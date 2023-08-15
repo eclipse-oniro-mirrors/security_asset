@@ -1,0 +1,67 @@
+{
+    "name": "@ohos/asset",
+    "description": "The provider of key and password storage and management",
+    "version": "4.0",
+    "license": "Apache License 2.0",
+    "publishAs": "code-segment",
+    "segment": {
+        "destPath": "base/security/asset"
+    },
+    "dirs":{},
+    "scripts": {
+        "install": "DEST_PATH=${DEP_BUNDLE_BASE}/base/security/asset && mkdir -p $DEST_PATH && cp -r ./* $DEST_PATH"
+    },
+    "author": {},
+    "repository": "",
+    "component": {
+        "name": "asset",
+        "subsystem": "security",
+        "syscap": [
+            "SystemCapability.Security.Asset"
+        ],
+        "features": [],
+        "adapted_system_type": [
+            "standard"
+        ],
+        "hisysevent_config": [
+            "//base/security/asset/hisysevent.yaml"
+        ],
+        "rom": "5120KByte",
+        "ram": "4828KByte",
+        "deps": {
+            "components": [
+                "hilog",
+                "ipc",
+                "common",
+                "c_utils",
+                "napi"
+            ],
+            "third_party": []
+        },
+        "build": {
+            "group_type": {
+                "base_group": [
+                "//base/security/asset:asset_component"
+                ]
+            },
+            "inner_api": [
+                {
+                    "name": "//base/security/asset/interfaces/inner_api/rust:asset_rust_sdk",
+                    "header": {
+                        "header_files": [],
+                        "header_base": []
+                    }
+                }, {
+                    "name": "//base/security/asset/interfaces/inner_api/c:asset_c_sdk",
+                    "header": {
+                        "header_files": [],
+                        "header_base": []
+                    }
+                }
+            ],
+            "test": [
+                "//base/security/asset:asset_test"
+            ]
+        }
+    }
+}
