@@ -17,9 +17,9 @@
 
 #![allow(dead_code)]
 
-mod asset_serialize;
 mod asset_deserialize;
 mod asset_request;
+mod asset_serialize;
 
 use ipc_rust::MsgParcel;
 
@@ -27,19 +27,16 @@ use ipc_rust::MsgParcel;
 pub struct AssetIpcSender {
     parcel_send: MsgParcel, // ipc parcel, n, private
     parcel_reply: Option<MsgParcel>, // reply, n, private
-    // send, v
-    // serialize, v
-    // deserialize, v
+                            // send, v
+                            // serialize, v
+                            // deserialize, v
 }
 
 impl AssetIpcSender {
-    pub fn new() -> Option<Self>
-    {
-        MsgParcel::new().map(|parcel| {
-            AssetIpcSender{
-                parcel_send: parcel,
-                parcel_reply: None,
-            }
+    pub fn new() -> Option<Self> {
+        MsgParcel::new().map(|parcel| AssetIpcSender {
+            parcel_send: parcel,
+            parcel_reply: None,
         })
     }
 }

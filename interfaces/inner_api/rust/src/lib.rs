@@ -15,15 +15,17 @@
 
 //! This create implement the asset
 
+use hilog_rust::{hilog, info, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
-use hilog_rust::{info, hilog, HiLogLabel, LogType};
 mod asset_ipc_client;
-use asset_common_lib::{asset_log_info, asset_type::{AssetResult, AssetStatusCode, AssetIpcCode}};
 use crate::asset_ipc_client::AssetIpcSender;
+use asset_common_lib::{
+    asset_log_info,
+    asset_type::{AssetIpcCode, AssetResult, AssetStatusCode},
+};
 
 /// insert data into asset
-pub fn asset_insert(_code: i32) -> AssetResult<AssetStatusCode>
-{
+pub fn asset_insert(_code: i32) -> AssetResult<AssetStatusCode> {
     asset_log_info!("AssetSdkLib", "xxxx");
     if let Some(sender) = AssetIpcSender::new() {
         sender.send_request(AssetIpcCode::Insert, "test")

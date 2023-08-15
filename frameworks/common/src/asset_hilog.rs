@@ -16,7 +16,7 @@
 //! This create implement the asset
 
 pub use std::ffi::{c_char, CString};
-pub use hilog_rust::{info, hilog, HiLogLabel, LogType};
+pub use hilog_rust::{hilog, HiLogLabel, LogType};
 
 /// blabla doc
 #[macro_export]
@@ -24,10 +24,10 @@ macro_rules! asset_log_info{
     ($tag:tt, $($arg:tt)*) => (
         let log_label: HiLogLabel = HiLogLabel {
             log_type: LogType::LogCore,
-            domain: 0xd001510, // test domain
+            domain: 0xD002F00, // security domain
             tag: $tag
         };
-        info!(log_label, $($arg)*)
+        hilog_rust::info!(log_label, $($arg)*)
     );
 }
 
@@ -37,9 +37,9 @@ macro_rules! asset_log_error{
     ($tag:tt, $($arg:tt)*) => (
         let log_label: HiLogLabel = HiLogLabel {
             log_type: LogType::LogCore,
-            domain: 0xd001510, // test domain
+            domain: 0xD002F00, // security domain
             tag: $tag
         };
-        error!(log_label, $($arg)*)
+        hilog_rust::error!(log_label, $($arg)*)
     );
 }

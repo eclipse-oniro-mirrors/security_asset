@@ -15,16 +15,20 @@
 
 //! This create implement the send request
 
-use asset_common_lib::{asset_log_info, asset_type::{AssetResult, AssetStatusCode, AssetIpcCode}};
 use super::AssetIpcSender;
+use asset_common_lib::{
+    asset_log_info,
+    asset_type::{AssetIpcCode, AssetResult, AssetStatusCode},
+};
 use ipc_rust::{
+    IRemoteBroker,
     // FromRemoteObj, IRemoteObj, RemoteObjRef,
     // get_service, IpcStatusCode,
-    IpcResult, IRemoteBroker,
+    IpcResult,
 };
 
+use hilog_rust::{hilog, info, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
-use hilog_rust::{info, hilog, HiLogLabel, LogType};
 // use crate::asset_ipc_client::{asset_serialize, asset_deserialize};
 
 /// Function between proxy and stub of ITestService
@@ -52,9 +56,8 @@ pub trait AssetBroker: IRemoteBroker {
 
 /// 2222
 impl AssetIpcSender {
-    pub fn send_request(&self, ipc_code: AssetIpcCode, data: &str)
-        -> AssetResult<AssetStatusCode>
-    {
+    pub fn send_request(&self, ipc_code: AssetIpcCode, data: &str) -> AssetResult<AssetStatusCode> {
         asset_log_info!("AssetRequest", "test send request {}, {}", ipc_code, data);
-        Ok(AssetStatusCode::Ok)    }
+        Ok(AssetStatusCode::Ok)
+    }
 }
