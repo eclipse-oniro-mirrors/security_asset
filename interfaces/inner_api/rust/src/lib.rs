@@ -15,7 +15,7 @@
 
 //! This create implement the asset
 
-use hilog_rust::{hilog, info, HiLogLabel, LogType};
+use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
 mod asset_ipc_client;
 use crate::asset_ipc_client::AssetIpcSender;

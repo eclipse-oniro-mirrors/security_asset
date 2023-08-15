@@ -27,7 +27,7 @@ use ipc_rust::{
     IpcResult,
 };
 
-use hilog_rust::{hilog, info, HiLogLabel, LogType};
+use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
 // use crate::asset_ipc_client::{asset_serialize, asset_deserialize};
 

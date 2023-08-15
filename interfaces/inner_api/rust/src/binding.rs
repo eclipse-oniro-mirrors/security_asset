@@ -17,7 +17,7 @@
 
 use asset_rust_sdk::asset_insert;
 use std::ffi::{c_char, CString};
-use hilog_rust::{info, hilog, HiLogLabel, LogType};
+use hilog_rust::{hilog, HiLogLabel, LogType};
 use asset_common_lib::asset_log_info;
 
 /// blablabla as documentation
