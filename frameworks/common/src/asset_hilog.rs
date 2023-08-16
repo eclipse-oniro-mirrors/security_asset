@@ -21,11 +21,11 @@ pub use hilog_rust::{hilog, HiLogLabel, LogType};
 /// blabla doc
 #[macro_export]
 macro_rules! asset_log_info{
-    ($tag:tt, $($arg:tt)*) => (
+    ($($arg:tt)*) => (
         let log_label: HiLogLabel = HiLogLabel {
             log_type: LogType::LogCore,
             domain: 0xD002F00, // security domain
-            tag: $tag
+            tag: "Asset"
         };
         hilog_rust::info!(log_label, $($arg)*)
     );
@@ -34,11 +34,11 @@ macro_rules! asset_log_info{
 /// blabla doc
 #[macro_export]
 macro_rules! asset_log_error{
-    ($tag:tt, $($arg:tt)*) => (
+    ($($arg:tt)*) => (
         let log_label: HiLogLabel = HiLogLabel {
             log_type: LogType::LogCore,
             domain: 0xD002F00, // security domain
-            tag: $tag
+            tag: "Asset"
         };
         hilog_rust::error!(log_label, $($arg)*)
     );

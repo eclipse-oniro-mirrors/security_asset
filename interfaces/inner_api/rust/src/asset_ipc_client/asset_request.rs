@@ -57,7 +57,7 @@ pub trait AssetBroker: IRemoteBroker {
 /// 2222
 impl AssetIpcSender {
     pub fn send_request(&self, ipc_code: AssetIpcCode, data: &str) -> AssetResult<AssetStatusCode> {
-        asset_log_info!("AssetRequest", "test send request {}, {}", ipc_code, data);
+        asset_log_info!("test send request {}, {}", ipc_code, data);
         Ok(AssetStatusCode::Ok)
     }
 }

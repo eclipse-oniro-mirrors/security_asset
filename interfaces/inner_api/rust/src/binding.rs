@@ -24,7 +24,7 @@ use asset_common_lib::asset_log_info;
 #[no_mangle]
 pub extern "C" fn AssetInsert(code: i32) -> i32
 {
-    asset_log_info!("AssetBinding", "receive code {} in AssetInsert", code);
+    asset_log_info!("receive code {} in AssetInsert", code);
     match asset_insert(code) {
         Ok(res) => {
             res as i32

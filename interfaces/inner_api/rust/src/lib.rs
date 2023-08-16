@@ -26,7 +26,7 @@ use asset_common_lib::{
 
 /// insert data into asset
 pub fn asset_insert(_code: i32) -> AssetResult<AssetStatusCode> {
-    asset_log_info!("AssetSdkLib", "xxxx");
+    asset_log_info!("enter asser insert");
     if let Some(sender) = AssetIpcSender::new() {
         sender.send_request(AssetIpcCode::Insert, "test")
     } else {
