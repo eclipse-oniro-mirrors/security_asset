@@ -16,5 +16,5 @@
 //! This create implement the asset
 
 #[macro_use]
-mod asset_hilog;
+pub mod asset_hilog;
 pub mod asset_type;

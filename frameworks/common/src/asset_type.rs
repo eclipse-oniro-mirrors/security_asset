@@ -18,6 +18,20 @@
 #![allow(dead_code)]
 
 use std::fmt;
+use std::iter::Map;
+
+enum AssetTag {
+    AssetTagAlias,
+}
+
+enum AssetValue {
+    BOOL(bool),
+    NUMBER(i32),
+    UINT8ARRAY(i32),
+    DATE(i32)
+}
+
+type AssetMap = Map<AssetTag, AssetValue>;
 
 /// Asset unified status code
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]

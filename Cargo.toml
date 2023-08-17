@@ -1,0 +1,5 @@
+[workspace]
+members = [
+    "frameworks/common",
+    "interfaces/inner_api/rust",
+]
