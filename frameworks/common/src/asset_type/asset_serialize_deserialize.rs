@@ -18,6 +18,8 @@
 use super::*;
 
 use ipc_rust::{MsgParcel, IpcResult, IpcStatusCode};
+use hilog_rust::{hilog, HiLogLabel, LogType};
+use std::ffi::{c_char, CString};
 
 fn serialize_ipc(map: &AssetMap, parcel: &mut MsgParcel) -> IpcResult<()>
 {
@@ -44,7 +46,10 @@ impl SerializeAsset for AssetMap {
     {
         match serialize_ipc(self, parcel) {
             Ok(_) => Ok(()),
-            Err(_) => Err(AssetStatusCode::Failed)
+            Err(_) => {
+                asset_log_error!("get tag type failed!");
+                Err(AssetStatusCode::Failed)
+            }
         }
     }
 }
@@ -86,7 +91,10 @@ impl DeserializeAsset for AssetMap {
     {
         match deserialize_ipc(parcel) {
             Ok(map) => Ok(map),
-            Err(_) => Err(AssetStatusCode::Failed)
+            Err(_) => {
+                asset_log_error!("deserialize failed!");
+                Err(AssetStatusCode::Failed)
+            }
         }
     }
 }

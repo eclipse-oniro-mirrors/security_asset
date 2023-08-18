@@ -16,6 +16,8 @@
 //! This create implement the asset
 
 use super::{AssetTag, AssetStatusCode, AssetResult, AssetType};
+use hilog_rust::{hilog, HiLogLabel, LogType};
+use std::ffi::{c_char, CString};
 
 impl TryFrom<u32> for AssetTag {
     type Error = AssetStatusCode;
@@ -23,7 +25,10 @@ impl TryFrom<u32> for AssetTag {
         match code {
             _ if code == AssetTag::AssetTagAlias as u32 => Ok(AssetTag::AssetTagAlias),
             _ if code == AssetTag::AssetTagAuthType as u32 => Ok(AssetTag::AssetTagAuthType),
-            _ => Err(AssetStatusCode::Failed),
+            _ => {
+                asset_log_error!("try convert u32 to AssetStatusCode failed!");
+                Err(AssetStatusCode::Failed)
+            }
         }
     }
 }
@@ -42,6 +47,7 @@ impl AssetTag {
                 Ok(AssetType::Uint8Array)
             }
             _ => {
+                asset_log_error!("get tag type failed!");
                 Err(AssetStatusCode::Failed)
             }
         }

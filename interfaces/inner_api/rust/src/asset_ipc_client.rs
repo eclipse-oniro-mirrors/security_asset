@@ -64,7 +64,7 @@ impl AssetIpcSender {
 
     pub fn read_request(&self) -> AssetResult<AssetMap> {
         let map = AssetMap::deserialize(&self.parcel_send)?;
-        asset_log_info!("map size is {}", map.len());
-        Err(AssetStatusCode::Failed)
+        asset_log_info!("map size is {}", @public(map.len()));
+        Ok(AssetStatusCode::Ok)
     }
 }
