@@ -15,6 +15,8 @@
 
 //! This create implement the asset
 
+pub use asset_common_lib::asset_type;
+
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
 mod asset_ipc_client;

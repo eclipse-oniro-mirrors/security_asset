@@ -17,9 +17,7 @@
 
 #![allow(dead_code)]
 
-mod asset_deserialize;
 mod asset_request;
-mod asset_serialize;
 
 use ipc_rust::MsgParcel;
 

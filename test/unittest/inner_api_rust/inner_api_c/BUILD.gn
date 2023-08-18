@@ -12,24 +12,19 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//build/test.gni")
 
-ohos_rust_static_library("asset_common_lib") {
+SUBSYSTEM_DIR = "//base/security/asset"
+
+module_output_path = "asset/asset_UT_test"
+
+ohos_unittest("asset_rust_api_test") {
+    module_out_path = module_output_path
+    include_dirs = [ "include" ]
     sources = [
-        "src/lib.rs",
+        "src/rust_api_test.cpp"
     ]
-
     deps = [
-        "//third_party/rust/crates/serde/serde:lib"
+        "$SUBSYSTEM_DIR/interfaces/inner_api/rust:asset_rust_sdk",
     ]
-
-    external_deps = [
-        "hilog:hilog_rust",
-        "ipc:ipc_rust",
-    ]
-
-    crate_name = "asset_common_lib"
-    crate_type = "rlib"
-
-    subsystem_name = "security"
-    part_name = "asset"
 }

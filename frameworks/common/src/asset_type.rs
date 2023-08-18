@@ -17,21 +17,47 @@
 
 #![allow(dead_code)]
 
+use std::collections::HashMap;
 use std::fmt;
-use std::iter::Map;
 
-enum AssetTag {
+use ipc_rust::MsgParcel;
+
+mod asset_serialize_deserialize;
+
+/// asset tag
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum AssetTag {
+    /// alias tag
     AssetTagAlias,
 }
 
-enum AssetValue {
+/// aset value
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum AssetValue {
+    /// bool for asset
     BOOL(bool),
-    NUMBER(i32),
-    UINT8ARRAY(i32),
-    DATE(i32)
+
+    /// number for asset
+    NUMBER(u32),
+
+    /// uint8array for asset
+    UINT8ARRAY(Vec<u8>),
 }
 
-type AssetMap = Map<AssetTag, AssetValue>;
+/// asset map
+pub type AssetMap = HashMap<AssetTag, AssetValue>;
+
+/// x
+pub trait SerializeAsset {
+    /// xxx
+    fn serialize(&self, parcel: &mut MsgParcel) -> AssetResult<()>;
+}
+
+/// x
+pub trait DeserializeAsset {
+    /// xxx
+    fn deserialize(parcel: &MsgParcel) -> AssetResult<AssetMap>;
+}
 
 /// Asset unified status code
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
