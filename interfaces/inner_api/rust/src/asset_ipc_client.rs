@@ -19,7 +19,12 @@
 
 mod asset_request;
 
+use asset_common_lib::{asset_log_info,
+    asset_type::{AssetStatusCode, SerializeAsset, AssetMap, DeserializeAsset, AssetResult}};
 use ipc_rust::MsgParcel;
+
+use hilog_rust::{hilog, HiLogLabel, LogType};
+use std::ffi::{c_char, CString};
 
 #[allow(dead_code)]
 pub struct AssetIpcSender {
@@ -36,5 +41,30 @@ impl AssetIpcSender {
             parcel_send: parcel,
             parcel_reply: None,
         })
+    }
+
+    fn serialize(&mut self, value: &impl SerializeAsset) -> AssetResult<()> {
+        value.serialize(&mut self.parcel_send)
+    }
+
+    fn deserialize(&self) -> AssetResult<AssetMap> {
+        match &self.parcel_reply {
+            Some(p) => {
+                AssetMap::deserialize(p)
+            },
+            _ => {
+                Err(AssetStatusCode::Failed)
+            }
+        }
+    }
+
+    pub fn read_reply() -> AssetResult<AssetMap> {
+        Err(AssetStatusCode::Failed)
+    }
+
+    pub fn read_request(&self) -> AssetResult<AssetMap> {
+        let map = AssetMap::deserialize(&self.parcel_send)?;
+        asset_log_info!("map size is {}", map.len());
+        Err(AssetStatusCode::Failed)
     }
 }

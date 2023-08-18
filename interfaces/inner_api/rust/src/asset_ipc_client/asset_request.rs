@@ -18,7 +18,7 @@
 use super::AssetIpcSender;
 use asset_common_lib::{
     asset_log_info,
-    asset_type::{AssetIpcCode, AssetResult, AssetStatusCode},
+    asset_type::{AssetIpcCode, AssetResult, AssetStatusCode, AssetMap},
 };
 
 use ipc_rust::{
@@ -57,8 +57,9 @@ pub trait AssetBroker: IRemoteBroker {
 
 /// 2222
 impl AssetIpcSender {
-    pub fn send_request(&self, ipc_code: AssetIpcCode, data: &str) -> AssetResult<AssetStatusCode> {
-        asset_log_info!("test send request {}, {}", ipc_code, data);
+    pub fn send_request(&mut self, ipc_code: AssetIpcCode, input: &AssetMap) -> AssetResult<AssetStatusCode> {
+        asset_log_info!("test send request {}", ipc_code);
+        self.serialize(input)?;
         Ok(AssetStatusCode::Ok)
     }
 }

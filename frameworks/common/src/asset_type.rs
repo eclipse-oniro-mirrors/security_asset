@@ -23,12 +23,33 @@ use std::fmt;
 use ipc_rust::MsgParcel;
 
 mod asset_serialize_deserialize;
+mod asset_tag_operator;
+
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+/// asset tag type
+pub enum AssetType {
+    /// bool
+    Bool = 1 << 28,
+    /// u32
+    U32 = 2 << 28,
+    /// u8array
+    Uint8Array = 3 << 28,
+}
 
 /// asset tag
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 pub enum AssetTag {
     /// alias tag
-    AssetTagAlias,
+    AssetTagAlias = AssetType::Uint8Array as isize | 1,
+    /// auth type
+    AssetTagAuthType = AssetType::U32 as isize | 1,
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+/// auth type
+pub enum AssetAuthType {
+    /// sss
+    NoAuth
 }
 
 /// aset value

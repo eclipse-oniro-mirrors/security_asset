@@ -15,9 +15,6 @@
 
 //! This create implement the asset
 
-pub use std::ffi::{c_char, CString};
-pub use hilog_rust::{hilog, HiLogLabel, LogType};
-
 /// blabla doc
 #[macro_export]
 macro_rules! asset_log_info{

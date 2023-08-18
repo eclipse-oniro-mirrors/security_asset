@@ -15,30 +15,9 @@
 
 //! This create implement the asset
 
-use super::{AssetMap, AssetTag, SerializeAsset, DeserializeAsset, AssetResult, AssetStatusCode, AssetValue};
+use super::*;
 
 use ipc_rust::{MsgParcel, IpcResult, IpcStatusCode};
-
-impl AssetTag {
-    fn from(u: u32) -> AssetResult<AssetTag>
-    {
-        // match u {
-        //     // AssetTag::AssetTagAlias as u32 => {
-        //     //     return Ok(AssetTag::AssetTagAlias)
-        //     // },
-        //     0 => {
-        //         return Ok(AssetTag::AssetTagAlias)
-        //     },
-        //     _ => {}
-        // }
-        // Err(AssetStatusCode::Failed)
-
-        if u == AssetTag::AssetTagAlias as u32 {
-            return Ok(AssetTag::AssetTagAlias);
-        }
-        Err(AssetStatusCode::Failed)
-    }
-}
 
 fn serialize_ipc(map: &AssetMap, parcel: &mut MsgParcel) -> IpcResult<()>
 {
@@ -76,14 +55,27 @@ fn deserialize_ipc(parcel: &MsgParcel) -> IpcResult<AssetMap>
     let mut map = AssetMap::with_capacity(len as usize);
     for _i in 0..len {
         let tag = parcel.read::<u32>()?;
-        // to do 从tag可判断出value类型
-        // let _value = parcel.read()?;
-        
-        // map.insert(tag, value);
-        if let Ok(t) = AssetTag::from(tag) {
-            map.insert(t, AssetValue::BOOL(true)); // to do delete
-        } else {
-            return Err(IpcStatusCode::Failed);
+        let asset_tag = AssetTag::try_from(tag);
+        if asset_tag.is_err() {
+            return Err(IpcStatusCode::Failed)
+        }
+        let asset_tag = asset_tag.unwrap();
+        match asset_tag.get_type() {
+            Ok(AssetType::Bool) => {
+                let v = parcel.read::<bool>()?;
+                map.insert(asset_tag, AssetValue::BOOL(v));
+            },
+            Ok(AssetType::U32) => {
+                let v = parcel.read::<u32>()?;
+                map.insert(asset_tag, AssetValue::NUMBER(v));
+            },
+            Ok(AssetType::Uint8Array) => {
+                let v = parcel.read::<Vec<u8>>()?;
+                map.insert(asset_tag, AssetValue::UINT8ARRAY(v));
+            },
+            Err(_) => {
+                return Err(IpcStatusCode::Failed);
+            }
         }
     }
     Ok(map)

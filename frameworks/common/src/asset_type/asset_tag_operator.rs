@@ -15,3 +15,35 @@
 
 //! This create implement the asset
 
+use super::{AssetTag, AssetStatusCode, AssetResult, AssetType};
+
+impl TryFrom<u32> for AssetTag {
+    type Error = AssetStatusCode;
+    fn try_from(code: u32) -> AssetResult<Self> {
+        match code {
+            _ if code == AssetTag::AssetTagAlias as u32 => Ok(AssetTag::AssetTagAlias),
+            _ if code == AssetTag::AssetTagAuthType as u32 => Ok(AssetTag::AssetTagAuthType),
+            _ => Err(AssetStatusCode::Failed),
+        }
+    }
+}
+
+impl AssetTag {
+    /// sss
+    pub fn get_type(&self) -> AssetResult<AssetType> {
+        match self {
+            _ if ((*self as u32) & (AssetType::Bool as u32)) != 0 => {
+                Ok(AssetType::Bool)
+            }
+            _ if ((*self as u32) & (AssetType::U32 as u32)) != 0 => {
+                Ok(AssetType::U32)
+            }
+            _ if ((*self as u32) & (AssetType::Uint8Array as u32)) != 0 => {
+                Ok(AssetType::Uint8Array)
+            }
+            _ => {
+                Err(AssetStatusCode::Failed)
+            }
+        }
+    }
+}

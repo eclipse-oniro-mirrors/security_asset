@@ -23,14 +23,19 @@ mod asset_ipc_client;
 use crate::asset_ipc_client::AssetIpcSender;
 use asset_common_lib::{
     asset_log_info,
-    asset_type::{AssetIpcCode, AssetResult, AssetStatusCode},
+    asset_type::{AssetIpcCode, AssetResult, AssetStatusCode, AssetMap, AssetTag, AssetValue},
 };
 
 /// insert data into asset
 pub fn asset_insert(_code: i32) -> AssetResult<AssetStatusCode> {
     asset_log_info!("enter asser insert");
-    if let Some(sender) = AssetIpcSender::new() {
-        sender.send_request(AssetIpcCode::Insert, "test")
+    if let Some(mut sender) = AssetIpcSender::new() {
+        let mut map = AssetMap::new();
+        map.insert(AssetTag::AssetTagAuthType, AssetValue::NUMBER(5));
+        sender.send_request(AssetIpcCode::Insert, &map)?;
+
+        sender.read_request()?;
+        Ok(AssetStatusCode::Ok)
     } else {
         Err(AssetStatusCode::Failed)
     }
