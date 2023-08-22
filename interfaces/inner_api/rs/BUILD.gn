@@ -44,7 +44,7 @@ ohos_rust_shared_ffi("asset_rust_binding") {
         "src/binding.rs",
     ]
     deps = [
-        "$SUBSYSTEM_DIR/interfaces/inner_api/rust:asset_rust_sdk",
+        "$SUBSYSTEM_DIR/interfaces/inner_api/rs:asset_rust_sdk",
         "$SUBSYSTEM_DIR/frameworks/common:asset_common_lib",
     ]
     external_deps = [

@@ -25,6 +25,6 @@ ohos_unittest("asset_rust_api_test") {
         "src/rust_api_test.cpp"
     ]
     deps = [
-        "$SUBSYSTEM_DIR/interfaces/inner_api/rust:asset_rust_sdk",
+        "$SUBSYSTEM_DIR/interfaces/inner_api/rs:asset_rust_sdk",
     ]
 }

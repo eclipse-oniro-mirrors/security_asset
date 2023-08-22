@@ -17,9 +17,9 @@ SUBSYSTEM_DIR = "//base/security/asset"
 
 group("asset_component") {
     deps = [
-        "$SUBSYSTEM_DIR/interfaces/inner_api/rust:asset_rust_sdk",
+        "$SUBSYSTEM_DIR/interfaces/inner_api/rs:asset_rust_sdk",
         "$SUBSYSTEM_DIR/interfaces/inner_api/c:asset_c_sdk",
-    #    "$SUBSYSTEM_DIR/services/core_service:asset_service",
+        "$SUBSYSTEM_DIR/services/core_service:asset_service",
     ]
 
     if (support_jsapi) {

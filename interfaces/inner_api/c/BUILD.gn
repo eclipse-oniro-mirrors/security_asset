@@ -28,6 +28,6 @@ ohos_shared_library("asset_c_sdk") {
         "src/asset_api.c",
     ]
     deps = [
-        "$SUBSYSTEM_DIR/interfaces/inner_api/rust:asset_rust_binding"
+        "$SUBSYSTEM_DIR/interfaces/inner_api/rs:asset_rust_binding"
     ]
 }

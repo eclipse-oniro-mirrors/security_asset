@@ -34,7 +34,8 @@
                 "ipc",
                 "common",
                 "c_utils",
-                "napi"
+                "napi",
+                "access_token"
             ],
             "third_party": []
         },
@@ -46,7 +47,7 @@
             },
             "inner_api": [
                 {
-                    "name": "//base/security/asset/interfaces/inner_api/rust:asset_rust_sdk",
+                    "name": "//base/security/asset/interfaces/inner_api/rs:asset_rust_sdk",
                     "header": {
                         "header_files": [],
                         "header_base": []

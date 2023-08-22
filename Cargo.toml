@@ -2,6 +2,6 @@
 members = [
     "frameworks/common",
     "frameworks/ipc_define",
-    "interfaces/inner_api/rust",
+    "interfaces/inner_api/rs",
     "services/core_service",
 ]
