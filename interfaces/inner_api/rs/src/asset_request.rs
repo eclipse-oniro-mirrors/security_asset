@@ -22,18 +22,17 @@ use asset_common_lib::{
 
 use asset_ipc_define_lib::asset_service::{ASSET_SERVICE_ID, AssetBroker};
 
-use ipc_rust::{
-    FromRemoteObj, get_service, RemoteObjRef,
-};
+use ipc_rust::RemoteObjRef;
+
+use rust_samgr::get_service_proxy;
 
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
 
 fn get_asset_service() -> AssetResult<RemoteObjRef<dyn AssetBroker>>
 {
-    let object = get_service(ASSET_SERVICE_ID).expect("get asset service failed");
-    let try_remote = <dyn AssetBroker as FromRemoteObj>::try_from(object);
-    match try_remote {
+    let object = get_service_proxy::<dyn AssetBroker>(ASSET_SERVICE_ID);
+    match object {
         Ok(remote) => {
             Ok(remote)
         },

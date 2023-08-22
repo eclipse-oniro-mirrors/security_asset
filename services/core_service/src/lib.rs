@@ -15,17 +15,24 @@
 
 //! This create implement the asset
 
-use asset_common_lib::asset_type::{AssetMap, AssetTag, AssetResult, AssetValue};
+use asset_common_lib::{asset_type::{AssetMap, AssetTag, AssetResult, AssetValue}, asset_log_info};
 use asset_ipc_define_lib::asset_service::{AssetStub, AssetBroker, ASSET_SERVICE_ID};
 
-use ipc_rust::{add_service, join_work_thread, IRemoteBroker};
+use ipc_rust::{IRemoteBroker, RemoteObj};
 
-use access_token::init_access_token;
+// use access_token::init_access_token;
+use hilog_rust::{hilog, error, HiLogLabel, LogType};
+use std::ffi::{c_char, CString};
 
-mod access_token;
+use system_ability_fwk_rust::{
+    define_system_ability, RSystemAbility, ISystemAbility, IMethod
+};
+
+// mod access_token;
 
 /// xxx
 pub struct AssetService;
+
 impl IRemoteBroker for AssetService {}
 
 impl AssetBroker for AssetService {
@@ -36,11 +43,42 @@ impl AssetBroker for AssetService {
     }
 }
 
-/// xxx
-pub fn asset_server_init() {
-    init_access_token();
-    // create stub
-    let service = AssetStub::new_remote_stub(AssetService).expect("create AssetService success");
-    add_service(&service.as_object().expect("get Asset service failed"), ASSET_SERVICE_ID).expect("add server to samgr failed"); 
-    join_work_thread();   
+// /// xxx
+// pub fn asset_server_init() {
+//     init_access_token();
+//     // create stub
+//     let service = AssetStub::new_remote_stub(AssetService).expect("create AssetService success");
+//     add_service(&service.as_object().expect("get Asset service failed"), ASSET_SERVICE_ID).expect("add server to samgr failed"); 
+//     join_work_thread();   
+// }
+
+const LOG_LABEL: HiLogLabel = HiLogLabel {
+    log_type: LogType::LogCore,
+    domain: 0xD002F00, // security domain
+    tag: "Asset"
+};
+
+define_system_ability!(
+    sa: SystemAbility(on_start, on_stop),
+);
+
+fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
+    let service = AssetStub::new_remote_stub(AssetService).expect("create TestService failed");
+    ability.publish(&service.as_object().expect("get ITest service failed"), ASSET_SERVICE_ID);
+    // init_access_token();
+    asset_log_info!("on_start");
 }
+
+fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {
+    asset_log_info!("on_stop");
+}
+
+#[used]
+#[link_section = ".init_array"]
+static A:extern fn() = {
+    extern fn init() {
+        let r_sa = SystemAbility::new_system_ability(ASSET_SERVICE_ID, true).expect("create TestService failed");
+        r_sa.register();
+    }
+    init
+};
