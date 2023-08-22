@@ -17,7 +17,7 @@
 
 use super::*;
 
-use ipc_rust::{MsgParcel, IpcResult, IpcStatusCode};
+use ipc_rust::{MsgParcel, BorrowedMsgParcel, IpcResult, IpcStatusCode};
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
 
@@ -54,7 +54,7 @@ impl SerializeAsset for AssetMap {
     }
 }
 
-fn deserialize_ipc(parcel: &MsgParcel) -> IpcResult<AssetMap>
+fn deserialize_ipc(parcel: &BorrowedMsgParcel) -> IpcResult<AssetMap>
 {
     let len = parcel.read::<u32>()?;
     let mut map = AssetMap::with_capacity(len as usize);
@@ -87,7 +87,7 @@ fn deserialize_ipc(parcel: &MsgParcel) -> IpcResult<AssetMap>
 }
 
 impl DeserializeAsset for AssetMap {
-    fn deserialize(parcel: &MsgParcel) -> AssetResult<AssetMap>
+    fn deserialize(parcel: &BorrowedMsgParcel) -> AssetResult<AssetMap>
     {
         match deserialize_ipc(parcel) {
             Ok(map) => Ok(map),

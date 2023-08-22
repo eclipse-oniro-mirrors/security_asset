@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//build/test.gni")
 
 SUBSYSTEM_DIR = "//base/security/asset"
 
@@ -22,6 +23,7 @@ ohos_rust_shared_library("asset_rust_sdk") {
 
     deps = [
         "$SUBSYSTEM_DIR/frameworks/common:asset_common_lib",
+        "$SUBSYSTEM_DIR/frameworks/ipc_define:asset_ipc_define_lib",
     ]
 
     external_deps = [
@@ -46,10 +48,7 @@ ohos_rust_shared_ffi("asset_rust_binding") {
         "$SUBSYSTEM_DIR/frameworks/common:asset_common_lib",
     ]
     external_deps = [
-        # "access_token:libnativetoken",
-        # "access_token:libtoken_setproc",
         "hilog:hilog_rust",
-        # "ipc:ipc_rust",
     ]
     crate_name = "asset_rust_binding"
     crate_type = "cdylib"

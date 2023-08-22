@@ -13,9 +13,15 @@
 
 import("//build/ohos.gni")
 
-ohos_rust_static_library("asset_common_lib") {
+SUBSYSTEM_DIR = "//base/security/asset"
+
+ohos_rust_shared_library("asset_service") {
     sources = [
         "src/lib.rs",
+    ]
+
+    deps = [
+        "$SUBSYSTEM_DIR/frameworks/common:asset_common_lib",
     ]
 
     external_deps = [
@@ -23,9 +29,15 @@ ohos_rust_static_library("asset_common_lib") {
         "ipc:ipc_rust",
     ]
 
-    crate_name = "asset_common_lib"
-    crate_type = "rlib"
+    external_deps += [
+        "access_token:libnativetoken",
+        "access_token:libtoken_setproc",
+    ]
 
+    crate_name = "asset_service"
+    crate_type = "dylib"
+
+    install_images = [ system_base_dir ]
     subsystem_name = "security"
     part_name = "asset"
 }

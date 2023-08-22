@@ -20,10 +20,10 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use ipc_rust::MsgParcel;
+use ipc_rust::{MsgParcel, BorrowedMsgParcel};
 
 mod asset_serialize_deserialize;
-mod asset_tag_operator;
+mod asset_tag_operation;
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 /// asset tag type
@@ -77,7 +77,7 @@ pub trait SerializeAsset {
 /// x
 pub trait DeserializeAsset {
     /// xxx
-    fn deserialize(parcel: &MsgParcel) -> AssetResult<AssetMap>;
+    fn deserialize(parcel: &BorrowedMsgParcel) -> AssetResult<AssetMap>;
 }
 
 /// Asset unified status code
@@ -94,21 +94,6 @@ impl fmt::Display for AssetStatusCode {
         match *self {
             AssetStatusCode::Ok => write!(f, "Ok"),
             AssetStatusCode::Failed => write!(f, "Failed"),
-        }
-    }
-}
-
-/// Asset ipc code
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum AssetIpcCode {
-    /// insert data
-    Insert = 1,
-}
-
-impl fmt::Display for AssetIpcCode {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            AssetIpcCode::Insert => write!(f, "insert"),
         }
     }
 }

@@ -15,26 +15,25 @@
 
 //! This create implement the asset
 
-pub use asset_common_lib::asset_type;
+mod asset_request;
 
+pub use asset_common_lib::asset_type;
+use asset_request::AssetIpcSender;
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
-mod asset_ipc_client;
-use crate::asset_ipc_client::AssetIpcSender;
 use asset_common_lib::{
     asset_log_info,
-    asset_type::{AssetIpcCode, AssetResult, AssetStatusCode, AssetMap, AssetTag, AssetValue},
+    asset_type::{AssetResult, AssetStatusCode, AssetMap, AssetTag, AssetValue},
 };
 
 /// insert data into asset
 pub fn asset_insert(_code: i32) -> AssetResult<AssetStatusCode> {
     asset_log_info!("enter asser insert");
-    if let Some(mut sender) = AssetIpcSender::new() {
+    if let Ok(sender) = AssetIpcSender::new() {
         let mut map = AssetMap::new();
         map.insert(AssetTag::AssetTagAuthType, AssetValue::NUMBER(5));
-        sender.send_request(AssetIpcCode::Insert, &map)?;
+        sender.insert(&map)?; // ingore reply
 
-        sender.read_request()?;
         Ok(AssetStatusCode::Ok)
     } else {
         Err(AssetStatusCode::Failed)

@@ -1,5 +1,7 @@
 [workspace]
 members = [
     "frameworks/common",
+    "frameworks/ipc_define",
     "interfaces/inner_api/rust",
+    "services/core_service",
 ]
