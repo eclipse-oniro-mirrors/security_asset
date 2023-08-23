@@ -19,7 +19,9 @@ group("asset_component") {
     deps = [
         "$SUBSYSTEM_DIR/interfaces/inner_api/rs:asset_rust_sdk",
         "$SUBSYSTEM_DIR/interfaces/inner_api/c:asset_c_sdk",
-        "$SUBSYSTEM_DIR/services/core_service:asset_service",
+        "$SUBSYSTEM_DIR/services/core_service:asset_server",
+        "$SUBSYSTEM_DIR/sa_profile:asset_sa_profiles",
+        "$SUBSYSTEM_DIR/services/core_service/etc/init:assetservice.cfg",
     ]
 
     if (support_jsapi) {

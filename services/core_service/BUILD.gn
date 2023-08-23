@@ -15,7 +15,7 @@ import("//build/ohos.gni")
 
 SUBSYSTEM_DIR = "//base/security/asset"
 
-ohos_rust_shared_library("asset_service") {
+ohos_rust_shared_library("asset_server") {
     sources = [
         "src/lib.rs",
     ]
@@ -36,7 +36,7 @@ ohos_rust_shared_library("asset_service") {
         "access_token:libtoken_setproc",
     ]
 
-    crate_name = "asset_service"
+    crate_name = "asset_server"
     crate_type = "dylib"
 
     install_images = [ system_base_dir ]

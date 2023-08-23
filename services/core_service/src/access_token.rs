@@ -38,7 +38,7 @@ extern "C" {
 /// Init access token ID for current process
 pub fn init_access_token()
 {
-    let name = CString::new("asset_service").expect("process name is invalid");
+    let name = CString::new("asset_server").expect("process name is invalid");
     let apl = CString::new("normal").expect("apl string is invalid");
     let mut param = TokenInfoParams {
         dcaps_num: 0,
