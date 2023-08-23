@@ -20,7 +20,6 @@ use asset_ipc_define_lib::asset_service::{AssetStub, AssetBroker, ASSET_SERVICE_
 
 use ipc_rust::{IRemoteBroker, RemoteObj};
 
-// use access_token::init_access_token;
 use hilog_rust::{hilog, error, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
 
@@ -28,7 +27,6 @@ use system_ability_fwk_rust::{
     define_system_ability, RSystemAbility, ISystemAbility, IMethod
 };
 
-// mod access_token;
 
 /// xxx
 pub struct AssetService;
@@ -45,7 +43,6 @@ impl AssetBroker for AssetService {
 
 // /// xxx
 // pub fn asset_server_init() {
-//     init_access_token();
 //     // create stub
 //     let service = AssetStub::new_remote_stub(AssetService).expect("create AssetService success");
 //     add_service(&service.as_object().expect("get Asset service failed"), ASSET_SERVICE_ID).expect("add server to samgr failed"); 
@@ -65,7 +62,6 @@ define_system_ability!(
 fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
     let service = AssetStub::new_remote_stub(AssetService).expect("create TestService failed");
     ability.publish(&service.as_object().expect("get ITest service failed"), ASSET_SERVICE_ID);
-    // init_access_token();
     asset_log_info!("on_start");
 }
 
