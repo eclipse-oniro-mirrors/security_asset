@@ -11,7 +11,11 @@ cd base/security
 git clone ssh://git@szv-y.codehub.huawei.com:2222/<工号>/asset.git
 
 ## 编译运行待补充
-在vendor/huawei/build/component_config/system/generic_generic_arm_64only/hisi_higeneric/part_config.json添加
+在vendor/huawei/build/component_config/system/generic_generic_arm_64only/hisi_higeneric/newphone_standard/part_config.json添加
 "security:asset":{},
 
-编译指令： ./build_system.sh --abi-type generic_generic_arm_64only --device-type hisi_higeneric_newphone_standard --ccache --build-variant root --build-target out/generic_generic_arm_64only/hisi_higeneric_newphone_standard/build_configs/security/asset:asset
+编译指令： ./build_system.sh --abi-type generic_generic_arm_64only --device-type hisi_higeneric_newphone_standard --ccache --build-variant root --build-target out/generic_generic_arm_64only/hisi_higeneric_newphone_standard/build_configs/security/asset:asset --build-target out/generic_generic_arm_64only/hisi_higeneric_newphone_standard/build_configs/security/asset:asset_test
+
+支持SA自启：各种脚本/push_asset_cfg.bat ，解压执行bat脚本即可。
+
+推包命令： 各种脚本/push_asset.bat 修改小包目录位置，执行即可。
