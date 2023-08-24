@@ -69,8 +69,8 @@ pub trait AssetBroker: IRemoteBroker {
     // fn transform(&self, code: u32, input: &AssetMap) -> AssetResult<AssetMap>;
 }
 
-fn on_asset_remote_request(_stub: &dyn AssetBroker, code: u32, data: &BorrowedMsgParcel,
-    _reply: &mut BorrowedMsgParcel) -> IpcResult<()> {
+fn on_asset_remote_request(stub: &dyn AssetBroker, code: u32, data: &BorrowedMsgParcel,
+    reply: &mut BorrowedMsgParcel) -> IpcResult<()> {
     let input_map = AssetMap::deserialize(data);
     if input_map.is_err() {
         return Err(IpcStatusCode::InvalidValue);
@@ -79,13 +79,16 @@ fn on_asset_remote_request(_stub: &dyn AssetBroker, code: u32, data: &BorrowedMs
         match ipc_code {
             AssetIpcCode::Insert => {
                 asset_log_info!("on_asset_remote_request Insert");
-                // stub.insert(input_map.as_ref().unwrap());
-                // to do: pack reply to reply parcel
+                let res: AssetMap = stub.insert(input_map.as_ref().unwrap()).unwrap();
+                let ser_res = res.serialize(reply);
+                if ser_res.is_err() {
+                    return Err(IpcStatusCode::InvalidValue);
+                }
             },
             AssetIpcCode::Read => {
                 asset_log_info!("on_asset_remote_request Read");
-                // stub.insert(input_map.as_ref().unwrap()); // to do 
-                // to do: pack reply to reply parcel
+                // let res: AssetMap = stub.insert(input_map.as_ref().unwrap()); // to do 
+                // res.serialize(reply);
             }
         }
         Ok(())
@@ -116,7 +119,7 @@ fn transform(proxy: &AssetProxy, input: &AssetMap) -> AssetResult<AssetMap> {
     let parce_new = MsgParcel::new();
     match parce_new {
         Some(mut send_parcel) => {
-            input.serialize(&mut send_parcel)?;
+            input.serialize(&mut send_parcel.borrowed())?;
 
             let reply_parcel = proxy.remote.send_request(AssetIpcCode::Insert as u32,
                 &send_parcel, false);

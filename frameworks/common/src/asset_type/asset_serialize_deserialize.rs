@@ -17,11 +17,11 @@
 
 use super::*;
 
-use ipc_rust::{MsgParcel, BorrowedMsgParcel, IpcResult, IpcStatusCode};
+use ipc_rust::{BorrowedMsgParcel, IpcResult, IpcStatusCode};
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
 
-fn serialize_ipc(map: &AssetMap, parcel: &mut MsgParcel) -> IpcResult<()>
+fn serialize_ipc(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> IpcResult<()>
 {
     parcel.write(&(map.len() as u32))?;
     for v in map.iter() {
@@ -42,7 +42,7 @@ fn serialize_ipc(map: &AssetMap, parcel: &mut MsgParcel) -> IpcResult<()>
 }
 
 impl SerializeAsset for AssetMap {
-    fn serialize(&self, parcel: &mut MsgParcel) -> AssetResult<()>
+    fn serialize(&self, parcel: &mut BorrowedMsgParcel) -> AssetResult<()>
     {
         match serialize_ipc(self, parcel) {
             Ok(_) => Ok(()),

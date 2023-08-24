@@ -20,7 +20,7 @@
 use std::collections::HashMap;
 use std::fmt;
 
-use ipc_rust::{MsgParcel, BorrowedMsgParcel};
+use ipc_rust::BorrowedMsgParcel;
 
 mod asset_serialize_deserialize;
 mod asset_tag_operation;
@@ -65,13 +65,29 @@ pub enum AssetValue {
     UINT8ARRAY(Vec<u8>),
 }
 
+impl fmt::Display for AssetValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            AssetValue::BOOL(b) => {
+                write!(f, "bool is {}", b)
+            }
+            AssetValue::NUMBER(number) => {
+                write!(f, "number is {}", number)
+            },
+            AssetValue::UINT8ARRAY(array) => {
+                write!(f, "array len is {}", array.len())
+            }
+        }
+    }
+}
+
 /// asset map
 pub type AssetMap = HashMap<AssetTag, AssetValue>;
 
 /// x
 pub trait SerializeAsset {
     /// xxx
-    fn serialize(&self, parcel: &mut MsgParcel) -> AssetResult<()>;
+    fn serialize(&self, parcel: &mut BorrowedMsgParcel) -> AssetResult<()>;
 }
 
 /// x
