@@ -131,7 +131,7 @@ back_to_enum! {
         /// IpcFailed
         IpcFailed = -2,
         /// InvalidArgement
-        InvalidArgement = -3,
+        InvalidArgument = -3,
     }
 }
 

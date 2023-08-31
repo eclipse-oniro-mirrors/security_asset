@@ -17,6 +17,8 @@
 
 use super::{AssetResult, AssetStatusCode, AssetTag, AssetType, AssetValue};
 use hilog_rust::{hilog, HiLogLabel, LogType};
+use ipc_rust::IpcStatusCode;
+
 use std::ffi::{c_char, CString};
 use std::fmt;
 
@@ -50,6 +52,27 @@ impl fmt::Display for AssetValue {
                 write!(f, "array len is {}", array.len())
             },
         }
+    }
+}
+
+// impl Into<IpcStatusCode> for AssetStatusCode {
+//     fn into(self) -> IpcStatusCode {
+//         asset_log_error!("get asset result [{}] for ipc", self);
+//         IpcStatusCode::Failed
+//     }
+// }
+
+impl From<AssetStatusCode> for IpcStatusCode {
+    fn from(value: AssetStatusCode) -> Self {
+        asset_log_error!("get asset result [{}] for ipc", value);
+        IpcStatusCode::Failed
+    }
+}
+
+impl From<IpcStatusCode> for AssetStatusCode {
+    fn from(value: IpcStatusCode) -> Self {
+        asset_log_error!("get ipc result [{}]", value);
+        AssetStatusCode::IpcFailed
     }
 }
 
