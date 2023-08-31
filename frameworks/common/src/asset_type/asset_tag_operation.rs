@@ -13,42 +13,89 @@
  * limitations under the License.
  */
 
-//! This create implement the asset
+//! 各种类型的拓展方法定义在此处
 
-use super::{AssetTag, AssetStatusCode, AssetResult, AssetType};
+use super::{AssetResult, AssetStatusCode, AssetTag, AssetType, AssetValue};
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
-
-impl TryFrom<u32> for AssetTag {
-    type Error = AssetStatusCode;
-    fn try_from(code: u32) -> AssetResult<Self> {
-        match code {
-            _ if code == AssetTag::AssetTagAlias as u32 => Ok(AssetTag::AssetTagAlias),
-            _ if code == AssetTag::AssetTagAuthType as u32 => Ok(AssetTag::AssetTagAuthType),
-            _ => {
-                asset_log_error!("try convert u32 to AssetStatusCode failed!");
-                Err(AssetStatusCode::Failed)
-            }
-        }
-    }
-}
+use std::fmt;
 
 impl AssetTag {
     /// sss
     pub fn get_type(&self) -> AssetResult<AssetType> {
         match self {
-            _ if ((*self as u32) & (AssetType::Bool as u32)) != 0 => {
-                Ok(AssetType::Bool)
-            }
-            _ if ((*self as u32) & (AssetType::U32 as u32)) != 0 => {
-                Ok(AssetType::U32)
-            }
+            _ if ((*self as u32) & (AssetType::Bool as u32)) != 0 => Ok(AssetType::Bool),
+            _ if ((*self as u32) & (AssetType::U32 as u32)) != 0 => Ok(AssetType::U32),
             _ if ((*self as u32) & (AssetType::Uint8Array as u32)) != 0 => {
                 Ok(AssetType::Uint8Array)
-            }
+            },
             _ => {
                 asset_log_error!("get tag type failed!");
                 Err(AssetStatusCode::Failed)
+            },
+        }
+    }
+}
+
+impl fmt::Display for AssetValue {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            AssetValue::BOOL(b) => {
+                write!(f, "bool is {}", b)
+            },
+            AssetValue::NUMBER(number) => {
+                write!(f, "number is {}", number)
+            },
+            AssetValue::UINT8ARRAY(array) => {
+                write!(f, "array len is {}", array.len())
+            },
+        }
+    }
+}
+
+impl fmt::Display for AssetStatusCode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // match *self {
+        //     AssetStatusCode::Ok => write!(f, "Ok"),
+        //     AssetStatusCode::Failed => write!(f, "Failed"),
+        //     _ => {
+        //         write!(f, "{}", *self as i32)
+        //     }
+        // }
+        write!(f, "{}", *self as i32)
+    }
+}
+
+/// xxx
+#[macro_export]
+macro_rules! back_to_enum {
+    ($(#[$meta:meta])* $vis:vis enum $name:ident {
+        $($(#[$vmeta:meta])* $vname:ident $(= $val:expr)?,)*
+    }) => {
+        $(#[$meta])*
+        $vis enum $name {
+            $($(#[$vmeta])* $vname $(= $val)?,)*
+        }
+
+        impl std::convert::TryFrom<u32> for $name {
+            type Error = ();
+
+            fn try_from(v: u32) -> Result<Self, Self::Error> {
+                match v {
+                    $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
+                    _ => Err(()),
+                }
+            }
+        }
+
+        impl std::convert::TryFrom<i32> for $name {
+            type Error = ();
+
+            fn try_from(v: i32) -> Result<Self, Self::Error> {
+                match v {
+                    $(x if x == $name::$vname as i32 => Ok($name::$vname),)*
+                    _ => Err(()),
+                }
             }
         }
     }

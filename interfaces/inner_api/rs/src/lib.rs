@@ -18,33 +18,31 @@
 mod asset_request;
 
 pub use asset_common_lib::asset_type;
+use asset_common_lib::{
+    asset_log_error, asset_log_info,
+    asset_type::{AssetMap, AssetResult, AssetStatusCode, AssetTag, AssetValue},
+};
 use asset_request::AssetIpcSender;
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
-use asset_common_lib::{
-    asset_log_info,
-    asset_type::{AssetResult, AssetStatusCode, AssetMap, AssetTag, AssetValue}, asset_log_error,
-};
 
 /// insert data into asset
 pub fn asset_insert(_code: i32) -> AssetResult<AssetStatusCode> {
     asset_log_info!("enter asser insert");
     if let Ok(sender) = AssetIpcSender::new() {
         let mut map = AssetMap::new();
-        map.insert(AssetTag::AssetTagAuthType, AssetValue::NUMBER(5));
+        map.insert(AssetTag::AuthType, AssetValue::NUMBER(5));
         sender.insert(&map)?; // ingore reply
         match sender.insert(&map) {
             Ok(res) => {
-                if let Some(v) = res.get(&AssetTag::AssetTagAuthType) {
+                if let Some(v) = res.get(&AssetTag::AuthType) {
                     asset_log_info!("res is {}", @public(v));
                 } else {
                     asset_log_error!("asset_insert failed!");
                 }
                 Ok(AssetStatusCode::Ok)
             },
-            Err(e) => {
-                Err(e)
-            }
+            Err(e) => Err(e),
         }
     } else {
         Err(AssetStatusCode::Failed)

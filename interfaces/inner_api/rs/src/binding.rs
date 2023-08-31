@@ -18,7 +18,7 @@
 use asset_rust_sdk::asset_insert;
 use std::ffi::{c_char, CString};
 use hilog_rust::{hilog, HiLogLabel, LogType};
-use asset_common_lib::asset_log_info;
+use asset_common_lib::{asset_log_info, asset_log_error};
 
 /// blablabla as documentation
 #[no_mangle]
@@ -30,7 +30,7 @@ pub extern "C" fn AssetInsert(code: i32) -> i32
             res as i32
         },
         Err(res) => {
-            println!("err");
+            asset_log_error!("err");
             res as i32
         }
     }

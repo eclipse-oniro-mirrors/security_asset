@@ -17,12 +17,11 @@
 
 use super::*;
 
-use ipc_rust::{BorrowedMsgParcel, IpcResult, IpcStatusCode};
 use hilog_rust::{hilog, HiLogLabel, LogType};
+use ipc_rust::{BorrowedMsgParcel, IpcResult, IpcStatusCode};
 use std::ffi::{c_char, CString};
 
-fn serialize_ipc(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> IpcResult<()>
-{
+fn serialize_ipc(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> IpcResult<()> {
     parcel.write(&(map.len() as u32))?;
     for v in map.iter() {
         parcel.write(&(*v.0 as u32))?;
@@ -35,34 +34,32 @@ fn serialize_ipc(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> IpcResult<()
             },
             AssetValue::UINT8ARRAY(a) => {
                 parcel.write(a)?;
-            }
+            },
         }
     }
     Ok(())
 }
 
 impl SerializeAsset for AssetMap {
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel) -> AssetResult<()>
-    {
+    fn serialize(&self, parcel: &mut BorrowedMsgParcel) -> AssetResult<()> {
         match serialize_ipc(self, parcel) {
             Ok(_) => Ok(()),
             Err(_) => {
                 asset_log_error!("get tag type failed!");
                 Err(AssetStatusCode::Failed)
-            }
+            },
         }
     }
 }
 
-fn deserialize_ipc(parcel: &BorrowedMsgParcel) -> IpcResult<AssetMap>
-{
+fn deserialize_ipc(parcel: &BorrowedMsgParcel) -> IpcResult<AssetMap> {
     let len = parcel.read::<u32>()?;
     let mut map = AssetMap::with_capacity(len as usize);
     for _i in 0..len {
         let tag = parcel.read::<u32>()?;
         let asset_tag = AssetTag::try_from(tag);
         if asset_tag.is_err() {
-            return Err(IpcStatusCode::Failed)
+            return Err(IpcStatusCode::Failed);
         }
         let asset_tag = asset_tag.unwrap();
         match asset_tag.get_type() {
@@ -80,21 +77,20 @@ fn deserialize_ipc(parcel: &BorrowedMsgParcel) -> IpcResult<AssetMap>
             },
             Err(_) => {
                 return Err(IpcStatusCode::Failed);
-            }
+            },
         }
     }
     Ok(map)
 }
 
 impl DeserializeAsset for AssetMap {
-    fn deserialize(parcel: &BorrowedMsgParcel) -> AssetResult<AssetMap>
-    {
+    fn deserialize(parcel: &BorrowedMsgParcel) -> AssetResult<AssetMap> {
         match deserialize_ipc(parcel) {
             Ok(map) => Ok(map),
             Err(_) => {
                 asset_log_error!("deserialize failed!");
                 Err(AssetStatusCode::Failed)
-            }
+            },
         }
     }
 }

@@ -25,6 +25,6 @@ ohos_unittest("asset_c_api_test") {
         "src/c_api_test.cpp"
     ]
     deps = [
-        "$SUBSYSTEM_DIR/interfaces/inner_api/c:asset_c_sdk",
+        "$SUBSYSTEM_DIR/interfaces/inner_api/c:asset_sdk",
     ]
 }

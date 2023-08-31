@@ -17,10 +17,10 @@
 
 use asset_common_lib::{
     asset_log_info,
-    asset_type::{AssetResult, AssetStatusCode, AssetMap},
+    asset_type::{AssetMap, AssetResult, AssetStatusCode},
 };
 
-use asset_ipc_define_lib::asset_service::{ASSET_SERVICE_ID, AssetBroker};
+use asset_ipc_define_lib::asset_service::{AssetBroker, ASSET_SERVICE_ID};
 
 use ipc_rust::RemoteObjRef;
 
@@ -29,31 +29,24 @@ use rust_samgr::get_service_proxy;
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
 
-fn get_asset_service() -> AssetResult<RemoteObjRef<dyn AssetBroker>>
-{
+fn get_asset_service() -> AssetResult<RemoteObjRef<dyn AssetBroker>> {
     let object = get_service_proxy::<dyn AssetBroker>(ASSET_SERVICE_ID);
     match object {
-        Ok(remote) => {
-            Ok(remote)
-        },
-        Err(_) => {
-            Err(AssetStatusCode::Failed)
-        }
+        Ok(remote) => Ok(remote),
+        Err(_) => Err(AssetStatusCode::Failed),
     }
 }
 
 /// sender
 pub struct AssetIpcSender {
-    proxy: RemoteObjRef<dyn AssetBroker>
+    proxy: RemoteObjRef<dyn AssetBroker>,
 }
 
 /// 2222
 impl AssetIpcSender {
     /// xxx
     pub fn new() -> AssetResult<AssetIpcSender> {
-        Ok(AssetIpcSender {
-            proxy: get_asset_service()?
-        })
+        Ok(AssetIpcSender { proxy: get_asset_service()? })
     }
 
     /// xxx

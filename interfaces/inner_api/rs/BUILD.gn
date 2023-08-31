@@ -52,8 +52,6 @@ ohos_rust_shared_ffi("asset_rust_binding") {
         "hilog:hilog_rust",
     ]
     crate_name = "asset_rust_binding"
-    crate_type = "cdylib"
-
     subsystem_name = "security"
     part_name = "asset"
 }

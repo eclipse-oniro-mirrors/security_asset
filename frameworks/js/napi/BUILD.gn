@@ -26,7 +26,7 @@ ohos_shared_library("asset_napi") {
     ]
 
     deps = [
-        "$SUBSYSTEM_DIR/interfaces/inner_api/c:asset_c_sdk",
+        "$SUBSYSTEM_DIR/interfaces/inner_api/c:asset_sdk",
     ]
 
     external_deps = [

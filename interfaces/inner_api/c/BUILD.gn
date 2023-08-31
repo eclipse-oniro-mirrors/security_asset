@@ -15,14 +15,14 @@ import("//build/ohos.gni")
 
 SUBSYSTEM_DIR = "//base/security/asset"
 
-config("asset_c_sdk_config") {
+config("asset_sdk_config") {
     include_dirs = [ "include" ]
 }
 
-ohos_shared_library("asset_c_sdk") {
+ohos_shared_library("asset_sdk") {
     subsystem_name = "security"
     part_name = "asset"
-    public_configs = [ ":asset_c_sdk_config" ]
+    public_configs = [ ":asset_sdk_config" ]
 
     sources = [
         "src/asset_api.c",
