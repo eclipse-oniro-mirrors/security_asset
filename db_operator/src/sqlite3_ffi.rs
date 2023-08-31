@@ -21,55 +21,55 @@ pub type SqliteErrcode = i32;
 /// Successful result
 pub const SQLITE_OK: i32 = 0;
 /// Generic error
-pub const SQLITE_ERROR: i32 = 1; /* Generic error */
+pub const SQLITE_ERROR: i32 = 1;
 /// Internal logic error in SQLite
-pub const SQLITE_INTERNAL: i32 = 2; /* Internal logic error in SQLite */
+pub const SQLITE_INTERNAL: i32 = 2;
 /// Access permission denied
-pub const SQLITE_PERM: i32 = 3; /* Access permission denied */
+pub const SQLITE_PERM: i32 = 3;
 /// Callback routine requested an abort
-pub const SQLITE_ABORT: i32 = 4; /* Callback routine requested an abort */
+pub const SQLITE_ABORT: i32 = 4;
 /// The database file is locked
-pub const SQLITE_BUSY: i32 = 5; /* The database file is locked */
+pub const SQLITE_BUSY: i32 = 5;
 /// A table in the database is locked
-pub const SQLITE_LOCKED: i32 = 6; /* A table in the database is locked */
+pub const SQLITE_LOCKED: i32 = 6;
 /// A malloc() failed
-pub const SQLITE_NOMEM: i32 = 7; /* A malloc() failed */
+pub const SQLITE_NOMEM: i32 = 7;
 /// Attempt to write a readonly database
-pub const SQLITE_READONLY: i32 = 8; /* Attempt to write a readonly database */
+pub const SQLITE_READONLY: i32 = 8;
 /// Operation terminated by sqlite3_interrupt()
-pub const SQLITE_INTERRUPT: i32 = 9; /* Operation terminated by sqlite3_interrupt()*/
+pub const SQLITE_INTERRUPT: i32 = 9;
 /// Some kind of disk I/O error occurred
-pub const SQLITE_IOERR: i32 = 10; /* Some kind of disk I/O error occurred */
+pub const SQLITE_IOERR: i32 = 10;
 /// The database disk image is malformed
-pub const SQLITE_CORRUPT: i32 = 11; /* The database disk image is malformed */
+pub const SQLITE_CORRUPT: i32 = 11;
 /// Unknown opcode in sqlite3_file_control()
-pub const SQLITE_NOTFOUND: i32 = 12; /* Unknown opcode in sqlite3_file_control() */
+pub const SQLITE_NOTFOUND: i32 = 12;
 /// Insertion failed because database is full
-pub const SQLITE_FULL: i32 = 13; /* Insertion failed because database is full */
+pub const SQLITE_FULL: i32 = 13;
 /// Unable to open the database file
-pub const SQLITE_CANTOPEN: i32 = 14; /* Unable to open the database file */
+pub const SQLITE_CANTOPEN: i32 = 14;
 /// Database lock protocol error
-pub const SQLITE_PROTOCOL: i32 = 15; /* Database lock protocol error */
+pub const SQLITE_PROTOCOL: i32 = 15;
 /// Internal use only
-pub const SQLITE_EMPTY: i32 = 16; /* Internal use only */
+pub const SQLITE_EMPTY: i32 = 16;
 /// The database schema changed
-pub const SQLITE_SCHEMA: i32 = 17; /* The database schema changed */
+pub const SQLITE_SCHEMA: i32 = 17;
 /// String or BLOB exceeds size limit
-pub const SQLITE_TOOBIG: i32 = 18; /* String or BLOB exceeds size limit */
+pub const SQLITE_TOOBIG: i32 = 18;
 /// Abort due to constraint violation
-pub const SQLITE_CONSTRAINT: i32 = 19; /* Abort due to constraint violation */
+pub const SQLITE_CONSTRAINT: i32 = 19;
 /// Data type mismatch
-pub const SQLITE_MISMATCH: i32 = 20; /* Data type mismatch */
+pub const SQLITE_MISMATCH: i32 = 20;
 /// Library used incorrectly
-pub const SQLITE_MISUSE: i32 = 21; /* Library used incorrectly */
+pub const SQLITE_MISUSE: i32 = 21;
 /// Uses OS features not supported on host
-pub const SQLITE_NOLFS: i32 = 22; /* Uses OS features not supported on host */
+pub const SQLITE_NOLFS: i32 = 22;
 /// Authorization denied
-pub const SQLITE_AUTH: i32 = 23; /* Authorization denied */
+pub const SQLITE_AUTH: i32 = 23;
 /// Not used
-pub const SQLITE_FORMAT: i32 = 24; /* Not used */
+pub const SQLITE_FORMAT: i32 = 24;
 /// 2nd parameter to sqlite3_bind out of range
-pub const SQLITE_RANGE: i32 = 25; /* 2nd parameter to sqlite3_bind out of range */
+pub const SQLITE_RANGE: i32 = 25;
 /// File opened that is not a database file
 pub const SQLITE_NOTADB: i32 = 26;
 /// Notifications from sqlite3_log()
@@ -82,45 +82,45 @@ pub const SQLITE_ROW: i32 = 100;
 pub const SQLITE_DONE: i32 = 101;
 
 /// Ok for sqlite3_open_v2()
-pub const SQLITE_OPEN_READONLY: i32 = 0x00000001; /* Ok for sqlite3_open_v2() */
+pub const SQLITE_OPEN_READONLY: i32 = 0x00000001;
 /// Ok for sqlite3_open_v2()
-pub const SQLITE_OPEN_READWRITE: i32 = 0x00000002; /* Ok for sqlite3_open_v2() */
+pub const SQLITE_OPEN_READWRITE: i32 = 0x00000002;
 /// Ok for sqlite3_open_v2()
-pub const SQLITE_OPEN_CREATE: i32 = 0x00000004; /* Ok for sqlite3_open_v2() */
+pub const SQLITE_OPEN_CREATE: i32 = 0x00000004;
 /// VFS only
-pub const SQLITE_OPEN_DELETEONCLOSE: i32 = 0x00000008; /* VFS only */
+pub const SQLITE_OPEN_DELETEONCLOSE: i32 = 0x00000008;
 /// VFS only
-pub const SQLITE_OPEN_EXCLUSIVE: i32 = 0x00000010; /* VFS only */
+pub const SQLITE_OPEN_EXCLUSIVE: i32 = 0x00000010;
 /// VFS only
-pub const SQLITE_OPEN_AUTOPROXY: i32 = 0x00000020; /* VFS only */
+pub const SQLITE_OPEN_AUTOPROXY: i32 = 0x00000020;
 /// Ok for sqlite3_open_v2()
-pub const SQLITE_OPEN_URI: i32 = 0x00000040; /* Ok for sqlite3_open_v2() */
+pub const SQLITE_OPEN_URI: i32 = 0x00000040;
 /// Ok for sqlite3_open_v2()
-pub const SQLITE_OPEN_MEMORY: i32 = 0x00000080; /* Ok for sqlite3_open_v2() */
+pub const SQLITE_OPEN_MEMORY: i32 = 0x00000080;
 /// VFS only
-pub const SQLITE_OPEN_MAIN_DB: i32 = 0x00000100; /* VFS only */
+pub const SQLITE_OPEN_MAIN_DB: i32 = 0x00000100;
 /// VFS only
-pub const SQLITE_OPEN_TEMP_DB: i32 = 0x00000200; /* VFS only */
+pub const SQLITE_OPEN_TEMP_DB: i32 = 0x00000200;
 /// VFS only
-pub const SQLITE_OPEN_TRANSIENT_DB: i32 = 0x00000400; /* VFS only */
+pub const SQLITE_OPEN_TRANSIENT_DB: i32 = 0x00000400;
 /// VFS only
-pub const SQLITE_OPEN_MAIN_JOURNAL: i32 = 0x00000800; /* VFS only */
+pub const SQLITE_OPEN_MAIN_JOURNAL: i32 = 0x00000800;
 /// VFS only
-pub const SQLITE_OPEN_TEMP_JOURNAL: i32 = 0x00001000; /* VFS only */
+pub const SQLITE_OPEN_TEMP_JOURNAL: i32 = 0x00001000;
 /// VFS only
-pub const SQLITE_OPEN_SUBJOURNAL: i32 = 0x00002000; /* VFS only */
+pub const SQLITE_OPEN_SUBJOURNAL: i32 = 0x00002000;
 /// VFS only
-pub const SQLITE_OPEN_MASTER_JOURNAL: i32 = 0x00004000; /* VFS only */
+pub const SQLITE_OPEN_MASTER_JOURNAL: i32 = 0x00004000;
 /// Ok for sqlite3_open_v2()
-pub const SQLITE_OPEN_NOMUTEX: i32 = 0x00008000; /* Ok for sqlite3_open_v2() */
+pub const SQLITE_OPEN_NOMUTEX: i32 = 0x00008000;
 /// Ok for sqlite3_open_v2()
-pub const SQLITE_OPEN_FULLMUTEX: i32 = 0x00010000; /* Ok for sqlite3_open_v2() */
+pub const SQLITE_OPEN_FULLMUTEX: i32 = 0x00010000;
 /// Ok for sqlite3_open_v2()
-pub const SQLITE_OPEN_SHAREDCACHE: i32 = 0x00020000; /* Ok for sqlite3_open_v2() */
+pub const SQLITE_OPEN_SHAREDCACHE: i32 = 0x00020000;
 /// Ok for sqlite3_open_v2()
-pub const SQLITE_OPEN_PRIVATECACHE: i32 = 0x00040000; /* Ok for sqlite3_open_v2() */
+pub const SQLITE_OPEN_PRIVATECACHE: i32 = 0x00040000;
 /// VFS only
-pub const SQLITE_OPEN_WAL: i32 = 0x00080000; /* VFS only */
+pub const SQLITE_OPEN_WAL: i32 = 0x00080000;
 
 /// interger type
 pub const SQLITE_INTEGER: i32 = 1;
