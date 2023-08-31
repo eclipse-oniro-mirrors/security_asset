@@ -1,0 +1,52 @@
+# Copyright (C) 2023 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+import("//build/test.gni")
+SUBSYSTEM_DIR = "//base/security/asset"
+
+ohos_rust_shared_library("db_operator") {
+    sources = [
+        "src/database.rs",
+        "src/database_table_helper.rs",
+        "src/table.rs",
+        "src/statement.rs",
+        "src/sqlite3_ffi.rs",
+        "src/types.rs",
+        "src/lib.rs",
+    ]
+
+    deps = [
+        "//third_party/sqlite:sqlite",
+    ]
+
+    crate_name = "db_operator"
+    crate_type = "dylib"
+
+    subsystem_name = "security"
+    part_name = "asset"
+}
+
+module_output_path = "asset/db_operator"
+
+ohos_rust_unittest("db_operator_test") {
+    module_out_path = module_output_path
+    sources = [
+        "test/mod.rs",
+    ]
+    deps = [
+        "$SUBSYSTEM_DIR/db_operator:db_operator",
+    ]
+    subsystem_name = "security"
+    part_name = "asset"
+}
