@@ -17,28 +17,11 @@
 
 #![allow(dead_code)]
 
-use std::collections::HashMap;
-
-use ipc_rust::BorrowedMsgParcel;
-
-mod asset_serialize_deserialize;
+mod asset_map;
 #[macro_use]
-mod asset_tag_operation;
+mod asset_type_transform;
 
-/// asset map
-pub type AssetMap = HashMap<AssetTag, AssetValue>;
-
-/// x
-pub trait SerializeAsset {
-    /// xxx
-    fn serialize(&self, parcel: &mut BorrowedMsgParcel) -> AssetResult<()>;
-}
-
-/// x
-pub trait DeserializeAsset {
-    /// xxx
-    fn deserialize(parcel: &BorrowedMsgParcel) -> AssetResult<AssetMap>;
-}
+pub use crate::asset_type::asset_map::*;
 
 /// version info
 pub struct VersionInfo {
@@ -71,7 +54,7 @@ pub enum AssetValue {
     UINT8ARRAY(Vec<u8>),
 }
 
-back_to_enum!{
+enum_auto_prepare!{
     /// asset tag
     #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
     pub enum AssetTag {
@@ -120,7 +103,7 @@ back_to_enum!{
     }
 }
 
-back_to_enum! {
+enum_auto_prepare! {
     /// Asset unified status code
     #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
     pub enum AssetStatusCode {

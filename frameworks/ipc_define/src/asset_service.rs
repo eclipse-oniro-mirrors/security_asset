@@ -26,7 +26,7 @@ use std::ffi::{c_char, CString};
 
 use asset_common_lib::{
     asset_log_error, asset_log_info,
-    asset_type::{AssetMap, AssetResult, AssetStatusCode, DeserializeAsset, SerializeAsset},
+    asset_type::{AssetMap, AssetResult, AssetStatusCode, SerializeAsset, DeserializeAsset},
 };
 
 /// Asset ipc code

@@ -15,7 +15,7 @@
 
 //! 各种类型的拓展方法定义在此处
 
-use super::{AssetResult, AssetStatusCode, AssetTag, AssetType, AssetValue};
+use crate::asset_type::{AssetResult, AssetStatusCode, AssetTag, AssetType, AssetValue};
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use ipc_rust::IpcStatusCode;
 
@@ -55,13 +55,6 @@ impl fmt::Display for AssetValue {
     }
 }
 
-// impl Into<IpcStatusCode> for AssetStatusCode {
-//     fn into(self) -> IpcStatusCode {
-//         asset_log_error!("get asset result [{}] for ipc", self);
-//         IpcStatusCode::Failed
-//     }
-// }
-
 impl From<AssetStatusCode> for IpcStatusCode {
     fn from(value: AssetStatusCode) -> Self {
         asset_log_error!("get asset result [{}] for ipc", value);
@@ -91,7 +84,7 @@ impl fmt::Display for AssetStatusCode {
 
 /// xxx
 #[macro_export]
-macro_rules! back_to_enum {
+macro_rules! enum_auto_prepare {
     ($(#[$meta:meta])* $vis:vis enum $name:ident {
         $($(#[$vmeta:meta])* $vname:ident $(= $val:expr)?,)*
     }) => {
@@ -123,3 +116,40 @@ macro_rules! back_to_enum {
         }
     }
 }
+
+
+// 过程宏生成display显示 枚举名 + 枚举值（i32)
+// use proc_macro::TokenStream;
+// use quote::quote;
+// use syn::{parse_macro_input, Data, DeriveInput, Fields};
+
+// #[proc_macro_derive(Display)]
+// pub fn display_macro(input: TokenStream) -> TokenStream {
+//     let ast = parse_macro_input!(input as DeriveInput);
+//     let name = &ast.ident;
+
+//     let fields = match ast.data {
+//         Data::Enum(ref data) => &data.variants,
+//         _ => panic!("Display macro only works with enums"),
+//     };
+
+//     let match_arms = fields.iter().map(|field| {
+//         let ident = &field.ident;
+//         let name = ident.as_ref().unwrap().to_string();
+//         quote! {
+//             #name => write!(f, #name),
+//         }
+//     });
+
+//     let output = quote! {
+//         impl std::fmt::Display for #name {
+//             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+//                 match self {
+//                     #(#match_arms)*
+//                 }
+//             }
+//         }
+//     };
+
+//     output.into()
+// }
