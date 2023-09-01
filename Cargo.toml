@@ -4,4 +4,5 @@ members = [
     "frameworks/ipc_define",
     "interfaces/inner_api/rs",
     "services/core_service",
+    "db_operator",
 ]

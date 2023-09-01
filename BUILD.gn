@@ -22,6 +22,7 @@ group("asset_component") {
         "$SUBSYSTEM_DIR/services/core_service:asset_server",
         "$SUBSYSTEM_DIR/sa_profile:asset_sa_profiles",
         "$SUBSYSTEM_DIR/services/core_service/etc/init:assetservice.cfg",
+        "$SUBSYSTEM_DIR/db_operator:db_operator",
     ]
 
     if (support_jsapi) {
@@ -35,5 +36,6 @@ group("asset_test") {
     deps = [
         "$SUBSYSTEM_DIR/test/unittest/inner_api_c:asset_c_api_test",
         "$SUBSYSTEM_DIR/test/unittest/kits_ndk:asset_c_ndk_test",
+        "$SUBSYSTEM_DIR/db_operator:db_operator_test",
     ]
 }
