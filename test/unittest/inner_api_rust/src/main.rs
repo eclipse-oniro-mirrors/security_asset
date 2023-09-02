@@ -24,10 +24,6 @@ fn test_for_add() {
     input.insert_attr(Tag::Accessibility, Accessibility::DeviceSecure).unwrap();
     input.insert_attr(Tag::Alias, Vec::from("alias".as_bytes())).unwrap();
 
-    for (key, value) in &input {
-        println!("{} / {}", *key as u32, value);
-    }
-
     match asset_rust_sdk::add(input) {
         Ok(_) => (),
         Err(err) => {

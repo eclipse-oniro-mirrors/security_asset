@@ -32,12 +32,11 @@ pub trait GetType {
 
 impl GetType for Tag {
     fn get_type(&self) -> AssetResult<AssetType> {
-        match self {
-            _ if ((*self as u32) & (AssetType::Bool as u32)) != 0 => Ok(AssetType::Bool),
-            _ if ((*self as u32) & (AssetType::U32 as u32)) != 0 => Ok(AssetType::U32),
-            _ if ((*self as u32) & (AssetType::Uint8Array as u32)) != 0 => {
-                Ok(AssetType::Uint8Array)
-            },
+        let mask = (*self as u32) & (0xF << 28) as u32;
+        match mask {
+            _ if AssetType::Bool as u32 == mask => Ok(AssetType::Bool),
+            _ if AssetType::U32 as u32 == mask => Ok(AssetType::U32),
+            _ if AssetType::Uint8Array as u32 == mask => Ok(AssetType::Uint8Array),
             _ => {
                 asset_log_error!("get tag type failed!");
                 Err(AssetStatusCode::Failed)

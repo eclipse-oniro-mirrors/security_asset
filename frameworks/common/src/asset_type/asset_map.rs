@@ -41,27 +41,30 @@ pub trait DeserializeAsset {
 
 impl SerializeAsset for AssetMap {
     fn serialize(&self, parcel: &mut BorrowedMsgParcel) -> AssetResult<()> {
+        asset_log_info!("enter serialize");
         parcel.write(&(self.len() as u32))?;
         for v in self.iter() {
             parcel.write(&(*v.0 as u32))?;
             match v.1 {
                 Value::BOOL(b) => {
-                    parcel.write(b)?;
+                    parcel.write::<bool>(b)?;
                 },
                 Value::NUMBER(n) => {
-                    parcel.write(n)?;
+                    parcel.write::<u32>(n)?;
                 },
                 Value::UINT8ARRAY(a) => {
-                    parcel.write(a)?;
+                    parcel.write::<Vec<u8>>(a)?;
                 },
             }
         }
+        asset_log_info!("leave serialize ok");
         Ok(())
     }
 }
 
 impl DeserializeAsset for AssetMap {
     fn deserialize(parcel: &BorrowedMsgParcel) -> AssetResult<AssetMap> {
+        asset_log_info!("enter deserialize");
         let len = parcel.read::<u32>()?;
         if len > 100 { // to do 外部输入，最大值校验
             return Err(AssetStatusCode::Failed);
@@ -72,14 +75,17 @@ impl DeserializeAsset for AssetMap {
             let asset_tag = Tag::try_from(tag)?;
             match asset_tag.get_type() {
                 Ok(AssetType::Bool) => {
+                    asset_log_info!("try get bool");
                     let v = parcel.read::<bool>()?;
                     map.insert(asset_tag, Value::BOOL(v));
                 },
                 Ok(AssetType::U32) => {
+                    asset_log_info!("try get u32");
                     let v = parcel.read::<u32>()?;
                     map.insert(asset_tag, Value::NUMBER(v));
                 },
                 Ok(AssetType::Uint8Array) => {
+                    asset_log_info!("try get uint8array");
                     let v = parcel.read::<Vec<u8>>()?;
                     map.insert(asset_tag, Value::UINT8ARRAY(v));
                 },
@@ -89,6 +95,7 @@ impl DeserializeAsset for AssetMap {
                 },
             }
         }
+        asset_log_info!("leave deserialize ok");
         Ok(map)
     }
 }

@@ -70,6 +70,7 @@ fn on_asset_remote_request(
 ) -> IpcResult<()> {
     let input_map = AssetMap::deserialize(data);
     if input_map.is_err() {
+        asset_log_error!("deserialize in on_asset_remote_request failed!");
         return Err(IpcStatusCode::InvalidValue);
     }
     if let Ok(ipc_code) = AssetIpcCode::try_from(code) {
