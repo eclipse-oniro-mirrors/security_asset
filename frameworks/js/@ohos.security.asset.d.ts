@@ -206,6 +206,58 @@ declare namespace asset {
   export type Value = boolean | number | Uint8Array;
 
   /**
+   * An enum type that indicates the type of the asset attribute value.
+   *
+   * @enum { number }
+   * @syscap SystemCapability.Security.Asset
+   * @since 11
+   */
+  enum TagType {
+    /**
+     * The type of the asset attribute value is int32.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
+    INT32 = 1 << 28,
+    /**
+     * The type of the asset attribute value is uint32.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
+    UINT32 = 2 << 28,
+    /**
+     * The type of the asset attribute value is int64.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
+    INT64 = 3 << 28,
+    /**
+     * The type of the asset attribute value is uint64.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
+    UINT64 = 4 << 28,
+    /**
+     * The type of the asset attribute value is bool.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
+    BOOL = 5 << 28,
+    /**
+     * The type of the asset attribute value is byte array.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
+    BYTES = 6 << 28
+  }
+
+  /**
    * An emum type that indicates the tag of the asset attribute.
    *
    * @enum { number }
@@ -363,22 +415,6 @@ declare namespace asset {
   }
 
   /**
-   * An enum type that indicates the type of the asset attribute value.
-   *
-   * @enum { number }
-   * @syscap SystemCapability.Security.Asset
-   * @since 11
-   */
-  export enum TagType {
-    INT32 = 1 << 28,
-    UINT32 = 2 << 28,
-    INT64 = 3 << 28,
-    UINT64 = 4 << 28,
-    BOOL = 5 << 28,
-    BYTES = 6 << 28
-  }
-
-  /**
    *  An enum type that indicates the asset error code.
    *
    * @enum { number }
@@ -413,49 +449,49 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    SERVICE_UNAVAILABLE = 2400001,
+    SERVICE_UNAVAILABLE = 24000001,
     /**
      * The error code indicates that the asset to be queried is not found.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    NOT_FOUND = 2400002,
+    NOT_FOUND = 24000002,
     /**
      * The error code indicates that the asset to be added is duplicate.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DUPLICATED = 2400003,
+    DUPLICATED = 24000003,
     /**
      * The error code indicates that the asset access is denied.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    ACCESS_DENIED = 2400004,
+    ACCESS_DENIED = 24000004,
     /**
      * The error code indicates that the authentication token has expired.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    AUTH_TOKEN_EXPIRED = 2400005,
+    AUTH_TOKEN_EXPIRED = 24000005,
     /**
      * The error code indicates that the system memory is insufficient.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    OUT_OF_MEMRORY = 2400006,
+    OUT_OF_MEMRORY = 24000006,
     /**
      * The error code indicates that the asset or key is corrupted.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_CORRUPTED = 2400007,
+    DATA_CORRUPTED = 24000007,
   }
 }
 
