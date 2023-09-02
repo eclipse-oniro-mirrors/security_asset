@@ -23,8 +23,8 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
     napi_value NapiRemove(napi_env env, napi_callback_info info);
-}
-}
-}
+} // Asset
+} // Security
+} // OHOS
 
 #endif // ASSET_NAPI_REMOVE_H

@@ -23,6 +23,7 @@ ohos_shared_library("asset_napi") {
     sources = [
         "src/asset_napi.cpp",
         "src/asset_napi_add.cpp",
+        "src/asset_napi_common.cpp",
         "src/asset_napi_get_version.cpp",
         "src/asset_napi_post_query.cpp",
         "src/asset_napi_pre_query.cpp",
@@ -36,8 +37,8 @@ ohos_shared_library("asset_napi") {
     ]
 
     external_deps = [
-        "c_utils:utils",
-        "hilog:libhilog",
+        #"c_utils:utils",
+        #"hilog:libhilog",
         "napi:ace_napi",
     ]
     cflags_cc = [

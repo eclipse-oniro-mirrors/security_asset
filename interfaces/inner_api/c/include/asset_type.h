@@ -16,6 +16,8 @@
 #ifndef ASSET_TYPE_H
 #define ASSET_TYPE_H
 
+#include <stdint.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
