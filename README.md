@@ -8,7 +8,7 @@ repo init -u http://mgit-tm.rnd.huawei.com/platform/manifest -m system_general.x
 
 2. asset代码下载：
 cd base/security
-git clone ssh://git@szv-y.codehub.huawei.com:2222/<工号>/asset.git
+git clone ssh://git@szv-y.codehub.huawei.com:2222/y00522150/asset.git
 
 ## 编译运行待补充
 在vendor/huawei/build/component_config/system/generic_generic_arm_64only/hisi_higeneric/newphone_standard/part_config.json添加
