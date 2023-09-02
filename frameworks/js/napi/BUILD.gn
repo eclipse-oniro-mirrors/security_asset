@@ -13,20 +13,26 @@
 
 import("//build/ohos.gni")
 
-SUBSYSTEM_DIR = "//base/security/asset"
+COMPONENT_DIR = "//base/security/asset"
 
 ohos_shared_library("asset_napi") {
     include_dirs = [
-        "include",
+        "inc",
     ]
 
     sources = [
-        "src/asset_napi_api.cpp",
-        "src/asset_napi_test.cpp",
+        "src/asset_napi.cpp",
+        "src/asset_napi_add.cpp",
+        "src/asset_napi_get_version.cpp",
+        "src/asset_napi_post_query.cpp",
+        "src/asset_napi_pre_query.cpp",
+        "src/asset_napi_query.cpp",
+        "src/asset_napi_remove.cpp",
+        "src/asset_napi_update.cpp",
     ]
 
     deps = [
-        "$SUBSYSTEM_DIR/interfaces/inner_api/c:asset_sdk",
+        "$COMPONENT_DIR/interfaces/inner_api/c:asset_sdk",
     ]
 
     external_deps = [

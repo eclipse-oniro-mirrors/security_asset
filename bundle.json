@@ -30,21 +30,24 @@
         "ram": "4828KByte",
         "deps": {
             "components": [
-                "hilog",
-                "ipc",
+                "access_token",
+                "build_framework",
                 "common",
                 "c_utils",
+                "hilog",
+                "ipc",
                 "napi",
-                "access_token",
                 "safwk",
                 "samgr"
             ],
-            "third_party": []
+            "third_party": [
+                "sqlite"
+            ]
         },
         "build": {
             "group_type": {
                 "base_group": [
-                "//base/security/asset:asset_component"
+                    "//base/security/asset:asset_component"
                 ]
             },
             "inner_api": [

@@ -13,14 +13,18 @@
  * limitations under the License.
  */
 
-#ifndef ASSET_TEST_H
-#define ASSET_TEST_H
+#ifndef ASSET_NAPI_GET_VERSION_H
+#define ASSET_NAPI_GET_VERSION_H
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
-namespace AssetNapi {
-napi_value JsAssetTest(napi_env env, napi_callback_info info);
+namespace OHOS {
+namespace Security {
+namespace Asset {
+    napi_value NapiGetVersion(napi_env env, napi_callback_info info);
+}
+}
 }
 
-#endif
+#endif // ASSET_NAPI_GET_VERSION_H

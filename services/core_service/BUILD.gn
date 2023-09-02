@@ -13,7 +13,7 @@
 
 import("//build/ohos.gni")
 
-SUBSYSTEM_DIR = "//base/security/asset"
+COMPONENT_DIR = "//base/security/asset"
 
 ohos_rust_shared_library("asset_server") {
     sources = [
@@ -21,8 +21,8 @@ ohos_rust_shared_library("asset_server") {
     ]
 
     deps = [
-        "$SUBSYSTEM_DIR/frameworks/common:asset_common_lib",
-        "$SUBSYSTEM_DIR/frameworks/ipc_define:asset_ipc_define_lib",
+        "$COMPONENT_DIR/frameworks/common:asset_common_lib",
+        "$COMPONENT_DIR/frameworks/ipc_define:asset_ipc_define_lib",
     ]
 
     external_deps = [

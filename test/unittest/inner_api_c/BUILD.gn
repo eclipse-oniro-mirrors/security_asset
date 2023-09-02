@@ -14,7 +14,7 @@
 import("//build/ohos.gni")
 import("//build/test.gni")
 
-SUBSYSTEM_DIR = "//base/security/asset"
+COMPONENT_DIR = "//base/security/asset"
 
 module_output_path = "asset/asset_UT_test"
 
@@ -25,6 +25,6 @@ ohos_unittest("asset_c_api_test") {
         "src/c_api_test.cpp"
     ]
     deps = [
-        "$SUBSYSTEM_DIR/interfaces/inner_api/c:asset_sdk",
+        "$COMPONENT_DIR/interfaces/inner_api/c:asset_sdk",
     ]
 }

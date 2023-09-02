@@ -205,6 +205,35 @@ declare namespace asset {
    */
   export type Value = boolean | number | Uint8Array;
 
+  export enum Accessibility {
+    DEVICE_POWER_ON = 0,
+    DEVICE_FIRST_UNLOCK = 1,
+    DEVICE_UNLOCK = 2,
+    DEVICE_SECURE = 3,
+  }
+
+  export enum AuthType {
+    NONE = 0x00,
+    ANY = 0xFF,
+  }
+
+  export enum SyncType {
+    NEVER = 0,
+    THIS_DEVICE = 1 << 0,
+    TRUSTED_ACCOUNT = 1 << 1,
+    TRUSTED_DEVICE = 1 << 2,
+  }
+
+  export enum ConflictPolicy {
+    OVERRIDE = 0,
+    REPORT = 1,
+  }
+
+  export enum ReturnType {
+    ALL = 0,
+    ATTRIBUTES = 1,
+  }
+
   /**
    * An enum type that indicates the type of the asset attribute value.
    *

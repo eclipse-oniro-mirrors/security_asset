@@ -13,7 +13,7 @@
 
 import("//build/ohos.gni")
 
-SUBSYSTEM_DIR = "//base/security/asset"
+COMPONENT_DIR = "//base/security/asset"
 
 config("asset_sdk_config") {
     include_dirs = [ "include" ]
@@ -28,6 +28,6 @@ ohos_shared_library("asset_sdk") {
         "src/asset_api.c",
     ]
     deps = [
-        "$SUBSYSTEM_DIR/interfaces/inner_api/rs:asset_rust_binding"
+        "$COMPONENT_DIR/interfaces/inner_api/rs:asset_rust_binding"
     ]
 }

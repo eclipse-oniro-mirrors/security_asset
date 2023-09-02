@@ -13,7 +13,7 @@
 
 import("//build/ohos.gni")
 import("//build/test.gni")
-SUBSYSTEM_DIR = "//base/security/asset"
+COMPONENT_DIR = "//base/security/asset"
 
 ohos_rust_shared_library("db_operator") {
     sources = [
@@ -45,7 +45,7 @@ ohos_rust_unittest("db_operator_test") {
         "test/mod.rs",
     ]
     deps = [
-        "$SUBSYSTEM_DIR/db_operator:db_operator",
+        "$COMPONENT_DIR/db_operator:db_operator",
     ]
     subsystem_name = "security"
     part_name = "asset"

@@ -14,7 +14,7 @@
 import("//build/ohos.gni")
 import("//build/test.gni")
 
-SUBSYSTEM_DIR = "//base/security/asset"
+COMPONENT_DIR = "//base/security/asset"
 
 ohos_rust_shared_library("asset_rust_sdk") {
     sources = [
@@ -22,8 +22,8 @@ ohos_rust_shared_library("asset_rust_sdk") {
     ]
 
     deps = [
-        "$SUBSYSTEM_DIR/frameworks/common:asset_common_lib",
-        "$SUBSYSTEM_DIR/frameworks/ipc_define:asset_ipc_define_lib",
+        "$COMPONENT_DIR/frameworks/common:asset_common_lib",
+        "$COMPONENT_DIR/frameworks/ipc_define:asset_ipc_define_lib",
     ]
 
     external_deps = [
@@ -45,8 +45,8 @@ ohos_rust_shared_ffi("asset_rust_binding") {
         "src/binding.rs",
     ]
     deps = [
-        "$SUBSYSTEM_DIR/interfaces/inner_api/rs:asset_rust_sdk",
-        "$SUBSYSTEM_DIR/frameworks/common:asset_common_lib",
+        "$COMPONENT_DIR/interfaces/inner_api/rs:asset_rust_sdk",
+        "$COMPONENT_DIR/frameworks/common:asset_common_lib",
     ]
     external_deps = [
         "hilog:hilog_rust",

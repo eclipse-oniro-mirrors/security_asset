@@ -13,7 +13,7 @@
 
 import("//build/ohos.gni")
 
-SUBSYSTEM_DIR = "//base/security/asset"
+COMPONENT_DIR = "//base/security/asset"
 
 ohos_ndk_library("libasset_ndk") {
     output_name = "asset_ndk"
@@ -41,7 +41,7 @@ ohos_shared_library("asset_ndk") {
     ]
 
     deps = [
-        "$SUBSYSTEM_DIR/interfaces/inner_api/c:asset_sdk",
+        "$COMPONENT_DIR/interfaces/inner_api/c:asset_sdk",
     ]
 
     external_deps = [ "hilog:libhilog" ]

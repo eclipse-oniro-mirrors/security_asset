@@ -13,30 +13,30 @@
 
 import("//build/ohos.gni")
 
-SUBSYSTEM_DIR = "//base/security/asset"
+COMPONENT_DIR = "//base/security/asset"
 
 group("asset_component") {
     deps = [
-        "$SUBSYSTEM_DIR/interfaces/inner_api/rs:asset_rust_sdk",
-        "$SUBSYSTEM_DIR/interfaces/inner_api/c:asset_sdk",
-        "$SUBSYSTEM_DIR/services/core_service:asset_server",
-        "$SUBSYSTEM_DIR/sa_profile:asset_sa_profiles",
-        "$SUBSYSTEM_DIR/services/core_service/etc/init:assetservice.cfg",
-        #"$SUBSYSTEM_DIR/db_operator:db_operator",
+        "$COMPONENT_DIR/interfaces/inner_api/rs:asset_rust_sdk",
+        "$COMPONENT_DIR/interfaces/inner_api/c:asset_sdk",
+        "$COMPONENT_DIR/services/core_service:asset_server",
+        "$COMPONENT_DIR/sa_profile:asset_sa_profiles",
+        "$COMPONENT_DIR/services/core_service/etc/init:assetservice.cfg",
+        "$COMPONENT_DIR/db_operator:db_operator",
+        "$COMPONENT_DIR/interfaces/kits/c:asset_ndk",
     ]
 
     if (support_jsapi) {
-        deps += [ "//$SUBSYSTEM_DIR/frameworks/js/napi:asset_napi" ]
+        deps += [ "//$COMPONENT_DIR/frameworks/js/napi:asset_napi" ]
     }
-    deps += [ "//$SUBSYSTEM_DIR/interfaces/kits/c:asset_ndk" ]
 }
 
 group("asset_test") {
     testonly = true
     deps = [
-        "$SUBSYSTEM_DIR/test/unittest/inner_api_c:asset_c_api_test",
-        "$SUBSYSTEM_DIR/test/unittest/kits_ndk:asset_c_ndk_test",
-        #"$SUBSYSTEM_DIR/db_operator:db_operator_test",
-        "$SUBSYSTEM_DIR/test/unittest/inner_api_rust:asset_rust_test",
+        "$COMPONENT_DIR/test/unittest/inner_api_c:asset_c_api_test",
+        "$COMPONENT_DIR/test/unittest/kits_ndk:asset_c_ndk_test",
+        "$COMPONENT_DIR/db_operator:db_operator_test",
+        "$COMPONENT_DIR/test/unittest/inner_api_rust:asset_rust_test",
     ]
 }
