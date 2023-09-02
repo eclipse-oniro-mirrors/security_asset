@@ -16,8 +16,8 @@
 import type { AsyncCallback } from './@ohos.base';
 
 /**
- * This module provides the lifecycle management capability of assets (such as passwords and tokens),
- * including adding, removing, updating, and querying.
+ * This module provides the capabilities for life cycle management of sensitive user data (Asset) such as passwords
+ * and tokens, including adding, removing, updating, and querying.
  *
  * @namespace asset
  * @syscap SystemCapability.Security.Asset
@@ -25,129 +25,129 @@ import type { AsyncCallback } from './@ohos.base';
  */
 declare namespace asset {
   /**
-   * Add an asset.
+   * Add an Asset.
    *
-   * @param { AssetMap } attributes - a map of attributes that describes the asset to add.
-   * @param { AsyncCallback<void> } callback - the callback of add.
+   * @param { AssetMap } attributes - a map object including attributes of the Asset to be added.
+   * @param { AsyncCallback<void> } callback - the callback function for add operation.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
   function add(attributes: AssetMap, callback: AsyncCallback<void>): void;
 
   /**
-   * Add an asset.
+   * Add an Asset.
    *
-   * @param { AssetMap } attributes - a map of attributes that describes the asset to add.
-   * @returns { Promise<void> } the promise returned by the function.
+   * @param { AssetMap } attributes - a map object including attributes of the Asset to be added.
+   * @returns { Promise<void> } the promise object returned by the function.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
   function add(attributes: AssetMap): Promise<void>;
 
   /**
-   * Remove one or multiple assets that match a search query.
+   * Remove one or more Assets that match a search query.
    *
-   * @param { AssetMap } query - a map of attributes that describes the search for asset to remove.
-   * @param { AsyncCallback<void> } callback - the callback of remove.
+   * @param { AssetMap } query - a map object including attributes of the Asset to be removed.
+   * @param { AsyncCallback<void> } callback - the callback function for remove operation.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
   function remove(query: AssetMap, callback: AsyncCallback<void>): void;
 
   /**
-   * Remove one or multiple assets that match a search query.
+   * Remove one or more Assets that match a search query.
    *
-   * @param { AssetMap } query - a map of attributes that describes the search for asset to remove.
-   * @returns { Promise<void> } the promise returned by the function.
+   * @param { AssetMap } query - a map object including attributes of the Asset to be removed.
+   * @returns { Promise<void> } the promise object returned by the function.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
   function remove(query: AssetMap): Promise<void>;
 
   /**
-   * Update an asset that matches a search query.
+   * Update an Asset that matches a search query.
    *
-   * @param { AssetMap } query - a map of attributes that describes the search for asset to update.
-   * @param { AssetMap } attributesToUpdate - a map of attributes to be updated with the new values.
-   * @param { AsyncCallback<void> } callback - the callback of update.
+   * @param { AssetMap } query - a map object including attributes of the Asset to be updated.
+   * @param { AssetMap } attributesToUpdate - a map object including attributes with new values.
+   * @param { AsyncCallback<void> } callback - the callback function for update operation.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
   function update(query: AssetMap, attributesToUpdate: AssetMap, callback: AsyncCallback<void>): void;
 
   /**
-   * Update an asset that matches a search query.
+   * Update an Asset that matches a search query.
    *
-   * @param { AssetMap } query - a map of attributes that describes the search for asset to update.
-   * @param { AssetMap } attributesToUpdate - a map of attributes to be updated with the new values.
-   * @returns { Promise<void> } the promise returned by the function.
+   * @param { AssetMap } query - a map object including attributes of the Asset to be updated.
+   * @param { AssetMap } attributesToUpdate - a map object including attributes with new values.
+   * @returns { Promise<void> } the promise object returned by the function.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
   function update(query: AssetMap, attributesToUpdate: AssetMap): Promise<void>;
 
   /**
-   * Prepare for querying one or multiple assets that require user authentication.
+   * Preprocessing (e.g. get challenge) for querying one or more Assets that require user authentication.
    *
-   * @param { AssetMap } query - a map of attributes that describes the search for asset to query.
-   * @param { AsyncCallback<Uint8Array> } callback - the callback of preQuery.
+   * @param { AssetMap } query - a map object including attributes of the Asset to be queried.
+   * @param { AsyncCallback<Uint8Array> } callback - the callback function for pre-query operation.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
   function preQuery(query: AssetMap, callback: AsyncCallback<Uint8Array>): void;
 
   /**
-   * Prepare for querying one or multiple assets that require user authentication.
+   * Preprocessing (e.g. get challenge) for querying one or more Assets that require user authentication.
    *
-   * @param { AssetMap } query - a map of attributes that describes the search for asset to query.
-   * @returns { Promise<Uint8Array> } the promise returned by the function.
+   * @param { AssetMap } query - a map object including attributes of the Asset to be queried.
+   * @returns { Promise<Uint8Array> } the promise object returned by the function.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
   function preQuery(query: AssetMap): Promise<Uint8Array>;
 
   /**
-   * Query one or multiple assets that match a search query.
+   * Query one or more Assets that match a search query.
    *
-   * @param { AssetMap } query - a map of attributes that describes the search for asset to query.
-   * @param { AsyncCallback<Array<AssetMap>> } callback - the callback of query containing query results.
+   * @param { AssetMap } query - a map object including attributes of the Asset to be queried.
+   * @param { AsyncCallback<Array<AssetMap>> } callback - the callback function for query operation.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
   function query(query: AssetMap, callback: AsyncCallback<Array<AssetMap>>): void;
 
   /**
-   * Query one or multiple assets that match a search query.
+   * Query one or more Assets that match a search query.
    *
-   * @param { AssetMap } query - a map of attributes that describes the search for asset to query.
-   * @returns { Promise<Array<AssetMap>> } the promise returned by the function.
+   * @param { AssetMap } query - a map object including attributes of the Asset to be queried.
+   * @returns { Promise<Array<AssetMap>> } the promise object returned by the function.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
   function query(query: AssetMap): Promise<Array<AssetMap>>;
 
   /**
-   * Release the resource after querying multiple assets that require user authentication.
+   * Post-processing (e.g. release resource) for querying multiple Assets that require user authentication.
    *
-   * @param { AssetMap } handle - a map contains the handle returned by {@link preQuery}.
-   * @param { AsyncCallback<void> } callback - the callback of postQuery.
+   * @param { AssetMap } handle - a map object contains the handle returned by {@link preQuery}.
+   * @param { AsyncCallback<void> } callback - the callback function for post-query operation.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
   function postQuery(handle: AssetMap, callback: AsyncCallback<void>): void;
 
   /**
-   * Release the resource after querying multiple assets that require user authentication.
+   * Post-processing (e.g. release resource) for querying multiple Assets that require user authentication.
    *
-   * @param { AssetMap } handle - a map contains the handle returned by {@link preQuery}.
-   * @returns { Promise<void> } the promise returned by the function.
+   * @param { AssetMap } handle - a map object contains the handle returned by {@link preQuery}.
+   * @returns { Promise<void> } the promise object returned by the function.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
   function postQuery(handle: AssetMap): Promise<void>;
 
   /**
-   * Get the version of {@link asset}.
+   * Get the version of {@link asset} module.
    *
    * @returns { VersionInfo } the version info.
    * @syscap SystemCapability.Security.Asset
@@ -156,7 +156,7 @@ declare namespace asset {
   function getVersion(): Version;
 
   /**
-   * The asset version.
+   * The version structure returned by {@link getVersion} function.
    *
    * @typedef Version
    * @syscap SystemCapability.Security.Asset
@@ -226,7 +226,7 @@ declare namespace asset {
 
   export enum ConflictPolicy {
     OVERRIDE = 0,
-    REPORT = 1,
+    THROW_ERROR = 1,
   }
 
   export enum ReturnType {
