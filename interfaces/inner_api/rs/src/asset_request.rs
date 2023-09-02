@@ -38,20 +38,26 @@ fn get_asset_service() -> AssetResult<RemoteObjRef<dyn AssetBroker>> {
 }
 
 /// sender
-pub struct AssetIpcSender {
+pub(crate) struct AssetIpcProxy {
     proxy: RemoteObjRef<dyn AssetBroker>,
 }
 
 /// 2222
-impl AssetIpcSender {
+impl AssetIpcProxy {
     /// xxx
-    pub fn new() -> AssetResult<AssetIpcSender> {
-        Ok(AssetIpcSender { proxy: get_asset_service()? })
+    pub(crate) fn new() -> AssetResult<AssetIpcProxy> {
+        Ok(AssetIpcProxy { proxy: get_asset_service()? })
     }
 
     /// xxx
-    pub fn insert(&self, input: &AssetMap) -> AssetResult<AssetMap> {
+    pub(crate) fn insert(&self, input: &AssetMap) -> AssetResult<AssetMap> {
         asset_log_info!("AssetIpcSender insert");
         self.proxy.insert(input)
+    }
+
+    /// add
+    pub(crate) fn add(&self, input: &AssetMap) -> AssetResult<AssetMap> {
+        asset_log_info!("AssetIpcSender add");
+        self.proxy.add(input)
     }
 }

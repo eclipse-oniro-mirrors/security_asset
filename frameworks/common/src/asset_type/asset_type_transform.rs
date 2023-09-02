@@ -15,16 +15,23 @@
 
 //! 各种类型的拓展方法定义在此处
 
-use crate::asset_type::{AssetResult, AssetStatusCode, AssetTag, AssetType, AssetValue};
+use crate::asset_type::{AssetResult, AssetStatusCode, Tag, AssetType, Value, Accessibility,
+    AssetReturnType, AssetConflictPolicy, AssetSyncType};
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use ipc_rust::IpcStatusCode;
 
 use std::ffi::{c_char, CString};
 use std::fmt;
 
-impl AssetTag {
-    /// sss
-    pub fn get_type(&self) -> AssetResult<AssetType> {
+/// get type
+pub trait GetType {
+    fn get_type(&self) -> AssetResult<AssetType>;
+
+    fn get_real(self) -> Value;
+}
+
+impl GetType for Tag {
+    fn get_type(&self) -> AssetResult<AssetType> {
         match self {
             _ if ((*self as u32) & (AssetType::Bool as u32)) != 0 => Ok(AssetType::Bool),
             _ if ((*self as u32) & (AssetType::U32 as u32)) != 0 => Ok(AssetType::U32),
@@ -37,18 +44,82 @@ impl AssetTag {
             },
         }
     }
+
+    fn get_real(self) -> Value {
+        todo!()
+    }
 }
 
-impl fmt::Display for AssetValue {
+impl GetType for Accessibility {
+    fn get_type(&self) -> AssetResult<AssetType> {
+        Ok(AssetType::U32)
+    }
+
+    fn get_real(self) -> Value {
+        Value::NUMBER(self as u32)
+    }
+}
+
+impl GetType for AssetSyncType {
+    fn get_type(&self) -> AssetResult<AssetType> {
+        Ok(AssetType::U32)
+    }
+
+    fn get_real(self) -> Value {
+        Value::NUMBER(self as u32)
+    }
+}
+
+impl GetType for AssetConflictPolicy {
+    fn get_type(&self) -> AssetResult<AssetType> {
+        Ok(AssetType::U32)
+    }
+
+    fn get_real(self) -> Value {
+        Value::NUMBER(self as u32)
+    }
+}
+
+impl GetType for AssetReturnType {
+    fn get_type(&self) -> AssetResult<AssetType> {
+        Ok(AssetType::U32)
+    }
+
+    fn get_real(self) -> Value {
+        Value::NUMBER(self as u32)
+    }
+}
+
+impl GetType for bool {
+    fn get_type(&self) -> AssetResult<AssetType> {
+        Ok(AssetType::Bool)
+    }
+
+    fn get_real(self) -> Value {
+        Value::BOOL(self)
+    }
+}
+
+impl GetType for Vec<u8> {
+    fn get_type(&self) -> AssetResult<AssetType> {
+        Ok(AssetType::Uint8Array)
+    }
+
+    fn get_real(self) -> Value {
+        Value::UINT8ARRAY(self)
+    }
+}
+
+impl fmt::Display for Value {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            AssetValue::BOOL(b) => {
+            Value::BOOL(b) => {
                 write!(f, "bool is {}", b)
             },
-            AssetValue::NUMBER(number) => {
+            Value::NUMBER(number) => {
                 write!(f, "number is {}", number)
             },
-            AssetValue::UINT8ARRAY(array) => {
+            Value::UINT8ARRAY(array) => {
                 write!(f, "array len is {}", array.len())
             },
         }
@@ -57,14 +128,14 @@ impl fmt::Display for AssetValue {
 
 impl From<AssetStatusCode> for IpcStatusCode {
     fn from(value: AssetStatusCode) -> Self {
-        asset_log_error!("get asset result [{}] for ipc", value);
+        asset_log_error!("get asset result [{}] for ipc", @public(value));
         IpcStatusCode::Failed
     }
 }
 
 impl From<IpcStatusCode> for AssetStatusCode {
     fn from(value: IpcStatusCode) -> Self {
-        asset_log_error!("get ipc result [{}]", value);
+        asset_log_error!("get ipc result [{}]", @public(value));
         AssetStatusCode::IpcFailed
     }
 }
@@ -94,23 +165,23 @@ macro_rules! enum_auto_prepare {
         }
 
         impl std::convert::TryFrom<u32> for $name {
-            type Error = ();
+            type Error = $crate::asset_type::AssetStatusCode;
 
             fn try_from(v: u32) -> Result<Self, Self::Error> {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
-                    _ => Err(()),
+                    _ => Err($crate::asset_type::AssetStatusCode::Failed),
                 }
             }
         }
 
         impl std::convert::TryFrom<i32> for $name {
-            type Error = ();
+            type Error = $crate::asset_type::AssetStatusCode;
 
             fn try_from(v: i32) -> Result<Self, Self::Error> {
                 match v {
                     $(x if x == $name::$vname as i32 => Ok($name::$vname),)*
-                    _ => Err(()),
+                    _ => Err($crate::asset_type::AssetStatusCode::Failed),
                 }
             }
         }

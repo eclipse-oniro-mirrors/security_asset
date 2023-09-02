@@ -15,16 +15,10 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 
 SUBSYSTEM_DIR = "//base/security/asset"
-
 module_output_path = "asset/asset_UT_test"
 
-ohos_unittest("asset_rust_api_test") {
+ohos_rust_unittest("asset_rust_test") {
     module_out_path = module_output_path
-    include_dirs = [ "include" ]
-    sources = [
-        "src/rust_api_test.cpp"
-    ]
-    deps = [
-        "$SUBSYSTEM_DIR/interfaces/inner_api/rs:asset_rust_sdk",
-    ]
+    sources = [ "src/main.rs" ]
+    deps = [ "$SUBSYSTEM_DIR/interfaces/inner_api/rs:asset_rust_sdk" ]
 }

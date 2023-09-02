@@ -25,38 +25,26 @@ use ipc_rust::{
 use std::ffi::{c_char, CString};
 
 use asset_common_lib::{
-    asset_log_error, asset_log_info,
-    asset_type::{AssetMap, AssetResult, AssetStatusCode, SerializeAsset, DeserializeAsset},
+    asset_log_info, enum_auto_prepare,
+    asset_type::{AssetMap, AssetResult, AssetStatusCode, SerializeAsset, DeserializeAsset}, asset_log_error,
 };
 
-/// Asset ipc code
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum AssetIpcCode {
-    /// insert data
-    Insert = FIRST_CALL_TRANSACTION,
-    /// read
-    Read,
+enum_auto_prepare!{
+    /// Asset ipc code
+    #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
+    pub enum AssetIpcCode {
+        /// insert data
+        Insert = FIRST_CALL_TRANSACTION,
+        /// add an asset
+        Add,
+    }
 }
 
 impl fmt::Display for AssetIpcCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
             AssetIpcCode::Insert => write!(f, "insert"),
-            AssetIpcCode::Read => write!(f, "read"),
-        }
-    }
-}
-
-impl TryFrom<u32> for AssetIpcCode {
-    type Error = AssetStatusCode;
-    fn try_from(code: u32) -> AssetResult<Self> {
-        match code {
-            _ if code == AssetIpcCode::Insert as u32 => Ok(AssetIpcCode::Insert),
-            _ if code == AssetIpcCode::Read as u32 => Ok(AssetIpcCode::Read),
-            _ => {
-                asset_log_error!("try convert u32 to AssetIpcCode failed!");
-                Err(AssetStatusCode::Failed)
-            },
+            AssetIpcCode::Add => write!(f, "add"),
         }
     }
 }
@@ -69,6 +57,9 @@ pub trait AssetBroker: IRemoteBroker {
     /// xxx
     fn insert(&self, input: &AssetMap) -> AssetResult<AssetMap>;
     // fn transform(&self, code: u32, input: &AssetMap) -> AssetResult<AssetMap>;
+
+    /// add an assert
+    fn add(&self, input: &AssetMap) -> AssetResult<AssetMap>;
 }
 
 fn on_asset_remote_request(
@@ -91,11 +82,14 @@ fn on_asset_remote_request(
                     return Err(IpcStatusCode::InvalidValue);
                 }
             },
-            AssetIpcCode::Read => {
-                asset_log_info!("on_asset_remote_request Read");
-                // let res: AssetMap = stub.insert(input_map.as_ref().unwrap()); // to do
-                // res.serialize(reply);
-            },
+            AssetIpcCode::Add => {
+                asset_log_info!("on_asset_remote_request add");
+                let res: AssetMap = stub.add(input_map.as_ref().unwrap()).unwrap();
+                let ser_res = res.serialize(reply);
+                if ser_res.is_err() {
+                    return Err(IpcStatusCode::InvalidValue);
+                }
+            }
         }
         Ok(())
     } else {
@@ -112,27 +106,28 @@ define_remote_object!(
 
 // Make RemoteStub<AssetStub> object can call AssetBroker function directly.
 impl AssetBroker for RemoteStub<AssetStub> {
-    // fn transform(&self, code: u32, input: &AssetMap) -> AssetResult<AssetMap> {
-    //     self.0.transform(code, input)
-    // }
-
     fn insert(&self, input: &AssetMap) -> AssetResult<AssetMap> {
         self.0.insert(input)
     }
+
+    fn add(&self, input: &AssetMap) -> AssetResult<AssetMap> {
+        self.0.add(input)
+    }
 }
 
-fn transform(proxy: &AssetProxy, input: &AssetMap) -> AssetResult<AssetMap> {
+fn transform(proxy: &AssetProxy, code: AssetIpcCode, input: &AssetMap) -> AssetResult<AssetMap> {
     let parce_new = MsgParcel::new();
     match parce_new {
         Some(mut send_parcel) => {
             input.serialize(&mut send_parcel.borrowed())?;
 
             let reply_parcel =
-                proxy.remote.send_request(AssetIpcCode::Insert as u32, &send_parcel, false);
+                proxy.remote.send_request(code as u32, &send_parcel, false);
             if let Ok(reply) = reply_parcel {
                 let ret = AssetMap::deserialize(reply.borrowed_ref())?;
                 Ok(ret)
             } else {
+                asset_log_error!("AssetProxy transform {} failed!", code);
                 Err(AssetStatusCode::Failed)
             }
         },
@@ -142,6 +137,10 @@ fn transform(proxy: &AssetProxy, input: &AssetMap) -> AssetResult<AssetMap> {
 
 impl AssetBroker for AssetProxy {
     fn insert(&self, input: &AssetMap) -> AssetResult<AssetMap> {
-        transform(self, input)
+        transform(self, AssetIpcCode::Insert, input)
+    }
+
+    fn add(&self, input: &AssetMap) -> AssetResult<AssetMap> {
+        transform(self, AssetIpcCode::Add, input)
     }
 }

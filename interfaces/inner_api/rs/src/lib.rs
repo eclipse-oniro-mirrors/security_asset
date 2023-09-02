@@ -20,22 +20,22 @@ mod asset_request;
 pub use asset_common_lib::asset_type;
 use asset_common_lib::{
     asset_log_error, asset_log_info,
-    asset_type::{AssetMap, AssetResult, AssetStatusCode, AssetTag, AssetValue},
+    asset_type::{AssetMap, AssetResult, AssetStatusCode, Tag, Value},
 };
-use asset_request::AssetIpcSender;
+use crate::asset_request::AssetIpcProxy;
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
 
 /// insert data into asset
 pub fn asset_insert(_code: i32) -> AssetResult<AssetStatusCode> {
     asset_log_info!("enter asser insert");
-    if let Ok(sender) = AssetIpcSender::new() {
+    if let Ok(sender) = AssetIpcProxy::new() {
         let mut map = AssetMap::new();
-        map.insert(AssetTag::AuthType, AssetValue::NUMBER(5));
+        map.insert(Tag::AuthType, Value::NUMBER(5));
         sender.insert(&map)?; // ingore reply
         match sender.insert(&map) {
             Ok(res) => {
-                if let Some(v) = res.get(&AssetTag::AuthType) {
+                if let Some(v) = res.get(&Tag::AuthType) {
                     asset_log_info!("res is {}", @public(v));
                 } else {
                     asset_log_error!("asset_insert failed!");
@@ -47,4 +47,10 @@ pub fn asset_insert(_code: i32) -> AssetResult<AssetStatusCode> {
     } else {
         Err(AssetStatusCode::Failed)
     }
+}
+
+/// add an asset
+pub fn add(input: AssetMap) -> AssetResult<AssetMap> {
+    asset_log_info!("enter assert add");
+    AssetIpcProxy::new()?.add(&input)
 }

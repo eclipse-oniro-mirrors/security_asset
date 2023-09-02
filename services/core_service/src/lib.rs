@@ -17,7 +17,7 @@
 
 use asset_common_lib::{
     asset_log_info,
-    asset_type::{AssetMap, AssetResult, AssetTag, AssetValue},
+    asset_type::{AssetMap, AssetResult, Tag, Value},
 };
 use asset_ipc_define_lib::asset_service::{AssetBroker, AssetStub, ASSET_SERVICE_ID};
 
@@ -28,6 +28,8 @@ use std::ffi::{c_char, CString};
 
 use system_ability_fwk_rust::{define_system_ability, IMethod, ISystemAbility, RSystemAbility};
 
+mod operations;
+
 /// xxx
 pub struct AssetService;
 
@@ -36,8 +38,12 @@ impl IRemoteBroker for AssetService {}
 impl AssetBroker for AssetService {
     fn insert(&self, _input: &AssetMap) -> AssetResult<AssetMap> {
         let mut map = AssetMap::new();
-        map.insert(AssetTag::AuthType, AssetValue::NUMBER(2)); // to do
+        map.insert(Tag::AuthType, Value::NUMBER(2)); // to do
         Ok(map)
+    }
+
+    fn add(&self, input: &AssetMap) -> AssetResult<AssetMap> {
+        operations::add(input)
     }
 }
 

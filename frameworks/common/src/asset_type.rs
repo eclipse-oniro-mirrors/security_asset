@@ -30,7 +30,7 @@ pub struct VersionInfo {
     patch: u32,
 }
 
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
 /// asset tag type
 pub enum AssetType {
     /// bool
@@ -42,8 +42,8 @@ pub enum AssetType {
 }
 
 /// asset value
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub enum AssetValue {
+#[derive(Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum Value {
     /// bool for asset
     BOOL(bool),
 
@@ -56,8 +56,8 @@ pub enum AssetValue {
 
 enum_auto_prepare!{
     /// asset tag
-    #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-    pub enum AssetTag {
+    #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
+    pub enum Tag {
         /// secret
         Secret = AssetType::Uint8Array as isize | 1,
         /// alias tag
@@ -121,7 +121,7 @@ enum_auto_prepare! {
 /// asset result
 pub type AssetResult<T> = std::result::Result<T, AssetStatusCode>;
 
-#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
 /// auth type
 pub enum AssetAuthType {
     /// None
@@ -131,7 +131,7 @@ pub enum AssetAuthType {
 }
 
 /// enum for AssetAccessibility
-pub enum AssetAccessibility {
+pub enum Accessibility {
     /// DevicePowerOn
     DevicePowerOn,
     /// DevoceFirstUnlock
