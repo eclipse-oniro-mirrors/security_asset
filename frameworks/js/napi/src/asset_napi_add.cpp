@@ -33,7 +33,7 @@ namespace Asset {
         AsyncContext *context = new(std::nothrow) AsyncContext;
         NAPI_THROW(env, context != nullptr, OUT_OF_MEMRORY, "Out of memory");
 
-        if (ParseJsParams(argc, argv, context) != napi_ok) {
+        if (ParseJsParams(env, argc, argv, context) != napi_ok) {
             delete context;
             return nullptr;
         }

@@ -55,7 +55,7 @@ namespace Asset {
         // todo: innerSDK方法定义好，为其赋值
     } AsyncContext;
 
-    napi_status ParseJsParams(size_t argc, napi_value *argv, AsyncContext *context);
+    napi_status ParseJsParams(napi_env env, size_t argc, napi_value *argv, AsyncContext *context);
 
 } // Asset
 } // Security

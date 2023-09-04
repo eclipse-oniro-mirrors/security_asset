@@ -40,7 +40,7 @@ pub fn asset_insert(_code: i32) -> AssetResult<AssetStatusCode> {
                 } else {
                     asset_log_error!("asset_insert failed!");
                 }
-                Ok(AssetStatusCode::Ok)
+                Ok(AssetStatusCode::Success)
             },
             Err(e) => Err(e),
         }

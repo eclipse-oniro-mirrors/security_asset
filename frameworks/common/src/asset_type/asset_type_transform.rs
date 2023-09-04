@@ -35,8 +35,8 @@ impl GetType for Tag {
         let mask = (*self as u32) & (0xF << 28) as u32;
         match mask {
             _ if AssetType::Bool as u32 == mask => Ok(AssetType::Bool),
-            _ if AssetType::U32 as u32 == mask => Ok(AssetType::U32),
-            _ if AssetType::Uint8Array as u32 == mask => Ok(AssetType::Uint8Array),
+            _ if AssetType::Uint32 as u32 == mask => Ok(AssetType::Uint32),
+            _ if AssetType::Bytes as u32 == mask => Ok(AssetType::Bytes),
             _ => {
                 asset_log_error!("get tag type failed!");
                 Err(AssetStatusCode::Failed)
@@ -51,7 +51,7 @@ impl GetType for Tag {
 
 impl GetType for Accessibility {
     fn get_type(&self) -> AssetResult<AssetType> {
-        Ok(AssetType::U32)
+        Ok(AssetType::Uint32)
     }
 
     fn get_real(self) -> Value {
@@ -61,7 +61,7 @@ impl GetType for Accessibility {
 
 impl GetType for AssetSyncType {
     fn get_type(&self) -> AssetResult<AssetType> {
-        Ok(AssetType::U32)
+        Ok(AssetType::Uint32)
     }
 
     fn get_real(self) -> Value {
@@ -71,7 +71,7 @@ impl GetType for AssetSyncType {
 
 impl GetType for AssetConflictPolicy {
     fn get_type(&self) -> AssetResult<AssetType> {
-        Ok(AssetType::U32)
+        Ok(AssetType::Uint32)
     }
 
     fn get_real(self) -> Value {
@@ -81,7 +81,7 @@ impl GetType for AssetConflictPolicy {
 
 impl GetType for AssetReturnType {
     fn get_type(&self) -> AssetResult<AssetType> {
-        Ok(AssetType::U32)
+        Ok(AssetType::Uint32)
     }
 
     fn get_real(self) -> Value {
@@ -101,11 +101,11 @@ impl GetType for bool {
 
 impl GetType for Vec<u8> {
     fn get_type(&self) -> AssetResult<AssetType> {
-        Ok(AssetType::Uint8Array)
+        Ok(AssetType::Bytes)
     }
 
     fn get_real(self) -> Value {
-        Value::UINT8ARRAY(self)
+        Value::Bytes(self)
     }
 }
 
@@ -118,7 +118,7 @@ impl fmt::Display for Value {
             Value::NUMBER(number) => {
                 write!(f, "number is {}", number)
             },
-            Value::UINT8ARRAY(array) => {
+            Value::Bytes(array) => {
                 write!(f, "array len is {}", array.len())
             },
         }
@@ -154,7 +154,7 @@ impl fmt::Display for AssetStatusCode {
 
 /// xxx
 #[macro_export]
-macro_rules! enum_auto_prepare {
+macro_rules! enum_auto_impl_try_from {
     ($(#[$meta:meta])* $vis:vis enum $name:ident {
         $($(#[$vmeta:meta])* $vname:ident $(= $val:expr)?,)*
     }) => {

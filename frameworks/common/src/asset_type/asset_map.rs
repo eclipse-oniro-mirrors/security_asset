@@ -52,7 +52,7 @@ impl SerializeAsset for AssetMap {
                 Value::NUMBER(n) => {
                     parcel.write::<u32>(n)?;
                 },
-                Value::UINT8ARRAY(a) => {
+                Value::Bytes(a) => {
                     parcel.write::<Vec<u8>>(a)?;
                 },
             }
@@ -79,15 +79,19 @@ impl DeserializeAsset for AssetMap {
                     let v = parcel.read::<bool>()?;
                     map.insert(asset_tag, Value::BOOL(v));
                 },
-                Ok(AssetType::U32) => {
+                Ok(AssetType::Uint32) => {
                     asset_log_info!("try get u32");
                     let v = parcel.read::<u32>()?;
                     map.insert(asset_tag, Value::NUMBER(v));
                 },
-                Ok(AssetType::Uint8Array) => {
+                Ok(AssetType::Bytes) => {
                     asset_log_info!("try get uint8array");
                     let v = parcel.read::<Vec<u8>>()?;
-                    map.insert(asset_tag, Value::UINT8ARRAY(v));
+                    map.insert(asset_tag, Value::Bytes(v));
+                },
+                Ok(AssetType::Uint64 | AssetType::Int32 | AssetType::Int64) => {
+                    asset_log_error!("deserialize {} failed!", @public(tag));
+                    return Err(AssetStatusCode::IpcFailed);
                 },
                 Err(_) => {
                     asset_log_error!("deserialize {} failed!", @public(tag));
@@ -109,7 +113,7 @@ pub trait InsertAttribute {
 impl InsertAttribute for AssetMap {
     fn insert_attr(&mut self, key: Tag, value: impl GetType) -> AssetResult<()> {
         match value.get_type() {
-            Ok(AssetType::U32) => {
+            Ok(AssetType::Uint32) => {
                 if let Value::NUMBER(real) = value.get_real()  {
                     self.insert(key, Value::NUMBER(real));
                     return Ok(());
@@ -123,12 +127,16 @@ impl InsertAttribute for AssetMap {
                 }
                 Err(AssetStatusCode::Failed)
             },
-            Ok(AssetType::Uint8Array) => {
-                if let Value::UINT8ARRAY(real) = value.get_real()  {
-                    self.insert(key, Value::UINT8ARRAY(real));
+            Ok(AssetType::Bytes) => {
+                if let Value::Bytes(real) = value.get_real()  {
+                    self.insert(key, Value::Bytes(real));
                     return Ok(());
                 }
                 Err(AssetStatusCode::Failed)
+            },
+            Ok(AssetType::Uint64 | AssetType::Int32 | AssetType::Int64) => {
+                asset_log_error!("insert {} failed!", @public(key as u32));
+                Err(AssetStatusCode::IpcFailed)
             },
             Err(_) => {
                 Err(AssetStatusCode::Failed)

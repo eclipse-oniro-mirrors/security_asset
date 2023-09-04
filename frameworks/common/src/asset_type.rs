@@ -23,22 +23,33 @@ mod asset_type_transform;
 
 pub use crate::asset_type::asset_map::*;
 
-/// version info
-pub struct VersionInfo {
+/// The asset version.
+pub struct Version {
+    /// The major version.
     major: u32,
+
+    /// The minor version.
     minor: u32,
+
+    /// The patch version.
     patch: u32,
 }
 
 #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
-/// asset tag type
+/// An enum type that indicates the type of the asset attribute value.
 pub enum AssetType {
-    /// bool
-    Bool = 1 << 28,
-    /// u32
-    U32 = 2 << 28,
-    /// u8array
-    Uint8Array = 3 << 28,
+    /// The type of the asset attribute value is int32.
+    Int32 = 1 << 28,
+    /// The type of the asset attribute value is uint32.
+    Uint32 = 2 << 28,
+    /// The type of the asset attribute value is int64.
+    Int64 = 3 << 28,
+    /// The type of the asset attribute value is uint64.
+    Uint64 = 4 << 28,
+    /// The type of the asset attribute value is bool.
+    Bool = 5 << 28,
+    /// The type of the asset attribute value is byte array.
+    Bytes = 6 << 28,
 }
 
 /// asset value
@@ -50,71 +61,122 @@ pub enum Value {
     /// number for asset
     NUMBER(u32),
 
-    /// uint8array for asset
-    UINT8ARRAY(Vec<u8>),
+    /// bytes for asset
+    Bytes(Vec<u8>),
 }
 
-enum_auto_prepare!{
-    /// asset tag
+enum_auto_impl_try_from!{
+    /// An emum type that indicates the tag of the asset attribute.
     #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
     pub enum Tag {
-        /// secret
-        Secret = AssetType::Uint8Array as isize | 1,
-        /// alias tag
-        Alias = AssetType::Uint8Array as isize | 2,
-        /// ACCESSIBILITY
-        Accessibility = AssetType::U32 as isize | 3,
-        /// auth type
-        AuthType = AssetType::U32 as isize | 4,
-        /// SyncType
-        SyncType = AssetType::U32 as isize | 5,
-        /// ConfictPolicy
-        ConfictPolicy = AssetType::U32 as isize | 6,
-        /// DataLabelCritical1
-        DataLabelCritical1 = AssetType::Uint8Array as isize | 7,
-        /// DataLabelCritical2
-        DataLabelCritical2 = AssetType::Uint8Array as isize | 8,
-        /// DataLabelCritical3
-        DataLabelCritical3 = AssetType::Uint8Array as isize | 9,
-        /// DataLabelCritical4
-        DataLabelCritical4 = AssetType::Uint8Array as isize | 10,
-        /// DataLabelNormal1
-        DataLabelNormal1 = AssetType::Uint8Array as isize | 11,
-        /// DataLabelNormal2
-        DataLabelNormal2 = AssetType::Uint8Array as isize | 12,
-        /// DataLabelNormal3
-        DataLabelNormal3 = AssetType::Uint8Array as isize | 13,
-        /// DataLabelNormal4
-        DataLabelNormal4 = AssetType::Uint8Array as isize | 14,
-        /// AuthValidtyPeriod
-        AuthValidityPeriod = AssetType::U32 as isize | 15,
-        /// ReturnLimit
-        ReturnLimit = AssetType::U32 as isize | 16,
-        /// ReturnOffset
-        ReturnOffset = AssetType::U32 as isize | 17,
-        /// ReturnOrderBy
-        ReturnOrderBy = AssetType::U32 as isize | 18,
-        /// ReturnType
-        ReturnType = AssetType::U32 as isize | 19,
-        /// AuthChallenge
-        AuthChallenge = AssetType::Uint8Array as isize | 20,
-        /// AuthToken
-        AuthToken = AssetType::Uint8Array as isize | 21,
+        /// A tag whose value is the asset, such as password and token.
+        Secret = AssetType::Bytes as isize | 1,
+
+        /// A tag whose value used to identify an asset.
+        Alias = AssetType::Bytes as isize | 2,
+
+        /// A tag whose value indicates when the asset can be accessed.
+        Accessibility = AssetType::Uint32 as isize | 3,
+
+        /// A tag whose value indicates what type of user authentication is required.
+        AuthType = AssetType::Uint32 as isize | 4,
+
+        /// A tag whose value indicates the validity period of user authentication, in seconds.
+        AythValidityPeriod = AssetType::Uint32 as isize | 5,
+
+        /// A tag whose value indicates the authentication challenge for anti-replay.
+        AuthChallenge = AssetType::Bytes as isize | 6,
+
+        /// A tag whose value indicates the credential after successful authentication of the user.
+        AuthToken = AssetType::Bytes as isize | 7,
+
+        /// A tag whose value indicates the type of asset synchronization.
+        SyncType = AssetType::Uint32 as isize | 8,
+
+        /// A tag whose value indicates the conflict handling policy for adding the asset with the same alias.
+        ConfictPolicy = AssetType::Uint32 as isize | 9,
+
+        /// A tag whose value indicates the first customized critical data of the asset.
+        DataLabelCritical1 = AssetType::Bytes as isize | 10,
+
+        /// A tag whose value indicates the second customized critical data of the asset.
+        DataLabelCritical2 = AssetType::Bytes as isize | 11,
+
+        /// A tag whose value indicates the third customized critical data of the asset.
+        DataLabelCritical3 = AssetType::Bytes as isize | 12,
+
+        /// A tag whose value indicates the fourth customized critical data of the asset.
+        DataLabelCritical4 = AssetType::Bytes as isize | 13,
+
+        /// A tag whose value indicates the first customized normal data of the asset.
+        DataLabelNormal1 = AssetType::Bytes as isize | 14,
+
+        /// A tag whose value indicates the second customized normal data of the asset.
+        DataLabelNormal2 = AssetType::Bytes as isize | 15,
+
+        /// A tag whose value indicates the third customized normal data of the asset.
+        DataLabelNormal3 = AssetType::Bytes as isize | 16,
+
+        /// A tag whose value indicates the fourth customized normal data of the asset.
+        DataLabelNormal4 = AssetType::Bytes as isize | 17,
+
+        /// A tag whose value indicates the type of the returned data.
+        ReturnType = AssetType::Uint32 as isize | 18,
+
+        /// A tag whose value indicates the maximum number of assets that can be returned in a query.
+        ReturnLimit = AssetType::Uint32 as isize | 19,
+
+        /// A tag whose value indicates the offset of the batch query result.
+        ReturnOffset = AssetType::Uint32 as isize | 20,
+
+        /// A tag whose value indicates the order by which the query result is returned.
+        ReturnOrderBy = AssetType::Uint32 as isize | 21,
+
     }
 }
 
-enum_auto_prepare! {
+enum_auto_impl_try_from! {
     /// Asset unified status code
     #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
     pub enum AssetStatusCode {
         /// success
-        Ok = 1,
+        Success = 0,
         /// failed
         Failed = -1,
-        /// IpcFailed
-        IpcFailed = -2,
-        /// InvalidArgement
-        InvalidArgument = -3,
+
+        /// The error code indicates that the permission is denied.
+        PermissionDenied = 201,
+
+        /// The error code indicates that the parameter is invalid
+        InvalidArgument = 401,
+
+        /// The error code indicates that the capability is not supported.
+        NotSupport = 801,
+
+        /// The error code indicates that the asset service is unavailable.
+        ServiceUnvailable = 24000001,
+
+        /// The error code indicates that the asset to be queried is not found.
+        NotFound = 24000002,
+
+        /// The error code indicates that the asset to be added is duplicate.
+        Duplicated = 24000003,
+
+        /// The error code indicates that the asset access is denied.
+        AccessDenied = 24000004,
+
+        /// The error code indicates that the authentication token has expired.
+        AuthTokenExpired = 24000005,
+
+        /// The error code indicates that the system memory is insufficient.
+        OutOfMemory = 24000006,
+
+        /// The error code indicates that the asset or key is corrupted.
+        DataCorrupted = 24000007,
+
+        // to do
+        /// The error code indicates that the ipc communication is failed.
+        IpcFailed = 24000008,
     }
 }
 
@@ -125,47 +187,47 @@ pub type AssetResult<T> = std::result::Result<T, AssetStatusCode>;
 /// auth type
 pub enum AssetAuthType {
     /// None
-    None,
+    None = 0x00,
     /// any
-    Any,
+    Any = 0xFF,
 }
 
 /// enum for AssetAccessibility
 pub enum Accessibility {
     /// DevicePowerOn
-    DevicePowerOn,
+    DevicePowerOn = 0,
     /// DevoceFirstUnlock
-    DevoceFirstUnlock,
+    DevoceFirstUnlock = 1,
     /// DeviceUnlock
-    DeviceUnlock,
+    DeviceUnlock = 2,
     /// DeviceSecure
-    DeviceSecure,
+    DeviceSecure = 3,
 }
 
 /// AssetSyncType
 pub enum AssetSyncType {
     /// None
-    None,
+    Never = 0,
     /// ThisDevice
-    ThisDevice,
+    ThisDevice = 1 << 0,
     /// TrustedAccount
-    TrustedAccount,
+    TrustedAccount = 1 << 1,
     /// TrustedDevice
-    TrustedDevice
+    TrustedDevice = 1 << 2
 }
 
 /// AssetConflictPolicy
 pub enum AssetConflictPolicy {
     /// OverRide
-    OverRide,
+    OverRide = 0,
     /// Report
-    Report,
+    Report = 1,
 }
 
 /// AssetReturnType
 pub enum AssetReturnType {
     /// All
-    All,
+    All = 0,
     /// Attributes
-    Attributes
+    Attributes = 1
 }

@@ -14,11 +14,12 @@
  */
 
 #include "asset_napi_common.h"
+#include "asset_type.h"
 
 namespace OHOS {
 namespace Security {
 namespace Asset {
-    napi_status ParseJsParams(size_t argc, napi_value *argv, AsyncContext *context)
+    napi_status ParseJsParams(napi_env env, size_t argc, napi_value *argv, AsyncContext *context)
     {
         size_t index = 0;
         napi_valuetype valueType = napi_undefined;

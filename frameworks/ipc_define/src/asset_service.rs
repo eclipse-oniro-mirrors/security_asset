@@ -25,11 +25,11 @@ use ipc_rust::{
 use std::ffi::{c_char, CString};
 
 use asset_common_lib::{
-    asset_log_info, enum_auto_prepare,
+    asset_log_info, enum_auto_impl_try_from,
     asset_type::{AssetMap, AssetResult, AssetStatusCode, SerializeAsset, DeserializeAsset}, asset_log_error,
 };
 
-enum_auto_prepare!{
+enum_auto_impl_try_from!{
     /// Asset ipc code
     #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
     pub enum AssetIpcCode {
