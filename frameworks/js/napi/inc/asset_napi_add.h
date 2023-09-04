@@ -22,7 +22,9 @@
 namespace OHOS {
 namespace Security {
 namespace Asset {
-    napi_value NapiAdd(napi_env env, napi_callback_info info);
+
+napi_value NapiAdd(napi_env env, napi_callback_info info);
+
 } // Asset
 } // Security
 } // OHOS

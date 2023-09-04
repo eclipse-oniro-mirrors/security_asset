@@ -16,6 +16,7 @@
 #ifndef ASSET_TYPE_H
 #define ASSET_TYPE_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -29,28 +30,30 @@ typedef enum {
     /**
      * The type of the asset attribute value is int32.
      */
-    INT32 = 1 << 28,
+    ASSET_TYPE_INT32 = 1 << 28,
     /**
      * The type of the asset attribute value is uint32.
      */
-    UINT32 = 2 << 28,
+    ASSET_TYPE_UINT32 = 2 << 28,
     /**
      * The type of the asset attribute value is int64.
      */
-    INT64 = 3 << 28,
+    ASSET_TYPE_INT64 = 3 << 28,
     /**
      * The type of the asset attribute value is uint64.
      */
-    UINT64 = 4 << 28,
+    ASSET_TYPE_UINT64 = 4 << 28,
     /**
      * The type of the asset attribute value is bool.
      */
-    BOOL = 5 << 28,
+    ASSET_TYPE_BOOL = 5 << 28,
     /**
      * The type of the asset attribute value is byte array.
      */
-    BYTES = 6 << 28,
-} TagType;
+    ASSET_TYPE_BYTES = 6 << 28,
+} AssetTagType;
+
+#define ASSET_TAG_TYPE_MASK (0xF << 28)
 
 /**
  * An emum type that indicates the tag of the asset attribute.
@@ -59,163 +62,164 @@ typedef enum {
     /**
      * A tag whose value is the asset, such as password and token.
      */
-    SECRET = BYTES | 1,
+    ASSET_TAG_SECRET = ASSET_TYPE_BYTES | 1,
     /**
      * A tag whose value used to identify an asset.
      */
-    ALIAS = BYTES | 2,
+    ASSET_TAG_ALIAS = ASSET_TYPE_BYTES | 2,
     /**
      * A tag whose value indicates when the asset can be accessed.
      */
-    ACCESSIBILITY = UINT32 | 3,
+    ASSET_TAG_ACCESSIBILITY = ASSET_TYPE_UINT32 | 3,
     /**
      * A tag whose value indicates what type of user authentication is required.
      */
-    AUTH_TYPE = UINT32 | 4,
+    ASSET_TAG_AUTH_TYPE = ASSET_TYPE_UINT32 | 4,
     /**
      * A tag whose value indicates the validity period of user authentication, in seconds.
      */
-    AUTH_VALIDITY_PERIOD = UINT32 | 5,
+    ASSET_TAG_AUTH_VALIDITY_PERIOD = ASSET_TYPE_UINT32 | 5,
     /**
      * A tag whose value indicates the authentication challenge for anti-replay.
      */
-    AUTH_CHALLENGE = BYTES | 6,
+    ASSET_TAG_AUTH_CHALLENGE = ASSET_TYPE_BYTES | 6,
     /**
      * A tag whose value indicates the credential after successful authentication of the user.
      */
-    AUTH_TOKEN = BYTES | 7,
+    ASSET_TAG_AUTH_TOKEN = ASSET_TYPE_BYTES | 7,
     /**
      * A tag whose value indicates the type of asset synchronization.
      */
-    SYNC_TYPE = UINT32 | 8,
+    ASSET_TAG_SYNC_TYPE = ASSET_TYPE_UINT32 | 8,
     /**
      * A tag whose value indicates the conflict handling policy for adding the asset with the same alias.
      */
-    CONFLICT_POLICY = UINT32 | 9,
+    ASSET_TAG_CONFLICT_POLICY = ASSET_TYPE_UINT32 | 9,
     /**
      * A tag whose value indicates the first customized critical data of the asset.
      */
-    DATA_LABLE_CRITICAL_1 = BYTES | 10,
+    ASSET_TAG_DATA_LABLE_CRITICAL_1 = ASSET_TYPE_BYTES | 10,
     /**
      * A tag whose value indicates the second customized critical data of the asset.
      */
-    DATA_LABLE_CRITICAL_2 = BYTES | 11,
+    ASSET_TAG_DATA_LABLE_CRITICAL_2 = ASSET_TYPE_BYTES | 11,
     /**
      * A tag whose value indicates the third customized critical data of the asset.
      */
-    DATA_LABLE_CRITICAL_3 = BYTES | 12,
+    ASSET_TAG_DATA_LABLE_CRITICAL_3 = ASSET_TYPE_BYTES | 12,
     /**
      * A tag whose value indicates the fourth customized critical data of the asset.
      */
-    DATA_LABLE_CRITICAL_4 = BYTES | 13,
+   ASSET_TAG_DATA_LABLE_CRITICAL_4 = ASSET_TYPE_BYTES | 13,
     /**
      * A tag whose value indicates the first customized normal data of the asset.
      */
-    DATA_LABLE_NORMAL_1 = BYTES | 14,
+    ASSET_TAG_DATA_LABLE_NORMAL_1 = ASSET_TYPE_BYTES | 14,
     /**
      * A tag whose value indicates the second customized normal data of the asset.
      */
-    DATA_LABLE_NORMAL_2 = BYTES | 15,
+    ASSET_TAG_DATA_LABLE_NORMAL_2 = ASSET_TYPE_BYTES | 15,
     /**
      * A tag whose value indicates the third customized normal data of the asset.
      */
-    DATA_LABLE_NORMAL_3 = BYTES | 16,
+    ASSET_TAG_DATA_LABLE_NORMAL_3 = ASSET_TYPE_BYTES | 16,
     /**
      * A tag whose value indicates the fourth customized normal data of the asset.
      */
-    DATA_LABLE_NORMAL_4 = BYTES | 17,
+    ASSET_TAG_DATA_LABLE_NORMAL_4 = ASSET_TYPE_BYTES | 17,
     /**
      * A tag whose value indicates the type of the returned data.
      */
-    RETURN_TYPE = UINT32 | 18,
+    ASSET_TAG_RETURN_TYPE = ASSET_TYPE_UINT32 | 18,
     /**
      * A tag whose value indicates the maximum number of assets that can be returned in a query.
      */
-    RETURN_LIMIT = UINT32 | 19,
+    ASSET_TAG_RETURN_LIMIT = ASSET_TYPE_UINT32 | 19,
     /**
      * A tag whose value indicates the offset of the batch query result.
      */
-    RETURN_OFFSET = UINT32 | 20,
+    ASSET_TAG_RETURN_OFFSET = ASSET_TYPE_UINT32 | 20,
     /**
      * A tag whose value indicates the order by which the query result is returned.
      */
-    RETURN_ORDER_BY = UINT32 | 21,
-} Tag;
+    ASSET_TAG_RETURN_ORDER_BY = ASSET_TYPE_UINT32 | 21,
+} AssetTag;
 
 
 /**
  *  An enum type that indicates the asset error code.
  */
 typedef enum {
+    ASSET_SUCCESS = 0,
     /**
      * The error code indicates that the permission is denied.
      */
-    PERMISSION_DENIED = 201,
+    ASSET_PERMISSION_DENIED = 201,
     /**
      * The error code indicates that the parameter is invalid
      */
-    INVALID_ARGUMENT = 401,
+    ASSET_INVALID_ARGUMENT = 401,
     /**
      * The error code indicates that the capability is not supported.
      */
-    NOT_SUPPORTED = 801,
+    ASSET_NOT_SUPPORTED = 801,
     /**
      * The error code indicates that the asset service is unavailable.
      */
-    SERVICE_UNAVAILABLE = 24000001,
+    ASSET_SERVICE_UNAVAILABLE = 24000001,
     /**
      * The error code indicates that the asset to be queried is not found.
      */
-    NOT_FOUND = 24000002,
+    ASSET_NOT_FOUND = 24000002,
     /**
      * The error code indicates that the asset to be added is duplicate.
      */
-    DUPLICATED = 24000003,
+    ASSET_DUPLICATED = 24000003,
     /**
      * The error code indicates that the asset access is denied.
      */
-    ACCESS_DENIED = 24000004,
+    ASSET_ACCESS_DENIED = 24000004,
     /**
      * The error code indicates that the authentication token has expired.
      */
-    AUTH_TOKEN_EXPIRED = 24000005,
+    ASSET_AUTH_TOKEN_EXPIRED = 24000005,
     /**
      * The error code indicates that the system memory is insufficient.
      */
-    OUT_OF_MEMRORY = 24000006,
+    ASSET_OUT_OF_MEMRORY = 24000006,
     /**
      * The error code indicates that the asset or key is corrupted.
      */
-    DATA_CORRUPTED = 24000007,
-} ErrorCode;
+    ASSET_DATA_CORRUPTED = 24000007,
+} AssetErrorCode;
 
 typedef enum {
-    DEVICE_POWER_ON = 0,
-    DEVICE_FIRST_UNLOCK = 1,
-    DEVICE_UNLOCK = 2,
-    DEVICE_SECURE = 3,
-} Accessibility;
+    ACCESSIBILITY_DEVICE_POWER_ON = 0,
+    ACCESSIBILITY_DEVICE_FIRST_UNLOCK = 1,
+    ACCESSIBILITY_DEVICE_UNLOCK = 2,
+    ACCESSIBILITY_DEVICE_SECURE = 3,
+} AssetAccessibility;
 
 typedef enum {
-    NONE = 0x00,
-    ANY = 0xFF,
-} AuthType;
+    AUTH_TYPE_NONE = 0x00,
+    AUTH_TYPE_ANY = 0xFF,
+} AssetAuthType;
 
 typedef enum {
-    NEVER = 0,
-    THIS_DEVICE = 1 << 0,
-    TRUSTED_ACCOUNT = 1 << 1,
-    TRUSTED_DEVICE = 1 << 2,
+    SYNC_TYPE_NEVER = 0,
+    SYNC_TYPE_THIS_DEVICE = 1 << 0,
+    SYNC_TYPE_TRUSTED_ACCOUNT = 1 << 1,
+    SYNC_TYPE_TRUSTED_DEVICE = 1 << 2,
 } SyncType;
 
 typedef enum {
-    OVERRIDE = 0,
-    REPORT = 1,
-} ConflictPolicy;
+    CONFLICT_OVERWRITE = 0,
+    CONFLICT_THROW_ERROR = 1,
+} ConflictResolution;
 
 typedef enum {
-    ALL = 0,
-    ATTRIBUTES = 1,
+    RETURN_ALL = 0,
+    RETURN_ATTRIBUTES = 1,
 } ReturnType;
 
 /**
@@ -235,6 +239,37 @@ typedef struct {
      */
     uint32_t patch;
 } Version;
+
+typedef struct {
+    uint32_t size;
+    uint8_t *data;
+} AssetBlob;
+
+typedef union {
+    int32_t i32;
+    uint32_t u32;
+    int64_t i64;
+    uint64_t u64;
+    bool boolean;
+    AssetBlob blob;
+} AssetValue;
+
+typedef struct {
+    uint32_t tag;
+    AssetValue value;
+} AssetParam;
+
+typedef struct {
+    AssetParam *params;
+    uint32_t count;
+} AssetResult;
+
+typedef struct {
+    AssetResult *results;
+    uint32_t count;
+} AssetResultSet;
+
+// todo: 同步最新JS doc
 
 #ifdef __cplusplus
 }

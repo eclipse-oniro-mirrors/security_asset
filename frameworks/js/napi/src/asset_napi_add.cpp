@@ -23,24 +23,33 @@
 namespace OHOS {
 namespace Security {
 namespace Asset {
-    napi_value NapiAdd(napi_env env, napi_callback_info info)
-    {
-        size_t argc = DEFAULT_MAX_ARGS_NUM;
-        napi_value argv[DEFAULT_MAX_ARGS_NUM] = { 0 };
-        NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-        NAPI_THROW(env, argc >= DEFAULT_MIN_ARGS_NUM, INVALID_ARGUMENT, "The number of parameters must be 1 or 2.");
 
-        AsyncContext *context = new(std::nothrow) AsyncContext;
-        NAPI_THROW(env, context != nullptr, OUT_OF_MEMRORY, "Out of memory");
+napi_value NapiAdd(napi_env env, napi_callback_info info)
+{
+    size_t argc = DEFAULT_MAX_ARGS_NUM;
+    napi_value argv[DEFAULT_MAX_ARGS_NUM] = { 0 };
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+    NAPI_THROW(env, argc < DEFAULT_MIN_ARGS_NUM, ASSET_INVALID_ARGUMENT, "The number of arguments must be 1 or 2.");
 
-        if (ParseJsParams(env, argc, argv, context) != napi_ok) {
-            delete context;
-            return nullptr;
-        }
+    AsyncContext *context = CreateAsyncContext();
+    NAPI_THROW(env, context == nullptr, ASSET_OUT_OF_MEMRORY, "Out of memory");
 
-        delete context;
+    size_t index = 0;
+    if (ParseMapParam(env, argv[index++], &context->params, &context->paramCnt) != napi_ok) {
+        DestroyAsyncContext(env, context);
         return nullptr;
     }
+
+    if (index < argc && ParseCallbackParam(env, argv[index++], &context->callback) != napi_ok) {
+        DestroyAsyncContext(env, context);
+        return nullptr;
+    }
+
+    // todo: 创建异步任务
+    DestroyAsyncContext(env, context);
+    return nullptr;
+}
+
 } // Asset
 } // Security
 } // OHOS

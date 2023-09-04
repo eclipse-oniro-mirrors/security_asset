@@ -19,11 +19,25 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "asset_type.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 int32_t AssetTest(int32_t code);
+
+int32_t InsertAsset(const AssetParam *attributes, uint32_t attrCount);
+
+int32_t PreQueryAsset(const AssetParam *query, uint32_t queryCnt, AssetBlob *challenge);
+
+int32_t QueryAsset(const AssetParam *query, uint32_t queryCnt, AssetResultSet *result);
+
+int32_t PostQueryAsset(const AssetParam *handle, uint32_t handleCnt);
+
+int32_t UpdateAsset(const AssetParam *query, uint32_t queryCnt, const AssetParam *attributesToUpdate, uint32_t updateCnt);
+
+int32_t DeleteAsset(const AssetParam *query, uint32_t queryCnt);
 
 #ifdef __cplusplus
 }
