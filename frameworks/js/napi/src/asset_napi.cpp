@@ -47,7 +47,7 @@ namespace {
         AddUint32Property(env, tag, "AUTH_CHALLENGE", AUTH_CHALLENGE);
         AddUint32Property(env, tag, "AUTH_TOKEN", AUTH_TOKEN);
         AddUint32Property(env, tag, "SYNC_TYPE", SYNC_TYPE);
-        AddUint32Property(env, tag, "CONFLICT_POLICY", CONFLICT_POLICY);
+        AddUint32Property(env, tag, "CONFLICT_RESOLUTION", CONFLICT_RESOLUTION);
         AddUint32Property(env, tag, "DATA_LABLE_CRITICAL_1", DATA_LABLE_CRITICAL_1);
         AddUint32Property(env, tag, "DATA_LABLE_CRITICAL_2", DATA_LABLE_CRITICAL_2);
         AddUint32Property(env, tag, "DATA_LABLE_CRITICAL_3", DATA_LABLE_CRITICAL_3);
@@ -111,13 +111,13 @@ namespace {
         return syncType;
     }
 
-    napi_value DeclareConflictPolicy(napi_env env)
+    napi_value DeclareConflictResolution(napi_env env)
     {
-        napi_value conflictPolicy = nullptr;
-        NAPI_CALL(env, napi_create_object(env, &conflictPolicy));
-        AddUint32Property(env, conflictPolicy, "OVERRIDE", OVERRIDE);
-        AddUint32Property(env, conflictPolicy, "REPORT", REPORT);
-        return conflictPolicy;
+        napi_value conflictResolution = nullptr;
+        NAPI_CALL(env, napi_create_object(env, &conflictResolution));
+        AddUint32Property(env, conflictResolution, "OVERWRITE", OVERWRITE);
+        AddUint32Property(env, conflictResolution, "THROW_ERROR", THROW_ERROR);
+        return conflictResolution;
     }
 
     napi_value DeclareReturnType(napi_env env)
@@ -147,7 +147,7 @@ namespace {
             DECLARE_NAPI_PROPERTY("Accessibility", DeclareAccessibility(env)),
             DECLARE_NAPI_PROPERTY("AuthType", DeclareAuthType(env)),
             DECLARE_NAPI_PROPERTY("SyncType", DeclareSyncType(env)),
-            DECLARE_NAPI_PROPERTY("ConflictPolicy", DeclareConflictPolicy(env)),
+            DECLARE_NAPI_PROPERTY("ConflictResolution", DeclareConflictResolution(env)),
             DECLARE_NAPI_PROPERTY("ReturnType", DeclareReturnType(env)),
         };
 

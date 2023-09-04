@@ -261,20 +261,89 @@ declare namespace asset {
     ANY = 0xFF,
   }
 
+  /**
+   * An enum type indicates the type of Asset synchronization.
+   *
+   * @enum { number }
+   * @syscap SystemCapability.Security.Asset
+   * @since 11
+   */
   export enum SyncType {
+    /**
+     * An Asset with this attribute value is never allowed to be transferred out.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
     NEVER = 0,
+    /**
+     * An Asset with this attribute value can only be restored to the device from which it was transferred out.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
     THIS_DEVICE = 1 << 0,
+    /**
+     * An Asset with this attribute value can only be transferred out to a device of trusted account.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
     TRUSTED_ACCOUNT = 1 << 1,
+    /**
+     * An Asset with this attribute value can only be transferred out to a trusted device (user authorized).
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
     TRUSTED_DEVICE = 1 << 2,
   }
 
-  export enum ConflictResolutionStrategy {
-    OVERRIDE = 0,
+  /**
+   * An enum type indicates the strategy for conflict resolution when handling duplicated Asset alias.
+   *
+   * @enum { number }
+   * @syscap SystemCapability.Security.Asset
+   * @since 11
+   */
+  export enum ConflictResolution {
+    /**
+     * Directly overwrite an Asset with duplicated alias when a conflict is detected.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
+    OVERWRITE = 0,
+    /**
+     * Throw an error so that the caller can take measures when a conflict is detected.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
     THROW_ERROR = 1,
   }
 
+  /**
+   * An enum type indicates the format type of return data.
+   *
+   * @enum { number }
+   * @syscap SystemCapability.Security.Asset
+   * @since 11
+   */
   export enum ReturnType {
+    /**
+     * Specify that the return data should contain both secret value and attributes.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
     ALL = 0,
+    /**
+     * Specify that the return data contains only attributes.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
     ATTRIBUTES = 1,
   }
 
@@ -400,7 +469,7 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    CONFLICT_RESOLUTION_STRATEGY = TagType.UINT32 | 9,
+    CONFLICT_RESOLUTION = TagType.UINT32 | 9,
     /**
      * A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
      *
