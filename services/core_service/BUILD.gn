@@ -23,6 +23,7 @@ ohos_rust_shared_library("asset_server") {
     deps = [
         "$COMPONENT_DIR/frameworks/common:asset_common_lib",
         "$COMPONENT_DIR/frameworks/ipc_define:asset_ipc_define_lib",
+        "$COMPONENT_DIR/db_operator:db_operator",
     ]
 
     external_deps = [
