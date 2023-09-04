@@ -24,7 +24,7 @@ namespace Asset {
         napi_valuetype valueType = napi_undefined;
         NAPI_CALL_BASE(env, napi_typeof(env, argv[index], &valueType), napi_invalid_arg);
         NAPI_THROW_BASE(env, valueType != napi_object, napi_object_expected,
-            INVALID_PARAMETER, "The first parameter must be of the Map type.");
+            INVALID_ARGUMENT, "The first parameter must be of the Map type.");
 
         // todo: 如何传递map?
 
@@ -32,7 +32,7 @@ namespace Asset {
         if (index < argc) {
             NAPI_CALL_BASE(env, napi_typeof(env, argv[index], &valueType), napi_invalid_arg);
             NAPI_THROW_BASE(env, valueType != napi_function, napi_function_expected,
-                INVALID_PARAMETER, "The second parameter must be of the AsyncCallback type.");
+                INVALID_ARGUMENT, "The second parameter must be of the AsyncCallback type.");
             napi_ref ref = nullptr;
             NAPI_CALL_BASE(env, napi_create_reference(env, argv[index], 1, &ref), napi_generic_failure);
             context->callback = ref;

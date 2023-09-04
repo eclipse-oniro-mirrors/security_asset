@@ -68,7 +68,7 @@ namespace {
         napi_value errorCode = nullptr;
         NAPI_CALL(env, napi_create_object(env, &errorCode));
         AddUint32Property(env, errorCode, "PERMISSION_DENIED", PERMISSION_DENIED);
-        AddUint32Property(env, errorCode, "INVALID_PARAMETER", INVALID_PARAMETER);
+        AddUint32Property(env, errorCode, "INVALID_ARGUMENT", INVALID_ARGUMENT);
         AddUint32Property(env, errorCode, "NOT_SUPPORTED", NOT_SUPPORTED);
         AddUint32Property(env, errorCode, "SERVICE_UNAVAILABLE", SERVICE_UNAVAILABLE);
         AddUint32Property(env, errorCode, "NOT_FOUND", NOT_FOUND);

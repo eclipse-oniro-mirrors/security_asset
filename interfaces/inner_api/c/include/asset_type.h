@@ -154,7 +154,7 @@ typedef enum {
     /**
      * The error code indicates that the parameter is invalid
      */
-    INVALID_PARAMETER = 401,
+    INVALID_ARGUMENT = 401,
     /**
      * The error code indicates that the capability is not supported.
      */

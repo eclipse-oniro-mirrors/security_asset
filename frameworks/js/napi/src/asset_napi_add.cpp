@@ -28,7 +28,7 @@ namespace Asset {
         size_t argc = DEFAULT_MAX_ARGS_NUM;
         napi_value argv[DEFAULT_MAX_ARGS_NUM] = { 0 };
         NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-        NAPI_THROW(env, argc >= DEFAULT_MIN_ARGS_NUM, INVALID_PARAMETER, "The number of parameters must be 1 or 2.");
+        NAPI_THROW(env, argc >= DEFAULT_MIN_ARGS_NUM, INVALID_ARGUMENT, "The number of parameters must be 1 or 2.");
 
         AsyncContext *context = new(std::nothrow) AsyncContext;
         NAPI_THROW(env, context != nullptr, OUT_OF_MEMRORY, "Out of memory");

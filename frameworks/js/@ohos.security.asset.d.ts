@@ -444,7 +444,7 @@ declare namespace asset {
   }
 
   /**
-   *  An enum type that indicates the asset error code.
+   *  An enum type containing the Asset error codes.
    *
    * @enum { number }
    * @syscap SystemCapability.Security.Asset
@@ -452,70 +452,70 @@ declare namespace asset {
    */
   export enum ErrorCode {
     /**
-     * The error code indicates that the permission is denied.
+     * The error code indicates that the caller doesn't have permission to operate.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
     PERMISSION_DENIED = 201,
     /**
-     * The error code indicates that the parameter is invalid
+     * The error code indicates an invalid argument.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    INVALID_PARAMETER = 401,
+    INVALID_ARGUMENT = 401,
     /**
-     * The error code indicates that the capability is not supported.
+     * The error code indicates an unsupported capability.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
     NOT_SUPPORTED = 801,
     /**
-     * The error code indicates that the asset service is unavailable.
+     * The error code indicates that the Asset service is unavailable.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
     SERVICE_UNAVAILABLE = 24000001,
     /**
-     * The error code indicates that the asset to be queried is not found.
+     * The error code indicates that the queried Asset can not be found.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
     NOT_FOUND = 24000002,
     /**
-     * The error code indicates that the asset to be added is duplicate.
+     * The error code indicates that the added Asset already exists.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
     DUPLICATED = 24000003,
     /**
-     * The error code indicates that the asset access is denied.
+     * The error code indicates that the access to Asset is denied.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
     ACCESS_DENIED = 24000004,
     /**
-     * The error code indicates that the authentication token has expired.
+     * The error code indicates an expired authentication token.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
     AUTH_TOKEN_EXPIRED = 24000005,
     /**
-     * The error code indicates that the system memory is insufficient.
+     * The error code indicates insufficient memory.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
     OUT_OF_MEMRORY = 24000006,
     /**
-     * The error code indicates that the asset or key is corrupted.
+     * The error code indicates a corrupted Asset or encryption key.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
