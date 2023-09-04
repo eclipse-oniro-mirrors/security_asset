@@ -205,15 +205,59 @@ declare namespace asset {
    */
   export type Value = boolean | number | Uint8Array;
 
+  /**
+   * An enum type indicates when the Asset is accessible.
+   *
+   * @enum { number }
+   * @syscap SystemCapability.Security.Asset
+   * @since 11
+   */
   export enum Accessibility {
-    DEVICE_POWER_ON = 0,
+    /**
+     * The secret value in the Asset can only be accessed after the device is first unlocked.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
     DEVICE_FIRST_UNLOCK = 1,
+    /**
+     * The secret value in the Asset can only be accessed while the device is unlocked.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
     DEVICE_UNLOCK = 2,
+    /**
+     * The secret value in the Asset can only be accessed
+     * when the device is unlocked and a PIN/pattern/password is set on the device.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
     DEVICE_SECURE = 3,
   }
 
+  /**
+   * An enum type indicates the user authentication type for Asset access control.
+   *
+   * @enum { number }
+   * @syscap SystemCapability.Security.Asset
+   * @since 11
+   */
   export enum AuthType {
+    /**
+     * The access to an Asset doesn't require user authentication.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
     NONE = 0x00,
+    /**
+     * The access to an Asset requires user authentication using either PIN/pattern/password or biometric traits.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
     ANY = 0xFF,
   }
 
