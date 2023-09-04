@@ -68,6 +68,21 @@ impl<'a> Database<'a> {
     }
 
     ///
+    /// create default database
+    ///
+    pub fn default_new(userid: &str, el: &str) -> Result<Database<'a>, SqliteErrcode> {
+        let mut path = format!("/data/service/{}/{}/asset_service/asset.db", el, userid);
+        let mut db = Database { path: "-", v2: false, handle: 0 };
+        path.push('\0');
+        let ret = sqlite3_open_func(&path, &mut db.handle);
+        if ret == SQLITE_OK {
+            Ok(db)
+        } else {
+            Err(ret)
+        }
+    }
+
+    ///
     /// get database user_version
     ///
     pub fn get_version(&self) -> Result<i32, SqliteErrcode> {
@@ -129,6 +144,14 @@ impl<'a> Database<'a> {
         let name = String::from_utf8(path.as_bytes().to_vec()).unwrap();
         let name = name.trim_matches(char::from(0));
         fs::remove_file(name)
+    }
+
+    ///
+    /// delete default database
+    ///
+    pub fn drop_default_database(userid: &str, el: &str) -> std::io::Result<()> {
+        let path = format!("/data/service/{}/{}/asset_service/asset.db", el, userid);
+        Database::drop_database(path.as_str())
     }
 
     ///
@@ -294,7 +317,10 @@ impl<'a> Database<'a> {
     pub fn drop_db(db: Database) -> std::io::Result<()> {
         let path = db.path;
         drop(db);
-        Database::drop_database(path)
+        if path != "-" {
+            return Database::drop_database(path);
+        }
+        Ok(())
     }
 }
 

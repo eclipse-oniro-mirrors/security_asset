@@ -15,12 +15,14 @@
 use crate::{
     database::Database,
     table::Table,
-    types::{Condition, DataValue, Pair, ResultSet},
+    types::{ColumnInfo, Condition, DataType, DataValue, Pair, ResultSet},
     SqliteErrcode,
 };
 
 /// just use database
 pub type DatabaseHelper<'a> = Database<'a>;
+/// just use database
+pub type DefaultDatabaseHelper<'a> = Database<'a>;
 /// just use table
 pub type TableHelper<'a, 'b> = Table<'a, 'b>;
 
@@ -205,6 +207,141 @@ impl<'a, 'b> TableHelper<'a, 'b> {
     }
 }
 
+///
+/// if table not exist, create default asset table
+///
+fn create_default_table<'b>(db: &'b Database) -> Result<Table<'static, 'b>, SqliteErrcode> {
+    let columns = &[
+        ColumnInfo {
+            name: "Id",
+            data_type: DataType::INTEGER,
+            is_primary_key: true,
+            not_null: true,
+        },
+        ColumnInfo {
+            name: "Secret",
+            data_type: DataType::BLOB,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "Alias",
+            data_type: DataType::TEXT,
+            is_primary_key: false,
+            not_null: true,
+        },
+        ColumnInfo {
+            name: "Owner",
+            data_type: DataType::TEXT,
+            is_primary_key: false,
+            not_null: true,
+        },
+        ColumnInfo {
+            name: "OwnerType",
+            data_type: DataType::INTEGER,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "GroupId",
+            data_type: DataType::TEXT,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "SyncType",
+            data_type: DataType::INTEGER,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "AccessType",
+            data_type: DataType::INTEGER,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "AuthType",
+            data_type: DataType::INTEGER,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "CreateTime",
+            data_type: DataType::INTEGER,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "UpdateTime",
+            data_type: DataType::INTEGER,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "DeleteType",
+            data_type: DataType::INTEGER,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "Version",
+            data_type: DataType::INTEGER,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "DataLabelCritical_1",
+            data_type: DataType::BLOB,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "DataLabelCritical_2",
+            data_type: DataType::BLOB,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "DataLabelCritical_3",
+            data_type: DataType::BLOB,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "DataLabelCritical_4",
+            data_type: DataType::BLOB,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "DataLabelNormal_1",
+            data_type: DataType::BLOB,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "DataLabelNormal_2",
+            data_type: DataType::BLOB,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "DataLabelNormal_3",
+            data_type: DataType::BLOB,
+            is_primary_key: false,
+            not_null: false,
+        },
+        ColumnInfo {
+            name: "DataLabelNormal_4",
+            data_type: DataType::BLOB,
+            is_primary_key: false,
+            not_null: false,
+        },
+    ];
+    db.create_table(G_ASSET_TABLE_NAME, columns)
+}
+
 impl<'a> DatabaseHelper<'a> {
     ///
     /// see TableHelper
@@ -280,6 +417,113 @@ impl<'a> DatabaseHelper<'a> {
         condition: &Condition,
     ) -> Result<ResultSet, SqliteErrcode> {
         let table = Table::new(table_name, self);
+        table.query_datas(owner, alias, condition)
+    }
+}
+
+impl<'a> DefaultDatabaseHelper<'a> {
+    ///
+    /// see TableHelper
+    ///
+    pub fn update_datas_default_once(
+        userid: &str,
+        el: &str,
+        owner: &str,
+        alias: &str,
+        datas: &Vec<Pair>,
+    ) -> Result<i32, SqliteErrcode> {
+        let db = Database::default_new(userid, el)?;
+        let table = match db.open_table(G_ASSET_TABLE_NAME) {
+            Ok(t) => t,
+            Err(_) => create_default_table(&db)?,
+        };
+        table.update_datas(owner, alias, datas)
+    }
+
+    ///
+    /// see TableHelper
+    ///
+    pub fn insert_datas_default_once(
+        userid: &str,
+        el: &str,
+        owner: &str,
+        alias: &str,
+        datas: Vec<Pair>,
+    ) -> Result<i32, SqliteErrcode> {
+        let db = Database::default_new(userid, el)?;
+        let table = match db.open_table(G_ASSET_TABLE_NAME) {
+            Ok(t) => t,
+            Err(_) => create_default_table(&db)?,
+        };
+        table.insert_datas(owner, alias, datas)
+    }
+
+    ///
+    /// see TableHelper
+    ///
+    pub fn delete_datas_default_once(
+        userid: &str,
+        el: &str,
+        owner: &str,
+        alias: &str,
+        cond: &Condition,
+    ) -> Result<i32, SqliteErrcode> {
+        let db = Database::default_new(userid, el)?;
+        let table = match db.open_table(G_ASSET_TABLE_NAME) {
+            Ok(t) => t,
+            Err(_) => create_default_table(&db)?,
+        };
+        table.delete_datas(owner, alias, cond)
+    }
+
+    ///
+    /// see TableHelper
+    ///
+    pub fn is_data_exists_default_once(
+        userid: &str,
+        el: &str,
+        owner: &str,
+        alias: &str,
+    ) -> Result<bool, SqliteErrcode> {
+        let db = Database::default_new(userid, el)?;
+        let table = match db.open_table(G_ASSET_TABLE_NAME) {
+            Ok(t) => t,
+            Err(_) => create_default_table(&db)?,
+        };
+        table.is_data_exist(owner, alias)
+    }
+
+    ///
+    /// see TableHelper
+    ///
+    pub fn select_count_default_once(
+        userid: &str,
+        el: &str,
+        owner: &str,
+    ) -> Result<i32, SqliteErrcode> {
+        let db = Database::default_new(userid, el)?;
+        let table = match db.open_table(G_ASSET_TABLE_NAME) {
+            Ok(t) => t,
+            Err(_) => create_default_table(&db)?,
+        };
+        table.select_count(owner)
+    }
+
+    ///
+    /// see TableHelper
+    ///
+    pub fn query_datas_default_once(
+        userid: &str,
+        el: &str,
+        owner: &str,
+        alias: &str,
+        condition: &Condition,
+    ) -> Result<ResultSet, SqliteErrcode> {
+        let db = Database::default_new(userid, el)?;
+        let table = match db.open_table(G_ASSET_TABLE_NAME) {
+            Ok(t) => t,
+            Err(_) => create_default_table(&db)?,
+        };
         table.query_datas(owner, alias, condition)
     }
 }

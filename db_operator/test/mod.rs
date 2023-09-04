@@ -16,7 +16,7 @@ use core::panic;
 
 use db_operator::{
     database::*,
-    database_table_helper::G_ASSET_TABLE_NAME,
+    database_table_helper::{DefaultDatabaseHelper, G_ASSET_TABLE_NAME},
     statement::Statement,
     types::{
         from_result_datatype_to_str, from_resultvalue_to_str_value, ColumnInfo, DataType,
@@ -31,30 +31,26 @@ pub fn test_for_selite3_open() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     match Database::new("/root/test.db") {
         Ok(_) => {
             panic!("read root");
-        }
+        },
         Err(ret) => {
             println!("expected fault {}", ret);
-        }
+        },
     };
 }
 
 #[test]
 pub fn test_for_selite3_v2_open() {
-    let _ = match Database::new_v2(
-        "testv2.db",
-        SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE,
-        None,
-    ) {
+    let _ = match Database::new_v2("testv2.db", SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE, None) {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     match Database::new_v2(
@@ -64,10 +60,10 @@ pub fn test_for_selite3_v2_open() {
     ) {
         Ok(_) => {
             panic!("read root");
-        }
+        },
         Err(ret) => {
             println!("expected fault {}", ret);
-        }
+        },
     };
 }
 
@@ -77,9 +73,9 @@ pub fn test_for_drop_database() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
-    let _ =  Database::drop_database("test1.db");
+    let _ = Database::drop_database("test1.db");
 }
 
 #[test]
@@ -88,7 +84,7 @@ pub fn test_for_update_version() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
     if db.update_version(1) != SQLITE_OK {
         panic!("update version fail");
@@ -101,7 +97,7 @@ pub fn test_for_error_exec() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
     let sql = "pragma zzz user_version = {} mmm";
     let statement = Statement::new(sql, &db);
@@ -115,16 +111,16 @@ pub fn test_for_open_table() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
     let table = db.open_table("table_name");
     match table {
         Ok(_o) => {
             panic!("open table succ");
-        }
+        },
         Err(e) => {
             println!("expect open table fail {}", e);
-        }
+        },
     }
 
     let _ = Database::drop_database("test4.db");
@@ -133,7 +129,7 @@ pub fn test_for_open_table() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     let columns = &[
@@ -154,17 +150,17 @@ pub fn test_for_open_table() {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
 
     let _ = match db.open_table("table_test") {
         Ok(o) => {
             println!("open table succ");
             o
-        }
+        },
         Err(e) => {
             panic!("open table fail {}", e)
-        }
+        },
     };
 }
 
@@ -174,7 +170,7 @@ pub fn test_for_drop_table() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     let columns = &[
@@ -195,7 +191,7 @@ pub fn test_for_drop_table() {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
 
     let ret = db.drop_table("table_test");
@@ -209,7 +205,7 @@ pub fn test_for_statement_column() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     let columns = &[
@@ -230,7 +226,7 @@ pub fn test_for_statement_column() {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
 
     let stmt = Statement::<false>::new("insert into table_test values(1, 'test')", &db);
@@ -320,7 +316,7 @@ pub fn test_update_row() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     let columns = &[
@@ -341,7 +337,7 @@ pub fn test_update_row() {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
     let dataset = &[
         [DataValue::Integer(2), DataValue::Text(b"test2")],
@@ -362,19 +358,12 @@ pub fn test_update_row() {
     }
 
     // update
-    let conditions = &vec![Pair {
-        column_name: "id",
-        value: DataValue::Integer(2),
-    }];
-    let datas = &vec![Pair {
-        column_name: "alias",
-        value: DataValue::Text(b"test_update"),
-    }];
+    let conditions = &vec![Pair { column_name: "id", value: DataValue::Integer(2) }];
+    let datas = &vec![Pair { column_name: "alias", value: DataValue::Text(b"test_update") }];
     let ret = table.update_row(conditions, datas).unwrap();
     assert_eq!(ret, 1);
-    let ret = table
-        .update_row_column(conditions, "alias", DataValue::Text(b"test_update1"))
-        .unwrap();
+    let ret =
+        table.update_row_column(conditions, "alias", DataValue::Text(b"test_update1")).unwrap();
     assert_eq!(ret, 1);
     let stmt = Statement::<true>::prepare("select * from table_test where id=2", &db).unwrap();
     let ret = stmt.step();
@@ -390,7 +379,7 @@ pub fn test_for_insert_row() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     let columns = &[
@@ -411,25 +400,16 @@ pub fn test_for_insert_row() {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
 
     let datas = &vec![
-        Pair {
-            column_name: "id",
-            value: DataValue::Integer(3),
-        },
-        Pair {
-            column_name: "alias",
-            value: DataValue::Text(b"alias1"),
-        },
+        Pair { column_name: "id", value: DataValue::Integer(3) },
+        Pair { column_name: "alias", value: DataValue::Text(b"alias1") },
     ];
     let count = table.insert_row(datas).unwrap();
     assert_eq!(count, 1);
-    let datas = &vec![Pair {
-        column_name: "alias",
-        value: DataValue::Text(b"alias1"),
-    }];
+    let datas = &vec![Pair { column_name: "alias", value: DataValue::Text(b"alias1") }];
     let count = table.insert_row(datas).unwrap();
     assert_eq!(count, 1);
 }
@@ -441,7 +421,7 @@ pub fn test_update_datas() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     let columns = &[
@@ -474,50 +454,23 @@ pub fn test_update_datas() {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
     let dataset = &[
         &vec![
-            Pair {
-                column_name: "Owner",
-                value: DataValue::Text(b"owner1"),
-            },
-            Pair {
-                column_name: "Alias",
-                value: DataValue::Text(b"alias1"),
-            },
-            Pair {
-                column_name: "value",
-                value: DataValue::Text(b"value1"),
-            },
+            Pair { column_name: "Owner", value: DataValue::Text(b"owner1") },
+            Pair { column_name: "Alias", value: DataValue::Text(b"alias1") },
+            Pair { column_name: "value", value: DataValue::Text(b"value1") },
         ],
         &vec![
-            Pair {
-                column_name: "Owner",
-                value: DataValue::Text(b"owner2"),
-            },
-            Pair {
-                column_name: "Alias",
-                value: DataValue::Text(b"alias2"),
-            },
-            Pair {
-                column_name: "value",
-                value: DataValue::Text(b"value2"),
-            },
+            Pair { column_name: "Owner", value: DataValue::Text(b"owner2") },
+            Pair { column_name: "Alias", value: DataValue::Text(b"alias2") },
+            Pair { column_name: "value", value: DataValue::Text(b"value2") },
         ],
         &vec![
-            Pair {
-                column_name: "Owner",
-                value: DataValue::Text(b"owner2"),
-            },
-            Pair {
-                column_name: "Alias",
-                value: DataValue::Text(b"alias3"),
-            },
-            Pair {
-                column_name: "value",
-                value: DataValue::Text(b"value3"),
-            },
+            Pair { column_name: "Owner", value: DataValue::Text(b"owner2") },
+            Pair { column_name: "Alias", value: DataValue::Text(b"alias3") },
+            Pair { column_name: "value", value: DataValue::Text(b"value3") },
         ],
     ];
 
@@ -527,13 +480,8 @@ pub fn test_update_datas() {
     }
 
     // update
-    let datas = &vec![Pair {
-        column_name: "value",
-        value: DataValue::Text(b"value_new"),
-    }];
-    let count = db
-        .update_datas(G_ASSET_TABLE_NAME, "owner2", "alias2", datas)
-        .unwrap();
+    let datas = &vec![Pair { column_name: "value", value: DataValue::Text(b"value_new") }];
+    let count = db.update_datas(G_ASSET_TABLE_NAME, "owner2", "alias2", datas).unwrap();
     assert_eq!(count, 1);
     // query
     let stmt = Statement::<true>::prepare(
@@ -554,7 +502,7 @@ pub fn test_insert_datas() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     let columns = &[
@@ -587,17 +535,12 @@ pub fn test_insert_datas() {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
-    let dataset = vec![Pair {
-        column_name: "value",
-        value: DataValue::Text(b"value"),
-    }];
+    let dataset = vec![Pair { column_name: "value", value: DataValue::Text(b"value") }];
     let owner = "owner1";
     let alias = "alias1";
-    let count = db
-        .insert_datas(G_ASSET_TABLE_NAME, owner, alias, dataset)
-        .unwrap();
+    let count = db.insert_datas(G_ASSET_TABLE_NAME, owner, alias, dataset).unwrap();
     assert_eq!(count, 1);
 
     // query
@@ -619,7 +562,7 @@ pub fn test_insert_row_datas() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     let columns = &[
@@ -652,7 +595,7 @@ pub fn test_insert_row_datas() {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
     let dataset = vec![
         DataValue::Integer(2),
@@ -682,7 +625,7 @@ pub fn test_delete_datas() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     let columns = &[
@@ -715,39 +658,22 @@ pub fn test_delete_datas() {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
-    let dataset = vec![Pair {
-        column_name: "value",
-        value: DataValue::Text(b"value"),
-    }];
+    let dataset = vec![Pair { column_name: "value", value: DataValue::Text(b"value") }];
     let owner = "owner1";
     let alias = "alias1";
-    let count = db
-        .insert_datas(G_ASSET_TABLE_NAME, owner, alias, dataset)
-        .unwrap();
+    let count = db.insert_datas(G_ASSET_TABLE_NAME, owner, alias, dataset).unwrap();
     assert_eq!(count, 1);
 
-    let cond = vec![Pair {
-        column_name: "value",
-        value: DataValue::Text(b"value"),
-    }];
-    let count = db
-        .delete_datas(G_ASSET_TABLE_NAME, owner, alias, &cond)
-        .unwrap();
+    let cond = vec![Pair { column_name: "value", value: DataValue::Text(b"value") }];
+    let count = db.delete_datas(G_ASSET_TABLE_NAME, owner, alias, &cond).unwrap();
     assert_eq!(count, 1);
 
-    let cond = vec![Pair {
-        column_name: "value",
-        value: DataValue::Text(b"value"),
-    }];
-    let count = db
-        .delete_datas(G_ASSET_TABLE_NAME, owner, alias, &cond)
-        .unwrap();
+    let cond = vec![Pair { column_name: "value", value: DataValue::Text(b"value") }];
+    let count = db.delete_datas(G_ASSET_TABLE_NAME, owner, alias, &cond).unwrap();
     assert_eq!(count, 0); // can not delete any data because no data
-    let count = db
-        .delete_datas(G_ASSET_TABLE_NAME, owner, alias, &vec![])
-        .unwrap();
+    let count = db.delete_datas(G_ASSET_TABLE_NAME, owner, alias, &vec![]).unwrap();
     assert_eq!(count, 0); // can not delete any data because no data
 
     // query
@@ -763,7 +689,7 @@ pub fn test_for_rename() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     let columns = &[
@@ -796,7 +722,7 @@ pub fn test_for_rename() {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
     let ret = table.rename("name");
     assert_eq!(ret, SQLITE_OK);
@@ -809,7 +735,7 @@ pub fn test_for_add_column() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     let columns = &[
@@ -842,7 +768,7 @@ pub fn test_for_add_column() {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
     let ret = table.add_new_column(
         ColumnInfo {
@@ -885,7 +811,7 @@ pub fn test_query() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     let columns = &[
@@ -912,24 +838,12 @@ pub fn test_query() {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
     let dataset = &[
-        [
-            DataValue::Integer(2),
-            DataValue::Text(b"test2"),
-            DataValue::Blob(b"blob2"),
-        ],
-        [
-            DataValue::Integer(3),
-            DataValue::Text(b"test3"),
-            DataValue::Blob(b"blob3"),
-        ],
-        [
-            DataValue::Integer(4),
-            DataValue::Text(b"test4"),
-            DataValue::Blob(b"blob4"),
-        ],
+        [DataValue::Integer(2), DataValue::Text(b"test2"), DataValue::Blob(b"blob2")],
+        [DataValue::Integer(3), DataValue::Text(b"test3"), DataValue::Blob(b"blob3")],
+        [DataValue::Integer(4), DataValue::Text(b"test4"), DataValue::Blob(b"blob4")],
     ];
 
     let stmt2 = Statement::<true>::prepare("insert into table_test values(?, ?, ?)", &db).unwrap();
@@ -948,27 +862,15 @@ pub fn test_query() {
 
     let count = table
         .insert_row(&vec![
-            Pair {
-                column_name: "alias",
-                value: DataValue::NoData,
-            },
-            Pair {
-                column_name: "blobs",
-                value: DataValue::Blob(b"blob5"),
-            },
+            Pair { column_name: "alias", value: DataValue::NoData },
+            Pair { column_name: "blobs", value: DataValue::Blob(b"blob5") },
         ])
         .unwrap();
     assert_eq!(count, 1);
     let count = table
         .insert_row(&vec![
-            Pair {
-                column_name: "alias",
-                value: DataValue::Text(b"test6"),
-            },
-            Pair {
-                column_name: "blobs",
-                value: DataValue::NoData,
-            },
+            Pair { column_name: "alias", value: DataValue::Text(b"test6") },
+            Pair { column_name: "blobs", value: DataValue::NoData },
         ])
         .unwrap();
     assert_eq!(count, 1);
@@ -985,23 +887,13 @@ pub fn test_query() {
     assert_eq!(resultset.len(), 5);
     let count = table.count_datas(&vec![]).unwrap();
     assert_eq!(count, 5);
-    let count = table
-        .count_datas(&vec![Pair {
-            column_name: "id",
-            value: DataValue::Integer(3),
-        }])
-        .unwrap();
+    let count =
+        table.count_datas(&vec![Pair { column_name: "id", value: DataValue::Integer(3) }]).unwrap();
     assert_eq!(count, 1);
     let exits = table
         .is_data_exists(&vec![
-            Pair {
-                column_name: "id",
-                value: DataValue::Integer(3),
-            },
-            Pair {
-                column_name: "alias",
-                value: DataValue::Text(b"testtest"),
-            },
+            Pair { column_name: "id", value: DataValue::Integer(3) },
+            Pair { column_name: "alias", value: DataValue::Text(b"testtest") },
         ])
         .unwrap();
     assert!(!exits);
@@ -1014,7 +906,7 @@ pub fn test_multi_insert_row_datas() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     let columns = &[
@@ -1047,25 +939,13 @@ pub fn test_multi_insert_row_datas() {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
     let columns = &vec!["Owner", "Alias", "value"];
     let dataset = vec![
-        vec![
-            DataValue::Text(b"owner1"),
-            DataValue::Text(b"alias1"),
-            DataValue::Text(b"aaaa"),
-        ],
-        vec![
-            DataValue::Text(b"owner2"),
-            DataValue::Text(b"alias2"),
-            DataValue::Text(b"bbbb"),
-        ],
-        vec![
-            DataValue::Text(b"owner3"),
-            DataValue::Text(b"alias3"),
-            DataValue::Text(b"cccc"),
-        ],
+        vec![DataValue::Text(b"owner1"), DataValue::Text(b"alias1"), DataValue::Text(b"aaaa")],
+        vec![DataValue::Text(b"owner2"), DataValue::Text(b"alias2"), DataValue::Text(b"bbbb")],
+        vec![DataValue::Text(b"owner3"), DataValue::Text(b"alias3"), DataValue::Text(b"cccc")],
     ];
     let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
     assert_eq!(count, 3);
@@ -1089,7 +969,7 @@ pub fn test_data_exists_and_data_count() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     let columns = &[
@@ -1122,38 +1002,22 @@ pub fn test_data_exists_and_data_count() {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
     let columns = &vec!["Owner", "Alias", "value"];
     let dataset = vec![
-        vec![
-            DataValue::Text(b"owner1"),
-            DataValue::Text(b"alias1"),
-            DataValue::Text(b"aaaa"),
-        ],
-        vec![
-            DataValue::Text(b"owner2"),
-            DataValue::Text(b"alias2"),
-            DataValue::Text(b"bbbb"),
-        ],
-        vec![
-            DataValue::Text(b"owner2"),
-            DataValue::Text(b"alias3"),
-            DataValue::Text(b"cccc"),
-        ],
+        vec![DataValue::Text(b"owner1"), DataValue::Text(b"alias1"), DataValue::Text(b"aaaa")],
+        vec![DataValue::Text(b"owner2"), DataValue::Text(b"alias2"), DataValue::Text(b"bbbb")],
+        vec![DataValue::Text(b"owner2"), DataValue::Text(b"alias3"), DataValue::Text(b"cccc")],
     ];
     let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
     assert_eq!(count, 3);
 
     // query
-    let exist = db
-        .is_data_exists(G_ASSET_TABLE_NAME, "owner1", "alias1")
-        .unwrap();
+    let exist = db.is_data_exists(G_ASSET_TABLE_NAME, "owner1", "alias1").unwrap();
     assert!(exist);
 
-    let exist = db
-        .is_data_exists(G_ASSET_TABLE_NAME, "owner1", "alias2")
-        .unwrap();
+    let exist = db.is_data_exists(G_ASSET_TABLE_NAME, "owner1", "alias2").unwrap();
     assert!(!exist);
 
     let count = db.select_count(G_ASSET_TABLE_NAME, "owner2").unwrap();
@@ -1167,7 +1031,7 @@ pub fn test_helper() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     let columns = &[
@@ -1200,38 +1064,22 @@ pub fn test_helper() {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
     let columns = &vec!["Owner", "Alias", "value"];
     let dataset = vec![
-        vec![
-            DataValue::Text(b"owner1"),
-            DataValue::Text(b"alias1"),
-            DataValue::Text(b"aaaa"),
-        ],
-        vec![
-            DataValue::Text(b"owner2"),
-            DataValue::Text(b"alias2"),
-            DataValue::Text(b"bbbb"),
-        ],
-        vec![
-            DataValue::Text(b"owner2"),
-            DataValue::Text(b"alias3"),
-            DataValue::Text(b"cccc"),
-        ],
+        vec![DataValue::Text(b"owner1"), DataValue::Text(b"alias1"), DataValue::Text(b"aaaa")],
+        vec![DataValue::Text(b"owner2"), DataValue::Text(b"alias2"), DataValue::Text(b"bbbb")],
+        vec![DataValue::Text(b"owner2"), DataValue::Text(b"alias3"), DataValue::Text(b"cccc")],
     ];
     let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
     assert_eq!(count, 3);
 
     // query
-    let exist = db
-        .is_data_exists(G_ASSET_TABLE_NAME, "owner1", "alias1")
-        .unwrap();
+    let exist = db.is_data_exists(G_ASSET_TABLE_NAME, "owner1", "alias1").unwrap();
     assert!(exist);
 
-    let exist = db
-        .is_data_exists(G_ASSET_TABLE_NAME, "owner1", "alias2")
-        .unwrap();
+    let exist = db.is_data_exists(G_ASSET_TABLE_NAME, "owner1", "alias2").unwrap();
     assert!(!exist);
 
     let count = db.select_count(G_ASSET_TABLE_NAME, "owner2").unwrap();
@@ -1242,10 +1090,7 @@ pub fn test_helper() {
             G_ASSET_TABLE_NAME,
             "owner4",
             "alias4",
-            vec![Pair {
-                column_name: "value",
-                value: DataValue::Text(b"value4"),
-            }],
+            vec![Pair { column_name: "value", value: DataValue::Text(b"value4") }],
         )
         .unwrap();
     assert_eq!(ret, 1);
@@ -1255,22 +1100,15 @@ pub fn test_helper() {
             G_ASSET_TABLE_NAME,
             "owner4",
             "alias4",
-            &vec![Pair {
-                column_name: "value",
-                value: DataValue::Text(b"value5"),
-            }],
+            &vec![Pair { column_name: "value", value: DataValue::Text(b"value5") }],
         )
         .unwrap();
     assert_eq!(ret, 1);
 
-    let ret = db
-        .delete_datas(G_ASSET_TABLE_NAME, "owner4", "alias4", &vec![])
-        .unwrap();
+    let ret = db.delete_datas(G_ASSET_TABLE_NAME, "owner4", "alias4", &vec![]).unwrap();
     assert_eq!(ret, 1);
 
-    let result = db
-        .query_datas(G_ASSET_TABLE_NAME, "owner1", "alias1", &vec![])
-        .unwrap();
+    let result = db.query_datas(G_ASSET_TABLE_NAME, "owner1", "alias1", &vec![]).unwrap();
     assert_eq!(result.len(), 1);
     for data in result {
         print!("line: ");
@@ -1288,7 +1126,7 @@ pub fn test_for_special_sql() {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
-        }
+        },
     };
 
     let columns = &[
@@ -1321,25 +1159,13 @@ pub fn test_for_special_sql() {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
     let columns = &vec!["Owner", "Alias", "value"];
     let dataset = vec![
-        vec![
-            DataValue::Text(b"owner1"),
-            DataValue::Text(b"alias1"),
-            DataValue::Text(b"aaaa"),
-        ],
-        vec![
-            DataValue::Text(b"owner2"),
-            DataValue::Text(b"alias2"),
-            DataValue::Text(b"bbbb"),
-        ],
-        vec![
-            DataValue::Text(b"owner2"),
-            DataValue::Text(b"alias3"),
-            DataValue::Text(b"cccc"),
-        ],
+        vec![DataValue::Text(b"owner1"), DataValue::Text(b"alias1"), DataValue::Text(b"aaaa")],
+        vec![DataValue::Text(b"owner2"), DataValue::Text(b"alias2"), DataValue::Text(b"bbbb")],
+        vec![DataValue::Text(b"owner2"), DataValue::Text(b"alias3"), DataValue::Text(b"cccc")],
     ];
     let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
     assert_eq!(count, 3);
@@ -1392,11 +1218,11 @@ pub fn test_for_update_ver() {
             data_type: DataType::TEXT,
         },
     ];
-    let _table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
+    let _ = match db.create_table(G_ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
-        }
+        },
     };
     drop(db);
     let db2 =
@@ -1409,4 +1235,73 @@ pub fn test_for_update_ver() {
 
     let db4 = Database::new_with_version_update("test20.db", 0, default_update_database_func);
     assert!(db4.is_err());
+}
+
+#[test]
+pub fn test_for_default_asset() {
+    let _ = Database::drop_default_database("userid1", "el1");
+    let count = DefaultDatabaseHelper::insert_datas_default_once(
+        "userid1",
+        "el1",
+        "owner1",
+        "Alias1",
+        vec![],
+    )
+    .unwrap();
+    assert_eq!(count, 1);
+    let count = DefaultDatabaseHelper::insert_datas_default_once(
+        "userid1",
+        "el1",
+        "owner1",
+        "Alias2",
+        vec![],
+    )
+    .unwrap();
+    assert_eq!(count, 1);
+
+    let count = DefaultDatabaseHelper::update_datas_default_once(
+        "userid1",
+        "el1",
+        "owner1",
+        "Alias1",
+        &vec![Pair { column_name: "UpdateTime", value: DataValue::Integer(1) }],
+    )
+    .unwrap();
+    assert_eq!(count, 1);
+
+    let count =
+        DefaultDatabaseHelper::select_count_default_once("userid1", "el1", "owner1").unwrap();
+    assert_eq!(count, 2);
+
+    let ret =
+        DefaultDatabaseHelper::is_data_exists_default_once("userid1", "el1", "owner1", "Alias2")
+            .unwrap();
+    assert!(ret);
+
+    let count = DefaultDatabaseHelper::delete_datas_default_once(
+        "userid1",
+        "el1",
+        "owner1",
+        "Alias1",
+        &vec![],
+    )
+    .unwrap();
+    assert_eq!(count, 1);
+
+    let result = DefaultDatabaseHelper::query_datas_default_once(
+        "userid1",
+        "el1",
+        "owner1",
+        "Alias2",
+        &vec![],
+    )
+    .unwrap();
+    assert_eq!(result.len(), 1);
+    for line in result {
+        print!("line: ");
+        for r in line {
+            print!("{}, ", from_resultvalue_to_str_value(&r));
+        }
+        println!();
+    }
 }
