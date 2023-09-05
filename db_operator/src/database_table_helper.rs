@@ -423,6 +423,23 @@ impl<'a> DatabaseHelper<'a> {
 
 impl<'a> DefaultDatabaseHelper<'a> {
     ///
+    /// open default database and table
+    ///
+    pub fn open_default_database_table(
+        userid: &str,
+        el: &str,
+    ) -> Result<DatabaseHelper<'a>, SqliteErrcode> {
+        let db = Database::default_new(userid, el)?;
+        match db.open_table(G_ASSET_TABLE_NAME) {
+            Ok(_) => {},
+            Err(_) => {
+                create_default_table(&db)?;
+            },
+        };
+        Ok(db)
+    }
+
+    ///
     /// see TableHelper
     ///
     pub fn update_datas_default_once(
