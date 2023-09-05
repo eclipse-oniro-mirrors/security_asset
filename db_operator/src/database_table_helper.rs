@@ -12,11 +12,13 @@
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
 //!
+use asset_common_lib::asset_type::AssetStatusCode;
+
 use crate::{
     database::{Database, UpdateDatabaseCallbackFunc},
+    from_sqlitecode_to_assetcode,
     table::Table,
     types::{ColumnInfo, Condition, DataType, DataValue, Pair, ResultSet},
-    SqliteErrcode,
 };
 
 /// just use database
@@ -59,12 +61,12 @@ impl<'a> TableHelper<'a> {
         owner: &str,
         alias: &str,
         datas: &Vec<Pair>,
-    ) -> Result<i32, SqliteErrcode> {
+    ) -> Result<i32, AssetStatusCode> {
         let conditions = &vec![
             Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) },
             Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) },
         ];
-        self.update_row(conditions, datas)
+        self.update_row(conditions, datas).map_err(|e| from_sqlitecode_to_assetcode(e))
     }
 
     #[cfg(not(doctest))]
@@ -93,14 +95,14 @@ impl<'a> TableHelper<'a> {
         owner: &str,
         alias: &str,
         datas: Vec<Pair>,
-    ) -> Result<i32, SqliteErrcode> {
+    ) -> Result<i32, AssetStatusCode> {
         let mut v = Vec::<Pair>::with_capacity(datas.len() + 2);
         v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
         v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
         for data in datas {
             v.push(data);
         }
-        self.insert_row(&v)
+        self.insert_row(&v).map_err(|e| from_sqlitecode_to_assetcode(e))
     }
 
     #[cfg(not(doctest))]
@@ -129,14 +131,14 @@ impl<'a> TableHelper<'a> {
         owner: &str,
         alias: &str,
         condition: &Condition,
-    ) -> Result<i32, SqliteErrcode> {
+    ) -> Result<i32, AssetStatusCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
         v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
         v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
         for c in condition {
             v.push(*c);
         }
-        self.delete_row(&v)
+        self.delete_row(&v).map_err(|e| from_sqlitecode_to_assetcode(e))
     }
 
     #[cfg(not(doctest))]
@@ -152,11 +154,12 @@ impl<'a> TableHelper<'a> {
     /// sql like:
     /// select count(*) as count from table_name where Owner='owner1' and Alias='alias1'
     ///
-    pub fn is_data_exist(&self, owner: &str, alias: &str) -> Result<bool, SqliteErrcode> {
+    pub fn is_data_exist(&self, owner: &str, alias: &str) -> Result<bool, AssetStatusCode> {
         self.is_data_exists(&vec![
             Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) },
             Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) },
         ])
+        .map_err(|e| from_sqlitecode_to_assetcode(e))
     }
 
     #[cfg(not(doctest))]
@@ -171,11 +174,12 @@ impl<'a> TableHelper<'a> {
     /// sql like:
     /// select count(*) as count from table_name where AppId='owner2'
     ///
-    pub fn select_count(&self, owner: &str) -> Result<i32, SqliteErrcode> {
+    pub fn select_count(&self, owner: &str) -> Result<i32, AssetStatusCode> {
         self.count_datas(&vec![Pair {
             column_name: G_COLUMN_OWNER,
             value: DataValue::Text(owner.as_bytes()),
         }])
+        .map_err(|e| from_sqlitecode_to_assetcode(e))
     }
 
     #[cfg(not(doctest))]
@@ -196,21 +200,21 @@ impl<'a> TableHelper<'a> {
         owner: &str,
         alias: &str,
         condition: &Condition,
-    ) -> Result<ResultSet, SqliteErrcode> {
+    ) -> Result<ResultSet, AssetStatusCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
         v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
         v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
         for c in condition {
             v.push(*c);
         }
-        self.query_row(&vec![], &v)
+        self.query_row(&vec![], &v).map_err(|e| from_sqlitecode_to_assetcode(e))
     }
 }
 
 ///
 /// if table not exist, create default asset table
 ///
-fn create_default_table(db: &Database) -> Result<Table, SqliteErrcode> {
+fn create_default_table(db: &Database) -> Result<Table, AssetStatusCode> {
     let columns = &[
         ColumnInfo {
             name: "Id",
@@ -339,7 +343,7 @@ fn create_default_table(db: &Database) -> Result<Table, SqliteErrcode> {
             not_null: false,
         },
     ];
-    db.create_table(G_ASSET_TABLE_NAME, columns)
+    db.create_table(G_ASSET_TABLE_NAME, columns).map_err(|e| from_sqlitecode_to_assetcode(e))
 }
 
 impl DefaultDatabaseHelper {
@@ -351,7 +355,7 @@ impl DefaultDatabaseHelper {
         owner: &str,
         alias: &str,
         datas: &Vec<Pair>,
-    ) -> Result<i32, SqliteErrcode> {
+    ) -> Result<i32, AssetStatusCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         table.update_datas(owner, alias, datas)
     }
@@ -364,7 +368,7 @@ impl DefaultDatabaseHelper {
         owner: &str,
         alias: &str,
         datas: Vec<Pair>,
-    ) -> Result<i32, SqliteErrcode> {
+    ) -> Result<i32, AssetStatusCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         table.insert_datas(owner, alias, datas)
     }
@@ -377,7 +381,7 @@ impl DefaultDatabaseHelper {
         owner: &str,
         alias: &str,
         cond: &Condition,
-    ) -> Result<i32, SqliteErrcode> {
+    ) -> Result<i32, AssetStatusCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         table.delete_datas(owner, alias, cond)
     }
@@ -385,7 +389,11 @@ impl DefaultDatabaseHelper {
     ///
     /// see TableHelper
     ///
-    pub fn is_data_exists_default(&self, owner: &str, alias: &str) -> Result<bool, SqliteErrcode> {
+    pub fn is_data_exists_default(
+        &self,
+        owner: &str,
+        alias: &str,
+    ) -> Result<bool, AssetStatusCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         table.is_data_exist(owner, alias)
     }
@@ -393,7 +401,7 @@ impl DefaultDatabaseHelper {
     ///
     /// see TableHelper
     ///
-    pub fn select_count_default(&self, owner: &str) -> Result<i32, SqliteErrcode> {
+    pub fn select_count_default(&self, owner: &str) -> Result<i32, AssetStatusCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         table.select_count(owner)
     }
@@ -406,7 +414,7 @@ impl DefaultDatabaseHelper {
         owner: &str,
         alias: &str,
         condition: &Condition,
-    ) -> Result<ResultSet, SqliteErrcode> {
+    ) -> Result<ResultSet, AssetStatusCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         table.query_datas(owner, alias, condition)
     }
@@ -418,11 +426,13 @@ impl DefaultDatabaseHelper {
     ///
     pub fn open_default_database_table(
         userid: u32,
-    ) -> Result<DefaultDatabaseHelper, SqliteErrcode> {
-        let db = Database::default_new(userid)?;
-        let _table = match db.open_table(G_ASSET_TABLE_NAME) {
-            Ok(t) => t,
-            Err(_) => create_default_table(&db)?,
+    ) -> Result<DefaultDatabaseHelper, AssetStatusCode> {
+        let db = Database::default_new(userid).map_err(|e| from_sqlitecode_to_assetcode(e))?;
+        match db.open_table(G_ASSET_TABLE_NAME) {
+            Ok(_) => {},
+            Err(_) => {
+                create_default_table(&db)?;
+            },
         };
         Ok(db)
     }
@@ -434,11 +444,14 @@ impl DefaultDatabaseHelper {
         userid: u32,
         version_new: i32,
         callback: UpdateDatabaseCallbackFunc,
-    ) -> Result<DefaultDatabaseHelper, SqliteErrcode> {
-        let db = Database::default_new_with_version_update(userid, version_new, callback)?;
-        let _table = match db.open_table(G_ASSET_TABLE_NAME) {
-            Ok(t) => t,
-            Err(_) => create_default_table(&db)?,
+    ) -> Result<DefaultDatabaseHelper, AssetStatusCode> {
+        let db = Database::default_new_with_version_update(userid, version_new, callback)
+            .map_err(|e| from_sqlitecode_to_assetcode(e))?;
+        match db.open_table(G_ASSET_TABLE_NAME) {
+            Ok(_) => {},
+            Err(_) => {
+                create_default_table(&db)?;
+            },
         };
         Ok(db)
     }
@@ -451,13 +464,9 @@ impl DefaultDatabaseHelper {
         owner: &str,
         alias: &str,
         datas: &Vec<Pair>,
-    ) -> Result<i32, SqliteErrcode> {
-        let db = Database::default_new(userid)?;
-        let table = match db.open_table(G_ASSET_TABLE_NAME) {
-            Ok(t) => t,
-            Err(_) => create_default_table(&db)?,
-        };
-        table.update_datas(owner, alias, datas)
+    ) -> Result<i32, AssetStatusCode> {
+        let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        db.update_datas_default(owner, alias, datas)
     }
 
     ///
@@ -468,13 +477,9 @@ impl DefaultDatabaseHelper {
         owner: &str,
         alias: &str,
         datas: Vec<Pair>,
-    ) -> Result<i32, SqliteErrcode> {
-        let db = Database::default_new(userid)?;
-        let table = match db.open_table(G_ASSET_TABLE_NAME) {
-            Ok(t) => t,
-            Err(_) => create_default_table(&db)?,
-        };
-        table.insert_datas(owner, alias, datas)
+    ) -> Result<i32, AssetStatusCode> {
+        let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        db.insert_datas_default(owner, alias, datas)
     }
 
     ///
@@ -485,13 +490,9 @@ impl DefaultDatabaseHelper {
         owner: &str,
         alias: &str,
         cond: &Condition,
-    ) -> Result<i32, SqliteErrcode> {
-        let db = Database::default_new(userid)?;
-        let table = match db.open_table(G_ASSET_TABLE_NAME) {
-            Ok(t) => t,
-            Err(_) => create_default_table(&db)?,
-        };
-        table.delete_datas(owner, alias, cond)
+    ) -> Result<i32, AssetStatusCode> {
+        let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        db.delete_datas_default(owner, alias, cond)
     }
 
     ///
@@ -501,25 +502,17 @@ impl DefaultDatabaseHelper {
         userid: u32,
         owner: &str,
         alias: &str,
-    ) -> Result<bool, SqliteErrcode> {
-        let db = Database::default_new(userid)?;
-        let table = match db.open_table(G_ASSET_TABLE_NAME) {
-            Ok(t) => t,
-            Err(_) => create_default_table(&db)?,
-        };
-        table.is_data_exist(owner, alias)
+    ) -> Result<bool, AssetStatusCode> {
+        let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        db.is_data_exists_default(owner, alias)
     }
 
     ///
     /// see TableHelper
     ///
-    pub fn select_count_default_once(userid: u32, owner: &str) -> Result<i32, SqliteErrcode> {
-        let db = Database::default_new(userid)?;
-        let table = match db.open_table(G_ASSET_TABLE_NAME) {
-            Ok(t) => t,
-            Err(_) => create_default_table(&db)?,
-        };
-        table.select_count(owner)
+    pub fn select_count_default_once(userid: u32, owner: &str) -> Result<i32, AssetStatusCode> {
+        let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        db.select_count_default(owner)
     }
 
     ///
@@ -530,12 +523,8 @@ impl DefaultDatabaseHelper {
         owner: &str,
         alias: &str,
         condition: &Condition,
-    ) -> Result<ResultSet, SqliteErrcode> {
-        let db = Database::default_new(userid)?;
-        let table = match db.open_table(G_ASSET_TABLE_NAME) {
-            Ok(t) => t,
-            Err(_) => create_default_table(&db)?,
-        };
-        table.query_datas(owner, alias, condition)
+    ) -> Result<ResultSet, AssetStatusCode> {
+        let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        db.query_datas_default(owner, alias, condition)
     }
 }

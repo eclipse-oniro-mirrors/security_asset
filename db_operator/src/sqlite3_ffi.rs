@@ -20,7 +20,7 @@ use asset_common_lib::asset_type::AssetStatusCode;
 /// sqlite error type
 pub type SqliteErrcode = i32;
 
-/// from db error code to asset status code
+/// change sqlite errcode to asset errcode
 pub fn from_sqlitecode_to_assetcode(value: SqliteErrcode) -> AssetStatusCode {
     match value {
         SQLITE_OK => AssetStatusCode::Success,
