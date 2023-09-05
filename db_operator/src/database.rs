@@ -118,6 +118,29 @@ impl<'a> Database<'a> {
     }
 
     ///
+    /// open database with version update callback
+    ///
+    pub fn default_new_with_version_update(
+        userid: &str,
+        el: &str,
+        ver: i32,
+        callback: UpdateDatabaseCallbackFunc,
+    ) -> Result<Database<'a>, SqliteErrcode> {
+        let db = Database::default_new(userid, el)?;
+        let version_old = db.get_version()?;
+        #[cfg(test)]
+        {
+            println!("database version old {}", version_old);
+        }
+        let ret = callback(&db, version_old, ver);
+        if ret != SQLITE_OK {
+            return Err(ret);
+        }
+
+        Ok(db)
+    }
+
+    ///
     /// open database file
     /// use sqlite3_open_v2 instead of sqlite3_open
     ///
