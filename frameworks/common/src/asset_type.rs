@@ -65,7 +65,7 @@ pub enum Value {
     Bytes(Vec<u8>),
 }
 
-enum_auto_impl_try_from!{
+enum_auto_impl_try_from! {
     /// An emum type that indicates the tag of the asset attribute.
     #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
     pub enum Tag {
@@ -177,6 +177,96 @@ enum_auto_impl_try_from! {
         // to do
         /// The error code indicates that the ipc communication is failed.
         IpcFailed = 24000008,
+
+        /// Generic error
+        SqliteERROR = 1,
+
+        /// Internal logic error in SQLite
+        SqliteINTERNAL = 2,
+
+        /// Access permission denied
+        SqlitePERM = 3,
+
+        /// Callback routine requested an abort
+        SqliteABORT = 4,
+
+        /// The database file is locked
+        SqliteBUSY = 5,
+
+        /// A table in the database is locked
+        SqliteLOCKED = 6,
+
+        /// A malloc() failed
+        SqliteNOMEM = 7,
+
+        /// Attempt to write a readonly database
+        SqliteREADONLY = 8,
+
+        /// Operation terminated by sqlite3_interrupt()
+        SqliteINTERRUPT = 9,
+
+        /// Some kind of disk I/O error occurred
+        SqliteIOERR = 10,
+
+        /// The database disk image is malformed
+        SqliteCORRUPT = 11,
+
+        /// Unknown opcode in sqlite3_file_control()
+        SqliteNOTFOUND = 12,
+
+        /// Insertion failed because database is full
+        SqliteFULL = 13,
+
+        /// Unable to open the database file
+        SqliteCANTOPEN = 14,
+
+        /// Database lock protocol error
+        SqlitePROTOCOL = 15,
+
+        /// Internal use only
+        SqliteEMPTY = 16,
+
+        /// The database schema changed
+        SqliteSCHEMA = 17,
+
+        /// String or BLOB exceeds size limit
+        SqliteTOOBIG = 18,
+
+        /// Abort due to constraint violation
+        SqliteCONSTRAINT = 19,
+
+        /// Data type mismatch
+        SqliteMISMATCH = 20,
+
+        /// Library used incorrectly
+        SqliteMISUSE = 21,
+
+        /// Uses OS features not supported on host
+        SqliteNOLFS = 22,
+
+        /// Authorization denied
+        SqliteAUTH = 23,
+
+        /// Not used
+        SqliteFORMAT = 24,
+
+        /// 2nd parameter to sqlite3_bind out of range
+        SqliteRANGE = 25,
+
+        /// File opened that is not a database file
+        SqliteNOTADB = 26,
+
+        /// Notifications from sqlite3_log()
+        SqliteNOTICE = 27,
+
+        /// Warnings from sqlite3_log()
+        SqliteWARNING = 28,
+
+        /// sqlite3_step() has another row ready
+        SqliteROW = 100,
+
+        /// sqlite3_step() has finished executing
+        SqliteDONE = 101,
     }
 }
 
@@ -213,7 +303,7 @@ pub enum AssetSyncType {
     /// TrustedAccount
     TrustedAccount = 1 << 1,
     /// TrustedDevice
-    TrustedDevice = 1 << 2
+    TrustedDevice = 1 << 2,
 }
 
 /// AssetConflictPolicy
@@ -229,5 +319,5 @@ pub enum AssetReturnType {
     /// All
     All = 0,
     /// Attributes
-    Attributes = 1
+    Attributes = 1,
 }
