@@ -12,7 +12,7 @@
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
 //!
-use crate::{database::Database, sqlite3_free_func};
+use crate::database::Database;
 
 /// DataType for DB
 #[derive(PartialEq, Eq, Clone, Copy)]
@@ -154,10 +154,4 @@ pub struct Sqlite3Errmsg<'a, 'b> {
     pub s: &'a str,
     /// point to database for auto drop
     pub db: &'b Database,
-}
-
-impl<'a, 'b> Drop for Sqlite3Errmsg<'a, 'b> {
-    fn drop(&mut self) {
-        sqlite3_free_func(self.s.as_ptr() as _)
-    }
 }

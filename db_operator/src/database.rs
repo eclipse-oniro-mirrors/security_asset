@@ -70,8 +70,8 @@ impl Database {
     ///
     /// create default database
     ///
-    pub fn default_new(userid: &str, el: &str) -> Result<Database, SqliteErrcode> {
-        let mut path = format!("/data/service/{}/{}/asset_service/asset.db", el, userid);
+    pub fn default_new(userid: u32) -> Result<Database, SqliteErrcode> {
+        let mut path = format!("/data/service/el1/{}/asset_service/asset.db", userid);
         let mut db = Database { path: path.clone(), v2: false, handle: 0 };
         path.push('\0');
         let ret = sqlite3_open_func(&path, &mut db.handle);
@@ -121,12 +121,11 @@ impl Database {
     /// open database with version update callback
     ///
     pub fn default_new_with_version_update(
-        userid: &str,
-        el: &str,
+        userid: u32,
         ver: i32,
         callback: UpdateDatabaseCallbackFunc,
     ) -> Result<Database, SqliteErrcode> {
-        let db = Database::default_new(userid, el)?;
+        let db = Database::default_new(userid)?;
         let version_old = db.get_version()?;
         #[cfg(test)]
         {
@@ -168,8 +167,8 @@ impl Database {
     ///
     /// delete default database
     ///
-    pub fn drop_default_database(userid: &str, el: &str) -> std::io::Result<()> {
-        let path = format!("/data/service/{}/{}/asset_service/asset.db", el, userid);
+    pub fn drop_default_database(userid: u32) -> std::io::Result<()> {
+        let path = format!("/data/service/el1/{}/asset_service/asset.db", userid);
         Database::drop_database(path.as_str())
     }
 

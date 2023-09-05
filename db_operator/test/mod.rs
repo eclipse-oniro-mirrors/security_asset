@@ -1402,29 +1402,96 @@ pub fn test_for_update_ver() {
 
 #[test]
 pub fn test_for_default_asset() {
-    let _ = Database::drop_default_database("userid1", "el1");
-    let count = DefaultDatabaseHelper::insert_datas_default_once(
-        "userid1",
-        "el1",
-        "owner1",
-        "Alias1",
-        vec![],
-    )
-    .unwrap();
+    let _ = Database::drop_default_database(1);
+    let def = vec![
+        Pair {
+            column_name: "Secret",
+            value: DataValue::Blob(b"blob"),
+        },
+        Pair {
+            column_name: "OwnerType",
+            value: DataValue::Integer(1),
+        },
+        Pair {
+            column_name: "OwnerType",
+            value: DataValue::Integer(1),
+        },
+        Pair {
+            column_name: "SyncType",
+            value: DataValue::Integer(1),
+        },
+        Pair {
+            column_name: "AccessType",
+            value: DataValue::Integer(1),
+        },
+        Pair {
+            column_name: "AuthType",
+            value: DataValue::Integer(1),
+        },
+        Pair {
+            column_name: "DeleteType",
+            value: DataValue::Integer(1),
+        },
+        Pair {
+            column_name: "Version",
+            value: DataValue::Integer(1),
+        },
+        Pair {
+            column_name: "CreateTime",
+            value: DataValue::Integer(1),
+        },
+        Pair {
+            column_name: "UpdateTime",
+            value: DataValue::Integer(1),
+        },
+    ];
+    let count =
+        DefaultDatabaseHelper::insert_datas_default_once(1, "owner1", "Alias1", def).unwrap();
     assert_eq!(count, 1);
-    let count = DefaultDatabaseHelper::insert_datas_default_once(
-        "userid1",
-        "el1",
-        "owner1",
-        "Alias2",
-        vec![],
-    )
-    .unwrap();
+    let def = vec![
+        Pair {
+            column_name: "Secret",
+            value: DataValue::Blob(b"blob"),
+        },
+        Pair {
+            column_name: "OwnerType",
+            value: DataValue::Integer(1),
+        },
+        Pair {
+            column_name: "SyncType",
+            value: DataValue::Integer(1),
+        },
+        Pair {
+            column_name: "AccessType",
+            value: DataValue::Integer(1),
+        },
+        Pair {
+            column_name: "AuthType",
+            value: DataValue::Integer(1),
+        },
+        Pair {
+            column_name: "DeleteType",
+            value: DataValue::Integer(1),
+        },
+        Pair {
+            column_name: "Version",
+            value: DataValue::Integer(1),
+        },
+        Pair {
+            column_name: "CreateTime",
+            value: DataValue::Integer(1),
+        },
+        Pair {
+            column_name: "UpdateTime",
+            value: DataValue::Integer(1),
+        },
+    ];
+    let count =
+        DefaultDatabaseHelper::insert_datas_default_once(1, "owner1", "Alias2", def).unwrap();
     assert_eq!(count, 1);
 
     let count = DefaultDatabaseHelper::update_datas_default_once(
-        "userid1",
-        "el1",
+        1,
         "owner1",
         "Alias1",
         &vec![Pair {
@@ -1435,33 +1502,18 @@ pub fn test_for_default_asset() {
     .unwrap();
     assert_eq!(count, 1);
 
-    let count =
-        DefaultDatabaseHelper::select_count_default_once("userid1", "el1", "owner1").unwrap();
+    let count = DefaultDatabaseHelper::select_count_default_once(1, "owner1").unwrap();
     assert_eq!(count, 2);
 
-    let ret =
-        DefaultDatabaseHelper::is_data_exists_default_once("userid1", "el1", "owner1", "Alias2")
-            .unwrap();
+    let ret = DefaultDatabaseHelper::is_data_exists_default_once(1, "owner1", "Alias2").unwrap();
     assert!(ret);
 
-    let count = DefaultDatabaseHelper::delete_datas_default_once(
-        "userid1",
-        "el1",
-        "owner1",
-        "Alias1",
-        &vec![],
-    )
-    .unwrap();
+    let count =
+        DefaultDatabaseHelper::delete_datas_default_once(1, "owner1", "Alias1", &vec![]).unwrap();
     assert_eq!(count, 1);
 
-    let result = DefaultDatabaseHelper::query_datas_default_once(
-        "userid1",
-        "el1",
-        "owner1",
-        "Alias2",
-        &vec![],
-    )
-    .unwrap();
+    let result =
+        DefaultDatabaseHelper::query_datas_default_once(1, "owner1", "Alias2", &vec![]).unwrap();
     assert_eq!(result.len(), 1);
     for line in result {
         print!("line: ");

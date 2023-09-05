@@ -222,7 +222,7 @@ fn create_default_table(db: &Database) -> Result<Table, SqliteErrcode> {
             name: "Secret",
             data_type: DataType::BLOB,
             is_primary_key: false,
-            not_null: false,
+            not_null: true,
         },
         ColumnInfo {
             name: G_COLUMN_ALIAS,
@@ -240,7 +240,7 @@ fn create_default_table(db: &Database) -> Result<Table, SqliteErrcode> {
             name: "OwnerType",
             data_type: DataType::INTEGER,
             is_primary_key: false,
-            not_null: false,
+            not_null: true,
         },
         ColumnInfo {
             name: "GroupId",
@@ -252,43 +252,43 @@ fn create_default_table(db: &Database) -> Result<Table, SqliteErrcode> {
             name: "SyncType",
             data_type: DataType::INTEGER,
             is_primary_key: false,
-            not_null: false,
+            not_null: true,
         },
         ColumnInfo {
             name: "AccessType",
             data_type: DataType::INTEGER,
             is_primary_key: false,
-            not_null: false,
+            not_null: true,
         },
         ColumnInfo {
             name: "AuthType",
             data_type: DataType::INTEGER,
             is_primary_key: false,
-            not_null: false,
+            not_null: true,
         },
         ColumnInfo {
             name: "CreateTime",
             data_type: DataType::INTEGER,
             is_primary_key: false,
-            not_null: false,
+            not_null: true,
         },
         ColumnInfo {
             name: "UpdateTime",
             data_type: DataType::INTEGER,
             is_primary_key: false,
-            not_null: false,
+            not_null: true,
         },
         ColumnInfo {
             name: "DeleteType",
             data_type: DataType::INTEGER,
             is_primary_key: false,
-            not_null: false,
+            not_null: true,
         },
         ColumnInfo {
             name: "Version",
             data_type: DataType::INTEGER,
             is_primary_key: false,
-            not_null: false,
+            not_null: true,
         },
         ColumnInfo {
             name: "DataLabelCritical_1",
@@ -417,10 +417,9 @@ impl DefaultDatabaseHelper {
     /// open default database and table
     ///
     pub fn open_default_database_table(
-        userid: &str,
-        el: &str,
+        userid: u32,
     ) -> Result<DefaultDatabaseHelper, SqliteErrcode> {
-        let db = Database::default_new(userid, el)?;
+        let db = Database::default_new(userid)?;
         let _table = match db.open_table(G_ASSET_TABLE_NAME) {
             Ok(t) => t,
             Err(_) => create_default_table(&db)?,
@@ -432,12 +431,11 @@ impl DefaultDatabaseHelper {
     /// open default database and table, if need update db version, input callback
     ///
     pub fn open_default_database_table_with_version_update(
-        userid: &str,
-        el: &str,
+        userid: u32,
         version_new: i32,
         callback: UpdateDatabaseCallbackFunc,
     ) -> Result<DefaultDatabaseHelper, SqliteErrcode> {
-        let db = Database::default_new_with_version_update(userid, el, version_new, callback)?;
+        let db = Database::default_new_with_version_update(userid, version_new, callback)?;
         let _table = match db.open_table(G_ASSET_TABLE_NAME) {
             Ok(t) => t,
             Err(_) => create_default_table(&db)?,
@@ -449,13 +447,12 @@ impl DefaultDatabaseHelper {
     /// see TableHelper
     ///
     pub fn update_datas_default_once(
-        userid: &str,
-        el: &str,
+        userid: u32,
         owner: &str,
         alias: &str,
         datas: &Vec<Pair>,
     ) -> Result<i32, SqliteErrcode> {
-        let db = Database::default_new(userid, el)?;
+        let db = Database::default_new(userid)?;
         let table = match db.open_table(G_ASSET_TABLE_NAME) {
             Ok(t) => t,
             Err(_) => create_default_table(&db)?,
@@ -467,13 +464,12 @@ impl DefaultDatabaseHelper {
     /// see TableHelper
     ///
     pub fn insert_datas_default_once(
-        userid: &str,
-        el: &str,
+        userid: u32,
         owner: &str,
         alias: &str,
         datas: Vec<Pair>,
     ) -> Result<i32, SqliteErrcode> {
-        let db = Database::default_new(userid, el)?;
+        let db = Database::default_new(userid)?;
         let table = match db.open_table(G_ASSET_TABLE_NAME) {
             Ok(t) => t,
             Err(_) => create_default_table(&db)?,
@@ -485,13 +481,12 @@ impl DefaultDatabaseHelper {
     /// see TableHelper
     ///
     pub fn delete_datas_default_once(
-        userid: &str,
-        el: &str,
+        userid: u32,
         owner: &str,
         alias: &str,
         cond: &Condition,
     ) -> Result<i32, SqliteErrcode> {
-        let db = Database::default_new(userid, el)?;
+        let db = Database::default_new(userid)?;
         let table = match db.open_table(G_ASSET_TABLE_NAME) {
             Ok(t) => t,
             Err(_) => create_default_table(&db)?,
@@ -503,12 +498,11 @@ impl DefaultDatabaseHelper {
     /// see TableHelper
     ///
     pub fn is_data_exists_default_once(
-        userid: &str,
-        el: &str,
+        userid: u32,
         owner: &str,
         alias: &str,
     ) -> Result<bool, SqliteErrcode> {
-        let db = Database::default_new(userid, el)?;
+        let db = Database::default_new(userid)?;
         let table = match db.open_table(G_ASSET_TABLE_NAME) {
             Ok(t) => t,
             Err(_) => create_default_table(&db)?,
@@ -519,12 +513,8 @@ impl DefaultDatabaseHelper {
     ///
     /// see TableHelper
     ///
-    pub fn select_count_default_once(
-        userid: &str,
-        el: &str,
-        owner: &str,
-    ) -> Result<i32, SqliteErrcode> {
-        let db = Database::default_new(userid, el)?;
+    pub fn select_count_default_once(userid: u32, owner: &str) -> Result<i32, SqliteErrcode> {
+        let db = Database::default_new(userid)?;
         let table = match db.open_table(G_ASSET_TABLE_NAME) {
             Ok(t) => t,
             Err(_) => create_default_table(&db)?,
@@ -536,13 +526,12 @@ impl DefaultDatabaseHelper {
     /// see TableHelper
     ///
     pub fn query_datas_default_once(
-        userid: &str,
-        el: &str,
+        userid: u32,
         owner: &str,
         alias: &str,
         condition: &Condition,
     ) -> Result<ResultSet, SqliteErrcode> {
-        let db = Database::default_new(userid, el)?;
+        let db = Database::default_new(userid)?;
         let table = match db.open_table(G_ASSET_TABLE_NAME) {
             Ok(t) => t,
             Err(_) => create_default_table(&db)?,
