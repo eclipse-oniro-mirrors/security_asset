@@ -23,9 +23,9 @@ use std::{ffi::CStr, fs, ptr::null_mut};
 
 /// sqlite database file
 #[repr(C)]
-pub struct Database<'a> {
+pub struct Database {
     /// database file path
-    pub path: &'a str,
+    pub path: String,
     /// is opened with sqlite3_open_v2
     pub(crate) v2: bool,
     /// raw pointer
@@ -50,14 +50,14 @@ pub fn default_update_database_func(db: &Database, old_ver: i32, new_ver: i32) -
     SQLITE_OK
 }
 
-impl<'a> Database<'a> {
+impl Database {
     ///
     /// open database file.
     /// will create it if not exits.
     ///
     pub fn new(path: &str) -> Result<Database, SqliteErrcode> {
-        let mut db = Database { path, v2: false, handle: 0 };
         let mut s = path.to_string();
+        let mut db = Database { path: s.clone(), v2: false, handle: 0 };
         s.push('\0');
         let ret = sqlite3_open_func(&s, &mut db.handle);
         if ret == SQLITE_OK {
@@ -70,9 +70,9 @@ impl<'a> Database<'a> {
     ///
     /// create default database
     ///
-    pub fn default_new(userid: &str, el: &str) -> Result<Database<'a>, SqliteErrcode> {
+    pub fn default_new(userid: &str, el: &str) -> Result<Database, SqliteErrcode> {
         let mut path = format!("/data/service/{}/{}/asset_service/asset.db", el, userid);
-        let mut db = Database { path: "-", v2: false, handle: 0 };
+        let mut db = Database { path: path.clone(), v2: false, handle: 0 };
         path.push('\0');
         let ret = sqlite3_open_func(&path, &mut db.handle);
         if ret == SQLITE_OK {
@@ -125,7 +125,7 @@ impl<'a> Database<'a> {
         el: &str,
         ver: i32,
         callback: UpdateDatabaseCallbackFunc,
-    ) -> Result<Database<'a>, SqliteErrcode> {
+    ) -> Result<Database, SqliteErrcode> {
         let db = Database::default_new(userid, el)?;
         let version_old = db.get_version()?;
         #[cfg(test)]
@@ -144,13 +144,9 @@ impl<'a> Database<'a> {
     /// open database file
     /// use sqlite3_open_v2 instead of sqlite3_open
     ///
-    pub fn new_v2<'b>(
-        path: &'a str,
-        flags: i32,
-        vfs: Option<&'b [u8]>,
-    ) -> Result<Database<'a>, SqliteErrcode> {
-        let mut db = Database { path, v2: false, handle: 0 };
+    pub fn new_v2(path: &str, flags: i32, vfs: Option<&[u8]>) -> Result<Database, SqliteErrcode> {
         let mut s = path.to_string();
+        let mut db = Database { path: s.clone(), v2: false, handle: 0 };
         s.push('\0');
         let ret = sqlite3_open_v2_func(&s, &mut db.handle, flags, vfs);
         if ret == SQLITE_OK {
@@ -233,7 +229,7 @@ impl<'a> Database<'a> {
     ///
     /// open a table, if the table not exists, return error
     ///
-    pub fn open_table<'b>(&'a self, table_name: &'b str) -> Result<Table<'b, 'a>, SqliteErrcode> {
+    pub fn open_table(&self, table_name: &str) -> Result<Table, SqliteErrcode> {
         let sql =
             format!("select * from sqlite_master where type ='table' and name = '{}'", table_name);
         let stmt = match Statement::<true>::prepare(sql.as_str(), self) {
@@ -261,7 +257,7 @@ impl<'a> Database<'a> {
     ///
     /// drop a table
     ///
-    pub fn drop_table<'b>(&'a self, table_name: &'b str) -> SqliteErrcode {
+    pub fn drop_table(&self, table_name: &str) -> SqliteErrcode {
         let sql = format!("DROP TABLE {}", table_name);
         let stmt = Statement::<false>::new(sql.as_str(), self);
         stmt.exec(None, 0)
@@ -301,11 +297,11 @@ impl<'a> Database<'a> {
     ///     }
     /// };
     ///
-    pub fn create_table<'b>(
-        &'a self,
-        table_name: &'b str,
+    pub fn create_table(
+        &self,
+        table_name: &str,
         columns: &[ColumnInfo],
-    ) -> Result<Table<'b, 'a>, SqliteErrcode> {
+    ) -> Result<Table, SqliteErrcode> {
         let mut sql = format!("CREATE TABLE {}(", table_name);
         for i in 0..columns.len() {
             let column = &columns[i];
@@ -338,16 +334,13 @@ impl<'a> Database<'a> {
 
     #[cfg(test)]
     pub fn drop_db(db: Database) -> std::io::Result<()> {
-        let path = db.path;
+        let path = db.path.clone();
         drop(db);
-        if path != "-" {
-            return Database::drop_database(path);
-        }
-        Ok(())
+        Database::drop_database(path.as_str())
     }
 }
 
-impl<'a> Drop for Database<'a> {
+impl Drop for Database {
     fn drop(&mut self) {
         let ret = if self.v2 {
             sqlite3_close_v2_func(self.handle)

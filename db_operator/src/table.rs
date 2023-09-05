@@ -26,16 +26,16 @@ use crate::{
 
 /// a database table
 #[repr(C)]
-pub struct Table<'a, 'b> {
+pub struct Table<'a> {
     /// table name
-    pub table_name: &'a str,
+    pub table_name: String,
     /// point to db
-    pub db: &'b Database<'b>,
+    pub db: &'a Database,
 }
 
-impl<'a, 'b> Table<'a, 'b> {
-    pub(crate) fn new(table_name: &'a str, db: &'b Database<'b>) -> Table<'a, 'b> {
-        Table { table_name, db }
+impl<'a> Table<'a> {
+    pub(crate) fn new(table_name: &str, db: &'a Database) -> Table<'a> {
+        Table { table_name: table_name.to_string(), db }
     }
 
     ///
@@ -390,7 +390,7 @@ impl<'a, 'b> Table<'a, 'b> {
     ///
     /// rename table name
     ///
-    pub fn rename(&'a mut self, name: &'a str) -> SqliteErrcode {
+    pub fn rename(&mut self, name: &str) -> SqliteErrcode {
         let sql = format!("ALTER TABLE {} RENAME TO {}", self.table_name, name);
         #[cfg(test)]
         {
@@ -399,7 +399,7 @@ impl<'a, 'b> Table<'a, 'b> {
         let stmt = &Statement::<false>::new(sql.as_str(), self.db);
         let ret = stmt.exec(None, 0);
         if ret == SQLITE_OK {
-            self.table_name = name;
+            self.table_name = name.to_string();
         }
         ret
     }
@@ -477,7 +477,7 @@ impl<'a, 'b> Table<'a, 'b> {
             sql.push('*');
         }
         sql.push_str(" from ");
-        sql.push_str(self.table_name);
+        sql.push_str(self.table_name.as_str());
         if !conditions.is_empty() {
             sql.push_str(" where ");
             for i in 0..conditions.len() {
