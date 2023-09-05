@@ -350,6 +350,7 @@ impl DefaultDatabaseHelper {
     ///
     /// see TableHelper
     ///
+    #[inline(always)]
     pub fn update_datas_default(
         &self,
         owner: &str,
@@ -363,6 +364,7 @@ impl DefaultDatabaseHelper {
     ///
     /// see TableHelper
     ///
+    #[inline(always)]
     pub fn insert_datas_default(
         &self,
         owner: &str,
@@ -376,6 +378,7 @@ impl DefaultDatabaseHelper {
     ///
     /// see TableHelper
     ///
+    #[inline(always)]
     pub fn delete_datas_default(
         &self,
         owner: &str,
@@ -389,6 +392,7 @@ impl DefaultDatabaseHelper {
     ///
     /// see TableHelper
     ///
+    #[inline(always)]
     pub fn is_data_exists_default(
         &self,
         owner: &str,
@@ -401,6 +405,7 @@ impl DefaultDatabaseHelper {
     ///
     /// see TableHelper
     ///
+    #[inline(always)]
     pub fn select_count_default(&self, owner: &str) -> Result<i32, AssetStatusCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         table.select_count(owner)
@@ -409,6 +414,7 @@ impl DefaultDatabaseHelper {
     ///
     /// see TableHelper
     ///
+    #[inline(always)]
     pub fn query_datas_default(
         &self,
         owner: &str,
@@ -459,6 +465,7 @@ impl DefaultDatabaseHelper {
     ///
     /// see TableHelper
     ///
+    #[inline(always)]
     pub fn update_datas_default_once(
         userid: u32,
         owner: &str,
@@ -472,6 +479,7 @@ impl DefaultDatabaseHelper {
     ///
     /// see TableHelper
     ///
+    #[inline(always)]
     pub fn insert_datas_default_once(
         userid: u32,
         owner: &str,
@@ -485,6 +493,7 @@ impl DefaultDatabaseHelper {
     ///
     /// see TableHelper
     ///
+    #[inline(always)]
     pub fn delete_datas_default_once(
         userid: u32,
         owner: &str,
@@ -498,6 +507,7 @@ impl DefaultDatabaseHelper {
     ///
     /// see TableHelper
     ///
+    #[inline(always)]
     pub fn is_data_exists_default_once(
         userid: u32,
         owner: &str,
@@ -510,6 +520,7 @@ impl DefaultDatabaseHelper {
     ///
     /// see TableHelper
     ///
+    #[inline(always)]
     pub fn select_count_default_once(userid: u32, owner: &str) -> Result<i32, AssetStatusCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.select_count_default(owner)
@@ -518,6 +529,7 @@ impl DefaultDatabaseHelper {
     ///
     /// see TableHelper
     ///
+    #[inline(always)]
     pub fn query_datas_default_once(
         userid: u32,
         owner: &str,
