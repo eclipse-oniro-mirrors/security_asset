@@ -440,6 +440,25 @@ impl<'a> DefaultDatabaseHelper<'a> {
     }
 
     ///
+    /// open default database and table, if need update db version, input callback
+    ///
+    pub fn open_default_database_table_with_version_update(
+        userid: &str,
+        el: &str,
+        version_new: i32,
+        callback: UpdateDatabaseCallbackFunc,
+    ) -> Result<DatabaseHelper<'a>, SqliteErrcode> {
+        let db = Database::default_new_with_version_update(userid, el, version_new, callback)?;
+        match db.open_table(G_ASSET_TABLE_NAME) {
+            Ok(_) => {}
+            Err(_) => {
+                create_default_table(&db)?;
+            }
+        };
+        Ok(db)
+    }
+
+    ///
     /// see TableHelper
     ///
     pub fn update_datas_default_once(
