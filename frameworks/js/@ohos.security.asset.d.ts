@@ -324,7 +324,7 @@ declare namespace asset {
   }
 
   /**
-   * An enum type indicates the format type of return data.
+   * An enum type indicates the return type of the queried Asset.
    *
    * @enum { number }
    * @syscap SystemCapability.Security.Asset
@@ -527,7 +527,7 @@ declare namespace asset {
      */
     DATA_LABLE_NORMAL_4 = TagType.BYTES | 17,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the format type of return data.
+     * A tag whose value is a 32-bit unsigned integer indicating the return type of the queried Asset.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
