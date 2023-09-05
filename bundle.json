@@ -38,7 +38,8 @@
                 "ipc",
                 "napi",
                 "safwk",
-                "samgr"
+                "samgr",
+                "huks"
             ],
             "third_party": [
                 "sqlite"

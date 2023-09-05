@@ -24,6 +24,7 @@ group("asset_component") {
         "$COMPONENT_DIR/services/core_service/etc/init:assetservice.cfg",
         "$COMPONENT_DIR/db_operator:db_operator",
         "$COMPONENT_DIR/interfaces/kits/c:asset_ndk",
+        "$COMPONENT_DIR/services/asset_huks:asset_huks",
     ]
 
     if (support_jsapi) {
@@ -38,5 +39,6 @@ group("asset_test") {
         "$COMPONENT_DIR/test/unittest/kits_ndk:asset_c_ndk_test",
         "$COMPONENT_DIR/db_operator:db_operator_test",
         "$COMPONENT_DIR/test/unittest/inner_api_rust:asset_rust_test",
+        "$COMPONENT_DIR/services/asset_huks:asset_huks_test",
     ]
 }
