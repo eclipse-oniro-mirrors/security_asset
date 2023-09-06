@@ -66,7 +66,7 @@ impl<'a> TableHelper<'a> {
             Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) },
             Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) },
         ];
-        self.update_row(conditions, datas).map_err(|e| from_sqlitecode_to_assetcode(e))
+        self.update_row(conditions, datas).map_err(from_sqlitecode_to_assetcode)
     }
 
     #[cfg(not(doctest))]
@@ -102,7 +102,7 @@ impl<'a> TableHelper<'a> {
         for data in datas {
             v.push(data);
         }
-        self.insert_row(&v).map_err(|e| from_sqlitecode_to_assetcode(e))
+        self.insert_row(&v).map_err(from_sqlitecode_to_assetcode)
     }
 
     #[cfg(not(doctest))]
@@ -138,7 +138,7 @@ impl<'a> TableHelper<'a> {
         for c in condition {
             v.push(*c);
         }
-        self.delete_row(&v).map_err(|e| from_sqlitecode_to_assetcode(e))
+        self.delete_row(&v).map_err(from_sqlitecode_to_assetcode)
     }
 
     #[cfg(not(doctest))]
@@ -159,7 +159,7 @@ impl<'a> TableHelper<'a> {
             Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) },
             Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) },
         ])
-        .map_err(|e| from_sqlitecode_to_assetcode(e))
+        .map_err(from_sqlitecode_to_assetcode)
     }
 
     #[cfg(not(doctest))]
@@ -207,7 +207,7 @@ impl<'a> TableHelper<'a> {
         for c in condition {
             v.push(*c);
         }
-        self.query_row(&vec![], &v).map_err(|e| from_sqlitecode_to_assetcode(e))
+        self.query_row(&vec![], &v).map_err(from_sqlitecode_to_assetcode)
     }
 }
 
@@ -343,7 +343,7 @@ fn create_default_table(db: &Database) -> Result<Table, AssetStatusCode> {
             not_null: false,
         },
     ];
-    db.create_table(G_ASSET_TABLE_NAME, columns).map_err(|e| from_sqlitecode_to_assetcode(e))
+    db.create_table(G_ASSET_TABLE_NAME, columns).map_err(from_sqlitecode_to_assetcode)
 }
 
 impl DefaultDatabaseHelper {
@@ -433,7 +433,7 @@ impl DefaultDatabaseHelper {
     pub fn open_default_database_table(
         userid: u32,
     ) -> Result<DefaultDatabaseHelper, AssetStatusCode> {
-        let db = Database::default_new(userid).map_err(|e| from_sqlitecode_to_assetcode(e))?;
+        let db = Database::default_new(userid).map_err(from_sqlitecode_to_assetcode)?;
         match db.open_table(G_ASSET_TABLE_NAME) {
             Ok(_) => {},
             Err(_) => {
@@ -452,7 +452,7 @@ impl DefaultDatabaseHelper {
         callback: UpdateDatabaseCallbackFunc,
     ) -> Result<DefaultDatabaseHelper, AssetStatusCode> {
         let db = Database::default_new_with_version_update(userid, version_new, callback)
-            .map_err(|e| from_sqlitecode_to_assetcode(e))?;
+            .map_err(from_sqlitecode_to_assetcode)?;
         match db.open_table(G_ASSET_TABLE_NAME) {
             Ok(_) => {},
             Err(_) => {
