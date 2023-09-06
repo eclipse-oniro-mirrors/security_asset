@@ -400,26 +400,33 @@ impl DefaultDatabaseHelper {
         #[cfg(feature = "auto_insert_time")]
         {
             let mut contain_create_time = false;
+            let mut contain_update_time = false;
             for data in &datas {
                 if data.column_name == "CreateTime" {
                     contain_create_time = true;
-                    break;
+                }
+                if data.column_name == "UpdateTime" {
+                    contain_update_time = true;
                 }
             }
-            if !contain_create_time {
+            if !contain_create_time || !contain_update_time {
                 let ctime = Instant::now().elapsed().as_secs().to_string();
                 let mut datas_new = Vec::<Pair>::with_capacity(datas.len() + 1);
                 for data in &datas {
                     datas_new.push(*data);
                 }
-                datas_new.push(Pair {
-                    column_name: "CreateTime",
-                    value: DataValue::Text(ctime.as_bytes()),
-                });
-                datas_new.push(Pair {
-                    column_name: "UpdateTime",
-                    value: DataValue::Text(ctime.as_bytes()),
-                });
+                if !contain_create_time {
+                    datas_new.push(Pair {
+                        column_name: "CreateTime",
+                        value: DataValue::Text(ctime.as_bytes()),
+                    });
+                }
+                if !contain_update_time {
+                    datas_new.push(Pair {
+                        column_name: "UpdateTime",
+                        value: DataValue::Text(ctime.as_bytes()),
+                    });
+                }
                 return table.insert_datas(owner, alias, datas_new);
             }
         }
