@@ -33,10 +33,48 @@ pub type TableHelper<'a> = Table<'a>;
 
 /// default table name
 pub const G_ASSET_TABLE_NAME: &str = "asset_table";
-/// default owner column name
+/// default column name
+pub const G_COLUMN_ID: &str = "Id";
+/// default column name
+pub const G_COLUMN_SECRET: &str = "Secret";
+/// default column name
 pub const G_COLUMN_OWNER: &str = "Owner";
-/// default alias column name
+/// default column name
 pub const G_COLUMN_ALIAS: &str = "Alias";
+/// default column name
+pub const G_COLUMN_OWNERTYPE: &str = "OwnerType";
+/// default column name
+pub const G_COLUMN_GROUPID: &str = "GroupId";
+/// default column name
+pub const G_COLUMN_SYNCTYPE: &str = "SyncType";
+/// default column name
+pub const G_COLUMN_ACCESSTYPE: &str = "AccessType";
+/// default column name
+pub const G_COLUMN_AUTHTYPE: &str = "AuthType";
+/// default column name
+pub const G_COLUMN_CREATETIME: &str = "CreateTime";
+/// default column name
+pub const G_COLUMN_UPDATETIME: &str = "UpdateTime";
+/// default column name
+pub const G_COLUMN_DELETETYPE: &str = "DeleteType";
+/// default column name
+pub const G_COLUMN_VERSION: &str = "Version";
+/// default column name
+pub const G_COLUMN_CRITICAL1: &str = "DataLabelCritical_1";
+/// default column name
+pub const G_COLUMN_CRITICAL2: &str = "DataLabelCritical_2";
+/// default column name
+pub const G_COLUMN_CRITICAL3: &str = "DataLabelCritical_3";
+/// default column name
+pub const G_COLUMN_CRITICAL4: &str = "DataLabelCritical_4";
+/// default column name
+pub const G_COLUMN_NORMAL1: &str = "DataLabelNormal_1";
+/// default column name
+pub const G_COLUMN_NORMAL2: &str = "DataLabelNormal_2";
+/// default column name
+pub const G_COLUMN_NORMAL3: &str = "DataLabelNormal_3";
+/// default column name
+pub const G_COLUMN_NORMAL4: &str = "DataLabelNormal_4";
 
 impl<'a> TableHelper<'a> {
     #[cfg(not(doctest))]
@@ -220,13 +258,13 @@ impl<'a> TableHelper<'a> {
 fn create_default_table(db: &Database) -> Result<Table, AssetStatusCode> {
     let columns = &[
         ColumnInfo {
-            name: "Id",
+            name: G_COLUMN_ID,
             data_type: DataType::INTEGER,
             is_primary_key: true,
             not_null: true,
         },
         ColumnInfo {
-            name: "Secret",
+            name: G_COLUMN_SECRET,
             data_type: DataType::BLOB,
             is_primary_key: false,
             not_null: true,
@@ -244,103 +282,103 @@ fn create_default_table(db: &Database) -> Result<Table, AssetStatusCode> {
             not_null: true,
         },
         ColumnInfo {
-            name: "OwnerType",
+            name: G_COLUMN_OWNERTYPE,
             data_type: DataType::INTEGER,
             is_primary_key: false,
             not_null: true,
         },
         ColumnInfo {
-            name: "GroupId",
+            name: G_COLUMN_GROUPID,
             data_type: DataType::TEXT,
             is_primary_key: false,
             not_null: false,
         },
         ColumnInfo {
-            name: "SyncType",
+            name: G_COLUMN_SYNCTYPE,
             data_type: DataType::INTEGER,
             is_primary_key: false,
             not_null: true,
         },
         ColumnInfo {
-            name: "AccessType",
+            name: G_COLUMN_ACCESSTYPE,
             data_type: DataType::INTEGER,
             is_primary_key: false,
             not_null: true,
         },
         ColumnInfo {
-            name: "AuthType",
+            name: G_COLUMN_AUTHTYPE,
             data_type: DataType::INTEGER,
             is_primary_key: false,
             not_null: true,
         },
         ColumnInfo {
-            name: "CreateTime",
+            name: G_COLUMN_CREATETIME,
             data_type: DataType::TEXT,
             is_primary_key: false,
             not_null: true,
         },
         ColumnInfo {
-            name: "UpdateTime",
+            name: G_COLUMN_UPDATETIME,
             data_type: DataType::TEXT,
             is_primary_key: false,
             not_null: true,
         },
         ColumnInfo {
-            name: "DeleteType",
+            name: G_COLUMN_DELETETYPE,
             data_type: DataType::INTEGER,
             is_primary_key: false,
             not_null: true,
         },
         ColumnInfo {
-            name: "Version",
+            name: G_COLUMN_VERSION,
             data_type: DataType::INTEGER,
             is_primary_key: false,
             not_null: true,
         },
         ColumnInfo {
-            name: "DataLabelCritical_1",
+            name: G_COLUMN_CRITICAL1,
             data_type: DataType::BLOB,
             is_primary_key: false,
             not_null: false,
         },
         ColumnInfo {
-            name: "DataLabelCritical_2",
+            name: G_COLUMN_CRITICAL2,
             data_type: DataType::BLOB,
             is_primary_key: false,
             not_null: false,
         },
         ColumnInfo {
-            name: "DataLabelCritical_3",
+            name: G_COLUMN_CRITICAL3,
             data_type: DataType::BLOB,
             is_primary_key: false,
             not_null: false,
         },
         ColumnInfo {
-            name: "DataLabelCritical_4",
+            name: G_COLUMN_CRITICAL4,
             data_type: DataType::BLOB,
             is_primary_key: false,
             not_null: false,
         },
         ColumnInfo {
-            name: "DataLabelNormal_1",
+            name: G_COLUMN_NORMAL1,
             data_type: DataType::BLOB,
             is_primary_key: false,
             not_null: false,
         },
         ColumnInfo {
-            name: "DataLabelNormal_2",
+            name: G_COLUMN_NORMAL2,
             data_type: DataType::BLOB,
             is_primary_key: false,
             not_null: false,
         },
         ColumnInfo {
-            name: "DataLabelNormal_3",
+            name: G_COLUMN_NORMAL3,
             data_type: DataType::BLOB,
             is_primary_key: false,
             not_null: false,
         },
         ColumnInfo {
-            name: "DataLabelNormal_4",
+            name: G_COLUMN_NORMAL4,
             data_type: DataType::BLOB,
             is_primary_key: false,
             not_null: false,
@@ -365,7 +403,7 @@ impl DefaultDatabaseHelper {
         {
             let mut contain_update_time = false;
             for data in datas {
-                if data.column_name == "UpdateTime" {
+                if data.column_name == G_COLUMN_UPDATETIME {
                     contain_update_time = true;
                     break;
                 }
@@ -377,7 +415,7 @@ impl DefaultDatabaseHelper {
                     datas_new.push(*data);
                 }
                 datas_new.push(Pair {
-                    column_name: "UpdateTime",
+                    column_name: G_COLUMN_UPDATETIME,
                     value: DataValue::Text(ctime.as_bytes()),
                 });
                 return table.update_datas(owner, alias, &datas_new);
@@ -402,10 +440,10 @@ impl DefaultDatabaseHelper {
             let mut contain_create_time = false;
             let mut contain_update_time = false;
             for data in &datas {
-                if data.column_name == "CreateTime" {
+                if data.column_name == G_COLUMN_CREATETIME {
                     contain_create_time = true;
                 }
-                if data.column_name == "UpdateTime" {
+                if data.column_name == G_COLUMN_UPDATETIME {
                     contain_update_time = true;
                 }
             }
@@ -417,13 +455,13 @@ impl DefaultDatabaseHelper {
                 }
                 if !contain_create_time {
                     datas_new.push(Pair {
-                        column_name: "CreateTime",
+                        column_name: G_COLUMN_CREATETIME,
                         value: DataValue::Text(ctime.as_bytes()),
                     });
                 }
                 if !contain_update_time {
                     datas_new.push(Pair {
-                        column_name: "UpdateTime",
+                        column_name: G_COLUMN_UPDATETIME,
                         value: DataValue::Text(ctime.as_bytes()),
                     });
                 }
