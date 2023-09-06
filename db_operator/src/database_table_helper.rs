@@ -63,10 +63,17 @@ impl<'a> TableHelper<'a> {
         datas: &Vec<Pair>,
     ) -> Result<i32, AssetStatusCode> {
         let conditions = &vec![
-            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) },
-            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) },
+            Pair {
+                column_name: G_COLUMN_OWNER,
+                value: DataValue::Text(owner.as_bytes()),
+            },
+            Pair {
+                column_name: G_COLUMN_ALIAS,
+                value: DataValue::Text(alias.as_bytes()),
+            },
         ];
-        self.update_row(conditions, datas).map_err(from_sqlitecode_to_assetcode)
+        self.update_row(conditions, datas)
+            .map_err(from_sqlitecode_to_assetcode)
     }
 
     #[cfg(not(doctest))]
@@ -97,8 +104,14 @@ impl<'a> TableHelper<'a> {
         datas: Vec<Pair>,
     ) -> Result<i32, AssetStatusCode> {
         let mut v = Vec::<Pair>::with_capacity(datas.len() + 2);
-        v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
-        v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+        v.push(Pair {
+            column_name: G_COLUMN_OWNER,
+            value: DataValue::Text(owner.as_bytes()),
+        });
+        v.push(Pair {
+            column_name: G_COLUMN_ALIAS,
+            value: DataValue::Text(alias.as_bytes()),
+        });
         for data in datas {
             v.push(data);
         }
@@ -133,8 +146,14 @@ impl<'a> TableHelper<'a> {
         condition: &Condition,
     ) -> Result<i32, AssetStatusCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
-        v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
-        v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+        v.push(Pair {
+            column_name: G_COLUMN_OWNER,
+            value: DataValue::Text(owner.as_bytes()),
+        });
+        v.push(Pair {
+            column_name: G_COLUMN_ALIAS,
+            value: DataValue::Text(alias.as_bytes()),
+        });
         for c in condition {
             v.push(*c);
         }
@@ -156,8 +175,14 @@ impl<'a> TableHelper<'a> {
     ///
     pub fn is_data_exist(&self, owner: &str, alias: &str) -> Result<bool, AssetStatusCode> {
         self.is_data_exists(&vec![
-            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) },
-            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) },
+            Pair {
+                column_name: G_COLUMN_OWNER,
+                value: DataValue::Text(owner.as_bytes()),
+            },
+            Pair {
+                column_name: G_COLUMN_ALIAS,
+                value: DataValue::Text(alias.as_bytes()),
+            },
         ])
         .map_err(from_sqlitecode_to_assetcode)
     }
@@ -179,7 +204,7 @@ impl<'a> TableHelper<'a> {
             column_name: G_COLUMN_OWNER,
             value: DataValue::Text(owner.as_bytes()),
         }])
-        .map_err(|e| from_sqlitecode_to_assetcode(e))
+        .map_err(from_sqlitecode_to_assetcode)
     }
 
     #[cfg(not(doctest))]
@@ -202,12 +227,19 @@ impl<'a> TableHelper<'a> {
         condition: &Condition,
     ) -> Result<ResultSet, AssetStatusCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
-        v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
-        v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+        v.push(Pair {
+            column_name: G_COLUMN_OWNER,
+            value: DataValue::Text(owner.as_bytes()),
+        });
+        v.push(Pair {
+            column_name: G_COLUMN_ALIAS,
+            value: DataValue::Text(alias.as_bytes()),
+        });
         for c in condition {
             v.push(*c);
         }
-        self.query_row(&vec![], &v).map_err(from_sqlitecode_to_assetcode)
+        self.query_row(&vec![], &v)
+            .map_err(from_sqlitecode_to_assetcode)
     }
 }
 
@@ -343,7 +375,8 @@ fn create_default_table(db: &Database) -> Result<Table, AssetStatusCode> {
             not_null: false,
         },
     ];
-    db.create_table(G_ASSET_TABLE_NAME, columns).map_err(from_sqlitecode_to_assetcode)
+    db.create_table(G_ASSET_TABLE_NAME, columns)
+        .map_err(from_sqlitecode_to_assetcode)
 }
 
 impl DefaultDatabaseHelper {
@@ -435,10 +468,10 @@ impl DefaultDatabaseHelper {
     ) -> Result<DefaultDatabaseHelper, AssetStatusCode> {
         let db = Database::default_new(userid).map_err(from_sqlitecode_to_assetcode)?;
         match db.open_table(G_ASSET_TABLE_NAME) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(_) => {
                 create_default_table(&db)?;
-            },
+            }
         };
         Ok(db)
     }
@@ -454,10 +487,10 @@ impl DefaultDatabaseHelper {
         let db = Database::default_new_with_version_update(userid, version_new, callback)
             .map_err(from_sqlitecode_to_assetcode)?;
         match db.open_table(G_ASSET_TABLE_NAME) {
-            Ok(_) => {},
+            Ok(_) => {}
             Err(_) => {
                 create_default_table(&db)?;
-            },
+            }
         };
         Ok(db)
     }
