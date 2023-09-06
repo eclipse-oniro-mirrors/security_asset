@@ -12,6 +12,9 @@
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
 //!
+#[cfg(feature = "auto_insert_time")]
+use std::time::Instant;
+
 use asset_common_lib::asset_type::AssetStatusCode;
 
 use crate::{
@@ -272,13 +275,13 @@ fn create_default_table(db: &Database) -> Result<Table, AssetStatusCode> {
         },
         ColumnInfo {
             name: "CreateTime",
-            data_type: DataType::INTEGER,
+            data_type: DataType::TEXT,
             is_primary_key: false,
             not_null: true,
         },
         ColumnInfo {
             name: "UpdateTime",
-            data_type: DataType::INTEGER,
+            data_type: DataType::TEXT,
             is_primary_key: false,
             not_null: true,
         },
@@ -358,6 +361,28 @@ impl DefaultDatabaseHelper {
         datas: &Vec<Pair>,
     ) -> Result<i32, AssetStatusCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
+        #[cfg(feature = "auto_insert_time")]
+        {
+            let mut contain_update_time = false;
+            for data in datas {
+                if data.column_name == "UpdateTime" {
+                    contain_update_time = true;
+                    break;
+                }
+            }
+            if !contain_update_time {
+                let ctime = Instant::now().elapsed().as_secs().to_string();
+                let mut datas_new = Vec::<Pair>::with_capacity(datas.len() + 1);
+                for data in datas {
+                    datas_new.push(*data);
+                }
+                datas_new.push(Pair {
+                    column_name: "UpdateTime",
+                    value: DataValue::Text(ctime.as_bytes()),
+                });
+                return table.update_datas(owner, alias, &datas_new);
+            }
+        }
         table.update_datas(owner, alias, datas)
     }
 
@@ -372,6 +397,32 @@ impl DefaultDatabaseHelper {
         datas: Vec<Pair>,
     ) -> Result<i32, AssetStatusCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
+        #[cfg(feature = "auto_insert_time")]
+        {
+            let mut contain_create_time = false;
+            for data in &datas {
+                if data.column_name == "CreateTime" {
+                    contain_create_time = true;
+                    break;
+                }
+            }
+            if !contain_create_time {
+                let ctime = Instant::now().elapsed().as_secs().to_string();
+                let mut datas_new = Vec::<Pair>::with_capacity(datas.len() + 1);
+                for data in &datas {
+                    datas_new.push(*data);
+                }
+                datas_new.push(Pair {
+                    column_name: "CreateTime",
+                    value: DataValue::Text(ctime.as_bytes()),
+                });
+                datas_new.push(Pair {
+                    column_name: "UpdateTime",
+                    value: DataValue::Text(ctime.as_bytes()),
+                });
+                return table.insert_datas(owner, alias, datas_new);
+            }
+        }
         table.insert_datas(owner, alias, datas)
     }
 

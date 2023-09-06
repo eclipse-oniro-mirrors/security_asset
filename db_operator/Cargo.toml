@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 
 asset_common_lib = { path = "../frameworks/common" }
+
+[features]
+auto_insert_time = []
