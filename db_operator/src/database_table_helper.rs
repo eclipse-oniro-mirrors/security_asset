@@ -12,8 +12,6 @@
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
 //!
-#[cfg(feature = "auto_insert_time")]
-use std::time::Instant;
 
 use asset_common_lib::asset_type::AssetStatusCode;
 
@@ -409,7 +407,7 @@ impl DefaultDatabaseHelper {
                 }
             }
             if !contain_update_time {
-                let ctime = Instant::now().elapsed().as_secs().to_string();
+                let ctime = std::time::UNIX_EPOCH.elapsed().unwrap().as_secs().to_string();
                 let mut datas_new = Vec::<Pair>::with_capacity(datas.len() + 1);
                 for data in datas {
                     datas_new.push(*data);
@@ -448,7 +446,7 @@ impl DefaultDatabaseHelper {
                 }
             }
             if !contain_create_time || !contain_update_time {
-                let ctime = Instant::now().elapsed().as_secs().to_string();
+                let ctime = std::time::UNIX_EPOCH.elapsed().unwrap().as_secs().to_string();
                 let mut datas_new = Vec::<Pair>::with_capacity(datas.len() + 1);
                 for data in &datas {
                     datas_new.push(*data);
