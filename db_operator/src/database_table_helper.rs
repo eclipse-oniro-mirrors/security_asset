@@ -447,7 +447,7 @@ impl DefaultDatabaseHelper {
             }
             if !contain_create_time || !contain_update_time {
                 let ctime = std::time::UNIX_EPOCH.elapsed().unwrap().as_secs().to_string();
-                let mut datas_new = Vec::<Pair>::with_capacity(datas.len() + 1);
+                let mut datas_new = Vec::<Pair>::with_capacity(datas.len() + 2);
                 for data in &datas {
                     datas_new.push(*data);
                 }
