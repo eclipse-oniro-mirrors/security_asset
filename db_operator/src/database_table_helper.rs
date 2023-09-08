@@ -74,6 +74,136 @@ pub const G_COLUMN_NORMAL3: &str = "DataLabelNormal_3";
 /// default column name
 pub const G_COLUMN_NORMAL4: &str = "DataLabelNormal_4";
 
+/// columns info for default asset_table
+pub const G_COLUMNS_INFO: &[ColumnInfo] = &[
+    ColumnInfo {
+        name: G_COLUMN_ID,
+        data_type: DataType::INTEGER,
+        is_primary_key: true,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_SECRET,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_ALIAS,
+        data_type: DataType::TEXT,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_OWNER,
+        data_type: DataType::TEXT,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_OWNERTYPE,
+        data_type: DataType::INTEGER,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_GROUPID,
+        data_type: DataType::TEXT,
+        is_primary_key: false,
+        not_null: false,
+    },
+    ColumnInfo {
+        name: G_COLUMN_SYNCTYPE,
+        data_type: DataType::INTEGER,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_ACCESSTYPE,
+        data_type: DataType::INTEGER,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_AUTHTYPE,
+        data_type: DataType::INTEGER,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_CREATETIME,
+        data_type: DataType::TEXT,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_UPDATETIME,
+        data_type: DataType::TEXT,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_DELETETYPE,
+        data_type: DataType::INTEGER,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_VERSION,
+        data_type: DataType::INTEGER,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_CRITICAL1,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: false,
+    },
+    ColumnInfo {
+        name: G_COLUMN_CRITICAL2,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: false,
+    },
+    ColumnInfo {
+        name: G_COLUMN_CRITICAL3,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: false,
+    },
+    ColumnInfo {
+        name: G_COLUMN_CRITICAL4,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: false,
+    },
+    ColumnInfo {
+        name: G_COLUMN_NORMAL1,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: false,
+    },
+    ColumnInfo {
+        name: G_COLUMN_NORMAL2,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: false,
+    },
+    ColumnInfo {
+        name: G_COLUMN_NORMAL3,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: false,
+    },
+    ColumnInfo {
+        name: G_COLUMN_NORMAL4,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: false,
+    },
+];
+
 impl<'a> TableHelper<'a> {
     #[cfg(not(doctest))]
     ///
@@ -253,136 +383,9 @@ impl<'a> TableHelper<'a> {
 ///
 /// if table not exist, create default asset table
 ///
+#[inline(always)]
 fn create_default_table(db: &Database) -> Result<Table, AssetStatusCode> {
-    let columns = &[
-        ColumnInfo {
-            name: G_COLUMN_ID,
-            data_type: DataType::INTEGER,
-            is_primary_key: true,
-            not_null: true,
-        },
-        ColumnInfo {
-            name: G_COLUMN_SECRET,
-            data_type: DataType::BLOB,
-            is_primary_key: false,
-            not_null: true,
-        },
-        ColumnInfo {
-            name: G_COLUMN_ALIAS,
-            data_type: DataType::TEXT,
-            is_primary_key: false,
-            not_null: true,
-        },
-        ColumnInfo {
-            name: G_COLUMN_OWNER,
-            data_type: DataType::TEXT,
-            is_primary_key: false,
-            not_null: true,
-        },
-        ColumnInfo {
-            name: G_COLUMN_OWNERTYPE,
-            data_type: DataType::INTEGER,
-            is_primary_key: false,
-            not_null: true,
-        },
-        ColumnInfo {
-            name: G_COLUMN_GROUPID,
-            data_type: DataType::TEXT,
-            is_primary_key: false,
-            not_null: false,
-        },
-        ColumnInfo {
-            name: G_COLUMN_SYNCTYPE,
-            data_type: DataType::INTEGER,
-            is_primary_key: false,
-            not_null: true,
-        },
-        ColumnInfo {
-            name: G_COLUMN_ACCESSTYPE,
-            data_type: DataType::INTEGER,
-            is_primary_key: false,
-            not_null: true,
-        },
-        ColumnInfo {
-            name: G_COLUMN_AUTHTYPE,
-            data_type: DataType::INTEGER,
-            is_primary_key: false,
-            not_null: true,
-        },
-        ColumnInfo {
-            name: G_COLUMN_CREATETIME,
-            data_type: DataType::TEXT,
-            is_primary_key: false,
-            not_null: true,
-        },
-        ColumnInfo {
-            name: G_COLUMN_UPDATETIME,
-            data_type: DataType::TEXT,
-            is_primary_key: false,
-            not_null: true,
-        },
-        ColumnInfo {
-            name: G_COLUMN_DELETETYPE,
-            data_type: DataType::INTEGER,
-            is_primary_key: false,
-            not_null: true,
-        },
-        ColumnInfo {
-            name: G_COLUMN_VERSION,
-            data_type: DataType::INTEGER,
-            is_primary_key: false,
-            not_null: true,
-        },
-        ColumnInfo {
-            name: G_COLUMN_CRITICAL1,
-            data_type: DataType::BLOB,
-            is_primary_key: false,
-            not_null: false,
-        },
-        ColumnInfo {
-            name: G_COLUMN_CRITICAL2,
-            data_type: DataType::BLOB,
-            is_primary_key: false,
-            not_null: false,
-        },
-        ColumnInfo {
-            name: G_COLUMN_CRITICAL3,
-            data_type: DataType::BLOB,
-            is_primary_key: false,
-            not_null: false,
-        },
-        ColumnInfo {
-            name: G_COLUMN_CRITICAL4,
-            data_type: DataType::BLOB,
-            is_primary_key: false,
-            not_null: false,
-        },
-        ColumnInfo {
-            name: G_COLUMN_NORMAL1,
-            data_type: DataType::BLOB,
-            is_primary_key: false,
-            not_null: false,
-        },
-        ColumnInfo {
-            name: G_COLUMN_NORMAL2,
-            data_type: DataType::BLOB,
-            is_primary_key: false,
-            not_null: false,
-        },
-        ColumnInfo {
-            name: G_COLUMN_NORMAL3,
-            data_type: DataType::BLOB,
-            is_primary_key: false,
-            not_null: false,
-        },
-        ColumnInfo {
-            name: G_COLUMN_NORMAL4,
-            data_type: DataType::BLOB,
-            is_primary_key: false,
-            not_null: false,
-        },
-    ];
-    db.create_table(G_ASSET_TABLE_NAME, columns).map_err(from_sqlitecode_to_assetcode)
+    db.create_table(G_ASSET_TABLE_NAME, G_COLUMNS_INFO).map_err(from_sqlitecode_to_assetcode)
 }
 
 impl DefaultDatabaseHelper {
