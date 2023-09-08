@@ -15,73 +15,97 @@
 
 //! This create implement the asset
 
-// use std::marker::PhantomData;
 // use std::mem::size_of;
 use std::ptr::null_mut;
 
-/// HuksErrcode
+/// HuksErrcode type
 pub type HuksErrcode = i32;
+/// HuksErrcode Success
 pub const HKS_SUCCESS: HuksErrcode = 0;
-// pub const HKS_ERROR_INVALID_ARGUMENT: HuksErrcode = -3;
-// pub const HKS_ERROR_NULL_POINTER: HuksErrcode = -14;
-// pub const HKS_ERROR_MALLOC_FAIL: HuksErrcode = -21;
+/// HuksErrcode Failure
+pub const HKS_FAILURE: HuksErrcode = -1;
 
-/// Huks Param 
-// pub const HKS_PARAM_SET_MAX_SIZE: u32 = 4 * 1024 * 1024;
-// pub const HKS_DEFAULT_PARAM_SET_SIZE: u32 = 512;
-// pub const HKS_DEFAULT_PARAM_CNT: u32 = (HKS_DEFAULT_PARAM_SET_SIZE - size_of::<HksParamSet>() as u32) / size_of::<HksParam>() as u32;
-
-// pub const HKS_TAG_TYPE_MASK: u32 = 0xF << 28;
-// pub const HKS_TAG_TYPE_BYTES: u32 = 5 << 28;
+/// Huks tag type uint
 pub const HKS_TAG_TYPE_UINT: u32 = 2 << 28;
+/// Huks tag type bytes
+pub const HKS_TAG_TYPE_BYTES: u32 = 5 << 28;
+/// Huks tag algorithm
 pub const HKS_TAG_ALGORITHM: u32 = HKS_TAG_TYPE_UINT | 1;
+/// Huks tag purpose
 pub const HKS_TAG_PURPOSE: u32 = HKS_TAG_TYPE_UINT | 2;
+/// Huks tag key size
 pub const HKS_TAG_KEY_SIZE: u32 = HKS_TAG_TYPE_UINT | 3;
+/// Huks tag digest
+pub const HKS_TAG_DIGEST: u32 = HKS_TAG_TYPE_UINT | 4;
+/// Huks tag padding
 pub const HKS_TAG_PADDING: u32 = HKS_TAG_TYPE_UINT | 5;
+/// Huks tag block mode
 pub const HKS_TAG_BLOCK_MODE: u32 = HKS_TAG_TYPE_UINT | 6;
+/// Huks tag associated data
+pub const HKS_TAG_ASSOCIATED_DATA:u32 = HKS_TAG_TYPE_BYTES | 8;
+/// Huks tag nonce
+pub const HKS_TAG_NONCE: u32 = HKS_TAG_TYPE_BYTES | 9;
+/// Huks tag ae tag
+pub const HKS_TAG_AE_TAG: u32 = HKS_TAG_TYPE_BYTES | 10009;
 
-/// Huks key algorithm
+/// Huks key algorithm aes
 pub const HKS_ALG_AES: u32 = 20;
 
-
-/// Huks key purpose
+/// Huks key purpose encrypt
 pub const HKS_KEY_PURPOSE_ENCRYPT: u32 = 1;
+/// Huks key purpose decrypt
 pub const HKS_KEY_PURPOSE_DECRYPT: u32 = 2;
 
-/// Huks key size
+/// Huks key size 128
 pub const HKS_AES_KEY_SIZE_128: u32 = 128;
 
-/// Huks key padding
+/// Huks key padding none
 pub const HKS_PADDING_NONE: u32 = 0;
 
-/// Huks cipher mode
+/// Huks key digest none
+pub const HKS_DIGEST_NONE:u32 = 0;
+
+/// Huks cipher mode gcm
 pub const HKS_MODE_GCM: u32 = 32;
 
+/// Some const variables huks encrypt used
+/// Aes common size
+pub const AES_COMMON_SIZE: u32 = 1024;
+/// Aad size
+pub const AAD_SIZE: u32 = 16;
+/// Nonce size
+pub const NONCE_SIZE: u32 = 12;
+/// Aead size
+pub const AEAD_SIZE: u32 = 16;
+/// Times
+pub const TIMES: u32 = 4;
+/// Max update size
+pub const MAX_UPDATE_SIZE: u32 = 64;
+/// Max outdata size
+pub const MAX_OUTDATA_SIZE: u32 = MAX_UPDATE_SIZE * TIMES;
 
-// #[repr(C)]
-// pub struct __IncompleteArrayField<T>(PhantomData<T>, [T; 0]);
-// impl<T> __IncompleteArrayField<T> {
-//     #[inline]
-//     pub const fn new() -> Self {
-//         __IncompleteArrayField(::std::marker::PhantomData, [])
-//     }
-// }
 
-/// HksBlob
+/// HksBlob struct
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct HksBlob{
+    /// HksBlob size
     pub size: u32,
+    /// HksBlob data pointer
     pub data: *mut u8,
 }
-/// HksParamSet
+/// HksParamSet struct
 #[repr(C)]
 pub struct HksParamSet{
+    /// HksParamSet size
     pub param_set_size: u32,
+    /// HksParamSet count
     pub params_cnt: u32,
+    /// HksParamSet params pointer
     pub params: *mut HksParam,
 }
 impl HksParamSet{
+    /// New a HksParamSet object
     pub fn new() -> Self{
         Self{
             param_set_size:0,
@@ -101,33 +125,29 @@ impl Drop for HksParamSet{
     }
 }
 
+/// HksParam struct
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct HksParam{
+    /// HksParam tag
     pub tag: u32,
+    /// HksParam union types
     pub union_1: HksParam_union_1,
 }
 
-// impl Copy for HksParam{}
-// impl Clone for HksParam{
-//     fn clone(&self) -> HksParam{
-//         *self
-//     }
-// }
-// impl Copy for Vec<HksParam>{}
-// impl Clone for Vec<HksParam>{
-//     fn clone(&self) -> Vec<HksParam>{
-//         self.clone()
-//     }
-// }
-
+/// HksParam_union_1 union
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub union HksParam_union_1{
+    /// HksParam bool param
     pub bool_param: bool,
+    /// HksParam int32 param
     pub int32_param: i32,
+    /// HksParam uint32 param
     pub uint32_param: u32,
+    /// HksParam uint64 param
     pub uint64_param: u64,
+    /// HksParam blob param
     pub blob: HksBlob,
 }
 
@@ -153,15 +173,12 @@ extern "C"{
     /// c build paramset
     pub fn HksBuildParamSet(param_set: *mut *mut HksParamSet) -> HuksErrcode;
 
-    // pub fn HksEncrypt(key: *const HksBlob, paramSet: *const HksParamSet,
-    //     plainText: *const HksBlob, cipherText: *mut HksBlob
-    // ) -> HuksErrcode;
+    /// c hksinit
+    pub fn HksInit(keyAlias: *const HksBlob, paramSet: *const HksParamSet,handle: *mut HksBlob, token: *mut HksBlob) -> HuksErrcode;
 
-    // pub fn HksDecrypt(key: *const HksBlob, paramSet: *const HksParamSet,
-    //     cipherText: *const HksBlob, plainText: *mut HksBlob
-    // ) -> HuksErrcode;
+    /// c hksupdate
+    pub fn HksUpdate(handle: *const HksBlob, paramSet: *const HksParamSet, inData: *const HksBlob, outData: *mut HksBlob) -> HuksErrcode;
 
-    // pub fn HksInit(keyAlias: *const HksBlob, paramSet: *const HksParamSet,
-    //     handle: *mut HksBlob, token: *mut HksBlob
-    // ) -> HuksErrcode;
+    /// c hksfinish
+    pub fn HksFinish(handle: *const HksBlob, paramSet: *const HksParamSet, inData: *const HksBlob, outData: *mut HksBlob) -> HuksErrcode;
 }

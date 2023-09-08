@@ -15,6 +15,6 @@
 
 //! This create implement the asset
 
-mod hukkey_ffi;
+pub mod hukkey_ffi;
 #[allow(non_snake_case, non_camel_case_types)]
 pub mod hukkey;

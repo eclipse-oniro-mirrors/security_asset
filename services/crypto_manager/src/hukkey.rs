@@ -18,105 +18,55 @@ use crate::hukkey_ffi::*;
 use asset_common_lib::{asset_type::{AssetStatusCode,AssetResult},asset_log_error};
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
-use std::ptr::null_mut;
-// use std::mem::{size_of,align_of};
-// use std::alloc::{alloc,dealloc,Layout};
+use std::ptr::{null_mut,copy_nonoverlapping};
+use std::mem::align_of;
+use std::alloc::{alloc,dealloc,Layout};
 
-/// KeyInfo
+
+/// KeyInfo struct
 pub struct KeyInfo {
-    /// user id
+    /// User id
     pub user_id: u32,
-    /// uid
+    /// Uid
     pub uid: u32,
-    /// auth_type
+    /// Auth_type
     pub auth_type: u32,
-    /// access_type
+    /// Access_type
     pub access_type: u32,
 }
-/// SecretKey
+/// SecretKey struct
 pub struct SecretKey{
-    /// secret key alias
+    /// SecretKey alias
     pub alias: String,
 }
 impl SecretKey{
-    /// new a secret key
+    /// New a secret key
     pub fn new(info: KeyInfo) -> Self{
         Self { alias: format!("{}_{}_{}_{}",info.user_id,info.uid,info.auth_type,info.access_type) }
     }
 
-    /// generate the hukkey
-    pub fn generate(&mut self) -> AssetResult<(Box<HksBlob>,Box<HksParamSet>)>{
+    /// Generate the hukkey
+    pub fn generate(&mut self, mut gen_param_set: HksParamSet) -> AssetResult<(Box<HksBlob>,Box<HksParamSet>,HuksErrcode)>{
         let hks_blob = Box::new(
             HksBlob{
             size: self.alias.len() as u32,
             data: &mut self.alias as *mut _ as *mut u8,
         });
         let key_alias: *const HksBlob = Box::into_raw(hks_blob);
-        
-        let mut genParamSet = HksParamSet::new();
-        let g_genParams004:[HksParam;5] = [
-            HksParam{
-                tag: HKS_TAG_ALGORITHM,
-                union_1: HksParam_union_1{
-                    uint32_param: HKS_ALG_AES
-                }
-            },
-            HksParam{
-                tag: HKS_TAG_PURPOSE,
-                union_1: HksParam_union_1{
-                    uint32_param: HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT
-                }
-            },
-            HksParam{
-                tag: HKS_TAG_KEY_SIZE,
-                union_1: HksParam_union_1{
-                    uint32_param: HKS_AES_KEY_SIZE_128
-                }
-            },
-            HksParam{
-                tag: HKS_TAG_PADDING,
-                union_1: HksParam_union_1{
-                    uint32_param: HKS_PADDING_NONE
-                }
-            },
-            HksParam{
-                tag: HKS_TAG_BLOCK_MODE,
-                union_1: HksParam_union_1{
-                    uint32_param: HKS_MODE_GCM
-                }
-            }
-        ];
-        // let g_genParams004_ptr = g_genParams004.as_ptr();
-
-        let ret = InitParamSet(&mut &mut genParamSet, &g_genParams004[0], 5);
-        if ret != HKS_SUCCESS{
-            asset_log_error!("InitParamSet(gen) failed.");
-            return Err(AssetStatusCode::Failed);
-        }
-        unsafe{
-            HksGenerateKey(key_alias, &genParamSet as *const HksParamSet, null_mut());
-        }
-        unsafe{Ok((Box::from_raw(key_alias as *mut HksBlob),Box::from_raw(&mut genParamSet as *mut HksParamSet)))}
+        let ret = unsafe{HksGenerateKey(key_alias, &gen_param_set as *const HksParamSet, null_mut())};
+        unsafe{Ok((Box::from_raw(key_alias as *mut HksBlob),Box::from_raw(&mut gen_param_set as *mut HksParamSet),ret))}
     }
 
-    /// delete the hukkey
+    /// Delete the hukkey
     pub fn delete(&self,hks_blob: Box<HksBlob>, hks_param_set: Box<HksParamSet>) -> HuksErrcode{
         let key_alias: *const HksBlob = Box::into_raw(hks_blob);
-        let param_set1: *const HksParamSet = Box::into_raw(hks_param_set);
-        unsafe{HksDeleteKey(key_alias, param_set1)}
+        let param_set: *const HksParamSet = Box::into_raw(hks_param_set);
+        unsafe{HksDeleteKey(key_alias, param_set)}
     }
 
-    // pub fn HksEncrypt_func(key: *const HksBlob, paramSet: *const HksParamSet,
-    //     plainText: *const HksBlob, cipherText: *mut HksBlob) -> HuksErrcode{
-    //     unsafe{HksEncrypt(key, paramSet, plainText, cipherText)}
-    // }
-    // pub fn HksDecrypt_func(key: *const HksBlob, paramSet: *const HksParamSet,
-    //     cipherText: *const HksBlob, plainText: *mut HksBlob) -> HuksErrcode{
-    //     unsafe{HksDecrypt(key, paramSet, cipherText, plainText)}
-    // }
 }
 
-/// init param set
+/// Init param set
 pub fn InitParamSet(param_set:&mut &mut HksParamSet, params:&HksParam, paramcount:u32) -> HuksErrcode{
     let mut ret: HuksErrcode = unsafe{HksInitParamSet(param_set as *mut &mut HksParamSet as *mut *mut HksParamSet)};
     if ret != HKS_SUCCESS {
@@ -126,233 +76,108 @@ pub fn InitParamSet(param_set:&mut &mut HksParamSet, params:&HksParam, paramcoun
     ret = unsafe{HksAddParams((*param_set) as *mut HksParamSet, params as *const HksParam, paramcount)};
     if ret != HKS_SUCCESS {
         asset_log_error!("HksAddParams failed");
-        unsafe{HksFreeParamSet(param_set as *mut &mut HksParamSet as *mut *mut HksParamSet)};
+        unsafe{
+            HksFreeParamSet(param_set as *mut &mut HksParamSet as *mut *mut HksParamSet);
+        }
         return ret;
     }
 
     ret = unsafe{HksBuildParamSet(param_set as *mut &mut HksParamSet as *mut *mut HksParamSet)};
     if ret != HKS_SUCCESS {
         asset_log_error!("HksBuildParamSet failed!");
-        unsafe{HksFreeParamSet(param_set as *mut &mut HksParamSet as *mut *mut HksParamSet)};
+        unsafe{
+            HksFreeParamSet(param_set as *mut &mut HksParamSet as *mut *mut HksParamSet);
+        }
         return ret;
     }
 
     HKS_SUCCESS
 }
 
-// fn HksInitParamSet(mut param_set:*mut HksParamSet) -> HuksErrcode{
-//     if param_set.is_null(){
-//         asset_log_error!("invalid init params!");
-//     }
+/// Test update loop finish
+pub fn TestUpdateLoopFinish(handle:&HksBlob, param_set:&HksParamSet, indata:&mut Box<HksBlob>, outdata:&mut Box<HksBlob>) -> HuksErrcode{
+    let last_ptr = unsafe{indata.data.add(indata.size as usize - 1)};
+    let param_set_ptr = param_set as *const HksParamSet;
+    let mut out_data_seg = HksBlob{ 
+        size: MAX_OUTDATA_SIZE,
+        data: null_mut()
+    };
+    let mut cur = outdata.data;
+    outdata.size = 0;
 
-//     let hks_param_set = Box::new(
-//         HksParamSet{
-//             params_cnt: 0,
-//             param_set_size: size_of::<HksParamSet>() as u32,
-//             params: null_mut::<HksParam>(),
-//         }
-//     );
-//     param_set = Box::into_raw(hks_param_set);
-//     if param_set.is_null(){
-//         asset_log_error!("malloc init param set failed!");
-//     }
-//     HKS_SUCCESS
-// }
+    indata.size = MAX_UPDATE_SIZE;
 
-// fn HksAddParams(param_set: *mut HksParamSet,params: *const HksParam, param_cnt: u32) -> HuksErrcode{
-//     let ret: HuksErrcode = CheckBeforeAddParams(param_set, params, param_cnt);
-//     if ret != HKS_SUCCESS {
-//         asset_log_error!("CheckBeforeAddParams failed");
-//         return ret;
-//     }
+    unsafe{
+        while indata.data <= last_ptr{
+            if indata.data.add(MAX_UPDATE_SIZE as usize) <= last_ptr{
+                out_data_seg.size = MAX_OUTDATA_SIZE;
+            } else {
+                indata.size = last_ptr.offset_from(indata.data) as u32 + 1;
+                break;
+            }
+            if MallocAndCheckBlobData(&mut out_data_seg) != HKS_SUCCESS{
+                return HKS_FAILURE;
+            }
+            
+            if HksUpdate(handle as *const HksBlob, param_set_ptr, Box::as_mut(indata) as *mut HksBlob as *const HksBlob, &mut out_data_seg as *mut HksBlob) != HKS_SUCCESS{
+                asset_log_error!("HksUpdate Failed.");
+                let layout = Layout::from_size_align(out_data_seg.size as usize,align_of::<u32>()).unwrap();
+                dealloc(out_data_seg.data,layout);
+                return HKS_FAILURE;
+            }
+            copy_nonoverlapping(out_data_seg.data as *const u8, cur, out_data_seg.size as usize);
+            cur = cur.add(out_data_seg.size as usize);
+            outdata.size += out_data_seg.size;
+            let layout = Layout::from_size_align(out_data_seg.size as usize,align_of::<u32>()).unwrap();
+            dealloc(out_data_seg.data,layout);
+            if indata.data.add(MAX_UPDATE_SIZE as usize) > last_ptr {
+                return HKS_FAILURE;
+            }
+            indata.data = indata.data.add(MAX_UPDATE_SIZE as usize);
+        }
+    }
+
+    let mut out_data_finish = HksBlob{
+        size: indata.size * TIMES,
+        data: null_mut()
+    };
+    if MallocAndCheckBlobData(&mut out_data_finish) != HKS_SUCCESS{
+        return HKS_FAILURE;
+    }
+
+    unsafe{
+        if HksFinish(handle as *const HksBlob, param_set_ptr, Box::as_mut(indata) as *mut HksBlob as *const HksBlob, &mut out_data_finish as *mut HksBlob) != HKS_SUCCESS{
+            let layout = Layout::from_size_align(out_data_finish.size as usize,align_of::<u32>()).unwrap();
+            dealloc(out_data_finish.data,layout);
+            return HKS_FAILURE;
+        }
+    }
     
-//     unsafe{
-//         if param_cnt > 0{
-//             let vec_hksparam = Box::new(
-//                 [HksParam{
-//                     tag: 0,
-//                     union_1: HksParam_union_1{
-//                         uint32_param: 0
-//                     }
-//                 },HksParam{
-//                     tag: 0,
-//                     union_1: HksParam_union_1{
-//                         uint32_param: 0
-//                     }
-//                 },HksParam{
-//                     tag: 0,
-//                     union_1: HksParam_union_1{
-//                         uint32_param: 0
-//                     }
-//                 },HksParam{
-//                     tag: 0,
-//                     union_1: HksParam_union_1{
-//                         uint32_param: 0
-//                     }
-//                 },HksParam{
-//                     tag: 0,
-//                     union_1: HksParam_union_1{
-//                         uint32_param: 0
-//                     }
-//                 }]
-//             );
-//             let vec_hksparam_ptr = Box::into_raw(vec_hksparam);
-//             (*param_set).params = &mut (*vec_hksparam_ptr)[0] as *mut HksParam;
-//         }
-//         for i in 0..=param_cnt{
-//             (*param_set).param_set_size += size_of::<HksParam>() as u32;
-//             if GetTagType((*params.add(i as usize)).tag) == HKS_TAG_TYPE_BYTES {
-//                 if IsAdditionOverflow((*param_set).param_set_size, (*params.add(i as usize)).union_1.blob.size) {
-//                     asset_log_error!("params size overflow!");
-//                     (*param_set).param_set_size -= size_of::<HksParam>() as u32;
-//                     return HKS_ERROR_INVALID_ARGUMENT;
-//                 }
-//                 (*param_set).param_set_size += (*params.add(i as usize)).union_1.blob.size;
-//             }
-//             *((*param_set).params.add(i as usize)) =  *params.add(i as usize);
-//         }
-//     }
-//     HKS_SUCCESS
-// }
+    unsafe{
+        copy_nonoverlapping(out_data_finish.data as *const u8, cur, out_data_finish.size as usize);
+    }
+    outdata.size += out_data_finish.size;
+    let layout = Layout::from_size_align(out_data_finish.size as usize,align_of::<u32>()).unwrap();
+    unsafe{
+        dealloc(out_data_finish.data,layout);
+    }
 
-// fn CheckBeforeAddParams(param_set: *mut HksParamSet,params: *const HksParam, param_cnt: u32) -> HuksErrcode{
-//     unsafe{
-//         if params.is_null() || param_set.is_null() || (*param_set).param_set_size > HKS_PARAM_SET_MAX_SIZE ||
-//         param_cnt > HKS_DEFAULT_PARAM_CNT || (*param_set).params_cnt > (HKS_DEFAULT_PARAM_CNT - param_cnt) {
-//             asset_log_error!("invalid params or paramset!");
-//             return HKS_ERROR_INVALID_ARGUMENT;
-//         }
-//     }
-    
-//     unsafe{    
-//         for i in 0..=param_cnt{
-//             if GetTagType((*params.add(i as usize)).tag) == HKS_TAG_TYPE_BYTES &&
-//                 (*params.add(i as usize)).union_1.blob.data.is_null(){
-//                 asset_log_error!("invalid blob param!");
-//                 return HKS_ERROR_INVALID_ARGUMENT;
-//             }
-//         }
-//     }
-//     HKS_SUCCESS
-// }
+    HKS_SUCCESS
+}
 
-// fn GetTagType(tag: u32) -> u32{
-//     tag & HKS_TAG_TYPE_MASK
-// }
+fn MallocAndCheckBlobData(blob: &mut HksBlob) -> HuksErrcode{
+    unsafe{
+        let layout = Layout::from_size_align(blob.size as usize,align_of::<u32>()).unwrap();
+        blob.data = alloc(layout);
+        if blob.data.is_null(){
+            asset_log_error!("could not alloc memory");
+            return HKS_FAILURE;
+        }
+    }
+    HKS_SUCCESS
+}
 
-// fn IsAdditionOverflow(a: u32, b: u32) -> bool{
-//     (0xffffffff - a) < b
-// }
-
-// fn HksFreeParamSet(param_set:*mut HksParamSet){
-//     if param_set.is_null() {
-//         asset_log_error!("invalid free paramset!");
-//         return;
-//     }
-//     unsafe{
-//         drop_in_place(param_set);
-//     }
-// }
-
-// fn HksBuildParamSet(param_set:*mut HksParamSet) -> HuksErrcode{
-//     if param_set.is_null(){
-//         return HKS_ERROR_NULL_POINTER;
-//     }
-    
-//     let ret = unsafe{HksCheckParamSet(param_set as * const HksParamSet, (*param_set).param_set_size)};
-//     if ret != HKS_SUCCESS{
-//         asset_log_error!("invalid build params!");
-//         return ret;
-//     }
-
-//     BuildParamSet(param_set)
-// }
-
-// fn HksCheckParamSet(param_set: *const HksParamSet, size: u32) -> HuksErrcode{
-//     if param_set.is_null() {
-//         return HKS_ERROR_NULL_POINTER;
-//     }
-
-//     unsafe{
-//         if size < size_of::<HksParamSet>() as u32 || size > HKS_PARAM_SET_MAX_SIZE ||
-//         (*param_set).param_set_size != size ||
-//         (*param_set).params_cnt > ((size - size_of::<HksParamSet>() as u32) / size_of::<HksParam>() as u32) {
-//             asset_log_error!("invalid param set!");
-//             return HKS_ERROR_INVALID_ARGUMENT;
-//         }
-//     }
-    
-//     HKS_SUCCESS
-// }
-
-// fn BuildParamSet(param_set:*mut HksParamSet) -> HuksErrcode{
-//     let mut fresh_param_set = param_set;
-//     let size: u32 = unsafe{(*fresh_param_set).param_set_size};
-//     let offset: u32 = unsafe{size_of::<HksParamSet>() as u32 + size_of::<HksParam>() as u32 * (*fresh_param_set).params_cnt};
-
-//     if size > HKS_DEFAULT_PARAM_SET_SIZE {
-//         let mut layout = Layout::from_size_align(size as usize,align_of::<HksParamSet>()).unwrap();
-//         fresh_param_set = unsafe{alloc(layout) as *mut HksParamSet};
-//         if fresh_param_set.is_null(){
-//             asset_log_error!("malloc params failed!");
-//             return HKS_ERROR_MALLOC_FAIL;
-//         }
-
-//         unsafe{
-//             copy_nonoverlapping(param_set as *const HksParamSet,fresh_param_set, size as usize);
-//             layout = Layout::from_size_align(offset as usize,align_of::<HksParamSet>()).unwrap();
-//             dealloc(param_set as *mut u8,layout);
-//             // param_set = fresh_param_set;
-//         }
-//     }
-
-//     HksFreshParamSet(fresh_param_set)
-// }
-
-// fn HksFreshParamSet(param_set: *mut HksParamSet) -> HuksErrcode{
-//     if param_set.is_null(){
-//         asset_log_error!("invalid NULL paramSet");
-//         return HKS_ERROR_NULL_POINTER;
-//     }
-//     let ret = unsafe{HksCheckParamSet(param_set as *const HksParamSet, (*param_set).param_set_size)};
-//     if ret != HKS_SUCCESS{
-//         asset_log_error!("invalid fresh paramSet");
-//         return ret;
-//     }
-
-//     FreshParamSet(param_set)
-// }
-
-// fn FreshParamSet(param_set: *mut HksParamSet) -> HuksErrcode{
-//     let size: u32 = unsafe{(*param_set).param_set_size};
-//     let mut offset: u32 = unsafe{size_of::<HksParamSet>() as u32 + size_of::<HksParam>() as u32 * (*param_set).params_cnt};
-//     unsafe{
-//         let param_ptr = (*param_set).params;
-//         for i in 0..=(*param_set).params_cnt as usize{
-//             if offset > size {
-//                 asset_log_error!("invalid param set offset!");
-//                 return HKS_ERROR_INVALID_ARGUMENT;
-//             }
-//             if GetTagType((*param_ptr.add(i)).tag) == HKS_TAG_TYPE_BYTES{
-//                 if IsAdditionOverflow(offset, (*param_ptr.add(i)).union_1.blob.size) {
-//                     asset_log_error!("blob size overflow!");
-//                     return HKS_ERROR_INVALID_ARGUMENT;
-//                 }
-//                 copy_nonoverlapping((*param_ptr.add(i)).union_1.blob.data,param_set.add(offset as usize) as *mut u8, (*param_ptr.add(i)).union_1.blob.size as usize);
-//                 (*param_ptr.add(i)).union_1.blob.data = param_set.add(offset as usize) as *mut u8;
-//                 offset += (*param_ptr.add(i)).union_1.blob.size;
-//             }
-//         }
-    
-//         if (*param_set).param_set_size != offset {
-//             asset_log_error!("invalid param set size!");
-//             return HKS_ERROR_INVALID_ARGUMENT;
-//         }
-//     }
-//     HKS_SUCCESS
-// }
-
-/// Crypto
+/// Crypto struct
 pub struct Crypto {
     // key: SecretKey,
     // mode: CryptoMode,
@@ -375,20 +200,85 @@ pub struct Crypto {
 // }
 
 impl Crypto {
-    /// encrypt
-    pub fn encrypt(msg: &Vec<u8>) -> AssetResult<Vec<u8>>{
-        let ptr = msg.as_ptr() as *mut u8;
-        let len = msg.len();
-        let cap = msg.capacity();
-        let res = unsafe{Vec::from_raw_parts(ptr, len, cap)};
-        Ok(res)
+    /// Encrypt
+    pub fn encrypt(key_alias: &HksBlob,gen_param_set: &HksParamSet, encrypt_param_set: HksParamSet, msg: &mut Vec<u8>) -> AssetResult<Box<Vec<u8>>>{
+        let mut handle_e: Box<Vec<u8>> = Box::new(vec![0,0,0,0,0,0,0,0]);
+        let mut handle_encrypt = Box::new(
+            HksBlob{
+                size: 8,
+                data: &mut handle_e[0] as *mut _ as *mut u8,
+            }
+        );
+        
+        let mut ret = unsafe{HksInit(key_alias as *const HksBlob, &encrypt_param_set as *const HksParamSet, Box::as_mut(&mut handle_encrypt) as *mut HksBlob, null_mut())};
+        if ret != HKS_SUCCESS{
+            asset_log_error!("Init failed.");
+            return Err(AssetStatusCode::Failed);
+        }
+        let mut indata = Box::new(
+            HksBlob { 
+                size: msg.len() as u32, 
+                data: &mut (*msg)[0] as *mut _ as *mut u8 
+            }
+        );
+        let mut cipher: Box<Vec<u8>> = Box::new(vec![0;AES_COMMON_SIZE as usize]);
+        let mut cipher_text = Box::new(
+            HksBlob{
+                size: AES_COMMON_SIZE,
+                data: &mut cipher[0] as *mut _ as *mut u8,
+            }
+        );
+        ret = TestUpdateLoopFinish(Box::as_ref(&handle_encrypt), &encrypt_param_set, &mut indata, &mut cipher_text);
+        if ret != HKS_SUCCESS{
+            asset_log_error!("TestUpdateLoopFinish failed.");
+            return Err(AssetStatusCode::Failed);
+        }
+        
+        if ret != HKS_SUCCESS{
+            unsafe{HksDeleteKey(key_alias as *const HksBlob, gen_param_set as *const HksParamSet)};
+            return Err(AssetStatusCode::Failed);
+        }
+        Ok(cipher)
     }
-    /// decrypt
-    pub fn decrypt(cipher: &Vec<u8>) -> AssetResult<Vec<u8>>{
-        let ptr = cipher.as_ptr() as *mut u8;
-        let len = cipher.len();
-        let cap = cipher.capacity();
-        let res = unsafe{Vec::from_raw_parts(ptr, len, cap)};
-        Ok(res)
+
+    /// Decrypt
+    pub fn decrypt(key_alias: &HksBlob, gen_param_set: &HksParamSet, decrypt_param_set: HksParamSet, cipher: &mut Vec<u8>) -> AssetResult<Box<Vec<u8>>>{
+        let mut handle_d: Box<Vec<u8>> = Box::new(vec![0,0,0,0,0,0,0,0]);
+        let mut handle_decrypt = Box::new(
+            HksBlob{
+                size: 8,
+                data: &mut handle_d[0] as *mut _ as *mut u8,
+            }
+        );
+        
+        let mut ret = unsafe{HksInit(key_alias as *const HksBlob, &decrypt_param_set as *const HksParamSet, Box::as_mut(&mut handle_decrypt) as *mut HksBlob, null_mut())};
+        if ret != HKS_SUCCESS{
+            asset_log_error!("Init failed.");
+            return Err(AssetStatusCode::Failed);
+        }
+        let mut cipher_text = Box::new(
+            HksBlob { 
+                size: cipher.len() as u32, 
+                data: &mut (*cipher)[0] as *mut _ as *mut u8 
+            }
+        );
+        let mut plain: Box<Vec<u8>> = Box::new(vec![0;AES_COMMON_SIZE as usize]);
+        let mut plain_text = Box::new(
+            HksBlob{
+                size: AES_COMMON_SIZE,
+                data: &mut plain[0] as *mut _ as *mut u8,
+            }
+        );
+        ret = TestUpdateLoopFinish(Box::as_ref(&handle_decrypt), &decrypt_param_set, &mut cipher_text, &mut plain_text);
+        if ret != HKS_SUCCESS{
+            asset_log_error!("TestUpdateLoopFinish failed.");
+            return Err(AssetStatusCode::Failed);
+        }
+        
+        if ret != HKS_SUCCESS{
+            unsafe{HksDeleteKey(key_alias as *const HksBlob, gen_param_set as *const HksParamSet)};
+            return Err(AssetStatusCode::Failed);
+        }
+        Ok(plain)
     }
 }
