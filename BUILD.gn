@@ -21,7 +21,7 @@ group("asset_component") {
         "$COMPONENT_DIR/interfaces/inner_api/c:asset_sdk",
         "$COMPONENT_DIR/services/core_service:asset_server",
         "$COMPONENT_DIR/sa_profile:asset_sa_profiles",
-        "$COMPONENT_DIR/db_operator:db_operator",
+        "$COMPONENT_DIR/services/db_operator:db_operator",
         "$COMPONENT_DIR/interfaces/kits/c:asset_ndk",
         "$COMPONENT_DIR/services/crypto_manager:crypto_manager",
     ]
@@ -34,7 +34,7 @@ group("asset_component") {
 group("asset_test") {
   testonly = true
   deps = [
-    "$COMPONENT_DIR/db_operator:db_operator_test",
+    "$COMPONENT_DIR/services/db_operator:db_operator_test",
     "$COMPONENT_DIR/services/crypto_manager:crypto_manager_test",
     "$COMPONENT_DIR/test/unittest/inner_api_c:asset_c_api_test",
     "$COMPONENT_DIR/test/unittest/inner_api_rust:asset_rust_test",

@@ -43,7 +43,7 @@ module_output_path = "asset/db_operator"
 ohos_rust_unittest("db_operator_test") {
   module_out_path = module_output_path
   sources = [ "test/mod.rs" ]
-  deps = [ "$COMPONENT_DIR/db_operator:db_operator" ]
+  deps = [ "$COMPONENT_DIR/services/db_operator:db_operator" ]
   subsystem_name = "security"
   part_name = "asset"
 }

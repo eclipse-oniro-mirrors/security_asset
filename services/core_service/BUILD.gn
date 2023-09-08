@@ -19,7 +19,7 @@ ohos_rust_shared_library("asset_server") {
   sources = [ "src/lib.rs" ]
 
   deps = [
-    "$COMPONENT_DIR/db_operator:db_operator",
+    "$COMPONENT_DIR/services/db_operator:db_operator",
     "$COMPONENT_DIR/frameworks/common:asset_common_lib",
     "$COMPONENT_DIR/frameworks/ipc_define:asset_ipc_define_lib",
   ]

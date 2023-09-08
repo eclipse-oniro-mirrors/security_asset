@@ -4,7 +4,7 @@ members = [
     "frameworks/ipc_define",
     "interfaces/inner_api/rs",
     "services/core_service",
-    "db_operator",
+    "services/db_operator",
     "test/unittest/inner_api_rust",
     "services/crypto_manager",
 ]
