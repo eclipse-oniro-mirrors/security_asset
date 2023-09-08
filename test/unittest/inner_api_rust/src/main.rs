@@ -15,11 +15,14 @@
 
 use core::panic;
 
-use asset_rust_sdk::asset_type::{AssetMap, Accessibility, Tag, InsertAttribute};
+use asset_rust_sdk::asset_type::{AssetMap, Accessibility, Tag, InsertAttribute, AssetAuthType, AssetSyncType};
 
 #[test]
 fn test_for_add() {
     let mut input = AssetMap::new();
+    input.insert_attr(Tag::Secret, Vec::from("alias".as_bytes())).unwrap();
+    input.insert_attr(Tag::AuthType, AssetAuthType::Any).unwrap();
+    input.insert_attr(Tag::SyncType, AssetSyncType::Never).unwrap();
 
     input.insert_attr(Tag::Accessibility, Accessibility::DeviceSecure).unwrap();
     input.insert_attr(Tag::Alias, Vec::from("alias".as_bytes())).unwrap();

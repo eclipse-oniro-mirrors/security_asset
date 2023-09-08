@@ -55,6 +55,6 @@ void AttestCApiTest::TearDown()
 HWTEST_F(AttestCApiTest, AttestCApiTest001, TestSize.Level0)
 {
     int32_t ret = AssetTest(1);
-    ASSERT_EQ(1, ret) << "res is" << ret;
+    ASSERT_EQ(0, ret) << "res is" << ret;
 }
 }

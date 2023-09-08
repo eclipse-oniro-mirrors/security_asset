@@ -43,6 +43,7 @@ impl AssetBroker for AssetService {
     }
 
     fn add(&self, input: &AssetMap) -> AssetResult<AssetMap> {
+        // get calling uid userid appid etc
         operations::add(input)
     }
 }

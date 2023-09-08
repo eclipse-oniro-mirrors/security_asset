@@ -16,5 +16,6 @@
 //! This create implement the asset operations
 
 mod operation_add;
+mod operation_common;
 
 pub(crate) use operation_add::add;

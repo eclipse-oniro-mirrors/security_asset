@@ -16,16 +16,15 @@ import("//build/ohos.gni")
 COMPONENT_DIR = "//base/security/asset"
 
 group("asset_component") {
-  deps = [
-    "$COMPONENT_DIR/db_operator:db_operator",
-    "$COMPONENT_DIR/interfaces/inner_api/c:asset_sdk",
-    "$COMPONENT_DIR/interfaces/inner_api/rs:asset_rust_sdk",
-    "$COMPONENT_DIR/interfaces/kits/c:asset_ndk",
-    "$COMPONENT_DIR/sa_profile:asset_sa_profiles",
-    "$COMPONENT_DIR/services/core_service:asset_server",
-    "$COMPONENT_DIR/services/core_service/etc/init:assetservice.cfg",
-    "$COMPONENT_DIR/services/crypto_manager:crypto_manager",
-  ]
+    deps = [
+        "$COMPONENT_DIR/interfaces/inner_api/rs:asset_rust_sdk",
+        "$COMPONENT_DIR/interfaces/inner_api/c:asset_sdk",
+        "$COMPONENT_DIR/services/core_service:asset_server",
+        "$COMPONENT_DIR/sa_profile:asset_sa_profiles",
+        "$COMPONENT_DIR/db_operator:db_operator",
+        "$COMPONENT_DIR/interfaces/kits/c:asset_ndk",
+        "$COMPONENT_DIR/services/crypto_manager:crypto_manager",
+    ]
 
   if (support_jsapi) {
     deps += [ "//$COMPONENT_DIR/frameworks/js/napi:asset_napi" ]
