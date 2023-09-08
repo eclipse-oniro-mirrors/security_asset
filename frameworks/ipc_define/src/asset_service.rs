@@ -85,11 +85,9 @@ fn on_asset_remote_request(
             },
             AssetIpcCode::Add => {
                 asset_log_info!("on_asset_remote_request add");
-                let res: AssetMap = stub.add(input_map.as_ref().unwrap()).unwrap();
-                let ser_res = res.serialize(reply);
-                if ser_res.is_err() {
-                    return Err(IpcStatusCode::InvalidValue);
-                }
+                let res: AssetMap = stub.add(input_map.as_ref().unwrap())?;
+                res.serialize(reply)?;
+                // to do : 将错误码放到map里，否则会有错误信息丢失
             }
         }
         Ok(())

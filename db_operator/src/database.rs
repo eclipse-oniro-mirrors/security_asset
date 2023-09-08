@@ -71,7 +71,7 @@ impl Database {
     /// create default database
     ///
     pub fn default_new(userid: u32) -> Result<Database, SqliteErrcode> {
-        let mut path = format!("/data/service/el1/{}/asset_service/asset.db", userid);
+        let mut path = format!("/data/service/el1/public/asset_service/{}/asset.db", userid);
         let mut db = Database { path: path.clone(), v2: false, handle: 0 };
         path.push('\0');
         let ret = sqlite3_open_func(&path, &mut db.handle);

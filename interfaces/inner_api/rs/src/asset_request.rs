@@ -17,7 +17,7 @@
 
 use asset_common_lib::{
     asset_log_info,
-    asset_type::{AssetMap, AssetResult, AssetStatusCode},
+    asset_type::{AssetMap, AssetResult, AssetStatusCode}, asset_log_error,
 };
 
 use asset_ipc_define_lib::asset_service::{AssetBroker, ASSET_SERVICE_ID};
@@ -33,7 +33,10 @@ fn get_asset_service() -> AssetResult<RemoteObjRef<dyn AssetBroker>> {
     let object = get_service_proxy::<dyn AssetBroker>(ASSET_SERVICE_ID);
     match object {
         Ok(remote) => Ok(remote),
-        Err(_) => Err(AssetStatusCode::ServiceUnvailable),
+        Err(e) => {
+            asset_log_error!("get_asset_service failed {}!", @public(e));
+            Err(AssetStatusCode::ServiceUnvailable)
+        }
     }
 }
 

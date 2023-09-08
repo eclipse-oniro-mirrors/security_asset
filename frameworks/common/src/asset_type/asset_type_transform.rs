@@ -16,7 +16,7 @@
 //! 各种类型的拓展方法定义在此处
 
 use crate::asset_type::{AssetResult, AssetStatusCode, Tag, AssetType, Value, Accessibility,
-    AssetReturnType, AssetConflictPolicy, AssetSyncType};
+    AssetReturnType, AssetConflictPolicy, AssetSyncType, AssetAuthType};
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use ipc_rust::IpcStatusCode;
 
@@ -96,6 +96,16 @@ impl GetType for bool {
 
     fn get_real(self) -> Value {
         Value::BOOL(self)
+    }
+}
+
+impl GetType for AssetAuthType {
+    fn get_type(&self) -> AssetResult<AssetType> {
+        Ok(AssetType::Uint32)
+    }
+
+    fn get_real(self) -> Value {
+        Value::NUMBER(self as u32)
     }
 }
 
