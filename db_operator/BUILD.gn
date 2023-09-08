@@ -16,38 +16,34 @@ import("//build/test.gni")
 COMPONENT_DIR = "//base/security/asset"
 
 ohos_rust_shared_library("db_operator") {
-    sources = [
-        "src/database.rs",
-        "src/database_table_helper.rs",
-        "src/table.rs",
-        "src/statement.rs",
-        "src/sqlite3_ffi.rs",
-        "src/types.rs",
-        "src/lib.rs",
-    ]
+  sources = [
+    "src/database.rs",
+    "src/database_table_helper.rs",
+    "src/lib.rs",
+    "src/sqlite3_ffi.rs",
+    "src/statement.rs",
+    "src/table.rs",
+    "src/types.rs",
+  ]
 
-    deps = [
-        "$COMPONENT_DIR/frameworks/common:asset_common_lib",
-        "//third_party/sqlite:sqlite",
-    ]
+  deps = [
+    "$COMPONENT_DIR/frameworks/common:asset_common_lib",
+    "//third_party/sqlite:sqlite",
+  ]
 
-    crate_name = "db_operator"
-    crate_type = "dylib"
+  crate_name = "db_operator"
+  crate_type = "dylib"
 
-    subsystem_name = "security"
-    part_name = "asset"
+  subsystem_name = "security"
+  part_name = "asset"
 }
 
 module_output_path = "asset/db_operator"
 
 ohos_rust_unittest("db_operator_test") {
-    module_out_path = module_output_path
-    sources = [
-        "test/mod.rs",
-    ]
-    deps = [
-        "$COMPONENT_DIR/db_operator:db_operator",
-    ]
-    subsystem_name = "security"
-    part_name = "asset"
+  module_out_path = module_output_path
+  sources = [ "test/mod.rs" ]
+  deps = [ "$COMPONENT_DIR/db_operator:db_operator" ]
+  subsystem_name = "security"
+  part_name = "asset"
 }

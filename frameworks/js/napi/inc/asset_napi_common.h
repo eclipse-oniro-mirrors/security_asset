@@ -25,57 +25,27 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 
-#define DEFAULT_MAX_ARGS_NUM 2
-#define DEFAULT_MIN_ARGS_NUM 1
-#define UPDATE_MAX_ARGS_NUM 3
-#define UPDATE_MIN_ARGS_NUM 2
-#define NAPI_THROW_BASE(env, assertion, ret, code, message)            \
-if ((assertion)) {                                                     \
-    napi_throw_error((env), std::to_string((code)).c_str(), message);  \
-    return (ret);                                                      \
-}
-
-#define NAPI_THROW(env, assertion, code, message) \
-    NAPI_THROW_BASE(env, assertion, nullptr, code, message)
-
-#define NAPI_THROW_RETURN(env, assertion, code, message) \
-    NAPI_THROW_BASE(env, assertion, napi_generic_failure, code, message)
-
-#define NAPI_THROW_BREAK(env, assertion, code, message) \
-if ((assertion)) { \
-    napi_throw_error((env), std::to_string((code)).c_str(), message); \
-    break; \
-}
-
-#define NAPI_CALL_BREAK(env, theCall)   \
-if ((theCall) != napi_ok) {             \
-    GET_AND_THROW_LAST_ERROR((env));    \
-    break;                              \
-}
-
-#define NAPI_CALL_RETURN(env, theCall)  \
-if ((theCall) != napi_ok) {             \
-    GET_AND_THROW_LAST_ERROR((env));    \
-    return napi_generic_failure;        \
-}
-
 typedef struct AsyncContext {
-    napi_async_work asyncWork = nullptr;
+    // common
+    napi_async_work work = nullptr;
     napi_deferred deferred = nullptr;
     napi_ref callback = nullptr;
 
+    // input
     AssetParam *params = nullptr;
     uint32_t paramCnt = 0;
+    AssetParam *updateParams = nullptr;
+    uint32_t updateParamCnt = 0;
+
+    // output
     int32_t result = 0;
+    AssetBlob challenge = { 0 };
+    AssetResultSet resultSet = { 0 };
 } AsyncContext;
 
-AsyncContext *CreateAsyncContext();
 
-void DestroyAsyncContext(napi_env env, AsyncContext *context);
-
-napi_status ParseMapParam(napi_env env, napi_value arg, AssetParam **params, uint32_t *paramCnt);
-
-napi_status ParseCallbackParam(napi_env env, napi_value arg, napi_ref *callback);
+napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
+    size_t expectArgNum = 2);
 
 } // Asset
 } // Security

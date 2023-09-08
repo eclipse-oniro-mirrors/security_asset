@@ -15,6 +15,8 @@
 
 #include "asset_api.h"
 
+#include "asset_log.h"
+
 int32_t AssetInsert(int32_t code);
 
 int32_t AssetTest(int32_t code)
@@ -22,7 +24,19 @@ int32_t AssetTest(int32_t code)
     return AssetInsert(code);
 }
 
-int32_t InsertAsset(const AssetParam *attributes, uint32_t attrCount)
+int32_t AddAsset(const AssetParam *attributes, uint32_t attrCount)
+{
+    LOGE("[YZT]Congratulations! AddAsset function is called.");
+    return ASSET_SUCCESS;
+}
+
+int32_t RemoveAsset(const AssetParam *query, uint32_t queryCnt)
+{
+    return ASSET_SUCCESS;
+}
+
+int32_t UpdateAsset(const AssetParam *query, uint32_t queryCnt,
+    const AssetParam *attributesToUpdate, uint32_t updateCnt)
 {
     return ASSET_SUCCESS;
 }
@@ -38,17 +52,6 @@ int32_t QueryAsset(const AssetParam *query, uint32_t queryCnt, AssetResultSet *r
 }
 
 int32_t PostQueryAsset(const AssetParam *handle, uint32_t handleCnt)
-{
-    return ASSET_SUCCESS;
-}
-
-int32_t UpdateAsset(const AssetParam *query, uint32_t queryCnt,
-    const AssetParam *attributesToUpdate, uint32_t updateCnt)
-{
-    return ASSET_SUCCESS;
-}
-
-int32_t DeleteAsset(const AssetParam *query, uint32_t queryCnt)
 {
     return ASSET_SUCCESS;
 }

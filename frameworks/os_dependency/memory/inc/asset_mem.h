@@ -4,7 +4,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,15 +13,23 @@
  * limitations under the License.
  */
 
-#include "asset_napi_pre_query.h"
+#ifndef ASSET_MEM_H
+#define ASSET_MEM_H
 
-namespace OHOS {
-namespace Security {
-namespace Asset {
-    napi_value NapiPreQuery(napi_env env, napi_callback_info info)
-    {
-        return nullptr;
-    }
-} // Asset
-} // Security
-} // OHOS
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void *AssetMalloc(uint32_t size);
+
+void AssetFree(void *addr);
+
+int32_t AssetMemCmp(const void *ptr1, const void *ptr2, uint32_t size);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // ASSET_MEM_H

@@ -14,18 +14,16 @@
 import("//build/ohos.gni")
 
 ohos_rust_static_library("asset_common_lib") {
-    sources = [
-        "src/lib.rs",
-    ]
+  sources = [ "src/lib.rs" ]
 
-    external_deps = [
-        "hilog:hilog_rust",
-        "ipc:ipc_rust",
-    ]
+  external_deps = [
+    "hilog:hilog_rust",
+    "ipc:ipc_rust",
+  ]
 
-    crate_name = "asset_common_lib"
-    crate_type = "rlib"
+  crate_name = "asset_common_lib"
+  crate_type = "rlib"
 
-    subsystem_name = "security"
-    part_name = "asset"
+  subsystem_name = "security"
+  part_name = "asset"
 }

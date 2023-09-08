@@ -16,18 +16,15 @@
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
-#include "asset_napi_add.h"
-#include "asset_napi_get_version.h"
-#include "asset_napi_post_query.h"
-#include "asset_napi_pre_query.h"
-#include "asset_napi_query.h"
-#include "asset_napi_remove.h"
-#include "asset_napi_update.h"
+#include "asset_api.h"
+#include "asset_napi_common.h"
 #include "asset_type.h"
 
 using namespace OHOS::Security::Asset;
 
 namespace {
+
+#define UPDATE_MAX_ARGS_NUM 3
 
 void AddUint32Property(napi_env env, napi_value object, const char *name, uint32_t value)
 {
@@ -48,7 +45,7 @@ napi_value DeclareTag(napi_env env)
     AddUint32Property(env, tag, "AUTH_CHALLENGE", ASSET_TAG_AUTH_CHALLENGE);
     AddUint32Property(env, tag, "AUTH_TOKEN", ASSET_TAG_AUTH_TOKEN);
     AddUint32Property(env, tag, "SYNC_TYPE", ASSET_TAG_SYNC_TYPE);
-    AddUint32Property(env, tag, "CONFLICT_POLICY", ASSET_TAG_CONFLICT_POLICY);
+    AddUint32Property(env, tag, "CONFLICT_RESOLUTION", ASSET_TAG_CONFLICT_RESOLUTION);
     AddUint32Property(env, tag, "DATA_LABLE_CRITICAL_1", ASSET_TAG_DATA_LABLE_CRITICAL_1);
     AddUint32Property(env, tag, "DATA_LABLE_CRITICAL_2", ASSET_TAG_DATA_LABLE_CRITICAL_2);
     AddUint32Property(env, tag, "DATA_LABLE_CRITICAL_3", ASSET_TAG_DATA_LABLE_CRITICAL_3);
@@ -85,7 +82,6 @@ napi_value DeclareAccessibility(napi_env env)
 {
     napi_value accessibility = nullptr;
     NAPI_CALL(env, napi_create_object(env, &accessibility));
-    AddUint32Property(env, accessibility, "DEVICE_POWER_ON", ACCESSIBILITY_DEVICE_POWER_ON);
     AddUint32Property(env, accessibility, "DEVICE_FIRST_UNLOCK", ACCESSIBILITY_DEVICE_FIRST_UNLOCK);
     AddUint32Property(env, accessibility, "DEVICE_UNLOCK", ACCESSIBILITY_DEVICE_UNLOCK);
     AddUint32Property(env, accessibility, "DEVICE_SECURE", ACCESSIBILITY_DEVICE_SECURE);
@@ -128,6 +124,72 @@ napi_value DeclareReturnType(napi_env env)
     AddUint32Property(env, returnType, "ALL", RETURN_ALL);
     AddUint32Property(env, returnType, "ATTRIBUTES", RETURN_ATTRIBUTES);
     return returnType;
+}
+
+napi_value NapiAdd(napi_env env, napi_callback_info info)
+{
+    napi_async_execute_callback execute =
+        [](napi_env env, void *data) {
+            AsyncContext *context = static_cast<AsyncContext *>(data);
+            context->result = AddAsset(context->params, context->paramCnt);
+        };
+    return NapiEntry(env, info, __func__, execute);
+}
+
+napi_value NapiRemove(napi_env env, napi_callback_info info)
+{
+    napi_async_execute_callback execute =
+        [](napi_env env, void *data) {
+            AsyncContext *context = static_cast<AsyncContext *>(data);
+            context->result = RemoveAsset(context->params, context->paramCnt);
+        };
+    return NapiEntry(env, info, __func__, execute);
+}
+
+napi_value NapiUpdate(napi_env env, napi_callback_info info)
+{
+    napi_async_execute_callback execute =
+        [](napi_env env, void *data) {
+            AsyncContext *context = static_cast<AsyncContext *>(data);
+            context->result =
+                UpdateAsset(context->params, context->paramCnt, context->updateParams, context->updateParamCnt);
+        };
+    return NapiEntry(env, info, __func__, execute, UPDATE_MAX_ARGS_NUM);
+}
+
+napi_value NapiPreQuery(napi_env env, napi_callback_info info)
+{
+    napi_async_execute_callback execute =
+        [](napi_env env, void *data) {
+            AsyncContext *context = static_cast<AsyncContext *>(data);
+            context->result = PreQueryAsset(context->params, context->paramCnt, &context->challenge);
+        };
+    return NapiEntry(env, info, __func__, execute);
+}
+
+napi_value NapiQuery(napi_env env, napi_callback_info info)
+{
+    napi_async_execute_callback execute =
+        [](napi_env env, void *data) {
+            AsyncContext *context = static_cast<AsyncContext *>(data);
+            context->result = QueryAsset(context->params, context->paramCnt, &context->resultSet);
+        };
+    return NapiEntry(env, info, __func__, execute);
+}
+
+napi_value NapiPostQuery(napi_env env, napi_callback_info info)
+{
+    napi_async_execute_callback execute =
+        [](napi_env env, void *data) {
+            AsyncContext *context = static_cast<AsyncContext *>(data);
+            context->result = PostQueryAsset(context->params, context->paramCnt);
+        };
+    return NapiEntry(env, info, __func__, execute);
+}
+
+napi_value NapiGetVersion(napi_env env, napi_callback_info info)
+{
+    return nullptr; // todo: to implement
 }
 
 napi_value Register(napi_env env, napi_value exports)

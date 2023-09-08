@@ -16,41 +16,35 @@ import("//build/ohos.gni")
 COMPONENT_DIR = "//base/security/asset"
 
 ohos_ndk_library("libasset_ndk") {
-    output_name = "asset_ndk"
-    output_extension = "z.so"
-    ndk_description_file = "./libasset.ndk.json"
-    min_compact_version = "1"
+  output_name = "asset_ndk"
+  output_extension = "z.so"
+  ndk_description_file = "./libasset.ndk.json"
+  min_compact_version = "1"
 }
 
 ohos_ndk_headers("asset_header") {
-    dest_dir = "$ndk_headers_out_dir/asset"
-    sources = [
-        "./include/native_asset_api.h",
-    ]
+  dest_dir = "$ndk_headers_out_dir/asset"
+  sources = [ "inc/native_asset_api.h" ]
 }
 
 config("asset_config") {
-    include_dirs = [ "include" ]
+  include_dirs = [ "inc" ]
 }
 
 ohos_shared_library("asset_ndk") {
-    public_configs = [ ":asset_config" ]
+  public_configs = [ ":asset_config" ]
 
-    sources = [
-        "src/native_asset_api.c",
-    ]
+  sources = [ "src/native_asset_api.c" ]
 
-    deps = [
-        "$COMPONENT_DIR/interfaces/inner_api/c:asset_sdk",
-    ]
+  deps = [ "$COMPONENT_DIR/interfaces/inner_api/c:asset_sdk" ]
 
-    external_deps = [ "hilog:libhilog" ]
+  external_deps = [ "hilog:libhilog" ]
 
-    cflags_cc = [
-        "-Wall",
-        "-Werror",
-    ]
+  cflags_cc = [
+    "-Wall",
+    "-Werror",
+  ]
 
-    part_name = "asset"
-    subsystem_name = "security"
+  part_name = "asset"
+  subsystem_name = "security"
 }

@@ -203,7 +203,7 @@ declare namespace asset {
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
-  export type Value = boolean | number | Uint8Array;
+  export type Value = boolean | number | Uint8Array; // todo: Uint8Array类型是否允许传UTF8字符串？
 
   /**
    * An enum type indicates when the Asset is accessible.
@@ -361,42 +361,42 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    INT32 = 1 << 28,
+    INT32 = 0x01 << 28,
     /**
      * The data type of Asset attribute value is uint32.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    UINT32 = 2 << 28,
+    UINT32 = 0x02 << 28,
     /**
      * The data type of Asset attribute value is int64.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    INT64 = 3 << 28,
+    INT64 = 0x03 << 28,
     /**
      * The data type of Asset attribute value is uint64.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    UINT64 = 4 << 28,
+    UINT64 = 0x04 << 28,
     /**
      * The data type of Asset attribute value is bool.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    BOOL = 5 << 28,
+    BOOL = 0x05 << 28,
     /**
      * The data type of Asset attribute value is byte array.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    BYTES = 6 << 28
+    BYTES = 0x06 << 28
   }
 
   /**
@@ -413,147 +413,147 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    SECRET = TagType.BYTES | 1,
+    SECRET = TagType.BYTES | 0x01,
     /**
      * A tag whose value is a byte array identifying an Asset.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    ALIAS = TagType.BYTES | 2,
+    ALIAS = TagType.BYTES | 0x02,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating when the Asset can be accessed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    ACCESSIBILITY = TagType.UINT32 | 3,
+    ACCESSIBILITY = TagType.UINT32 | 0x03,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the user authentication type for Asset access control.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    AUTH_TYPE = TagType.UINT32 | 4,
+    AUTH_TYPE = TagType.UINT32 | 0x04,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the validity period in seconds of user authentication.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    AUTH_VALIDITY_PERIOD = TagType.UINT32 | 5,
+    AUTH_VALIDITY_PERIOD = TagType.UINT32 | 0x05,
     /**
      * A tag whose value is a byte array indicating the authentication challenge for anti-replay protection.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    AUTH_CHALLENGE = TagType.BYTES | 6,
+    AUTH_CHALLENGE = TagType.BYTES | 0x06,
     /**
      * A tag whose value is a byte array indicating the authentication token after a user is verified.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    AUTH_TOKEN = TagType.BYTES | 7,
+    AUTH_TOKEN = TagType.BYTES | 0x07,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the type of Asset synchronization.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    SYNC_TYPE = TagType.UINT32 | 8,
+    SYNC_TYPE = TagType.UINT32 | 0x08,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    CONFLICT_RESOLUTION = TagType.UINT32 | 9,
+    CONFLICT_RESOLUTION = TagType.UINT32 | 0x09,
     /**
      * A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_CRITICAL_1 = TagType.BYTES | 10,
+    DATA_LABLE_CRITICAL_1 = TagType.BYTES | 0x0A,
     /**
      * A tag whose value is a byte array indicating the second user-defined Asset data label (not allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_CRITICAL_2 = TagType.BYTES | 11,
+    DATA_LABLE_CRITICAL_2 = TagType.BYTES | 0x0B,
     /**
      * A tag whose value is a byte array indicating the third user-defined Asset data label (not allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_CRITICAL_3 = TagType.BYTES | 12,
+    DATA_LABLE_CRITICAL_3 = TagType.BYTES | 0x0C,
     /**
      * A tag whose value is a byte array indicating the fourth user-defined Asset data label (not allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_CRITICAL_4 = TagType.BYTES | 13,
+    DATA_LABLE_CRITICAL_4 = TagType.BYTES | 0x0D,
     /**
      * A tag whose value is a byte array indicating the first user-defined Asset data label (allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_NORMAL_1 = TagType.BYTES | 14,
+    DATA_LABLE_NORMAL_1 = TagType.BYTES | 0x0E,
     /**
      * A tag whose value is a byte array indicating the second user-defined Asset data label (allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_NORMAL_2 = TagType.BYTES | 15,
+    DATA_LABLE_NORMAL_2 = TagType.BYTES | 0x0F,
     /**
      * A tag whose value is a byte array indicating the third user-defined Asset data label (allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_NORMAL_3 = TagType.BYTES | 16,
+    DATA_LABLE_NORMAL_3 = TagType.BYTES | 0x10,
     /**
      * A tag whose value is a byte array indicating the fourth user-defined Asset data label (allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_NORMAL_4 = TagType.BYTES | 17,
+    DATA_LABLE_NORMAL_4 = TagType.BYTES | 0x11,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the return type of the queried Asset.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    RETURN_TYPE = TagType.UINT32 | 18,
+    RETURN_TYPE = TagType.UINT32 | 0x12,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the maximum number of returned Assets in one query.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    RETURN_LIMIT = TagType.UINT32 | 19,
+    RETURN_LIMIT = TagType.UINT32 | 0x13,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the offset of return data in batch query.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    RETURN_OFFSET = TagType.UINT32 | 20,
+    RETURN_OFFSET = TagType.UINT32 | 0x14,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    RETURN_ORDER_BY = TagType.UINT32 | 21,
+    RETURN_ORDER_BY = TagType.UINT32 | 0x15,
   }
 
   /**

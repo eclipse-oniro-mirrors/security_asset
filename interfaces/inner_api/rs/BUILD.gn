@@ -17,41 +17,35 @@ import("//build/test.gni")
 COMPONENT_DIR = "//base/security/asset"
 
 ohos_rust_shared_library("asset_rust_sdk") {
-    sources = [
-        "src/lib.rs",
-    ]
+  sources = [ "src/lib.rs" ]
 
-    deps = [
-        "$COMPONENT_DIR/frameworks/common:asset_common_lib",
-        "$COMPONENT_DIR/frameworks/ipc_define:asset_ipc_define_lib",
-    ]
+  deps = [
+    "$COMPONENT_DIR/frameworks/common:asset_common_lib",
+    "$COMPONENT_DIR/frameworks/ipc_define:asset_ipc_define_lib",
+  ]
 
-    external_deps = [
-        "hilog:hilog_rust",
-        "ipc:ipc_rust",
-        "samgr:rust_samgr",
-    ]
+  external_deps = [
+    "hilog:hilog_rust",
+    "ipc:ipc_rust",
+    "samgr:rust_samgr",
+  ]
 
-    crate_name = "asset_rust_sdk"
-    crate_type = "dylib"
+  crate_name = "asset_rust_sdk"
+  crate_type = "dylib"
 
-    install_images = [ system_base_dir ]
-    subsystem_name = "security"
-    part_name = "asset"
+  install_images = [ system_base_dir ]
+  subsystem_name = "security"
+  part_name = "asset"
 }
 
 ohos_rust_shared_ffi("asset_rust_binding") {
-    sources = [
-        "src/binding.rs",
-    ]
-    deps = [
-        "$COMPONENT_DIR/interfaces/inner_api/rs:asset_rust_sdk",
-        "$COMPONENT_DIR/frameworks/common:asset_common_lib",
-    ]
-    external_deps = [
-        "hilog:hilog_rust",
-    ]
-    crate_name = "asset_rust_binding"
-    subsystem_name = "security"
-    part_name = "asset"
+  sources = [ "src/binding.rs" ]
+  deps = [
+    "$COMPONENT_DIR/frameworks/common:asset_common_lib",
+    "$COMPONENT_DIR/interfaces/inner_api/rs:asset_rust_sdk",
+  ]
+  external_deps = [ "hilog:hilog_rust" ]
+  crate_name = "asset_rust_binding"
+  subsystem_name = "security"
+  part_name = "asset"
 }

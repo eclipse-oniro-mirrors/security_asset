@@ -27,7 +27,12 @@ extern "C" {
 
 int32_t AssetTest(int32_t code);
 
-int32_t InsertAsset(const AssetParam *attributes, uint32_t attrCount);
+int32_t AddAsset(const AssetParam *attributes, uint32_t attrCount);
+
+int32_t RemoveAsset(const AssetParam *query, uint32_t queryCnt);
+
+int32_t UpdateAsset(const AssetParam *query, uint32_t queryCnt,
+    const AssetParam *attributesToUpdate, uint32_t updateCnt);
 
 int32_t PreQueryAsset(const AssetParam *query, uint32_t queryCnt, AssetBlob *challenge);
 
@@ -35,9 +40,6 @@ int32_t QueryAsset(const AssetParam *query, uint32_t queryCnt, AssetResultSet *r
 
 int32_t PostQueryAsset(const AssetParam *handle, uint32_t handleCnt);
 
-int32_t UpdateAsset(const AssetParam *query, uint32_t queryCnt, const AssetParam *attributesToUpdate, uint32_t updateCnt);
-
-int32_t DeleteAsset(const AssetParam *query, uint32_t queryCnt);
 
 #ifdef __cplusplus
 }
