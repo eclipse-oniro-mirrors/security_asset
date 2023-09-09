@@ -3,7 +3,7 @@
     "systemability": [
         {
             "name": 3511,
-            "libpath": "libasset_server.dylib.so",
+            "libpath": "libasset_service.dylib.so",
             "run-on-create": true,
             "distributed": false,
             "dump_level": 1

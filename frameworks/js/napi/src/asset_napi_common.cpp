@@ -61,9 +61,9 @@ if ((theCall) != napi_ok) {                 \
 #define CHECK_ASSET_TAG(env, condition, tag, message)                                   \
 if ((condition)) {                                                                      \
     char msg[MAX_MESSAGE_LEN] = { 0 };                                                  \
-    (void)sprintf_s(msg, MAX_MESSAGE_LEN, "AssetTag(0x%08x) "#message, tag);            \
+    (void)sprintf_s(msg, MAX_MESSAGE_LEN, "AssetTag(0x%08x) " message, tag);            \
     LOGE("[FATAL] %s", msg);                                                            \
-    napi_throw_error((env), std::to_string(ASSET_INVALID_ARGUMENT).c_str(), message);   \
+    napi_throw_error((env), std::to_string(ASSET_INVALID_ARGUMENT).c_str(), msg);       \
     return napi_invalid_arg;                                                            \
 }
 
@@ -156,31 +156,31 @@ napi_status ParseAssetAttribute(napi_env env, napi_value tag, napi_value value, 
     NAPI_CALL_RETURN_ERR(env, napi_typeof(env, value, &type));
     switch (param.tag & ASSET_TAG_TYPE_MASK) {
         case ASSET_TYPE_INT32:
-            CHECK_ASSET_TAG(env, type != napi_number, tag, "expect type napi_number");
+            CHECK_ASSET_TAG(env, type != napi_number, param.tag, "expect type napi_number");
             NAPI_CALL_RETURN_ERR(env, napi_get_value_int32(env, value, &param.value.i32));
             break;
         case ASSET_TYPE_UINT32:
-            CHECK_ASSET_TAG(env, type != napi_number, tag, "expect type napi_number");
+            CHECK_ASSET_TAG(env, type != napi_number, param.tag, "expect type napi_number");
             NAPI_CALL_RETURN_ERR(env, napi_get_value_uint32(env, value, &param.value.u32));
             break;
         case ASSET_TYPE_INT64:
-            CHECK_ASSET_TAG(env, type != napi_number, tag, "expect type napi_number");
+            CHECK_ASSET_TAG(env, type != napi_number, param.tag, "expect type napi_number");
             NAPI_CALL_RETURN_ERR(env, napi_get_value_int64(env, value, &param.value.i64));
             break;
         case ASSET_TYPE_UINT64:
-            CHECK_ASSET_TAG(env, type != napi_number, tag, "expect type napi_number");
+            CHECK_ASSET_TAG(env, type != napi_number, param.tag, "expect type napi_number");
             NAPI_CALL_RETURN_ERR(env, napi_get_value_int64(env, value, reinterpret_cast<int64_t *>(&param.value.u64)));
             break;
         case ASSET_TYPE_BOOL:
-            CHECK_ASSET_TAG(env, type != napi_boolean, tag, "expect type napi_boolean");
+            CHECK_ASSET_TAG(env, type != napi_boolean, param.tag, "expect type napi_boolean");
             NAPI_CALL_RETURN_ERR(env, napi_get_value_bool(env, value, &param.value.boolean));
             break;
         case ASSET_TYPE_BYTES:
-            CHECK_ASSET_TAG(env, type != napi_object, tag, "expect type napi_object");
+            CHECK_ASSET_TAG(env, type != napi_object, param.tag, "expect type napi_object");
             NAPI_CALL_RETURN_ERR(env, ParseByteArray(env, value, param.tag, param.value.blob));
             break;
         default:
-            CHECK_ASSET_TAG(env, true, tag, "Invalid tag argument.");
+            CHECK_ASSET_TAG(env, true, param.tag, "Invalid tag argument.");
     }
     return napi_ok;
 }
@@ -381,8 +381,7 @@ napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName
 {
     size_t argc = expectArgNum;
     napi_value argv[MAX_ARGS_NUM] = { 0 };
-    napi_value thisArg = nullptr;
-    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, &thisArg, nullptr));
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
     NAPI_THROW(env, argc < (expectArgNum - 1), ASSET_INVALID_ARGUMENT, "The number of arguments is insufficient.");
 
     AsyncContext *context = CreateAsyncContext();
@@ -406,11 +405,12 @@ napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName
             break;
         }
 
-        if (CreateAsyncWork(env, context, funcName, execute) == nullptr) {
+        napi_value promise = CreateAsyncWork(env, context, funcName, execute);
+        if (promise == nullptr) {
             LOGE("Create async work failed.");
             break;
         }
-        return thisArg;
+        return promise;
     } while (0);
     DestroyAsyncContext(env, context);
     return nullptr;

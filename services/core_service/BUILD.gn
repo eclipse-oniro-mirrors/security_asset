@@ -15,13 +15,13 @@ import("//build/ohos.gni")
 
 COMPONENT_DIR = "//base/security/asset"
 
-ohos_rust_shared_library("asset_server") {
+ohos_rust_shared_library("asset_service") {
   sources = [ "src/lib.rs" ]
 
   deps = [
-    "$COMPONENT_DIR/services/db_operator:db_operator",
     "$COMPONENT_DIR/frameworks/common:asset_common_lib",
     "$COMPONENT_DIR/frameworks/ipc_define:asset_ipc_define_lib",
+    "$COMPONENT_DIR/services/db_operator:db_operator",
   ]
 
   external_deps = [
@@ -35,7 +35,7 @@ ohos_rust_shared_library("asset_server") {
     "access_token:libtoken_setproc",
   ]
 
-  crate_name = "asset_server"
+  crate_name = "asset_service"
   crate_type = "dylib"
 
   install_images = [ system_base_dir ]

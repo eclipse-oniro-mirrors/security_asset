@@ -25,7 +25,7 @@
 #define LOG_TAG "Asset"
 
 #undef LOG_DOMAIN
-#define LOG_DOMAIN 0xD002F00 /* Security subsystem's domain id */
+#define LOG_DOMAIN 0xD002F70 // Security Domain ID: 0xD002F00 - 0xD002FFF
 
 #define LOGD(fmt, arg...) \
 HILOG_DEBUG(LOG_CORE, "%" LOG_PUBLIC "s[%" LOG_PUBLIC "u]: " fmt "\n", __func__, __LINE__, ##arg)
