@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//build/test.gni")
 
 COMPONENT_DIR = "//base/security/asset"
 

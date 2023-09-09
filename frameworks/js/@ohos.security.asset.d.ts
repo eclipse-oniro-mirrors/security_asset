@@ -203,7 +203,7 @@ declare namespace asset {
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
-  export type Value = boolean | number | Uint8Array; // todo: Uint8Array类型是否允许传UTF8字符串？
+  export type Value = boolean | number | Uint8Array;
 
   /**
    * An enum type indicates when the Asset is accessible.

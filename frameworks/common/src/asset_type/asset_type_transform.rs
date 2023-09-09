@@ -24,9 +24,10 @@ use std::ffi::{c_char, CString};
 use std::fmt;
 
 /// get type
-pub trait GetType {
+pub trait GetType { // todo: getter方法的命名上不需要加上get
+    /// get type
     fn get_type(&self) -> AssetResult<AssetType>;
-
+    /// get real
     fn get_real(self) -> Value;
 }
 
@@ -196,6 +197,8 @@ macro_rules! enum_auto_impl_try_from {
         }
     }
 }
+
+// todo: SDK、SA共用的类型放在common，封装成静态库；只在SDK和SA层单独使用的函数需要抽出来，比如GetType只有服务层使用
 
 
 // 过程宏生成display显示 枚举名 + 枚举值（i32)

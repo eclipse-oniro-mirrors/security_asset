@@ -34,6 +34,9 @@ git clone ssh://git@szv-y.codehub.huawei.com:2222/y00522150/asset.git
 ./scripts/push_asset.bat
 ```
 
+## 测试
+测试DEMO：https://codehub-y.huawei.com/y00522150/AssetDemo/files?ref=master
+
 ## 工具汇总
 ```bash
 # 格式化BUILD.gn文件

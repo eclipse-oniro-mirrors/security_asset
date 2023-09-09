@@ -21,7 +21,7 @@ macro_rules! asset_log_info{
     ($($arg:tt)*) => (
         let log_label: HiLogLabel = HiLogLabel {
             log_type: LogType::LogCore,
-            domain: 0xD002F00, // security domain
+            domain: 0xD002F70, // asset domain id
             tag: "Asset"
         };
         hilog_rust::info!(log_label, $($arg)*)

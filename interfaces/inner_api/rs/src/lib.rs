@@ -54,3 +54,9 @@ pub fn add(input: AssetMap) -> AssetResult<AssetMap> {
     asset_log_info!("enter assert add");
     AssetIpcProxy::new()?.add(&input)
 }
+
+/// the mock function
+pub fn add_asset(_input: AssetMap) -> AssetStatusCode {
+    asset_log_info!("enter assert add");
+    AssetStatusCode::Success
+}

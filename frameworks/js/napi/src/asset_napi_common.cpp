@@ -323,7 +323,7 @@ void ResolvePromise(napi_env env, AsyncContext *context)
     napi_value result = nullptr;
     if (context->result == ASSET_SUCCESS) {
         result = GetBusinessReturn(env, context);
-        NAPI_CALL_RETURN_VOID(env, napi_resolve_deferred(env, context->deferred, result)); // todo: not callable
+        NAPI_CALL_RETURN_VOID(env, napi_resolve_deferred(env, context->deferred, result));
     } else {
         result = GetBusinessError(env, context->result);
         NAPI_CALL_RETURN_VOID(env, napi_reject_deferred(env, context->deferred, result));

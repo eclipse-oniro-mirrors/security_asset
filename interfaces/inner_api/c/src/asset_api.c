@@ -24,10 +24,12 @@ int32_t AssetTest(int32_t code)
     return AssetInsert(code);
 }
 
-int32_t AddAsset(const AssetParam *attributes, uint32_t attrCount)
+extern int32_t AddAssetC2Rust(const AssetParam *attributes, uint32_t attrCnt);
+
+int32_t AddAsset(const AssetParam *attributes, uint32_t attrCnt)
 {
     LOGE("[YZT]Congratulations! AddAsset function is called.");
-    return ASSET_SUCCESS;
+    return AddAssetC2Rust(attributes, attrCnt);
 }
 
 int32_t RemoveAsset(const AssetParam *query, uint32_t queryCnt)
@@ -54,4 +56,10 @@ int32_t QueryAsset(const AssetParam *query, uint32_t queryCnt, AssetResultSet *r
 int32_t PostQueryAsset(const AssetParam *handle, uint32_t handleCnt)
 {
     return ASSET_SUCCESS;
+}
+
+Version GetVersion(void)
+{
+    Version v = { 1, 0, 0 };
+    return  v;
 }

@@ -19,7 +19,7 @@
 
 mod asset_map;
 #[macro_use]
-mod asset_type_transform;
+pub mod asset_type_transform;
 
 pub use crate::asset_type::asset_map::*;
 
@@ -37,7 +37,7 @@ pub struct Version {
 
 #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
 /// An enum type that indicates the type of the asset attribute value.
-pub enum AssetType {
+pub enum AssetType { // todo: asset_type mod defines, AssetType改成DataType，与数据库共用一个数据类型
     /// The type of the asset attribute value is int32.
     Int32 = 1 << 28,
     /// The type of the asset attribute value is uint32.
