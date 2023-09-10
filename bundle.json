@@ -39,7 +39,8 @@
                 "napi",
                 "safwk",
                 "samgr",
-                "huks"
+                "huks",
+                "os_account"
             ],
             "third_party": [
                 "sqlite"

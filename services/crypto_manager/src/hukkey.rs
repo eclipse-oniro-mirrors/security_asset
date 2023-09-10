@@ -98,7 +98,7 @@ pub fn InitParamSet(param_set:&mut &mut HksParamSet, params:&HksParam, paramcoun
 pub fn TestUpdateLoopFinish(handle:&HksBlob, param_set:&HksParamSet, indata:&mut Box<HksBlob>, outdata:&mut Box<HksBlob>) -> HuksErrcode{
     let last_ptr = unsafe{indata.data.add(indata.size as usize - 1)};
     let param_set_ptr = param_set as *const HksParamSet;
-    let mut out_data_seg = HksBlob{ 
+    let mut out_data_seg = HksBlob{
         size: MAX_OUTDATA_SIZE,
         data: null_mut()
     };
@@ -118,7 +118,7 @@ pub fn TestUpdateLoopFinish(handle:&HksBlob, param_set:&HksParamSet, indata:&mut
             if MallocAndCheckBlobData(&mut out_data_seg) != HKS_SUCCESS{
                 return HKS_FAILURE;
             }
-            
+
             if HksUpdate(handle as *const HksBlob, param_set_ptr, Box::as_mut(indata) as *mut HksBlob as *const HksBlob, &mut out_data_seg as *mut HksBlob) != HKS_SUCCESS{
                 asset_log_error!("HksUpdate Failed.");
                 let layout = Layout::from_size_align(out_data_seg.size as usize,align_of::<u32>()).unwrap();
@@ -152,7 +152,7 @@ pub fn TestUpdateLoopFinish(handle:&HksBlob, param_set:&HksParamSet, indata:&mut
             return HKS_FAILURE;
         }
     }
-    
+
     unsafe{
         copy_nonoverlapping(out_data_finish.data as *const u8, cur, out_data_finish.size as usize);
     }
@@ -209,16 +209,16 @@ impl Crypto {
                 data: &mut handle_e[0] as *mut _ as *mut u8,
             }
         );
-        
+
         let mut ret = unsafe{HksInit(key_alias as *const HksBlob, &encrypt_param_set as *const HksParamSet, Box::as_mut(&mut handle_encrypt) as *mut HksBlob, null_mut())};
         if ret != HKS_SUCCESS{
             asset_log_error!("Init failed.");
             return Err(AssetStatusCode::Failed);
         }
         let mut indata = Box::new(
-            HksBlob { 
-                size: msg.len() as u32, 
-                data: &mut (*msg)[0] as *mut _ as *mut u8 
+            HksBlob {
+                size: msg.len() as u32,
+                data: &mut (*msg)[0] as *mut _ as *mut u8
             }
         );
         let mut cipher: Box<Vec<u8>> = Box::new(vec![0;AES_COMMON_SIZE as usize]);
@@ -233,7 +233,7 @@ impl Crypto {
             asset_log_error!("TestUpdateLoopFinish failed.");
             return Err(AssetStatusCode::Failed);
         }
-        
+
         if ret != HKS_SUCCESS{
             unsafe{HksDeleteKey(key_alias as *const HksBlob, gen_param_set as *const HksParamSet)};
             return Err(AssetStatusCode::Failed);
@@ -250,16 +250,16 @@ impl Crypto {
                 data: &mut handle_d[0] as *mut _ as *mut u8,
             }
         );
-        
+
         let mut ret = unsafe{HksInit(key_alias as *const HksBlob, &decrypt_param_set as *const HksParamSet, Box::as_mut(&mut handle_decrypt) as *mut HksBlob, null_mut())};
         if ret != HKS_SUCCESS{
             asset_log_error!("Init failed.");
             return Err(AssetStatusCode::Failed);
         }
         let mut cipher_text = Box::new(
-            HksBlob { 
-                size: cipher.len() as u32, 
-                data: &mut (*cipher)[0] as *mut _ as *mut u8 
+            HksBlob {
+                size: cipher.len() as u32,
+                data: &mut (*cipher)[0] as *mut _ as *mut u8
             }
         );
         let mut plain: Box<Vec<u8>> = Box::new(vec![0;AES_COMMON_SIZE as usize]);
@@ -274,7 +274,7 @@ impl Crypto {
             asset_log_error!("TestUpdateLoopFinish failed.");
             return Err(AssetStatusCode::Failed);
         }
-        
+
         if ret != HKS_SUCCESS{
             unsafe{HksDeleteKey(key_alias as *const HksBlob, gen_param_set as *const HksParamSet)};
             return Err(AssetStatusCode::Failed);

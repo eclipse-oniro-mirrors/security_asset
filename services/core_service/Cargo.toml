@@ -9,3 +9,4 @@ edition = "2021"
 asset_common_lib = { path = "../../frameworks/common" }
 asset_ipc_define_lib = { path = "../../frameworks/ipc_define" }
 db_operator = { path = "../../services/db_operator" }
+crypto_manager = { path = "../crypto_manager" }

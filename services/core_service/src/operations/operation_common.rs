@@ -15,7 +15,6 @@
 
 //! This create implement the asset
 
-
 use asset_common_lib::{asset_type::{AssetMap, AssetResult, Value, AssetStatusCode, Tag}, asset_log_info, asset_log_error};
 use db_operator::types::{Pair, DataValue};
 
@@ -65,6 +64,9 @@ pub(crate) const G_ACCESS_TYPE: &str = "AccessType";
 pub(crate) const G_DELETE_TYPE: &str = "DeleteType";
 pub(crate) const G_VERSION: &str = "Version";
 pub(crate) const G_UPDATE_TIME: &str = "UpdateTime";
+pub(crate) const G_SECRET: &str = "Secret";
+pub(crate) const G_AUTH_TYPE: &str = "AuthType";
+pub(crate) const G_SYNC_TYPE: &str = "SyncType";
 
 /// xxx
 pub(crate) fn get_set_current_time(vec: &mut Vec<Pair>) -> AssetResult<()>  {
@@ -133,6 +135,17 @@ pub(crate) fn get_set_update_time(vec: &mut Vec<Pair>) -> AssetResult<()>  {
         Pair {
             column_name: G_UPDATE_TIME,
             value: DataValue::Integer(update_time),
+        }
+    );
+    Ok(())
+}
+
+/// xxx
+pub(crate) fn set_ciphet_secret<'a>(cipher_secret: &'a [u8], vec: &mut Vec<Pair<'a>>) -> AssetResult<()>  {
+    vec.push(
+        Pair {
+            column_name: G_SECRET,
+            value: DataValue::Blob(cipher_secret),
         }
     );
     Ok(())

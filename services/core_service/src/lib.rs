@@ -29,6 +29,7 @@ use std::ffi::{c_char, CString};
 use system_ability_fwk_rust::{define_system_ability, IMethod, ISystemAbility, RSystemAbility};
 
 mod operations;
+mod calling_process_info;
 
 /// xxx
 pub struct AssetService;

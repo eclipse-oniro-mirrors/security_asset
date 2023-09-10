@@ -15,7 +15,7 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 SUBSYSTEM_DIR = "//base/security/asset"
 
-ohos_rust_shared_library("crypto_manager") {
+ohos_rust_static_library("crypto_manager") {
   sources = [
     "src/hukkey.rs",
     "src/hukkey_ffi.rs",
@@ -30,7 +30,7 @@ ohos_rust_shared_library("crypto_manager") {
   ]
 
   crate_name = "crypto_manager"
-  crate_type = "dylib"
+  crate_type = "rlib"
 
   subsystem_name = "security"
   part_name = "asset"
