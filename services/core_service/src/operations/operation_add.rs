@@ -17,7 +17,9 @@
 #![allow(dead_code)]
 
 use asset_common_lib::{asset_type::{AssetMap, AssetResult, Tag, AssetStatusCode, Value}, asset_log_info, asset_log_error};
-use db_operator::{database_table_helper::DefaultDatabaseHelper, types::Pair};
+use db_operator::{database_table_helper::DefaultDatabaseHelper, types::Pair,
+    database_table_helper::{G_COLUMN_SYNCTYPE, G_COLUMN_AUTHTYPE}};
+
 // use crypto_manager::hukkey::Crypto;
 use crate::{operations::operation_common::*, calling_process_info::CallingInfo};
 
@@ -34,31 +36,29 @@ fn encrypt_secret(input: &AssetMap) -> AssetResult<Vec<u8>> {
     }
 }
 
-fn construct_data(input: &AssetMap) -> AssetResult<Vec<Pair>> {
+fn construct_data<'a>(input: &'a AssetMap, calling_info: &'a CallingInfo) -> AssetResult<Vec<Pair<'a>>> {
     let mut data_vec = Vec::new();
 
-    get_set_attr(input, G_SYNC_TYPE, Tag::SyncType, &mut data_vec)?;
-    get_set_attr(input, G_AUTH_TYPE, Tag::AuthType, &mut data_vec)?;
+    get_set_attr(input, G_COLUMN_SYNCTYPE, Tag::SyncType, &mut data_vec)?;
+    get_set_attr(input, G_COLUMN_AUTHTYPE, Tag::AuthType, &mut data_vec)?;
+
+    get_set_owner_type(calling_info, &mut data_vec)?;
 
     get_set_delete_type(&mut data_vec)?;
     get_set_access_type(&mut data_vec)?;
-    get_set_owner_type(&mut data_vec)?;
     get_set_version(&mut data_vec)?;
-    get_set_current_time(&mut data_vec)?;
-    get_set_update_time(&mut data_vec)?;
     Ok(data_vec)
 }
 
-pub(crate) fn add(input: &AssetMap) -> AssetResult<AssetMap> {
+pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> AssetResult<AssetMap> {
     // arrange the table value
-    let mut db_data = construct_data(input)?;
+    let mut db_data = construct_data(input, calling_info)?;
 
     let cipher_secret = encrypt_secret(input)?;
     set_ciphet_secret(&cipher_secret, &mut db_data)?;
 
     // to do 创建用户目录
 
-    let calling_info = CallingInfo::new()?;
     let owner_str = String::from_utf8(calling_info.get_owner_text().clone());
     if owner_str.is_err() {
         return Err(AssetStatusCode::Failed);
@@ -67,6 +67,6 @@ pub(crate) fn add(input: &AssetMap) -> AssetResult<AssetMap> {
     let insert_num =
         DefaultDatabaseHelper::insert_datas_default_once(calling_info.get_user_id(), &owner_str.unwrap(), "Alias1", db_data)?;
 
-    asset_log_info!("inser {} data", @public(insert_num));
+    asset_log_info!("insert {} data", @public(insert_num));
     Ok(AssetMap::new())
 }

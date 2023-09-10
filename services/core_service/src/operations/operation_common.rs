@@ -16,10 +16,16 @@
 //! This create implement the asset
 
 use asset_common_lib::{asset_type::{AssetMap, AssetResult, Value, AssetStatusCode, Tag}, asset_log_info, asset_log_error};
-use db_operator::types::{Pair, DataValue};
+use db_operator::{
+    types::{Pair, DataValue},
+    database_table_helper::{G_COLUMN_ACCESSTYPE, G_COLUMN_OWNERTYPE, G_COLUMN_DELETETYPE,
+        G_COLUMN_VERSION, G_COLUMN_SECRET}
+};
 
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
+
+use crate::calling_process_info::CallingInfo;
 
 pub(crate) trait FromValueToDataValue {
     /// xxx
@@ -58,35 +64,12 @@ pub(crate) fn get_set_attr<'a>(input: &'a AssetMap, column_name: &'a str, tag: T
     Err(AssetStatusCode::InvalidArgument)
 }
 
-pub(crate) const G_CREATE_TIME: &str = "CreateTime";
-pub(crate) const G_OWNER_TYPE: &str = "OwnerType";
-pub(crate) const G_ACCESS_TYPE: &str = "AccessType";
-pub(crate) const G_DELETE_TYPE: &str = "DeleteType";
-pub(crate) const G_VERSION: &str = "Version";
-pub(crate) const G_UPDATE_TIME: &str = "UpdateTime";
-pub(crate) const G_SECRET: &str = "Secret";
-pub(crate) const G_AUTH_TYPE: &str = "AuthType";
-pub(crate) const G_SYNC_TYPE: &str = "SyncType";
-
 /// xxx
-pub(crate) fn get_set_current_time(vec: &mut Vec<Pair>) -> AssetResult<()>  {
-    let current_time = 5555;
+pub(crate) fn get_set_owner_type(calling_info: &CallingInfo, vec: &mut Vec<Pair>) -> AssetResult<()>  {
     vec.push(
         Pair {
-            column_name: G_CREATE_TIME,
-            value: DataValue::Integer(current_time),
-        }
-    );
-    Ok(())
-}
-
-/// xxx
-pub(crate) fn get_set_owner_type(vec: &mut Vec<Pair>) -> AssetResult<()>  {
-    let owner_type = 1;
-    vec.push(
-        Pair {
-            column_name: G_OWNER_TYPE,
-            value: DataValue::Integer(owner_type),
+            column_name: G_COLUMN_OWNERTYPE,
+            value: DataValue::Integer(calling_info.get_owner_type() as i32),
         }
     );
     Ok(())
@@ -97,7 +80,7 @@ pub(crate) fn get_set_access_type(vec: &mut Vec<Pair>) -> AssetResult<()>  {
     let access_type = 1;
     vec.push(
         Pair {
-            column_name: G_ACCESS_TYPE,
+            column_name: G_COLUMN_ACCESSTYPE,
             value: DataValue::Integer(access_type),
         }
     );
@@ -109,7 +92,7 @@ pub(crate) fn get_set_delete_type(vec: &mut Vec<Pair>) -> AssetResult<()>  {
     let delete_type = 1;
     vec.push(
         Pair {
-            column_name: G_DELETE_TYPE,
+            column_name: G_COLUMN_DELETETYPE,
             value: DataValue::Integer(delete_type),
         }
     );
@@ -121,20 +104,8 @@ pub(crate) fn get_set_version(vec: &mut Vec<Pair>) -> AssetResult<()>  {
     let version = 1;
     vec.push(
         Pair {
-            column_name: G_VERSION,
+            column_name: G_COLUMN_VERSION,
             value: DataValue::Integer(version),
-        }
-    );
-    Ok(())
-}
-
-/// xxx
-pub(crate) fn get_set_update_time(vec: &mut Vec<Pair>) -> AssetResult<()>  {
-    let update_time = 1;
-    vec.push(
-        Pair {
-            column_name: G_UPDATE_TIME,
-            value: DataValue::Integer(update_time),
         }
     );
     Ok(())
@@ -144,7 +115,7 @@ pub(crate) fn get_set_update_time(vec: &mut Vec<Pair>) -> AssetResult<()>  {
 pub(crate) fn set_ciphet_secret<'a>(cipher_secret: &'a [u8], vec: &mut Vec<Pair<'a>>) -> AssetResult<()>  {
     vec.push(
         Pair {
-            column_name: G_SECRET,
+            column_name: G_COLUMN_SECRET,
             value: DataValue::Blob(cipher_secret),
         }
     );

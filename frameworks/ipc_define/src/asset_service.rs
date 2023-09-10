@@ -77,17 +77,28 @@ fn on_asset_remote_request(
         match ipc_code {
             AssetIpcCode::Insert => {
                 asset_log_info!("on_asset_remote_request Insert");
-                let res: AssetMap = stub.insert(input_map.as_ref().unwrap()).unwrap();
-                let ser_res = res.serialize(reply);
-                if ser_res.is_err() {
-                    return Err(IpcStatusCode::InvalidValue);
+                match stub.insert(input_map.as_ref().unwrap()) {
+                    Ok(res) => {
+                        reply.write::<i32>(&(AssetStatusCode::Success as i32))?;
+                        res.serialize(reply)?;
+                    },
+                    Err(e) => {
+                        reply.write::<i32>(&(e as i32))?;
+                    }
                 }
             },
             AssetIpcCode::Add => {
                 asset_log_info!("on_asset_remote_request add");
-                let res: AssetMap = stub.add(input_map.as_ref().unwrap())?;
-                res.serialize(reply)?;
-                // to do : 将错误码放到map里，否则会有错误信息丢失
+
+                match stub.add(input_map.as_ref().unwrap()) {
+                    Ok(res) => {
+                        reply.write::<i32>(&(AssetStatusCode::Success as i32))?;
+                        res.serialize(reply)?;
+                    },
+                    Err(e) => {
+                        reply.write::<i32>(&(e as i32))?;
+                    }
+                }
             }
         }
         Ok(())
@@ -123,14 +134,17 @@ fn transform(proxy: &AssetProxy, code: AssetIpcCode, input: &AssetMap) -> AssetR
             let reply_parcel =
                 proxy.remote.send_request(code as u32, &send_parcel, false);
             if let Ok(reply) = reply_parcel {
-                let ret = AssetMap::deserialize(reply.borrowed_ref())?;
-                Ok(ret)
+                let res_code = AssetStatusCode::try_from(reply.read::<i32>()?)?;
+                if res_code != AssetStatusCode::Success {
+                    return Err(res_code);
+                }
+                Ok(AssetMap::deserialize(reply.borrowed_ref())?)
             } else {
                 asset_log_error!("AssetProxy transform {} failed!", code);
                 Err(AssetStatusCode::Failed)
             }
         },
-        None => Err(AssetStatusCode::Failed),
+        None => Err(AssetStatusCode::Failed)
     }
 }
 

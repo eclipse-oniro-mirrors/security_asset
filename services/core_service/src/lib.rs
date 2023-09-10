@@ -31,6 +31,8 @@ use system_ability_fwk_rust::{define_system_ability, IMethod, ISystemAbility, RS
 mod operations;
 mod calling_process_info;
 
+use calling_process_info::CallingInfo;
+
 /// xxx
 pub struct AssetService;
 
@@ -45,7 +47,9 @@ impl AssetBroker for AssetService {
 
     fn add(&self, input: &AssetMap) -> AssetResult<AssetMap> {
         // get calling uid userid appid etc
-        operations::add(input)
+        let calling_info = CallingInfo::new()?;
+
+        operations::add(input, &calling_info)
     }
 }
 

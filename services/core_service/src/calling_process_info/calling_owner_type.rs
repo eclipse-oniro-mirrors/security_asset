@@ -57,11 +57,6 @@ impl OwnerType {
     }
 }
 
-// fn get_hap_info() -> AssetResult<OwnerType> {
-//     // let calling_uid = get_calling_uid();
-//     todo!()
-// }
-
 fn get_native_owner_info(uid: u64) -> AssetResult<OwnerType>{
     Ok(OwnerType::Native(Vec::from(format!("{}", uid).as_bytes())))
 }
