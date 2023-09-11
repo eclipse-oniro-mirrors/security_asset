@@ -31,6 +31,8 @@ ohos_rust_static_library("db_operator") {
     "//third_party/sqlite:sqlite",
   ]
 
+  external_deps = [ "hilog:hilog_rust" ]
+
   crate_name = "db_operator"
   crate_type = "rlib"
 

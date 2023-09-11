@@ -13,14 +13,15 @@
 //! limitations under the License.
 //!
 
-use asset_common_lib::asset_type::AssetStatusCode;
-
 use crate::{
     database::{Database, UpdateDatabaseCallbackFunc},
     from_sqlitecode_to_assetcode,
     table::Table,
     types::{ColumnInfo, Condition, DataType, DataValue, Pair, ResultSet},
 };
+use asset_common_lib::{asset_log_error, asset_type::AssetStatusCode};
+use hilog_rust::{hilog, HiLogLabel, LogType};
+use std::ffi::{c_char, CString};
 
 /// just use database
 pub type DatabaseHelper = Database;
@@ -387,9 +388,9 @@ pub fn process_err_msg<T>(
 ) -> Result<T, AssetStatusCode> {
     if res.is_err() {
         if let Some(msg) = db.get_errmsg() {
-            println!("db err info: {}", msg.s);
+            asset_log_error!("db err info: {}", @public(msg.s));
         } else {
-            println!("db err with no msg");
+            asset_log_error!("db err with no msg");
         }
     }
     res
