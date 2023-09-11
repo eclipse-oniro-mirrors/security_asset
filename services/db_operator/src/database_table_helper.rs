@@ -380,12 +380,29 @@ impl<'a> TableHelper<'a> {
     }
 }
 
+/// process err msg, this may be use in test, consider delete this funciton when release
+pub fn process_err_msg<T>(
+    res: Result<T, AssetStatusCode>,
+    db: &DefaultDatabaseHelper,
+) -> Result<T, AssetStatusCode> {
+    if res.is_err() {
+        if let Some(msg) = db.get_errmsg() {
+            println!("db err info: {}", msg.s);
+        } else {
+            println!("db err with no msg");
+        }
+    }
+    res
+}
+
 ///
 /// if table not exist, create default asset table
 ///
 #[inline(always)]
 fn create_default_table(db: &Database) -> Result<Table, AssetStatusCode> {
-    db.create_table(G_ASSET_TABLE_NAME, G_COLUMNS_INFO).map_err(from_sqlitecode_to_assetcode)
+    let res =
+        db.create_table(G_ASSET_TABLE_NAME, G_COLUMNS_INFO).map_err(from_sqlitecode_to_assetcode);
+    process_err_msg(res, db)
 }
 
 impl DefaultDatabaseHelper {
@@ -422,7 +439,7 @@ impl DefaultDatabaseHelper {
                 return table.update_datas(owner, alias, &datas_new);
             }
         }
-        table.update_datas(owner, alias, datas)
+        process_err_msg(table.update_datas(owner, alias, datas), self)
     }
 
     ///
@@ -469,7 +486,7 @@ impl DefaultDatabaseHelper {
                 return table.insert_datas(owner, alias, datas_new);
             }
         }
-        table.insert_datas(owner, alias, datas)
+        process_err_msg(table.insert_datas(owner, alias, datas), self)
     }
 
     ///
@@ -483,7 +500,7 @@ impl DefaultDatabaseHelper {
         cond: &Condition,
     ) -> Result<i32, AssetStatusCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
-        table.delete_datas(owner, alias, cond)
+        process_err_msg(table.delete_datas(owner, alias, cond), self)
     }
 
     ///
@@ -496,7 +513,7 @@ impl DefaultDatabaseHelper {
         alias: &str,
     ) -> Result<bool, AssetStatusCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
-        table.is_data_exist(owner, alias)
+        process_err_msg(table.is_data_exist(owner, alias), self)
     }
 
     ///
@@ -505,7 +522,7 @@ impl DefaultDatabaseHelper {
     #[inline(always)]
     pub fn select_count_default(&self, owner: &str) -> Result<u32, AssetStatusCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
-        table.select_count(owner)
+        process_err_msg(table.select_count(owner), self)
     }
 
     ///
@@ -519,7 +536,7 @@ impl DefaultDatabaseHelper {
         condition: &Condition,
     ) -> Result<ResultSet, AssetStatusCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
-        table.query_datas(owner, alias, condition)
+        process_err_msg(table.query_datas(owner, alias, condition), self)
     }
 }
 
