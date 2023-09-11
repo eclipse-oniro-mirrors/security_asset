@@ -15,7 +15,7 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 COMPONENT_DIR = "//base/security/asset"
 
-ohos_rust_shared_library("db_operator") {
+ohos_rust_static_library("db_operator") {
   sources = [
     "src/database.rs",
     "src/database_table_helper.rs",
@@ -32,7 +32,7 @@ ohos_rust_shared_library("db_operator") {
   ]
 
   crate_name = "db_operator"
-  crate_type = "dylib"
+  crate_type = "rlib"
 
   subsystem_name = "security"
   part_name = "asset"
@@ -42,7 +42,7 @@ module_output_path = "asset/db_operator"
 
 ohos_rust_unittest("db_operator_test") {
   module_out_path = module_output_path
-  sources = [ "test/mod.rs" ]
+  sources = [ "../../test/unittest/db_operator_test/mod.rs" ]
   deps = [ "$COMPONENT_DIR/services/db_operator:db_operator" ]
   subsystem_name = "security"
   part_name = "asset"
