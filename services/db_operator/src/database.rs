@@ -168,7 +168,7 @@ impl Database {
     /// delete default database
     ///
     pub fn drop_default_database(userid: u32) -> std::io::Result<()> {
-        let path = format!("/data/service/el1/{}/asset_service/asset.db", userid);
+        let path = format!("/data/service/el1/public/asset_service/{}/asset.db", userid);
         Database::drop_database(path.as_str())
     }
 
