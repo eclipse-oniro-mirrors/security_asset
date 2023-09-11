@@ -16,7 +16,7 @@
 #include "os_account_wrapper.h"
 #include "os_account_manager.h"
 
-uint32_t GetCallingUserIdByUid(uint64_t uid)
+uint32_t GetUserIdByUid(uint64_t uid)
 {
     int userId = 0;
     OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userId);

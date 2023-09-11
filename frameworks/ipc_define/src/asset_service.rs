@@ -24,12 +24,12 @@ use ipc_rust::{
 };
 use std::ffi::{c_char, CString};
 
-use asset_common_lib::{
-    asset_log_info, enum_auto_impl_try_from,
-    asset_type::{AssetMap, AssetResult, AssetStatusCode, SerializeAsset, DeserializeAsset}, asset_log_error,
+use asset_common::{
+    asset_log_info, impl_try_from,
+    definition::{AssetMap, Result, ErrCode, SerializeAsset, DeserializeAsset}, asset_log_error,
 };
 
-enum_auto_impl_try_from!{
+impl_try_from!{
     /// Asset ipc code
     #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
     pub enum AssetIpcCode {
@@ -55,11 +55,11 @@ pub const ASSET_SERVICE_ID: i32 = 3511;
 /// Function between proxy and stub of AssetService
 pub trait AssetBroker: IRemoteBroker {
     /// xxx
-    fn insert(&self, input: &AssetMap) -> AssetResult<AssetMap>;
-    // fn transform(&self, code: u32, input: &AssetMap) -> AssetResult<AssetMap>;
+    fn insert(&self, input: &AssetMap) -> Result<AssetMap>;
+    // fn transform(&self, code: u32, input: &AssetMap) -> Result<AssetMap>;
 
     /// add an assert
-    fn add(&self, input: &AssetMap) -> AssetResult<AssetMap>;
+    fn add(&self, input: &AssetMap) -> Result<AssetMap>;
 }
 
 fn on_asset_remote_request(
@@ -79,7 +79,7 @@ fn on_asset_remote_request(
                 asset_log_info!("on_asset_remote_request Insert");
                 match stub.insert(input_map.as_ref().unwrap()) {
                     Ok(res) => {
-                        reply.write::<i32>(&(AssetStatusCode::Success as i32))?;
+                        reply.write::<i32>(&(ErrCode::Success as i32))?;
                         res.serialize(reply)?;
                     },
                     Err(e) => {
@@ -92,7 +92,7 @@ fn on_asset_remote_request(
 
                 match stub.add(input_map.as_ref().unwrap()) {
                     Ok(res) => {
-                        reply.write::<i32>(&(AssetStatusCode::Success as i32))?;
+                        reply.write::<i32>(&(ErrCode::Success as i32))?;
                         res.serialize(reply)?;
                     },
                     Err(e) => {
@@ -116,16 +116,16 @@ define_remote_object!(
 
 // Make RemoteStub<AssetStub> object can call AssetBroker function directly.
 impl AssetBroker for RemoteStub<AssetStub> {
-    fn insert(&self, input: &AssetMap) -> AssetResult<AssetMap> {
+    fn insert(&self, input: &AssetMap) -> Result<AssetMap> {
         self.0.insert(input)
     }
 
-    fn add(&self, input: &AssetMap) -> AssetResult<AssetMap> {
+    fn add(&self, input: &AssetMap) -> Result<AssetMap> {
         self.0.add(input)
     }
 }
 
-fn transform(proxy: &AssetProxy, code: AssetIpcCode, input: &AssetMap) -> AssetResult<AssetMap> {
+fn transform(proxy: &AssetProxy, code: AssetIpcCode, input: &AssetMap) -> Result<AssetMap> {
     let parce_new = MsgParcel::new();
     match parce_new {
         Some(mut send_parcel) => {
@@ -134,26 +134,26 @@ fn transform(proxy: &AssetProxy, code: AssetIpcCode, input: &AssetMap) -> AssetR
             let reply_parcel =
                 proxy.remote.send_request(code as u32, &send_parcel, false);
             if let Ok(reply) = reply_parcel {
-                let res_code = AssetStatusCode::try_from(reply.read::<i32>()?)?;
-                if res_code != AssetStatusCode::Success {
+                let res_code = ErrCode::try_from(reply.read::<i32>()?)?;
+                if res_code != ErrCode::Success {
                     return Err(res_code);
                 }
                 Ok(AssetMap::deserialize(reply.borrowed_ref())?)
             } else {
                 asset_log_error!("AssetProxy transform {} failed!", code);
-                Err(AssetStatusCode::Failed)
+                Err(ErrCode::Failed)
             }
         },
-        None => Err(AssetStatusCode::Failed)
+        None => Err(ErrCode::Failed)
     }
 }
 
 impl AssetBroker for AssetProxy {
-    fn insert(&self, input: &AssetMap) -> AssetResult<AssetMap> {
+    fn insert(&self, input: &AssetMap) -> Result<AssetMap> {
         transform(self, AssetIpcCode::Insert, input)
     }
 
-    fn add(&self, input: &AssetMap) -> AssetResult<AssetMap> {
+    fn add(&self, input: &AssetMap) -> Result<AssetMap> {
         transform(self, AssetIpcCode::Add, input)
     }
 }

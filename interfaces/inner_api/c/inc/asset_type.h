@@ -148,9 +148,8 @@ typedef enum {
     ASSET_TAG_RETURN_ORDER_BY = ASSET_TYPE_UINT32 | 0x15,
 } AssetTag;
 
-
 /**
- *  An enum type containing the Asset error codes.
+ * An enum type containing the Asset result codes.
  */
 typedef enum {
     /**
@@ -197,11 +196,11 @@ typedef enum {
      * The error code indicates that the Asset or encryption key is corrupted.
      */
     ASSET_DATA_CORRUPTED = 24000007,
-} AssetErrorCode;
+} ErrCode;
 
 /**
  * An enum type indicates when the Asset is accessible.
-*/
+ */
 typedef enum {
     /**
      * The secret value in the Asset can only be accessed after the device is first unlocked.
@@ -230,7 +229,7 @@ typedef enum {
      * The access to an Asset requires user authentication using either PIN/pattern/password or biometric traits.
      */
     AUTH_TYPE_ANY = 0xFF,
-} AssetAuthType;
+} AuthType;
 
 /**
  * An enum type indicates the type of Asset synchronization.
@@ -370,7 +369,7 @@ typedef struct {
      * The count of an Asset attributes.
      */
     uint32_t count;
-} AssetResult;
+} Result;
 
 /**
  * A type that indicates the Asset query result set.
@@ -379,12 +378,12 @@ typedef struct {
     /**
      * The query result set.
      */
-    AssetResult *results;
+    Result *results;
     /**
      * The count of the result set.
      */
     uint32_t count;
-} AssetResultSet;
+} ResultSet;
 
 #ifdef __cplusplus
 }

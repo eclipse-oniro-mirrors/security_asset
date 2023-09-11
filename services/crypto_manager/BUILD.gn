@@ -22,7 +22,7 @@ ohos_rust_static_library("crypto_manager") {
     "src/lib.rs",
   ]
 
-  deps = [ "$SUBSYSTEM_DIR/frameworks/common:asset_common_lib" ]
+  deps = [ "$SUBSYSTEM_DIR/frameworks/common:asset_common" ]
 
   external_deps = [
     "hilog:hilog_rust",

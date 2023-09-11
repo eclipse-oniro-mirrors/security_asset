@@ -48,7 +48,7 @@ int32_t PreQueryAsset(const AssetParam *query, uint32_t queryCnt, AssetBlob *cha
     return ASSET_SUCCESS;
 }
 
-int32_t QueryAsset(const AssetParam *query, uint32_t queryCnt, AssetResultSet *result)
+int32_t QueryAsset(const AssetParam *query, uint32_t queryCnt, ResultSet *result)
 {
     return ASSET_SUCCESS;
 }

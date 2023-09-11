@@ -6,5 +6,5 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-asset_common_lib = { path = "../../../frameworks/common" }
+asset_common = { path = "../../../frameworks/common" }
 asset_ipc_define_lib = { path = "../../../frameworks/ipc_define" }

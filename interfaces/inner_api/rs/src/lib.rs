@@ -17,17 +17,17 @@
 
 mod asset_request;
 
-pub use asset_common_lib::asset_type;
-use asset_common_lib::{
+pub use asset_common::definition;
+use asset_common::{
     asset_log_error, asset_log_info,
-    asset_type::{AssetMap, AssetResult, AssetStatusCode, Tag, Value},
+    definition::{AssetMap, Result, ErrCode, Tag, Value},
 };
 use crate::asset_request::AssetIpcProxy;
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
 
 /// insert data into asset
-pub fn asset_insert(_code: i32) -> AssetResult<AssetStatusCode> {
+pub fn asset_insert(_code: i32) -> Result<ErrCode> {
     asset_log_info!("enter asser insert");
     if let Ok(sender) = AssetIpcProxy::new() {
         let mut map = AssetMap::new();
@@ -40,23 +40,23 @@ pub fn asset_insert(_code: i32) -> AssetResult<AssetStatusCode> {
                 } else {
                     asset_log_error!("asset_insert failed!");
                 }
-                Ok(AssetStatusCode::Success)
+                Ok(ErrCode::Success)
             },
             Err(e) => Err(e),
         }
     } else {
-        Err(AssetStatusCode::Failed)
+        Err(ErrCode::Failed)
     }
 }
 
 /// add an asset
-pub fn add(input: AssetMap) -> AssetResult<AssetMap> {
+pub fn add(input: AssetMap) -> Result<AssetMap> {
     asset_log_info!("enter assert add");
     AssetIpcProxy::new()?.add(&input)
 }
 
 /// the mock function
-pub fn add_asset(_input: AssetMap) -> AssetStatusCode {
+pub fn add_asset(_input: AssetMap) -> ErrCode {
     asset_log_info!("enter assert add");
-    AssetStatusCode::Success
+    ErrCode::Success
 }

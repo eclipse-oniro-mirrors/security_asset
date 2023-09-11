@@ -15,9 +15,9 @@
 
 //! This create implement the send request
 
-use asset_common_lib::{
+use asset_common::{
     asset_log_info,
-    asset_type::{AssetMap, AssetResult, AssetStatusCode}, asset_log_error,
+    definition::{AssetMap, Result, ErrCode}, asset_log_error,
 };
 
 use asset_ipc_define_lib::asset_service::{AssetBroker, ASSET_SERVICE_ID};
@@ -29,13 +29,13 @@ use rust_samgr::get_service_proxy;
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
 
-fn get_asset_service() -> AssetResult<RemoteObjRef<dyn AssetBroker>> {
+fn get_asset_service() -> Result<RemoteObjRef<dyn AssetBroker>> {
     let object = get_service_proxy::<dyn AssetBroker>(ASSET_SERVICE_ID);
     match object {
         Ok(remote) => Ok(remote),
         Err(e) => {
             asset_log_error!("get_asset_service failed {}!", @public(e));
-            Err(AssetStatusCode::ServiceUnvailable)
+            Err(ErrCode::ServiceUnvailable)
         }
     }
 }
@@ -48,18 +48,18 @@ pub(crate) struct AssetIpcProxy {
 /// 2222
 impl AssetIpcProxy {
     /// xxx
-    pub(crate) fn new() -> AssetResult<AssetIpcProxy> {
+    pub(crate) fn new() -> Result<AssetIpcProxy> {
         Ok(AssetIpcProxy { proxy: get_asset_service()? })
     }
 
     /// xxx
-    pub(crate) fn insert(&self, input: &AssetMap) -> AssetResult<AssetMap> {
+    pub(crate) fn insert(&self, input: &AssetMap) -> Result<AssetMap> {
         asset_log_info!("AssetIpcSender insert");
         self.proxy.insert(input)
     }
 
     /// add
-    pub(crate) fn add(&self, input: &AssetMap) -> AssetResult<AssetMap> {
+    pub(crate) fn add(&self, input: &AssetMap) -> Result<AssetMap> {
         asset_log_info!("AssetIpcSender add");
         self.proxy.add(input)
     }

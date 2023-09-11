@@ -36,7 +36,7 @@ int32_t UpdateAsset(const AssetParam *query, uint32_t queryCnt,
 
 int32_t PreQueryAsset(const AssetParam *query, uint32_t queryCnt, AssetBlob *challenge);
 
-int32_t QueryAsset(const AssetParam *query, uint32_t queryCnt, AssetResultSet *result);
+int32_t QueryAsset(const AssetParam *query, uint32_t queryCnt, ResultSet *result);
 
 int32_t PostQueryAsset(const AssetParam *handle, uint32_t handleCnt);
 

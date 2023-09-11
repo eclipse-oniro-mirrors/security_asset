@@ -27,7 +27,7 @@ ohos_rust_static_library("db_operator") {
   ]
 
   deps = [
-    "$COMPONENT_DIR/frameworks/common:asset_common_lib",
+    "$COMPONENT_DIR/frameworks/common:asset_common",
     "//third_party/sqlite:sqlite",
   ]
 

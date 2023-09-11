@@ -15,46 +15,46 @@
 use core::ffi::c_void;
 use std::ptr::null;
 
-use asset_common_lib::asset_type::AssetStatusCode;
+use asset_common::definition::ErrCode;
 
 /// sqlite error type
 pub type SqliteErrcode = i32;
 
 /// change sqlite errcode to asset errcode
-pub fn from_sqlitecode_to_assetcode(value: SqliteErrcode) -> AssetStatusCode {
+pub fn from_sqlitecode_to_assetcode(value: SqliteErrcode) -> ErrCode {
     match value {
-        SQLITE_OK => AssetStatusCode::Success,
-        SQLITE_ERROR => AssetStatusCode::SqliteERROR,
-        SQLITE_INTERNAL => AssetStatusCode::SqliteINTERNAL,
-        SQLITE_PERM => AssetStatusCode::SqlitePERM,
-        SQLITE_ABORT => AssetStatusCode::SqliteABORT,
-        SQLITE_BUSY => AssetStatusCode::SqliteBUSY,
-        SQLITE_LOCKED => AssetStatusCode::SqliteLOCKED,
-        SQLITE_NOMEM => AssetStatusCode::SqliteNOMEM,
-        SQLITE_READONLY => AssetStatusCode::SqliteREADONLY,
-        SQLITE_INTERRUPT => AssetStatusCode::SqliteINTERRUPT,
-        SQLITE_IOERR => AssetStatusCode::SqliteIOERR,
-        SQLITE_CORRUPT => AssetStatusCode::SqliteCORRUPT,
-        SQLITE_NOTFOUND => AssetStatusCode::SqliteNOTFOUND,
-        SQLITE_FULL => AssetStatusCode::SqliteFULL,
-        SQLITE_CANTOPEN => AssetStatusCode::SqliteCANTOPEN,
-        SQLITE_PROTOCOL => AssetStatusCode::SqlitePROTOCOL,
-        SQLITE_EMPTY => AssetStatusCode::SqliteEMPTY,
-        SQLITE_SCHEMA => AssetStatusCode::SqliteSCHEMA,
-        SQLITE_TOOBIG => AssetStatusCode::SqliteTOOBIG,
-        SQLITE_CONSTRAINT => AssetStatusCode::SqliteCONSTRAINT,
-        SQLITE_MISMATCH => AssetStatusCode::SqliteMISMATCH,
-        SQLITE_MISUSE => AssetStatusCode::SqliteMISUSE,
-        SQLITE_NOLFS => AssetStatusCode::SqliteNOLFS,
-        SQLITE_AUTH => AssetStatusCode::SqliteAUTH,
-        SQLITE_FORMAT => AssetStatusCode::SqliteFORMAT,
-        SQLITE_RANGE => AssetStatusCode::SqliteRANGE,
-        SQLITE_NOTADB => AssetStatusCode::SqliteNOTADB,
-        SQLITE_NOTICE => AssetStatusCode::SqliteNOTICE,
-        SQLITE_WARNING => AssetStatusCode::SqliteWARNING,
-        SQLITE_ROW => AssetStatusCode::SqliteROW,
-        SQLITE_DONE => AssetStatusCode::SqliteDONE,
-        _ => AssetStatusCode::SqliteERROR,
+        SQLITE_OK => ErrCode::Success,
+        SQLITE_ERROR => ErrCode::SqliteERROR,
+        SQLITE_INTERNAL => ErrCode::SqliteINTERNAL,
+        SQLITE_PERM => ErrCode::SqlitePERM,
+        SQLITE_ABORT => ErrCode::SqliteABORT,
+        SQLITE_BUSY => ErrCode::SqliteBUSY,
+        SQLITE_LOCKED => ErrCode::SqliteLOCKED,
+        SQLITE_NOMEM => ErrCode::SqliteNOMEM,
+        SQLITE_READONLY => ErrCode::SqliteREADONLY,
+        SQLITE_INTERRUPT => ErrCode::SqliteINTERRUPT,
+        SQLITE_IOERR => ErrCode::SqliteIOERR,
+        SQLITE_CORRUPT => ErrCode::SqliteCORRUPT,
+        SQLITE_NOTFOUND => ErrCode::SqliteNOTFOUND,
+        SQLITE_FULL => ErrCode::SqliteFULL,
+        SQLITE_CANTOPEN => ErrCode::SqliteCANTOPEN,
+        SQLITE_PROTOCOL => ErrCode::SqlitePROTOCOL,
+        SQLITE_EMPTY => ErrCode::SqliteEMPTY,
+        SQLITE_SCHEMA => ErrCode::SqliteSCHEMA,
+        SQLITE_TOOBIG => ErrCode::SqliteTOOBIG,
+        SQLITE_CONSTRAINT => ErrCode::SqliteCONSTRAINT,
+        SQLITE_MISMATCH => ErrCode::SqliteMISMATCH,
+        SQLITE_MISUSE => ErrCode::SqliteMISUSE,
+        SQLITE_NOLFS => ErrCode::SqliteNOLFS,
+        SQLITE_AUTH => ErrCode::SqliteAUTH,
+        SQLITE_FORMAT => ErrCode::SqliteFORMAT,
+        SQLITE_RANGE => ErrCode::SqliteRANGE,
+        SQLITE_NOTADB => ErrCode::SqliteNOTADB,
+        SQLITE_NOTICE => ErrCode::SqliteNOTICE,
+        SQLITE_WARNING => ErrCode::SqliteWARNING,
+        SQLITE_ROW => ErrCode::SqliteROW,
+        SQLITE_DONE => ErrCode::SqliteDONE,
+        _ => ErrCode::SqliteERROR,
     }
 }
 

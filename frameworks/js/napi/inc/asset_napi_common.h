@@ -40,7 +40,7 @@ typedef struct AsyncContext {
     // output
     int32_t result = 0;
     AssetBlob challenge = { 0 };
-    AssetResultSet resultSet = { 0 };
+    ResultSet resultSet = { 0 };
 } AsyncContext;
 
 

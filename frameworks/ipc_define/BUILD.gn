@@ -17,7 +17,7 @@ COMPONENT_DIR = "//base/security/asset"
 
 ohos_rust_static_library("asset_ipc_define_lib") {
   sources = [ "src/lib.rs" ]
-  deps = [ "$COMPONENT_DIR/frameworks/common:asset_common_lib" ]
+  deps = [ "$COMPONENT_DIR/frameworks/common:asset_common" ]
   external_deps = [
     "hilog:hilog_rust",
     "ipc:ipc_rust",

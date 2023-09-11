@@ -15,7 +15,7 @@
 
 //! This create implement the asset
 
-use asset_common_lib::{asset_type::{AssetMap, AssetResult, Value, AssetStatusCode, Tag}, asset_log_info, asset_log_error};
+use asset_common::{definition::{AssetMap, Result, Value, ErrCode, Tag}, asset_log_info, asset_log_error};
 use db_operator::{
     types::{Pair, DataValue},
     database_table_helper::{G_COLUMN_ACCESSTYPE, G_COLUMN_OWNERTYPE, G_COLUMN_DELETETYPE,
@@ -29,11 +29,11 @@ use crate::calling_process_info::CallingInfo;
 
 pub(crate) trait FromValueToDataValue {
     /// xxx
-    fn to_data_value(&self) -> AssetResult<DataValue>;
+    fn to_data_value(&self) -> Result<DataValue>;
 }
 
 impl FromValueToDataValue for Value {
-    fn to_data_value(&self) -> AssetResult<DataValue> {
+    fn to_data_value(&self) -> Result<DataValue> {
         match self {
             Value::NUMBER(n) => {
                 Ok(DataValue::Integer(*n)) // to do 类型确认
@@ -42,14 +42,14 @@ impl FromValueToDataValue for Value {
                 Ok(DataValue::Blob(v))
             },
             _ => {
-                Err(AssetStatusCode::InvalidArgument)
+                Err(ErrCode::InvalidArgument)
             }
         }
     }
 }
 
 /// xxx
-pub(crate) fn get_set_attr<'a>(input: &'a AssetMap, column_name: &'a str, tag: Tag, vec: &mut Vec<Pair<'a>>) -> AssetResult<()> {
+pub(crate) fn get_set_attr<'a>(input: &'a AssetMap, column_name: &'a str, tag: Tag, vec: &mut Vec<Pair<'a>>) -> Result<()> {
     if let Some(v) = input.get(&tag) {
         vec.push(
             Pair {
@@ -61,11 +61,11 @@ pub(crate) fn get_set_attr<'a>(input: &'a AssetMap, column_name: &'a str, tag: T
         return Ok(());
     }
     asset_log_error!("{} missed", @public(tag as u32));
-    Err(AssetStatusCode::InvalidArgument)
+    Err(ErrCode::InvalidArgument)
 }
 
 /// xxx
-pub(crate) fn get_set_owner_type(calling_info: &CallingInfo, vec: &mut Vec<Pair>) -> AssetResult<()>  {
+pub(crate) fn get_set_owner_type(calling_info: &CallingInfo, vec: &mut Vec<Pair>) -> Result<()>  {
     vec.push(
         Pair {
             column_name: G_COLUMN_OWNERTYPE,
@@ -76,7 +76,7 @@ pub(crate) fn get_set_owner_type(calling_info: &CallingInfo, vec: &mut Vec<Pair>
 }
 
 /// xxx
-pub(crate) fn get_set_access_type(vec: &mut Vec<Pair>) -> AssetResult<()>  {
+pub(crate) fn get_set_access_type(vec: &mut Vec<Pair>) -> Result<()>  {
     let access_type = 1;
     vec.push(
         Pair {
@@ -88,7 +88,7 @@ pub(crate) fn get_set_access_type(vec: &mut Vec<Pair>) -> AssetResult<()>  {
 }
 
 /// xxx
-pub(crate) fn get_set_delete_type(vec: &mut Vec<Pair>) -> AssetResult<()>  {
+pub(crate) fn get_set_delete_type(vec: &mut Vec<Pair>) -> Result<()>  {
     let delete_type = 1;
     vec.push(
         Pair {
@@ -100,7 +100,7 @@ pub(crate) fn get_set_delete_type(vec: &mut Vec<Pair>) -> AssetResult<()>  {
 }
 
 /// xxx
-pub(crate) fn get_set_version(vec: &mut Vec<Pair>) -> AssetResult<()>  {
+pub(crate) fn get_set_version(vec: &mut Vec<Pair>) -> Result<()>  {
     let version = 1;
     vec.push(
         Pair {
@@ -112,7 +112,7 @@ pub(crate) fn get_set_version(vec: &mut Vec<Pair>) -> AssetResult<()>  {
 }
 
 /// xxx
-pub(crate) fn set_ciphet_secret<'a>(cipher_secret: &'a [u8], vec: &mut Vec<Pair<'a>>) -> AssetResult<()>  {
+pub(crate) fn set_ciphet_secret<'a>(cipher_secret: &'a [u8], vec: &mut Vec<Pair<'a>>) -> Result<()>  {
     vec.push(
         Pair {
             column_name: G_COLUMN_SECRET,

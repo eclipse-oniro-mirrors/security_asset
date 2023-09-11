@@ -16,7 +16,7 @@
 //! This create implement the asset
 #![allow(dead_code)]
 
-use asset_common_lib::{asset_type::{AssetMap, AssetResult, Tag, AssetStatusCode, Value}, asset_log_info, asset_log_error};
+use asset_common::{definition::{AssetMap, Result, Tag, ErrCode, Value}, asset_log_info, asset_log_error};
 use db_operator::{database_table_helper::DefaultDatabaseHelper, types::Pair,
     database_table_helper::{G_COLUMN_SYNCTYPE, G_COLUMN_AUTHTYPE}};
 
@@ -26,17 +26,17 @@ use crate::{operations::operation_common::*, calling_process_info::CallingInfo};
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
 
-fn encrypt_secret(input: &AssetMap) -> AssetResult<Vec<u8>> {
+fn encrypt_secret(input: &AssetMap) -> Result<Vec<u8>> {
     if let Some(Value::Bytes(secret)) = input.get(&Tag::Secret) {
         // Crypto::encrypt(secret)
         Ok(secret.clone()) // to do 使用加解密适配层的接口进行加密
     } else {
         asset_log_error!("get secret from input failed!");
-        Err(AssetStatusCode::InvalidArgument)
+        Err(ErrCode::InvalidArgument)
     }
 }
 
-fn construct_data<'a>(input: &'a AssetMap, calling_info: &'a CallingInfo) -> AssetResult<Vec<Pair<'a>>> {
+fn construct_data<'a>(input: &'a AssetMap, calling_info: &'a CallingInfo) -> Result<Vec<Pair<'a>>> {
     let mut data_vec = Vec::new();
 
     get_set_attr(input, G_COLUMN_SYNCTYPE, Tag::SyncType, &mut data_vec)?;
@@ -50,7 +50,7 @@ fn construct_data<'a>(input: &'a AssetMap, calling_info: &'a CallingInfo) -> Ass
     Ok(data_vec)
 }
 
-pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> AssetResult<AssetMap> {
+pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<AssetMap> {
     // arrange the table value
     let mut db_data = construct_data(input, calling_info)?;
 
@@ -61,7 +61,7 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> AssetResult<A
 
     let owner_str = String::from_utf8(calling_info.get_owner_text().clone());
     if owner_str.is_err() {
-        return Err(AssetStatusCode::Failed);
+        return Err(ErrCode::Failed);
     }
     // call sql to add
     let insert_num =

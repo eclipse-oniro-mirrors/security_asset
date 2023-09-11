@@ -51,3 +51,4 @@ git clone ssh://git@szv-y.codehub.huawei.com:2222/y00522150/asset.git
 **日志打印规范：**https://gitee.com/openharmony/docs/blob/master/zh-cn/contribute/OpenHarmony-Log-guide.md
 **可靠性设计和编码规范：**https://w3.huawei.com/ipd/tsl/#!tsl_new/standard/standard.html?standardId=152795
 **RUST编码规范：**https://w3.huawei.com/ipd/tsl/#!tsl_new/standard/standard.html?standardId=217651
+**可信构建：**https://wiki.huawei.com/domains/6660/wiki/8/WIKI20230410978631?title=_15

@@ -21,13 +21,13 @@ use std::{
 };
 use hilog_rust::{hilog, HiLogLabel, LogType};
 
-use asset_common_lib::{
+use asset_common::{
     asset_log_info,
     asset_log_error,
-    asset_type::{
+    definition::{
         AssetMap,
-        AssetStatusCode,
-        AssetType,
+        DataType,
+        ErrCode,
         Tag,
         Value,
         asset_type_transform::GetType
@@ -46,7 +46,7 @@ pub extern "C" fn AssetInsert(code: i32) -> i32
             res as i32
         },
         Err(res) => {
-            asset_log_error!("err");
+            // asset_log_error!("err");
             res as i32
         }
     }
@@ -59,7 +59,7 @@ pub extern "C" fn AssetInsert(code: i32) -> i32
 pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetParam, attr_cnt: u32) -> i32 {
     asset_log_error!("[YZT] enter AddAssetC2Rust!");
     if attributes.is_null() || attr_cnt == 0 { // todo: 待确认是否需要校验
-        return AssetStatusCode::InvalidArgument as i32;
+        return ErrCode::InvalidArgument as i32;
     }
 
     let mut map = AssetMap::with_capacity(attr_cnt as usize);
@@ -70,19 +70,19 @@ pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetParam, attr_cnt:
             Err(err_code) => return err_code as i32,
         };
         match attr_tag.get_type() {
-            Ok(AssetType::Bool) => {
+            Ok(DataType::Bool) => {
                 map.insert(attr_tag, Value::BOOL((*attr).value.boolean));
             },
-            Ok(AssetType::Uint32) => {
+            Ok(DataType::Uint32) => {
                 map.insert(attr_tag, Value::NUMBER((*attr).value.uint32));
             },
-            Ok(AssetType::Bytes) => {
+            Ok(DataType::Bytes) => {
                 let blob_slice = slice::from_raw_parts((*attr).value.blob.data, (*attr).value.blob.size as usize);
                 let blob_vec = blob_slice.to_vec();
                 map.insert(attr_tag, Value::Bytes(blob_vec));
             },
             _ => {
-                return AssetStatusCode::InvalidArgument as i32;
+                return ErrCode::InvalidArgument as i32;
             },
         }
     }

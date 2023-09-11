@@ -17,4 +17,4 @@
 
 #[macro_use]
 pub mod asset_hilog;
-pub mod asset_type;
+pub mod definition;

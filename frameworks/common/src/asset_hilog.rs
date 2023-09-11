@@ -34,7 +34,7 @@ macro_rules! asset_log_error{
     ($($arg:tt)*) => (
         let log_label: HiLogLabel = HiLogLabel {
             log_type: LogType::LogCore,
-            domain: 0xD002F00, // security domain
+            domain: 0xD002F70, // security domain
             tag: "Asset"
         };
         hilog_rust::error!(log_label, $($arg)*)

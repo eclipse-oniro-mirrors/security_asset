@@ -17,12 +17,12 @@
 #![allow(dead_code)]
 
 extern "C" {
-    fn GetCallingUserIdByUid(uid: u64) -> u32;
+    fn GetUserIdByUid(uid: u64) -> u32;
 }
 
 /// xxx
 pub(crate) fn get_calling_user_id(uid: u64) -> u32 {
     unsafe {
-        GetCallingUserIdByUid(uid) // to do
+        GetUserIdByUid(uid) // to do
     }
 }

@@ -15,7 +15,7 @@
 
 //! This create implement the asset
 use crate::hukkey_ffi::*;
-use asset_common_lib::{asset_type::{AssetStatusCode,AssetResult},asset_log_error};
+use asset_common::{definition::{ErrCode,Result},asset_log_error};
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
 use std::ptr::{null_mut,copy_nonoverlapping};
@@ -46,7 +46,7 @@ impl SecretKey{
     }
 
     /// Generate the hukkey
-    pub fn generate(&mut self, mut gen_param_set: HksParamSet) -> AssetResult<(Box<HksBlob>,Box<HksParamSet>,HuksErrcode)>{
+    pub fn generate(&mut self, mut gen_param_set: HksParamSet) -> Result<(Box<HksBlob>,Box<HksParamSet>,HuksErrcode)>{
         let hks_blob = Box::new(
             HksBlob{
             size: self.alias.len() as u32,
@@ -201,7 +201,7 @@ pub struct Crypto {
 
 impl Crypto {
     /// Encrypt
-    pub fn encrypt(key_alias: &HksBlob,gen_param_set: &HksParamSet, encrypt_param_set: HksParamSet, msg: &mut Vec<u8>) -> AssetResult<Box<Vec<u8>>>{
+    pub fn encrypt(key_alias: &HksBlob,gen_param_set: &HksParamSet, encrypt_param_set: HksParamSet, msg: &mut Vec<u8>) -> Result<Box<Vec<u8>>>{
         let mut handle_e: Box<Vec<u8>> = Box::new(vec![0,0,0,0,0,0,0,0]);
         let mut handle_encrypt = Box::new(
             HksBlob{
@@ -213,7 +213,7 @@ impl Crypto {
         let mut ret = unsafe{HksInit(key_alias as *const HksBlob, &encrypt_param_set as *const HksParamSet, Box::as_mut(&mut handle_encrypt) as *mut HksBlob, null_mut())};
         if ret != HKS_SUCCESS{
             asset_log_error!("Init failed.");
-            return Err(AssetStatusCode::Failed);
+            return Err(ErrCode::Failed);
         }
         let mut indata = Box::new(
             HksBlob {
@@ -231,18 +231,18 @@ impl Crypto {
         ret = TestUpdateLoopFinish(Box::as_ref(&handle_encrypt), &encrypt_param_set, &mut indata, &mut cipher_text);
         if ret != HKS_SUCCESS{
             asset_log_error!("TestUpdateLoopFinish failed.");
-            return Err(AssetStatusCode::Failed);
+            return Err(ErrCode::Failed);
         }
 
         if ret != HKS_SUCCESS{
             unsafe{HksDeleteKey(key_alias as *const HksBlob, gen_param_set as *const HksParamSet)};
-            return Err(AssetStatusCode::Failed);
+            return Err(ErrCode::Failed);
         }
         Ok(cipher)
     }
 
     /// Decrypt
-    pub fn decrypt(key_alias: &HksBlob, gen_param_set: &HksParamSet, decrypt_param_set: HksParamSet, cipher: &mut Vec<u8>) -> AssetResult<Box<Vec<u8>>>{
+    pub fn decrypt(key_alias: &HksBlob, gen_param_set: &HksParamSet, decrypt_param_set: HksParamSet, cipher: &mut Vec<u8>) -> Result<Box<Vec<u8>>>{
         let mut handle_d: Box<Vec<u8>> = Box::new(vec![0,0,0,0,0,0,0,0]);
         let mut handle_decrypt = Box::new(
             HksBlob{
@@ -254,7 +254,7 @@ impl Crypto {
         let mut ret = unsafe{HksInit(key_alias as *const HksBlob, &decrypt_param_set as *const HksParamSet, Box::as_mut(&mut handle_decrypt) as *mut HksBlob, null_mut())};
         if ret != HKS_SUCCESS{
             asset_log_error!("Init failed.");
-            return Err(AssetStatusCode::Failed);
+            return Err(ErrCode::Failed);
         }
         let mut cipher_text = Box::new(
             HksBlob {
@@ -272,12 +272,12 @@ impl Crypto {
         ret = TestUpdateLoopFinish(Box::as_ref(&handle_decrypt), &decrypt_param_set, &mut cipher_text, &mut plain_text);
         if ret != HKS_SUCCESS{
             asset_log_error!("TestUpdateLoopFinish failed.");
-            return Err(AssetStatusCode::Failed);
+            return Err(ErrCode::Failed);
         }
 
         if ret != HKS_SUCCESS{
             unsafe{HksDeleteKey(key_alias as *const HksBlob, gen_param_set as *const HksParamSet)};
-            return Err(AssetStatusCode::Failed);
+            return Err(ErrCode::Failed);
         }
         Ok(plain)
     }

@@ -19,7 +19,7 @@ use crate::{
     table::Table,
     types::{ColumnInfo, Condition, DataType, DataValue, Pair, ResultSet},
 };
-use asset_common_lib::{asset_log_error, asset_type::AssetStatusCode};
+use asset_common_lib::{asset_log_error, definition::ErrCode};
 use hilog_rust::{hilog, HiLogLabel, LogType};
 use std::ffi::{c_char, CString};
 
@@ -231,7 +231,7 @@ impl<'a> TableHelper<'a> {
         owner: &str,
         alias: &str,
         datas: &Vec<Pair>,
-    ) -> Result<i32, AssetStatusCode> {
+    ) -> Result<i32, ErrCode> {
         let conditions = &vec![
             Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) },
             Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) },
@@ -265,7 +265,7 @@ impl<'a> TableHelper<'a> {
         owner: &str,
         alias: &str,
         datas: Vec<Pair>,
-    ) -> Result<i32, AssetStatusCode> {
+    ) -> Result<i32, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(datas.len() + 2);
         v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
         v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
@@ -301,7 +301,7 @@ impl<'a> TableHelper<'a> {
         owner: &str,
         alias: &str,
         condition: &Condition,
-    ) -> Result<i32, AssetStatusCode> {
+    ) -> Result<i32, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
         v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
         v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
@@ -324,7 +324,7 @@ impl<'a> TableHelper<'a> {
     /// sql like:
     /// select count(*) as count from table_name where Owner='owner1' and Alias='alias1'
     ///
-    pub fn is_data_exist(&self, owner: &str, alias: &str) -> Result<bool, AssetStatusCode> {
+    pub fn is_data_exist(&self, owner: &str, alias: &str) -> Result<bool, ErrCode> {
         self.is_data_exists(&vec![
             Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) },
             Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) },
@@ -344,7 +344,7 @@ impl<'a> TableHelper<'a> {
     /// sql like:
     /// select count(*) as count from table_name where AppId='owner2'
     ///
-    pub fn select_count(&self, owner: &str) -> Result<u32, AssetStatusCode> {
+    pub fn select_count(&self, owner: &str) -> Result<u32, ErrCode> {
         self.count_datas(&vec![Pair {
             column_name: G_COLUMN_OWNER,
             value: DataValue::Text(owner.as_bytes()),
@@ -370,7 +370,7 @@ impl<'a> TableHelper<'a> {
         owner: &str,
         alias: &str,
         condition: &Condition,
-    ) -> Result<ResultSet, AssetStatusCode> {
+    ) -> Result<ResultSet, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
         v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
         v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
@@ -383,9 +383,9 @@ impl<'a> TableHelper<'a> {
 
 /// process err msg, this may be use in test, consider delete this funciton when release
 pub fn process_err_msg<T>(
-    res: Result<T, AssetStatusCode>,
+    res: Result<T, ErrCode>,
     db: &DefaultDatabaseHelper,
-) -> Result<T, AssetStatusCode> {
+) -> Result<T, ErrCode> {
     if res.is_err() {
         if let Some(msg) = db.get_errmsg() {
             asset_log_error!("db err info: {}", @public(msg.s));
@@ -400,7 +400,7 @@ pub fn process_err_msg<T>(
 /// if table not exist, create default asset table
 ///
 #[inline(always)]
-fn create_default_table(db: &Database) -> Result<Table, AssetStatusCode> {
+fn create_default_table(db: &Database) -> Result<Table, ErrCode> {
     let res =
         db.create_table(G_ASSET_TABLE_NAME, G_COLUMNS_INFO).map_err(from_sqlitecode_to_assetcode);
     process_err_msg(res, db)
@@ -416,7 +416,7 @@ impl DefaultDatabaseHelper {
         owner: &str,
         alias: &str,
         datas: &Vec<Pair>,
-    ) -> Result<i32, AssetStatusCode> {
+    ) -> Result<i32, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         #[cfg(feature = "auto_insert_time")]
         {
@@ -452,7 +452,7 @@ impl DefaultDatabaseHelper {
         owner: &str,
         alias: &str,
         datas: Vec<Pair>,
-    ) -> Result<i32, AssetStatusCode> {
+    ) -> Result<i32, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         #[cfg(feature = "auto_insert_time")]
         {
@@ -499,7 +499,7 @@ impl DefaultDatabaseHelper {
         owner: &str,
         alias: &str,
         cond: &Condition,
-    ) -> Result<i32, AssetStatusCode> {
+    ) -> Result<i32, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         process_err_msg(table.delete_datas(owner, alias, cond), self)
     }
@@ -512,7 +512,7 @@ impl DefaultDatabaseHelper {
         &self,
         owner: &str,
         alias: &str,
-    ) -> Result<bool, AssetStatusCode> {
+    ) -> Result<bool, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         process_err_msg(table.is_data_exist(owner, alias), self)
     }
@@ -521,7 +521,7 @@ impl DefaultDatabaseHelper {
     /// see TableHelper
     ///
     #[inline(always)]
-    pub fn select_count_default(&self, owner: &str) -> Result<u32, AssetStatusCode> {
+    pub fn select_count_default(&self, owner: &str) -> Result<u32, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         process_err_msg(table.select_count(owner), self)
     }
@@ -535,7 +535,7 @@ impl DefaultDatabaseHelper {
         owner: &str,
         alias: &str,
         condition: &Condition,
-    ) -> Result<ResultSet, AssetStatusCode> {
+    ) -> Result<ResultSet, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         process_err_msg(table.query_datas(owner, alias, condition), self)
     }
@@ -547,7 +547,7 @@ impl DefaultDatabaseHelper {
     ///
     pub fn open_default_database_table(
         userid: u32,
-    ) -> Result<DefaultDatabaseHelper, AssetStatusCode> {
+    ) -> Result<DefaultDatabaseHelper, ErrCode> {
         let db = Database::default_new(userid).map_err(from_sqlitecode_to_assetcode)?;
         match db.open_table(G_ASSET_TABLE_NAME) {
             Ok(_) => {},
@@ -565,7 +565,7 @@ impl DefaultDatabaseHelper {
         userid: u32,
         version_new: u32,
         callback: UpdateDatabaseCallbackFunc,
-    ) -> Result<DefaultDatabaseHelper, AssetStatusCode> {
+    ) -> Result<DefaultDatabaseHelper, ErrCode> {
         let db = Database::default_new_with_version_update(userid, version_new, callback)
             .map_err(from_sqlitecode_to_assetcode)?;
         match db.open_table(G_ASSET_TABLE_NAME) {
@@ -586,7 +586,7 @@ impl DefaultDatabaseHelper {
         owner: &str,
         alias: &str,
         datas: &Vec<Pair>,
-    ) -> Result<i32, AssetStatusCode> {
+    ) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.update_datas_default(owner, alias, datas)
     }
@@ -600,7 +600,7 @@ impl DefaultDatabaseHelper {
         owner: &str,
         alias: &str,
         datas: Vec<Pair>,
-    ) -> Result<i32, AssetStatusCode> {
+    ) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.insert_datas_default(owner, alias, datas)
     }
@@ -614,7 +614,7 @@ impl DefaultDatabaseHelper {
         owner: &str,
         alias: &str,
         cond: &Condition,
-    ) -> Result<i32, AssetStatusCode> {
+    ) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.delete_datas_default(owner, alias, cond)
     }
@@ -627,7 +627,7 @@ impl DefaultDatabaseHelper {
         userid: u32,
         owner: &str,
         alias: &str,
-    ) -> Result<bool, AssetStatusCode> {
+    ) -> Result<bool, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.is_data_exists_default(owner, alias)
     }
@@ -636,7 +636,7 @@ impl DefaultDatabaseHelper {
     /// see TableHelper
     ///
     #[inline(always)]
-    pub fn select_count_default_once(userid: u32, owner: &str) -> Result<u32, AssetStatusCode> {
+    pub fn select_count_default_once(userid: u32, owner: &str) -> Result<u32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.select_count_default(owner)
     }
@@ -650,7 +650,7 @@ impl DefaultDatabaseHelper {
         owner: &str,
         alias: &str,
         condition: &Condition,
-    ) -> Result<ResultSet, AssetStatusCode> {
+    ) -> Result<ResultSet, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.query_datas_default(owner, alias, condition)
     }

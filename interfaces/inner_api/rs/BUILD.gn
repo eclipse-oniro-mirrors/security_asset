@@ -19,7 +19,7 @@ ohos_rust_shared_library("asset_rust_sdk") {
   sources = [ "src/lib.rs" ]
 
   deps = [
-    "$COMPONENT_DIR/frameworks/common:asset_common_lib",
+    "$COMPONENT_DIR/frameworks/common:asset_common",
     "$COMPONENT_DIR/frameworks/ipc_define:asset_ipc_define_lib",
   ]
 
@@ -40,7 +40,7 @@ ohos_rust_shared_library("asset_rust_sdk") {
 ohos_rust_shared_ffi("asset_rust_binding") {
   sources = [ "src/binding.rs" ]
   deps = [
-    "$COMPONENT_DIR/frameworks/common:asset_common_lib",
+    "$COMPONENT_DIR/frameworks/common:asset_common",
     "$COMPONENT_DIR/interfaces/inner_api/rs:asset_rust_sdk",
   ]
   external_deps = [ "hilog:hilog_rust" ]
