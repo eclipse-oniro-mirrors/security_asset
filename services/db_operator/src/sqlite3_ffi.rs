@@ -274,6 +274,10 @@ pub type sqlite3_bind_int_ctype =
     extern fn(stmt: *mut c_void, index: i32, value: i32) -> SqliteErrcode;
 
 /// c wrap func
+pub type sqlite3_bind_int64_ctype =
+    extern fn(stmt: *mut c_void, index: i32, value: i64) -> SqliteErrcode;
+
+/// c wrap func
 pub type sqlite3_bind_null_ctype = extern fn(stmt: *mut c_void, index: i32) -> SqliteErrcode;
 
 /// c wrap func
@@ -305,6 +309,9 @@ pub type sqlite3_column_double_ctype = extern fn(stmt: *mut c_void, iCol: i32) -
 pub type sqlite3_column_int_ctype = extern fn(stmt: *mut c_void, iCol: i32) -> i32;
 
 /// c wrap func
+pub type sqlite3_column_int64_ctype = extern fn(stmt: *mut c_void, iCol: i32) -> i64;
+
+/// c wrap func
 pub type sqlite3_column_text_ctype = extern fn(stmt: *mut c_void, iCol: i32) -> *const u8;
 
 /// c wrap func
@@ -330,7 +337,7 @@ pub struct sqlite3_api_routines {
     /// sqlite3_c_func
     pub bind_int: sqlite3_bind_int_ctype,
     /// sqlite3_c_func
-    pub bind_int64: *const c_void,
+    pub bind_int64: sqlite3_bind_int64_ctype,
     /// sqlite3_c_func
     pub bind_null: sqlite3_bind_null_ctype,
     /// sqlite3_c_func
@@ -378,7 +385,7 @@ pub struct sqlite3_api_routines {
     /// sqlite3_c_func
     pub column_int: sqlite3_column_int_ctype,
     /// sqlite3_c_func
-    pub column_int64: *const c_void,
+    pub column_int64: sqlite3_column_int64_ctype,
     /// sqlite3_c_func
     pub column_name: sqlite3_column_name_ctype,
     /// sqlite3_c_func
@@ -995,6 +1002,11 @@ pub fn sqlite3_bind_int_func(stat: usize, index: i32, value: i32) -> SqliteErrco
 }
 
 /// rust ffi func for C func
+pub fn sqlite3_bind_int64_func(stat: usize, index: i32, value: i64) -> SqliteErrcode {
+    unsafe { ((*sqlite3_export_symbols).bind_int64)(stat as _, index, value) }
+}
+
+/// rust ffi func for C func
 pub fn sqlite3_bind_null_func(stat: usize, index: i32) -> SqliteErrcode {
     unsafe { ((*sqlite3_export_symbols).bind_null)(stat as _, index) }
 }
@@ -1042,6 +1054,11 @@ pub fn sqlite3_column_double_func(stmt: usize, iCol: i32) -> f64 {
 /// rust ffi func for C func
 pub fn sqlite3_column_int_func(stmt: usize, iCol: i32) -> i32 {
     unsafe { ((*sqlite3_export_symbols).column_int)(stmt as _, iCol) }
+}
+
+/// rust ffi func for C func
+pub fn sqlite3_column_int64_func(stmt: usize, iCol: i32) -> i64 {
+    unsafe { ((*sqlite3_export_symbols).column_int64)(stmt as _, iCol) }
 }
 
 /// rust ffi func for C func

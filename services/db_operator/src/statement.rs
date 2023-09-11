@@ -16,10 +16,10 @@ use std::ffi::CStr;
 
 use crate::{
     database::Database,
-    sqlite3_bind_blob_func, sqlite3_bind_double_func, sqlite3_bind_int_func,
+    sqlite3_bind_blob_func, sqlite3_bind_double_func, sqlite3_bind_int64_func,
     sqlite3_bind_null_func, sqlite3_bind_text_func, sqlite3_callback, sqlite3_column_blob_func,
     sqlite3_column_bytes_func, sqlite3_column_count_func, sqlite3_column_double_func,
-    sqlite3_column_int_func, sqlite3_column_name_func, sqlite3_column_text_func,
+    sqlite3_column_int64_func, sqlite3_column_name_func, sqlite3_column_text_func,
     sqlite3_column_type_func, sqlite3_data_count_func, sqlite3_finalize_func,
     sqlite3_prepare_v2_func, sqlite3_reset_func, sqlite3_step_func,
     types::{DataValue, ResultDataValue},
@@ -90,7 +90,7 @@ impl<'b> Statement<'b, true> {
     pub fn bind_data(&self, index: i32, data: &DataValue) -> SqliteErrcode {
         match data {
             DataValue::Blob(b) => sqlite3_bind_blob_func(self.handle, index, b, b.len() as _, None),
-            DataValue::Integer(i) => sqlite3_bind_int_func(self.handle, index, *i as i32),
+            DataValue::Integer(i) => sqlite3_bind_int64_func(self.handle, index, *i as _),
             DataValue::Double(d) => sqlite3_bind_double_func(self.handle, index, *d),
             DataValue::Text(t) => sqlite3_bind_text_func(self.handle, index, t, t.len() as _, None),
             DataValue::NoData => sqlite3_bind_null_func(self.handle, index),
@@ -190,7 +190,7 @@ impl<'b> Statement<'b, true> {
     /// the index if start with 0
     ///
     pub fn query_column_int(&self, index: i32) -> u32 {
-        sqlite3_column_int_func(self.handle, index) as u32
+        sqlite3_column_int64_func(self.handle, index) as u32
     }
 
     ///
