@@ -15,13 +15,16 @@
 
 //! 各种类型的拓展方法定义在此处
 
-use crate::definition::{Result, ErrCode, Tag, DataType, Value, Accessibility,
-    ReturnType, ConflictResolution, SyncType, AuthType};
-use hilog_rust::{hilog, HiLogLabel, LogType};
-use ipc_rust::IpcStatusCode;
-
 use std::ffi::{c_char, CString};
 use std::fmt;
+
+use hilog_rust::hilog;
+use ipc_rust::IpcStatusCode;
+
+use crate::definition::{
+    Result, ErrCode, Tag, DataType, Value,
+    Accessibility, ReturnType, ConflictResolution, SyncType, AuthType
+};
 
 /// The mask used to obtain the data type of Asset attribute value.
 const DATA_TYPE_MASK: u32 = 0xF << 28;
@@ -42,7 +45,7 @@ impl GetType for Tag {
             _ if DataType::Uint32 as u32 == mask => Ok(DataType::Uint32),
             _ if DataType::Bytes as u32 == mask => Ok(DataType::Bytes),
             _ => {
-                asset_log_error!("get tag type failed!");
+                loge!("get tag type failed!");
                 Err(ErrCode::Failed)
             },
         }
@@ -141,14 +144,14 @@ impl fmt::Display for Value {
 
 impl From<ErrCode> for IpcStatusCode {
     fn from(value: ErrCode) -> Self {
-        asset_log_error!("get asset result [{}] for ipc", @public(value));
+        loge!("get asset result [{}] for ipc", @public(value));
         IpcStatusCode::Failed
     }
 }
 
 impl From<IpcStatusCode> for ErrCode {
     fn from(value: IpcStatusCode) -> Self {
-        asset_log_error!("get ipc result [{}]", @public(value));
+        loge!("get ipc result [{}]", @public(value));
         ErrCode::IpcError
     }
 }
@@ -166,7 +169,18 @@ impl fmt::Display for ErrCode {
     }
 }
 
-/// xxx
+/// Macro to implement TryFrom for enumeration types.
+///
+/// # Example
+///
+/// ```
+/// impl_try_from! {
+///     enum Color {
+///         GREEN = 0,
+///         YELLOW = 1,
+///     }
+/// }
+/// ```
 #[macro_export]
 macro_rules! impl_try_from {
     ($(#[$meta:meta])* $vis:vis enum $name:ident {

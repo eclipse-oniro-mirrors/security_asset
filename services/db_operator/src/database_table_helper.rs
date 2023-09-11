@@ -19,8 +19,8 @@ use crate::{
     table::Table,
     types::{ColumnInfo, Condition, DataType, DataValue, Pair, ResultSet},
 };
-use asset_common_lib::{asset_log_error, definition::ErrCode};
-use hilog_rust::{hilog, HiLogLabel, LogType};
+use asset_common::{loge, definition::ErrCode};
+use hilog_rust::hilog;
 use std::ffi::{c_char, CString};
 
 /// just use database
@@ -388,9 +388,9 @@ pub fn process_err_msg<T>(
 ) -> Result<T, ErrCode> {
     if res.is_err() {
         if let Some(msg) = db.get_errmsg() {
-            asset_log_error!("db err info: {}", @public(msg.s));
+            loge!("db err info: {}", @public(msg.s));
         } else {
-            asset_log_error!("db err with no msg");
+            loge!("db err with no msg");
         }
     }
     res

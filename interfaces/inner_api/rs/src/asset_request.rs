@@ -16,8 +16,8 @@
 //! This create implement the send request
 
 use asset_common::{
-    asset_log_info,
-    definition::{AssetMap, Result, ErrCode}, asset_log_error,
+    logi,
+    definition::{AssetMap, Result, ErrCode}, loge,
 };
 
 use asset_ipc_define_lib::asset_service::{AssetBroker, ASSET_SERVICE_ID};
@@ -26,7 +26,7 @@ use ipc_rust::RemoteObjRef;
 
 use rust_samgr::get_service_proxy;
 
-use hilog_rust::{hilog, HiLogLabel, LogType};
+use hilog_rust::hilog;
 use std::ffi::{c_char, CString};
 
 fn get_asset_service() -> Result<RemoteObjRef<dyn AssetBroker>> {
@@ -34,7 +34,7 @@ fn get_asset_service() -> Result<RemoteObjRef<dyn AssetBroker>> {
     match object {
         Ok(remote) => Ok(remote),
         Err(e) => {
-            asset_log_error!("get_asset_service failed {}!", @public(e));
+            loge!("get_asset_service failed {}!", @public(e));
             Err(ErrCode::ServiceUnvailable)
         }
     }
@@ -54,13 +54,13 @@ impl AssetIpcProxy {
 
     /// xxx
     pub(crate) fn insert(&self, input: &AssetMap) -> Result<AssetMap> {
-        asset_log_info!("AssetIpcSender insert");
+        logi!("AssetIpcSender insert");
         self.proxy.insert(input)
     }
 
     /// add
     pub(crate) fn add(&self, input: &AssetMap) -> Result<AssetMap> {
-        asset_log_info!("AssetIpcSender add");
+        logi!("AssetIpcSender add");
         self.proxy.add(input)
     }
 }

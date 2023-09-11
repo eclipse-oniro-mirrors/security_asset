@@ -13,14 +13,23 @@
  * limitations under the License.
  */
 
-//! This create implement the asset
+//! This module defines the macros required for log printing.
 
-/// blabla doc
+/// Print logs at the info level.
+///
+/// # Examples
+///
+/// ```
+/// use std::ffi::{c_char, CString};
+/// use hilog_rust::hilog;
+///
+/// logi!("hello, {}", "world");
+/// ```
 #[macro_export]
-macro_rules! asset_log_info{
+macro_rules! logi{
     ($($arg:tt)*) => (
-        let log_label: HiLogLabel = HiLogLabel {
-            log_type: LogType::LogCore,
+        let log_label = hilog_rust::HiLogLabel {
+            log_type: hilog_rust::LogType::LogCore,
             domain: 0xD002F70, // asset domain id
             tag: "Asset"
         };
@@ -28,12 +37,21 @@ macro_rules! asset_log_info{
     );
 }
 
-/// blabla doc
+/// Print logs at the error level.
+///
+/// # Examples
+///
+/// ```
+/// use std::ffi::{c_char, CString};
+/// use hilog_rust::hilog;
+///
+/// loge!("Error message: {}", "read file failed");
+/// ```
 #[macro_export]
-macro_rules! asset_log_error{
+macro_rules! loge{
     ($($arg:tt)*) => (
-        let log_label: HiLogLabel = HiLogLabel {
-            log_type: LogType::LogCore,
+        let log_label = hilog_rust::HiLogLabel {
+            log_type: hilog_rust::LogType::LogCore,
             domain: 0xD002F70, // security domain
             tag: "Asset"
         };

@@ -15,14 +15,14 @@
 
 //! This create implement the asset
 
-use asset_common::{definition::{AssetMap, Result, Value, ErrCode, Tag}, asset_log_info, asset_log_error};
+use asset_common::{definition::{AssetMap, Result, Value, ErrCode, Tag}, logi, loge};
 use db_operator::{
     types::{Pair, DataValue},
     database_table_helper::{G_COLUMN_ACCESSTYPE, G_COLUMN_OWNERTYPE, G_COLUMN_DELETETYPE,
         G_COLUMN_VERSION, G_COLUMN_SECRET}
 };
 
-use hilog_rust::{hilog, HiLogLabel, LogType};
+use hilog_rust::hilog;
 use std::ffi::{c_char, CString};
 
 use crate::calling_process_info::CallingInfo;
@@ -57,10 +57,10 @@ pub(crate) fn get_set_attr<'a>(input: &'a AssetMap, column_name: &'a str, tag: T
                 value: v.to_data_value()?,
             }
         );
-        asset_log_info!("get {} {} successfully", @public(column_name), @public(tag as u32));
+        logi!("get {} {} successfully", @public(column_name), @public(tag as u32));
         return Ok(());
     }
-    asset_log_error!("{} missed", @public(tag as u32));
+    loge!("{} missed", @public(tag as u32));
     Err(ErrCode::InvalidArgument)
 }
 

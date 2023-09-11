@@ -16,7 +16,7 @@
 //! This create implement the asset
 
 use asset_common::{
-    asset_log_info,
+    logi,
     definition::{AssetMap, Result, Tag, Value},
 };
 use asset_ipc_define_lib::asset_service::{AssetBroker, AssetStub, ASSET_SERVICE_ID};
@@ -66,11 +66,11 @@ define_system_ability!(
 fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
     let service = AssetStub::new_remote_stub(AssetService).expect("create TestService failed");
     ability.publish(&service.as_object().expect("get ITest service failed"), ASSET_SERVICE_ID);
-    asset_log_info!("on_start");
+    logi!("on_start");
 }
 
 fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {
-    asset_log_info!("on_stop");
+    logi!("on_stop");
 }
 
 #[used]

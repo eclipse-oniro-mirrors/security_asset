@@ -15,13 +15,13 @@
 
 //! map的各类操作
 
-use crate::definition::{Tag, Value, Result, ErrCode, DataType, AssetMap};
-
-use hilog_rust::{hilog, HiLogLabel, LogType};
-use ipc_rust::BorrowedMsgParcel;
 use std::ffi::{c_char, CString};
 
+use hilog_rust::hilog;
+use ipc_rust::BorrowedMsgParcel;
+
 use super::asset_type_transform::GetType;
+use crate::definition::{Tag, Value, Result, ErrCode, DataType, AssetMap};
 
 /// x
 pub trait SerializeAsset {
@@ -37,7 +37,7 @@ pub trait DeserializeAsset {
 
 impl SerializeAsset for AssetMap {
     fn serialize(&self, parcel: &mut BorrowedMsgParcel) -> Result<()> {
-        asset_log_info!("enter serialize");
+        logi!("enter serialize");
         parcel.write(&(self.len() as u32))?;
         for v in self.iter() {
             parcel.write(&(*v.0 as u32))?;
@@ -53,14 +53,14 @@ impl SerializeAsset for AssetMap {
                 },
             }
         }
-        asset_log_info!("leave serialize ok");
+        logi!("leave serialize ok");
         Ok(())
     }
 }
 
 impl DeserializeAsset for AssetMap {
     fn deserialize(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
-        asset_log_info!("enter deserialize");
+        logi!("enter deserialize");
         let len = parcel.read::<u32>()?;
         if len > 100 { // to do 外部输入，最大值校验
             return Err(ErrCode::InvalidArgument);
@@ -71,31 +71,31 @@ impl DeserializeAsset for AssetMap {
             let asset_tag = Tag::try_from(tag)?;
             match asset_tag.get_type() {
                 Ok(DataType::Bool) => {
-                    asset_log_info!("try get bool");
+                    logi!("try get bool");
                     let v = parcel.read::<bool>()?;
                     map.insert(asset_tag, Value::BOOL(v));
                 },
                 Ok(DataType::Uint32) => {
-                    asset_log_info!("try get u32");
+                    logi!("try get u32");
                     let v = parcel.read::<u32>()?;
                     map.insert(asset_tag, Value::NUMBER(v));
                 },
                 Ok(DataType::Bytes) => {
-                    asset_log_info!("try get uint8array");
+                    logi!("try get uint8array");
                     let v = parcel.read::<Vec<u8>>()?;
                     map.insert(asset_tag, Value::Bytes(v));
                 },
                 Ok(DataType::Uint64 | DataType::Int32 | DataType::Int64) => {
-                    asset_log_error!("deserialize {} failed!", @public(tag));
+                    loge!("deserialize {} failed!", @public(tag));
                     return Err(ErrCode::IpcError);
                 },
                 Err(_) => {
-                    asset_log_error!("deserialize {} failed!", @public(tag));
+                    loge!("deserialize {} failed!", @public(tag));
                     return Err(ErrCode::IpcError);
                 },
             }
         }
-        asset_log_info!("leave deserialize ok");
+        logi!("leave deserialize ok");
         Ok(map)
     }
 }
@@ -131,7 +131,7 @@ impl InsertAttribute for AssetMap {
                 Err(ErrCode::Failed)
             },
             Ok(DataType::Uint64 | DataType::Int32 | DataType::Int64) => {
-                asset_log_error!("insert {} failed!", @public(key as u32));
+                loge!("insert {} failed!", @public(key as u32));
                 Err(ErrCode::IpcError)
             },
             Err(_) => {

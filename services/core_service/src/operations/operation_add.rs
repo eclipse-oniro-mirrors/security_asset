@@ -16,14 +16,14 @@
 //! This create implement the asset
 #![allow(dead_code)]
 
-use asset_common::{definition::{AssetMap, Result, Tag, ErrCode, Value}, asset_log_info, asset_log_error};
+use asset_common::{definition::{AssetMap, Result, Tag, ErrCode, Value}, logi, loge};
 use db_operator::{database_table_helper::DefaultDatabaseHelper, types::Pair,
     database_table_helper::{G_COLUMN_SYNCTYPE, G_COLUMN_AUTHTYPE}};
 
 // use crypto_manager::hukkey::Crypto;
 use crate::{operations::operation_common::*, calling_process_info::CallingInfo};
 
-use hilog_rust::{hilog, HiLogLabel, LogType};
+use hilog_rust::hilog;
 use std::ffi::{c_char, CString};
 
 fn encrypt_secret(input: &AssetMap) -> Result<Vec<u8>> {
@@ -31,7 +31,7 @@ fn encrypt_secret(input: &AssetMap) -> Result<Vec<u8>> {
         // Crypto::encrypt(secret)
         Ok(secret.clone()) // to do 使用加解密适配层的接口进行加密
     } else {
-        asset_log_error!("get secret from input failed!");
+        loge!("get secret from input failed!");
         Err(ErrCode::InvalidArgument)
     }
 }
@@ -67,6 +67,6 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<AssetM
     let insert_num =
         DefaultDatabaseHelper::insert_datas_default_once(calling_info.get_user_id(), &owner_str.unwrap(), "Alias1", db_data)?;
 
-    asset_log_info!("insert {} data", @public(insert_num));
+    logi!("insert {} data", @public(insert_num));
     Ok(AssetMap::new())
 }

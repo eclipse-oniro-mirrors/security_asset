@@ -15,23 +15,24 @@
 
 //! This create implement the asset
 
+use std::ffi::{c_char, CString};
 use std::fmt;
 
-use hilog_rust::{hilog, HiLogLabel, LogType};
+use hilog_rust::hilog;
 use ipc_rust::{
-    define_remote_object, BorrowedMsgParcel, IRemoteBroker, IRemoteObj, IpcResult, IpcStatusCode,
-    MsgParcel, RemoteObj, RemoteStub, FIRST_CALL_TRANSACTION,
+    define_remote_object, BorrowedMsgParcel, IRemoteBroker, IRemoteObj, IpcResult,
+    IpcStatusCode, MsgParcel, RemoteObj, RemoteStub,
+    FIRST_CALL_TRANSACTION,
 };
-use std::ffi::{c_char, CString};
 
 use asset_common::{
-    asset_log_info, impl_try_from,
-    definition::{AssetMap, Result, ErrCode, SerializeAsset, DeserializeAsset}, asset_log_error,
+    logi, loge, impl_try_from,
+    definition::{AssetMap, Result, ErrCode, SerializeAsset, DeserializeAsset},
 };
 
 impl_try_from!{
     /// Asset ipc code
-    #[derive(Clone, Copy, Eq, Hash, Ord, PartialEq, PartialOrd)]
+    #[derive(Clone, Copy)]
     pub enum AssetIpcCode {
         /// insert data
         Insert = FIRST_CALL_TRANSACTION,
@@ -70,13 +71,13 @@ fn on_asset_remote_request(
 ) -> IpcResult<()> {
     let input_map = AssetMap::deserialize(data);
     if input_map.is_err() {
-        asset_log_error!("deserialize in on_asset_remote_request failed!");
+        loge!("deserialize in on_asset_remote_request failed!");
         return Err(IpcStatusCode::InvalidValue);
     }
     if let Ok(ipc_code) = AssetIpcCode::try_from(code) {
         match ipc_code {
             AssetIpcCode::Insert => {
-                asset_log_info!("on_asset_remote_request Insert");
+                logi!("on_asset_remote_request Insert");
                 match stub.insert(input_map.as_ref().unwrap()) {
                     Ok(res) => {
                         reply.write::<i32>(&(ErrCode::Success as i32))?;
@@ -88,7 +89,7 @@ fn on_asset_remote_request(
                 }
             },
             AssetIpcCode::Add => {
-                asset_log_info!("on_asset_remote_request add");
+                logi!("on_asset_remote_request add");
 
                 match stub.add(input_map.as_ref().unwrap()) {
                     Ok(res) => {
@@ -140,7 +141,7 @@ fn transform(proxy: &AssetProxy, code: AssetIpcCode, input: &AssetMap) -> Result
                 }
                 Ok(AssetMap::deserialize(reply.borrowed_ref())?)
             } else {
-                asset_log_error!("AssetProxy transform {} failed!", code);
+                loge!("AssetProxy transform {} failed!", code);
                 Err(ErrCode::Failed)
             }
         },

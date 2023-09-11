@@ -19,11 +19,11 @@ use std::{
     slice,
     ffi::{c_char, CString},
 };
-use hilog_rust::{hilog, HiLogLabel, LogType};
+use hilog_rust::hilog;
 
 use asset_common::{
-    asset_log_info,
-    asset_log_error,
+    logi,
+    loge,
     definition::{
         AssetMap,
         DataType,
@@ -40,13 +40,13 @@ use asset_rust_sdk::{asset_insert, add_asset};
 #[no_mangle]
 pub extern "C" fn AssetInsert(code: i32) -> i32
 {
-    asset_log_info!("receive code {} in AssetInsert", @public(code));
+    logi!("receive code {} in AssetInsert", @public(code));
     match asset_insert(code) {
         Ok(res) => {
             res as i32
         },
         Err(res) => {
-            // asset_log_error!("err");
+            // loge!("err");
             res as i32
         }
     }
@@ -57,7 +57,7 @@ pub extern "C" fn AssetInsert(code: i32) -> i32
 /// dereference pointer
 #[no_mangle]
 pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetParam, attr_cnt: u32) -> i32 {
-    asset_log_error!("[YZT] enter AddAssetC2Rust!");
+    loge!("[YZT] enter AddAssetC2Rust!");
     if attributes.is_null() || attr_cnt == 0 { // todo: 待确认是否需要校验
         return ErrCode::InvalidArgument as i32;
     }
@@ -86,7 +86,7 @@ pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetParam, attr_cnt:
             },
         }
     }
-    asset_log_error!("[YZT] end AddAssetC2Rust!");
+    loge!("[YZT] end AddAssetC2Rust!");
     add_asset(map) as i32
 }
 

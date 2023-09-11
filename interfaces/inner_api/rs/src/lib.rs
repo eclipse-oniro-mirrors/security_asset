@@ -19,16 +19,16 @@ mod asset_request;
 
 pub use asset_common::definition;
 use asset_common::{
-    asset_log_error, asset_log_info,
+    loge, logi,
     definition::{AssetMap, Result, ErrCode, Tag, Value},
 };
 use crate::asset_request::AssetIpcProxy;
-use hilog_rust::{hilog, HiLogLabel, LogType};
+use hilog_rust::hilog;
 use std::ffi::{c_char, CString};
 
 /// insert data into asset
 pub fn asset_insert(_code: i32) -> Result<ErrCode> {
-    asset_log_info!("enter asser insert");
+    logi!("enter asser insert");
     if let Ok(sender) = AssetIpcProxy::new() {
         let mut map = AssetMap::new();
         map.insert(Tag::AuthType, Value::NUMBER(5));
@@ -36,9 +36,9 @@ pub fn asset_insert(_code: i32) -> Result<ErrCode> {
         match sender.insert(&map) {
             Ok(res) => {
                 if let Some(v) = res.get(&Tag::AuthType) {
-                    asset_log_info!("res is {}", @public(v));
+                    logi!("res is {}", @public(v));
                 } else {
-                    asset_log_error!("asset_insert failed!");
+                    loge!("asset_insert failed!");
                 }
                 Ok(ErrCode::Success)
             },
@@ -51,12 +51,12 @@ pub fn asset_insert(_code: i32) -> Result<ErrCode> {
 
 /// add an asset
 pub fn add(input: AssetMap) -> Result<AssetMap> {
-    asset_log_info!("enter assert add");
+    logi!("enter assert add");
     AssetIpcProxy::new()?.add(&input)
 }
 
 /// the mock function
 pub fn add_asset(_input: AssetMap) -> ErrCode {
-    asset_log_info!("enter assert add");
+    logi!("enter assert add");
     ErrCode::Success
 }

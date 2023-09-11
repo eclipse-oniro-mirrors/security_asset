@@ -15,8 +15,8 @@
 
 //! This create implement the asset
 use crate::hukkey_ffi::*;
-use asset_common::{definition::{ErrCode,Result},asset_log_error};
-use hilog_rust::{hilog, HiLogLabel, LogType};
+use asset_common::{definition::{ErrCode,Result},loge};
+use hilog_rust::hilog;
 use std::ffi::{c_char, CString};
 use std::ptr::{null_mut,copy_nonoverlapping};
 use std::mem::align_of;
@@ -70,12 +70,12 @@ impl SecretKey{
 pub fn InitParamSet(param_set:&mut &mut HksParamSet, params:&HksParam, paramcount:u32) -> HuksErrcode{
     let mut ret: HuksErrcode = unsafe{HksInitParamSet(param_set as *mut &mut HksParamSet as *mut *mut HksParamSet)};
     if ret != HKS_SUCCESS {
-        asset_log_error!("HksInitParamSet failed");
+        loge!("HksInitParamSet failed");
         return ret;
     }
     ret = unsafe{HksAddParams((*param_set) as *mut HksParamSet, params as *const HksParam, paramcount)};
     if ret != HKS_SUCCESS {
-        asset_log_error!("HksAddParams failed");
+        loge!("HksAddParams failed");
         unsafe{
             HksFreeParamSet(param_set as *mut &mut HksParamSet as *mut *mut HksParamSet);
         }
@@ -84,7 +84,7 @@ pub fn InitParamSet(param_set:&mut &mut HksParamSet, params:&HksParam, paramcoun
 
     ret = unsafe{HksBuildParamSet(param_set as *mut &mut HksParamSet as *mut *mut HksParamSet)};
     if ret != HKS_SUCCESS {
-        asset_log_error!("HksBuildParamSet failed!");
+        loge!("HksBuildParamSet failed!");
         unsafe{
             HksFreeParamSet(param_set as *mut &mut HksParamSet as *mut *mut HksParamSet);
         }
@@ -120,7 +120,7 @@ pub fn TestUpdateLoopFinish(handle:&HksBlob, param_set:&HksParamSet, indata:&mut
             }
 
             if HksUpdate(handle as *const HksBlob, param_set_ptr, Box::as_mut(indata) as *mut HksBlob as *const HksBlob, &mut out_data_seg as *mut HksBlob) != HKS_SUCCESS{
-                asset_log_error!("HksUpdate Failed.");
+                loge!("HksUpdate Failed.");
                 let layout = Layout::from_size_align(out_data_seg.size as usize,align_of::<u32>()).unwrap();
                 dealloc(out_data_seg.data,layout);
                 return HKS_FAILURE;
@@ -170,7 +170,7 @@ fn MallocAndCheckBlobData(blob: &mut HksBlob) -> HuksErrcode{
         let layout = Layout::from_size_align(blob.size as usize,align_of::<u32>()).unwrap();
         blob.data = alloc(layout);
         if blob.data.is_null(){
-            asset_log_error!("could not alloc memory");
+            loge!("could not alloc memory");
             return HKS_FAILURE;
         }
     }
@@ -212,7 +212,7 @@ impl Crypto {
 
         let mut ret = unsafe{HksInit(key_alias as *const HksBlob, &encrypt_param_set as *const HksParamSet, Box::as_mut(&mut handle_encrypt) as *mut HksBlob, null_mut())};
         if ret != HKS_SUCCESS{
-            asset_log_error!("Init failed.");
+            loge!("Init failed.");
             return Err(ErrCode::Failed);
         }
         let mut indata = Box::new(
@@ -230,7 +230,7 @@ impl Crypto {
         );
         ret = TestUpdateLoopFinish(Box::as_ref(&handle_encrypt), &encrypt_param_set, &mut indata, &mut cipher_text);
         if ret != HKS_SUCCESS{
-            asset_log_error!("TestUpdateLoopFinish failed.");
+            loge!("TestUpdateLoopFinish failed.");
             return Err(ErrCode::Failed);
         }
 
@@ -253,7 +253,7 @@ impl Crypto {
 
         let mut ret = unsafe{HksInit(key_alias as *const HksBlob, &decrypt_param_set as *const HksParamSet, Box::as_mut(&mut handle_decrypt) as *mut HksBlob, null_mut())};
         if ret != HKS_SUCCESS{
-            asset_log_error!("Init failed.");
+            loge!("Init failed.");
             return Err(ErrCode::Failed);
         }
         let mut cipher_text = Box::new(
@@ -271,7 +271,7 @@ impl Crypto {
         );
         ret = TestUpdateLoopFinish(Box::as_ref(&handle_decrypt), &decrypt_param_set, &mut cipher_text, &mut plain_text);
         if ret != HKS_SUCCESS{
-            asset_log_error!("TestUpdateLoopFinish failed.");
+            loge!("TestUpdateLoopFinish failed.");
             return Err(ErrCode::Failed);
         }
 
