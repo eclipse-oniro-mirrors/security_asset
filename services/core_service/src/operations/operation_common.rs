@@ -36,7 +36,7 @@ impl FromValueToDataValue for Value {
     fn to_data_value(&self) -> AssetResult<DataValue> {
         match self {
             Value::NUMBER(n) => {
-                Ok(DataValue::Integer(*n as i32)) // to do 类型确认
+                Ok(DataValue::Integer(*n)) // to do 类型确认
             },
             Value::Bytes(v) => {
                 Ok(DataValue::Blob(v))
@@ -69,7 +69,7 @@ pub(crate) fn get_set_owner_type(calling_info: &CallingInfo, vec: &mut Vec<Pair>
     vec.push(
         Pair {
             column_name: G_COLUMN_OWNERTYPE,
-            value: DataValue::Integer(calling_info.get_owner_type() as i32),
+            value: DataValue::Integer(calling_info.get_owner_type()),
         }
     );
     Ok(())

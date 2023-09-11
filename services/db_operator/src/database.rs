@@ -34,10 +34,10 @@ pub struct Database {
 
 /// update func callback
 pub type UpdateDatabaseCallbackFunc =
-    fn(db: &Database, old_ver: i32, new_ver: i32) -> SqliteErrcode;
+    fn(db: &Database, old_ver: u32, new_ver: u32) -> SqliteErrcode;
 
 /// default callback func for update database
-pub fn default_update_database_func(db: &Database, old_ver: i32, new_ver: i32) -> SqliteErrcode {
+pub fn default_update_database_func(db: &Database, old_ver: u32, new_ver: u32) -> SqliteErrcode {
     if new_ver > old_ver {
         // TODO do something
         println!("database {} update from ver {} to {}", db.path, old_ver, new_ver);
@@ -48,6 +48,12 @@ pub fn default_update_database_func(db: &Database, old_ver: i32, new_ver: i32) -
         return SQLITE_ERROR;
     }
     SQLITE_OK
+}
+
+/// format database path
+#[inline(always)]
+pub fn fmt_db_path(userid: u32) -> String {
+    format!("/data/service/el1/public/asset_service/{}/asset.db", userid)
 }
 
 impl Database {
@@ -71,7 +77,7 @@ impl Database {
     /// create default database
     ///
     pub fn default_new(userid: u32) -> Result<Database, SqliteErrcode> {
-        let mut path = format!("/data/service/el1/public/asset_service/{}/asset.db", userid);
+        let mut path = fmt_db_path(userid);
         let mut db = Database { path: path.clone(), v2: false, handle: 0 };
         path.push('\0');
         let ret = sqlite3_open_func(&path, &mut db.handle);
@@ -85,7 +91,7 @@ impl Database {
     ///
     /// get database user_version
     ///
-    pub fn get_version(&self) -> Result<i32, SqliteErrcode> {
+    pub fn get_version(&self) -> Result<u32, SqliteErrcode> {
         let stmt = Statement::<true>::prepare("pragma user_version", self)?;
         let ret = stmt.step();
         if ret != SQLITE_ROW {
@@ -100,7 +106,7 @@ impl Database {
     ///
     pub fn new_with_version_update(
         path: &str,
-        ver: i32,
+        ver: u32,
         callback: UpdateDatabaseCallbackFunc,
     ) -> Result<Database, SqliteErrcode> {
         let db = Database::new(path)?;
@@ -122,7 +128,7 @@ impl Database {
     ///
     pub fn default_new_with_version_update(
         userid: u32,
-        ver: i32,
+        ver: u32,
         callback: UpdateDatabaseCallbackFunc,
     ) -> Result<Database, SqliteErrcode> {
         let db = Database::default_new(userid)?;
@@ -168,7 +174,7 @@ impl Database {
     /// delete default database
     ///
     pub fn drop_default_database(userid: u32) -> std::io::Result<()> {
-        let path = format!("/data/service/el1/public/asset_service/{}/asset.db", userid);
+        let path = fmt_db_path(userid);
         Database::drop_database(path.as_str())
     }
 

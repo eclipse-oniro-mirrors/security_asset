@@ -559,7 +559,7 @@ impl<'a> Table<'a> {
     ///
     /// the sql is like : select count(*) as count from table_name where id=3
     ///
-    pub fn count_datas(&self, conditions: &Condition) -> Result<i32, SqliteErrcode> {
+    pub fn count_datas(&self, conditions: &Condition) -> Result<u32, SqliteErrcode> {
         let mut sql = format!("select count(*) as count from {}", self.table_name);
         if !conditions.is_empty() {
             sql.push_str(" where ");

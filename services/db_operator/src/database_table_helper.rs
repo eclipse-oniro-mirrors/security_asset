@@ -343,7 +343,7 @@ impl<'a> TableHelper<'a> {
     /// sql like:
     /// select count(*) as count from table_name where AppId='owner2'
     ///
-    pub fn select_count(&self, owner: &str) -> Result<i32, AssetStatusCode> {
+    pub fn select_count(&self, owner: &str) -> Result<u32, AssetStatusCode> {
         self.count_datas(&vec![Pair {
             column_name: G_COLUMN_OWNER,
             value: DataValue::Text(owner.as_bytes()),
@@ -503,7 +503,7 @@ impl DefaultDatabaseHelper {
     /// see TableHelper
     ///
     #[inline(always)]
-    pub fn select_count_default(&self, owner: &str) -> Result<i32, AssetStatusCode> {
+    pub fn select_count_default(&self, owner: &str) -> Result<u32, AssetStatusCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         table.select_count(owner)
     }
@@ -545,7 +545,7 @@ impl DefaultDatabaseHelper {
     ///
     pub fn open_default_database_table_with_version_update(
         userid: u32,
-        version_new: i32,
+        version_new: u32,
         callback: UpdateDatabaseCallbackFunc,
     ) -> Result<DefaultDatabaseHelper, AssetStatusCode> {
         let db = Database::default_new_with_version_update(userid, version_new, callback)
@@ -618,7 +618,7 @@ impl DefaultDatabaseHelper {
     /// see TableHelper
     ///
     #[inline(always)]
-    pub fn select_count_default_once(userid: u32, owner: &str) -> Result<i32, AssetStatusCode> {
+    pub fn select_count_default_once(userid: u32, owner: &str) -> Result<u32, AssetStatusCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.select_count_default(owner)
     }

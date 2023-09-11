@@ -42,7 +42,7 @@ pub fn from_datatype_to_str(value: DataType) -> &'static str {
 #[repr(C)]
 pub enum DataValue<'a> {
     /// numbers
-    Integer(i32),
+    Integer(u32),
     /// float value
     Double(f64),
     /// string
@@ -71,7 +71,7 @@ pub fn from_datavalue_to_str_value(value: DataValue) -> String {
 #[repr(C)]
 pub enum ResultDataValue {
     /// numbers
-    Integer(i32),
+    Integer(u32),
     /// float value
     Double(f64),
     /// string

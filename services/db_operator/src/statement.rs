@@ -90,7 +90,7 @@ impl<'b> Statement<'b, true> {
     pub fn bind_data(&self, index: i32, data: &DataValue) -> SqliteErrcode {
         match data {
             DataValue::Blob(b) => sqlite3_bind_blob_func(self.handle, index, b, b.len() as _, None),
-            DataValue::Integer(i) => sqlite3_bind_int_func(self.handle, index, *i),
+            DataValue::Integer(i) => sqlite3_bind_int_func(self.handle, index, *i as i32),
             DataValue::Double(d) => sqlite3_bind_double_func(self.handle, index, *d),
             DataValue::Text(t) => sqlite3_bind_text_func(self.handle, index, t, t.len() as _, None),
             DataValue::NoData => sqlite3_bind_null_func(self.handle, index),
@@ -189,8 +189,8 @@ impl<'b> Statement<'b, true> {
     /// query column datas in result set for int data
     /// the index if start with 0
     ///
-    pub fn query_column_int(&self, index: i32) -> i32 {
-        sqlite3_column_int_func(self.handle, index)
+    pub fn query_column_int(&self, index: i32) -> u32 {
+        sqlite3_column_int_func(self.handle, index) as u32
     }
 
     ///
