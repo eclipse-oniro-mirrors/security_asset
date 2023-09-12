@@ -59,6 +59,7 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 
     let sys_time_res = SystemTime::now().duration_since(UNIX_EPOCH);
     if sys_time_res.is_err() {
+        loge!("get sys_time_res faield!");
         return Err(ErrCode::Failed);
     }
     let time_string = sys_time_res.unwrap().as_millis().to_string();
@@ -69,7 +70,7 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 
     let owner_str = String::from_utf8(calling_info.get_owner_text().clone());
     if owner_str.is_err() {
-        loge!("get sys time faield!");
+        loge!("get owner str faield!");
         return Err(ErrCode::Failed);
     }
 

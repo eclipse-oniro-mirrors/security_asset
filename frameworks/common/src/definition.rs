@@ -131,16 +131,22 @@ pub enum Value {
 /// A Map type containing tag-value pairs that describe the attributes of an Asset.
 pub type AssetMap = HashMap<Tag, Value>;
 
+/// max capacity in a map
+pub const MAX_MAP_CAPACITY: u32 = 100; // todo 具体值确认
+
+/// The result code indicates that the operation is successful.
+pub const SUCCESS: i32 = 0;
+
 impl_try_from! {
     /// An enum type containing the Asset result codes.
     #[derive(Clone, Copy)]
     #[derive(Debug)]
     #[derive(Eq, Hash, PartialEq)]
     pub enum ErrCode {
-        /// The result code indicates that the operation is successful.
+        /// success
         Success = 0,
 
-        /// failed
+        /// failed, todo delete
         Failed = -1,
 
         /// The error code indicates that the caller doesn't have permission to operate.

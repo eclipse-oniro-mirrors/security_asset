@@ -17,8 +17,6 @@
 
 use std::fmt;
 
-use ipc_rust::IpcStatusCode;
-
 use crate::definition::{
     Result, ErrCode, Tag, DataType, Value,
     Accessibility, ReturnType, ConflictResolution, SyncType, AuthType
@@ -44,7 +42,7 @@ impl GetType for Tag {
             _ if DataType::Bytes as u32 == mask => Ok(DataType::Bytes),
             _ => {
                 loge!("get tag type failed!");
-                Err(ErrCode::Failed)
+                Err(ErrCode::InvalidArgument)
             },
         }
     }
@@ -140,20 +138,6 @@ impl fmt::Display for Value {
     }
 }
 
-impl From<ErrCode> for IpcStatusCode {
-    fn from(value: ErrCode) -> Self {
-        loge!("get asset result [{}] for ipc", value);
-        IpcStatusCode::Failed
-    }
-}
-
-impl From<IpcStatusCode> for ErrCode {
-    fn from(value: IpcStatusCode) -> Self {
-        loge!("get ipc result [{}]", value);
-        ErrCode::IpcError
-    }
-}
-
 impl fmt::Display for ErrCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         // match *self {
@@ -195,7 +179,7 @@ macro_rules! impl_try_from {
             fn try_from(v: u32) -> std::result::Result<Self, Self::Error> {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
-                    _ => Err($crate::definition::ErrCode::Failed),
+                    _ => Err($crate::definition::ErrCode::InvalidArgument),
                 }
             }
         }
@@ -206,7 +190,7 @@ macro_rules! impl_try_from {
             fn try_from(v: i32) -> std::result::Result<Self, Self::Error> {
                 match v {
                     $(x if x == $name::$vname as i32 => Ok($name::$vname),)*
-                    _ => Err($crate::definition::ErrCode::Failed),
+                    _ => Err($crate::definition::ErrCode::InvalidArgument),
                 }
             }
         }

@@ -18,24 +18,24 @@
 use ipc_rust::BorrowedMsgParcel;
 
 use super::asset_type_transform::GetType;
-use crate::definition::{Tag, Value, Result, ErrCode, DataType, AssetMap};
+use crate::definition::{Tag, Value, Result, ErrCode, DataType, AssetMap, MAX_MAP_CAPACITY};
 use crate::loge;
 
 /// serialize the map to parcel
 pub fn serialize(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<()> {
     logi!("enter serialize");
-    parcel.write(&(map.len() as u32))?;
+    parcel.write(&(map.len() as u32)).map_err(|_| ErrCode::IpcError)?;
     for v in map.iter() {
-        parcel.write(&(*v.0 as u32))?;
+        parcel.write(&(*v.0 as u32)).map_err(|_| ErrCode::IpcError)?;
         match v.1 {
             Value::BOOL(b) => {
-                parcel.write::<bool>(b)?;
+                parcel.write::<bool>(b).map_err(|_| ErrCode::IpcError)?;
             },
             Value::NUMBER(n) => {
-                parcel.write::<u32>(n)?;
+                parcel.write::<u32>(n).map_err(|_| ErrCode::IpcError)?;
             },
             Value::Bytes(a) => {
-                parcel.write::<Vec<u8>>(a)?;
+                parcel.write::<Vec<u8>>(a).map_err(|_| ErrCode::IpcError)?;
             },
         }
     }
@@ -46,29 +46,29 @@ pub fn serialize(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<()> {
 /// deserialize the map from parcel
 pub fn deserialize(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
     logi!("enter deserialize");
-    let len = parcel.read::<u32>()?;
-    if len > 100 { // to do 外部输入，最大值校验
+    let len = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
+    if len > MAX_MAP_CAPACITY {
         loge!("The map size exceeds the limit.");
         return Err(ErrCode::InvalidArgument);
     }
     let mut map = AssetMap::with_capacity(len as usize);
     for _i in 0..len {
-        let tag = parcel.read::<u32>()?;
+        let tag = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
         let asset_tag = Tag::try_from(tag)?;
         match asset_tag.get_type() {
             Ok(DataType::Bool) => {
                 logi!("try get bool");
-                let v = parcel.read::<bool>()?;
+                let v = parcel.read::<bool>().map_err(|_| ErrCode::IpcError)?;
                 map.insert(asset_tag, Value::BOOL(v));
             },
             Ok(DataType::Uint32) => {
                 logi!("try get u32");
-                let v = parcel.read::<u32>()?;
+                let v = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
                 map.insert(asset_tag, Value::NUMBER(v));
             },
             Ok(DataType::Bytes) => {
                 logi!("try get uint8array");
-                let v = parcel.read::<Vec<u8>>()?;
+                let v = parcel.read::<Vec<u8>>().map_err(|_| ErrCode::IpcError)?;
                 map.insert(asset_tag, Value::Bytes(v));
             },
             Ok(DataType::Uint64 | DataType::Int32 | DataType::Int64) => {
@@ -108,7 +108,7 @@ impl InsertAttribute for AssetMap {
                     return Ok(());
                 }
                 loge!("InsertAttribute bool failed!");
-                Err(ErrCode::Failed)
+                Err(ErrCode::InvalidArgument)
             },
             Ok(DataType::Bytes) => {
                 if let Value::Bytes(real) = value.get_real()  {
@@ -116,11 +116,11 @@ impl InsertAttribute for AssetMap {
                     return Ok(());
                 }
                 loge!("InsertAttribute byte failed!");
-                Err(ErrCode::Failed)
+                Err(ErrCode::InvalidArgument)
             },
             _ => {
                 loge!("insert {} failed invalid tag!", key as u32);
-                Err(ErrCode::Failed)
+                Err(ErrCode::InvalidArgument)
             }
         }
     }

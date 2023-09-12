@@ -18,7 +18,7 @@
 use std::ffi::{c_char, CString};
 use hilog_rust::hilog;
 
-/// xx
+/// the function to print log, and may be should not be used instead of logi
 pub fn log_func_i(log: &str)
 {
     let log_label = hilog_rust::HiLogLabel {
@@ -29,7 +29,7 @@ pub fn log_func_i(log: &str)
     hilog_rust::info!(log_label, "{}", @public(log));
 }
 
-/// xx
+/// the function to print log, and may be should not be used instead of loge
 pub fn log_func_e(log: &str)
 {
     let log_label = hilog_rust::HiLogLabel {
