@@ -70,6 +70,7 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 
     let owner_str = String::from_utf8(calling_info.get_owner_text().clone());
     if owner_str.is_err() {
+        loge!("get sys time faield!");
         return Err(ErrCode::Failed);
     }
 
@@ -79,9 +80,11 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
         if let Ok(alias_ok) = alias_try {
             alias = alias_ok;
         } else {
+            loge!("parse alias from utf8 faield!");
             return Err(ErrCode::InvalidArgument);
         }
     } else {
+        loge!("get alias faield!");
         return Err(ErrCode::InvalidArgument);
     }
 

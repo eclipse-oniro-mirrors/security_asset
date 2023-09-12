@@ -41,14 +41,14 @@ impl IRemoteBroker for AssetService {}
 impl IAsset for AssetService {
     fn add(&self, input: &AssetMap) -> Result<()> {
         // get calling uid userid appid etc
-        let calling_info = CallingInfo::new();
+        let calling_info = CallingInfo::build()?;
         operations::add(input, &calling_info)
     }
 }
 
 const LOG_LABEL: HiLogLabel = HiLogLabel {
     log_type: LogType::LogCore,
-    domain: 0xD002F00, // security domain
+    domain: 0xD002F70, // security domain
     tag: "Asset",
 };
 

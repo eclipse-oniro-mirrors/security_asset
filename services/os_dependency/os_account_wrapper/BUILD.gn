@@ -13,12 +13,18 @@
 
 import("//build/ohos.gni")
 
+COMPONENT_DIR = "//base/security/asset"
+
 ohos_static_library("libasset_os_account_wrapper") {
-    subsystem_name = "security"
-    part_name = "asset"
-    include_dirs = ["inc"]
-    sources = [
-        "src/os_account_wrapper.cpp"
-    ]
-    external_deps = [ "os_account:os_account_innerkits" ]
+  subsystem_name = "security"
+  part_name = "asset"
+  include_dirs = [
+    "inc",
+    "$COMPONENT_DIR/frameworks/os_dependency/log/inc",
+  ]
+  sources = [ "src/os_account_wrapper.cpp" ]
+  external_deps = [
+    "hilog:libhilog",
+    "os_account:os_account_innerkits",
+  ]
 }

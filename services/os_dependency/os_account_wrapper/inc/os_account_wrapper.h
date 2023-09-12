@@ -13,12 +13,19 @@
  * limitations under the License.
  */
 
-#include "os_account_wrapper.h"
-#include "os_account_manager.h"
+#ifndef OS_ACCOUNT_WRAPPER
+#define OS_ACCOUNT_WRAPPER
 
-uint32_t GetUserIdByUid(uint64_t uid)
-{
-    int userId = 0;
-    OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userId);
-    return (uint32_t)userId;
+#include <stdint.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+bool GetUserIdByUid(uint64_t uid, uint32_t *userId);
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif

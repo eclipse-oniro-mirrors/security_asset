@@ -16,13 +16,24 @@
 //! This create implement the asset
 #![allow(dead_code)]
 
+use asset_common::{definition::{Result, ErrCode}, loge};
+
+use hilog_rust::hilog;
+use std::ffi::{c_char, CString};
+
 extern "C" {
-    fn GetUserIdByUid(uid: u64) -> u32;
+    fn GetUserIdByUid(uid: u64, userId: &mut u32) -> bool;
 }
 
 /// xxx
-pub(crate) fn get_calling_user_id(uid: u64) -> u32 {
+pub(crate) fn get_calling_user_id(uid: u64) ->  Result<u32> {
     unsafe {
-        GetUserIdByUid(uid) // to do
+        let mut user_id = 0;
+        if GetUserIdByUid(uid, &mut user_id) {
+            Ok(user_id)
+        } else {
+            loge!("get userid failed!");
+            Err(ErrCode::Failed)
+        }
     }
 }

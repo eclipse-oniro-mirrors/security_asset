@@ -38,7 +38,11 @@ git clone ssh://git@szv-y.codehub.huawei.com:2222/y00522150/asset.git
 
 # 运行环境：(每次代码修改后执行)
 ./scripts/push_asset.bat
+
+# 批量整改gn文件格式（在asset目录下执行）
+find -name "*.gn" | xargs ../../../prebuilts/build-tools/linux-x86/bin/gn format
 ```
+
 
 ## 测试
 测试DEMO：https://codehub-y.huawei.com/y00522150/AssetDemo/files?ref=master
