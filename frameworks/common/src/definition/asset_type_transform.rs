@@ -15,8 +15,6 @@
 
 //! 各种类型的拓展方法定义在此处
 
-use std::fmt;
-
 use crate::definition::{
     Result, ErrCode, Tag, DataType, Value,
     Accessibility, ReturnType, ConflictResolution, SyncType, AuthType
@@ -122,41 +120,12 @@ impl GetType for Vec<u8> {
     }
 }
 
-impl fmt::Display for Value {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Value::BOOL(b) => {
-                write!(f, "bool is {}", b)
-            },
-            Value::NUMBER(number) => {
-                write!(f, "number is {}", number)
-            },
-            Value::Bytes(array) => {
-                write!(f, "array len is {}", array.len())
-            },
-        }
-    }
-}
-
-impl fmt::Display for ErrCode {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // match *self {
-        //     ErrCode::Ok => write!(f, "Ok"),
-        //     ErrCode::Failed => write!(f, "Failed"),
-        //     _ => {
-        //         write!(f, "{}", *self as i32)
-        //     }
-        // }
-        write!(f, "{}", *self as i32)
-    }
-}
-
-/// Macro to implement TryFrom for enumeration types.
+/// Macro to implement TryFrom and Display for enumeration types.
 ///
 /// # Example
 ///
 /// ```
-/// impl_try_from! {
+/// impl_enum_trait! {
 ///     enum Color {
 ///         GREEN = 0,
 ///         YELLOW = 1,
@@ -164,7 +133,7 @@ impl fmt::Display for ErrCode {
 /// }
 /// ```
 #[macro_export]
-macro_rules! impl_try_from {
+macro_rules! impl_enum_trait {
     ($(#[$meta:meta])* $vis:vis enum $name:ident {
         $($(#[$vmeta:meta])* $vname:ident $(= $val:expr)?,)*
     }) => {
@@ -194,11 +163,20 @@ macro_rules! impl_try_from {
                 }
             }
         }
+
+        impl std::fmt::Display for $name {
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                match self {
+                    $($name::$vname => {
+                        write!(f, "{}", stringify!($name::$vname))
+                    },)*
+                }
+            }
+        }
     }
 }
 
 // todo: SDK、SA共用的类型放在common，封装成静态库；只在SDK和SA层单独使用的函数需要抽出来，比如GetType只有服务层使用
-
 
 // 过程宏生成display显示 枚举名 + 枚举值（i32)
 // use proc_macro::TokenStream;

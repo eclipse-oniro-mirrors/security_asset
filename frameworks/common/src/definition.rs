@@ -44,7 +44,7 @@ pub enum DataType {
     Bytes = 6 << 28,
 }
 
-impl_try_from! {
+impl_enum_trait! {
     /// An emum type that indicates the tag of the asset attribute.
     #[derive(Clone, Copy)]
     #[derive(Eq, Hash, PartialEq)]
@@ -137,7 +137,7 @@ pub const MAX_MAP_CAPACITY: u32 = 100; // todo 具体值确认
 /// The result code indicates that the operation is successful.
 pub const SUCCESS: i32 = 0;
 
-impl_try_from! {
+impl_enum_trait! {
     /// An enum type containing the Asset result codes.
     #[derive(Clone, Copy)]
     #[derive(Debug)]

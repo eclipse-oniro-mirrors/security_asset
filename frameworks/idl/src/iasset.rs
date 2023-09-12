@@ -16,17 +16,15 @@
 
 //! This create implement the asset
 
-use std::fmt;
-
 use asset_common::{
-    impl_try_from,
+    impl_enum_trait,
     definition::{AssetMap, Result}
 };
 
 /// SA ID for Asset service
 pub const SA_ID: i32 = 3511;
 
-impl_try_from!{
+impl_enum_trait!{
     /// Code used to identify the function to be called.
     #[derive(Clone, Copy)]
     pub enum IpcCode {
@@ -45,18 +43,18 @@ impl_try_from!{
     }
 }
 
-impl fmt::Display for IpcCode {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            IpcCode::Add => write!(f, "AddAsset"),
-            IpcCode::Remove => write!(f, "RemoveAsset"),
-            IpcCode::Update => write!(f, "UpdateAsset"),
-            IpcCode::PreQuery => write!(f, "PreQueryAsset"),
-            IpcCode::Query => write!(f, "QueryAsset"),
-            IpcCode::PostQuery => write!(f, "PostQueryAsset"),
-        }
-    }
-}
+// impl fmt::Display for IpcCode {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         match *self {
+//             IpcCode::Add => write!(f, "AddAsset"),
+//             IpcCode::Remove => write!(f, "RemoveAsset"),
+//             IpcCode::Update => write!(f, "UpdateAsset"),
+//             IpcCode::PreQuery => write!(f, "PreQueryAsset"),
+//             IpcCode::Query => write!(f, "QueryAsset"),
+//             IpcCode::PostQuery => write!(f, "PostQueryAsset"),
+//         }
+//     }
+// }
 
 /// Function between proxy and stub of Asset service
 pub trait IAsset: ipc_rust::IRemoteBroker {
