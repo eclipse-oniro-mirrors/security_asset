@@ -67,9 +67,9 @@ fn test_hukkey_encrypt() {
 
     if generate_res == HKS_SUCCESS{
         println!("test_hukkey_encrypt: generate success");
-        let mut msg = vec![1,2,3,4,5,6];
-        let mut aad = vec![0;AAD_SIZE as usize];
-        let cipher = crypto.encrypt(&mut msg, &mut aad).unwrap();
+        let msg = vec![1,2,3,4,5,6];
+        let aad = vec![0;AAD_SIZE as usize];
+        let cipher = crypto.encrypt(&msg, &aad).unwrap();
         println!("test_hukkey_encrypt: encrypt success, now check cipher");
         let mut flag = true;
         for i in 0..msg.len(){
@@ -99,9 +99,9 @@ fn test_hukkey_decrypt() {
 
     if generate_res == HKS_SUCCESS{
         println!("test_hukkey_decrypt: generate success");
-        let mut msg = vec![1,2,3,4,5,6];
-        let mut aad = vec![0;AAD_SIZE as usize];
-        let mut cipher = crypto.encrypt(&mut msg, &mut aad).unwrap();
+        let msg = vec![1,2,3,4,5,6];
+        let aad = vec![0;AAD_SIZE as usize];
+        let cipher = crypto.encrypt(&msg, &aad).unwrap();
         println!("test_hukkey_decrypt: encrypt success, now check cipher");
         let mut flag = true;
         for i in 0..msg.len(){
@@ -116,7 +116,7 @@ fn test_hukkey_decrypt() {
             panic!("test_hukkey_decrypt fail because cipher_text equals indata.");
         }
         println!("test_hukkey_decrypt: encrypt pass, now decrypt...");
-        let plain = crypto.decrypt(&mut cipher, &mut aad).unwrap();
+        let plain = crypto.decrypt(&cipher, &aad).unwrap();
         println!("test_hukkey_decrypt: decrypt pass, now check decrypt");
         
         flag = true;

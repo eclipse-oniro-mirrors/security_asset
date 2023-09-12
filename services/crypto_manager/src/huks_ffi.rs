@@ -92,7 +92,7 @@ pub struct HksBlob{
     /// HksBlob size
     pub size: u32,
     /// HksBlob data pointer
-    pub data: *mut u8,
+    pub data: *const u8,
 }
 /// HksParamSet struct
 #[repr(C)]

@@ -49,7 +49,7 @@ impl SecretKey{
     pub fn exists(&self) -> HuksErrcode{
         let hks_blob = HksBlob{
             size: self.alias.len() as u32,
-            data: &mut self.alias.as_str() as *mut _ as *mut u8,
+            data: self.alias.as_str() as *const _ as *const u8,
         };
         let key_alias = &hks_blob as *const HksBlob;
         unsafe{HksKeyExist(key_alias,null_mut())}
@@ -59,7 +59,7 @@ impl SecretKey{
     pub fn generate(&self) -> HuksErrcode{
         let hks_blob = HksBlob{
             size: self.alias.len() as u32,
-            data: &mut self.alias.as_str() as *mut _ as *mut u8,
+            data: self.alias.as_str() as *const _ as *const u8,
         };
         let key_alias = &hks_blob as *const HksBlob;
 
@@ -108,7 +108,7 @@ impl SecretKey{
     pub fn delete(&self) -> HuksErrcode{
         let hks_blob = HksBlob{
             size: self.alias.len() as u32,
-            data: &mut self.alias.as_str() as *mut _ as *mut u8,
+            data: self.alias.as_str() as *const _ as *const u8,
         };
         let key_alias = &hks_blob as *const HksBlob;
         unsafe{HksDeleteKey(key_alias,null_mut())}
@@ -154,18 +154,18 @@ pub fn update_and_finish(handle:&HksBlob, param_set:&HksParamSet, indata:&mut Hk
         if HksFinish(handle as *const HksBlob, param_set_ptr, 
             indata as *mut HksBlob as *const HksBlob, &mut out_data_finish as *mut HksBlob) != HKS_SUCCESS{
             let layout = Layout::from_size_align(out_data_finish.size as usize,align_of::<u32>()).unwrap();
-            dealloc(out_data_finish.data,layout);
+            dealloc(out_data_finish.data as *mut u8,layout);
             return HKS_FAILURE;
         }
     }
 
     unsafe{
-        copy_nonoverlapping(out_data_finish.data as *const u8, cur, out_data_finish.size as usize);
+        copy_nonoverlapping(out_data_finish.data, cur as *mut u8, out_data_finish.size as usize);
     }
     outdata.size += out_data_finish.size;
     let layout = Layout::from_size_align(out_data_finish.size as usize,align_of::<u32>()).unwrap();
     unsafe{
-        dealloc(out_data_finish.data,layout);
+        dealloc(out_data_finish.data as *mut u8,layout);
     }
 
     HKS_SUCCESS
@@ -209,24 +209,24 @@ pub struct Crypto {
 
 impl Crypto {
     /// Encrypt
-    pub fn encrypt(&mut self, msg: &mut Vec<u8>,aad:&mut Vec<u8>) -> Result<Vec<u8>,ErrCode>{
+    pub fn encrypt(&mut self, msg: &Vec<u8>, aad:&Vec<u8>) -> Result<Vec<u8>,ErrCode>{
         let hks_blob = HksBlob{
             size: self.key.alias.len() as u32,
-            data: &mut self.key.alias.as_str() as *mut _ as *mut u8,
+            data: self.key.alias.as_str() as *const _ as *const u8,
         };
         let key_alias = &hks_blob as *const HksBlob;
 
         // init handle_encrypt
-        let mut handle_e: Vec<u8> = vec![0,0,0,0,0,0,0,0];
+        let handle_e: Vec<u8> = vec![0,0,0,0,0,0,0,0];
         let mut handle_encrypt = HksBlob{
             size: 8,
-            data: &mut handle_e[0] as *mut _ as *mut u8,
+            data: &handle_e[0] as *const _ as *const u8,
         };
 
         // 此处对NONCE是硬编码
-        let mut NONCE_VEC: Vec<u8> = vec![0;NONCE_SIZE as usize];
-        let AAD = &mut (*aad)[0] as *mut _ as *mut u8;
-        let NONCE = &mut NONCE_VEC[0] as *mut _ as *mut u8;
+        let NONCE_VEC: Vec<u8> = vec![0;NONCE_SIZE as usize];
+        let AAD = &(*aad)[0] as *const _ as *const u8;
+        let NONCE = &NONCE_VEC[0] as *const _ as *const u8;
 
         // Init encrypt_param_set
         let mut g_encrypt_params004:[HksParam;7] = [
@@ -296,12 +296,12 @@ impl Crypto {
         }
         let mut indata = HksBlob{
             size: msg.len() as u32,
-            data: &mut (*msg)[0] as *mut _ as *mut u8
+            data: &(*msg)[0] as *const _ as *const u8
         };
-        let mut cipher: Vec<u8> = vec![0;AES_COMMON_SIZE as usize];
+        let cipher: Vec<u8> = vec![0;AES_COMMON_SIZE as usize];
         let mut cipher_text =HksBlob{
             size: AES_COMMON_SIZE,
-            data: &mut cipher[0] as *mut _ as *mut u8,
+            data: &cipher[0] as *const _ as *const u8,
         };
         ret = update_and_finish(&handle_encrypt, &encrypt_param_set, &mut indata, &mut cipher_text);
         if ret != HKS_SUCCESS{
@@ -312,18 +312,18 @@ impl Crypto {
     }
 
     /// Decrypt
-    pub fn decrypt(&mut self, cipher: &mut Vec<u8>, aad:&mut Vec<u8>) -> Result<Vec<u8>,ErrCode>{
+    pub fn decrypt(&mut self, cipher: &Vec<u8>, aad:&Vec<u8>) -> Result<Vec<u8>,ErrCode>{
         let hks_blob = HksBlob{
             size: self.key.alias.len() as u32,
-            data: &mut self.key.alias.as_str() as *mut _ as *mut u8,
+            data: self.key.alias.as_str() as *const _ as *const u8,
         };
         let key_alias = &hks_blob as *const HksBlob;
         
         // init handle_decrypt
-        let mut handle_d: Vec<u8> = vec![0,0,0,0,0,0,0,0];
+        let handle_d: Vec<u8> = vec![0,0,0,0,0,0,0,0];
         let mut handle_decrypt = HksBlob{
             size: 8,
-            data: &mut handle_d[0] as *mut _ as *mut u8,
+            data: &handle_d[0] as *const _ as *const u8,
         };
 
         // take the AEAD from cipher.
@@ -336,14 +336,14 @@ impl Crypto {
             &cipher[cipher_without_aead_size..(cipher_without_aead_size + AEAD_SIZE as usize)]);
         let mut cipher_text = HksBlob{
             size: cipher_without_aead_size as u32,
-            data: &mut (*cipher)[0] as *mut _ as *mut u8
+            data: &(*cipher)[0] as *const _ as *const u8
         };
 
         // 此处对NONCE是硬编码
-        let mut NONCE_VEC: Vec<u8> = vec![0;NONCE_SIZE as usize];
-        let AAD = &mut (*aad)[0] as *mut _ as *mut u8;
-        let NONCE = &mut NONCE_VEC[0] as *mut _ as *mut u8;
-        let AEAD = &mut AEAD_VEC[0] as *mut _ as *mut u8;
+        let NONCE_VEC: Vec<u8> = vec![0;NONCE_SIZE as usize];
+        let AAD = &(*aad)[0] as *const _ as *const u8;
+        let NONCE = &NONCE_VEC[0] as *const _ as *const u8;
+        let AEAD = &AEAD_VEC[0] as *const _ as *const u8;
         let mut g_decrypt_params004:[HksParam;8] = [
             HksParam{
                 tag: HKS_TAG_ALGORITHM,
@@ -419,10 +419,10 @@ impl Crypto {
         }
 
         
-        let mut plain: Vec<u8> = vec![0;AES_COMMON_SIZE as usize];
+        let plain: Vec<u8> = vec![0;AES_COMMON_SIZE as usize];
         let mut plain_text = HksBlob{
             size: AES_COMMON_SIZE,
-            data: &mut plain[0] as *mut _ as *mut u8,
+            data: &plain[0] as *const _ as *const u8,
         };
         ret = update_and_finish(&handle_decrypt, &decrypt_param_set, &mut cipher_text, &mut plain_text);
         if ret != HKS_SUCCESS{
