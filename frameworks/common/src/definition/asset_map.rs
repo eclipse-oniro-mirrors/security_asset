@@ -22,6 +22,7 @@ use ipc_rust::BorrowedMsgParcel;
 
 use super::asset_type_transform::GetType;
 use crate::definition::{Tag, Value, Result, ErrCode, DataType, AssetMap};
+use crate::loge;
 
 /// x
 pub trait SerializeAsset {
@@ -63,6 +64,7 @@ impl DeserializeAsset for AssetMap {
         logi!("enter deserialize");
         let len = parcel.read::<u32>()?;
         if len > 100 { // to do 外部输入，最大值校验
+            loge!("The map size exceeds the limit.");
             return Err(ErrCode::InvalidArgument);
         }
         let mut map = AssetMap::with_capacity(len as usize);

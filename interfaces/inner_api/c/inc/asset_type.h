@@ -143,7 +143,7 @@ typedef enum {
      */
     ASSET_TAG_RETURN_OFFSET = ASSET_TYPE_UINT32 | 0x14,
     /**
-     * A tag whose value is a byte array indicating the order by which the query results are returned.
+     * A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
      */
     ASSET_TAG_RETURN_ORDER_BY = ASSET_TYPE_UINT32 | 0x15,
 } AssetTag;

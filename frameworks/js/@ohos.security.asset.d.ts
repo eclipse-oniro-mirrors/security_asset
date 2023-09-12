@@ -127,7 +127,7 @@ declare namespace asset {
   function query(query: AssetMap): Promise<Array<AssetMap>>;
 
   /**
-   * Post-processing (e.g. release resource) for querying multiple Assets that require user authentication.
+   * Post-processing (e.g. release cached resource) for querying multiple Assets that require user authentication.
    *
    * @param { AssetMap } handle - a map object contains the handle returned by {@link preQuery}.
    * @param { AsyncCallback<void> } callback - the callback function for post-query operation.
@@ -137,7 +137,7 @@ declare namespace asset {
   function postQuery(handle: AssetMap, callback: AsyncCallback<void>): void;
 
   /**
-   * Post-processing (e.g. release resource) for querying multiple Assets that require user authentication.
+   * Post-processing (e.g. release cached resource) for querying multiple Assets that require user authentication.
    *
    * @param { AssetMap } handle - a map object contains the handle returned by {@link preQuery}.
    * @returns { Promise<void> } the promise object returned by the function.
@@ -572,14 +572,14 @@ declare namespace asset {
      */
     PERMISSION_DENIED = 201,
     /**
-     * The error code indicates an invalid argument.
+     * The error code indicates that the argument is invalid.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
     INVALID_ARGUMENT = 401,
     /**
-     * The error code indicates an unsupported capability.
+     * The error code indicates that the capability is not supported.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
@@ -614,7 +614,7 @@ declare namespace asset {
      */
     ACCESS_DENIED = 24000004,
     /**
-     * The error code indicates an expired authentication token.
+     * The error code indicates that the authentication token has expired.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
@@ -628,7 +628,7 @@ declare namespace asset {
      */
     OUT_OF_MEMRORY = 24000006,
     /**
-     * The error code indicates a corrupted Asset or encryption key.
+     * The error code indicates that the Asset or encryption key is corrupted.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11

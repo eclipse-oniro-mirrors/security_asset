@@ -308,6 +308,7 @@ napi_value GetBusinessError(napi_env env, int32_t errCode)
 {
     napi_value result = nullptr;
     napi_value code = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &result));
     NAPI_CALL(env, napi_create_int32(env, errCode, &code));
     NAPI_CALL(env, napi_set_named_property(env, result, "code", code));
 

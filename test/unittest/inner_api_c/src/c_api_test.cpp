@@ -45,16 +45,4 @@ void AttestCApiTest::SetUp()
 void AttestCApiTest::TearDown()
 {
 }
-
-/**
- * @tc.name: AttestCApiTest.AttestCApiTest001
- * @tc.desc: AttestCApiTest001
- * @tc.type: FUNC
- * @tc.result:0
- */
-HWTEST_F(AttestCApiTest, AttestCApiTest001, TestSize.Level0)
-{
-    int32_t ret = AssetTest(1);
-    ASSERT_EQ(0, ret) << "res is" << ret;
-}
 }

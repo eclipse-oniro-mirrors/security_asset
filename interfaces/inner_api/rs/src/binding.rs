@@ -16,13 +16,12 @@
 //! This create implement the asset
 
 use std::{
-    slice,
     ffi::{c_char, CString},
+    slice,
 };
 use hilog_rust::hilog;
 
 use asset_common::{
-    logi,
     loge,
     definition::{
         AssetMap,
@@ -32,25 +31,7 @@ use asset_common::{
         Value,
         asset_type_transform::GetType
     }};
-use asset_rust_sdk::{asset_insert, add};
-
-// asset_rust_sdk的crate名字叫asset_sdk或asset, libasset
-
-/// blablabla as documentation
-#[no_mangle]
-pub extern "C" fn AssetInsert(code: i32) -> i32
-{
-    logi!("receive code {} in AssetInsert", @public(code));
-    match asset_insert(code) {
-        Ok(res) => {
-            res as i32
-        },
-        Err(res) => {
-            // loge!("err");
-            res as i32
-        }
-    }
-}
+use asset_rust_sdk::add;
 
 /// add asset c2rust
 /// # Safety
@@ -59,6 +40,7 @@ pub extern "C" fn AssetInsert(code: i32) -> i32
 pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetParam, attr_cnt: u32) -> i32 {
     loge!("[YZT] enter AddAssetC2Rust!");
     if attributes.is_null() || attr_cnt == 0 {
+        loge!("[YZT] null pointer");
         return ErrCode::InvalidArgument as i32;
     }
 
@@ -82,6 +64,7 @@ pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetParam, attr_cnt:
                 map.insert(attr_tag, Value::Bytes(blob_vec));
             },
             _ => {
+                loge!("[YZT] invalid data type");
                 return ErrCode::InvalidArgument as i32;
             },
         }

@@ -17,7 +17,7 @@
 
 #include "asset_api.h"
 
-int32_t OH_Asset_Test(int32_t code)
+int32_t OH_Asset_Add(int32_t code)
 {
-    return AssetTest(code);
+    return 0;
 }

@@ -17,13 +17,6 @@
 
 #include "asset_log.h"
 
-int32_t AssetInsert(int32_t code);
-
-int32_t AssetTest(int32_t code)
-{
-    return AssetInsert(code);
-}
-
 extern int32_t AddAssetC2Rust(const AssetParam *attributes, uint32_t attrCnt);
 
 int32_t AddAsset(const AssetParam *attributes, uint32_t attrCnt)

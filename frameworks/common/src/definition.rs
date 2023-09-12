@@ -113,7 +113,7 @@ impl_try_from! {
         /// A tag whose value is a 32-bit unsigned integer indicating the offset of return data in batch query.
         ReturnOffset = DataType::Uint32 as isize | 0x14,
 
-        /// A tag whose value is a byte array indicating the order by which the query results are returned.
+        /// A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
         ReturnOrderBy = DataType::Uint32 as isize | 0x15,
     }
 }

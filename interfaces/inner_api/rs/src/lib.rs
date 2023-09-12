@@ -19,41 +19,12 @@ mod asset_request;
 
 pub use asset_common::definition;
 use asset_common::{
-    loge, logi,
-    definition::{AssetMap, Result, ErrCode, Tag, Value},
+    logi,
+    definition::{AssetMap, Result},
 };
 use crate::asset_request::AssetProxy;
 use hilog_rust::hilog;
 use std::ffi::{c_char, CString};
-
-/// insert data into asset
-pub fn asset_insert(_code: i32) -> Result<ErrCode> {
-    logi!("enter asser insert");
-    if let Ok(sender) = AssetProxy::build() {
-        let mut map = AssetMap::new();
-        map.insert(Tag::AuthType, Value::NUMBER(5));
-        sender.insert(&map)?; // ingore reply
-        match sender.insert(&map) {
-            Ok(res) => {
-                if let Some(v) = res.get(&Tag::AuthType) {
-                    logi!("res is {}", @public(v));
-                } else {
-                    loge!("asset_insert failed!");
-                }
-                Ok(ErrCode::Success)
-            },
-            Err(e) => Err(e),
-        }
-    } else {
-        Err(ErrCode::Failed)
-    }
-}
-
-// /// add an asset
-// pub fn add(input: AssetMap) -> Result<AssetMap> {
-//     logi!("enter assert add");
-//     AssetProxy::new()?.add(&input)
-// }
 
 /// add an asset
 pub fn add(input: AssetMap) -> Result<()> {

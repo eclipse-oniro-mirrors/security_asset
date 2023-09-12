@@ -50,12 +50,6 @@ impl AssetProxy {
         Ok(AssetProxy { proxy: get_asset_service()? })
     }
 
-    /// xxx
-    pub(crate) fn insert(&self, input: &AssetMap) -> Result<AssetMap> {
-        logi!("AssetIpcSender insert");
-        self.proxy.insert(input)
-    }
-
     /// add
     pub(crate) fn add(&self, input: &AssetMap) -> Result<()> {
         logi!("AssetIpcSender add");

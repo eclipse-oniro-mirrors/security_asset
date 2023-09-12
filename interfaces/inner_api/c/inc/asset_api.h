@@ -25,8 +25,6 @@
 extern "C" {
 #endif
 
-int32_t AssetTest(int32_t code);
-
 int32_t AddAsset(const AssetParam *attributes, uint32_t attrCnt);
 
 int32_t RemoveAsset(const AssetParam *query, uint32_t queryCnt);
