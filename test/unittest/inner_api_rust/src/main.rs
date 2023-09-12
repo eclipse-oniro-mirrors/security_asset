@@ -15,7 +15,7 @@
 
 use core::panic;
 
-use asset_rust_sdk::definition::{AssetMap, Accessibility, Tag, InsertAttribute, AuthType, SyncType, Value};
+use asset_rust_sdk::definition::{AssetMap, Accessibility, Tag, InsertAttribute, AuthType, SyncType};
 
 #[test]
 fn test_for_add() {
@@ -26,8 +26,6 @@ fn test_for_add() {
 
     input.insert_attr(Tag::Accessibility, Accessibility::DeviceSecure).unwrap();
     input.insert_attr(Tag::Alias, Vec::from("alias".as_bytes())).unwrap();
-
-    input.insert(Tag::Accessibility, Value::NUMBER(Accessibility::DeviceSecure as u32));
 
     match asset_rust_sdk::add(input) {
         Ok(_) => (),

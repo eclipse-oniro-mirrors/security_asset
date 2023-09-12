@@ -60,7 +60,7 @@ pub(crate) fn get_set_attr<'a>(input: &'a AssetMap, column_name: &'a str, tag: T
         logi!("get {} {} successfully", @public(column_name), @public(tag as u32));
         return Ok(());
     }
-    loge!("{} missed", @public(tag as u32));
+    loge!("{:x} missed", @public(tag as u32));
     Err(ErrCode::InvalidArgument)
 }
 

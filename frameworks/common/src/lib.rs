@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This create implement the asset
+//! Module shared by the SDK and Service
 
 #[macro_use]
 pub mod asset_hilog;

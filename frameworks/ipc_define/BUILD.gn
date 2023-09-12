@@ -15,7 +15,7 @@ import("//build/ohos.gni")
 
 COMPONENT_DIR = "//base/security/asset"
 
-ohos_rust_static_library("asset_ipc_define_lib") {
+ohos_rust_static_library("asset_ipc") {
   sources = [ "src/lib.rs" ]
   deps = [ "$COMPONENT_DIR/frameworks/common:asset_common" ]
   external_deps = [
@@ -23,7 +23,7 @@ ohos_rust_static_library("asset_ipc_define_lib") {
     "ipc:ipc_rust",
   ]
 
-  crate_name = "asset_ipc_define_lib"
+  crate_name = "asset_ipc"
   crate_type = "rlib"
 
   subsystem_name = "security"

@@ -15,41 +15,39 @@
 
 //! This create implement the send request
 
-use asset_common::{
-    logi,
-    definition::{AssetMap, Result, ErrCode}, loge,
-};
-
-use asset_ipc_define_lib::asset_service::{AssetBroker, ASSET_SERVICE_ID};
-
-use ipc_rust::RemoteObjRef;
-
-use rust_samgr::get_service_proxy;
-
-use hilog_rust::hilog;
 use std::ffi::{c_char, CString};
 
-fn get_asset_service() -> Result<RemoteObjRef<dyn AssetBroker>> {
-    let object = get_service_proxy::<dyn AssetBroker>(ASSET_SERVICE_ID);
+use hilog_rust::hilog;
+use ipc_rust::RemoteObjRef;
+use rust_samgr::get_service_proxy;
+
+use asset_common::{
+    logi, loge,
+    definition::{AssetMap, Result, ErrCode},
+};
+use asset_ipc::asset_service::{IAsset, ASSET_SERVICE_ID};
+
+fn get_asset_service() -> Result<RemoteObjRef<dyn IAsset>> {
+    let object = get_service_proxy::<dyn IAsset>(ASSET_SERVICE_ID);
     match object {
         Ok(remote) => Ok(remote),
         Err(e) => {
-            loge!("get_asset_service failed {}!", @public(e));
+            loge!("[FATAL]get_asset_service failed {}!", @public(e));
             Err(ErrCode::ServiceUnvailable)
         }
     }
 }
 
 /// sender
-pub(crate) struct AssetIpcProxy {
-    proxy: RemoteObjRef<dyn AssetBroker>,
+pub(crate) struct AssetProxy {
+    proxy: RemoteObjRef<dyn IAsset>,
 }
 
 /// 2222
-impl AssetIpcProxy {
+impl AssetProxy {
     /// xxx
-    pub(crate) fn new() -> Result<AssetIpcProxy> {
-        Ok(AssetIpcProxy { proxy: get_asset_service()? })
+    pub(crate) fn build() -> Result<AssetProxy> {
+        Ok(AssetProxy { proxy: get_asset_service()? })
     }
 
     /// xxx
@@ -59,7 +57,7 @@ impl AssetIpcProxy {
     }
 
     /// add
-    pub(crate) fn add(&self, input: &AssetMap) -> Result<AssetMap> {
+    pub(crate) fn add(&self, input: &AssetMap) -> Result<()> {
         logi!("AssetIpcSender add");
         self.proxy.add(input)
     }

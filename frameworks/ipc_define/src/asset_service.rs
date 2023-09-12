@@ -33,51 +33,49 @@ use asset_common::{
 impl_try_from!{
     /// Asset ipc code
     #[derive(Clone, Copy)]
-    pub enum AssetIpcCode {
+    pub enum IpcCode {
         /// insert data
         Insert = FIRST_CALL_TRANSACTION,
-        /// add an asset
+        /// IPC code for AddAsset
         Add,
     }
 }
 
-impl fmt::Display for AssetIpcCode {
+impl fmt::Display for IpcCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            AssetIpcCode::Insert => write!(f, "insert"),
-            AssetIpcCode::Add => write!(f, "add"),
+            IpcCode::Insert => write!(f, "insert"),
+            IpcCode::Add => write!(f, "add"),
         }
     }
 }
 
-/// SA ID for "example_asset_ipc_service"
+/// SA ID for "security_asset_service"
 pub const ASSET_SERVICE_ID: i32 = 3511;
 
 /// Function between proxy and stub of AssetService
-pub trait AssetBroker: IRemoteBroker {
+pub trait IAsset: IRemoteBroker {
     /// xxx
     fn insert(&self, input: &AssetMap) -> Result<AssetMap>;
     // fn transform(&self, code: u32, input: &AssetMap) -> Result<AssetMap>;
 
     /// add an assert
-    fn add(&self, input: &AssetMap) -> Result<AssetMap>;
+    fn add(&self, input: &AssetMap) -> Result<()>;
 }
 
-fn on_asset_remote_request(
-    stub: &dyn AssetBroker,
-    code: u32,
-    data: &BorrowedMsgParcel,
-    reply: &mut BorrowedMsgParcel,
-) -> IpcResult<()> {
+/// IPC entry of the Asset service
+fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
+    reply: &mut BorrowedMsgParcel) -> IpcResult<()> {
+    logi!("on_remote_request, calling function: {}", code);
     let input_map = AssetMap::deserialize(data);
     if input_map.is_err() {
-        loge!("deserialize in on_asset_remote_request failed!");
+        loge!("deserialize in on_remote_request failed!");
         return Err(IpcStatusCode::InvalidValue);
     }
-    if let Ok(ipc_code) = AssetIpcCode::try_from(code) {
+    if let Ok(ipc_code) = IpcCode::try_from(code) {
         match ipc_code {
-            AssetIpcCode::Insert => {
-                logi!("on_asset_remote_request Insert");
+            IpcCode::Insert => {
+                logi!("on_remote_request Insert");
                 match stub.insert(input_map.as_ref().unwrap()) {
                     Ok(res) => {
                         reply.write::<i32>(&(ErrCode::Success as i32))?;
@@ -88,13 +86,12 @@ fn on_asset_remote_request(
                     }
                 }
             },
-            AssetIpcCode::Add => {
-                logi!("on_asset_remote_request add");
+            IpcCode::Add => {
+                logi!("on_remote_request add");
 
                 match stub.add(input_map.as_ref().unwrap()) {
-                    Ok(res) => {
+                    Ok(_) => {
                         reply.write::<i32>(&(ErrCode::Success as i32))?;
-                        res.serialize(reply)?;
                     },
                     Err(e) => {
                         reply.write::<i32>(&(e as i32))?;
@@ -109,52 +106,47 @@ fn on_asset_remote_request(
 }
 
 define_remote_object!(
-    AssetBroker["security_asset_service"] {
-        stub: AssetStub(on_asset_remote_request),
+    IAsset["security_asset_service"] {
+        stub: AssetStub(on_remote_request),
         proxy: AssetProxy,
     }
 );
 
-// Make RemoteStub<AssetStub> object can call AssetBroker function directly.
-impl AssetBroker for RemoteStub<AssetStub> {
+// Make RemoteStub<AssetStub> object can call IAsset function directly.
+impl IAsset for RemoteStub<AssetStub> {
     fn insert(&self, input: &AssetMap) -> Result<AssetMap> {
         self.0.insert(input)
     }
 
-    fn add(&self, input: &AssetMap) -> Result<AssetMap> {
+    fn add(&self, input: &AssetMap) -> Result<()> {
         self.0.add(input)
     }
 }
 
-fn transform(proxy: &AssetProxy, code: AssetIpcCode, input: &AssetMap) -> Result<AssetMap> {
-    let parce_new = MsgParcel::new();
-    match parce_new {
-        Some(mut send_parcel) => {
-            input.serialize(&mut send_parcel.borrowed())?;
+impl IAsset for AssetProxy {
+    fn insert(&self, _input: &AssetMap) -> Result<AssetMap> {
+        Ok(AssetMap::new())
+    }
 
-            let reply_parcel =
-                proxy.remote.send_request(code as u32, &send_parcel, false);
-            if let Ok(reply) = reply_parcel {
-                let res_code = ErrCode::try_from(reply.read::<i32>()?)?;
-                if res_code != ErrCode::Success {
-                    return Err(res_code);
+    fn add(&self, input: &AssetMap) -> Result<()> {
+        let parce_new = MsgParcel::new();
+        match parce_new {
+            Some(mut send_parcel) => {
+                input.serialize(&mut send_parcel.borrowed())?;
+                let reply_parcel =
+                    self.remote.send_request(IpcCode::Add as u32, &send_parcel, false);
+                if let Ok(reply) = reply_parcel {
+                    let res_code = ErrCode::try_from(reply.read::<i32>()?)?;
+                    if res_code != ErrCode::Success {
+                        return Err(res_code);
+                    }
+                    Ok(())
+                } else {
+                    loge!("AssetProxy transform {} failed!", IpcCode::Add);
+                    Err(ErrCode::Failed)
                 }
-                Ok(AssetMap::deserialize(reply.borrowed_ref())?)
-            } else {
-                loge!("AssetProxy transform {} failed!", code);
-                Err(ErrCode::Failed)
-            }
-        },
-        None => Err(ErrCode::Failed)
-    }
-}
-
-impl AssetBroker for AssetProxy {
-    fn insert(&self, input: &AssetMap) -> Result<AssetMap> {
-        transform(self, AssetIpcCode::Insert, input)
-    }
-
-    fn add(&self, input: &AssetMap) -> Result<AssetMap> {
-        transform(self, AssetIpcCode::Add, input)
+            },
+            None => Err(ErrCode::Failed)
+        }
     }
 }

@@ -32,7 +32,7 @@ use asset_common::{
         Value,
         asset_type_transform::GetType
     }};
-use asset_rust_sdk::{asset_insert, add_asset};
+use asset_rust_sdk::{asset_insert, add};
 
 // asset_rust_sdk的crate名字叫asset_sdk或asset, libasset
 
@@ -58,7 +58,7 @@ pub extern "C" fn AssetInsert(code: i32) -> i32
 #[no_mangle]
 pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetParam, attr_cnt: u32) -> i32 {
     loge!("[YZT] enter AddAssetC2Rust!");
-    if attributes.is_null() || attr_cnt == 0 { // todo: 待确认是否需要校验
+    if attributes.is_null() || attr_cnt == 0 {
         return ErrCode::InvalidArgument as i32;
     }
 
@@ -87,7 +87,11 @@ pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetParam, attr_cnt:
         }
     }
     loge!("[YZT] end AddAssetC2Rust!");
-    add_asset(map) as i32
+    if let Err(e) = add(map) {
+        e as i32
+    } else {
+        0
+    }
 }
 
 /// asset param from c

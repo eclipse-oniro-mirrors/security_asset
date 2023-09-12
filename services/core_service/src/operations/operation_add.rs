@@ -51,7 +51,7 @@ fn construct_data<'a>(input: &'a AssetMap, calling_info: &'a CallingInfo) -> Res
     Ok(data_vec)
 }
 
-pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<AssetMap> {
+pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // arrange the table value
     let mut db_data = construct_data(input, calling_info)?;
 
@@ -90,5 +90,5 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<AssetM
         DefaultDatabaseHelper::insert_datas_default_once(calling_info.get_user_id(), &owner_str.unwrap(), &alias, db_data)?;
 
     logi!("insert {} data", @public(insert_num));
-    Ok(AssetMap::new())
+    Ok(())
 }

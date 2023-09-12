@@ -16,12 +16,9 @@
 //! This create implement the asset
 #![allow(dead_code)]
 
-use asset_common::definition::Result;
-
 /// OwnerType
 pub(crate) enum OwnerType {
     Hap(Vec<u8>),
-    Sa(Vec<u8>),
     Native(Vec<u8>)
 }
 
@@ -32,11 +29,8 @@ impl OwnerType {
             Self::Hap(_) => {
                 1
             },
-            Self::Sa(_) => {
-                2
-            },
             Self::Native(_) => {
-                3
+                2
             }
         }
     }
@@ -47,9 +41,6 @@ impl OwnerType {
             Self::Hap(owner_text) => {
                 owner_text
             },
-            Self::Sa(owner_text) => {
-                owner_text
-            },
             Self::Native(owner_text) => {
                 owner_text
             }
@@ -57,12 +48,12 @@ impl OwnerType {
     }
 }
 
-fn get_native_owner_info(uid: u64) -> Result<OwnerType>{
-    Ok(OwnerType::Native(Vec::from(format!("{}", uid).as_bytes())))
+fn get_native_owner_info(uid: u64) -> OwnerType {
+    OwnerType::Native(Vec::from(format!("{}", uid).as_bytes()))
 }
 
 /// xxx
-pub(crate) fn get_calling_owner_type(uid: u64) -> Result<OwnerType> {
+pub(crate) fn get_calling_owner_type(uid: u64) -> OwnerType {
     // Ok(OwnerType::Native(Vec::from("123"))) // to do
     get_native_owner_info(uid)
 }

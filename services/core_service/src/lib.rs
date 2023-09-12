@@ -19,7 +19,7 @@ use asset_common::{
     logi,
     definition::{AssetMap, Result, Tag, Value},
 };
-use asset_ipc_define_lib::asset_service::{AssetBroker, AssetStub, ASSET_SERVICE_ID};
+use asset_ipc::asset_service::{IAsset, AssetStub, ASSET_SERVICE_ID};
 
 use ipc_rust::{IRemoteBroker, RemoteObj};
 
@@ -38,17 +38,16 @@ pub struct AssetService;
 
 impl IRemoteBroker for AssetService {}
 
-impl AssetBroker for AssetService {
+impl IAsset for AssetService {
     fn insert(&self, _input: &AssetMap) -> Result<AssetMap> {
         let mut map = AssetMap::new();
         map.insert(Tag::AuthType, Value::NUMBER(2)); // to do
         Ok(map)
     }
 
-    fn add(&self, input: &AssetMap) -> Result<AssetMap> {
+    fn add(&self, input: &AssetMap) -> Result<()> {
         // get calling uid userid appid etc
-        let calling_info = CallingInfo::new()?;
-
+        let calling_info = CallingInfo::new();
         operations::add(input, &calling_info)
     }
 }

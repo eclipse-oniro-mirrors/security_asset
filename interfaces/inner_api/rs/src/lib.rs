@@ -22,14 +22,14 @@ use asset_common::{
     loge, logi,
     definition::{AssetMap, Result, ErrCode, Tag, Value},
 };
-use crate::asset_request::AssetIpcProxy;
+use crate::asset_request::AssetProxy;
 use hilog_rust::hilog;
 use std::ffi::{c_char, CString};
 
 /// insert data into asset
 pub fn asset_insert(_code: i32) -> Result<ErrCode> {
     logi!("enter asser insert");
-    if let Ok(sender) = AssetIpcProxy::new() {
+    if let Ok(sender) = AssetProxy::build() {
         let mut map = AssetMap::new();
         map.insert(Tag::AuthType, Value::NUMBER(5));
         sender.insert(&map)?; // ingore reply
@@ -49,14 +49,14 @@ pub fn asset_insert(_code: i32) -> Result<ErrCode> {
     }
 }
 
-/// add an asset
-pub fn add(input: AssetMap) -> Result<AssetMap> {
-    logi!("enter assert add");
-    AssetIpcProxy::new()?.add(&input)
-}
+// /// add an asset
+// pub fn add(input: AssetMap) -> Result<AssetMap> {
+//     logi!("enter assert add");
+//     AssetProxy::new()?.add(&input)
+// }
 
-/// the mock function
-pub fn add_asset(_input: AssetMap) -> ErrCode {
-    logi!("enter assert add");
-    ErrCode::Success
+/// add an asset
+pub fn add(input: AssetMap) -> Result<()> {
+    logi!("[YZT][RUST SDK]enter asset add");
+    AssetProxy::build()?.add(&input)
 }
