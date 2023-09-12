@@ -21,7 +21,6 @@ extern int32_t AddAssetC2Rust(const AssetParam *attributes, uint32_t attrCnt);
 
 int32_t AddAsset(const AssetParam *attributes, uint32_t attrCnt)
 {
-    LOGE("[YZT]Congratulations! AddAsset function is called.");
     return AddAssetC2Rust(attributes, attrCnt);
 }
 

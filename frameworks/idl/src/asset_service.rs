@@ -15,58 +15,32 @@
 
 //! This create implement the asset
 
-use std::fmt;
+use std::ffi::{c_char, CString};
 
 use ipc_rust::{
-    define_remote_object, BorrowedMsgParcel, IRemoteBroker, IRemoteObj, IpcResult,
+    define_remote_object, BorrowedMsgParcel, IpcResult, IRemoteObj,
     IpcStatusCode, MsgParcel, RemoteObj, RemoteStub,
-    FIRST_CALL_TRANSACTION,
 };
 
 use asset_common::{
-    logi, loge, impl_try_from,
-    definition::{AssetMap, Result, ErrCode, serialize_map_into_parcel, deserialize_map_from_parcel},
+    logi, loge,
+    definition::{AssetMap, Result, ErrCode, SerializeAsset, DeserializeAsset},
 };
+use super::iasset::{IAsset, IpcCode};
 
-impl_try_from!{
-    /// Asset ipc code
-    #[derive(Clone, Copy)]
-    pub enum IpcCode {
-        /// IPC code for AddAsset
-        Add = FIRST_CALL_TRANSACTION,
-    }
-}
-
-impl fmt::Display for IpcCode {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match *self {
-            IpcCode::Add => write!(f, "add"),
-        }
-    }
-}
-
-/// SA ID for "security_asset_service"
-pub const ASSET_SERVICE_ID: i32 = 3511;
-
-/// Function between proxy and stub of AssetService
-pub trait IAsset: IRemoteBroker {
-    /// add an assert
-    fn add(&self, input: &AssetMap) -> Result<()>;
-}
-
-/// IPC entry of the Asset service
-fn send_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
+/// IPC entry of the Asset SDK
+fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
     reply: &mut BorrowedMsgParcel) -> IpcResult<()> {
-    logi!("send_request, calling function: {}", code);
-    let input_map = deserialize_map_from_parcel(data);
+    logi!("on_remote_request, calling function: {}", code);
+    let input_map = AssetMap::deserialize(data);
     if input_map.is_err() {
-        loge!("deserialize in send_request failed!");
+        loge!("deserialize in on_remote_request failed!");
         return Err(IpcStatusCode::InvalidValue);
     }
     if let Ok(ipc_code) = IpcCode::try_from(code) {
         match ipc_code {
             IpcCode::Add => {
-                logi!("send_request add");
+                logi!("on_remote_request add");
 
                 match stub.add(input_map.as_ref().unwrap()) {
                     Ok(_) => {
@@ -76,7 +50,9 @@ fn send_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
                         reply.write::<i32>(&(e as i32))?;
                     }
                 }
-            }
+            },
+            IpcCode::Remove => (),
+            _ => ()
         }
         Ok(())
     } else {
@@ -86,7 +62,7 @@ fn send_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
 
 define_remote_object!(
     IAsset["security_asset_service"] {
-        stub: AssetStub(send_request),
+        stub: AssetStub(on_remote_request),
         proxy: AssetProxy,
     }
 );
@@ -103,9 +79,8 @@ impl IAsset for AssetProxy {
         let parce_new = MsgParcel::new();
         match parce_new {
             Some(mut send_parcel) => {
-                serialize_map_into_parcel(input, &mut send_parcel.borrowed())?;
-                let reply_parcel =
-                    self.remote.send_request(IpcCode::Add as u32, &send_parcel, false);
+                input.serialize(&mut send_parcel.borrowed())?;
+                let reply_parcel = self.remote.send_request(IpcCode::Add as u32, &send_parcel, false);
                 if let Ok(reply) = reply_parcel {
                     let res_code = ErrCode::try_from(reply.read::<i32>()?)?;
                     if res_code != ErrCode::Success {

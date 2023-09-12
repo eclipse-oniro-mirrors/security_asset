@@ -27,10 +27,12 @@ fn test_for_add() {
     input.insert_attr(Tag::Accessibility, Accessibility::DeviceSecure).unwrap();
     input.insert_attr(Tag::Alias, Vec::from("alias".as_bytes())).unwrap();
 
-    match asset_rust_sdk::add(input) {
-        Ok(_) => (),
-        Err(err) => {
-            panic!("test_for_add fail err {}", err);
-        }
+    match asset_rust_sdk::Manager::build() {
+        Ok(manager) => {
+            if let Err(e) = manager.add(input) {
+                panic!("test for add failed {}", e)
+            }
+        },
+        Err(e) => panic!("test for add failed {}", e)
     }
 }

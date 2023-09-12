@@ -27,7 +27,7 @@ use asset_common::{
         Value,
         asset_type_transform::GetType
     }};
-use asset_rust_sdk::add;
+use asset_rust_sdk::Manager;
 
 /// add asset c2rust
 /// # Safety
@@ -66,10 +66,15 @@ pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetParam, attr_cnt:
         }
     }
     loge!("[YZT] end AddAssetC2Rust!");
-    if let Err(e) = add(map) {
-        e as i32
-    } else {
-        0
+    match Manager::build() {
+        Ok(manager) => {
+            if let Err(e) = manager.add(map) {
+                e as i32
+            } else {
+                0
+            }
+        },
+        Err(e) => e as i32
     }
 }
 

@@ -16,3 +16,4 @@
 //! This create implement the asset
 
 pub mod asset_service;
+pub mod iasset;

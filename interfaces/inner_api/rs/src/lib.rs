@@ -15,17 +15,49 @@
 
 //! This create implement the asset
 
-mod asset_request;
+#![allow(dead_code)]
 
-pub use asset_common::definition;
+pub use asset_common::definition; // todo: definition迁移到SDK后，怎么解决Service的依赖
+
+use std::ffi::{c_char, CString};
+
+use hilog_rust::hilog;
+use ipc_rust::RemoteObjRef;
+use rust_samgr::get_service_proxy;
+
 use asset_common::{
-    logi,
-    definition::{AssetMap, Result},
+    logi, loge,
+    definition::{AssetMap, Result, ErrCode},
 };
-use crate::asset_request::AssetProxy;
+use asset_ipc::iasset::{IAsset, SA_ID};
 
-/// add an asset
-pub fn add(input: AssetMap) -> Result<()> {
-    logi!("[YZT][RUST SDK]enter asset add");
-    AssetProxy::build()?.add(&input)
+fn get_remote() -> Result<RemoteObjRef<dyn IAsset>> {
+    let object = get_service_proxy::<dyn IAsset>(SA_ID);
+    match object {
+        Ok(remote) => Ok(remote),
+        Err(e) => {
+            loge!("[FATAL]get_remote failed {}!", @public(e));
+            Err(ErrCode::ServiceUnvailable)
+        }
+    }
+}
+
+/// This manager provides the capabilities for life cycle management of sensitive user data (Asset) such as passwords
+/// and tokens, including adding, removing, updating, and querying.
+pub struct Manager {
+    remote: RemoteObjRef<dyn IAsset>,
+}
+
+impl Manager {
+    /// Build and initialize the Manager.
+    pub fn build() -> Result<Self> {
+        let remote = get_remote()?;
+        Ok(Self { remote })
+    }
+
+    /// Add an Asset.
+    pub fn add(&self, input: AssetMap) -> Result<()> {
+        logi!("[YZT][RUST SDK]enter asset add");
+        self.remote.add(&input)
+    }
 }

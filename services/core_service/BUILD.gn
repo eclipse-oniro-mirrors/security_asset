@@ -20,7 +20,7 @@ ohos_rust_shared_library("asset_service") {
 
   deps = [
     "$COMPONENT_DIR/frameworks/common:asset_common",
-    "$COMPONENT_DIR/frameworks/ipc_define:asset_ipc",
+    "$COMPONENT_DIR/frameworks/idl:asset_ipc",
     "$COMPONENT_DIR/services/crypto_manager:crypto_manager",
     "$COMPONENT_DIR/services/db_operator:db_operator",
     "$COMPONENT_DIR/services/os_dependency/os_account_wrapper:libasset_os_account_wrapper",

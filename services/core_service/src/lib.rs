@@ -15,22 +15,21 @@
 
 //! This create implement the asset
 
+use std::ffi::{c_char, CString};
+
 use asset_common::{
     logi,
     definition::{AssetMap, Result},
 };
-use asset_ipc::asset_service::{IAsset, AssetStub, ASSET_SERVICE_ID};
-
-use ipc_rust::{IRemoteBroker, RemoteObj};
+use asset_ipc::iasset::{IAsset, SA_ID};
+use asset_ipc::asset_service::AssetStub;
 
 use hilog_rust::{error, hilog, HiLogLabel, LogType};
-use std::ffi::{c_char, CString};
-
+use ipc_rust::{IRemoteBroker, RemoteObj};
 use system_ability_fwk_rust::{define_system_ability, IMethod, ISystemAbility, RSystemAbility};
 
 mod operations;
 mod calling_process_info;
-
 use calling_process_info::CallingInfo;
 
 /// xxx
@@ -48,7 +47,7 @@ impl IAsset for AssetService {
 
 const LOG_LABEL: HiLogLabel = HiLogLabel {
     log_type: LogType::LogCore,
-    domain: 0xD002F70, // security domain
+    domain: 0xD002F70,
     tag: "Asset",
 };
 
@@ -58,7 +57,7 @@ define_system_ability!(
 
 fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
     let service = AssetStub::new_remote_stub(AssetService).expect("create TestService failed");
-    ability.publish(&service.as_object().expect("get ITest service failed"), ASSET_SERVICE_ID);
+    ability.publish(&service.as_object().expect("get ITest service failed"), SA_ID);
     logi!("on_start");
 }
 
@@ -70,7 +69,7 @@ fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {
 #[link_section = ".init_array"]
 static A: extern fn() = {
     extern fn init() {
-        let r_sa = SystemAbility::new_system_ability(ASSET_SERVICE_ID, true)
+        let r_sa = SystemAbility::new_system_ability(SA_ID, true)
             .expect("create TestService failed");
         r_sa.register();
     }
