@@ -19,7 +19,7 @@ use asset_common::{definition::{AssetMap, Result, Value, ErrCode, Tag}, logi, lo
 use db_operator::{
     types::{Pair, DataValue},
     database_table_helper::{G_COLUMN_ACCESSTYPE, G_COLUMN_OWNERTYPE, G_COLUMN_DELETETYPE,
-        G_COLUMN_VERSION, G_COLUMN_SECRET}
+        G_COLUMN_VERSION, G_COLUMN_SECRET, G_COLUMN_CREATETIME, G_COLUMN_UPDATETIME}
 };
 
 use hilog_rust::hilog;
@@ -119,5 +119,29 @@ pub(crate) fn set_ciphet_secret<'a>(cipher_secret: &'a [u8], vec: &mut Vec<Pair<
             value: DataValue::Blob(cipher_secret),
         }
     );
+    Ok(())
+}
+
+/// xxx
+pub(crate) fn get_set_current_time<'a>(create_time: &'a str, vec: &mut Vec<Pair<'a>>) -> Result<()>  {
+    vec.push(
+        Pair {
+            column_name: G_COLUMN_CREATETIME,
+            value: DataValue::Text(create_time.as_bytes())
+        }
+    );
+
+    Ok(())
+}
+
+/// xxx
+pub(crate) fn get_set_update_time<'a>(update_time: &'a str, vec: &mut Vec<Pair<'a>>) -> Result<()>  {
+    vec.push(
+        Pair {
+            column_name: G_COLUMN_UPDATETIME,
+            value: DataValue::Text(update_time.as_bytes())
+        }
+    );
+
     Ok(())
 }

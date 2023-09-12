@@ -3,7 +3,6 @@ hdc file send \\7.222.59.152\z00639827\workspace\hmos_asset\out\generic_generic_
 hdc file send  \\7.222.59.152\z00639827\workspace\hmos_asset\out\generic_generic_arm_64only\hisi_higeneric_newphone_standard\lib.unstripped\security\asset\libasset_sdk.z.so ./system/lib64/
 hdc file send  \\7.222.59.152\z00639827\workspace\hmos_asset\out\generic_generic_arm_64only\hisi_higeneric_newphone_standard\lib.unstripped\security\asset\libasset_ndk.z.so ./system/lib64/
 hdc file send  \\7.222.59.152\z00639827\workspace\hmos_asset\out\generic_generic_arm_64only\hisi_higeneric_newphone_standard\lib.unstripped\security\asset\libasset_rust_binding.z.so ./system/lib64/
-hdc file send  \\7.222.59.152\z00639827\workspace\hmos_asset\out\generic_generic_arm_64only\hisi_higeneric_newphone_standard\lib.unstripped\security\asset\libdb_operator.dylib.so ./system/lib64/
 
 hdc file send  \\7.222.59.152\z00639827\workspace\hmos_asset\out\generic_generic_arm_64only\hisi_higeneric_newphone_standard\lib.unstripped\security\asset\libasset_service.dylib.so ./system/lib64/
 

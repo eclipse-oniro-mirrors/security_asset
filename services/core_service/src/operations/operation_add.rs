@@ -24,7 +24,7 @@ use db_operator::{database_table_helper::DefaultDatabaseHelper, types::Pair,
 use crate::{operations::operation_common::*, calling_process_info::CallingInfo};
 
 use hilog_rust::hilog;
-use std::ffi::{c_char, CString};
+use std::{ffi::{c_char, CString}, time::{SystemTime, UNIX_EPOCH}};
 
 fn encrypt_secret(input: &AssetMap) -> Result<Vec<u8>> {
     if let Some(Value::Bytes(secret)) = input.get(&Tag::Secret) {
@@ -47,6 +47,7 @@ fn construct_data<'a>(input: &'a AssetMap, calling_info: &'a CallingInfo) -> Res
     get_set_delete_type(&mut data_vec)?;
     get_set_access_type(&mut data_vec)?;
     get_set_version(&mut data_vec)?;
+
     Ok(data_vec)
 }
 
@@ -56,6 +57,14 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<AssetM
 
     let cipher_secret = encrypt_secret(input)?;
     set_ciphet_secret(&cipher_secret, &mut db_data)?;
+
+    let sys_time_res = SystemTime::now().duration_since(UNIX_EPOCH);
+    if sys_time_res.is_err() {
+        return Err(ErrCode::Failed);
+    }
+    let time_string = sys_time_res.unwrap().as_millis().to_string();
+    get_set_current_time(&time_string, &mut db_data)?;
+    get_set_update_time(&time_string, &mut db_data)?;
 
     // to do 创建用户目录
 
