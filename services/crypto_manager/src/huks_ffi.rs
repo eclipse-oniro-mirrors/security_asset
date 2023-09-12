@@ -56,8 +56,8 @@ pub const HKS_KEY_PURPOSE_ENCRYPT: u32 = 1;
 /// Huks key purpose decrypt
 pub const HKS_KEY_PURPOSE_DECRYPT: u32 = 2;
 
-/// Huks key size 128
-pub const HKS_AES_KEY_SIZE_128: u32 = 128;
+/// Huks key size 256
+pub const HKS_AES_KEY_SIZE_256: u32 = 256;
 
 /// Huks key padding none
 pub const HKS_PADDING_NONE: u32 = 0;
@@ -160,6 +160,9 @@ extern "C"{
     /// c delete key
     pub fn HksDeleteKey(key_alias: *const HksBlob, param_set: *const HksParamSet
     ) -> HuksErrcode;
+
+    /// c key exist
+    pub fn HksKeyExist(key_alias: *const HksBlob, param_set: *const HksParamSet) -> HuksErrcode;
 
     /// c init paramset
     pub fn HksInitParamSet(param_set: *mut *mut HksParamSet) -> HuksErrcode;

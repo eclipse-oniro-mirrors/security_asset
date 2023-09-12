@@ -8,4 +8,5 @@ members = [
     "test/unittest/inner_api_rust",
     "services/crypto_manager",
     "test/unittest/db_operator_test",
+    "test/unittest/crypto_manager_test",
 ]
