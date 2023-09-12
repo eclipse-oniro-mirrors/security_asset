@@ -19,7 +19,7 @@
 mod asset_map;
 #[macro_use]
 pub mod asset_type_transform;
-pub use asset_map::{serialize_map_into_parcel, deserialize_map_from_parcel, InsertAttribute};
+pub use asset_map::{serialize, deserialize, InsertAttribute};
 
 use std::collections::HashMap;
 

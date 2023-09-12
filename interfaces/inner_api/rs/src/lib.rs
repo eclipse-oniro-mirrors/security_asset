@@ -19,9 +19,6 @@
 
 pub use asset_common::definition; // todo: definition迁移到SDK后，怎么解决Service的依赖
 
-use std::ffi::{c_char, CString};
-
-use hilog_rust::hilog;
 use ipc_rust::RemoteObjRef;
 use rust_samgr::get_service_proxy;
 
@@ -36,7 +33,7 @@ fn get_remote() -> Result<RemoteObjRef<dyn IAsset>> {
     match object {
         Ok(remote) => Ok(remote),
         Err(e) => {
-            loge!("[FATAL]get_remote failed {}!", @public(e));
+            loge!("[FATAL]get_remote failed {}!", e);
             Err(ErrCode::ServiceUnvailable)
         }
     }

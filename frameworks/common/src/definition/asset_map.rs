@@ -22,8 +22,8 @@ use crate::definition::{Tag, Value, Result, ErrCode, DataType, AssetMap};
 use crate::loge;
 
 /// serialize the map to parcel
-pub fn serialize_map_into_parcel(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<()> {
-    logi!("enter serialize_map_into_parcel");
+pub fn serialize(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<()> {
+    logi!("enter serialize");
     parcel.write(&(map.len() as u32))?;
     for v in map.iter() {
         parcel.write(&(*v.0 as u32))?;
@@ -39,13 +39,13 @@ pub fn serialize_map_into_parcel(map: &AssetMap, parcel: &mut BorrowedMsgParcel)
             },
         }
     }
-    logi!("leave serialize_map_into_parcel ok");
+    logi!("leave serialize ok");
     Ok(())
 }
 
 /// deserialize the map from parcel
-pub fn deserialize_map_from_parcel(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
-    logi!("enter deserialize_map_from_parcel");
+pub fn deserialize(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
+    logi!("enter deserialize");
     let len = parcel.read::<u32>()?;
     if len > 100 { // to do 外部输入，最大值校验
         loge!("The map size exceeds the limit.");
@@ -81,7 +81,7 @@ pub fn deserialize_map_from_parcel(parcel: &BorrowedMsgParcel) -> Result<AssetMa
             },
         }
     }
-    logi!("leave deserialize_map_from_parcel ok");
+    logi!("leave deserialize ok");
     Ok(map)
 }
 

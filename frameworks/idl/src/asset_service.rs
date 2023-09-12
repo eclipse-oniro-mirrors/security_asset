@@ -15,8 +15,6 @@
 
 //! This create implement the asset
 
-use std::ffi::{c_char, CString};
-
 use ipc_rust::{
     define_remote_object, BorrowedMsgParcel, IpcResult, IRemoteObj,
     IpcStatusCode, MsgParcel, RemoteObj, RemoteStub,
@@ -24,15 +22,15 @@ use ipc_rust::{
 
 use asset_common::{
     logi, loge,
-    definition::{AssetMap, Result, ErrCode, SerializeAsset, DeserializeAsset},
+    definition::{AssetMap, Result, ErrCode, serialize, deserialize},
 };
 use super::iasset::{IAsset, IpcCode};
 
-/// IPC entry of the Asset SDK
+/// IPC entry of the Asset Service
 fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
     reply: &mut BorrowedMsgParcel) -> IpcResult<()> {
     logi!("on_remote_request, calling function: {}", code);
-    let input_map = AssetMap::deserialize(data);
+    let input_map = deserialize(data);
     if input_map.is_err() {
         loge!("deserialize in on_remote_request failed!");
         return Err(IpcStatusCode::InvalidValue);
@@ -79,7 +77,7 @@ impl IAsset for AssetProxy {
         let parce_new = MsgParcel::new();
         match parce_new {
             Some(mut send_parcel) => {
-                input.serialize(&mut send_parcel.borrowed())?;
+                serialize(input, &mut send_parcel.borrowed())?;
                 let reply_parcel = self.remote.send_request(IpcCode::Add as u32, &send_parcel, false);
                 if let Ok(reply) = reply_parcel {
                     let res_code = ErrCode::try_from(reply.read::<i32>()?)?;
