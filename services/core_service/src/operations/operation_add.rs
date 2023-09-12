@@ -23,8 +23,7 @@ use db_operator::{database_table_helper::DefaultDatabaseHelper, types::Pair,
 // use crypto_manager::hukkey::Crypto;
 use crate::{operations::operation_common::*, calling_process_info::CallingInfo};
 
-use hilog_rust::hilog;
-use std::{ffi::{c_char, CString}, time::{SystemTime, UNIX_EPOCH}};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 fn encrypt_secret(input: &AssetMap) -> Result<Vec<u8>> {
     if let Some(Value::Bytes(secret)) = input.get(&Tag::Secret) {
@@ -92,6 +91,6 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     let insert_num =
         DefaultDatabaseHelper::insert_datas_default_once(calling_info.get_user_id(), &owner_str.unwrap(), &alias, db_data)?;
 
-    logi!("insert {} data", @public(insert_num));
+    logi!("insert {} data", insert_num);
     Ok(())
 }

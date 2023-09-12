@@ -15,9 +15,6 @@
 
 //! This create implement the send request
 
-use std::ffi::{c_char, CString};
-
-use hilog_rust::hilog;
 use ipc_rust::RemoteObjRef;
 use rust_samgr::get_service_proxy;
 
@@ -32,7 +29,7 @@ fn get_asset_service() -> Result<RemoteObjRef<dyn IAsset>> {
     match object {
         Ok(remote) => Ok(remote),
         Err(e) => {
-            loge!("[FATAL]get_asset_service failed {}!", @public(e));
+            loge!("[FATAL]get_asset_service failed {}!", e);
             Err(ErrCode::ServiceUnvailable)
         }
     }

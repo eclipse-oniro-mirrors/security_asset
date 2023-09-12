@@ -23,8 +23,6 @@ use asset_common::{
     definition::{AssetMap, Result},
 };
 use crate::asset_request::AssetProxy;
-use hilog_rust::hilog;
-use std::ffi::{c_char, CString};
 
 /// add an asset
 pub fn add(input: AssetMap) -> Result<()> {

@@ -22,9 +22,6 @@ use db_operator::{
         G_COLUMN_VERSION, G_COLUMN_SECRET, G_COLUMN_CREATETIME, G_COLUMN_UPDATETIME}
 };
 
-use hilog_rust::hilog;
-use std::ffi::{c_char, CString};
-
 use crate::calling_process_info::CallingInfo;
 
 pub(crate) trait FromValueToDataValue {
@@ -57,10 +54,10 @@ pub(crate) fn get_set_attr<'a>(input: &'a AssetMap, column_name: &'a str, tag: T
                 value: v.to_data_value()?,
             }
         );
-        logi!("get {} {} successfully", @public(column_name), @public(tag as u32));
+        logi!("get {} {} successfully", column_name, tag as u32);
         return Ok(());
     }
-    loge!("{:x} missed", @public(tag as u32));
+    loge!("{:x} missed", tag as u32);
     Err(ErrCode::InvalidArgument)
 }
 

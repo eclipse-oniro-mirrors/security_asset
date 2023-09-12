@@ -18,9 +18,6 @@
 
 use asset_common::{definition::{Result, ErrCode}, loge};
 
-use hilog_rust::hilog;
-use std::ffi::{c_char, CString};
-
 extern "C" {
     fn GetUserIdByUid(uid: u64, userId: &mut u32) -> bool;
 }

@@ -15,11 +15,7 @@
 
 //! This create implement the asset
 
-use std::{
-    ffi::{c_char, CString},
-    slice,
-};
-use hilog_rust::hilog;
+use std::slice;
 
 use asset_common::{
     loge,

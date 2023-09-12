@@ -15,10 +15,8 @@
 
 //! This create implement the asset
 
-use std::ffi::{c_char, CString};
 use std::fmt;
 
-use hilog_rust::hilog;
 use ipc_rust::{
     define_remote_object, BorrowedMsgParcel, IRemoteBroker, IRemoteObj, IpcResult,
     IpcStatusCode, MsgParcel, RemoteObj, RemoteStub,
@@ -27,7 +25,7 @@ use ipc_rust::{
 
 use asset_common::{
     logi, loge, impl_try_from,
-    definition::{AssetMap, Result, ErrCode, SerializeAsset, DeserializeAsset},
+    definition::{AssetMap, Result, ErrCode, serialize_map_into_parcel, deserialize_map_from_parcel},
 };
 
 impl_try_from!{
@@ -60,7 +58,7 @@ pub trait IAsset: IRemoteBroker {
 fn send_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
     reply: &mut BorrowedMsgParcel) -> IpcResult<()> {
     logi!("send_request, calling function: {}", code);
-    let input_map = AssetMap::deserialize(data);
+    let input_map = deserialize_map_from_parcel(data);
     if input_map.is_err() {
         loge!("deserialize in send_request failed!");
         return Err(IpcStatusCode::InvalidValue);
@@ -105,7 +103,7 @@ impl IAsset for AssetProxy {
         let parce_new = MsgParcel::new();
         match parce_new {
             Some(mut send_parcel) => {
-                input.serialize(&mut send_parcel.borrowed())?;
+                serialize_map_into_parcel(input, &mut send_parcel.borrowed())?;
                 let reply_parcel =
                     self.remote.send_request(IpcCode::Add as u32, &send_parcel, false);
                 if let Ok(reply) = reply_parcel {

@@ -16,12 +16,9 @@
 //! This create implement the asset
 use crate::huks_ffi::*;
 use asset_common::{loge, definition::ErrCode};
-use hilog_rust::hilog;
-use std::ffi::{c_char, CString};
 use std::ptr::{null_mut,copy_nonoverlapping};
 use std::mem::{size_of,align_of};
 use std::alloc::{alloc,dealloc,Layout};
-
 
 /// KeyInfo struct
 pub struct KeyInfo {
@@ -96,9 +93,9 @@ impl SecretKey{
                 }
             }
         ];
-        let gen_param_set = HksParamSet { 
-            param_set_size: 8 + 5 * size_of::<HksParam>() as u32, 
-            params_cnt: 5, 
+        let gen_param_set = HksParamSet {
+            param_set_size: 8 + 5 * size_of::<HksParam>() as u32,
+            params_cnt: 5,
             params: &mut g_gen_params004[0] as *mut _ as *mut HksParam,
         };
         unsafe{HksGenerateKey(key_alias, &gen_param_set as *const HksParamSet, null_mut())}
@@ -151,7 +148,7 @@ pub fn update_and_finish(handle:&HksBlob, param_set:&HksParamSet, indata:&mut Hk
     }
 
     unsafe{
-        if HksFinish(handle as *const HksBlob, param_set_ptr, 
+        if HksFinish(handle as *const HksBlob, param_set_ptr,
             indata as *mut HksBlob as *const HksBlob, &mut out_data_finish as *mut HksBlob) != HKS_SUCCESS{
             let layout = Layout::from_size_align(out_data_finish.size as usize,align_of::<u32>()).unwrap();
             dealloc(out_data_finish.data as *mut u8,layout);
@@ -187,7 +184,7 @@ fn malloc_and_check_blob_data(blob: &mut HksBlob) -> HuksErrcode{
 pub struct Crypto {
     /// Crypto secretkey
     pub key: SecretKey,
-    
+
     // mode: CryptoMode,
     // challenge: Vec<u8>,
     // handle: Vec<u8>,
@@ -279,15 +276,15 @@ impl Crypto {
                 }
             },
         ];
-        let encrypt_param_set = HksParamSet { 
-            param_set_size: 8 + 7 * size_of::<HksParam>() as u32, 
-            params_cnt: 7, 
+        let encrypt_param_set = HksParamSet {
+            param_set_size: 8 + 7 * size_of::<HksParam>() as u32,
+            params_cnt: 7,
             params: &mut g_encrypt_params004[0] as *mut _ as *mut HksParam,
         };
 
 
         let mut ret = unsafe{
-            HksInit(key_alias, &encrypt_param_set as *const HksParamSet, 
+            HksInit(key_alias, &encrypt_param_set as *const HksParamSet,
                 &mut handle_encrypt as *mut HksBlob, null_mut())
         };
         if ret != HKS_SUCCESS{
@@ -318,7 +315,7 @@ impl Crypto {
             data: self.key.alias.as_str() as *const _ as *const u8,
         };
         let key_alias = &hks_blob as *const HksBlob;
-        
+
         // init handle_decrypt
         let handle_d: Vec<u8> = vec![0,0,0,0,0,0,0,0];
         let mut handle_decrypt = HksBlob{
@@ -403,14 +400,14 @@ impl Crypto {
                 }
             },
         ];
-        let decrypt_param_set = HksParamSet { 
-            param_set_size: 8 + 8 * size_of::<HksParam>() as u32, 
-            params_cnt: 8, 
+        let decrypt_param_set = HksParamSet {
+            param_set_size: 8 + 8 * size_of::<HksParam>() as u32,
+            params_cnt: 8,
             params: &mut g_decrypt_params004[0] as *mut _ as *mut HksParam,
         };
 
         let mut ret = unsafe{
-            HksInit(key_alias, &decrypt_param_set as *const HksParamSet, 
+            HksInit(key_alias, &decrypt_param_set as *const HksParamSet,
                 &mut handle_decrypt as *mut HksBlob, null_mut())
         };
         if ret != HKS_SUCCESS{
@@ -418,7 +415,7 @@ impl Crypto {
             return Err(ErrCode::Failed);
         }
 
-        
+
         let plain: Vec<u8> = vec![0;AES_COMMON_SIZE as usize];
         let mut plain_text = HksBlob{
             size: AES_COMMON_SIZE,

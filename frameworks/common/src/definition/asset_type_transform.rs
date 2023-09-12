@@ -15,10 +15,8 @@
 
 //! 各种类型的拓展方法定义在此处
 
-use std::ffi::{c_char, CString};
 use std::fmt;
 
-use hilog_rust::hilog;
 use ipc_rust::IpcStatusCode;
 
 use crate::definition::{
@@ -144,14 +142,14 @@ impl fmt::Display for Value {
 
 impl From<ErrCode> for IpcStatusCode {
     fn from(value: ErrCode) -> Self {
-        loge!("get asset result [{}] for ipc", @public(value));
+        loge!("get asset result [{}] for ipc", value);
         IpcStatusCode::Failed
     }
 }
 
 impl From<IpcStatusCode> for ErrCode {
     fn from(value: IpcStatusCode) -> Self {
-        loge!("get ipc result [{}]", @public(value));
+        loge!("get ipc result [{}]", value);
         ErrCode::IpcError
     }
 }

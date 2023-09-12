@@ -15,25 +15,42 @@
 
 //! This module defines the macros required for log printing.
 
+use std::ffi::{c_char, CString};
+use hilog_rust::hilog;
+
+/// xx
+pub fn log_func_i(log: &str)
+{
+    let log_label = hilog_rust::HiLogLabel {
+        log_type: hilog_rust::LogType::LogCore,
+        domain: 0xD002F70, // security domain
+        tag: "Asset"
+    };
+    hilog_rust::info!(log_label, "{}", @public(log));
+}
+
+/// xx
+pub fn log_func_e(log: &str)
+{
+    let log_label = hilog_rust::HiLogLabel {
+        log_type: hilog_rust::LogType::LogCore,
+        domain: 0xD002F70, // security domain
+        tag: "Asset"
+    };
+    hilog_rust::error!(log_label, "{}", @public(log));
+}
+
 /// Print logs at the info level.
 ///
 /// # Examples
 ///
 /// ```
-/// use std::ffi::{c_char, CString};
-/// use hilog_rust::hilog;
-///
 /// logi!("hello, {}", "world");
 /// ```
 #[macro_export]
 macro_rules! logi{
     ($($arg:tt)*) => (
-        let log_label = hilog_rust::HiLogLabel {
-            log_type: hilog_rust::LogType::LogCore,
-            domain: 0xD002F70, // asset domain id
-            tag: "Asset"
-        };
-        hilog_rust::info!(log_label, $($arg)*)
+        $crate::asset_hilog::log_func_i(&format!($($arg)*));
     );
 }
 
@@ -42,19 +59,11 @@ macro_rules! logi{
 /// # Examples
 ///
 /// ```
-/// use std::ffi::{c_char, CString};
-/// use hilog_rust::hilog;
-///
 /// loge!("Error message: {}", "read file failed");
 /// ```
 #[macro_export]
 macro_rules! loge{
     ($($arg:tt)*) => (
-        let log_label = hilog_rust::HiLogLabel {
-            log_type: hilog_rust::LogType::LogCore,
-            domain: 0xD002F70, // security domain
-            tag: "Asset"
-        };
-        hilog_rust::error!(log_label, $($arg)*)
+        $crate::asset_hilog::log_func_e(&format!($($arg)*));
     );
 }
