@@ -72,9 +72,22 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<AssetM
     if owner_str.is_err() {
         return Err(ErrCode::Failed);
     }
+
+    let alias;
+    if let Some(Value::Bytes(alias_vec)) = input.get(&Tag::Alias) {
+        let alias_try = String::from_utf8(alias_vec.clone());
+        if let Ok(alias_ok) = alias_try {
+            alias = alias_ok;
+        } else {
+            return Err(ErrCode::InvalidArgument);
+        }
+    } else {
+        return Err(ErrCode::InvalidArgument);
+    }
+
     // call sql to add
     let insert_num =
-        DefaultDatabaseHelper::insert_datas_default_once(calling_info.get_user_id(), &owner_str.unwrap(), "Alias1", db_data)?;
+        DefaultDatabaseHelper::insert_datas_default_once(calling_info.get_user_id(), &owner_str.unwrap(), &alias, db_data)?;
 
     logi!("insert {} data", @public(insert_num));
     Ok(AssetMap::new())
