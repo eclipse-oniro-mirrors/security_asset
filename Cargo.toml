@@ -7,4 +7,5 @@ members = [
     "services/db_operator",
     "test/unittest/inner_api_rust",
     "services/crypto_manager",
+    "test/unittest/db_operator_test",
 ]

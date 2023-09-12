@@ -27,7 +27,7 @@ use db_operator::{
 };
 
 #[test]
-pub fn test_for_selite3_open() {
+pub fn test_for_sqlite3_open() {
     let _ = match Database::new("test.db") {
         Ok(o) => o,
         Err(ret) => {
@@ -58,7 +58,7 @@ pub fn test_for_selite3_open() {
 }
 
 #[test]
-pub fn test_for_selite3_v2_open() {
+pub fn test_for_sqlite3_v2_open() {
     let _ = match Database::new_v2(
         "testv2.db",
         SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE,
