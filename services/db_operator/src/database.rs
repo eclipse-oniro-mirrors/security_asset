@@ -208,6 +208,7 @@ impl<'a> Database<'a> {
             file: get_filelock_by_userid(u32::MAX),
         };
         s.push('\0');
+        let _lock = db.file.mtx.lock().unwrap();
         let ret = sqlite3_open_v2_func(&s, &mut db.handle, flags, vfs);
         if ret == SQLITE_OK {
             Ok(db)
