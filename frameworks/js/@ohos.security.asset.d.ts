@@ -356,47 +356,19 @@ declare namespace asset {
    */
   enum TagType {
     /**
-     * The data type of Asset attribute value is int32.
-     *
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    INT32 = 0x01 << 28,
-    /**
      * The data type of Asset attribute value is uint32.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    UINT32 = 0x02 << 28,
-    /**
-     * The data type of Asset attribute value is int64.
-     *
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    INT64 = 0x03 << 28,
-    /**
-     * The data type of Asset attribute value is uint64.
-     *
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    UINT64 = 0x04 << 28,
-    /**
-     * The data type of Asset attribute value is bool.
-     *
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    BOOL = 0x05 << 28,
+    UINT32 = 0x01 << 28,
     /**
      * The data type of Asset attribute value is byte array.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    BYTES = 0x06 << 28
+    BYTES = 0x02 << 28,
   }
 
   /**

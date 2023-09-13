@@ -19,29 +19,17 @@
 mod asset_map;
 #[macro_use]
 pub mod asset_type_transform;
-pub use asset_map::{serialize, deserialize, InsertAttribute};
+pub use asset_map::InsertAttribute;
 
 use std::collections::HashMap;
 
 /// An enum type containing the data type definitions for Asset attribute value.
 pub enum DataType {
-    /// The data type of Asset attribute value is int32.
-    Int32 = 1 << 28,
-
     /// The data type of Asset attribute value is uint32.
-    Uint32 = 2 << 28,
-
-    /// The data type of Asset attribute value is int64.
-    Int64 = 3 << 28,
-
-    /// The data type of Asset attribute value is uint64.
-    Uint64 = 4 << 28,
-
-    /// The data type of Asset attribute value is bool.
-    Bool = 5 << 28,
+    Uint32 = 1 << 28,
 
     /// The data type of Asset attribute value is byte array.
-    Bytes = 6 << 28,
+    Bytes = 2 << 28,
 }
 
 impl_enum_trait! {
@@ -131,21 +119,12 @@ pub enum Value {
 /// A Map type containing tag-value pairs that describe the attributes of an Asset.
 pub type AssetMap = HashMap<Tag, Value>;
 
-/// max capacity in a map
-pub const MAX_MAP_CAPACITY: u32 = 100; // todo 具体值确认
-
-/// The result code indicates that the operation is successful.
-pub const SUCCESS: i32 = 0;
-
 impl_enum_trait! {
     /// An enum type containing the Asset result codes.
     #[derive(Clone, Copy)]
     #[derive(Debug)]
     #[derive(Eq, Hash, PartialEq)]
     pub enum ErrCode {
-        /// success
-        Success = 0,
-
         /// failed, todo delete
         Failed = -1,
 

@@ -23,7 +23,6 @@ pub type SqliteErrcode = i32;
 /// change sqlite errcode to asset errcode
 pub fn from_sqlitecode_to_assetcode(value: SqliteErrcode) -> ErrCode {
     match value {
-        SQLITE_OK => ErrCode::Success,
         SQLITE_ERROR => ErrCode::SqliteERROR,
         SQLITE_INTERNAL => ErrCode::SqliteINTERNAL,
         SQLITE_PERM => ErrCode::SqlitePERM,

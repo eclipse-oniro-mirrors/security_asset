@@ -21,13 +21,14 @@ use asset_common::{
     logi,
     definition::{AssetMap, Result},
 };
-use asset_ipc::iasset::{IAsset, SA_ID};
-use asset_ipc::asset_service::AssetStub;
+use asset_ipc::{IAsset, SA_ID};
+use stub::AssetStub;
 
 use hilog_rust::{error, hilog, HiLogLabel, LogType};
 use ipc_rust::{IRemoteBroker, RemoteObj};
 use system_ability_fwk_rust::{define_system_ability, IMethod, ISystemAbility, RSystemAbility};
 
+mod stub;
 mod operations;
 mod calling_process_info;
 use calling_process_info::CallingInfo;

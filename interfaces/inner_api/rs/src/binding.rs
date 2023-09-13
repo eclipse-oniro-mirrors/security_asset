@@ -47,21 +47,14 @@ pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetParam, attr_cnt:
             Ok(tag) => tag,
             Err(err_code) => return err_code as i32,
         };
-        match attr_tag.get_type() {
-            Ok(DataType::Bool) => {
-                map.insert(attr_tag, Value::BOOL((*attr).value.boolean));
-            },
-            Ok(DataType::Uint32) => {
+        match attr_tag.data_type() {
+            DataType::Uint32 => {
                 map.insert(attr_tag, Value::NUMBER((*attr).value.uint32));
             },
-            Ok(DataType::Bytes) => {
+            DataType::Bytes => {
                 let blob_slice = slice::from_raw_parts((*attr).value.blob.data, (*attr).value.blob.size as usize);
                 let blob_vec = blob_slice.to_vec();
                 map.insert(attr_tag, Value::Bytes(blob_vec));
-            },
-            _ => {
-                loge!("[YZT] invalid data type");
-                return ErrCode::InvalidArgument as i32;
             },
         }
     }

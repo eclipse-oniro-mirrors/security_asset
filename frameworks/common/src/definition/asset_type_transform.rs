@@ -16,7 +16,7 @@
 //! 各种类型的拓展方法定义在此处
 
 use crate::definition::{
-    Result, ErrCode, Tag, DataType, Value,
+    Tag, DataType, Value,
     Accessibility, ReturnType, ConflictResolution, SyncType, AuthType
 };
 
@@ -24,98 +24,86 @@ use crate::definition::{
 const DATA_TYPE_MASK: u32 = 0xF << 28;
 
 /// get type
-pub trait GetType { // todo: getter方法的命名上不需要加上get
-    /// get type
-    fn get_type(&self) -> Result<DataType>;
-    /// get real
-    fn get_real(self) -> Value;
+pub trait GetType {
+    /// Get the primitive data type of Enum type.
+    fn data_type(&self) -> DataType;
+    /// Get the wrapped value.
+    fn into_value(self) -> Value;
 }
 
 impl GetType for Tag {
-    fn get_type(&self) -> Result<DataType> {
+    fn data_type(&self) -> DataType {
         let mask = (*self as u32) & DATA_TYPE_MASK;
         match mask {
-            _ if DataType::Bool as u32 == mask => Ok(DataType::Bool),
-            _ if DataType::Uint32 as u32 == mask => Ok(DataType::Uint32),
-            _ if DataType::Bytes as u32 == mask => Ok(DataType::Bytes),
+            _ if DataType::Uint32 as u32 == mask => DataType::Uint32,
+            _ if DataType::Bytes as u32 == mask => DataType::Bytes,
             _ => {
-                loge!("get tag type failed!");
-                Err(ErrCode::InvalidArgument)
+                panic!("Unexpected action, data type should be uint32 or bytes");
             },
         }
     }
 
-    fn get_real(self) -> Value {
+    fn into_value(self) -> Value {
         todo!()
     }
 }
 
 impl GetType for Accessibility {
-    fn get_type(&self) -> Result<DataType> {
-        Ok(DataType::Uint32)
+    fn data_type(&self) -> DataType {
+        DataType::Uint32
     }
 
-    fn get_real(self) -> Value {
+    fn into_value(self) -> Value {
         Value::NUMBER(self as u32)
     }
 }
 
 impl GetType for SyncType {
-    fn get_type(&self) -> Result<DataType> {
-        Ok(DataType::Uint32)
+    fn data_type(&self) -> DataType {
+        DataType::Uint32
     }
 
-    fn get_real(self) -> Value {
+    fn into_value(self) -> Value {
         Value::NUMBER(self as u32)
     }
 }
 
 impl GetType for ConflictResolution {
-    fn get_type(&self) -> Result<DataType> {
-        Ok(DataType::Uint32)
+    fn data_type(&self) -> DataType {
+        DataType::Uint32
     }
 
-    fn get_real(self) -> Value {
+    fn into_value(self) -> Value {
         Value::NUMBER(self as u32)
     }
 }
 
 impl GetType for ReturnType {
-    fn get_type(&self) -> Result<DataType> {
-        Ok(DataType::Uint32)
+    fn data_type(&self) -> DataType {
+        DataType::Uint32
     }
 
-    fn get_real(self) -> Value {
+    fn into_value(self) -> Value {
         Value::NUMBER(self as u32)
     }
 }
 
-impl GetType for bool {
-    fn get_type(&self) -> Result<DataType> {
-        Ok(DataType::Bool)
-    }
-
-    fn get_real(self) -> Value {
-        Value::BOOL(self)
-    }
-}
-
 impl GetType for AuthType {
-    fn get_type(&self) -> Result<DataType> {
-        Ok(DataType::Uint32)
+    fn data_type(&self) -> DataType {
+        DataType::Uint32
     }
 
-    fn get_real(self) -> Value {
+    fn into_value(self) -> Value {
         Value::NUMBER(self as u32)
     }
 }
 
 impl GetType for Vec<u8> {
-    fn get_type(&self) -> Result<DataType> {
-        Ok(DataType::Bytes)
+    fn data_type(&self) -> DataType {
+        DataType::Bytes
     }
 
-    fn get_real(self) -> Value {
+    fn into_value(self) -> Value {
         Value::Bytes(self)
     }
 }

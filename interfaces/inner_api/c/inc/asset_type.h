@@ -28,29 +28,13 @@ extern "C" {
  */
 typedef enum {
     /**
-     * The data type of Asset attribute value is int32.
-     */
-    ASSET_TYPE_INT32 = 0x1 << 28,
-    /**
      * The data type of Asset attribute value is uint32.
      */
-    ASSET_TYPE_UINT32 = 0x2 << 28,
-    /**
-     * The data type of Asset attribute value is int64.
-     */
-    ASSET_TYPE_INT64 = 0x3 << 28,
-    /**
-     * The data type of Asset attribute value is uint64.
-     */
-    ASSET_TYPE_UINT64 = 0x4 << 28,
-    /**
-     * The data type of Asset attribute value is bool.
-     */
-    ASSET_TYPE_BOOL = 0x5 << 28,
+    ASSET_TYPE_UINT32 = 0x1 << 28,
     /**
      * The data type of Asset attribute value is byte array.
      */
-    ASSET_TYPE_BYTES = 0x6 << 28,
+    ASSET_TYPE_BYTES = 0x2 << 28,
 } AssetTagType;
 
 /**

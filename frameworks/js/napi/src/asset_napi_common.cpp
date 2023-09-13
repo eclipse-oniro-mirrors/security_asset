@@ -155,25 +155,9 @@ napi_status ParseAssetAttribute(napi_env env, napi_value tag, napi_value value, 
     // parse value
     NAPI_CALL_RETURN_ERR(env, napi_typeof(env, value, &type));
     switch (param.tag & ASSET_TAG_TYPE_MASK) {
-        case ASSET_TYPE_INT32:
-            CHECK_ASSET_TAG(env, type != napi_number, param.tag, "expect type napi_number");
-            NAPI_CALL_RETURN_ERR(env, napi_get_value_int32(env, value, &param.value.i32));
-            break;
         case ASSET_TYPE_UINT32:
             CHECK_ASSET_TAG(env, type != napi_number, param.tag, "expect type napi_number");
             NAPI_CALL_RETURN_ERR(env, napi_get_value_uint32(env, value, &param.value.u32));
-            break;
-        case ASSET_TYPE_INT64:
-            CHECK_ASSET_TAG(env, type != napi_number, param.tag, "expect type napi_number");
-            NAPI_CALL_RETURN_ERR(env, napi_get_value_int64(env, value, &param.value.i64));
-            break;
-        case ASSET_TYPE_UINT64:
-            CHECK_ASSET_TAG(env, type != napi_number, param.tag, "expect type napi_number");
-            NAPI_CALL_RETURN_ERR(env, napi_get_value_int64(env, value, reinterpret_cast<int64_t *>(&param.value.u64)));
-            break;
-        case ASSET_TYPE_BOOL:
-            CHECK_ASSET_TAG(env, type != napi_boolean, param.tag, "expect type napi_boolean");
-            NAPI_CALL_RETURN_ERR(env, napi_get_value_bool(env, value, &param.value.boolean));
             break;
         case ASSET_TYPE_BYTES:
             CHECK_ASSET_TAG(env, type != napi_object, param.tag, "expect type napi_object");

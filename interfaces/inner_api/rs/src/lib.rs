@@ -19,6 +19,8 @@
 
 pub use asset_common::definition; // todo: definition迁移到SDK后，怎么解决Service的依赖
 
+mod proxy;
+
 use ipc_rust::RemoteObjRef;
 use rust_samgr::get_service_proxy;
 
@@ -26,10 +28,11 @@ use asset_common::{
     logi, loge,
     definition::{AssetMap, Result, ErrCode},
 };
-use asset_ipc::iasset::{IAsset, SA_ID};
+use asset_ipc::{IAsset, SA_ID};
+use proxy::AssetProxy;
 
-fn get_remote() -> Result<RemoteObjRef<dyn IAsset>> {
-    let object = get_service_proxy::<dyn IAsset>(SA_ID);
+fn get_remote() -> Result<RemoteObjRef<AssetProxy>> {
+    let object = get_service_proxy::<AssetProxy>(SA_ID);
     match object {
         Ok(remote) => Ok(remote),
         Err(e) => {
@@ -42,7 +45,7 @@ fn get_remote() -> Result<RemoteObjRef<dyn IAsset>> {
 /// This manager provides the capabilities for life cycle management of sensitive user data (Asset) such as passwords
 /// and tokens, including adding, removing, updating, and querying.
 pub struct Manager {
-    remote: RemoteObjRef<dyn IAsset>,
+    remote: RemoteObjRef<AssetProxy>,
 }
 
 impl Manager {
