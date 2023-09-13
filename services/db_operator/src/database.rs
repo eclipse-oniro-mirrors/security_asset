@@ -102,6 +102,7 @@ impl<'a> Database<'a> {
             file: get_filelock_by_userid(u32::MAX),
         };
         s.push('\0');
+        let _lock = db.file.mtx.lock().unwrap();
         let ret = sqlite3_open_func(&s, &mut db.handle);
         if ret == SQLITE_OK {
             Ok(db)
@@ -122,6 +123,7 @@ impl<'a> Database<'a> {
             file: get_filelock_by_userid(userid),
         };
         path.push('\0');
+        let _lock = db.file.mtx.lock().unwrap();
         let ret = sqlite3_open_func(&path, &mut db.handle);
         if ret == SQLITE_OK {
             Ok(db)
@@ -152,6 +154,7 @@ impl<'a> Database<'a> {
         callback: UpdateDatabaseCallbackFunc,
     ) -> Result<Database, SqliteErrcode> {
         let db = Database::new(path)?;
+        let _lock = db.file.mtx.lock().unwrap();
         let version_old = db.get_version()?;
         #[cfg(test)]
         {
@@ -174,6 +177,7 @@ impl<'a> Database<'a> {
         callback: UpdateDatabaseCallbackFunc,
     ) -> Result<Database<'a>, SqliteErrcode> {
         let db = Database::default_new(userid)?;
+        let _lock = db.file.mtx.lock().unwrap();
         let version_old = db.get_version()?;
         #[cfg(test)]
         {

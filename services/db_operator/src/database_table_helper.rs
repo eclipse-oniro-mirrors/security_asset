@@ -560,6 +560,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     ///
     pub fn open_default_database_table(userid: u32) -> Result<DefaultDatabaseHelper<'a>, ErrCode> {
         let db = Database::default_new(userid).map_err(from_sqlitecode_to_assetcode)?;
+        let _lock = db.file.mtx.lock().unwrap();
         match db.open_table(G_ASSET_TABLE_NAME) {
             Ok(_) => {},
             Err(_) => {
@@ -579,6 +580,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     ) -> Result<DefaultDatabaseHelper<'a>, ErrCode> {
         let db = Database::default_new_with_version_update(userid, version_new, callback)
             .map_err(from_sqlitecode_to_assetcode)?;
+        let _lock = db.file.mtx.lock().unwrap();
         match db.open_table(G_ASSET_TABLE_NAME) {
             Ok(_) => {},
             Err(_) => {
