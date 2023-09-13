@@ -153,5 +153,5 @@ pub struct Sqlite3Errmsg<'a, 'b> {
     /// error string
     pub s: &'a str,
     /// point to database for auto drop
-    pub db: &'b Database,
+    pub db: &'b Database<'b>,
 }

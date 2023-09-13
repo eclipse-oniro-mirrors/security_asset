@@ -32,7 +32,7 @@ pub struct Statement<'b, const PREPARE: bool> {
     /// sql string
     pub sql: String,
     /// point to db
-    db: &'b Database,
+    db: &'b Database<'b>,
     /// raw pointer
     handle: usize,
 }

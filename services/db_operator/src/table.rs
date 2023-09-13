@@ -30,7 +30,7 @@ pub struct Table<'a> {
     /// table name
     pub table_name: String,
     /// point to db
-    pub db: &'a Database,
+    pub db: &'a Database<'a>,
 }
 
 impl<'a> Table<'a> {

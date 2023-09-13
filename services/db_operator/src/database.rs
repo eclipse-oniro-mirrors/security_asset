@@ -19,17 +19,49 @@ use crate::{
 };
 
 use super::*;
-use std::{ffi::CStr, fs, ptr::null_mut};
+use std::{ffi::CStr, fs, ptr::null_mut, sync::Mutex};
+
+/// each user have a Database file
+pub struct UseridFileLock {
+    /// userid
+    pub userid: u32,
+    /// file lock
+    pub mtx: Mutex<u32>,
+}
+
+/// save all the userid filelocks
+static mut G_USERFILE_LOCK_LIST: Vec<UseridFileLock> = Vec::new();
+/// protect G_USERFILE_LOCK_LIST
+static G_LIST_LOCK: Mutex<u32> = Mutex::new(0);
+
+/// if userid exists, return reference, or create a new lock, insert into list and return reference
+pub fn get_filelock_by_userid<'a>(userid: u32) -> &'a UseridFileLock {
+    let _lock = G_LIST_LOCK.lock().unwrap();
+    // SAFETY: We just push item into G_LIST, never remove item or modify item,
+    // so return a reference of G_LIST item is safe.
+    unsafe {
+        for f in G_USERFILE_LOCK_LIST.iter() {
+            if f.userid == userid {
+                return f;
+            }
+        }
+        let nf = UseridFileLock { userid, mtx: Mutex::new(userid) };
+        G_USERFILE_LOCK_LIST.push(nf);
+        &G_USERFILE_LOCK_LIST[G_USERFILE_LOCK_LIST.len() - 1]
+    }
+}
 
 /// sqlite database file
 #[repr(C)]
-pub struct Database {
+pub struct Database<'a> {
     /// database file path
     pub path: String,
     /// is opened with sqlite3_open_v2
     pub(crate) v2: bool,
     /// raw pointer
-    pub(crate) handle: usize, // C pointer
+    pub(crate) handle: usize,
+    /// db file
+    pub file: &'a UseridFileLock,
 }
 
 /// update func callback
@@ -56,14 +88,19 @@ pub fn fmt_db_path(userid: u32) -> String {
     format!("/data/service/el1/public/asset_service/{}/asset.db", userid)
 }
 
-impl Database {
+impl<'a> Database<'a> {
     ///
     /// open database file.
     /// will create it if not exits.
     ///
-    pub fn new(path: &str) -> Result<Database, SqliteErrcode> {
+    pub fn new(path: &str) -> Result<Database<'a>, SqliteErrcode> {
         let mut s = path.to_string();
-        let mut db = Database { path: s.clone(), v2: false, handle: 0 };
+        let mut db = Database {
+            path: s.clone(),
+            v2: false,
+            handle: 0,
+            file: get_filelock_by_userid(u32::MAX),
+        };
         s.push('\0');
         let ret = sqlite3_open_func(&s, &mut db.handle);
         if ret == SQLITE_OK {
@@ -76,9 +113,14 @@ impl Database {
     ///
     /// create default database
     ///
-    pub fn default_new(userid: u32) -> Result<Database, SqliteErrcode> {
+    pub fn default_new(userid: u32) -> Result<Database<'a>, SqliteErrcode> {
         let mut path = fmt_db_path(userid);
-        let mut db = Database { path: path.clone(), v2: false, handle: 0 };
+        let mut db = Database {
+            path: path.clone(),
+            v2: false,
+            handle: 0,
+            file: get_filelock_by_userid(userid),
+        };
         path.push('\0');
         let ret = sqlite3_open_func(&path, &mut db.handle);
         if ret == SQLITE_OK {
@@ -130,7 +172,7 @@ impl Database {
         userid: u32,
         ver: u32,
         callback: UpdateDatabaseCallbackFunc,
-    ) -> Result<Database, SqliteErrcode> {
+    ) -> Result<Database<'a>, SqliteErrcode> {
         let db = Database::default_new(userid)?;
         let version_old = db.get_version()?;
         #[cfg(test)]
@@ -149,9 +191,18 @@ impl Database {
     /// open database file
     /// use sqlite3_open_v2 instead of sqlite3_open
     ///
-    pub fn new_v2(path: &str, flags: i32, vfs: Option<&[u8]>) -> Result<Database, SqliteErrcode> {
+    pub fn new_v2(
+        path: &str,
+        flags: i32,
+        vfs: Option<&[u8]>,
+    ) -> Result<Database<'a>, SqliteErrcode> {
         let mut s = path.to_string();
-        let mut db = Database { path: s.clone(), v2: false, handle: 0 };
+        let mut db = Database {
+            path: s.clone(),
+            v2: false,
+            handle: 0,
+            file: get_filelock_by_userid(u32::MAX),
+        };
         s.push('\0');
         let ret = sqlite3_open_v2_func(&s, &mut db.handle, flags, vfs);
         if ret == SQLITE_OK {
@@ -345,7 +396,7 @@ impl Database {
     }
 }
 
-impl Drop for Database {
+impl<'a> Drop for Database<'a> {
     fn drop(&mut self) {
         let ret = if self.v2 {
             sqlite3_close_v2_func(self.handle)
