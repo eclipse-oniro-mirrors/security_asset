@@ -13,13 +13,17 @@
  * limitations under the License.
  */
 
-//! This create implement the asset operations
+//! This file implement the asset param check
 
-mod operation_add;
-mod operation_common;
-mod param_check;
-mod file_operator;
+use std::fs;
+use asset_common::{definition::{ErrCode, Result}, loge};
 
-pub(crate) use operation_add::add;
-pub(crate) use param_check::check_params;
-pub(crate) use file_operator::create_user_db_dir;
+const PATH: &str = "data/service/el1/public/asset_service";
+
+pub(crate) fn create_user_db_dir(user_id: u32) -> Result<()>
+{
+    fs::create_dir(format!("{}/{}", PATH, user_id)).map_err(|_| {
+        loge!("create dir failed!");
+        ErrCode::Failed
+    })
+}

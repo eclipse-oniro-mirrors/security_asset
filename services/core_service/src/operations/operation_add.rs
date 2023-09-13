@@ -21,7 +21,7 @@ use db_operator::{database_table_helper::DefaultDatabaseHelper, types::Pair,
     database_table_helper::{G_COLUMN_SYNCTYPE, G_COLUMN_AUTHTYPE}};
 
 // use crypto_manager::hukkey::Crypto;
-use crate::{operations::operation_common::*, calling_process_info::CallingInfo};
+use crate::{operations::{operation_common::*, create_user_db_dir}, calling_process_info::CallingInfo};
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -66,8 +66,6 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     get_set_current_time(&time_string, &mut db_data)?;
     get_set_update_time(&time_string, &mut db_data)?;
 
-    // to do 创建用户目录
-
     let owner_str = String::from_utf8(calling_info.get_owner_text().clone());
     if owner_str.is_err() {
         loge!("get owner str faield!");
@@ -87,6 +85,9 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
         loge!("get alias faield!");
         return Err(ErrCode::InvalidArgument);
     }
+
+    // create user dir
+    create_user_db_dir(calling_info.get_user_id())?;
 
     // call sql to add
     let insert_num =
