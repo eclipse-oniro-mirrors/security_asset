@@ -21,7 +21,7 @@ use asset_common::{
     logi,
     definition::{AssetMap, Result},
 };
-use asset_ipc::{IAsset, SA_ID};
+use asset_ipc::{IAsset, SA_ID, IpcCode};
 use stub::AssetStub;
 
 use hilog_rust::{error, hilog, HiLogLabel, LogType};
@@ -32,6 +32,7 @@ mod stub;
 mod operations;
 mod calling_process_info;
 use calling_process_info::CallingInfo;
+use operations::check_params;
 
 /// xxx
 pub struct AssetService;
@@ -41,8 +42,8 @@ impl IRemoteBroker for AssetService {}
 impl IAsset for AssetService {
     fn add(&self, input: &AssetMap) -> Result<()> {
         // get calling uid userid appid etc
-        let calling_info = CallingInfo::build()?;
-        operations::add(input, &calling_info)
+        check_params(input, IpcCode::Add)?; // todo 等待ipc_code的定义，第二参数取代为枚举
+        operations::add(input, &CallingInfo::build()?)
     }
 }
 
@@ -57,8 +58,8 @@ define_system_ability!(
 );
 
 fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
-    let service = AssetStub::new_remote_stub(AssetService).expect("create TestService failed");
-    ability.publish(&service.as_object().expect("get ITest service failed"), SA_ID);
+    let service = AssetStub::new_remote_stub(AssetService).expect("create AssetService failed");
+    ability.publish(&service.as_object().expect("publish Asset service failed"), SA_ID);
     logi!("on_start");
 }
 

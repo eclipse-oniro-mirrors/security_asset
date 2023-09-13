@@ -256,59 +256,69 @@ impl_enum_trait! {
 /// Alias of the Asset result type.
 pub type Result<T> = std::result::Result<T, ErrCode>;
 
-/// An enum type indicates when the Asset is accessible.
-pub enum Accessibility {
-    /// The secret value in the Asset can only be accessed after the device is first unlocked.
-    DevoceFirstUnlock = 1,
+impl_enum_trait! {
+    /// An enum type indicates when the Asset is accessible.
+    pub enum Accessibility {
+        /// The secret value in the Asset can only be accessed after the device is first unlocked.
+        DevoceFirstUnlock = 1,
 
-    /// The secret value in the Asset can only be accessed while the device is unlocked.
-    DeviceUnlock = 2,
+        /// The secret value in the Asset can only be accessed while the device is unlocked.
+        DeviceUnlock = 2,
 
-    /// The secret value in the Asset can only be accessed
-    /// when the device is unlocked and a PIN/pattern/password is set on the device.
-    DeviceSecure = 3,
+        /// The secret value in the Asset can only be accessed
+        /// when the device is unlocked and a PIN/pattern/password is set on the device.
+        DeviceSecure = 3,
+    }
 }
 
-/// An enum type indicates the user authentication type for Asset access control.
-pub enum AuthType {
-    /// The access to an Asset doesn't require user authentication.
-    None = 0x00,
+impl_enum_trait! {
+    /// An enum type indicates the user authentication type for Asset access control.
+    pub enum AuthType {
+        /// The access to an Asset doesn't require user authentication.
+        None = 0x00,
 
-    /// The access to an Asset requires user authentication using either PIN/pattern/password or biometric traits.
-    Any = 0xFF,
+        /// The access to an Asset requires user authentication using either PIN/pattern/password or biometric traits.
+        Any = 0xFF,
+    }
 }
 
-/// An enum type indicates the type of Asset synchronization.
-pub enum SyncType {
-    /// An Asset with this attribute value is never allowed to be transferred out.
-    Never = 0,
+impl_enum_trait! {
+    /// An enum type indicates the type of Asset synchronization.
+    pub enum SyncType {
+        /// An Asset with this attribute value is never allowed to be transferred out.
+        Never = 0,
 
-    /// An Asset with this attribute value can only be restored to the device from which it was transferred out.
-    ThisDevice = 1 << 0,
+        /// An Asset with this attribute value can only be restored to the device from which it was transferred out.
+        ThisDevice = 1 << 0,
 
-    /// An Asset with this attribute value can only be transferred out to a device of trusted account.
-    TrustedAccount = 1 << 1,
+        /// An Asset with this attribute value can only be transferred out to a device of trusted account.
+        TrustedAccount = 1 << 1,
 
-    /// An Asset with this attribute value can only be transferred out to a trusted device (user authorized).
-    TrustedDevice = 1 << 2,
+        /// An Asset with this attribute value can only be transferred out to a trusted device (user authorized).
+        TrustedDevice = 1 << 2,
+    }
 }
 
-/// An enum type indicates the strategy for conflict resolution when handling duplicated Asset alias.
-pub enum ConflictResolution {
-    /// Directly overwrite an Asset with duplicated alias when a conflict is detected.
-    Overwrite = 0,
+impl_enum_trait! {
+    /// An enum type indicates the strategy for conflict resolution when handling duplicated Asset alias.
+    pub enum ConflictResolution {
+        /// Directly overwrite an Asset with duplicated alias when a conflict is detected.
+        Overwrite = 0,
 
-    /// Throw an error so that the caller can take measures when a conflict is detected.
-    ThrowError = 1,
+        /// Throw an error so that the caller can take measures when a conflict is detected.
+        ThrowError = 1,
+    }
 }
 
-/// An enum type indicates the return type of the queried Asset.
-pub enum ReturnType {
-    /// Specify that the return data should contain both secret value and attributes.
-    All = 0,
+impl_enum_trait! {
+    /// An enum type indicates the return type of the queried Asset.
+    pub enum ReturnType {
+        /// Specify that the return data should contain both secret value and attributes.
+        All = 0,
 
-    /// Specify that the return data contains only attributes.
-    Attributes = 1,
+        /// Specify that the return data contains only attributes.
+        Attributes = 1,
+    }
 }
 
 /// The asset version.

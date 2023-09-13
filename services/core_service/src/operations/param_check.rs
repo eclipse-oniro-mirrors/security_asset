@@ -13,11 +13,21 @@
  * limitations under the License.
  */
 
-//! This create implement the asset operations
+//! This file implement the asset param check
 
-mod operation_add;
-mod operation_common;
-mod param_check;
+mod tag_value_match;
+mod required_tag;
+mod value_validity_check;
 
-pub(crate) use operation_add::add;
-pub(crate) use param_check::check_params;
+use asset_common::definition::{AssetMap, Result};
+
+use asset_ipc::IpcCode;
+
+/// check the validity and comprehensiveness of input params
+pub(crate) fn check_params(params: &AssetMap, code: IpcCode) -> Result<()>
+{
+    required_tag::check_required_params(params, code)?;
+    tag_value_match::check_tag_value_match(params)?;
+    value_validity_check::check_value_validity(params)?;
+    Ok(())
+}
