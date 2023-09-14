@@ -30,25 +30,22 @@ pub struct UseridFileLock {
 }
 
 /// save all the userid filelocks
-static mut G_USERFILE_LOCK_LIST: Vec<UseridFileLock> = Vec::new();
-/// protect G_USERFILE_LOCK_LIST
-static G_LIST_LOCK: Mutex<u32> = Mutex::new(0);
+static G_USERFILE_LOCK_LIST: Mutex<Vec<&'static UseridFileLock>> = Mutex::new(Vec::new());
 
 /// if userid exists, return reference, or create a new lock, insert into list and return reference
-pub fn get_filelock_by_userid<'a>(userid: u32) -> &'a UseridFileLock {
-    let _lock = G_LIST_LOCK.lock().unwrap();
-    // SAFETY: We just push item into G_LIST, never remove item or modify item,
-    // so return a reference of G_LIST item is safe.
-    unsafe {
-        for f in G_USERFILE_LOCK_LIST.iter() {
-            if f.userid == userid {
-                return f;
-            }
+pub fn get_filelock_by_userid(userid: u32) -> &'static UseridFileLock {
+    let mut list = G_USERFILE_LOCK_LIST.lock().unwrap();
+    for f in list.iter() {
+        if f.userid == userid {
+            return f;
         }
-        let nf = UseridFileLock { userid, mtx: Mutex::new(userid) };
-        G_USERFILE_LOCK_LIST.push(nf);
-        &G_USERFILE_LOCK_LIST[G_USERFILE_LOCK_LIST.len() - 1]
     }
+    let nf = Box::new(UseridFileLock { userid, mtx: Mutex::new(userid) });
+    // SAFETY: We just push item into G_USERFILE_LOCK_LIST, never remove item or modify item,
+    // so return a reference of leak item is safe.
+    let nf: &'static UseridFileLock = Box::leak(nf);
+    list.push(nf);
+    list[list.len() - 1]
 }
 
 /// sqlite database file
