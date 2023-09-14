@@ -415,7 +415,7 @@ impl Crypto {
                 &mut handle_decrypt as *mut HksBlob, null_mut())
         };
         if ret != HKS_SUCCESS{
-            println!("Decrypt Init Failed.");
+            loge!("Decrypt Init Failed.");
             return Err(ErrCode::Failed);
         }
 
@@ -427,7 +427,7 @@ impl Crypto {
         };
         ret = unsafe{update_and_finish(&handle_decrypt, &*(buffer.as_ptr() as *const HksParamSet), &mut cipher_text, &mut plain_text)};
         if ret != HKS_SUCCESS{
-            println!("Decrypt update_and_finish Failed.");
+            loge!("Decrypt update_and_finish Failed.");
             return Err(ErrCode::Failed);
         }
         Ok(plain)
