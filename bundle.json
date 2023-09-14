@@ -54,7 +54,7 @@
             },
             "inner_api": [
                 {
-                    "name": "//base/security/asset/interfaces/inner_api/rs:asset_rust_sdk",
+                    "name": "//base/security/asset/interfaces/inner_api/rs:asset_sdk",
                     "header": {
                         "header_files": [],
                         "header_base": []

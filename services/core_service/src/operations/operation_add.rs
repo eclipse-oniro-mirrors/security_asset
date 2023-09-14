@@ -16,9 +16,11 @@
 //! This create implement the asset
 #![allow(dead_code)]
 
-use asset_common::{definition::{AssetMap, Result, Tag, ErrCode, Value}, logi, loge};
-use db_operator::{database_table_helper::DefaultDatabaseHelper, types::Pair,
-    database_table_helper::{G_COLUMN_SYNCTYPE, G_COLUMN_AUTHTYPE}};
+use asset_common::{loge, logi, definition::{AssetMap, Result, Tag, ErrCode, Value}};
+use db_operator::{
+    database_table_helper::{DefaultDatabaseHelper, G_COLUMN_SYNCTYPE, G_COLUMN_AUTHTYPE},
+    types::Pair,
+};
 
 // use crypto_manager::hukkey::Crypto;
 use crate::{operations::{operation_common::*, create_user_db_dir}, calling_process_info::CallingInfo};

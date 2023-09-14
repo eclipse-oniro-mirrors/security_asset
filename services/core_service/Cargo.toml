@@ -7,6 +7,6 @@ edition = "2021"
 
 [dependencies]
 asset_common = { path = "../../frameworks/common" }
-asset_ipc = { path = "../../frameworks/idl" }
+asset_ipc_interface = { path = "../../frameworks/ipc_interface" }
 db_operator = { path = "../../services/db_operator" }
 crypto_manager = { path = "../crypto_manager" }

@@ -13,21 +13,15 @@
  * limitations under the License.
  */
 
-//! This create implement the asset
+//! This module implements the function of Asset SDK from C to RUST.
 
 use std::slice;
 
 use asset_common::{
     loge,
-    definition::{
-        AssetMap,
-        DataType,
-        ErrCode,
-        Tag,
-        Value,
-        asset_type_transform::GetType
-    }};
-use asset_rust_sdk::Manager;
+    definition::{AssetMap, DataType, ErrCode, IntoValue, Tag, Value}
+};
+use asset_sdk::Manager;
 
 /// add asset c2rust
 /// # Safety
@@ -49,7 +43,7 @@ pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetParam, attr_cnt:
         };
         match attr_tag.data_type() {
             DataType::Uint32 => {
-                map.insert(attr_tag, Value::NUMBER((*attr).value.uint32));
+                map.insert(attr_tag, Value::Number((*attr).value.uint32));
             },
             DataType::Bytes => {
                 let blob_slice = slice::from_raw_parts((*attr).value.blob.data, (*attr).value.blob.size as usize);

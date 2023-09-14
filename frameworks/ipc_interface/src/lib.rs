@@ -15,7 +15,10 @@
 
 //! This module defines IPC interfaces and constants.
 
-use asset_common::{definition::{AssetMap, Result}, impl_enum_trait};
+use asset_common::{
+    definition::{AssetMap, Result},
+    impl_enum_trait,
+};
 
 /// SA id for Asset service
 pub const SA_ID: i32 = 3511;

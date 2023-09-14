@@ -1,7 +1,7 @@
 [workspace]
 members = [
     "frameworks/common",
-    "frameworks/idl",
+    "frameworks/ipc_interface",
     "interfaces/inner_api/rs",
     "services/core_service",
     "services/db_operator",

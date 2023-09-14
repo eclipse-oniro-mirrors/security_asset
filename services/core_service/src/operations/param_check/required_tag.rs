@@ -19,7 +19,7 @@ use asset_common::{
     definition::{AssetMap, ErrCode, Result, Tag},
     loge};
 
-use asset_ipc::IpcCode;
+use asset_ipc_interface::IpcCode;
 
 const ADD_REQUIRED_PARAMS: [Tag; 2] = [
     Tag::Secret, Tag::Alias

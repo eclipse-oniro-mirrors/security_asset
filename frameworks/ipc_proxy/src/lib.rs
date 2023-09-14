@@ -20,21 +20,17 @@ use ipc_rust::{
     MsgParcel, RemoteObj, RemoteObjRef
 };
 
-use asset_common::definition::{AssetMap, ErrCode, Result, Value};
-use asset_common::logi;
-use asset_ipc::{IAsset, IpcCode, IPC_SUCCESS, SA_NAME};
+use asset_common::{logi, definition::{AssetMap, ErrCode, Result, Value}};
+use asset_ipc_interface::{IAsset, IpcCode, IPC_SUCCESS, SA_NAME};
 
 /// serialize the map to parcel
-pub fn serialize(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<()> {
+fn serialize(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<()> {
     logi!("enter serialize");
     parcel.write(&(map.len() as u32)).map_err(|_| ErrCode::IpcError)?;
     for v in map.iter() {
         parcel.write(&(*v.0 as u32)).map_err(|_| ErrCode::IpcError)?;
         match v.1 {
-            Value::BOOL(b) => {
-                parcel.write::<bool>(b).map_err(|_| ErrCode::IpcError)?;
-            },
-            Value::NUMBER(n) => {
+            Value::Number(n) => {
                 parcel.write::<u32>(n).map_err(|_| ErrCode::IpcError)?;
             },
             Value::Bytes(a) => {
@@ -47,7 +43,7 @@ pub fn serialize(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<()> {
 }
 
 /// Proxy of Asset Service.
-pub(crate) struct AssetProxy {
+pub struct AssetProxy {
     remote: RemoteObj,
 }
 
@@ -95,6 +91,6 @@ impl IAsset for AssetProxy {
 impl FromRemoteObj for AssetProxy {
     /// Convert RemoteObj to RemoteObjRef<dyn IAsset>
     fn try_from(object: RemoteObj) -> IpcResult<RemoteObjRef<AssetProxy>> {
-        Ok(RemoteObjRef::new(Box::new(AssetProxy::from_remote_object(&object)?))) // todo: 孤儿原则？
+        Ok(RemoteObjRef::new(Box::new(AssetProxy::from_remote_object(&object)?)))
     }
 }

@@ -15,7 +15,10 @@
 
 //! This create implement the asset
 
-use asset_common::{definition::{AssetMap, Result, Value, ErrCode, Tag}, logi, loge};
+use asset_common::{
+    logi, loge,
+    definition::{AssetMap, Result, Value, ErrCode, Tag}
+};
 use db_operator::{
     types::{Pair, DataValue},
     database_table_helper::{G_COLUMN_ACCESSTYPE, G_COLUMN_OWNERTYPE, G_COLUMN_DELETETYPE,
@@ -32,15 +35,8 @@ pub(crate) trait FromValueToDataValue {
 impl FromValueToDataValue for Value {
     fn to_data_value(&self) -> Result<DataValue> {
         match self {
-            Value::NUMBER(n) => {
-                Ok(DataValue::Integer(*n)) // to do 类型确认
-            },
-            Value::Bytes(v) => {
-                Ok(DataValue::Blob(v))
-            },
-            _ => {
-                Err(ErrCode::InvalidArgument)
-            }
+            Value::Number(n) => Ok(DataValue::Integer(*n)), // to do 类型确认
+            Value::Bytes(v) => Ok(DataValue::Blob(v)),
         }
     }
 }

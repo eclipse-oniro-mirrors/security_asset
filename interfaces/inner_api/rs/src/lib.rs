@@ -17,22 +17,16 @@
 
 #![allow(dead_code)]
 
-pub use asset_common::definition; // todo: definition迁移到SDK后，怎么解决Service的依赖
-
-mod proxy;
+pub use asset_common::definition;
 
 use ipc_rust::RemoteObjRef;
-use rust_samgr::get_service_proxy;
 
-use asset_common::{
-    logi, loge,
-    definition::{AssetMap, Result, ErrCode},
-};
-use asset_ipc::{IAsset, SA_ID};
-use proxy::AssetProxy;
+use asset_common::{logi, loge, definition::{AssetMap, Result, ErrCode}};
+use asset_ipc_interface::{IAsset, SA_ID};
+use asset_ipc_proxy::AssetProxy;
 
 fn get_remote() -> Result<RemoteObjRef<AssetProxy>> {
-    let object = get_service_proxy::<AssetProxy>(SA_ID);
+    let object = rust_samgr::get_service_proxy::<AssetProxy>(SA_ID);
     match object {
         Ok(remote) => Ok(remote),
         Err(e) => {

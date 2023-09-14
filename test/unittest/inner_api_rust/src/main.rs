@@ -15,7 +15,7 @@
 
 use core::panic;
 
-use asset_rust_sdk::definition::{AssetMap, Accessibility, Tag, InsertAttribute, AuthType, SyncType};
+use asset_sdk::definition::{AssetMap, Accessibility, Tag, Insert, AuthType, SyncType};
 
 #[test]
 fn test_for_add() {
@@ -27,7 +27,7 @@ fn test_for_add() {
     input.insert_attr(Tag::Accessibility, Accessibility::DeviceSecure).unwrap();
     input.insert_attr(Tag::Alias, Vec::from("alias".as_bytes())).unwrap();
 
-    match asset_rust_sdk::Manager::build() {
+    match asset_sdk::Manager::build() {
         Ok(manager) => {
             if let Err(e) = manager.add(input) {
                 panic!("test for add failed {}", e)

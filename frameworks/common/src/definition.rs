@@ -16,12 +16,12 @@
 //! This module defines asset-related data structures.
 
 #![allow(dead_code)]
-mod asset_map;
-#[macro_use]
-pub mod asset_type_transform;
-pub use asset_map::InsertAttribute;
+
+mod extension;
 
 use std::collections::HashMap;
+
+use crate::impl_enum_trait;
 
 /// An enum type containing the data type definitions for Asset attribute value.
 pub enum DataType {
@@ -106,11 +106,8 @@ impl_enum_trait! {
 
 /// A type that indicates the secret or attribute value of an Asset tag.
 pub enum Value {
-    /// Asset attribute value, whose data type is bool.
-    BOOL(bool),
-
     /// Asset attribute value, whose data type is number.
-    NUMBER(u32),
+    Number(u32),
 
     /// Asset attribute value, whose data type is byte array.
     Bytes(Vec<u8>),
@@ -331,4 +328,18 @@ pub struct Version {
 
     /// The patch version.
     patch: u32,
+}
+
+/// Automatically convert the input value to Asset Value, then insert into the collection.
+pub trait Insert {
+    /// Insert an attribute into the collection.
+    fn insert_attr(&mut self, key: Tag, value: impl IntoValue) -> Result<()>;
+}
+
+/// Convert a specific type to the Asset Value type.
+pub trait IntoValue {
+    /// Get the data type of Asset Enum type.
+    fn data_type(&self) -> DataType;
+    /// Convert the Asset Enum type to the Value variant.
+    fn into_value(self) -> Value;
 }

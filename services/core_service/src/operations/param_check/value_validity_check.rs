@@ -21,8 +21,8 @@ const MAX_BYTES_LEN: usize = 256;
 
 fn check_accessibility(value: &Value) -> Result<()>
 {
-    let Value::NUMBER(v) = value else {
-        panic!("convert value to Value::NUMBER in check_accessibility failed!")
+    let Value::Number(v) = value else {
+        panic!("convert value to Value::Number in check_accessibility failed!")
     };
     if Accessibility::try_from(*v).is_err() {
         loge!("check accessibility value failed!");
@@ -57,8 +57,8 @@ fn check_alias(value: &Value) -> Result<()>
 
 fn check_auth_type(value: &Value) -> Result<()>
 {
-    let Value::NUMBER(v) = value else {
-        panic!("convert value to Value::NUMBER in check_auth_type failed!")
+    let Value::Number(v) = value else {
+        panic!("convert value to Value::Number in check_auth_type failed!")
     };
     if AuthType::try_from(*v).is_err() {
         loge!("check auth type value failed!");
@@ -69,8 +69,8 @@ fn check_auth_type(value: &Value) -> Result<()>
 
 fn check_auth_validity_period(value: &Value) -> Result<()>
 {
-    let Value::NUMBER(v) = value else {
-        panic!("convert value to Value::NUMBER in check_auth_validity_period failed!")
+    let Value::Number(v) = value else {
+        panic!("convert value to Value::Number in check_auth_validity_period failed!")
     };
     if *v > 600 { // todo 限时多少
         return Err(ErrCode::InvalidArgument);
@@ -104,8 +104,8 @@ fn check_auth_token(value: &Value) -> Result<()>
 
 fn check_sync_type(value: &Value) -> Result<()>
 {
-    let Value::NUMBER(v) = value else {
-        panic!("convert value to Value::NUMBER in check_sync_type failed!")
+    let Value::Number(v) = value else {
+        panic!("convert value to Value::Number in check_sync_type failed!")
     };
     if SyncType::try_from(*v).is_err() {
         loge!("check sync type value failed!");
@@ -116,8 +116,8 @@ fn check_sync_type(value: &Value) -> Result<()>
 
 fn check_conflict_policy(value: &Value) -> Result<()>
 {
-    let Value::NUMBER(v) = value else {
-        panic!("convert value to Value::NUMBER in check_conflict_policy failed!")
+    let Value::Number(v) = value else {
+        panic!("convert value to Value::Number in check_conflict_policy failed!")
     };
     if ConflictResolution::try_from(*v).is_err() {
         loge!("check conflict policy value failed!");
@@ -152,8 +152,8 @@ fn check_data_label_normal(value: &Value) -> Result<()>
 
 fn check_return_type(value: &Value) -> Result<()>
 {
-    let Value::NUMBER(v) = value else {
-        panic!("convert value to Value::NUMBER in check_return_type failed!")
+    let Value::Number(v) = value else {
+        panic!("convert value to Value::Number in check_return_type failed!")
     };
     if ReturnType::try_from(*v).is_err() {
         loge!("check return type value failed!");
@@ -164,8 +164,8 @@ fn check_return_type(value: &Value) -> Result<()>
 
 fn check_return_limit(value: &Value) -> Result<()>
 {
-    let Value::NUMBER(v) = value else {
-        panic!("convert value to Value::NUMBER in check_return_limit failed!")
+    let Value::Number(v) = value else {
+        panic!("convert value to Value::Number in check_return_limit failed!")
     };
     if *v > 100 { // todo limit限制多少
         loge!("check return limit value failed!");
@@ -176,8 +176,8 @@ fn check_return_limit(value: &Value) -> Result<()>
 
 fn check_return_offset(value: &Value) -> Result<()>
 {
-    let Value::NUMBER(v) = value else {
-        panic!("convert value to Value::NUMBER in check_return_offset failed!")
+    let Value::Number(v) = value else {
+        panic!("convert value to Value::Number in check_return_offset failed!")
     };
     if *v > 100 { // todo limit限制多少
         loge!("check return offset failed!");
@@ -188,8 +188,8 @@ fn check_return_offset(value: &Value) -> Result<()>
 
 fn check_return_order_by(value: &Value) -> Result<()>
 {
-    let Value::NUMBER(v) = value else {
-        panic!("convert value to Value::NUMBER in check_return_type failed!")
+    let Value::Number(v) = value else {
+        panic!("convert value to Value::Number in check_return_type failed!")
     };
     match Tag::try_from(*v)? {
         Tag::DataLabelCritical1 | Tag::DataLabelCritical2 | Tag::DataLabelCritical3 | Tag::DataLabelCritical4 => Ok(()),

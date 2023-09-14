@@ -16,7 +16,7 @@
 //! This file implement the asset param check
 
 use asset_common::{
-    definition::{AssetMap, DataType, ErrCode, Result, Tag, Value, asset_type_transform::GetType},
+    definition::{AssetMap, DataType, ErrCode, Result, Tag, Value, IntoValue},
     loge};
 
 fn tag_value_match(tag: &Tag, value: &Value) -> bool
@@ -28,7 +28,7 @@ fn tag_value_match(tag: &Tag, value: &Value) -> bool
             }
         },
         DataType::Uint32 => {
-            if let Value::NUMBER(_) = value {
+            if let Value::Number(_) = value {
                 return true;
             }
         },

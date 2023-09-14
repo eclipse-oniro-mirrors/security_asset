@@ -15,32 +15,16 @@ import("//build/ohos.gni")
 
 COMPONENT_DIR = "//base/security/asset"
 
-config("asset_sdk_config") {
-  include_dirs = [ "inc" ]
-}
-
-ohos_shared_library("asset_sdk") {
-  subsystem_name = "security"
-  part_name = "asset"
-  public_configs = [ ":asset_sdk_config" ]
-  include_dirs = [
-    "$COMPONENT_DIR/frameworks/os_dependency/log/inc",
-    # todo：模块内部依赖改成相对路径
+ohos_rust_static_library("asset_ipc_interface") {
+  sources = [ "src/lib.rs" ]
+  deps = [ "$COMPONENT_DIR/frameworks/common:asset_common" ]
+  external_deps = [
+    "hilog:hilog_rust",
+    "ipc:ipc_rust",
   ]
 
-  sources = [ "src/asset_api.c" ]
-  deps = [ ":asset_sdk_ffi" ]
-  external_deps = [ "hilog:libhilog" ]
-}
-
-ohos_rust_shared_ffi("asset_sdk_ffi") {
-  sources = [ "src/asset_ffi.rs" ]
-  deps = [
-    "$COMPONENT_DIR/frameworks/common:asset_common",
-    "$COMPONENT_DIR/interfaces/inner_api/rs:asset_sdk",
-  ]
-  external_deps = [ "hilog:hilog_rust" ]
-  crate_name = "asset_sdk_ffi"
+  crate_name = "asset_ipc_interface"
+  crate_type = "rlib"
   subsystem_name = "security"
   part_name = "asset"
 }

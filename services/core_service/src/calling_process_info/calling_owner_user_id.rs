@@ -16,7 +16,7 @@
 //! This create implement the asset
 #![allow(dead_code)]
 
-use asset_common::{definition::{Result, ErrCode}, loge};
+use asset_common::{loge, definition::{Result, ErrCode}};
 
 extern "C" {
     fn GetUserIdByUid(uid: u64, userId: &mut u32) -> bool;

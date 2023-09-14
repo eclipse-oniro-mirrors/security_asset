@@ -21,7 +21,7 @@ mod value_validity_check;
 
 use asset_common::definition::{AssetMap, Result};
 
-use asset_ipc::IpcCode;
+use asset_ipc_interface::IpcCode;
 
 /// check the validity and comprehensiveness of input params
 pub(crate) fn check_params(params: &AssetMap, code: IpcCode) -> Result<()>

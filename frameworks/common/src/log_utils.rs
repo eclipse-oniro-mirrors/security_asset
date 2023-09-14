@@ -50,7 +50,7 @@ pub fn log_func_e(log: &str)
 #[macro_export]
 macro_rules! logi{
     ($($arg:tt)*) => (
-        $crate::asset_hilog::log_func_i(&format!($($arg)*));
+        $crate::log_utils::log_func_i(&format!($($arg)*));
     );
 }
 
@@ -64,6 +64,6 @@ macro_rules! logi{
 #[macro_export]
 macro_rules! loge{
     ($($arg:tt)*) => (
-        $crate::asset_hilog::log_func_e(&format!($($arg)*));
+        $crate::log_utils::log_func_e(&format!($($arg)*));
     );
 }

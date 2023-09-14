@@ -13,8 +13,12 @@
  * limitations under the License.
  */
 
-//! Module shared by the SDK and Service
+//! This module implements the common capabilities of the SDK and service.
 
 #[macro_use]
-pub mod asset_hilog;
+pub mod log_utils;
+
+#[macro_use]
+pub mod macro_utils;
+
 pub mod definition;

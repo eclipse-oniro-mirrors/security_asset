@@ -21,7 +21,7 @@ use asset_common::{
     logi,
     definition::{AssetMap, Result},
 };
-use asset_ipc::{IAsset, SA_ID, IpcCode};
+use asset_ipc_interface::{IAsset, SA_ID, IpcCode};
 use stub::AssetStub;
 
 use hilog_rust::{error, hilog, HiLogLabel, LogType};

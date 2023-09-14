@@ -1,9 +1,10 @@
 [package]
-name = "asset_ipc"
+name = "asset_ipc_interface"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-asset_common = { path = "../../frameworks/common" }
+asset_common = { path = "../common" }
+asset_ipc_interface = { path = "../ipc_interface" }

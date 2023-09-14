@@ -20,12 +20,11 @@ use ipc_rust::{
     RemoteStub, String16
 };
 
-use asset_ipc::{IAsset, IpcCode, IPC_SUCCESS};
-use asset_common::definition::{
-    AssetMap, Result, ErrCode, DataType, Tag, Value,
-    asset_type_transform::GetType,
+use asset_ipc_interface::{IAsset, IpcCode, IPC_SUCCESS};
+use asset_common::{
+    loge, logi,
+    definition::{AssetMap, Result, ErrCode, DataType, IntoValue, Tag, Value},
 };
-use asset_common::{loge, logi};
 
 /// max capacity in a map
 const MAP_MAX_CAPACITY: u32 = 30;
@@ -46,7 +45,7 @@ pub fn deserialize(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
             DataType::Uint32 => {
                 logi!("try get u32");
                 let v = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
-                map.insert(asset_tag, Value::NUMBER(v));
+                map.insert(asset_tag, Value::Number(v));
             },
             DataType::Bytes => {
                 logi!("try get uint8array");
