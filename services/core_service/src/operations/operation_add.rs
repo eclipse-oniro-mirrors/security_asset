@@ -16,13 +16,21 @@
 //! This create implement the asset
 #![allow(dead_code)]
 
-use asset_common::{definition::{AssetMap, Result, Tag, ErrCode, Value}, logi, loge};
+use asset_common::{
+    definition::{AssetMap, Result, Tag, ErrCode, Value, SyncType, Accessibility, AuthType, Insert},
+    loge,
+    logi,
+};
 use asset_ipc_interface::IpcCode;
 use db_operator::{database_table_helper::DefaultDatabaseHelper, types::Pair};
 
 // use crypto_manager::hukkey::Crypto;
-use crate::{operations::{operation_common::*, create_user_db_dir}, calling_process_info::CallingInfo,
-    definition_inner::AssetInnerMap};
+use crate::{
+    operations::operation_common::{get_alias, construst_extra_params, set_extra_attrs, set_input_attr,
+        create_user_db_dir},
+    calling_process_info::CallingInfo,
+    definition_inner::AssetInnerMap
+};
 
 fn encrypt_secret(input: &AssetMap) -> Result<Vec<u8>> {
     if let Some(Value::Bytes(secret)) = input.get(&Tag::Secret) {
@@ -37,19 +45,58 @@ fn encrypt_secret(input: &AssetMap) -> Result<Vec<u8>> {
 fn construct_data<'a>(input: &'a AssetMap, inner_params: &'a AssetInnerMap) -> Result<Vec<Pair<'a>>> {
     let mut data_vec = Vec::new();
     set_input_attr(input, &mut data_vec)?;
-    set_inner_attrs(inner_params, &mut data_vec)?;
+    set_extra_attrs(inner_params, &mut data_vec)?;
     Ok(data_vec)
+}
+
+fn check_or_default_sync_type(map: &mut AssetMap) -> Result<()>
+{
+    if !map.contains_key(&Tag::SyncType) {
+        logi!("add default sync type");
+        map.insert_attr(Tag::SyncType, SyncType::Never)?;
+    }
+    Ok(())
+}
+
+fn check_or_default_access_type(map: &mut AssetMap) -> Result<()>
+{
+    if !map.contains_key(&Tag::Accessibility) {
+        logi!("add default access type");
+        map.insert_attr(Tag::Accessibility, Accessibility::DevoceFirstUnlock)?;
+    }
+    Ok(())
+}
+
+fn check_or_default_auth_type(map: &mut AssetMap) -> Result<()>
+{
+    if !map.contains_key(&Tag::AuthType) {
+        logi!("add default auth type");
+        map.insert_attr(Tag::AuthType, AuthType::None)?;
+    }
+    Ok(())
+}
+
+fn construct_params_with_default(input: &AssetMap) -> Result<AssetMap>
+{
+    let mut map = (*input).clone();
+    check_or_default_sync_type(&mut map)?;
+    check_or_default_access_type(&mut map)?;
+    check_or_default_auth_type(&mut map)?;
+    Ok(map)
 }
 
 pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // create user dir
     create_user_db_dir(calling_info.get_user_id())?;
 
+    // get param map contains input params and default params
+    let input_new = construct_params_with_default(input)?;
+
     // a map collecting inner params
-    let inner_params = construst_inner_params(calling_info, IpcCode::Add)?;
+    let inner_params = construst_extra_params(calling_info, IpcCode::Add)?;
 
     // construct db data from input map and inner params
-    let db_data = construct_data(input, &inner_params)?;
+    let db_data = construct_data(&input_new, &inner_params)?;
 
     // get owner str
     let owner_str = String::from_utf8(calling_info.get_owner_text().clone()).map_err(|_| {
@@ -57,7 +104,7 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
         ErrCode::Failed
     })?;
 
-    let alias = get_alias(input)?;
+    let alias = get_alias(&input_new)?;
 
     // call sql to add
     let insert_num =

@@ -18,9 +18,6 @@
 mod operation_add;
 mod operation_common;
 mod param_check;
-mod file_operator;
 
 pub(crate) use operation_add::add;
 pub(crate) use param_check::check_params;
-pub(crate) use file_operator::create_user_db_dir;
-pub(crate) use operation_common::construct_params_with_default;

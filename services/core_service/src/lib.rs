@@ -34,7 +34,7 @@ mod calling_process_info;
 mod definition_inner;
 
 use calling_process_info::CallingInfo;
-use operations::{check_params, construct_params_with_default};
+use operations::check_params;
 
 /// xxx
 pub struct AssetService;
@@ -46,11 +46,8 @@ impl IAsset for AssetService {
         // check the validity and comprehensiveness of input params
         check_params(input, &IpcCode::Add)?;
 
-        // get param map contains input params and default params
-        let input_new = construct_params_with_default(input)?;
-
         // get calling uid userid appid etc and do add
-        operations::add(&input_new, &CallingInfo::build()?)
+        operations::add(input, &CallingInfo::build()?)
     }
 }
 
