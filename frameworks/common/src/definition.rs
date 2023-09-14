@@ -105,6 +105,7 @@ impl_enum_trait! {
 }
 
 /// A type that indicates the secret or attribute value of an Asset tag.
+#[derive(Clone)]
 pub enum Value {
     /// Asset attribute value, whose data type is number.
     Number(u32),

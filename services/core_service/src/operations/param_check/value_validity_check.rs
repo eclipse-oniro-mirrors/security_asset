@@ -73,6 +73,7 @@ fn check_auth_validity_period(value: &Value) -> Result<()>
         panic!("convert value to Value::Number in check_auth_validity_period failed!")
     };
     if *v > 600 { // todo 限时多少
+        loge!("check auth valid period failed!");
         return Err(ErrCode::InvalidArgument);
     }
     Ok(())

@@ -29,7 +29,7 @@ fn test_for_add() {
 
     match asset_sdk::Manager::build() {
         Ok(manager) => {
-            if let Err(e) = manager.add(input) {
+            if let Err(e) = manager.add(&input) {
                 panic!("test for add failed {}", e)
             }
         },

@@ -24,7 +24,7 @@ use asset_common::definition::{AssetMap, Result};
 use asset_ipc_interface::IpcCode;
 
 /// check the validity and comprehensiveness of input params
-pub(crate) fn check_params(params: &AssetMap, code: IpcCode) -> Result<()>
+pub(crate) fn check_params(params: &AssetMap, code: &IpcCode) -> Result<()>
 {
     required_tag::check_required_params(params, code)?;
     tag_value_match::check_tag_value_match(params)?;

@@ -16,16 +16,13 @@
 //! This create implement the asset
 #![allow(dead_code)]
 
-use asset_common::{loge, logi, definition::{AssetMap, Result, Tag, ErrCode, Value}};
-use db_operator::{
-    database_table_helper::{DefaultDatabaseHelper, G_COLUMN_SYNCTYPE, G_COLUMN_AUTHTYPE},
-    types::Pair,
-};
+use asset_common::{definition::{AssetMap, Result, Tag, ErrCode, Value}, logi, loge};
+use asset_ipc_interface::IpcCode;
+use db_operator::{database_table_helper::DefaultDatabaseHelper, types::Pair};
 
 // use crypto_manager::hukkey::Crypto;
-use crate::{operations::{operation_common::*, create_user_db_dir}, calling_process_info::CallingInfo};
-
-use std::time::{SystemTime, UNIX_EPOCH};
+use crate::{operations::{operation_common::*, create_user_db_dir}, calling_process_info::CallingInfo,
+    definition_inner::AssetInnerMap};
 
 fn encrypt_secret(input: &AssetMap) -> Result<Vec<u8>> {
     if let Some(Value::Bytes(secret)) = input.get(&Tag::Secret) {
@@ -37,63 +34,34 @@ fn encrypt_secret(input: &AssetMap) -> Result<Vec<u8>> {
     }
 }
 
-fn construct_data<'a>(input: &'a AssetMap, calling_info: &'a CallingInfo) -> Result<Vec<Pair<'a>>> {
+fn construct_data<'a>(input: &'a AssetMap, inner_params: &'a AssetInnerMap) -> Result<Vec<Pair<'a>>> {
     let mut data_vec = Vec::new();
-
-    get_set_attr(input, G_COLUMN_SYNCTYPE, Tag::SyncType, &mut data_vec)?;
-    get_set_attr(input, G_COLUMN_AUTHTYPE, Tag::AuthType, &mut data_vec)?;
-
-    get_set_owner_type(calling_info, &mut data_vec)?;
-
-    get_set_delete_type(&mut data_vec)?;
-    get_set_access_type(&mut data_vec)?;
-    get_set_version(&mut data_vec)?;
-
+    set_input_attr(input, &mut data_vec)?;
+    set_inner_attrs(inner_params, &mut data_vec)?;
     Ok(data_vec)
 }
 
 pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    // arrange the table value
-    let mut db_data = construct_data(input, calling_info)?;
-
-    let cipher_secret = encrypt_secret(input)?;
-    set_ciphet_secret(&cipher_secret, &mut db_data)?;
-
-    let sys_time_res = SystemTime::now().duration_since(UNIX_EPOCH);
-    if sys_time_res.is_err() {
-        loge!("get sys_time_res faield!");
-        return Err(ErrCode::Failed);
-    }
-    let time_string = sys_time_res.unwrap().as_millis().to_string();
-    get_set_current_time(&time_string, &mut db_data)?;
-    get_set_update_time(&time_string, &mut db_data)?;
-
-    let owner_str = String::from_utf8(calling_info.get_owner_text().clone());
-    if owner_str.is_err() {
-        loge!("get owner str faield!");
-        return Err(ErrCode::Failed);
-    }
-
-    let alias;
-    if let Some(Value::Bytes(alias_vec)) = input.get(&Tag::Alias) {
-        let alias_try = String::from_utf8(alias_vec.clone());
-        if let Ok(alias_ok) = alias_try {
-            alias = alias_ok;
-        } else {
-            loge!("parse alias from utf8 faield!");
-            return Err(ErrCode::InvalidArgument);
-        }
-    } else {
-        loge!("get alias faield!");
-        return Err(ErrCode::InvalidArgument);
-    }
-
     // create user dir
     create_user_db_dir(calling_info.get_user_id())?;
 
+    // a map collecting inner params
+    let inner_params = construst_inner_params(calling_info, IpcCode::Add)?;
+
+    // construct db data from input map and inner params
+    let db_data = construct_data(input, &inner_params)?;
+
+    // get owner str
+    let owner_str = String::from_utf8(calling_info.get_owner_text().clone()).map_err(|_| {
+        loge!("get owner str faield!");
+        ErrCode::Failed
+    })?;
+
+    let alias = get_alias(input)?;
+
     // call sql to add
     let insert_num =
-        DefaultDatabaseHelper::insert_datas_default_once(calling_info.get_user_id(), &owner_str.unwrap(), &alias, db_data)?;
+        DefaultDatabaseHelper::insert_datas_default_once(calling_info.get_user_id(), &owner_str, &alias, db_data)?;
 
     logi!("insert {} data", insert_num);
     Ok(())

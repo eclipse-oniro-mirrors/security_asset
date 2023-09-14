@@ -50,8 +50,8 @@ impl Manager {
     }
 
     /// Add an Asset.
-    pub fn add(&self, input: AssetMap) -> Result<()> {
+    pub fn add(&self, input: &AssetMap) -> Result<()> {
         logi!("[YZT][RUST SDK]enter asset add");
-        self.remote.add(&input)
+        self.remote.add(input)
     }
 }

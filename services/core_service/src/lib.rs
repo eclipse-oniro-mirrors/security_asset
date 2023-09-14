@@ -31,8 +31,10 @@ use system_ability_fwk_rust::{define_system_ability, IMethod, ISystemAbility, RS
 mod stub;
 mod operations;
 mod calling_process_info;
+mod definition_inner;
+
 use calling_process_info::CallingInfo;
-use operations::check_params;
+use operations::{check_params, construct_params_with_default};
 
 /// xxx
 pub struct AssetService;
@@ -41,9 +43,14 @@ impl IRemoteBroker for AssetService {}
 
 impl IAsset for AssetService {
     fn add(&self, input: &AssetMap) -> Result<()> {
-        // get calling uid userid appid etc
-        check_params(input, IpcCode::Add)?; // todo 等待ipc_code的定义，第二参数取代为枚举
-        operations::add(input, &CallingInfo::build()?)
+        // check the validity and comprehensiveness of input params
+        check_params(input, &IpcCode::Add)?;
+
+        // get param map contains input params and default params
+        let input_new = construct_params_with_default(input)?;
+
+        // get calling uid userid appid etc and do add
+        operations::add(&input_new, &CallingInfo::build()?)
     }
 }
 
@@ -72,7 +79,7 @@ fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {
 static A: extern fn() = {
     extern fn init() {
         let r_sa = SystemAbility::new_system_ability(SA_ID, true)
-            .expect("create TestService failed");
+            .expect("create Asset service failed");
         r_sa.register();
     }
     init

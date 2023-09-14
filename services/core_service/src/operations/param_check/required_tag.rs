@@ -36,9 +36,9 @@ fn check_required_params_inner(params: &AssetMap, required_params: &[Tag]) -> Re
     Ok(())
 }
 
-pub(crate) fn check_required_params(params: &AssetMap, code: IpcCode) -> Result<()>
+pub(crate) fn check_required_params(params: &AssetMap, code: &IpcCode) -> Result<()>
 {
-    match code {
+    match *code {
         IpcCode::Add => {
             check_required_params_inner(params, &ADD_REQUIRED_PARAMS)
         },

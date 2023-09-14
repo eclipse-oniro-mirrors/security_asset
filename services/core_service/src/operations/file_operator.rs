@@ -15,15 +15,19 @@
 
 //! This file implement the asset param check
 
-use std::fs;
+use std::{fs, path::Path};
 use asset_common::{definition::{ErrCode, Result}, loge};
 
 const PATH: &str = "data/service/el1/public/asset_service";
 
 pub(crate) fn create_user_db_dir(user_id: u32) -> Result<()>
 {
-    fs::create_dir(format!("{}/{}", PATH, user_id)).map_err(|_| {
-        loge!("create dir failed!");
-        ErrCode::Failed
-    })
+    let path = format!("{}/{}", PATH, user_id);
+    if !Path::new(&path).exists() {
+        fs::create_dir(path).map_err(|_| {
+            loge!("create dir failed!");
+            ErrCode::Failed
+        })?;
+    }
+    Ok(())
 }
