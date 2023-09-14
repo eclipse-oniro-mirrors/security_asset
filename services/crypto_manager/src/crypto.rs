@@ -15,6 +15,7 @@
 
 //! This create implement the asset
 use crate::huks_ffi::*;
+// use std::ffi::c_char;
 use asset_common::{loge, definition::ErrCode};
 use std::ptr::{null_mut,copy_nonoverlapping};
 use std::mem::{size_of,align_of};
@@ -61,7 +62,7 @@ impl SecretKey{
         let key_alias = &hks_blob as *const HksBlob;
 
         // init gen_param_set
-        let mut g_gen_params004:[HksParam;5] = [
+        let g_gen_params004:[HksParam;5] = [
             HksParam{
                 tag: HKS_TAG_ALGORITHM,
                 union_1: HksParam_union_1{
@@ -93,12 +94,15 @@ impl SecretKey{
                 }
             }
         ];
-        let gen_param_set = HksParamSet {
-            param_set_size: 8 + 5 * size_of::<HksParam>() as u32,
-            params_cnt: 5,
-            params: &mut g_gen_params004[0] as *mut _ as *mut HksParam,
-        };
-        unsafe{HksGenerateKey(key_alias, &gen_param_set as *const HksParamSet, null_mut())}
+        let mut buffer = Box::new([0u8;8 + 5 * size_of::<HksParam>()]);
+        unsafe{
+            let gen_param_set = buffer.as_mut_ptr() as *mut HksParamSet;
+            (*gen_param_set).param_set_size = 8 + 5 * size_of::<HksParam>() as u32;
+            (*gen_param_set).params_cnt = 5;
+            copy_nonoverlapping(g_gen_params004.as_ptr() as *const u8,buffer.as_mut_ptr().add(8),5 * size_of::<HksParam>());
+        }
+        
+        unsafe{HksGenerateKey(key_alias, buffer.as_ptr() as *const HksParamSet, null_mut())}
     }
 
     /// Delete the hukkey
@@ -226,7 +230,7 @@ impl Crypto {
         let NONCE = &NONCE_VEC[0] as *const _ as *const u8;
 
         // Init encrypt_param_set
-        let mut g_encrypt_params004:[HksParam;7] = [
+        let g_encrypt_params004:[HksParam;7] = [
             HksParam{
                 tag: HKS_TAG_ALGORITHM,
                 union_1: HksParam_union_1{
@@ -276,15 +280,16 @@ impl Crypto {
                 }
             },
         ];
-        let encrypt_param_set = HksParamSet {
-            param_set_size: 8 + 7 * size_of::<HksParam>() as u32,
-            params_cnt: 7,
-            params: &mut g_encrypt_params004[0] as *mut _ as *mut HksParam,
-        };
-
+        let mut buffer = Box::new([0u8;8 + 7 * size_of::<HksParam>()]);
+        unsafe{
+            let encrypt_param_set = buffer.as_mut_ptr() as *mut HksParamSet;
+            (*encrypt_param_set).param_set_size = 8 + 7 * size_of::<HksParam>() as u32;
+            (*encrypt_param_set).params_cnt = 7;
+            copy_nonoverlapping(g_encrypt_params004.as_ptr() as *const u8,buffer.as_mut_ptr().add(8),7 * size_of::<HksParam>());
+        }
 
         let mut ret = unsafe{
-            HksInit(key_alias, &encrypt_param_set as *const HksParamSet,
+            HksInit(key_alias, buffer.as_ptr() as *const HksParamSet,
                 &mut handle_encrypt as *mut HksBlob, null_mut())
         };
         if ret != HKS_SUCCESS{
@@ -300,7 +305,7 @@ impl Crypto {
             size: AES_COMMON_SIZE,
             data: &cipher[0] as *const _ as *const u8,
         };
-        ret = update_and_finish(&handle_encrypt, &encrypt_param_set, &mut indata, &mut cipher_text);
+        ret = unsafe{update_and_finish(&handle_encrypt, &*(buffer.as_ptr() as *const HksParamSet), &mut indata, &mut cipher_text)};
         if ret != HKS_SUCCESS{
             loge!("Encrypt update_and_finish Failed.");
             return Err(ErrCode::Failed);
@@ -341,7 +346,7 @@ impl Crypto {
         let AAD = &(*aad)[0] as *const _ as *const u8;
         let NONCE = &NONCE_VEC[0] as *const _ as *const u8;
         let AEAD = &AEAD_VEC[0] as *const _ as *const u8;
-        let mut g_decrypt_params004:[HksParam;8] = [
+        let g_decrypt_params004:[HksParam;8] = [
             HksParam{
                 tag: HKS_TAG_ALGORITHM,
                 union_1: HksParam_union_1{
@@ -400,14 +405,16 @@ impl Crypto {
                 }
             },
         ];
-        let decrypt_param_set = HksParamSet {
-            param_set_size: 8 + 8 * size_of::<HksParam>() as u32,
-            params_cnt: 8,
-            params: &mut g_decrypt_params004[0] as *mut _ as *mut HksParam,
-        };
+        let mut buffer = Box::new([0u8;8 + 8 * size_of::<HksParam>()]);
+        unsafe{
+            let decrypt_param_set = buffer.as_mut_ptr() as *mut HksParamSet;
+            (*decrypt_param_set).param_set_size = 8 + 8 * size_of::<HksParam>() as u32;
+            (*decrypt_param_set).params_cnt = 8;
+            copy_nonoverlapping(g_decrypt_params004.as_ptr() as *const u8,buffer.as_mut_ptr().add(8),8 * size_of::<HksParam>());
+        }
 
         let mut ret = unsafe{
-            HksInit(key_alias, &decrypt_param_set as *const HksParamSet,
+            HksInit(key_alias, buffer.as_ptr() as *const HksParamSet,
                 &mut handle_decrypt as *mut HksBlob, null_mut())
         };
         if ret != HKS_SUCCESS{
@@ -421,7 +428,7 @@ impl Crypto {
             size: AES_COMMON_SIZE,
             data: &plain[0] as *const _ as *const u8,
         };
-        ret = update_and_finish(&handle_decrypt, &decrypt_param_set, &mut cipher_text, &mut plain_text);
+        ret = unsafe{update_and_finish(&handle_decrypt, &*(buffer.as_ptr() as *const HksParamSet), &mut cipher_text, &mut plain_text)};
         if ret != HKS_SUCCESS{
             loge!("Decrypt update_and_finish Failed.");
             return Err(ErrCode::Failed);
