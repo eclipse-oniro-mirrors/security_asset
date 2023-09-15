@@ -20,7 +20,7 @@ use db_operator::{
     database_table_helper::{DefaultDatabaseHelper, G_ASSET_TABLE_NAME},
     statement::Statement,
     types::{
-        from_result_datatype_to_str, from_resultvalue_to_str_value, ColumnInfo, DataType,
+        from_result_datatype_to_str, from_result_value_to_str_value, ColumnInfo, DataType,
         DataValue, Pair, ResultDataValue,
     },
     SQLITE_DONE, SQLITE_OK, SQLITE_OPEN_CREATE, SQLITE_OPEN_READWRITE, SQLITE_ROW,
@@ -979,7 +979,7 @@ pub fn test_query() {
     for dataline in &resultset {
         print!("line: ");
         for data in dataline {
-            print!("{} ", from_resultvalue_to_str_value(data));
+            print!("{} ", from_result_value_to_str_value(data));
         }
         println!()
     }
@@ -1264,7 +1264,7 @@ pub fn test_helper() {
     for data in result {
         print!("line: ");
         for d in data {
-            print!("{}, ", from_resultvalue_to_str_value(&d));
+            print!("{}, ", from_result_value_to_str_value(&d));
         }
         println!();
     }
@@ -1344,8 +1344,8 @@ pub fn test_for_special_sql() {
         let alias = stmt.query_column_text(1);
         print!(
             "{} {}",
-            from_resultvalue_to_str_value(&ResultDataValue::Text(Some(Box::new(owner.to_vec())))),
-            from_resultvalue_to_str_value(&ResultDataValue::Text(Some(Box::new(alias.to_vec()))))
+            from_result_value_to_str_value(&ResultDataValue::Text(Some(Box::new(owner.to_vec())))),
+            from_result_value_to_str_value(&ResultDataValue::Text(Some(Box::new(alias.to_vec()))))
         );
         println!();
     }
@@ -1518,7 +1518,7 @@ pub fn test_for_default_asset() {
     for line in result {
         print!("line: ");
         for r in line {
-            print!("{}, ", from_resultvalue_to_str_value(&r));
+            print!("{}, ", from_result_value_to_str_value(&r));
         }
         println!();
     }

@@ -1,4 +1,3 @@
-//!
 //! Copyright (C) 2023 Huawei Device Co., Ltd.
 //! Licensed under the Apache License, Version 2.0 (the "License");
 //! you may not use this file except in compliance with the License.
@@ -11,7 +10,6 @@
 //! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
-//!
 use crate::database::Database;
 
 /// DataType for DB
@@ -37,7 +35,7 @@ pub fn from_datatype_to_str(value: DataType) -> &'static str {
     }
 }
 
-/// Datavalue for DB
+/// Data value for DB
 #[derive(Clone, Copy)]
 #[repr(C)]
 pub enum DataValue<'a> {
@@ -53,8 +51,8 @@ pub enum DataValue<'a> {
     NoData,
 }
 
-/// change datavalue to str value when build sql
-pub fn from_datavalue_to_str_value(value: DataValue) -> String {
+/// change data value to str value when build sql
+pub fn from_data_value_to_str_value(value: DataValue) -> String {
     match value {
         DataValue::NoData => String::from("NULL"),
         DataValue::Double(d) => format!("{}", d),
@@ -83,7 +81,7 @@ pub enum ResultDataValue {
 }
 
 /// change result value to string when output
-pub fn from_resultvalue_to_str_value(value: &ResultDataValue) -> String {
+pub fn from_result_value_to_str_value(value: &ResultDataValue) -> String {
     match value {
         ResultDataValue::Null => String::from("NULL"),
         ResultDataValue::Integer(b) => format!("{}", b),
@@ -128,7 +126,7 @@ pub struct Pair<'a> {
     pub value: DataValue<'a>,
 }
 
-/// query conditons
+/// query conditions
 pub type Condition<'a> = Vec<Pair<'a>>;
 
 /// column info for create table
@@ -149,7 +147,7 @@ pub type ResultSet = Vec<Vec<ResultDataValue>>;
 
 /// err msg for database after exec sql
 #[repr(C)]
-pub struct Sqlite3Errmsg<'a, 'b> {
+pub struct Sqlite3ErrMsg<'a, 'b> {
     /// error string
     pub s: &'a str,
     /// point to database for auto drop

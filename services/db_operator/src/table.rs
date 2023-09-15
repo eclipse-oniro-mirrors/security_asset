@@ -1,4 +1,3 @@
-//!
 //! Copyright (C) 2023 Huawei Device Co., Ltd.
 //! Licensed under the Apache License, Version 2.0 (the "License");
 //! you may not use this file except in compliance with the License.
@@ -11,16 +10,15 @@
 //! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
-//!
 use crate::{
     database::Database,
     sqlite3_changes_func,
     statement::Statement,
     types::{
-        from_datatype_to_str, from_datavalue_to_str_value, ColumnInfo, Condition, DataValue, Pair,
+        from_data_value_to_str_value, from_datatype_to_str, ColumnInfo, Condition, DataValue, Pair,
         ResultDataValue, ResultSet,
     },
-    SqliteErrcode, SQLITE_BLOB, SQLITE_DONE, SQLITE_ERROR, SQLITE_FLOAT, SQLITE_INTEGER,
+    SqliteErrCode, SQLITE_BLOB, SQLITE_DONE, SQLITE_ERROR, SQLITE_FLOAT, SQLITE_INTEGER,
     SQLITE_NULL, SQLITE_OK, SQLITE_ROW, SQLITE_TEXT,
 };
 
@@ -38,7 +36,6 @@ impl<'a> Table<'a> {
         Table { table_name: table_name.to_string(), db }
     }
 
-    ///
     /// the param conditions is to build sql after 'where'
     /// the param datas is to build sql between 'set' and 'where'
     /// like this sql: update table_test set alias='test_update' where id=2
@@ -55,12 +52,10 @@ impl<'a> Table<'a> {
     /// }];
     ///
     /// let ret = table.update_row(conditions, datas);
-    ///
-    pub fn update_row(
-        &self,
-        conditions: &Condition,
-        datas: &Vec<Pair>,
-    ) -> Result<i32, SqliteErrcode> {
+    pub fn update_row(&self,
+                      conditions: &Condition,
+                      datas: &Vec<Pair>)
+                      -> Result<i32, SqliteErrCode> {
         let mut sql = format!("update {} set ", self.table_name);
         for i in 0..datas.len() {
             let data = &datas[i];
@@ -119,21 +114,17 @@ impl<'a> Table<'a> {
         Ok(count)
     }
 
-    ///
     /// update single data
     /// sql like: update table_name set column_name=data_new [where conditions]
-    ///
-    pub fn update_row_column(
-        &self,
-        conditions: &Condition,
-        column_name: &str,
-        data_new: DataValue,
-    ) -> Result<i32, SqliteErrcode> {
+    pub fn update_row_column(&self,
+                             conditions: &Condition,
+                             column_name: &str,
+                             data_new: DataValue)
+                             -> Result<i32, SqliteErrCode> {
         let datas = vec![Pair { column_name, value: data_new }];
         self.update_row(conditions, &datas)
     }
 
-    ///
     /// delete row from table
     /// like this sql: delete from table_test where id=2
     /// the code like:
@@ -144,8 +135,7 @@ impl<'a> Table<'a> {
     /// }];
     ///
     /// let ret = table.delete_row(conditions);
-    ///
-    pub fn delete_row(&self, conditions: &Condition) -> Result<i32, SqliteErrcode> {
+    pub fn delete_row(&self, conditions: &Condition) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("delete from {}", self.table_name);
         if !conditions.is_empty() {
             sql.push_str(" where ");
@@ -189,7 +179,6 @@ impl<'a> Table<'a> {
         Ok(count)
     }
 
-    ///
     /// insert into table, datas is the value to be insert.
     /// sql like: insert into table_test (id,alias) values (3,'alias1')
     /// code like this:
@@ -205,8 +194,7 @@ impl<'a> Table<'a> {
     ///     },
     /// ];
     /// let ret = table.insert_row(datas);
-    ///
-    pub fn insert_row(&self, datas: &Vec<Pair>) -> Result<i32, SqliteErrcode> {
+    pub fn insert_row(&self, datas: &Vec<Pair>) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("insert into {} (", self.table_name);
         for i in 0..datas.len() {
             let data = &datas[i];
@@ -254,15 +242,13 @@ impl<'a> Table<'a> {
         Ok(count)
     }
 
-    ///
     /// insert into table, datas is the value to be insert.
     /// sql like: insert into table_test values (3,'alias1')
     /// code like this:
     ///
     /// let datas = &vec![DataValue::Integer(3), DataValue::Text(b"alias1")];
     /// let ret = table.insert_row_datas(datas);
-    ///
-    pub fn insert_row_datas(&self, datas: &Vec<DataValue>) -> Result<i32, SqliteErrcode> {
+    pub fn insert_row_datas(&self, datas: &Vec<DataValue>) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("insert into {} ", self.table_name);
         sql.push_str("values (");
         for i in 0..datas.len() {
@@ -303,7 +289,6 @@ impl<'a> Table<'a> {
         Ok(count)
     }
 
-    ///
     /// insert into table, dataset is the value to be insert.
     /// sql like: insert into table_test values (3,'alias1')
     /// code like this:
@@ -313,26 +298,24 @@ impl<'a> Table<'a> {
     ///     vec![
     ///         DataValue::Text(b"appid1"),
     ///         DataValue::Text(b"alias1"),
-    ///         DataValue::Text(b"aaaa"),
+    ///         DataValue::Text(b"a"),
     ///     ],
     ///     vec![
     ///         DataValue::Text(b"appid2"),
     ///         DataValue::Text(b"alias2"),
-    ///         DataValue::Text(b"bbbb"),
+    ///         DataValue::Text(b"b"),
     ///     ],
     ///     vec![
     ///         DataValue::Text(b"appid3"),
     ///         DataValue::Text(b"alias3"),
-    ///         DataValue::Text(b"cccc"),
+    ///         DataValue::Text(b"c"),
     ///     ],
     /// ];
     /// let count = table.insert_multi_row_datas(columns, &dataset);
-    ///
-    pub fn insert_multi_row_datas(
-        &self,
-        columns: &Vec<&str>,
-        dataset: &Vec<Vec<DataValue>>,
-    ) -> Result<i32, SqliteErrcode> {
+    pub fn insert_multi_row_datas(&self,
+                                  columns: &Vec<&str>,
+                                  dataset: &Vec<Vec<DataValue>>)
+                                  -> Result<i32, SqliteErrCode> {
         let mut sql = format!("insert into {} (", self.table_name);
         for i in 0..columns.len() {
             let column = &columns[i];
@@ -387,10 +370,8 @@ impl<'a> Table<'a> {
         Ok(count)
     }
 
-    ///
     /// rename table name
-    ///
-    pub fn rename(&mut self, name: &str) -> SqliteErrcode {
+    pub fn rename(&mut self, name: &str) -> SqliteErrCode {
         let sql = format!("ALTER TABLE {} RENAME TO {}", self.table_name, name);
         #[cfg(test)]
         {
@@ -404,7 +385,6 @@ impl<'a> Table<'a> {
         ret
     }
 
-    ///
     /// add new column for table
     /// 1. can not add primary key
     /// 2. can not add not null key if no default value
@@ -413,18 +393,17 @@ impl<'a> Table<'a> {
     /// code like:
     /// let ret = table.add_new_column(
     ///     ColumnInfo {
-    ///         name: "nnnid",
+    ///         name: "id",
     ///         data_type: DataType::INTEGER,
     ///         is_primary_key: false,
     ///         not_null: true,
     ///     },
     ///     Some(DataValue::Integer(0)),
     /// );
-    pub fn add_new_column(
-        &self,
-        column: ColumnInfo,
-        default_value: Option<DataValue>,
-    ) -> SqliteErrcode {
+    pub fn add_new_column(&self,
+                          column: ColumnInfo,
+                          default_value: Option<DataValue>)
+                          -> SqliteErrCode {
         if column.is_primary_key {
             return SQLITE_ERROR;
         }
@@ -436,7 +415,7 @@ impl<'a> Table<'a> {
             format!("ALTER TABLE {} ADD COLUMN {} {}", self.table_name, column.name, datatype);
         if let Some(data) = default_value {
             sql.push_str(" DEFAULT ");
-            sql.push_str(&from_datavalue_to_str_value(data));
+            sql.push_str(&from_data_value_to_str_value(data));
         }
         if column.not_null {
             sql.push_str(" NOT NULL");
@@ -450,21 +429,18 @@ impl<'a> Table<'a> {
         stmt.exec(None, 0)
     }
 
-    ///
     /// query datas from table,
     /// if length of columns is 0, will select *.
-    /// if length of conditons is 0, will select all data.
+    /// if length of conditions is 0, will select all data.
     ///
     /// code like:
-    /// let resultset = table.query_row(&vec!["alias", "blobs"], &vec![]);
+    /// let result_set = table.query_row(&vec!["alias", "blobs"], &vec![]);
     ///
     /// means sql like: select alias,blobs from table_name
-    ///
-    pub fn query_row(
-        &self,
-        columns: &Vec<&str>,
-        conditions: &Condition,
-    ) -> Result<ResultSet, SqliteErrcode> {
+    pub fn query_row(&self,
+                     columns: &Vec<&str>,
+                     conditions: &Condition)
+                     -> Result<ResultSet, SqliteErrCode> {
         let mut sql = String::from("select ");
         if !columns.is_empty() {
             for i in 0..columns.len() {
@@ -514,7 +490,7 @@ impl<'a> Table<'a> {
         }
         let mut result = vec![];
         while stmt.step() == SQLITE_ROW {
-            let mut dataline = Vec::<ResultDataValue>::new();
+            let mut data_line = Vec::<ResultDataValue>::new();
             let n = stmt.data_count();
             for i in 0..n {
                 let tp = stmt.column_type(i);
@@ -522,33 +498,32 @@ impl<'a> Table<'a> {
                     SQLITE_TEXT => {
                         let text = stmt.query_column_text(i);
                         ResultDataValue::Text(if text.is_empty() {
-                            None
-                        } else {
-                            Some(Box::new(text.to_vec()))
-                        })
+                                                  None
+                                              } else {
+                                                  Some(Box::new(text.to_vec()))
+                                              })
                     },
                     SQLITE_INTEGER => ResultDataValue::Integer(stmt.query_column_int(i)),
                     SQLITE_FLOAT => ResultDataValue::Double(stmt.query_column_double(i)),
                     SQLITE_BLOB => {
                         let blob = stmt.query_column_blob(i);
                         ResultDataValue::Blob(if blob.is_empty() {
-                            None
-                        } else {
-                            Some(Box::new(blob.to_vec()))
-                        })
+                                                  None
+                                              } else {
+                                                  Some(Box::new(blob.to_vec()))
+                                              })
                     },
                     SQLITE_NULL => ResultDataValue::Blob(None),
                     _ => return Err(SQLITE_ERROR),
                 };
-                dataline.push(data);
+                data_line.push(data);
             }
-            result.push(dataline);
+            result.push(data_line);
         }
         Ok(result)
     }
 
-    ///
-    /// return the count of datas with conditons, the length of conditions may be 0.
+    /// return the count of datas with conditions, the length of conditions may be 0.
     ///
     /// code like:
     /// let count = table
@@ -558,8 +533,7 @@ impl<'a> Table<'a> {
     ///     }]);
     ///
     /// the sql is like : select count(*) as count from table_name where id=3
-    ///
-    pub fn count_datas(&self, conditions: &Condition) -> Result<u32, SqliteErrcode> {
+    pub fn count_datas(&self, conditions: &Condition) -> Result<u32, SqliteErrCode> {
         let mut sql = format!("select count(*) as count from {}", self.table_name);
         if !conditions.is_empty() {
             sql.push_str(" where ");
@@ -603,7 +577,6 @@ impl<'a> Table<'a> {
         Ok(count)
     }
 
-    ///
     /// return if the data exists
     ///
     /// code like:
@@ -615,14 +588,13 @@ impl<'a> Table<'a> {
     ///         },
     ///         Pair {
     ///             column_name: "alias",
-    ///             value: DataValue::Text(b"testtest"),
+    ///             value: DataValue::Text(b"test test"),
     ///         },
     ///     ]);
     ///
-    /// the sql is like: select count(*) as count from table_name where id=3 and alias='testtest'
+    /// the sql is like: select count(*) as count from table_name where id=3 and alias='test test'
     /// if count > 0, data exists
-    ///
-    pub fn is_data_exists(&self, cond: &Condition) -> Result<bool, SqliteErrcode> {
+    pub fn is_data_exists(&self, cond: &Condition) -> Result<bool, SqliteErrCode> {
         let ret = self.count_datas(cond);
         match ret {
             Ok(count) => Ok(count > 0),

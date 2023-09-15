@@ -19,18 +19,18 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use asset_common::{definition::{Result, ErrCode}, loge};
 use asset_ipc_interface::IpcCode;
-use db_operator::database_table_helper::{G_COLUMN_OWNERTYPE, G_COLUMN_DELETETYPE,
-        G_COLUMN_VERSION, G_COLUMN_CREATETIME, G_COLUMN_UPDATETIME};
+use db_operator::database_table_helper::{G_COLUMN_OWNER_TYPE, G_COLUMN_DELETE_TYPE,
+        G_COLUMN_VERSION, G_COLUMN_CREATE_TIME, G_COLUMN_UPDATE_TIME};
 
 use crate::{calling_process_info::CallingInfo, definition_inner::{AssetInnerMap, DeleteType, InnerValue}};
 
 fn get_owner_type(calling_info: &CallingInfo, params: &mut AssetInnerMap) -> Result<()> {
-    params.insert(G_COLUMN_OWNERTYPE, InnerValue::Number(calling_info.get_owner_type()));
+    params.insert(G_COLUMN_OWNER_TYPE, InnerValue::Number(calling_info.get_owner_type()));
     Ok(())
 }
 
 fn get_delete_type(params: &mut AssetInnerMap) -> Result<()> {
-    params.insert(G_COLUMN_DELETETYPE,
+    params.insert(G_COLUMN_DELETE_TYPE,
         InnerValue::Number(DeleteType::WhenUninstallApp as u32 | DeleteType::WhenRemoveUser as u32));
     Ok(())
 }
@@ -47,7 +47,7 @@ fn get_update_time(params: &mut AssetInnerMap) -> Result<()> {
         return Err(ErrCode::Failed);
     }
     let time_string = sys_time_res.unwrap().as_millis().to_string();
-    params.insert(G_COLUMN_UPDATETIME, InnerValue::Text(time_string.into_bytes()));
+    params.insert(G_COLUMN_UPDATE_TIME, InnerValue::Text(time_string.into_bytes()));
     Ok(())
 }
 
@@ -58,7 +58,7 @@ fn get_create_time(params: &mut AssetInnerMap) -> Result<()> {
         return Err(ErrCode::Failed);
     }
     let time_string = sys_time_res.unwrap().as_millis().to_string();
-    params.insert(G_COLUMN_CREATETIME, InnerValue::Text(time_string.into_bytes()));
+    params.insert(G_COLUMN_CREATE_TIME, InnerValue::Text(time_string.into_bytes()));
     Ok(())
 }
 

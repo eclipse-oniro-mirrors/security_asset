@@ -1,4 +1,3 @@
-//!
 //! Copyright (C) 2023 Huawei Device Co., Ltd.
 //! Licensed under the Apache License, Version 2.0 (the "License");
 //! you may not use this file except in compliance with the License.
@@ -11,17 +10,16 @@
 //! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
-//!
 use core::ffi::c_void;
 use std::ptr::null;
 
 use asset_common::definition::ErrCode;
 
 /// sqlite error type
-pub type SqliteErrcode = i32;
+pub type SqliteErrCode = i32;
 
-/// change sqlite errcode to asset errcode
-pub fn from_sqlitecode_to_assetcode(value: SqliteErrcode) -> ErrCode {
+/// change sqlite err code to asset err code
+pub fn from_sqlite_code_to_asset_code(value: SqliteErrCode) -> ErrCode {
     match value {
         SQLITE_ERROR => ErrCode::SqliteERROR,
         SQLITE_INTERNAL => ErrCode::SqliteINTERNAL,
@@ -161,7 +159,7 @@ pub const SQLITE_OPEN_PRIVATECACHE: i32 = 0x00040000;
 /// VFS only
 pub const SQLITE_OPEN_WAL: i32 = 0x00080000;
 
-/// interger type
+/// integer type
 pub const SQLITE_INTEGER: i32 = 1;
 /// float type
 pub const SQLITE_FLOAT: i32 = 2;
@@ -171,174 +169,167 @@ pub const SQLITE_BLOB: i32 = 4;
 pub const SQLITE_NULL: i32 = 5;
 /// string type
 pub const SQLITE_TEXT: i32 = 3;
-/// stirng type
+/// string type
 pub const SQLITE3_TEXT: i32 = 3;
 
-///
 /// data: pointer passed by sqlite3_exec
 /// argc: count of ResultSet
 /// argv: Result
-/// azColName: Column names
-///
-pub type sqlite3_callback = extern fn(
-    data: *mut c_void,
-    argc: i32,
-    argv: *const *const u8,
-    azColName: *const *const u8,
-) -> SqliteErrcode;
+/// az_col_name: Column names
+pub type Sqlite3Callback = extern fn(data: *mut c_void,
+                                     argc: i32,
+                                     argv: *const *const u8,
+                                     az_col_name: *const *const u8)
+                                     -> SqliteErrCode;
 
 /// callback func for bind data
-pub type bind_callback = extern fn(p: *mut c_void);
+pub type BindCallback = extern fn(p: *mut c_void);
 
 /// c wrap func
-pub type sqlite3_open_ctype = extern fn(
-    filename: *const u8,    /* Database filename (UTF-8) */
-    ppDb: *mut *mut c_void, /* OUT: SQLite db handle */
-) -> SqliteErrcode;
+pub type Sqlite3OpenCType = extern fn(filename: *const u8,     // Database filename (UTF-8)
+                                      pp_db: *mut *mut c_void  /* OUT: SQLite db handle */)
+                                      -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_open_v2_ctype = extern fn(
-    filename: *const u8,    /* Database filename (UTF-8) */
-    ppDb: *mut *mut c_void, /* OUT: SQLite db handle */
-    flags: i32,             /* Flags */
-    zVfs: *const u8,        /* Name of VFS module to use */
-) -> SqliteErrcode;
+pub type Sqlite3OpenV2CType = extern fn(filename: *const u8,     // Database filename (UTF-8)
+                                        pp_db: *mut *mut c_void, // OUT: SQLite db handle
+                                        flags: i32,              // Flags
+                                        z_vfs: *const u8         /* Name of VFS module to use */)
+                                        -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_close_ctype = extern fn(db: *mut c_void) -> SqliteErrcode;
+pub type Sqlite3CloseCType = extern fn(db: *mut c_void) -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_close_v2_ctype = extern fn(db: *mut c_void) -> SqliteErrcode;
+pub type Sqlite3CloseV2CType = extern fn(db: *mut c_void) -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_exec_ctype = extern fn(
-    db: *mut c_void,                    /* An open database */
-    sql: *const u8,                     /* SQL to be evaluated */
-    callback: Option<sqlite3_callback>, /* Callback function */
-    data: *mut c_void,                  /* 1st argument to callback */
-    msg: *mut *mut u8,                  /* Error msg written here */
-) -> SqliteErrcode;
+pub type Sqlite3ExecCType = extern fn(db: *mut c_void,                   // An open database
+                                      sql: *const u8,                    // SQL to be evaluated
+                                      callback: Option<Sqlite3Callback>, // Callback function
+                                      data: *mut c_void,                 /* 1st argument to
+                                                                          * callback */
+                                      msg: *mut *mut u8 /* Error msg written here */)
+                                      -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_finalize_ctype = extern fn(stmt: *mut c_void) -> SqliteErrcode;
+pub type Sqlite3FinalizeCType = extern fn(stmt: *mut c_void) -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_free_ctype = extern fn(data: *mut c_void);
+pub type Sqlite3FreeCType = extern fn(data: *mut c_void);
 
 /// c wrap func
-pub type sqlite3_changes_ctype = extern fn(db: *mut c_void) -> SqliteErrcode;
+pub type Sqlite3ChangesCType = extern fn(db: *mut c_void) -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_prepare_ctype = extern fn(
-    db: *mut c_void,          /* Database handle */
-    zSql: *const u8,          /* SQL statement, UTF-8 encoded */
-    nByte: i32,               /* Maximum length of zSql in bytes. */
-    ppStmt: *mut *mut c_void, /* OUT: Statement handle */
-    pzTail: *mut *mut u8,     /* OUT: Pointer to unused portion of zSql */
-) -> SqliteErrcode;
+pub type Sqlite3PrepareCType =
+    extern fn(db: *mut c_void,           // Database handle
+              z_sql: *const u8,          // SQL statement, UTF-8 encoded
+              n_byte: i32,               // Maximum length of z_sql in bytes.
+              pp_stmt: *mut *mut c_void, // OUT: Statement handle
+              pz_tail: *mut *mut u8      /* OUT: Pointer to unused portion of z_sql */)
+              -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_prepare_v2_ctype = extern fn(
-    db: *mut c_void,          /* Database handle */
-    zSql: *const u8,          /* SQL statement, UTF-8 encoded */
-    nByte: i32,               /* Maximum length of zSql in bytes. */
-    ppStmt: *mut *mut c_void, /* OUT: Statement handle */
-    pzTail: *mut *mut u8,     /* OUT: Pointer to unused portion of zSql */
-) -> SqliteErrcode;
+pub type Sqlite3PrepareV2CType =
+    extern fn(db: *mut c_void,           // Database handle
+              z_sql: *const u8,          // SQL statement, UTF-8 encoded
+              n_byte: i32,               // Maximum length of z_sql in bytes.
+              pp_stmt: *mut *mut c_void, // OUT: Statement handle
+              pz_tail: *mut *mut u8      /* OUT: Pointer to unused portion of z_sql */)
+              -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_bind_text_ctype = extern fn(
-    stmt: *mut c_void,
-    index: i32,
-    text: *const u8,
-    size: i32,
-    callback: Option<bind_callback>,
-) -> SqliteErrcode;
+pub type Sqlite3BindTextCType = extern fn(stmt: *mut c_void,
+                                          index: i32,
+                                          text: *const u8,
+                                          size: i32,
+                                          callback: Option<BindCallback>)
+                                          -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_bind_blob_ctype = extern fn(
-    stmt: *mut c_void,
-    index: i32,
-    blob: *const u8,
-    n: i32,
-    callback: Option<bind_callback>,
-) -> SqliteErrcode;
+pub type Sqlite3BindBlobCType = extern fn(stmt: *mut c_void,
+                                          index: i32,
+                                          blob: *const u8,
+                                          n: i32,
+                                          callback: Option<BindCallback>)
+                                          -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_bind_double_ctype =
-    extern fn(stmt: *mut c_void, index: i32, value: f64) -> SqliteErrcode;
+pub type Sqlite3BindDoubleCType =
+    extern fn(stmt: *mut c_void, index: i32, value: f64) -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_bind_int_ctype =
-    extern fn(stmt: *mut c_void, index: i32, value: i32) -> SqliteErrcode;
+pub type Sqlite3BindIntCType =
+    extern fn(stmt: *mut c_void, index: i32, value: i32) -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_bind_int64_ctype =
-    extern fn(stmt: *mut c_void, index: i32, value: i64) -> SqliteErrcode;
+pub type Sqlite3BindInt64CType =
+    extern fn(stmt: *mut c_void, index: i32, value: i64) -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_bind_null_ctype = extern fn(stmt: *mut c_void, index: i32) -> SqliteErrcode;
+pub type Sqlite3BindNullCType = extern fn(stmt: *mut c_void, index: i32) -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_bind_zeroblob_ctype =
-    extern fn(stmt: *mut c_void, index: i32, n: i32) -> SqliteErrcode;
+pub type Sqlite3BindZeroBlobCType =
+    extern fn(stmt: *mut c_void, index: i32, n: i32) -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_errmsg_ctype = extern fn(db: *mut c_void) -> *const u8;
+pub type Sqlite3ErrMsgCType = extern fn(db: *mut c_void) -> *const u8;
 
 /// c wrap func
-pub type sqlite3_step_ctype = extern fn(stmt: *mut c_void) -> SqliteErrcode;
+pub type Sqlite3StepCType = extern fn(stmt: *mut c_void) -> SqliteErrCode;
 
 /// c wrap func
-pub type sqlite3_column_count_ctype = extern fn(stmt: *mut c_void) -> i32;
+pub type Sqlite3ColumnCountCType = extern fn(stmt: *mut c_void) -> i32;
 
 /// c wrap func
-pub type sqlite3_column_name_ctype = extern fn(stmt: *mut c_void, N: i32) -> *const u8;
+pub type Sqlite3ColumnNameCType = extern fn(stmt: *mut c_void, n: i32) -> *const u8;
 
 /// c wrap func
-pub type sqlite3_data_count_ctype = extern fn(stmt: *mut c_void) -> i32;
+pub type Sqlite3DataCountCType = extern fn(stmt: *mut c_void) -> i32;
 
 /// c wrap func
-pub type sqlite3_column_blob_ctype = extern fn(stmt: *mut c_void, iCol: i32) -> *const u8;
+pub type Sqlite3ColumnBlobCType = extern fn(stmt: *mut c_void, i_col: i32) -> *const u8;
 
 /// c wrap func
-pub type sqlite3_column_double_ctype = extern fn(stmt: *mut c_void, iCol: i32) -> f64;
+pub type Sqlite3ColumnDoubleCType = extern fn(stmt: *mut c_void, i_col: i32) -> f64;
 
 /// c wrap func
-pub type sqlite3_column_int_ctype = extern fn(stmt: *mut c_void, iCol: i32) -> i32;
+pub type Sqlite3ColumnIntCType = extern fn(stmt: *mut c_void, i_col: i32) -> i32;
 
 /// c wrap func
-pub type sqlite3_column_int64_ctype = extern fn(stmt: *mut c_void, iCol: i32) -> i64;
+pub type Sqlite3ColumnInt64CType = extern fn(stmt: *mut c_void, i_col: i32) -> i64;
 
 /// c wrap func
-pub type sqlite3_column_text_ctype = extern fn(stmt: *mut c_void, iCol: i32) -> *const u8;
+pub type Sqlite3ColumnTextCType = extern fn(stmt: *mut c_void, i_col: i32) -> *const u8;
 
 /// c wrap func
-pub type sqlite3_column_bytes_ctype = extern fn(stmt: *mut c_void, iCol: i32) -> i32;
+pub type Sqlite3ColumnBytesCType = extern fn(stmt: *mut c_void, i_col: i32) -> i32;
 
 /// c wrap func
-pub type sqlite3_column_type_ctype = extern fn(stmt: *mut c_void, iCol: i32) -> i32;
+pub type Sqlite3ColumnTypeCType = extern fn(stmt: *mut c_void, i_col: i32) -> i32;
 
 /// c wrap func
-pub type sqlite3_reset_ctype = extern fn(stmt: *mut c_void) -> SqliteErrcode;
+pub type Sqlite3ResetCType = extern fn(stmt: *mut c_void) -> SqliteErrCode;
 
 /// global functions for sqlite3
 #[repr(C)]
-pub struct sqlite3_api_routines {
+pub struct Sqlite3ApiRoutines {
     /// sqlite3_c_func
     pub aggregate_context: *const c_void,
     /// sqlite3_c_func
     pub aggregate_count: *const c_void,
     /// sqlite3_c_func
-    pub bind_blob: sqlite3_bind_blob_ctype,
+    pub bind_blob: Sqlite3BindBlobCType,
     /// sqlite3_c_func
-    pub bind_double: sqlite3_bind_double_ctype,
+    pub bind_double: Sqlite3BindDoubleCType,
     /// sqlite3_c_func
-    pub bind_int: sqlite3_bind_int_ctype,
+    pub bind_int: Sqlite3BindIntCType,
     /// sqlite3_c_func
-    pub bind_int64: sqlite3_bind_int64_ctype,
+    pub bind_int64: Sqlite3BindInt64CType,
     /// sqlite3_c_func
-    pub bind_null: sqlite3_bind_null_ctype,
+    pub bind_null: Sqlite3BindNullCType,
     /// sqlite3_c_func
     pub bind_parameter_count: *const c_void,
     /// sqlite3_c_func
@@ -346,7 +337,7 @@ pub struct sqlite3_api_routines {
     /// sqlite3_c_func
     pub bind_parameter_name: *const c_void,
     /// sqlite3_c_func
-    pub bind_text: sqlite3_bind_text_ctype,
+    pub bind_text: Sqlite3BindTextCType,
     /// sqlite3_c_func
     pub bind_text16: *const c_void,
     /// sqlite3_c_func
@@ -356,21 +347,21 @@ pub struct sqlite3_api_routines {
     /// sqlite3_c_func
     pub busy_timeout: *const c_void,
     /// sqlite3_c_func
-    pub changes: sqlite3_changes_ctype,
+    pub changes: Sqlite3ChangesCType,
     /// sqlite3_c_func
-    pub close: sqlite3_close_ctype,
+    pub close: Sqlite3CloseCType,
     /// sqlite3_c_func
     pub collation_needed: *const c_void,
     /// sqlite3_c_func
     pub collation_needed16: *const c_void,
     /// sqlite3_c_func
-    pub column_blob: sqlite3_column_blob_ctype,
+    pub column_blob: Sqlite3ColumnBlobCType,
     /// sqlite3_c_func
-    pub column_bytes: sqlite3_column_bytes_ctype,
+    pub column_bytes: Sqlite3ColumnBytesCType,
     /// sqlite3_c_func
     pub column_bytes16: *const c_void,
     /// sqlite3_c_func
-    pub column_count: sqlite3_column_count_ctype,
+    pub column_count: Sqlite3ColumnCountCType,
     /// sqlite3_c_func
     pub column_database_name: *const c_void,
     /// sqlite3_c_func
@@ -380,13 +371,13 @@ pub struct sqlite3_api_routines {
     /// sqlite3_c_func
     pub column_decltype16: *const c_void,
     /// sqlite3_c_func
-    pub column_double: sqlite3_column_double_ctype,
+    pub column_double: Sqlite3ColumnDoubleCType,
     /// sqlite3_c_func
-    pub column_int: sqlite3_column_int_ctype,
+    pub column_int: Sqlite3ColumnIntCType,
     /// sqlite3_c_func
-    pub column_int64: sqlite3_column_int64_ctype,
+    pub column_int64: Sqlite3ColumnInt64CType,
     /// sqlite3_c_func
-    pub column_name: sqlite3_column_name_ctype,
+    pub column_name: Sqlite3ColumnNameCType,
     /// sqlite3_c_func
     pub column_name16: *const c_void,
     /// sqlite3_c_func
@@ -398,11 +389,11 @@ pub struct sqlite3_api_routines {
     /// sqlite3_c_func
     pub column_table_name16: *const c_void,
     /// sqlite3_c_func
-    pub column_text: sqlite3_column_text_ctype,
+    pub column_text: Sqlite3ColumnTextCType,
     /// sqlite3_c_func
     pub column_text16: *const c_void,
     /// sqlite3_c_func
-    pub column_type: sqlite3_column_type_ctype,
+    pub column_type: Sqlite3ColumnTypeCType,
     /// sqlite3_c_func
     pub column_value: *const c_void,
     /// sqlite3_c_func
@@ -422,7 +413,7 @@ pub struct sqlite3_api_routines {
     /// sqlite3_c_func
     pub create_module: *const c_void,
     /// sqlite3_c_func
-    pub data_count: sqlite3_data_count_ctype,
+    pub data_count: Sqlite3DataCountCType,
     /// sqlite3_c_func
     pub db_handle: *const c_void,
     /// sqlite3_c_func
@@ -432,17 +423,17 @@ pub struct sqlite3_api_routines {
     /// sqlite3_c_func
     pub errcode: *const c_void,
     /// sqlite3_c_func
-    pub errmsg: sqlite3_errmsg_ctype,
+    pub errmsg: Sqlite3ErrMsgCType,
     /// sqlite3_c_func
     pub errmsg16: *const c_void,
     /// sqlite3_c_func
-    pub exec: sqlite3_exec_ctype,
+    pub exec: Sqlite3ExecCType,
     /// sqlite3_c_func
     pub expired: *const c_void,
     /// sqlite3_c_func
-    pub finalize: sqlite3_finalize_ctype,
+    pub finalize: Sqlite3FinalizeCType,
     /// sqlite3_c_func
-    pub free: sqlite3_free_ctype,
+    pub free: Sqlite3FreeCType,
     /// sqlite3_c_func
     pub free_table: *const c_void,
     /// sqlite3_c_func
@@ -466,11 +457,11 @@ pub struct sqlite3_api_routines {
     /// sqlite3_c_func
     pub mprintf: *const c_void,
     /// sqlite3_c_func
-    pub open: sqlite3_open_ctype,
+    pub open: Sqlite3OpenCType,
     /// sqlite3_c_func
     pub open16: *const c_void,
     /// sqlite3_c_func
-    pub prepare: sqlite3_prepare_ctype,
+    pub prepare: Sqlite3PrepareCType,
     /// sqlite3_c_func
     pub prepare16: *const c_void,
     /// sqlite3_c_func
@@ -480,7 +471,7 @@ pub struct sqlite3_api_routines {
     /// sqlite3_c_func
     pub realloc: *const c_void,
     /// sqlite3_c_func
-    pub reset: sqlite3_reset_ctype,
+    pub reset: Sqlite3ResetCType,
     /// sqlite3_c_func
     pub result_blob: *const c_void,
     /// sqlite3_c_func
@@ -514,7 +505,7 @@ pub struct sqlite3_api_routines {
     /// sqlite3_c_func
     pub xsnprintf: *const c_void,
     /// sqlite3_c_func
-    pub step: sqlite3_step_ctype,
+    pub step: Sqlite3StepCType,
     /// sqlite3_c_func
     pub table_column_metadata: *const c_void,
     /// sqlite3_c_func
@@ -558,7 +549,7 @@ pub struct sqlite3_api_routines {
     /// sqlite3_c_func
     pub overload_function: *const c_void,
     /// sqlite3_c_func
-    pub prepare_v2: sqlite3_prepare_v2_ctype,
+    pub prepare_v2: Sqlite3PrepareV2CType,
     /// sqlite3_c_func
     pub prepare16_v2: *const c_void,
     /// sqlite3_c_func
@@ -566,7 +557,7 @@ pub struct sqlite3_api_routines {
     /// sqlite3_c_func
     pub create_module_v2: *const c_void,
     /// sqlite3_c_func
-    pub bind_zeroblob: sqlite3_bind_zeroblob_ctype,
+    pub bind_zeroblob: Sqlite3BindZeroBlobCType,
     /// sqlite3_c_func
     pub blob_bytes: *const c_void,
     /// sqlite3_c_func
@@ -596,7 +587,7 @@ pub struct sqlite3_api_routines {
     /// sqlite3_c_func
     pub mutex_try: *const c_void,
     /// sqlite3_c_func
-    pub open_v2: sqlite3_open_v2_ctype,
+    pub open_v2: Sqlite3OpenV2CType,
     /// sqlite3_c_func
     pub release_memory: *const c_void,
     /// sqlite3_c_func
@@ -684,7 +675,7 @@ pub struct sqlite3_api_routines {
     /// sqlite3_c_func
     pub vtab_on_conflict: *const c_void,
     /// sqlite3_c_func
-    pub close_v2: sqlite3_close_v2_ctype,
+    pub close_v2: Sqlite3CloseV2CType,
     /// sqlite3_c_func
     pub db_filename: *const c_void,
     /// sqlite3_c_func
@@ -863,58 +854,58 @@ pub struct sqlite3_api_routines {
 
 extern {
     /// sqlite3 export symbols by struct, the functions is the member.
-    static sqlite3_export_symbols: *const sqlite3_api_routines;
+    static sqlite3_export_symbols: *const Sqlite3ApiRoutines;
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_open_func(
-    filename: &str,   /* Database filename (UTF-8) */
-    ppDb: &mut usize, /* OUT: SQLite db handle */
-) -> SqliteErrcode {
-    unsafe { ((*sqlite3_export_symbols).open)(filename.as_ptr(), ppDb as *mut usize as _) }
+pub fn sqlite3_open_func(filename: &str,    // Database filename (UTF-8)
+                         pp_db: &mut usize  /* OUT: SQLite db handle */)
+                         -> SqliteErrCode {
+    unsafe { ((*sqlite3_export_symbols).open)(filename.as_ptr(), pp_db as *mut usize as _) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_open_v2_func(
-    filename: &str,      /* Database filename (UTF-8) */
-    ppDb: &mut usize,    /* OUT: SQLite db handle */
-    flags: i32,          /* Flags */
-    zVfs: Option<&[u8]>, /* Name of VFS module to use */
-) -> SqliteErrcode {
-    let addr = match zVfs {
+pub fn sqlite3_open_v2_func(filename: &str,       // Database filename (UTF-8)
+                            pp_db: &mut usize,    // OUT: SQLite db handle
+                            flags: i32,           // Flags
+                            z_vfs: Option<&[u8]>  /* Name of VFS module to use */)
+                            -> SqliteErrCode {
+    let addr = match z_vfs {
         Some(v) => v.as_ptr(),
         None => null(),
     };
     unsafe {
-        ((*sqlite3_export_symbols).open_v2)(filename.as_ptr(), ppDb as *mut usize as _, flags, addr)
+        ((*sqlite3_export_symbols).open_v2)(filename.as_ptr(),
+                                            pp_db as *mut usize as _,
+                                            flags,
+                                            addr)
     }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_close_func(db: usize) -> SqliteErrcode {
+pub fn sqlite3_close_func(db: usize) -> SqliteErrCode {
     unsafe { ((*sqlite3_export_symbols).close)(db as _) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_close_v2_func(db: usize) -> SqliteErrcode {
+pub fn sqlite3_close_v2_func(db: usize) -> SqliteErrCode {
     unsafe { ((*sqlite3_export_symbols).close_v2)(db as _) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_exec_func(
-    db: usize,                          /* An open database */
-    sql: &str,                          /* SQL to be evaluated */
-    callback: Option<sqlite3_callback>, /* Callback function */
-    data: usize,                        /* 1st argument to callback */
-    msg: &mut *mut u8,                  /* Error msg written here */
-) -> SqliteErrcode {
+pub fn sqlite3_exec_func(db: usize,                         // An open database
+                         sql: &str,                         // SQL to be evaluated
+                         callback: Option<Sqlite3Callback>, // Callback function
+                         data: usize,                       // 1st argument to callback
+                         msg: &mut *mut u8                  /* Error msg written here */)
+                         -> SqliteErrCode {
     unsafe {
         ((*sqlite3_export_symbols).exec)(db as _, sql.as_ptr(), callback, data as _, msg as _)
     }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_finalize_func(stat: usize) -> SqliteErrcode {
+pub fn sqlite3_finalize_func(stat: usize) -> SqliteErrCode {
     unsafe { ((*sqlite3_export_symbols).finalize)(stat as _) }
 }
 
@@ -924,104 +915,97 @@ pub fn sqlite3_free_func(data: usize) {
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_changes_func(db: usize) -> SqliteErrcode {
+pub fn sqlite3_changes_func(db: usize) -> SqliteErrCode {
     unsafe { ((*sqlite3_export_symbols).changes)(db as _) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_prepare_func(
-    db: usize,          /* Database handle */
-    zSql: &[u8],        /* SQL statement, UTF-8 encoded */
-    nByte: i32,         /* Maximum length of zSql in bytes. */
-    ppStmt: &mut usize, /* OUT: Statement handle */
-    pzTail: &mut usize, /* OUT: Pointer to unused portion of zSql */
-) -> SqliteErrcode {
+pub fn sqlite3_prepare_func(db: usize,           // Database handle
+                            z_sql: &[u8],        // SQL statement, UTF-8 encoded
+                            n_byte: i32,         // Maximum length of z_sql in bytes.
+                            pp_stmt: &mut usize, // OUT: Statement handle
+                            pz_tail: &mut usize  /* OUT: Pointer to unused portion of z_sql */)
+                            -> SqliteErrCode {
     unsafe {
-        ((*sqlite3_export_symbols).prepare)(
-            db as _,
-            zSql.as_ptr(),
-            nByte,
-            ppStmt as *mut usize as _,
-            pzTail as *mut usize as _,
-        )
+        ((*sqlite3_export_symbols).prepare)(db as _,
+                                            z_sql.as_ptr(),
+                                            n_byte,
+                                            pp_stmt as *mut usize as _,
+                                            pz_tail as *mut usize as _)
     }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_prepare_v2_func(
-    db: usize,          /* Database handle */
-    zSql: &str,         /* SQL statement, UTF-8 encoded */
-    nByte: i32,         /* Maximum length of zSql in bytes. */
-    ppStmt: &mut usize, /* OUT: Statement handle */
-    pzTail: &mut usize, /* OUT: Pointer to unused portion of zSql */
-) -> SqliteErrcode {
+pub fn sqlite3_prepare_v2_func(db: usize,           // Database handle
+                               z_sql: &str,         // SQL statement, UTF-8 encoded
+                               n_byte: i32,         // Maximum length of z_sql in bytes.
+                               pp_stmt: &mut usize, // OUT: Statement handle
+                               pz_tail: &mut usize  /* OUT: Pointer to unused portion of
+                                                     * z_sql */)
+                               -> SqliteErrCode {
     unsafe {
-        ((*sqlite3_export_symbols).prepare_v2)(
-            db as _,
-            zSql.as_ptr(),
-            nByte,
-            ppStmt as *mut usize as _,
-            pzTail as *mut usize as _,
-        )
+        ((*sqlite3_export_symbols).prepare_v2)(db as _,
+                                               z_sql.as_ptr(),
+                                               n_byte,
+                                               pp_stmt as *mut usize as _,
+                                               pz_tail as *mut usize as _)
     }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_bind_text_func(
-    stat: usize,
-    index: i32,
-    text: &[u8],
-    size: i32,
-    callback: Option<bind_callback>,
-) -> SqliteErrcode {
+pub fn sqlite3_bind_text_func(stat: usize,
+                              index: i32,
+                              text: &[u8],
+                              size: i32,
+                              callback: Option<BindCallback>)
+                              -> SqliteErrCode {
     unsafe {
         ((*sqlite3_export_symbols).bind_text)(stat as _, index, text.as_ptr(), size, callback)
     }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_bind_blob_func(
-    stat: usize,
-    index: i32,
-    blob: &[u8],
-    n: i32,
-    callback: Option<bind_callback>,
-) -> SqliteErrcode {
+pub fn sqlite3_bind_blob_func(stat: usize,
+                              index: i32,
+                              blob: &[u8],
+                              n: i32,
+                              callback: Option<BindCallback>)
+                              -> SqliteErrCode {
     unsafe { ((*sqlite3_export_symbols).bind_blob)(stat as _, index, blob.as_ptr(), n, callback) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_bind_double_func(stat: usize, index: i32, value: f64) -> SqliteErrcode {
+pub fn sqlite3_bind_double_func(stat: usize, index: i32, value: f64) -> SqliteErrCode {
     unsafe { ((*sqlite3_export_symbols).bind_double)(stat as _, index, value) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_bind_int_func(stat: usize, index: i32, value: i32) -> SqliteErrcode {
+pub fn sqlite3_bind_int_func(stat: usize, index: i32, value: i32) -> SqliteErrCode {
     unsafe { ((*sqlite3_export_symbols).bind_int)(stat as _, index, value) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_bind_int64_func(stat: usize, index: i32, value: i64) -> SqliteErrcode {
+pub fn sqlite3_bind_int64_func(stat: usize, index: i32, value: i64) -> SqliteErrCode {
     unsafe { ((*sqlite3_export_symbols).bind_int64)(stat as _, index, value) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_bind_null_func(stat: usize, index: i32) -> SqliteErrcode {
+pub fn sqlite3_bind_null_func(stat: usize, index: i32) -> SqliteErrCode {
     unsafe { ((*sqlite3_export_symbols).bind_null)(stat as _, index) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_bind_zeroblob_func(stat: usize, index: i32, n: i32) -> SqliteErrcode {
+pub fn sqlite3_bind_zeroblob_func(stat: usize, index: i32, n: i32) -> SqliteErrCode {
     unsafe { ((*sqlite3_export_symbols).bind_zeroblob)(stat as _, index, n) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_errmsg_func(db: usize) -> *const u8 {
+pub fn sqlite3_err_msg_func(db: usize) -> *const u8 {
     unsafe { ((*sqlite3_export_symbols).errmsg)(db as _) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_step_func(stat: usize) -> SqliteErrcode {
+pub fn sqlite3_step_func(stat: usize) -> SqliteErrCode {
     unsafe { ((*sqlite3_export_symbols).step)(stat as _) }
 }
 
@@ -1041,41 +1025,41 @@ pub fn sqlite3_data_count_func(stat: usize) -> i32 {
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_column_blob_func(stmt: usize, iCol: i32) -> *const u8 {
-    unsafe { ((*sqlite3_export_symbols).column_blob)(stmt as _, iCol) }
+pub fn sqlite3_column_blob_func(stmt: usize, i_col: i32) -> *const u8 {
+    unsafe { ((*sqlite3_export_symbols).column_blob)(stmt as _, i_col) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_column_double_func(stmt: usize, iCol: i32) -> f64 {
-    unsafe { ((*sqlite3_export_symbols).column_double)(stmt as _, iCol) }
+pub fn sqlite3_column_double_func(stmt: usize, i_col: i32) -> f64 {
+    unsafe { ((*sqlite3_export_symbols).column_double)(stmt as _, i_col) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_column_int_func(stmt: usize, iCol: i32) -> i32 {
-    unsafe { ((*sqlite3_export_symbols).column_int)(stmt as _, iCol) }
+pub fn sqlite3_column_int_func(stmt: usize, i_col: i32) -> i32 {
+    unsafe { ((*sqlite3_export_symbols).column_int)(stmt as _, i_col) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_column_int64_func(stmt: usize, iCol: i32) -> i64 {
-    unsafe { ((*sqlite3_export_symbols).column_int64)(stmt as _, iCol) }
+pub fn sqlite3_column_int64_func(stmt: usize, i_col: i32) -> i64 {
+    unsafe { ((*sqlite3_export_symbols).column_int64)(stmt as _, i_col) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_column_text_func(stmt: usize, iCol: i32) -> *const u8 {
-    unsafe { ((*sqlite3_export_symbols).column_text)(stmt as _, iCol) }
+pub fn sqlite3_column_text_func(stmt: usize, i_col: i32) -> *const u8 {
+    unsafe { ((*sqlite3_export_symbols).column_text)(stmt as _, i_col) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_column_bytes_func(stmt: usize, iCol: i32) -> i32 {
-    unsafe { ((*sqlite3_export_symbols).column_bytes)(stmt as _, iCol) }
+pub fn sqlite3_column_bytes_func(stmt: usize, i_col: i32) -> i32 {
+    unsafe { ((*sqlite3_export_symbols).column_bytes)(stmt as _, i_col) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_column_type_func(stmt: usize, iCol: i32) -> i32 {
-    unsafe { ((*sqlite3_export_symbols).column_type)(stmt as _, iCol) }
+pub fn sqlite3_column_type_func(stmt: usize, i_col: i32) -> i32 {
+    unsafe { ((*sqlite3_export_symbols).column_type)(stmt as _, i_col) }
 }
 
 /// rust ffi func for C func
-pub fn sqlite3_reset_func(stmt: usize) -> SqliteErrcode {
+pub fn sqlite3_reset_func(stmt: usize) -> SqliteErrCode {
     unsafe { ((*sqlite3_export_symbols).reset)(stmt as _) }
 }

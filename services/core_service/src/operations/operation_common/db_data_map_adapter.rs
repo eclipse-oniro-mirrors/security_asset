@@ -18,8 +18,8 @@
 use asset_common::definition::{AssetMap, Result, Value, Tag};
 use db_operator::{
     types::{Pair, DataValue},
-    database_table_helper::{G_COLUMN_ACCESSTYPE, G_COLUMN_SECRET, G_COLUMN_ALIAS, G_COLUMN_AUTHTYPE,
-        G_COLUMN_SYNCTYPE, G_COLUMN_CRITICAL1, G_COLUMN_CRITICAL2, G_COLUMN_CRITICAL3,
+    database_table_helper::{G_COLUMN_ACCESS_TYPE, G_COLUMN_SECRET, G_COLUMN_ALIAS, G_COLUMN_AUTH_TYPE,
+        G_COLUMN_SYNC_TYPE, G_COLUMN_CRITICAL1, G_COLUMN_CRITICAL2, G_COLUMN_CRITICAL3,
         G_COLUMN_CRITICAL4, G_COLUMN_NORMAL1, G_COLUMN_NORMAL2, G_COLUMN_NORMAL3, G_COLUMN_NORMAL4}
 };
 
@@ -52,11 +52,11 @@ fn convert_extra_value_into_db_value(value: &InnerValue) -> Result<DataValue> {
 
 fn get_tag_column_name(tag: &Tag) -> Option<&str> {
     match *tag {
-        Tag::Accessibility => Some(G_COLUMN_ACCESSTYPE),
+        Tag::Accessibility => Some(G_COLUMN_ACCESS_TYPE),
         Tag::Secret => Some(G_COLUMN_SECRET),
         Tag::Alias => Some(G_COLUMN_ALIAS),
-        Tag::AuthType => Some(G_COLUMN_AUTHTYPE),
-        Tag::SyncType => Some(G_COLUMN_SYNCTYPE),
+        Tag::AuthType => Some(G_COLUMN_AUTH_TYPE),
+        Tag::SyncType => Some(G_COLUMN_SYNC_TYPE),
         Tag::DataLabelCritical1 => Some(G_COLUMN_CRITICAL1),
         Tag::DataLabelCritical2 => Some(G_COLUMN_CRITICAL2),
         Tag::DataLabelCritical3 => Some(G_COLUMN_CRITICAL3),
