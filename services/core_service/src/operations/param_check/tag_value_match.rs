@@ -19,8 +19,7 @@ use asset_common::{
     definition::{AssetMap, DataType, ErrCode, Result, Tag, Value, IntoValue},
     loge};
 
-fn tag_value_match(tag: &Tag, value: &Value) -> bool
-{
+fn tag_value_match(tag: &Tag, value: &Value) -> bool {
     match tag.data_type() {
         DataType::Bytes => {
             if let Value::Bytes(_) = value {
@@ -36,8 +35,7 @@ fn tag_value_match(tag: &Tag, value: &Value) -> bool
     false
 }
 
-pub(crate) fn check_tag_value_match(params: &AssetMap) -> Result<()>
-{
+pub(crate) fn check_tag_value_match(params: &AssetMap) -> Result<()> {
     for (tag, value) in params.iter() {
         if !tag_value_match(tag, value) {
             loge!("tag [{}] and its value type match failed!", tag);

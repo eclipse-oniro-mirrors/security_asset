@@ -19,8 +19,7 @@ use asset_common::{definition::{AssetMap, ErrCode, Result, Tag, Value, Accessibi
 
 const MAX_BYTES_LEN: usize = 256;
 
-fn check_accessibility(value: &Value) -> Result<()>
-{
+fn check_accessibility(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
         panic!("convert value to Value::Number in check_accessibility failed!")
     };
@@ -31,8 +30,7 @@ fn check_accessibility(value: &Value) -> Result<()>
     Ok(())
 }
 
-fn check_secret(value: &Value) -> Result<()>
-{
+fn check_secret(value: &Value) -> Result<()> {
     let Value::Bytes(v) = value else {
         panic!("convert value to Value::Bytes in check_secret failed!")
     };
@@ -43,8 +41,7 @@ fn check_secret(value: &Value) -> Result<()>
     Ok(())
 }
 
-fn check_alias(value: &Value) -> Result<()>
-{
+fn check_alias(value: &Value) -> Result<()> {
     let Value::Bytes(v) = value else {
         panic!("convert value to Value::Bytes in check_alias failed!")
     };
@@ -55,8 +52,7 @@ fn check_alias(value: &Value) -> Result<()>
     Ok(())
 }
 
-fn check_auth_type(value: &Value) -> Result<()>
-{
+fn check_auth_type(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
         panic!("convert value to Value::Number in check_auth_type failed!")
     };
@@ -67,8 +63,7 @@ fn check_auth_type(value: &Value) -> Result<()>
     Ok(())
 }
 
-fn check_auth_validity_period(value: &Value) -> Result<()>
-{
+fn check_auth_validity_period(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
         panic!("convert value to Value::Number in check_auth_validity_period failed!")
     };
@@ -79,8 +74,7 @@ fn check_auth_validity_period(value: &Value) -> Result<()>
     Ok(())
 }
 
-fn check_challenge(value: &Value) -> Result<()>
-{
+fn check_challenge(value: &Value) -> Result<()> {
     let Value::Bytes(v) = value else {
         panic!("convert value to Value::Bytes in check_challenge failed!")
     };
@@ -91,8 +85,7 @@ fn check_challenge(value: &Value) -> Result<()>
     Ok(())
 }
 
-fn check_auth_token(value: &Value) -> Result<()>
-{
+fn check_auth_token(value: &Value) -> Result<()> {
     let Value::Bytes(v) = value else {
         panic!("convert value to Value::Bytes in check_auth_token failed!")
     };
@@ -103,8 +96,7 @@ fn check_auth_token(value: &Value) -> Result<()>
     Ok(())
 }
 
-fn check_sync_type(value: &Value) -> Result<()>
-{
+fn check_sync_type(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
         panic!("convert value to Value::Number in check_sync_type failed!")
     };
@@ -115,8 +107,7 @@ fn check_sync_type(value: &Value) -> Result<()>
     Ok(())
 }
 
-fn check_conflict_policy(value: &Value) -> Result<()>
-{
+fn check_conflict_policy(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
         panic!("convert value to Value::Number in check_conflict_policy failed!")
     };
@@ -127,8 +118,7 @@ fn check_conflict_policy(value: &Value) -> Result<()>
     Ok(())
 }
 
-fn check_data_label_critical(value: &Value) -> Result<()>
-{
+fn check_data_label_critical(value: &Value) -> Result<()> {
     let Value::Bytes(v) = value else {
         panic!("convert value to Value::Bytes in check_data_label_critical failed!")
     };
@@ -139,8 +129,7 @@ fn check_data_label_critical(value: &Value) -> Result<()>
     Ok(())
 }
 
-fn check_data_label_normal(value: &Value) -> Result<()>
-{
+fn check_data_label_normal(value: &Value) -> Result<()> {
     let Value::Bytes(v) = value else {
         panic!("convert value to Value::Bytes in check_data_label_normal failed!")
     };
@@ -151,8 +140,7 @@ fn check_data_label_normal(value: &Value) -> Result<()>
     Ok(())
 }
 
-fn check_return_type(value: &Value) -> Result<()>
-{
+fn check_return_type(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
         panic!("convert value to Value::Number in check_return_type failed!")
     };
@@ -163,8 +151,7 @@ fn check_return_type(value: &Value) -> Result<()>
     Ok(())
 }
 
-fn check_return_limit(value: &Value) -> Result<()>
-{
+fn check_return_limit(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
         panic!("convert value to Value::Number in check_return_limit failed!")
     };
@@ -175,8 +162,7 @@ fn check_return_limit(value: &Value) -> Result<()>
     Ok(())
 }
 
-fn check_return_offset(value: &Value) -> Result<()>
-{
+fn check_return_offset(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
         panic!("convert value to Value::Number in check_return_offset failed!")
     };
@@ -187,8 +173,7 @@ fn check_return_offset(value: &Value) -> Result<()>
     Ok(())
 }
 
-fn check_return_order_by(value: &Value) -> Result<()>
-{
+fn check_return_order_by(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
         panic!("convert value to Value::Number in check_return_type failed!")
     };
@@ -199,8 +184,7 @@ fn check_return_order_by(value: &Value) -> Result<()>
     }
 }
 
-fn match_tag_and_check(tag: &Tag, value: &Value) -> Result<()>
-{
+fn match_tag_and_check(tag: &Tag, value: &Value) -> Result<()> {
     match tag {
         Tag::Accessibility => check_accessibility(value),
         Tag::Secret => check_secret(value),
@@ -226,8 +210,7 @@ fn match_tag_and_check(tag: &Tag, value: &Value) -> Result<()>
     }
 }
 
-pub(crate) fn check_value_validity(params: &AssetMap) -> Result<()>
-{
+pub(crate) fn check_value_validity(params: &AssetMap) -> Result<()> {
     for (tag, value) in params {
         match_tag_and_check(tag, value)?;
     }

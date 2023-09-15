@@ -18,16 +18,17 @@
 mod extra_params;
 mod db_data_map_adapter;
 mod file_operator;
+mod default_params;
 
 pub(crate) use extra_params::construst_extra_params;
 pub(crate) use db_data_map_adapter::{set_extra_attrs, set_input_attr};
 pub(crate) use file_operator::create_user_db_dir;
+pub(crate) use default_params::construct_params_with_default;
 
 use asset_common::{definition::{AssetMap, Result, Value, ErrCode, Tag},
     loge};
 
-pub(crate) fn get_alias(input: &AssetMap) -> Result<String>
-{
+pub(crate) fn get_alias(input: &AssetMap) -> Result<String> {
     let alias;
     if let Some(Value::Bytes(alias_vec)) = input.get(&Tag::Alias) {
         let alias_try = String::from_utf8(alias_vec.clone());

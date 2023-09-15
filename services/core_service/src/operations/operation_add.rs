@@ -17,7 +17,7 @@
 #![allow(dead_code)]
 
 use asset_common::{
-    definition::{AssetMap, Result, Tag, ErrCode, Value, SyncType, Accessibility, AuthType, Insert},
+    definition::{AssetMap, Result, Tag, ErrCode, Value},
     loge,
     logi,
 };
@@ -27,7 +27,7 @@ use db_operator::{database_table_helper::DefaultDatabaseHelper, types::Pair};
 // use crypto_manager::hukkey::Crypto;
 use crate::{
     operations::operation_common::{get_alias, construst_extra_params, set_extra_attrs, set_input_attr,
-        create_user_db_dir},
+        create_user_db_dir, construct_params_with_default},
     calling_process_info::CallingInfo,
     definition_inner::AssetInnerMap
 };
@@ -49,51 +49,15 @@ fn construct_data<'a>(input: &'a AssetMap, inner_params: &'a AssetInnerMap) -> R
     Ok(data_vec)
 }
 
-fn check_or_default_sync_type(map: &mut AssetMap) -> Result<()>
-{
-    if !map.contains_key(&Tag::SyncType) {
-        logi!("add default sync type");
-        map.insert_attr(Tag::SyncType, SyncType::Never)?;
-    }
-    Ok(())
-}
-
-fn check_or_default_access_type(map: &mut AssetMap) -> Result<()>
-{
-    if !map.contains_key(&Tag::Accessibility) {
-        logi!("add default access type");
-        map.insert_attr(Tag::Accessibility, Accessibility::DevoceFirstUnlock)?;
-    }
-    Ok(())
-}
-
-fn check_or_default_auth_type(map: &mut AssetMap) -> Result<()>
-{
-    if !map.contains_key(&Tag::AuthType) {
-        logi!("add default auth type");
-        map.insert_attr(Tag::AuthType, AuthType::None)?;
-    }
-    Ok(())
-}
-
-fn construct_params_with_default(input: &AssetMap) -> Result<AssetMap>
-{
-    let mut map = (*input).clone();
-    check_or_default_sync_type(&mut map)?;
-    check_or_default_access_type(&mut map)?;
-    check_or_default_auth_type(&mut map)?;
-    Ok(map)
-}
-
 pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // create user dir
     create_user_db_dir(calling_info.get_user_id())?;
 
     // get param map contains input params and default params
-    let input_new = construct_params_with_default(input)?;
+    let input_new = construct_params_with_default(input, &IpcCode::Add)?;
 
     // a map collecting inner params
-    let inner_params = construst_extra_params(calling_info, IpcCode::Add)?;
+    let inner_params = construst_extra_params(calling_info, &IpcCode::Add)?;
 
     // construct db data from input map and inner params
     let db_data = construct_data(&input_new, &inner_params)?;

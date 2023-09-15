@@ -49,6 +49,14 @@ impl IAsset for AssetService {
         // get calling uid userid appid etc and do add
         operations::add(input, &CallingInfo::build()?)
     }
+
+    fn query(&self, input: &AssetMap) -> Result<Vec<AssetMap>> {
+        // check the validity and comprehensiveness of input params
+        check_params(input, &IpcCode::Query)?;
+
+        // get calling uid userid appid etc and do query
+        operations::query(input, &CallingInfo::build()?)
+    }
 }
 
 const LOG_LABEL: HiLogLabel = HiLogLabel {

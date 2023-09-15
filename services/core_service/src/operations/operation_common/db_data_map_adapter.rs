@@ -25,8 +25,7 @@ use db_operator::{
 
 use crate::definition_inner::{AssetInnerMap, InnerValue};
 
-fn convert_value_into_db_value(value: &Value) -> Result<DataValue>
-{
+fn convert_value_into_db_value(value: &Value) -> Result<DataValue> {
     match value {
         Value::Number(n) => {
             Ok(DataValue::Integer(*n)) // to do 类型确认
@@ -37,8 +36,7 @@ fn convert_value_into_db_value(value: &Value) -> Result<DataValue>
     }
 }
 
-fn convert_extra_value_into_db_value(value: &InnerValue) -> Result<DataValue>
-{
+fn convert_extra_value_into_db_value(value: &InnerValue) -> Result<DataValue> {
     match value {
         InnerValue::Number(n) => {
             Ok(DataValue::Integer(*n)) // to do 类型确认
@@ -52,8 +50,7 @@ fn convert_extra_value_into_db_value(value: &InnerValue) -> Result<DataValue>
     }
 }
 
-fn get_tag_column_name(tag: &Tag) -> Option<&str>
-{
+fn get_tag_column_name(tag: &Tag) -> Option<&str> {
     match *tag {
         Tag::Accessibility => Some(G_COLUMN_ACCESSTYPE),
         Tag::Secret => Some(G_COLUMN_SECRET),

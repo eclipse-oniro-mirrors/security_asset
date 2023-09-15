@@ -19,8 +19,7 @@ use std::ffi::{c_char, CString};
 use hilog_rust::hilog;
 
 /// the function to print log, and may be should not be used instead of logi
-pub fn log_func_i(log: &str)
-{
+pub fn log_func_i(log: &str) {
     let log_label = hilog_rust::HiLogLabel {
         log_type: hilog_rust::LogType::LogCore,
         domain: 0xD002F70, // security domain
@@ -30,8 +29,7 @@ pub fn log_func_i(log: &str)
 }
 
 /// the function to print log, and may be should not be used instead of loge
-pub fn log_func_e(log: &str)
-{
+pub fn log_func_e(log: &str) {
     let log_label = hilog_rust::HiLogLabel {
         log_type: hilog_rust::LogType::LogCore,
         domain: 0xD002F70, // security domain
@@ -48,7 +46,7 @@ pub fn log_func_e(log: &str)
 /// logi!("hello, {}", "world");
 /// ```
 #[macro_export]
-macro_rules! logi{
+macro_rules! logi {
     ($($arg:tt)*) => (
         $crate::log_utils::log_func_i(&format!($($arg)*));
     );
@@ -62,7 +60,7 @@ macro_rules! logi{
 /// loge!("Error message: {}", "read file failed");
 /// ```
 #[macro_export]
-macro_rules! loge{
+macro_rules! loge {
     ($($arg:tt)*) => (
         $crate::log_utils::log_func_e(&format!($($arg)*));
     );

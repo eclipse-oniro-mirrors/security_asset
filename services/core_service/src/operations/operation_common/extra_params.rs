@@ -24,27 +24,23 @@ use db_operator::database_table_helper::{G_COLUMN_OWNERTYPE, G_COLUMN_DELETETYPE
 
 use crate::{calling_process_info::CallingInfo, definition_inner::{AssetInnerMap, DeleteType, InnerValue}};
 
-fn get_owner_type(calling_info: &CallingInfo, params: &mut AssetInnerMap) -> Result<()>
-{
+fn get_owner_type(calling_info: &CallingInfo, params: &mut AssetInnerMap) -> Result<()> {
     params.insert(G_COLUMN_OWNERTYPE, InnerValue::Number(calling_info.get_owner_type()));
     Ok(())
 }
 
-fn get_delete_type(params: &mut AssetInnerMap) -> Result<()>
-{
+fn get_delete_type(params: &mut AssetInnerMap) -> Result<()> {
     params.insert(G_COLUMN_DELETETYPE,
         InnerValue::Number(DeleteType::WhenUninstallApp as u32 | DeleteType::WhenRemoveUser as u32));
     Ok(())
 }
 
-fn get_version(params: &mut AssetInnerMap) -> Result<()>
-{
+fn get_version(params: &mut AssetInnerMap) -> Result<()> {
     params.insert(G_COLUMN_VERSION, InnerValue::Number(1)); // todo get real
     Ok(())
 }
 
-fn get_update_time(params: &mut AssetInnerMap) -> Result<()>
-{
+fn get_update_time(params: &mut AssetInnerMap) -> Result<()> {
     let sys_time_res = SystemTime::now().duration_since(UNIX_EPOCH);
     if sys_time_res.is_err() {
         loge!("get sys_time_res faield!");
@@ -55,8 +51,7 @@ fn get_update_time(params: &mut AssetInnerMap) -> Result<()>
     Ok(())
 }
 
-fn get_create_time(params: &mut AssetInnerMap) -> Result<()>
-{
+fn get_create_time(params: &mut AssetInnerMap) -> Result<()> {
     let sys_time_res = SystemTime::now().duration_since(UNIX_EPOCH);
     if sys_time_res.is_err() {
         loge!("get sys_time_res faield!");
@@ -67,13 +62,12 @@ fn get_create_time(params: &mut AssetInnerMap) -> Result<()>
     Ok(())
 }
 
-pub(crate) fn construst_extra_params(calling_info: &CallingInfo, code: IpcCode) -> Result<AssetInnerMap>
-{
+pub(crate) fn construst_extra_params<'a>(calling_info: &'a CallingInfo, code: &'a IpcCode) -> Result<AssetInnerMap<'a>> {
     let mut params = AssetInnerMap::new();
     get_owner_type(calling_info, &mut params)?;
     get_delete_type(&mut params)?;
     get_version(&mut params)?;
-    match code {
+    match *code {
         IpcCode::Add => {
             get_update_time(&mut params)?;
             get_create_time(&mut params)?;

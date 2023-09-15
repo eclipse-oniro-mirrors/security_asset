@@ -15,7 +15,7 @@
 
 use core::panic;
 
-use asset_sdk::definition::{AssetMap, Accessibility, Tag, Insert, AuthType, SyncType};
+use asset_sdk::definition::{AssetMap, Accessibility, Tag, Insert, AuthType, SyncType, Value};
 
 #[test]
 fn test_for_add() {
@@ -31,6 +31,34 @@ fn test_for_add() {
         Ok(manager) => {
             if let Err(e) = manager.add(&input) {
                 panic!("test for add failed {}", e)
+            }
+        },
+        Err(e) => panic!("test for add failed {}", e)
+    }
+}
+
+#[test]
+fn test_for_query() {
+    test_for_add();
+    let mut input = AssetMap::new();
+    input.insert_attr(Tag::Alias, Vec::from("alias".as_bytes())).unwrap();
+
+    match asset_sdk::Manager::build() {
+        Ok(manager) => {
+            match manager.query(&input) {
+                Ok(res) => {
+                    for map in res.iter() {
+                        for (tag, value) in map.iter() {
+                            match value {
+                                Value::Number(num) => println!("get tag:[{}] value:[{}]", tag, num),
+                                Value::Bytes(bytes) => println!("get tag:[{}] value_len:[{}]", tag, bytes.len()),
+                            }
+                        }
+                    }
+                },
+                Err(e) => {
+                    panic!("test for query failed {}", e)
+                }
             }
         },
         Err(e) => panic!("test for add failed {}", e)

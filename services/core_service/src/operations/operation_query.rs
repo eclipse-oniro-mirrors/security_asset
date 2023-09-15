@@ -13,20 +13,22 @@
  * limitations under the License.
  */
 
-//! This file implement the asset param check
+//! This create implement the asset
+#![allow(dead_code)]
 
-use std::{fs, path::Path};
-use asset_common::{definition::{ErrCode, Result}, loge};
+use crate::{
+    calling_process_info::CallingInfo,
+    operations::operation_common::construct_params_with_default
+};
 
-const PATH: &str = "data/service/el1/public/asset_service";
+use asset_common::definition::{AssetMap, Result};
+use asset_ipc_interface::IpcCode;
 
-pub(crate) fn create_user_db_dir(user_id: u32) -> Result<()> {
-    let path = format!("{}/{}", PATH, user_id);
-    if !Path::new(&path).exists() {
-        fs::create_dir(path).map_err(|_| {
-            loge!("create dir failed!");
-            ErrCode::Failed
-        })?;
-    }
-    Ok(())
+pub(crate) fn query(input: &AssetMap, _calling_info: &CallingInfo) -> Result<Vec<AssetMap>> {
+    let res_vec: Vec<AssetMap> = Vec::new();
+
+    // get param map contains input params and default params
+    let _input_new = construct_params_with_default(input, &IpcCode::Add)?;
+
+    Ok(res_vec)
 }

@@ -20,49 +20,17 @@ use ipc_rust::{
     RemoteStub, String16
 };
 
-use asset_ipc_interface::{IAsset, IpcCode, IPC_SUCCESS};
+use asset_ipc_interface::{IAsset, IpcCode, IPC_SUCCESS, serialize_vector_map, deserialize_map};
 use asset_common::{
-    loge, logi,
-    definition::{AssetMap, Result, ErrCode, DataType, IntoValue, Tag, Value},
+    loge,
+    logi,
 };
-
-/// max capacity in a map
-const MAP_MAX_CAPACITY: u32 = 30;
-
-/// deserialize the map from parcel
-pub fn deserialize(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
-    logi!("enter deserialize");
-    let len = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
-    if len > MAP_MAX_CAPACITY {
-        loge!("The map size exceeds the limit.");
-        return Err(ErrCode::InvalidArgument);
-    }
-    let mut map = AssetMap::with_capacity(len as usize);
-    for _i in 0..len {
-        let tag = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
-        let asset_tag = Tag::try_from(tag)?;
-        match asset_tag.data_type() {
-            DataType::Uint32 => {
-                logi!("try get u32");
-                let v = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
-                map.insert(asset_tag, Value::Number(v));
-            },
-            DataType::Bytes => {
-                logi!("try get uint8array");
-                let v = parcel.read::<Vec<u8>>().map_err(|_| ErrCode::IpcError)?;
-                map.insert(asset_tag, Value::Bytes(v));
-            },
-        }
-    }
-    logi!("leave deserialize ok");
-    Ok(map)
-}
 
 /// IPC entry of the Asset service
 fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
     reply: &mut BorrowedMsgParcel) -> IpcResult<()> {
     logi!("on_remote_request, calling function: {}", code);
-    let input_map = deserialize(data).map_err(|_| IpcStatusCode::InvalidValue)?;
+    let input_map = deserialize_map(data).map_err(|_| IpcStatusCode::InvalidValue)?;
     let ipc_code = IpcCode::try_from(code).map_err(|_| IpcStatusCode::InvalidValue)?;
     match ipc_code {
         IpcCode::Add => {
@@ -76,7 +44,21 @@ fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
                 }
             }
         },
-        IpcCode::Remove => {},
+        IpcCode::Query => {
+            logi!("on_remote_request query");
+            match stub.query(&input_map) {
+                Ok(res) => {
+                    reply.write::<i32>(&IPC_SUCCESS)?;
+                    serialize_vector_map(&res, reply).map_err(|e| {
+                        loge!("serialize_vector_map failed! {}", e);
+                        IpcStatusCode::InvalidValue
+                    })?;
+                },
+                Err(e) => {
+                    reply.write::<i32>(&(e as i32))?;
+                }
+            }
+        },
         _ => {},
     }
     Ok(())

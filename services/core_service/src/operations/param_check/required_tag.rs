@@ -25,8 +25,11 @@ const ADD_REQUIRED_PARAMS: [Tag; 2] = [
     Tag::Secret, Tag::Alias
 ];
 
-fn check_required_params_inner(params: &AssetMap, required_params: &[Tag]) -> Result<()>
-{
+const QUERY_REQUIRED_PARAMS: [Tag; 1] = [
+    Tag::Alias
+];
+
+fn check_required_params_inner(params: &AssetMap, required_params: &[Tag]) -> Result<()> {
     for param in required_params {
         if !params.contains_key(param) {
             loge!("tag [{}] missed", param);
@@ -36,11 +39,13 @@ fn check_required_params_inner(params: &AssetMap, required_params: &[Tag]) -> Re
     Ok(())
 }
 
-pub(crate) fn check_required_params(params: &AssetMap, code: &IpcCode) -> Result<()>
-{
+pub(crate) fn check_required_params(params: &AssetMap, code: &IpcCode) -> Result<()> {
     match *code {
         IpcCode::Add => {
             check_required_params_inner(params, &ADD_REQUIRED_PARAMS)
+        },
+        IpcCode::Query => {
+            check_required_params_inner(params, &QUERY_REQUIRED_PARAMS)
         },
         _ => {
             Err(ErrCode::NotFound) // 枚举匹配，不会有这个分支，todo delete

@@ -2,6 +2,7 @@
 members = [
     "frameworks/common",
     "frameworks/ipc_interface",
+    "frameworks/ipc_proxy",
     "interfaces/inner_api/rs",
     "services/core_service",
     "services/db_operator",
