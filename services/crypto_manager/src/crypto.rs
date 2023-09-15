@@ -310,7 +310,11 @@ impl Crypto {
             loge!("Encrypt update_and_finish Failed.");
             return Err(ErrCode::Failed);
         }
-        Ok(cipher)
+        
+        let mut cipher_final: Vec<u8> = vec![0;cipher_text.size as usize];
+        cipher_final[0..cipher_text.size as usize].copy_from_slice(
+            &cipher[0..cipher_text.size as usize]);
+        Ok(cipher_final)
     }
 
     /// Decrypt
@@ -420,9 +424,9 @@ impl Crypto {
         }
 
 
-        let plain: Vec<u8> = vec![0;AES_COMMON_SIZE as usize];
+        let plain: Vec<u8> = vec![0;cipher.len()];
         let mut plain_text = HksBlob{
-            size: AES_COMMON_SIZE,
+            size: cipher.len() as u32,
             data: plain.as_ptr(),
         };
         ret = unsafe{update_and_finish(&handle_decrypt, &*(buffer.as_ptr() as *const HksParamSet), &mut cipher_text, &mut plain_text)};
