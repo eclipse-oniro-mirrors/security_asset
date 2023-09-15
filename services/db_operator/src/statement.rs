@@ -65,7 +65,11 @@ impl<'b> Statement<'b, true> {
         sql_s.push('\0');
         let mut stmt = Statement { sql: sql_s, db, handle: 0 };
         let ret = sqlite3_prepare_v2_func(db.handle, &stmt.sql, -1, &mut stmt.handle, &mut tail);
-        if ret == 0 { Ok(stmt) } else { Err(ret) }
+        if ret == 0 {
+            Ok(stmt)
+        } else {
+            Err(ret)
+        }
     }
 
     /// bind datas

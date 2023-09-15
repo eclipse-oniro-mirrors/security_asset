@@ -88,27 +88,39 @@ impl<'a> Database<'a> {
     /// will create it if not exits.
     pub fn new(path: &str) -> Result<Database<'a>, SqliteErrCode> {
         let mut s = path.to_string();
-        let mut db = Database { path: s.clone(),
-                                v2: false,
-                                handle: 0,
-                                file: get_file_lock_by_userid(u32::MAX) };
+        let mut db = Database {
+            path: s.clone(),
+            v2: false,
+            handle: 0,
+            file: get_file_lock_by_userid(u32::MAX),
+        };
         s.push('\0');
         let _lock = db.file.mtx.lock().unwrap();
         let ret = sqlite3_open_func(&s, &mut db.handle);
-        if ret == SQLITE_OK { Ok(db) } else { Err(ret) }
+        if ret == SQLITE_OK {
+            Ok(db)
+        } else {
+            Err(ret)
+        }
     }
 
     /// create default database
     pub fn default_new(userid: u32) -> Result<Database<'a>, SqliteErrCode> {
         let mut path = fmt_db_path(userid);
-        let mut db = Database { path: path.clone(),
-                                v2: false,
-                                handle: 0,
-                                file: get_file_lock_by_userid(userid) };
+        let mut db = Database {
+            path: path.clone(),
+            v2: false,
+            handle: 0,
+            file: get_file_lock_by_userid(userid),
+        };
         path.push('\0');
         let _lock = db.file.mtx.lock().unwrap();
         let ret = sqlite3_open_func(&path, &mut db.handle);
-        if ret == SQLITE_OK { Ok(db) } else { Err(ret) }
+        if ret == SQLITE_OK {
+            Ok(db)
+        } else {
+            Err(ret)
+        }
     }
 
     /// get database user_version
@@ -123,10 +135,11 @@ impl<'a> Database<'a> {
     }
 
     /// open database with version update callback
-    pub fn new_with_version_update(path: &str,
-                                   ver: u32,
-                                   callback: UpdateDatabaseCallbackFunc)
-                                   -> Result<Database, SqliteErrCode> {
+    pub fn new_with_version_update(
+        path: &str,
+        ver: u32,
+        callback: UpdateDatabaseCallbackFunc,
+    ) -> Result<Database, SqliteErrCode> {
         let db = Database::new(path)?;
         let _lock = db.file.mtx.lock().unwrap();
         let version_old = db.get_version()?;
@@ -143,10 +156,11 @@ impl<'a> Database<'a> {
     }
 
     /// open database with version update callback
-    pub fn default_new_with_version_update(userid: u32,
-                                           ver: u32,
-                                           callback: UpdateDatabaseCallbackFunc)
-                                           -> Result<Database<'a>, SqliteErrCode> {
+    pub fn default_new_with_version_update(
+        userid: u32,
+        ver: u32,
+        callback: UpdateDatabaseCallbackFunc,
+    ) -> Result<Database<'a>, SqliteErrCode> {
         let db = Database::default_new(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
         let version_old = db.get_version()?;
@@ -164,19 +178,26 @@ impl<'a> Database<'a> {
 
     /// open database file
     /// use sqlite3_open_v2 instead of sqlite3_open
-    pub fn new_v2(path: &str,
-                  flags: i32,
-                  vfs: Option<&[u8]>)
-                  -> Result<Database<'a>, SqliteErrCode> {
+    pub fn new_v2(
+        path: &str,
+        flags: i32,
+        vfs: Option<&[u8]>,
+    ) -> Result<Database<'a>, SqliteErrCode> {
         let mut s = path.to_string();
-        let mut db = Database { path: s.clone(),
-                                v2: false,
-                                handle: 0,
-                                file: get_file_lock_by_userid(u32::MAX) };
+        let mut db = Database {
+            path: s.clone(),
+            v2: false,
+            handle: 0,
+            file: get_file_lock_by_userid(u32::MAX),
+        };
         s.push('\0');
         let _lock = db.file.mtx.lock().unwrap();
         let ret = sqlite3_open_v2_func(&s, &mut db.handle, flags, vfs);
-        if ret == SQLITE_OK { Ok(db) } else { Err(ret) }
+        if ret == SQLITE_OK {
+            Ok(db)
+        } else {
+            Err(ret)
+        }
     }
 
     /// delete database with delete the file
@@ -216,11 +237,12 @@ impl<'a> Database<'a> {
     /// you should use statement.step for prepared statement.
     /// callback function for process result set.
     /// the final param data will be passed into callback function.
-    pub fn exec(&self,
-                stmt: &Statement<false>,
-                callback: Option<Sqlite3Callback>,
-                data: usize)
-                -> SqliteErrCode {
+    pub fn exec(
+        &self,
+        stmt: &Statement<false>,
+        callback: Option<Sqlite3Callback>,
+        data: usize,
+    ) -> SqliteErrCode {
         let mut msg = null_mut();
         let ret = sqlite3_exec_func(self.handle, &stmt.sql, callback, data, &mut msg);
         if !msg.is_null() {
@@ -257,7 +279,11 @@ impl<'a> Database<'a> {
             },
         };
         let ret = stmt.step();
-        if ret != SQLITE_ROW { Err(ret) } else { Ok(Table::new(table_name, self)) }
+        if ret != SQLITE_ROW {
+            Err(ret)
+        } else {
+            Ok(Table::new(table_name, self))
+        }
     }
 
     /// drop a table
@@ -299,10 +325,11 @@ impl<'a> Database<'a> {
     ///         println!("create table err {}", e);
     ///     }
     /// };
-    pub fn create_table(&self,
-                        table_name: &str,
-                        columns: &[ColumnInfo])
-                        -> Result<Table, SqliteErrCode> {
+    pub fn create_table(
+        &self,
+        table_name: &str,
+        columns: &[ColumnInfo],
+    ) -> Result<Table, SqliteErrCode> {
         let mut sql = format!("CREATE TABLE {}(", table_name);
         for i in 0..columns.len() {
             let column = &columns[i];

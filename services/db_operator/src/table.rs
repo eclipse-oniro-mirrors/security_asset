@@ -52,10 +52,11 @@ impl<'a> Table<'a> {
     /// }];
     ///
     /// let ret = table.update_row(conditions, datas);
-    pub fn update_row(&self,
-                      conditions: &Condition,
-                      datas: &Vec<Pair>)
-                      -> Result<i32, SqliteErrCode> {
+    pub fn update_row(
+        &self,
+        conditions: &Condition,
+        datas: &Vec<Pair>,
+    ) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("update {} set ", self.table_name);
         for i in 0..datas.len() {
             let data = &datas[i];
@@ -116,11 +117,12 @@ impl<'a> Table<'a> {
 
     /// update single data
     /// sql like: update table_name set column_name=data_new [where conditions]
-    pub fn update_row_column(&self,
-                             conditions: &Condition,
-                             column_name: &str,
-                             data_new: DataValue)
-                             -> Result<i32, SqliteErrCode> {
+    pub fn update_row_column(
+        &self,
+        conditions: &Condition,
+        column_name: &str,
+        data_new: DataValue,
+    ) -> Result<i32, SqliteErrCode> {
         let datas = vec![Pair { column_name, value: data_new }];
         self.update_row(conditions, &datas)
     }
@@ -312,10 +314,11 @@ impl<'a> Table<'a> {
     ///     ],
     /// ];
     /// let count = table.insert_multi_row_datas(columns, &dataset);
-    pub fn insert_multi_row_datas(&self,
-                                  columns: &Vec<&str>,
-                                  dataset: &Vec<Vec<DataValue>>)
-                                  -> Result<i32, SqliteErrCode> {
+    pub fn insert_multi_row_datas(
+        &self,
+        columns: &Vec<&str>,
+        dataset: &Vec<Vec<DataValue>>,
+    ) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("insert into {} (", self.table_name);
         for i in 0..columns.len() {
             let column = &columns[i];
@@ -400,10 +403,11 @@ impl<'a> Table<'a> {
     ///     },
     ///     Some(DataValue::Integer(0)),
     /// );
-    pub fn add_new_column(&self,
-                          column: ColumnInfo,
-                          default_value: Option<DataValue>)
-                          -> SqliteErrCode {
+    pub fn add_new_column(
+        &self,
+        column: ColumnInfo,
+        default_value: Option<DataValue>,
+    ) -> SqliteErrCode {
         if column.is_primary_key {
             return SQLITE_ERROR;
         }
@@ -437,10 +441,11 @@ impl<'a> Table<'a> {
     /// let result_set = table.query_row(&vec!["alias", "blobs"], &vec![]);
     ///
     /// means sql like: select alias,blobs from table_name
-    pub fn query_row(&self,
-                     columns: &Vec<&str>,
-                     conditions: &Condition)
-                     -> Result<ResultSet, SqliteErrCode> {
+    pub fn query_row(
+        &self,
+        columns: &Vec<&str>,
+        conditions: &Condition,
+    ) -> Result<ResultSet, SqliteErrCode> {
         let mut sql = String::from("select ");
         if !columns.is_empty() {
             for i in 0..columns.len() {
@@ -498,20 +503,20 @@ impl<'a> Table<'a> {
                     SQLITE_TEXT => {
                         let text = stmt.query_column_text(i);
                         ResultDataValue::Text(if text.is_empty() {
-                                                  None
-                                              } else {
-                                                  Some(Box::new(text.to_vec()))
-                                              })
+                            None
+                        } else {
+                            Some(Box::new(text.to_vec()))
+                        })
                     },
                     SQLITE_INTEGER => ResultDataValue::Integer(stmt.query_column_int(i)),
                     SQLITE_FLOAT => ResultDataValue::Double(stmt.query_column_double(i)),
                     SQLITE_BLOB => {
                         let blob = stmt.query_column_blob(i);
                         ResultDataValue::Blob(if blob.is_empty() {
-                                                  None
-                                              } else {
-                                                  Some(Box::new(blob.to_vec()))
-                                              })
+                            None
+                        } else {
+                            Some(Box::new(blob.to_vec()))
+                        })
                     },
                     SQLITE_NULL => ResultDataValue::Blob(None),
                     _ => return Err(SQLITE_ERROR),

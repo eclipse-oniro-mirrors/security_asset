@@ -73,90 +73,134 @@ pub const G_COLUMN_NORMAL3: &str = "DataLabelNormal_3";
 pub const G_COLUMN_NORMAL4: &str = "DataLabelNormal_4";
 
 /// columns info for default asset_table
-pub const G_COLUMNS_INFO: &[ColumnInfo] = &[ColumnInfo { name: G_COLUMN_ID,
-                                                         data_type: DataType::INTEGER,
-                                                         is_primary_key: true,
-                                                         not_null: true },
-                                            ColumnInfo { name: G_COLUMN_SECRET,
-                                                         data_type: DataType::BLOB,
-                                                         is_primary_key: false,
-                                                         not_null: true },
-                                            ColumnInfo { name: G_COLUMN_ALIAS,
-                                                         data_type: DataType::TEXT,
-                                                         is_primary_key: false,
-                                                         not_null: true },
-                                            ColumnInfo { name: G_COLUMN_OWNER,
-                                                         data_type: DataType::TEXT,
-                                                         is_primary_key: false,
-                                                         not_null: true },
-                                            ColumnInfo { name: G_COLUMN_OWNER_TYPE,
-                                                         data_type: DataType::INTEGER,
-                                                         is_primary_key: false,
-                                                         not_null: true },
-                                            ColumnInfo { name: G_COLUMN_GROUP_ID,
-                                                         data_type: DataType::TEXT,
-                                                         is_primary_key: false,
-                                                         not_null: false },
-                                            ColumnInfo { name: G_COLUMN_SYNC_TYPE,
-                                                         data_type: DataType::INTEGER,
-                                                         is_primary_key: false,
-                                                         not_null: true },
-                                            ColumnInfo { name: G_COLUMN_ACCESS_TYPE,
-                                                         data_type: DataType::INTEGER,
-                                                         is_primary_key: false,
-                                                         not_null: true },
-                                            ColumnInfo { name: G_COLUMN_AUTH_TYPE,
-                                                         data_type: DataType::INTEGER,
-                                                         is_primary_key: false,
-                                                         not_null: true },
-                                            ColumnInfo { name: G_COLUMN_CREATE_TIME,
-                                                         data_type: DataType::TEXT,
-                                                         is_primary_key: false,
-                                                         not_null: true },
-                                            ColumnInfo { name: G_COLUMN_UPDATE_TIME,
-                                                         data_type: DataType::TEXT,
-                                                         is_primary_key: false,
-                                                         not_null: true },
-                                            ColumnInfo { name: G_COLUMN_DELETE_TYPE,
-                                                         data_type: DataType::INTEGER,
-                                                         is_primary_key: false,
-                                                         not_null: true },
-                                            ColumnInfo { name: G_COLUMN_VERSION,
-                                                         data_type: DataType::INTEGER,
-                                                         is_primary_key: false,
-                                                         not_null: true },
-                                            ColumnInfo { name: G_COLUMN_CRITICAL1,
-                                                         data_type: DataType::BLOB,
-                                                         is_primary_key: false,
-                                                         not_null: false },
-                                            ColumnInfo { name: G_COLUMN_CRITICAL2,
-                                                         data_type: DataType::BLOB,
-                                                         is_primary_key: false,
-                                                         not_null: false },
-                                            ColumnInfo { name: G_COLUMN_CRITICAL3,
-                                                         data_type: DataType::BLOB,
-                                                         is_primary_key: false,
-                                                         not_null: false },
-                                            ColumnInfo { name: G_COLUMN_CRITICAL4,
-                                                         data_type: DataType::BLOB,
-                                                         is_primary_key: false,
-                                                         not_null: false },
-                                            ColumnInfo { name: G_COLUMN_NORMAL1,
-                                                         data_type: DataType::BLOB,
-                                                         is_primary_key: false,
-                                                         not_null: false },
-                                            ColumnInfo { name: G_COLUMN_NORMAL2,
-                                                         data_type: DataType::BLOB,
-                                                         is_primary_key: false,
-                                                         not_null: false },
-                                            ColumnInfo { name: G_COLUMN_NORMAL3,
-                                                         data_type: DataType::BLOB,
-                                                         is_primary_key: false,
-                                                         not_null: false },
-                                            ColumnInfo { name: G_COLUMN_NORMAL4,
-                                                         data_type: DataType::BLOB,
-                                                         is_primary_key: false,
-                                                         not_null: false }];
+pub const G_COLUMNS_INFO: &[ColumnInfo] = &[
+    ColumnInfo {
+        name: G_COLUMN_ID,
+        data_type: DataType::INTEGER,
+        is_primary_key: true,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_SECRET,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_ALIAS,
+        data_type: DataType::TEXT,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_OWNER,
+        data_type: DataType::TEXT,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_OWNER_TYPE,
+        data_type: DataType::INTEGER,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_GROUP_ID,
+        data_type: DataType::TEXT,
+        is_primary_key: false,
+        not_null: false,
+    },
+    ColumnInfo {
+        name: G_COLUMN_SYNC_TYPE,
+        data_type: DataType::INTEGER,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_ACCESS_TYPE,
+        data_type: DataType::INTEGER,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_AUTH_TYPE,
+        data_type: DataType::INTEGER,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_CREATE_TIME,
+        data_type: DataType::TEXT,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_UPDATE_TIME,
+        data_type: DataType::TEXT,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_DELETE_TYPE,
+        data_type: DataType::INTEGER,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_VERSION,
+        data_type: DataType::INTEGER,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_CRITICAL1,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: false,
+    },
+    ColumnInfo {
+        name: G_COLUMN_CRITICAL2,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: false,
+    },
+    ColumnInfo {
+        name: G_COLUMN_CRITICAL3,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: false,
+    },
+    ColumnInfo {
+        name: G_COLUMN_CRITICAL4,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: false,
+    },
+    ColumnInfo {
+        name: G_COLUMN_NORMAL1,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: false,
+    },
+    ColumnInfo {
+        name: G_COLUMN_NORMAL2,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: false,
+    },
+    ColumnInfo {
+        name: G_COLUMN_NORMAL3,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: false,
+    },
+    ColumnInfo {
+        name: G_COLUMN_NORMAL4,
+        data_type: DataType::BLOB,
+        is_primary_key: false,
+        not_null: false,
+    },
+];
 
 impl<'a> TableHelper<'a> {
     #[cfg(not(doctest))]
@@ -181,14 +225,16 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// sql like:
     /// update table_name set alias='test_update' where AppId='owner' and Alias='alias'
-    pub fn update_datas(&self,
-                        owner: &str,
-                        alias: &str,
-                        datas: &Vec<Pair>)
-                        -> Result<i32, ErrCode> {
-        let conditions =
-            &vec![Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) },
-                  Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) },];
+    pub fn update_datas(
+        &self,
+        owner: &str,
+        alias: &str,
+        datas: &Vec<Pair>,
+    ) -> Result<i32, ErrCode> {
+        let conditions = &vec![
+            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) },
+            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) },
+        ];
         let _lock = self.db.file.mtx.lock().unwrap();
         self.update_row(conditions, datas).map_err(from_sqlite_code_to_asset_code)
     }
@@ -250,11 +296,12 @@ impl<'a> TableHelper<'a> {
     ///
     /// sql like:
     /// delete from table_name where Owner=owner and Alias=alias and value='test_update'
-    pub fn delete_datas(&self,
-                        owner: &str,
-                        alias: &str,
-                        condition: &Condition)
-                        -> Result<i32, ErrCode> {
+    pub fn delete_datas(
+        &self,
+        owner: &str,
+        alias: &str,
+        condition: &Condition,
+    ) -> Result<i32, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
         v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
         v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
@@ -280,11 +327,11 @@ impl<'a> TableHelper<'a> {
     /// select count(*) as count from table_name where Owner='owner1' and Alias='alias1'
     pub fn is_data_exist(&self, owner: &str, alias: &str) -> Result<bool, ErrCode> {
         let _lock = self.db.file.mtx.lock().unwrap();
-        self.is_data_exists(&vec![Pair { column_name: G_COLUMN_OWNER,
-                                         value: DataValue::Text(owner.as_bytes()) },
-                                  Pair { column_name: G_COLUMN_ALIAS,
-                                         value: DataValue::Text(alias.as_bytes()) },])
-            .map_err(from_sqlite_code_to_asset_code)
+        self.is_data_exists(&vec![
+            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) },
+            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) },
+        ])
+        .map_err(from_sqlite_code_to_asset_code)
     }
 
     #[cfg(not(doctest))]
@@ -301,9 +348,11 @@ impl<'a> TableHelper<'a> {
     /// select count(*) as count from table_name where AppId='owner2'
     pub fn select_count(&self, owner: &str) -> Result<u32, ErrCode> {
         let _lock = self.db.file.mtx.lock().unwrap();
-        self.count_datas(&vec![Pair { column_name: G_COLUMN_OWNER,
-                                      value: DataValue::Text(owner.as_bytes()) }])
-            .map_err(from_sqlite_code_to_asset_code)
+        self.count_datas(&vec![Pair {
+            column_name: G_COLUMN_OWNER,
+            value: DataValue::Text(owner.as_bytes()),
+        }])
+        .map_err(from_sqlite_code_to_asset_code)
     }
 
     #[cfg(not(doctest))]
@@ -319,11 +368,12 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// sql like:
     /// select * from table_name where AppId='owner' and Alias='alias'
-    pub fn query_datas(&self,
-                       owner: &str,
-                       alias: &str,
-                       condition: &Condition)
-                       -> Result<ResultSet, ErrCode> {
+    pub fn query_datas(
+        &self,
+        owner: &str,
+        alias: &str,
+        condition: &Condition,
+    ) -> Result<ResultSet, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
         v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
         v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
@@ -336,9 +386,10 @@ impl<'a> TableHelper<'a> {
 }
 
 /// process err msg, this may be use in test, consider delete this function when release
-pub fn process_err_msg<T>(res: Result<T, ErrCode>,
-                          db: &DefaultDatabaseHelper)
-                          -> Result<T, ErrCode> {
+pub fn process_err_msg<T>(
+    res: Result<T, ErrCode>,
+    db: &DefaultDatabaseHelper,
+) -> Result<T, ErrCode> {
     if res.is_err() {
         if let Some(msg) = db.get_err_msg() {
             loge!("db err info: {}", msg.s);
@@ -360,11 +411,12 @@ fn create_default_table<'a>(db: &'a Database) -> Result<Table<'a>, ErrCode> {
 impl<'a> DefaultDatabaseHelper<'a> {
     /// see TableHelper
     #[inline(always)]
-    pub fn update_datas_default(&self,
-                                owner: &str,
-                                alias: &str,
-                                datas: &Vec<Pair>)
-                                -> Result<i32, ErrCode> {
+    pub fn update_datas_default(
+        &self,
+        owner: &str,
+        alias: &str,
+        datas: &Vec<Pair>,
+    ) -> Result<i32, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         #[cfg(feature = "auto_insert_time")]
         {
@@ -381,8 +433,10 @@ impl<'a> DefaultDatabaseHelper<'a> {
                 for data in datas {
                     datas_new.push(*data);
                 }
-                datas_new.push(Pair { column_name: G_COLUMN_UPDATE_TIME,
-                                      value: DataValue::Text(ctime.as_bytes()) });
+                datas_new.push(Pair {
+                    column_name: G_COLUMN_UPDATE_TIME,
+                    value: DataValue::Text(ctime.as_bytes()),
+                });
                 return table.update_datas(owner, alias, &datas_new);
             }
         }
@@ -391,11 +445,12 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn insert_datas_default(&self,
-                                owner: &str,
-                                alias: &str,
-                                datas: Vec<Pair>)
-                                -> Result<i32, ErrCode> {
+    pub fn insert_datas_default(
+        &self,
+        owner: &str,
+        alias: &str,
+        datas: Vec<Pair>,
+    ) -> Result<i32, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         #[cfg(feature = "auto_insert_time")]
         {
@@ -416,12 +471,16 @@ impl<'a> DefaultDatabaseHelper<'a> {
                     datas_new.push(*data);
                 }
                 if !contain_create_time {
-                    datas_new.push(Pair { column_name: G_COLUMN_CREATE_TIME,
-                                          value: DataValue::Text(ctime.as_bytes()) });
+                    datas_new.push(Pair {
+                        column_name: G_COLUMN_CREATE_TIME,
+                        value: DataValue::Text(ctime.as_bytes()),
+                    });
                 }
                 if !contain_update_time {
-                    datas_new.push(Pair { column_name: G_COLUMN_UPDATE_TIME,
-                                          value: DataValue::Text(ctime.as_bytes()) });
+                    datas_new.push(Pair {
+                        column_name: G_COLUMN_UPDATE_TIME,
+                        value: DataValue::Text(ctime.as_bytes()),
+                    });
                 }
                 return table.insert_datas(owner, alias, datas_new);
             }
@@ -431,11 +490,12 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn delete_datas_default(&self,
-                                owner: &str,
-                                alias: &str,
-                                cond: &Condition)
-                                -> Result<i32, ErrCode> {
+    pub fn delete_datas_default(
+        &self,
+        owner: &str,
+        alias: &str,
+        cond: &Condition,
+    ) -> Result<i32, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         process_err_msg(table.delete_datas(owner, alias, cond), self)
     }
@@ -456,11 +516,12 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn query_datas_default(&self,
-                               owner: &str,
-                               alias: &str,
-                               condition: &Condition)
-                               -> Result<ResultSet, ErrCode> {
+    pub fn query_datas_default(
+        &self,
+        owner: &str,
+        alias: &str,
+        condition: &Condition,
+    ) -> Result<ResultSet, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         process_err_msg(table.query_datas(owner, alias, condition), self)
     }
@@ -484,8 +545,8 @@ impl<'a> DefaultDatabaseHelper<'a> {
     pub fn open_default_database_table_with_version_update(
         userid: u32,
         version_new: u32,
-        callback: UpdateDatabaseCallbackFunc)
-        -> Result<DefaultDatabaseHelper<'a>, ErrCode> {
+        callback: UpdateDatabaseCallbackFunc,
+    ) -> Result<DefaultDatabaseHelper<'a>, ErrCode> {
         let db = Database::default_new_with_version_update(userid, version_new, callback)
             .map_err(from_sqlite_code_to_asset_code)?;
         let _lock = db.file.mtx.lock().unwrap();
@@ -500,43 +561,47 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn update_datas_default_once(userid: u32,
-                                     owner: &str,
-                                     alias: &str,
-                                     datas: &Vec<Pair>)
-                                     -> Result<i32, ErrCode> {
+    pub fn update_datas_default_once(
+        userid: u32,
+        owner: &str,
+        alias: &str,
+        datas: &Vec<Pair>,
+    ) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.update_datas_default(owner, alias, datas)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn insert_datas_default_once(userid: u32,
-                                     owner: &str,
-                                     alias: &str,
-                                     datas: Vec<Pair>)
-                                     -> Result<i32, ErrCode> {
+    pub fn insert_datas_default_once(
+        userid: u32,
+        owner: &str,
+        alias: &str,
+        datas: Vec<Pair>,
+    ) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.insert_datas_default(owner, alias, datas)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn delete_datas_default_once(userid: u32,
-                                     owner: &str,
-                                     alias: &str,
-                                     cond: &Condition)
-                                     -> Result<i32, ErrCode> {
+    pub fn delete_datas_default_once(
+        userid: u32,
+        owner: &str,
+        alias: &str,
+        cond: &Condition,
+    ) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.delete_datas_default(owner, alias, cond)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn is_data_exists_default_once(userid: u32,
-                                       owner: &str,
-                                       alias: &str)
-                                       -> Result<bool, ErrCode> {
+    pub fn is_data_exists_default_once(
+        userid: u32,
+        owner: &str,
+        alias: &str,
+    ) -> Result<bool, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.is_data_exists_default(owner, alias)
     }
@@ -550,11 +615,12 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn query_datas_default_once(userid: u32,
-                                    owner: &str,
-                                    alias: &str,
-                                    condition: &Condition)
-                                    -> Result<ResultSet, ErrCode> {
+    pub fn query_datas_default_once(
+        userid: u32,
+        owner: &str,
+        alias: &str,
+        condition: &Condition,
+    ) -> Result<ResultSet, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.query_datas_default(owner, alias, condition)
     }
