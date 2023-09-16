@@ -19,6 +19,13 @@ use asset_common::{definition::{AssetMap, ErrCode, Result, Tag, Value, Accessibi
 
 const MAX_BYTES_LEN: usize = 256;
 
+fn check_bool_type(value: &Value) -> Result<()> {
+    let Value::Bool(_) = value else {
+        panic!("convert value to Value::Bool in check_bool_type failed!")
+    };
+    Ok(())
+}
+
 fn check_accessibility(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
         panic!("convert value to Value::Number in check_accessibility failed!")
@@ -186,9 +193,10 @@ fn check_return_order_by(value: &Value) -> Result<()> {
 
 fn match_tag_and_check(tag: &Tag, value: &Value) -> Result<()> {
     match tag {
-        Tag::Accessibility => check_accessibility(value),
         Tag::Secret => check_secret(value),
         Tag::Alias => check_alias(value),
+        Tag::Accessibility => check_accessibility(value),
+        Tag::RequirePasswordSet => check_bool_type(value),
         Tag::AuthType => check_auth_type(value),
         Tag::AuthValidityPeriod => check_auth_validity_period(value),
         Tag::AuthChallenge => check_challenge(value),

@@ -25,11 +25,14 @@ use crate::impl_enum_trait;
 
 /// An enum type containing the data type definitions for Asset attribute value.
 pub enum DataType {
+    /// The data type of Asset attribute value is bool.
+    Bool = 1 << 28,
+
     /// The data type of Asset attribute value is uint32.
-    Uint32 = 1 << 28,
+    Uint32 = 2 << 28,
 
     /// The data type of Asset attribute value is byte array.
-    Bytes = 2 << 28,
+    Bytes = 3 << 28,
 }
 
 impl_enum_trait! {
@@ -46,67 +49,73 @@ impl_enum_trait! {
         /// A tag whose value is a 32-bit unsigned integer indicating when the Asset can be accessed.
         Accessibility = DataType::Uint32 as isize | 0x03,
 
+        /// A tag whose value is a bool indicating whether a screen lock password is set for the device.
+        RequirePasswordSet = DataType::Bool as isize | 0x04,
+
         /// A tag whose value is a 32-bit unsigned integer indicating
         /// the user authentication type for Asset access control.
-        AuthType = DataType::Uint32 as isize | 0x04,
+        AuthType = DataType::Uint32 as isize | 0x05,
 
         /// A tag whose value is a 32-bit unsigned integer indicating
         /// the validity period in seconds of user authentication.
-        AuthValidityPeriod = DataType::Uint32 as isize | 0x05,
+        AuthValidityPeriod = DataType::Uint32 as isize | 0x06,
 
         /// A tag whose value is a byte array indicating the authentication challenge for anti-replay protection.
-        AuthChallenge = DataType::Bytes as isize | 0x06,
+        AuthChallenge = DataType::Bytes as isize | 0x07,
 
         /// A tag whose value is a byte array indicating the authentication token after a user is verified.
-        AuthToken = DataType::Bytes as isize | 0x07,
+        AuthToken = DataType::Bytes as isize | 0x08,
 
         /// A tag whose value is a 32-bit unsigned integer indicating the type of Asset synchronization.
-        SyncType = DataType::Uint32 as isize | 0x08,
+        SyncType = DataType::Uint32 as isize | 0x10,
 
         /// A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
-        ConfictPolicy = DataType::Uint32 as isize | 0x09,
+        ConfictPolicy = DataType::Uint32 as isize | 0x11,
 
         /// A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
-        DataLabelCritical1 = DataType::Bytes as isize | 0x0A,
+        DataLabelCritical1 = DataType::Bytes as isize | 0x20,
 
         /// A tag whose value is a byte array indicating the second user-defined Asset data label (not allow to update).
-        DataLabelCritical2 = DataType::Bytes as isize | 0x0B,
+        DataLabelCritical2 = DataType::Bytes as isize | 0x21,
 
         /// A tag whose value is a byte array indicating the third user-defined Asset data label (not allow to update).
-        DataLabelCritical3 = DataType::Bytes as isize | 0x0C,
+        DataLabelCritical3 = DataType::Bytes as isize | 0x22,
 
         /// A tag whose value is a byte array indicating the fourth user-defined Asset data label (not allow to update).
-        DataLabelCritical4 = DataType::Bytes as isize | 0x0D,
+        DataLabelCritical4 = DataType::Bytes as isize | 0x23,
 
         /// A tag whose value is a byte array indicating the first user-defined Asset data label (allow to update).
-        DataLabelNormal1 = DataType::Bytes as isize | 0x0E,
+        DataLabelNormal1 = DataType::Bytes as isize | 0x24,
 
         /// A tag whose value is a byte array indicating the second user-defined Asset data label (allow to update).
-        DataLabelNormal2 = DataType::Bytes as isize | 0x0F,
+        DataLabelNormal2 = DataType::Bytes as isize | 0x25,
 
         /// A tag whose value is a byte array indicating the third user-defined Asset data label (allow to update).
-        DataLabelNormal3 = DataType::Bytes as isize | 0x10,
+        DataLabelNormal3 = DataType::Bytes as isize | 0x26,
 
         /// A tag whose value is a byte array indicating the fourth user-defined Asset data label (allow to update).
-        DataLabelNormal4 = DataType::Bytes as isize | 0x11,
+        DataLabelNormal4 = DataType::Bytes as isize | 0x27,
 
         /// A tag whose value is a 32-bit unsigned integer indicating the return type of the queried Asset.
-        ReturnType = DataType::Uint32 as isize | 0x12,
+        ReturnType = DataType::Uint32 as isize | 0x30,
 
         /// A tag whose value is a 32-bit unsigned integer indicating the maximum number of returned Assets in a query.
-        ReturnLimit = DataType::Uint32 as isize | 0x13,
+        ReturnLimit = DataType::Uint32 as isize | 0x31,
 
         /// A tag whose value is a 32-bit unsigned integer indicating the offset of return data in batch query.
-        ReturnOffset = DataType::Uint32 as isize | 0x14,
+        ReturnOffset = DataType::Uint32 as isize | 0x32,
 
         /// A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
-        ReturnOrderBy = DataType::Uint32 as isize | 0x15,
+        ReturnOrderBy = DataType::Uint32 as isize | 0x33,
     }
 }
 
 /// A type that indicates the secret or attribute value of an Asset tag.
 #[derive(Clone)]
 pub enum Value {
+    /// Asset attribute value, whose data type is bool.
+    Bool(bool),
+
     /// Asset attribute value, whose data type is number.
     Number(u32),
 
@@ -262,10 +271,6 @@ impl_enum_trait! {
 
         /// The secret value in the Asset can only be accessed while the device is unlocked.
         DeviceUnlock = 2,
-
-        /// The secret value in the Asset can only be accessed
-        /// when the device is unlocked and a PIN/pattern/password is set on the device.
-        DeviceSecure = 3,
     }
 }
 

@@ -69,12 +69,9 @@ pub fn serialize_map(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<(
     for v in map.iter() {
         parcel.write(&(*v.0 as u32)).map_err(|_| ErrCode::IpcError)?;
         match v.1 {
-            Value::Number(n) => {
-                parcel.write::<u32>(n).map_err(|_| ErrCode::IpcError)?;
-            },
-            Value::Bytes(a) => {
-                parcel.write::<Vec<u8>>(a).map_err(|_| ErrCode::IpcError)?;
-            },
+            Value::Bool(b) => parcel.write::<bool>(b).map_err(|_| ErrCode::IpcError)?,
+            Value::Number(n) => parcel.write::<u32>(n).map_err(|_| ErrCode::IpcError)?,
+            Value::Bytes(a) => parcel.write::<Vec<u8>>(a).map_err(|_| ErrCode::IpcError)?,
         }
     }
     logi!("leave serialize ok");
@@ -94,6 +91,11 @@ pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
         let tag = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
         let asset_tag = Tag::try_from(tag)?;
         match asset_tag.data_type() {
+            DataType::Bool => {
+                logi!("try get u32");
+                let v = parcel.read::<bool>().map_err(|_| ErrCode::IpcError)?;
+                map.insert(asset_tag, Value::Bool(v));
+            }
             DataType::Uint32 => {
                 logi!("try get u32");
                 let v = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;

@@ -21,6 +21,11 @@ use asset_common::{
 
 fn tag_value_match(tag: &Tag, value: &Value) -> bool {
     match tag.data_type() {
+        DataType::Bool => {
+            if let Value::Bool(_) = value {
+                return true;
+            }
+        }
         DataType::Bytes => {
             if let Value::Bytes(_) = value {
                 return true;

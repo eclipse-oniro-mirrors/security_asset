@@ -24,7 +24,7 @@ fn test_for_add() {
     input.insert_attr(Tag::AuthType, AuthType::Any).unwrap();
     input.insert_attr(Tag::SyncType, SyncType::Never).unwrap();
 
-    input.insert_attr(Tag::Accessibility, Accessibility::DeviceSecure).unwrap();
+    input.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlock).unwrap();
     input.insert_attr(Tag::Alias, Vec::from("alias".as_bytes())).unwrap();
 
     match asset_sdk::Manager::build() {
@@ -50,6 +50,7 @@ fn test_for_query() {
                     for map in res.iter() {
                         for (tag, value) in map.iter() {
                             match value {
+                                Value::Bool(boolean) => println!("get tag:[{}] value:[{}]", tag, boolean),
                                 Value::Number(num) => println!("get tag:[{}] value:[{}]", tag, num),
                                 Value::Bytes(bytes) => println!("get tag:[{}] value_len:[{}]", tag, bytes.len()),
                             }

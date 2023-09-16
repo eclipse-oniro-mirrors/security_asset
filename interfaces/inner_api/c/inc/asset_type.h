@@ -28,13 +28,17 @@ extern "C" {
  */
 typedef enum {
     /**
+     * The data type of Asset attribute value is bool.
+     */
+    ASSET_TYPE_BOOL = 0x1 << 28,
+    /**
      * The data type of Asset attribute value is uint32.
      */
-    ASSET_TYPE_UINT32 = 0x1 << 28,
+    ASSET_TYPE_UINT32 = 0x2 << 28,
     /**
      * The data type of Asset attribute value is byte array.
      */
-    ASSET_TYPE_BYTES = 0x2 << 28,
+    ASSET_TYPE_BYTES = 0x3 << 28,
 } AssetTagType;
 
 /**
@@ -59,77 +63,81 @@ typedef enum {
      */
     ASSET_TAG_ACCESSIBILITY = ASSET_TYPE_UINT32 | 0x03,
     /**
+     * A tag whose value is a bool indicating whether a screen lock password is set for the device.
+     */
+    ASSET_TAG_REQUIRE_PASSWORD_SET = ASSET_TYPE_BOOL | 0x04,
+    /**
      * A tag whose value is a 32-bit unsigned integer indicating the user authentication type for Asset access control.
      */
-    ASSET_TAG_AUTH_TYPE = ASSET_TYPE_UINT32 | 0x04,
+    ASSET_TAG_AUTH_TYPE = ASSET_TYPE_UINT32 | 0x05,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the validity period in seconds of user authentication.
      */
-    ASSET_TAG_AUTH_VALIDITY_PERIOD = ASSET_TYPE_UINT32 | 0x05,
+    ASSET_TAG_AUTH_VALIDITY_PERIOD = ASSET_TYPE_UINT32 | 0x06,
     /**
      * A tag whose value is a byte array indicating the authentication challenge for anti-replay protection.
      */
-    ASSET_TAG_AUTH_CHALLENGE = ASSET_TYPE_BYTES | 0x06,
+    ASSET_TAG_AUTH_CHALLENGE = ASSET_TYPE_BYTES | 0x07,
     /**
      * A tag whose value is a byte array indicating the authentication token after a user is verified.
      */
-    ASSET_TAG_AUTH_TOKEN = ASSET_TYPE_BYTES | 0x07,
+    ASSET_TAG_AUTH_TOKEN = ASSET_TYPE_BYTES | 0x08,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the type of Asset synchronization.
      */
-    ASSET_TAG_SYNC_TYPE = ASSET_TYPE_UINT32 | 0x08,
+    ASSET_TAG_SYNC_TYPE = ASSET_TYPE_UINT32 | 0x10,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
      */
-    ASSET_TAG_CONFLICT_RESOLUTION = ASSET_TYPE_UINT32 | 0x09,
+    ASSET_TAG_CONFLICT_RESOLUTION = ASSET_TYPE_UINT32 | 0x11,
     /**
      * A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
      */
-    ASSET_TAG_DATA_LABLE_CRITICAL_1 = ASSET_TYPE_BYTES | 0x0A,
+    ASSET_TAG_DATA_LABLE_CRITICAL_1 = ASSET_TYPE_BYTES | 0x20,
     /**
      * A tag whose value is a byte array indicating the second user-defined Asset data label (not allow to update).
      */
-    ASSET_TAG_DATA_LABLE_CRITICAL_2 = ASSET_TYPE_BYTES | 0x0B,
+    ASSET_TAG_DATA_LABLE_CRITICAL_2 = ASSET_TYPE_BYTES | 0x21,
     /**
      * A tag whose value is a byte array indicating the third user-defined Asset data label (not allow to update).
      */
-    ASSET_TAG_DATA_LABLE_CRITICAL_3 = ASSET_TYPE_BYTES | 0x0C,
+    ASSET_TAG_DATA_LABLE_CRITICAL_3 = ASSET_TYPE_BYTES | 0x22,
     /**
      * A tag whose value is a byte array indicating the fourth user-defined Asset data label (not allow to update).
      */
-   ASSET_TAG_DATA_LABLE_CRITICAL_4 = ASSET_TYPE_BYTES | 0x0D,
+   ASSET_TAG_DATA_LABLE_CRITICAL_4 = ASSET_TYPE_BYTES | 0x23,
     /**
      * A tag whose value is a byte array indicating the first user-defined Asset data label (allow to update).
      */
-    ASSET_TAG_DATA_LABLE_NORMAL_1 = ASSET_TYPE_BYTES | 0x0E,
+    ASSET_TAG_DATA_LABLE_NORMAL_1 = ASSET_TYPE_BYTES | 0x24,
     /**
      * A tag whose value is a byte array indicating the second user-defined Asset data label (allow to update).
      */
-    ASSET_TAG_DATA_LABLE_NORMAL_2 = ASSET_TYPE_BYTES | 0x0F,
+    ASSET_TAG_DATA_LABLE_NORMAL_2 = ASSET_TYPE_BYTES | 0x25,
     /**
      * A tag whose value is a byte array indicating the third user-defined Asset data label (allow to update).
      */
-    ASSET_TAG_DATA_LABLE_NORMAL_3 = ASSET_TYPE_BYTES | 0x10,
+    ASSET_TAG_DATA_LABLE_NORMAL_3 = ASSET_TYPE_BYTES | 0x26,
     /**
      * A tag whose value is a byte array indicating the fourth user-defined Asset data label (allow to update).
      */
-    ASSET_TAG_DATA_LABLE_NORMAL_4 = ASSET_TYPE_BYTES | 0x11,
+    ASSET_TAG_DATA_LABLE_NORMAL_4 = ASSET_TYPE_BYTES | 0x27,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the return type of the queried Asset.
      */
-    ASSET_TAG_RETURN_TYPE = ASSET_TYPE_UINT32 | 0x12,
+    ASSET_TAG_RETURN_TYPE = ASSET_TYPE_UINT32 | 0x30,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the maximum number of returned Assets in one query.
      */
-    ASSET_TAG_RETURN_LIMIT = ASSET_TYPE_UINT32 | 0x13,
+    ASSET_TAG_RETURN_LIMIT = ASSET_TYPE_UINT32 | 0x31,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the offset of return data in batch query.
      */
-    ASSET_TAG_RETURN_OFFSET = ASSET_TYPE_UINT32 | 0x14,
+    ASSET_TAG_RETURN_OFFSET = ASSET_TYPE_UINT32 | 0x32,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
      */
-    ASSET_TAG_RETURN_ORDER_BY = ASSET_TYPE_UINT32 | 0x15,
+    ASSET_TAG_RETURN_ORDER_BY = ASSET_TYPE_UINT32 | 0x33,
 } AssetTag;
 
 /**
@@ -302,25 +310,13 @@ typedef struct {
  */
 typedef union {
     /**
-     * Value of the asset attribute whose data type is int32.
+     * Value of the asset attribute whose data type is bool.
      */
-    int32_t i32;
+    bool boolean;
     /**
      * Value of the asset attribute whose data type is uint32.
      */
     uint32_t u32;
-    /**
-     * Value of the asset attribute whose data type is int64.
-     */
-    int64_t i64;
-    /**
-     * Value of the asset attribute whose data type is uint64.
-     */
-    uint64_t u64;
-    /**
-     * Value of the asset attribute whose data type is bool.
-     */
-    bool boolean;
     /**
      * Value of the asset attribute whose data type is byte array.
      */
@@ -339,7 +335,7 @@ typedef struct {
      * The value of the Asset attribute.
      */
     AssetValue value;
-} AssetParam;
+} AssetAttr;
 
 /**
  * A type that indicates the query result of an Asset record.
@@ -348,12 +344,12 @@ typedef struct {
     /**
      * The attributes of an Asset.
      */
-    AssetParam *params;
+    AssetAttr *attrs;
     /**
      * The count of an Asset attributes.
      */
     uint32_t count;
-} Result;
+} AssetResult;
 
 /**
  * A type that indicates the Asset query result set.
@@ -362,12 +358,12 @@ typedef struct {
     /**
      * The query result set.
      */
-    Result *results;
+    AssetResult *results;
     /**
      * The count of the result set.
      */
     uint32_t count;
-} ResultSet;
+} AssetResultSet;
 
 #ifdef __cplusplus
 }

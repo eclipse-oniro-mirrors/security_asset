@@ -27,7 +27,7 @@ use asset_sdk::Manager;
 /// # Safety
 /// dereference pointer
 #[no_mangle]
-pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetParam, attr_cnt: u32) -> i32 {
+pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetAttr, attr_cnt: u32) -> i32 {
     loge!("[YZT] enter AddAssetC2Rust!");
     if attributes.is_null() || attr_cnt == 0 {
         loge!("[YZT] null pointer");
@@ -42,6 +42,9 @@ pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetParam, attr_cnt:
             Err(err_code) => return err_code as i32,
         };
         match attr_tag.data_type() {
+            DataType::Bool => {
+                map.insert(attr_tag, Value::Bool((*attr).value.boolean));
+            }
             DataType::Uint32 => {
                 map.insert(attr_tag, Value::Number((*attr).value.uint32));
             },
@@ -67,7 +70,7 @@ pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetParam, attr_cnt:
 
 /// asset param from c
 #[repr(C)]
-pub struct AssetParam {
+pub struct AssetAttr {
     tag: u32,
     value: AssetValue,
 }

@@ -27,26 +27,17 @@ use crate::definition_inner::{AssetInnerMap, InnerValue};
 
 fn convert_value_into_db_value(value: &Value) -> Result<DataValue> {
     match value {
-        Value::Number(n) => {
-            Ok(DataValue::Integer(*n)) // to do 类型确认
-        },
-        Value::Bytes(v) => {
-            Ok(DataValue::Blob(v))
-        },
+        Value::Bool(b) => Ok(DataValue::Integer(*b as u32)),
+        Value::Number(n) => Ok(DataValue::Integer(*n)), // to do 类型确认
+        Value::Bytes(v) => Ok(DataValue::Blob(v))
     }
 }
 
 fn convert_extra_value_into_db_value(value: &InnerValue) -> Result<DataValue> {
     match value {
-        InnerValue::Number(n) => {
-            Ok(DataValue::Integer(*n)) // to do 类型确认
-        },
-        InnerValue::Blob(v) => {
-            Ok(DataValue::Blob(v))
-        },
-        InnerValue::Text(v) => {
-            Ok(DataValue::Text(v))
-        },
+        InnerValue::Number(n) => Ok(DataValue::Integer(*n)), // to do 类型确认
+        InnerValue::Blob(v) => Ok(DataValue::Blob(v)),
+        InnerValue::Text(v) => Ok(DataValue::Text(v)),
     }
 }
 

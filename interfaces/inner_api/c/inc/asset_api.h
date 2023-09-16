@@ -25,20 +25,36 @@
 extern "C" {
 #endif
 
-int32_t AddAsset(const AssetParam *attributes, uint32_t attrCnt);
+int32_t AddAsset(const AssetAttr *attributes, uint32_t attrCnt);
 
-int32_t RemoveAsset(const AssetParam *query, uint32_t queryCnt);
+int32_t RemoveAsset(const AssetAttr *query, uint32_t queryCnt);
 
-int32_t UpdateAsset(const AssetParam *query, uint32_t queryCnt,
-    const AssetParam *attributesToUpdate, uint32_t updateCnt);
+int32_t UpdateAsset(const AssetAttr *query, uint32_t queryCnt,
+    const AssetAttr *attributesToUpdate, uint32_t updateCnt);
 
-int32_t PreQueryAsset(const AssetParam *query, uint32_t queryCnt, AssetBlob *challenge);
+int32_t PreQueryAsset(const AssetAttr *query, uint32_t queryCnt, AssetBlob *challenge);
 
-int32_t QueryAsset(const AssetParam *query, uint32_t queryCnt, ResultSet *result);
+int32_t QueryAsset(const AssetAttr *query, uint32_t queryCnt, AssetResultSet *result);
 
-int32_t PostQueryAsset(const AssetParam *handle, uint32_t handleCnt);
+int32_t PostQueryAsset(const AssetAttr *handle, uint32_t handleCnt);
 
 Version GetVersion(void);
+
+/**
+ * Parse the AssetResult to get the specified attribute.
+ * Note: The returned AssetAttr pointer does not need to be released.
+ */
+AssetAttr *ParseAttr(const AssetResult *result, AssetTag tag);
+
+/**
+ * Release the AssetBlob returned by PreQueryAsset function.
+ */
+void FreeAssetBlob(AssetBlob *blob);
+
+/**
+ * Release the AssetResultSet returned by QueryAsset function.
+ */
+void FreeAssetResultSet(AssetResultSet *resultSet);
 
 #ifdef __cplusplus
 }

@@ -29,6 +29,7 @@ impl IntoValue for Tag {
     fn data_type(&self) -> DataType {
         let mask = (*self as u32) & DATA_TYPE_MASK;
         match mask {
+            _ if DataType::Bool as u32 == mask => DataType::Bool,
             _ if DataType::Uint32 as u32 == mask => DataType::Uint32,
             _ if DataType::Bytes as u32 == mask => DataType::Bytes,
             _ => {
@@ -105,6 +106,14 @@ impl IntoValue for Vec<u8> {
 impl Insert for AssetMap {
     fn insert_attr(&mut self, key: Tag, value: impl IntoValue) -> Result<()> {
         match value.data_type() {
+            DataType::Bool => {
+                if let Value::Bool(real) = value.into_value() {
+                    self.insert(key, Value::Bool(real));
+                    return Ok(());
+                }
+                loge!("Insert bool failed!");
+                Err(ErrCode::InvalidArgument)
+            }
             DataType::Uint32 => {
                 if let Value::Number(real) = value.into_value() {
                     self.insert(key, Value::Number(real));

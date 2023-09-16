@@ -40,6 +40,7 @@ napi_value DeclareTag(napi_env env)
     AddUint32Property(env, tag, "SECRET", ASSET_TAG_SECRET);
     AddUint32Property(env, tag, "ALIAS", ASSET_TAG_ALIAS);
     AddUint32Property(env, tag, "ACCESSIBILITY", ASSET_TAG_ACCESSIBILITY);
+    AddUint32Property(env, tag, "REQUIRE_PASSWORD_SET", ASSET_TAG_REQUIRE_PASSWORD_SET);
     AddUint32Property(env, tag, "AUTH_TYPE", ASSET_TAG_AUTH_TYPE);
     AddUint32Property(env, tag, "AUTH_VALIDITY_PERIOD", ASSET_TAG_AUTH_VALIDITY_PERIOD);
     AddUint32Property(env, tag, "AUTH_CHALLENGE", ASSET_TAG_AUTH_CHALLENGE);
@@ -131,7 +132,7 @@ napi_value NapiAdd(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AddAsset(context->params, context->paramCnt);
+            context->result = AddAsset(context->attrs, context->attrCnt);
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -141,7 +142,7 @@ napi_value NapiRemove(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = RemoveAsset(context->params, context->paramCnt);
+            context->result = RemoveAsset(context->attrs, context->attrCnt);
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -152,7 +153,7 @@ napi_value NapiUpdate(napi_env env, napi_callback_info info)
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
             context->result =
-                UpdateAsset(context->params, context->paramCnt, context->updateParams, context->updateParamCnt);
+                UpdateAsset(context->attrs, context->attrCnt, context->updateAttrs, context->updateAttrCnt);
         };
     return NapiEntry(env, info, __func__, execute, UPDATE_MAX_ARGS_NUM);
 }
@@ -162,7 +163,7 @@ napi_value NapiPreQuery(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = PreQueryAsset(context->params, context->paramCnt, &context->challenge);
+            context->result = PreQueryAsset(context->attrs, context->attrCnt, &context->challenge);
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -172,7 +173,7 @@ napi_value NapiQuery(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = QueryAsset(context->params, context->paramCnt, &context->resultSet);
+            context->result = QueryAsset(context->attrs, context->attrCnt, &context->resultSet);
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -182,14 +183,27 @@ napi_value NapiPostQuery(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = PostQueryAsset(context->params, context->paramCnt);
+            context->result = PostQueryAsset(context->attrs, context->attrCnt);
         };
     return NapiEntry(env, info, __func__, execute);
 }
 
 napi_value NapiGetVersion(napi_env env, napi_callback_info info)
 {
-    return nullptr; // todo: to implement
+    Version version = GetVersion();
+
+    napi_value versionObj;
+    NAPI_CALL(env, napi_create_object(env, &versionObj));
+
+    napi_value major, minor, patch;
+    NAPI_CALL(env, napi_create_uint32(env, version.major, &major));
+    NAPI_CALL(env, napi_create_uint32(env, version.minor, &minor));
+    NAPI_CALL(env, napi_create_uint32(env, version.patch, &patch));
+
+    NAPI_CALL(env, napi_set_named_property(env, versionObj, "major", major));
+    NAPI_CALL(env, napi_set_named_property(env, versionObj, "minor", minor));
+    NAPI_CALL(env, napi_set_named_property(env, versionObj, "patch", patch));
+    return versionObj;
 }
 
 napi_value Register(napi_env env, napi_value exports)

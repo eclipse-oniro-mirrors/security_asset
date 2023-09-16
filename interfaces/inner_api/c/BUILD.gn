@@ -20,17 +20,18 @@ config("asset_sdk_config") {
 }
 
 ohos_shared_library("asset_sdk") {
+  sources = [ "src/asset_api.c" ]
+  public_configs = [ ":asset_sdk_config" ]
+  deps = [
+    ":asset_sdk_ffi",
+    "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem",
+  ]
+  external_deps = [
+    "hilog:libhilog",
+    "c_utils:utils",
+    ]
   subsystem_name = "security"
   part_name = "asset"
-  public_configs = [ ":asset_sdk_config" ]
-  include_dirs = [
-    "$COMPONENT_DIR/frameworks/os_dependency/log/inc",
-    # todo：模块内部依赖改成相对路径
-  ]
-
-  sources = [ "src/asset_api.c" ]
-  deps = [ ":asset_sdk_ffi" ]
-  external_deps = [ "hilog:libhilog" ]
 }
 
 ohos_rust_shared_ffi("asset_sdk_ffi") {
