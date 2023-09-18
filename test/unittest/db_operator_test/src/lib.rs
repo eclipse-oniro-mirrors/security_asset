@@ -1258,6 +1258,7 @@ pub fn test_for_default_asset() {
         Pair { column_name: "Version", value: DataValue::Integer(1) },
         Pair { column_name: "CreateTime", value: DataValue::Integer(1) },
         Pair { column_name: "UpdateTime", value: DataValue::Integer(1) },
+        Pair { column_name: "RequirePasswordSet", value: DataValue::Integer(0) },
     ];
     let count =
         DefaultDatabaseHelper::insert_datas_default_once(1, "owner1", "Alias1", def).unwrap();
@@ -1272,6 +1273,7 @@ pub fn test_for_default_asset() {
         Pair { column_name: "Version", value: DataValue::Integer(1) },
         Pair { column_name: "CreateTime", value: DataValue::Integer(1) },
         Pair { column_name: "UpdateTime", value: DataValue::Integer(1) },
+        Pair { column_name: "RequirePasswordSet", value: DataValue::Integer(0) },
     ];
     let count =
         DefaultDatabaseHelper::insert_datas_default_once(1, "owner1", "Alias2", def).unwrap();

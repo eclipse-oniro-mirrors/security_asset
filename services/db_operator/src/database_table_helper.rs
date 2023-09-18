@@ -56,6 +56,8 @@ pub const G_COLUMN_DELETE_TYPE: &str = "DeleteType";
 /// default column name
 pub const G_COLUMN_VERSION: &str = "Version";
 /// default column name
+pub const G_COLUMN_REQUIRE_PASSWORD_SET: &str = "RequirePasswordSet";
+/// default column name
 pub const G_COLUMN_CRITICAL1: &str = "DataLabelCritical_1";
 /// default column name
 pub const G_COLUMN_CRITICAL2: &str = "DataLabelCritical_2";
@@ -148,6 +150,12 @@ pub const G_COLUMNS_INFO: &[ColumnInfo] = &[
     },
     ColumnInfo {
         name: G_COLUMN_VERSION,
+        data_type: DataType::INTEGER,
+        is_primary_key: false,
+        not_null: true,
+    },
+    ColumnInfo {
+        name: G_COLUMN_REQUIRE_PASSWORD_SET,
         data_type: DataType::INTEGER,
         is_primary_key: false,
         not_null: true,
