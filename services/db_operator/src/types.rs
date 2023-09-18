@@ -148,7 +148,7 @@ pub struct ColumnInfo<'a> {
 pub type ResultSet = Vec<Vec<ResultDataValue>>;
 
 /// advanced result set
-pub type AdvancedResultSet<'a> = Vec<HashMap<&'a str, ResultDataValue>>;
+pub type AdvancedResultSet = Vec<HashMap<String, ResultDataValue>>;
 
 /// err msg for database after exec sql
 #[repr(C)]

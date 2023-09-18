@@ -539,11 +539,11 @@ impl<'a> Table<'a> {
     /// let resultset = table.query_datas_with_key_value(&vec!["alias", "blobs"], &vec![]);
     ///
     /// means sql like: select alias,blobs from table_name
-    pub fn query_datas_advanced<'b>(
+    pub fn query_datas_advanced(
         &self,
-        columns: &Vec<&'b str>,
+        columns: &Vec<&str>,
         conditions: &Condition,
-    ) -> Result<AdvancedResultSet<'b>, SqliteErrCode> {
+    ) -> Result<AdvancedResultSet, SqliteErrCode> {
         let mut sql = String::from("select ");
         if !columns.is_empty() {
             for i in 0..columns.len() {
@@ -593,7 +593,7 @@ impl<'a> Table<'a> {
         }
         let mut result = vec![];
         while stmt.step() == SQLITE_ROW {
-            let mut dataline = HashMap::<&str, ResultDataValue>::new();
+            let mut dataline = HashMap::<String, ResultDataValue>::new();
             let n = stmt.data_count();
             for i in 0..n {
                 let tp = stmt.column_type(i);
@@ -619,7 +619,8 @@ impl<'a> Table<'a> {
                     SQLITE_NULL => ResultDataValue::Blob(None),
                     _ => return Err(SQLITE_ERROR),
                 };
-                dataline.insert(columns[i as usize], data);
+                let column_name = stmt.query_column_name(i).unwrap().to_string();
+                dataline.insert(column_name, data);
             }
             result.push(dataline);
         }

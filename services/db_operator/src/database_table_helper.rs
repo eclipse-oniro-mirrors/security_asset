@@ -405,13 +405,13 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// sql like:
     /// select * from table_name where AppId='owner' and Alias='alias'
-    pub fn query_columns<'b>(
+    pub fn query_columns(
         &self,
-        columns: &Vec<&'b str>,
+        columns: &Vec<&str>,
         owner: &str,
         alias: &str,
         condition: &Condition,
-    ) -> Result<AdvancedResultSet<'b>, ErrCode> {
+    ) -> Result<AdvancedResultSet, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
         v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
         v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
@@ -566,13 +566,13 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn query_columns_default<'b>(
+    pub fn query_columns_default(
         &self,
-        columns: &Vec<&'b str>,
+        columns: &Vec<&str>,
         owner: &str,
         alias: &str,
         condition: &Condition,
-    ) -> Result<AdvancedResultSet<'b>, ErrCode> {
+    ) -> Result<AdvancedResultSet, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         process_err_msg(table.query_columns(columns, owner, alias, condition), self)
     }
@@ -678,13 +678,13 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn query_columns_default_once<'b>(
+    pub fn query_columns_default_once(
         userid: u32,
-        columns: &Vec<&'b str>,
+        columns: &Vec<&str>,
         owner: &str,
         alias: &str,
         condition: &Condition,
-    ) -> Result<AdvancedResultSet<'b>, ErrCode> {
+    ) -> Result<AdvancedResultSet, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.query_columns_default(columns, owner, alias, condition)
     }
