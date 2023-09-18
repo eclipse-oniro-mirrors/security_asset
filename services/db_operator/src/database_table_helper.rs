@@ -391,6 +391,36 @@ impl<'a> TableHelper<'a> {
         let _lock = self.db.file.mtx.lock().unwrap();
         self.query_row(&vec![], &v).map_err(from_sqlite_code_to_asset_code)
     }
+
+    #[cfg(not(doctest))]
+    /// query special columns with condition(condition could be empty).
+    /// if success, return result set.
+    /// if fail, return err code.
+    ///
+    /// code like:
+    /// ```
+    /// use db_operator::database_table_helper::DefaultDatabaseHelper;
+    /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
+    /// let result = helper.query_columns(&[], "owner", "alias", &vec![]);
+    /// ```
+    /// sql like:
+    /// select * from table_name where AppId='owner' and Alias='alias'
+    pub fn query_columns(
+        &self,
+        columns: &Vec<&str>,
+        owner: &str,
+        alias: &str,
+        condition: &Condition,
+    ) -> Result<ResultSet, ErrCode> {
+        let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
+        v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+        v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+        for c in condition {
+            v.push(*c);
+        }
+        let _lock = self.db.file.mtx.lock().unwrap();
+        self.query_row(columns, &v).map_err(from_sqlite_code_to_asset_code)
+    }
 }
 
 /// process err msg, this may be use in test, consider delete this function when release
@@ -533,6 +563,19 @@ impl<'a> DefaultDatabaseHelper<'a> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         process_err_msg(table.query_datas(owner, alias, condition), self)
     }
+
+    /// see TableHelper
+    #[inline(always)]
+    pub fn query_columns_default(
+        &self,
+        columns: &Vec<&str>,
+        owner: &str,
+        alias: &str,
+        condition: &Condition,
+    ) -> Result<ResultSet, ErrCode> {
+        let table = Table::new(G_ASSET_TABLE_NAME, self);
+        process_err_msg(table.query_columns(columns, owner, alias, condition), self)
+    }
 }
 
 impl<'a> DefaultDatabaseHelper<'a> {
@@ -631,5 +674,18 @@ impl<'a> DefaultDatabaseHelper<'a> {
     ) -> Result<ResultSet, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.query_datas_default(owner, alias, condition)
+    }
+
+    /// see TableHelper
+    #[inline(always)]
+    pub fn query_columns_default_once(
+        userid: u32,
+        columns: &Vec<&str>,
+        owner: &str,
+        alias: &str,
+        condition: &Condition,
+    ) -> Result<ResultSet, ErrCode> {
+        let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        db.query_columns_default(columns, owner, alias, condition)
     }
 }
