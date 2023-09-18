@@ -10,6 +10,8 @@
 //! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
+use std::collections::HashMap;
+
 use crate::database::Database;
 
 /// DataType for DB
@@ -144,6 +146,9 @@ pub struct ColumnInfo<'a> {
 
 /// result set
 pub type ResultSet = Vec<Vec<ResultDataValue>>;
+
+/// advanced result set
+pub type AdvancedResultSet<'a> = Vec<HashMap<&'a str, ResultDataValue>>;
 
 /// err msg for database after exec sql
 #[repr(C)]

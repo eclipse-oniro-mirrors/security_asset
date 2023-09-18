@@ -10,13 +10,15 @@
 //! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
+use std::collections::HashMap;
+
 use crate::{
     database::Database,
     sqlite3_changes_func,
     statement::Statement,
     types::{
-        from_data_value_to_str_value, from_datatype_to_str, ColumnInfo, Condition, DataValue, Pair,
-        ResultDataValue, ResultSet,
+        from_data_value_to_str_value, from_datatype_to_str, AdvancedResultSet, ColumnInfo,
+        Condition, DataValue, Pair, ResultDataValue, ResultSet,
     },
     SqliteErrCode, SQLITE_BLOB, SQLITE_DONE, SQLITE_ERROR, SQLITE_FLOAT, SQLITE_INTEGER,
     SQLITE_NULL, SQLITE_OK, SQLITE_ROW, SQLITE_TEXT,
@@ -524,6 +526,102 @@ impl<'a> Table<'a> {
                 data_line.push(data);
             }
             result.push(data_line);
+        }
+        Ok(result)
+    }
+
+    /// query datas from table,
+    /// if length of columns is 0, will select *.
+    /// if length of conditons is 0, will select all data.
+    /// the return value will construct into HashMap
+    ///
+    /// code like:
+    /// let resultset = table.query_datas_with_key_value(&vec!["alias", "blobs"], &vec![]);
+    ///
+    /// means sql like: select alias,blobs from table_name
+    pub fn query_datas_advanced<'b>(
+        &self,
+        columns: &Vec<&'b str>,
+        conditions: &Condition,
+    ) -> Result<AdvancedResultSet<'b>, SqliteErrCode> {
+        let mut sql = String::from("select ");
+        if !columns.is_empty() {
+            for i in 0..columns.len() {
+                sql.push_str(columns[i]);
+                if i != columns.len() - 1 {
+                    sql.push(',');
+                }
+            }
+        } else {
+            sql.push('*');
+        }
+        sql.push_str(" from ");
+        sql.push_str(self.table_name.as_str());
+        if !conditions.is_empty() {
+            sql.push_str(" where ");
+            for i in 0..conditions.len() {
+                let cond = &conditions[i];
+                sql.push_str(cond.column_name);
+                sql.push_str("=?");
+                if i != conditions.len() - 1 {
+                    sql.push_str(" and ")
+                }
+            }
+        }
+        #[cfg(test)]
+        {
+            println!("{}", sql);
+        }
+        let stmt = match Statement::<true>::prepare(sql.as_str(), self.db) {
+            Ok(s) => s,
+            Err(e) => {
+                #[cfg(test)]
+                {
+                    let msg = self.db.get_errmsg().unwrap();
+                    println!("prepare query row fail ret {}, info: {}", e, msg.s);
+                }
+                return Err(e);
+            },
+        };
+        let mut index = 1;
+        for cond in conditions {
+            let ret = stmt.bind_data(index, &cond.value);
+            if ret != SQLITE_OK {
+                return Err(ret);
+            }
+            index += 1;
+        }
+        let mut result = vec![];
+        while stmt.step() == SQLITE_ROW {
+            let mut dataline = HashMap::<&str, ResultDataValue>::new();
+            let n = stmt.data_count();
+            for i in 0..n {
+                let tp = stmt.column_type(i);
+                let data = match tp {
+                    SQLITE_TEXT => {
+                        let text = stmt.query_column_text(i);
+                        ResultDataValue::Text(if text.is_empty() {
+                            None
+                        } else {
+                            Some(Box::new(text.to_vec()))
+                        })
+                    },
+                    SQLITE_INTEGER => ResultDataValue::Integer(stmt.query_column_int(i)),
+                    SQLITE_FLOAT => ResultDataValue::Double(stmt.query_column_double(i)),
+                    SQLITE_BLOB => {
+                        let blob = stmt.query_column_blob(i);
+                        ResultDataValue::Blob(if blob.is_empty() {
+                            None
+                        } else {
+                            Some(Box::new(blob.to_vec()))
+                        })
+                    },
+                    SQLITE_NULL => ResultDataValue::Blob(None),
+                    _ => return Err(SQLITE_ERROR),
+                };
+                dataline.insert(columns[i as usize], data);
+            }
+            result.push(dataline);
         }
         Ok(result)
     }

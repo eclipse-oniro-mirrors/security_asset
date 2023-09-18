@@ -17,7 +17,7 @@ use crate::{
     database::{Database, UpdateDatabaseCallbackFunc},
     from_sqlite_code_to_asset_code,
     table::Table,
-    types::{ColumnInfo, Condition, DataType, DataValue, Pair, ResultSet},
+    types::{AdvancedResultSet, ColumnInfo, Condition, DataType, DataValue, Pair, ResultSet},
 };
 
 /// just use database
@@ -405,13 +405,13 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// sql like:
     /// select * from table_name where AppId='owner' and Alias='alias'
-    pub fn query_columns(
+    pub fn query_columns<'b>(
         &self,
-        columns: &Vec<&str>,
+        columns: &Vec<&'b str>,
         owner: &str,
         alias: &str,
         condition: &Condition,
-    ) -> Result<ResultSet, ErrCode> {
+    ) -> Result<AdvancedResultSet<'b>, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
         v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
         v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
@@ -419,7 +419,7 @@ impl<'a> TableHelper<'a> {
             v.push(*c);
         }
         let _lock = self.db.file.mtx.lock().unwrap();
-        self.query_row(columns, &v).map_err(from_sqlite_code_to_asset_code)
+        self.query_datas_advanced(columns, &v).map_err(from_sqlite_code_to_asset_code)
     }
 }
 
@@ -566,13 +566,13 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn query_columns_default(
+    pub fn query_columns_default<'b>(
         &self,
-        columns: &Vec<&str>,
+        columns: &Vec<&'b str>,
         owner: &str,
         alias: &str,
         condition: &Condition,
-    ) -> Result<ResultSet, ErrCode> {
+    ) -> Result<AdvancedResultSet<'b>, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         process_err_msg(table.query_columns(columns, owner, alias, condition), self)
     }
@@ -678,13 +678,13 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn query_columns_default_once(
+    pub fn query_columns_default_once<'b>(
         userid: u32,
-        columns: &Vec<&str>,
+        columns: &Vec<&'b str>,
         owner: &str,
         alias: &str,
         condition: &Condition,
-    ) -> Result<ResultSet, ErrCode> {
+    ) -> Result<AdvancedResultSet<'b>, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.query_columns_default(columns, owner, alias, condition)
     }
