@@ -17,11 +17,10 @@ use crate::{
     sqlite3_changes_func,
     statement::Statement,
     types::{
-        from_data_value_to_str_value, from_datatype_to_str, AdvancedResultSet, ColumnInfo,
+        from_datatype_to_str, from_data_value_to_str_value, AdvancedResultSet, ColumnInfo,
         Condition, DataValue, Pair, ResultDataValue, ResultSet,
     },
-    SqliteErrCode, SQLITE_BLOB, SQLITE_DONE, SQLITE_ERROR, SQLITE_FLOAT, SQLITE_INTEGER,
-    SQLITE_NULL, SQLITE_OK, SQLITE_ROW, SQLITE_TEXT,
+    SqliteErrCode, SQLITE_DONE, SQLITE_ERROR, SQLITE_OK, SQLITE_ROW,
 };
 
 /// a database table
@@ -31,6 +30,123 @@ pub struct Table<'a> {
     pub table_name: String,
     /// point to db
     pub db: &'a Database<'a>,
+}
+
+/// prepare statement with test output
+#[inline(always)]
+pub fn prepare_statement<'a>(
+    table: &'a Table,
+    sql: &mut str,
+) -> Result<Statement<'a, true>, SqliteErrCode> {
+    #[cfg(test)]
+    {
+        println!("{}", sql);
+    }
+    let stmt = match Statement::<true>::prepare(sql, table.db) {
+        Ok(s) => s,
+        Err(e) => {
+            #[cfg(test)]
+            {
+                let msg = table.db.get_errmsg().unwrap();
+                println!("prepare stmt fail ret {}, info: {}", e, msg.s);
+            }
+            return Err(e);
+        },
+    };
+    Ok(stmt)
+}
+
+/// bind conditions for statement
+#[inline(always)]
+pub fn bind_conditions(
+    conditions: &Condition,
+    stmt: &Statement<true>,
+    index: &mut i32,
+) -> Result<(), SqliteErrCode> {
+    bind_datas(conditions, stmt, index)
+}
+
+/// bind datas
+#[inline(always)]
+pub fn bind_datas(
+    datas: &Vec<Pair>,
+    stmt: &Statement<true>,
+    index: &mut i32,
+) -> Result<(), SqliteErrCode> {
+    for data in datas {
+        let ret = stmt.bind_data(*index, &data.value);
+        if ret != SQLITE_OK {
+            return Err(ret);
+        }
+        *index += 1;
+    }
+    Ok(())
+}
+
+/// bind data values
+#[inline(always)]
+pub fn bind_data_values(
+    datas: &Vec<DataValue>,
+    stmt: &Statement<true>,
+    index: &mut i32,
+) -> Result<(), SqliteErrCode> {
+    for data in datas {
+        let ret = stmt.bind_data(*index, data);
+        if ret != SQLITE_OK {
+            return Err(ret);
+        }
+        *index += 1;
+    }
+    Ok(())
+}
+
+/// build sql columns not empty
+#[inline(always)]
+pub fn build_sql_columns_not_empty(columns: &Vec<&str>, sql: &mut String) {
+    for i in 0..columns.len() {
+        let column = &columns[i];
+        sql.push_str(column);
+        if i != columns.len() - 1 {
+            sql.push(',');
+        }
+    }
+}
+
+/// build sql columns
+#[inline(always)]
+pub fn build_sql_columns(columns: &Vec<&str>, sql: &mut String) {
+    if !columns.is_empty() {
+        build_sql_columns_not_empty(columns, sql);
+    } else {
+        sql.push('*');
+    }
+}
+
+/// build sql where
+#[inline(always)]
+pub fn build_sql_where(conditions: &Condition, sql: &mut String) {
+    if !conditions.is_empty() {
+        sql.push_str(" where ");
+        for i in 0..conditions.len() {
+            let cond = &conditions[i];
+            sql.push_str(cond.column_name);
+            sql.push_str("=?");
+            if i != conditions.len() - 1 {
+                sql.push_str(" and ")
+            }
+        }
+    }
+}
+
+/// build sql values
+#[inline(always)]
+pub fn build_sql_values(len: usize, sql: &mut String) {
+    for i in 0..len {
+        sql.push('?');
+        if i != len - 1 {
+            sql.push(',');
+        }
+    }
 }
 
 impl<'a> Table<'a> {
@@ -68,47 +184,11 @@ impl<'a> Table<'a> {
                 sql.push(',');
             }
         }
-        if !conditions.is_empty() {
-            sql.push_str(" where ");
-            for i in 0..conditions.len() {
-                let pair = &conditions[i];
-                sql.push_str(pair.column_name);
-                sql.push_str("=?");
-                if i != conditions.len() - 1 {
-                    sql.push_str(" and ");
-                }
-            }
-        }
-        #[cfg(test)]
-        {
-            println!("{}", sql);
-        }
-        let stmt = match Statement::<true>::prepare(sql.as_str(), self.db) {
-            Ok(s) => s,
-            Err(e) => {
-                #[cfg(test)]
-                {
-                    let msg = self.db.get_errmsg().unwrap();
-                    println!("prepare update row fail ret {}, info: {}", e, msg.s);
-                }
-                return Err(e);
-            },
-        };
+        build_sql_where(conditions, &mut sql);
+        let stmt = prepare_statement(self, &mut sql)?;
         let mut index = 1;
-        for data in datas {
-            let ret = stmt.bind_data(index, &data.value);
-            if ret != SQLITE_OK {
-                return Err(ret);
-            }
-            index += 1;
-        }
-        for pair in conditions {
-            let ret = stmt.bind_data(index, &pair.value);
-            if ret != SQLITE_OK {
-                return Err(ret);
-            }
-            index += 1;
-        }
+        bind_datas(datas, &stmt, &mut index)?;
+        bind_conditions(conditions, &stmt, &mut index)?;
         let ret = stmt.step();
         if ret != SQLITE_DONE {
             return Err(ret);
@@ -141,40 +221,10 @@ impl<'a> Table<'a> {
     /// let ret = table.delete_row(conditions);
     pub fn delete_row(&self, conditions: &Condition) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("delete from {}", self.table_name);
-        if !conditions.is_empty() {
-            sql.push_str(" where ");
-            for i in 0..conditions.len() {
-                let cond = &conditions[i];
-                sql.push_str(cond.column_name);
-                sql.push_str("=?");
-                if i != conditions.len() - 1 {
-                    sql.push_str(" and ")
-                }
-            }
-        }
-        #[cfg(test)]
-        {
-            println!("{}", sql);
-        }
-        let stmt = match Statement::<true>::prepare(sql.as_str(), self.db) {
-            Ok(s) => s,
-            Err(e) => {
-                #[cfg(test)]
-                {
-                    let msg = self.db.get_errmsg().unwrap();
-                    println!("prepare delete row fail ret {}, info: {}", e, msg.s);
-                }
-                return Err(e);
-            },
-        };
+        build_sql_where(conditions, &mut sql);
+        let stmt = prepare_statement(self, &mut sql)?;
         let mut index = 1;
-        for cond in conditions {
-            let ret = stmt.bind_data(index, &cond.value);
-            if ret != SQLITE_OK {
-                return Err(ret);
-            }
-            index += 1;
-        }
+        bind_conditions(conditions, &stmt, &mut index)?;
         let ret = stmt.step();
         if ret != SQLITE_DONE {
             return Err(ret);
@@ -208,36 +258,11 @@ impl<'a> Table<'a> {
             }
         }
         sql.push_str(") values (");
-        for i in 0..datas.len() {
-            sql.push('?');
-            if i != datas.len() - 1 {
-                sql.push(',');
-            }
-        }
+        build_sql_values(datas.len(), &mut sql);
         sql.push(')');
-        #[cfg(test)]
-        {
-            println!("{}", sql);
-        }
-        let stmt = match Statement::<true>::prepare(sql.as_str(), self.db) {
-            Ok(s) => s,
-            Err(e) => {
-                #[cfg(test)]
-                {
-                    let msg = self.db.get_errmsg().unwrap();
-                    println!("prepare insert row fail ret {}, info: {}", e, msg.s);
-                }
-                return Err(e);
-            },
-        };
+        let stmt = prepare_statement(self, &mut sql)?;
         let mut index = 1;
-        for data in datas {
-            let ret = stmt.bind_data(index, &data.value);
-            if ret != SQLITE_OK {
-                return Err(ret);
-            }
-            index += 1;
-        }
+        bind_datas(datas, &stmt, &mut index)?;
         let ret = stmt.step();
         if ret != SQLITE_DONE {
             return Err(ret);
@@ -255,36 +280,11 @@ impl<'a> Table<'a> {
     pub fn insert_row_datas(&self, datas: &Vec<DataValue>) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("insert into {} ", self.table_name);
         sql.push_str("values (");
-        for i in 0..datas.len() {
-            sql.push('?');
-            if i != datas.len() - 1 {
-                sql.push(',');
-            }
-        }
+        build_sql_values(datas.len(), &mut sql);
         sql.push(')');
-        #[cfg(test)]
-        {
-            println!("{}", sql);
-        }
-        let stmt = match Statement::<true>::prepare(sql.as_str(), self.db) {
-            Ok(s) => s,
-            Err(e) => {
-                #[cfg(test)]
-                {
-                    let msg = self.db.get_errmsg().unwrap();
-                    println!("prepare insert row data fail ret {}, info: {}", e, msg.s);
-                }
-                return Err(e);
-            },
-        };
+        let stmt = prepare_statement(self, &mut sql)?;
         let mut index = 1;
-        for data in datas {
-            let ret = stmt.bind_data(index, data);
-            if ret != SQLITE_OK {
-                return Err(ret);
-            }
-            index += 1;
-        }
+        bind_data_values(datas, &stmt, &mut index)?;
         let ret = stmt.step();
         if ret != SQLITE_DONE {
             return Err(ret);
@@ -322,36 +322,11 @@ impl<'a> Table<'a> {
         dataset: &Vec<Vec<DataValue>>,
     ) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("insert into {} (", self.table_name);
-        for i in 0..columns.len() {
-            let column = &columns[i];
-            sql.push_str(column);
-            if i != columns.len() - 1 {
-                sql.push(',');
-            }
-        }
+        build_sql_columns_not_empty(columns, &mut sql);
         sql.push_str(") values (");
-        for i in 0..columns.len() {
-            sql.push('?');
-            if i != columns.len() - 1 {
-                sql.push(',');
-            }
-        }
+        build_sql_values(columns.len(), &mut sql);
         sql.push(')');
-        #[cfg(test)]
-        {
-            println!("{}", sql);
-        }
-        let stmt = match Statement::<true>::prepare(sql.as_str(), self.db) {
-            Ok(s) => s,
-            Err(e) => {
-                #[cfg(test)]
-                {
-                    let msg = self.db.get_errmsg().unwrap();
-                    println!("prepare insert row data fail ret {}, info: {}", e, msg.s);
-                }
-                return Err(e);
-            },
-        };
+        let stmt = prepare_statement(self, &mut sql)?;
         let mut count = 0;
         for datas in dataset {
             let ret = stmt.reset();
@@ -359,13 +334,7 @@ impl<'a> Table<'a> {
                 return Err(ret);
             }
             let mut index = 1;
-            for data in datas {
-                let ret = stmt.bind_data(index, data);
-                if ret != SQLITE_OK {
-                    return Err(ret);
-                }
-                index += 1;
-            }
+            bind_data_values(datas, &stmt, &mut index)?;
             let ret = stmt.step();
             if ret != SQLITE_DONE {
                 return Err(ret);
@@ -449,80 +418,19 @@ impl<'a> Table<'a> {
         conditions: &Condition,
     ) -> Result<ResultSet, SqliteErrCode> {
         let mut sql = String::from("select ");
-        if !columns.is_empty() {
-            for i in 0..columns.len() {
-                sql.push_str(columns[i]);
-                if i != columns.len() - 1 {
-                    sql.push(',');
-                }
-            }
-        } else {
-            sql.push('*');
-        }
+        build_sql_columns(columns, &mut sql);
         sql.push_str(" from ");
         sql.push_str(self.table_name.as_str());
-        if !conditions.is_empty() {
-            sql.push_str(" where ");
-            for i in 0..conditions.len() {
-                let cond = &conditions[i];
-                sql.push_str(cond.column_name);
-                sql.push_str("=?");
-                if i != conditions.len() - 1 {
-                    sql.push_str(" and ")
-                }
-            }
-        }
-        #[cfg(test)]
-        {
-            println!("{}", sql);
-        }
-        let stmt = match Statement::<true>::prepare(sql.as_str(), self.db) {
-            Ok(s) => s,
-            Err(e) => {
-                #[cfg(test)]
-                {
-                    let msg = self.db.get_errmsg().unwrap();
-                    println!("prepare query row fail ret {}, info: {}", e, msg.s);
-                }
-                return Err(e);
-            },
-        };
+        build_sql_where(conditions, &mut sql);
+        let stmt = prepare_statement(self, &mut sql)?;
         let mut index = 1;
-        for cond in conditions {
-            let ret = stmt.bind_data(index, &cond.value);
-            if ret != SQLITE_OK {
-                return Err(ret);
-            }
-            index += 1;
-        }
+        bind_conditions(conditions, &stmt, &mut index)?;
         let mut result = vec![];
         while stmt.step() == SQLITE_ROW {
             let mut data_line = Vec::<ResultDataValue>::new();
             let n = stmt.data_count();
             for i in 0..n {
-                let tp = stmt.column_type(i);
-                let data = match tp {
-                    SQLITE_TEXT => {
-                        let text = stmt.query_column_text(i);
-                        ResultDataValue::Text(if text.is_empty() {
-                            None
-                        } else {
-                            Some(Box::new(text.to_vec()))
-                        })
-                    },
-                    SQLITE_INTEGER => ResultDataValue::Integer(stmt.query_column_int(i)),
-                    SQLITE_FLOAT => ResultDataValue::Double(stmt.query_column_double(i)),
-                    SQLITE_BLOB => {
-                        let blob = stmt.query_column_blob(i);
-                        ResultDataValue::Blob(if blob.is_empty() {
-                            None
-                        } else {
-                            Some(Box::new(blob.to_vec()))
-                        })
-                    },
-                    SQLITE_NULL => ResultDataValue::Blob(None),
-                    _ => return Err(SQLITE_ERROR),
-                };
+                let data = stmt.query_columns_auto_type(i)?;
                 data_line.push(data);
             }
             result.push(data_line);
@@ -532,11 +440,11 @@ impl<'a> Table<'a> {
 
     /// query datas from table,
     /// if length of columns is 0, will select *.
-    /// if length of conditons is 0, will select all data.
+    /// if length of conditions is 0, will select all data.
     /// the return value will construct into HashMap
     ///
     /// code like:
-    /// let resultset = table.query_datas_with_key_value(&vec!["alias", "blobs"], &vec![]);
+    /// let result_set = table.query_datas_with_key_value(&vec!["alias", "blobs"], &vec![]);
     ///
     /// means sql like: select alias,blobs from table_name
     pub fn query_datas_advanced(
@@ -545,84 +453,23 @@ impl<'a> Table<'a> {
         conditions: &Condition,
     ) -> Result<AdvancedResultSet, SqliteErrCode> {
         let mut sql = String::from("select ");
-        if !columns.is_empty() {
-            for i in 0..columns.len() {
-                sql.push_str(columns[i]);
-                if i != columns.len() - 1 {
-                    sql.push(',');
-                }
-            }
-        } else {
-            sql.push('*');
-        }
+        build_sql_columns(columns, &mut sql);
         sql.push_str(" from ");
         sql.push_str(self.table_name.as_str());
-        if !conditions.is_empty() {
-            sql.push_str(" where ");
-            for i in 0..conditions.len() {
-                let cond = &conditions[i];
-                sql.push_str(cond.column_name);
-                sql.push_str("=?");
-                if i != conditions.len() - 1 {
-                    sql.push_str(" and ")
-                }
-            }
-        }
-        #[cfg(test)]
-        {
-            println!("{}", sql);
-        }
-        let stmt = match Statement::<true>::prepare(sql.as_str(), self.db) {
-            Ok(s) => s,
-            Err(e) => {
-                #[cfg(test)]
-                {
-                    let msg = self.db.get_errmsg().unwrap();
-                    println!("prepare query row fail ret {}, info: {}", e, msg.s);
-                }
-                return Err(e);
-            },
-        };
+        build_sql_where(conditions, &mut sql);
+        let stmt = prepare_statement(self, &mut sql)?;
         let mut index = 1;
-        for cond in conditions {
-            let ret = stmt.bind_data(index, &cond.value);
-            if ret != SQLITE_OK {
-                return Err(ret);
-            }
-            index += 1;
-        }
+        bind_conditions(conditions, &stmt, &mut index)?;
         let mut result = vec![];
         while stmt.step() == SQLITE_ROW {
-            let mut dataline = HashMap::<String, ResultDataValue>::new();
+            let mut data_line = HashMap::<String, ResultDataValue>::new();
             let n = stmt.data_count();
             for i in 0..n {
-                let tp = stmt.column_type(i);
-                let data = match tp {
-                    SQLITE_TEXT => {
-                        let text = stmt.query_column_text(i);
-                        ResultDataValue::Text(if text.is_empty() {
-                            None
-                        } else {
-                            Some(Box::new(text.to_vec()))
-                        })
-                    },
-                    SQLITE_INTEGER => ResultDataValue::Integer(stmt.query_column_int(i)),
-                    SQLITE_FLOAT => ResultDataValue::Double(stmt.query_column_double(i)),
-                    SQLITE_BLOB => {
-                        let blob = stmt.query_column_blob(i);
-                        ResultDataValue::Blob(if blob.is_empty() {
-                            None
-                        } else {
-                            Some(Box::new(blob.to_vec()))
-                        })
-                    },
-                    SQLITE_NULL => ResultDataValue::Blob(None),
-                    _ => return Err(SQLITE_ERROR),
-                };
+                let data = stmt.query_columns_auto_type(i)?;
                 let column_name = stmt.query_column_name(i).unwrap().to_string();
-                dataline.insert(column_name, data);
+                data_line.insert(column_name, data);
             }
-            result.push(dataline);
+            result.push(data_line);
         }
         Ok(result)
     }
@@ -639,40 +486,10 @@ impl<'a> Table<'a> {
     /// the sql is like : select count(*) as count from table_name where id=3
     pub fn count_datas(&self, conditions: &Condition) -> Result<u32, SqliteErrCode> {
         let mut sql = format!("select count(*) as count from {}", self.table_name);
-        if !conditions.is_empty() {
-            sql.push_str(" where ");
-            for i in 0..conditions.len() {
-                let cond = &conditions[i];
-                sql.push_str(cond.column_name);
-                sql.push_str("=?");
-                if i != conditions.len() - 1 {
-                    sql.push_str(" and ")
-                }
-            }
-        }
-        #[cfg(test)]
-        {
-            println!("{}", sql);
-        }
-        let stmt = match Statement::<true>::prepare(sql.as_str(), self.db) {
-            Ok(s) => s,
-            Err(e) => {
-                #[cfg(test)]
-                {
-                    let msg = self.db.get_errmsg().unwrap();
-                    println!("prepare count datas fail ret {}, info: {}", e, msg.s);
-                }
-                return Err(e);
-            },
-        };
+        build_sql_where(conditions, &mut sql);
+        let stmt = prepare_statement(self, &mut sql)?;
         let mut index = 1;
-        for cond in conditions {
-            let ret = stmt.bind_data(index, &cond.value);
-            if ret != SQLITE_OK {
-                return Err(ret);
-            }
-            index += 1;
-        }
+        bind_conditions(conditions, &stmt, &mut index)?;
         let ret = stmt.step();
         if ret != SQLITE_ROW {
             return Err(ret);

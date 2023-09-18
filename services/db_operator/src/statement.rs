@@ -21,7 +21,8 @@ use crate::{
     sqlite3_column_type_func, sqlite3_data_count_func, sqlite3_finalize_func,
     sqlite3_prepare_v2_func, sqlite3_reset_func, sqlite3_step_func,
     types::{DataValue, ResultDataValue},
-    Sqlite3Callback, SqliteErrCode, SQLITE_ERROR, SQLITE_OK,
+    Sqlite3Callback, SqliteErrCode, SQLITE_BLOB, SQLITE_ERROR, SQLITE_FLOAT, SQLITE_INTEGER,
+    SQLITE_NULL, SQLITE_OK, SQLITE_TEXT,
 };
 
 /// sql statement
@@ -143,6 +144,34 @@ impl<'b> Statement<'b, true> {
                 *d = self.query_column_double(index);
             },
         }
+    }
+
+    /// query columns auto type
+    pub fn query_columns_auto_type(&self, i: i32) -> Result<ResultDataValue, SqliteErrCode> {
+        let tp = self.column_type(i);
+        let data = match tp {
+            SQLITE_TEXT => {
+                let text: &[u8] = self.query_column_text(i);
+                ResultDataValue::Text(if text.is_empty() {
+                    None
+                } else {
+                    Some(Box::new(text.to_vec()))
+                })
+            },
+            SQLITE_INTEGER => ResultDataValue::Integer(self.query_column_int(i)),
+            SQLITE_FLOAT => ResultDataValue::Double(self.query_column_double(i)),
+            SQLITE_BLOB => {
+                let blob = self.query_column_blob(i);
+                ResultDataValue::Blob(if blob.is_empty() {
+                    None
+                } else {
+                    Some(Box::new(blob.to_vec()))
+                })
+            },
+            SQLITE_NULL => ResultDataValue::Blob(None),
+            _ => return Err(SQLITE_ERROR),
+        };
+        Ok(data)
     }
 
     /// query column datas in result set for blob data
