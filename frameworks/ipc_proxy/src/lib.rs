@@ -20,7 +20,7 @@ use ipc_rust::{
     MsgParcel, RemoteObj, RemoteObjRef
 };
 
-use asset_common::{definition::{AssetMap, ErrCode, Result}};
+use asset_common::{definition::{AssetMap, ErrCode, Result}, loge};
 use asset_ipc_interface::{IAsset, IpcCode, IPC_SUCCESS, SA_NAME, serialize_map,
     deserialize_vector_map};
 
@@ -75,7 +75,13 @@ impl IAsset for AssetProxy {
             Some(mut send_parcel) => {
                 serialize_map(input, &mut send_parcel.borrowed())?;
                 let mut reply =
-                    self.remote.send_request(IpcCode::Query as u32, &send_parcel, false).map_err(|_| ErrCode::IpcError)?;
+                    self.remote.send_request(IpcCode::Query as u32, &send_parcel, false).map_err(|e| {
+                        loge!("query send request failed! res = [{}]", e);
+                        ErrCode::IpcError
+                    })?;
+
+                    loge!("query after send_request");
+
                     let res_code = reply.read::<i32>().map_err(|_| ErrCode::IpcError)?;
                     if res_code != IPC_SUCCESS {
                         return Err(ErrCode::try_from(res_code)?);

@@ -103,6 +103,16 @@ impl IntoValue for Vec<u8> {
     }
 }
 
+impl IntoValue for bool {
+    fn data_type(&self) -> DataType {
+        DataType::Bool
+    }
+
+    fn into_value(self) -> Value {
+        Value::Bool(self)
+    }
+}
+
 impl Insert for AssetMap {
     fn insert_attr(&mut self, key: Tag, value: impl IntoValue) -> Result<()> {
         match value.data_type() {

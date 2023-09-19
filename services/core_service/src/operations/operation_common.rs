@@ -15,13 +15,15 @@
 
 //! This create implement the asset
 
-mod extra_params;
-mod db_data_map_adapter;
-mod file_operator;
+mod crypto_adapter;
+mod db_adapter;
 mod default_params;
+mod extra_params;
+mod file_operator;
 
+pub(crate) use crypto_adapter::{encrypt, decrypt};
 pub(crate) use extra_params::construst_extra_params;
-pub(crate) use db_data_map_adapter::{set_extra_attrs, set_input_attr};
+pub(crate) use db_adapter::{set_extra_attrs, set_input_attr, insert_one_data, query_one_data};
 pub(crate) use file_operator::create_user_db_dir;
 pub(crate) use default_params::construct_params_with_default;
 

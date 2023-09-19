@@ -15,13 +15,17 @@
 
 //! This create implement the asset
 
-use asset_common::definition::{AssetMap, Result, Value, Tag};
+use asset_common::{definition::{AssetMap, ErrCode, Result, Value, Tag}, loge, logi};
 use db_operator::{
     types::{Pair, DataValue},
-    database_table_helper::{G_COLUMN_ACCESS_TYPE, G_COLUMN_SECRET, G_COLUMN_ALIAS, G_COLUMN_AUTH_TYPE,
+    database_table_helper::{
+        DefaultDatabaseHelper,
+        G_COLUMN_ACCESS_TYPE, G_COLUMN_SECRET, G_COLUMN_ALIAS, G_COLUMN_AUTH_TYPE,
         G_COLUMN_SYNC_TYPE, G_COLUMN_CRITICAL1, G_COLUMN_CRITICAL2, G_COLUMN_CRITICAL3,
-        G_COLUMN_CRITICAL4, G_COLUMN_NORMAL1, G_COLUMN_NORMAL2, G_COLUMN_NORMAL3, G_COLUMN_NORMAL4}
+        G_COLUMN_CRITICAL4, G_COLUMN_NORMAL1, G_COLUMN_NORMAL2, G_COLUMN_NORMAL3, G_COLUMN_NORMAL4, G_COLUMN_REQUIRE_PASSWORD_SET
+    }
 };
+use crate::calling_process_info::CallingInfo;
 
 use crate::definition_inner::{AssetInnerMap, InnerValue};
 
@@ -56,12 +60,17 @@ fn get_tag_column_name(tag: &Tag) -> Option<&str> {
         Tag::DataLabelNormal2 => Some(G_COLUMN_NORMAL2),
         Tag::DataLabelNormal3 => Some(G_COLUMN_NORMAL3),
         Tag::DataLabelNormal4 => Some(G_COLUMN_NORMAL4),
+        Tag::RequirePasswordSet => Some(G_COLUMN_REQUIRE_PASSWORD_SET),
         _ => None,
     }
 }
 
 pub(crate) fn set_input_attr<'a>(input: &'a AssetMap, vec: &mut Vec<Pair<'a>>) -> Result<()> {
     for (tag, value) in input.iter() {
+        // skip secret param input, for it should be cipher instead of plain
+        if tag == &Tag::Secret {
+            continue;
+        }
         if let Some(column) = get_tag_column_name(tag) {
             vec.push(
                 Pair {
@@ -85,4 +94,36 @@ pub(crate) fn set_extra_attrs<'a>(input: &'a AssetInnerMap, vec: &mut Vec<Pair<'
         );
     }
     Ok(())
+}
+
+pub(crate) fn insert_one_data(alias: &str, calling_info: &CallingInfo, db_data: Vec<Pair>) -> Result<i32> {
+    // get owner str
+    let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
+        loge!("get owner str faield!");
+        ErrCode::Failed
+    })?;
+
+    // call sql to add
+    let insert_num =
+        DefaultDatabaseHelper::insert_datas_default_once(calling_info.user_id(), &owner_str, alias, db_data)?;
+
+    logi!("insert {} data", insert_num);
+
+    Ok(insert_num)
+}
+
+pub(crate) fn query_one_data(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
+    // get owner str
+    let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
+        loge!("get owner str faield!");
+        ErrCode::Failed
+    })?;
+
+    // call sql to add
+    let query_res =
+        DefaultDatabaseHelper::query_datas_default_once(calling_info.user_id(), &owner_str, alias, db_data)?;
+
+    logi!("query found {}", query_res.len());
+    let res_vec: Vec<AssetMap> = Vec::new();
+    Ok(res_vec)
 }

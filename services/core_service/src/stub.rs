@@ -55,6 +55,7 @@ fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
                     })?;
                 },
                 Err(e) => {
+                    loge!("query failed, res is [{}]", e);
                     reply.write::<i32>(&(e as i32))?;
                 }
             }

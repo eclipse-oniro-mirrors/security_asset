@@ -111,7 +111,7 @@ fn test_hukkey_encrypt() {
                 panic!("test_hukkey_encrypt fail because encrypt error = {}", e);
             }
         }
-        
+
     }else{
         panic!("test_hukkey_encrypt fail because generate error = {}", generate_res);
     }

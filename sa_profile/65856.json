@@ -2,7 +2,7 @@
     "process": "huks_service",
     "systemability": [
         {
-            "name": 3511,
+            "name": 65856,
             "libpath": "libasset_service.dylib.so",
             "run-on-create": true,
             "distributed": false,

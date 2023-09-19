@@ -57,7 +57,7 @@ impl Manager {
 
     /// Query one or more Assets that match a search query.
     pub fn query(&self, input: &AssetMap) -> Result<Vec<AssetMap>> {
-        logi!("[YZT][RUST SDK]enter asset add");
+        logi!("[YZT][RUST SDK]enter asset query");
         self.remote.query(input)
     }
 }

@@ -26,7 +26,7 @@ pub struct KeyInfo {
     /// User id
     pub user_id: u32,
     /// Uid
-    pub uid: u32,
+    pub uid: u64,
     /// Auth_type
     pub auth_type: u32,
     /// Access_type
@@ -101,7 +101,7 @@ impl SecretKey{
             (*gen_param_set).params_cnt = 5;
             copy_nonoverlapping(g_gen_params004.as_ptr() as *const u8,buffer.as_mut_ptr().add(8),5 * size_of::<HksParam>());
         }
-        
+
         unsafe{HksGenerateKey(key_alias, buffer.as_ptr() as *const HksParamSet, null_mut())}
     }
 
@@ -310,7 +310,7 @@ impl Crypto {
             loge!("Encrypt update_and_finish Failed.");
             return Err(ErrCode::Failed);
         }
-        
+
         let mut cipher_final: Vec<u8> = vec![0;cipher_text.size as usize];
         cipher_final[0..cipher_text.size as usize].copy_from_slice(
             &cipher[0..cipher_text.size as usize]);
@@ -333,6 +333,9 @@ impl Crypto {
         };
 
         // take the AEAD from cipher.
+        if cipher.len() < AEAD_SIZE {
+            return Err(ErrCode::Failed);
+        }
         let cipher_without_aead_size = cipher.len() - AEAD_SIZE as usize;
         let mut AEAD_VEC: Vec<u8> = vec![0;AEAD_SIZE as usize];
         AEAD_VEC[0..AEAD_SIZE as usize].copy_from_slice(

@@ -17,32 +17,24 @@
 #![allow(dead_code)]
 
 use asset_common::{
-    definition::{AssetMap, Result, Tag, ErrCode, Value},
-    loge,
+    definition::{AssetMap, Result},
     logi,
 };
 use asset_ipc_interface::IpcCode;
-use db_operator::{database_table_helper::DefaultDatabaseHelper, types::Pair};
+use db_operator::{database_table_helper::G_COLUMN_SECRET, types::{DataValue, Pair}};
 
 // use crypto_manager::hukkey::Crypto;
 use crate::{
-    operations::operation_common::{get_alias, construst_extra_params, set_extra_attrs, set_input_attr,
-        create_user_db_dir, construct_params_with_default},
+    operations::operation_common::{
+        get_alias, construst_extra_params, set_extra_attrs, set_input_attr, create_user_db_dir,
+        construct_params_with_default, encrypt, insert_one_data
+    },
     calling_process_info::CallingInfo,
     definition_inner::AssetInnerMap
 };
 
-fn encrypt_secret(input: &AssetMap) -> Result<Vec<u8>> {
-    if let Some(Value::Bytes(secret)) = input.get(&Tag::Secret) {
-        // Crypto::encrypt(secret)
-        Ok(secret.clone()) // to do 使用加解密适配层的接口进行加密
-    } else {
-        loge!("get secret from input failed!");
-        Err(ErrCode::InvalidArgument)
-    }
-}
-
-fn construct_data<'a>(input: &'a AssetMap, inner_params: &'a AssetInnerMap) -> Result<Vec<Pair<'a>>> {
+fn construct_data<'a>(input: &'a AssetMap, inner_params: &'a AssetInnerMap)
+    -> Result<Vec<Pair<'a>>> {
     let mut data_vec = Vec::new();
     set_input_attr(input, &mut data_vec)?;
     set_extra_attrs(inner_params, &mut data_vec)?;
@@ -51,7 +43,7 @@ fn construct_data<'a>(input: &'a AssetMap, inner_params: &'a AssetInnerMap) -> R
 
 pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // create user dir
-    create_user_db_dir(calling_info.get_user_id())?;
+    create_user_db_dir(calling_info.user_id())?;
 
     // get param map contains input params and default params
     let input_new = construct_params_with_default(input, &IpcCode::Add)?;
@@ -60,19 +52,22 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     let inner_params = construst_extra_params(calling_info, &IpcCode::Add)?;
 
     // construct db data from input map and inner params
-    let db_data = construct_data(&input_new, &inner_params)?;
+    let mut db_data = construct_data(&input_new, &inner_params)?;
 
-    // get owner str
-    let owner_str = String::from_utf8(calling_info.get_owner_text().clone()).map_err(|_| {
-        loge!("get owner str faield!");
-        ErrCode::Failed
-    })?;
+    let cipher = encrypt(calling_info, &input_new)?;
+    logi!("get cipher len is [{}]", cipher.len()); // todo delete
+    db_data.push(
+        Pair {
+            column_name: G_COLUMN_SECRET,
+            value: DataValue::Blob(&cipher),
+        }
+    );
 
     let alias = get_alias(&input_new)?;
 
     // call sql to add
     let insert_num =
-        DefaultDatabaseHelper::insert_datas_default_once(calling_info.get_user_id(), &owner_str, &alias, db_data)?;
+        insert_one_data(&alias, calling_info, db_data)?;
 
     logi!("insert {} data", insert_num);
     Ok(())

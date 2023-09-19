@@ -25,7 +25,7 @@ use asset_common::{
 use ipc_rust::BorrowedMsgParcel;
 
 /// SA id for Asset service
-pub const SA_ID: i32 = 3511;
+pub const SA_ID: i32 = 0x00010140;
 /// SA name for Asset service
 pub const SA_NAME: &str = "security_asset_service";
 /// IPC result code.

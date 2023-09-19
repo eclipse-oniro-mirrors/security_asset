@@ -53,11 +53,20 @@ fn check_or_default_return_type(map: &mut AssetMap) -> Result<()> {
     Ok(())
 }
 
+fn check_or_default_required_pwd_set(map: &mut AssetMap) -> Result<()> {
+    if !map.contains_key(&Tag::RequirePasswordSet) {
+        logi!("add default required password set");
+        map.insert_attr(Tag::RequirePasswordSet, false)?;
+    }
+    Ok(())
+}
+
 fn construct_add(input: &AssetMap) -> Result<AssetMap> {
     let mut map = (*input).clone();
     check_or_default_sync_type(&mut map)?;
     check_or_default_access_type(&mut map)?;
     check_or_default_auth_type(&mut map)?;
+    check_or_default_required_pwd_set(&mut map)?;
     Ok(map)
 }
 
