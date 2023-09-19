@@ -1366,3 +1366,14 @@ pub fn test_for_transaction() {
     let mut _tr2 = Transaction::new(&db);
     assert_eq!(_tr2.begin(), 0);
 }
+
+#[test]
+pub fn test_for_transaction2() {
+    let _ = Database::drop_default_database(4);
+    let db = DefaultDatabaseHelper::open_default_database_table(4).unwrap();
+    let mut trans = Transaction::new(&db);
+    assert_eq!(trans.begin(), 0);
+    let count = db.select_count_default("owner").unwrap();
+    assert_eq!(count, 0);
+    assert_eq!(trans.rollback(), 0);
+}
