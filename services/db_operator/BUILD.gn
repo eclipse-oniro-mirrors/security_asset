@@ -17,6 +17,7 @@ COMPONENT_DIR = "//base/security/asset"
 
 ohos_rust_static_library("db_operator") {
   sources = [
+    "src/transaction.rs",
     "src/database.rs",
     "src/database_table_helper.rs",
     "src/lib.rs",

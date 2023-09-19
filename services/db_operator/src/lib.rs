@@ -21,6 +21,8 @@ mod sqlite3_ffi;
 pub mod statement;
 #[path = "table.rs"]
 pub mod table;
+#[path = "transaction.rs"]
+pub mod transaction;
 #[path = "types.rs"]
 pub mod types;
 pub use sqlite3_ffi::*;

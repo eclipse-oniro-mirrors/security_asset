@@ -19,6 +19,7 @@ use db_operator::{
     database::*,
     database_table_helper::{DefaultDatabaseHelper, G_ASSET_TABLE_NAME},
     statement::Statement,
+    transaction::Transaction,
     types::{
         from_result_datatype_to_str, from_result_value_to_str_value, ColumnInfo, DataType,
         DataValue, Pair, ResultDataValue,
@@ -1308,4 +1309,60 @@ pub fn test_for_default_asset() {
         }
         println!();
     }
+}
+
+#[test]
+pub fn test_for_transaction() {
+    Database::drop_database("test21.db").unwrap();
+    let db = Database::new("test21.db").unwrap();
+    let columns = &[
+        ColumnInfo {
+            name: "Id",
+            is_primary_key: true,
+            not_null: true,
+            data_type: DataType::INTEGER,
+        },
+        ColumnInfo {
+            name: "Owner",
+            is_primary_key: false,
+            not_null: true,
+            data_type: DataType::TEXT,
+        },
+        ColumnInfo {
+            name: "Alias",
+            is_primary_key: false,
+            not_null: true,
+            data_type: DataType::TEXT,
+        },
+        ColumnInfo {
+            name: "value",
+            is_primary_key: false,
+            not_null: false,
+            data_type: DataType::TEXT,
+        },
+    ];
+    let mut trans = Transaction::new(&db);
+    assert_eq!(trans.begin(), 0);
+    let table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
+        Ok(t) => t,
+        Err(e) => {
+            panic!("create table err {}", e);
+        },
+    };
+    db.insert_datas_default("owner", "alias", vec![]).unwrap();
+    let count = table
+        .count_datas(&vec![Pair { column_name: "Owner", value: DataValue::Text(b"owner") }])
+        .unwrap();
+    assert_eq!(count, 1);
+    assert_eq!(trans.commit(), 0);
+    let mut s = Transaction::new(&db);
+    assert_eq!(s.begin(), 0);
+    let count = db.insert_datas_default("owner", "alias", vec![]).unwrap();
+    assert_eq!(count, 1);
+    s.rollback(); // pre insert will rollback
+    let result_count = db.select_count_default("owner").unwrap();
+    assert_eq!(result_count, 1); // only 1 insert commit
+    let _tr1 = Transaction::new(&db);
+    let mut _tr2 = Transaction::new(&db);
+    assert_eq!(_tr2.begin(), 0);
 }

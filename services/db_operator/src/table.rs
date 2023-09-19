@@ -17,7 +17,7 @@ use crate::{
     sqlite3_changes_func,
     statement::Statement,
     types::{
-        from_datatype_to_str, from_data_value_to_str_value, AdvancedResultSet, ColumnInfo,
+        from_data_value_to_str_value, from_datatype_to_str, AdvancedResultSet, ColumnInfo,
         Condition, DataValue, Pair, ResultDataValue, ResultSet,
     },
     SqliteErrCode, SQLITE_DONE, SQLITE_ERROR, SQLITE_OK, SQLITE_ROW,
