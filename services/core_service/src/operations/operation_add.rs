@@ -26,8 +26,9 @@ use db_operator::{database_table_helper::G_COLUMN_SECRET, types::{DataValue, Pai
 // use crypto_manager::hukkey::Crypto;
 use crate::{
     operations::operation_common::{
-        get_alias, construst_extra_params, set_extra_attrs, set_input_attr, create_user_db_dir,
-        construct_params_with_default, encrypt, insert_one_data
+        get_alias, construst_extra_params, create_user_db_dir,
+        construct_params_with_default, encrypt,
+        db_adapter::{set_extra_attrs, set_input_attr, insert_data_once}
     },
     calling_process_info::CallingInfo,
     definition_inner::AssetInnerMap
@@ -67,7 +68,7 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 
     // call sql to add
     let insert_num =
-        insert_one_data(&alias, calling_info, db_data)?;
+        insert_data_once(&alias, calling_info, db_data)?;
 
     logi!("insert {} data", insert_num);
     Ok(())

@@ -18,32 +18,64 @@
 
 use crate::{
     calling_process_info::CallingInfo,
-    operations::operation_common::{construct_params_with_default, get_alias, set_input_attr},
+    operations::operation_common::{
+        construct_params_with_default, get_alias, decrypt,
+        db_adapter::{set_input_attr, query_data_once, convert_db_data_into_map},
+    },
 };
 
-use asset_common::definition::{AssetMap, Result, Accessibility, AuthType};
+use db_operator::types::Pair;
+
+use asset_common::definition::{AssetMap, Result, Insert, Value, ErrCode, Tag};
 use asset_ipc_interface::IpcCode;
 
-use super::operation_common::{query_one_data, decrypt};
+fn precise_query(alias: &str, calling_info: &CallingInfo, input: &AssetMap, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
+    let query_res = query_data_once(alias, calling_info, db_data)?;
 
-const ACCESSIBILITY_LIST: [Accessibility; 2] = [Accessibility::DeviceUnlock, Accessibility::DevoceFirstUnlock];
-const AUTH_TYPE_LIST: [AuthType; 2] = [AuthType::Any, AuthType::None];
+    let mut res_vec = convert_db_data_into_map(&query_res)?;
+
+    let auth_type = match input.get(&Tag::AuthType) {
+        Some(Value::Number(res)) => res,
+        _ => todo!(),
+    };
+    let access_type = match input.get(&Tag::Accessibility) {
+        Some(Value::Number(res)) => res,
+        _ => todo!(),
+    };
+    let secret = match input.get(&Tag::Secret) {
+        Some(Value::Bytes(res)) => res,
+        _ => todo!(),
+    };
+    for map in &mut res_vec {
+        map.insert_attr(Tag::Secret, decrypt(calling_info, auth_type, access_type, secret)?)?;
+    }
+
+    Ok(res_vec)
+}
+
+fn fuzzy_query(_calling_info: &CallingInfo, _db_data: &[Pair]) -> Result<Vec<AssetMap>> {
+    let mut db_datas: Vec<AssetMap> = Vec::new();
+    // todo 查询数据库，批量查询
+    for data in &mut db_datas {
+        data.remove(&Tag::Secret);
+    }
+    Ok(db_datas)
+}
 
 pub(crate) fn query(input: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<AssetMap>> {
-    let res_vec: Vec<AssetMap> = Vec::new();
 
     // get param map contains input params and default params
     let input_new = construct_params_with_default(input, &IpcCode::Query)?;
 
     let mut data_vec = Vec::new();
     set_input_attr(&input_new, &mut data_vec)?;
-
     match get_alias(&input_new) {
         Ok(alias) => {
-            let _data = query_one_data(&alias, calling_info, &data_vec)?;
-            let _ = decrypt(calling_info, &1, &2, &Vec::from([1;99])); // todo
-            Ok(res_vec)
+            precise_query(&alias, calling_info, input, &data_vec)
         },
-        Err(_) => todo!(),
+        Err(ErrCode::NotFound) => {
+            fuzzy_query(calling_info, &data_vec)
+        }
+        _ => todo!(),
     }
 }

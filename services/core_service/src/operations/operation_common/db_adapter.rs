@@ -17,7 +17,7 @@
 
 use asset_common::{definition::{AssetMap, ErrCode, Result, Value, Tag}, loge, logi};
 use db_operator::{
-    types::{Pair, DataValue},
+    types::{Pair, DataValue, AdvancedResultSet, ResultDataValue},
     database_table_helper::{
         DefaultDatabaseHelper,
         G_COLUMN_ACCESS_TYPE, G_COLUMN_SECRET, G_COLUMN_ALIAS, G_COLUMN_AUTH_TYPE,
@@ -25,9 +25,11 @@ use db_operator::{
         G_COLUMN_CRITICAL4, G_COLUMN_NORMAL1, G_COLUMN_NORMAL2, G_COLUMN_NORMAL3, G_COLUMN_NORMAL4, G_COLUMN_REQUIRE_PASSWORD_SET
     }
 };
-use crate::calling_process_info::CallingInfo;
-
-use crate::definition_inner::{AssetInnerMap, InnerValue};
+use crate::{
+    calling_process_info::CallingInfo,
+    definition_inner::{AssetInnerMap, InnerValue},
+    operations::param_check::value_validity_check::check_value_validity,
+};
 
 fn convert_value_into_db_value(value: &Value) -> Result<DataValue> {
     match value {
@@ -96,7 +98,7 @@ pub(crate) fn set_extra_attrs<'a>(input: &'a AssetInnerMap, vec: &mut Vec<Pair<'
     Ok(())
 }
 
-pub(crate) fn insert_one_data(alias: &str, calling_info: &CallingInfo, db_data: Vec<Pair>) -> Result<i32> {
+pub(crate) fn insert_data_once(alias: &str, calling_info: &CallingInfo, db_data: Vec<Pair>) -> Result<i32> {
     // get owner str
     let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
         loge!("get owner str faield!");
@@ -112,7 +114,7 @@ pub(crate) fn insert_one_data(alias: &str, calling_info: &CallingInfo, db_data: 
     Ok(insert_num)
 }
 
-pub(crate) fn query_one_data(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
+pub(crate) fn query_data_once(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<AdvancedResultSet> {
     // get owner str
     let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
         loge!("get owner str faield!");
@@ -121,9 +123,69 @@ pub(crate) fn query_one_data(alias: &str, calling_info: &CallingInfo, db_data: &
 
     // call sql to add
     let query_res =
-        DefaultDatabaseHelper::query_datas_default_once(calling_info.user_id(), &owner_str, alias, db_data)?;
+        DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(), &Vec::new(), &owner_str, alias, db_data)?;
 
     logi!("query found {}", query_res.len());
-    let res_vec: Vec<AssetMap> = Vec::new();
+    Ok(query_res)
+}
+
+fn convert_db_data_into_asset(data: &ResultDataValue) -> Option<Value> {
+    match data {
+        ResultDataValue::Integer(i) => Some(Value::Number(*i)),
+        ResultDataValue::Text(t) | ResultDataValue::Blob(t) => {
+            match t {
+                Some(v) => {
+                    Some(Value::Bytes(*v.clone()))
+                }
+                None => todo!(),
+            }
+        },
+        _ => None
+    }
+}
+
+fn convert_db_column_into_tag(column: &str) -> Option<Tag> {
+    match column {
+        G_COLUMN_ACCESS_TYPE => Some(Tag::Accessibility),
+        G_COLUMN_SECRET => Some(Tag::Secret),
+        G_COLUMN_ALIAS => Some(Tag::Alias),
+        G_COLUMN_AUTH_TYPE => Some(Tag::AuthType),
+        G_COLUMN_SYNC_TYPE => Some(Tag::SyncType),
+        G_COLUMN_CRITICAL1 => Some(Tag::DataLabelCritical1),
+        G_COLUMN_CRITICAL2 => Some(Tag::DataLabelCritical2),
+        G_COLUMN_CRITICAL3 => Some(Tag::DataLabelCritical3),
+        G_COLUMN_CRITICAL4 => Some(Tag::DataLabelCritical4),
+        G_COLUMN_NORMAL1 => Some(Tag::DataLabelNormal1),
+        G_COLUMN_NORMAL2 => Some(Tag::DataLabelNormal2),
+        G_COLUMN_NORMAL3 => Some(Tag::DataLabelNormal3),
+        G_COLUMN_NORMAL4 => Some(Tag::DataLabelNormal4),
+        G_COLUMN_REQUIRE_PASSWORD_SET => Some(Tag::RequirePasswordSet),
+        _ => None,
+    }
+}
+
+fn insert_db_data_into_asset_map(column: &String, data: &ResultDataValue, map: &mut AssetMap) -> Result<()> {
+    if let Some(tag) = convert_db_column_into_tag(column) {
+        match convert_db_data_into_asset(data) {
+            Some(value) => map.insert(tag, value),
+            None => {
+                loge!("convert [{}] failed!", column);
+                return Err(ErrCode::SqliteERROR);
+            },
+        };
+    }
+    Ok(())
+}
+
+pub(crate) fn convert_db_data_into_map(db_results: &AdvancedResultSet) -> Result<Vec<AssetMap>> {
+    let mut res_vec = Vec::new();
+    for result in db_results {
+        let mut map = AssetMap::new();
+        for (column, data) in result.iter() {
+            insert_db_data_into_asset_map(column, data, &mut map)?;
+        }
+        check_value_validity(&map)?;
+        res_vec.push(map);
+    }
     Ok(res_vec)
 }

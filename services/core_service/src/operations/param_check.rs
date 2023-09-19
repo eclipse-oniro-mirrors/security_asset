@@ -17,7 +17,7 @@
 
 mod tag_value_match;
 mod required_tag;
-mod value_validity_check;
+pub mod value_validity_check;
 
 use asset_common::definition::{AssetMap, Result};
 

@@ -16,19 +16,19 @@
 //! This create implement the asset
 
 mod crypto_adapter;
-mod db_adapter;
+pub(crate) mod db_adapter;
 mod default_params;
 mod extra_params;
 mod file_operator;
 
 pub(crate) use crypto_adapter::{encrypt, decrypt};
 pub(crate) use extra_params::construst_extra_params;
-pub(crate) use db_adapter::{set_extra_attrs, set_input_attr, insert_one_data, query_one_data};
+
 pub(crate) use file_operator::create_user_db_dir;
 pub(crate) use default_params::construct_params_with_default;
 
 use asset_common::{definition::{AssetMap, Result, Value, ErrCode, Tag},
-    loge};
+    loge, logi};
 
 pub(crate) fn get_alias(input: &AssetMap) -> Result<String> {
     let alias;
@@ -41,8 +41,8 @@ pub(crate) fn get_alias(input: &AssetMap) -> Result<String> {
             return Err(ErrCode::InvalidArgument);
         }
     } else {
-        loge!("get alias failed!");
-        return Err(ErrCode::InvalidArgument);
+        logi!("not found alias in map!");
+        return Err(ErrCode::NotFound);
     }
     Ok(alias)
 }

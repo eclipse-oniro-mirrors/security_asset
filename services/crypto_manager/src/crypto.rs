@@ -333,7 +333,7 @@ impl Crypto {
         };
 
         // take the AEAD from cipher.
-        if cipher.len() < AEAD_SIZE {
+        if cipher.len() < AEAD_SIZE as usize {
             return Err(ErrCode::Failed);
         }
         let cipher_without_aead_size = cipher.len() - AEAD_SIZE as usize;
