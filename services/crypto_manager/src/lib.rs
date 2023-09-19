@@ -15,6 +15,6 @@
 
 //! This create implement the asset
 
-pub mod huks_ffi;
 #[allow(non_snake_case, non_camel_case_types)]
 pub mod crypto;
+pub mod huks_ffi;

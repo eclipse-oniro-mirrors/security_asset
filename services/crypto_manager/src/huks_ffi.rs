@@ -42,7 +42,7 @@ pub const HKS_TAG_PADDING: u32 = HKS_TAG_TYPE_UINT | 5;
 /// Huks tag block mode
 pub const HKS_TAG_BLOCK_MODE: u32 = HKS_TAG_TYPE_UINT | 6;
 /// Huks tag associated data
-pub const HKS_TAG_ASSOCIATED_DATA:u32 = HKS_TAG_TYPE_BYTES | 8;
+pub const HKS_TAG_ASSOCIATED_DATA: u32 = HKS_TAG_TYPE_BYTES | 8;
 /// Huks tag nonce
 pub const HKS_TAG_NONCE: u32 = HKS_TAG_TYPE_BYTES | 9;
 /// Huks tag ae tag
@@ -63,7 +63,7 @@ pub const HKS_AES_KEY_SIZE_256: u32 = 256;
 pub const HKS_PADDING_NONE: u32 = 0;
 
 /// Huks key digest none
-pub const HKS_DIGEST_NONE:u32 = 0;
+pub const HKS_DIGEST_NONE: u32 = 0;
 
 /// Huks cipher mode gcm
 pub const HKS_MODE_GCM: u32 = 32;
@@ -84,11 +84,10 @@ pub const MAX_UPDATE_SIZE: u32 = 64;
 /// Max outdata size
 pub const MAX_OUTDATA_SIZE: u32 = MAX_UPDATE_SIZE * TIMES;
 
-
 /// HksBlob struct
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct HksBlob{
+pub struct HksBlob {
     /// HksBlob size
     pub size: u32,
     /// HksBlob data pointer
@@ -96,7 +95,7 @@ pub struct HksBlob{
 }
 /// HksParamSet struct
 #[repr(C)]
-pub struct HksParamSet{
+pub struct HksParamSet {
     /// HksParamSet size
     pub param_set_size: u32,
     /// HksParamSet count
@@ -104,23 +103,19 @@ pub struct HksParamSet{
     /// HksParamSet params pointer
     pub params: *mut HksParam,
 }
-impl HksParamSet{
+impl HksParamSet {
     /// New a HksParamSet object
-    pub fn new() -> Self{
-        Self{
-            param_set_size:0,
-            params_cnt:0,
-            params: null_mut::<HksParam>(),
-        }
+    pub fn new() -> Self {
+        Self { param_set_size: 0, params_cnt: 0, params: null_mut::<HksParam>() }
     }
 }
-impl Default for HksParamSet{
+impl Default for HksParamSet {
     fn default() -> Self {
         Self::new()
     }
 }
-impl Drop for HksParamSet{
-    fn drop(&mut self){
+impl Drop for HksParamSet {
+    fn drop(&mut self) {
         println!("HksParamSet dropping");
     }
 }
@@ -128,7 +123,7 @@ impl Drop for HksParamSet{
 /// HksParam struct
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct HksParam{
+pub struct HksParam {
     /// HksParam tag
     pub tag: u32,
     /// HksParam union types
@@ -138,7 +133,7 @@ pub struct HksParam{
 /// HksParam_union_1 union
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub union HksParam_union_1{
+pub union HksParam_union_1 {
     /// HksParam bool param
     pub bool_param: bool,
     /// HksParam int32 param
@@ -151,15 +146,16 @@ pub union HksParam_union_1{
     pub blob: HksBlob,
 }
 
-extern "C"{
+extern {
     /// c generate key
-    pub fn HksGenerateKey(key_alias: *const HksBlob,
-        param_set_in: *const HksParamSet, param_set_out: *mut HksParamSet
+    pub fn HksGenerateKey(
+        key_alias: *const HksBlob,
+        param_set_in: *const HksParamSet,
+        param_set_out: *mut HksParamSet,
     ) -> HuksErrcode;
 
     /// c delete key
-    pub fn HksDeleteKey(key_alias: *const HksBlob, param_set: *const HksParamSet
-    ) -> HuksErrcode;
+    pub fn HksDeleteKey(key_alias: *const HksBlob, param_set: *const HksParamSet) -> HuksErrcode;
 
     /// c key exist
     pub fn HksKeyExist(key_alias: *const HksBlob, param_set: *const HksParamSet) -> HuksErrcode;
@@ -168,7 +164,11 @@ extern "C"{
     pub fn HksInitParamSet(param_set: *mut *mut HksParamSet) -> HuksErrcode;
 
     /// c addparams
-    pub fn HksAddParams(param_set: *mut HksParamSet,params: *const HksParam, param_cnt: u32) -> HuksErrcode;
+    pub fn HksAddParams(
+        param_set: *mut HksParamSet,
+        params: *const HksParam,
+        param_cnt: u32,
+    ) -> HuksErrcode;
 
     /// c free paramset
     pub fn HksFreeParamSet(param_set: *mut *mut HksParamSet);
@@ -177,11 +177,26 @@ extern "C"{
     pub fn HksBuildParamSet(param_set: *mut *mut HksParamSet) -> HuksErrcode;
 
     /// c hksinit
-    pub fn HksInit(keyAlias: *const HksBlob, paramSet: *const HksParamSet,handle: *mut HksBlob, token: *mut HksBlob) -> HuksErrcode;
+    pub fn HksInit(
+        keyAlias: *const HksBlob,
+        paramSet: *const HksParamSet,
+        handle: *mut HksBlob,
+        token: *mut HksBlob,
+    ) -> HuksErrcode;
 
     /// c hksupdate
-    pub fn HksUpdate(handle: *const HksBlob, paramSet: *const HksParamSet, inData: *const HksBlob, outData: *mut HksBlob) -> HuksErrcode;
+    pub fn HksUpdate(
+        handle: *const HksBlob,
+        paramSet: *const HksParamSet,
+        inData: *const HksBlob,
+        outData: *mut HksBlob,
+    ) -> HuksErrcode;
 
     /// c hksfinish
-    pub fn HksFinish(handle: *const HksBlob, paramSet: *const HksParamSet, inData: *const HksBlob, outData: *mut HksBlob) -> HuksErrcode;
+    pub fn HksFinish(
+        handle: *const HksBlob,
+        paramSet: *const HksParamSet,
+        inData: *const HksBlob,
+        outData: *mut HksBlob,
+    ) -> HuksErrcode;
 }

@@ -16,15 +16,10 @@ use crypto_manager::crypto::*;
 use crypto_manager::huks_ffi::*;
 
 #[test]
-fn test_hukkey_new(){
-    let info = KeyInfo {
-        user_id: 1,
-        uid: 2,
-        auth_type: 3,
-        access_type: 4,
-    };
+fn test_hukkey_new() {
+    let info = KeyInfo { user_id: 1, uid: 2, auth_type: 3, access_type: 4 };
     let secret_key = SecretKey::new(info);
-    assert_eq!(secret_key.alias,"1_2_3_4".to_string());
+    assert_eq!(secret_key.alias, "1_2_3_4".to_string());
 }
 
 #[test]
@@ -32,9 +27,9 @@ fn test_hukkey_generate() {
     let info = KeyInfo { user_id: 1, uid: 2, auth_type: 3, access_type: 4 };
     let secret_key = SecretKey::new(info);
     let res = secret_key.generate();
-    if res == HKS_SUCCESS{
+    if res == HKS_SUCCESS {
         println!("test_hukkey_generate pass");
-    }else{
+    } else {
         panic!("test_hukkey_generate fail error = {}", res);
     }
 }
@@ -44,21 +39,21 @@ fn test_hukkey_delete() {
     let info = KeyInfo { user_id: 1, uid: 2, auth_type: 3, access_type: 4 };
     let secret_key = SecretKey::new(info);
     let generate_res = secret_key.generate();
-    if generate_res == HKS_SUCCESS{
+    if generate_res == HKS_SUCCESS {
         println!("test_hukkey_delete: generate success");
         let delete_res = secret_key.delete();
-        if delete_res == HKS_SUCCESS{
+        if delete_res == HKS_SUCCESS {
             println!("test_hukkey_delete pass");
-        }else{
+        } else {
             panic!("test_hukkey_delete fail error = {}", delete_res);
         }
-    }else{
+    } else {
         panic!("test_hukkey_delete fail because generate error = {}", generate_res);
     }
 }
 
 #[test]
-fn test_hukkey_need_user_auth(){
+fn test_hukkey_need_user_auth() {
     let info_need = KeyInfo { user_id: 0, uid: 0, auth_type: 1, access_type: 0 };
     let secret_key_need = SecretKey::new(info_need);
     let info_dont_need = KeyInfo { user_id: 0, uid: 0, auth_type: 0, access_type: 0 };
@@ -68,7 +63,7 @@ fn test_hukkey_need_user_auth(){
 }
 
 #[test]
-fn test_hukkey_need_device_unlock(){
+fn test_hukkey_need_device_unlock() {
     let info_need = KeyInfo { user_id: 0, uid: 0, auth_type: 0, access_type: 3 };
     let secret_key_need = SecretKey::new(info_need);
     let info_dont_need = KeyInfo { user_id: 0, uid: 0, auth_type: 0, access_type: 0 };
@@ -85,19 +80,22 @@ fn test_hukkey_encrypt() {
     let generate_res = secret_key.generate();
     let mut crypto = Crypto { key: secret_key };
 
-    if generate_res == HKS_SUCCESS{
+    if generate_res == HKS_SUCCESS {
         println!("test_hukkey_encrypt: generate success");
-        let msg = vec![1,2,3,4,5,6];
-        let aad = vec![0;AAD_SIZE as usize];
+        let msg = vec![1, 2, 3, 4, 5, 6];
+        let aad = vec![0; AAD_SIZE as usize];
         let encrypt_res = crypto.encrypt(&msg, &aad);
-        match encrypt_res{
-            Ok(cipher) =>{
-                println!("test_hukkey_encrypt: encrypt success, cipher is {:?}, now check cipher",cipher);
+        match encrypt_res {
+            Ok(cipher) => {
+                println!(
+                    "test_hukkey_encrypt: encrypt success, cipher is {:?}, now check cipher",
+                    cipher
+                );
                 let mut flag = true;
-                for i in 0..msg.len(){
-                    if msg[i] == cipher[i]{
+                for i in 0..msg.len() {
+                    if msg[i] == cipher[i] {
                         continue;
-                    }else{
+                    } else {
                         flag = false;
                         break;
                     }
@@ -107,12 +105,11 @@ fn test_hukkey_encrypt() {
                 }
                 println!("test_hukkey_encrypt pass");
             },
-            Err(e) =>{
+            Err(e) => {
                 panic!("test_hukkey_encrypt fail because encrypt error = {}", e);
-            }
+            },
         }
-
-    }else{
+    } else {
         panic!("test_hukkey_encrypt fail because generate error = {}", generate_res);
     }
 }
@@ -124,19 +121,22 @@ fn test_hukkey_decrypt() {
     let secret_key = SecretKey::new(info);
     let generate_res = secret_key.generate();
     let mut crypto = Crypto { key: secret_key };
-    if generate_res == HKS_SUCCESS{
+    if generate_res == HKS_SUCCESS {
         println!("test_hukkey_decrypt: generate success");
-        let msg = vec![1,2,3,4,5,6];
-        let aad = vec![0;AAD_SIZE as usize];
+        let msg = vec![1, 2, 3, 4, 5, 6];
+        let aad = vec![0; AAD_SIZE as usize];
         let encrypt_res = crypto.encrypt(&msg, &aad);
-        match encrypt_res{
-            Ok(cipher) =>{
-                println!("test_hukkey_decrypt: encrypt success, cipher is {:?}, now check cipher",cipher);
+        match encrypt_res {
+            Ok(cipher) => {
+                println!(
+                    "test_hukkey_decrypt: encrypt success, cipher is {:?}, now check cipher",
+                    cipher
+                );
                 let mut flag = true;
-                for i in 0..msg.len(){
-                    if msg[i] == cipher[i]{
+                for i in 0..msg.len() {
+                    if msg[i] == cipher[i] {
                         continue;
-                    }else{
+                    } else {
                         flag = false;
                         break;
                     }
@@ -146,11 +146,14 @@ fn test_hukkey_decrypt() {
                 }
                 println!("test_hukkey_decrypt: encrypt pass, now decrypt...");
                 let decrypt_res = crypto.decrypt(&cipher, &aad);
-                match decrypt_res{
-                    Ok(plain) =>{
-                        println!("test_hukkey_decrypt: decrypt pass, plain is {:?}, now check decrypt", plain);
+                match decrypt_res {
+                    Ok(plain) => {
+                        println!(
+                            "test_hukkey_decrypt: decrypt pass, plain is {:?}, now check decrypt",
+                            plain
+                        );
                         flag = true;
-                        for i in 0..msg.len(){
+                        for i in 0..msg.len() {
                             if msg[i] != plain[i] {
                                 flag = false;
                                 break;
@@ -165,14 +168,14 @@ fn test_hukkey_decrypt() {
                     },
                     Err(e) => {
                         panic!("test_hukkey_decrypt fail because decrypt error = {}", e);
-                    }
+                    },
                 }
             },
-            Err(e) =>{
+            Err(e) => {
                 panic!("test_hukkey_decrypt fail because encrypt error = {}", e);
-            }
+            },
         }
-    }else{
+    } else {
         panic!("test_hukkey_decrypt fail because generate error = {}", generate_res);
     }
 }
