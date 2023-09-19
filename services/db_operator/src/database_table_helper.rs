@@ -281,6 +281,18 @@ impl<'a> TableHelper<'a> {
         self.insert_row(&v).map_err(from_sqlite_code_to_asset_code)
     }
 
+    /// insert multi datas
+    /// columns: the columns
+    /// datas: the data set
+    pub fn insert_multi_datas(
+        &self,
+        columns: &Vec<&str>,
+        datas: &Vec<Vec<DataValue>>,
+    ) -> Result<i32, ErrCode> {
+        let _lock = self.db.file.mtx.lock().unwrap();
+        self.insert_multi_row_datas(columns, datas).map_err(from_sqlite_code_to_asset_code)
+    }
+
     #[cfg(not(doctest))]
     /// delete datas from asset db table.
     /// owner and alias is the primary-key for resources.
@@ -528,6 +540,17 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
+    pub fn insert_multi_datas_default(
+        &self,
+        columns: &Vec<&str>,
+        datas: &Vec<Vec<DataValue>>,
+    ) -> Result<i32, ErrCode> {
+        let table = Table::new(G_ASSET_TABLE_NAME, self);
+        process_err_msg(table.insert_multi_datas(columns, datas), self)
+    }
+
+    /// see TableHelper
+    #[inline(always)]
     pub fn delete_datas_default(
         &self,
         owner: &str,
@@ -632,6 +655,17 @@ impl<'a> DefaultDatabaseHelper<'a> {
     ) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.insert_datas_default(owner, alias, datas)
+    }
+
+    /// see TableHelper
+    #[inline(always)]
+    pub fn insert_multi_datas_default_once(
+        userid: u32,
+        columns: &Vec<&str>,
+        datas: &Vec<Vec<DataValue>>,
+    ) -> Result<i32, ErrCode> {
+        let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        db.insert_multi_datas_default(columns, datas)
     }
 
     /// see TableHelper
