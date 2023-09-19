@@ -21,7 +21,7 @@ use asset_sdk::definition::{AssetMap, Accessibility, Tag, Insert, AuthType, Sync
 fn test_for_add() {
     let mut input = AssetMap::new();
     input.insert_attr(Tag::Secret, Vec::from("alias".as_bytes())).unwrap();
-    input.insert_attr(Tag::AuthType, AuthType::Any).unwrap();
+    input.insert_attr(Tag::AuthType, AuthType::None).unwrap();
     input.insert_attr(Tag::SyncType, SyncType::Never).unwrap();
 
     input.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlock).unwrap();

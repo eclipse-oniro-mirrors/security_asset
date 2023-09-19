@@ -26,27 +26,36 @@ use crate::{
 
 use db_operator::types::Pair;
 
-use asset_common::definition::{AssetMap, Result, Insert, Value, ErrCode, Tag};
+use asset_common::{definition::{AssetMap, Result, Insert, Value, ErrCode, Tag}, loge};
 use asset_ipc_interface::IpcCode;
 
-fn precise_query(alias: &str, calling_info: &CallingInfo, input: &AssetMap, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
+fn precise_query(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
     let query_res = query_data_once(alias, calling_info, db_data)?;
 
     let mut res_vec = convert_db_data_into_map(&query_res)?;
 
-    let auth_type = match input.get(&Tag::AuthType) {
-        Some(Value::Number(res)) => res,
-        _ => todo!(),
-    };
-    let access_type = match input.get(&Tag::Accessibility) {
-        Some(Value::Number(res)) => res,
-        _ => todo!(),
-    };
-    let secret = match input.get(&Tag::Secret) {
-        Some(Value::Bytes(res)) => res,
-        _ => todo!(),
-    };
     for map in &mut res_vec {
+        let auth_type = match map.get(&Tag::AuthType) {
+            Some(Value::Number(res)) => res,
+            _ => {
+                loge!("get auth type failed!");
+                return Err(ErrCode::SqliteERROR);
+            },
+        };
+        let access_type = match map.get(&Tag::Accessibility) {
+            Some(Value::Number(res)) => res,
+            _ => {
+                loge!("get access type failed!");
+                return Err(ErrCode::SqliteERROR);
+            },
+        };
+        let secret = match map.get(&Tag::Secret) {
+            Some(Value::Bytes(res)) => res,
+            _ => {
+                loge!("get secret failed!");
+                return Err(ErrCode::SqliteERROR);
+            },
+        };
         map.insert_attr(Tag::Secret, decrypt(calling_info, auth_type, access_type, secret)?)?;
     }
 
@@ -71,11 +80,14 @@ pub(crate) fn query(input: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<
     set_input_attr(&input_new, &mut data_vec)?;
     match get_alias(&input_new) {
         Ok(alias) => {
-            precise_query(&alias, calling_info, input, &data_vec)
+            precise_query(&alias, calling_info, &data_vec)
         },
         Err(ErrCode::NotFound) => {
             fuzzy_query(calling_info, &data_vec)
         }
-        _ => todo!(),
+        _ => {
+            loge!("get alias and not not found failed!");
+            Err(ErrCode::SqliteERROR)
+        },
     }
 }

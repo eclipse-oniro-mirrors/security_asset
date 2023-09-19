@@ -79,9 +79,6 @@ impl IAsset for AssetProxy {
                         loge!("query send request failed! res = [{}]", e);
                         ErrCode::IpcError
                     })?;
-
-                    loge!("query after send_request");
-
                     let res_code = reply.read::<i32>().map_err(|_| ErrCode::IpcError)?;
                     if res_code != IPC_SUCCESS {
                         return Err(ErrCode::try_from(res_code)?);

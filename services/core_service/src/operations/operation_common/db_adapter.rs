@@ -109,6 +109,8 @@ pub(crate) fn insert_data_once(alias: &str, calling_info: &CallingInfo, db_data:
     let insert_num =
         DefaultDatabaseHelper::insert_datas_default_once(calling_info.user_id(), &owner_str, alias, db_data)?;
 
+    logi!("insert params calling_info.user_id() = [{}], owner_str = [{}], alias = [{}]", calling_info.user_id(), owner_str, alias); // todo delete
+
     logi!("insert {} data", insert_num);
 
     Ok(insert_num)
@@ -125,6 +127,10 @@ pub(crate) fn query_data_once(alias: &str, calling_info: &CallingInfo, db_data: 
     let query_res =
         DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(), &Vec::new(), &owner_str, alias, db_data)?;
 
+    logi!("query params calling_info.user_id() = [{}], owner_str = [{}], alias = [{}], db_data len is [{}]", calling_info.user_id(), owner_str, alias, db_data.len()); // todo delete
+    for pair in db_data {
+        logi!("db data is [{}]", pair.column_name);
+    }
     logi!("query found {}", query_res.len());
     Ok(query_res)
 }
