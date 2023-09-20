@@ -60,7 +60,7 @@ pub trait IAsset: ipc_rust::IRemoteBroker {
 }
 
 /// max capacity in a map
-const MAP_MAX_CAPACITY: u32 = 30;
+const MAP_MAX_CAPACITY: u32 = 9999;
 
 /// serialize the map to parcel
 pub fn serialize_map(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<()> {
@@ -115,7 +115,7 @@ pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
 /// serialize the vector of map to parcel
 pub fn serialize_vector_map(vec: &Vec<AssetMap>, parcel: &mut BorrowedMsgParcel) -> Result<()> {
     logi!("enter serialize_vector_map");
-    parcel.write(&(vec.len() as u32)).map_err(|_| ErrCode::IpcError)?;
+    parcel.write::<u32>(&(vec.len() as u32)).map_err(|_| ErrCode::IpcError)?;
     for i in 0..vec.len() {
         match vec.get(i) {
             Some(map) => {

@@ -21,6 +21,7 @@ const MAX_BYTES_LEN: usize = 256;
 
 fn check_bool_type(value: &Value) -> Result<()> {
     let Value::Bool(_) = value else {
+        loge!("convert value to Value::Number in check_bool_type failed!");
         panic!("convert value to Value::Bool in check_bool_type failed!")
     };
     Ok(())
@@ -28,6 +29,7 @@ fn check_bool_type(value: &Value) -> Result<()> {
 
 fn check_accessibility(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
+        loge!("convert value to Value::Number in check_accessibility failed!");
         panic!("convert value to Value::Number in check_accessibility failed!")
     };
     if Accessibility::try_from(*v).is_err() {
@@ -39,6 +41,7 @@ fn check_accessibility(value: &Value) -> Result<()> {
 
 fn check_secret(value: &Value) -> Result<()> {
     let Value::Bytes(v) = value else {
+        loge!("convert value to Value::Number in check_secret failed!");
         panic!("convert value to Value::Bytes in check_secret failed!")
     };
     if v.len() > MAX_BYTES_LEN {
@@ -50,6 +53,7 @@ fn check_secret(value: &Value) -> Result<()> {
 
 fn check_alias(value: &Value) -> Result<()> {
     let Value::Bytes(v) = value else {
+        loge!("convert value to Value::Number in check_alias failed!");
         panic!("convert value to Value::Bytes in check_alias failed!")
     };
     if v.len() > MAX_BYTES_LEN {
@@ -61,6 +65,7 @@ fn check_alias(value: &Value) -> Result<()> {
 
 fn check_auth_type(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
+        loge!("convert value to Value::Number in check_auth_type failed!");
         panic!("convert value to Value::Number in check_auth_type failed!")
     };
     if AuthType::try_from(*v).is_err() {
@@ -72,6 +77,7 @@ fn check_auth_type(value: &Value) -> Result<()> {
 
 fn check_auth_validity_period(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
+        loge!("convert value to Value::Number in check_auth_validity_period failed!");
         panic!("convert value to Value::Number in check_auth_validity_period failed!")
     };
     if *v > 600 { // todo 限时多少
@@ -83,6 +89,7 @@ fn check_auth_validity_period(value: &Value) -> Result<()> {
 
 fn check_challenge(value: &Value) -> Result<()> {
     let Value::Bytes(v) = value else {
+        loge!("convert value to Value::Number in check_challenge failed!");
         panic!("convert value to Value::Bytes in check_challenge failed!")
     };
     if v.len() > MAX_BYTES_LEN { // todo 限长多少
@@ -94,6 +101,7 @@ fn check_challenge(value: &Value) -> Result<()> {
 
 fn check_auth_token(value: &Value) -> Result<()> {
     let Value::Bytes(v) = value else {
+        loge!("convert value to Value::Number in check_auth_token failed!");
         panic!("convert value to Value::Bytes in check_auth_token failed!")
     };
     if v.len() > MAX_BYTES_LEN { // todo 限长多少
@@ -105,6 +113,7 @@ fn check_auth_token(value: &Value) -> Result<()> {
 
 fn check_sync_type(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
+        loge!("convert value to Value::Number in check_sync_type failed!");
         panic!("convert value to Value::Number in check_sync_type failed!")
     };
     if SyncType::try_from(*v).is_err() {
@@ -116,6 +125,7 @@ fn check_sync_type(value: &Value) -> Result<()> {
 
 fn check_conflict_policy(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
+        loge!("convert value to Value::Number in check_conflict_policy failed!");
         panic!("convert value to Value::Number in check_conflict_policy failed!")
     };
     if ConflictResolution::try_from(*v).is_err() {
@@ -127,6 +137,7 @@ fn check_conflict_policy(value: &Value) -> Result<()> {
 
 fn check_data_label_critical(value: &Value) -> Result<()> {
     let Value::Bytes(v) = value else {
+        loge!("convert value to Value::Bytes in check_data_label_critical failed!");
         panic!("convert value to Value::Bytes in check_data_label_critical failed!")
     };
     if v.len() > MAX_BYTES_LEN {
@@ -138,6 +149,7 @@ fn check_data_label_critical(value: &Value) -> Result<()> {
 
 fn check_data_label_normal(value: &Value) -> Result<()> {
     let Value::Bytes(v) = value else {
+        loge!("convert value to Value::Bytes in check_data_label_normal failed!");
         panic!("convert value to Value::Bytes in check_data_label_normal failed!")
     };
     if v.len() > MAX_BYTES_LEN {
@@ -149,6 +161,7 @@ fn check_data_label_normal(value: &Value) -> Result<()> {
 
 fn check_return_type(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
+        loge!("convert value to Value::Number in check_return_type failed!");
         panic!("convert value to Value::Number in check_return_type failed!")
     };
     if ReturnType::try_from(*v).is_err() {
@@ -160,6 +173,7 @@ fn check_return_type(value: &Value) -> Result<()> {
 
 fn check_return_limit(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
+        loge!("convert value to Value::Number in check_return_limit failed!");
         panic!("convert value to Value::Number in check_return_limit failed!")
     };
     if *v > 100 { // todo limit限制多少
@@ -171,6 +185,7 @@ fn check_return_limit(value: &Value) -> Result<()> {
 
 fn check_return_offset(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
+        loge!("convert value to Value::Number in check_return_offset failed!");
         panic!("convert value to Value::Number in check_return_offset failed!")
     };
     if *v > 100 { // todo limit限制多少

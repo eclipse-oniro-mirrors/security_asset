@@ -62,17 +62,17 @@ fn precise_query(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -
     Ok(res_vec)
 }
 
-fn fuzzy_query(_calling_info: &CallingInfo, _db_data: &[Pair]) -> Result<Vec<AssetMap>> {
-    let mut db_datas: Vec<AssetMap> = Vec::new();
-    // todo 查询数据库，批量查询
-    for data in &mut db_datas {
+fn fuzzy_query(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
+    let query_res = query_data_once("", calling_info, db_data)?;
+    let mut res_vec = convert_db_data_into_map(&query_res)?;
+
+    for data in &mut res_vec {
         data.remove(&Tag::Secret);
     }
-    Ok(db_datas)
+    Ok(res_vec)
 }
 
 pub(crate) fn query(input: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<AssetMap>> {
-
     // get param map contains input params and default params
     let input_new = construct_params_with_default(input, &IpcCode::Query)?;
 

@@ -70,7 +70,7 @@ fn get_tag_column_name(tag: &Tag) -> Option<&str> {
 pub(crate) fn set_input_attr<'a>(input: &'a AssetMap, vec: &mut Vec<Pair<'a>>) -> Result<()> {
     for (tag, value) in input.iter() {
         // skip secret param input, for it should be cipher instead of plain
-        if tag == &Tag::Secret {
+        if tag == &Tag::Secret || tag == &Tag::Alias {
             continue;
         }
         if let Some(column) = get_tag_column_name(tag) {
@@ -135,17 +135,16 @@ pub(crate) fn query_data_once(alias: &str, calling_info: &CallingInfo, db_data: 
     Ok(query_res)
 }
 
-fn convert_db_data_into_asset(data: &ResultDataValue) -> Option<Value> {
+fn convert_db_data_into_asset(tag: &Tag, data: &ResultDataValue) -> Option<Value> {
     match data {
-        ResultDataValue::Integer(i) => Some(Value::Number(*i)),
-        ResultDataValue::Text(t) | ResultDataValue::Blob(t) => {
-            match t {
-                Some(v) => {
-                    Some(Value::Bytes(*v.clone()))
-                }
-                None => todo!(),
+        ResultDataValue::Integer(i) => {
+            match *tag {
+                Tag::RequirePasswordSet => Some(Value::Bool(*i != 0)),
+                _ => Some(Value::Number(*i)),
             }
         },
+        ResultDataValue::Text(t) | ResultDataValue::Blob(t) =>
+            t.as_ref().map(|v| Value::Bytes(*v.clone())),
         _ => None
     }
 }
@@ -172,12 +171,12 @@ fn convert_db_column_into_tag(column: &str) -> Option<Tag> {
 
 fn insert_db_data_into_asset_map(column: &String, data: &ResultDataValue, map: &mut AssetMap) -> Result<()> {
     if let Some(tag) = convert_db_column_into_tag(column) {
-        match convert_db_data_into_asset(data) {
+        match convert_db_data_into_asset(&tag, data) {
             Some(value) => map.insert(tag, value),
             None => {
-                loge!("convert [{}] failed!", column);
-                return Err(ErrCode::SqliteERROR);
-            },
+                logi!("convert [{}] is empty", column);
+                None
+            }
         };
     }
     Ok(())

@@ -38,10 +38,39 @@ fn test_for_add() {
 }
 
 #[test]
-fn test_for_query() {
+fn test_for_precise_query() {
     test_for_add();
     let mut input = AssetMap::new();
     input.insert_attr(Tag::Alias, Vec::from("alias".as_bytes())).unwrap();
+
+    match asset_sdk::Manager::build() {
+        Ok(manager) => {
+            match manager.query(&input) {
+                Ok(res) => {
+                    for map in res.iter() {
+                        for (tag, value) in map.iter() {
+                            match value {
+                                Value::Bool(boolean) => println!("get tag:[{}] value:[{}]", tag, boolean),
+                                Value::Number(num) => println!("get tag:[{}] value:[{}]", tag, num),
+                                Value::Bytes(bytes) => println!("get tag:[{}] value_len:[{}]", tag, bytes.len()),
+                            }
+                        }
+                    }
+                },
+                Err(e) => {
+                    panic!("test for query failed {}", e)
+                }
+            }
+        },
+        Err(e) => panic!("test for add failed {}", e)
+    }
+}
+
+#[test]
+fn test_for_fuzz_query() {
+    test_for_add();
+    let mut input = AssetMap::new();
+    input.insert_attr(Tag::SyncType, SyncType::Never).unwrap();
 
     match asset_sdk::Manager::build() {
         Ok(manager) => {
