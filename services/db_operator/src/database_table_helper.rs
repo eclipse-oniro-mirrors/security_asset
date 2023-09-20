@@ -239,12 +239,15 @@ impl<'a> TableHelper<'a> {
         alias: &str,
         datas: &Vec<Pair>,
     ) -> Result<i32, ErrCode> {
-        let conditions = &vec![
-            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) },
-            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) },
-        ];
+        let mut v = vec![];
+        if !owner.is_empty() {
+            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+        }
+        if !alias.is_empty() {
+            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+        }
         let _lock = self.db.file.mtx.lock().unwrap();
-        self.update_row(conditions, datas).map_err(from_sqlite_code_to_asset_code)
+        self.update_row(&v, datas).map_err(from_sqlite_code_to_asset_code)
     }
 
     #[cfg(not(doctest))]
@@ -272,8 +275,12 @@ impl<'a> TableHelper<'a> {
     /// insert into table_name(Owner,Alias,value) values(owner,alias,'test_update')
     pub fn insert_datas(&self, owner: &str, alias: &str, datas: Vec<Pair>) -> Result<i32, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(datas.len() + 2);
-        v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
-        v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+        if !owner.is_empty() {
+            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+        }
+        if !alias.is_empty() {
+            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+        }
         for data in datas {
             v.push(data);
         }
@@ -323,8 +330,12 @@ impl<'a> TableHelper<'a> {
         condition: &Condition,
     ) -> Result<i32, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
-        v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
-        v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+        if !owner.is_empty() {
+            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+        }
+        if !alias.is_empty() {
+            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+        }
         for c in condition {
             v.push(*c);
         }
@@ -347,11 +358,14 @@ impl<'a> TableHelper<'a> {
     /// select count(*) as count from table_name where Owner='owner1' and Alias='alias1'
     pub fn is_data_exist(&self, owner: &str, alias: &str) -> Result<bool, ErrCode> {
         let _lock = self.db.file.mtx.lock().unwrap();
-        self.is_data_exists(&vec![
-            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) },
-            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) },
-        ])
-        .map_err(from_sqlite_code_to_asset_code)
+        let mut v = vec![];
+        if !owner.is_empty() {
+            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+        }
+        if !alias.is_empty() {
+            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+        }
+        self.is_data_exists(&v).map_err(from_sqlite_code_to_asset_code)
     }
 
     #[cfg(not(doctest))]
@@ -368,11 +382,11 @@ impl<'a> TableHelper<'a> {
     /// select count(*) as count from table_name where AppId='owner2'
     pub fn select_count(&self, owner: &str) -> Result<u32, ErrCode> {
         let _lock = self.db.file.mtx.lock().unwrap();
-        self.count_datas(&vec![Pair {
-            column_name: G_COLUMN_OWNER,
-            value: DataValue::Text(owner.as_bytes()),
-        }])
-        .map_err(from_sqlite_code_to_asset_code)
+        let mut v = vec![];
+        if !owner.is_empty() {
+            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+        }
+        self.count_datas(&v).map_err(from_sqlite_code_to_asset_code)
     }
 
     #[cfg(not(doctest))]
@@ -395,8 +409,12 @@ impl<'a> TableHelper<'a> {
         condition: &Condition,
     ) -> Result<ResultSet, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
-        v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
-        v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+        if !owner.is_empty() {
+            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+        }
+        if !alias.is_empty() {
+            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+        }
         for c in condition {
             v.push(*c);
         }
@@ -425,8 +443,12 @@ impl<'a> TableHelper<'a> {
         condition: &Condition,
     ) -> Result<AdvancedResultSet, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
-        v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
-        v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+        if !owner.is_empty() {
+            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+        }
+        if !alias.is_empty() {
+            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+        }
         for c in condition {
             v.push(*c);
         }
