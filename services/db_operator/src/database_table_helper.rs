@@ -229,7 +229,7 @@ impl<'a> TableHelper<'a> {
     ///     value: DataValue::Text(b"test_update"),
     /// }];
     ///
-    /// let ret = helper.update_datas("owner", "alias", datas);
+    /// let ret = helper.update_datas_default("owner", "alias", datas);
     /// ```
     /// sql like:
     /// update table_name set alias='test_update' where AppId='owner' and Alias='alias'
@@ -270,7 +270,7 @@ impl<'a> TableHelper<'a> {
     ///     value: DataValue::Text(b"test_update"),
     /// }];
     ///
-    /// let ret = helper.insert_data("owner", "alias", datas);
+    /// let ret = helper.insert_datas_default("owner", "alias", datas);
     /// ```
     ///
     /// sql like:
@@ -322,7 +322,7 @@ impl<'a> TableHelper<'a> {
     ///     value: DataValue::Text(b"test_update"),
     /// }];
     ///
-    /// let ret = helper.delete_datas("owner", "alias", cond);
+    /// let ret = helper.delete_datas_default("owner", "alias", &cond);
     /// ```
     ///
     /// sql like:
@@ -357,7 +357,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let exist = helper.is_data_exist("owner1", "alias1");
+    /// let exist = helper.is_data_exists_default("owner1", "alias1");
     /// ```
     ///
     /// sql like:
@@ -384,7 +384,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let count = helper.select_count("owner2");
+    /// let count = helper.select_count_default("owner2");
     /// ```
     /// sql like:
     /// select count(*) as count from table_name where AppId='owner2'
@@ -408,7 +408,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let result = helper.query_datas("owner", "alias", &vec![]);
+    /// let result = helper.query_datas_default("owner", "alias", &vec![]);
     /// ```
     /// sql like:
     /// select * from table_name where AppId='owner' and Alias='alias'
@@ -443,7 +443,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let result = helper.query_columns(&[], "owner", "alias", &vec![]);
+    /// let result = helper.query_columns_default(&[], "owner", "alias", &vec![]);
     /// ```
     /// sql like:
     /// select * from table_name where AppId='owner' and Alias='alias'
