@@ -242,6 +242,8 @@ impl<'a> TableHelper<'a> {
         let mut v = vec![];
         if !owner.is_empty() {
             v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+        } else {
+            return Err(ErrCode::AccessDenied);
         }
         if !alias.is_empty() {
             v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
@@ -277,6 +279,8 @@ impl<'a> TableHelper<'a> {
         let mut v = Vec::<Pair>::with_capacity(datas.len() + 2);
         if !owner.is_empty() {
             v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+        } else {
+            return Err(ErrCode::AccessDenied);
         }
         if !alias.is_empty() {
             v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
@@ -332,6 +336,8 @@ impl<'a> TableHelper<'a> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
         if !owner.is_empty() {
             v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+        } else {
+            return Err(ErrCode::AccessDenied);
         }
         if !alias.is_empty() {
             v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
@@ -361,6 +367,8 @@ impl<'a> TableHelper<'a> {
         let mut v = vec![];
         if !owner.is_empty() {
             v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+        } else {
+            return Err(ErrCode::AccessDenied);
         }
         if !alias.is_empty() {
             v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
@@ -385,6 +393,8 @@ impl<'a> TableHelper<'a> {
         let mut v = vec![];
         if !owner.is_empty() {
             v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+        } else {
+            return Err(ErrCode::AccessDenied);
         }
         self.count_datas(&v).map_err(from_sqlite_code_to_asset_code)
     }
@@ -411,6 +421,8 @@ impl<'a> TableHelper<'a> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
         if !owner.is_empty() {
             v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+        } else {
+            return Err(ErrCode::AccessDenied);
         }
         if !alias.is_empty() {
             v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
@@ -445,6 +457,8 @@ impl<'a> TableHelper<'a> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
         if !owner.is_empty() {
             v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+        } else {
+            return Err(ErrCode::AccessDenied);
         }
         if !alias.is_empty() {
             v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
