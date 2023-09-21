@@ -57,6 +57,9 @@ pub trait IAsset: ipc_rust::IRemoteBroker {
 
     /// Add an asset.
     fn query(&self, input: &AssetMap) -> Result<Vec<AssetMap>>;
+
+    /// Update an asset.
+    fn update(&self, input: &AssetMap) -> Result<()>;
 }
 
 /// max capacity in a map

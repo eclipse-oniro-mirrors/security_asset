@@ -33,15 +33,8 @@ fn construct_key_info(calling_info: &CallingInfo, auth_type: &u32, access_type: 
     }
 }
 
-pub(crate) fn encrypt(calling_info: &CallingInfo, input: &AssetMap) -> Result<Vec<u8>> {
-    let auth_type = match input.get(&Tag::AuthType) {
-        Some(Value::Number(res)) => res,
-        _ => todo!(),
-    };
-    let access_type = match input.get(&Tag::Accessibility) {
-        Some(Value::Number(res)) => res,
-        _ => todo!(),
-    };
+pub(crate) fn encrypt(calling_info: &CallingInfo, auth_type: &u32, access_type: &u32, input: &AssetMap)
+    -> Result<Vec<u8>> {
     let key_info = construct_key_info(calling_info, auth_type, access_type);
     let secret_key = SecretKey::new(key_info);
     if secret_key.exists() != 0 { // todo 使用Ok（bool）类型判断

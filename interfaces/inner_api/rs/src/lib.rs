@@ -60,4 +60,10 @@ impl Manager {
         logi!("[YZT][RUST SDK]enter asset query");
         self.remote.query(input)
     }
+
+    /// Update one Assets that match a search query.
+    pub fn update(&self, input: &AssetMap) -> Result<()> {
+        logi!("[YZT][RUST SDK]enter asset query");
+        self.remote.update(input)
+    }
 }

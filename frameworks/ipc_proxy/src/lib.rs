@@ -88,6 +88,23 @@ impl IAsset for AssetProxy {
             None => Err(ErrCode::IpcError)
         }
     }
+
+    fn update(&self, input: &AssetMap) -> Result<()> {
+        let parce_new = MsgParcel::new();
+        match parce_new {
+            Some(mut send_parcel) => {
+                serialize_map(input, &mut send_parcel.borrowed())?;
+                let reply =
+                    self.remote.send_request(IpcCode::Update as u32, &send_parcel, false).map_err(|_| ErrCode::IpcError)?;
+                    let res_code = reply.read::<i32>().map_err(|_| ErrCode::IpcError)?;
+                    if res_code != IPC_SUCCESS {
+                        return Err(ErrCode::try_from(res_code)?);
+                    }
+                    Ok(())
+            },
+            None => Err(ErrCode::IpcError)
+        }
+    }
 }
 
 impl FromRemoteObj for AssetProxy {

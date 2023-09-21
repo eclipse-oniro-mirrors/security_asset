@@ -57,6 +57,14 @@ impl IAsset for AssetService {
         // get calling uid userid appid etc and do query
         operations::query(input, &CallingInfo::build()?)
     }
+
+    fn update(&self, input: &AssetMap) -> Result<()> {
+        // check the validity and comprehensiveness of input params
+        check_params(input, &IpcCode::Update)?;
+
+        // get calling uid userid appid etc and do add
+        operations::update(input, &CallingInfo::build()?)
+    }
 }
 
 const LOG_LABEL: HiLogLabel = HiLogLabel {

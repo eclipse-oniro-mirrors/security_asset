@@ -17,8 +17,8 @@
 #![allow(dead_code)]
 
 use asset_common::{
-    definition::{AssetMap, Result},
-    logi,
+    definition::{AssetMap, Result, ConflictResolution, ErrCode, Tag, Value},
+    logi, loge,
 };
 use asset_ipc_interface::IpcCode;
 use db_operator::{database_table_helper::G_COLUMN_SECRET, types::{DataValue, Pair}};
@@ -28,7 +28,7 @@ use crate::{
     operations::operation_common::{
         get_alias, construst_extra_params, create_user_db_dir,
         construct_params_with_default, encrypt,
-        db_adapter::{set_extra_attrs, set_input_attr, insert_data_once}
+        db_adapter::{set_extra_attrs, set_input_attr, insert_data_once, data_exist_once}
     },
     calling_process_info::CallingInfo,
     definition_inner::AssetInnerMap
@@ -40,6 +40,18 @@ fn construct_data<'a>(input: &'a AssetMap, inner_params: &'a AssetInnerMap)
     set_input_attr(input, &mut data_vec)?;
     set_extra_attrs(inner_params, &mut data_vec)?;
     Ok(data_vec)
+}
+
+fn encrypt_add(input: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
+    let auth_type = match input.get(&Tag::AuthType) {
+        Some(Value::Number(res)) => res,
+        _ => todo!(),
+    };
+    let access_type = match input.get(&Tag::Accessibility) {
+        Some(Value::Number(res)) => res,
+        _ => todo!(),
+    };
+    encrypt(calling_info, auth_type, access_type, input)
 }
 
 pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
@@ -55,7 +67,7 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // construct db data from input map and inner params
     let mut db_data = construct_data(&input_new, &inner_params)?;
 
-    let cipher = encrypt(calling_info, &input_new)?;
+    let cipher = encrypt_add(&input_new, calling_info)?;
     logi!("get cipher len is [{}]", cipher.len()); // todo delete
     db_data.push(
         Pair {
@@ -65,6 +77,23 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     );
 
     let alias = get_alias(&input_new)?;
+
+    if data_exist_once(&alias, calling_info)? {
+        match input_new.get(&Tag::ConfictPolicy) {
+            Some(Value::Number(num)) if *num == ConflictResolution::ThrowError as u32 => {
+                loge!("alias already exists");
+                return Err(ErrCode::Duplicated);
+            },
+            Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {
+                todo!()
+                // todo delete asset data
+            }
+            _ => {
+                loge!("not found ConfictPolicy");
+                return Err(ErrCode::InvalidArgument);
+            },
+        }
+    }
 
     // call sql to add
     let insert_num =

@@ -16,7 +16,7 @@
 //! This file implement the asset param check
 
 mod tag_value_match;
-mod required_tag;
+mod check_tag;
 pub mod value_validity_check;
 
 use asset_common::definition::{AssetMap, Result};
@@ -26,7 +26,7 @@ use asset_ipc_interface::IpcCode;
 /// check the validity and comprehensiveness of input params
 pub(crate) fn check_params(params: &AssetMap, code: &IpcCode) -> Result<()> {
     // check whether all required params are contained
-    required_tag::check_required_params(params, code)?;
+    check_tag::check_tag_validity(params, code)?;
 
     // check the param tags and the param value's types are matched
     tag_value_match::check_tag_value_match(params)?;

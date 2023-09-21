@@ -17,6 +17,25 @@ use core::panic;
 
 use asset_sdk::definition::{AssetMap, Accessibility, Tag, Insert, AuthType, SyncType, Value};
 
+fn add_asset_inner(alias: &[u8]) {
+    let mut input = AssetMap::new();
+    input.insert_attr(Tag::Secret, alias.to_owned()).unwrap();
+    input.insert_attr(Tag::AuthType, AuthType::None).unwrap();
+    input.insert_attr(Tag::SyncType, SyncType::Never).unwrap();
+
+    input.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlock).unwrap();
+    input.insert_attr(Tag::Alias, alias.to_owned()).unwrap();
+
+    match asset_sdk::Manager::build() {
+        Ok(manager) => {
+            if let Err(e) = manager.add(&input) {
+                panic!("test for add failed {}", e)
+            }
+        },
+        Err(e) => panic!("test for add failed {}", e)
+    }
+}
+
 #[test]
 fn test_for_add() {
     let mut input = AssetMap::new();
@@ -39,9 +58,10 @@ fn test_for_add() {
 
 #[test]
 fn test_for_precise_query() {
-    test_for_add();
+    let alias = Vec::from("test_for_precise_query".as_bytes());
+    add_asset_inner(&alias);
     let mut input = AssetMap::new();
-    input.insert_attr(Tag::Alias, Vec::from("alias".as_bytes())).unwrap();
+    input.insert_attr(Tag::Alias, alias).unwrap();
 
     match asset_sdk::Manager::build() {
         Ok(manager) => {
@@ -62,13 +82,14 @@ fn test_for_precise_query() {
                 }
             }
         },
-        Err(e) => panic!("test for add failed {}", e)
+        Err(e) => panic!("test for query failed {}", e)
     }
 }
 
 #[test]
 fn test_for_fuzz_query() {
-    test_for_add();
+    let alias = Vec::from("test_for_fuzz_query".as_bytes());
+    add_asset_inner(&alias);
     let mut input = AssetMap::new();
     input.insert_attr(Tag::SyncType, SyncType::Never).unwrap();
 
@@ -91,6 +112,29 @@ fn test_for_fuzz_query() {
                 }
             }
         },
-        Err(e) => panic!("test for add failed {}", e)
+        Err(e) => panic!("test for query failed {}", e)
+    }
+}
+
+#[test]
+fn test_for_update_normal_label() {
+    let alias = Vec::from("test_for_update_normal_label".as_bytes());
+    add_asset_inner(&alias);
+    let mut input = AssetMap::new();
+    input.insert_attr(Tag::DataLabelNormal1, Vec::from("DataLabelNormal1".as_bytes())).unwrap();
+    input.insert_attr(Tag::Alias, alias).unwrap();
+
+    match asset_sdk::Manager::build() {
+        Ok(manager) => {
+            match manager.update(&input) {
+                Ok(_) => {
+                    print!("update ok");
+                },
+                Err(e) => {
+                    panic!("test for update failed {}", e)
+                }
+            }
+        },
+        Err(e) => panic!("test for update failed {}", e)
     }
 }

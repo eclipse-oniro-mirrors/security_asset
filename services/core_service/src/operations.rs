@@ -18,8 +18,10 @@
 mod operation_add;
 mod operation_common;
 mod operation_query;
+mod operation_update;
 mod param_check;
 
 pub(crate) use operation_add::add;
+pub(crate) use operation_update::update;
 pub(crate) use operation_query::query;
 pub(crate) use param_check::check_params;
