@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This create implement the asset
+//! This crate implements the asset
 
 use asset_common::{
     definition::{Result, ErrCode, Tag, ReturnType, SyncType, Accessibility, AuthType, AssetMap, Insert, ConflictResolution},

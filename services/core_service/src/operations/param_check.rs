@@ -14,6 +14,7 @@
  */
 
 //! This file implement the asset param check
+#![allow(dead_code)]
 
 mod tag_value_match;
 mod check_tag;
@@ -21,11 +22,26 @@ pub mod value_validity_check;
 
 use asset_common::definition::{AssetMap, Result};
 
-use asset_ipc_interface::IpcCode;
+pub(crate) enum ParamCode {
+    /// Code for add params.
+    Add,
+    /// Code for remove params.
+    Remove,
+    /// Code for update params.
+    Update,
+    /// Code for update match params.
+    UpdateQuery,
+    /// Code for pre-query params.
+    PreQuery,
+    /// Code for query params.
+    Query,
+    /// Code for post params.
+    PostQuery,
+}
 
 /// check the validity and comprehensiveness of input params
-pub(crate) fn check_params(params: &AssetMap, code: &IpcCode) -> Result<()> {
-    // check whether all required params are contained
+pub(crate) fn check_params(params: &AssetMap, code: &ParamCode) -> Result<()> {
+    // check whether all required params are contained and valid
     check_tag::check_tag_validity(params, code)?;
 
     // check the param tags and the param value's types are matched

@@ -13,7 +13,7 @@
 //! limitations under the License.
 //!
 
-//! This create implement the asset
+//! This crate implements the asset
 
 #[allow(non_snake_case, non_camel_case_types)]
 pub mod crypto;

@@ -30,11 +30,11 @@ use asset_common::{
 fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
     reply: &mut BorrowedMsgParcel) -> IpcResult<()> {
     logi!("on_remote_request, calling function: {}", code);
-    let input_map = deserialize_map(data).map_err(|_| IpcStatusCode::InvalidValue)?;
     let ipc_code = IpcCode::try_from(code).map_err(|_| IpcStatusCode::InvalidValue)?;
     match ipc_code {
         IpcCode::Add => {
             logi!("on_remote_request add");
+            let input_map = deserialize_map(data).map_err(|_| IpcStatusCode::InvalidValue)?;
             match stub.add(&input_map) {
                 Ok(_) => {
                     reply.write::<i32>(&IPC_SUCCESS)?;
@@ -46,6 +46,7 @@ fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
         },
         IpcCode::Query => {
             logi!("on_remote_request query");
+            let input_map = deserialize_map(data).map_err(|_| IpcStatusCode::InvalidValue)?;
             match stub.query(&input_map) {
                 Ok(res) => {
                     reply.write::<i32>(&IPC_SUCCESS)?;
@@ -60,9 +61,12 @@ fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
                 }
             }
         },
+
         IpcCode::Update => {
             logi!("on_remote_request update");
-            match stub.update(&input_map) {
+            let query_map = deserialize_map(data).map_err(|_| IpcStatusCode::InvalidValue)?;
+            let update_map = deserialize_map(data).map_err(|_| IpcStatusCode::InvalidValue)?;
+            match stub.update(&query_map, &update_map) {
                 Ok(_) => {
                     reply.write::<i32>(&IPC_SUCCESS)?;
                 },
@@ -71,6 +75,18 @@ fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
                 }
             }
         }
+        IpcCode::Remove => {
+            logi!("on_remote_request remove");
+            let input_map = deserialize_map(data).map_err(|_| IpcStatusCode::InvalidValue)?;
+            match stub.remove(&input_map) {
+                Ok(_) => {
+                    reply.write::<i32>(&IPC_SUCCESS)?;
+                },
+                Err(e) => {
+                    reply.write::<i32>(&(e as i32))?;
+                }
+            }
+        },
         _ => {},
     }
     Ok(())

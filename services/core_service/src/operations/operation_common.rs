@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This create implement the asset
+//! This crate implements the asset
 
 mod crypto_adapter;
 pub(crate) mod db_adapter;

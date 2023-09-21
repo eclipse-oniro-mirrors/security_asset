@@ -13,7 +13,7 @@
 //! limitations under the License.
 //!
 
-//! This create implement the asset
+//! This crate implements the asset
 use crate::huks_ffi::*;
 // use std::ffi::c_char;
 use asset_common::{definition::ErrCode, loge};

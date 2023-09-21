@@ -41,8 +41,8 @@ fn construct_data<'a>(input: &'a AssetMap, inner_params: &'a AssetInnerMap)
     Ok(data_vec)
 }
 
-pub(crate) fn update(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    let alias = get_alias(input)?;
+pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    let alias = get_alias(query)?;
 
     if !data_exist_once(&alias, calling_info)? {
         loge!("asset not exist!");
@@ -52,12 +52,12 @@ pub(crate) fn update(input: &AssetMap, calling_info: &CallingInfo) -> Result<()>
     // a map collecting inner params
     let inner_params = construst_extra_params(calling_info, &IpcCode::Update)?;
 
-    // construct db data from input map
-    let mut db_data = construct_data(input, &inner_params)?;
+    // construct db data from update map
+    let mut db_data = construct_data(update, &inner_params)?;
 
     let cipher;
     // whether to update secret
-    if let Some(Value::Bytes(secret)) = input.get(&Tag::Secret) {
+    if let Some(Value::Bytes(secret)) = update.get(&Tag::Secret) {
         // todo 获取存储的数据
         let query_res = query_data_once(&alias, calling_info, &vec![])?;
         if query_res.len() != 1 {

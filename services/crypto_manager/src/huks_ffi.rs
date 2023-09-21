@@ -13,7 +13,7 @@
 //! limitations under the License.
 //!
 
-//! This create implement the asset
+//! This crate implements the asset
 
 // use std::mem::size_of;
 use std::ptr::null_mut;

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This create implement the asset
+//! This crate implements the asset
 #![allow(dead_code)]
 
 mod calling_owner_type;

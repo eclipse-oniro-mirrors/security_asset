@@ -21,6 +21,7 @@
 #include "asset_mem.h"
 
 extern int32_t AddAssetC2Rust(const AssetAttr *attributes, uint32_t attrCnt);
+extern int32_t RemoveAssetC2Rust(const AssetAttr *query, uint32_t queryCnt);
 
 int32_t AddAsset(const AssetAttr *attributes, uint32_t attrCnt)
 {
@@ -29,7 +30,7 @@ int32_t AddAsset(const AssetAttr *attributes, uint32_t attrCnt)
 
 int32_t RemoveAsset(const AssetAttr *query, uint32_t queryCnt)
 {
-    return ASSET_SUCCESS;
+    return RemoveAssetC2Rust(query, queryCnt);
 }
 
 int32_t UpdateAsset(const AssetAttr *query, uint32_t queryCnt,
