@@ -186,7 +186,7 @@ impl<'a> Database<'a> {
         let mut s = path.to_string();
         let mut db = Database {
             path: s.clone(),
-            v2: false,
+            v2: true,
             handle: 0,
             file: get_file_lock_by_userid(u32::MAX),
         };
