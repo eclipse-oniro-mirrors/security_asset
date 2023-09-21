@@ -550,7 +550,7 @@ pub fn test_insert_datas() {
     let dataset = vec![Pair { column_name: "value", value: DataValue::Text(b"value") }];
     let owner = "owner1";
     let alias = "alias1";
-    let count = db.insert_datas_default(owner, alias, dataset).unwrap();
+    let count = db.insert_datas_default(owner, alias, &dataset).unwrap();
     assert_eq!(count, 1);
 
     // query
@@ -673,7 +673,7 @@ pub fn test_delete_datas() {
     let dataset = vec![Pair { column_name: "value", value: DataValue::Text(b"value") }];
     let owner = "owner1";
     let alias = "alias1";
-    let count = db.insert_datas_default(owner, alias, dataset).unwrap();
+    let count = db.insert_datas_default(owner, alias, &dataset).unwrap();
     assert_eq!(count, 1);
 
     let cond = vec![Pair { column_name: "value", value: DataValue::Text(b"value") }];
@@ -1099,7 +1099,7 @@ pub fn test_helper() {
         .insert_datas_default(
             "owner4",
             "alias4",
-            vec![Pair { column_name: "value", value: DataValue::Text(b"value4") }],
+            &vec![Pair { column_name: "value", value: DataValue::Text(b"value4") }],
         )
         .unwrap();
     assert_eq!(ret, 1);
@@ -1262,7 +1262,7 @@ pub fn test_for_default_asset() {
         Pair { column_name: "RequirePasswordSet", value: DataValue::Integer(0) },
     ];
     let count =
-        DefaultDatabaseHelper::insert_datas_default_once(1, "owner1", "Alias1", def).unwrap();
+        DefaultDatabaseHelper::insert_datas_default_once(1, "owner1", "Alias1", &def).unwrap();
     assert_eq!(count, 1);
     let def = vec![
         Pair { column_name: "Secret", value: DataValue::Blob(b"blob") },
@@ -1277,7 +1277,7 @@ pub fn test_for_default_asset() {
         Pair { column_name: "RequirePasswordSet", value: DataValue::Integer(0) },
     ];
     let count =
-        DefaultDatabaseHelper::insert_datas_default_once(1, "owner1", "Alias2", def).unwrap();
+        DefaultDatabaseHelper::insert_datas_default_once(1, "owner1", "Alias2", &def).unwrap();
     assert_eq!(count, 1);
 
     let count = DefaultDatabaseHelper::update_datas_default_once(
@@ -1349,7 +1349,7 @@ pub fn test_for_transaction() {
             panic!("create table err {}", e);
         },
     };
-    db.insert_datas_default("owner", "alias", vec![]).unwrap();
+    db.insert_datas_default("owner", "alias", &vec![]).unwrap();
     let count = table
         .count_datas(&vec![Pair { column_name: "Owner", value: DataValue::Text(b"owner") }])
         .unwrap();
@@ -1357,7 +1357,7 @@ pub fn test_for_transaction() {
     assert_eq!(trans.commit(), 0);
     let mut s = Transaction::new(&db);
     assert_eq!(s.begin(), 0);
-    let count = db.insert_datas_default("owner", "alias", vec![]).unwrap();
+    let count = db.insert_datas_default("owner", "alias", &vec![]).unwrap();
     assert_eq!(count, 1);
     s.rollback(); // pre insert will rollback
     let result_count = db.select_count_default("owner").unwrap();

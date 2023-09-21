@@ -107,7 +107,7 @@ pub(crate) fn insert_data_once(alias: &str, calling_info: &CallingInfo, db_data:
 
     // call sql to add
     let insert_num =
-        DefaultDatabaseHelper::insert_datas_default_once(calling_info.user_id(), &owner_str, alias, db_data)?;
+        DefaultDatabaseHelper::insert_datas_default_once(calling_info.user_id(), &owner_str, alias, &db_data)?;
 
     logi!("insert params calling_info.user_id() = [{}], owner_str = [{}], alias = [{}]", calling_info.user_id(), owner_str, alias); // todo delete
 

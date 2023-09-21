@@ -270,12 +270,12 @@ impl<'a> TableHelper<'a> {
     ///     value: DataValue::Text(b"test_update"),
     /// }];
     ///
-    /// let ret = helper.insert_datas_default("owner", "alias", datas);
+    /// let ret = helper.insert_datas_default("owner", "alias", &datas);
     /// ```
     ///
     /// sql like:
     /// insert into table_name(Owner,Alias,value) values(owner,alias,'test_update')
-    pub fn insert_datas(&self, owner: &str, alias: &str, datas: Vec<Pair>) -> Result<i32, ErrCode> {
+    pub fn insert_datas(&self, owner: &str, alias: &str, datas: &Vec<Pair>) -> Result<i32, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(datas.len() + 2);
         if !owner.is_empty() {
             v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
@@ -286,7 +286,7 @@ impl<'a> TableHelper<'a> {
             v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
         }
         for data in datas {
-            v.push(data);
+            v.push(*data);
         }
         let _lock = self.db.file.mtx.lock().unwrap();
         self.insert_row(&v).map_err(from_sqlite_code_to_asset_code)
@@ -535,14 +535,14 @@ impl<'a> DefaultDatabaseHelper<'a> {
         &self,
         owner: &str,
         alias: &str,
-        datas: Vec<Pair>,
+        datas: &Vec<Pair>,
     ) -> Result<i32, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         #[cfg(feature = "auto_insert_time")]
         {
             let mut contain_create_time = false;
             let mut contain_update_time = false;
-            for data in &datas {
+            for data in datas {
                 if data.column_name == G_COLUMN_CREATE_TIME {
                     contain_create_time = true;
                 }
@@ -553,7 +553,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
             if !contain_create_time || !contain_update_time {
                 let ctime = std::time::UNIX_EPOCH.elapsed().unwrap().as_secs().to_string();
                 let mut datas_new = Vec::<Pair>::with_capacity(datas.len() + 2);
-                for data in &datas {
+                for data in datas {
                     datas_new.push(*data);
                 }
                 if !contain_create_time {
@@ -568,7 +568,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
                         value: DataValue::Text(ctime.as_bytes()),
                     });
                 }
-                return table.insert_datas(owner, alias, datas_new);
+                return table.insert_datas(owner, alias, &datas_new);
             }
         }
         process_err_msg(table.insert_datas(owner, alias, datas), self)
@@ -687,7 +687,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
         userid: u32,
         owner: &str,
         alias: &str,
-        datas: Vec<Pair>,
+        datas: &Vec<Pair>,
     ) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         db.insert_datas_default(owner, alias, datas)
