@@ -42,18 +42,6 @@ fn construct_data<'a>(input: &'a AssetMap, inner_params: &'a AssetInnerMap)
     Ok(data_vec)
 }
 
-fn encrypt_add(input: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
-    let auth_type = match input.get(&Tag::AuthType) {
-        Some(Value::Number(res)) => res,
-        _ => todo!(),
-    };
-    let access_type = match input.get(&Tag::Accessibility) {
-        Some(Value::Number(res)) => res,
-        _ => todo!(),
-    };
-    encrypt(calling_info, auth_type, access_type, input)
-}
-
 pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // create user dir
     create_user_db_dir(calling_info.user_id())?;
@@ -67,7 +55,12 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // construct db data from input map and inner params
     let mut db_data = construct_data(&input_new, &inner_params)?;
 
-    let cipher = encrypt_add(&input_new, calling_info)?;
+    let secret = match input.get(&Tag::Secret) {
+        Some(Value::Bytes(res)) => res,
+        _ => todo!(),
+    };
+
+    let cipher = encrypt(calling_info, &input_new, secret)?;
     logi!("get cipher len is [{}]", cipher.len()); // todo delete
     db_data.push(
         Pair {

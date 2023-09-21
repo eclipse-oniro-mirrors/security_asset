@@ -138,3 +138,27 @@ fn test_for_update_normal_label() {
         Err(e) => panic!("test for update failed {}", e)
     }
 }
+
+#[test]
+fn test_for_update_secret_and_normal_label() {
+    let alias = Vec::from("test_for_update_secret_and_normal_label".as_bytes());
+    add_asset_inner(&alias);
+    let mut input = AssetMap::new();
+    input.insert_attr(Tag::DataLabelNormal1, Vec::from("DataLabelNormal1".as_bytes())).unwrap();
+    input.insert_attr(Tag::Alias, alias).unwrap();
+    input.insert_attr(Tag::Secret, Vec::from("secret_test_for_update_secret_and_normal_label".as_bytes())).unwrap();
+
+    match asset_sdk::Manager::build() {
+        Ok(manager) => {
+            match manager.update(&input) {
+                Ok(_) => {
+                    print!("update ok");
+                },
+                Err(e) => {
+                    panic!("test for update failed {}", e)
+                }
+            }
+        },
+        Err(e) => panic!("test for update failed {}", e)
+    }
+}

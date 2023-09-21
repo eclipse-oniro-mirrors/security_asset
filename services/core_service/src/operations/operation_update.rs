@@ -27,7 +27,7 @@ use db_operator::{database_table_helper::G_COLUMN_SECRET, types::{DataValue, Pai
 use crate::{
     operations::operation_common::{
         get_alias, construst_extra_params, encrypt,
-        db_adapter::{set_extra_attrs, set_input_attr, data_exist_once, update_data_once}
+        db_adapter::{set_extra_attrs, set_input_attr, data_exist_once, update_data_once, query_data_once}
     },
     calling_process_info::CallingInfo,
     definition_inner::AssetInnerMap
@@ -39,18 +39,6 @@ fn construct_data<'a>(input: &'a AssetMap, inner_params: &'a AssetInnerMap)
     set_input_attr(input, &mut data_vec)?;
     set_extra_attrs(inner_params, &mut data_vec)?;
     Ok(data_vec)
-}
-
-fn encrypt_update(input: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
-    let auth_type = match input.get(&Tag::AuthType) {
-        Some(Value::Number(res)) => res,
-        _ => todo!(),
-    };
-    let access_type = match input.get(&Tag::Accessibility) {
-        Some(Value::Number(res)) => res,
-        _ => todo!(),
-    };
-    encrypt(calling_info, auth_type, access_type, input)
 }
 
 pub(crate) fn update(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
@@ -69,9 +57,15 @@ pub(crate) fn update(input: &AssetMap, calling_info: &CallingInfo) -> Result<()>
 
     let cipher;
     // whether to update secret
-    if input.contains_key(&Tag::Secret) {
+    if let Some(Value::Bytes(secret)) = input.get(&Tag::Secret) {
         // todo 获取存储的数据
-        cipher = encrypt_update(input, calling_info)?;
+        let query_res = query_data_once(&alias, calling_info, &vec![])?;
+        if query_res.len() != 1 {
+            loge!("query to-be-updated asset failed, found [{}] assets", query_res.len());
+            return Err(ErrCode::NotFound);
+        }
+        let asset_map = query_res.get(0).unwrap();
+        cipher = encrypt(calling_info, asset_map, secret)?;
         logi!("get cipher len is [{}]", cipher.len()); // todo delete
         db_data.push(
             Pair {

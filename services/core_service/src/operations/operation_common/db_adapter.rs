@@ -125,7 +125,7 @@ pub(crate) fn data_exist_once(alias: &str, calling_info: &CallingInfo) -> Result
     DefaultDatabaseHelper::is_data_exists_default_once(calling_info.user_id(), &owner_str, alias)
 }
 
-pub(crate) fn query_data_once(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<AdvancedResultSet> {
+pub(crate) fn query_data_once(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
     // get owner str
     let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
         loge!("get owner str faield!");
@@ -141,7 +141,10 @@ pub(crate) fn query_data_once(alias: &str, calling_info: &CallingInfo, db_data: 
         logi!("db data is [{}]", pair.column_name);
     }
     logi!("query found {}", query_res.len());
-    Ok(query_res)
+
+    let res_vec = convert_db_data_into_map(&query_res)?;
+
+    Ok(res_vec)
 }
 
 pub(crate) fn update_data_once(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<i32> {

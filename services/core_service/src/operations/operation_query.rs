@@ -20,7 +20,7 @@ use crate::{
     calling_process_info::CallingInfo,
     operations::operation_common::{
         construct_params_with_default, get_alias, decrypt,
-        db_adapter::{set_input_attr, query_data_once, convert_db_data_into_map},
+        db_adapter::{set_input_attr, query_data_once},
     },
 };
 
@@ -30,11 +30,9 @@ use asset_common::{definition::{AssetMap, Result, Insert, Value, ErrCode, Tag}, 
 use asset_ipc_interface::IpcCode;
 
 fn precise_query(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
-    let query_res = query_data_once(alias, calling_info, db_data)?;
+    let mut query_res = query_data_once(alias, calling_info, db_data)?;
 
-    let mut res_vec = convert_db_data_into_map(&query_res)?;
-
-    for map in &mut res_vec {
+    for map in &mut query_res {
         let auth_type = match map.get(&Tag::AuthType) {
             Some(Value::Number(res)) => res,
             _ => {
@@ -59,17 +57,16 @@ fn precise_query(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -
         map.insert_attr(Tag::Secret, decrypt(calling_info, auth_type, access_type, secret)?)?;
     }
 
-    Ok(res_vec)
+    Ok(query_res)
 }
 
 fn fuzzy_query(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
-    let query_res = query_data_once("", calling_info, db_data)?;
-    let mut res_vec = convert_db_data_into_map(&query_res)?;
+    let mut query_res = query_data_once("", calling_info, db_data)?;
 
-    for data in &mut res_vec {
+    for data in &mut query_res {
         data.remove(&Tag::Secret);
     }
-    Ok(res_vec)
+    Ok(query_res)
 }
 
 pub(crate) fn query(input: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<AssetMap>> {
