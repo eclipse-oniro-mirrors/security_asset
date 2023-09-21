@@ -29,7 +29,7 @@ use crate::{
 #[repr(C)]
 pub struct Statement<'b, const PREPARE: bool> {
     /// sql string
-    pub sql: String,
+    pub(crate) sql: String,
     /// point to db
     db: &'b Database<'b>,
     /// raw pointer

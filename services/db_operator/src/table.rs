@@ -27,14 +27,14 @@ use crate::{
 #[repr(C)]
 pub struct Table<'a> {
     /// table name
-    pub table_name: String,
+    pub(crate) table_name: String,
     /// point to db
-    pub db: &'a Database<'a>,
+    pub(crate) db: &'a Database<'a>,
 }
 
 /// prepare statement with test output
 #[inline(always)]
-pub fn prepare_statement<'a>(
+fn prepare_statement<'a>(
     table: &'a Table,
     sql: &mut str,
 ) -> Result<Statement<'a, true>, SqliteErrCode> {
@@ -58,7 +58,7 @@ pub fn prepare_statement<'a>(
 
 /// bind conditions for statement
 #[inline(always)]
-pub fn bind_conditions(
+fn bind_conditions(
     conditions: &Condition,
     stmt: &Statement<true>,
     index: &mut i32,
@@ -68,7 +68,7 @@ pub fn bind_conditions(
 
 /// bind datas
 #[inline(always)]
-pub fn bind_datas(
+fn bind_datas(
     datas: &Vec<Pair>,
     stmt: &Statement<true>,
     index: &mut i32,
@@ -85,7 +85,7 @@ pub fn bind_datas(
 
 /// bind data values
 #[inline(always)]
-pub fn bind_data_values(
+fn bind_data_values(
     datas: &Vec<DataValue>,
     stmt: &Statement<true>,
     index: &mut i32,
@@ -102,7 +102,7 @@ pub fn bind_data_values(
 
 /// build sql columns not empty
 #[inline(always)]
-pub fn build_sql_columns_not_empty(columns: &Vec<&str>, sql: &mut String) {
+fn build_sql_columns_not_empty(columns: &Vec<&str>, sql: &mut String) {
     for i in 0..columns.len() {
         let column = &columns[i];
         sql.push_str(column);
@@ -114,7 +114,7 @@ pub fn build_sql_columns_not_empty(columns: &Vec<&str>, sql: &mut String) {
 
 /// build sql columns
 #[inline(always)]
-pub fn build_sql_columns(columns: &Vec<&str>, sql: &mut String) {
+fn build_sql_columns(columns: &Vec<&str>, sql: &mut String) {
     if !columns.is_empty() {
         build_sql_columns_not_empty(columns, sql);
     } else {
@@ -124,7 +124,7 @@ pub fn build_sql_columns(columns: &Vec<&str>, sql: &mut String) {
 
 /// build sql where
 #[inline(always)]
-pub fn build_sql_where(conditions: &Condition, sql: &mut String) {
+fn build_sql_where(conditions: &Condition, sql: &mut String) {
     if !conditions.is_empty() {
         sql.push_str(" where ");
         for i in 0..conditions.len() {
@@ -140,7 +140,7 @@ pub fn build_sql_where(conditions: &Condition, sql: &mut String) {
 
 /// build sql values
 #[inline(always)]
-pub fn build_sql_values(len: usize, sql: &mut String) {
+fn build_sql_values(len: usize, sql: &mut String) {
     for i in 0..len {
         sql.push('?');
         if i != len - 1 {

@@ -22,16 +22,16 @@ use crate::{
 /// each user have a Database file
 pub struct UseridFileLock {
     /// userid
-    pub userid: u32,
+    pub(crate) userid: u32,
     /// file lock
-    pub mtx: Mutex<u32>,
+    pub(crate) mtx: Mutex<u32>,
 }
 
 /// save all the userid file locks
 static G_USER_FILE_LOCK_LIST: Mutex<Vec<&'static UseridFileLock>> = Mutex::new(Vec::new());
 
 /// if userid exists, return reference, or create a new lock, insert into list and return reference
-pub fn get_file_lock_by_userid(userid: u32) -> &'static UseridFileLock {
+fn get_file_lock_by_userid(userid: u32) -> &'static UseridFileLock {
     let mut list = G_USER_FILE_LOCK_LIST.lock().unwrap();
     for f in list.iter() {
         if f.userid == userid {
@@ -50,13 +50,13 @@ pub fn get_file_lock_by_userid(userid: u32) -> &'static UseridFileLock {
 #[repr(C)]
 pub struct Database<'a> {
     /// database file path
-    pub path: String,
+    pub(crate) path: String,
     /// is opened with sqlite3_open_v2
     pub(crate) v2: bool,
     /// raw pointer
     pub(crate) handle: usize,
     /// db file
-    pub file: &'a UseridFileLock,
+    pub(crate) file: &'a UseridFileLock,
 }
 
 /// update func callback
