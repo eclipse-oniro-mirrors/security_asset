@@ -19,13 +19,12 @@
 use crate::{
     calling_process_info::CallingInfo,
     operations::operation_common::{
-        construct_params_with_default, get_alias,
+        get_alias,
         db_adapter::{set_input_attr, remove_data_once},
     },
 };
 
 use asset_common::{definition::{AssetMap, Result, ErrCode}, logi, loge};
-use asset_ipc_interface::IpcCode;
 
 pub(crate) fn remove(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     let mut data_vec = Vec::new();
@@ -42,7 +41,7 @@ pub(crate) fn remove(input: &AssetMap, calling_info: &CallingInfo) -> Result<()>
             let remove_num = remove_data_once("", calling_info, &data_vec)?;
             logi!("remove {} data", remove_num);
             Ok(())
-        }
+        },
         _ => {
             loge!("get alias and not not found failed!");
             Err(ErrCode::SqliteERROR)

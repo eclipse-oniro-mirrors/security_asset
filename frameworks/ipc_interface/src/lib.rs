@@ -59,8 +59,8 @@ pub trait IAsset: ipc_rust::IRemoteBroker {
     fn query(&self, input: &AssetMap) -> Result<Vec<AssetMap>>;
 
     /// Update an asset.
-    fn update(&self, input: &AssetMap) -> Result<()>;
-    
+    fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()>;
+
     /// Remove one or multiple assets.
     fn remove(&self, input: &AssetMap) -> Result<()>;
 }

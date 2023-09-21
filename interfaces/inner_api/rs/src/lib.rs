@@ -62,9 +62,9 @@ impl Manager {
     }
 
     /// Update one Assets that match a search query.
-    pub fn update(&self, input: &AssetMap) -> Result<()> {
+    pub fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
         logi!("[YZT][RUST SDK]enter asset query");
-        self.remote.update(input)
+        self.remote.update(query, attributes_to_update)
     }
 
     /// Remove an Asset.

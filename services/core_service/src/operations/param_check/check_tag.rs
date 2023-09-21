@@ -19,13 +19,13 @@ use asset_common::{
     definition::{AssetMap, ErrCode, Result, Tag},
     loge};
 
-use asset_ipc_interface::IpcCode;
+use crate::operations::param_check::ParamCode;
 
 const ADD_REQUIRED_PARAMS: [Tag; 2] = [
     Tag::Secret, Tag::Alias
 ];
 
-const UPDATE_REQUIRED_PARAMS: [Tag; 1] = [
+const UPDATE_QUERY_REQUIRED_PARAMS: [Tag; 1] = [
     Tag::Alias
 ];
 
@@ -39,13 +39,13 @@ fn check_required_params_inner(params: &AssetMap, required_params: &[Tag]) -> Re
     Ok(())
 }
 
-fn check_required_tags(params: &AssetMap, code: &IpcCode) -> Result<()> {
+pub(crate) fn check_required_tags(params: &AssetMap, code: &ParamCode) -> Result<()> {
     match *code {
-        IpcCode::Add => {
+        ParamCode::Add => {
             check_required_params_inner(params, &ADD_REQUIRED_PARAMS)
         },
-        IpcCode::Update => {
-            check_required_params_inner(params, &UPDATE_REQUIRED_PARAMS)
+        ParamCode::UpdateQuery => {
+            check_required_params_inner(params, &UPDATE_QUERY_REQUIRED_PARAMS)
         },
         _ => {
             Ok(())
@@ -66,8 +66,13 @@ const QUERY_AVAILABLE_PARAMS: [Tag; 19] = [
     Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderBy, Tag::ReturnType, Tag::AuthToken, Tag::AuthChallenge
 ];
 
-const UPDATE_AVAILABLE_PARAMS: [Tag; 6] = [
-    Tag::Alias, Tag::Secret, Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4
+const UPDATE_AVAILABLE_PARAMS: [Tag; 5] = [
+    Tag::Secret, Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4
+];
+
+// todo
+const UPDATE_MATCH_AVAILABLE_PARAMS: [Tag; 1] = [
+    Tag::Alias
 ];
 
 fn check_tag_validity_inner(params: &AssetMap, available_params: &[Tag]) -> Result<()> {
@@ -80,12 +85,13 @@ fn check_tag_validity_inner(params: &AssetMap, available_params: &[Tag]) -> Resu
     Ok(())
 }
 
-pub(crate) fn check_tag_validity(params: &AssetMap, code: &IpcCode) -> Result<()> {
+pub(crate) fn check_tag_validity(params: &AssetMap, code: &ParamCode) -> Result<()> {
     check_required_tags(params, code)?;
     match *code {
-        IpcCode::Add => check_tag_validity_inner(params, &ADD_AVAILABLE_PARAMS),
-        IpcCode::Query => check_tag_validity_inner(params, &QUERY_AVAILABLE_PARAMS),
-        IpcCode::Update => check_tag_validity_inner(params, &UPDATE_AVAILABLE_PARAMS),
+        ParamCode::Add => check_tag_validity_inner(params, &ADD_AVAILABLE_PARAMS),
+        ParamCode::Query => check_tag_validity_inner(params, &QUERY_AVAILABLE_PARAMS),
+        ParamCode::Update => check_tag_validity_inner(params, &UPDATE_AVAILABLE_PARAMS),
+        ParamCode::UpdateQuery => check_tag_validity_inner(params, &UPDATE_MATCH_AVAILABLE_PARAMS),
         _ => {
             Ok(())
         }

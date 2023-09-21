@@ -21,7 +21,7 @@ use asset_common::{
     logi,
     definition::{AssetMap, Result},
 };
-use asset_ipc_interface::{IAsset, SA_ID, IpcCode};
+use asset_ipc_interface::{IAsset, SA_ID};
 use stub::AssetStub;
 
 use hilog_rust::{error, hilog, HiLogLabel, LogType};
@@ -34,7 +34,7 @@ mod calling_process_info;
 mod definition_inner;
 
 use calling_process_info::CallingInfo;
-use operations::check_params;
+use operations::param_check;
 
 /// xxx
 pub struct AssetService;
@@ -44,7 +44,7 @@ impl IRemoteBroker for AssetService {}
 impl IAsset for AssetService {
     fn add(&self, input: &AssetMap) -> Result<()> {
         // check the validity and comprehensiveness of input params
-        check_params(input, &IpcCode::Add)?;
+        param_check::check_params(input, &param_check::ParamCode::Add)?;
 
         // get calling uid userid appid etc and do add
         operations::add(input, &CallingInfo::build()?)
@@ -52,23 +52,24 @@ impl IAsset for AssetService {
 
     fn query(&self, input: &AssetMap) -> Result<Vec<AssetMap>> {
         // check the validity and comprehensiveness of input params
-        check_params(input, &IpcCode::Query)?;
+        param_check::check_params(input, &param_check::ParamCode::Query)?;
 
         // get calling uid userid appid etc and do query
         operations::query(input, &CallingInfo::build()?)
     }
 
-    fn update(&self, input: &AssetMap) -> Result<()> {
+    fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
         // check the validity and comprehensiveness of input params
-        check_params(input, &IpcCode::Update)?;
+        param_check::check_params(query, &param_check::ParamCode::UpdateQuery)?;
+        param_check::check_params(attributes_to_update, &param_check::ParamCode::Update)?;
 
         // get calling uid userid appid etc and do add
-        operations::update(input, &CallingInfo::build()?)
+        operations::update(query, attributes_to_update, &CallingInfo::build()?)
     }
 
     fn remove(&self, input: &AssetMap) -> Result<()> {
         // check the validity and comprehensiveness of input params
-        check_params(input, &IpcCode::Remove)?;
+        param_check::check_params(input, &param_check::ParamCode::Remove)?;
 
         // get calling uid userid appid etc and do remove
         operations::remove(input, &CallingInfo::build()?)
