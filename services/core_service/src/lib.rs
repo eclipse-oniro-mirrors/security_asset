@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This create implement the asset
+//! This crate implements the asset
 
 use std::ffi::{c_char, CString};
 
@@ -64,6 +64,14 @@ impl IAsset for AssetService {
 
         // get calling uid userid appid etc and do add
         operations::update(input, &CallingInfo::build()?)
+    }
+
+    fn remove(&self, input: &AssetMap) -> Result<()> {
+        // check the validity and comprehensiveness of input params
+        check_params(input, &IpcCode::Remove)?;
+
+        // get calling uid userid appid etc and do remove
+        operations::remove(input, &CallingInfo::build()?)
     }
 }
 

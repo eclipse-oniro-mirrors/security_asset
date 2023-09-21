@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This create implement the asset
+//! This crate implements the asset
 
 #![allow(dead_code)]
 
@@ -65,5 +65,11 @@ impl Manager {
     pub fn update(&self, input: &AssetMap) -> Result<()> {
         logi!("[YZT][RUST SDK]enter asset query");
         self.remote.update(input)
+    }
+
+    /// Remove an Asset.
+    pub fn remove(&self, input: &AssetMap) -> Result<()> {
+        logi!("[JIN][RUST SDK]enter asset remove");
+        self.remote.remove(input)
     }
 }

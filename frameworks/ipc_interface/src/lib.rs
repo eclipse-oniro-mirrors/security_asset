@@ -55,11 +55,14 @@ pub trait IAsset: ipc_rust::IRemoteBroker {
     /// Add an asset.
     fn add(&self, input: &AssetMap) -> Result<()>;
 
-    /// Add an asset.
+    /// Query one or multiple assets.
     fn query(&self, input: &AssetMap) -> Result<Vec<AssetMap>>;
 
     /// Update an asset.
     fn update(&self, input: &AssetMap) -> Result<()>;
+    
+    /// Remove one or multiple assets.
+    fn remove(&self, input: &AssetMap) -> Result<()>;
 }
 
 /// max capacity in a map

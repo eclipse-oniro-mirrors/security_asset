@@ -21,3 +21,8 @@ int32_t OH_Asset_Add(int32_t code)
 {
     return 0;
 }
+
+int32_t OH_Asset_Remove(int32_t code)
+{
+    return 0;
+}

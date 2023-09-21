@@ -13,15 +13,17 @@
  * limitations under the License.
  */
 
-//! This create implement the asset operations
+//! This crate implements the asset operations
 
 mod operation_add;
 mod operation_common;
 mod operation_query;
+mod operation_remove;
 mod operation_update;
 mod param_check;
 
 pub(crate) use operation_add::add;
-pub(crate) use operation_update::update;
 pub(crate) use operation_query::query;
+pub(crate) use operation_remove::remove;
+pub(crate) use operation_update::update;
 pub(crate) use param_check::check_params;

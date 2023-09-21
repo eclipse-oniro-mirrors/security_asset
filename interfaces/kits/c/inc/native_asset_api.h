@@ -43,6 +43,15 @@ extern "C" {
  */
 int32_t OH_Asset_Add(int32_t code);
 
+/**
+ * @brief Just for test.
+ *
+ * @param code just for test.
+ * @since 11
+ * @version 1.0
+ */
+int32_t OH_Asset_Remove(int32_t code);
+
 #ifdef __cplusplus
 }
 #endif

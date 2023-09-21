@@ -60,6 +60,7 @@ fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
                 }
             }
         },
+
         IpcCode::Update => {
             logi!("on_remote_request update");
             match stub.update(&input_map) {
@@ -71,6 +72,17 @@ fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
                 }
             }
         }
+        IpcCode::Remove => {
+            logi!("on_remote_request remove");
+            match stub.remove(&input_map) {
+                Ok(_) => {
+                    reply.write::<i32>(&IPC_SUCCESS)?;
+                },
+                Err(e) => {
+                    reply.write::<i32>(&(e as i32))?;
+                }
+            }
+        },
         _ => {},
     }
     Ok(())

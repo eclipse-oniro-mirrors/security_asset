@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This create implement the asset
+//! This crate implements the asset
 
 use asset_common::{definition::{AssetMap, ErrCode, Result, Value, Tag}, loge, logi};
 use db_operator::{
@@ -150,17 +150,33 @@ pub(crate) fn query_data_once(alias: &str, calling_info: &CallingInfo, db_data: 
 pub(crate) fn update_data_once(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<i32> {
     // get owner str
     let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
-        loge!("get owner str faield!");
+        loge!("get owner str failed!");
         ErrCode::Failed
     })?;
 
     // call sql to update
     let update_num =
-        DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(),  &owner_str, alias, db_data)?;
+        DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(), &owner_str, alias, db_data)?;
 
     logi!("update {} data", update_num);
 
     Ok(update_num)
+}
+
+pub(crate) fn remove_data_once(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<i32> {
+    // get owner str
+    let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
+        loge!("get owner str failed!");
+        ErrCode::Failed
+    })?;
+
+    // call sql to remove
+    let remove_num = 
+        DefaultDatabaseHelper::delete_datas_default_once(calling_info.user_id(), &owner_str, alias, db_data)?;
+    
+    logi!("remove {} data", remove_num);
+
+    Ok(remove_num)
 }
 
 fn convert_db_data_into_asset(tag: &Tag, data: &ResultDataValue) -> Option<Value> {
