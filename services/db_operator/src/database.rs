@@ -125,6 +125,7 @@ impl<'a> Database<'a> {
 
     /// get database user_version
     pub fn get_version(&self) -> Result<u32, SqliteErrCode> {
+        let _lock = self.file.mtx.lock().unwrap();
         let stmt = Statement::<true>::prepare("pragma user_version", self)?;
         let ret = stmt.step();
         if ret != SQLITE_ROW {
@@ -141,7 +142,6 @@ impl<'a> Database<'a> {
         callback: UpdateDatabaseCallbackFunc,
     ) -> Result<Database, SqliteErrCode> {
         let db = Database::new(path)?;
-        let _lock = db.file.mtx.lock().unwrap();
         let version_old = db.get_version()?;
         #[cfg(test)]
         {
@@ -162,7 +162,6 @@ impl<'a> Database<'a> {
         callback: UpdateDatabaseCallbackFunc,
     ) -> Result<Database<'a>, SqliteErrCode> {
         let db = Database::default_new(userid)?;
-        let _lock = db.file.mtx.lock().unwrap();
         let version_old = db.get_version()?;
         #[cfg(test)]
         {
