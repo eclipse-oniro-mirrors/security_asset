@@ -102,7 +102,7 @@ pub(crate) fn insert_data_once(alias: &str, calling_info: &CallingInfo, db_data:
     // get owner str
     let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
         loge!("get owner str faield!");
-        ErrCode::Failed
+        ErrCode::InvalidArgument
     })?;
 
     // call sql to add
@@ -120,7 +120,7 @@ pub(crate) fn data_exist_once(alias: &str, calling_info: &CallingInfo) -> Result
     // get owner str
     let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
         loge!("get owner str faield!");
-        ErrCode::Failed
+        ErrCode::InvalidArgument
     })?;
     DefaultDatabaseHelper::is_data_exists_default_once(calling_info.user_id(), &owner_str, alias)
 }
@@ -129,7 +129,7 @@ pub(crate) fn query_data_once(alias: &str, calling_info: &CallingInfo, db_data: 
     // get owner str
     let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
         loge!("get owner str faield!");
-        ErrCode::Failed
+        ErrCode::InvalidArgument
     })?;
 
     // call sql to add
@@ -151,7 +151,7 @@ pub(crate) fn update_data_once(alias: &str, calling_info: &CallingInfo, db_data:
     // get owner str
     let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
         loge!("get owner str failed!");
-        ErrCode::Failed
+        ErrCode::InvalidArgument
     })?;
 
     // call sql to update
@@ -167,13 +167,13 @@ pub(crate) fn remove_data_once(alias: &str, calling_info: &CallingInfo, db_data:
     // get owner str
     let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
         loge!("get owner str failed!");
-        ErrCode::Failed
+        ErrCode::InvalidArgument
     })?;
 
     // call sql to remove
-    let remove_num = 
+    let remove_num =
         DefaultDatabaseHelper::delete_datas_default_once(calling_info.user_id(), &owner_str, alias, db_data)?;
-    
+
     logi!("remove {} data", remove_num);
 
     Ok(remove_num)

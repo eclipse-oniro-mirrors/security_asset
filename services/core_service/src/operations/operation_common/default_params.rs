@@ -94,6 +94,6 @@ pub(crate) fn construct_params_with_default(input: &AssetMap, code: &IpcCode) ->
         IpcCode::Query => {
             construct_query(input)
         },
-        _ => Err(ErrCode::Failed)
+        _ => todo!()
     }
 }
