@@ -36,6 +36,20 @@ fn add_asset_inner(alias: &[u8]) {
     }
 }
 
+fn remove_asset_inner(alias: &[u8]) {
+    let mut input = AssetMap::new();
+    input.insert_attr(Tag::Alias, alias.to_owned()).unwrap();
+
+    match asset_sdk::Manager::build() {
+        Ok(manager) => {
+            if let Err(e) = manager.remove(&input) {
+                panic!("test for remote failed {}", e)
+            }
+        },
+        Err(e) => panic!("test for add failed {}", e)
+    }
+}
+
 #[test]
 fn test_for_add() {
     let mut input = AssetMap::new();
@@ -54,6 +68,8 @@ fn test_for_add() {
         },
         Err(e) => panic!("test for add failed {}", e)
     }
+
+    remove_asset_inner(&Vec::from("alias".as_bytes()));
 }
 
 #[test]
@@ -61,7 +77,7 @@ fn test_for_precise_query() {
     let alias = Vec::from("test_for_precise_query".as_bytes());
     add_asset_inner(&alias);
     let mut input = AssetMap::new();
-    input.insert_attr(Tag::Alias, alias).unwrap();
+    input.insert_attr(Tag::Alias, alias.clone()).unwrap();
 
     match asset_sdk::Manager::build() {
         Ok(manager) => {
@@ -84,6 +100,8 @@ fn test_for_precise_query() {
         },
         Err(e) => panic!("test for query failed {}", e)
     }
+
+    remove_asset_inner(&alias);
 }
 
 #[test]
@@ -114,6 +132,7 @@ fn test_for_fuzz_query() {
         },
         Err(e) => panic!("test for query failed {}", e)
     }
+    remove_asset_inner(&alias);
 }
 
 #[test]
@@ -123,7 +142,7 @@ fn test_for_update_normal_label() {
     let mut update = AssetMap::new();
     update.insert_attr(Tag::DataLabelNormal1, Vec::from("DataLabelNormal1".as_bytes())).unwrap();
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Alias, alias).unwrap();
+    query.insert_attr(Tag::Alias, alias.clone()).unwrap();
 
     match asset_sdk::Manager::build() {
         Ok(manager) => {
@@ -138,6 +157,7 @@ fn test_for_update_normal_label() {
         },
         Err(e) => panic!("test for update failed {}", e)
     }
+    remove_asset_inner(&alias);
 }
 
 #[test]
@@ -145,7 +165,7 @@ fn test_for_update_secret_and_normal_label() {
     let alias = Vec::from("test_for_update_secret_and_normal_label".as_bytes());
     add_asset_inner(&alias);
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Alias, alias).unwrap();
+    query.insert_attr(Tag::Alias, alias.clone()).unwrap();
 
     let mut update = AssetMap::new();
     update.insert_attr(Tag::DataLabelNormal1, Vec::from("DataLabelNormal1".as_bytes())).unwrap();
@@ -164,4 +184,5 @@ fn test_for_update_secret_and_normal_label() {
         },
         Err(e) => panic!("test for update failed {}", e)
     }
+    remove_asset_inner(&alias);
 }
