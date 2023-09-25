@@ -275,7 +275,12 @@ impl<'a> TableHelper<'a> {
     ///
     /// sql like:
     /// insert into table_name(Owner,Alias,value) values(owner,alias,'test_update')
-    pub fn insert_datas(&self, owner: &str, alias: &str, datas: &Vec<Pair>) -> Result<i32, ErrCode> {
+    pub fn insert_datas(
+        &self,
+        owner: &str,
+        alias: &str,
+        datas: &Vec<Pair>,
+    ) -> Result<i32, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(datas.len() + 2);
         if !owner.is_empty() {
             v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });

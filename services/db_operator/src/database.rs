@@ -266,13 +266,9 @@ impl<'a> Database<'a> {
         let stmt = match Statement::<true>::prepare(sql.as_str(), self) {
             Ok(o) => o,
             Err(e) => {
-                #[cfg(test)]
-                {
-                    let msg = sqlite3_err_msg_func(self.handle);
-                    if !msg.is_null() {
-                        self.print_err_msg(msg);
-                        sqlite3_free_func(msg as _);
-                    }
+                let msg = sqlite3_err_msg_func(self.handle);
+                if !msg.is_null() {
+                    self.print_err_msg(msg);
                 }
                 return Err(e);
             },
@@ -346,10 +342,7 @@ impl<'a> Database<'a> {
             };
         }
         sql.push_str(");");
-        #[cfg(test)]
-        {
-            asset_common::loge!("{}", sql);
-        }
+        asset_common::loge!("{}", sql);
         let stmt = Statement::<false>::new(sql.as_str(), self);
         let ret = stmt.exec(None, 0);
         if ret != SQLITE_OK {
