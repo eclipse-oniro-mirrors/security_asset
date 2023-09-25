@@ -21,7 +21,7 @@ use asset_common::{
     loge,
 };
 
-extern {
+extern "C" {
     fn GetUserIdByUid(uid: u64, userId: &mut i32) -> bool;
 }
 

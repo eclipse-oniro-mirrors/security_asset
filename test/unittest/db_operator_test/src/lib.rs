@@ -1271,7 +1271,7 @@ pub fn test_for_update_ver() {
     assert!(db4.is_err());
 }
 
-pub fn test_for_default_asset(userid: u32) {
+pub fn test_for_default_asset(userid: i32) {
     // let _ = Database::drop_default_database(userid);
     let def = vec![
         Pair { column_name: "Secret", value: DataValue::Blob(b"blob") },

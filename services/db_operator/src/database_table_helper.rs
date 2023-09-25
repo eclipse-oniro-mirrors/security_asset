@@ -907,7 +907,7 @@ pub type TransactionCallback = fn(db: &Database) -> bool;
 /// do transaction
 /// if commit, return true
 /// if rollback, return false
-pub fn do_transaction(userid: u32, callback: TransactionCallback) -> Result<bool, ErrCode> {
+pub fn do_transaction(userid: i32, callback: TransactionCallback) -> Result<bool, ErrCode> {
     let db = match DefaultDatabaseHelper::open_default_database_table(userid) {
         Ok(o) => o,
         Err(e) => {
