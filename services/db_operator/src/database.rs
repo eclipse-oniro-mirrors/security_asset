@@ -10,7 +10,7 @@
 //! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
-use std::{ffi::CStr, fs, ptr::null_mut, sync::Mutex};
+use std::{ffi::CStr, fs, path::Path, ptr::null_mut, sync::Mutex};
 
 use super::*;
 use crate::{
@@ -49,14 +49,22 @@ fn get_file_lock_by_userid(userid: u32) -> &'static UseridFileLock {
 /// sqlite database file
 #[repr(C)]
 pub struct Database<'a> {
-    /// database file path
+    /// database file string
     pub(crate) path: String,
+    /// database file string
+    pub(crate) back_path: String,
     /// is opened with sqlite3_open_v2
     pub(crate) v2: bool,
+    /// open flags
+    pub(crate) flags: i32,
+    /// vfs
+    pub(crate) vfs: Option<&'a [u8]>,
     /// raw pointer
     pub(crate) handle: usize,
     /// db file
     pub(crate) file: &'a UseridFileLock,
+    /// backup
+    pub(crate) backup_handle: usize,
 }
 
 /// update func callback
@@ -67,11 +75,11 @@ pub type UpdateDatabaseCallbackFunc =
 pub fn default_update_database_func(db: &Database, old_ver: u32, new_ver: u32) -> SqliteErrCode {
     if new_ver > old_ver {
         // TODO do something
-        println!("database {} update from ver {} to {}", db.path, old_ver, new_ver);
+        asset_common::loge!("database {} update from ver {} to {}", db.path, old_ver, new_ver);
         return db.update_version(new_ver as _);
     }
     if new_ver < old_ver {
-        println!("database version rollback is not supported!");
+        asset_common::loge!("database version rollback is not supported!");
         return SQLITE_ERROR;
     }
     SQLITE_OK
@@ -79,7 +87,7 @@ pub fn default_update_database_func(db: &Database, old_ver: u32, new_ver: u32) -
 
 /// format database path
 #[inline(always)]
-pub fn fmt_db_path(userid: u32) -> String {
+fn fmt_db_path(userid: u32) -> String {
     format!("/data/service/el1/public/asset_service/{}/asset.db", userid)
 }
 
@@ -90,44 +98,171 @@ fn fmt_backup_path(path: &str) -> String {
     bp
 }
 
+/// recovery if database file format error
+/// if recovery_master == false, will recovery backup file
+pub fn recovery_db_file(db: &Database, recovery_master: bool) -> Result<u64, std::io::Error> {
+    if recovery_master {
+        fs::copy(&db.back_path, &db.path)
+    } else {
+        fs::copy(&db.path, &db.back_path)
+    }
+}
+
+/// wrap sqlite open
+#[inline(always)]
+fn sqlite3_open_wrap(
+    file: &str,
+    handle: &mut usize,
+    flag: i32,
+    vfs: Option<&[u8]>,
+    v2: bool,
+) -> SqliteErrCode {
+    if v2 {
+        sqlite3_open_v2_func(file, handle, flag, vfs)
+    } else {
+        sqlite3_open_func(file, handle)
+    }
+}
+
+/// is corrupt
+fn is_database_file_error(ret: SqliteErrCode) -> bool {
+    ret == SQLITE_CORRUPT || ret == SQLITE_NOTADB
+}
+
+/// open db, will recovery wrong db file
+fn open_db(
+    db: &mut Database,
+    path: String,
+    back_path: String,
+    flag: i32,
+    vfs: Option<&[u8]>,
+) -> Result<(), SqliteErrCode> {
+    let _lock = db.file.mtx.lock().unwrap();
+    let ret = sqlite3_open_wrap(&path, &mut db.handle, flag, vfs, db.v2);
+    let b_ret = sqlite3_open_wrap(&back_path, &mut db.backup_handle, flag, vfs, db.v2);
+    if ret == SQLITE_OK && b_ret == SQLITE_OK {
+        Ok(())
+    } else if ret == SQLITE_OK && is_database_file_error(b_ret) {
+        db.backup_handle = 0;
+        let ret = recovery_db_file(db, false);
+        if ret.is_ok() {
+            asset_common::loge!("recovery {} succ", db.back_path);
+            // TODO ignore return value : if re open backup fail
+            let ret = sqlite3_open_wrap(&back_path, &mut db.backup_handle, flag, vfs, db.v2);
+            if ret != SQLITE_OK {
+                asset_common::loge!("re open {} fail", &back_path);
+            }
+        } else {
+            // TODO ignore error : if recovery backup fail
+            asset_common::loge!("recovery {} fail", db.back_path);
+        }
+        Ok(())
+    } else if is_database_file_error(ret) && b_ret == SQLITE_OK {
+        let ret = recovery_db_file(db, true);
+        // swap master and backup
+        db.switch_master_backup();
+        if ret.is_ok() {
+            asset_common::loge!("recovery {} succ", db.back_path);
+            // TODO ignore return value : if re open backup fail
+            let ret = sqlite3_open_wrap(&path, &mut db.backup_handle, flag, vfs, db.v2);
+            if ret != SQLITE_OK {
+                asset_common::loge!("re open {} fail", &path);
+            }
+        } else {
+            // TODO ignore error : if recovery backup fail
+            asset_common::loge!("recovery {} fail", db.back_path);
+        }
+        Ok(())
+    } else {
+        Err(ret)
+    }
+}
+
 impl<'a> Database<'a> {
+    /// create backup db
+    pub(crate) fn backup_db(&self) -> Database {
+        Database {
+            path: self.back_path.clone(),
+            back_path: self.path.clone(),
+            v2: self.v2,
+            flags: 0,
+            vfs: None,
+            handle: self.backup_handle,
+            file: self.file,
+            backup_handle: self.handle,
+        }
+    }
+
+    /// switch master backup
+    pub(crate) fn switch_master_backup(&mut self) {
+        self.handle = self.backup_handle;
+        self.backup_handle = 0;
+        let p = self.path.clone();
+        self.path = self.back_path.clone();
+        self.back_path = p;
+    }
+
+    /// reopen db file
+    pub(crate) fn re_open(&mut self, re_open_master: bool) {
+        let re_open_func =
+            |v2: bool, handle: &mut usize, path: &String, flags: i32, vfs: Option<&[u8]>| {
+                if *handle != 0 {
+                    *handle = 0;
+                }
+                let mut path_c = path.clone();
+                path_c.push('\0');
+                let ret = sqlite3_open_wrap(&path_c, handle, flags, vfs, v2);
+                if ret != SQLITE_OK {
+                    asset_common::loge!("re open handle {} fail {}", path, ret);
+                }
+            };
+        if re_open_master {
+            re_open_func(self.v2, &mut self.handle, &self.path, self.flags, self.vfs);
+        } else {
+            re_open_func(self.v2, &mut self.backup_handle, &self.back_path, self.flags, self.vfs);
+        }
+    }
+
     /// open database file.
     /// will create it if not exits.
-    pub fn new(path: &str) -> Result<Database<'a>, SqliteErrCode> {
-        let mut s = path.to_string();
+    pub fn new(path: &str) -> Result<Database, SqliteErrCode> {
+        let mut path_c = path.to_string();
+        let mut back_path_c = fmt_backup_path(path);
         let mut db = Database {
-            path: s.clone(),
+            path: path_c.clone(),
+            back_path: back_path_c.clone(),
             v2: false,
+            flags: 0,
+            vfs: None,
             handle: 0,
             file: get_file_lock_by_userid(u32::MAX),
+            backup_handle: 0,
         };
-        s.push('\0');
-        let _lock = db.file.mtx.lock().unwrap();
-        let ret = sqlite3_open_func(&s, &mut db.handle);
-        if ret == SQLITE_OK {
-            Ok(db)
-        } else {
-            Err(ret)
-        }
+        path_c.push('\0');
+        back_path_c.push('\0');
+        open_db(&mut db, path_c, back_path_c, 0, None)?;
+        Ok(db)
     }
 
     /// create default database
     pub fn default_new(userid: u32) -> Result<Database<'a>, SqliteErrCode> {
-        let mut path = fmt_db_path(userid);
+        let path = fmt_db_path(userid);
+        let mut path_c = path.clone();
+        let mut back_path_c = fmt_backup_path(path.as_str());
         let mut db = Database {
-            path: path.clone(),
+            path: path_c.clone(),
+            back_path: back_path_c.clone(),
             v2: false,
+            flags: 0,
+            vfs: None,
             handle: 0,
-            file: get_file_lock_by_userid(userid),
+            file: get_file_lock_by_userid(u32::MAX),
+            backup_handle: 0,
         };
-        path.push('\0');
-        let _lock = db.file.mtx.lock().unwrap();
-        let ret = sqlite3_open_func(&path, &mut db.handle);
-        if ret == SQLITE_OK {
-            Ok(db)
-        } else {
-            Err(ret)
-        }
+        path_c.push('\0');
+        back_path_c.push('\0');
+        open_db(&mut db, path_c, back_path_c, 0, None)?;
+        Ok(db)
     }
 
     /// get database user_version
@@ -187,23 +322,24 @@ impl<'a> Database<'a> {
     pub fn new_v2(
         path: &str,
         flags: i32,
-        vfs: Option<&[u8]>,
+        vfs: Option<&'a [u8]>,
     ) -> Result<Database<'a>, SqliteErrCode> {
-        let mut s = path.to_string();
+        let mut path_c = path.to_string();
+        let mut back_path_c = fmt_backup_path(path);
         let mut db = Database {
-            path: s.clone(),
+            path: path_c.clone(),
+            back_path: back_path_c.clone(),
             v2: true,
+            flags,
+            vfs,
             handle: 0,
             file: get_file_lock_by_userid(u32::MAX),
+            backup_handle: 0,
         };
-        s.push('\0');
-        let _lock = db.file.mtx.lock().unwrap();
-        let ret = sqlite3_open_v2_func(&s, &mut db.handle, flags, vfs);
-        if ret == SQLITE_OK {
-            Ok(db)
-        } else {
-            Err(ret)
-        }
+        path_c.push('\0');
+        back_path_c.push('\0');
+        open_db(&mut db, path_c, back_path_c, flags, vfs)?;
+        Ok(db)
     }
 
     /// delete database with delete the file
@@ -211,6 +347,20 @@ impl<'a> Database<'a> {
         let name = String::from_utf8(path.as_bytes().to_vec()).unwrap();
         let name = name.trim_matches(char::from(0));
         fs::remove_file(name)
+    }
+
+    /// delete database with delete the file and backup file
+    pub fn drop_database_and_backup(self) -> std::io::Result<()> {
+        let _lock = self.file.mtx.lock().unwrap();
+        let path = self.path.clone();
+        let path: &Path = path.as_ref();
+        let back_path = self.back_path.clone();
+        let back_path: &Path = back_path.as_ref();
+        drop(self);
+        let ret = fs::remove_file(path);
+        let back_ret = if back_path.exists() { fs::remove_file(back_path) } else { Ok(()) };
+        ret?;
+        back_ret
     }
 
     /// delete default database
@@ -276,7 +426,7 @@ impl<'a> Database<'a> {
         statement.exec(None, 0)
     }
 
-    /// open a table, if the table not exists, return error
+    /// open a table, if the table not exists, return Ok(None)
     pub fn open_table(&self, table_name: &str) -> Result<Option<Table>, SqliteErrCode> {
         let sql =
             format!("select * from sqlite_master where type ='table' and name = '{}'", table_name);
@@ -358,7 +508,7 @@ impl<'a> Database<'a> {
         let stmt = Statement::<false>::new(sql.as_str(), self);
         let ret = stmt.exec(None, 0);
         if ret != SQLITE_OK {
-            println!("exec create table fail {}", ret);
+            asset_common::loge!("exec create table fail {}", ret);
             return Err(ret);
         }
         Ok(Table::new(table_name, self))
@@ -367,20 +517,38 @@ impl<'a> Database<'a> {
     #[cfg(test)]
     pub fn drop_db(db: Database) -> std::io::Result<()> {
         let path = db.path.clone();
+        let b_path = db.back_path.clone();
         drop(db);
-        Database::drop_database(path.as_str())
+        let ret = Database::drop_database(path.as_str());
+        let b_ret = Database::drop_database(b_path.as_str());
+        ret?;
+        b_ret?;
+        Ok(())
+    }
+}
+
+/// wrap close func
+pub(crate) fn sqlite3_close_wrap(v2: bool, handle: usize) -> SqliteErrCode {
+    if v2 {
+        sqlite3_close_v2_func(handle)
+    } else {
+        sqlite3_close_func(handle)
     }
 }
 
 impl<'a> Drop for Database<'a> {
     fn drop(&mut self) {
-        let ret = if self.v2 {
-            sqlite3_close_v2_func(self.handle)
-        } else {
-            sqlite3_close_func(self.handle)
-        };
-        if ret != SQLITE_OK {
-            println!("close db fail ret {}", ret);
+        if self.handle != 0 {
+            let ret = sqlite3_close_wrap(self.v2, self.handle);
+            if ret != SQLITE_OK {
+                asset_common::loge!("close db fail ret {}", ret);
+            }
+        }
+        if self.backup_handle != 0 {
+            let back_ret = sqlite3_close_wrap(self.v2, self.backup_handle);
+            if back_ret != SQLITE_OK {
+                asset_common::loge!("close back db fail ret {}", back_ret);
+            }
         }
     }
 }
