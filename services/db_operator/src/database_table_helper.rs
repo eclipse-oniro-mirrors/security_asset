@@ -648,7 +648,11 @@ impl<'a> DefaultDatabaseHelper<'a> {
         let db = Database::default_new(userid).map_err(from_sqlite_code_to_asset_code)?;
         let _lock = db.file.mtx.lock().unwrap();
         match db.open_table(G_ASSET_TABLE_NAME) {
-            Ok(_) => {},
+            Ok(o) => {
+                if o.is_none() {
+                    create_default_table(&db)?;
+                }
+            },
             Err(_) => {
                 create_default_table(&db)?;
             },
@@ -666,7 +670,11 @@ impl<'a> DefaultDatabaseHelper<'a> {
             .map_err(from_sqlite_code_to_asset_code)?;
         let _lock = db.file.mtx.lock().unwrap();
         match db.open_table(G_ASSET_TABLE_NAME) {
-            Ok(_) => {},
+            Ok(o) => {
+                if o.is_none() {
+                    create_default_table(&db)?;
+                }
+            },
             Err(_) => {
                 create_default_table(&db)?;
             },

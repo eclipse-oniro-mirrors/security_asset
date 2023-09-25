@@ -260,24 +260,19 @@ impl<'a> Database<'a> {
     }
 
     /// open a table, if the table not exists, return error
-    pub fn open_table(&self, table_name: &str) -> Result<Table, SqliteErrCode> {
+    pub fn open_table(&self, table_name: &str) -> Result<Option<Table>, SqliteErrCode> {
         let sql =
             format!("select * from sqlite_master where type ='table' and name = '{}'", table_name);
-        let stmt = match Statement::<true>::prepare(sql.as_str(), self) {
-            Ok(o) => o,
-            Err(e) => {
-                let msg = sqlite3_err_msg_func(self.handle);
-                if !msg.is_null() {
-                    self.print_err_msg(msg);
-                }
-                return Err(e);
-            },
-        };
+        let stmt = Statement::<true>::prepare(sql.as_str(), self)?;
         let ret = stmt.step();
         if ret != SQLITE_ROW {
-            Err(ret)
+            if ret == SQLITE_DONE {
+                Ok(None)
+            } else {
+                Err(ret)
+            }
         } else {
-            Ok(Table::new(table_name, self))
+            Ok(Some(Table::new(table_name, self)))
         }
     }
 
