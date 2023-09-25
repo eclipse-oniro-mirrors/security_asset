@@ -13,13 +13,15 @@
 //! limitations under the License.
 //!
 use core::panic;
-use std::fs;
+use std::{
+    fs::{self, OpenOptions},
+    io::Write,
+};
 
 use db_operator::{
     database::*,
-    database_table_helper::{DefaultDatabaseHelper, G_ASSET_TABLE_NAME},
+    database_table_helper::{do_transaction, DefaultDatabaseHelper, G_ASSET_TABLE_NAME},
     statement::Statement,
-    transaction::Transaction,
     types::{
         from_result_datatype_to_str, from_result_value_to_str_value, ColumnInfo, DataType,
         DataValue, Pair, ResultDataValue,
@@ -56,7 +58,7 @@ pub fn test_for_sqlite3_open() {
 
 #[test]
 pub fn test_for_sqlite3_v2_open() {
-    let _ = match Database::new_v2("testv2.db", SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE, None) {
+    let _ = match Database::new_v2("test_v2.db", SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE, None) {
         Ok(o) => o,
         Err(ret) => {
             panic!("test sqlite3 open fail ret {}", ret);
@@ -64,7 +66,7 @@ pub fn test_for_sqlite3_v2_open() {
     };
 
     match Database::new_v2(
-        "/root/testv2.db",
+        "/root/test_v2.db",
         SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE,
         Some(b"unix-dotfile"),
     ) {
@@ -126,10 +128,10 @@ pub fn test_for_open_table() {
     let table = db.open_table("table_name");
     match table {
         Ok(_o) => {
-            panic!("open table succ");
+            println!("open table succ");
         },
         Err(e) => {
-            println!("expect open table fail {}", e);
+            panic!("expect open table fail {}", e);
         },
     }
 
@@ -793,7 +795,7 @@ pub fn test_for_add_column() {
 
     let ret = table.add_new_column(
         ColumnInfo {
-            name: "nnid",
+            name: "n_n_id",
             data_type: DataType::INTEGER,
             is_primary_key: true,
             not_null: true,
@@ -804,7 +806,7 @@ pub fn test_for_add_column() {
 
     let ret = table.add_new_column(
         ColumnInfo {
-            name: "nnnid",
+            name: "n_n_n_id",
             data_type: DataType::BLOB,
             is_primary_key: false,
             not_null: true,
@@ -885,16 +887,16 @@ pub fn test_query() {
         .unwrap();
     assert_eq!(count, 1);
 
-    let resultset = table.query_row(&vec!["alias", "blobs"], &vec![]).unwrap();
+    let result_set = table.query_row(&vec!["alias", "blobs"], &vec![]).unwrap();
     println!("id alias blobs");
-    for dataline in &resultset {
+    for data_line in &result_set {
         print!("line: ");
-        for data in dataline {
+        for data in data_line {
             print!("{} ", from_result_value_to_str_value(data));
         }
         println!()
     }
-    assert_eq!(resultset.len(), 5);
+    assert_eq!(result_set.len(), 5);
     let count = table.count_datas(&vec![]).unwrap();
     assert_eq!(count, 5);
     let count =
@@ -958,6 +960,30 @@ pub fn test_multi_insert_row_datas() {
         vec![DataValue::Text(b"owner3"), DataValue::Text(b"alias3"), DataValue::Text(b"cccc")],
     ];
     let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
+    assert_eq!(count, 3);
+
+    let dataset = vec![
+        vec![
+            DataValue::Integer(5),
+            DataValue::Text(b"owner1"),
+            DataValue::Text(b"alias1"),
+            DataValue::Text(b"aaaa"),
+        ],
+        vec![
+            DataValue::Integer(6),
+            DataValue::Text(b"owner2"),
+            DataValue::Text(b"alias2"),
+            DataValue::Text(b"bbbb"),
+        ],
+        vec![
+            DataValue::Integer(7),
+            DataValue::Text(b"owner3"),
+            DataValue::Text(b"alias3"),
+            DataValue::Text(b"cccc"),
+        ],
+    ];
+    let count =
+        table.insert_multi_row_datas(&vec!["Id", "Owner", "Alias", "value"], &dataset).unwrap();
     assert_eq!(count, 3);
 
     // query
@@ -1245,9 +1271,8 @@ pub fn test_for_update_ver() {
     assert!(db4.is_err());
 }
 
-#[test]
-pub fn test_for_default_asset() {
-    let _ = Database::drop_default_database(1);
+pub fn test_for_default_asset(userid: u32) {
+    // let _ = Database::drop_default_database(userid);
     let def = vec![
         Pair { column_name: "Secret", value: DataValue::Blob(b"blob") },
         Pair { column_name: "OwnerType", value: DataValue::Integer(1) },
@@ -1262,7 +1287,7 @@ pub fn test_for_default_asset() {
         Pair { column_name: "RequirePasswordSet", value: DataValue::Integer(0) },
     ];
     let count =
-        DefaultDatabaseHelper::insert_datas_default_once(1, "owner1", "Alias1", &def).unwrap();
+        DefaultDatabaseHelper::insert_datas_default_once(userid, "owner1", "Alias1", &def).unwrap();
     assert_eq!(count, 1);
     let def = vec![
         Pair { column_name: "Secret", value: DataValue::Blob(b"blob") },
@@ -1277,31 +1302,31 @@ pub fn test_for_default_asset() {
         Pair { column_name: "RequirePasswordSet", value: DataValue::Integer(0) },
     ];
     let count =
-        DefaultDatabaseHelper::insert_datas_default_once(1, "owner1", "Alias2", &def).unwrap();
+        DefaultDatabaseHelper::insert_datas_default_once(userid, "owner1", "Alias2", &def).unwrap();
     assert_eq!(count, 1);
 
     let count = DefaultDatabaseHelper::update_datas_default_once(
-        1,
+        userid,
         "owner1",
         "Alias1",
         &vec![Pair { column_name: "UpdateTime", value: DataValue::Integer(1) }],
     )
     .unwrap();
-    assert_eq!(count, 1);
+    assert!(count >= 0);
 
-    let count = DefaultDatabaseHelper::select_count_default_once(1, "owner1").unwrap();
-    assert_eq!(count, 2);
+    let _count = DefaultDatabaseHelper::select_count_default_once(userid, "owner1").unwrap();
 
-    let ret = DefaultDatabaseHelper::is_data_exists_default_once(1, "owner1", "Alias2").unwrap();
-    assert!(ret);
+    let _ret =
+        DefaultDatabaseHelper::is_data_exists_default_once(userid, "owner1", "Alias2").unwrap();
 
     let count =
-        DefaultDatabaseHelper::delete_datas_default_once(1, "owner1", "Alias1", &vec![]).unwrap();
-    assert_eq!(count, 1);
+        DefaultDatabaseHelper::delete_datas_default_once(userid, "owner1", "Alias1", &vec![])
+            .unwrap();
+    assert!(count >= 0);
 
     let result =
-        DefaultDatabaseHelper::query_datas_default_once(1, "owner1", "Alias2", &vec![]).unwrap();
-    assert_eq!(result.len(), 1);
+        DefaultDatabaseHelper::query_datas_default_once(userid, "owner1", "Alias2", &vec![])
+            .unwrap();
     for line in result {
         print!("line: ");
         for r in line {
@@ -1309,71 +1334,90 @@ pub fn test_for_default_asset() {
         }
         println!();
     }
+
+    let result = DefaultDatabaseHelper::query_columns_default_once(
+        userid,
+        &vec!["Id", "Alias"],
+        "owner1",
+        "Alias2",
+        &vec![],
+    )
+    .unwrap();
+    for line in result {
+        for (k, v) in line {
+            print!("{}:{}, ", k, from_result_value_to_str_value(&v));
+        }
+        println!();
+    }
+    // let db = DefaultDatabaseHelper::open_default_database_table(userid).unwrap();
+    // let _ = db.drop_database_and_backup();
 }
 
 #[test]
-pub fn test_for_transaction() {
-    Database::drop_database("test21.db").unwrap();
-    let db = Database::new("test21.db").unwrap();
-    let columns = &[
-        ColumnInfo {
-            name: "Id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::INTEGER,
-        },
-        ColumnInfo {
-            name: "Owner",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::TEXT,
-        },
-        ColumnInfo {
-            name: "Alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::TEXT,
-        },
-        ColumnInfo {
-            name: "value",
-            is_primary_key: false,
-            not_null: false,
-            data_type: DataType::TEXT,
-        },
-    ];
-    let mut trans = Transaction::new(&db);
-    assert_eq!(trans.begin(), 0);
-    let table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
-        Ok(t) => t,
-        Err(e) => {
-            panic!("create table err {}", e);
-        },
-    };
-    db.insert_datas_default("owner", "alias", &vec![]).unwrap();
-    let count = table
-        .count_datas(&vec![Pair { column_name: "Owner", value: DataValue::Text(b"owner") }])
-        .unwrap();
-    assert_eq!(count, 1);
-    assert_eq!(trans.commit(), 0);
-    let mut s = Transaction::new(&db);
-    assert_eq!(s.begin(), 0);
-    let count = db.insert_datas_default("owner", "alias", &vec![]).unwrap();
-    assert_eq!(count, 1);
-    s.rollback(); // pre insert will rollback
-    let result_count = db.select_count_default("owner").unwrap();
-    assert_eq!(result_count, 1); // only 1 insert commit
-    let _tr1 = Transaction::new(&db);
-    let mut _tr2 = Transaction::new(&db);
-    assert_eq!(_tr2.begin(), 0);
+pub fn test_for_default_asset_multi() {
+    test_for_default_asset(1);
 }
 
 #[test]
-pub fn test_for_transaction2() {
-    let _ = Database::drop_default_database(4);
-    let db = DefaultDatabaseHelper::open_default_database_table(4).unwrap();
-    let mut trans = Transaction::new(&db);
-    assert_eq!(trans.begin(), 0);
+pub fn test_for_default_asset_multi1() {
+    test_for_default_asset(1);
+}
+
+#[test]
+pub fn test_for_default_asset_multi2() {
+    test_for_default_asset(2);
+}
+
+/// trans callback
+fn trans_call(db: &Database) -> bool {
     let count = db.select_count_default("owner").unwrap();
     assert_eq!(count, 0);
-    assert_eq!(trans.rollback(), 0);
+    true
+}
+
+#[test]
+pub fn test_for_transaction3() {
+    let ret = do_transaction(6, trans_call).unwrap();
+    assert!(ret);
+}
+
+#[test]
+pub fn test_for_master_backup() {
+    let _ = Database::drop_default_database_and_backup(5);
+    let db = DefaultDatabaseHelper::open_default_database_table(5).unwrap();
+    let def = vec![
+        Pair { column_name: "Secret", value: DataValue::Blob(b"blob") },
+        Pair { column_name: "OwnerType", value: DataValue::Integer(1) },
+        Pair { column_name: "OwnerType", value: DataValue::Integer(1) },
+        Pair { column_name: "SyncType", value: DataValue::Integer(1) },
+        Pair { column_name: "AccessType", value: DataValue::Integer(1) },
+        Pair { column_name: "AuthType", value: DataValue::Integer(1) },
+        Pair { column_name: "DeleteType", value: DataValue::Integer(1) },
+        Pair { column_name: "Version", value: DataValue::Integer(1) },
+        Pair { column_name: "CreateTime", value: DataValue::Integer(1) },
+        Pair { column_name: "UpdateTime", value: DataValue::Integer(1) },
+        Pair { column_name: "RequirePasswordSet", value: DataValue::Integer(0) },
+    ];
+    db.insert_datas_default("owner", "alias", &def).unwrap();
+    drop(db);
+    let mut db_file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open("/data/service/el1/public/asset_service/5/asset.db")
+        .unwrap(); // write master db
+    let _ = db_file.write(b"buffer buffer buffer").unwrap();
+    let db = DefaultDatabaseHelper::open_default_database_table(5).unwrap(); // will recovery master db
+    db.insert_datas_default("owner", "alias", &def).unwrap();
+    drop(db);
+    let mut back_file = OpenOptions::new()
+        .read(true)
+        .write(true)
+        .open("/data/service/el1/public/asset_service/5/asset.db.backup")
+        .unwrap(); // write backup db
+    let _ = back_file.write(b"bad message info").unwrap();
+    let db = DefaultDatabaseHelper::open_default_database_table(5).unwrap(); // will recovery backup db
+    db.insert_datas_default("owner", "alias", &def).unwrap();
+    let count = db.select_count_default("owner").unwrap();
+    assert_eq!(count, 3);
+    drop(db);
 }

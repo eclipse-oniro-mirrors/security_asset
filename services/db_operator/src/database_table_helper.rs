@@ -17,7 +17,9 @@ use crate::{
     database::{Database, UpdateDatabaseCallbackFunc},
     from_sqlite_code_to_asset_code,
     table::Table,
+    transaction::Transaction,
     types::{AdvancedResultSet, ColumnInfo, Condition, DataType, DataValue, Pair, ResultSet},
+    SQLITE_OK,
 };
 
 /// just use database
@@ -770,5 +772,44 @@ impl<'a> DefaultDatabaseHelper<'a> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.query_columns_default(columns, owner, alias, condition)
+    }
+}
+
+/// transaction callback func, do NOT lock database in this callback function
+/// return true if want to commit, false if want to rollback
+pub type TransactionCallback = fn(db: &Database) -> bool;
+
+/// do transaction
+/// if commit, return true
+/// if rollback, return false
+pub fn do_transaction(userid: u32, callback: TransactionCallback) -> Result<bool, ErrCode> {
+    let db = match DefaultDatabaseHelper::open_default_database_table(userid) {
+        Ok(o) => o,
+        Err(e) => {
+            println!("transaction open db fail");
+            return Err(e);
+        },
+    };
+
+    let mut trans = Transaction::new(&db);
+    let _lock = db.file.mtx.lock().unwrap();
+    let ret = trans.begin();
+    if ret != 0 {
+        return Err(from_sqlite_code_to_asset_code(ret));
+    }
+    if callback(&db) {
+        let ret = trans.commit();
+        if ret != SQLITE_OK {
+            println!("trans commit fail {}", ret);
+            return Err(from_sqlite_code_to_asset_code(ret));
+        }
+        Ok(true)
+    } else {
+        let ret = trans.rollback();
+        if ret != SQLITE_OK {
+            println!("trans rollback fail {}", ret);
+            return Err(from_sqlite_code_to_asset_code(ret));
+        }
+        Ok(false)
     }
 }

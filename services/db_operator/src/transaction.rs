@@ -10,6 +10,7 @@
 //! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
+
 use crate::{database::Database, statement::Statement};
 
 use super::*;
@@ -34,7 +35,6 @@ impl<'a> Transaction<'a> {
             // do nothing
             return SQLITE_OK;
         }
-        let _lock = self.db.file.mtx.lock().unwrap();
         let sql = "begin transaction";
         let stmt = Statement::<false>::new(sql, self.db);
         let ret = stmt.exec(None, 0);
@@ -56,7 +56,6 @@ impl<'a> Transaction<'a> {
 
     /// cancel transaction
     fn rollback_transaction(&self) -> SqliteErrCode {
-        let _lock = self.db.file.mtx.lock().unwrap();
         let sql = "rollback";
         let stmt = Statement::<false>::new(sql, self.db);
         stmt.exec(None, 0)
@@ -67,7 +66,6 @@ impl<'a> Transaction<'a> {
         if !self.started {
             return SQLITE_ERROR;
         }
-        let _lock = self.db.file.mtx.lock().unwrap();
         let sql = "commit";
         let stmt = Statement::<false>::new(sql, self.db);
         let ret = stmt.exec(None, 0);

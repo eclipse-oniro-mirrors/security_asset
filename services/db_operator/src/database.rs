@@ -83,6 +83,13 @@ pub fn fmt_db_path(userid: u32) -> String {
     format!("/data/service/el1/public/asset_service/{}/asset.db", userid)
 }
 
+/// get backup path
+fn fmt_backup_path(path: &str) -> String {
+    let mut bp = path.to_string();
+    bp.push_str(".backup");
+    bp
+}
+
 impl<'a> Database<'a> {
     /// open database file.
     /// will create it if not exits.
@@ -210,6 +217,16 @@ impl<'a> Database<'a> {
     pub fn drop_default_database(userid: u32) -> std::io::Result<()> {
         let path = fmt_db_path(userid);
         Database::drop_database(path.as_str())
+    }
+
+    /// delete default database and backup db
+    pub fn drop_default_database_and_backup(userid: u32) -> std::io::Result<()> {
+        let path = fmt_db_path(userid);
+        let back_path = fmt_backup_path(path.as_str());
+        let ret = Database::drop_database(path.as_str());
+        let back_ret = Database::drop_database(back_path.as_str());
+        ret?;
+        back_ret
     }
 
     /// return err msg if get error.
