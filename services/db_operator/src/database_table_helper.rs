@@ -248,7 +248,6 @@ impl<'a> TableHelper<'a> {
         if !alias.is_empty() {
             v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
         }
-        let _lock = self.db.file.mtx.lock().unwrap();
         self.update_row(&v, datas).map_err(from_sqlite_code_to_asset_code)
     }
 
@@ -293,7 +292,6 @@ impl<'a> TableHelper<'a> {
         for data in datas {
             v.push(*data);
         }
-        let _lock = self.db.file.mtx.lock().unwrap();
         self.insert_row(&v).map_err(from_sqlite_code_to_asset_code)
     }
 
@@ -305,7 +303,6 @@ impl<'a> TableHelper<'a> {
         columns: &Vec<&str>,
         datas: &Vec<Vec<DataValue>>,
     ) -> Result<i32, ErrCode> {
-        let _lock = self.db.file.mtx.lock().unwrap();
         self.insert_multi_row_datas(columns, datas).map_err(from_sqlite_code_to_asset_code)
     }
 
@@ -350,7 +347,6 @@ impl<'a> TableHelper<'a> {
         for c in condition {
             v.push(*c);
         }
-        let _lock = self.db.file.mtx.lock().unwrap();
         self.delete_row(&v).map_err(from_sqlite_code_to_asset_code)
     }
 
@@ -368,7 +364,6 @@ impl<'a> TableHelper<'a> {
     /// sql like:
     /// select count(*) as count from table_name where Owner='owner1' and Alias='alias1'
     pub fn is_data_exist(&self, owner: &str, alias: &str) -> Result<bool, ErrCode> {
-        let _lock = self.db.file.mtx.lock().unwrap();
         let mut v = vec![];
         if !owner.is_empty() {
             v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
@@ -394,7 +389,6 @@ impl<'a> TableHelper<'a> {
     /// sql like:
     /// select count(*) as count from table_name where AppId='owner2'
     pub fn select_count(&self, owner: &str) -> Result<u32, ErrCode> {
-        let _lock = self.db.file.mtx.lock().unwrap();
         let mut v = vec![];
         if !owner.is_empty() {
             v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
@@ -435,7 +429,6 @@ impl<'a> TableHelper<'a> {
         for c in condition {
             v.push(*c);
         }
-        let _lock = self.db.file.mtx.lock().unwrap();
         self.query_row(&vec![], &v).map_err(from_sqlite_code_to_asset_code)
     }
 
@@ -471,7 +464,6 @@ impl<'a> TableHelper<'a> {
         for c in condition {
             v.push(*c);
         }
-        let _lock = self.db.file.mtx.lock().unwrap();
         self.query_datas_advanced(columns, &v).map_err(from_sqlite_code_to_asset_code)
     }
 }
@@ -691,6 +683,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
         datas: &Vec<Pair>,
     ) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        let _lock = db.file.mtx.lock().unwrap();
         db.update_datas_default(owner, alias, datas)
     }
 
@@ -703,6 +696,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
         datas: &Vec<Pair>,
     ) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        let _lock = db.file.mtx.lock().unwrap();
         db.insert_datas_default(owner, alias, datas)
     }
 
@@ -714,6 +708,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
         datas: &Vec<Vec<DataValue>>,
     ) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        let _lock = db.file.mtx.lock().unwrap();
         db.insert_multi_datas_default(columns, datas)
     }
 
@@ -726,6 +721,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
         cond: &Condition,
     ) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        let _lock = db.file.mtx.lock().unwrap();
         db.delete_datas_default(owner, alias, cond)
     }
 
@@ -737,6 +733,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
         alias: &str,
     ) -> Result<bool, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        let _lock = db.file.mtx.lock().unwrap();
         db.is_data_exists_default(owner, alias)
     }
 
@@ -744,6 +741,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     #[inline(always)]
     pub fn select_count_default_once(userid: u32, owner: &str) -> Result<u32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        let _lock = db.file.mtx.lock().unwrap();
         db.select_count_default(owner)
     }
 
@@ -756,6 +754,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
         condition: &Condition,
     ) -> Result<ResultSet, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        let _lock = db.file.mtx.lock().unwrap();
         db.query_datas_default(owner, alias, condition)
     }
 
@@ -769,6 +768,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
         condition: &Condition,
     ) -> Result<AdvancedResultSet, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        let _lock = db.file.mtx.lock().unwrap();
         db.query_columns_default(columns, owner, alias, condition)
     }
 }
