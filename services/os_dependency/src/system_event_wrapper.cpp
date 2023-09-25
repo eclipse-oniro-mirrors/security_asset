@@ -60,7 +60,6 @@ bool SubscribeSystemEvent(void)
 
     if (g_eventHandler != nullptr) { // todo: 是否需要考虑并发
         g_eventHandler = std::make_shared<SystemEventHandler>(subscriberInfo);
-        // g_eventHandler = new(std::nothrow) SystemEventHandler(subscriberInfo);
     }
 
     if (g_eventHandler == nullptr) {
@@ -80,8 +79,7 @@ bool UnSubscribeSystemEvent(void)
 
     bool res = OHOS::EventFwk::CommonEventManager::UnSubscribeCommonEvent(g_eventHandler);
 
-    g_eventHandler = nullptr;
-    // delete g_eventHandler; // todo: 是否需要考虑并发
+    g_eventHandler = nullptr; // todo: 是否需要考虑并发
 
     return res;
 }

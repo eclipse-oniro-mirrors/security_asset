@@ -16,21 +16,6 @@
 #ifndef SYSTEM_EVENT_WRAPPER
 #define SYSTEM_EVENT_WRAPPER
 
-
-
-// namespace OHOS {
-// namespace Security {
-// namespace Asset {
-// class SystemEventHandler : public OHOS::EventFwk::CommonEventSubscriber {
-// public:
-//     explicit SystemEventHandler(const OHOS::EventFwk::CommonEventSubscribeInfo &subscribeInfo);
-//     ~SystemEventHandler() = default;
-//     void OnReceiveEvent(const OHOS::EventFwk::CommonEventData &data) override;
-// };
-// } // namespace Asset
-// } // namespace Security
-// } // namespace OHOS
-
 #ifdef __cplusplus
 extern "C" {
 #endif
