@@ -24,7 +24,7 @@ use std::ptr::{copy_nonoverlapping, null_mut};
 /// KeyInfo struct
 pub struct KeyInfo {
     /// User id
-    pub user_id: u32,
+    pub user_id: i32,
     /// Uid
     pub uid: u64,
     /// Auth_type

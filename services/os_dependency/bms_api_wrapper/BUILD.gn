@@ -1,0 +1,39 @@
+# Copyright (C) 2023 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/ohos.gni")
+
+COMPONENT_DIR = "//base/security/asset"
+
+ohos_static_library("asset_bms_api_wrapper") {
+  subsystem_name = "security"
+  part_name = "asset"
+  include_dirs = [
+    "inc",
+    "$COMPONENT_DIR/frameworks/os_dependency/log/inc",
+  ]
+  sources = [ "src/bms_api_wrapper.cpp" ]
+  deps = [
+    "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem"
+  ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "os_account:os_account_innerkits",
+    "access_token:libaccesstoken_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "ipc:ipc_single",
+    "samgr:samgr_proxy",
+  ]
+}

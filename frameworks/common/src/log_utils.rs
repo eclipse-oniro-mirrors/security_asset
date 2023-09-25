@@ -15,15 +15,15 @@
 
 //! This module defines the macros required for log printing.
 
-use std::ffi::{c_char, CString};
 use hilog_rust::hilog;
+use std::ffi::{c_char, CString};
 
 /// the function to print log, and may be should not be used instead of logi
 pub fn log_func_i(log: &str) {
     let log_label = hilog_rust::HiLogLabel {
         log_type: hilog_rust::LogType::LogCore,
         domain: 0xD002F70, // security domain
-        tag: "Asset"
+        tag: "Asset",
     };
     hilog_rust::info!(log_label, "{}", @public(log));
 }
@@ -33,7 +33,7 @@ pub fn log_func_e(log: &str) {
     let log_label = hilog_rust::HiLogLabel {
         log_type: hilog_rust::LogType::LogCore,
         domain: 0xD002F70, // security domain
-        tag: "Asset"
+        tag: "Asset",
     };
     hilog_rust::error!(log_label, "{}", @public(log));
 }

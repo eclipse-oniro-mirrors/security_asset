@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,27 +13,21 @@
  * limitations under the License.
  */
 
-//! This crate implements the asset
-#![allow(dead_code)]
+#ifndef BMS_API_WRAPPER
+#define BMS_API_WRAPPER
 
-use asset_common::{
-    definition::{ErrCode, Result},
-    loge,
-};
+#include <stdint.h>
 
-extern {
-    fn GetUserIdByUid(uid: u64, userId: &mut i32) -> bool;
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+bool GetCallingOwnerType(uint32_t callingTokenId, int32_t *ownerType);
+bool GetCallingToken(uint32_t *tokenId);
+const char * GetCallingProcessName(uint32_t tokenId);
+const char * GetHapOwnerInfo(uint32_t tokenId, int32_t userId);
+#ifdef __cplusplus
 }
+#endif
 
-/// xxx
-pub(crate) fn get_calling_user_id(uid: u64) -> Result<i32> {
-    unsafe {
-        let mut user_id = 0;
-        if GetUserIdByUid(uid, &mut user_id) {
-            Ok(user_id)
-        } else {
-            loge!("get userid failed!");
-            Err(ErrCode::Failed) // ACCOUNT_FAIL
-        }
-    }
-}
+#endif

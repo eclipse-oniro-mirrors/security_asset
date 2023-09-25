@@ -16,44 +16,89 @@
 //! This crate implements the asset
 #![allow(dead_code)]
 
+use asset_common::{
+    definition::{ErrCode, Result},
+    loge, logi,
+};
+use std::ffi::{CStr, CString};
+use std::os::raw::c_char;
+
 /// OwnerType
 pub(crate) enum OwnerType {
     Hap(Vec<u8>),
-    Native(Vec<u8>)
+    Native(Vec<u8>),
 }
 
 impl OwnerType {
     /// xx
     pub(crate) fn get_type_num(&self) -> u32 {
         match self {
-            Self::Hap(_) => {
-                1
-            },
-            Self::Native(_) => {
-                2
-            }
+            Self::Hap(_) => 1,
+            Self::Native(_) => 2,
         }
     }
 
     /// xx
-    pub(crate) fn get_owner_text(&self) -> &Vec<u8>{
+    pub(crate) fn get_owner_text(&self) -> &Vec<u8> {
         match self {
-            Self::Hap(owner_text) => {
-                owner_text
-            },
-            Self::Native(owner_text) => {
-                owner_text
-            }
+            Self::Hap(owner_text) => owner_text,
+            Self::Native(owner_text) => owner_text,
         }
     }
 }
 
-fn get_native_owner_info(uid: u64) -> OwnerType {
-    OwnerType::Native(Vec::from(format!("{}", uid).as_bytes()))
+extern {
+    fn GetCallingOwnerType(callingTokenId: u32, ownerType: &mut i32) -> bool; // ownerType: 0-> hap; 1->native; 2->shell;
+    fn GetCallingToken(tokenId: &mut u32) -> bool;
+    fn GetCallingProcessName(tokenId: u32) -> *const c_char;
+    fn GetHapOwnerInfo(tokenId: u32, userId: i32) -> *const c_char;
 }
 
-/// xxx
-pub(crate) fn get_calling_owner_type(uid: u64) -> OwnerType {
-    // Ok(OwnerType::Native(Vec::from("123"))) // to do
-    get_native_owner_info(uid)
+fn get_native_owner_info(token_id: u32, uid: u64) -> Result<OwnerType> {
+    unsafe {
+        let p_name = GetCallingProcessName(token_id);
+        if p_name.is_null() {
+            loge!("get calling PName failed!");
+            return Err(ErrCode::Failed);
+        }
+        let p_name_str = CStr::from_ptr(p_name as _).to_str().unwrap();
+        logi!("get calling owner info success! uid:{} pname:{}", uid, p_name_str);
+        Ok(OwnerType::Native(Vec::from(format!("{}{}", uid, p_name_str).as_bytes())))
+    }
+}
+
+fn get_hap_owner_info(token_id: u32, user_id: i32) -> Result<OwnerType> {
+    unsafe {
+        let user_info = GetHapOwnerInfo(token_id, user_id);
+        if !user_info.is_null() {
+            let user_info_str = CString::from_raw(user_info as *mut c_char).into_string().unwrap();
+            logi!("get calling owner info success! user_info:{}", user_info_str);
+            Ok(OwnerType::Hap(Vec::from(user_info_str.as_bytes())))
+        } else {
+            loge!("get calling owner(hap) info failed!");
+            Err(ErrCode::Failed)
+        }
+    }
+}
+
+pub(crate) fn get_calling_owner_type(uid: u64, user_id: i32) -> Result<OwnerType> {
+    unsafe {
+        let mut token_id = 0;
+        // 1 get calling tokenid
+        if !GetCallingToken(&mut token_id) {
+            loge!("get calling token failed!");
+            return Err(ErrCode::Failed);
+        }
+        let mut owner_type = 0; // store owner type
+        // 2 find this calling onwer type 0:hap 1: native 2: shell
+        if GetCallingOwnerType(token_id, &mut owner_type) {
+            match owner_type {
+                0 => Ok(get_hap_owner_info(token_id, user_id)?),
+                _ => Ok(get_native_owner_info(token_id, uid)?),
+            }
+        } else {
+            loge!("get calling owner type failed!");
+            Err(ErrCode::Failed)
+        }
+    }
 }
