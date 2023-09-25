@@ -40,7 +40,7 @@ fn prepare_statement<'a>(
 ) -> Result<Statement<'a, true>, SqliteErrCode> {
     #[cfg(test)]
     {
-        println!("{}", sql);
+        asset_common::loge!("{}", sql);
     }
     let stmt = match Statement::<true>::prepare(sql, table.db) {
         Ok(s) => s,
@@ -48,7 +48,7 @@ fn prepare_statement<'a>(
             #[cfg(test)]
             {
                 let msg = table.db.get_errmsg().unwrap();
-                println!("prepare stmt fail ret {}, info: {}", e, msg.s);
+                asset_common::loge!("prepare stmt fail ret {}, info: {}", e, msg.s);
             }
             return Err(e);
         },
@@ -349,7 +349,7 @@ impl<'a> Table<'a> {
         let sql = format!("ALTER TABLE {} RENAME TO {}", self.table_name, name);
         #[cfg(test)]
         {
-            println!("{}", sql);
+            asset_common::loge!("{}", sql);
         }
         let stmt = &Statement::<false>::new(sql.as_str(), self.db);
         let ret = stmt.exec(None, 0);
@@ -397,7 +397,7 @@ impl<'a> Table<'a> {
         }
         #[cfg(test)]
         {
-            println!("{}", sql);
+            asset_common::loge!("{}", sql);
         }
         let stmt = Statement::<false>::new(sql.as_str(), self.db);
 

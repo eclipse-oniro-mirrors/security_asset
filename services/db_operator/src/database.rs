@@ -228,7 +228,7 @@ impl<'a> Database<'a> {
     pub(crate) fn print_err_msg(&self, msg: *const u8) {
         unsafe {
             let s = CStr::from_ptr(msg as _);
-            println!("exec fail error msg: {}", s.to_str().unwrap());
+            asset_common::loge!("exec fail error msg: {}", s.to_str().unwrap());
         }
     }
 
@@ -348,7 +348,7 @@ impl<'a> Database<'a> {
         sql.push_str(");");
         #[cfg(test)]
         {
-            println!("{}", sql);
+            asset_common::loge!("{}", sql);
         }
         let stmt = Statement::<false>::new(sql.as_str(), self);
         let ret = stmt.exec(None, 0);
