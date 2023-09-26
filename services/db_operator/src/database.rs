@@ -92,6 +92,7 @@ fn fmt_db_path(userid: u32) -> String {
 }
 
 /// get backup path
+#[inline(always)]
 fn fmt_backup_path(path: &str) -> String {
     let mut bp = path.to_string();
     bp.push_str(".backup");
@@ -125,6 +126,7 @@ fn sqlite3_open_wrap(
 }
 
 /// is corrupt
+#[inline(always)]
 fn is_database_file_error(ret: SqliteErrCode) -> bool {
     ret == SQLITE_CORRUPT || ret == SQLITE_NOTADB
 }
@@ -139,10 +141,10 @@ fn open_db(
 ) -> Result<(), SqliteErrCode> {
     let _lock = db.file.mtx.lock().unwrap();
     let ret = sqlite3_open_wrap(&path, &mut db.handle, flag, vfs, db.v2);
-    let b_ret = sqlite3_open_wrap(&back_path, &mut db.backup_handle, flag, vfs, db.v2);
-    if ret == SQLITE_OK && b_ret == SQLITE_OK {
+    let back_ret = sqlite3_open_wrap(&back_path, &mut db.backup_handle, flag, vfs, db.v2);
+    if ret == SQLITE_OK && back_ret == SQLITE_OK {
         Ok(())
-    } else if ret == SQLITE_OK && is_database_file_error(b_ret) {
+    } else if ret == SQLITE_OK && is_database_file_error(back_ret) {
         db.backup_handle = 0;
         let ret = recovery_db_file(db, false);
         if ret.is_ok() {
@@ -157,7 +159,7 @@ fn open_db(
             asset_common::loge!("recovery {} fail", db.back_path);
         }
         Ok(())
-    } else if is_database_file_error(ret) && b_ret == SQLITE_OK {
+    } else if is_database_file_error(ret) && back_ret == SQLITE_OK {
         let ret = recovery_db_file(db, true);
         // swap master and backup
         db.switch_master_backup();
@@ -185,8 +187,8 @@ impl<'a> Database<'a> {
             path: self.back_path.clone(),
             back_path: self.path.clone(),
             v2: self.v2,
-            flags: 0,
-            vfs: None,
+            flags: self.flags,
+            vfs: self.vfs,
             handle: self.backup_handle,
             file: self.file,
             backup_handle: self.handle,
@@ -256,7 +258,7 @@ impl<'a> Database<'a> {
             flags: 0,
             vfs: None,
             handle: 0,
-            file: get_file_lock_by_userid(u32::MAX),
+            file: get_file_lock_by_userid(userid),
             backup_handle: 0,
         };
         path_c.push('\0');
