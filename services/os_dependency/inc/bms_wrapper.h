@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef BMS_API_WRAPPER
-#define BMS_API_WRAPPER
+#ifndef BMS_WRAPPER
+#define BMS_WRAPPER
 
 #include <stdint.h>
 

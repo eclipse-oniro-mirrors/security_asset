@@ -25,7 +25,6 @@ ohos_rust_shared_library("asset_service") {
     "$COMPONENT_DIR/services/crypto_manager:crypto_manager",
     "$COMPONENT_DIR/services/db_operator:db_operator",
     "$COMPONENT_DIR/services/os_dependency:asset_os_dependency",
-    "$COMPONENT_DIR/services/os_dependency/bms_api_wrapper:asset_bms_api_wrapper",
   ]
 
   external_deps = [

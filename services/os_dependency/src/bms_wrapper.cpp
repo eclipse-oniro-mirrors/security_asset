@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "bms_api_wrapper.h"
+#include "bms_wrapper.h"
 
 #include <cstring>
 

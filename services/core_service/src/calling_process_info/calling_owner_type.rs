@@ -94,7 +94,9 @@ pub(crate) fn get_calling_owner_type(uid: u64, user_id: i32) -> Result<OwnerType
         if GetCallingOwnerType(token_id, &mut owner_type) {
             match owner_type {
                 0 => Ok(get_hap_owner_info(token_id, user_id)?),
-                _ => Ok(get_native_owner_info(token_id, uid)?),
+                1 => Ok(get_native_owner_info(token_id, uid)?),
+                2 => Ok(get_native_owner_info(token_id, uid)?),
+                _ => Err(ErrCode::Failed)
             }
         } else {
             loge!("get calling owner type failed!");
