@@ -68,13 +68,12 @@ if ((condition)) {                                                              
     return napi_invalid_arg;                                                            \
 }
 
-void FreeAttrIfNeed(AssetAttr &attr)
+void FreeAttrIfNeed(Asset_Attr &attr)
 {
     if ((attr.tag & ASSET_TAG_TYPE_MASK) == ASSET_TYPE_BYTES) {
-        FreeAssetBlob(&attr.value.blob);
+        OH_Asset_FreeAssetBlob(&attr.value.blob);
     }
 }
-
 
 void FreeAssetAttrs(AsyncContext *context)
 {
@@ -94,7 +93,7 @@ void FreeAssetAttrs(AsyncContext *context)
         AssetFree(context->updateAttrs);
         context->updateAttrs = nullptr;
     }
-    FreeAssetBlob(&context->challenge);
+    OH_Asset_FreeAssetBlob(&context->challenge);
     // todo: delete reasultSet
 }
 
@@ -124,7 +123,7 @@ void DestroyAsyncContext(napi_env env, AsyncContext *context)
     AssetFree(context);
 }
 
-napi_status ParseByteArray(napi_env env, napi_value value, uint32_t tag, AssetBlob &blob)
+napi_status ParseByteArray(napi_env env, napi_value value, uint32_t tag, Asset_Blob &blob)
 {
     napi_typedarray_type arrayType;
     size_t length = 0;
@@ -135,13 +134,13 @@ napi_status ParseByteArray(napi_env env, napi_value value, uint32_t tag, AssetBl
     CHECK_ASSET_TAG(env, length == 0 || length > MAX_BUFFER_LEN, tag, "invalid array length.");
 
     blob.data = static_cast<uint8_t *>(AssetMalloc(length));
-    NAPI_THROW_RETURN_ERR(env, blob.data == nullptr, ASSET_OUT_OF_MEMRORY, "Unable to allocate memory for AssetBlob.");
+    NAPI_THROW_RETURN_ERR(env, blob.data == nullptr, ASSET_OUT_OF_MEMRORY, "Unable to allocate memory for Asset_Blob.");
     (void)memcpy_s(blob.data, length, rawData, length);
     blob.size = static_cast<uint32_t>(length);
     return napi_ok;
 }
 
-napi_status ParseAssetAttribute(napi_env env, napi_value tag, napi_value value, AssetAttr &attr)
+napi_status ParseAssetAttribute(napi_env env, napi_value tag, napi_value value, Asset_Attr &attr)
 {
     // parse tag
     napi_valuetype type = napi_undefined;
@@ -171,7 +170,7 @@ napi_status ParseAssetAttribute(napi_env env, napi_value tag, napi_value value, 
     return napi_ok;
 }
 
-void FreeAttrVec(std::vector<AssetAttr> &attrs)
+void FreeAttrVec(std::vector<Asset_Attr> &attrs)
 {
     for (auto attr : attrs) {
         FreeAttrIfNeed(attr);
@@ -189,7 +188,7 @@ napi_value GetIteratorNext(napi_env env, napi_value iterator, napi_value func, b
     return next;
 }
 
-napi_status ParseMapParam(napi_env env, napi_value arg, AssetAttr **attrs, uint32_t *attrCnt)
+napi_status ParseMapParam(napi_env env, napi_value arg, Asset_Attr **attrs, uint32_t *attrCnt)
 {
     // check map type
     bool isMap = false;
@@ -204,7 +203,7 @@ napi_status ParseMapParam(napi_env env, napi_value arg, AssetAttr **attrs, uint3
     NAPI_CALL_RETURN_ERR(env, napi_call_function(env, arg, entriesFunc, 0, nullptr, &iterator));
     NAPI_CALL_RETURN_ERR(env, napi_get_named_property(env, iterator, "next", &nextFunc));
 
-    std::vector<AssetAttr> attrVec;
+    std::vector<Asset_Attr> attrVec;
     bool done = false;
     napi_value next = nullptr;
     while ((next = GetIteratorNext(env, iterator, nextFunc, &done)) != nullptr && !done) {
@@ -215,7 +214,7 @@ napi_status ParseMapParam(napi_env env, napi_value arg, AssetAttr **attrs, uint3
         NAPI_CALL_BREAK(env, napi_get_element(env, entry, 0, &key));
         NAPI_CALL_BREAK(env, napi_get_element(env, entry, 1, &value));
 
-        AssetAttr param;
+        Asset_Attr param;
         NAPI_CALL_BREAK(env, ParseAssetAttribute(env, key, value, param));
         attrVec.push_back(param);
     }
@@ -227,12 +226,12 @@ napi_status ParseMapParam(napi_env env, napi_value arg, AssetAttr **attrs, uint3
     }
 
     // transfer vector to array
-    *attrs = static_cast<AssetAttr *>(AssetMalloc(attrVec.size() * sizeof(AssetAttr)));
+    *attrs = static_cast<Asset_Attr *>(AssetMalloc(attrVec.size() * sizeof(Asset_Attr)));
     if (*attrs == nullptr) {
         FreeAttrVec(attrVec);
-        NAPI_THROW_RETURN_ERR(env, true, ASSET_OUT_OF_MEMRORY, "Unable to allocate memory for AssetAttr array.");
+        NAPI_THROW_RETURN_ERR(env, true, ASSET_OUT_OF_MEMRORY, "Unable to allocate memory for Asset_Attr array.");
     }
-    (void)memcpy_s(*attrs, attrVec.size() * sizeof(AssetAttr), &attrVec[0], attrVec.size() * sizeof(AssetAttr));
+    (void)memcpy_s(*attrs, attrVec.size() * sizeof(Asset_Attr), &attrVec[0], attrVec.size() * sizeof(Asset_Attr));
     *attrCnt = attrVec.size();
     return napi_ok;
 }

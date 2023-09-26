@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ASSET_TYPE_H
-#define ASSET_TYPE_H
+#ifndef ASSET_INNER_TYPE_H
+#define ASSET_INNER_TYPE_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -369,4 +369,4 @@ typedef struct {
 }
 #endif
 
-#endif // ASSET_TYPE_H
+#endif // ASSET_INNER_TYPE_H

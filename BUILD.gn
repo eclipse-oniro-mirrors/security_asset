@@ -17,7 +17,6 @@ COMPONENT_DIR = "//base/security/asset"
 
 group("asset_component") {
   deps = [
-    "$COMPONENT_DIR/interfaces/inner_api/c:asset_sdk",
     "$COMPONENT_DIR/interfaces/inner_api/rs:asset_sdk",
     "$COMPONENT_DIR/interfaces/kits/c:asset_ndk",
     "$COMPONENT_DIR/sa_profile:asset_sa_profiles",

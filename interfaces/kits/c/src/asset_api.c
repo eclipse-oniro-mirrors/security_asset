@@ -13,54 +13,54 @@
  * limitations under the License.
  */
 
-#include "asset_inner_api.h"
-
-#include "securec.h"
+#include "asset_api.h"
 
 #include "asset_log.h"
 #include "asset_mem.h"
 
-extern int32_t AddAssetC2Rust(const AssetAttr *attributes, uint32_t attrCnt);
-extern int32_t RemoveAssetC2Rust(const AssetAttr *query, uint32_t queryCnt);
+#include "securec.h"
 
-int32_t AddAsset(const AssetAttr *attributes, uint32_t attrCnt)
+extern int32_t AddAssetC2Rust(const Asset_Attr *attributes, uint32_t attrCnt);
+extern int32_t RemoveAssetC2Rust(const Asset_Attr *query, uint32_t queryCnt);
+
+int32_t OH_Asset_AddAsset(const Asset_Attr *attributes, uint32_t attrCnt)
 {
     return AddAssetC2Rust(attributes, attrCnt);
 }
 
-int32_t RemoveAsset(const AssetAttr *query, uint32_t queryCnt)
+int32_t OH_Asset_RemoveAsset(const Asset_Attr *query, uint32_t queryCnt)
 {
     return RemoveAssetC2Rust(query, queryCnt);
 }
 
-int32_t UpdateAsset(const AssetAttr *query, uint32_t queryCnt,
-    const AssetAttr *attributesToUpdate, uint32_t updateCnt)
+int32_t OH_Asset_UpdateAsset(const Asset_Attr *query, uint32_t queryCnt,
+    const Asset_Attr *attributesToUpdate, uint32_t updateCnt)
 {
     return ASSET_SUCCESS;
 }
 
-int32_t PreQueryAsset(const AssetAttr *query, uint32_t queryCnt, Asset_Blob *challenge)
+int32_t OH_Asset_PreQueryAsset(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob *challenge)
 {
     return ASSET_SUCCESS;
 }
 
-int32_t QueryAsset(const AssetAttr *query, uint32_t queryCnt, AssetResultSet *result)
+int32_t OH_Asset_QueryAsset(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultSet *result)
 {
     return ASSET_SUCCESS;
 }
 
-int32_t PostQueryAsset(const AssetAttr *handle, uint32_t handleCnt)
+int32_t OH_Asset_PostQueryAsset(const Asset_Attr *handle, uint32_t handleCnt)
 {
     return ASSET_SUCCESS;
 }
 
-Version GetVersion(void)
+Asset_Version OH_Asset_GetVersion(void)
 {
-    Version v = { 1, 0, 0 };
+    Asset_Version v = { 1, 0, 0 };
     return  v;
 }
 
-AssetAttr *ParseAttr(const AssetResult *result, AssetTag tag)
+Asset_Attr *OH_Asset_ParseAttr(const Asset_Result *result, Asset_Tag tag)
 {
     if (result == NULL || result->attrs == NULL || result->count == 0) {
         LOGE("Argument is NULL.");
@@ -75,7 +75,7 @@ AssetAttr *ParseAttr(const AssetResult *result, AssetTag tag)
     return NULL;
 }
 
-void FreeAsset_Blob(Asset_Blob *blob)
+void OH_Asset_FreeAssetBlob(Asset_Blob *blob)
 {
     if (blob == NULL || blob->data == NULL || blob->size == 0) {
         return;
@@ -86,21 +86,21 @@ void FreeAsset_Blob(Asset_Blob *blob)
     blob->size = 0;
 }
 
-void FreeAssetResultSet(AssetResultSet *resultSet)
+void OH_Asset_FreeAssetResultSet(Asset_ResultSet *resultSet)
 {
     if (resultSet == NULL || resultSet->results == NULL || resultSet->count == 0) {
         return;
     }
 
     for (uint32_t i = 0; i < resultSet->count; i++) {
-        AssetAttr *attrs = resultSet->results[i].attrs;
+        Asset_Attr *attrs = resultSet->results[i].attrs;
         uint32_t attrCnt = resultSet->results[i].count;
         if (attrs == NULL || attrCnt == 0) {
             continue;
         }
         for (uint32_t j = 0; j < attrCnt; j++) {
             if ((attrs[j].tag & ASSET_TAG_TYPE_MASK) == ASSET_TYPE_BYTES) {
-                FreeAsset_Blob(&attrs[j].value.blob);
+                OH_Asset_FreeAssetBlob(&attrs[j].value.blob);
             }
         }
         resultSet->results[i].attrs = NULL;

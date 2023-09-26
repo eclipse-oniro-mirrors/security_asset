@@ -28,7 +28,7 @@ ohos_shared_library("asset_napi") {
 
   deps = [
     "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem",
-    "$COMPONENT_DIR/interfaces/inner_api/c:asset_sdk",
+    "$COMPONENT_DIR/interfaces/kits/c:asset_ndk",
   ]
 
   external_deps = [

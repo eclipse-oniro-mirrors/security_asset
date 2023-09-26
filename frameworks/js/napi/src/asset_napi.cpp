@@ -83,9 +83,9 @@ napi_value DeclareAccessibility(napi_env env)
 {
     napi_value accessibility = nullptr;
     NAPI_CALL(env, napi_create_object(env, &accessibility));
-    AddUint32Property(env, accessibility, "DEVICE_FIRST_UNLOCK", ACCESSIBILITY_DEVICE_FIRST_UNLOCK);
-    AddUint32Property(env, accessibility, "DEVICE_UNLOCK", ACCESSIBILITY_DEVICE_UNLOCK);
-    AddUint32Property(env, accessibility, "DEVICE_SECURE", ACCESSIBILITY_DEVICE_SECURE);
+    AddUint32Property(env, accessibility, "DEVICE_FIRST_UNLOCK", ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCK);
+    AddUint32Property(env, accessibility, "DEVICE_UNLOCK", ASSET_ACCESSIBILITY_DEVICE_UNLOCK);
+    AddUint32Property(env, accessibility, "DEVICE_SECURE", ASSET_ACCESSIBILITY_DEVICE_SECURE);
     return accessibility;
 }
 
@@ -93,8 +93,8 @@ napi_value DeclareAuthType(napi_env env)
 {
     napi_value authType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &authType));
-    AddUint32Property(env, authType, "NONE", AUTH_TYPE_NONE);
-    AddUint32Property(env, authType, "ANY", AUTH_TYPE_ANY);
+    AddUint32Property(env, authType, "NONE", ASSET_AUTH_TYPE_NONE);
+    AddUint32Property(env, authType, "ANY", ASSET_AUTH_TYPE_ANY);
     return authType;
 }
 
@@ -102,10 +102,10 @@ napi_value DeclareSyncType(napi_env env)
 {
     napi_value syncType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &syncType));
-    AddUint32Property(env, syncType, "NEVER", SYNC_TYPE_NEVER);
-    AddUint32Property(env, syncType, "THIS_DEVICE", SYNC_TYPE_THIS_DEVICE);
-    AddUint32Property(env, syncType, "TRUSTED_ACCOUNT", SYNC_TYPE_TRUSTED_ACCOUNT);
-    AddUint32Property(env, syncType, "TRUSTED_DEVICE", SYNC_TYPE_TRUSTED_DEVICE);
+    AddUint32Property(env, syncType, "NEVER", ASSET_SYNC_TYPE_NEVER);
+    AddUint32Property(env, syncType, "THIS_DEVICE", ASSET_SYNC_TYPE_THIS_DEVICE);
+    AddUint32Property(env, syncType, "TRUSTED_ACCOUNT", ASSET_SYNC_TYPE_TRUSTED_ACCOUNT);
+    AddUint32Property(env, syncType, "TRUSTED_DEVICE", ASSET_SYNC_TYPE_TRUSTED_DEVICE);
     return syncType;
 }
 
@@ -113,8 +113,8 @@ napi_value DeclareConflictResolution(napi_env env)
 {
     napi_value conflictResolution = nullptr;
     NAPI_CALL(env, napi_create_object(env, &conflictResolution));
-    AddUint32Property(env, conflictResolution, "OVERWRITE", CONFLICT_OVERWRITE);
-    AddUint32Property(env, conflictResolution, "THROW_ERROR", CONFLICT_THROW_ERROR);
+    AddUint32Property(env, conflictResolution, "OVERWRITE", ASSET_CONFLICT_OVERWRITE);
+    AddUint32Property(env, conflictResolution, "THROW_ERROR", ASSET_CONFLICT_THROW_ERROR);
     return conflictResolution;
 }
 
@@ -122,8 +122,8 @@ napi_value DeclareReturnType(napi_env env)
 {
     napi_value returnType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &returnType));
-    AddUint32Property(env, returnType, "ALL", RETURN_ALL);
-    AddUint32Property(env, returnType, "ATTRIBUTES", RETURN_ATTRIBUTES);
+    AddUint32Property(env, returnType, "ALL", ASSET_RETURN_ALL);
+    AddUint32Property(env, returnType, "ATTRIBUTES", ASSET_RETURN_ATTRIBUTES);
     return returnType;
 }
 
@@ -132,7 +132,7 @@ napi_value NapiAdd(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AddAsset(context->attrs, context->attrCnt);
+            context->result = OH_Asset_AddAsset(context->attrs, context->attrCnt);
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -142,7 +142,7 @@ napi_value NapiRemove(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = RemoveAsset(context->attrs, context->attrCnt);
+            context->result = OH_Asset_RemoveAsset(context->attrs, context->attrCnt);
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -153,7 +153,7 @@ napi_value NapiUpdate(napi_env env, napi_callback_info info)
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
             context->result =
-                UpdateAsset(context->attrs, context->attrCnt, context->updateAttrs, context->updateAttrCnt);
+                OH_Asset_UpdateAsset(context->attrs, context->attrCnt, context->updateAttrs, context->updateAttrCnt);
         };
     return NapiEntry(env, info, __func__, execute, UPDATE_MAX_ARGS_NUM);
 }
@@ -163,7 +163,7 @@ napi_value NapiPreQuery(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = PreQueryAsset(context->attrs, context->attrCnt, &context->challenge);
+            context->result = OH_Asset_PreQueryAsset(context->attrs, context->attrCnt, &context->challenge);
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -173,7 +173,7 @@ napi_value NapiQuery(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = QueryAsset(context->attrs, context->attrCnt, &context->resultSet);
+            context->result = OH_Asset_QueryAsset(context->attrs, context->attrCnt, &context->resultSet);
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -183,14 +183,14 @@ napi_value NapiPostQuery(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = PostQueryAsset(context->attrs, context->attrCnt);
+            context->result = OH_Asset_PostQueryAsset(context->attrs, context->attrCnt);
         };
     return NapiEntry(env, info, __func__, execute);
 }
 
 napi_value NapiGetVersion(napi_env env, napi_callback_info info)
 {
-    Version version = GetVersion();
+    Asset_Version version = OH_Asset_GetVersion();
 
     napi_value versionObj;
     NAPI_CALL(env, napi_create_object(env, &versionObj));

@@ -632,49 +632,56 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    BMS_ERROR = 240000010,
+    BMS_ERROR = 24000010,
     /**
      * The error code indicates that the cryptography operation is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    CRYPTO_ERROR = 240000011,
+    CRYPTO_ERROR = 24000011,
     /**
      * The error code indicates that the operation of calling OS Account service is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    ACCOUNT_ERROR = 240000012,
+    ACCOUNT_ERROR = 24000012,
     /**
      * The error code indicates that the operation of calling Common Event service is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    COMMON_EVENT_ERROR = 240000013,
+    COMMON_EVENT_ERROR = 24000013,
     /**
      * The error code indicates that the operation of calling Access Token service is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    ACCESS_TOKEN_ERROR = 240000014,
+    ACCESS_TOKEN_ERROR = 24000014,
     /**
      * The error code indicates that the operation of file is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    FILE_OPERATION_ERROR = 240000015,
+    FILE_OPERATION_ERROR = 24000015,
     /**
      * The error code indicates that the operation of file is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    SYSTEM_TIME_GET_ERROR = 240000016,
+    SYSTEM_TIME_GET_ERROR = 24000016,
+    /**
+     * The error code indicates that the amount of map element or other limited quotas exceed the limit.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
+    EXCEED_LIMIT = 24000017,
   }
 }
 

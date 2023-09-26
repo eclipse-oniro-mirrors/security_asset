@@ -32,15 +32,15 @@ typedef struct AsyncContext {
     napi_ref callback = nullptr;
 
     // input
-    AssetAttr *attrs = nullptr;
+    Asset_Attr *attrs = nullptr;
     uint32_t attrCnt = 0;
-    AssetAttr *updateAttrs = nullptr;
+    Asset_Attr *updateAttrs = nullptr;
     uint32_t updateAttrCnt = 0;
 
     // output
     int32_t result = 0;
-    AssetBlob challenge = { 0 };
-    AssetResultSet resultSet = { 0 };
+    Asset_Blob challenge = { 0 };
+    Asset_ResultSet resultSet = { 0 };
 } AsyncContext;
 
 
