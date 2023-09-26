@@ -14,7 +14,10 @@
 use asset_common::definition::ErrCode;
 
 use crate::{
-    database::{recovery_db_file, sqlite3_close_wrap, Database, UpdateDatabaseCallbackFunc},
+    database::{
+        copy_db_file, copy_db_file_inner, is_database_file_error, sqlite3_close_wrap, Database,
+        UpdateDatabaseCallbackFunc,
+    },
     from_sqlite_code_to_asset_code,
     table::Table,
     transaction::Transaction,
@@ -212,62 +215,52 @@ pub const G_COLUMNS_INFO: &[ColumnInfo] = &[
     },
 ];
 
-/// master-backup process
-/// # Return
-/// only if master db corrupt and backup db success, we will use return value from backup db
-/// true: use return value from backup db
-/// false: use return value from master db
-#[inline(always)]
-fn process_return_value_of_master_backup<T>(
-    ret: &Result<T, ErrCode>,
-    back_ret: &Result<T, ErrCode>,
-    db: &Database,
-) -> bool {
-    if let Err(e) = back_ret {
-        asset_common::loge!("operation for back db fail {:?}", e);
-        if matches!(*e, ErrCode::SqliteCORRUPT | ErrCode::SqliteNOTADB) && ret.is_ok() {
-            let ret = recovery_db_file(db, false);
-            if ret.is_err() {
-                asset_common::loge!("recovery back db {} fail", db.back_path);
-            } else {
-                asset_common::loge!("recovery back db {} succ", db.back_path);
-            }
-        }
-    } else if matches!(ret, Err(ErrCode::SqliteCORRUPT) | Err(ErrCode::SqliteNOTADB)) {
-        asset_common::loge!("operation for master db fail: corrupt");
-        let ret = recovery_db_file(db, true);
-        if ret.is_err() {
-            asset_common::loge!("recovery db {} fail", db.path);
-        } else {
-            asset_common::loge!("recovery db {} succ", db.path);
-        }
-        return true;
-    }
-    false
-}
-
 /// do same operation in backup database when do something in master db
-fn process_same_operation_in_master_backup_database<
-    T,
-    F: Fn(&Table) -> Result<T, SqliteErrCode>,
->(
+/// TODO backup every success operation or only when charge idle?
+fn back_db_when_succ<T, F: Fn(&Table) -> Result<T, SqliteErrCode>>(
+    modified: bool,
     table: &Table,
     func: F,
 ) -> Result<T, ErrCode> {
-    let ret = func(table).map_err(from_sqlite_code_to_asset_code);
-    let ret = process_err_msg(ret, table.db);
-    if table.db.backup_handle != 0 {
-        // create a temp db which do NOT need drop so we must forget it after use
-        let back_db = table.db.backup_db();
-        let back_table = Table { table_name: table.table_name.clone(), db: &back_db };
-        let back_ret = func(&back_table).map_err(from_sqlite_code_to_asset_code);
-        let back_ret = process_err_msg(back_ret, &back_db);
-        core::mem::forget(back_db);
-        if process_return_value_of_master_backup(&ret, &back_ret, table.db) {
-            return back_ret;
-        }
+    let ret = func(table);
+    match ret {
+        Ok(o) => {
+            if modified {
+                // let _ = thread::spawn(move || {
+                let back_ret = copy_db_file_inner(&table.db.path, &table.db.back_path);
+                if back_ret.is_err() {
+                    println!("backup db {} fail", table.db.back_path);
+                } else {
+                    println!("backup db {} succ", table.db.back_path);
+                }
+                //});
+            }
+            Ok(o)
+        },
+        Err(e) => {
+            //if is_database_file_error(e) {
+            // let _ = sqlite3_close_wrap(table.db.v2, table.db.handle);
+            // // recovery master db
+            // let r_ret = recovery_db_file(table.db, true);
+            // if r_ret.is_err() {
+            //     asset_common::loge!("recovery master db {} fail", table.db.path);
+            //     Err(ErrCode::SqliteERROR)
+            // } else {
+            //     asset_common::logi!("recovery master db {} succ", table.db.path);
+            //     let o_ret = table.db.re_open();
+            //     if let Err(e) = o_ret {
+            //         asset_common::loge!("reopen master db {} fail {}", table.db.path, e);
+            //         Err(ErrCode::SqliteERROR)
+            //     } else {
+            //         let res = func(table);
+            //         process_err_msg(res.map_err(from_sqlite_code_to_asset_code), table.db)
+            //     }
+            // }
+            //} else {
+            process_err_msg(Err(from_sqlite_code_to_asset_code(e)), table.db)
+            //}
+        },
     }
-    ret // TODO return value only for master db?
 }
 
 impl<'a> TableHelper<'a> {
@@ -308,7 +301,7 @@ impl<'a> TableHelper<'a> {
             v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
         }
         let closure = |e: &Table| e.update_row(&v, datas);
-        process_same_operation_in_master_backup_database(self, closure)
+        back_db_when_succ(true, self, closure)
     }
 
     /// insert datas into asset db table.
@@ -352,7 +345,7 @@ impl<'a> TableHelper<'a> {
             v.push(*data);
         }
         let closure = |e: &Table| e.insert_row(&v);
-        process_same_operation_in_master_backup_database(self, closure)
+        back_db_when_succ(true, self, closure)
     }
 
     /// insert multi datas
@@ -364,7 +357,7 @@ impl<'a> TableHelper<'a> {
         datas: &Vec<Vec<DataValue>>,
     ) -> Result<i32, ErrCode> {
         let closure = |e: &Table| e.insert_multi_row_datas(columns, datas);
-        process_same_operation_in_master_backup_database(self, closure)
+        back_db_when_succ(true, self, closure)
     }
 
     /// delete datas from asset db table.
@@ -408,7 +401,7 @@ impl<'a> TableHelper<'a> {
             v.push(*c);
         }
         let closure = |e: &Table| e.delete_row(&v);
-        process_same_operation_in_master_backup_database(self, closure)
+        back_db_when_succ(true, self, closure)
     }
 
     /// return if data exists.
@@ -434,7 +427,7 @@ impl<'a> TableHelper<'a> {
             v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
         }
         let closure = |e: &Table| e.is_data_exists(&v);
-        process_same_operation_in_master_backup_database(self, closure)
+        back_db_when_succ(false, self, closure)
     }
 
     /// return select count for owner.
@@ -456,7 +449,7 @@ impl<'a> TableHelper<'a> {
             return Err(ErrCode::AccessDenied);
         }
         let closure = |e: &Table| e.count_datas(&v);
-        process_same_operation_in_master_backup_database(self, closure)
+        back_db_when_succ(false, self, closure)
     }
 
     /// query all datas for owner and alias with condition(condition could be empty).
@@ -490,7 +483,7 @@ impl<'a> TableHelper<'a> {
             v.push(*c);
         }
         let closure = |e: &Table| e.query_row(&vec![], &v);
-        process_same_operation_in_master_backup_database(self, closure)
+        back_db_when_succ(false, self, closure)
     }
 
     /// query special columns with condition(condition could be empty).
@@ -525,7 +518,7 @@ impl<'a> TableHelper<'a> {
             v.push(*c);
         }
         let closure = |e: &Table| e.query_datas_advanced(columns, &v);
-        process_same_operation_in_master_backup_database(self, closure)
+        back_db_when_succ(false, self, closure)
     }
 }
 
@@ -549,73 +542,51 @@ pub fn process_err_msg<T>(
 fn create_default_table<'a>(db: &'a Database) -> Result<Table<'a>, ErrCode> {
     let res =
         db.create_table(G_ASSET_TABLE_NAME, G_COLUMNS_INFO).map_err(from_sqlite_code_to_asset_code);
-    let res = process_err_msg(res, db);
-    if db.backup_handle != 0 {
-        let back_db = db.backup_db();
-        let back_ret = back_db
-            .create_table(G_ASSET_TABLE_NAME, G_COLUMNS_INFO)
-            .map_err(from_sqlite_code_to_asset_code);
-        let back_ret = match process_err_msg(back_ret, &back_db) {
-            Ok(_) => Ok(Table::new(G_ASSET_TABLE_NAME, db)),
-            Err(e) => Err(e),
-        };
-        core::mem::forget(back_db);
-        if process_return_value_of_master_backup(&res, &back_ret, db) {
-            return back_ret;
-        }
+    match process_err_msg(res, db) {
+        Ok(table) => {
+            let closure = |_e: &Table| Ok(());
+            let _ = back_db_when_succ(true, &table, closure);
+            Ok(table)
+        },
+        Err(e) => Err(e),
     }
-    res
 }
 
 /// open default table
 fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>, ErrCode> {
-    let res = db.open_table(G_ASSET_TABLE_NAME).map_err(from_sqlite_code_to_asset_code);
-    let res = process_err_msg(res, db);
-    let back_ret = if db.backup_handle != 0 {
-        let back_db = db.backup_db();
-        let back_ret =
-            back_db.open_table(G_ASSET_TABLE_NAME).map_err(from_sqlite_code_to_asset_code);
-        let back_ret = match process_err_msg(back_ret, &back_db) {
-            Ok(_) => Ok(Table::new(G_ASSET_TABLE_NAME, db)),
-            Err(e) => Err(e),
-        };
-        core::mem::forget(back_db);
-        back_ret
-    } else {
-        Err(ErrCode::SqliteERROR)
-    };
-    if matches!(back_ret, Err(ErrCode::SqliteCORRUPT) | Err(ErrCode::SqliteNOTADB)) && res.is_ok() {
-        asset_common::loge!("operation for back db fail corrupt");
-        let ret = sqlite3_close_wrap(db.v2, db.backup_handle);
-        if ret != SQLITE_OK {
-            asset_common::loge!("close old handle {} fail {}", db.back_path, ret);
-        }
-        let ret = recovery_db_file(db, false);
-        if ret.is_err() {
-            asset_common::loge!("recovery back db {} fail", db.back_path);
-        } else {
-            asset_common::loge!("recovery back db {} succ", db.back_path);
-            db.re_open(false);
-        }
-        return Ok(Some(Table::new(G_ASSET_TABLE_NAME, db)));
-    } else if matches!(res, Err(ErrCode::SqliteCORRUPT) | Err(ErrCode::SqliteNOTADB))
-        && back_ret.is_ok()
-    {
-        asset_common::loge!("operation for master db fail: corrupt");
-        let ret = sqlite3_close_wrap(db.v2, db.handle);
-        if ret != SQLITE_OK {
-            asset_common::loge!("close old handle {} fail {}", db.path, ret);
-        }
-        let ret = recovery_db_file(db, true);
-        if ret.is_err() {
-            asset_common::loge!("recovery db {} fail", db.path);
-        } else {
-            asset_common::loge!("recovery db {} succ", db.path);
-            db.re_open(true);
-        }
-        return Ok(Some(Table::new(G_ASSET_TABLE_NAME, db)));
+    let res = db.open_table(G_ASSET_TABLE_NAME);
+    match res {
+        Ok(o) => {
+            if o.is_none() {
+                return Ok(None);
+            }
+            return Ok(Some(Table::new(G_ASSET_TABLE_NAME, db)));
+        },
+        Err(e) => {
+            if is_database_file_error(e) {
+                let _ = sqlite3_close_wrap(db.v2, db.handle);
+                // recovery master db
+                let r_ret = copy_db_file(db, true);
+                if r_ret.is_err() {
+                    asset_common::loge!("recovery master db {} fail", db.path);
+                    Err(ErrCode::SqliteERROR)
+                } else {
+                    asset_common::logi!("recovery master db {} succ", db.path);
+                    let o_ret = db.re_open();
+                    if let Err(e) = o_ret {
+                        asset_common::loge!("reopen master db {} fail {}", db.path, e);
+                        return Err(ErrCode::SqliteERROR);
+                    }
+                    process_err_msg(
+                        db.open_table(G_ASSET_TABLE_NAME).map_err(from_sqlite_code_to_asset_code),
+                        db,
+                    )
+                }
+            } else {
+                process_err_msg(Err(from_sqlite_code_to_asset_code(e)), db)
+            }
+        },
     }
-    process_err_msg(db.open_table(G_ASSET_TABLE_NAME).map_err(from_sqlite_code_to_asset_code), db)
 }
 
 impl<'a> DefaultDatabaseHelper<'a> {

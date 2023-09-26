@@ -1368,9 +1368,34 @@ pub fn test_for_default_asset_multi2() {
     test_for_default_asset(2);
 }
 
+#[test]
+pub fn test_for_recovery() {
+    let db = Database::new("test111.db").unwrap();
+    let table = db
+        .create_table(
+            "tt",
+            &[ColumnInfo {
+                name: "Id",
+                data_type: DataType::INTEGER,
+                is_primary_key: true,
+                not_null: true,
+            }],
+        )
+        .unwrap();
+    let count =
+        table.insert_row(&vec![Pair { column_name: "Id", value: DataValue::Integer(1) }]).unwrap();
+    assert_eq!(count, 1);
+    fs::copy("test111.db", "test111.db.backup").unwrap();
+    fs::remove_file("test111.db").unwrap();
+    fs::copy("test111.db.backup", "test111.db").unwrap();
+    let count = table.count_datas(&vec![]).unwrap();
+    assert_eq!(count, 1);
+    let _ = Database::drop_database_and_backup(db);
+}
+
 /// trans callback
 fn trans_call(db: &Database) -> bool {
-    let count = db.select_count_default("owner").unwrap();
+    let count = db.select_count_default("owner1").unwrap();
     assert_eq!(count, 0);
     true
 }
@@ -1379,6 +1404,12 @@ fn trans_call(db: &Database) -> bool {
 pub fn test_for_transaction3() {
     let ret = do_transaction(6, trans_call).unwrap();
     assert!(ret);
+}
+
+#[test]
+pub fn test_for_error() {
+    let stmt = DefaultDatabaseHelper::insert_datas_default_once(1, "owner", "alias", &vec![]);
+    assert!(stmt.is_err());
 }
 
 #[test]

@@ -20,39 +20,10 @@ pub type SqliteErrCode = i32;
 
 /// change sqlite err code to asset err code
 pub fn from_sqlite_code_to_asset_code(value: SqliteErrCode) -> ErrCode {
-    match value {
-        SQLITE_ERROR => ErrCode::SqliteERROR,
-        SQLITE_INTERNAL => ErrCode::SqliteINTERNAL,
-        SQLITE_PERM => ErrCode::SqlitePERM,
-        SQLITE_ABORT => ErrCode::SqliteABORT,
-        SQLITE_BUSY => ErrCode::SqliteBUSY,
-        SQLITE_LOCKED => ErrCode::SqliteLOCKED,
-        SQLITE_NOMEM => ErrCode::SqliteNOMEM,
-        SQLITE_READONLY => ErrCode::SqliteREADONLY,
-        SQLITE_INTERRUPT => ErrCode::SqliteINTERRUPT,
-        SQLITE_IOERR => ErrCode::SqliteIOERR,
-        SQLITE_CORRUPT => ErrCode::SqliteCORRUPT,
-        SQLITE_NOTFOUND => ErrCode::SqliteNOTFOUND,
-        SQLITE_FULL => ErrCode::SqliteFULL,
-        SQLITE_CANTOPEN => ErrCode::SqliteCANTOPEN,
-        SQLITE_PROTOCOL => ErrCode::SqlitePROTOCOL,
-        SQLITE_EMPTY => ErrCode::SqliteEMPTY,
-        SQLITE_SCHEMA => ErrCode::SqliteSCHEMA,
-        SQLITE_TOOBIG => ErrCode::SqliteTOOBIG,
-        SQLITE_CONSTRAINT => ErrCode::SqliteCONSTRAINT,
-        SQLITE_MISMATCH => ErrCode::SqliteMISMATCH,
-        SQLITE_MISUSE => ErrCode::SqliteMISUSE,
-        SQLITE_NOLFS => ErrCode::SqliteNOLFS,
-        SQLITE_AUTH => ErrCode::SqliteAUTH,
-        SQLITE_FORMAT => ErrCode::SqliteFORMAT,
-        SQLITE_RANGE => ErrCode::SqliteRANGE,
-        SQLITE_NOTADB => ErrCode::SqliteNOTADB,
-        SQLITE_NOTICE => ErrCode::SqliteNOTICE,
-        SQLITE_WARNING => ErrCode::SqliteWARNING,
-        SQLITE_ROW => ErrCode::SqliteROW,
-        SQLITE_DONE => ErrCode::SqliteDONE,
-        _ => ErrCode::SqliteERROR,
+    if value != SQLITE_OK && value != SQLITE_DONE {
+        asset_common::loge!("error ret {}", value);
     }
+    ErrCode::SqliteERROR
 }
 
 /// Successful result
