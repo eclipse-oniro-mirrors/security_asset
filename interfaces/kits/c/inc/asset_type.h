@@ -458,4 +458,5 @@ typedef struct {
 }
 #endif
 
+/** @} */
 #endif // ASSET_TYPE_H
