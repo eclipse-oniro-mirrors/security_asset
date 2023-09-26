@@ -238,27 +238,21 @@ fn back_db_when_succ<T, F: Fn(&Table) -> Result<T, SqliteErrCode>>(
             Ok(o)
         },
         Err(e) => {
-            //if is_database_file_error(e) {
-            // let _ = sqlite3_close_wrap(table.db.v2, table.db.handle);
-            // // recovery master db
-            // let r_ret = recovery_db_file(table.db, true);
-            // if r_ret.is_err() {
-            //     asset_common::loge!("recovery master db {} fail", table.db.path);
-            //     Err(ErrCode::SqliteERROR)
-            // } else {
-            //     asset_common::logi!("recovery master db {} succ", table.db.path);
-            //     let o_ret = table.db.re_open();
-            //     if let Err(e) = o_ret {
-            //         asset_common::loge!("reopen master db {} fail {}", table.db.path, e);
-            //         Err(ErrCode::SqliteERROR)
-            //     } else {
-            //         let res = func(table);
-            //         process_err_msg(res.map_err(from_sqlite_code_to_asset_code), table.db)
-            //     }
-            // }
-            //} else {
-            process_err_msg(Err(from_sqlite_code_to_asset_code(e)), table.db)
-            //}
+            if is_database_file_error(e) {
+                // recovery master db
+                let r_ret = copy_db_file(table.db, true);
+                if r_ret.is_err() {
+                    println!("recovery master db {} fail", table.db.path);
+                    Err(ErrCode::SqliteERROR)
+                } else {
+                    println!("recovery master db {} succ", table.db.path);
+
+                    let res = func(table);
+                    process_err_msg(res.map_err(from_sqlite_code_to_asset_code), table.db)
+                }
+            } else {
+                process_err_msg(Err(from_sqlite_code_to_asset_code(e)), table.db)
+            }
         },
     }
 }

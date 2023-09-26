@@ -52,7 +52,7 @@ extern "C" {
  *    returns an error code otherwise.
  * @since 11
  */
-int32_t OH_Asset_AddAsset(const Asset_Attr *attributes, uint32_t attrCnt);
+int32_t OH_Asset_Add(const Asset_Attr *attributes, uint32_t attrCnt);
 
 /**
  * @brief Remove one or more Assets that match a search query.
@@ -63,7 +63,7 @@ int32_t OH_Asset_AddAsset(const Asset_Attr *attributes, uint32_t attrCnt);
  *    returns an error code otherwise.
  * @since 11
  */
-int32_t OH_Asset_RemoveAsset(const Asset_Attr *query, uint32_t queryCnt);
+int32_t OH_Asset_Remove(const Asset_Attr *query, uint32_t queryCnt);
 
 /**
  * @brief Update an Asset that matches a search query.
@@ -76,7 +76,7 @@ int32_t OH_Asset_RemoveAsset(const Asset_Attr *query, uint32_t queryCnt);
  *    returns an error code otherwise.
  * @since 11
  */
-int32_t OH_Asset_UpdateAsset(const Asset_Attr *query, uint32_t queryCnt,
+int32_t OH_Asset_Update(const Asset_Attr *query, uint32_t queryCnt,
     const Asset_Attr *attributesToUpdate, uint32_t updateCnt);
 
 /**
@@ -85,12 +85,12 @@ int32_t OH_Asset_UpdateAsset(const Asset_Attr *query, uint32_t queryCnt,
  * @param query Indicates the pointer to the array including attributes of the Asset to be queried.
  * @param queryCnt Indicates the count of elements in query array.
  * @param challenge Indicates the pointer to the challenge value obtained
-*      which is used later in {@link OH_Asset_QueryAsset}.
+*      which is used later in {@link OH_Asset_Query}.
  * @return Returns {@link OH_Asset_ErrCode#OH_ASSET_SUCCESS} if the operation is successful;
  *    returns an error code otherwise.
  * @since 11
  */
-int32_t OH_Asset_PreQueryAsset(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob *challenge);
+int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob *challenge);
 
 /**
  * @brief Query one or more Assets that match a search query.
@@ -102,18 +102,18 @@ int32_t OH_Asset_PreQueryAsset(const Asset_Attr *query, uint32_t queryCnt, Asset
  *    returns an error code otherwise.
  * @since 11
  */
-int32_t OH_Asset_QueryAsset(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultSet *result);
+int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultSet *result);
 
 /**
  * @brief Post-processing (e.g. release cached resource) for querying multiple Assets that require user authentication.
  *
- * @param handle Indicates the pointer to the array including challenge obtained from {@link OH_Asset_PreQueryAsset}.
+ * @param handle Indicates the pointer to the array including challenge obtained from {@link OH_Asset_PreQuery}.
  * @param handleCnt Indicates the count of elements in handle array.
  * @return Returns {@link OH_Asset_ErrCode#OH_ASSET_SUCCESS} if the operation is successful;
  *    returns an error code otherwise.
  * @since 11
  */
-int32_t OH_Asset_PostQueryAsset(const Asset_Attr *handle, uint32_t handleCnt);
+int32_t OH_Asset_PostQuery(const Asset_Attr *handle, uint32_t handleCnt);
 
 /**
  * @brief Obtains the current Asset SDK version.
@@ -126,7 +126,7 @@ Asset_Version OH_Asset_GetVersion(void);
 /**
  * @brief Parse the AssetResult to get the specified attribute.
  *
- * @param result Indicates the pointer to the array including query results obtained from {@link OH_Asset_QueryAsset}.
+ * @param result Indicates the pointer to the array including query results obtained from {@link OH_Asset_Query}.
  * @param tag Indicates the tag of specified attribute.
  * @return Returns the attribute in form of {@link #Asset_Attr} if the operation is successful which does not
  *    need to be released;
@@ -136,20 +136,20 @@ Asset_Version OH_Asset_GetVersion(void);
 Asset_Attr *OH_Asset_ParseAttr(const Asset_Result *result, Asset_Tag tag);
 
 /**
- * @brief Release the AssetBlob obtained from {@link #OH_Asset_PreQueryAsset}.
+ * @brief Release the AssetBlob obtained from {@link #OH_Asset_PreQuery}.
  *
  * @param blob Indicates the pointer to blob which needs to be freed.
  * @since 11
  */
-void OH_Asset_FreeAssetBlob(Asset_Blob *blob);
+void OH_Asset_FreeBlob(Asset_Blob *blob);
 
 /**
- * @brief Release the AssetResultSet obtained from {@link #OH_Asset_QueryAsset}.
+ * @brief Release the AssetResultSet obtained from {@link #OH_Asset_Query}.
  *
- * @param resultSet Indicates the pointer to the query results obtained from {@link #OH_Asset_QueryAsset}.
+ * @param resultSet Indicates the pointer to the query results obtained from {@link #OH_Asset_Query}.
  * @since 11
  */
-void OH_Asset_FreeAssetResultSet(Asset_ResultSet *resultSet);
+void OH_Asset_FreeResultSet(Asset_ResultSet *resultSet);
 
 #ifdef __cplusplus
 }
