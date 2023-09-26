@@ -49,6 +49,25 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // get param map contains input params and default params
     let input_new = construct_params_with_default(input, &IpcCode::Add)?;
 
+    let alias = get_alias(&input_new)?;
+
+    if data_exist_once(&alias, calling_info)? {
+        match input_new.get(&Tag::ConfictPolicy) {
+            Some(Value::Number(num)) if *num == ConflictResolution::ThrowError as u32 => {
+                loge!("alias already exists");
+                return Err(ErrCode::Duplicated);
+            },
+            Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {
+                todo!()
+                // todo delete asset data
+            }
+            _ => {
+                loge!("not found ConfictPolicy");
+                return Err(ErrCode::InvalidArgument);
+            },
+        }
+    }
+
     // a map collecting inner params
     let inner_params = construst_extra_params(calling_info, &IpcCode::Add)?;
 
@@ -68,25 +87,6 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
             value: DataValue::Blob(&cipher),
         }
     );
-
-    let alias = get_alias(&input_new)?;
-
-    if data_exist_once(&alias, calling_info)? {
-        match input_new.get(&Tag::ConfictPolicy) {
-            Some(Value::Number(num)) if *num == ConflictResolution::ThrowError as u32 => {
-                loge!("alias already exists");
-                return Err(ErrCode::Duplicated);
-            },
-            Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {
-                todo!()
-                // todo delete asset data
-            }
-            _ => {
-                loge!("not found ConfictPolicy");
-                return Err(ErrCode::InvalidArgument);
-            },
-        }
-    }
 
     // call sql to add
     let insert_num =

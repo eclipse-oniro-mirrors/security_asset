@@ -22,16 +22,16 @@ use crate::{
 /// each user have a Database file
 pub struct UseridFileLock {
     /// userid
-    pub(crate) userid: u32,
+    pub(crate) userid: i32,
     /// file lock
-    pub(crate) mtx: Mutex<u32>,
+    pub(crate) mtx: Mutex<i32>,
 }
 
 /// save all the userid file locks
 static G_USER_FILE_LOCK_LIST: Mutex<Vec<&'static UseridFileLock>> = Mutex::new(Vec::new());
 
 /// if userid exists, return reference, or create a new lock, insert into list and return reference
-fn get_file_lock_by_userid(userid: u32) -> &'static UseridFileLock {
+fn get_file_lock_by_userid(userid: i32) -> &'static UseridFileLock {
     let mut list = G_USER_FILE_LOCK_LIST.lock().unwrap();
     for f in list.iter() {
         if f.userid == userid {
@@ -87,7 +87,7 @@ pub fn default_update_database_func(db: &Database, old_ver: u32, new_ver: u32) -
 
 /// format database path
 #[inline(always)]
-fn fmt_db_path(userid: u32) -> String {
+fn fmt_db_path(userid: i32) -> String {
     format!("/data/service/el1/public/asset_service/{}/asset.db", userid)
 }
 
@@ -237,7 +237,7 @@ impl<'a> Database<'a> {
             flags: 0,
             vfs: None,
             handle: 0,
-            file: get_file_lock_by_userid(u32::MAX),
+            file: get_file_lock_by_userid(i32::MAX),
             backup_handle: 0,
         };
         path_c.push('\0');
@@ -247,7 +247,7 @@ impl<'a> Database<'a> {
     }
 
     /// create default database
-    pub fn default_new(userid: u32) -> Result<Database<'a>, SqliteErrCode> {
+    pub fn default_new(userid: i32) -> Result<Database<'a>, SqliteErrCode> {
         let path = fmt_db_path(userid);
         let mut path_c = path.clone();
         let mut back_path_c = fmt_backup_path(path.as_str());
@@ -301,7 +301,7 @@ impl<'a> Database<'a> {
 
     /// open database with version update callback
     pub fn default_new_with_version_update(
-        userid: u32,
+        userid: i32,
         ver: u32,
         callback: UpdateDatabaseCallbackFunc,
     ) -> Result<Database<'a>, SqliteErrCode> {
@@ -335,7 +335,7 @@ impl<'a> Database<'a> {
             flags,
             vfs,
             handle: 0,
-            file: get_file_lock_by_userid(u32::MAX),
+            file: get_file_lock_by_userid(i32::MAX),
             backup_handle: 0,
         };
         path_c.push('\0');
@@ -366,13 +366,13 @@ impl<'a> Database<'a> {
     }
 
     /// delete default database
-    pub fn drop_default_database(userid: u32) -> std::io::Result<()> {
+    pub fn drop_default_database(userid: i32) -> std::io::Result<()> {
         let path = fmt_db_path(userid);
         Database::drop_database(path.as_str())
     }
 
     /// delete default database and backup db
-    pub fn drop_default_database_and_backup(userid: u32) -> std::io::Result<()> {
+    pub fn drop_default_database_and_backup(userid: i32) -> std::io::Result<()> {
         let path = fmt_db_path(userid);
         let back_path = fmt_backup_path(path.as_str());
         let ret = Database::drop_database(path.as_str());

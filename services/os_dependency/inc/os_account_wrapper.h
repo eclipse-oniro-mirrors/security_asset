@@ -13,19 +13,19 @@
  * limitations under the License.
  */
 
-#include "os_account_wrapper.h"
+#ifndef OS_ACCOUNT_WRAPPER
+#define OS_ACCOUNT_WRAPPER
 
-#include "asset_log.h"
-#include "os_account_manager.h"
+#include <stdint.h>
 
-bool GetUserIdByUid(uint64_t uid, uint32_t *userId)
-{
-    int userIdInt;
-    int res = OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userIdInt);
-    if (res != 0) {
-        LOGE("get userid from uid failed! res is %{public}i", res);
-        return false;
-    }
-    *userId = static_cast<uint32_t>(userIdInt);
-    return true;
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+bool GetUserIdByUid(uint64_t uid, uint32_t *userId);
+
+#ifdef __cplusplus
 }
+#endif
+
+#endif

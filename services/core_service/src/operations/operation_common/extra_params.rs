@@ -44,7 +44,7 @@ fn get_update_time(params: &mut AssetInnerMap) -> Result<()> {
     let sys_time_res = SystemTime::now().duration_since(UNIX_EPOCH);
     if sys_time_res.is_err() {
         loge!("get sys_time_res faield!");
-        return Err(ErrCode::Failed);
+        return Err(ErrCode::Failed); //SYSTEM_TIME_GET_ERROR
     }
     let time_string = sys_time_res.unwrap().as_millis().to_string();
     params.insert(G_COLUMN_UPDATE_TIME, InnerValue::Text(time_string.into_bytes()));
@@ -55,7 +55,7 @@ fn get_create_time(params: &mut AssetInnerMap) -> Result<()> {
     let sys_time_res = SystemTime::now().duration_since(UNIX_EPOCH);
     if sys_time_res.is_err() {
         loge!("get sys_time_res faield!");
-        return Err(ErrCode::Failed);
+        return Err(ErrCode::Failed); //SYSTEM_TIME_GET_ERROR
     }
     let time_string = sys_time_res.unwrap().as_millis().to_string();
     params.insert(G_COLUMN_CREATE_TIME, InnerValue::Text(time_string.into_bytes()));

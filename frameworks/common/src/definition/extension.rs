@@ -16,9 +16,8 @@
 //! This module extends the function of Asset data structure.
 
 use super::{
-    AssetMap, DataType, ErrCode, IntoValue, Insert,
-    Result, Tag, Value, Accessibility, AuthType,
-    ConflictResolution, ReturnType, SyncType
+    Accessibility, AssetMap, AuthType, ConflictResolution, DataType, ErrCode, Insert, IntoValue,
+    Result, ReturnType, SyncType, Tag, Value,
 };
 use crate::loge;
 
@@ -123,7 +122,7 @@ impl Insert for AssetMap {
                 }
                 loge!("Insert bool failed!");
                 Err(ErrCode::InvalidArgument)
-            }
+            },
             DataType::Uint32 => {
                 if let Value::Number(real) = value.into_value() {
                     self.insert(key, Value::Number(real));

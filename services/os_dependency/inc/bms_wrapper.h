@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef OS_ACCOUNT_WRAPPER
-#define OS_ACCOUNT_WRAPPER
+#ifndef BMS_WRAPPER
+#define BMS_WRAPPER
 
 #include <stdint.h>
 
@@ -22,8 +22,10 @@
 extern "C" {
 #endif
 
-bool GetUserIdByUid(uint64_t uid, uint32_t *userId);
-
+bool GetCallingOwnerType(uint32_t callingTokenId, int32_t *ownerType);
+bool GetCallingToken(uint32_t *tokenId);
+const char * GetCallingProcessName(uint32_t tokenId);
+const char * GetHapOwnerInfo(uint32_t tokenId, int32_t userId);
 #ifdef __cplusplus
 }
 #endif

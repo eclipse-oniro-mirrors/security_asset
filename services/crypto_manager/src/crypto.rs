@@ -24,7 +24,7 @@ use std::ptr::{copy_nonoverlapping, null_mut};
 /// KeyInfo struct
 pub struct KeyInfo {
     /// User id
-    pub user_id: u32,
+    pub user_id: i32,
     /// Uid
     pub uid: u64,
     /// Auth_type
@@ -285,7 +285,7 @@ impl Crypto {
         };
         if ret != HKS_SUCCESS {
             loge!("Encrypt HksInit Failed.");
-            return Err(ErrCode::Failed);
+            return Err(ErrCode::Failed); //CRYPTO_FAIL
         }
         let mut indata = HksBlob { size: msg.len() as u32, data: msg.as_ptr() };
         let cipher: Vec<u8> = vec![0; AES_COMMON_SIZE as usize];
@@ -300,7 +300,7 @@ impl Crypto {
         };
         if ret != HKS_SUCCESS {
             loge!("Encrypt update_and_finish Failed.");
-            return Err(ErrCode::Failed);
+            return Err(ErrCode::Failed); //CRYPTO_FAIL
         }
 
         let mut cipher_final: Vec<u8> = vec![0; cipher_text.size as usize];
@@ -323,7 +323,7 @@ impl Crypto {
 
         // take the AEAD from cipher.
         if cipher.len() < AEAD_SIZE as usize {
-            return Err(ErrCode::Failed);
+            return Err(ErrCode::InvalidArgument);
         }
         let cipher_without_aead_size = cipher.len() - AEAD_SIZE as usize;
         let mut AEAD_VEC: Vec<u8> = vec![0; AEAD_SIZE as usize];
@@ -395,7 +395,7 @@ impl Crypto {
         };
         if ret != HKS_SUCCESS {
             loge!("Decrypt Init Failed.");
-            return Err(ErrCode::Failed);
+            return Err(ErrCode::Failed); //CRYPTO_FAIL
         }
 
         let plain: Vec<u8> = vec![0; cipher.len()];
@@ -410,7 +410,7 @@ impl Crypto {
         };
         if ret != HKS_SUCCESS {
             loge!("Decrypt update_and_finish Failed.");
-            return Err(ErrCode::Failed);
+            return Err(ErrCode::Failed); //CRYPTO_FAIL
         }
         Ok(plain)
     }

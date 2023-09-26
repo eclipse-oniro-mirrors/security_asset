@@ -15,19 +15,22 @@
 
 //! This file implement the asset param check
 
+use asset_common::{
+    definition::{ErrCode, Result},
+    loge, logi,
+};
 use std::{fs, path::Path};
-use asset_common::{definition::{ErrCode, Result}, loge, logi};
 
 const ROOT_PATH: &str = "data/service/el1/public/asset_service";
 
-pub(crate) fn create_user_db_dir(user_id: u32) -> Result<()> {
+pub(crate) fn create_user_db_dir(user_id: i32) -> Result<()> {
     let path_str = format!("{}/{}", ROOT_PATH, user_id);
     let path = Path::new(&path_str);
     if !path.exists() {
         match fs::create_dir(path) {
             Err(e) if e.kind() != std::io::ErrorKind::AlreadyExists => {
                 loge!("create dir failed! error is [{}]", e);
-                return Err(ErrCode::Failed);
+                return Err(ErrCode::Failed); //FILE_OPERATION_FAIL
             },
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
                 logi!("dir already exists");

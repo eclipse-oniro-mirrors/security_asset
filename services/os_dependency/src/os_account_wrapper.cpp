@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,27 +13,20 @@
  * limitations under the License.
  */
 
-//! This crate implements the asset
-#![allow(dead_code)]
+#include "os_account_wrapper.h"
 
-use asset_common::{
-    definition::{ErrCode, Result},
-    loge,
-};
+#include "os_account_manager.h"
 
-extern "C" {
-    fn GetUserIdByUid(uid: u64, userId: &mut i32) -> bool;
-}
+#include "asset_log.h"
 
-/// xxx
-pub(crate) fn get_calling_user_id(uid: u64) -> Result<i32> {
-    unsafe {
-        let mut user_id = 0;
-        if GetUserIdByUid(uid, &mut user_id) {
-            Ok(user_id)
-        } else {
-            loge!("get userid failed!");
-            Err(ErrCode::Failed) // ACCOUNT_FAIL
-        }
+bool GetUserIdByUid(uint64_t uid, uint32_t *userId)
+{
+    int userIdInt;
+    int res = OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userIdInt);
+    if (res != 0) {
+        LOGE("get userid from uid failed! res is %{public}i", res);
+        return false;
     }
+    *userId = static_cast<uint32_t>(userIdInt);
+    return true;
 }

@@ -763,7 +763,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
 impl<'a> DefaultDatabaseHelper<'a> {
     /// open default database and table
-    pub fn open_default_database_table(userid: u32) -> Result<DefaultDatabaseHelper<'a>, ErrCode> {
+    pub fn open_default_database_table(userid: i32) -> Result<DefaultDatabaseHelper<'a>, ErrCode> {
         let mut db = Database::default_new(userid).map_err(from_sqlite_code_to_asset_code)?;
         let _lock = db.file.mtx.lock().unwrap();
         match open_default_table(&mut db) {
@@ -781,7 +781,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// open default database and table, if need update db version, input callback
     pub fn open_default_database_table_with_version_update(
-        userid: u32,
+        userid: i32,
         version_new: u32,
         callback: UpdateDatabaseCallbackFunc,
     ) -> Result<DefaultDatabaseHelper<'a>, ErrCode> {
@@ -804,7 +804,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     /// see TableHelper
     #[inline(always)]
     pub fn update_datas_default_once(
-        userid: u32,
+        userid: i32,
         owner: &str,
         alias: &str,
         datas: &Vec<Pair>,
@@ -817,7 +817,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     /// see TableHelper
     #[inline(always)]
     pub fn insert_datas_default_once(
-        userid: u32,
+        userid: i32,
         owner: &str,
         alias: &str,
         datas: &Vec<Pair>,
@@ -830,7 +830,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     /// see TableHelper
     #[inline(always)]
     pub fn insert_multi_datas_default_once(
-        userid: u32,
+        userid: i32,
         columns: &Vec<&str>,
         datas: &Vec<Vec<DataValue>>,
     ) -> Result<i32, ErrCode> {
@@ -842,7 +842,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     /// see TableHelper
     #[inline(always)]
     pub fn delete_datas_default_once(
-        userid: u32,
+        userid: i32,
         owner: &str,
         alias: &str,
         cond: &Condition,
@@ -855,7 +855,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     /// see TableHelper
     #[inline(always)]
     pub fn is_data_exists_default_once(
-        userid: u32,
+        userid: i32,
         owner: &str,
         alias: &str,
     ) -> Result<bool, ErrCode> {
@@ -866,7 +866,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn select_count_default_once(userid: u32, owner: &str) -> Result<u32, ErrCode> {
+    pub fn select_count_default_once(userid: i32, owner: &str) -> Result<u32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.select_count_default(owner)
@@ -875,7 +875,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     /// see TableHelper
     #[inline(always)]
     pub fn query_datas_default_once(
-        userid: u32,
+        userid: i32,
         owner: &str,
         alias: &str,
         condition: &Condition,
@@ -888,7 +888,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     /// see TableHelper
     #[inline(always)]
     pub fn query_columns_default_once(
-        userid: u32,
+        userid: i32,
         columns: &Vec<&str>,
         owner: &str,
         alias: &str,
@@ -907,7 +907,7 @@ pub type TransactionCallback = fn(db: &Database) -> bool;
 /// do transaction
 /// if commit, return true
 /// if rollback, return false
-pub fn do_transaction(userid: u32, callback: TransactionCallback) -> Result<bool, ErrCode> {
+pub fn do_transaction(userid: i32, callback: TransactionCallback) -> Result<bool, ErrCode> {
     let db = match DefaultDatabaseHelper::open_default_database_table(userid) {
         Ok(o) => o,
         Err(e) => {

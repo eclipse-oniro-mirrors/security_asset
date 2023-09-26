@@ -20,7 +20,7 @@ mod calling_owner_type;
 mod calling_owner_user_id;
 
 use asset_common::definition::Result;
-use calling_owner_type::{OwnerType, get_calling_owner_type};
+use calling_owner_type::{get_calling_owner_type, OwnerType};
 use calling_owner_user_id::get_calling_user_id;
 
 use ipc_rust::get_calling_uid;
@@ -28,7 +28,7 @@ use ipc_rust::get_calling_uid;
 /// calling info
 pub(crate) struct CallingInfo {
     owner_type: OwnerType,
-    user_id: u32,
+    user_id: i32,
     uid: u64,
 }
 
@@ -36,11 +36,8 @@ impl CallingInfo {
     /// x
     pub(crate) fn build() -> Result<Self> {
         let uid = get_calling_uid();
-        Ok(CallingInfo {
-            uid,
-            owner_type: get_calling_owner_type(uid),
-            user_id: get_calling_user_id(uid)?
-        })
+        let user_id = get_calling_user_id(uid)?;
+        Ok(CallingInfo { uid, owner_type: get_calling_owner_type(uid, user_id)?, user_id })
     }
 
     /// x
@@ -54,7 +51,7 @@ impl CallingInfo {
     }
 
     /// x
-    pub(crate) fn user_id(&self) -> u32 {
+    pub(crate) fn user_id(&self) -> i32 {
         self.user_id
     }
 
