@@ -132,7 +132,7 @@ napi_value NapiAdd(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = OH_Asset_AddAsset(context->attrs, context->attrCnt);
+            context->result = OH_Asset_Add(context->attrs, context->attrCnt);
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -142,7 +142,7 @@ napi_value NapiRemove(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = OH_Asset_RemoveAsset(context->attrs, context->attrCnt);
+            context->result = OH_Asset_Remove(context->attrs, context->attrCnt);
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -153,7 +153,7 @@ napi_value NapiUpdate(napi_env env, napi_callback_info info)
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
             context->result =
-                OH_Asset_UpdateAsset(context->attrs, context->attrCnt, context->updateAttrs, context->updateAttrCnt);
+                OH_Asset_Update(context->attrs, context->attrCnt, context->updateAttrs, context->updateAttrCnt);
         };
     return NapiEntry(env, info, __func__, execute, UPDATE_MAX_ARGS_NUM);
 }
@@ -163,7 +163,7 @@ napi_value NapiPreQuery(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = OH_Asset_PreQueryAsset(context->attrs, context->attrCnt, &context->challenge);
+            context->result = OH_Asset_PreQuery(context->attrs, context->attrCnt, &context->challenge);
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -173,7 +173,7 @@ napi_value NapiQuery(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = OH_Asset_QueryAsset(context->attrs, context->attrCnt, &context->resultSet);
+            context->result = OH_Asset_Query(context->attrs, context->attrCnt, &context->resultSet);
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -183,7 +183,7 @@ napi_value NapiPostQuery(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = OH_Asset_PostQueryAsset(context->attrs, context->attrCnt);
+            context->result = OH_Asset_PostQuery(context->attrs, context->attrCnt);
         };
     return NapiEntry(env, info, __func__, execute);
 }

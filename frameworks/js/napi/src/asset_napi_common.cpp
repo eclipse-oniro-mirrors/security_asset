@@ -71,7 +71,7 @@ if ((condition)) {                                                              
 void FreeAttrIfNeed(Asset_Attr &attr)
 {
     if ((attr.tag & ASSET_TAG_TYPE_MASK) == ASSET_TYPE_BYTES) {
-        OH_Asset_FreeAssetBlob(&attr.value.blob);
+        OH_Asset_FreeBlob(&attr.value.blob);
     }
 }
 
@@ -93,7 +93,7 @@ void FreeAssetAttrs(AsyncContext *context)
         AssetFree(context->updateAttrs);
         context->updateAttrs = nullptr;
     }
-    OH_Asset_FreeAssetBlob(&context->challenge);
+    OH_Asset_FreeBlob(&context->challenge);
     // todo: delete reasultSet
 }
 

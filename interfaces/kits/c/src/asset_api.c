@@ -23,33 +23,33 @@
 extern int32_t AddAssetC2Rust(const Asset_Attr *attributes, uint32_t attrCnt);
 extern int32_t RemoveAssetC2Rust(const Asset_Attr *query, uint32_t queryCnt);
 
-int32_t OH_Asset_AddAsset(const Asset_Attr *attributes, uint32_t attrCnt)
+int32_t OH_Asset_Add(const Asset_Attr *attributes, uint32_t attrCnt)
 {
     return AddAssetC2Rust(attributes, attrCnt);
 }
 
-int32_t OH_Asset_RemoveAsset(const Asset_Attr *query, uint32_t queryCnt)
+int32_t OH_Asset_Remove(const Asset_Attr *query, uint32_t queryCnt)
 {
     return RemoveAssetC2Rust(query, queryCnt);
 }
 
-int32_t OH_Asset_UpdateAsset(const Asset_Attr *query, uint32_t queryCnt,
+int32_t OH_Asset_Update(const Asset_Attr *query, uint32_t queryCnt,
     const Asset_Attr *attributesToUpdate, uint32_t updateCnt)
 {
     return ASSET_SUCCESS;
 }
 
-int32_t OH_Asset_PreQueryAsset(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob *challenge)
+int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob *challenge)
 {
     return ASSET_SUCCESS;
 }
 
-int32_t OH_Asset_QueryAsset(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultSet *result)
+int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultSet *result)
 {
     return ASSET_SUCCESS;
 }
 
-int32_t OH_Asset_PostQueryAsset(const Asset_Attr *handle, uint32_t handleCnt)
+int32_t OH_Asset_PostQuery(const Asset_Attr *handle, uint32_t handleCnt)
 {
     return ASSET_SUCCESS;
 }
@@ -75,7 +75,7 @@ Asset_Attr *OH_Asset_ParseAttr(const Asset_Result *result, Asset_Tag tag)
     return NULL;
 }
 
-void OH_Asset_FreeAssetBlob(Asset_Blob *blob)
+void OH_Asset_FreeBlob(Asset_Blob *blob)
 {
     if (blob == NULL || blob->data == NULL || blob->size == 0) {
         return;
@@ -86,7 +86,7 @@ void OH_Asset_FreeAssetBlob(Asset_Blob *blob)
     blob->size = 0;
 }
 
-void OH_Asset_FreeAssetResultSet(Asset_ResultSet *resultSet)
+void OH_Asset_FreeResultSet(Asset_ResultSet *resultSet)
 {
     if (resultSet == NULL || resultSet->results == NULL || resultSet->count == 0) {
         return;
@@ -100,7 +100,7 @@ void OH_Asset_FreeAssetResultSet(Asset_ResultSet *resultSet)
         }
         for (uint32_t j = 0; j < attrCnt; j++) {
             if ((attrs[j].tag & ASSET_TAG_TYPE_MASK) == ASSET_TYPE_BYTES) {
-                OH_Asset_FreeAssetBlob(&attrs[j].value.blob);
+                OH_Asset_FreeBlob(&attrs[j].value.blob);
             }
         }
         resultSet->results[i].attrs = NULL;
