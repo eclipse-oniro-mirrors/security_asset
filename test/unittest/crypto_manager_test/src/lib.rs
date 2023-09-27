@@ -15,7 +15,8 @@
 use crypto_manager::crypto::*;
 use crypto_manager::huks_ffi::*;
 
-/*
+pub const AAD_SIZE: u32 = 16;
+
 #[test]
 fn test_hukkey_new() {
     let info = KeyInfo { user_id: 1, uid: 2, auth_type: 3, access_type: 4 };
@@ -67,7 +68,7 @@ fn test_hukkey_encrypt() {
     let info = KeyInfo { user_id: 1, uid: 2, auth_type: 0, access_type: 0 };
     let secret_key = SecretKey::new(info);
     let generate_res = secret_key.generate();
-    let mut crypto = Crypto { key: secret_key };
+    let crypto = Crypto { key: secret_key };
 
     if generate_res != HKS_SUCCESS {
         panic!("test_hukkey_encrypt fail because generate error = {}", generate_res);
@@ -101,15 +102,14 @@ fn test_hukkey_encrypt() {
     }
     crypto.key.delete();
 }
-*/
 
 #[test]
 #[allow(non_snake_case)]
 fn test_hukkey_decrypt() {
-    let info = KeyInfo { user_id: 1, uid: 2, auth_type: 3, access_type: 4 };
+    let info = KeyInfo { user_id: 1, uid: 1, auth_type: 3, access_type: 4 };
     let secret_key = SecretKey::new(info);
     let generate_res = secret_key.generate();
-    let mut crypto = Crypto { key: secret_key };
+    let crypto = Crypto { key: secret_key };
     if generate_res != HKS_SUCCESS {
         panic!("test_hukkey_decrypt fail because generate key error = {}", generate_res);
     }
@@ -133,7 +133,7 @@ fn test_hukkey_decrypt() {
                 panic!("test_hukkey_decrypt fail because cipher_text equals indata.");
             }
 
-            println!("encrypt pass, now decrypt...");
+            println!("encrypt pass, now decrypt..., cipher is {:?}", cipher);
             let decrypt_res = crypto.decrypt(&cipher, &aad);
             match decrypt_res {
                 Ok(plain) => {
@@ -145,7 +145,7 @@ fn test_hukkey_decrypt() {
                             break;
                         }
                     }
-                    if flag {
+                    if !flag {
                         crypto.key.delete();
                         panic!("test_hukkey_decrypt fail because plain_text not equals inData");
                     }

@@ -12,39 +12,29 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//build/test.gni")
+
 COMPONENT_DIR = "//base/security/asset"
 
-ohos_rust_static_library("crypto_manager") {
+ohos_static_library("crypto_manager_wrapper") {
+  subsystem_name = "security"
+  part_name = "asset"
+
   sources = [
-    "src/crypto.rs",
-    "src/huks_ffi.rs",
-    "src/lib.rs",
+    "src/crypto_wrapper.cpp",
+    "src/hks_key.cpp",
+  ]
+
+  include_dirs = [
+    "inc",
+    "$COMPONENT_DIR/frameworks/os_dependency/log/inc",
   ]
 
   deps = [
-    "$COMPONENT_DIR/frameworks/common:asset_common",
-    "$COMPONENT_DIR/services/crypto_manager/crypto_manager_wrapper:crypto_manager_wrapper",
+    "//third_party/bounds_checking_function:libsec_shared",
   ]
 
   external_deps = [
-    "hilog:hilog_rust",
+    "hilog:libhilog",
     "huks:libhukssdk",
   ]
-
-  crate_name = "crypto_manager"
-  crate_type = "rlib"
-
-  subsystem_name = "security"
-  part_name = "asset"
-}
-
-module_output_path = "asset/crypto_manager"
-
-ohos_rust_unittest("crypto_manager_test") {
-  module_out_path = module_output_path
-  sources = [ "../../test/unittest/crypto_manager_test/src/lib.rs" ]
-  deps = [ "$COMPONENT_DIR/services/crypto_manager:crypto_manager" ]
-  subsystem_name = "security"
-  part_name = "asset"
 }

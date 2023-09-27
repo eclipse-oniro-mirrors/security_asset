@@ -50,7 +50,7 @@ pub(crate) fn encrypt(calling_info: &CallingInfo, input: &AssetMap, secret: &Vec
         logi!("generete key res is [{}]", res);
         // return Err() // todo
     }
-    let mut crypto = Crypto { key: secret_key };
+    let crypto = Crypto { key: secret_key };
 
     crypto.encrypt(secret, &construct_aad(calling_info, auth_type, access_type))
 }
@@ -66,7 +66,7 @@ pub(crate) fn decrypt(calling_info: &CallingInfo, auth_type: &u32, access_type: 
         logi!("generete key res is [{}]", res);
         // return Err() // todo
     }
-    let mut crypto = Crypto { key: secret_key };
+    let crypto = Crypto { key: secret_key };
 
     crypto.decrypt(cipher, &construct_aad(calling_info, auth_type, access_type))
 }
