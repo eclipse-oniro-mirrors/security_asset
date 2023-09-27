@@ -48,7 +48,7 @@ extern "C" {
  *
  * @param attributes Indicates the pointer to the array including attributes of the Asset to be added.
  * @param attrCnt Indicates the count of elements in attributes array.
- * @return Returns {@link OH_Asset_ErrCode#OH_ASSET_SUCCESS} if the operation is successful;
+ * @return Returns {@link Asset_ResultCode#ASSET_SUCCESS} if the operation is successful;
  *    returns an error code otherwise.
  * @since 11
  */
@@ -59,7 +59,7 @@ int32_t OH_Asset_Add(const Asset_Attr *attributes, uint32_t attrCnt);
  *
  * @param query Indicates the pointer to the array including attributes of the Asset to be removed.
  * @param queryCnt Indicates the count of elements in query array.
- * @return Returns {@link OH_Asset_ErrCode#OH_ASSET_SUCCESS} if the operation is successful;
+ * @return Returns {@link Asset_ResultCode#ASSET_SUCCESS} if the operation is successful;
  *    returns an error code otherwise.
  * @since 11
  */
@@ -72,7 +72,7 @@ int32_t OH_Asset_Remove(const Asset_Attr *query, uint32_t queryCnt);
  * @param queryCnt Indicates the count of elements in query array.
  * @param attributesToUpdate Indicates the pointer to the array including attributes with new values.
  * @param updateCnt Indicates the count of elements in attributesToUpdate array.
- * @return Returns {@link OH_Asset_ErrCode#OH_ASSET_SUCCESS} if the operation is successful;
+ * @return Returns {@link Asset_ResultCode#ASSET_SUCCESS} if the operation is successful;
  *    returns an error code otherwise.
  * @since 11
  */
@@ -86,7 +86,7 @@ int32_t OH_Asset_Update(const Asset_Attr *query, uint32_t queryCnt,
  * @param queryCnt Indicates the count of elements in query array.
  * @param challenge Indicates the pointer to the challenge value obtained
 *      which is used later in {@link OH_Asset_Query}.
- * @return Returns {@link OH_Asset_ErrCode#OH_ASSET_SUCCESS} if the operation is successful;
+ * @return Returns {@link Asset_ResultCode#ASSET_SUCCESS} if the operation is successful;
  *    returns an error code otherwise.
  * @since 11
  */
@@ -98,7 +98,7 @@ int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob
  * @param query Indicates the pointer to the array including attributes of the Asset to be queried.
  * @param queryCnt Indicates the count of elements in query array.
  * @param result Indicates pointer to the array including query results.
- * @return Returns {@link OH_Asset_ErrCode#OH_ASSET_SUCCESS} if the operation is successful;
+ * @return Returns {@link Asset_ResultCode#ASSET_SUCCESS} if the operation is successful;
  *    returns an error code otherwise.
  * @since 11
  */
@@ -109,7 +109,7 @@ int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultS
  *
  * @param handle Indicates the pointer to the array including challenge obtained from {@link OH_Asset_PreQuery}.
  * @param handleCnt Indicates the count of elements in handle array.
- * @return Returns {@link OH_Asset_ErrCode#OH_ASSET_SUCCESS} if the operation is successful;
+ * @return Returns {@link Asset_ResultCode#ASSET_SUCCESS} if the operation is successful;
  *    returns an error code otherwise.
  * @since 11
  */

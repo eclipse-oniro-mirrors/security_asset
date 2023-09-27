@@ -25,7 +25,7 @@ fn add_asset_inner(alias: &[u8]) {
 
     input.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlock).unwrap();
     input.insert_attr(Tag::Alias, alias.to_owned()).unwrap();
-    input.insert_attr(Tag::ConfictPolicy, ConflictResolution::Overwrite).unwrap();
+    input.insert_attr(Tag::ConflictResolution, ConflictResolution::Overwrite).unwrap();
 
     match asset_sdk::Manager::build() {
         Ok(manager) => {

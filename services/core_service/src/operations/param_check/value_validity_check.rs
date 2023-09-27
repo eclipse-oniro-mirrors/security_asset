@@ -123,13 +123,13 @@ fn check_sync_type(value: &Value) -> Result<()> {
     Ok(())
 }
 
-fn check_conflict_policy(value: &Value) -> Result<()> {
+fn check_conflict_resolution(value: &Value) -> Result<()> {
     let Value::Number(v) = value else {
-        loge!("convert value to Value::Number in check_conflict_policy failed!");
-        panic!("convert value to Value::Number in check_conflict_policy failed!")
+        loge!("convert value to Value::Number in check_conflict resolution failed!");
+        panic!("convert value to Value::Number in check_conflict resolution failed!")
     };
     if ConflictResolution::try_from(*v).is_err() {
-        loge!("check conflict policy value failed!");
+        loge!("check conflict resolution value failed!");
         return Err(ErrCode::InvalidArgument);
     }
     Ok(())
@@ -217,7 +217,7 @@ fn match_tag_and_check(tag: &Tag, value: &Value) -> Result<()> {
         Tag::AuthChallenge => check_challenge(value),
         Tag::AuthToken => check_auth_token(value),
         Tag::SyncType => check_sync_type(value),
-        Tag::ConfictPolicy => check_conflict_policy(value),
+        Tag::ConflictResolution => check_conflict_resolution(value),
         Tag::DataLabelCritical1 => check_data_label_critical(value),
         Tag::DataLabelCritical2 => check_data_label_critical(value),
         Tag::DataLabelCritical3 => check_data_label_critical(value),

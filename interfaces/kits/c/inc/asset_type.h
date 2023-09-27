@@ -248,14 +248,14 @@ typedef enum {
      */
     ASSET_FILE_OPERATION_ERROR = 24000015,
     /**
-     * The error code indicates that the operation of file is failed.
+     * The error code indicates that the operation of get system time is failed.
      */
     ASSET_SYSTEM_TIME_GET_ERROR = 24000016,
     /**
      * The error code indicates that the amount of map element or other limited quotas exceed the limit.
      */
     ASSET_EXCEED_LIMIT = 24000017,
-} Asset_ErrCode;
+} Asset_ResultCode;
 
 /**
  * @brief An enum type indicates when the Asset is accessible.

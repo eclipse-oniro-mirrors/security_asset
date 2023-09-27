@@ -70,7 +70,7 @@ impl_enum_trait! {
         SyncType = DataType::Uint32 as isize | 0x10,
 
         /// A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
-        ConfictPolicy = DataType::Uint32 as isize | 0x11,
+        ConflictResolution = DataType::Uint32 as isize | 0x11,
 
         /// A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
         DataLabelCritical1 = DataType::Bytes as isize | 0x20,

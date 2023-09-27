@@ -669,7 +669,7 @@ declare namespace asset {
      */
     FILE_OPERATION_ERROR = 24000015,
     /**
-     * The error code indicates that the operation of file is failed.
+     * The error code indicates that the operation of get system time is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11

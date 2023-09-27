@@ -55,7 +55,7 @@ pub(crate) fn check_required_tags(params: &AssetMap, code: &ParamCode) -> Result
 
 const ADD_AVAILABLE_PARAMS: [Tag; 15] = [
     Tag::Secret, Tag::Alias, Tag::Accessibility, Tag::RequirePasswordSet, Tag::AuthType, Tag::SyncType,
-    Tag::ConfictPolicy, Tag::DataLabelCritical1, Tag::DataLabelCritical2, Tag::DataLabelCritical3,
+    Tag::ConflictResolution, Tag::DataLabelCritical1, Tag::DataLabelCritical2, Tag::DataLabelCritical3,
     Tag::DataLabelCritical4, Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4
 ];
 
