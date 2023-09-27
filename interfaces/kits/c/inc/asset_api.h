@@ -68,7 +68,7 @@ int32_t OH_Asset_Remove(const Asset_Attr *query, uint32_t queryCnt);
 /**
  * @brief Update an Asset that matches a search query.
  *
- * @param query Indicates the pointer to the array of parameters to add. of the Asset to be updated.
+ * @param query Indicates the pointer to a array of attributes of the Asset to be updated.
  * @param queryCnt Indicates the count of elements in query array.
  * @param attributesToUpdate Indicates the pointer to the array including attributes with new values.
  * @param updateCnt Indicates the count of elements in attributesToUpdate array.
