@@ -27,7 +27,7 @@ declare namespace asset {
   /**
    * Add an Asset.
    *
-   * @param { AssetMap } attributes - a map object including attributes of the Asset to be added.
+   * @param { AssetMap } attributes - a map object containing attributes of the Asset to be added.
    * @param { AsyncCallback<void> } callback - the callback function for add operation.
    * @syscap SystemCapability.Security.Asset
    * @since 11
@@ -37,7 +37,7 @@ declare namespace asset {
   /**
    * Add an Asset.
    *
-   * @param { AssetMap } attributes - a map object including attributes of the Asset to be added.
+   * @param { AssetMap } attributes - a map object containing attributes of the Asset to be added.
    * @returns { Promise<void> } the promise object returned by the function.
    * @syscap SystemCapability.Security.Asset
    * @since 11
@@ -47,7 +47,7 @@ declare namespace asset {
   /**
    * Remove one or more Assets that match a search query.
    *
-   * @param { AssetMap } query - a map object including attributes of the Asset to be removed.
+   * @param { AssetMap } query - a map object containing attributes of the Asset to be removed.
    * @param { AsyncCallback<void> } callback - the callback function for remove operation.
    * @syscap SystemCapability.Security.Asset
    * @since 11
@@ -57,7 +57,7 @@ declare namespace asset {
   /**
    * Remove one or more Assets that match a search query.
    *
-   * @param { AssetMap } query - a map object including attributes of the Asset to be removed.
+   * @param { AssetMap } query - a map object containing attributes of the Asset to be removed.
    * @returns { Promise<void> } the promise object returned by the function.
    * @syscap SystemCapability.Security.Asset
    * @since 11
@@ -67,8 +67,8 @@ declare namespace asset {
   /**
    * Update an Asset that matches a search query.
    *
-   * @param { AssetMap } query - a map object including attributes of the Asset to be updated.
-   * @param { AssetMap } attributesToUpdate - a map object including attributes with new values.
+   * @param { AssetMap } query - a map object containing attributes of the Asset to be updated.
+   * @param { AssetMap } attributesToUpdate - a map object containing attributes with new values.
    * @param { AsyncCallback<void> } callback - the callback function for update operation.
    * @syscap SystemCapability.Security.Asset
    * @since 11
@@ -78,8 +78,8 @@ declare namespace asset {
   /**
    * Update an Asset that matches a search query.
    *
-   * @param { AssetMap } query - a map object including attributes of the Asset to be updated.
-   * @param { AssetMap } attributesToUpdate - a map object including attributes with new values.
+   * @param { AssetMap } query - a map object containing attributes of the Asset to be updated.
+   * @param { AssetMap } attributesToUpdate - a map object containing attributes with new values.
    * @returns { Promise<void> } the promise object returned by the function.
    * @syscap SystemCapability.Security.Asset
    * @since 11
@@ -89,7 +89,7 @@ declare namespace asset {
   /**
    * Preprocessing (e.g. get challenge) for querying one or more Assets that require user authentication.
    *
-   * @param { AssetMap } query - a map object including attributes of the Asset to be queried.
+   * @param { AssetMap } query - a map object containing attributes of the Asset to be queried.
    * @param { AsyncCallback<Uint8Array> } callback - the callback function for pre-query operation.
    * @syscap SystemCapability.Security.Asset
    * @since 11
@@ -99,7 +99,7 @@ declare namespace asset {
   /**
    * Preprocessing (e.g. get challenge) for querying one or more Assets that require user authentication.
    *
-   * @param { AssetMap } query - a map object including attributes of the Asset to be queried.
+   * @param { AssetMap } query - a map object containing attributes of the Asset to be queried.
    * @returns { Promise<Uint8Array> } the promise object returned by the function.
    * @syscap SystemCapability.Security.Asset
    * @since 11
@@ -109,7 +109,7 @@ declare namespace asset {
   /**
    * Query one or more Assets that match a search query.
    *
-   * @param { AssetMap } query - a map object including attributes of the Asset to be queried.
+   * @param { AssetMap } query - a map object containing attributes of the Asset to be queried.
    * @param { AsyncCallback<Array<AssetMap>> } callback - the callback function for query operation.
    * @syscap SystemCapability.Security.Asset
    * @since 11
@@ -119,7 +119,7 @@ declare namespace asset {
   /**
    * Query one or more Assets that match a search query.
    *
-   * @param { AssetMap } query - a map object including attributes of the Asset to be queried.
+   * @param { AssetMap } query - a map object containing attributes of the Asset to be queried.
    * @returns { Promise<Array<AssetMap>> } the promise object returned by the function.
    * @syscap SystemCapability.Security.Asset
    * @since 11
