@@ -18,7 +18,9 @@
 use asset_common::{definition::{AssetMap, ErrCode, Result, Value, Tag}, loge, logi};
 use db_operator::{
     types::{Pair, DataValue, AdvancedResultSet, ResultDataValue},
+    database::Database,
     database_table_helper::{
+        do_transaction,
         DefaultDatabaseHelper,
         G_COLUMN_ACCESS_TYPE, G_COLUMN_SECRET, G_COLUMN_ALIAS, G_COLUMN_AUTH_TYPE,
         G_COLUMN_SYNC_TYPE, G_COLUMN_CRITICAL1, G_COLUMN_CRITICAL2, G_COLUMN_CRITICAL3,
@@ -114,6 +116,32 @@ pub(crate) fn insert_data_once(alias: &str, calling_info: &CallingInfo, db_data:
     logi!("insert {} data", insert_num);
 
     Ok(insert_num)
+}
+
+pub(crate) fn replace_data_once(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<()> {
+    // get owner str
+    let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
+        loge!("get owner str faield!");
+        ErrCode::InvalidArgument
+    })?;
+
+    let replace_call = |db: &Database| -> bool {
+        if db.delete_datas_default(&owner_str, alias, &Vec::new()).is_err() {
+            loge!("remove asset in replace operation failed!");
+            return false;
+        }
+        if db.insert_datas_default(&owner_str, alias, db_data).is_err() {
+            loge!("insert asset in replace operation failed!");
+            return false;
+        }
+        true
+    };
+
+    if !do_transaction(calling_info.user_id(), replace_call)? {
+        loge!("do_transaction in replace_data_once failed!");
+        return Err(ErrCode::SqliteERROR);
+    }
+    Ok(())
 }
 
 pub(crate) fn data_exist_once(alias: &str, calling_info: &CallingInfo) -> Result<bool> {

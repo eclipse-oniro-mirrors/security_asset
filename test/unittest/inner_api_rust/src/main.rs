@@ -15,7 +15,7 @@
 
 use core::panic;
 
-use asset_sdk::definition::{AssetMap, Accessibility, Tag, Insert, AuthType, SyncType, Value};
+use asset_sdk::definition::{AssetMap, Accessibility, Tag, Insert, AuthType, SyncType, Value, ConflictResolution};
 
 fn add_asset_inner(alias: &[u8]) {
     let mut input = AssetMap::new();
@@ -25,6 +25,7 @@ fn add_asset_inner(alias: &[u8]) {
 
     input.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlock).unwrap();
     input.insert_attr(Tag::Alias, alias.to_owned()).unwrap();
+    input.insert_attr(Tag::ConfictPolicy, ConflictResolution::Overwrite).unwrap();
 
     match asset_sdk::Manager::build() {
         Ok(manager) => {
@@ -70,6 +71,17 @@ fn test_for_add() {
     }
 
     remove_asset_inner(&Vec::from("alias".as_bytes()));
+}
+
+#[test]
+fn test_for_add_conflict_overwrite() {
+    let alias = Vec::from("test_for_add_conflict_overwrite".as_bytes());
+    add_asset_inner(&alias);
+
+    // panic will occur if fail
+    add_asset_inner(&alias);
+
+    remove_asset_inner(&alias);
 }
 
 #[test]

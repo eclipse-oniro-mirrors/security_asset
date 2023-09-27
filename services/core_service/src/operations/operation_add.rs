@@ -28,7 +28,7 @@ use crate::{
     operations::operation_common::{
         get_alias, construst_extra_params, create_user_db_dir,
         construct_params_with_default, encrypt,
-        db_adapter::{set_extra_attrs, set_input_attr, insert_data_once, data_exist_once}
+        db_adapter::{set_extra_attrs, set_input_attr, insert_data_once, data_exist_once, replace_data_once}
     },
     calling_process_info::CallingInfo,
     definition_inner::AssetInnerMap
@@ -51,23 +51,6 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 
     let alias = get_alias(&input_new)?;
 
-    if data_exist_once(&alias, calling_info)? {
-        match input_new.get(&Tag::ConfictPolicy) {
-            Some(Value::Number(num)) if *num == ConflictResolution::ThrowError as u32 => {
-                loge!("alias already exists");
-                return Err(ErrCode::Duplicated);
-            },
-            Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {
-                todo!()
-                // todo delete asset data
-            }
-            _ => {
-                loge!("not found ConfictPolicy");
-                return Err(ErrCode::InvalidArgument);
-            },
-        }
-    }
-
     // a map collecting inner params
     let inner_params = construst_extra_params(calling_info, &IpcCode::Add)?;
 
@@ -87,6 +70,23 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
             value: DataValue::Blob(&cipher),
         }
     );
+
+    if data_exist_once(&alias, calling_info)? {
+        match input_new.get(&Tag::ConfictPolicy) {
+            Some(Value::Number(num)) if *num == ConflictResolution::ThrowError as u32 => {
+                loge!("alias already exists");
+                return Err(ErrCode::Duplicated);
+            },
+            Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {
+                return replace_data_once(&alias, calling_info, &db_data);
+                // todo delete asset data
+            }
+            _ => {
+                loge!("not found ConfictPolicy");
+                return Err(ErrCode::InvalidArgument);
+            },
+        }
+    }
 
     // call sql to add
     let insert_num =
