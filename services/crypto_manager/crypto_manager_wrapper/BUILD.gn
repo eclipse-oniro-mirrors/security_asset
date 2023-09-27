@@ -21,7 +21,7 @@ ohos_static_library("crypto_manager_wrapper") {
 
   sources = [
     "src/crypto_wrapper.cpp",
-    "src/hks_key.cpp",
+    "src/hks_key_wrapper.cpp",
   ]
 
   include_dirs = [

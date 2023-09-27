@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef CRYPTO_WRAPPER
-#define CRYPTO_WRAPPER
+#ifndef HKS_KEY_WRAPPER
+#define HKS_KEY_WRAPPER
 
 #include "hks_api.h"
 
@@ -22,10 +22,10 @@
 extern "C" {
 #endif
 
-int EncryptWrapper(uint32_t keyLen, const uint8_t *keyData, uint32_t aadLen, const uint8_t *aad,
-    uint32_t msgLen, const uint8_t *msg, uint32_t cipherLen, uint8_t *cipher);
-int DecryptWrapper(uint32_t keyLen, const uint8_t *keyData, uint32_t aadLen, const uint8_t *aad,
-    uint32_t cipherLen, const uint8_t *cipher, uint32_t plainLen, uint8_t *plain);
+int32_t InitParamSet(struct HksParamSet **paramSet, const struct HksParam *params, uint32_t paramcount);
+int32_t GenerateKey(uint32_t keyLen, const uint8_t *keyData);
+int32_t DeleteKey(uint32_t keyLen, const uint8_t *keyData);
+int32_t KeyExist(uint32_t keyLen, const uint8_t *keyData);
 
 #ifdef __cplusplus
 }
