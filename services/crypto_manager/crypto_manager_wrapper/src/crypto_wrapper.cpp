@@ -95,7 +95,20 @@ static struct HksParam g_decryptParams[] = {
     }
 };
 
-int32_t UpdateLoopFinish(const struct HksBlob *handle, const struct HksParamSet *paramSet,
+static int32_t CheckCryptParma(const struct CryptParam *data)
+{
+    if ((data == NULL) || (data->keyLen == 0 || data->keyData == NULL) ||
+        (data->dataInLen == 0 || data->dataIn == NULL) ||
+        (data->aadLen == 0 || data->aad == NULL) ||
+        (data->dataOutLen ==0 || data->dataOut == NULL)) {
+        LOGE("hks invalid argument\n");
+        return HKS_FAILURE;
+    }
+
+    return HKS_SUCCESS;
+}
+
+static int32_t UpdateLoopFinish(const struct HksBlob *handle, const struct HksParamSet *paramSet,
     const struct HksBlob *inData, struct HksBlob *outData)
 {
     /* donnot need update, just finish */
@@ -119,13 +132,15 @@ int32_t UpdateLoopFinish(const struct HksBlob *handle, const struct HksParamSet 
     return HKS_SUCCESS;
 }
 
-int EncryptWrapper(const struct CryptParam *data)
+int32_t EncryptWrapper(const struct CryptParam *data)
 {
-    if ((data == NULL) || (data->keyLen == 0 || data->keyData == NULL) ||
-        (data->dataInLen == 0 || data->dataIn == NULL) ||
-        (data->aadLen == 0 || data->aad == NULL) ||
-        (data->dataOutLen != (data->dataInLen + AEAD_SIZE + NONCE_SIZE) || data->dataOut == NULL)) {
+    if (CheckCryptParma(data) != HKS_SUCCESS) {
         LOGE("hks encrypt invalid argument\n");
+        return HKS_FAILURE;
+    }
+
+    if (data->dataOutLen != data->dataInLen + AEAD_SIZE + NONCE_SIZE) {
+        LOGE("hks encrypt cipher len not match\n");
         return HKS_FAILURE;
     }
 
@@ -168,13 +183,16 @@ END:
     return ret;
 }
 
-int DecryptWrapper(const struct CryptParam *data)
+int32_t DecryptWrapper(const struct CryptParam *data)
 {
-    if ((data == NULL) || (data->keyLen == 0 || data->keyData == NULL) ||
-        (data->dataInLen <= AEAD_SIZE + NONCE_SIZE || data->dataIn == NULL) ||
-        (data->aadLen == 0 || data->aad == NULL) || 
-        (data->dataOutLen != data->dataInLen - AEAD_SIZE - NONCE_SIZE || data->dataOut == NULL)) {
+    if (CheckCryptParma(data) != HKS_SUCCESS) {
         LOGE("hks decrypt invalid argument\n");
+        return HKS_FAILURE;
+    }
+
+    if ((data->dataInLen <= AEAD_SIZE + NONCE_SIZE) ||
+        (data->dataOutLen != data->dataInLen - AEAD_SIZE - NONCE_SIZE)) {
+        LOGE("hks decrypt cipher len or plain len not match\n");
         return HKS_FAILURE;
     }
 
