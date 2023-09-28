@@ -22,10 +22,19 @@
 extern "C" {
 #endif
 
-int EncryptWrapper(uint32_t keyLen, const uint8_t *keyData, uint32_t aadLen, const uint8_t *aad,
-    uint32_t msgLen, const uint8_t *msg, uint32_t cipherLen, uint8_t *cipher);
-int DecryptWrapper(uint32_t keyLen, const uint8_t *keyData, uint32_t aadLen, const uint8_t *aad,
-    uint32_t cipherLen, const uint8_t *cipher, uint32_t plainLen, uint8_t *plain);
+struct CryptParam {
+    uint32_t keyLen;
+    const uint8_t *keyData;
+    uint32_t aadLen;
+    const uint8_t *aad;
+    uint32_t dataInLen;
+    const uint8_t *dataIn;
+    uint32_t dataOutLen;
+    uint8_t *dataOut;
+};
+
+int EncryptWrapper(const struct CryptParam *data);
+int DecryptWrapper(const struct CryptParam *data);
 
 #ifdef __cplusplus
 }

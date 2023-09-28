@@ -27,6 +27,27 @@ pub const NONCE_SIZE: u32 = 12;
 /// Aead size, keep same with huks_wrapper
 pub const AEAD_SIZE: u32 = 16;
 
+/// crypto params for crypt_wrapper, keep same with crypto_wrapper.h
+#[repr(C)]
+pub struct CryptParam {
+    /// keyinfo size
+    pub key_len: u32,
+    /// keyinfo buff
+    pub key_data: *const u8,
+    /// asociate data size
+    pub aad_len: u32,
+    /// asociate data buff
+    pub aad: *const u8,
+    /// encrypt&decrypt input data len
+    pub data_in_len: u32,
+    /// encrypt&decrypt input data buff
+    pub data_in: *const u8,
+    /// encrypt&decrypt output data len
+    pub data_out_len: u32,
+    /// encrypt&decrypt output data buff
+    pub data_out: *const u8,
+}
+
 extern {
     /// c generate key
     pub fn GenerateKey(keyLen: u32, keyData: *const u8) -> HuksErrcode;
@@ -38,26 +59,8 @@ extern {
     pub fn KeyExist(keyLen: u32, keyData: *const u8) -> HuksErrcode;
 
     /// hks encrypt c func
-    pub fn EncryptWrapper(
-        keyLen: u32,
-        keyData: *const u8,
-        aadLen: u32,
-        aad: *const u8,
-        msgLen: u32,
-        msg: *const u8,
-        cipherLen: u32,
-        cipher: *mut u8,
-    ) -> HuksErrcode;
+    pub fn EncryptWrapper(data: *const CryptParam) -> HuksErrcode;
 
     /// hks decrypt c func
-    pub fn DecryptWrapper(
-        keyLen: u32,
-        keyData: *const u8,
-        aadLen: u32,
-        aad: *const u8,
-        cipherLen: u32,
-        cipher: *const u8,
-        plainLen: u32,
-        plain: *mut u8,
-    ) -> HuksErrcode;
+    pub fn DecryptWrapper(data: *const CryptParam) -> HuksErrcode;
 }

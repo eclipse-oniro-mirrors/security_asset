@@ -119,26 +119,27 @@ int32_t UpdateLoopFinish(const struct HksBlob *handle, const struct HksParamSet 
     return HKS_SUCCESS;
 }
 
-int EncryptWrapper(uint32_t keyLen, const uint8_t *keyData, uint32_t aadLen, const uint8_t *aad,
-    uint32_t msgLen, const uint8_t *msg, uint32_t cipherLen, uint8_t *cipher)
+int EncryptWrapper(const struct CryptParam *data)
 {
-    if ((keyLen == 0 || keyData == NULL) || (msgLen == 0 || msg == NULL) || (aadLen == 0 || aad == NULL) ||
-        (cipherLen != (msgLen + AEAD_SIZE + NONCE_SIZE) || cipher == NULL)) {
+    if ((data == NULL) || (data->keyLen == 0 || data->keyData == NULL) ||
+        (data->dataInLen == 0 || data->dataIn == NULL) ||
+        (data->aadLen == 0 || data->aad == NULL) ||
+        (data->dataOutLen != (data->dataInLen + AEAD_SIZE + NONCE_SIZE) || data->dataOut == NULL)) {
         LOGE("hks encrypt invalid argument\n");
         return HKS_FAILURE;
     }
 
     int32_t ret;
-    struct HksBlob keyAlias = { keyLen, (uint8_t *)keyData };
-    struct HksBlob inData = { msgLen, (uint8_t *)msg };
-    struct HksBlob outData = { cipherLen, cipher };
+    struct HksBlob keyAlias = { data->keyLen, (uint8_t *)data->keyData };
+    struct HksBlob inData = { data->dataInLen, (uint8_t *)data->dataIn };
+    struct HksBlob outData = { data->dataOutLen, data->dataOut };
     struct HksParamSet *encryptParamSet = NULL;
     uint8_t handleE[sizeof(uint64_t)] = { 0 };
     struct HksBlob handleEncrypt = { sizeof(uint64_t), handleE };
 
     /* initial AAD */
-    g_encryptParams[5].blob.size = aadLen;
-    g_encryptParams[5].blob.data = (uint8_t *)aad;
+    g_encryptParams[5].blob.size = data->aadLen;
+    g_encryptParams[5].blob.data = (uint8_t *)data->aad;
 
     // three stage encrypt
     ret = InitParamSet(&encryptParamSet, g_encryptParams, sizeof(g_encryptParams) / sizeof(HksParam));
@@ -167,30 +168,31 @@ END:
     return ret;
 }
 
-int DecryptWrapper(uint32_t keyLen, const uint8_t *keyData, uint32_t aadLen, const uint8_t *aad,
-    uint32_t cipherLen, const uint8_t *cipher, uint32_t plainLen, uint8_t *plain)
+int DecryptWrapper(const struct CryptParam *data)
 {
-    if ((keyLen == 0 || keyData == NULL) || (cipherLen <= AEAD_SIZE + NONCE_SIZE || cipher == NULL) ||
-        (aadLen == 0 || aad == NULL) || (plainLen != cipherLen - AEAD_SIZE - NONCE_SIZE || plain == NULL)) {
+    if ((data == NULL) || (data->keyLen == 0 || data->keyData == NULL) ||
+        (data->dataInLen <= AEAD_SIZE + NONCE_SIZE || data->dataIn == NULL) ||
+        (data->aadLen == 0 || data->aad == NULL) || 
+        (data->dataOutLen != data->dataInLen - AEAD_SIZE - NONCE_SIZE || data->dataOut == NULL)) {
         LOGE("hks decrypt invalid argument\n");
         return HKS_FAILURE;
     }
 
     int32_t ret;
-    struct HksBlob keyAlias = { keyLen, (uint8_t *)keyData };
-    struct HksBlob inData = { plainLen, (uint8_t *)cipher };
-    struct HksBlob outData = { plainLen, plain };
+    struct HksBlob keyAlias = { data->keyLen, (uint8_t *)data->keyData };
+    struct HksBlob inData = { data->dataOutLen, (uint8_t *)data->dataIn };
+    struct HksBlob outData = { data->dataOutLen, data->dataOut };
     struct HksParamSet *decryptParamSet = nullptr;
     uint8_t handleD[sizeof(uint64_t)] = { 0 };
     struct HksBlob handleDecrypt = { sizeof(uint64_t), handleD };
 
     /* initial AAD */
-    g_decryptParams[5].blob.size = aadLen;
-    g_decryptParams[5].blob.data = (uint8_t *)aad;
+    g_decryptParams[5].blob.size = data->aadLen;
+    g_decryptParams[5].blob.data = (uint8_t *)data->aad;
 
     /* initial AEAD */
     g_decryptParams[7].blob.size = AEAD_SIZE;
-    g_decryptParams[7].blob.data = (uint8_t *)cipher + plainLen;
+    g_decryptParams[7].blob.data = (uint8_t *)data->dataIn + data->dataOutLen;
 
     // three stage decrypt
     ret = InitParamSet(&decryptParamSet, g_decryptParams, sizeof(g_decryptParams) / sizeof(HksParam));

@@ -16,5 +16,7 @@
 //! This crate implements the asset
 
 #[allow(non_snake_case, non_camel_case_types)]
+#[path = "crypto.rs"]
 pub mod crypto;
+#[path = "huks_ffi.rs"]
 pub mod huks_ffi;
