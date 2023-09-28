@@ -192,10 +192,12 @@ napi_value NapiGetVersion(napi_env env, napi_callback_info info)
 {
     Asset_Version version = OH_Asset_GetVersion();
 
-    napi_value versionObj;
+    napi_value versionObj = nullptr;
     NAPI_CALL(env, napi_create_object(env, &versionObj));
 
-    napi_value major, minor, patch;
+    napi_value major = nullptr;
+    napi_value minor = nullptr;
+    napi_value patch = nullptr;
     NAPI_CALL(env, napi_create_uint32(env, version.major, &major));
     NAPI_CALL(env, napi_create_uint32(env, version.minor, &minor));
     NAPI_CALL(env, napi_create_uint32(env, version.patch, &patch));

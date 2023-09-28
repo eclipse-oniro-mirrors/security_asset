@@ -221,7 +221,7 @@ typedef enum {
     /**
      * The error code indicates that the Database operation is failed.
      */
-    ASSET_DB_ERROR = 24000009,
+    ASSET_SQLITE_ERROR = 24000009,
     /**
      * The error code indicates that the operation of calling Bundle Manager service is failed.
      */
@@ -232,7 +232,6 @@ typedef enum {
     ASSET_CRYPTO_ERROR = 24000011,
     /**
      * The error code indicates that the operation of calling OS Account service is failed.
-     *
      */
     ASSET_ACCOUNT_ERROR = 24000012,
     /**

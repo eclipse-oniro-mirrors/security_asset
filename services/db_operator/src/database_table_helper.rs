@@ -243,7 +243,7 @@ fn back_db_when_succ<T, F: Fn(&Table) -> Result<T, SqliteErrCode>>(
                 let r_ret = copy_db_file(table.db, true);
                 if r_ret.is_err() {
                     println!("recovery master db {} fail", table.db.path);
-                    Err(ErrCode::SqliteERROR)
+                    Err(ErrCode::SqliteError)
                 } else {
                     println!("recovery master db {} succ", table.db.path);
 
@@ -563,13 +563,13 @@ fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>, Err
                 let r_ret = copy_db_file(db, true);
                 if r_ret.is_err() {
                     asset_common::loge!("recovery master db {} fail", db.path);
-                    Err(ErrCode::SqliteERROR)
+                    Err(ErrCode::SqliteError)
                 } else {
                     asset_common::logi!("recovery master db {} succ", db.path);
                     let o_ret = db.re_open();
                     if let Err(e) = o_ret {
                         asset_common::loge!("reopen master db {} fail {}", db.path, e);
-                        return Err(ErrCode::SqliteERROR);
+                        return Err(ErrCode::SqliteError);
                     }
                     process_err_msg(
                         db.open_table(G_ASSET_TABLE_NAME).map_err(from_sqlite_code_to_asset_code),

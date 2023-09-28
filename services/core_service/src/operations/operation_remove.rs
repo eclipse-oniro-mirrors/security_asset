@@ -44,7 +44,7 @@ pub(crate) fn remove(input: &AssetMap, calling_info: &CallingInfo) -> Result<()>
         },
         _ => {
             loge!("get alias and not not found failed!");
-            Err(ErrCode::SqliteERROR)
+            Err(ErrCode::SqliteError)
         },
     }
 }

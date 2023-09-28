@@ -102,7 +102,7 @@ int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob
  *    returns an error code otherwise.
  * @since 11
  */
-int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultSet *result);
+int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultSet *resultSet);
 
 /**
  * @brief Post-processing (e.g. release cached resource) for querying multiple Assets that require user authentication.
@@ -156,4 +156,4 @@ void OH_Asset_FreeResultSet(Asset_ResultSet *resultSet);
 #endif
 
 /** @} */
-#endif /* ASSET_API_H */
+#endif // ASSET_API_H

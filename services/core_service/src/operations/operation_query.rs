@@ -37,21 +37,21 @@ fn precise_query(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -
             Some(Value::Number(res)) => res,
             _ => {
                 loge!("get auth type failed!");
-                return Err(ErrCode::SqliteERROR);
+                return Err(ErrCode::SqliteError);
             },
         };
         let access_type = match map.get(&Tag::Accessibility) {
             Some(Value::Number(res)) => res,
             _ => {
                 loge!("get access type failed!");
-                return Err(ErrCode::SqliteERROR);
+                return Err(ErrCode::SqliteError);
             },
         };
         let secret = match map.get(&Tag::Secret) {
             Some(Value::Bytes(res)) => res,
             _ => {
                 loge!("get secret failed!");
-                return Err(ErrCode::SqliteERROR);
+                return Err(ErrCode::SqliteError);
             },
         };
         map.insert_attr(Tag::Secret, decrypt(calling_info, auth_type, access_type, secret)?)?;
@@ -84,7 +84,7 @@ pub(crate) fn query(input: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<
         }
         _ => {
             loge!("get alias and not not found failed!");
-            Err(ErrCode::SqliteERROR)
+            Err(ErrCode::SqliteError)
         },
     }
 }

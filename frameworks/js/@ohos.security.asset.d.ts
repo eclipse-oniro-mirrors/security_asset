@@ -625,7 +625,7 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DB_ERROR = 24000009,
+    SQLITE_ERROR = 24000009,
     /**
      * The error code indicates that the operation of calling Bundle Manager service is failed.
      *

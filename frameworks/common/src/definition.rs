@@ -168,8 +168,32 @@ impl_enum_trait! {
         /// The error code indicates that the ipc communication is abnormal.
         IpcError = 24000008,
 
-        /// Generic error
-        SqliteERROR = 24000009,
+        /// The error code indicates that the Database operation is failed.
+        SqliteError = 24000009,
+
+        /// The error code indicates that the operation of calling Bundle Manager service is failed.
+        BmsError = 24000010,
+
+        /// The error code indicates that the cryptography operation is failed.
+        CryptoError = 24000011,
+
+        /// The error code indicates that the operation of calling OS Account service is failed.
+        AccountError = 24000012,
+
+        /// The error code indicates that the operation of calling Common Event service is failed.
+        CommonEventError = 24000013,
+
+        /// The error code indicates that the operation of calling Access Token service is failed.
+        AccessTokenError = 24000014,
+
+        /// The error code indicates that the operation of file is failed.
+        FileOperationError = 24000015,
+
+        /// The error code indicates that the operation of file is failed.
+        SystemTimeError = 24000016,
+
+        /// The error code indicates that the amount of map element or other limited quotas exceed the limit.
+        ExceedLimit = 24000017,
     }
 }
 

@@ -23,15 +23,12 @@ use asset_common::{
 };
 use asset_sdk::Manager;
 
-/// add asset c2rust
-/// # Safety
-/// dereference pointer
-#[no_mangle]
-pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetAttr, attr_cnt: u32) -> i32 {
-    loge!("[YZT] enter AddAssetC2Rust!");
+const RESULT_CODE_SUCCESS: i32 = 0;
+
+unsafe fn into_map(attributes: *const Asset_Attr, attr_cnt: u32) -> Option<AssetMap> {
     if attributes.is_null() || attr_cnt == 0 {
-        loge!("[YZT] null pointer");
-        return ErrCode::InvalidArgument as i32;
+        loge!("[FATAL] attributes is null or attr_cnt is 0");
+        return None;
     }
 
     let mut map = AssetMap::with_capacity(attr_cnt as usize);
@@ -39,7 +36,7 @@ pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetAttr, attr_cnt: 
         let attr = attributes.offset(i as isize);
         let attr_tag = match Tag::try_from((*attr).tag) {
             Ok(tag) => tag,
-            Err(err_code) => return err_code as i32,
+            Err(_) => return None,
         };
         match attr_tag.data_type() {
             DataType::Bool => {
@@ -55,16 +52,28 @@ pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetAttr, attr_cnt: 
             },
         }
     }
-    loge!("[YZT] end AddAssetC2Rust!");
-    match Manager::build() {
-        Ok(manager) => {
-            if let Err(e) = manager.add(&map) {
-                e as i32
-            } else {
-                0
-            }
-        },
-        Err(e) => e as i32
+    Some(map)
+}
+
+/// add asset c2rust
+/// # Safety
+/// dereference pointer
+#[no_mangle]
+pub unsafe extern "C" fn add_asset(attributes: *const Asset_Attr, attr_cnt: u32) -> i32 {
+    let map = match into_map(attributes, attr_cnt) {
+        Some(map) => map,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return e as i32,
+    };
+
+    if let Err(e) = manager.add(&map) {
+        e as i32
+    } else {
+        RESULT_CODE_SUCCESS
     }
 }
 
@@ -72,66 +81,152 @@ pub unsafe extern "C" fn AddAssetC2Rust(attributes: *const AssetAttr, attr_cnt: 
 /// # Safety
 /// dereference pointer
 #[no_mangle]
-pub unsafe extern "C" fn RemoveAssetC2Rust(query: *const AssetAttr, query_cnt: u32) -> i32 {
-    loge!("[JIN] enter RemoveAssetC2Rust!");
-    if query.is_null() || query_cnt == 0 {
-        loge!("[JIN] null pointer");
-        return ErrCode::InvalidArgument as i32;
-    }
+pub unsafe extern "C" fn remove_asset(query: *const Asset_Attr, query_cnt: u32) -> i32 {
+    let map = match into_map(query, query_cnt) {
+        Some(map) => map,
+        None => return ErrCode::InvalidArgument as i32,
+    };
 
-    let mut map = AssetMap::with_capacity(query_cnt as usize);
-    for i in 0..query_cnt {
-        let attr = query.offset(i as isize);
-        let attr_tag = match Tag::try_from((*attr).tag) {
-            Ok(tag) => tag,
-            Err(err_code) => return err_code as i32,
-        };
-        match attr_tag.data_type() {
-            DataType::Bool => {
-                map.insert(attr_tag, Value::Bool((*attr).value.boolean));
-            }
-            DataType::Uint32 => {
-                map.insert(attr_tag, Value::Number((*attr).value.uint32));
-            },
-            DataType::Bytes => {
-                let blob_slice = slice::from_raw_parts((*attr).value.blob.data, (*attr).value.blob.size as usize);
-                let blob_vec = blob_slice.to_vec();
-                map.insert(attr_tag, Value::Bytes(blob_vec));
-            },
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return e as i32,
+    };
+
+    if let Err(e) = manager.remove(&map) {
+        e as i32
+    } else {
+        RESULT_CODE_SUCCESS
+    }
+}
+
+/// update asset c2rust
+/// # Safety
+/// dereference pointer
+#[no_mangle]
+pub unsafe extern "C" fn update_asset(query: *const Asset_Attr, query_cnt: u32,
+    attributes_to_update: *const Asset_Attr, update_cnt: u32) -> i32 {
+    let query_map = match into_map(query, query_cnt) {
+        Some(map) => map,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    let update_map = match into_map(attributes_to_update, update_cnt) {
+        Some(map) => map,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return e as i32,
+    };
+
+    if let Err(e) = manager.update(&query_map, &update_map) {
+        e as i32
+    } else {
+        RESULT_CODE_SUCCESS
+    }
+}
+
+/// preQuery asset c2rust
+/// # Safety
+/// dereference pointer
+#[no_mangle]
+pub unsafe extern "C" fn pre_query_asset(query: *const Asset_Attr, query_cnt: u32, _challenge: *mut Asset_Blob) -> i32 {
+    let _map = match into_map(query, query_cnt) {
+        Some(map) => map,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    let _manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return e as i32,
+    };
+
+    loge!("[YZT] enter pre query");
+    // if let Err(e) = manager.pre_query(&map) {
+    //     e as i32
+    // }
+    RESULT_CODE_SUCCESS
+}
+
+/// query asset c2rust
+/// # Safety
+/// dereference pointer
+#[no_mangle]
+pub unsafe extern "C" fn query_asset(query: *const Asset_Attr, query_cnt: u32,
+    _result_set: *mut Asset_ResultSet) -> i32 {
+    let map = match into_map(query, query_cnt) {
+        Some(map) => map,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return e as i32,
+    };
+
+    loge!("[YZT] enter query");
+    match manager.query(&map) {
+        Err(e) => e as i32,
+        Ok(_res) => {
+            loge!("[YZT] end query");
+            RESULT_CODE_SUCCESS
         }
     }
-    loge!("[JIN] end RemoveAssetC2Rust!");
-    match Manager::build() {
-        Ok(manager) => {
-            if let Err(e) = manager.remove(&map) {
-                e as i32
-            } else {
-                0
-            }
-        },
-        Err(e) => e as i32
-    }
 }
 
-/// asset param from c
+/// postQuery asset c2rust
+/// # Safety
+/// dereference pointer
+#[no_mangle]
+pub unsafe extern "C" fn post_query_asset(handle: *const Asset_Attr, handle_cnt: u32) -> i32 {
+    let _map = match into_map(handle, handle_cnt) {
+        Some(map) => map,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    let _manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return e as i32,
+    };
+
+    loge!("[YZT] enter post query");
+    // if let Err(e) = manager.post_query(&map) {
+    //     e as i32
+    // }
+    RESULT_CODE_SUCCESS
+}
+
+/// Attribute of Asset
 #[repr(C)]
-pub struct AssetAttr {
+pub struct Asset_Attr {
     tag: u32,
-    value: AssetValue,
+    value: Asset_Value,
 }
 
+/// Blob of Asset
 #[repr(C)]
-struct AssetBlob {
+pub struct Asset_Blob {
     size: u32,
     data: *mut u8,
 }
 
 #[repr(C)]
-union AssetValue {
-    int32: i32,
-    uint32: u32,
-    int64: i64,
-    uint64: u64,
+union Asset_Value {
     boolean: bool,
-    blob: std::mem::ManuallyDrop<AssetBlob>,
+    uint32: u32,
+    blob: std::mem::ManuallyDrop<Asset_Blob>,
+}
+
+#[repr(C)]
+struct Asset_Result {
+    attrs: *mut Asset_Attr,
+    count: u32,
+}
+
+/// Result Set of Asset
+#[repr(C)]
+pub struct Asset_ResultSet {
+    results: *mut Asset_Result,
+    count: u32,
 }

@@ -20,38 +20,43 @@
 
 #include "securec.h"
 
-extern int32_t AddAssetC2Rust(const Asset_Attr *attributes, uint32_t attrCnt);
-extern int32_t RemoveAssetC2Rust(const Asset_Attr *query, uint32_t queryCnt);
+extern int32_t add_asset(const Asset_Attr *attributes, uint32_t attr_cnt);
+extern int32_t remove_asset(const Asset_Attr *query, uint32_t query_cnt);
+extern int32_t update_asset(const Asset_Attr *query, uint32_t query_cnt,
+    const Asset_Attr *attributes_to_update, uint32_t update_cnt);
+extern int32_t pre_query_asset(const Asset_Attr *query, uint32_t query_cnt, Asset_Blob *challenge);
+extern int32_t query_asset(const Asset_Attr *query, uint32_t query_cnt, Asset_ResultSet *result_set);
+extern int32_t post_query_asset(const Asset_Attr *handle, uint32_t handle_cnt);
 
 int32_t OH_Asset_Add(const Asset_Attr *attributes, uint32_t attrCnt)
 {
-    return AddAssetC2Rust(attributes, attrCnt);
+    return add_asset(attributes, attrCnt);
 }
 
 int32_t OH_Asset_Remove(const Asset_Attr *query, uint32_t queryCnt)
 {
-    return RemoveAssetC2Rust(query, queryCnt);
+    return remove_asset(query, queryCnt);
 }
 
 int32_t OH_Asset_Update(const Asset_Attr *query, uint32_t queryCnt,
     const Asset_Attr *attributesToUpdate, uint32_t updateCnt)
 {
-    return ASSET_SUCCESS;
+    return update_asset(query, queryCnt, attributesToUpdate, updateCnt);
 }
 
 int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob *challenge)
 {
-    return ASSET_SUCCESS;
+    return pre_query_asset(query, queryCnt, challenge);
 }
 
-int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultSet *result)
+int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultSet *resultSet)
 {
-    return ASSET_SUCCESS;
+    return query_asset(query, queryCnt, resultSet);
 }
 
 int32_t OH_Asset_PostQuery(const Asset_Attr *handle, uint32_t handleCnt)
 {
-    return ASSET_SUCCESS;
+    return post_query_asset(handle, handleCnt);
 }
 
 Asset_Version OH_Asset_GetVersion(void)

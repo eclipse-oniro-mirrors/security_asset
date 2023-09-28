@@ -25,7 +25,7 @@ fn tag_value_match(tag: &Tag, value: &Value) -> bool {
             if let Value::Bool(_) = value {
                 return true;
             }
-        }
+        },
         DataType::Bytes => {
             if let Value::Bytes(_) = value {
                 return true;

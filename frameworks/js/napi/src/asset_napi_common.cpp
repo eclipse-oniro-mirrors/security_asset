@@ -93,8 +93,9 @@ void FreeAssetAttrs(AsyncContext *context)
         AssetFree(context->updateAttrs);
         context->updateAttrs = nullptr;
     }
+
     OH_Asset_FreeBlob(&context->challenge);
-    // todo: delete reasultSet
+    OH_Asset_FreeResultSet(&context->resultSet);
 }
 
 AsyncContext *CreateAsyncContext()
@@ -229,7 +230,7 @@ napi_status ParseMapParam(napi_env env, napi_value arg, Asset_Attr **attrs, uint
     *attrs = static_cast<Asset_Attr *>(AssetMalloc(attrVec.size() * sizeof(Asset_Attr)));
     if (*attrs == nullptr) {
         FreeAttrVec(attrVec);
-        NAPI_THROW_RETURN_ERR(env, true, ASSET_OUT_OF_MEMRORY, "Unable to allocate memory for Asset_Attr array.");
+        NAPI_THROW_RETURN_ERR(env, true, ASSET_OUT_OF_MEMRORY, "Unable to allocate memory for Attribute array.");
     }
     (void)memcpy_s(*attrs, attrVec.size() * sizeof(Asset_Attr), &attrVec[0], attrVec.size() * sizeof(Asset_Attr));
     *attrCnt = attrVec.size();
@@ -250,40 +251,88 @@ napi_status ParseCallbackParam(napi_env env, napi_value arg, napi_ref *callback)
 
 napi_value GetUndefinedValue(napi_env env)
 {
-    napi_value value;
+    napi_value value = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &value));
     return value;
 }
 
-napi_value GetBusinessReturn(napi_env env, AsyncContext *context)
+napi_value GetUint8Array(napi_env env, const Asset_Blob *blob)
 {
-    napi_value result = nullptr;
-    if (context->challenge.data != nullptr && context->challenge.size != 0) {
-        // Create a temp array to store the challenge
-        uint8_t *tmp = static_cast<uint8_t *>(AssetMalloc(context->challenge.size));
-        NAPI_THROW(env, tmp == nullptr, ASSET_OUT_OF_MEMRORY, "Unable to allocate memory for challenge.");
-        (void)memcpy_s(tmp, context->challenge.size, context->challenge.data, context->challenge.size);
+    if (blob->data == nullptr || blob->size == 0) {
+        return nullptr;
+    }
+    // Create a temp array to store the blob value.
+    uint8_t *tmp = static_cast<uint8_t *>(AssetMalloc(blob->size));
+    NAPI_THROW(env, tmp == nullptr, ASSET_OUT_OF_MEMRORY, "Unable to allocate memory for out challenge.");
+    (void)memcpy_s(tmp, blob->size, blob->data, blob->size);
 
-        // Create napi array to store the challenge
-        napi_value challenge = nullptr;
-        napi_status status = napi_create_external_arraybuffer(
-            env, context->challenge.data, context->challenge.size,
-            [](napi_env env, void *data, void *hint) {
-                AssetFree(data);
-            },
-            nullptr, &challenge);
-        if (status != napi_ok) {
-            AssetFree(tmp);
-            GET_AND_THROW_LAST_ERROR(env);
+    // Create napi array to store the uint8_t array.
+    napi_value array = nullptr;
+    napi_status status = napi_create_external_arraybuffer(env, blob->data, blob->size,
+        [](napi_env env, void *data, void *hint) {
+            AssetFree(data);
+        },
+        nullptr, &array);
+    if (status != napi_ok) {
+        AssetFree(tmp);
+        GET_AND_THROW_LAST_ERROR(env);
+        return nullptr;
+    }
+    napi_value result = nullptr;
+    NAPI_CALL(env, napi_create_typedarray(env, napi_uint8_array, blob->size, array, 0, &result));
+    return result;
+}
+
+napi_value GetMapObject(napi_env env, Asset_Result *result)
+{
+    napi_value map = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &map));
+    for (uint32_t i = 0; i < result->count; i++) {
+        napi_value key = nullptr;
+        napi_value value = nullptr;
+        NAPI_CALL(env, napi_create_uint32(env, result->attrs[i].tag, &key));
+        switch (result->attrs[i].tag & ASSET_TAG_TYPE_MASK) {
+            case ASSET_TYPE_BOOL:
+                NAPI_CALL(env, napi_get_boolean(env, result->attrs[i].value.boolean, &value));
+                break;
+            case ASSET_TYPE_UINT32:
+                NAPI_CALL(env, napi_create_uint32(env, result->attrs[i].value.u32, &value));
+                break;
+            case ASSET_TYPE_BYTES:
+                value = GetUint8Array(env, &result->attrs[i].value.blob);
+                break;
+            default:
+                return nullptr;
+        }
+        NAPI_CALL(env, napi_set_property(env, map, key, value));
+    }
+    return map;
+}
+
+napi_value GetMapArray(napi_env env, Asset_ResultSet *resultSet)
+{
+    napi_value array = nullptr;
+    NAPI_CALL(env, napi_create_array(env, &array));
+    for (uint32_t i = 0; i < resultSet->count; i++) {
+        if (resultSet->results[i].attrs == nullptr || resultSet->results[i].count == 0) {
             return nullptr;
         }
-        NAPI_CALL(env, napi_create_typedarray(env, napi_uint8_array, context->challenge.size, challenge, 0, &result));
-        return result;
+        napi_value map = GetMapObject(env, &resultSet->results[i]);
+        NAPI_CALL(env, napi_set_element(env, array, i, map));
+    }
+    return array;
+}
+
+napi_value GetBusinessValue(napi_env env, AsyncContext *context)
+{
+    // Processing the return value of the PreQueryAsset function.
+    if (context->challenge.data != nullptr && context->challenge.size != 0) {
+        return GetUint8Array(env, &context->challenge);
     }
 
+    // Processing the return value of the QueryAsset function.
     if (context->resultSet.results != nullptr && context->resultSet.count != 0) {
-        // todo: return the result set to JS
-        return result;
+        return GetMapArray(env, &context->resultSet);
     }
 
     return GetUndefinedValue(env);
@@ -308,7 +357,7 @@ void ResolvePromise(napi_env env, AsyncContext *context)
 {
     napi_value result = nullptr;
     if (context->result == ASSET_SUCCESS) {
-        result = GetBusinessReturn(env, context);
+        result = GetBusinessValue(env, context);
         NAPI_CALL_RETURN_VOID(env, napi_resolve_deferred(env, context->deferred, result));
     } else {
         result = GetBusinessError(env, context->result);
@@ -322,7 +371,7 @@ void ResolveCallback(napi_env env, AsyncContext *context)
     size_t index = 0;
     if (context->result == ASSET_SUCCESS) {
         cbArgs[index++] = GetUndefinedValue(env);
-        cbArgs[index++] = GetBusinessReturn(env, context);
+        cbArgs[index++] = GetBusinessValue(env, context);
     } else {
         cbArgs[index++] = GetBusinessError(env, context->result);
     }

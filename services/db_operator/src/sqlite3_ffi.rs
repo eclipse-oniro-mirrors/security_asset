@@ -23,7 +23,7 @@ pub fn from_sqlite_code_to_asset_code(value: SqliteErrCode) -> ErrCode {
     if value != SQLITE_OK && value != SQLITE_DONE {
         asset_common::loge!("error ret {}", value);
     }
-    ErrCode::SqliteERROR
+    ErrCode::SqliteError
 }
 
 /// Successful result

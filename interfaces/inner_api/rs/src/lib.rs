@@ -55,21 +55,21 @@ impl Manager {
         self.remote.add(input)
     }
 
-    /// Query one or more Assets that match a search query.
-    pub fn query(&self, input: &AssetMap) -> Result<Vec<AssetMap>> {
-        logi!("[YZT][RUST SDK]enter asset query");
-        self.remote.query(input)
-    }
-
-    /// Update one Assets that match a search query.
-    pub fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
-        logi!("[YZT][RUST SDK]enter asset query");
-        self.remote.update(query, attributes_to_update)
-    }
-
     /// Remove an Asset.
     pub fn remove(&self, input: &AssetMap) -> Result<()> {
         logi!("[JIN][RUST SDK]enter asset remove");
         self.remote.remove(input)
+    }
+
+    /// Update an Asset that matches a search query.
+    pub fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
+        logi!("[YZT][RUST SDK]enter asset update");
+        self.remote.update(query, attributes_to_update)
+    }
+
+    /// Query one or more Assets that match a search query.
+    pub fn query(&self, input: &AssetMap) -> Result<Vec<AssetMap>> {
+        logi!("[YZT][RUST SDK]enter asset query");
+        self.remote.query(input)
     }
 }

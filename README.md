@@ -49,11 +49,8 @@ find -name "*.gn" | xargs ../../../prebuilts/build-tools/linux-x86/bin/gn format
 
 ## 工具汇总
 ```bash
-# 格式化BUILD.gn文件
-../../../prebuilts/build-tools/linux-x86/bin/gn format *.gn
-../../../prebuilts/build-tools/linux-x86/bin/gn format **/*.gn
-../../../prebuilts/build-tools/linux-x86/bin/gn format **/**/*.gn
-../../../prebuilts/build-tools/linux-x86/bin/gn format **/**/**/*.gn
+# 格式化BUILD.gn文件, 在asset目录下执行
+find -name "*.gn" -or -name "*.gni" | xargs ../../../prebuilts/build-tools/linux-x86/bin/gn format
 ```
 
 ### WIKI汇总
