@@ -21,9 +21,11 @@
 #include "asset_log.h"
 #include "hks_key_wrapper.h"
 
+// AEAD return from huks with 16 bits
 static const uint32_t AEAD_SIZE = 16;
+// NONCE remain for huks, hard code now
 static const uint32_t NONCE_SIZE = 12;
-static uint8_t NONCE[NONCE_SIZE] = { 0 }; // hard code
+static uint8_t NONCE[NONCE_SIZE] = { 0 };
 
 // encrypt params
 static struct HksParam g_encryptParams[] = {
