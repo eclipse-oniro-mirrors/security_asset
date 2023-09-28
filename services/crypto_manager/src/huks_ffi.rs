@@ -29,10 +29,7 @@ pub const AEAD_SIZE: u32 = 16;
 
 extern {
     /// c generate key
-    pub fn GenerateKey(
-        keyLen: u32,
-        keyData: *const u8
-    ) -> HuksErrcode;
+    pub fn GenerateKey(keyLen: u32, keyData: *const u8) -> HuksErrcode;
 
     /// c delete key
     pub fn DeleteKey(keyLen: u32, keyData: *const u8) -> HuksErrcode;
@@ -42,17 +39,25 @@ extern {
 
     /// hks encrypt c func
     pub fn EncryptWrapper(
-        keyLen: u32, keyData: *const u8,
-        aadLen: u32, aad: *const u8,
-        msgLen: u32, msg: *const u8,
-        cipherLen: u32, cipher: *mut u8
+        keyLen: u32,
+        keyData: *const u8,
+        aadLen: u32,
+        aad: *const u8,
+        msgLen: u32,
+        msg: *const u8,
+        cipherLen: u32,
+        cipher: *mut u8,
     ) -> HuksErrcode;
 
     /// hks decrypt c func
     pub fn DecryptWrapper(
-        keyLen: u32, keyData: *const u8,
-        aadLen: u32, aad: *const u8,
-        cipherLen: u32, cipher: *const u8,
-        plainLen: u32, plain: *mut u8
+        keyLen: u32,
+        keyData: *const u8,
+        aadLen: u32,
+        aad: *const u8,
+        cipherLen: u32,
+        cipher: *const u8,
+        plainLen: u32,
+        plain: *mut u8,
     ) -> HuksErrcode;
 }

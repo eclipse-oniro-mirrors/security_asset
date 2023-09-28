@@ -21,7 +21,6 @@
 #include "asset_log.h"
 #include "hks_key_wrapper.h"
 
-static const uint32_t AAD_SIZE = 16;
 static const uint32_t AEAD_SIZE = 16;
 static const uint32_t NONCE_SIZE = 12;
 static uint8_t NONCE[NONCE_SIZE] = { 0 }; // hard code
@@ -123,8 +122,8 @@ int32_t UpdateLoopFinish(const struct HksBlob *handle, const struct HksParamSet 
 int EncryptWrapper(uint32_t keyLen, const uint8_t *keyData, uint32_t aadLen, const uint8_t *aad,
     uint32_t msgLen, const uint8_t *msg, uint32_t cipherLen, uint8_t *cipher)
 {
-    if ((keyLen == 0 || keyData == NULL) || (msgLen == 0 || msg == NULL) || (aadLen != AAD_SIZE || aad == NULL) ||
-        (cipherLen != (msgLen + AAD_SIZE + NONCE_SIZE) || cipher == NULL)) {
+    if ((keyLen == 0 || keyData == NULL) || (msgLen == 0 || msg == NULL) || (aadLen == 0 || aad == NULL) ||
+        (cipherLen != (msgLen + AEAD_SIZE + NONCE_SIZE) || cipher == NULL)) {
         LOGE("hks encrypt invalid argument\n");
         return HKS_FAILURE;
     }
@@ -172,7 +171,7 @@ int DecryptWrapper(uint32_t keyLen, const uint8_t *keyData, uint32_t aadLen, con
     uint32_t cipherLen, const uint8_t *cipher, uint32_t plainLen, uint8_t *plain)
 {
     if ((keyLen == 0 || keyData == NULL) || (cipherLen <= AEAD_SIZE + NONCE_SIZE || cipher == NULL) ||
-        (aadLen != AAD_SIZE || aad == NULL) || (plainLen != cipherLen - AEAD_SIZE - NONCE_SIZE || plain == NULL)) {
+        (aadLen == 0 || aad == NULL) || (plainLen != cipherLen - AEAD_SIZE - NONCE_SIZE || plain == NULL)) {
         LOGE("hks decrypt invalid argument\n");
         return HKS_FAILURE;
     }

@@ -101,7 +101,7 @@ impl Crypto {
                 msg.len() as u32,
                 msg.as_ptr(),
                 cipher.len() as u32,
-                cipher.as_mut_ptr()
+                cipher.as_mut_ptr(),
             )
         };
 
@@ -115,7 +115,7 @@ impl Crypto {
 
     /// Decrypt
     pub fn decrypt(&self, cipher: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
-        if cipher.len() <= (AEAD_SIZE  + NONCE_SIZE) as usize {
+        if cipher.len() <= (AEAD_SIZE + NONCE_SIZE) as usize {
             loge!("invalid cipher\n");
             return Err(ErrCode::Failed);
         }
@@ -130,7 +130,7 @@ impl Crypto {
                 cipher.len() as u32,
                 cipher.as_ptr(),
                 plain.len() as u32,
-                plain.as_mut_ptr()
+                plain.as_mut_ptr(),
             )
         };
 

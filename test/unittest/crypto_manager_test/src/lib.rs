@@ -15,7 +15,7 @@
 use crypto_manager::crypto::*;
 use crypto_manager::huks_ffi::*;
 
-pub const AAD_SIZE: u32 = 16;
+pub const AAD_SIZE: u32 = 8;
 
 #[test]
 fn test_hukkey_new() {
