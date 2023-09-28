@@ -139,7 +139,7 @@ pub(crate) fn replace_data_once(alias: &str, calling_info: &CallingInfo, db_data
 
     if !do_transaction(calling_info.user_id(), replace_call)? {
         loge!("do_transaction in replace_data_once failed!");
-        return Err(ErrCode::SqliteERROR);
+        return Err(ErrCode::SqliteError);
     }
     Ok(())
 }
