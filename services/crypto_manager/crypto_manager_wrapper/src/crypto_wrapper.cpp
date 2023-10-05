@@ -21,13 +21,13 @@
 #include "asset_log.h"
 #include "hks_key_wrapper.h"
 
-// AEAD return from huks with 16 bits
+/* AEAD return from huks with 16 bits */
 static const uint32_t AEAD_SIZE = 16;
-// NONCE remain for huks, hard code now
+/* NONCE remain for huks, hard code now */
 static const uint32_t NONCE_SIZE = 12;
 static uint8_t NONCE[NONCE_SIZE] = { 0 };
 
-// encrypt params
+/* encrypt params */
 static struct HksParam g_encryptParams[] = {
     {
         .tag = HKS_TAG_ALGORITHM,
@@ -59,7 +59,7 @@ static struct HksParam g_encryptParams[] = {
     }
 };
 
-// decrypt params
+/* decrypt params */
 static struct HksParam g_decryptParams[] = {
     {
         .tag = HKS_TAG_ALGORITHM,
@@ -158,21 +158,21 @@ int32_t EncryptWrapper(const struct CryptParam *data)
     g_encryptParams[5].blob.size = data->aadLen;
     g_encryptParams[5].blob.data = (uint8_t *)data->aad;
 
-    // three stage encrypt
+    /* three stage encrypt */
     ret = InitParamSet(&encryptParamSet, g_encryptParams, sizeof(g_encryptParams) / sizeof(HksParam));
     if (ret != HKS_SUCCESS) {
         LOGE("hks encrypt init paramset err = %d\n", ret);
         goto END;
     }
 
-    // Init
+    /* Init */
     ret = HksInit(&keyAlias, encryptParamSet, &handleEncrypt, nullptr);
     if (ret != HKS_SUCCESS) {
         LOGE("hks encrypt init failed err = %d\n", ret);
         goto END;
     }
  
-    // Update & Finish
+    /* Update & Finish */
     ret = UpdateLoopFinish(&handleEncrypt, encryptParamSet, &inData, &outData);
     if (ret != HKS_SUCCESS) {
         LOGE("hks encrypt updata and finish failed err = %d\n", ret);
@@ -214,21 +214,21 @@ int32_t DecryptWrapper(const struct CryptParam *data)
     g_decryptParams[7].blob.size = AEAD_SIZE;
     g_decryptParams[7].blob.data = (uint8_t *)data->dataIn + data->dataOutLen;
 
-    // three stage decrypt
+    /* three stage decrypt */
     ret = InitParamSet(&decryptParamSet, g_decryptParams, sizeof(g_decryptParams) / sizeof(HksParam));
     if (ret != HKS_SUCCESS) {
         LOGE("hks decrypt init paramset err = %d\n", ret);
         goto END;
     }
 
-    // Init
+    /* Init */
     ret = HksInit(&keyAlias, decryptParamSet, &handleDecrypt, nullptr);
     if (ret != HKS_SUCCESS) {
         LOGE("hks decrypt init failed err = %d\n", ret);
         goto END;
     }
 
-    // Update & Finish
+    /* Update & Finish */
     ret = UpdateLoopFinish(&handleDecrypt, decryptParamSet, &inData, &outData);
     if (ret != HKS_SUCCESS) {
         LOGE("hks decrypt updata and finish failed err = %d\n", ret);
