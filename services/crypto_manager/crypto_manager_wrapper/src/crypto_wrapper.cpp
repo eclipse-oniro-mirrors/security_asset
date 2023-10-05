@@ -92,7 +92,7 @@ static struct HksParam g_decryptParams[] = {
         .tag = HKS_TAG_AE_TAG,
         .blob = {
             .size = 0,
-            .data = NULL // todo: need fix by code
+            .data = NULL
         }
     }
 };

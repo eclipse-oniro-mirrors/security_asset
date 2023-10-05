@@ -91,7 +91,9 @@ pub struct Crypto {
 impl Crypto {
     /// Encrypt
     pub fn encrypt(&self, msg: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
-        let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize + NONCE_SIZE as usize]; // ciper 为出参密文长度，后面需要增加16(aead), 之后需要增加12(nonce)字节长度,可考虑增加预留长度
+        // out param
+        let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize + NONCE_SIZE as usize];
+        // in param
         let data = CryptParam {
             key_len: self.key.alias.len() as u32,
             key_data: self.key.alias.as_ptr(),
@@ -103,14 +105,10 @@ impl Crypto {
             data_out: cipher.as_mut_ptr(),
         };
 
-        let ret = unsafe { EncryptWrapper(&data as *const CryptParam) };
-
-        if ret != HKS_SUCCESS {
-            loge!("Encrypt Failed.");
-            return Err(ErrCode::Failed); //CRYPTO_FAIL
+        match unsafe { EncryptWrapper(&data as *const CryptParam) } {
+            HKS_SUCCESS => Ok(cipher),
+            _ => Err(ErrCode::Failed),
         }
-
-        Ok(cipher)
     }
 
     /// Decrypt
@@ -119,9 +117,9 @@ impl Crypto {
             loge!("invalid cipher\n");
             return Err(ErrCode::Failed);
         }
-
+        // out param
         let mut plain: Vec<u8> = vec![0; cipher.len() - AEAD_SIZE as usize - NONCE_SIZE as usize];
-
+        // in param
         let data = CryptParam {
             key_len: self.key.alias.len() as u32,
             key_data: self.key.alias.as_ptr(),
@@ -133,13 +131,9 @@ impl Crypto {
             data_out: plain.as_mut_ptr(),
         };
 
-        let ret = unsafe { DecryptWrapper(&data as *const CryptParam) };
-
-        if ret != HKS_SUCCESS {
-            loge!("Decrypt Failed.");
-            return Err(ErrCode::Failed); //CRYPTO_FAIL
+        match unsafe { DecryptWrapper(&data as *const CryptParam) } {
+            HKS_SUCCESS => Ok(plain),
+            _ => Err(ErrCode::Failed),
         }
-
-        Ok(plain)
     }
 }
