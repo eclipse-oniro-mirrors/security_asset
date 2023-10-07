@@ -39,10 +39,16 @@ impl OwnerType {
     }
 
     /// xx
-    pub(crate) fn get_owner_text(&self) -> &Vec<u8> {
+    pub(crate) fn get_owner_text(&self) -> Result<String> {
         match self {
-            Self::Hap(owner_text) => owner_text,
-            Self::Native(owner_text) => owner_text,
+            Self::Hap(owner_text) => Ok(String::from_utf8(owner_text.clone()).map_err(|e| {
+                loge!("get hap owner name failed, get error [{}]", e);
+                ErrCode::BmsError
+            })?),
+            Self::Native(owner_text) => Ok(String::from_utf8(owner_text.clone()).map_err(|e| {
+                loge!("get native owner name failed, get error [{}]", e);
+                ErrCode::IpcError
+            })?),
         }
     }
 }

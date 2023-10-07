@@ -21,8 +21,8 @@ use asset_common::{definition::ErrCode, loge};
 pub struct KeyInfo {
     /// User id
     pub user_id: i32,
-    /// Uid
-    pub uid: u64,
+    /// Owner
+    pub owner: String,
     /// Auth_type
     pub auth_type: u32,
     /// Access_type
@@ -37,7 +37,7 @@ impl SecretKey {
     /// New a secret key
     pub fn new(info: KeyInfo) -> Self {
         Self {
-            alias: format!("{}_{}_{}_{}", info.user_id, info.uid, info.auth_type, info.access_type),
+            alias: format!("{}_{}_{}_{}", info.user_id, info.owner, info.auth_type, info.access_type),
         }
     }
 

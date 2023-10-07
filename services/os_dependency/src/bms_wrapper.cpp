@@ -18,15 +18,16 @@
 #include <cstring>
 
 #include "accesstoken_kit.h"
-#include "ipc_skeleton.h"
-#include "iservice_registry.h"
-#include "system_ability_definition.h"
-#include "hap_token_info.h"
-#include "bundle_mgr_proxy.h"
-
 #include "asset_log.h"
 #include "asset_mem.h"
+#include "bundle_mgr_proxy.h"
+#include "hap_token_info.h"
+#include "ipc_skeleton.h"
+#include "iservice_registry.h"
 #include "os_account_manager.h"
+#include "system_ability_definition.h"
+
+#include "securec.h"
 
 using namespace OHOS;
 using namespace Security::AccessToken;
@@ -112,11 +113,15 @@ const char * GetHapOwnerInfo(uint32_t tokenId, int32_t userId)
 
     // The appid is concatenated from the bundle name and the developer's public key certificate.
     // transfer appid from string to char *
-    int len = bundleInfo.appId.length();
+    char spelit = '_';
+    int len = bundleInfo.appId.length() + sizeof(spelit)+ sizeof(bundleInfo.appIndex);
     auto ownerInfo = static_cast<char *>(AssetMalloc((len + 1) * sizeof(char)));
     strcpy(ownerInfo, bundleInfo.appId.c_str());
+    (void)memcpy_s(ownerInfo + bundleInfo.appId.length(), sizeof(spelit) + sizeof(bundleInfo.appIndex),
+        &spelit, sizeof(spelit));
+    (void)memcpy_s(ownerInfo + sizeof(spelit) + bundleInfo.appId.length(), sizeof(bundleInfo.appIndex),
+        &bundleInfo.appIndex, sizeof(bundleInfo.appIndex));
+
     LOGE("ownerInfo val: %s", ownerInfo);
     return ownerInfo;
 }
-
-

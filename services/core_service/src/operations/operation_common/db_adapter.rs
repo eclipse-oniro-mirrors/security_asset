@@ -102,10 +102,7 @@ pub(crate) fn set_extra_attrs<'a>(input: &'a AssetInnerMap, vec: &mut Vec<Pair<'
 
 pub(crate) fn insert_data_once(alias: &str, calling_info: &CallingInfo, db_data: Vec<Pair>) -> Result<i32> {
     // get owner str
-    let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
-        loge!("get owner str faield!");
-        ErrCode::InvalidArgument
-    })?;
+    let owner_str = calling_info.owner_text()?;
 
     // call sql to add
     let insert_num =
@@ -120,10 +117,7 @@ pub(crate) fn insert_data_once(alias: &str, calling_info: &CallingInfo, db_data:
 
 pub(crate) fn replace_data_once(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<()> {
     // get owner str
-    let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
-        loge!("get owner str faield!");
-        ErrCode::InvalidArgument
-    })?;
+    let owner_str = calling_info.owner_text()?;
 
     let replace_call = |db: &Database| -> bool {
         if db.delete_datas_default(&owner_str, alias, &Vec::new()).is_err() {
@@ -146,19 +140,13 @@ pub(crate) fn replace_data_once(alias: &str, calling_info: &CallingInfo, db_data
 
 pub(crate) fn data_exist_once(alias: &str, calling_info: &CallingInfo) -> Result<bool> {
     // get owner str
-    let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
-        loge!("get owner str faield!");
-        ErrCode::InvalidArgument
-    })?;
+    let owner_str = calling_info.owner_text()?;
     DefaultDatabaseHelper::is_data_exists_default_once(calling_info.user_id(), &owner_str, alias)
 }
 
 pub(crate) fn query_data_once(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
     // get owner str
-    let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
-        loge!("get owner str faield!");
-        ErrCode::InvalidArgument
-    })?;
+    let owner_str = calling_info.owner_text()?;
 
     // call sql to add
     let query_res =
@@ -177,10 +165,7 @@ pub(crate) fn query_data_once(alias: &str, calling_info: &CallingInfo, db_data: 
 
 pub(crate) fn update_data_once(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<i32> {
     // get owner str
-    let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
-        loge!("get owner str failed!");
-        ErrCode::InvalidArgument
-    })?;
+    let owner_str = calling_info.owner_text()?;
 
     // call sql to update
     let update_num =
@@ -193,10 +178,7 @@ pub(crate) fn update_data_once(alias: &str, calling_info: &CallingInfo, db_data:
 
 pub(crate) fn remove_data_once(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<i32> {
     // get owner str
-    let owner_str = String::from_utf8(calling_info.owner_text().clone()).map_err(|_| {
-        loge!("get owner str failed!");
-        ErrCode::InvalidArgument
-    })?;
+    let owner_str = calling_info.owner_text()?;
 
     // call sql to remove
     let remove_num =
