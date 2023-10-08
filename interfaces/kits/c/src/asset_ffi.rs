@@ -137,9 +137,25 @@ pub unsafe extern "C" fn pre_query_asset(query: *const Asset_Attr, query_cnt: u3
         None => return ErrCode::InvalidArgument as i32,
     };
 
+    loge!("[YYD] pre_query_asset!");
     let _manager = match Manager::build() {
-        Ok(manager) => manager,
-        Err(e) => return e as i32,
+        Ok(manager) => {
+            match manager.pre_query(&_map) {
+                Ok(r) => {
+                    // format challenge info
+                    let size = r.len() as u32;
+                    let ptr = r.as_ptr() as *mut u8;
+                    std::mem::forget(r);
+                    (*_challenge).size = size;
+                    (*_challenge).data = ptr;
+                    0
+                },
+                Err(e) => {
+                    e as i32
+                }
+            }
+        },
+        Err(e) => e as i32
     };
 
     loge!("[YZT] enter pre query");

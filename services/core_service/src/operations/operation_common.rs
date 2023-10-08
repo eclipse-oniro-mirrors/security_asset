@@ -21,7 +21,7 @@ mod default_params;
 mod extra_params;
 mod file_operator;
 
-pub(crate) use crypto_adapter::{encrypt, decrypt};
+pub(crate) use crypto_adapter::{encrypt, decrypt, init_decrypt};
 pub(crate) use extra_params::construst_extra_params;
 
 pub(crate) use file_operator::create_user_db_dir;

@@ -22,7 +22,7 @@ use ipc_rust::{
 
 use asset_common::{definition::{AssetMap, ErrCode, Result}, loge};
 use asset_ipc_interface::{IAsset, IpcCode, IPC_SUCCESS, SA_NAME, serialize_map,
-    deserialize_vector_map};
+    deserialize_vector_map, deserialize_vector_u8};
 
 /// Proxy of Asset Service.
 pub struct AssetProxy {
@@ -89,6 +89,26 @@ impl IAsset for AssetProxy {
         }
     }
 
+    fn pre_query(&self, input: &AssetMap) -> Result<Vec<u8>> {
+        let parce_new = MsgParcel::new();
+        match parce_new {
+            Some(mut send_parcel) => {
+                serialize_map(input, &mut send_parcel.borrowed())?;
+                let mut reply =
+                    self.remote.send_request(IpcCode::PreQuery as u32, &send_parcel, false).map_err(|e| {
+                        loge!("pre query send request failed! res = [{}]", e);
+                        ErrCode::IpcError
+                    })?;
+                    let res_code = reply.read::<i32>().map_err(|_| ErrCode::IpcError)?;
+                    if res_code != IPC_SUCCESS {
+                        return Err(ErrCode::try_from(res_code)?);
+                    }
+                    Ok(deserialize_vector_u8(&reply.borrowed())?)
+            },
+            None => Err(ErrCode::IpcError)
+        }
+    }
+
     fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
         let parce_new = MsgParcel::new();
         match parce_new {
@@ -106,7 +126,7 @@ impl IAsset for AssetProxy {
             None => Err(ErrCode::IpcError)
         }
     }
-    
+
     fn remove(&self, input: &AssetMap) -> Result<()> {
         let parce_new = MsgParcel::new();
         match parce_new {

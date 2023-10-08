@@ -20,7 +20,7 @@ use ipc_rust::{
     RemoteStub, String16
 };
 
-use asset_ipc_interface::{IAsset, IpcCode, IPC_SUCCESS, serialize_vector_map, deserialize_map};
+use asset_ipc_interface::{IAsset, IpcCode, IPC_SUCCESS, serialize_vector_map, deserialize_map, serialize_vector_u8};
 use asset_common::{
     loge,
     logi,
@@ -57,6 +57,24 @@ fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
                 },
                 Err(e) => {
                     loge!("query failed, res is [{}]", e);
+                    reply.write::<i32>(&(e as i32))?;
+                }
+            }
+        },
+
+        IpcCode::PreQuery => {
+            logi!("on_remote_request pre query");
+            let input_map = deserialize_map(data).map_err(|_| IpcStatusCode::InvalidValue)?;
+            match stub.pre_query(&input_map) {
+                Ok(res) => {
+                    reply.write::<i32>(&IPC_SUCCESS)?;
+                    serialize_vector_u8(&res, reply).map_err(|e| {
+                        loge!("serialize_vector_map failed! {}", e);
+                        IpcStatusCode::InvalidValue
+                    })?;
+                },
+                Err(e) => {
+                    loge!("pre query failed, res is [{}]", e);
                     reply.write::<i32>(&(e as i32))?;
                 }
             }

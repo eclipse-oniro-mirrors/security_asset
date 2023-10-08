@@ -86,6 +86,12 @@ fn construct_query(input: &AssetMap) -> Result<AssetMap> {
     Ok(map)
 }
 
+fn construct_pre_query(input: &AssetMap) -> Result<AssetMap> {
+    let mut map = (*input).clone();
+    check_or_default_return_type(&mut map)?;
+    Ok(map)
+}
+
 pub(crate) fn construct_params_with_default(input: &AssetMap, code: &IpcCode) -> Result<AssetMap> {
     match *code {
         IpcCode::Add => {
@@ -93,6 +99,9 @@ pub(crate) fn construct_params_with_default(input: &AssetMap, code: &IpcCode) ->
         },
         IpcCode::Query => {
             construct_query(input)
+        },
+        IpcCode::PreQuery => {
+            construct_pre_query(input)
         },
         _ => todo!()
     }

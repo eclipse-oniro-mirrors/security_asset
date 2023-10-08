@@ -24,5 +24,6 @@ pub mod param_check;
 
 pub(crate) use operation_add::add;
 pub(crate) use operation_query::query;
+pub(crate) use operation_query::pre_query;
 pub(crate) use operation_remove::remove;
 pub(crate) use operation_update::update;

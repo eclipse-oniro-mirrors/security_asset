@@ -72,4 +72,10 @@ impl Manager {
         logi!("[YZT][RUST SDK]enter asset query");
         self.remote.query(input)
     }
+
+    /// Query one or more Assets that require user authentication.
+    pub fn pre_query(&self, input: &AssetMap) -> Result<Vec<u8>> {
+        logi!("[YYD][RUST SDK]enter asset pre query");
+        self.remote.pre_query(input)
+    }
 }

@@ -58,6 +58,14 @@ impl IAsset for AssetService {
         operations::query(input, &CallingInfo::build()?)
     }
 
+    fn pre_query(&self, input: &AssetMap) -> Result<Vec<u8>> {
+        // check the validity and comprehensiveness of input params
+        param_check::check_params(input, &param_check::ParamCode::Query)?;
+
+        // get calling uid userid appid etc and do query
+        operations::pre_query(input, &CallingInfo::build()?)
+    }
+
     fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
         // check the validity and comprehensiveness of input params
         param_check::check_params(query, &param_check::ParamCode::UpdateQuery)?;

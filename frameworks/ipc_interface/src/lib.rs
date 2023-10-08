@@ -58,6 +58,9 @@ pub trait IAsset: ipc_rust::IRemoteBroker {
     /// Query one or multiple assets.
     fn query(&self, input: &AssetMap) -> Result<Vec<AssetMap>>;
 
+    /// Query one or more Assets that require user authentication.
+    fn pre_query(&self, input: &AssetMap) -> Result<Vec<u8>>;
+
     /// Update an asset.
     fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()>;
 
@@ -138,6 +141,15 @@ pub fn serialize_vector_map(vec: &Vec<AssetMap>, parcel: &mut BorrowedMsgParcel)
     Ok(())
 }
 
+/// serialize the vector of u8 to parcel
+pub fn serialize_vector_u8(vec: &Vec<u8>, parcel: &mut BorrowedMsgParcel) -> Result<()> {
+    logi!("enter serialize_vector_u8");
+    parcel.write::<u32>(&(vec.len() as u32)).map_err(|_| ErrCode::IpcError)?;
+    parcel.write::<Vec<u8>>(vec).map_err(|_| ErrCode::IpcError)?;
+    logi!("leave serialize_vector_u8 ok");
+    Ok(())
+}
+
 /// deserialize the vector of map from parcel
 pub fn deserialize_vector_map(parcel: &BorrowedMsgParcel) -> Result<Vec<AssetMap>> {
     logi!("enter deserialize_vector_map");
@@ -148,6 +160,21 @@ pub fn deserialize_vector_map(parcel: &BorrowedMsgParcel) -> Result<Vec<AssetMap
     let mut res_vec = Vec::with_capacity(len as usize);
     for _i in 0..len {
         res_vec.push(deserialize_map(parcel)?);
+    }
+    logi!("leave deserialize_vector_map ok");
+    Ok(res_vec)
+}
+
+/// deserialize the vector u8 from parcel
+pub fn deserialize_vector_u8(parcel: &BorrowedMsgParcel) -> Result<Vec<u8>> {
+    logi!("enter deserialize_vector_map");
+    let len = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
+    if len > MAP_MAX_CAPACITY { // todo 最大允许值
+        return Err(ErrCode::IpcError);
+    }
+    let mut res_vec = Vec::with_capacity(len as usize);
+    for _i in 0..len {
+        res_vec.extend(parcel.read::<Vec<u8>>().map_err(|_| ErrCode::IpcError)?);
     }
     logi!("leave deserialize_vector_map ok");
     Ok(res_vec)

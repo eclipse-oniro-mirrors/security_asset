@@ -70,3 +70,9 @@ pub(crate) fn decrypt(calling_info: &CallingInfo, auth_type: &u32, access_type: 
 
     crypto.decrypt(cipher, &construct_aad(calling_info, auth_type, access_type))
 }
+
+pub(crate) fn init_decrypt() -> Result<Vec<u8>> {
+
+    // todo 这里需要等init_decrypt的接口搞定之后再写 先写个假的放上去
+    Ok(vec![1, 2, 2, 2, 2, 1])
+}
