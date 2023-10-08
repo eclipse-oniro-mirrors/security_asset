@@ -32,7 +32,7 @@ fn check_or_default_sync_type(map: &mut AssetMap) -> Result<()> {
 fn check_or_default_access_type(map: &mut AssetMap) -> Result<()> {
     if !map.contains_key(&Tag::Accessibility) {
         logi!("add default access type");
-        map.insert_attr(Tag::Accessibility, Accessibility::DevoceFirstUnlock)?;
+        map.insert_attr(Tag::Accessibility, Accessibility::DeviceFirstUnlock)?;
     }
     Ok(())
 }

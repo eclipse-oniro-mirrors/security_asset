@@ -107,7 +107,7 @@ impl Crypto {
 
         match unsafe { EncryptWrapper(&data as *const CryptParam) } {
             HKS_SUCCESS => Ok(cipher),
-            _ => Err(ErrCode::Failed),
+            _ => Err(ErrCode::CryptoError),
         }
     }
 
@@ -115,7 +115,7 @@ impl Crypto {
     pub fn decrypt(&self, cipher: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
         if cipher.len() <= (AEAD_SIZE + NONCE_SIZE) as usize {
             loge!("invalid cipher\n");
-            return Err(ErrCode::Failed);
+            return Err(ErrCode::InvalidArgument);
         }
         // out param
         let mut plain: Vec<u8> = vec![0; cipher.len() - AEAD_SIZE as usize - NONCE_SIZE as usize];
@@ -133,7 +133,7 @@ impl Crypto {
 
         match unsafe { DecryptWrapper(&data as *const CryptParam) } {
             HKS_SUCCESS => Ok(plain),
-            _ => Err(ErrCode::Failed),
+            _ => Err(ErrCode::CryptoError),
         }
     }
 }

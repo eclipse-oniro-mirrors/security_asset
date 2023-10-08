@@ -70,11 +70,16 @@ pub trait IAsset: ipc_rust::IRemoteBroker {
 
 // todo
 /// max capacity in a map
-const MAP_MAX_CAPACITY: u32 = 9999;
+const MAP_MAX_CAPACITY: u32 = 100;
+const MAP_VEC_MAX_CAPACITY: u32 = 999;
 
 /// serialize the map to parcel
 pub fn serialize_map(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<()> {
     logi!("enter serialize");
+    if map.len() as u32 > MAP_MAX_CAPACITY {
+        loge!("map is too big");
+        return Err(ErrCode::InvalidArgument);
+    }
     parcel.write(&(map.len() as u32)).map_err(|_| ErrCode::IpcError)?;
     for v in map.iter() {
         parcel.write(&(*v.0 as u32)).map_err(|_| ErrCode::IpcError)?;
@@ -125,6 +130,10 @@ pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
 /// serialize the vector of map to parcel
 pub fn serialize_vector_map(vec: &Vec<AssetMap>, parcel: &mut BorrowedMsgParcel) -> Result<()> {
     logi!("enter serialize_vector_map");
+    if vec.len() as u32 > MAP_VEC_MAX_CAPACITY {
+        loge!("map vec is too big");
+        return Err(ErrCode::InvalidArgument);
+    }
     parcel.write::<u32>(&(vec.len() as u32)).map_err(|_| ErrCode::IpcError)?;
     for i in 0..vec.len() {
         match vec.get(i) {
@@ -153,8 +162,8 @@ pub fn serialize_vector_u8(vec: &Vec<u8>, parcel: &mut BorrowedMsgParcel) -> Res
 /// deserialize the vector of map from parcel
 pub fn deserialize_vector_map(parcel: &BorrowedMsgParcel) -> Result<Vec<AssetMap>> {
     logi!("enter deserialize_vector_map");
-    let len = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
-    if len > MAP_MAX_CAPACITY { // todo 最大允许值
+    let len = parcel.read::<u32>().map_err(|_| ErrCode::InvalidArgument)?;
+    if len > MAP_VEC_MAX_CAPACITY { // todo 最大允许值
         return Err(ErrCode::IpcError);
     }
     let mut res_vec = Vec::with_capacity(len as usize);

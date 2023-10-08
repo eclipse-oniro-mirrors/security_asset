@@ -65,7 +65,7 @@ fn get_native_owner_info(token_id: u32, uid: u64) -> Result<OwnerType> {
         let p_name = GetCallingProcessName(token_id);
         if p_name.is_null() {
             loge!("get calling PName failed!");
-            return Err(ErrCode::Failed);
+            return Err(ErrCode::BmsError);
         }
         let p_name_str = CStr::from_ptr(p_name as _).to_str().unwrap();
         logi!("get calling owner info success! uid:{} pname:{}", uid, p_name_str);
@@ -82,7 +82,7 @@ fn get_hap_owner_info(token_id: u32, user_id: i32) -> Result<OwnerType> {
             Ok(OwnerType::Hap(Vec::from(user_info_str.as_bytes())))
         } else {
             loge!("get calling owner(hap) info failed!");
-            Err(ErrCode::Failed)
+            Err(ErrCode::BmsError)
         }
     }
 }
@@ -93,7 +93,7 @@ pub(crate) fn get_calling_owner_type(uid: u64, user_id: i32) -> Result<OwnerType
         // 1 get calling tokenid
         if !GetCallingToken(&mut token_id) {
             loge!("get calling token failed!");
-            return Err(ErrCode::Failed);
+            return Err(ErrCode::BmsError);
         }
         let mut owner_type = 0; // store owner type
         // 2 find this calling onwer type 0:hap 1: native 2: shell
@@ -102,11 +102,11 @@ pub(crate) fn get_calling_owner_type(uid: u64, user_id: i32) -> Result<OwnerType
                 0 => Ok(get_hap_owner_info(token_id, user_id)?),
                 1 => Ok(get_native_owner_info(token_id, uid)?),
                 2 => Ok(get_native_owner_info(token_id, uid)?),
-                _ => Err(ErrCode::Failed)
+                _ => Err(ErrCode::BmsError)
             }
         } else {
             loge!("get calling owner type failed!");
-            Err(ErrCode::Failed)
+            Err(ErrCode::BmsError)
         }
     }
 }

@@ -132,9 +132,6 @@ impl_enum_trait! {
     #[derive(Debug)]
     #[derive(Eq, Hash, PartialEq)]
     pub enum ErrCode {
-        /// failed, todo delete
-        Failed = -1,
-
         /// The error code indicates that the caller doesn't have permission to operate.
         PermissionDenied = 201,
 
@@ -204,7 +201,7 @@ impl_enum_trait! {
     /// An enum type indicates when the Asset is accessible.
     pub enum Accessibility {
         /// The secret value in the Asset can only be accessed after the device is first unlocked.
-        DevoceFirstUnlock = 1,
+        DeviceFirstUnlock = 1,
 
         /// The secret value in the Asset can only be accessed while the device is unlocked.
         DeviceUnlock = 2,

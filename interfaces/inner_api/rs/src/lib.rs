@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This crate implements the asset
+//! This crate implements the interface of asset
 
 #![allow(dead_code)]
 

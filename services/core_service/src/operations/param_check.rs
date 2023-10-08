@@ -16,7 +16,6 @@
 //! This file implement the asset param check
 #![allow(dead_code)]
 
-mod tag_value_match;
 mod check_tag;
 pub mod value_validity_check;
 
@@ -43,9 +42,6 @@ pub(crate) enum ParamCode {
 pub(crate) fn check_params(params: &AssetMap, code: &ParamCode) -> Result<()> {
     // check whether all required params are contained and valid
     check_tag::check_tag_validity(params, code)?;
-
-    // check the param tags and the param value's types are matched
-    tag_value_match::check_tag_value_match(params)?;
 
     // check the validity of param value
     value_validity_check::check_value_validity(params)?;

@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 
-//! This file implement the asset param check
+//! This file implement the optional param check
 
 use asset_common::{
     definition::{AssetMap, ErrCode, Result, Tag},
-    loge};
+    loge
+};
 
 use crate::operations::param_check::ParamCode;
 

@@ -16,12 +16,12 @@
 //! This crate implements the asset
 #![allow(dead_code)]
 
-mod calling_owner_type;
-mod calling_owner_user_id;
+mod calling_type;
+mod calling_user_id;
 
 use asset_common::definition::Result;
-use calling_owner_type::{get_calling_owner_type, OwnerType};
-use calling_owner_user_id::get_calling_user_id;
+use calling_type::{get_calling_owner_type, OwnerType};
+use calling_user_id::get_calling_user_id;
 
 use ipc_rust::get_calling_uid;
 

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This file implement the asset param check
+//! This file implement the file operations
 
 use asset_common::{
     definition::{ErrCode, Result},
@@ -30,7 +30,7 @@ pub(crate) fn create_user_db_dir(user_id: i32) -> Result<()> {
         match fs::create_dir(path) {
             Err(e) if e.kind() != std::io::ErrorKind::AlreadyExists => {
                 loge!("create dir failed! error is [{}]", e);
-                return Err(ErrCode::Failed); //FILE_OPERATION_FAIL
+                return Err(ErrCode::FileOperationError);
             },
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
                 logi!("dir already exists");

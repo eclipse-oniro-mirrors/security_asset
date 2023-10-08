@@ -33,7 +33,7 @@ pub(crate) fn get_calling_user_id(uid: u64) -> Result<i32> {
             Ok(user_id)
         } else {
             loge!("get userid failed!");
-            Err(ErrCode::Failed) // ACCOUNT_FAIL
+            Err(ErrCode::AccountError) // ACCOUNT_FAIL
         }
     }
 }
