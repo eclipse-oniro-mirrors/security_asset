@@ -22,7 +22,7 @@ pub struct KeyInfo {
     /// User id
     pub user_id: i32,
     /// Owner
-    pub owner: String,
+    pub owner_hash: Vec<u8>,
     /// Auth_type
     pub auth_type: u32,
     /// Access_type
@@ -31,13 +31,22 @@ pub struct KeyInfo {
 /// SecretKey struct
 pub struct SecretKey {
     /// SecretKey alias
-    pub alias: String,
+    pub alias: Vec<u8>,
 }
+const ALIAS_LEN: u32 = 64;
 impl SecretKey {
     /// New a secret key
-    pub fn new(info: KeyInfo) -> Self {
+    pub fn new(mut info: KeyInfo) -> Self {
+        let mut alias: Vec<u8> = Vec::with_capacity(ALIAS_LEN as usize);
+        alias.extend_from_slice(&info.user_id.to_le_bytes());
+        alias.push(b'_');
+        alias.append(&mut info.owner_hash);
+        alias.push(b'_');
+        alias.extend_from_slice(&info.auth_type.to_le_bytes());
+        alias.push(b'_');
+        alias.extend_from_slice(&info.access_type.to_le_bytes());
         Self {
-            alias: format!("{}_{}_{}_{}", info.user_id, info.owner, info.auth_type, info.access_type),
+            alias
         }
     }
 
@@ -58,21 +67,21 @@ impl SecretKey {
 
     /// Determine whether user auth is required.
     pub fn need_user_auth(&self) -> bool {
-        for (i, item) in self.alias.split('_').enumerate() {
-            if i == 2 {
-                return item == 1.to_string();
-            }
-        }
+        // for (i, item) in self.alias.split('_').enumerate() {
+        //     if i == 2 {
+        //         return item == 1.to_string();
+        //     }
+        // }
         false
     }
 
     /// Determine whether device unlock is required.
     pub fn need_device_unlock(&self) -> bool {
-        for (i, item) in self.alias.split('_').enumerate() {
-            if i == 3 {
-                return item == 3.to_string();
-            }
-        }
+        // for (i, item) in self.alias.split('_').enumerate() {
+        //     if i == 3 {
+        //         return item == 3.to_string();
+        //     }
+        // }
         false
     }
 }

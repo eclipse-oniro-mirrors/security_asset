@@ -20,6 +20,7 @@ pub(crate) mod db_adapter;
 mod default_params;
 mod extra_params;
 mod file_operator;
+pub(crate) mod hasher;
 
 pub(crate) use crypto_adapter::{encrypt, decrypt, init_decrypt};
 pub(crate) use extra_params::construst_extra_params;

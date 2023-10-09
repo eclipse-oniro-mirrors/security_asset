@@ -57,7 +57,7 @@ extern {
     fn GetCallingOwnerType(callingTokenId: u32, ownerType: &mut i32) -> bool; // ownerType: 0-> hap; 1->native; 2->shell;
     fn GetCallingToken(tokenId: &mut u32) -> bool;
     fn GetCallingProcessName(tokenId: u32) -> *const c_char;
-    fn GetHapOwnerInfo(tokenId: u32, userId: i32) -> *const c_char;
+    fn GetHapOwnerInfo(tokenId: u32, userId: i32, addId: *mut *mut c_char, appIndex: *mut i32) -> bool;
 }
 
 fn get_native_owner_info(token_id: u32, uid: u64) -> Result<OwnerType> {
@@ -75,15 +75,17 @@ fn get_native_owner_info(token_id: u32, uid: u64) -> Result<OwnerType> {
 
 fn get_hap_owner_info(token_id: u32, user_id: i32) -> Result<OwnerType> {
     unsafe {
-        let user_info = GetHapOwnerInfo(token_id, user_id);
-        if !user_info.is_null() {
-            let user_info_str = CString::from_raw(user_info as *mut c_char).into_string().unwrap();
-            logi!("get calling owner info success! user_info:{}", user_info_str);
-            Ok(OwnerType::Hap(Vec::from(user_info_str.as_bytes())))
-        } else {
-            loge!("get calling owner(hap) info failed!");
-            Err(ErrCode::BmsError)
+        let mut app_id: *mut c_char = std::ptr::null_mut();
+        let mut app_index: i32 = 0;
+        if !GetHapOwnerInfo(token_id, user_id, &mut app_id, &mut app_index) {
+            loge!("Get hap owner info failed.");
+            return Err(ErrCode::BmsError);
         }
+        let app_id = CString::from_raw(app_id).into_string().map_err(|e| {
+            loge!("get string from add id failed [{}].", e);
+            ErrCode::BmsError
+        })?;
+        Ok(OwnerType::Hap(format!("{}_{}", app_id, app_index).as_bytes().to_vec()))
     }
 }
 

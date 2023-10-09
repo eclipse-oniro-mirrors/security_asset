@@ -19,14 +19,14 @@ pub const AAD_SIZE: u32 = 8;
 
 #[test]
 fn test_hukkey_new() {
-    let info = KeyInfo { user_id: 1, owner: "2".to_owned(), auth_type: 3, access_type: 4 };
+    let info = KeyInfo { user_id: 1, owner_hash: vec![b'2'], auth_type: 3, access_type: 4 };
     let secret_key = SecretKey::new(info);
-    assert_eq!(secret_key.alias, "1_2_3_4".to_string());
+    assert_eq!(secret_key.alias, "1_2_3_4".as_bytes().to_vec());
 }
 
 #[test]
 fn test_hukkey_generate_and_delete() {
-    let info = KeyInfo { user_id: 1, owner: "2".to_owned(), auth_type: 3, access_type: 4 };
+    let info = KeyInfo { user_id: 1, owner_hash: vec![b'2'], auth_type: 3, access_type: 4 };
     let secret_key = SecretKey::new(info);
     let generate_res = secret_key.generate();
     if generate_res != HKS_SUCCESS {
@@ -44,9 +44,9 @@ fn test_hukkey_generate_and_delete() {
 
 #[test]
 fn test_hukkey_need_user_auth() {
-    let info_need = KeyInfo { user_id: 0, owner: "0".to_owned(), auth_type: 1, access_type: 0 };
+    let info_need = KeyInfo { user_id: 0, owner_hash: vec![b'3'], auth_type: 1, access_type: 0 };
     let secret_key_need = SecretKey::new(info_need);
-    let info_dont_need = KeyInfo { user_id: 0, owner: "0".to_owned(), auth_type: 0, access_type: 0 };
+    let info_dont_need = KeyInfo { user_id: 0, owner_hash: vec![b'4'], auth_type: 0, access_type: 0 };
     let secret_key_dont_need = SecretKey::new(info_dont_need);
     assert!(secret_key_need.need_user_auth());
     assert!(!secret_key_dont_need.need_user_auth());
@@ -54,9 +54,9 @@ fn test_hukkey_need_user_auth() {
 
 #[test]
 fn test_hukkey_need_device_unlock() {
-    let info_need = KeyInfo { user_id: 0, owner: "0".to_owned(), auth_type: 0, access_type: 3 };
+    let info_need = KeyInfo { user_id: 0, owner_hash: vec![b'0'], auth_type: 0, access_type: 3 };
     let secret_key_need = SecretKey::new(info_need);
-    let info_dont_need = KeyInfo { user_id: 0, owner: "0".to_owned(), auth_type: 0, access_type: 0 };
+    let info_dont_need = KeyInfo { user_id: 0, owner_hash: vec![b'0'], auth_type: 0, access_type: 0 };
     let secret_key_dont_need = SecretKey::new(info_dont_need);
     assert!(secret_key_need.need_device_unlock());
     assert!(!secret_key_dont_need.need_device_unlock());
@@ -65,7 +65,7 @@ fn test_hukkey_need_device_unlock() {
 #[test]
 #[allow(non_snake_case)]
 fn test_hukkey_encrypt() {
-    let info = KeyInfo { user_id: 1, owner: "0".to_owned(), auth_type: 0, access_type: 0 };
+    let info = KeyInfo { user_id: 1, owner_hash: vec![b'0'], auth_type: 0, access_type: 0 };
     let secret_key = SecretKey::new(info);
     let generate_res = secret_key.generate();
     let crypto = Crypto { key: secret_key };
@@ -106,7 +106,7 @@ fn test_hukkey_encrypt() {
 #[test]
 #[allow(non_snake_case)]
 fn test_hukkey_decrypt() {
-    let info = KeyInfo { user_id: 1, owner: "3".to_owned(), auth_type: 3, access_type: 4 };
+    let info = KeyInfo { user_id: 1, owner_hash: vec![b'3'], auth_type: 3, access_type: 4 };
     let secret_key = SecretKey::new(info);
     let generate_res = secret_key.generate();
     let crypto = Crypto { key: secret_key };

@@ -68,7 +68,7 @@ static sptr<AppExecFwk::IBundleMgr> GetBundleMgrProxy()
     return iface_cast<AppExecFwk::IBundleMgr>(remoteObject);
 }
 
-const char * GetCallingProcessName(uint32_t tokenId)
+const char *GetCallingProcessName(uint32_t tokenId)
 {
     // get process name
     NativeTokenInfo nativeTokenInfo;
@@ -85,7 +85,7 @@ const char * GetCallingProcessName(uint32_t tokenId)
     return process_name;
 }
 
-const char * GetHapOwnerInfo(uint32_t tokenId, int32_t userId)
+bool GetHapOwnerInfo(uint32_t tokenId, int32_t userId, char** appId, int32_t *appIndex)
 {
     // get hap owner info
     HapTokenInfo hapTokenInfo;
@@ -93,13 +93,13 @@ const char * GetHapOwnerInfo(uint32_t tokenId, int32_t userId)
     LOGE("RET_SUCCESS val: %{public}i", RET_SUCCESS);
     if (callingResult != RET_SUCCESS) {
         LOGE("Get hap info failed from access token kit.");
-        return nullptr;
+        return false;
     }
 
     sptr<AppExecFwk::IBundleMgr> bundleMgrProxy = GetBundleMgrProxy();
     if (bundleMgrProxy == NULL) {
         LOGE("bundle mgr proxy is nullptr.");
-        return nullptr;
+        return false;
     }
 
     AppExecFwk::BundleInfo bundleInfo;
@@ -108,20 +108,18 @@ const char * GetHapOwnerInfo(uint32_t tokenId, int32_t userId)
         AppExecFwk::BundleFlag::GET_BUNDLE_WITH_HASH_VALUE, bundleInfo, userId);
     if (!isGetInfoSuccess) {
         LOGE("GetBundleInfo failed.");
-        return nullptr;
+        return false;
     }
 
     // The appid is concatenated from the bundle name and the developer's public key certificate.
     // transfer appid from string to char *
-    char spelit = '_';
-    int len = bundleInfo.appId.length() + sizeof(spelit)+ sizeof(bundleInfo.appIndex);
+    int len = bundleInfo.appId.length();
     auto ownerInfo = static_cast<char *>(AssetMalloc((len + 1) * sizeof(char)));
     strcpy(ownerInfo, bundleInfo.appId.c_str());
-    (void)memcpy_s(ownerInfo + bundleInfo.appId.length(), sizeof(spelit) + sizeof(bundleInfo.appIndex),
-        &spelit, sizeof(spelit));
-    (void)memcpy_s(ownerInfo + sizeof(spelit) + bundleInfo.appId.length(), sizeof(bundleInfo.appIndex),
-        &bundleInfo.appIndex, sizeof(bundleInfo.appIndex));
 
     LOGE("ownerInfo val: %s", ownerInfo);
-    return ownerInfo;
+
+    *appId = ownerInfo;
+    *appIndex = bundleInfo.appIndex;
+    return true;
 }

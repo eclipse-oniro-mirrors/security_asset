@@ -16,7 +16,7 @@
 //! This crate implements the asset operations
 
 mod operation_add;
-mod operation_common;
+pub mod operation_common;
 mod operation_query;
 mod operation_remove;
 mod operation_update;

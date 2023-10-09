@@ -19,6 +19,7 @@ use crypto_manager::crypto::{Crypto, KeyInfo, SecretKey};
 
 use asset_common::{definition::{AssetMap, Result, Tag, Value}, logi};
 use crate::calling_process_info::CallingInfo;
+use crate::operations::operation_common::hasher;
 
 fn construct_aad(info: &CallingInfo, auth_type: &u32, access_type: &u32) -> Vec<u8> {
     format!("{}_{}_{}_{}", info.user_id(), info.uid(), *auth_type, *access_type).into_bytes()
@@ -27,7 +28,7 @@ fn construct_aad(info: &CallingInfo, auth_type: &u32, access_type: &u32) -> Vec<
 fn construct_key_info(calling_info: &CallingInfo, auth_type: &u32, access_type: &u32) -> Result<KeyInfo> {
     Ok(KeyInfo {
         user_id: calling_info.user_id(),
-        owner: calling_info.owner_text()?,
+        owner_hash: hasher::sha256(calling_info.owner_text()?.as_bytes()).to_vec(),
         auth_type: *auth_type,
         access_type: *access_type,
     })
