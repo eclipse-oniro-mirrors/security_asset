@@ -74,7 +74,7 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     if data_exist_once(&alias, calling_info)? {
         match input_new.get(&Tag::ConflictResolution) {
             Some(Value::Number(num)) if *num == ConflictResolution::ThrowError as u32 => {
-                loge!("alias already exists");
+                loge!("[FATAL]The specified alias already exists.");
                 return Err(ErrCode::Duplicated);
             },
             Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {

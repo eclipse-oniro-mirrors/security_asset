@@ -68,43 +68,19 @@ if ((condition)) {                                                              
     return napi_invalid_arg;                                                            \
 }
 
-void FreeAttrIfNeed(Asset_Attr &attr)
+void FreeAssetAttrs(std::vector<Asset_Attr> &attrs)
 {
-    if ((attr.tag & ASSET_TAG_TYPE_MASK) == ASSET_TYPE_BYTES) {
-        OH_Asset_FreeBlob(&attr.value.blob);
-    }
-}
-
-void FreeAssetAttrs(AsyncContext *context)
-{
-    if (context->attrs != nullptr) {
-        for (uint32_t i = 0; i < context->attrCnt; i++) {
-            FreeAttrIfNeed(context->attrs[i]);
+    for (auto attr : attrs) {
+        if ((attr.tag & ASSET_TAG_TYPE_MASK) == ASSET_TYPE_BYTES) {
+            OH_Asset_FreeBlob(&attr.value.blob);
         }
-
-        AssetFree(context->attrs);
-        context->attrs = nullptr;
     }
-    if (context->updateAttrs != nullptr) {
-        for (uint32_t i = 0; i < context->updateAttrCnt; i++) {
-            FreeAttrIfNeed(context->updateAttrs[i]);
-        }
-
-        AssetFree(context->updateAttrs);
-        context->updateAttrs = nullptr;
-    }
-
-    OH_Asset_FreeBlob(&context->challenge);
-    OH_Asset_FreeResultSet(&context->resultSet);
+    attrs.clear();
 }
 
 AsyncContext *CreateAsyncContext()
 {
-    AsyncContext *context = static_cast<AsyncContext *>(AssetMalloc(sizeof(AsyncContext)));
-    if (context != nullptr) {
-        (void)memset_s(context, sizeof(AsyncContext), 0, sizeof(AsyncContext));
-    }
-    return context;
+    return static_cast<AsyncContext *>(AssetMalloc(sizeof(AsyncContext)));
 }
 
 void DestroyAsyncContext(napi_env env, AsyncContext *context)
@@ -120,7 +96,11 @@ void DestroyAsyncContext(napi_env env, AsyncContext *context)
         napi_delete_reference(env, context->callback);
         context->callback = nullptr;
     }
-    FreeAssetAttrs(context);
+
+    FreeAssetAttrs(context->attrs);
+    FreeAssetAttrs(context->updateAttrs);
+    OH_Asset_FreeBlob(&context->challenge);
+    OH_Asset_FreeResultSet(&context->resultSet);
     AssetFree(context);
 }
 
@@ -136,6 +116,8 @@ napi_status ParseByteArray(napi_env env, napi_value value, uint32_t tag, Asset_B
 
     blob.data = static_cast<uint8_t *>(AssetMalloc(length));
     NAPI_THROW_RETURN_ERR(env, blob.data == nullptr, ASSET_OUT_OF_MEMRORY, "Unable to allocate memory for Asset_Blob.");
+
+    LOGE("[YZT] Malloc for ParseByteArray");
     (void)memcpy_s(blob.data, length, rawData, length);
     blob.size = static_cast<uint32_t>(length);
     return napi_ok;
@@ -145,7 +127,6 @@ napi_status ParseAssetAttribute(napi_env env, napi_value tag, napi_value value, 
 {
     // parse tag
     napi_valuetype type = napi_undefined;
-
     NAPI_CALL_RETURN_ERR(env, napi_typeof(env, tag, &type));
     NAPI_THROW_RETURN_ERR(env, type != napi_number, ASSET_INVALID_ARGUMENT, "The tag type of map should be number.");
     NAPI_CALL_RETURN_ERR(env, napi_get_value_uint32(env, tag, &attr.tag));
@@ -171,13 +152,6 @@ napi_status ParseAssetAttribute(napi_env env, napi_value tag, napi_value value, 
     return napi_ok;
 }
 
-void FreeAttrVec(std::vector<Asset_Attr> &attrs)
-{
-    for (auto attr : attrs) {
-        FreeAttrIfNeed(attr);
-    }
-}
-
 napi_value GetIteratorNext(napi_env env, napi_value iterator, napi_value func, bool *done)
 {
     napi_value next = nullptr;
@@ -189,7 +163,7 @@ napi_value GetIteratorNext(napi_env env, napi_value iterator, napi_value func, b
     return next;
 }
 
-napi_status ParseMapParam(napi_env env, napi_value arg, Asset_Attr **attrs, uint32_t *attrCnt)
+napi_status ParseMapParam(napi_env env, napi_value arg, std::vector<Asset_Attr> &attrs)
 {
     // check map type
     bool isMap = false;
@@ -204,7 +178,6 @@ napi_status ParseMapParam(napi_env env, napi_value arg, Asset_Attr **attrs, uint
     NAPI_CALL_RETURN_ERR(env, napi_call_function(env, arg, entriesFunc, 0, nullptr, &iterator));
     NAPI_CALL_RETURN_ERR(env, napi_get_named_property(env, iterator, "next", &nextFunc));
 
-    std::vector<Asset_Attr> attrVec;
     bool done = false;
     napi_value next = nullptr;
     while ((next = GetIteratorNext(env, iterator, nextFunc, &done)) != nullptr && !done) {
@@ -215,25 +188,12 @@ napi_status ParseMapParam(napi_env env, napi_value arg, Asset_Attr **attrs, uint
         NAPI_CALL_BREAK(env, napi_get_element(env, entry, 0, &key));
         NAPI_CALL_BREAK(env, napi_get_element(env, entry, 1, &value));
 
-        Asset_Attr param;
+        Asset_Attr param = { 0 };
         NAPI_CALL_BREAK(env, ParseAssetAttribute(env, key, value, param));
-        attrVec.push_back(param);
+        attrs.push_back(param);
     }
 
-    if (!done || attrVec.size() == 0) {
-        LOGE("[FATAL] vector size=%zu", attrVec.size());
-        FreeAttrVec(attrVec);
-        return napi_generic_failure;
-    }
-
-    // transfer vector to array
-    *attrs = static_cast<Asset_Attr *>(AssetMalloc(attrVec.size() * sizeof(Asset_Attr)));
-    if (*attrs == nullptr) {
-        FreeAttrVec(attrVec);
-        NAPI_THROW_RETURN_ERR(env, true, ASSET_OUT_OF_MEMRORY, "Unable to allocate memory for Attribute array.");
-    }
-    (void)memcpy_s(*attrs, attrVec.size() * sizeof(Asset_Attr), &attrVec[0], attrVec.size() * sizeof(Asset_Attr));
-    *attrCnt = attrVec.size();
+    NAPI_THROW_RETURN_ERR(env, !done, ASSET_INVALID_ARGUMENT, "Parse entry of map failed.");
     return napi_ok;
 }
 
@@ -258,11 +218,12 @@ napi_value GetUndefinedValue(napi_env env)
 
 napi_value GetUint8Array(napi_env env, const Asset_Blob *blob)
 {
-    if (blob->data == nullptr || blob->size == 0) {
+    if (blob->data == nullptr || blob->size == 0 || blob->size > MAX_BUFFER_LEN) {
         return nullptr;
     }
     // Create a temp array to store the blob value.
     uint8_t *tmp = static_cast<uint8_t *>(AssetMalloc(blob->size));
+    LOGE("[YZT] Malloc for GetUint8Array");
     NAPI_THROW(env, tmp == nullptr, ASSET_OUT_OF_MEMRORY, "Unable to allocate memory for out challenge.");
     (void)memcpy_s(tmp, blob->size, blob->data, blob->size);
 
@@ -424,13 +385,13 @@ napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName
 
     do {
         size_t index = 0;
-        if (ParseMapParam(env, argv[index++], &context->attrs, &context->attrCnt) != napi_ok) {
+        if (ParseMapParam(env, argv[index++], context->attrs) != napi_ok) {
             LOGE("Parse first map parameter failed.");
             break;
         }
 
-        if (index < (argc - 1) &&
-            ParseMapParam(env, argv[index++], &context->updateAttrs, &context->updateAttrCnt) != napi_ok) {
+        if (expectArgNum == UPDATE_MAX_ARGS_NUM &&
+            ParseMapParam(env, argv[index++], context->updateAttrs) != napi_ok) {
             LOGE("Parse second map parameter failed.");
             break;
         }

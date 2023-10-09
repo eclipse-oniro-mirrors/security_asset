@@ -29,7 +29,7 @@ void *AssetMalloc(uint32_t size)
     }
     void *addr = malloc(size);
     if (addr != NULL) {
-        memset_s(addr, size, 0, size);
+        (void)memset_s(addr, size, 0, size);
         LOGE("[YZT] malloc %p size = %u", addr, size); // todo: test memory leak
     }
     return addr;

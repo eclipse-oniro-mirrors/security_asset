@@ -117,7 +117,7 @@ pub(crate) fn pre_query(input: &AssetMap, calling_info: &CallingInfo) -> Result<
                 return Err(ErrCode::SqliteError);
             },
         };
-        secret_key_set.insert(format!("{}_{}_{}_{}", calling_info.user_id(), calling_info.uid(), *auth_type, *access_type).into_bytes());
+        secret_key_set.insert(format!("{}_{}_{}_{}", calling_info.user_id(), calling_info.uid(), *auth_type, *access_type).into_bytes()); // todo: 不要使用uid
     }
     // use secret key to get challenge
     let mut challenge_vec = Vec::new();

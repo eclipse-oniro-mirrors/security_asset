@@ -44,6 +44,6 @@ pub(crate) fn check_params(params: &AssetMap, code: &ParamCode) -> Result<()> {
     check_tag::check_tag_validity(params, code)?;
 
     // check the validity of param value
-    value_validity_check::check_value_validity(params)?;
+    value_validity_check::check_value_validity(params)?; // todo: 和check_tag的命名风格保持一致
     Ok(())
 }

@@ -38,7 +38,7 @@ bool GetCallingToken(uint32_t *tokenId)
     return true;
 }
 
-bool GetCallingOwnerType(uint32_t callingTokenId, int32_t *ownerType)
+bool GetCallingOwnerType(uint32_t callingTokenId, int32_t *ownerType) // todo: 直接返回type, 外面函数校验
 {
     // get token type
     ATokenTypeEnum tokenType = AccessTokenKit::GetTokenType(callingTokenId);
@@ -73,7 +73,6 @@ const char *GetCallingProcessName(uint32_t tokenId)
     // get process name
     NativeTokenInfo nativeTokenInfo;
     int32_t callingResult = AccessTokenKit::GetNativeTokenInfo(tokenId, nativeTokenInfo);
-    LOGE("RET_SUCCESS val: %{public}i callingResult val: %{public}i", RET_SUCCESS, callingResult);
     if (callingResult != RET_SUCCESS) {
         LOGE("Get native info failed from access token kit.");
         return nullptr;
@@ -90,7 +89,6 @@ bool GetHapOwnerInfo(uint32_t tokenId, int32_t userId, char** appId, int32_t *ap
     // get hap owner info
     HapTokenInfo hapTokenInfo;
     int32_t callingResult = AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
-    LOGE("RET_SUCCESS val: %{public}i", RET_SUCCESS);
     if (callingResult != RET_SUCCESS) {
         LOGE("Get hap info failed from access token kit.");
         return false;
@@ -117,6 +115,7 @@ bool GetHapOwnerInfo(uint32_t tokenId, int32_t userId, char** appId, int32_t *ap
     auto ownerInfo = static_cast<char *>(AssetMalloc((len + 1) * sizeof(char)));
     strcpy(ownerInfo, bundleInfo.appId.c_str());
 
+    ownerInfo[11] = '\0';
     LOGE("ownerInfo val: %s", ownerInfo);
 
     *appId = ownerInfo;

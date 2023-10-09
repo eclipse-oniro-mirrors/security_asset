@@ -20,7 +20,10 @@ use ipc_rust::{
     RemoteStub, String16
 };
 
-use asset_ipc_interface::{IAsset, IpcCode, IPC_SUCCESS, serialize_vector_map, deserialize_map, serialize_vector_u8};
+use asset_ipc_interface::{
+    IAsset, IpcCode, IPC_SUCCESS, SA_NAME,
+    serialize_vector_map, deserialize_map, serialize_vector_u8
+};
 use asset_common::{
     loge,
     logi,
@@ -29,13 +32,12 @@ use asset_common::{
 /// IPC entry of the Asset service
 fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
     reply: &mut BorrowedMsgParcel) -> IpcResult<()> {
-    logi!("on_remote_request, calling function: {}", code);
     let ipc_code = IpcCode::try_from(code).map_err(|_| IpcStatusCode::InvalidValue)?;
+    let input_map = deserialize_map(data).map_err(|_| IpcStatusCode::InvalidValue)?;
+    logi!("on_remote_request, calling function: {}", ipc_code);
     match ipc_code {
         IpcCode::Add => {
-            logi!("on_remote_request add");
-            let input_map = deserialize_map(data).map_err(|_| IpcStatusCode::InvalidValue)?;
-            match stub.add(&input_map) {
+            match stub.add(&input_map) { // todo: 公共代码能否抽出来，eg.closure
                 Ok(_) => {
                     reply.write::<i32>(&IPC_SUCCESS)?;
                 },
@@ -45,8 +47,6 @@ fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
             }
         },
         IpcCode::Query => {
-            logi!("on_remote_request query");
-            let input_map = deserialize_map(data).map_err(|_| IpcStatusCode::InvalidValue)?;
             match stub.query(&input_map) {
                 Ok(res) => {
                     reply.write::<i32>(&IPC_SUCCESS)?;
@@ -61,10 +61,7 @@ fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
                 }
             }
         },
-
         IpcCode::PreQuery => {
-            logi!("on_remote_request pre query");
-            let input_map = deserialize_map(data).map_err(|_| IpcStatusCode::InvalidValue)?;
             match stub.pre_query(&input_map) {
                 Ok(res) => {
                     reply.write::<i32>(&IPC_SUCCESS)?;
@@ -79,12 +76,9 @@ fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
                 }
             }
         },
-
         IpcCode::Update => {
-            logi!("on_remote_request update");
-            let query_map = deserialize_map(data).map_err(|_| IpcStatusCode::InvalidValue)?;
             let update_map = deserialize_map(data).map_err(|_| IpcStatusCode::InvalidValue)?;
-            match stub.update(&query_map, &update_map) {
+            match stub.update(&input_map, &update_map) {
                 Ok(_) => {
                     reply.write::<i32>(&IPC_SUCCESS)?;
                 },
@@ -92,10 +86,8 @@ fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
                     reply.write::<i32>(&(e as i32))?;
                 }
             }
-        }
+        },
         IpcCode::Remove => {
-            logi!("on_remote_request remove");
-            let input_map = deserialize_map(data).map_err(|_| IpcStatusCode::InvalidValue)?;
             match stub.remove(&input_map) {
                 Ok(_) => {
                     reply.write::<i32>(&IPC_SUCCESS)?;
@@ -124,7 +116,7 @@ impl AssetStub {
 impl IRemoteStub for AssetStub {
     /// Get stub object descriptor.
     fn get_descriptor() -> &'static str {
-        "security_asset_service"
+        SA_NAME
     }
 
     /// Callback to deal IPC request for this stub.

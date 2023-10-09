@@ -3,7 +3,7 @@ members = [
     "frameworks/common",
     "frameworks/ipc_interface",
     "frameworks/ipc_proxy",
-    "interfaces/inner_api/rs",
+    "interfaces/kits/c",
     "services/core_service",
     "services/db_operator",
     "test/unittest/inner_api_rust",

@@ -243,7 +243,7 @@ fn match_tag_and_check(tag: &Tag, value: &Value) -> Result<()> {
 
 pub(crate) fn check_value_validity(params: &AssetMap) -> Result<()> {
     for (tag, value) in params {
-        match_tag_and_check(tag, value)?;
+        match_tag_and_check(tag, value)?; // todo: 修改下命名
     }
     Ok(())
 }

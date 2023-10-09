@@ -33,7 +33,7 @@ mod operations;
 mod calling_process_info;
 mod definition_inner;
 
-use calling_process_info::CallingInfo;
+use calling_process_info::CallingInfo; // todo: calling_process_info -> calling_info
 use operations::param_check;
 
 /// xxx
@@ -42,7 +42,7 @@ pub struct AssetService;
 impl IRemoteBroker for AssetService {}
 
 impl IAsset for AssetService {
-    fn add(&self, input: &AssetMap) -> Result<()> {
+    fn add(&self, input: &AssetMap) -> Result<()> { // todo param -> argument
         // check the validity and comprehensiveness of input params
         param_check::check_params(input, &param_check::ParamCode::Add)?;
 

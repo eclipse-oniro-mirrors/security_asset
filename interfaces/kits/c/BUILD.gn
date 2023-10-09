@@ -54,15 +54,17 @@ ohos_shared_library("asset_ndk") {
     "-Werror",
   ]
 
+  relative_install_dir = "ndk"
   part_name = "asset"
   subsystem_name = "security"
 }
 
 ohos_rust_shared_ffi("asset_sdk_ffi") {
-  sources = [ "src/asset_ffi.rs" ]
+  sources = [ "src/lib.rs" ]
   deps = [
     "$COMPONENT_DIR/frameworks/common:asset_common",
     "$COMPONENT_DIR/interfaces/inner_api/rs:asset_sdk",
+    "//third_party/rust/crates/libc:lib",
   ]
   external_deps = [ "hilog:hilog_rust" ]
   crate_name = "asset_sdk_ffi"

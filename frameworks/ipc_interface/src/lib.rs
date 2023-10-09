@@ -81,9 +81,9 @@ pub fn serialize_map(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<(
         return Err(ErrCode::InvalidArgument);
     }
     parcel.write(&(map.len() as u32)).map_err(|_| ErrCode::IpcError)?;
-    for v in map.iter() {
-        parcel.write(&(*v.0 as u32)).map_err(|_| ErrCode::IpcError)?;
-        match v.1 {
+    for (&tag, value) in map.iter() {
+        parcel.write(&(tag as u32)).map_err(|_| ErrCode::IpcError)?;
+        match value {
             Value::Bool(b) => parcel.write::<bool>(b).map_err(|_| ErrCode::IpcError)?,
             Value::Number(n) => parcel.write::<u32>(n).map_err(|_| ErrCode::IpcError)?,
             Value::Bytes(a) => parcel.write::<Vec<u8>>(a).map_err(|_| ErrCode::IpcError)?,
@@ -107,17 +107,14 @@ pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
         let asset_tag = Tag::try_from(tag)?;
         match asset_tag.data_type() {
             DataType::Bool => {
-                logi!("try get u32");
                 let v = parcel.read::<bool>().map_err(|_| ErrCode::IpcError)?;
                 map.insert(asset_tag, Value::Bool(v));
             }
             DataType::Uint32 => {
-                logi!("try get u32");
                 let v = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
                 map.insert(asset_tag, Value::Number(v));
             },
             DataType::Bytes => {
-                logi!("try get uint8array");
                 let v = parcel.read::<Vec<u8>>().map_err(|_| ErrCode::IpcError)?;
                 map.insert(asset_tag, Value::Bytes(v));
             },
@@ -135,16 +132,8 @@ pub fn serialize_vector_map(vec: &Vec<AssetMap>, parcel: &mut BorrowedMsgParcel)
         return Err(ErrCode::InvalidArgument);
     }
     parcel.write::<u32>(&(vec.len() as u32)).map_err(|_| ErrCode::IpcError)?;
-    for i in 0..vec.len() {
-        match vec.get(i) {
-            Some(map) => {
-                serialize_map(map, parcel)?;
-            },
-            None => {
-                loge!("get map from vec in serialize_vector_map failed!");
-                return Err(ErrCode::InvalidArgument);
-            }
-        }
+    for map in vec.iter() {
+        serialize_map(map, parcel)?;
     }
     logi!("leave serialize_vector_map ok");
     Ok(())
@@ -163,7 +152,7 @@ pub fn serialize_vector_u8(vec: &Vec<u8>, parcel: &mut BorrowedMsgParcel) -> Res
 pub fn deserialize_vector_map(parcel: &BorrowedMsgParcel) -> Result<Vec<AssetMap>> {
     logi!("enter deserialize_vector_map");
     let len = parcel.read::<u32>().map_err(|_| ErrCode::InvalidArgument)?;
-    if len > MAP_VEC_MAX_CAPACITY { // todo 最大允许值
+    if len > MAP_VEC_MAX_CAPACITY { // todo 最大允许值，测试一把最大值，设置上限，规范上序列化的上限
         return Err(ErrCode::IpcError);
     }
     let mut res_vec = Vec::with_capacity(len as usize);
@@ -181,10 +170,10 @@ pub fn deserialize_vector_u8(parcel: &BorrowedMsgParcel) -> Result<Vec<u8>> {
     if len > MAP_MAX_CAPACITY { // todo 最大允许值
         return Err(ErrCode::IpcError);
     }
-    let mut res_vec = Vec::with_capacity(len as usize);
+    let mut res = Vec::with_capacity(len as usize);
     for _i in 0..len {
-        res_vec.extend(parcel.read::<Vec<u8>>().map_err(|_| ErrCode::IpcError)?);
+        res.extend(parcel.read::<Vec<u8>>().map_err(|_| ErrCode::IpcError)?);
     }
     logi!("leave deserialize_vector_map ok");
-    Ok(res_vec)
+    Ok(res)
 }

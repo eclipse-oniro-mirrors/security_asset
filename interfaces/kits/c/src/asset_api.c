@@ -108,9 +108,11 @@ void OH_Asset_FreeResultSet(Asset_ResultSet *resultSet)
                 OH_Asset_FreeBlob(&attrs[j].value.blob);
             }
         }
+        AssetFree(resultSet->results[i].attrs);
         resultSet->results[i].attrs = NULL;
         resultSet->results[i].count = 0;
     }
+    AssetFree(resultSet->results);
     resultSet->results = NULL;
     resultSet->count = 0;
 }

@@ -29,7 +29,7 @@ use ipc_rust::get_calling_uid;
 pub(crate) struct CallingInfo {
     owner_type: OwnerType,
     user_id: i32,
-    uid: u64,
+    uid: u64, // todo: 去掉
 }
 
 impl CallingInfo {

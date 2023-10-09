@@ -89,11 +89,11 @@ fn get_hap_owner_info(token_id: u32, user_id: i32) -> Result<OwnerType> {
     }
 }
 
-pub(crate) fn get_calling_owner_type(uid: u64, user_id: i32) -> Result<OwnerType> {
+pub(crate) fn get_calling_owner_type(uid: u64, user_id: i32) -> Result<OwnerType> { // todo: 将本函数的功能都封装到C++ 中，只对rust开放一个函数
     unsafe {
         let mut token_id = 0;
         // 1 get calling tokenid
-        if !GetCallingToken(&mut token_id) {
+        if !GetCallingToken(&mut token_id) { // todo: 直接返回tokenId, 命名上加上ID
             loge!("get calling token failed!");
             return Err(ErrCode::BmsError);
         }

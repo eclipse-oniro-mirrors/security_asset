@@ -16,6 +16,8 @@
 #ifndef ASSET_NAPI_COMMON_H
 #define ASSET_NAPI_COMMON_H
 
+#include <vector>
+
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
@@ -25,6 +27,8 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 
+#define UPDATE_MAX_ARGS_NUM 3
+
 typedef struct AsyncContext {
     // common
     napi_async_work work = nullptr;
@@ -32,10 +36,8 @@ typedef struct AsyncContext {
     napi_ref callback = nullptr;
 
     // input
-    Asset_Attr *attrs = nullptr;
-    uint32_t attrCnt = 0;
-    Asset_Attr *updateAttrs = nullptr;
-    uint32_t updateAttrCnt = 0;
+    std::vector<Asset_Attr> attrs;
+    std::vector<Asset_Attr> updateAttrs;
 
     // output
     int32_t result = 0;

@@ -24,8 +24,6 @@ using namespace OHOS::Security::Asset;
 
 namespace {
 
-#define UPDATE_MAX_ARGS_NUM 3
-
 void AddUint32Property(napi_env env, napi_value object, const char *name, uint32_t value)
 {
     napi_value property = nullptr;
@@ -132,7 +130,7 @@ napi_value NapiAdd(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = OH_Asset_Add(context->attrs, context->attrCnt);
+            context->result = OH_Asset_Add(&context->attrs[0], context->attrs.size());
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -142,7 +140,7 @@ napi_value NapiRemove(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = OH_Asset_Remove(context->attrs, context->attrCnt);
+            context->result = OH_Asset_Remove(&context->attrs[0], context->attrs.size());
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -152,8 +150,8 @@ napi_value NapiUpdate(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result =
-                OH_Asset_Update(context->attrs, context->attrCnt, context->updateAttrs, context->updateAttrCnt);
+            context->result = OH_Asset_Update(&context->attrs[0], context->attrs.size(),
+                &context->updateAttrs[0], context->updateAttrs.size());
         };
     return NapiEntry(env, info, __func__, execute, UPDATE_MAX_ARGS_NUM);
 }
@@ -163,7 +161,7 @@ napi_value NapiPreQuery(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = OH_Asset_PreQuery(context->attrs, context->attrCnt, &context->challenge);
+            context->result = OH_Asset_PreQuery(&context->attrs[0], context->attrs.size(), &context->challenge);
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -173,7 +171,7 @@ napi_value NapiQuery(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = OH_Asset_Query(context->attrs, context->attrCnt, &context->resultSet);
+            context->result = OH_Asset_Query(&context->attrs[0], context->attrs.size(), &context->resultSet);
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -183,7 +181,7 @@ napi_value NapiPostQuery(napi_env env, napi_callback_info info)
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
             AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = OH_Asset_PostQuery(context->attrs, context->attrCnt);
+            context->result = OH_Asset_PostQuery(&context->attrs[0], context->attrs.size());
         };
     return NapiEntry(env, info, __func__, execute);
 }
@@ -211,7 +209,7 @@ napi_value NapiGetVersion(napi_env env, napi_callback_info info)
 napi_value Register(napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
-        // function register
+        // register function
         DECLARE_NAPI_FUNCTION("add", NapiAdd),
         DECLARE_NAPI_FUNCTION("remove", NapiRemove),
         DECLARE_NAPI_FUNCTION("update", NapiUpdate),
@@ -220,7 +218,7 @@ napi_value Register(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("postQuery", NapiPostQuery),
         DECLARE_NAPI_FUNCTION("getVersion", NapiGetVersion),
 
-        // enum register
+        // register enumerate
         DECLARE_NAPI_PROPERTY("Tag", DeclareTag(env)),
         DECLARE_NAPI_PROPERTY("ErrorCode", DeclareErrorCode(env)),
         DECLARE_NAPI_PROPERTY("Accessibility", DeclareAccessibility(env)),

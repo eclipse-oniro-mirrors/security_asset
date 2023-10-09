@@ -428,13 +428,13 @@ typedef struct {
  */
 typedef struct {
     /**
-     * The attributes of an Asset.
-     */
-    Asset_Attr *attrs;
-    /**
      * The count of an Asset attributes.
      */
     uint32_t count;
+    /**
+     * The attributes of an Asset.
+     */
+    Asset_Attr *attrs;
 } Asset_Result;
 
 /**
@@ -444,13 +444,13 @@ typedef struct {
  */
 typedef struct {
     /**
-     * The query result set.
-     */
-    Asset_Result *results;
-    /**
      * The count of the result set.
      */
     uint32_t count;
+    /**
+     * The query result set.
+     */
+    Asset_Result *results;
 } Asset_ResultSet;
 
 #ifdef __cplusplus

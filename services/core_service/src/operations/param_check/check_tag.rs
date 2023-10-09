@@ -30,6 +30,7 @@ const UPDATE_QUERY_REQUIRED_PARAMS: [Tag; 1] = [
     Tag::Alias
 ];
 
+//todo: 命名修改，bool返回值
 fn check_required_params_inner(params: &AssetMap, required_params: &[Tag]) -> Result<()> {
     for param in required_params {
         if !params.contains_key(param) {
@@ -40,12 +41,12 @@ fn check_required_params_inner(params: &AssetMap, required_params: &[Tag]) -> Re
     Ok(())
 }
 
-pub(crate) fn check_required_tags(params: &AssetMap, code: &ParamCode) -> Result<()> {
+pub(crate) fn check_required_tags(params: &AssetMap, code: &ParamCode) -> Result<()> { // todo: bool
     match *code {
-        ParamCode::Add => {
+        ParamCode::Add => {//todo: 加引用，45行去*
             check_required_params_inner(params, &ADD_REQUIRED_PARAMS)
         },
-        ParamCode::UpdateQuery => {
+        ParamCode::UpdateQuery => { // todo: 测试一把update的第二个map为空的情况
             check_required_params_inner(params, &UPDATE_QUERY_REQUIRED_PARAMS)
         },
         _ => {
@@ -54,6 +55,7 @@ pub(crate) fn check_required_tags(params: &AssetMap, code: &ParamCode) -> Result
     }
 }
 
+// todo: 分成小数组进行组装
 const ADD_AVAILABLE_PARAMS: [Tag; 15] = [
     Tag::Secret, Tag::Alias, Tag::Accessibility, Tag::RequirePasswordSet, Tag::AuthType, Tag::SyncType,
     Tag::ConflictResolution, Tag::DataLabelCritical1, Tag::DataLabelCritical2, Tag::DataLabelCritical3,
@@ -77,7 +79,7 @@ const UPDATE_MATCH_AVAILABLE_PARAMS: [Tag; 1] = [
 ];
 
 fn check_tag_validity_inner(params: &AssetMap, available_params: &[Tag]) -> Result<()> {
-    for (tag, _) in params.iter() {
+    for (tag, _) in params.iter() { // todo: iter() -> keys()
         if !available_params.contains(tag) {
             loge!("tag [{}] is not expected!", tag);
             return Err(ErrCode::InvalidArgument);
@@ -86,9 +88,9 @@ fn check_tag_validity_inner(params: &AssetMap, available_params: &[Tag]) -> Resu
     Ok(())
 }
 
-pub(crate) fn check_tag_validity(params: &AssetMap, code: &ParamCode) -> Result<()> {
+pub(crate) fn check_tag_validity(params: &AssetMap, code: &ParamCode) -> Result<()> {  // todo: bool
     check_required_tags(params, code)?;
-    match *code {
+    match *code { // add等code能否塞到数组里？
         ParamCode::Add => check_tag_validity_inner(params, &ADD_AVAILABLE_PARAMS),
         ParamCode::Query => check_tag_validity_inner(params, &QUERY_AVAILABLE_PARAMS),
         ParamCode::Update => check_tag_validity_inner(params, &UPDATE_AVAILABLE_PARAMS),
