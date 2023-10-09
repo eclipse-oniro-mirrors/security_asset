@@ -46,11 +46,17 @@ pub(crate) fn encrypt(calling_info: &CallingInfo, input: &AssetMap, secret: &Vec
     };
     let key_info = construct_key_info(calling_info, auth_type, access_type)?;
     let secret_key = SecretKey::new(key_info);
-    if secret_key.exists() != 0 { // todo 使用Ok（bool）类型判断
-        let res = secret_key.generate(); // todo
-        logi!("generete key res is [{}]", res);
-        // return Err() // todo
-    }
+    match secret_key.exists() { // todo 使用Ok（bool）类型判断
+        Ok(true) => (),
+        _ => {
+            match secret_key.generate() {
+                Ok(true) => print!("generete key success"),
+                Ok(false) => print!("never reached"),
+                Err(res) => logi!("generete key failed, res is [{}]", res),
+            };
+        },
+    };
+
     let crypto = Crypto { key: secret_key };
 
     crypto.encrypt(secret, &construct_aad(calling_info, auth_type, access_type))
@@ -62,11 +68,17 @@ pub(crate) fn decrypt(calling_info: &CallingInfo, auth_type: &u32, access_type: 
 
     let key_info = construct_key_info(calling_info, auth_type, access_type)?;
     let secret_key = SecretKey::new(key_info);
-    if secret_key.exists() != 0 { // todo 使用Ok（bool）类型判断
-        let res = secret_key.generate(); // todo
-        logi!("generete key res is [{}]", res);
-        // return Err() // todo
-    }
+    match secret_key.exists() { // todo 使用Ok（bool）类型判断
+        Ok(true) => (),
+        _ => {
+            match secret_key.generate() {
+                Ok(true) => print!("generete key success"),
+                Ok(false) => print!("never reached"),
+                Err(res) => logi!("generete key failed, res is [{}]", res),
+            };
+        },
+    };
+
     let crypto = Crypto { key: secret_key };
 
     crypto.decrypt(cipher, &construct_aad(calling_info, auth_type, access_type))

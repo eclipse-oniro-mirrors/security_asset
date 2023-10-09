@@ -13,7 +13,6 @@
 //! limitations under the License.
 //!
 use crypto_manager::crypto::*;
-use crypto_manager::huks_ffi::*;
 
 pub const AAD_SIZE: u32 = 8;
 
@@ -28,18 +27,17 @@ fn test_hukkey_new() {
 fn test_hukkey_generate_and_delete() {
     let info = KeyInfo { user_id: 1, owner_hash: vec![b'2'], auth_type: 3, access_type: 4 };
     let secret_key = SecretKey::new(info);
-    let generate_res = secret_key.generate();
-    if generate_res != HKS_SUCCESS {
-        panic!("test_hukkey_delete fail because generate error = {}", generate_res);
-    }
+    match secret_key.generate() {
+        Ok(true) => println!("test_hukkey_generate: generate success"),
+        Ok(false) => println!("never reached"),
+        Err(res) => panic!("test_hukkey_delete fail because generate error = {}", res),
+    };
 
-    println!("test_hukkey_generate: generate success");
-    let delete_res = secret_key.delete();
-    if delete_res != HKS_SUCCESS {
-        panic!("test_hukkey_delete fail error = {}", delete_res);
+    match secret_key.delete() {
+        Ok(true) => println!("test_hukkey_delete pass"),
+        Ok(false) => println!("never reached"),
+        Err(res) => panic!("test_hukkey_delete fail error = {}", res),
     }
-
-    println!("test_hukkey_delete pass");
 }
 
 #[test]
@@ -67,12 +65,13 @@ fn test_hukkey_need_device_unlock() {
 fn test_hukkey_encrypt() {
     let info = KeyInfo { user_id: 1, owner_hash: vec![b'0'], auth_type: 0, access_type: 0 };
     let secret_key = SecretKey::new(info);
-    let generate_res = secret_key.generate();
-    let crypto = Crypto { key: secret_key };
+    match secret_key.generate() {
+        Ok(true) => println!("test_hukkey_generate: generate success"),
+        Ok(false) => println!("never reached"),
+        Err(res) => panic!("test_hukkey_encrypt fail because generate error = {}", res),
+    };
 
-    if generate_res != HKS_SUCCESS {
-        panic!("test_hukkey_encrypt fail because generate error = {}", generate_res);
-    }
+    let crypto = Crypto { key: secret_key };
 
     println!("test_hukkey_encrypt: generate success");
     let msg = vec![1, 2, 3, 4, 5, 6];
@@ -89,18 +88,18 @@ fn test_hukkey_encrypt() {
                 }
             }
             if flag {
-                crypto.key.delete();
+                let _ = crypto.key.delete();
                 panic!("test_hukkey_encrypt fail because cipher_text equals indata.");
             }
 
             println!("test_hukkey_encrypt pass");
         },
         Err(e) => {
-            crypto.key.delete();
+            let _ = crypto.key.delete();
             panic!("test_hukkey_encrypt fail because encrypt error = {}", e);
         },
     }
-    crypto.key.delete();
+    let _ = crypto.key.delete();
 }
 
 #[test]
@@ -108,11 +107,13 @@ fn test_hukkey_encrypt() {
 fn test_hukkey_decrypt() {
     let info = KeyInfo { user_id: 1, owner_hash: vec![b'3'], auth_type: 3, access_type: 4 };
     let secret_key = SecretKey::new(info);
-    let generate_res = secret_key.generate();
+    match secret_key.generate() {
+        Ok(true) => println!("test_hukkey_generate: generate success"),
+        Ok(false) => println!("never reached"),
+        Err(res) => panic!("test_hukkey_encrypt fail because generate error = {}", res),
+    };
+
     let crypto = Crypto { key: secret_key };
-    if generate_res != HKS_SUCCESS {
-        panic!("test_hukkey_decrypt fail because generate key error = {}", generate_res);
-    }
 
     println!("test_hukkey_decrypt: generate key success");
     let msg = vec![1, 2, 3, 4, 5, 6];
@@ -129,7 +130,7 @@ fn test_hukkey_decrypt() {
                 }
             }
             if flag {
-                crypto.key.delete();
+                let _ = crypto.key.delete();
                 panic!("test_hukkey_decrypt fail because cipher_text equals indata.");
             }
 
@@ -146,22 +147,22 @@ fn test_hukkey_decrypt() {
                         }
                     }
                     if !flag {
-                        crypto.key.delete();
+                        let _ = crypto.key.delete();
                         panic!("test_hukkey_decrypt fail because plain_text not equals inData");
                     }
 
                     println!("test_hukkey_decrypt pass");
                 },
                 Err(e) => {
-                    crypto.key.delete();
+                    let _ = crypto.key.delete();
                     panic!("test_hukkey_decrypt fail because decrypt error = {}", e);
                 },
             }
         },
         Err(e) => {
-            crypto.key.delete();
+            let _ = crypto.key.delete();
             panic!("test_hukkey_decrypt fail because encrypt error = {}", e);
         },
     }
-    crypto.key.delete();
+    let _ = crypto.key.delete();
 }

@@ -21,6 +21,8 @@ pub type HuksErrcode = i32;
 pub const HKS_SUCCESS: HuksErrcode = 0;
 /// HuksErrcode Failure
 pub const HKS_FAILURE: HuksErrcode = -1;
+/// HuksErrcode NOt EXIST
+pub const HKS_ERROR_NOT_EXIST: HuksErrcode = -13;
 
 /// Nonce size, keep same with huks_wrapper
 pub const NONCE_SIZE: u32 = 12;

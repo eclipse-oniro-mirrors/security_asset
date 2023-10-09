@@ -30,59 +30,68 @@ pub struct KeyInfo {
 }
 /// SecretKey struct
 pub struct SecretKey {
-    /// SecretKey alias
+    /// 1 means need user auth, others donnot need
+    pub auth_type: u32,
+    /// 3 means need device unlock, others donnot need
+    pub access_type: u32,
+    /// secret key alias
     pub alias: Vec<u8>,
 }
 const ALIAS_LEN: u32 = 64;
 impl SecretKey {
     /// New a secret key
     pub fn new(mut info: KeyInfo) -> Self {
-        let mut alias: Vec<u8> = Vec::with_capacity(ALIAS_LEN as usize);
-        alias.extend_from_slice(&info.user_id.to_le_bytes());
-        alias.push(b'_');
-        alias.append(&mut info.owner_hash);
-        alias.push(b'_');
-        alias.extend_from_slice(&info.auth_type.to_le_bytes());
-        alias.push(b'_');
-        alias.extend_from_slice(&info.access_type.to_le_bytes());
+        let mut alias_vec: Vec<u8> = Vec::with_capacity(ALIAS_LEN as usize);
+        alias_vec.extend_from_slice(&info.user_id.to_le_bytes());
+        alias_vec.push(b'_');
+        alias_vec.append(&mut info.owner_hash);
+        alias_vec.push(b'_');
+        alias_vec.extend_from_slice(&info.auth_type.to_le_bytes());
+        alias_vec.push(b'_');
+        alias_vec.extend_from_slice(&info.access_type.to_le_bytes());
         Self {
-            alias
+            auth_type: info.auth_type,
+            access_type: info.access_type,
+            alias: alias_vec,
         }
     }
 
     /// Check whether the secret key exists
-    pub fn exists(&self) -> HuksErrcode {
-        unsafe { KeyExist(self.alias.len() as u32, self.alias.as_ptr()) }
+    pub fn exists(&self) -> Result<bool, HuksErrcode> {
+        let ret = unsafe { KeyExist(self.alias.len() as u32, self.alias.as_ptr()) };
+        match ret {
+            HKS_SUCCESS => Ok(true),
+            HKS_ERROR_NOT_EXIST => Ok(false),
+            _ => Err(ret),
+        }
     }
 
     /// Generate the hukkey
-    pub fn generate(&self) -> HuksErrcode {
-        unsafe { GenerateKey(self.alias.len() as u32, self.alias.as_ptr()) }
+    pub fn generate(&self) -> Result<bool, HuksErrcode> {
+        let ret = unsafe { GenerateKey(self.alias.len() as u32, self.alias.as_ptr()) };
+        match ret {
+            HKS_SUCCESS => Ok(true),
+            _ => Err(ret),
+        }
     }
 
     /// Delete the hukkey
-    pub fn delete(&self) -> HuksErrcode {
-        unsafe { DeleteKey(self.alias.len() as u32, self.alias.as_ptr()) }
+    pub fn delete(&self) -> Result<bool, HuksErrcode> {
+        let ret = unsafe { DeleteKey(self.alias.len() as u32, self.alias.as_ptr()) };
+        match ret {
+            HKS_SUCCESS => Ok(true),
+            _ => Err(ret),
+        }
     }
 
     /// Determine whether user auth is required.
     pub fn need_user_auth(&self) -> bool {
-        // for (i, item) in self.alias.split('_').enumerate() {
-        //     if i == 2 {
-        //         return item == 1.to_string();
-        //     }
-        // }
-        false
+        self.auth_type == 1
     }
 
     /// Determine whether device unlock is required.
     pub fn need_device_unlock(&self) -> bool {
-        // for (i, item) in self.alias.split('_').enumerate() {
-        //     if i == 3 {
-        //         return item == 3.to_string();
-        //     }
-        // }
-        false
+        self.access_type == 3
     }
 }
 
@@ -114,9 +123,13 @@ impl Crypto {
             data_out: cipher.as_mut_ptr(),
         };
 
-        match unsafe { EncryptWrapper(&data as *const CryptParam) } {
+        let ret = unsafe { EncryptWrapper(&data as *const CryptParam) };
+        match ret {
             HKS_SUCCESS => Ok(cipher),
-            _ => Err(ErrCode::CryptoError),
+            _ => {
+                loge!("crypto error ret {}", ret);
+                Err(ErrCode::CryptoError)
+            },
         }
     }
 
@@ -140,9 +153,13 @@ impl Crypto {
             data_out: plain.as_mut_ptr(),
         };
 
-        match unsafe { DecryptWrapper(&data as *const CryptParam) } {
+        let ret = unsafe { DecryptWrapper(&data as *const CryptParam) };
+        match ret {
             HKS_SUCCESS => Ok(plain),
-            _ => Err(ErrCode::CryptoError),
+            _ => {
+                loge!("crypto error ret {}", ret);
+                Err(ErrCode::CryptoError)
+            },
         }
     }
 }
