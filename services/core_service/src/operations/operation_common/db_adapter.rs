@@ -30,7 +30,7 @@ use db_operator::{
 use crate::{
     calling_process_info::CallingInfo,
     definition_inner::{AssetInnerMap, InnerValue},
-    operations::param_check::value_validity_check::check_value_validity,
+    argument_check::value_check::check_value_validity,
 };
 
 fn convert_value_into_db_value(value: &Value) -> Result<DataValue> {

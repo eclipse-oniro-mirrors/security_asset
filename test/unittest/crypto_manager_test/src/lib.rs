@@ -20,7 +20,7 @@ pub const AAD_SIZE: u32 = 8;
 fn test_hukkey_new() {
     let info = KeyInfo { user_id: 1, owner_hash: vec![b'2'], auth_type: 3, access_type: 4 };
     let secret_key = SecretKey::new(info);
-    assert_eq!(secret_key.alias, "1_2_3_4".as_bytes().to_vec());
+    assert_eq!(secret_key.alias, vec![1, 0, 0, 0, 95, 50, 95, 3, 0, 0, 0, 95, 4, 0, 0, 0]);
 }
 
 #[test]
@@ -28,8 +28,7 @@ fn test_hukkey_generate_and_delete() {
     let info = KeyInfo { user_id: 1, owner_hash: vec![b'2'], auth_type: 3, access_type: 4 };
     let secret_key = SecretKey::new(info);
     match secret_key.generate() {
-        Ok(true) => println!("test_hukkey_generate: generate success"),
-        Ok(false) => println!("never reached"),
+        Ok(()) => println!("test_hukkey_generate: generate success"),
         Err(res) => panic!("test_hukkey_delete fail because generate error = {}", res),
     };
 
@@ -66,8 +65,7 @@ fn test_hukkey_encrypt() {
     let info = KeyInfo { user_id: 1, owner_hash: vec![b'0'], auth_type: 0, access_type: 0 };
     let secret_key = SecretKey::new(info);
     match secret_key.generate() {
-        Ok(true) => println!("test_hukkey_generate: generate success"),
-        Ok(false) => println!("never reached"),
+        Ok(()) => println!("test_hukkey_generate: generate success"),
         Err(res) => panic!("test_hukkey_encrypt fail because generate error = {}", res),
     };
 
@@ -108,8 +106,7 @@ fn test_hukkey_decrypt() {
     let info = KeyInfo { user_id: 1, owner_hash: vec![b'3'], auth_type: 3, access_type: 4 };
     let secret_key = SecretKey::new(info);
     match secret_key.generate() {
-        Ok(true) => println!("test_hukkey_generate: generate success"),
-        Ok(false) => println!("never reached"),
+        Ok(()) => println!("test_hukkey_generate: generate success"),
         Err(res) => panic!("test_hukkey_encrypt fail because generate error = {}", res),
     };
 
