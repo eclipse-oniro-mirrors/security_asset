@@ -46,21 +46,21 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // create user dir
     create_user_db_dir(calling_info.user_id())?;
 
+    // todo: 不塞运行参数
     // get param map contains input params and default params
     let input_new = construct_params_with_default(input, &IpcCode::Add)?;
 
+    // todo: yuanhao ： 不单抽，放在db_data里下沉
     let alias = get_alias(&input_new)?;
 
     // a map collecting inner params
     let inner_params = construst_extra_params(calling_info, &IpcCode::Add)?;
 
+    // todo : 与袁浩确认使用&Vec<Pair>的可行性，减少适配层
     // construct db data from input map and inner params
     let mut db_data = construct_data(&input_new, &inner_params)?;
 
-    let secret = match input.get(&Tag::Secret) {
-        Some(Value::Bytes(res)) => res,
-        _ => return Err(ErrCode::InvalidArgument)
-    };
+    let Value::Bytes(secret) = input.get(&Tag::Secret).unwrap() else { panic!("Impossible error for secret type.") };
 
     let cipher = encrypt(calling_info, &input_new, secret)?;
     logi!("get cipher len is [{}]", cipher.len()); // todo delete
@@ -71,25 +71,20 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
         }
     );
 
+    // todo ： zwz 抽函数
     if data_exist_once(&alias, calling_info)? {
         match input_new.get(&Tag::ConflictResolution) {
-            Some(Value::Number(num)) if *num == ConflictResolution::ThrowError as u32 => {
+            Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 =>
+                return replace_data_once(&alias, calling_info, &db_data),
+            _ => {
                 loge!("[FATAL]The specified alias already exists.");
                 return Err(ErrCode::Duplicated);
-            },
-            Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {
-                return replace_data_once(&alias, calling_info, &db_data);
-            }
-            _ => {
-                loge!("not found ConflictResolution");
-                return Err(ErrCode::InvalidArgument);
             },
         }
     }
 
     // call sql to add
-    let insert_num =
-        insert_data_once(&alias, calling_info, db_data)?;
+    let insert_num = insert_data_once(&alias, calling_info, db_data)?;
 
     logi!("insert {} data", insert_num);
     Ok(())

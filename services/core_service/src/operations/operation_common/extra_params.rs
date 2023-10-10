@@ -57,7 +57,7 @@ fn get_create_time(params: &mut AssetInnerMap) -> Result<()> {
         loge!("get sys_time_res faield!");
         return Err(ErrCode::SystemTimeError);
     }
-    let time_string = sys_time_res.unwrap().as_millis().to_string();
+    let time_string = sys_time_res.unwrap().as_millis().to_string(); // todo : zwz: unwrap
     params.insert(G_COLUMN_CREATE_TIME, InnerValue::Text(time_string.into_bytes()));
     Ok(())
 }
@@ -72,9 +72,7 @@ pub(crate) fn construst_extra_params<'a>(calling_info: &'a CallingInfo, code: &'
             get_update_time(&mut params)?;
             get_create_time(&mut params)?;
         },
-        IpcCode::Update => {
-            get_update_time(&mut params)?;
-        },
+        IpcCode::Update => get_update_time(&mut params)?,
         _ => {},
     }
     Ok(params)

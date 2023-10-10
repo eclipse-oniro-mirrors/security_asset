@@ -69,6 +69,7 @@ fn check_or_default_conflict_resolution(map: &mut AssetMap) -> Result<()> {
     Ok(())
 }
 
+// todo zwz : 一函数，参数传入tag与default
 fn construct_add(input: &AssetMap) -> Result<AssetMap> {
     let mut map = (*input).clone();
     check_or_default_sync_type(&mut map)?;
@@ -86,6 +87,7 @@ fn construct_query(input: &AssetMap) -> Result<AssetMap> {
     Ok(map)
 }
 
+// todo yyd : delete
 fn construct_pre_query(input: &AssetMap) -> Result<AssetMap> {
     let mut map = (*input).clone();
     check_or_default_return_type(&mut map)?;
@@ -94,15 +96,9 @@ fn construct_pre_query(input: &AssetMap) -> Result<AssetMap> {
 
 pub(crate) fn construct_params_with_default(input: &AssetMap, code: &IpcCode) -> Result<AssetMap> {
     match *code {
-        IpcCode::Add => {
-            construct_add(input)
-        },
-        IpcCode::Query => {
-            construct_query(input)
-        },
-        IpcCode::PreQuery => {
-            construct_pre_query(input)
-        },
+        IpcCode::Add => construct_add(input),
+        IpcCode::Query => construct_query(input),
+        IpcCode::PreQuery => construct_pre_query(input),
         _ => panic!("No default params for [{}]", code)
     }
 }

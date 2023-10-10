@@ -65,14 +65,19 @@ int32_t InitParamSet(struct HksParamSet **paramSet, const struct HksParam *param
     return ret;
 }
 
+// todo : zdy : 参数名
 int32_t GenerateKey(uint32_t keyLen, const uint8_t *keyData)
 {
+    // todo: zdy : keyData强转
     struct HksBlob keyAlias = { keyLen, (uint8_t *)keyData };
     struct HksParamSet *paramSetIn = NULL;
+    // todo zdy genParams没必要全局
+    // todo zdy 缺少访问控制参数
     int32_t ret = InitParamSet(&paramSetIn, g_genParams, sizeof(g_genParams) / sizeof(HksParam));
     if (ret != HKS_SUCCESS) {
         return ret;
     }
+    // todo : zdy  paramset 内存释放
 
     return HksGenerateKey(&keyAlias, paramSetIn, nullptr);
 }

@@ -57,7 +57,7 @@ fn into_map(attributes: *const Asset_Attr, attr_cnt: u32) -> Option<AssetMap> {
                     let blob_vec = blob_slice.to_vec();
                     map.insert(attr_tag, Value::Bytes(blob_vec));
                 },
-            }
+            };
         }
     }
     Some(map)

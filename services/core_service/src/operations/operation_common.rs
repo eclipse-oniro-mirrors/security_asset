@@ -34,7 +34,7 @@ use asset_common::{definition::{AssetMap, Result, Value, ErrCode, Tag},
 pub(crate) fn get_alias(input: &AssetMap) -> Result<String> {
     let alias;
     if let Some(Value::Bytes(alias_vec)) = input.get(&Tag::Alias) {
-        let alias_try = String::from_utf8(alias_vec.clone());
+        let alias_try = String::from_utf8(alias_vec.clone()); // todo : 可支持bytes,数据库放开text限制
         if let Ok(alias_ok) = alias_try {
             alias = alias_ok;
         } else {

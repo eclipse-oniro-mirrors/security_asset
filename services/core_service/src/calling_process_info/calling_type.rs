@@ -38,6 +38,7 @@ impl OwnerType {
         }
     }
 
+    // to do : zwz : 不要String，直接vec<u8>
     /// xx
     pub(crate) fn get_owner_text(&self) -> Result<String> {
         match self {

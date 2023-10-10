@@ -38,12 +38,8 @@ fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
     match ipc_code {
         IpcCode::Add => {
             match stub.add(&input_map) { // todo: 公共代码能否抽出来，eg.closure
-                Ok(_) => {
-                    reply.write::<i32>(&IPC_SUCCESS)?;
-                },
-                Err(e) => {
-                    reply.write::<i32>(&(e as i32))?;
-                }
+                Ok(_) => reply.write::<i32>(&IPC_SUCCESS)?,
+                Err(e) => reply.write::<i32>(&(e as i32))?
             }
         },
         IpcCode::Query => {
@@ -79,22 +75,14 @@ fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
         IpcCode::Update => {
             let update_map = deserialize_map(data).map_err(|_| IpcStatusCode::InvalidValue)?;
             match stub.update(&input_map, &update_map) {
-                Ok(_) => {
-                    reply.write::<i32>(&IPC_SUCCESS)?;
-                },
-                Err(e) => {
-                    reply.write::<i32>(&(e as i32))?;
-                }
+                Ok(_) => reply.write::<i32>(&IPC_SUCCESS)?,
+                Err(e) => reply.write::<i32>(&(e as i32))?
             }
         },
         IpcCode::Remove => {
             match stub.remove(&input_map) {
-                Ok(_) => {
-                    reply.write::<i32>(&IPC_SUCCESS)?;
-                },
-                Err(e) => {
-                    reply.write::<i32>(&(e as i32))?;
-                }
+                Ok(_) => reply.write::<i32>(&IPC_SUCCESS)?,
+                Err(e) => reply.write::<i32>(&(e as i32))?
             }
         },
         _ => {},
@@ -125,9 +113,7 @@ impl IRemoteStub for AssetStub {
 
         match result {
             Ok(_) => 0,
-            Err(error) => {
-                error as i32
-            }
+            Err(error) => error as i32
         }
     }
 

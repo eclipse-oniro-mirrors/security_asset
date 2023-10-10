@@ -40,17 +40,12 @@ fn check_argument_exist(arguments: &AssetMap, required_arguments: &[Tag]) -> Res
     Ok(())
 }
 
+// todo: 测试一把update的第二个map为空的情况
 pub(crate) fn check_required_tags(arguments: &AssetMap, code: &ArgumentCode) -> Result<()> {
     match *code {
-        ArgumentCode::Add => {
-            check_argument_exist(arguments, &ADD_REQUIRED_PARAMS)
-        },
-        ArgumentCode::UpdateQuery => { // todo: 测试一把update的第二个map为空的情况
-            check_argument_exist(arguments, &UPDATE_QUERY_REQUIRED_PARAMS)
-        },
-        _ => {
-            Ok(())
-        }
+        ArgumentCode::Add => check_argument_exist(arguments, &ADD_REQUIRED_PARAMS),
+        ArgumentCode::UpdateQuery => check_argument_exist(arguments, &UPDATE_QUERY_REQUIRED_PARAMS),
+        _ => Ok(())
     }
 }
 
@@ -96,8 +91,6 @@ pub(crate) fn check_tag_validity(argument: &AssetMap, code: &ArgumentCode) -> Re
         ArgumentCode::Query => check_optional_tags(argument, &QUERY_AVAILABLE_ARGUMENTS),
         ArgumentCode::Update => check_optional_tags(argument, &UPDATE_AVAILABLE_ARGUMENTS),
         ArgumentCode::UpdateQuery => check_optional_tags(argument, &UPDATE_MATCH_AVAILABLE_ARGUMENTS),
-        _ => {
-            Ok(())
-        }
+        _ => Ok(())
     }
 }

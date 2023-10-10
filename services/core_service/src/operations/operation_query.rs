@@ -31,7 +31,7 @@ use db_operator::types::Pair;
 use asset_common::{definition::{AssetMap, Result, Insert, Value, ErrCode, Tag}, loge, logi};
 use asset_ipc_interface::IpcCode;
 
-fn precise_query(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
+fn single_query(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
     let mut query_res = query_data_once(alias, calling_info, db_data)?;
 
     for map in &mut query_res {
@@ -62,7 +62,7 @@ fn precise_query(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -
     Ok(query_res)
 }
 
-fn fuzzy_query(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
+fn batch_query(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
     let mut query_res = query_data_once("", calling_info, db_data)?;
 
     for data in &mut query_res {
@@ -78,12 +78,8 @@ pub(crate) fn query(input: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<
     let mut data_vec = Vec::new();
     set_input_attr(&input_new, &mut data_vec)?;
     match get_alias(&input_new) {
-        Ok(alias) => {
-            precise_query(&alias, calling_info, &data_vec)
-        },
-        Err(ErrCode::NotFound) => {
-            fuzzy_query(calling_info, &data_vec)
-        }
+        Ok(alias) => single_query(&alias, calling_info, &data_vec),
+        Err(ErrCode::NotFound) => batch_query(calling_info, &data_vec),
         _ => {
             loge!("get alias and not not found failed!");
             Err(ErrCode::SqliteError)
@@ -99,7 +95,7 @@ pub(crate) fn pre_query(input: &AssetMap, calling_info: &CallingInfo) -> Result<
     set_input_attr(&input_new, &mut data_vec)?;
     // get all pre query data
     let data_vec = Vec::new();
-    let all_data: Vec<AssetMap> = fuzzy_query(calling_info, &data_vec)?;
+    let all_data: Vec<AssetMap> = batch_query(calling_info, &data_vec)?;
     // get all secret key
     let mut secret_key_set = HashSet::new();
     for map in all_data.iter() {

@@ -113,6 +113,28 @@ fn test_for_precise_query() {
         Err(e) => panic!("test for query failed {}", e)
     }
 
+    match asset_sdk::Manager::build() {
+        Ok(manager) => {
+            match manager.query(&input) {
+                Ok(res) => {
+                    for map in res.iter() {
+                        for (tag, value) in map.iter() {
+                            match value {
+                                Value::Bool(boolean) => println!("get tag:[{}] value:[{}]", tag, boolean),
+                                Value::Number(num) => println!("get tag:[{}] value:[{}]", tag, num),
+                                Value::Bytes(bytes) => println!("get tag:[{}] value_len:[{}]", tag, bytes.len()),
+                            }
+                        }
+                    }
+                },
+                Err(e) => {
+                    panic!("test for query 2 failed {}", e)
+                }
+            }
+        },
+        Err(e) => panic!("test for query 2 failed {}", e)
+    }
+
     remove_asset_inner(&alias);
 }
 
@@ -143,6 +165,28 @@ fn test_for_fuzz_query() {
             }
         },
         Err(e) => panic!("test for query failed {}", e)
+    }
+
+    match asset_sdk::Manager::build() {
+        Ok(manager) => {
+            match manager.query(&input) {
+                Ok(res) => {
+                    for map in res.iter() {
+                        for (tag, value) in map.iter() {
+                            match value {
+                                Value::Bool(boolean) => println!("get tag:[{}] value:[{}]", tag, boolean),
+                                Value::Number(num) => println!("get tag:[{}] value:[{}]", tag, num),
+                                Value::Bytes(bytes) => println!("get tag:[{}] value_len:[{}]", tag, bytes.len()),
+                            }
+                        }
+                    }
+                },
+                Err(e) => {
+                    panic!("test for query 2 failed {}", e)
+                }
+            }
+        },
+        Err(e) => panic!("test for query 2 failed {}", e)
     }
     remove_asset_inner(&alias);
 }

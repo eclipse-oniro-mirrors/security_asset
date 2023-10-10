@@ -110,6 +110,7 @@ static int32_t CheckCryptParma(const struct CryptParam *data)
     return HKS_SUCCESS;
 }
 
+//todo : zdy ： 没必要封函数
 static int32_t UpdateLoopFinish(const struct HksBlob *handle, const struct HksParamSet *paramSet,
     const struct HksBlob *inData, struct HksBlob *outData)
 {
@@ -119,7 +120,7 @@ static int32_t UpdateLoopFinish(const struct HksBlob *handle, const struct HksPa
         LOGE("malloc failed\n");
         return HKS_FAILURE;
     }
-
+    // todo : zdy : 没必要中间值
     struct HksBlob outDataFinish = { outData->size, tempOutData };
 
     if (HksFinish(handle, paramSet, inData, &outDataFinish) != HKS_SUCCESS) {
@@ -150,7 +151,7 @@ int32_t EncryptWrapper(const struct CryptParam *data)
     struct HksBlob keyAlias = { data->keyLen, (uint8_t *)data->keyData };
     struct HksBlob inData = { data->dataInLen, (uint8_t *)data->dataIn };
     struct HksBlob outData = { data->dataOutLen, data->dataOut };
-    struct HksParamSet *encryptParamSet = NULL;
+    struct HksParamSet *encryptParamSet = NULL; // todo : zdy  内存释放
     uint8_t handleE[sizeof(uint64_t)] = { 0 };
     struct HksBlob handleEncrypt = { sizeof(uint64_t), handleE };
 
@@ -171,7 +172,8 @@ int32_t EncryptWrapper(const struct CryptParam *data)
         LOGE("hks encrypt init failed err = %d\n", ret);
         goto END;
     }
- 
+
+    //todo : zdy : 没有做update操作不要叫update
     /* Update & Finish */
     ret = UpdateLoopFinish(&handleEncrypt, encryptParamSet, &inData, &outData);
     if (ret != HKS_SUCCESS) {
@@ -185,8 +187,10 @@ END:
     return ret;
 }
 
+// todo: zdy : 封装rust的blob
 int32_t DecryptWrapper(const struct CryptParam *data)
 {
+    // todo : zdy : Parma
     if (CheckCryptParma(data) != HKS_SUCCESS) {
         LOGE("hks decrypt invalid argument\n");
         return HKS_FAILURE;

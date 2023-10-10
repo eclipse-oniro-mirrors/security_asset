@@ -115,7 +115,7 @@ bool GetHapOwnerInfo(uint32_t tokenId, int32_t userId, char** appId, int32_t *ap
     auto ownerInfo = static_cast<char *>(AssetMalloc((len + 1) * sizeof(char)));
     strcpy(ownerInfo, bundleInfo.appId.c_str());
 
-    LOGE("ownerInfo val: %s", ownerInfo);
+    LOGE("ownerInfo val: %{public}s", ownerInfo);
 
     *appId = ownerInfo;
     *appIndex = bundleInfo.appIndex;
