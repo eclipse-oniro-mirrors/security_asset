@@ -20,7 +20,6 @@ pub mod operation_common;
 mod operation_query;
 mod operation_remove;
 mod operation_update;
-pub mod param_check;
 
 pub(crate) use operation_add::add;
 pub(crate) use operation_query::query;

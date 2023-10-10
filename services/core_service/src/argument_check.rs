@@ -16,12 +16,12 @@
 //! This file implement the asset param check
 #![allow(dead_code)]
 
-mod check_tag;
-pub mod value_validity_check;
+mod tag_check;
+pub(crate) mod value_check;
 
 use asset_common::definition::{AssetMap, Result};
 
-pub(crate) enum ParamCode {
+pub(crate) enum ArgumentCode {
     /// Code for add params.
     Add,
     /// Code for remove params.
@@ -38,12 +38,12 @@ pub(crate) enum ParamCode {
     PostQuery,
 }
 
-/// check the validity and comprehensiveness of input params
-pub(crate) fn check_params(params: &AssetMap, code: &ParamCode) -> Result<()> {
+/// check the validity and comprehensiveness of input argument
+pub(crate) fn check_argument(argument: &AssetMap, code: &ArgumentCode) -> Result<()> {
     // check whether all required params are contained and valid
-    check_tag::check_tag_validity(params, code)?;
+    tag_check::check_tag_validity(argument, code)?;
 
     // check the validity of param value
-    value_validity_check::check_value_validity(params)?; // todo: 和check_tag的命名风格保持一致
+    value_check::check_value_validity(argument)?;
     Ok(())
 }

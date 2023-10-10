@@ -67,10 +67,10 @@ impl SecretKey {
     }
 
     /// Generate the hukkey
-    pub fn generate(&self) -> Result<bool, HuksErrcode> {
+    pub fn generate(&self) -> Result<(), HuksErrcode> {
         let ret = unsafe { GenerateKey(self.alias.len() as u32, self.alias.as_ptr()) };
         match ret {
-            HKS_SUCCESS => Ok(true),
+            HKS_SUCCESS => Ok(()),
             _ => Err(ret),
         }
     }

@@ -32,9 +32,9 @@ mod stub;
 mod operations;
 mod calling_process_info;
 mod definition_inner;
+mod argument_check;
 
 use calling_process_info::CallingInfo; // todo: calling_process_info -> calling_info
-use operations::param_check;
 
 /// xxx
 pub struct AssetService;
@@ -44,7 +44,7 @@ impl IRemoteBroker for AssetService {}
 impl IAsset for AssetService {
     fn add(&self, input: &AssetMap) -> Result<()> { // todo param -> argument
         // check the validity and comprehensiveness of input params
-        param_check::check_params(input, &param_check::ParamCode::Add)?;
+        argument_check::check_argument(input, &argument_check::ArgumentCode::Add)?;
 
         // get calling uid userid appid etc and do add
         operations::add(input, &CallingInfo::build()?)
@@ -52,7 +52,7 @@ impl IAsset for AssetService {
 
     fn query(&self, input: &AssetMap) -> Result<Vec<AssetMap>> {
         // check the validity and comprehensiveness of input params
-        param_check::check_params(input, &param_check::ParamCode::Query)?;
+        argument_check::check_argument(input, &argument_check::ArgumentCode::Query)?;
 
         // get calling uid userid appid etc and do query
         operations::query(input, &CallingInfo::build()?)
@@ -60,7 +60,7 @@ impl IAsset for AssetService {
 
     fn pre_query(&self, input: &AssetMap) -> Result<Vec<u8>> {
         // check the validity and comprehensiveness of input params
-        param_check::check_params(input, &param_check::ParamCode::Query)?;
+        argument_check::check_argument(input, &argument_check::ArgumentCode::Query)?;
 
         // get calling uid userid appid etc and do query
         operations::pre_query(input, &CallingInfo::build()?)
@@ -68,8 +68,8 @@ impl IAsset for AssetService {
 
     fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
         // check the validity and comprehensiveness of input params
-        param_check::check_params(query, &param_check::ParamCode::UpdateQuery)?;
-        param_check::check_params(attributes_to_update, &param_check::ParamCode::Update)?;
+        argument_check::check_argument(query, &argument_check::ArgumentCode::UpdateQuery)?;
+        argument_check::check_argument(attributes_to_update, &argument_check::ArgumentCode::Update)?;
 
         // get calling uid userid appid etc and do add
         operations::update(query, attributes_to_update, &CallingInfo::build()?)
@@ -77,7 +77,7 @@ impl IAsset for AssetService {
 
     fn remove(&self, input: &AssetMap) -> Result<()> {
         // check the validity and comprehensiveness of input params
-        param_check::check_params(input, &param_check::ParamCode::Remove)?;
+        argument_check::check_argument(input, &argument_check::ArgumentCode::Remove)?;
 
         // get calling uid userid appid etc and do remove
         operations::remove(input, &CallingInfo::build()?)

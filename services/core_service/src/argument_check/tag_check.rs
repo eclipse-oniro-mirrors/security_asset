@@ -20,7 +20,7 @@ use asset_common::{
     loge
 };
 
-use crate::operations::param_check::ParamCode;
+use crate::argument_check::ArgumentCode;
 
 const ADD_REQUIRED_PARAMS: [Tag; 2] = [
     Tag::Secret, Tag::Alias
@@ -30,10 +30,9 @@ const UPDATE_QUERY_REQUIRED_PARAMS: [Tag; 1] = [
     Tag::Alias
 ];
 
-//todo: 命名修改，bool返回值
-fn check_required_params_inner(params: &AssetMap, required_params: &[Tag]) -> Result<()> {
-    for param in required_params {
-        if !params.contains_key(param) {
+fn check_argument_exist(arguments: &AssetMap, required_arguments: &[Tag]) -> Result<()> {
+    for param in required_arguments {
+        if !arguments.contains_key(param) {
             loge!("tag [{}] missed", param);
             return Err(ErrCode::InvalidArgument);
         }
@@ -41,13 +40,13 @@ fn check_required_params_inner(params: &AssetMap, required_params: &[Tag]) -> Re
     Ok(())
 }
 
-pub(crate) fn check_required_tags(params: &AssetMap, code: &ParamCode) -> Result<()> { // todo: bool
+pub(crate) fn check_required_tags(arguments: &AssetMap, code: &ArgumentCode) -> Result<()> {
     match *code {
-        ParamCode::Add => {//todo: 加引用，45行去*
-            check_required_params_inner(params, &ADD_REQUIRED_PARAMS)
+        ArgumentCode::Add => {
+            check_argument_exist(arguments, &ADD_REQUIRED_PARAMS)
         },
-        ParamCode::UpdateQuery => { // todo: 测试一把update的第二个map为空的情况
-            check_required_params_inner(params, &UPDATE_QUERY_REQUIRED_PARAMS)
+        ArgumentCode::UpdateQuery => { // todo: 测试一把update的第二个map为空的情况
+            check_argument_exist(arguments, &UPDATE_QUERY_REQUIRED_PARAMS)
         },
         _ => {
             Ok(())
@@ -56,31 +55,33 @@ pub(crate) fn check_required_tags(params: &AssetMap, code: &ParamCode) -> Result
 }
 
 // todo: 分成小数组进行组装
-const ADD_AVAILABLE_PARAMS: [Tag; 15] = [
+const ADD_AVAILABLE_ARGUMENTS: [Tag; 15] = [
     Tag::Secret, Tag::Alias, Tag::Accessibility, Tag::RequirePasswordSet, Tag::AuthType, Tag::SyncType,
     Tag::ConflictResolution, Tag::DataLabelCritical1, Tag::DataLabelCritical2, Tag::DataLabelCritical3,
     Tag::DataLabelCritical4, Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4
 ];
 
-const QUERY_AVAILABLE_PARAMS: [Tag; 19] = [
+const QUERY_AVAILABLE_ARGUMENTS: [Tag; 19] = [
     Tag::Alias, Tag::Accessibility, Tag::RequirePasswordSet, Tag::AuthType, Tag::SyncType,
     Tag::DataLabelCritical1, Tag::DataLabelCritical2, Tag::DataLabelCritical3,
     Tag::DataLabelCritical4, Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4,
     Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderBy, Tag::ReturnType, Tag::AuthToken, Tag::AuthChallenge
 ];
 
-const UPDATE_AVAILABLE_PARAMS: [Tag; 5] = [
+const UPDATE_AVAILABLE_ARGUMENTS: [Tag; 5] = [
     Tag::Secret, Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4
 ];
 
 // todo
-const UPDATE_MATCH_AVAILABLE_PARAMS: [Tag; 1] = [
-    Tag::Alias
+const UPDATE_MATCH_AVAILABLE_ARGUMENTS: [Tag; 13] = [
+    Tag::Alias, Tag::Accessibility, Tag::RequirePasswordSet, Tag::AuthType, Tag::SyncType,
+    Tag::DataLabelCritical1, Tag::DataLabelCritical2, Tag::DataLabelCritical3,
+    Tag::DataLabelCritical4, Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4,
 ];
 
-fn check_tag_validity_inner(params: &AssetMap, available_params: &[Tag]) -> Result<()> {
-    for (tag, _) in params.iter() { // todo: iter() -> keys()
-        if !available_params.contains(tag) {
+fn check_optional_tags(argument: &AssetMap, available_arguments: &[Tag]) -> Result<()> {
+    for tag in argument.keys() {
+        if !available_arguments.contains(tag) {
             loge!("tag [{}] is not expected!", tag);
             return Err(ErrCode::InvalidArgument);
         }
@@ -88,13 +89,13 @@ fn check_tag_validity_inner(params: &AssetMap, available_params: &[Tag]) -> Resu
     Ok(())
 }
 
-pub(crate) fn check_tag_validity(params: &AssetMap, code: &ParamCode) -> Result<()> {  // todo: bool
-    check_required_tags(params, code)?;
+pub(crate) fn check_tag_validity(argument: &AssetMap, code: &ArgumentCode) -> Result<()> {  // todo: bool
+    check_required_tags(argument, code)?;
     match *code { // add等code能否塞到数组里？
-        ParamCode::Add => check_tag_validity_inner(params, &ADD_AVAILABLE_PARAMS),
-        ParamCode::Query => check_tag_validity_inner(params, &QUERY_AVAILABLE_PARAMS),
-        ParamCode::Update => check_tag_validity_inner(params, &UPDATE_AVAILABLE_PARAMS),
-        ParamCode::UpdateQuery => check_tag_validity_inner(params, &UPDATE_MATCH_AVAILABLE_PARAMS),
+        ArgumentCode::Add => check_optional_tags(argument, &ADD_AVAILABLE_ARGUMENTS),
+        ArgumentCode::Query => check_optional_tags(argument, &QUERY_AVAILABLE_ARGUMENTS),
+        ArgumentCode::Update => check_optional_tags(argument, &UPDATE_AVAILABLE_ARGUMENTS),
+        ArgumentCode::UpdateQuery => check_optional_tags(argument, &UPDATE_MATCH_AVAILABLE_ARGUMENTS),
         _ => {
             Ok(())
         }

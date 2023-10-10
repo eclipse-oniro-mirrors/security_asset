@@ -27,10 +27,11 @@ use db_operator::{database_table_helper::G_COLUMN_SECRET, types::{DataValue, Pai
 use crate::{
     operations::operation_common::{
         get_alias, construst_extra_params, encrypt,
-        db_adapter::{set_extra_attrs, set_input_attr, data_exist_once, update_data_once, query_data_once}
+        db_adapter::{set_extra_attrs, set_input_attr, data_exist_once, update_data_once}
     },
     calling_process_info::CallingInfo,
-    definition_inner::AssetInnerMap
+    definition_inner::AssetInnerMap,
+    operations::operation_query
 };
 
 fn construct_data<'a>(input: &'a AssetMap, inner_params: &'a AssetInnerMap)
@@ -58,8 +59,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     let cipher;
     // whether to update secret
     if let Some(Value::Bytes(secret)) = update.get(&Tag::Secret) {
-        // todo 获取存储的数据
-        let query_res = query_data_once(&alias, calling_info, &vec![])?;
+        let query_res = operation_query::query(query, calling_info)?;
         if query_res.len() != 1 {
             loge!("query to-be-updated asset failed, found [{}] assets", query_res.len());
             return Err(ErrCode::NotFound);

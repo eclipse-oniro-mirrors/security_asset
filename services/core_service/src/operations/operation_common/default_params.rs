@@ -103,6 +103,6 @@ pub(crate) fn construct_params_with_default(input: &AssetMap, code: &IpcCode) ->
         IpcCode::PreQuery => {
             construct_pre_query(input)
         },
-        _ => todo!()
+        _ => panic!("No default params for [{}]", code)
     }
 }

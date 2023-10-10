@@ -59,7 +59,7 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 
     let secret = match input.get(&Tag::Secret) {
         Some(Value::Bytes(res)) => res,
-        _ => todo!(),
+        _ => return Err(ErrCode::InvalidArgument)
     };
 
     let cipher = encrypt(calling_info, &input_new, secret)?;

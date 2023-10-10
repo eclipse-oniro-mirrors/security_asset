@@ -17,7 +17,7 @@
 
 use crypto_manager::crypto::{Crypto, KeyInfo, SecretKey};
 
-use asset_common::{definition::{AssetMap, Result, Tag, Value}, logi};
+use asset_common::{definition::{AssetMap, Result, Tag, Value, ErrCode}, loge};
 use crate::calling_process_info::CallingInfo;
 use crate::operations::operation_common::hasher;
 
@@ -38,7 +38,7 @@ pub(crate) fn encrypt(calling_info: &CallingInfo, input: &AssetMap, secret: &Vec
     -> Result<Vec<u8>> {
     let auth_type = match input.get(&Tag::AuthType) {
         Some(Value::Number(res)) => res,
-        _ => todo!(),
+        _ => panic!("get number from auth_type failed."),
     };
     let access_type = match input.get(&Tag::Accessibility) {
         Some(Value::Number(res)) => res,
@@ -48,13 +48,16 @@ pub(crate) fn encrypt(calling_info: &CallingInfo, input: &AssetMap, secret: &Vec
     let secret_key = SecretKey::new(key_info);
     match secret_key.exists() { // todo 使用Ok（bool）类型判断
         Ok(true) => (),
-        _ => {
+        Ok(false) => {
             match secret_key.generate() {
-                Ok(true) => print!("generete key success"),
-                Ok(false) => print!("never reached"),
-                Err(res) => logi!("generete key failed, res is [{}]", res),
+                Ok(_) => (),
+                Err(res) => loge!("Generete key failed, res is [{}].", res),
             };
         },
+        _ => {
+            loge!("Check key exist failed.");
+            return Err(ErrCode::CryptoError);
+        }
     };
 
     let crypto = Crypto { key: secret_key };
@@ -64,18 +67,14 @@ pub(crate) fn encrypt(calling_info: &CallingInfo, input: &AssetMap, secret: &Vec
 
 pub(crate) fn decrypt(calling_info: &CallingInfo, auth_type: &u32, access_type: &u32,
     cipher: &Vec<u8>) -> Result<Vec<u8>> {
-    // todo： authtype 和 accesstype遍历
 
     let key_info = construct_key_info(calling_info, auth_type, access_type)?;
     let secret_key = SecretKey::new(key_info);
     match secret_key.exists() { // todo 使用Ok（bool）类型判断
         Ok(true) => (),
         _ => {
-            match secret_key.generate() {
-                Ok(true) => print!("generete key success"),
-                Ok(false) => print!("never reached"),
-                Err(res) => logi!("generete key failed, res is [{}]", res),
-            };
+            loge!("Found key failed.");
+            return Err(ErrCode::NotFound);
         },
     };
 
