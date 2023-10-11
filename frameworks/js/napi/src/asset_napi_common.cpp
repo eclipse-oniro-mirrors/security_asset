@@ -97,10 +97,10 @@ void DestroyAsyncContext(napi_env env, AsyncContext *context)
         context->callback = nullptr;
     }
 
-    FreeAssetAttrs(context->attrs);
-    FreeAssetAttrs(context->updateAttrs);
-    OH_Asset_FreeBlob(&context->challenge);
     OH_Asset_FreeResultSet(&context->resultSet);
+    OH_Asset_FreeBlob(&context->challenge);
+    FreeAssetAttrs(context->updateAttrs);
+    FreeAssetAttrs(context->attrs);
     AssetFree(context);
 }
 
@@ -117,7 +117,6 @@ napi_status ParseByteArray(napi_env env, napi_value value, uint32_t tag, Asset_B
     blob.data = static_cast<uint8_t *>(AssetMalloc(length));
     NAPI_THROW_RETURN_ERR(env, blob.data == nullptr, ASSET_OUT_OF_MEMRORY, "Unable to allocate memory for Asset_Blob.");
 
-    LOGE("[YZT] Malloc for ParseByteArray");
     (void)memcpy_s(blob.data, length, rawData, length);
     blob.size = static_cast<uint32_t>(length);
     return napi_ok;
@@ -223,7 +222,6 @@ napi_value GetUint8Array(napi_env env, const Asset_Blob *blob)
     }
     // Create a temp array to store the blob value.
     uint8_t *tmp = static_cast<uint8_t *>(AssetMalloc(blob->size));
-    LOGE("[YZT] Malloc for GetUint8Array");
     NAPI_THROW(env, tmp == nullptr, ASSET_OUT_OF_MEMRORY, "Unable to allocate memory for out challenge.");
     (void)memcpy_s(tmp, blob->size, blob->data, blob->size);
 
@@ -231,7 +229,7 @@ napi_value GetUint8Array(napi_env env, const Asset_Blob *blob)
     napi_value array = nullptr;
     napi_status status = napi_create_external_arraybuffer(env, blob->data, blob->size,
         [](napi_env env, void *data, void *hint) {
-            AssetFree(data);
+            AssetFree(data); // todo: 未看到对应的释放日志
         },
         nullptr, &array);
     if (status != napi_ok) {
@@ -246,8 +244,14 @@ napi_value GetUint8Array(napi_env env, const Asset_Blob *blob)
 
 napi_value GetMapObject(napi_env env, Asset_Result *result)
 {
+    napi_value global = nullptr;
+    napi_value mapFunc = nullptr;
     napi_value map = nullptr;
-    NAPI_CALL(env, napi_create_object(env, &map));
+    NAPI_CALL(env, napi_get_global(env, &global));
+    NAPI_CALL(env, napi_get_named_property(env, global, "Map", &mapFunc));
+    NAPI_CALL(env, napi_new_instance(env, mapFunc, 0, nullptr, &map));
+    napi_value setFunc = nullptr;
+    NAPI_CALL(env, napi_get_named_property(env, map, "set", &setFunc));
     for (uint32_t i = 0; i < result->count; i++) {
         napi_value key = nullptr;
         napi_value value = nullptr;
@@ -265,7 +269,9 @@ napi_value GetMapObject(napi_env env, Asset_Result *result)
             default:
                 return nullptr;
         }
-        NAPI_CALL(env, napi_set_property(env, map, key, value));
+
+        napi_value setArgs[] = { key, value };
+        napi_call_function(env, map, setFunc, sizeof(setArgs) / sizeof(setArgs[0]), setArgs, nullptr);
     }
     return map;
 }

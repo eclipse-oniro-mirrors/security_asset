@@ -21,8 +21,6 @@ use std::{
     result::Result, slice
 };
 
-use libc::size_t;
-
 use asset_common::{
     loge,
     definition::{AssetMap, DataType, ErrCode, IntoValue, Tag, Value}
@@ -30,6 +28,7 @@ use asset_common::{
 use asset_sdk::Manager;
 
 const RESULT_CODE_SUCCESS: i32 = 0;
+extern { fn AssetMalloc(size: u32) -> *mut ::libc::c_void; }
 
 fn into_map(attributes: *const Asset_Attr, attr_cnt: u32) -> Option<AssetMap> {
     if attributes.is_null() {
@@ -245,12 +244,11 @@ impl TryFrom<&Vec<u8>> for Asset_Blob {
             data: std::ptr::null_mut(),
         };
 
-        blob.data = unsafe { libc::malloc(blob.size as size_t) as *mut u8 };
+        blob.data = unsafe { AssetMalloc(blob.size) as *mut u8 };
         if blob.data.is_null() {
             loge!("[FATAL][RUST SDK]Unable to allocate memory for Asset_Blob.");
             return Err(ErrCode::OutOfMemory);
         }
-        loge!("[RUST SDK][YZT] malloc for blob.data 0x{:x}", blob.data as usize);
         unsafe { std::ptr::copy_nonoverlapping(vec.as_ptr(), blob.data, blob.size as usize) };
         Ok(blob)
     }
@@ -293,14 +291,13 @@ impl TryFrom<&AssetMap> for Asset_Result {
         };
 
         result.attrs = unsafe {
-            libc::malloc(result.count.wrapping_mul(size_of::<Asset_Attr>() as u32) as size_t) as *mut Asset_Attr
+            AssetMalloc(result.count.wrapping_mul(size_of::<Asset_Attr>() as u32)) as *mut Asset_Attr
         };
         if result.attrs.is_null() {
             loge!("[FATAL][RUST SDK]Unable to allocate memory for Asset_Result.");
             return Err(ErrCode::OutOfMemory);
         }
 
-        loge!("[RUST SDK][YZT] malloc for result.attrs 0x{:x}", result.attrs as usize);
         for (i, (tag, value)) in map.iter().enumerate() {
             unsafe {
                 let attr = result.attrs.add(i);
@@ -328,13 +325,12 @@ impl TryFrom<&Vec<AssetMap>> for Asset_ResultSet {
             results: std::ptr::null_mut(),
         };
         result_set.results = unsafe {
-            libc::malloc(result_set.count.wrapping_mul(size_of::<Asset_Result>() as u32) as size_t) as *mut Asset_Result
+            AssetMalloc(result_set.count.wrapping_mul(size_of::<Asset_Result>() as u32)) as *mut Asset_Result
         };
         if result_set.results.is_null() {
             loge!("[FATAL][RUST SDK]Unable to allocate memory for Asset_ResultSet.");
             return Err(ErrCode::OutOfMemory);
         }
-        loge!("[RUST SDK][YZT] malloc for resultSet.results 0x{:x}", result_set.results as usize);
         for (i, map) in maps.iter().enumerate() {
             unsafe {
                 let result = result_set.results.add(i);

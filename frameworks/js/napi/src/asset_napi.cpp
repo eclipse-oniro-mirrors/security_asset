@@ -83,7 +83,6 @@ napi_value DeclareAccessibility(napi_env env)
     NAPI_CALL(env, napi_create_object(env, &accessibility));
     AddUint32Property(env, accessibility, "DEVICE_FIRST_UNLOCK", ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCK);
     AddUint32Property(env, accessibility, "DEVICE_UNLOCK", ASSET_ACCESSIBILITY_DEVICE_UNLOCK);
-    AddUint32Property(env, accessibility, "DEVICE_SECURE", ASSET_ACCESSIBILITY_DEVICE_SECURE);
     return accessibility;
 }
 

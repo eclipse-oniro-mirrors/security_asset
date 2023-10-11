@@ -63,6 +63,7 @@ ohos_rust_shared_ffi("asset_sdk_ffi") {
   sources = [ "src/lib.rs" ]
   deps = [
     "$COMPONENT_DIR/frameworks/common:asset_common",
+    "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem",
     "$COMPONENT_DIR/interfaces/inner_api/rs:asset_sdk",
     "//third_party/rust/crates/libc:lib",
   ]

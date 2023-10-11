@@ -28,5 +28,8 @@ ohos_static_library("asset_mem") {
   public_configs = [ ":asset_mem_config" ]
 
   sources = [ "src/asset_mem.c" ]
-  external_deps = [ "hilog:libhilog" ]
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
 }

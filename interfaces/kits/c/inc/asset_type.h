@@ -270,11 +270,6 @@ typedef enum {
      * The secret value in the Asset can only be accessed while the device is unlocked.
      */
     ASSET_ACCESSIBILITY_DEVICE_UNLOCK = 2,
-    /**
-     * The secret value in the Asset can only be accessed
-     * when the device is unlocked and a PIN/pattern/password is set on the device.
-     */
-    ASSET_ACCESSIBILITY_DEVICE_SECURE = 3,
 } Asset_Accessibility;
 
 /**
