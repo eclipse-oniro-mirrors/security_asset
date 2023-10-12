@@ -15,7 +15,7 @@ use asset_common::definition::ErrCode;
 
 use crate::{
     database::{
-        copy_db_file, copy_db_file_inner, is_database_file_error, sqlite3_close_wrap, Database,
+        copy_db_file, copy_db_file_inner, is_db_corrupt, sqlite3_close_wrap, Database,
         UpdateDatabaseCallbackFunc,
     },
     from_sqlite_code_to_asset_code,
@@ -28,7 +28,6 @@ use crate::{
     SqliteErrCode, SQLITE_OK,
 };
 
-// todo: 为什么要换个名字
 /// just use database
 pub type DatabaseHelper<'a> = Database<'a>;
 /// just use database
@@ -38,54 +37,54 @@ pub type TableHelper<'a> = Table<'a>;
 
 /// default table name
 pub const G_ASSET_TABLE_NAME: &str = "asset_table";
-/// default column name // todo: 1012 修改下doc, 每个字段不一样
+/// default column name Id
 pub const G_COLUMN_ID: &str = "Id";
-/// default column name
+/// default column name Secret
 pub const G_COLUMN_SECRET: &str = "Secret";
-/// default column name
+/// default column name Owner
 pub const G_COLUMN_OWNER: &str = "Owner";
-/// default column name
+/// default column name Alias
 pub const G_COLUMN_ALIAS: &str = "Alias";
-/// default column name
+/// default column name OwnerType
 pub const G_COLUMN_OWNER_TYPE: &str = "OwnerType";
-/// default column name
+/// default column name GroupId
 pub const G_COLUMN_GROUP_ID: &str = "GroupId";
-/// default column name
+/// default column name SyncType
 pub const G_COLUMN_SYNC_TYPE: &str = "SyncType";
-/// default column name
-pub const G_COLUMN_ACCESS_TYPE: &str = "AccessType"; // todo: 1012 rename accessibility
-/// default column name
+/// default column name Accessibility
+pub const G_COLUMN_ACCESSIBILITY: &str = "Accessibility";
+/// default column name AuthType
 pub const G_COLUMN_AUTH_TYPE: &str = "AuthType";
-/// default column name
+/// default column name CreateTime
 pub const G_COLUMN_CREATE_TIME: &str = "CreateTime";
-/// default column name
+/// default column name UpdateTime
 pub const G_COLUMN_UPDATE_TIME: &str = "UpdateTime";
-/// default column name
+/// default column name DeleteType
 pub const G_COLUMN_DELETE_TYPE: &str = "DeleteType";
-/// default column name
+/// default column name Version
 pub const G_COLUMN_VERSION: &str = "Version";
-/// default column name
+/// default column name RequirePasswordSet
 pub const G_COLUMN_REQUIRE_PASSWORD_SET: &str = "RequirePasswordSet";
-/// default column name
+/// default column name DataLabelCritical_1
 pub const G_COLUMN_CRITICAL1: &str = "DataLabelCritical_1";
-/// default column name
+/// default column name DataLabelCritical_2
 pub const G_COLUMN_CRITICAL2: &str = "DataLabelCritical_2";
-/// default column name
+/// default column name DataLabelCritical_3
 pub const G_COLUMN_CRITICAL3: &str = "DataLabelCritical_3";
-/// default column name
+/// default column name DataLabelCritical_4
 pub const G_COLUMN_CRITICAL4: &str = "DataLabelCritical_4";
-/// default column name
+/// default column name DataLabelNormal_1
 pub const G_COLUMN_NORMAL1: &str = "DataLabelNormal_1";
-/// default column name
+/// default column name DataLabelNormal_2
 pub const G_COLUMN_NORMAL2: &str = "DataLabelNormal_2";
-/// default column name
+/// default column name DataLabelNormal_3
 pub const G_COLUMN_NORMAL3: &str = "DataLabelNormal_3";
-/// default column name
+/// default column name DataLabelNormal_4
 pub const G_COLUMN_NORMAL4: &str = "DataLabelNormal_4";
 
 /// columns info for default asset_table
-pub const G_COLUMNS_INFO: &[ColumnInfo] = &[ // todo: 1012 COLUMN_INFO
-    ColumnInfo { // todo 1012 每个字段放一行
+pub const G_COLUMNS_INFO: &[ColumnInfo] = &[
+    ColumnInfo {
         name: G_COLUMN_ID,
         data_type: DataType::INTEGER,
         is_primary_key: true,
@@ -128,7 +127,7 @@ pub const G_COLUMNS_INFO: &[ColumnInfo] = &[ // todo: 1012 COLUMN_INFO
         not_null: true,
     },
     ColumnInfo {
-        name: G_COLUMN_ACCESS_TYPE,
+        name: G_COLUMN_ACCESSIBILITY,
         data_type: DataType::INTEGER,
         is_primary_key: false,
         not_null: true,
@@ -242,7 +241,7 @@ fn back_db_when_succ<T, F: Fn(&Table) -> Result<T, SqliteErrCode>>(
             Ok(o)
         },
         Err(e) => {
-            if is_database_file_error(e) {
+            if is_db_corrupt(e) {
                 // recovery master db
                 let r_ret = copy_db_file(table.db, true);
                 if r_ret.is_err() {
@@ -472,7 +471,7 @@ fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>, Err
             return Ok(Some(Table::new(G_ASSET_TABLE_NAME, db)));
         },
         Err(e) => {
-            if is_database_file_error(e) {
+            if is_db_corrupt(e) {
                 let _ = sqlite3_close_wrap(db.v2, db.handle);
                 // recovery master db
                 let r_ret = copy_db_file(db, true);

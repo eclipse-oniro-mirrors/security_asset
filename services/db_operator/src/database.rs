@@ -27,13 +27,12 @@ pub struct UseridFileLock {
     pub(crate) mtx: Mutex<i32>,
 }
 
-// todo: 1012 去掉G_, FILE->DB
 /// save all the userid file locks
-static G_USER_FILE_LOCK_LIST: Mutex<Vec<&'static UseridFileLock>> = Mutex::new(Vec::new()); // todo: 为什么存引用，而不是直接存Box
+static G_USER_DB_LOCK_LIST: Mutex<Vec<&'static UseridFileLock>> = Mutex::new(Vec::new());
 
 /// if userid exists, return reference, or create a new lock, insert into list and return reference
 fn get_file_lock_by_userid(userid: i32) -> &'static UseridFileLock {
-    let mut list = G_USER_FILE_LOCK_LIST.lock().unwrap();
+    let mut list = G_USER_DB_LOCK_LIST.lock().unwrap();
     for f in list.iter() {
         if f.userid == userid {
             return f;
@@ -106,9 +105,10 @@ pub fn copy_db_file_inner(from: &String, to: &String) -> Result<u64, std::io::Er
 }
 
 /// recovery if database file format error
-/// if recovery_master == false, will recovery backup file
-pub fn copy_db_file(db: &Database, recovery_master: bool) -> Result<u64, std::io::Error> {
-    if recovery_master {
+/// if master_or_backup == false, will recovery backup file
+/// if master_or_backup == true, will recovery master file
+pub fn copy_db_file(db: &Database, master_or_backup: bool) -> Result<u64, std::io::Error> {
+    if master_or_backup {
         fs::copy(&db.back_path, &db.path)
     } else {
         fs::copy(&db.path, &db.back_path)
@@ -133,43 +133,44 @@ fn sqlite3_open_wrap(
 
 /// is corrupt
 #[inline(always)]
-pub fn is_database_file_error(ret: SqliteErrCode) -> bool { // todo: 1012 修改下命名 is_db_corrupt
+pub fn is_db_corrupt(ret: SqliteErrCode) -> bool {
     ret == SQLITE_CORRUPT || ret == SQLITE_NOTADB
 }
 
 /// open db, will recovery wrong db file
 fn open_db(
-    db: &mut Database, // todo 1012 参数统一放在同一行，如果超过行宽，则超出部分的参数换行缩进4个空格
-    path: String, // todo 1012 path back_path两个参数冗余
+    db: &mut Database,
+    path: String,
     back_path: String,
-    flag: i32, // todo: 1012 flag 和 vfs和database结构体中的有啥区别？
+    flag: i32,
     vfs: Option<&[u8]>,
 ) -> Result<(), SqliteErrCode> {
     let _lock = db.file.mtx.lock().unwrap();
-    let mut ret = sqlite3_open_wrap(&path, &mut db.handle, flag, vfs, db.v2); // todo: 1012 不用支持open_v2
-    if is_database_file_error(ret) {
+    let mut ret = sqlite3_open_wrap(&path, &mut db.handle, flag, vfs, db.v2);
+    if is_db_corrupt(ret) {
         // recovery master db
         let mut back_handle = 0usize;
         let back_ret = sqlite3_open_wrap(&back_path, &mut back_handle, flag, vfs, db.v2);
         if back_ret != SQLITE_OK {
             asset_common::loge!("both master backup db fail: {} {} {}", path, ret, back_ret);
-            Err(ret) // todo 1012 提前return, 减少嵌套层数
-        } else {
-            let _ = sqlite3_close_wrap(db.v2, back_handle); // todo: 1012, 保留v2实现，返回值不能忽略
-            let r_ret = copy_db_file(db, true); //todo: 1012 recovery_master命名
-            if r_ret.is_err() {
-                asset_common::loge!("recovery master db {} fail", path);
-                Err(ret)
-            } else {
-                asset_common::logi!("recovery master db {} succ", path);
-                ret = sqlite3_open_wrap(&path, &mut db.handle, flag, vfs, db.v2);
-                if ret != SQLITE_OK {
-                    asset_common::loge!("reopen master db {} fail {}", path, ret);
-                    return Err(ret);
-                }
-                Ok(())
-            }
+            return Err(ret);
         }
+        let close_ret = sqlite3_close_wrap(db.v2, back_handle);
+        if close_ret != SQLITE_OK {
+            asset_common::loge!("close back fail {}", close_ret);
+        }
+        let r_ret = copy_db_file(db, true);
+        if r_ret.is_err() {
+            asset_common::loge!("recovery master db {} fail", path);
+            return Err(ret);
+        }
+        asset_common::logi!("recovery master db {} succ", path);
+        ret = sqlite3_open_wrap(&path, &mut db.handle, flag, vfs, db.v2);
+        if ret != SQLITE_OK {
+            asset_common::loge!("reopen master db {} fail {}", path, ret);
+            return Err(ret);
+        }
+        Ok(())
     } else if ret == SQLITE_OK {
         Ok(())
     } else {
@@ -198,17 +199,18 @@ impl<'a> Database<'a> {
     pub fn new(path: &str) -> Result<Database, SqliteErrCode> {
         let mut path_c = path.to_string();
         let mut back_path_c = fmt_backup_path(path);
-        let mut db: Database<'_> = Database { // user - mutex
+        let mut db: Database<'_> = Database {
+            // user - mutex
             path: path_c.clone(),
             back_path: back_path_c.clone(),
             v2: false,
             flags: 0,
             vfs: None,
             handle: 0,
-            file: get_file_lock_by_userid(i32::MAX), // todo 1012 该new函数预期作为通用函数，但此处与userId强相关，可以删除
+            file: get_file_lock_by_userid(i32::MAX),
         };
         path_c.push('\0');
-        back_path_c.push('\0'); // todo: 1012 为什么要加/0, 后续要转C语言的风格，没有结束符？
+        back_path_c.push('\0');
         open_db(&mut db, path_c, back_path_c, 0, None)?;
         Ok(db)
     }
@@ -395,13 +397,13 @@ impl<'a> Database<'a> {
 
     /// open a table, if the table not exists, return Ok(None)
     pub fn open_table(&self, table_name: &str) -> Result<Option<Table>, SqliteErrCode> {
-        let sql = // todo 1012 不用换行
+        let sql =
             format!("select * from sqlite_master where type ='table' and name = '{}'", table_name);
         let stmt = Statement::<true>::prepare(sql.as_str(), self)?;
         let ret = stmt.step();
         if ret != SQLITE_ROW {
             if ret == SQLITE_DONE {
-                Ok(None) // todo 1012 直接调用create_table
+                Ok(None)
             } else {
                 Err(ret)
             }
@@ -415,7 +417,7 @@ impl<'a> Database<'a> {
         let sql = format!("DROP TABLE {}", table_name);
         let stmt = Statement::<false>::new(sql.as_str(), self);
         stmt.exec(None, 0)
-    } // todo: 1012 对于非db_operator中调用的函数，去掉pub或，加上pub(crate)
+    }
 
     /// create table with name 'table_name'
     /// the columns is descriptions for each column.
