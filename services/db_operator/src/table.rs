@@ -10,7 +10,7 @@
 //! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
-use std::collections::HashMap;
+use std::{cmp::Ordering, collections::HashMap};
 
 use crate::{
     database::Database,
@@ -18,7 +18,7 @@ use crate::{
     statement::Statement,
     types::{
         from_data_value_to_str_value, from_datatype_to_str, AdvancedResultSet, ColumnInfo,
-        Condition, DataValue, Pair, ResultDataValue, ResultSet,
+        Condition, DataValue, Pair, QueryOptions, ResultDataValue, ResultSet,
     },
     SqliteErrCode, SQLITE_DONE, SQLITE_ERROR, SQLITE_OK, SQLITE_ROW,
 };
@@ -139,6 +139,34 @@ fn build_sql_values(len: usize, sql: &mut String) {
         sql.push('?');
         if i != len - 1 {
             sql.push(',');
+        }
+    }
+}
+
+/// build sql options
+fn build_sql_query_options(query_options: Option<&QueryOptions>, sql: &mut String) {
+    if let Some(option) = query_options {
+        if let Some(order_by) = &option.order_by {
+            if !order_by.is_empty() {
+                sql.push_str(" order by ");
+                build_sql_columns_not_empty(order_by, sql);
+            }
+        }
+        if let Some(order) = option.order {
+            let str = if order == Ordering::Greater {
+                "ASC"
+            } else if order == Ordering::Less {
+                "DESC"
+            } else {
+                ""
+            };
+            sql.push_str(format!(" {}", str).as_str());
+        }
+        if let Some(limit) = option.limit {
+            sql.push_str(format!(" limit {}", limit).as_str());
+        }
+        if let Some(offset) = option.offset {
+            sql.push_str(format!(" offset {}", offset).as_str());
         }
     }
 }
@@ -404,12 +432,14 @@ impl<'a> Table<'a> {
         &self,
         columns: &Vec<&str>,
         conditions: &Condition,
+        query_options: Option<&QueryOptions>,
     ) -> Result<ResultSet, SqliteErrCode> {
         let mut sql = String::from("select ");
         build_sql_columns(columns, &mut sql);
         sql.push_str(" from ");
         sql.push_str(self.table_name.as_str());
         build_sql_where(conditions, &mut sql);
+        build_sql_query_options(query_options, &mut sql);
         let stmt = prepare_statement(self, &mut sql)?;
         let mut index = 1;
         bind_conditions(conditions, &stmt, &mut index)?;
@@ -439,12 +469,14 @@ impl<'a> Table<'a> {
         &self,
         columns: &Vec<&str>,
         conditions: &Condition,
+        query_options: Option<&QueryOptions>,
     ) -> Result<AdvancedResultSet, SqliteErrCode> {
         let mut sql = String::from("select ");
         build_sql_columns(columns, &mut sql);
         sql.push_str(" from ");
         sql.push_str(self.table_name.as_str());
         build_sql_where(conditions, &mut sql);
+        build_sql_query_options(query_options, &mut sql);
         let stmt = prepare_statement(self, &mut sql)?;
         let mut index = 1;
         bind_conditions(conditions, &stmt, &mut index)?;

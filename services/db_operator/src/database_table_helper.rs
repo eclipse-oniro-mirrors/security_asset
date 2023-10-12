@@ -21,7 +21,10 @@ use crate::{
     from_sqlite_code_to_asset_code,
     table::Table,
     transaction::Transaction,
-    types::{AdvancedResultSet, ColumnInfo, Condition, DataType, DataValue, Pair, ResultSet},
+    types::{
+        AdvancedResultSet, ColumnInfo, Condition, DataType, DataValue, Pair, QueryOptions,
+        ResultSet,
+    },
     SqliteErrCode, SQLITE_OK,
 };
 
@@ -454,7 +457,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let result = helper.query_datas_default("owner", "alias", &vec![]);
+    /// let result = helper.query_datas_default("owner", "alias", &vec![], None);
     /// ```
     /// sql like:
     /// select * from table_name where AppId='owner' and Alias='alias'
@@ -463,6 +466,7 @@ impl<'a> TableHelper<'a> {
         owner: &str,
         alias: &str,
         condition: &Condition,
+        query_options: Option<&QueryOptions>,
     ) -> Result<ResultSet, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
         if !owner.is_empty() {
@@ -476,7 +480,7 @@ impl<'a> TableHelper<'a> {
         for c in condition {
             v.push(*c);
         }
-        let closure = |e: &Table| e.query_row(&vec![], &v);
+        let closure = |e: &Table| e.query_row(&vec![], &v, query_options);
         back_db_when_succ(false, self, closure)
     }
 
@@ -488,7 +492,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let result = helper.query_columns_default(&vec![], "owner", "alias", &vec![]);
+    /// let result = helper.query_columns_default(&vec![], "owner", "alias", &vec![], None);
     /// ```
     /// sql like:
     /// select * from table_name where AppId='owner' and Alias='alias'
@@ -498,6 +502,7 @@ impl<'a> TableHelper<'a> {
         owner: &str,
         alias: &str,
         condition: &Condition,
+        query_options: Option<&QueryOptions>,
     ) -> Result<AdvancedResultSet, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
         if !owner.is_empty() {
@@ -511,7 +516,7 @@ impl<'a> TableHelper<'a> {
         for c in condition {
             v.push(*c);
         }
-        let closure = |e: &Table| e.query_datas_advanced(columns, &v);
+        let closure = |e: &Table| e.query_datas_advanced(columns, &v, query_options);
         back_db_when_succ(false, self, closure)
     }
 }
@@ -707,9 +712,10 @@ impl<'a> DefaultDatabaseHelper<'a> {
         owner: &str,
         alias: &str,
         condition: &Condition,
+        query_options: Option<&QueryOptions>,
     ) -> Result<ResultSet, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
-        table.query_datas(owner, alias, condition)
+        table.query_datas(owner, alias, condition, query_options)
     }
 
     /// see TableHelper
@@ -720,9 +726,10 @@ impl<'a> DefaultDatabaseHelper<'a> {
         owner: &str,
         alias: &str,
         condition: &Condition,
+        query_options: Option<&QueryOptions>,
     ) -> Result<AdvancedResultSet, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
-        table.query_columns(columns, owner, alias, condition)
+        table.query_columns(columns, owner, alias, condition, query_options)
     }
 }
 
@@ -844,10 +851,11 @@ impl<'a> DefaultDatabaseHelper<'a> {
         owner: &str,
         alias: &str,
         condition: &Condition,
+        query_options: Option<&QueryOptions>,
     ) -> Result<ResultSet, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.query_datas_default(owner, alias, condition)
+        db.query_datas_default(owner, alias, condition, query_options)
     }
 
     /// see TableHelper
@@ -858,10 +866,11 @@ impl<'a> DefaultDatabaseHelper<'a> {
         owner: &str,
         alias: &str,
         condition: &Condition,
+        query_options: Option<&QueryOptions>,
     ) -> Result<AdvancedResultSet, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.query_columns_default(columns, owner, alias, condition)
+        db.query_columns_default(columns, owner, alias, condition, query_options)
     }
 }
 

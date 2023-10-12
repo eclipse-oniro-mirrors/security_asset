@@ -10,7 +10,7 @@
 //! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
-use std::collections::HashMap;
+use std::{cmp::Ordering, collections::HashMap};
 
 use crate::database::Database;
 
@@ -157,4 +157,17 @@ pub struct Sqlite3ErrMsg<'a, 'b> {
     pub s: &'a str,
     /// point to database for auto drop
     pub db: &'b Database<'b>,
+}
+
+/// query options
+#[repr(C)]
+pub struct QueryOptions<'a> {
+    /// offset param
+    pub offset: Option<u32>,
+    /// limit param
+    pub limit: Option<u32>,
+    /// order param:ASC, DESC
+    pub order: Option<Ordering>,
+    /// order by columns
+    pub order_by: Option<Vec<&'a str>>,
 }

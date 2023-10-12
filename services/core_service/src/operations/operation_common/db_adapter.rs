@@ -150,7 +150,7 @@ pub(crate) fn query_data_once(alias: &str, calling_info: &CallingInfo, db_data: 
 
     // call sql to add
     let query_res =
-        DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(), &Vec::new(), &owner_str, alias, db_data)?;
+        DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(), &Vec::new(), &owner_str, alias, db_data, None)?;
 
     logi!("query params calling_info.user_id() = [{}], owner_str = [{}], alias = [{}], db_data len is [{}]", calling_info.user_id(), owner_str, alias, db_data.len()); // todo delete
     for pair in db_data {
