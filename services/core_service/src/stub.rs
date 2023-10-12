@@ -22,7 +22,7 @@ use ipc_rust::{
 
 use asset_ipc_interface::{
     IAsset, IpcCode, IPC_SUCCESS, SA_NAME,
-    serialize_vector_map, deserialize_map, serialize_vector_u8
+    serialize_maps, deserialize_map
 };
 use asset_common::{
     loge,
@@ -46,7 +46,7 @@ fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
             match stub.query(&input_map) {
                 Ok(res) => {
                     reply.write::<i32>(&IPC_SUCCESS)?;
-                    serialize_vector_map(&res, reply).map_err(|e| {
+                    serialize_maps(&res, reply).map_err(|e| {
                         loge!("serialize_vector_map failed! {}", e);
                         IpcStatusCode::InvalidValue
                     })?;
@@ -61,10 +61,7 @@ fn on_remote_request(stub: &dyn IAsset, code: u32, data: &BorrowedMsgParcel,
             match stub.pre_query(&input_map) {
                 Ok(res) => {
                     reply.write::<i32>(&IPC_SUCCESS)?;
-                    serialize_vector_u8(&res, reply).map_err(|e| {
-                        loge!("serialize_vector_map failed! {}", e);
-                        IpcStatusCode::InvalidValue
-                    })?;
+                    reply.write::<Vec<u8>>(&res)?;
                 },
                 Err(e) => {
                     loge!("pre query failed, res is [{}]", e);
@@ -95,7 +92,6 @@ pub struct AssetStub(Box<dyn IAsset + Sync + Send>);
 
 impl AssetStub {
     /// Create a new remote stub service
-    #[allow(dead_code)]
     pub fn new_remote_stub<T: IAsset + Send + Sync + 'static>(obj: T) -> Option<RemoteStub<Self>> {
         RemoteStub::new(AssetStub(Box::new(obj)))
     }

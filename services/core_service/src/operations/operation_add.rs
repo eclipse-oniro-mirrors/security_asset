@@ -14,7 +14,6 @@
  */
 
 //! This crate implements the asset
-#![allow(dead_code)]
 
 use asset_common::{
     definition::{AssetMap, Result, ConflictResolution, ErrCode, Tag, Value},
@@ -23,7 +22,6 @@ use asset_common::{
 use asset_ipc_interface::IpcCode;
 use db_operator::{database_table_helper::G_COLUMN_SECRET, types::{DataValue, Pair}};
 
-// use crypto_manager::hukkey::Crypto;
 use crate::{
     operations::operation_common::{
         construst_extra_params, create_user_db_dir,

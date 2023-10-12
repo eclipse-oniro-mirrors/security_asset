@@ -34,7 +34,7 @@ mod calling_info;
 mod definition_inner;
 mod argument_check;
 
-use calling_info::CallingInfo; // todo: calling_process_info -> calling_info
+use calling_info::CallingInfo;
 
 /// xxx
 pub struct AssetService;
@@ -42,45 +42,35 @@ pub struct AssetService;
 impl IRemoteBroker for AssetService {}
 
 impl IAsset for AssetService {
-    fn add(&self, input: &AssetMap) -> Result<()> { // todo param -> argument
-        // check the validity and comprehensiveness of input params
-        argument_check::check_argument(input, &argument_check::ArgumentCode::Add)?;
-
-        // get calling uid userid appid etc and do add
-        operations::add(input, &CallingInfo::build()?)
+    fn add(&self, attributes: &AssetMap) -> Result<()> { // todo param -> argument
+        argument_check::check_argument(attributes, &argument_check::ArgumentCode::Add)?;
+        operations::add(attributes, &CallingInfo::build()?)
     }
 
-    fn query(&self, input: &AssetMap) -> Result<Vec<AssetMap>> {
-        // check the validity and comprehensiveness of input params
-        argument_check::check_argument(input, &argument_check::ArgumentCode::Query)?;
-
-        // get calling uid userid appid etc and do query
-        operations::query(input, &CallingInfo::build()?)
-    }
-
-    fn pre_query(&self, input: &AssetMap) -> Result<Vec<u8>> {
-        // check the validity and comprehensiveness of input params
-        argument_check::check_argument(input, &argument_check::ArgumentCode::Query)?;
-
-        // get calling uid userid appid etc and do query
-        operations::pre_query(input, &CallingInfo::build()?)
+    fn remove(&self, query: &AssetMap) -> Result<()> {
+        argument_check::check_argument(query, &argument_check::ArgumentCode::Remove)?;
+        operations::remove(query, &CallingInfo::build()?)
     }
 
     fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
-        // check the validity and comprehensiveness of input params
         argument_check::check_argument(query, &argument_check::ArgumentCode::UpdateQuery)?;
         argument_check::check_argument(attributes_to_update, &argument_check::ArgumentCode::Update)?;
-
-        // get calling uid userid appid etc and do add
         operations::update(query, attributes_to_update, &CallingInfo::build()?)
     }
 
-    fn remove(&self, input: &AssetMap) -> Result<()> {
-        // check the validity and comprehensiveness of input params
-        argument_check::check_argument(input, &argument_check::ArgumentCode::Remove)?;
+    fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>> {
+        argument_check::check_argument(query, &argument_check::ArgumentCode::PreQuery)?;
+        operations::pre_query(query, &CallingInfo::build()?)
+    }
 
-        // get calling uid userid appid etc and do remove
-        operations::remove(input, &CallingInfo::build()?)
+    fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>> {
+        argument_check::check_argument(query, &argument_check::ArgumentCode::Query)?;
+        operations::query(query, &CallingInfo::build()?)
+    }
+
+    fn post_query(&self, query: &AssetMap) -> Result<()> {
+        argument_check::check_argument(query, &argument_check::ArgumentCode::PostQuery)?;
+        Ok(()) // todo: implement
     }
 }
 

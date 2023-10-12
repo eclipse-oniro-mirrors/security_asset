@@ -23,7 +23,10 @@ use std::{
 
 use asset_common::{
     loge,
-    definition::{AssetMap, DataType, ErrCode, IntoValue, Tag, Value}
+    definition::{
+        AssetMap, DataType, ErrCode, IntoValue,
+        Tag, Value, Version
+    }
 };
 use asset_sdk::Manager;
 
@@ -135,7 +138,7 @@ pub extern "C" fn update_asset(query: *const Asset_Attr, query_cnt: u32,
 /// The caller must ensure that the challenge pointer is valid.
 #[no_mangle]
 pub unsafe extern "C" fn pre_query_asset(query: *const Asset_Attr, query_cnt: u32, challenge: *mut Asset_Blob) -> i32 {
-    let _map = match into_map(query, query_cnt) {
+    let map = match into_map(query, query_cnt) {
         Some(map) => map,
         None => return ErrCode::InvalidArgument as i32,
     };
@@ -150,7 +153,7 @@ pub unsafe extern "C" fn pre_query_asset(query: *const Asset_Attr, query_cnt: u3
         Err(e) => return e as i32,
     };
 
-    let res = match manager.pre_query(&_map) {
+    let res = match manager.pre_query(&map) {
         Err(e) => return e as i32,
         Ok(res) => res,
     };
@@ -204,21 +207,28 @@ pub unsafe extern "C" fn query_asset(query: *const Asset_Attr, query_cnt: u32,
 /// Function called from C programming language to Rust programming language for post quering Asset.
 #[no_mangle]
 pub extern "C" fn post_query_asset(handle: *const Asset_Attr, handle_cnt: u32) -> i32 {
-    let _map = match into_map(handle, handle_cnt) {
+    let map = match into_map(handle, handle_cnt) {
         Some(map) => map,
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let _manager = match Manager::build() {
+    let manager = match Manager::build() {
         Ok(manager) => manager,
         Err(e) => return e as i32,
     };
 
     loge!("[YZT] enter post query");
-    // if let Err(e) = manager.post_query(&map) {
-    //     e as i32
-    // }
-    RESULT_CODE_SUCCESS
+    if let Err(e) = manager.post_query(&map) {
+        e as i32
+    } else {
+        RESULT_CODE_SUCCESS
+    }
+}
+
+/// Function called from C programming language to Rust programming language for getting Asset version.
+#[no_mangle]
+pub extern "C" fn get_asset_version() -> Version {
+    Manager::get_version()
 }
 
 /// Attribute of Asset with a c representation.

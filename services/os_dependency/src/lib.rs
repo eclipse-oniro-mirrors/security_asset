@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-//! This module implements the function of Asset SDK from C to RUST.
-#![allow(dead_code)]
+//! This create implement the asset
 
 use std::{
     ffi::c_char,

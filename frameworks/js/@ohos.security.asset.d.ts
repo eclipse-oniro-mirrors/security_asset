@@ -599,89 +599,96 @@ declare namespace asset {
      */
     AUTH_TOKEN_EXPIRED = 24000005,
     /**
+     * The error code indicates that the screen lock status mismatches.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
+    StatusMismatch = 24000006,
+    /**
      * The error code indicates insufficient memory.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    OUT_OF_MEMRORY = 24000006,
+    OUT_OF_MEMRORY = 24000007,
     /**
      * The error code indicates that the Asset or encryption key is corrupted.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_CORRUPTED = 24000007,
+    DATA_CORRUPTED = 24000008,
     /**
      * The error code indicates that the ipc communication is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    IPC_ERROR = 24000008,
+    IPC_ERROR = 24000009,
     /**
-     * The error code indicates that the Database operation is failed.
+     * The error code indicates that the database operation is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    SQLITE_ERROR = 24000009,
+    SQLITE_ERROR = 24000010,
     /**
      * The error code indicates that the operation of calling Bundle Manager service is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    BMS_ERROR = 24000010,
+    BMS_ERROR = 24000011,
     /**
      * The error code indicates that the cryptography operation is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    CRYPTO_ERROR = 24000011,
+    CRYPTO_ERROR = 24000012,
     /**
-     * The error code indicates that the operation of calling OS Account service is failed.
+     * The error code indicates that the operation of calling OS account service is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    ACCOUNT_ERROR = 24000012,
+    ACCOUNT_ERROR = 24000013,
     /**
-     * The error code indicates that the operation of calling Common Event service is failed.
+     * The error code indicates that the operation of calling common event service is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    COMMON_EVENT_ERROR = 24000013,
+    COMMON_EVENT_ERROR = 24000014,
     /**
-     * The error code indicates that the operation of calling Access Token service is failed.
+     * The error code indicates that the operation of calling access token service is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    ACCESS_TOKEN_ERROR = 24000014,
+    ACCESS_TOKEN_ERROR = 24000015,
     /**
      * The error code indicates that the operation of file is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    FILE_OPERATION_ERROR = 24000015,
+    FILE_OPERATION_ERROR = 24000016,
     /**
-     * The error code indicates that the operation of get system time is failed.
+     * The error code indicates that the operation of getting system time is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    SYSTEM_TIME_GET_ERROR = 24000016,
+    SYSTEM_TIME_GET_ERROR = 24000017,
     /**
      * The error code indicates that the amount of map element or other limited quotas exceed the limit.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    EXCEED_LIMIT = 24000017,
+    EXCEED_LIMIT = 24000018,
   }
 }
 

@@ -15,8 +15,6 @@
 
 //! This module defines asset-related data structures.
 
-#![allow(dead_code)]
-
 mod extension;
 
 use std::collections::HashMap;
@@ -156,9 +154,8 @@ impl_enum_trait! {
         /// The error code indicates that the authentication token has expired.
         AuthTokenExpired = 24000005,
 
-        // todo : yzt : 啥意思啊
-        /// The error code indicates that the blabla
-        StatusMisMatch = 24000006,
+        /// The error code indicates that the screen lock status mismatches.
+        StatusMismatch = 24000006,
 
         /// The error code indicates insufficient memory.
         OutOfMemory = 24000007,
@@ -190,7 +187,7 @@ impl_enum_trait! {
         /// The error code indicates that the operation of file is failed.
         FileOperationError = 24000016,
 
-        /// The error code indicates that the operation of geting system time failed.
+        /// The error code indicates that the operation of getting system time failed.
         SystemTimeError = 24000017,
 
         /// The error code indicates that the amount of map element or other limited quotas exceed the limit.
@@ -263,15 +260,16 @@ impl_enum_trait! {
 }
 
 /// The asset version.
+#[repr(C)]
 pub struct Version {
     /// The major version.
-    major: u32,
+    pub major: u32,
 
     /// The minor version.
-    minor: u32,
+    pub minor: u32,
 
     /// The patch version.
-    patch: u32,
+    pub patch: u32,
 }
 
 /// Automatically convert the input value to Asset Value, then insert into the collection.

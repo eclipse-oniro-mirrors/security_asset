@@ -14,7 +14,6 @@
  */
 
 //! This crate implements the asset
-#![allow(dead_code)]
 
 use crate::{
     calling_info::CallingInfo,

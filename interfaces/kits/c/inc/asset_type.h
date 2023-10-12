@@ -207,53 +207,57 @@ typedef enum {
      */
     ASSET_AUTH_TOKEN_EXPIRED = 24000005,
     /**
+     * The error code indicates that the screen lock status mismatches.
+     */
+    StatusMismatch = 24000006,
+    /**
      * The error code indicates insufficient memory.
      */
-    ASSET_OUT_OF_MEMRORY = 24000006,
+    ASSET_OUT_OF_MEMRORY = 24000007,
     /**
      * The error code indicates that the Asset or encryption key is corrupted.
      */
-    ASSET_DATA_CORRUPTED = 24000007,
+    ASSET_DATA_CORRUPTED = 24000008,
     /**
      * The error code indicates that the ipc communication is failed.
      */
-    ASSET_IPC_ERROR = 24000008,
+    ASSET_IPC_ERROR = 24000009,
     /**
-     * The error code indicates that the Database operation is failed.
+     * The error code indicates that the database operation is failed.
      */
-    ASSET_SQLITE_ERROR = 24000009,
+    ASSET_SQLITE_ERROR = 24000010,
     /**
      * The error code indicates that the operation of calling Bundle Manager service is failed.
      */
-    ASSET_BMS_ERROR = 24000010,
+    ASSET_BMS_ERROR = 24000011,
     /**
      * The error code indicates that the cryptography operation is failed.
      */
-    ASSET_CRYPTO_ERROR = 24000011,
+    ASSET_CRYPTO_ERROR = 24000012,
     /**
-     * The error code indicates that the operation of calling OS Account service is failed.
+     * The error code indicates that the operation of calling OS account service is failed.
      */
-    ASSET_ACCOUNT_ERROR = 24000012,
+    ASSET_ACCOUNT_ERROR = 24000013,
     /**
-     * The error code indicates that the operation of calling Common Event service is failed.
+     * The error code indicates that the operation of calling common event service is failed.
      */
-    ASSET_COMMON_EVENT_ERROR = 24000013,
+    ASSET_COMMON_EVENT_ERROR = 24000014,
     /**
-     * The error code indicates that the operation of calling Access Token service is failed.
+     * The error code indicates that the operation of calling access token service is failed.
      */
-    ASSET_ACCESS_TOKEN_ERROR = 24000014,
+    ASSET_ACCESS_TOKEN_ERROR = 24000015,
     /**
      * The error code indicates that the operation of file is failed.
      */
-    ASSET_FILE_OPERATION_ERROR = 24000015,
+    ASSET_FILE_OPERATION_ERROR = 24000016,
     /**
-     * The error code indicates that the operation of get system time is failed.
+     * The error code indicates that the operation of getting system time is failed.
      */
-    ASSET_SYSTEM_TIME_GET_ERROR = 24000016,
+    ASSET_SYSTEM_TIME_GET_ERROR = 24000017,
     /**
      * The error code indicates that the amount of map element or other limited quotas exceed the limit.
      */
-    ASSET_EXCEED_LIMIT = 24000017,
+    ASSET_EXCEED_LIMIT = 24000018,
 } Asset_ResultCode;
 
 /**

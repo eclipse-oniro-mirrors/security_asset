@@ -17,19 +17,20 @@
 
 use asset_common::{
     definition::{AssetMap, Result, DataType, ErrCode, IntoValue, Tag, Value},
-    impl_enum_trait,
-    loge,
-    logi,
+    impl_enum_trait, loge, logi,
 };
 
 use ipc_rust::BorrowedMsgParcel;
 
-/// SA id for Asset service
+/// SA id for Asset service.
 pub const SA_ID: i32 = 0x00010140;
-/// SA name for Asset service
+/// SA name for Asset service.
 pub const SA_NAME: &str = "security_asset_service";
 /// IPC result code.
 pub const IPC_SUCCESS: i32 = 0;
+
+const MAP_MAX_CAPACITY: u32 = 100;
+const VEC_MAX_CAPACITY: u32 = 0x10000;
 
 impl_enum_trait!{
     /// Code used to identify the function to be called.
@@ -50,35 +51,33 @@ impl_enum_trait!{
     }
 }
 
-/// Function between proxy and stub of Asset service
+/// Function between proxy and stub of Asset service.
 pub trait IAsset: ipc_rust::IRemoteBroker {
-    /// Add an asset.
-    fn add(&self, input: &AssetMap) -> Result<()>;
+    /// Add an Asset.
+    fn add(&self, attributes: &AssetMap) -> Result<()>;
 
-    /// Query one or multiple assets.
-    fn query(&self, input: &AssetMap) -> Result<Vec<AssetMap>>;
+    /// Remove one or more Assets that match a search query.
+    fn remove(&self, query: &AssetMap) -> Result<()>;
 
-    /// Query one or more Assets that require user authentication.
-    fn pre_query(&self, input: &AssetMap) -> Result<Vec<u8>>;
-
-    /// Update an asset.
+    /// Update an Asset that matches a search query.
     fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()>;
 
-    /// Remove one or multiple assets.
-    fn remove(&self, input: &AssetMap) -> Result<()>;
-}
+    /// Preprocessing for querying one or more Assets that require user authentication.
+    fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>>;
 
-// todo
-/// max capacity in a map
-const MAP_MAX_CAPACITY: u32 = 100;
-const MAP_VEC_MAX_CAPACITY: u32 = 999;
+    /// Query one or more Assets that match a search query.
+    fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>>;
+
+    /// Post-processing for querying multiple Assets that require user authentication.
+    fn post_query(&self, query: &AssetMap) -> Result<()>;
+}
 
 /// serialize the map to parcel
 pub fn serialize_map(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<()> {
-    logi!("enter serialize");
+    logi!("enter serialize"); // todo: delete
     if map.len() as u32 > MAP_MAX_CAPACITY {
-        loge!("map is too big");
-        return Err(ErrCode::InvalidArgument);
+        loge!("[FALTAL][IPC]The map size exceeds the limit.");
+        return Err(ErrCode::ExceedLimit);
     }
     parcel.write(&(map.len() as u32)).map_err(|_| ErrCode::IpcError)?;
     for (&tag, value) in map.iter() {
@@ -98,25 +97,25 @@ pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
     logi!("enter deserialize");
     let len = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
     if len > MAP_MAX_CAPACITY {
-        loge!("The map size exceeds the limit.");
-        return Err(ErrCode::InvalidArgument);
+        loge!("[FATAL][IPC]The map size exceeds the limit.");
+        return Err(ErrCode::ExceedLimit);
     }
     let mut map = AssetMap::with_capacity(len as usize);
-    for _i in 0..len {
+    for _ in 0..len {
         let tag = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
-        let asset_tag = Tag::try_from(tag)?;
-        match asset_tag.data_type() {
+        let tag = Tag::try_from(tag)?;
+        match tag.data_type() {
             DataType::Bool => {
                 let v = parcel.read::<bool>().map_err(|_| ErrCode::IpcError)?;
-                map.insert(asset_tag, Value::Bool(v));
+                map.insert(tag, Value::Bool(v));
             }
             DataType::Uint32 => {
                 let v = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
-                map.insert(asset_tag, Value::Number(v));
+                map.insert(tag, Value::Number(v));
             },
             DataType::Bytes => {
                 let v = parcel.read::<Vec<u8>>().map_err(|_| ErrCode::IpcError)?;
-                map.insert(asset_tag, Value::Bytes(v));
+                map.insert(tag, Value::Bytes(v));
             },
         }
     }
@@ -124,56 +123,33 @@ pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
     Ok(map)
 }
 
-/// serialize the vector of map to parcel
-pub fn serialize_vector_map(vec: &Vec<AssetMap>, parcel: &mut BorrowedMsgParcel) -> Result<()> {
-    logi!("enter serialize_vector_map");
-    if vec.len() as u32 > MAP_VEC_MAX_CAPACITY {
-        loge!("map vec is too big");
-        return Err(ErrCode::InvalidArgument);
+/// Serialize the collection of map to parcel.
+pub fn serialize_maps(vec: &Vec<AssetMap>, parcel: &mut BorrowedMsgParcel) -> Result<()> {
+    logi!("enter serialize_maps");
+    if vec.len() as u32 > VEC_MAX_CAPACITY {
+        loge!("[FATAL][IPC]The vector size exceeds the limit.");
+        return Err(ErrCode::ExceedLimit);
     }
     parcel.write::<u32>(&(vec.len() as u32)).map_err(|_| ErrCode::IpcError)?;
     for map in vec.iter() {
         serialize_map(map, parcel)?;
     }
-    logi!("leave serialize_vector_map ok");
+    logi!("leave serialize_maps ok");
     Ok(())
 }
 
-/// serialize the vector of u8 to parcel
-pub fn serialize_vector_u8(vec: &Vec<u8>, parcel: &mut BorrowedMsgParcel) -> Result<()> {
-    logi!("enter serialize_vector_u8");
-    parcel.write::<u32>(&(vec.len() as u32)).map_err(|_| ErrCode::IpcError)?;
-    parcel.write::<Vec<u8>>(vec).map_err(|_| ErrCode::IpcError)?;
-    logi!("leave serialize_vector_u8 ok");
-    Ok(())
-}
-
-/// deserialize the vector of map from parcel
-pub fn deserialize_vector_map(parcel: &BorrowedMsgParcel) -> Result<Vec<AssetMap>> {
-    logi!("enter deserialize_vector_map");
+/// Deserialize the collection of map from parcel.
+pub fn deserialize_maps(parcel: &BorrowedMsgParcel) -> Result<Vec<AssetMap>> {
+    logi!("enter deserialize_maps");
     let len = parcel.read::<u32>().map_err(|_| ErrCode::InvalidArgument)?;
-    if len > MAP_VEC_MAX_CAPACITY { // todo 最大允许值，测试一把最大值，设置上限，规范上序列化的上限
-        return Err(ErrCode::IpcError);
+    if len > VEC_MAX_CAPACITY {
+        loge!("[FATAL][IPC]The vector size exceeds the limit.");
+        return Err(ErrCode::ExceedLimit);
     }
     let mut res_vec = Vec::with_capacity(len as usize);
     for _i in 0..len {
         res_vec.push(deserialize_map(parcel)?);
     }
-    logi!("leave deserialize_vector_map ok");
+    logi!("leave deserialize_maps ok");
     Ok(res_vec)
-}
-
-/// deserialize the vector u8 from parcel
-pub fn deserialize_vector_u8(parcel: &BorrowedMsgParcel) -> Result<Vec<u8>> {
-    logi!("enter deserialize_vector_map");
-    let len = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
-    if len > MAP_MAX_CAPACITY { // todo 最大允许值
-        return Err(ErrCode::IpcError);
-    }
-    let mut res = Vec::with_capacity(len as usize);
-    for _i in 0..len {
-        res.extend(parcel.read::<Vec<u8>>().map_err(|_| ErrCode::IpcError)?);
-    }
-    logi!("leave deserialize_vector_map ok");
-    Ok(res)
 }

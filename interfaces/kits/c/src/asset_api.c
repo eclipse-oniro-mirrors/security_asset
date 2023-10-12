@@ -27,6 +27,7 @@ extern int32_t update_asset(const Asset_Attr *query, uint32_t query_cnt,
 extern int32_t pre_query_asset(const Asset_Attr *query, uint32_t query_cnt, Asset_Blob *challenge);
 extern int32_t query_asset(const Asset_Attr *query, uint32_t query_cnt, Asset_ResultSet *result_set);
 extern int32_t post_query_asset(const Asset_Attr *handle, uint32_t handle_cnt);
+extern Asset_Version get_asset_version();
 
 int32_t OH_Asset_Add(const Asset_Attr *attributes, uint32_t attrCnt)
 {
@@ -61,14 +62,13 @@ int32_t OH_Asset_PostQuery(const Asset_Attr *handle, uint32_t handleCnt)
 
 Asset_Version OH_Asset_GetVersion(void)
 {
-    Asset_Version v = { 1, 0, 0 };
-    return  v;
+    return get_asset_version();
 }
 
 Asset_Attr *OH_Asset_ParseAttr(const Asset_Result *result, Asset_Tag tag)
 {
     if (result == NULL || result->attrs == NULL || result->count == 0) {
-        LOGE("Argument is NULL.");
+        LOGE("[FATAL]Argument is NULL.");
         return NULL;
     }
     for (uint32_t i = 0; i < result->count; i++) {
@@ -76,7 +76,7 @@ Asset_Attr *OH_Asset_ParseAttr(const Asset_Result *result, Asset_Tag tag)
             return &result->attrs[i];
         }
     }
-    LOGE("Attribute not found.");
+    LOGE("[FATAL]Attribute not found.");
     return NULL;
 }
 

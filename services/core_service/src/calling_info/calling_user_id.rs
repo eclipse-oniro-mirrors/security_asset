@@ -14,7 +14,6 @@
  */
 
 //! This crate implements the asset
-#![allow(dead_code)]
 
 use asset_common::{
     definition::{ErrCode, Result},

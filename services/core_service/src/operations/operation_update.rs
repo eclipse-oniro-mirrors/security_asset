@@ -14,7 +14,6 @@
  */
 
 //! This create implement the asset
-#![allow(dead_code)]
 
 use asset_common::{
     definition::{AssetMap, Result, ErrCode, Tag, Value},

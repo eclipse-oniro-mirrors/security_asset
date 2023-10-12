@@ -14,7 +14,6 @@
  */
 
 //! This crate implements the asset
-#![allow(dead_code)]
 
 mod calling_type;
 mod calling_user_id;

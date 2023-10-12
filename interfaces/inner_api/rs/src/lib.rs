@@ -15,13 +15,11 @@
 
 //! This crate implements the interface of asset
 
-#![allow(dead_code)]
-
 pub use asset_common::definition;
 
 use ipc_rust::RemoteObjRef;
 
-use asset_common::{logi, loge, definition::{AssetMap, Result, ErrCode}};
+use asset_common::{definition::{AssetMap, ErrCode, Result, Version}, loge};
 use asset_ipc_interface::{IAsset, SA_ID};
 use asset_ipc_proxy::AssetProxy;
 
@@ -30,7 +28,7 @@ fn get_remote() -> Result<RemoteObjRef<AssetProxy>> {
     match object {
         Ok(remote) => Ok(remote),
         Err(e) => {
-            loge!("[FATAL]get_remote failed {}!", e);
+            loge!("[FATAL][RUST SDK]get remote service failed. Error = {}", e);
             Err(ErrCode::ServiceUnvailable)
         }
     }
@@ -50,32 +48,41 @@ impl Manager {
     }
 
     /// Add an Asset.
-    pub fn add(&self, input: &AssetMap) -> Result<()> {
-        logi!("[YZT][RUST SDK]enter asset add");
-        self.remote.add(input)
+    pub fn add(&self, attributes: &AssetMap) -> Result<()> {
+        self.remote.add(attributes)
     }
 
-    /// Remove an Asset.
-    pub fn remove(&self, input: &AssetMap) -> Result<()> {
-        logi!("[JIN][RUST SDK]enter asset remove");
-        self.remote.remove(input)
+    /// Remove one or more Assets that match a search query.
+    pub fn remove(&self, query: &AssetMap) -> Result<()> {
+        self.remote.remove(query)
     }
 
     /// Update an Asset that matches a search query.
     pub fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
-        logi!("[YZT][RUST SDK]enter asset update");
         self.remote.update(query, attributes_to_update)
     }
 
-    /// Query one or more Assets that match a search query.
-    pub fn query(&self, input: &AssetMap) -> Result<Vec<AssetMap>> {
-        logi!("[YZT][RUST SDK]enter asset query");
-        self.remote.query(input)
+    /// Preprocessing for querying one or more Assets that require user authentication.
+    pub fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>> {
+        self.remote.pre_query(query)
     }
 
-    /// Query one or more Assets that require user authentication.
-    pub fn pre_query(&self, input: &AssetMap) -> Result<Vec<u8>> {
-        logi!("[YYD][RUST SDK]enter asset pre query");
-        self.remote.pre_query(input)
+    /// Query one or more Assets that match a search query.
+    pub fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>> {
+        self.remote.query(query)
+    }
+
+    /// Post-processing for querying multiple Assets that require user authentication.
+    pub fn post_query(&self, query: &AssetMap) -> Result<()> {
+        self.remote.post_query(query)
+    }
+
+    /// Get the version of Asset.
+    pub fn get_version() -> Version {
+        Version {
+            major: 1,
+            minor: 0,
+            patch: 0
+        }
     }
 }
