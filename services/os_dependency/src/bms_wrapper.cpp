@@ -32,7 +32,7 @@
 using namespace OHOS;
 using namespace Security::AccessToken;
 
-bool GetCallingToken(uint32_t *tokenId)
+bool GetCallingTokenId(uint32_t *tokenId)
 {
     *tokenId = static_cast<uint32_t>(IPCSkeleton::GetCallingTokenID());
     return true;
@@ -120,4 +120,60 @@ bool GetHapOwnerInfo(uint32_t tokenId, int32_t userId, char** appId, int32_t *ap
     *appId = ownerInfo;
     *appIndex = bundleInfo.appIndex;
     return true;
+}
+
+
+bool GetCallingOwnerInfo(int64_t uid, int32_t userId, uint32_t *ownerType, char** ownerInfo) {
+    // 1 get calling token id
+    auto callingTokenId = IPCSkeleton::GetCallingTokenID();
+
+    // 2 find this calling onwer type
+    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenType(callingTokenId);
+    if (tokenType == ATokenTypeEnum::TOKEN_HAP) {
+        // use owner type to construct hap owner info
+        int *appIndex = NULL;
+        char **appId = NULL;
+        bool isGetInfoSuccess = GetHapOwnerInfo(callingTokenId, userId, appId, appIndex);
+        if (!isGetInfoSuccess) {
+            return false;
+        }
+        // use appid and appindex to construct owner info
+        int len = 0;
+        while (*appId[len] != '\0') {
+            len ++;
+        }
+        std::string appIndexStr = std::to_string(*appIndex);
+        len += appIndexStr.length();
+        auto tmpOwnerInfo = static_cast<char *>(AssetMalloc((len + 1) * sizeof(char)));
+        strcpy(tmpOwnerInfo, *appId);
+        strcat(tmpOwnerInfo, appIndexStr.c_str());
+        // release appId
+        AssetFree(*appId);
+        *ownerInfo = tmpOwnerInfo;
+    } else if (tokenType == ATokenTypeEnum::TOKEN_NATIVE || tokenType == ATokenTypeEnum::TOKEN_SHELL) {
+        // use owner type to construct native owner info
+        const char *processName = GetCallingProcessName(callingTokenId);
+        int len = 0;
+        while (processName[len] != '\0') {
+            len ++;
+        }
+        std::string uidStr = std::to_string(uid);
+        len += uidStr.length();
+        auto tmpOwnerInfo = static_cast<char *>(AssetMalloc((len + 1) * sizeof(char)));
+        strcpy(tmpOwnerInfo, uidStr.c_str());
+        strcat(tmpOwnerInfo, processName);
+        // release processName
+        AssetFree((void *)processName);
+        *ownerInfo = tmpOwnerInfo;
+    } else {
+        LOGE("get wrong token type %{public}i", tokenType);
+        return false;
+    }
+
+    *ownerType = static_cast<int32_t>(tokenType);
+    return true;
+}
+
+void FreeMemory(const char* freeStr) {
+    AssetFree((void *)freeStr);
 }

@@ -23,9 +23,10 @@ extern "C" {
 #endif
 
 bool GetCallingOwnerType(uint32_t callingTokenId, int32_t *ownerType);
-bool GetCallingToken(uint32_t *tokenId);
+bool GetCallingTokenId(uint32_t *tokenId);
 const char * GetCallingProcessName(uint32_t tokenId);
 bool GetHapOwnerInfo(uint32_t tokenId, int32_t userId, char** appId, int32_t *appIndex);
+void FreeMemory(const char* freeStr);
 #ifdef __cplusplus
 }
 #endif

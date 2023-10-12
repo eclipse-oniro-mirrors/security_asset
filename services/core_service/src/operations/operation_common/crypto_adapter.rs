@@ -18,11 +18,11 @@
 use crypto_manager::crypto::{Crypto, KeyInfo, SecretKey};
 
 use asset_common::{definition::{AssetMap, Result, Tag, Value, ErrCode}, loge};
-use crate::calling_process_info::CallingInfo;
+use crate::calling_info::CallingInfo;
 use crate::operations::operation_common::hasher;
 
 fn construct_aad(info: &CallingInfo, auth_type: &u32, access_type: &u32) -> Vec<u8> {
-    format!("{}_{}_{}_{}", info.user_id(), info.uid(), *auth_type, *access_type).into_bytes() // todo: 删除uid
+    format!("{}_{}_{}", info.user_id(), *auth_type, *access_type).into_bytes()
 }
 
 // todo : zwz : 传入map
@@ -84,8 +84,10 @@ pub(crate) fn decrypt(calling_info: &CallingInfo, auth_type: &u32, access_type: 
     crypto.decrypt(cipher, &construct_aad(calling_info, auth_type, access_type))
 }
 
-pub(crate) fn init_decrypt() -> Result<Vec<u8>> {
-
+pub(crate) fn init_decrypt(calling_info: &CallingInfo, auth_type: &u32, access_type: &u32)
+    -> Result<Vec<u8>> {
+    let key_info = construct_key_info(calling_info, auth_type, access_type)?;
+    let _secret_key = SecretKey::new(key_info);
     // todo 这里需要等init_decrypt的接口搞定之后再写 先写个假的放上去
     Ok(vec![1, 2, 2, 2, 2, 1])
 }
