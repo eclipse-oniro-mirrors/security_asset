@@ -132,7 +132,9 @@ pub struct QueryOptions<'a> {
     pub offset: Option<u32>,
     /// limit param
     pub limit: Option<u32>,
-    /// order param:ASC, DESC
+    /// order param
+    /// Ordering::Greater => ASC
+    /// Ordering::Less => DESC
     pub order: Option<Ordering>,
     /// order by columns
     pub order_by: Option<Vec<&'a str>>,
