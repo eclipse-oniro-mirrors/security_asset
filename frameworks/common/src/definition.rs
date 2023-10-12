@@ -156,41 +156,43 @@ impl_enum_trait! {
         /// The error code indicates that the authentication token has expired.
         AuthTokenExpired = 24000005,
 
+        StatusMisMatch = 24000006,
+
         /// The error code indicates insufficient memory.
-        OutOfMemory = 24000006,
+        OutOfMemory = 24000007,
 
         /// The error code indicates that the Asset or encryption key is corrupted.
-        DataCorrupted = 24000007,
+        DataCorrupted = 24000008,
 
         /// The error code indicates that the ipc communication is abnormal.
-        IpcError = 24000008,
+        IpcError = 24000009,
 
-        /// The error code indicates that the Database operation is failed.
-        SqliteError = 24000009,
+        /// The error code indicates that the database operation is failed.
+        SqliteError = 24000010,
 
-        /// The error code indicates that the operation of calling Bundle Manager service is failed.
-        BmsError = 24000010,
+        /// The error code indicates that the operation of calling bundle manager service is failed.
+        BmsError = 24000011,
 
         /// The error code indicates that the cryptography operation is failed.
-        CryptoError = 24000011,
+        CryptoError = 24000012,
 
-        /// The error code indicates that the operation of calling OS Account service is failed.
-        AccountError = 24000012,
+        /// The error code indicates that the operation of calling OS account service is failed.
+        AccountError = 24000013,
 
-        /// The error code indicates that the operation of calling Common Event service is failed.
-        CommonEventError = 24000013,
+        /// The error code indicates that the operation of calling common event service is failed.
+        CommonEventError = 24000014,
 
-        /// The error code indicates that the operation of calling Access Token service is failed.
-        AccessTokenError = 24000014,
-
-        /// The error code indicates that the operation of file is failed.
-        FileOperationError = 24000015,
+        /// The error code indicates that the operation of calling access token service is failed.
+        AccessTokenError = 24000015,
 
         /// The error code indicates that the operation of file is failed.
-        SystemTimeError = 24000016,
+        FileOperationError = 24000016,
+
+        /// The error code indicates that the operation of geting system time failed.
+        SystemTimeError = 24000017,
 
         /// The error code indicates that the amount of map element or other limited quotas exceed the limit.
-        ExceedLimit = 24000017,
+        ExceedLimit = 24000018,
     }
 }
 

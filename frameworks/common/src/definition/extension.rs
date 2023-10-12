@@ -16,8 +16,9 @@
 //! This module extends the function of Asset data structure.
 
 use super::{
-    Accessibility, AssetMap, AuthType, ConflictResolution, DataType, ErrCode, Insert, IntoValue,
-    Result, ReturnType, SyncType, Tag, Value,
+    Accessibility, AssetMap, AuthType, ConflictResolution, DataType,
+    ErrCode, Insert, IntoValue, Result, ReturnType,
+    SyncType, Tag, Value,
 };
 use crate::loge;
 
@@ -32,7 +33,7 @@ impl IntoValue for Tag {
             _ if DataType::Uint32 as u32 == mask => DataType::Uint32,
             _ if DataType::Bytes as u32 == mask => DataType::Bytes,
             _ => {
-                panic!("Unexpected action, data type should be uint32 or bytes");
+                panic!("Unexpected data type, it should be uint32 or bytes.");
             },
         }
     }
@@ -120,7 +121,7 @@ impl Insert for AssetMap {
                     self.insert(key, Value::Bool(real));
                     return Ok(());
                 }
-                loge!("Insert bool failed!");
+                loge!("[FATAL]Insert data of bool type failed!");
                 Err(ErrCode::InvalidArgument)
             },
             DataType::Uint32 => {
@@ -128,7 +129,7 @@ impl Insert for AssetMap {
                     self.insert(key, Value::Number(real));
                     return Ok(());
                 }
-                loge!("Insert u32 failed!");
+                loge!("[FATAL]Insert data of u32 type failed!");
                 Err(ErrCode::InvalidArgument)
             },
             DataType::Bytes => {
@@ -136,7 +137,7 @@ impl Insert for AssetMap {
                     self.insert(key, Value::Bytes(real));
                     return Ok(());
                 }
-                loge!("Insert byte failed!");
+                loge!("[FATAL]Insert data of bytes type failed!");
                 Err(ErrCode::InvalidArgument)
             },
         }
