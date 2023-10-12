@@ -439,7 +439,7 @@ impl<'a> Database<'a> {
     ///         name: "alias",
     ///         is_primary_key: false,
     ///         not_null: true,
-    ///         data_type: DataType::TEXT,
+    ///         data_type: DataType::BLOB,
     ///     },
     /// ];
     /// let table = match db.create_table("table_test", columns) {

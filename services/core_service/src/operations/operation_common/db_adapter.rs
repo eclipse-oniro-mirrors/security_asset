@@ -45,7 +45,7 @@ fn convert_extra_value_into_db_value(value: &InnerValue) -> Result<DataValue> {
     match value {
         InnerValue::Number(n) => Ok(DataValue::Integer(*n)), // to do 类型确认
         InnerValue::Blob(v) => Ok(DataValue::Blob(v)),
-        InnerValue::Text(v) => Ok(DataValue::Text(v)),
+        InnerValue::Text(v) => Ok(DataValue::Blob(v)),
     }
 }
 
@@ -197,8 +197,8 @@ fn convert_db_data_into_asset(tag: &Tag, data: &ResultDataValue) -> Option<Value
                 _ => Some(Value::Number(*i)),
             }
         },
-        ResultDataValue::Text(t) | ResultDataValue::Blob(t) =>
-            t.as_ref().map(|v| Value::Bytes(*v.clone())),
+        ResultDataValue::Blob(t) =>
+            Some(Value::Bytes(*t.clone())),
         _ => None
     }
 }

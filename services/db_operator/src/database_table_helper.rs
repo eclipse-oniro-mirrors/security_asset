@@ -98,13 +98,13 @@ pub const G_COLUMNS_INFO: &[ColumnInfo] = &[
     },
     ColumnInfo {
         name: G_COLUMN_ALIAS,
-        data_type: DataType::TEXT,
+        data_type: DataType::BLOB,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
         name: G_COLUMN_OWNER,
-        data_type: DataType::TEXT,
+        data_type: DataType::BLOB,
         is_primary_key: false,
         not_null: true,
     },
@@ -116,7 +116,7 @@ pub const G_COLUMNS_INFO: &[ColumnInfo] = &[
     },
     ColumnInfo {
         name: G_COLUMN_GROUP_ID,
-        data_type: DataType::TEXT,
+        data_type: DataType::BLOB,
         is_primary_key: false,
         not_null: false,
     },
@@ -140,13 +140,13 @@ pub const G_COLUMNS_INFO: &[ColumnInfo] = &[
     },
     ColumnInfo {
         name: G_COLUMN_CREATE_TIME,
-        data_type: DataType::TEXT,
+        data_type: DataType::BLOB,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
         name: G_COLUMN_UPDATE_TIME,
-        data_type: DataType::TEXT,
+        data_type: DataType::BLOB,
         is_primary_key: false,
         not_null: true,
     },
@@ -275,7 +275,7 @@ impl<'a> TableHelper<'a> {
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let datas = &vec![Pair {
     ///     column_name: "alias",
-    ///     value: DataValue::Text(b"test_update"),
+    ///     value: DataValue::Blob(b"test_update"),
     /// }];
     ///
     /// let ret = helper.update_datas_default("owner", "alias", datas);
@@ -290,12 +290,12 @@ impl<'a> TableHelper<'a> {
     ) -> Result<i32, ErrCode> {
         let mut v = vec![];
         if !owner.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(owner.as_bytes()) });
         } else {
             return Err(ErrCode::AccessDenied);
         }
         if !alias.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(alias.as_bytes()) });
         }
         let closure = |e: &Table| e.update_row(&v, datas);
         back_db_when_succ(true, self, closure)
@@ -315,7 +315,7 @@ impl<'a> TableHelper<'a> {
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let datas = vec![Pair {
     ///     column_name: "value",
-    ///     value: DataValue::Text(b"test_update"),
+    ///     value: DataValue::Blob(b"test_update"),
     /// }];
     ///
     /// let ret = helper.insert_datas_default("owner", "alias", &datas);
@@ -331,12 +331,12 @@ impl<'a> TableHelper<'a> {
     ) -> Result<i32, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(datas.len() + 2);
         if !owner.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(owner.as_bytes()) });
         } else {
             return Err(ErrCode::AccessDenied);
         }
         if !alias.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(alias.as_bytes()) });
         }
         for data in datas {
             v.push(*data);
@@ -371,7 +371,7 @@ impl<'a> TableHelper<'a> {
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let cond = vec![Pair {
     ///     column_name: "value",
-    ///     value: DataValue::Text(b"test_update"),
+    ///     value: DataValue::Blob(b"test_update"),
     /// }];
     ///
     /// let ret = helper.delete_datas_default("owner", "alias", &cond);
@@ -387,12 +387,12 @@ impl<'a> TableHelper<'a> {
     ) -> Result<i32, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
         if !owner.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(owner.as_bytes()) });
         } else {
             return Err(ErrCode::AccessDenied);
         }
         if !alias.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(alias.as_bytes()) });
         }
         for c in condition {
             v.push(*c);
@@ -416,12 +416,12 @@ impl<'a> TableHelper<'a> {
     pub fn is_data_exist(&self, owner: &str, alias: &str) -> Result<bool, ErrCode> {
         let mut v = vec![];
         if !owner.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(owner.as_bytes()) });
         } else {
             return Err(ErrCode::AccessDenied);
         }
         if !alias.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(alias.as_bytes()) });
         }
         let closure = |e: &Table| e.is_data_exists(&v);
         back_db_when_succ(false, self, closure)
@@ -441,7 +441,7 @@ impl<'a> TableHelper<'a> {
     pub fn select_count(&self, owner: &str) -> Result<u32, ErrCode> {
         let mut v = vec![];
         if !owner.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(owner.as_bytes()) });
         } else {
             return Err(ErrCode::AccessDenied);
         }
@@ -470,12 +470,12 @@ impl<'a> TableHelper<'a> {
     ) -> Result<ResultSet, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
         if !owner.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(owner.as_bytes()) });
         } else {
             return Err(ErrCode::AccessDenied);
         }
         if !alias.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(alias.as_bytes()) });
         }
         for c in condition {
             v.push(*c);
@@ -506,12 +506,12 @@ impl<'a> TableHelper<'a> {
     ) -> Result<AdvancedResultSet, ErrCode> {
         let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
         if !owner.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Text(owner.as_bytes()) });
+            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(owner.as_bytes()) });
         } else {
             return Err(ErrCode::AccessDenied);
         }
         if !alias.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Text(alias.as_bytes()) });
+            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(alias.as_bytes()) });
         }
         for c in condition {
             v.push(*c);
@@ -615,7 +615,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
                 }
                 datas_new.push(Pair {
                     column_name: G_COLUMN_UPDATE_TIME,
-                    value: DataValue::Text(ctime.as_bytes()),
+                    value: DataValue::Blob(ctime.as_bytes()),
                 });
                 return table.update_datas(owner, alias, &datas_new);
             }
@@ -653,13 +653,13 @@ impl<'a> DefaultDatabaseHelper<'a> {
                 if !contain_create_time {
                     datas_new.push(Pair {
                         column_name: G_COLUMN_CREATE_TIME,
-                        value: DataValue::Text(ctime.as_bytes()),
+                        value: DataValue::Blob(ctime.as_bytes()),
                     });
                 }
                 if !contain_update_time {
                     datas_new.push(Pair {
                         column_name: G_COLUMN_UPDATE_TIME,
-                        value: DataValue::Text(ctime.as_bytes()),
+                        value: DataValue::Blob(ctime.as_bytes()),
                     });
                 }
                 return table.insert_datas(owner, alias, &datas_new);

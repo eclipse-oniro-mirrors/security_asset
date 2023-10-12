@@ -14,15 +14,14 @@ use std::ffi::CStr;
 
 use crate::{
     database::Database,
-    sqlite3_bind_blob_func, sqlite3_bind_double_func, sqlite3_bind_int64_func,
-    sqlite3_bind_null_func, sqlite3_bind_text_func, sqlite3_column_blob_func,
-    sqlite3_column_bytes_func, sqlite3_column_count_func, sqlite3_column_double_func,
-    sqlite3_column_int64_func, sqlite3_column_name_func, sqlite3_column_text_func,
-    sqlite3_column_type_func, sqlite3_data_count_func, sqlite3_finalize_func,
-    sqlite3_prepare_v2_func, sqlite3_reset_func, sqlite3_step_func,
+    sqlite3_bind_blob_func, sqlite3_bind_int64_func, sqlite3_bind_null_func,
+    sqlite3_column_blob_func, sqlite3_column_bytes_func, sqlite3_column_count_func,
+    sqlite3_column_double_func, sqlite3_column_int64_func, sqlite3_column_name_func,
+    sqlite3_column_text_func, sqlite3_column_type_func, sqlite3_data_count_func,
+    sqlite3_finalize_func, sqlite3_prepare_v2_func, sqlite3_reset_func, sqlite3_step_func,
     types::{DataValue, ResultDataValue},
-    Sqlite3Callback, SqliteErrCode, SQLITE_BLOB, SQLITE_ERROR, SQLITE_FLOAT, SQLITE_INTEGER,
-    SQLITE_NULL, SQLITE_OK, SQLITE_TEXT,
+    Sqlite3Callback, SqliteErrCode, SQLITE_BLOB, SQLITE_ERROR, SQLITE_INTEGER, SQLITE_NULL,
+    SQLITE_OK,
 };
 
 /// sql statement
@@ -80,8 +79,6 @@ impl<'b> Statement<'b, true> {
         match data {
             DataValue::Blob(b) => sqlite3_bind_blob_func(self.handle, index, b, b.len() as _, None),
             DataValue::Integer(i) => sqlite3_bind_int64_func(self.handle, index, *i as _),
-            DataValue::Double(d) => sqlite3_bind_double_func(self.handle, index, *d),
-            DataValue::Text(t) => sqlite3_bind_text_func(self.handle, index, t, t.len() as _, None),
             DataValue::NoData => sqlite3_bind_null_func(self.handle, index),
         }
     }
@@ -120,28 +117,15 @@ impl<'b> Statement<'b, true> {
             ResultDataValue::Blob(_) => {
                 let blob = self.query_column_blob(index);
                 if blob.is_empty() {
-                    *out = ResultDataValue::Blob(None);
+                    *out = ResultDataValue::Null;
                 } else {
                     let mut out_blob = Box::new(vec![0u8; blob.len()]);
                     out_blob.copy_from_slice(blob);
-                    *out = ResultDataValue::Blob(Some(out_blob));
-                }
-            },
-            ResultDataValue::Text(_) => {
-                let text = self.query_column_text(index);
-                if text.is_empty() {
-                    *out = ResultDataValue::Text(None);
-                } else {
-                    let mut out_text = Box::new(vec![0u8; text.len()]);
-                    out_text.copy_from_slice(text);
-                    *out = ResultDataValue::Text(Some(out_text));
+                    *out = ResultDataValue::Blob(out_blob);
                 }
             },
             ResultDataValue::Integer(i) => {
                 *i = self.query_column_int(index);
-            },
-            ResultDataValue::Double(d) => {
-                *d = self.query_column_double(index);
             },
         }
     }
@@ -150,25 +134,16 @@ impl<'b> Statement<'b, true> {
     pub fn query_columns_auto_type(&self, i: i32) -> Result<ResultDataValue, SqliteErrCode> {
         let tp = self.column_type(i);
         let data = match tp {
-            SQLITE_TEXT => {
-                let text: &[u8] = self.query_column_text(i);
-                ResultDataValue::Text(if text.is_empty() {
-                    None
-                } else {
-                    Some(Box::new(text.to_vec()))
-                })
-            },
             SQLITE_INTEGER => ResultDataValue::Integer(self.query_column_int(i)),
-            SQLITE_FLOAT => ResultDataValue::Double(self.query_column_double(i)),
             SQLITE_BLOB => {
                 let blob = self.query_column_blob(i);
-                ResultDataValue::Blob(if blob.is_empty() {
-                    None
+                if blob.is_empty() {
+                    ResultDataValue::Null
                 } else {
-                    Some(Box::new(blob.to_vec()))
-                })
+                    ResultDataValue::Blob(Box::new(blob.to_vec()))
+                }
             },
-            SQLITE_NULL => ResultDataValue::Blob(None),
+            SQLITE_NULL => ResultDataValue::Null,
             _ => return Err(SQLITE_ERROR),
         };
         Ok(data)

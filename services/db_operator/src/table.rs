@@ -188,7 +188,7 @@ impl<'a> Table<'a> {
     ///
     /// let datas = &vec![Pair {
     ///     column_name: "alias",
-    ///     value: DataValue::Text(b"test_update"),
+    ///     value: DataValue::Blob(b"test_update"),
     /// }];
     ///
     /// let ret = table.update_row(conditions, datas);
@@ -266,7 +266,7 @@ impl<'a> Table<'a> {
     ///     },
     ///     Pair {
     ///         column_name: "alias",
-    ///         value: DataValue::Text(b"alias1"),
+    ///         value: DataValue::Blob(b"alias1"),
     ///     },
     /// ];
     /// let ret = table.insert_row(datas);
@@ -297,7 +297,7 @@ impl<'a> Table<'a> {
     /// sql like: insert into table_test values (3,'alias1')
     /// code like this:
     ///
-    /// let datas = &vec![DataValue::Integer(3), DataValue::Text(b"alias1")];
+    /// let datas = &vec![DataValue::Integer(3), DataValue::Blob(b"alias1")];
     /// let ret = table.insert_row_datas(datas);
     pub fn insert_row_datas(&self, datas: &Vec<DataValue>) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("insert into {} ", self.table_name);
@@ -322,19 +322,19 @@ impl<'a> Table<'a> {
     /// let columns = &vec!["AppId", "Alias", "value"];
     /// let dataset = vec![
     ///     vec![
-    ///         DataValue::Text(b"appid1"),
-    ///         DataValue::Text(b"alias1"),
-    ///         DataValue::Text(b"a"),
+    ///         DataValue::Blob(b"appid1"),
+    ///         DataValue::Blob(b"alias1"),
+    ///         DataValue::Blob(b"a"),
     ///     ],
     ///     vec![
-    ///         DataValue::Text(b"appid2"),
-    ///         DataValue::Text(b"alias2"),
-    ///         DataValue::Text(b"b"),
+    ///         DataValue::Blob(b"appid2"),
+    ///         DataValue::Blob(b"alias2"),
+    ///         DataValue::Blob(b"b"),
     ///     ],
     ///     vec![
-    ///         DataValue::Text(b"appid3"),
-    ///         DataValue::Text(b"alias3"),
-    ///         DataValue::Text(b"c"),
+    ///         DataValue::Blob(b"appid3"),
+    ///         DataValue::Blob(b"alias3"),
+    ///         DataValue::Blob(b"c"),
     ///     ],
     /// ];
     /// let count = table.insert_multi_row_datas(columns, &dataset);
@@ -381,7 +381,7 @@ impl<'a> Table<'a> {
     /// add new column for table
     /// 1. can not add primary key
     /// 2. can not add not null key if no default value
-    /// 3. only double/int/text support default value, blob data default value is always null
+    /// 3. only int/blob support default value, blob data default value is always null
     ///
     /// code like:
     /// let ret = table.add_new_column(
@@ -529,7 +529,7 @@ impl<'a> Table<'a> {
     ///         },
     ///         Pair {
     ///             column_name: "alias",
-    ///             value: DataValue::Text(b"test test"),
+    ///             value: DataValue::Blob(b"test test"),
     ///         },
     ///     ]);
     ///

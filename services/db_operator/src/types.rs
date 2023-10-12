@@ -19,21 +19,15 @@ use crate::database::Database;
 pub enum DataType {
     /// numbers
     INTEGER,
-    /// string
-    TEXT,
     /// binary data
     BLOB,
-    /// float value
-    DOUBLE,
 }
 
 /// change datatype to sql str
 pub fn from_datatype_to_str(value: DataType) -> &'static str {
     match value {
         DataType::BLOB => "BLOB",
-        DataType::DOUBLE => "REAL",
         DataType::INTEGER => "INTEGER",
-        DataType::TEXT => "TEXT",
     }
 }
 
@@ -43,10 +37,6 @@ pub fn from_datatype_to_str(value: DataType) -> &'static str {
 pub enum DataValue<'a> {
     /// numbers
     Integer(u32),
-    /// float value
-    Double(f64),
-    /// string
-    Text(&'a [u8]),
     /// binary data
     Blob(&'a [u8]),
     /// for null
@@ -57,13 +47,8 @@ pub enum DataValue<'a> {
 pub fn from_data_value_to_str_value(value: DataValue) -> String {
     match value {
         DataValue::NoData => String::from("NULL"),
-        DataValue::Double(d) => format!("{}", d),
         DataValue::Integer(i) => format!("{}", i),
         DataValue::Blob(_b) => String::from("NOT SUPPORTED"),
-        DataValue::Text(t) => {
-            let s = unsafe { String::from_utf8_unchecked(t.to_vec()) };
-            format!("'{}'", s)
-        },
     }
 }
 
@@ -72,12 +57,8 @@ pub fn from_data_value_to_str_value(value: DataValue) -> String {
 pub enum ResultDataValue {
     /// numbers
     Integer(u32),
-    /// float value
-    Double(f64),
-    /// string
-    Text(Option<Box<Vec<u8>>>),
     /// binary data
-    Blob(Option<Box<Vec<u8>>>),
+    Blob(Box<Vec<u8>>),
     /// for null
     Null,
 }
@@ -87,22 +68,9 @@ pub fn from_result_value_to_str_value(value: &ResultDataValue) -> String {
     match value {
         ResultDataValue::Null => String::from("NULL"),
         ResultDataValue::Integer(b) => format!("{}", b),
-        ResultDataValue::Double(b) => format!("{}", b),
         ResultDataValue::Blob(b) => {
-            if let Some(b) = b {
-                let s = unsafe { String::from_utf8_unchecked(b.to_vec()) };
-                format!("'{}'", s)
-            } else {
-                String::from("NULL")
-            }
-        },
-        ResultDataValue::Text(b) => {
-            if let Some(b) = b {
-                let s = unsafe { String::from_utf8_unchecked(b.to_vec()) };
-                format!("'{}'", s)
-            } else {
-                String::from("NULL")
-            }
+            let s = unsafe { String::from_utf8_unchecked(b.to_vec()) };
+            format!("'{}'", s)
         },
     }
 }
@@ -111,9 +79,7 @@ pub fn from_result_value_to_str_value(value: &ResultDataValue) -> String {
 pub fn from_result_datatype_to_str(value: &ResultDataValue) -> &'static str {
     match value {
         ResultDataValue::Blob(_) => "BLOB",
-        ResultDataValue::Double(_) => "REAL",
         ResultDataValue::Integer(_) => "INTEGER",
-        ResultDataValue::Text(_) => "TEXT",
         ResultDataValue::Null => "NULL",
     }
 }
