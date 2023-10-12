@@ -28,6 +28,7 @@ use crate::{
     SqliteErrCode, SQLITE_OK,
 };
 
+// todo: 为什么要换个名字
 /// just use database
 pub type DatabaseHelper<'a> = Database<'a>;
 /// just use database
@@ -37,7 +38,7 @@ pub type TableHelper<'a> = Table<'a>;
 
 /// default table name
 pub const G_ASSET_TABLE_NAME: &str = "asset_table";
-/// default column name
+/// default column name // todo: 1012 修改下doc, 每个字段不一样
 pub const G_COLUMN_ID: &str = "Id";
 /// default column name
 pub const G_COLUMN_SECRET: &str = "Secret";
@@ -52,7 +53,7 @@ pub const G_COLUMN_GROUP_ID: &str = "GroupId";
 /// default column name
 pub const G_COLUMN_SYNC_TYPE: &str = "SyncType";
 /// default column name
-pub const G_COLUMN_ACCESS_TYPE: &str = "AccessType";
+pub const G_COLUMN_ACCESS_TYPE: &str = "AccessType"; // todo: 1012 rename accessibility
 /// default column name
 pub const G_COLUMN_AUTH_TYPE: &str = "AuthType";
 /// default column name
@@ -83,8 +84,8 @@ pub const G_COLUMN_NORMAL3: &str = "DataLabelNormal_3";
 pub const G_COLUMN_NORMAL4: &str = "DataLabelNormal_4";
 
 /// columns info for default asset_table
-pub const G_COLUMNS_INFO: &[ColumnInfo] = &[
-    ColumnInfo {
+pub const G_COLUMNS_INFO: &[ColumnInfo] = &[ // todo: 1012 COLUMN_INFO
+    ColumnInfo { // todo 1012 每个字段放一行
         name: G_COLUMN_ID,
         data_type: DataType::INTEGER,
         is_primary_key: true,

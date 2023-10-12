@@ -48,7 +48,7 @@ impl CallingInfo {
     }
 
     /// get owner info hap:
-    pub(crate) fn owner_text(&self) -> Result<String> {
+    pub(crate) fn owner_text(&self) -> &Vec<u8> {
         self.owner_type.get_owner_text()
     }
 
