@@ -11,9 +11,8 @@
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
 
-use crate::{database::Database, statement::Statement};
-
 use super::*;
+use crate::{database::Database, statement::Statement};
 
 /// Transaction for sqlite db
 #[repr(C)]
