@@ -20,11 +20,11 @@ use std::{
 
 use db_operator::{
     database::*,
-    database_table_helper::{do_transaction, DefaultDatabaseHelper, G_ASSET_TABLE_NAME},
+    database_table_helper::{do_transaction, DefaultDatabaseHelper, G_ASSET_TABLE_NAME, G_COLUMN_OWNER, G_COLUMN_ALIAS},
     statement::Statement,
     types::{
         from_result_datatype_to_str, from_result_value_to_str_value, ColumnInfo, DataType,
-        DataValue, Pair, ResultDataValue,
+        DataValue, Pair, ResultDataValue, QueryOptions,
     },
     SQLITE_DONE, SQLITE_OK, SQLITE_OPEN_CREATE, SQLITE_OPEN_READWRITE, SQLITE_ROW,
 };
@@ -887,7 +887,7 @@ pub fn test_query() {
         .unwrap();
     assert_eq!(count, 1);
 
-    let result_set = table.query_row(&vec!["alias", "blobs"], &vec![]).unwrap();
+    let result_set = table.query_row(&vec!["alias", "blobs"], &vec![], None).unwrap();
     println!("id alias blobs");
     for data_line in &result_set {
         print!("line: ");
@@ -1142,7 +1142,7 @@ pub fn test_helper() {
     let ret = db.delete_datas_default("owner4", "alias4", &vec![]).unwrap();
     assert_eq!(ret, 1);
 
-    let result = db.query_datas_default("owner1", "alias1", &vec![]).unwrap();
+    let result = db.query_datas_default("owner1", "alias1", &vec![], None).unwrap();
     assert_eq!(result.len(), 1);
     for data in result {
         print!("line: ");
@@ -1325,7 +1325,7 @@ pub fn test_for_default_asset(userid: i32) {
     assert!(count >= 0);
 
     let result =
-        DefaultDatabaseHelper::query_datas_default_once(userid, "owner1", "Alias2", &vec![])
+        DefaultDatabaseHelper::query_datas_default_once(userid, "owner1", "Alias2", &vec![], None)
             .unwrap();
     for line in result {
         print!("line: ");
@@ -1335,12 +1335,20 @@ pub fn test_for_default_asset(userid: i32) {
         println!();
     }
 
+    let query = QueryOptions {
+        limit: Some(100),
+        offset: Some(0),
+        order: Some(Ordering::Greater),
+        order_by: Some(vec![G_COLUMN_OWNER, G_COLUMN_ALIAS]),
+    };
+
     let result = DefaultDatabaseHelper::query_columns_default_once(
         userid,
         &vec!["Id", "Alias"],
         "owner1",
         "Alias2",
         &vec![],
+        Some(&query),
     )
     .unwrap();
     for line in result {
