@@ -28,7 +28,7 @@ use asset_common::{
 use db_operator::{
     database_table_helper::{
         DefaultDatabaseHelper,
-        G_COLUMN_ACCESS_TYPE, G_COLUMN_AUTH_TYPE,
+        G_COLUMN_ACCESSIBILITY, G_COLUMN_AUTH_TYPE,
     },
     types::{
         DataValue, Pair,
@@ -41,7 +41,7 @@ use db_operator::{
 pub unsafe extern "C" fn delete_hap_asset(user_id: i32, owner: *const c_char, auth_type: u32, access_type: u32) -> i32 {
     let owner_str = CString::from_raw(owner as *mut c_char).into_string().unwrap();
     let cond = vec![
-        Pair { column_name: G_COLUMN_ACCESS_TYPE, value: DataValue::Integer(access_type) },
+        Pair { column_name: G_COLUMN_ACCESSIBILITY, value: DataValue::Integer(access_type) },
         Pair { column_name: G_COLUMN_AUTH_TYPE, value: DataValue::Integer(auth_type) }
     ];
 
