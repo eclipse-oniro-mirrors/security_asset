@@ -22,7 +22,7 @@ use db_operator::{
     database_table_helper::{
         do_transaction,
         DefaultDatabaseHelper,
-        G_COLUMN_ACCESS_TYPE, G_COLUMN_SECRET, G_COLUMN_ALIAS, G_COLUMN_AUTH_TYPE,
+        G_COLUMN_ACCESSIBILITY, G_COLUMN_SECRET, G_COLUMN_ALIAS, G_COLUMN_AUTH_TYPE,
         G_COLUMN_SYNC_TYPE, G_COLUMN_CRITICAL1, G_COLUMN_CRITICAL2, G_COLUMN_CRITICAL3,
         G_COLUMN_CRITICAL4, G_COLUMN_NORMAL1, G_COLUMN_NORMAL2, G_COLUMN_NORMAL3, G_COLUMN_NORMAL4, G_COLUMN_REQUIRE_PASSWORD_SET
     }
@@ -51,7 +51,7 @@ fn convert_extra_value_into_db_value(value: &InnerValue) -> Result<DataValue> {
 
 fn get_tag_column_name(tag: &Tag) -> Option<&str> {
     match *tag {
-        Tag::Accessibility => Some(G_COLUMN_ACCESS_TYPE),
+        Tag::Accessibility => Some(G_COLUMN_ACCESSIBILITY),
         Tag::Secret => Some(G_COLUMN_SECRET),
         Tag::Alias => Some(G_COLUMN_ALIAS),
         Tag::AuthType => Some(G_COLUMN_AUTH_TYPE),
@@ -205,7 +205,7 @@ fn convert_db_data_into_asset(tag: &Tag, data: &ResultDataValue) -> Option<Value
 
 fn convert_db_column_into_tag(column: &str) -> Option<Tag> {
     match column {
-        G_COLUMN_ACCESS_TYPE => Some(Tag::Accessibility),
+        G_COLUMN_ACCESSIBILITY => Some(Tag::Accessibility),
         G_COLUMN_SECRET => Some(Tag::Secret),
         G_COLUMN_ALIAS => Some(Tag::Alias),
         G_COLUMN_AUTH_TYPE => Some(Tag::AuthType),
