@@ -30,7 +30,8 @@ group("asset_component") {
   }
 }
 
-group("asset_test") {
+# need set different name from asset_test for building script limit
+group("asset_bin_test") {
   testonly = true
   deps = [
     "$COMPONENT_DIR/services/crypto_manager:crypto_manager_test",
