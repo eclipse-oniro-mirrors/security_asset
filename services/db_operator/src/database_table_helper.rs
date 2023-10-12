@@ -232,9 +232,9 @@ fn back_db_when_succ<T, F: Fn(&Table) -> Result<T, SqliteErrCode>>(
                 // let _ = thread::spawn(move || {
                 let back_ret = copy_db_file_inner(&table.db.path, &table.db.back_path);
                 if back_ret.is_err() {
-                    println!("backup db {} fail", table.db.back_path);
+                    asset_common::loge!("backup db {} fail", table.db.back_path);
                 } else {
-                    println!("backup db {} succ", table.db.back_path);
+                    asset_common::logi!("backup db {} succ", table.db.back_path);
                 }
                 //});
             }
@@ -245,10 +245,10 @@ fn back_db_when_succ<T, F: Fn(&Table) -> Result<T, SqliteErrCode>>(
                 // recovery master db
                 let r_ret = copy_db_file(table.db, true);
                 if r_ret.is_err() {
-                    println!("recovery master db {} fail", table.db.path);
+                    asset_common::loge!("recovery master db {} fail", table.db.path);
                     Err(ErrCode::SqliteError)
                 } else {
-                    println!("recovery master db {} succ", table.db.path);
+                    asset_common::logi!("recovery master db {} succ", table.db.path);
 
                     let res = func(table);
                     process_err_msg(res.map_err(from_sqlite_code_to_asset_code), table.db)
@@ -437,9 +437,9 @@ pub fn process_err_msg<T>(
 ) -> Result<T, ErrCode> {
     if res.is_err() {
         if let Some(msg) = db.get_err_msg() {
-            println!("db err info: {}", msg.s);
+            asset_common::loge!("db err info: {}", msg.s);
         } else {
-            println!("db err with no msg");
+            asset_common::loge!("db err with no msg");
         }
     }
     res
@@ -476,13 +476,13 @@ fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>, Err
                 // recovery master db
                 let r_ret = copy_db_file(db, true);
                 if r_ret.is_err() {
-                    println!("recovery master db {} fail", db.path);
+                    asset_common::loge!("recovery master db {} fail", db.path);
                     Err(ErrCode::SqliteError)
                 } else {
-                    println!("recovery master db {} succ", db.path);
+                    asset_common::logi!("recovery master db {} succ", db.path);
                     let o_ret = db.re_open();
                     if let Err(e) = o_ret {
-                        println!("reopen master db {} fail {}", db.path, e);
+                        asset_common::loge!("reopen master db {} fail {}", db.path, e);
                         return Err(ErrCode::SqliteError);
                     }
                     process_err_msg(
@@ -764,7 +764,7 @@ pub fn do_transaction<F: Fn(&Database) -> bool>(userid: i32, callback: F) -> Res
     let db = match DefaultDatabaseHelper::open_default_database_table(userid) {
         Ok(o) => o,
         Err(e) => {
-            println!("transaction open db fail");
+            asset_common::loge!("transaction open db fail");
             return Err(e);
         },
     };
@@ -778,14 +778,14 @@ pub fn do_transaction<F: Fn(&Database) -> bool>(userid: i32, callback: F) -> Res
     if callback(&db) {
         let ret = trans.commit();
         if ret != SQLITE_OK {
-            println!("trans commit fail {}", ret);
+            asset_common::loge!("trans commit fail {}", ret);
             return Err(from_sqlite_code_to_asset_code(ret));
         }
         Ok(true)
     } else {
         let ret = trans.rollback();
         if ret != SQLITE_OK {
-            println!("trans rollback fail {}", ret);
+            asset_common::loge!("trans rollback fail {}", ret);
             return Err(from_sqlite_code_to_asset_code(ret));
         }
         Ok(false)
