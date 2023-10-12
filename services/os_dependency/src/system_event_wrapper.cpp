@@ -58,7 +58,8 @@ public:
             LOGE("userId %{public}i", userId);  // todo 要删掉
 
             // get APPID todo 这里需要等到能获取到appId的时候再操作
-            std::string appId = want.GetStringParam(OHOS::AppExecFwk::Constants::APP_ID);
+            const char *APP_ID = "appId";
+            std::string appId = want.GetStringParam(APP_ID);
             LOGE("appId %{public}s", appId.c_str());  // todo 要删掉
 
             if (appId.empty() || userId == -1) {
