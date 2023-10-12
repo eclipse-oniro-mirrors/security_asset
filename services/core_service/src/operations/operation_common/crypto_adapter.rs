@@ -17,7 +17,7 @@
 
 use crypto_manager::crypto::{Crypto, KeyInfo, SecretKey};
 
-use asset_common::{definition::{AssetMap, Result, Tag, Value, ErrCode}, loge};
+use asset_common::{definition::{AssetMap, Result, Tag, Value, ErrCode}, loge, logi};
 use crate::calling_info::CallingInfo;
 use crate::operations::operation_common::hasher;
 
@@ -25,11 +25,15 @@ fn construct_aad(info: &CallingInfo, auth_type: &u32, access_type: &u32) -> Vec<
     format!("{}_{}_{}", info.user_id(), *auth_type, *access_type).into_bytes()
 }
 
+// todo : zwz : 切面编程
+// logi!("reset calling indentity [{}]", ipc_rust::reset_calling_identity().unwrap());
+
 // todo : zwz : 传入map
 fn construct_key_info(calling_info: &CallingInfo, auth_type: &u32, access_type: &u32) -> Result<KeyInfo> {
+    logi!("user_id:[{}], owner_hash:[{}], auth_type:[{}],access_type:[{}]", calling_info.user_id(), String::from_utf8(calling_info.owner_text().clone()).unwrap(), *auth_type, *access_type);
     Ok(KeyInfo {
         user_id: calling_info.user_id(),
-        owner_hash: hasher::sha256(calling_info.owner_text()?.as_bytes()).to_vec(),
+        owner_hash: hasher::sha256(calling_info.owner_text()).to_vec(),
         auth_type: *auth_type,
         access_type: *access_type,
     })

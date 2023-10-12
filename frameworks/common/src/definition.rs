@@ -156,6 +156,8 @@ impl_enum_trait! {
         /// The error code indicates that the authentication token has expired.
         AuthTokenExpired = 24000005,
 
+        // todo : yzt : 啥意思啊
+        /// The error code indicates that the blabla
         StatusMisMatch = 24000006,
 
         /// The error code indicates insufficient memory.

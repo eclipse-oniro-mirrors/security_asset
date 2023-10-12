@@ -102,13 +102,13 @@ pub(crate) fn set_extra_attrs<'a>(input: &'a AssetInnerMap, vec: &mut Vec<Pair<'
 
 pub(crate) fn insert_data_once(alias: &str, calling_info: &CallingInfo, db_data: Vec<Pair>) -> Result<i32> {
     // get owner str
-    let owner_str = calling_info.owner_text()?;
+    let owner = calling_info.owner_text();
 
     // call sql to add
     let insert_num =
-        DefaultDatabaseHelper::insert_datas_default_once(calling_info.user_id(), &owner_str, alias, &db_data)?;
+        DefaultDatabaseHelper::insert_datas_default_once(calling_info.user_id(), &String::from_utf8(owner.clone()).unwrap(), alias, &db_data)?;
 
-    logi!("insert params calling_info.user_id() = [{}], owner_str = [{}], alias = [{}]", calling_info.user_id(), owner_str, alias); // todo delete
+    logi!("insert params calling_info.user_id() = [{}], owner_str = [{}], alias = [{}]", calling_info.user_id(), &String::from_utf8(owner.clone()).unwrap(), alias); // todo delete
 
     logi!("insert {} data", insert_num);
 
@@ -117,14 +117,14 @@ pub(crate) fn insert_data_once(alias: &str, calling_info: &CallingInfo, db_data:
 
 pub(crate) fn replace_data_once(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<()> {
     // get owner str
-    let owner_str = calling_info.owner_text()?;
+    let owner = calling_info.owner_text();
 
     let replace_call = |db: &Database| -> bool {
-        if db.delete_datas_default(&owner_str, alias, &Vec::new()).is_err() {
+        if db.delete_datas_default(&String::from_utf8(owner.clone()).unwrap(), alias, &Vec::new()).is_err() {
             loge!("remove asset in replace operation failed!");
             return false;
         }
-        if db.insert_datas_default(&owner_str, alias, db_data).is_err() {
+        if db.insert_datas_default(&String::from_utf8(owner.clone()).unwrap(), alias, db_data).is_err() {
             loge!("insert asset in replace operation failed!");
             return false;
         }
@@ -140,19 +140,19 @@ pub(crate) fn replace_data_once(alias: &str, calling_info: &CallingInfo, db_data
 
 pub(crate) fn data_exist_once(alias: &str, calling_info: &CallingInfo) -> Result<bool> {
     // get owner str
-    let owner_str = calling_info.owner_text()?;
-    DefaultDatabaseHelper::is_data_exists_default_once(calling_info.user_id(), &owner_str, alias)
+    let owner = calling_info.owner_text();
+    DefaultDatabaseHelper::is_data_exists_default_once(calling_info.user_id(), &String::from_utf8(owner.clone()).unwrap(), alias)
 }
 
 pub(crate) fn query_data_once(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
     // get owner str
-    let owner_str = calling_info.owner_text()?;
+    let owner = calling_info.owner_text();
 
     // call sql to add
     let query_res =
-        DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(), &Vec::new(), &owner_str, alias, db_data, None)?;
+        DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(), &Vec::new(), &String::from_utf8(owner.clone()).unwrap(), alias, db_data, None)?;
 
-    logi!("query params calling_info.user_id() = [{}], owner_str = [{}], alias = [{}], db_data len is [{}]", calling_info.user_id(), owner_str, alias, db_data.len()); // todo delete
+    logi!("query params calling_info.user_id() = [{}], owner_str = [{}], alias = [{}], db_data len is [{}]", calling_info.user_id(), &String::from_utf8(owner.clone()).unwrap(), alias, db_data.len()); // todo delete
     for pair in db_data {
         logi!("db data is [{}]", pair.column_name);
     }
@@ -164,12 +164,12 @@ pub(crate) fn query_data_once(alias: &str, calling_info: &CallingInfo, db_data: 
 }
 
 pub(crate) fn update_data_once(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<i32> {
-    // get owner str
-    let owner_str = calling_info.owner_text()?;
+    // get owner
+    let owner = calling_info.owner_text();
 
     // call sql to update
     let update_num =
-        DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(), &owner_str, alias, db_data)?;
+        DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(), &String::from_utf8(owner.clone()).unwrap(), alias, db_data)?;
 
     logi!("update {} data", update_num);
 
@@ -177,12 +177,12 @@ pub(crate) fn update_data_once(alias: &str, calling_info: &CallingInfo, db_data:
 }
 
 pub(crate) fn remove_data_once(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<i32> {
-    // get owner str
-    let owner_str = calling_info.owner_text()?;
+    // get owner
+    let owner = calling_info.owner_text();
 
     // call sql to remove
     let remove_num =
-        DefaultDatabaseHelper::delete_datas_default_once(calling_info.user_id(), &owner_str, alias, db_data)?;
+        DefaultDatabaseHelper::delete_datas_default_once(calling_info.user_id(), &String::from_utf8(owner.clone()).unwrap(), alias, db_data)?;
 
     logi!("remove {} data", remove_num);
 
