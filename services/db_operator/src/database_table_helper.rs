@@ -278,26 +278,12 @@ impl<'a> TableHelper<'a> {
     ///     value: DataValue::Blob(b"test_update"),
     /// }];
     ///
-    /// let ret = helper.update_datas_default("owner", "alias", datas);
+    /// let ret = helper.update_datas_default(&vec![], datas);
     /// ```
     /// sql like:
     /// update table_name set alias='test_update' where AppId='owner' and Alias='alias'
-    pub fn update_datas(
-        &self,
-        owner: &str,
-        alias: &str,
-        datas: &Vec<Pair>,
-    ) -> Result<i32, ErrCode> {
-        let mut v = vec![];
-        if !owner.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(owner.as_bytes()) });
-        } else {
-            return Err(ErrCode::AccessDenied);
-        }
-        if !alias.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(alias.as_bytes()) });
-        }
-        let closure = |e: &Table| e.update_row(&v, datas);
+    pub fn update_datas(&self, condition: &Condition, datas: &Vec<Pair>) -> Result<i32, ErrCode> {
+        let closure = |e: &Table| e.update_row(condition, datas);
         back_db_when_succ(true, self, closure)
     }
 
@@ -318,30 +304,13 @@ impl<'a> TableHelper<'a> {
     ///     value: DataValue::Blob(b"test_update"),
     /// }];
     ///
-    /// let ret = helper.insert_datas_default("owner", "alias", &datas);
+    /// let ret = helper.insert_datas_default(&datas);
     /// ```
     ///
     /// sql like:
     /// insert into table_name(Owner,Alias,value) values(owner,alias,'test_update')
-    pub fn insert_datas(
-        &self,
-        owner: &str,
-        alias: &str,
-        datas: &Vec<Pair>,
-    ) -> Result<i32, ErrCode> {
-        let mut v = Vec::<Pair>::with_capacity(datas.len() + 2);
-        if !owner.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(owner.as_bytes()) });
-        } else {
-            return Err(ErrCode::AccessDenied);
-        }
-        if !alias.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(alias.as_bytes()) });
-        }
-        for data in datas {
-            v.push(*data);
-        }
-        let closure = |e: &Table| e.insert_row(&v);
+    pub fn insert_datas(&self, datas: &Vec<Pair>) -> Result<i32, ErrCode> {
+        let closure = |e: &Table| e.insert_row(datas);
         back_db_when_succ(true, self, closure)
     }
 
@@ -374,30 +343,13 @@ impl<'a> TableHelper<'a> {
     ///     value: DataValue::Blob(b"test_update"),
     /// }];
     ///
-    /// let ret = helper.delete_datas_default("owner", "alias", &cond);
+    /// let ret = helper.delete_datas_default(&cond);
     /// ```
     ///
     /// sql like:
     /// delete from table_name where Owner=owner and Alias=alias and value='test_update'
-    pub fn delete_datas(
-        &self,
-        owner: &str,
-        alias: &str,
-        condition: &Condition,
-    ) -> Result<i32, ErrCode> {
-        let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
-        if !owner.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(owner.as_bytes()) });
-        } else {
-            return Err(ErrCode::AccessDenied);
-        }
-        if !alias.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(alias.as_bytes()) });
-        }
-        for c in condition {
-            v.push(*c);
-        }
-        let closure = |e: &Table| e.delete_row(&v);
+    pub fn delete_datas(&self, condition: &Condition) -> Result<i32, ErrCode> {
+        let closure = |e: &Table| e.delete_row(condition);
         back_db_when_succ(true, self, closure)
     }
 
@@ -408,22 +360,13 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let exist = helper.is_data_exists_default("owner1", "alias1");
+    /// let exist = helper.is_data_exists_default(&vec![]);
     /// ```
     ///
     /// sql like:
     /// select count(*) as count from table_name where Owner='owner1' and Alias='alias1'
-    pub fn is_data_exist(&self, owner: &str, alias: &str) -> Result<bool, ErrCode> {
-        let mut v = vec![];
-        if !owner.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(owner.as_bytes()) });
-        } else {
-            return Err(ErrCode::AccessDenied);
-        }
-        if !alias.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(alias.as_bytes()) });
-        }
-        let closure = |e: &Table| e.is_data_exists(&v);
+    pub fn is_data_exist(&self, condition: &Condition) -> Result<bool, ErrCode> {
+        let closure = |e: &Table| e.is_data_exists(condition);
         back_db_when_succ(false, self, closure)
     }
 
@@ -434,18 +377,12 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let count = helper.select_count_default("owner2");
+    /// let count = helper.select_count_default(&vec![]);
     /// ```
     /// sql like:
     /// select count(*) as count from table_name where AppId='owner2'
-    pub fn select_count(&self, owner: &str) -> Result<u32, ErrCode> {
-        let mut v = vec![];
-        if !owner.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(owner.as_bytes()) });
-        } else {
-            return Err(ErrCode::AccessDenied);
-        }
-        let closure = |e: &Table| e.count_datas(&v);
+    pub fn select_count(&self, condition: &Condition) -> Result<u32, ErrCode> {
+        let closure = |e: &Table| e.count_datas(condition);
         back_db_when_succ(false, self, closure)
     }
 
@@ -457,30 +394,16 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let result = helper.query_datas_default("owner", "alias", &vec![], None);
+    /// let result = helper.query_datas_default(&vec![], None);
     /// ```
     /// sql like:
     /// select * from table_name where AppId='owner' and Alias='alias'
     pub fn query_datas(
         &self,
-        owner: &str,
-        alias: &str,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
     ) -> Result<ResultSet, ErrCode> {
-        let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
-        if !owner.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(owner.as_bytes()) });
-        } else {
-            return Err(ErrCode::AccessDenied);
-        }
-        if !alias.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(alias.as_bytes()) });
-        }
-        for c in condition {
-            v.push(*c);
-        }
-        let closure = |e: &Table| e.query_row(&vec![], &v, query_options);
+        let closure = |e: &Table| e.query_row(&vec![], condition, query_options);
         back_db_when_succ(false, self, closure)
     }
 
@@ -492,31 +415,17 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let result = helper.query_columns_default(&vec![], "owner", "alias", &vec![], None);
+    /// let result = helper.query_columns_default(&vec![], &vec![], None);
     /// ```
     /// sql like:
     /// select * from table_name where AppId='owner' and Alias='alias'
     pub fn query_columns(
         &self,
         columns: &Vec<&str>,
-        owner: &str,
-        alias: &str,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
     ) -> Result<AdvancedResultSet, ErrCode> {
-        let mut v = Vec::<Pair>::with_capacity(condition.len() + 2);
-        if !owner.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(owner.as_bytes()) });
-        } else {
-            return Err(ErrCode::AccessDenied);
-        }
-        if !alias.is_empty() {
-            v.push(Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(alias.as_bytes()) });
-        }
-        for c in condition {
-            v.push(*c);
-        }
-        let closure = |e: &Table| e.query_datas_advanced(columns, &v, query_options);
+        let closure = |e: &Table| e.query_datas_advanced(columns, condition, query_options);
         back_db_when_succ(false, self, closure)
     }
 }
@@ -528,9 +437,9 @@ pub fn process_err_msg<T>(
 ) -> Result<T, ErrCode> {
     if res.is_err() {
         if let Some(msg) = db.get_err_msg() {
-            asset_common::loge!("db err info: {}", msg.s);
+            println!("db err info: {}", msg.s);
         } else {
-            asset_common::loge!("db err with no msg");
+            println!("db err with no msg");
         }
     }
     res
@@ -567,13 +476,13 @@ fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>, Err
                 // recovery master db
                 let r_ret = copy_db_file(db, true);
                 if r_ret.is_err() {
-                    asset_common::loge!("recovery master db {} fail", db.path);
+                    println!("recovery master db {} fail", db.path);
                     Err(ErrCode::SqliteError)
                 } else {
-                    asset_common::logi!("recovery master db {} succ", db.path);
+                    println!("recovery master db {} succ", db.path);
                     let o_ret = db.re_open();
                     if let Err(e) = o_ret {
-                        asset_common::loge!("reopen master db {} fail {}", db.path, e);
+                        println!("reopen master db {} fail {}", db.path, e);
                         return Err(ErrCode::SqliteError);
                     }
                     process_err_msg(
@@ -593,8 +502,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     #[inline(always)]
     pub fn update_datas_default(
         &self,
-        owner: &str,
-        alias: &str,
+        condition: &Condition,
         datas: &Vec<Pair>,
     ) -> Result<i32, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
@@ -617,20 +525,15 @@ impl<'a> DefaultDatabaseHelper<'a> {
                     column_name: G_COLUMN_UPDATE_TIME,
                     value: DataValue::Blob(ctime.as_bytes()),
                 });
-                return table.update_datas(owner, alias, &datas_new);
+                return table.update_datas(condition, &datas_new);
             }
         }
-        table.update_datas(owner, alias, datas)
+        table.update_datas(condition, datas)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn insert_datas_default(
-        &self,
-        owner: &str,
-        alias: &str,
-        datas: &Vec<Pair>,
-    ) -> Result<i32, ErrCode> {
+    pub fn insert_datas_default(&self, datas: &Vec<Pair>) -> Result<i32, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         #[cfg(feature = "auto_insert_time")]
         {
@@ -662,10 +565,10 @@ impl<'a> DefaultDatabaseHelper<'a> {
                         value: DataValue::Blob(ctime.as_bytes()),
                     });
                 }
-                return table.insert_datas(owner, alias, &datas_new);
+                return table.insert_datas(&datas_new);
             }
         }
-        table.insert_datas(owner, alias, datas)
+        table.insert_datas(datas)
     }
 
     /// see TableHelper
@@ -681,41 +584,34 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn delete_datas_default(
-        &self,
-        owner: &str,
-        alias: &str,
-        cond: &Condition,
-    ) -> Result<i32, ErrCode> {
+    pub fn delete_datas_default(&self, cond: &Condition) -> Result<i32, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
-        table.delete_datas(owner, alias, cond)
+        table.delete_datas(cond)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn is_data_exists_default(&self, owner: &str, alias: &str) -> Result<bool, ErrCode> {
+    pub fn is_data_exists_default(&self, condition: &Condition) -> Result<bool, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
-        table.is_data_exist(owner, alias)
+        table.is_data_exist(condition)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn select_count_default(&self, owner: &str) -> Result<u32, ErrCode> {
+    pub fn select_count_default(&self, condition: &Condition) -> Result<u32, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
-        table.select_count(owner)
+        table.select_count(condition)
     }
 
     /// see TableHelper
     #[inline(always)]
     pub fn query_datas_default(
         &self,
-        owner: &str,
-        alias: &str,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
     ) -> Result<ResultSet, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
-        table.query_datas(owner, alias, condition, query_options)
+        table.query_datas(condition, query_options)
     }
 
     /// see TableHelper
@@ -723,13 +619,11 @@ impl<'a> DefaultDatabaseHelper<'a> {
     pub fn query_columns_default(
         &self,
         columns: &Vec<&str>,
-        owner: &str,
-        alias: &str,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
     ) -> Result<AdvancedResultSet, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
-        table.query_columns(columns, owner, alias, condition, query_options)
+        table.query_columns(columns, condition, query_options)
     }
 }
 
@@ -777,26 +671,20 @@ impl<'a> DefaultDatabaseHelper<'a> {
     #[inline(always)]
     pub fn update_datas_default_once(
         userid: i32,
-        owner: &str,
-        alias: &str,
+        condition: &Condition,
         datas: &Vec<Pair>,
     ) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.update_datas_default(owner, alias, datas)
+        db.update_datas_default(condition, datas)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn insert_datas_default_once(
-        userid: i32,
-        owner: &str,
-        alias: &str,
-        datas: &Vec<Pair>,
-    ) -> Result<i32, ErrCode> {
+    pub fn insert_datas_default_once(userid: i32, datas: &Vec<Pair>) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.insert_datas_default(owner, alias, datas)
+        db.insert_datas_default(datas)
     }
 
     /// see TableHelper
@@ -813,49 +701,41 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn delete_datas_default_once(
-        userid: i32,
-        owner: &str,
-        alias: &str,
-        cond: &Condition,
-    ) -> Result<i32, ErrCode> {
+    pub fn delete_datas_default_once(userid: i32, cond: &Condition) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.delete_datas_default(owner, alias, cond)
+        db.delete_datas_default(cond)
     }
 
     /// see TableHelper
     #[inline(always)]
     pub fn is_data_exists_default_once(
         userid: i32,
-        owner: &str,
-        alias: &str,
+        condition: &Condition,
     ) -> Result<bool, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.is_data_exists_default(owner, alias)
+        db.is_data_exists_default(condition)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn select_count_default_once(userid: i32, owner: &str) -> Result<u32, ErrCode> {
+    pub fn select_count_default_once(userid: i32, condition: &Condition) -> Result<u32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.select_count_default(owner)
+        db.select_count_default(condition)
     }
 
     /// see TableHelper
     #[inline(always)]
     pub fn query_datas_default_once(
         userid: i32,
-        owner: &str,
-        alias: &str,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
     ) -> Result<ResultSet, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.query_datas_default(owner, alias, condition, query_options)
+        db.query_datas_default(condition, query_options)
     }
 
     /// see TableHelper
@@ -863,14 +743,12 @@ impl<'a> DefaultDatabaseHelper<'a> {
     pub fn query_columns_default_once(
         userid: i32,
         columns: &Vec<&str>,
-        owner: &str,
-        alias: &str,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
     ) -> Result<AdvancedResultSet, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.query_columns_default(columns, owner, alias, condition, query_options)
+        db.query_columns_default(columns, condition, query_options)
     }
 }
 
@@ -886,7 +764,7 @@ pub fn do_transaction<F: Fn(&Database) -> bool>(userid: i32, callback: F) -> Res
     let db = match DefaultDatabaseHelper::open_default_database_table(userid) {
         Ok(o) => o,
         Err(e) => {
-            asset_common::loge!("transaction open db fail");
+            println!("transaction open db fail");
             return Err(e);
         },
     };
@@ -900,14 +778,14 @@ pub fn do_transaction<F: Fn(&Database) -> bool>(userid: i32, callback: F) -> Res
     if callback(&db) {
         let ret = trans.commit();
         if ret != SQLITE_OK {
-            asset_common::loge!("trans commit fail {}", ret);
+            println!("trans commit fail {}", ret);
             return Err(from_sqlite_code_to_asset_code(ret));
         }
         Ok(true)
     } else {
         let ret = trans.rollback();
         if ret != SQLITE_OK {
-            asset_common::loge!("trans rollback fail {}", ret);
+            println!("trans rollback fail {}", ret);
             return Err(from_sqlite_code_to_asset_code(ret));
         }
         Ok(false)
