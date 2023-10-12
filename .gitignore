@@ -1,3 +1,5 @@
+.idea
+services/db_operator/.idea
 .vscode/*
 *Cargo.lock
 *target/
