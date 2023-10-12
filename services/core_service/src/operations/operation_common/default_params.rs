@@ -16,7 +16,8 @@
 //! This crate implements the asset
 
 use asset_common::{
-    definition::{Result, Tag, ReturnType, SyncType, Accessibility, AuthType, AssetMap, Insert, ConflictResolution},
+    definition::{Result, Tag, ReturnType, SyncType, Accessibility, AuthType, ErrCode,
+        AssetMap, Insert, ConflictResolution},
     logi,
 };
 use asset_ipc_interface::IpcCode;
@@ -69,36 +70,50 @@ fn check_or_default_conflict_resolution(map: &mut AssetMap) -> Result<()> {
     Ok(())
 }
 
-// todo zwz : 一函数，参数传入tag与default
-fn construct_add(input: &AssetMap) -> Result<AssetMap> {
-    let mut map = (*input).clone();
-    check_or_default_sync_type(&mut map)?;
-    check_or_default_access_type(&mut map)?;
-    check_or_default_auth_type(&mut map)?;
-    check_or_default_required_pwd_set(&mut map)?;
-    check_or_default_conflict_resolution(&mut map)?;
+const CHECK_DEFAULT: [(&Tag, fn(&mut AssetMap) -> Result<()>); 6] = [
+    (&Tag::Accessibility, check_or_default_access_type),
+    (&Tag::SyncType, check_or_default_sync_type),
+    (&Tag::AuthType, check_or_default_auth_type),
+    (&Tag::RequirePasswordSet, check_or_default_required_pwd_set),
+    (&Tag::ConflictResolution, check_or_default_conflict_resolution),
+    (&Tag::ReturnType, check_or_default_return_type),
+];
 
-    Ok(map)
+const ADD_DEFAULT_TAGS: [&Tag; 5] = [
+    &Tag::SyncType, &Tag::AuthType, &Tag::Accessibility, &Tag::RequirePasswordSet, &Tag::ConflictResolution
+];
+
+const QUERY_DEFAULT_TAGS: [&Tag; 1] = [
+    &Tag::ReturnType
+];
+
+const PRE_QUERY_DEFAULT_TAGS: [&Tag; 1] = [
+    &Tag::ReturnType
+];
+
+fn exe_check_default(input: &mut AssetMap, tag: &Tag) -> Result<()> {
+    for (t, func) in CHECK_DEFAULT {
+        if tag == t {
+            return func(input);
+        }
+    }
+    Err(ErrCode::InvalidArgument)
 }
 
-fn construct_query(input: &AssetMap) -> Result<AssetMap> {
-    let mut map = (*input).clone();
-    check_or_default_return_type(&mut map)?;
-    Ok(map)
-}
-
-// todo yyd : delete
-fn construct_pre_query(input: &AssetMap) -> Result<AssetMap> {
-    let mut map = (*input).clone();
-    check_or_default_return_type(&mut map)?;
-    Ok(map)
+fn default_if_not_exist(input: &mut AssetMap, default_tags: &[&Tag]) -> Result<()> {
+    for &default_tag in default_tags {
+        exe_check_default(input, default_tag)?;
+    }
+    Ok(())
 }
 
 pub(crate) fn construct_params_with_default(input: &AssetMap, code: &IpcCode) -> Result<AssetMap> {
+    let mut map = (*input).clone();
     match *code {
-        IpcCode::Add => construct_add(input),
-        IpcCode::Query => construct_query(input),
-        IpcCode::PreQuery => construct_pre_query(input),
+        IpcCode::Add => default_if_not_exist(&mut map, &ADD_DEFAULT_TAGS)?,
+        IpcCode::Query => default_if_not_exist(&mut map, &QUERY_DEFAULT_TAGS)?,
+        IpcCode::PreQuery => default_if_not_exist(&mut map, &PRE_QUERY_DEFAULT_TAGS)?,
         _ => panic!("No default params for [{}]", code)
     }
+    Ok(map)
 }

@@ -17,7 +17,7 @@
 #![allow(dead_code)]
 
 use std::{
-    ffi::{c_char, CString},
+    ffi::c_char,
     fs, path::Path,
 };
 
@@ -35,17 +35,18 @@ use db_operator::{
     },
 };
 
+// todo : yyd : 修改入参
 /// Function called from C programming language to Rust programming language for delete hap Asset.
 /// # Safety
 #[no_mangle]
-pub unsafe extern "C" fn delete_hap_asset(user_id: i32, owner: *const c_char, auth_type: u32, access_type: u32) -> i32 {
-    let owner_str = CString::from_raw(owner as *mut c_char).into_string().unwrap();
+pub unsafe extern "C" fn delete_hap_asset(user_id: i32, _owner: *const c_char, auth_type: u32, access_type: u32) -> i32 {
     let cond = vec![
         Pair { column_name: G_COLUMN_ACCESS_TYPE, value: DataValue::Integer(access_type) },
         Pair { column_name: G_COLUMN_AUTH_TYPE, value: DataValue::Integer(auth_type) }
     ];
 
-    match DefaultDatabaseHelper::delete_datas_default_once(user_id, &owner_str, "", &cond) {
+    // todo : yyd : 修改
+    match DefaultDatabaseHelper::delete_datas_default_once(user_id, &cond) {
         Ok(remove_num) => {
             logi!("remove {} data", remove_num);
             remove_num

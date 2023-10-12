@@ -21,15 +21,23 @@ use asset_common::{definition::{AssetMap, Result, Tag, Value, ErrCode}, loge, lo
 use crate::calling_info::CallingInfo;
 use crate::operations::operation_common::hasher;
 
-fn construct_aad(info: &CallingInfo, auth_type: &u32, access_type: &u32) -> Vec<u8> {
-    format!("{}_{}_{}", info.user_id(), *auth_type, *access_type).into_bytes()
+// todo : zwz : 实现真的aad
+fn construct_aad() -> Vec<u8> {
+    "1_2_3_4".as_bytes().to_vec()
 }
 
 // todo : zwz : 切面编程
 // logi!("reset calling indentity [{}]", ipc_rust::reset_calling_identity().unwrap());
 
 // todo : zwz : 传入map
-fn construct_key_info(calling_info: &CallingInfo, auth_type: &u32, access_type: &u32) -> Result<KeyInfo> {
+fn construct_key_info(calling_info: &CallingInfo, input: &AssetMap) -> Result<KeyInfo> {
+    let Some(Value::Number(auth_type)) = input.get(&Tag::AuthType) else {
+        panic!()
+    };
+    let Some(Value::Number(access_type)) = input.get(&Tag::Accessibility) else {
+        panic!()
+    };
+
     logi!("user_id:[{}], owner_hash:[{}], auth_type:[{}],access_type:[{}]", calling_info.user_id(), String::from_utf8(calling_info.owner_text().clone()).unwrap(), *auth_type, *access_type);
     Ok(KeyInfo {
         user_id: calling_info.user_id(),
@@ -41,15 +49,7 @@ fn construct_key_info(calling_info: &CallingInfo, auth_type: &u32, access_type: 
 
 pub(crate) fn encrypt(calling_info: &CallingInfo, input: &AssetMap, secret: &Vec<u8>)
     -> Result<Vec<u8>> {
-    let auth_type = match input.get(&Tag::AuthType) {
-        Some(Value::Number(res)) => res,
-        _ => panic!("get number from auth_type failed."),
-    };
-    let access_type = match input.get(&Tag::Accessibility) {
-        Some(Value::Number(res)) => res,
-        _ => todo!(),
-    };
-    let key_info = construct_key_info(calling_info, auth_type, access_type)?;
+    let key_info = construct_key_info(calling_info, input)?;
     let secret_key = SecretKey::new(key_info);
     match secret_key.exists() { // todo 使用Ok（bool）类型判断
         Ok(true) => (),
@@ -67,13 +67,15 @@ pub(crate) fn encrypt(calling_info: &CallingInfo, input: &AssetMap, secret: &Vec
 
     let crypto = Crypto { key: secret_key };
 
-    crypto.encrypt(secret, &construct_aad(calling_info, auth_type, access_type))
+    crypto.encrypt(secret, &construct_aad())
 }
 
-pub(crate) fn decrypt(calling_info: &CallingInfo, auth_type: &u32, access_type: &u32,
-    cipher: &Vec<u8>) -> Result<Vec<u8>> {
-
-    let key_info = construct_key_info(calling_info, auth_type, access_type)?;
+pub(crate) fn decrypt(calling_info: &CallingInfo, input: &AssetMap) -> Result<Vec<u8>> {
+    let Some(Value::Bytes(secret)) = input.get(&Tag::Secret) else {
+        loge!("get secret failed!");
+        panic!()
+    };
+    let key_info = construct_key_info(calling_info, input)?;
     let secret_key = SecretKey::new(key_info);
     match secret_key.exists() { // todo 使用Ok（bool）类型判断
         Ok(true) => (),
@@ -85,12 +87,13 @@ pub(crate) fn decrypt(calling_info: &CallingInfo, auth_type: &u32, access_type: 
 
     let crypto = Crypto { key: secret_key };
 
-    crypto.decrypt(cipher, &construct_aad(calling_info, auth_type, access_type))
+    crypto.decrypt(secret, &construct_aad())
 }
 
-pub(crate) fn init_decrypt(calling_info: &CallingInfo, auth_type: &u32, access_type: &u32)
+// todo : yyd : 改入参
+pub(crate) fn init_decrypt(calling_info: &CallingInfo, input: &AssetMap, _auth_type: &u32, _access_type: &u32)
     -> Result<Vec<u8>> {
-    let key_info = construct_key_info(calling_info, auth_type, access_type)?;
+    let key_info = construct_key_info(calling_info, input)?;
     let _secret_key = SecretKey::new(key_info);
     // todo 这里需要等init_decrypt的接口搞定之后再写 先写个假的放上去
     Ok(vec![1, 2, 2, 2, 2, 1])

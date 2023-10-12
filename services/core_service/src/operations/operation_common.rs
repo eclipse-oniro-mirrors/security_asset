@@ -31,6 +31,7 @@ pub(crate) use default_params::construct_params_with_default;
 use asset_common::{definition::{AssetMap, Result, Value, ErrCode, Tag},
     loge, logi};
 
+// todo : zwz : 不转字串，转到update里
 pub(crate) fn get_alias(input: &AssetMap) -> Result<String> {
     let alias;
     if let Some(Value::Bytes(alias_vec)) = input.get(&Tag::Alias) {

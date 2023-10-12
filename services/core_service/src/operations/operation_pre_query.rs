@@ -63,7 +63,7 @@ pub(crate) fn pre_query(input: &AssetMap, calling_info: &CallingInfo) -> Result<
     // todo 遍历每一个密钥，获取challenge
     let challenge_seperator = b'_';
     for (idx, (auth_type, access_type)) in secret_key_set.iter().enumerate() {
-        let tmp_challenge = init_decrypt(calling_info, auth_type, access_type)?;
+        let tmp_challenge = init_decrypt(calling_info, input, auth_type, access_type)?;
         challenge_vec.extend(tmp_challenge);
         if idx < secret_key_set.len() - 1 {
             challenge_vec.push(challenge_seperator);

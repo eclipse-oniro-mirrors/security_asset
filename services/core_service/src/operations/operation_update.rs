@@ -21,7 +21,7 @@ use asset_common::{
     logi, loge,
 };
 use asset_ipc_interface::IpcCode;
-use db_operator::{database_table_helper::G_COLUMN_SECRET, types::{DataValue, Pair}};
+use db_operator::{database_table_helper::{G_COLUMN_SECRET, G_COLUMN_ALIAS}, types::{DataValue, Pair}};
 
 // use crypto_manager::hukkey::Crypto;
 use crate::{
@@ -44,8 +44,10 @@ fn construct_data<'a>(input: &'a AssetMap, inner_params: &'a AssetInnerMap)
 
 pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     let alias = get_alias(query)?;
+    let mut query_db = Vec::new();
+    set_input_attr(query, &mut query_db)?;
 
-    if !data_exist_once(&alias, calling_info)? {
+    if !data_exist_once(calling_info, &query_db)? {
         loge!("asset not exist!");
         return Err(ErrCode::NotFound);
     }
@@ -55,6 +57,13 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
 
     // construct db data from update map
     let mut db_data = construct_data(update, &inner_params)?;
+
+    db_data.push(
+        Pair {
+            column_name: G_COLUMN_ALIAS,
+            value: DataValue::Blob(alias.as_bytes()),
+        }
+    );
 
     let cipher;
     // whether to update secret
@@ -76,7 +85,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     }
 
     // call sql to update
-    let update_num = update_data_once(&alias, calling_info, &db_data)?;
+    let update_num = update_data_once(calling_info, &db_data)?;
 
     logi!("update {} data", update_num);
     Ok(())

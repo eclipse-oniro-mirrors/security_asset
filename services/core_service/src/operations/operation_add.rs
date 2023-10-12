@@ -26,7 +26,7 @@ use db_operator::{database_table_helper::G_COLUMN_SECRET, types::{DataValue, Pai
 // use crypto_manager::hukkey::Crypto;
 use crate::{
     operations::operation_common::{
-        get_alias, construst_extra_params, create_user_db_dir,
+        construst_extra_params, create_user_db_dir,
         construct_params_with_default, encrypt,
         db_adapter::{set_extra_attrs, set_input_attr, insert_data_once, data_exist_once, replace_data_once}
     },
@@ -42,6 +42,21 @@ fn construct_data<'a>(input: &'a AssetMap, inner_params: &'a AssetInnerMap)
     Ok(data_vec)
 }
 
+fn check_resolve_conflict(input: &AssetMap, calling_info: &CallingInfo, db_data: &Vec<Pair<>>)
+    -> Result<()> {
+    if data_exist_once(calling_info, db_data)? {
+        match input.get(&Tag::ConflictResolution) {
+            Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 =>
+                return replace_data_once(calling_info, db_data),
+            _ => {
+                loge!("[FATAL]The specified alias already exists.");
+                return Err(ErrCode::Duplicated);
+            },
+        }
+    }
+    Ok(())
+}
+
 pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // create user dir
     create_user_db_dir(calling_info.user_id())?;
@@ -49,9 +64,6 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // todo: 不塞运行参数
     // get param map contains input params and default params
     let input_new = construct_params_with_default(input, &IpcCode::Add)?;
-
-    // todo: yuanhao ： 不单抽，放在db_data里下沉
-    let alias = get_alias(&input_new)?;
 
     // a map collecting inner params
     let inner_params = construst_extra_params(calling_info, &IpcCode::Add)?;
@@ -71,20 +83,10 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
         }
     );
 
-    // todo ： zwz 抽函数
-    if data_exist_once(&alias, calling_info)? {
-        match input_new.get(&Tag::ConflictResolution) {
-            Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 =>
-                return replace_data_once(&alias, calling_info, &db_data),
-            _ => {
-                loge!("[FATAL]The specified alias already exists.");
-                return Err(ErrCode::Duplicated);
-            },
-        }
-    }
+    check_resolve_conflict(&input_new, calling_info, &db_data)?;
 
     // call sql to add
-    let insert_num = insert_data_once(&alias, calling_info, db_data)?;
+    let insert_num = insert_data_once(calling_info, db_data)?;
 
     logi!("insert {} data", insert_num);
     Ok(())

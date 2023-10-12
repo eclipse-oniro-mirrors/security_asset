@@ -18,33 +18,15 @@
 
 use crate::{
     calling_info::CallingInfo,
-    operations::operation_common::{
-        get_alias,
-        db_adapter::{set_input_attr, remove_data_once},
-    },
+    operations::operation_common::db_adapter::{set_input_attr, remove_data_once},
 };
 
-use asset_common::{definition::{AssetMap, Result, ErrCode}, logi, loge};
+use asset_common::{definition::{AssetMap, Result}, logi};
 
 pub(crate) fn remove(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     let mut data_vec = Vec::new();
     set_input_attr(input, &mut data_vec)?;
-    match get_alias(input) {
-        Ok(alias) => {
-            // call sql to remove
-            let remove_num = remove_data_once(&alias, calling_info, &data_vec)?;
-            logi!("remove {} data", remove_num);
-            Ok(())
-        },
-        Err(ErrCode::NotFound) => {
-            // call sql to remove
-            let remove_num = remove_data_once("", calling_info, &data_vec)?;
-            logi!("remove {} data", remove_num);
-            Ok(())
-        },
-        _ => {
-            loge!("get alias and not not found failed!");
-            Err(ErrCode::SqliteError)
-        },
-    }
+    let remove_num = remove_data_once(calling_info, &data_vec)?;
+    logi!("remove {} data", remove_num);
+    Ok(())
 }

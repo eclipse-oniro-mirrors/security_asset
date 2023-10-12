@@ -19,49 +19,28 @@
 use crate::{
     calling_info::CallingInfo,
     operations::operation_common::{
-        construct_params_with_default, get_alias, decrypt,
+        construct_params_with_default, decrypt,
         db_adapter::{set_input_attr, query_data_once},
     },
 };
 
 use db_operator::types::Pair;
 
-use asset_common::{definition::{AssetMap, Result, Insert, Value, ErrCode, Tag}, loge};
+use asset_common::definition::{AssetMap, Result, Insert, Tag};
 use asset_ipc_interface::IpcCode;
 
-fn single_query(alias: &str, calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
-    let mut query_res = query_data_once(alias, calling_info, db_data)?;
+fn single_query(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
+    let mut query_res = query_data_once(calling_info, db_data)?;
 
     for map in &mut query_res {
-        let auth_type = match map.get(&Tag::AuthType) {
-            Some(Value::Number(res)) => res,
-            _ => {
-                loge!("get auth type failed!");
-                return Err(ErrCode::SqliteError);
-            },
-        };
-        let access_type = match map.get(&Tag::Accessibility) {
-            Some(Value::Number(res)) => res,
-            _ => {
-                loge!("get access type failed!");
-                return Err(ErrCode::SqliteError);
-            },
-        };
-        let secret = match map.get(&Tag::Secret) {
-            Some(Value::Bytes(res)) => res,
-            _ => {
-                loge!("get secret failed!");
-                return Err(ErrCode::SqliteError);
-            },
-        };
-        map.insert_attr(Tag::Secret, decrypt(calling_info, auth_type, access_type, secret)?)?;
+        map.insert_attr(Tag::Secret, decrypt(calling_info, map)?)?;
     }
 
     Ok(query_res)
 }
 
 pub(crate) fn batch_query(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
-    let mut query_res = query_data_once("", calling_info, db_data)?;
+    let mut query_res = query_data_once(calling_info, db_data)?;
 
     for data in &mut query_res {
         data.remove(&Tag::Secret);
@@ -75,12 +54,9 @@ pub(crate) fn query(input: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<
 
     let mut data_vec = Vec::new();
     set_input_attr(&input_new, &mut data_vec)?;
-    match get_alias(&input_new) {
-        Ok(alias) => single_query(&alias, calling_info, &data_vec),
-        Err(ErrCode::NotFound) => batch_query(calling_info, &data_vec),
-        _ => {
-            loge!("get alias and not not found failed!");
-            Err(ErrCode::SqliteError)
-        },
+    if input_new.contains_key(&Tag::Alias) {
+        single_query(calling_info, &data_vec)
+    } else {
+        batch_query(calling_info, &data_vec)
     }
 }

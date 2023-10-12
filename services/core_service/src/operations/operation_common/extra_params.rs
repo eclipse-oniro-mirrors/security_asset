@@ -20,7 +20,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use asset_common::{definition::{Result, ErrCode}, loge};
 use asset_ipc_interface::IpcCode;
 use db_operator::database_table_helper::{G_COLUMN_OWNER_TYPE, G_COLUMN_DELETE_TYPE,
-        G_COLUMN_VERSION, G_COLUMN_CREATE_TIME, G_COLUMN_UPDATE_TIME};
+        G_COLUMN_VERSION, G_COLUMN_CREATE_TIME, G_COLUMN_UPDATE_TIME, G_COLUMN_OWNER};
 
 use crate::{calling_info::CallingInfo, definition_inner::{AssetInnerMap, DeleteType, InnerValue}};
 
@@ -62,9 +62,15 @@ fn get_create_time(params: &mut AssetInnerMap) -> Result<()> {
     Ok(())
 }
 
+fn get_owner(calling_info: &CallingInfo, params: &mut AssetInnerMap) -> Result<()> {
+    params.insert(G_COLUMN_OWNER, InnerValue::Text(calling_info.owner_text().clone()));
+    Ok(())
+}
+
 pub(crate) fn construst_extra_params<'a>(calling_info: &'a CallingInfo, code: &'a IpcCode) -> Result<AssetInnerMap<'a>> {
     let mut params = AssetInnerMap::new();
     get_owner_type(calling_info, &mut params)?;
+    get_owner(calling_info, &mut params)?;
     get_delete_type(&mut params)?;
     get_version(&mut params)?;
     match *code {
