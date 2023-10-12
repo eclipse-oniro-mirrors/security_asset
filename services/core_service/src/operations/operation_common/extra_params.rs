@@ -22,7 +22,7 @@ use asset_ipc_interface::IpcCode;
 use db_operator::database_table_helper::{G_COLUMN_OWNER_TYPE, G_COLUMN_DELETE_TYPE,
         G_COLUMN_VERSION, G_COLUMN_CREATE_TIME, G_COLUMN_UPDATE_TIME};
 
-use crate::{calling_process_info::CallingInfo, definition_inner::{AssetInnerMap, DeleteType, InnerValue}};
+use crate::{calling_info::CallingInfo, definition_inner::{AssetInnerMap, DeleteType, InnerValue}};
 
 fn get_owner_type(calling_info: &CallingInfo, params: &mut AssetInnerMap) -> Result<()> {
     params.insert(G_COLUMN_OWNER_TYPE, InnerValue::Number(calling_info.owner_type()));

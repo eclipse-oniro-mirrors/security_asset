@@ -23,13 +23,13 @@ use asset_common::{
 use std::ffi::{CStr, CString};
 use std::os::raw::c_char;
 
-/// OwnerType
-pub(crate) enum OwnerType {
+/// Owner
+pub(crate) enum Owner {
     Hap(Vec<u8>),
     Native(Vec<u8>),
 }
 
-impl OwnerType {
+impl Owner {
     /// xx
     pub(crate) fn get_type_num(&self) -> u32 {
         match self {
@@ -56,12 +56,13 @@ impl OwnerType {
 
 extern {
     fn GetCallingOwnerType(callingTokenId: u32, ownerType: &mut i32) -> bool; // ownerType: 0-> hap; 1->native; 2->shell;
-    fn GetCallingToken(tokenId: &mut u32) -> bool;
+    fn GetCallingTokenId(tokenId: &mut u32) -> bool;
     fn GetCallingProcessName(tokenId: u32) -> *const c_char;
     fn GetHapOwnerInfo(tokenId: u32, userId: i32, addId: *mut *mut c_char, appIndex: *mut i32) -> bool;
+    fn FreeMemory(freeStr: *const c_char);
 }
 
-fn get_native_owner_info(token_id: u32, uid: u64) -> Result<OwnerType> {
+fn get_native_owner_info(token_id: u32, uid: u64) -> Result<Owner> {
     unsafe {
         let p_name = GetCallingProcessName(token_id);
         if p_name.is_null() {
@@ -70,11 +71,12 @@ fn get_native_owner_info(token_id: u32, uid: u64) -> Result<OwnerType> {
         }
         let p_name_str = CStr::from_ptr(p_name as _).to_str().unwrap();
         logi!("get calling owner info success! uid:{} pname:{}", uid, p_name_str);
-        Ok(OwnerType::Native(Vec::from(format!("{}{}", uid, p_name_str).as_bytes())))
+        // FreeMemory(p_name);
+        Ok(Owner::Native(Vec::from(format!("{}{}", uid, p_name_str).as_bytes())))
     }
 }
 
-fn get_hap_owner_info(token_id: u32, user_id: i32) -> Result<OwnerType> {
+fn get_hap_owner_info(token_id: u32, user_id: i32) -> Result<Owner> {
     unsafe {
         let mut app_id: *mut c_char = std::ptr::null_mut();
         let mut app_index: i32 = 0;
@@ -82,19 +84,21 @@ fn get_hap_owner_info(token_id: u32, user_id: i32) -> Result<OwnerType> {
             loge!("Get hap owner info failed.");
             return Err(ErrCode::BmsError);
         }
-        let app_id = CString::from_raw(app_id).into_string().map_err(|e| {
+        let app_id_str = CString::from_raw(app_id).into_string().map_err(|e| {
             loge!("get string from add id failed [{}].", e);
             ErrCode::BmsError
         })?;
-        Ok(OwnerType::Hap(format!("{}_{}", app_id, app_index).as_bytes().to_vec()))
+        // free c memory
+        // FreeMemory(app_id);
+        Ok(Owner::Hap(format!("{}_{}", app_id_str, app_index).as_bytes().to_vec()))
     }
 }
 
-pub(crate) fn get_calling_owner_type(uid: u64, user_id: i32) -> Result<OwnerType> { // todo: 将本函数的功能都封装到C++ 中，只对rust开放一个函数
+pub(crate) fn get_calling_owner(uid: u64, user_id: i32) -> Result<Owner> { // todo: 将本函数的功能都封装到C++ 中，只对rust开放一个函数
     unsafe {
         let mut token_id = 0;
         // 1 get calling tokenid
-        if !GetCallingToken(&mut token_id) { // todo: 直接返回tokenId, 命名上加上ID
+        if !GetCallingTokenId(&mut token_id) {
             loge!("get calling token failed!");
             return Err(ErrCode::BmsError);
         }

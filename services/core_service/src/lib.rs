@@ -30,11 +30,11 @@ use system_ability_fwk_rust::{define_system_ability, IMethod, ISystemAbility, RS
 
 mod stub;
 mod operations;
-mod calling_process_info;
+mod calling_info;
 mod definition_inner;
 mod argument_check;
 
-use calling_process_info::CallingInfo; // todo: calling_process_info -> calling_info
+use calling_info::CallingInfo; // todo: calling_process_info -> calling_info
 
 /// xxx
 pub struct AssetService;
@@ -94,14 +94,38 @@ define_system_ability!(
     sa: SystemAbility(on_start, on_stop),
 );
 
+extern "C" {
+    fn SubscribeSystemEvent() -> bool;
+    fn UnSubscribeSystemEvent() -> bool;
+}
+
+use std::thread;
+use std::time::Duration;
+
+const MAX_DELAY_TIMES: u32 = 100;
+const DELAY_INTERVAL: u64 = 200000;
+
 fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
     let service = AssetStub::new_remote_stub(AssetService).expect("create AssetService failed");
     ability.publish(&service.as_object().expect("publish Asset service failed"), SA_ID);
     logi!("on_start");
+    unsafe{
+        for i in 0..MAX_DELAY_TIMES {
+            if SubscribeSystemEvent() {
+                logi!("SubscribeSystemEvent success, i = {}", i);
+                return;
+            } else {
+                logi!("SubscribeSystemEvent failed {} times", i);
+                thread::sleep(Duration::from_millis(DELAY_INTERVAL));
+            }
+        }
+        logi!("SubscribeSystemEvent failed");
+    }
 }
 
 fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {
     logi!("on_stop");
+    unsafe{ UnSubscribeSystemEvent(); }
 }
 
 #[used]

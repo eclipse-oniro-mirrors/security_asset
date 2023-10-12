@@ -25,13 +25,13 @@ git clone ssh://git@szv-y.codehub.huawei.com:2222/y00522150/asset.git
 
 ```bash
 # 首次编译命令：（修改BUILD.gn时执行）
-./build_system.sh --abi-type generic_generic_arm_64only --device-type hisi_higeneric_newphone_standard --ccache --build-variant root --build-target out/generic_generic_arm_64only/hisi_higeneric_newphone_standard/build_configs/security/asset:asset --build-target out/generic_generic_arm_64only/hisi_higeneric_newphone_standard/build_configs/security/asset:asset_test
+./build_system.sh --abi-type generic_generic_arm_64only --device-type hisi_higeneric_newphone_standard --ccache --build-variant root --build-target out/generic_generic_arm_64only/hisi_higeneric_newphone_standard/build_configs/security/asset:asset --build-target asset_test
 
 # 非首次编译命令：（未修改BUILD.gn时执行）
-./build_system.sh --abi-type generic_generic_arm_64only --device-type hisi_higeneric_newphone_standard --ccache --build-variant root --build-target out/generic_generic_arm_64only/hisi_higeneric_newphone_standard/build_configs/security/asset:asset --build-target out/generic_generic_arm_64only/hisi_higeneric_newphone_standard/build_configs/security/asset:asset_test --fast-rebuild
+./build_system.sh --abi-type generic_generic_arm_64only --device-type hisi_higeneric_newphone_standard --ccache --build-variant root --build-target out/generic_generic_arm_64only/hisi_higeneric_newphone_standard/build_configs/security/asset:asset --build-target asset_test --fast-rebuild
 
 # PC编译命令：
-./build_system.sh --abi-type generic_generic_arm_64only --device-type hisi_newbaltimore_pc_standard --ccache --build-variant root --build-target out/generic_generic_arm_64only/hisi_newbaltimore_pc_standard/build_configs/security/asset:asset --build-target out/generic_generic_arm_64only/hisi_newbaltimore_pc_standard/build_configs/security/asset:asset_test
+./build_system.sh --abi-type generic_generic_arm_64only --device-type hisi_newbaltimore_pc_standard --ccache --build-variant root --build-target out/generic_generic_arm_64only/hisi_newbaltimore_pc_standard/build_configs/security/asset:asset --build-target asset_test
 
 # 支持SA自启：(仅在调试设备上执行一次)
 ./scripts/push_asset_cfg.bat

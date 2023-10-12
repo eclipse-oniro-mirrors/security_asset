@@ -28,7 +28,9 @@ ohos_static_library("asset_os_dependency") {
     "src/bms_wrapper.cpp",
   ]
   deps = [
-    "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem"
+    ":db_ffi",
+    "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem",
+    "$COMPONENT_DIR/interfaces/kits/c:asset_ndk",
   ]
   external_deps = [
     "c_utils:utils",
@@ -42,4 +44,18 @@ ohos_static_library("asset_os_dependency") {
     "ipc:ipc_single",
     "samgr:samgr_proxy",
   ]
+}
+
+ohos_rust_shared_ffi("db_ffi") {
+  sources = [ "src/lib.rs" ]
+  deps = [
+    "$COMPONENT_DIR/frameworks/common:asset_common",
+    "$COMPONENT_DIR/interfaces/inner_api/rs:asset_sdk",
+    "$COMPONENT_DIR/services/db_operator:db_operator",
+    "//third_party/rust/crates/libc:lib",
+  ]
+  external_deps = [ "hilog:hilog_rust" ]
+  crate_name = "db_ffi"
+  subsystem_name = "security"
+  part_name = "asset"
 }

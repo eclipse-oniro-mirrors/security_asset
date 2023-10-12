@@ -29,7 +29,7 @@ use crate::{
         get_alias, construst_extra_params, encrypt,
         db_adapter::{set_extra_attrs, set_input_attr, data_exist_once, update_data_once}
     },
-    calling_process_info::CallingInfo,
+    calling_info::CallingInfo,
     definition_inner::AssetInnerMap,
     operations::operation_query
 };

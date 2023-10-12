@@ -30,7 +30,7 @@ use crate::{
         construct_params_with_default, encrypt,
         db_adapter::{set_extra_attrs, set_input_attr, insert_data_once, data_exist_once, replace_data_once}
     },
-    calling_process_info::CallingInfo,
+    calling_info::CallingInfo,
     definition_inner::AssetInnerMap
 };
 
