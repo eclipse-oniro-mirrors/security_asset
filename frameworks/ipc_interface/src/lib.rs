@@ -16,7 +16,10 @@
 //! This module defines IPC interfaces and constants.
 
 use asset_common::{
-    definition::{AssetMap, Result, DataType, ErrCode, IntoValue, Tag, Value},
+    definition::{
+        AssetMap, DataType, ErrCode, IntoValue, Result,
+        Tag, Value
+    },
     impl_enum_trait, loge, logi,
 };
 

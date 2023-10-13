@@ -13,23 +13,21 @@
  * limitations under the License.
  */
 
-//! This file implement the file operations
+//! This file implement the file operations.
 
-use asset_common::{
-    definition::{ErrCode, Result},
-    loge, logi,
-};
 use std::{fs, path::Path};
+
+use asset_common::{definition::{ErrCode, Result}, loge, logi,};
 
 const ROOT_PATH: &str = "data/service/el1/public/asset_service";
 
 pub(crate) fn create_user_db_dir(user_id: i32) -> Result<()> {
-    let path_str = format!("{}/{}", ROOT_PATH, user_id);
-    let path = Path::new(&path_str);
+    let path = format!("{}/{}", ROOT_PATH, user_id);
+    let path = Path::new(&path);
     if !path.exists() {
         match fs::create_dir(path) {
             Err(e) if e.kind() != std::io::ErrorKind::AlreadyExists => {
-                loge!("create dir failed! error is [{}]", e);
+                loge!("[FATAL]Create dir failed! error is [{}]", e);
                 return Err(ErrCode::FileOperationError);
             },
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
