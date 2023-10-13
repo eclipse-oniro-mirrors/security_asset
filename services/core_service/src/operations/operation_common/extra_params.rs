@@ -63,7 +63,7 @@ fn get_create_time(params: &mut AssetInnerMap) -> Result<()> {
 }
 
 fn get_owner(calling_info: &CallingInfo, params: &mut AssetInnerMap) -> Result<()> {
-    params.insert(G_COLUMN_OWNER, InnerValue::Blob(calling_info.owner_text().clone()));
+    params.insert(G_COLUMN_OWNER, InnerValue::Blob(calling_info.owner_info().clone()));
     Ok(())
 }
 

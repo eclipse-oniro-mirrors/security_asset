@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This crate implements the asset operations
+//! This crate implements the asset operations.
 
 mod operation_add;
 pub mod operation_common;

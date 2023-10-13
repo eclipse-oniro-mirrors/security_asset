@@ -13,45 +13,66 @@
  * limitations under the License.
  */
 
-//! This crate implements the asset
-
-mod calling_type;
-mod calling_user_id;
-
-use asset_common::definition::Result;
-use calling_type::{get_calling_owner, Owner};
-use calling_user_id::get_calling_user_id;
+//! This module implements the capability of processing the identity information of the Asset caller.
 
 use ipc_rust::get_calling_uid;
 
-/// calling info
+use asset_common::{definition::{ErrCode, Result}, impl_enum_trait};
+
+impl_enum_trait!{
+    #[repr(C)]
+    #[derive(Copy, Clone)]
+    pub(crate) enum OwnerType {
+        Hap = 0,
+        Native = 1,
+    }
+}
+
 pub(crate) struct CallingInfo {
-    owner: Owner,
+    owner_type: OwnerType,
+    owner_info: Vec<u8>,
     user_id: i32,
 }
 
+extern "C" {
+    fn GetUserIdByUid(uid: u64, userId: &mut i32) -> bool;
+    fn GetOwnerInfo(userId: i32, uid: u64, ownerType: *mut OwnerType,
+        ownerInfo: *mut libc::c_char, infoLen: *mut u32) -> bool;
+}
+
+pub(crate) fn get_user_id(uid: u64) -> Result<i32> {
+    unsafe {
+        let mut user_id = 0;
+        if GetUserIdByUid(uid, &mut user_id) {
+            Ok(user_id)
+        } else {
+            Err(ErrCode::AccountError)
+        }
+    }
+}
+
 impl CallingInfo {
-    /// x
     pub(crate) fn build() -> Result<Self> {
         let uid = get_calling_uid();
-        let user_id = get_calling_user_id(uid)?;
-        Ok(CallingInfo {
-            owner: get_calling_owner(uid, user_id)?,
-            user_id
-        })
+        let user_id: i32 = get_user_id(uid)?;
+        let mut owner_info = vec![0u8; 256];
+        let mut len = 256u32;
+        let mut owner_type = OwnerType::Hap;
+        unsafe {
+            GetOwnerInfo(user_id, uid, &mut owner_type, owner_info.as_mut_ptr(), &mut len);
+        }
+        owner_info.truncate(len as usize);
+        Ok(CallingInfo { owner_type, owner_info, user_id })
     }
 
-    /// get owner type hap: 1 native: 2
     pub(crate) fn owner_type(&self) -> u32 {
-        self.owner.get_type_num()
+        self.owner_type as u32
     }
 
-    /// get owner info hap:
-    pub(crate) fn owner_text(&self) -> &Vec<u8> {
-        self.owner.get_owner_text()
+    pub(crate) fn owner_info(&self) -> &Vec<u8> {
+        &self.owner_info
     }
 
-    /// get user id
     pub(crate) fn user_id(&self) -> i32 {
         self.user_id
     }

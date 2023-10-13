@@ -11,6 +11,9 @@
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
 use std::ffi::CStr;
+use std::fmt::Write;
+
+use asset_common::loge;
 
 use crate::{
     database::Database,
@@ -72,14 +75,31 @@ impl<'b> Statement<'b, true> {
         }
     }
 
+    fn print_vec(i: i32, v: &[u8]) { // todo: delete
+        let mut s = String::new();
+        for byte in v {
+            write!(s, "{:02x}", byte).expect("Unable to write to string");
+        }
+        loge!("[YZT] index = {}, bind vec = {}", i, s);
+    }
+
     /// bind datas
     /// datatype is detected by enum DataValue,
     /// index is start with 1, for '?' in sql.
     pub fn bind_data(&self, index: i32, data: &DataValue) -> SqliteErrCode {
         match data {
-            DataValue::Blob(b) => sqlite3_bind_blob_func(self.handle, index, b, b.len() as _, None),
-            DataValue::Integer(i) => sqlite3_bind_int64_func(self.handle, index, *i as _),
-            DataValue::NoData => sqlite3_bind_null_func(self.handle, index),
+            DataValue::Blob(b) => {
+                Self::print_vec(index, b);
+                sqlite3_bind_blob_func(self.handle, index, b, b.len() as _, None)
+            },
+            DataValue::Integer(i) => {
+                loge!("[YZT] index = {}, bind integer = {}", index, i);
+                sqlite3_bind_int64_func(self.handle, index, *i as _)
+            },
+            DataValue::NoData => {
+                loge!("[YZT] index = {}, bind null", index);
+                sqlite3_bind_null_func(self.handle, index)
+            },
         }
     }
 

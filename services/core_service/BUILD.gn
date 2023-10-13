@@ -25,6 +25,7 @@ ohos_rust_shared_library("asset_service") {
     "$COMPONENT_DIR/services/crypto_manager:crypto_manager",
     "$COMPONENT_DIR/services/db_operator:db_operator",
     "$COMPONENT_DIR/services/os_dependency:asset_os_dependency",
+    "//third_party/rust/crates/libc:lib",
   ]
 
   external_deps = [

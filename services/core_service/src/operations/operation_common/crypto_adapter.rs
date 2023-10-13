@@ -37,10 +37,10 @@ fn construct_key_info(calling_info: &CallingInfo, input: &AssetMap) -> Result<Ke
         panic!()
     };
 
-    logi!("user_id:[{}], owner_hash:[{}], auth_type:[{}],access_type:[{}]", calling_info.user_id(), String::from_utf8(calling_info.owner_text().clone()).unwrap(), *auth_type, *access_type);
+    logi!("user_id:[{}], owner_hash:[{}], auth_type:[{}],access_type:[{}]", calling_info.user_id(), String::from_utf8(calling_info.owner_info().clone()).unwrap(), *auth_type, *access_type);
     Ok(KeyInfo {
         user_id: calling_info.user_id(),
-        owner_hash: hasher::sha256(calling_info.owner_text()).to_vec(),
+        owner_hash: hasher::sha256(calling_info.owner_info()).to_vec(),
         auth_type: *auth_type,
         access_type: *access_type,
     })

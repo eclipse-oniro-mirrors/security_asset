@@ -22,11 +22,13 @@
 extern "C" {
 #endif
 
-bool GetCallingOwnerType(uint32_t callingTokenId, int32_t *ownerType);
-bool GetCallingTokenId(uint32_t *tokenId);
-const char * GetCallingProcessName(uint32_t tokenId);
-bool GetHapOwnerInfo(uint32_t tokenId, int32_t userId, char** appId, int32_t *appIndex);
-void FreeMemory(const char* freeStr);
+enum OwnerType {
+    HAP = 0,
+    NATIVE = 1,
+};
+
+bool GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, char *ownerInfo, uint32_t *infoLen);
+
 #ifdef __cplusplus
 }
 #endif

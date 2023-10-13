@@ -19,14 +19,14 @@
 
 #include "asset_log.h"
 
-bool GetUserIdByUid(uint64_t uid, uint32_t *userId)
+bool GetUserIdByUid(uint64_t uid, int32_t *userId)
 {
     int userIdInt;
     int res = OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userIdInt);
     if (res != 0) {
-        LOGE("get userid from uid failed! res is %{public}i", res);
+        LOGE("[FATAL]Get user id from uid failed! res is %{public}i", res);
         return false;
     }
-    *userId = static_cast<uint32_t>(userIdInt);
+    *userId = userIdInt;
     return true;
 }

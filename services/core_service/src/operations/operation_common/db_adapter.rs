@@ -137,7 +137,7 @@ pub(crate) fn data_exist_once(calling_info: &CallingInfo, db_data: &Vec<Pair>) -
 
 pub(crate) fn query_data_once(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
     // get owner str
-    let owner = calling_info.owner_text();
+    let owner = calling_info.owner_info();
 
     // call sql to add
     let query_res =
@@ -213,7 +213,7 @@ fn insert_db_data_into_asset_map(column: &String, data: &ResultDataValue, map: &
         match convert_db_data_into_asset(&tag, data) {
             Some(value) => map.insert(tag, value),
             None => {
-                logi!("convert [{}] is empty", column);
+                logi!("convert [{}] is empty", column); //todo: delete
                 None
             }
         };

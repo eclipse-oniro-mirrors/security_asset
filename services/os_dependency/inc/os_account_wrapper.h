@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-bool GetUserIdByUid(uint64_t uid, uint32_t *userId);
+bool GetUserIdByUid(uint64_t uid, int32_t *userId);
 
 #ifdef __cplusplus
 }
