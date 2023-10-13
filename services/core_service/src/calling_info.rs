@@ -26,7 +26,7 @@ use ipc_rust::get_calling_uid;
 
 /// calling info
 pub(crate) struct CallingInfo {
-    owner_type: Owner,
+    owner: Owner,
     user_id: i32,
 }
 
@@ -36,19 +36,19 @@ impl CallingInfo {
         let uid = get_calling_uid();
         let user_id = get_calling_user_id(uid)?;
         Ok(CallingInfo {
-            owner_type: get_calling_owner(uid, user_id)?,
+            owner: get_calling_owner(uid, user_id)?,
             user_id
         })
     }
 
     /// get owner type hap: 1 native: 2
     pub(crate) fn owner_type(&self) -> u32 {
-        self.owner_type.get_type_num()
+        self.owner.get_type_num()
     }
 
     /// get owner info hap:
     pub(crate) fn owner_text(&self) -> &Vec<u8> {
-        self.owner_type.get_owner_text()
+        self.owner.get_owner_text()
     }
 
     /// get user id

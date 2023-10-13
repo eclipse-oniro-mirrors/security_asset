@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This crate implements the interface of asset
+//! This module defines the interface of the Asset Rust SDK.
 
 pub use asset_common::definition;
 

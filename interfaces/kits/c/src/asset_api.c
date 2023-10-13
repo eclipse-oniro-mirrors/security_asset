@@ -15,10 +15,10 @@
 
 #include "asset_api.h"
 
+#include "securec.h"
+
 #include "asset_log.h"
 #include "asset_mem.h"
-
-#include "securec.h"
 
 extern int32_t add_asset(const Asset_Attr *attributes, uint32_t attr_cnt);
 extern int32_t remove_asset(const Asset_Attr *query, uint32_t query_cnt);

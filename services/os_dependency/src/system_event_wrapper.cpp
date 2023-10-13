@@ -24,7 +24,7 @@
 #include "asset_log.h"
 
 extern "C" {
-int32_t delete_hap_asset(int32_t user_id, const char* owner, uint32_t auth_type, uint32_t access_type);
+int32_t delete_hap_asset(int32_t user_id, const char* owner);
 void delete_user_asset(int32_t user_id);
 }
 
@@ -62,22 +62,27 @@ public:
             std::string appId = want.GetStringParam(APP_ID);
             LOGE("appId %{public}s", appId.c_str());  // todo 要删掉
 
+            // todo 获取 appIndex 只有在COMMON_EVENT_SANDBOX_PACKAGE_REMOVED的时候获取 在COMMON_EVENT_PACKAGE_REMOVED的时候默认为0
+            int appIndex = 0;
+            if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
+                appIndex = want.GetIntParam(OHOS::AppExecFwk::Constants::SANDBOX_APP_INDEX, -1);
+                if (appIndex < 0) {
+                    LOGE("sandbox package appIndex = %{public}d is invalid.", appIndex);
+                    return;
+                }
+                LOGE("sandbox package appIndex = %{public}d", appIndex);
+
+            }
+
             if (appId.empty() || userId == -1) {
                 LOGE("get wrong appId/userId");
                 return;
             }
-            // todo 获取 appIndex 只有在COMMON_EVENT_SANDBOX_PACKAGE_REMOVED的时候获取 在COMMON_EVENT_PACKAGE_REMOVED的时候默认为0
-            int appIndex = 0;
-            LOGE("appId %{public}i", appIndex);  // todo 要删掉
+            LOGE("appIndex %{public}i", appIndex);  // todo 要删掉
             // 2. 调用数据库提供的接口，删除userID+owner(appId+appIndex)对应的数据； 删除密钥 userId+owner+accessType+authType
-            // 现在已经有userId和owner accessType和authType直接遍历
             std::string owner = appId + '_' + std::to_string(appIndex);
-            int totalDeleteNum = 0;
-            for (int accessType = 0; accessType < 2; accessType++) {
-                for (int authType = 0; authType < 2; authType++) {
-                    totalDeleteNum += delete_hap_asset(userId, owner.c_str(), authType, accessType);
-                }
-            }
+            int totalDeleteNum = delete_hap_asset(userId, owner.c_str());
+
             LOGI("delete finish! total delete line: %{public}i", totalDeleteNum);  // todo 要删掉
             // 5. 测试沙箱应用卸载时，能否获取到userID, appId（最新开发分支版本可能没有）, appIndex
 

@@ -13,31 +13,80 @@
  * limitations under the License.
  */
 
-//! This crate implements the asset
+//! This module implements the Asset service.
 
 use std::ffi::{c_char, CString};
+use std::thread;
+use std::time::Duration;
 
-use asset_common::{
-    logi,
-    definition::{AssetMap, Result},
-};
-use asset_ipc_interface::{IAsset, SA_ID};
-use stub::AssetStub;
-
-use hilog_rust::{error, hilog, HiLogLabel, LogType};
+use hilog_rust::{HiLogLabel, LogType, error, hilog};
 use ipc_rust::{IRemoteBroker, RemoteObj};
-use system_ability_fwk_rust::{define_system_ability, IMethod, ISystemAbility, RSystemAbility};
+use system_ability_fwk_rust::{IMethod, ISystemAbility, RSystemAbility, define_system_ability};
 
-mod stub;
-mod operations;
+use asset_common::{definition::{AssetMap, Result}, logi};
+use asset_ipc_interface::{IAsset, SA_ID};
+
+mod argument_check;
 mod calling_info;
 mod definition_inner;
-mod argument_check;
+mod operations;
+mod stub;
 
 use calling_info::CallingInfo;
+use stub::AssetStub;
 
-/// xxx
-pub struct AssetService;
+const LOG_LABEL: HiLogLabel = HiLogLabel {
+    log_type: LogType::LogCore,
+    domain: 0xD002F70,
+    tag: "Asset",
+};
+
+define_system_ability!(
+    sa: SystemAbility(on_start, on_stop),
+);
+
+const MAX_DELAY_TIMES: u32 = 100;
+const DELAY_INTERVAL: u64 = 200000;
+
+extern "C" {
+    fn SubscribeSystemEvent() -> bool;
+    fn UnSubscribeSystemEvent() -> bool;
+}
+
+fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
+    let service = AssetStub::new_remote_stub(AssetService).expect("create AssetService failed");
+    ability.publish(&service.as_object().expect("publish Asset service failed"), SA_ID);
+    logi!("[INFO]Asset service on_start");
+    unsafe{
+        for i in 0..MAX_DELAY_TIMES {
+            if SubscribeSystemEvent() {
+                logi!("SubscribeSystemEvent success, i = {}", i);
+                return;
+            } else {
+                logi!("SubscribeSystemEvent failed {} times", i);
+                thread::sleep(Duration::from_millis(DELAY_INTERVAL));
+            }
+        }
+        logi!("SubscribeSystemEvent failed");
+    }
+}
+
+fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {
+    logi!("[INFO]Asset service on_stop");
+    unsafe{ UnSubscribeSystemEvent(); }
+}
+
+#[used]
+#[link_section = ".init_array"]
+static A: extern fn() = {
+    extern fn init() {
+        let r_sa = SystemAbility::new_system_ability(SA_ID, true).expect("create Asset service failed");
+        r_sa.register();
+    }
+    init
+};
+
+struct AssetService;
 
 impl IRemoteBroker for AssetService {}
 
@@ -73,58 +122,3 @@ impl IAsset for AssetService {
         Ok(()) // todo: implement
     }
 }
-
-const LOG_LABEL: HiLogLabel = HiLogLabel {
-    log_type: LogType::LogCore,
-    domain: 0xD002F70,
-    tag: "Asset",
-};
-
-define_system_ability!(
-    sa: SystemAbility(on_start, on_stop),
-);
-
-extern "C" {
-    fn SubscribeSystemEvent() -> bool;
-    fn UnSubscribeSystemEvent() -> bool;
-}
-
-use std::thread;
-use std::time::Duration;
-
-const MAX_DELAY_TIMES: u32 = 100;
-const DELAY_INTERVAL: u64 = 200000;
-
-fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
-    let service = AssetStub::new_remote_stub(AssetService).expect("create AssetService failed");
-    ability.publish(&service.as_object().expect("publish Asset service failed"), SA_ID);
-    logi!("on_start");
-    unsafe{
-        for i in 0..MAX_DELAY_TIMES {
-            if SubscribeSystemEvent() {
-                logi!("SubscribeSystemEvent success, i = {}", i);
-                return;
-            } else {
-                logi!("SubscribeSystemEvent failed {} times", i);
-                thread::sleep(Duration::from_millis(DELAY_INTERVAL));
-            }
-        }
-        logi!("SubscribeSystemEvent failed");
-    }
-}
-
-fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {
-    logi!("on_stop");
-    unsafe{ UnSubscribeSystemEvent(); }
-}
-
-#[used]
-#[link_section = ".init_array"]
-static A: extern fn() = {
-    extern fn init() {
-        let r_sa = SystemAbility::new_system_ability(SA_ID, true)
-            .expect("create Asset service failed");
-        r_sa.register();
-    }
-    init
-};
