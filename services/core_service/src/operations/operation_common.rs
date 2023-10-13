@@ -28,23 +28,18 @@ pub(crate) use extra_params::construst_extra_params;
 pub(crate) use file_operator::create_user_db_dir;
 pub(crate) use default_params::construct_params_with_default;
 
-use asset_common::{definition::{AssetMap, Result, Value, ErrCode, Tag},
-    loge, logi};
+use crate::{
+    operations::operation_common::db_adapter::{set_extra_attrs, set_input_attr},
+    definition_inner::AssetInnerMap,
+};
 
-// todo : zwz : 不转字串，转到update里
-pub(crate) fn get_alias(input: &AssetMap) -> Result<String> {
-    let alias;
-    if let Some(Value::Bytes(alias_vec)) = input.get(&Tag::Alias) {
-        let alias_try = String::from_utf8(alias_vec.clone()); // todo : 可支持bytes,数据库放开text限制
-        if let Ok(alias_ok) = alias_try {
-            alias = alias_ok;
-        } else {
-            loge!("parse alias from utf8 failed!");
-            return Err(ErrCode::InvalidArgument);
-        }
-    } else {
-        logi!("not found alias in map!");
-        return Err(ErrCode::NotFound);
-    }
-    Ok(alias)
+use asset_common::definition::{AssetMap, Result};
+use db_operator::types::Pair;
+
+pub(crate) fn construct_db_data<'a>(input: &'a AssetMap, inner_params: &'a AssetInnerMap)
+    -> Result<Vec<Pair<'a>>> {
+    let mut data_vec = Vec::new();
+    set_input_attr(input, &mut data_vec)?;
+    set_extra_attrs(inner_params, &mut data_vec)?;
+    Ok(data_vec)
 }

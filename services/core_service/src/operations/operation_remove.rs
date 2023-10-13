@@ -17,14 +17,21 @@
 
 use crate::{
     calling_info::CallingInfo,
-    operations::operation_common::db_adapter::{set_input_attr, remove_data_once},
+    operations::operation_common::{
+        construct_db_data, construct_params_with_default, construst_extra_params,
+        db_adapter::remove_data_once,
+    }
 };
+use asset_ipc_interface::IpcCode;
 
 use asset_common::{definition::{AssetMap, Result}, logi};
 
 pub(crate) fn remove(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    let mut data_vec = Vec::new();
-    set_input_attr(input, &mut data_vec)?;
+
+    let input_new = construct_params_with_default(input, &IpcCode::Remove)?;
+    let inner_params = construst_extra_params(calling_info, &IpcCode::Remove)?;
+
+    let data_vec = construct_db_data(&input_new, &inner_params)?;
     let remove_num = remove_data_once(calling_info, &data_vec)?;
     logi!("remove {} data", remove_num);
     Ok(())

@@ -113,7 +113,7 @@ pub(crate) fn construct_params_with_default(input: &AssetMap, code: &IpcCode) ->
         IpcCode::Add => default_if_not_exist(&mut map, &ADD_DEFAULT_TAGS)?,
         IpcCode::Query => default_if_not_exist(&mut map, &QUERY_DEFAULT_TAGS)?,
         IpcCode::PreQuery => default_if_not_exist(&mut map, &PRE_QUERY_DEFAULT_TAGS)?,
-        _ => panic!("No default params for [{}]", code)
+        _ => {}
     }
     Ok(map)
 }

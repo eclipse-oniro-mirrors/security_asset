@@ -24,21 +24,11 @@ use db_operator::{database_table_helper::G_COLUMN_SECRET, types::{DataValue, Pai
 
 use crate::{
     operations::operation_common::{
-        construst_extra_params, create_user_db_dir,
-        construct_params_with_default, encrypt,
-        db_adapter::{set_extra_attrs, set_input_attr, insert_data_once, data_exist_once, replace_data_once}
+        create_user_db_dir, construct_params_with_default, encrypt, construct_db_data, construst_extra_params,
+        db_adapter::{insert_data_once, data_exist_once, replace_data_once}
     },
-    calling_info::CallingInfo,
-    definition_inner::AssetInnerMap
+    calling_info::CallingInfo
 };
-
-fn construct_data<'a>(input: &'a AssetMap, inner_params: &'a AssetInnerMap)
-    -> Result<Vec<Pair<'a>>> {
-    let mut data_vec = Vec::new();
-    set_input_attr(input, &mut data_vec)?;
-    set_extra_attrs(inner_params, &mut data_vec)?;
-    Ok(data_vec)
-}
 
 fn check_resolve_conflict(input: &AssetMap, calling_info: &CallingInfo, db_data: &Vec<Pair<>>)
     -> Result<()> {
@@ -58,19 +48,16 @@ fn check_resolve_conflict(input: &AssetMap, calling_info: &CallingInfo, db_data:
 pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // create user dir
     create_user_db_dir(calling_info.user_id())?;
-
-    // todo: 不塞运行参数
     // get param map contains input params and default params
     let input_new = construct_params_with_default(input, &IpcCode::Add)?;
-
     // a map collecting inner params
     let inner_params = construst_extra_params(calling_info, &IpcCode::Add)?;
 
     // todo : 与袁浩确认使用&Vec<Pair>的可行性，减少适配层
     // construct db data from input map and inner params
-    let mut db_data = construct_data(&input_new, &inner_params)?;
+    let mut db_data = construct_db_data(&input_new, &inner_params)?;
 
-    let Value::Bytes(secret) = input.get(&Tag::Secret).unwrap() else { panic!("Impossible error for secret type.") };
+    let Value::Bytes(secret) = input_new.get(&Tag::Secret).unwrap() else { panic!("Impossible error for secret type.") };
 
     let cipher = encrypt(calling_info, &input_new, secret)?;
     logi!("get cipher len is [{}]", cipher.len()); // todo delete

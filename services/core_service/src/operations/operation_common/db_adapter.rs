@@ -45,7 +45,6 @@ fn convert_extra_value_into_db_value(value: &InnerValue) -> Result<DataValue> {
     match value {
         InnerValue::Number(n) => Ok(DataValue::Integer(*n)), // to do 类型确认
         InnerValue::Blob(v) => Ok(DataValue::Blob(v)),
-        InnerValue::Text(v) => Ok(DataValue::Blob(v)),
     }
 }
 

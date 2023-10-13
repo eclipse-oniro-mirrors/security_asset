@@ -46,8 +46,8 @@ fn get_update_time(params: &mut AssetInnerMap) -> Result<()> {
         loge!("get sys_time_res faield!");
         return Err(ErrCode::SystemTimeError);
     }
-    let time_string = sys_time_res.unwrap().as_millis().to_string();
-    params.insert(G_COLUMN_UPDATE_TIME, InnerValue::Text(time_string.into_bytes()));
+    let time_string = sys_time_res.unwrap().as_millis().to_string(); // todo zwz unwrap
+    params.insert(G_COLUMN_UPDATE_TIME, InnerValue::Blob(time_string.into_bytes()));
     Ok(())
 }
 
@@ -58,12 +58,12 @@ fn get_create_time(params: &mut AssetInnerMap) -> Result<()> {
         return Err(ErrCode::SystemTimeError);
     }
     let time_string = sys_time_res.unwrap().as_millis().to_string(); // todo : zwz: unwrap
-    params.insert(G_COLUMN_CREATE_TIME, InnerValue::Text(time_string.into_bytes()));
+    params.insert(G_COLUMN_CREATE_TIME, InnerValue::Blob(time_string.into_bytes()));
     Ok(())
 }
 
 fn get_owner(calling_info: &CallingInfo, params: &mut AssetInnerMap) -> Result<()> {
-    params.insert(G_COLUMN_OWNER, InnerValue::Text(calling_info.owner_text().clone()));
+    params.insert(G_COLUMN_OWNER, InnerValue::Blob(calling_info.owner_text().clone()));
     Ok(())
 }
 
@@ -71,12 +71,12 @@ pub(crate) fn construst_extra_params<'a>(calling_info: &'a CallingInfo, code: &'
     let mut params = AssetInnerMap::new();
     get_owner_type(calling_info, &mut params)?;
     get_owner(calling_info, &mut params)?;
-    get_delete_type(&mut params)?;
-    get_version(&mut params)?;
     match *code {
         IpcCode::Add => {
             get_update_time(&mut params)?;
             get_create_time(&mut params)?;
+            get_delete_type(&mut params)?;
+            get_version(&mut params)?;
         },
         IpcCode::Update => get_update_time(&mut params)?,
         _ => {},

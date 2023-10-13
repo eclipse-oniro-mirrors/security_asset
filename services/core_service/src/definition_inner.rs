@@ -29,9 +29,6 @@ pub(crate) enum DeleteType {
 
 /// An enum type containing the data type definitions for intermediate layer between asset inner data and db data.
 pub(crate) enum InnerValue {
-    /// string
-    Text(Vec<u8>),
-
     /// binary data
     Blob(Vec<u8>),
 
