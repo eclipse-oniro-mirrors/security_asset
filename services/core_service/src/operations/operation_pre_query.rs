@@ -20,8 +20,7 @@ use std::collections::HashSet;
 use crate::{
     calling_info::CallingInfo,
     operations::operation_common::{
-        construct_params_with_default, init_decrypt,
-        db_adapter::set_input_attr,
+        construct_params_with_default, init_decrypt, construst_extra_params, construct_db_data,
     },
     operations::operation_query::batch_query,
 };
@@ -30,13 +29,10 @@ use asset_common::{definition::{AssetMap, Result, Value, ErrCode, Tag}, loge, lo
 use asset_ipc_interface::IpcCode;
 
 pub(crate) fn pre_query(input: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
-    // get param map contains input params and default params
     let input_new = construct_params_with_default(input, &IpcCode::PreQuery)?;
+    let inner_params = construst_extra_params(calling_info, &IpcCode::PreQuery)?;
+    let data_vec = construct_db_data(&input_new, &inner_params)?;
 
-    let mut data_vec = Vec::new();
-    set_input_attr(&input_new, &mut data_vec)?;
-    // get all pre query data
-    let data_vec = Vec::new();
     let all_data: Vec<AssetMap> = batch_query(calling_info, &data_vec)?;
     // get all secret key
     let mut secret_key_set = HashSet::new();

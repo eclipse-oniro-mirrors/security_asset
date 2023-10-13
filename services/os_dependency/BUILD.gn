@@ -52,6 +52,7 @@ ohos_rust_shared_ffi("db_ffi") {
     "$COMPONENT_DIR/frameworks/common:asset_common",
     "$COMPONENT_DIR/interfaces/inner_api/rs:asset_sdk",
     "$COMPONENT_DIR/services/db_operator:db_operator",
+    "$COMPONENT_DIR/services/crypto_manager:crypto_manager",
     "//third_party/rust/crates/libc:lib",
   ]
   external_deps = [ "hilog:hilog_rust" ]

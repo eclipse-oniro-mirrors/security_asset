@@ -16,42 +16,58 @@
 //! This create implement the asset
 
 use std::{
-    ffi::c_char,
+    ffi::{c_char, CString},
     fs, path::Path,
 };
 
 use asset_common::{
     loge, logi,
 };
-
+use asset_sdk::definition::{
+    Accessibility, AuthType,
+};
+use crypto_manager::crypto::{
+    KeyInfo, SecretKey,
+};
 use db_operator::{
     database_table_helper::{
-        DefaultDatabaseHelper,
-        G_COLUMN_ACCESSIBILITY, G_COLUMN_AUTH_TYPE,
+        DefaultDatabaseHelper, G_COLUMN_OWNER,
     },
-    types::{
-        DataValue, Pair,
-    },
+    types::{DataValue, Pair},
 };
 
-// todo : yyd : 修改入参
 /// Function called from C programming language to Rust programming language for delete hap Asset.
 /// # Safety
 #[no_mangle]
-pub unsafe extern "C" fn delete_hap_asset(user_id: i32, _owner: *const c_char, auth_type: u32, access_type: u32) -> i32 {
+pub unsafe extern "C" fn delete_hap_asset(user_id: i32, owner: *const c_char) -> i32 {
+    // 1 delete data in db
+    let owner_str = CString::from_raw(owner as *mut c_char).into_string().unwrap();
     let cond = vec![
-        Pair { column_name: G_COLUMN_ACCESSIBILITY, value: DataValue::Integer(access_type) },
-        Pair { column_name: G_COLUMN_AUTH_TYPE, value: DataValue::Integer(auth_type) }
+        Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(owner_str.as_bytes()) }
     ];
-
-    // todo : yyd : 修改
-    match DefaultDatabaseHelper::delete_datas_default_once(user_id, &cond) {
+    let remove_num = match DefaultDatabaseHelper::delete_datas_default_once(user_id, &cond) {
         Ok(remove_num) => {
             logi!("remove {} data", remove_num);
             remove_num
         },
         Err(_) => 0
+    };
+    // 2 delete data in hucks
+    // todo owner_hash现在调用不到 需要等文志抽出来之后调用
+    let mut info = Vec::with_capacity(4);
+    info.push(KeyInfo { user_id, owner_hash: vec![b'2'], auth_type: AuthType::None as u32, access_type: Accessibility::DeviceFirstUnlock as u32 });
+    info.push(KeyInfo { user_id, owner_hash: vec![b'2'], auth_type: AuthType::None as u32, access_type: Accessibility::DeviceUnlock as u32 });
+    info.push(KeyInfo { user_id, owner_hash: vec![b'2'], auth_type: AuthType::Any as u32, access_type: Accessibility::DeviceFirstUnlock as u32 });
+    info.push(KeyInfo { user_id, owner_hash: vec![b'2'], auth_type: AuthType::Any as u32, access_type: Accessibility::DeviceUnlock as u32 });
+    while let Some(sub_info) = info.pop() {
+        let secret_key = SecretKey::new(sub_info);
+        match secret_key.delete() {
+            Ok(true) => logi!("delete huks key pass"),
+            Ok(false) => logi!("delete huks key never reached"),
+            Err(res) => logi!("delete huks key fail error = {}", res),
+        };
     }
+    remove_num
 }
 
 const ROOT_PATH: &str = "data/service/el1/public/asset_service";

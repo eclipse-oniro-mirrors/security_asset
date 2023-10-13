@@ -102,6 +102,7 @@ bool GetHapOwnerInfo(uint32_t tokenId, int32_t userId, char** appId, int32_t *ap
 
     AppExecFwk::BundleInfo bundleInfo;
     const std::string bundleNameStr = hapTokenInfo.bundleName;
+    LOGE("use bundle name is : %{public}s", bundleNameStr.c_str());  // todo 后续删掉
     bool isGetInfoSuccess = bundleMgrProxy->GetBundleInfo(bundleNameStr,
         AppExecFwk::BundleFlag::GET_BUNDLE_WITH_HASH_VALUE, bundleInfo, userId);
     if (!isGetInfoSuccess) {
