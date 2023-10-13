@@ -64,7 +64,7 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     db_data.push(
         Pair {
             column_name: G_COLUMN_SECRET,
-            value: DataValue::Blob(&cipher),
+            value: DataValue::Blob(cipher),
         }
     );
 

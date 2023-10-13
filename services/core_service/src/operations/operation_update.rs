@@ -49,7 +49,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     data_vec.push(
         Pair {
             column_name: G_COLUMN_ALIAS,
-            value: DataValue::Blob(alias),
+            value: DataValue::Blob(alias.to_vec()),
         }
     );
 
@@ -67,7 +67,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
         data_vec.push(
             Pair {
                 column_name: G_COLUMN_SECRET,
-                value: DataValue::Blob(&cipher),
+                value: DataValue::Blob(cipher),
             }
         );
     }

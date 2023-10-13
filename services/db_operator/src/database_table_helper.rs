@@ -275,7 +275,7 @@ impl<'a> TableHelper<'a> {
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let datas = &vec![Pair {
     ///     column_name: "alias",
-    ///     value: DataValue::Blob(b"test_update"),
+    ///     value: DataValue::Blob(b"test_update".to_vec()),
     /// }];
     ///
     /// let ret = helper.update_datas_default(&vec![], datas);
@@ -301,7 +301,7 @@ impl<'a> TableHelper<'a> {
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let datas = vec![Pair {
     ///     column_name: "value",
-    ///     value: DataValue::Blob(b"test_update"),
+    ///     value: DataValue::Blob(b"test_update".to_vec()),
     /// }];
     ///
     /// let ret = helper.insert_datas_default(&datas);
@@ -340,7 +340,7 @@ impl<'a> TableHelper<'a> {
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let cond = vec![Pair {
     ///     column_name: "value",
-    ///     value: DataValue::Blob(b"test_update"),
+    ///     value: DataValue::Blob(b"test_update".to_vec()),
     /// }];
     ///
     /// let ret = helper.delete_datas_default(&cond);

@@ -957,7 +957,7 @@ pub fn sqlite3_bind_text_func(
 pub fn sqlite3_bind_blob_func(
     stat: usize,
     index: i32,
-    blob: &[u8],
+    blob: &Vec<u8>,
     n: i32,
     callback: Option<BindCallback>,
 ) -> SqliteErrCode {

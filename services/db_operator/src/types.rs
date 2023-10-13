@@ -32,13 +32,13 @@ pub fn from_datatype_to_str(value: DataType) -> &'static str {
 }
 
 /// Data value for DB
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 #[repr(C)]
-pub enum DataValue<'a> {
+pub enum DataValue {
     /// numbers
     Integer(u32),
     /// binary data
-    Blob(&'a [u8]),
+    Blob(Vec<u8>),
     /// for null
     NoData,
 }
@@ -85,13 +85,13 @@ pub fn from_result_datatype_to_str(value: &ResultDataValue) -> &'static str {
 }
 
 /// Pair struct for query condition or exec data
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 #[repr(C)]
 pub struct Pair<'a> {
     /// column name for condition
     pub column_name: &'a str,
     /// query value for condition
-    pub value: DataValue<'a>,
+    pub value: DataValue,
 }
 
 /// query conditions
