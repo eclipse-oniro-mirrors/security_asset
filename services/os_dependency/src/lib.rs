@@ -20,9 +20,7 @@ use std::{
     fs, path::Path,
 };
 
-use asset_common::{
-    loge, logi,
-};
+use asset_common::{ loge, logi, hasher};
 use asset_sdk::definition::{
     Accessibility, AuthType,
 };
@@ -55,10 +53,10 @@ pub unsafe extern "C" fn delete_hap_asset(user_id: i32, owner: *const c_char) ->
     // 2 delete data in hucks
     // todo owner_hash现在调用不到 需要等文志抽出来之后调用
     let mut info = Vec::with_capacity(4);
-    info.push(KeyInfo { user_id, owner_hash: vec![b'2'], auth_type: AuthType::None as u32, access_type: Accessibility::DeviceFirstUnlock as u32 });
-    info.push(KeyInfo { user_id, owner_hash: vec![b'2'], auth_type: AuthType::None as u32, access_type: Accessibility::DeviceUnlock as u32 });
-    info.push(KeyInfo { user_id, owner_hash: vec![b'2'], auth_type: AuthType::Any as u32, access_type: Accessibility::DeviceFirstUnlock as u32 });
-    info.push(KeyInfo { user_id, owner_hash: vec![b'2'], auth_type: AuthType::Any as u32, access_type: Accessibility::DeviceUnlock as u32 });
+    info.push(KeyInfo { user_id, owner_hash: hasher::sha256(owner_str.as_bytes()).to_vec(), auth_type: AuthType::None as u32, access_type: Accessibility::DeviceFirstUnlock as u32 });
+    info.push(KeyInfo { user_id, owner_hash: hasher::sha256(owner_str.as_bytes()).to_vec(), auth_type: AuthType::None as u32, access_type: Accessibility::DeviceUnlock as u32 });
+    info.push(KeyInfo { user_id, owner_hash: hasher::sha256(owner_str.as_bytes()).to_vec(), auth_type: AuthType::Any as u32, access_type: Accessibility::DeviceFirstUnlock as u32 });
+    info.push(KeyInfo { user_id, owner_hash: hasher::sha256(owner_str.as_bytes()).to_vec(), auth_type: AuthType::Any as u32, access_type: Accessibility::DeviceUnlock as u32 });
     while let Some(sub_info) = info.pop() {
         let secret_key = SecretKey::new(sub_info);
         match secret_key.delete() {

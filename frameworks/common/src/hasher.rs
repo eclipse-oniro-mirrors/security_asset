@@ -87,7 +87,8 @@ fn compress(input_bytes: &Vec<u8>) -> [u32; 8] {
     hash
 }
 
-pub(crate) fn sha256(input: &[u8]) -> [u8; 32] {
+/// the function to get sha256
+pub fn sha256(input: &[u8]) -> [u8; 32] {
     // padding
     let mut input_bytes = input.to_vec();
     let input_len = input_bytes.len();
