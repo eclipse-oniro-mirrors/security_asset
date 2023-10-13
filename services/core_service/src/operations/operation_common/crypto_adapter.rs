@@ -17,9 +17,8 @@
 
 use crypto_manager::crypto::{Crypto, KeyInfo, SecretKey};
 
-use asset_common::{definition::{AssetMap, Result, Tag, Value, ErrCode}, loge, logi};
+use asset_common::{definition::{AssetMap, Result, Tag, Value, ErrCode}, loge, logi, hasher};
 use crate::calling_info::CallingInfo;
-use crate::operations::operation_common::hasher;
 
 // todo : zwz : 实现真的aad
 fn construct_aad() -> Vec<u8> {

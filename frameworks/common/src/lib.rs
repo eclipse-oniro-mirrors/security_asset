@@ -22,3 +22,5 @@ pub mod log_utils;
 pub mod macro_utils;
 
 pub mod definition;
+
+pub mod hasher;

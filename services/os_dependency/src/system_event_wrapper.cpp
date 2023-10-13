@@ -70,7 +70,7 @@ public:
                     LOGE("sandbox package appIndex = %{public}d is invalid.", appIndex);
                     return;
                 }
-                LOGE("sandbox package appIndex = %{public}d", appIndex);
+                LOGE("sandbox package appIndex = %{public}d", appIndex);  // todo 要删掉
 
             }
 
