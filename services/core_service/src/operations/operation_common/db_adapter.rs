@@ -108,15 +108,7 @@ pub(crate) fn construct_db_data(input: &AssetMap, calling_info: &CallingInfo, co
 }
 
 pub(crate) fn insert_data_once(calling_info: &CallingInfo, db_data: Vec<Pair>) -> Result<i32> {
-    // call sql to add
-    let insert_num =
-        DefaultDatabaseHelper::insert_datas_default_once(calling_info.user_id(), &db_data)?;
-
-    logi!("insert params calling_info.user_id() = [{}]", calling_info.user_id()); // todo delete
-
-    logi!("insert {} data", insert_num);
-
-    Ok(insert_num)
+    DefaultDatabaseHelper::insert_datas_default_once(calling_info.user_id(), &db_data)
 }
 
 pub(crate) fn replace_data_once(calling_info: &CallingInfo, query_db_data: &Vec<Pair<>>,
@@ -161,50 +153,30 @@ fn get_query_options(input: &AssetMap) -> QueryOptions {
                     Ok(res) => Some(vec![res]),
                     Err(_) => None,
                 }
-
             }
             _ => None,
         },
     }
 }
 
-pub(crate) fn query_data_once(calling_info: &CallingInfo, db_data: &Vec<Pair>, input: &AssetMap) -> Result<Vec<AssetMap>> {
-    // get owner str
-    let owner = calling_info.owner_info();
-
+pub(crate) fn query_data_once(calling_info: &CallingInfo, db_data: &Vec<Pair>, input: &AssetMap)
+    -> Result<Vec<AssetMap>> {
     // call sql to add
     let query_res = DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(),
         &Vec::new(), db_data, Some(&get_query_options(input)))?;
 
-    logi!("query params calling_info.user_id() = [{}], owner_str = [{}], db_data len is [{}]", calling_info.user_id(), &String::from_utf8(owner.clone()).unwrap(), db_data.len()); // todo delete
-    for pair in db_data {
-        logi!("db data is [{}]", pair.column_name);
-    }
     logi!("query found {}", query_res.len());
 
-    let res_vec = convert_db_data_into_map(&query_res)?;
-
-    Ok(res_vec)
+    convert_db_data_into_map(&query_res)
 }
 
 pub(crate) fn update_data_once(calling_info: &CallingInfo, query_db_data: &Vec<Pair>, update_db_data: &Vec<Pair>) -> Result<i32> {
     // call sql to update
-    let update_num =
-        DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(), query_db_data, update_db_data)?;
-
-    logi!("update {} data", update_num);
-
-    Ok(update_num)
+    DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(), query_db_data, update_db_data)
 }
 
 pub(crate) fn remove_data_once(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<i32> {
-    // call sql to remove
-    let remove_num =
-        DefaultDatabaseHelper::delete_datas_default_once(calling_info.user_id(), db_data)?;
-
-    logi!("remove {} data", remove_num);
-
-    Ok(remove_num)
+    DefaultDatabaseHelper::delete_datas_default_once(calling_info.user_id(), db_data)
 }
 
 fn convert_db_data_into_asset(tag: &Tag, data: &ResultDataValue) -> Option<Value> {
