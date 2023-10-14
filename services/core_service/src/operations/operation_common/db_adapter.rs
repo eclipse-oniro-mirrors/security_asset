@@ -100,13 +100,14 @@ pub(crate) fn insert_data_once(calling_info: &CallingInfo, db_data: Vec<Pair>) -
     Ok(insert_num)
 }
 
-pub(crate) fn replace_data_once(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<()> {
+pub(crate) fn replace_data_once(calling_info: &CallingInfo, query_db_data: &Vec<Pair<>>,
+    replace_db_data: &Vec<Pair>) -> Result<()> {
     let replace_call = |db: &Database| -> bool {
-        if db.delete_datas_default(&Vec::new()).is_err() {
+        if db.delete_datas_default(query_db_data).is_err() {
             loge!("remove asset in replace operation failed!");
             return false;
         }
-        if db.insert_datas_default(db_data).is_err() {
+        if db.insert_datas_default(replace_db_data).is_err() {
             loge!("insert asset in replace operation failed!");
             return false;
         }
@@ -187,7 +188,7 @@ pub(crate) fn query_data_once(calling_info: &CallingInfo, db_data: &Vec<Pair>, i
 pub(crate) fn update_data_once(calling_info: &CallingInfo, query_db_data: &Vec<Pair>, update_db_data: &Vec<Pair>) -> Result<i32> {
     // call sql to update
     let update_num =
-        DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(), query_db_data, update_db_data)?; // todo zwz condition获取
+        DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(), query_db_data, update_db_data)?;
 
     logi!("update {} data", update_num);
 

@@ -56,7 +56,7 @@ fn check_resolve_conflict(input: &AssetMap, calling_info: &CallingInfo, db_data:
     if data_exist_once(calling_info, &query_db_data)? {
         match input.get(&Tag::ConflictResolution) {
             Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 =>
-                return replace_data_once(calling_info, db_data),
+                return replace_data_once(calling_info, &query_db_data, db_data),
             _ => {
                 loge!("[FATAL]The specified alias already exists.");
                 return Err(ErrCode::Duplicated);
