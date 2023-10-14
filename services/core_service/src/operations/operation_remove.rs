@@ -18,9 +18,10 @@
 use crate::{
     calling_info::CallingInfo,
     operations::operation_common::{
-        construct_params_with_default, construst_extra_params,
+        construct_params_with_default,
         db_adapter::{remove_data_once, construct_db_data},
-    }
+    },
+    definition_inner::OperationCode
 };
 use asset_ipc_interface::IpcCode;
 
@@ -29,9 +30,8 @@ use asset_common::{definition::{AssetMap, Result}, logi};
 pub(crate) fn remove(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 
     let input_new = construct_params_with_default(input, &IpcCode::Remove)?;
-    let inner_params = construst_extra_params(calling_info, &IpcCode::Remove)?;
 
-    let data_vec = construct_db_data(&input_new, &inner_params)?;
+    let data_vec = construct_db_data(&input_new, calling_info, &OperationCode::Remove)?;
     let remove_num = remove_data_once(calling_info, &data_vec)?;
     logi!("remove {} data", remove_num);
     Ok(())

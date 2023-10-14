@@ -17,7 +17,7 @@
 
 use asset_common::{
     definition::{Result, Tag, ReturnType, SyncType, Accessibility, AuthType, ErrCode,
-        AssetMap, Insert, ConflictResolution},
+        AssetMap, Insert},
     logi,
 };
 use asset_ipc_interface::IpcCode;
@@ -62,25 +62,16 @@ fn check_or_default_required_pwd_set(map: &mut AssetMap) -> Result<()> {
     Ok(())
 }
 
-fn check_or_default_conflict_resolution(map: &mut AssetMap) -> Result<()> {
-    if !map.contains_key(&Tag::ConflictResolution) {
-        logi!("add default conflict resolution set");
-        map.insert_attr(Tag::ConflictResolution, ConflictResolution::ThrowError)?;
-    }
-    Ok(())
-}
-
-const CHECK_DEFAULT: [(&Tag, fn(&mut AssetMap) -> Result<()>); 6] = [
+const CHECK_DEFAULT: [(&Tag, fn(&mut AssetMap) -> Result<()>); 5] = [
     (&Tag::Accessibility, check_or_default_access_type),
     (&Tag::SyncType, check_or_default_sync_type),
     (&Tag::AuthType, check_or_default_auth_type),
     (&Tag::RequirePasswordSet, check_or_default_required_pwd_set),
-    (&Tag::ConflictResolution, check_or_default_conflict_resolution),
     (&Tag::ReturnType, check_or_default_return_type),
 ];
 
-const ADD_DEFAULT_TAGS: [&Tag; 5] = [
-    &Tag::SyncType, &Tag::AuthType, &Tag::Accessibility, &Tag::RequirePasswordSet, &Tag::ConflictResolution
+const ADD_DEFAULT_TAGS: [&Tag; 4] = [
+    &Tag::SyncType, &Tag::AuthType, &Tag::Accessibility, &Tag::RequirePasswordSet
 ];
 
 const QUERY_DEFAULT_TAGS: [&Tag; 1] = [

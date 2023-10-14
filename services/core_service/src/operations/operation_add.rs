@@ -15,24 +15,45 @@
 
 //! This crate implements the asset
 
+use core::panic;
+
 use asset_common::{
     definition::{AssetMap, Result, ConflictResolution, ErrCode, Tag, Value},
     logi, loge,
 };
 use asset_ipc_interface::IpcCode;
-use db_operator::{database_table_helper::G_COLUMN_SECRET, types::{DataValue, Pair}};
+use db_operator::{database_table_helper::{G_COLUMN_SECRET, G_COLUMN_ALIAS, G_COLUMN_OWNER, G_COLUMN_OWNER_TYPE}, types::{DataValue, Pair}};
 
 use crate::{
     operations::operation_common::{
-        create_user_db_dir, construct_params_with_default, encrypt, construst_extra_params,
+        create_user_db_dir, construct_params_with_default, encrypt,
         db_adapter::{insert_data_once, data_exist_once, replace_data_once, construct_db_data}
     },
+    definition_inner::OperationCode,
     calling_info::CallingInfo
 };
 
 fn check_resolve_conflict(input: &AssetMap, calling_info: &CallingInfo, db_data: &Vec<Pair<>>)
     -> Result<()> {
-    if data_exist_once(calling_info, db_data)? {
+    let Some(Value::Bytes(alias)) = input.get(&Tag::Alias) else {
+        panic!()
+    };
+    let query_db_data = vec![
+        Pair {
+            column_name: G_COLUMN_ALIAS,
+            value: DataValue::Blob(alias.clone())
+        },
+        Pair {
+            column_name: G_COLUMN_OWNER,
+            value: DataValue::Blob(calling_info.owner_info().clone())
+        },
+        Pair {
+            column_name: G_COLUMN_OWNER_TYPE,
+            value: DataValue::Integer(calling_info.owner_type())
+        }
+    ];
+
+    if data_exist_once(calling_info, &query_db_data)? {
         match input.get(&Tag::ConflictResolution) {
             Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 =>
                 return replace_data_once(calling_info, db_data),
@@ -50,11 +71,9 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     create_user_db_dir(calling_info.user_id())?;
     // get param map contains input params and default params
     let input_new = construct_params_with_default(input, &IpcCode::Add)?;
-    // a map collecting inner params
-    let inner_params = construst_extra_params(calling_info, &IpcCode::Add)?;
 
     // construct db data from input map and inner params
-    let mut db_data = construct_db_data(&input_new, &inner_params)?;
+    let mut db_data = construct_db_data(&input_new, calling_info, &OperationCode::Add)?;
 
     let Value::Bytes(secret) = input_new.get(&Tag::Secret).unwrap() else { panic!("Impossible error for secret type.") };
 

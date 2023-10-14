@@ -29,8 +29,9 @@ use db_operator::{
 };
 use crate::{
     calling_info::CallingInfo,
-    definition_inner::{AssetInnerMap, InnerValue},
+    operations::operation_common::extra_params::add_extra_db_data,
     argument_check::value_check::check_value_validity,
+    definition_inner::OperationCode,
 };
 
 fn convert_value_into_db_value(value: &Value) -> Result<DataValue> {
@@ -38,13 +39,6 @@ fn convert_value_into_db_value(value: &Value) -> Result<DataValue> {
         Value::Bool(b) => Ok(DataValue::Integer(*b as u32)),
         Value::Number(n) => Ok(DataValue::Integer(*n)), // to do 类型确认
         Value::Bytes(v) => Ok(DataValue::Blob(v.to_vec()))
-    }
-}
-
-fn convert_extra_value_into_db_value(value: &InnerValue) -> Result<DataValue> {
-    match value {
-        InnerValue::Number(n) => Ok(DataValue::Integer(*n)), // to do 类型确认
-        InnerValue::Blob(v) => Ok(DataValue::Blob(v.to_vec())),
     }
 }
 
@@ -86,24 +80,12 @@ pub(crate) fn set_input_attr(input: &AssetMap, vec: &mut Vec<Pair<>>) -> Result<
     Ok(())
 }
 
-pub(crate) fn set_extra_attrs(input: &AssetInnerMap, vec: &mut Vec<Pair<>>) -> Result<()> {
-    for (tag, value) in input.iter() {
-        vec.push(
-            Pair {
-                column_name: tag,
-                value: convert_extra_value_into_db_value(value)?,
-            }
-        );
-    }
-    Ok(())
-}
-
-pub(crate) fn construct_db_data(input: &AssetMap, inner_params: &AssetInnerMap)
+pub(crate) fn construct_db_data(input: &AssetMap, calling_info: &CallingInfo, code: &OperationCode)
     -> Result<Vec<Pair<>>> {
-    let mut data_vec = Vec::new();
-    set_input_attr(input, &mut data_vec)?;
-    set_extra_attrs(inner_params, &mut data_vec)?;
-    Ok(data_vec)
+    let mut db_data = Vec::new();
+    set_input_attr(input, &mut db_data)?;
+    add_extra_db_data(calling_info, code, &mut db_data)?;
+    Ok(db_data)
 }
 
 pub(crate) fn insert_data_once(calling_info: &CallingInfo, db_data: Vec<Pair>) -> Result<i32> {

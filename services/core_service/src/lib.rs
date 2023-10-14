@@ -34,6 +34,7 @@ mod stub;
 
 use calling_info::CallingInfo;
 use stub::AssetStub;
+use definition_inner::OperationCode;
 
 const LOG_LABEL: HiLogLabel = HiLogLabel {
     log_type: LogType::LogCore,
@@ -92,33 +93,33 @@ impl IRemoteBroker for AssetService {}
 
 impl IAsset for AssetService {
     fn add(&self, attributes: &AssetMap) -> Result<()> { // todo param -> argument
-        argument_check::check_argument(attributes, &argument_check::ArgumentCode::Add)?;
+        argument_check::check_argument(attributes, &OperationCode::Add)?;
         operations::add(attributes, &CallingInfo::build()?)
     }
 
     fn remove(&self, query: &AssetMap) -> Result<()> {
-        argument_check::check_argument(query, &argument_check::ArgumentCode::Remove)?;
+        argument_check::check_argument(query, &OperationCode::Remove)?;
         operations::remove(query, &CallingInfo::build()?)
     }
 
     fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
-        argument_check::check_argument(query, &argument_check::ArgumentCode::UpdateQuery)?;
-        argument_check::check_argument(attributes_to_update, &argument_check::ArgumentCode::Update)?;
+        argument_check::check_argument(query, &OperationCode::UpdateQuery)?;
+        argument_check::check_argument(attributes_to_update, &OperationCode::Update)?;
         operations::update(query, attributes_to_update, &CallingInfo::build()?)
     }
 
     fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>> {
-        argument_check::check_argument(query, &argument_check::ArgumentCode::PreQuery)?;
+        argument_check::check_argument(query, &OperationCode::PreQuery)?;
         operations::pre_query(query, &CallingInfo::build()?)
     }
 
     fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>> {
-        argument_check::check_argument(query, &argument_check::ArgumentCode::Query)?;
+        argument_check::check_argument(query, &OperationCode::Query)?;
         operations::query(query, &CallingInfo::build()?)
     }
 
     fn post_query(&self, query: &AssetMap) -> Result<()> {
-        argument_check::check_argument(query, &argument_check::ArgumentCode::PostQuery)?;
+        argument_check::check_argument(query, &OperationCode::PostQuery)?;
         Ok(()) // todo: implement
     }
 }

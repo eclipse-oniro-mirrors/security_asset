@@ -18,9 +18,10 @@
 use crate::{
     calling_info::CallingInfo,
     operations::operation_common::{
-        construct_params_with_default, decrypt, construst_extra_params,
+        construct_params_with_default, decrypt,
         db_adapter::{query_data_once, construct_db_data},
     },
+    definition_inner::OperationCode,
 };
 
 use db_operator::types::Pair;
@@ -50,9 +51,8 @@ pub(crate) fn batch_query(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Re
 pub(crate) fn query(input: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<AssetMap>> {
     // get param map contains input params and default params
     let input_new = construct_params_with_default(input, &IpcCode::Query)?;
-    let inner_params = construst_extra_params(calling_info, &IpcCode::Query)?;
 
-    let data_vec = construct_db_data(&input_new, &inner_params)?;
+    let data_vec = construct_db_data(&input_new, calling_info, &OperationCode::Query)?;
     if input_new.contains_key(&Tag::Alias) {
         single_query(calling_info, &data_vec)
     } else {

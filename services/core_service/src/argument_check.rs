@@ -20,26 +20,10 @@ mod tag_check;
 pub(crate) mod value_check;
 
 use asset_common::definition::{AssetMap, Result};
-
-pub(crate) enum ArgumentCode {
-    /// Code for add params.
-    Add,
-    /// Code for remove params.
-    Remove,
-    /// Code for update params.
-    Update,
-    /// Code for update match params.
-    UpdateQuery,
-    /// Code for pre-query params.
-    PreQuery,
-    /// Code for query params.
-    Query,
-    /// Code for post params.
-    PostQuery,
-}
+use crate::definition_inner::OperationCode;
 
 /// check the validity and comprehensiveness of input argument
-pub(crate) fn check_argument(argument: &AssetMap, code: &ArgumentCode) -> Result<()> {
+pub(crate) fn check_argument(argument: &AssetMap, code: &OperationCode) -> Result<()> {
     // check whether all required params are contained and valid
     tag_check::check_tag_validity(argument, code)?;
 

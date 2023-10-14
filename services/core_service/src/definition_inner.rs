@@ -17,8 +17,6 @@
 
 #![allow(dead_code)]
 
-use std::collections::HashMap;
-
 /// An enum type indicates the delete type of the Asset.
 pub(crate) enum DeleteType {
     Never = 0,
@@ -27,13 +25,25 @@ pub(crate) enum DeleteType {
     WhenClearAppData = 1 << 2,
 }
 
-/// An enum type containing the data type definitions for intermediate layer between asset inner data and db data.
-pub(crate) enum InnerValue {
-    /// binary data
-    Blob(Vec<u8>),
+pub(crate) enum OperationCode {
+    /// Code for add params.
+    Add,
 
-    /// numbers
-    Number(u32),
+    /// Code for remove params.
+    Remove,
+
+    /// Code for update params.
+    Update,
+
+    /// Code for update match params.
+    UpdateQuery,
+
+    /// Code for pre-query params.
+    PreQuery,
+
+    /// Code for query params.
+    Query,
+
+    /// Code for post params.
+    PostQuery,
 }
-
-pub(crate) type AssetInnerMap = HashMap<&'static str, InnerValue>;

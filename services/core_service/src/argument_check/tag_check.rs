@@ -20,7 +20,7 @@ use asset_common::{
     loge
 };
 
-use crate::argument_check::ArgumentCode;
+use crate::argument_check::OperationCode;
 
 const ADD_REQUIRED_PARAMS: [Tag; 2] = [
     Tag::Secret, Tag::Alias
@@ -41,10 +41,10 @@ fn check_argument_exist(arguments: &AssetMap, required_arguments: &[Tag]) -> Res
 }
 
 // todo: 测试一把update的第二个map为空的情况
-pub(crate) fn check_required_tags(arguments: &AssetMap, code: &ArgumentCode) -> Result<()> {
+pub(crate) fn check_required_tags(arguments: &AssetMap, code: &OperationCode) -> Result<()> {
     match *code {
-        ArgumentCode::Add => check_argument_exist(arguments, &ADD_REQUIRED_PARAMS),
-        ArgumentCode::UpdateQuery => check_argument_exist(arguments, &UPDATE_QUERY_REQUIRED_PARAMS),
+        OperationCode::Add => check_argument_exist(arguments, &ADD_REQUIRED_PARAMS),
+        OperationCode::UpdateQuery => check_argument_exist(arguments, &UPDATE_QUERY_REQUIRED_PARAMS),
         _ => Ok(())
     }
 }
@@ -84,13 +84,13 @@ fn check_optional_tags(argument: &AssetMap, available_arguments: &[Tag]) -> Resu
     Ok(())
 }
 
-pub(crate) fn check_tag_validity(argument: &AssetMap, code: &ArgumentCode) -> Result<()> {  // todo: bool
+pub(crate) fn check_tag_validity(argument: &AssetMap, code: &OperationCode) -> Result<()> {  // todo: bool
     check_required_tags(argument, code)?;
     match *code { // add等code能否塞到数组里？
-        ArgumentCode::Add => check_optional_tags(argument, &ADD_AVAILABLE_ARGUMENTS),
-        ArgumentCode::Query => check_optional_tags(argument, &QUERY_AVAILABLE_ARGUMENTS),
-        ArgumentCode::Update => check_optional_tags(argument, &UPDATE_AVAILABLE_ARGUMENTS),
-        ArgumentCode::UpdateQuery => check_optional_tags(argument, &UPDATE_MATCH_AVAILABLE_ARGUMENTS),
+        OperationCode::Add => check_optional_tags(argument, &ADD_AVAILABLE_ARGUMENTS),
+        OperationCode::Query => check_optional_tags(argument, &QUERY_AVAILABLE_ARGUMENTS),
+        OperationCode::Update => check_optional_tags(argument, &UPDATE_AVAILABLE_ARGUMENTS),
+        OperationCode::UpdateQuery => check_optional_tags(argument, &UPDATE_MATCH_AVAILABLE_ARGUMENTS),
         _ => Ok(())
     }
 }
