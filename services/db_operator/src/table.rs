@@ -224,7 +224,7 @@ impl<'a> Table<'a> {
     pub fn update_row_column(
         &self,
         conditions: &Condition,
-        column_name: &str,
+        column_name: &'static str,
         data_new: DataValue,
     ) -> Result<i32, SqliteErrCode> {
         let datas = vec![Pair { column_name, value: data_new }];

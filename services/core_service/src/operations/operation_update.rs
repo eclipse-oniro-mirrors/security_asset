@@ -21,7 +21,10 @@ use asset_common::{
 };
 
 use asset_ipc_interface::IpcCode;
-use crate::operations::operation_common::{construct_db_data, construct_params_with_default, construst_extra_params};
+use crate::operations::operation_common::{
+    construct_params_with_default, construst_extra_params,
+    db_adapter::construct_db_data,
+};
 use db_operator::{database_table_helper::{G_COLUMN_SECRET, G_COLUMN_ALIAS}, types::{DataValue, Pair}};
 
 // use crypto_manager::hukkey::Crypto;

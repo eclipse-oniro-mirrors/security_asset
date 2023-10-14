@@ -26,19 +26,3 @@ pub(crate) use extra_params::construst_extra_params;
 
 pub(crate) use file_operator::create_user_db_dir;
 pub(crate) use default_params::construct_params_with_default;
-
-use crate::{
-    operations::operation_common::db_adapter::{set_extra_attrs, set_input_attr},
-    definition_inner::AssetInnerMap,
-};
-
-use asset_common::definition::{AssetMap, Result};
-use db_operator::types::Pair;
-
-pub(crate) fn construct_db_data<'a>(input: &'a AssetMap, inner_params: &'a AssetInnerMap)
-    -> Result<Vec<Pair<'a>>> {
-    let mut data_vec = Vec::new();
-    set_input_attr(input, &mut data_vec)?;
-    set_extra_attrs(inner_params, &mut data_vec)?;
-    Ok(data_vec)
-}

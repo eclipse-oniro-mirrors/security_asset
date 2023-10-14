@@ -24,8 +24,8 @@ use db_operator::{database_table_helper::G_COLUMN_SECRET, types::{DataValue, Pai
 
 use crate::{
     operations::operation_common::{
-        create_user_db_dir, construct_params_with_default, encrypt, construct_db_data, construst_extra_params,
-        db_adapter::{insert_data_once, data_exist_once, replace_data_once}
+        create_user_db_dir, construct_params_with_default, encrypt, construst_extra_params,
+        db_adapter::{insert_data_once, data_exist_once, replace_data_once, construct_db_data}
     },
     calling_info::CallingInfo
 };
@@ -53,7 +53,6 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // a map collecting inner params
     let inner_params = construst_extra_params(calling_info, &IpcCode::Add)?;
 
-    // todo : 与袁浩确认使用&Vec<Pair>的可行性，减少适配层
     // construct db data from input map and inner params
     let mut db_data = construct_db_data(&input_new, &inner_params)?;
 

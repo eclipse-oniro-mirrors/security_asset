@@ -20,7 +20,8 @@ use std::collections::HashSet;
 use crate::{
     calling_info::CallingInfo,
     operations::operation_common::{
-        construct_params_with_default, init_decrypt, construst_extra_params, construct_db_data,
+        construct_params_with_default, init_decrypt, construst_extra_params,
+        db_adapter::construct_db_data,
     },
     operations::operation_query::batch_query,
 };

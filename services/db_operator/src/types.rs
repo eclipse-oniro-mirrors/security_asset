@@ -87,21 +87,21 @@ pub fn from_result_datatype_to_str(value: &ResultDataValue) -> &'static str {
 /// Pair struct for query condition or exec data
 #[derive(Clone)]
 #[repr(C)]
-pub struct Pair<'a> {
+pub struct Pair<> {
     /// column name for condition
-    pub column_name: &'a str,
+    pub column_name: &'static str,
     /// query value for condition
     pub value: DataValue,
 }
 
 /// query conditions
-pub type Condition<'a> = Vec<Pair<'a>>;
+pub type Condition<> = Vec<Pair<>>;
 
 /// column info for create table
 #[repr(C)]
-pub struct ColumnInfo<'a> {
+pub struct ColumnInfo<> {
     /// column name
-    pub name: &'a str,
+    pub name: &'static str,
     /// column datatype
     pub data_type: DataType,
     /// id auto inc for primary key

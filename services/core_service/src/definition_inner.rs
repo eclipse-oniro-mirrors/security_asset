@@ -36,4 +36,4 @@ pub(crate) enum InnerValue {
     Number(u32),
 }
 
-pub(crate) type AssetInnerMap<'a> = HashMap<&'a str, InnerValue>;
+pub(crate) type AssetInnerMap = HashMap<&'static str, InnerValue>;

@@ -36,28 +36,26 @@ fn get_delete_type(params: &mut AssetInnerMap) -> Result<()> {
 }
 
 fn get_version(params: &mut AssetInnerMap) -> Result<()> {
-    params.insert(G_COLUMN_VERSION, InnerValue::Number(1)); // todo get real
+    params.insert(G_COLUMN_VERSION, InnerValue::Number(1)); // todo zwz get real
     Ok(())
 }
 
 fn get_update_time(params: &mut AssetInnerMap) -> Result<()> {
-    let sys_time_res = SystemTime::now().duration_since(UNIX_EPOCH);
-    if sys_time_res.is_err() {
-        loge!("get sys_time_res faield!");
-        return Err(ErrCode::SystemTimeError);
-    }
-    let time_string = sys_time_res.unwrap().as_millis().to_string(); // todo zwz unwrap
+    let sys_time_res = SystemTime::now().duration_since(UNIX_EPOCH).map_err(|e| {
+        loge!("Get sys_time_res faield [{}].", e);
+        ErrCode::SystemTimeError
+    })?;
+    let time_string = sys_time_res.as_millis().to_string();
     params.insert(G_COLUMN_UPDATE_TIME, InnerValue::Blob(time_string.into_bytes()));
     Ok(())
 }
 
 fn get_create_time(params: &mut AssetInnerMap) -> Result<()> {
-    let sys_time_res = SystemTime::now().duration_since(UNIX_EPOCH);
-    if sys_time_res.is_err() {
-        loge!("get sys_time_res faield!");
-        return Err(ErrCode::SystemTimeError);
-    }
-    let time_string = sys_time_res.unwrap().as_millis().to_string(); // todo : zwz: unwrap
+    let sys_time_res = SystemTime::now().duration_since(UNIX_EPOCH).map_err(|e| {
+        loge!("Get sys_time_res faield [{}].", e);
+        ErrCode::SystemTimeError
+    })?;
+    let time_string = sys_time_res.as_millis().to_string();
     params.insert(G_COLUMN_CREATE_TIME, InnerValue::Blob(time_string.into_bytes()));
     Ok(())
 }
@@ -67,7 +65,7 @@ fn get_owner(calling_info: &CallingInfo, params: &mut AssetInnerMap) -> Result<(
     Ok(())
 }
 
-pub(crate) fn construst_extra_params<'a>(calling_info: &'a CallingInfo, code: &'a IpcCode) -> Result<AssetInnerMap<'a>> {
+pub(crate) fn construst_extra_params(calling_info: &CallingInfo, code: &IpcCode) -> Result<AssetInnerMap> {
     let mut params = AssetInnerMap::new();
     get_owner_type(calling_info, &mut params)?;
     get_owner(calling_info, &mut params)?;

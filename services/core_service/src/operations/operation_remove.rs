@@ -18,8 +18,8 @@
 use crate::{
     calling_info::CallingInfo,
     operations::operation_common::{
-        construct_db_data, construct_params_with_default, construst_extra_params,
-        db_adapter::remove_data_once,
+        construct_params_with_default, construst_extra_params,
+        db_adapter::{remove_data_once, construct_db_data},
     }
 };
 use asset_ipc_interface::IpcCode;

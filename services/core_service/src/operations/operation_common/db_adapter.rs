@@ -48,7 +48,7 @@ fn convert_extra_value_into_db_value(value: &InnerValue) -> Result<DataValue> {
     }
 }
 
-fn get_tag_column_name(tag: &Tag) -> Option<&str> {
+fn get_tag_column_name(tag: &Tag) -> Option<&'static str> {
     match *tag {
         Tag::Accessibility => Some(G_COLUMN_ACCESSIBILITY),
         Tag::Secret => Some(G_COLUMN_SECRET),
@@ -68,7 +68,7 @@ fn get_tag_column_name(tag: &Tag) -> Option<&str> {
     }
 }
 
-pub(crate) fn set_input_attr<'a>(input: &'a AssetMap, vec: &mut Vec<Pair<'a>>) -> Result<()> {
+pub(crate) fn set_input_attr(input: &AssetMap, vec: &mut Vec<Pair<>>) -> Result<()> {
     for (tag, value) in input.iter() {
         // skip secret param input, for it should be cipher instead of plain
         if tag == &Tag::Secret {
@@ -86,8 +86,7 @@ pub(crate) fn set_input_attr<'a>(input: &'a AssetMap, vec: &mut Vec<Pair<'a>>) -
     Ok(())
 }
 
-/// xxx
-pub(crate) fn set_extra_attrs<'a>(input: &'a AssetInnerMap, vec: &mut Vec<Pair<'a>>) -> Result<()> {
+pub(crate) fn set_extra_attrs(input: &AssetInnerMap, vec: &mut Vec<Pair<>>) -> Result<()> {
     for (tag, value) in input.iter() {
         vec.push(
             Pair {
@@ -97,6 +96,14 @@ pub(crate) fn set_extra_attrs<'a>(input: &'a AssetInnerMap, vec: &mut Vec<Pair<'
         );
     }
     Ok(())
+}
+
+pub(crate) fn construct_db_data(input: &AssetMap, inner_params: &AssetInnerMap)
+    -> Result<Vec<Pair<>>> {
+    let mut data_vec = Vec::new();
+    set_input_attr(input, &mut data_vec)?;
+    set_extra_attrs(inner_params, &mut data_vec)?;
+    Ok(data_vec)
 }
 
 pub(crate) fn insert_data_once(calling_info: &CallingInfo, db_data: Vec<Pair>) -> Result<i32> {
@@ -113,7 +120,7 @@ pub(crate) fn insert_data_once(calling_info: &CallingInfo, db_data: Vec<Pair>) -
 
 pub(crate) fn replace_data_once(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<()> {
     let replace_call = |db: &Database| -> bool {
-        if db.delete_datas_default(&Vec::new()).is_err() { // todo : zwz : 删除参数带入alias
+        if db.delete_datas_default(&Vec::new()).is_err() {
             loge!("remove asset in replace operation failed!");
             return false;
         }
@@ -157,7 +164,7 @@ pub(crate) fn query_data_once(calling_info: &CallingInfo, db_data: &Vec<Pair>) -
 pub(crate) fn update_data_once(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<i32> {
     // call sql to update
     let update_num =
-        DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(), &Vec::new(), db_data)?; // todo : zwz : 传入alias
+        DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(), &Vec::new(), db_data)?; // todo zwz condition获取
 
     logi!("update {} data", update_num);
 

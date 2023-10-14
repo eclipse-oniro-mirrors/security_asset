@@ -377,7 +377,7 @@ pub fn test_update_row() {
     let ret = table.update_row(conditions, datas).unwrap();
     assert_eq!(ret, 1);
     let ret = table
-        .update_row_column(conditions, "alias", DataValue::Blob(b"test_update1".to_vec()))
+        .update_row_column(conditions, G_COLUMN_ALIAS, DataValue::Blob(b"test_update1".to_vec()))
         .unwrap();
     assert_eq!(ret, 1);
     let stmt = Statement::<true>::prepare("select * from table_test where id=2", &db).unwrap();
