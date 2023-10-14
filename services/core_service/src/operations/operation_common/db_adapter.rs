@@ -143,10 +143,10 @@ pub(crate) fn query_data_once(calling_info: &CallingInfo, db_data: &Vec<Pair>) -
     Ok(res_vec)
 }
 
-pub(crate) fn update_data_once(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<i32> {
+pub(crate) fn update_data_once(calling_info: &CallingInfo, query_db_data: &Vec<Pair>, update_db_data: &Vec<Pair>) -> Result<i32> {
     // call sql to update
     let update_num =
-        DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(), &Vec::new(), db_data)?; // todo zwz condition获取
+        DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(), query_db_data, update_db_data)?; // todo zwz condition获取
 
     logi!("update {} data", update_num);
 

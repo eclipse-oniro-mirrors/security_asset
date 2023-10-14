@@ -42,12 +42,12 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     let update_new = construct_params_with_default(update, &IpcCode::Update)?;
     let query_new = construct_params_with_default(query, &IpcCode::Query)?;
 
-    let mut db_data = construct_db_data(&update_new, calling_info, &OperationCode::Update)?;
+    let mut update_db_data = construct_db_data(&update_new, calling_info, &OperationCode::Update)?;
+    let query_db_data = construct_db_data(&query_new, calling_info, &OperationCode::Query)?;
 
     let cipher;
     // whether to update secret
     if let Some(Value::Bytes(secret)) = update_new.get(&Tag::Secret) {
-        let query_db_data = construct_db_data(&query_new, calling_info, &OperationCode::Query)?;
         let query_res = query_data_once(calling_info, &query_db_data)?;
         if query_res.len() != 1 {
             loge!("query to-be-updated asset failed, found [{}] assets", query_res.len());
@@ -56,7 +56,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
         let asset_map = query_res.get(0).unwrap();
         cipher = encrypt(calling_info, asset_map, secret)?;
         logi!("get cipher len is [{}]", cipher.len()); // todo delete
-        db_data.push(
+        update_db_data.push(
             Pair {
                 column_name: G_COLUMN_SECRET,
                 value: DataValue::Blob(cipher),
@@ -64,7 +64,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
         );
     }
 
-    db_data.push(
+    update_db_data.push(
         Pair {
             column_name: G_COLUMN_ALIAS,
             value: DataValue::Blob(alias.to_vec()),
@@ -72,7 +72,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     );
 
     // call sql to update
-    let update_num = update_data_once(calling_info, &db_data)?;
+    let update_num = update_data_once(calling_info, &query_db_data, &update_db_data)?;
 
     logi!("update {} data", update_num);
     Ok(())
