@@ -42,6 +42,7 @@ fn convert_value_into_db_value(value: &Value) -> Result<DataValue> {
     }
 }
 
+// todo zwz 尝试与下文映射归一
 fn get_tag_column_name(tag: &Tag) -> Option<&'static str> {
     match *tag {
         Tag::Accessibility => Some(G_COLUMN_ACCESSIBILITY),
@@ -59,6 +60,24 @@ fn get_tag_column_name(tag: &Tag) -> Option<&'static str> {
         Tag::DataLabelNormal4 => Some(G_COLUMN_NORMAL4),
         Tag::RequirePasswordSet => Some(G_COLUMN_REQUIRE_PASSWORD_SET),
         _ => None,
+    }
+}
+
+// todo zwz 尝试与上文映射归一
+fn order_by_into_str(order_by: &u32) -> Result<&'static str> {
+    match Tag::try_from(*order_by)? {
+        Tag::DataLabelNormal1 => Ok(G_COLUMN_NORMAL1),
+        Tag::DataLabelNormal2 => Ok(G_COLUMN_NORMAL2),
+        Tag::DataLabelNormal3 => Ok(G_COLUMN_NORMAL3),
+        Tag::DataLabelNormal4 => Ok(G_COLUMN_NORMAL4),
+        Tag::DataLabelCritical1 => Ok(G_COLUMN_CRITICAL1),
+        Tag::DataLabelCritical2 => Ok(G_COLUMN_CRITICAL2),
+        Tag::DataLabelCritical3 => Ok(G_COLUMN_CRITICAL3),
+        Tag::DataLabelCritical4 => Ok(G_COLUMN_CRITICAL4),
+        _ => {
+            loge!("Invalid tag for order by [{}].", order_by);
+            Err(ErrCode::InvalidArgument)
+        }
     }
 }
 
@@ -123,23 +142,6 @@ pub(crate) fn replace_data_once(calling_info: &CallingInfo, query_db_data: &Vec<
 
 pub(crate) fn data_exist_once(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<bool> {
     DefaultDatabaseHelper::is_data_exists_default_once(calling_info.user_id(), db_data)
-}
-
-fn order_by_into_str(order_by: &u32) -> Result<&'static str> {
-    match Tag::try_from(*order_by)? {
-        Tag::DataLabelNormal1 => Ok(G_COLUMN_NORMAL1),
-        Tag::DataLabelNormal2 => Ok(G_COLUMN_NORMAL2),
-        Tag::DataLabelNormal3 => Ok(G_COLUMN_NORMAL3),
-        Tag::DataLabelNormal4 => Ok(G_COLUMN_NORMAL4),
-        Tag::DataLabelCritical1 => Ok(G_COLUMN_CRITICAL1),
-        Tag::DataLabelCritical2 => Ok(G_COLUMN_CRITICAL2),
-        Tag::DataLabelCritical3 => Ok(G_COLUMN_CRITICAL3),
-        Tag::DataLabelCritical4 => Ok(G_COLUMN_CRITICAL4),
-        _ => {
-            loge!("Invalid tag for order by [{}].", order_by);
-            Err(ErrCode::InvalidArgument)
-        }
-    }
 }
 
 fn get_query_options(input: &AssetMap) -> QueryOptions {
