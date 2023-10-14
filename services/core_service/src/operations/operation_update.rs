@@ -48,7 +48,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     let cipher;
     // whether to update secret
     if let Some(Value::Bytes(secret)) = update_new.get(&Tag::Secret) {
-        let query_res = query_data_once(calling_info, &query_db_data)?;
+        let query_res = query_data_once(calling_info, &query_db_data, &query_new)?;
         if query_res.len() != 1 {
             loge!("query to-be-updated asset failed, found [{}] assets", query_res.len());
             return Err(ErrCode::NotFound);

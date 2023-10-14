@@ -36,7 +36,7 @@ pub(crate) fn pre_query(input: &AssetMap, calling_info: &CallingInfo) -> Result<
     let input_new = construct_params_with_default(input, &IpcCode::PreQuery)?;
     let data_vec = construct_db_data(&input_new, calling_info, &OperationCode::PreQuery)?;
 
-    let all_data: Vec<AssetMap> = batch_query(calling_info, &data_vec)?;
+    let all_data: Vec<AssetMap> = batch_query(calling_info, &data_vec, &input_new)?;
     // get all secret key
     let mut secret_key_set = HashSet::new();
     for map in all_data.iter() {

@@ -127,7 +127,7 @@ pub struct Sqlite3ErrMsg<'a, 'b> {
 
 /// query options
 #[repr(C)]
-pub struct QueryOptions<'a> {
+pub struct QueryOptions {
     /// offset param
     pub offset: Option<u32>,
     /// limit param
@@ -137,5 +137,5 @@ pub struct QueryOptions<'a> {
     /// Ordering::Less => DESC
     pub order: Option<Ordering>,
     /// order by columns
-    pub order_by: Option<Vec<&'a str>>,
+    pub order_by: Option<Vec<&'static str>>,
 }

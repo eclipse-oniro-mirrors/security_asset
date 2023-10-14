@@ -17,7 +17,7 @@
 
 use asset_common::{definition::{AssetMap, ErrCode, Result, Value, Tag}, loge, logi};
 use db_operator::{
-    types::{Pair, DataValue, AdvancedResultSet, ResultDataValue},
+    types::{Pair, DataValue, AdvancedResultSet, ResultDataValue, QueryOptions},
     database::Database,
     database_table_helper::{
         do_transaction,
@@ -124,13 +124,54 @@ pub(crate) fn data_exist_once(calling_info: &CallingInfo, db_data: &Vec<Pair>) -
     DefaultDatabaseHelper::is_data_exists_default_once(calling_info.user_id(), db_data)
 }
 
-pub(crate) fn query_data_once(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
+fn order_by_into_str(order_by: &u32) -> Result<&'static str> {
+    match Tag::try_from(*order_by)? {
+        Tag::DataLabelNormal1 => Ok(G_COLUMN_NORMAL1),
+        Tag::DataLabelNormal2 => Ok(G_COLUMN_NORMAL2),
+        Tag::DataLabelNormal3 => Ok(G_COLUMN_NORMAL3),
+        Tag::DataLabelNormal4 => Ok(G_COLUMN_NORMAL4),
+        Tag::DataLabelCritical1 => Ok(G_COLUMN_CRITICAL1),
+        Tag::DataLabelCritical2 => Ok(G_COLUMN_CRITICAL2),
+        Tag::DataLabelCritical3 => Ok(G_COLUMN_CRITICAL3),
+        Tag::DataLabelCritical4 => Ok(G_COLUMN_CRITICAL4),
+        _ => {
+            loge!("Invalid tag for order by [{}].", order_by);
+            Err(ErrCode::InvalidArgument)
+        }
+    }
+}
+
+fn get_query_options(input: &AssetMap) -> QueryOptions {
+    QueryOptions {
+        offset: match input.get(&Tag::ReturnOffset) {
+            Some(Value::Number(offset)) => Some(*offset),
+            _ => None,
+        },
+        limit: match input.get(&Tag::ReturnLimit) {
+            Some(Value::Number(limit)) => Some(*limit),
+            _ => None,
+        },
+        order: None,
+        order_by: match input.get(&Tag::ReturnOrderBy) {
+            Some(Value::Number(limit)) => {
+                match order_by_into_str(limit) {
+                    Ok(res) => Some(vec![res]),
+                    Err(_) => None,
+                }
+
+            }
+            _ => None,
+        },
+    }
+}
+
+pub(crate) fn query_data_once(calling_info: &CallingInfo, db_data: &Vec<Pair>, input: &AssetMap) -> Result<Vec<AssetMap>> {
     // get owner str
     let owner = calling_info.owner_info();
 
     // call sql to add
-    let query_res =
-        DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(), &Vec::new(), db_data, None)?;// todo : zwz : 批量查询
+    let query_res = DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(),
+        &Vec::new(), db_data, Some(&get_query_options(input)))?;
 
     logi!("query params calling_info.user_id() = [{}], owner_str = [{}], db_data len is [{}]", calling_info.user_id(), &String::from_utf8(owner.clone()).unwrap(), db_data.len()); // todo delete
     for pair in db_data {

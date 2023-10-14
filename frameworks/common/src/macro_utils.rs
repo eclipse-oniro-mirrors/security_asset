@@ -43,7 +43,10 @@ macro_rules! impl_enum_trait {
             fn try_from(v: u32) -> std::result::Result<Self, Self::Error> {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
-                    _ => Err($crate::definition::ErrCode::InvalidArgument),
+                    _ => {
+                        $crate::loge!("Convert u32 [{}] failed.", v);
+                        Err($crate::definition::ErrCode::InvalidArgument)
+                    }
                 }
             }
         }
@@ -54,7 +57,10 @@ macro_rules! impl_enum_trait {
             fn try_from(v: i32) -> std::result::Result<Self, Self::Error> {
                 match v {
                     $(x if x == $name::$vname as i32 => Ok($name::$vname),)*
-                    _ => Err($crate::definition::ErrCode::InvalidArgument),
+                    _ => {
+                        $crate::loge!("Convert i32 [{}] failed.", v);
+                        Err($crate::definition::ErrCode::InvalidArgument)
+                    }
                 }
             }
         }

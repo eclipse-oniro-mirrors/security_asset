@@ -29,8 +29,8 @@ use db_operator::types::Pair;
 use asset_common::definition::{AssetMap, Result, Insert, Tag};
 use asset_ipc_interface::IpcCode;
 
-fn single_query(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
-    let mut query_res = query_data_once(calling_info, db_data)?;
+fn single_query(calling_info: &CallingInfo, db_data: &Vec<Pair>, input: &AssetMap) -> Result<Vec<AssetMap>> {
+    let mut query_res = query_data_once(calling_info, db_data, input)?;
 
     for map in &mut query_res {
         map.insert_attr(Tag::Secret, decrypt(calling_info, map)?)?;
@@ -39,8 +39,8 @@ fn single_query(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<A
     Ok(query_res)
 }
 
-pub(crate) fn batch_query(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<Vec<AssetMap>> {
-    let mut query_res = query_data_once(calling_info, db_data)?;
+pub(crate) fn batch_query(calling_info: &CallingInfo, db_data: &Vec<Pair>, input: &AssetMap) -> Result<Vec<AssetMap>> {
+    let mut query_res = query_data_once(calling_info, db_data, input)?;
 
     for data in &mut query_res {
         data.remove(&Tag::Secret);
@@ -54,8 +54,8 @@ pub(crate) fn query(input: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<
 
     let data_vec = construct_db_data(&input_new, calling_info, &OperationCode::Query)?;
     if input_new.contains_key(&Tag::Alias) {
-        single_query(calling_info, &data_vec)
+        single_query(calling_info, &data_vec, &input_new)
     } else {
-        batch_query(calling_info, &data_vec)
+        batch_query(calling_info, &data_vec, &input_new)
     }
 }
