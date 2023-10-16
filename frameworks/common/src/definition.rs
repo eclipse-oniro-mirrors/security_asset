@@ -110,6 +110,7 @@ impl_enum_trait! {
 
 /// A type that indicates the secret or attribute value of an Asset tag.
 #[derive(Clone)]
+#[repr(C)]
 pub enum Value {
     /// Asset attribute value, whose data type is bool.
     Bool(bool),

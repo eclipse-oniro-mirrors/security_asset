@@ -35,8 +35,8 @@ group("asset_bin_test") {
   testonly = true
   deps = [
     "$COMPONENT_DIR/services/crypto_manager:crypto_manager_test",
-    "$COMPONENT_DIR/services/db_operator:db_operator_test",
     "$COMPONENT_DIR/test/unittest/inner_api_c:asset_c_api_test",
+    "$COMPONENT_DIR/test/unittest/db_operator_test:db_operator_test",
     "$COMPONENT_DIR/test/unittest/inner_api_rust:asset_rust_test",
     "$COMPONENT_DIR/test/unittest/kits_ndk:asset_c_ndk_test",
   ]

@@ -17,9 +17,9 @@
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use asset_common::{definition::{Result, ErrCode}, loge};
+use asset_common::{definition::{Result, ErrCode, Value}, loge};
 use db_operator::{database_table_helper::{G_COLUMN_OWNER_TYPE, G_COLUMN_DELETE_TYPE,
-        G_COLUMN_VERSION, G_COLUMN_CREATE_TIME, G_COLUMN_UPDATE_TIME, G_COLUMN_OWNER}, types::{Pair, DataValue}};
+        G_COLUMN_VERSION, G_COLUMN_CREATE_TIME, G_COLUMN_UPDATE_TIME, G_COLUMN_OWNER}, types::Pair};
 
 use crate::{calling_info::CallingInfo, definition_inner::{DeleteType, OperationCode}};
 
@@ -27,7 +27,7 @@ fn get_owner_type(calling_info: &CallingInfo, db_data: &mut Vec<Pair<>>) -> Resu
     db_data.push(
         Pair {
             column_name: G_COLUMN_OWNER_TYPE,
-            value: DataValue::Integer(calling_info.owner_type()),
+            value: Value::Number(calling_info.owner_type()),
         }
     );
     Ok(())
@@ -37,7 +37,7 @@ fn get_delete_type(db_data: &mut Vec<Pair<>>) -> Result<()> {
     db_data.push(
         Pair {
             column_name: G_COLUMN_DELETE_TYPE,
-            value: DataValue::Integer(DeleteType::WhenUninstallApp as u32 | DeleteType::WhenRemoveUser as u32),
+            value: Value::Number(DeleteType::WhenUninstallApp as u32 | DeleteType::WhenRemoveUser as u32),
         }
     );
     Ok(())
@@ -47,7 +47,7 @@ fn get_version(db_data: &mut Vec<Pair<>>) -> Result<()> {
     db_data.push(
         Pair {
             column_name: G_COLUMN_VERSION,
-            value: DataValue::Integer(1), // todo zwz get real
+            value: Value::Number(1), // todo zwz get real
         }
     );
     Ok(())
@@ -63,7 +63,7 @@ fn get_update_time(db_data: &mut Vec<Pair<>>) -> Result<()> {
     db_data.push(
         Pair {
             column_name: G_COLUMN_UPDATE_TIME,
-            value: DataValue::Blob(time_string),
+            value: Value::Bytes(time_string),
         }
     );
     Ok(())
@@ -79,7 +79,7 @@ fn get_create_time(db_data: &mut Vec<Pair<>>) -> Result<()> {
     db_data.push(
         Pair {
             column_name: G_COLUMN_CREATE_TIME,
-            value: DataValue::Blob(time_string),
+            value: Value::Bytes(time_string),
         }
     );
     Ok(())
@@ -89,7 +89,7 @@ fn get_owner(calling_info: &CallingInfo, db_data: &mut Vec<Pair<>>) -> Result<()
     db_data.push(
         Pair {
             column_name: G_COLUMN_OWNER,
-            value: DataValue::Blob(calling_info.owner_info().clone()),
+            value: Value::Bytes(calling_info.owner_info().clone()),
         }
     );
     Ok(())

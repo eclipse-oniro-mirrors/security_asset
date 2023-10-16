@@ -19,6 +19,7 @@ use std::{
     io::Write,
 };
 
+use asset_common::definition::{DataType, Value};
 use db_operator::{
     database::*,
     database_table_helper::{
@@ -26,8 +27,8 @@ use db_operator::{
     },
     statement::Statement,
     types::{
-        from_result_datatype_to_str, from_result_value_to_str_value, ColumnInfo, DataType,
-        DataValue, Pair, QueryOptions, ResultDataValue,
+        from_data_value_to_str_value, ColumnInfo,
+        Pair, QueryOptions,
     },
     SQLITE_DONE, SQLITE_OK, SQLITE_OPEN_CREATE, SQLITE_OPEN_READWRITE, SQLITE_ROW,
 };
@@ -152,13 +153,13 @@ pub fn test_for_open_table() {
             name: "id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "alias",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let _table = match db.create_table("table_test", columns) {
@@ -193,13 +194,13 @@ pub fn test_for_drop_table() {
             name: "id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "alias",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let _table = match db.create_table("table_test", columns) {
@@ -228,13 +229,13 @@ pub fn test_for_statement_column() {
             name: "id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "alias",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let _ = match db.create_table("table_test", columns) {
@@ -250,7 +251,7 @@ pub fn test_for_statement_column() {
 
     let stmt1 =
         Statement::<true>::prepare("select id,alias from table_test where id < ?", &db).unwrap();
-    let ret = stmt1.bind_data(1, &DataValue::Integer(1000));
+    let ret = stmt1.bind_data(1, &Value::Number(1000));
     assert_eq!(ret, SQLITE_OK);
     let count = stmt1.column_count();
     assert_eq!(count, 2);
@@ -261,13 +262,11 @@ pub fn test_for_statement_column() {
     }
     // query by query_column
     while stmt1.step() == SQLITE_ROW {
-        let mut out_id = ResultDataValue::Integer(0);
-        stmt1.query_column(0, &mut out_id);
-        let mut out_alias = ResultDataValue::Blob(Box::default());
-        stmt1.query_column(1, &mut out_alias);
-        println!("id is {}", from_result_datatype_to_str(&out_id));
-        println!("alias is {}", from_result_datatype_to_str(&out_alias));
-        if let (ResultDataValue::Integer(id), ResultDataValue::Blob(alias)) = (out_id, out_alias) {
+        let out_id = stmt1.query_column(0, &DataType::Uint32).unwrap();
+        let out_alias = stmt1.query_column(1, &DataType::Bytes).unwrap();
+        println!("id is {}", from_data_value_to_str_value(&out_id));
+        println!("alias is {}", from_data_value_to_str_value(&out_alias));
+        if let (Value::Number(id), Value::Bytes(alias)) = (out_id, out_alias) {
             let alias_str = unsafe { String::from_utf8_unchecked(alias.to_vec()) };
             println!("line 0 : id {} alias {}", id, alias_str);
         }
@@ -279,9 +278,9 @@ pub fn test_for_statement_column() {
 
     // multi insert
     let dataset = &[
-        [DataValue::Integer(2), DataValue::Blob(b"test2".to_vec())],
-        [DataValue::Integer(3), DataValue::Blob(b"test3".to_vec())],
-        [DataValue::Integer(4), DataValue::Blob(b"test4".to_vec())],
+        [Value::Number(2), Value::Bytes(b"test2".to_vec())],
+        [Value::Number(3), Value::Bytes(b"test3".to_vec())],
+        [Value::Number(4), Value::Bytes(b"test4".to_vec())],
     ];
 
     let stmt2 = Statement::<true>::prepare("insert into table_test values(?, ?)", &db).unwrap();
@@ -298,7 +297,7 @@ pub fn test_for_statement_column() {
 
     let stmt1 =
         Statement::<true>::prepare("select id,alias from table_test where id < ?", &db).unwrap();
-    let ret = stmt1.bind_data(1, &DataValue::Integer(1000));
+    let ret = stmt1.bind_data(1, &Value::Number(1000));
     assert_eq!(ret, SQLITE_OK);
     let count = stmt1.column_count();
     assert_eq!(count, 2);
@@ -337,13 +336,13 @@ pub fn test_update_row() {
             name: "id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "alias",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let table = match db.create_table("table_test", columns) {
@@ -353,9 +352,9 @@ pub fn test_update_row() {
         },
     };
     let dataset = &[
-        [DataValue::Integer(2), DataValue::Blob(b"test2".to_vec())],
-        [DataValue::Integer(3), DataValue::Blob(b"test3".to_vec())],
-        [DataValue::Integer(4), DataValue::Blob(b"test4".to_vec())],
+        [Value::Number(2), Value::Bytes(b"test2".to_vec())],
+        [Value::Number(3), Value::Bytes(b"test3".to_vec())],
+        [Value::Number(4), Value::Bytes(b"test4".to_vec())],
     ];
 
     let stmt2 = Statement::<true>::prepare("insert into table_test values(?, ?)", &db).unwrap();
@@ -371,13 +370,13 @@ pub fn test_update_row() {
     }
 
     // update
-    let conditions = &vec![Pair { column_name: "id", value: DataValue::Integer(2) }];
+    let conditions = &vec![Pair { column_name: "id", value: Value::Number(2) }];
     let datas =
-        &vec![Pair { column_name: "alias", value: DataValue::Blob(b"test_update".to_vec()) }];
+        &vec![Pair { column_name: "alias", value: Value::Bytes(b"test_update".to_vec()) }];
     let ret = table.update_row(conditions, datas).unwrap();
     assert_eq!(ret, 1);
     let ret = table
-        .update_row_column(conditions, G_COLUMN_ALIAS, DataValue::Blob(b"test_update1".to_vec()))
+        .update_row_column(conditions, G_COLUMN_ALIAS, Value::Bytes(b"test_update1".to_vec()))
         .unwrap();
     assert_eq!(ret, 1);
     let stmt = Statement::<true>::prepare("select * from table_test where id=2", &db).unwrap();
@@ -402,13 +401,13 @@ pub fn test_for_insert_row() {
             name: "id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "alias",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let table = match db.create_table("table_test", columns) {
@@ -419,12 +418,12 @@ pub fn test_for_insert_row() {
     };
 
     let datas = &vec![
-        Pair { column_name: "id", value: DataValue::Integer(3) },
-        Pair { column_name: "alias", value: DataValue::Blob(b"alias1".to_vec()) },
+        Pair { column_name: "id", value: Value::Number(3) },
+        Pair { column_name: "alias", value: Value::Bytes(b"alias1".to_vec()) },
     ];
     let count = table.insert_row(datas).unwrap();
     assert_eq!(count, 1);
-    let datas = &vec![Pair { column_name: "alias", value: DataValue::Blob(b"alias1".to_vec()) }];
+    let datas = &vec![Pair { column_name: "alias", value: Value::Bytes(b"alias1".to_vec()) }];
     let count = table.insert_row(datas).unwrap();
     assert_eq!(count, 1);
 }
@@ -444,25 +443,25 @@ pub fn test_update_datas() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "Owner",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "Alias",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "value",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
@@ -473,19 +472,19 @@ pub fn test_update_datas() {
     };
     let dataset = &[
         &vec![
-            Pair { column_name: "Owner", value: DataValue::Blob(b"owner1".to_vec()) },
-            Pair { column_name: "Alias", value: DataValue::Blob(b"alias1".to_vec()) },
-            Pair { column_name: "value", value: DataValue::Blob(b"value1".to_vec()) },
+            Pair { column_name: "Owner", value: Value::Bytes(b"owner1".to_vec()) },
+            Pair { column_name: "Alias", value: Value::Bytes(b"alias1".to_vec()) },
+            Pair { column_name: "value", value: Value::Bytes(b"value1".to_vec()) },
         ],
         &vec![
-            Pair { column_name: "Owner", value: DataValue::Blob(b"owner2".to_vec()) },
-            Pair { column_name: "Alias", value: DataValue::Blob(b"alias2".to_vec()) },
-            Pair { column_name: "value", value: DataValue::Blob(b"value2".to_vec()) },
+            Pair { column_name: "Owner", value: Value::Bytes(b"owner2".to_vec()) },
+            Pair { column_name: "Alias", value: Value::Bytes(b"alias2".to_vec()) },
+            Pair { column_name: "value", value: Value::Bytes(b"value2".to_vec()) },
         ],
         &vec![
-            Pair { column_name: "Owner", value: DataValue::Blob(b"owner2".to_vec()) },
-            Pair { column_name: "Alias", value: DataValue::Blob(b"alias3".to_vec()) },
-            Pair { column_name: "value", value: DataValue::Blob(b"value3".to_vec()) },
+            Pair { column_name: "Owner", value: Value::Bytes(b"owner2".to_vec()) },
+            Pair { column_name: "Alias", value: Value::Bytes(b"alias3".to_vec()) },
+            Pair { column_name: "value", value: Value::Bytes(b"value3".to_vec()) },
         ],
     ];
 
@@ -495,12 +494,12 @@ pub fn test_update_datas() {
     }
 
     // update
-    let datas = &vec![Pair { column_name: "value", value: DataValue::Blob(b"value_new".to_vec()) }];
+    let datas = &vec![Pair { column_name: "value", value: Value::Bytes(b"value_new".to_vec()) }];
     let count = db
         .update_datas_default(
             &vec![
-                Pair { column_name: "Owner", value: DataValue::Blob(b"owner2".to_vec()) },
-                Pair { column_name: "Alias", value: DataValue::Blob(b"alias2".to_vec()) },
+                Pair { column_name: "Owner", value: Value::Bytes(b"owner2".to_vec()) },
+                Pair { column_name: "Alias", value: Value::Bytes(b"alias2".to_vec()) },
             ],
             datas,
         )
@@ -510,8 +509,8 @@ pub fn test_update_datas() {
     let stmt =
         Statement::<true>::prepare("select * from asset_table where Owner=? and Alias=?", &db)
             .unwrap();
-    let od = DataValue::Blob(b"owner2".to_vec());
-    let ad = DataValue::Blob(b"alias2".to_vec());
+    let od = Value::Bytes(b"owner2".to_vec());
+    let ad = Value::Bytes(b"alias2".to_vec());
     let ret = stmt.bind_data(1, &od);
     assert_eq!(ret, 0);
     let ret = stmt.bind_data(2, &ad);
@@ -537,25 +536,25 @@ pub fn test_insert_datas() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "Owner",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "Alias",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "value",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let _table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
@@ -565,9 +564,9 @@ pub fn test_insert_datas() {
         },
     };
     let dataset = vec![
-        Pair { column_name: "value", value: DataValue::Blob(b"value".to_vec()) },
-        Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner1".to_vec()) },
-        Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"alias1".to_vec()) },
+        Pair { column_name: "value", value: Value::Bytes(b"value".to_vec()) },
+        Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner1".to_vec()) },
+        Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"alias1".to_vec()) },
     ];
     let count = db.insert_datas_default(&dataset).unwrap();
     assert_eq!(count, 1);
@@ -576,8 +575,8 @@ pub fn test_insert_datas() {
     let stmt =
         Statement::<true>::prepare("select * from asset_table where Owner=? and Alias=?", &db)
             .unwrap();
-    let ownerd = DataValue::Blob(b"owner1".to_vec());
-    let aliasd = DataValue::Blob(b"alias1".to_vec());
+    let ownerd = Value::Bytes(b"owner1".to_vec());
+    let aliasd = Value::Bytes(b"alias1".to_vec());
     let ret = stmt.bind_data(1, &ownerd);
     assert_eq!(ret, 0);
     let ret = stmt.bind_data(2, &aliasd);
@@ -603,25 +602,25 @@ pub fn test_insert_row_datas() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "Owner",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "Alias",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "value",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
@@ -631,10 +630,10 @@ pub fn test_insert_row_datas() {
         },
     };
     let dataset = vec![
-        DataValue::Integer(2),
-        DataValue::Blob(b"owner1".to_vec()),
-        DataValue::Blob(b"alias1".to_vec()),
-        DataValue::Blob(b"bbbb".to_vec()),
+        Value::Number(2),
+        Value::Bytes(b"owner1".to_vec()),
+        Value::Bytes(b"alias1".to_vec()),
+        Value::Bytes(b"bbbb".to_vec()),
     ];
     let count = table.insert_row_datas(&dataset).unwrap();
     assert_eq!(count, 1);
@@ -643,8 +642,8 @@ pub fn test_insert_row_datas() {
     let stmt =
         Statement::<true>::prepare("select * from asset_table where Owner=? and Alias=?", &db)
             .unwrap();
-    let od = DataValue::Blob(b"owner1".to_vec());
-    let ad = DataValue::Blob(b"alias1".to_vec());
+    let od = Value::Bytes(b"owner1".to_vec());
+    let ad = Value::Bytes(b"alias1".to_vec());
     let ret = stmt.bind_data(1, &od);
     assert_eq!(ret, 0);
     let ret = stmt.bind_data(2, &ad);
@@ -670,25 +669,25 @@ pub fn test_delete_datas() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "Owner",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "Alias",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "value",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let _table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
@@ -698,28 +697,28 @@ pub fn test_delete_datas() {
         },
     };
     let dataset = vec![
-        Pair { column_name: "value", value: DataValue::Blob(b"value".to_vec()) },
-        Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner1".to_vec()) },
-        Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"alias1".to_vec()) },
+        Pair { column_name: "value", value: Value::Bytes(b"value".to_vec()) },
+        Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner1".to_vec()) },
+        Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"alias1".to_vec()) },
     ];
     let count = db.insert_datas_default(&dataset).unwrap();
     assert_eq!(count, 1);
 
     let cond = vec![
-        Pair { column_name: "value", value: DataValue::Blob(b"value".to_vec()) },
-        Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner1".to_vec()) },
-        Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"alias1".to_vec()) },
+        Pair { column_name: "value", value: Value::Bytes(b"value".to_vec()) },
+        Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner1".to_vec()) },
+        Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"alias1".to_vec()) },
     ];
     let count = db.delete_datas_default(&cond).unwrap();
     assert_eq!(count, 1);
 
-    let cond = vec![Pair { column_name: "value", value: DataValue::Blob(b"value".to_vec()) }];
+    let cond = vec![Pair { column_name: "value", value: Value::Bytes(b"value".to_vec()) }];
     let count = db.delete_datas_default(&cond).unwrap();
     assert_eq!(count, 0); // can not delete any data because no data
     let count = db
         .delete_datas_default(&vec![
-            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner1".to_vec()) },
-            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"alias1".to_vec()) },
+            Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner1".to_vec()) },
+            Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"alias1".to_vec()) },
         ])
         .unwrap();
     assert_eq!(count, 0); // can not delete any data because no data
@@ -745,25 +744,25 @@ pub fn test_for_rename() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "Owner",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "Alias",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "value",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let mut table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
@@ -791,25 +790,25 @@ pub fn test_for_add_column() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "Owner",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "Alias",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "value",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
@@ -821,33 +820,33 @@ pub fn test_for_add_column() {
     let ret = table.add_new_column(
         ColumnInfo {
             name: "nid",
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
             is_primary_key: false,
             not_null: true,
         },
-        Some(DataValue::Integer(0)),
+        Some(Value::Number(0)),
     );
     assert_eq!(ret, SQLITE_OK);
 
     let ret = table.add_new_column(
         ColumnInfo {
             name: "n_n_id",
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
             is_primary_key: true,
             not_null: true,
         },
-        Some(DataValue::Integer(0)),
+        Some(Value::Number(0)),
     );
     assert_ne!(ret, SQLITE_OK);
 
     let ret = table.add_new_column(
         ColumnInfo {
             name: "n_n_n_id",
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
             is_primary_key: false,
             not_null: true,
         },
-        Some(DataValue::Blob(b"".to_vec())),
+        Some(Value::Bytes(b"".to_vec())),
     );
     assert_ne!(ret, SQLITE_OK);
 }
@@ -867,19 +866,19 @@ pub fn test_query() {
             name: "id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "alias",
             is_primary_key: false,
             not_null: false,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "blobs",
             is_primary_key: false,
             not_null: false,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let table = match db.create_table("table_test", columns) {
@@ -890,19 +889,19 @@ pub fn test_query() {
     };
     let dataset = &[
         [
-            DataValue::Integer(2),
-            DataValue::Blob(b"test2".to_vec()),
-            DataValue::Blob(b"blob2".to_vec()),
+            Value::Number(2),
+            Value::Bytes(b"test2".to_vec()),
+            Value::Bytes(b"blob2".to_vec()),
         ],
         [
-            DataValue::Integer(3),
-            DataValue::Blob(b"test3".to_vec()),
-            DataValue::Blob(b"blob3".to_vec()),
+            Value::Number(3),
+            Value::Bytes(b"test3".to_vec()),
+            Value::Bytes(b"blob3".to_vec()),
         ],
         [
-            DataValue::Integer(4),
-            DataValue::Blob(b"test4".to_vec()),
-            DataValue::Blob(b"blob4".to_vec()),
+            Value::Number(4),
+            Value::Bytes(b"test4".to_vec()),
+            Value::Bytes(b"blob4".to_vec()),
         ],
     ];
 
@@ -920,27 +919,12 @@ pub fn test_query() {
         assert_eq!(ret, SQLITE_DONE);
     }
 
-    let count = table
-        .insert_row(&vec![
-            Pair { column_name: "alias", value: DataValue::NoData },
-            Pair { column_name: "blobs", value: DataValue::Blob(b"blob5".to_vec()) },
-        ])
-        .unwrap();
-    assert_eq!(count, 1);
-    let count = table
-        .insert_row(&vec![
-            Pair { column_name: "alias", value: DataValue::Blob(b"test6".to_vec()) },
-            Pair { column_name: "blobs", value: DataValue::NoData },
-        ])
-        .unwrap();
-    assert_eq!(count, 1);
-
     let result_set = table.query_row(&vec!["alias", "blobs"], &vec![], None).unwrap();
     println!("id alias blobs");
     for data_line in &result_set {
         print!("line: ");
         for data in data_line {
-            print!("{} ", from_result_value_to_str_value(data));
+            print!("{} ", from_data_value_to_str_value(data));
         }
         println!()
     }
@@ -948,12 +932,12 @@ pub fn test_query() {
     let count = table.count_datas(&vec![]).unwrap();
     assert_eq!(count, 5);
     let count =
-        table.count_datas(&vec![Pair { column_name: "id", value: DataValue::Integer(3) }]).unwrap();
+        table.count_datas(&vec![Pair { column_name: "id", value: Value::Number(3) }]).unwrap();
     assert_eq!(count, 1);
     let exits = table
         .is_data_exists(&vec![
-            Pair { column_name: "id", value: DataValue::Integer(3) },
-            Pair { column_name: "alias", value: DataValue::Blob(b"testtest".to_vec()) },
+            Pair { column_name: "id", value: Value::Number(3) },
+            Pair { column_name: "alias", value: Value::Bytes(b"testtest".to_vec()) },
         ])
         .unwrap();
     assert!(!exits);
@@ -974,25 +958,25 @@ pub fn test_multi_insert_row_datas() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "Owner",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "Alias",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "value",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
@@ -1004,19 +988,19 @@ pub fn test_multi_insert_row_datas() {
     let columns = &vec!["Owner", "Alias", "value"];
     let dataset = vec![
         vec![
-            DataValue::Blob(b"owner1".to_vec()),
-            DataValue::Blob(b"alias1".to_vec()),
-            DataValue::Blob(b"aaaa".to_vec()),
+            Value::Bytes(b"owner1".to_vec()),
+            Value::Bytes(b"alias1".to_vec()),
+            Value::Bytes(b"aaaa".to_vec()),
         ],
         vec![
-            DataValue::Blob(b"owner2".to_vec()),
-            DataValue::Blob(b"alias2".to_vec()),
-            DataValue::Blob(b"bbbb".to_vec()),
+            Value::Bytes(b"owner2".to_vec()),
+            Value::Bytes(b"alias2".to_vec()),
+            Value::Bytes(b"bbbb".to_vec()),
         ],
         vec![
-            DataValue::Blob(b"owner3".to_vec()),
-            DataValue::Blob(b"alias3".to_vec()),
-            DataValue::Blob(b"cccc".to_vec()),
+            Value::Bytes(b"owner3".to_vec()),
+            Value::Bytes(b"alias3".to_vec()),
+            Value::Bytes(b"cccc".to_vec()),
         ],
     ];
     let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
@@ -1024,22 +1008,22 @@ pub fn test_multi_insert_row_datas() {
 
     let dataset = vec![
         vec![
-            DataValue::Integer(5),
-            DataValue::Blob(b"owner1".to_vec()),
-            DataValue::Blob(b"alias1".to_vec()),
-            DataValue::Blob(b"aaaa".to_vec()),
+            Value::Number(5),
+            Value::Bytes(b"owner1".to_vec()),
+            Value::Bytes(b"alias1".to_vec()),
+            Value::Bytes(b"aaaa".to_vec()),
         ],
         vec![
-            DataValue::Integer(6),
-            DataValue::Blob(b"owner2".to_vec()),
-            DataValue::Blob(b"alias2".to_vec()),
-            DataValue::Blob(b"bbbb".to_vec()),
+            Value::Number(6),
+            Value::Bytes(b"owner2".to_vec()),
+            Value::Bytes(b"alias2".to_vec()),
+            Value::Bytes(b"bbbb".to_vec()),
         ],
         vec![
-            DataValue::Integer(7),
-            DataValue::Blob(b"owner3".to_vec()),
-            DataValue::Blob(b"alias3".to_vec()),
-            DataValue::Blob(b"cccc".to_vec()),
+            Value::Number(7),
+            Value::Bytes(b"owner3".to_vec()),
+            Value::Bytes(b"alias3".to_vec()),
+            Value::Bytes(b"cccc".to_vec()),
         ],
     ];
     let count =
@@ -1050,8 +1034,8 @@ pub fn test_multi_insert_row_datas() {
     let stmt =
         Statement::<true>::prepare("select * from asset_table where Owner=? and Alias=?", &db)
             .unwrap();
-    let od = DataValue::Blob(b"owner1".to_vec());
-    let ad = DataValue::Blob(b"alias1".to_vec());
+    let od = Value::Bytes(b"owner1".to_vec());
+    let ad = Value::Bytes(b"alias1".to_vec());
     let ret = stmt.bind_data(1, &od);
     assert_eq!(ret, 0);
     let ret = stmt.bind_data(2, &ad);
@@ -1077,25 +1061,25 @@ pub fn test_data_exists_and_data_count() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "Owner",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "Alias",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "value",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
@@ -1107,19 +1091,19 @@ pub fn test_data_exists_and_data_count() {
     let columns = &vec!["Owner", "Alias", "value"];
     let dataset = vec![
         vec![
-            DataValue::Blob(b"owner1".to_vec()),
-            DataValue::Blob(b"alias1".to_vec()),
-            DataValue::Blob(b"aaaa".to_vec()),
+            Value::Bytes(b"owner1".to_vec()),
+            Value::Bytes(b"alias1".to_vec()),
+            Value::Bytes(b"aaaa".to_vec()),
         ],
         vec![
-            DataValue::Blob(b"owner2".to_vec()),
-            DataValue::Blob(b"alias2".to_vec()),
-            DataValue::Blob(b"bbbb".to_vec()),
+            Value::Bytes(b"owner2".to_vec()),
+            Value::Bytes(b"alias2".to_vec()),
+            Value::Bytes(b"bbbb".to_vec()),
         ],
         vec![
-            DataValue::Blob(b"owner2".to_vec()),
-            DataValue::Blob(b"alias3".to_vec()),
-            DataValue::Blob(b"cccc".to_vec()),
+            Value::Bytes(b"owner2".to_vec()),
+            Value::Bytes(b"alias3".to_vec()),
+            Value::Bytes(b"cccc".to_vec()),
         ],
     ];
     let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
@@ -1128,16 +1112,16 @@ pub fn test_data_exists_and_data_count() {
     // query
     let exist = db
         .is_data_exists_default(&vec![
-            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner1".to_vec()) },
-            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"alias1".to_vec()) },
+            Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner1".to_vec()) },
+            Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"alias1".to_vec()) },
         ])
         .unwrap();
     assert!(exist);
 
     let exist = db
         .is_data_exists_default(&vec![
-            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner1".to_vec()) },
-            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"alias2".to_vec()) },
+            Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner1".to_vec()) },
+            Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"alias2".to_vec()) },
         ])
         .unwrap();
     assert!(!exist);
@@ -1145,7 +1129,7 @@ pub fn test_data_exists_and_data_count() {
     let count = db
         .select_count_default(&vec![Pair {
             column_name: G_COLUMN_OWNER,
-            value: DataValue::Blob(b"owner2".to_vec()),
+            value: Value::Bytes(b"owner2".to_vec()),
         }])
         .unwrap();
     assert_eq!(count, 2);
@@ -1166,25 +1150,25 @@ pub fn test_helper() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "Owner",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "Alias",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "value",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
@@ -1196,19 +1180,19 @@ pub fn test_helper() {
     let columns = &vec!["Owner", "Alias", "value"];
     let dataset = vec![
         vec![
-            DataValue::Blob(b"owner1".to_vec()),
-            DataValue::Blob(b"alias1".to_vec()),
-            DataValue::Blob(b"aaaa".to_vec()),
+            Value::Bytes(b"owner1".to_vec()),
+            Value::Bytes(b"alias1".to_vec()),
+            Value::Bytes(b"aaaa".to_vec()),
         ],
         vec![
-            DataValue::Blob(b"owner2".to_vec()),
-            DataValue::Blob(b"alias2".to_vec()),
-            DataValue::Blob(b"bbbb".to_vec()),
+            Value::Bytes(b"owner2".to_vec()),
+            Value::Bytes(b"alias2".to_vec()),
+            Value::Bytes(b"bbbb".to_vec()),
         ],
         vec![
-            DataValue::Blob(b"owner2".to_vec()),
-            DataValue::Blob(b"alias3".to_vec()),
-            DataValue::Blob(b"cccc".to_vec()),
+            Value::Bytes(b"owner2".to_vec()),
+            Value::Bytes(b"alias3".to_vec()),
+            Value::Bytes(b"cccc".to_vec()),
         ],
     ];
     let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
@@ -1217,16 +1201,16 @@ pub fn test_helper() {
     // query
     let exist = db
         .is_data_exists_default(&vec![
-            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner1".to_vec()) },
-            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"alias1".to_vec()) },
+            Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner1".to_vec()) },
+            Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"alias1".to_vec()) },
         ])
         .unwrap();
     assert!(exist);
 
     let exist = db
         .is_data_exists_default(&vec![
-            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner1".to_vec()) },
-            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"alias2".to_vec()) },
+            Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner1".to_vec()) },
+            Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"alias2".to_vec()) },
         ])
         .unwrap();
     assert!(!exist);
@@ -1234,16 +1218,16 @@ pub fn test_helper() {
     let count = db
         .select_count_default(&vec![Pair {
             column_name: G_COLUMN_OWNER,
-            value: DataValue::Blob(b"owner2".to_vec()),
+            value: Value::Bytes(b"owner2".to_vec()),
         }])
         .unwrap();
     assert_eq!(count, 2);
 
     let ret = db
         .insert_datas_default(&vec![
-            Pair { column_name: "value", value: DataValue::Blob(b"value4".to_vec()) },
-            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner4".to_vec()) },
-            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"alias4".to_vec()) },
+            Pair { column_name: "value", value: Value::Bytes(b"value4".to_vec()) },
+            Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner4".to_vec()) },
+            Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"alias4".to_vec()) },
         ])
         .unwrap();
     assert_eq!(ret, 1);
@@ -1251,18 +1235,18 @@ pub fn test_helper() {
     let ret = db
         .update_datas_default(
             &vec![
-                Pair { column_name: "Owner", value: DataValue::Blob(b"owner4".to_vec()) },
-                Pair { column_name: "Alias", value: DataValue::Blob(b"alias4".to_vec()) },
+                Pair { column_name: "Owner", value: Value::Bytes(b"owner4".to_vec()) },
+                Pair { column_name: "Alias", value: Value::Bytes(b"alias4".to_vec()) },
             ],
-            &vec![Pair { column_name: "value", value: DataValue::Blob(b"value5".to_vec()) }],
+            &vec![Pair { column_name: "value", value: Value::Bytes(b"value5".to_vec()) }],
         )
         .unwrap();
     assert_eq!(ret, 1);
 
     let ret = db
         .delete_datas_default(&vec![
-            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner4".to_vec()) },
-            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"alias4".to_vec()) },
+            Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner4".to_vec()) },
+            Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"alias4".to_vec()) },
         ])
         .unwrap();
     assert_eq!(ret, 1);
@@ -1270,8 +1254,8 @@ pub fn test_helper() {
     let result = db
         .query_datas_default(
             &vec![
-                Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner1".to_vec()) },
-                Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"alias1".to_vec()) },
+                Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner1".to_vec()) },
+                Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"alias1".to_vec()) },
             ],
             None,
         )
@@ -1280,7 +1264,7 @@ pub fn test_helper() {
     for data in result {
         print!("line: ");
         for d in data {
-            print!("{}, ", from_result_value_to_str_value(&d));
+            print!("{}, ", from_data_value_to_str_value(&d));
         }
         println!();
     }
@@ -1301,25 +1285,25 @@ pub fn test_for_special_sql() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "Owner",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "Alias",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "value",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
@@ -1331,19 +1315,19 @@ pub fn test_for_special_sql() {
     let columns = &vec!["Owner", "Alias", "value"];
     let dataset = vec![
         vec![
-            DataValue::Blob(b"owner1".to_vec()),
-            DataValue::Blob(b"alias1".to_vec()),
-            DataValue::Blob(b"aaaa".to_vec()),
+            Value::Bytes(b"owner1".to_vec()),
+            Value::Bytes(b"alias1".to_vec()),
+            Value::Bytes(b"aaaa".to_vec()),
         ],
         vec![
-            DataValue::Blob(b"owner2".to_vec()),
-            DataValue::Blob(b"alias2".to_vec()),
-            DataValue::Blob(b"bbbb".to_vec()),
+            Value::Bytes(b"owner2".to_vec()),
+            Value::Bytes(b"alias2".to_vec()),
+            Value::Bytes(b"bbbb".to_vec()),
         ],
         vec![
-            DataValue::Blob(b"owner2".to_vec()),
-            DataValue::Blob(b"alias3".to_vec()),
-            DataValue::Blob(b"cccc".to_vec()),
+            Value::Bytes(b"owner2".to_vec()),
+            Value::Bytes(b"alias3".to_vec()),
+            Value::Bytes(b"cccc".to_vec()),
         ],
     ];
     let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
@@ -1351,7 +1335,7 @@ pub fn test_for_special_sql() {
 
     let sql = "select Owner,Alias from asset_table where Id>?";
     let stmt = Statement::<true>::prepare(sql, &db).unwrap();
-    let ret = stmt.bind_data(1, &DataValue::Integer(1));
+    let ret = stmt.bind_data(1, &Value::Number(1));
     assert_eq!(ret, SQLITE_OK);
 
     while stmt.step() == SQLITE_ROW {
@@ -1360,8 +1344,8 @@ pub fn test_for_special_sql() {
         let alias = stmt.query_column_text(1);
         print!(
             "{} {}",
-            from_result_value_to_str_value(&ResultDataValue::Blob(Box::new(owner.to_vec()))),
-            from_result_value_to_str_value(&ResultDataValue::Blob(Box::new(alias.to_vec())))
+            from_data_value_to_str_value(&Value::Bytes(owner.to_vec())),
+            from_data_value_to_str_value(&Value::Bytes(alias.to_vec()))
         );
         println!();
     }
@@ -1376,25 +1360,25 @@ pub fn test_for_update_ver() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::INTEGER,
+            data_type: DataType::Uint32,
         },
         ColumnInfo {
             name: "Owner",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "Alias",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
         ColumnInfo {
             name: "value",
             is_primary_key: false,
             not_null: true,
-            data_type: DataType::BLOB,
+            data_type: DataType::Bytes,
         },
     ];
     let _ = match db.create_table(G_ASSET_TABLE_NAME, columns) {
@@ -1419,35 +1403,35 @@ pub fn test_for_update_ver() {
 pub fn test_for_default_asset(userid: i32) {
     // let _ = Database::drop_default_database(userid);
     let def = vec![
-        Pair { column_name: "Secret", value: DataValue::Blob(b"blob".to_vec()) },
-        Pair { column_name: "OwnerType", value: DataValue::Integer(1) },
-        Pair { column_name: "OwnerType", value: DataValue::Integer(1) },
-        Pair { column_name: "SyncType", value: DataValue::Integer(1) },
-        Pair { column_name: "Accessibility", value: DataValue::Integer(1) },
-        Pair { column_name: "AuthType", value: DataValue::Integer(1) },
-        Pair { column_name: "DeleteType", value: DataValue::Integer(1) },
-        Pair { column_name: "Version", value: DataValue::Integer(1) },
-        Pair { column_name: "CreateTime", value: DataValue::Integer(1) },
-        Pair { column_name: "UpdateTime", value: DataValue::Integer(1) },
-        Pair { column_name: "RequirePasswordSet", value: DataValue::Integer(0) },
-        Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner1".to_vec()) },
-        Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"Alias1".to_vec()) },
+        Pair { column_name: "Secret", value: Value::Bytes(b"blob".to_vec()) },
+        Pair { column_name: "OwnerType", value: Value::Number(1) },
+        Pair { column_name: "OwnerType", value: Value::Number(1) },
+        Pair { column_name: "SyncType", value: Value::Number(1) },
+        Pair { column_name: "Accessibility", value: Value::Number(1) },
+        Pair { column_name: "AuthType", value: Value::Number(1) },
+        Pair { column_name: "DeleteType", value: Value::Number(1) },
+        Pair { column_name: "Version", value: Value::Number(1) },
+        Pair { column_name: "CreateTime", value: Value::Number(1) },
+        Pair { column_name: "UpdateTime", value: Value::Number(1) },
+        Pair { column_name: "RequirePasswordSet", value: Value::Number(0) },
+        Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner1".to_vec()) },
+        Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"Alias1".to_vec()) },
     ];
     let count = DefaultDatabaseHelper::insert_datas_default_once(userid, &def).unwrap();
     assert_eq!(count, 1);
     let def = vec![
-        Pair { column_name: "Secret", value: DataValue::Blob(b"blob".to_vec()) },
-        Pair { column_name: "OwnerType", value: DataValue::Integer(1) },
-        Pair { column_name: "SyncType", value: DataValue::Integer(1) },
-        Pair { column_name: "Accessibility", value: DataValue::Integer(1) },
-        Pair { column_name: "AuthType", value: DataValue::Integer(1) },
-        Pair { column_name: "DeleteType", value: DataValue::Integer(1) },
-        Pair { column_name: "Version", value: DataValue::Integer(1) },
-        Pair { column_name: "CreateTime", value: DataValue::Integer(1) },
-        Pair { column_name: "UpdateTime", value: DataValue::Integer(1) },
-        Pair { column_name: "RequirePasswordSet", value: DataValue::Integer(0) },
-        Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner1".to_vec()) },
-        Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"Alias2".to_vec()) },
+        Pair { column_name: "Secret", value: Value::Bytes(b"blob".to_vec()) },
+        Pair { column_name: "OwnerType", value: Value::Number(1) },
+        Pair { column_name: "SyncType", value: Value::Number(1) },
+        Pair { column_name: "Accessibility", value: Value::Number(1) },
+        Pair { column_name: "AuthType", value: Value::Number(1) },
+        Pair { column_name: "DeleteType", value: Value::Number(1) },
+        Pair { column_name: "Version", value: Value::Number(1) },
+        Pair { column_name: "CreateTime", value: Value::Number(1) },
+        Pair { column_name: "UpdateTime", value: Value::Number(1) },
+        Pair { column_name: "RequirePasswordSet", value: Value::Number(0) },
+        Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner1".to_vec()) },
+        Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"Alias2".to_vec()) },
     ];
     let count = DefaultDatabaseHelper::insert_datas_default_once(userid, &def).unwrap();
     assert_eq!(count, 1);
@@ -1455,25 +1439,25 @@ pub fn test_for_default_asset(userid: i32) {
     let count = DefaultDatabaseHelper::update_datas_default_once(
         userid,
         &vec![
-            Pair { column_name: "Owner", value: DataValue::Blob(b"owner1".to_vec()) },
-            Pair { column_name: "Alias", value: DataValue::Blob(b"Alias1".to_vec()) },
+            Pair { column_name: "Owner", value: Value::Bytes(b"owner1".to_vec()) },
+            Pair { column_name: "Alias", value: Value::Bytes(b"Alias1".to_vec()) },
         ],
-        &vec![Pair { column_name: "UpdateTime", value: DataValue::Integer(1) }],
+        &vec![Pair { column_name: "UpdateTime", value: Value::Number(1) }],
     )
     .unwrap();
     assert!(count >= 0);
 
     let _count = DefaultDatabaseHelper::select_count_default_once(
         userid,
-        &vec![Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner1".to_vec()) }],
+        &vec![Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner1".to_vec()) }],
     )
     .unwrap();
 
     let _ret = DefaultDatabaseHelper::is_data_exists_default_once(
         userid,
         &vec![
-            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner1".to_vec()) },
-            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"Alias2".to_vec()) },
+            Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner1".to_vec()) },
+            Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"Alias2".to_vec()) },
         ],
     )
     .unwrap();
@@ -1481,8 +1465,8 @@ pub fn test_for_default_asset(userid: i32) {
     let count = DefaultDatabaseHelper::delete_datas_default_once(
         userid,
         &vec![
-            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner1".to_vec()) },
-            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"Alias1".to_vec()) },
+            Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner1".to_vec()) },
+            Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"Alias1".to_vec()) },
         ],
     )
     .unwrap();
@@ -1498,8 +1482,8 @@ pub fn test_for_default_asset(userid: i32) {
     let result = DefaultDatabaseHelper::query_datas_default_once(
         userid,
         &vec![
-            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner1".to_vec()) },
-            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"Alias2".to_vec()) },
+            Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner1".to_vec()) },
+            Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"Alias2".to_vec()) },
         ],
         Some(&query),
     )
@@ -1507,7 +1491,7 @@ pub fn test_for_default_asset(userid: i32) {
     for line in result {
         print!("line: ");
         for r in line {
-            print!("{}, ", from_result_value_to_str_value(&r));
+            print!("{}, ", from_data_value_to_str_value(&r));
         }
         println!();
     }
@@ -1516,15 +1500,15 @@ pub fn test_for_default_asset(userid: i32) {
         userid,
         &vec!["Id", "Alias"],
         &vec![
-            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner1".to_vec()) },
-            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"Alias2".to_vec()) },
+            Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner1".to_vec()) },
+            Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"Alias2".to_vec()) },
         ],
         None,
     )
     .unwrap();
     for line in result {
         for (k, v) in line {
-            print!("{}:{}, ", k, from_result_value_to_str_value(&v));
+            print!("{}:{}, ", k, from_data_value_to_str_value(&v));
         }
         println!();
     }
@@ -1555,14 +1539,14 @@ pub fn test_for_recovery() {
             "tt",
             &[ColumnInfo {
                 name: "Id",
-                data_type: DataType::INTEGER,
+                data_type: DataType::Uint32,
                 is_primary_key: true,
                 not_null: true,
             }],
         )
         .unwrap();
     let count =
-        table.insert_row(&vec![Pair { column_name: "Id", value: DataValue::Integer(1) }]).unwrap();
+        table.insert_row(&vec![Pair { column_name: "Id", value: Value::Number(1) }]).unwrap();
     assert_eq!(count, 1);
     fs::copy("test111.db", "test111.db.backup").unwrap();
     fs::remove_file("test111.db").unwrap();
@@ -1577,7 +1561,7 @@ fn trans_call(db: &Database) -> bool {
     let count = db
         .select_count_default(&vec![Pair {
             column_name: G_COLUMN_OWNER,
-            value: DataValue::Blob(b"owner1".to_vec()),
+            value: Value::Bytes(b"owner1".to_vec()),
         }])
         .unwrap();
     assert_eq!(count, 0);
@@ -1592,7 +1576,7 @@ pub fn test_for_transaction3() {
         let count = db
             .select_count_default(&vec![Pair {
                 column_name: G_COLUMN_OWNER,
-                value: DataValue::Blob(b"owner1".to_vec()),
+                value: Value::Bytes(b"owner1".to_vec()),
             }])
             .unwrap();
         assert_eq!(count, 0);
@@ -1607,8 +1591,8 @@ pub fn test_for_error() {
     let stmt = DefaultDatabaseHelper::insert_datas_default_once(
         1,
         &vec![
-            Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner".to_vec()) },
-            Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"alias".to_vec()) },
+            Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner".to_vec()) },
+            Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"alias".to_vec()) },
         ],
     );
     assert!(stmt.is_err());
@@ -1619,19 +1603,19 @@ pub fn test_for_master_backup() {
     let _ = Database::drop_default_database_and_backup(5);
     let db = DefaultDatabaseHelper::open_default_database_table(5).unwrap();
     let def = vec![
-        Pair { column_name: "Secret", value: DataValue::Blob(b"blob".to_vec()) },
-        Pair { column_name: "OwnerType", value: DataValue::Integer(1) },
-        Pair { column_name: "OwnerType", value: DataValue::Integer(1) },
-        Pair { column_name: "SyncType", value: DataValue::Integer(1) },
-        Pair { column_name: "Accessibility", value: DataValue::Integer(1) },
-        Pair { column_name: "AuthType", value: DataValue::Integer(1) },
-        Pair { column_name: "DeleteType", value: DataValue::Integer(1) },
-        Pair { column_name: "Version", value: DataValue::Integer(1) },
-        Pair { column_name: "CreateTime", value: DataValue::Integer(1) },
-        Pair { column_name: "UpdateTime", value: DataValue::Integer(1) },
-        Pair { column_name: "RequirePasswordSet", value: DataValue::Integer(0) },
-        Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(b"owner".to_vec()) },
-        Pair { column_name: G_COLUMN_ALIAS, value: DataValue::Blob(b"alias".to_vec()) },
+        Pair { column_name: "Secret", value: Value::Bytes(b"blob".to_vec()) },
+        Pair { column_name: "OwnerType", value: Value::Number(1) },
+        Pair { column_name: "OwnerType", value: Value::Number(1) },
+        Pair { column_name: "SyncType", value: Value::Number(1) },
+        Pair { column_name: "Accessibility", value: Value::Number(1) },
+        Pair { column_name: "AuthType", value: Value::Number(1) },
+        Pair { column_name: "DeleteType", value: Value::Number(1) },
+        Pair { column_name: "Version", value: Value::Number(1) },
+        Pair { column_name: "CreateTime", value: Value::Number(1) },
+        Pair { column_name: "UpdateTime", value: Value::Number(1) },
+        Pair { column_name: "RequirePasswordSet", value: Value::Number(0) },
+        Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(b"owner".to_vec()) },
+        Pair { column_name: G_COLUMN_ALIAS, value: Value::Bytes(b"alias".to_vec()) },
     ];
     db.insert_datas_default(&def).unwrap();
     drop(db);
@@ -1655,7 +1639,7 @@ pub fn test_for_master_backup() {
     let count = db
         .select_count_default(&vec![Pair {
             column_name: G_COLUMN_OWNER,
-            value: DataValue::Blob(b"owner".to_vec()),
+            value: Value::Bytes(b"owner".to_vec()),
         }])
         .unwrap();
     assert_eq!(count, 3);

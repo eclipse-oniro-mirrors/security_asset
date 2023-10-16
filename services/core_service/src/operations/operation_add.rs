@@ -22,7 +22,7 @@ use asset_common::{
     logi, loge,
 };
 use asset_ipc_interface::IpcCode;
-use db_operator::{database_table_helper::{G_COLUMN_SECRET, G_COLUMN_ALIAS, G_COLUMN_OWNER, G_COLUMN_OWNER_TYPE}, types::{DataValue, Pair}};
+use db_operator::{database_table_helper::{G_COLUMN_SECRET, G_COLUMN_ALIAS, G_COLUMN_OWNER, G_COLUMN_OWNER_TYPE}, types::Pair};
 
 use crate::{
     operations::operation_common::{
@@ -41,15 +41,15 @@ fn check_resolve_conflict(input: &AssetMap, calling_info: &CallingInfo, db_data:
     let query_db_data = vec![
         Pair {
             column_name: G_COLUMN_ALIAS,
-            value: DataValue::Blob(alias.clone())
+            value: Value::Bytes(alias.clone())
         },
         Pair {
             column_name: G_COLUMN_OWNER,
-            value: DataValue::Blob(calling_info.owner_info().clone())
+            value: Value::Bytes(calling_info.owner_info().clone())
         },
         Pair {
             column_name: G_COLUMN_OWNER_TYPE,
-            value: DataValue::Integer(calling_info.owner_type())
+            value: Value::Number(calling_info.owner_type())
         }
     ];
 
@@ -82,7 +82,7 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     db_data.push(
         Pair {
             column_name: G_COLUMN_SECRET,
-            value: DataValue::Blob(cipher),
+            value: Value::Bytes(cipher),
         }
     );
 

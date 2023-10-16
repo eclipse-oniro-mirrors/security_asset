@@ -22,7 +22,7 @@ use asset_common::{
 
 use asset_ipc_interface::IpcCode;
 
-use db_operator::{database_table_helper::{G_COLUMN_SECRET, G_COLUMN_ALIAS}, types::{DataValue, Pair}};
+use db_operator::{database_table_helper::{G_COLUMN_SECRET, G_COLUMN_ALIAS}, types::Pair};
 
 // use crypto_manager::hukkey::Crypto;
 use crate::{
@@ -59,7 +59,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
         update_db_data.push(
             Pair {
                 column_name: G_COLUMN_SECRET,
-                value: DataValue::Blob(cipher),
+                value: Value::Bytes(cipher),
             }
         );
     }
@@ -67,7 +67,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     update_db_data.push(
         Pair {
             column_name: G_COLUMN_ALIAS,
-            value: DataValue::Blob(alias.to_vec()),
+            value: Value::Bytes(alias.to_vec()),
         }
     );
 

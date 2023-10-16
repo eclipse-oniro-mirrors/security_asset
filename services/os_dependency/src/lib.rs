@@ -20,9 +20,9 @@ use std::{
     fs, path::Path,
 };
 
-use asset_common::{ loge, logi, hasher};
+use asset_common::{loge, logi, hasher};
 use asset_sdk::definition::{
-    Accessibility, AuthType,
+    Accessibility, AuthType, Value
 };
 use crypto_manager::crypto::{
     KeyInfo, SecretKey,
@@ -31,7 +31,7 @@ use db_operator::{
     database_table_helper::{
         DefaultDatabaseHelper, G_COLUMN_OWNER,
     },
-    types::{DataValue, Pair},
+    types::Pair,
 };
 
 /// Function called from C programming language to Rust programming language for delete hap Asset.
@@ -41,7 +41,7 @@ pub unsafe extern "C" fn delete_hap_asset(user_id: i32, owner: *const c_char) ->
     // 1 delete data in db
     let owner_str = CString::from_raw(owner as *mut c_char).into_string().unwrap();
     let cond = vec![
-        Pair { column_name: G_COLUMN_OWNER, value: DataValue::Blob(owner_str.as_bytes().to_vec()) }
+        Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(owner_str.as_bytes().to_vec()) }
     ];
     let remove_num = match DefaultDatabaseHelper::delete_datas_default_once(user_id, &cond) {
         Ok(remove_num) => {

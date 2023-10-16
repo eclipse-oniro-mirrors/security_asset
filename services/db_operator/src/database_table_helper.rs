@@ -11,7 +11,7 @@
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
 
-use asset_common::definition::ErrCode;
+use asset_common::definition::{ErrCode, Value, DataType};
 
 use crate::{
     database::{
@@ -22,7 +22,7 @@ use crate::{
     table::Table,
     transaction::Transaction,
     types::{
-        AdvancedResultSet, ColumnInfo, Condition, DataType, DataValue, Pair, QueryOptions,
+        AdvancedResultSet, ColumnInfo, Condition, Pair, QueryOptions,
         ResultSet,
     },
     SqliteErrCode, SQLITE_OK,
@@ -86,133 +86,133 @@ pub const G_COLUMN_NORMAL4: &str = "DataLabelNormal_4";
 pub const G_COLUMNS_INFO: &[ColumnInfo] = &[
     ColumnInfo {
         name: G_COLUMN_ID,
-        data_type: DataType::INTEGER,
+        data_type: DataType::Uint32,
         is_primary_key: true,
         not_null: true,
     },
     ColumnInfo {
         name: G_COLUMN_SECRET,
-        data_type: DataType::BLOB,
+        data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
         name: G_COLUMN_ALIAS,
-        data_type: DataType::BLOB,
+        data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
         name: G_COLUMN_OWNER,
-        data_type: DataType::BLOB,
+        data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
         name: G_COLUMN_OWNER_TYPE,
-        data_type: DataType::INTEGER,
+        data_type: DataType::Uint32,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
         name: G_COLUMN_GROUP_ID,
-        data_type: DataType::BLOB,
+        data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
     ColumnInfo {
         name: G_COLUMN_SYNC_TYPE,
-        data_type: DataType::INTEGER,
+        data_type: DataType::Uint32,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
         name: G_COLUMN_ACCESSIBILITY,
-        data_type: DataType::INTEGER,
+        data_type: DataType::Uint32,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
         name: G_COLUMN_AUTH_TYPE,
-        data_type: DataType::INTEGER,
+        data_type: DataType::Uint32,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
         name: G_COLUMN_CREATE_TIME,
-        data_type: DataType::BLOB,
+        data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
         name: G_COLUMN_UPDATE_TIME,
-        data_type: DataType::BLOB,
+        data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
         name: G_COLUMN_DELETE_TYPE,
-        data_type: DataType::INTEGER,
+        data_type: DataType::Uint32,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
         name: G_COLUMN_VERSION,
-        data_type: DataType::INTEGER,
+        data_type: DataType::Uint32,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
         name: G_COLUMN_REQUIRE_PASSWORD_SET,
-        data_type: DataType::INTEGER,
+        data_type: DataType::Uint32,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
         name: G_COLUMN_CRITICAL1,
-        data_type: DataType::BLOB,
+        data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
     ColumnInfo {
         name: G_COLUMN_CRITICAL2,
-        data_type: DataType::BLOB,
+        data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
     ColumnInfo {
         name: G_COLUMN_CRITICAL3,
-        data_type: DataType::BLOB,
+        data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
     ColumnInfo {
         name: G_COLUMN_CRITICAL4,
-        data_type: DataType::BLOB,
+        data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
     ColumnInfo {
         name: G_COLUMN_NORMAL1,
-        data_type: DataType::BLOB,
+        data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
     ColumnInfo {
         name: G_COLUMN_NORMAL2,
-        data_type: DataType::BLOB,
+        data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
     ColumnInfo {
         name: G_COLUMN_NORMAL3,
-        data_type: DataType::BLOB,
+        data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
     ColumnInfo {
         name: G_COLUMN_NORMAL4,
-        data_type: DataType::BLOB,
+        data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
@@ -320,7 +320,7 @@ impl<'a> TableHelper<'a> {
     pub fn insert_multi_datas(
         &self,
         columns: &Vec<&str>,
-        datas: &Vec<Vec<DataValue>>,
+        datas: &Vec<Vec<Value>>,
     ) -> Result<i32, ErrCode> {
         let closure = |e: &Table| e.insert_multi_row_datas(columns, datas);
         back_db_when_succ(true, self, closure)
@@ -523,7 +523,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
                 }
                 datas_new.push(Pair {
                     column_name: G_COLUMN_UPDATE_TIME,
-                    value: DataValue::Blob(ctime.as_bytes()),
+                    value: Value::Bytes(ctime.as_bytes()),
                 });
                 return table.update_datas(condition, &datas_new);
             }
@@ -556,13 +556,13 @@ impl<'a> DefaultDatabaseHelper<'a> {
                 if !contain_create_time {
                     datas_new.push(Pair {
                         column_name: G_COLUMN_CREATE_TIME,
-                        value: DataValue::Blob(ctime.as_bytes()),
+                        value: Value::Bytes(ctime.as_bytes()),
                     });
                 }
                 if !contain_update_time {
                     datas_new.push(Pair {
                         column_name: G_COLUMN_UPDATE_TIME,
-                        value: DataValue::Blob(ctime.as_bytes()),
+                        value: Value::Bytes(ctime.as_bytes()),
                     });
                 }
                 return table.insert_datas(&datas_new);
@@ -576,7 +576,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     pub fn insert_multi_datas_default(
         &self,
         columns: &Vec<&str>,
-        datas: &Vec<Vec<DataValue>>,
+        datas: &Vec<Vec<Value>>,
     ) -> Result<i32, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         table.insert_multi_datas(columns, datas)
@@ -692,7 +692,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     pub fn insert_multi_datas_default_once(
         userid: i32,
         columns: &Vec<&str>,
-        datas: &Vec<Vec<DataValue>>,
+        datas: &Vec<Vec<Value>>,
     ) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();

@@ -17,7 +17,7 @@
 
 use asset_common::{definition::{AssetMap, ErrCode, Result, Value, Tag}, loge, logi};
 use db_operator::{
-    types::{Pair, DataValue, AdvancedResultSet, ResultDataValue, QueryOptions},
+    types::{Pair, AdvancedResultSet, QueryOptions},
     database::Database,
     database_table_helper::{
         do_transaction,
@@ -34,11 +34,11 @@ use crate::{
     definition_inner::OperationCode,
 };
 
-fn convert_value_into_db_value(value: &Value) -> Result<DataValue> {
+fn convert_value_into_db_value(value: &Value) -> Result<Value> {
     match value {
-        Value::Bool(b) => Ok(DataValue::Integer(*b as u32)),
-        Value::Number(n) => Ok(DataValue::Integer(*n)), // to do 类型确认
-        Value::Bytes(v) => Ok(DataValue::Blob(v.to_vec()))
+        Value::Bool(b) => Ok(Value::Number(*b as u32)),
+        Value::Number(n) => Ok(Value::Number(*n)),
+        Value::Bytes(v) => Ok(Value::Bytes(v.to_vec()))
     }
 }
 
@@ -179,16 +179,16 @@ pub(crate) fn remove_data_once(calling_info: &CallingInfo, db_data: &Vec<Pair>) 
     DefaultDatabaseHelper::delete_datas_default_once(calling_info.user_id(), db_data)
 }
 
-fn convert_db_data_into_asset(tag: &Tag, data: &ResultDataValue) -> Option<Value> {
+fn convert_db_data_into_asset(tag: &Tag, data: &Value) -> Option<Value> {
     match data {
-        ResultDataValue::Integer(i) => {
+        Value::Number(i) => {
             match *tag {
                 Tag::RequirePasswordSet => Some(Value::Bool(*i != 0)),
                 _ => Some(Value::Number(*i)),
             }
         },
-        ResultDataValue::Blob(t) =>
-            Some(Value::Bytes(*t.clone())),
+        Value::Bytes(t) =>
+            Some(Value::Bytes(t.to_vec())),
         _ => None
     }
 }
@@ -213,7 +213,7 @@ fn convert_db_column_into_tag(column: &str) -> Option<Tag> {
     }
 }
 
-fn insert_db_data_into_asset_map(column: &String, data: &ResultDataValue, map: &mut AssetMap) -> Result<()> {
+fn insert_db_data_into_asset_map(column: &String, data: &Value, map: &mut AssetMap) -> Result<()> {
     if let Some(tag) = convert_db_column_into_tag(column) {
         match convert_db_data_into_asset(&tag, data) {
             Some(value) => map.insert(tag, value),

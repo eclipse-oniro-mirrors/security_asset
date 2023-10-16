@@ -14,73 +14,26 @@ use std::{cmp::Ordering, collections::HashMap};
 
 use crate::database::Database;
 
-/// DataType for DB
-#[derive(PartialEq, Eq, Clone, Copy)]
-pub enum DataType {
-    /// numbers
-    INTEGER,
-    /// binary data
-    BLOB,
-}
+use asset_common::{definition::{Value, DataType}, loge};
 
 /// change datatype to sql str
-pub fn from_datatype_to_str(value: DataType) -> &'static str {
-    match value {
-        DataType::BLOB => "BLOB",
-        DataType::INTEGER => "INTEGER",
-    }
-}
-
-/// Data value for DB
-#[derive(Clone)]
-#[repr(C)]
-pub enum DataValue {
-    /// numbers
-    Integer(u32),
-    /// binary data
-    Blob(Vec<u8>),
-    /// for null
-    NoData,
-}
-
-/// change data value to str value when build sql
-pub fn from_data_value_to_str_value(value: DataValue) -> String {
-    match value {
-        DataValue::NoData => String::from("NULL"),
-        DataValue::Integer(i) => format!("{}", i),
-        DataValue::Blob(_b) => String::from("NOT SUPPORTED"),
-    }
-}
-
-/// Result set data value for query sql
-#[repr(C)]
-pub enum ResultDataValue {
-    /// numbers
-    Integer(u32),
-    /// binary data
-    Blob(Box<Vec<u8>>),
-    /// for null
-    Null,
-}
-
-/// change result value to string when output
-pub fn from_result_value_to_str_value(value: &ResultDataValue) -> String {
-    match value {
-        ResultDataValue::Null => String::from("NULL"),
-        ResultDataValue::Integer(b) => format!("{}", b),
-        ResultDataValue::Blob(b) => {
-            let s = unsafe { String::from_utf8_unchecked(b.to_vec()) };
-            format!("'{}'", s)
+pub fn from_datatype_to_str(value: &DataType) -> &'static str {
+    match *value {
+        DataType::Bytes => "BLOB",
+        DataType::Uint32 => "INTEGER",
+        DataType::Bool => {
+            loge!("Unexpected bool type.");
+            panic!()
         },
     }
 }
 
-/// change result datatype to str when output
-pub fn from_result_datatype_to_str(value: &ResultDataValue) -> &'static str {
-    match value {
-        ResultDataValue::Blob(_) => "BLOB",
-        ResultDataValue::Integer(_) => "INTEGER",
-        ResultDataValue::Null => "NULL",
+/// change data value to str value when build sql
+pub fn from_data_value_to_str_value(value: &Value) -> String {
+    match *value {
+        Value::Number(i) => format!("{}", i),
+        Value::Bytes(_) => String::from("NOT SUPPORTED"),
+        Value::Bool(b) => format!("{}", b),
     }
 }
 
@@ -91,7 +44,7 @@ pub struct Pair {
     /// column name for condition
     pub column_name: &'static str,
     /// query value for condition
-    pub value: DataValue,
+    pub value: Value,
 }
 
 /// query conditions
@@ -111,10 +64,10 @@ pub struct ColumnInfo {
 }
 
 /// result set
-pub type ResultSet = Vec<Vec<ResultDataValue>>;
+pub type ResultSet = Vec<Vec<Value>>;
 
 /// advanced result set
-pub type AdvancedResultSet = Vec<HashMap<String, ResultDataValue>>;
+pub type AdvancedResultSet = Vec<HashMap<String, Value>>;
 
 /// err msg for database after exec sql
 #[repr(C)]

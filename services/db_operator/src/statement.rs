@@ -13,16 +13,15 @@
 use std::ffi::CStr;
 use std::fmt::Write;
 
-use asset_common::loge;
+use asset_common::{loge, definition::{Value, DataType}};
 
 use crate::{
     database::Database,
-    sqlite3_bind_blob_func, sqlite3_bind_int64_func, sqlite3_bind_null_func,
+    sqlite3_bind_blob_func, sqlite3_bind_int64_func,
     sqlite3_column_blob_func, sqlite3_column_bytes_func, sqlite3_column_count_func,
     sqlite3_column_double_func, sqlite3_column_int64_func, sqlite3_column_name_func,
     sqlite3_column_text_func, sqlite3_column_type_func, sqlite3_data_count_func,
     sqlite3_finalize_func, sqlite3_prepare_v2_func, sqlite3_reset_func, sqlite3_step_func,
-    types::{DataValue, ResultDataValue},
     Sqlite3Callback, SqliteErrCode, SQLITE_BLOB, SQLITE_ERROR, SQLITE_INTEGER, SQLITE_NULL,
     SQLITE_OK,
 };
@@ -87,19 +86,19 @@ impl<'b> Statement<'b, true> {
     /// bind datas
     /// datatype is detected by enum DataValue,
     /// index is start with 1, for '?' in sql.
-    pub fn bind_data(&self, index: i32, data: &DataValue) -> SqliteErrCode {
+    pub fn bind_data(&self, index: i32, data: &Value) -> SqliteErrCode {
         match data {
-            DataValue::Blob(b) => {
+            Value::Bytes(b) => {
                 Self::print_vec(index, b);
                 sqlite3_bind_blob_func(self.handle, index, b, b.len() as _, None)
             },
-            DataValue::Integer(i) => {
+            Value::Number(i) => {
                 loge!("[YZT] index = {}, bind integer = {}", index, i);
                 sqlite3_bind_int64_func(self.handle, index, *i as _)
             },
-            DataValue::NoData => {
-                loge!("[YZT] index = {}, bind null", index);
-                sqlite3_bind_null_func(self.handle, index)
+            Value::Bool(_) => {
+                loge!("Unexpected bool type.");
+                panic!()
             },
         }
     }
@@ -132,39 +131,40 @@ impl<'b> Statement<'b, true> {
     /// query column datas in result set
     /// datatype is auto detected by ResultDataValue
     /// the index if start with 0
-    pub fn query_column(&self, index: i32, out: &mut ResultDataValue) {
+    pub fn query_column(&self, index: i32, out: &DataType) -> Option<Value> {
         match out {
-            ResultDataValue::Null => {},
-            ResultDataValue::Blob(_) => {
+            DataType::Bytes => {
                 let blob = self.query_column_blob(index);
                 if blob.is_empty() {
-                    *out = ResultDataValue::Null;
+                    None
                 } else {
-                    let mut out_blob = Box::new(vec![0u8; blob.len()]);
-                    out_blob.copy_from_slice(blob);
-                    *out = ResultDataValue::Blob(out_blob);
+                    Some(Value::Bytes(blob.to_vec()))
                 }
             },
-            ResultDataValue::Integer(i) => {
-                *i = self.query_column_int(index);
+            DataType::Uint32 => {
+                Some(Value::Number(self.query_column_int(index)))
+            },
+            DataType::Bool => {
+                loge!("Unexpected bool type.");
+                panic!()
             },
         }
     }
 
     /// query columns auto type
-    pub fn query_columns_auto_type(&self, i: i32) -> Result<ResultDataValue, SqliteErrCode> {
+    pub fn query_columns_auto_type(&self, i: i32) -> Result<Option<Value>, SqliteErrCode> {
         let tp = self.column_type(i);
         let data = match tp {
-            SQLITE_INTEGER => ResultDataValue::Integer(self.query_column_int(i)),
+            SQLITE_INTEGER => Some(Value::Number(self.query_column_int(i))),
             SQLITE_BLOB => {
                 let blob = self.query_column_blob(i);
                 if blob.is_empty() {
-                    ResultDataValue::Null
+                    None
                 } else {
-                    ResultDataValue::Blob(Box::new(blob.to_vec()))
+                    Some(Value::Bytes(blob.to_vec()))
                 }
             },
-            SQLITE_NULL => ResultDataValue::Null,
+            SQLITE_NULL => None,
             _ => return Err(SQLITE_ERROR),
         };
         Ok(data)

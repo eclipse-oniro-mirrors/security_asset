@@ -18,10 +18,12 @@ use crate::{
     statement::Statement,
     types::{
         from_data_value_to_str_value, from_datatype_to_str, AdvancedResultSet, ColumnInfo,
-        Condition, DataValue, Pair, QueryOptions, ResultDataValue, ResultSet,
+        Condition, Pair, QueryOptions, ResultSet,
     },
     SqliteErrCode, SQLITE_DONE, SQLITE_ERROR, SQLITE_OK, SQLITE_ROW,
 };
+
+use asset_common::definition::Value;
 
 /// a database table
 #[repr(C)]
@@ -80,7 +82,7 @@ fn bind_datas(
 /// bind data values
 #[inline(always)]
 fn bind_data_values(
-    datas: &Vec<DataValue>,
+    datas: &Vec<Value>,
     stmt: &Statement<true>,
     index: &mut i32,
 ) -> Result<(), SqliteErrCode> {
@@ -225,7 +227,7 @@ impl<'a> Table<'a> {
         &self,
         conditions: &Condition,
         column_name: &'static str,
-        data_new: DataValue,
+        data_new: Value,
     ) -> Result<i32, SqliteErrCode> {
         let datas = vec![Pair { column_name, value: data_new }];
         self.update_row(conditions, &datas)
@@ -299,7 +301,7 @@ impl<'a> Table<'a> {
     ///
     /// let datas = &vec![DataValue::Integer(3), DataValue::Blob(b"alias1")];
     /// let ret = table.insert_row_datas(datas);
-    pub fn insert_row_datas(&self, datas: &Vec<DataValue>) -> Result<i32, SqliteErrCode> {
+    pub fn insert_row_datas(&self, datas: &Vec<Value>) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("insert into {} ", self.table_name);
         sql.push_str("values (");
         build_sql_values(datas.len(), &mut sql);
@@ -341,7 +343,7 @@ impl<'a> Table<'a> {
     pub fn insert_multi_row_datas(
         &self,
         columns: &Vec<&str>,
-        dataset: &Vec<Vec<DataValue>>,
+        dataset: &Vec<Vec<Value>>,
     ) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("insert into {} (", self.table_name);
         build_sql_columns_not_empty(columns, &mut sql);
@@ -396,7 +398,7 @@ impl<'a> Table<'a> {
     pub fn add_new_column(
         &self,
         column: ColumnInfo,
-        default_value: Option<DataValue>,
+        default_value: Option<Value>,
     ) -> SqliteErrCode {
         if column.is_primary_key {
             return SQLITE_ERROR;
@@ -404,12 +406,12 @@ impl<'a> Table<'a> {
         if column.not_null && default_value.is_none() {
             return SQLITE_ERROR;
         }
-        let datatype = from_datatype_to_str(column.data_type);
+        let datatype = from_datatype_to_str(&column.data_type);
         let mut sql =
             format!("ALTER TABLE {} ADD COLUMN {} {}", self.table_name, column.name, datatype);
         if let Some(data) = default_value {
             sql.push_str(" DEFAULT ");
-            sql.push_str(&from_data_value_to_str_value(data));
+            sql.push_str(&from_data_value_to_str_value(&data));
         }
         if column.not_null {
             sql.push_str(" NOT NULL");
@@ -445,11 +447,13 @@ impl<'a> Table<'a> {
         bind_conditions(conditions, &stmt, &mut index)?;
         let mut result = vec![];
         while stmt.step() == SQLITE_ROW {
-            let mut data_line = Vec::<ResultDataValue>::new();
+            let mut data_line = Vec::<Value>::new();
             let n = stmt.data_count();
             for i in 0..n {
                 let data = stmt.query_columns_auto_type(i)?;
-                data_line.push(data);
+                if let Some(data) = data {
+                    data_line.push(data);
+                }
             }
             result.push(data_line);
         }
@@ -482,12 +486,14 @@ impl<'a> Table<'a> {
         bind_conditions(conditions, &stmt, &mut index)?;
         let mut result = vec![];
         while stmt.step() == SQLITE_ROW {
-            let mut data_line = HashMap::<String, ResultDataValue>::new();
+            let mut data_line = HashMap::<String, Value>::new();
             let n = stmt.data_count();
             for i in 0..n {
                 let data = stmt.query_columns_auto_type(i)?;
-                let column_name = stmt.query_column_name(i).unwrap().to_string();
-                data_line.insert(column_name, data);
+                if let Some(data) = data {
+                    let column_name = stmt.query_column_name(i).unwrap().to_string();
+                    data_line.insert(column_name, data);
+                }
             }
             result.push(data_line);
         }

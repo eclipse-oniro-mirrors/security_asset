@@ -461,7 +461,7 @@ impl<'a> Database<'a> {
             let column = &columns[i];
             sql.push_str(column.name);
             sql.push(' ');
-            sql.push_str(from_datatype_to_str(column.data_type));
+            sql.push_str(from_datatype_to_str(&column.data_type));
             if column.is_primary_key {
                 sql.push_str(" PRIMARY KEY");
             }
