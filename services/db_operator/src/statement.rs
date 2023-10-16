@@ -75,7 +75,8 @@ impl<'b> Statement<'b, true> {
         }
     }
 
-    fn print_vec(i: i32, v: &[u8]) { // todo: delete
+    fn print_vec(i: i32, v: &[u8]) {
+        // todo: delete
         let mut s = String::new();
         for byte in v {
             write!(s, "{:02x}", byte).expect("Unable to write to string");

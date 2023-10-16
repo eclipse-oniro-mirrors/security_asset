@@ -87,7 +87,7 @@ pub fn from_result_datatype_to_str(value: &ResultDataValue) -> &'static str {
 /// Pair struct for query condition or exec data
 #[derive(Clone)]
 #[repr(C)]
-pub struct Pair<> {
+pub struct Pair {
     /// column name for condition
     pub column_name: &'static str,
     /// query value for condition
@@ -95,11 +95,11 @@ pub struct Pair<> {
 }
 
 /// query conditions
-pub type Condition<> = Vec<Pair<>>;
+pub type Condition = Vec<Pair>;
 
 /// column info for create table
 #[repr(C)]
-pub struct ColumnInfo<> {
+pub struct ColumnInfo {
     /// column name
     pub name: &'static str,
     /// column datatype
