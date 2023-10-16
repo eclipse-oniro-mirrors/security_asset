@@ -31,7 +31,7 @@ use db_operator::{
     database_table_helper::{
         DefaultDatabaseHelper, G_COLUMN_OWNER,
     },
-    types::Pair,
+    types::DbMap,
 };
 
 /// Function called from C programming language to Rust programming language for delete hap Asset.
@@ -40,9 +40,9 @@ use db_operator::{
 pub unsafe extern "C" fn delete_hap_asset(user_id: i32, owner: *const c_char) -> i32 {
     // 1 delete data in db
     let owner_str = CString::from_raw(owner as *mut c_char).into_string().unwrap();
-    let cond = vec![
-        Pair { column_name: G_COLUMN_OWNER, value: Value::Bytes(owner_str.as_bytes().to_vec()) }
-    ];
+    let cond = DbMap::from([
+        (G_COLUMN_OWNER, Value::Bytes(owner_str.as_bytes().to_vec())),
+    ]);
     let remove_num = match DefaultDatabaseHelper::delete_datas_default_once(user_id, &cond) {
         Ok(remove_num) => {
             logi!("remove {} data", remove_num);

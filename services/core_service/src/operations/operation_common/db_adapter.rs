@@ -17,7 +17,7 @@
 
 use asset_common::{definition::{AssetMap, ErrCode, Result, Value, Tag}, loge, logi};
 use db_operator::{
-    types::{Pair, AdvancedResultSet, QueryOptions},
+    types::{Pair, AdvancedResultSet, QueryOptions, DbMap},
     database::Database,
     database_table_helper::{
         do_transaction,
@@ -107,18 +107,18 @@ pub(crate) fn construct_db_data(input: &AssetMap, calling_info: &CallingInfo, co
     Ok(db_data)
 }
 
-pub(crate) fn insert_data_once(calling_info: &CallingInfo, db_data: Vec<Pair>) -> Result<i32> {
-    DefaultDatabaseHelper::insert_datas_default_once(calling_info.user_id(), &db_data)
+pub(crate) fn insert_data_once(calling_info: &CallingInfo, _db_data: &[Pair]) -> Result<i32> {
+    DefaultDatabaseHelper::insert_datas_default_once(calling_info.user_id(), &DbMap::new())
 }
 
-pub(crate) fn replace_data_once(calling_info: &CallingInfo, query_db_data: &Vec<Pair<>>,
-    replace_db_data: &Vec<Pair>) -> Result<()> {
+pub(crate) fn replace_data_once(calling_info: &CallingInfo, _query_db_data: &[Pair],
+    _replace_db_data: &[Pair]) -> Result<()> {
     let replace_call = |db: &Database| -> bool {
-        if db.delete_datas_default(query_db_data).is_err() {
+        if db.delete_datas_default(&DbMap::new()).is_err() {
             loge!("remove asset in replace operation failed!");
             return false;
         }
-        if db.insert_datas_default(replace_db_data).is_err() {
+        if db.insert_datas_default(&DbMap::new()).is_err() {
             loge!("insert asset in replace operation failed!");
             return false;
         }
@@ -132,8 +132,8 @@ pub(crate) fn replace_data_once(calling_info: &CallingInfo, query_db_data: &Vec<
     Ok(())
 }
 
-pub(crate) fn data_exist_once(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<bool> {
-    DefaultDatabaseHelper::is_data_exists_default_once(calling_info.user_id(), db_data)
+pub(crate) fn data_exist_once(calling_info: &CallingInfo, _db_data: &[Pair]) -> Result<bool> {
+    DefaultDatabaseHelper::is_data_exists_default_once(calling_info.user_id(), &DbMap::new())
 }
 
 fn get_query_options(input: &AssetMap) -> QueryOptions {
@@ -159,24 +159,24 @@ fn get_query_options(input: &AssetMap) -> QueryOptions {
     }
 }
 
-pub(crate) fn query_data_once(calling_info: &CallingInfo, db_data: &Vec<Pair>, input: &AssetMap)
+pub(crate) fn query_data_once(calling_info: &CallingInfo, _db_data: &[Pair], input: &AssetMap)
     -> Result<Vec<AssetMap>> {
     // call sql to add
     let query_res = DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(),
-        &Vec::new(), db_data, Some(&get_query_options(input)))?;
+        &Vec::new(), &DbMap::new(), Some(&get_query_options(input)))?;
 
     logi!("query found {}", query_res.len());
 
     convert_db_data_into_map(&query_res)
 }
 
-pub(crate) fn update_data_once(calling_info: &CallingInfo, query_db_data: &Vec<Pair>, update_db_data: &Vec<Pair>) -> Result<i32> {
+pub(crate) fn update_data_once(calling_info: &CallingInfo, _query_db_data: &[Pair], _update_db_data: &[Pair]) -> Result<i32> {
     // call sql to update
-    DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(), query_db_data, update_db_data)
+    DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(), &DbMap::new(), &DbMap::new())
 }
 
-pub(crate) fn remove_data_once(calling_info: &CallingInfo, db_data: &Vec<Pair>) -> Result<i32> {
-    DefaultDatabaseHelper::delete_datas_default_once(calling_info.user_id(), db_data)
+pub(crate) fn remove_data_once(calling_info: &CallingInfo, _db_data: &[Pair]) -> Result<i32> {
+    DefaultDatabaseHelper::delete_datas_default_once(calling_info.user_id(), &DbMap::new())
 }
 
 fn convert_db_data_into_asset(tag: &Tag, data: &Value) -> Option<Value> {

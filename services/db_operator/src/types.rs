@@ -47,8 +47,11 @@ pub struct Pair {
     pub value: Value,
 }
 
+/// A Map type containing tag-value pairs that describe the attributes of an Asset.
+pub type DbMap = HashMap<&'static str, Value>;
+
 /// query conditions
-pub type Condition = Vec<Pair>;
+pub type Condition = DbMap;
 
 /// column info for create table
 #[repr(C)]

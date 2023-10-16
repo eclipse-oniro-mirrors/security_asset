@@ -18,7 +18,7 @@ use crate::{
     statement::Statement,
     types::{
         from_data_value_to_str_value, from_datatype_to_str, AdvancedResultSet, ColumnInfo,
-        Condition, Pair, QueryOptions, ResultSet,
+        Condition, QueryOptions, ResultSet, DbMap
     },
     SqliteErrCode, SQLITE_DONE, SQLITE_ERROR, SQLITE_OK, SQLITE_ROW,
 };
@@ -65,12 +65,12 @@ fn bind_conditions(
 /// bind datas
 #[inline(always)]
 fn bind_datas(
-    datas: &Vec<Pair>,
+    datas: &DbMap,
     stmt: &Statement<true>,
     index: &mut i32,
 ) -> Result<(), SqliteErrCode> {
-    for data in datas {
-        let ret = stmt.bind_data(*index, &data.value);
+    for (_, value) in datas.iter() {
+        let ret = stmt.bind_data(*index, value);
         if ret != SQLITE_OK {
             return Err(ret);
         }
@@ -123,9 +123,8 @@ fn build_sql_columns(columns: &Vec<&str>, sql: &mut String) {
 fn build_sql_where(conditions: &Condition, sql: &mut String) {
     if !conditions.is_empty() {
         sql.push_str(" where ");
-        for i in 0..conditions.len() {
-            let cond = &conditions[i];
-            sql.push_str(cond.column_name);
+        for (i, column_name) in conditions.keys().enumerate() {
+            sql.push_str(column_name);
             sql.push_str("=?");
             if i != conditions.len() - 1 {
                 sql.push_str(" and ")
@@ -197,12 +196,11 @@ impl<'a> Table<'a> {
     pub fn update_row(
         &self,
         conditions: &Condition,
-        datas: &Vec<Pair>,
+        datas: &DbMap,
     ) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("update {} set ", self.table_name);
-        for i in 0..datas.len() {
-            let data = &datas[i];
-            sql.push_str(data.column_name);
+        for (i, column_name) in datas.keys().enumerate() {
+            sql.push_str(column_name);
             sql.push_str("=?");
             if i != datas.len() - 1 {
                 sql.push(',');
@@ -229,7 +227,8 @@ impl<'a> Table<'a> {
         column_name: &'static str,
         data_new: Value,
     ) -> Result<i32, SqliteErrCode> {
-        let datas = vec![Pair { column_name, value: data_new }];
+        let mut datas = DbMap::new();
+        datas.insert(column_name, data_new);
         self.update_row(conditions, &datas)
     }
 
@@ -272,15 +271,15 @@ impl<'a> Table<'a> {
     ///     },
     /// ];
     /// let ret = table.insert_row(datas);
-    pub fn insert_row(&self, datas: &Vec<Pair>) -> Result<i32, SqliteErrCode> {
+    pub fn insert_row(&self, datas: &DbMap) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("insert into {} (", self.table_name);
-        for i in 0..datas.len() {
-            let data = &datas[i];
-            sql.push_str(data.column_name);
+        for (i, column_name) in datas.keys().enumerate() {
+            sql.push_str(column_name);
             if i != datas.len() - 1 {
                 sql.push(',');
             }
         }
+
         sql.push_str(") values (");
         build_sql_values(datas.len(), &mut sql);
         sql.push(')');

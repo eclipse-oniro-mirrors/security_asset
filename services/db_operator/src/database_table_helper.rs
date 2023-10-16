@@ -22,8 +22,8 @@ use crate::{
     table::Table,
     transaction::Transaction,
     types::{
-        AdvancedResultSet, ColumnInfo, Condition, Pair, QueryOptions,
-        ResultSet,
+        AdvancedResultSet, ColumnInfo, Condition, QueryOptions,
+        ResultSet, DbMap
     },
     SqliteErrCode, SQLITE_OK,
 };
@@ -282,7 +282,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// sql like:
     /// update table_name set alias='test_update' where AppId='owner' and Alias='alias'
-    pub fn update_datas(&self, condition: &Condition, datas: &Vec<Pair>) -> Result<i32, ErrCode> {
+    pub fn update_datas(&self, condition: &Condition, datas: &DbMap) -> Result<i32, ErrCode> {
         let closure = |e: &Table| e.update_row(condition, datas);
         back_db_when_succ(true, self, closure)
     }
@@ -309,7 +309,7 @@ impl<'a> TableHelper<'a> {
     ///
     /// sql like:
     /// insert into table_name(Owner,Alias,value) values(owner,alias,'test_update')
-    pub fn insert_datas(&self, datas: &Vec<Pair>) -> Result<i32, ErrCode> {
+    pub fn insert_datas(&self, datas: &DbMap) -> Result<i32, ErrCode> {
         let closure = |e: &Table| e.insert_row(datas);
         back_db_when_succ(true, self, closure)
     }
@@ -503,7 +503,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     pub fn update_datas_default(
         &self,
         condition: &Condition,
-        datas: &Vec<Pair>,
+        datas: &DbMap,
     ) -> Result<i32, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         #[cfg(feature = "auto_insert_time")]
@@ -533,7 +533,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn insert_datas_default(&self, datas: &Vec<Pair>) -> Result<i32, ErrCode> {
+    pub fn insert_datas_default(&self, datas: &DbMap) -> Result<i32, ErrCode> {
         let table = Table::new(G_ASSET_TABLE_NAME, self);
         #[cfg(feature = "auto_insert_time")]
         {
@@ -672,7 +672,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     pub fn update_datas_default_once(
         userid: i32,
         condition: &Condition,
-        datas: &Vec<Pair>,
+        datas: &DbMap,
     ) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
@@ -681,7 +681,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn insert_datas_default_once(userid: i32, datas: &Vec<Pair>) -> Result<i32, ErrCode> {
+    pub fn insert_datas_default_once(userid: i32, datas: &DbMap) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.insert_datas_default(datas)

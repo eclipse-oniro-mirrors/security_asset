@@ -29,7 +29,7 @@ use db_operator::types::Pair;
 use asset_common::definition::{AssetMap, Result, Insert, Tag};
 use asset_ipc_interface::IpcCode;
 
-fn single_query(calling_info: &CallingInfo, db_data: &Vec<Pair>, input: &AssetMap) -> Result<Vec<AssetMap>> {
+fn single_query(calling_info: &CallingInfo, db_data: &[Pair], input: &AssetMap) -> Result<Vec<AssetMap>> {
     let mut query_res = query_data_once(calling_info, db_data, input)?;
 
     for map in &mut query_res {
@@ -39,7 +39,7 @@ fn single_query(calling_info: &CallingInfo, db_data: &Vec<Pair>, input: &AssetMa
     Ok(query_res)
 }
 
-pub(crate) fn batch_query(calling_info: &CallingInfo, db_data: &Vec<Pair>, input: &AssetMap) -> Result<Vec<AssetMap>> {
+pub(crate) fn batch_query(calling_info: &CallingInfo, db_data: &[Pair], input: &AssetMap) -> Result<Vec<AssetMap>> {
     let mut query_res = query_data_once(calling_info, db_data, input)?;
 
     for data in &mut query_res {

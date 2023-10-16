@@ -33,7 +33,7 @@ use crate::{
     calling_info::CallingInfo
 };
 
-fn check_resolve_conflict(input: &AssetMap, calling_info: &CallingInfo, db_data: &Vec<Pair<>>)
+fn check_resolve_conflict(input: &AssetMap, calling_info: &CallingInfo, db_data: &[Pair])
     -> Result<()> {
     let Some(Value::Bytes(alias)) = input.get(&Tag::Alias) else {
         panic!()
@@ -89,7 +89,7 @@ pub(crate) fn add(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     check_resolve_conflict(&input_new, calling_info, &db_data)?;
 
     // call sql to add
-    let insert_num = insert_data_once(calling_info, db_data)?;
+    let insert_num = insert_data_once(calling_info, &db_data)?;
 
     logi!("insert {} data", insert_num);
     Ok(())
