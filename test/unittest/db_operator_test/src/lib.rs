@@ -26,10 +26,7 @@ use db_operator::{
         do_transaction, DefaultDatabaseHelper, G_ASSET_TABLE_NAME, G_COLUMN_ALIAS, G_COLUMN_OWNER,
     },
     statement::Statement,
-    types::{
-        from_data_value_to_str_value, ColumnInfo,
-        Pair, QueryOptions,
-    },
+    types::{from_data_value_to_str_value, ColumnInfo, Pair, QueryOptions},
     SQLITE_DONE, SQLITE_OK, SQLITE_OPEN_CREATE, SQLITE_OPEN_READWRITE, SQLITE_ROW,
 };
 
@@ -371,8 +368,7 @@ pub fn test_update_row() {
 
     // update
     let conditions = &vec![Pair { column_name: "id", value: Value::Number(2) }];
-    let datas =
-        &vec![Pair { column_name: "alias", value: Value::Bytes(b"test_update".to_vec()) }];
+    let datas = &vec![Pair { column_name: "alias", value: Value::Bytes(b"test_update".to_vec()) }];
     let ret = table.update_row(conditions, datas).unwrap();
     assert_eq!(ret, 1);
     let ret = table
@@ -888,21 +884,9 @@ pub fn test_query() {
         },
     };
     let dataset = &[
-        [
-            Value::Number(2),
-            Value::Bytes(b"test2".to_vec()),
-            Value::Bytes(b"blob2".to_vec()),
-        ],
-        [
-            Value::Number(3),
-            Value::Bytes(b"test3".to_vec()),
-            Value::Bytes(b"blob3".to_vec()),
-        ],
-        [
-            Value::Number(4),
-            Value::Bytes(b"test4".to_vec()),
-            Value::Bytes(b"blob4".to_vec()),
-        ],
+        [Value::Number(2), Value::Bytes(b"test2".to_vec()), Value::Bytes(b"blob2".to_vec())],
+        [Value::Number(3), Value::Bytes(b"test3".to_vec()), Value::Bytes(b"blob3".to_vec())],
+        [Value::Number(4), Value::Bytes(b"test4".to_vec()), Value::Bytes(b"blob4".to_vec())],
     ];
 
     let stmt2 = Statement::<true>::prepare("insert into table_test values(?, ?, ?)", &db).unwrap();
