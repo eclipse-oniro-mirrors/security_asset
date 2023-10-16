@@ -16,8 +16,8 @@
 //! This module implements the Asset service.
 
 use std::ffi::{c_char, CString};
-// use std::thread;
-// use std::time::Duration;
+use std::thread;
+use std::time::Duration;
 
 use hilog_rust::{HiLogLabel, LogType, error, hilog};
 use ipc_rust::{IRemoteBroker, RemoteObj};
@@ -46,11 +46,11 @@ define_system_ability!(
     sa: SystemAbility(on_start, on_stop),
 );
 
-// const MAX_DELAY_TIMES: u32 = 100;
-// const DELAY_INTERVAL: u64 = 200000;
+const MAX_DELAY_TIMES: u32 = 100;
+const DELAY_INTERVAL: u64 = 200000;
 
 extern "C" {
-    // fn SubscribeSystemEvent() -> bool;
+    fn SubscribeSystemEvent() -> bool;
     fn UnSubscribeSystemEvent() -> bool;
 }
 
@@ -58,18 +58,17 @@ fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
     let service = AssetStub::new_remote_stub(AssetService).expect("create AssetService failed");
     ability.publish(&service.as_object().expect("publish Asset service failed"), SA_ID);
     logi!("[INFO]Asset service on_start");
-    // unsafe{
-    //     for i in 0..MAX_DELAY_TIMES {
-    //         if SubscribeSystemEvent() {
-    //             logi!("SubscribeSystemEvent success, i = {}", i);
-    //             return;
-    //         } else {
-    //             logi!("SubscribeSystemEvent failed {} times", i);
-    //             thread::sleep(Duration::from_millis(DELAY_INTERVAL));
-    //         }
-    //     }
-    //     logi!("SubscribeSystemEvent failed");
-    // }
+    unsafe{
+        for i in 0..MAX_DELAY_TIMES {
+            thread::sleep(Duration::from_millis(DELAY_INTERVAL));
+            if SubscribeSystemEvent() {
+                logi!("SubscribeSystemEvent success, i = {}", i);
+                return;
+            }
+            logi!("SubscribeSystemEvent failed {} times", i);
+        }
+        logi!("SubscribeSystemEvent failed");
+    }
 }
 
 fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {

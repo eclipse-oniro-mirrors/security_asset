@@ -17,7 +17,7 @@
 
 use ipc_rust::get_calling_uid;
 
-use asset_common::{definition::{ErrCode, Result}, impl_enum_trait};
+use asset_common::{definition::{ErrCode, Result}, impl_enum_trait, logi};
 
 impl_enum_trait!{
     #[repr(C)]
@@ -62,6 +62,9 @@ impl CallingInfo {
             GetOwnerInfo(user_id, uid, &mut owner_type, owner_info.as_mut_ptr(), &mut len);
         }
         owner_info.truncate(len as usize);
+
+        logi!("reset calling indentity [{}]", ipc_rust::reset_calling_identity().unwrap());  // todo 换个位置
+
         Ok(CallingInfo { owner_type, owner_info, user_id })
     }
 
