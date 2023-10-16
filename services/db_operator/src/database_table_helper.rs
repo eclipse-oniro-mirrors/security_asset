@@ -11,7 +11,7 @@
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
 
-use asset_common::definition::{ErrCode, Value, DataType};
+use asset_common::definition::{DataType, ErrCode, Value};
 
 use crate::{
     database::{

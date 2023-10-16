@@ -51,13 +51,15 @@ pub unsafe extern "C" fn delete_hap_asset(user_id: i32, owner: *const c_char) ->
         Err(_) => 0
     };
     // 2 delete data in hucks
-    // todo owner_hash现在调用不到 需要等文志抽出来之后调用
     let mut info = Vec::with_capacity(4);
-    info.push(KeyInfo { user_id, owner_hash: hasher::sha256(owner_str.as_bytes()).to_vec(), auth_type: AuthType::None as u32, access_type: Accessibility::DeviceFirstUnlock as u32 });
-    info.push(KeyInfo { user_id, owner_hash: hasher::sha256(owner_str.as_bytes()).to_vec(), auth_type: AuthType::None as u32, access_type: Accessibility::DeviceUnlock as u32 });
-    info.push(KeyInfo { user_id, owner_hash: hasher::sha256(owner_str.as_bytes()).to_vec(), auth_type: AuthType::Any as u32, access_type: Accessibility::DeviceFirstUnlock as u32 });
-    info.push(KeyInfo { user_id, owner_hash: hasher::sha256(owner_str.as_bytes()).to_vec(), auth_type: AuthType::Any as u32, access_type: Accessibility::DeviceUnlock as u32 });
+    let owner_hasher = hasher::sha256(owner_str.as_bytes()).to_vec();
+    logi!("delete_hap_asset! user_id:[{}], owner_hash:[{}]", user_id, String::from_utf8(owner_str.as_bytes().to_vec()).unwrap());  // todo delete
+    info.push(KeyInfo { user_id, owner_hash: owner_hasher.clone(), auth_type: AuthType::Any as u32, access_type: Accessibility::DeviceUnlock as u32 });
+    info.push(KeyInfo { user_id, owner_hash: owner_hasher.clone(), auth_type: AuthType::None as u32, access_type: Accessibility::DeviceFirstUnlock as u32 });
+    info.push(KeyInfo { user_id, owner_hash: owner_hasher.clone(), auth_type: AuthType::None as u32, access_type: Accessibility::DeviceUnlock as u32 });
+    info.push(KeyInfo { user_id, owner_hash: owner_hasher, auth_type: AuthType::Any as u32, access_type: Accessibility::DeviceFirstUnlock as u32 });
     while let Some(sub_info) = info.pop() {
+        logi!("delet key use: auth_type:[{}], access_type:[{}]", sub_info.auth_type, sub_info.access_type);  // todo delete
         let secret_key = SecretKey::new(sub_info);
         match secret_key.delete() {
             Ok(true) => logi!("delete huks key pass"),

@@ -12,10 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <stdio.h>
 
 #include "hks_key_wrapper.h"
 #include "hks_param.h"
 #include "asset_log.h"
+#include "asset_mem.h"
+const int HEX_RETIO = 2;
 
 static struct HksParam g_genParams[] = {
     {
@@ -65,9 +68,20 @@ int32_t InitParamSet(struct HksParamSet **paramSet, const struct HksParam *param
     return ret;
 }
 
+static void PrintBytes(const char *tag, const uint8_t *stream, const uint32_t length)
+{
+    uint32_t mallocLen = length * HEX_RETIO + 1;
+    char *str = static_cast<char *>(AssetMalloc(mallocLen));
+    for (uint32_t i = 0; i < length; i++)
+        (void)sprintf(str + HEX_RETIO * i, "%.2x", stream[i]);
+    LOGE("[YYDS] %{public}s: size=%{public}u, value=%{public}s", tag, length, str);
+    AssetFree(str);
+}
+
 // todo : zdy : 参数名
 int32_t GenerateKey(uint32_t keyLen, const uint8_t *keyData)
 {
+    PrintBytes("GenerateKey", keyData, keyLen);
     // todo: zdy : keyData强转
     struct HksBlob keyAlias = { keyLen, (uint8_t *)keyData };
     struct HksParamSet *paramSetIn = NULL;
@@ -84,6 +98,7 @@ int32_t GenerateKey(uint32_t keyLen, const uint8_t *keyData)
 
 int32_t DeleteKey(uint32_t keyLen, const uint8_t *keyData)
 {
+    PrintBytes("DeleteKey", keyData, keyLen);
     struct HksBlob keyAlias = { keyLen, (uint8_t *)keyData };
     return HksDeleteKey(&keyAlias, nullptr);
 }

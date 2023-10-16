@@ -14,7 +14,10 @@ use std::{cmp::Ordering, collections::HashMap};
 
 use crate::database::Database;
 
-use asset_common::{definition::{Value, DataType}, loge};
+use asset_common::{
+    definition::{DataType, Value},
+    loge,
+};
 
 /// change datatype to sql str
 pub fn from_datatype_to_str(value: &DataType) -> &'static str {

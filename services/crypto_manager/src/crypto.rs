@@ -68,6 +68,7 @@ impl SecretKey {
 
     /// Generate the hukkey
     pub fn generate(&self) -> Result<(), HuksErrcode> {
+        loge!("start to generate key!!!!");
         let ret = unsafe { GenerateKey(self.alias.len() as u32, self.alias.as_ptr()) };
         match ret {
             HKS_SUCCESS => Ok(()),
@@ -77,6 +78,7 @@ impl SecretKey {
 
     /// Delete the hukkey
     pub fn delete(&self) -> Result<bool, HuksErrcode> {
+        loge!("start to delete key!!!!");
         let ret = unsafe { DeleteKey(self.alias.len() as u32, self.alias.as_ptr()) };
         match ret {
             HKS_SUCCESS => Ok(true),

@@ -30,6 +30,7 @@ ohos_static_library("crypto_manager_wrapper") {
   ]
 
   deps = [
+    "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem",
     "//third_party/bounds_checking_function:libsec_shared",
   ]
 

@@ -906,21 +906,9 @@ pub fn test_query() {
         },
     };
     let dataset = &[
-        [
-            Value::Number(2),
-            Value::Bytes(b"test2".to_vec()),
-            Value::Bytes(b"blob2".to_vec()),
-        ],
-        [
-            Value::Number(3),
-            Value::Bytes(b"test3".to_vec()),
-            Value::Bytes(b"blob3".to_vec()),
-        ],
-        [
-            Value::Number(4),
-            Value::Bytes(b"test4".to_vec()),
-            Value::Bytes(b"blob4".to_vec()),
-        ],
+        [Value::Number(2), Value::Bytes(b"test2".to_vec()), Value::Bytes(b"blob2".to_vec())],
+        [Value::Number(3), Value::Bytes(b"test3".to_vec()), Value::Bytes(b"blob3".to_vec())],
+        [Value::Number(4), Value::Bytes(b"test4".to_vec()), Value::Bytes(b"blob4".to_vec())],
     ];
 
     let stmt2 = Statement::<true>::prepare("insert into table_test values(?, ?, ?)", &db).unwrap();
