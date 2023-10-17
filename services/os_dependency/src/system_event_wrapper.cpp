@@ -83,6 +83,7 @@ public:
         } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
             // 3. 获取到userID, 删除数据库userId，删除密钥-（huks)
             // get userId
+            LOGE("COMMON_EVENT_USER_REMOVED start!!!");
             int uid = want.GetIntParam(OHOS::AppExecFwk::Constants::UID, -1);
             int userId = -1;
             OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userId);

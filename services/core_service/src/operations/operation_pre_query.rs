@@ -31,10 +31,16 @@ use crate::{
 
 use asset_common::{definition::{AssetMap, Result, Value, ErrCode, Tag}, loge, logi};
 
+use asset_sdk::definition::AuthType;
+
 pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
     let mut db_data = into_db_map(query);
     add_owner_info(calling_info, &mut db_data);
-
+    // check pre query data
+    if !query.contains_key(&Tag::Alias) || !query.contains_key(&Tag::AuthValidityPeriod) {
+        loge!("tag alias or auth validity period missed");
+        return Err(ErrCode::InvalidArgument);
+    }
     //todo: yzt select AuthType, AccessType from table; 能否distinct?
     let all_data = batch_query(calling_info, &db_data, query)?;
     // get all secret key
@@ -54,7 +60,10 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
                 return Err(ErrCode::SqliteError);
             },
         };
-        secret_key_set.insert((*auth_type, *access_type));
+        // filter auth type
+        if *auth_type == AuthType::Any as u32 {
+            secret_key_set.insert((*auth_type, *access_type));
+        }
     }
     // use secret key to get challenge
     let mut challenge_vec = Vec::new();

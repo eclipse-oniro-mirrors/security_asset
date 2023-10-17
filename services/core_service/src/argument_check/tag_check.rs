@@ -56,6 +56,12 @@ const ADD_AVAILABLE_ARGUMENTS: [Tag; 15] = [
     Tag::DataLabelCritical4, Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4
 ];
 
+const PRE_QUERY_AVAILABLE_ARGUMENTS: [Tag; 13] = [
+    Tag::Alias, Tag::Accessibility, Tag::AuthType, Tag::SyncType, Tag::AuthValidityPeriod,
+    Tag::DataLabelCritical1, Tag::DataLabelCritical2, Tag::DataLabelCritical3, Tag::DataLabelCritical4,
+    Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4
+];
+
 const QUERY_AVAILABLE_ARGUMENTS: [Tag; 19] = [
     Tag::Alias, Tag::Accessibility, Tag::RequirePasswordSet, Tag::AuthType, Tag::SyncType,
     Tag::DataLabelCritical1, Tag::DataLabelCritical2, Tag::DataLabelCritical3,
@@ -88,6 +94,7 @@ pub(crate) fn check_tag_validity(argument: &AssetMap, code: &OperationCode) -> R
     check_required_tags(argument, code)?;
     match *code { // todo: zwz add等code能否塞到数组里？
         OperationCode::Add => check_optional_tags(argument, &ADD_AVAILABLE_ARGUMENTS),
+        OperationCode::PreQuery => check_optional_tags(argument, &PRE_QUERY_AVAILABLE_ARGUMENTS),
         OperationCode::Query => check_optional_tags(argument, &QUERY_AVAILABLE_ARGUMENTS),
         OperationCode::Update => check_optional_tags(argument, &UPDATE_AVAILABLE_ARGUMENTS),
         OperationCode::UpdateQuery => check_optional_tags(argument, &UPDATE_MATCH_AVAILABLE_ARGUMENTS),
