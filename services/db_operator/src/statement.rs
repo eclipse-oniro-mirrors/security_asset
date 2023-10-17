@@ -131,7 +131,7 @@ impl<'b> Statement<'b, true> {
 
     /// query column datas in result set
     /// datatype is auto detected by ResultDataValue
-    /// the index if start with 0
+    /// the index is start with 0
     pub fn query_column(&self, index: i32, out: &DataType) -> Option<Value> {
         match out {
             DataType::Bytes => {
@@ -170,7 +170,7 @@ impl<'b> Statement<'b, true> {
     }
 
     /// query column datas in result set for blob data
-    /// the index if start with 0
+    /// the index is start with 0
     pub fn query_column_blob(&self, index: i32) -> &'b [u8] {
         let blob = sqlite3_column_blob_func(self.handle, index);
         let len = self.column_bytes(index);
@@ -178,19 +178,19 @@ impl<'b> Statement<'b, true> {
     }
 
     /// query column datas in result set for double data
-    /// the index if start with 0
+    /// the index is start with 0
     pub fn query_column_double(&self, index: i32) -> f64 {
         sqlite3_column_double_func(self.handle, index)
     }
 
     /// query column datas in result set for int data
-    /// the index if start with 0
+    /// the index is start with 0
     pub fn query_column_int(&self, index: i32) -> u32 {
         sqlite3_column_int64_func(self.handle, index) as u32
     }
 
     /// query column datas in result set for text data
-    /// the index if start with 0
+    /// the index is start with 0
     pub fn query_column_text(&self, index: i32) -> &'b [u8] {
         let text = sqlite3_column_text_func(self.handle, index);
         let len = self.column_bytes(index);

@@ -79,7 +79,8 @@ pub const COLUMN_NORMAL3: &str = "DataLabelNormal_3";
 /// default column name DataLabelNormal_4
 pub const COLUMN_NORMAL4: &str = "DataLabelNormal_4";
 
-const COLUMN_TABLE: [&str; 22] = [
+/// the columns for default asset table
+pub const COLUMN_TABLE: [&str; 22] = [
     COLUMN_ID,
     COLUMN_SECRET,
     COLUMN_ALIAS,
@@ -333,7 +334,7 @@ impl<'a> TableHelper<'a> {
     /// datas: the data set
     pub fn insert_multi_datas(
         &self,
-        columns: &Vec<&str>,
+        columns: &Vec<&'static str>,
         datas: &Vec<Vec<Value>>,
     ) -> Result<i32, ErrCode> {
         let closure = |e: &Table| e.insert_multi_row_datas(columns, datas);
@@ -438,12 +439,11 @@ impl<'a> TableHelper<'a> {
     /// select * from table_name where AppId='owner' and Alias='alias'
     pub fn query_columns(
         &self,
-        columns: &Vec<&str>,
+        columns: &Vec<&'static str>,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
     ) -> Result<Vec<DbMap>, ErrCode> {
-        let closure =
-            |e: &Table| e.query_datas_advanced(columns, condition, query_options, &COLUMN_TABLE);
+        let closure = |e: &Table| e.query_datas_advanced(columns, condition, query_options);
         back_db_when_succ(false, self, closure)
     }
 }
@@ -593,7 +593,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     #[inline(always)]
     pub fn insert_multi_datas_default(
         &self,
-        columns: &Vec<&str>,
+        columns: &Vec<&'static str>,
         datas: &Vec<Vec<Value>>,
     ) -> Result<i32, ErrCode> {
         let table = Table::new(ASSET_TABLE_NAME, self);
@@ -636,7 +636,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     #[inline(always)]
     pub fn query_columns_default(
         &self,
-        columns: &Vec<&str>,
+        columns: &Vec<&'static str>,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
     ) -> Result<Vec<DbMap>, ErrCode> {
@@ -709,7 +709,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     #[inline(always)]
     pub fn insert_multi_datas_default_once(
         userid: i32,
-        columns: &Vec<&str>,
+        columns: &Vec<&'static str>,
         datas: &Vec<Vec<Value>>,
     ) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
@@ -760,7 +760,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     #[inline(always)]
     pub fn query_columns_default_once(
         userid: i32,
-        columns: &Vec<&str>,
+        columns: &Vec<&'static str>,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
     ) -> Result<Vec<DbMap>, ErrCode> {

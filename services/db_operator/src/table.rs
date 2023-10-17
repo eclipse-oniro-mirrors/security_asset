@@ -15,6 +15,7 @@ use std::cmp::Ordering;
 
 use crate::{
     database::Database,
+    database_table_helper::COLUMN_TABLE,
     sqlite3_changes_func,
     statement::Statement,
     types::{
@@ -167,15 +168,6 @@ fn build_sql_query_options(query_options: Option<&QueryOptions>, sql: &mut Strin
             sql.push_str(format!(" offset {}", offset).as_str());
         }
     }
-}
-
-fn get_static_column_name(table_column: &'static [&str], db_column: &str) -> &'static str {
-    for column_name in table_column.iter() {
-        if (*column_name).eq(db_column) {
-            return column_name;
-        }
-    }
-    "error" // This will never happen
 }
 
 impl<'a> Table<'a> {
@@ -343,7 +335,7 @@ impl<'a> Table<'a> {
     /// let count = table.insert_multi_row_datas(columns, &dataset);
     pub fn insert_multi_row_datas(
         &self,
-        columns: &Vec<&str>,
+        columns: &Vec<&'static str>,
         dataset: &Vec<Vec<Value>>,
     ) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("insert into {} (", self.table_name);
@@ -472,10 +464,9 @@ impl<'a> Table<'a> {
     /// means sql like: select alias,blobs from table_name
     pub fn query_datas_advanced(
         &self,
-        columns: &Vec<&str>,
+        columns: &Vec<&'static str>,
         conditions: &Condition,
         query_options: Option<&QueryOptions>,
-        table_columns: &'static [&str],
     ) -> Result<Vec<DbMap>, SqliteErrCode> {
         let mut sql = String::from("select ");
         build_sql_columns(columns, &mut sql);
@@ -491,10 +482,13 @@ impl<'a> Table<'a> {
             let mut data_line = DbMap::new();
             let n = stmt.data_count();
             for i in 0..n {
-                let data = stmt.query_columns_auto_type(i)?; // todo: zwz 归一数据类型
+                let data = stmt.query_columns_auto_type(i)?;
                 if let Some(data) = data {
-                    let column_name = stmt.query_column_name(i).unwrap().to_string(); // todo: yzt 此处转化为常量字符串
-                    let column_name = get_static_column_name(table_columns, &column_name);
+                    let column_name = if columns.is_empty() {
+                        COLUMN_TABLE[i as usize]
+                    } else {
+                        columns[i as usize]
+                    };
                     data_line.insert(column_name, data);
                 }
             }
