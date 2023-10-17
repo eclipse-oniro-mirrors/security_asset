@@ -21,7 +21,12 @@ use asset_common::{
 };
 
 const MAX_SECRET_LEN: usize = 1024;
-const MAX_BYTES_LEN: usize = 512;
+const MAX_ALIAS_LEN: usize = 512;
+const MAX_AUTH_TOKEN_LEN: usize = 512;
+const MAX_RETURN_LIMIT: usize = 65536;
+const MAX_AUTH_VALID_PERIOD: usize = 600;
+
+const DEFAULT_CHALLENGE_LEN: usize = 32;
 
 fn check_bool_type(value: &Value) -> Result<()> {
     let Value::Bool(_) = value else {
@@ -60,7 +65,7 @@ fn check_alias(value: &Value) -> Result<()> {
         loge!("convert value to Value::Number in check_alias failed!");
         return Err(ErrCode::InvalidArgument);
     };
-    if v.len() > MAX_BYTES_LEN {
+    if v.len() > MAX_ALIAS_LEN {
         loge!("check alias len [{}] failed!", v.len());
         return Err(ErrCode::InvalidArgument);
     }
@@ -84,7 +89,7 @@ fn check_auth_validity_period(value: &Value) -> Result<()> {
         loge!("convert value to Value::Number in check_auth_validity_period failed!");
         return Err(ErrCode::InvalidArgument);
     };
-    if *v > 600 { // todo 限时多少
+    if *v > MAX_AUTH_VALID_PERIOD {
         loge!("check auth valid period failed! found [{}]", *v);
         return Err(ErrCode::InvalidArgument);
     }
@@ -96,7 +101,7 @@ fn check_challenge(value: &Value) -> Result<()> {
         loge!("convert value to Value::Number in check_challenge failed!");
         return Err(ErrCode::InvalidArgument);
     };
-    if v.len() > MAX_BYTES_LEN { // todo 限长多少
+    if v.len() != DEFAULT_CHALLENGE_LEN {
         loge!("check challenge len [{}] failed!", v.len());
         return Err(ErrCode::InvalidArgument);
     }
@@ -108,7 +113,7 @@ fn check_auth_token(value: &Value) -> Result<()> {
         loge!("convert value to Value::Number in check_auth_token failed!");
         return Err(ErrCode::InvalidArgument);
     };
-    if v.len() > MAX_BYTES_LEN { // todo 限长多少
+    if v.len() > MAX_AUTH_TOKEN_LEN {
         loge!("check auth token len [{}] failed!", v.len());
         return Err(ErrCode::InvalidArgument);
     }
@@ -144,7 +149,7 @@ fn check_data_label_critical(value: &Value) -> Result<()> {
         loge!("convert value to Value::Bytes in check_data_label_critical failed!");
         return Err(ErrCode::InvalidArgument);
     };
-    if v.len() > MAX_BYTES_LEN {
+    if v.len() > MAX_ALIAS_LEN {
         loge!("check data label critical len [{}] failed!", v.len());
         return Err(ErrCode::InvalidArgument);
     }
@@ -156,7 +161,7 @@ fn check_data_label_normal(value: &Value) -> Result<()> {
         loge!("convert value to Value::Bytes in check_data_label_normal failed!");
         return Err(ErrCode::InvalidArgument);
     };
-    if v.len() > MAX_BYTES_LEN {
+    if v.len() > MAX_ALIAS_LEN {
         loge!("check data label normal len [{}] failed!", v.len());
         return Err(ErrCode::InvalidArgument);
     }
@@ -180,7 +185,7 @@ fn check_return_limit(value: &Value) -> Result<()> {
         loge!("convert value to Value::Number in check_return_limit failed!");
         return Err(ErrCode::InvalidArgument);
     };
-    if *v > 100 { // todo limit限制多少
+    if *v > MAX_RETURN_LIMIT {
         loge!("check return limit value failed! found [{}]", *v);
         return Err(ErrCode::InvalidArgument);
     }
@@ -192,10 +197,6 @@ fn check_return_offset(value: &Value) -> Result<()> {
         loge!("convert value to Value::Number in check_return_offset failed!");
         return Err(ErrCode::InvalidArgument);
     };
-    if *v > 100 { // todo limit限制多少
-        loge!("check return offset failed! found [{}]", *v);
-        return Err(ErrCode::InvalidArgument);
-    }
     Ok(())
 }
 

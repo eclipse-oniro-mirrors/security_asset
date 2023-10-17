@@ -52,7 +52,6 @@ fn u32_into_aad(column: &str, attrs: &DbMap, aad: &mut Vec<u8>) {
     }
 }
 
-// todo : zwz : 实现真的aad
 fn construct_aad(attrs: &DbMap) -> Vec<u8> {
     let mut aad = Vec::new();
     for (column, data_type) in &AAD_ATTR {
@@ -72,9 +71,6 @@ fn construct_aad(attrs: &DbMap) -> Vec<u8> {
     aad
 }
 
-// todo : zwz : 切面编程
-// logi!("reset calling indentity [{}]", ipc_rust::reset_calling_identity().unwrap());
-
 fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<SecretKey> {
     let Value::Number(auth_type) = attrs[COLUMN_AUTH_TYPE] else { return Err(ErrCode::InvalidArgument) };
     let auth_type = AuthType::try_from(auth_type)?;
@@ -86,6 +82,11 @@ fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<SecretKey> {
 }
 
 pub(crate) fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
+    let identity = ipc_rust::reset_calling_identity().map_err(|e| {
+        loge!("Execute reset_calling_identity failed, error is [{}].", e);
+        ErrCode::IpcError
+    });
+
     let secret_key = build_secret_key(calling_info, db_data)?;
     match secret_key.exists() {
         Ok(true) => (),
@@ -104,15 +105,32 @@ pub(crate) fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
 
     let crypto = Crypto { key: secret_key };
     let Value::Bytes(ref secret) = db_data[COLUMN_SECRET] else { return Err(ErrCode::InvalidArgument) };
-    crypto.encrypt(secret, &construct_aad(db_data))
+
+    let encryption = crypto.encrypt(secret, &construct_aad(db_data))?;
+
+    if !set_calling_identity(identity) {
+        loge!("Execute set_calling_identity failed.");
+        return Err(ErrCode::IpcError);
+    }
+
+    Ok(encryption)
 }
 
 pub(crate) fn decrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
+    let identity = ipc_rust::reset_calling_identity().map_err(|e| {
+        loge!("Execute reset_calling_identity failed, error is [{}].", e);
+        ErrCode::IpcError
+    });
+
     let Value::Bytes(ref secret) = db_data[COLUMN_SECRET] else { return Err(ErrCode::InvalidArgument) };
     let secret_key = build_secret_key(calling_info, db_data)?;
     let crypto = Crypto { key: secret_key };
     let secret = crypto.decrypt(secret, &construct_aad(db_data))?; // todo: 待处理HUKS返回值，比如密钥不存在，锁屏状态不正确
     db_data.insert(COLUMN_SECRET, Value::Bytes(secret));
+    if !set_calling_identity(identity) {
+        loge!("Execute set_calling_identity failed.");
+        return Err(ErrCode::IpcError);
+    }
     Ok(())
 }
 
