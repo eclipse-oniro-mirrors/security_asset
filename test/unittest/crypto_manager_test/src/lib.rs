@@ -12,21 +12,21 @@
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
 //!
+use asset_common::definition::{Accessibility, AuthType};
 use crypto_manager::crypto::*;
 
 pub const AAD_SIZE: u32 = 8;
 
 #[test]
-fn test_hukkey_new() {
-    let info = KeyInfo { user_id: 1, owner_hash: vec![b'2'], auth_type: 3, access_type: 4 };
-    let secret_key = SecretKey::new(info);
-    assert_eq!(secret_key.alias, vec![1, 0, 0, 0, 95, 50, 95, 3, 0, 0, 0, 95, 4, 0, 0, 0]);
+fn test_hukkey_key_new() { // todo: zdy 不要出现hukkey, 不存在huk, 可以使用secret key替换
+    // let secret_key = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlock);
+    // assert_eq!(secret_key.alias, vec![1, 0, 0, 0, 95, 50, 95, 3, 0, 0, 0, 95, 4, 0, 0, 0]);
+    // todo zdy 不要为了测试用例暴露不该是public的字段
 }
 
 #[test]
-fn test_hukkey_generate_and_delete() {
-    let info = KeyInfo { user_id: 1, owner_hash: vec![b'2'], auth_type: 3, access_type: 4 };
-    let secret_key = SecretKey::new(info);
+fn test_hukkey_key_generate_and_delete() {
+    let secret_key = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlock);
     match secret_key.generate() {
         Ok(()) => println!("test_hukkey_generate: generate success"),
         Err(res) => panic!("test_hukkey_delete fail because generate error = {}", res),
@@ -41,20 +41,16 @@ fn test_hukkey_generate_and_delete() {
 
 #[test]
 fn test_hukkey_need_user_auth() {
-    let info_need = KeyInfo { user_id: 0, owner_hash: vec![b'3'], auth_type: 1, access_type: 0 };
-    let secret_key_need = SecretKey::new(info_need);
-    let info_dont_need = KeyInfo { user_id: 0, owner_hash: vec![b'4'], auth_type: 0, access_type: 0 };
-    let secret_key_dont_need = SecretKey::new(info_dont_need);
+    let secret_key_need = SecretKey::new(1, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlock);
+    let secret_key_dont_need = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlock);
     assert!(secret_key_need.need_user_auth());
     assert!(!secret_key_dont_need.need_user_auth());
 }
 
 #[test]
 fn test_hukkey_need_device_unlock() {
-    let info_need = KeyInfo { user_id: 0, owner_hash: vec![b'0'], auth_type: 0, access_type: 3 };
-    let secret_key_need = SecretKey::new(info_need);
-    let info_dont_need = KeyInfo { user_id: 0, owner_hash: vec![b'0'], auth_type: 0, access_type: 0 };
-    let secret_key_dont_need = SecretKey::new(info_dont_need);
+    let secret_key_need = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlock);
+    let secret_key_dont_need = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceFirstUnlock);
     assert!(secret_key_need.need_device_unlock());
     assert!(!secret_key_dont_need.need_device_unlock());
 }
@@ -62,8 +58,7 @@ fn test_hukkey_need_device_unlock() {
 #[test]
 #[allow(non_snake_case)]
 fn test_hukkey_encrypt() {
-    let info = KeyInfo { user_id: 1, owner_hash: vec![b'0'], auth_type: 0, access_type: 0 };
-    let secret_key = SecretKey::new(info);
+    let secret_key = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceFirstUnlock);
     match secret_key.generate() {
         Ok(()) => println!("test_hukkey_generate: generate success"),
         Err(res) => panic!("test_hukkey_encrypt fail because generate error = {}", res),
@@ -103,8 +98,7 @@ fn test_hukkey_encrypt() {
 #[test]
 #[allow(non_snake_case)]
 fn test_hukkey_decrypt() {
-    let info = KeyInfo { user_id: 1, owner_hash: vec![b'3'], auth_type: 3, access_type: 4 };
-    let secret_key = SecretKey::new(info);
+    let secret_key = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceFirstUnlock);
     match secret_key.generate() {
         Ok(()) => println!("test_hukkey_generate: generate success"),
         Err(res) => panic!("test_hukkey_encrypt fail because generate error = {}", res),

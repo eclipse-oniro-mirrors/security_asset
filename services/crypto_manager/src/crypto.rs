@@ -15,48 +15,32 @@
 
 //! This crate implements the asset
 use crate::huks_ffi::*;
-use asset_common::{definition::ErrCode, loge};
+use asset_common::{definition::{Accessibility, AuthType, ErrCode}, loge};
 
-/// KeyInfo struct
-pub struct KeyInfo {
-    /// User id
-    pub user_id: i32,
-    /// Owner
-    pub owner_hash: Vec<u8>,
-    /// Auth_type
-    pub auth_type: u32,
-    /// Access_type
-    pub access_type: u32,
-}
 /// SecretKey struct
 pub struct SecretKey {
-    /// 1 means need user auth, others donnot need
-    pub auth_type: u32,
-    /// 3 means need device unlock, others donnot need
-    pub access_type: u32,
-    /// secret key alias
-    pub alias: Vec<u8>,
+    auth_type: AuthType,
+    access_type: Accessibility,
+    alias: Vec<u8>,
 }
-const ALIAS_LEN: u32 = 64;
+
+const MAX_ALIAS_SIZE: u32 = 64;
+
 impl SecretKey {
     /// New a secret key
-    pub fn new(mut info: KeyInfo) -> Self {
-        let mut alias_vec: Vec<u8> = Vec::with_capacity(ALIAS_LEN as usize);
-        alias_vec.extend_from_slice(&info.user_id.to_le_bytes());
-        alias_vec.push(b'_');
-        alias_vec.append(&mut info.owner_hash);
-        alias_vec.push(b'_');
-        alias_vec.extend_from_slice(&info.auth_type.to_le_bytes());
-        alias_vec.push(b'_');
-        alias_vec.extend_from_slice(&info.access_type.to_le_bytes());
-        Self {
-            auth_type: info.auth_type,
-            access_type: info.access_type,
-            alias: alias_vec,
-        }
+    pub fn new(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility) -> Self {
+        let mut alias: Vec<u8> = Vec::with_capacity(MAX_ALIAS_SIZE as usize);
+        alias.extend_from_slice(&user_id.to_le_bytes());
+        alias.push(b'_');
+        alias.extend(owner);
+        alias.push(b'_');
+        alias.extend_from_slice(&(auth_type as u32).to_le_bytes());
+        alias.push(b'_');
+        alias.extend_from_slice(&(access_type as u32).to_le_bytes());
+        Self { auth_type, access_type, alias }
     }
 
-    /// Check whether the secret key exists
+    /// Check whether the secret key exists.
     pub fn exists(&self) -> Result<bool, HuksErrcode> {
         let ret = unsafe { KeyExist(self.alias.len() as u32, self.alias.as_ptr()) };
         match ret {
@@ -66,7 +50,7 @@ impl SecretKey {
         }
     }
 
-    /// Generate the hukkey
+    /// Generate the secret key
     pub fn generate(&self) -> Result<(), HuksErrcode> {
         loge!("start to generate key!!!!");
         let ret = unsafe { GenerateKey(self.alias.len() as u32, self.alias.as_ptr()) };
@@ -76,9 +60,8 @@ impl SecretKey {
         }
     }
 
-    /// Delete the hukkey
-    pub fn delete(&self) -> Result<bool, HuksErrcode> {
-        loge!("start to delete key!!!!");
+    /// Delete the secret key.
+    pub fn delete(&self) -> Result<bool, HuksErrcode> { // todo: zdy 不需要bool的返回值
         let ret = unsafe { DeleteKey(self.alias.len() as u32, self.alias.as_ptr()) };
         match ret {
             HKS_SUCCESS => Ok(true),
@@ -88,12 +71,12 @@ impl SecretKey {
 
     /// Determine whether user auth is required.
     pub fn need_user_auth(&self) -> bool {
-        self.auth_type == 1
+        self.auth_type == AuthType::Any
     }
 
     /// Determine whether device unlock is required.
     pub fn need_device_unlock(&self) -> bool {
-        self.access_type == 3
+        self.access_type == Accessibility::DeviceUnlock
     }
 }
 

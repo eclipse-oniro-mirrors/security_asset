@@ -20,59 +20,48 @@ use asset_common::{
     logi, loge,
 };
 
-use asset_ipc_interface::IpcCode;
-
-use db_operator::{database_table_helper::{G_COLUMN_SECRET, G_COLUMN_ALIAS}, types::Pair};
+use db_operator::{database_table_helper::{COLUMN_SECRET, COLUMN_UPDATE_TIME, DefaultDatabaseHelper}, types::DbMap};
 
 // use crypto_manager::hukkey::Crypto;
 use crate::{
     operations::operation_common::{
-        encrypt, construct_params_with_default,
-        db_adapter::{update_data_once, construct_db_data, query_data_once}
+        encrypt, add_owner_info,
+        db_adapter::into_db_map
     },
     calling_info::CallingInfo,
-    definition_inner::OperationCode,
 };
 
+use super::operation_common::get_system_time;
+
+fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
+    let time = get_system_time()?;
+    db_data.insert(COLUMN_UPDATE_TIME, Value::Bytes(time));
+    Ok(())
+}
+
 pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    // alias is sure to exist for the pre-check
-    let Some(Value::Bytes(alias)) = query.get(&Tag::Alias) else {
-        panic!()
-    };
-    let update_new = construct_params_with_default(update, &IpcCode::Update)?;
-    let query_new = construct_params_with_default(query, &IpcCode::Query)?;
+    let mut query_db_data = into_db_map(query);
+    add_owner_info(calling_info, &mut query_db_data);
 
-    let mut update_db_data = construct_db_data(&update_new, calling_info, &OperationCode::Update)?;
-    let query_db_data = construct_db_data(&query_new, calling_info, &OperationCode::Query)?;
+    let mut update_db_data = into_db_map(update);
+    add_system_attrs(&mut update_db_data)?;
 
-    let cipher;
-    // whether to update secret
-    if let Some(Value::Bytes(secret)) = update_new.get(&Tag::Secret) {
-        let query_res = query_data_once(calling_info, &query_db_data, &query_new)?;
-        if query_res.len() != 1 {
-            loge!("query to-be-updated asset failed, found [{}] assets", query_res.len());
+    if update.contains_key(&Tag::Secret) {
+        let results =
+            DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(), &vec![], &query_db_data, None)?;
+        if results.len() != 1 {
+            loge!("query to-be-updated asset failed, found [{}] assets", results.len());
             return Err(ErrCode::NotFound);
         }
-        let asset_map = query_res.get(0).unwrap();
-        cipher = encrypt(calling_info, asset_map, secret)?;
-        logi!("get cipher len is [{}]", cipher.len()); // todo delete
-        update_db_data.push(
-            Pair {
-                column_name: G_COLUMN_SECRET,
-                value: Value::Bytes(cipher),
-            }
-        );
+
+        let result = results.get(0).unwrap();
+        let cipher = encrypt(calling_info, result)?;
+        update_db_data.insert(COLUMN_SECRET, Value::Bytes(cipher));
     }
 
-    update_db_data.push(
-        Pair {
-            column_name: G_COLUMN_ALIAS,
-            value: Value::Bytes(alias.to_vec()),
-        }
-    );
-
     // call sql to update
-    let update_num = update_data_once(calling_info, &query_db_data, &update_db_data)?;
+    let update_num =
+        DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(), &query_db_data, &update_db_data)?;
 
     logi!("update {} data", update_num);
     Ok(())

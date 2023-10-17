@@ -15,24 +15,29 @@
 
 //! This crate implements the asset
 
+use asset_common::{definition::{AssetMap, Result, ErrCode}, logi, loge};
+use db_operator::database_table_helper::DefaultDatabaseHelper;
+
 use crate::{
     calling_info::CallingInfo,
     operations::operation_common::{
-        construct_params_with_default,
-        db_adapter::{remove_data_once, construct_db_data},
+        db_adapter::into_db_map, add_owner_info,
     },
-    definition_inner::OperationCode
 };
-use asset_ipc_interface::IpcCode;
 
-use asset_common::{definition::{AssetMap, Result}, logi};
+pub(crate) fn remove(query: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    let mut db_data = into_db_map(query);
+    add_owner_info(calling_info, &mut db_data);
 
-pub(crate) fn remove(input: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-
-    let input_new = construct_params_with_default(input, &IpcCode::Remove)?;
-
-    let data_vec = construct_db_data(&input_new, calling_info, &OperationCode::Remove)?;
-    let remove_num = remove_data_once(calling_info, &data_vec)?;
-    logi!("remove {} data", remove_num);
-    Ok(())
+    let remove_num = DefaultDatabaseHelper::delete_datas_default_once(calling_info.user_id(), &db_data)?;
+    match remove_num {
+        0 => {
+            loge!("[FATAL]The data to be deleted does not exist.");
+            Err(ErrCode::NotFound)
+        },
+        n => {
+            logi!("[INFO]Successfully deleted {} database records", n);
+            Ok(())
+        }
+    }
 }

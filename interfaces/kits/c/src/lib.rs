@@ -217,7 +217,6 @@ pub extern "C" fn post_query_asset(handle: *const Asset_Attr, handle_cnt: u32) -
         Err(e) => return e as i32,
     };
 
-    loge!("[YZT] enter post query");
     if let Err(e) = manager.post_query(&map) {
         e as i32
     } else {

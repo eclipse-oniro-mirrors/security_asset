@@ -21,22 +21,22 @@ use crate::{
     calling_info::CallingInfo,
     operations::{
         operation_common::{
-            construct_params_with_default, init_decrypt,
-            db_adapter::construct_db_data,
+            add_owner_info,
+            init_decrypt,
+            db_adapter::into_db_map,
         },
         operation_query::batch_query,
     },
-    definition_inner::OperationCode,
 };
 
 use asset_common::{definition::{AssetMap, Result, Value, ErrCode, Tag}, loge, logi};
-use asset_ipc_interface::IpcCode;
 
-pub(crate) fn pre_query(input: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
-    let input_new = construct_params_with_default(input, &IpcCode::PreQuery)?;
-    let data_vec = construct_db_data(&input_new, calling_info, &OperationCode::PreQuery)?;
+pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
+    let mut db_data = into_db_map(query);
+    add_owner_info(calling_info, &mut db_data);
 
-    let all_data: Vec<AssetMap> = batch_query(calling_info, &data_vec, &input_new)?;
+    //todo: yzt select AuthType, AccessType from table; 能否distinct?
+    let all_data = batch_query(calling_info, &db_data, query)?;
     // get all secret key
     let mut secret_key_set = HashSet::new();
     for map in all_data.iter() {
@@ -61,7 +61,7 @@ pub(crate) fn pre_query(input: &AssetMap, calling_info: &CallingInfo) -> Result<
     // todo 遍历每一个密钥，获取challenge
     let challenge_seperator = b'_';
     for (idx, (auth_type, access_type)) in secret_key_set.iter().enumerate() {
-        let tmp_challenge = init_decrypt(calling_info, input, auth_type, access_type)?;
+        let tmp_challenge = init_decrypt(calling_info, query, auth_type, access_type)?;
         challenge_vec.extend(tmp_challenge);
         if idx < secret_key_set.len() - 1 {
             challenge_vec.push(challenge_seperator);

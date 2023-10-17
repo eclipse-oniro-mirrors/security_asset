@@ -201,6 +201,8 @@ pub type Result<T> = std::result::Result<T, ErrCode>;
 
 impl_enum_trait! {
     /// An enum type indicates when the Asset is accessible.
+    #[derive(Clone, Copy)]
+    #[derive(PartialEq, Eq)]
     pub enum Accessibility {
         /// The secret value in the Asset can only be accessed after the device is first unlocked.
         DeviceFirstUnlock = 1,
@@ -212,6 +214,8 @@ impl_enum_trait! {
 
 impl_enum_trait! {
     /// An enum type indicates the user authentication type for Asset access control.
+    #[derive(Clone, Copy)]
+    #[derive(PartialEq, Eq)]
     pub enum AuthType {
         /// The access to an Asset doesn't require user authentication.
         None = 0x00,

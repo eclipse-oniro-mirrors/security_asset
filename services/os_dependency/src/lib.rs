@@ -20,54 +20,48 @@ use std::{
     fs, path::Path,
 };
 
-use asset_common::{logi, hasher};
+use asset_common::{hasher, logi};
 use asset_sdk::definition::{
     Accessibility, AuthType, Value
 };
-use crypto_manager::crypto::{
-    KeyInfo, SecretKey,
-};
+use crypto_manager::crypto::SecretKey;
 use db_operator::{
     database_table_helper::{
-        DefaultDatabaseHelper, G_COLUMN_OWNER,
+        DefaultDatabaseHelper, COLUMN_OWNER,
     },
     types::DbMap,
 };
+
+fn delete_key(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility) {
+    let secret_key = SecretKey::new(user_id, owner, auth_type, access_type);
+    match secret_key.delete() {
+        Ok(true) => logi!("delete huks key pass"),
+        Ok(false) => logi!("delete huks key never reached"),
+        Err(res) => logi!("delete huks key fail error = {}", res),
+    };
+}
 
 /// Function called from C programming language to Rust programming language for delete hap Asset.
 /// # Safety
 #[no_mangle]
 pub unsafe extern "C" fn delete_hap_asset(user_id: i32, owner: *const c_char) -> i32 {
     // 1 delete data in db
-    let owner_str = CString::from_raw(owner as *mut c_char).into_string().unwrap();
+    let owner = CString::from_raw(owner as *mut c_char).into_string().unwrap();
     let cond = DbMap::from([
-        (G_COLUMN_OWNER, Value::Bytes(owner_str.as_bytes().to_vec())),
+        (COLUMN_OWNER, Value::Bytes(owner.as_bytes().to_vec())),
     ]);
-    let remove_num = match DefaultDatabaseHelper::delete_datas_default_once(user_id, &cond) {
-        Ok(remove_num) => {
-            logi!("remove {} data", remove_num);
+    match DefaultDatabaseHelper::delete_datas_default_once(user_id, &cond) {
+        Ok(remove_num) if remove_num > 0 => {
+            // 2 delete data in huks
+            let owner = hasher::sha256(owner.as_bytes());
+            delete_key(user_id, &owner, AuthType::None, Accessibility::DeviceFirstUnlock);
+            delete_key(user_id, &owner, AuthType::None, Accessibility::DeviceUnlock);
+            delete_key(user_id, &owner, AuthType::Any, Accessibility::DeviceFirstUnlock);
+            delete_key(user_id, &owner, AuthType::Any, Accessibility::DeviceUnlock);
             remove_num
         },
-        Err(_) => 0
-    };
-    // 2 delete data in hucks
-    let mut info = Vec::with_capacity(4);
-    let owner_hasher = hasher::sha256(owner_str.as_bytes()).to_vec();
-    logi!("delete_hap_asset! user_id:[{}], owner_hash:[{}]", user_id, String::from_utf8(owner_str.as_bytes().to_vec()).unwrap());  // todo delete
-    info.push(KeyInfo { user_id, owner_hash: owner_hasher.clone(), auth_type: AuthType::Any as u32, access_type: Accessibility::DeviceUnlock as u32 });
-    info.push(KeyInfo { user_id, owner_hash: owner_hasher.clone(), auth_type: AuthType::None as u32, access_type: Accessibility::DeviceFirstUnlock as u32 });
-    info.push(KeyInfo { user_id, owner_hash: owner_hasher.clone(), auth_type: AuthType::None as u32, access_type: Accessibility::DeviceUnlock as u32 });
-    info.push(KeyInfo { user_id, owner_hash: owner_hasher, auth_type: AuthType::Any as u32, access_type: Accessibility::DeviceFirstUnlock as u32 });
-    while let Some(sub_info) = info.pop() {
-        logi!("delet key use: auth_type:[{}], access_type:[{}]", sub_info.auth_type, sub_info.access_type);  // todo delete
-        let secret_key = SecretKey::new(sub_info);
-        match secret_key.delete() {
-            Ok(true) => logi!("delete huks key pass"),
-            Ok(false) => logi!("delete huks key never reached"),
-            Err(res) => logi!("delete huks key fail error = {}", res),
-        };
+        _ => 0
     }
-    remove_num
 }
 
 const ROOT_PATH: &str = "data/service/el1/public/asset_service";

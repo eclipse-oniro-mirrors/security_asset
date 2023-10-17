@@ -18,44 +18,82 @@
 use crate::{
     calling_info::CallingInfo,
     operations::operation_common::{
-        construct_params_with_default, decrypt,
-        db_adapter::{query_data_once, construct_db_data},
+        decrypt, add_owner_info, db_adapter::into_db_map
     },
-    definition_inner::OperationCode,
 };
 
-use db_operator::types::Pair;
+use db_operator::{types::{DbMap, QueryOptions}, database_table_helper::DefaultDatabaseHelper};
 
-use asset_common::definition::{AssetMap, Result, Insert, Tag};
-use asset_ipc_interface::IpcCode;
+use asset_common::{definition::{AssetMap, Result, Tag, Value, ErrCode, ReturnType}, loge, logi};
 
-fn single_query(calling_info: &CallingInfo, db_data: &[Pair], input: &AssetMap) -> Result<Vec<AssetMap>> {
-    let mut query_res = query_data_once(calling_info, db_data, input)?;
+use super::operation_common::db_adapter::{convert_db_data_into_map, order_by_into_str};
 
-    for map in &mut query_res {
-        map.insert_attr(Tag::Secret, decrypt(calling_info, map)?)?;
+fn single_query(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<Vec<AssetMap>> {
+    let mut results = DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(), &vec![], db_data, None)?;
+    match results.len() {
+        0 => {
+            loge!("[FATAL]The data to be queried does not exist.");
+            Err(ErrCode::NotFound)
+        },
+        1 => {
+            decrypt(calling_info, &mut results[0])?;
+            convert_db_data_into_map(&results)
+        }
+        n => {
+            loge!("[FATAL]The database contains {} records with the specified alias.", n);
+            Err(ErrCode::NotFound)
+        },
     }
-
-    Ok(query_res)
 }
 
-pub(crate) fn batch_query(calling_info: &CallingInfo, db_data: &[Pair], input: &AssetMap) -> Result<Vec<AssetMap>> {
-    let mut query_res = query_data_once(calling_info, db_data, input)?;
+fn get_query_options(input: &AssetMap) -> QueryOptions {
+    QueryOptions {
+        offset: match input.get(&Tag::ReturnOffset) {
+            Some(Value::Number(offset)) => Some(*offset),
+            _ => None,
+        },
+        limit: match input.get(&Tag::ReturnLimit) {
+            Some(Value::Number(limit)) => Some(*limit),
+            _ => None,
+        },
+        order: None,
+        order_by: match input.get(&Tag::ReturnOrderBy) {
+            Some(Value::Number(limit)) => {
+                match order_by_into_str(limit) {
+                    Ok(res) => Some(vec![res]),
+                    Err(_) => None,
+                }
+            }
+            _ => None,
+        },
+    }
+}
 
-    for data in &mut query_res {
+pub(crate) fn batch_query(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
+    let results = DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(),
+        &vec![], db_data, Some(&get_query_options(attrs)))?;
+    logi!("query found {}", results.len());
+
+    let mut results = convert_db_data_into_map(&results)?;
+    for data in &mut results {
         data.remove(&Tag::Secret);
     }
-    Ok(query_res)
+    Ok(results)
 }
 
-pub(crate) fn query(input: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<AssetMap>> {
-    // get param map contains input params and default params
-    let input_new = construct_params_with_default(input, &IpcCode::Query)?;
+pub(crate) fn query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<AssetMap>> {
+    let mut db_data = into_db_map(query);
+    add_owner_info(calling_info, &mut db_data);
 
-    let data_vec = construct_db_data(&input_new, calling_info, &OperationCode::Query)?;
-    if input_new.contains_key(&Tag::Alias) {
-        single_query(calling_info, &data_vec, &input_new)
-    } else {
-        batch_query(calling_info, &data_vec, &input_new)
+    match query.get(&Tag::ReturnType) {
+        Some(Value::Number(return_type)) if *return_type == (ReturnType::All as u32) => {
+            if !query.contains_key(&Tag::Alias)  {
+                loge!("[FATAL]Batch secret query is not supported.");
+                Err(ErrCode::NotSupport)
+            } else {
+                single_query(calling_info, &mut db_data)
+            }
+        },
+        _ => batch_query(calling_info, &db_data, query)
     }
 }

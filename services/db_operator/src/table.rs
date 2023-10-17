@@ -10,14 +10,15 @@
 //! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
-use std::{cmp::Ordering, collections::HashMap};
+
+use std::cmp::Ordering;
 
 use crate::{
     database::Database,
     sqlite3_changes_func,
     statement::Statement,
     types::{
-        from_data_value_to_str_value, from_datatype_to_str, AdvancedResultSet, ColumnInfo,
+        from_data_value_to_str_value, from_datatype_to_str, ColumnInfo,
         Condition, QueryOptions, ResultSet, DbMap
     },
     SqliteErrCode, SQLITE_DONE, SQLITE_ERROR, SQLITE_OK, SQLITE_ROW,
@@ -170,6 +171,15 @@ fn build_sql_query_options(query_options: Option<&QueryOptions>, sql: &mut Strin
             sql.push_str(format!(" offset {}", offset).as_str());
         }
     }
+}
+
+fn get_static_column_name(table_column: &'static [&str], db_column: &str) -> &'static str {
+    for column_name in table_column.iter() {
+        if (*column_name).eq(db_column) {
+            return column_name;
+        }
+    }
+    "error" // This will never happen
 }
 
 impl<'a> Table<'a> {
@@ -473,7 +483,8 @@ impl<'a> Table<'a> {
         columns: &Vec<&str>,
         conditions: &Condition,
         query_options: Option<&QueryOptions>,
-    ) -> Result<AdvancedResultSet, SqliteErrCode> {
+        table_columns: &'static [&str]
+    ) -> Result<Vec<DbMap>, SqliteErrCode> {
         let mut sql = String::from("select ");
         build_sql_columns(columns, &mut sql);
         sql.push_str(" from ");
@@ -485,12 +496,13 @@ impl<'a> Table<'a> {
         bind_conditions(conditions, &stmt, &mut index)?;
         let mut result = vec![];
         while stmt.step() == SQLITE_ROW {
-            let mut data_line = HashMap::<String, Value>::new();
+            let mut data_line = DbMap::new();
             let n = stmt.data_count();
             for i in 0..n {
-                let data = stmt.query_columns_auto_type(i)?;
+                let data = stmt.query_columns_auto_type(i)?; // todo: zwz 归一数据类型
                 if let Some(data) = data {
-                    let column_name = stmt.query_column_name(i).unwrap().to_string();
+                    let column_name = stmt.query_column_name(i).unwrap().to_string(); // todo: yzt 此处转化为常量字符串
+                    let column_name = get_static_column_name(table_columns, &column_name);
                     data_line.insert(column_name, data);
                 }
             }

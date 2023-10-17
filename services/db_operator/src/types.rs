@@ -50,7 +50,7 @@ pub struct Pair {
     pub value: Value,
 }
 
-/// A Map type containing tag-value pairs that describe the attributes of an Asset.
+/// A Map type containing tag-value pairs that describe the attributes of an DB field.
 pub type DbMap = HashMap<&'static str, Value>;
 
 /// query conditions
@@ -71,9 +71,6 @@ pub struct ColumnInfo {
 
 /// result set
 pub type ResultSet = Vec<Vec<Value>>;
-
-/// advanced result set
-pub type AdvancedResultSet = Vec<HashMap<String, Value>>;
 
 /// err msg for database after exec sql
 #[repr(C)]

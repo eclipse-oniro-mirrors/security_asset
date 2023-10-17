@@ -19,6 +19,7 @@ use std::ffi::{c_char, CString};
 use std::thread;
 use std::time::Duration;
 
+use definition_inner::OperationCode;
 use hilog_rust::{HiLogLabel, LogType, error, hilog};
 use ipc_rust::{IRemoteBroker, RemoteObj};
 use system_ability_fwk_rust::{IMethod, ISystemAbility, RSystemAbility, define_system_ability};
@@ -34,7 +35,6 @@ mod stub;
 
 use calling_info::CallingInfo;
 use stub::AssetStub;
-use definition_inner::OperationCode;
 
 const LOG_LABEL: HiLogLabel = HiLogLabel {
     log_type: LogType::LogCore,
@@ -91,7 +91,8 @@ struct AssetService;
 impl IRemoteBroker for AssetService {}
 
 impl IAsset for AssetService {
-    fn add(&self, attributes: &AssetMap) -> Result<()> { // todo param -> argument
+    fn add(&self, attributes: &AssetMap) -> Result<()> {
+        // todo: yzt 调用点拆分到各个operation文件中，删除OperationCode和definition_inner文件
         argument_check::check_argument(attributes, &OperationCode::Add)?;
         operations::add(attributes, &CallingInfo::build()?)
     }

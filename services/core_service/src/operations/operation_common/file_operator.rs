@@ -17,7 +17,7 @@
 
 use std::{fs, path::Path};
 
-use asset_common::{definition::{ErrCode, Result}, loge, logi,};
+use asset_common::{definition::{ErrCode, Result}, loge};
 
 const ROOT_PATH: &str = "data/service/el1/public/asset_service";
 
@@ -31,7 +31,6 @@ pub(crate) fn create_user_db_dir(user_id: i32) -> Result<()> {
                 return Err(ErrCode::FileOperationError);
             },
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
-                logi!("dir already exists");
                 return Ok(());
             },
             _ => return Ok(()),

@@ -59,7 +59,9 @@ impl CallingInfo {
         let mut len = 256u32;
         let mut owner_type = OwnerType::Hap;
         unsafe {
-            GetOwnerInfo(user_id, uid, &mut owner_type, owner_info.as_mut_ptr(), &mut len);
+            if !GetOwnerInfo(user_id, uid, &mut owner_type, owner_info.as_mut_ptr(), &mut len) {
+                return Err(ErrCode::BmsError);
+            }
         }
         owner_info.truncate(len as usize);
 

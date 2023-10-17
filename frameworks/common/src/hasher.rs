@@ -88,7 +88,7 @@ fn compress(input_bytes: &Vec<u8>) -> [u32; 8] {
 }
 
 /// the function to get sha256
-pub fn sha256(input: &[u8]) -> [u8; 32] {
+pub fn sha256(input: &[u8]) -> Vec<u8> { // todo: zwz: 入参都不要命名为input, 所有的入参都可以叫input，表达不了实际含义
     // padding
     let mut input_bytes = input.to_vec();
     let input_len = input_bytes.len();
@@ -121,5 +121,5 @@ pub fn sha256(input: &[u8]) -> [u8; 32] {
         ret[i * 4 + 3] = (hash[i] & 0xff) as u8;
     }
 
-    ret
+    ret.to_vec()
 }

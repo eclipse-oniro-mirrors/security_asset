@@ -41,10 +41,13 @@ ohos_rust_static_library("crypto_manager") {
 
 module_output_path = "asset/crypto_manager"
 
-ohos_rust_unittest("crypto_manager_test") {
+ohos_rust_unittest("crypto_manager_test") { #todo zdy: 该配置和测试用例放在一起
   module_out_path = module_output_path
   sources = [ "../../test/unittest/crypto_manager_test/src/lib.rs" ]
-  deps = [ "$COMPONENT_DIR/services/crypto_manager:crypto_manager" ]
+  deps = [
+    "$COMPONENT_DIR/frameworks/common:asset_common",
+    "$COMPONENT_DIR/services/crypto_manager:crypto_manager"
+    ]
   subsystem_name = "security"
   part_name = "asset"
 }

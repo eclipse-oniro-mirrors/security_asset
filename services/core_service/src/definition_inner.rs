@@ -17,13 +17,6 @@
 
 #![allow(dead_code)]
 
-/// An enum type indicates the delete type of the Asset.
-pub(crate) enum DeleteType {
-    Never = 0,
-    WhenUninstallApp = 1 << 0,
-    WhenRemoveUser = 1 << 1,
-    WhenClearAppData = 1 << 2,
-}
 
 pub(crate) enum OperationCode {
     /// Code for add params.

@@ -15,9 +15,10 @@
 
 //! This crate implements the asset
 
-use crypto_manager::crypto::{Crypto, KeyInfo, SecretKey};
+use crypto_manager::crypto::{Crypto, SecretKey};
 
-use asset_common::{definition::{AssetMap, Result, Tag, Value, ErrCode}, loge, logi, hasher};
+use asset_common::{definition::{Accessibility, AssetMap, AuthType, ErrCode, Result, Value}, hasher, loge, logi};
+use db_operator::{database_table_helper::{COLUMN_AUTH_TYPE, COLUMN_ACCESSIBILITY, COLUMN_SECRET}, types::DbMap};
 use crate::calling_info::CallingInfo;
 
 // todo : zwz : 实现真的aad
@@ -28,72 +29,50 @@ fn construct_aad() -> Vec<u8> {
 // todo : zwz : 切面编程
 // logi!("reset calling indentity [{}]", ipc_rust::reset_calling_identity().unwrap());
 
-// todo : zwz : 传入map
-fn construct_key_info(calling_info: &CallingInfo, input: &AssetMap) -> Result<KeyInfo> {
-    let Some(Value::Number(auth_type)) = input.get(&Tag::AuthType) else {
-        panic!()
-    };
-    let Some(Value::Number(access_type)) = input.get(&Tag::Accessibility) else {
-        panic!()
-    };
+fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<SecretKey> {
+    let Value::Number(auth_type) = attrs[COLUMN_AUTH_TYPE] else { return Err(ErrCode::InvalidArgument) };
+    let auth_type = AuthType::try_from(auth_type)?;
 
-    logi!("user_id:[{}], owner_hash:[{}], auth_type:[{}],access_type:[{}]", calling_info.user_id(), String::from_utf8(calling_info.owner_info().clone()).unwrap(), *auth_type, *access_type);
-    Ok(KeyInfo {
-        user_id: calling_info.user_id(),
-        owner_hash: hasher::sha256(calling_info.owner_info()).to_vec(),
-        auth_type: *auth_type,
-        access_type: *access_type,
-    })
+    let Value::Number(access_type) = attrs[COLUMN_ACCESSIBILITY] else { return Err(ErrCode::InvalidArgument) };
+    let access_type = Accessibility::try_from(access_type)?;
+
+    Ok(SecretKey::new(calling.user_id(), &hasher::sha256(calling.owner_info()), auth_type, access_type))
 }
 
-pub(crate) fn encrypt(calling_info: &CallingInfo, input: &AssetMap, secret: &Vec<u8>)
-    -> Result<Vec<u8>> {
-    let key_info = construct_key_info(calling_info, input)?;
-    let secret_key = SecretKey::new(key_info);
-    match secret_key.exists() { // todo 使用Ok（bool）类型判断
+pub(crate) fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
+    let secret_key = build_secret_key(calling_info, db_data)?;
+    match secret_key.exists() {
         Ok(true) => (),
         Ok(false) => {
+            logi!("[INFO]The key does not exist, generate it.");
             match secret_key.generate() {
                 Ok(_) => (),
                 Err(res) => loge!("Generete key failed, res is [{}].", res),
             };
         },
         _ => {
-            loge!("Check key exist failed.");
+            loge!("[FATAL]HUKS failed to determine whether the key exists.");
             return Err(ErrCode::CryptoError);
         }
     };
 
     let crypto = Crypto { key: secret_key };
-
+    let Value::Bytes(ref secret) = db_data[COLUMN_SECRET] else { return Err(ErrCode::InvalidArgument) };
     crypto.encrypt(secret, &construct_aad())
 }
 
-pub(crate) fn decrypt(calling_info: &CallingInfo, input: &AssetMap) -> Result<Vec<u8>> {
-    let Some(Value::Bytes(secret)) = input.get(&Tag::Secret) else {
-        loge!("get secret failed!");
-        panic!()
-    };
-    let key_info = construct_key_info(calling_info, input)?;
-    let secret_key = SecretKey::new(key_info);
-    match secret_key.exists() { // todo 使用Ok（bool）类型判断
-        Ok(true) => (),
-        _ => {
-            loge!("Found key failed.");
-            return Err(ErrCode::NotFound);
-        },
-    };
-
+pub(crate) fn decrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
+    let Value::Bytes(ref secret) = db_data[COLUMN_SECRET] else { return Err(ErrCode::InvalidArgument) };
+    let secret_key = build_secret_key(calling_info, db_data)?;
     let crypto = Crypto { key: secret_key };
-
-    crypto.decrypt(secret, &construct_aad())
+    let secret = crypto.decrypt(secret, &construct_aad())?; // todo: 待处理HUKS返回值，比如密钥不存在，锁屏状态不正确
+    db_data.insert(COLUMN_SECRET, Value::Bytes(secret));
+    Ok(())
 }
 
 // todo : yyd : 改入参
-pub(crate) fn init_decrypt(calling_info: &CallingInfo, input: &AssetMap, _auth_type: &u32, _access_type: &u32)
+pub(crate) fn init_decrypt(_calling_info: &CallingInfo, _input: &AssetMap, _auth_type: &u32, _access_type: &u32)
     -> Result<Vec<u8>> {
-    let key_info = construct_key_info(calling_info, input)?;
-    let _secret_key = SecretKey::new(key_info);
     // todo 这里需要等init_decrypt的接口搞定之后再写 先写个假的放上去
     Ok(vec![1, 2, 2, 2, 2, 1])
 }

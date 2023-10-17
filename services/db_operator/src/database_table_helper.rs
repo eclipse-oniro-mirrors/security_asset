@@ -22,7 +22,7 @@ use crate::{
     table::Table,
     transaction::Transaction,
     types::{
-        AdvancedResultSet, ColumnInfo, Condition, QueryOptions,
+        ColumnInfo, Condition, QueryOptions,
         ResultSet, DbMap
     },
     SqliteErrCode, SQLITE_OK,
@@ -36,182 +36,189 @@ pub type DefaultDatabaseHelper<'a> = Database<'a>;
 pub type TableHelper<'a> = Table<'a>;
 
 /// default table name
-pub const G_ASSET_TABLE_NAME: &str = "asset_table";
+pub const ASSET_TABLE_NAME: &str = "asset_table";
 /// default column name Id
-pub const G_COLUMN_ID: &str = "Id";
+pub const COLUMN_ID: &str = "Id";
 /// default column name Secret
-pub const G_COLUMN_SECRET: &str = "Secret";
-/// default column name Owner
-pub const G_COLUMN_OWNER: &str = "Owner";
+pub const COLUMN_SECRET: &str = "Secret";
 /// default column name Alias
-pub const G_COLUMN_ALIAS: &str = "Alias";
+pub const COLUMN_ALIAS: &str = "Alias";
+/// default column name Owner
+pub const COLUMN_OWNER: &str = "Owner";
 /// default column name OwnerType
-pub const G_COLUMN_OWNER_TYPE: &str = "OwnerType";
+pub const COLUMN_OWNER_TYPE: &str = "OwnerType";
 /// default column name GroupId
-pub const G_COLUMN_GROUP_ID: &str = "GroupId";
+pub const COLUMN_GROUP_ID: &str = "GroupId";
 /// default column name SyncType
-pub const G_COLUMN_SYNC_TYPE: &str = "SyncType";
+pub const COLUMN_SYNC_TYPE: &str = "SyncType";
 /// default column name Accessibility
-pub const G_COLUMN_ACCESSIBILITY: &str = "Accessibility";
+pub const COLUMN_ACCESSIBILITY: &str = "Accessibility";
 /// default column name AuthType
-pub const G_COLUMN_AUTH_TYPE: &str = "AuthType";
+pub const COLUMN_AUTH_TYPE: &str = "AuthType";
 /// default column name CreateTime
-pub const G_COLUMN_CREATE_TIME: &str = "CreateTime";
+pub const COLUMN_CREATE_TIME: &str = "CreateTime";
 /// default column name UpdateTime
-pub const G_COLUMN_UPDATE_TIME: &str = "UpdateTime";
+pub const COLUMN_UPDATE_TIME: &str = "UpdateTime";
 /// default column name DeleteType
-pub const G_COLUMN_DELETE_TYPE: &str = "DeleteType";
+pub const COLUMN_DELETE_TYPE: &str = "DeleteType";
 /// default column name Version
-pub const G_COLUMN_VERSION: &str = "Version";
+pub const COLUMN_VERSION: &str = "Version";
 /// default column name RequirePasswordSet
-pub const G_COLUMN_REQUIRE_PASSWORD_SET: &str = "RequirePasswordSet";
+pub const COLUMN_REQUIRE_PASSWORD_SET: &str = "RequirePasswordSet";
 /// default column name DataLabelCritical_1
-pub const G_COLUMN_CRITICAL1: &str = "DataLabelCritical_1";
+pub const COLUMN_CRITICAL1: &str = "DataLabelCritical_1";
 /// default column name DataLabelCritical_2
-pub const G_COLUMN_CRITICAL2: &str = "DataLabelCritical_2";
+pub const COLUMN_CRITICAL2: &str = "DataLabelCritical_2";
 /// default column name DataLabelCritical_3
-pub const G_COLUMN_CRITICAL3: &str = "DataLabelCritical_3";
+pub const COLUMN_CRITICAL3: &str = "DataLabelCritical_3";
 /// default column name DataLabelCritical_4
-pub const G_COLUMN_CRITICAL4: &str = "DataLabelCritical_4";
+pub const COLUMN_CRITICAL4: &str = "DataLabelCritical_4";
 /// default column name DataLabelNormal_1
-pub const G_COLUMN_NORMAL1: &str = "DataLabelNormal_1";
+pub const COLUMN_NORMAL1: &str = "DataLabelNormal_1";
 /// default column name DataLabelNormal_2
-pub const G_COLUMN_NORMAL2: &str = "DataLabelNormal_2";
+pub const COLUMN_NORMAL2: &str = "DataLabelNormal_2";
 /// default column name DataLabelNormal_3
-pub const G_COLUMN_NORMAL3: &str = "DataLabelNormal_3";
+pub const COLUMN_NORMAL3: &str = "DataLabelNormal_3";
 /// default column name DataLabelNormal_4
-pub const G_COLUMN_NORMAL4: &str = "DataLabelNormal_4";
+pub const COLUMN_NORMAL4: &str = "DataLabelNormal_4";
+
+const COLUMN_TABLE: [&str; 22] = [
+    COLUMN_ID, COLUMN_SECRET, COLUMN_ALIAS, COLUMN_OWNER, COLUMN_OWNER_TYPE, COLUMN_GROUP_ID,
+    COLUMN_SYNC_TYPE, COLUMN_ACCESSIBILITY, COLUMN_AUTH_TYPE, COLUMN_CREATE_TIME, COLUMN_UPDATE_TIME,
+    COLUMN_DELETE_TYPE, COLUMN_VERSION, COLUMN_REQUIRE_PASSWORD_SET, COLUMN_CRITICAL1, COLUMN_CRITICAL2,
+    COLUMN_CRITICAL3, COLUMN_CRITICAL4, COLUMN_NORMAL1, COLUMN_NORMAL2, COLUMN_NORMAL3, COLUMN_NORMAL4
+];
 
 /// columns info for default asset_table
-pub const G_COLUMNS_INFO: &[ColumnInfo] = &[
+pub const COLUMN_INFO: &[ColumnInfo] = &[
     ColumnInfo {
-        name: G_COLUMN_ID,
+        name: COLUMN_ID,
         data_type: DataType::Uint32,
         is_primary_key: true,
         not_null: true,
     },
     ColumnInfo {
-        name: G_COLUMN_SECRET,
+        name: COLUMN_SECRET,
         data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
-        name: G_COLUMN_ALIAS,
+        name: COLUMN_ALIAS,
         data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
-        name: G_COLUMN_OWNER,
+        name: COLUMN_OWNER,
         data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
-        name: G_COLUMN_OWNER_TYPE,
+        name: COLUMN_OWNER_TYPE,
         data_type: DataType::Uint32,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
-        name: G_COLUMN_GROUP_ID,
+        name: COLUMN_GROUP_ID,
         data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
     ColumnInfo {
-        name: G_COLUMN_SYNC_TYPE,
+        name: COLUMN_SYNC_TYPE,
         data_type: DataType::Uint32,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
-        name: G_COLUMN_ACCESSIBILITY,
+        name: COLUMN_ACCESSIBILITY,
         data_type: DataType::Uint32,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
-        name: G_COLUMN_AUTH_TYPE,
+        name: COLUMN_AUTH_TYPE,
         data_type: DataType::Uint32,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
-        name: G_COLUMN_CREATE_TIME,
+        name: COLUMN_CREATE_TIME,
         data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
-        name: G_COLUMN_UPDATE_TIME,
+        name: COLUMN_UPDATE_TIME,
         data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
-        name: G_COLUMN_DELETE_TYPE,
+        name: COLUMN_DELETE_TYPE,
         data_type: DataType::Uint32,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
-        name: G_COLUMN_VERSION,
+        name: COLUMN_VERSION,
         data_type: DataType::Uint32,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
-        name: G_COLUMN_REQUIRE_PASSWORD_SET,
+        name: COLUMN_REQUIRE_PASSWORD_SET,
         data_type: DataType::Uint32,
         is_primary_key: false,
         not_null: true,
     },
     ColumnInfo {
-        name: G_COLUMN_CRITICAL1,
+        name: COLUMN_CRITICAL1,
         data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
     ColumnInfo {
-        name: G_COLUMN_CRITICAL2,
+        name: COLUMN_CRITICAL2,
         data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
     ColumnInfo {
-        name: G_COLUMN_CRITICAL3,
+        name: COLUMN_CRITICAL3,
         data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
     ColumnInfo {
-        name: G_COLUMN_CRITICAL4,
+        name: COLUMN_CRITICAL4,
         data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
     ColumnInfo {
-        name: G_COLUMN_NORMAL1,
+        name: COLUMN_NORMAL1,
         data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
     ColumnInfo {
-        name: G_COLUMN_NORMAL2,
+        name: COLUMN_NORMAL2,
         data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
     ColumnInfo {
-        name: G_COLUMN_NORMAL3,
+        name: COLUMN_NORMAL3,
         data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
     },
     ColumnInfo {
-        name: G_COLUMN_NORMAL4,
+        name: COLUMN_NORMAL4,
         data_type: DataType::Bytes,
         is_primary_key: false,
         not_null: false,
@@ -424,8 +431,8 @@ impl<'a> TableHelper<'a> {
         columns: &Vec<&str>,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
-    ) -> Result<AdvancedResultSet, ErrCode> {
-        let closure = |e: &Table| e.query_datas_advanced(columns, condition, query_options);
+    ) -> Result<Vec<DbMap>, ErrCode> {
+        let closure = |e: &Table| e.query_datas_advanced(columns, condition, query_options, &COLUMN_TABLE);
         back_db_when_succ(false, self, closure)
     }
 }
@@ -449,7 +456,7 @@ pub fn process_err_msg<T>(
 #[inline(always)]
 fn create_default_table<'a>(db: &'a Database) -> Result<Table<'a>, ErrCode> {
     let res =
-        db.create_table(G_ASSET_TABLE_NAME, G_COLUMNS_INFO).map_err(from_sqlite_code_to_asset_code);
+        db.create_table(ASSET_TABLE_NAME, COLUMN_INFO).map_err(from_sqlite_code_to_asset_code);
     match process_err_msg(res, db) {
         Ok(table) => {
             let closure = |_e: &Table| Ok(());
@@ -462,13 +469,13 @@ fn create_default_table<'a>(db: &'a Database) -> Result<Table<'a>, ErrCode> {
 
 /// open default table
 fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>, ErrCode> {
-    let res = db.open_table(G_ASSET_TABLE_NAME);
+    let res = db.open_table(ASSET_TABLE_NAME);
     match res {
         Ok(o) => {
             if o.is_none() {
                 return Ok(None);
             }
-            return Ok(Some(Table::new(G_ASSET_TABLE_NAME, db)));
+            return Ok(Some(Table::new(ASSET_TABLE_NAME, db)));
         },
         Err(e) => {
             if is_db_corrupt(e) {
@@ -486,7 +493,7 @@ fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>, Err
                         return Err(ErrCode::SqliteError);
                     }
                     process_err_msg(
-                        db.open_table(G_ASSET_TABLE_NAME).map_err(from_sqlite_code_to_asset_code),
+                        db.open_table(ASSET_TABLE_NAME).map_err(from_sqlite_code_to_asset_code),
                         db,
                     )
                 }
@@ -505,12 +512,12 @@ impl<'a> DefaultDatabaseHelper<'a> {
         condition: &Condition,
         datas: &DbMap,
     ) -> Result<i32, ErrCode> {
-        let table = Table::new(G_ASSET_TABLE_NAME, self);
+        let table = Table::new(ASSET_TABLE_NAME, self);
         #[cfg(feature = "auto_insert_time")]
         {
             let mut contain_update_time = false;
             for data in datas {
-                if data.column_name == G_COLUMN_UPDATE_TIME {
+                if data.column_name == COLUMN_UPDATE_TIME {
                     contain_update_time = true;
                     break;
                 }
@@ -522,7 +529,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
                     datas_new.push(*data);
                 }
                 datas_new.push(Pair {
-                    column_name: G_COLUMN_UPDATE_TIME,
+                    column_name: COLUMN_UPDATE_TIME,
                     value: Value::Bytes(ctime.as_bytes()),
                 });
                 return table.update_datas(condition, &datas_new);
@@ -534,16 +541,16 @@ impl<'a> DefaultDatabaseHelper<'a> {
     /// see TableHelper
     #[inline(always)]
     pub fn insert_datas_default(&self, datas: &DbMap) -> Result<i32, ErrCode> {
-        let table = Table::new(G_ASSET_TABLE_NAME, self);
+        let table = Table::new(ASSET_TABLE_NAME, self);
         #[cfg(feature = "auto_insert_time")]
         {
             let mut contain_create_time = false;
             let mut contain_update_time = false;
             for data in datas {
-                if data.column_name == G_COLUMN_CREATE_TIME {
+                if data.column_name == COLUMN_CREATE_TIME {
                     contain_create_time = true;
                 }
-                if data.column_name == G_COLUMN_UPDATE_TIME {
+                if data.column_name == COLUMN_UPDATE_TIME {
                     contain_update_time = true;
                 }
             }
@@ -555,13 +562,13 @@ impl<'a> DefaultDatabaseHelper<'a> {
                 }
                 if !contain_create_time {
                     datas_new.push(Pair {
-                        column_name: G_COLUMN_CREATE_TIME,
+                        column_name: COLUMN_CREATE_TIME,
                         value: Value::Bytes(ctime.as_bytes()),
                     });
                 }
                 if !contain_update_time {
                     datas_new.push(Pair {
-                        column_name: G_COLUMN_UPDATE_TIME,
+                        column_name: COLUMN_UPDATE_TIME,
                         value: Value::Bytes(ctime.as_bytes()),
                     });
                 }
@@ -578,28 +585,28 @@ impl<'a> DefaultDatabaseHelper<'a> {
         columns: &Vec<&str>,
         datas: &Vec<Vec<Value>>,
     ) -> Result<i32, ErrCode> {
-        let table = Table::new(G_ASSET_TABLE_NAME, self);
+        let table = Table::new(ASSET_TABLE_NAME, self);
         table.insert_multi_datas(columns, datas)
     }
 
     /// see TableHelper
     #[inline(always)]
     pub fn delete_datas_default(&self, cond: &Condition) -> Result<i32, ErrCode> {
-        let table = Table::new(G_ASSET_TABLE_NAME, self);
+        let table = Table::new(ASSET_TABLE_NAME, self);
         table.delete_datas(cond)
     }
 
     /// see TableHelper
     #[inline(always)]
     pub fn is_data_exists_default(&self, condition: &Condition) -> Result<bool, ErrCode> {
-        let table = Table::new(G_ASSET_TABLE_NAME, self);
+        let table = Table::new(ASSET_TABLE_NAME, self);
         table.is_data_exist(condition)
     }
 
     /// see TableHelper
     #[inline(always)]
     pub fn select_count_default(&self, condition: &Condition) -> Result<u32, ErrCode> {
-        let table = Table::new(G_ASSET_TABLE_NAME, self);
+        let table = Table::new(ASSET_TABLE_NAME, self);
         table.select_count(condition)
     }
 
@@ -610,7 +617,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
         condition: &Condition,
         query_options: Option<&QueryOptions>,
     ) -> Result<ResultSet, ErrCode> {
-        let table = Table::new(G_ASSET_TABLE_NAME, self);
+        let table = Table::new(ASSET_TABLE_NAME, self);
         table.query_datas(condition, query_options)
     }
 
@@ -621,8 +628,8 @@ impl<'a> DefaultDatabaseHelper<'a> {
         columns: &Vec<&str>,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
-    ) -> Result<AdvancedResultSet, ErrCode> {
-        let table = Table::new(G_ASSET_TABLE_NAME, self);
+    ) -> Result<Vec<DbMap>, ErrCode> {
+        let table = Table::new(ASSET_TABLE_NAME, self);
         table.query_columns(columns, condition, query_options)
     }
 }
@@ -745,7 +752,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
         columns: &Vec<&str>,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
-    ) -> Result<AdvancedResultSet, ErrCode> {
+    ) -> Result<Vec<DbMap>, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.query_columns_default(columns, condition, query_options)

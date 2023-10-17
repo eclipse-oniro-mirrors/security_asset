@@ -23,7 +23,7 @@ use asset_common::definition::{DataType, Value};
 use db_operator::{
     database::*,
     database_table_helper::{
-        do_transaction, DefaultDatabaseHelper, G_ASSET_TABLE_NAME, G_COLUMN_ALIAS, G_COLUMN_OWNER,
+        do_transaction, DefaultDatabaseHelper, ASSET_TABLE_NAME, COLUMN_ALIAS, COLUMN_OWNER,
     },
     statement::Statement,
     types::{
@@ -380,7 +380,7 @@ pub fn test_update_row() {
     let ret = table.update_row(&conditions, &datas).unwrap();
     assert_eq!(ret, 1);
     let ret = table
-        .update_row_column(&conditions, G_COLUMN_ALIAS, Value::Bytes(b"test_update1".to_vec()))
+        .update_row_column(&conditions, COLUMN_ALIAS, Value::Bytes(b"test_update1".to_vec()))
         .unwrap();
     assert_eq!(ret, 1);
     let stmt = Statement::<true>::prepare("select * from table_test where id=2", &db).unwrap();
@@ -472,7 +472,7 @@ pub fn test_update_datas() {
             data_type: DataType::Bytes,
         },
     ];
-    let table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
+    let table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
@@ -568,7 +568,7 @@ pub fn test_insert_datas() {
             data_type: DataType::Bytes,
         },
     ];
-    let _table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
+    let _table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
@@ -577,8 +577,8 @@ pub fn test_insert_datas() {
 
     let dataset = DbMap::from([
         ("value", Value::Bytes(b"value".to_vec())),
-        (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-        (G_COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
+        (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+        (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
     ]);
 
     let count = db.insert_datas_default(&dataset).unwrap();
@@ -636,7 +636,7 @@ pub fn test_insert_row_datas() {
             data_type: DataType::Bytes,
         },
     ];
-    let table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
+    let table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
@@ -703,7 +703,7 @@ pub fn test_delete_datas() {
             data_type: DataType::Bytes,
         },
     ];
-    let _table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
+    let _table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
@@ -711,8 +711,8 @@ pub fn test_delete_datas() {
     };
     let dataset = DbMap::from([
         ("value", Value::Bytes(b"value".to_vec())),
-        (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-        (G_COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
+        (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+        (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
     ]);
 
     let count = db.insert_datas_default(&dataset).unwrap();
@@ -720,8 +720,8 @@ pub fn test_delete_datas() {
 
     let cond = DbMap::from([
         ("value", Value::Bytes(b"value".to_vec())),
-        (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-        (G_COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
+        (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+        (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
     ]);
 
     let count = db.delete_datas_default(&cond).unwrap();
@@ -735,8 +735,8 @@ pub fn test_delete_datas() {
     assert_eq!(count, 0); // can not delete any data because no data
     let count = db
         .delete_datas_default(&DbMap::from([
-            (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-            (G_COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+            (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
         ]))
         .unwrap();
     assert_eq!(count, 0); // can not delete any data because no data
@@ -783,7 +783,7 @@ pub fn test_for_rename() {
             data_type: DataType::Bytes,
         },
     ];
-    let mut table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
+    let mut table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
@@ -829,7 +829,7 @@ pub fn test_for_add_column() {
             data_type: DataType::Bytes,
         },
     ];
-    let table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
+    let table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
@@ -985,7 +985,7 @@ pub fn test_multi_insert_row_datas() {
             data_type: DataType::Bytes,
         },
     ];
-    let table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
+    let table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
@@ -1088,7 +1088,7 @@ pub fn test_data_exists_and_data_count() {
             data_type: DataType::Bytes,
         },
     ];
-    let table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
+    let table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
@@ -1118,23 +1118,23 @@ pub fn test_data_exists_and_data_count() {
     // query
     let exist = db
         .is_data_exists_default(&DbMap::from([
-            (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-            (G_COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+            (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
         ]))
         .unwrap();
     assert!(exist);
 
     let exist = db
         .is_data_exists_default(&DbMap::from([
-            (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-            (G_COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+            (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
         ]))
         .unwrap();
     assert!(!exist);
 
     let count = db
         .select_count_default(&DbMap::from([
-            (G_COLUMN_OWNER, Value::Bytes(b"owner2".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"owner2".to_vec())),
         ])).unwrap();
     assert_eq!(count, 2);
 }
@@ -1175,7 +1175,7 @@ pub fn test_helper() {
             data_type: DataType::Bytes,
         },
     ];
-    let table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
+    let table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
@@ -1205,23 +1205,23 @@ pub fn test_helper() {
     // query
     let exist = db
         .is_data_exists_default(&DbMap::from([
-            (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-            (G_COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+            (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
         ]))
         .unwrap();
     assert!(exist);
 
     let exist = db
         .is_data_exists_default(&DbMap::from([
-            (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-            (G_COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+            (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
         ]))
         .unwrap();
     assert!(!exist);
 
     let count = db
         .select_count_default(&DbMap::from([
-            (G_COLUMN_OWNER, Value::Bytes(b"owner2".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"owner2".to_vec())),
         ]))
         .unwrap();
     assert_eq!(count, 2);
@@ -1229,8 +1229,8 @@ pub fn test_helper() {
     let ret = db
         .insert_datas_default(&DbMap::from([
                 ("value", Value::Bytes(b"value4".to_vec())),
-                (G_COLUMN_OWNER, Value::Bytes(b"owner4".to_vec())),
-                (G_COLUMN_ALIAS, Value::Bytes(b"alias4".to_vec())),
+                (COLUMN_OWNER, Value::Bytes(b"owner4".to_vec())),
+                (COLUMN_ALIAS, Value::Bytes(b"alias4".to_vec())),
             ]))
         .unwrap();
     assert_eq!(ret, 1);
@@ -1238,8 +1238,8 @@ pub fn test_helper() {
     let ret = db
         .update_datas_default(
             &DbMap::from([
-                (G_COLUMN_OWNER, Value::Bytes(b"owner4".to_vec())),
-                (G_COLUMN_ALIAS, Value::Bytes(b"alias4".to_vec())),
+                (COLUMN_OWNER, Value::Bytes(b"owner4".to_vec())),
+                (COLUMN_ALIAS, Value::Bytes(b"alias4".to_vec())),
             ]),
             &DbMap::from([
                 ("value", Value::Bytes(b"value5".to_vec())),
@@ -1250,8 +1250,8 @@ pub fn test_helper() {
 
     let ret = db
         .delete_datas_default(&DbMap::from([
-            (G_COLUMN_OWNER, Value::Bytes(b"owner4".to_vec())),
-            (G_COLUMN_ALIAS, Value::Bytes(b"alias4".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"owner4".to_vec())),
+            (COLUMN_ALIAS, Value::Bytes(b"alias4".to_vec())),
         ]))
         .unwrap();
     assert_eq!(ret, 1);
@@ -1259,8 +1259,8 @@ pub fn test_helper() {
     let result = db
         .query_datas_default(
             &DbMap::from([
-                (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-                (G_COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
+                (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+                (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
             ]),
             None,
         )
@@ -1311,7 +1311,7 @@ pub fn test_for_special_sql() {
             data_type: DataType::Bytes,
         },
     ];
-    let table = match db.create_table(G_ASSET_TABLE_NAME, columns) {
+    let table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
@@ -1386,7 +1386,7 @@ pub fn test_for_update_ver() {
             data_type: DataType::Bytes,
         },
     ];
-    let _ = match db.create_table(G_ASSET_TABLE_NAME, columns) {
+    let _ = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
         Err(e) => {
             panic!("create table err {}", e);
@@ -1418,15 +1418,15 @@ pub fn test_for_default_asset(userid: i32) {
         ("CreateTime", Value::Number(1)),
         ("UpdateTime", Value::Number(1)),
         ("RequirePasswordSet", Value::Number(0)),
-        (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-        (G_COLUMN_ALIAS, Value::Bytes(b"Alias1".to_vec())),
+        (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+        (COLUMN_ALIAS, Value::Bytes(b"Alias1".to_vec())),
     ]);
 
     let count = DefaultDatabaseHelper::insert_datas_default_once(userid, &def).unwrap();
     assert_eq!(count, 1);
 
-    def.remove(G_COLUMN_ALIAS);
-    def.insert(G_COLUMN_ALIAS, Value::Bytes(b"Alias2".to_vec()));
+    def.remove(COLUMN_ALIAS);
+    def.insert(COLUMN_ALIAS, Value::Bytes(b"Alias2".to_vec()));
 
     let count = DefaultDatabaseHelper::insert_datas_default_once(userid, &def).unwrap();
     assert_eq!(count, 1);
@@ -1447,7 +1447,7 @@ pub fn test_for_default_asset(userid: i32) {
     let _count = DefaultDatabaseHelper::select_count_default_once(
         userid,
         &DbMap::from([
-            (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
         ])
     )
     .unwrap();
@@ -1455,8 +1455,8 @@ pub fn test_for_default_asset(userid: i32) {
     let _ret = DefaultDatabaseHelper::is_data_exists_default_once(
         userid,
         &DbMap::from([
-            (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-            (G_COLUMN_ALIAS, Value::Bytes(b"Alias2".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+            (COLUMN_ALIAS, Value::Bytes(b"Alias2".to_vec())),
         ]),
     )
     .unwrap();
@@ -1464,8 +1464,8 @@ pub fn test_for_default_asset(userid: i32) {
     let count = DefaultDatabaseHelper::delete_datas_default_once(
         userid,
         &DbMap::from([
-            (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-            (G_COLUMN_ALIAS, Value::Bytes(b"Alias1".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+            (COLUMN_ALIAS, Value::Bytes(b"Alias1".to_vec())),
         ]),
     )
     .unwrap();
@@ -1475,14 +1475,14 @@ pub fn test_for_default_asset(userid: i32) {
         limit: Some(100),
         offset: Some(0),
         order: Some(Ordering::Greater),
-        order_by: Some(vec![G_COLUMN_OWNER, G_COLUMN_ALIAS]),
+        order_by: Some(vec![COLUMN_OWNER, COLUMN_ALIAS]),
     };
 
     let result = DefaultDatabaseHelper::query_datas_default_once(
         userid,
         &DbMap::from([
-            (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-            (G_COLUMN_ALIAS, Value::Bytes(b"Alias2".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+            (COLUMN_ALIAS, Value::Bytes(b"Alias2".to_vec())),
         ]),
         Some(&query),
     )
@@ -1499,8 +1499,8 @@ pub fn test_for_default_asset(userid: i32) {
         userid,
         &vec!["Id", "Alias"],
         &DbMap::from([
-            (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-            (G_COLUMN_ALIAS, Value::Bytes(b"Alias2".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+            (COLUMN_ALIAS, Value::Bytes(b"Alias2".to_vec())),
         ]),
         None,
     )
@@ -1561,7 +1561,7 @@ pub fn test_for_recovery() {
 fn trans_call(db: &Database) -> bool {
     let count = db
         .select_count_default(&DbMap::from([
-            (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
         ])).unwrap();
     assert_eq!(count, 0);
     true
@@ -1574,7 +1574,7 @@ pub fn test_for_transaction3() {
     let trans = |db: &Database| -> bool {
         let count = db
             .select_count_default(&DbMap::from([
-                (G_COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
+                (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
             ]))
             .unwrap();
         assert_eq!(count, 0);
@@ -1589,8 +1589,8 @@ pub fn test_for_error() {
     let stmt = DefaultDatabaseHelper::insert_datas_default_once(
         1,
         &DbMap::from([
-            (G_COLUMN_OWNER, Value::Bytes(b"owner".to_vec())),
-            (G_COLUMN_OWNER, Value::Bytes(b"alias".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"owner".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"alias".to_vec())),
         ]),
     );
     assert!(stmt.is_err());
@@ -1611,8 +1611,8 @@ pub fn test_for_master_backup() {
         ("CreateTime", Value::Number(1)),
         ("UpdateTime", Value::Number(1)),
         ("RequirePasswordSet", Value::Number(0)),
-        (G_COLUMN_OWNER, Value::Bytes(b"owner".to_vec())),
-        (G_COLUMN_ALIAS, Value::Bytes(b"Alias".to_vec())),
+        (COLUMN_OWNER, Value::Bytes(b"owner".to_vec())),
+        (COLUMN_ALIAS, Value::Bytes(b"Alias".to_vec())),
     ]);
 
     db.insert_datas_default(&def).unwrap();
@@ -1636,7 +1636,7 @@ pub fn test_for_master_backup() {
     db.insert_datas_default(&def).unwrap();
     let count = db
         .select_count_default(&DbMap::from([
-            (G_COLUMN_OWNER, Value::Bytes(b"owner".to_vec())),
+            (COLUMN_OWNER, Value::Bytes(b"owner".to_vec())),
         ])).unwrap();
     assert_eq!(count, 3);
     drop(db);

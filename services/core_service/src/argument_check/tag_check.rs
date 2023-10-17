@@ -49,7 +49,7 @@ pub(crate) fn check_required_tags(arguments: &AssetMap, code: &OperationCode) ->
     }
 }
 
-// todo: 分成小数组进行组装
+// todo: zwz 分成小数组进行组装
 const ADD_AVAILABLE_ARGUMENTS: [Tag; 15] = [
     Tag::Secret, Tag::Alias, Tag::Accessibility, Tag::RequirePasswordSet, Tag::AuthType, Tag::SyncType,
     Tag::ConflictResolution, Tag::DataLabelCritical1, Tag::DataLabelCritical2, Tag::DataLabelCritical3,
@@ -86,7 +86,7 @@ fn check_optional_tags(argument: &AssetMap, available_arguments: &[Tag]) -> Resu
 
 pub(crate) fn check_tag_validity(argument: &AssetMap, code: &OperationCode) -> Result<()> {  // todo: bool
     check_required_tags(argument, code)?;
-    match *code { // add等code能否塞到数组里？
+    match *code { // todo: zwz add等code能否塞到数组里？
         OperationCode::Add => check_optional_tags(argument, &ADD_AVAILABLE_ARGUMENTS),
         OperationCode::Query => check_optional_tags(argument, &QUERY_AVAILABLE_ARGUMENTS),
         OperationCode::Update => check_optional_tags(argument, &UPDATE_AVAILABLE_ARGUMENTS),
