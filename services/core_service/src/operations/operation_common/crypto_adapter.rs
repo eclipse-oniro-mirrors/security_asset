@@ -17,13 +17,59 @@
 
 use crypto_manager::crypto::{Crypto, SecretKey};
 
-use asset_common::{definition::{Accessibility, AssetMap, AuthType, ErrCode, Result, Value}, hasher, loge, logi};
-use db_operator::{database_table_helper::{COLUMN_AUTH_TYPE, COLUMN_ACCESSIBILITY, COLUMN_SECRET}, types::DbMap};
+use asset_common::{
+    definition::{Accessibility, AssetMap, AuthType, ErrCode, Result, Value, DataType},
+    hasher, loge, logi
+};
+use db_operator::{
+    database_table_helper::{
+        COLUMN_AUTH_TYPE, COLUMN_ACCESSIBILITY, COLUMN_SECRET, COLUMN_ALIAS, COLUMN_OWNER, COLUMN_OWNER_TYPE,
+        COLUMN_GROUP_ID, COLUMN_SYNC_TYPE, COLUMN_REQUIRE_PASSWORD_SET,
+        COLUMN_DELETE_TYPE, COLUMN_VERSION, COLUMN_CRITICAL1, COLUMN_CRITICAL2, COLUMN_CRITICAL3, COLUMN_CRITICAL4
+    },
+    types::DbMap
+};
 use crate::calling_info::CallingInfo;
 
+const AAD_ATTR: [(&str, DataType); 15] = [
+    (COLUMN_ALIAS, DataType::Bytes), (COLUMN_SECRET, DataType::Bytes), (COLUMN_OWNER, DataType::Bytes),
+    (COLUMN_OWNER_TYPE, DataType::Uint32), (COLUMN_GROUP_ID, DataType::Bytes), (COLUMN_SYNC_TYPE, DataType::Uint32),
+    (COLUMN_ACCESSIBILITY, DataType::Uint32), (COLUMN_REQUIRE_PASSWORD_SET, DataType::Uint32),
+    (COLUMN_AUTH_TYPE, DataType::Uint32), (COLUMN_DELETE_TYPE, DataType::Uint32), (COLUMN_VERSION, DataType::Uint32),
+    (COLUMN_CRITICAL1, DataType::Bytes), (COLUMN_CRITICAL2, DataType::Bytes), (COLUMN_CRITICAL3, DataType::Bytes),
+    (COLUMN_CRITICAL4, DataType::Bytes)
+];
+
+fn bytes_into_aad(column: &str, attrs: &DbMap, aad: &mut Vec<u8>) {
+    if let Some(Value::Bytes(bytes)) = attrs.get(column) {
+        aad.append(&mut bytes.clone());
+    }
+}
+
+fn u32_into_aad(column: &str, attrs: &DbMap, aad: &mut Vec<u8>) {
+    if let Some(Value::Number(num)) = attrs.get(column) {
+        aad.append(&mut num.to_string().into_bytes());
+    }
+}
+
 // todo : zwz : 实现真的aad
-fn construct_aad() -> Vec<u8> {
-    "1_2_3_4".as_bytes().to_vec()
+fn construct_aad(attrs: &DbMap) -> Vec<u8> {
+    let mut aad = Vec::new();
+    for (column, data_type) in &AAD_ATTR {
+        match *data_type {
+            DataType::Uint32 => {
+                u32_into_aad(column, attrs, &mut aad)
+            },
+            DataType::Bytes => {
+                bytes_into_aad(column, attrs, &mut aad);
+            },
+            DataType::Bool => {
+                loge!("Unexpected value type.");
+                panic!();
+            },
+        }
+    }
+    aad
 }
 
 // todo : zwz : 切面编程
@@ -58,14 +104,14 @@ pub(crate) fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
 
     let crypto = Crypto { key: secret_key };
     let Value::Bytes(ref secret) = db_data[COLUMN_SECRET] else { return Err(ErrCode::InvalidArgument) };
-    crypto.encrypt(secret, &construct_aad())
+    crypto.encrypt(secret, &construct_aad(db_data))
 }
 
 pub(crate) fn decrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     let Value::Bytes(ref secret) = db_data[COLUMN_SECRET] else { return Err(ErrCode::InvalidArgument) };
     let secret_key = build_secret_key(calling_info, db_data)?;
     let crypto = Crypto { key: secret_key };
-    let secret = crypto.decrypt(secret, &construct_aad())?; // todo: 待处理HUKS返回值，比如密钥不存在，锁屏状态不正确
+    let secret = crypto.decrypt(secret, &construct_aad(db_data))?; // todo: 待处理HUKS返回值，比如密钥不存在，锁屏状态不正确
     db_data.insert(COLUMN_SECRET, Value::Bytes(secret));
     Ok(())
 }
