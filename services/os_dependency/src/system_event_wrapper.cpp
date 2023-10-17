@@ -45,24 +45,17 @@ public:
         LOGE("receive event!!!!!");  // todo 要删掉
         if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED ||
             action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
-            // 1. 测试主应用卸载时，能否获取到userID, appId（最新开发分支版本）, appIndex（默认为0）
-            // int userId = want.GetIntParam(OHOS::AppExecFwk::Constants::USER_ID, -1);
+
             // get userId(use front userId)
-            std::vector<int> ids;
-            int ret = OHOS::AccountSA::OsAccountManager::QueryActiveOsAccountIds(ids);
-            if (ret != 0 || ids.empty()) {
-                LOGE("QueryActiveOsAccountIds Failed!! ret = %" LOG_PUBLIC "d", ret);
-                return;
-            }
-            int userId = ids[0];
+            int uid = want.GetIntParam(OHOS::AppExecFwk::Constants::UID, -1);
+            int userId = -1;
+            OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userId);
             LOGE("userId %{public}i", userId);  // todo 要删掉
 
-            // get APPID todo 这里需要等到能获取到appId的时候再操作
             const char *APP_ID = "appId";
             std::string appId = want.GetStringParam(APP_ID);
             LOGE("appId %{public}s", appId.c_str());  // todo 要删掉
 
-            // todo 获取 appIndex 只有在COMMON_EVENT_SANDBOX_PACKAGE_REMOVED的时候获取 在COMMON_EVENT_PACKAGE_REMOVED的时候默认为0
             int appIndex = 0;
             if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
                 appIndex = want.GetIntParam(OHOS::AppExecFwk::Constants::SANDBOX_APP_INDEX, -1);
@@ -84,20 +77,15 @@ public:
             int totalDeleteNum = delete_hap_asset(userId, owner.c_str());
 
             LOGI("delete finish! total delete line: %{public}i", totalDeleteNum);  // todo 要删掉
-            // 5. 测试沙箱应用卸载时，能否获取到userID, appId（最新开发分支版本可能没有）, appIndex
 
             // TODO: 增加判断os_account
             // do DeleteByAppID
         } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
             // 3. 获取到userID, 删除数据库userId，删除密钥-（huks)
             // get userId
-            std::vector<int> ids;
-            int ret = OHOS::AccountSA::OsAccountManager::QueryActiveOsAccountIds(ids);
-            if (ret != 0 || ids.empty()) {
-                LOGE("QueryActiveOsAccountIds Failed!! ret = %" LOG_PUBLIC "d", ret);
-                return;
-            }
-            int userId = ids[0];
+            int uid = want.GetIntParam(OHOS::AppExecFwk::Constants::UID, -1);
+            int userId = -1;
+            OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userId);
             LOGE("userId %{public}i", userId);  // todo 要删掉
             // delete data
             delete_user_asset(userId);  // todo 这里直接把user下对应的文件夹删除了 谨慎使用

@@ -20,7 +20,7 @@ use std::{
     fs, path::Path,
 };
 
-use asset_common::{loge, logi, hasher};
+use asset_common::{logi, hasher};
 use asset_sdk::definition::{
     Accessibility, AuthType, Value
 };
@@ -81,8 +81,9 @@ pub extern "C" fn delete_user_asset(user_id: i32) {
     let path = Path::new(&path_str);
     if !path.exists() {
         match fs::remove_dir_all(path) {
+            Ok(_) => { logi!("remove dir success!"); },
             Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
-                loge!("remove dir failed! not found dir");
+                logi!("remove dir failed! not found dir");
             },
             Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
                 logi!("remove dir failed! permission denied");
