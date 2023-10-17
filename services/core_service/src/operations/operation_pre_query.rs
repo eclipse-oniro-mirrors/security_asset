@@ -21,11 +21,9 @@ use crate::{
     calling_info::CallingInfo,
     operations::{
         operation_common::{
-            add_owner_info,
-            init_decrypt,
-            db_adapter::into_db_map,
+            add_owner_info, init_decrypt, into_db_map
         },
-        operation_query::batch_query,
+        operation_query::query_attrs,
     },
 };
 
@@ -36,13 +34,8 @@ use asset_sdk::definition::AuthType;
 pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
     let mut db_data = into_db_map(query);
     add_owner_info(calling_info, &mut db_data);
-    // check pre query data
-    if !query.contains_key(&Tag::Alias) || !query.contains_key(&Tag::AuthValidityPeriod) {
-        loge!("tag alias or auth validity period missed");
-        return Err(ErrCode::InvalidArgument);
-    }
-    //todo: yzt select AuthType, AccessType from table; 能否distinct?
-    let all_data = batch_query(calling_info, &db_data, query)?;
+
+    let all_data = query_attrs(calling_info, &db_data, query)?;
     // get all secret key
     let mut secret_key_set = HashSet::new();
     for map in all_data.iter() {

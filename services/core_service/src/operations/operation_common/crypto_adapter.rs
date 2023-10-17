@@ -31,13 +31,13 @@ use db_operator::{
 };
 use crate::calling_info::CallingInfo;
 
-const AAD_ATTR: [(&str, DataType); 15] = [
-    (COLUMN_ALIAS, DataType::Bytes), (COLUMN_SECRET, DataType::Bytes), (COLUMN_OWNER, DataType::Bytes),
-    (COLUMN_OWNER_TYPE, DataType::Uint32), (COLUMN_GROUP_ID, DataType::Bytes), (COLUMN_SYNC_TYPE, DataType::Uint32),
-    (COLUMN_ACCESSIBILITY, DataType::Uint32), (COLUMN_REQUIRE_PASSWORD_SET, DataType::Uint32),
-    (COLUMN_AUTH_TYPE, DataType::Uint32), (COLUMN_DELETE_TYPE, DataType::Uint32), (COLUMN_VERSION, DataType::Uint32),
-    (COLUMN_CRITICAL1, DataType::Bytes), (COLUMN_CRITICAL2, DataType::Bytes), (COLUMN_CRITICAL3, DataType::Bytes),
-    (COLUMN_CRITICAL4, DataType::Bytes)
+const AAD_ATTR: [(&str, DataType); 14] = [
+    (COLUMN_ALIAS, DataType::Bytes), (COLUMN_OWNER, DataType::Bytes), (COLUMN_OWNER_TYPE, DataType::Number),
+    (COLUMN_GROUP_ID, DataType::Bytes), (COLUMN_SYNC_TYPE, DataType::Number),
+    (COLUMN_ACCESSIBILITY, DataType::Number), (COLUMN_REQUIRE_PASSWORD_SET, DataType::Number),
+    (COLUMN_AUTH_TYPE, DataType::Number), (COLUMN_DELETE_TYPE, DataType::Number), (COLUMN_VERSION, DataType::Number),
+    (COLUMN_CRITICAL1, DataType::Bytes), (COLUMN_CRITICAL2, DataType::Bytes),
+    (COLUMN_CRITICAL3, DataType::Bytes), (COLUMN_CRITICAL4, DataType::Bytes)
 ];
 
 fn bytes_into_aad(column: &str, attrs: &DbMap, aad: &mut Vec<u8>) {
@@ -56,7 +56,7 @@ fn construct_aad(attrs: &DbMap) -> Vec<u8> {
     let mut aad = Vec::new();
     for (column, data_type) in &AAD_ATTR {
         match *data_type {
-            DataType::Uint32 => {
+            DataType::Number => {
                 u32_into_aad(column, attrs, &mut aad)
             },
             DataType::Bytes => {

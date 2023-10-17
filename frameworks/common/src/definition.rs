@@ -22,12 +22,13 @@ use std::collections::HashMap;
 use crate::impl_enum_trait;
 
 /// An enum type containing the data type definitions for Asset attribute value.
+#[derive(Eq, PartialEq)]
 pub enum DataType {
     /// The data type of Asset attribute value is bool.
     Bool = 1 << 28,
 
     /// The data type of Asset attribute value is uint32.
-    Uint32 = 2 << 28,
+    Number = 2 << 28,
 
     /// The data type of Asset attribute value is byte array.
     Bytes = 3 << 28,
@@ -45,18 +46,18 @@ impl_enum_trait! {
         Alias = DataType::Bytes as isize | 0x02,
 
         /// A tag whose value is a 32-bit unsigned integer indicating when the Asset can be accessed.
-        Accessibility = DataType::Uint32 as isize | 0x03,
+        Accessibility = DataType::Number as isize | 0x03,
 
         /// A tag whose value is a bool indicating whether a screen lock password is set for the device.
         RequirePasswordSet = DataType::Bool as isize | 0x04,
 
         /// A tag whose value is a 32-bit unsigned integer indicating
         /// the user authentication type for Asset access control.
-        AuthType = DataType::Uint32 as isize | 0x05,
+        AuthType = DataType::Number as isize | 0x05,
 
         /// A tag whose value is a 32-bit unsigned integer indicating
         /// the validity period in seconds of user authentication.
-        AuthValidityPeriod = DataType::Uint32 as isize | 0x06,
+        AuthValidityPeriod = DataType::Number as isize | 0x06,
 
         /// A tag whose value is a byte array indicating the authentication challenge for anti-replay protection.
         AuthChallenge = DataType::Bytes as isize | 0x07,
@@ -65,10 +66,10 @@ impl_enum_trait! {
         AuthToken = DataType::Bytes as isize | 0x08,
 
         /// A tag whose value is a 32-bit unsigned integer indicating the type of Asset synchronization.
-        SyncType = DataType::Uint32 as isize | 0x10,
+        SyncType = DataType::Number as isize | 0x10,
 
         /// A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
-        ConflictResolution = DataType::Uint32 as isize | 0x11,
+        ConflictResolution = DataType::Number as isize | 0x11,
 
         /// A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
         DataLabelCritical1 = DataType::Bytes as isize | 0x20,
@@ -95,16 +96,16 @@ impl_enum_trait! {
         DataLabelNormal4 = DataType::Bytes as isize | 0x27,
 
         /// A tag whose value is a 32-bit unsigned integer indicating the return type of the queried Asset.
-        ReturnType = DataType::Uint32 as isize | 0x30,
+        ReturnType = DataType::Number as isize | 0x30,
 
         /// A tag whose value is a 32-bit unsigned integer indicating the maximum number of returned Assets in a query.
-        ReturnLimit = DataType::Uint32 as isize | 0x31,
+        ReturnLimit = DataType::Number as isize | 0x31,
 
         /// A tag whose value is a 32-bit unsigned integer indicating the offset of return data in batch query.
-        ReturnOffset = DataType::Uint32 as isize | 0x32,
+        ReturnOffset = DataType::Number as isize | 0x32,
 
         /// A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
-        ReturnOrderBy = DataType::Uint32 as isize | 0x33,
+        ReturnOrderBy = DataType::Number as isize | 0x33,
     }
 }
 

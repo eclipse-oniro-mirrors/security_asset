@@ -15,21 +15,38 @@
 
 //! This crate implements the asset
 
+use asset_common::{definition::{AssetMap, Result, Tag, Value, ErrCode, ReturnType}, loge, logi};
+use db_operator::{types::{DbMap, QueryOptions}, database_table_helper::DefaultDatabaseHelper};
+
 use crate::{
+    argument_check::value_check::check_value_validity,
     calling_info::CallingInfo,
     operations::operation_common::{
-        decrypt, add_owner_info, db_adapter::into_db_map
+        decrypt, add_owner_info, into_db_map, TAG_COLUMN_TABLE
     },
 };
 
-use db_operator::{types::{DbMap, QueryOptions}, database_table_helper::DefaultDatabaseHelper};
+fn convert_db_data_into_map(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
+    let mut map_set = Vec::new();
+    for db_result in db_results {
+        let mut map = AssetMap::new();
+        for (column, data) in db_result.iter() {
+            for (table_tag, table_column) in TAG_COLUMN_TABLE {
+                if (*column).eq(table_column) {
+                    map.insert(table_tag, data.clone());
+                    break;
+                }
+            }
+        }
+        check_value_validity(&map)?;
+        map_set.push(map);
+    }
+    Ok(map_set)
+}
 
-use asset_common::{definition::{AssetMap, Result, Tag, Value, ErrCode, ReturnType}, loge, logi};
-
-use super::operation_common::db_adapter::{convert_db_data_into_map, order_by_into_str};
-
-fn single_query(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<Vec<AssetMap>> {
+fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<Vec<AssetMap>> {
     let mut results = DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(), &vec![], db_data, None)?;
+    logi!("results len {}", results.len());
     match results.len() {
         0 => {
             loge!("[FATAL]The data to be queried does not exist.");
@@ -41,7 +58,7 @@ fn single_query(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<Vec<A
         }
         n => {
             loge!("[FATAL]The database contains {} records with the specified alias.", n);
-            Err(ErrCode::NotFound)
+            Err(ErrCode::SqliteError)
         },
     }
 }
@@ -58,21 +75,30 @@ fn get_query_options(input: &AssetMap) -> QueryOptions {
         },
         order: None,
         order_by: match input.get(&Tag::ReturnOrderBy) {
-            Some(Value::Number(limit)) => {
-                match order_by_into_str(limit) {
-                    Ok(res) => Some(vec![res]),
-                    Err(_) => None,
+            Some(Value::Number(order_by)) => {
+                let order_tag = Tag::try_from(*order_by).expect("Tag::ReturnOrderBy has been verified");
+                let mut order_by = None;
+                for (tag, column) in TAG_COLUMN_TABLE {
+                    if order_tag == tag {
+                        order_by = Some(vec![column]);
+                        break;
+                    }
                 }
+                order_by
             }
             _ => None,
         },
     }
 }
 
-pub(crate) fn batch_query(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
+pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
     let results = DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(),
         &vec![], db_data, Some(&get_query_options(attrs)))?;
     logi!("query found {}", results.len());
+    if results.is_empty() {
+        loge!("[FATAL]The data to be queried does not exist.");
+        return Err(ErrCode::NotFound)
+    }
 
     let mut results = convert_db_data_into_map(&results)?;
     for data in &mut results {
@@ -91,9 +117,9 @@ pub(crate) fn query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<
                 loge!("[FATAL]Batch secret query is not supported.");
                 Err(ErrCode::NotSupport)
             } else {
-                single_query(calling_info, &mut db_data)
+                query_all(calling_info, &mut db_data)
             }
         },
-        _ => batch_query(calling_info, &db_data, query)
+        _ => query_attrs(calling_info, &db_data, query)
     }
 }

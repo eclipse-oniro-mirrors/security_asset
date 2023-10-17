@@ -112,7 +112,7 @@ pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
                 let v = parcel.read::<bool>().map_err(|_| ErrCode::IpcError)?;
                 map.insert(tag, Value::Bool(v));
             }
-            DataType::Uint32 => {
+            DataType::Number => {
                 let v = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
                 map.insert(tag, Value::Number(v));
             },

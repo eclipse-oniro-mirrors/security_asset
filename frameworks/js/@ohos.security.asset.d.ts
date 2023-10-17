@@ -360,7 +360,7 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    UINT32 = 0x02 << 28,
+    NUMBER = 0x02 << 28,
     /**
      * The data type of Asset attribute value is byte array.
      *
@@ -398,7 +398,7 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    ACCESSIBILITY = TagType.UINT32 | 0x03,
+    ACCESSIBILITY = TagType.NUMBER | 0x03,
     /**
      * A tag whose value is a bool indicating whether a screen lock password is set for the device.
      *
@@ -412,14 +412,14 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    AUTH_TYPE = TagType.UINT32 | 0x05,
+    AUTH_TYPE = TagType.NUMBER | 0x05,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the validity period in seconds of user authentication.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    AUTH_VALIDITY_PERIOD = TagType.UINT32 | 0x06,
+    AUTH_VALIDITY_PERIOD = TagType.NUMBER | 0x06,
     /**
      * A tag whose value is a byte array indicating the authentication challenge for anti-replay protection.
      *
@@ -440,14 +440,14 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    SYNC_TYPE = TagType.UINT32 | 0x10,
+    SYNC_TYPE = TagType.NUMBER | 0x10,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    CONFLICT_RESOLUTION = TagType.UINT32 | 0x11,
+    CONFLICT_RESOLUTION = TagType.NUMBER | 0x11,
     /**
      * A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
      *
@@ -510,28 +510,28 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    RETURN_TYPE = TagType.UINT32 | 0x30,
+    RETURN_TYPE = TagType.NUMBER | 0x30,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the maximum number of returned Assets in one query.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    RETURN_LIMIT = TagType.UINT32 | 0x31,
+    RETURN_LIMIT = TagType.NUMBER | 0x31,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the offset of return data in batch query.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    RETURN_OFFSET = TagType.UINT32 | 0x32,
+    RETURN_OFFSET = TagType.NUMBER | 0x32,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    RETURN_ORDER_BY = TagType.UINT32 | 0x33,
+    RETURN_ORDER_BY = TagType.NUMBER | 0x33,
   }
 
   /**

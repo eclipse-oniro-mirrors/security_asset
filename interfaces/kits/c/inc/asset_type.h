@@ -54,7 +54,7 @@ typedef enum {
     /**
      * The data type of Asset attribute value is uint32.
      */
-    ASSET_TYPE_UINT32 = 0x2 << 28,
+    ASSET_TYPE_NUMBER = 0x2 << 28,
     /**
      * The data type of Asset attribute value is byte array.
      */
@@ -85,7 +85,7 @@ typedef enum {
     /**
      * A tag whose value is a 32-bit unsigned integer indicating when the Asset can be accessed.
      */
-    ASSET_TAG_ACCESSIBILITY = ASSET_TYPE_UINT32 | 0x03,
+    ASSET_TAG_ACCESSIBILITY = ASSET_TYPE_NUMBER | 0x03,
     /**
      * A tag whose value is a bool indicating whether a screen lock password is set for the device.
      */
@@ -93,11 +93,11 @@ typedef enum {
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the user authentication type for Asset access control.
      */
-    ASSET_TAG_AUTH_TYPE = ASSET_TYPE_UINT32 | 0x05,
+    ASSET_TAG_AUTH_TYPE = ASSET_TYPE_NUMBER | 0x05,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the validity period in seconds of user authentication.
      */
-    ASSET_TAG_AUTH_VALIDITY_PERIOD = ASSET_TYPE_UINT32 | 0x06,
+    ASSET_TAG_AUTH_VALIDITY_PERIOD = ASSET_TYPE_NUMBER | 0x06,
     /**
      * A tag whose value is a byte array indicating the authentication challenge for anti-replay protection.
      */
@@ -109,11 +109,11 @@ typedef enum {
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the type of Asset synchronization.
      */
-    ASSET_TAG_SYNC_TYPE = ASSET_TYPE_UINT32 | 0x10,
+    ASSET_TAG_SYNC_TYPE = ASSET_TYPE_NUMBER | 0x10,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
      */
-    ASSET_TAG_CONFLICT_RESOLUTION = ASSET_TYPE_UINT32 | 0x11,
+    ASSET_TAG_CONFLICT_RESOLUTION = ASSET_TYPE_NUMBER | 0x11,
     /**
      * A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
      */
@@ -149,19 +149,19 @@ typedef enum {
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the return type of the queried Asset.
      */
-    ASSET_TAG_RETURN_TYPE = ASSET_TYPE_UINT32 | 0x30,
+    ASSET_TAG_RETURN_TYPE = ASSET_TYPE_NUMBER | 0x30,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the maximum number of returned Assets in one query.
      */
-    ASSET_TAG_RETURN_LIMIT = ASSET_TYPE_UINT32 | 0x31,
+    ASSET_TAG_RETURN_LIMIT = ASSET_TYPE_NUMBER | 0x31,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the offset of return data in batch query.
      */
-    ASSET_TAG_RETURN_OFFSET = ASSET_TYPE_UINT32 | 0x32,
+    ASSET_TAG_RETURN_OFFSET = ASSET_TYPE_NUMBER | 0x32,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
      */
-    ASSET_TAG_RETURN_ORDER_BY = ASSET_TYPE_UINT32 | 0x33,
+    ASSET_TAG_RETURN_ORDER_BY = ASSET_TYPE_NUMBER | 0x33,
 } Asset_Tag;
 
 /**

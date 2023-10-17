@@ -150,7 +150,7 @@ pub fn test_for_open_table() {
             name: "id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "alias",
@@ -191,7 +191,7 @@ pub fn test_for_drop_table() {
             name: "id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "alias",
@@ -226,7 +226,7 @@ pub fn test_for_statement_column() {
             name: "id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "alias",
@@ -259,7 +259,7 @@ pub fn test_for_statement_column() {
     }
     // query by query_column
     while stmt1.step() == SQLITE_ROW {
-        let out_id = stmt1.query_column(0, &DataType::Uint32).unwrap();
+        let out_id = stmt1.query_column(0, &DataType::Number).unwrap();
         let out_alias = stmt1.query_column(1, &DataType::Bytes).unwrap();
         println!("id is {}", from_data_value_to_str_value(&out_id));
         println!("alias is {}", from_data_value_to_str_value(&out_alias));
@@ -333,7 +333,7 @@ pub fn test_update_row() {
             name: "id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "alias",
@@ -398,7 +398,7 @@ pub fn test_for_insert_row() {
             name: "id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "alias",
@@ -440,7 +440,7 @@ pub fn test_update_datas() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "Owner",
@@ -534,7 +534,7 @@ pub fn test_insert_datas() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "Owner",
@@ -602,7 +602,7 @@ pub fn test_insert_row_datas() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "Owner",
@@ -669,7 +669,7 @@ pub fn test_delete_datas() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "Owner",
@@ -747,7 +747,7 @@ pub fn test_for_rename() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "Owner",
@@ -793,7 +793,7 @@ pub fn test_for_add_column() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "Owner",
@@ -823,7 +823,7 @@ pub fn test_for_add_column() {
     let ret = table.add_new_column(
         ColumnInfo {
             name: "nid",
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
             is_primary_key: false,
             not_null: true,
         },
@@ -834,7 +834,7 @@ pub fn test_for_add_column() {
     let ret = table.add_new_column(
         ColumnInfo {
             name: "n_n_id",
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
             is_primary_key: true,
             not_null: true,
         },
@@ -869,7 +869,7 @@ pub fn test_query() {
             name: "id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "alias",
@@ -948,7 +948,7 @@ pub fn test_multi_insert_row_datas() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "Owner",
@@ -1051,7 +1051,7 @@ pub fn test_data_exists_and_data_count() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "Owner",
@@ -1137,7 +1137,7 @@ pub fn test_helper() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "Owner",
@@ -1269,7 +1269,7 @@ pub fn test_for_special_sql() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "Owner",
@@ -1344,7 +1344,7 @@ pub fn test_for_update_ver() {
             name: "Id",
             is_primary_key: true,
             not_null: true,
-            data_type: DataType::Uint32,
+            data_type: DataType::Number,
         },
         ColumnInfo {
             name: "Owner",
@@ -1513,7 +1513,7 @@ pub fn test_for_recovery() {
             "tt",
             &[ColumnInfo {
                 name: "Id",
-                data_type: DataType::Uint32,
+                data_type: DataType::Number,
                 is_primary_key: true,
                 not_null: true,
             }],

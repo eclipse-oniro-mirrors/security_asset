@@ -1,22 +1,24 @@
-//! Copyright (C) 2023 Huawei Device Co., Ltd.
-//! Licensed under the Apache License, Version 2.0 (the "License");
-//! you may not use this file except in compliance with the License.
-//! You may obtain a copy of the License at
-//!
-//! http://www.apache.org/licenses/LICENSE-2.0
-//!
-//! Unless required by applicable law or agreed to in writing, software
-//! distributed under the License is distributed on an "AS IS" BASIS,
-//! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//! See the License for the specific language governing permissions and
-//! limitations under the License.
+/*
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+//! yuanhao: 补充DOC
+
 use std::ffi::CStr;
 use std::fmt::Write;
 
-use asset_common::{
-    definition::{DataType, Value},
-    loge,
-};
+use asset_common::{definition::{DataType, Value}, loge};
 
 use crate::{
     database::Database, sqlite3_bind_blob_func, sqlite3_bind_int64_func, sqlite3_column_blob_func,
@@ -85,7 +87,7 @@ impl<'b> Statement<'b, true> {
     }
 
     /// bind datas
-    /// datatype is detected by enum DataValue,
+    /// data_type is detected by enum Value,
     /// index is start with 1, for '?' in sql.
     pub fn bind_data(&self, index: i32, data: &Value) -> SqliteErrCode {
         match data {
@@ -97,9 +99,9 @@ impl<'b> Statement<'b, true> {
                 loge!("[YZT] index = {}, bind integer = {}", index, i);
                 sqlite3_bind_int64_func(self.handle, index, *i as _)
             },
-            Value::Bool(_) => {
-                loge!("Unexpected bool type.");
-                panic!()
+            Value::Bool(b) => {
+                loge!("[YZT] index = {}, bind bool = {}", index, b);
+                sqlite3_bind_int64_func(self.handle, index, *b as _)
             },
         }
     }
@@ -130,8 +132,8 @@ impl<'b> Statement<'b, true> {
     }
 
     /// query column datas in result set
-    /// datatype is auto detected by ResultDataValue
-    /// the index is start with 0
+    /// data_type is auto detected by Value
+    /// the index if start with 0
     pub fn query_column(&self, index: i32, out: &DataType) -> Option<Value> {
         match out {
             DataType::Bytes => {
@@ -142,11 +144,8 @@ impl<'b> Statement<'b, true> {
                     Some(Value::Bytes(blob.to_vec()))
                 }
             },
-            DataType::Uint32 => Some(Value::Number(self.query_column_int(index))),
-            DataType::Bool => {
-                loge!("Unexpected bool type.");
-                panic!()
-            },
+            DataType::Number => Some(Value::Number(self.query_column_int(index))),
+            DataType::Bool => Some(Value::Bool(self.query_column_int(index) != 0))
         }
     }
 
@@ -203,7 +202,7 @@ impl<'b> Statement<'b, true> {
         sqlite3_column_bytes_func(self.handle, index)
     }
 
-    /// return column datatype
+    /// return column data_type
     pub fn column_type(&self, index: i32) -> i32 {
         sqlite3_column_type_func(self.handle, index)
     }

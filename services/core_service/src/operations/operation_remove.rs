@@ -21,7 +21,7 @@ use db_operator::database_table_helper::DefaultDatabaseHelper;
 use crate::{
     calling_info::CallingInfo,
     operations::operation_common::{
-        db_adapter::into_db_map, add_owner_info,
+        into_db_map, add_owner_info,
     },
 };
 

@@ -1,17 +1,21 @@
-//! Copyright (C) 2023 Huawei Device Co., Ltd.
-//! Licensed under the Apache License, Version 2.0 (the "License");
-//! you may not use this file except in compliance with the License.
-//! You may obtain a copy of the License at
-//!
-//! http://www.apache.org/licenses/LICENSE-2.0
-//!
-//! Unless required by applicable law or agreed to in writing, software
-//! distributed under the License is distributed on an "AS IS" BASIS,
-//! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//! See the License for the specific language governing permissions and
-//! limitations under the License.
+/*
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
-use asset_common::definition::{DataType, ErrCode, Value};
+//! yuanhao: 补充DOC
+
+use asset_common::{definition::{DataType, ErrCode, Value}, loge, logi};
 
 use crate::{
     database::{
@@ -79,166 +83,30 @@ pub const COLUMN_NORMAL3: &str = "DataLabelNormal_3";
 /// default column name DataLabelNormal_4
 pub const COLUMN_NORMAL4: &str = "DataLabelNormal_4";
 
-/// the columns for default asset table
-pub const COLUMN_TABLE: &[&str] = &[
-    COLUMN_ID,
-    COLUMN_SECRET,
-    COLUMN_ALIAS,
-    COLUMN_OWNER,
-    COLUMN_OWNER_TYPE,
-    COLUMN_GROUP_ID,
-    COLUMN_SYNC_TYPE,
-    COLUMN_ACCESSIBILITY,
-    COLUMN_AUTH_TYPE,
-    COLUMN_CREATE_TIME,
-    COLUMN_UPDATE_TIME,
-    COLUMN_DELETE_TYPE,
-    COLUMN_VERSION,
-    COLUMN_REQUIRE_PASSWORD_SET,
-    COLUMN_CRITICAL1,
-    COLUMN_CRITICAL2,
-    COLUMN_CRITICAL3,
-    COLUMN_CRITICAL4,
-    COLUMN_NORMAL1,
-    COLUMN_NORMAL2,
-    COLUMN_NORMAL3,
-    COLUMN_NORMAL4,
-];
-
 /// columns info for default asset_table
 pub const COLUMN_INFO: &[ColumnInfo] = &[
-    ColumnInfo {
-        name: COLUMN_ID,
-        data_type: DataType::Uint32,
-        is_primary_key: true,
-        not_null: true,
-    },
-    ColumnInfo {
-        name: COLUMN_SECRET,
-        data_type: DataType::Bytes,
-        is_primary_key: false,
-        not_null: true,
-    },
-    ColumnInfo {
-        name: COLUMN_ALIAS,
-        data_type: DataType::Bytes,
-        is_primary_key: false,
-        not_null: true,
-    },
-    ColumnInfo {
-        name: COLUMN_OWNER,
-        data_type: DataType::Bytes,
-        is_primary_key: false,
-        not_null: true,
-    },
-    ColumnInfo {
-        name: COLUMN_OWNER_TYPE,
-        data_type: DataType::Uint32,
-        is_primary_key: false,
-        not_null: true,
-    },
-    ColumnInfo {
-        name: COLUMN_GROUP_ID,
-        data_type: DataType::Bytes,
-        is_primary_key: false,
-        not_null: false,
-    },
-    ColumnInfo {
-        name: COLUMN_SYNC_TYPE,
-        data_type: DataType::Uint32,
-        is_primary_key: false,
-        not_null: true,
-    },
-    ColumnInfo {
-        name: COLUMN_ACCESSIBILITY,
-        data_type: DataType::Uint32,
-        is_primary_key: false,
-        not_null: true,
-    },
-    ColumnInfo {
-        name: COLUMN_AUTH_TYPE,
-        data_type: DataType::Uint32,
-        is_primary_key: false,
-        not_null: true,
-    },
-    ColumnInfo {
-        name: COLUMN_CREATE_TIME,
-        data_type: DataType::Bytes,
-        is_primary_key: false,
-        not_null: true,
-    },
-    ColumnInfo {
-        name: COLUMN_UPDATE_TIME,
-        data_type: DataType::Bytes,
-        is_primary_key: false,
-        not_null: true,
-    },
-    ColumnInfo {
-        name: COLUMN_DELETE_TYPE,
-        data_type: DataType::Uint32,
-        is_primary_key: false,
-        not_null: true,
-    },
-    ColumnInfo {
-        name: COLUMN_VERSION,
-        data_type: DataType::Uint32,
-        is_primary_key: false,
-        not_null: true,
-    },
-    ColumnInfo {
-        name: COLUMN_REQUIRE_PASSWORD_SET,
-        data_type: DataType::Uint32,
-        is_primary_key: false,
-        not_null: true,
-    },
-    ColumnInfo {
-        name: COLUMN_CRITICAL1,
-        data_type: DataType::Bytes,
-        is_primary_key: false,
-        not_null: false,
-    },
-    ColumnInfo {
-        name: COLUMN_CRITICAL2,
-        data_type: DataType::Bytes,
-        is_primary_key: false,
-        not_null: false,
-    },
-    ColumnInfo {
-        name: COLUMN_CRITICAL3,
-        data_type: DataType::Bytes,
-        is_primary_key: false,
-        not_null: false,
-    },
-    ColumnInfo {
-        name: COLUMN_CRITICAL4,
-        data_type: DataType::Bytes,
-        is_primary_key: false,
-        not_null: false,
-    },
-    ColumnInfo {
-        name: COLUMN_NORMAL1,
-        data_type: DataType::Bytes,
-        is_primary_key: false,
-        not_null: false,
-    },
-    ColumnInfo {
-        name: COLUMN_NORMAL2,
-        data_type: DataType::Bytes,
-        is_primary_key: false,
-        not_null: false,
-    },
-    ColumnInfo {
-        name: COLUMN_NORMAL3,
-        data_type: DataType::Bytes,
-        is_primary_key: false,
-        not_null: false,
-    },
-    ColumnInfo {
-        name: COLUMN_NORMAL4,
-        data_type: DataType::Bytes,
-        is_primary_key: false,
-        not_null: false,
-    },
+    ColumnInfo { name: COLUMN_ID, data_type: DataType::Number, is_primary_key: true, not_null: true },
+    ColumnInfo { name: COLUMN_SECRET, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
+    ColumnInfo { name: COLUMN_ALIAS, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
+    ColumnInfo { name: COLUMN_OWNER, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
+    ColumnInfo { name: COLUMN_OWNER_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: COLUMN_GROUP_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: COLUMN_SYNC_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: COLUMN_ACCESSIBILITY, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: COLUMN_AUTH_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: COLUMN_CREATE_TIME, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
+    ColumnInfo { name: COLUMN_UPDATE_TIME, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
+    ColumnInfo { name: COLUMN_DELETE_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: COLUMN_VERSION, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: COLUMN_REQUIRE_PASSWORD_SET, data_type: DataType::Bool, is_primary_key: false, not_null: true },
+    ColumnInfo { name: COLUMN_CRITICAL1, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: COLUMN_CRITICAL2, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: COLUMN_CRITICAL3, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: COLUMN_CRITICAL4, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: COLUMN_NORMAL1, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: COLUMN_NORMAL2, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: COLUMN_NORMAL3, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: COLUMN_NORMAL4, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
 ];
 
 /// do same operation in backup database when do something in master db
@@ -255,9 +123,9 @@ fn back_db_when_succ<T, F: Fn(&Table) -> Result<T, SqliteErrCode>>(
                 // let _ = thread::spawn(move || {
                 let back_ret = copy_db_file_inner(&table.db.path, &table.db.back_path);
                 if back_ret.is_err() {
-                    asset_common::loge!("backup db {} fail", table.db.back_path);
+                    loge!("backup db {} fail", table.db.back_path);
                 } else {
-                    asset_common::logi!("backup db {} succ", table.db.back_path);
+                    logi!("backup db {} succ", table.db.back_path);
                 }
                 //});
             }
@@ -268,10 +136,10 @@ fn back_db_when_succ<T, F: Fn(&Table) -> Result<T, SqliteErrCode>>(
                 // recovery master db
                 let r_ret = copy_db_file(table.db, true);
                 if r_ret.is_err() {
-                    asset_common::loge!("recovery master db {} fail", table.db.path);
+                    loge!("recovery master db {} fail", table.db.path);
                     Err(ErrCode::SqliteError)
                 } else {
-                    asset_common::logi!("recovery master db {} succ", table.db.path);
+                    logi!("recovery master db {} succ", table.db.path);
 
                     let res = func(table);
                     process_err_msg(res.map_err(from_sqlite_code_to_asset_code), table.db)
@@ -286,18 +154,19 @@ fn back_db_when_succ<T, F: Fn(&Table) -> Result<T, SqliteErrCode>>(
 impl<'a> TableHelper<'a> {
     /// update datas in asset db table.
     /// owner and alias is the primary-key for resources.
-    /// the datas is a list of column-data Pair.
+    /// the datas is a map of column-data pair.
     /// if success, return line changes.
     /// if fail, return err code.
     ///
-    /// the code like:
+    /// # Exsample
     /// ```
+    /// use asset_common::definition::Value;
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
-    /// use std::collections::HashMap;
-    /// use asset_common::definition::Value,
+    /// use db_operator::types::DbMap;
     ///
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let ret = helper.update_datas_default(&HashMap::<&'static str, Value>::new(), &HashMap::<&'static str, Value>::new());
+    /// let datas = DbMap::from(["value", Value::Bytes(b"test_update".to_vec())]);
+    /// let ret = helper.update_datas_default(&DbMap::new(), datas);
     /// ```
     /// sql like:
     /// update table_name set alias='test_update' where AppId='owner' and Alias='alias'
@@ -308,18 +177,20 @@ impl<'a> TableHelper<'a> {
 
     /// insert datas into asset db table.
     /// owner and alias is the primary-key for resources.
-    /// the datas is a list of column-data Pair.
+    /// the datas is a map of column-data pair.
     /// if success, return line changes.
     /// if fail, return err code.
     ///
-    /// the code like:
+    /// # Example
     /// ```
+    /// use asset_common::definition::Value;
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
-    /// use std::collections::HashMap;
-    /// use asset_common::definition::Value,
+    /// use db_operator::types::DbMap;
     ///
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let ret = helper.insert_datas_default(&HashMap::<&'static str, Value>::new());
+    /// let datas = DbMap::from(["value", Value::Bytes(b"test_update".to_vec())]);
+    ///
+    /// let ret = helper.insert_datas_default(&datas);
     /// ```
     ///
     /// sql like:
@@ -343,17 +214,20 @@ impl<'a> TableHelper<'a> {
 
     /// delete datas from asset db table.
     /// owner and alias is the primary-key for resources.
-    /// the cond is a list of column-data Pair.
+    /// the cond is a map of column-data pair.
     /// if success, return line changes.
     /// if fail, return err code.
     ///
-    /// the code like:
+    /// # Example
     /// ```
+    /// use asset_common::definition::Value;
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
-    /// use std::collections::HashMap;
-    /// use asset_common::definition::Value,
+    /// use db_operator::types::DbMap;
+    ///
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let ret = helper.delete_datas_default(&HashMap::<&'static str, Value>::new());
+    /// let cond = DbMap::from(["value", Value::Bytes(b"test_delete".to_vec())]);
+    ///
+    /// let ret = helper.delete_datas_default(&cond);
     /// ```
     ///
     /// sql like:
@@ -366,7 +240,7 @@ impl<'a> TableHelper<'a> {
     /// return if data exists.
     /// if fail, return err code.
     ///
-    /// code like:
+    /// # Example
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use std::collections::HashMap;
@@ -385,7 +259,7 @@ impl<'a> TableHelper<'a> {
     /// return select count for owner.
     /// if fail, return err code.
     ///
-    /// code like:
+    /// # Example
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use std::collections::HashMap;
@@ -404,7 +278,7 @@ impl<'a> TableHelper<'a> {
     /// if success, return result set.
     /// if fail, return err code.
     ///
-    /// code like:
+    /// # Example
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use std::collections::HashMap;
@@ -427,7 +301,7 @@ impl<'a> TableHelper<'a> {
     /// if success, return result set.
     /// if fail, return err code.
     ///
-    /// code like:
+    /// # Example
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use std::collections::HashMap;
@@ -443,7 +317,7 @@ impl<'a> TableHelper<'a> {
         condition: &Condition,
         query_options: Option<&QueryOptions>,
     ) -> Result<Vec<DbMap>, ErrCode> {
-        let closure = |e: &Table| e.query_datas_advanced(columns, condition, query_options);
+        let closure = |e: &Table| e.query_datas_advanced(columns, condition, query_options, COLUMN_INFO);
         back_db_when_succ(false, self, closure)
     }
 }
@@ -455,9 +329,9 @@ pub fn process_err_msg<T>(
 ) -> Result<T, ErrCode> {
     if res.is_err() {
         if let Some(msg) = db.get_err_msg() {
-            asset_common::loge!("db err info: {}", msg.s);
+            loge!("db err info: {}", msg.s);
         } else {
-            asset_common::loge!("db err with no msg");
+            loge!("db err with no msg");
         }
     }
     res
@@ -494,13 +368,13 @@ fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>, Err
                 // recovery master db
                 let r_ret = copy_db_file(db, true);
                 if r_ret.is_err() {
-                    asset_common::loge!("recovery master db {} fail", db.path);
+                    loge!("recovery master db {} fail", db.path);
                     Err(ErrCode::SqliteError)
                 } else {
-                    asset_common::logi!("recovery master db {} succ", db.path);
+                    logi!("recovery master db {} succ", db.path);
                     let o_ret = db.re_open();
                     if let Err(e) = o_ret {
-                        asset_common::loge!("reopen master db {} fail {}", db.path, e);
+                        loge!("reopen master db {} fail {}", db.path, e);
                         return Err(ErrCode::SqliteError);
                     }
                     process_err_msg(
@@ -524,28 +398,6 @@ impl<'a> DefaultDatabaseHelper<'a> {
         datas: &DbMap,
     ) -> Result<i32, ErrCode> {
         let table = Table::new(ASSET_TABLE_NAME, self);
-        #[cfg(feature = "auto_insert_time")]
-        {
-            let mut contain_update_time = false;
-            for data in datas {
-                if data.column_name == COLUMN_UPDATE_TIME {
-                    contain_update_time = true;
-                    break;
-                }
-            }
-            if !contain_update_time {
-                let ctime = std::time::UNIX_EPOCH.elapsed().unwrap().as_secs().to_string();
-                let mut datas_new = Vec::<Pair>::with_capacity(datas.len() + 1);
-                for data in datas {
-                    datas_new.push(*data);
-                }
-                datas_new.push(Pair {
-                    column_name: COLUMN_UPDATE_TIME,
-                    value: Value::Bytes(ctime.as_bytes()),
-                });
-                return table.update_datas(condition, &datas_new);
-            }
-        }
         table.update_datas(condition, datas)
     }
 
@@ -553,39 +405,6 @@ impl<'a> DefaultDatabaseHelper<'a> {
     #[inline(always)]
     pub fn insert_datas_default(&self, datas: &DbMap) -> Result<i32, ErrCode> {
         let table = Table::new(ASSET_TABLE_NAME, self);
-        #[cfg(feature = "auto_insert_time")]
-        {
-            let mut contain_create_time = false;
-            let mut contain_update_time = false;
-            for data in datas {
-                if data.column_name == COLUMN_CREATE_TIME {
-                    contain_create_time = true;
-                }
-                if data.column_name == COLUMN_UPDATE_TIME {
-                    contain_update_time = true;
-                }
-            }
-            if !contain_create_time || !contain_update_time {
-                let ctime = std::time::UNIX_EPOCH.elapsed().unwrap().as_secs().to_string();
-                let mut datas_new = Vec::<Pair>::with_capacity(datas.len() + 2);
-                for data in datas {
-                    datas_new.push(*data);
-                }
-                if !contain_create_time {
-                    datas_new.push(Pair {
-                        column_name: COLUMN_CREATE_TIME,
-                        value: Value::Bytes(ctime.as_bytes()),
-                    });
-                }
-                if !contain_update_time {
-                    datas_new.push(Pair {
-                        column_name: COLUMN_UPDATE_TIME,
-                        value: Value::Bytes(ctime.as_bytes()),
-                    });
-                }
-                return table.insert_datas(&datas_new);
-            }
-        }
         table.insert_datas(datas)
     }
 
@@ -782,7 +601,7 @@ pub fn do_transaction<F: Fn(&Database) -> bool>(userid: i32, callback: F) -> Res
     let db = match DefaultDatabaseHelper::open_default_database_table(userid) {
         Ok(o) => o,
         Err(e) => {
-            asset_common::loge!("transaction open db fail");
+            loge!("transaction open db fail");
             return Err(e);
         },
     };
@@ -796,14 +615,14 @@ pub fn do_transaction<F: Fn(&Database) -> bool>(userid: i32, callback: F) -> Res
     if callback(&db) {
         let ret = trans.commit();
         if ret != SQLITE_OK {
-            asset_common::loge!("trans commit fail {}", ret);
+            loge!("trans commit fail {}", ret);
             return Err(from_sqlite_code_to_asset_code(ret));
         }
         Ok(true)
     } else {
         let ret = trans.rollback();
         if ret != SQLITE_OK {
-            asset_common::loge!("trans rollback fail {}", ret);
+            loge!("trans rollback fail {}", ret);
             return Err(from_sqlite_code_to_asset_code(ret));
         }
         Ok(false)

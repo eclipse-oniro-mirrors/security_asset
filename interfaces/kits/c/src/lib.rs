@@ -22,11 +22,10 @@ use std::{
 };
 
 use asset_common::{
-    loge,
     definition::{
         AssetMap, DataType, ErrCode, IntoValue,
         Tag, Value, Version
-    }
+    }, loge, logi
 };
 use asset_sdk::Manager;
 
@@ -51,7 +50,7 @@ fn into_map(attributes: *const Asset_Attr, attr_cnt: u32) -> Option<AssetMap> {
                 DataType::Bool => {
                     map.insert(attr_tag, Value::Bool((*attr).value.boolean));
                 }
-                DataType::Uint32 => {
+                DataType::Number => {
                     map.insert(attr_tag, Value::Number((*attr).value.uint32));
                 },
                 DataType::Bytes => {

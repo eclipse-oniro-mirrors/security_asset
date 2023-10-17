@@ -40,7 +40,7 @@ void AssetFree(void *addr)
     if (addr == NULL) {
         return;
     }
-    LOGE("[YZT] free %p", addr); // todo: test memory leak
+    LOGE("[YZT] free %{public}p", addr); // todo: test memory leak
     free(addr);
 }
 

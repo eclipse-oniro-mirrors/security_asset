@@ -29,10 +29,8 @@ use db_operator::{
 use crate::{
     calling_info::CallingInfo,
     operations::operation_common::{
-        add_owner_info, create_user_db_dir, encrypt, get_system_time,
-        db_adapter::into_db_map
-    },
-    VERSION
+        add_owner_info, create_user_db_dir, encrypt, get_system_time, into_db_map
+    }, DB_DATA_VERSION
 };
 
 impl_enum_trait! {
@@ -64,30 +62,31 @@ fn replace_db_record(calling_info: &CallingInfo, query_db_data: &DbMap, replace_
     Ok(())
 }
 
-fn resolve_conflict(calling_info: &CallingInfo, attrs: &AssetMap, db_data: &DbMap) -> Result<()> {
+fn resolve_conflict(calling_info: &CallingInfo, attrs: &AssetMap, query: &DbMap, db_data: &DbMap) -> Result<()> {
+    match attrs.get(&Tag::ConflictResolution) {
+        Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {
+            replace_db_record(calling_info, query, db_data)
+        },
+        _ => {
+            loge!("[FATAL]The specified alias already exists.");
+            Err(ErrCode::Duplicated)
+        }
+    }
+}
+
+fn get_query_condition(calling_info: &CallingInfo, attrs: &AssetMap) -> Result<DbMap> {
     let Value::Bytes(ref alias) = attrs[&Tag::Alias] else { return Err(ErrCode::InvalidArgument) };
     let mut query = DbMap::new();
     query.insert(COLUMN_ALIAS, Value::Bytes(alias.clone()));
     query.insert(COLUMN_OWNER, Value::Bytes(calling_info.owner_info().clone()));
     query.insert(COLUMN_OWNER_TYPE, Value::Number(calling_info.owner_type()));
-
-    if DefaultDatabaseHelper::is_data_exists_default_once(calling_info.user_id(), &query)? {
-        match attrs.get(&Tag::ConflictResolution) {
-            Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 =>
-                return replace_db_record(calling_info, &query, db_data),
-            _ => {
-                loge!("[FATAL]The specified alias already exists.");
-                return Err(ErrCode::Duplicated);
-            },
-        }
-    }
-    Ok(())
+    Ok(query)
 }
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     let delete_type = DeleteType::WhenUninstallApp as u32 | DeleteType::WhenRemoveUser as u32;
     db_data.insert(COLUMN_DELETE_TYPE, Value::Number(delete_type));
-    db_data.insert(COLUMN_VERSION, Value::Number(VERSION));
+    db_data.insert(COLUMN_VERSION, Value::Number(DB_DATA_VERSION));
 
     let time = get_system_time()?;
     db_data.insert(COLUMN_CREATE_TIME, Value::Bytes(time.clone()));
@@ -99,7 +98,7 @@ fn add_default_attrs(db_data: &mut DbMap) {
     db_data.entry(COLUMN_ACCESSIBILITY).or_insert(Value::Number(Accessibility::DeviceFirstUnlock as u32));
     db_data.entry(COLUMN_AUTH_TYPE).or_insert(Value::Number(AuthType::None as u32));
     db_data.entry(COLUMN_SYNC_TYPE).or_insert(Value::Number(SyncType::Never as u32));
-    db_data.entry(COLUMN_REQUIRE_PASSWORD_SET).or_insert(Value::Number(false as u32));
+    db_data.entry(COLUMN_REQUIRE_PASSWORD_SET).or_insert(Value::Bool(false));
 }
 
 pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
@@ -115,11 +114,12 @@ pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<(
     let cipher = encrypt(calling_info, &db_data)?;
     db_data.insert(COLUMN_SECRET, Value::Bytes(cipher));
 
-    resolve_conflict(calling_info, attributes, &db_data)?;
-
-    // call sql to add
-    let insert_num = DefaultDatabaseHelper::insert_datas_default_once(calling_info.user_id(), &db_data)?;
-
-    logi!("insert {} data", insert_num);
-    Ok(())
+    let query = get_query_condition(calling_info, attributes)?;
+    if DefaultDatabaseHelper::is_data_exists_default_once(calling_info.user_id(), &query)? {
+        resolve_conflict(calling_info, attributes, &query, &db_data)
+    } else {
+        let insert_num = DefaultDatabaseHelper::insert_datas_default_once(calling_info.user_id(), &db_data)?;
+        logi!("insert {} data", insert_num);
+        Ok(())
+    }
 }

@@ -1,31 +1,34 @@
-//! Copyright (C) 2023 Huawei Device Co., Ltd.
-//! Licensed under the Apache License, Version 2.0 (the "License");
-//! you may not use this file except in compliance with the License.
-//! You may obtain a copy of the License at
-//!
-//! http://www.apache.org/licenses/LICENSE-2.0
-//!
-//! Unless required by applicable law or agreed to in writing, software
-//! distributed under the License is distributed on an "AS IS" BASIS,
-//! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//! See the License for the specific language governing permissions and
-//! limitations under the License.
+/*
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+//! yuanhao: 补充DOC
 
 use std::cmp::Ordering;
 
 use crate::{
     database::Database,
-    database_table_helper::COLUMN_TABLE,
     sqlite3_changes_func,
     statement::Statement,
     types::{
-        from_data_value_to_str_value, from_datatype_to_str, ColumnInfo, Condition, DbMap,
-        QueryOptions, ResultSet,
+        from_data_value_to_str_value, from_data_type_to_str, ColumnInfo,
+        Condition, QueryOptions, ResultSet, DbMap
     },
     SqliteErrCode, SQLITE_DONE, SQLITE_ERROR, SQLITE_OK, SQLITE_ROW,
 };
 
-use asset_common::definition::Value;
+use asset_common::definition::{DataType, Value};
 
 /// a database table
 #[repr(C)]
@@ -170,6 +173,15 @@ fn build_sql_query_options(query_options: Option<&QueryOptions>, sql: &mut Strin
     }
 }
 
+fn get_column_info(columns: &'static [ColumnInfo], db_column: &str) -> &'static ColumnInfo {
+    for column in columns.iter() {
+        if column.name.eq(db_column) {
+            return column;
+        }
+    }
+    panic!()
+}
+
 impl<'a> Table<'a> {
     pub(crate) fn new(table_name: &str, db: &'a Database) -> Table<'a> {
         Table { table_name: table_name.to_string(), db }
@@ -180,15 +192,9 @@ impl<'a> Table<'a> {
     /// like this sql: update table_test set alias='test_update' where id=2
     /// the code like:
     ///
-    /// let conditions = &vec![Pair {
-    ///     column_name: "id",
-    ///     value: DataValue::Integer(2),
-    /// }];
+    /// let conditions = &DbMap::from([("id", Value::Number(2)]);
     ///
-    /// let datas = &vec![Pair {
-    ///     column_name: "alias",
-    ///     value: DataValue::Blob(b"test_update"),
-    /// }];
+    /// let datas = &DbMap::from([("alias", Value::Bytes(b"test_update")]);
     ///
     /// let ret = table.update_row(conditions, datas);
     pub fn update_row(&self, conditions: &Condition, datas: &DbMap) -> Result<i32, SqliteErrCode> {
@@ -230,10 +236,7 @@ impl<'a> Table<'a> {
     /// like this sql: delete from table_test where id=2
     /// the code like:
     ///
-    /// let conditions = &vec![Pair {
-    ///     column_name: "id",
-    ///     value: DataValue::Integer(2),
-    /// }];
+    /// let conditions = &DbMap::from([("id", Value::Number(2)]);
     ///
     /// let ret = table.delete_row(conditions);
     pub fn delete_row(&self, conditions: &Condition) -> Result<i32, SqliteErrCode> {
@@ -254,16 +257,7 @@ impl<'a> Table<'a> {
     /// sql like: insert into table_test (id,alias) values (3,'alias1')
     /// code like this:
     ///
-    /// let datas = &vec![
-    ///     Pair {
-    ///         column_name: "id",
-    ///         value: DataValue::Integer(3),
-    ///     },
-    ///     Pair {
-    ///         column_name: "alias",
-    ///         value: DataValue::Blob(b"alias1"),
-    ///     },
-    /// ];
+    /// let datas = &DbMap::from([("id", Value::Number(3), ("alias", Value::Bytes(b"alias1"))]);
     /// let ret = table.insert_row(datas);
     pub fn insert_row(&self, datas: &DbMap) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("insert into {} (", self.table_name);
@@ -292,7 +286,7 @@ impl<'a> Table<'a> {
     /// sql like: insert into table_test values (3,'alias1')
     /// code like this:
     ///
-    /// let datas = &vec![DataValue::Integer(3), DataValue::Blob(b"alias1")];
+    /// let datas = &vec![Value::Number(3), Value::Bytes(b"alias1")];
     /// let ret = table.insert_row_datas(datas);
     pub fn insert_row_datas(&self, datas: &Vec<Value>) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("insert into {} ", self.table_name);
@@ -317,19 +311,19 @@ impl<'a> Table<'a> {
     /// let columns = &vec!["AppId", "Alias", "value"];
     /// let dataset = vec![
     ///     vec![
-    ///         DataValue::Blob(b"appid1"),
-    ///         DataValue::Blob(b"alias1"),
-    ///         DataValue::Blob(b"a"),
+    ///         Value::Bytes(b"appid1"),
+    ///         Value::Bytes(b"alias1"),
+    ///         Value::Bytes(b"a"),
     ///     ],
     ///     vec![
-    ///         DataValue::Blob(b"appid2"),
-    ///         DataValue::Blob(b"alias2"),
-    ///         DataValue::Blob(b"b"),
+    ///         Value::Bytes(b"appid2"),
+    ///         Value::Bytes(b"alias2"),
+    ///         Value::Bytes(b"b"),
     ///     ],
     ///     vec![
-    ///         DataValue::Blob(b"appid3"),
-    ///         DataValue::Blob(b"alias3"),
-    ///         DataValue::Blob(b"c"),
+    ///         Value::Bytes(b"appid3"),
+    ///         Value::Bytes(b"alias3"),
+    ///         Value::Bytes(b"c"),
     ///     ],
     /// ];
     /// let count = table.insert_multi_row_datas(columns, &dataset);
@@ -386,7 +380,7 @@ impl<'a> Table<'a> {
     ///         is_primary_key: false,
     ///         not_null: true,
     ///     },
-    ///     Some(DataValue::Integer(0)),
+    ///     Some(Value::Number(0)),
     /// );
     pub fn add_new_column(
         &self,
@@ -399,9 +393,9 @@ impl<'a> Table<'a> {
         if column.not_null && default_value.is_none() {
             return SQLITE_ERROR;
         }
-        let datatype = from_datatype_to_str(&column.data_type);
+        let data_type = from_data_type_to_str(&column.data_type);
         let mut sql =
-            format!("ALTER TABLE {} ADD COLUMN {} {}", self.table_name, column.name, datatype);
+            format!("ALTER TABLE {} ADD COLUMN {} {}", self.table_name, column.name, data_type);
         if let Some(data) = default_value {
             sql.push_str(" DEFAULT ");
             sql.push_str(&from_data_value_to_str_value(&data));
@@ -467,6 +461,7 @@ impl<'a> Table<'a> {
         columns: &Vec<&'static str>,
         conditions: &Condition,
         query_options: Option<&QueryOptions>,
+        column_info: &'static [ColumnInfo]
     ) -> Result<Vec<DbMap>, SqliteErrCode> {
         let mut sql = String::from("select ");
         build_sql_columns(columns, &mut sql);
@@ -479,20 +474,19 @@ impl<'a> Table<'a> {
         bind_conditions(conditions, &stmt, &mut index)?;
         let mut result = vec![];
         while stmt.step() == SQLITE_ROW {
-            let mut data_line = DbMap::new();
+            let mut record = DbMap::new();
             let n = stmt.data_count();
             for i in 0..n {
-                let data = stmt.query_columns_auto_type(i)?;
-                if let Some(data) = data {
-                    let column_name = if columns.is_empty() {
-                        COLUMN_TABLE[i as usize]
-                    } else {
-                        columns[i as usize]
-                    };
-                    data_line.insert(column_name, data);
-                }
+                let column_name = stmt.query_column_name(i)?;
+                let column_info = get_column_info(column_info, column_name);
+                match stmt.query_columns_auto_type(i)? {
+                    Some(Value::Number(n)) if column_info.data_type == DataType::Bool =>
+                        record.insert(column_info.name, Value::Bool(n != 0)),
+                    Some(n) => record.insert(column_info.name, n),
+                    None => continue,
+                };
             }
-            result.push(data_line);
+            result.push(record);
         }
         Ok(result)
     }
@@ -501,10 +495,7 @@ impl<'a> Table<'a> {
     ///
     /// code like:
     /// let count = table
-    ///     .count_datas(&vec![Pair {
-    ///         column_name: "id",
-    ///         value: DataValue::Integer(3),
-    ///     }]);
+    ///     .count_datas(&DbMap::from([("id", Value::Number(3))]));
     ///
     /// the sql is like : select count(*) as count from table_name where id=3
     pub fn count_datas(&self, conditions: &Condition) -> Result<u32, SqliteErrCode> {
@@ -525,16 +516,7 @@ impl<'a> Table<'a> {
     ///
     /// code like:
     /// let exits = table
-    ///     .is_data_exists(&vec![
-    ///         Pair {
-    ///             column_name: "id",
-    ///             value: DataValue::Integer(3),
-    ///         },
-    ///         Pair {
-    ///             column_name: "alias",
-    ///             value: DataValue::Blob(b"test test"),
-    ///         },
-    ///     ]);
+    ///     .is_data_exists(&DbMap::from([("id", Value::Number(3)), ("alias", Value::Bytes(b"test test"))]));
     ///
     /// the sql is like: select count(*) as count from table_name where id=3 and alias='test test'
     /// if count > 0, data exists

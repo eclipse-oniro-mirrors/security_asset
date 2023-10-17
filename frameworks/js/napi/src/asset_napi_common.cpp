@@ -137,7 +137,7 @@ napi_status ParseAssetAttribute(napi_env env, napi_value tag, napi_value value, 
             CHECK_ASSET_TAG(env, type != napi_boolean, attr.tag, "Expect type napi_boolean.");
             NAPI_CALL_RETURN_ERR(env, napi_get_value_bool(env, value, &attr.value.boolean));
             break;
-        case ASSET_TYPE_UINT32:
+        case ASSET_TYPE_NUMBER:
             CHECK_ASSET_TAG(env, type != napi_number, attr.tag, "expect type napi_number");
             NAPI_CALL_RETURN_ERR(env, napi_get_value_uint32(env, value, &attr.value.u32));
             break;
@@ -260,7 +260,7 @@ napi_value GetMapObject(napi_env env, Asset_Result *result)
             case ASSET_TYPE_BOOL:
                 NAPI_CALL(env, napi_get_boolean(env, result->attrs[i].value.boolean, &value));
                 break;
-            case ASSET_TYPE_UINT32:
+            case ASSET_TYPE_NUMBER:
                 NAPI_CALL(env, napi_create_uint32(env, result->attrs[i].value.u32, &value));
                 break;
             case ASSET_TYPE_BYTES:
@@ -271,7 +271,7 @@ napi_value GetMapObject(napi_env env, Asset_Result *result)
         }
 
         napi_value setArgs[] = { key, value };
-        napi_call_function(env, map, setFunc, sizeof(setArgs) / sizeof(setArgs[0]), setArgs, nullptr);
+        NAPI_CALL(env, napi_call_function(env, map, setFunc, sizeof(setArgs) / sizeof(setArgs[0]), setArgs, nullptr));
     }
     return map;
 }

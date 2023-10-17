@@ -15,7 +15,7 @@
 
 use core::panic;
 
-use asset_sdk::definition::{AssetMap, Accessibility, Tag, Insert, AuthType, SyncType, Value, ConflictResolution};
+use asset_sdk::definition::{AssetMap, Accessibility, Tag, Insert, AuthType, SyncType, Value, ConflictResolution, ReturnType};
 
 fn add_asset_inner(alias: &[u8]) {
     let mut input = AssetMap::new();
@@ -90,6 +90,7 @@ fn test_for_precise_query() {
     add_asset_inner(&alias);
     let mut input = AssetMap::new();
     input.insert_attr(Tag::Alias, alias.clone()).unwrap();
+    input.insert_attr(Tag::ReturnType, ReturnType::All).unwrap();
 
     match asset_sdk::Manager::build() {
         Ok(manager) => {

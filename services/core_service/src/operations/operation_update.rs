@@ -25,8 +25,7 @@ use db_operator::{database_table_helper::{COLUMN_SECRET, COLUMN_UPDATE_TIME, Def
 // use crypto_manager::hukkey::Crypto;
 use crate::{
     operations::operation_common::{
-        encrypt, add_owner_info,
-        db_adapter::into_db_map
+        encrypt, add_owner_info, into_db_map
     },
     calling_info::CallingInfo,
 };

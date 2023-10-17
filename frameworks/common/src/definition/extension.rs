@@ -30,7 +30,7 @@ impl IntoValue for Tag {
         let mask = (*self as u32) & DATA_TYPE_MASK;
         match mask {
             _ if DataType::Bool as u32 == mask => DataType::Bool,
-            _ if DataType::Uint32 as u32 == mask => DataType::Uint32,
+            _ if DataType::Number as u32 == mask => DataType::Number,
             _ if DataType::Bytes as u32 == mask => DataType::Bytes,
             _ => {
                 panic!("Unexpected data type, it should be uint32 or bytes.");
@@ -45,7 +45,7 @@ impl IntoValue for Tag {
 
 impl IntoValue for Accessibility {
     fn data_type(&self) -> DataType {
-        DataType::Uint32
+        DataType::Number
     }
 
     fn into_value(self) -> Value {
@@ -55,7 +55,7 @@ impl IntoValue for Accessibility {
 
 impl IntoValue for SyncType {
     fn data_type(&self) -> DataType {
-        DataType::Uint32
+        DataType::Number
     }
 
     fn into_value(self) -> Value {
@@ -65,7 +65,7 @@ impl IntoValue for SyncType {
 
 impl IntoValue for ConflictResolution {
     fn data_type(&self) -> DataType {
-        DataType::Uint32
+        DataType::Number
     }
 
     fn into_value(self) -> Value {
@@ -75,7 +75,7 @@ impl IntoValue for ConflictResolution {
 
 impl IntoValue for ReturnType {
     fn data_type(&self) -> DataType {
-        DataType::Uint32
+        DataType::Number
     }
 
     fn into_value(self) -> Value {
@@ -85,7 +85,7 @@ impl IntoValue for ReturnType {
 
 impl IntoValue for AuthType {
     fn data_type(&self) -> DataType {
-        DataType::Uint32
+        DataType::Number
     }
 
     fn into_value(self) -> Value {
@@ -124,7 +124,7 @@ impl Insert for AssetMap {
                 loge!("[FATAL]Insert data of bool type failed!");
                 Err(ErrCode::InvalidArgument)
             },
-            DataType::Uint32 => {
+            DataType::Number => {
                 if let Value::Number(real) = value.into_value() {
                     self.insert(key, Value::Number(real));
                     return Ok(());

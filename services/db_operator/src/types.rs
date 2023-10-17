@@ -1,33 +1,32 @@
-//! Copyright (C) 2023 Huawei Device Co., Ltd.
-//! Licensed under the Apache License, Version 2.0 (the "License");
-//! you may not use this file except in compliance with the License.
-//! You may obtain a copy of the License at
-//!
-//! http://www.apache.org/licenses/LICENSE-2.0
-//!
-//! Unless required by applicable law or agreed to in writing, software
-//! distributed under the License is distributed on an "AS IS" BASIS,
-//! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//! See the License for the specific language governing permissions and
-//! limitations under the License.
+/*
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+//! yuanhao: 补充DOC
+
 use std::{cmp::Ordering, collections::HashMap};
+
+use asset_common::definition::{DataType, Value};
 
 use crate::database::Database;
 
-use asset_common::{
-    definition::{DataType, Value},
-    loge,
-};
-
-/// change datatype to sql str
-pub fn from_datatype_to_str(value: &DataType) -> &'static str {
+/// change data type to sql str
+pub fn from_data_type_to_str(value: &DataType) -> &'static str {
     match *value {
         DataType::Bytes => "BLOB",
-        DataType::Uint32 => "INTEGER",
-        DataType::Bool => {
-            loge!("Unexpected bool type.");
-            panic!()
-        },
+        DataType::Number => "INTEGER",
+        DataType::Bool => "INTEGER",
     }
 }
 
@@ -38,16 +37,6 @@ pub fn from_data_value_to_str_value(value: &Value) -> String {
         Value::Bytes(_) => String::from("NOT SUPPORTED"),
         Value::Bool(b) => format!("{}", b),
     }
-}
-
-/// Pair struct for query condition or exec data
-#[derive(Clone)]
-#[repr(C)]
-pub struct Pair {
-    /// column name for condition
-    pub column_name: &'static str,
-    /// query value for condition
-    pub value: Value,
 }
 
 /// A Map type containing tag-value pairs that describe the attributes of an DB field.
@@ -61,7 +50,7 @@ pub type Condition = DbMap;
 pub struct ColumnInfo {
     /// column name
     pub name: &'static str,
-    /// column datatype
+    /// column data type
     pub data_type: DataType,
     /// id auto inc for primary key
     pub is_primary_key: bool,

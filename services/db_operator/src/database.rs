@@ -1,22 +1,27 @@
-//! Copyright (C) 2023 Huawei Device Co., Ltd.
-//! Licensed under the Apache License, Version 2.0 (the "License");
-//! you may not use this file except in compliance with the License.
-//! You may obtain a copy of the License at
-//!
-//! http://www.apache.org/licenses/LICENSE-2.0
-//!
-//! Unless required by applicable law or agreed to in writing, software
-//! distributed under the License is distributed on an "AS IS" BASIS,
-//! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//! See the License for the specific language governing permissions and
-//! limitations under the License.
+/*
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+//! yuanhao: 补充DOC
+
 use std::{ffi::CStr, fs, path::Path, ptr::null_mut, sync::Mutex};
 
 use super::*;
 use crate::{
     statement::Statement,
     table::Table,
-    types::{from_datatype_to_str, ColumnInfo, Sqlite3ErrMsg},
+    types::{from_data_type_to_str, ColumnInfo, Sqlite3ErrMsg},
 };
 
 /// each user have a Database file
@@ -422,7 +427,7 @@ impl<'a> Database<'a> {
     /// create table with name 'table_name'
     /// the columns is descriptions for each column.
     /// for each column, there is 4 attr
-    /// name, is_primary_key, is_not_null, datatype
+    /// name, is_primary_key, is_not_null, data_type
     /// code like follows:
     ///
     /// let db = match Database::new("test7.db") {
@@ -461,7 +466,7 @@ impl<'a> Database<'a> {
             let column = &columns[i];
             sql.push_str(column.name);
             sql.push(' ');
-            sql.push_str(from_datatype_to_str(&column.data_type));
+            sql.push_str(from_data_type_to_str(&column.data_type));
             if column.is_primary_key {
                 sql.push_str(" PRIMARY KEY");
             }
