@@ -48,6 +48,7 @@ define_system_ability!(
 
 const MAX_DELAY_TIMES: u32 = 100;
 const DELAY_INTERVAL: u64 = 200000;
+const VERSION: u32 = 1;
 
 extern "C" {
     fn SubscribeSystemEvent() -> bool;

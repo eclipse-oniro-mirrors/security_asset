@@ -89,7 +89,7 @@ fn check_auth_validity_period(value: &Value) -> Result<()> {
         loge!("convert value to Value::Number in check_auth_validity_period failed!");
         return Err(ErrCode::InvalidArgument);
     };
-    if *v > MAX_AUTH_VALID_PERIOD {
+    if *v as usize > MAX_AUTH_VALID_PERIOD {
         loge!("check auth valid period failed! found [{}]", *v);
         return Err(ErrCode::InvalidArgument);
     }
@@ -185,7 +185,7 @@ fn check_return_limit(value: &Value) -> Result<()> {
         loge!("convert value to Value::Number in check_return_limit failed!");
         return Err(ErrCode::InvalidArgument);
     };
-    if *v > MAX_RETURN_LIMIT {
+    if *v as usize > MAX_RETURN_LIMIT {
         loge!("check return limit value failed! found [{}]", *v);
         return Err(ErrCode::InvalidArgument);
     }
@@ -193,7 +193,7 @@ fn check_return_limit(value: &Value) -> Result<()> {
 }
 
 fn check_return_offset(value: &Value) -> Result<()> {
-    let Value::Number(v) = value else {
+    let Value::Number(_v) = value else {
         loge!("convert value to Value::Number in check_return_offset failed!");
         return Err(ErrCode::InvalidArgument);
     };

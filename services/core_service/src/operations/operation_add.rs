@@ -31,7 +31,8 @@ use crate::{
     operations::operation_common::{
         add_owner_info, create_user_db_dir, encrypt, get_system_time,
         db_adapter::into_db_map
-    }
+    },
+    VERSION
 };
 
 impl_enum_trait! {
@@ -86,7 +87,7 @@ fn resolve_conflict(calling_info: &CallingInfo, attrs: &AssetMap, db_data: &DbMa
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     let delete_type = DeleteType::WhenUninstallApp as u32 | DeleteType::WhenRemoveUser as u32;
     db_data.insert(COLUMN_DELETE_TYPE, Value::Number(delete_type));
-    db_data.insert(COLUMN_VERSION, Value::Number(1)); // todo: zwz to get real
+    db_data.insert(COLUMN_VERSION, Value::Number(VERSION));
 
     let time = get_system_time()?;
     db_data.insert(COLUMN_CREATE_TIME, Value::Bytes(time.clone()));

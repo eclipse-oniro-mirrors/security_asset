@@ -85,7 +85,7 @@ pub(crate) fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
     let identity = ipc_rust::reset_calling_identity().map_err(|e| {
         loge!("Execute reset_calling_identity failed, error is [{}].", e);
         ErrCode::IpcError
-    });
+    })?;
 
     let secret_key = build_secret_key(calling_info, db_data)?;
     match secret_key.exists() {
@@ -94,7 +94,10 @@ pub(crate) fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
             logi!("[INFO]The key does not exist, generate it.");
             match secret_key.generate() {
                 Ok(_) => (),
-                Err(res) => loge!("Generete key failed, res is [{}].", res),
+                Err(res) => {
+                    loge!("Generete key failed, res is [{}].", res);
+                    return Err(ErrCode::CryptoError);
+                },
             };
         },
         _ => {
@@ -108,7 +111,7 @@ pub(crate) fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
 
     let encryption = crypto.encrypt(secret, &construct_aad(db_data))?;
 
-    if !set_calling_identity(identity) {
+    if !ipc_rust::set_calling_identity(identity) {
         loge!("Execute set_calling_identity failed.");
         return Err(ErrCode::IpcError);
     }
@@ -120,14 +123,14 @@ pub(crate) fn decrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result
     let identity = ipc_rust::reset_calling_identity().map_err(|e| {
         loge!("Execute reset_calling_identity failed, error is [{}].", e);
         ErrCode::IpcError
-    });
+    })?;
 
     let Value::Bytes(ref secret) = db_data[COLUMN_SECRET] else { return Err(ErrCode::InvalidArgument) };
     let secret_key = build_secret_key(calling_info, db_data)?;
     let crypto = Crypto { key: secret_key };
     let secret = crypto.decrypt(secret, &construct_aad(db_data))?; // todo: 待处理HUKS返回值，比如密钥不存在，锁屏状态不正确
     db_data.insert(COLUMN_SECRET, Value::Bytes(secret));
-    if !set_calling_identity(identity) {
+    if !ipc_rust::set_calling_identity(identity) {
         loge!("Execute set_calling_identity failed.");
         return Err(ErrCode::IpcError);
     }
