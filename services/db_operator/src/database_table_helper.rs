@@ -80,7 +80,7 @@ pub const COLUMN_NORMAL3: &str = "DataLabelNormal_3";
 pub const COLUMN_NORMAL4: &str = "DataLabelNormal_4";
 
 /// the columns for default asset table
-pub const COLUMN_TABLE: [&str; 22] = [
+pub const COLUMN_TABLE: &[&str] = &[
     COLUMN_ID,
     COLUMN_SECRET,
     COLUMN_ALIAS,
