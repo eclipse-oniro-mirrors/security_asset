@@ -18,8 +18,8 @@ use crate::{
     sqlite3_changes_func,
     statement::Statement,
     types::{
-        from_data_value_to_str_value, from_datatype_to_str, ColumnInfo,
-        Condition, QueryOptions, ResultSet, DbMap
+        from_data_value_to_str_value, from_datatype_to_str, ColumnInfo, Condition, DbMap,
+        QueryOptions, ResultSet,
     },
     SqliteErrCode, SQLITE_DONE, SQLITE_ERROR, SQLITE_OK, SQLITE_ROW,
 };
@@ -65,11 +65,7 @@ fn bind_conditions(
 
 /// bind datas
 #[inline(always)]
-fn bind_datas(
-    datas: &DbMap,
-    stmt: &Statement<true>,
-    index: &mut i32,
-) -> Result<(), SqliteErrCode> {
+fn bind_datas(datas: &DbMap, stmt: &Statement<true>, index: &mut i32) -> Result<(), SqliteErrCode> {
     for (_, value) in datas.iter() {
         let ret = stmt.bind_data(*index, value);
         if ret != SQLITE_OK {
@@ -203,11 +199,7 @@ impl<'a> Table<'a> {
     /// }];
     ///
     /// let ret = table.update_row(conditions, datas);
-    pub fn update_row(
-        &self,
-        conditions: &Condition,
-        datas: &DbMap,
-    ) -> Result<i32, SqliteErrCode> {
+    pub fn update_row(&self, conditions: &Condition, datas: &DbMap) -> Result<i32, SqliteErrCode> {
         let mut sql = format!("update {} set ", self.table_name);
         for (i, column_name) in datas.keys().enumerate() {
             sql.push_str(column_name);
@@ -483,7 +475,7 @@ impl<'a> Table<'a> {
         columns: &Vec<&str>,
         conditions: &Condition,
         query_options: Option<&QueryOptions>,
-        table_columns: &'static [&str]
+        table_columns: &'static [&str],
     ) -> Result<Vec<DbMap>, SqliteErrCode> {
         let mut sql = String::from("select ");
         build_sql_columns(columns, &mut sql);

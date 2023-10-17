@@ -21,10 +21,7 @@ use crate::{
     from_sqlite_code_to_asset_code,
     table::Table,
     transaction::Transaction,
-    types::{
-        ColumnInfo, Condition, QueryOptions,
-        ResultSet, DbMap
-    },
+    types::{ColumnInfo, Condition, DbMap, QueryOptions, ResultSet},
     SqliteErrCode, SQLITE_OK,
 };
 
@@ -83,10 +80,28 @@ pub const COLUMN_NORMAL3: &str = "DataLabelNormal_3";
 pub const COLUMN_NORMAL4: &str = "DataLabelNormal_4";
 
 const COLUMN_TABLE: [&str; 22] = [
-    COLUMN_ID, COLUMN_SECRET, COLUMN_ALIAS, COLUMN_OWNER, COLUMN_OWNER_TYPE, COLUMN_GROUP_ID,
-    COLUMN_SYNC_TYPE, COLUMN_ACCESSIBILITY, COLUMN_AUTH_TYPE, COLUMN_CREATE_TIME, COLUMN_UPDATE_TIME,
-    COLUMN_DELETE_TYPE, COLUMN_VERSION, COLUMN_REQUIRE_PASSWORD_SET, COLUMN_CRITICAL1, COLUMN_CRITICAL2,
-    COLUMN_CRITICAL3, COLUMN_CRITICAL4, COLUMN_NORMAL1, COLUMN_NORMAL2, COLUMN_NORMAL3, COLUMN_NORMAL4
+    COLUMN_ID,
+    COLUMN_SECRET,
+    COLUMN_ALIAS,
+    COLUMN_OWNER,
+    COLUMN_OWNER_TYPE,
+    COLUMN_GROUP_ID,
+    COLUMN_SYNC_TYPE,
+    COLUMN_ACCESSIBILITY,
+    COLUMN_AUTH_TYPE,
+    COLUMN_CREATE_TIME,
+    COLUMN_UPDATE_TIME,
+    COLUMN_DELETE_TYPE,
+    COLUMN_VERSION,
+    COLUMN_REQUIRE_PASSWORD_SET,
+    COLUMN_CRITICAL1,
+    COLUMN_CRITICAL2,
+    COLUMN_CRITICAL3,
+    COLUMN_CRITICAL4,
+    COLUMN_NORMAL1,
+    COLUMN_NORMAL2,
+    COLUMN_NORMAL3,
+    COLUMN_NORMAL4,
 ];
 
 /// columns info for default asset_table
@@ -277,15 +292,11 @@ impl<'a> TableHelper<'a> {
     /// the code like:
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
-    /// use db_operator::types::{DataValue, Pair};
+    /// use std::collections::HashMap;
+    /// use asset_common::definition::Value,
     ///
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let datas = &vec![Pair {
-    ///     column_name: "alias",
-    ///     value: DataValue::Blob(b"test_update".to_vec()),
-    /// }];
-    ///
-    /// let ret = helper.update_datas_default(&vec![], datas);
+    /// let ret = helper.update_datas_default(&HashMap::<&'static str, Value>::new(), &HashMap::<&'static str, Value>::new());
     /// ```
     /// sql like:
     /// update table_name set alias='test_update' where AppId='owner' and Alias='alias'
@@ -303,15 +314,11 @@ impl<'a> TableHelper<'a> {
     /// the code like:
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
-    /// use db_operator::types::{DataValue, Pair};
+    /// use std::collections::HashMap;
+    /// use asset_common::definition::Value,
     ///
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let datas = vec![Pair {
-    ///     column_name: "value",
-    ///     value: DataValue::Blob(b"test_update".to_vec()),
-    /// }];
-    ///
-    /// let ret = helper.insert_datas_default(&datas);
+    /// let ret = helper.insert_datas_default(&HashMap::<&'static str, Value>::new());
     /// ```
     ///
     /// sql like:
@@ -342,15 +349,10 @@ impl<'a> TableHelper<'a> {
     /// the code like:
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
-    /// use db_operator::types::{DataValue, Pair};
-    ///
+    /// use std::collections::HashMap;
+    /// use asset_common::definition::Value,
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let cond = vec![Pair {
-    ///     column_name: "value",
-    ///     value: DataValue::Blob(b"test_update".to_vec()),
-    /// }];
-    ///
-    /// let ret = helper.delete_datas_default(&cond);
+    /// let ret = helper.delete_datas_default(&HashMap::<&'static str, Value>::new());
     /// ```
     ///
     /// sql like:
@@ -366,8 +368,10 @@ impl<'a> TableHelper<'a> {
     /// code like:
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
+    /// use std::collections::HashMap;
+    /// use asset_common::definition::Value,
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let exist = helper.is_data_exists_default(&vec![]);
+    /// let exist = helper.is_data_exists_default(&HashMap::<&'static str, Value>::new());
     /// ```
     ///
     /// sql like:
@@ -383,8 +387,10 @@ impl<'a> TableHelper<'a> {
     /// code like:
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
+    /// use std::collections::HashMap;
+    /// use asset_common::definition::Value,
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let count = helper.select_count_default(&vec![]);
+    /// let count = helper.select_count_default(&HashMap::<&'static str, Value>::new());
     /// ```
     /// sql like:
     /// select count(*) as count from table_name where AppId='owner2'
@@ -400,8 +406,10 @@ impl<'a> TableHelper<'a> {
     /// code like:
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
+    /// use std::collections::HashMap;
+    /// use asset_common::definition::Value,
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let result = helper.query_datas_default(&vec![], None);
+    /// let result = helper.query_datas_default(&HashMap::<&'static str, Value>::new(), None);
     /// ```
     /// sql like:
     /// select * from table_name where AppId='owner' and Alias='alias'
@@ -421,8 +429,10 @@ impl<'a> TableHelper<'a> {
     /// code like:
     /// ```
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
+    /// use std::collections::HashMap;
+    /// use asset_common::definition::Value,
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let result = helper.query_columns_default(&vec![], &vec![], None);
+    /// let result = helper.query_columns_default(&vec![], &HashMap::<&'static str, Value>::new(), None);
     /// ```
     /// sql like:
     /// select * from table_name where AppId='owner' and Alias='alias'
@@ -432,7 +442,8 @@ impl<'a> TableHelper<'a> {
         condition: &Condition,
         query_options: Option<&QueryOptions>,
     ) -> Result<Vec<DbMap>, ErrCode> {
-        let closure = |e: &Table| e.query_datas_advanced(columns, condition, query_options, &COLUMN_TABLE);
+        let closure =
+            |e: &Table| e.query_datas_advanced(columns, condition, query_options, &COLUMN_TABLE);
         back_db_when_succ(false, self, closure)
     }
 }
