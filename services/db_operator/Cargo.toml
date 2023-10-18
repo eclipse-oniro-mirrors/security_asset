@@ -9,5 +9,3 @@ edition = "2021"
 
 asset_common = { path = "../../frameworks/common" }
 
-[features]
-auto_insert_time = []
