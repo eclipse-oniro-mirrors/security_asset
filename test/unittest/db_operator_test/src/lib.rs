@@ -20,7 +20,7 @@ use std::{
 };
 
 use asset_common::definition::{DataType, Value};
-use db_operator::{
+use asset_db_operator::{
     database::*,
     database_table_helper::{do_transaction, DefaultDatabaseHelper, ASSET_TABLE_NAME, COLUMN_ALIAS, COLUMN_OWNER},
     statement::Statement,

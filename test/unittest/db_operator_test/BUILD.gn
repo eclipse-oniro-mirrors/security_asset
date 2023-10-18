@@ -22,7 +22,7 @@ ohos_rust_unittest("db_operator_test") {
   module_out_path = module_output_path
   sources = [ "src/lib.rs" ]
   deps = [
-    "$COMPONENT_DIR/services/db_operator:db_operator",
+    "$COMPONENT_DIR/services/db_operator:asset_db_operator",
     "$COMPONENT_DIR/frameworks/common:asset_common",
   ]
   subsystem_name = "security"

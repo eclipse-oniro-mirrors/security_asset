@@ -13,22 +13,17 @@
  * limitations under the License.
  */
 
-//! This create implement the asset
+//! This module is used to adapt to the functions on which assets depend.
 
 use std::{
     ffi::{c_char, CString},
     fs, path::Path,
 };
 
-use asset_common::{hasher, logi};
-use asset_sdk::definition::{
-    Accessibility, AuthType, Value
-};
-use crypto_manager::crypto::SecretKey;
-use db_operator::{
-    database_table_helper::{
-        DefaultDatabaseHelper, COLUMN_OWNER,
-    },
+use asset_common::{definition::{Accessibility, AuthType, Value}, hasher, logi};
+use asset_crypto_manager::crypto::SecretKey;
+use asset_db_operator::{
+    database_table_helper::{DefaultDatabaseHelper, COLUMN_OWNER},
     types::DbMap,
 };
 

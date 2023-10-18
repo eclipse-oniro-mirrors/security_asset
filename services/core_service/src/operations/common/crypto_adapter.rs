@@ -15,13 +15,12 @@
 
 //! This crate implements the asset
 
-use crypto_manager::crypto::{Crypto, SecretKey};
-
 use asset_common::{
     definition::{Accessibility, AssetMap, AuthType, ErrCode, Result, Value, DataType},
     hasher, loge, logi
 };
-use db_operator::{
+use asset_crypto_manager::crypto::{Crypto, SecretKey};
+use asset_db_operator::{
     database_table_helper::{
         COLUMN_AUTH_TYPE, COLUMN_ACCESSIBILITY, COLUMN_SECRET, COLUMN_ALIAS, COLUMN_OWNER, COLUMN_OWNER_TYPE,
         COLUMN_GROUP_ID, COLUMN_SYNC_TYPE, COLUMN_REQUIRE_PASSWORD_SET,
@@ -29,6 +28,7 @@ use db_operator::{
     },
     types::DbMap
 };
+
 use crate::calling_info::CallingInfo;
 
 const AAD_ATTR: [(&str, DataType); 14] = [

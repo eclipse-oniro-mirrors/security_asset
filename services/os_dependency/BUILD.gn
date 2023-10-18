@@ -28,35 +28,34 @@ ohos_static_library("asset_os_dependency") {
     "src/bms_wrapper.cpp",
   ]
   deps = [
-    ":db_ffi",
+    ":asset_service_ffi",
     "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem",
     "$COMPONENT_DIR/interfaces/kits/c:asset_ndk",
   ]
   external_deps = [
-    "c_utils:utils",
-    "hilog:libhilog",
-    "os_account:os_account_innerkits",
     "ability_base:want",
-    "common_event_service:cesfwk_innerkits",
     "access_token:libaccesstoken_sdk",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
+    "common_event_service:cesfwk_innerkits",
+    "c_utils:utils",
+    "hilog:libhilog",
     "ipc:ipc_single",
+    "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
   ]
 }
 
-ohos_rust_shared_ffi("db_ffi") {
+ohos_rust_shared_ffi("asset_service_ffi") {
   sources = [ "src/lib.rs" ]
   deps = [
     "$COMPONENT_DIR/frameworks/common:asset_common",
-    "$COMPONENT_DIR/interfaces/inner_api/rs:asset_sdk",
-    "$COMPONENT_DIR/services/db_operator:db_operator",
-    "$COMPONENT_DIR/services/crypto_manager:crypto_manager",
+    "$COMPONENT_DIR/services/db_operator:asset_db_operator",
+    "$COMPONENT_DIR/services/crypto_manager:asset_crypto_manager",
     "//third_party/rust/crates/libc:lib",
   ]
   external_deps = [ "hilog:hilog_rust" ]
-  crate_name = "db_ffi"
+  crate_name = "asset_service_ffi"
   subsystem_name = "security"
   part_name = "asset"
 }

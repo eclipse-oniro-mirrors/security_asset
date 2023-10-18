@@ -43,6 +43,20 @@ impl IntoValue for Tag {
     }
 }
 
+impl IntoValue for Value {
+    fn data_type(&self) -> DataType {
+        match self {
+            Value::Bool(_) => DataType::Bool,
+            Value::Number(_) => DataType::Number,
+            Value::Bytes(_) => DataType::Bytes,
+        }
+    }
+
+    fn into_value(self) -> Value {
+        self
+    }
+}
+
 impl IntoValue for Accessibility {
     fn data_type(&self) -> DataType {
         DataType::Number

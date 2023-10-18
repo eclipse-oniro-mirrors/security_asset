@@ -15,7 +15,7 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 COMPONENT_DIR = "//base/security/asset"
 
-ohos_rust_static_library("crypto_manager") {
+ohos_rust_static_library("asset_crypto_manager") {
   sources = [
     "src/crypto.rs",
     "src/huks_ffi.rs",
@@ -32,22 +32,8 @@ ohos_rust_static_library("crypto_manager") {
     "huks:libhukssdk",
   ]
 
-  crate_name = "crypto_manager"
+  crate_name = "asset_crypto_manager"
   crate_type = "rlib"
-
-  subsystem_name = "security"
-  part_name = "asset"
-}
-
-module_output_path = "asset/crypto_manager"
-
-ohos_rust_unittest("crypto_manager_test") { #todo zdy: 该配置和测试用例放在一起
-  module_out_path = module_output_path
-  sources = [ "../../test/unittest/crypto_manager_test/src/lib.rs" ]
-  deps = [
-    "$COMPONENT_DIR/frameworks/common:asset_common",
-    "$COMPONENT_DIR/services/crypto_manager:crypto_manager"
-    ]
   subsystem_name = "security"
   part_name = "asset"
 }

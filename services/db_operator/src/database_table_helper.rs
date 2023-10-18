@@ -85,6 +85,8 @@ pub const COLUMN_NORMAL2: &str = "DataLabelNormal_2";
 pub const COLUMN_NORMAL3: &str = "DataLabelNormal_3";
 /// default column name DataLabelNormal_4
 pub const COLUMN_NORMAL4: &str = "DataLabelNormal_4";
+/// Latest data version number.
+pub const DB_DATA_VERSION: u32 = 1;
 
 /// columns info for default asset_table
 pub const COLUMN_INFO: &[ColumnInfo] = &[
@@ -164,8 +166,8 @@ impl<'a> TableHelper<'a> {
     /// # Example
     /// ```
     /// use asset_common::definition::Value;
-    /// use db_operator::database_table_helper::DefaultDatabaseHelper;
-    /// use db_operator::types::DbMap;
+    /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
+    /// use asset_db_operator::types::DbMap;
     ///
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let datas = DbMap::from(["value", Value::Bytes(b"test_update".to_vec())]);
@@ -187,8 +189,8 @@ impl<'a> TableHelper<'a> {
     /// # Example
     /// ```
     /// use asset_common::definition::Value;
-    /// use db_operator::database_table_helper::DefaultDatabaseHelper;
-    /// use db_operator::types::DbMap;
+    /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
+    /// use asset_db_operator::types::DbMap;
     ///
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let datas = DbMap::from(["value", Value::Bytes(b"test_update".to_vec())]);
@@ -220,8 +222,8 @@ impl<'a> TableHelper<'a> {
     /// # Example
     /// ```
     /// use asset_common::definition::Value;
-    /// use db_operator::database_table_helper::DefaultDatabaseHelper;
-    /// use db_operator::types::DbMap;
+    /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
+    /// use asset_db_operator::types::DbMap;
     ///
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let cond = DbMap::from(["value", Value::Bytes(b"test_delete".to_vec())]);
@@ -241,7 +243,7 @@ impl<'a> TableHelper<'a> {
     ///
     /// # Example
     /// ```
-    /// use db_operator::database_table_helper::DefaultDatabaseHelper;
+    /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use std::collections::HashMap;
     /// use asset_common::definition::Value,
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
@@ -260,7 +262,7 @@ impl<'a> TableHelper<'a> {
     ///
     /// # Example
     /// ```
-    /// use db_operator::database_table_helper::DefaultDatabaseHelper;
+    /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use std::collections::HashMap;
     /// use asset_common::definition::Value,
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
@@ -279,7 +281,7 @@ impl<'a> TableHelper<'a> {
     ///
     /// # Example
     /// ```
-    /// use db_operator::database_table_helper::DefaultDatabaseHelper;
+    /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use std::collections::HashMap;
     /// use asset_common::definition::Value,
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
@@ -302,7 +304,7 @@ impl<'a> TableHelper<'a> {
     ///
     /// # Example
     /// ```
-    /// use db_operator::database_table_helper::DefaultDatabaseHelper;
+    /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use std::collections::HashMap;
     /// use asset_common::definition::Value,
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();

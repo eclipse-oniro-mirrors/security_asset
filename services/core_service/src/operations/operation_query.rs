@@ -13,32 +13,18 @@
  * limitations under the License.
  */
 
-//! This crate implements the asset
+//! This module is used to query the Asset, including single and batch query.
 
 use asset_common::{definition::{AssetMap, Result, Tag, Value, ErrCode, ReturnType}, loge, logi};
-use db_operator::{types::{DbMap, QueryOptions}, database_table_helper::DefaultDatabaseHelper};
+use asset_db_operator::{types::{DbMap, QueryOptions}, database_table_helper::DefaultDatabaseHelper};
 
-use crate::{
-    argument_check::value_check::check_value_validity,
-    calling_info::CallingInfo,
-    operations::operation_common::{
-        decrypt, add_owner_info, into_db_map, TAG_COLUMN_TABLE
-    },
-};
+use crate::{calling_info::CallingInfo, operations::common};
 
-fn convert_db_data_into_map(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
+fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
     let mut map_set = Vec::new();
     for db_result in db_results {
-        let mut map = AssetMap::new();
-        for (column, data) in db_result.iter() {
-            for (table_tag, table_column) in TAG_COLUMN_TABLE {
-                if (*column).eq(table_column) {
-                    map.insert(table_tag, data.clone());
-                    break;
-                }
-            }
-        }
-        check_value_validity(&map)?;
+        let map = common::into_asset_map(db_result);
+        common::check_value_validity(&map)?;
         map_set.push(map);
     }
     Ok(map_set)
@@ -53,8 +39,8 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<Vec<Asse
             Err(ErrCode::NotFound)
         },
         1 => {
-            decrypt(calling_info, &mut results[0])?;
-            convert_db_data_into_map(&results)
+            common::decrypt(calling_info, &mut results[0])?;
+            into_asset_maps(&results)
         }
         n => {
             loge!("[FATAL]The database contains {} records with the specified alias.", n);
@@ -63,28 +49,21 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<Vec<Asse
     }
 }
 
-fn get_query_options(input: &AssetMap) -> QueryOptions {
+fn get_query_options(attrs: &AssetMap) -> QueryOptions {
     QueryOptions {
-        offset: match input.get(&Tag::ReturnOffset) {
+        offset: match attrs.get(&Tag::ReturnOffset) {
             Some(Value::Number(offset)) => Some(*offset),
             _ => None,
         },
-        limit: match input.get(&Tag::ReturnLimit) {
+        limit: match attrs.get(&Tag::ReturnLimit) {
             Some(Value::Number(limit)) => Some(*limit),
             _ => None,
         },
         order: None,
-        order_by: match input.get(&Tag::ReturnOrderBy) {
+        order_by: match attrs.get(&Tag::ReturnOrderBy) {
             Some(Value::Number(order_by)) => {
-                let order_tag = Tag::try_from(*order_by).expect("Tag::ReturnOrderBy has been verified");
-                let mut order_by = None;
-                for (tag, column) in TAG_COLUMN_TABLE {
-                    if order_tag == tag {
-                        order_by = Some(vec![column]);
-                        break;
-                    }
-                }
-                order_by
+                let tag = Tag::try_from(*order_by).expect("Tag::ReturnOrderBy has been verified");
+                common::get_cloumn_name(tag).map(|order_by|vec![order_by])
             }
             _ => None,
         },
@@ -100,16 +79,32 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
         return Err(ErrCode::NotFound)
     }
 
-    let mut results = convert_db_data_into_map(&results)?;
+    let mut results = into_asset_maps(&results)?;
     for data in &mut results {
         data.remove(&Tag::Secret);
     }
     Ok(results)
 }
 
+const OPTIONAL_ATTRS: [Tag; 6] = [
+    Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderBy, Tag::ReturnType, Tag::AuthToken, Tag::AuthChallenge
+];
+
+fn check_arguments(attributes: &AssetMap) -> Result<()> {
+    let mut optional_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
+    optional_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
+    optional_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
+    optional_tags.extend_from_slice(&OPTIONAL_ATTRS);
+    common::check_optional_tags(attributes, &optional_tags)?;
+
+    common::check_value_validity(attributes)
+}
+
 pub(crate) fn query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<AssetMap>> {
-    let mut db_data = into_db_map(query);
-    add_owner_info(calling_info, &mut db_data);
+    check_arguments(query)?;
+
+    let mut db_data = common::into_db_map(query);
+    common::add_owner_info(calling_info, &mut db_data);
 
     match query.get(&Tag::ReturnType) {
         Some(Value::Number(return_type)) if *return_type == (ReturnType::All as u32) => {

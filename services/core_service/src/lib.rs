@@ -19,7 +19,6 @@ use std::ffi::{c_char, CString};
 use std::thread;
 use std::time::Duration;
 
-use definition_inner::OperationCode;
 use hilog_rust::{HiLogLabel, LogType, error, hilog};
 use ipc_rust::{IRemoteBroker, RemoteObj};
 use system_ability_fwk_rust::{IMethod, ISystemAbility, RSystemAbility, define_system_ability};
@@ -27,9 +26,7 @@ use system_ability_fwk_rust::{IMethod, ISystemAbility, RSystemAbility, define_sy
 use asset_common::{definition::{AssetMap, Result}, logi};
 use asset_ipc_interface::{IAsset, SA_ID};
 
-mod argument_check;
 mod calling_info;
-mod definition_inner;
 mod operations;
 mod stub;
 
@@ -48,7 +45,6 @@ define_system_ability!(
 
 const MAX_DELAY_TIMES: u32 = 100;
 const DELAY_INTERVAL: u64 = 200000;
-const DB_DATA_VERSION: u32 = 1;
 
 extern "C" {
     fn SubscribeSystemEvent() -> bool;
@@ -93,34 +89,26 @@ impl IRemoteBroker for AssetService {}
 
 impl IAsset for AssetService {
     fn add(&self, attributes: &AssetMap) -> Result<()> {
-        // todo: yzt 调用点拆分到各个operation文件中，删除OperationCode和definition_inner文件
-        argument_check::check_argument(attributes, &OperationCode::Add)?;
         operations::add(attributes, &CallingInfo::build()?)
     }
 
     fn remove(&self, query: &AssetMap) -> Result<()> {
-        argument_check::check_argument(query, &OperationCode::Remove)?;
         operations::remove(query, &CallingInfo::build()?)
     }
 
     fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
-        argument_check::check_argument(query, &OperationCode::UpdateQuery)?;
-        argument_check::check_argument(attributes_to_update, &OperationCode::Update)?;
         operations::update(query, attributes_to_update, &CallingInfo::build()?)
     }
 
     fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>> {
-        argument_check::check_argument(query, &OperationCode::PreQuery)?;
         operations::pre_query(query, &CallingInfo::build()?)
     }
 
     fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>> {
-        argument_check::check_argument(query, &OperationCode::Query)?;
         operations::query(query, &CallingInfo::build()?)
     }
 
     fn post_query(&self, query: &AssetMap) -> Result<()> {
-        argument_check::check_argument(query, &OperationCode::PostQuery)?;
-        Ok(()) // todo: implement
+        operations::post_query(query, &CallingInfo::build()?)
     }
 }

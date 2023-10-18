@@ -19,19 +19,16 @@ use asset_common::{
     definition::{AssetMap, ConflictResolution, ErrCode, Result, Tag, Value, AuthType, Accessibility, SyncType},
     loge, logi, impl_enum_trait,
 };
-use db_operator::{
+use asset_db_operator::{
     database_table_helper::{COLUMN_SECRET, COLUMN_ALIAS, COLUMN_OWNER, COLUMN_OWNER_TYPE,
         COLUMN_SYNC_TYPE, COLUMN_AUTH_TYPE, COLUMN_ACCESSIBILITY, COLUMN_REQUIRE_PASSWORD_SET,
-        COLUMN_DELETE_TYPE, COLUMN_VERSION, COLUMN_CREATE_TIME, COLUMN_UPDATE_TIME, do_transaction, DefaultDatabaseHelper},
+        COLUMN_DELETE_TYPE, COLUMN_VERSION, COLUMN_CREATE_TIME, COLUMN_UPDATE_TIME,
+        do_transaction, DefaultDatabaseHelper, DB_DATA_VERSION
+    },
     types::DbMap, database::Database
 };
 
-use crate::{
-    calling_info::CallingInfo,
-    operations::operation_common::{
-        add_owner_info, create_user_db_dir, encrypt, get_system_time, into_db_map
-    }, DB_DATA_VERSION
-};
+use crate::{calling_info::CallingInfo, operations::common};
 
 impl_enum_trait! {
     enum DeleteType {
@@ -88,7 +85,7 @@ fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     db_data.insert(COLUMN_DELETE_TYPE, Value::Number(delete_type));
     db_data.insert(COLUMN_VERSION, Value::Number(DB_DATA_VERSION));
 
-    let time = get_system_time()?;
+    let time = common::get_system_time()?;
     db_data.insert(COLUMN_CREATE_TIME, Value::Bytes(time.clone()));
     db_data.insert(COLUMN_UPDATE_TIME, Value::Bytes(time));
     Ok(())
@@ -101,17 +98,38 @@ fn add_default_attrs(db_data: &mut DbMap) {
     db_data.entry(COLUMN_REQUIRE_PASSWORD_SET).or_insert(Value::Bool(false));
 }
 
+const REQUIRED_ATTRS: [Tag; 2] = [
+    Tag::Secret, Tag::Alias
+];
+
+const OPTIONAL_ATTRS: [Tag; 2] = [
+    Tag::Secret, Tag::ConflictResolution,
+];
+
+fn check_arguments(attributes: &AssetMap) -> Result<()> {
+    common::check_required_tags(attributes, &REQUIRED_ATTRS)?;
+
+    let mut optional_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
+    optional_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
+    optional_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
+    optional_tags.extend_from_slice(&OPTIONAL_ATTRS);
+    common::check_optional_tags(attributes, &optional_tags)?;
+    common::check_value_validity(attributes)
+}
+
 pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    check_arguments(attributes)?;
+
     // Create database directory if not exists.
-    create_user_db_dir(calling_info.user_id())?;
+    common::create_user_db_dir(calling_info.user_id())?;
 
     // Fill all attributes to DbMap.
-    let mut db_data = into_db_map(attributes);
-    add_owner_info(calling_info, &mut db_data);
+    let mut db_data = common::into_db_map(attributes);
+    common::add_owner_info(calling_info, &mut db_data);
     add_system_attrs(&mut db_data)?;
     add_default_attrs(&mut db_data);
 
-    let cipher = encrypt(calling_info, &db_data)?;
+    let cipher = common::encrypt(calling_info, &db_data)?;
     db_data.insert(COLUMN_SECRET, Value::Bytes(cipher));
 
     let query = get_query_condition(calling_info, attributes)?;

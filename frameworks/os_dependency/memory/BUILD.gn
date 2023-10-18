@@ -23,13 +23,12 @@ config("asset_mem_config") {
 }
 
 ohos_static_library("asset_mem") {
-  subsystem_name = "security"
-  part_name = "asset"
   public_configs = [ ":asset_mem_config" ]
-
   sources = [ "src/asset_mem.c" ]
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
   ]
+  subsystem_name = "security"
+  part_name = "asset"
 }

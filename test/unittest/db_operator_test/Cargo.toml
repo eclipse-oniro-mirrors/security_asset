@@ -8,4 +8,4 @@ edition = "2021"
 [dependencies]
 
 asset_common = { path = "../../../frameworks/common" }
-db_operator = { path = "../../../services/db_operator" }
+asset_db_operator = { path = "../../../services/db_operator" }

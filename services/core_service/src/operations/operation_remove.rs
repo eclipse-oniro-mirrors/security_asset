@@ -13,21 +13,26 @@
  * limitations under the License.
  */
 
-//! This crate implements the asset
+//! This module is used to delete the Asset, including single and batch deletion.
 
 use asset_common::{definition::{AssetMap, Result, ErrCode}, logi, loge};
-use db_operator::database_table_helper::DefaultDatabaseHelper;
+use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
 
-use crate::{
-    calling_info::CallingInfo,
-    operations::operation_common::{
-        into_db_map, add_owner_info,
-    },
-};
+use crate::{calling_info::CallingInfo, operations::common};
+
+fn check_arguments(attributes: &AssetMap) -> Result<()> {
+    let mut optional_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
+    optional_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
+    optional_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
+    common::check_optional_tags(attributes, &optional_tags)?;
+    common::check_value_validity(attributes)
+}
 
 pub(crate) fn remove(query: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    let mut db_data = into_db_map(query);
-    add_owner_info(calling_info, &mut db_data);
+    check_arguments(query)?;
+
+    let mut db_data = common::into_db_map(query);
+    common::add_owner_info(calling_info, &mut db_data);
 
     let remove_num = DefaultDatabaseHelper::delete_datas_default_once(calling_info.user_id(), &db_data)?;
     match remove_num {

@@ -23,21 +23,18 @@ ohos_rust_shared_library("asset_service") {
     "$COMPONENT_DIR/frameworks/common:asset_common",
     "$COMPONENT_DIR/frameworks/ipc_interface:asset_ipc_interface",
     "$COMPONENT_DIR/frameworks/ipc_proxy:asset_ipc_proxy",
-    "$COMPONENT_DIR/services/crypto_manager:crypto_manager",
-    "$COMPONENT_DIR/services/db_operator:db_operator",
+    "$COMPONENT_DIR/services/crypto_manager:asset_crypto_manager",
+    "$COMPONENT_DIR/services/db_operator:asset_db_operator",
     "$COMPONENT_DIR/services/os_dependency:asset_os_dependency",
     "//third_party/rust/crates/libc:lib",
   ]
 
   external_deps = [
+    #"access_token:libnativetoken",
+    #"access_token:libtoken_setproc",
     "hilog:hilog_rust",
     "ipc:ipc_rust",
     "safwk:system_ability_fwk_rust",
-  ]
-
-  external_deps += [
-    "access_token:libnativetoken",
-    "access_token:libtoken_setproc",
   ]
 
   crate_name = "asset_service"

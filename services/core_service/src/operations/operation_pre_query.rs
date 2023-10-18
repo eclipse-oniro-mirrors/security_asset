@@ -13,28 +13,35 @@
  * limitations under the License.
  */
 
-//! This crate implements the asset
+//! This module prepares for querying Asset that required secondary identity authentication.
 
 use std::collections::HashSet;
 
+use asset_common::{definition::{AuthType, AssetMap, Result, Value, ErrCode, Tag}, loge, logi};
+
 use crate::{
     calling_info::CallingInfo,
-    operations::{
-        operation_common::{
-            add_owner_info, init_decrypt, into_db_map
-        },
-        operation_query::query_attrs,
-    },
+    operations::{common, operation_query::query_attrs}
 };
 
-use asset_common::{definition::{AssetMap, Result, Value, ErrCode, Tag}, loge, logi};
+const OPTIONAL_ATTRS: [Tag; 1] = [Tag::AuthValidityPeriod];
 
-use asset_sdk::definition::AuthType;
+fn check_arguments(attributes: &AssetMap) -> Result<()> {
+    let mut optional_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
+    optional_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
+    optional_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
+    optional_tags.extend_from_slice(&OPTIONAL_ATTRS);
+    common::check_optional_tags(attributes, &optional_tags)?;
+    common::check_value_validity(attributes)
+}
 
 pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
-    let mut db_data = into_db_map(query);
-    add_owner_info(calling_info, &mut db_data);
+    check_arguments(query)?;
 
+    let mut db_data = common::into_db_map(query);
+    common::add_owner_info(calling_info, &mut db_data);
+
+    // todo: 不依赖query中封装的函数，直接调用数据库的查询接口，只查询authType和accessType
     let all_data = query_attrs(calling_info, &db_data, query)?;
     // get all secret key
     let mut secret_key_set = HashSet::new();
@@ -63,7 +70,7 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
     // todo 遍历每一个密钥，获取challenge
     let challenge_seperator = b'_';
     for (idx, (auth_type, access_type)) in secret_key_set.iter().enumerate() {
-        let tmp_challenge = init_decrypt(calling_info, query, auth_type, access_type)?;
+        let tmp_challenge = common::init_decrypt(calling_info, query, auth_type, access_type)?;
         challenge_vec.extend(tmp_challenge);
         if idx < secret_key_set.len() - 1 {
             challenge_vec.push(challenge_seperator);

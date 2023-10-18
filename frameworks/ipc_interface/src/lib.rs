@@ -32,8 +32,8 @@ pub const SA_NAME: &str = "security_asset_service";
 /// IPC result code.
 pub const IPC_SUCCESS: i32 = 0;
 
-const MAP_MAX_CAPACITY: u32 = 100;
-const VEC_MAX_CAPACITY: u32 = 0x10000;
+const MAX_MAP_CAPACITY: u32 = 100;
+const MAX_VEC_CAPACITY: u32 = 0x10000;
 
 impl_enum_trait!{
     /// Code used to identify the function to be called.
@@ -78,7 +78,7 @@ pub trait IAsset: ipc_rust::IRemoteBroker {
 /// serialize the map to parcel
 pub fn serialize_map(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<()> {
     logi!("enter serialize"); // todo: delete
-    if map.len() as u32 > MAP_MAX_CAPACITY {
+    if map.len() as u32 > MAX_MAP_CAPACITY {
         loge!("[FALTAL][IPC]The map size exceeds the limit.");
         return Err(ErrCode::ExceedLimit);
     }
@@ -99,7 +99,7 @@ pub fn serialize_map(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<(
 pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
     logi!("enter deserialize");
     let len = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
-    if len > MAP_MAX_CAPACITY {
+    if len > MAX_MAP_CAPACITY {
         loge!("[FATAL][IPC]The map size exceeds the limit.");
         return Err(ErrCode::ExceedLimit);
     }
@@ -129,7 +129,7 @@ pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
 /// Serialize the collection of map to parcel.
 pub fn serialize_maps(vec: &Vec<AssetMap>, parcel: &mut BorrowedMsgParcel) -> Result<()> {
     logi!("enter serialize_maps");
-    if vec.len() as u32 > VEC_MAX_CAPACITY {
+    if vec.len() as u32 > MAX_VEC_CAPACITY {
         loge!("[FATAL][IPC]The vector size exceeds the limit.");
         return Err(ErrCode::ExceedLimit);
     }
@@ -145,7 +145,7 @@ pub fn serialize_maps(vec: &Vec<AssetMap>, parcel: &mut BorrowedMsgParcel) -> Re
 pub fn deserialize_maps(parcel: &BorrowedMsgParcel) -> Result<Vec<AssetMap>> {
     logi!("enter deserialize_maps");
     let len = parcel.read::<u32>().map_err(|_| ErrCode::InvalidArgument)?;
-    if len > VEC_MAX_CAPACITY {
+    if len > MAX_VEC_CAPACITY {
         loge!("[FATAL][IPC]The vector size exceeds the limit.");
         return Err(ErrCode::ExceedLimit);
     }

@@ -1,11 +1,11 @@
 [package]
-name = "os_dependency_db"
+name = "os_dependency"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-db_operator = { path = "../../services/db_operator" }
-crypto_manager = { path = "../../services/crypto_manager" }
+asset_db_operator = { path = "../../services/db_operator" }
+asset_crypto_manager = { path = "../../services/crypto_manager" }
 asset_common = { path = "../../frameworks/common" }

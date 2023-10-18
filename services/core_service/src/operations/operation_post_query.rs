@@ -13,30 +13,20 @@
  * limitations under the License.
  */
 
-//! This module defines asset-related data structures only used in service.
+//! This module is used to clear resources after query the Asset that required secondary identity authentication.
 
-#![allow(dead_code)]
+use asset_common::definition::{AssetMap, Result, Tag};
 
+use crate::{calling_info::CallingInfo, operations::common};
 
-pub(crate) enum OperationCode {
-    /// Code for add params.
-    Add,
+const REQUIRED_ATTRS: [Tag; 1] = [Tag::AuthChallenge];
 
-    /// Code for remove params.
-    Remove,
+fn check_arguments(query: &AssetMap) -> Result<()> {
+    common::check_required_tags(query, &REQUIRED_ATTRS)?;
+    common::check_value_validity(query)
+}
 
-    /// Code for update params.
-    Update,
-
-    /// Code for update match params.
-    UpdateQuery,
-
-    /// Code for pre-query params.
-    PreQuery,
-
-    /// Code for query params.
-    Query,
-
-    /// Code for post params.
-    PostQuery,
+// todo: to implement
+pub(crate) fn post_query(handle: &AssetMap, _calling_info: &CallingInfo) -> Result<()> {
+    check_arguments(handle)
 }

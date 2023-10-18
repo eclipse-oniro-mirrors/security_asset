@@ -5,9 +5,10 @@ members = [
     "frameworks/ipc_proxy",
     "interfaces/kits/c",
     "services/core_service",
-    "services/db_operator",
-    "test/unittest/inner_api_rust",
     "services/crypto_manager",
+    "services/db_operator",
+    "services/os_dependency",
+    "test/unittest/inner_api_rust",
     "test/unittest/db_operator_test",
     "test/unittest/crypto_manager_test",
 ]

@@ -13,36 +13,53 @@
  * limitations under the License.
  */
 
-//! This create implement the asset
+//! This module is used to update the specified alias of Asset.
 
 use asset_common::{
     definition::{AssetMap, Result, ErrCode, Tag, Value},
     logi, loge,
 };
 
-use db_operator::{database_table_helper::{COLUMN_SECRET, COLUMN_UPDATE_TIME, DefaultDatabaseHelper}, types::DbMap};
-
-// use crypto_manager::hukkey::Crypto;
-use crate::{
-    operations::operation_common::{
-        encrypt, add_owner_info, into_db_map
-    },
-    calling_info::CallingInfo,
+use asset_db_operator::{
+    database_table_helper::{COLUMN_SECRET, COLUMN_UPDATE_TIME, DefaultDatabaseHelper},
+    types::DbMap
 };
 
-use super::operation_common::get_system_time;
+use crate::{calling_info::CallingInfo, operations::common};
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
-    let time = get_system_time()?;
+    let time = common::get_system_time()?;
     db_data.insert(COLUMN_UPDATE_TIME, Value::Bytes(time));
     Ok(())
 }
 
-pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    let mut query_db_data = into_db_map(query);
-    add_owner_info(calling_info, &mut query_db_data);
+const QUERY_REQUIRED_ATTRS: [Tag; 1] = [Tag::Alias];
+const UPDATE_OPTIONAL_ATTRS: [Tag; 1] = [Tag::Secret];
 
-    let mut update_db_data = into_db_map(update);
+fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap) -> Result<()> {
+    // Check attributes used to query.
+    common::check_required_tags(query, &QUERY_REQUIRED_ATTRS)?;
+    let mut optional_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
+    optional_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
+    optional_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
+    common::check_optional_tags(query, &optional_tags)?;
+    common::check_value_validity(query)?;
+
+    // Check attributes to update.
+    optional_tags = common::NORMAL_LABEL_ATTRS.to_vec();
+    optional_tags.extend_from_slice(&UPDATE_OPTIONAL_ATTRS);
+    common::check_optional_tags(attrs_to_update, &optional_tags)?;
+    common::check_value_validity(attrs_to_update)
+}
+
+// todo: yzt 测试一把update的第二个map为空的情况
+pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    check_arguments(query, update)?;
+
+    let mut query_db_data = common::into_db_map(query);
+    common::add_owner_info(calling_info, &mut query_db_data);
+
+    let mut update_db_data = common::into_db_map(update);
     add_system_attrs(&mut update_db_data)?;
 
     if update.contains_key(&Tag::Secret) {
@@ -54,7 +71,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
         }
 
         let result = results.get(0).unwrap();
-        let cipher = encrypt(calling_info, result)?;
+        let cipher = common::encrypt(calling_info, result)?;
         update_db_data.insert(COLUMN_SECRET, Value::Bytes(cipher));
     }
 
