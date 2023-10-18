@@ -14,7 +14,7 @@
  */
 
 //! the interfaces of db_operator public for other module
-//! inlcuding transaction and create default db,table
+//! including transaction and create default db,table
 
 use asset_common::{
     definition::{DataType, ErrCode, Value},
@@ -170,8 +170,8 @@ impl<'a> TableHelper<'a> {
     /// use asset_db_operator::types::DbMap;
     ///
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let datas = DbMap::from(["value", Value::Bytes(b"test_update".to_vec())]);
-    /// let ret = helper.update_datas_default(&DbMap::new(), datas);
+    /// let datas = DbMap::from([("value", Value::Bytes(b"test_update".to_vec()))]);
+    /// let ret = helper.update_datas_default(&DbMap::new(), &datas);
     /// ```
     /// sql like:
     /// update table_name set alias='test_update' where AppId='owner' and Alias='alias'
@@ -193,7 +193,7 @@ impl<'a> TableHelper<'a> {
     /// use asset_db_operator::types::DbMap;
     ///
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let datas = DbMap::from(["value", Value::Bytes(b"test_update".to_vec())]);
+    /// let datas = DbMap::from([("value", Value::Bytes(b"test_update".to_vec()))]);
     ///
     /// let ret = helper.insert_datas_default(&datas);
     /// ```
@@ -226,7 +226,7 @@ impl<'a> TableHelper<'a> {
     /// use asset_db_operator::types::DbMap;
     ///
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
-    /// let cond = DbMap::from(["value", Value::Bytes(b"test_delete".to_vec())]);
+    /// let cond = DbMap::from([("value", Value::Bytes(b"test_delete".to_vec()))]);
     ///
     /// let ret = helper.delete_datas_default(&cond);
     /// ```
@@ -245,7 +245,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use std::collections::HashMap;
-    /// use asset_common::definition::Value,
+    /// use asset_common::definition::Value;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let exist = helper.is_data_exists_default(&HashMap::<&'static str, Value>::new());
     /// ```
@@ -264,7 +264,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use std::collections::HashMap;
-    /// use asset_common::definition::Value,
+    /// use asset_common::definition::Value;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let count = helper.select_count_default(&HashMap::<&'static str, Value>::new());
     /// ```
@@ -283,7 +283,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use std::collections::HashMap;
-    /// use asset_common::definition::Value,
+    /// use asset_common::definition::Value;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let result = helper.query_datas_default(&HashMap::<&'static str, Value>::new(), None);
     /// ```
@@ -306,7 +306,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use std::collections::HashMap;
-    /// use asset_common::definition::Value,
+    /// use asset_common::definition::Value;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let result = helper.query_columns_default(&vec![], &HashMap::<&'static str, Value>::new(), None);
     /// ```

@@ -219,7 +219,7 @@ impl<'b, const PREPARE: bool> Drop for Statement<'b, PREPARE> {
         if self.handle != 0 {
             let ret = sqlite3_finalize_func(self.handle);
             if ret != SQLITE_OK {
-                asset_common::loge!("sqlite3 finalize fail ret {}", ret);
+                loge!("sqlite3 finalize fail ret {}", ret);
             }
         }
     }
