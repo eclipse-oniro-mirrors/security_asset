@@ -25,7 +25,7 @@ use asset_common::{
     definition::{
         AssetMap, DataType, ErrCode, IntoValue,
         Tag, Value, Version
-    }, loge, logi
+    }, loge
 };
 use asset_sdk::Manager;
 

@@ -14,6 +14,13 @@
  */
 
 //! This crate implements the sha256
+#![allow(dead_code)]
+
+const LOWER_BYTES_MASK: u32 = 0xff;
+const BITS_PER_U8: usize = 8;
+const U8_PER_U32: usize = 4;
+const SHA256_LEN: usize = 32;
+const BYTES_PER_CHUNK: usize = 64;
 
 const SHA256_H: [u32; 8] = [
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab,
@@ -33,93 +40,111 @@ const SHA256_K: [u32; 64] = [
     0xc67178f2,
 ];
 
-fn compress(input_bytes: &Vec<u8>) -> [u32; 8] {
-    let mut hash = SHA256_H;
-    let nblocks = input_bytes.len() / 64;
-    for i in 0..nblocks {
-        let mut w = [0; 64];
-        for (j, item) in w.iter_mut().enumerate().take(16) {
-            let offset = i * 64 + j * 4;
-            *item = ((input_bytes[offset] as u32) << 24)
-                | ((input_bytes[offset + 1] as u32) << 16)
-                | ((input_bytes[offset + 2] as u32) << 8)
-                | (input_bytes[offset + 3] as u32);
-        }
-        for j in 16..64 {
-            let s0 = w[j - 15].rotate_right(7) ^ w[j - 15].rotate_right(18) ^ (w[j - 15] >> 3);
-            let s1 = w[j - 2].rotate_right(17) ^ w[j - 2].rotate_right(19) ^ (w[j - 2] >> 10);
-            w[j] = w[j - 16]
-                .wrapping_add(s0)
-                .wrapping_add(w[j - 7])
-                .wrapping_add(s1);
-        }
-        let mut working: [u32; 8] = hash; // working variables
-        for j in 0..64 {
-            let s1 = working[4].rotate_right(6)
-                ^ working[4].rotate_right(11)
-                ^ working[4].rotate_right(25);
-            let choose = (working[4] & working[5]) ^ ((!working[4]) & working[6]);
-            let temp1 = working[7]
-                .wrapping_add(s1)
-                .wrapping_add(choose)
-                .wrapping_add(SHA256_K[j])
-                .wrapping_add(w[j]);
-            let s0 = working[0].rotate_right(2)
-                ^ working[0].rotate_right(13)
-                ^ working[0].rotate_right(22);
-            let major =
-                (working[0] & working[1]) ^ (working[0] & working[2]) ^ (working[1] & working[2]);
-            let temp2 = s0.wrapping_add(major);
-            working[7] = working[6];
-            working[6] = working[5];
-            working[5] = working[4];
-            working[4] = working[3].wrapping_add(temp1);
-            working[3] = working[2];
-            working[2] = working[1];
-            working[1] = working[0];
-            working[0] = temp1.wrapping_add(temp2);
-        }
-
-        for j in 0..8 {
-            hash[j] = hash[j].wrapping_add(working[j]);
-        }
+fn expand_chunk(plain_chunk: [u8; BYTES_PER_CHUNK]) -> [u32; BYTES_PER_CHUNK] {
+    let mut expanded_chunk = [0; BYTES_PER_CHUNK];
+    for (i, item) in expanded_chunk.iter_mut().enumerate().take(16) {
+        let offset = i * U8_PER_U32;
+        *item = ((plain_chunk[offset] as u32) << 24)
+            | ((plain_chunk[offset + 1] as u32) << 16)
+            | ((plain_chunk[offset + 2] as u32) << 8)
+            | (plain_chunk[offset + 3] as u32);
     }
-    hash
+
+    for i in 16..64 {
+        let s0 = expanded_chunk[i - 15].rotate_right(7) ^ expanded_chunk[i - 15].rotate_right(18)
+            ^ (expanded_chunk[i - 15] >> 3);
+        let s1 = expanded_chunk[i - 2].rotate_right(17) ^ expanded_chunk[i - 2].rotate_right(19)
+            ^ (expanded_chunk[i - 2] >> 10);
+        expanded_chunk[i] = expanded_chunk[i - 16]
+            .wrapping_add(s0)
+            .wrapping_add(expanded_chunk[i - 7])
+            .wrapping_add(s1);
+    }
+    expanded_chunk
 }
 
-/// the function to get sha256
-pub fn sha256(input: &[u8]) -> Vec<u8> { // todo: zwz: 入参都不要命名为input, 所有的入参都可以叫input，表达不了实际含义
+fn compress_chunk(expanded_chunk: [u32; 64]) -> [u32; 8] {
+    let mut compressed_chunk: [u32; 8] = SHA256_H;
+    for i in 0..64 {
+        let s1 = compressed_chunk[4].rotate_right(6)
+            ^ compressed_chunk[4].rotate_right(11)
+            ^ compressed_chunk[4].rotate_right(25);
+        let choose = (compressed_chunk[4] & compressed_chunk[5]) ^ ((!compressed_chunk[4]) & compressed_chunk[6]);
+        let temp1 = compressed_chunk[7]
+            .wrapping_add(s1)
+            .wrapping_add(choose)
+            .wrapping_add(SHA256_K[i])
+            .wrapping_add(expanded_chunk[i]);
+        let s0 = compressed_chunk[0].rotate_right(2)
+            ^ compressed_chunk[0].rotate_right(13)
+            ^ compressed_chunk[0].rotate_right(22);
+        let major = (compressed_chunk[0] & compressed_chunk[1]) ^ (compressed_chunk[0] & compressed_chunk[2]) ^
+            (compressed_chunk[1] & compressed_chunk[2]);
+        let temp2 = s0.wrapping_add(major);
+        compressed_chunk[7] = compressed_chunk[6];
+        compressed_chunk[6] = compressed_chunk[5];
+        compressed_chunk[5] = compressed_chunk[4];
+        compressed_chunk[4] = compressed_chunk[3].wrapping_add(temp1);
+        compressed_chunk[3] = compressed_chunk[2];
+        compressed_chunk[2] = compressed_chunk[1];
+        compressed_chunk[1] = compressed_chunk[0];
+        compressed_chunk[0] = temp1.wrapping_add(temp2);
+    }
+    compressed_chunk
+}
+
+fn compress(input_bytes: &[u8]) -> [u32; 8] {
+    let mut compress = SHA256_H;
+    let chunk_num = input_bytes.len() / BYTES_PER_CHUNK;
+    for i in 0..chunk_num {
+        // the try_into of array cannot be failed, for the length of plain_chunk is sure to be 64 as expected
+        let expanded_chunk =
+            expand_chunk(input_bytes[i * BYTES_PER_CHUNK..(i + 1) * BYTES_PER_CHUNK].try_into().unwrap());
+        let compressed_chunk: [u32; 8] = compress_chunk(expanded_chunk);
+        for j in 0..8 {
+            compress[j] = compress[j].wrapping_add(compressed_chunk[j]);
+        }
+    }
+    compress
+}
+
+fn pre_process_plain(plain: &Vec<u8>) -> Vec<u8> {
     // padding
-    let mut input_bytes = input.to_vec();
-    let input_len = input_bytes.len();
-    let padding_len = if input_len % 64 < 56 {
-        56 - input_len % 64
+    let mut process_plain = plain.clone();
+    let plain_len = plain.len();
+    let padding_len = if plain_len % BYTES_PER_CHUNK < 56 {
+        56 - plain_len % BYTES_PER_CHUNK
     } else {
-        120 - input_len % 64
+        120 - plain_len % BYTES_PER_CHUNK
     };
 
-    input_bytes.push(0x80); // 1000 0000
-    // for _ in 0..padding_len - 1 {
-    //     input_bytes.push(0x00);
-    // }
-    input_bytes.append(&mut vec![0x00; padding_len - 1]);
+    process_plain.push(0x80); // 1000 0000
 
-    let input_bit_len = input_len * 8;
+    process_plain.append(&mut vec![0x00; padding_len - 1]);
+
+    let plain_bit_len = plain_len * BITS_PER_U8;
     for i in 0..8 {
-        let byte = ((input_bit_len >> (56 - i * 8)) & 0xff) as u8;
-
-        input_bytes.push(byte);
+        let split_byte = ((plain_bit_len >> (56 - i * BITS_PER_U8)) & LOWER_BYTES_MASK as usize) as u8;
+        process_plain.push(split_byte);
     }
+    process_plain
+}
 
-    let hash = compress(&input_bytes);
-
-    let mut ret = [0; 32];
-    for i in 0..8 {
-        ret[i * 4] = ((hash[i] >> 24) & 0xff) as u8;
-        ret[i * 4 + 1] = ((hash[i] >> 16) & 0xff) as u8;
-        ret[i * 4 + 2] = ((hash[i] >> 8) & 0xff) as u8;
-        ret[i * 4 + 3] = (hash[i] & 0xff) as u8;
+fn into_vec_u8(hash: &[u32; 8]) -> Vec<u8> {
+    let mut ret = [0; SHA256_LEN];
+    for i in 0..hash.len() {
+        ret[i * U8_PER_U32] = ((hash[i] >> 24) & LOWER_BYTES_MASK) as u8;
+        ret[i * U8_PER_U32 + 1] = ((hash[i] >> 16) & LOWER_BYTES_MASK) as u8;
+        ret[i * U8_PER_U32 + 2] = ((hash[i] >> 8) & LOWER_BYTES_MASK) as u8;
+        ret[i * U8_PER_U32 + 3] = (hash[i] & LOWER_BYTES_MASK) as u8;
     }
 
     ret.to_vec()
+}
+
+/// the function to execute sha256
+pub fn sha256(plain: &Vec<u8>) -> Vec<u8> {
+    let processed_plain = pre_process_plain(plain);
+
+    into_vec_u8(&compress(&processed_plain))
 }

@@ -53,7 +53,7 @@ pub unsafe extern "C" fn delete_hap_asset(user_id: i32, owner: *const c_char) ->
     match DefaultDatabaseHelper::delete_datas_default_once(user_id, &cond) {
         Ok(remove_num) if remove_num > 0 => {
             // 2 delete data in huks
-            let owner = hasher::sha256(owner.as_bytes());
+            let owner = hasher::sha256(&owner.as_bytes().to_vec());
             delete_key(user_id, &owner, AuthType::None, Accessibility::DeviceFirstUnlock);
             delete_key(user_id, &owner, AuthType::None, Accessibility::DeviceUnlock);
             delete_key(user_id, &owner, AuthType::Any, Accessibility::DeviceFirstUnlock);
