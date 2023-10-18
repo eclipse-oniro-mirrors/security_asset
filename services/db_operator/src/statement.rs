@@ -13,20 +13,23 @@
  * limitations under the License.
  */
 
-//! yuanhao: 补充DOC
+//! sqlite statement impl, support two types of statement: exec and prepare
+//! statement is auto drop by RAII
 
 use std::ffi::CStr;
 use std::fmt::Write;
 
-use asset_common::{definition::{DataType, Value}, loge};
+use asset_common::{
+    definition::{DataType, Value},
+    loge,
+};
 
 use crate::{
     database::Database, sqlite3_bind_blob_func, sqlite3_bind_int64_func, sqlite3_column_blob_func,
-    sqlite3_column_bytes_func, sqlite3_column_count_func, sqlite3_column_double_func,
-    sqlite3_column_int64_func, sqlite3_column_name_func, sqlite3_column_text_func,
-    sqlite3_column_type_func, sqlite3_data_count_func, sqlite3_finalize_func,
-    sqlite3_prepare_v2_func, sqlite3_reset_func, sqlite3_step_func, Sqlite3Callback, SqliteErrCode,
-    SQLITE_BLOB, SQLITE_ERROR, SQLITE_INTEGER, SQLITE_NULL, SQLITE_OK,
+    sqlite3_column_bytes_func, sqlite3_column_count_func, sqlite3_column_double_func, sqlite3_column_int64_func,
+    sqlite3_column_name_func, sqlite3_column_text_func, sqlite3_column_type_func, sqlite3_data_count_func,
+    sqlite3_finalize_func, sqlite3_prepare_v2_func, sqlite3_reset_func, sqlite3_step_func, Sqlite3Callback,
+    SqliteErrCode, SQLITE_BLOB, SQLITE_ERROR, SQLITE_INTEGER, SQLITE_NULL, SQLITE_OK,
 };
 
 /// sql statement
@@ -145,7 +148,7 @@ impl<'b> Statement<'b, true> {
                 }
             },
             DataType::Number => Some(Value::Number(self.query_column_int(index))),
-            DataType::Bool => Some(Value::Bool(self.query_column_int(index) != 0))
+            DataType::Bool => Some(Value::Bool(self.query_column_int(index) != 0)),
         }
     }
 

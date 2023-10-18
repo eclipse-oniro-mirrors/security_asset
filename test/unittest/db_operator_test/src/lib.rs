@@ -22,9 +22,7 @@ use std::{
 use asset_common::definition::{DataType, Value};
 use db_operator::{
     database::*,
-    database_table_helper::{
-        do_transaction, DefaultDatabaseHelper, ASSET_TABLE_NAME, COLUMN_ALIAS, COLUMN_OWNER,
-    },
+    database_table_helper::{do_transaction, DefaultDatabaseHelper, ASSET_TABLE_NAME, COLUMN_ALIAS, COLUMN_OWNER},
     statement::Statement,
     types::{from_data_value_to_str_value, ColumnInfo, DbMap, QueryOptions},
     SQLITE_DONE, SQLITE_OK, SQLITE_OPEN_CREATE, SQLITE_OPEN_READWRITE, SQLITE_ROW,
@@ -66,11 +64,7 @@ pub fn test_for_sqlite3_v2_open() {
         },
     };
 
-    match Database::new_v2(
-        "/root/test_v2.db",
-        SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE,
-        Some(b"unix-dotfile"),
-    ) {
+    match Database::new_v2("/root/test_v2.db", SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE, Some(b"unix-dotfile")) {
         Ok(_) => {
             panic!("read root");
         },
@@ -146,18 +140,8 @@ pub fn test_for_open_table() {
     };
 
     let columns = &[
-        ColumnInfo {
-            name: "id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
     let _table = match db.create_table("table_test", columns) {
         Ok(t) => t,
@@ -187,18 +171,8 @@ pub fn test_for_drop_table() {
     };
 
     let columns = &[
-        ColumnInfo {
-            name: "id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
     let _table = match db.create_table("table_test", columns) {
         Ok(t) => t,
@@ -222,18 +196,8 @@ pub fn test_for_statement_column() {
     };
 
     let columns = &[
-        ColumnInfo {
-            name: "id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
     let _ = match db.create_table("table_test", columns) {
         Ok(t) => t,
@@ -246,8 +210,7 @@ pub fn test_for_statement_column() {
     let code = stmt.exec(None, 0);
     assert_eq!(code, SQLITE_OK);
 
-    let stmt1 =
-        Statement::<true>::prepare("select id,alias from table_test where id < ?", &db).unwrap();
+    let stmt1 = Statement::<true>::prepare("select id,alias from table_test where id < ?", &db).unwrap();
     let ret = stmt1.bind_data(1, &Value::Number(1000));
     assert_eq!(ret, SQLITE_OK);
     let count = stmt1.column_count();
@@ -292,8 +255,7 @@ pub fn test_for_statement_column() {
         assert_eq!(ret, SQLITE_DONE);
     }
 
-    let stmt1 =
-        Statement::<true>::prepare("select id,alias from table_test where id < ?", &db).unwrap();
+    let stmt1 = Statement::<true>::prepare("select id,alias from table_test where id < ?", &db).unwrap();
     let ret = stmt1.bind_data(1, &Value::Number(1000));
     assert_eq!(ret, SQLITE_OK);
     let count = stmt1.column_count();
@@ -329,18 +291,8 @@ pub fn test_update_row() {
     };
 
     let columns = &[
-        ColumnInfo {
-            name: "id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
     let table = match db.create_table("table_test", columns) {
         Ok(t) => t,
@@ -372,9 +324,7 @@ pub fn test_update_row() {
 
     let ret = table.update_row(&conditions, &datas).unwrap();
     assert_eq!(ret, 1);
-    let ret = table
-        .update_row_column(&conditions, COLUMN_ALIAS, Value::Bytes(b"test_update1".to_vec()))
-        .unwrap();
+    let ret = table.update_row_column(&conditions, COLUMN_ALIAS, Value::Bytes(b"test_update1".to_vec())).unwrap();
     assert_eq!(ret, 1);
     let stmt = Statement::<true>::prepare("select * from table_test where id=2", &db).unwrap();
     let ret = stmt.step();
@@ -394,18 +344,8 @@ pub fn test_for_insert_row() {
     };
 
     let columns = &[
-        ColumnInfo {
-            name: "id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
     let table = match db.create_table("table_test", columns) {
         Ok(t) => t,
@@ -414,8 +354,7 @@ pub fn test_for_insert_row() {
         },
     };
 
-    let datas =
-        DbMap::from([("id", Value::Number(3)), ("alias", Value::Bytes(b"alias1".to_vec()))]);
+    let datas = DbMap::from([("id", Value::Number(3)), ("alias", Value::Bytes(b"alias1".to_vec()))]);
 
     let count = table.insert_row(&datas).unwrap();
     assert_eq!(count, 1);
@@ -436,30 +375,10 @@ pub fn test_update_datas() {
     };
 
     let columns = &[
-        ColumnInfo {
-            name: "Id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "Owner",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "Alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "value",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
     let table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
@@ -495,18 +414,13 @@ pub fn test_update_datas() {
 
     let count = db
         .update_datas_default(
-            &DbMap::from([
-                ("Owner", Value::Bytes(b"owner2".to_vec())),
-                ("Alias", Value::Bytes(b"alias2".to_vec())),
-            ]),
+            &DbMap::from([("Owner", Value::Bytes(b"owner2".to_vec())), ("Alias", Value::Bytes(b"alias2".to_vec()))]),
             &datas,
         )
         .unwrap();
     assert_eq!(count, 1);
     // query
-    let stmt =
-        Statement::<true>::prepare("select * from asset_table where Owner=? and Alias=?", &db)
-            .unwrap();
+    let stmt = Statement::<true>::prepare("select * from asset_table where Owner=? and Alias=?", &db).unwrap();
     let od = Value::Bytes(b"owner2".to_vec());
     let ad = Value::Bytes(b"alias2".to_vec());
     let ret = stmt.bind_data(1, &od);
@@ -530,30 +444,10 @@ pub fn test_insert_datas() {
     };
 
     let columns = &[
-        ColumnInfo {
-            name: "Id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "Owner",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "Alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "value",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
     let _table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
@@ -572,9 +466,7 @@ pub fn test_insert_datas() {
     assert_eq!(count, 1);
 
     // query
-    let stmt =
-        Statement::<true>::prepare("select * from asset_table where Owner=? and Alias=?", &db)
-            .unwrap();
+    let stmt = Statement::<true>::prepare("select * from asset_table where Owner=? and Alias=?", &db).unwrap();
     let ownerd = Value::Bytes(b"owner1".to_vec());
     let aliasd = Value::Bytes(b"alias1".to_vec());
     let ret = stmt.bind_data(1, &ownerd);
@@ -598,30 +490,10 @@ pub fn test_insert_row_datas() {
     };
 
     let columns = &[
-        ColumnInfo {
-            name: "Id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "Owner",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "Alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "value",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
     let table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
@@ -639,9 +511,7 @@ pub fn test_insert_row_datas() {
     assert_eq!(count, 1);
 
     // query
-    let stmt =
-        Statement::<true>::prepare("select * from asset_table where Owner=? and Alias=?", &db)
-            .unwrap();
+    let stmt = Statement::<true>::prepare("select * from asset_table where Owner=? and Alias=?", &db).unwrap();
     let od = Value::Bytes(b"owner1".to_vec());
     let ad = Value::Bytes(b"alias1".to_vec());
     let ret = stmt.bind_data(1, &od);
@@ -665,30 +535,10 @@ pub fn test_delete_datas() {
     };
 
     let columns = &[
-        ColumnInfo {
-            name: "Id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "Owner",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "Alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "value",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
     let _table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
@@ -743,30 +593,10 @@ pub fn test_for_rename() {
     };
 
     let columns = &[
-        ColumnInfo {
-            name: "Id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "Owner",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "Alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "value",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
     let mut table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
@@ -789,30 +619,10 @@ pub fn test_for_add_column() {
     };
 
     let columns = &[
-        ColumnInfo {
-            name: "Id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "Owner",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "Alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "value",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
     let table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
@@ -821,34 +631,19 @@ pub fn test_for_add_column() {
         },
     };
     let ret = table.add_new_column(
-        ColumnInfo {
-            name: "nid",
-            data_type: DataType::Number,
-            is_primary_key: false,
-            not_null: true,
-        },
+        ColumnInfo { name: "nid", data_type: DataType::Number, is_primary_key: false, not_null: true },
         Some(Value::Number(0)),
     );
     assert_eq!(ret, SQLITE_OK);
 
     let ret = table.add_new_column(
-        ColumnInfo {
-            name: "n_n_id",
-            data_type: DataType::Number,
-            is_primary_key: true,
-            not_null: true,
-        },
+        ColumnInfo { name: "n_n_id", data_type: DataType::Number, is_primary_key: true, not_null: true },
         Some(Value::Number(0)),
     );
     assert_ne!(ret, SQLITE_OK);
 
     let ret = table.add_new_column(
-        ColumnInfo {
-            name: "n_n_n_id",
-            data_type: DataType::Bytes,
-            is_primary_key: false,
-            not_null: true,
-        },
+        ColumnInfo { name: "n_n_n_id", data_type: DataType::Bytes, is_primary_key: false, not_null: true },
         Some(Value::Bytes(b"".to_vec())),
     );
     assert_ne!(ret, SQLITE_OK);
@@ -865,24 +660,9 @@ pub fn test_query() {
     };
 
     let columns = &[
-        ColumnInfo {
-            name: "id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "alias",
-            is_primary_key: false,
-            not_null: false,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "blobs",
-            is_primary_key: false,
-            not_null: false,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "alias", is_primary_key: false, not_null: false, data_type: DataType::Bytes },
+        ColumnInfo { name: "blobs", is_primary_key: false, not_null: false, data_type: DataType::Bytes },
     ];
     let table = match db.create_table("table_test", columns) {
         Ok(t) => t,
@@ -925,10 +705,7 @@ pub fn test_query() {
     let count = table.count_datas(&DbMap::from([("id", Value::Number(3))])).unwrap();
     assert_eq!(count, 1);
     let exits = table
-        .is_data_exists(&DbMap::from([
-            ("id", Value::Number(3)),
-            ("alias", Value::Bytes(b"testtest".to_vec())),
-        ]))
+        .is_data_exists(&DbMap::from([("id", Value::Number(3)), ("alias", Value::Bytes(b"testtest".to_vec()))]))
         .unwrap();
     assert!(!exits);
 }
@@ -944,30 +721,10 @@ pub fn test_multi_insert_row_datas() {
     };
 
     let columns = &[
-        ColumnInfo {
-            name: "Id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "Owner",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "Alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "value",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
     let table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
@@ -977,21 +734,9 @@ pub fn test_multi_insert_row_datas() {
     };
     let columns = &vec!["Owner", "Alias", "value"];
     let dataset = vec![
-        vec![
-            Value::Bytes(b"owner1".to_vec()),
-            Value::Bytes(b"alias1".to_vec()),
-            Value::Bytes(b"aaaa".to_vec()),
-        ],
-        vec![
-            Value::Bytes(b"owner2".to_vec()),
-            Value::Bytes(b"alias2".to_vec()),
-            Value::Bytes(b"bbbb".to_vec()),
-        ],
-        vec![
-            Value::Bytes(b"owner3".to_vec()),
-            Value::Bytes(b"alias3".to_vec()),
-            Value::Bytes(b"cccc".to_vec()),
-        ],
+        vec![Value::Bytes(b"owner1".to_vec()), Value::Bytes(b"alias1".to_vec()), Value::Bytes(b"aaaa".to_vec())],
+        vec![Value::Bytes(b"owner2".to_vec()), Value::Bytes(b"alias2".to_vec()), Value::Bytes(b"bbbb".to_vec())],
+        vec![Value::Bytes(b"owner3".to_vec()), Value::Bytes(b"alias3".to_vec()), Value::Bytes(b"cccc".to_vec())],
     ];
     let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
     assert_eq!(count, 3);
@@ -1016,14 +761,11 @@ pub fn test_multi_insert_row_datas() {
             Value::Bytes(b"cccc".to_vec()),
         ],
     ];
-    let count =
-        table.insert_multi_row_datas(&vec!["Id", "Owner", "Alias", "value"], &dataset).unwrap();
+    let count = table.insert_multi_row_datas(&vec!["Id", "Owner", "Alias", "value"], &dataset).unwrap();
     assert_eq!(count, 3);
 
     // query
-    let stmt =
-        Statement::<true>::prepare("select * from asset_table where Owner=? and Alias=?", &db)
-            .unwrap();
+    let stmt = Statement::<true>::prepare("select * from asset_table where Owner=? and Alias=?", &db).unwrap();
     let od = Value::Bytes(b"owner1".to_vec());
     let ad = Value::Bytes(b"alias1".to_vec());
     let ret = stmt.bind_data(1, &od);
@@ -1047,30 +789,10 @@ pub fn test_data_exists_and_data_count() {
     };
 
     let columns = &[
-        ColumnInfo {
-            name: "Id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "Owner",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "Alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "value",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
     let table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
@@ -1080,21 +802,9 @@ pub fn test_data_exists_and_data_count() {
     };
     let columns = &vec!["Owner", "Alias", "value"];
     let dataset = vec![
-        vec![
-            Value::Bytes(b"owner1".to_vec()),
-            Value::Bytes(b"alias1".to_vec()),
-            Value::Bytes(b"aaaa".to_vec()),
-        ],
-        vec![
-            Value::Bytes(b"owner2".to_vec()),
-            Value::Bytes(b"alias2".to_vec()),
-            Value::Bytes(b"bbbb".to_vec()),
-        ],
-        vec![
-            Value::Bytes(b"owner2".to_vec()),
-            Value::Bytes(b"alias3".to_vec()),
-            Value::Bytes(b"cccc".to_vec()),
-        ],
+        vec![Value::Bytes(b"owner1".to_vec()), Value::Bytes(b"alias1".to_vec()), Value::Bytes(b"aaaa".to_vec())],
+        vec![Value::Bytes(b"owner2".to_vec()), Value::Bytes(b"alias2".to_vec()), Value::Bytes(b"bbbb".to_vec())],
+        vec![Value::Bytes(b"owner2".to_vec()), Value::Bytes(b"alias3".to_vec()), Value::Bytes(b"cccc".to_vec())],
     ];
     let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
     assert_eq!(count, 3);
@@ -1116,9 +826,7 @@ pub fn test_data_exists_and_data_count() {
         .unwrap();
     assert!(!exist);
 
-    let count = db
-        .select_count_default(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner2".to_vec()))]))
-        .unwrap();
+    let count = db.select_count_default(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner2".to_vec()))])).unwrap();
     assert_eq!(count, 2);
 }
 
@@ -1133,30 +841,10 @@ pub fn test_helper() {
     };
 
     let columns = &[
-        ColumnInfo {
-            name: "Id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "Owner",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "Alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "value",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
     let table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
@@ -1166,21 +854,9 @@ pub fn test_helper() {
     };
     let columns = &vec!["Owner", "Alias", "value"];
     let dataset = vec![
-        vec![
-            Value::Bytes(b"owner1".to_vec()),
-            Value::Bytes(b"alias1".to_vec()),
-            Value::Bytes(b"aaaa".to_vec()),
-        ],
-        vec![
-            Value::Bytes(b"owner2".to_vec()),
-            Value::Bytes(b"alias2".to_vec()),
-            Value::Bytes(b"bbbb".to_vec()),
-        ],
-        vec![
-            Value::Bytes(b"owner2".to_vec()),
-            Value::Bytes(b"alias3".to_vec()),
-            Value::Bytes(b"cccc".to_vec()),
-        ],
+        vec![Value::Bytes(b"owner1".to_vec()), Value::Bytes(b"alias1".to_vec()), Value::Bytes(b"aaaa".to_vec())],
+        vec![Value::Bytes(b"owner2".to_vec()), Value::Bytes(b"alias2".to_vec()), Value::Bytes(b"bbbb".to_vec())],
+        vec![Value::Bytes(b"owner2".to_vec()), Value::Bytes(b"alias3".to_vec()), Value::Bytes(b"cccc".to_vec())],
     ];
     let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
     assert_eq!(count, 3);
@@ -1202,9 +878,7 @@ pub fn test_helper() {
         .unwrap();
     assert!(!exist);
 
-    let count = db
-        .select_count_default(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner2".to_vec()))]))
-        .unwrap();
+    let count = db.select_count_default(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner2".to_vec()))])).unwrap();
     assert_eq!(count, 2);
 
     let ret = db
@@ -1265,30 +939,10 @@ pub fn test_for_special_sql() {
     };
 
     let columns = &[
-        ColumnInfo {
-            name: "Id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "Owner",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "Alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "value",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
     let table = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
@@ -1298,21 +952,9 @@ pub fn test_for_special_sql() {
     };
     let columns = &vec!["Owner", "Alias", "value"];
     let dataset = vec![
-        vec![
-            Value::Bytes(b"owner1".to_vec()),
-            Value::Bytes(b"alias1".to_vec()),
-            Value::Bytes(b"aaaa".to_vec()),
-        ],
-        vec![
-            Value::Bytes(b"owner2".to_vec()),
-            Value::Bytes(b"alias2".to_vec()),
-            Value::Bytes(b"bbbb".to_vec()),
-        ],
-        vec![
-            Value::Bytes(b"owner2".to_vec()),
-            Value::Bytes(b"alias3".to_vec()),
-            Value::Bytes(b"cccc".to_vec()),
-        ],
+        vec![Value::Bytes(b"owner1".to_vec()), Value::Bytes(b"alias1".to_vec()), Value::Bytes(b"aaaa".to_vec())],
+        vec![Value::Bytes(b"owner2".to_vec()), Value::Bytes(b"alias2".to_vec()), Value::Bytes(b"bbbb".to_vec())],
+        vec![Value::Bytes(b"owner2".to_vec()), Value::Bytes(b"alias3".to_vec()), Value::Bytes(b"cccc".to_vec())],
     ];
     let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
     assert_eq!(count, 3);
@@ -1340,30 +982,10 @@ pub fn test_for_update_ver() {
     let _ = Database::drop_database("test20.db");
     let db = Database::new("test20.db").unwrap();
     let columns = &[
-        ColumnInfo {
-            name: "Id",
-            is_primary_key: true,
-            not_null: true,
-            data_type: DataType::Number,
-        },
-        ColumnInfo {
-            name: "Owner",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "Alias",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
-        ColumnInfo {
-            name: "value",
-            is_primary_key: false,
-            not_null: true,
-            data_type: DataType::Bytes,
-        },
+        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
     let _ = match db.create_table(ASSET_TABLE_NAME, columns) {
         Ok(t) => t,
@@ -1372,12 +994,10 @@ pub fn test_for_update_ver() {
         },
     };
     drop(db);
-    let db2 =
-        Database::new_with_version_update("test20.db", 0, default_update_database_func).unwrap();
+    let db2 = Database::new_with_version_update("test20.db", 0, default_update_database_func).unwrap();
     drop(db2);
 
-    let db3 =
-        Database::new_with_version_update("test20.db", 1, default_update_database_func).unwrap();
+    let db3 = Database::new_with_version_update("test20.db", 1, default_update_database_func).unwrap();
     drop(db3);
 
     let db4 = Database::new_with_version_update("test20.db", 0, default_update_database_func);
@@ -1412,10 +1032,7 @@ pub fn test_for_default_asset(userid: i32) {
 
     let count = DefaultDatabaseHelper::update_datas_default_once(
         userid,
-        &DbMap::from([
-            ("Owner", Value::Bytes(b"owner1".to_vec())),
-            ("Alias", Value::Bytes(b"Alias1".to_vec())),
-        ]),
+        &DbMap::from([("Owner", Value::Bytes(b"owner1".to_vec())), ("Alias", Value::Bytes(b"Alias1".to_vec()))]),
         &DbMap::from([("UpdateTime", Value::Number(1))]),
     )
     .unwrap();
@@ -1511,12 +1128,7 @@ pub fn test_for_recovery() {
     let table = db
         .create_table(
             "tt",
-            &[ColumnInfo {
-                name: "Id",
-                data_type: DataType::Number,
-                is_primary_key: true,
-                not_null: true,
-            }],
+            &[ColumnInfo { name: "Id", data_type: DataType::Number, is_primary_key: true, not_null: true }],
         )
         .unwrap();
     let count = table.insert_row(&DbMap::from([("Id", Value::Number(1))])).unwrap();
@@ -1531,9 +1143,7 @@ pub fn test_for_recovery() {
 
 /// trans callback
 fn trans_call(db: &Database) -> bool {
-    let count = db
-        .select_count_default(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner1".to_vec()))]))
-        .unwrap();
+    let count = db.select_count_default(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner1".to_vec()))])).unwrap();
     assert_eq!(count, 0);
     true
 }
@@ -1543,9 +1153,7 @@ pub fn test_for_transaction3() {
     let ret = do_transaction(6, trans_call).unwrap();
     assert!(ret);
     let trans = |db: &Database| -> bool {
-        let count = db
-            .select_count_default(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner1".to_vec()))]))
-            .unwrap();
+        let count = db.select_count_default(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner1".to_vec()))])).unwrap();
         assert_eq!(count, 0);
         true
     };
@@ -1586,11 +1194,8 @@ pub fn test_for_master_backup() {
 
     db.insert_datas_default(&def).unwrap();
     drop(db);
-    let mut db_file = OpenOptions::new()
-        .read(true)
-        .write(true)
-        .open("/data/service/el1/public/asset_service/5/asset.db")
-        .unwrap(); // write master db
+    let mut db_file =
+        OpenOptions::new().read(true).write(true).open("/data/service/el1/public/asset_service/5/asset.db").unwrap(); // write master db
     let _ = db_file.write(b"buffer buffer buffer").unwrap();
     let db = DefaultDatabaseHelper::open_default_database_table(5).unwrap(); // will recovery master db
     db.insert_datas_default(&def).unwrap();
@@ -1603,9 +1208,7 @@ pub fn test_for_master_backup() {
     let _ = back_file.write(b"bad message info").unwrap();
     let db = DefaultDatabaseHelper::open_default_database_table(5).unwrap(); // will recovery backup db
     db.insert_datas_default(&def).unwrap();
-    let count = db
-        .select_count_default(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner".to_vec()))]))
-        .unwrap();
+    let count = db.select_count_default(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner".to_vec()))])).unwrap();
     assert_eq!(count, 3);
     drop(db);
 }

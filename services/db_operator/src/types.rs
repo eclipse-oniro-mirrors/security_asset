@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! yuanhao: 补充DOC
+//! struct types for db
 
 use std::{cmp::Ordering, collections::HashMap};
 

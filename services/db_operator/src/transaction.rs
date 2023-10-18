@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-//! yuanhao: 补充DOC
+//! for db transaction, support closure.
+//! transaction is auto rollback if not commit by RAII.
 
 use super::*;
 use crate::{database::Database, statement::Statement};

@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 
-//! yuanhao: 补充DOC
+//! impl for db
+//! each user have a db, each db have a db file and a lock, the lock is mutex
+//! db link is auto drop by RAII
 
 use std::{ffi::CStr, fs, path::Path, ptr::null_mut, sync::Mutex};
 
@@ -71,8 +73,7 @@ pub struct Database<'a> {
 }
 
 /// update func callback
-pub type UpdateDatabaseCallbackFunc =
-    fn(db: &Database, old_ver: u32, new_ver: u32) -> SqliteErrCode;
+pub type UpdateDatabaseCallbackFunc = fn(db: &Database, old_ver: u32, new_ver: u32) -> SqliteErrCode;
 
 /// default callback func for update database
 pub fn default_update_database_func(db: &Database, old_ver: u32, new_ver: u32) -> SqliteErrCode {
@@ -122,13 +123,7 @@ pub fn copy_db_file(db: &Database, master_or_backup: bool) -> Result<u64, std::i
 
 /// wrap sqlite open
 #[inline(always)]
-fn sqlite3_open_wrap(
-    file: &str,
-    handle: &mut usize,
-    flag: i32,
-    vfs: Option<&[u8]>,
-    v2: bool,
-) -> SqliteErrCode {
+fn sqlite3_open_wrap(file: &str, handle: &mut usize, flag: i32, vfs: Option<&[u8]>, v2: bool) -> SqliteErrCode {
     if v2 {
         sqlite3_open_v2_func(file, handle, flag, vfs)
     } else {
@@ -294,11 +289,7 @@ impl<'a> Database<'a> {
 
     /// open database file
     /// use sqlite3_open_v2 instead of sqlite3_open
-    pub fn new_v2(
-        path: &str,
-        flags: i32,
-        vfs: Option<&'a [u8]>,
-    ) -> Result<Database<'a>, SqliteErrCode> {
+    pub fn new_v2(path: &str, flags: i32, vfs: Option<&'a [u8]>) -> Result<Database<'a>, SqliteErrCode> {
         let mut path_c = path.to_string();
         let mut back_path_c = fmt_backup_path(path);
         let mut db = Database {
@@ -377,12 +368,7 @@ impl<'a> Database<'a> {
     /// you should use statement.step for prepared statement.
     /// callback function for process result set.
     /// the final param data will be passed into callback function.
-    pub fn exec(
-        &self,
-        stmt: &Statement<false>,
-        callback: Option<Sqlite3Callback>,
-        data: usize,
-    ) -> SqliteErrCode {
+    pub fn exec(&self, stmt: &Statement<false>, callback: Option<Sqlite3Callback>, data: usize) -> SqliteErrCode {
         let mut msg = null_mut();
         let ret = sqlite3_exec_func(self.handle, &stmt.sql, callback, data, &mut msg);
         if !msg.is_null() {
@@ -402,8 +388,7 @@ impl<'a> Database<'a> {
 
     /// open a table, if the table not exists, return Ok(None)
     pub fn open_table(&self, table_name: &str) -> Result<Option<Table>, SqliteErrCode> {
-        let sql =
-            format!("select * from sqlite_master where type ='table' and name = '{}'", table_name);
+        let sql = format!("select * from sqlite_master where type ='table' and name = '{}'", table_name);
         let stmt = Statement::<true>::prepare(sql.as_str(), self)?;
         let ret = stmt.step();
         if ret != SQLITE_ROW {
@@ -456,11 +441,7 @@ impl<'a> Database<'a> {
     ///         println!("create table err {}", e);
     ///     }
     /// };
-    pub fn create_table(
-        &self,
-        table_name: &str,
-        columns: &[ColumnInfo],
-    ) -> Result<Table, SqliteErrCode> {
+    pub fn create_table(&self, table_name: &str, columns: &[ColumnInfo]) -> Result<Table, SqliteErrCode> {
         let mut sql = format!("CREATE TABLE {}(", table_name);
         for i in 0..columns.len() {
             let column = &columns[i];

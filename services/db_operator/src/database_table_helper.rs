@@ -13,14 +13,17 @@
  * limitations under the License.
  */
 
-//! yuanhao: 补充DOC
+//! the interfaces of db_operator public for other module
+//! inlcuding transaction and create default db,table
 
-use asset_common::{definition::{DataType, ErrCode, Value}, loge, logi};
+use asset_common::{
+    definition::{DataType, ErrCode, Value},
+    loge, logi,
+};
 
 use crate::{
     database::{
-        copy_db_file, copy_db_file_inner, is_db_corrupt, sqlite3_close_wrap, Database,
-        UpdateDatabaseCallbackFunc,
+        copy_db_file, copy_db_file_inner, is_db_corrupt, sqlite3_close_wrap, Database, UpdateDatabaseCallbackFunc,
     },
     from_sqlite_code_to_asset_code,
     table::Table,
@@ -158,7 +161,7 @@ impl<'a> TableHelper<'a> {
     /// if success, return line changes.
     /// if fail, return err code.
     ///
-    /// # Exsample
+    /// # Example
     /// ```
     /// use asset_common::definition::Value;
     /// use db_operator::database_table_helper::DefaultDatabaseHelper;
@@ -203,11 +206,7 @@ impl<'a> TableHelper<'a> {
     /// insert multi datas
     /// columns: the columns
     /// datas: the data set
-    pub fn insert_multi_datas(
-        &self,
-        columns: &Vec<&'static str>,
-        datas: &Vec<Vec<Value>>,
-    ) -> Result<i32, ErrCode> {
+    pub fn insert_multi_datas(&self, columns: &Vec<&'static str>, datas: &Vec<Vec<Value>>) -> Result<i32, ErrCode> {
         let closure = |e: &Table| e.insert_multi_row_datas(columns, datas);
         back_db_when_succ(true, self, closure)
     }
@@ -323,10 +322,7 @@ impl<'a> TableHelper<'a> {
 }
 
 /// process err msg, this may be use in test, consider delete this function when release
-pub fn process_err_msg<T>(
-    res: Result<T, ErrCode>,
-    db: &DefaultDatabaseHelper,
-) -> Result<T, ErrCode> {
+pub fn process_err_msg<T>(res: Result<T, ErrCode>, db: &DefaultDatabaseHelper) -> Result<T, ErrCode> {
     if res.is_err() {
         if let Some(msg) = db.get_err_msg() {
             loge!("db err info: {}", msg.s);
@@ -340,8 +336,7 @@ pub fn process_err_msg<T>(
 /// if table not exist, create default asset table
 #[inline(always)]
 fn create_default_table<'a>(db: &'a Database) -> Result<Table<'a>, ErrCode> {
-    let res =
-        db.create_table(ASSET_TABLE_NAME, COLUMN_INFO).map_err(from_sqlite_code_to_asset_code);
+    let res = db.create_table(ASSET_TABLE_NAME, COLUMN_INFO).map_err(from_sqlite_code_to_asset_code);
     match process_err_msg(res, db) {
         Ok(table) => {
             let closure = |_e: &Table| Ok(());
@@ -377,10 +372,7 @@ fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>, Err
                         loge!("reopen master db {} fail {}", db.path, e);
                         return Err(ErrCode::SqliteError);
                     }
-                    process_err_msg(
-                        db.open_table(ASSET_TABLE_NAME).map_err(from_sqlite_code_to_asset_code),
-                        db,
-                    )
+                    process_err_msg(db.open_table(ASSET_TABLE_NAME).map_err(from_sqlite_code_to_asset_code), db)
                 }
             } else {
                 process_err_msg(Err(from_sqlite_code_to_asset_code(e)), db)
@@ -392,11 +384,7 @@ fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>, Err
 impl<'a> DefaultDatabaseHelper<'a> {
     /// see TableHelper
     #[inline(always)]
-    pub fn update_datas_default(
-        &self,
-        condition: &Condition,
-        datas: &DbMap,
-    ) -> Result<i32, ErrCode> {
+    pub fn update_datas_default(&self, condition: &Condition, datas: &DbMap) -> Result<i32, ErrCode> {
         let table = Table::new(ASSET_TABLE_NAME, self);
         table.update_datas(condition, datas)
     }
@@ -506,11 +494,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn update_datas_default_once(
-        userid: i32,
-        condition: &Condition,
-        datas: &DbMap,
-    ) -> Result<i32, ErrCode> {
+    pub fn update_datas_default_once(userid: i32, condition: &Condition, datas: &DbMap) -> Result<i32, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.update_datas_default(condition, datas)
@@ -546,10 +530,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn is_data_exists_default_once(
-        userid: i32,
-        condition: &Condition,
-    ) -> Result<bool, ErrCode> {
+    pub fn is_data_exists_default_once(userid: i32, condition: &Condition) -> Result<bool, ErrCode> {
         let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.is_data_exists_default(condition)

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! yuanhao: 补充DOC
+//! db operator module, use sqlite3
 
 #[path = "database.rs"]
 pub mod database;

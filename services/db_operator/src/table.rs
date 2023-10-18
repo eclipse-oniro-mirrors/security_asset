@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 
-//! yuanhao: 补充DOC
+//! sqlite table impl, build most of the sql.
+//! all the column name should be static str, do NOT pass column name from user interface, it's not safe
+//! the data can be from user input, we will prepare and bind data.
+//! table is auto drop by RAII
 
 use std::cmp::Ordering;
 
@@ -22,8 +25,7 @@ use crate::{
     sqlite3_changes_func,
     statement::Statement,
     types::{
-        from_data_value_to_str_value, from_data_type_to_str, ColumnInfo,
-        Condition, QueryOptions, ResultSet, DbMap
+        from_data_type_to_str, from_data_value_to_str_value, ColumnInfo, Condition, DbMap, QueryOptions, ResultSet,
     },
     SqliteErrCode, SQLITE_DONE, SQLITE_ERROR, SQLITE_OK, SQLITE_ROW,
 };
@@ -41,10 +43,7 @@ pub struct Table<'a> {
 
 /// prepare statement with test output
 #[inline(always)]
-fn prepare_statement<'a>(
-    table: &'a Table,
-    sql: &mut str,
-) -> Result<Statement<'a, true>, SqliteErrCode> {
+fn prepare_statement<'a>(table: &'a Table, sql: &mut str) -> Result<Statement<'a, true>, SqliteErrCode> {
     asset_common::loge!("{}", sql);
     let stmt = match Statement::<true>::prepare(sql, table.db) {
         Ok(s) => s,
@@ -59,11 +58,7 @@ fn prepare_statement<'a>(
 
 /// bind conditions for statement
 #[inline(always)]
-fn bind_conditions(
-    conditions: &Condition,
-    stmt: &Statement<true>,
-    index: &mut i32,
-) -> Result<(), SqliteErrCode> {
+fn bind_conditions(conditions: &Condition, stmt: &Statement<true>, index: &mut i32) -> Result<(), SqliteErrCode> {
     bind_datas(conditions, stmt, index)
 }
 
@@ -82,11 +77,7 @@ fn bind_datas(datas: &DbMap, stmt: &Statement<true>, index: &mut i32) -> Result<
 
 /// bind data values
 #[inline(always)]
-fn bind_data_values(
-    datas: &Vec<Value>,
-    stmt: &Statement<true>,
-    index: &mut i32,
-) -> Result<(), SqliteErrCode> {
+fn bind_data_values(datas: &Vec<Value>, stmt: &Statement<true>, index: &mut i32) -> Result<(), SqliteErrCode> {
     for data in datas {
         let ret = stmt.bind_data(*index, data);
         if ret != SQLITE_OK {
@@ -382,11 +373,7 @@ impl<'a> Table<'a> {
     ///     },
     ///     Some(Value::Number(0)),
     /// );
-    pub fn add_new_column(
-        &self,
-        column: ColumnInfo,
-        default_value: Option<Value>,
-    ) -> SqliteErrCode {
+    pub fn add_new_column(&self, column: ColumnInfo, default_value: Option<Value>) -> SqliteErrCode {
         if column.is_primary_key {
             return SQLITE_ERROR;
         }
@@ -394,8 +381,7 @@ impl<'a> Table<'a> {
             return SQLITE_ERROR;
         }
         let data_type = from_data_type_to_str(&column.data_type);
-        let mut sql =
-            format!("ALTER TABLE {} ADD COLUMN {} {}", self.table_name, column.name, data_type);
+        let mut sql = format!("ALTER TABLE {} ADD COLUMN {} {}", self.table_name, column.name, data_type);
         if let Some(data) = default_value {
             sql.push_str(" DEFAULT ");
             sql.push_str(&from_data_value_to_str_value(&data));
@@ -461,7 +447,7 @@ impl<'a> Table<'a> {
         columns: &Vec<&'static str>,
         conditions: &Condition,
         query_options: Option<&QueryOptions>,
-        column_info: &'static [ColumnInfo]
+        column_info: &'static [ColumnInfo],
     ) -> Result<Vec<DbMap>, SqliteErrCode> {
         let mut sql = String::from("select ");
         build_sql_columns(columns, &mut sql);
@@ -480,8 +466,9 @@ impl<'a> Table<'a> {
                 let column_name = stmt.query_column_name(i)?;
                 let column_info = get_column_info(column_info, column_name);
                 match stmt.query_columns_auto_type(i)? {
-                    Some(Value::Number(n)) if column_info.data_type == DataType::Bool =>
-                        record.insert(column_info.name, Value::Bool(n != 0)),
+                    Some(Value::Number(n)) if column_info.data_type == DataType::Bool => {
+                        record.insert(column_info.name, Value::Bool(n != 0))
+                    },
                     Some(n) => record.insert(column_info.name, n),
                     None => continue,
                 };
