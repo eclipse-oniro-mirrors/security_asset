@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This crate implements the asset operations.
+//! This module is used to implement the Asset lifecycle management.
 
 mod common;
 mod operation_add;

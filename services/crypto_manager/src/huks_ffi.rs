@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This crate implements the asset
+//! This module is used to adapt to the capabilities provided by the HUKS.
 
 /// HuksErrcode type
 pub type HuksErrcode = i32;

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This crate implements the asset
+//! This module is used to adapt to the crypto manager.
 
 use asset_common::{
     definition::{Accessibility, AssetMap, AuthType, DataType, ErrCode, Result, Value},

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This crate implements the asset
+//! This module is used to manage the life cycle of Asset.
 
 #[allow(non_snake_case, non_camel_case_types)]
 #[path = "crypto.rs"]

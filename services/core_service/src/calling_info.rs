@@ -73,8 +73,6 @@ impl CallingInfo {
         }
         owner_info.truncate(len as usize);
 
-        logi!("reset calling indentity [{}]", ipc_rust::reset_calling_identity().unwrap()); // todo 换个位置
-
         Ok(CallingInfo { owner_type, owner_info, user_id })
     }
 

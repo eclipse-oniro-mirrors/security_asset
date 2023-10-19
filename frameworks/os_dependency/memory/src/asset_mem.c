@@ -30,7 +30,7 @@ void *AssetMalloc(uint32_t size)
     void *addr = malloc(size);
     if (addr != NULL) {
         (void)memset_s(addr, size, 0, size);
-        LOGE("[YZT] malloc %{public}p size = %{public}u", addr, size); // todo: test memory leak
+        LOGE("[YZT] malloc %{public}p size = %{public}u", addr, size); // todo: delete
     }
     return addr;
 }
@@ -40,7 +40,7 @@ void AssetFree(void *addr)
     if (addr == NULL) {
         return;
     }
-    LOGE("[YZT] free %{public}p", addr); // todo: test memory leak
+    LOGE("[YZT] free %{public}p", addr); // todo: delete
     free(addr);
 }
 

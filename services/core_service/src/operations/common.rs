@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This crate implements the asset
+//! This module is used to provide common capabilities for the Asset operations.
 
 mod argument_check;
 mod crypto_adapter;

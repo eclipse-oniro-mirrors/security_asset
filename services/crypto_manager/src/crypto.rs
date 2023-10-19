@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 
-//! This crate implements the asset
+//! This module is used to implement cryptographic algorithm operations, including key generation and usage.
+
 use crate::huks_ffi::*;
 use asset_common::{
     definition::{Accessibility, AuthType, ErrCode},

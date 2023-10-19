@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This crate implements the asset // todo: zwz 增加补充注释
+//! This module is used to insert an Asset with a specified alias.
 
 use asset_common::{
     definition::{Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Result, SyncType, Tag, Value},

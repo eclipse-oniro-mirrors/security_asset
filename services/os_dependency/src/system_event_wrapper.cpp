@@ -24,10 +24,9 @@
 #include "asset_log.h"
 
 extern "C" {
-int32_t delete_hap_asset(int32_t user_id, const char* owner);
-void delete_user_asset(int32_t user_id);
+    int32_t delete_hap_asset(int32_t user_id, const char* owner);
+    void delete_user_asset(int32_t user_id);
 }
-
 
 
 namespace {
