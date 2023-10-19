@@ -45,13 +45,12 @@ public:
         LOGE("receive event!!!!!");  // todo 要删掉
         if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED ||
             action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
-
-            // get userId(use front userId)
+            // get userId
             int uid = want.GetIntParam(OHOS::AppExecFwk::Constants::UID, -1);
             int userId = -1;
             OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userId);
             LOGE("userId %{public}i", userId);  // todo 要删掉
-
+            // get appId
             const char *APP_ID = "appId";
             std::string appId = want.GetStringParam(APP_ID);
             LOGE("appId %{public}s", appId.c_str());  // todo 要删掉
@@ -63,37 +62,23 @@ public:
                     LOGE("sandbox package appIndex = %{public}d is invalid.", appIndex);
                     return;
                 }
-                LOGE("sandbox package appIndex = %{public}d", appIndex);  // todo 要删掉
-
             }
-
             if (appId.empty() || userId == -1) {
                 LOGE("get wrong appId/userId");
                 return;
             }
+
             LOGE("appIndex %{public}i", appIndex);  // todo 要删掉
-            // 2. 调用数据库提供的接口，删除userID+owner(appId+appIndex)对应的数据； 删除密钥 userId+owner+accessType+authType
             std::string owner = appId + '_' + std::to_string(appIndex);
             int totalDeleteNum = delete_hap_asset(userId, owner.c_str());
-
             LOGI("delete finish! total delete line: %{public}i", totalDeleteNum);  // todo 要删掉
-
             // TODO: 增加判断os_account
             // do DeleteByAppID
         } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
-            // 3. 获取到userID, 删除数据库userId，删除密钥-（huks)
-            // get userId
-            LOGE("COMMON_EVENT_USER_REMOVED start!!!");
-            int uid = want.GetIntParam(OHOS::AppExecFwk::Constants::UID, -1);
-            int userId = -1;
-            OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userId);
-            LOGE("userId %{public}i", userId);  // todo 要删掉
+            int userId = data.GetCode();
+            LOGE("AssetService user removed: userId is %{public}i", userId);  // todo 要删掉
             // delete data
             delete_user_asset(userId);  // todo 这里直接把user下对应的文件夹删除了 谨慎使用
-            // 4. 属主访问控制获取到的userID，应该是前台userID，而不是调用方的userID
-            // int userId = data.GetCode();
-            // do deleteByUserID
-            // do delete key by userID, call HUKS API
         }
     }
 };
