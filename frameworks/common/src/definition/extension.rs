@@ -16,8 +16,7 @@
 //! This module extends the function of Asset data structure.
 
 use super::{
-    Accessibility, AssetMap, AuthType, ConflictResolution, DataType,
-    ErrCode, Insert, IntoValue, Result, ReturnType,
+    Accessibility, AssetMap, AuthType, ConflictResolution, DataType, ErrCode, Insert, IntoValue, Result, ReturnType,
     SyncType, Tag, Value,
 };
 use crate::loge;

@@ -17,10 +17,14 @@
 
 use std::{
     ffi::{c_char, CString},
-    fs, path::Path,
+    fs,
+    path::Path,
 };
 
-use asset_common::{definition::{Accessibility, AuthType, Value}, hasher, logi};
+use asset_common::{
+    definition::{Accessibility, AuthType, Value},
+    hasher, logi,
+};
 use asset_crypto_manager::crypto::SecretKey;
 use asset_db_operator::{
     database_table_helper::{DefaultDatabaseHelper, COLUMN_OWNER},
@@ -42,9 +46,7 @@ fn delete_key(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: A
 pub unsafe extern "C" fn delete_hap_asset(user_id: i32, owner: *const c_char) -> i32 {
     // 1 delete data in db
     let owner = CString::from_raw(owner as *mut c_char).into_string().unwrap();
-    let cond = DbMap::from([
-        (COLUMN_OWNER, Value::Bytes(owner.as_bytes().to_vec())),
-    ]);
+    let cond = DbMap::from([(COLUMN_OWNER, Value::Bytes(owner.as_bytes().to_vec()))]);
     match DefaultDatabaseHelper::delete_datas_default_once(user_id, &cond) {
         Ok(remove_num) if remove_num > 0 => {
             // 2 delete data in huks
@@ -55,7 +57,7 @@ pub unsafe extern "C" fn delete_hap_asset(user_id: i32, owner: *const c_char) ->
             delete_key(user_id, &owner, AuthType::Any, Accessibility::DeviceUnlock);
             remove_num
         },
-        _ => 0
+        _ => 0,
     }
 }
 
@@ -70,7 +72,9 @@ pub extern "C" fn delete_user_asset(user_id: i32) {
     let path = Path::new(&path_str);
     if !path.exists() {
         match fs::remove_dir_all(path) {
-            Ok(_) => { logi!("remove dir success!"); },
+            Ok(_) => {
+                logi!("remove dir success!");
+            },
             Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
                 logi!("remove dir failed! not found dir");
             },

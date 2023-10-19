@@ -17,9 +17,10 @@
 
 use asset_common::{
     definition::{
-        Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode,
-        IntoValue, Result, ReturnType, SyncType, Tag, Value
-    }, loge
+        Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, IntoValue, Result, ReturnType, SyncType, Tag,
+        Value,
+    },
+    loge,
 };
 
 use crate::operations::common::{CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS};
@@ -79,7 +80,7 @@ fn check_tag_range(tag: &Tag, value: &Value, tags: &[Tag]) -> Result<()> {
         _ => {
             loge!("[FATAL]The value[{}] of Tag[{}] is not in the valid tag range.", *n, tag);
             Err(ErrCode::InvalidArgument)
-        }
+        },
     }
 }
 
@@ -95,14 +96,16 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::AuthToken => check_array_size(tag, value, AUTH_TOKEN_SIZE - 1, AUTH_TOKEN_SIZE),
         Tag::SyncType => check_enum_variant::<SyncType>(tag, value),
         Tag::ConflictResolution => check_enum_variant::<ConflictResolution>(tag, value),
-        Tag::DataLabelCritical1 | Tag::DataLabelCritical2 | Tag::DataLabelCritical3 | Tag::DataLabelCritical4 =>
-            check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_LABEL_SIZE),
-        Tag::DataLabelNormal1 | Tag::DataLabelNormal2 | Tag::DataLabelNormal3 | Tag::DataLabelNormal4 =>
-            check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_LABEL_SIZE),
+        Tag::DataLabelCritical1 | Tag::DataLabelCritical2 | Tag::DataLabelCritical3 | Tag::DataLabelCritical4 => {
+            check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_LABEL_SIZE)
+        },
+        Tag::DataLabelNormal1 | Tag::DataLabelNormal2 | Tag::DataLabelNormal3 | Tag::DataLabelNormal4 => {
+            check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_LABEL_SIZE)
+        },
         Tag::ReturnType => check_enum_variant::<ReturnType>(tag, value),
         Tag::ReturnLimit => check_number_range(tag, value, MIN_NUMBER_VALUE, MAX_RETURN_LIMIT),
         Tag::ReturnOffset => Ok(()),
-        Tag::ReturnOrderBy => check_tag_range(tag, value, &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat())
+        Tag::ReturnOrderBy => check_tag_range(tag, value, &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat()),
     }
 }
 

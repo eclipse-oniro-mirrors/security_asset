@@ -17,20 +17,21 @@
 
 use std::{
     convert::TryFrom,
-    mem::{ManuallyDrop, size_of},
-    result::Result, slice
+    mem::{size_of, ManuallyDrop},
+    result::Result,
+    slice,
 };
 
 use asset_common::{
-    definition::{
-        AssetMap, DataType, ErrCode, IntoValue,
-        Tag, Value, Version
-    }, loge
+    definition::{AssetMap, DataType, ErrCode, IntoValue, Tag, Value, Version},
+    loge,
 };
 use asset_sdk::Manager;
 
 const RESULT_CODE_SUCCESS: i32 = 0;
-extern { fn AssetMalloc(size: u32) -> *mut ::libc::c_void; }
+extern "C" {
+    fn AssetMalloc(size: u32) -> *mut ::libc::c_void;
+}
 
 fn into_map(attributes: *const Asset_Attr, attr_cnt: u32) -> Option<AssetMap> {
     if attributes.is_null() {
@@ -49,7 +50,7 @@ fn into_map(attributes: *const Asset_Attr, attr_cnt: u32) -> Option<AssetMap> {
             match attr_tag.data_type() {
                 DataType::Bool => {
                     map.insert(attr_tag, Value::Bool((*attr).value.boolean));
-                }
+                },
                 DataType::Number => {
                     map.insert(attr_tag, Value::Number((*attr).value.uint32));
                 },
@@ -106,8 +107,12 @@ pub extern "C" fn remove_asset(query: *const Asset_Attr, query_cnt: u32) -> i32 
 
 /// Function called from C programming language to Rust programming language for updating Asset.
 #[no_mangle]
-pub extern "C" fn update_asset(query: *const Asset_Attr, query_cnt: u32,
-    attributes_to_update: *const Asset_Attr, update_cnt: u32) -> i32 {
+pub extern "C" fn update_asset(
+    query: *const Asset_Attr,
+    query_cnt: u32,
+    attributes_to_update: *const Asset_Attr,
+    update_cnt: u32,
+) -> i32 {
     let query_map = match into_map(query, query_cnt) {
         Some(map) => map,
         None => return ErrCode::InvalidArgument as i32,
@@ -160,9 +165,9 @@ pub unsafe extern "C" fn pre_query_asset(query: *const Asset_Attr, query_cnt: u3
     match Asset_Blob::try_from(&res) {
         Err(e) => e as i32,
         Ok(b) => {
-            *challenge =b;
+            *challenge = b;
             RESULT_CODE_SUCCESS
-        }
+        },
     }
 }
 
@@ -172,8 +177,11 @@ pub unsafe extern "C" fn pre_query_asset(query: *const Asset_Attr, query_cnt: u3
 ///
 /// The caller must ensure that the result_set pointer is valid.
 #[no_mangle]
-pub unsafe extern "C" fn query_asset(query: *const Asset_Attr, query_cnt: u32,
-    result_set: *mut Asset_ResultSet) -> i32 {
+pub unsafe extern "C" fn query_asset(
+    query: *const Asset_Attr,
+    query_cnt: u32,
+    result_set: *mut Asset_ResultSet,
+) -> i32 {
     let map = match into_map(query, query_cnt) {
         Some(map) => map,
         None => return ErrCode::InvalidArgument as i32,
@@ -199,7 +207,7 @@ pub unsafe extern "C" fn query_asset(query: *const Asset_Attr, query_cnt: u32,
         Ok(s) => {
             *result_set = s;
             RESULT_CODE_SUCCESS
-        }
+        },
     }
 }
 
@@ -247,10 +255,7 @@ impl TryFrom<&Vec<u8>> for Asset_Blob {
     type Error = ErrCode;
 
     fn try_from(vec: &Vec<u8>) -> Result<Self, Self::Error> {
-        let mut blob = Asset_Blob {
-            size: vec.len() as u32,
-            data: std::ptr::null_mut(),
-        };
+        let mut blob = Asset_Blob { size: vec.len() as u32, data: std::ptr::null_mut() };
 
         blob.data = unsafe { AssetMalloc(blob.size) as *mut u8 };
         if blob.data.is_null() {
@@ -266,7 +271,7 @@ impl TryFrom<&Vec<u8>> for Asset_Blob {
 union Asset_Value {
     boolean: bool,
     uint32: u32,
-    blob: ManuallyDrop::<Asset_Blob>,
+    blob: ManuallyDrop<Asset_Blob>,
 }
 
 impl TryFrom<&Value> for Asset_Value {
@@ -293,14 +298,10 @@ impl TryFrom<&AssetMap> for Asset_Result {
     type Error = ErrCode;
 
     fn try_from(map: &AssetMap) -> Result<Self, Self::Error> {
-        let mut result = Asset_Result {
-            count: map.len() as u32,
-            attrs: std::ptr::null_mut(),
-        };
+        let mut result = Asset_Result { count: map.len() as u32, attrs: std::ptr::null_mut() };
 
-        result.attrs = unsafe {
-            AssetMalloc(result.count.wrapping_mul(size_of::<Asset_Attr>() as u32)) as *mut Asset_Attr
-        };
+        result.attrs =
+            unsafe { AssetMalloc(result.count.wrapping_mul(size_of::<Asset_Attr>() as u32)) as *mut Asset_Attr };
         if result.attrs.is_null() {
             loge!("[FATAL][RUST SDK]Unable to allocate memory for Asset_Result.");
             return Err(ErrCode::OutOfMemory);
@@ -328,10 +329,7 @@ impl TryFrom<&Vec<AssetMap>> for Asset_ResultSet {
     type Error = ErrCode;
 
     fn try_from(maps: &Vec<AssetMap>) -> Result<Self, Self::Error> {
-        let mut result_set = Asset_ResultSet {
-            count: maps.len() as u32,
-            results: std::ptr::null_mut(),
-        };
+        let mut result_set = Asset_ResultSet { count: maps.len() as u32, results: std::ptr::null_mut() };
         result_set.results = unsafe {
             AssetMalloc(result_set.count.wrapping_mul(size_of::<Asset_Result>() as u32)) as *mut Asset_Result
         };

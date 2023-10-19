@@ -20,9 +20,9 @@ pub const AAD_SIZE: u32 = 8;
 
 #[test]
 fn test_hukkey_key_new() { // todo: zdy 不要出现hukkey, 不存在huk, 可以使用secret key替换
-    // let secret_key = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlock);
-    // assert_eq!(secret_key.alias, vec![1, 0, 0, 0, 95, 50, 95, 3, 0, 0, 0, 95, 4, 0, 0, 0]);
-    // todo zdy 不要为了测试用例暴露不该是public的字段
+                           // let secret_key = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlock);
+                           // assert_eq!(secret_key.alias, vec![1, 0, 0, 0, 95, 50, 95, 3, 0, 0, 0, 95, 4, 0, 0, 0]);
+                           // todo zdy 不要为了测试用例暴露不该是public的字段
 }
 
 #[test]

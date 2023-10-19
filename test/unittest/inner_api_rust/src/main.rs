@@ -15,7 +15,9 @@
 
 use core::panic;
 
-use asset_sdk::definition::{AssetMap, Accessibility, Tag, Insert, AuthType, SyncType, Value, ConflictResolution, ReturnType};
+use asset_sdk::definition::{
+    Accessibility, AssetMap, AuthType, ConflictResolution, Insert, ReturnType, SyncType, Tag, Value,
+};
 
 fn add_asset_inner(alias: &[u8]) {
     let mut input = AssetMap::new();
@@ -33,7 +35,7 @@ fn add_asset_inner(alias: &[u8]) {
                 panic!("test for add failed {}", e)
             }
         },
-        Err(e) => panic!("test for add failed {}", e)
+        Err(e) => panic!("test for add failed {}", e),
     }
 }
 
@@ -47,7 +49,7 @@ fn remove_asset_inner(alias: &[u8]) {
                 panic!("test for remote failed {}", e)
             }
         },
-        Err(e) => panic!("test for add failed {}", e)
+        Err(e) => panic!("test for add failed {}", e),
     }
 }
 
@@ -67,7 +69,7 @@ fn test_for_add() {
                 panic!("test for add failed {}", e)
             }
         },
-        Err(e) => panic!("test for add failed {}", e)
+        Err(e) => panic!("test for add failed {}", e),
     }
 
     remove_asset_inner(&Vec::from("alias".as_bytes()));
@@ -93,47 +95,43 @@ fn test_for_precise_query() {
     input.insert_attr(Tag::ReturnType, ReturnType::All).unwrap();
 
     match asset_sdk::Manager::build() {
-        Ok(manager) => {
-            match manager.query(&input) {
-                Ok(res) => {
-                    for map in res.iter() {
-                        for (tag, value) in map.iter() {
-                            match value {
-                                Value::Bool(boolean) => println!("get tag:[{}] value:[{}]", tag, boolean),
-                                Value::Number(num) => println!("get tag:[{}] value:[{}]", tag, num),
-                                Value::Bytes(bytes) => println!("get tag:[{}] value_len:[{}]", tag, bytes.len()),
-                            }
+        Ok(manager) => match manager.query(&input) {
+            Ok(res) => {
+                for map in res.iter() {
+                    for (tag, value) in map.iter() {
+                        match value {
+                            Value::Bool(boolean) => println!("get tag:[{}] value:[{}]", tag, boolean),
+                            Value::Number(num) => println!("get tag:[{}] value:[{}]", tag, num),
+                            Value::Bytes(bytes) => println!("get tag:[{}] value_len:[{}]", tag, bytes.len()),
                         }
                     }
-                },
-                Err(e) => {
-                    panic!("test for query failed {}", e)
                 }
-            }
+            },
+            Err(e) => {
+                panic!("test for query failed {}", e)
+            },
         },
-        Err(e) => panic!("test for query failed {}", e)
+        Err(e) => panic!("test for query failed {}", e),
     }
 
     match asset_sdk::Manager::build() {
-        Ok(manager) => {
-            match manager.query(&input) {
-                Ok(res) => {
-                    for map in res.iter() {
-                        for (tag, value) in map.iter() {
-                            match value {
-                                Value::Bool(boolean) => println!("get tag:[{}] value:[{}]", tag, boolean),
-                                Value::Number(num) => println!("get tag:[{}] value:[{}]", tag, num),
-                                Value::Bytes(bytes) => println!("get tag:[{}] value_len:[{}]", tag, bytes.len()),
-                            }
+        Ok(manager) => match manager.query(&input) {
+            Ok(res) => {
+                for map in res.iter() {
+                    for (tag, value) in map.iter() {
+                        match value {
+                            Value::Bool(boolean) => println!("get tag:[{}] value:[{}]", tag, boolean),
+                            Value::Number(num) => println!("get tag:[{}] value:[{}]", tag, num),
+                            Value::Bytes(bytes) => println!("get tag:[{}] value_len:[{}]", tag, bytes.len()),
                         }
                     }
-                },
-                Err(e) => {
-                    panic!("test for query 2 failed {}", e)
                 }
-            }
+            },
+            Err(e) => {
+                panic!("test for query 2 failed {}", e)
+            },
         },
-        Err(e) => panic!("test for query 2 failed {}", e)
+        Err(e) => panic!("test for query 2 failed {}", e),
     }
 
     remove_asset_inner(&alias);
@@ -147,47 +145,43 @@ fn test_for_fuzz_query() {
     input.insert_attr(Tag::SyncType, SyncType::Never).unwrap();
 
     match asset_sdk::Manager::build() {
-        Ok(manager) => {
-            match manager.query(&input) {
-                Ok(res) => {
-                    for map in res.iter() {
-                        for (tag, value) in map.iter() {
-                            match value {
-                                Value::Bool(boolean) => println!("get tag:[{}] value:[{}]", tag, boolean),
-                                Value::Number(num) => println!("get tag:[{}] value:[{}]", tag, num),
-                                Value::Bytes(bytes) => println!("get tag:[{}] value_len:[{}]", tag, bytes.len()),
-                            }
+        Ok(manager) => match manager.query(&input) {
+            Ok(res) => {
+                for map in res.iter() {
+                    for (tag, value) in map.iter() {
+                        match value {
+                            Value::Bool(boolean) => println!("get tag:[{}] value:[{}]", tag, boolean),
+                            Value::Number(num) => println!("get tag:[{}] value:[{}]", tag, num),
+                            Value::Bytes(bytes) => println!("get tag:[{}] value_len:[{}]", tag, bytes.len()),
                         }
                     }
-                },
-                Err(e) => {
-                    panic!("test for query failed {}", e)
                 }
-            }
+            },
+            Err(e) => {
+                panic!("test for query failed {}", e)
+            },
         },
-        Err(e) => panic!("test for query failed {}", e)
+        Err(e) => panic!("test for query failed {}", e),
     }
 
     match asset_sdk::Manager::build() {
-        Ok(manager) => {
-            match manager.query(&input) {
-                Ok(res) => {
-                    for map in res.iter() {
-                        for (tag, value) in map.iter() {
-                            match value {
-                                Value::Bool(boolean) => println!("get tag:[{}] value:[{}]", tag, boolean),
-                                Value::Number(num) => println!("get tag:[{}] value:[{}]", tag, num),
-                                Value::Bytes(bytes) => println!("get tag:[{}] value_len:[{}]", tag, bytes.len()),
-                            }
+        Ok(manager) => match manager.query(&input) {
+            Ok(res) => {
+                for map in res.iter() {
+                    for (tag, value) in map.iter() {
+                        match value {
+                            Value::Bool(boolean) => println!("get tag:[{}] value:[{}]", tag, boolean),
+                            Value::Number(num) => println!("get tag:[{}] value:[{}]", tag, num),
+                            Value::Bytes(bytes) => println!("get tag:[{}] value_len:[{}]", tag, bytes.len()),
                         }
                     }
-                },
-                Err(e) => {
-                    panic!("test for query 2 failed {}", e)
                 }
-            }
+            },
+            Err(e) => {
+                panic!("test for query 2 failed {}", e)
+            },
         },
-        Err(e) => panic!("test for query 2 failed {}", e)
+        Err(e) => panic!("test for query 2 failed {}", e),
     }
     remove_asset_inner(&alias);
 }
@@ -202,17 +196,15 @@ fn test_for_update_normal_label() {
     query.insert_attr(Tag::Alias, alias.clone()).unwrap();
 
     match asset_sdk::Manager::build() {
-        Ok(manager) => {
-            match manager.update(&query, &update) {
-                Ok(_) => {
-                    print!("update ok");
-                },
-                Err(e) => {
-                    panic!("test for update failed {}", e)
-                }
-            }
+        Ok(manager) => match manager.update(&query, &update) {
+            Ok(_) => {
+                print!("update ok");
+            },
+            Err(e) => {
+                panic!("test for update failed {}", e)
+            },
         },
-        Err(e) => panic!("test for update failed {}", e)
+        Err(e) => panic!("test for update failed {}", e),
     }
     remove_asset_inner(&alias);
 }
@@ -229,17 +221,15 @@ fn test_for_update_secret_and_normal_label() {
     update.insert_attr(Tag::Secret, Vec::from("secret_test_for_update_secret_and_normal_label".as_bytes())).unwrap();
 
     match asset_sdk::Manager::build() {
-        Ok(manager) => {
-            match manager.update(&query, &update) {
-                Ok(_) => {
-                    print!("update ok");
-                },
-                Err(e) => {
-                    panic!("test for update failed {}", e)
-                }
-            }
+        Ok(manager) => match manager.update(&query, &update) {
+            Ok(_) => {
+                print!("update ok");
+            },
+            Err(e) => {
+                panic!("test for update failed {}", e)
+            },
         },
-        Err(e) => panic!("test for update failed {}", e)
+        Err(e) => panic!("test for update failed {}", e),
     }
     remove_asset_inner(&alias);
 }

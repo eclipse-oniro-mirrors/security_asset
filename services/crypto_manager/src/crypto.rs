@@ -15,7 +15,10 @@
 
 //! This crate implements the asset
 use crate::huks_ffi::*;
-use asset_common::{definition::{Accessibility, AuthType, ErrCode}, loge};
+use asset_common::{
+    definition::{Accessibility, AuthType, ErrCode},
+    loge,
+};
 
 /// SecretKey struct
 pub struct SecretKey {
@@ -61,7 +64,8 @@ impl SecretKey {
     }
 
     /// Delete the secret key.
-    pub fn delete(&self) -> Result<bool, HuksErrcode> { // todo: zdy 不需要bool的返回值
+    pub fn delete(&self) -> Result<bool, HuksErrcode> {
+        // todo: zdy 不需要bool的返回值
         let ret = unsafe { DeleteKey(self.alias.len() as u32, self.alias.as_ptr()) };
         match ret {
             HKS_SUCCESS => Ok(true),

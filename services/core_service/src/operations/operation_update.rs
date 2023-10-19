@@ -16,13 +16,13 @@
 //! This module is used to update the specified alias of Asset.
 
 use asset_common::{
-    definition::{AssetMap, Result, ErrCode, Tag, Value},
-    logi, loge,
+    definition::{AssetMap, ErrCode, Result, Tag, Value},
+    loge, logi,
 };
 
 use asset_db_operator::{
-    database_table_helper::{COLUMN_SECRET, COLUMN_UPDATE_TIME, DefaultDatabaseHelper},
-    types::DbMap
+    database_table_helper::{DefaultDatabaseHelper, COLUMN_SECRET, COLUMN_UPDATE_TIME},
+    types::DbMap,
 };
 
 use crate::{calling_info::CallingInfo, operations::common};

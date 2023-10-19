@@ -19,7 +19,10 @@ pub use asset_common::definition;
 
 use ipc_rust::RemoteObjRef;
 
-use asset_common::{definition::{AssetMap, ErrCode, Result, Version}, loge};
+use asset_common::{
+    definition::{AssetMap, ErrCode, Result, Version},
+    loge,
+};
 use asset_ipc_interface::{IAsset, SA_ID};
 use asset_ipc_proxy::AssetProxy;
 
@@ -30,7 +33,7 @@ fn get_remote() -> Result<RemoteObjRef<AssetProxy>> {
         Err(e) => {
             loge!("[FATAL][RUST SDK]get remote service failed. Error = {}", e);
             Err(ErrCode::ServiceUnvailable)
-        }
+        },
     }
 }
 
@@ -79,10 +82,6 @@ impl Manager {
 
     /// Get the version of Asset.
     pub fn get_version() -> Version {
-        Version {
-            major: 1,
-            minor: 0,
-            patch: 0
-        }
+        Version { major: 1, minor: 0, patch: 0 }
     }
 }

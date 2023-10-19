@@ -50,7 +50,7 @@ pub struct CryptParam {
     pub data_out: *const u8,
 }
 
-extern {
+extern "C" {
     /// c generate key
     pub fn GenerateKey(keyLen: u32, keyData: *const u8) -> HuksErrcode;
 

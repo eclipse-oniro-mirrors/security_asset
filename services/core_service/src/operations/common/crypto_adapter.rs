@@ -16,28 +16,36 @@
 //! This crate implements the asset
 
 use asset_common::{
-    definition::{Accessibility, AssetMap, AuthType, ErrCode, Result, Value, DataType},
-    hasher, loge, logi
+    definition::{Accessibility, AssetMap, AuthType, DataType, ErrCode, Result, Value},
+    hasher, loge, logi,
 };
 use asset_crypto_manager::crypto::{Crypto, SecretKey};
 use asset_db_operator::{
     database_table_helper::{
-        COLUMN_AUTH_TYPE, COLUMN_ACCESSIBILITY, COLUMN_SECRET, COLUMN_ALIAS, COLUMN_OWNER, COLUMN_OWNER_TYPE,
-        COLUMN_GROUP_ID, COLUMN_SYNC_TYPE, COLUMN_REQUIRE_PASSWORD_SET,
-        COLUMN_DELETE_TYPE, COLUMN_VERSION, COLUMN_CRITICAL1, COLUMN_CRITICAL2, COLUMN_CRITICAL3, COLUMN_CRITICAL4
+        COLUMN_ACCESSIBILITY, COLUMN_ALIAS, COLUMN_AUTH_TYPE, COLUMN_CRITICAL1, COLUMN_CRITICAL2, COLUMN_CRITICAL3,
+        COLUMN_CRITICAL4, COLUMN_DELETE_TYPE, COLUMN_GROUP_ID, COLUMN_OWNER, COLUMN_OWNER_TYPE,
+        COLUMN_REQUIRE_PASSWORD_SET, COLUMN_SECRET, COLUMN_SYNC_TYPE, COLUMN_VERSION,
     },
-    types::DbMap
+    types::DbMap,
 };
 
 use crate::calling_info::CallingInfo;
 
 const AAD_ATTR: [(&str, DataType); 14] = [
-    (COLUMN_ALIAS, DataType::Bytes), (COLUMN_OWNER, DataType::Bytes), (COLUMN_OWNER_TYPE, DataType::Number),
-    (COLUMN_GROUP_ID, DataType::Bytes), (COLUMN_SYNC_TYPE, DataType::Number),
-    (COLUMN_ACCESSIBILITY, DataType::Number), (COLUMN_REQUIRE_PASSWORD_SET, DataType::Number),
-    (COLUMN_AUTH_TYPE, DataType::Number), (COLUMN_DELETE_TYPE, DataType::Number), (COLUMN_VERSION, DataType::Number),
-    (COLUMN_CRITICAL1, DataType::Bytes), (COLUMN_CRITICAL2, DataType::Bytes),
-    (COLUMN_CRITICAL3, DataType::Bytes), (COLUMN_CRITICAL4, DataType::Bytes)
+    (COLUMN_ALIAS, DataType::Bytes),
+    (COLUMN_OWNER, DataType::Bytes),
+    (COLUMN_OWNER_TYPE, DataType::Number),
+    (COLUMN_GROUP_ID, DataType::Bytes),
+    (COLUMN_SYNC_TYPE, DataType::Number),
+    (COLUMN_ACCESSIBILITY, DataType::Number),
+    (COLUMN_REQUIRE_PASSWORD_SET, DataType::Number),
+    (COLUMN_AUTH_TYPE, DataType::Number),
+    (COLUMN_DELETE_TYPE, DataType::Number),
+    (COLUMN_VERSION, DataType::Number),
+    (COLUMN_CRITICAL1, DataType::Bytes),
+    (COLUMN_CRITICAL2, DataType::Bytes),
+    (COLUMN_CRITICAL3, DataType::Bytes),
+    (COLUMN_CRITICAL4, DataType::Bytes),
 ];
 
 fn bytes_into_aad(column: &str, attrs: &DbMap, aad: &mut Vec<u8>) {
@@ -56,9 +64,7 @@ fn construct_aad(attrs: &DbMap) -> Vec<u8> {
     let mut aad = Vec::new();
     for (column, data_type) in &AAD_ATTR {
         match *data_type {
-            DataType::Number => {
-                u32_into_aad(column, attrs, &mut aad)
-            },
+            DataType::Number => u32_into_aad(column, attrs, &mut aad),
             DataType::Bytes => {
                 bytes_into_aad(column, attrs, &mut aad);
             },
@@ -103,7 +109,7 @@ pub(crate) fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
         _ => {
             loge!("[FATAL]HUKS failed to determine whether the key exists.");
             return Err(ErrCode::CryptoError);
-        }
+        },
     };
 
     let crypto = Crypto { key: secret_key };
@@ -138,8 +144,12 @@ pub(crate) fn decrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result
 }
 
 // todo : yyd : 改入参
-pub(crate) fn init_decrypt(_calling_info: &CallingInfo, _input: &AssetMap, _auth_type: &u32, _access_type: &u32)
-    -> Result<Vec<u8>> {
+pub(crate) fn init_decrypt(
+    _calling_info: &CallingInfo,
+    _input: &AssetMap,
+    _auth_type: &u32,
+    _access_type: &u32,
+) -> Result<Vec<u8>> {
     // todo 这里需要等init_decrypt的接口搞定之后再写 先写个假的放上去
     Ok(vec![1, 2, 2, 2, 2, 1])
 }

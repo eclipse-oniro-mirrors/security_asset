@@ -15,8 +15,14 @@
 
 //! This module is used to query the Asset, including single and batch query.
 
-use asset_common::{definition::{AssetMap, Result, Tag, Value, ErrCode, ReturnType}, loge, logi};
-use asset_db_operator::{types::{DbMap, QueryOptions}, database_table_helper::DefaultDatabaseHelper};
+use asset_common::{
+    definition::{AssetMap, ErrCode, Result, ReturnType, Tag, Value},
+    loge, logi,
+};
+use asset_db_operator::{
+    database_table_helper::DefaultDatabaseHelper,
+    types::{DbMap, QueryOptions},
+};
 
 use crate::{calling_info::CallingInfo, operations::common};
 
@@ -31,7 +37,8 @@ fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
 }
 
 fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<Vec<AssetMap>> {
-    let mut results = DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(), &vec![], db_data, None)?;
+    let mut results =
+        DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(), &vec![], db_data, None)?;
     logi!("results len {}", results.len());
     match results.len() {
         0 => {
@@ -41,7 +48,7 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<Vec<Asse
         1 => {
             common::decrypt(calling_info, &mut results[0])?;
             into_asset_maps(&results)
-        }
+        },
         n => {
             loge!("[FATAL]The database contains {} records with the specified alias.", n);
             Err(ErrCode::SqliteError)
@@ -63,20 +70,24 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
         order_by: match attrs.get(&Tag::ReturnOrderBy) {
             Some(Value::Number(order_by)) => {
                 let tag = Tag::try_from(*order_by).expect("Tag::ReturnOrderBy has been verified");
-                common::get_cloumn_name(tag).map(|order_by|vec![order_by])
-            }
+                common::get_cloumn_name(tag).map(|order_by| vec![order_by])
+            },
             _ => None,
         },
     }
 }
 
 pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
-    let results = DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(),
-        &vec![], db_data, Some(&get_query_options(attrs)))?;
+    let results = DefaultDatabaseHelper::query_columns_default_once(
+        calling_info.user_id(),
+        &vec![],
+        db_data,
+        Some(&get_query_options(attrs)),
+    )?;
     logi!("query found {}", results.len());
     if results.is_empty() {
         loge!("[FATAL]The data to be queried does not exist.");
-        return Err(ErrCode::NotFound)
+        return Err(ErrCode::NotFound);
     }
 
     let mut results = into_asset_maps(&results)?;
@@ -86,9 +97,8 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
     Ok(results)
 }
 
-const OPTIONAL_ATTRS: [Tag; 6] = [
-    Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderBy, Tag::ReturnType, Tag::AuthToken, Tag::AuthChallenge
-];
+const OPTIONAL_ATTRS: [Tag; 6] =
+    [Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderBy, Tag::ReturnType, Tag::AuthToken, Tag::AuthChallenge];
 
 fn check_arguments(attributes: &AssetMap) -> Result<()> {
     let mut optional_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
@@ -108,13 +118,13 @@ pub(crate) fn query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<
 
     match query.get(&Tag::ReturnType) {
         Some(Value::Number(return_type)) if *return_type == (ReturnType::All as u32) => {
-            if !query.contains_key(&Tag::Alias)  {
+            if !query.contains_key(&Tag::Alias) {
                 loge!("[FATAL]Batch secret query is not supported.");
                 Err(ErrCode::NotSupport)
             } else {
                 query_all(calling_info, &mut db_data)
             }
         },
-        _ => query_attrs(calling_info, &db_data, query)
+        _ => query_attrs(calling_info, &db_data, query),
     }
 }

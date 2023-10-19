@@ -19,11 +19,14 @@ use std::ffi::{c_char, CString};
 use std::thread;
 use std::time::Duration;
 
-use hilog_rust::{HiLogLabel, LogType, error, hilog};
+use hilog_rust::{error, hilog, HiLogLabel, LogType};
 use ipc_rust::{IRemoteBroker, RemoteObj};
-use system_ability_fwk_rust::{IMethod, ISystemAbility, RSystemAbility, define_system_ability};
+use system_ability_fwk_rust::{define_system_ability, IMethod, ISystemAbility, RSystemAbility};
 
-use asset_common::{definition::{AssetMap, Result}, logi};
+use asset_common::{
+    definition::{AssetMap, Result},
+    logi,
+};
 use asset_ipc_interface::{IAsset, SA_ID};
 
 mod calling_info;
@@ -33,11 +36,7 @@ mod stub;
 use calling_info::CallingInfo;
 use stub::AssetStub;
 
-const LOG_LABEL: HiLogLabel = HiLogLabel {
-    log_type: LogType::LogCore,
-    domain: 0xD002F70,
-    tag: "Asset",
-};
+const LOG_LABEL: HiLogLabel = HiLogLabel { log_type: LogType::LogCore, domain: 0xD002F70, tag: "Asset" };
 
 define_system_ability!(
     sa: SystemAbility(on_start, on_stop),
@@ -55,7 +54,7 @@ fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
     let service = AssetStub::new_remote_stub(AssetService).expect("create AssetService failed");
     ability.publish(&service.as_object().expect("publish Asset service failed"), SA_ID);
     logi!("[INFO]Asset service on_start");
-    unsafe{
+    unsafe {
         for i in 0..MAX_DELAY_TIMES {
             thread::sleep(Duration::from_millis(DELAY_INTERVAL));
             if SubscribeSystemEvent() {
@@ -70,13 +69,15 @@ fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
 
 fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {
     logi!("[INFO]Asset service on_stop");
-    unsafe{ UnSubscribeSystemEvent(); }
+    unsafe {
+        UnSubscribeSystemEvent();
+    }
 }
 
 #[used]
 #[link_section = ".init_array"]
-static A: extern fn() = {
-    extern fn init() {
+static A: extern "C" fn() = {
+    extern "C" fn init() {
         let r_sa = SystemAbility::new_system_ability(SA_ID, true).expect("create Asset service failed");
         r_sa.register();
     }

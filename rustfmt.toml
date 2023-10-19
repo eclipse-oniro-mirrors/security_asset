@@ -1,4 +1,3 @@
-version = "Two"
 # 统一管理宽度设置，但不包含 comment_width
 use_small_heuristics="MAX"
 # 在match分支中，如果包含了块，也需要加逗号以示分隔
@@ -9,9 +8,3 @@ newline_style="Unix"
 merge_derives = false
 # 设置行长度
 max_width = 120
-# 指定 fmt 忽略的目录
-ignore = [
-"src/test",
-"test",
-"docs",
-]

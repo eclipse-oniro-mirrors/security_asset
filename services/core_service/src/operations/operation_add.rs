@@ -16,16 +16,17 @@
 //! This crate implements the asset // todo: zwz 增加补充注释
 
 use asset_common::{
-    definition::{AssetMap, ConflictResolution, ErrCode, Result, Tag, Value, AuthType, Accessibility, SyncType},
-    loge, logi, impl_enum_trait,
+    definition::{Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Result, SyncType, Tag, Value},
+    impl_enum_trait, loge, logi,
 };
 use asset_db_operator::{
-    database_table_helper::{COLUMN_SECRET, COLUMN_ALIAS, COLUMN_OWNER, COLUMN_OWNER_TYPE,
-        COLUMN_SYNC_TYPE, COLUMN_AUTH_TYPE, COLUMN_ACCESSIBILITY, COLUMN_REQUIRE_PASSWORD_SET,
-        COLUMN_DELETE_TYPE, COLUMN_VERSION, COLUMN_CREATE_TIME, COLUMN_UPDATE_TIME,
-        do_transaction, DefaultDatabaseHelper, DB_DATA_VERSION
+    database::Database,
+    database_table_helper::{
+        do_transaction, DefaultDatabaseHelper, COLUMN_ACCESSIBILITY, COLUMN_ALIAS, COLUMN_AUTH_TYPE,
+        COLUMN_CREATE_TIME, COLUMN_DELETE_TYPE, COLUMN_OWNER, COLUMN_OWNER_TYPE, COLUMN_REQUIRE_PASSWORD_SET,
+        COLUMN_SECRET, COLUMN_SYNC_TYPE, COLUMN_UPDATE_TIME, COLUMN_VERSION, DB_DATA_VERSION,
     },
-    types::DbMap, database::Database
+    types::DbMap,
 };
 
 use crate::{calling_info::CallingInfo, operations::common};
@@ -67,7 +68,7 @@ fn resolve_conflict(calling_info: &CallingInfo, attrs: &AssetMap, query: &DbMap,
         _ => {
             loge!("[FATAL]The specified alias already exists.");
             Err(ErrCode::Duplicated)
-        }
+        },
     }
 }
 
@@ -98,13 +99,9 @@ fn add_default_attrs(db_data: &mut DbMap) {
     db_data.entry(COLUMN_REQUIRE_PASSWORD_SET).or_insert(Value::Bool(false));
 }
 
-const REQUIRED_ATTRS: [Tag; 2] = [
-    Tag::Secret, Tag::Alias
-];
+const REQUIRED_ATTRS: [Tag; 2] = [Tag::Secret, Tag::Alias];
 
-const OPTIONAL_ATTRS: [Tag; 2] = [
-    Tag::Secret, Tag::ConflictResolution,
-];
+const OPTIONAL_ATTRS: [Tag; 2] = [Tag::Secret, Tag::ConflictResolution];
 
 fn check_arguments(attributes: &AssetMap) -> Result<()> {
     common::check_required_tags(attributes, &REQUIRED_ATTRS)?;

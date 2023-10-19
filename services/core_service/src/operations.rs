@@ -17,15 +17,15 @@
 
 mod common;
 mod operation_add;
-mod operation_remove;
-mod operation_update;
+mod operation_post_query;
 mod operation_pre_query;
 mod operation_query;
-mod operation_post_query;
+mod operation_remove;
+mod operation_update;
 
 pub(crate) use operation_add::add;
-pub(crate) use operation_remove::remove;
-pub(crate) use operation_update::update;
+pub(crate) use operation_post_query::post_query;
 pub(crate) use operation_pre_query::pre_query;
 pub(crate) use operation_query::query;
-pub(crate) use operation_post_query::post_query;
+pub(crate) use operation_remove::remove;
+pub(crate) use operation_update::update;

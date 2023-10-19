@@ -17,7 +17,10 @@
 
 use std::{fs, path::Path};
 
-use asset_common::{definition::{ErrCode, Result}, loge};
+use asset_common::{
+    definition::{ErrCode, Result},
+    loge,
+};
 
 const ROOT_PATH: &str = "data/service/el1/public/asset_service";
 

@@ -16,10 +16,7 @@
 //! This module defines IPC interfaces and constants.
 
 use asset_common::{
-    definition::{
-        AssetMap, DataType, ErrCode, IntoValue, Result,
-        Tag, Value
-    },
+    definition::{AssetMap, DataType, ErrCode, IntoValue, Result, Tag, Value},
     impl_enum_trait, loge, logi,
 };
 
@@ -35,7 +32,7 @@ pub const IPC_SUCCESS: i32 = 0;
 const MAX_MAP_CAPACITY: u32 = 100;
 const MAX_VEC_CAPACITY: u32 = 0x10000;
 
-impl_enum_trait!{
+impl_enum_trait! {
     /// Code used to identify the function to be called.
     #[derive(Clone, Copy)]
     pub enum IpcCode {
@@ -111,7 +108,7 @@ pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
             DataType::Bool => {
                 let v = parcel.read::<bool>().map_err(|_| ErrCode::IpcError)?;
                 map.insert(tag, Value::Bool(v));
-            }
+            },
             DataType::Number => {
                 let v = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
                 map.insert(tag, Value::Number(v));

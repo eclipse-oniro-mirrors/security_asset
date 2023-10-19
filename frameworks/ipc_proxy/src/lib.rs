@@ -16,12 +16,14 @@
 //! This module implements the proxy of the Asset service.
 
 use ipc_rust::{
-    FromRemoteObj, IRemoteBroker, IRemoteObj, IpcResult, IpcStatusCode,
-    MsgParcel, RemoteObj, RemoteObjRef
+    FromRemoteObj, IRemoteBroker, IRemoteObj, IpcResult, IpcStatusCode, MsgParcel, RemoteObj, RemoteObjRef,
 };
 
-use asset_common::{definition::{AssetMap, ErrCode, Result}, loge};
-use asset_ipc_interface::{IAsset, IPC_SUCCESS, IpcCode, SA_NAME, deserialize_maps, serialize_map};
+use asset_common::{
+    definition::{AssetMap, ErrCode, Result},
+    loge,
+};
+use asset_ipc_interface::{deserialize_maps, serialize_map, IAsset, IpcCode, IPC_SUCCESS, SA_NAME};
 
 /// Proxy of Asset Service.
 pub struct AssetProxy {
@@ -31,9 +33,7 @@ pub struct AssetProxy {
 impl AssetProxy {
     /// Create proxy object by RemoteObj.
     fn from_remote_object(remote: &RemoteObj) -> IpcResult<Self> {
-        Ok(Self {
-            remote: remote.clone(),
-        })
+        Ok(Self { remote: remote.clone() })
     }
 
     /// Get proxy object descriptor.

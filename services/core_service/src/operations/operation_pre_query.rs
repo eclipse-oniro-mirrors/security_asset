@@ -17,11 +17,14 @@
 
 use std::collections::HashSet;
 
-use asset_common::{definition::{AuthType, AssetMap, Result, Value, ErrCode, Tag}, loge, logi};
+use asset_common::{
+    definition::{AssetMap, AuthType, ErrCode, Result, Tag, Value},
+    loge, logi,
+};
 
 use crate::{
     calling_info::CallingInfo,
-    operations::{common, operation_query::query_attrs}
+    operations::{common, operation_query::query_attrs},
 };
 
 const OPTIONAL_ATTRS: [Tag; 1] = [Tag::AuthValidityPeriod];

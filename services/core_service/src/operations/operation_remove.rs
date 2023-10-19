@@ -15,7 +15,10 @@
 
 //! This module is used to delete the Asset, including single and batch deletion.
 
-use asset_common::{definition::{AssetMap, Result, ErrCode}, logi, loge};
+use asset_common::{
+    definition::{AssetMap, ErrCode, Result},
+    loge, logi,
+};
 use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
 
 use crate::{calling_info::CallingInfo, operations::common};
@@ -43,6 +46,6 @@ pub(crate) fn remove(query: &AssetMap, calling_info: &CallingInfo) -> Result<()>
         n => {
             logi!("[INFO]Successfully deleted {} database records", n);
             Ok(())
-        }
+        },
     }
 }

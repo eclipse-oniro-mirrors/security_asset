@@ -17,9 +17,12 @@
 
 use ipc_rust::get_calling_uid;
 
-use asset_common::{definition::{ErrCode, Result}, impl_enum_trait, logi};
+use asset_common::{
+    definition::{ErrCode, Result},
+    impl_enum_trait, logi,
+};
 
-impl_enum_trait!{
+impl_enum_trait! {
     #[repr(C)]
     #[derive(Copy, Clone)]
     pub(crate) enum OwnerType {
@@ -36,8 +39,13 @@ pub(crate) struct CallingInfo {
 
 extern "C" {
     fn GetUserIdByUid(uid: u64, userId: &mut i32) -> bool;
-    fn GetOwnerInfo(userId: i32, uid: u64, ownerType: *mut OwnerType,
-        ownerInfo: *mut libc::c_char, infoLen: *mut u32) -> bool;
+    fn GetOwnerInfo(
+        userId: i32,
+        uid: u64,
+        ownerType: *mut OwnerType,
+        ownerInfo: *mut libc::c_char,
+        infoLen: *mut u32,
+    ) -> bool;
 }
 
 pub(crate) fn get_user_id(uid: u64) -> Result<i32> {
@@ -65,7 +73,7 @@ impl CallingInfo {
         }
         owner_info.truncate(len as usize);
 
-        logi!("reset calling indentity [{}]", ipc_rust::reset_calling_identity().unwrap());  // todo 换个位置
+        logi!("reset calling indentity [{}]", ipc_rust::reset_calling_identity().unwrap()); // todo 换个位置
 
         Ok(CallingInfo { owner_type, owner_info, user_id })
     }
