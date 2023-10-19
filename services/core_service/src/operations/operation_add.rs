@@ -106,11 +106,11 @@ const OPTIONAL_ATTRS: [Tag; 2] = [Tag::Secret, Tag::ConflictResolution];
 fn check_arguments(attributes: &AssetMap) -> Result<()> {
     common::check_required_tags(attributes, &REQUIRED_ATTRS)?;
 
-    let mut optional_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
-    optional_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
-    optional_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
-    optional_tags.extend_from_slice(&OPTIONAL_ATTRS);
-    common::check_optional_tags(attributes, &optional_tags)?;
+    let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
+    valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
+    valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
+    valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
+    common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)
 }
 

@@ -127,9 +127,9 @@ pub(crate) fn check_required_tags(attrs: &AssetMap, required_tags: &[Tag]) -> Re
     Ok(())
 }
 
-pub(crate) fn check_optional_tags(attrs: &AssetMap, optional_tags: &[Tag]) -> Result<()> {
+pub(crate) fn check_tag_validity(attrs: &AssetMap, valid_tags: &[Tag]) -> Result<()> {
     for tag in attrs.keys() {
-        if !optional_tags.contains(tag) {
+        if !valid_tags.contains(tag) {
             loge!("[FATAL]The tag [{}] is illegal.", tag);
             return Err(ErrCode::InvalidArgument);
         }

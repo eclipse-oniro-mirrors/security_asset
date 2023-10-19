@@ -39,16 +39,16 @@ const UPDATE_OPTIONAL_ATTRS: [Tag; 1] = [Tag::Secret];
 fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap) -> Result<()> {
     // Check attributes used to query.
     common::check_required_tags(query, &QUERY_REQUIRED_ATTRS)?;
-    let mut optional_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
-    optional_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
-    optional_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
-    common::check_optional_tags(query, &optional_tags)?;
+    let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
+    valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
+    valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
+    common::check_tag_validity(query, &valid_tags)?;
     common::check_value_validity(query)?;
 
     // Check attributes to update.
-    optional_tags = common::NORMAL_LABEL_ATTRS.to_vec();
-    optional_tags.extend_from_slice(&UPDATE_OPTIONAL_ATTRS);
-    common::check_optional_tags(attrs_to_update, &optional_tags)?;
+    valid_tags = common::NORMAL_LABEL_ATTRS.to_vec();
+    valid_tags.extend_from_slice(&UPDATE_OPTIONAL_ATTRS);
+    common::check_tag_validity(attrs_to_update, &valid_tags)?;
     common::check_value_validity(attrs_to_update)
 }
 

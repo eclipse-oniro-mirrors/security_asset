@@ -20,7 +20,7 @@ use asset_common::{
     loge, logi,
 };
 use asset_db_operator::{
-    database_table_helper::DefaultDatabaseHelper,
+    database_table_helper::{DefaultDatabaseHelper, COLUMN_SECRET},
     types::{DbMap, QueryOptions},
 };
 
@@ -78,7 +78,7 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
 }
 
 pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
-    let results = DefaultDatabaseHelper::query_columns_default_once(
+    let mut results = DefaultDatabaseHelper::query_columns_default_once(
         calling_info.user_id(),
         &vec![],
         db_data,
@@ -90,23 +90,22 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
         return Err(ErrCode::NotFound);
     }
 
-    let mut results = into_asset_maps(&results)?;
     for data in &mut results {
-        data.remove(&Tag::Secret);
+        data.remove(&COLUMN_SECRET);
     }
-    Ok(results)
+
+    into_asset_maps(&results)
 }
 
 const OPTIONAL_ATTRS: [Tag; 6] =
     [Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderBy, Tag::ReturnType, Tag::AuthToken, Tag::AuthChallenge];
 
 fn check_arguments(attributes: &AssetMap) -> Result<()> {
-    let mut optional_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
-    optional_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
-    optional_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
-    optional_tags.extend_from_slice(&OPTIONAL_ATTRS);
-    common::check_optional_tags(attributes, &optional_tags)?;
-
+    let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
+    valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
+    valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
+    valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
+    common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)
 }
 

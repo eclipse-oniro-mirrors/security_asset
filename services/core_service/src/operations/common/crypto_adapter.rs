@@ -38,7 +38,7 @@ const AAD_ATTR: [(&str, DataType); 14] = [
     (COLUMN_GROUP_ID, DataType::Bytes),
     (COLUMN_SYNC_TYPE, DataType::Number),
     (COLUMN_ACCESSIBILITY, DataType::Number),
-    (COLUMN_REQUIRE_PASSWORD_SET, DataType::Number),
+    (COLUMN_REQUIRE_PASSWORD_SET, DataType::Bool),
     (COLUMN_AUTH_TYPE, DataType::Number),
     (COLUMN_DELETE_TYPE, DataType::Number),
     (COLUMN_VERSION, DataType::Number),
@@ -50,13 +50,19 @@ const AAD_ATTR: [(&str, DataType); 14] = [
 
 fn bytes_into_aad(column: &str, attrs: &DbMap, aad: &mut Vec<u8>) {
     if let Some(Value::Bytes(bytes)) = attrs.get(column) {
-        aad.append(&mut bytes.clone());
+        aad.extend(bytes);
     }
 }
 
 fn u32_into_aad(column: &str, attrs: &DbMap, aad: &mut Vec<u8>) {
     if let Some(Value::Number(num)) = attrs.get(column) {
-        aad.append(&mut num.to_string().into_bytes());
+        aad.extend(num.to_le_bytes());
+    }
+}
+
+fn bool_into_aad(column: &str, attrs: &DbMap, aad: &mut Vec<u8>) {
+    if let Some(Value::Bool(num)) = attrs.get(column) {
+        aad.push(*num as u8);
     }
 }
 
@@ -65,13 +71,8 @@ fn construct_aad(attrs: &DbMap) -> Vec<u8> {
     for (column, data_type) in &AAD_ATTR {
         match *data_type {
             DataType::Number => u32_into_aad(column, attrs, &mut aad),
-            DataType::Bytes => {
-                bytes_into_aad(column, attrs, &mut aad);
-            },
-            DataType::Bool => {
-                loge!("Unexpected value type.");
-                panic!();
-            },
+            DataType::Bytes => bytes_into_aad(column, attrs, &mut aad),
+            DataType::Bool => bool_into_aad(column, attrs, &mut aad),
         }
     }
     aad
@@ -115,14 +116,14 @@ pub(crate) fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
     let crypto = Crypto { key: secret_key };
     let Value::Bytes(ref secret) = db_data[COLUMN_SECRET] else { return Err(ErrCode::InvalidArgument) };
 
-    let encryption = crypto.encrypt(secret, &construct_aad(db_data))?;
+    let cipher = crypto.encrypt(secret, &construct_aad(db_data))?;
 
     if !ipc_rust::set_calling_identity(identity) {
         loge!("Execute set_calling_identity failed.");
         return Err(ErrCode::IpcError);
     }
 
-    Ok(encryption)
+    Ok(cipher)
 }
 
 pub(crate) fn decrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {

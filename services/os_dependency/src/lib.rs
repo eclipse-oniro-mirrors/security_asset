@@ -48,7 +48,7 @@ pub unsafe extern "C" fn delete_hap_asset(user_id: i32, owner: *const c_char) ->
     let owner = CString::from_raw(owner as *mut c_char).into_string().unwrap();
     let cond = DbMap::from([(COLUMN_OWNER, Value::Bytes(owner.as_bytes().to_vec()))]);
     match DefaultDatabaseHelper::delete_datas_default_once(user_id, &cond) {
-        Ok(remove_num) if remove_num > 0 => {
+        Ok(remove_num) => {
             // 2 delete data in huks
             let owner = hasher::sha256(&owner.as_bytes().to_vec());
             delete_key(user_id, &owner, AuthType::None, Accessibility::DeviceFirstUnlock);
@@ -65,20 +65,23 @@ const ROOT_PATH: &str = "data/service/el1/public/asset_service";
 
 /// Function called from C programming language to Rust programming language for delete user Asset.
 /// # Safety
-/// dereference pointer
+/// dereference pointer  // todo: yyd delete
 #[no_mangle]
 pub extern "C" fn delete_user_asset(user_id: i32) {
+    // todo: yyd 该文件实现挪到file_operator文件里
     let path_str = format!("{}/{}", ROOT_PATH, user_id);
     let path = Path::new(&path_str);
     if !path.exists() {
+        // toto: yyd: 此处是文件存在
         match fs::remove_dir_all(path) {
             Ok(_) => {
                 logi!("remove dir success!");
             },
             Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
-                logi!("remove dir failed! not found dir");
+                logi!("remove dir failed! not found dir"); // 返回成功
             },
             Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
+                // todo: yyd 确认什么情况下返回什么错误码，如果数据库正在使用，删除目录需要重试
                 logi!("remove dir failed! permission denied");
             },
             Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {

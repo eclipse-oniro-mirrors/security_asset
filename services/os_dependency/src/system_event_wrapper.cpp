@@ -24,17 +24,16 @@
 #include "asset_log.h"
 
 extern "C" {
-    int32_t delete_hap_asset(int32_t user_id, const char* owner);
+    int32_t delete_hap_asset(int32_t user_id, const char* owner); // todo 切换命名
     void delete_user_asset(int32_t user_id);
 }
-
 
 namespace {
 class SystemEventHandler : public OHOS::EventFwk::CommonEventSubscriber {
 public:
     SystemEventHandler(const OHOS::EventFwk::CommonEventSubscribeInfo &subscribeInfo) :
         OHOS::EventFwk::CommonEventSubscriber(subscribeInfo) {
-            LOGE("SystemEventHandler constructor");
+            LOGE("SystemEventHandler constructor"); // todo: delete
         }
     ~SystemEventHandler() = default;
     void OnReceiveEvent(const OHOS::EventFwk::CommonEventData &data) override
@@ -47,7 +46,7 @@ public:
             // get userId
             int uid = want.GetIntParam(OHOS::AppExecFwk::Constants::UID, -1);
             int userId = -1;
-            OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userId);
+            OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userId); // todo: 从want中获取
             LOGE("userId %{public}i", userId);  // todo 要删掉
             // get appId
             const char *APP_ID = "appId";
@@ -78,7 +77,7 @@ public:
             LOGE("AssetService user removed: userId is %{public}i", userId);  // todo 要删掉
             // delete data
             delete_user_asset(userId);  // todo 这里直接把user下对应的文件夹删除了 谨慎使用
-        }
+        } // todo: 监听锁屏广播，中止session
     }
 };
 }

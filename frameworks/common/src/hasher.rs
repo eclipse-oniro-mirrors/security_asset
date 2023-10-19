@@ -16,6 +16,8 @@
 //! This crate implements the sha256
 #![allow(dead_code)]
 
+// todo framework 创建一个utils目录，将该文件放进去，新建一个BUILD.gn文件
+
 const LOWER_BYTES_MASK: u32 = 0xff;
 const BITS_PER_U8: usize = 8;
 const U8_PER_U32: usize = 4;

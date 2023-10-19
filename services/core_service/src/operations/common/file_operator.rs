@@ -22,6 +22,8 @@ use asset_common::{
     loge,
 };
 
+// todo: yyd 该文件挪到framework/os_denpendency下
+
 const ROOT_PATH: &str = "data/service/el1/public/asset_service";
 
 pub(crate) fn create_user_db_dir(user_id: i32) -> Result<()> {

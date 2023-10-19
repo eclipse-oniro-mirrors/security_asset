@@ -19,7 +19,7 @@ use ipc_rust::get_calling_uid;
 
 use asset_common::{
     definition::{ErrCode, Result},
-    impl_enum_trait, logi,
+    impl_enum_trait,
 };
 
 impl_enum_trait! {
@@ -52,6 +52,7 @@ pub(crate) fn get_user_id(uid: u64) -> Result<i32> {
     unsafe {
         let mut user_id = 0;
         if GetUserIdByUid(uid, &mut user_id) {
+            // todo：yyd 获取前台用户的user_id
             Ok(user_id)
         } else {
             Err(ErrCode::AccountError)

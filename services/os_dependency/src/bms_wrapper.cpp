@@ -34,11 +34,6 @@ using namespace OHOS;
 using namespace AppExecFwk;
 using namespace Security::AccessToken;
 
-uint32_t GetCallingTokenId()
-{
-    return IPCSkeleton::GetCallingTokenID();
-}
-
 static sptr<IBundleMgr> GetBundleMgrProxy()
 {
     sptr<ISystemAbilityManager> saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -97,7 +92,7 @@ bool GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, char *owne
     if (ownerType == NULL || ownerInfo == NULL || infoLen == NULL) {
         return false;
     }
-    auto tokenId = GetCallingTokenId();
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
     ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
     std::string info;
     bool ret = false;
