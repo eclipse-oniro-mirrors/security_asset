@@ -17,11 +17,9 @@
 
 mod argument_check;
 mod crypto_adapter;
-mod file_operator;
 
 pub(crate) use argument_check::{check_tag_validity, check_required_tags, check_value_validity};
 pub(crate) use crypto_adapter::{decrypt, encrypt, init_decrypt};
-pub(crate) use file_operator::create_user_db_dir;
 
 use std::time::{SystemTime, UNIX_EPOCH};
 

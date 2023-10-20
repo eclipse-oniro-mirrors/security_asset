@@ -118,7 +118,7 @@ pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<(
     check_arguments(attributes)?;
 
     // Create database directory if not exists.
-    common::create_user_db_dir(calling_info.user_id())?;
+    asset_file_operator::create_user_db_dir(calling_info.user_id())?;
 
     // Fill all attributes to DbMap.
     let mut db_data = common::into_db_map(attributes);

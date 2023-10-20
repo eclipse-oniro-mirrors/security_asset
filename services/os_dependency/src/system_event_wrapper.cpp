@@ -24,8 +24,8 @@
 #include "asset_log.h"
 
 extern "C" {
-    int32_t delete_hap_asset(int32_t user_id, const char* owner); // todo 切换命名
-    void delete_user_asset(int32_t user_id);
+    int32_t delete_asset_by_owner(int32_t user_id, const char* owner);
+    bool delete_asset_user_dir(int32_t user_id);
 }
 
 namespace {
@@ -40,44 +40,34 @@ public:
     {
         auto want = data.GetWant();
         std::string action = want.GetAction();
-        LOGE("receive event!!!!!");  // todo 要删掉
         if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED ||
             action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
-            // get userId
-            int uid = want.GetIntParam(OHOS::AppExecFwk::Constants::UID, -1);
-            int userId = -1;
-            OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userId); // todo: 从want中获取
-            LOGE("userId %{public}i", userId);  // todo 要删掉
-            // get appId
+            int userId = want.GetIntParam(OHOS::AppExecFwk::Constants::USER_ID, -1);
             const char *APP_ID = "appId";
             std::string appId = want.GetStringParam(APP_ID);
-            LOGE("appId %{public}s", appId.c_str());  // todo 要删掉
 
-            int appIndex = 0;
-            if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
-                appIndex = want.GetIntParam(OHOS::AppExecFwk::Constants::SANDBOX_APP_INDEX, -1);
-                if (appIndex < 0) {
-                    LOGE("sandbox package appIndex = %{public}d is invalid.", appIndex);
-                    return;
-                }
-            }
-            if (appId.empty() || userId == -1) {
-                LOGE("get wrong appId/userId");
+            int appIndex = action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED ?
+                want.GetIntParam(OHOS::AppExecFwk::Constants::SANDBOX_APP_INDEX, -1) : 0;
+
+            if (appId.empty() || userId == -1 || appIndex == -1) {
+                LOGE("wrong appId %{public}s/userId %{public}i/appIndex %{public}d", appId.c_str(), userId, appIndex);
                 return;
             }
 
-            LOGE("appIndex %{public}i", appIndex);  // todo 要删掉
+            LOGI("AssetService app removed");
             std::string owner = appId + '_' + std::to_string(appIndex);
-            int totalDeleteNum = delete_hap_asset(userId, owner.c_str());
+            int totalDeleteNum = delete_asset_by_owner(userId, owner.c_str());
             LOGI("delete finish! total delete line: %{public}i", totalDeleteNum);  // todo 要删掉
-            // TODO: 增加判断os_account
-            // do DeleteByAppID
         } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
             int userId = data.GetCode();
             LOGE("AssetService user removed: userId is %{public}i", userId);  // todo 要删掉
-            // delete data
-            delete_user_asset(userId);  // todo 这里直接把user下对应的文件夹删除了 谨慎使用
-        } // todo: 监听锁屏广播，中止session
+            if (delete_asset_user_dir(userId)) {
+                LOGI("delete user %{public}i dir finish!", userId);  // todo 要删掉
+            };
+        } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SCREEN_OFF) {
+            // todo: 监听锁屏广播，中止session
+            LOGE("AssetService screen off");  // todo 要删掉
+        }
     }
 };
 }
@@ -90,6 +80,7 @@ bool SubscribeSystemEvent(void)
     matchingSkills.AddEvent(OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
     matchingSkills.AddEvent(OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED);
     matchingSkills.AddEvent(OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED);
+    matchingSkills.AddEvent(OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SCREEN_OFF);
     OHOS::EventFwk::CommonEventSubscribeInfo subscriberInfo(matchingSkills);
 
     g_eventHandler = std::make_shared<SystemEventHandler>(subscriberInfo);

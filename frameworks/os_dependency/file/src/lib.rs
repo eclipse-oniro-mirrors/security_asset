@@ -22,11 +22,11 @@ use asset_common::{
     loge,
 };
 
-// todo: yyd 该文件挪到framework/os_denpendency下
 
 const ROOT_PATH: &str = "data/service/el1/public/asset_service";
 
-pub(crate) fn create_user_db_dir(user_id: i32) -> Result<()> {
+/// the function to create user database directory
+pub fn create_user_db_dir(user_id: i32) -> Result<()> {
     let path = format!("{}/{}", ROOT_PATH, user_id);
     let path = Path::new(&path);
     if !path.exists() {
@@ -42,4 +42,26 @@ pub(crate) fn create_user_db_dir(user_id: i32) -> Result<()> {
         }
     }
     Ok(())
+}
+
+/// the function to delete user directory
+pub fn delete_user_db_dir(user_id: i32) -> bool {
+    let path_str = format!("{}/{}", ROOT_PATH, user_id);
+    let path = Path::new(&path_str);
+    if path.exists() {
+        match fs::remove_dir_all(path) {
+            Ok(_) => {
+                return true
+            },
+            Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
+                return true
+            },
+            Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
+                loge!("remove dir failed! permission denied");
+                return false
+            },
+            _ => { return true }
+        }
+    }
+    true
 }

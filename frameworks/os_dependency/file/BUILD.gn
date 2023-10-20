@@ -15,31 +15,15 @@ import("//build/ohos.gni")
 
 COMPONENT_DIR = "//base/security/asset"
 
-ohos_rust_shared_library("asset_service") {
+ohos_rust_static_library("asset_file_operator") {
   sources = [ "src/lib.rs" ]
 
   deps = [
-    "$COMPONENT_DIR/interfaces/inner_api/rs:asset_sdk",
     "$COMPONENT_DIR/frameworks/common:asset_common",
-    "$COMPONENT_DIR/frameworks/ipc_interface:asset_ipc_interface",
-    "$COMPONENT_DIR/frameworks/ipc_proxy:asset_ipc_proxy",
-    "$COMPONENT_DIR/frameworks/os_dependency/file:asset_file_operator",
-    "$COMPONENT_DIR/services/crypto_manager:asset_crypto_manager",
-    "$COMPONENT_DIR/services/db_operator:asset_db_operator",
-    "$COMPONENT_DIR/services/os_dependency:asset_os_dependency",
-    "//third_party/rust/crates/libc:lib",
   ]
 
-  external_deps = [
-    #"access_token:libnativetoken",
-    #"access_token:libtoken_setproc",
-    "hilog:hilog_rust",
-    "ipc:ipc_rust",
-    "safwk:system_ability_fwk_rust",
-  ]
-
-  crate_name = "asset_service"
-  crate_type = "dylib"
+  crate_name = "asset_file_operator"
+  crate_type = "rlib"
 
   install_images = [ system_base_dir ]
   subsystem_name = "security"

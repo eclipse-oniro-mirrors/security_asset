@@ -9,3 +9,4 @@ edition = "2021"
 asset_db_operator = { path = "../../services/db_operator" }
 asset_crypto_manager = { path = "../../services/crypto_manager" }
 asset_common = { path = "../../frameworks/common" }
+asset_file_operator = { path = "../../frameworks/os_dependency/file" }
