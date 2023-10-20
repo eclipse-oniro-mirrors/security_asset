@@ -25,6 +25,12 @@ extern "C" {
 struct CryptParam {
     uint32_t keyLen;
     const uint8_t *keyData;
+    uint32_t challengePos;
+    uint32_t challengeLen;
+    uint8_t *challengeData;
+    enum HksKeyPurpose cryptoMode;
+    uint32_t handleLen;
+    uint8_t *handleData;
     uint32_t aadLen;
     const uint8_t *aad;
     uint32_t dataInLen;
@@ -33,8 +39,14 @@ struct CryptParam {
     uint8_t *dataOut;
 };
 
+/* once encrypt&decrypt */
 int EncryptWrapper(const struct CryptParam *data);
 int DecryptWrapper(const struct CryptParam *data);
+
+/* multi encrypt&decrypt */
+int32_t InitCryptoWrapper(const struct CryptParam *data);
+int32_t ExecCryptoWrapper(const struct CryptParam *data);
+int32_t DropCrypto(const struct CryptParam *data);
 
 #ifdef __cplusplus
 }

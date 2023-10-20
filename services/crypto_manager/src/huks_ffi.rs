@@ -24,10 +24,23 @@ pub const HKS_FAILURE: HuksErrcode = -1;
 /// HuksErrcode NOt EXIST
 pub const HKS_ERROR_NOT_EXIST: HuksErrcode = -13;
 
+/// crypto type
+pub type HksKeyPurpose = i32;
+/// encrypto mode
+pub const HKS_KEY_PURPOSE_ENCRYPT: HksKeyPurpose  = 1;
+/// decrypto mode
+pub const HKS_KEY_PURPOSE_DECRYPT: HksKeyPurpose  = 2;
+
 /// Nonce size, keep same with huks_wrapper
 pub const NONCE_SIZE: u32 = 12;
 /// Aead size, keep same with huks_wrapper
 pub const AEAD_SIZE: u32 = 16;
+
+/// handle len is sizeof(uint64_t) / sizeof(u8) = 8, for HuksInit
+pub const HANDLE_LEN: u32 = 8;
+
+/// chanllenge len for HuksInit
+pub const CHALLENGE_LEN: u32 = 32;
 
 /// crypto params for crypt_wrapper, keep same with crypto_wrapper.h
 #[repr(C)]
@@ -36,6 +49,18 @@ pub struct CryptParam {
     pub key_len: u32,
     /// keyinfo buff
     pub key_data: *const u8,
+    /// challenge position
+    pub challenge_pos: u32,
+    /// challenge length
+    pub challenge_len: u32,
+    /// challenge data
+    pub challenge_data: *const u8,
+    /// crypto mode
+    pub crypto_mode: HksKeyPurpose,
+    /// handle len
+    pub handle_len: u32,
+    /// handle data
+    pub handle_data: *const u8,
     /// asociate data size
     pub aad_len: u32,
     /// asociate data buff
@@ -65,4 +90,13 @@ extern "C" {
 
     /// hks decrypt c func
     pub fn DecryptWrapper(data: *const CryptParam) -> HuksErrcode;
+
+    /// hks crypto init c func
+    pub fn InitCryptoWrapper(data: *const CryptParam) -> HuksErrcode;
+
+    /// hks execute crypto c func
+    pub fn ExecCryptoWrapper(data: *const CryptParam) -> HuksErrcode;
+
+    /// hks crypto drop c func
+    pub fn DropCrypto(data: *const CryptParam) -> HuksErrcode;
 }

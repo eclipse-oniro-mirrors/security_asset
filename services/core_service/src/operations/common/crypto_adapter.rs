@@ -113,10 +113,9 @@ pub(crate) fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
         },
     };
 
-    let crypto = Crypto { key: secret_key };
     let Value::Bytes(ref secret) = db_data[COLUMN_SECRET] else { return Err(ErrCode::InvalidArgument) };
 
-    let cipher = crypto.encrypt(secret, &construct_aad(db_data))?;
+    let cipher = Crypto::encrypt(&secret_key ,secret, &construct_aad(db_data))?;
 
     if !ipc_rust::set_calling_identity(identity) {
         loge!("Execute set_calling_identity failed.");
@@ -134,8 +133,7 @@ pub(crate) fn decrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result
 
     let Value::Bytes(ref secret) = db_data[COLUMN_SECRET] else { return Err(ErrCode::InvalidArgument) };
     let secret_key = build_secret_key(calling_info, db_data)?;
-    let crypto = Crypto { key: secret_key };
-    let secret = crypto.decrypt(secret, &construct_aad(db_data))?; // todo: 待处理HUKS返回值，比如密钥不存在，锁屏状态不正确
+    let secret = Crypto::decrypt(&secret_key, secret, &construct_aad(db_data))?; // todo: 待处理HUKS返回值，比如密钥不存在，锁屏状态不正确
     db_data.insert(COLUMN_SECRET, Value::Bytes(secret));
     if !ipc_rust::set_calling_identity(identity) {
         loge!("Execute set_calling_identity failed.");

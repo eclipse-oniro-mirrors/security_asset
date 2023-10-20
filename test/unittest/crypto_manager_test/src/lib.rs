@@ -65,12 +65,10 @@ fn test_hukkey_encrypt() {
         Err(res) => panic!("test_hukkey_encrypt fail because generate error = {}", res),
     };
 
-    let crypto = Crypto { key: secret_key };
-
     println!("test_hukkey_encrypt: generate success");
     let msg = vec![1, 2, 3, 4, 5, 6];
     let aad = vec![0; AAD_SIZE as usize];
-    let encrypt_res = crypto.encrypt(&msg, &aad);
+    let encrypt_res = Crypto::encrypt(&secret_key, &msg, &aad);
     match encrypt_res {
         Ok(cipher) => {
             println!("encrypt success, cipher is {:?}, now check cipher", cipher);
@@ -82,18 +80,18 @@ fn test_hukkey_encrypt() {
                 }
             }
             if flag {
-                let _ = crypto.key.delete();
+                let _ = secret_key.delete();
                 panic!("test_hukkey_encrypt fail because cipher_text equals indata.");
             }
 
             println!("test_hukkey_encrypt pass");
         },
         Err(e) => {
-            let _ = crypto.key.delete();
+            let _ = secret_key.delete();
             panic!("test_hukkey_encrypt fail because encrypt error = {}", e);
         },
     }
-    let _ = crypto.key.delete();
+    let _ = secret_key.delete();
 }
 
 #[test]
@@ -105,12 +103,10 @@ fn test_hukkey_decrypt() {
         Err(res) => panic!("test_hukkey_encrypt fail because generate error = {}", res),
     };
 
-    let crypto = Crypto { key: secret_key };
-
     println!("test_hukkey_decrypt: generate key success");
     let msg = vec![1, 2, 3, 4, 5, 6];
     let aad = vec![0; AAD_SIZE as usize];
-    let encrypt_res = crypto.encrypt(&msg, &aad);
+    let encrypt_res = Crypto::encrypt(&secret_key, &msg, &aad);
     match encrypt_res {
         Ok(cipher) => {
             println!("encrypt success, cipher is {:?}, now check cipher", cipher);
@@ -122,12 +118,12 @@ fn test_hukkey_decrypt() {
                 }
             }
             if flag {
-                let _ = crypto.key.delete();
+                let _ = secret_key.delete();
                 panic!("test_hukkey_decrypt fail because cipher_text equals indata.");
             }
 
             println!("encrypt pass, now decrypt..., cipher is {:?}", cipher);
-            let decrypt_res = crypto.decrypt(&cipher, &aad);
+            let decrypt_res = Crypto::decrypt(&secret_key, &cipher, &aad);
             match decrypt_res {
                 Ok(plain) => {
                     println!("decrypt pass, plain is {:?}, now check decrypt", plain);
@@ -139,22 +135,22 @@ fn test_hukkey_decrypt() {
                         }
                     }
                     if !flag {
-                        let _ = crypto.key.delete();
+                        let _ = secret_key.delete();
                         panic!("test_hukkey_decrypt fail because plain_text not equals inData");
                     }
 
                     println!("test_hukkey_decrypt pass");
                 },
                 Err(e) => {
-                    let _ = crypto.key.delete();
+                    let _ = secret_key.delete();
                     panic!("test_hukkey_decrypt fail because decrypt error = {}", e);
                 },
             }
         },
         Err(e) => {
-            let _ = crypto.key.delete();
+            let _ = secret_key.delete();
             panic!("test_hukkey_decrypt fail because encrypt error = {}", e);
         },
     }
-    let _ = crypto.key.delete();
+    let _ = secret_key.delete();
 }
