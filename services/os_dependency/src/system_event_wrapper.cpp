@@ -24,17 +24,15 @@
 #include "asset_log.h"
 
 extern "C" {
-    int32_t delete_asset_by_owner(int32_t user_id, const char* owner);
-    bool delete_asset_user_dir(int32_t user_id);
+    int32_t delete_by_owner(int32_t user_id, const char* owner);
+    bool delete_by_user_dir(int32_t user_id);
 }
 
 namespace {
 class SystemEventHandler : public OHOS::EventFwk::CommonEventSubscriber {
 public:
     SystemEventHandler(const OHOS::EventFwk::CommonEventSubscribeInfo &subscribeInfo) :
-        OHOS::EventFwk::CommonEventSubscriber(subscribeInfo) {
-            LOGE("SystemEventHandler constructor"); // todo: delete
-        }
+        OHOS::EventFwk::CommonEventSubscriber(subscribeInfo) {}
     ~SystemEventHandler() = default;
     void OnReceiveEvent(const OHOS::EventFwk::CommonEventData &data) override
     {
@@ -56,12 +54,12 @@ public:
 
             LOGI("AssetService app removed");
             std::string owner = appId + '_' + std::to_string(appIndex);
-            int totalDeleteNum = delete_asset_by_owner(userId, owner.c_str());
+            int totalDeleteNum = delete_by_owner(userId, owner.c_str());
             LOGI("delete finish! total delete line: %{public}i", totalDeleteNum);  // todo 要删掉
         } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
             int userId = data.GetCode();
             LOGE("AssetService user removed: userId is %{public}i", userId);  // todo 要删掉
-            if (delete_asset_user_dir(userId)) {
+            if (delete_by_user_dir(userId)) {
                 LOGI("delete user %{public}i dir finish!", userId);  // todo 要删掉
             };
         } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SCREEN_OFF) {

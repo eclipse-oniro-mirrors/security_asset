@@ -19,14 +19,14 @@
 
 #include "asset_log.h"
 
-bool GetUserIdByUid(uint64_t uid, int32_t *userId)
+bool GetFrontUserId(int32_t *userId)
 {
-    int userIdInt;
-    int res = OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userIdInt);
-    if (res != 0) {
-        LOGE("[FATAL]Get user id from uid failed! res is %{public}i", res);
+    std::vector<int> ids;
+    int ret = OHOS::AccountSA::OsAccountManager::QueryActiveOsAccountIds(ids);
+    if (ret != 0 || ids.empty()) {
+        LOGE("Asset QueryActiveOsAccountIds Failed!! ret = %" LOG_PUBLIC "d", ret);
         return false;
     }
-    *userId = userIdInt;
+    *userId = ids[0];
     return true;
 }

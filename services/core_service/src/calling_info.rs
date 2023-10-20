@@ -38,7 +38,7 @@ pub(crate) struct CallingInfo {
 }
 
 extern "C" {
-    fn GetUserIdByUid(uid: u64, userId: &mut i32) -> bool;
+    fn GetFrontUserId(userId: &mut i32) -> bool;
     fn GetOwnerInfo(
         userId: i32,
         uid: u64,
@@ -48,10 +48,10 @@ extern "C" {
     ) -> bool;
 }
 
-pub(crate) fn get_user_id(uid: u64) -> Result<i32> {
+pub(crate) fn get_user_id() -> Result<i32> {
     unsafe {
         let mut user_id = 0;
-        if GetUserIdByUid(uid, &mut user_id) {
+        if GetFrontUserId(&mut user_id) {
             // todo：yyd 获取前台用户的user_id
             Ok(user_id)
         } else {
@@ -63,7 +63,7 @@ pub(crate) fn get_user_id(uid: u64) -> Result<i32> {
 impl CallingInfo {
     pub(crate) fn build() -> Result<Self> {
         let uid = get_calling_uid();
-        let user_id: i32 = get_user_id(uid)?;
+        let user_id: i32 = get_user_id()?;
         let mut owner_info = vec![0u8; 256];
         let mut len = 256u32;
         let mut owner_type = OwnerType::Hap;

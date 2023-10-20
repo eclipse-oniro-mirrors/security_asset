@@ -40,7 +40,7 @@ fn delete_key(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: A
 /// Function called from C programming language to Rust programming language for delete hap Asset.
 /// # Safety
 #[no_mangle]
-pub unsafe extern "C" fn delete_asset_by_owner(user_id: i32, owner: *const c_char) -> i32 {
+pub unsafe extern "C" fn delete_by_owner(user_id: i32, owner: *const c_char) -> i32 {
     // 1 delete data in db
     let owner = CString::from_raw(owner as *mut c_char).into_string().unwrap();
     let cond = DbMap::from([(COLUMN_OWNER, Value::Bytes(owner.as_bytes().to_vec()))]);
@@ -60,6 +60,6 @@ pub unsafe extern "C" fn delete_asset_by_owner(user_id: i32, owner: *const c_cha
 
 /// Function called from C programming language to Rust programming language for delete user Asset.
 #[no_mangle]
-pub extern "C" fn delete_asset_user_dir(user_id: i32) -> bool {
+pub extern "C" fn delete_by_user_dir(user_id: i32) -> bool {
     delete_user_db_dir(user_id)
 }
