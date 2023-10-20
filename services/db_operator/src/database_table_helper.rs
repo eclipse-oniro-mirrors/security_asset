@@ -412,7 +412,7 @@ impl<'a> DefaultDatabaseHelper<'a> {
     /// see TableHelper
     #[inline(always)]
     pub fn delete_datas_default(&self, cond: &Condition) -> Result<i32, ErrCode> {
-        let table = Table::new(ASSET_TABLE_NAME, self); // todo: yuanhao 数据删除、更新、查询前不需要先创建表吧
+        let table = Table::new(ASSET_TABLE_NAME, self);
         table.delete_datas(cond)
     }
 
