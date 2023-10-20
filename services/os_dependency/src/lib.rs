@@ -19,7 +19,7 @@ use std::ffi::{c_char, CString};
 
 use asset_common::{
     definition::{Accessibility, AuthType, Value},
-    hasher, logi,
+    hasher, loge,
 };
 use asset_crypto_manager::crypto::SecretKey;
 use asset_db_operator::{
@@ -30,23 +30,20 @@ use asset_file_operator::delete_user_db_dir;
 
 fn delete_key(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility) {
     let secret_key = SecretKey::new(user_id, owner, auth_type, access_type);
-    match secret_key.delete() {
-        Ok(true) => logi!("delete huks key pass"),
-        Ok(false) => logi!("delete huks key never reached"),
-        Err(res) => logi!("delete huks key fail error = {}", res),
-    };
+    if let Err(e) = secret_key.delete() {
+        loge!("Delete huks key failed, error = {}", e);
+    }
 }
 
 /// Function called from C programming language to Rust programming language for delete hap Asset.
-/// # Safety
 #[no_mangle]
-pub unsafe extern "C" fn delete_by_owner(user_id: i32, owner: *const c_char) -> i32 {
-    // 1 delete data in db
-    let owner = CString::from_raw(owner as *mut c_char).into_string().unwrap();
-    let cond = DbMap::from([(COLUMN_OWNER, Value::Bytes(owner.as_bytes().to_vec()))]);
+pub extern "C" fn delete_data_by_owner(user_id: i32, owner: *const c_char) -> i32 {
+    let owner = unsafe { CString::from_raw(owner as *mut c_char).into_string().unwrap() }; // todo: unwrap改掉
+    let mut cond = DbMap::new();
+    // cond.insert(COLUMN_OWNER_TYPE, Value::Number(OwnerType::Hap as u32)); // todo: 加个constants 文件 yzt
+    cond.insert(COLUMN_OWNER, Value::Bytes(owner.as_bytes().to_vec())); // todo: owner + ownerLen 一起通过函数参数传过来
     match DefaultDatabaseHelper::delete_datas_default_once(user_id, &cond) {
         Ok(remove_num) => {
-            // 2 delete data in huks
             let owner = hasher::sha256(&owner.as_bytes().to_vec());
             delete_key(user_id, &owner, AuthType::None, Accessibility::DeviceFirstUnlock);
             delete_key(user_id, &owner, AuthType::None, Accessibility::DeviceUnlock);
@@ -60,6 +57,6 @@ pub unsafe extern "C" fn delete_by_owner(user_id: i32, owner: *const c_char) -> 
 
 /// Function called from C programming language to Rust programming language for delete user Asset.
 #[no_mangle]
-pub extern "C" fn delete_by_user_dir(user_id: i32) -> bool {
-    delete_user_db_dir(user_id)
+pub extern "C" fn delete_dir_by_user(user_id: i32) -> bool {
+    delete_user_db_dir(user_id).is_ok()
 }

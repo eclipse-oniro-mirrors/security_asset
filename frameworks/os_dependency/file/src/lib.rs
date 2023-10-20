@@ -22,46 +22,40 @@ use asset_common::{
     loge,
 };
 
-
 const ROOT_PATH: &str = "data/service/el1/public/asset_service";
 
-/// the function to create user database directory
+/// Create user database directory.
 pub fn create_user_db_dir(user_id: i32) -> Result<()> {
     let path = format!("{}/{}", ROOT_PATH, user_id);
     let path = Path::new(&path);
-    if !path.exists() {
-        match fs::create_dir(path) {
-            Err(e) if e.kind() != std::io::ErrorKind::AlreadyExists => {
-                loge!("[FATAL]Create dir failed! error is [{}]", e);
-                return Err(ErrCode::FileOperationError);
-            },
-            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
-                return Ok(());
-            },
-            _ => return Ok(()),
-        }
+    if path.exists() {
+        return Ok(())
     }
-    Ok(())
+
+    match fs::create_dir(path) {
+        Ok(_) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
+        Err(e) => {
+            loge!("[FATAL]Create dir failed! error is [{}]", e);
+            Err(ErrCode::FileOperationError)
+        },
+    }
 }
 
-/// the function to delete user directory
-pub fn delete_user_db_dir(user_id: i32) -> bool {
+/// Delete user databse directory.
+pub fn delete_user_db_dir(user_id: i32) -> Result<()> {
     let path_str = format!("{}/{}", ROOT_PATH, user_id);
     let path = Path::new(&path_str);
-    if path.exists() {
-        match fs::remove_dir_all(path) {
-            Ok(_) => {
-                return true
-            },
-            Err(e) if e.kind() != std::io::ErrorKind::NotFound => {
-                return true
-            },
-            Err(e) if e.kind() == std::io::ErrorKind::PermissionDenied => {
-                loge!("remove dir failed! permission denied");
-                return false
-            },
-            _ => { return true }
-        }
+    if !path.exists() {
+        return Ok(());
     }
-    true
+
+    match fs::remove_dir_all(path) {
+        Ok(_) => Ok(()),
+        Err(e) if e.kind() != std::io::ErrorKind::NotFound => Ok(()),
+        Err(e) => {
+            loge!("[FATAL]Delete dir failed! error is [{}]", e);
+            Err(ErrCode::FileOperationError)
+        },
+    }
 }

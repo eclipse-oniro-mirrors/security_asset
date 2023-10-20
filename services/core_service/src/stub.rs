@@ -64,7 +64,7 @@ fn reply_handle(code: IpcCode, ret: Result<()>, reply: &mut BorrowedMsgParcel) -
         result = e as i32;
     }
 
-    logi!("[INFO]on_remote_request enter, calling function: {}, result code: {}", code, result);
+    logi!("[INFO]on_remote_request end, calling function: {}, result code: {}", code, result);
     reply.write::<i32>(&result)?;
     Ok(())
 }
@@ -77,7 +77,7 @@ fn on_remote_request(
 ) -> IpcResult<()> {
     let ipc_code = IpcCode::try_from(code).map_err(ipc_err_handle)?;
     let map = deserialize_map(data).map_err(ipc_err_handle)?;
-    logi!("[INFO]on_remote_request end, calling function: {}", ipc_code);
+    logi!("[INFO]on_remote_request enter, calling function: {}", ipc_code);
     match ipc_code {
         IpcCode::Add => reply_handle(ipc_code, stub.add(&map), reply),
         IpcCode::Remove => reply_handle(ipc_code, stub.remove(&map), reply),

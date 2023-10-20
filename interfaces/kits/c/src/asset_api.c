@@ -20,14 +20,14 @@
 #include "asset_log.h"
 #include "asset_mem.h"
 
-extern int32_t add_asset(const Asset_Attr *attributes, uint32_t attr_cnt);
-extern int32_t remove_asset(const Asset_Attr *query, uint32_t query_cnt);
-extern int32_t update_asset(const Asset_Attr *query, uint32_t query_cnt,
+int32_t add_asset(const Asset_Attr *attributes, uint32_t attr_cnt);
+int32_t remove_asset(const Asset_Attr *query, uint32_t query_cnt);
+int32_t update_asset(const Asset_Attr *query, uint32_t query_cnt,
     const Asset_Attr *attributes_to_update, uint32_t update_cnt);
-extern int32_t pre_query_asset(const Asset_Attr *query, uint32_t query_cnt, Asset_Blob *challenge);
-extern int32_t query_asset(const Asset_Attr *query, uint32_t query_cnt, Asset_ResultSet *result_set);
-extern int32_t post_query_asset(const Asset_Attr *handle, uint32_t handle_cnt);
-extern Asset_Version get_asset_version();
+int32_t pre_query_asset(const Asset_Attr *query, uint32_t query_cnt, Asset_Blob *challenge);
+int32_t query_asset(const Asset_Attr *query, uint32_t query_cnt, Asset_ResultSet *result_set);
+int32_t post_query_asset(const Asset_Attr *handle, uint32_t handle_cnt);
+Asset_Version get_asset_version();
 
 int32_t OH_Asset_Add(const Asset_Attr *attributes, uint32_t attrCnt)
 {

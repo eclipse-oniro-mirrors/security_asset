@@ -24,7 +24,7 @@ bool GetFrontUserId(int32_t *userId)
     std::vector<int> ids;
     int ret = OHOS::AccountSA::OsAccountManager::QueryActiveOsAccountIds(ids);
     if (ret != 0 || ids.empty()) {
-        LOGE("Asset QueryActiveOsAccountIds Failed!! ret = %" LOG_PUBLIC "d", ret);
+        LOGE("[FATAL]Query active user id failed. ret = %{public}d", ret);
         return false;
     }
     *userId = ids[0];

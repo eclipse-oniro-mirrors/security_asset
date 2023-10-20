@@ -63,14 +63,15 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     add_system_attrs(&mut update_db_data)?;
 
     if update.contains_key(&Tag::Secret) {
-        let results =
+        let mut results =
             DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(), &vec![], &query_db_data, None)?;
         if results.len() != 1 {
             loge!("query to-be-updated asset failed, found [{}] assets", results.len());
             return Err(ErrCode::NotFound);
         }
 
-        let result = results.get(0).unwrap();
+        let result = results.get_mut(0).unwrap();
+        result.insert(COLUMN_SECRET, update[&Tag::Secret].clone());
         let cipher = common::encrypt(calling_info, result)?;
         update_db_data.insert(COLUMN_SECRET, Value::Bytes(cipher));
     }

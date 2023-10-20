@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 asset_common = { path = "../../frameworks/common" }
+ipc_rust = { path = "../../../../../foundation/communication/ipc/interfaces/innerkits/rust/" }
