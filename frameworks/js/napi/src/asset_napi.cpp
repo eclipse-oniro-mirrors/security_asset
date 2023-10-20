@@ -72,8 +72,19 @@ napi_value DeclareErrorCode(napi_env env)
     AddUint32Property(env, errorCode, "DUPLICATED", ASSET_DUPLICATED);
     AddUint32Property(env, errorCode, "ACCESS_DENIED", ASSET_ACCESS_DENIED);
     AddUint32Property(env, errorCode, "AUTH_TOKEN_EXPIRED", ASSET_AUTH_TOKEN_EXPIRED);
+    AddUint32Property(env, errorCode, "STATUS_MISMATCH", ASSET_STATUS_MISMATCH);
     AddUint32Property(env, errorCode, "OUT_OF_MEMRORY", ASSET_OUT_OF_MEMRORY);
     AddUint32Property(env, errorCode, "DATA_CORRUPTED", ASSET_DATA_CORRUPTED);
+    AddUint32Property(env, errorCode, "IPC_ERROR", ASSET_IPC_ERROR);
+    AddUint32Property(env, errorCode, "SQLITE_ERROR", ASSET_SQLITE_ERROR);
+    AddUint32Property(env, errorCode, "BMS_ERROR", ASSET_BMS_ERROR);
+    AddUint32Property(env, errorCode, "CRYPTO_ERROR", ASSET_CRYPTO_ERROR);
+    AddUint32Property(env, errorCode, "ACCOUNT_ERROR", ASSET_ACCOUNT_ERROR);
+    AddUint32Property(env, errorCode, "COMMON_EVENT_ERROR", ASSET_COMMON_EVENT_ERROR);
+    AddUint32Property(env, errorCode, "ACCESS_TOKEN_ERROR", ASSET_ACCESS_TOKEN_ERROR);
+    AddUint32Property(env, errorCode, "FILE_OPERATION_ERROR", ASSET_FILE_OPERATION_ERROR);
+    AddUint32Property(env, errorCode, "SYSTEM_TIME_GET_ERROR", ASSET_SYSTEM_TIME_GET_ERROR);
+    AddUint32Property(env, errorCode, "EXCEED_LIMIT", ASSET_EXCEED_LIMIT);
     return errorCode;
 }
 

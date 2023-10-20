@@ -482,56 +482,56 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_NORMAL_1 = TagType.BYTES | 0x24,
+    DATA_LABLE_NORMAL_1 = TagType.BYTES | 0x30,
     /**
      * A tag whose value is a byte array indicating the second user-defined Asset data label (allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_NORMAL_2 = TagType.BYTES | 0x25,
+    DATA_LABLE_NORMAL_2 = TagType.BYTES | 0x31,
     /**
      * A tag whose value is a byte array indicating the third user-defined Asset data label (allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_NORMAL_3 = TagType.BYTES | 0x26,
+    DATA_LABLE_NORMAL_3 = TagType.BYTES | 0x32,
     /**
      * A tag whose value is a byte array indicating the fourth user-defined Asset data label (allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_NORMAL_4 = TagType.BYTES | 0x27,
+    DATA_LABLE_NORMAL_4 = TagType.BYTES | 0x33,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the return type of the queried Asset.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    RETURN_TYPE = TagType.NUMBER | 0x30,
+    RETURN_TYPE = TagType.NUMBER | 0x40,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the maximum number of returned Assets in one query.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    RETURN_LIMIT = TagType.NUMBER | 0x31,
+    RETURN_LIMIT = TagType.NUMBER | 0x41,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the offset of return data in batch query.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    RETURN_OFFSET = TagType.NUMBER | 0x32,
+    RETURN_OFFSET = TagType.NUMBER | 0x42,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    RETURN_ORDER_BY = TagType.NUMBER | 0x33,
+    RETURN_ORDER_BY = TagType.NUMBER | 0x43,
   }
 
   /**
@@ -604,7 +604,7 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    StatusMismatch = 24000006,
+    STATUS_MISMATCH = 24000006,
     /**
      * The error code indicates insufficient memory.
      *

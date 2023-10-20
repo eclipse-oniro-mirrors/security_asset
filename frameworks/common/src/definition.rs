@@ -84,28 +84,28 @@ impl_enum_trait! {
         DataLabelCritical4 = DataType::Bytes as isize | 0x23,
 
         /// A tag whose value is a byte array indicating the first user-defined Asset data label (allow to update).
-        DataLabelNormal1 = DataType::Bytes as isize | 0x24,
+        DataLabelNormal1 = DataType::Bytes as isize | 0x30,
 
         /// A tag whose value is a byte array indicating the second user-defined Asset data label (allow to update).
-        DataLabelNormal2 = DataType::Bytes as isize | 0x25,
+        DataLabelNormal2 = DataType::Bytes as isize | 0x31,
 
         /// A tag whose value is a byte array indicating the third user-defined Asset data label (allow to update).
-        DataLabelNormal3 = DataType::Bytes as isize | 0x26,
+        DataLabelNormal3 = DataType::Bytes as isize | 0x32,
 
         /// A tag whose value is a byte array indicating the fourth user-defined Asset data label (allow to update).
-        DataLabelNormal4 = DataType::Bytes as isize | 0x27,
+        DataLabelNormal4 = DataType::Bytes as isize | 0x33,
 
         /// A tag whose value is a 32-bit unsigned integer indicating the return type of the queried Asset.
-        ReturnType = DataType::Number as isize | 0x30,
+        ReturnType = DataType::Number as isize | 0x40,
 
         /// A tag whose value is a 32-bit unsigned integer indicating the maximum number of returned Assets in a query.
-        ReturnLimit = DataType::Number as isize | 0x31,
+        ReturnLimit = DataType::Number as isize | 0x41,
 
         /// A tag whose value is a 32-bit unsigned integer indicating the offset of return data in batch query.
-        ReturnOffset = DataType::Number as isize | 0x32,
+        ReturnOffset = DataType::Number as isize | 0x42,
 
         /// A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
-        ReturnOrderBy = DataType::Number as isize | 0x33,
+        ReturnOrderBy = DataType::Number as isize | 0x43,
     }
 }
 

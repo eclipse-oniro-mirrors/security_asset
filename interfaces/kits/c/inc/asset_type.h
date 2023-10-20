@@ -133,35 +133,35 @@ typedef enum {
     /**
      * A tag whose value is a byte array indicating the first user-defined Asset data label (allow to update).
      */
-    ASSET_TAG_DATA_LABLE_NORMAL_1 = ASSET_TYPE_BYTES | 0x24,
+    ASSET_TAG_DATA_LABLE_NORMAL_1 = ASSET_TYPE_BYTES | 0x30,
     /**
      * A tag whose value is a byte array indicating the second user-defined Asset data label (allow to update).
      */
-    ASSET_TAG_DATA_LABLE_NORMAL_2 = ASSET_TYPE_BYTES | 0x25,
+    ASSET_TAG_DATA_LABLE_NORMAL_2 = ASSET_TYPE_BYTES | 0x31,
     /**
      * A tag whose value is a byte array indicating the third user-defined Asset data label (allow to update).
      */
-    ASSET_TAG_DATA_LABLE_NORMAL_3 = ASSET_TYPE_BYTES | 0x26,
+    ASSET_TAG_DATA_LABLE_NORMAL_3 = ASSET_TYPE_BYTES | 0x32,
     /**
      * A tag whose value is a byte array indicating the fourth user-defined Asset data label (allow to update).
      */
-    ASSET_TAG_DATA_LABLE_NORMAL_4 = ASSET_TYPE_BYTES | 0x27,
+    ASSET_TAG_DATA_LABLE_NORMAL_4 = ASSET_TYPE_BYTES | 0x33,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the return type of the queried Asset.
      */
-    ASSET_TAG_RETURN_TYPE = ASSET_TYPE_NUMBER | 0x30,
+    ASSET_TAG_RETURN_TYPE = ASSET_TYPE_NUMBER | 0x40,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the maximum number of returned Assets in one query.
      */
-    ASSET_TAG_RETURN_LIMIT = ASSET_TYPE_NUMBER | 0x31,
+    ASSET_TAG_RETURN_LIMIT = ASSET_TYPE_NUMBER | 0x41,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the offset of return data in batch query.
      */
-    ASSET_TAG_RETURN_OFFSET = ASSET_TYPE_NUMBER | 0x32,
+    ASSET_TAG_RETURN_OFFSET = ASSET_TYPE_NUMBER | 0x42,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
      */
-    ASSET_TAG_RETURN_ORDER_BY = ASSET_TYPE_NUMBER | 0x33,
+    ASSET_TAG_RETURN_ORDER_BY = ASSET_TYPE_NUMBER | 0x43,
 } Asset_Tag;
 
 /**
@@ -209,7 +209,7 @@ typedef enum {
     /**
      * The error code indicates that the screen lock status mismatches.
      */
-    StatusMismatch = 24000006,
+    ASSET_STATUS_MISMATCH = 24000006,
     /**
      * The error code indicates insufficient memory.
      */
