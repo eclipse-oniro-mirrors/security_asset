@@ -48,7 +48,7 @@ static int32_t InitEncryptParamSet(struct HksParamSet **paramSet, const struct C
         { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT },
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
-        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM }, 
+        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
         { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = data->aadLen, .data = (uint8_t *)data->aad }}, /* initial AAD */
         { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE, .data = (uint8_t *)NONCE }} /* todo */
     };
@@ -63,7 +63,7 @@ int32_t EncryptWrapper(const struct CryptParam *data)
         return HKS_ERROR_INVALID_ARGUMENT;
     }
 
-    if (data->dataOutLen != data->dataInLen + AEAD_SIZE + NONCE_SIZE) {
+    if (data->dataOutLen != data->dataInLen + AEAD_SIZE) { // todo : zdy 加上nonce的长度
         LOGE("hks encrypt cipher len not match\n");
         return HKS_ERROR_INVALID_ARGUMENT;
     }
@@ -126,8 +126,8 @@ int32_t DecryptWrapper(const struct CryptParam *data)
         return HKS_ERROR_INVALID_ARGUMENT;
     }
 
-    if ((data->dataInLen <= AEAD_SIZE + NONCE_SIZE) ||
-        (data->dataOutLen != data->dataInLen - AEAD_SIZE - NONCE_SIZE)) {
+    if ((data->dataInLen <= AEAD_SIZE) || // todo : zdy 加上nonce的长度
+        (data->dataOutLen != data->dataInLen - AEAD_SIZE)) { // todo : zdy 加上nonce的长度
         LOGE("hks decrypt cipher len or plain len not match\n");
         return HKS_ERROR_INVALID_ARGUMENT;
     }
@@ -291,9 +291,9 @@ static int32_t CreateCryptoParamSet(struct HksParamSet **paramSet, const struct 
 
         return InitParamSet(paramSet, initParams, sizeof(initParams) / sizeof(HksParam));
     }
-    
+
     LOGE("invalid crypto mode\n");
-    return HKS_ERROR_INVALID_ARGUMENT; 
+    return HKS_ERROR_INVALID_ARGUMENT;
 }
 
 static int32_t CreateFinishParamSet(struct HksParamSet **paramSet, const struct CryptParam *data)

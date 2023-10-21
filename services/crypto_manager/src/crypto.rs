@@ -202,7 +202,7 @@ impl Crypto {
     /// Signle function call for encrypt
     pub fn encrypt(key: &SecretKey, msg: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
         // out param
-        let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize + NONCE_SIZE as usize];
+        let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize]; // todo : zdy 加上nonce的长度
         // in param
         let data = CryptParam {
             key_len: key.alias.len() as u32,
@@ -233,12 +233,12 @@ impl Crypto {
 
     /// Signle function call for decrypt
     pub fn decrypt(key: &SecretKey, cipher: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
-        if cipher.len() <= (AEAD_SIZE + NONCE_SIZE) as usize {
+        if cipher.len() <= AEAD_SIZE as usize { // todo : zdy 加上nonce的长度
             loge!("invalid cipher\n");
             return Err(ErrCode::InvalidArgument);
         }
         // out param
-        let mut plain: Vec<u8> = vec![0; cipher.len() - AEAD_SIZE as usize - NONCE_SIZE as usize];
+        let mut plain: Vec<u8> = vec![0; cipher.len() - AEAD_SIZE as usize]; // todo : zdy 减去nonce的长度
         // in param
         let data = CryptParam {
             key_len: key.alias.len() as u32,
