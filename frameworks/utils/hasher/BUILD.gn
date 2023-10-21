@@ -13,28 +13,11 @@
 
 import("//build/ohos.gni")
 
-COMPONENT_DIR = "//base/security/asset"
-
-ohos_rust_shared_library("asset_sdk") {
+ohos_rust_static_library("asset_hasher") {
   sources = [ "src/lib.rs" ]
 
-  deps = [
-    "$COMPONENT_DIR/frameworks/common:asset_common",
-    "$COMPONENT_DIR/frameworks/ipc_interface:asset_ipc_interface",
-    "$COMPONENT_DIR/frameworks/ipc_proxy:asset_ipc_proxy",
-    "$COMPONENT_DIR/frameworks/os_dependency/samgr:asset_samgr",
-  ]
-
-  external_deps = [
-    "hilog:hilog_rust",
-    "ipc:ipc_rust",
-    "samgr:rust_samgr",
-  ]
-
-  crate_name = "asset_sdk"
-  crate_type = "dylib"
-
-  install_images = [ system_base_dir ]
+  crate_name = "asset_hasher"
+  crate_type = "rlib"
   subsystem_name = "security"
   part_name = "asset"
 }

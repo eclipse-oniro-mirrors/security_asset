@@ -142,7 +142,7 @@ impl_enum_trait! {
         NotSupport = 801,
 
         /// The error code indicates that the Asset service is unavailable.
-        ServiceUnvailable = 24000001,
+        ServiceUnavailable = 24000001,
 
         /// The error code indicates that the queried Asset can not be found.
         NotFound = 24000002,

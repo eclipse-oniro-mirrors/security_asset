@@ -26,13 +26,22 @@ use asset_common::{
 use asset_ipc_interface::{IAsset, SA_ID};
 use asset_ipc_proxy::AssetProxy;
 
+extern "C" { fn LoadService(id: i32) -> bool; }
+
 fn get_remote() -> Result<RemoteObjRef<AssetProxy>> {
+    unsafe {
+        if !LoadService(SA_ID) {
+            loge!("[FATAL]Load service failed.");
+            return Err(ErrCode::ServiceUnavailable);
+        }
+    }
+
     let object = rust_samgr::get_service_proxy::<AssetProxy>(SA_ID);
     match object {
         Ok(remote) => Ok(remote),
         Err(e) => {
             loge!("[FATAL][RUST SDK]get remote service failed. Error = {}", e);
-            Err(ErrCode::ServiceUnvailable)
+            Err(ErrCode::ServiceUnavailable)
         },
     }
 }

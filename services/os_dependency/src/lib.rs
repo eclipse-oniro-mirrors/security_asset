@@ -19,7 +19,7 @@ use std::ffi::{c_char, CString};
 
 use asset_common::{
     definition::{Accessibility, AuthType, Value},
-    hasher, loge,
+    loge,
 };
 use asset_crypto_manager::crypto::SecretKey;
 use asset_db_operator::{
@@ -27,6 +27,7 @@ use asset_db_operator::{
     types::DbMap,
 };
 use asset_file_operator::delete_user_db_dir;
+use asset_hasher::sha256;
 
 fn delete_key(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility) {
     let secret_key = SecretKey::new(user_id, owner, auth_type, access_type);
@@ -44,7 +45,7 @@ pub extern "C" fn delete_data_by_owner(user_id: i32, owner: *const c_char) -> i3
     cond.insert(COLUMN_OWNER, Value::Bytes(owner.as_bytes().to_vec())); // todo: owner + ownerLen 一起通过函数参数传过来
     match DefaultDatabaseHelper::delete_datas_default_once(user_id, &cond) {
         Ok(remove_num) => {
-            let owner = hasher::sha256(&owner.as_bytes().to_vec());
+            let owner = sha256(&owner.as_bytes().to_vec());
             delete_key(user_id, &owner, AuthType::None, Accessibility::DeviceFirstUnlock);
             delete_key(user_id, &owner, AuthType::None, Accessibility::DeviceUnlock);
             delete_key(user_id, &owner, AuthType::Any, Accessibility::DeviceFirstUnlock);

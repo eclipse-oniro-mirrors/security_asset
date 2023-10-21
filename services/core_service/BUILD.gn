@@ -21,6 +21,7 @@ ohos_rust_shared_library("asset_service") {
   deps = [
     "$COMPONENT_DIR/interfaces/inner_api/rs:asset_sdk",
     "$COMPONENT_DIR/frameworks/common:asset_common",
+    "$COMPONENT_DIR/frameworks/utils/hasher:asset_hasher",
     "$COMPONENT_DIR/frameworks/ipc_interface:asset_ipc_interface",
     "$COMPONENT_DIR/frameworks/ipc_proxy:asset_ipc_proxy",
     "$COMPONENT_DIR/frameworks/os_dependency/file:asset_file_operator",

@@ -51,6 +51,7 @@ ohos_rust_shared_ffi("asset_service_ffi") {
   deps = [
     "$COMPONENT_DIR/frameworks/common:asset_common",
     "$COMPONENT_DIR/frameworks/os_dependency/file:asset_file_operator",
+    "$COMPONENT_DIR/frameworks/utils/hasher:asset_hasher",
     "$COMPONENT_DIR/services/db_operator:asset_db_operator",
     "$COMPONENT_DIR/services/crypto_manager:asset_crypto_manager",
     "//third_party/rust/crates/libc:lib",

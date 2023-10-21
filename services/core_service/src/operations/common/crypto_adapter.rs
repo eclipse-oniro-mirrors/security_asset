@@ -17,7 +17,7 @@
 
 use asset_common::{
     definition::{Accessibility, AssetMap, AuthType, DataType, ErrCode, Result, Value},
-    hasher, loge, logi,
+    loge, logi,
 };
 use asset_crypto_manager::crypto::{Crypto, SecretKey};
 use asset_db_operator::{
@@ -28,6 +28,8 @@ use asset_db_operator::{
     },
     types::DbMap,
 };
+
+use asset_hasher::sha256;
 
 use crate::calling_info::CallingInfo;
 
@@ -85,7 +87,7 @@ fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<SecretKey> {
     let Value::Number(access_type) = attrs[COLUMN_ACCESSIBILITY] else { return Err(ErrCode::InvalidArgument) };
     let access_type = Accessibility::try_from(access_type)?;
 
-    Ok(SecretKey::new(calling.user_id(), &hasher::sha256(calling.owner_info()), auth_type, access_type))
+    Ok(SecretKey::new(calling.user_id(), &sha256(calling.owner_info()), auth_type, access_type))
 }
 
 pub(crate) fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {

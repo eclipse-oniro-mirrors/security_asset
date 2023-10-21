@@ -1,4 +1,4 @@
-# Copyright (C) 2023 Huawei Device Co., Ltd.
+# Copyright (c) 2023 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -15,26 +15,15 @@ import("//build/ohos.gni")
 
 COMPONENT_DIR = "//base/security/asset"
 
-ohos_rust_shared_library("asset_sdk") {
-  sources = [ "src/lib.rs" ]
-
-  deps = [
-    "$COMPONENT_DIR/frameworks/common:asset_common",
-    "$COMPONENT_DIR/frameworks/ipc_interface:asset_ipc_interface",
-    "$COMPONENT_DIR/frameworks/ipc_proxy:asset_ipc_proxy",
-    "$COMPONENT_DIR/frameworks/os_dependency/samgr:asset_samgr",
-  ]
-
+ohos_static_library("asset_samgr") {
+  sources = [ "src/samgr_wrapper.cpp" ]
+  include_dirs = ["$COMPONENT_DIR/frameworks/os_dependency/log/inc"]
   external_deps = [
-    "hilog:hilog_rust",
-    "ipc:ipc_rust",
-    "samgr:rust_samgr",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "samgr:samgr_proxy",
+    "ipc:ipc_core",
   ]
-
-  crate_name = "asset_sdk"
-  crate_type = "dylib"
-
-  install_images = [ system_base_dir ]
   subsystem_name = "security"
   part_name = "asset"
 }
