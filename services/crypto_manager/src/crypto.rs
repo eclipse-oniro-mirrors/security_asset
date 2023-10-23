@@ -138,7 +138,7 @@ impl Crypto {
     }
 
     /// Start HuksInit
-    pub fn init_crypto(&mut self) -> Result<(), ErrCode> {
+    pub fn init_crypto(&mut self) -> Result<Vec<u8>, ErrCode> {
         // in param
         let data = CryptParam {
             key_len: self.key.alias.len() as u32,
@@ -159,7 +159,9 @@ impl Crypto {
 
         let ret =unsafe { InitCryptoWrapper(&data as *const CryptParam) };
         match ret {
-            HKS_SUCCESS => Ok(()),
+            HKS_SUCCESS => {
+                Ok(self.challenge.clone())
+            },
             _ => {
                 loge!("crypto init failed ret {}", ret);
                 Err(ErrCode::CryptoError)
@@ -287,6 +289,25 @@ impl CryptoManager {
         Self { crypto_vec: vec![] }
     }
 
+    fn challenge_cmp(challenge_pos: u32, challenge: &Vec<u8>, crypto_challenge: &[u8]) ->Result<(), ErrCode> {
+        if challenge.len() != CHALLENGE_LEN as usize {
+            loge!("invalid challenge len {}", challenge.len());
+            return Err(ErrCode::CryptoError)
+        }
+
+        match challenge_pos {
+            0 | 1 | 2 | 3 => {
+                let index = (challenge_pos * 4) as usize;
+                if challenge[index..(index + 4)] == crypto_challenge[index..(index + 4)] {
+                    return Ok(())
+                }
+                loge!("challenge not match");
+            },
+            _ => loge!("invalid challenge_pos {}", challenge_pos),
+        }
+        Err(ErrCode::CryptoError)
+    }
+
     /// add a crypto in manager, not allow insert crypto with same challenge
     pub fn add(&mut self, crypto: Crypto) ->Result<(), ErrCode>{
         for temp_crypto in self.crypto_vec.iter() {
@@ -300,21 +321,25 @@ impl CryptoManager {
     }
 
     /// remove a crypto in manager
-    pub fn remove(&mut self, challenge: &Vec<u8>) {
+    pub fn remove(&mut self, challenge_pos: u32, challenge: &Vec<u8>) {
         for (index, crypto) in self.crypto_vec.iter().enumerate() {
-            if challenge.as_slice() == crypto.challenge.as_slice() {
-                self.crypto_vec.remove(index);
-                break
+            match Self::challenge_cmp(challenge_pos, challenge, &crypto.challenge) {
+                Ok(()) => {
+                    self.crypto_vec.remove(index);
+                    return
+                },
+                _ => continue,
             }
         }
         loge!("crypto not found\n");
     }
 
     /// find a crypto in manager, donnot use this function return value with add&remove
-    pub fn find(&self, challenge: &Vec<u8>) -> Option<&Crypto> {
+    pub fn find(&self, challenge_pos: u32, challenge: &Vec<u8>) -> Option<&Crypto> {
         for crypto in self.crypto_vec.iter() {
-            if challenge.as_slice() == crypto.challenge.as_slice() {
-                return Some(crypto)
+            match Self::challenge_cmp(challenge_pos, challenge, &crypto.challenge) {
+                Ok(()) => return Some(crypto),
+                _ => continue,
             }
         }
         loge!("crypto not found\n");
