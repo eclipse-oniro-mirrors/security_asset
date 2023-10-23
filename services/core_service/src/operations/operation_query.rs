@@ -46,6 +46,10 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<Vec<Asse
             Err(ErrCode::NotFound)
         },
         1 => {
+            // 1. 查询结果中authType是否为any, 不是直接decrypt
+            // 2. 二次访问控制流程：判断入参是否有challenge和authToken, 没有报错
+            // 3.                 crypto manager 查询指定challenge、密钥别名的crypto
+            // 4.                 调用crypto的exec_crypt接口
             common::decrypt(calling_info, &mut results[0])?;
             into_asset_maps(&results)
         },

@@ -16,7 +16,7 @@
 //! This module is used to adapt to the crypto manager.
 
 use asset_common::{
-    definition::{Accessibility, AssetMap, AuthType, DataType, ErrCode, Result, Value},
+    definition::{Accessibility, AuthType, DataType, ErrCode, Result, Value},
     loge, logi,
 };
 use asset_crypto_manager::crypto::{Crypto, SecretKey};
@@ -142,15 +142,4 @@ pub(crate) fn decrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result
         return Err(ErrCode::IpcError);
     }
     Ok(())
-}
-
-// todo : yyd : 改入参
-pub(crate) fn init_decrypt(
-    _calling_info: &CallingInfo,
-    _input: &AssetMap,
-    _auth_type: &u32,
-    _access_type: &u32,
-) -> Result<Vec<u8>> {
-    // todo 这里需要等init_decrypt的接口搞定之后再写 先写个假的放上去
-    Ok(vec![1, 2, 2, 2, 2, 1])
 }

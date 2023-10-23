@@ -84,7 +84,7 @@ static A: extern "C" fn() = {
     init
 };
 
-struct AssetService;
+struct AssetService; // 默认调用CryptoManager::new
 
 impl IRemoteBroker for AssetService {}
 
@@ -102,7 +102,7 @@ impl IAsset for AssetService {
     }
 
     fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>> {
-        operations::pre_query(query, &CallingInfo::build()?)
+        operations::pre_query(query, &CallingInfo::build()?) // todo 传CryptoManager实例
     }
 
     fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>> {

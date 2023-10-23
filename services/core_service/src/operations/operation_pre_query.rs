@@ -16,13 +16,19 @@
 //! This module prepares for querying Asset that required secondary identity authentication.
 
 use asset_common::{
-    definition::{AssetMap, AuthType, ErrCode, Result, Tag, Value},
+    definition::{Accessibility, AssetMap, AuthType, ErrCode, Result, Tag, Value},
     loge, logi,
+};
+use asset_crypto_manager::{
+    crypto::{Crypto, SecretKey},
+    huks_ffi::{CHALLENGE_LEN, HKS_KEY_PURPOSE_DECRYPT},
 };
 use asset_db_operator::{
     database_table_helper::{DefaultDatabaseHelper, COLUMN_ACCESSIBILITY, COLUMN_AUTH_TYPE},
     types::DbMap,
 };
+
+use asset_hasher::sha256;
 
 use crate::{ calling_info::CallingInfo, operations::common, };
 
@@ -34,10 +40,17 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
-    common::check_value_validity(attributes)
+    common::check_value_validity(attributes)?;
+
+    let auth_type = AuthType::Any as u32;
+    match attributes.get(&Tag::AuthType) {
+        Some(Value::Number(val)) if *val == auth_type => Ok(()),
+        None => Ok(()),
+        _ => Err(ErrCode::InvalidArgument)
+    }
 }
 
-fn query_access_types(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u32>> {
+fn query_access_types(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<Accessibility>> {
     let results = DefaultDatabaseHelper::query_columns_default_once(
         calling_info.user_id(),
         &vec![COLUMN_ACCESSIBILITY],
@@ -53,10 +66,10 @@ fn query_access_types(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
     // into list
     let mut access_types = Vec::new();
     for db_result in results {
-        let Value::Number(access_type) = db_result.get(&COLUMN_ACCESSIBILITY).unwrap() else {
-            return Err(ErrCode::InvalidArgument);
-        };
-        access_types.push(*access_type);
+        match db_result.get(&COLUMN_ACCESSIBILITY) {
+            Some(Value::Number(access_type)) => access_types.push(Accessibility::try_from(*access_type)?),
+            _ => return Err(ErrCode::InvalidArgument),
+        }
     }
     Ok(access_types)
 }
@@ -66,27 +79,39 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
 
     let mut db_data = common::into_db_map(query);
     common::add_owner_info(calling_info, &mut db_data);
-    db_data.insert(COLUMN_AUTH_TYPE, Value::Number(AuthType::Any as u32));
-
+    db_data.entry(COLUMN_AUTH_TYPE).or_insert(Value::Number(AuthType::Any as u32));
 
     let access_types = query_access_types(calling_info, &db_data)?;
 
-    // use secret key to get challenge
-    let mut challenge_vec = Vec::new();
-    // todo 遍历每一个密钥，获取challenge
-    let challenge_seperator = b'_';
+    if access_types.is_empty() {
+        return Err(ErrCode::NotFound);
+    }
+
+    let mut challenge = vec![0; CHALLENGE_LEN as usize];
+    let mut cryptos = Vec::with_capacity(4);
     for (idx, access_type) in access_types.iter().enumerate() {
-        let tmp_challenge = common::init_decrypt(calling_info, query, &(AuthType::Any as u32), access_type)?;
-        challenge_vec.extend(tmp_challenge);
-        if idx < access_types.len() - 1 {
-            challenge_vec.push(challenge_seperator);
+
+        // get_or_default
+        let Value::Number(exp_time) = query.get(&Tag::AuthValidityPeriod).unwrap_or(&Value::Number(60)) else {
+            return Err(ErrCode::InvalidArgument);
+        };
+
+        let secret_key = SecretKey::new(
+            calling_info.user_id(), &sha256(calling_info.owner_info()), AuthType::Any, *access_type);
+        let mut crypto = Crypto::new(
+            HKS_KEY_PURPOSE_DECRYPT, secret_key, idx as u32, *exp_time);
+
+        match crypto.init_crypto() {
+            Ok(the_challenge) => {
+                challenge[(idx * 8)..((idx + 1) * 8)].copy_from_slice(&the_challenge[(idx * 8)..((idx + 1) * 8)]);
+            },
+            Err(e) => return Err(e)
         }
-        // todo 根据challenge等信息创建session
+        cryptos.push(crypto);
     }
-    if challenge_vec.is_empty() {
-        Err(ErrCode::NotFound)
-    } else {
-        logi!("get challenge successful!");
-        Ok(challenge_vec)
-    }
+
+    // todo 在所有crypto都生成challenge之后再往crypto manager中添加cryptos
+
+    logi!("get challenge successful!");  // todo delete
+    Ok(challenge)
 }

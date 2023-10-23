@@ -29,4 +29,5 @@ fn check_arguments(query: &AssetMap) -> Result<()> {
 // todo: to implement
 pub(crate) fn post_query(handle: &AssetMap, _calling_info: &CallingInfo) -> Result<()> {
     check_arguments(handle)
+    // todo 根据外部传入的challenge，删除crypto manager中的crypto
 }
