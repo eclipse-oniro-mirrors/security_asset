@@ -15,17 +15,16 @@
 
 //! This module prepares for querying Asset that required secondary identity authentication.
 
-use std::collections::HashSet;
-
 use asset_common::{
     definition::{AssetMap, AuthType, ErrCode, Result, Tag, Value},
     loge, logi,
 };
-
-use crate::{
-    calling_info::CallingInfo,
-    operations::{common, operation_query::query_attrs},
+use asset_db_operator::{
+    database_table_helper::{DefaultDatabaseHelper, COLUMN_ACCESSIBILITY, COLUMN_AUTH_TYPE},
+    types::DbMap,
 };
+
+use crate::{ calling_info::CallingInfo, operations::common, };
 
 const OPTIONAL_ATTRS: [Tag; 1] = [Tag::AuthValidityPeriod];
 
@@ -38,44 +37,48 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     common::check_value_validity(attributes)
 }
 
+fn query_access_types(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u32>> {
+    let results = DefaultDatabaseHelper::query_columns_default_once(
+        calling_info.user_id(),
+        &vec![COLUMN_ACCESSIBILITY],
+        db_data,
+        None,
+    )?;
+    logi!("query found {}", results.len());
+    if results.is_empty() {
+        loge!("[FATAL]The data to be queried does not exist.");
+        return Err(ErrCode::NotFound);
+    }
+
+    // into list
+    let mut access_types = Vec::new();
+    for db_result in results {
+        let Value::Number(access_type) = db_result.get(&COLUMN_ACCESSIBILITY).unwrap() else {
+            return Err(ErrCode::InvalidArgument);
+        };
+        access_types.push(*access_type);
+    }
+    Ok(access_types)
+}
+
 pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
     check_arguments(query)?;
 
     let mut db_data = common::into_db_map(query);
     common::add_owner_info(calling_info, &mut db_data);
+    db_data.insert(COLUMN_AUTH_TYPE, Value::Number(AuthType::Any as u32));
 
-    // todo: 不依赖query中封装的函数，直接调用数据库的查询接口，只查询authType和accessType
-    let all_data = query_attrs(calling_info, &db_data, query)?;
-    // get all secret key
-    let mut secret_key_set = HashSet::new();
-    for map in all_data.iter() {
-        let auth_type = match map.get(&Tag::AuthType) {
-            Some(Value::Number(res)) => res,
-            _ => {
-                loge!("get auth type failed!");
-                return Err(ErrCode::SqliteError);
-            },
-        };
-        let access_type = match map.get(&Tag::Accessibility) {
-            Some(Value::Number(res)) => res,
-            _ => {
-                loge!("get access type failed!");
-                return Err(ErrCode::SqliteError);
-            },
-        };
-        // filter auth type
-        if *auth_type == AuthType::Any as u32 {
-            secret_key_set.insert((*auth_type, *access_type));
-        }
-    }
+
+    let access_types = query_access_types(calling_info, &db_data)?;
+
     // use secret key to get challenge
     let mut challenge_vec = Vec::new();
     // todo 遍历每一个密钥，获取challenge
     let challenge_seperator = b'_';
-    for (idx, (auth_type, access_type)) in secret_key_set.iter().enumerate() {
-        let tmp_challenge = common::init_decrypt(calling_info, query, auth_type, access_type)?;
+    for (idx, access_type) in access_types.iter().enumerate() {
+        let tmp_challenge = common::init_decrypt(calling_info, query, &(AuthType::Any as u32), access_type)?;
         challenge_vec.extend(tmp_challenge);
-        if idx < secret_key_set.len() - 1 {
+        if idx < access_types.len() - 1 {
             challenge_vec.push(challenge_seperator);
         }
         // todo 根据challenge等信息创建session

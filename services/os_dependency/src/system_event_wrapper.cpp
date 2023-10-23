@@ -24,7 +24,7 @@
 #include "asset_log.h"
 
 extern "C" {
-    int32_t delete_data_by_owner(int32_t user_id, const char* owner);
+    int32_t delete_data_by_owner(int32_t user_id, const uint8_t *owner, uint32_t owner_size);
     bool delete_dir_by_user(int32_t user_id);
 }
 
@@ -43,7 +43,7 @@ void OnPackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp)
     }
 
     std::string owner = appId + '_' + std::to_string(appIndex);
-    int totalDeleteNum = delete_data_by_owner(userId, owner.c_str());
+    int totalDeleteNum = delete_data_by_owner(userId, reinterpret_cast<const uint8_t *>(owner.c_str()), owner.size());
     LOGI("[INFO] Receive event: PACKAGE_REMOVED, userId=%{public}i, appId=%{public}s, appIndex=%{public}d, "
         "deleteDataNum=%{public}d", userId, appId.c_str(), appIndex, totalDeleteNum);
 }
