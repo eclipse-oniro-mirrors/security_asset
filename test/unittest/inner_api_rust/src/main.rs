@@ -17,6 +17,9 @@ use core::panic;
 
 use asset_sdk::{Accessibility, AssetMap, AuthType, ConflictResolution, Insert, ReturnType, SyncType, Tag, Value};
 
+mod add;
+mod common;
+
 fn add_asset_inner(alias: &[u8]) {
     let mut input = AssetMap::new();
     input.insert_attr(Tag::Secret, alias.to_owned()).unwrap();
