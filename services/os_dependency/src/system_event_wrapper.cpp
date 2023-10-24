@@ -19,7 +19,6 @@
 #include "common_event_manager.h"
 #include "common_event_subscriber.h"
 #include "common_event_support.h"
-#include "os_account_manager.h"
 
 #include "asset_log.h"
 
@@ -35,7 +34,6 @@ void OnPackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp)
     int userId = want.GetIntParam(OHOS::AppExecFwk::Constants::USER_ID, -1);
     std::string appId = want.GetStringParam(APP_ID);
     int appIndex = isSandBoxApp ? want.GetIntParam(OHOS::AppExecFwk::Constants::SANDBOX_APP_INDEX, -1) : 0;
-
     if (appId.empty() || userId == -1 || appIndex == -1) {
         LOGE("[FATAL]Get removed owner info failed, userId=%{public}i, appId=%{public}s, appIndex=%{public}d",
             userId, appId.c_str(), appIndex);

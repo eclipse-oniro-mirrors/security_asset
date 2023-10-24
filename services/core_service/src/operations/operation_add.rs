@@ -15,10 +15,6 @@
 
 //! This module is used to insert an Asset with a specified alias.
 
-use asset_common::{
-    definition::{Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Result, SyncType, Tag, Value},
-    impl_enum_trait, loge, logi,
-};
 use asset_db_operator::{
     database::Database,
     database_table_helper::{
@@ -28,6 +24,10 @@ use asset_db_operator::{
     },
     types::DbMap,
 };
+use asset_definition::{
+    impl_enum_trait, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Result, SyncType, Tag, Value,
+};
+use asset_log::{loge, logi};
 
 use crate::{calling_info::CallingInfo, operations::common};
 

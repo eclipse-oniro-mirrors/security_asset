@@ -17,19 +17,8 @@
 
 use ipc_rust::get_calling_uid;
 
-use asset_common::{
-    definition::{ErrCode, Result},
-    impl_enum_trait,
-};
-
-impl_enum_trait! {
-    #[repr(C)]
-    #[derive(Copy, Clone)]
-    pub(crate) enum OwnerType {
-        Hap = 0,
-        Native = 1,
-    }
-}
+use asset_constants::OwnerType;
+use asset_definition::{ErrCode, Result};
 
 pub(crate) struct CallingInfo {
     owner_type: OwnerType,
@@ -39,13 +28,7 @@ pub(crate) struct CallingInfo {
 
 extern "C" {
     fn GetFrontUserId(userId: &mut i32) -> bool;
-    fn GetOwnerInfo(
-        userId: i32,
-        uid: u64,
-        ownerType: *mut OwnerType,
-        ownerInfo: *mut libc::c_char,
-        infoLen: *mut u32,
-    ) -> bool;
+    fn GetOwnerInfo(userId: i32, uid: u64, ownerType: *mut OwnerType, ownerInfo: *mut u8, infoLen: *mut u32) -> bool;
 }
 
 pub(crate) fn get_front_user_id() -> Result<i32> {

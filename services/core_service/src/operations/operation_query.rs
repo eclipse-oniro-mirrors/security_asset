@@ -15,14 +15,12 @@
 
 //! This module is used to query the Asset, including single and batch query.
 
-use asset_common::{
-    definition::{AssetMap, ErrCode, Result, ReturnType, Tag, Value},
-    loge, logi,
-};
 use asset_db_operator::{
     database_table_helper::{DefaultDatabaseHelper, COLUMN_SECRET},
     types::{DbMap, QueryOptions},
 };
+use asset_definition::{AssetMap, ErrCode, Result, ReturnType, Tag, Value};
+use asset_log::{loge, logi};
 
 use crate::{calling_info::CallingInfo, operations::common};
 

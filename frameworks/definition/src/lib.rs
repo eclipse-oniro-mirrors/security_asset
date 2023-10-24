@@ -15,11 +15,11 @@
 
 //! This module defines asset-related data structures.
 
-mod extension;
-
 use std::collections::HashMap;
 
-use crate::impl_enum_trait;
+mod extension;
+#[macro_use]
+pub mod macros;
 
 /// An enum type containing the data type definitions for Asset attribute value.
 #[derive(Eq, PartialEq)]

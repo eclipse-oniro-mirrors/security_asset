@@ -18,7 +18,7 @@
 use core::ffi::c_void;
 use std::ptr::null;
 
-use asset_common::definition::ErrCode;
+use asset_definition::ErrCode;
 
 /// sqlite error type
 pub type SqliteErrCode = i32;
@@ -26,7 +26,7 @@ pub type SqliteErrCode = i32;
 /// change sqlite err code to asset err code
 pub fn from_sqlite_code_to_asset_code(value: SqliteErrCode) -> ErrCode {
     if value != SQLITE_OK && value != SQLITE_DONE {
-        asset_common::loge!("error ret {}", value);
+        asset_log::loge!("error ret {}", value);
     }
     ErrCode::SqliteError
 }

@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-//! This crate implements the sha256
-#![allow(dead_code)]
+//! This crate implements the sha256.
 
 const LOWER_BYTES_MASK: u32 = 0xff;
 const BITS_PER_U8: usize = 8;
@@ -105,26 +104,22 @@ fn compress(input_bytes: &[u8]) -> [u32; 8] {
     compress
 }
 
-fn pre_process_plain(plain: &Vec<u8>) -> Vec<u8> {
+fn pre_process_msg(message: &[u8]) -> Vec<u8> {
     // padding
-    let mut process_plain = plain.clone();
-    let plain_len = plain.len();
-    let padding_len = if plain_len % BYTES_PER_CHUNK < 56 {
-        56 - plain_len % BYTES_PER_CHUNK
-    } else {
-        120 - plain_len % BYTES_PER_CHUNK
-    };
+    let mut message = message.to_vec();
+    let msg_len = message.len();
+    let padding_len =
+        if msg_len % BYTES_PER_CHUNK < 56 { 56 - msg_len % BYTES_PER_CHUNK } else { 120 - msg_len % BYTES_PER_CHUNK };
 
-    process_plain.push(0x80); // 1000 0000
+    message.push(0x80); // 1000 0000
+    message.append(&mut vec![0x00; padding_len - 1]);
 
-    process_plain.append(&mut vec![0x00; padding_len - 1]);
-
-    let plain_bit_len = plain_len * BITS_PER_U8;
+    let msg_bit_len = msg_len * BITS_PER_U8;
     for i in 0..8 {
-        let split_byte = ((plain_bit_len >> (56 - i * BITS_PER_U8)) & LOWER_BYTES_MASK as usize) as u8;
-        process_plain.push(split_byte);
+        let split_byte = ((msg_bit_len >> (56 - i * BITS_PER_U8)) & LOWER_BYTES_MASK as usize) as u8;
+        message.push(split_byte);
     }
-    process_plain
+    message
 }
 
 fn into_vec_u8(hash: &[u32; 8]) -> Vec<u8> {
@@ -140,8 +135,7 @@ fn into_vec_u8(hash: &[u32; 8]) -> Vec<u8> {
 }
 
 /// the function to execute sha256
-pub fn sha256(plain: &Vec<u8>) -> Vec<u8> {
-    let processed_plain = pre_process_plain(plain);
-
-    into_vec_u8(&compress(&processed_plain))
+pub fn sha256(message: &[u8]) -> Vec<u8> {
+    let processed_msg = pre_process_msg(message);
+    into_vec_u8(&compress(&processed_msg))
 }

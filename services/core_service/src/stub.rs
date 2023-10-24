@@ -17,11 +17,9 @@
 
 use ipc_rust::{BorrowedMsgParcel, FileDesc, IRemoteStub, IpcResult, IpcStatusCode, RemoteStub, String16};
 
-use asset_common::{
-    definition::{ErrCode, Result},
-    loge, logi,
-};
-use asset_ipc_interface::{deserialize_map, serialize_maps, IAsset, IpcCode, IPC_SUCCESS, SA_NAME};
+use asset_definition::{ErrCode, Result};
+use asset_ipc::{deserialize_map, serialize_maps, IAsset, IpcCode, IPC_SUCCESS, SA_NAME};
+use asset_log::{loge, logi};
 
 /// IPC stub type.
 pub struct AssetStub(Box<dyn IAsset + Sync + Send>);

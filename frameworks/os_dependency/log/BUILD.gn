@@ -13,17 +13,11 @@
 
 import("//build/ohos.gni")
 
-COMPONENT_DIR = "//base/security/asset"
-
-ohos_rust_static_library("asset_ipc_interface") {
+ohos_rust_static_library("asset_log") {
   sources = [ "src/lib.rs" ]
-  deps = [ "$COMPONENT_DIR/frameworks/common:asset_common" ]
-  external_deps = [
-    "hilog:hilog_rust",
-    "ipc:ipc_rust",
-  ]
+  external_deps = [ "hilog:hilog_rust" ]
 
-  crate_name = "asset_ipc_interface"
+  crate_name = "asset_log"
   crate_type = "rlib"
   subsystem_name = "security"
   part_name = "asset"

@@ -20,8 +20,7 @@
 #include "asset_log.h"
 
 namespace {
-    const int32_t LOADSA_TIMEOUT_SECOUND = 2;
-
+    const int32_t LOAD_TIMEOUT_IN_SECONDS = 2;
     std::mutex g_serviceLock;
 }
 
@@ -40,11 +39,10 @@ bool LoadService(int32_t saId)
     }
 
     std::lock_guard<std::mutex> lock(g_serviceLock);
-
     object = samgrProxy->CheckSystemAbility(saId);
     if (object != nullptr) {
         return true;
     }
 
-    return samgrProxy->LoadSystemAbility(saId, LOADSA_TIMEOUT_SECOUND) != nullptr;
+    return samgrProxy->LoadSystemAbility(saId, LOAD_TIMEOUT_IN_SECONDS) != nullptr;
 }

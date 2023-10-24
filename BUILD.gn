@@ -24,7 +24,7 @@ group("asset_component") {
   ]
 
   if (support_jsapi) {
-    deps += [ "//$COMPONENT_DIR/frameworks/js/napi:asset_napi" ]
+    deps += [ "$COMPONENT_DIR/frameworks/js/napi:asset_napi" ]
   }
 }
 

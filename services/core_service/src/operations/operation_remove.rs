@@ -15,11 +15,9 @@
 
 //! This module is used to delete the Asset, including single and batch deletion.
 
-use asset_common::{
-    definition::{AssetMap, ErrCode, Result},
-    loge, logi,
-};
 use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
+use asset_definition::{AssetMap, ErrCode, Result};
+use asset_log::{loge, logi};
 
 use crate::{calling_info::CallingInfo, operations::common};
 

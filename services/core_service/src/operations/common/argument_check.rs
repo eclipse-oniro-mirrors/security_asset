@@ -15,13 +15,10 @@
 
 //! This module is used to verify the validity of asset attributes.
 
-use asset_common::{
-    definition::{
-        Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, IntoValue, Result, ReturnType, SyncType, Tag,
-        Value,
-    },
-    loge,
+use asset_definition::{
+    Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, IntoValue, Result, ReturnType, SyncType, Tag, Value,
 };
+use asset_log::loge;
 
 use crate::operations::common::{CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS};
 

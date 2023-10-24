@@ -19,7 +19,6 @@ use std::{
     io::Write,
 };
 
-use asset_common::definition::{DataType, Value};
 use asset_db_operator::{
     database::*,
     database_table_helper::{do_transaction, DefaultDatabaseHelper, ASSET_TABLE_NAME, COLUMN_ALIAS, COLUMN_OWNER},
@@ -27,6 +26,7 @@ use asset_db_operator::{
     types::{from_data_value_to_str_value, ColumnInfo, DbMap, QueryOptions},
     SQLITE_DONE, SQLITE_OK, SQLITE_OPEN_CREATE, SQLITE_OPEN_READWRITE, SQLITE_ROW,
 };
+use asset_definition::{DataType, Value};
 
 #[test]
 pub fn test_for_sqlite3_open() {

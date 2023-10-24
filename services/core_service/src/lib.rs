@@ -15,19 +15,19 @@
 
 //! This module implements the Asset service.
 
-use std::ffi::{c_char, CString};
-use std::thread;
-use std::time::Duration;
+use std::{
+    ffi::{c_char, CString},
+    thread,
+    time::Duration,
+};
 
 use hilog_rust::{error, hilog, HiLogLabel, LogType};
 use ipc_rust::{IRemoteBroker, RemoteObj};
 use system_ability_fwk_rust::{define_system_ability, IMethod, ISystemAbility, RSystemAbility};
 
-use asset_common::{
-    definition::{AssetMap, Result},
-    logi,
-};
-use asset_ipc_interface::{IAsset, SA_ID};
+use asset_definition::{AssetMap, Result};
+use asset_ipc::{IAsset, SA_ID};
+use asset_log::logi;
 
 mod calling_info;
 mod operations;

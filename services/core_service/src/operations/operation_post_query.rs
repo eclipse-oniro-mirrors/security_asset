@@ -15,7 +15,7 @@
 
 //! This module is used to clear resources after query the Asset that required secondary identity authentication.
 
-use asset_common::definition::{AssetMap, Result, Tag};
+use asset_definition::{AssetMap, Result, Tag};
 
 use crate::{calling_info::CallingInfo, operations::common};
 

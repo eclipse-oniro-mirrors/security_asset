@@ -1,10 +1,9 @@
 [package]
-name = "asset_ipc_proxy"
+name = "asset_definition"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-asset_common = { path = "../common" }
-asset_ipc_interface = { path = "../ipc_interface" }
+asset_log = { path = "../os_dependency/log" }

@@ -15,10 +15,6 @@
 
 //! This module prepares for querying Asset that required secondary identity authentication.
 
-use asset_common::{
-    definition::{Accessibility, AssetMap, AuthType, ErrCode, Result, Tag, Value},
-    loge, logi,
-};
 use asset_crypto_manager::{
     crypto::{Crypto, SecretKey},
     huks_ffi::{CHALLENGE_LEN, HKS_KEY_PURPOSE_DECRYPT},
@@ -27,10 +23,11 @@ use asset_db_operator::{
     database_table_helper::{DefaultDatabaseHelper, COLUMN_ACCESSIBILITY, COLUMN_AUTH_TYPE},
     types::DbMap,
 };
-
+use asset_definition::{Accessibility, AssetMap, AuthType, ErrCode, Result, Tag, Value};
 use asset_hasher::sha256;
+use asset_log::{loge, logi};
 
-use crate::{ calling_info::CallingInfo, operations::common, };
+use crate::{calling_info::CallingInfo, operations::common};
 
 const OPTIONAL_ATTRS: [Tag; 1] = [Tag::AuthValidityPeriod];
 
@@ -46,7 +43,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     match attributes.get(&Tag::AuthType) {
         Some(Value::Number(val)) if *val == auth_type => Ok(()),
         None => Ok(()),
-        _ => Err(ErrCode::InvalidArgument)
+        _ => Err(ErrCode::InvalidArgument),
     }
 }
 
@@ -90,28 +87,26 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
     let mut challenge = vec![0; CHALLENGE_LEN as usize];
     let mut cryptos = Vec::with_capacity(4);
     for (idx, access_type) in access_types.iter().enumerate() {
-
         // get_or_default
         let Value::Number(exp_time) = query.get(&Tag::AuthValidityPeriod).unwrap_or(&Value::Number(60)) else {
             return Err(ErrCode::InvalidArgument);
         };
 
-        let secret_key = SecretKey::new(
-            calling_info.user_id(), &sha256(calling_info.owner_info()), AuthType::Any, *access_type);
-        let mut crypto = Crypto::new(
-            HKS_KEY_PURPOSE_DECRYPT, secret_key, idx as u32, *exp_time);
+        let secret_key =
+            SecretKey::new(calling_info.user_id(), &sha256(calling_info.owner_info()), AuthType::Any, *access_type);
+        let mut crypto = Crypto::new(HKS_KEY_PURPOSE_DECRYPT, secret_key, idx as u32, *exp_time);
 
         match crypto.init_crypto() {
             Ok(the_challenge) => {
                 challenge[(idx * 8)..((idx + 1) * 8)].copy_from_slice(&the_challenge[(idx * 8)..((idx + 1) * 8)]);
             },
-            Err(e) => return Err(e)
+            Err(e) => return Err(e),
         }
         cryptos.push(crypto);
     }
 
     // todo 在所有crypto都生成challenge之后再往crypto manager中添加cryptos
 
-    logi!("get challenge successful!");  // todo delete
+    logi!("get challenge successful!"); // todo delete
     Ok(challenge)
 }

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-use asset_common::definition::{Accessibility, AuthType};
 use asset_crypto_manager::crypto::*;
+use asset_definition::{Accessibility, AuthType};
 
 pub const AAD_SIZE: u32 = 8;
 

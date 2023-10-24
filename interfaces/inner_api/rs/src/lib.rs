@@ -15,18 +15,19 @@
 
 //! This module defines the interface of the Asset Rust SDK.
 
-pub use asset_common::definition;
+pub use asset_definition::*;
 
 use ipc_rust::RemoteObjRef;
 
-use asset_common::{
-    definition::{AssetMap, ErrCode, Result, Version},
-    loge,
-};
-use asset_ipc_interface::{IAsset, SA_ID};
-use asset_ipc_proxy::AssetProxy;
+use asset_ipc::{IAsset, SA_ID};
+use asset_log::loge;
 
-extern "C" { fn LoadService(id: i32) -> bool; }
+mod proxy;
+use proxy::AssetProxy;
+
+extern "C" {
+    fn LoadService(id: i32) -> bool;
+}
 
 fn get_remote() -> Result<RemoteObjRef<AssetProxy>> {
     unsafe {

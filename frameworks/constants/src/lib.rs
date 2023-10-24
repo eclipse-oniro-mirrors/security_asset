@@ -13,12 +13,18 @@
  * limitations under the License.
  */
 
-//! This module implements the common capabilities of the SDK and service.
+//! This crate defines the common constants.
 
-#[macro_use]
-pub mod log_utils;
+use asset_definition::impl_enum_trait;
 
-#[macro_use]
-pub mod macro_utils;
-
-pub mod definition;
+impl_enum_trait! {
+    /// The type of the calling.
+    #[repr(C)]
+    #[derive(Copy, Clone)]
+    pub enum OwnerType {
+        /// The calling is a application.
+        Hap = 0,
+        /// The calling is a native process.
+        Native = 1,
+    }
+}

@@ -19,39 +19,18 @@
 #include "securec.h"
 
 #include "accesstoken_kit.h"
-#include "bundle_mgr_proxy.h"
+#include "bundle_mgr_client.h"
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
-#include "iservice_registry.h"
-#include "os_account_manager.h"
-#include "system_ability_definition.h"
 
 #include "asset_log.h"
-#include "asset_mem.h"
-#include "asset_type.h"
 
 using namespace OHOS;
 using namespace AppExecFwk;
 using namespace Security::AccessToken;
 
-static sptr<IBundleMgr> GetBundleMgrProxy()
-{
-    sptr<ISystemAbilityManager> saManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    if (saManager == NULL) {
-        LOGE("[FATAL]Fail to get system ability manager.");
-        return NULL;
-    }
-
-    sptr<IRemoteObject> remoteObject = saManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
-    if (remoteObject == NULL) {
-        LOGE("[FATAL]Fail to get bundle manager service.");
-        return NULL;
-    }
-
-    return iface_cast<IBundleMgr>(remoteObject);
-}
-
-static bool GetHapInfo(int32_t userId, uint32_t tokenId, std::string &info)
+namespace {
+bool GetHapInfo(int32_t userId, uint32_t tokenId, std::string &info)
 {
     HapTokenInfo tokenInfo;
     int32_t ret = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
@@ -60,13 +39,9 @@ static bool GetHapInfo(int32_t userId, uint32_t tokenId, std::string &info)
         return false;
     }
 
-    sptr<IBundleMgr> bms = GetBundleMgrProxy();
-    if (bms == NULL) {
-        return false;
-    }
-
+    AppExecFwk::BundleMgrClient bmsClient;
     AppExecFwk::BundleInfo bundleInfo;
-    if (!bms->GetBundleInfo(tokenInfo.bundleName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE, bundleInfo, userId)) {
+    if (!bmsClient.GetBundleInfo(tokenInfo.bundleName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE, bundleInfo, userId)) {
         LOGE("[FATAL]Get bundle info failed!");
         return false;
     }
@@ -75,7 +50,7 @@ static bool GetHapInfo(int32_t userId, uint32_t tokenId, std::string &info)
     return true;
 }
 
-static bool GetProcessInfo(uint32_t tokenId, uint64_t uid, std::string &info)
+bool GetProcessInfo(uint32_t tokenId, uint64_t uid, std::string &info)
 {
     NativeTokenInfo tokenInfo;
     int32_t ret = AccessTokenKit::GetNativeTokenInfo(tokenId, tokenInfo);
@@ -87,8 +62,9 @@ static bool GetProcessInfo(uint32_t tokenId, uint64_t uid, std::string &info)
     info = tokenInfo.processName + "_" + std::to_string(uid);
     return true;
 }
+} // namespace
 
-bool GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, char *ownerInfo, uint32_t *infoLen) {
+bool GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen) {
     if (ownerType == NULL || ownerInfo == NULL || infoLen == NULL) {
         return false;
     }

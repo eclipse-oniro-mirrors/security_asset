@@ -17,10 +17,8 @@
 
 use std::{fs, path::Path};
 
-use asset_common::{
-    definition::{ErrCode, Result},
-    loge,
-};
+use asset_definition::{ErrCode, Result};
+use asset_log::loge;
 
 const ROOT_PATH: &str = "data/service/el1/public/asset_service";
 
@@ -29,7 +27,7 @@ pub fn create_user_db_dir(user_id: i32) -> Result<()> {
     let path = format!("{}/{}", ROOT_PATH, user_id);
     let path = Path::new(&path);
     if path.exists() {
-        return Ok(())
+        return Ok(());
     }
 
     match fs::create_dir(path) {

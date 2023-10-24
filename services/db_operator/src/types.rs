@@ -17,7 +17,7 @@
 
 use std::{cmp::Ordering, collections::HashMap};
 
-use asset_common::definition::{DataType, Value};
+use asset_definition::{DataType, Value};
 
 use crate::database::Database;
 

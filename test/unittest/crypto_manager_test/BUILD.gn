@@ -21,8 +21,8 @@ module_output_path = "asset/asset_UT_test"
 ohos_rust_unittest("crypto_manager_test") {
   sources = [ "src/lib.rs" ]
   deps = [
-    "$COMPONENT_DIR/frameworks/common:asset_common",
-    "$COMPONENT_DIR/services/crypto_manager:asset_crypto_manager"
+    "$COMPONENT_DIR/frameworks/definition:asset_definition",
+    "$COMPONENT_DIR/services/crypto_manager:asset_crypto_manager",
   ]
   module_out_path = module_output_path
   subsystem_name = "security"

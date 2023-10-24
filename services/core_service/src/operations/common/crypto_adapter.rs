@@ -15,10 +15,6 @@
 
 //! This module is used to adapt to the crypto manager.
 
-use asset_common::{
-    definition::{Accessibility, AuthType, DataType, ErrCode, Result, Value},
-    loge, logi,
-};
 use asset_crypto_manager::crypto::{Crypto, SecretKey};
 use asset_db_operator::{
     database_table_helper::{
@@ -28,8 +24,9 @@ use asset_db_operator::{
     },
     types::DbMap,
 };
-
+use asset_definition::{Accessibility, AuthType, DataType, ErrCode, Result, Value};
 use asset_hasher::sha256;
+use asset_log::{loge, logi};
 
 use crate::calling_info::CallingInfo;
 
@@ -117,7 +114,7 @@ pub(crate) fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
 
     let Value::Bytes(ref secret) = db_data[COLUMN_SECRET] else { return Err(ErrCode::InvalidArgument) };
 
-    let cipher = Crypto::encrypt(&secret_key ,secret, &construct_aad(db_data))?;
+    let cipher = Crypto::encrypt(&secret_key, secret, &construct_aad(db_data))?;
 
     if !ipc_rust::set_calling_identity(identity) {
         loge!("Execute set_calling_identity failed.");

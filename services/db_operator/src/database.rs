@@ -79,11 +79,11 @@ pub type UpdateDatabaseCallbackFunc = fn(db: &Database, old_ver: u32, new_ver: u
 pub fn default_update_database_func(db: &Database, old_ver: u32, new_ver: u32) -> SqliteErrCode {
     if new_ver > old_ver {
         // TODO do something
-        asset_common::logi!("database {} update from ver {} to {}", db.path, old_ver, new_ver);
+        asset_log::logi!("database {} update from ver {} to {}", db.path, old_ver, new_ver);
         return db.update_version(new_ver as _);
     }
     if new_ver < old_ver {
-        asset_common::loge!("database version rollback is not supported!");
+        asset_log::loge!("database version rollback is not supported!");
         return SQLITE_ERROR;
     }
     SQLITE_OK
@@ -152,22 +152,22 @@ fn open_db(
         let mut back_handle = 0usize;
         let back_ret = sqlite3_open_wrap(&back_path, &mut back_handle, flag, vfs, db.v2);
         if back_ret != SQLITE_OK {
-            asset_common::loge!("both master backup db fail: {} {} {}", path, ret, back_ret);
+            asset_log::loge!("both master backup db fail: {} {} {}", path, ret, back_ret);
             return Err(ret);
         }
         let close_ret = sqlite3_close_wrap(db.v2, back_handle);
         if close_ret != SQLITE_OK {
-            asset_common::loge!("close back fail {}", close_ret);
+            asset_log::loge!("close back fail {}", close_ret);
         }
         let r_ret = copy_db_file(db, true);
         if r_ret.is_err() {
-            asset_common::loge!("recovery master db {} fail", path);
+            asset_log::loge!("recovery master db {} fail", path);
             return Err(ret);
         }
-        asset_common::logi!("recovery master db {} succ", path);
+        asset_log::logi!("recovery master db {} succ", path);
         ret = sqlite3_open_wrap(&path, &mut db.handle, flag, vfs, db.v2);
         if ret != SQLITE_OK {
-            asset_common::loge!("reopen master db {} fail {}", path, ret);
+            asset_log::loge!("reopen master db {} fail {}", path, ret);
             return Err(ret);
         }
         Ok(())
@@ -188,7 +188,7 @@ impl<'a> Database<'a> {
         path_c.push('\0');
         let ret = sqlite3_open_wrap(&path_c, &mut self.handle, self.flags, self.vfs, self.v2);
         if ret != SQLITE_OK {
-            asset_common::loge!("re open handle {} fail {}", self.path, ret);
+            asset_log::loge!("re open handle {} fail {}", self.path, ret);
             return Err(ret);
         }
         Ok(())
@@ -360,7 +360,7 @@ impl<'a> Database<'a> {
     pub(crate) fn print_err_msg(&self, msg: *const u8) {
         unsafe {
             let s = CStr::from_ptr(msg as _);
-            asset_common::loge!("exec fail error msg: {}", s.to_str().unwrap());
+            asset_log::loge!("exec fail error msg: {}", s.to_str().unwrap());
         }
     }
 
@@ -459,11 +459,11 @@ impl<'a> Database<'a> {
             };
         }
         sql.push_str(");");
-        asset_common::loge!("{}", sql);
+        asset_log::loge!("{}", sql);
         let stmt = Statement::<false>::new(sql.as_str(), self);
         let ret = stmt.exec(None, 0);
         if ret != SQLITE_OK {
-            asset_common::loge!("exec create table fail {}", ret);
+            asset_log::loge!("exec create table fail {}", ret);
             return Err(ret);
         }
         Ok(Table::new(table_name, self))
@@ -496,7 +496,7 @@ impl<'a> Drop for Database<'a> {
         if self.handle != 0 {
             let ret = sqlite3_close_wrap(self.v2, self.handle);
             if ret != SQLITE_OK {
-                asset_common::loge!("close db fail ret {}", ret);
+                asset_log::loge!("close db fail ret {}", ret);
             }
         }
     }

@@ -1,8 +1,10 @@
 [workspace]
 members = [
-    "frameworks/common",
-    "frameworks/ipc_interface",
-    "frameworks/ipc_proxy",
+    "frameworks/constants",
+    "frameworks/definition",
+    "frameworks/ipc",
+    "frameworks/os_dependency/log",
+    "frameworks/utils/hasher",
     "interfaces/kits/c",
     "services/core_service",
     "services/crypto_manager",

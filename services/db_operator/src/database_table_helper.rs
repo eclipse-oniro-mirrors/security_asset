@@ -16,10 +16,8 @@
 //! the interfaces of db_operator public for other module
 //! including transaction and create default db,table
 
-use asset_common::{
-    definition::{DataType, ErrCode, Value},
-    loge, logi,
-};
+use asset_definition::{DataType, ErrCode, Value};
+use asset_log::{loge, logi};
 
 use crate::{
     database::{
@@ -165,7 +163,7 @@ impl<'a> TableHelper<'a> {
     ///
     /// # Example
     /// ```
-    /// use asset_common::definition::Value;
+    /// use asset_definition::Value;
     /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use asset_db_operator::types::DbMap;
     ///
@@ -188,7 +186,7 @@ impl<'a> TableHelper<'a> {
     ///
     /// # Example
     /// ```
-    /// use asset_common::definition::Value;
+    /// use asset_definition::Value;
     /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use asset_db_operator::types::DbMap;
     ///
@@ -221,7 +219,7 @@ impl<'a> TableHelper<'a> {
     ///
     /// # Example
     /// ```
-    /// use asset_common::definition::Value;
+    /// use asset_definition::Value;
     /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use asset_db_operator::types::DbMap;
     ///
@@ -245,7 +243,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use std::collections::HashMap;
-    /// use asset_common::definition::Value;
+    /// use asset_definition::Value;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let exist = helper.is_data_exists_default(&HashMap::<&'static str, Value>::new());
     /// ```
@@ -264,7 +262,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use std::collections::HashMap;
-    /// use asset_common::definition::Value;
+    /// use asset_definition::Value;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let count = helper.select_count_default(&HashMap::<&'static str, Value>::new());
     /// ```
@@ -283,7 +281,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use std::collections::HashMap;
-    /// use asset_common::definition::Value;
+    /// use asset_definition::Value;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let result = helper.query_datas_default(&HashMap::<&'static str, Value>::new(), None);
     /// ```
@@ -306,7 +304,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
     /// use std::collections::HashMap;
-    /// use asset_common::definition::Value;
+    /// use asset_definition::Value;
     /// let helper = DefaultDatabaseHelper::open_default_database_table(1).unwrap();
     /// let result = helper.query_columns_default(&vec![], &HashMap::<&'static str, Value>::new(), None);
     /// ```

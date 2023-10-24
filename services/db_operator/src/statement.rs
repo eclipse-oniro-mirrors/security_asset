@@ -19,10 +19,8 @@
 use std::ffi::CStr;
 use std::fmt::Write;
 
-use asset_common::{
-    definition::{DataType, Value},
-    loge,
-};
+use asset_definition::{DataType, Value};
+use asset_log::loge;
 
 use crate::{
     database::Database, sqlite3_bind_blob_func, sqlite3_bind_int64_func, sqlite3_column_blob_func,

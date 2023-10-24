@@ -1,10 +1,10 @@
 [package]
-name = "c"
+name = "asset_constants"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-asset_sdk = { path = "../../inner_api/rs" }
-asset_log = { path = "../../../frameworks/os_dependency/log" }
+asset_definition = { path = "../definition" }
+asset_log = { path = "../os_dependency/log" }

@@ -22,11 +22,8 @@ use std::{
     slice,
 };
 
-use asset_common::{
-    definition::{AssetMap, DataType, ErrCode, IntoValue, Tag, Value, Version},
-    loge,
-};
-use asset_sdk::Manager;
+use asset_log::loge;
+use asset_sdk::{AssetMap, DataType, ErrCode, IntoValue, Manager, Tag, Value, Version};
 
 const RESULT_CODE_SUCCESS: i32 = 0;
 extern "C" {

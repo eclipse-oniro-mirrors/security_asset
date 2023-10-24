@@ -27,9 +27,9 @@ pub const HKS_ERROR_NOT_EXIST: HuksErrcode = -13;
 /// crypto type
 pub type HksKeyPurpose = i32;
 /// encrypto mode
-pub const HKS_KEY_PURPOSE_ENCRYPT: HksKeyPurpose  = 1;
+pub const HKS_KEY_PURPOSE_ENCRYPT: HksKeyPurpose = 1;
 /// decrypto mode
-pub const HKS_KEY_PURPOSE_DECRYPT: HksKeyPurpose  = 2;
+pub const HKS_KEY_PURPOSE_DECRYPT: HksKeyPurpose = 2;
 
 /// Nonce size, keep same with huks_wrapper
 pub const NONCE_SIZE: u32 = 12;

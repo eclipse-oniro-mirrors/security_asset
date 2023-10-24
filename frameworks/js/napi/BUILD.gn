@@ -16,11 +16,7 @@ import("//build/ohos.gni")
 COMPONENT_DIR = "//base/security/asset"
 
 ohos_shared_library("asset_napi") {
-  include_dirs = [
-    "inc",
-    "$COMPONENT_DIR/frameworks/os_dependency/log/inc",
-  ]
-
+  include_dirs = [ "inc" ]
   sources = [
     "src/asset_napi.cpp",
     "src/asset_napi_common.cpp",

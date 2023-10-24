@@ -38,28 +38,28 @@ macro_rules! impl_enum_trait {
         }
 
         impl std::convert::TryFrom<u32> for $name {
-            type Error = $crate::definition::ErrCode;
+            type Error = $crate::ErrCode;
 
             fn try_from(v: u32) -> std::result::Result<Self, Self::Error> {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
                     _ => {
-                        $crate::loge!("Convert u32 [{}] failed.", v);
-                        Err($crate::definition::ErrCode::InvalidArgument)
+                        asset_log::loge!("Convert u32 [{}] failed.", v);
+                        Err($crate::ErrCode::InvalidArgument)
                     }
                 }
             }
         }
 
         impl std::convert::TryFrom<i32> for $name {
-            type Error = $crate::definition::ErrCode;
+            type Error = $crate::ErrCode;
 
             fn try_from(v: i32) -> std::result::Result<Self, Self::Error> {
                 match v {
                     $(x if x == $name::$vname as i32 => Ok($name::$vname),)*
                     _ => {
-                        $crate::loge!("Convert i32 [{}] failed.", v);
-                        Err($crate::definition::ErrCode::InvalidArgument)
+                        asset_log::loge!("Convert i32 [{}] failed.", v);
+                        Err($crate::ErrCode::InvalidArgument)
                     }
                 }
             }

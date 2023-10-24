@@ -17,15 +17,13 @@ COMPONENT_DIR = "//base/security/asset"
 
 ohos_rust_static_library("asset_file_operator") {
   sources = [ "src/lib.rs" ]
-
   deps = [
-    "$COMPONENT_DIR/frameworks/common:asset_common",
+    "$COMPONENT_DIR/frameworks/definition:asset_definition",
+    "$COMPONENT_DIR/frameworks/os_dependency/log:asset_log",
   ]
 
   crate_name = "asset_file_operator"
   crate_type = "rlib"
-
-  install_images = [ system_base_dir ]
   subsystem_name = "security"
   part_name = "asset"
 }

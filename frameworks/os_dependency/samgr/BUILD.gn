@@ -17,9 +17,8 @@ COMPONENT_DIR = "//base/security/asset"
 
 ohos_static_library("asset_samgr") {
   sources = [ "src/samgr_wrapper.cpp" ]
-  include_dirs = ["$COMPONENT_DIR/frameworks/os_dependency/log/inc"]
+  include_dirs = [ "$COMPONENT_DIR/frameworks/os_dependency/log/inc" ]
   external_deps = [
-    "c_utils:utils",
     "hilog:libhilog",
     "samgr:samgr_proxy",
     "ipc:ipc_core",

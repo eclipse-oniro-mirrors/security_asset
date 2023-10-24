@@ -15,12 +15,10 @@
 
 //! This module defines IPC interfaces and constants.
 
-use asset_common::{
-    definition::{AssetMap, DataType, ErrCode, IntoValue, Result, Tag, Value},
-    impl_enum_trait, loge, logi,
-};
-
 use ipc_rust::BorrowedMsgParcel;
+
+use asset_definition::{impl_enum_trait, AssetMap, DataType, ErrCode, IntoValue, Result, Tag, Value};
+use asset_log::{loge, logi};
 
 /// SA id for Asset service.
 pub const SA_ID: i32 = 0x00010140;

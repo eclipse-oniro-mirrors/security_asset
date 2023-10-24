@@ -15,15 +15,12 @@
 
 //! This module is used to update the specified alias of Asset.
 
-use asset_common::{
-    definition::{AssetMap, ErrCode, Result, Tag, Value},
-    loge, logi,
-};
-
 use asset_db_operator::{
     database_table_helper::{DefaultDatabaseHelper, COLUMN_SECRET, COLUMN_UPDATE_TIME},
     types::DbMap,
 };
+use asset_definition::{AssetMap, ErrCode, Result, Tag, Value};
+use asset_log::{loge, logi};
 
 use crate::{calling_info::CallingInfo, operations::common};
 
@@ -52,7 +49,6 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap) -> Result<()> {
     common::check_value_validity(attrs_to_update)
 }
 
-// todo: yzt 测试一把update的第二个map为空的情况
 pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     check_arguments(query, update)?;
 

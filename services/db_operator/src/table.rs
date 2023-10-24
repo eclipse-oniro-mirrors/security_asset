@@ -30,7 +30,7 @@ use crate::{
     SqliteErrCode, SQLITE_DONE, SQLITE_ERROR, SQLITE_OK, SQLITE_ROW,
 };
 
-use asset_common::definition::{DataType, Value};
+use asset_definition::{DataType, Value};
 
 /// a database table
 #[repr(C)]
@@ -44,12 +44,12 @@ pub struct Table<'a> {
 /// prepare statement with test output
 #[inline(always)]
 fn prepare_statement<'a>(table: &'a Table, sql: &mut str) -> Result<Statement<'a, true>, SqliteErrCode> {
-    asset_common::loge!("{}", sql);
+    asset_log::loge!("{}", sql);
     let stmt = match Statement::<true>::prepare(sql, table.db) {
         Ok(s) => s,
         Err(e) => {
             let msg = table.db.get_err_msg().unwrap();
-            asset_common::loge!("prepare stmt fail ret {}, info: {}", e, msg.s);
+            asset_log::loge!("prepare stmt fail ret {}, info: {}", e, msg.s);
             return Err(e);
         },
     };
@@ -349,7 +349,7 @@ impl<'a> Table<'a> {
     /// rename table name
     pub fn rename(&mut self, name: &str) -> SqliteErrCode {
         let sql = format!("ALTER TABLE {} RENAME TO {}", self.table_name, name);
-        asset_common::loge!("{}", sql);
+        asset_log::loge!("{}", sql);
         let stmt = &Statement::<false>::new(sql.as_str(), self.db);
         let ret = stmt.exec(None, 0);
         if ret == SQLITE_OK {
@@ -389,7 +389,7 @@ impl<'a> Table<'a> {
         if column.not_null {
             sql.push_str(" NOT NULL");
         }
-        asset_common::loge!("{}", sql);
+        asset_log::loge!("{}", sql);
         let stmt = Statement::<false>::new(sql.as_str(), self.db);
 
         stmt.exec(None, 0)

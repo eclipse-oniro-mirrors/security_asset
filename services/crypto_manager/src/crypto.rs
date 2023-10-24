@@ -16,12 +16,11 @@
 //! This module is used to implement cryptographic algorithm operations, including key generation and usage.
 
 use std::ptr::null;
+
+use asset_definition::{Accessibility, AuthType, ErrCode};
+use asset_log::{loge, logi};
+
 use crate::huks_ffi::*;
-use asset_common::{
-    definition::{Accessibility, AuthType, ErrCode},
-    loge,
-    logi,
-};
 
 /// SecretKey struct
 pub struct SecretKey {
@@ -123,10 +122,10 @@ impl Drop for Crypto {
             handle_data: self.handle.as_mut_ptr(),
         };
 
-        let ret =unsafe { DropCrypto(&data as *const CryptParam) };
+        let ret = unsafe { DropCrypto(&data as *const CryptParam) };
         match ret {
             HKS_SUCCESS => logi!("crypto drop finish success\n"),
-            _ =>  loge!("crypto drop finish failed ret {}", ret),
+            _ => loge!("crypto drop finish failed ret {}", ret),
         }
     }
 }
@@ -134,7 +133,14 @@ impl Drop for Crypto {
 impl Crypto {
     /// New a crypto struct
     pub fn new(mode: HksKeyPurpose, key: SecretKey, challenge_pos: u32, exp_time: u32) -> Self {
-        Self { key, mode, challenge: vec![0; CHALLENGE_LEN as usize], handle: vec![0; HANDLE_LEN as usize], challenge_pos, _exp_time: exp_time }
+        Self {
+            key,
+            mode,
+            challenge: vec![0; CHALLENGE_LEN as usize],
+            handle: vec![0; HANDLE_LEN as usize],
+            challenge_pos,
+            _exp_time: exp_time,
+        }
     }
 
     /// Start HuksInit
@@ -157,11 +163,9 @@ impl Crypto {
             handle_data: self.handle.as_mut_ptr(),
         };
 
-        let ret =unsafe { InitCryptoWrapper(&data as *const CryptParam) };
+        let ret = unsafe { InitCryptoWrapper(&data as *const CryptParam) };
         match ret {
-            HKS_SUCCESS => {
-                Ok(self.challenge.clone())
-            },
+            HKS_SUCCESS => Ok(self.challenge.clone()),
             _ => {
                 loge!("crypto init failed ret {}", ret);
                 Err(ErrCode::CryptoError)
@@ -205,7 +209,7 @@ impl Crypto {
     pub fn encrypt(key: &SecretKey, msg: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
         // out param
         let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize]; // todo : zdy 加上nonce的长度
-        // in param
+                                                                           // in param
         let data = CryptParam {
             key_len: key.alias.len() as u32,
             key_data: key.alias.as_ptr(),
@@ -235,13 +239,14 @@ impl Crypto {
 
     /// Signle function call for decrypt
     pub fn decrypt(key: &SecretKey, cipher: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
-        if cipher.len() <= AEAD_SIZE as usize { // todo : zdy 加上nonce的长度
+        if cipher.len() <= AEAD_SIZE as usize {
+            // todo : zdy 加上nonce的长度
             loge!("invalid cipher\n");
             return Err(ErrCode::InvalidArgument);
         }
         // out param
         let mut plain: Vec<u8> = vec![0; cipher.len() - AEAD_SIZE as usize]; // todo : zdy 减去nonce的长度
-        // in param
+                                                                             // in param
         let data = CryptParam {
             key_len: key.alias.len() as u32,
             key_data: key.alias.as_ptr(),
@@ -289,17 +294,17 @@ impl CryptoManager {
         Self { crypto_vec: vec![] }
     }
 
-    fn challenge_cmp(challenge_pos: u32, challenge: &Vec<u8>, crypto_challenge: &[u8]) ->Result<(), ErrCode> {
+    fn challenge_cmp(challenge_pos: u32, challenge: &Vec<u8>, crypto_challenge: &[u8]) -> Result<(), ErrCode> {
         if challenge.len() != CHALLENGE_LEN as usize {
             loge!("invalid challenge len {}", challenge.len());
-            return Err(ErrCode::CryptoError)
+            return Err(ErrCode::CryptoError);
         }
 
         match challenge_pos {
             0 | 1 | 2 | 3 => {
                 let index = (challenge_pos * 4) as usize;
                 if challenge[index..(index + 4)] == crypto_challenge[index..(index + 4)] {
-                    return Ok(())
+                    return Ok(());
                 }
                 loge!("challenge not match");
             },
@@ -309,11 +314,11 @@ impl CryptoManager {
     }
 
     /// add a crypto in manager, not allow insert crypto with same challenge
-    pub fn add(&mut self, crypto: Crypto) ->Result<(), ErrCode>{
+    pub fn add(&mut self, crypto: Crypto) -> Result<(), ErrCode> {
         for temp_crypto in self.crypto_vec.iter() {
             if crypto.challenge.as_slice() == temp_crypto.challenge.as_slice() {
                 loge!("crypto manager not allow insert crypto with same challenge");
-                return Err(ErrCode::CryptoError)
+                return Err(ErrCode::CryptoError);
             }
         }
         self.crypto_vec.push(crypto);
@@ -326,7 +331,7 @@ impl CryptoManager {
             match Self::challenge_cmp(challenge_pos, challenge, &crypto.challenge) {
                 Ok(()) => {
                     self.crypto_vec.remove(index);
-                    return
+                    return;
                 },
                 _ => continue,
             }

@@ -17,17 +17,16 @@
 
 use std::slice;
 
-use asset_common::{
-    definition::{Accessibility, AuthType, Value},
-    loge,
-};
+use asset_constants::OwnerType;
 use asset_crypto_manager::crypto::SecretKey;
 use asset_db_operator::{
-    database_table_helper::{DefaultDatabaseHelper, COLUMN_OWNER},
+    database_table_helper::{DefaultDatabaseHelper, COLUMN_OWNER, COLUMN_OWNER_TYPE},
     types::DbMap,
 };
+use asset_definition::{Accessibility, AuthType, Value};
 use asset_file_operator::delete_user_db_dir;
 use asset_hasher::sha256;
+use asset_log::loge;
 
 fn delete_key(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility) {
     let secret_key = SecretKey::new(user_id, owner, auth_type, access_type);
@@ -36,15 +35,17 @@ fn delete_key(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: A
     }
 }
 
-/// Function called from C programming language to Rust programming language for delete hap Asset.
+/// Function called from C programming language to Rust programming language for delete data by owner.
+///
 /// # Safety
 ///
+/// The caller must ensure that the owner pointer is valid.
 #[no_mangle]
 pub unsafe extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) -> i32 {
     let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner, owner_size as usize).to_vec() };
     let owner_hash: Vec<u8> = sha256(&owner);
     let mut cond = DbMap::new();
-    // cond.insert(COLUMN_OWNER_TYPE, Value::Number(OwnerType::Hap as u32)); // todo: 加个constants 文件 yzt
+    cond.insert(COLUMN_OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
     cond.insert(COLUMN_OWNER, Value::Bytes(owner));
     match DefaultDatabaseHelper::delete_datas_default_once(user_id, &cond) {
         Ok(remove_num) => {
@@ -58,7 +59,7 @@ pub unsafe extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, ow
     }
 }
 
-/// Function called from C programming language to Rust programming language for delete user Asset.
+/// Function called from C programming language to Rust programming language for delete dir by user.
 #[no_mangle]
 pub extern "C" fn delete_dir_by_user(user_id: i32) -> bool {
     delete_user_db_dir(user_id).is_ok()

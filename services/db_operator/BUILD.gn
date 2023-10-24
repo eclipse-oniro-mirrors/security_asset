@@ -17,26 +17,23 @@ COMPONENT_DIR = "//base/security/asset"
 
 ohos_rust_static_library("asset_db_operator") {
   sources = [
-    "src/transaction.rs",
     "src/database.rs",
     "src/database_table_helper.rs",
     "src/lib.rs",
     "src/sqlite3_ffi.rs",
     "src/statement.rs",
     "src/table.rs",
+    "src/transaction.rs",
     "src/types.rs",
   ]
-
   deps = [
-    "$COMPONENT_DIR/frameworks/common:asset_common",
+    "$COMPONENT_DIR/frameworks/definition:asset_definition",
+    "$COMPONENT_DIR/frameworks/os_dependency/log:asset_log",
     "//third_party/sqlite:sqlite",
   ]
 
-  external_deps = [ "hilog:hilog_rust" ]
-
   crate_name = "asset_db_operator"
   crate_type = "rlib"
-
   subsystem_name = "security"
   part_name = "asset"
 }

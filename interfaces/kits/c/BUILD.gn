@@ -36,17 +36,15 @@ config("asset_config") {
 
 ohos_shared_library("asset_ndk") {
   public_configs = [ ":asset_config" ]
-
   sources = [ "src/asset_api.c" ]
-
   deps = [
     ":asset_sdk_ffi",
     "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem",
   ]
 
   external_deps = [
-    "hilog:libhilog",
     "c_utils:utils",
+    "hilog:libhilog",
   ]
 
   cflags_cc = [
@@ -55,19 +53,18 @@ ohos_shared_library("asset_ndk") {
   ]
 
   relative_install_dir = "ndk"
-  part_name = "asset"
   subsystem_name = "security"
+  part_name = "asset"
 }
 
 ohos_rust_shared_ffi("asset_sdk_ffi") {
   sources = [ "src/lib.rs" ]
   deps = [
-    "$COMPONENT_DIR/frameworks/common:asset_common",
+    "$COMPONENT_DIR/frameworks/os_dependency/log:asset_log",
     "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem",
     "$COMPONENT_DIR/interfaces/inner_api/rs:asset_sdk",
     "//third_party/rust/crates/libc:lib",
   ]
-  external_deps = [ "hilog:hilog_rust" ]
   crate_name = "asset_sdk_ffi"
   subsystem_name = "security"
   part_name = "asset"

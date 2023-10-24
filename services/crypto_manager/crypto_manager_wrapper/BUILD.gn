@@ -21,10 +21,7 @@ ohos_static_library("crypto_manager_wrapper") {
     "src/hks_key_wrapper.cpp",
   ]
 
-  include_dirs = [
-    "inc",
-    "$COMPONENT_DIR/frameworks/os_dependency/log/inc",
-  ]
+  include_dirs = [ "inc" ]
 
   deps = [
     "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem",
