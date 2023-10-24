@@ -187,6 +187,7 @@ static int32_t CheckInitParma(const struct CryptParam *data)
     return HKS_SUCCESS;
 }
 
+// HksInit需要增加超时时间的tag(预留)
 static int32_t CreateInitParamSet(struct HksParamSet **paramSet, enum HksKeyPurpose cryptoMode, uint32_t challengePos)
 {
     /* init params */
@@ -196,7 +197,8 @@ static int32_t CreateInitParamSet(struct HksParamSet **paramSet, enum HksKeyPurp
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
-        { .tag = HKS_TAG_CHALLENGE_POS, .uint32Param = challengePos }
+        { .tag = HKS_TAG_CHALLENGE_POS, .uint32Param = challengePos },
+        // { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE, .data = (uint8_t *)NONCE }},
     };
 
     return InitParamSet(paramSet, initParams, sizeof(initParams) / sizeof(HksParam));
@@ -259,6 +261,7 @@ static int32_t CheckCryptoParam(const struct CryptParam *data, bool needData)
     return HKS_SUCCESS;
 }
 
+// todo: authToken 放入params里，解密情况下
 static int32_t CreateCryptoParamSet(struct HksParamSet **paramSet, const struct CryptParam *data)
 {
     if (data->cryptoMode == HKS_KEY_PURPOSE_ENCRYPT) {
@@ -271,7 +274,7 @@ static int32_t CreateCryptoParamSet(struct HksParamSet **paramSet, const struct 
             { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
             { .tag = HKS_TAG_CHALLENGE_POS, .uint32Param = data->challengePos },
             { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = data->aadLen, .data = (uint8_t *)data->aad }}, /* initial AAD */
-            { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE, .data = (uint8_t *)NONCE }}, /* todo */
+            // { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE, .data = (uint8_t *)NONCE }}, /* todo */
         };
 
         return InitParamSet(paramSet, initParams, sizeof(initParams) / sizeof(HksParam));
@@ -295,6 +298,7 @@ static int32_t CreateCryptoParamSet(struct HksParamSet **paramSet, const struct 
     LOGE("invalid crypto mode\n");
     return HKS_ERROR_INVALID_ARGUMENT;
 }
+
 
 static int32_t CreateFinishParamSet(struct HksParamSet **paramSet, const struct CryptParam *data)
 {

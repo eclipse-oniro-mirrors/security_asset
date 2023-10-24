@@ -13,16 +13,15 @@
  * limitations under the License.
  */
 
+///use asset_crypto_manager::huks_ffi::*;
 use asset_crypto_manager::crypto::*;
 use asset_definition::{Accessibility, AuthType};
 
 pub const AAD_SIZE: u32 = 8;
 
 #[test]
-fn test_hukkey_key_new() { // todo: zdy 不要出现hukkey, 不存在huk, 可以使用secret key替换
-                           // let secret_key = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlock);
-                           // assert_eq!(secret_key.alias, vec![1, 0, 0, 0, 95, 50, 95, 3, 0, 0, 0, 95, 4, 0, 0, 0]);
-                           // todo zdy 不要为了测试用例暴露不该是public的字段
+fn test_hukkey_key_new() {
+    let _secret_key = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlock);
 }
 
 #[test]
@@ -154,3 +153,31 @@ fn test_hukkey_decrypt() {
     }
     let _ = secret_key.delete();
 }
+
+
+/*
+#[test]
+fn test_crypto_init() {
+    let secret_key = SecretKey::new(6, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlock);
+    match secret_key.exists() {
+        Ok(true) => (),
+        Ok(false) => {
+            print!("huks key start create");
+            match secret_key.generate() {
+                Ok(()) => println!("test_hukkey_generate: generate success"),
+                Err(res) => panic!("test_hukkey_delete fail because generate error = {}", res),
+            };
+        },
+        _ => panic!("hukskey exist failed")
+    };
+
+    let mut crypto = Crypto::new(HKS_KEY_PURPOSE_ENCRYPT, secret_key, 0, 0);
+    let challenge = crypto.init_crypto();
+    match challenge {
+        Ok(_) => print!("crypto challenge init success"),
+        Err(_) => {
+            panic!("crypto init fail")
+        },
+    };
+}
+*/

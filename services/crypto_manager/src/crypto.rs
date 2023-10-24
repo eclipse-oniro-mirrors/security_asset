@@ -31,17 +31,24 @@ pub struct SecretKey {
 
 const MAX_ALIAS_SIZE: u32 = 64;
 
+/// construct alias
+pub fn construct_alias(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility)
+    -> Vec<u8> {
+    let mut alias: Vec<u8> = Vec::with_capacity(MAX_ALIAS_SIZE as usize);
+    alias.extend_from_slice(&user_id.to_le_bytes());
+    alias.push(b'_');
+    alias.extend(owner);
+    alias.push(b'_');
+    alias.extend_from_slice(&(auth_type as u32).to_le_bytes());
+    alias.push(b'_');
+    alias.extend_from_slice(&(access_type as u32).to_le_bytes());
+    alias
+}
+
 impl SecretKey {
     /// New a secret key
     pub fn new(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility) -> Self {
-        let mut alias: Vec<u8> = Vec::with_capacity(MAX_ALIAS_SIZE as usize);
-        alias.extend_from_slice(&user_id.to_le_bytes());
-        alias.push(b'_');
-        alias.extend(owner);
-        alias.push(b'_');
-        alias.extend_from_slice(&(auth_type as u32).to_le_bytes());
-        alias.push(b'_');
-        alias.extend_from_slice(&(access_type as u32).to_le_bytes());
+        let alias = construct_alias(user_id, owner, auth_type, access_type);
         Self { auth_type, access_type, alias }
     }
 
@@ -99,7 +106,7 @@ pub struct Crypto {
     /// challege position for huks
     challenge_pos: u32,
     /// timeout time, reserved
-    _exp_time: u32,
+    _exp_time: u32, // 最大10min
 }
 
 impl Drop for Crypto {
@@ -173,8 +180,8 @@ impl Crypto {
         }
     }
 
-    /// Exec encrypt or decrypt
-    pub fn exec_crypto(&mut self, msg: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
+    /// Exec encrypt or decrypt，todo：需要判断一下超时时间，返回超时错误码 AuthTokenExpired，需要增加authtoken入参
+    pub fn exec_crypto(&self, msg: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
         // out param
         let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize + NONCE_SIZE as usize];
         // in param
@@ -190,9 +197,9 @@ impl Crypto {
             data_out: cipher.as_mut_ptr(),
             challenge_pos: self.challenge_pos,
             challenge_len: self.challenge.len() as u32,
-            challenge_data: self.challenge.as_mut_ptr(),
+            challenge_data: self.challenge.clone().as_mut_ptr(),
             handle_len: self.handle.len() as u32,
-            handle_data: self.handle.as_mut_ptr(),
+            handle_data: self.handle.clone().as_mut_ptr(),
         };
 
         let ret = unsafe { ExecCryptoWrapper(&data as *const CryptParam) };
@@ -209,7 +216,7 @@ impl Crypto {
     pub fn encrypt(key: &SecretKey, msg: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
         // out param
         let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize]; // todo : zdy 加上nonce的长度
-                                                                           // in param
+        // in param
         let data = CryptParam {
             key_len: key.alias.len() as u32,
             key_data: key.alias.as_ptr(),
@@ -303,7 +310,7 @@ impl CryptoManager {
         match challenge_pos {
             0 | 1 | 2 | 3 => {
                 let index = (challenge_pos * 4) as usize;
-                if challenge[index..(index + 4)] == crypto_challenge[index..(index + 4)] {
+                if challenge[index..(index + 8)] == crypto_challenge[index..(index + 8)] {
                     return Ok(());
                 }
                 loge!("challenge not match");
