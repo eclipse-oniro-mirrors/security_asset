@@ -14,7 +14,7 @@
  */
 
 use asset_sdk::{
-    AssetMap, Tag, Value, ErrCode, Result
+    AssetMap, Tag, Value, ErrCode, Result, ReturnType
 };
 
 pub(crate) fn get_bytes(input: &AssetMap, tag: Tag) -> Result<&Vec<u8>> {
@@ -42,6 +42,23 @@ pub(crate) fn remove_by_alias(alias: &[u8]) -> Result<()> {
     asset_sdk::Manager::build()?.remove(&AssetMap::from([(Tag::Alias, Value::Bytes(alias.to_vec()))]))
 }
 
-pub(crate) fn query_by_alias(alias: &[u8]) -> Result<Vec<AssetMap>> {
-    asset_sdk::Manager::build()?.query(&AssetMap::from([(Tag::Alias, Value::Bytes(alias.to_vec()))]))
+pub(crate) fn query_all_by_alias(alias: &[u8]) -> Result<Vec<AssetMap>> {
+    asset_sdk::Manager::build()?.query(&AssetMap::from([
+        (Tag::Alias, Value::Bytes(alias.to_vec())),
+        (Tag::ReturnType, Value::Number(ReturnType::All as u32)),
+    ]))
+}
+
+pub(crate) fn query_attr_by_alias(alias: &[u8]) -> Result<Vec<AssetMap>> {
+    asset_sdk::Manager::build()?.query(&AssetMap::from([
+        (Tag::Alias, Value::Bytes(alias.to_vec())),
+        (Tag::ReturnType, Value::Number(ReturnType::Attributes as u32)),
+    ]))
+}
+
+pub(crate) fn add_default_asset(alias: &[u8], secret: &[u8]) -> Result<()> {
+    asset_sdk::Manager::build()?.add(&AssetMap::from([
+        (Tag::Alias, Value::Bytes(alias.to_vec())),
+        (Tag::Secret, Value::Bytes(secret.to_vec())),
+    ]))
 }

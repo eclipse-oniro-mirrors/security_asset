@@ -14,10 +14,10 @@
  */
 
 use asset_sdk::{
-    AssetMap, AuthType, ConflictResolution, Insert, Tag, Value, ErrCode,
+    AssetMap, AuthType, ConflictResolution, Insert, Tag, Value, ErrCode
 };
 
-use crate::common::{get_bytes, get_number, remove_by_alias, query_by_alias};
+use crate::common::{get_bytes, get_number, remove_by_alias, query_attr_by_alias};
 
 #[test]
 fn add_values_match_query() {
@@ -34,7 +34,7 @@ fn add_values_match_query() {
 
     let mut query = AssetMap::new();
     query.insert_attr(Tag::Alias, alias.to_owned()).unwrap();
-    let res = query_by_alias(alias).unwrap();
+    let res = query_attr_by_alias(alias).unwrap();
     assert_eq!(1, res.len());
     assert_eq!(data_label, *get_bytes(&res[0], Tag::DataLabelCritical1).unwrap());
     assert_eq!(auth_type as u32, get_number(&res[0], Tag::AuthType).unwrap());
@@ -73,7 +73,7 @@ fn add_conflict_over_write() {
 
     asset_sdk::Manager::build().unwrap().add(&add_over_write).unwrap();
 
-    let res = query_by_alias(alias).unwrap();
+    let res = query_attr_by_alias(alias).unwrap();
     assert_eq!(1, res.len());
     assert!(res[0].get(&Tag::DataLabelNormal1).is_none());
 
@@ -81,7 +81,7 @@ fn add_conflict_over_write() {
     add_over_write.insert_attr(Tag::ConflictResolution, ConflictResolution::Overwrite).unwrap();
 
     asset_sdk::Manager::build().unwrap().add(&add_over_write).unwrap();
-    let res = query_by_alias(alias).unwrap();
+    let res = query_attr_by_alias(alias).unwrap();
     assert_eq!(1, res.len());
     assert_eq!(label_normal_1, *get_bytes(&res[0], Tag::DataLabelNormal1).unwrap());
 

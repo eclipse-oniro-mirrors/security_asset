@@ -75,7 +75,10 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     // call sql to update
     let update_num =
         DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(), &query_db_data, &update_db_data)?;
-
+    if update_num == 0 {
+        loge!("[FATAL]Update asset failed, update 0 asset.");
+        return Err(ErrCode::NotFound);
+    }
     logi!("update {} data", update_num);
     Ok(())
 }

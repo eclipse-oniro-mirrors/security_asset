@@ -19,9 +19,11 @@ use core::panic;
 
 use asset_sdk::{Accessibility, AssetMap, AuthType, ConflictResolution, Insert, ReturnType, SyncType, Tag, Value};
 
-mod add;
 mod common;
+
+mod add;
 mod remove;
+mod update;
 
 fn add_asset_inner(alias: &[u8]) {
     let mut input = AssetMap::new();
