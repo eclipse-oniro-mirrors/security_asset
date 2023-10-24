@@ -38,7 +38,7 @@ pub(crate) fn get_number(input: &AssetMap, tag: Tag) -> Result<u32> {
 //     Err(ErrCode::NotFound)
 // }
 
-pub(crate) fn delete_by_alias(alias: &[u8]) -> Result<()> {
+pub(crate) fn remove_by_alias(alias: &[u8]) -> Result<()> {
     asset_sdk::Manager::build()?.remove(&AssetMap::from([(Tag::Alias, Value::Bytes(alias.to_vec()))]))
 }
 

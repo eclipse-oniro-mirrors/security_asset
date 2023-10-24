@@ -13,12 +13,15 @@
  * limitations under the License.
  */
 
+#![feature(is_some_and)]
+
 use core::panic;
 
 use asset_sdk::{Accessibility, AssetMap, AuthType, ConflictResolution, Insert, ReturnType, SyncType, Tag, Value};
 
 mod add;
 mod common;
+mod remove;
 
 fn add_asset_inner(alias: &[u8]) {
     let mut input = AssetMap::new();
