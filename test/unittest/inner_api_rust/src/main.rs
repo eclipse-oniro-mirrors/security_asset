@@ -70,7 +70,7 @@ fn test_for_add() {
         Err(e) => panic!("test for add failed {}", e),
     }
 
-    // remove_asset_inner(&Vec::from("alias".as_bytes()));
+    remove_asset_inner(&Vec::from("alias".as_bytes()));
 }
 
 #[test]
