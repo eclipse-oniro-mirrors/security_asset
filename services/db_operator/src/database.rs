@@ -92,7 +92,7 @@ pub type UpdateDatabaseCallbackFunc = fn(db: &Database, old_ver: u32, new_ver: u
 /// default callback func for update database
 pub fn default_update_database_func(db: &Database, old_ver: u32, new_ver: u32) -> SqliteErrCode {
     if new_ver > old_ver {
-        // TODO do something
+        // do something
         asset_log::logi!("database {} update from ver {} to {}", db.path, old_ver, new_ver);
         return db.update_version(new_ver as _);
     }

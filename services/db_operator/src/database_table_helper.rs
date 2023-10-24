@@ -119,7 +119,7 @@ fn from_sqlite_code_to_asset_code(value: SqliteErrCode) -> ErrCode {
 }
 
 /// do same operation in backup database when do something in master db
-/// TODO backup every success operation or only when charge idle?
+/// backup every success operation, recovery every fail operation
 fn back_db_when_succ<T, F: Fn(&Table) -> Result<T, SqliteErrCode>>(
     modified: bool,
     table: &Table,
