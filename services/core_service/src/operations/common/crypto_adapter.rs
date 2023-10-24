@@ -15,7 +15,7 @@
 
 //! This module is used to adapt to the crypto manager.
 
-use asset_crypto_manager::crypto::{Crypto, SecretKey};
+use asset_crypto_manager::crypto::{Crypto, CryptoManager, SecretKey, construct_alias};
 use asset_db_operator::{
     database_table_helper::{
         COLUMN_ACCESSIBILITY, COLUMN_ALIAS, COLUMN_AUTH_TYPE, COLUMN_CRITICAL1, COLUMN_CRITICAL2, COLUMN_CRITICAL3,
@@ -134,6 +134,41 @@ pub(crate) fn decrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result
     let secret_key = build_secret_key(calling_info, db_data)?;
     let secret = Crypto::decrypt(&secret_key, secret, &construct_aad(db_data))?; // todo: 待处理HUKS返回值，比如密钥不存在，锁屏状态不正确
     db_data.insert(COLUMN_SECRET, Value::Bytes(secret));
+    if !ipc_rust::set_calling_identity(identity) {
+        loge!("Execute set_calling_identity failed.");
+        return Err(ErrCode::IpcError);
+    }
+    Ok(())
+}
+
+pub(crate) fn exec_crypto(calling_info: &CallingInfo, db_data: &mut DbMap, challenge: &Vec<u8>, _auth_token: &[u8])
+    -> Result<()> {
+    let identity = ipc_rust::reset_calling_identity().map_err(|e| {
+        loge!("Execute reset_calling_identity failed, error is [{}].", e);
+        ErrCode::IpcError
+    })?;
+    let Some(Value::Bytes(ref secret)) = db_data.get(COLUMN_SECRET) else { return Err(ErrCode::InvalidArgument) };
+    let Some(Value::Number(auth_type)) = db_data.get(COLUMN_AUTH_TYPE) else { return Err(ErrCode::InvalidArgument) };
+    let auth_type = AuthType::try_from(*auth_type)?;
+    let Some(Value::Number(access_type)) = db_data.get(COLUMN_ACCESSIBILITY) else { return Err(ErrCode::InvalidArgument) };
+    let access_type = Accessibility::try_from(*access_type)?;
+
+    // todo crypto manager 使用单例
+    let crypto_manager = CryptoManager::new();
+
+    // todo challenge_pos 改用 alias
+    let _alias = construct_alias(
+        calling_info.user_id(), &sha256(calling_info.owner_info()), auth_type, access_type);
+    match crypto_manager.find(0, challenge) {
+        Some(crypto) => {
+            // todo 添加auth_token
+            let secret = crypto.exec_crypto(secret, &construct_aad(db_data))?;
+            loge!("get secret {} success!!!!", String::from_utf8_lossy(&secret));  // todo delete
+            db_data.insert(COLUMN_SECRET, Value::Bytes(secret));
+        },
+        None => return Err(ErrCode::CryptoError)
+    }
+
     if !ipc_rust::set_calling_identity(identity) {
         loge!("Execute set_calling_identity failed.");
         return Err(ErrCode::IpcError);

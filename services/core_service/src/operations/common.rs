@@ -19,7 +19,7 @@ mod argument_check;
 mod crypto_adapter;
 
 pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_value_validity};
-pub(crate) use crypto_adapter::{decrypt, encrypt};
+pub(crate) use crypto_adapter::{decrypt, encrypt, exec_crypto};
 
 use std::time::{SystemTime, UNIX_EPOCH};
 

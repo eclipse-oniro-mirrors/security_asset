@@ -16,7 +16,7 @@
 //! This module prepares for querying Asset that required secondary identity authentication.
 
 use asset_crypto_manager::{
-    crypto::{Crypto, SecretKey},
+    crypto::{Crypto, CryptoManager, SecretKey},
     huks_ffi::{CHALLENGE_LEN, HKS_KEY_PURPOSE_DECRYPT},
 };
 use asset_db_operator::{
@@ -105,8 +105,11 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
         cryptos.push(crypto);
     }
 
-    // todo 在所有crypto都生成challenge之后再往crypto manager中添加cryptos
-
-    logi!("get challenge successful!"); // todo delete
+    // todo crypto manager的获取需要改用单例模式
+    let mut crypto_manager = CryptoManager::new();
+    for crypto in cryptos {
+        crypto_manager.add(crypto)?;
+    }
+    logi!("get challenge successful!");  // todo delete
     Ok(challenge)
 }

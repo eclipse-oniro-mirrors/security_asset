@@ -16,10 +16,10 @@
 //! This module is used to query the Asset, including single and batch query.
 
 use asset_db_operator::{
-    database_table_helper::{DefaultDatabaseHelper, COLUMN_SECRET},
+    database_table_helper::{DefaultDatabaseHelper, COLUMN_AUTH_TYPE, COLUMN_SECRET},
     types::{DbMap, QueryOptions},
 };
-use asset_definition::{AssetMap, ErrCode, Result, ReturnType, Tag, Value};
+use asset_definition::{AssetMap, AuthType, ErrCode, Result, ReturnType, Tag, Value};
 use asset_log::{loge, logi};
 
 use crate::{calling_info::CallingInfo, operations::common};
@@ -34,7 +34,7 @@ fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
     Ok(map_set)
 }
 
-fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<Vec<AssetMap>> {
+fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) -> Result<Vec<AssetMap>> {
     let mut results =
         DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(), &vec![], db_data, None)?;
     logi!("results len {}", results.len());
@@ -44,12 +44,21 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<Vec<Asse
             Err(ErrCode::NotFound)
         },
         1 => {
-            // 1. 查询结果中authType是否为any, 不是直接decrypt
-            // 2. 二次访问控制流程：判断入参是否有challenge和authToken, 没有报错
-            // 3.                 crypto manager 查询指定challenge、密钥别名的crypto
-            // 4.                 调用crypto的exec_crypt接口
-            common::decrypt(calling_info, &mut results[0])?;
-            into_asset_maps(&results)
+            match results[0].get(COLUMN_AUTH_TYPE) {
+                Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
+                    let Some(Value::Bytes(ref challenge)) =
+                        query.get(&Tag::AuthChallenge) else { return Err(ErrCode::InvalidArgument) };
+                    let Some(Value::Bytes(ref auth_token)) =
+                        query.get(&Tag::AuthToken) else { return Err(ErrCode::InvalidArgument) };
+                    common::exec_crypto(calling_info, &mut results[0], challenge, auth_token)?;
+                    loge!("enter secdond query 4");  // todo delete
+                    into_asset_maps(&results)
+                },
+                _ => {
+                    common::decrypt(calling_info, &mut results[0])?;
+                    into_asset_maps(&results)
+                },
+            }
         },
         n => {
             loge!("[FATAL]The database contains {} records with the specified alias.", n);
@@ -123,7 +132,7 @@ pub(crate) fn query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<
                 loge!("[FATAL]Batch secret query is not supported.");
                 Err(ErrCode::NotSupport)
             } else {
-                query_all(calling_info, &mut db_data)
+                query_all(calling_info, &mut db_data, query)
             }
         },
         _ => query_attrs(calling_info, &db_data, query),

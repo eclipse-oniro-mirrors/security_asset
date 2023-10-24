@@ -44,7 +44,7 @@ macro_rules! impl_enum_trait {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
                     _ => {
-                        asset_log::loge!("Convert u32 [{}] failed.", v);
+                        asset_log::loge!("[FATAL]Convert u32 [{}] failed.", v);
                         Err($crate::ErrCode::InvalidArgument)
                     }
                 }
