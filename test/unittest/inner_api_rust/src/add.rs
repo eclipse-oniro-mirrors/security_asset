@@ -13,11 +13,9 @@
  * limitations under the License.
  */
 
-use asset_sdk::{
-    AssetMap, AuthType, ConflictResolution, Insert, Tag, Value, ErrCode
-};
+use asset_sdk::{AssetMap, AuthType, ConflictResolution, ErrCode, Insert, Tag, Value};
 
-use crate::common::{get_bytes, get_number, remove_by_alias, query_attr_by_alias};
+use crate::common::{get_bytes, get_number, query_attr_by_alias, remove_by_alias};
 
 #[test]
 fn add_values_match_query() {
@@ -47,10 +45,8 @@ fn add_conflict_throw_error() {
     let alias = "add_conflict_throw_error".as_bytes();
     let secret = "add_conflict_throw_error_secret".as_bytes();
 
-    let mut add_throw_error = AssetMap::from([
-        (Tag::Alias, Value::Bytes(alias.to_owned())),
-        (Tag::Secret, Value::Bytes(secret.to_owned())),
-    ]);
+    let mut add_throw_error =
+        AssetMap::from([(Tag::Alias, Value::Bytes(alias.to_owned())), (Tag::Secret, Value::Bytes(secret.to_owned()))]);
     asset_sdk::Manager::build().unwrap().add(&add_throw_error).unwrap();
 
     assert_eq!(Err(ErrCode::Duplicated), asset_sdk::Manager::build().unwrap().add(&add_throw_error));

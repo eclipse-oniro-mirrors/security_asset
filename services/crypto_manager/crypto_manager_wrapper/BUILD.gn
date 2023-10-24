@@ -16,17 +16,12 @@ import("//build/ohos.gni")
 COMPONENT_DIR = "//base/security/asset"
 
 ohos_static_library("crypto_manager_wrapper") {
+  include_dirs = [ "inc" ]
   sources = [
     "src/crypto_wrapper.cpp",
     "src/hks_key_wrapper.cpp",
   ]
-
-  include_dirs = [ "inc" ]
-
-  deps = [
-    "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem",
-    "//third_party/bounds_checking_function:libsec_shared",
-  ]
+  deps = [ "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem" ]
 
   external_deps = [
     "hilog:libhilog",

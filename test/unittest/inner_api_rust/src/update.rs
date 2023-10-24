@@ -15,11 +15,9 @@
 
 use core::panic;
 
-use asset_sdk::{
-    AssetMap, Tag, Value, Insert
-};
+use asset_sdk::{AssetMap, Insert, Tag, Value};
 
-use crate::common::{remove_by_alias, query_all_by_alias, add_default_asset, query_attr_by_alias};
+use crate::common::{add_default_asset, query_all_by_alias, query_attr_by_alias, remove_by_alias};
 
 #[test]
 fn update_same_secret() {

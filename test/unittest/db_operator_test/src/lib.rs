@@ -23,8 +23,7 @@ use asset_db_operator::{
     database::*,
     database_table_helper::{do_transaction, DefaultDatabaseHelper, ASSET_TABLE_NAME, COLUMN_ALIAS, COLUMN_OWNER},
     statement::Statement,
-    types::{from_data_value_to_str_value, ColumnInfo, DbMap, QueryOptions},
-    SQLITE_DONE, SQLITE_OK, SQLITE_OPEN_CREATE, SQLITE_OPEN_READWRITE, SQLITE_ROW,
+    types::{from_data_value_to_str_value, ColumnInfo, DbMap, QueryOptions, SQLITE_DONE, SQLITE_OK, SQLITE_ROW},
 };
 use asset_definition::{DataType, Value};
 
@@ -46,32 +45,6 @@ pub fn test_for_sqlite3_open() {
         },
     };
     let _ = fs::create_dir("db");
-
-    let _ = match Database::new_v2("db/test.db", SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE, None) {
-        Ok(o) => o,
-        Err(ret) => {
-            panic!("test sqlite3 open fail ret {}", ret);
-        },
-    };
-}
-
-#[test]
-pub fn test_for_sqlite3_v2_open() {
-    let _ = match Database::new_v2("test_v2.db", SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE, None) {
-        Ok(o) => o,
-        Err(ret) => {
-            panic!("test sqlite3 open fail ret {}", ret);
-        },
-    };
-
-    match Database::new_v2("/root/test_v2.db", SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE, Some(b"unix-dotfile")) {
-        Ok(_) => {
-            panic!("read root");
-        },
-        Err(ret) => {
-            println!("expected fault {}", ret);
-        },
-    };
 }
 
 #[test]
@@ -1004,8 +977,8 @@ pub fn test_for_update_ver() {
     assert!(db4.is_err());
 }
 
-pub fn test_for_default_asset(userid: i32) {
-    // let _ = Database::drop_default_database(userid);
+pub fn test_for_default_asset(user_id: i32) {
+    // let _ = Database::drop_default_database(user_id);
     let mut def = DbMap::from([
         ("Secret", Value::Bytes(b"blob".to_vec())),
         ("OwnerType", Value::Number(1)),
@@ -1021,17 +994,17 @@ pub fn test_for_default_asset(userid: i32) {
         (COLUMN_ALIAS, Value::Bytes(b"Alias1".to_vec())),
     ]);
 
-    let count = DefaultDatabaseHelper::insert_datas_default_once(userid, &def).unwrap();
+    let count = DefaultDatabaseHelper::insert_datas_default_once(user_id, &def).unwrap();
     assert_eq!(count, 1);
 
     def.remove(COLUMN_ALIAS);
     def.insert(COLUMN_ALIAS, Value::Bytes(b"Alias2".to_vec()));
 
-    let count = DefaultDatabaseHelper::insert_datas_default_once(userid, &def).unwrap();
+    let count = DefaultDatabaseHelper::insert_datas_default_once(user_id, &def).unwrap();
     assert_eq!(count, 1);
 
     let count = DefaultDatabaseHelper::update_datas_default_once(
-        userid,
+        user_id,
         &DbMap::from([("Owner", Value::Bytes(b"owner1".to_vec())), ("Alias", Value::Bytes(b"Alias1".to_vec()))]),
         &DbMap::from([("UpdateTime", Value::Number(1))]),
     )
@@ -1039,13 +1012,13 @@ pub fn test_for_default_asset(userid: i32) {
     assert!(count >= 0);
 
     let _count = DefaultDatabaseHelper::select_count_default_once(
-        userid,
+        user_id,
         &DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner1".to_vec()))]),
     )
     .unwrap();
 
     let _ret = DefaultDatabaseHelper::is_data_exists_default_once(
-        userid,
+        user_id,
         &DbMap::from([
             (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
             (COLUMN_ALIAS, Value::Bytes(b"Alias2".to_vec())),
@@ -1054,7 +1027,7 @@ pub fn test_for_default_asset(userid: i32) {
     .unwrap();
 
     let count = DefaultDatabaseHelper::delete_datas_default_once(
-        userid,
+        user_id,
         &DbMap::from([
             (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
             (COLUMN_ALIAS, Value::Bytes(b"Alias1".to_vec())),
@@ -1071,7 +1044,7 @@ pub fn test_for_default_asset(userid: i32) {
     };
 
     let result = DefaultDatabaseHelper::query_datas_default_once(
-        userid,
+        user_id,
         &DbMap::from([
             (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
             (COLUMN_ALIAS, Value::Bytes(b"Alias2".to_vec())),
@@ -1088,7 +1061,7 @@ pub fn test_for_default_asset(userid: i32) {
     }
 
     let result = DefaultDatabaseHelper::query_columns_default_once(
-        userid,
+        user_id,
         &vec!["Id", "Alias"],
         &DbMap::from([
             (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
@@ -1103,7 +1076,7 @@ pub fn test_for_default_asset(userid: i32) {
         }
         println!();
     }
-    // let db = DefaultDatabaseHelper::open_default_database_table(userid).unwrap();
+    // let db = DefaultDatabaseHelper::open_default_database_table(user_id).unwrap();
     // let _ = db.drop_database_and_backup();
 }
 

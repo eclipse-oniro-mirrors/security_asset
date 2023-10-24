@@ -63,7 +63,6 @@ ohos_rust_shared_ffi("asset_sdk_ffi") {
     "$COMPONENT_DIR/frameworks/os_dependency/log:asset_log",
     "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem",
     "$COMPONENT_DIR/interfaces/inner_api/rs:asset_sdk",
-    "//third_party/rust/crates/libc:lib",
   ]
   crate_name = "asset_sdk_ffi"
   subsystem_name = "security"

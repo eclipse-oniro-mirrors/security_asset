@@ -18,19 +18,23 @@
 //! the data can be from user input, we will prepare and bind data.
 //! table is auto drop by RAII
 
+use core::ffi::c_void;
 use std::cmp::Ordering;
 
 use crate::{
     database::Database,
-    sqlite3_changes_func,
     statement::Statement,
     types::{
         from_data_type_to_str, from_data_value_to_str_value, ColumnInfo, Condition, DbMap, QueryOptions, ResultSet,
+        SqliteErrCode, SQLITE_DONE, SQLITE_ERROR, SQLITE_OK, SQLITE_ROW,
     },
-    SqliteErrCode, SQLITE_DONE, SQLITE_ERROR, SQLITE_OK, SQLITE_ROW,
 };
 
 use asset_definition::{DataType, Value};
+
+extern "C" {
+    fn SqliteChanges(db: *mut c_void) -> i32;
+}
 
 /// a database table
 #[repr(C)]
@@ -206,7 +210,7 @@ impl<'a> Table<'a> {
         if ret != SQLITE_DONE {
             return Err(ret);
         }
-        let count = sqlite3_changes_func(self.db.handle);
+        let count = unsafe { SqliteChanges(self.db.handle as _) };
         Ok(count)
     }
 
@@ -240,7 +244,7 @@ impl<'a> Table<'a> {
         if ret != SQLITE_DONE {
             return Err(ret);
         }
-        let count = sqlite3_changes_func(self.db.handle);
+        let count = unsafe { SqliteChanges(self.db.handle as _) };
         Ok(count)
     }
 
@@ -269,7 +273,7 @@ impl<'a> Table<'a> {
         if ret != SQLITE_DONE {
             return Err(ret);
         }
-        let count = sqlite3_changes_func(self.db.handle);
+        let count = unsafe { SqliteChanges(self.db.handle as _) };
         Ok(count)
     }
 
@@ -291,7 +295,7 @@ impl<'a> Table<'a> {
         if ret != SQLITE_DONE {
             return Err(ret);
         }
-        let count = sqlite3_changes_func(self.db.handle);
+        let count = unsafe { SqliteChanges(self.db.handle as _) };
         Ok(count)
     }
 

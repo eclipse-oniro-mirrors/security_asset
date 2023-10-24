@@ -15,6 +15,7 @@
 
 //! This module implements the function of Asset SDK from C to RUST.
 
+use core::ffi::c_void;
 use std::{
     convert::TryFrom,
     mem::{size_of, ManuallyDrop},
@@ -27,7 +28,7 @@ use asset_sdk::{AssetMap, DataType, ErrCode, IntoValue, Manager, Tag, Value, Ver
 
 const RESULT_CODE_SUCCESS: i32 = 0;
 extern "C" {
-    fn AssetMalloc(size: u32) -> *mut ::libc::c_void;
+    fn AssetMalloc(size: u32) -> *mut c_void;
 }
 
 fn into_map(attributes: *const Asset_Attr, attr_cnt: u32) -> Option<AssetMap> {

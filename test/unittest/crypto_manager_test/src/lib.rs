@@ -154,7 +154,6 @@ fn test_hukkey_decrypt() {
     let _ = secret_key.delete();
 }
 
-
 /*
 #[test]
 fn test_crypto_init() {

@@ -17,38 +17,58 @@
 //! each user have a db, each db have a db file and a lock, the lock is mutex
 //! db link is auto drop by RAII
 
+use core::ffi::c_void;
 use std::{ffi::CStr, fs, path::Path, ptr::null_mut, sync::Mutex};
 
-use super::*;
 use crate::{
     statement::Statement,
     table::Table,
-    types::{from_data_type_to_str, ColumnInfo, Sqlite3ErrMsg},
+    types::{
+        from_data_type_to_str, ColumnInfo, Sqlite3Callback, Sqlite3ErrMsg, SqliteErrCode, SQLITE_DONE, SQLITE_ERROR,
+        SQLITE_OK, SQLITE_ROW,
+    },
 };
 
+extern "C" {
+    fn SqliteOpen(file_name: *const u8, pp_db: *mut *mut c_void) -> i32;
+    fn SqliteCloseV2(db: *mut c_void) -> i32;
+    fn SqliteExec(
+        db: *mut c_void,
+        sql: *const u8,
+        callback: Option<Sqlite3Callback>,
+        data: *mut c_void,
+        msg: *mut *mut u8,
+    ) -> i32;
+    fn SqliteFree(data: *mut c_void);
+    fn SqliteErrMsg(db: *mut c_void) -> *const u8;
+}
+
+const SQLITE_CORRUPT: i32 = 11;
+const SQLITE_NOTADB: i32 = 26;
+
 /// each user have a Database file
-pub struct UseridFileLock {
-    /// userid
-    pub(crate) userid: i32,
+pub struct UserIdFileLock {
+    /// user_id
+    pub(crate) user_id: i32,
     /// file lock
     pub(crate) mtx: Mutex<i32>,
 }
 
-/// save all the userid file locks
-static G_USER_DB_LOCK_LIST: Mutex<Vec<&'static UseridFileLock>> = Mutex::new(Vec::new());
+/// save all the user_id file locks
+static G_USER_DB_LOCK_LIST: Mutex<Vec<&'static UserIdFileLock>> = Mutex::new(Vec::new());
 
-/// if userid exists, return reference, or create a new lock, insert into list and return reference
-fn get_file_lock_by_userid(userid: i32) -> &'static UseridFileLock {
+/// if user_id exists, return reference, or create a new lock, insert into list and return reference
+fn get_file_lock_by_user_id(user_id: i32) -> &'static UserIdFileLock {
     let mut list = G_USER_DB_LOCK_LIST.lock().unwrap();
     for f in list.iter() {
-        if f.userid == userid {
+        if f.user_id == user_id {
             return f;
         }
     }
-    let nf = Box::new(UseridFileLock { userid, mtx: Mutex::new(userid) });
+    let nf = Box::new(UserIdFileLock { user_id, mtx: Mutex::new(user_id) });
     // SAFETY: We just push item into G_USER_FILE_LOCK_LIST, never remove item or modify item,
     // so return a reference of leak item is safe.
-    let nf: &'static UseridFileLock = Box::leak(nf);
+    let nf: &'static UserIdFileLock = Box::leak(nf);
     list.push(nf);
     list[list.len() - 1]
 }
@@ -60,16 +80,10 @@ pub struct Database<'a> {
     pub(crate) path: String,
     /// database file string
     pub(crate) back_path: String,
-    /// is opened with sqlite3_open_v2
-    pub(crate) v2: bool,
-    /// open flags
-    pub(crate) flags: i32,
-    /// vfs
-    pub(crate) vfs: Option<&'a [u8]>,
     /// raw pointer
     pub(crate) handle: usize,
     /// db file
-    pub(crate) file: &'a UseridFileLock,
+    pub(crate) file: &'a UserIdFileLock,
 }
 
 /// update func callback
@@ -91,8 +105,8 @@ pub fn default_update_database_func(db: &Database, old_ver: u32, new_ver: u32) -
 
 /// format database path
 #[inline(always)]
-fn fmt_db_path(userid: i32) -> String {
-    format!("/data/service/el1/public/asset_service/{}/asset.db", userid)
+fn fmt_db_path(user_id: i32) -> String {
+    format!("/data/service/el1/public/asset_service/{}/asset.db", user_id)
 }
 
 /// get backup path
@@ -123,12 +137,8 @@ pub fn copy_db_file(db: &Database, master_or_backup: bool) -> Result<u64, std::i
 
 /// wrap sqlite open
 #[inline(always)]
-fn sqlite3_open_wrap(file: &str, handle: &mut usize, flag: i32, vfs: Option<&[u8]>, v2: bool) -> SqliteErrCode {
-    if v2 {
-        sqlite3_open_v2_func(file, handle, flag, vfs)
-    } else {
-        sqlite3_open_func(file, handle)
-    }
+fn sqlite3_open_wrap(file: &str, handle: &mut usize) -> SqliteErrCode {
+    unsafe { SqliteOpen(file.as_ptr(), handle as *mut usize as _) }
 }
 
 /// is corrupt
@@ -138,24 +148,18 @@ pub fn is_db_corrupt(ret: SqliteErrCode) -> bool {
 }
 
 /// open db, will recovery wrong db file
-fn open_db(
-    db: &mut Database,
-    path: String,
-    back_path: String,
-    flag: i32,
-    vfs: Option<&[u8]>,
-) -> Result<(), SqliteErrCode> {
+fn open_db(db: &mut Database, path: String, back_path: String) -> Result<(), SqliteErrCode> {
     let _lock = db.file.mtx.lock().unwrap();
-    let mut ret = sqlite3_open_wrap(&path, &mut db.handle, flag, vfs, db.v2);
+    let mut ret = sqlite3_open_wrap(&path, &mut db.handle);
     if is_db_corrupt(ret) {
         // recovery master db
         let mut back_handle = 0usize;
-        let back_ret = sqlite3_open_wrap(&back_path, &mut back_handle, flag, vfs, db.v2);
+        let back_ret = sqlite3_open_wrap(&back_path, &mut back_handle);
         if back_ret != SQLITE_OK {
             asset_log::loge!("both master backup db fail: {} {} {}", path, ret, back_ret);
             return Err(ret);
         }
-        let close_ret = sqlite3_close_wrap(db.v2, back_handle);
+        let close_ret = sqlite3_close_wrap(back_handle);
         if close_ret != SQLITE_OK {
             asset_log::loge!("close back fail {}", close_ret);
         }
@@ -165,7 +169,7 @@ fn open_db(
             return Err(ret);
         }
         asset_log::logi!("recovery master db {} succ", path);
-        ret = sqlite3_open_wrap(&path, &mut db.handle, flag, vfs, db.v2);
+        ret = sqlite3_open_wrap(&path, &mut db.handle);
         if ret != SQLITE_OK {
             asset_log::loge!("reopen master db {} fail {}", path, ret);
             return Err(ret);
@@ -186,7 +190,7 @@ impl<'a> Database<'a> {
         }
         let mut path_c = self.path.clone();
         path_c.push('\0');
-        let ret = sqlite3_open_wrap(&path_c, &mut self.handle, self.flags, self.vfs, self.v2);
+        let ret = sqlite3_open_wrap(&path_c, &mut self.handle);
         if ret != SQLITE_OK {
             asset_log::loge!("re open handle {} fail {}", self.path, ret);
             return Err(ret);
@@ -203,35 +207,29 @@ impl<'a> Database<'a> {
             // user - mutex
             path: path_c.clone(),
             back_path: back_path_c.clone(),
-            v2: false,
-            flags: 0,
-            vfs: None,
             handle: 0,
-            file: get_file_lock_by_userid(i32::MAX),
+            file: get_file_lock_by_user_id(i32::MAX),
         };
         path_c.push('\0');
         back_path_c.push('\0');
-        open_db(&mut db, path_c, back_path_c, 0, None)?;
+        open_db(&mut db, path_c, back_path_c)?;
         Ok(db)
     }
 
     /// create default database
-    pub fn default_new(userid: i32) -> Result<Database<'a>, SqliteErrCode> {
-        let path = fmt_db_path(userid);
+    pub fn default_new(user_id: i32) -> Result<Database<'a>, SqliteErrCode> {
+        let path = fmt_db_path(user_id);
         let mut path_c = path.clone();
         let mut back_path_c = fmt_backup_path(path.as_str());
         let mut db = Database {
             path: path_c.clone(),
             back_path: back_path_c.clone(),
-            v2: false,
-            flags: 0,
-            vfs: None,
             handle: 0,
-            file: get_file_lock_by_userid(userid),
+            file: get_file_lock_by_user_id(user_id),
         };
         path_c.push('\0');
         back_path_c.push('\0');
-        open_db(&mut db, path_c, back_path_c, 0, None)?;
+        open_db(&mut db, path_c, back_path_c)?;
         Ok(db)
     }
 
@@ -269,11 +267,11 @@ impl<'a> Database<'a> {
 
     /// open database with version update callback
     pub fn default_new_with_version_update(
-        userid: i32,
+        user_id: i32,
         ver: u32,
         callback: UpdateDatabaseCallbackFunc,
     ) -> Result<Database<'a>, SqliteErrCode> {
-        let db = Database::default_new(userid)?;
+        let db = Database::default_new(user_id)?;
         let version_old = db.get_version()?;
         #[cfg(test)]
         {
@@ -284,26 +282,6 @@ impl<'a> Database<'a> {
             return Err(ret);
         }
 
-        Ok(db)
-    }
-
-    /// open database file
-    /// use sqlite3_open_v2 instead of sqlite3_open
-    pub fn new_v2(path: &str, flags: i32, vfs: Option<&'a [u8]>) -> Result<Database<'a>, SqliteErrCode> {
-        let mut path_c = path.to_string();
-        let mut back_path_c = fmt_backup_path(path);
-        let mut db = Database {
-            path: path_c.clone(),
-            back_path: back_path_c.clone(),
-            v2: true,
-            flags,
-            vfs,
-            handle: 0,
-            file: get_file_lock_by_userid(i32::MAX),
-        };
-        path_c.push('\0');
-        back_path_c.push('\0');
-        open_db(&mut db, path_c, back_path_c, flags, vfs)?;
         Ok(db)
     }
 
@@ -329,14 +307,14 @@ impl<'a> Database<'a> {
     }
 
     /// delete default database
-    pub fn drop_default_database(userid: i32) -> std::io::Result<()> {
-        let path = fmt_db_path(userid);
+    pub fn drop_default_database(user_id: i32) -> std::io::Result<()> {
+        let path = fmt_db_path(user_id);
         Database::drop_database(path.as_str())
     }
 
     /// delete default database and backup db
-    pub fn drop_default_database_and_backup(userid: i32) -> std::io::Result<()> {
-        let path = fmt_db_path(userid);
+    pub fn drop_default_database_and_backup(user_id: i32) -> std::io::Result<()> {
+        let path = fmt_db_path(user_id);
         let back_path = fmt_backup_path(path.as_str());
         let ret = Database::drop_database(path.as_str());
         let back_ret = Database::drop_database(back_path.as_str());
@@ -348,7 +326,7 @@ impl<'a> Database<'a> {
     /// return None if no error.
     /// You do NOT need to free err msg, it's auto freed.
     pub fn get_err_msg(&self) -> Option<Sqlite3ErrMsg> {
-        let msg = sqlite3_err_msg_func(self.handle);
+        let msg = unsafe { SqliteErrMsg(self.handle as _) };
         if !msg.is_null() {
             let s = unsafe { CStr::from_ptr(msg as _) };
             let se = Sqlite3ErrMsg { s: s.to_str().unwrap(), db: self };
@@ -369,11 +347,11 @@ impl<'a> Database<'a> {
     /// callback function for process result set.
     /// the final param data will be passed into callback function.
     pub fn exec(&self, stmt: &Statement<false>, callback: Option<Sqlite3Callback>, data: usize) -> SqliteErrCode {
-        let mut msg = null_mut();
-        let ret = sqlite3_exec_func(self.handle, &stmt.sql, callback, data, &mut msg);
+        let mut msg: *mut u8 = null_mut();
+        let ret = unsafe { SqliteExec(self.handle as _, stmt.sql.as_ptr(), callback, data as _, &mut msg as _) };
         if !msg.is_null() {
             self.print_err_msg(msg);
-            sqlite3_free_func(msg as _);
+            unsafe { SqliteFree(msg as _) };
             return SQLITE_ERROR;
         }
         ret
@@ -483,18 +461,14 @@ impl<'a> Database<'a> {
 }
 
 /// wrap close func
-pub(crate) fn sqlite3_close_wrap(v2: bool, handle: usize) -> SqliteErrCode {
-    if v2 {
-        sqlite3_close_v2_func(handle)
-    } else {
-        sqlite3_close_func(handle)
-    }
+pub(crate) fn sqlite3_close_wrap(handle: usize) -> SqliteErrCode {
+    unsafe { SqliteCloseV2(handle as _) }
 }
 
 impl<'a> Drop for Database<'a> {
     fn drop(&mut self) {
         if self.handle != 0 {
-            let ret = sqlite3_close_wrap(self.v2, self.handle);
+            let ret = sqlite3_close_wrap(self.handle);
             if ret != SQLITE_OK {
                 asset_log::loge!("close db fail ret {}", ret);
             }

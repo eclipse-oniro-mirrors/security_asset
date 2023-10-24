@@ -19,9 +19,6 @@
 pub mod database;
 #[path = "database_table_helper.rs"]
 pub mod database_table_helper;
-#[allow(non_snake_case, non_camel_case_types)]
-#[path = "sqlite3_ffi.rs"]
-mod sqlite3_ffi;
 #[path = "statement.rs"]
 pub mod statement;
 #[path = "table.rs"]
@@ -30,4 +27,3 @@ pub mod table;
 pub mod transaction;
 #[path = "types.rs"]
 pub mod types;
-pub use sqlite3_ffi::*;

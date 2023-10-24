@@ -16,8 +16,11 @@
 //! for db transaction, support closure.
 //! transaction is auto rollback if not commit by RAII.
 
-use super::*;
-use crate::{database::Database, statement::Statement};
+use crate::{
+    database::Database,
+    statement::Statement,
+    types::{SqliteErrCode, SQLITE_ERROR, SQLITE_OK},
+};
 
 /// Transaction for sqlite db
 #[repr(C)]

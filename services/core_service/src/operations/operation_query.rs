@@ -51,7 +51,7 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
                     let Some(Value::Bytes(ref auth_token)) =
                         query.get(&Tag::AuthToken) else { return Err(ErrCode::InvalidArgument) };
                     common::exec_crypto(calling_info, &mut results[0], challenge, auth_token)?;
-                    loge!("enter secdond query 4");  // todo delete
+                    loge!("enter secdond query 4"); // todo delete
                     into_asset_maps(&results)
                 },
                 _ => {

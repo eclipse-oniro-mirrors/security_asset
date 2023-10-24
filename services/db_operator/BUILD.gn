@@ -20,20 +20,26 @@ ohos_rust_static_library("asset_db_operator") {
     "src/database.rs",
     "src/database_table_helper.rs",
     "src/lib.rs",
-    "src/sqlite3_ffi.rs",
     "src/statement.rs",
     "src/table.rs",
     "src/transaction.rs",
     "src/types.rs",
   ]
   deps = [
+    ":asset_sqlite3_wrapper",
     "$COMPONENT_DIR/frameworks/definition:asset_definition",
     "$COMPONENT_DIR/frameworks/os_dependency/log:asset_log",
-    "//third_party/sqlite:sqlite",
   ]
 
   crate_name = "asset_db_operator"
   crate_type = "rlib"
+  subsystem_name = "security"
+  part_name = "asset"
+}
+
+ohos_static_library("asset_sqlite3_wrapper") {
+  sources = [ "src/sqlite3_wrapper.c" ]
+  deps = [ "//third_party/sqlite:sqlite" ]
   subsystem_name = "security"
   part_name = "asset"
 }

@@ -16,6 +16,7 @@
 //! sqlite statement impl, support two types of statement: exec and prepare
 //! statement is auto drop by RAII
 
+use core::ffi::c_void;
 use std::ffi::CStr;
 use std::fmt::Write;
 
@@ -23,12 +24,37 @@ use asset_definition::{DataType, Value};
 use asset_log::loge;
 
 use crate::{
-    database::Database, sqlite3_bind_blob_func, sqlite3_bind_int64_func, sqlite3_column_blob_func,
-    sqlite3_column_bytes_func, sqlite3_column_count_func, sqlite3_column_double_func, sqlite3_column_int64_func,
-    sqlite3_column_name_func, sqlite3_column_text_func, sqlite3_column_type_func, sqlite3_data_count_func,
-    sqlite3_finalize_func, sqlite3_prepare_v2_func, sqlite3_reset_func, sqlite3_step_func, Sqlite3Callback,
-    SqliteErrCode, SQLITE_BLOB, SQLITE_ERROR, SQLITE_INTEGER, SQLITE_NULL, SQLITE_OK,
+    database::Database,
+    types::{Sqlite3Callback, SqliteErrCode, SQLITE_ERROR, SQLITE_OK},
 };
+
+type BindCallback = extern "C" fn(p: *mut c_void);
+extern "C" {
+    fn SqliteFinalize(stmt: *mut c_void) -> i32;
+    fn SqlitePrepareV2(
+        db: *mut c_void,
+        z_sql: *const u8,
+        n_byte: i32,
+        pp_stmt: *mut *mut c_void,
+        pz_tail: *mut *mut u8,
+    ) -> i32;
+    fn SqliteBindBlob(stmt: *mut c_void, index: i32, blob: *const u8, n: i32, callback: Option<BindCallback>) -> i32;
+    fn SqliteBindInt64(stmt: *mut c_void, index: i32, value: i64) -> i32;
+    fn SqliteStep(stmt: *mut c_void) -> i32;
+    fn SqliteColumnCount(stmt: *mut c_void) -> i32;
+    fn SqliteColumnName(stmt: *mut c_void, n: i32) -> *const u8;
+    fn SqliteDataCount(stmt: *mut c_void) -> i32;
+    fn SqliteColumnBlob(stmt: *mut c_void, i_col: i32) -> *const u8;
+    fn SqliteColumnInt64(stmt: *mut c_void, i_col: i32) -> i64;
+    fn SqliteColumnText(stmt: *mut c_void, i_col: i32) -> *const u8;
+    fn SqliteColumnBytes(stmt: *mut c_void, i_col: i32) -> i32;
+    fn SqliteColumnType(stmt: *mut c_void, i_col: i32) -> i32;
+    fn SqliteReset(stmt: *mut c_void) -> i32;
+}
+
+const SQLITE_INTEGER: i32 = 1;
+const SQLITE_BLOB: i32 = 4;
+const SQLITE_NULL: i32 = 5;
 
 /// sql statement
 #[repr(C)]
@@ -61,7 +87,7 @@ impl<'b> Statement<'b, true> {
     /// wrap for sqlite3_step,
     /// if step succ, will return SQLITE_DONE for update,insert,delete or SQLITE_ROW for select
     pub fn step(&self) -> SqliteErrCode {
-        sqlite3_step_func(self.handle)
+        unsafe { SqliteStep(self.handle as _) }
     }
 
     /// prepare a sql, you can use '?' for datas and bind datas later
@@ -70,7 +96,15 @@ impl<'b> Statement<'b, true> {
         let mut sql_s = sql.to_string();
         sql_s.push('\0');
         let mut stmt = Statement { sql: sql_s, db, handle: 0 };
-        let ret = sqlite3_prepare_v2_func(db.handle, &stmt.sql, -1, &mut stmt.handle, &mut tail);
+        let ret = unsafe {
+            SqlitePrepareV2(
+                db.handle as _,
+                stmt.sql.as_ptr(),
+                -1,
+                &mut stmt.handle as *mut usize as _,
+                &mut tail as *mut usize as _,
+            )
+        };
         if ret == 0 {
             Ok(stmt)
         } else {
@@ -94,32 +128,32 @@ impl<'b> Statement<'b, true> {
         match data {
             Value::Bytes(b) => {
                 Self::print_vec(index, b);
-                sqlite3_bind_blob_func(self.handle, index, b, b.len() as _, None)
+                unsafe { SqliteBindBlob(self.handle as _, index, b.as_ptr(), b.len() as _, None) }
             },
             Value::Number(i) => {
                 loge!("[YZT] index = {}, bind integer = {}", index, i);
-                sqlite3_bind_int64_func(self.handle, index, *i as _)
+                unsafe { SqliteBindInt64(self.handle as _, index, *i as _) }
             },
             Value::Bool(b) => {
                 loge!("[YZT] index = {}, bind bool = {}", index, b);
-                sqlite3_bind_int64_func(self.handle, index, *b as _)
+                unsafe { SqliteBindInt64(self.handle as _, index, *b as _) }
             },
         }
     }
 
     /// you should reset statement before bind data for insert statement
     pub fn reset(&self) -> SqliteErrCode {
-        sqlite3_reset_func(self.handle)
+        unsafe { SqliteReset(self.handle as _) }
     }
 
     /// get column count for select statement
     pub fn column_count(&self) -> i32 {
-        sqlite3_column_count_func(self.handle)
+        unsafe { SqliteColumnCount(self.handle as _) }
     }
 
     /// return the column name
     pub fn query_column_name(&self, n: i32) -> Result<&str, SqliteErrCode> {
-        let s = sqlite3_column_name_func(self.handle, n);
+        let s = unsafe { SqliteColumnName(self.handle as _, n) };
         if !s.is_null() {
             let name = unsafe { CStr::from_ptr(s as _) };
             return Ok(name.to_str().unwrap());
@@ -129,7 +163,7 @@ impl<'b> Statement<'b, true> {
 
     /// data count
     pub fn data_count(&self) -> i32 {
-        sqlite3_data_count_func(self.handle)
+        unsafe { SqliteDataCount(self.handle as _) }
     }
 
     /// query column datas in result set
@@ -172,27 +206,21 @@ impl<'b> Statement<'b, true> {
     /// query column datas in result set for blob data
     /// the index is start with 0
     pub fn query_column_blob(&self, index: i32) -> &'b [u8] {
-        let blob = sqlite3_column_blob_func(self.handle, index);
+        let blob = unsafe { SqliteColumnBlob(self.handle as _, index) };
         let len = self.column_bytes(index);
         unsafe { core::slice::from_raw_parts(blob, len as _) }
-    }
-
-    /// query column datas in result set for double data
-    /// the index is start with 0
-    pub fn query_column_double(&self, index: i32) -> f64 {
-        sqlite3_column_double_func(self.handle, index)
     }
 
     /// query column datas in result set for int data
     /// the index is start with 0
     pub fn query_column_int(&self, index: i32) -> u32 {
-        sqlite3_column_int64_func(self.handle, index) as u32
+        unsafe { SqliteColumnInt64(self.handle as _, index) as u32 }
     }
 
     /// query column datas in result set for text data
     /// the index is start with 0
     pub fn query_column_text(&self, index: i32) -> &'b [u8] {
-        let text = sqlite3_column_text_func(self.handle, index);
+        let text = unsafe { SqliteColumnText(self.handle as _, index) };
         let len = self.column_bytes(index);
         unsafe { core::slice::from_raw_parts(text, len as _) }
     }
@@ -200,12 +228,12 @@ impl<'b> Statement<'b, true> {
     /// return the bytes of data, you should first call query_column_text or query_column_blob,
     /// then call column_bytes.
     pub fn column_bytes(&self, index: i32) -> i32 {
-        sqlite3_column_bytes_func(self.handle, index)
+        unsafe { SqliteColumnBytes(self.handle as _, index) }
     }
 
     /// return column data_type
     pub fn column_type(&self, index: i32) -> i32 {
-        sqlite3_column_type_func(self.handle, index)
+        unsafe { SqliteColumnType(self.handle as _, index) }
     }
 }
 
@@ -215,7 +243,7 @@ impl<'b, const PREPARE: bool> Drop for Statement<'b, PREPARE> {
             return;
         }
         if self.handle != 0 {
-            let ret = sqlite3_finalize_func(self.handle);
+            let ret = unsafe { SqliteFinalize(self.handle as _) };
             if ret != SQLITE_OK {
                 loge!("sqlite3 finalize fail ret {}", ret);
             }

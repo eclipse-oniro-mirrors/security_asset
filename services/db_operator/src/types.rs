@@ -15,6 +15,7 @@
 
 //! struct types for db
 
+use core::ffi::c_void;
 use std::{cmp::Ordering, collections::HashMap};
 
 use asset_definition::{DataType, Value};
@@ -84,3 +85,20 @@ pub struct QueryOptions {
     /// order by columns
     pub order_by: Option<Vec<&'static str>>,
 }
+
+/// sqlite error type
+pub type SqliteErrCode = i32;
+/// Successful result
+pub const SQLITE_OK: i32 = 0;
+/// Generic error
+pub const SQLITE_ERROR: i32 = 1;
+/// sqlite3_step() has another row ready
+pub const SQLITE_ROW: i32 = 100;
+/// sqlite3_step() has finished executing
+pub const SQLITE_DONE: i32 = 101;
+/// data: pointer passed by sqlite3_exec
+/// argc: count of ResultSet
+/// argv: Result
+/// az_col_name: Column names
+pub(crate) type Sqlite3Callback =
+    extern "C" fn(data: *mut c_void, argc: i32, argv: *const *const u8, az_col_name: *const *const u8) -> SqliteErrCode;

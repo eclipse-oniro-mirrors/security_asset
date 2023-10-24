@@ -13,20 +13,18 @@
  * limitations under the License.
  */
 
-use asset_sdk::{
-    AssetMap, Tag, Value, ErrCode, Result, ReturnType
-};
+use asset_sdk::{AssetMap, ErrCode, Result, ReturnType, Tag, Value};
 
 pub(crate) fn get_bytes(input: &AssetMap, tag: Tag) -> Result<&Vec<u8>> {
     if let Some(Value::Bytes(bytes)) = input.get(&tag) {
-        return Ok(bytes)
+        return Ok(bytes);
     }
     Err(ErrCode::NotFound)
 }
 
 pub(crate) fn get_number(input: &AssetMap, tag: Tag) -> Result<u32> {
     if let Some(Value::Number(num)) = input.get(&tag) {
-        return Ok(*num)
+        return Ok(*num);
     }
     Err(ErrCode::NotFound)
 }

@@ -23,11 +23,9 @@ use crate::{
     database::{
         copy_db_file, copy_db_file_inner, is_db_corrupt, sqlite3_close_wrap, Database, UpdateDatabaseCallbackFunc,
     },
-    from_sqlite_code_to_asset_code,
     table::Table,
     transaction::Transaction,
-    types::{ColumnInfo, Condition, DbMap, QueryOptions, ResultSet},
-    SqliteErrCode, SQLITE_OK,
+    types::{ColumnInfo, Condition, DbMap, QueryOptions, ResultSet, SqliteErrCode, SQLITE_DONE, SQLITE_OK},
 };
 
 /// just use database
@@ -111,6 +109,14 @@ pub const COLUMN_INFO: &[ColumnInfo] = &[
     ColumnInfo { name: COLUMN_NORMAL3, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
     ColumnInfo { name: COLUMN_NORMAL4, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
 ];
+
+/// change sqlite err code to asset err code
+fn from_sqlite_code_to_asset_code(value: SqliteErrCode) -> ErrCode {
+    if value != SQLITE_OK && value != SQLITE_DONE {
+        asset_log::loge!("error ret {}", value);
+    }
+    ErrCode::SqliteError
+}
 
 /// do same operation in backup database when do something in master db
 /// TODO backup every success operation or only when charge idle?
@@ -359,7 +365,7 @@ fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>, Err
         },
         Err(e) => {
             if is_db_corrupt(e) {
-                let _ = sqlite3_close_wrap(db.v2, db.handle);
+                let _ = sqlite3_close_wrap(db.handle);
                 // recovery master db
                 let r_ret = copy_db_file(db, true);
                 if r_ret.is_err() {
@@ -454,8 +460,8 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
 impl<'a> DefaultDatabaseHelper<'a> {
     /// open default database and table
-    pub fn open_default_database_table(userid: i32) -> Result<DefaultDatabaseHelper<'a>, ErrCode> {
-        let mut db = Database::default_new(userid).map_err(from_sqlite_code_to_asset_code)?;
+    pub fn open_default_database_table(user_id: i32) -> Result<DefaultDatabaseHelper<'a>, ErrCode> {
+        let mut db = Database::default_new(user_id).map_err(from_sqlite_code_to_asset_code)?;
         let _lock = db.file.mtx.lock().unwrap();
         match open_default_table(&mut db) {
             Ok(o) => {
@@ -472,11 +478,11 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// open default database and table, if need update db version, input callback
     pub fn open_default_database_table_with_version_update(
-        userid: i32,
+        user_id: i32,
         version_new: u32,
         callback: UpdateDatabaseCallbackFunc,
     ) -> Result<DefaultDatabaseHelper<'a>, ErrCode> {
-        let mut db = Database::default_new_with_version_update(userid, version_new, callback)
+        let mut db = Database::default_new_with_version_update(user_id, version_new, callback)
             .map_err(from_sqlite_code_to_asset_code)?;
         let _lock = db.file.mtx.lock().unwrap();
         match open_default_table(&mut db) {
@@ -494,16 +500,16 @@ impl<'a> DefaultDatabaseHelper<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn update_datas_default_once(userid: i32, condition: &Condition, datas: &DbMap) -> Result<i32, ErrCode> {
-        let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+    pub fn update_datas_default_once(user_id: i32, condition: &Condition, datas: &DbMap) -> Result<i32, ErrCode> {
+        let db = DefaultDatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.update_datas_default(condition, datas)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn insert_datas_default_once(userid: i32, datas: &DbMap) -> Result<i32, ErrCode> {
-        let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+    pub fn insert_datas_default_once(user_id: i32, datas: &DbMap) -> Result<i32, ErrCode> {
+        let db = DefaultDatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.insert_datas_default(datas)
     }
@@ -511,35 +517,35 @@ impl<'a> DefaultDatabaseHelper<'a> {
     /// see TableHelper
     #[inline(always)]
     pub fn insert_multi_datas_default_once(
-        userid: i32,
+        user_id: i32,
         columns: &Vec<&'static str>,
         datas: &Vec<Vec<Value>>,
     ) -> Result<i32, ErrCode> {
-        let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        let db = DefaultDatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.insert_multi_datas_default(columns, datas)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn delete_datas_default_once(userid: i32, cond: &Condition) -> Result<i32, ErrCode> {
-        let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+    pub fn delete_datas_default_once(user_id: i32, cond: &Condition) -> Result<i32, ErrCode> {
+        let db = DefaultDatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.delete_datas_default(cond)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn is_data_exists_default_once(userid: i32, condition: &Condition) -> Result<bool, ErrCode> {
-        let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+    pub fn is_data_exists_default_once(user_id: i32, condition: &Condition) -> Result<bool, ErrCode> {
+        let db = DefaultDatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.is_data_exists_default(condition)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn select_count_default_once(userid: i32, condition: &Condition) -> Result<u32, ErrCode> {
-        let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+    pub fn select_count_default_once(user_id: i32, condition: &Condition) -> Result<u32, ErrCode> {
+        let db = DefaultDatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.select_count_default(condition)
     }
@@ -547,11 +553,11 @@ impl<'a> DefaultDatabaseHelper<'a> {
     /// see TableHelper
     #[inline(always)]
     pub fn query_datas_default_once(
-        userid: i32,
+        user_id: i32,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
     ) -> Result<ResultSet, ErrCode> {
-        let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        let db = DefaultDatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.query_datas_default(condition, query_options)
     }
@@ -559,12 +565,12 @@ impl<'a> DefaultDatabaseHelper<'a> {
     /// see TableHelper
     #[inline(always)]
     pub fn query_columns_default_once(
-        userid: i32,
+        user_id: i32,
         columns: &Vec<&'static str>,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
     ) -> Result<Vec<DbMap>, ErrCode> {
-        let db = DefaultDatabaseHelper::open_default_database_table(userid)?;
+        let db = DefaultDatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.query_columns_default(columns, condition, query_options)
     }
@@ -578,8 +584,8 @@ impl<'a> DefaultDatabaseHelper<'a> {
 /// do transaction
 /// if commit, return true
 /// if rollback, return false
-pub fn do_transaction<F: Fn(&Database) -> bool>(userid: i32, callback: F) -> Result<bool, ErrCode> {
-    let db = match DefaultDatabaseHelper::open_default_database_table(userid) {
+pub fn do_transaction<F: Fn(&Database) -> bool>(user_id: i32, callback: F) -> Result<bool, ErrCode> {
+    let db = match DefaultDatabaseHelper::open_default_database_table(user_id) {
         Ok(o) => o,
         Err(e) => {
             loge!("transaction open db fail");

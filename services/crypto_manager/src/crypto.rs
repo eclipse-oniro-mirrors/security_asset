@@ -32,8 +32,7 @@ pub struct SecretKey {
 const MAX_ALIAS_SIZE: u32 = 64;
 
 /// construct alias
-pub fn construct_alias(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility)
-    -> Vec<u8> {
+pub fn construct_alias(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility) -> Vec<u8> {
     let mut alias: Vec<u8> = Vec::with_capacity(MAX_ALIAS_SIZE as usize);
     alias.extend_from_slice(&user_id.to_le_bytes());
     alias.push(b'_');
@@ -216,7 +215,7 @@ impl Crypto {
     pub fn encrypt(key: &SecretKey, msg: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
         // out param
         let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize]; // todo : zdy 加上nonce的长度
-        // in param
+                                                                           // in param
         let data = CryptParam {
             key_len: key.alias.len() as u32,
             key_data: key.alias.as_ptr(),

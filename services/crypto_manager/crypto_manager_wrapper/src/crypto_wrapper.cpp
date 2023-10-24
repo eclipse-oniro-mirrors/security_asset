@@ -14,10 +14,11 @@
  */
 
 #include "crypto_wrapper.h"
-#include <securec.h>
+
 #include "hks_api.h"
 #include "hks_param.h"
 #include "hks_type.h"
+
 #include "asset_log.h"
 #include "hks_key_wrapper.h"
 

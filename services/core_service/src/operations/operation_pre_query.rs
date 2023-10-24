@@ -110,6 +110,6 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
     for crypto in cryptos {
         crypto_manager.add(crypto)?;
     }
-    logi!("get challenge successful!");  // todo delete
+    logi!("get challenge successful!"); // todo delete
     Ok(challenge)
 }

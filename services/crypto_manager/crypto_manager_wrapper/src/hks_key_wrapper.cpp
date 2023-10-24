@@ -16,8 +16,10 @@
 
 #include "hks_key_wrapper.h"
 #include "hks_param.h"
+
 #include "asset_log.h"
 #include "asset_mem.h"
+
 const int HEX_RETIO = 2;
 
 static struct HksParam g_genParams[] = {
