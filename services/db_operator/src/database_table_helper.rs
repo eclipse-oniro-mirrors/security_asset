@@ -173,7 +173,7 @@ impl<'a> TableHelper<'a> {
     ///
     /// let helper = DatabaseHelper::open_default_database_table(1).unwrap();
     /// let datas = DbMap::from([("value", Value::Bytes(b"test_update".to_vec()))]);
-    /// let ret = helper.update_datas_default(&DbMap::new(), &datas);
+    /// let ret = helper.update_datas(&DbMap::new(), &datas);
     /// ```
     /// sql like:
     /// update table_name set alias='test_update' where AppId='owner' and Alias='alias'
@@ -197,7 +197,7 @@ impl<'a> TableHelper<'a> {
     /// let helper = DatabaseHelper::open_default_database_table(1).unwrap();
     /// let datas = DbMap::from([("value", Value::Bytes(b"test_update".to_vec()))]);
     ///
-    /// let ret = helper.insert_datas_default(&datas);
+    /// let ret = helper.insert_datas(&datas);
     /// ```
     ///
     /// sql like:
@@ -230,7 +230,7 @@ impl<'a> TableHelper<'a> {
     /// let helper = DatabaseHelper::open_default_database_table(1).unwrap();
     /// let cond = DbMap::from([("value", Value::Bytes(b"test_delete".to_vec()))]);
     ///
-    /// let ret = helper.delete_datas_default(&cond);
+    /// let ret = helper.delete_datas(&cond);
     /// ```
     ///
     /// sql like:
@@ -249,7 +249,7 @@ impl<'a> TableHelper<'a> {
     /// use std::collections::HashMap;
     /// use asset_definition::Value;
     /// let helper = DatabaseHelper::open_default_database_table(1).unwrap();
-    /// let exist = helper.is_data_exists_default(&HashMap::<&'static str, Value>::new());
+    /// let exist = helper.is_data_exists(&HashMap::<&'static str, Value>::new());
     /// ```
     ///
     /// sql like:
@@ -268,7 +268,7 @@ impl<'a> TableHelper<'a> {
     /// use std::collections::HashMap;
     /// use asset_definition::Value;
     /// let helper = DatabaseHelper::open_default_database_table(1).unwrap();
-    /// let count = helper.select_count_default(&HashMap::<&'static str, Value>::new());
+    /// let count = helper.select_count(&HashMap::<&'static str, Value>::new());
     /// ```
     /// sql like:
     /// select count(*) as count from table_name where AppId='owner2'
@@ -287,7 +287,7 @@ impl<'a> TableHelper<'a> {
     /// use std::collections::HashMap;
     /// use asset_definition::Value;
     /// let helper = DatabaseHelper::open_default_database_table(1).unwrap();
-    /// let result = helper.query_datas_default(&HashMap::<&'static str, Value>::new(), None);
+    /// let result = helper.query_datas(&HashMap::<&'static str, Value>::new(), None);
     /// ```
     /// sql like:
     /// select * from table_name where AppId='owner' and Alias='alias'
@@ -310,7 +310,7 @@ impl<'a> TableHelper<'a> {
     /// use std::collections::HashMap;
     /// use asset_definition::Value;
     /// let helper = DatabaseHelper::open_default_database_table(1).unwrap();
-    /// let result = helper.query_columns_default(&vec![], &HashMap::<&'static str, Value>::new(), None);
+    /// let result = helper.query_columns(&vec![], &HashMap::<&'static str, Value>::new(), None);
     /// ```
     /// sql like:
     /// select * from table_name where AppId='owner' and Alias='alias'
@@ -388,53 +388,49 @@ fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>, Err
 impl<'a> Database<'a> {
     /// see TableHelper
     #[inline(always)]
-    pub fn update_datas_default(&self, condition: &Condition, datas: &DbMap) -> Result<i32, ErrCode> {
+    pub fn update_datas(&self, condition: &Condition, datas: &DbMap) -> Result<i32, ErrCode> {
         let table = Table::new(ASSET_TABLE_NAME, self);
         table.update_datas(condition, datas)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn insert_datas_default(&self, datas: &DbMap) -> Result<i32, ErrCode> {
+    pub fn insert_datas(&self, datas: &DbMap) -> Result<i32, ErrCode> {
         let table = Table::new(ASSET_TABLE_NAME, self);
         table.insert_datas(datas)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn insert_multi_datas_default(
-        &self,
-        columns: &Vec<&'static str>,
-        datas: &Vec<Vec<Value>>,
-    ) -> Result<i32, ErrCode> {
+    pub fn insert_multi_datas(&self, columns: &Vec<&'static str>, datas: &Vec<Vec<Value>>) -> Result<i32, ErrCode> {
         let table = Table::new(ASSET_TABLE_NAME, self);
         table.insert_multi_datas(columns, datas)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn delete_datas_default(&self, cond: &Condition) -> Result<i32, ErrCode> {
+    pub fn delete_datas(&self, cond: &Condition) -> Result<i32, ErrCode> {
         let table = Table::new(ASSET_TABLE_NAME, self);
         table.delete_datas(cond)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn is_data_exists_default(&self, condition: &Condition) -> Result<bool, ErrCode> {
+    pub fn is_data_exists(&self, condition: &Condition) -> Result<bool, ErrCode> {
         let table = Table::new(ASSET_TABLE_NAME, self);
         table.is_data_exist(condition)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn select_count_default(&self, condition: &Condition) -> Result<u32, ErrCode> {
+    pub fn select_count(&self, condition: &Condition) -> Result<u32, ErrCode> {
         let table = Table::new(ASSET_TABLE_NAME, self);
         table.select_count(condition)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn query_datas_default(
+    pub fn query_datas(
         &self,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
@@ -445,7 +441,7 @@ impl<'a> Database<'a> {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn query_columns_default(
+    pub fn query_columns(
         &self,
         columns: &Vec<&'static str>,
         condition: &Condition,
@@ -501,7 +497,7 @@ impl DatabaseHelper {
     pub fn update_datas(user_id: i32, condition: &Condition, datas: &DbMap) -> Result<i32, ErrCode> {
         let db = DatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.update_datas_default(condition, datas)
+        db.update_datas(condition, datas)
     }
 
     /// see TableHelper
@@ -509,7 +505,7 @@ impl DatabaseHelper {
     pub fn insert_datas(user_id: i32, datas: &DbMap) -> Result<i32, ErrCode> {
         let db = DatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.insert_datas_default(datas)
+        db.insert_datas(datas)
     }
 
     /// see TableHelper
@@ -521,7 +517,7 @@ impl DatabaseHelper {
     ) -> Result<i32, ErrCode> {
         let db = DatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.insert_multi_datas_default(columns, datas)
+        db.insert_multi_datas(columns, datas)
     }
 
     /// see TableHelper
@@ -529,7 +525,7 @@ impl DatabaseHelper {
     pub fn delete_datas(user_id: i32, cond: &Condition) -> Result<i32, ErrCode> {
         let db = DatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.delete_datas_default(cond)
+        db.delete_datas(cond)
     }
 
     /// see TableHelper
@@ -537,7 +533,7 @@ impl DatabaseHelper {
     pub fn is_data_exists(user_id: i32, condition: &Condition) -> Result<bool, ErrCode> {
         let db = DatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.is_data_exists_default(condition)
+        db.is_data_exists(condition)
     }
 
     /// see TableHelper
@@ -545,7 +541,7 @@ impl DatabaseHelper {
     pub fn select_count(user_id: i32, condition: &Condition) -> Result<u32, ErrCode> {
         let db = DatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.select_count_default(condition)
+        db.select_count(condition)
     }
 
     /// see TableHelper
@@ -557,7 +553,7 @@ impl DatabaseHelper {
     ) -> Result<ResultSet, ErrCode> {
         let db = DatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.query_datas_default(condition, query_options)
+        db.query_datas(condition, query_options)
     }
 
     /// see TableHelper
@@ -570,7 +566,7 @@ impl DatabaseHelper {
     ) -> Result<Vec<DbMap>, ErrCode> {
         let db = DatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
-        db.query_columns_default(columns, condition, query_options)
+        db.query_columns(columns, condition, query_options)
     }
 }
 

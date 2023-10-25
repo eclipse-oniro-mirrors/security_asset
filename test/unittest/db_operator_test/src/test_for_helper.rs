@@ -60,7 +60,7 @@ pub fn test_helper() {
 
     // query
     let exist = db
-        .is_data_exists_default(&DbMap::from([
+        .is_data_exists(&DbMap::from([
             (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
             (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
         ]))
@@ -68,7 +68,7 @@ pub fn test_helper() {
     assert!(exist);
 
     let exist = db
-        .is_data_exists_default(&DbMap::from([
+        .is_data_exists(&DbMap::from([
             (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
             (COLUMN_ALIAS, Value::Bytes(b"alias2".to_vec())),
         ]))
@@ -79,11 +79,11 @@ pub fn test_helper() {
 }
 
 fn helper_fun(db: Database<'_>) {
-    let count = db.select_count_default(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner2".to_vec()))])).unwrap();
+    let count = db.select_count(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner2".to_vec()))])).unwrap();
     assert_eq!(count, 2);
 
     let ret = db
-        .insert_datas_default(&DbMap::from([
+        .insert_datas(&DbMap::from([
             ("value", Value::Bytes(b"value4".to_vec())),
             (COLUMN_OWNER, Value::Bytes(b"owner4".to_vec())),
             (COLUMN_ALIAS, Value::Bytes(b"alias4".to_vec())),
@@ -92,7 +92,7 @@ fn helper_fun(db: Database<'_>) {
     assert_eq!(ret, 1);
 
     let ret = db
-        .update_datas_default(
+        .update_datas(
             &DbMap::from([
                 (COLUMN_OWNER, Value::Bytes(b"owner4".to_vec())),
                 (COLUMN_ALIAS, Value::Bytes(b"alias4".to_vec())),
@@ -103,7 +103,7 @@ fn helper_fun(db: Database<'_>) {
     assert_eq!(ret, 1);
 
     let ret = db
-        .delete_datas_default(&DbMap::from([
+        .delete_datas(&DbMap::from([
             (COLUMN_OWNER, Value::Bytes(b"owner4".to_vec())),
             (COLUMN_ALIAS, Value::Bytes(b"alias4".to_vec())),
         ]))
@@ -111,7 +111,7 @@ fn helper_fun(db: Database<'_>) {
     assert_eq!(ret, 1);
 
     let result = db
-        .query_datas_default(
+        .query_datas(
             &DbMap::from([
                 (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
                 (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
@@ -346,7 +346,7 @@ pub fn test_for_recovery() {
 
 /// trans callback
 fn trans_call(db: &Database) -> bool {
-    let count = db.select_count_default(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner1".to_vec()))])).unwrap();
+    let count = db.select_count(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner1".to_vec()))])).unwrap();
     assert_eq!(count, 0);
     true
 }
@@ -356,7 +356,7 @@ pub fn test_for_transaction3() {
     let ret = do_transaction(6, trans_call).unwrap();
     assert!(ret);
     let trans = |db: &Database| -> bool {
-        let count = db.select_count_default(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner1".to_vec()))])).unwrap();
+        let count = db.select_count(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner1".to_vec()))])).unwrap();
         assert_eq!(count, 0);
         true
     };
@@ -395,13 +395,13 @@ pub fn test_for_master_backup() {
         (COLUMN_ALIAS, Value::Bytes(b"Alias".to_vec())),
     ]);
 
-    db.insert_datas_default(&def).unwrap();
+    db.insert_datas(&def).unwrap();
     drop(db);
     let mut db_file =
         OpenOptions::new().read(true).write(true).open("/data/service/el1/public/asset_service/5/asset.db").unwrap(); // write master db
     let _ = db_file.write(b"buffer buffer buffer").unwrap();
     let db = DatabaseHelper::open_default_database_table(5).unwrap(); // will recovery master db
-    db.insert_datas_default(&def).unwrap();
+    db.insert_datas(&def).unwrap();
     drop(db);
     let mut back_file = OpenOptions::new()
         .read(true)
@@ -410,8 +410,8 @@ pub fn test_for_master_backup() {
         .unwrap(); // write backup db
     let _ = back_file.write(b"bad message info").unwrap();
     let db = DatabaseHelper::open_default_database_table(5).unwrap(); // will recovery backup db
-    db.insert_datas_default(&def).unwrap();
-    let count = db.select_count_default(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner".to_vec()))])).unwrap();
+    db.insert_datas(&def).unwrap();
+    let count = db.select_count(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner".to_vec()))])).unwrap();
     assert_eq!(count, 3);
     drop(db);
 }

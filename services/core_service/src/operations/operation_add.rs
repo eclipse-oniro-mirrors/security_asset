@@ -42,11 +42,11 @@ impl_enum_trait! {
 
 fn replace_db_record(calling_info: &CallingInfo, query_db_data: &DbMap, replace_db_data: &DbMap) -> Result<()> {
     let replace_callback = |db: &Database| -> bool {
-        if db.delete_datas_default(query_db_data).is_err() {
+        if db.delete_datas(query_db_data).is_err() {
             loge!("remove asset in replace operation failed!");
             return false;
         }
-        if db.insert_datas_default(replace_db_data).is_err() {
+        if db.insert_datas(replace_db_data).is_err() {
             loge!("insert asset in replace operation failed!");
             return false;
         }

@@ -256,7 +256,7 @@ pub fn test_update_datas() {
     let datas = DbMap::from([("value", Value::Bytes(b"value_new".to_vec()))]);
 
     let count = db
-        .update_datas_default(
+        .update_datas(
             &DbMap::from([("Owner", Value::Bytes(b"owner2".to_vec())), ("Alias", Value::Bytes(b"alias2".to_vec()))]),
             &datas,
         )
@@ -305,7 +305,7 @@ pub fn test_insert_datas() {
         (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
     ]);
 
-    let count = db.insert_datas_default(&dataset).unwrap();
+    let count = db.insert_datas(&dataset).unwrap();
     assert_eq!(count, 1);
 
     // query
@@ -395,7 +395,7 @@ pub fn test_delete_datas() {
         (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
     ]);
 
-    let count = db.insert_datas_default(&dataset).unwrap();
+    let count = db.insert_datas(&dataset).unwrap();
     assert_eq!(count, 1);
 
     let cond = DbMap::from([
@@ -404,15 +404,15 @@ pub fn test_delete_datas() {
         (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
     ]);
 
-    let count = db.delete_datas_default(&cond).unwrap();
+    let count = db.delete_datas(&cond).unwrap();
     assert_eq!(count, 1);
 
     let cond = DbMap::from([("value", Value::Bytes(b"value".to_vec()))]);
 
-    let count = db.delete_datas_default(&cond).unwrap();
+    let count = db.delete_datas(&cond).unwrap();
     assert_eq!(count, 0); // can not delete any data because no data
     let count = db
-        .delete_datas_default(&DbMap::from([
+        .delete_datas(&DbMap::from([
             (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
             (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
         ]))
@@ -654,7 +654,7 @@ pub fn test_data_exists_and_data_count() {
 
     // query
     let exist = db
-        .is_data_exists_default(&DbMap::from([
+        .is_data_exists(&DbMap::from([
             (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
             (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
         ]))
@@ -662,13 +662,13 @@ pub fn test_data_exists_and_data_count() {
     assert!(exist);
 
     let exist = db
-        .is_data_exists_default(&DbMap::from([
+        .is_data_exists(&DbMap::from([
             (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
             (COLUMN_ALIAS, Value::Bytes(b"alias2".to_vec())),
         ]))
         .unwrap();
     assert!(!exist);
 
-    let count = db.select_count_default(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner2".to_vec()))])).unwrap();
+    let count = db.select_count(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner2".to_vec()))])).unwrap();
     assert_eq!(count, 2);
 }
