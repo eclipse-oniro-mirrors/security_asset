@@ -16,7 +16,7 @@
 //! This module is used to implement cryptographic algorithm operations, including key generation and usage.
 
 use std::ptr::null;
-
+use std::sync::Mutex;
 use asset_definition::{Accessibility, AuthType, ErrCode};
 use asset_log::{loge, logi};
 
@@ -284,6 +284,7 @@ impl Crypto {
 /// Crypto Manager struct
 pub struct CryptoManager {
     crypto_vec: Vec<Crypto>,
+    mutex: Mutex<u32>,
 }
 
 /// default for crypto manager
@@ -297,30 +298,26 @@ impl Default for CryptoManager {
 impl CryptoManager {
     /// new crypto manager
     pub fn new() -> Self {
-        Self { crypto_vec: vec![] }
+        Self { crypto_vec: vec![], mutex: Mutex::new(0) }
     }
 
-    fn challenge_cmp(challenge_pos: u32, challenge: &Vec<u8>, crypto_challenge: &[u8]) -> Result<(), ErrCode> {
+    fn challenge_cmp(challenge: &Vec<u8>, crypto: &Crypto) -> Result<(), ErrCode> {
         if challenge.len() != CHALLENGE_LEN as usize {
             loge!("invalid challenge len {}", challenge.len());
             return Err(ErrCode::CryptoError);
         }
 
-        match challenge_pos {
-            0 | 1 | 2 | 3 => {
-                let index = (challenge_pos * 4) as usize;
-                if challenge[index..(index + 8)] == crypto_challenge[index..(index + 8)] {
-                    return Ok(());
-                }
-                loge!("challenge not match");
-            },
-            _ => loge!("invalid challenge_pos {}", challenge_pos),
+        let index = (crypto.challenge_pos * 4) as usize;
+        if challenge[index..(index + 8)] == crypto.challenge[index..(index + 8)] {
+            return Ok(());
         }
+
         Err(ErrCode::CryptoError)
     }
 
     /// add a crypto in manager, not allow insert crypto with same challenge
     pub fn add(&mut self, crypto: Crypto) -> Result<(), ErrCode> {
+        let _lock = self.mutex.lock().unwrap();
         for temp_crypto in self.crypto_vec.iter() {
             if crypto.challenge.as_slice() == temp_crypto.challenge.as_slice() {
                 loge!("crypto manager not allow insert crypto with same challenge");
@@ -332,28 +329,44 @@ impl CryptoManager {
     }
 
     /// remove a crypto in manager
-    pub fn remove(&mut self, challenge_pos: u32, challenge: &Vec<u8>) {
+    pub fn remove(&mut self, challenge: &Vec<u8>) {
+        let _lock = self.mutex.lock().unwrap();
+        let mut delete_index: Vec<usize> = vec![];
         for (index, crypto) in self.crypto_vec.iter().enumerate() {
-            match Self::challenge_cmp(challenge_pos, challenge, &crypto.challenge) {
+            match Self::challenge_cmp(challenge, crypto) {
+                Ok(()) => continue,
+                _ => delete_index.push(index),
+            }
+        }
+
+        let delete_num = delete_index.len();
+        delete_index.sort();
+        for x in 0..delete_num {
+            self.crypto_vec.remove(delete_index[delete_num - x - 1]);
+        }
+    }
+
+    /// find a crypto in manager, donnot use this function return value with add&remove
+    pub fn find(&self, alias: &Vec<u8>, challenge: &Vec<u8>) -> Option<&Crypto> {
+        let _lock = self.mutex.lock().unwrap();
+        for crypto in self.crypto_vec.iter() {
+            if alias.as_slice() != crypto.key.alias.as_slice() {
+                continue;
+            }
+
+            match Self::challenge_cmp(challenge, crypto) {
                 Ok(()) => {
-                    self.crypto_vec.remove(index);
-                    return;
+                    return Some(crypto);
                 },
                 _ => continue,
             }
         }
         loge!("crypto not found\n");
+        None
     }
 
-    /// find a crypto in manager, donnot use this function return value with add&remove
-    pub fn find(&self, challenge_pos: u32, challenge: &Vec<u8>) -> Option<&Crypto> {
-        for crypto in self.crypto_vec.iter() {
-            match Self::challenge_cmp(challenge_pos, challenge, &crypto.challenge) {
-                Ok(()) => return Some(crypto),
-                _ => continue,
-            }
-        }
-        loge!("crypto not found\n");
-        None
+    /// remove device_unlock crypto in crypto mgr
+    pub fn remove_device_unlock(&mut self) {
+        let _lock = self.mutex.lock().unwrap();
     }
 }

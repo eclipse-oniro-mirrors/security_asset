@@ -162,7 +162,7 @@ pub(crate) fn exec_crypto(
 
     // todo challenge_pos 改用 alias
     let _alias = construct_alias(calling_info.user_id(), &sha256(calling_info.owner_info()), auth_type, access_type);
-    match crypto_manager.find(0, challenge) {
+    match crypto_manager.find(&_alias, challenge) {
         Some(crypto) => {
             // todo 添加auth_token
             let secret = crypto.exec_crypto(secret, &construct_aad(db_data))?;

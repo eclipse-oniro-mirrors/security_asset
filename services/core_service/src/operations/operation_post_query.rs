@@ -36,6 +36,6 @@ pub(crate) fn post_query(handle: &AssetMap, _calling_info: &CallingInfo) -> Resu
     // todo crypto manager的获取需要改用单例模式
     let mut crypto_manager = CryptoManager::new();
     // todo 等接口改了之后删掉challenge_pos参数
-    crypto_manager.remove(0, challenge);
+    crypto_manager.remove(challenge);
     Ok(())
 }
