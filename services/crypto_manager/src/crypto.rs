@@ -16,6 +16,7 @@
 //! This module is used to implement cryptographic algorithm operations, including key generation and usage.
 
 use std::ptr::null;
+use std::sync::Arc;
 use std::sync::Mutex;
 use asset_definition::{Accessibility, AuthType, ErrCode};
 use asset_log::{loge, logi};
@@ -299,6 +300,16 @@ impl CryptoManager {
     /// new crypto manager
     pub fn new() -> Self {
         Self { crypto_vec: vec![], mutex: Mutex::new(0) }
+    }
+
+    /// get single instance for cryptomgr
+    pub fn get_instance() -> Arc<CryptoManager> {
+        static mut INSTANCE: Option<Arc<CryptoManager>> = None;
+        unsafe {
+            INSTANCE.get_or_insert_with(|| {
+                Arc::new(CryptoManager { crypto_vec: vec![], mutex: Mutex::new(0) })
+            }).clone()
+        }
     }
 
     fn challenge_cmp(challenge: &Vec<u8>, crypto: &Crypto) -> Result<(), ErrCode> {
