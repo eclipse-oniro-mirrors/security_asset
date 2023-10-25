@@ -413,7 +413,10 @@ impl<'a> Table<'a> {
         conditions: &Condition,
         query_options: Option<&QueryOptions>,
     ) -> Result<ResultSet, SqliteErrCode> {
-        let mut sql = String::from("select distinct ");
+        let mut sql = String::from("select ");
+        if !columns.is_empty() {
+            sql.push_str("distinct ");
+        }
         build_sql_columns(columns, &mut sql);
         sql.push_str(" from ");
         sql.push_str(self.table_name.as_str());
@@ -453,7 +456,10 @@ impl<'a> Table<'a> {
         query_options: Option<&QueryOptions>,
         column_info: &'static [ColumnInfo],
     ) -> Result<Vec<DbMap>, SqliteErrCode> {
-        let mut sql = String::from("select distinct ");
+        let mut sql = String::from("select ");
+        if !columns.is_empty() {
+            sql.push_str("distinct ");
+        }
         build_sql_columns(columns, &mut sql);
         sql.push_str(" from ");
         sql.push_str(self.table_name.as_str());
@@ -490,7 +496,7 @@ impl<'a> Table<'a> {
     ///
     /// the sql is like : select count(*) as count from table_name where id=3
     pub fn count_datas(&self, conditions: &Condition) -> Result<u32, SqliteErrCode> {
-        let mut sql = format!("select distinct count(*) as count from {}", self.table_name);
+        let mut sql = format!("select count(*) as count from {}", self.table_name);
         build_sql_where(conditions, &mut sql);
         let stmt = prepare_statement(self, &mut sql)?;
         let mut index = 1;
