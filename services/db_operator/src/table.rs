@@ -52,8 +52,12 @@ fn prepare_statement<'a>(table: &'a Table, sql: &mut str) -> Result<Statement<'a
     let stmt = match Statement::<true>::prepare(sql, table.db) {
         Ok(s) => s,
         Err(e) => {
-            let msg = table.db.get_err_msg().unwrap();
-            asset_log::loge!("prepare stmt fail ret {}, info: {}", e, msg.s);
+            let msg = table.db.get_err_msg();
+            if let Some(msg) = msg {
+                asset_log::loge!("prepare stmt fail ret {}, info: {}", e, msg.s);
+            } else {
+                asset_log::loge!("prepare stmt fail ret {}, info: none", e);
+            }
             return Err(e);
         },
     };

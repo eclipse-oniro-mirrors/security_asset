@@ -287,7 +287,7 @@ impl<'a> Database<'a> {
 
     /// delete database with delete the file
     pub fn drop_database(path: &str) -> std::io::Result<()> {
-        let name = String::from_utf8(path.as_bytes().to_vec()).unwrap();
+        let name = String::from(path);
         let name = name.trim_matches(char::from(0));
         fs::remove_file(name)
     }
@@ -329,8 +329,12 @@ impl<'a> Database<'a> {
         let msg = unsafe { SqliteErrMsg(self.handle as _) };
         if !msg.is_null() {
             let s = unsafe { CStr::from_ptr(msg as _) };
-            let se = Sqlite3ErrMsg { s: s.to_str().unwrap(), db: self };
-            return Some(se);
+            if let Ok(rs) = s.to_str() {
+                let se = Sqlite3ErrMsg { s: rs, db: self };
+                return Some(se);
+            } else {
+                return None;
+            }
         }
         None
     }
@@ -338,7 +342,11 @@ impl<'a> Database<'a> {
     pub(crate) fn print_err_msg(&self, msg: *const u8) {
         unsafe {
             let s = CStr::from_ptr(msg as _);
-            asset_log::loge!("exec fail error msg: {}", s.to_str().unwrap());
+            if let Ok(rs) = s.to_str() {
+                asset_log::loge!("exec fail error msg: {}", rs);
+            } else {
+                asset_log::loge!("exec fail error msg: none");
+            }
         }
     }
 

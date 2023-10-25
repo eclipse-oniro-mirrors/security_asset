@@ -155,7 +155,12 @@ impl<'b> Statement<'b, true> {
         let s = unsafe { SqliteColumnName(self.handle as _, n) };
         if !s.is_null() {
             let name = unsafe { CStr::from_ptr(s as _) };
-            return Ok(name.to_str().unwrap());
+            if let Ok(rn) = name.to_str() {
+                return Ok(rn);
+            } else {
+                loge!("asset column name error");
+                return Err(SQLITE_ERROR);
+            }
         }
         Err(SQLITE_ERROR)
     }
