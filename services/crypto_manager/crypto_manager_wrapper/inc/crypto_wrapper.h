@@ -40,8 +40,10 @@ struct CryptParam {
 };
 
 /* once encrypt&decrypt */
-int EncryptWrapper(const struct CryptParam *data);
-int DecryptWrapper(const struct CryptParam *data);
+int32_t EncryptWrapper(const struct HksBlob *keyAlias, const struct HksBlob *aadData,
+        const struct HksBlob *inData, struct HksBlob *outData);
+int DecryptWrapper(const struct HksBlob *keyAlias, const struct HksBlob *aadData,
+        const struct HksBlob *inData, struct HksBlob *outData);
 
 /* multi encrypt&decrypt */
 int32_t InitCryptoWrapper(const struct CryptParam *data);

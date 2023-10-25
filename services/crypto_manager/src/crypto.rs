@@ -215,26 +215,29 @@ impl Crypto {
     /// Signle function call for encrypt
     pub fn encrypt(key: &SecretKey, msg: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
         // out param
-        let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize]; // todo : zdy 加上nonce的长度
-                                                                           // in param
-        let data = CryptParam {
-            key_len: key.alias.len() as u32,
-            key_data: key.alias.as_ptr(),
-            aad_len: aad.len() as u32,
-            aad: aad.as_ptr(),
-            data_in_len: msg.len() as u32,
-            data_in: msg.as_ptr(),
-            data_out_len: cipher.len() as u32,
-            data_out: cipher.as_mut_ptr(),
-            challenge_pos: 0,
-            challenge_len: 0,
-            challenge_data: null(),
-            crypto_mode: 0,
-            handle_len: 0,
-            handle_data: null(),
+        let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize];
+        let key_alias = ConstCryptoBlob {
+            size: key.alias.len() as u32,
+            data: key.alias.as_ptr(),
         };
 
-        let ret = unsafe { EncryptWrapper(&data as *const CryptParam) };
+        let aad_data = ConstCryptoBlob {
+            size: aad.len() as u32,
+            data: aad.as_ptr(),
+        };
+
+        let data_in = ConstCryptoBlob {
+            size: msg.len() as u32,
+            data: msg.as_ptr(),
+        };
+
+        let mut data_out = CryptoBlob {
+            size: cipher.len() as u32,
+            data: cipher.as_mut_ptr(),
+        };
+
+        let ret = unsafe { EncryptWrapper(&key_alias as *const ConstCryptoBlob, &aad_data as *const ConstCryptoBlob,
+            &data_in as *const ConstCryptoBlob, &mut data_out as *mut CryptoBlob) };
         match ret {
             HKS_SUCCESS => Ok(cipher),
             _ => {
@@ -252,26 +255,29 @@ impl Crypto {
             return Err(ErrCode::InvalidArgument);
         }
         // out param
-        let mut plain: Vec<u8> = vec![0; cipher.len() - AEAD_SIZE as usize]; // todo : zdy 减去nonce的长度
-                                                                             // in param
-        let data = CryptParam {
-            key_len: key.alias.len() as u32,
-            key_data: key.alias.as_ptr(),
-            aad_len: aad.len() as u32,
-            aad: aad.as_ptr(),
-            data_in_len: cipher.len() as u32,
-            data_in: cipher.as_ptr(),
-            data_out_len: plain.len() as u32,
-            data_out: plain.as_mut_ptr(),
-            challenge_pos: 0,
-            challenge_len: 0,
-            challenge_data: null(),
-            crypto_mode: 0,
-            handle_len: 0,
-            handle_data: null(),
+        let mut plain: Vec<u8> = vec![0; cipher.len() - AEAD_SIZE as usize];
+        let key_alias = ConstCryptoBlob {
+            size: key.alias.len() as u32,
+            data: key.alias.as_ptr(),
         };
 
-        let ret = unsafe { DecryptWrapper(&data as *const CryptParam) };
+        let aad_data = ConstCryptoBlob {
+            size: aad.len() as u32,
+            data: aad.as_ptr(),
+        };
+
+        let data_in = ConstCryptoBlob {
+            size: cipher.len() as u32,
+            data: cipher.as_ptr(),
+        };
+
+        let mut data_out = CryptoBlob {
+            size: plain.len() as u32,
+            data: plain.as_mut_ptr(),
+        };
+
+        let ret = unsafe { DecryptWrapper(&key_alias as *const ConstCryptoBlob, &aad_data as *const ConstCryptoBlob,
+            &data_in as *const ConstCryptoBlob, &mut data_out as *mut CryptoBlob) };
         match ret {
             HKS_SUCCESS => Ok(plain),
             _ => {

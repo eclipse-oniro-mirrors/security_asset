@@ -75,6 +75,24 @@ pub struct CryptParam {
     pub data_out: *const u8,
 }
 
+/// crypto params for crypt_wrapper, keep same with crypto_wrapper.h
+#[repr(C)]
+pub struct ConstCryptoBlob {
+    /// keyinfo size
+    pub size: u32,
+    /// keyinfo buff
+    pub data: *const u8,
+}
+
+/// crypto params for crypt_wrapper, keep same with crypto_wrapper.h
+#[repr(C)]
+pub struct CryptoBlob {
+    /// keyinfo size
+    pub size: u32,
+    /// keyinfo buff
+    pub data: *mut u8,
+}
+
 extern "C" {
     /// c generate key
     pub fn GenerateKey(keyLen: u32, keyData: *const u8) -> HuksErrcode;
@@ -86,10 +104,12 @@ extern "C" {
     pub fn KeyExist(keyLen: u32, keyData: *const u8) -> HuksErrcode;
 
     /// hks encrypt c func
-    pub fn EncryptWrapper(data: *const CryptParam) -> HuksErrcode;
+    pub fn EncryptWrapper(key_alias: *const ConstCryptoBlob, aad_data: *const ConstCryptoBlob,
+        data_in: *const ConstCryptoBlob, data_out: *mut CryptoBlob) -> HuksErrcode;
 
     /// hks decrypt c func
-    pub fn DecryptWrapper(data: *const CryptParam) -> HuksErrcode;
+    pub fn DecryptWrapper(key_alias: *const ConstCryptoBlob, aad_data: *const ConstCryptoBlob,
+        data_in: *const ConstCryptoBlob, data_out: *mut CryptoBlob) -> HuksErrcode;
 
     /// hks crypto init c func
     pub fn InitCryptoWrapper(data: *const CryptParam) -> HuksErrcode;

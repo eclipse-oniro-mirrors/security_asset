@@ -28,12 +28,13 @@ static const uint32_t AEAD_SIZE = 16;
 static const uint32_t NONCE_SIZE = 12;
 static uint8_t NONCE[NONCE_SIZE] = { 0 };
 
-static int32_t CheckCryptParam(const struct CryptParam *data)
+static int32_t CheckCryptParam(const struct HksBlob *keyAlias, const struct HksBlob *aadData,
+    const struct HksBlob *inData, struct HksBlob *outData)
 {
-    if ((data == nullptr) || (data->keyLen == 0 || data->keyData == nullptr) ||
-        (data->dataInLen == 0 || data->dataIn == nullptr) ||
-        (data->aadLen == 0 || data->aad == nullptr) ||
-        (data->dataOutLen ==0 || data->dataOut == nullptr)) {
+    if ((keyAlias == nullptr) || (keyAlias->size == 0) || (keyAlias->data == nullptr) ||
+        (aadData == nullptr) || (aadData->size == 0) || (aadData->data == nullptr) ||
+        (inData == nullptr) || (inData->size == 0) || (inData->data == nullptr) ||
+        (outData == nullptr) || (outData->size == 0) || (outData->data == nullptr)) {
         LOGE("hks invalid argument\n");
         return HKS_ERROR_INVALID_ARGUMENT;
     }
@@ -41,7 +42,7 @@ static int32_t CheckCryptParam(const struct CryptParam *data)
     return HKS_SUCCESS;
 }
 
-static int32_t InitEncryptParamSet(struct HksParamSet **paramSet, const struct CryptParam *data)
+static int32_t InitEncryptParamSet(struct HksParamSet **paramSet, const struct HksBlob *aadData)
 {
     /* encrypt param */
     struct HksParam encryptParams[] = {
@@ -50,42 +51,40 @@ static int32_t InitEncryptParamSet(struct HksParamSet **paramSet, const struct C
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
-        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = data->aadLen, .data = (uint8_t *)data->aad }}, /* initial AAD */
+        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = aadData->size, .data = (uint8_t *)aadData->data }}, /* initial AAD */
         { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE, .data = (uint8_t *)NONCE }} /* todo */
     };
 
     return InitParamSet(paramSet, encryptParams, sizeof(encryptParams) / sizeof(HksParam));
 }
 
-int32_t EncryptWrapper(const struct CryptParam *data)
+int32_t EncryptWrapper(const struct HksBlob *keyAlias, const struct HksBlob *aadData,
+    const struct HksBlob *inData, struct HksBlob *outData)
 {
-    if (CheckCryptParam(data) != HKS_SUCCESS) {
+    if (CheckCryptParam(keyAlias, aadData, inData, outData) != HKS_SUCCESS) {
         LOGE("hks encrypt invalid argument\n");
         return HKS_ERROR_INVALID_ARGUMENT;
     }
 
-    if (data->dataOutLen != data->dataInLen + AEAD_SIZE) { // todo : zdy 加上nonce的长度
+    if (outData->size != inData->size + AEAD_SIZE) { // todo : zdy 加上nonce的长度
         LOGE("hks encrypt cipher len not match\n");
         return HKS_ERROR_INVALID_ARGUMENT;
     }
 
     int32_t ret;
-    struct HksBlob keyAlias = { data->keyLen, (uint8_t *)data->keyData };
-    struct HksBlob inData = { data->dataInLen, (uint8_t *)data->dataIn };
-    struct HksBlob outData = { data->dataOutLen, data->dataOut };
     struct HksParamSet *encryptParamSet = nullptr;
     uint8_t handleE[sizeof(uint64_t)] = { 0 };
     struct HksBlob handleEncrypt = { sizeof(uint64_t), handleE };
 
     /* init paramset */
-    ret = InitEncryptParamSet(&encryptParamSet, data);
+    ret = InitEncryptParamSet(&encryptParamSet, aadData);
     if (ret != HKS_SUCCESS) {
         LOGE("hks encrypt init paramset err = %d\n", ret);
         return ret;
     }
 
     /* three stage encrypt Init */
-    ret = HksInit(&keyAlias, encryptParamSet, &handleEncrypt, nullptr);
+    ret = HksInit(keyAlias, encryptParamSet, &handleEncrypt, nullptr);
     if (ret != HKS_SUCCESS) {
         LOGE("hks encrypt init failed err = %d\n", ret);
         HksFreeParamSet(&encryptParamSet);
@@ -93,7 +92,7 @@ int32_t EncryptWrapper(const struct CryptParam *data)
     }
 
     /* Do finish */
-    ret = HksFinish(&handleEncrypt, encryptParamSet, &inData, &outData);
+    ret = HksFinish(&handleEncrypt, encryptParamSet, inData, outData);
     if (ret != HKS_SUCCESS) {
         LOGE("hks encrypt updata and finish failed err = %d\n", ret);
     }
@@ -102,7 +101,8 @@ int32_t EncryptWrapper(const struct CryptParam *data)
     return ret;
 }
 
-static int32_t InitDecryptParamSet(struct HksParamSet **paramSet, const struct CryptParam *data)
+static int32_t InitDecryptParamSet(struct HksParamSet **paramSet, const struct HksBlob *aadData,
+    const struct HksBlob *inData, struct HksBlob *outData)
 {
     /* decrypt params */
     struct HksParam decryptParams[] = {
@@ -111,45 +111,46 @@ static int32_t InitDecryptParamSet(struct HksParamSet **paramSet, const struct C
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
-        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = data->aadLen, .data = (uint8_t *)data->aad }},
+        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = aadData->size, .data = (uint8_t *)aadData->data }},
         { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE, .data = (uint8_t *)NONCE }},
-        { .tag = HKS_TAG_AE_TAG, .blob = { .size = AEAD_SIZE, .data = (uint8_t *)data->dataIn + data->dataOutLen }}
+        { .tag = HKS_TAG_AE_TAG, .blob = { .size = AEAD_SIZE, .data = (uint8_t *)(inData->data + outData->size) }}
     };
 
     return InitParamSet(paramSet, decryptParams, sizeof(decryptParams) / sizeof(HksParam));
 }
 
 // todo: zdy : 封装rust的blob
-int32_t DecryptWrapper(const struct CryptParam *data)
+int32_t DecryptWrapper(const struct HksBlob *keyAlias, const struct HksBlob *aadData,
+    const struct HksBlob *inData, struct HksBlob *outData)
 {
-    if (CheckCryptParam(data) != HKS_SUCCESS) {
+    if (CheckCryptParam(keyAlias, aadData, inData, outData) != HKS_SUCCESS) {
         LOGE("hks decrypt invalid argument\n");
         return HKS_ERROR_INVALID_ARGUMENT;
     }
 
-    if ((data->dataInLen <= AEAD_SIZE) || // todo : zdy 加上nonce的长度
-        (data->dataOutLen != data->dataInLen - AEAD_SIZE)) { // todo : zdy 加上nonce的长度
+    if ((inData->size <= AEAD_SIZE) || // todo : zdy 加上nonce的长度
+        (outData->size != inData->size - AEAD_SIZE)) { // todo : zdy 加上nonce的长度
         LOGE("hks decrypt cipher len or plain len not match\n");
         return HKS_ERROR_INVALID_ARGUMENT;
     }
 
+    /* data in len is out len, except aead size */
+    struct HksBlob tmpInData = { outData->size, inData->data };
+
     int32_t ret;
-    struct HksBlob keyAlias = { data->keyLen, (uint8_t *)data->keyData };
-    struct HksBlob inData = { data->dataOutLen, (uint8_t *)data->dataIn };
-    struct HksBlob outData = { data->dataOutLen, data->dataOut };
     struct HksParamSet *decryptParamSet = nullptr;
     uint8_t handleD[sizeof(uint64_t)] = { 0 };
     struct HksBlob handleDecrypt = { sizeof(uint64_t), handleD };
 
     /* init paramset */
-    ret = InitDecryptParamSet(&decryptParamSet, data);
+    ret = InitDecryptParamSet(&decryptParamSet, aadData, inData, outData);
     if (ret != HKS_SUCCESS) {
         LOGE("hks decrypt init paramset err = %d\n", ret);
         return ret;
     }
 
     /* three stage decrypt Init */
-    ret = HksInit(&keyAlias, decryptParamSet, &handleDecrypt, nullptr);
+    ret = HksInit(keyAlias, decryptParamSet, &handleDecrypt, nullptr);
     if (ret != HKS_SUCCESS) {
         LOGE("hks decrypt init failed err = %d\n", ret);
         HksFreeParamSet(&decryptParamSet);
@@ -157,7 +158,7 @@ int32_t DecryptWrapper(const struct CryptParam *data)
     }
 
     /* Do finish */
-    ret = HksFinish(&handleDecrypt, decryptParamSet, &inData, &outData);
+    ret = HksFinish(&handleDecrypt, decryptParamSet, &tmpInData, outData);
     if (ret != HKS_SUCCESS) {
         LOGE("hks decrypt updata and finish failed err = %d\n", ret);
     }
