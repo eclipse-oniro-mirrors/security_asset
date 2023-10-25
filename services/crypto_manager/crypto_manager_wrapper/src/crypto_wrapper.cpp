@@ -105,7 +105,7 @@ int32_t EncryptWrapper(const struct CryptParam *data)
 static int32_t InitDecryptParamSet(struct HksParamSet **paramSet, const struct CryptParam *data)
 {
     /* decrypt params */
-    static struct HksParam decryptParams[] = {
+    struct HksParam decryptParams[] = {
         { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
         { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_DECRYPT },
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
@@ -192,7 +192,7 @@ static int32_t CheckInitParma(const struct CryptParam *data)
 static int32_t CreateInitParamSet(struct HksParamSet **paramSet, enum HksKeyPurpose cryptoMode, uint32_t challengePos)
 {
     /* init params */
-    static struct HksParam initParams[] = {
+    struct HksParam initParams[] = {
         { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES},
         { .tag = HKS_TAG_PURPOSE, .uint32Param = cryptoMode },
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
