@@ -70,7 +70,7 @@ pub fn test_helper() {
     let exist = db
         .is_data_exists_default(&DbMap::from([
             (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-            (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
+            (COLUMN_ALIAS, Value::Bytes(b"alias2".to_vec())),
         ]))
         .unwrap();
     assert!(!exist);

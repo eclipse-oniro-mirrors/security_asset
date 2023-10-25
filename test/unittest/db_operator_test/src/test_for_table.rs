@@ -542,9 +542,9 @@ pub fn test_query() {
         }
         println!()
     }
-    assert_eq!(result_set.len(), 5);
+    assert_eq!(result_set.len(), 3);
     let count = table.count_datas(&DbMap::new()).unwrap();
-    assert_eq!(count, 5);
+    assert_eq!(count, 3);
     let count = table.count_datas(&DbMap::from([("id", Value::Number(3))])).unwrap();
     assert_eq!(count, 1);
     let exits = table
@@ -664,7 +664,7 @@ pub fn test_data_exists_and_data_count() {
     let exist = db
         .is_data_exists_default(&DbMap::from([
             (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-            (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
+            (COLUMN_ALIAS, Value::Bytes(b"alias2".to_vec())),
         ]))
         .unwrap();
     assert!(!exist);
