@@ -46,6 +46,7 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
         1 => {
             match results[0].get(COLUMN_AUTH_TYPE) {
                 Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
+                    common::check_required_tags(query, &SEC_QUERY_OPTIONAL_ATTRS)?;
                     let Some(Value::Bytes(ref challenge)) =
                         query.get(&Tag::AuthChallenge) else { return Err(ErrCode::InvalidArgument) };
                     let Some(Value::Bytes(ref auth_token)) =
@@ -110,6 +111,7 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
 
 const OPTIONAL_ATTRS: [Tag; 6] =
     [Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderBy, Tag::ReturnType, Tag::AuthToken, Tag::AuthChallenge];
+const SEC_QUERY_OPTIONAL_ATTRS: [Tag; 2] = [Tag::AuthChallenge, Tag::AuthToken];
 
 fn check_arguments(attributes: &AssetMap) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();

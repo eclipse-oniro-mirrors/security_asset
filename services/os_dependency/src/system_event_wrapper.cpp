@@ -25,6 +25,7 @@
 extern "C" {
     int32_t delete_data_by_owner(int32_t user_id, const uint8_t *owner, uint32_t owner_size);
     bool delete_dir_by_user(int32_t user_id);
+    void delete_device_unlock_crypto();
 }
 
 namespace {
@@ -64,7 +65,8 @@ public:
             bool ret = delete_dir_by_user(userId);
             LOGI("[INFO] Receive event: USER_REMOVED, userId=%{public}i, deleteDirRet=%{public}d", userId, ret);
         } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SCREEN_OFF) {
-            LOGE("AssetService screen off");  // // todo: 监听锁屏广播，中止session
+            delete_device_unlock_crypto();
+            LOGI("[INFO] Receive event: SCREEN_OFF");
         }
     }
 };

@@ -18,7 +18,7 @@
 use std::slice;
 
 use asset_constants::OwnerType;
-use asset_crypto_manager::crypto::SecretKey;
+use asset_crypto_manager::crypto::{SecretKey, CryptoManager};
 use asset_db_operator::{
     database_table_helper::{DefaultDatabaseHelper, COLUMN_OWNER, COLUMN_OWNER_TYPE},
     types::DbMap,
@@ -63,4 +63,13 @@ pub unsafe extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, ow
 #[no_mangle]
 pub extern "C" fn delete_dir_by_user(user_id: i32) -> bool {
     delete_user_db_dir(user_id).is_ok()
+}
+
+/// Function called from C programming language to Rust programming language for delete crypto.
+#[no_mangle]
+pub extern "C" fn delete_device_unlock_crypto() {
+    // todo crypto manager的获取需要改用单例模式
+    let mut _crypto_manager = CryptoManager::new();
+    // todo 等接口好了调用
+    loge!("delete_device_unlock_crypto");  // todo delete
 }
