@@ -16,7 +16,7 @@
 //! This module is used to update the specified alias of Asset.
 
 use asset_db_operator::{
-    database_table_helper::{DefaultDatabaseHelper, COLUMN_SECRET, COLUMN_UPDATE_TIME},
+    database_table_helper::{DatabaseHelper, COLUMN_SECRET, COLUMN_UPDATE_TIME},
     types::DbMap,
 };
 use asset_definition::{AssetMap, ErrCode, Result, Tag, Value};
@@ -59,8 +59,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     add_system_attrs(&mut update_db_data)?;
 
     if update.contains_key(&Tag::Secret) {
-        let mut results =
-            DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(), &vec![], &query_db_data, None)?;
+        let mut results = DatabaseHelper::query_columns(calling_info.user_id(), &vec![], &query_db_data, None)?;
         if results.len() != 1 {
             loge!("query to-be-updated asset failed, found [{}] assets", results.len());
             return Err(ErrCode::NotFound);
@@ -73,8 +72,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     }
 
     // call sql to update
-    let update_num =
-        DefaultDatabaseHelper::update_datas_default_once(calling_info.user_id(), &query_db_data, &update_db_data)?;
+    let update_num = DatabaseHelper::update_datas(calling_info.user_id(), &query_db_data, &update_db_data)?;
     if update_num == 0 {
         loge!("[FATAL]Update asset failed, update 0 asset.");
         return Err(ErrCode::NotFound);

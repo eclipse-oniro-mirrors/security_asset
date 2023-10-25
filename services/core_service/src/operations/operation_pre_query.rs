@@ -20,7 +20,7 @@ use asset_crypto_manager::{
     huks_ffi::{CHALLENGE_LEN, HKS_KEY_PURPOSE_DECRYPT},
 };
 use asset_db_operator::{
-    database_table_helper::{DefaultDatabaseHelper, COLUMN_ACCESSIBILITY, COLUMN_AUTH_TYPE},
+    database_table_helper::{DatabaseHelper, COLUMN_ACCESSIBILITY, COLUMN_AUTH_TYPE},
     types::DbMap,
 };
 use asset_definition::{Accessibility, AssetMap, AuthType, ErrCode, Result, Tag, Value};
@@ -48,12 +48,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
 }
 
 fn query_access_types(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<Accessibility>> {
-    let results = DefaultDatabaseHelper::query_columns_default_once(
-        calling_info.user_id(),
-        &vec![COLUMN_ACCESSIBILITY],
-        db_data,
-        None,
-    )?;
+    let results = DatabaseHelper::query_columns(calling_info.user_id(), &vec![COLUMN_ACCESSIBILITY], db_data, None)?;
     logi!("query found {}", results.len());
     if results.is_empty() {
         loge!("[FATAL]The data to be queried does not exist.");

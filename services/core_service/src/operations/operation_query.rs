@@ -16,7 +16,7 @@
 //! This module is used to query the Asset, including single and batch query.
 
 use asset_db_operator::{
-    database_table_helper::{DefaultDatabaseHelper, COLUMN_AUTH_TYPE, COLUMN_SECRET},
+    database_table_helper::{DatabaseHelper, COLUMN_AUTH_TYPE, COLUMN_SECRET},
     types::{DbMap, QueryOptions},
 };
 use asset_definition::{AssetMap, AuthType, ErrCode, Result, ReturnType, Tag, Value};
@@ -35,8 +35,7 @@ fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
 }
 
 fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) -> Result<Vec<AssetMap>> {
-    let mut results =
-        DefaultDatabaseHelper::query_columns_default_once(calling_info.user_id(), &vec![], db_data, None)?;
+    let mut results = DatabaseHelper::query_columns(calling_info.user_id(), &vec![], db_data, None)?;
     logi!("results len {}", results.len());
     match results.len() {
         0 => {
@@ -47,10 +46,12 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
             match results[0].get(COLUMN_AUTH_TYPE) {
                 Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
                     common::check_required_tags(query, &SEC_QUERY_OPTIONAL_ATTRS)?;
-                    let Some(Value::Bytes(ref challenge)) =
-                        query.get(&Tag::AuthChallenge) else { return Err(ErrCode::InvalidArgument) };
-                    let Some(Value::Bytes(ref auth_token)) =
-                        query.get(&Tag::AuthToken) else { return Err(ErrCode::InvalidArgument) };
+                    let Some(Value::Bytes(ref challenge)) = query.get(&Tag::AuthChallenge) else {
+                        return Err(ErrCode::InvalidArgument);
+                    };
+                    let Some(Value::Bytes(ref auth_token)) = query.get(&Tag::AuthToken) else {
+                        return Err(ErrCode::InvalidArgument);
+                    };
                     common::exec_crypto(calling_info, &mut results[0], challenge, auth_token)?;
                     loge!("enter secdond query 4"); // todo delete
                     into_asset_maps(&results)
@@ -90,12 +91,8 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
 }
 
 pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
-    let mut results = DefaultDatabaseHelper::query_columns_default_once(
-        calling_info.user_id(),
-        &vec![],
-        db_data,
-        Some(&get_query_options(attrs)),
-    )?;
+    let mut results =
+        DatabaseHelper::query_columns(calling_info.user_id(), &vec![], db_data, Some(&get_query_options(attrs)))?;
     logi!("query found {}", results.len());
     if results.is_empty() {
         loge!("[FATAL]The data to be queried does not exist.");

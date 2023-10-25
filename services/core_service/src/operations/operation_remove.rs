@@ -15,7 +15,7 @@
 
 //! This module is used to delete the Asset, including single and batch deletion.
 
-use asset_db_operator::database_table_helper::DefaultDatabaseHelper;
+use asset_db_operator::database_table_helper::DatabaseHelper;
 use asset_definition::{AssetMap, ErrCode, Result};
 use asset_log::{loge, logi};
 
@@ -35,7 +35,7 @@ pub(crate) fn remove(query: &AssetMap, calling_info: &CallingInfo) -> Result<()>
     let mut db_data = common::into_db_map(query);
     common::add_owner_info(calling_info, &mut db_data);
 
-    let remove_num = DefaultDatabaseHelper::delete_datas_default_once(calling_info.user_id(), &db_data)?;
+    let remove_num = DatabaseHelper::delete_datas(calling_info.user_id(), &db_data)?;
     match remove_num {
         0 => {
             loge!("[FATAL]The data to be deleted does not exist.");

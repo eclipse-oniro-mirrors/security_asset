@@ -54,9 +54,7 @@ fn update_different_secret() {
 
     let res = query_all_by_alias(alias).unwrap();
     assert_eq!(1, res.len());
-    let Value::Bytes(ref secret_query) = res[0][&Tag::Secret] else {
-        panic!()
-    };
+    let Value::Bytes(ref secret_query) = res[0][&Tag::Secret] else { panic!() };
     assert_eq!(secret_new, secret_query);
 
     remove_by_alias(alias).unwrap();
@@ -77,8 +75,7 @@ fn update_attr_normal() {
 
     asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap();
     let query_res = &query_attr_by_alias(alias).unwrap()[0];
-    let Value::Bytes(label_normal_query) =
-        query_res.get(&Tag::DataLabelNormal1).unwrap() else { panic!() };
+    let Value::Bytes(label_normal_query) = query_res.get(&Tag::DataLabelNormal1).unwrap() else { panic!() };
     assert_eq!(label_normal, label_normal_query);
 
     remove_by_alias(alias).unwrap();

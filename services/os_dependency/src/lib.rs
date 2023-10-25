@@ -18,9 +18,9 @@
 use std::slice;
 
 use asset_constants::OwnerType;
-use asset_crypto_manager::crypto::{SecretKey, CryptoManager};
+use asset_crypto_manager::crypto::{CryptoManager, SecretKey};
 use asset_db_operator::{
-    database_table_helper::{DefaultDatabaseHelper, COLUMN_OWNER, COLUMN_OWNER_TYPE},
+    database_table_helper::{DatabaseHelper, COLUMN_OWNER, COLUMN_OWNER_TYPE},
     types::DbMap,
 };
 use asset_definition::{Accessibility, AuthType, Value};
@@ -47,7 +47,7 @@ pub unsafe extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, ow
     let mut cond = DbMap::new();
     cond.insert(COLUMN_OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
     cond.insert(COLUMN_OWNER, Value::Bytes(owner));
-    match DefaultDatabaseHelper::delete_datas_default_once(user_id, &cond) {
+    match DatabaseHelper::delete_datas(user_id, &cond) {
         Ok(remove_num) => {
             delete_key(user_id, &owner_hash, AuthType::None, Accessibility::DeviceFirstUnlock);
             delete_key(user_id, &owner_hash, AuthType::None, Accessibility::DeviceUnlock);
@@ -71,5 +71,5 @@ pub extern "C" fn delete_device_unlock_crypto() {
     // todo crypto manager的获取需要改用单例模式
     let mut _crypto_manager = CryptoManager::new();
     // todo 等接口好了调用
-    loge!("delete_device_unlock_crypto");  // todo delete
+    loge!("delete_device_unlock_crypto"); // todo delete
 }

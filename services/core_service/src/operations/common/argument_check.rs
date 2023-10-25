@@ -44,7 +44,9 @@ fn check_data_type(tag: &Tag, value: &Value) -> Result<()> {
 }
 
 fn check_array_size(tag: &Tag, value: &Value, min: usize, max: usize) -> Result<()> {
-    let Value::Bytes(v) = value else { return Err(ErrCode::InvalidArgument); };
+    let Value::Bytes(v) = value else {
+        return Err(ErrCode::InvalidArgument);
+    };
     if v.len() > max || v.len() <= min {
         loge!("[FATAL]The array length[{}] of Tag[{}], exceeds the valid range.", v.len(), tag);
         return Err(ErrCode::InvalidArgument);
@@ -53,7 +55,9 @@ fn check_array_size(tag: &Tag, value: &Value, min: usize, max: usize) -> Result<
 }
 
 fn check_enum_variant<T: TryFrom<u32>>(tag: &Tag, value: &Value) -> Result<()> {
-    let Value::Number(n) = value else { return Err(ErrCode::InvalidArgument); };
+    let Value::Number(n) = value else {
+        return Err(ErrCode::InvalidArgument);
+    };
     if T::try_from(*n).is_err() {
         loge!("[FATAL]The value of Tag[{}] is not a legal enumeration variant", tag);
         return Err(ErrCode::InvalidArgument);
@@ -62,7 +66,9 @@ fn check_enum_variant<T: TryFrom<u32>>(tag: &Tag, value: &Value) -> Result<()> {
 }
 
 fn check_number_range(tag: &Tag, value: &Value, min: u32, max: u32) -> Result<()> {
-    let Value::Number(n) = value else { return Err(ErrCode::InvalidArgument); };
+    let Value::Number(n) = value else {
+        return Err(ErrCode::InvalidArgument);
+    };
     if *n <= min || *n > max {
         loge!("[FATAL]The value[{}] of Tag[{}] is not in the valid number range.", *n, tag);
         return Err(ErrCode::InvalidArgument);
@@ -71,7 +77,9 @@ fn check_number_range(tag: &Tag, value: &Value, min: u32, max: u32) -> Result<()
 }
 
 fn check_tag_range(tag: &Tag, value: &Value, tags: &[Tag]) -> Result<()> {
-    let Value::Number(n) = value else { return Err(ErrCode::InvalidArgument); };
+    let Value::Number(n) = value else {
+        return Err(ErrCode::InvalidArgument);
+    };
     match Tag::try_from(*n) {
         Ok(value) if tags.contains(&value) => Ok(()),
         _ => {

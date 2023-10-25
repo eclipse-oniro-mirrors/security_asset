@@ -154,7 +154,9 @@ pub(crate) fn exec_crypto(
     let Some(Value::Bytes(ref secret)) = db_data.get(COLUMN_SECRET) else { return Err(ErrCode::InvalidArgument) };
     let Some(Value::Number(auth_type)) = db_data.get(COLUMN_AUTH_TYPE) else { return Err(ErrCode::InvalidArgument) };
     let auth_type = AuthType::try_from(*auth_type)?;
-    let Some(Value::Number(access_type)) = db_data.get(COLUMN_ACCESSIBILITY) else { return Err(ErrCode::InvalidArgument) };
+    let Some(Value::Number(access_type)) = db_data.get(COLUMN_ACCESSIBILITY) else {
+        return Err(ErrCode::InvalidArgument);
+    };
     let access_type = Accessibility::try_from(*access_type)?;
 
     // todo crypto manager 使用单例

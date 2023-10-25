@@ -21,7 +21,7 @@ use std::{
 
 use asset_db_operator::{
     database::*,
-    database_table_helper::{do_transaction, DefaultDatabaseHelper, ASSET_TABLE_NAME, COLUMN_ALIAS, COLUMN_OWNER},
+    database_table_helper::{do_transaction, DatabaseHelper, ASSET_TABLE_NAME, COLUMN_ALIAS, COLUMN_OWNER},
     statement::Statement,
     types::{from_data_value_to_str_value, ColumnInfo, DbMap, QueryOptions, SQLITE_OK, SQLITE_ROW},
 };
@@ -222,16 +222,16 @@ pub fn test_for_default_asset(user_id: i32) {
         (COLUMN_ALIAS, Value::Bytes(b"Alias1".to_vec())),
     ]);
 
-    let count = DefaultDatabaseHelper::insert_datas_default_once(user_id, &def).unwrap();
+    let count = DatabaseHelper::insert_datas(user_id, &def).unwrap();
     assert_eq!(count, 1);
 
     def.remove(COLUMN_ALIAS);
     def.insert(COLUMN_ALIAS, Value::Bytes(b"Alias2".to_vec()));
 
-    let count = DefaultDatabaseHelper::insert_datas_default_once(user_id, &def).unwrap();
+    let count = DatabaseHelper::insert_datas(user_id, &def).unwrap();
     assert_eq!(count, 1);
 
-    let count = DefaultDatabaseHelper::update_datas_default_once(
+    let count = DatabaseHelper::update_datas(
         user_id,
         &DbMap::from([("Owner", Value::Bytes(b"owner1".to_vec())), ("Alias", Value::Bytes(b"Alias1".to_vec()))]),
         &DbMap::from([("UpdateTime", Value::Number(1))]),
@@ -239,13 +239,11 @@ pub fn test_for_default_asset(user_id: i32) {
     .unwrap();
     assert!(count >= 0);
 
-    let _count = DefaultDatabaseHelper::select_count_default_once(
-        user_id,
-        &DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner1".to_vec()))]),
-    )
-    .unwrap();
+    let _count =
+        DatabaseHelper::select_count(user_id, &DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner1".to_vec()))]))
+            .unwrap();
 
-    let _ret = DefaultDatabaseHelper::is_data_exists_default_once(
+    let _ret = DatabaseHelper::is_data_exists(
         user_id,
         &DbMap::from([
             (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
@@ -254,7 +252,7 @@ pub fn test_for_default_asset(user_id: i32) {
     )
     .unwrap();
 
-    let count = DefaultDatabaseHelper::delete_datas_default_once(
+    let count = DatabaseHelper::delete_datas(
         user_id,
         &DbMap::from([
             (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
@@ -275,7 +273,7 @@ fn default_asset_fun(user_id: i32) {
         order_by: Some(vec![COLUMN_OWNER, COLUMN_ALIAS]),
     };
 
-    let result = DefaultDatabaseHelper::query_datas_default_once(
+    let result = DatabaseHelper::query_datas(
         user_id,
         &DbMap::from([
             (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
@@ -292,7 +290,7 @@ fn default_asset_fun(user_id: i32) {
         println!();
     }
 
-    let result = DefaultDatabaseHelper::query_columns_default_once(
+    let result = DatabaseHelper::query_columns(
         user_id,
         &vec!["Id", "Alias"],
         &DbMap::from([
@@ -308,7 +306,7 @@ fn default_asset_fun(user_id: i32) {
         }
         println!();
     }
-    // let db = DefaultDatabaseHelper::open_default_database_table(user_id).unwrap();
+    // let db = DatabaseHelper::open_default_database_table(user_id).unwrap();
     // let _ = db.drop_database_and_backup();
 }
 
@@ -368,7 +366,7 @@ pub fn test_for_transaction3() {
 
 #[test]
 pub fn test_for_error() {
-    let stmt = DefaultDatabaseHelper::insert_datas_default_once(
+    let stmt = DatabaseHelper::insert_datas(
         1,
         &DbMap::from([
             (COLUMN_OWNER, Value::Bytes(b"owner".to_vec())),
@@ -381,7 +379,7 @@ pub fn test_for_error() {
 #[test]
 pub fn test_for_master_backup() {
     let _ = Database::drop_default_database_and_backup(5);
-    let db = DefaultDatabaseHelper::open_default_database_table(5).unwrap();
+    let db = DatabaseHelper::open_default_database_table(5).unwrap();
     let def = DbMap::from([
         ("Secret", Value::Bytes(b"blob".to_vec())),
         ("OwnerType", Value::Number(1)),
@@ -402,7 +400,7 @@ pub fn test_for_master_backup() {
     let mut db_file =
         OpenOptions::new().read(true).write(true).open("/data/service/el1/public/asset_service/5/asset.db").unwrap(); // write master db
     let _ = db_file.write(b"buffer buffer buffer").unwrap();
-    let db = DefaultDatabaseHelper::open_default_database_table(5).unwrap(); // will recovery master db
+    let db = DatabaseHelper::open_default_database_table(5).unwrap(); // will recovery master db
     db.insert_datas_default(&def).unwrap();
     drop(db);
     let mut back_file = OpenOptions::new()
@@ -411,7 +409,7 @@ pub fn test_for_master_backup() {
         .open("/data/service/el1/public/asset_service/5/asset.db.backup")
         .unwrap(); // write backup db
     let _ = back_file.write(b"bad message info").unwrap();
-    let db = DefaultDatabaseHelper::open_default_database_table(5).unwrap(); // will recovery backup db
+    let db = DatabaseHelper::open_default_database_table(5).unwrap(); // will recovery backup db
     db.insert_datas_default(&def).unwrap();
     let count = db.select_count_default(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner".to_vec()))])).unwrap();
     assert_eq!(count, 3);

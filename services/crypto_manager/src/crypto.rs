@@ -15,11 +15,11 @@
 
 //! This module is used to implement cryptographic algorithm operations, including key generation and usage.
 
+use asset_definition::{Accessibility, AuthType, ErrCode};
+use asset_log::{loge, logi};
 use std::ptr::null;
 use std::sync::Arc;
 use std::sync::Mutex;
-use asset_definition::{Accessibility, AuthType, ErrCode};
-use asset_log::{loge, logi};
 
 use crate::huks_ffi::*;
 
@@ -306,9 +306,7 @@ impl CryptoManager {
     pub fn get_instance() -> Arc<CryptoManager> {
         static mut INSTANCE: Option<Arc<CryptoManager>> = None;
         unsafe {
-            INSTANCE.get_or_insert_with(|| {
-                Arc::new(CryptoManager { crypto_vec: vec![], mutex: Mutex::new(0) })
-            }).clone()
+            INSTANCE.get_or_insert_with(|| Arc::new(CryptoManager { crypto_vec: vec![], mutex: Mutex::new(0) })).clone()
         }
     }
 

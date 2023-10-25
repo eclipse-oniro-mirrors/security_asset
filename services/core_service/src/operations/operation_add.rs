@@ -18,9 +18,9 @@
 use asset_db_operator::{
     database::Database,
     database_table_helper::{
-        do_transaction, DefaultDatabaseHelper, COLUMN_ACCESSIBILITY, COLUMN_ALIAS, COLUMN_AUTH_TYPE,
-        COLUMN_CREATE_TIME, COLUMN_DELETE_TYPE, COLUMN_OWNER, COLUMN_OWNER_TYPE, COLUMN_REQUIRE_PASSWORD_SET,
-        COLUMN_SECRET, COLUMN_SYNC_TYPE, COLUMN_UPDATE_TIME, COLUMN_VERSION, DB_DATA_VERSION,
+        do_transaction, DatabaseHelper, COLUMN_ACCESSIBILITY, COLUMN_ALIAS, COLUMN_AUTH_TYPE, COLUMN_CREATE_TIME,
+        COLUMN_DELETE_TYPE, COLUMN_OWNER, COLUMN_OWNER_TYPE, COLUMN_REQUIRE_PASSWORD_SET, COLUMN_SECRET,
+        COLUMN_SYNC_TYPE, COLUMN_UPDATE_TIME, COLUMN_VERSION, DB_DATA_VERSION,
     },
     types::DbMap,
 };
@@ -130,10 +130,10 @@ pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<(
     db_data.insert(COLUMN_SECRET, Value::Bytes(cipher));
 
     let query = get_query_condition(calling_info, attributes)?;
-    if DefaultDatabaseHelper::is_data_exists_default_once(calling_info.user_id(), &query)? {
+    if DatabaseHelper::is_data_exists(calling_info.user_id(), &query)? {
         resolve_conflict(calling_info, attributes, &query, &db_data)
     } else {
-        let insert_num = DefaultDatabaseHelper::insert_datas_default_once(calling_info.user_id(), &db_data)?;
+        let insert_num = DatabaseHelper::insert_datas(calling_info.user_id(), &db_data)?;
         logi!("insert {} data", insert_num);
         Ok(())
     }

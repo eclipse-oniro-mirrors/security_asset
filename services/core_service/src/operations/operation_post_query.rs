@@ -30,8 +30,9 @@ fn check_arguments(query: &AssetMap) -> Result<()> {
 // todo: to implement
 pub(crate) fn post_query(handle: &AssetMap, _calling_info: &CallingInfo) -> Result<()> {
     check_arguments(handle)?;
-    let Some(Value::Bytes(ref challenge)) = handle.get(&Tag::AuthChallenge)
-        else { return Err(ErrCode::InvalidArgument) };
+    let Some(Value::Bytes(ref challenge)) = handle.get(&Tag::AuthChallenge) else {
+        return Err(ErrCode::InvalidArgument);
+    };
 
     // todo crypto manager的获取需要改用单例模式
     let mut crypto_manager = CryptoManager::new();
