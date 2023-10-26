@@ -24,9 +24,8 @@
 
 /* AEAD return from huks with 16 bits */
 static const uint32_t AEAD_SIZE = 16;
-/* NONCE remain for huks, hard code now */
+/* NONCE return from huks with 12 bits */
 static const uint32_t NONCE_SIZE = 12;
-static uint8_t NONCE[NONCE_SIZE] = { 0 };
 
 static int32_t CheckCryptParam(const struct HksBlob *keyAlias, const struct HksBlob *aadData,
     const struct HksBlob *inData, struct HksBlob *outData)
@@ -51,8 +50,7 @@ static int32_t InitEncryptParamSet(struct HksParamSet **paramSet, const struct H
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
-        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = aadData->size, .data = (uint8_t *)aadData->data }}, /* initial AAD */
-        { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE, .data = (uint8_t *)NONCE }} /* todo */
+        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = aadData->size, .data = (uint8_t *)aadData->data }} /* initial AAD */
     };
 
     return InitParamSet(paramSet, encryptParams, sizeof(encryptParams) / sizeof(HksParam));
@@ -66,7 +64,7 @@ int32_t EncryptWrapper(const struct HksBlob *keyAlias, const struct HksBlob *aad
         return HKS_ERROR_INVALID_ARGUMENT;
     }
 
-    if (outData->size != inData->size + AEAD_SIZE) { // todo : zdy 加上nonce的长度
+    if (outData->size != inData->size + AEAD_SIZE + NONCE_SIZE) {
         LOGE("hks encrypt cipher len not match\n");
         return HKS_ERROR_INVALID_ARGUMENT;
     }
@@ -112,14 +110,13 @@ static int32_t InitDecryptParamSet(struct HksParamSet **paramSet, const struct H
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
         { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = aadData->size, .data = (uint8_t *)aadData->data }},
-        { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE, .data = (uint8_t *)NONCE }},
-        { .tag = HKS_TAG_AE_TAG, .blob = { .size = AEAD_SIZE, .data = (uint8_t *)(inData->data + outData->size) }}
+        { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE, .data = (uint8_t *)inData->data + outData->size + AEAD_SIZE }},
+        { .tag = HKS_TAG_AE_TAG, .blob = { .size = AEAD_SIZE, .data = (uint8_t *)inData->data + outData->size }}
     };
 
     return InitParamSet(paramSet, decryptParams, sizeof(decryptParams) / sizeof(HksParam));
 }
 
-// todo: zdy : 封装rust的blob
 int32_t DecryptWrapper(const struct HksBlob *keyAlias, const struct HksBlob *aadData,
     const struct HksBlob *inData, struct HksBlob *outData)
 {
@@ -128,8 +125,8 @@ int32_t DecryptWrapper(const struct HksBlob *keyAlias, const struct HksBlob *aad
         return HKS_ERROR_INVALID_ARGUMENT;
     }
 
-    if ((inData->size <= AEAD_SIZE) || // todo : zdy 加上nonce的长度
-        (outData->size != inData->size - AEAD_SIZE)) { // todo : zdy 加上nonce的长度
+    if ((inData->size <= AEAD_SIZE + NONCE_SIZE) ||
+        (outData->size != inData->size - AEAD_SIZE - NONCE_SIZE)) {
         LOGE("hks decrypt cipher len or plain len not match\n");
         return HKS_ERROR_INVALID_ARGUMENT;
     }
@@ -206,7 +203,6 @@ static int32_t CreateInitParamSet(struct HksParamSet **paramSet, const struct Cr
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
         { .tag = HKS_TAG_CHALLENGE_POS, .uint32Param = param->challengePos },
-        // { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE, .data = (uint8_t *)NONCE }},
     };
 
     return InitParamSet(paramSet, initParams, sizeof(initParams) / sizeof(HksParam));
@@ -285,8 +281,7 @@ static int32_t CreateCryptoParamSet(struct HksParamSet **paramSet, const CryptPa
             { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
             { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
             { .tag = HKS_TAG_CHALLENGE_POS, .uint32Param = param->challengePos },
-            { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = aadData->size, .data = (uint8_t *)aadData->data }}, /* initial AAD */
-            // { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE, .data = (uint8_t *)NONCE }}, /* todo */
+            { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = aadData->size, .data = (uint8_t *)aadData->data }} /* initial AAD */
         };
 
         return InitParamSet(paramSet, initParams, sizeof(initParams) / sizeof(HksParam));
@@ -300,7 +295,7 @@ static int32_t CreateCryptoParamSet(struct HksParamSet **paramSet, const CryptPa
             { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
             { .tag = HKS_TAG_CHALLENGE_POS, .uint32Param = param->challengePos },
             { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = aadData->size, .data = (uint8_t *)aadData->data }}, /* initial AAD */
-            { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE, .data = (uint8_t *)NONCE }}, /* todo */
+            { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE, .data = (uint8_t *)inData->data + outData->size + AEAD_SIZE }},
             { .tag = HKS_TAG_AE_TAG, .blob = { .size = AEAD_SIZE, .data = (uint8_t *)inData->data + outData->size }}
         };
 
@@ -361,7 +356,7 @@ static int32_t CreateFinishParamSet(struct HksParamSet **paramSet, const CryptPa
     return InitParamSet(paramSet, initParams, sizeof(initParams) / sizeof(HksParam));
 }
 
-static bool CheckCryptoParam(const CryptParam *param, struct HksBlob *handleData)
+static bool CheckDropParam(const CryptParam *param, struct HksBlob *handleData)
 {
     if (param == nullptr || param->challengePos > CHALLENGEPOS_MAX ||
         ((param->cryptoMode != HKS_KEY_PURPOSE_ENCRYPT) && (param->cryptoMode != HKS_KEY_PURPOSE_DECRYPT))) {
@@ -379,7 +374,7 @@ static bool CheckCryptoParam(const CryptParam *param, struct HksBlob *handleData
 
 int32_t DropCrypto(const CryptParam *param, struct HksBlob *handleData)
 {
-    if (CheckCryptoParam(param, handleData) != HKS_SUCCESS) {
+    if (CheckDropParam(param, handleData) != HKS_SUCCESS) {
         LOGE("hks finish crypto invalid argument\n");
         return HKS_ERROR_INVALID_ARGUMENT;
     }

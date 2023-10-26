@@ -176,7 +176,8 @@ impl Crypto {
         }
     }
 
-    /// Exec encrypt or decrypt，todo：需要判断一下超时时间，返回超时错误码 AuthTokenExpired，需要增加authtoken入参
+    //todo：需要判断一下超时时间，返回超时错误码 AuthTokenExpired，需要增加authtoken入参
+    /// Exec encrypt or decrypt
     pub fn exec_crypto(&self, msg: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
         // out param
         let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize + NONCE_SIZE as usize];
@@ -220,7 +221,7 @@ impl Crypto {
     /// Signle function call for encrypt
     pub fn encrypt(key: &SecretKey, msg: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
         // out param
-        let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize];
+        let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize + NONCE_SIZE as usize];
         let key_alias = ConstCryptoBlob {
             size: key.alias.len() as u32,
             data: key.alias.as_ptr(),
@@ -254,13 +255,12 @@ impl Crypto {
 
     /// Signle function call for decrypt
     pub fn decrypt(key: &SecretKey, cipher: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
-        if cipher.len() <= AEAD_SIZE as usize {
-            // todo : zdy 加上nonce的长度
+        if cipher.len() <= (AEAD_SIZE + NONCE_SIZE) as usize {
             loge!("invalid cipher\n");
             return Err(ErrCode::InvalidArgument);
         }
         // out param
-        let mut plain: Vec<u8> = vec![0; cipher.len() - AEAD_SIZE as usize];
+        let mut plain: Vec<u8> = vec![0; cipher.len() - AEAD_SIZE as usize - NONCE_SIZE as usize];
         let key_alias = ConstCryptoBlob {
             size: key.alias.len() as u32,
             data: key.alias.as_ptr(),
