@@ -17,7 +17,6 @@
 
 use asset_definition::{Accessibility, AuthType, ErrCode};
 use asset_log::{loge, logi};
-use std::ptr::null;
 use std::sync::Arc;
 use std::sync::Mutex;
 
@@ -112,24 +111,17 @@ pub struct Crypto {
 impl Drop for Crypto {
     fn drop(&mut self) {
         // in param
-        let data = CryptParam {
-            key_len: 0,
-            key_data: null(),
+        let param = CryptParam {
             crypto_mode: self.mode,
-            aad_len: 0,
-            aad: null(),
-            data_in_len: 0,
-            data_in: null(),
-            data_out_len: 0,
-            data_out: null(),
             challenge_pos: self.challenge_pos,
-            challenge_len: 0,
-            challenge_data: null(),
-            handle_len: self.handle.len() as u32,
-            handle_data: self.handle.as_mut_ptr(),
         };
 
-        let ret = unsafe { DropCrypto(&data as *const CryptParam) };
+        let mut handle_data = CryptoBlob {
+            size: self.handle.len() as u32,
+            data: self.handle.as_mut_ptr(),
+        };
+
+        let ret = unsafe { DropCrypto(&param as *const CryptParam, &mut handle_data as *mut CryptoBlob) };
         match ret {
             HKS_SUCCESS => logi!("crypto drop finish success\n"),
             _ => loge!("crypto drop finish failed ret {}", ret),
@@ -153,24 +145,28 @@ impl Crypto {
     /// Start HuksInit
     pub fn init_crypto(&mut self) -> Result<Vec<u8>, ErrCode> {
         // in param
-        let data = CryptParam {
-            key_len: self.key.alias.len() as u32,
-            key_data: self.key.alias.as_ptr(),
+        let param = CryptParam {
             crypto_mode: self.mode,
-            aad_len: 0,
-            aad: null(),
-            data_in_len: 0,
-            data_in: null(),
-            data_out_len: 0,
-            data_out: null(),
             challenge_pos: self.challenge_pos,
-            challenge_len: self.challenge.len() as u32,
-            challenge_data: self.challenge.as_mut_ptr(),
-            handle_len: self.handle.len() as u32,
-            handle_data: self.handle.as_mut_ptr(),
         };
 
-        let ret = unsafe { InitCryptoWrapper(&data as *const CryptParam) };
+        let key_data = ConstCryptoBlob {
+            size: self.key.alias.len() as u32,
+            data: self.key.alias.as_ptr(),
+        };
+
+        let mut challenge_data = CryptoBlob {
+            size: self.challenge.len() as u32,
+            data: self.challenge.as_mut_ptr(),
+        };
+
+        let mut handle_data = CryptoBlob {
+            size: self.handle.len() as u32,
+            data: self.handle.as_mut_ptr(),
+        };
+
+        let ret = unsafe { InitCryptoWrapper(&param as *const CryptParam, &key_data as *const ConstCryptoBlob,
+            &mut challenge_data as *mut CryptoBlob, &mut handle_data as *mut CryptoBlob) };
         match ret {
             HKS_SUCCESS => Ok(self.challenge.clone()),
             _ => {
@@ -185,24 +181,33 @@ impl Crypto {
         // out param
         let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize + NONCE_SIZE as usize];
         // in param
-        let data = CryptParam {
-            key_len: 0,
-            key_data: null(),
+        let param = CryptParam {
             crypto_mode: self.mode,
-            aad_len: aad.len() as u32,
-            aad: aad.as_ptr(),
-            data_in_len: msg.len() as u32,
-            data_in: msg.as_ptr(),
-            data_out_len: cipher.len() as u32,
-            data_out: cipher.as_mut_ptr(),
             challenge_pos: self.challenge_pos,
-            challenge_len: self.challenge.len() as u32,
-            challenge_data: self.challenge.clone().as_mut_ptr(),
-            handle_len: self.handle.len() as u32,
-            handle_data: self.handle.clone().as_mut_ptr(),
         };
 
-        let ret = unsafe { ExecCryptoWrapper(&data as *const CryptParam) };
+        let aad_data = ConstCryptoBlob {
+            size: aad.len() as u32,
+            data: aad.as_ptr(),
+        };
+
+        let handle_data = ConstCryptoBlob {
+            size: self.handle.len() as u32,
+            data: self.handle.as_ptr(),
+        };
+
+        let in_data = ConstCryptoBlob {
+            size: msg.len() as u32,
+            data: msg.as_ptr(),
+        };
+
+        let mut out_data = CryptoBlob {
+            size: cipher.len() as u32,
+            data: cipher.as_mut_ptr(),
+        };
+
+        let ret = unsafe { ExecCryptoWrapper(&param as *const CryptParam, &aad_data as *const ConstCryptoBlob,
+            &handle_data as *const ConstCryptoBlob, &in_data as *const ConstCryptoBlob, &mut out_data as *mut CryptoBlob) };
         match ret {
             HKS_SUCCESS => Ok(cipher),
             _ => {
@@ -226,18 +231,18 @@ impl Crypto {
             data: aad.as_ptr(),
         };
 
-        let data_in = ConstCryptoBlob {
+        let in_data = ConstCryptoBlob {
             size: msg.len() as u32,
             data: msg.as_ptr(),
         };
 
-        let mut data_out = CryptoBlob {
+        let mut out_data = CryptoBlob {
             size: cipher.len() as u32,
             data: cipher.as_mut_ptr(),
         };
 
         let ret = unsafe { EncryptWrapper(&key_alias as *const ConstCryptoBlob, &aad_data as *const ConstCryptoBlob,
-            &data_in as *const ConstCryptoBlob, &mut data_out as *mut CryptoBlob) };
+            &in_data as *const ConstCryptoBlob, &mut out_data as *mut CryptoBlob) };
         match ret {
             HKS_SUCCESS => Ok(cipher),
             _ => {
@@ -266,18 +271,18 @@ impl Crypto {
             data: aad.as_ptr(),
         };
 
-        let data_in = ConstCryptoBlob {
+        let in_data = ConstCryptoBlob {
             size: cipher.len() as u32,
             data: cipher.as_ptr(),
         };
 
-        let mut data_out = CryptoBlob {
+        let mut out_data = CryptoBlob {
             size: plain.len() as u32,
             data: plain.as_mut_ptr(),
         };
 
         let ret = unsafe { DecryptWrapper(&key_alias as *const ConstCryptoBlob, &aad_data as *const ConstCryptoBlob,
-            &data_in as *const ConstCryptoBlob, &mut data_out as *mut CryptoBlob) };
+            &in_data as *const ConstCryptoBlob, &mut out_data as *mut CryptoBlob) };
         match ret {
             HKS_SUCCESS => Ok(plain),
             _ => {

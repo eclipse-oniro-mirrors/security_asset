@@ -23,20 +23,8 @@ extern "C" {
 #endif
 
 struct CryptParam {
-    uint32_t keyLen;
-    const uint8_t *keyData;
-    uint32_t challengePos;
-    uint32_t challengeLen;
-    uint8_t *challengeData;
     enum HksKeyPurpose cryptoMode;
-    uint32_t handleLen;
-    uint8_t *handleData;
-    uint32_t aadLen;
-    const uint8_t *aad;
-    uint32_t dataInLen;
-    const uint8_t *dataIn;
-    uint32_t dataOutLen;
-    uint8_t *dataOut;
+    uint32_t challengePos;
 };
 
 /* once encrypt&decrypt */
@@ -46,9 +34,11 @@ int DecryptWrapper(const struct HksBlob *keyAlias, const struct HksBlob *aadData
         const struct HksBlob *inData, struct HksBlob *outData);
 
 /* multi encrypt&decrypt */
-int32_t InitCryptoWrapper(const struct CryptParam *data);
-int32_t ExecCryptoWrapper(const struct CryptParam *data);
-int32_t DropCrypto(const struct CryptParam *data);
+int32_t InitCryptoWrapper(const struct CryptParam *param, const struct HksBlob *key_data,
+    struct HksBlob *challenge_data, struct HksBlob *handle_data);
+int32_t ExecCryptoWrapper(const CryptParam *param, const struct HksBlob *aadData,
+    const struct HksBlob *handleData, const struct HksBlob *inData, struct HksBlob *outData);
+int32_t DropCrypto(const CryptParam *param, struct HksBlob *handle_data);
 
 #ifdef __cplusplus
 }

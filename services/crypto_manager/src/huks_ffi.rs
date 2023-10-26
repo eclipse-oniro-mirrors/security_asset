@@ -42,40 +42,16 @@ pub const HANDLE_LEN: u32 = 8;
 /// chanllenge len for HuksInit
 pub const CHALLENGE_LEN: u32 = 32;
 
-/// crypto params for crypt_wrapper, keep same with crypto_wrapper.h
+/// crypto params, like cryptoMode, challenge_pos
 #[repr(C)]
 pub struct CryptParam {
-    /// keyinfo size
-    pub key_len: u32,
-    /// keyinfo buff
-    pub key_data: *const u8,
-    /// challenge position
-    pub challenge_pos: u32,
-    /// challenge length
-    pub challenge_len: u32,
-    /// challenge data
-    pub challenge_data: *const u8,
     /// crypto mode
     pub crypto_mode: HksKeyPurpose,
-    /// handle len
-    pub handle_len: u32,
-    /// handle data
-    pub handle_data: *const u8,
-    /// asociate data size
-    pub aad_len: u32,
-    /// asociate data buff
-    pub aad: *const u8,
-    /// encrypt&decrypt input data len
-    pub data_in_len: u32,
-    /// encrypt&decrypt input data buff
-    pub data_in: *const u8,
-    /// encrypt&decrypt output data len
-    pub data_out_len: u32,
-    /// encrypt&decrypt output data buff
-    pub data_out: *const u8,
+    /// challenge position
+    pub challenge_pos: u32,
 }
 
-/// crypto params for crypt_wrapper, keep same with crypto_wrapper.h
+/// const crypto blobs, keep same with crypto_wrapper.h
 #[repr(C)]
 pub struct ConstCryptoBlob {
     /// keyinfo size
@@ -84,7 +60,7 @@ pub struct ConstCryptoBlob {
     pub data: *const u8,
 }
 
-/// crypto params for crypt_wrapper, keep same with crypto_wrapper.h
+/// crypto blobs, keep same with crypto_wrapper.h
 #[repr(C)]
 pub struct CryptoBlob {
     /// keyinfo size
@@ -105,18 +81,21 @@ extern "C" {
 
     /// hks encrypt c func
     pub fn EncryptWrapper(key_alias: *const ConstCryptoBlob, aad_data: *const ConstCryptoBlob,
-        data_in: *const ConstCryptoBlob, data_out: *mut CryptoBlob) -> HuksErrcode;
+        in_data: *const ConstCryptoBlob, out_data: *mut CryptoBlob) -> HuksErrcode;
 
     /// hks decrypt c func
     pub fn DecryptWrapper(key_alias: *const ConstCryptoBlob, aad_data: *const ConstCryptoBlob,
-        data_in: *const ConstCryptoBlob, data_out: *mut CryptoBlob) -> HuksErrcode;
+        in_data: *const ConstCryptoBlob, out_data: *mut CryptoBlob) -> HuksErrcode;
 
     /// hks crypto init c func
-    pub fn InitCryptoWrapper(data: *const CryptParam) -> HuksErrcode;
+    pub fn InitCryptoWrapper(param: *const CryptParam, key_data: *const ConstCryptoBlob,
+        challenge_data: *mut CryptoBlob, handle_data: *mut CryptoBlob) -> HuksErrcode;
 
     /// hks execute crypto c func
-    pub fn ExecCryptoWrapper(data: *const CryptParam) -> HuksErrcode;
+    pub fn ExecCryptoWrapper(param: *const CryptParam, aad_data: *const ConstCryptoBlob,
+        handle_data: *const ConstCryptoBlob, in_data: *const ConstCryptoBlob,
+        out_data: *mut CryptoBlob) -> HuksErrcode;
 
     /// hks crypto drop c func
-    pub fn DropCrypto(data: *const CryptParam) -> HuksErrcode;
+    pub fn DropCrypto(param: *const CryptParam, handle_data: *mut CryptoBlob) -> HuksErrcode;
 }
