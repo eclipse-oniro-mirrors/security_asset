@@ -21,8 +21,8 @@ use crate::common::{add_default_asset, query_all_by_alias, query_attr_by_alias, 
 
 #[test]
 fn update_same_secret() {
-    let alias = "update_same_secret".as_bytes();
-    let secret = "update_same_secret".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     add_default_asset(alias, secret).unwrap();
 
     let mut query = AssetMap::new();
@@ -38,8 +38,8 @@ fn update_same_secret() {
 
 #[test]
 fn update_different_secret() {
-    let alias = "update_different_secret".as_bytes();
-    let secret = "update_different_secret".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     add_default_asset(alias, secret).unwrap();
 
     let mut query = AssetMap::new();
@@ -62,8 +62,8 @@ fn update_different_secret() {
 
 #[test]
 fn update_attr_normal() {
-    let alias = "update_attr_normal".as_bytes();
-    let secret = "update_attr_normal".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     add_default_asset(alias, secret).unwrap();
 
     let mut query = AssetMap::new();
@@ -83,8 +83,8 @@ fn update_attr_normal() {
 
 #[test]
 fn update_non_exist() {
-    let alias = "update_non_exist".as_bytes();
-    let label_normal = "update_non_exist".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let label_normal = std::any::type_name::<()>().as_bytes();
 
     let mut query = AssetMap::new();
     query.insert_attr(Tag::Alias, alias.to_owned()).unwrap();
@@ -97,8 +97,8 @@ fn update_non_exist() {
 
 #[test]
 fn update_query_with_secret() {
-    let alias = "update_query_with_secret".as_bytes();
-    let secret = "update_query_with_secret".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     add_default_asset(alias, secret).unwrap();
 
     let mut query = AssetMap::new();
@@ -116,8 +116,8 @@ fn update_query_with_secret() {
 
 #[test]
 fn update_secret_without_query_alias() {
-    let alias = "update_secret_without_query_alias".as_bytes();
-    let secret = "update_secret_without_query_alias".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     add_default_asset(alias, secret).unwrap();
 
     let query = AssetMap::new();
@@ -134,8 +134,8 @@ fn update_secret_without_query_alias() {
 
 #[test]
 fn update_alias() {
-    let alias = "update_alias".as_bytes();
-    let secret = "update_alias".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     add_default_asset(alias, secret).unwrap();
 
     let query = AssetMap::new();

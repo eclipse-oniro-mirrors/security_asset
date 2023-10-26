@@ -19,9 +19,9 @@ use crate::common::{get_bytes, get_number, query_attr_by_alias, remove_by_alias}
 
 #[test]
 fn add_all_tags() {
-    let alias = "add_all_tags".as_bytes();
-    let data_label = "add_all_tags".as_bytes();
-    let secret = "add_all_tags".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let data_label = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     let auth_type = AuthType::None;
     let mut add = AssetMap::new();
     add.insert_attr(Tag::Alias, alias.to_owned()).unwrap();
@@ -40,8 +40,8 @@ fn add_all_tags() {
 
 #[test]
 fn add_conflict_throw_error() {
-    let alias = "add_conflict_throw_error".as_bytes();
-    let secret = "add_conflict_throw_error_secret".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
 
     let mut add_throw_error =
         AssetMap::from([(Tag::Alias, Value::Bytes(alias.to_owned())), (Tag::Secret, Value::Bytes(secret.to_owned()))]);
@@ -57,8 +57,8 @@ fn add_conflict_throw_error() {
 
 #[test]
 fn add_conflict_over_write() {
-    let alias = "add_conflict_over_write".as_bytes();
-    let secret = "add_conflict_over_write_secret".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     let label_normal_1 = "add_conflict_over_write_label_normal_1".as_bytes();
 
     let mut add_over_write = AssetMap::new();

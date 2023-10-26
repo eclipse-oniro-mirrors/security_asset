@@ -31,8 +31,8 @@ fn remove_condition_non_exist() {
 
 #[test]
 fn remove_condition_exist_and_query() {
-    let alias = "remove_condition_exist_and_query".as_bytes();
-    let secret = "remove_condition_exist_and_query".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     let label_vritial_2 = "remove_condition_exist_and_query".as_bytes();
     let mut condition = AssetMap::from([
         (Tag::Alias, Value::Bytes(alias.to_owned())),
@@ -48,8 +48,8 @@ fn remove_condition_exist_and_query() {
 
 #[test]
 fn remove_condition_with_secret() {
-    let alias = "remove_condition_with_secret".as_bytes();
-    let secret = "remove_condition_with_secret".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     let condition =
         AssetMap::from([(Tag::Alias, Value::Bytes(alias.to_owned())), (Tag::Secret, Value::Bytes(secret.to_owned()))]);
     asset_sdk::Manager::build().unwrap().add(&condition).unwrap();

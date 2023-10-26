@@ -21,15 +21,15 @@ use crate::common::{
 
 #[test]
 fn query_non_exist_with_alias() {
-    let alias = "query_non_exist_with_alias".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
     assert_eq!(ErrCode::NotFound, query_attr_by_alias(alias).unwrap_err());
     assert_eq!(ErrCode::NotFound, query_all_by_alias(alias).unwrap_err());
 }
 
 #[test]
 fn query_with_wrong_alias() {
-    let alias = "query_with_wrong_alias".as_bytes();
-    let secret = "query_with_wrong_alias".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     add_default_asset(alias, secret).unwrap();
 
     let alias_new = "query_with_wrong_alias_wrong_alias".as_bytes();
@@ -47,8 +47,8 @@ fn query_non_exist_without_alias() {
 
 #[test]
 fn query_without_alias_with_wrong_condition() {
-    let alias = "query_non_exist_without_alias".as_bytes();
-    let secret = "query_non_exist_without_alias".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     let mut add = AssetMap::new();
     add.insert_attr(Tag::RequirePasswordSet, false).unwrap();
     add.insert_attr(Tag::Alias, alias.to_owned()).unwrap();
@@ -65,8 +65,8 @@ fn query_without_alias_with_wrong_condition() {
 #[test]
 fn query_without_limit() {
     let _ = remove_all();
-    let alias = "query_without_limit".as_bytes();
-    let secret = "query_without_limit".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     let asset_num = 10;
     for i in 0..asset_num {
         let alias_new = format!("{:?}{}", alias, i);
@@ -87,8 +87,8 @@ fn query_without_limit() {
 #[test]
 fn query_with_limit_with_without_offset() {
     let _ = remove_all();
-    let alias = "query_with_limit_without_offset".as_bytes();
-    let secret = "query_with_limit_without_offset".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     let asset_num = 10;
     for i in 0..asset_num {
         let alias_new = format!("{:?}{}", alias, i);
@@ -121,8 +121,8 @@ fn query_with_limit_with_without_offset() {
 
 #[test]
 fn query_with_without_return_type() {
-    let alias = "query_with_without_return_type".as_bytes();
-    let secret = "query_with_without_return_type".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     add_default_asset(alias, secret).unwrap();
 
     assert!(!query_attr_by_alias(alias).unwrap()[0].contains_key(&Tag::Secret));
@@ -133,8 +133,8 @@ fn query_with_without_return_type() {
 
 #[test]
 fn query_with_secret() {
-    let alias = "query_with_secret".as_bytes();
-    let secret = "query_with_secret".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     add_default_asset(alias, secret).unwrap();
 
     let query = AssetMap::from([(Tag::Secret, Value::Bytes(secret.to_vec()))]);
@@ -145,8 +145,8 @@ fn query_with_secret() {
 
 #[test]
 fn query_with_return_all_without_alias() {
-    let alias = "query_with_return_all_without_alias".as_bytes();
-    let secret = "query_with_return_all_without_alias".as_bytes();
+    let alias = std::any::type_name::<()>().as_bytes();
+    let secret = std::any::type_name::<()>().as_bytes();
     add_default_asset(alias, secret).unwrap();
 
     let query = AssetMap::from([(Tag::ReturnType, Value::Number(ReturnType::All as u32))]);
