@@ -14,9 +14,11 @@
  */
 
 //! This module is used to clear resources after query the Asset that required secondary identity authentication.
+use std::sync::Arc;
 
 use asset_crypto_manager::crypto::CryptoManager;
 use asset_definition::{AssetMap, ErrCode, Result, Tag, Value};
+use asset_log::loge;
 
 use crate::{calling_info::CallingInfo, operations::common};
 
@@ -27,16 +29,17 @@ fn check_arguments(query: &AssetMap) -> Result<()> {
     common::check_value_validity(query)
 }
 
-// todo: to implement
 pub(crate) fn post_query(handle: &AssetMap, _calling_info: &CallingInfo) -> Result<()> {
     check_arguments(handle)?;
     let Some(Value::Bytes(ref challenge)) = handle.get(&Tag::AuthChallenge) else {
         return Err(ErrCode::InvalidArgument);
     };
 
-    // todo crypto manager的获取需要改用单例模式
-    let mut crypto_manager = CryptoManager::new();
-    // todo 等接口改了之后删掉challenge_pos参数
-    crypto_manager.remove(challenge);
+    let mut instance = CryptoManager::get_instance();
+    if let Some(crypto_manager) = Arc::get_mut(&mut instance) {
+        crypto_manager.remove(challenge);
+    } else {
+        loge!("[FATAL]get crypto manager fail!");
+    }
     Ok(())
 }

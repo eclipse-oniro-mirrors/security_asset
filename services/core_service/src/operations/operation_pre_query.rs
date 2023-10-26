@@ -14,6 +14,7 @@
  */
 
 //! This module prepares for querying Asset that required secondary identity authentication.
+use std::sync::Arc;
 
 use asset_crypto_manager::{
     crypto::{Crypto, CryptoManager, SecretKey},
@@ -100,11 +101,13 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
         cryptos.push(crypto);
     }
 
-    // todo crypto manager的获取需要改用单例模式
-    let mut crypto_manager = CryptoManager::new();
-    for crypto in cryptos {
-        crypto_manager.add(crypto)?;
+    let mut instance = CryptoManager::get_instance();
+    if let Some(crypto_manager) = Arc::get_mut(&mut instance) {
+        for crypto in cryptos {
+            crypto_manager.add(crypto)?;
+        }
+    } else {
+        loge!("[FATAL]get crypto manager fail!");
     }
-    logi!("get challenge successful!"); // todo delete
     Ok(challenge)
 }

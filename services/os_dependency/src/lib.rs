@@ -15,7 +15,7 @@
 
 //! This module is used to adapt to the functions on which assets depend.
 
-use std::slice;
+use std::{slice, sync::Arc};
 
 use asset_constants::OwnerType;
 use asset_crypto_manager::crypto::{CryptoManager, SecretKey};
@@ -68,8 +68,10 @@ pub extern "C" fn delete_dir_by_user(user_id: i32) -> bool {
 /// Function called from C programming language to Rust programming language for delete crypto.
 #[no_mangle]
 pub extern "C" fn delete_device_unlock_crypto() {
-    // todo crypto manager的获取需要改用单例模式
-    let mut _crypto_manager = CryptoManager::new();
-    // todo 等接口好了调用
-    loge!("delete_device_unlock_crypto"); // todo delete
+    let mut instance = CryptoManager::get_instance();
+    if let Some(crypto_manager) = Arc::get_mut(&mut instance) {
+        crypto_manager.remove_device_unlock();
+    } else {
+        loge!("[FATAL]get crypto manager fail!"); // todo delete
+    }
 }

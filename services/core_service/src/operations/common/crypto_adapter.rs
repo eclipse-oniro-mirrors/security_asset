@@ -15,6 +15,8 @@
 
 //! This module is used to adapt to the crypto manager.
 
+use std::sync::Arc;
+
 use asset_crypto_manager::crypto::{construct_alias, Crypto, CryptoManager, SecretKey};
 use asset_db_operator::{
     database_table_helper::{
@@ -159,19 +161,20 @@ pub(crate) fn exec_crypto(
     };
     let access_type = Accessibility::try_from(*access_type)?;
 
-    // todo crypto manager 使用单例
-    let crypto_manager = CryptoManager::new();
-
-    // todo challenge_pos 改用 alias
-    let _alias = construct_alias(calling_info.user_id(), &sha256(calling_info.owner_info()), auth_type, access_type);
-    match crypto_manager.find(&_alias, challenge) {
-        Some(crypto) => {
-            // todo 添加auth_token
-            let secret = crypto.exec_crypto(secret, &construct_aad(db_data))?;
-            loge!("get secret {} success!!!!", String::from_utf8_lossy(&secret)); // todo delete
-            db_data.insert(COLUMN_SECRET, Value::Bytes(secret));
-        },
-        None => return Err(ErrCode::CryptoError),
+    let mut instance = CryptoManager::get_instance();
+    if let Some(crypto_manager) = Arc::get_mut(&mut instance) {
+        let alias = construct_alias(calling_info.user_id(), &sha256(calling_info.owner_info()), auth_type, access_type);
+        match crypto_manager.find(&alias, challenge) {
+            Some(crypto) => {
+                // todo 添加auth_token
+                let secret = crypto.exec_crypto(secret, &construct_aad(db_data))?;
+                loge!("get secret {} success!!!!", String::from_utf8_lossy(&secret)); // todo delete
+                db_data.insert(COLUMN_SECRET, Value::Bytes(secret));
+            },
+            None => return Err(ErrCode::CryptoError),
+    }
+    } else {
+        loge!("[FATAL]get crypto manager fail!");
     }
 
     if !ipc_rust::set_calling_identity(identity) {
