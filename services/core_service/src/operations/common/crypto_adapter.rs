@@ -15,8 +15,6 @@
 
 //! This module is used to adapt to the crypto manager.
 
-use std::sync::Arc;
-
 use asset_crypto_manager::crypto::{construct_alias, Crypto, CryptoManager, SecretKey};
 use asset_db_operator::{
     database_table_helper::{
@@ -157,12 +155,14 @@ pub(crate) fn exec_crypto(
     let Some(Value::Number(auth_type)) = db_data.get(COLUMN_AUTH_TYPE) else { return Err(ErrCode::InvalidArgument) };
     let auth_type = AuthType::try_from(*auth_type)?;
     let Some(Value::Number(access_type)) = db_data.get(COLUMN_ACCESSIBILITY) else {
-        return Err(ErrCode::InvalidArgument);
+        return Err(ErrCode::InvalidArgument); // 复用build_secret_key
     };
     let access_type = Accessibility::try_from(*access_type)?;
 
-    let mut instance = CryptoManager::get_instance();
-    if let Some(crypto_manager) = Arc::get_mut(&mut instance) {
+    let instance = CryptoManager::get_instance();
+    let crypto_manager = instance.lock().unwrap();
+    // if let Some(crypto_manager) = Arc::get_mut(&mut instance) {
+        // todo: 修改crypto_manager find函数的入参 alias-> secretKey
         let alias = construct_alias(calling_info.user_id(), &sha256(calling_info.owner_info()), auth_type, access_type);
         match crypto_manager.find(&alias, challenge) {
             Some(crypto) => {
@@ -173,9 +173,9 @@ pub(crate) fn exec_crypto(
             },
             None => return Err(ErrCode::CryptoError),
     }
-    } else {
-        loge!("[FATAL]get crypto manager fail!");
-    }
+    // } else {
+    //     loge!("[FATAL]get crypto manager fail!");
+    // }
 
     if !ipc_rust::set_calling_identity(identity) {
         loge!("Execute set_calling_identity failed.");

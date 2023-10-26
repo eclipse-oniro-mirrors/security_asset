@@ -52,7 +52,7 @@ impl SecretKey {
     }
 
     /// Check whether the secret key exists.
-    pub fn exists(&self) -> Result<bool, HuksErrcode> {
+    pub fn exists(&self) -> Result<bool, HuksErrcode> { // todo: zdy exists去掉最后的s
         let ret = unsafe { KeyExist(self.alias.len() as u32, self.alias.as_ptr()) };
         match ret {
             HKS_SUCCESS => Ok(true),
@@ -309,15 +309,15 @@ impl Default for CryptoManager {
 /// concurrency is not handlled in these impl, plese handle it
 impl CryptoManager {
     /// new crypto manager
-    pub fn new() -> Self {
+    fn new() -> Self { //
         Self { crypto_vec: vec![], mutex: Mutex::new(0) }
     }
 
     /// get single instance for cryptomgr
-    pub fn get_instance() -> Arc<CryptoManager> {
-        static mut INSTANCE: Option<Arc<CryptoManager>> = None;
+    pub fn get_instance() -> Arc<Mutex<CryptoManager>> {
+        static mut INSTANCE: Option<Arc<Mutex<CryptoManager>>> = None;
         unsafe {
-            INSTANCE.get_or_insert_with(|| Arc::new(CryptoManager { crypto_vec: vec![], mutex: Mutex::new(0) })).clone()
+            INSTANCE.get_or_insert_with(|| Arc::new(Mutex::new(CryptoManager::new()))).clone()
         }
     }
 

@@ -14,11 +14,9 @@
  */
 
 //! This module is used to clear resources after query the Asset that required secondary identity authentication.
-use std::sync::Arc;
 
 use asset_crypto_manager::crypto::CryptoManager;
 use asset_definition::{AssetMap, ErrCode, Result, Tag, Value};
-use asset_log::loge;
 
 use crate::{calling_info::CallingInfo, operations::common};
 
@@ -35,11 +33,12 @@ pub(crate) fn post_query(handle: &AssetMap, _calling_info: &CallingInfo) -> Resu
         return Err(ErrCode::InvalidArgument);
     };
 
-    let mut instance = CryptoManager::get_instance();
-    if let Some(crypto_manager) = Arc::get_mut(&mut instance) {
+    let instance = CryptoManager::get_instance();
+    let mut crypto_manager = instance.lock().unwrap();
+    // if let Some(crypto_manager) = Arc::get_mut(&mut instance) {
         crypto_manager.remove(challenge);
-    } else {
-        loge!("[FATAL]get crypto manager fail!");
-    }
+    // } else {
+    //     loge!("[FATAL]get crypto manager fail!");
+    // }
     Ok(())
 }

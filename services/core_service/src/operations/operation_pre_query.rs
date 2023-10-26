@@ -14,7 +14,6 @@
  */
 
 //! This module prepares for querying Asset that required secondary identity authentication.
-use std::sync::Arc;
 
 use asset_crypto_manager::{
     crypto::{Crypto, CryptoManager, SecretKey},
@@ -40,11 +39,12 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
 
-    let auth_type = AuthType::Any as u32;
     match attributes.get(&Tag::AuthType) {
-        Some(Value::Number(val)) if *val == auth_type => Ok(()),
-        None => Ok(()),
-        _ => Err(ErrCode::InvalidArgument),
+        Some(Value::Number(val)) if *val == (AuthType::None as u32) => {
+            loge!("todo"); // todo
+            Err(ErrCode::InvalidArgument)
+        },
+        _ => Ok(()),
     }
 }
 
@@ -61,7 +61,10 @@ fn query_access_types(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
     for db_result in results {
         match db_result.get(&COLUMN_ACCESSIBILITY) {
             Some(Value::Number(access_type)) => access_types.push(Accessibility::try_from(*access_type)?),
-            _ => return Err(ErrCode::InvalidArgument),
+            _ => {
+                loge!("todo"); // todo
+                return Err(ErrCode::InvalidArgument)
+            },
         }
     }
     Ok(access_types)
@@ -77,23 +80,24 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
     let access_types = query_access_types(calling_info, &db_data)?;
 
     if access_types.is_empty() {
+        loge!("todo"); // todo 统一加日志
         return Err(ErrCode::NotFound);
     }
+
+    let Value::Number(exp_time) = query.get(&Tag::AuthValidityPeriod).unwrap_or(&Value::Number(60)) else {
+        return Err(ErrCode::InvalidArgument);
+    };
+    let owner_hash = sha256(calling_info.owner_info());
 
     let mut challenge = vec![0; CHALLENGE_LEN as usize];
     let mut cryptos = Vec::with_capacity(4);
     for (idx, access_type) in access_types.iter().enumerate() {
-        // get_or_default
-        let Value::Number(exp_time) = query.get(&Tag::AuthValidityPeriod).unwrap_or(&Value::Number(60)) else {
-            return Err(ErrCode::InvalidArgument);
-        };
-
         let secret_key =
-            SecretKey::new(calling_info.user_id(), &sha256(calling_info.owner_info()), AuthType::Any, *access_type);
+            SecretKey::new(calling_info.user_id(), &owner_hash, AuthType::Any, *access_type);
         let mut crypto = Crypto::new(HKS_KEY_PURPOSE_DECRYPT, secret_key, idx as u32, *exp_time);
 
-        match crypto.init_crypto() {
-            Ok(the_challenge) => {
+        match crypto.init_crypto() { // 问号表达式
+            Ok(the_challenge) => { // todo: 8 和 1 魔鬼数字， 抽一个函数：入参32字节和pos, 出参8字节 &[u8; 8] getter setter
                 challenge[(idx * 8)..((idx + 1) * 8)].copy_from_slice(&the_challenge[(idx * 8)..((idx + 1) * 8)]);
             },
             Err(e) => return Err(e),
@@ -101,13 +105,14 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
         cryptos.push(crypto);
     }
 
-    let mut instance = CryptoManager::get_instance();
-    if let Some(crypto_manager) = Arc::get_mut(&mut instance) {
+    let instance = CryptoManager::get_instance();
+    let mut crypto_manager = instance.lock().unwrap();
+    // if let Some(crypto_manager) = Arc::get_mut(&mut instance) {
         for crypto in cryptos {
             crypto_manager.add(crypto)?;
         }
-    } else {
-        loge!("[FATAL]get crypto manager fail!");
-    }
+    // } else {
+        // loge!("[FATAL]get crypto manager fail!"); // todo: 并发操作不能直接报错，应该等待
+    // }
     Ok(challenge)
 }

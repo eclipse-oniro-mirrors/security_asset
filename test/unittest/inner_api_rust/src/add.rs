@@ -18,7 +18,7 @@ use asset_sdk::{AssetMap, AuthType, ConflictResolution, ErrCode, Insert, Tag, Va
 use crate::common::{get_bytes, get_number, query_attr_by_alias, remove_by_alias};
 
 #[test]
-fn add_values_match_query() {
+fn add_all_tags() {
     let alias = "add_values_match_query".as_bytes();
     let data_label = "add_values_match_query_data_label".as_bytes();
     let secret = "add_values_match_query_secret".as_bytes();
@@ -30,8 +30,6 @@ fn add_values_match_query() {
     add.insert_attr(Tag::AuthType, auth_type).unwrap();
     asset_sdk::Manager::build().unwrap().add(&add).unwrap();
 
-    let mut query = AssetMap::new();
-    query.insert_attr(Tag::Alias, alias.to_owned()).unwrap();
     let res = query_attr_by_alias(alias).unwrap();
     assert_eq!(1, res.len());
     assert_eq!(data_label, *get_bytes(&res[0], Tag::DataLabelCritical1).unwrap());
