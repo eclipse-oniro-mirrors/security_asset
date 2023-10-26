@@ -25,12 +25,13 @@ extern "C" {
 struct CryptParam {
     enum HksKeyPurpose cryptoMode;
     uint32_t challengePos;
+    uint32_t expTime;
 };
 
 /* once encrypt&decrypt */
-int32_t EncryptWrapper(const struct HksBlob *keyAlias, const struct HksBlob *aadData,
+int32_t EncryptWrapper(const struct HksBlob *keyData, const struct HksBlob *aadData,
         const struct HksBlob *inData, struct HksBlob *outData);
-int DecryptWrapper(const struct HksBlob *keyAlias, const struct HksBlob *aadData,
+int DecryptWrapper(const struct HksBlob *keyData, const struct HksBlob *aadData,
         const struct HksBlob *inData, struct HksBlob *outData);
 
 /* multi encrypt&decrypt */

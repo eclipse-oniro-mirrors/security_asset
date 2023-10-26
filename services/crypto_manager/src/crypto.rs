@@ -15,10 +15,11 @@
 
 //! This module is used to implement cryptographic algorithm operations, including key generation and usage.
 
-use asset_definition::{Accessibility, AuthType, ErrCode};
-use asset_log::{loge, logi};
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::time::{SystemTime, UNIX_EPOCH};
+use asset_definition::{Accessibility, AuthType, ErrCode};
+use asset_log::{loge, logi};
 
 use crate::huks_ffi::*;
 
@@ -60,8 +61,13 @@ impl SecretKey {
     }
 
     /// Check whether the secret key exists.
-    pub fn exists(&self) -> Result<bool, ErrCode> { // todo: zdy exists去掉最后的s
-        let ret = unsafe { KeyExist(self.alias.len() as u32, self.alias.as_ptr()) };
+    pub fn exists(&self) -> Result<bool, ErrCode> {
+        let key_data = ConstCryptoBlob {
+            size: self.alias.len() as u32,
+            data: self.alias.as_ptr(),
+        };
+
+        let ret = unsafe { KeyExist(&key_data as *const ConstCryptoBlob) };
         match ret {
             HKS_SUCCESS => Ok(true),
             HKS_ERROR_NOT_EXIST => Ok(false),
@@ -75,7 +81,12 @@ impl SecretKey {
     /// Generate the secret key
     pub fn generate(&self) -> Result<(), ErrCode> {
         loge!("start to generate key!!!!");
-        let ret = unsafe { GenerateKey(self.alias.len() as u32, self.alias.as_ptr()) };
+        let key_data = ConstCryptoBlob {
+            size: self.alias.len() as u32,
+            data: self.alias.as_ptr(),
+        };
+
+        let ret = unsafe { GenerateKey(&key_data as *const ConstCryptoBlob) };
         match ret {
             HKS_SUCCESS => Ok(()),
             _ => {
@@ -87,7 +98,12 @@ impl SecretKey {
 
     /// Delete the secret key.
     pub fn delete(&self) -> Result<(), ErrCode> {
-        let ret = unsafe { DeleteKey(self.alias.len() as u32, self.alias.as_ptr()) };
+        let key_data = ConstCryptoBlob {
+            size: self.alias.len() as u32,
+            data: self.alias.as_ptr(),
+        };
+
+        let ret = unsafe { DeleteKey(&key_data as *const ConstCryptoBlob) };
         match ret {
             HKS_SUCCESS => Ok(()),
             _ => {
@@ -120,8 +136,8 @@ pub struct Crypto {
     handle: Vec<u8>,
     /// challege position for huks
     challenge_pos: u32,
-    /// timeout time, reserved
-    _exp_time: u32, // 最大10min
+    /// timeout time, reserved, 600s max
+    exp_time: u64,
 }
 
 impl Drop for Crypto {
@@ -130,6 +146,7 @@ impl Drop for Crypto {
         let param = CryptParam {
             crypto_mode: self.mode,
             challenge_pos: self.challenge_pos,
+            exp_time: 0, // no use
         };
 
         let mut handle_data = CryptoBlob {
@@ -148,22 +165,37 @@ impl Drop for Crypto {
 impl Crypto {
     /// New a crypto struct
     pub fn new(mode: HksKeyPurpose, key: SecretKey, challenge_pos: u32, exp_time: u32) -> Self {
+        let now = SystemTime::now();
+        let since_the_epoch = now.duration_since(UNIX_EPOCH).expect("Time went backwards");
+        let now_second = since_the_epoch.as_secs();
+        logi!("now time is {}", now_second);
+
         Self {
             key,
             mode,
             challenge: vec![0; CHALLENGE_LEN as usize],
             handle: vec![0; HANDLE_LEN as usize],
             challenge_pos,
-            _exp_time: exp_time,
+            exp_time: now_second + exp_time as u64,
         }
     }
 
     /// Start HuksInit
     pub fn init_crypto(&mut self) -> Result<Vec<u8>, ErrCode> {
+        let now = SystemTime::now();
+        let since_the_epoch = now.duration_since(UNIX_EPOCH).expect("Time went backwards");
+        let now_second = since_the_epoch.as_secs();
+        logi!("now time is {}", now_second);
+        if now_second >= self.exp_time {
+            loge!("init crypto time expired {}", now_second);
+            return Err(ErrCode::AuthTokenExpired);
+        }
+
         // in param
         let param = CryptParam {
             crypto_mode: self.mode,
             challenge_pos: self.challenge_pos,
+            exp_time: (self.exp_time - now_second) as u32,
         };
 
         let key_data = ConstCryptoBlob {
@@ -171,6 +203,7 @@ impl Crypto {
             data: self.key.alias.as_ptr(),
         };
 
+        // out param
         let mut challenge_data = CryptoBlob {
             size: self.challenge.len() as u32,
             data: self.challenge.as_mut_ptr(),
@@ -192,15 +225,25 @@ impl Crypto {
         }
     }
 
-    //todo：需要判断一下超时时间，返回超时错误码 AuthTokenExpired，需要增加authtoken入参
+    //todo：需要增加authtoken入参
     /// Exec encrypt or decrypt
     pub fn exec_crypto(&self, msg: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
+        let now = SystemTime::now();
+        let since_the_epoch = now.duration_since(UNIX_EPOCH).expect("Time went backwards");
+        let now_second = since_the_epoch.as_secs();
+        logi!("now time is {}", now_second);
+        if now_second >= self.exp_time {
+            loge!("exec crypto time expired {}", now_second);
+            return Err(ErrCode::AuthTokenExpired);
+        }
+
         // out param
         let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize + NONCE_SIZE as usize];
         // in param
         let param = CryptParam {
             crypto_mode: self.mode,
             challenge_pos: self.challenge_pos,
+            exp_time: 0, // no use
         };
 
         let aad_data = ConstCryptoBlob {

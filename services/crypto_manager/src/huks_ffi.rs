@@ -49,6 +49,8 @@ pub struct CryptParam {
     pub crypto_mode: HksKeyPurpose,
     /// challenge position
     pub challenge_pos: u32,
+    /// expeire time
+    pub exp_time: u32,
 }
 
 /// const crypto blobs, keep same with crypto_wrapper.h
@@ -71,20 +73,20 @@ pub struct CryptoBlob {
 
 extern "C" {
     /// c generate key
-    pub fn GenerateKey(keyLen: u32, keyData: *const u8) -> HuksErrcode;
+    pub fn GenerateKey(key_data: *const ConstCryptoBlob) -> HuksErrcode;
 
     /// c delete key
-    pub fn DeleteKey(keyLen: u32, keyData: *const u8) -> HuksErrcode;
+    pub fn DeleteKey(key_data: *const ConstCryptoBlob) -> HuksErrcode;
 
     /// c key exist
-    pub fn KeyExist(keyLen: u32, keyData: *const u8) -> HuksErrcode;
+    pub fn KeyExist(key_data: *const ConstCryptoBlob) -> HuksErrcode;
 
     /// hks encrypt c func
-    pub fn EncryptWrapper(key_alias: *const ConstCryptoBlob, aad_data: *const ConstCryptoBlob,
+    pub fn EncryptWrapper(key_data: *const ConstCryptoBlob, aad_data: *const ConstCryptoBlob,
         in_data: *const ConstCryptoBlob, out_data: *mut CryptoBlob) -> HuksErrcode;
 
     /// hks decrypt c func
-    pub fn DecryptWrapper(key_alias: *const ConstCryptoBlob, aad_data: *const ConstCryptoBlob,
+    pub fn DecryptWrapper(key_data: *const ConstCryptoBlob, aad_data: *const ConstCryptoBlob,
         in_data: *const ConstCryptoBlob, out_data: *mut CryptoBlob) -> HuksErrcode;
 
     /// hks crypto init c func

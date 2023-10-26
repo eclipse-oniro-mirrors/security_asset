@@ -16,30 +16,10 @@
 
 #include "hks_key_wrapper.h"
 #include "hks_param.h"
-
 #include "asset_log.h"
 #include "asset_mem.h"
 
 const int HEX_RETIO = 2;
-
-static struct HksParam g_genParams[] = {
-    {
-        .tag = HKS_TAG_ALGORITHM,
-        .uint32Param = HKS_ALG_AES
-    }, {
-        .tag = HKS_TAG_PURPOSE,
-        .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT
-    }, {
-        .tag = HKS_TAG_KEY_SIZE,
-        .uint32Param = HKS_AES_KEY_SIZE_256
-    }, {
-        .tag = HKS_TAG_PADDING,
-        .uint32Param = HKS_PADDING_NONE
-    }, {
-        .tag = HKS_TAG_BLOCK_MODE,
-        .uint32Param = HKS_MODE_GCM
-    }
-};
 
 int32_t InitParamSet(struct HksParamSet **paramSet, const struct HksParam *params, uint32_t paramcount)
 {
@@ -80,33 +60,73 @@ static void PrintBytes(const char *tag, const uint8_t *stream, const uint32_t le
     AssetFree(str);
 }
 
-// todo : zdy : 参数名
-int32_t GenerateKey(uint32_t keyLen, const uint8_t *keyData)
+static int32_t CreateGenKeyParamSet(struct HksParamSet **paramSet)
 {
-    PrintBytes("GenerateKey", keyData, keyLen);
-    // todo: zdy : keyData强转
-    struct HksBlob keyAlias = { keyLen, (uint8_t *)keyData };
+    struct HksParam genKeyParams[] = {
+        {
+            .tag = HKS_TAG_ALGORITHM,
+            .uint32Param = HKS_ALG_AES
+        }, {
+            .tag = HKS_TAG_PURPOSE,
+            .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT
+        }, {
+            .tag = HKS_TAG_KEY_SIZE,
+            .uint32Param = HKS_AES_KEY_SIZE_256
+        }, {
+            .tag = HKS_TAG_PADDING,
+            .uint32Param = HKS_PADDING_NONE
+        }, {
+            .tag = HKS_TAG_BLOCK_MODE,
+            .uint32Param = HKS_MODE_GCM
+        }
+    };
+
+    return InitParamSet(paramSet, genKeyParams, sizeof(genKeyParams) / sizeof(HksParam));
+}
+
+int32_t GenerateKey(const struct HksBlob *keyData)
+{
+    if (keyData->size == 0 || keyData->data == nullptr) {
+        LOGE("invalid key data\n");
+        return HKS_ERROR_INVALID_ARGUMENT;
+    }
+
+    PrintBytes("GenerateKey", keyData->data, keyData->size);
     struct HksParamSet *paramSetIn = NULL;
-    // todo zdy genParams没必要全局
     // todo zdy 缺少访问控制参数
-    int32_t ret = InitParamSet(&paramSetIn, g_genParams, sizeof(g_genParams) / sizeof(HksParam));
+    int32_t ret = CreateGenKeyParamSet(&paramSetIn);
     if (ret != HKS_SUCCESS) {
+        LOGE("generate key huks init param failed\n");
+        HksFreeParamSet(&paramSetIn);
         return ret;
     }
-    // todo : zdy  paramset 内存释放
 
-    return HksGenerateKey(&keyAlias, paramSetIn, nullptr);
+    ret = HksGenerateKey(keyData, paramSetIn, nullptr);
+    if (ret != HKS_SUCCESS) {
+        LOGE("generate key huks failed\n");
+    }
+
+    HksFreeParamSet(&paramSetIn);
+    return ret;
 }
 
-int32_t DeleteKey(uint32_t keyLen, const uint8_t *keyData)
+int32_t DeleteKey(const struct HksBlob *keyData)
 {
-    PrintBytes("DeleteKey", keyData, keyLen);
-    struct HksBlob keyAlias = { keyLen, (uint8_t *)keyData };
-    return HksDeleteKey(&keyAlias, nullptr);
+    if (keyData->size == 0 || keyData->data == nullptr) {
+        LOGE("invalid key data\n");
+        return HKS_ERROR_INVALID_ARGUMENT;
+    }
+
+    PrintBytes("DeleteKey", keyData->data, keyData->size);
+    return HksDeleteKey(keyData, nullptr);
 }
 
-int32_t KeyExist(uint32_t keyLen, const uint8_t *keyData)
+int32_t KeyExist(const struct HksBlob *keyData)
 {
-    struct HksBlob keyAlias = { keyLen, (uint8_t *)keyData };
-    return HksKeyExist(&keyAlias, nullptr);
+    if (keyData->size == 0 || keyData->data == nullptr) {
+        LOGE("invalid key data\n");
+        return HKS_ERROR_INVALID_ARGUMENT;
+    }
+
+    return HksKeyExist(keyData, nullptr);
 }
