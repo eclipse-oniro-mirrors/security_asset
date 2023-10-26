@@ -162,7 +162,7 @@ declare namespace asset {
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
-  export interface Version {
+  interface Version {
     /**
      * The major version.
      *
@@ -195,7 +195,7 @@ declare namespace asset {
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
-  export type AssetMap = Map<Tag, Value>;
+  type AssetMap = Map<Tag, Value>;
 
   /**
    * A type that indicates the secret or attribute value of an Asset tag.
@@ -203,7 +203,7 @@ declare namespace asset {
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
-  export type Value = boolean | number | Uint8Array;
+  type Value = boolean | number | Uint8Array;
 
   /**
    * An enum type indicates when the Asset is accessible.
@@ -212,7 +212,7 @@ declare namespace asset {
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
-  export enum Accessibility {
+  enum Accessibility {
     /**
      * The secret value in the Asset can only be accessed after the device is first unlocked.
      *
@@ -236,7 +236,7 @@ declare namespace asset {
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
-  export enum AuthType {
+  enum AuthType {
     /**
      * The access to an Asset doesn't require user authentication.
      *
@@ -260,7 +260,7 @@ declare namespace asset {
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
-  export enum SyncType {
+  enum SyncType {
     /**
      * An Asset with this attribute value is never allowed to be transferred out.
      *
@@ -298,7 +298,7 @@ declare namespace asset {
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
-  export enum ConflictResolution {
+  enum ConflictResolution {
     /**
      * Directly overwrite an Asset with duplicated alias when a conflict is detected.
      *
@@ -322,7 +322,7 @@ declare namespace asset {
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
-  export enum ReturnType {
+  enum ReturnType {
     /**
      * Specify that the return data should contain both secret value and attributes.
      *
@@ -377,7 +377,7 @@ declare namespace asset {
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
-  export enum Tag {
+  enum Tag {
     /**
      * A tag whose value is a byte array indicating the sensitive user data such as passwords and tokens.
      *
@@ -531,7 +531,7 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    RETURN_ORDER_BY = TagType.NUMBER | 0x43,
+    RETURN_ORDERED_BY = TagType.NUMBER | 0x43,
   }
 
   /**
@@ -541,7 +541,7 @@ declare namespace asset {
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
-  export enum ErrorCode {
+  enum ErrorCode {
     /**
      * The error code indicates that the caller doesn't have permission to operate.
      *
@@ -681,14 +681,21 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    SYSTEM_TIME_GET_ERROR = 24000017,
+    GET_SYSTEM_TIME_ERROR = 24000017,
+    /**
+     * The error code indicates that getting the mutex failed.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
+    ASSET_GET_MUTEX_ERROR = 24000018,
     /**
      * The error code indicates that the amount of map element or other limited quotas exceed the limit.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    EXCEED_LIMIT = 24000018,
+    LIMIT_EXCEEDED = 24000019,
   }
 }
 

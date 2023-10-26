@@ -13,28 +13,41 @@
  * limitations under the License.
  */
 
+#![allow(dead_code)]
+
 use asset_sdk::{AssetMap, ErrCode, Result, ReturnType, Tag, Value};
 
-pub(crate) fn get_bytes(input: &AssetMap, tag: Tag) -> Result<&Vec<u8>> {
-    if let Some(Value::Bytes(bytes)) = input.get(&tag) {
-        return Ok(bytes);
+pub(crate) fn get_bytes(attrs: &AssetMap, tag: Tag) -> Result<&Vec<u8>> {
+    if let Some(Value::Bytes(bytes)) = attrs.get(&tag) {
+        Ok(bytes)
+    } else {
+        Err(ErrCode::InvalidArgument)
     }
-    Err(ErrCode::NotFound)
 }
 
-pub(crate) fn get_number(input: &AssetMap, tag: Tag) -> Result<u32> {
-    if let Some(Value::Number(num)) = input.get(&tag) {
-        return Ok(*num);
+pub(crate) fn get_number(attrs: &AssetMap, tag: Tag) -> Result<u32> {
+    if let Some(Value::Number(num)) = attrs.get(&tag) {
+        Ok(*num)
+    } else {
+        Err(ErrCode::InvalidArgument)
     }
-    Err(ErrCode::NotFound)
 }
 
-// pub(crate) fn get_bool(input: &AssetMap, tag: Tag) -> Result<bool> {
-//     if let Some(Value::Bool(b)) = input.get(&tag) {
-//         return Ok(*b)
-//     }
-//     Err(ErrCode::NotFound)
-// }
+pub(crate) fn get_enum_variant<T: TryFrom<u32, Error = ErrCode>>(attrs: &AssetMap, tag: Tag) -> Result<T> {
+    if let Some(Value::Number(num)) = attrs.get(&tag) {
+        T::try_from(*num)
+    } else {
+        Err(ErrCode::InvalidArgument)
+    }
+}
+
+pub(crate) fn get_bool(attrs: &AssetMap, tag: Tag) -> Result<bool> {
+    if let Some(Value::Bool(b)) = attrs.get(&tag) {
+        Ok(*b)
+    } else {
+        Err(ErrCode::InvalidArgument)
+    }
+}
 
 pub(crate) fn remove_by_alias(alias: &[u8]) -> Result<()> {
     asset_sdk::Manager::build()?.remove(&AssetMap::from([(Tag::Alias, Value::Bytes(alias.to_vec()))]))

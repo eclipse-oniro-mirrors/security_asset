@@ -161,7 +161,7 @@ typedef enum {
     /**
      * A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
      */
-    ASSET_TAG_RETURN_ORDER_BY = ASSET_TYPE_NUMBER | 0x43,
+    ASSET_TAG_RETURN_ORDERED_BY = ASSET_TYPE_NUMBER | 0x43,
 } Asset_Tag;
 
 /**
@@ -253,11 +253,15 @@ typedef enum {
     /**
      * The error code indicates that the operation of getting system time is failed.
      */
-    ASSET_SYSTEM_TIME_GET_ERROR = 24000017,
+    ASSET_GET_SYSTEM_TIME_ERROR = 24000017,
+    /**
+     * The error code indicates that getting the mutex failed.
+     */
+    ASSET_GET_MUTEX_ERROR = 24000018,
     /**
      * The error code indicates that the amount of map element or other limited quotas exceed the limit.
      */
-    ASSET_EXCEED_LIMIT = 24000018,
+    ASSET_LIMIT_EXCEEDED = 24000019,
 } Asset_ResultCode;
 
 /**

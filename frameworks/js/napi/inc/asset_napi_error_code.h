@@ -35,6 +35,7 @@ const std::unordered_map<int32_t, const char *> ERR_MSGS = {
     { ASSET_DUPLICATED, "The added Asset already exists." },
     { ASSET_ACCESS_DENIED, "The access to Asset is denied." },
     { ASSET_AUTH_TOKEN_EXPIRED, "The authentication token has expired." },
+    { ASSET_STATUS_MISMATCH, "The screen lock status mismatches." },
     { ASSET_OUT_OF_MEMRORY, "Insufficient memory." },
     { ASSET_DATA_CORRUPTED, "The Asset or encryption key is corrupted." },
 };

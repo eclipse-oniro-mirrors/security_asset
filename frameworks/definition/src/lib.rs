@@ -106,7 +106,7 @@ impl_enum_trait! {
         ReturnOffset = DataType::Number as isize | 0x42,
 
         /// A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
-        ReturnOrderBy = DataType::Number as isize | 0x43,
+        ReturnOrderedBy = DataType::Number as isize | 0x43,
     }
 }
 
@@ -192,10 +192,13 @@ impl_enum_trait! {
         FileOperationError = 24000016,
 
         /// The error code indicates that the operation of getting system time failed.
-        SystemTimeError = 24000017,
+        GetSystemTimeError = 24000017,
+
+        /// The error code indicates that getting the mutex failed.
+        GetMutexError = 24000018,
 
         /// The error code indicates that the amount of map element or other limited quotas exceed the limit.
-        ExceedLimit = 24000018,
+        LimitExceeded = 24000019,
     }
 }
 
@@ -204,6 +207,7 @@ pub type Result<T> = std::result::Result<T, ErrCode>;
 
 impl_enum_trait! {
     /// An enum type indicates when the Asset is accessible.
+    #[derive(Debug)]
     #[derive(Clone, Copy)]
     #[derive(PartialEq, Eq)]
     pub enum Accessibility {
@@ -217,6 +221,7 @@ impl_enum_trait! {
 
 impl_enum_trait! {
     /// An enum type indicates the user authentication type for Asset access control.
+    #[derive(Debug)]
     #[derive(Clone, Copy)]
     #[derive(PartialEq, Eq)]
     pub enum AuthType {
@@ -230,6 +235,9 @@ impl_enum_trait! {
 
 impl_enum_trait! {
     /// An enum type indicates the type of Asset synchronization.
+    #[derive(Debug)]
+    #[derive(Clone, Copy)]
+    #[derive(PartialEq, Eq)]
     pub enum SyncType {
         /// An Asset with this attribute value is never allowed to be transferred out.
         Never = 0,

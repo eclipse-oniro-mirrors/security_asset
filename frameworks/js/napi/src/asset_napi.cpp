@@ -56,7 +56,7 @@ napi_value DeclareTag(napi_env env)
     AddUint32Property(env, tag, "RETURN_TYPE", ASSET_TAG_RETURN_TYPE);
     AddUint32Property(env, tag, "RETURN_LIMIT", ASSET_TAG_RETURN_LIMIT);
     AddUint32Property(env, tag, "RETURN_OFFSET", ASSET_TAG_RETURN_OFFSET);
-    AddUint32Property(env, tag, "RETURN_ORDER_BY", ASSET_TAG_RETURN_ORDER_BY);
+    AddUint32Property(env, tag, "RETURN_ORDERED_BY", ASSET_TAG_RETURN_ORDERED_BY);
     return tag;
 }
 
@@ -83,8 +83,9 @@ napi_value DeclareErrorCode(napi_env env)
     AddUint32Property(env, errorCode, "COMMON_EVENT_ERROR", ASSET_COMMON_EVENT_ERROR);
     AddUint32Property(env, errorCode, "ACCESS_TOKEN_ERROR", ASSET_ACCESS_TOKEN_ERROR);
     AddUint32Property(env, errorCode, "FILE_OPERATION_ERROR", ASSET_FILE_OPERATION_ERROR);
-    AddUint32Property(env, errorCode, "SYSTEM_TIME_GET_ERROR", ASSET_SYSTEM_TIME_GET_ERROR);
-    AddUint32Property(env, errorCode, "EXCEED_LIMIT", ASSET_EXCEED_LIMIT);
+    AddUint32Property(env, errorCode, "GET_SYSTEM_TIME_ERROR", ASSET_GET_SYSTEM_TIME_ERROR);
+    AddUint32Property(env, errorCode, "GET_MUTEX_ERROR", ASSET_GET_MUTEX_ERROR);
+    AddUint32Property(env, errorCode, "LIMIT_EXCEEDED", ASSET_LIMIT_EXCEEDED);
     return errorCode;
 }
 

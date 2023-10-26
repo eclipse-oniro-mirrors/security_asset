@@ -75,7 +75,7 @@ pub fn serialize_map(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<(
     logi!("enter serialize"); // todo: delete
     if map.len() as u32 > MAX_MAP_CAPACITY {
         loge!("[FALTAL][IPC]The map size exceeds the limit.");
-        return Err(ErrCode::ExceedLimit);
+        return Err(ErrCode::LimitExceeded);
     }
     parcel.write(&(map.len() as u32)).map_err(|_| ErrCode::IpcError)?;
     for (&tag, value) in map.iter() {
@@ -96,7 +96,7 @@ pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
     let len = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
     if len > MAX_MAP_CAPACITY {
         loge!("[FATAL][IPC]The map size exceeds the limit.");
-        return Err(ErrCode::ExceedLimit);
+        return Err(ErrCode::LimitExceeded);
     }
     let mut map = AssetMap::with_capacity(len as usize);
     for _ in 0..len {
@@ -126,7 +126,7 @@ pub fn serialize_maps(vec: &Vec<AssetMap>, parcel: &mut BorrowedMsgParcel) -> Re
     logi!("enter serialize_maps");
     if vec.len() as u32 > MAX_VEC_CAPACITY {
         loge!("[FATAL][IPC]The vector size exceeds the limit.");
-        return Err(ErrCode::ExceedLimit);
+        return Err(ErrCode::LimitExceeded);
     }
     parcel.write::<u32>(&(vec.len() as u32)).map_err(|_| ErrCode::IpcError)?;
     for map in vec.iter() {
@@ -142,7 +142,7 @@ pub fn deserialize_maps(parcel: &BorrowedMsgParcel) -> Result<Vec<AssetMap>> {
     let len = parcel.read::<u32>().map_err(|_| ErrCode::InvalidArgument)?;
     if len > MAX_VEC_CAPACITY {
         loge!("[FATAL][IPC]The vector size exceeds the limit.");
-        return Err(ErrCode::ExceedLimit);
+        return Err(ErrCode::LimitExceeded);
     }
     let mut res_vec = Vec::with_capacity(len as usize);
     for _i in 0..len {

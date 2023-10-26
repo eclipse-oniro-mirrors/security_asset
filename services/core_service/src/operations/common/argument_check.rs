@@ -16,7 +16,7 @@
 //! This module is used to verify the validity of asset attributes.
 
 use asset_definition::{
-    Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, IntoValue, Result, ReturnType, SyncType, Tag, Value,
+    Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, IntoValue, Result, ReturnType, Tag, Value,
 };
 use asset_log::loge;
 
@@ -34,6 +34,7 @@ const MAX_LABEL_SIZE: usize = 512;
 
 const AUTH_TOKEN_SIZE: usize = 148;
 const CHALLENGE_SIZE: usize = 32;
+const SYNC_TYPE_BITS: u32 = 3;
 
 fn check_data_type(tag: &Tag, value: &Value) -> Result<()> {
     if tag.data_type() != value.data_type() {
@@ -60,6 +61,17 @@ fn check_enum_variant<T: TryFrom<u32>>(tag: &Tag, value: &Value) -> Result<()> {
     };
     if T::try_from(*n).is_err() {
         loge!("[FATAL]The value of Tag[{}] is not a legal enumeration variant", tag);
+        return Err(ErrCode::InvalidArgument);
+    }
+    Ok(())
+}
+
+fn check_valid_bits(tag: &Tag, value: &Value, max_bits: u32) -> Result<()> {
+    let Value::Number(n) = value else {
+        return Err(ErrCode::InvalidArgument);
+    };
+    if *n >= 2_u32.pow(max_bits) { // 2: binary system
+        loge!("[FATAL]The value[{}] of Tag[{}] is not in the valid bit number.", *n, tag);
         return Err(ErrCode::InvalidArgument);
     }
     Ok(())
@@ -99,7 +111,7 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::AuthValidityPeriod => check_number_range(tag, value, MIN_NUMBER_VALUE, MAX_AUTH_VALID_PERIOD),
         Tag::AuthChallenge => check_array_size(tag, value, CHALLENGE_SIZE - 1, CHALLENGE_SIZE),
         Tag::AuthToken => check_array_size(tag, value, AUTH_TOKEN_SIZE - 1, AUTH_TOKEN_SIZE),
-        Tag::SyncType => check_enum_variant::<SyncType>(tag, value),
+        Tag::SyncType => check_valid_bits(tag, value, SYNC_TYPE_BITS),
         Tag::ConflictResolution => check_enum_variant::<ConflictResolution>(tag, value),
         Tag::DataLabelCritical1 | Tag::DataLabelCritical2 | Tag::DataLabelCritical3 | Tag::DataLabelCritical4 => {
             check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_LABEL_SIZE)
@@ -110,7 +122,7 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::ReturnType => check_enum_variant::<ReturnType>(tag, value),
         Tag::ReturnLimit => check_number_range(tag, value, MIN_NUMBER_VALUE, MAX_RETURN_LIMIT),
         Tag::ReturnOffset => Ok(()),
-        Tag::ReturnOrderBy => check_tag_range(tag, value, &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat()),
+        Tag::ReturnOrderedBy => check_tag_range(tag, value, &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat()),
     }
 }
 

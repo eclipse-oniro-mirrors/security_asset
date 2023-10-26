@@ -78,7 +78,7 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
             _ => None,
         },
         order: None,
-        order_by: match attrs.get(&Tag::ReturnOrderBy) {
+        order_by: match attrs.get(&Tag::ReturnOrderedBy) {
             Some(Value::Number(order_by)) => {
                 let tag = Tag::try_from(*order_by).expect("Tag::ReturnOrderBy has been verified");
                 common::get_cloumn_name(tag).map(|order_by| vec![order_by])
@@ -105,7 +105,7 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
 }
 
 const OPTIONAL_ATTRS: [Tag; 6] =
-    [Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderBy, Tag::ReturnType, Tag::AuthToken, Tag::AuthChallenge];
+    [Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderedBy, Tag::ReturnType, Tag::AuthToken, Tag::AuthChallenge];
 const SEC_QUERY_OPTIONAL_ATTRS: [Tag; 2] = [Tag::AuthChallenge, Tag::AuthToken];
 
 fn check_arguments(attributes: &AssetMap) -> Result<()> {
