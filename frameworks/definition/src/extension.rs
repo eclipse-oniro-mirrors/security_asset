@@ -127,6 +127,17 @@ impl IntoValue for bool {
     }
 }
 
+
+impl IntoValue for u32 {
+    fn data_type(&self) -> DataType {
+        DataType::Number
+    }
+
+    fn into_value(self) -> Value {
+        Value::Number(self)
+    }
+}
+
 impl Insert for AssetMap {
     fn insert_attr(&mut self, key: Tag, value: impl IntoValue) -> Result<()> {
         match value.data_type() {

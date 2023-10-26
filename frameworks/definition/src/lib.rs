@@ -37,6 +37,7 @@ pub enum DataType {
 impl_enum_trait! {
     /// An emum type that indicates the tag of the asset attribute.
     #[derive(Clone, Copy)]
+    #[derive(Debug)]
     #[derive(Eq, Hash, PartialEq)]
     pub enum Tag {
         /// A tag whose value is a byte array indicating the sensitive user data such as passwords and tokens.
@@ -111,6 +112,7 @@ impl_enum_trait! {
 
 /// A type that indicates the secret or attribute value of an Asset tag.
 #[derive(Clone)]
+#[derive(Debug)]
 #[repr(C)]
 pub enum Value {
     /// Asset attribute value, whose data type is bool.

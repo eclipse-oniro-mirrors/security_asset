@@ -43,7 +43,7 @@ fn remove_condition_exist_and_query() {
     condition.remove(&Tag::Alias);
     condition.remove(&Tag::Secret);
     asset_sdk::Manager::build().unwrap().remove(&condition).unwrap();
-    assert!(asset_sdk::Manager::build().unwrap().query(&condition).is_err_and(|e| e == ErrCode::NotFound));
+    assert_eq!(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&condition).unwrap_err());
 }
 
 #[test]
@@ -53,6 +53,6 @@ fn remove_condition_with_secret() {
     let condition =
         AssetMap::from([(Tag::Alias, Value::Bytes(alias.to_owned())), (Tag::Secret, Value::Bytes(secret.to_owned()))]);
     asset_sdk::Manager::build().unwrap().add(&condition).unwrap();
-    assert!(asset_sdk::Manager::build().unwrap().remove(&condition).is_err());
+    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().remove(&condition).unwrap_err());
     remove_by_alias(alias).unwrap();
 }

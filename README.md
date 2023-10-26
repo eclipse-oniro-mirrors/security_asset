@@ -43,9 +43,11 @@ git clone ssh://git@szv-y.codehub.huawei.com:2222/y00522150/asset.git
 find -name "*.gn" | xargs ../../../prebuilts/build-tools/linux-x86/bin/gn format
 ```
 
-
 ## 测试
 测试DEMO：https://codehub-y.huawei.com/y00522150/AssetDemo/files?ref=master
+
+# 单线程运行测试用例
+执行的时候 在后面加 --test-threads=1
 
 ## 工具汇总
 ```bash

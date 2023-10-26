@@ -15,7 +15,7 @@
 
 use core::panic;
 
-use asset_sdk::{AssetMap, Insert, Tag, Value};
+use asset_sdk::{AssetMap, ErrCode, Insert, Tag, Value};
 
 use crate::common::{add_default_asset, query_all_by_alias, query_attr_by_alias, remove_by_alias};
 
@@ -92,7 +92,7 @@ fn update_non_exist() {
     let mut update = AssetMap::new();
     update.insert_attr(Tag::DataLabelNormal1, label_normal.to_owned()).unwrap();
 
-    assert!(asset_sdk::Manager::build().unwrap().update(&query, &update).is_err());
+    assert_eq!(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err());
 }
 
 #[test]
@@ -109,7 +109,7 @@ fn update_query_with_secret() {
     let mut update = AssetMap::new();
     update.insert_attr(Tag::DataLabelNormal1, label_normal.to_owned()).unwrap();
 
-    assert!(asset_sdk::Manager::build().unwrap().update(&query, &update).is_err());
+    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err());
 
     remove_by_alias(alias).unwrap();
 }
@@ -127,7 +127,7 @@ fn update_secret_without_query_alias() {
     update.insert_attr(Tag::DataLabelNormal1, label_normal.to_owned()).unwrap();
     update.insert_attr(Tag::Secret, secret.to_owned()).unwrap();
 
-    assert!(asset_sdk::Manager::build().unwrap().update(&query, &update).is_err());
+    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err());
 
     remove_by_alias(alias).unwrap();
 }
@@ -145,7 +145,7 @@ fn update_alias() {
     let mut update = AssetMap::new();
     update.insert_attr(Tag::Alias, alias_new.to_owned()).unwrap();
 
-    assert!(asset_sdk::Manager::build().unwrap().update(&query, &update).is_err());
+    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err());
 
     remove_by_alias(alias).unwrap();
 }

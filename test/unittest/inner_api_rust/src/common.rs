@@ -40,6 +40,10 @@ pub(crate) fn remove_by_alias(alias: &[u8]) -> Result<()> {
     asset_sdk::Manager::build()?.remove(&AssetMap::from([(Tag::Alias, Value::Bytes(alias.to_vec()))]))
 }
 
+pub(crate) fn remove_all() -> Result<()> {
+    asset_sdk::Manager::build()?.remove(&AssetMap::new())
+}
+
 pub(crate) fn query_all_by_alias(alias: &[u8]) -> Result<Vec<AssetMap>> {
     asset_sdk::Manager::build()?.query(&AssetMap::from([
         (Tag::Alias, Value::Bytes(alias.to_vec())),

@@ -19,9 +19,9 @@ use crate::common::{get_bytes, get_number, query_attr_by_alias, remove_by_alias}
 
 #[test]
 fn add_all_tags() {
-    let alias = "add_values_match_query".as_bytes();
-    let data_label = "add_values_match_query_data_label".as_bytes();
-    let secret = "add_values_match_query_secret".as_bytes();
+    let alias = "add_all_tags".as_bytes();
+    let data_label = "add_all_tags".as_bytes();
+    let secret = "add_all_tags".as_bytes();
     let auth_type = AuthType::None;
     let mut add = AssetMap::new();
     add.insert_attr(Tag::Alias, alias.to_owned()).unwrap();

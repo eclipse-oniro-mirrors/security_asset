@@ -13,10 +13,9 @@
  * limitations under the License.
  */
 
-#![feature(is_some_and)]
-
 mod common;
 
 mod add;
 mod remove;
 mod update;
+mod query;
