@@ -52,32 +52,40 @@ impl SecretKey {
     }
 
     /// Check whether the secret key exists.
-    pub fn exists(&self) -> Result<bool, HuksErrcode> {
+    pub fn exists(&self) -> Result<bool, ErrCode> {
         let ret = unsafe { KeyExist(self.alias.len() as u32, self.alias.as_ptr()) };
         match ret {
             HKS_SUCCESS => Ok(true),
             HKS_ERROR_NOT_EXIST => Ok(false),
-            _ => Err(ret),
+            _ => {
+                loge!("secret key exist check failed ret {}", ret);
+                Err(ErrCode::CryptoError)
+            },
         }
     }
 
     /// Generate the secret key
-    pub fn generate(&self) -> Result<(), HuksErrcode> {
+    pub fn generate(&self) -> Result<(), ErrCode> {
         loge!("start to generate key!!!!");
         let ret = unsafe { GenerateKey(self.alias.len() as u32, self.alias.as_ptr()) };
         match ret {
             HKS_SUCCESS => Ok(()),
-            _ => Err(ret),
+            _ => {
+                loge!("secret key generate failed ret {}", ret);
+                Err(ErrCode::CryptoError)
+            },
         }
     }
 
     /// Delete the secret key.
-    pub fn delete(&self) -> Result<bool, HuksErrcode> {
-        // todo: zdy 不需要bool的返回值
+    pub fn delete(&self) -> Result<(), ErrCode> {
         let ret = unsafe { DeleteKey(self.alias.len() as u32, self.alias.as_ptr()) };
         match ret {
-            HKS_SUCCESS => Ok(true),
-            _ => Err(ret),
+            HKS_SUCCESS => Ok(()),
+            _ => {
+                loge!("secret key delete failed ret {}", ret);
+                Err(ErrCode::CryptoError)
+            },
         }
     }
 

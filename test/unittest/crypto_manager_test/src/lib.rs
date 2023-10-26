@@ -33,8 +33,7 @@ fn test_hukkey_key_generate_and_delete() {
     };
 
     match secret_key.delete() {
-        Ok(true) => println!("test_hukkey_delete pass"),
-        Ok(false) => println!("never reached"),
+        Ok(()) => println!("test_hukkey_delete pass"),
         Err(res) => panic!("test_hukkey_delete fail error = {}", res),
     }
 }
