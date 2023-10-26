@@ -16,7 +16,7 @@
 //! This module prepares for querying Asset that required secondary identity authentication.
 
 use asset_crypto_manager::{
-    crypto::{Crypto, CryptoManager, SecretKey},
+    crypto::{Crypto, CryptoManager, SecretKey, get_valiad_challenge, set_valiad_challenge},
     huks_ffi::{CHALLENGE_LEN, HKS_KEY_PURPOSE_DECRYPT},
 };
 use asset_db_operator::{
@@ -30,6 +30,7 @@ use asset_log::{loge, logi};
 use crate::{calling_info::CallingInfo, operations::common};
 
 const OPTIONAL_ATTRS: [Tag; 1] = [Tag::AuthValidityPeriod];
+const DEFAULT_AUTH_VALIDITY: u32 = 60;
 
 fn check_arguments(attributes: &AssetMap) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
@@ -41,7 +42,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
 
     match attributes.get(&Tag::AuthType) {
         Some(Value::Number(val)) if *val == (AuthType::None as u32) => {
-            loge!("todo"); // todo
+            loge!("Pre Query AuthType invalid.");
             Err(ErrCode::InvalidArgument)
         },
         _ => Ok(()),
@@ -62,7 +63,7 @@ fn query_access_types(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
         match db_result.get(&COLUMN_ACCESSIBILITY) {
             Some(Value::Number(access_type)) => access_types.push(Accessibility::try_from(*access_type)?),
             _ => {
-                loge!("todo"); // todo
+                loge!("Pre Query Accessibility invalid.");
                 return Err(ErrCode::InvalidArgument)
             },
         }
@@ -80,11 +81,11 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
     let access_types = query_access_types(calling_info, &db_data)?;
 
     if access_types.is_empty() {
-        loge!("todo"); // todo 统一加日志
+        loge!("Pre Query result not found.");
         return Err(ErrCode::NotFound);
     }
 
-    let Value::Number(exp_time) = query.get(&Tag::AuthValidityPeriod).unwrap_or(&Value::Number(60)) else {
+    let Value::Number(exp_time) = query.get(&Tag::AuthValidityPeriod).unwrap_or(&Value::Number(DEFAULT_AUTH_VALIDITY)) else {
         return Err(ErrCode::InvalidArgument);
     };
     let owner_hash = sha256(calling_info.owner_info());
@@ -92,27 +93,18 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
     let mut challenge = vec![0; CHALLENGE_LEN as usize];
     let mut cryptos = Vec::with_capacity(4);
     for (idx, access_type) in access_types.iter().enumerate() {
-        let secret_key =
-            SecretKey::new(calling_info.user_id(), &owner_hash, AuthType::Any, *access_type);
+        let secret_key = SecretKey::new(calling_info.user_id(), &owner_hash, AuthType::Any, *access_type);
         let mut crypto = Crypto::new(HKS_KEY_PURPOSE_DECRYPT, secret_key, idx as u32, *exp_time);
 
-        match crypto.init_crypto() { // 问号表达式
-            Ok(the_challenge) => { // todo: 8 和 1 魔鬼数字， 抽一个函数：入参32字节和pos, 出参8字节 &[u8; 8] getter setter
-                challenge[(idx * 8)..((idx + 1) * 8)].copy_from_slice(&the_challenge[(idx * 8)..((idx + 1) * 8)]);
-            },
-            Err(e) => return Err(e),
-        }
+        let tmp_challenge = crypto.init_crypto()?;
+        set_valiad_challenge(get_valiad_challenge(&tmp_challenge, idx), idx, &mut challenge);
         cryptos.push(crypto);
     }
 
     let instance = CryptoManager::get_instance();
     let mut crypto_manager = instance.lock().unwrap();
-    // if let Some(crypto_manager) = Arc::get_mut(&mut instance) {
-        for crypto in cryptos {
-            crypto_manager.add(crypto)?;
-        }
-    // } else {
-        // loge!("[FATAL]get crypto manager fail!"); // todo: 并发操作不能直接报错，应该等待
-    // }
+    for crypto in cryptos {
+        crypto_manager.add(crypto)?;
+    }
     Ok(challenge)
 }

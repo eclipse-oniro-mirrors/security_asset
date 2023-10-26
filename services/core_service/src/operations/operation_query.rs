@@ -53,14 +53,12 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
                         return Err(ErrCode::InvalidArgument);
                     }; // todo: 封装函数到common中 zwz
                     common::exec_crypto(calling_info, &mut results[0], challenge, auth_token)?;
-                    loge!("enter secdond query 4"); // todo delete
-                    into_asset_maps(&results) // todo: 和61行合并
                 },
                 _ => {
                     common::decrypt(calling_info, &mut results[0])?;
-                    into_asset_maps(&results)
                 },
-            }
+            };
+            into_asset_maps(&results)
         },
         n => {
             loge!("[FATAL]The database contains {} records with the specified alias.", n);

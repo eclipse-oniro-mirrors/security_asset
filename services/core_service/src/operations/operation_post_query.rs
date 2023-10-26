@@ -35,10 +35,6 @@ pub(crate) fn post_query(handle: &AssetMap, _calling_info: &CallingInfo) -> Resu
 
     let instance = CryptoManager::get_instance();
     let mut crypto_manager = instance.lock().unwrap();
-    // if let Some(crypto_manager) = Arc::get_mut(&mut instance) {
-        crypto_manager.remove(challenge);
-    // } else {
-    //     loge!("[FATAL]get crypto manager fail!");
-    // }
+    crypto_manager.remove(challenge);
     Ok(())
 }

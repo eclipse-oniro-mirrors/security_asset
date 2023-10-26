@@ -30,6 +30,7 @@ pub struct SecretKey {
 }
 
 const MAX_ALIAS_SIZE: u32 = 64;
+const VALIAD_CHALLENGE_LEN: usize = 8;
 
 /// construct alias
 pub fn construct_alias(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility) -> Vec<u8> {
@@ -47,7 +48,14 @@ pub fn construct_alias(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, acces
 impl SecretKey {
     /// New a secret key
     pub fn new(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility) -> Self {
-        let alias = construct_alias(user_id, owner, auth_type, access_type);
+        let mut alias: Vec<u8> = Vec::with_capacity(MAX_ALIAS_SIZE as usize);
+        alias.extend_from_slice(&user_id.to_le_bytes());
+        alias.push(b'_');
+        alias.extend(owner);
+        alias.push(b'_');
+        alias.extend_from_slice(&(auth_type as u32).to_le_bytes());
+        alias.push(b'_');
+        alias.extend_from_slice(&(access_type as u32).to_le_bytes());
         Self { auth_type, access_type, alias }
     }
 
@@ -335,8 +343,8 @@ impl CryptoManager {
             return Err(ErrCode::CryptoError);
         }
 
-        let index = (crypto.challenge_pos * 4) as usize;
-        if challenge[index..(index + 8)] == crypto.challenge[index..(index + 8)] {
+        let index = crypto.challenge_pos as usize;
+        if get_valiad_challenge(challenge, index) == get_valiad_challenge(&crypto.challenge, index) {
             return Ok(());
         }
 
@@ -375,10 +383,10 @@ impl CryptoManager {
     }
 
     /// find a crypto in manager, donnot use this function return value with add&remove
-    pub fn find(&self, alias: &Vec<u8>, challenge: &Vec<u8>) -> Option<&Crypto> {
+    pub fn find(&self, secret_key: &SecretKey, challenge: &Vec<u8>) -> Option<&Crypto> {
         let _lock = self.mutex.lock().unwrap();
         for crypto in self.crypto_vec.iter() {
-            if alias.as_slice() != crypto.key.alias.as_slice() {
+            if secret_key.alias.as_slice() != crypto.key.alias.as_slice() {
                 continue;
             }
 
@@ -397,4 +405,18 @@ impl CryptoManager {
     pub fn remove_device_unlock(&mut self) {
         let _lock = self.mutex.lock().unwrap();
     }
+}
+
+/// get valiad challenge
+pub fn get_valiad_challenge(challenge: &[u8], index: usize) -> &[u8] {
+    let start = index * VALIAD_CHALLENGE_LEN;
+    let end = start + VALIAD_CHALLENGE_LEN;
+    &challenge[start..end]
+}
+
+/// set valiad challenge
+pub fn set_valiad_challenge(valiad_challenge: &[u8], index: usize, challenge: &mut [u8]) {
+    let start = index * VALIAD_CHALLENGE_LEN;
+    let end = start + VALIAD_CHALLENGE_LEN;
+    challenge[start..end].copy_from_slice(valiad_challenge);
 }
