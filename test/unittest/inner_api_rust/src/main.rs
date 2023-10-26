@@ -16,6 +16,6 @@
 mod common;
 
 mod add;
+mod query;
 mod remove;
 mod update;
-mod query;

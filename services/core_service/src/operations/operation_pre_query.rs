@@ -16,7 +16,7 @@
 //! This module prepares for querying Asset that required secondary identity authentication.
 
 use asset_crypto_manager::{
-    crypto::{Crypto, CryptoManager, SecretKey, get_valiad_challenge, set_valiad_challenge},
+    crypto::{get_valiad_challenge, set_valiad_challenge, Crypto, CryptoManager, SecretKey},
     huks_ffi::{CHALLENGE_LEN, HKS_KEY_PURPOSE_DECRYPT},
 };
 use asset_db_operator::{
@@ -64,7 +64,7 @@ fn query_access_types(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
             Some(Value::Number(access_type)) => access_types.push(Accessibility::try_from(*access_type)?),
             _ => {
                 loge!("Pre Query Accessibility invalid.");
-                return Err(ErrCode::InvalidArgument)
+                return Err(ErrCode::InvalidArgument);
             },
         }
     }

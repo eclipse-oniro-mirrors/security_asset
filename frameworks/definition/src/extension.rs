@@ -127,7 +127,6 @@ impl IntoValue for bool {
     }
 }
 
-
 impl IntoValue for u32 {
     fn data_type(&self) -> DataType {
         DataType::Number
