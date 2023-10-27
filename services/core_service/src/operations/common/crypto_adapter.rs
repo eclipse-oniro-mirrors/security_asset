@@ -145,7 +145,7 @@ pub(crate) fn exec_crypto(
     calling_info: &CallingInfo,
     db_data: &mut DbMap,
     challenge: &Vec<u8>,
-    _auth_token: &[u8],
+    auth_token: &Vec<u8>,
 ) -> Result<()> {
     let identity = ipc_rust::reset_calling_identity().map_err(|e| {
         loge!("Execute reset_calling_identity failed, error is [{}].", e);
@@ -159,7 +159,7 @@ pub(crate) fn exec_crypto(
             match crypto_manager.find(&secret_key, challenge) {
                 Some(crypto) => {
                     // todo 添加auth_token
-                    let secret = crypto.exec_crypto(secret, &construct_aad(db_data))?;
+                    let secret = crypto.exec_crypto(secret, &construct_aad(db_data), auth_token)?;
                     loge!("get secret {} success!!!!", String::from_utf8_lossy(&secret)); // todo delete
                     db_data.insert(COLUMN_SECRET, Value::Bytes(secret));
                 },

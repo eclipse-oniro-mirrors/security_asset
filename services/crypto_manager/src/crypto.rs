@@ -149,7 +149,10 @@ impl Drop for Crypto {
             exp_time: 0, // no use
         };
 
-        let mut handle_data = CryptoBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
+        let mut handle_data = CryptoBlob {
+            size: self.handle.len() as u32,
+            data: self.handle.as_mut_ptr(),
+        };
 
         let ret = unsafe { DropCrypto(&param as *const CryptParam, &mut handle_data as *mut CryptoBlob) };
         match ret {
@@ -195,7 +198,10 @@ impl Crypto {
             exp_time: (self.exp_time - now_second) as u32,
         };
 
-        let key_data = ConstCryptoBlob { size: self.key.alias.len() as u32, data: self.key.alias.as_ptr() };
+        let key_data = ConstCryptoBlob {
+            size: self.key.alias.len() as u32,
+            data: self.key.alias.as_ptr(),
+        };
 
         // out param
         let mut challenge_data = CryptoBlob {
@@ -203,16 +209,13 @@ impl Crypto {
             data: self.challenge.as_mut_ptr(),
         };
 
-        let mut handle_data = CryptoBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
-
-        let ret = unsafe {
-            InitCryptoWrapper(
-                &param as *const CryptParam,
-                &key_data as *const ConstCryptoBlob,
-                &mut challenge_data as *mut CryptoBlob,
-                &mut handle_data as *mut CryptoBlob,
-            )
+        let mut handle_data = CryptoBlob {
+            size: self.handle.len() as u32,
+            data: self.handle.as_mut_ptr(),
         };
+
+        let ret = unsafe { InitCryptoWrapper(&param as *const CryptParam, &key_data as *const ConstCryptoBlob,
+            &mut challenge_data as *mut CryptoBlob, &mut handle_data as *mut CryptoBlob) };
         match ret {
             HKS_SUCCESS => Ok(self.challenge.clone()),
             _ => {
@@ -224,7 +227,7 @@ impl Crypto {
 
     //todo：需要增加authtoken入参
     /// Exec encrypt or decrypt
-    pub fn exec_crypto(&self, msg: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
+    pub fn exec_crypto(&self, msg: &Vec<u8>, aad: &Vec<u8>, auth_token: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
         let now = SystemTime::now();
         let since_the_epoch = now.duration_since(UNIX_EPOCH).expect("Time went backwards");
         let now_second = since_the_epoch.as_secs();
@@ -236,6 +239,7 @@ impl Crypto {
 
         // out param
         let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize + NONCE_SIZE as usize];
+
         // in param
         let param = CryptParam {
             crypto_mode: self.mode,
@@ -243,23 +247,34 @@ impl Crypto {
             exp_time: 0, // no use
         };
 
-        let aad_data = ConstCryptoBlob { size: aad.len() as u32, data: aad.as_ptr() };
-
-        let handle_data = ConstCryptoBlob { size: self.handle.len() as u32, data: self.handle.as_ptr() };
-
-        let in_data = ConstCryptoBlob { size: msg.len() as u32, data: msg.as_ptr() };
-
-        let mut out_data = CryptoBlob { size: cipher.len() as u32, data: cipher.as_mut_ptr() };
-
-        let ret = unsafe {
-            ExecCryptoWrapper(
-                &param as *const CryptParam,
-                &aad_data as *const ConstCryptoBlob,
-                &handle_data as *const ConstCryptoBlob,
-                &in_data as *const ConstCryptoBlob,
-                &mut out_data as *mut CryptoBlob,
-            )
+        let aad_data = ConstCryptoBlob {
+            size: aad.len() as u32,
+            data: aad.as_ptr(),
         };
+
+        let auth_token = ConstCryptoBlob {
+            size: auth_token.len() as u32,
+            data: auth_token.as_ptr(),
+        };
+
+        let handle_data = ConstCryptoBlob {
+            size: self.handle.len() as u32,
+            data: self.handle.as_ptr(),
+        };
+
+        let in_data = ConstCryptoBlob {
+            size: msg.len() as u32,
+            data: msg.as_ptr(),
+        };
+
+        let mut out_data = CryptoBlob {
+            size: cipher.len() as u32,
+            data: cipher.as_mut_ptr(),
+        };
+
+        let ret = unsafe { ExecCryptoWrapper(&param as *const CryptParam, &aad_data as *const ConstCryptoBlob,
+            &auth_token as *const ConstCryptoBlob, &handle_data as *const ConstCryptoBlob,
+            &in_data as *const ConstCryptoBlob, &mut out_data as *mut CryptoBlob) };
         match ret {
             HKS_SUCCESS => Ok(cipher),
             _ => {
@@ -273,22 +288,28 @@ impl Crypto {
     pub fn encrypt(key: &SecretKey, msg: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
         // out param
         let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize + NONCE_SIZE as usize];
-        let key_alias = ConstCryptoBlob { size: key.alias.len() as u32, data: key.alias.as_ptr() };
-
-        let aad_data = ConstCryptoBlob { size: aad.len() as u32, data: aad.as_ptr() };
-
-        let in_data = ConstCryptoBlob { size: msg.len() as u32, data: msg.as_ptr() };
-
-        let mut out_data = CryptoBlob { size: cipher.len() as u32, data: cipher.as_mut_ptr() };
-
-        let ret = unsafe {
-            EncryptWrapper(
-                &key_alias as *const ConstCryptoBlob,
-                &aad_data as *const ConstCryptoBlob,
-                &in_data as *const ConstCryptoBlob,
-                &mut out_data as *mut CryptoBlob,
-            )
+        let key_alias = ConstCryptoBlob {
+            size: key.alias.len() as u32,
+            data: key.alias.as_ptr(),
         };
+
+        let aad_data = ConstCryptoBlob {
+            size: aad.len() as u32,
+            data: aad.as_ptr(),
+        };
+
+        let in_data = ConstCryptoBlob {
+            size: msg.len() as u32,
+            data: msg.as_ptr(),
+        };
+
+        let mut out_data = CryptoBlob {
+            size: cipher.len() as u32,
+            data: cipher.as_mut_ptr(),
+        };
+
+        let ret = unsafe { EncryptWrapper(&key_alias as *const ConstCryptoBlob, &aad_data as *const ConstCryptoBlob,
+            &in_data as *const ConstCryptoBlob, &mut out_data as *mut CryptoBlob) };
         match ret {
             HKS_SUCCESS => Ok(cipher),
             _ => {
@@ -306,22 +327,28 @@ impl Crypto {
         }
         // out param
         let mut plain: Vec<u8> = vec![0; cipher.len() - AEAD_SIZE as usize - NONCE_SIZE as usize];
-        let key_alias = ConstCryptoBlob { size: key.alias.len() as u32, data: key.alias.as_ptr() };
-
-        let aad_data = ConstCryptoBlob { size: aad.len() as u32, data: aad.as_ptr() };
-
-        let in_data = ConstCryptoBlob { size: cipher.len() as u32, data: cipher.as_ptr() };
-
-        let mut out_data = CryptoBlob { size: plain.len() as u32, data: plain.as_mut_ptr() };
-
-        let ret = unsafe {
-            DecryptWrapper(
-                &key_alias as *const ConstCryptoBlob,
-                &aad_data as *const ConstCryptoBlob,
-                &in_data as *const ConstCryptoBlob,
-                &mut out_data as *mut CryptoBlob,
-            )
+        let key_alias = ConstCryptoBlob {
+            size: key.alias.len() as u32,
+            data: key.alias.as_ptr(),
         };
+
+        let aad_data = ConstCryptoBlob {
+            size: aad.len() as u32,
+            data: aad.as_ptr(),
+        };
+
+        let in_data = ConstCryptoBlob {
+            size: cipher.len() as u32,
+            data: cipher.as_ptr(),
+        };
+
+        let mut out_data = CryptoBlob {
+            size: plain.len() as u32,
+            data: plain.as_mut_ptr(),
+        };
+
+        let ret = unsafe { DecryptWrapper(&key_alias as *const ConstCryptoBlob, &aad_data as *const ConstCryptoBlob,
+            &in_data as *const ConstCryptoBlob, &mut out_data as *mut CryptoBlob) };
         match ret {
             HKS_SUCCESS => Ok(plain),
             _ => {
@@ -335,28 +362,21 @@ impl Crypto {
 /// Crypto Manager struct
 pub struct CryptoManager {
     crypto_vec: Vec<Crypto>,
-    mutex: Mutex<u32>,
-}
-
-/// default for crypto manager
-impl Default for CryptoManager {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 /// concurrency is not handlled in these impl, plese handle it
 impl CryptoManager {
     /// new crypto manager
-    fn new() -> Self {
-        //
-        Self { crypto_vec: vec![], mutex: Mutex::new(0) }
+    fn new() -> Self { //
+        Self { crypto_vec: vec![] }
     }
 
     /// get single instance for cryptomgr
     pub fn get_instance() -> Arc<Mutex<CryptoManager>> {
         static mut INSTANCE: Option<Arc<Mutex<CryptoManager>>> = None;
-        unsafe { INSTANCE.get_or_insert_with(|| Arc::new(Mutex::new(CryptoManager::new()))).clone() }
+        unsafe {
+            INSTANCE.get_or_insert_with(|| Arc::new(Mutex::new(CryptoManager::new()))).clone()
+        }
     }
 
     fn challenge_cmp(challenge: &Vec<u8>, crypto: &Crypto) -> Result<(), ErrCode> {
@@ -375,7 +395,6 @@ impl CryptoManager {
 
     /// add a crypto in manager, not allow insert crypto with same challenge
     pub fn add(&mut self, crypto: Crypto) -> Result<(), ErrCode> {
-        let _lock = self.mutex.lock().unwrap();
         for temp_crypto in self.crypto_vec.iter() {
             if crypto.challenge.as_slice() == temp_crypto.challenge.as_slice() {
                 loge!("crypto manager not allow insert crypto with same challenge");
@@ -388,7 +407,6 @@ impl CryptoManager {
 
     /// remove a crypto in manager
     pub fn remove(&mut self, challenge: &Vec<u8>) {
-        let _lock = self.mutex.lock().unwrap();
         let mut delete_index: Vec<usize> = vec![];
         for (index, crypto) in self.crypto_vec.iter().enumerate() {
             match Self::challenge_cmp(challenge, crypto) {
@@ -406,7 +424,6 @@ impl CryptoManager {
 
     /// find a crypto in manager, donnot use this function return value with add&remove
     pub fn find(&self, secret_key: &SecretKey, challenge: &Vec<u8>) -> Option<&Crypto> {
-        let _lock = self.mutex.lock().unwrap();
         for crypto in self.crypto_vec.iter() {
             if secret_key.alias.as_slice() != crypto.key.alias.as_slice() {
                 continue;
@@ -425,7 +442,6 @@ impl CryptoManager {
 
     /// remove device_unlock crypto in crypto mgr
     pub fn remove_device_unlock(&mut self) {
-        let _lock = self.mutex.lock().unwrap();
     }
 }
 
