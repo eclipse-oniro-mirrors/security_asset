@@ -57,7 +57,6 @@ fn query_access_types(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
         return Err(ErrCode::NotFound);
     }
 
-    // into list
     let mut access_types = Vec::new();
     for db_result in results {
         match db_result.get(&COLUMN_ACCESSIBILITY) {

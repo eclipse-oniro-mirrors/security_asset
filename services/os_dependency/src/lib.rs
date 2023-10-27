@@ -70,9 +70,7 @@ pub extern "C" fn delete_dir_by_user(user_id: i32) -> bool {
 pub extern "C" fn delete_crypto_needing_device_unlock() {
     match CryptoManager::get_instance().lock() {
         Ok(mut crypto_manager) => crypto_manager.remove_device_unlock(),
-        Err(_) => {
-            loge!("[FATAL] get mutex lock fail! err={}", ErrCode::GetMutexError);
-        }
+        Err(_) => loge!("[FATAL] get mutex lock fail! err={}", ErrCode::GetMutexError),
     }
 
 }
