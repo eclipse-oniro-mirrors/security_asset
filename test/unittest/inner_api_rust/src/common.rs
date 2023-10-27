@@ -17,6 +17,20 @@
 
 use asset_sdk::{AssetMap, ErrCode, Result, ReturnType, Tag, Value};
 
+#[macro_export]
+macro_rules! function {
+    () => {{
+        fn f() {}
+        fn type_name_of<T>(_: T) -> &'static str {
+            std::any::type_name::<T>()
+        }
+        type_name_of(f)
+            .rsplit("::")
+            .find(|&part| part != "f" && part != "{{closure}}")
+            .expect("Short function name")
+    }};
+}
+
 pub(crate) fn get_bytes(attrs: &AssetMap, tag: Tag) -> Result<&Vec<u8>> {
     if let Some(Value::Bytes(bytes)) = attrs.get(&tag) {
         Ok(bytes)

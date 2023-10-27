@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#[macro_use]
 mod common;
 
 mod add;

@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 
-use asset_sdk::{AssetMap, ErrCode, Tag, Value};
-
-use crate::common::remove_by_alias;
+use asset_sdk::*;
+use crate::common::*;
 
 #[test]
 fn remove_alias_non_exist() {
@@ -31,8 +30,8 @@ fn remove_condition_non_exist() {
 
 #[test]
 fn remove_condition_exist_and_query() {
-    let alias = std::any::type_name::<()>().as_bytes();
-    let secret = std::any::type_name::<()>().as_bytes();
+    let alias = function!().as_bytes();
+    let secret = function!().as_bytes();
     let label_vritial_2 = "remove_condition_exist_and_query".as_bytes();
     let mut condition = AssetMap::from([
         (Tag::Alias, Value::Bytes(alias.to_owned())),
@@ -48,8 +47,8 @@ fn remove_condition_exist_and_query() {
 
 #[test]
 fn remove_condition_with_secret() {
-    let alias = std::any::type_name::<()>().as_bytes();
-    let secret = std::any::type_name::<()>().as_bytes();
+    let alias = function!().as_bytes();
+    let secret = function!().as_bytes();
     let condition =
         AssetMap::from([(Tag::Alias, Value::Bytes(alias.to_owned())), (Tag::Secret, Value::Bytes(secret.to_owned()))]);
     asset_sdk::Manager::build().unwrap().add(&condition).unwrap();

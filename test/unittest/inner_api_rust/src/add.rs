@@ -13,8 +13,7 @@
  * limitations under the License.
  */
 
-use asset_sdk::{AssetMap, AuthType, ConflictResolution, ErrCode, Insert, Tag, Value, Accessibility, SyncType};
-
+use asset_sdk::*;
 use crate::common::*;
 
 #[test]
@@ -70,7 +69,7 @@ fn add_all_tags() {
 
 #[test]
 fn add_required_tags() {
-    let func_name = std::any::type_name::<()>().as_bytes();
+    let func_name = function!().as_bytes();
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, func_name.to_owned()).unwrap();
     attrs.insert_attr(Tag::Secret, func_name.to_owned()).unwrap();
@@ -90,7 +89,7 @@ fn add_required_tags() {
 
 #[test]
 fn add_english_secret() {
-    let func_name = std::any::type_name::<()>();
+    let func_name = function!();
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, func_name.as_bytes().to_owned()).unwrap();
     attrs.insert_attr(Tag::Secret, func_name.as_bytes().to_owned()).unwrap();
@@ -123,8 +122,8 @@ fn add_chinese_secret() {
 
 #[test]
 fn add_conflict_throw_error() {
-    let alias = std::any::type_name::<()>().as_bytes();
-    let secret = std::any::type_name::<()>().as_bytes();
+    let alias = function!().as_bytes();
+    let secret = function!().as_bytes();
 
     let mut add_throw_error =
         AssetMap::from([(Tag::Alias, Value::Bytes(alias.to_owned())), (Tag::Secret, Value::Bytes(secret.to_owned()))]);
@@ -139,9 +138,9 @@ fn add_conflict_throw_error() {
 }
 
 #[test]
-fn add_conflict_over_write() {
-    let alias = std::any::type_name::<()>().as_bytes();
-    let secret = std::any::type_name::<()>().as_bytes();
+fn add_conflict_overwrite() {
+    let alias = function!().as_bytes();
+    let secret = function!().as_bytes();
     let label_normal_1 = "add_conflict_over_write_label_normal_1".as_bytes();
 
     let mut add_over_write = AssetMap::new();

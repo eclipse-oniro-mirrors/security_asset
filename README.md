@@ -48,9 +48,9 @@ find -name "*.gn" | xargs ../../../prebuilts/build-tools/linux-x86/bin/gn format
 
 ```bash
 #自动化用例推包运行
-hdc file send Z:\\workspace\\hmos_asset\\out\\generic_generic_arm_64only\\hisi_higeneric_newphone_standard\\tests\\unittest\\asset\\asset_UT_test\\asset_rust_test ./data/
+hdc file send Z:\workspace\hmos_trunk\out\generic_generic_arm_64only\hisi_higeneric_newphone_standard\tests\unittest\asset\asset_UT_test\asset_rust_test ./data/
 hdc shell chmod 777 ./data/asset_rust_test
-hdc shell "./data/asset_rust_test"
+hdc shell "./data/asset_rust_test --test-threads=1"
 ```
 
 # 单线程运行测试用例
