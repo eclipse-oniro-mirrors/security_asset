@@ -45,6 +45,11 @@ pub(crate) const SYNC_TYPE_MAX_BITS: u32 = 3;
 pub(crate) const DELETE_TYPE_MIN_BITS: u32 = 1;
 pub(crate) const DELETE_TYPE_MAX_BITS: u32 = 2;
 
+pub(crate) const ACCESSIBILITY_MIN_BITS: u32 = 1;
+pub(crate) const ACCESSIBILITY_MAX_BITS: u32 = 2;
+pub(crate) const AUTH_TYPE_MIN_VALUE: u32 = 1;
+pub(crate) const AUTH_TYPE_MAX_VALUE: u32 = 255;
+
 
 pub(crate) fn get_bytes(attrs: &AssetMap, tag: Tag) -> Result<&Vec<u8>> {
     if let Some(Value::Bytes(bytes)) = attrs.get(&tag) {

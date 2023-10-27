@@ -12,14 +12,3 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-#[macro_use]
-mod common;
-
-mod add;
-mod add_abnormal;
-mod query;
-mod query_abnormal;
-mod remove;
-mod remove_abnormal;
-mod update;
