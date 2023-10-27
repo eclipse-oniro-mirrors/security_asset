@@ -30,21 +30,21 @@ fn add_all_tags() {
     let critical_label4 = "add_all_tags_critical_label4".as_bytes();
 
     let mut attrs = AssetMap::new();
-    attrs.insert_attr(Tag::Alias, alias.to_vec()).unwrap();
-    attrs.insert_attr(Tag::Secret, secret.to_vec()).unwrap();
-    attrs.insert_attr(Tag::DataLabelNormal1, normal_label1.to_owned()).unwrap();
-    attrs.insert_attr(Tag::DataLabelNormal2, normal_label2.to_owned()).unwrap();
-    attrs.insert_attr(Tag::DataLabelNormal3, normal_label3.to_owned()).unwrap();
-    attrs.insert_attr(Tag::DataLabelNormal4, normal_label4.to_owned()).unwrap();
-    attrs.insert_attr(Tag::DataLabelCritical1, critical_label1.to_owned()).unwrap();
-    attrs.insert_attr(Tag::DataLabelCritical2, critical_label2.to_owned()).unwrap();
-    attrs.insert_attr(Tag::DataLabelCritical3, critical_label3.to_owned()).unwrap();
-    attrs.insert_attr(Tag::DataLabelCritical4, critical_label4.to_owned()).unwrap();
-    attrs.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlock).unwrap();
-    attrs.insert_attr(Tag::AuthType, AuthType::Any).unwrap();
-    attrs.insert_attr(Tag::SyncType, SyncType::ThisDevice).unwrap();
-    attrs.insert_attr(Tag::RequirePasswordSet, true).unwrap();
-    attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::Overwrite).unwrap();
+    attrs.insert_attr(Tag::Alias, alias.to_vec());
+    attrs.insert_attr(Tag::Secret, secret.to_vec());
+    attrs.insert_attr(Tag::DataLabelNormal1, normal_label1.to_owned());
+    attrs.insert_attr(Tag::DataLabelNormal2, normal_label2.to_owned());
+    attrs.insert_attr(Tag::DataLabelNormal3, normal_label3.to_owned());
+    attrs.insert_attr(Tag::DataLabelNormal4, normal_label4.to_owned());
+    attrs.insert_attr(Tag::DataLabelCritical1, critical_label1.to_owned());
+    attrs.insert_attr(Tag::DataLabelCritical2, critical_label2.to_owned());
+    attrs.insert_attr(Tag::DataLabelCritical3, critical_label3.to_owned());
+    attrs.insert_attr(Tag::DataLabelCritical4, critical_label4.to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlock);
+    attrs.insert_attr(Tag::AuthType, AuthType::Any);
+    attrs.insert_attr(Tag::SyncType, SyncType::ThisDevice);
+    attrs.insert_attr(Tag::RequirePasswordSet, true);
+    attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::Overwrite);
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     let res = query_attr_by_alias(alias).unwrap();
@@ -71,8 +71,8 @@ fn add_all_tags() {
 fn add_required_tags() {
     let func_name = function!().as_bytes();
     let mut attrs = AssetMap::new();
-    attrs.insert_attr(Tag::Alias, func_name.to_owned()).unwrap();
-    attrs.insert_attr(Tag::Secret, func_name.to_owned()).unwrap();
+    attrs.insert_attr(Tag::Alias, func_name.to_owned());
+    attrs.insert_attr(Tag::Secret, func_name.to_owned());
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     let res = query_all_by_alias(func_name).unwrap();
@@ -91,8 +91,8 @@ fn add_required_tags() {
 fn add_english_secret() {
     let func_name = function!();
     let mut attrs = AssetMap::new();
-    attrs.insert_attr(Tag::Alias, func_name.as_bytes().to_owned()).unwrap();
-    attrs.insert_attr(Tag::Secret, func_name.as_bytes().to_owned()).unwrap();
+    attrs.insert_attr(Tag::Alias, func_name.as_bytes().to_owned());
+    attrs.insert_attr(Tag::Secret, func_name.as_bytes().to_owned());
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     let res = query_all_by_alias(func_name.as_bytes()).unwrap();
@@ -107,8 +107,8 @@ fn add_chinese_secret() {
     let alias = "Здравствуйте";
     let secret = "中文";
     let mut attrs = AssetMap::new();
-    attrs.insert_attr(Tag::Alias, alias.as_bytes().to_owned()).unwrap();
-    attrs.insert_attr(Tag::Secret, secret.as_bytes().to_owned()).unwrap();
+    attrs.insert_attr(Tag::Alias, alias.as_bytes().to_owned());
+    attrs.insert_attr(Tag::Secret, secret.as_bytes().to_owned());
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     let res = query_all_by_alias(alias.as_bytes()).unwrap();
@@ -126,15 +126,15 @@ fn add_same_alias_throw_error() {
 
     // step1. insert data
     let mut attrs = AssetMap::new();
-    attrs.insert_attr(Tag::Alias, function_name.to_owned()).unwrap();
-    attrs.insert_attr(Tag::Secret, function_name.to_owned()).unwrap();
+    attrs.insert_attr(Tag::Alias, function_name.to_owned());
+    attrs.insert_attr(Tag::Secret, function_name.to_owned());
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     // step2. insert data with the same alias, default resolution: throw error
     assert_eq!(Err(ErrCode::Duplicated), asset_sdk::Manager::build().unwrap().add(&attrs));
 
     // step3. insert data with the same alias, specified resolution: throw error
-    attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::ThrowError).unwrap();
+    attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::ThrowError);
     assert_eq!(Err(ErrCode::Duplicated), asset_sdk::Manager::build().unwrap().add(&attrs));
 
     remove_by_alias(function_name).unwrap();
@@ -146,8 +146,8 @@ fn add_same_alias_overwrite() {
 
     // step1. insert data
     let mut attrs = AssetMap::new();
-    attrs.insert_attr(Tag::Alias, function_name.to_owned()).unwrap();
-    attrs.insert_attr(Tag::Secret, function_name.to_owned()).unwrap();
+    attrs.insert_attr(Tag::Alias, function_name.to_owned());
+    attrs.insert_attr(Tag::Secret, function_name.to_owned());
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     // step2. query data with no label
@@ -157,8 +157,8 @@ fn add_same_alias_overwrite() {
 
     // step3. insert data with the same alias, specified resolution: overwrite
     let critical_label = "add_same_alias_overwrite".as_bytes();
-    attrs.insert_attr(Tag::DataLabelCritical1, critical_label.to_owned()).unwrap();
-    attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::Overwrite).unwrap();
+    attrs.insert_attr(Tag::DataLabelCritical1, critical_label.to_owned());
+    attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::Overwrite);
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     // step4. query new data with critical label
@@ -174,9 +174,9 @@ fn add_multiple_sync_types() {
     let function_name = function!().as_bytes();
     let sync_type = (SyncType::ThisDevice as u32) | (SyncType::TrustedDevice as u32);
     let mut attrs = AssetMap::new();
-    attrs.insert_attr(Tag::Alias, function_name.to_owned()).unwrap();
-    attrs.insert_attr(Tag::Secret, function_name.to_owned()).unwrap();
-    attrs.insert_attr(Tag::SyncType, sync_type).unwrap();
+    attrs.insert_attr(Tag::Alias, function_name.to_owned());
+    attrs.insert_attr(Tag::Secret, function_name.to_owned());
+    attrs.insert_attr(Tag::SyncType, sync_type);
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     let res = query_attr_by_alias(function_name).unwrap();

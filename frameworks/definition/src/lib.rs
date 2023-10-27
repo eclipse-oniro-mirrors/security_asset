@@ -293,7 +293,7 @@ pub struct Version {
 /// Automatically convert the input value to Asset Value, then insert into the collection.
 pub trait Insert {
     /// Insert an attribute into the collection.
-    fn insert_attr(&mut self, key: Tag, value: impl IntoValue) -> Result<()>;
+    fn insert_attr(&mut self, key: Tag, value: impl IntoValue);
 }
 
 /// Convert a specific type to the Asset Value type.

@@ -25,10 +25,10 @@ fn update_same_secret() {
     add_default_asset(alias, secret).unwrap();
 
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Alias, alias.to_owned()).unwrap();
+    query.insert_attr(Tag::Alias, alias.to_owned());
 
     let mut update = AssetMap::new();
-    update.insert_attr(Tag::Secret, secret.to_owned()).unwrap();
+    update.insert_attr(Tag::Secret, secret.to_owned());
 
     asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap();
 
@@ -42,12 +42,12 @@ fn update_different_secret() {
     add_default_asset(alias, secret).unwrap();
 
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Alias, alias.to_owned()).unwrap();
+    query.insert_attr(Tag::Alias, alias.to_owned());
 
     let secret_new = "update_different_secret_new".as_bytes();
 
     let mut update = AssetMap::new();
-    update.insert_attr(Tag::Secret, secret_new.to_owned()).unwrap();
+    update.insert_attr(Tag::Secret, secret_new.to_owned());
 
     asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap();
 
@@ -66,11 +66,11 @@ fn update_attr_normal() {
     add_default_asset(alias, secret).unwrap();
 
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Alias, alias.to_owned()).unwrap();
+    query.insert_attr(Tag::Alias, alias.to_owned());
 
     let label_normal = "update_attr_normal".as_bytes();
     let mut update = AssetMap::new();
-    update.insert_attr(Tag::DataLabelNormal1, label_normal.to_owned()).unwrap();
+    update.insert_attr(Tag::DataLabelNormal1, label_normal.to_owned());
 
     asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap();
     let query_res = &query_attr_by_alias(alias).unwrap()[0];
@@ -86,10 +86,10 @@ fn update_non_exist() {
     let label_normal = function!().as_bytes();
 
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Alias, alias.to_owned()).unwrap();
+    query.insert_attr(Tag::Alias, alias.to_owned());
 
     let mut update = AssetMap::new();
-    update.insert_attr(Tag::DataLabelNormal1, label_normal.to_owned()).unwrap();
+    update.insert_attr(Tag::DataLabelNormal1, label_normal.to_owned());
 
     assert_eq!(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err());
 }
@@ -101,12 +101,12 @@ fn update_query_with_secret() {
     add_default_asset(alias, secret).unwrap();
 
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Alias, alias.to_owned()).unwrap();
-    query.insert_attr(Tag::Secret, secret.to_owned()).unwrap();
+    query.insert_attr(Tag::Alias, alias.to_owned());
+    query.insert_attr(Tag::Secret, secret.to_owned());
 
     let label_normal = "update_query_with_secret".as_bytes();
     let mut update = AssetMap::new();
-    update.insert_attr(Tag::DataLabelNormal1, label_normal.to_owned()).unwrap();
+    update.insert_attr(Tag::DataLabelNormal1, label_normal.to_owned());
 
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err());
 
@@ -123,8 +123,8 @@ fn update_secret_without_query_alias() {
 
     let label_normal = "update_secret_without_query_alias".as_bytes();
     let mut update = AssetMap::new();
-    update.insert_attr(Tag::DataLabelNormal1, label_normal.to_owned()).unwrap();
-    update.insert_attr(Tag::Secret, secret.to_owned()).unwrap();
+    update.insert_attr(Tag::DataLabelNormal1, label_normal.to_owned());
+    update.insert_attr(Tag::Secret, secret.to_owned());
 
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err());
 
@@ -142,7 +142,7 @@ fn update_alias() {
     let alias_new = "update_alias_new".as_bytes();
 
     let mut update = AssetMap::new();
-    update.insert_attr(Tag::Alias, alias_new.to_owned()).unwrap();
+    update.insert_attr(Tag::Alias, alias_new.to_owned());
 
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err());
 

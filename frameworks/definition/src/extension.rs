@@ -15,10 +15,8 @@
 
 //! This module extends the function of Asset data structure.
 
-use asset_log::loge;
-
 use super::{
-    Accessibility, AssetMap, AuthType, ConflictResolution, DataType, ErrCode, Insert, IntoValue, Result, ReturnType,
+    Accessibility, AssetMap, AuthType, ConflictResolution, DataType, Insert, IntoValue, ReturnType,
     SyncType, Tag, Value,
 };
 
@@ -138,13 +136,7 @@ impl IntoValue for u32 {
 }
 
 impl Insert for AssetMap {
-    fn insert_attr(&mut self, key: Tag, value: impl IntoValue) -> Result<()> {
-        if key.data_type() != value.data_type() {
-            loge!("[FATAL][SDK]Data type mismatch, key type: {}, value type: {}", key.data_type(), value.data_type());
-            Err(ErrCode::InvalidArgument)
-        } else {
-            self.insert(key, value.into_value());
-            Ok(())
-        }
+    fn insert_attr(&mut self, key: Tag, value: impl IntoValue) {
+        self.insert(key, value.into_value());
     }
 }

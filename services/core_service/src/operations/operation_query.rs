@@ -15,6 +15,8 @@
 
 //! This module is used to query the Asset, including single and batch query.
 
+use std::cmp::Ordering;
+
 use asset_db_operator::{
     database_table_helper::{DatabaseHelper, COLUMN_AUTH_TYPE, COLUMN_SECRET},
     types::{DbMap, QueryOptions},
@@ -77,7 +79,6 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
             Some(Value::Number(limit)) => Some(*limit),
             _ => None,
         },
-        order: None,
         order_by: match attrs.get(&Tag::ReturnOrderedBy) {
             Some(Value::Number(order_by)) => {
                 let tag = Tag::try_from(*order_by).expect("Tag::ReturnOrderBy has been verified");
@@ -85,6 +86,13 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
             },
             _ => None,
         },
+        order: {
+            if attrs.contains_key(&Tag::ReturnOrderedBy) {
+                Some(Ordering::Greater)
+            } else {
+                None
+            }
+        }
     }
 }
 
