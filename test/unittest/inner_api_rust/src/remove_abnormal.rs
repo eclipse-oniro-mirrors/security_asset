@@ -17,15 +17,11 @@ use crate::common::*;
 use asset_sdk::*;
 
 #[test]
-fn remove_alias_short_len() {
+fn remove_invalid_alias() {
     let mut query = AssetMap::new();
     query.insert_attr(Tag::Alias, vec![]);
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().remove(&query).unwrap_err());
-}
 
-#[test]
-fn remove_alias_long_len() {
-    let mut query = AssetMap::new();
     query.insert_attr(Tag::Alias, vec![0; MAX_ALIAS_SIZE + 1]);
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().remove(&query).unwrap_err());
 }

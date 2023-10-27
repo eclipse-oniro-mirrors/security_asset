@@ -57,20 +57,14 @@ fn add_alias_with_max_len() {
 }
 
 #[test]
-fn add_alias_with_short_len() {
+fn add_invalid_alias() {
     let function_name = function!().as_bytes();
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, vec![]);
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
-}
 
-#[test]
-fn add_alias_with_long_len() {
-    let function_name = function!().as_bytes();
-    let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, vec![0; MAX_ALIAS_SIZE + 1]);
-    attrs.insert_attr(Tag::Secret, function_name.to_owned());
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 }
 
@@ -118,20 +112,14 @@ fn add_secret_with_max_len() {
 }
 
 #[test]
-fn add_secret_with_short_len() {
+fn add_invalid_secret() {
     let function_name = function!().as_bytes();
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, vec![]);
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
-}
 
-#[test]
-fn add_secret_with_long_len() {
-    let function_name = function!().as_bytes();
-    let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Secret, vec![0; MAX_ARRAY_SIZE + 1]);
-    attrs.insert_attr(Tag::Secret, function_name.to_owned());
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 }
 
@@ -157,19 +145,6 @@ fn add_invalid_accessibility() {
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 
     attrs.insert_attr(Tag::Accessibility, (Accessibility::DeviceUnlock as u32) + 1);
-    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
-}
-
-#[test]
-fn add_accessibility_with_unmatched_type() {
-    let function_name = function!().as_bytes();
-    let mut attrs = AssetMap::new();
-    attrs.insert_attr(Tag::Alias, function_name.to_owned());
-    attrs.insert_attr(Tag::Secret, function_name.to_owned());
-    attrs.insert_attr(Tag::Accessibility, vec![]);
-    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
-
-    attrs.insert_attr(Tag::Accessibility, true);
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 }
 
@@ -200,19 +175,6 @@ fn add_invalid_auth_type() {
 }
 
 #[test]
-fn add_auth_type_with_unmatched_type() {
-    let function_name = function!().as_bytes();
-    let mut attrs = AssetMap::new();
-    attrs.insert_attr(Tag::Alias, function_name.to_owned());
-    attrs.insert_attr(Tag::Secret, function_name.to_owned());
-    attrs.insert_attr(Tag::AuthType, vec![]);
-    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
-
-    attrs.insert_attr(Tag::AuthType, true);
-    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
-}
-
-#[test]
 fn add_invalid_sync_type() {
     let function_name = function!().as_bytes();
     let mut attrs = AssetMap::new();
@@ -237,19 +199,6 @@ fn add_sync_type_with_max_len() {
 }
 
 #[test]
-fn add_sync_type_with_unmatched_type() {
-    let function_name = function!().as_bytes();
-    let mut attrs = AssetMap::new();
-    attrs.insert_attr(Tag::Alias, function_name.to_owned());
-    attrs.insert_attr(Tag::Secret, function_name.to_owned());
-    attrs.insert_attr(Tag::SyncType, vec![]);
-    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
-
-    attrs.insert_attr(Tag::SyncType, true);
-    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
-}
-
-#[test]
 fn add_invalid_delete_type() {
     let function_name = function!().as_bytes();
     let mut attrs = AssetMap::new();
@@ -257,19 +206,6 @@ fn add_invalid_delete_type() {
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
     let delete_type = DeleteType::WhenPackageRemoved as u32 | DeleteType::WhenUserRemoved as u32;
     attrs.insert_attr(Tag::DeleteType, delete_type + 1);
-    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
-}
-
-#[test]
-fn add_delete_type_with_unmatched_type() {
-    let function_name = function!().as_bytes();
-    let mut attrs = AssetMap::new();
-    attrs.insert_attr(Tag::Alias, function_name.to_owned());
-    attrs.insert_attr(Tag::Secret, function_name.to_owned());
-    attrs.insert_attr(Tag::DeleteType, vec![]);
-    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
-
-    attrs.insert_attr(Tag::DeleteType, true);
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 }
 
@@ -324,6 +260,19 @@ fn add_label_with_unmatched_type() {
         assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 
         attrs.insert_attr(label, true);
+        assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
+    }
+}
+
+#[test]
+fn add_number_tag_with_unmatched_type() {
+    let tags_num = [Tag::Accessibility, Tag::AuthType, Tag::SyncType, Tag::DeleteType, Tag::ConflictResolution];
+    for tag in tags_num {
+        let mut attrs = AssetMap::new();
+        attrs.insert_attr(tag, vec![]);
+        assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
+
+        attrs.insert_attr(tag, true);
         assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
     }
 }

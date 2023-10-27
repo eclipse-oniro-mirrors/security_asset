@@ -42,6 +42,10 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap) -> Result<()> {
     common::check_tag_validity(query, &valid_tags)?;
     common::check_value_validity(query)?;
 
+    if attrs_to_update.is_empty() {
+        loge!("[FATAL]The attributes to update is empty.");
+        return Err(ErrCode::InvalidArgument);
+    }
     // Check attributes to update.
     valid_tags = common::NORMAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&UPDATE_OPTIONAL_ATTRS);

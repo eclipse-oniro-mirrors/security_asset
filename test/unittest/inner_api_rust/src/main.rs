@@ -23,3 +23,4 @@ mod query_abnormal;
 mod remove;
 mod remove_abnormal;
 mod update;
+mod update_abnormal;

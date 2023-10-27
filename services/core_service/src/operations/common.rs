@@ -60,8 +60,8 @@ pub(crate) const CRITICAL_LABEL_ATTRS: [Tag; 4] =
 pub(crate) const NORMAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4];
 
-pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 5] =
-    [Tag::Alias, Tag::Accessibility, Tag::AuthType, Tag::SyncType, Tag::RequirePasswordSet];
+pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 6] =
+    [Tag::Alias, Tag::Accessibility, Tag::AuthType, Tag::DeleteType, Tag::SyncType, Tag::RequirePasswordSet];
 
 pub(crate) fn get_cloumn_name(tag: Tag) -> Option<&'static str> {
     for (table_tag, table_column) in TAG_COLUMN_TABLE {

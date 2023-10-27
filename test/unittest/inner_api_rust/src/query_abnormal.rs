@@ -17,15 +17,11 @@ use crate::common::*;
 use asset_sdk::*;
 
 #[test]
-fn query_alias_short_len() {
+fn query_invalid_alias() {
     let mut query = AssetMap::new();
     query.insert_attr(Tag::Alias, vec![]);
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
 
-#[test]
-fn query_alias_long_len() {
-    let mut query = AssetMap::new();
     query.insert_attr(Tag::Alias, vec![0; MAX_ALIAS_SIZE + 1]);
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 }
@@ -101,9 +97,28 @@ fn query_invalid_return_limit() {
 
 #[test]
 fn query_invalid_return_ordered_by() {
-    let mut query = AssetMap::new();
-    query.insert_attr(Tag::ReturnOrderedBy, Tag::Alias);
-    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+    let tags = [
+        Tag::Secret,
+        Tag::Alias,
+        Tag::Accessibility,
+        Tag::RequirePasswordSet,
+        Tag::AuthType,
+        Tag::SyncType,
+        Tag::DeleteType,
+        Tag::AuthValidityPeriod,
+        Tag::ReturnType,
+        Tag::ReturnLimit,
+        Tag::ReturnOffset,
+        Tag::ReturnOrderedBy,
+        Tag::ConflictResolution,
+        Tag::AuthChallenge,
+        Tag::AuthToken,
+    ];
+    for tag in tags {
+        let mut query = AssetMap::new();
+        query.insert_attr(Tag::ReturnOrderedBy, tag);
+        assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+    }
 }
 
 #[test]
@@ -149,7 +164,7 @@ fn query_bytes_tag_with_unmatched_type() {
 
 #[test]
 fn query_number_tag_with_unmatched_type() {
-    let tags_bytes = [
+    let tags_num = [
         Tag::Accessibility,
         Tag::AuthType,
         Tag::SyncType,
@@ -159,9 +174,9 @@ fn query_number_tag_with_unmatched_type() {
         Tag::ReturnOrderedBy,
         Tag::ReturnType,
     ];
-    for tag in tags_bytes {
+    for tag in tags_num {
         let mut query = AssetMap::new();
-        query.insert_attr(tag, 0);
+        query.insert_attr(tag, vec![]);
         assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
         query.insert_attr(tag, true);
