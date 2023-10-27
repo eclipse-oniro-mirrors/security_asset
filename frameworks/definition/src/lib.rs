@@ -36,7 +36,7 @@ impl_enum_trait! {
     }
 }
 
-impl_enum_trait! {
+impl_tag_trait! {
     /// An emum type that indicates the tag of the asset attribute.
     #[derive(Clone, Copy)]
     #[derive(Debug)]

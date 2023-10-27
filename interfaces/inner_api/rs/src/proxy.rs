@@ -64,7 +64,7 @@ impl FromRemoteObj for AssetProxy {
 impl AssetProxy {
     fn send_request(&self, parcel: MsgParcel, ipc_code: IpcCode) -> Result<MsgParcel> {
         let reply = self.remote.send_request(ipc_code as u32, &parcel, false).map_err(ipc_err_handle)?;
-        match reply.read::<i32>().map_err(ipc_err_handle)? {
+        match reply.read::<u32>().map_err(ipc_err_handle)? {
             IPC_SUCCESS => Ok(reply),
             e => Err(ErrCode::try_from(e)?),
         }

@@ -16,8 +16,7 @@
 //! This module extends the function of Asset data structure.
 
 use super::{
-    Accessibility, AssetMap, AuthType, ConflictResolution, DataType, Insert, IntoValue, ReturnType,
-    SyncType, Tag, Value,
+    AssetMap, DataType, Insert, IntoValue, Tag, Value,
 };
 
 /// The mask used to obtain the data type of Asset attribute value.
@@ -52,56 +51,6 @@ impl IntoValue for Value {
 
     fn into_value(self) -> Value {
         self
-    }
-}
-
-impl IntoValue for Accessibility {
-    fn data_type(&self) -> DataType {
-        DataType::Number
-    }
-
-    fn into_value(self) -> Value {
-        Value::Number(self as u32)
-    }
-}
-
-impl IntoValue for SyncType {
-    fn data_type(&self) -> DataType {
-        DataType::Number
-    }
-
-    fn into_value(self) -> Value {
-        Value::Number(self as u32)
-    }
-}
-
-impl IntoValue for ConflictResolution {
-    fn data_type(&self) -> DataType {
-        DataType::Number
-    }
-
-    fn into_value(self) -> Value {
-        Value::Number(self as u32)
-    }
-}
-
-impl IntoValue for ReturnType {
-    fn data_type(&self) -> DataType {
-        DataType::Number
-    }
-
-    fn into_value(self) -> Value {
-        Value::Number(self as u32)
-    }
-}
-
-impl IntoValue for AuthType {
-    fn data_type(&self) -> DataType {
-        DataType::Number
-    }
-
-    fn into_value(self) -> Value {
-        Value::Number(self as u32)
     }
 }
 

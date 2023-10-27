@@ -20,6 +20,54 @@
 /// # Example
 ///
 /// ```
+/// impl_tag_trait! {
+///     enum Color {
+///         GREEN = 0,
+///         YELLOW = 1,
+///     }
+/// }
+/// ```
+#[macro_export]
+macro_rules! impl_tag_trait {
+    ($(#[$meta:meta])* $vis:vis enum $name:ident {
+        $($(#[$vmeta:meta])* $vname:ident $(= $val:expr)?,)*
+    }) => {
+        $(#[$meta])*
+        $vis enum $name {
+            $($(#[$vmeta])* $vname $(= $val)?,)*
+        }
+
+        impl std::convert::TryFrom<u32> for $name {
+            type Error = $crate::ErrCode;
+
+            fn try_from(v: u32) -> std::result::Result<Self, Self::Error> {
+                match v {
+                    $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
+                    _ => {
+                        asset_log::loge!("[FATAL]Type[{}] try from u32[{}] failed.", stringify!($name), v);
+                        Err($crate::ErrCode::InvalidArgument)
+                    }
+                }
+            }
+        }
+
+        impl std::fmt::Display for $name {
+            fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                match self {
+                    $($name::$vname => {
+                        write!(f, "{}", stringify!($name::$vname))
+                    },)*
+                }
+            }
+        }
+    }
+}
+
+/// Macro to implement TryFrom and Display for enumeration types.
+///
+/// # Example
+///
+/// ```
 /// impl_enum_trait! {
 ///     enum Color {
 ///         GREEN = 0,
@@ -51,20 +99,6 @@ macro_rules! impl_enum_trait {
             }
         }
 
-        impl std::convert::TryFrom<i32> for $name {
-            type Error = $crate::ErrCode;
-
-            fn try_from(v: i32) -> std::result::Result<Self, Self::Error> {
-                match v {
-                    $(x if x == $name::$vname as i32 => Ok($name::$vname),)*
-                    _ => {
-                        asset_log::loge!("Convert i32 [{}] failed.", v);
-                        Err($crate::ErrCode::InvalidArgument)
-                    }
-                }
-            }
-        }
-
         impl std::fmt::Display for $name {
             fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
                 match self {
@@ -72,6 +106,16 @@ macro_rules! impl_enum_trait {
                         write!(f, "{}", stringify!($name::$vname))
                     },)*
                 }
+            }
+        }
+
+        impl $crate::IntoValue for $name {
+            fn data_type(&self) -> $crate::DataType {
+                $crate::DataType::Number
+            }
+
+            fn into_value(self) -> $crate::Value {
+                $crate::Value::Number(self as u32)
             }
         }
     }

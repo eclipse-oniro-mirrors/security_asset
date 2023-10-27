@@ -25,7 +25,7 @@ pub const SA_ID: i32 = 0x00010140;
 /// SA name for Asset service.
 pub const SA_NAME: &str = "security_asset_service";
 /// IPC result code.
-pub const IPC_SUCCESS: i32 = 0;
+pub const IPC_SUCCESS: u32 = 0;
 
 const MAX_MAP_CAPACITY: u32 = 100;
 const MAX_VEC_CAPACITY: u32 = 0x10000;

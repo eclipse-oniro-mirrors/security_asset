@@ -40,7 +40,7 @@ impl IRemoteStub for AssetStub {
     /// Callback to deal IPC request for this stub.
     fn on_remote_request(&self, code: u32, data: &BorrowedMsgParcel, reply: &mut BorrowedMsgParcel) -> i32 {
         match on_remote_request(&*self.0, code, data, reply) {
-            Ok(_) => IPC_SUCCESS,
+            Ok(_) => IPC_SUCCESS as i32,
             Err(e) => e as i32,
         }
     }
@@ -59,11 +59,11 @@ fn ipc_err_handle(e: ErrCode) -> IpcStatusCode {
 fn reply_handle(code: IpcCode, ret: Result<()>, reply: &mut BorrowedMsgParcel) -> IpcResult<()> {
     let mut result = IPC_SUCCESS;
     if let Err(e) = ret {
-        result = e as i32;
+        result = e as u32;
     }
 
     logi!("[INFO]on_remote_request end, calling function: {}, result code: {}", code, result);
-    reply.write::<i32>(&result)?;
+    reply.write::<u32>(&result)?;
     Ok(())
 }
 
