@@ -17,6 +17,7 @@
 
 use asset_crypto_manager::crypto::CryptoManager;
 use asset_definition::{AssetMap, ErrCode, Result, Tag, Value};
+use asset_log::loge;
 
 use crate::{calling_info::CallingInfo, operations::common};
 
@@ -33,8 +34,14 @@ pub(crate) fn post_query(handle: &AssetMap, _calling_info: &CallingInfo) -> Resu
         return Err(ErrCode::InvalidArgument);
     };
 
-    let instance = CryptoManager::get_instance();
-    let mut crypto_manager = instance.lock().unwrap();
-    crypto_manager.remove(challenge);
-    Ok(())
+    match CryptoManager::get_instance().lock() {
+        Ok(mut crypto_manager) => {
+            crypto_manager.remove(challenge);
+            Ok(())
+        },
+        Err(_) => {
+            loge!("[FATAL] get mutex lock fail! err={}", ErrCode::GetMutexError);
+            Err(ErrCode::GetMutexError)
+        }
+    }
 }

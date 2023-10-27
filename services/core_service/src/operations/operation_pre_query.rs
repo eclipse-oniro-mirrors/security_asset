@@ -101,10 +101,16 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
         cryptos.push(crypto);
     }
 
-    let instance = CryptoManager::get_instance();
-    let mut crypto_manager = instance.lock().unwrap();
-    for crypto in cryptos {
-        crypto_manager.add(crypto)?;
+    match CryptoManager::get_instance().lock() {
+        Ok(mut crypto_manager) => {
+            for crypto in cryptos {
+                crypto_manager.add(crypto)?;
+            }
+            Ok(challenge)
+        },
+        Err(_) => {
+            loge!("[FATAL] get mutex lock fail! err={}", ErrCode::GetMutexError);
+            Err(ErrCode::GetMutexError)
+        }
     }
-    Ok(challenge)
 }
