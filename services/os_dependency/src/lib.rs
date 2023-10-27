@@ -72,5 +72,4 @@ pub extern "C" fn delete_crypto_needing_device_unlock() {
         Ok(mut crypto_manager) => crypto_manager.remove_device_unlock(),
         Err(_) => loge!("[FATAL] get mutex lock fail! err={}", ErrCode::GetMutexError),
     }
-
 }

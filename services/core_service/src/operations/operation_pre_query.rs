@@ -110,6 +110,6 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
         Err(_) => {
             loge!("[FATAL] get mutex lock fail! err={}", ErrCode::GetMutexError);
             Err(ErrCode::GetMutexError)
-        }
+        },
     }
 }

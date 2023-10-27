@@ -118,6 +118,15 @@ napi_value DeclareSyncType(napi_env env)
     return syncType;
 }
 
+napi_value DeclareDeleteType(napi_env env)
+{
+    napi_value deleteType = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &deleteType));
+    AddUint32Property(env, deleteType, "WHEN_USER_REMOVED", ASSET_DELETE_WHEN_USER_REMOVED);
+    AddUint32Property(env, deleteType, "WHEN_PACKAGE_REMOVED", ASSET_DELETE_WHEN_PACKAGE_REMOVED);
+    return deleteType;
+}
+
 napi_value DeclareConflictResolution(napi_env env)
 {
     napi_value conflictResolution = nullptr;
@@ -235,6 +244,7 @@ napi_value Register(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("Accessibility", DeclareAccessibility(env)),
         DECLARE_NAPI_PROPERTY("AuthType", DeclareAuthType(env)),
         DECLARE_NAPI_PROPERTY("SyncType", DeclareSyncType(env)),
+        DECLARE_NAPI_PROPERTY("DeleteType", DeclareDeleteType(env)),
         DECLARE_NAPI_PROPERTY("ConflictResolution", DeclareConflictResolution(env)),
         DECLARE_NAPI_PROPERTY("ReturnType", DeclareReturnType(env)),
     };

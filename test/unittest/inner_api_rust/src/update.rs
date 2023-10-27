@@ -15,8 +15,8 @@
 
 use core::panic;
 
-use asset_sdk::*;
 use crate::common::*;
+use asset_sdk::*;
 
 #[test]
 fn update_same_secret() {

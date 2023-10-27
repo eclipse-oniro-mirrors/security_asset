@@ -34,7 +34,10 @@ const MAX_LABEL_SIZE: usize = 512;
 
 const AUTH_TOKEN_SIZE: usize = 148;
 const CHALLENGE_SIZE: usize = 32;
-const SYNC_TYPE_BITS: u32 = 3;
+const SYNC_TYPE_MIN_BITS: u32 = 0;
+const SYNC_TYPE_MAX_BITS: u32 = 3;
+const DELETE_TYPE_MIN_BITS: u32 = 1;
+const DELETE_TYPE_MAX_BITS: u32 = 2;
 
 fn check_data_type(tag: &Tag, value: &Value) -> Result<()> {
     if tag.data_type() != value.data_type() {
@@ -66,11 +69,12 @@ fn check_enum_variant<T: TryFrom<u32>>(tag: &Tag, value: &Value) -> Result<()> {
     Ok(())
 }
 
-fn check_valid_bits(tag: &Tag, value: &Value, max_bits: u32) -> Result<()> {
+fn check_valid_bits(tag: &Tag, value: &Value, min_bits: u32, max_bits: u32) -> Result<()> {
     let Value::Number(n) = value else {
         return Err(ErrCode::InvalidArgument);
     };
-    if *n >= 2_u32.pow(max_bits) { // 2: binary system
+    if *n >= 2_u32.pow(max_bits) || *n < (2_u32.pow(min_bits) - 1) {
+        // 2: binary system
         loge!("[FATAL]The value[{}] of Tag[{}] is not in the valid bit number.", *n, tag);
         return Err(ErrCode::InvalidArgument);
     }
@@ -111,7 +115,8 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::AuthValidityPeriod => check_number_range(tag, value, MIN_NUMBER_VALUE, MAX_AUTH_VALID_PERIOD),
         Tag::AuthChallenge => check_array_size(tag, value, CHALLENGE_SIZE - 1, CHALLENGE_SIZE),
         Tag::AuthToken => check_array_size(tag, value, AUTH_TOKEN_SIZE - 1, AUTH_TOKEN_SIZE),
-        Tag::SyncType => check_valid_bits(tag, value, SYNC_TYPE_BITS),
+        Tag::SyncType => check_valid_bits(tag, value, SYNC_TYPE_MIN_BITS, SYNC_TYPE_MAX_BITS),
+        Tag::DeleteType => check_valid_bits(tag, value, DELETE_TYPE_MIN_BITS, DELETE_TYPE_MAX_BITS),
         Tag::ConflictResolution => check_enum_variant::<ConflictResolution>(tag, value),
         Tag::DataLabelCritical1 | Tag::DataLabelCritical2 | Tag::DataLabelCritical3 | Tag::DataLabelCritical4 => {
             check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_LABEL_SIZE)

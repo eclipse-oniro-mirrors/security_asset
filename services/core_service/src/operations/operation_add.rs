@@ -25,20 +25,11 @@ use asset_db_operator::{
     types::DbMap,
 };
 use asset_definition::{
-    impl_enum_trait, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Result, SyncType, Tag, Value,
+    Accessibility, AssetMap, AuthType, ConflictResolution, DeleteType, ErrCode, Result, SyncType, Tag, Value,
 };
 use asset_log::{loge, logi};
 
 use crate::{calling_info::CallingInfo, operations::common};
-
-impl_enum_trait! {
-    enum DeleteType {
-        Never = 0,
-        WhenUninstallApp = 1 << 0,
-        WhenRemoveUser = 1 << 1,
-        WhenClearAppData = 1 << 2,
-    }
-}
 
 fn replace_db_record(calling_info: &CallingInfo, query_db_data: &DbMap, replace_db_data: &DbMap) -> Result<()> {
     let replace_callback = |db: &Database| -> bool {
@@ -82,8 +73,6 @@ fn get_query_condition(calling_info: &CallingInfo, attrs: &AssetMap) -> Result<D
 }
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
-    let delete_type = DeleteType::WhenUninstallApp as u32 | DeleteType::WhenRemoveUser as u32;
-    db_data.insert(COLUMN_DELETE_TYPE, Value::Number(delete_type));
     db_data.insert(COLUMN_VERSION, Value::Number(DB_DATA_VERSION));
 
     let time = common::get_system_time()?;
@@ -97,11 +86,13 @@ fn add_default_attrs(db_data: &mut DbMap) {
     db_data.entry(COLUMN_AUTH_TYPE).or_insert(Value::Number(AuthType::None as u32));
     db_data.entry(COLUMN_SYNC_TYPE).or_insert(Value::Number(SyncType::Never as u32));
     db_data.entry(COLUMN_REQUIRE_PASSWORD_SET).or_insert(Value::Bool(false));
+    let delete_type = DeleteType::WhenUserRemoved as u32 | DeleteType::WhenPacageRemoved as u32;
+    db_data.entry(COLUMN_DELETE_TYPE).or_insert(Value::Number(delete_type));
 }
 
 const REQUIRED_ATTRS: [Tag; 2] = [Tag::Secret, Tag::Alias];
 
-const OPTIONAL_ATTRS: [Tag; 2] = [Tag::Secret, Tag::ConflictResolution];
+const OPTIONAL_ATTRS: [Tag; 3] = [Tag::Secret, Tag::ConflictResolution, Tag::DeleteType];
 
 fn check_arguments(attributes: &AssetMap) -> Result<()> {
     common::check_required_tags(attributes, &REQUIRED_ATTRS)?;

@@ -26,8 +26,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use asset_db_operator::{
     database_table_helper::{
         COLUMN_ACCESSIBILITY, COLUMN_ALIAS, COLUMN_AUTH_TYPE, COLUMN_CRITICAL1, COLUMN_CRITICAL2, COLUMN_CRITICAL3,
-        COLUMN_CRITICAL4, COLUMN_NORMAL1, COLUMN_NORMAL2, COLUMN_NORMAL3, COLUMN_NORMAL4, COLUMN_OWNER,
-        COLUMN_OWNER_TYPE, COLUMN_REQUIRE_PASSWORD_SET, COLUMN_SECRET, COLUMN_SYNC_TYPE,
+        COLUMN_CRITICAL4, COLUMN_DELETE_TYPE, COLUMN_NORMAL1, COLUMN_NORMAL2, COLUMN_NORMAL3, COLUMN_NORMAL4,
+        COLUMN_OWNER, COLUMN_OWNER_TYPE, COLUMN_REQUIRE_PASSWORD_SET, COLUMN_SECRET, COLUMN_SYNC_TYPE,
     },
     types::DbMap,
 };
@@ -36,12 +36,13 @@ use asset_log::loge;
 
 use crate::calling_info::CallingInfo;
 
-pub(crate) const TAG_COLUMN_TABLE: [(Tag, &str); 14] = [
+pub(crate) const TAG_COLUMN_TABLE: [(Tag, &str); 15] = [
     (Tag::Secret, COLUMN_SECRET),
     (Tag::Alias, COLUMN_ALIAS),
     (Tag::Accessibility, COLUMN_ACCESSIBILITY),
     (Tag::AuthType, COLUMN_AUTH_TYPE),
     (Tag::SyncType, COLUMN_SYNC_TYPE),
+    (Tag::DeleteType, COLUMN_DELETE_TYPE),
     (Tag::RequirePasswordSet, COLUMN_REQUIRE_PASSWORD_SET),
     (Tag::DataLabelCritical1, COLUMN_CRITICAL1),
     (Tag::DataLabelCritical2, COLUMN_CRITICAL2),

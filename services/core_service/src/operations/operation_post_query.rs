@@ -42,6 +42,6 @@ pub(crate) fn post_query(handle: &AssetMap, _calling_info: &CallingInfo) -> Resu
         Err(_) => {
             loge!("[FATAL] get mutex lock fail! err={}", ErrCode::GetMutexError);
             Err(ErrCode::GetMutexError)
-        }
+        },
     }
 }

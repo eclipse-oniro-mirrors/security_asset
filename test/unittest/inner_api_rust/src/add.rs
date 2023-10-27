@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-use asset_sdk::*;
 use crate::common::*;
+use asset_sdk::*;
 
 #[test]
 fn add_all_tags() {
@@ -43,13 +43,14 @@ fn add_all_tags() {
     attrs.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlock);
     attrs.insert_attr(Tag::AuthType, AuthType::Any);
     attrs.insert_attr(Tag::SyncType, SyncType::ThisDevice);
+    attrs.insert_attr(Tag::DeleteType, DeleteType::WhenUserRemoved);
     attrs.insert_attr(Tag::RequirePasswordSet, true);
     attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::Overwrite);
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     let res = query_attr_by_alias(alias).unwrap();
     assert_eq!(1, res.len());
-    assert_eq!(13, res[0].len());
+    assert_eq!(14, res[0].len());
     assert_eq!(alias, *get_bytes(&res[0], Tag::Alias).unwrap());
     assert_eq!(normal_label1, *get_bytes(&res[0], Tag::DataLabelNormal1).unwrap());
     assert_eq!(normal_label2, *get_bytes(&res[0], Tag::DataLabelNormal2).unwrap());
@@ -62,6 +63,7 @@ fn add_all_tags() {
     assert_eq!(Accessibility::DeviceUnlock, get_enum_variant::<Accessibility>(&res[0], Tag::Accessibility).unwrap());
     assert_eq!(AuthType::Any, get_enum_variant::<AuthType>(&res[0], Tag::AuthType).unwrap());
     assert_eq!(SyncType::ThisDevice, get_enum_variant::<SyncType>(&res[0], Tag::SyncType).unwrap());
+    assert_eq!(DeleteType::WhenUserRemoved, get_enum_variant::<DeleteType>(&res[0], Tag::DeleteType).unwrap());
     assert!(get_bool(&res[0], Tag::RequirePasswordSet).unwrap());
 
     remove_by_alias(alias).unwrap();
@@ -77,12 +79,17 @@ fn add_required_tags() {
 
     let res = query_all_by_alias(func_name).unwrap();
     assert_eq!(1, res.len());
-    assert_eq!(6, res[0].len());
+    assert_eq!(7, res[0].len());
     assert_eq!(func_name, *get_bytes(&res[0], Tag::Alias).unwrap());
     assert_eq!(func_name, *get_bytes(&res[0], Tag::Secret).unwrap());
-    assert_eq!(Accessibility::DeviceFirstUnlock, get_enum_variant::<Accessibility>(&res[0], Tag::Accessibility).unwrap());
+    assert_eq!(
+        Accessibility::DeviceFirstUnlock,
+        get_enum_variant::<Accessibility>(&res[0], Tag::Accessibility).unwrap()
+    );
     assert_eq!(AuthType::None, get_enum_variant::<AuthType>(&res[0], Tag::AuthType).unwrap());
     assert_eq!(SyncType::Never, get_enum_variant::<SyncType>(&res[0], Tag::SyncType).unwrap());
+    let delete_type = (DeleteType::WhenUserRemoved as u32) | (DeleteType::WhenUserRemoved as u32);
+    assert_eq!(delete_type, get_number(&res[0], Tag::DeleteType).unwrap());
     assert!(!get_bool(&res[0], Tag::RequirePasswordSet).unwrap());
     remove_by_alias(func_name).unwrap();
 }

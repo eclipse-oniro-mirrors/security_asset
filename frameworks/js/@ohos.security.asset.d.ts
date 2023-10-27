@@ -292,6 +292,30 @@ declare namespace asset {
   }
 
   /**
+   * An enum type indicates the type of when to delete Asset.
+   *
+   * @enum { number }
+   * @syscap SystemCapability.Security.Asset
+   * @since 11
+   */
+  enum DeleteType {
+    /**
+     * The Asset is deleted when the user space it belongs to is removed.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
+    WHEN_USER_REMOVED = 1 << 0,
+    /**
+     * The Asset is deleted when the package it belongs to is removed.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
+    WHEN_PACKAGE_REMOVED = 1 << 1,
+  }
+
+  /**
    * An enum type indicates the strategy for conflict resolution when handling duplicated Asset alias.
    *
    * @enum { number }
@@ -442,12 +466,12 @@ declare namespace asset {
      */
     SYNC_TYPE = TagType.NUMBER | 0x10,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
+     * A tag whose value is a 32-bit unsigned integer indicating when to delete Asset.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    CONFLICT_RESOLUTION = TagType.NUMBER | 0x11,
+    DELETE_TYPE = TagType.NUMBER | 0x11,
     /**
      * A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
      *
@@ -532,6 +556,13 @@ declare namespace asset {
      * @since 11
      */
     RETURN_ORDERED_BY = TagType.NUMBER | 0x43,
+    /**
+     * A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
+    CONFLICT_RESOLUTION = TagType.NUMBER | 0x44,
   }
 
   /**

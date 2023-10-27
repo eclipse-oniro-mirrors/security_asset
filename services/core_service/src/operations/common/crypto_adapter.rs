@@ -169,7 +169,7 @@ pub(crate) fn exec_crypto(
         Err(_) => {
             loge!("[FATAL] get mutex lock fail! err={}", ErrCode::GetMutexError);
             return Err(ErrCode::GetMutexError);
-        }
+        },
     }
 
     if !ipc_rust::set_calling_identity(identity) {

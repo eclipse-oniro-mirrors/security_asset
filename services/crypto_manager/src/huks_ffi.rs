@@ -82,21 +82,38 @@ extern "C" {
     pub fn KeyExist(key_data: *const ConstCryptoBlob) -> HuksErrcode;
 
     /// hks encrypt c func
-    pub fn EncryptWrapper(key_data: *const ConstCryptoBlob, aad_data: *const ConstCryptoBlob,
-        in_data: *const ConstCryptoBlob, out_data: *mut CryptoBlob) -> HuksErrcode;
+    pub fn EncryptWrapper(
+        key_data: *const ConstCryptoBlob,
+        aad_data: *const ConstCryptoBlob,
+        in_data: *const ConstCryptoBlob,
+        out_data: *mut CryptoBlob,
+    ) -> HuksErrcode;
 
     /// hks decrypt c func
-    pub fn DecryptWrapper(key_data: *const ConstCryptoBlob, aad_data: *const ConstCryptoBlob,
-        in_data: *const ConstCryptoBlob, out_data: *mut CryptoBlob) -> HuksErrcode;
+    pub fn DecryptWrapper(
+        key_data: *const ConstCryptoBlob,
+        aad_data: *const ConstCryptoBlob,
+        in_data: *const ConstCryptoBlob,
+        out_data: *mut CryptoBlob,
+    ) -> HuksErrcode;
 
     /// hks crypto init c func
-    pub fn InitCryptoWrapper(param: *const CryptParam, key_data: *const ConstCryptoBlob,
-        challenge_data: *mut CryptoBlob, handle_data: *mut CryptoBlob) -> HuksErrcode;
+    pub fn InitCryptoWrapper(
+        param: *const CryptParam,
+        key_data: *const ConstCryptoBlob,
+        challenge_data: *mut CryptoBlob,
+        handle_data: *mut CryptoBlob,
+    ) -> HuksErrcode;
 
     /// hks execute crypto c func
-    pub fn ExecCryptoWrapper(param: *const CryptParam, aad_data: *const ConstCryptoBlob,
-        auth_token: *const ConstCryptoBlob, handle_data: *const ConstCryptoBlob,
-        in_data: *const ConstCryptoBlob, out_data: *mut CryptoBlob) -> HuksErrcode;
+    pub fn ExecCryptoWrapper(
+        param: *const CryptParam,
+        aad_data: *const ConstCryptoBlob,
+        auth_token: *const ConstCryptoBlob,
+        handle_data: *const ConstCryptoBlob,
+        in_data: *const ConstCryptoBlob,
+        out_data: *mut CryptoBlob,
+    ) -> HuksErrcode;
 
     /// hks crypto drop c func
     pub fn DropCrypto(param: *const CryptParam, handle_data: *mut CryptoBlob) -> HuksErrcode;

@@ -71,8 +71,8 @@ impl_tag_trait! {
         /// A tag whose value is a 32-bit unsigned integer indicating the type of Asset synchronization.
         SyncType = DataType::Number as isize | 0x10,
 
-        /// A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
-        ConflictResolution = DataType::Number as isize | 0x11,
+        /// A tag whose value is a 32-bit unsigned integer indicating when to delete Asset.
+        DeleteType = DataType::Number as isize | 0x11,
 
         /// A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
         DataLabelCritical1 = DataType::Bytes as isize | 0x20,
@@ -109,6 +109,9 @@ impl_tag_trait! {
 
         /// A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
         ReturnOrderedBy = DataType::Number as isize | 0x43,
+
+        /// A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
+        ConflictResolution = DataType::Number as isize | 0x44,
     }
 }
 
@@ -252,6 +255,19 @@ impl_enum_trait! {
 
         /// An Asset with this attribute value can only be transferred out to a trusted device (user authorized).
         TrustedDevice = 1 << 2,
+    }
+}
+
+impl_enum_trait! {
+    /// An enum type indicates the type of when to delete Asset.
+    #[derive(Debug)]
+    #[derive(PartialEq, Eq)]
+    pub enum DeleteType {
+        /// The Asset is deleted when the user space it belongs to is removed.
+        WhenUserRemoved = 1 << 0,
+
+        /// The Asset is deleted when the package it belongs to is removed.
+        WhenPacageRemoved = 1 << 1,
     }
 }
 

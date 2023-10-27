@@ -15,9 +15,7 @@
 
 //! This module extends the function of Asset data structure.
 
-use super::{
-    AssetMap, DataType, Insert, IntoValue, Tag, Value,
-};
+use super::{AssetMap, DataType, Insert, IntoValue, Tag, Value};
 
 /// The mask used to obtain the data type of Asset attribute value.
 const DATA_TYPE_MASK: u32 = 0xF << 28;

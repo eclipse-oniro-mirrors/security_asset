@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-use asset_sdk::*;
 use crate::common::*;
+use asset_sdk::*;
 
 #[test]
 fn remove_alias_non_exist() {

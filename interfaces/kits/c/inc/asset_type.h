@@ -111,9 +111,9 @@ typedef enum {
      */
     ASSET_TAG_SYNC_TYPE = ASSET_TYPE_NUMBER | 0x10,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
+     * A tag whose value is a 32-bit unsigned integer indicating when to delete Asset.
      */
-    ASSET_TAG_CONFLICT_RESOLUTION = ASSET_TYPE_NUMBER | 0x11,
+    ASSET_TAG_DELETE_TYPE = ASSET_TYPE_NUMBER | 0x11,
     /**
      * A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
      */
@@ -162,6 +162,10 @@ typedef enum {
      * A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
      */
     ASSET_TAG_RETURN_ORDERED_BY = ASSET_TYPE_NUMBER | 0x43,
+    /**
+     * A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
+     */
+    ASSET_TAG_CONFLICT_RESOLUTION = ASSET_TYPE_NUMBER | 0x44,
 } Asset_Tag;
 
 /**
@@ -319,6 +323,22 @@ typedef enum {
      */
     ASSET_SYNC_TYPE_TRUSTED_DEVICE = 1 << 2,
 } Asset_SyncType;
+
+/**
+ * @brief enum type indicates the type of when to delete Asset.
+ *
+ * @since 11
+ */
+typedef enum {
+    /**
+     * The Asset is deleted when the user space it belongs to is removed.
+     */
+    ASSET_DELETE_WHEN_USER_REMOVED = 1 << 0,
+    /**
+     * The Asset is deleted when the package it belongs to is removed.
+     */
+    ASSET_DELETE_WHEN_PACKAGE_REMOVED = 1 << 1,
+} Asset_DeleteType;
 
 /**
  * @brief An enum type indicates the strategy for conflict resolution when handling duplicated Asset alias.
