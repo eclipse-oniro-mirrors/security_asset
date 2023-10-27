@@ -30,13 +30,12 @@ fn remove_condition_non_exist() {
 
 #[test]
 fn remove_condition_exist_and_query() {
-    let alias = function!().as_bytes();
-    let secret = function!().as_bytes();
-    let label_vritial_2 = "remove_condition_exist_and_query".as_bytes();
+    let function_name = function!().as_bytes();
+    let critical_label = "remove_condition_exist_and_query".as_bytes();
     let mut condition = AssetMap::from([
-        (Tag::Alias, Value::Bytes(alias.to_owned())),
-        (Tag::Secret, Value::Bytes(secret.to_owned())),
-        (Tag::DataLabelCritical2, Value::Bytes(label_vritial_2.to_owned())),
+        (Tag::Alias, Value::Bytes(function_name.to_owned())),
+        (Tag::Secret, Value::Bytes(function_name.to_owned())),
+        (Tag::DataLabelCritical2, Value::Bytes(critical_label.to_owned())),
     ]);
     asset_sdk::Manager::build().unwrap().add(&condition).unwrap();
     condition.remove(&Tag::Alias);
@@ -47,11 +46,14 @@ fn remove_condition_exist_and_query() {
 
 #[test]
 fn remove_condition_with_secret() {
-    let alias = function!().as_bytes();
-    let secret = function!().as_bytes();
-    let condition =
-        AssetMap::from([(Tag::Alias, Value::Bytes(alias.to_owned())), (Tag::Secret, Value::Bytes(secret.to_owned()))]);
+    let function_name = function!().as_bytes();
+    let condition = AssetMap::from([
+        (Tag::Alias, Value::Bytes(function_name.to_owned())),
+        (Tag::Secret, Value::Bytes(function_name.to_owned())),
+    ]);
     asset_sdk::Manager::build().unwrap().add(&condition).unwrap();
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().remove(&condition).unwrap_err());
-    remove_by_alias(alias).unwrap();
+    remove_by_alias(function_name).unwrap();
 }
+
+// todo: remove all ?

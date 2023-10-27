@@ -25,14 +25,13 @@ fn query_non_exist_with_alias() {
 
 #[test]
 fn query_with_wrong_alias() {
-    let alias = function!().as_bytes();
-    let secret = function!().as_bytes();
-    add_default_asset(alias, secret).unwrap();
+    let function_name = function!().as_bytes();
+    add_default_asset(function_name, function_name).unwrap();
 
     let alias_new = "query_with_wrong_alias_wrong_alias".as_bytes();
     assert_eq!(ErrCode::NotFound, query_attr_by_alias(alias_new).unwrap_err());
     assert_eq!(ErrCode::NotFound, query_all_by_alias(alias_new).unwrap_err());
-    remove_by_alias(alias).unwrap();
+    remove_by_alias(function_name).unwrap();
 }
 
 #[test]
@@ -44,31 +43,28 @@ fn query_non_exist_without_alias() {
 
 #[test]
 fn query_without_alias_with_wrong_condition() {
-    let alias = function!().as_bytes();
-    let secret = function!().as_bytes();
+    let function_name = function!().as_bytes();
     let mut add = AssetMap::new();
     add.insert_attr(Tag::RequirePasswordSet, false);
-    add.insert_attr(Tag::Alias, alias.to_owned());
-    add.insert_attr(Tag::Secret, secret.to_owned());
+    add.insert_attr(Tag::Alias, function_name.to_owned());
+    add.insert_attr(Tag::Secret, function_name.to_owned());
     asset_sdk::Manager::build().unwrap().add(&add).unwrap();
 
     let mut query = AssetMap::new();
     query.insert_attr(Tag::RequirePasswordSet, true);
     assert_eq!(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
-    remove_by_alias(alias).unwrap();
+    remove_by_alias(function_name).unwrap();
 }
 
 #[test]
 fn query_without_limit() {
     let _ = remove_all();
-    let alias = function!().as_bytes();
-    let secret = function!().as_bytes();
+    let function_name = function!().as_bytes();
     let asset_num = 10;
     for i in 0..asset_num {
-        let alias_new = format!("{:?}{}", alias, i);
-        let secret_new = format!("{:?}{}", secret, i);
-        add_default_asset(alias_new.as_bytes(), secret_new.as_bytes()).unwrap();
+        let new_name = format!("{:?}{}", function_name, i);
+        add_default_asset(new_name.as_bytes(), new_name.as_bytes()).unwrap();
     }
 
     let query = AssetMap::new();
@@ -76,21 +72,19 @@ fn query_without_limit() {
     assert_eq!(asset_num, asset_sdk::Manager::build().unwrap().query(&query).unwrap().len() as u32);
 
     for i in 0..asset_num {
-        let alias_new = format!("{:?}{}", alias, i);
-        remove_by_alias(alias_new.as_bytes()).unwrap();
+        let new_name = format!("{:?}{}", function_name, i);
+        remove_by_alias(new_name.as_bytes()).unwrap();
     }
 }
 
 #[test]
 fn query_with_limit_with_without_offset() {
     let _ = remove_all();
-    let alias = function!().as_bytes();
-    let secret = function!().as_bytes();
+    let function_name = function!().as_bytes();
     let asset_num = 10;
     for i in 0..asset_num {
-        let alias_new = format!("{:?}{}", alias, i);
-        let secret_new = format!("{:?}{}", secret, i);
-        add_default_asset(alias_new.as_bytes(), secret_new.as_bytes()).unwrap();
+        let new_name = format!("{:?}{}", function_name, i);
+        add_default_asset(new_name.as_bytes(), new_name.as_bytes()).unwrap();
     }
 
     let mut query = AssetMap::new();
@@ -99,7 +93,7 @@ fn query_with_limit_with_without_offset() {
     let assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
     assert_eq!(limit, assets.len() as u32);
     for (i, asset) in assets.iter().enumerate() {
-        assert!(get_bytes(asset, Tag::Alias).unwrap().eq(format!("{:?}{}", alias, i).as_bytes()));
+        assert!(get_bytes(asset, Tag::Alias).unwrap().eq(format!("{:?}{}", function_name, i).as_bytes()));
     }
 
     let offset = 2u32;
@@ -107,67 +101,64 @@ fn query_with_limit_with_without_offset() {
     let assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
     assert_eq!(limit, assets.len() as u32);
     for (i, asset) in assets.iter().enumerate() {
-        assert!(get_bytes(asset, Tag::Alias).unwrap().eq(format!("{:?}{}", alias, i + offset as usize).as_bytes()));
+        assert!(get_bytes(asset, Tag::Alias)
+            .unwrap()
+            .eq(format!("{:?}{}", function_name, i + offset as usize).as_bytes()));
     }
 
     for i in 0..asset_num {
-        let alias_new = format!("{:?}{}", alias, i);
-        remove_by_alias(alias_new.as_bytes()).unwrap();
+        let new_name = format!("{:?}{}", function_name, i);
+        remove_by_alias(new_name.as_bytes()).unwrap();
     }
 }
 
 #[test]
 fn query_with_without_return_type() {
-    let alias = function!().as_bytes();
-    let secret = function!().as_bytes();
-    add_default_asset(alias, secret).unwrap();
+    let function_name = function!().as_bytes();
+    add_default_asset(function_name, function_name).unwrap();
 
-    assert!(!query_attr_by_alias(alias).unwrap()[0].contains_key(&Tag::Secret));
-    assert!(query_all_by_alias(alias).unwrap()[0].contains_key(&Tag::Secret));
+    assert!(!query_attr_by_alias(function_name).unwrap()[0].contains_key(&Tag::Secret));
+    assert!(query_all_by_alias(function_name).unwrap()[0].contains_key(&Tag::Secret));
 
-    remove_by_alias(alias).unwrap();
+    remove_by_alias(function_name).unwrap();
 }
 
 #[test]
 fn query_with_secret() {
-    let alias = function!().as_bytes();
-    let secret = function!().as_bytes();
-    add_default_asset(alias, secret).unwrap();
+    let function_name = function!().as_bytes();
+    add_default_asset(function_name, function_name).unwrap();
 
-    let query = AssetMap::from([(Tag::Secret, Value::Bytes(secret.to_vec()))]);
+    let query = AssetMap::from([(Tag::Secret, Value::Bytes(function_name.to_vec()))]);
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
-    remove_by_alias(alias).unwrap();
+    remove_by_alias(function_name).unwrap();
 }
 
 #[test]
 fn query_with_return_all_without_alias() {
-    let alias = function!().as_bytes();
-    let secret = function!().as_bytes();
-    add_default_asset(alias, secret).unwrap();
+    let function_name = function!().as_bytes();
+    add_default_asset(function_name, function_name).unwrap();
 
     let query = AssetMap::from([(Tag::ReturnType, Value::Number(ReturnType::All as u32))]);
-
     assert_eq!(ErrCode::NotSupport, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
-    remove_by_alias(alias).unwrap();
+    remove_by_alias(function_name).unwrap();
 }
 
 fn query_with_order(order: &[u8], suffix: &[&[u8]]) {
     let _ = remove_all();
-    let alias = function!();
-    let secret = function!();
+    let function_name = function!();
     let asset_num = 4;
     let mut add = AssetMap::new();
-    add.insert_attr(Tag::Secret, secret.as_bytes().to_vec());
+    add.insert_attr(Tag::Secret, function_name.as_bytes().to_vec());
     for item in suffix.iter().take(asset_num) {
         let mut alias_new: Vec<u8> = Vec::new();
-        alias_new.extend_from_slice(alias.as_bytes());
+        alias_new.extend_from_slice(function_name.as_bytes());
         alias_new.extend_from_slice(item);
         let mut order_new: Vec<u8> = Vec::new();
         order_new.extend_from_slice(order);
         order_new.extend_from_slice(item);
-        add_default_asset(&alias_new, secret.as_bytes()).unwrap();
+        add_default_asset(&alias_new, function_name.as_bytes()).unwrap();
     }
 
     let mut query = AssetMap::new();
@@ -181,14 +172,14 @@ fn query_with_order(order: &[u8], suffix: &[&[u8]]) {
         let get_alias = get_bytes(asset, Tag::Alias).unwrap();
 
         let mut alias_new: Vec<u8> = Vec::new();
-        alias_new.extend_from_slice(alias.as_bytes());
+        alias_new.extend_from_slice(function_name.as_bytes());
         alias_new.extend_from_slice(suffix[i]);
         assert_eq!(&alias_new, get_alias);
     }
 
     for item in suffix.iter().take(asset_num) {
         let mut alias_new: Vec<u8> = Vec::new();
-        alias_new.extend_from_slice(alias.as_bytes());
+        alias_new.extend_from_slice(function_name.as_bytes());
         alias_new.extend_from_slice(item);
 
         remove_by_alias(&alias_new).unwrap();
@@ -228,3 +219,5 @@ fn query_with_order_with_unreadible() {
     suffix.sort_by(|a, b| b.cmp(a));
     query_with_order(&order, &suffix);
 }
+
+// todo: query all

@@ -31,236 +31,62 @@ fn query_alias_long_len() {
 }
 
 #[test]
-fn query_alias_with_unmatched_type() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::Alias, MIN_NUMBER_VALUE);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::Alias, true);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
 fn query_invalid_accessibility() {
    let mut query = AssetMap::new();
-   query.insert_attr(Tag::Accessibility, ACCESSIBILITY_MIN_BITS - 1);
+   query.insert_attr(Tag::Accessibility, (Accessibility::DeviceFirstUnlock as u32) - 1);
    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
-   query.insert_attr(Tag::Accessibility, ACCESSIBILITY_MAX_BITS + 1);
+   query.insert_attr(Tag::Accessibility, (Accessibility::DeviceUnlock as u32) + 1);
    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 }
 
 #[test]
-fn query_accessibility_with_unmatched_type() {
-   let mut query = AssetMap::new();
+fn query_required_pwd_with_unmatched_type() {
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::RequirePasswordSet, vec![]);
+    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
-   query.insert_attr(Tag::Accessibility, vec![]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::Accessibility, true);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+    query.insert_attr(Tag::RequirePasswordSet, 0);
+    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 }
 
 #[test]
 fn query_invalid_auth_type() {
    let mut query = AssetMap::new();
-   query.insert_attr(Tag::AuthType, AUTH_TYPE_MIN_VALUE - 1);
+   query.insert_attr(Tag::AuthType, (AuthType::None as u32) + 1);
    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
-   query.insert_attr(Tag::AuthType, AUTH_TYPE_MAX_VALUE + 1);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_auth_type_with_unmatched_type() {
-   let mut query = AssetMap::new();
-
-   query.insert_attr(Tag::AuthType, vec![]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::AuthType, true);
+   query.insert_attr(Tag::AuthType, (AuthType::Any as u32) + 1);
    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 }
 
 #[test]
 fn query_invalid_sync_type() {
    let mut query = AssetMap::new();
-   query.insert_attr(Tag::SyncType, SYNC_TYPE_MIN_BITS);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::SyncType, SYNC_TYPE_MAX_BITS + 1);
+   let sync_type = SyncType::ThisDevice as u32 | SyncType::TrustedAccount as u32 | SyncType::TrustedDevice as u32;
+   query.insert_attr(Tag::SyncType, sync_type + 1);
    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 }
 
 #[test]
-fn query_sync_type_with_unmatched_type() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::AuthType, vec![]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::AuthType, true);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+fn query_invalid_delete_type() {
+    let mut query = AssetMap::new();
+    let delete_type = DeleteType::WhenPackageRemoved as u32 | DeleteType::WhenUserRemoved as u32;
+    query.insert_attr(Tag::DeleteType, delete_type + 1);
+    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 }
 
 #[test]
-fn query_invalid_data_lable_critical_1() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::DataLabelCritical1, vec![]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+fn query_invalid_label() {
+    let labels = &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat();
+    for &label in labels {
+        let mut query = AssetMap::new();
+        query.insert_attr(label, vec![]);
+        assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
-   query.insert_attr(Tag::DataLabelCritical1, vec![0; MAX_LABEL_SIZE + 1]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_data_lable_critical_1_with_unmatched_type() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::DataLabelCritical1, 0);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::DataLabelCritical1, true);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_invalid_data_lable_critical_2() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::DataLabelCritical2, vec![]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::DataLabelCritical2, vec![0; MAX_LABEL_SIZE + 1]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_data_lable_critical_2_with_unmatched_type() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::DataLabelCritical2, 0);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::DataLabelCritical2, true);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_invalid_data_lable_critical_3() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::DataLabelCritical3, vec![]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::DataLabelCritical3, vec![0; MAX_LABEL_SIZE + 1]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_data_lable_critical_3_with_unmatched_type() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::DataLabelCritical3, 0);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::DataLabelCritical3, true);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_invalid_data_lable_critical_4() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::DataLabelCritical4, vec![]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::DataLabelCritical4, vec![0; MAX_LABEL_SIZE + 1]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_data_lable_critical_4_with_unmatched_type() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::DataLabelCritical4, 0);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::DataLabelCritical4, true);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_invalid_data_lable_normal_1() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::DataLabelNormal1, vec![]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::DataLabelNormal1, vec![0; MAX_LABEL_SIZE + 1]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_data_lable_normal_1_with_unmatched_type() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::DataLabelNormal1, 0);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::DataLabelNormal1, true);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_invalid_data_lable_normal_2() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::DataLabelNormal2, vec![]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::DataLabelNormal2, vec![0; MAX_LABEL_SIZE + 1]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_data_lable_normal_2_with_unmatched_type() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::DataLabelNormal2, 0);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::DataLabelNormal2, true);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_invalid_data_lable_normal_3() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::DataLabelNormal3, vec![]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::DataLabelNormal3, vec![0; MAX_LABEL_SIZE + 1]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_data_lable_normal_3_with_unmatched_type() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::DataLabelNormal3, 0);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::DataLabelNormal3, true);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-   remove_by_alias(alias).unwrap();
-}
-
-#[test]
-fn query_invalid_data_lable_normal_4() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::DataLabelNormal4, vec![]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::DataLabelNormal4, vec![0; MAX_LABEL_SIZE + 1]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_data_lable_normal_4_with_unmatched_type() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::DataLabelNormal4, 0);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::DataLabelNormal4, true);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+        query.insert_attr(label, vec![0; MAX_LABEL_SIZE + 1]);
+        assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+    }
 }
 
 #[test]
@@ -274,26 +100,6 @@ fn query_invalid_return_limit() {
 }
 
 #[test]
-fn query_return_limit_with_unmatched_type() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::ReturnLimit, vec![]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::ReturnLimit, true);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_return_offset_with_unmatched_type() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::ReturnOffset, vec![]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::ReturnOffset, true);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
 fn query_invalid_return_ordered_by() {
    let mut query = AssetMap::new();
    query.insert_attr(Tag::ReturnOrderedBy, Tag::Alias);
@@ -301,29 +107,9 @@ fn query_invalid_return_ordered_by() {
 }
 
 #[test]
-fn query_return_ordered_by_with_unmatched_type() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::ReturnOrderedBy, vec![]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::ReturnOrderedBy, true);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
 fn query_invalid_return_type() {
    let mut query = AssetMap::new();
    query.insert_attr(Tag::ReturnType, ReturnType::Attributes as u32 + 1);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_return_type_with_unmatched_type() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::ReturnType, vec![]);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::ReturnType, true);
    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 }
 
@@ -338,16 +124,6 @@ fn query_invalid_auth_challenge() {
 }
 
 #[test]
-fn query_auth_challenge_with_unmatched_type() {
-   let mut query = AssetMap::new();
-   query.insert_attr(Tag::AuthChallenge, 0);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-   query.insert_attr(Tag::AuthChallenge, true);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
 fn query_invalid_auth_token() {
    let mut query = AssetMap::new();
    query.insert_attr(Tag::AuthToken, vec![0; AUTH_TOKEN_SIZE - 1]);
@@ -358,11 +134,46 @@ fn query_invalid_auth_token() {
 }
 
 #[test]
-fn query_auth_token_with_unmatched_type() {
+fn query_bytes_tag_with_unmatched_type() {
+   let mut tags_bytes = [CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat();
+   tags_bytes.extend(&[Tag::AuthToken, Tag::AuthChallenge, Tag::Alias]);
+   for tag in tags_bytes {
    let mut query = AssetMap::new();
-   query.insert_attr(Tag::AuthToken, 0);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+      query.insert_attr(tag, 0);
+      assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
-   query.insert_attr(Tag::AuthToken, true);
-   assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+      query.insert_attr(tag, true);
+      assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+   }
+}
+
+#[test]
+fn query_number_tag_with_unmatched_type() {
+   let tags_bytes = [Tag::Accessibility, Tag::AuthType, Tag::SyncType, Tag::DeleteType, Tag::ReturnLimit,
+      Tag::ReturnOffset, Tag::ReturnOrderedBy, Tag::ReturnType];
+   for tag in tags_bytes {
+   let mut query = AssetMap::new();
+      query.insert_attr(tag, 0);
+      assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+
+      query.insert_attr(tag, true);
+      assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+   }
+}
+
+#[test]
+fn query_unsupported_tags() {
+   let tags_bytes = [Tag::Secret];
+   for tag in tags_bytes {
+      let mut query = AssetMap::new();
+      query.insert_attr(tag, vec![0; MIN_ARRAY_SIZE + 1]);
+      assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+   }
+
+   let tags_num = [Tag::AuthValidityPeriod, Tag::ConflictResolution];
+   for tag in tags_num {
+      let mut query = AssetMap::new();
+      query.insert_attr(tag, 1);
+      assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+   }
 }

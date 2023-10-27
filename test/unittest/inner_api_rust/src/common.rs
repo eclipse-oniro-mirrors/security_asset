@@ -45,10 +45,11 @@ pub(crate) const SYNC_TYPE_MAX_BITS: u32 = 3;
 pub(crate) const DELETE_TYPE_MIN_BITS: u32 = 1;
 pub(crate) const DELETE_TYPE_MAX_BITS: u32 = 2;
 
-pub(crate) const ACCESSIBILITY_MIN_BITS: u32 = 1;
-pub(crate) const ACCESSIBILITY_MAX_BITS: u32 = 2;
-pub(crate) const AUTH_TYPE_MIN_VALUE: u32 = 1;
-pub(crate) const AUTH_TYPE_MAX_VALUE: u32 = 255;
+pub(crate) const CRITICAL_LABEL_ATTRS: [Tag; 4] =
+    [Tag::DataLabelCritical1, Tag::DataLabelCritical2, Tag::DataLabelCritical3, Tag::DataLabelCritical4];
+
+pub(crate) const NORMAL_LABEL_ATTRS: [Tag; 4] =
+    [Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4];
 
 
 pub(crate) fn get_bytes(attrs: &AssetMap, tag: Tag) -> Result<&Vec<u8>> {
