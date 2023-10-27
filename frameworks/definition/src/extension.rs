@@ -139,31 +139,12 @@ impl IntoValue for u32 {
 
 impl Insert for AssetMap {
     fn insert_attr(&mut self, key: Tag, value: impl IntoValue) -> Result<()> {
-        match value.data_type() {
-            DataType::Bool => {
-                if let Value::Bool(real) = value.into_value() {
-                    self.insert(key, Value::Bool(real));
-                    return Ok(());
-                }
-                loge!("[FATAL]Insert data of bool type failed!");
-                Err(ErrCode::InvalidArgument)
-            },
-            DataType::Number => {
-                if let Value::Number(real) = value.into_value() {
-                    self.insert(key, Value::Number(real));
-                    return Ok(());
-                }
-                loge!("[FATAL]Insert data of u32 type failed!");
-                Err(ErrCode::InvalidArgument)
-            },
-            DataType::Bytes => {
-                if let Value::Bytes(real) = value.into_value() {
-                    self.insert(key, Value::Bytes(real));
-                    return Ok(());
-                }
-                loge!("[FATAL]Insert data of bytes type failed!");
-                Err(ErrCode::InvalidArgument)
-            },
+        if key.data_type() != value.data_type() {
+            loge!("[FATAL][SDK]Data type mismatch, key type: {}, value type: {}", key.data_type(), value.data_type());
+            Err(ErrCode::InvalidArgument)
+        } else {
+            self.insert(key, value.into_value());
+            Ok(())
         }
     }
 }

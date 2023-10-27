@@ -79,6 +79,10 @@ pub fn serialize_map(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<(
     }
     parcel.write(&(map.len() as u32)).map_err(|_| ErrCode::IpcError)?;
     for (&tag, value) in map.iter() {
+        if tag.data_type() != value.data_type() {
+            loge!("[FATAL][IPC]Data type mismatch, key type: {}, value type: {}", tag.data_type(), value.data_type());
+            return Err(ErrCode::InvalidArgument);
+        }
         parcel.write(&(tag as u32)).map_err(|_| ErrCode::IpcError)?;
         match value {
             Value::Bool(b) => parcel.write::<bool>(b).map_err(|_| ErrCode::IpcError)?,

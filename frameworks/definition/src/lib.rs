@@ -21,17 +21,19 @@ mod extension;
 #[macro_use]
 pub mod macros;
 
-/// An enum type containing the data type definitions for Asset attribute value.
-#[derive(Eq, PartialEq)]
-pub enum DataType {
-    /// The data type of Asset attribute value is bool.
-    Bool = 1 << 28,
+impl_enum_trait! {
+    /// An enum type containing the data type definitions for Asset attribute value.
+    #[derive(Eq, PartialEq)]
+    pub enum DataType {
+        /// The data type of Asset attribute value is bool.
+        Bool = 1 << 28,
 
-    /// The data type of Asset attribute value is uint32.
-    Number = 2 << 28,
+        /// The data type of Asset attribute value is uint32.
+        Number = 2 << 28,
 
-    /// The data type of Asset attribute value is byte array.
-    Bytes = 3 << 28,
+        /// The data type of Asset attribute value is byte array.
+        Bytes = 3 << 28,
+    }
 }
 
 impl_enum_trait! {
