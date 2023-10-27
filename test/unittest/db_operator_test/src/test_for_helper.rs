@@ -206,6 +206,7 @@ pub fn test_for_update_ver() {
 }
 
 pub fn test_for_default_asset(user_id: i32) {
+    fs::create_dir_all(format!("/data/service/el1/public/asset_service/{}/", user_id)).unwrap();
     // let _ = Database::drop_default_database(user_id);
     let mut def = DbMap::from([
         ("Secret", Value::Bytes(b"blob".to_vec())),
@@ -353,6 +354,7 @@ fn trans_call(db: &Database) -> bool {
 
 #[test]
 pub fn test_for_transaction3() {
+    fs::create_dir_all(format!("/data/service/el1/public/asset_service/{}/", 6)).unwrap();
     let ret = do_transaction(6, trans_call).unwrap();
     assert!(ret);
     let trans = |db: &Database| -> bool {
@@ -366,6 +368,7 @@ pub fn test_for_transaction3() {
 
 #[test]
 pub fn test_for_error() {
+    fs::create_dir_all(format!("/data/service/el1/public/asset_service/{}/", 1)).unwrap();
     let stmt = DatabaseHelper::insert_datas(
         1,
         &DbMap::from([
@@ -378,6 +381,7 @@ pub fn test_for_error() {
 
 #[test]
 pub fn test_for_master_backup() {
+    fs::create_dir_all(format!("/data/service/el1/public/asset_service/{}/", 5)).unwrap();
     let _ = Database::drop_default_database_and_backup(5);
     let db = DatabaseHelper::open_default_database_table(5).unwrap();
     let def = DbMap::from([
