@@ -21,4 +21,5 @@ mod add_abnormal;
 mod query;
 mod query_abnormal;
 mod remove;
+mod remove_abnormal;
 mod update;
