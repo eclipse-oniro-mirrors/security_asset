@@ -267,7 +267,7 @@ impl_enum_trait! {
         WhenUserRemoved = 1 << 0,
 
         /// The Asset is deleted when the package it belongs to is removed.
-        WhenPacageRemoved = 1 << 1,
+        WhenPackageRemoved = 1 << 1,
     }
 }
 

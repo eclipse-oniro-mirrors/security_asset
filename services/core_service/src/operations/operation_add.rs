@@ -86,7 +86,7 @@ fn add_default_attrs(db_data: &mut DbMap) {
     db_data.entry(COLUMN_AUTH_TYPE).or_insert(Value::Number(AuthType::None as u32));
     db_data.entry(COLUMN_SYNC_TYPE).or_insert(Value::Number(SyncType::Never as u32));
     db_data.entry(COLUMN_REQUIRE_PASSWORD_SET).or_insert(Value::Bool(false));
-    let delete_type = DeleteType::WhenUserRemoved as u32 | DeleteType::WhenPacageRemoved as u32;
+    let delete_type = DeleteType::WhenUserRemoved as u32 | DeleteType::WhenPackageRemoved as u32;
     db_data.entry(COLUMN_DELETE_TYPE).or_insert(Value::Number(delete_type));
 }
 

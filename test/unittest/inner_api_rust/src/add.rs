@@ -88,7 +88,7 @@ fn add_required_tags() {
     );
     assert_eq!(AuthType::None, get_enum_variant::<AuthType>(&res[0], Tag::AuthType).unwrap());
     assert_eq!(SyncType::Never, get_enum_variant::<SyncType>(&res[0], Tag::SyncType).unwrap());
-    let delete_type = (DeleteType::WhenUserRemoved as u32) | (DeleteType::WhenUserRemoved as u32);
+    let delete_type = (DeleteType::WhenUserRemoved as u32) | (DeleteType::WhenPackageRemoved as u32);
     assert_eq!(delete_type, get_number(&res[0], Tag::DeleteType).unwrap());
     assert!(!get_bool(&res[0], Tag::RequirePasswordSet).unwrap());
     remove_by_alias(func_name).unwrap();

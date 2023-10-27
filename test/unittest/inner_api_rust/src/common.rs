@@ -28,6 +28,24 @@ macro_rules! function {
     }};
 }
 
+pub(crate) const MIN_NUMBER_VALUE: u32 = 0;
+pub(crate) const MAX_RETURN_LIMIT: u32 = 0x10000; // 65536
+pub(crate) const MAX_AUTH_VALID_PERIOD: u32 = 600; // 10min
+
+pub(crate) const MIN_ARRAY_SIZE: usize = 0;
+pub(crate) const MAX_ARRAY_SIZE: usize = 1024;
+
+pub(crate) const MAX_ALIAS_SIZE: usize = 256;
+pub(crate) const MAX_LABEL_SIZE: usize = 512;
+
+pub(crate) const AUTH_TOKEN_SIZE: usize = 148;
+pub(crate) const CHALLENGE_SIZE: usize = 32;
+pub(crate) const SYNC_TYPE_MIN_BITS: u32 = 0;
+pub(crate) const SYNC_TYPE_MAX_BITS: u32 = 3;
+pub(crate) const DELETE_TYPE_MIN_BITS: u32 = 1;
+pub(crate) const DELETE_TYPE_MAX_BITS: u32 = 2;
+
+
 pub(crate) fn get_bytes(attrs: &AssetMap, tag: Tag) -> Result<&Vec<u8>> {
     if let Some(Value::Bytes(bytes)) = attrs.get(&tag) {
         Ok(bytes)
