@@ -121,45 +121,65 @@ fn add_chinese_secret() {
 }
 
 #[test]
-fn add_conflict_throw_error() {
-    let alias = function!().as_bytes();
-    let secret = function!().as_bytes();
+fn add_same_alias_throw_error() {
+    let function_name = function!().as_bytes();
 
-    let mut add_throw_error =
-        AssetMap::from([(Tag::Alias, Value::Bytes(alias.to_owned())), (Tag::Secret, Value::Bytes(secret.to_owned()))]);
-    asset_sdk::Manager::build().unwrap().add(&add_throw_error).unwrap();
+    // step1. insert data
+    let mut attrs = AssetMap::new();
+    attrs.insert_attr(Tag::Alias, function_name.to_owned()).unwrap();
+    attrs.insert_attr(Tag::Secret, function_name.to_owned()).unwrap();
+    asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
-    assert_eq!(Err(ErrCode::Duplicated), asset_sdk::Manager::build().unwrap().add(&add_throw_error));
+    // step2. insert data with the same alias, default resolution: throw error
+    assert_eq!(Err(ErrCode::Duplicated), asset_sdk::Manager::build().unwrap().add(&attrs));
 
-    add_throw_error.insert_attr(Tag::ConflictResolution, ConflictResolution::ThrowError).unwrap();
-    assert_eq!(Err(ErrCode::Duplicated), asset_sdk::Manager::build().unwrap().add(&add_throw_error));
+    // step3. insert data with the same alias, specified resolution: throw error
+    attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::ThrowError).unwrap();
+    assert_eq!(Err(ErrCode::Duplicated), asset_sdk::Manager::build().unwrap().add(&attrs));
 
-    remove_by_alias(alias).unwrap();
+    remove_by_alias(function_name).unwrap();
 }
 
 #[test]
-fn add_conflict_overwrite() {
-    let alias = function!().as_bytes();
-    let secret = function!().as_bytes();
-    let label_normal_1 = "add_conflict_over_write_label_normal_1".as_bytes();
+fn add_same_alias_overwrite() {
+    let function_name = function!().as_bytes();
 
-    let mut add_over_write = AssetMap::new();
-    add_over_write.insert_attr(Tag::Alias, alias.to_owned()).unwrap();
-    add_over_write.insert_attr(Tag::Secret, secret.to_owned()).unwrap();
+    // step1. insert data
+    let mut attrs = AssetMap::new();
+    attrs.insert_attr(Tag::Alias, function_name.to_owned()).unwrap();
+    attrs.insert_attr(Tag::Secret, function_name.to_owned()).unwrap();
+    asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
-    asset_sdk::Manager::build().unwrap().add(&add_over_write).unwrap();
-
-    let res = query_attr_by_alias(alias).unwrap();
+    // step2. query data with no label
+    let res = query_attr_by_alias(function_name).unwrap();
     assert_eq!(1, res.len());
-    assert!(res[0].get(&Tag::DataLabelNormal1).is_none());
+    assert!(res[0].get(&Tag::DataLabelCritical1).is_none());
 
-    add_over_write.insert_attr(Tag::DataLabelNormal1, label_normal_1.to_owned()).unwrap();
-    add_over_write.insert_attr(Tag::ConflictResolution, ConflictResolution::Overwrite).unwrap();
+    // step3. insert data with the same alias, specified resolution: overwrite
+    let critical_label = "add_same_alias_overwrite".as_bytes();
+    attrs.insert_attr(Tag::DataLabelCritical1, critical_label.to_owned()).unwrap();
+    attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::Overwrite).unwrap();
+    asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
-    asset_sdk::Manager::build().unwrap().add(&add_over_write).unwrap();
-    let res = query_attr_by_alias(alias).unwrap();
+    // step4. query new data with critical label
+    let res = query_attr_by_alias(function_name).unwrap();
     assert_eq!(1, res.len());
-    assert_eq!(label_normal_1, *get_bytes(&res[0], Tag::DataLabelNormal1).unwrap());
+    assert_eq!(critical_label, *get_bytes(&res[0], Tag::DataLabelCritical1).unwrap());
 
-    remove_by_alias(alias).unwrap();
+    remove_by_alias(function_name).unwrap();
+}
+
+#[test]
+fn add_multiple_sync_types() {
+    let function_name = function!().as_bytes();
+    let sync_type = (SyncType::ThisDevice as u32) | (SyncType::TrustedDevice as u32);
+    let mut attrs = AssetMap::new();
+    attrs.insert_attr(Tag::Alias, function_name.to_owned()).unwrap();
+    attrs.insert_attr(Tag::Secret, function_name.to_owned()).unwrap();
+    attrs.insert_attr(Tag::SyncType, sync_type).unwrap();
+    asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
+
+    let res = query_attr_by_alias(function_name).unwrap();
+    assert_eq!(1, res.len());
+    assert_eq!(sync_type, get_number(&res[0], Tag::SyncType).unwrap());
 }

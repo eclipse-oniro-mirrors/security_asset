@@ -16,6 +16,7 @@
 #[macro_use]
 mod common;
 
+mod add_abnormal;
 mod add;
 mod query;
 mod remove;
