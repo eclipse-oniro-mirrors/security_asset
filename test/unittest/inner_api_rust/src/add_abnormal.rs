@@ -331,7 +331,7 @@ fn add_label_with_unmatched_type() {
 #[test]
 fn add_unsupported_tags() {
     let function_name = function!().as_bytes();
-    let tags_bytes = [Tag::Secret, Tag::AuthChallenge, Tag::AuthToken];
+    let tags_bytes = [Tag::AuthChallenge, Tag::AuthToken];
     for tag in tags_bytes {
         let mut attrs = AssetMap::new();
         attrs.insert_attr(Tag::Alias, function_name.to_owned());
@@ -340,7 +340,8 @@ fn add_unsupported_tags() {
         assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
     }
 
-    let tags_num = [Tag::AuthValidityPeriod, Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderedBy, Tag::ReturnType];
+    let tags_num =
+        [Tag::AuthValidityPeriod, Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderedBy, Tag::ReturnType];
     for tag in tags_num {
         let mut attrs = AssetMap::new();
         attrs.insert_attr(Tag::Alias, function_name.to_owned());

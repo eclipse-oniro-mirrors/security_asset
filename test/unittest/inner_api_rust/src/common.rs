@@ -51,7 +51,6 @@ pub(crate) const CRITICAL_LABEL_ATTRS: [Tag; 4] =
 pub(crate) const NORMAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4];
 
-
 pub(crate) fn get_bytes(attrs: &AssetMap, tag: Tag) -> Result<&Vec<u8>> {
     if let Some(Value::Bytes(bytes)) = attrs.get(&tag) {
         Ok(bytes)
