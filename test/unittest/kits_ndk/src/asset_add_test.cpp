@@ -49,6 +49,42 @@ void AssetAddTest::TearDown()
 {
 }
 
+bool checkMatchAttrResult(const Asset_Attr *attrs, uint32_t attrCnt, const Asset_Result *result)
+{
+    for (uint32_t i = 0; i < attrCnt; i++) {
+        if (attrs[i].tag == ASSET_TAG_CONFLICT_RESOLUTION) {
+            continue;
+        }
+        Asset_Attr *res = OH_Asset_ParseAttr(result, (Asset_Tag)attrs[i].tag);
+        if (res == nullptr) {
+            return false;
+        }
+        switch (attrs[i].tag & ASSET_TAG_TYPE_MASK) {
+            case ASSET_TYPE_BOOL:
+                if (attrs[i].value.boolean != res->value.boolean) {
+                    printf("tag is %x, %u vs %u", attrs[i].tag, attrs[i].value.boolean, res->value.boolean);
+                    return false;
+                }
+                break;
+            case ASSET_TYPE_NUMBER:
+                if (attrs[i].value.u32 != res->value.u32) {
+                    printf("tag is %x, %u vs %u", attrs[i].tag, attrs[i].value.u32, res->value.u32);
+                    return false;
+                }
+                break;
+            case ASSET_TYPE_BYTES:
+                if (!CompareBlob(&attrs[i].value.blob, &res->value.blob)) {
+                    printf("tag is %x, len %u vs len %u", attrs[i].tag, attrs[i].value.blob.size, res->value.blob.size);
+                    return false;
+                }
+                break;
+            default:
+                return false;
+        };
+    }
+    return true;
+}
+
 /**
  * @tc.name: AssetAddTest.AssetAddTest001
  * @tc.desc: Add alias and secret, then query, expect success and match
@@ -57,16 +93,23 @@ void AssetAddTest::TearDown()
  */
 HWTEST_F(AssetAddTest, AssetAddTest001, TestSize.Level0)
 {
-    Asset_Blob alias = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
-    Asset_Blob secret = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
     Asset_Attr attr[] = {
-        {
-            .tag = ASSET_TAG_ALIAS,
-            .value.blob = alias
-        }, {
-            .tag = ASSET_TAG_SECRET,
-            .value.blob = secret
-        }
+        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = ASSET_TAG_SECRET, .value.blob = funcName },
+        { .tag = ASSET_TAG_ACCESSIBILITY, .value.u32 = ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCK },
+        { .tag = ASSET_TAG_REQUIRE_PASSWORD_SET, .value.boolean = false },
+        { .tag = ASSET_TAG_AUTH_TYPE, .value.u32 = ASSET_AUTH_TYPE_NONE },
+        { .tag = ASSET_TAG_SYNC_TYPE, .value.u32 = ASSET_SYNC_TYPE_NEVER },
+        { .tag = ASSET_TAG_CONFLICT_RESOLUTION, .value.u32 = ASSET_CONFLICT_OVERWRITE },
+        { .tag = ASSET_TAG_DATA_LABLE_NORMAL_1, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABLE_NORMAL_2, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABLE_NORMAL_3, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABLE_NORMAL_4, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABLE_CRITICAL_1, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABLE_CRITICAL_2, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABLE_CRITICAL_3, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABLE_CRITICAL_4, .value.blob = funcName }
     };
     ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(attr, sizeof(attr) / sizeof(attr[0])));
 
@@ -74,13 +117,8 @@ HWTEST_F(AssetAddTest, AssetAddTest001, TestSize.Level0)
     ASSERT_EQ(ASSET_SUCCESS, QueryByAlias(__func__, &resultSet));
     ASSERT_EQ(1, resultSet.count);
     Asset_Result result = resultSet.results[0];
-    Asset_Attr *alias_query = OH_Asset_ParseAttr(&result, ASSET_TAG_ALIAS);
-    ASSERT_NE(nullptr, alias_query);
-    Asset_Attr *secret_query = OH_Asset_ParseAttr(&result, ASSET_TAG_SECRET);
-    ASSERT_NE(nullptr, secret_query);
+    ASSERT_EQ(true, checkMatchAttrResult(attr, sizeof(attr) / sizeof(attr[0]), &result));
 
-    ASSERT_TRUE(CompareBlob(&alias_query->value.blob, &alias));
-    ASSERT_TRUE(CompareBlob(&secret_query->value.blob, &secret));
     OH_Asset_FreeResultSet(&resultSet);
     ASSERT_EQ(ASSET_SUCCESS, RemoveByAlias(__func__));
 }

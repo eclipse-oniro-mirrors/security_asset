@@ -25,9 +25,9 @@
 extern "C" {
 #endif
 
-int32_t RemoveByAlias(const char* alias);
-int32_t QueryByAlias(const char* alias, Asset_ResultSet *resultSet);
-bool CompareBlob(Asset_Blob* blob1, Asset_Blob* blob2);
+int32_t RemoveByAlias(const char *alias);
+int32_t QueryByAlias(const char *alias, Asset_ResultSet *resultSet);
+bool CompareBlob(const Asset_Blob *blob1, const Asset_Blob *blob2);
 
 #ifdef __cplusplus
 }

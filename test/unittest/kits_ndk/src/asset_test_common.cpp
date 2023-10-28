@@ -20,7 +20,7 @@
 
 #include "asset_api.h"
 
-int32_t RemoveByAlias(const char* alias)
+int32_t RemoveByAlias(const char *alias)
 {
     Asset_Attr attr[] = {
         {
@@ -34,7 +34,7 @@ int32_t RemoveByAlias(const char* alias)
     return OH_Asset_Remove(attr, sizeof(attr) / sizeof(attr[0]));
 }
 
-int32_t QueryByAlias(const char* alias, Asset_ResultSet *resultSet)
+int32_t QueryByAlias(const char *alias, Asset_ResultSet *resultSet)
 {
     Asset_Attr attr[] = {
         {
@@ -51,7 +51,7 @@ int32_t QueryByAlias(const char* alias, Asset_ResultSet *resultSet)
     return OH_Asset_Query(attr, sizeof(attr) / sizeof(attr[0]), resultSet);
 }
 
-bool CompareBlob(Asset_Blob* blob1, Asset_Blob* blob2)
+bool CompareBlob(const Asset_Blob *blob1, const Asset_Blob *blob2)
 {
     if (blob1->size != blob2->size) {
         return false;
