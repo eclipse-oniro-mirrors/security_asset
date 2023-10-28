@@ -20,7 +20,6 @@ namespace Unittest::AttestRemoveTest {
 int AttestRemoveTest001(void);
 int AttestRemoveTest002(void);
 int AttestRemoveTest003(void);
-int AttestRemoveTest004(void);
 }
 
 #endif // ASSET_REMOVE_TEST_H
