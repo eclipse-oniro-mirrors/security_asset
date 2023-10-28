@@ -23,6 +23,7 @@ ohos_unittest("asset_ndk_test") {
   include_dirs = [ "inc" ]
   sources = [
     "src/asset_add_test.cpp",
+    "src/asset_remove_test.cpp",
     "src/asset_test_common.cpp",
   ]
   deps = [ "$COMPONENT_DIR/interfaces/kits/c:asset_ndk" ]
