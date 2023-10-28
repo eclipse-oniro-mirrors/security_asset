@@ -47,9 +47,20 @@ ohos_shared_library("asset_ndk") {
     "hilog:libhilog",
   ]
 
-  cflags_cc = [
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+  ldflags = [ "--coverage" ]
+  cflags = [
     "-Wall",
     "-Werror",
+    "-fPIC",
+    "--coverage",
   ]
 
   relative_install_dir = "ndk"
