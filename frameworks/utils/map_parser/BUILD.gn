@@ -12,17 +12,15 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//build/test.gni")
 
 COMPONENT_DIR = "//base/security/asset"
 
-module_output_path = "asset/asset_UT_test"
+ohos_rust_static_library("asset_map_parser") {
+  sources = [ "src/lib.rs" ]
+  deps = [ "$COMPONENT_DIR/frameworks/definition:asset_definition" ]
 
-ohos_rust_unittest("asset_rust_test") {
-  module_out_path = module_output_path
-  sources = [ "src/main.rs" ]
-  deps = [
-    "$COMPONENT_DIR/interfaces/inner_api/rs:asset_sdk",
-    "$COMPONENT_DIR/frameworks/utils/map_parser:asset_map_parser",
-  ]
+  crate_name = "asset_map_parser"
+  crate_type = "rlib"
+  subsystem_name = "security"
+  part_name = "asset"
 }

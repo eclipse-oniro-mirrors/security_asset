@@ -5,6 +5,7 @@ members = [
     "frameworks/ipc",
     "frameworks/os_dependency/log",
     "frameworks/utils/hasher",
+    "frameworks/utils/map_parser",
     "interfaces/kits/c",
     "services/core_service",
     "services/crypto_manager",

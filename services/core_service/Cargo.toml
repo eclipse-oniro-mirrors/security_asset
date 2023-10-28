@@ -14,3 +14,4 @@ asset_file_operator = { path = "../../frameworks/os_dependency/file" }
 asset_hasher = { path = "../../frameworks/utils/hasher" }
 asset_ipc = { path = "../../frameworks/ipc" }
 asset_log = { path = "../../frameworks/os_dependency/log" }
+asset_map_parser = { path = "../../frameworks/utils/map_parser" }

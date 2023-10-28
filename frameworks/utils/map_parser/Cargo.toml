@@ -1,10 +1,9 @@
 [package]
-name = "asset_test"
+name = "asset_map_parser"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-asset_sdk = { path = "../../../interfaces/inner_api/rs" }
-asset_map_parser = { path = "../../../frameworks/utils/map_parser" }
+asset_definition = { path = "../../definition" }

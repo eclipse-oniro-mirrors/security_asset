@@ -15,6 +15,7 @@
 
 use crate::common::*;
 use asset_sdk::*;
+use asset_map_parser::*;
 
 #[test]
 fn query_non_exist_with_alias() {

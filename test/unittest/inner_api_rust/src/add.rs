@@ -15,6 +15,7 @@
 
 use crate::common::*;
 use asset_sdk::*;
+use asset_map_parser::*;
 
 #[test]
 fn add_all_tags() {

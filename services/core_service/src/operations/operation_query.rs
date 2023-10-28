@@ -23,6 +23,7 @@ use asset_db_operator::{
 };
 use asset_definition::{AssetMap, AuthType, ErrCode, Result, ReturnType, Tag, Value};
 use asset_log::{loge, logi};
+use asset_map_parser::get_bytes;
 
 use crate::{calling_info::CallingInfo, operations::common};
 
@@ -48,12 +49,8 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
             match results[0].get(COLUMN_AUTH_TYPE) {
                 Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
                     common::check_required_tags(query, &SEC_QUERY_OPTIONAL_ATTRS)?;
-                    let Some(Value::Bytes(ref challenge)) = query.get(&Tag::AuthChallenge) else {
-                        return Err(ErrCode::InvalidArgument);
-                    };
-                    let Some(Value::Bytes(ref auth_token)) = query.get(&Tag::AuthToken) else {
-                        return Err(ErrCode::InvalidArgument);
-                    }; // todo: 封装函数到common中 zwz
+                    let challenge = get_bytes(query, Tag::AuthChallenge)?;
+                    let auth_token = get_bytes(query, Tag::AuthToken)?;
                     common::exec_crypto(calling_info, &mut results[0], challenge, auth_token)?;
                 },
                 _ => {

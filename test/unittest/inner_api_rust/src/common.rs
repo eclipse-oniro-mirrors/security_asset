@@ -15,7 +15,7 @@
 
 #![allow(dead_code)]
 
-use asset_sdk::{AssetMap, ErrCode, Result, ReturnType, Tag, Value};
+use asset_sdk::{AssetMap, Result, ReturnType, Tag, Value};
 
 #[macro_export]
 macro_rules! function {
@@ -50,38 +50,6 @@ pub(crate) const CRITICAL_LABEL_ATTRS: [Tag; 4] =
 
 pub(crate) const NORMAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4];
-
-pub(crate) fn get_bytes(attrs: &AssetMap, tag: Tag) -> Result<&Vec<u8>> {
-    if let Some(Value::Bytes(bytes)) = attrs.get(&tag) {
-        Ok(bytes)
-    } else {
-        Err(ErrCode::InvalidArgument)
-    }
-}
-
-pub(crate) fn get_number(attrs: &AssetMap, tag: Tag) -> Result<u32> {
-    if let Some(Value::Number(num)) = attrs.get(&tag) {
-        Ok(*num)
-    } else {
-        Err(ErrCode::InvalidArgument)
-    }
-}
-
-pub(crate) fn get_enum_variant<T: TryFrom<u32, Error = ErrCode>>(attrs: &AssetMap, tag: Tag) -> Result<T> {
-    if let Some(Value::Number(num)) = attrs.get(&tag) {
-        T::try_from(*num)
-    } else {
-        Err(ErrCode::InvalidArgument)
-    }
-}
-
-pub(crate) fn get_bool(attrs: &AssetMap, tag: Tag) -> Result<bool> {
-    if let Some(Value::Bool(b)) = attrs.get(&tag) {
-        Ok(*b)
-    } else {
-        Err(ErrCode::InvalidArgument)
-    }
-}
 
 pub(crate) fn remove_by_alias(alias: &[u8]) -> Result<()> {
     asset_sdk::Manager::build()?.remove(&AssetMap::from([(Tag::Alias, Value::Bytes(alias.to_vec()))]))
