@@ -13,36 +13,22 @@
  * limitations under the License.
  */
 
-#include "asset_api.h"
+#ifndef ASSET_TEST_COMMON_H
+#define ASSET_TEST_COMMON_H
 
-#include <gtest/gtest.h>
+#include <stdint.h>
+#include <stdlib.h>
 
-using namespace testing::ext;
-namespace Unittest::AttestCApiTest {
-class AttestCApiTest : public testing::Test {
-public:
-    static void SetUpTestCase(void);
+#include "asset_type.h"
 
-    static void TearDownTestCase(void);
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-    void SetUp();
+int32_t RemoveByAlias(const char* alias);
 
-    void TearDown();
-};
-
-void AttestCApiTest::SetUpTestCase(void)
-{
+#ifdef __cplusplus
 }
+#endif
 
-void AttestCApiTest::TearDownTestCase(void)
-{
-}
-
-void AttestCApiTest::SetUp()
-{
-}
-
-void AttestCApiTest::TearDown()
-{
-}
-}
+#endif // ASSET_TEST_COMMON_H

@@ -22,9 +22,9 @@ ohos_rust_static_library("asset_crypto_manager") {
     "src/lib.rs",
   ]
   deps = [
-    "crypto_manager_wrapper:crypto_manager_wrapper",
     "$COMPONENT_DIR/frameworks/definition:asset_definition",
     "$COMPONENT_DIR/frameworks/os_dependency/log:asset_log",
+    "crypto_manager_wrapper:crypto_manager_wrapper",
   ]
 
   external_deps = [ "huks:libhukssdk" ]

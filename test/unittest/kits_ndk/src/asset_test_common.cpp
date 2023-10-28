@@ -13,47 +13,22 @@
  * limitations under the License.
  */
 
+#include "asset_test_common.h"
+
 #include "asset_api.h"
 
 #include <gtest/gtest.h>
 
-using namespace testing::ext;
-namespace Unittest::AttestCApiTest {
-class AttestCApiTest : public testing::Test {
-public:
-    static void SetUpTestCase(void);
-
-    static void TearDownTestCase(void);
-
-    void SetUp();
-
-    void TearDown();
-};
-
-void AttestCApiTest::SetUpTestCase(void)
+int32_t RemoveByAlias(const char* alias)
 {
-}
-
-void AttestCApiTest::TearDownTestCase(void)
-{
-}
-
-void AttestCApiTest::SetUp()
-{
-}
-
-void AttestCApiTest::TearDown()
-{
-}
-
-/**
- * @tc.name: AttestCApiTest.AttestCApiTest001
- * @tc.desc: AttestCApiTest001
- * @tc.type: FUNC
- * @tc.result:0
- */
-HWTEST_F(AttestCApiTest, AttestCApiTest001, TestSize.Level0)
-{
-    ASSERT_EQ(0, 0);
-}
+    Asset_Attr attr[] = {
+        {
+            .tag = ASSET_TAG_ALIAS,
+            .value.blob = {
+                .size = strlen(alias),
+                .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias))
+            }
+        }
+    };
+    return OH_Asset_Remove(attr, sizeof(attr) / sizeof(attr[0]));
 }

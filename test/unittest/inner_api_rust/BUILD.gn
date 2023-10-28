@@ -22,7 +22,7 @@ ohos_rust_unittest("asset_rust_test") {
   module_out_path = module_output_path
   sources = [ "src/main.rs" ]
   deps = [
-    "$COMPONENT_DIR/interfaces/inner_api/rs:asset_sdk",
     "$COMPONENT_DIR/frameworks/utils/map_parser:asset_map_parser",
+    "$COMPONENT_DIR/interfaces/inner_api/rs:asset_sdk",
   ]
 }

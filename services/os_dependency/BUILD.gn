@@ -25,9 +25,7 @@ ohos_static_library("asset_os_dependency") {
     "src/os_account_wrapper.cpp",
     "src/system_event_wrapper.cpp",
   ]
-  deps = [
-    ":asset_service_ffi",
-  ]
+  deps = [ ":asset_service_ffi" ]
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
