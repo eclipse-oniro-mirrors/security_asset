@@ -32,7 +32,7 @@ extern "C" {
 }
 
 fn into_map(attributes: *const Asset_Attr, attr_cnt: u32) -> Option<AssetMap> {
-    if attributes.is_null() {
+    if attributes.is_null() && attr_cnt != 0 {
         loge!("[FATAL][RUST SDK]Attributes is null.");
         return None;
     }
