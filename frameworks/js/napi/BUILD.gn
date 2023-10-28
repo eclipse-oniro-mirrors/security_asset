@@ -32,9 +32,20 @@ ohos_shared_library("asset_napi") {
     "hilog:libhilog",
     "napi:ace_napi",
   ]
+  sanitize = {
+      integer_overflow = true
+      cfi = true
+      debug = false
+      cfi_cross_dso = true
+      boundary_sanitize = true
+      ubsan = true
+  }
+  ldflags = [ "--coverage" ]
   cflags_cc = [
     "-Wall",
     "-Werror",
+    "-fPIC",
+    "--coverage",
   ]
   relative_install_dir = "module/security"
   subsystem_name = "security"
