@@ -63,7 +63,7 @@ pub fn test_for_statement_column() {
         let out_alias = stmt1.query_column(1, &DataType::Bytes).unwrap();
         println!("id is {}", from_data_value_to_str_value(&out_id));
         println!("alias is {}", from_data_value_to_str_value(&out_alias));
-        if let (Value::Number(id), Value::Bytes(alias)) = (out_id, out_alias) {
+        if let (Value::Number(id), Value::Bytes(ref alias)) = (out_id, out_alias) {
             let alias_str = unsafe { String::from_utf8_unchecked(alias.to_vec()) };
             println!("line 0 : id {} alias {}", id, alias_str);
         }

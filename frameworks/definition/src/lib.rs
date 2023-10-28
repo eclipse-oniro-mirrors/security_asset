@@ -130,6 +130,14 @@ pub enum Value {
     Bytes(Vec<u8>),
 }
 
+impl Drop for Value {
+    fn drop(&mut self) {
+        if let Value::Bytes(bytes) = self {
+            bytes.fill(0);
+        }
+    }
+}
+
 /// A Map type containing tag-value pairs that describe the attributes of an Asset.
 pub type AssetMap = HashMap<Tag, Value>;
 

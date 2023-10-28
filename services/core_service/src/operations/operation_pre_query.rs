@@ -84,7 +84,9 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
         return Err(ErrCode::NotFound);
     }
 
-    let Value::Number(exp_time) = query.get(&Tag::AuthValidityPeriod).unwrap_or(&Value::Number(DEFAULT_AUTH_VALIDITY)) else {
+    let auth_validity_default = Value::Number(DEFAULT_AUTH_VALIDITY);
+
+    let Value::Number(exp_time) = query.get(&Tag::AuthValidityPeriod).unwrap_or(&auth_validity_default) else {
         return Err(ErrCode::InvalidArgument);
     };
     let owner_hash = sha256(calling_info.owner_info());
