@@ -13,20 +13,17 @@
  * limitations under the License.
  */
 
-#ifndef ASSET_ADD_TEST_H
-#define ASSET_ADD_TEST_H
+#ifndef ASSET_QUERY_TEST_H
+#define ASSET_QUERY_TEST_H
 
-namespace Unittest::AssetAddTest {
-int AssetAddTest001(void);
-int AssetAddTest002(void);
-int AssetAddTest003(void);
-int AssetAddTest004(void);
-int AssetAddTest005(void);
-int AssetAddTest006(void);
-int AssetAddTest007(void);
-int AssetAddTest008(void);
-int AssetAddTest009(void);
-int AssetAddTest010(void);
+namespace Unittest::AssetQueryTest {
+int AssetQueryTest001(void);
+int AssetQueryTest002(void);
+int AssetQueryTest003(void);
+int AssetQueryTest004(void);
+int AssetQueryTest005(void);
+int AssetQueryTest006(void);
+int AssetQueryTest007(void);
 }
 
-#endif // ASSET_ADD_TEST_H
+#endif // ASSET_QUERY_TEST_H

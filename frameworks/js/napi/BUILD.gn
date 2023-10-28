@@ -33,12 +33,12 @@ ohos_shared_library("asset_napi") {
     "napi:ace_napi",
   ]
   sanitize = {
-      integer_overflow = true
-      cfi = true
-      debug = false
-      cfi_cross_dso = true
-      boundary_sanitize = true
-      ubsan = true
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
   }
   ldflags = [ "--coverage" ]
   cflags_cc = [

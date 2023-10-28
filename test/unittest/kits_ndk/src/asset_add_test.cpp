@@ -87,7 +87,7 @@ bool checkMatchAttrResult(const Asset_Attr *attrs, uint32_t attrCnt, const Asset
 
 /**
  * @tc.name: AssetAddTest.AssetAddTest001
- * @tc.desc: Add alias and secret, then query, expect success and match
+ * @tc.desc: Add asset with all attrs, then query, expect success and match
  * @tc.type: FUNC
  * @tc.result:0
  */
@@ -223,20 +223,62 @@ HWTEST_F(AssetAddTest, AssetAddTest005, TestSize.Level0)
  */
 HWTEST_F(AssetAddTest, AssetAddTest006, TestSize.Level0)
 {
-    Asset_Blob alias = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
-    Asset_Blob secret = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
     Asset_Attr attr[] = {
         {
             .tag = ASSET_TAG_ALIAS,
-            .value.blob = alias
+            .value.blob = funcName
         }, {
             .tag = ASSET_TAG_SECRET,
-            .value.blob = secret
+            .value.blob = funcName
         }
     };
     ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(attr, sizeof(attr) / sizeof(attr[0])));
     ASSERT_EQ(ASSET_DUPLICATED, OH_Asset_Add(attr, sizeof(attr) / sizeof(attr[0])));
 
     ASSERT_EQ(ASSET_SUCCESS, RemoveByAlias(__func__));
+}
+
+/**
+ * @tc.name: AssetAddTest.AssetAddTest008
+ * @tc.desc: Add without attr, expect ASSET_INVALID_ARGUMENT
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetAddTest, AssetAddTest008, TestSize.Level0)
+{
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Add(nullptr, 0));
+}
+
+/**
+ * @tc.name: AssetAddTest.AssetAddTest009
+ * @tc.desc: Add without attr but count is wrong, expect ASSET_INVALID_ARGUMENT
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetAddTest, AssetAddTest009, TestSize.Level0)
+{
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Add(nullptr, 1));
+}
+
+/**
+ * @tc.name: AssetAddTest.AssetAddTest010
+ * @tc.desc: Add with attr but count is wrong, expect ASSET_INVALID_ARGUMENT
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetAddTest, AssetAddTest010, TestSize.Level0)
+{
+    Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    Asset_Attr attr[] = {
+        {
+            .tag = ASSET_TAG_ALIAS,
+            .value.blob = funcName
+        }, {
+            .tag = ASSET_TAG_SECRET,
+            .value.blob = funcName
+        }
+    };
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Add(attr, 0));
 }
 }
