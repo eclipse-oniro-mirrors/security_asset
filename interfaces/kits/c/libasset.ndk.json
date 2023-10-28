@@ -18,9 +18,6 @@
         "name": "OH_Asset_PostQuery"
     },
     {
-        "name": "OH_Asset_GetVersion"
-    },
-    {
         "name": "OH_Asset_ParseAttr"
     },
     {

@@ -26,7 +26,7 @@ use crate::{
     statement::Statement,
     types::{
         from_data_type_to_str, from_data_value_to_str_value, ColumnInfo, Condition, DbMap, QueryOptions, ResultSet,
-        SqliteErrCode, SQLITE_DONE, SQLITE_ERROR, SQLITE_OK, SQLITE_ROW,
+        SqliteErrCode, DATABASE_ERROR, SQLITE_DONE, SQLITE_OK, SQLITE_ROW,
     },
 };
 
@@ -48,7 +48,6 @@ pub struct Table<'a> {
 /// prepare statement with test output
 #[inline(always)]
 fn prepare_statement<'a>(table: &'a Table, sql: &mut str) -> Result<Statement<'a, true>, SqliteErrCode> {
-    asset_log::loge!("{}", sql);
     let stmt = match Statement::<true>::prepare(sql, table.db) {
         Ok(s) => s,
         Err(e) => {
@@ -357,7 +356,6 @@ impl<'a> Table<'a> {
     /// rename table name
     pub fn rename(&mut self, name: &str) -> SqliteErrCode {
         let sql = format!("ALTER TABLE {} RENAME TO {}", self.table_name, name);
-        asset_log::loge!("{}", sql);
         let stmt = &Statement::<false>::new(sql.as_str(), self.db);
         let ret = stmt.exec(None, 0);
         if ret == SQLITE_OK {
@@ -383,10 +381,10 @@ impl<'a> Table<'a> {
     /// );
     pub fn add_new_column(&self, column: ColumnInfo, default_value: Option<Value>) -> SqliteErrCode {
         if column.is_primary_key {
-            return SQLITE_ERROR;
+            return DATABASE_ERROR;
         }
         if column.not_null && default_value.is_none() {
-            return SQLITE_ERROR;
+            return DATABASE_ERROR;
         }
         let data_type = from_data_type_to_str(&column.data_type);
         let mut sql = format!("ALTER TABLE {} ADD COLUMN {} {}", self.table_name, column.name, data_type);
@@ -397,7 +395,6 @@ impl<'a> Table<'a> {
         if column.not_null {
             sql.push_str(" NOT NULL");
         }
-        asset_log::loge!("{}", sql);
         let stmt = Statement::<false>::new(sql.as_str(), self.db);
 
         stmt.exec(None, 0)

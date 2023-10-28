@@ -116,14 +116,6 @@ int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultS
 int32_t OH_Asset_PostQuery(const Asset_Attr *handle, uint32_t handleCnt);
 
 /**
- * @brief Obtains the current Asset SDK version.
- *
- * @return Returns the current Asset SDK version in form of {@link #Asset_Version}.
- * @since 11
- */
-Asset_Version OH_Asset_GetVersion(void);
-
-/**
  * @brief Parse the AssetResult to get the specified attribute.
  *
  * @param result Indicates the pointer to the array including query results obtained from {@link OH_Asset_Query}.

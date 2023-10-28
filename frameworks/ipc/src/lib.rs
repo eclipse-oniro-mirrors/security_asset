@@ -18,7 +18,7 @@
 use ipc_rust::BorrowedMsgParcel;
 
 use asset_definition::{impl_enum_trait, AssetMap, DataType, ErrCode, IntoValue, Result, Tag, Value};
-use asset_log::{loge, logi};
+use asset_log::loge;
 
 /// SA id for Asset service.
 pub const SA_ID: i32 = 0x00010140;
@@ -72,7 +72,6 @@ pub trait IAsset: ipc_rust::IRemoteBroker {
 
 /// serialize the map to parcel
 pub fn serialize_map(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<()> {
-    logi!("enter serialize"); // todo: delete
     if map.len() as u32 > MAX_MAP_CAPACITY {
         loge!("[FALTAL][IPC]The map size exceeds the limit.");
         return Err(ErrCode::LimitExceeded);
@@ -90,13 +89,11 @@ pub fn serialize_map(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<(
             Value::Bytes(a) => parcel.write::<Vec<u8>>(a).map_err(|_| ErrCode::IpcError)?,
         }
     }
-    logi!("leave serialize ok");
     Ok(())
 }
 
 /// deserialize the map from parcel
 pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
-    logi!("enter deserialize");
     let len = parcel.read::<u32>().map_err(|_| ErrCode::IpcError)?;
     if len > MAX_MAP_CAPACITY {
         loge!("[FATAL][IPC]The map size exceeds the limit.");
@@ -121,13 +118,11 @@ pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
             },
         }
     }
-    logi!("leave deserialize ok");
     Ok(map)
 }
 
 /// Serialize the collection of map to parcel.
 pub fn serialize_maps(vec: &Vec<AssetMap>, parcel: &mut BorrowedMsgParcel) -> Result<()> {
-    logi!("enter serialize_maps");
     if vec.len() as u32 > MAX_VEC_CAPACITY {
         loge!("[FATAL][IPC]The vector size exceeds the limit.");
         return Err(ErrCode::LimitExceeded);
@@ -136,13 +131,11 @@ pub fn serialize_maps(vec: &Vec<AssetMap>, parcel: &mut BorrowedMsgParcel) -> Re
     for map in vec.iter() {
         serialize_map(map, parcel)?;
     }
-    logi!("leave serialize_maps ok");
     Ok(())
 }
 
 /// Deserialize the collection of map from parcel.
 pub fn deserialize_maps(parcel: &BorrowedMsgParcel) -> Result<Vec<AssetMap>> {
-    logi!("enter deserialize_maps");
     let len = parcel.read::<u32>().map_err(|_| ErrCode::InvalidArgument)?;
     if len > MAX_VEC_CAPACITY {
         loge!("[FATAL][IPC]The vector size exceeds the limit.");
@@ -152,6 +145,5 @@ pub fn deserialize_maps(parcel: &BorrowedMsgParcel) -> Result<Vec<AssetMap>> {
     for _i in 0..len {
         res_vec.push(deserialize_map(parcel)?);
     }
-    logi!("leave deserialize_maps ok");
     Ok(res_vec)
 }

@@ -146,49 +146,6 @@ declare namespace asset {
    */
   function postQuery(handle: AssetMap): Promise<void>;
 
-  /**
-   * Get the version of {@link asset} module.
-   *
-   * @returns { VersionInfo } the version info.
-   * @syscap SystemCapability.Security.Asset
-   * @since 11
-   */
-  function getVersion(): Version;
-
-  /**
-   * The version structure returned by {@link getVersion} function.
-   *
-   * @typedef Version
-   * @syscap SystemCapability.Security.Asset
-   * @since 11
-   */
-  interface Version {
-    /**
-     * The major version.
-     *
-     * @type {number}
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    major: number,
-    /**
-     * The minor version.
-     *
-     * @type {number}
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    minor: number,
-    /**
-     * The patch version.
-     *
-     * @type {number}
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    patch: number,
-  }
-
    /**
    * A Map type containing tag-value pairs that describe the attributes of an Asset.
    *
@@ -663,7 +620,7 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    SQLITE_ERROR = 24000010,
+    DATABASE_ERROR = 24000010,
     /**
      * The error code indicates that the operation of calling bundle manager service is failed.
      *
@@ -714,19 +671,12 @@ declare namespace asset {
      */
     GET_SYSTEM_TIME_ERROR = 24000017,
     /**
-     * The error code indicates that getting the mutex failed.
-     *
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    ASSET_GET_MUTEX_ERROR = 24000018,
-    /**
      * The error code indicates that the amount of map element or other limited quotas exceed the limit.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    LIMIT_EXCEEDED = 24000019,
+    LIMIT_EXCEEDED = 24000018,
   }
 }
 

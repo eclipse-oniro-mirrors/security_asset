@@ -91,7 +91,7 @@ pub type SqliteErrCode = i32;
 /// Successful result
 pub const SQLITE_OK: i32 = 0;
 /// Generic error
-pub const SQLITE_ERROR: i32 = 1;
+pub const DATABASE_ERROR: i32 = 1;
 /// sqlite3_step() has another row ready
 pub const SQLITE_ROW: i32 = 100;
 /// sqlite3_step() has finished executing

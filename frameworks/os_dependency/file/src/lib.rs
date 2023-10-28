@@ -34,7 +34,7 @@ pub fn create_user_db_dir(user_id: i32) -> Result<()> {
         Ok(_) => Ok(()),
         Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
         Err(e) => {
-            loge!("[FATAL]Create dir failed! error is [{}]", e);
+            loge!("[FATAL][SA]Create dir failed! error is [{}]", e);
             Err(ErrCode::FileOperationError)
         },
     }
@@ -52,7 +52,7 @@ pub fn delete_user_db_dir(user_id: i32) -> Result<()> {
         Ok(_) => Ok(()),
         Err(e) if e.kind() != std::io::ErrorKind::NotFound => Ok(()),
         Err(e) => {
-            loge!("[FATAL]Delete dir failed! error is [{}]", e);
+            loge!("[FATAL][SA]Delete dir failed! error is [{}]", e);
             Err(ErrCode::FileOperationError)
         },
     }

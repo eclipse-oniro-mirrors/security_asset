@@ -229,7 +229,7 @@ typedef enum {
     /**
      * The error code indicates that the database operation is failed.
      */
-    ASSET_SQLITE_ERROR = 24000010,
+    ASSET_DATABASE_ERROR = 24000010,
     /**
      * The error code indicates that the operation of calling bundle manager service is failed.
      */
@@ -259,13 +259,9 @@ typedef enum {
      */
     ASSET_GET_SYSTEM_TIME_ERROR = 24000017,
     /**
-     * The error code indicates that getting the mutex failed.
-     */
-    ASSET_GET_MUTEX_ERROR = 24000018,
-    /**
      * The error code indicates that the amount of map element or other limited quotas exceed the limit.
      */
-    ASSET_LIMIT_EXCEEDED = 24000019,
+    ASSET_LIMIT_EXCEEDED = 24000018,
 } Asset_ResultCode;
 
 /**
@@ -371,26 +367,6 @@ typedef enum {
      */
     ASSET_RETURN_ATTRIBUTES = 1,
 } Asset_ReturnType;
-
-/**
- * @brief The version structure returned by {@link GetVersion} function.
- *
- * @since 11
- */
-typedef struct {
-    /**
-     * The major version.
-     */
-    uint32_t major;
-    /**
-     * The minor version.
-     */
-    uint32_t minor;
-    /**
-     * The patch version.
-     */
-    uint32_t patch;
-} Asset_Version;
 
 /**
  * @brief A type that indicates the Asset attribute whose value is a byte array.

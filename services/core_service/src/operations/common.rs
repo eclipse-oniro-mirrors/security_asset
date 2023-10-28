@@ -100,7 +100,7 @@ pub(crate) fn into_asset_map(db_data: &DbMap) -> AssetMap {
 
 pub(crate) fn get_system_time() -> Result<Vec<u8>> {
     let sys_time = SystemTime::now().duration_since(UNIX_EPOCH).map_err(|e| {
-        loge!("[FATAL]Get system time faield [{}].", e);
+        loge!("[FATAL][SA]Get system time faield [{}].", e);
         ErrCode::GetSystemTimeError
     })?;
     Ok(sys_time.as_millis().to_string().as_bytes().to_vec())

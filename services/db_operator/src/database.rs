@@ -24,7 +24,7 @@ use crate::{
     statement::Statement,
     table::Table,
     types::{
-        from_data_type_to_str, ColumnInfo, Sqlite3Callback, Sqlite3ErrMsg, SqliteErrCode, SQLITE_DONE, SQLITE_ERROR,
+        from_data_type_to_str, ColumnInfo, Sqlite3Callback, Sqlite3ErrMsg, SqliteErrCode, DATABASE_ERROR, SQLITE_DONE,
         SQLITE_OK, SQLITE_ROW,
     },
 };
@@ -98,7 +98,7 @@ pub fn default_update_database_func(db: &Database, old_ver: u32, new_ver: u32) -
     }
     if new_ver < old_ver {
         asset_log::loge!("database version rollback is not supported!");
-        return SQLITE_ERROR;
+        return DATABASE_ERROR;
     }
     SQLITE_OK
 }
@@ -192,7 +192,7 @@ impl<'a> Database<'a> {
         path_c.push('\0');
         let ret = sqlite3_open_wrap(&path_c, &mut self.handle);
         if ret != SQLITE_OK {
-            asset_log::loge!("re open handle {} fail {}", self.path, ret);
+            asset_log::loge!("reopen handle {} fail {}", self.path, ret);
             return Err(ret);
         }
         Ok(())
@@ -360,7 +360,7 @@ impl<'a> Database<'a> {
         if !msg.is_null() {
             self.print_err_msg(msg);
             unsafe { SqliteFree(msg as _) };
-            return SQLITE_ERROR;
+            return DATABASE_ERROR;
         }
         ret
     }
@@ -445,7 +445,6 @@ impl<'a> Database<'a> {
             };
         }
         sql.push_str(");");
-        asset_log::loge!("{}", sql);
         let stmt = Statement::<false>::new(sql.as_str(), self);
         let ret = stmt.exec(None, 0);
         if ret != SQLITE_OK {

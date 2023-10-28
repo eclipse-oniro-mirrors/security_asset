@@ -38,6 +38,16 @@ const std::unordered_map<int32_t, const char *> ERR_MSGS = {
     { ASSET_STATUS_MISMATCH, "The screen lock status mismatches." },
     { ASSET_OUT_OF_MEMRORY, "Insufficient memory." },
     { ASSET_DATA_CORRUPTED, "The Asset or encryption key is corrupted." },
+    { ASSET_IPC_ERROR, "Ipc communication is failed" },
+    { ASSET_DATABASE_ERROR, "The database operation is failed." },
+    { ASSET_BMS_ERROR, "The operation of calling bundle manager service is failed." },
+    { ASSET_CRYPTO_ERROR, "The cryptography operation is failed." },
+    { ASSET_ACCOUNT_ERROR, "The operation of calling OS account service is failed." },
+    { ASSET_COMMON_EVENT_ERROR, "The operation of calling common event service is failed." },
+    { ASSET_ACCESS_TOKEN_ERROR, "The operation of calling access token service is failed." },
+    { ASSET_FILE_OPERATION_ERROR, "The operation of file is failed." },
+    { ASSET_GET_SYSTEM_TIME_ERROR, "The operation of getting system time is failed." },
+    { ASSET_LIMIT_EXCEEDED, "The amount of map element or other limited quotas exceed the limit." },
 };
 
 inline const char *GetErrorMessage(int32_t errCode)

@@ -46,7 +46,7 @@ fn replace_db_record(calling_info: &CallingInfo, query_db_data: &DbMap, replace_
 
     if !do_transaction(calling_info.user_id(), replace_callback)? {
         loge!("do_transaction in replace_db_record failed!");
-        return Err(ErrCode::SqliteError);
+        return Err(ErrCode::DatabaseError);
     }
     Ok(())
 }
@@ -57,7 +57,7 @@ fn resolve_conflict(calling_info: &CallingInfo, attrs: &AssetMap, query: &DbMap,
             replace_db_record(calling_info, query, db_data)
         },
         _ => {
-            loge!("[FATAL]The specified alias already exists.");
+            loge!("[FATAL][SA]The specified alias already exists.");
             Err(ErrCode::Duplicated)
         },
     }

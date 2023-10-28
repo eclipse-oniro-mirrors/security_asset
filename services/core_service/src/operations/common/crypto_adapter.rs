@@ -153,24 +153,17 @@ pub(crate) fn exec_crypto(
     })?;
     let Some(Value::Bytes(ref secret)) = db_data.get(COLUMN_SECRET) else { return Err(ErrCode::InvalidArgument) };
 
-    match CryptoManager::get_instance().lock() {
-        Ok(crypto_manager) => {
-            let secret_key = build_secret_key(calling_info, db_data)?;
-            match crypto_manager.find(&secret_key, challenge) {
-                Some(crypto) => {
-                    // todo 添加auth_token
-                    let secret = crypto.exec_crypto(secret, &construct_aad(db_data), auth_token)?;
-                    loge!("get secret {} success!!!!", String::from_utf8_lossy(&secret)); // todo delete
-                    db_data.insert(COLUMN_SECRET, Value::Bytes(secret));
-                },
-                None => return Err(ErrCode::CryptoError),
-            };
+    let crypto_manager = CryptoManager::get_instance();
+    let secret_key = build_secret_key(calling_info, db_data)?;
+    match crypto_manager.lock().unwrap().find(&secret_key, challenge) {
+        Some(crypto) => {
+            // todo 添加auth_token
+            let secret = crypto.exec_crypto(secret, &construct_aad(db_data), auth_token)?;
+            loge!("get secret {} success!!!!", String::from_utf8_lossy(&secret)); // todo delete
+            db_data.insert(COLUMN_SECRET, Value::Bytes(secret));
         },
-        Err(_) => {
-            loge!("[FATAL] get mutex lock fail! err={}", ErrCode::GetMutexError);
-            return Err(ErrCode::GetMutexError);
-        },
-    }
+        None => return Err(ErrCode::CryptoError),
+    };
 
     if !ipc_rust::set_calling_identity(identity) {
         loge!("Execute set_calling_identity failed.");

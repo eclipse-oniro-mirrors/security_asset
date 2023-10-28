@@ -19,7 +19,7 @@
 use crate::{
     database::Database,
     statement::Statement,
-    types::{SqliteErrCode, SQLITE_ERROR, SQLITE_OK},
+    types::{SqliteErrCode, DATABASE_ERROR, SQLITE_OK},
 };
 
 /// Transaction for sqlite db
@@ -54,7 +54,7 @@ impl<'a> Transaction<'a> {
     /// cancel transaction
     pub fn rollback(self) -> SqliteErrCode {
         if !self.started {
-            return SQLITE_ERROR;
+            return DATABASE_ERROR;
         }
         let ret = self.rollback_transaction();
         core::mem::forget(self);
@@ -71,7 +71,7 @@ impl<'a> Transaction<'a> {
     /// commit transaction
     pub fn commit(self) -> SqliteErrCode {
         if !self.started {
-            return SQLITE_ERROR;
+            return DATABASE_ERROR;
         }
         let sql = "commit";
         let stmt = Statement::<false>::new(sql, self.db);

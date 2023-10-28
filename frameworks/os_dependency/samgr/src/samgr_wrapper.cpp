@@ -30,7 +30,7 @@ bool LoadService(int32_t saId)
 {
     auto samgrProxy = OHOS::SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgrProxy == nullptr) {
-        LOGE("[FATAL]Get system ability manager proxy failed.");
+        LOGE("[FATAL][SA]Get system ability manager proxy failed.");
         return false;
     }
     auto object = samgrProxy->CheckSystemAbility(saId);

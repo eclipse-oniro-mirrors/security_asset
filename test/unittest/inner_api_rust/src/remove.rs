@@ -55,5 +55,3 @@ fn remove_condition_with_secret() {
     assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().remove(&condition).unwrap_err());
     remove_by_alias(function_name).unwrap();
 }
-
-// todo: remove all ?

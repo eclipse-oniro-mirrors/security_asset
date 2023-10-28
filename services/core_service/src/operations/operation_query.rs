@@ -64,7 +64,7 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
         },
         n => {
             loge!("[FATAL]The database contains {} records with the specified alias.", n);
-            Err(ErrCode::SqliteError)
+            Err(ErrCode::DatabaseError)
         },
     }
 }

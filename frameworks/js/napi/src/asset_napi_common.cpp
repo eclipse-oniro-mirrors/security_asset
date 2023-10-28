@@ -36,7 +36,7 @@ namespace {
 
 #define NAPI_THROW_BASE(env, condition, ret, code, message)             \
 if ((condition)) {                                                      \
-    LOGE("[FATAL] " message);                                           \
+    LOGE("[FATAL][NAPI] " message);                                           \
     napi_throw_error((env), std::to_string((code)).c_str(), message);   \
     return (ret);                                                       \
 }
@@ -63,7 +63,7 @@ if ((theCall) != napi_ok) {                 \
 if ((condition)) {                                                                      \
     char msg[MAX_MESSAGE_LEN] = { 0 };                                                  \
     (void)sprintf_s(msg, MAX_MESSAGE_LEN, "AssetTag(0x%08x) " message, tag);            \
-    LOGE("[FATAL] %s", msg);                                                            \
+    LOGE("[FATAL][NAPI] %s", msg);                                                            \
     napi_throw_error((env), std::to_string(ASSET_INVALID_ARGUMENT).c_str(), msg);       \
     return napi_invalid_arg;                                                            \
 }
@@ -227,9 +227,9 @@ napi_value GetUint8Array(napi_env env, const Asset_Blob *blob)
 
     // Create napi array to store the uint8_t array.
     napi_value array = nullptr;
-    napi_status status = napi_create_external_arraybuffer(env, blob->data, blob->size,
+    napi_status status = napi_create_external_arraybuffer(env, tmp, blob->size,
         [](napi_env env, void *data, void *hint) {
-            AssetFree(data); // todo: 未看到对应的释放日志
+            AssetFree(data);
         },
         nullptr, &array);
     if (status != napi_ok) {

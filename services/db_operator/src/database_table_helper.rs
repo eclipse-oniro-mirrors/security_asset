@@ -113,7 +113,7 @@ fn from_sqlite_code_to_asset_code(value: SqliteErrCode) -> ErrCode {
     if value != SQLITE_OK && value != SQLITE_DONE {
         asset_log::loge!("error ret {}", value);
     }
-    ErrCode::SqliteError
+    ErrCode::DatabaseError
 }
 
 /// do same operation in backup database when do something in master db
@@ -144,7 +144,7 @@ fn back_db_when_succ<T, F: Fn(&Table) -> Result<T, SqliteErrCode>>(
                 let r_ret = copy_db_file(table.db, true);
                 if r_ret.is_err() {
                     loge!("recovery master db {} fail", table.db.path);
-                    Err(ErrCode::SqliteError)
+                    Err(ErrCode::DatabaseError)
                 } else {
                     logi!("recovery master db {} succ", table.db.path);
 
@@ -368,13 +368,13 @@ fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>, Err
                 let r_ret = copy_db_file(db, true);
                 if r_ret.is_err() {
                     loge!("recovery master db {} fail", db.path);
-                    Err(ErrCode::SqliteError)
+                    Err(ErrCode::DatabaseError)
                 } else {
                     logi!("recovery master db {} succ", db.path);
                     let o_ret = db.re_open();
                     if let Err(e) = o_ret {
                         loge!("reopen master db {} fail {}", db.path, e);
-                        return Err(ErrCode::SqliteError);
+                        return Err(ErrCode::DatabaseError);
                     }
                     process_err_msg(db.open_table(ASSET_TABLE_NAME).map_err(from_sqlite_code_to_asset_code), db)
                 }

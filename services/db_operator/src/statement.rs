@@ -18,14 +18,13 @@
 
 use core::ffi::c_void;
 use std::ffi::CStr;
-use std::fmt::Write;
 
 use asset_definition::{DataType, Value};
 use asset_log::loge;
 
 use crate::{
     database::Database,
-    types::{Sqlite3Callback, SqliteErrCode, SQLITE_ERROR, SQLITE_OK},
+    types::{Sqlite3Callback, SqliteErrCode, DATABASE_ERROR, SQLITE_OK},
 };
 
 type BindCallback = extern "C" fn(p: *mut c_void);
@@ -112,31 +111,14 @@ impl<'b> Statement<'b, true> {
         }
     }
 
-    fn print_vec(i: i32, v: &[u8]) {
-        let mut s = String::new();
-        for byte in v {
-            write!(s, "{:02x}", byte).expect("Unable to write to string");
-        }
-        loge!("[YZT] index = {}, bind vec = {}", i, s);
-    }
-
     /// bind datas
     /// data_type is detected by enum Value,
     /// index is start with 1, for '?' in sql.
     pub fn bind_data(&self, index: i32, data: &Value) -> SqliteErrCode {
         match data {
-            Value::Bytes(b) => {
-                Self::print_vec(index, b);
-                unsafe { SqliteBindBlob(self.handle as _, index, b.as_ptr(), b.len() as _, None) }
-            },
-            Value::Number(i) => {
-                loge!("[YZT] index = {}, bind integer = {}", index, i);
-                unsafe { SqliteBindInt64(self.handle as _, index, *i as _) }
-            },
-            Value::Bool(b) => {
-                loge!("[YZT] index = {}, bind bool = {}", index, b);
-                unsafe { SqliteBindInt64(self.handle as _, index, *b as _) }
-            },
+            Value::Bytes(b) => unsafe { SqliteBindBlob(self.handle as _, index, b.as_ptr(), b.len() as _, None) },
+            Value::Number(i) => unsafe { SqliteBindInt64(self.handle as _, index, *i as _) },
+            Value::Bool(b) => unsafe { SqliteBindInt64(self.handle as _, index, *b as _) },
         }
     }
 
@@ -159,10 +141,10 @@ impl<'b> Statement<'b, true> {
                 return Ok(rn);
             } else {
                 loge!("asset column name error");
-                return Err(SQLITE_ERROR);
+                return Err(DATABASE_ERROR);
             }
         }
-        Err(SQLITE_ERROR)
+        Err(DATABASE_ERROR)
     }
 
     /// data count
@@ -202,7 +184,7 @@ impl<'b> Statement<'b, true> {
                 }
             },
             SQLITE_NULL => None,
-            _ => return Err(SQLITE_ERROR),
+            _ => return Err(DATABASE_ERROR),
         };
         Ok(data)
     }

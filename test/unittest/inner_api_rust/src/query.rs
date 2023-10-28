@@ -219,5 +219,3 @@ fn query_with_order_with_unreadible() {
     suffix.sort_by(|a, b| b.cmp(a));
     query_with_order(&order, &suffix);
 }
-
-// todo: query all

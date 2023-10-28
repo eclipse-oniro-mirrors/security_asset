@@ -23,7 +23,7 @@ use asset_db_operator::{
     database_table_helper::{DatabaseHelper, COLUMN_OWNER, COLUMN_OWNER_TYPE},
     types::DbMap,
 };
-use asset_definition::{Accessibility, AuthType, ErrCode, Value};
+use asset_definition::{Accessibility, AuthType, Value};
 use asset_file_operator::delete_user_db_dir;
 use asset_hasher::sha256;
 use asset_log::loge;
@@ -68,8 +68,6 @@ pub extern "C" fn delete_dir_by_user(user_id: i32) -> bool {
 /// Function called from C programming language to Rust programming language for delete crypto.
 #[no_mangle]
 pub extern "C" fn delete_crypto_needing_device_unlock() {
-    match CryptoManager::get_instance().lock() {
-        Ok(mut crypto_manager) => crypto_manager.remove_device_unlock(),
-        Err(_) => loge!("[FATAL] get mutex lock fail! err={}", ErrCode::GetMutexError),
-    }
+    let crypto_manager = CryptoManager::get_instance();
+    crypto_manager.lock().unwrap().remove_device_unlock();
 }

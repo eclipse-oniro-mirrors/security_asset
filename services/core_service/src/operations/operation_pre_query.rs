@@ -25,7 +25,7 @@ use asset_db_operator::{
 };
 use asset_definition::{Accessibility, AssetMap, AuthType, ErrCode, Result, Tag, Value};
 use asset_hasher::sha256;
-use asset_log::{loge, logi};
+use asset_log::loge;
 
 use crate::{calling_info::CallingInfo, operations::common};
 
@@ -51,9 +51,8 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
 
 fn query_access_types(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<Accessibility>> {
     let results = DatabaseHelper::query_columns(calling_info.user_id(), &vec![COLUMN_ACCESSIBILITY], db_data, None)?;
-    logi!("query found {}", results.len());
     if results.is_empty() {
-        loge!("[FATAL]The data to be queried does not exist.");
+        loge!("[FATAL][SA]The data to be queried does not exist.");
         return Err(ErrCode::NotFound);
     }
 
@@ -102,16 +101,10 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
         cryptos.push(crypto);
     }
 
-    match CryptoManager::get_instance().lock() {
-        Ok(mut crypto_manager) => {
-            for crypto in cryptos {
-                crypto_manager.add(crypto)?;
-            }
-            Ok(challenge)
-        },
-        Err(_) => {
-            loge!("[FATAL] get mutex lock fail! err={}", ErrCode::GetMutexError);
-            Err(ErrCode::GetMutexError)
-        },
+    let arc_crypto_manager = CryptoManager::get_instance();
+    let mut crypto_manager = arc_crypto_manager.lock().unwrap();
+    for crypto in cryptos {
+        crypto_manager.add(crypto)?;
     }
+    Ok(challenge)
 }

@@ -76,7 +76,7 @@ napi_value DeclareErrorCode(napi_env env)
     AddUint32Property(env, errorCode, "OUT_OF_MEMRORY", ASSET_OUT_OF_MEMRORY);
     AddUint32Property(env, errorCode, "DATA_CORRUPTED", ASSET_DATA_CORRUPTED);
     AddUint32Property(env, errorCode, "IPC_ERROR", ASSET_IPC_ERROR);
-    AddUint32Property(env, errorCode, "SQLITE_ERROR", ASSET_SQLITE_ERROR);
+    AddUint32Property(env, errorCode, "DATABASE_ERROR", ASSET_DATABASE_ERROR);
     AddUint32Property(env, errorCode, "BMS_ERROR", ASSET_BMS_ERROR);
     AddUint32Property(env, errorCode, "CRYPTO_ERROR", ASSET_CRYPTO_ERROR);
     AddUint32Property(env, errorCode, "ACCOUNT_ERROR", ASSET_ACCOUNT_ERROR);
@@ -84,7 +84,6 @@ napi_value DeclareErrorCode(napi_env env)
     AddUint32Property(env, errorCode, "ACCESS_TOKEN_ERROR", ASSET_ACCESS_TOKEN_ERROR);
     AddUint32Property(env, errorCode, "FILE_OPERATION_ERROR", ASSET_FILE_OPERATION_ERROR);
     AddUint32Property(env, errorCode, "GET_SYSTEM_TIME_ERROR", ASSET_GET_SYSTEM_TIME_ERROR);
-    AddUint32Property(env, errorCode, "GET_MUTEX_ERROR", ASSET_GET_MUTEX_ERROR);
     AddUint32Property(env, errorCode, "LIMIT_EXCEEDED", ASSET_LIMIT_EXCEEDED);
     return errorCode;
 }
@@ -206,26 +205,6 @@ napi_value NapiPostQuery(napi_env env, napi_callback_info info)
     return NapiEntry(env, info, __func__, execute);
 }
 
-napi_value NapiGetVersion(napi_env env, napi_callback_info info)
-{
-    Asset_Version version = OH_Asset_GetVersion();
-
-    napi_value versionObj = nullptr;
-    NAPI_CALL(env, napi_create_object(env, &versionObj));
-
-    napi_value major = nullptr;
-    napi_value minor = nullptr;
-    napi_value patch = nullptr;
-    NAPI_CALL(env, napi_create_uint32(env, version.major, &major));
-    NAPI_CALL(env, napi_create_uint32(env, version.minor, &minor));
-    NAPI_CALL(env, napi_create_uint32(env, version.patch, &patch));
-
-    NAPI_CALL(env, napi_set_named_property(env, versionObj, "major", major));
-    NAPI_CALL(env, napi_set_named_property(env, versionObj, "minor", minor));
-    NAPI_CALL(env, napi_set_named_property(env, versionObj, "patch", patch));
-    return versionObj;
-}
-
 napi_value Register(napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
@@ -236,7 +215,6 @@ napi_value Register(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("preQuery", NapiPreQuery),
         DECLARE_NAPI_FUNCTION("query", NapiQuery),
         DECLARE_NAPI_FUNCTION("postQuery", NapiPostQuery),
-        DECLARE_NAPI_FUNCTION("getVersion", NapiGetVersion),
 
         // register enumerate
         DECLARE_NAPI_PROPERTY("Tag", DeclareTag(env)),

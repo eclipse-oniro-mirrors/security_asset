@@ -101,12 +101,7 @@ fn remove_bytes_tag_with_unmatched_type() {
 
 #[test]
 fn remove_number_tag_with_unmatched_type() {
-    let tags_bytes = [
-        Tag::Accessibility,
-        Tag::AuthType,
-        Tag::SyncType,
-        Tag::DeleteType,
-    ];
+    let tags_bytes = [Tag::Accessibility, Tag::AuthType, Tag::SyncType, Tag::DeleteType];
     for tag in tags_bytes {
         let mut query = AssetMap::new();
         query.insert_attr(tag, vec![]);
@@ -126,8 +121,14 @@ fn remove_unsupported_tags() {
         assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().remove(&query).unwrap_err());
     }
 
-    let tags_num = [Tag::AuthValidityPeriod, Tag::ConflictResolution, Tag::ReturnLimit, Tag::ReturnOffset,
-        Tag::ReturnOrderedBy, Tag::ReturnType];
+    let tags_num = [
+        Tag::AuthValidityPeriod,
+        Tag::ConflictResolution,
+        Tag::ReturnLimit,
+        Tag::ReturnOffset,
+        Tag::ReturnOrderedBy,
+        Tag::ReturnType,
+    ];
     for tag in tags_num {
         let mut query = AssetMap::new();
         query.insert_attr(tag, 1);

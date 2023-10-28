@@ -184,7 +184,7 @@ impl_enum_trait! {
         IpcError = 24000009,
 
         /// The error code indicates that the database operation is failed.
-        SqliteError = 24000010,
+        DatabaseError = 24000010,
 
         /// The error code indicates that the operation of calling bundle manager service is failed.
         BmsError = 24000011,
@@ -207,11 +207,8 @@ impl_enum_trait! {
         /// The error code indicates that the operation of getting system time failed.
         GetSystemTimeError = 24000017,
 
-        /// The error code indicates that getting the mutex failed.
-        GetMutexError = 24000018,
-
         /// The error code indicates that the amount of map element or other limited quotas exceed the limit.
-        LimitExceeded = 24000019,
+        LimitExceeded = 24000018,
     }
 }
 
@@ -299,19 +296,6 @@ impl_enum_trait! {
         /// Specify that the return data contains only attributes.
         Attributes = 1,
     }
-}
-
-/// The asset version.
-#[repr(C)]
-pub struct Version {
-    /// The major version.
-    pub major: u32,
-
-    /// The minor version.
-    pub minor: u32,
-
-    /// The patch version.
-    pub patch: u32,
 }
 
 /// Automatically convert the input value to Asset Value, then insert into the collection.

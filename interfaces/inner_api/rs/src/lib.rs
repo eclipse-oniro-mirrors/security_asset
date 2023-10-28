@@ -32,7 +32,7 @@ extern "C" {
 fn get_remote() -> Result<RemoteObjRef<AssetProxy>> {
     unsafe {
         if !LoadService(SA_ID) {
-            loge!("[FATAL]Load service failed.");
+            loge!("[FATAL][RUST SDK]Load service failed.");
             return Err(ErrCode::ServiceUnavailable);
         }
     }
@@ -88,10 +88,5 @@ impl Manager {
     /// Post-processing for querying multiple Assets that require user authentication.
     pub fn post_query(&self, query: &AssetMap) -> Result<()> {
         self.remote.post_query(query)
-    }
-
-    /// Get the version of Asset.
-    pub fn get_version() -> Version {
-        Version { major: 1, minor: 0, patch: 0 }
     }
 }
