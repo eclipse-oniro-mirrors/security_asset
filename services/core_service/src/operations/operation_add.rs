@@ -15,6 +15,7 @@
 
 //! This module is used to insert an Asset with a specified alias.
 
+use asset_crypto_manager::crypto::{Crypto, SecretKey};
 use asset_db_operator::{
     database::Database,
     database_table_helper::{
@@ -25,11 +26,40 @@ use asset_db_operator::{
     types::DbMap,
 };
 use asset_definition::{
-    Accessibility, AssetMap, AuthType, ConflictResolution, DeleteType, ErrCode, Result, SyncType, Tag, Value,
+    Accessibility, AssetMap, AuthType, ConflictResolution, DeleteType, ErrCode, Extension, Result, SyncType, Tag, Value,
 };
 use asset_log::{loge, logi};
 
 use crate::{calling_info::CallingInfo, operations::common};
+
+fn generate_key_if_needed(secret_key: &SecretKey) -> Result<()> {
+    match secret_key.exists() {
+        Ok(true) => Ok(()),
+        Ok(false) => {
+            logi!("[INFO]The key does not exist, generate it.");
+            if let Err(res) = secret_key.generate() {
+                loge!("[FATAL]Generete key failed, res is [{}].", res);
+                Err(ErrCode::CryptoError)
+            } else {
+                Ok(())
+            }
+        },
+        _ => {
+            loge!("HUKS failed to check whether the key exists.");
+            Err(ErrCode::CryptoError)
+        },
+    }
+}
+
+fn encrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
+    let secret_key = common::build_secret_key(calling_info, db_data)?;
+    generate_key_if_needed(&secret_key)?;
+
+    let secret = db_data.get_bytes_attr(&COLUMN_SECRET)?;
+    let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data))?;
+    db_data.insert(COLUMN_SECRET, Value::Bytes(cipher));
+    Ok(())
+}
 
 fn replace_db_record(calling_info: &CallingInfo, query_db_data: &DbMap, replace_db_data: &DbMap) -> Result<()> {
     let replace_callback = |db: &Database| -> bool {
@@ -51,9 +81,10 @@ fn replace_db_record(calling_info: &CallingInfo, query_db_data: &DbMap, replace_
     Ok(())
 }
 
-fn resolve_conflict(calling_info: &CallingInfo, attrs: &AssetMap, query: &DbMap, db_data: &DbMap) -> Result<()> {
+fn resolve_conflict(calling_info: &CallingInfo, attrs: &AssetMap, query: &DbMap, db_data: &mut DbMap) -> Result<()> {
     match attrs.get(&Tag::ConflictResolution) {
         Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {
+            encrypt(calling_info, db_data)?;
             replace_db_record(calling_info, query, db_data)
         },
         _ => {
@@ -64,7 +95,7 @@ fn resolve_conflict(calling_info: &CallingInfo, attrs: &AssetMap, query: &DbMap,
 }
 
 fn get_query_condition(calling_info: &CallingInfo, attrs: &AssetMap) -> Result<DbMap> {
-    let Value::Bytes(ref alias) = attrs[&Tag::Alias] else { return Err(ErrCode::InvalidArgument) };
+    let alias = attrs.get_bytes_attr(&Tag::Alias)?;
     let mut query = DbMap::new();
     query.insert(COLUMN_ALIAS, Value::Bytes(alias.clone()));
     query.insert(COLUMN_OWNER, Value::Bytes(calling_info.owner_info().clone()));
@@ -117,13 +148,11 @@ pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<(
     add_system_attrs(&mut db_data)?;
     add_default_attrs(&mut db_data);
 
-    let cipher = common::encrypt(calling_info, &db_data)?;
-    db_data.insert(COLUMN_SECRET, Value::Bytes(cipher));
-
     let query = get_query_condition(calling_info, attributes)?;
     if DatabaseHelper::is_data_exists(calling_info.user_id(), &query)? {
-        resolve_conflict(calling_info, attributes, &query, &db_data)
+        resolve_conflict(calling_info, attributes, &query, &mut db_data)
     } else {
+        encrypt(calling_info, &mut db_data)?;
         let insert_num = DatabaseHelper::insert_datas(calling_info.user_id(), &db_data)?;
         logi!("insert {} data", insert_num);
         Ok(())

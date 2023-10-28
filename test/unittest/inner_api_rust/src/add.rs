@@ -15,7 +15,6 @@
 
 use crate::common::*;
 use asset_sdk::*;
-use asset_map_parser::*;
 
 #[test]
 fn add_all_tags() {
@@ -52,20 +51,20 @@ fn add_all_tags() {
     let res = query_attr_by_alias(alias).unwrap();
     assert_eq!(1, res.len());
     assert_eq!(14, res[0].len());
-    assert_eq!(alias, *get_bytes(&res[0], Tag::Alias).unwrap());
-    assert_eq!(normal_label1, *get_bytes(&res[0], Tag::DataLabelNormal1).unwrap());
-    assert_eq!(normal_label2, *get_bytes(&res[0], Tag::DataLabelNormal2).unwrap());
-    assert_eq!(normal_label3, *get_bytes(&res[0], Tag::DataLabelNormal3).unwrap());
-    assert_eq!(normal_label4, *get_bytes(&res[0], Tag::DataLabelNormal4).unwrap());
-    assert_eq!(critical_label1, *get_bytes(&res[0], Tag::DataLabelCritical1).unwrap());
-    assert_eq!(critical_label2, *get_bytes(&res[0], Tag::DataLabelCritical2).unwrap());
-    assert_eq!(critical_label3, *get_bytes(&res[0], Tag::DataLabelCritical3).unwrap());
-    assert_eq!(critical_label4, *get_bytes(&res[0], Tag::DataLabelCritical4).unwrap());
-    assert_eq!(Accessibility::DeviceUnlock, get_enum_variant::<Accessibility>(&res[0], Tag::Accessibility).unwrap());
-    assert_eq!(AuthType::Any, get_enum_variant::<AuthType>(&res[0], Tag::AuthType).unwrap());
-    assert_eq!(SyncType::ThisDevice, get_enum_variant::<SyncType>(&res[0], Tag::SyncType).unwrap());
-    assert_eq!(DeleteType::WhenUserRemoved, get_enum_variant::<DeleteType>(&res[0], Tag::DeleteType).unwrap());
-    assert!(get_bool(&res[0], Tag::RequirePasswordSet).unwrap());
+    assert_eq!(alias, *res[0].get_bytes_attr(&Tag::Alias).unwrap());
+    assert_eq!(normal_label1, *res[0].get_bytes_attr(&Tag::DataLabelNormal1).unwrap());
+    assert_eq!(normal_label2, *res[0].get_bytes_attr(&Tag::DataLabelNormal2).unwrap());
+    assert_eq!(normal_label3, *res[0].get_bytes_attr(&Tag::DataLabelNormal3).unwrap());
+    assert_eq!(normal_label4, *res[0].get_bytes_attr(&Tag::DataLabelNormal4).unwrap());
+    assert_eq!(critical_label1, *res[0].get_bytes_attr(&Tag::DataLabelCritical1).unwrap());
+    assert_eq!(critical_label2, *res[0].get_bytes_attr(&Tag::DataLabelCritical2).unwrap());
+    assert_eq!(critical_label3, *res[0].get_bytes_attr(&Tag::DataLabelCritical3).unwrap());
+    assert_eq!(critical_label4, *res[0].get_bytes_attr(&Tag::DataLabelCritical4).unwrap());
+    assert_eq!(Accessibility::DeviceUnlock, res[0].get_enum_attr::<Accessibility>(&Tag::Accessibility).unwrap());
+    assert_eq!(AuthType::Any, res[0].get_enum_attr::<AuthType>(&Tag::AuthType).unwrap());
+    assert_eq!(SyncType::ThisDevice, res[0].get_enum_attr::<SyncType>(&Tag::SyncType).unwrap());
+    assert_eq!(DeleteType::WhenUserRemoved, res[0].get_enum_attr::<DeleteType>(&Tag::DeleteType).unwrap());
+    assert!(res[0].get_bool_attr(&Tag::RequirePasswordSet).unwrap());
 
     remove_by_alias(alias).unwrap();
 }
@@ -81,17 +80,14 @@ fn add_required_tags() {
     let res = query_all_by_alias(func_name).unwrap();
     assert_eq!(1, res.len());
     assert_eq!(7, res[0].len());
-    assert_eq!(func_name, *get_bytes(&res[0], Tag::Alias).unwrap());
-    assert_eq!(func_name, *get_bytes(&res[0], Tag::Secret).unwrap());
-    assert_eq!(
-        Accessibility::DeviceFirstUnlock,
-        get_enum_variant::<Accessibility>(&res[0], Tag::Accessibility).unwrap()
-    );
-    assert_eq!(AuthType::None, get_enum_variant::<AuthType>(&res[0], Tag::AuthType).unwrap());
-    assert_eq!(SyncType::Never, get_enum_variant::<SyncType>(&res[0], Tag::SyncType).unwrap());
+    assert_eq!(func_name, *res[0].get_bytes_attr(&Tag::Alias).unwrap());
+    assert_eq!(func_name, *res[0].get_bytes_attr(&Tag::Secret).unwrap());
+    assert_eq!(Accessibility::DeviceFirstUnlock, res[0].get_enum_attr::<Accessibility>(&Tag::Accessibility).unwrap());
+    assert_eq!(AuthType::None, res[0].get_enum_attr::<AuthType>(&Tag::AuthType).unwrap());
+    assert_eq!(SyncType::Never, res[0].get_enum_attr::<SyncType>(&Tag::SyncType).unwrap());
     let delete_type = (DeleteType::WhenUserRemoved as u32) | (DeleteType::WhenPackageRemoved as u32);
-    assert_eq!(delete_type, get_number(&res[0], Tag::DeleteType).unwrap());
-    assert!(!get_bool(&res[0], Tag::RequirePasswordSet).unwrap());
+    assert_eq!(delete_type, res[0].get_num_attr(&Tag::DeleteType).unwrap());
+    assert!(!res[0].get_bool_attr(&Tag::RequirePasswordSet).unwrap());
     remove_by_alias(func_name).unwrap();
 }
 
@@ -105,7 +101,7 @@ fn add_english_secret() {
 
     let res = query_all_by_alias(func_name.as_bytes()).unwrap();
     assert_eq!(1, res.len());
-    let bytes = get_bytes(&res[0], Tag::Secret).unwrap();
+    let bytes = res[0].get_bytes_attr(&Tag::Secret).unwrap();
     assert_eq!(func_name, String::from_utf8(bytes.to_owned()).unwrap());
     remove_by_alias(func_name.as_bytes()).unwrap();
 }
@@ -121,9 +117,9 @@ fn add_chinese_secret() {
 
     let res = query_all_by_alias(alias.as_bytes()).unwrap();
     assert_eq!(1, res.len());
-    let bytes = get_bytes(&res[0], Tag::Secret).unwrap();
+    let bytes = res[0].get_bytes_attr(&Tag::Secret).unwrap();
     assert_eq!(secret, String::from_utf8(bytes.to_owned()).unwrap());
-    let bytes = get_bytes(&res[0], Tag::Alias).unwrap();
+    let bytes = res[0].get_bytes_attr(&Tag::Alias).unwrap();
     assert_eq!(alias, String::from_utf8(bytes.to_owned()).unwrap());
     remove_by_alias(alias.as_bytes()).unwrap();
 }
@@ -172,7 +168,7 @@ fn add_same_alias_overwrite() {
     // step4. query new data with critical label
     let res = query_attr_by_alias(function_name).unwrap();
     assert_eq!(1, res.len());
-    assert_eq!(critical_label, *get_bytes(&res[0], Tag::DataLabelCritical1).unwrap());
+    assert_eq!(critical_label, *res[0].get_bytes_attr(&Tag::DataLabelCritical1).unwrap());
 
     remove_by_alias(function_name).unwrap();
 }
@@ -189,5 +185,5 @@ fn add_multiple_sync_types() {
 
     let res = query_attr_by_alias(function_name).unwrap();
     assert_eq!(1, res.len());
-    assert_eq!(sync_type, get_number(&res[0], Tag::SyncType).unwrap());
+    assert_eq!(sync_type, res[0].get_num_attr(&Tag::SyncType).unwrap());
 }

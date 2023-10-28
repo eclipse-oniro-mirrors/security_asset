@@ -25,7 +25,6 @@ ohos_rust_shared_library("asset_service") {
     "$COMPONENT_DIR/frameworks/os_dependency/file:asset_file_operator",
     "$COMPONENT_DIR/frameworks/os_dependency/log:asset_log",
     "$COMPONENT_DIR/frameworks/utils/hasher:asset_hasher",
-    "$COMPONENT_DIR/frameworks/utils/map_parser:asset_map_parser",
     "$COMPONENT_DIR/services/crypto_manager:asset_crypto_manager",
     "$COMPONENT_DIR/services/db_operator:asset_db_operator",
     "$COMPONENT_DIR/services/os_dependency:asset_os_dependency",

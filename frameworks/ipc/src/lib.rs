@@ -17,7 +17,7 @@
 
 use ipc_rust::BorrowedMsgParcel;
 
-use asset_definition::{impl_enum_trait, AssetMap, DataType, ErrCode, IntoValue, Result, Tag, Value};
+use asset_definition::{impl_enum_trait, AssetMap, Conversion, DataType, ErrCode, Result, Tag, Value};
 use asset_log::loge;
 
 /// SA id for Asset service.

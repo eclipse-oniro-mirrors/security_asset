@@ -15,12 +15,14 @@
 
 //! This module extends the function of Asset data structure.
 
-use super::{AssetMap, DataType, Insert, IntoValue, Tag, Value};
+use std::{collections::HashMap, hash::Hash};
+
+use super::{Conversion, DataType, ErrCode, Extension, Result, Tag, Value};
 
 /// The mask used to obtain the data type of Asset attribute value.
 const DATA_TYPE_MASK: u32 = 0xF << 28;
 
-impl IntoValue for Tag {
+impl Conversion for Tag {
     fn data_type(&self) -> DataType {
         let mask = (*self as u32) & DATA_TYPE_MASK;
         match mask {
@@ -38,7 +40,7 @@ impl IntoValue for Tag {
     }
 }
 
-impl IntoValue for Value {
+impl Conversion for Value {
     fn data_type(&self) -> DataType {
         match self {
             Value::Bool(_) => DataType::Bool,
@@ -52,7 +54,7 @@ impl IntoValue for Value {
     }
 }
 
-impl IntoValue for Vec<u8> {
+impl Conversion for Vec<u8> {
     fn data_type(&self) -> DataType {
         DataType::Bytes
     }
@@ -62,7 +64,7 @@ impl IntoValue for Vec<u8> {
     }
 }
 
-impl IntoValue for bool {
+impl Conversion for bool {
     fn data_type(&self) -> DataType {
         DataType::Bool
     }
@@ -72,7 +74,7 @@ impl IntoValue for bool {
     }
 }
 
-impl IntoValue for u32 {
+impl Conversion for u32 {
     fn data_type(&self) -> DataType {
         DataType::Number
     }
@@ -82,8 +84,43 @@ impl IntoValue for u32 {
     }
 }
 
-impl Insert for AssetMap {
-    fn insert_attr(&mut self, key: Tag, value: impl IntoValue) {
+impl<K> Extension<K> for HashMap<K, Value>
+where
+    K: Eq + PartialEq + Hash,
+{
+    fn insert_attr(&mut self, key: K, value: impl Conversion) {
         self.insert(key, value.into_value());
+    }
+
+    fn get_bool_attr(&self, key: &K) -> Result<bool> {
+        if let Some(Value::Bool(b)) = self.get(key) {
+            Ok(*b)
+        } else {
+            Err(ErrCode::InvalidArgument)
+        }
+    }
+
+    fn get_enum_attr<T: TryFrom<u32, Error = ErrCode>>(&self, key: &K) -> Result<T> {
+        if let Some(Value::Number(num)) = self.get(key) {
+            T::try_from(*num)
+        } else {
+            Err(ErrCode::InvalidArgument)
+        }
+    }
+
+    fn get_num_attr(&self, key: &K) -> Result<u32> {
+        if let Some(Value::Number(num)) = self.get(key) {
+            Ok(*num)
+        } else {
+            Err(ErrCode::InvalidArgument)
+        }
+    }
+
+    fn get_bytes_attr(&self, key: &K) -> Result<&Vec<u8>> {
+        if let Some(Value::Bytes(bytes)) = self.get(key) {
+            Ok(bytes)
+        } else {
+            Err(ErrCode::InvalidArgument)
+        }
     }
 }

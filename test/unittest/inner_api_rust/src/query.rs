@@ -15,7 +15,6 @@
 
 use crate::common::*;
 use asset_sdk::*;
-use asset_map_parser::*;
 
 #[test]
 fn query_non_exist_with_alias() {
@@ -94,7 +93,7 @@ fn query_with_limit_with_without_offset() {
     let assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
     assert_eq!(limit, assets.len() as u32);
     for (i, asset) in assets.iter().enumerate() {
-        assert!(get_bytes(asset, Tag::Alias).unwrap().eq(format!("{:?}{}", function_name, i).as_bytes()));
+        assert!(asset.get_bytes_attr(&Tag::Alias).unwrap().eq(format!("{:?}{}", function_name, i).as_bytes()));
     }
 
     let offset = 2u32;
@@ -102,7 +101,8 @@ fn query_with_limit_with_without_offset() {
     let assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
     assert_eq!(limit, assets.len() as u32);
     for (i, asset) in assets.iter().enumerate() {
-        assert!(get_bytes(asset, Tag::Alias)
+        assert!(asset
+            .get_bytes_attr(&Tag::Alias)
             .unwrap()
             .eq(format!("{:?}{}", function_name, i + offset as usize).as_bytes()));
     }
@@ -170,7 +170,7 @@ fn query_with_order(order: &[u8], suffix: &[&[u8]]) {
     assert_eq!(limit, assets.len() as u32);
 
     for (i, asset) in assets.iter().enumerate() {
-        let get_alias = get_bytes(asset, Tag::Alias).unwrap();
+        let get_alias = asset.get_bytes_attr(&Tag::Alias).unwrap();
 
         let mut alias_new: Vec<u8> = Vec::new();
         alias_new.extend_from_slice(function_name.as_bytes());

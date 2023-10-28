@@ -15,28 +15,29 @@
 
 //! This module is used to provide common capabilities for the Asset operations.
 
-mod argument_check;
-mod crypto_adapter;
-
-pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_value_validity};
-pub(crate) use crypto_adapter::{decrypt, encrypt, exec_crypto};
-
 use std::time::{SystemTime, UNIX_EPOCH};
 
+mod argument_check;
+
+pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_value_validity};
+
+use asset_crypto_manager::crypto::SecretKey;
 use asset_db_operator::{
     database_table_helper::{
         COLUMN_ACCESSIBILITY, COLUMN_ALIAS, COLUMN_AUTH_TYPE, COLUMN_CRITICAL1, COLUMN_CRITICAL2, COLUMN_CRITICAL3,
-        COLUMN_CRITICAL4, COLUMN_DELETE_TYPE, COLUMN_NORMAL1, COLUMN_NORMAL2, COLUMN_NORMAL3, COLUMN_NORMAL4,
-        COLUMN_OWNER, COLUMN_OWNER_TYPE, COLUMN_REQUIRE_PASSWORD_SET, COLUMN_SECRET, COLUMN_SYNC_TYPE,
+        COLUMN_CRITICAL4, COLUMN_DELETE_TYPE, COLUMN_GROUP_ID, COLUMN_NORMAL1, COLUMN_NORMAL2, COLUMN_NORMAL3,
+        COLUMN_NORMAL4, COLUMN_OWNER, COLUMN_OWNER_TYPE, COLUMN_REQUIRE_PASSWORD_SET, COLUMN_SECRET, COLUMN_SYNC_TYPE,
+        COLUMN_VERSION,
     },
     types::DbMap,
 };
-use asset_definition::{AssetMap, ErrCode, Result, Tag, Value};
+use asset_definition::{Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
+use asset_hasher::sha256;
 use asset_log::loge;
 
 use crate::calling_info::CallingInfo;
 
-pub(crate) const TAG_COLUMN_TABLE: [(Tag, &str); 15] = [
+const TAG_COLUMN_TABLE: [(Tag, &str); 15] = [
     (Tag::Secret, COLUMN_SECRET),
     (Tag::Alias, COLUMN_ALIAS),
     (Tag::Accessibility, COLUMN_ACCESSIBILITY),
@@ -52,6 +53,23 @@ pub(crate) const TAG_COLUMN_TABLE: [(Tag, &str); 15] = [
     (Tag::DataLabelNormal2, COLUMN_NORMAL2),
     (Tag::DataLabelNormal3, COLUMN_NORMAL3),
     (Tag::DataLabelNormal4, COLUMN_NORMAL4),
+];
+
+const AAD_ATTR: [&str; 14] = [
+    COLUMN_ALIAS,
+    COLUMN_OWNER,
+    COLUMN_OWNER_TYPE,
+    COLUMN_GROUP_ID,
+    COLUMN_SYNC_TYPE,
+    COLUMN_ACCESSIBILITY,
+    COLUMN_REQUIRE_PASSWORD_SET,
+    COLUMN_AUTH_TYPE,
+    COLUMN_DELETE_TYPE,
+    COLUMN_VERSION,
+    COLUMN_CRITICAL1,
+    COLUMN_CRITICAL2,
+    COLUMN_CRITICAL3,
+    COLUMN_CRITICAL4,
 ];
 
 pub(crate) const CRITICAL_LABEL_ATTRS: [Tag; 4] =
@@ -109,4 +127,23 @@ pub(crate) fn get_system_time() -> Result<Vec<u8>> {
 pub(crate) fn add_owner_info(calling_info: &CallingInfo, db_data: &mut DbMap) {
     db_data.insert(COLUMN_OWNER, Value::Bytes(calling_info.owner_info().clone()));
     db_data.insert(COLUMN_OWNER_TYPE, Value::Number(calling_info.owner_type()));
+}
+
+pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<SecretKey> {
+    let auth_type = attrs.get_enum_attr::<AuthType>(&COLUMN_AUTH_TYPE)?;
+    let access_type = attrs.get_enum_attr::<Accessibility>(&COLUMN_ACCESSIBILITY)?;
+    Ok(SecretKey::new(calling.user_id(), &sha256(calling.owner_info()), auth_type, access_type))
+}
+
+pub(crate) fn build_aad(attrs: &DbMap) -> Vec<u8> {
+    let mut aad = Vec::new();
+    for column in &AAD_ATTR {
+        match attrs.get(column) {
+            Some(Value::Bytes(bytes)) => aad.extend(bytes),
+            Some(Value::Number(num)) => aad.extend(num.to_le_bytes()),
+            Some(Value::Bool(num)) => aad.push(*num as u8),
+            None => continue,
+        }
+    }
+    aad
 }

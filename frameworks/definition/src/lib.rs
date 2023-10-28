@@ -298,16 +298,29 @@ impl_enum_trait! {
     }
 }
 
-/// Automatically convert the input value to Asset Value, then insert into the collection.
-pub trait Insert {
+/// Expended abililty for HashMap.
+pub trait Extension<K> {
     /// Insert an attribute into the collection.
-    fn insert_attr(&mut self, key: Tag, value: impl IntoValue);
+    fn insert_attr(&mut self, key: K, value: impl Conversion);
+
+    /// Get an attribute of bool type from the collection.
+    fn get_bool_attr(&self, key: &K) -> Result<bool>;
+
+    /// Get an attribute of enum type from the collection.
+    fn get_enum_attr<T: TryFrom<u32, Error = ErrCode>>(&self, key: &K) -> Result<T>;
+
+    /// Get an attribute of number type from the collection.
+    fn get_num_attr(&self, key: &K) -> Result<u32>;
+
+    /// Get an attribute of bytes type from the collection.
+    fn get_bytes_attr(&self, key: &K) -> Result<&Vec<u8>>;
 }
 
-/// Convert a specific type to the Asset Value type.
-pub trait IntoValue {
+/// Conversion between a specific type and the Asset Value type.
+pub trait Conversion {
     /// Get the data type of Asset Enum type.
     fn data_type(&self) -> DataType;
+
     /// Convert the Asset Enum type to the Value variant.
     fn into_value(self) -> Value;
 }

@@ -15,7 +15,7 @@
 
 //! This module is used to implement cryptographic algorithm operations, including key generation and usage.
 
-use asset_definition::{Accessibility, AuthType, ErrCode};
+use asset_definition::{Accessibility, AuthType, ErrCode, Result};
 use asset_log::{loge, logi};
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -23,7 +23,29 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::huks_ffi::*;
 
-/// SecretKey struct
+struct IdentityGuard {
+    identity: String,
+}
+
+impl IdentityGuard {
+    fn build() -> Result<Self> {
+        let identity = ipc_rust::reset_calling_identity().map_err(|e| {
+            loge!("[FATAL][SA]Reset calling identity failed, error is [{}].", e);
+            ErrCode::IpcError
+        })?;
+        Ok(Self { identity })
+    }
+}
+
+impl Drop for IdentityGuard {
+    fn drop(&mut self) {
+        if !ipc_rust::set_calling_identity(self.identity.clone()) {
+            loge!("[FATAL][SA]Set calling identity failed.");
+        }
+    }
+}
+
+/// Struct to store key attributes, excluding key materials.
 pub struct SecretKey {
     auth_type: AuthType,
     access_type: Accessibility,
@@ -32,19 +54,6 @@ pub struct SecretKey {
 
 const MAX_ALIAS_SIZE: u32 = 64;
 const VALIAD_CHALLENGE_LEN: usize = 8;
-
-/// construct alias
-pub fn construct_alias(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility) -> Vec<u8> {
-    let mut alias: Vec<u8> = Vec::with_capacity(MAX_ALIAS_SIZE as usize);
-    alias.extend_from_slice(&user_id.to_le_bytes());
-    alias.push(b'_');
-    alias.extend(owner);
-    alias.push(b'_');
-    alias.extend_from_slice(&(auth_type as u32).to_le_bytes());
-    alias.push(b'_');
-    alias.extend_from_slice(&(access_type as u32).to_le_bytes());
-    alias
-}
 
 impl SecretKey {
     /// New a secret key
@@ -61,9 +70,10 @@ impl SecretKey {
     }
 
     /// Check whether the secret key exists.
-    pub fn exists(&self) -> Result<bool, ErrCode> {
+    pub fn exists(&self) -> Result<bool> {
         let key_data = ConstCryptoBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
 
+        let _ = IdentityGuard::build()?;
         let ret = unsafe { KeyExist(&key_data as *const ConstCryptoBlob) };
         match ret {
             HKS_SUCCESS => Ok(true),
@@ -75,11 +85,12 @@ impl SecretKey {
         }
     }
 
-    /// Generate the secret key
-    pub fn generate(&self) -> Result<(), ErrCode> {
+    /// Generate the secret key and store in HUKS.
+    pub fn generate(&self) -> Result<()> {
         loge!("start to generate key!!!!");
         let key_data = ConstCryptoBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
 
+        let _ = IdentityGuard::build()?;
         let ret = unsafe { GenerateKey(&key_data as *const ConstCryptoBlob) };
         match ret {
             HKS_SUCCESS => Ok(()),
@@ -91,9 +102,10 @@ impl SecretKey {
     }
 
     /// Delete the secret key.
-    pub fn delete(&self) -> Result<(), ErrCode> {
+    pub fn delete(&self) -> Result<()> {
         let key_data = ConstCryptoBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
 
+        let _ = IdentityGuard::build()?;
         let ret = unsafe { DeleteKey(&key_data as *const ConstCryptoBlob) };
         match ret {
             HKS_SUCCESS => Ok(()),
@@ -142,10 +154,9 @@ impl Drop for Crypto {
 
         let mut handle_data = CryptoBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
 
-        let ret = unsafe { DropCrypto(&param as *const CryptParam, &mut handle_data as *mut CryptoBlob) };
-        match ret {
-            HKS_SUCCESS => logi!("crypto drop finish success\n"),
-            _ => loge!("crypto drop finish failed ret {}", ret),
+        let res = IdentityGuard::build();
+        if res.is_ok() {
+            unsafe { DropCrypto(&param as *const CryptParam, &mut handle_data as *mut CryptoBlob) };
         }
     }
 }
@@ -169,7 +180,7 @@ impl Crypto {
     }
 
     /// Start HuksInit
-    pub fn init_crypto(&mut self) -> Result<Vec<u8>, ErrCode> {
+    pub fn init_crypto(&mut self) -> Result<Vec<u8>> {
         let now = SystemTime::now();
         let since_the_epoch = now.duration_since(UNIX_EPOCH).expect("Time went backwards");
         let now_second = since_the_epoch.as_secs();
@@ -193,6 +204,7 @@ impl Crypto {
 
         let mut handle_data = CryptoBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
 
+        let _ = IdentityGuard::build()?;
         let ret = unsafe {
             InitCryptoWrapper(
                 &param as *const CryptParam,
@@ -212,7 +224,7 @@ impl Crypto {
 
     //todo：需要增加authtoken入参
     /// Exec encrypt or decrypt
-    pub fn exec_crypto(&self, msg: &Vec<u8>, aad: &Vec<u8>, auth_token: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
+    pub fn exec_crypto(&self, msg: &Vec<u8>, aad: &Vec<u8>, auth_token: &Vec<u8>) -> Result<Vec<u8>> {
         let now = SystemTime::now();
         let since_the_epoch = now.duration_since(UNIX_EPOCH).expect("Time went backwards");
         let now_second = since_the_epoch.as_secs();
@@ -242,6 +254,7 @@ impl Crypto {
 
         let mut out_data = CryptoBlob { size: cipher.len() as u32, data: cipher.as_mut_ptr() };
 
+        let _ = IdentityGuard::build()?;
         let ret = unsafe {
             ExecCryptoWrapper(
                 &param as *const CryptParam,
@@ -262,7 +275,7 @@ impl Crypto {
     }
 
     /// Signle function call for encrypt
-    pub fn encrypt(key: &SecretKey, msg: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
+    pub fn encrypt(key: &SecretKey, msg: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>> {
         // out param
         let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize + NONCE_SIZE as usize];
         let key_alias = ConstCryptoBlob { size: key.alias.len() as u32, data: key.alias.as_ptr() };
@@ -273,6 +286,7 @@ impl Crypto {
 
         let mut out_data = CryptoBlob { size: cipher.len() as u32, data: cipher.as_mut_ptr() };
 
+        let _ = IdentityGuard::build()?;
         let ret = unsafe {
             EncryptWrapper(
                 &key_alias as *const ConstCryptoBlob,
@@ -291,7 +305,7 @@ impl Crypto {
     }
 
     /// Signle function call for decrypt
-    pub fn decrypt(key: &SecretKey, cipher: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>, ErrCode> {
+    pub fn decrypt(key: &SecretKey, cipher: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>> {
         if cipher.len() <= (AEAD_SIZE + NONCE_SIZE) as usize {
             loge!("invalid cipher\n");
             return Err(ErrCode::InvalidArgument);
@@ -306,6 +320,7 @@ impl Crypto {
 
         let mut out_data = CryptoBlob { size: plain.len() as u32, data: plain.as_mut_ptr() };
 
+        let _ = IdentityGuard::build()?;
         let ret = unsafe {
             DecryptWrapper(
                 &key_alias as *const ConstCryptoBlob,
@@ -343,7 +358,7 @@ impl CryptoManager {
         unsafe { INSTANCE.get_or_insert_with(|| Arc::new(Mutex::new(CryptoManager::new()))).clone() }
     }
 
-    fn challenge_cmp(challenge: &Vec<u8>, crypto: &Crypto) -> Result<(), ErrCode> {
+    fn challenge_cmp(challenge: &Vec<u8>, crypto: &Crypto) -> Result<()> {
         if challenge.len() != CHALLENGE_LEN as usize {
             loge!("invalid challenge len {}", challenge.len());
             return Err(ErrCode::CryptoError);
@@ -358,7 +373,7 @@ impl CryptoManager {
     }
 
     /// add a crypto in manager, not allow insert crypto with same challenge
-    pub fn add(&mut self, crypto: Crypto) -> Result<(), ErrCode> {
+    pub fn add(&mut self, crypto: Crypto) -> Result<()> {
         for temp_crypto in self.crypto_vec.iter() {
             if crypto.challenge.as_slice() == temp_crypto.challenge.as_slice() {
                 loge!("crypto manager not allow insert crypto with same challenge");

@@ -43,6 +43,5 @@ bool LoadService(int32_t saId)
     if (object != nullptr) {
         return true;
     }
-
     return samgrProxy->LoadSystemAbility(saId, LOAD_TIMEOUT_IN_SECONDS) != nullptr;
 }

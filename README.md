@@ -46,13 +46,19 @@ find -name "*.gn" | xargs ../../../prebuilts/build-tools/linux-x86/bin/gn format
 ## 测试
 测试DEMO：https://codehub-y.huawei.com/y00522150/AssetDemo/files?ref=master
 
-disable样机打卡软件：find -name com.huawei.hmsapp.samplemanagement | xargs rm -rf
-
 ```bash
 # 自动化用例推包运行
 hdc file send Z:\workspace\hmos_trunk\out\generic_generic_arm_64only\hisi_higeneric_newphone_standard\tests\unittest\asset\asset_UT_test\asset_rust_test ./data/
+
 hdc shell chmod 777 ./data/asset_rust_test
+
 hdc shell "./data/asset_rust_test --test-threads=1"
+
+hdc file send Z:\workspace\hmos_trunk\out\generic_generic_arm_64only\hisi_higeneric_newphone_standard\tests\unittest\asset\asset_UT_test\asset_ndk_test ./data/
+
+hdc shell chmod 777 ./data/asset_ndk_test
+
+hdc shell "./data/asset_ndk_test --gtest_output=xml:/data/"
 ```
 
 # 单线程运行测试用例
@@ -62,6 +68,10 @@ hdc shell "./data/asset_rust_test --test-threads=1"
 ```bash
 # 格式化BUILD.gn文件, 在asset目录下执行
 find -name "*.gn" -or -name "*.gni" | xargs ../../../prebuilts/build-tools/linux-x86/bin/gn format
+
+# disable样机打卡软件, 在设备上执行
+hdc shell
+find -name com.huawei.hmsapp.samplemanagement | xargs rm -rf
 ```
 
 ### WIKI汇总

@@ -27,7 +27,10 @@ ohos_rust_static_library("asset_crypto_manager") {
     "crypto_manager_wrapper:crypto_manager_wrapper",
   ]
 
-  external_deps = [ "huks:libhukssdk" ]
+  external_deps = [
+    "huks:libhukssdk",
+    "ipc:ipc_rust",
+  ]
 
   crate_name = "asset_crypto_manager"
   crate_type = "rlib"

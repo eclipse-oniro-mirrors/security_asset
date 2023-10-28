@@ -16,7 +16,7 @@
 //! This module is used to clear resources after query the Asset that required secondary identity authentication.
 
 use asset_crypto_manager::crypto::CryptoManager;
-use asset_definition::{AssetMap, ErrCode, Result, Tag, Value};
+use asset_definition::{AssetMap, Extension, Result, Tag};
 
 use crate::{calling_info::CallingInfo, operations::common};
 
@@ -29,9 +29,7 @@ fn check_arguments(query: &AssetMap) -> Result<()> {
 
 pub(crate) fn post_query(handle: &AssetMap, _calling_info: &CallingInfo) -> Result<()> {
     check_arguments(handle)?;
-    let Some(Value::Bytes(ref challenge)) = handle.get(&Tag::AuthChallenge) else {
-        return Err(ErrCode::InvalidArgument);
-    };
+    let challenge = handle.get_bytes_attr(&Tag::AuthChallenge)?;
 
     let crypto_manager = CryptoManager::get_instance();
     crypto_manager.lock().unwrap().remove(challenge);

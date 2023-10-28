@@ -16,7 +16,7 @@
 //! This module is used to verify the validity of asset attributes.
 
 use asset_definition::{
-    Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, IntoValue, Result, ReturnType, Tag, Value,
+    Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, Result, ReturnType, Tag, Value,
 };
 use asset_log::loge;
 

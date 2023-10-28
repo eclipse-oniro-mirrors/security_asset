@@ -17,13 +17,13 @@
 
 use std::cmp::Ordering;
 
+use asset_crypto_manager::crypto::{Crypto, CryptoManager};
 use asset_db_operator::{
     database_table_helper::{DatabaseHelper, COLUMN_AUTH_TYPE, COLUMN_SECRET},
     types::{DbMap, QueryOptions},
 };
-use asset_definition::{AssetMap, AuthType, ErrCode, Result, ReturnType, Tag, Value};
+use asset_definition::{AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value};
 use asset_log::{loge, logi};
-use asset_map_parser::get_bytes;
 
 use crate::{calling_info::CallingInfo, operations::common};
 
@@ -35,6 +35,29 @@ fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
         map_set.push(map);
     }
     Ok(map_set)
+}
+
+fn decrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
+    let secret = db_data.get_bytes_attr(&COLUMN_SECRET)?;
+    let secret_key = common::build_secret_key(calling_info, db_data)?;
+    let secret = Crypto::decrypt(&secret_key, secret, &common::build_aad(db_data))?;
+    db_data.insert(COLUMN_SECRET, Value::Bytes(secret));
+    Ok(())
+}
+
+fn exec_crypto(calling: &CallingInfo, db_data: &mut DbMap, challenge: &Vec<u8>, auth_token: &Vec<u8>) -> Result<()> {
+    let secret = db_data.get_bytes_attr(&COLUMN_SECRET)?;
+    let crypto_manager = CryptoManager::get_instance();
+    let secret_key = common::build_secret_key(calling, db_data)?;
+    let x = match crypto_manager.lock().unwrap().find(&secret_key, challenge) {
+        Some(crypto) => {
+            let secret = crypto.exec_crypto(secret, &common::build_aad(db_data), auth_token)?;
+            db_data.insert(COLUMN_SECRET, Value::Bytes(secret));
+            Ok(())
+        },
+        None => return Err(ErrCode::CryptoError),
+    };
+    x
 }
 
 fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) -> Result<Vec<AssetMap>> {
@@ -49,12 +72,12 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
             match results[0].get(COLUMN_AUTH_TYPE) {
                 Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
                     common::check_required_tags(query, &SEC_QUERY_OPTIONAL_ATTRS)?;
-                    let challenge = get_bytes(query, Tag::AuthChallenge)?;
-                    let auth_token = get_bytes(query, Tag::AuthToken)?;
-                    common::exec_crypto(calling_info, &mut results[0], challenge, auth_token)?;
+                    let challenge = query.get_bytes_attr(&Tag::AuthChallenge)?;
+                    let auth_token = query.get_bytes_attr(&Tag::AuthToken)?;
+                    exec_crypto(calling_info, &mut results[0], challenge, auth_token)?;
                 },
                 _ => {
-                    common::decrypt(calling_info, &mut results[0])?;
+                    decrypt(calling_info, &mut results[0])?;
                 },
             };
             into_asset_maps(&results)
@@ -96,7 +119,6 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
 pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
     let mut results =
         DatabaseHelper::query_columns(calling_info.user_id(), &vec![], db_data, Some(&get_query_options(attrs)))?;
-    logi!("query found {}", results.len());
     if results.is_empty() {
         loge!("[FATAL]The data to be queried does not exist.");
         return Err(ErrCode::NotFound);

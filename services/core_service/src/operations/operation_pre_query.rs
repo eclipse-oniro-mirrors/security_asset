@@ -23,7 +23,7 @@ use asset_db_operator::{
     database_table_helper::{DatabaseHelper, COLUMN_ACCESSIBILITY, COLUMN_AUTH_TYPE},
     types::DbMap,
 };
-use asset_definition::{Accessibility, AssetMap, AuthType, ErrCode, Result, Tag, Value};
+use asset_definition::{Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
 use asset_hasher::sha256;
 use asset_log::loge;
 
@@ -77,24 +77,18 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
     db_data.entry(COLUMN_AUTH_TYPE).or_insert(Value::Number(AuthType::Any as u32));
 
     let access_types = query_access_types(calling_info, &db_data)?;
-
     if access_types.is_empty() {
         loge!("Pre Query result not found.");
         return Err(ErrCode::NotFound);
     }
 
-    let auth_validity_default = Value::Number(DEFAULT_AUTH_VALIDITY);
-
-    let Value::Number(exp_time) = query.get(&Tag::AuthValidityPeriod).unwrap_or(&auth_validity_default) else {
-        return Err(ErrCode::InvalidArgument);
-    };
+    let valid_time = query.get_num_attr(&Tag::AuthValidityPeriod).unwrap_or(DEFAULT_AUTH_VALIDITY);
     let owner_hash = sha256(calling_info.owner_info());
-
     let mut challenge = vec![0; CHALLENGE_LEN as usize];
     let mut cryptos = Vec::with_capacity(4);
     for (idx, access_type) in access_types.iter().enumerate() {
         let secret_key = SecretKey::new(calling_info.user_id(), &owner_hash, AuthType::Any, *access_type);
-        let mut crypto = Crypto::new(HKS_KEY_PURPOSE_DECRYPT, secret_key, idx as u32, *exp_time);
+        let mut crypto = Crypto::new(HKS_KEY_PURPOSE_DECRYPT, secret_key, idx as u32, valid_time);
 
         let tmp_challenge = crypto.init_crypto()?;
         set_valiad_challenge(get_valiad_challenge(&tmp_challenge, idx), idx, &mut challenge);

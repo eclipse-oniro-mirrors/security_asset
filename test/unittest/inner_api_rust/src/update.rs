@@ -53,8 +53,7 @@ fn update_different_secret() {
 
     let res = query_all_by_alias(alias).unwrap();
     assert_eq!(1, res.len());
-    let Value::Bytes(ref secret_query) = res[0][&Tag::Secret] else { panic!() };
-    assert_eq!(secret_new, secret_query);
+    assert_eq!(secret_new, res[0].get_bytes_attr(&Tag::Secret).unwrap());
 
     remove_by_alias(alias).unwrap();
 }

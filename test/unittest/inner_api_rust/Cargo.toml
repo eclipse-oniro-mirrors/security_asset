@@ -7,4 +7,3 @@ edition = "2021"
 
 [dependencies]
 asset_sdk = { path = "../../../interfaces/inner_api/rs" }
-asset_map_parser = { path = "../../../frameworks/utils/map_parser" }

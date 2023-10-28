@@ -109,7 +109,7 @@ macro_rules! impl_enum_trait {
             }
         }
 
-        impl $crate::IntoValue for $name {
+        impl $crate::Conversion for $name {
             fn data_type(&self) -> $crate::DataType {
                 $crate::DataType::Number
             }
