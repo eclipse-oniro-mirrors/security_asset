@@ -164,9 +164,11 @@ fn build_sql_query_options(query_options: Option<&QueryOptions>, sql: &mut Strin
         }
         if let Some(limit) = option.limit {
             sql.push_str(format!(" limit {}", limit).as_str());
-        }
-        if let Some(offset) = option.offset {
-            sql.push_str(format!(" offset {}", offset).as_str());
+            if let Some(offset) = option.offset {
+                sql.push_str(format!(" offset {}", offset).as_str());
+            }
+        } else if let Some(offset) = option.offset {
+            sql.push_str(format!(" limit -1 offset {}", offset).as_str());
         }
     }
 }
