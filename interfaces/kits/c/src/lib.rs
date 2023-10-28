@@ -53,6 +53,10 @@ fn into_map(attributes: *const AssetAttr, attr_cnt: u32) -> Option<AssetMap> {
                     map.insert(attr_tag, Value::Number((*attr).value.uint32));
                 },
                 DataType::Bytes => {
+                    if (*attr).value.blob.data.is_null() || (*attr).value.blob.size == 0 {
+                        loge!("[FATAL][RUST SDK]Blob data is empty.");
+                        return None;
+                    }
                     let blob_slice = slice::from_raw_parts((*attr).value.blob.data, (*attr).value.blob.size as usize);
                     let blob_vec = blob_slice.to_vec();
                     map.insert(attr_tag, Value::Bytes(blob_vec));

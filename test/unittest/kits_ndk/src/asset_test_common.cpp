@@ -15,9 +15,10 @@
 
 #include "asset_test_common.h"
 
-#include "asset_api.h"
-
 #include <gtest/gtest.h>
+#include <string.h>
+
+#include "asset_api.h"
 
 int32_t RemoveByAlias(const char* alias)
 {
@@ -31,4 +32,29 @@ int32_t RemoveByAlias(const char* alias)
         }
     };
     return OH_Asset_Remove(attr, sizeof(attr) / sizeof(attr[0]));
+}
+
+int32_t QueryByAlias(const char* alias, Asset_ResultSet *resultSet)
+{
+    Asset_Attr attr[] = {
+        {
+            .tag = ASSET_TAG_ALIAS,
+            .value.blob = {
+                .size = strlen(alias),
+                .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias))
+            }
+        }, {
+            .tag = ASSET_TAG_RETURN_TYPE,
+            .value.u32 = ASSET_RETURN_ALL
+        }
+    };
+    return OH_Asset_Query(attr, sizeof(attr) / sizeof(attr[0]), resultSet);
+}
+
+bool CompareBlob(Asset_Blob* blob1, Asset_Blob* blob2)
+{
+    if (blob1->size != blob2->size) {
+        return false;
+    }
+    return memcmp(blob1->data, blob2->data, blob1->size) == 0;
 }

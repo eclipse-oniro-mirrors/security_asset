@@ -16,8 +16,9 @@
 #ifndef ASSET_ADD_TEST_H
 #define ASSET_ADD_TEST_H
 
-namespace Unittest::AesCipher {
-int AttestAddTest001(void);
+namespace Unittest::AssetAddTest {
+int AssetAddTest001(void);
+int AssetAddTest002(void);
 }
 
 #endif // ASSET_ADD_TEST_H
