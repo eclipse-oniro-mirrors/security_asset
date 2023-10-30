@@ -192,7 +192,6 @@ static int32_t CheckInitParma(const struct CryptParam *param, const struct HksBl
     return HKS_SUCCESS;
 }
 
-// todo HksInit需要增加超时时间的tag(预留)
 static int32_t CreateInitParamSet(struct HksParamSet **paramSet, const struct CryptParam *param)
 {
     /* init params */
@@ -202,7 +201,11 @@ static int32_t CreateInitParamSet(struct HksParamSet **paramSet, const struct Cr
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
+        { .tag = HKS_TAG_DIGEST, .uint32Param = HKS_DIGEST_NONE },
         { .tag = HKS_TAG_CHALLENGE_POS, .uint32Param = param->challengePos },
+        { .tag = HKS_TAG_IS_BATCH_OPERATION, .boolParam = true },
+        { .tag = HKS_TAG_BATCH_OPERATION_TIMEOUT, .uint32Param = param->expTime },
+        { .tag = HKS_TAG_BATCH_PURPOSE, .uint32Param = param->cryptoMode },
     };
 
     return InitParamSet(paramSet, initParams, sizeof(initParams) / sizeof(HksParam));
@@ -233,6 +236,7 @@ int32_t InitCryptoWrapper(const struct CryptParam *param, const struct HksBlob *
     }
 
     HksFreeParamSet(&paramSet);
+    LOGE("hks crypto init done ret = %d\n", ret);
     return ret;
 }
 
@@ -240,17 +244,14 @@ static int32_t CheckCryptoParam(const CryptParam *param, const struct HksBlob *a
     const struct HksBlob *authToken, const struct HksBlob *handleData,
     const struct HksBlob *inData, struct HksBlob *outData)
 {
-    if (param == nullptr || param->challengePos > CHALLENGEPOS_MAX ||
-        ((param->cryptoMode != HKS_KEY_PURPOSE_ENCRYPT) && (param->cryptoMode != HKS_KEY_PURPOSE_DECRYPT))) {
+    if (param == nullptr || param->challengePos > CHALLENGEPOS_MAX || param->cryptoMode != HKS_KEY_PURPOSE_DECRYPT) {
         LOGE("hks invalid param\n");
         return HKS_ERROR_INVALID_ARGUMENT;
     }
 
-    if (param->cryptoMode == HKS_KEY_PURPOSE_DECRYPT) {
-        if (authToken == nullptr || authToken->size == 0 || authToken->data == nullptr) {
-            LOGE("hks invalid auth token\n");
-            return HKS_ERROR_INVALID_ARGUMENT;
-        }
+    if (authToken == nullptr || authToken->size == 0 || authToken->data == nullptr) {
+        LOGE("hks invalid auth token\n");
+        return HKS_ERROR_INVALID_ARGUMENT;
     }
 
     if (aadData == nullptr || aadData->size == 0 || aadData->data == nullptr) {
@@ -276,44 +277,27 @@ static int32_t CheckCryptoParam(const CryptParam *param, const struct HksBlob *a
     return HKS_SUCCESS;
 }
 
-// todo: authToken 放入params里，解密情况下
 static int32_t CreateCryptoParamSet(struct HksParamSet **paramSet, const CryptParam *param,
     const struct HksBlob *aadData, const struct HksBlob *authToken,
     const struct HksBlob *inData, struct HksBlob *outData)
 {
-    if (param->cryptoMode == HKS_KEY_PURPOSE_ENCRYPT) {
-        /* init encrypto params */
-        struct HksParam initParams[] = {
-            { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES},
-            { .tag = HKS_TAG_PURPOSE, .uint32Param = param->cryptoMode },
-            { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
-            { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
-            { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
-            { .tag = HKS_TAG_CHALLENGE_POS, .uint32Param = param->challengePos },
-            { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = aadData->size, .data = (uint8_t *)aadData->data }} /* initial AAD */
-        };
+    /* init decrypto params */
+    struct HksParam initParams[] = {
+        { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES},
+        { .tag = HKS_TAG_PURPOSE, .uint32Param = param->cryptoMode },
+        { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
+        { .tag = HKS_TAG_DIGEST, .uint32Param = HKS_DIGEST_NONE },
+        { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
+        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
+        { .tag = HKS_TAG_IS_BATCH_OPERATION, .boolParam = true },
+        { .tag = HKS_TAG_BATCH_PURPOSE, .uint32Param = param->cryptoMode },
+        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = aadData->size, .data = (uint8_t *)aadData->data }}, /* initial AAD */
+        { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE, .data = (uint8_t *)inData->data + outData->size + AEAD_SIZE }},
+        { .tag = HKS_TAG_AE_TAG, .blob = { .size = AEAD_SIZE, .data = (uint8_t *)inData->data + outData->size }},
+        { .tag = HKS_TAG_AUTH_TOKEN, .blob = { .size = authToken->size, .data = (uint8_t *)authToken->data }}, /* initial auth token */
+    };
 
-        return InitParamSet(paramSet, initParams, sizeof(initParams) / sizeof(HksParam));
-    } else if (param->cryptoMode == HKS_KEY_PURPOSE_DECRYPT) {
-        /* init decrypto params */
-        struct HksParam initParams[] = {
-            { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES},
-            { .tag = HKS_TAG_PURPOSE, .uint32Param = param->cryptoMode },
-            { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
-            { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
-            { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
-            { .tag = HKS_TAG_CHALLENGE_POS, .uint32Param = param->challengePos },
-            { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = aadData->size, .data = (uint8_t *)aadData->data }}, /* initial AAD */
-            { .tag = HKS_TAG_AUTH_TOKEN, .blob = { .size = authToken->size, .data = (uint8_t *)authToken->data }}, /* initial AAD */
-            { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE, .data = (uint8_t *)inData->data + outData->size + AEAD_SIZE }},
-            { .tag = HKS_TAG_AE_TAG, .blob = { .size = AEAD_SIZE, .data = (uint8_t *)inData->data + outData->size }}
-        };
-
-        return InitParamSet(paramSet, initParams, sizeof(initParams) / sizeof(HksParam));
-    }
-
-    LOGE("invalid crypto mode\n");
-    return HKS_ERROR_INVALID_ARGUMENT;
+    return InitParamSet(paramSet, initParams, sizeof(initParams) / sizeof(HksParam));
 }
 
 int32_t ExecCryptoWrapper(const CryptParam *param, const struct HksBlob *aadData, const struct HksBlob *authToken,
@@ -328,11 +312,7 @@ int32_t ExecCryptoWrapper(const CryptParam *param, const struct HksBlob *aadData
     struct HksParamSet *paramSet = nullptr;
     struct HksBlob tmpInData = { 0, nullptr };
 
-    if (param->cryptoMode == HKS_KEY_PURPOSE_ENCRYPT) {
-        tmpInData = { inData->size, (uint8_t *)inData->data };
-    } else if (param->cryptoMode == HKS_KEY_PURPOSE_DECRYPT) {
-        tmpInData = { outData->size, (uint8_t *)inData->data };
-    }
+    tmpInData = { outData->size, (uint8_t *)inData->data };
 
     /* init paramset */
     ret = CreateCryptoParamSet(&paramSet, param, aadData, authToken, inData, outData);
@@ -348,28 +328,13 @@ int32_t ExecCryptoWrapper(const CryptParam *param, const struct HksBlob *aadData
     }
 
     HksFreeParamSet(&paramSet);
+    LOGE("hks crypto update done ret = %d\n", ret);
     return ret;
-}
-
-static int32_t CreateFinishParamSet(struct HksParamSet **paramSet, const CryptParam *param)
-{
-    /* init encrypto params */
-    struct HksParam initParams[] = {
-        { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES},
-        { .tag = HKS_TAG_PURPOSE, .uint32Param = param->cryptoMode },
-        { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
-        { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
-        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
-        { .tag = HKS_TAG_CHALLENGE_POS, .uint32Param = param->challengePos },
-    };
-
-    return InitParamSet(paramSet, initParams, sizeof(initParams) / sizeof(HksParam));
 }
 
 static bool CheckDropParam(const CryptParam *param, struct HksBlob *handleData)
 {
-    if (param == nullptr || param->challengePos > CHALLENGEPOS_MAX ||
-        ((param->cryptoMode != HKS_KEY_PURPOSE_ENCRYPT) && (param->cryptoMode != HKS_KEY_PURPOSE_DECRYPT))) {
+    if (param == nullptr || param->challengePos > CHALLENGEPOS_MAX || param->cryptoMode != HKS_KEY_PURPOSE_DECRYPT) {
         LOGE("hks invalid param\n");
         return HKS_ERROR_INVALID_ARGUMENT;
     }
@@ -395,18 +360,19 @@ int32_t DropCrypto(const CryptParam *param, struct HksBlob *handleData)
     struct HksBlob outData = { 0, nullptr };
 
     /* init paramset */
-    ret = CreateFinishParamSet(&paramSet, param);
+    ret = InitParamSet(&paramSet, nullptr, 0);
     if (ret != HKS_SUCCESS) {
         LOGE("hks crypto finish paramset err = %d\n", ret);
         return ret;
     }
 
-    /* update */
+    /* finish */
     ret = HksFinish(handleData, paramSet, &inData, &outData);
     if (ret != HKS_SUCCESS) {
         LOGE("hks crypto finish failed err = %d\n", ret);
     }
 
     HksFreeParamSet(&paramSet);
+    LOGE("hks crypto finish done ret = %d\n", ret);
     return ret;
 }

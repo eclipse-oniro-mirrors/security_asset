@@ -91,7 +91,8 @@ impl SecretKey {
         let key_data = ConstCryptoBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
 
         let _ = IdentityGuard::build()?;
-        let ret = unsafe { GenerateKey(&key_data as *const ConstCryptoBlob) };
+	let need_user_auth = self.need_user_auth();
+        let ret = unsafe { GenerateKey(&key_data as *const ConstCryptoBlob, need_user_auth) };
         match ret {
             HKS_SUCCESS => Ok(()),
             _ => {
@@ -141,6 +142,8 @@ pub struct Crypto {
     challenge_pos: u32,
     /// timeout time, reserved, 600s max
     exp_time: u64,
+    /// crypto have been initailized
+    initailized: bool,
 }
 
 impl Drop for Crypto {
@@ -176,6 +179,7 @@ impl Crypto {
             handle: vec![0; HANDLE_LEN as usize],
             challenge_pos,
             exp_time: now_second + exp_time as u64,
+            initailized: false,
         }
     }
 
@@ -188,6 +192,11 @@ impl Crypto {
         if now_second >= self.exp_time {
             loge!("init crypto time expired {}", now_second);
             return Err(ErrCode::AuthTokenExpired);
+        }
+
+        if self.mode != HKS_KEY_PURPOSE_DECRYPT {
+            loge!("only support decrypt");
+            return Err(ErrCode::CryptoError);
         }
 
         // in param
@@ -214,7 +223,10 @@ impl Crypto {
             )
         };
         match ret {
-            HKS_SUCCESS => Ok(self.challenge.clone()),
+            HKS_SUCCESS => {
+                self.initailized = true;
+                Ok(self.challenge.clone())
+            },
             _ => {
                 loge!("crypto init failed ret {}", ret);
                 Err(ErrCode::CryptoError)
@@ -222,7 +234,6 @@ impl Crypto {
         }
     }
 
-    //todo：需要增加authtoken入参
     /// Exec encrypt or decrypt
     pub fn exec_crypto(&self, msg: &Vec<u8>, aad: &Vec<u8>, auth_token: &Vec<u8>) -> Result<Vec<u8>> {
         let now = SystemTime::now();
@@ -234,8 +245,22 @@ impl Crypto {
             return Err(ErrCode::AuthTokenExpired);
         }
 
+        if self.mode != HKS_KEY_PURPOSE_DECRYPT {
+            loge!("unsupported crypto mode");
+            return Err(ErrCode::CryptoError);
+        }
+
+        if !self.initailized {
+            loge!("crypto not initailize");
+            return Err(ErrCode::CryptoError);
+        }
+
         // out param
-        let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize + NONCE_SIZE as usize];
+        if msg.len() <= (AEAD_SIZE + NONCE_SIZE) as usize {
+            loge!("invalid msg\n");
+            return Err(ErrCode::InvalidArgument);
+        }
+        let mut cipher: Vec<u8> = vec![0; msg.len() - AEAD_SIZE as usize - NONCE_SIZE as usize];
 
         // in param
         let param = CryptParam {

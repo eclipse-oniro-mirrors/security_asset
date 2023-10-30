@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-///use asset_crypto_manager::huks_ffi::*;
+use asset_crypto_manager::huks_ffi::*;
 use asset_crypto_manager::crypto::*;
 use asset_definition::{Accessibility, AuthType};
 
@@ -153,10 +153,9 @@ fn test_hukkey_decrypt() {
     let _ = secret_key.delete();
 }
 
-/*
 #[test]
 fn test_crypto_init() {
-    let secret_key = SecretKey::new(6, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlock);
+    let secret_key = SecretKey::new(6, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlock);
     match secret_key.exists() {
         Ok(true) => (),
         Ok(false) => {
@@ -169,13 +168,71 @@ fn test_crypto_init() {
         _ => panic!("hukskey exist failed")
     };
 
-    let mut crypto = Crypto::new(HKS_KEY_PURPOSE_ENCRYPT, secret_key, 0, 0);
+    let secret_key2 = SecretKey::new(6, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlock);
+
+    let mut crypto = Crypto::new(HKS_KEY_PURPOSE_DECRYPT, secret_key, 0, 600);
     let challenge = crypto.init_crypto();
     match challenge {
         Ok(_) => print!("crypto challenge init success"),
         Err(_) => {
+            let _ = secret_key2.delete();
             panic!("crypto init fail")
         },
     };
+    let _ = secret_key2.delete();
 }
-*/
+
+#[test]
+fn test_crypto_exec_crypto() {
+    let secret_key = SecretKey::new(7, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlock);
+    match secret_key.exists() {
+        Ok(true) => println!("test_hukkey_decrypt: key exist"),
+        Ok(false) => {
+            print!("test_crypto_exec_crypto: huks key start create");
+            match secret_key.generate() {
+                Ok(()) => println!("test_hukkey_generate: generate success"),
+                Err(res) => panic!("test_hukkey_delete fail because generate error = {}", res),
+            };
+        },
+        _ => panic!("hukskey exist failed")
+    };
+
+    let secret_key2 = SecretKey::new(7, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlock);
+    let msg = vec![1, 2, 3, 4, 5, 6];
+    let aad = vec![0; AAD_SIZE as usize];
+    let encrypt_res = Crypto::encrypt(&secret_key, &msg, &aad);
+    match encrypt_res {
+        Ok(cipher) => {
+            println!("encrypt pass, now decrypt..., cipher is {:?}", cipher);
+            let mut crypto = Crypto::new(HKS_KEY_PURPOSE_DECRYPT, secret_key, 0, 600);
+            let challenge = crypto.init_crypto();
+            match challenge {
+                Ok(_) => print!("test_crypto_exec_crypto: crypto challenge init success"),
+                Err(_) => {
+                    let _ = secret_key2.delete();
+                    panic!("crypto init fail")
+                },
+            };
+
+            let authtoken = vec![0; 148]; // todo, need authtoken
+            let encrypt_res = crypto.exec_crypto(&cipher, &aad, &authtoken);
+            match encrypt_res {
+                Ok(plain_text) => {
+                    println!("decrypt pass, plain is {:?}, now check decrypt", plain_text);
+                    for i in 0..msg.len() {
+                        if msg[i] != plain_text[i] {
+                            let _ = secret_key2.delete();
+                            panic!("test_hukkey_decrypt fail because plain_text not equals inData");
+                        }
+                    }
+                },
+                Err(e) => println!("test_crypto_exec_crypto fail because encrypt error = {}", e),
+            }
+        },
+        Err(e) => {
+            let _ = secret_key2.delete();
+            panic!("test_crypto_exec_crypto fail because encrypt error = {}", e);
+        },
+    }
+    let _ = secret_key2.delete();
+}

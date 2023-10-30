@@ -73,7 +73,7 @@ pub struct CryptoBlob {
 
 extern "C" {
     /// c generate key
-    pub fn GenerateKey(key_data: *const ConstCryptoBlob) -> HuksErrcode;
+    pub fn GenerateKey(key_data: *const ConstCryptoBlob, need_user_auth: bool) -> HuksErrcode;
 
     /// c delete key
     pub fn DeleteKey(key_data: *const ConstCryptoBlob) -> HuksErrcode;
