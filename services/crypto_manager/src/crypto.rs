@@ -46,6 +46,7 @@ impl Drop for IdentityGuard {
 }
 
 /// Struct to store key attributes, excluding key materials.
+#[derive(Clone)]
 pub struct SecretKey {
     auth_type: AuthType,
     access_type: Accessibility,
@@ -149,12 +150,7 @@ pub struct Crypto {
 impl Drop for Crypto {
     fn drop(&mut self) {
         // in param
-        let param = CryptParam {
-            crypto_mode: self.mode,
-            challenge_pos: self.challenge_pos,
-            exp_time: 0, // no use
-        };
-
+        let param = CryptParam { crypto_mode: self.mode, challenge_pos: self.challenge_pos, exp_time: 0 };
         let mut handle_data = CryptoBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
 
         let res = IdentityGuard::build();
@@ -263,11 +259,7 @@ impl Crypto {
         let mut cipher: Vec<u8> = vec![0; msg.len() - AEAD_SIZE as usize - NONCE_SIZE as usize];
 
         // in param
-        let param = CryptParam {
-            crypto_mode: self.mode,
-            challenge_pos: self.challenge_pos,
-            exp_time: 0, // no use
-        };
+        let param = CryptParam { crypto_mode: self.mode, challenge_pos: self.challenge_pos, exp_time: 0 };
 
         let aad_data = ConstCryptoBlob { size: aad.len() as u32, data: aad.as_ptr() };
 
@@ -337,6 +329,7 @@ impl Crypto {
         }
         // out param
         let mut plain: Vec<u8> = vec![0; cipher.len() - AEAD_SIZE as usize - NONCE_SIZE as usize];
+
         let key_alias = ConstCryptoBlob { size: key.alias.len() as u32, data: key.alias.as_ptr() };
 
         let aad_data = ConstCryptoBlob { size: aad.len() as u32, data: aad.as_ptr() };

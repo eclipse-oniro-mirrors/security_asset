@@ -101,11 +101,9 @@ fn test_hukkey_decrypt() {
         Err(res) => panic!("test_hukkey_encrypt fail because generate error = {}", res),
     };
 
-    println!("test_hukkey_decrypt: generate key success");
     let msg = vec![1, 2, 3, 4, 5, 6];
     let aad = vec![0; AAD_SIZE as usize];
-    let encrypt_res = Crypto::encrypt(&secret_key, &msg, &aad);
-    match encrypt_res {
+    match Crypto::encrypt(&secret_key, &msg, &aad) {
         Ok(cipher) => {
             println!("encrypt success, cipher is {:?}, now check cipher", cipher);
             let mut flag = true;
@@ -120,24 +118,18 @@ fn test_hukkey_decrypt() {
                 panic!("test_hukkey_decrypt fail because cipher_text equals indata.");
             }
 
-            println!("encrypt pass, now decrypt..., cipher is {:?}", cipher);
-            let decrypt_res = Crypto::decrypt(&secret_key, &cipher, &aad);
-            match decrypt_res {
+            match Crypto::decrypt(&secret_key, &cipher, &aad) {
                 Ok(plain) => {
                     println!("decrypt pass, plain is {:?}, now check decrypt", plain);
-                    flag = true;
                     for i in 0..msg.len() {
                         if msg[i] != plain[i] {
-                            flag = false;
-                            break;
+                            let _ = secret_key.delete();
+                            panic!("test_hukkey_decrypt fail because plain_text not equals inData");
                         }
-                    }
-                    if !flag {
-                        let _ = secret_key.delete();
-                        panic!("test_hukkey_decrypt fail because plain_text not equals inData");
                     }
 
                     println!("test_hukkey_decrypt pass");
+                    let _ = secret_key.delete();
                 },
                 Err(e) => {
                     let _ = secret_key.delete();
@@ -150,10 +142,10 @@ fn test_hukkey_decrypt() {
             panic!("test_hukkey_decrypt fail because encrypt error = {}", e);
         },
     }
-    let _ = secret_key.delete();
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn test_crypto_init() {
     let secret_key = SecretKey::new(6, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlock);
     match secret_key.exists() {
@@ -183,6 +175,7 @@ fn test_crypto_init() {
 }
 
 #[test]
+#[allow(non_snake_case)]
 fn test_crypto_exec_crypto() {
     let secret_key = SecretKey::new(7, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlock);
     match secret_key.exists() {
@@ -197,16 +190,14 @@ fn test_crypto_exec_crypto() {
         _ => panic!("hukskey exist failed"),
     };
 
-    let secret_key2 = SecretKey::new(7, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlock);
+    let secret_key2 = secret_key.clone();
     let msg = vec![1, 2, 3, 4, 5, 6];
     let aad = vec![0; AAD_SIZE as usize];
-    let encrypt_res = Crypto::encrypt(&secret_key, &msg, &aad);
-    match encrypt_res {
+    match Crypto::encrypt(&secret_key, &msg, &aad) {
         Ok(cipher) => {
             println!("encrypt pass, now decrypt..., cipher is {:?}", cipher);
             let mut crypto = Crypto::new(HKS_KEY_PURPOSE_DECRYPT, secret_key, 0, 600);
-            let challenge = crypto.init_crypto();
-            match challenge {
+            match crypto.init_crypto() {
                 Ok(_) => print!("test_crypto_exec_crypto: crypto challenge init success"),
                 Err(_) => {
                     let _ = secret_key2.delete();
@@ -214,9 +205,9 @@ fn test_crypto_exec_crypto() {
                 },
             };
 
-            let authtoken = vec![0; 148]; // todo, need authtoken
-            let encrypt_res = crypto.exec_crypto(&cipher, &aad, &authtoken);
-            match encrypt_res {
+            // verify auth token, should fail
+            let authtoken = vec![0; 148];
+            match crypto.exec_crypto(&cipher, &aad, &authtoken) {
                 Ok(plain_text) => {
                     println!("decrypt pass, plain is {:?}, now check decrypt", plain_text);
                     for i in 0..msg.len() {
