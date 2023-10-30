@@ -16,7 +16,7 @@
 #ifndef ASSET_ADD_TEST_H
 #define ASSET_ADD_TEST_H
 
-namespace Unittest::AssetAddTest {
+namespace UnitTest::AssetAddTest {
 int AssetAddTest001(void);
 int AssetAddTest002(void);
 int AssetAddTest003(void);

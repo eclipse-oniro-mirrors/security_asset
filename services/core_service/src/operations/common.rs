@@ -22,15 +22,7 @@ mod argument_check;
 pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_value_validity};
 
 use asset_crypto_manager::crypto::SecretKey;
-use asset_db_operator::{
-    database_table_helper::{
-        COLUMN_ACCESSIBILITY, COLUMN_ALIAS, COLUMN_AUTH_TYPE, COLUMN_CRITICAL1, COLUMN_CRITICAL2, COLUMN_CRITICAL3,
-        COLUMN_CRITICAL4, COLUMN_DELETE_TYPE, COLUMN_GROUP_ID, COLUMN_NORMAL1, COLUMN_NORMAL2, COLUMN_NORMAL3,
-        COLUMN_NORMAL4, COLUMN_OWNER, COLUMN_OWNER_TYPE, COLUMN_REQUIRE_PASSWORD_SET, COLUMN_SECRET, COLUMN_SYNC_TYPE,
-        COLUMN_VERSION,
-    },
-    types::DbMap,
-};
+use asset_db_operator::types::{column, DbMap};
 use asset_definition::{Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
 use asset_hasher::sha256;
 use asset_log::loge;
@@ -38,38 +30,38 @@ use asset_log::loge;
 use crate::calling_info::CallingInfo;
 
 const TAG_COLUMN_TABLE: [(Tag, &str); 15] = [
-    (Tag::Secret, COLUMN_SECRET),
-    (Tag::Alias, COLUMN_ALIAS),
-    (Tag::Accessibility, COLUMN_ACCESSIBILITY),
-    (Tag::AuthType, COLUMN_AUTH_TYPE),
-    (Tag::SyncType, COLUMN_SYNC_TYPE),
-    (Tag::DeleteType, COLUMN_DELETE_TYPE),
-    (Tag::RequirePasswordSet, COLUMN_REQUIRE_PASSWORD_SET),
-    (Tag::DataLabelCritical1, COLUMN_CRITICAL1),
-    (Tag::DataLabelCritical2, COLUMN_CRITICAL2),
-    (Tag::DataLabelCritical3, COLUMN_CRITICAL3),
-    (Tag::DataLabelCritical4, COLUMN_CRITICAL4),
-    (Tag::DataLabelNormal1, COLUMN_NORMAL1),
-    (Tag::DataLabelNormal2, COLUMN_NORMAL2),
-    (Tag::DataLabelNormal3, COLUMN_NORMAL3),
-    (Tag::DataLabelNormal4, COLUMN_NORMAL4),
+    (Tag::Secret, column::SECRET),
+    (Tag::Alias, column::ALIAS),
+    (Tag::Accessibility, column::ACCESSIBILITY),
+    (Tag::AuthType, column::AUTH_TYPE),
+    (Tag::SyncType, column::SYNC_TYPE),
+    (Tag::DeleteType, column::DELETE_TYPE),
+    (Tag::RequirePasswordSet, column::REQUIRE_PASSWORD_SET),
+    (Tag::DataLabelCritical1, column::CRITICAL1),
+    (Tag::DataLabelCritical2, column::CRITICAL2),
+    (Tag::DataLabelCritical3, column::CRITICAL3),
+    (Tag::DataLabelCritical4, column::CRITICAL4),
+    (Tag::DataLabelNormal1, column::NORMAL1),
+    (Tag::DataLabelNormal2, column::NORMAL2),
+    (Tag::DataLabelNormal3, column::NORMAL3),
+    (Tag::DataLabelNormal4, column::NORMAL4),
 ];
 
 const AAD_ATTR: [&str; 14] = [
-    COLUMN_ALIAS,
-    COLUMN_OWNER,
-    COLUMN_OWNER_TYPE,
-    COLUMN_GROUP_ID,
-    COLUMN_SYNC_TYPE,
-    COLUMN_ACCESSIBILITY,
-    COLUMN_REQUIRE_PASSWORD_SET,
-    COLUMN_AUTH_TYPE,
-    COLUMN_DELETE_TYPE,
-    COLUMN_VERSION,
-    COLUMN_CRITICAL1,
-    COLUMN_CRITICAL2,
-    COLUMN_CRITICAL3,
-    COLUMN_CRITICAL4,
+    column::ALIAS,
+    column::OWNER,
+    column::OWNER_TYPE,
+    column::GROUP_ID,
+    column::SYNC_TYPE,
+    column::ACCESSIBILITY,
+    column::REQUIRE_PASSWORD_SET,
+    column::AUTH_TYPE,
+    column::DELETE_TYPE,
+    column::VERSION,
+    column::CRITICAL1,
+    column::CRITICAL2,
+    column::CRITICAL3,
+    column::CRITICAL4,
 ];
 
 pub(crate) const CRITICAL_LABEL_ATTRS: [Tag; 4] =
@@ -125,13 +117,13 @@ pub(crate) fn get_system_time() -> Result<Vec<u8>> {
 }
 
 pub(crate) fn add_owner_info(calling_info: &CallingInfo, db_data: &mut DbMap) {
-    db_data.insert(COLUMN_OWNER, Value::Bytes(calling_info.owner_info().clone()));
-    db_data.insert(COLUMN_OWNER_TYPE, Value::Number(calling_info.owner_type()));
+    db_data.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
+    db_data.insert(column::OWNER_TYPE, Value::Number(calling_info.owner_type()));
 }
 
 pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<SecretKey> {
-    let auth_type = attrs.get_enum_attr::<AuthType>(&COLUMN_AUTH_TYPE)?;
-    let access_type = attrs.get_enum_attr::<Accessibility>(&COLUMN_ACCESSIBILITY)?;
+    let auth_type = attrs.get_enum_attr::<AuthType>(&column::AUTH_TYPE)?;
+    let access_type = attrs.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
     Ok(SecretKey::new(calling.user_id(), &sha256(calling.owner_info()), auth_type, access_type))
 }
 

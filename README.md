@@ -61,9 +61,6 @@ hdc shell chmod 777 ./data/asset_ndk_test
 hdc shell "./data/asset_ndk_test --gtest_output=xml:/data/"
 ```
 
-# 单线程运行测试用例
-执行的时候 在后面加 --test-threads=1
-
 ## 工具汇总
 ```bash
 # 格式化BUILD.gn文件, 在asset目录下执行
@@ -74,7 +71,7 @@ hdc shell
 find -name com.huawei.hmsapp.samplemanagement | xargs rm -rf
 ```
 
-### WIKI汇总
+## WIKI汇总
 **BUILD.gn规范：**https://gitee.com/openharmony/docs/blob/master/zh-cn/device-dev/subsystems/subsys-build-component-building-rules.md
 **日志打印规范：**https://gitee.com/openharmony/docs/blob/master/zh-cn/contribute/OpenHarmony-Log-guide.md
 **可靠性设计和编码规范：**https://w3.huawei.com/ipd/tsl/#!tsl_new/standard/standard.html?standardId=152795

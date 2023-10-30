@@ -16,10 +16,10 @@
 #ifndef ASSET_REMOVE_TEST_H
 #define ASSET_REMOVE_TEST_H
 
-namespace Unittest::AttestRemoveTest {
-int AttestRemoveTest001(void);
-int AttestRemoveTest002(void);
-int AttestRemoveTest003(void);
+namespace UnitTest::AssetRemoveTest {
+int AssetRemoveTest001(void);
+int AssetRemoveTest002(void);
+int AssetRemoveTest003(void);
 }
 
 #endif // ASSET_REMOVE_TEST_H

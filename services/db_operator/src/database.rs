@@ -24,7 +24,7 @@ use crate::{
     statement::Statement,
     table::Table,
     types::{
-        from_data_type_to_str, ColumnInfo, Sqlite3Callback, Sqlite3ErrMsg, SqliteErrCode, DATABASE_ERROR, SQLITE_DONE,
+        from_data_type_to_str, ColumnInfo, Sqlite3Callback, Sqlite3ErrMsg, SqliteErrCode, SQLITE_DONE, SQLITE_ERROR,
         SQLITE_OK, SQLITE_ROW,
     },
 };
@@ -98,7 +98,7 @@ pub fn default_update_database_func(db: &Database, old_ver: u32, new_ver: u32) -
     }
     if new_ver < old_ver {
         asset_log::loge!("database version rollback is not supported!");
-        return DATABASE_ERROR;
+        return SQLITE_ERROR;
     }
     SQLITE_OK
 }
@@ -360,7 +360,7 @@ impl<'a> Database<'a> {
         if !msg.is_null() {
             self.print_err_msg(msg);
             unsafe { SqliteFree(msg as _) };
-            return DATABASE_ERROR;
+            return SQLITE_ERROR;
         }
         ret
     }

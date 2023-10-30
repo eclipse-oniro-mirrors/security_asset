@@ -13,13 +13,11 @@
 
 import("//build/ohos.gni")
 
-COMPONENT_DIR = "//base/security/asset"
-
 ohos_rust_static_library("asset_ipc") {
   sources = [ "src/lib.rs" ]
   deps = [
-    "$COMPONENT_DIR/frameworks/definition:asset_definition",
-    "$COMPONENT_DIR/frameworks/os_dependency/log:asset_log",
+    "../definition:asset_definition",
+    "../os_dependency/log:asset_log",
   ]
   external_deps = [ "ipc:ipc_rust" ]
 

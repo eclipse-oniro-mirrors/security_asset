@@ -26,7 +26,7 @@ use crate::{
     statement::Statement,
     types::{
         from_data_type_to_str, from_data_value_to_str_value, ColumnInfo, Condition, DbMap, QueryOptions, ResultSet,
-        SqliteErrCode, DATABASE_ERROR, SQLITE_DONE, SQLITE_OK, SQLITE_ROW,
+        SqliteErrCode, SQLITE_DONE, SQLITE_ERROR, SQLITE_OK, SQLITE_ROW,
     },
 };
 
@@ -383,10 +383,10 @@ impl<'a> Table<'a> {
     /// );
     pub fn add_new_column(&self, column: ColumnInfo, default_value: Option<Value>) -> SqliteErrCode {
         if column.is_primary_key {
-            return DATABASE_ERROR;
+            return SQLITE_ERROR;
         }
         if column.not_null && default_value.is_none() {
-            return DATABASE_ERROR;
+            return SQLITE_ERROR;
         }
         let data_type = from_data_type_to_str(&column.data_type);
         let mut sql = format!("ALTER TABLE {} ADD COLUMN {} {}", self.table_name, column.name, data_type);

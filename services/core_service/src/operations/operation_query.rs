@@ -19,8 +19,8 @@ use std::cmp::Ordering;
 
 use asset_crypto_manager::crypto::{Crypto, CryptoManager};
 use asset_db_operator::{
-    database_table_helper::{DatabaseHelper, COLUMN_AUTH_TYPE, COLUMN_SECRET},
-    types::{DbMap, QueryOptions},
+    database_table_helper::DatabaseHelper,
+    types::{column, DbMap, QueryOptions},
 };
 use asset_definition::{AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value};
 use asset_log::{loge, logi};
@@ -38,21 +38,21 @@ fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
 }
 
 fn decrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
-    let secret = db_data.get_bytes_attr(&COLUMN_SECRET)?;
+    let secret = db_data.get_bytes_attr(&column::SECRET)?;
     let secret_key = common::build_secret_key(calling_info, db_data)?;
     let secret = Crypto::decrypt(&secret_key, secret, &common::build_aad(db_data))?;
-    db_data.insert(COLUMN_SECRET, Value::Bytes(secret));
+    db_data.insert(column::SECRET, Value::Bytes(secret));
     Ok(())
 }
 
 fn exec_crypto(calling: &CallingInfo, db_data: &mut DbMap, challenge: &Vec<u8>, auth_token: &Vec<u8>) -> Result<()> {
-    let secret = db_data.get_bytes_attr(&COLUMN_SECRET)?;
+    let secret = db_data.get_bytes_attr(&column::SECRET)?;
     let crypto_manager = CryptoManager::get_instance();
     let secret_key = common::build_secret_key(calling, db_data)?;
     let x = match crypto_manager.lock().unwrap().find(&secret_key, challenge) {
         Some(crypto) => {
             let secret = crypto.exec_crypto(secret, &common::build_aad(db_data), auth_token)?;
-            db_data.insert(COLUMN_SECRET, Value::Bytes(secret));
+            db_data.insert(column::SECRET, Value::Bytes(secret));
             Ok(())
         },
         None => return Err(ErrCode::CryptoError),
@@ -69,7 +69,7 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
             Err(ErrCode::NotFound)
         },
         1 => {
-            match results[0].get(COLUMN_AUTH_TYPE) {
+            match results[0].get(column::AUTH_TYPE) {
                 Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
                     common::check_required_tags(query, &SEC_QUERY_OPTIONAL_ATTRS)?;
                     let challenge = query.get_bytes_attr(&Tag::AuthChallenge)?;
@@ -125,7 +125,7 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
     }
 
     for data in &mut results {
-        data.remove(&COLUMN_SECRET);
+        data.remove(&column::SECRET);
     }
 
     into_asset_maps(&results)

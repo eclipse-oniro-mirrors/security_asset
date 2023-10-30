@@ -1,24 +1,26 @@
-//!
-//! Copyright (C) 2023 Huawei Device Co., Ltd.
-//! Licensed under the Apache License, Version 2.0 (the "License");
-//! you may not use this file except in compliance with the License.
-//! You may obtain a copy of the License at
-//!
-//! http://www.apache.org/licenses/LICENSE-2.0
-//!
-//! Unless required by applicable law or agreed to in writing, software
-//! distributed under the License is distributed on an "AS IS" BASIS,
-//! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//! See the License for the specific language governing permissions and
-//! limitations under the License.
-//!
+/*
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 use core::panic;
 
 use asset_db_operator::{
     database::*,
-    database_table_helper::{ASSET_TABLE_NAME, COLUMN_ALIAS, COLUMN_OWNER},
     statement::Statement,
-    types::{from_data_value_to_str_value, ColumnInfo, DbMap, SQLITE_DONE, SQLITE_OK, SQLITE_ROW},
+    types::{
+        column, from_data_value_to_str_value, ColumnInfo, DbMap, ASSET_TABLE_NAME, SQLITE_DONE, SQLITE_OK, SQLITE_ROW,
+    },
 };
 use asset_definition::{DataType, Value};
 
@@ -167,7 +169,7 @@ pub fn test_update_row() {
 
     let ret = table.update_row(&conditions, &datas).unwrap();
     assert_eq!(ret, 1);
-    let ret = table.update_row_column(&conditions, COLUMN_ALIAS, Value::Bytes(b"test_update1".to_vec())).unwrap();
+    let ret = table.update_row_column(&conditions, column::ALIAS, Value::Bytes(b"test_update1".to_vec())).unwrap();
     assert_eq!(ret, 1);
     let stmt = Statement::<true>::prepare("select * from table_test where id=2", &db).unwrap();
     let ret = stmt.step();
@@ -301,8 +303,8 @@ pub fn test_insert_datas() {
 
     let dataset = DbMap::from([
         ("value", Value::Bytes(b"value".to_vec())),
-        (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-        (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
+        (column::OWNER, Value::Bytes(b"owner1".to_vec())),
+        (column::ALIAS, Value::Bytes(b"alias1".to_vec())),
     ]);
 
     let count = db.insert_datas(&dataset).unwrap();
@@ -391,8 +393,8 @@ pub fn test_delete_datas() {
     };
     let dataset = DbMap::from([
         ("value", Value::Bytes(b"value".to_vec())),
-        (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-        (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
+        (column::OWNER, Value::Bytes(b"owner1".to_vec())),
+        (column::ALIAS, Value::Bytes(b"alias1".to_vec())),
     ]);
 
     let count = db.insert_datas(&dataset).unwrap();
@@ -400,8 +402,8 @@ pub fn test_delete_datas() {
 
     let cond = DbMap::from([
         ("value", Value::Bytes(b"value".to_vec())),
-        (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-        (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
+        (column::OWNER, Value::Bytes(b"owner1".to_vec())),
+        (column::ALIAS, Value::Bytes(b"alias1".to_vec())),
     ]);
 
     let count = db.delete_datas(&cond).unwrap();
@@ -413,8 +415,8 @@ pub fn test_delete_datas() {
     assert_eq!(count, 0); // can not delete any data because no data
     let count = db
         .delete_datas(&DbMap::from([
-            (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-            (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
+            (column::OWNER, Value::Bytes(b"owner1".to_vec())),
+            (column::ALIAS, Value::Bytes(b"alias1".to_vec())),
         ]))
         .unwrap();
     assert_eq!(count, 0); // can not delete any data because no data
@@ -655,20 +657,20 @@ pub fn test_data_exists_and_data_count() {
     // query
     let exist = db
         .is_data_exists(&DbMap::from([
-            (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-            (COLUMN_ALIAS, Value::Bytes(b"alias1".to_vec())),
+            (column::OWNER, Value::Bytes(b"owner1".to_vec())),
+            (column::ALIAS, Value::Bytes(b"alias1".to_vec())),
         ]))
         .unwrap();
     assert!(exist);
 
     let exist = db
         .is_data_exists(&DbMap::from([
-            (COLUMN_OWNER, Value::Bytes(b"owner1".to_vec())),
-            (COLUMN_ALIAS, Value::Bytes(b"alias2".to_vec())),
+            (column::OWNER, Value::Bytes(b"owner1".to_vec())),
+            (column::ALIAS, Value::Bytes(b"alias2".to_vec())),
         ]))
         .unwrap();
     assert!(!exist);
 
-    let count = db.select_count(&DbMap::from([(COLUMN_OWNER, Value::Bytes(b"owner2".to_vec()))])).unwrap();
+    let count = db.select_count(&DbMap::from([(column::OWNER, Value::Bytes(b"owner2".to_vec()))])).unwrap();
     assert_eq!(count, 2);
 }

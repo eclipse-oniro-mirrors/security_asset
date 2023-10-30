@@ -25,6 +25,8 @@
 extern "C" {
 #endif
 
+#define ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
+
 int32_t RemoveByAlias(const char *alias);
 int32_t QueryByAlias(const char *alias, Asset_ResultSet *resultSet);
 bool CompareBlob(const Asset_Blob *blob1, const Asset_Blob *blob2);

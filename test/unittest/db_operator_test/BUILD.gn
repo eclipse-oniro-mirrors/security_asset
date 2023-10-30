@@ -14,16 +14,14 @@
 import("//build/ohos.gni")
 import("//build/test.gni")
 
-COMPONENT_DIR = "//base/security/asset"
-
 module_output_path = "asset/asset_UT_test"
 
 ohos_rust_unittest("db_operator_test") {
   module_out_path = module_output_path
   sources = [ "src/lib.rs" ]
   deps = [
-    "$COMPONENT_DIR/frameworks/definition:asset_definition",
-    "$COMPONENT_DIR/services/db_operator:asset_db_operator",
+    "../../../frameworks/definition:asset_definition",
+    "../../../services/db_operator:asset_db_operator",
   ]
   subsystem_name = "security"
   part_name = "asset"

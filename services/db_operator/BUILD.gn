@@ -12,8 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//build/test.gni")
-COMPONENT_DIR = "//base/security/asset"
 
 ohos_rust_static_library("asset_db_operator") {
   sources = [
@@ -27,8 +25,8 @@ ohos_rust_static_library("asset_db_operator") {
   ]
   deps = [
     ":asset_sqlite3_wrapper",
-    "$COMPONENT_DIR/frameworks/definition:asset_definition",
-    "$COMPONENT_DIR/frameworks/os_dependency/log:asset_log",
+    "../../frameworks/definition:asset_definition",
+    "../../frameworks/os_dependency/log:asset_log",
   ]
 
   crate_name = "asset_db_operator"

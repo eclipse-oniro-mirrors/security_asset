@@ -64,7 +64,8 @@ bool GetProcessInfo(uint32_t tokenId, uint64_t uid, std::string &info)
 }
 } // namespace
 
-bool GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen) {
+bool GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen)
+{
     if (ownerType == NULL || ownerInfo == NULL || infoLen == NULL) {
         return false;
     }

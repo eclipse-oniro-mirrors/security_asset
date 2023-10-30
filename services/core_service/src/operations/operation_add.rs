@@ -18,12 +18,8 @@
 use asset_crypto_manager::crypto::{Crypto, SecretKey};
 use asset_db_operator::{
     database::Database,
-    database_table_helper::{
-        do_transaction, DatabaseHelper, COLUMN_ACCESSIBILITY, COLUMN_ALIAS, COLUMN_AUTH_TYPE, COLUMN_CREATE_TIME,
-        COLUMN_DELETE_TYPE, COLUMN_OWNER, COLUMN_OWNER_TYPE, COLUMN_REQUIRE_PASSWORD_SET, COLUMN_SECRET,
-        COLUMN_SYNC_TYPE, COLUMN_UPDATE_TIME, COLUMN_VERSION, DB_DATA_VERSION,
-    },
-    types::DbMap,
+    database_table_helper::{do_transaction, DatabaseHelper},
+    types::{column, DbMap, DB_DATA_VERSION},
 };
 use asset_definition::{
     Accessibility, AssetMap, AuthType, ConflictResolution, DeleteType, ErrCode, Extension, Result, SyncType, Tag, Value,
@@ -55,9 +51,9 @@ fn encrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     let secret_key = common::build_secret_key(calling_info, db_data)?;
     generate_key_if_needed(&secret_key)?;
 
-    let secret = db_data.get_bytes_attr(&COLUMN_SECRET)?;
+    let secret = db_data.get_bytes_attr(&column::SECRET)?;
     let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data))?;
-    db_data.insert(COLUMN_SECRET, Value::Bytes(cipher));
+    db_data.insert(column::SECRET, Value::Bytes(cipher));
     Ok(())
 }
 
@@ -97,28 +93,28 @@ fn resolve_conflict(calling_info: &CallingInfo, attrs: &AssetMap, query: &DbMap,
 fn get_query_condition(calling_info: &CallingInfo, attrs: &AssetMap) -> Result<DbMap> {
     let alias = attrs.get_bytes_attr(&Tag::Alias)?;
     let mut query = DbMap::new();
-    query.insert(COLUMN_ALIAS, Value::Bytes(alias.clone()));
-    query.insert(COLUMN_OWNER, Value::Bytes(calling_info.owner_info().clone()));
-    query.insert(COLUMN_OWNER_TYPE, Value::Number(calling_info.owner_type()));
+    query.insert(column::ALIAS, Value::Bytes(alias.clone()));
+    query.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
+    query.insert(column::OWNER_TYPE, Value::Number(calling_info.owner_type()));
     Ok(query)
 }
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
-    db_data.insert(COLUMN_VERSION, Value::Number(DB_DATA_VERSION));
+    db_data.insert(column::VERSION, Value::Number(DB_DATA_VERSION));
 
     let time = common::get_system_time()?;
-    db_data.insert(COLUMN_CREATE_TIME, Value::Bytes(time.clone()));
-    db_data.insert(COLUMN_UPDATE_TIME, Value::Bytes(time));
+    db_data.insert(column::CREATE_TIME, Value::Bytes(time.clone()));
+    db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     Ok(())
 }
 
 fn add_default_attrs(db_data: &mut DbMap) {
-    db_data.entry(COLUMN_ACCESSIBILITY).or_insert(Value::Number(Accessibility::DeviceFirstUnlock as u32));
-    db_data.entry(COLUMN_AUTH_TYPE).or_insert(Value::Number(AuthType::None as u32));
-    db_data.entry(COLUMN_SYNC_TYPE).or_insert(Value::Number(SyncType::Never as u32));
-    db_data.entry(COLUMN_REQUIRE_PASSWORD_SET).or_insert(Value::Bool(false));
+    db_data.entry(column::ACCESSIBILITY).or_insert(Value::Number(Accessibility::DeviceFirstUnlock as u32));
+    db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::None as u32));
+    db_data.entry(column::SYNC_TYPE).or_insert(Value::Number(SyncType::Never as u32));
+    db_data.entry(column::REQUIRE_PASSWORD_SET).or_insert(Value::Bool(false));
     let delete_type = DeleteType::WhenUserRemoved as u32 | DeleteType::WhenPackageRemoved as u32;
-    db_data.entry(COLUMN_DELETE_TYPE).or_insert(Value::Number(delete_type));
+    db_data.entry(column::DELETE_TYPE).or_insert(Value::Number(delete_type));
 }
 
 const REQUIRED_ATTRS: [Tag; 2] = [Tag::Secret, Tag::Alias];

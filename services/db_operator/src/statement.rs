@@ -24,7 +24,7 @@ use asset_log::loge;
 
 use crate::{
     database::Database,
-    types::{Sqlite3Callback, SqliteErrCode, DATABASE_ERROR, SQLITE_OK},
+    types::{Sqlite3Callback, SqliteErrCode, SQLITE_ERROR, SQLITE_OK},
 };
 
 type BindCallback = extern "C" fn(p: *mut c_void);
@@ -141,10 +141,10 @@ impl<'b> Statement<'b, true> {
                 return Ok(rn);
             } else {
                 loge!("asset column name error");
-                return Err(DATABASE_ERROR);
+                return Err(SQLITE_ERROR);
             }
         }
-        Err(DATABASE_ERROR)
+        Err(SQLITE_ERROR)
     }
 
     /// data count
@@ -184,7 +184,7 @@ impl<'b> Statement<'b, true> {
                 }
             },
             SQLITE_NULL => None,
-            _ => return Err(DATABASE_ERROR),
+            _ => return Err(SQLITE_ERROR),
         };
         Ok(data)
     }

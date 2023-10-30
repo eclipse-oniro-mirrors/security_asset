@@ -13,8 +13,6 @@
 
 import("//build/ohos.gni")
 
-COMPONENT_DIR = "//base/security/asset"
-
 ohos_shared_library("asset_napi") {
   include_dirs = [ "inc" ]
   sources = [
@@ -23,8 +21,8 @@ ohos_shared_library("asset_napi") {
   ]
 
   deps = [
-    "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem",
-    "$COMPONENT_DIR/interfaces/kits/c:asset_ndk",
+    "../../../interfaces/kits/c:asset_ndk",
+    "../../os_dependency/memory:asset_mem",
   ]
 
   external_deps = [

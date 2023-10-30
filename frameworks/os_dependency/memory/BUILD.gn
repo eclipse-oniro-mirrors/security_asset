@@ -13,12 +13,10 @@
 
 import("//build/ohos.gni")
 
-COMPONENT_DIR = "//base/security/asset"
-
 config("asset_mem_config") {
   include_dirs = [
     "inc",
-    "$COMPONENT_DIR/frameworks/os_dependency/log/inc",
+    "../log/inc",
   ]
 }
 

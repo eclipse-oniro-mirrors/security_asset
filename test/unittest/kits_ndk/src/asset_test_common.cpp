@@ -15,8 +15,8 @@
 
 #include "asset_test_common.h"
 
+#include <string>
 #include <gtest/gtest.h>
-#include <string.h>
 
 #include "asset_api.h"
 
@@ -31,7 +31,7 @@ int32_t RemoveByAlias(const char *alias)
             }
         }
     };
-    return OH_Asset_Remove(attr, sizeof(attr) / sizeof(attr[0]));
+    return OH_Asset_Remove(attr, ARRAY_SIZE(attr));
 }
 
 int32_t QueryByAlias(const char *alias, Asset_ResultSet *resultSet)
@@ -48,7 +48,7 @@ int32_t QueryByAlias(const char *alias, Asset_ResultSet *resultSet)
             .value.u32 = ASSET_RETURN_ALL
         }
     };
-    return OH_Asset_Query(attr, sizeof(attr) / sizeof(attr[0]), resultSet);
+    return OH_Asset_Query(attr, ARRAY_SIZE(attr), resultSet);
 }
 
 bool CompareBlob(const Asset_Blob *blob1, const Asset_Blob *blob2)

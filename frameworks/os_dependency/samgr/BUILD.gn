@@ -13,11 +13,9 @@
 
 import("//build/ohos.gni")
 
-COMPONENT_DIR = "//base/security/asset"
-
 ohos_static_library("asset_samgr") {
   sources = [ "src/samgr_wrapper.cpp" ]
-  include_dirs = [ "$COMPONENT_DIR/frameworks/os_dependency/log/inc" ]
+  include_dirs = [ "../log/inc" ]
   external_deps = [
     "hilog:libhilog",
     "ipc:ipc_core",

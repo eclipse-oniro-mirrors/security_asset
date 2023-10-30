@@ -16,7 +16,7 @@
 #ifndef ASSET_QUERY_TEST_H
 #define ASSET_QUERY_TEST_H
 
-namespace Unittest::AssetQueryTest {
+namespace UnitTest::AssetQueryTest {
 int AssetQueryTest001(void);
 int AssetQueryTest002(void);
 int AssetQueryTest003(void);

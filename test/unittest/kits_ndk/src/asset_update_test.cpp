@@ -15,23 +15,23 @@
 
 #include "asset_update_test.h"
 
+#include <string>
 #include <gtest/gtest.h>
-#include <string.h>
 
 #include "asset_api.h"
 #include "asset_test_common.h"
 
 using namespace testing::ext;
-namespace Unittest::AssetUpdateTest {
+namespace UnitTest::AssetUpdateTest {
 class AssetUpdateTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
 
     static void TearDownTestCase(void);
 
-    void SetUp();
+    void SetUp(void);
 
-    void TearDown();
+    void TearDown(void);
 };
 
 void AssetUpdateTest::SetUpTestCase(void)
@@ -42,11 +42,11 @@ void AssetUpdateTest::TearDownTestCase(void)
 {
 }
 
-void AssetUpdateTest::SetUp()
+void AssetUpdateTest::SetUp(void)
 {
 }
 
-void AssetUpdateTest::TearDown()
+void AssetUpdateTest::TearDown(void)
 {
 }
 
@@ -59,34 +59,25 @@ void AssetUpdateTest::TearDown()
 HWTEST_F(AssetUpdateTest, AssetUpdateTest001, TestSize.Level0)
 {
     Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
-    Asset_Attr add_attr[] = {
-        {
-            .tag = ASSET_TAG_ALIAS,
-            .value.blob = funcName
-        }, {
-            .tag = ASSET_TAG_SECRET,
-            .value.blob = funcName
-        }
+    Asset_Attr addAttr[] = {
+        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = ASSET_TAG_SECRET, .value.blob = funcName }
     };
-    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(add_attr, sizeof(add_attr) / sizeof(add_attr[0])));
+    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(addAttr, ARRAY_SIZE(addAttr)));
 
-    Asset_Attr query_attr[] = {
-        {
-            .tag = ASSET_TAG_ALIAS,
-            .value.blob = funcName
-        }
+    Asset_Attr queryAttr[] = {
+        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName }
     };
-    const char *secret_new = "secret_new";
-    Asset_Attr update_attr[] = {
+    const char *secretNew = "secret_new";
+    Asset_Attr updateAttr[] = {
         {
             .tag = ASSET_TAG_SECRET,
             .value.blob = {
-                .size = strlen(secret_new), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(secret_new))
+                .size = strlen(secretNew), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(secretNew))
             }
         }
     };
-    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Update(query_attr, sizeof(query_attr) / sizeof(query_attr[0]),
-        update_attr, sizeof(update_attr) / sizeof(update_attr[0])));
+    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Update(queryAttr, ARRAY_SIZE(queryAttr), updateAttr, ARRAY_SIZE(updateAttr)));
 
     ASSERT_EQ(ASSET_SUCCESS, RemoveByAlias(__func__));
 }
@@ -100,14 +91,10 @@ HWTEST_F(AssetUpdateTest, AssetUpdateTest001, TestSize.Level0)
 HWTEST_F(AssetUpdateTest, AssetUpdateTest002, TestSize.Level0)
 {
     Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
-    Asset_Attr query_attr[] = {
-        {
-            .tag = ASSET_TAG_ALIAS,
-            .value.blob = funcName
-        }
+    Asset_Attr queryAttr[] = {
+        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName }
     };
-    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Update(query_attr, sizeof(query_attr) / sizeof(query_attr[0]),
-        nullptr, 0));
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Update(queryAttr, ARRAY_SIZE(queryAttr), nullptr, 0));
 }
 
 /**
@@ -119,14 +106,10 @@ HWTEST_F(AssetUpdateTest, AssetUpdateTest002, TestSize.Level0)
 HWTEST_F(AssetUpdateTest, AssetUpdateTest003, TestSize.Level0)
 {
     Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
-    Asset_Attr update_attr[] = {
-        {
-            .tag = ASSET_TAG_SECRET,
-            .value.blob = funcName
-        }
+    Asset_Attr updateAttr[] = {
+        { .tag = ASSET_TAG_SECRET, .value.blob = funcName }
     };
-    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Update(nullptr, 0,
-        update_attr, sizeof(update_attr) / sizeof(update_attr[0])));
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Update(nullptr, 0, updateAttr, ARRAY_SIZE(updateAttr)));
 }
 
 /**
@@ -138,22 +121,18 @@ HWTEST_F(AssetUpdateTest, AssetUpdateTest003, TestSize.Level0)
 HWTEST_F(AssetUpdateTest, AssetUpdateTest004, TestSize.Level0)
 {
     Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
-    Asset_Attr query_attr[] = {
-        {
-            .tag = ASSET_TAG_ALIAS,
-            .value.blob = funcName
-        }
+    Asset_Attr queryAttr[] = {
+        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName }
     };
-    const char *secret_new = "secret_new";
-    Asset_Attr update_attr[] = {
+    const char *secretNew = "secret_new";
+    Asset_Attr updateAttr[] = {
         {
             .tag = ASSET_TAG_SECRET,
             .value.blob = {
-                .size = strlen(secret_new), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(secret_new))
+                .size = strlen(secretNew), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(secretNew))
             }
         }
     };
-    ASSERT_EQ(ASSET_NOT_FOUND, OH_Asset_Update(query_attr, sizeof(query_attr) / sizeof(query_attr[0]),
-        update_attr, sizeof(update_attr) / sizeof(update_attr[0])));
+    ASSERT_EQ(ASSET_NOT_FOUND, OH_Asset_Update(queryAttr, ARRAY_SIZE(queryAttr), updateAttr, ARRAY_SIZE(updateAttr)));
 }
 }

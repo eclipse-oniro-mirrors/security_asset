@@ -29,7 +29,7 @@ extern "C" {
 }
 
 namespace {
-const char *APP_ID = "appId";
+const char * const APP_ID = "appId";
 void OnPackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp)
 {
     int userId = want.GetIntParam(OHOS::AppExecFwk::Constants::USER_ID, -1);

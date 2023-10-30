@@ -13,15 +13,13 @@
 
 import("//build/ohos.gni")
 
-COMPONENT_DIR = "//base/security/asset"
-
 ohos_rust_shared_library("asset_sdk") {
   sources = [ "src/lib.rs" ]
   deps = [
-    "$COMPONENT_DIR/frameworks/definition:asset_definition",
-    "$COMPONENT_DIR/frameworks/ipc:asset_ipc",
-    "$COMPONENT_DIR/frameworks/os_dependency/log:asset_log",
-    "$COMPONENT_DIR/frameworks/os_dependency/samgr:asset_samgr",
+    "../../../frameworks/definition:asset_definition",
+    "../../../frameworks/ipc:asset_ipc",
+    "../../../frameworks/os_dependency/log:asset_log",
+    "../../../frameworks/os_dependency/samgr:asset_samgr",
   ]
 
   external_deps = [

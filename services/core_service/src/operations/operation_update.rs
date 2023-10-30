@@ -17,8 +17,8 @@
 
 use asset_crypto_manager::crypto::Crypto;
 use asset_db_operator::{
-    database_table_helper::{DatabaseHelper, COLUMN_SECRET, COLUMN_UPDATE_TIME},
-    types::DbMap,
+    database_table_helper::DatabaseHelper,
+    types::{column, DbMap},
 };
 use asset_definition::{AssetMap, ErrCode, Extension, Result, Tag, Value};
 use asset_log::{loge, logi};
@@ -27,14 +27,14 @@ use crate::{calling_info::CallingInfo, operations::common};
 
 fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
     let secret_key = common::build_secret_key(calling_info, db_data)?;
-    let secret = db_data.get_bytes_attr(&COLUMN_SECRET)?;
+    let secret = db_data.get_bytes_attr(&column::SECRET)?;
     let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data))?;
     Ok(cipher)
 }
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     let time = common::get_system_time()?;
-    db_data.insert(COLUMN_UPDATE_TIME, Value::Bytes(time));
+    db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     Ok(())
 }
 
@@ -78,9 +78,9 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
         }
 
         let result = results.get_mut(0).unwrap();
-        result.insert(COLUMN_SECRET, update[&Tag::Secret].clone());
+        result.insert(column::SECRET, update[&Tag::Secret].clone());
         let cipher = encrypt(calling_info, result)?;
-        update_db_data.insert(COLUMN_SECRET, Value::Bytes(cipher));
+        update_db_data.insert(column::SECRET, Value::Bytes(cipher));
     }
 
     // call sql to update

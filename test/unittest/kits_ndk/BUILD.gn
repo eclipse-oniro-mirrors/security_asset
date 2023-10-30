@@ -14,8 +14,6 @@
 import("//build/ohos.gni")
 import("//build/test.gni")
 
-COMPONENT_DIR = "//base/security/asset"
-
 module_output_path = "asset/asset_UT_test"
 
 ohos_unittest("asset_ndk_test") {
@@ -28,5 +26,5 @@ ohos_unittest("asset_ndk_test") {
     "src/asset_test_common.cpp",
     "src/asset_update_test.cpp",
   ]
-  deps = [ "$COMPONENT_DIR/interfaces/kits/c:asset_ndk" ]
+  deps = [ "../../../interfaces/kits/c:asset_ndk" ]
 }

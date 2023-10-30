@@ -15,23 +15,23 @@
 
 #include "asset_operation_test.h"
 
+#include <string>
 #include <gtest/gtest.h>
-#include <string.h>
 
 #include "asset_api.h"
 #include "asset_test_common.h"
 
 using namespace testing::ext;
-namespace Unittest::AssetOperationTest {
+namespace UnitTest::AssetOperationTest {
 class AssetOperationTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
 
     static void TearDownTestCase(void);
 
-    void SetUp();
+    void SetUp(void);
 
-    void TearDown();
+    void TearDown(void);
 };
 
 void AssetOperationTest::SetUpTestCase(void)
@@ -42,11 +42,11 @@ void AssetOperationTest::TearDownTestCase(void)
 {
 }
 
-void AssetOperationTest::SetUp()
+void AssetOperationTest::SetUp(void)
 {
 }
 
-void AssetOperationTest::TearDown()
+void AssetOperationTest::TearDown(void)
 {
 }
 

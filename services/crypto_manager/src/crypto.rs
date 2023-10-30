@@ -91,7 +91,7 @@ impl SecretKey {
         let key_data = ConstCryptoBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
 
         let _ = IdentityGuard::build()?;
-	let need_user_auth = self.need_user_auth();
+        let need_user_auth = self.need_user_auth();
         let ret = unsafe { GenerateKey(&key_data as *const ConstCryptoBlob, need_user_auth) };
         match ret {
             HKS_SUCCESS => Ok(()),

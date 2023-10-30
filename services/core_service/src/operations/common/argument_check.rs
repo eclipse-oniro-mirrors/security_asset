@@ -41,7 +41,7 @@ const DELETE_TYPE_MAX_BITS: u32 = 2;
 
 fn check_data_type(tag: &Tag, value: &Value) -> Result<()> {
     if tag.data_type() != value.data_type() {
-        loge!("[FATAL]The data type of the tag[{}] does not match that of the value.", tag);
+        loge!("[FATAL]The data type[{}] of the tag[{}] does not match that of the value.", value.data_type(), tag);
         return Err(ErrCode::InvalidArgument);
     }
     Ok(())
@@ -63,7 +63,7 @@ fn check_enum_variant<T: TryFrom<u32>>(tag: &Tag, value: &Value) -> Result<()> {
         return Err(ErrCode::InvalidArgument);
     };
     if T::try_from(*n).is_err() {
-        loge!("[FATAL]The value of Tag[{}] is not a legal enumeration variant", tag);
+        loge!("[FATAL]The value[{}] of Tag[{}] is not a legal enumeration variant", *n, tag);
         return Err(ErrCode::InvalidArgument);
     }
     Ok(())

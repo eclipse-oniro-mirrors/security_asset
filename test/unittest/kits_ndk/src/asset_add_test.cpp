@@ -21,16 +21,16 @@
 #include "asset_test_common.h"
 
 using namespace testing::ext;
-namespace Unittest::AssetAddTest {
+namespace UnitTest::AssetAddTest {
 class AssetAddTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
 
     static void TearDownTestCase(void);
 
-    void SetUp();
+    void SetUp(void);
 
-    void TearDown();
+    void TearDown(void);
 };
 
 void AssetAddTest::SetUpTestCase(void)
@@ -41,11 +41,11 @@ void AssetAddTest::TearDownTestCase(void)
 {
 }
 
-void AssetAddTest::SetUp()
+void AssetAddTest::SetUp(void)
 {
 }
 
-void AssetAddTest::TearDown()
+void AssetAddTest::TearDown(void)
 {
 }
 
@@ -55,7 +55,7 @@ bool checkMatchAttrResult(const Asset_Attr *attrs, uint32_t attrCnt, const Asset
         if (attrs[i].tag == ASSET_TAG_CONFLICT_RESOLUTION) {
             continue;
         }
-        Asset_Attr *res = OH_Asset_ParseAttr(result, (Asset_Tag)attrs[i].tag);
+        Asset_Attr *res = OH_Asset_ParseAttr(result, static_cast<Asset_Tag>(attrs[i].tag));
         if (res == nullptr) {
             return false;
         }
@@ -111,13 +111,13 @@ HWTEST_F(AssetAddTest, AssetAddTest001, TestSize.Level0)
         { .tag = ASSET_TAG_DATA_LABLE_CRITICAL_3, .value.blob = funcName },
         { .tag = ASSET_TAG_DATA_LABLE_CRITICAL_4, .value.blob = funcName }
     };
-    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(attr, sizeof(attr) / sizeof(attr[0])));
+    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
 
     Asset_ResultSet resultSet = { 0 };
     ASSERT_EQ(ASSET_SUCCESS, QueryByAlias(__func__, &resultSet));
     ASSERT_EQ(1, resultSet.count);
     Asset_Result result = resultSet.results[0];
-    ASSERT_EQ(true, checkMatchAttrResult(attr, sizeof(attr) / sizeof(attr[0]), &result));
+    ASSERT_EQ(true, checkMatchAttrResult(attr, ARRAY_SIZE(attr), &result));
 
     OH_Asset_FreeResultSet(&resultSet);
     ASSERT_EQ(ASSET_SUCCESS, RemoveByAlias(__func__));
@@ -142,7 +142,7 @@ HWTEST_F(AssetAddTest, AssetAddTest002, TestSize.Level0)
             .value.blob = secret
         }
     };
-    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Add(attr, sizeof(attr) / sizeof(attr[0])));
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
 }
 
 /**
@@ -162,7 +162,7 @@ HWTEST_F(AssetAddTest, AssetAddTest003, TestSize.Level0)
             .value.boolean = true
         }
     };
-    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Add(attr, sizeof(attr) / sizeof(attr[0])));
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
 }
 
 /**
@@ -187,7 +187,7 @@ HWTEST_F(AssetAddTest, AssetAddTest004, TestSize.Level0)
             .value.boolean = false
         }
     };
-    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Add(attr, sizeof(attr) / sizeof(attr[0])));
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
 }
 
 /**
@@ -212,7 +212,7 @@ HWTEST_F(AssetAddTest, AssetAddTest005, TestSize.Level0)
             .value.blob = secret
         }
     };
-    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Add(attr, sizeof(attr) / sizeof(attr[0])));
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
 }
 
 /**
@@ -233,8 +233,8 @@ HWTEST_F(AssetAddTest, AssetAddTest006, TestSize.Level0)
             .value.blob = funcName
         }
     };
-    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(attr, sizeof(attr) / sizeof(attr[0])));
-    ASSERT_EQ(ASSET_DUPLICATED, OH_Asset_Add(attr, sizeof(attr) / sizeof(attr[0])));
+    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
+    ASSERT_EQ(ASSET_DUPLICATED, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
 
     ASSERT_EQ(ASSET_SUCCESS, RemoveByAlias(__func__));
 }
@@ -271,13 +271,8 @@ HWTEST_F(AssetAddTest, AssetAddTest010, TestSize.Level0)
 {
     Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
     Asset_Attr attr[] = {
-        {
-            .tag = ASSET_TAG_ALIAS,
-            .value.blob = funcName
-        }, {
-            .tag = ASSET_TAG_SECRET,
-            .value.blob = funcName
-        }
+        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = ASSET_TAG_SECRET, .value.blob = funcName }
     };
     ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Add(attr, 0));
 }

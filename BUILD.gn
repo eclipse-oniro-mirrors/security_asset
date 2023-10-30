@@ -13,18 +13,16 @@
 
 import("//build/ohos.gni")
 
-COMPONENT_DIR = "//base/security/asset"
-
 group("asset_component") {
   deps = [
-    "$COMPONENT_DIR/interfaces/inner_api/rs:asset_sdk",
-    "$COMPONENT_DIR/interfaces/kits/c:asset_ndk",
-    "$COMPONENT_DIR/sa_profile:asset_sa_profiles",
-    "$COMPONENT_DIR/services/core_service:asset_service",
+    "interfaces/inner_api/rs:asset_sdk",
+    "interfaces/kits/c:asset_ndk",
+    "sa_profile:asset_sa_profiles",
+    "services/core_service:asset_service",
   ]
 
   if (support_jsapi) {
-    deps += [ "$COMPONENT_DIR/frameworks/js/napi:asset_napi" ]
+    deps += [ "frameworks/js/napi:asset_napi" ]
   }
 }
 
@@ -32,9 +30,9 @@ group("asset_component") {
 group("asset_bin_test") {
   testonly = true
   deps = [
-    "$COMPONENT_DIR/test/unittest/crypto_manager_test:crypto_manager_test",
-    "$COMPONENT_DIR/test/unittest/db_operator_test:db_operator_test",
-    "$COMPONENT_DIR/test/unittest/inner_api_rust:asset_rust_test",
-    "$COMPONENT_DIR/test/unittest/kits_ndk:asset_ndk_test",
+    "test/unittest/crypto_manager_test:crypto_manager_test",
+    "test/unittest/db_operator_test:db_operator_test",
+    "test/unittest/inner_api_rust:asset_rust_test",
+    "test/unittest/kits_ndk:asset_ndk_test",
   ]
 }

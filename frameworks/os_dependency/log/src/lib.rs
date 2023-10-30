@@ -23,7 +23,7 @@ use hilog_rust::hilog;
 pub fn log_func_i(log: &str) {
     let log_label = hilog_rust::HiLogLabel {
         log_type: hilog_rust::LogType::LogCore,
-        domain: 0xD002F70, // security domain
+        domain: 0xD002F70, // Security Domain ID: 0xD002F00 - 0xD002FFF
         tag: "Asset",
     };
     hilog_rust::info!(log_label, "{}", @public(log));
@@ -33,7 +33,7 @@ pub fn log_func_i(log: &str) {
 pub fn log_func_e(log: &str) {
     let log_label = hilog_rust::HiLogLabel {
         log_type: hilog_rust::LogType::LogCore,
-        domain: 0xD002F70, // security domain
+        domain: 0xD002F70, // Security Domain ID: 0xD002F00 - 0xD002FFF
         tag: "Asset",
     };
     hilog_rust::error!(log_label, "{}", @public(log));

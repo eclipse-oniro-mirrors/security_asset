@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 
-#ifndef ASSET_ADD_TEST_H
-#define ASSET_ADD_TEST_H
+#ifndef ASSET_UPDATE_TEST_H
+#define ASSET_UPDATE_TEST_H
 
-namespace Unittest::AssetUpdateTest {
+namespace UnitTest::AssetUpdateTest {
 int AssetUpdateTest001(void);
 int AssetUpdateTest002(void);
 int AssetUpdateTest003(void);
 int AssetUpdateTest004(void);
 }
 
-#endif // ASSET_ADD_TEST_H
+#endif // ASSET_UPDATE_TEST_H

@@ -13,8 +13,6 @@
 
 import("//build/ohos.gni")
 
-COMPONENT_DIR = "//base/security/asset"
-
 ohos_ndk_library("libasset_ndk") {
   output_name = "asset_ndk"
   output_extension = "z.so"
@@ -39,7 +37,7 @@ ohos_shared_library("asset_ndk") {
   sources = [ "src/asset_api.c" ]
   deps = [
     ":asset_sdk_ffi",
-    "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem",
+    "../../../frameworks/os_dependency/memory:asset_mem",
   ]
 
   external_deps = [
@@ -71,9 +69,9 @@ ohos_shared_library("asset_ndk") {
 ohos_rust_shared_ffi("asset_sdk_ffi") {
   sources = [ "src/lib.rs" ]
   deps = [
-    "$COMPONENT_DIR/frameworks/os_dependency/log:asset_log",
-    "$COMPONENT_DIR/frameworks/os_dependency/memory:asset_mem",
-    "$COMPONENT_DIR/interfaces/inner_api/rs:asset_sdk",
+    "../../../frameworks/os_dependency/log:asset_log",
+    "../../../frameworks/os_dependency/memory:asset_mem",
+    "../../inner_api/rs:asset_sdk",
   ]
   crate_name = "asset_sdk_ffi"
   subsystem_name = "security"

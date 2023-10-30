@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-use asset_crypto_manager::huks_ffi::*;
 use asset_crypto_manager::crypto::*;
+use asset_crypto_manager::huks_ffi::*;
 use asset_definition::{Accessibility, AuthType};
 
 pub const AAD_SIZE: u32 = 8;
@@ -165,7 +165,7 @@ fn test_crypto_init() {
                 Err(res) => panic!("test_hukkey_delete fail because generate error = {}", res),
             };
         },
-        _ => panic!("hukskey exist failed")
+        _ => panic!("hukskey exist failed"),
     };
 
     let secret_key2 = SecretKey::new(6, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlock);
@@ -194,7 +194,7 @@ fn test_crypto_exec_crypto() {
                 Err(res) => panic!("test_hukkey_delete fail because generate error = {}", res),
             };
         },
-        _ => panic!("hukskey exist failed")
+        _ => panic!("hukskey exist failed"),
     };
 
     let secret_key2 = SecretKey::new(7, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlock);

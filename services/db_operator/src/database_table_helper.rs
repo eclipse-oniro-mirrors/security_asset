@@ -16,7 +16,7 @@
 //! the interfaces of db_operator public for other module
 //! including transaction and create default db,table
 
-use asset_definition::{DataType, ErrCode, Value};
+use asset_definition::{ErrCode, Value};
 use asset_log::{loge, logi};
 
 use crate::{
@@ -25,88 +25,15 @@ use crate::{
     },
     table::Table,
     transaction::Transaction,
-    types::{ColumnInfo, Condition, DbMap, QueryOptions, ResultSet, SqliteErrCode, SQLITE_DONE, SQLITE_OK},
+    types::{
+        Condition, DbMap, QueryOptions, ResultSet, SqliteErrCode, ASSET_TABLE_NAME, COLUMN_INFO, SQLITE_DONE, SQLITE_OK,
+    },
 };
 
 /// just use database
 pub struct DatabaseHelper;
 /// just use table
 pub type TableHelper<'a> = Table<'a>;
-
-/// default table name
-pub const ASSET_TABLE_NAME: &str = "asset_table";
-/// default column name Id
-pub const COLUMN_ID: &str = "Id";
-/// default column name Secret
-pub const COLUMN_SECRET: &str = "Secret";
-/// default column name Alias
-pub const COLUMN_ALIAS: &str = "Alias";
-/// default column name Owner
-pub const COLUMN_OWNER: &str = "Owner";
-/// default column name OwnerType
-pub const COLUMN_OWNER_TYPE: &str = "OwnerType";
-/// default column name GroupId
-pub const COLUMN_GROUP_ID: &str = "GroupId";
-/// default column name SyncType
-pub const COLUMN_SYNC_TYPE: &str = "SyncType";
-/// default column name Accessibility
-pub const COLUMN_ACCESSIBILITY: &str = "Accessibility";
-/// default column name AuthType
-pub const COLUMN_AUTH_TYPE: &str = "AuthType";
-/// default column name CreateTime
-pub const COLUMN_CREATE_TIME: &str = "CreateTime";
-/// default column name UpdateTime
-pub const COLUMN_UPDATE_TIME: &str = "UpdateTime";
-/// default column name DeleteType
-pub const COLUMN_DELETE_TYPE: &str = "DeleteType";
-/// default column name Version
-pub const COLUMN_VERSION: &str = "Version";
-/// default column name RequirePasswordSet
-pub const COLUMN_REQUIRE_PASSWORD_SET: &str = "RequirePasswordSet";
-/// default column name DataLabelCritical_1
-pub const COLUMN_CRITICAL1: &str = "DataLabelCritical_1";
-/// default column name DataLabelCritical_2
-pub const COLUMN_CRITICAL2: &str = "DataLabelCritical_2";
-/// default column name DataLabelCritical_3
-pub const COLUMN_CRITICAL3: &str = "DataLabelCritical_3";
-/// default column name DataLabelCritical_4
-pub const COLUMN_CRITICAL4: &str = "DataLabelCritical_4";
-/// default column name DataLabelNormal_1
-pub const COLUMN_NORMAL1: &str = "DataLabelNormal_1";
-/// default column name DataLabelNormal_2
-pub const COLUMN_NORMAL2: &str = "DataLabelNormal_2";
-/// default column name DataLabelNormal_3
-pub const COLUMN_NORMAL3: &str = "DataLabelNormal_3";
-/// default column name DataLabelNormal_4
-pub const COLUMN_NORMAL4: &str = "DataLabelNormal_4";
-/// Latest data version number.
-pub const DB_DATA_VERSION: u32 = 1;
-
-/// columns info for default asset_table
-pub const COLUMN_INFO: &[ColumnInfo] = &[
-    ColumnInfo { name: COLUMN_ID, data_type: DataType::Number, is_primary_key: true, not_null: true },
-    ColumnInfo { name: COLUMN_SECRET, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
-    ColumnInfo { name: COLUMN_ALIAS, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
-    ColumnInfo { name: COLUMN_OWNER, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
-    ColumnInfo { name: COLUMN_OWNER_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
-    ColumnInfo { name: COLUMN_GROUP_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
-    ColumnInfo { name: COLUMN_SYNC_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
-    ColumnInfo { name: COLUMN_ACCESSIBILITY, data_type: DataType::Number, is_primary_key: false, not_null: true },
-    ColumnInfo { name: COLUMN_AUTH_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
-    ColumnInfo { name: COLUMN_CREATE_TIME, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
-    ColumnInfo { name: COLUMN_UPDATE_TIME, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
-    ColumnInfo { name: COLUMN_DELETE_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
-    ColumnInfo { name: COLUMN_VERSION, data_type: DataType::Number, is_primary_key: false, not_null: true },
-    ColumnInfo { name: COLUMN_REQUIRE_PASSWORD_SET, data_type: DataType::Bool, is_primary_key: false, not_null: true },
-    ColumnInfo { name: COLUMN_CRITICAL1, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
-    ColumnInfo { name: COLUMN_CRITICAL2, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
-    ColumnInfo { name: COLUMN_CRITICAL3, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
-    ColumnInfo { name: COLUMN_CRITICAL4, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
-    ColumnInfo { name: COLUMN_NORMAL1, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
-    ColumnInfo { name: COLUMN_NORMAL2, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
-    ColumnInfo { name: COLUMN_NORMAL3, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
-    ColumnInfo { name: COLUMN_NORMAL4, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
-];
 
 /// change sqlite err code to asset err code
 fn from_sqlite_code_to_asset_code(value: SqliteErrCode) -> ErrCode {

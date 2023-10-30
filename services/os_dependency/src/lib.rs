@@ -20,8 +20,8 @@ use std::slice;
 use asset_constants::OwnerType;
 use asset_crypto_manager::crypto::{CryptoManager, SecretKey};
 use asset_db_operator::{
-    database_table_helper::{DatabaseHelper, COLUMN_OWNER, COLUMN_OWNER_TYPE},
-    types::DbMap,
+    database_table_helper::DatabaseHelper,
+    types::{column, DbMap},
 };
 use asset_definition::{Accessibility, AuthType, Value};
 use asset_file_operator::delete_user_db_dir;
@@ -45,8 +45,8 @@ pub unsafe extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, ow
     let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner, owner_size as usize).to_vec() };
     let owner_hash: Vec<u8> = sha256(&owner);
     let mut cond = DbMap::new();
-    cond.insert(COLUMN_OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
-    cond.insert(COLUMN_OWNER, Value::Bytes(owner));
+    cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
+    cond.insert(column::OWNER, Value::Bytes(owner));
     match DatabaseHelper::delete_datas(user_id, &cond) {
         Ok(remove_num) => {
             delete_key(user_id, &owner_hash, AuthType::None, Accessibility::DeviceFirstUnlock);

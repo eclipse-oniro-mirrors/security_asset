@@ -15,7 +15,6 @@ import("//build/ohos.gni")
 
 ohos_rust_static_library("asset_hasher") {
   sources = [ "src/lib.rs" ]
-
   crate_name = "asset_hasher"
   crate_type = "rlib"
   subsystem_name = "security"

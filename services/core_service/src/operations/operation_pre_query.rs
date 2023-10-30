@@ -20,8 +20,8 @@ use asset_crypto_manager::{
     huks_ffi::{CHALLENGE_LEN, HKS_KEY_PURPOSE_DECRYPT},
 };
 use asset_db_operator::{
-    database_table_helper::{DatabaseHelper, COLUMN_ACCESSIBILITY, COLUMN_AUTH_TYPE},
-    types::DbMap,
+    database_table_helper::DatabaseHelper,
+    types::{column, DbMap},
 };
 use asset_definition::{Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
 use asset_hasher::sha256;
@@ -50,7 +50,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
 }
 
 fn query_access_types(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<Accessibility>> {
-    let results = DatabaseHelper::query_columns(calling_info.user_id(), &vec![COLUMN_ACCESSIBILITY], db_data, None)?;
+    let results = DatabaseHelper::query_columns(calling_info.user_id(), &vec![column::ACCESSIBILITY], db_data, None)?;
     if results.is_empty() {
         loge!("[FATAL][SA]The data to be queried does not exist.");
         return Err(ErrCode::NotFound);
@@ -58,7 +58,7 @@ fn query_access_types(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
 
     let mut access_types = Vec::new();
     for db_result in results {
-        match db_result.get(&COLUMN_ACCESSIBILITY) {
+        match db_result.get(&column::ACCESSIBILITY) {
             Some(Value::Number(access_type)) => access_types.push(Accessibility::try_from(*access_type)?),
             _ => {
                 loge!("Pre Query Accessibility invalid.");
@@ -74,7 +74,7 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
 
     let mut db_data = common::into_db_map(query);
     common::add_owner_info(calling_info, &mut db_data);
-    db_data.entry(COLUMN_AUTH_TYPE).or_insert(Value::Number(AuthType::Any as u32));
+    db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::Any as u32));
 
     let access_types = query_access_types(calling_info, &db_data)?;
     if access_types.is_empty() {

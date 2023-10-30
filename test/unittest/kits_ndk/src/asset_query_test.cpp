@@ -15,23 +15,23 @@
 
 #include "asset_add_test.h"
 
+#include <string>
 #include <gtest/gtest.h>
-#include <string.h>
 
 #include "asset_api.h"
 #include "asset_test_common.h"
 
 using namespace testing::ext;
-namespace Unittest::AssetQueryTest {
+namespace UnitTest::AssetQueryTest {
 class AssetQueryTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
 
     static void TearDownTestCase(void);
 
-    void SetUp();
+    void SetUp(void);
 
-    void TearDown();
+    void TearDown(void);
 };
 
 void AssetQueryTest::SetUpTestCase(void)
@@ -42,11 +42,11 @@ void AssetQueryTest::TearDownTestCase(void)
 {
 }
 
-void AssetQueryTest::SetUp()
+void AssetQueryTest::SetUp(void)
 {
 }
 
-void AssetQueryTest::TearDown()
+void AssetQueryTest::TearDown(void)
 {
 }
 
@@ -59,29 +59,18 @@ void AssetQueryTest::TearDown()
 HWTEST_F(AssetQueryTest, AssetQueryTest001, TestSize.Level0)
 {
     Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
-    Asset_Attr add_attr[] = {
-        {
-            .tag = ASSET_TAG_ALIAS,
-            .value.blob = funcName
-        }, {
-            .tag = ASSET_TAG_SECRET,
-            .value.blob = funcName
-        }
+    Asset_Attr addAttr[] = {
+        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = ASSET_TAG_SECRET, .value.blob = funcName }
     };
-    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(add_attr, sizeof(add_attr) / sizeof(add_attr[0])));
+    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(addAttr, ARRAY_SIZE(addAttr)));
 
     Asset_ResultSet resultSet = { 0 };
-    Asset_Attr query_attr[] = {
-        {
-            .tag = ASSET_TAG_ALIAS,
-            .value.blob = funcName
-        }, {
-            .tag = ASSET_TAG_RETURN_TYPE,
-            .value.u32 = ASSET_RETURN_ALL
-        }
+    Asset_Attr queryAttr[] = {
+        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = ASSET_TAG_RETURN_TYPE, .value.u32 = ASSET_RETURN_ALL }
     };
-    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Query(query_attr, sizeof(query_attr) / sizeof(query_attr[0]), &resultSet));
-
+    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Query(queryAttr, ARRAY_SIZE(queryAttr), &resultSet));
     ASSERT_EQ(1, resultSet.count);
 
     OH_Asset_FreeResultSet(&resultSet);
@@ -99,15 +88,10 @@ HWTEST_F(AssetQueryTest, AssetQueryTest002, TestSize.Level0)
     Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
     Asset_ResultSet resultSet = { 0 };
     Asset_Attr attr[] = {
-        {
-            .tag = ASSET_TAG_ALIAS,
-            .value.blob = funcName
-        }, {
-            .tag = ASSET_TAG_RETURN_TYPE,
-            .value.u32 = ASSET_RETURN_ALL
-        }
+        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = ASSET_TAG_RETURN_TYPE, .value.u32 = ASSET_RETURN_ALL }
     };
-    ASSERT_EQ(ASSET_NOT_FOUND, OH_Asset_Query(attr, sizeof(attr) / sizeof(attr[0]), &resultSet));
+    ASSERT_EQ(ASSET_NOT_FOUND, OH_Asset_Query(attr, ARRAY_SIZE(attr), &resultSet));
 
     OH_Asset_FreeResultSet(&resultSet);
 }
@@ -123,15 +107,10 @@ HWTEST_F(AssetQueryTest, AssetQueryTest003, TestSize.Level0)
     Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
     Asset_ResultSet resultSet = { 0 };
     Asset_Attr attr[] = {
-        {
-            .tag = ASSET_TAG_ALIAS,
-            .value.blob = funcName
-        }, {
-            .tag = ASSET_TAG_RETURN_TYPE,
-            .value.u32 = ASSET_RETURN_ALL
-        }
+        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = ASSET_TAG_RETURN_TYPE, .value.u32 = ASSET_RETURN_ALL }
     };
-    ASSERT_EQ(ASSET_NOT_FOUND, OH_Asset_Query(attr, sizeof(attr) / sizeof(attr[0]), &resultSet));
+    ASSERT_EQ(ASSET_NOT_FOUND, OH_Asset_Query(attr, ARRAY_SIZE(attr), &resultSet));
 
     OH_Asset_FreeResultSet(&resultSet);
 }
@@ -159,13 +138,8 @@ HWTEST_F(AssetQueryTest, AssetQueryTest005, TestSize.Level0)
     Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
     Asset_ResultSet resultSet = { 0 };
     Asset_Attr attr[] = {
-        {
-            .tag = ASSET_TAG_ALIAS,
-            .value.blob = funcName
-        }, {
-            .tag = ASSET_TAG_RETURN_TYPE,
-            .value.u32 = ASSET_RETURN_ALL
-        }
+        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = ASSET_TAG_RETURN_TYPE, .value.u32 = ASSET_RETURN_ALL }
     };
     ASSERT_EQ(ASSET_NOT_FOUND, OH_Asset_Query(attr, 0, &resultSet));
 }
@@ -192,14 +166,9 @@ HWTEST_F(AssetQueryTest, AssetQueryTest007, TestSize.Level0)
 {
     Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
     Asset_Attr attr[] = {
-        {
-            .tag = ASSET_TAG_ALIAS,
-            .value.blob = funcName
-        }, {
-            .tag = ASSET_TAG_RETURN_TYPE,
-            .value.u32 = ASSET_RETURN_ALL
-        }
+        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = ASSET_TAG_RETURN_TYPE, .value.u32 = ASSET_RETURN_ALL }
     };
-    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Query(attr, sizeof(attr) / sizeof(attr[0]), nullptr));
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Query(attr, ARRAY_SIZE(attr), nullptr));
 }
 }
