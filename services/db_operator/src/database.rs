@@ -469,7 +469,6 @@ impl<'a> Database<'a> {
         }
         Ok(Table::new(table_name, self))
     }
-
 }
 
 /// wrap close func
