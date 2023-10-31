@@ -110,9 +110,6 @@ pub fn default_update_database_func(db: &Database, old_ver: u32, new_ver: u32) -
 /// format database path
 #[inline(always)]
 fn fmt_db_path(user_id: i32) -> String {
-    #[cfg(test)]
-    return format!("/data/asset_test/{}/asset.db", user_id);
-    #[cfg(not(test))]
     format!("/data/service/el1/public/asset_service/{}/asset.db", user_id)
 }
 
