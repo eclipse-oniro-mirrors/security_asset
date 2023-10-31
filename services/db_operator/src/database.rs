@@ -20,6 +20,8 @@
 use core::ffi::c_void;
 use std::{ffi::CStr, fs, path::Path, ptr::null_mut, sync::Mutex};
 
+#[cfg(test)]
+use crate::types::{column, from_data_value_to_str_value, DbMap, ASSET_TABLE_NAME};
 use crate::{
     statement::Statement,
     table::Table,
@@ -29,7 +31,7 @@ use crate::{
     },
 };
 #[cfg(test)]
-use asset_definition::DataType;
+use asset_definition::{DataType, Value};
 #[cfg(test)]
 use core::panic;
 
@@ -468,17 +470,6 @@ impl<'a> Database<'a> {
         Ok(Table::new(table_name, self))
     }
 
-    #[cfg(test)]
-    pub(crate) fn drop_db(db: Database) -> std::io::Result<()> {
-        let path = db.path.clone();
-        let b_path = db.back_path.clone();
-        drop(db);
-        let ret = Database::drop_database(path.as_str());
-        let b_ret = Database::drop_database(b_path.as_str());
-        ret?;
-        b_ret?;
-        Ok(())
-    }
 }
 
 /// wrap close func
