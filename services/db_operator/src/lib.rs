@@ -25,6 +25,9 @@ pub mod statement;
 #[path = "table.rs"]
 #[allow(dead_code)]
 pub mod table;
+#[cfg(test)]
+#[path = "../../../test/unittest/db_operator_test/src/test_for_helper.rs"]
+mod test_for_helper;
 #[path = "transaction.rs"]
 pub mod transaction;
 #[path = "types.rs"]

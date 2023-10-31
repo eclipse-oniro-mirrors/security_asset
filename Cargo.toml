@@ -11,6 +11,5 @@ members = [
     "services/db_operator",
     "services/os_dependency",
     "test/unittest/inner_api_rust",
-    "test/unittest/db_operator_test",
     "test/unittest/crypto_manager_test",
 ]

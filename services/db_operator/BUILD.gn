@@ -12,6 +12,9 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//build/test.gni")
+
+module_output_path = "asset/asset_UT_test"
 
 ohos_rust_static_library("asset_db_operator") {
   sources = [
@@ -31,6 +34,18 @@ ohos_rust_static_library("asset_db_operator") {
 
   crate_name = "asset_db_operator"
   crate_type = "rlib"
+  subsystem_name = "security"
+  part_name = "asset"
+}
+
+ohos_rust_unittest("db_operator_test") {
+  module_out_path = module_output_path
+  sources = [ "src/lib.rs" ]
+  deps = [
+    ":asset_sqlite3_wrapper",
+    "../../frameworks/os_dependency/log:asset_log",
+    "../../frameworks/definition:asset_definition",
+  ]
   subsystem_name = "security"
   part_name = "asset"
 }
