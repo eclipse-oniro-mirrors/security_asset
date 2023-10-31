@@ -78,6 +78,28 @@ fn query_without_limit() {
 }
 
 #[test]
+fn query_with_offset_without_limit() {
+    let _ = remove_all();
+    let function_name = function!().as_bytes();
+    let asset_num = 10;
+    for i in 0..asset_num {
+        let new_name = format!("{:?}{}", function_name, i);
+        add_default_asset(new_name.as_bytes(), new_name.as_bytes()).unwrap();
+    }
+
+    let offset = 3;
+
+    let query = AssetMap::from([(Tag::ReturnOffset, Value::Number(offset))]);
+
+    assert_eq!(asset_num - offset, asset_sdk::Manager::build().unwrap().query(&query).unwrap().len() as u32);
+
+    for i in 0..(asset_num - offset) {
+        let new_name = format!("{:?}{}", function_name, i + offset);
+        remove_by_alias(new_name.as_bytes()).unwrap();
+    }
+}
+
+#[test]
 fn query_with_limit_with_without_offset() {
     let _ = remove_all();
     let function_name = function!().as_bytes();
