@@ -61,6 +61,9 @@ hdc shell chmod 777 ./data/asset_ndk_test
 hdc shell "./data/asset_ndk_test --gtest_output=xml:/data/"
 ```
 
+# 单线程运行测试用例
+执行的时候 在后面加 --test-threads=1
+
 ## 工具汇总
 ```bash
 # 格式化BUILD.gn文件, 在asset目录下执行
