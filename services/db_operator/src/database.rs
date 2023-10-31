@@ -28,6 +28,10 @@ use crate::{
         SQLITE_OK, SQLITE_ROW,
     },
 };
+#[cfg(test)]
+use asset_definition::DataType;
+#[cfg(test)]
+use core::panic;
 
 extern "C" {
     fn SqliteOpen(file_name: *const u8, pp_db: *mut *mut c_void) -> i32;
@@ -203,7 +207,8 @@ impl<'a> Database<'a> {
 
     /// open database file.
     /// will create it if not exits.
-    pub fn new(path: &str) -> Result<Database, SqliteErrCode> {
+    #[cfg(test)]
+    pub(crate) fn new(path: &str) -> Result<Database, SqliteErrCode> {
         let mut path_c = path.to_string();
         let mut back_path_c = fmt_backup_path(path);
         let mut db: Database<'_> = Database {
@@ -220,7 +225,7 @@ impl<'a> Database<'a> {
     }
 
     /// create default database
-    pub fn default_new(user_id: i32) -> Result<Database<'a>, SqliteErrCode> {
+    pub(crate) fn default_new(user_id: i32) -> Result<Database<'a>, SqliteErrCode> {
         let path = fmt_db_path(user_id);
         let mut path_c = path.clone();
         let mut back_path_c = fmt_backup_path(path.as_str());
@@ -237,7 +242,7 @@ impl<'a> Database<'a> {
     }
 
     /// get database user_version
-    pub fn get_version(&self) -> Result<u32, SqliteErrCode> {
+    pub(crate) fn get_version(&self) -> Result<u32, SqliteErrCode> {
         let _lock = self.file.mtx.lock().unwrap();
         let stmt = Statement::<true>::prepare("pragma user_version", self)?;
         let ret = stmt.step();
@@ -249,7 +254,8 @@ impl<'a> Database<'a> {
     }
 
     /// open database with version update callback
-    pub fn new_with_version_update(
+    #[cfg(test)]
+    pub(crate) fn new_with_version_update(
         path: &str,
         ver: u32,
         callback: UpdateDatabaseCallbackFunc,
@@ -269,7 +275,7 @@ impl<'a> Database<'a> {
     }
 
     /// open database with version update callback
-    pub fn default_new_with_version_update(
+    pub(crate) fn default_new_with_version_update(
         user_id: i32,
         ver: u32,
         callback: UpdateDatabaseCallbackFunc,
@@ -328,7 +334,7 @@ impl<'a> Database<'a> {
     /// return err msg if get error.
     /// return None if no error.
     /// You do NOT need to free err msg, it's auto freed.
-    pub fn get_err_msg(&self) -> Option<Sqlite3ErrMsg> {
+    pub(crate) fn get_err_msg(&self) -> Option<Sqlite3ErrMsg> {
         let msg = unsafe { SqliteErrMsg(self.handle as _) };
         if !msg.is_null() {
             let s = unsafe { CStr::from_ptr(msg as _) };
@@ -357,7 +363,12 @@ impl<'a> Database<'a> {
     /// you should use statement.step for prepared statement.
     /// callback function for process result set.
     /// the final param data will be passed into callback function.
-    pub fn exec(&self, stmt: &Statement<false>, callback: Option<Sqlite3Callback>, data: usize) -> SqliteErrCode {
+    pub(crate) fn exec(
+        &self,
+        stmt: &Statement<false>,
+        callback: Option<Sqlite3Callback>,
+        data: usize,
+    ) -> SqliteErrCode {
         let mut msg: *mut u8 = null_mut();
         let ret = unsafe { SqliteExec(self.handle as _, stmt.sql.as_ptr(), callback, data as _, &mut msg as _) };
         if !msg.is_null() {
@@ -369,14 +380,14 @@ impl<'a> Database<'a> {
     }
 
     /// set database version
-    pub fn update_version(&self, ver: u32) -> SqliteErrCode {
+    pub(crate) fn update_version(&self, ver: u32) -> SqliteErrCode {
         let sql = format!("pragma user_version = {}", ver);
         let statement = Statement::new(sql.as_str(), self);
         statement.exec(None, 0)
     }
 
     /// open a table, if the table not exists, return Ok(None)
-    pub fn open_table(&self, table_name: &str) -> Result<Option<Table>, SqliteErrCode> {
+    pub(crate) fn open_table(&self, table_name: &str) -> Result<Option<Table>, SqliteErrCode> {
         let sql = format!("select * from sqlite_master where type ='table' and name = '{}'", table_name);
         let stmt = Statement::<true>::prepare(sql.as_str(), self)?;
         let ret = stmt.step();
@@ -430,7 +441,7 @@ impl<'a> Database<'a> {
     ///         println!("create table err {}", e);
     ///     }
     /// };
-    pub fn create_table(&self, table_name: &str, columns: &[ColumnInfo]) -> Result<Table, SqliteErrCode> {
+    pub(crate) fn create_table(&self, table_name: &str, columns: &[ColumnInfo]) -> Result<Table, SqliteErrCode> {
         let mut sql = format!("CREATE TABLE {}(", table_name);
         for i in 0..columns.len() {
             let column = &columns[i];
@@ -458,7 +469,7 @@ impl<'a> Database<'a> {
     }
 
     #[cfg(test)]
-    pub fn drop_db(db: Database) -> std::io::Result<()> {
+    pub(crate) fn drop_db(db: Database) -> std::io::Result<()> {
         let path = db.path.clone();
         let b_path = db.back_path.clone();
         drop(db);
@@ -483,5 +494,334 @@ impl<'a> Drop for Database<'a> {
                 asset_log::loge!("close db fail ret {}", ret);
             }
         }
+    }
+}
+
+#[test]
+pub fn test_for_sqlite3_open() {
+    let _ = match Database::new("test.db") {
+        Ok(o) => o,
+        Err(ret) => {
+            panic!("test sqlite3 open fail ret {}", ret);
+        },
+    };
+
+    match Database::new("/root/test.db") {
+        Ok(_) => {
+            panic!("read root");
+        },
+        Err(ret) => {
+            println!("expected fault {}", ret);
+        },
+    };
+    let _ = fs::create_dir("db");
+}
+
+#[test]
+pub fn test_for_drop_database() {
+    let _ = match Database::new("test1.db") {
+        Ok(o) => o,
+        Err(ret) => {
+            panic!("test sqlite3 open fail ret {}", ret);
+        },
+    };
+    let _ = Database::drop_database("test1.db");
+}
+
+#[test]
+pub fn test_for_update_version() {
+    let db = match Database::new("test0.db") {
+        Ok(o) => o,
+        Err(ret) => {
+            panic!("test sqlite3 open fail ret {}", ret);
+        },
+    };
+    if db.update_version(1) != SQLITE_OK {
+        panic!("update version fail");
+    }
+}
+
+#[test]
+pub fn test_for_error_exec() {
+    let db = match Database::new("test1.db") {
+        Ok(o) => o,
+        Err(ret) => {
+            panic!("test sqlite3 open fail ret {}", ret);
+        },
+    };
+    let sql = "pragma zzz user_version = {} mmm";
+    let statement = Statement::new(sql, &db);
+    let ret = statement.exec(None, 0);
+    assert_ne!(ret, 0);
+}
+
+#[test]
+pub fn test_for_open_table() {
+    let db = match Database::new("test3.db") {
+        Ok(o) => o,
+        Err(ret) => {
+            panic!("test sqlite3 open fail ret {}", ret);
+        },
+    };
+    let table = db.open_table("table_name");
+    match table {
+        Ok(_o) => {
+            println!("open table succ");
+        },
+        Err(e) => {
+            panic!("expect open table fail {}", e);
+        },
+    }
+
+    let _ = Database::drop_database("test4.db");
+
+    let db = match Database::new("test4.db") {
+        Ok(o) => o,
+        Err(ret) => {
+            panic!("test sqlite3 open fail ret {}", ret);
+        },
+    };
+
+    let columns = &[
+        ColumnInfo { name: "id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+    ];
+    let _table = match db.create_table("table_test", columns) {
+        Ok(t) => t,
+        Err(e) => {
+            panic!("create table err {}", e);
+        },
+    };
+
+    let _ = match db.open_table("table_test") {
+        Ok(o) => {
+            println!("open table succ");
+            o
+        },
+        Err(e) => {
+            panic!("open table fail {}", e)
+        },
+    };
+}
+
+#[test]
+pub fn test_for_drop_table() {
+    let db = match Database::new("test5.db") {
+        Ok(o) => o,
+        Err(ret) => {
+            panic!("test sqlite3 open fail ret {}", ret);
+        },
+    };
+
+    let columns = &[
+        ColumnInfo { name: "id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+    ];
+    let _table = match db.create_table("table_test", columns) {
+        Ok(t) => t,
+        Err(e) => {
+            panic!("create table err {}", e);
+        },
+    };
+
+    let ret = db.drop_table("table_test");
+    assert_eq!(ret, SQLITE_OK);
+}
+
+#[test]
+pub fn test_for_special_sql() {
+    let _ = Database::drop_database("test19.db");
+    let db = match Database::new("test19.db") {
+        Ok(o) => o,
+        Err(ret) => {
+            panic!("test sqlite3 open fail ret {}", ret);
+        },
+    };
+
+    let columns = &[
+        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+    ];
+    let table = match db.create_table(ASSET_TABLE_NAME, columns) {
+        Ok(t) => t,
+        Err(e) => {
+            panic!("create table err {}", e);
+        },
+    };
+    let columns = &vec!["Owner", "Alias", "value"];
+    let dataset = vec![
+        vec![Value::Bytes(b"owner1".to_vec()), Value::Bytes(b"alias1".to_vec()), Value::Bytes(b"aaaa".to_vec())],
+        vec![Value::Bytes(b"owner2".to_vec()), Value::Bytes(b"alias2".to_vec()), Value::Bytes(b"bbbb".to_vec())],
+        vec![Value::Bytes(b"owner2".to_vec()), Value::Bytes(b"alias3".to_vec()), Value::Bytes(b"cccc".to_vec())],
+    ];
+    let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
+    assert_eq!(count, 3);
+
+    let sql = "select Owner,Alias from asset_table where Id>?";
+    let stmt = Statement::<true>::prepare(sql, &db).unwrap();
+    let ret = stmt.bind_data(1, &Value::Number(1));
+    assert_eq!(ret, SQLITE_OK);
+
+    while stmt.step() == SQLITE_ROW {
+        print!("line: ");
+        let owner = stmt.query_column_text(0);
+        let alias = stmt.query_column_text(1);
+        print!(
+            "{} {}",
+            from_data_value_to_str_value(&Value::Bytes(owner.to_vec())),
+            from_data_value_to_str_value(&Value::Bytes(alias.to_vec()))
+        );
+        println!();
+    }
+}
+
+#[test]
+pub fn test_for_update_ver() {
+    let _ = Database::drop_database("test20.db");
+    let db = Database::new("test20.db").unwrap();
+    let columns = &[
+        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+    ];
+    let _ = match db.create_table(ASSET_TABLE_NAME, columns) {
+        Ok(t) => t,
+        Err(e) => {
+            panic!("create table err {}", e);
+        },
+    };
+    drop(db);
+    let db2 = Database::new_with_version_update("test20.db", 0, default_update_database_func).unwrap();
+    drop(db2);
+
+    let db3 = Database::new_with_version_update("test20.db", 1, default_update_database_func).unwrap();
+    drop(db3);
+
+    let db4 = Database::new_with_version_update("test20.db", 0, default_update_database_func);
+    assert!(db4.is_err());
+}
+
+#[test]
+pub fn test_for_recovery() {
+    let db = Database::new("test111.db").unwrap();
+    let table = db
+        .create_table(
+            "tt",
+            &[ColumnInfo { name: "Id", data_type: DataType::Number, is_primary_key: true, not_null: true }],
+        )
+        .unwrap();
+    let count = table.insert_row(&DbMap::from([("Id", Value::Number(1))])).unwrap();
+    assert_eq!(count, 1);
+    fs::copy("test111.db", "test111.db.backup").unwrap();
+    fs::remove_file("test111.db").unwrap();
+    fs::copy("test111.db.backup", "test111.db").unwrap();
+    let count = table.count_datas(&DbMap::new()).unwrap();
+    assert_eq!(count, 1);
+    let _ = Database::drop_database_and_backup(db);
+}
+
+#[test]
+pub fn test_db_fun() {
+    let _ = Database::drop_database("test18.db");
+    let db = match Database::new("test18.db") {
+        Ok(o) => o,
+        Err(ret) => {
+            panic!("test sqlite3 open fail ret {}", ret);
+        },
+    };
+
+    let columns = &[
+        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+    ];
+    let table = match db.create_table(ASSET_TABLE_NAME, columns) {
+        Ok(t) => t,
+        Err(e) => {
+            panic!("create table err {}", e);
+        },
+    };
+    let columns = &vec!["Owner", "Alias", "value"];
+    let dataset = vec![
+        vec![Value::Bytes(b"owner1".to_vec()), Value::Bytes(b"alias1".to_vec()), Value::Bytes(b"aaaa".to_vec())],
+        vec![Value::Bytes(b"owner2".to_vec()), Value::Bytes(b"alias2".to_vec()), Value::Bytes(b"bbbb".to_vec())],
+        vec![Value::Bytes(b"owner2".to_vec()), Value::Bytes(b"alias3".to_vec()), Value::Bytes(b"cccc".to_vec())],
+    ];
+    let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
+    assert_eq!(count, 3);
+
+    // query
+    let exist = db
+        .is_data_exists(&DbMap::from([
+            (column::OWNER, Value::Bytes(b"owner1".to_vec())),
+            (column::ALIAS, Value::Bytes(b"alias1".to_vec())),
+        ]))
+        .unwrap();
+    assert!(exist);
+
+    let exist = db
+        .is_data_exists(&DbMap::from([
+            (column::OWNER, Value::Bytes(b"owner1".to_vec())),
+            (column::ALIAS, Value::Bytes(b"alias2".to_vec())),
+        ]))
+        .unwrap();
+    assert!(!exist);
+
+    db_fun(db);
+}
+
+#[cfg(test)]
+fn db_fun(db: Database<'_>) {
+    let count = db.select_count(&DbMap::from([(column::OWNER, Value::Bytes(b"owner2".to_vec()))])).unwrap();
+    assert_eq!(count, 2);
+
+    let ret = db
+        .insert_datas(&DbMap::from([
+            ("value", Value::Bytes(b"value4".to_vec())),
+            (column::OWNER, Value::Bytes(b"owner4".to_vec())),
+            (column::ALIAS, Value::Bytes(b"alias4".to_vec())),
+        ]))
+        .unwrap();
+    assert_eq!(ret, 1);
+
+    let ret = db
+        .update_datas(
+            &DbMap::from([
+                (column::OWNER, Value::Bytes(b"owner4".to_vec())),
+                (column::ALIAS, Value::Bytes(b"alias4".to_vec())),
+            ]),
+            &DbMap::from([("value", Value::Bytes(b"value5".to_vec()))]),
+        )
+        .unwrap();
+    assert_eq!(ret, 1);
+
+    let ret = db
+        .delete_datas(&DbMap::from([
+            (column::OWNER, Value::Bytes(b"owner4".to_vec())),
+            (column::ALIAS, Value::Bytes(b"alias4".to_vec())),
+        ]))
+        .unwrap();
+    assert_eq!(ret, 1);
+
+    let result = db
+        .query_datas(
+            &DbMap::from([
+                (column::OWNER, Value::Bytes(b"owner1".to_vec())),
+                (column::ALIAS, Value::Bytes(b"alias1".to_vec())),
+            ]),
+            None,
+        )
+        .unwrap();
+    assert_eq!(result.len(), 1);
+    for data in result {
+        print!("line: ");
+        for d in data {
+            print!("{}, ", from_data_value_to_str_value(&d));
+        }
+        println!();
     }
 }

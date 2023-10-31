@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-use core::panic;
 use std::{
     cmp::Ordering,
     fs::{self, OpenOptions},
@@ -23,190 +22,9 @@ use std::{
 use asset_db_operator::{
     database::*,
     database_table_helper::{do_transaction, DatabaseHelper},
-    statement::Statement,
-    types::{
-        column, from_data_value_to_str_value, ColumnInfo, DbMap, QueryOptions, ASSET_TABLE_NAME, SQLITE_OK, SQLITE_ROW,
-    },
+    types::{column, from_data_value_to_str_value, DbMap, QueryOptions},
 };
-use asset_definition::{DataType, Value};
-
-#[test]
-pub fn test_helper() {
-    let _ = Database::drop_database("test18.db");
-    let db = match Database::new("test18.db") {
-        Ok(o) => o,
-        Err(ret) => {
-            panic!("test sqlite3 open fail ret {}", ret);
-        },
-    };
-
-    let columns = &[
-        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
-        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
-        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
-        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
-    ];
-    let table = match db.create_table(ASSET_TABLE_NAME, columns) {
-        Ok(t) => t,
-        Err(e) => {
-            panic!("create table err {}", e);
-        },
-    };
-    let columns = &vec!["Owner", "Alias", "value"];
-    let dataset = vec![
-        vec![Value::Bytes(b"owner1".to_vec()), Value::Bytes(b"alias1".to_vec()), Value::Bytes(b"aaaa".to_vec())],
-        vec![Value::Bytes(b"owner2".to_vec()), Value::Bytes(b"alias2".to_vec()), Value::Bytes(b"bbbb".to_vec())],
-        vec![Value::Bytes(b"owner2".to_vec()), Value::Bytes(b"alias3".to_vec()), Value::Bytes(b"cccc".to_vec())],
-    ];
-    let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
-    assert_eq!(count, 3);
-
-    // query
-    let exist = db
-        .is_data_exists(&DbMap::from([
-            (column::OWNER, Value::Bytes(b"owner1".to_vec())),
-            (column::ALIAS, Value::Bytes(b"alias1".to_vec())),
-        ]))
-        .unwrap();
-    assert!(exist);
-
-    let exist = db
-        .is_data_exists(&DbMap::from([
-            (column::OWNER, Value::Bytes(b"owner1".to_vec())),
-            (column::ALIAS, Value::Bytes(b"alias2".to_vec())),
-        ]))
-        .unwrap();
-    assert!(!exist);
-
-    helper_fun(db);
-}
-
-fn helper_fun(db: Database<'_>) {
-    let count = db.select_count(&DbMap::from([(column::OWNER, Value::Bytes(b"owner2".to_vec()))])).unwrap();
-    assert_eq!(count, 2);
-
-    let ret = db
-        .insert_datas(&DbMap::from([
-            ("value", Value::Bytes(b"value4".to_vec())),
-            (column::OWNER, Value::Bytes(b"owner4".to_vec())),
-            (column::ALIAS, Value::Bytes(b"alias4".to_vec())),
-        ]))
-        .unwrap();
-    assert_eq!(ret, 1);
-
-    let ret = db
-        .update_datas(
-            &DbMap::from([
-                (column::OWNER, Value::Bytes(b"owner4".to_vec())),
-                (column::ALIAS, Value::Bytes(b"alias4".to_vec())),
-            ]),
-            &DbMap::from([("value", Value::Bytes(b"value5".to_vec()))]),
-        )
-        .unwrap();
-    assert_eq!(ret, 1);
-
-    let ret = db
-        .delete_datas(&DbMap::from([
-            (column::OWNER, Value::Bytes(b"owner4".to_vec())),
-            (column::ALIAS, Value::Bytes(b"alias4".to_vec())),
-        ]))
-        .unwrap();
-    assert_eq!(ret, 1);
-
-    let result = db
-        .query_datas(
-            &DbMap::from([
-                (column::OWNER, Value::Bytes(b"owner1".to_vec())),
-                (column::ALIAS, Value::Bytes(b"alias1".to_vec())),
-            ]),
-            None,
-        )
-        .unwrap();
-    assert_eq!(result.len(), 1);
-    for data in result {
-        print!("line: ");
-        for d in data {
-            print!("{}, ", from_data_value_to_str_value(&d));
-        }
-        println!();
-    }
-}
-
-#[test]
-pub fn test_for_special_sql() {
-    let _ = Database::drop_database("test19.db");
-    let db = match Database::new("test19.db") {
-        Ok(o) => o,
-        Err(ret) => {
-            panic!("test sqlite3 open fail ret {}", ret);
-        },
-    };
-
-    let columns = &[
-        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
-        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
-        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
-        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
-    ];
-    let table = match db.create_table(ASSET_TABLE_NAME, columns) {
-        Ok(t) => t,
-        Err(e) => {
-            panic!("create table err {}", e);
-        },
-    };
-    let columns = &vec!["Owner", "Alias", "value"];
-    let dataset = vec![
-        vec![Value::Bytes(b"owner1".to_vec()), Value::Bytes(b"alias1".to_vec()), Value::Bytes(b"aaaa".to_vec())],
-        vec![Value::Bytes(b"owner2".to_vec()), Value::Bytes(b"alias2".to_vec()), Value::Bytes(b"bbbb".to_vec())],
-        vec![Value::Bytes(b"owner2".to_vec()), Value::Bytes(b"alias3".to_vec()), Value::Bytes(b"cccc".to_vec())],
-    ];
-    let count = table.insert_multi_row_datas(columns, &dataset).unwrap();
-    assert_eq!(count, 3);
-
-    let sql = "select Owner,Alias from asset_table where Id>?";
-    let stmt = Statement::<true>::prepare(sql, &db).unwrap();
-    let ret = stmt.bind_data(1, &Value::Number(1));
-    assert_eq!(ret, SQLITE_OK);
-
-    while stmt.step() == SQLITE_ROW {
-        print!("line: ");
-        let owner = stmt.query_column_text(0);
-        let alias = stmt.query_column_text(1);
-        print!(
-            "{} {}",
-            from_data_value_to_str_value(&Value::Bytes(owner.to_vec())),
-            from_data_value_to_str_value(&Value::Bytes(alias.to_vec()))
-        );
-        println!();
-    }
-}
-
-#[test]
-pub fn test_for_update_ver() {
-    let _ = Database::drop_database("test20.db");
-    let db = Database::new("test20.db").unwrap();
-    let columns = &[
-        ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
-        ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
-        ColumnInfo { name: "Alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
-        ColumnInfo { name: "value", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
-    ];
-    let _ = match db.create_table(ASSET_TABLE_NAME, columns) {
-        Ok(t) => t,
-        Err(e) => {
-            panic!("create table err {}", e);
-        },
-    };
-    drop(db);
-    let db2 = Database::new_with_version_update("test20.db", 0, default_update_database_func).unwrap();
-    drop(db2);
-
-    let db3 = Database::new_with_version_update("test20.db", 1, default_update_database_func).unwrap();
-    drop(db3);
-
-    let db4 = Database::new_with_version_update("test20.db", 0, default_update_database_func);
-    assert!(db4.is_err());
-}
+use asset_definition::Value;
 
 pub fn test_for_default_asset(user_id: i32) {
     fs::create_dir_all(format!("/data/asset_test/{}/", user_id)).unwrap();
@@ -327,25 +145,6 @@ pub fn test_for_default_asset_multi1() {
 #[test]
 pub fn test_for_default_asset_multi2() {
     test_for_default_asset(2);
-}
-
-#[test]
-pub fn test_for_recovery() {
-    let db = Database::new("test111.db").unwrap();
-    let table = db
-        .create_table(
-            "tt",
-            &[ColumnInfo { name: "Id", data_type: DataType::Number, is_primary_key: true, not_null: true }],
-        )
-        .unwrap();
-    let count = table.insert_row(&DbMap::from([("Id", Value::Number(1))])).unwrap();
-    assert_eq!(count, 1);
-    fs::copy("test111.db", "test111.db.backup").unwrap();
-    fs::remove_file("test111.db").unwrap();
-    fs::copy("test111.db.backup", "test111.db").unwrap();
-    let count = table.count_datas(&DbMap::new()).unwrap();
-    assert_eq!(count, 1);
-    let _ = Database::drop_database_and_backup(db);
 }
 
 /// trans callback

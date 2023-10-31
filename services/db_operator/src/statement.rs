@@ -85,12 +85,12 @@ impl<'b> Statement<'b, false> {
 impl<'b> Statement<'b, true> {
     /// wrap for sqlite3_step,
     /// if step succ, will return SQLITE_DONE for update,insert,delete or SQLITE_ROW for select
-    pub fn step(&self) -> SqliteErrCode {
+    pub(crate) fn step(&self) -> SqliteErrCode {
         unsafe { SqliteStep(self.handle as _) }
     }
 
     /// prepare a sql, you can use '?' for datas and bind datas later
-    pub fn prepare(sql: &str, db: &'b Database) -> Result<Statement<'b, true>, SqliteErrCode> {
+    pub(crate) fn prepare(sql: &str, db: &'b Database) -> Result<Statement<'b, true>, SqliteErrCode> {
         let mut tail = 0usize;
         let mut sql_s = sql.to_string();
         sql_s.push('\0');
@@ -114,7 +114,7 @@ impl<'b> Statement<'b, true> {
     /// bind datas
     /// data_type is detected by enum Value,
     /// index is start with 1, for '?' in sql.
-    pub fn bind_data(&self, index: i32, data: &Value) -> SqliteErrCode {
+    pub(crate) fn bind_data(&self, index: i32, data: &Value) -> SqliteErrCode {
         match data {
             Value::Bytes(b) => unsafe { SqliteBindBlob(self.handle as _, index, b.as_ptr(), b.len() as _, None) },
             Value::Number(i) => unsafe { SqliteBindInt64(self.handle as _, index, *i as _) },
@@ -123,17 +123,17 @@ impl<'b> Statement<'b, true> {
     }
 
     /// you should reset statement before bind data for insert statement
-    pub fn reset(&self) -> SqliteErrCode {
+    pub(crate) fn reset(&self) -> SqliteErrCode {
         unsafe { SqliteReset(self.handle as _) }
     }
 
     /// get column count for select statement
-    pub fn column_count(&self) -> i32 {
+    pub(crate) fn column_count(&self) -> i32 {
         unsafe { SqliteColumnCount(self.handle as _) }
     }
 
     /// return the column name
-    pub fn query_column_name(&self, n: i32) -> Result<&str, SqliteErrCode> {
+    pub(crate) fn query_column_name(&self, n: i32) -> Result<&str, SqliteErrCode> {
         let s = unsafe { SqliteColumnName(self.handle as _, n) };
         if !s.is_null() {
             let name = unsafe { CStr::from_ptr(s as _) };
@@ -148,14 +148,14 @@ impl<'b> Statement<'b, true> {
     }
 
     /// data count
-    pub fn data_count(&self) -> i32 {
+    pub(crate) fn data_count(&self) -> i32 {
         unsafe { SqliteDataCount(self.handle as _) }
     }
 
     /// query column datas in result set
     /// data_type is auto detected by Value
     /// the index if start with 0
-    pub fn query_column(&self, index: i32, out: &DataType) -> Option<Value> {
+    pub(crate) fn query_column(&self, index: i32, out: &DataType) -> Option<Value> {
         match out {
             DataType::Bytes => {
                 let blob = self.query_column_blob(index);
@@ -171,7 +171,7 @@ impl<'b> Statement<'b, true> {
     }
 
     /// query columns auto type
-    pub fn query_columns_auto_type(&self, i: i32) -> Result<Option<Value>, SqliteErrCode> {
+    pub(crate) fn query_columns_auto_type(&self, i: i32) -> Result<Option<Value>, SqliteErrCode> {
         let tp = self.column_type(i);
         let data = match tp {
             SQLITE_INTEGER => Some(Value::Number(self.query_column_int(i))),
@@ -191,7 +191,7 @@ impl<'b> Statement<'b, true> {
 
     /// query column datas in result set for blob data
     /// the index is start with 0
-    pub fn query_column_blob(&self, index: i32) -> &'b [u8] {
+    pub(crate) fn query_column_blob(&self, index: i32) -> &'b [u8] {
         let blob = unsafe { SqliteColumnBlob(self.handle as _, index) };
         let len = self.column_bytes(index);
         unsafe { core::slice::from_raw_parts(blob, len as _) }
@@ -199,13 +199,13 @@ impl<'b> Statement<'b, true> {
 
     /// query column datas in result set for int data
     /// the index is start with 0
-    pub fn query_column_int(&self, index: i32) -> u32 {
+    pub(crate) fn query_column_int(&self, index: i32) -> u32 {
         unsafe { SqliteColumnInt64(self.handle as _, index) as u32 }
     }
 
     /// query column datas in result set for text data
     /// the index is start with 0
-    pub fn query_column_text(&self, index: i32) -> &'b [u8] {
+    pub(crate) fn query_column_text(&self, index: i32) -> &'b [u8] {
         let text = unsafe { SqliteColumnText(self.handle as _, index) };
         let len = self.column_bytes(index);
         unsafe { core::slice::from_raw_parts(text, len as _) }
@@ -213,12 +213,12 @@ impl<'b> Statement<'b, true> {
 
     /// return the bytes of data, you should first call query_column_text or query_column_blob,
     /// then call column_bytes.
-    pub fn column_bytes(&self, index: i32) -> i32 {
+    pub(crate) fn column_bytes(&self, index: i32) -> i32 {
         unsafe { SqliteColumnBytes(self.handle as _, index) }
     }
 
     /// return column data_type
-    pub fn column_type(&self, index: i32) -> i32 {
+    pub(crate) fn column_type(&self, index: i32) -> i32 {
         unsafe { SqliteColumnType(self.handle as _, index) }
     }
 }

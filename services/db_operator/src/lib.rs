@@ -20,8 +20,10 @@ pub mod database;
 #[path = "database_table_helper.rs"]
 pub mod database_table_helper;
 #[path = "statement.rs"]
+#[allow(dead_code)]
 pub mod statement;
 #[path = "table.rs"]
+#[allow(dead_code)]
 pub mod table;
 #[path = "transaction.rs"]
 pub mod transaction;

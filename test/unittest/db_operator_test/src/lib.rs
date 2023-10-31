@@ -14,10 +14,4 @@
  */
 
 #[cfg(test)]
-mod test_for_table;
-
-#[cfg(test)]
 mod test_for_helper;
-
-#[cfg(test)]
-mod test_for_database;
