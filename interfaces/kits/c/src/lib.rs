@@ -24,7 +24,7 @@ use std::{
 };
 
 use asset_log::loge;
-use asset_sdk::{AssetMap, Conversion, DataType, ErrCode, Manager, Tag, Value};
+use asset_sdk::{asset_error_err, AssetMap, Conversion, DataType, ErrCode, Manager, Tag, Value, AssetError};
 
 const RESULT_CODE_SUCCESS: i32 = 0;
 extern "C" {
@@ -77,11 +77,11 @@ pub extern "C" fn add_asset(attributes: *const AssetAttr, attr_cnt: u32) -> i32 
 
     let manager = match Manager::build() {
         Ok(manager) => manager,
-        Err(e) => return e as i32,
+        Err(e) => return e.code as i32,
     };
 
     if let Err(e) = manager.add(&map) {
-        e as i32
+        e.code as i32
     } else {
         RESULT_CODE_SUCCESS
     }
@@ -97,11 +97,11 @@ pub extern "C" fn remove_asset(query: *const AssetAttr, query_cnt: u32) -> i32 {
 
     let manager = match Manager::build() {
         Ok(manager) => manager,
-        Err(e) => return e as i32,
+        Err(e) => return e.code as i32,
     };
 
     if let Err(e) = manager.remove(&map) {
-        e as i32
+        e.code as i32
     } else {
         RESULT_CODE_SUCCESS
     }
@@ -127,11 +127,11 @@ pub extern "C" fn update_asset(
 
     let manager = match Manager::build() {
         Ok(manager) => manager,
-        Err(e) => return e as i32,
+        Err(e) => return e.code as i32,
     };
 
     if let Err(e) = manager.update(&query_map, &update_map) {
-        e as i32
+        e.code as i32
     } else {
         RESULT_CODE_SUCCESS
     }
@@ -156,16 +156,16 @@ pub unsafe extern "C" fn pre_query_asset(query: *const AssetAttr, query_cnt: u32
 
     let manager = match Manager::build() {
         Ok(manager) => manager,
-        Err(e) => return e as i32,
+        Err(e) => return e.code as i32,
     };
 
     let res = match manager.pre_query(&map) {
-        Err(e) => return e as i32,
+        Err(e) => return e.code as i32,
         Ok(res) => res,
     };
 
     match AssetBlob::try_from(&res) {
-        Err(e) => e as i32,
+        Err(e) => e.code as i32,
         Ok(b) => {
             *challenge = b;
             RESULT_CODE_SUCCESS
@@ -192,16 +192,16 @@ pub unsafe extern "C" fn query_asset(query: *const AssetAttr, query_cnt: u32, re
 
     let manager = match Manager::build() {
         Ok(manager) => manager,
-        Err(e) => return e as i32,
+        Err(e) => return e.code as i32,
     };
 
     let res = match manager.query(&map) {
-        Err(e) => return e as i32,
+        Err(e) => return e.code as i32,
         Ok(res) => res,
     };
 
     match AssetResultSet::try_from(&res) {
-        Err(e) => e as i32,
+        Err(e) => e.code as i32,
         Ok(s) => {
             *result_set = s;
             RESULT_CODE_SUCCESS
@@ -219,11 +219,11 @@ pub extern "C" fn post_query_asset(handle: *const AssetAttr, handle_cnt: u32) ->
 
     let manager = match Manager::build() {
         Ok(manager) => manager,
-        Err(e) => return e as i32,
+        Err(e) => return e.code as i32,
     };
 
     if let Err(e) = manager.post_query(&map) {
-        e as i32
+        e.code as i32
     } else {
         RESULT_CODE_SUCCESS
     }
@@ -244,15 +244,17 @@ pub struct AssetBlob {
 }
 
 impl TryFrom<&Vec<u8>> for AssetBlob {
-    type Error = ErrCode;
+    type Error = AssetError;
 
     fn try_from(vec: &Vec<u8>) -> Result<Self, Self::Error> {
         let mut blob = AssetBlob { size: vec.len() as u32, data: std::ptr::null_mut() };
 
         blob.data = unsafe { AssetMalloc(blob.size) as *mut u8 };
         if blob.data.is_null() {
-            loge!("[FATAL][RUST SDK]Unable to allocate memory for Asset_Blob.");
-            return Err(ErrCode::OutOfMemory);
+            return asset_error_err!(
+                ErrCode::OutOfMemory,
+                "[FATAL][RUST SDK]Unable to allocate memory for Asset_Blob."
+            );
         }
         unsafe { std::ptr::copy_nonoverlapping(vec.as_ptr(), blob.data, blob.size as usize) };
         Ok(blob)
@@ -267,7 +269,7 @@ union AssetValue {
 }
 
 impl TryFrom<&Value> for AssetValue {
-    type Error = ErrCode;
+    type Error = AssetError;
 
     fn try_from(value: &Value) -> Result<Self, Self::Error> {
         let mut out = AssetValue { boolean: false };
@@ -287,7 +289,7 @@ struct AssetResult {
 }
 
 impl TryFrom<&AssetMap> for AssetResult {
-    type Error = ErrCode;
+    type Error = AssetError;
 
     fn try_from(map: &AssetMap) -> Result<Self, Self::Error> {
         let mut result = AssetResult { count: map.len() as u32, attrs: std::ptr::null_mut() };
@@ -295,8 +297,10 @@ impl TryFrom<&AssetMap> for AssetResult {
         result.attrs =
             unsafe { AssetMalloc(result.count.wrapping_mul(size_of::<AssetAttr>() as u32)) as *mut AssetAttr };
         if result.attrs.is_null() {
-            loge!("[FATAL][RUST SDK]Unable to allocate memory for Asset_Result.");
-            return Err(ErrCode::OutOfMemory);
+            return asset_error_err!(
+                ErrCode::OutOfMemory,
+                "[FATAL][RUST SDK]Unable to allocate memory for Asset_Result."
+            );
         }
 
         for (i, (tag, value)) in map.iter().enumerate() {
@@ -318,15 +322,17 @@ pub struct AssetResultSet {
 }
 
 impl TryFrom<&Vec<AssetMap>> for AssetResultSet {
-    type Error = ErrCode;
+    type Error = AssetError;
 
     fn try_from(maps: &Vec<AssetMap>) -> Result<Self, Self::Error> {
         let mut result_set = AssetResultSet { count: maps.len() as u32, results: std::ptr::null_mut() };
         result_set.results =
             unsafe { AssetMalloc(result_set.count.wrapping_mul(size_of::<AssetResult>() as u32)) as *mut AssetResult };
         if result_set.results.is_null() {
-            loge!("[FATAL][RUST SDK]Unable to allocate memory for Asset_ResultSet.");
-            return Err(ErrCode::OutOfMemory);
+            return asset_error_err!(
+                ErrCode::OutOfMemory,
+                "[FATAL][RUST SDK]Unable to allocate memory for Asset_ResultSet."
+            );
         }
         for (i, map) in maps.iter().enumerate() {
             unsafe {

@@ -135,11 +135,11 @@ fn add_same_alias_throw_error() {
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     // step2. insert data with the same alias, default resolution: throw error
-    assert_eq!(Err(ErrCode::Duplicated), asset_sdk::Manager::build().unwrap().add(&attrs));
+    expect_error_eq(ErrCode::Duplicated, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 
     // step3. insert data with the same alias, specified resolution: throw error
     attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::ThrowError);
-    assert_eq!(Err(ErrCode::Duplicated), asset_sdk::Manager::build().unwrap().add(&attrs));
+    expect_error_eq(ErrCode::Duplicated, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 
     remove_by_alias(function_name).unwrap();
 }

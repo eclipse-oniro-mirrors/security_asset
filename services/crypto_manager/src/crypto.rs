@@ -15,7 +15,7 @@
 
 //! This module is used to implement cryptographic algorithm operations, including key generation and usage.
 
-use asset_definition::{Accessibility, AuthType, ErrCode, Result};
+use asset_definition::{asset_error, asset_error_err, Accessibility, AuthType, ErrCode, Result};
 use asset_log::{loge, logi};
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -30,8 +30,7 @@ struct IdentityGuard {
 impl IdentityGuard {
     fn build() -> Result<Self> {
         let identity = ipc_rust::reset_calling_identity().map_err(|e| {
-            loge!("[FATAL][SA]Reset calling identity failed, error is [{}].", e);
-            ErrCode::IpcError
+            asset_error!(ErrCode::IpcError, "[FATAL][SA]Reset calling identity failed, error is [{}].", e)
         })?;
         Ok(Self { identity })
     }
@@ -80,8 +79,7 @@ impl SecretKey {
             HKS_SUCCESS => Ok(true),
             HKS_ERROR_NOT_EXIST => Ok(false),
             _ => {
-                loge!("secret key exist check failed ret {}", ret);
-                Err(ErrCode::CryptoError)
+                asset_error_err!(ErrCode::CryptoError, "[FATAL]secret key exist check failed ret {}", ret)
             },
         }
     }
@@ -97,8 +95,7 @@ impl SecretKey {
         match ret {
             HKS_SUCCESS => Ok(()),
             _ => {
-                loge!("secret key generate failed ret {}", ret);
-                Err(ErrCode::CryptoError)
+                asset_error_err!(ErrCode::CryptoError, "[FATAL]secret key generate failed ret {}", ret)
             },
         }
     }
@@ -112,8 +109,7 @@ impl SecretKey {
         match ret {
             HKS_SUCCESS => Ok(()),
             _ => {
-                loge!("secret key delete failed ret {}", ret);
-                Err(ErrCode::CryptoError)
+                asset_error_err!(ErrCode::CryptoError, "[FATAL]secret key delete failed ret {}", ret)
             },
         }
     }
@@ -187,13 +183,11 @@ impl Crypto {
         let now_second = since_the_epoch.as_secs();
         logi!("now time is {}", now_second);
         if now_second >= self.exp_time {
-            loge!("init crypto time expired {}", now_second);
-            return Err(ErrCode::AuthTokenExpired);
+            return asset_error_err!(ErrCode::AuthTokenExpired, "[FATAL]init crypto time expired {}", now_second);
         }
 
         if self.mode != HKS_KEY_PURPOSE_DECRYPT {
-            loge!("only support decrypt");
-            return Err(ErrCode::CryptoError);
+            return asset_error_err!(ErrCode::CryptoError, "[FATAL]only support decrypt");
         }
 
         // in param
@@ -226,8 +220,7 @@ impl Crypto {
                 Ok(self.challenge.clone())
             },
             _ => {
-                loge!("crypto init failed ret {}", ret);
-                Err(ErrCode::CryptoError)
+                asset_error_err!(ErrCode::CryptoError, "[FATAL]crypto init failed ret {}", ret)
             },
         }
     }
@@ -239,24 +232,20 @@ impl Crypto {
         let now_second = since_the_epoch.as_secs();
         logi!("now time is {}", now_second);
         if now_second >= self.exp_time {
-            loge!("exec crypto time expired {}", now_second);
-            return Err(ErrCode::AuthTokenExpired);
+            return asset_error_err!(ErrCode::AuthTokenExpired, "[FATAL]exec crypto time expired {}", now_second);
         }
 
         if self.mode != HKS_KEY_PURPOSE_DECRYPT {
-            loge!("unsupported crypto mode");
-            return Err(ErrCode::CryptoError);
+            return asset_error_err!(ErrCode::CryptoError, "[FATAL]unsupported crypto mode");
         }
 
         if !self.initailized {
-            loge!("crypto not initailize");
-            return Err(ErrCode::CryptoError);
+            return asset_error_err!(ErrCode::CryptoError, "[FATAL]crypto not initailize");
         }
 
         // out param
         if msg.len() <= (AEAD_SIZE + NONCE_SIZE) as usize {
-            loge!("invalid msg\n");
-            return Err(ErrCode::InvalidArgument);
+            return asset_error_err!(ErrCode::InvalidArgument, "[FATAL]invalid msg");
         }
         let mut cipher: Vec<u8> = vec![0; msg.len() - AEAD_SIZE as usize - NONCE_SIZE as usize];
 
@@ -287,8 +276,7 @@ impl Crypto {
         match ret {
             HKS_SUCCESS => Ok(cipher),
             _ => {
-                loge!("execute crypto error ret {}", ret);
-                Err(ErrCode::CryptoError)
+                asset_error_err!(ErrCode::CryptoError, "[FATAL]execute crypto error ret {}", ret)
             },
         }
     }
@@ -317,8 +305,7 @@ impl Crypto {
         match ret {
             HKS_SUCCESS => Ok(cipher),
             _ => {
-                loge!("encrypto error ret {}", ret);
-                Err(ErrCode::CryptoError)
+                asset_error_err!(ErrCode::CryptoError, "[FATAL]encrypto error ret {}", ret)
             },
         }
     }
@@ -326,8 +313,7 @@ impl Crypto {
     /// Signle function call for decrypt
     pub fn decrypt(key: &SecretKey, cipher: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>> {
         if cipher.len() <= (AEAD_SIZE + NONCE_SIZE) as usize {
-            loge!("invalid cipher\n");
-            return Err(ErrCode::InvalidArgument);
+            return asset_error_err!(ErrCode::InvalidArgument, "[FATAL]invalid cipher");
         }
         // out param
         let mut plain: Vec<u8> = vec![0; cipher.len() - AEAD_SIZE as usize - NONCE_SIZE as usize];
@@ -352,8 +338,7 @@ impl Crypto {
         match ret {
             HKS_SUCCESS => Ok(plain),
             _ => {
-                loge!("decrypto error ret {}", ret);
-                Err(ErrCode::CryptoError)
+                asset_error_err!(ErrCode::CryptoError, "[FATAL]decrypto error ret {}", ret)
             },
         }
     }
@@ -380,8 +365,7 @@ impl CryptoManager {
 
     fn challenge_cmp(challenge: &Vec<u8>, crypto: &Crypto) -> Result<()> {
         if challenge.len() != CHALLENGE_LEN as usize {
-            loge!("invalid challenge len {}", challenge.len());
-            return Err(ErrCode::CryptoError);
+            return asset_error_err!(ErrCode::CryptoError, "[FATAL]invalid challenge len {}", challenge.len());
         }
 
         let index = crypto.challenge_pos as usize;
@@ -389,7 +373,7 @@ impl CryptoManager {
             return Ok(());
         }
 
-        Err(ErrCode::CryptoError)
+        asset_error_err!(ErrCode::CryptoError, "[FATAL]Matched challenge not found.")
     }
 
     /// add a crypto in manager, not allow insert crypto with same challenge
@@ -397,8 +381,10 @@ impl CryptoManager {
         loge!("crypto add, add challenge = {:?}", crypto.challenge);
         for temp_crypto in self.crypto_vec.iter() {
             if crypto.challenge.as_slice() == temp_crypto.challenge.as_slice() {
-                loge!("crypto manager not allow insert crypto with same challenge");
-                return Err(ErrCode::CryptoError);
+                return asset_error_err!(
+                    ErrCode::CryptoError,
+                    "[FATAL]crypto manager not allow insert crypto with same challenge"
+                );
             }
         }
         self.crypto_vec.push(crypto);

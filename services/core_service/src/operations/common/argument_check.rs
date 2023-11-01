@@ -16,9 +16,9 @@
 //! This module is used to verify the validity of asset attributes.
 
 use asset_definition::{
-    Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, Result, ReturnType, Tag, Value,
+    asset_error_err, Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, Result, ReturnType,
+    Tag, Value,
 };
-use asset_log::loge;
 
 use crate::operations::common::{CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS};
 
@@ -41,66 +41,90 @@ const DELETE_TYPE_MAX_BITS: u32 = 2;
 
 fn check_data_type(tag: &Tag, value: &Value) -> Result<()> {
     if tag.data_type() != value.data_type() {
-        loge!("[FATAL]The data type[{}] of the tag[{}] does not match that of the value.", value.data_type(), tag);
-        return Err(ErrCode::InvalidArgument);
+        return asset_error_err!(
+            ErrCode::InvalidArgument,
+            "[FATAL]The data type[{}] of the tag[{}] does not match that of the value.",
+            value.data_type(),
+            tag
+        );
     }
     Ok(())
 }
 
 fn check_array_size(tag: &Tag, value: &Value, min: usize, max: usize) -> Result<()> {
     let Value::Bytes(v) = value else {
-        return Err(ErrCode::InvalidArgument);
+        return asset_error_err!(ErrCode::InvalidArgument, "[FATAL][{}] is not a bytes.", tag);
     };
     if v.len() > max || v.len() <= min {
-        loge!("[FATAL]The array length[{}] of Tag[{}], exceeds the valid range.", v.len(), tag);
-        return Err(ErrCode::InvalidArgument);
+        return asset_error_err!(
+            ErrCode::InvalidArgument,
+            "[FATAL]The array length[{}] of Tag[{}], exceeds the valid range.",
+            v.len(),
+            tag
+        );
     }
     Ok(())
 }
 
 fn check_enum_variant<T: TryFrom<u32>>(tag: &Tag, value: &Value) -> Result<()> {
     let Value::Number(n) = value else {
-        return Err(ErrCode::InvalidArgument);
+        return asset_error_err!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
     };
     if T::try_from(*n).is_err() {
-        loge!("[FATAL]The value[{}] of Tag[{}] is not a legal enumeration variant", *n, tag);
-        return Err(ErrCode::InvalidArgument);
+        return asset_error_err!(
+            ErrCode::InvalidArgument,
+            "[FATAL]The value[{}] of Tag[{}] is not a legal enumeration variant",
+            *n,
+            tag
+        );
     }
     Ok(())
 }
 
 fn check_valid_bits(tag: &Tag, value: &Value, min_bits: u32, max_bits: u32) -> Result<()> {
     let Value::Number(n) = value else {
-        return Err(ErrCode::InvalidArgument);
+        return asset_error_err!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
     };
     if *n >= 2_u32.pow(max_bits) || *n < (2_u32.pow(min_bits) - 1) {
         // 2: binary system
-        loge!("[FATAL]The value[{}] of Tag[{}] is not in the valid bit number.", *n, tag);
-        return Err(ErrCode::InvalidArgument);
+        return asset_error_err!(
+            ErrCode::InvalidArgument,
+            "[FATAL]The value[{}] of Tag[{}] is not in the valid bit number.",
+            *n,
+            tag
+        );
     }
     Ok(())
 }
 
 fn check_number_range(tag: &Tag, value: &Value, min: u32, max: u32) -> Result<()> {
     let Value::Number(n) = value else {
-        return Err(ErrCode::InvalidArgument);
+        return asset_error_err!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
     };
     if *n <= min || *n > max {
-        loge!("[FATAL]The value[{}] of Tag[{}] is not in the valid number range.", *n, tag);
-        return Err(ErrCode::InvalidArgument);
+        return asset_error_err!(
+            ErrCode::InvalidArgument,
+            "[FATAL]The value[{}] of Tag[{}] is not in the valid number range.",
+            *n,
+            tag
+        );
     }
     Ok(())
 }
 
 fn check_tag_range(tag: &Tag, value: &Value, tags: &[Tag]) -> Result<()> {
     let Value::Number(n) = value else {
-        return Err(ErrCode::InvalidArgument);
+        return asset_error_err!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
     };
     match Tag::try_from(*n) {
         Ok(value) if tags.contains(&value) => Ok(()),
         _ => {
-            loge!("[FATAL]The value[{}] of Tag[{}] is not in the valid tag range.", *n, tag);
-            Err(ErrCode::InvalidArgument)
+            asset_error_err!(
+                ErrCode::InvalidArgument,
+                "[FATAL]The value[{}] of Tag[{}] is not in the valid tag range.",
+                *n,
+                tag
+            )
         },
     }
 }
@@ -142,8 +166,7 @@ pub(crate) fn check_value_validity(attrs: &AssetMap) -> Result<()> {
 pub(crate) fn check_required_tags(attrs: &AssetMap, required_tags: &[Tag]) -> Result<()> {
     for tag in required_tags {
         if !attrs.contains_key(tag) {
-            loge!("[FATAL]The required tag [{}] is missing.", tag);
-            return Err(ErrCode::InvalidArgument);
+            return asset_error_err!(ErrCode::InvalidArgument, "[FATAL]The required tag [{}] is missing.", tag);
         }
     }
     Ok(())
@@ -152,8 +175,7 @@ pub(crate) fn check_required_tags(attrs: &AssetMap, required_tags: &[Tag]) -> Re
 pub(crate) fn check_tag_validity(attrs: &AssetMap, valid_tags: &[Tag]) -> Result<()> {
     for tag in attrs.keys() {
         if !valid_tags.contains(tag) {
-            loge!("[FATAL]The tag [{}] is illegal.", tag);
-            return Err(ErrCode::InvalidArgument);
+            return asset_error_err!(ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);
         }
     }
     Ok(())

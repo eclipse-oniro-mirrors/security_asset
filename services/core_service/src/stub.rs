@@ -17,7 +17,7 @@
 
 use ipc_rust::{BorrowedMsgParcel, FileDesc, IRemoteStub, IpcResult, IpcStatusCode, RemoteStub, String16};
 
-use asset_definition::{ErrCode, Result};
+use asset_definition::{Result, AssetError};
 use asset_ipc::{deserialize_map, serialize_maps, IAsset, IpcCode, IPC_SUCCESS, SA_NAME};
 use asset_log::{loge, logi};
 
@@ -51,19 +51,22 @@ impl IRemoteStub for AssetStub {
     }
 }
 
-fn ipc_err_handle(e: ErrCode) -> IpcStatusCode {
-    loge!("[IPC]Asset error code = {}", e);
+fn asset_err_handle(e: AssetError) -> IpcStatusCode {
+    loge!("[IPC]Asset error code = {}, msg is {}", e.code, e.msg);
     IpcStatusCode::InvalidValue
 }
 
 fn reply_handle(code: IpcCode, ret: Result<()>, reply: &mut BorrowedMsgParcel) -> IpcResult<()> {
     let mut result = IPC_SUCCESS;
-    if let Err(e) = ret {
-        result = e as u32;
+    match ret {
+        Ok(_) => reply.write::<u32>(&IPC_SUCCESS)?,
+        Err(e) => {
+            reply.write::<u32>(&(e.code as u32))?;
+            reply.write::<String>(&e.msg)?;
+            result = e.code as u32;
+        },
     }
-
     logi!("[INFO]on_remote_request end, calling function: {}, result code: {}", code, result);
-    reply.write::<u32>(&result)?;
     Ok(())
 }
 
@@ -73,14 +76,14 @@ fn on_remote_request(
     data: &BorrowedMsgParcel,
     reply: &mut BorrowedMsgParcel,
 ) -> IpcResult<()> {
-    let ipc_code = IpcCode::try_from(code).map_err(ipc_err_handle)?;
-    let map = deserialize_map(data).map_err(ipc_err_handle)?;
+    let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
+    let map = deserialize_map(data).map_err(asset_err_handle)?;
     logi!("[INFO]on_remote_request enter, calling function: {}", ipc_code);
     match ipc_code {
         IpcCode::Add => reply_handle(ipc_code, stub.add(&map), reply),
         IpcCode::Remove => reply_handle(ipc_code, stub.remove(&map), reply),
         IpcCode::Update => {
-            let update_map = deserialize_map(data).map_err(ipc_err_handle)?;
+            let update_map = deserialize_map(data).map_err(asset_err_handle)?;
             reply_handle(ipc_code, stub.update(&map, &update_map), reply)
         },
         IpcCode::PreQuery => match stub.pre_query(&map) {
@@ -93,7 +96,7 @@ fn on_remote_request(
         IpcCode::Query => match stub.query(&map) {
             Ok(res) => {
                 reply_handle(ipc_code, Ok(()), reply)?;
-                serialize_maps(&res, reply).map_err(ipc_err_handle)
+                serialize_maps(&res, reply).map_err(asset_err_handle)
             },
             Err(e) => reply_handle(ipc_code, Err(e), reply),
         },

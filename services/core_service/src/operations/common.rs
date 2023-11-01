@@ -23,9 +23,8 @@ pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_v
 
 use asset_crypto_manager::crypto::SecretKey;
 use asset_db_operator::types::{column, DbMap};
-use asset_definition::{Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
+use asset_definition::{asset_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
 use asset_hasher::sha256;
-use asset_log::loge;
 
 use crate::calling_info::CallingInfo;
 
@@ -109,10 +108,9 @@ pub(crate) fn into_asset_map(db_data: &DbMap) -> AssetMap {
 }
 
 pub(crate) fn get_system_time() -> Result<Vec<u8>> {
-    let sys_time = SystemTime::now().duration_since(UNIX_EPOCH).map_err(|e| {
-        loge!("[FATAL][SA]Get system time faield [{}].", e);
-        ErrCode::GetSystemTimeError
-    })?;
+    let sys_time = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|e| asset_error!(ErrCode::GetSystemTimeError, "[FATAL][SA]Get system time faield [{}].", e))?;
     Ok(sys_time.as_millis().to_string().as_bytes().to_vec())
 }
 

@@ -22,7 +22,8 @@ use asset_db_operator::{
     types::{column, DbMap, DB_DATA_VERSION},
 };
 use asset_definition::{
-    Accessibility, AssetMap, AuthType, ConflictResolution, DeleteType, ErrCode, Extension, Result, SyncType, Tag, Value,
+    asset_error_err, Accessibility, AssetMap, AuthType, ConflictResolution, DeleteType, ErrCode, Extension, Result,
+    SyncType, Tag, Value,
 };
 use asset_log::{loge, logi};
 
@@ -33,16 +34,10 @@ fn generate_key_if_needed(secret_key: &SecretKey) -> Result<()> {
         Ok(true) => Ok(()),
         Ok(false) => {
             logi!("[INFO]The key does not exist, generate it.");
-            if let Err(res) = secret_key.generate() {
-                loge!("[FATAL]Generete key failed, res is [{}].", res);
-                Err(ErrCode::CryptoError)
-            } else {
-                Ok(())
-            }
+            secret_key.generate()
         },
         _ => {
-            loge!("HUKS failed to check whether the key exists.");
-            Err(ErrCode::CryptoError)
+            asset_error_err!(ErrCode::CryptoError, "[FATAL]HUKS failed to check whether the key exists.")
         },
     }
 }
@@ -71,8 +66,7 @@ fn replace_db_record(calling_info: &CallingInfo, query_db_data: &DbMap, replace_
     };
 
     if !do_transaction(calling_info.user_id(), replace_callback)? {
-        loge!("do_transaction in replace_db_record failed!");
-        return Err(ErrCode::DatabaseError);
+        return asset_error_err!(ErrCode::DatabaseError, "[FATAL]Execute do_transaction in replace_db_record failed!");
     }
     Ok(())
 }
@@ -84,8 +78,7 @@ fn resolve_conflict(calling_info: &CallingInfo, attrs: &AssetMap, query: &DbMap,
             replace_db_record(calling_info, query, db_data)
         },
         _ => {
-            loge!("[FATAL][SA]The specified alias already exists.");
-            Err(ErrCode::Duplicated)
+            asset_error_err!(ErrCode::Duplicated, "[FATAL][SA]The specified alias already exists.")
         },
     }
 }

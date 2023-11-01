@@ -19,8 +19,8 @@ use asset_sdk::*;
 #[test]
 fn query_non_exist_with_alias() {
     let alias = function!().as_bytes();
-    assert_eq!(ErrCode::NotFound, query_attr_by_alias(alias).unwrap_err());
-    assert_eq!(ErrCode::NotFound, query_all_by_alias(alias).unwrap_err());
+    expect_error_eq(ErrCode::NotFound, query_attr_by_alias(alias).unwrap_err());
+    expect_error_eq(ErrCode::NotFound, query_all_by_alias(alias).unwrap_err());
 }
 
 #[test]
@@ -29,8 +29,8 @@ fn query_with_wrong_alias() {
     add_default_asset(function_name, function_name).unwrap();
 
     let alias_new = "query_with_wrong_alias_wrong_alias".as_bytes();
-    assert_eq!(ErrCode::NotFound, query_attr_by_alias(alias_new).unwrap_err());
-    assert_eq!(ErrCode::NotFound, query_all_by_alias(alias_new).unwrap_err());
+    expect_error_eq(ErrCode::NotFound, query_attr_by_alias(alias_new).unwrap_err());
+    expect_error_eq(ErrCode::NotFound, query_all_by_alias(alias_new).unwrap_err());
     remove_by_alias(function_name).unwrap();
 }
 
@@ -38,7 +38,7 @@ fn query_with_wrong_alias() {
 fn query_non_exist_without_alias() {
     let mut query = AssetMap::new();
     query.insert_attr(Tag::RequirePasswordSet, true);
-    assert_eq!(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 }
 
 #[test]
@@ -52,7 +52,7 @@ fn query_without_alias_with_wrong_condition() {
 
     let mut query = AssetMap::new();
     query.insert_attr(Tag::RequirePasswordSet, true);
-    assert_eq!(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
     remove_by_alias(function_name).unwrap();
 }
@@ -152,7 +152,7 @@ fn query_with_secret() {
     add_default_asset(function_name, function_name).unwrap();
 
     let query = AssetMap::from([(Tag::Secret, Value::Bytes(function_name.to_vec()))]);
-    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
     remove_by_alias(function_name).unwrap();
 }
@@ -163,7 +163,7 @@ fn query_with_return_all_without_alias() {
     add_default_asset(function_name, function_name).unwrap();
 
     let query = AssetMap::from([(Tag::ReturnType, Value::Number(ReturnType::All as u32))]);
-    assert_eq!(ErrCode::NotSupport, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+    expect_error_eq(ErrCode::NotSupport, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
     remove_by_alias(function_name).unwrap();
 }

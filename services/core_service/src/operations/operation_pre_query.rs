@@ -23,9 +23,8 @@ use asset_db_operator::{
     database_table_helper::DatabaseHelper,
     types::{column, DbMap},
 };
-use asset_definition::{Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
+use asset_definition::{asset_error_err, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
 use asset_hasher::sha256;
-use asset_log::loge;
 
 use crate::{calling_info::CallingInfo, operations::common};
 
@@ -42,8 +41,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
 
     match attributes.get(&Tag::AuthType) {
         Some(Value::Number(val)) if *val == (AuthType::None as u32) => {
-            loge!("Pre Query AuthType invalid.");
-            Err(ErrCode::InvalidArgument)
+            asset_error_err!(ErrCode::InvalidArgument, "[FATAL][SA]Pre Query AuthType invalid.")
         },
         _ => Ok(()),
     }
@@ -52,8 +50,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
 fn query_access_types(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<Accessibility>> {
     let results = DatabaseHelper::query_columns(calling_info.user_id(), &vec![column::ACCESSIBILITY], db_data, None)?;
     if results.is_empty() {
-        loge!("[FATAL][SA]The data to be queried does not exist.");
-        return Err(ErrCode::NotFound);
+        return asset_error_err!(ErrCode::NotFound, "[FATAL][SA]The data to be queried does not exist.");
     }
 
     let mut access_types = Vec::new();
@@ -61,8 +58,7 @@ fn query_access_types(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
         match db_result.get(&column::ACCESSIBILITY) {
             Some(Value::Number(access_type)) => access_types.push(Accessibility::try_from(*access_type)?),
             _ => {
-                loge!("Pre Query Accessibility invalid.");
-                return Err(ErrCode::InvalidArgument);
+                return asset_error_err!(ErrCode::InvalidArgument, "[FATAL][SA]Pre Query Accessibility invalid.");
             },
         }
     }
@@ -78,8 +74,7 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
 
     let access_types = query_access_types(calling_info, &db_data)?;
     if access_types.is_empty() {
-        loge!("Pre Query result not found.");
-        return Err(ErrCode::NotFound);
+        return asset_error_err!(ErrCode::NotFound, "[FATAL][SA]Pre Query result not found.");
     }
 
     let valid_time = query.get_num_attr(&Tag::AuthValidityPeriod).unwrap_or(DEFAULT_AUTH_VALIDITY);

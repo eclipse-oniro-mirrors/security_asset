@@ -18,14 +18,14 @@ use asset_sdk::*;
 
 #[test]
 fn remove_alias_non_exist() {
-    assert_eq!(Err(ErrCode::NotFound), remove_by_alias("remove_alias_non_exist".as_bytes()));
+    expect_error_eq(ErrCode::NotFound, remove_by_alias("remove_alias_non_exist".as_bytes()).unwrap_err());
 }
 
 #[test]
 fn remove_condition_non_exist() {
     let delete_condition =
         AssetMap::from([(Tag::DataLabelCritical1, Value::Bytes("remove_condition_non_exist".as_bytes().to_vec()))]);
-    assert_eq!(Err(ErrCode::NotFound), asset_sdk::Manager::build().unwrap().remove(&delete_condition));
+        expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().remove(&delete_condition).unwrap_err());
 }
 
 #[test]
@@ -41,7 +41,7 @@ fn remove_condition_exist_and_query() {
     condition.remove(&Tag::Alias);
     condition.remove(&Tag::Secret);
     asset_sdk::Manager::build().unwrap().remove(&condition).unwrap();
-    assert_eq!(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&condition).unwrap_err());
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&condition).unwrap_err());
 }
 
 #[test]
@@ -52,6 +52,6 @@ fn remove_condition_with_secret() {
         (Tag::Secret, Value::Bytes(function_name.to_owned())),
     ]);
     asset_sdk::Manager::build().unwrap().add(&condition).unwrap();
-    assert_eq!(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().remove(&condition).unwrap_err());
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().remove(&condition).unwrap_err());
     remove_by_alias(function_name).unwrap();
 }

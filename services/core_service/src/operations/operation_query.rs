@@ -22,8 +22,8 @@ use asset_db_operator::{
     database_table_helper::DatabaseHelper,
     types::{column, DbMap, QueryOptions},
 };
-use asset_definition::{AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value};
-use asset_log::{loge, logi};
+use asset_definition::{asset_error_err, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value};
+use asset_log::logi;
 
 use crate::{calling_info::CallingInfo, operations::common};
 
@@ -55,7 +55,7 @@ fn exec_crypto(calling: &CallingInfo, db_data: &mut DbMap, challenge: &Vec<u8>, 
             db_data.insert(column::SECRET, Value::Bytes(secret));
             Ok(())
         },
-        None => return Err(ErrCode::CryptoError),
+        None => return asset_error_err!(ErrCode::CryptoError, "[FATAL][SA]Execute ctypto not found."),
     };
     x
 }
@@ -65,8 +65,7 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
     logi!("results len {}", results.len());
     match results.len() {
         0 => {
-            loge!("[FATAL]The data to be queried does not exist.");
-            Err(ErrCode::NotFound)
+            asset_error_err!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.")
         },
         1 => {
             match results[0].get(column::AUTH_TYPE) {
@@ -83,8 +82,11 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
             into_asset_maps(&results)
         },
         n => {
-            loge!("[FATAL]The database contains {} records with the specified alias.", n);
-            Err(ErrCode::DatabaseError)
+            asset_error_err!(
+                ErrCode::DatabaseError,
+                "[FATAL]The database contains {} records with the specified alias.",
+                n
+            )
         },
     }
 }
@@ -120,8 +122,7 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
     let mut results =
         DatabaseHelper::query_columns(calling_info.user_id(), &vec![], db_data, Some(&get_query_options(attrs)))?;
     if results.is_empty() {
-        loge!("[FATAL]The data to be queried does not exist.");
-        return Err(ErrCode::NotFound);
+        return asset_error_err!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
     }
 
     for data in &mut results {
@@ -153,8 +154,7 @@ pub(crate) fn query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<
     match query.get(&Tag::ReturnType) {
         Some(Value::Number(return_type)) if *return_type == (ReturnType::All as u32) => {
             if !query.contains_key(&Tag::Alias) {
-                loge!("[FATAL]Batch secret query is not supported.");
-                Err(ErrCode::NotSupport)
+                asset_error_err!(ErrCode::NotSupport, "[FATAL]Batch secret query is not supported.")
             } else {
                 query_all(calling_info, &mut db_data, query)
             }

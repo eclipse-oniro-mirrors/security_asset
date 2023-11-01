@@ -38,14 +38,14 @@ macro_rules! impl_tag_trait {
         }
 
         impl std::convert::TryFrom<u32> for $name {
-            type Error = $crate::ErrCode;
+            type Error = $crate::AssetError;
 
             fn try_from(v: u32) -> std::result::Result<Self, Self::Error> {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
                     _ => {
-                        asset_log::loge!("[FATAL]Type[{}] try from u32[{}] failed.", stringify!($name), v);
-                        Err($crate::ErrCode::InvalidArgument)
+                        $crate::asset_error_err!($crate::ErrCode::InvalidArgument,
+                            "[FATAL]Type[{}] try from u32[{}] failed.", stringify!($name), v)
                     }
                 }
             }
@@ -86,14 +86,14 @@ macro_rules! impl_enum_trait {
         }
 
         impl std::convert::TryFrom<u32> for $name {
-            type Error = $crate::ErrCode;
+            type Error = $crate::AssetError;
 
             fn try_from(v: u32) -> std::result::Result<Self, Self::Error> {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
                     _ => {
-                        asset_log::loge!("[FATAL]Type[{}] try from u32[{}] failed.", stringify!($name), v);
-                        Err($crate::ErrCode::InvalidArgument)
+                        $crate::asset_error_err!($crate::ErrCode::InvalidArgument,
+                            "[FATAL]Type[{}] try from u32[{}] failed.", stringify!($name), v)
                     }
                 }
             }
@@ -119,4 +119,42 @@ macro_rules! impl_enum_trait {
             }
         }
     }
+}
+
+/// Construct AssetError and print log.
+///
+/// # Examples
+///
+/// ```
+/// asset_error_err!(ErrCode::InvalidArgument, "hello, {}", "world");
+/// ```
+#[macro_export]
+macro_rules! asset_error {
+    ($code:expr, $($arg:tt)*) => {{
+        let str = format!($($arg)*);
+        asset_log::loge!("{}", str);
+        $crate::AssetError {
+            code: $code,
+            msg: str
+        }
+    }};
+}
+
+/// Construct AssetError and print log.
+///
+/// # Examples
+///
+/// ```
+/// asset_error_err!(ErrCode::InvalidArgument, "hello, {}", "world");
+/// ```
+#[macro_export]
+macro_rules! asset_error_err {
+    ($code:expr, $($arg:tt)*) => {{
+        let str = format!($($arg)*);
+        asset_log::loge!("{}", str);
+        Err($crate::AssetError {
+            code: $code,
+            msg: str
+        })
+    }};
 }

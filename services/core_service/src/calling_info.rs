@@ -18,7 +18,7 @@
 use ipc_rust::get_calling_uid;
 
 use asset_constants::OwnerType;
-use asset_definition::{ErrCode, Result};
+use asset_definition::{asset_error_err, ErrCode, Result};
 
 pub(crate) struct CallingInfo {
     owner_type: OwnerType,
@@ -37,7 +37,7 @@ pub(crate) fn get_front_user_id() -> Result<i32> {
         if GetFrontUserId(&mut user_id) {
             Ok(user_id)
         } else {
-            Err(ErrCode::AccountError)
+            asset_error_err!(ErrCode::AccountError, "[FATAL]Get front user id failed.")
         }
     }
 }
@@ -51,7 +51,7 @@ impl CallingInfo {
         let mut owner_type = OwnerType::Hap;
         unsafe {
             if !GetOwnerInfo(user_id, uid, &mut owner_type, owner_info.as_mut_ptr(), &mut len) {
-                return Err(ErrCode::BmsError);
+                return asset_error_err!(ErrCode::BmsError, "[FATAL]Get owner info from bms failed.");
             }
         }
         owner_info.truncate(len as usize);

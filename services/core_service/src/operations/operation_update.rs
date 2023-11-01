@@ -20,8 +20,8 @@ use asset_db_operator::{
     database_table_helper::DatabaseHelper,
     types::{column, DbMap},
 };
-use asset_definition::{AssetMap, ErrCode, Extension, Result, Tag, Value};
-use asset_log::{loge, logi};
+use asset_definition::{asset_error_err, AssetMap, ErrCode, Extension, Result, Tag, Value};
+use asset_log::logi;
 
 use crate::{calling_info::CallingInfo, operations::common};
 
@@ -51,8 +51,7 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap) -> Result<()> {
     common::check_value_validity(query)?;
 
     if attrs_to_update.is_empty() {
-        loge!("[FATAL]The attributes to update is empty.");
-        return Err(ErrCode::InvalidArgument);
+        return asset_error_err!(ErrCode::InvalidArgument, "[FATAL]The attributes to update is empty.");
     }
     // Check attributes to update.
     valid_tags = common::NORMAL_LABEL_ATTRS.to_vec();
@@ -73,8 +72,11 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     if update.contains_key(&Tag::Secret) {
         let mut results = DatabaseHelper::query_columns(calling_info.user_id(), &vec![], &query_db_data, None)?;
         if results.len() != 1 {
-            loge!("query to-be-updated asset failed, found [{}] assets", results.len());
-            return Err(ErrCode::NotFound);
+            return asset_error_err!(
+                ErrCode::NotFound,
+                "query to-be-updated asset failed, found [{}] assets",
+                results.len()
+            );
         }
 
         let result = results.get_mut(0).unwrap();
@@ -86,8 +88,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     // call sql to update
     let update_num = DatabaseHelper::update_datas(calling_info.user_id(), &query_db_data, &update_db_data)?;
     if update_num == 0 {
-        loge!("[FATAL]Update asset failed, update 0 asset.");
-        return Err(ErrCode::NotFound);
+        return asset_error_err!(ErrCode::NotFound, "[FATAL]Update asset failed, update 0 asset.");
     }
     logi!("update {} data", update_num);
     Ok(())

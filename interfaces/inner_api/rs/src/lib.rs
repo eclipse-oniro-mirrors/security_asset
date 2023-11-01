@@ -20,7 +20,6 @@ pub use asset_definition::*;
 use ipc_rust::RemoteObjRef;
 
 use asset_ipc::{IAsset, SA_ID};
-use asset_log::loge;
 
 mod proxy;
 use proxy::AssetProxy;
@@ -32,8 +31,7 @@ extern "C" {
 fn get_remote() -> Result<RemoteObjRef<AssetProxy>> {
     unsafe {
         if !LoadService(SA_ID) {
-            loge!("[FATAL][RUST SDK]Load service failed.");
-            return Err(ErrCode::ServiceUnavailable);
+            return asset_error_err!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]Load service failed.");
         }
     }
 
@@ -41,8 +39,7 @@ fn get_remote() -> Result<RemoteObjRef<AssetProxy>> {
     match object {
         Ok(remote) => Ok(remote),
         Err(e) => {
-            loge!("[FATAL][RUST SDK]get remote service failed. Error = {}", e);
-            Err(ErrCode::ServiceUnavailable)
+            asset_error_err!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed. Error = {}", e)
         },
     }
 }

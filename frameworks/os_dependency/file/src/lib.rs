@@ -17,8 +17,7 @@
 
 use std::{fs, path::Path};
 
-use asset_definition::{ErrCode, Result};
-use asset_log::loge;
+use asset_definition::{asset_error_err, ErrCode, Result};
 
 const ROOT_PATH: &str = "data/service/el1/public/asset_service";
 
@@ -34,8 +33,7 @@ pub fn create_user_db_dir(user_id: i32) -> Result<()> {
         Ok(_) => Ok(()),
         Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
         Err(e) => {
-            loge!("[FATAL][SA]Create dir failed! error is [{}]", e);
-            Err(ErrCode::FileOperationError)
+            asset_error_err!(ErrCode::FileOperationError, "[FATAL][SA]Create dir failed! error is [{}]", e)
         },
     }
 }
@@ -52,8 +50,7 @@ pub fn delete_user_db_dir(user_id: i32) -> Result<()> {
         Ok(_) => Ok(()),
         Err(e) if e.kind() != std::io::ErrorKind::NotFound => Ok(()),
         Err(e) => {
-            loge!("[FATAL][SA]Delete dir failed! error is [{}]", e);
-            Err(ErrCode::FileOperationError)
+            asset_error_err!(ErrCode::FileOperationError, "[FATAL][SA]Delete dir failed! error is [{}]", e)
         },
     }
 }

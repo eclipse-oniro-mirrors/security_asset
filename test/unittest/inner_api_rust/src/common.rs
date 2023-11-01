@@ -15,7 +15,7 @@
 
 #![allow(dead_code)]
 
-use asset_sdk::{AssetMap, Result, ReturnType, Tag, Value};
+use asset_sdk::{AssetMap, Result, ReturnType, Tag, Value, ErrCode, AssetError};
 
 #[macro_export]
 macro_rules! function {
@@ -78,4 +78,8 @@ pub(crate) fn add_default_asset(alias: &[u8], secret: &[u8]) -> Result<()> {
         (Tag::Alias, Value::Bytes(alias.to_vec())),
         (Tag::Secret, Value::Bytes(secret.to_vec())),
     ]))
+}
+
+pub(crate) fn expect_error_eq(expect_err: ErrCode, real_err: AssetError) {
+    assert_eq!(expect_err, real_err.code)
 }

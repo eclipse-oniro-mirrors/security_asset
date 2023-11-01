@@ -17,7 +17,7 @@
 
 use std::{collections::HashMap, hash::Hash};
 
-use super::{Conversion, DataType, ErrCode, Extension, Result, Tag, Value};
+use super::{asset_error_err, AssetError, Conversion, DataType, ErrCode, Extension, Result, Tag, Value};
 
 /// The mask used to obtain the data type of Asset attribute value.
 const DATA_TYPE_MASK: u32 = 0xF << 28;
@@ -96,15 +96,15 @@ where
         if let Some(Value::Bool(b)) = self.get(key) {
             Ok(*b)
         } else {
-            Err(ErrCode::InvalidArgument)
+            asset_error_err!(ErrCode::InvalidArgument, "[FATAL]Get bool attr fail!")
         }
     }
 
-    fn get_enum_attr<T: TryFrom<u32, Error = ErrCode>>(&self, key: &K) -> Result<T> {
+    fn get_enum_attr<T: TryFrom<u32, Error = AssetError>>(&self, key: &K) -> Result<T> {
         if let Some(Value::Number(num)) = self.get(key) {
             T::try_from(*num)
         } else {
-            Err(ErrCode::InvalidArgument)
+            asset_error_err!(ErrCode::InvalidArgument, "[FATAL]Get enum attr fail!")
         }
     }
 
@@ -112,7 +112,7 @@ where
         if let Some(Value::Number(num)) = self.get(key) {
             Ok(*num)
         } else {
-            Err(ErrCode::InvalidArgument)
+            asset_error_err!(ErrCode::InvalidArgument, "[FATAL]Get num attr fail!")
         }
     }
 
@@ -120,7 +120,7 @@ where
         if let Some(Value::Bytes(bytes)) = self.get(key) {
             Ok(bytes)
         } else {
-            Err(ErrCode::InvalidArgument)
+            asset_error_err!(ErrCode::InvalidArgument, "[FATAL]Get bytes attr fail!")
         }
     }
 }

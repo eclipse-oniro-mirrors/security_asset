@@ -16,7 +16,7 @@
 //! the interfaces of db_operator public for other module
 //! including transaction and create default db,table
 
-use asset_definition::{ErrCode, Value};
+use asset_definition::{asset_error, asset_error_err, AssetError, ErrCode, Result, Value};
 use asset_log::{loge, logi};
 
 use crate::{
@@ -25,9 +25,7 @@ use crate::{
     },
     table::Table,
     transaction::Transaction,
-    types::{
-        Condition, DbMap, QueryOptions, ResultSet, SqliteErrCode, ASSET_TABLE_NAME, COLUMN_INFO, SQLITE_DONE, SQLITE_OK,
-    },
+    types::{Condition, DbMap, QueryOptions, ResultSet, SqliteErrCode, ASSET_TABLE_NAME, COLUMN_INFO, SQLITE_OK},
 };
 
 /// just use database
@@ -35,21 +33,16 @@ pub struct DatabaseHelper;
 /// just use table
 pub type TableHelper<'a> = Table<'a>;
 
+type DbResult<T> = std::result::Result<T, SqliteErrCode>;
+
 /// change sqlite err code to asset err code
-fn from_sqlite_code_to_asset_code(value: SqliteErrCode) -> ErrCode {
-    if value != SQLITE_OK && value != SQLITE_DONE {
-        asset_log::loge!("error ret {}", value);
-    }
-    ErrCode::DatabaseError
+fn from_sqlite_code_to_asset_code(value: SqliteErrCode) -> AssetError {
+    asset_error!(ErrCode::DatabaseError, "sqlite error ret {}", value)
 }
 
 /// do same operation in backup database when do something in master db
 /// backup every success operation, recovery every fail operation
-fn back_db_when_succ<T, F: Fn(&Table) -> Result<T, SqliteErrCode>>(
-    modified: bool,
-    table: &Table,
-    func: F,
-) -> Result<T, ErrCode> {
+fn back_db_when_succ<T, F: Fn(&Table) -> DbResult<T>>(modified: bool, table: &Table, func: F) -> Result<T> {
     let ret = func(table);
     match ret {
         Ok(o) => {
@@ -70,8 +63,7 @@ fn back_db_when_succ<T, F: Fn(&Table) -> Result<T, SqliteErrCode>>(
                 // recovery master db
                 let r_ret = copy_db_file(table.db, true);
                 if r_ret.is_err() {
-                    loge!("recovery master db {} fail", table.db.path);
-                    Err(ErrCode::DatabaseError)
+                    asset_error_err!(ErrCode::DatabaseError, "[FATAL]recovery master db {} fail", table.db.path)
                 } else {
                     logi!("recovery master db {} succ", table.db.path);
 
@@ -104,7 +96,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// sql like:
     /// update table_name set alias='test_update' where AppId='owner' and Alias='alias'
-    pub fn update_datas(&self, condition: &Condition, datas: &DbMap) -> Result<i32, ErrCode> {
+    pub fn update_datas(&self, condition: &Condition, datas: &DbMap) -> Result<i32> {
         let closure = |e: &Table| e.update_row(condition, datas);
         back_db_when_succ(true, self, closure)
     }
@@ -129,7 +121,7 @@ impl<'a> TableHelper<'a> {
     ///
     /// sql like:
     /// insert into table_name(Owner,Alias,value) values(owner,alias,'test_update')
-    pub fn insert_datas(&self, datas: &DbMap) -> Result<i32, ErrCode> {
+    pub fn insert_datas(&self, datas: &DbMap) -> Result<i32> {
         let closure = |e: &Table| e.insert_row(datas);
         back_db_when_succ(true, self, closure)
     }
@@ -137,7 +129,7 @@ impl<'a> TableHelper<'a> {
     /// insert multi datas
     /// columns: the columns
     /// datas: the data set
-    pub fn insert_multi_datas(&self, columns: &Vec<&'static str>, datas: &Vec<Vec<Value>>) -> Result<i32, ErrCode> {
+    pub fn insert_multi_datas(&self, columns: &Vec<&'static str>, datas: &Vec<Vec<Value>>) -> Result<i32> {
         let closure = |e: &Table| e.insert_multi_row_datas(columns, datas);
         back_db_when_succ(true, self, closure)
     }
@@ -162,7 +154,7 @@ impl<'a> TableHelper<'a> {
     ///
     /// sql like:
     /// delete from table_name where Owner=owner and Alias=alias and value='test_update'
-    pub fn delete_datas(&self, condition: &Condition) -> Result<i32, ErrCode> {
+    pub fn delete_datas(&self, condition: &Condition) -> Result<i32> {
         let closure = |e: &Table| e.delete_row(condition);
         back_db_when_succ(true, self, closure)
     }
@@ -181,7 +173,7 @@ impl<'a> TableHelper<'a> {
     ///
     /// sql like:
     /// select count(*) as count from table_name where Owner='owner1' and Alias='alias1'
-    pub fn is_data_exist(&self, condition: &Condition) -> Result<bool, ErrCode> {
+    pub fn is_data_exist(&self, condition: &Condition) -> Result<bool> {
         let closure = |e: &Table| e.is_data_exists(condition);
         back_db_when_succ(false, self, closure)
     }
@@ -199,7 +191,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// sql like:
     /// select count(*) as count from table_name where AppId='owner2'
-    pub fn select_count(&self, condition: &Condition) -> Result<u32, ErrCode> {
+    pub fn select_count(&self, condition: &Condition) -> Result<u32> {
         let closure = |e: &Table| e.count_datas(condition);
         back_db_when_succ(false, self, closure)
     }
@@ -218,11 +210,7 @@ impl<'a> TableHelper<'a> {
     /// ```
     /// sql like:
     /// select * from table_name where AppId='owner' and Alias='alias'
-    pub fn query_datas(
-        &self,
-        condition: &Condition,
-        query_options: Option<&QueryOptions>,
-    ) -> Result<ResultSet, ErrCode> {
+    pub fn query_datas(&self, condition: &Condition, query_options: Option<&QueryOptions>) -> Result<ResultSet> {
         let closure = |e: &Table| e.query_row(&vec![], condition, query_options);
         back_db_when_succ(false, self, closure)
     }
@@ -246,14 +234,14 @@ impl<'a> TableHelper<'a> {
         columns: &Vec<&'static str>,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
-    ) -> Result<Vec<DbMap>, ErrCode> {
+    ) -> Result<Vec<DbMap>> {
         let closure = |e: &Table| e.query_datas_advanced(columns, condition, query_options, COLUMN_INFO);
         back_db_when_succ(false, self, closure)
     }
 }
 
 /// process err msg, this may be use in test, consider delete this function when release
-pub fn process_err_msg<T>(res: Result<T, ErrCode>, db: &Database) -> Result<T, ErrCode> {
+pub fn process_err_msg<T>(res: Result<T>, db: &Database) -> Result<T> {
     if res.is_err() {
         if let Some(msg) = db.get_err_msg() {
             loge!("db err info: {}", msg.s);
@@ -266,7 +254,7 @@ pub fn process_err_msg<T>(res: Result<T, ErrCode>, db: &Database) -> Result<T, E
 
 /// if table not exist, create default asset table
 #[inline(always)]
-fn create_default_table<'a>(db: &'a Database) -> Result<Table<'a>, ErrCode> {
+fn create_default_table<'a>(db: &'a Database) -> Result<Table<'a>> {
     let res = db.create_table(ASSET_TABLE_NAME, COLUMN_INFO).map_err(from_sqlite_code_to_asset_code);
     match process_err_msg(res, db) {
         Ok(table) => {
@@ -279,7 +267,7 @@ fn create_default_table<'a>(db: &'a Database) -> Result<Table<'a>, ErrCode> {
 }
 
 /// open default table
-fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>, ErrCode> {
+fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>> {
     let res = db.open_table(ASSET_TABLE_NAME);
     match res {
         Ok(o) => {
@@ -294,14 +282,17 @@ fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>, Err
                 // recovery master db
                 let r_ret = copy_db_file(db, true);
                 if r_ret.is_err() {
-                    loge!("recovery master db {} fail", db.path);
-                    Err(ErrCode::DatabaseError)
+                    asset_error_err!(ErrCode::DatabaseError, "[FATAL]recovery master db {} fail", db.path)
                 } else {
                     logi!("recovery master db {} succ", db.path);
                     let o_ret = db.re_open();
                     if let Err(e) = o_ret {
-                        loge!("reopen master db {} fail {}", db.path, e);
-                        return Err(ErrCode::DatabaseError);
+                        return asset_error_err!(
+                            ErrCode::DatabaseError,
+                            "[FATAL]reopen master db {} fail {}",
+                            db.path,
+                            e
+                        );
                     }
                     process_err_msg(db.open_table(ASSET_TABLE_NAME).map_err(from_sqlite_code_to_asset_code), db)
                 }
@@ -315,53 +306,49 @@ fn open_default_table<'a>(db: &'a mut Database) -> Result<Option<Table<'a>>, Err
 impl<'a> Database<'a> {
     /// see TableHelper
     #[inline(always)]
-    pub fn update_datas(&self, condition: &Condition, datas: &DbMap) -> Result<i32, ErrCode> {
+    pub fn update_datas(&self, condition: &Condition, datas: &DbMap) -> Result<i32> {
         let table = Table::new(ASSET_TABLE_NAME, self);
         table.update_datas(condition, datas)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn insert_datas(&self, datas: &DbMap) -> Result<i32, ErrCode> {
+    pub fn insert_datas(&self, datas: &DbMap) -> Result<i32> {
         let table = Table::new(ASSET_TABLE_NAME, self);
         table.insert_datas(datas)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn insert_multi_datas(&self, columns: &Vec<&'static str>, datas: &Vec<Vec<Value>>) -> Result<i32, ErrCode> {
+    pub fn insert_multi_datas(&self, columns: &Vec<&'static str>, datas: &Vec<Vec<Value>>) -> Result<i32> {
         let table = Table::new(ASSET_TABLE_NAME, self);
         table.insert_multi_datas(columns, datas)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn delete_datas(&self, cond: &Condition) -> Result<i32, ErrCode> {
+    pub fn delete_datas(&self, cond: &Condition) -> Result<i32> {
         let table = Table::new(ASSET_TABLE_NAME, self);
         table.delete_datas(cond)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn is_data_exists(&self, condition: &Condition) -> Result<bool, ErrCode> {
+    pub fn is_data_exists(&self, condition: &Condition) -> Result<bool> {
         let table = Table::new(ASSET_TABLE_NAME, self);
         table.is_data_exist(condition)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn select_count(&self, condition: &Condition) -> Result<u32, ErrCode> {
+    pub fn select_count(&self, condition: &Condition) -> Result<u32> {
         let table = Table::new(ASSET_TABLE_NAME, self);
         table.select_count(condition)
     }
 
     /// see TableHelper
     #[inline(always)]
-    pub fn query_datas(
-        &self,
-        condition: &Condition,
-        query_options: Option<&QueryOptions>,
-    ) -> Result<ResultSet, ErrCode> {
+    pub fn query_datas(&self, condition: &Condition, query_options: Option<&QueryOptions>) -> Result<ResultSet> {
         let table = Table::new(ASSET_TABLE_NAME, self);
         table.query_datas(condition, query_options)
     }
@@ -373,7 +360,7 @@ impl<'a> Database<'a> {
         columns: &Vec<&'static str>,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
-    ) -> Result<Vec<DbMap>, ErrCode> {
+    ) -> Result<Vec<DbMap>> {
         let table = Table::new(ASSET_TABLE_NAME, self);
         table.query_columns(columns, condition, query_options)
     }
@@ -381,7 +368,7 @@ impl<'a> Database<'a> {
 
 impl DatabaseHelper {
     /// open default database and table
-    pub fn open_default_database_table<'a>(user_id: i32) -> Result<Database<'a>, ErrCode> {
+    pub fn open_default_database_table<'a>(user_id: i32) -> Result<Database<'a>> {
         let mut db = Database::default_new(user_id).map_err(from_sqlite_code_to_asset_code)?;
         let _lock = db.file.mtx.lock().unwrap();
         match open_default_table(&mut db) {
@@ -402,7 +389,7 @@ impl DatabaseHelper {
         user_id: i32,
         version_new: u32,
         callback: UpdateDatabaseCallbackFunc,
-    ) -> Result<Database<'a>, ErrCode> {
+    ) -> Result<Database<'a>> {
         let mut db = Database::default_new_with_version_update(user_id, version_new, callback)
             .map_err(from_sqlite_code_to_asset_code)?;
         let _lock = db.file.mtx.lock().unwrap();
@@ -421,7 +408,7 @@ impl DatabaseHelper {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn update_datas(user_id: i32, condition: &Condition, datas: &DbMap) -> Result<i32, ErrCode> {
+    pub fn update_datas(user_id: i32, condition: &Condition, datas: &DbMap) -> Result<i32> {
         let db = DatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.update_datas(condition, datas)
@@ -429,7 +416,7 @@ impl DatabaseHelper {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn insert_datas(user_id: i32, datas: &DbMap) -> Result<i32, ErrCode> {
+    pub fn insert_datas(user_id: i32, datas: &DbMap) -> Result<i32> {
         let db = DatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.insert_datas(datas)
@@ -437,11 +424,7 @@ impl DatabaseHelper {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn insert_multi_datas(
-        user_id: i32,
-        columns: &Vec<&'static str>,
-        datas: &Vec<Vec<Value>>,
-    ) -> Result<i32, ErrCode> {
+    pub fn insert_multi_datas(user_id: i32, columns: &Vec<&'static str>, datas: &Vec<Vec<Value>>) -> Result<i32> {
         let db = DatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.insert_multi_datas(columns, datas)
@@ -449,7 +432,7 @@ impl DatabaseHelper {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn delete_datas(user_id: i32, cond: &Condition) -> Result<i32, ErrCode> {
+    pub fn delete_datas(user_id: i32, cond: &Condition) -> Result<i32> {
         let db = DatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.delete_datas(cond)
@@ -457,7 +440,7 @@ impl DatabaseHelper {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn is_data_exists(user_id: i32, condition: &Condition) -> Result<bool, ErrCode> {
+    pub fn is_data_exists(user_id: i32, condition: &Condition) -> Result<bool> {
         let db = DatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.is_data_exists(condition)
@@ -465,7 +448,7 @@ impl DatabaseHelper {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn select_count(user_id: i32, condition: &Condition) -> Result<u32, ErrCode> {
+    pub fn select_count(user_id: i32, condition: &Condition) -> Result<u32> {
         let db = DatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.select_count(condition)
@@ -473,11 +456,7 @@ impl DatabaseHelper {
 
     /// see TableHelper
     #[inline(always)]
-    pub fn query_datas(
-        user_id: i32,
-        condition: &Condition,
-        query_options: Option<&QueryOptions>,
-    ) -> Result<ResultSet, ErrCode> {
+    pub fn query_datas(user_id: i32, condition: &Condition, query_options: Option<&QueryOptions>) -> Result<ResultSet> {
         let db = DatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.query_datas(condition, query_options)
@@ -490,7 +469,7 @@ impl DatabaseHelper {
         columns: &Vec<&'static str>,
         condition: &Condition,
         query_options: Option<&QueryOptions>,
-    ) -> Result<Vec<DbMap>, ErrCode> {
+    ) -> Result<Vec<DbMap>> {
         let db = DatabaseHelper::open_default_database_table(user_id)?;
         let _lock = db.file.mtx.lock().unwrap();
         db.query_columns(columns, condition, query_options)
@@ -505,7 +484,7 @@ impl DatabaseHelper {
 /// do transaction
 /// if commit, return true
 /// if rollback, return false
-pub fn do_transaction<F: Fn(&Database) -> bool>(user_id: i32, callback: F) -> Result<bool, ErrCode> {
+pub fn do_transaction<F: Fn(&Database) -> bool>(user_id: i32, callback: F) -> Result<bool> {
     let db = match DatabaseHelper::open_default_database_table(user_id) {
         Ok(o) => o,
         Err(e) => {

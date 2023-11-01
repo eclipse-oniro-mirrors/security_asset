@@ -31,7 +31,7 @@ use asset_log::loge;
 fn delete_key(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility) {
     let secret_key = SecretKey::new(user_id, owner, auth_type, access_type);
     if let Err(e) = secret_key.delete() {
-        loge!("Delete huks key failed, error = {}", e);
+        loge!("Delete huks key failed, error = {}", e.code);
     }
 }
 

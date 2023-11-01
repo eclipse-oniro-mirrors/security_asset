@@ -15,7 +15,7 @@
 
 //! This module defines asset-related data structures.
 
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Display};
 
 mod extension;
 #[macro_use]
@@ -142,7 +142,7 @@ impl Drop for Value {
 pub type AssetMap = HashMap<Tag, Value>;
 
 impl_enum_trait! {
-    /// An enum type containing the Asset result codes.
+    /// An enum type containing the Asset error codes.
     #[derive(Clone, Copy)]
     #[derive(Debug)]
     #[derive(Eq, Hash, PartialEq)]
@@ -212,8 +212,24 @@ impl_enum_trait! {
     }
 }
 
+/// A struct containing the Asset result code and error message.
+#[derive(Debug)]
+pub struct AssetError {
+    /// Error code for error occurred.
+    pub code: ErrCode,
+
+    /// Error message for error occurred.
+    pub msg: String,
+}
+
+impl Display for AssetError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "error code is {}, msg is {}", self.code, self.msg)
+    }
+}
+
 /// Alias of the Asset result type.
-pub type Result<T> = std::result::Result<T, ErrCode>;
+pub type Result<T> = std::result::Result<T, AssetError>;
 
 impl_enum_trait! {
     /// An enum type indicates when the Asset is accessible.
@@ -307,7 +323,7 @@ pub trait Extension<K> {
     fn get_bool_attr(&self, key: &K) -> Result<bool>;
 
     /// Get an attribute of enum type from the collection.
-    fn get_enum_attr<T: TryFrom<u32, Error = ErrCode>>(&self, key: &K) -> Result<T>;
+    fn get_enum_attr<T: TryFrom<u32, Error = AssetError>>(&self, key: &K) -> Result<T>;
 
     /// Get an attribute of number type from the collection.
     fn get_num_attr(&self, key: &K) -> Result<u32>;
