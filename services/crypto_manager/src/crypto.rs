@@ -392,6 +392,7 @@ impl CryptoManager {
 
     /// add a crypto in manager, not allow insert crypto with same challenge
     pub fn add(&mut self, crypto: Crypto) -> Result<()> {
+        loge!("crypto add, add challenge = {:?}", crypto.challenge);
         for temp_crypto in self.crypto_vec.iter() {
             if crypto.challenge.as_slice() == temp_crypto.challenge.as_slice() {
                 loge!("crypto manager not allow insert crypto with same challenge");
@@ -406,15 +407,18 @@ impl CryptoManager {
     pub fn remove(&mut self, challenge: &Vec<u8>) {
         let mut delete_index: Vec<usize> = vec![];
         for (index, crypto) in self.crypto_vec.iter().enumerate() {
+            loge!("crypto remove compare, index = {}, ori_chanllenge = {:?} tar_challenge = {:?}",
+                index, challenge, crypto.challenge);
             match Self::challenge_cmp(challenge, crypto) {
-                Ok(()) => continue,
-                _ => delete_index.push(index),
+                Ok(()) => delete_index.push(index),
+                _ => continue,
             }
         }
 
         let delete_num = delete_index.len();
         delete_index.sort();
         for x in 0..delete_num {
+            loge!("delete crypto index = {}", x);
             self.crypto_vec.remove(delete_index[delete_num - x - 1]);
         }
     }

@@ -77,14 +77,14 @@ int32_t EncryptWrapper(const struct HksBlob *keyData, const struct HksBlob *aadD
     /* init paramset */
     ret = InitEncryptParamSet(&encryptParamSet, aadData);
     if (ret != HKS_SUCCESS) {
-        LOGE("hks encrypt init paramset err = %d\n", ret);
+        LOGE("hks encrypt init paramset err = %{public}d\n", ret);
         return ret;
     }
 
     /* three stage encrypt Init */
     ret = HksInit(keyData, encryptParamSet, &handleEncrypt, nullptr);
     if (ret != HKS_SUCCESS) {
-        LOGE("hks encrypt init failed err = %d\n", ret);
+        LOGE("hks encrypt init failed err = %{public}d\n", ret);
         HksFreeParamSet(&encryptParamSet);
         return ret;
     }
@@ -92,7 +92,7 @@ int32_t EncryptWrapper(const struct HksBlob *keyData, const struct HksBlob *aadD
     /* Do finish */
     ret = HksFinish(&handleEncrypt, encryptParamSet, inData, outData);
     if (ret != HKS_SUCCESS) {
-        LOGE("hks encrypt updata and finish failed err = %d\n", ret);
+        LOGE("hks encrypt updata and finish failed err = %{public}d\n", ret);
     }
 
     HksFreeParamSet(&encryptParamSet);
@@ -142,14 +142,14 @@ int32_t DecryptWrapper(const struct HksBlob *keyData, const struct HksBlob *aadD
     /* init paramset */
     ret = InitDecryptParamSet(&decryptParamSet, aadData, inData, outData);
     if (ret != HKS_SUCCESS) {
-        LOGE("hks decrypt init paramset err = %d\n", ret);
+        LOGE("hks decrypt init paramset err = %{public}d\n", ret);
         return ret;
     }
 
     /* three stage decrypt Init */
     ret = HksInit(keyData, decryptParamSet, &handleDecrypt, nullptr);
     if (ret != HKS_SUCCESS) {
-        LOGE("hks decrypt init failed err = %d\n", ret);
+        LOGE("hks decrypt init failed err = %{public}d\n", ret);
         HksFreeParamSet(&decryptParamSet);
         return ret;
     }
@@ -157,7 +157,7 @@ int32_t DecryptWrapper(const struct HksBlob *keyData, const struct HksBlob *aadD
     /* Do finish */
     ret = HksFinish(&handleDecrypt, decryptParamSet, &tmpInData, outData);
     if (ret != HKS_SUCCESS) {
-        LOGE("hks decrypt updata and finish failed err = %d\n", ret);
+        LOGE("hks decrypt updata and finish failed err = %{public}d\n", ret);
     }
 
     HksFreeParamSet(&decryptParamSet);
@@ -225,18 +225,18 @@ int32_t InitCryptoWrapper(const struct CryptParam *param, const struct HksBlob *
     /* init paramset */
     ret = CreateInitParamSet(&paramSet, param);
     if (ret != HKS_SUCCESS) {
-        LOGE("hks crypto init paramset err = %d\n", ret);
+        LOGE("hks crypto init paramset err = %{public}d\n", ret);
         return ret;
     }
 
     /* Init */
     ret = HksInit(keyData, paramSet, handleData, challengeData);
     if (ret != HKS_SUCCESS) {
-        LOGE("hks crypto init failed err = %d\n", ret);
+        LOGE("hks crypto init failed err = %{public}d\n", ret);
     }
 
     HksFreeParamSet(&paramSet);
-    LOGE("hks crypto init done ret = %d\n", ret);
+    LOGE("hks crypto init done ret = %{public}d\n", ret);
     return ret;
 }
 
@@ -317,18 +317,18 @@ int32_t ExecCryptoWrapper(const CryptParam *param, const struct HksBlob *aadData
     /* init paramset */
     ret = CreateCryptoParamSet(&paramSet, param, aadData, authToken, inData, outData);
     if (ret != HKS_SUCCESS) {
-        LOGE("hks crypto update paramset err = %d\n", ret);
+        LOGE("hks crypto update paramset err = %{public}d\n", ret);
         return ret;
     }
 
     /* update */
     ret = HksUpdate(handleData, paramSet, &tmpInData, outData);
     if (ret != HKS_SUCCESS) {
-        LOGE("hks crypto update failed err = %d\n", ret);
+        LOGE("hks crypto update failed err = %{public}d\n", ret);
     }
 
     HksFreeParamSet(&paramSet);
-    LOGE("hks crypto update done ret = %d\n", ret);
+    LOGE("hks crypto update done ret = %{public}d\n", ret);
     return ret;
 }
 
@@ -362,17 +362,17 @@ int32_t DropCrypto(const CryptParam *param, struct HksBlob *handleData)
     /* init paramset */
     ret = InitParamSet(&paramSet, nullptr, 0);
     if (ret != HKS_SUCCESS) {
-        LOGE("hks crypto finish paramset err = %d\n", ret);
+        LOGE("hks crypto finish paramset err = %{public}d\n", ret);
         return ret;
     }
 
     /* finish */
     ret = HksFinish(handleData, paramSet, &inData, &outData);
     if (ret != HKS_SUCCESS) {
-        LOGE("hks crypto finish failed err = %d\n", ret);
+        LOGE("hks crypto finish failed err = %{public}d\n", ret);
     }
 
     HksFreeParamSet(&paramSet);
-    LOGE("hks crypto finish done ret = %d\n", ret);
+    LOGE("hks crypto finish done ret = %{public}d\n", ret);
     return ret;
 }
