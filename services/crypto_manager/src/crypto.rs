@@ -149,6 +149,7 @@ pub struct Crypto {
 
 impl Drop for Crypto {
     fn drop(&mut self) {
+        loge!("drop crypto handle = {:?}, challenge = {:?}", self.handle, self.challenge);
         // in param
         let param = CryptParam { crypto_mode: self.mode, challenge_pos: self.challenge_pos, exp_time: 0 };
         let mut handle_data = CryptoBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
@@ -220,6 +221,7 @@ impl Crypto {
         };
         match ret {
             HKS_SUCCESS => {
+                loge!("init crypto success handle = {:?}, challenge = {:?}", self.handle, self.challenge);
                 self.initailized = true;
                 Ok(self.challenge.clone())
             },
@@ -442,7 +444,21 @@ impl CryptoManager {
     }
 
     /// remove device_unlock crypto in crypto mgr
-    pub fn remove_device_unlock(&mut self) {}
+    pub fn remove_device_unlock(&mut self) {
+        let mut delete_index: Vec<usize> = vec![];
+        for (index, crypto) in self.crypto_vec.iter().enumerate() {
+            if crypto.key.need_device_unlock() {
+                delete_index.push(index);
+            }
+        }
+
+        let delete_num = delete_index.len();
+        delete_index.sort();
+        for x in 0..delete_num {
+            loge!("delete crypto index = {}", x);
+            self.crypto_vec.remove(delete_index[delete_num - x - 1]);
+        }
+    }
 }
 
 /// get valiad challenge
