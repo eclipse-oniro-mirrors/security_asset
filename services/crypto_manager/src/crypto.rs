@@ -73,18 +73,14 @@ impl SecretKey {
     pub fn exists(&self) -> Result<bool> {
         let key_data = ConstCryptoBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
 
-        match IdentityGuard::build() {
-            Ok(_) => {
-                let ret = unsafe { KeyExist(&key_data as *const ConstCryptoBlob) };
-                match ret {
-                    HKS_SUCCESS => Ok(true),
-                    HKS_ERROR_NOT_EXIST => Ok(false),
-                    _ => {
-                        asset_error_err!(ErrCode::CryptoError, "[FATAL]secret key exist check failed ret {}", ret)
-                    },
-                }
+        let _identity_guard = IdentityGuard::build()?;
+        let ret = unsafe { KeyExist(&key_data as *const ConstCryptoBlob) };
+        match ret {
+            HKS_SUCCESS => Ok(true),
+            HKS_ERROR_NOT_EXIST => Ok(false),
+            _ => {
+                asset_error_err!(ErrCode::CryptoError, "[FATAL]secret key exist check failed ret {}", ret)
             },
-            Err(e) => Err(e)
         }
     }
 
@@ -93,18 +89,14 @@ impl SecretKey {
         loge!("start to generate key!!!!");
         let key_data = ConstCryptoBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
 
-        match IdentityGuard::build() {
-            Ok(_) => {
-                let need_user_auth = self.need_user_auth();
-                let ret = unsafe { GenerateKey(&key_data as *const ConstCryptoBlob, need_user_auth) };
-                match ret {
-                    HKS_SUCCESS => Ok(()),
-                    _ => {
-                        asset_error_err!(ErrCode::CryptoError, "[FATAL]secret key generate failed ret {}", ret)
-                    },
-                }
+        let _identity_guard = IdentityGuard::build()?;
+        let need_user_auth = self.need_user_auth();
+        let ret = unsafe { GenerateKey(&key_data as *const ConstCryptoBlob, need_user_auth) };
+        match ret {
+            HKS_SUCCESS => Ok(()),
+            _ => {
+                asset_error_err!(ErrCode::CryptoError, "[FATAL]secret key generate failed ret {}", ret)
             },
-            Err(e) => Err(e)
         }
     }
 
@@ -112,17 +104,13 @@ impl SecretKey {
     pub fn delete(&self) -> Result<()> {
         let key_data = ConstCryptoBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
 
-        match IdentityGuard::build() {
-            Ok(_) => {
-                let ret = unsafe { DeleteKey(&key_data as *const ConstCryptoBlob) };
-                match ret {
-                    HKS_SUCCESS => Ok(()),
-                    _ => {
-                        asset_error_err!(ErrCode::CryptoError, "[FATAL]secret key delete failed ret {}", ret)
-                    },
-                }
+        let _identity_guard = IdentityGuard::build()?;
+        let ret = unsafe { DeleteKey(&key_data as *const ConstCryptoBlob) };
+        match ret {
+            HKS_SUCCESS => Ok(()),
+            _ => {
+                asset_error_err!(ErrCode::CryptoError, "[FATAL]secret key delete failed ret {}", ret)
             },
-            Err(e) => Err(e)
         }
     }
 
@@ -216,28 +204,24 @@ impl Crypto {
 
         let mut handle_data = CryptoBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
 
-        match IdentityGuard::build() {
-            Ok(_) => {
-                let ret = unsafe {
-                    InitCryptoWrapper(
-                        &param as *const CryptParam,
-                        &key_data as *const ConstCryptoBlob,
-                        &mut challenge_data as *mut CryptoBlob,
-                        &mut handle_data as *mut CryptoBlob,
-                    )
-                };
-                match ret {
-                    HKS_SUCCESS => {
-                        loge!("init crypto success handle = {:?}, challenge = {:?}", self.handle, self.challenge);
-                        self.initailized = true;
-                        Ok(self.challenge.clone())
-                    },
-                    _ => {
-                        asset_error_err!(ErrCode::CryptoError, "[FATAL]crypto init failed ret {}", ret)
-                    },
-                }
+        let _identity_guard = IdentityGuard::build()?;
+        let ret = unsafe {
+            InitCryptoWrapper(
+                &param as *const CryptParam,
+                &key_data as *const ConstCryptoBlob,
+                &mut challenge_data as *mut CryptoBlob,
+                &mut handle_data as *mut CryptoBlob,
+            )
+        };
+        match ret {
+            HKS_SUCCESS => {
+                loge!("init crypto success handle = {:?}, challenge = {:?}", self.handle, self.challenge);
+                self.initailized = true;
+                Ok(self.challenge.clone())
             },
-            Err(e) => Err(e)
+            _ => {
+                asset_error_err!(ErrCode::CryptoError, "[FATAL]crypto init failed ret {}", ret)
+            },
         }
     }
 
@@ -278,26 +262,22 @@ impl Crypto {
 
         let mut out_data = CryptoBlob { size: cipher.len() as u32, data: cipher.as_mut_ptr() };
 
-        match IdentityGuard::build() {
-            Ok(_) => {
-                let ret = unsafe {
-                    ExecCryptoWrapper(
-                        &param as *const CryptParam,
-                        &aad_data as *const ConstCryptoBlob,
-                        &auth_token as *const ConstCryptoBlob,
-                        &handle_data as *const ConstCryptoBlob,
-                        &in_data as *const ConstCryptoBlob,
-                        &mut out_data as *mut CryptoBlob,
-                    )
-                };
-                match ret {
-                    HKS_SUCCESS => Ok(cipher),
-                    _ => {
-                        asset_error_err!(ErrCode::CryptoError, "[FATAL]execute crypto error ret {}", ret)
-                    },
-                }
+        let _identity_guard = IdentityGuard::build()?;
+        let ret = unsafe {
+            ExecCryptoWrapper(
+                &param as *const CryptParam,
+                &aad_data as *const ConstCryptoBlob,
+                &auth_token as *const ConstCryptoBlob,
+                &handle_data as *const ConstCryptoBlob,
+                &in_data as *const ConstCryptoBlob,
+                &mut out_data as *mut CryptoBlob,
+            )
+        };
+        match ret {
+            HKS_SUCCESS => Ok(cipher),
+            _ => {
+                asset_error_err!(ErrCode::CryptoError, "[FATAL]execute crypto error ret {}", ret)
             },
-            Err(e) => Err(e)
         }
     }
 
@@ -313,24 +293,20 @@ impl Crypto {
 
         let mut out_data = CryptoBlob { size: cipher.len() as u32, data: cipher.as_mut_ptr() };
 
-        match IdentityGuard::build() {
-            Ok(_) => {
-                let ret = unsafe {
-                    EncryptWrapper(
-                        &key_alias as *const ConstCryptoBlob,
-                        &aad_data as *const ConstCryptoBlob,
-                        &in_data as *const ConstCryptoBlob,
-                        &mut out_data as *mut CryptoBlob,
-                    )
-                };
-                match ret {
-                    HKS_SUCCESS => Ok(cipher),
-                    _ => {
-                        asset_error_err!(ErrCode::CryptoError, "[FATAL]encrypto error ret {}", ret)
-                    },
-                }
+        let _identity_guard = IdentityGuard::build()?;
+        let ret = unsafe {
+            EncryptWrapper(
+                &key_alias as *const ConstCryptoBlob,
+                &aad_data as *const ConstCryptoBlob,
+                &in_data as *const ConstCryptoBlob,
+                &mut out_data as *mut CryptoBlob,
+            )
+        };
+        match ret {
+            HKS_SUCCESS => Ok(cipher),
+            _ => {
+                asset_error_err!(ErrCode::CryptoError, "[FATAL]encrypto error ret {}", ret)
             },
-            Err(e) => Err(e)
         }
     }
 
@@ -350,24 +326,20 @@ impl Crypto {
 
         let mut out_data = CryptoBlob { size: plain.len() as u32, data: plain.as_mut_ptr() };
 
-        match IdentityGuard::build() {
-            Ok(_) => {
-                let ret = unsafe {
-                    DecryptWrapper(
-                        &key_alias as *const ConstCryptoBlob,
-                        &aad_data as *const ConstCryptoBlob,
-                        &in_data as *const ConstCryptoBlob,
-                        &mut out_data as *mut CryptoBlob,
-                    )
-                };
-                match ret {
-                    HKS_SUCCESS => Ok(plain),
-                    _ => {
-                        asset_error_err!(ErrCode::CryptoError, "[FATAL]decrypto error ret {}", ret)
-                    },
-                }
+        let _identity_guard = IdentityGuard::build()?;
+        let ret = unsafe {
+            DecryptWrapper(
+                &key_alias as *const ConstCryptoBlob,
+                &aad_data as *const ConstCryptoBlob,
+                &in_data as *const ConstCryptoBlob,
+                &mut out_data as *mut CryptoBlob,
+            )
+        };
+        match ret {
+            HKS_SUCCESS => Ok(plain),
+            _ => {
+                asset_error_err!(ErrCode::CryptoError, "[FATAL]decrypto error ret {}", ret)
             },
-            Err(e) => Err(e)
         }
     }
 }
