@@ -18,7 +18,7 @@
 use std::{
     ffi::{c_char, CString},
     thread,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
 use hilog_rust::{error, hilog, HiLogLabel, LogType};
@@ -32,9 +32,11 @@ use asset_log::logi;
 mod calling_info;
 mod operations;
 mod stub;
+mod sys_event;
 
 use calling_info::CallingInfo;
 use stub::AssetStub;
+use sys_event::sys_event_log;
 
 const LOG_LABEL: HiLogLabel = HiLogLabel { log_type: LogType::LogCore, domain: 0xD002F70, tag: "Asset" };
 
@@ -90,26 +92,38 @@ impl IRemoteBroker for AssetService {}
 
 impl IAsset for AssetService {
     fn add(&self, attributes: &AssetMap) -> Result<()> {
-        operations::add(attributes, &CallingInfo::build()?)
+        let start = Instant::now();
+        let calling_info = CallingInfo::build()?;
+        sys_event_log(operations::add(attributes, &calling_info), &calling_info, start, "add")
     }
 
     fn remove(&self, query: &AssetMap) -> Result<()> {
-        operations::remove(query, &CallingInfo::build()?)
+        let start = Instant::now();
+        let calling_info = CallingInfo::build()?;
+        sys_event_log(operations::remove(query, &calling_info), &calling_info, start, "remove")
     }
 
     fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
-        operations::update(query, attributes_to_update, &CallingInfo::build()?)
+        let start = Instant::now();
+        let calling_info = CallingInfo::build()?;
+        sys_event_log(operations::update(query, attributes_to_update, &calling_info), &calling_info, start, "update")
     }
 
     fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>> {
-        operations::pre_query(query, &CallingInfo::build()?)
+        let start = Instant::now();
+        let calling_info = CallingInfo::build()?;
+        sys_event_log(operations::pre_query(query, &calling_info), &calling_info, start, "pre_query")
     }
 
     fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>> {
-        operations::query(query, &CallingInfo::build()?)
+        let start = Instant::now();
+        let calling_info = CallingInfo::build()?;
+        sys_event_log(operations::query(query, &calling_info), &calling_info, start, "query")
     }
 
     fn post_query(&self, query: &AssetMap) -> Result<()> {
-        operations::post_query(query, &CallingInfo::build()?)
+        let start = Instant::now();
+        let calling_info = CallingInfo::build()?;
+        sys_event_log(operations::post_query(query, &calling_info), &calling_info, start, "post_query")
     }
 }

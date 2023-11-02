@@ -29,6 +29,7 @@ ohos_rust_shared_library("asset_service") {
 
   external_deps = [
     "hilog:hilog_rust",
+    "hisysevent:hisysevent_rust",
     "ipc:ipc_rust",
     "safwk:system_ability_fwk_rust",
   ]

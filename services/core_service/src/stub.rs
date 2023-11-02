@@ -17,7 +17,7 @@
 
 use ipc_rust::{BorrowedMsgParcel, FileDesc, IRemoteStub, IpcResult, IpcStatusCode, RemoteStub, String16};
 
-use asset_definition::{Result, AssetError};
+use asset_definition::{AssetError, Result};
 use asset_ipc::{deserialize_map, serialize_maps, IAsset, IpcCode, IPC_SUCCESS, SA_NAME};
 use asset_log::{loge, logi};
 
