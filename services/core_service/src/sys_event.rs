@@ -18,7 +18,6 @@
 use std::time::Instant;
 
 use asset_log::{loge, logi};
-// pub(crate) use hisysevent::{build_number_param, build_str_param};
 use hisysevent::{build_number_param, build_str_param, write, EventType, HiSysEventParam};
 
 use asset_definition::Result;

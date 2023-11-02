@@ -30,6 +30,9 @@ git clone ssh://git@szv-y.codehub.huawei.com:2222/y00522150/asset.git
 # 非首次编译命令：（未修改BUILD.gn时执行）
 ./build_system.sh --abi-type generic_generic_arm_64only --device-type hisi_higeneric_newphone_standard --ccache --build-variant root --build-target out/generic_generic_arm_64only/hisi_higeneric_newphone_standard/build_configs/security/asset:asset --build-target asset_test --fast-rebuild
 
+# 打点文件编译命令：（修改hisysevent.yaml时执行）
+./build/ohos/hisysevent/gen_def_from_all_yaml.py --yaml-list base/security/asset/hisysevent.yaml --def-path out/generic_generic_arm_64only/hisi_higeneric_newphone_standard/security/asset
+
 # PC编译命令：
 ./build_system.sh --abi-type generic_generic_arm_64only --device-type hisi_newbaltimore_pc_standard --ccache --build-variant root --build-target out/generic_generic_arm_64only/hisi_newbaltimore_pc_standard/build_configs/security/asset:asset --build-target asset_test
 
