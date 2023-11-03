@@ -24,7 +24,7 @@ use std::{
 };
 
 use asset_log::loge;
-use asset_sdk::{asset_error_err, AssetMap, Conversion, DataType, ErrCode, Manager, Tag, Value, AssetError};
+use asset_sdk::{asset_error_err, AssetError, AssetMap, Conversion, DataType, ErrCode, Manager, Tag, Value};
 
 const RESULT_CODE_SUCCESS: i32 = 0;
 extern "C" {

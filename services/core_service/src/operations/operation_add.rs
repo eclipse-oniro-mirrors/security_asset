@@ -117,10 +117,10 @@ const OPTIONAL_ATTRS: [Tag; 3] = [Tag::Secret, Tag::ConflictResolution, Tag::Del
 
 fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     if calling_info.owner_type() != OwnerType::Native as u32 {
-        return Ok(())
+        return Ok(());
     }
-    let access = attributes.get_enum_attr::<Accessibility>(&Tag::Accessibility)
-        .unwrap_or(Accessibility::DeviceFirstUnlocked);
+    let access =
+        attributes.get_enum_attr::<Accessibility>(&Tag::Accessibility).unwrap_or(Accessibility::DeviceFirstUnlocked);
     if access == Accessibility::DevicePowerOn {
         return Ok(());
     }

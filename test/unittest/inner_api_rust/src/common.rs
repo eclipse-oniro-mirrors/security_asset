@@ -15,7 +15,7 @@
 
 #![allow(dead_code)]
 
-use asset_sdk::{AssetMap, Result, ReturnType, Tag, Value, ErrCode, AssetError, Accessibility};
+use asset_sdk::{Accessibility, AssetError, AssetMap, ErrCode, Result, ReturnType, Tag, Value};
 
 #[macro_export]
 macro_rules! function {

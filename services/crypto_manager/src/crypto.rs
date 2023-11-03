@@ -395,8 +395,12 @@ impl CryptoManager {
     pub fn remove(&mut self, challenge: &Vec<u8>) {
         let mut delete_index: Vec<usize> = vec![];
         for (index, crypto) in self.crypto_vec.iter().enumerate() {
-            loge!("crypto remove compare, index = {}, ori_chanllenge = {:?} tar_challenge = {:?}",
-                index, challenge, crypto.challenge);
+            loge!(
+                "crypto remove compare, index = {}, ori_chanllenge = {:?} tar_challenge = {:?}",
+                index,
+                challenge,
+                crypto.challenge
+            );
             match Self::challenge_cmp(challenge, crypto) {
                 Ok(()) => delete_index.push(index),
                 _ => continue,

@@ -107,7 +107,10 @@ fn update_query_with_secret() {
     let mut update = AssetMap::new();
     update.insert_attr(Tag::DataLabelNormal1, label_normal.to_owned());
 
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err());
+    expect_error_eq(
+        ErrCode::InvalidArgument,
+        asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err(),
+    );
 
     remove_by_alias(alias).unwrap();
 }
@@ -125,7 +128,10 @@ fn update_secret_without_query_alias() {
     update.insert_attr(Tag::DataLabelNormal1, label_normal.to_owned());
     update.insert_attr(Tag::Secret, secret.to_owned());
 
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err());
+    expect_error_eq(
+        ErrCode::InvalidArgument,
+        asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err(),
+    );
 
     remove_by_alias(alias).unwrap();
 }
@@ -143,7 +149,10 @@ fn update_alias() {
     let mut update = AssetMap::new();
     update.insert_attr(Tag::Alias, alias_new.to_owned());
 
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err());
+    expect_error_eq(
+        ErrCode::InvalidArgument,
+        asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err(),
+    );
 
     remove_by_alias(alias).unwrap();
 }

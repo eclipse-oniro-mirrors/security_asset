@@ -25,7 +25,7 @@ fn remove_alias_non_exist() {
 fn remove_condition_non_exist() {
     let delete_condition =
         AssetMap::from([(Tag::DataLabelCritical1, Value::Bytes("remove_condition_non_exist".as_bytes().to_vec()))]);
-        expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().remove(&delete_condition).unwrap_err());
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().remove(&delete_condition).unwrap_err());
 }
 
 #[test]
