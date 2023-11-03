@@ -40,7 +40,7 @@ fn add_all_tags() {
     attrs.insert_attr(Tag::DataLabelCritical2, critical_label2.to_owned());
     attrs.insert_attr(Tag::DataLabelCritical3, critical_label3.to_owned());
     attrs.insert_attr(Tag::DataLabelCritical4, critical_label4.to_owned());
-    attrs.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlocked);
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     attrs.insert_attr(Tag::AuthType, AuthType::Any);
     attrs.insert_attr(Tag::SyncType, SyncType::ThisDevice);
     attrs.insert_attr(Tag::DeleteType, DeleteType::WhenUserRemoved);
@@ -60,7 +60,7 @@ fn add_all_tags() {
     assert_eq!(critical_label2, *res[0].get_bytes_attr(&Tag::DataLabelCritical2).unwrap());
     assert_eq!(critical_label3, *res[0].get_bytes_attr(&Tag::DataLabelCritical3).unwrap());
     assert_eq!(critical_label4, *res[0].get_bytes_attr(&Tag::DataLabelCritical4).unwrap());
-    assert_eq!(Accessibility::DeviceUnlocked, res[0].get_enum_attr::<Accessibility>(&Tag::Accessibility).unwrap());
+    assert_eq!(Accessibility::DevicePowerOn, res[0].get_enum_attr::<Accessibility>(&Tag::Accessibility).unwrap());
     assert_eq!(AuthType::Any, res[0].get_enum_attr::<AuthType>(&Tag::AuthType).unwrap());
     assert_eq!(SyncType::ThisDevice, res[0].get_enum_attr::<SyncType>(&Tag::SyncType).unwrap());
     assert_eq!(DeleteType::WhenUserRemoved, res[0].get_enum_attr::<DeleteType>(&Tag::DeleteType).unwrap());
@@ -75,6 +75,7 @@ fn add_required_tags() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, func_name.to_owned());
     attrs.insert_attr(Tag::Secret, func_name.to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     let res = query_all_by_alias(func_name).unwrap();
@@ -82,7 +83,7 @@ fn add_required_tags() {
     assert_eq!(7, res[0].len());
     assert_eq!(func_name, *res[0].get_bytes_attr(&Tag::Alias).unwrap());
     assert_eq!(func_name, *res[0].get_bytes_attr(&Tag::Secret).unwrap());
-    assert_eq!(Accessibility::DeviceFirstUnlocked, res[0].get_enum_attr::<Accessibility>(&Tag::Accessibility).unwrap());
+    assert_eq!(Accessibility::DevicePowerOn, res[0].get_enum_attr::<Accessibility>(&Tag::Accessibility).unwrap());
     assert_eq!(AuthType::None, res[0].get_enum_attr::<AuthType>(&Tag::AuthType).unwrap());
     assert_eq!(SyncType::Never, res[0].get_enum_attr::<SyncType>(&Tag::SyncType).unwrap());
     let delete_type = (DeleteType::WhenUserRemoved as u32) | (DeleteType::WhenPackageRemoved as u32);
@@ -97,6 +98,7 @@ fn add_english_secret() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, func_name.as_bytes().to_owned());
     attrs.insert_attr(Tag::Secret, func_name.as_bytes().to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     let res = query_all_by_alias(func_name.as_bytes()).unwrap();
@@ -113,6 +115,7 @@ fn add_chinese_secret() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, alias.as_bytes().to_owned());
     attrs.insert_attr(Tag::Secret, secret.as_bytes().to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     let res = query_all_by_alias(alias.as_bytes()).unwrap();
@@ -132,6 +135,7 @@ fn add_same_alias_throw_error() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     // step2. insert data with the same alias, default resolution: throw error
@@ -152,6 +156,7 @@ fn add_same_alias_overwrite() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     // step2. query data with no label
@@ -163,6 +168,7 @@ fn add_same_alias_overwrite() {
     let critical_label = "add_same_alias_overwrite".as_bytes();
     attrs.insert_attr(Tag::DataLabelCritical1, critical_label.to_owned());
     attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::Overwrite);
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     // step4. query new data with critical label
@@ -181,6 +187,7 @@ fn add_multiple_sync_types() {
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
     attrs.insert_attr(Tag::SyncType, sync_type);
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     let res = query_attr_by_alias(function_name).unwrap();

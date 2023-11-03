@@ -48,6 +48,7 @@ fn query_without_alias_with_wrong_condition() {
     add.insert_attr(Tag::RequirePasswordSet, false);
     add.insert_attr(Tag::Alias, function_name.to_owned());
     add.insert_attr(Tag::Secret, function_name.to_owned());
+    add.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     asset_sdk::Manager::build().unwrap().add(&add).unwrap();
 
     let mut query = AssetMap::new();

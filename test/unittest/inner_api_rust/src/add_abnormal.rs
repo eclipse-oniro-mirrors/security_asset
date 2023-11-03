@@ -18,7 +18,8 @@ use asset_sdk::*;
 
 #[test]
 fn add_empty_attr() {
-    let attrs = AssetMap::new();
+    let mut attrs = AssetMap::new();
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 }
 
@@ -26,6 +27,7 @@ fn add_empty_attr() {
 fn add_without_alias() {
     let function_name = function!().as_bytes();
     let mut attrs = AssetMap::new();
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 }
@@ -37,6 +39,7 @@ fn add_alias_with_min_len() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, alias.clone());
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     assert!(asset_sdk::Manager::build().unwrap().add(&attrs).is_ok());
 
     query_attr_by_alias(&alias).unwrap();
@@ -50,6 +53,7 @@ fn add_alias_with_max_len() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, alias.clone());
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     assert!(asset_sdk::Manager::build().unwrap().add(&attrs).is_ok());
 
     query_attr_by_alias(&alias).unwrap();
@@ -62,6 +66,7 @@ fn add_invalid_alias() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, vec![]);
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 
     attrs.insert_attr(Tag::Alias, vec![0; MAX_ALIAS_SIZE + 1]);
@@ -74,6 +79,7 @@ fn add_alias_with_unmatched_type() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
     attrs.insert_attr(Tag::Alias, 0);
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 
     attrs.insert_attr(Tag::Alias, true);
@@ -84,6 +90,7 @@ fn add_alias_with_unmatched_type() {
 fn add_without_secret() {
     let function_name = function!().as_bytes();
     let mut attrs = AssetMap::new();
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 }
@@ -92,6 +99,7 @@ fn add_without_secret() {
 fn add_secret_with_min_len() {
     let function_name = function!().as_bytes();
     let mut attrs = AssetMap::new();
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, vec![0; MIN_ARRAY_SIZE + 1]);
     assert!(asset_sdk::Manager::build().unwrap().add(&attrs).is_ok());
@@ -105,6 +113,7 @@ fn add_secret_with_max_len() {
     let function_name = function!().as_bytes();
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     attrs.insert_attr(Tag::Secret, vec![0; MAX_ARRAY_SIZE]);
     assert!(asset_sdk::Manager::build().unwrap().add(&attrs).is_ok());
 
@@ -117,6 +126,7 @@ fn add_invalid_secret() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, vec![]);
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 
     attrs.insert_attr(Tag::Secret, vec![0; MAX_ARRAY_SIZE + 1]);
@@ -129,6 +139,7 @@ fn add_secret_with_unmatched_type() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, 0);
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 
     attrs.insert_attr(Tag::Secret, true);
@@ -140,6 +151,7 @@ fn add_invalid_accessibility() {
     let function_name = function!().as_bytes();
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
 
     attrs.insert_attr(Tag::Accessibility, (Accessibility::DeviceUnlocked as u32) + 1);
@@ -153,6 +165,7 @@ fn add_required_pwd_with_unmatched_type() {
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
     attrs.insert_attr(Tag::RequirePasswordSet, vec![]);
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 
     attrs.insert_attr(Tag::RequirePasswordSet, 0);
@@ -165,6 +178,7 @@ fn add_invalid_auth_type() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     attrs.insert_attr(Tag::AuthType, (AuthType::None as u32) + 1);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 
@@ -178,6 +192,7 @@ fn add_invalid_sync_type() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     let sync_type = SyncType::ThisDevice as u32 | SyncType::TrustedAccount as u32 | SyncType::TrustedDevice as u32;
     attrs.insert_attr(Tag::SyncType, sync_type + 1);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
@@ -189,6 +204,7 @@ fn add_sync_type_with_max_len() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     let sync_type = SyncType::ThisDevice as u32 | SyncType::TrustedAccount as u32 | SyncType::TrustedDevice as u32;
     attrs.insert_attr(Tag::SyncType, sync_type);
     assert!(asset_sdk::Manager::build().unwrap().add(&attrs).is_ok());
@@ -202,6 +218,7 @@ fn add_invalid_delete_type() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     let delete_type = DeleteType::WhenPackageRemoved as u32 | DeleteType::WhenUserRemoved as u32;
     attrs.insert_attr(Tag::DeleteType, delete_type + 1);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
@@ -213,6 +230,7 @@ fn add_invalid_conflict_resolution() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     attrs.insert_attr(Tag::ConflictResolution, (ConflictResolution::ThrowError as u32) + 1);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 }
@@ -223,6 +241,7 @@ fn add_conflict_resolution_with_unmatched_type() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     attrs.insert_attr(Tag::ConflictResolution, vec![]);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 
@@ -237,6 +256,7 @@ fn add_invalid_label() {
     for &label in labels {
         let mut attrs = AssetMap::new();
         attrs.insert_attr(Tag::Alias, function_name.to_owned());
+        attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
         attrs.insert_attr(Tag::Secret, function_name.to_owned());
         attrs.insert_attr(label, vec![]);
         expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
@@ -255,6 +275,7 @@ fn add_label_with_unmatched_type() {
         attrs.insert_attr(Tag::Alias, function_name.to_owned());
         attrs.insert_attr(Tag::Secret, function_name.to_owned());
         attrs.insert_attr(label, 0);
+        attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
         expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 
         attrs.insert_attr(label, true);
@@ -268,6 +289,7 @@ fn add_number_tag_with_unmatched_type() {
     for tag in tags_num {
         let mut attrs = AssetMap::new();
         attrs.insert_attr(tag, vec![]);
+        attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
         expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 
         attrs.insert_attr(tag, true);
@@ -283,6 +305,7 @@ fn add_unsupported_tags() {
         let mut attrs = AssetMap::new();
         attrs.insert_attr(Tag::Alias, function_name.to_owned());
         attrs.insert_attr(Tag::Secret, function_name.to_owned());
+        attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
         attrs.insert_attr(tag, vec![0; MIN_ARRAY_SIZE + 1]);
         expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
     }
@@ -294,6 +317,21 @@ fn add_unsupported_tags() {
         attrs.insert_attr(Tag::Alias, function_name.to_owned());
         attrs.insert_attr(Tag::Secret, function_name.to_owned());
         attrs.insert_attr(tag, 1);
+        attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
         expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
     }
+}
+
+#[test]
+fn add_as_native_with_device_powner_on() {
+    let function_name = function!().as_bytes();
+    let mut attrs = AssetMap::new();
+    attrs.insert_attr(Tag::Alias, function_name.to_owned());
+    attrs.insert_attr(Tag::Secret, function_name.to_owned());
+
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlocked);
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
+
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DeviceFirstUnlocked);
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 }

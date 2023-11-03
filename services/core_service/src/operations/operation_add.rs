@@ -116,7 +116,7 @@ const REQUIRED_ATTRS: [Tag; 2] = [Tag::Secret, Tag::Alias];
 const OPTIONAL_ATTRS: [Tag; 3] = [Tag::Secret, Tag::ConflictResolution, Tag::DeleteType];
 
 fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    if calling_info.owner_type() == OwnerType::Native as u32 {
+    if calling_info.owner_type() != OwnerType::Native as u32 {
         return Ok(())
     }
     let access = attributes.get_enum_attr::<Accessibility>(&Tag::Accessibility)

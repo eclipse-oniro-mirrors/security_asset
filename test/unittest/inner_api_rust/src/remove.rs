@@ -37,6 +37,7 @@ fn remove_condition_exist_and_query() {
         (Tag::Secret, Value::Bytes(function_name.to_owned())),
         (Tag::DataLabelCritical2, Value::Bytes(critical_label.to_owned())),
     ]);
+    condition.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     asset_sdk::Manager::build().unwrap().add(&condition).unwrap();
     condition.remove(&Tag::Alias);
     condition.remove(&Tag::Secret);
@@ -47,10 +48,11 @@ fn remove_condition_exist_and_query() {
 #[test]
 fn remove_condition_with_secret() {
     let function_name = function!().as_bytes();
-    let condition = AssetMap::from([
+    let mut condition = AssetMap::from([
         (Tag::Alias, Value::Bytes(function_name.to_owned())),
         (Tag::Secret, Value::Bytes(function_name.to_owned())),
     ]);
+    condition.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     asset_sdk::Manager::build().unwrap().add(&condition).unwrap();
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().remove(&condition).unwrap_err());
     remove_by_alias(function_name).unwrap();

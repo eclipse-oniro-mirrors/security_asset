@@ -15,7 +15,7 @@
 
 #![allow(dead_code)]
 
-use asset_sdk::{AssetMap, Result, ReturnType, Tag, Value, ErrCode, AssetError};
+use asset_sdk::{AssetMap, Result, ReturnType, Tag, Value, ErrCode, AssetError, Accessibility};
 
 #[macro_export]
 macro_rules! function {
@@ -77,6 +77,7 @@ pub(crate) fn add_default_asset(alias: &[u8], secret: &[u8]) -> Result<()> {
     asset_sdk::Manager::build()?.add(&AssetMap::from([
         (Tag::Alias, Value::Bytes(alias.to_vec())),
         (Tag::Secret, Value::Bytes(secret.to_vec())),
+        (Tag::Accessibility, Value::Number(Accessibility::DevicePowerOn as u32)),
     ]))
 }
 
