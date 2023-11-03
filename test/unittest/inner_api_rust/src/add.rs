@@ -40,7 +40,7 @@ fn add_all_tags() {
     attrs.insert_attr(Tag::DataLabelCritical2, critical_label2.to_owned());
     attrs.insert_attr(Tag::DataLabelCritical3, critical_label3.to_owned());
     attrs.insert_attr(Tag::DataLabelCritical4, critical_label4.to_owned());
-    attrs.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlock);
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlocked);
     attrs.insert_attr(Tag::AuthType, AuthType::Any);
     attrs.insert_attr(Tag::SyncType, SyncType::ThisDevice);
     attrs.insert_attr(Tag::DeleteType, DeleteType::WhenUserRemoved);
@@ -60,7 +60,7 @@ fn add_all_tags() {
     assert_eq!(critical_label2, *res[0].get_bytes_attr(&Tag::DataLabelCritical2).unwrap());
     assert_eq!(critical_label3, *res[0].get_bytes_attr(&Tag::DataLabelCritical3).unwrap());
     assert_eq!(critical_label4, *res[0].get_bytes_attr(&Tag::DataLabelCritical4).unwrap());
-    assert_eq!(Accessibility::DeviceUnlock, res[0].get_enum_attr::<Accessibility>(&Tag::Accessibility).unwrap());
+    assert_eq!(Accessibility::DeviceUnlocked, res[0].get_enum_attr::<Accessibility>(&Tag::Accessibility).unwrap());
     assert_eq!(AuthType::Any, res[0].get_enum_attr::<AuthType>(&Tag::AuthType).unwrap());
     assert_eq!(SyncType::ThisDevice, res[0].get_enum_attr::<SyncType>(&Tag::SyncType).unwrap());
     assert_eq!(DeleteType::WhenUserRemoved, res[0].get_enum_attr::<DeleteType>(&Tag::DeleteType).unwrap());
@@ -82,7 +82,7 @@ fn add_required_tags() {
     assert_eq!(7, res[0].len());
     assert_eq!(func_name, *res[0].get_bytes_attr(&Tag::Alias).unwrap());
     assert_eq!(func_name, *res[0].get_bytes_attr(&Tag::Secret).unwrap());
-    assert_eq!(Accessibility::DeviceFirstUnlock, res[0].get_enum_attr::<Accessibility>(&Tag::Accessibility).unwrap());
+    assert_eq!(Accessibility::DeviceFirstUnlocked, res[0].get_enum_attr::<Accessibility>(&Tag::Accessibility).unwrap());
     assert_eq!(AuthType::None, res[0].get_enum_attr::<AuthType>(&Tag::AuthType).unwrap());
     assert_eq!(SyncType::Never, res[0].get_enum_attr::<SyncType>(&Tag::SyncType).unwrap());
     let delete_type = (DeleteType::WhenUserRemoved as u32) | (DeleteType::WhenPackageRemoved as u32);

@@ -237,11 +237,14 @@ impl_enum_trait! {
     #[derive(Clone, Copy)]
     #[derive(PartialEq, Eq)]
     pub enum Accessibility {
+        /// The secret value in the Asset can only be accessed after the device power on.
+        DevicePowerOn = 0,
+
         /// The secret value in the Asset can only be accessed after the device is first unlocked.
-        DeviceFirstUnlock = 1,
+        DeviceFirstUnlocked = 1,
 
         /// The secret value in the Asset can only be accessed while the device is unlocked.
-        DeviceUnlock = 2,
+        DeviceUnlocked = 2,
     }
 }
 

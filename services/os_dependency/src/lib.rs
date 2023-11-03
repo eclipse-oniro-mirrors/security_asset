@@ -49,10 +49,10 @@ pub unsafe extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, ow
     cond.insert(column::OWNER, Value::Bytes(owner));
     match DatabaseHelper::delete_datas(user_id, &cond) {
         Ok(remove_num) => {
-            delete_key(user_id, &owner_hash, AuthType::None, Accessibility::DeviceFirstUnlock);
-            delete_key(user_id, &owner_hash, AuthType::None, Accessibility::DeviceUnlock);
-            delete_key(user_id, &owner_hash, AuthType::Any, Accessibility::DeviceFirstUnlock);
-            delete_key(user_id, &owner_hash, AuthType::Any, Accessibility::DeviceUnlock);
+            delete_key(user_id, &owner_hash, AuthType::None, Accessibility::DeviceFirstUnlocked);
+            delete_key(user_id, &owner_hash, AuthType::None, Accessibility::DeviceUnlocked);
+            delete_key(user_id, &owner_hash, AuthType::Any, Accessibility::DeviceFirstUnlocked);
+            delete_key(user_id, &owner_hash, AuthType::Any, Accessibility::DeviceUnlocked);
             remove_num
         },
         _ => 0,

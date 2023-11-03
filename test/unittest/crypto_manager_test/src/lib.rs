@@ -21,12 +21,12 @@ pub const AAD_SIZE: u32 = 8;
 
 #[test]
 fn test_hukkey_key_new() {
-    let _secret_key = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlock);
+    let _secret_key = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlocked);
 }
 
 #[test]
 fn test_hukkey_key_generate_and_delete() {
-    let secret_key = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlock);
+    let secret_key = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlocked);
     match secret_key.generate() {
         Ok(()) => println!("test_hukkey_generate: generate success"),
         Err(res) => panic!("test_hukkey_delete fail because generate error = {}", res),
@@ -40,16 +40,16 @@ fn test_hukkey_key_generate_and_delete() {
 
 #[test]
 fn test_hukkey_need_user_auth() {
-    let secret_key_need = SecretKey::new(2, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlock);
-    let secret_key_dont_need = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlock);
+    let secret_key_need = SecretKey::new(2, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked);
+    let secret_key_dont_need = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlocked);
     assert!(secret_key_need.need_user_auth());
     assert!(!secret_key_dont_need.need_user_auth());
 }
 
 #[test]
 fn test_hukkey_need_device_unlock() {
-    let secret_key_need = SecretKey::new(3, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlock);
-    let secret_key_dont_need = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceFirstUnlock);
+    let secret_key_need = SecretKey::new(3, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlocked);
+    let secret_key_dont_need = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceFirstUnlocked);
     assert!(secret_key_need.need_device_unlock());
     assert!(!secret_key_dont_need.need_device_unlock());
 }
@@ -57,7 +57,7 @@ fn test_hukkey_need_device_unlock() {
 #[test]
 #[allow(non_snake_case)]
 fn test_hukkey_encrypt() {
-    let secret_key = SecretKey::new(4, &vec![b'2'], AuthType::None, Accessibility::DeviceFirstUnlock);
+    let secret_key = SecretKey::new(4, &vec![b'2'], AuthType::None, Accessibility::DeviceFirstUnlocked);
     match secret_key.generate() {
         Ok(()) => println!("test_hukkey_generate: generate success"),
         Err(res) => panic!("test_hukkey_encrypt fail because generate error = {}", res),
@@ -95,7 +95,7 @@ fn test_hukkey_encrypt() {
 #[test]
 #[allow(non_snake_case)]
 fn test_hukkey_decrypt() {
-    let secret_key = SecretKey::new(5, &vec![b'2'], AuthType::None, Accessibility::DeviceFirstUnlock);
+    let secret_key = SecretKey::new(5, &vec![b'2'], AuthType::None, Accessibility::DeviceFirstUnlocked);
     match secret_key.generate() {
         Ok(()) => println!("test_hukkey_generate: generate success"),
         Err(res) => panic!("test_hukkey_encrypt fail because generate error = {}", res),
@@ -147,7 +147,7 @@ fn test_hukkey_decrypt() {
 #[test]
 #[allow(non_snake_case)]
 fn test_crypto_init() {
-    let secret_key = SecretKey::new(6, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlock);
+    let secret_key = SecretKey::new(6, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked);
     match secret_key.exists() {
         Ok(true) => (),
         Ok(false) => {
@@ -160,7 +160,7 @@ fn test_crypto_init() {
         _ => panic!("hukskey exist failed"),
     };
 
-    let secret_key2 = SecretKey::new(6, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlock);
+    let secret_key2 = SecretKey::new(6, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked);
 
     let mut crypto = Crypto::new(HKS_KEY_PURPOSE_DECRYPT, secret_key, 0, 600);
     let challenge = crypto.init_crypto();
@@ -177,7 +177,7 @@ fn test_crypto_init() {
 #[test]
 #[allow(non_snake_case)]
 fn test_crypto_exec_crypto() {
-    let secret_key = SecretKey::new(7, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlock);
+    let secret_key = SecretKey::new(7, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked);
     match secret_key.exists() {
         Ok(true) => println!("test_hukkey_decrypt: key exist"),
         Ok(false) => {

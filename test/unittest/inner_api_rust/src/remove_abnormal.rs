@@ -29,10 +29,8 @@ fn remove_invalid_alias() {
 #[test]
 fn remove_invalid_accessibility() {
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Accessibility, (Accessibility::DeviceFirstUnlock as u32) - 1);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().remove(&query).unwrap_err());
 
-    query.insert_attr(Tag::Accessibility, (Accessibility::DeviceUnlock as u32) + 1);
+    query.insert_attr(Tag::Accessibility, (Accessibility::DeviceUnlocked as u32) + 1);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().remove(&query).unwrap_err());
 }
 

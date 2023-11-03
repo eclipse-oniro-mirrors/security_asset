@@ -121,7 +121,7 @@ impl SecretKey {
 
     /// Determine whether device unlock is required.
     pub fn need_device_unlock(&self) -> bool {
-        self.access_type == Accessibility::DeviceUnlock
+        self.access_type == Accessibility::DeviceUnlocked
     }
 }
 

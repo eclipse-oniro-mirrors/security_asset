@@ -141,10 +141,8 @@ fn add_invalid_accessibility() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
-    attrs.insert_attr(Tag::Accessibility, (Accessibility::DeviceFirstUnlock as u32) - 1);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 
-    attrs.insert_attr(Tag::Accessibility, (Accessibility::DeviceUnlock as u32) + 1);
+    attrs.insert_attr(Tag::Accessibility, (Accessibility::DeviceUnlocked as u32) + 1);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 }
 

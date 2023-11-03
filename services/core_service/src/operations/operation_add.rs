@@ -15,6 +15,7 @@
 
 //! This module is used to insert an Asset with a specified alias.
 
+use asset_constants::OwnerType;
 use asset_crypto_manager::crypto::{Crypto, SecretKey};
 use asset_db_operator::{
     database::Database,
@@ -102,7 +103,7 @@ fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
 }
 
 fn add_default_attrs(db_data: &mut DbMap) {
-    db_data.entry(column::ACCESSIBILITY).or_insert(Value::Number(Accessibility::DeviceFirstUnlock as u32));
+    db_data.entry(column::ACCESSIBILITY).or_insert(Value::Number(Accessibility::DeviceFirstUnlocked as u32));
     db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::None as u32));
     db_data.entry(column::SYNC_TYPE).or_insert(Value::Number(SyncType::Never as u32));
     db_data.entry(column::REQUIRE_PASSWORD_SET).or_insert(Value::Bool(false));
@@ -114,7 +115,19 @@ const REQUIRED_ATTRS: [Tag; 2] = [Tag::Secret, Tag::Alias];
 
 const OPTIONAL_ATTRS: [Tag; 3] = [Tag::Secret, Tag::ConflictResolution, Tag::DeleteType];
 
-fn check_arguments(attributes: &AssetMap) -> Result<()> {
+fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    if calling_info.owner_type() == OwnerType::Native as u32 {
+        return Ok(())
+    }
+    let access = attributes.get_enum_attr::<Accessibility>(&Tag::Accessibility)
+        .unwrap_or(Accessibility::DeviceFirstUnlocked);
+    if access == Accessibility::DevicePowerOn {
+        return Ok(());
+    }
+    asset_error_err!(ErrCode::InvalidArgument, "[FATAL][SA]Native can not use asset with accessibility as {}.", access)
+}
+
+fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     common::check_required_tags(attributes, &REQUIRED_ATTRS)?;
 
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
@@ -122,11 +135,12 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
-    common::check_value_validity(attributes)
+    common::check_value_validity(attributes)?;
+    check_accessibity_validity(attributes, calling_info)
 }
 
 pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    check_arguments(attributes)?;
+    check_arguments(attributes, calling_info)?;
 
     // Create database directory if not exists.
     asset_file_operator::create_user_db_dir(calling_info.user_id())?;
