@@ -227,3 +227,61 @@ fn test_crypto_exec_crypto() {
     }
     let _ = secret_key2.delete();
 }
+
+#[test]
+#[allow(non_snake_case)]
+fn test_crypto_manager() {
+    let secret_key = SecretKey::new(8, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked);
+    match secret_key.exists() {
+        Ok(true) => println!("test_hukkey_decrypt: key exist"),
+        Ok(false) => {
+            print!("test_crypto_exec_crypto: huks key start create");
+            match secret_key.generate() {
+                Ok(()) => println!("test_hukkey_generate: generate success"),
+                Err(res) => panic!("test_hukkey_delete fail because generate error = {}", res),
+            };
+        },
+        _ => panic!("hukskey exist failed"),
+    };
+
+    let mut crypto1 = Crypto::new(HKS_KEY_PURPOSE_DECRYPT, secret_key.clone(), 0, 600);
+    let mut challege1 = vec![0; CHALLENGE_LEN as usize];
+    match crypto1.init_crypto() {
+        Ok(tmp_challenge) => set_valiad_challenge(get_valiad_challenge(&tmp_challenge, 0), 0, &mut challege1),
+        Err(ret) => panic!("crypto init failed {}", ret),
+    };
+
+    let mut crypto2 = Crypto::new(HKS_KEY_PURPOSE_DECRYPT, secret_key.clone(), 1, 600);
+    let mut challege2 = vec![0; CHALLENGE_LEN as usize];
+    match crypto2.init_crypto() {
+        Ok(tmp_challenge) => set_valiad_challenge(get_valiad_challenge(&tmp_challenge, 1), 1, &mut challege2),
+        Err(ret) => panic!("crypto init failed {}", ret),
+    };
+
+    let arc_crypto_manager = CryptoManager::get_instance();
+    let mut crypto_manager = arc_crypto_manager.lock().unwrap();
+    match crypto_manager.add(crypto1) {
+        Ok(_) => print!("crypto manager add success"),
+        Err(_) => panic!("crypto manager add failed"),
+    };
+
+    match crypto_manager.add(crypto2) {
+        Ok(_) => print!("crypto manager add success"),
+        Err(_) => panic!("crypto manager add failed"),
+    };
+
+    match crypto_manager.find(&secret_key, &challege1) {
+        Some(_) => print!("crypto manager find success"),
+        None => panic!("crypto manager find failed"),
+    };
+
+    match crypto_manager.find(&secret_key, &challege2) {
+        Some(_) => print!("crypto manager find success"),
+        None => panic!("crypto manager find failed"),
+    };
+
+    crypto_manager.remove(&challege1);
+    crypto_manager.remove(&challege2);
+
+    let _ = secret_key.delete();
+}

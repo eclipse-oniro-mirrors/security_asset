@@ -19,6 +19,7 @@ use asset_definition::{asset_error, asset_error_err, Accessibility, AuthType, Er
 use asset_log::{loge, logi};
 use std::sync::Arc;
 use std::sync::Mutex;
+use std::ptr::null;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::huks_ffi::*;
@@ -147,7 +148,8 @@ impl Drop for Crypto {
     fn drop(&mut self) {
         loge!("drop crypto handle = {:?}, challenge = {:?}", self.handle, self.challenge);
         // in param
-        let param = CryptParam { crypto_mode: self.mode, challenge_pos: self.challenge_pos, exp_time: 0 };
+        let param = CryptParam { crypto_mode: self.mode, challenge_pos: self.challenge_pos,
+                exp_time: 0, aad_data: null(), auth_token: null()};
         let mut handle_data = CryptoBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
 
         let res = IdentityGuard::build();
@@ -195,6 +197,8 @@ impl Crypto {
             crypto_mode: self.mode,
             challenge_pos: self.challenge_pos,
             exp_time: (self.exp_time - now_second) as u32,
+            aad_data: null(),
+            auth_token: null()
         };
 
         let key_data = ConstCryptoBlob { size: self.key.alias.len() as u32, data: self.key.alias.as_ptr() };
@@ -250,11 +254,12 @@ impl Crypto {
         let mut cipher: Vec<u8> = vec![0; msg.len() - AEAD_SIZE as usize - NONCE_SIZE as usize];
 
         // in param
-        let param = CryptParam { crypto_mode: self.mode, challenge_pos: self.challenge_pos, exp_time: 0 };
-
         let aad_data = ConstCryptoBlob { size: aad.len() as u32, data: aad.as_ptr() };
 
         let auth_token = ConstCryptoBlob { size: auth_token.len() as u32, data: auth_token.as_ptr() };
+
+        let param = CryptParam { crypto_mode: self.mode, challenge_pos: self.challenge_pos, exp_time: 0,
+            aad_data: &aad_data as *const ConstCryptoBlob, auth_token: &auth_token as *const ConstCryptoBlob};
 
         let handle_data = ConstCryptoBlob { size: self.handle.len() as u32, data: self.handle.as_ptr() };
 
@@ -266,8 +271,6 @@ impl Crypto {
         let ret = unsafe {
             ExecCryptoWrapper(
                 &param as *const CryptParam,
-                &aad_data as *const ConstCryptoBlob,
-                &auth_token as *const ConstCryptoBlob,
                 &handle_data as *const ConstCryptoBlob,
                 &in_data as *const ConstCryptoBlob,
                 &mut out_data as *mut CryptoBlob,
@@ -363,17 +366,18 @@ impl CryptoManager {
         unsafe { INSTANCE.get_or_insert_with(|| Arc::new(Mutex::new(CryptoManager::new()))).clone() }
     }
 
-    fn challenge_cmp(challenge: &Vec<u8>, crypto: &Crypto) -> Result<()> {
+    fn challenge_cmp(challenge: &Vec<u8>, crypto: &Crypto) -> bool {
         if challenge.len() != CHALLENGE_LEN as usize {
-            return asset_error_err!(ErrCode::CryptoError, "[FATAL]invalid challenge len {}", challenge.len());
+            loge!("[FATAL]invalid challenge len {}", challenge.len());
+            return false;
         }
 
         let index = crypto.challenge_pos as usize;
         if get_valiad_challenge(challenge, index) == get_valiad_challenge(&crypto.challenge, index) {
-            return Ok(());
+            return true;
         }
 
-        asset_error_err!(ErrCode::CryptoError, "[FATAL]Matched challenge not found.")
+        false
     }
 
     /// add a crypto in manager, not allow insert crypto with same challenge
@@ -402,8 +406,8 @@ impl CryptoManager {
                 crypto.challenge
             );
             match Self::challenge_cmp(challenge, crypto) {
-                Ok(()) => delete_index.push(index),
-                _ => continue,
+                true => delete_index.push(index),
+                false => continue,
             }
         }
 
@@ -423,10 +427,8 @@ impl CryptoManager {
             }
 
             match Self::challenge_cmp(challenge, crypto) {
-                Ok(()) => {
-                    return Some(crypto);
-                },
-                _ => continue,
+                true => return Some(crypto),
+                false => continue,
             }
         }
         loge!("crypto not found\n");

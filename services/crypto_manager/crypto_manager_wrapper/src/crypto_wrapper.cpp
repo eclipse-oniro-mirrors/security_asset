@@ -240,8 +240,7 @@ int32_t InitCryptoWrapper(const struct CryptParam *param, const struct HksBlob *
     return ret;
 }
 
-static int32_t CheckCryptoParam(const CryptParam *param, const struct HksBlob *aadData,
-    const struct HksBlob *authToken, const struct HksBlob *handleData,
+static int32_t CheckCryptoParam(const CryptParam *param, const struct HksBlob *handleData,
     const struct HksBlob *inData, struct HksBlob *outData)
 {
     if (param == nullptr || param->challengePos > CHALLENGEPOS_MAX || param->cryptoMode != HKS_KEY_PURPOSE_DECRYPT) {
@@ -249,12 +248,12 @@ static int32_t CheckCryptoParam(const CryptParam *param, const struct HksBlob *a
         return HKS_ERROR_INVALID_ARGUMENT;
     }
 
-    if (authToken == nullptr || authToken->size == 0 || authToken->data == nullptr) {
+    if (param->authToken == nullptr || param->authToken->size == 0 || param->authToken->data == nullptr) {
         LOGE("hks invalid auth token\n");
         return HKS_ERROR_INVALID_ARGUMENT;
     }
 
-    if (aadData == nullptr || aadData->size == 0 || aadData->data == nullptr) {
+    if (param->aadData == nullptr || param->aadData->size == 0 || param->aadData->data == nullptr) {
         LOGE("hks invalid aad data\n");
         return HKS_ERROR_INVALID_ARGUMENT;
     }
@@ -278,7 +277,6 @@ static int32_t CheckCryptoParam(const CryptParam *param, const struct HksBlob *a
 }
 
 static int32_t CreateCryptoParamSet(struct HksParamSet **paramSet, const CryptParam *param,
-    const struct HksBlob *aadData, const struct HksBlob *authToken,
     const struct HksBlob *inData, struct HksBlob *outData)
 {
     /* init decrypto params */
@@ -291,19 +289,22 @@ static int32_t CreateCryptoParamSet(struct HksParamSet **paramSet, const CryptPa
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
         { .tag = HKS_TAG_IS_BATCH_OPERATION, .boolParam = true },
         { .tag = HKS_TAG_BATCH_PURPOSE, .uint32Param = param->cryptoMode },
-        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = aadData->size, .data = (uint8_t *)aadData->data }}, /* initial AAD */
-        { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE, .data = (uint8_t *)inData->data + outData->size + AEAD_SIZE }},
+        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = { .size = param->aadData->size,
+            .data = (uint8_t *)param->aadData->data }},
+        { .tag = HKS_TAG_NONCE, .blob = { .size = NONCE_SIZE,
+            .data = (uint8_t *)inData->data + outData->size + AEAD_SIZE }},
         { .tag = HKS_TAG_AE_TAG, .blob = { .size = AEAD_SIZE, .data = (uint8_t *)inData->data + outData->size }},
-        { .tag = HKS_TAG_AUTH_TOKEN, .blob = { .size = authToken->size, .data = (uint8_t *)authToken->data }}, /* initial auth token */
+        { .tag = HKS_TAG_AUTH_TOKEN, .blob = { .size = param->authToken->size,
+            .data = (uint8_t *)param->authToken->data }},
     };
 
     return InitParamSet(paramSet, initParams, sizeof(initParams) / sizeof(HksParam));
 }
 
-int32_t ExecCryptoWrapper(const CryptParam *param, const struct HksBlob *aadData, const struct HksBlob *authToken,
-    const struct HksBlob *handleData, const struct HksBlob *inData, struct HksBlob *outData)
+int32_t ExecCryptoWrapper(const CryptParam *param, const struct HksBlob *handleData,
+    const struct HksBlob *inData, struct HksBlob *outData)
 {
-    if (CheckCryptoParam(param, aadData, authToken, handleData, inData, outData) != HKS_SUCCESS) {
+    if (CheckCryptoParam(param, handleData, inData, outData) != HKS_SUCCESS) {
         LOGE("hks update crypto invalid argument\n");
         return HKS_ERROR_INVALID_ARGUMENT;
     }
@@ -315,7 +316,7 @@ int32_t ExecCryptoWrapper(const CryptParam *param, const struct HksBlob *aadData
     tmpInData = { outData->size, (uint8_t *)inData->data };
 
     /* init paramset */
-    ret = CreateCryptoParamSet(&paramSet, param, aadData, authToken, inData, outData);
+    ret = CreateCryptoParamSet(&paramSet, param, inData, outData);
     if (ret != HKS_SUCCESS) {
         LOGE("hks crypto update paramset err = %{public}d\n", ret);
         return ret;

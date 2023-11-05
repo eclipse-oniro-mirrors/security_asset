@@ -26,6 +26,8 @@ struct CryptParam {
     enum HksKeyPurpose cryptoMode;
     uint32_t challengePos;
     uint32_t expTime;
+    const struct HksBlob *aadData;
+    const struct HksBlob *authToken;
 };
 
 /* once encrypt&decrypt */
@@ -37,8 +39,8 @@ int DecryptWrapper(const struct HksBlob *keyData, const struct HksBlob *aadData,
 /* multi encrypt&decrypt */
 int32_t InitCryptoWrapper(const struct CryptParam *param, const struct HksBlob *key_data,
     struct HksBlob *challenge_data, struct HksBlob *handle_data);
-int32_t ExecCryptoWrapper(const CryptParam *param, const struct HksBlob *aadData, const struct HksBlob *authToken,
-    const struct HksBlob *handleData, const struct HksBlob *inData, struct HksBlob *outData);
+int32_t ExecCryptoWrapper(const CryptParam *param, const struct HksBlob *handleData,
+    const struct HksBlob *inData, struct HksBlob *outData);
 int32_t DropCrypto(const CryptParam *param, struct HksBlob *handle_data);
 
 #ifdef __cplusplus

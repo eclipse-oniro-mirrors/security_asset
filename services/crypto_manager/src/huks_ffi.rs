@@ -51,6 +51,10 @@ pub struct CryptParam {
     pub challenge_pos: u32,
     /// expeire time
     pub exp_time: u32,
+    /// aad
+    pub aad_data: *const ConstCryptoBlob,
+    /// auth token
+    pub auth_token: *const ConstCryptoBlob,
 }
 
 /// const crypto blobs, keep same with crypto_wrapper.h
@@ -108,8 +112,6 @@ extern "C" {
     /// hks execute crypto c func
     pub fn ExecCryptoWrapper(
         param: *const CryptParam,
-        aad_data: *const ConstCryptoBlob,
-        auth_token: *const ConstCryptoBlob,
         handle_data: *const ConstCryptoBlob,
         in_data: *const ConstCryptoBlob,
         out_data: *mut CryptoBlob,
