@@ -96,7 +96,7 @@ impl IAsset for AssetService {
     fn add(&self, attributes: &AssetMap) -> Result<()> {
         let fun_name = "add";
         let start = Instant::now();
-        let trace = TraceScope::trace(fun_name);
+        let _trace = TraceScope::trace(fun_name);
         let calling_info = CallingInfo::build()?;
         sys_event_log(operations::add(attributes, &calling_info), &calling_info, start, fun_name)
     }
