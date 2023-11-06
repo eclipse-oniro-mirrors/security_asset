@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This module implements the stub of the Asset service.
+//! This module is used to Asset service hisysevent.
 
 use std::time::Instant;
 

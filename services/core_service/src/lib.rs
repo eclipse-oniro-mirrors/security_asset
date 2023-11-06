@@ -33,10 +33,12 @@ mod calling_info;
 mod operations;
 mod stub;
 mod sys_event;
+mod trace;
 
 use calling_info::CallingInfo;
 use stub::AssetStub;
 use sys_event::sys_event_log;
+use trace::TraceScope;
 
 const LOG_LABEL: HiLogLabel = HiLogLabel { log_type: LogType::LogCore, domain: 0xD002F70, tag: "Asset" };
 
@@ -92,38 +94,50 @@ impl IRemoteBroker for AssetService {}
 
 impl IAsset for AssetService {
     fn add(&self, attributes: &AssetMap) -> Result<()> {
+        let fun_name = "add";
         let start = Instant::now();
+        let trace = TraceScope::trace(fun_name);
         let calling_info = CallingInfo::build()?;
-        sys_event_log(operations::add(attributes, &calling_info), &calling_info, start, "add")
+        sys_event_log(operations::add(attributes, &calling_info), &calling_info, start, fun_name)
     }
 
     fn remove(&self, query: &AssetMap) -> Result<()> {
+        let fun_name = "remove";
         let start = Instant::now();
+        let _trace = TraceScope::trace(fun_name);
         let calling_info = CallingInfo::build()?;
-        sys_event_log(operations::remove(query, &calling_info), &calling_info, start, "remove")
+        sys_event_log(operations::remove(query, &calling_info), &calling_info, start, fun_name)
     }
 
     fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
+        let fun_name = "update";
         let start = Instant::now();
+        let _trace = TraceScope::trace(fun_name);
         let calling_info = CallingInfo::build()?;
-        sys_event_log(operations::update(query, attributes_to_update, &calling_info), &calling_info, start, "update")
+        sys_event_log(operations::update(query, attributes_to_update, &calling_info), &calling_info, start, fun_name)
     }
 
     fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>> {
+        let fun_name = "pre_query";
         let start = Instant::now();
+        let _trace = TraceScope::trace(fun_name);
         let calling_info = CallingInfo::build()?;
-        sys_event_log(operations::pre_query(query, &calling_info), &calling_info, start, "pre_query")
+        sys_event_log(operations::pre_query(query, &calling_info), &calling_info, start, fun_name)
     }
 
     fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>> {
+        let fun_name = "query";
         let start = Instant::now();
+        let _trace = TraceScope::trace(fun_name);
         let calling_info = CallingInfo::build()?;
-        sys_event_log(operations::query(query, &calling_info), &calling_info, start, "query")
+        sys_event_log(operations::query(query, &calling_info), &calling_info, start, fun_name)
     }
 
     fn post_query(&self, query: &AssetMap) -> Result<()> {
+        let fun_name = "post_query";
         let start = Instant::now();
+        let _trace = TraceScope::trace(fun_name);
         let calling_info = CallingInfo::build()?;
-        sys_event_log(operations::post_query(query, &calling_info), &calling_info, start, "post_query")
+        sys_event_log(operations::post_query(query, &calling_info), &calling_info, start, fun_name)
     }
 }
