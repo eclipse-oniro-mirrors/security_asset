@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,22 +13,7 @@
  * limitations under the License.
  */
 
-#ifndef HKS_KEY_WRAPPER
-#define HKS_KEY_WRAPPER
+//! the module test for database operator
 
-#include "hks_api.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-int32_t InitParamSet(struct HksParamSet **paramSet, const struct HksParam *params, uint32_t paramcount);
-int32_t GenerateKey(const struct HksBlob *keyData, bool needUserAuth);
-int32_t DeleteKey(const struct HksBlob *keyData);
-int32_t KeyExist(const struct HksBlob *keyData);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif
+mod test_database;
+mod test_table;

@@ -15,7 +15,7 @@
 
 //! This module defines asset-related data structures.
 
-use std::{collections::HashMap, fmt::Display};
+use std::collections::HashMap;
 
 mod extension;
 #[macro_use]
@@ -118,6 +118,7 @@ impl_tag_trait! {
 /// A type that indicates the secret or attribute value of an Asset tag.
 #[derive(Clone)]
 #[derive(Debug)]
+#[derive(Eq, Hash, PartialEq)]
 #[repr(C)]
 pub enum Value {
     /// Asset attribute value, whose data type is bool.
@@ -220,12 +221,6 @@ pub struct AssetError {
 
     /// Error message for error occurred.
     pub msg: String,
-}
-
-impl Display for AssetError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "error code is {}, msg is {}", self.code, self.msg)
-    }
 }
 
 /// Alias of the Asset result type.

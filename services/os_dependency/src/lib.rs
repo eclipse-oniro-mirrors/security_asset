@@ -20,18 +20,18 @@ use std::slice;
 use asset_constants::OwnerType;
 use asset_crypto_manager::crypto::{CryptoManager, SecretKey};
 use asset_db_operator::{
-    database_table_helper::DatabaseHelper,
+    database::Database,
     types::{column, DbMap},
 };
 use asset_definition::{Accessibility, AuthType, Value};
 use asset_file_operator::delete_user_db_dir;
-use asset_hasher::sha256;
 use asset_log::loge;
+use asset_utils::hasher::sha256;
 
 fn delete_key(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility) {
     let secret_key = SecretKey::new(user_id, owner, auth_type, access_type);
     if let Err(e) = secret_key.delete() {
-        loge!("Delete huks key failed, error = {}", e.code);
+        loge!("Delete huks key failed, error = {}", e);
     }
 }
 
@@ -47,7 +47,8 @@ pub unsafe extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, ow
     let mut cond = DbMap::new();
     cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
     cond.insert(column::OWNER, Value::Bytes(owner));
-    match DatabaseHelper::delete_datas(user_id, &cond) {
+    let Ok(mut db) = Database::build(user_id) else { return 0 };
+    match db.delete_datas(&cond) {
         Ok(remove_num) => {
             delete_key(user_id, &owner_hash, AuthType::None, Accessibility::DeviceFirstUnlocked);
             delete_key(user_id, &owner_hash, AuthType::None, Accessibility::DeviceUnlocked);
@@ -69,5 +70,5 @@ pub extern "C" fn delete_dir_by_user(user_id: i32) -> bool {
 #[no_mangle]
 pub extern "C" fn delete_crypto_needing_device_unlock() {
     let crypto_manager = CryptoManager::get_instance();
-    crypto_manager.lock().unwrap().remove_device_unlock();
+    crypto_manager.lock().unwrap().remove_need_device_unlocked();
 }

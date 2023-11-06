@@ -18,7 +18,7 @@
 use ipc_rust::get_calling_uid;
 
 use asset_constants::OwnerType;
-use asset_definition::{asset_error_err, ErrCode, Result};
+use asset_definition::{log_throw_error, ErrCode, Result};
 
 pub(crate) struct CallingInfo {
     owner_type: OwnerType,
@@ -27,17 +27,17 @@ pub(crate) struct CallingInfo {
 }
 
 extern "C" {
-    fn GetFrontUserId(userId: &mut i32) -> bool;
+    fn GetUserIdByUid(uid: u64, userId: &mut i32) -> bool;
     fn GetOwnerInfo(userId: i32, uid: u64, ownerType: *mut OwnerType, ownerInfo: *mut u8, infoLen: *mut u32) -> bool;
 }
 
-pub(crate) fn get_front_user_id() -> Result<i32> {
+pub(crate) fn get_user_id(uid: u64) -> Result<i32> {
     unsafe {
         let mut user_id = 0;
-        if GetFrontUserId(&mut user_id) {
+        if GetUserIdByUid(uid, &mut user_id) {
             Ok(user_id)
         } else {
-            asset_error_err!(ErrCode::AccountError, "[FATAL]Get front user id failed.")
+            log_throw_error!(ErrCode::AccountError, "[FATAL]Get front user id failed.")
         }
     }
 }
@@ -45,17 +45,16 @@ pub(crate) fn get_front_user_id() -> Result<i32> {
 impl CallingInfo {
     pub(crate) fn build() -> Result<Self> {
         let uid = get_calling_uid();
-        let user_id: i32 = get_front_user_id()?;
+        let user_id: i32 = get_user_id(uid)?;
         let mut owner_info = vec![0u8; 256];
         let mut len = 256u32;
         let mut owner_type = OwnerType::Hap;
         unsafe {
             if !GetOwnerInfo(user_id, uid, &mut owner_type, owner_info.as_mut_ptr(), &mut len) {
-                return asset_error_err!(ErrCode::BmsError, "[FATAL]Get owner info from bms failed.");
+                return log_throw_error!(ErrCode::BmsError, "[FATAL]Get owner info from bms failed.");
             }
         }
         owner_info.truncate(len as usize);
-
         Ok(CallingInfo { owner_type, owner_info, user_id })
     }
 

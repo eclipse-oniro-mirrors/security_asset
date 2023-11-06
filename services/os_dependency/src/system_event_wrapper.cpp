@@ -29,13 +29,17 @@ extern "C" {
 }
 
 namespace {
+using namespace OHOS::AppExecFwk::Constants;
+using namespace OHOS::EventFwk;
+
 const char * const APP_ID = "appId";
+
 void OnPackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp)
 {
-    int userId = want.GetIntParam(OHOS::AppExecFwk::Constants::USER_ID, -1);
+    int userId = want.GetIntParam(USER_ID, INVALID_USERID);
     std::string appId = want.GetStringParam(APP_ID);
-    int appIndex = isSandBoxApp ? want.GetIntParam(OHOS::AppExecFwk::Constants::SANDBOX_APP_INDEX, -1) : 0;
-    if (appId.empty() || userId == -1 || appIndex == -1) {
+    int appIndex = isSandBoxApp ? want.GetIntParam(SANDBOX_APP_INDEX, -1) : 0;
+    if (appId.empty() || userId == INVALID_USERID || appIndex == -1) {
         LOGE("[FATAL]Get removed owner info failed, userId=%{public}i, appId=%{public}s, appIndex=%{public}d",
             userId, appId.c_str(), appIndex);
         return;
@@ -43,30 +47,31 @@ void OnPackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp)
 
     std::string owner = appId + '_' + std::to_string(appIndex);
     int totalDeleteNum = delete_data_by_owner(userId, reinterpret_cast<const uint8_t *>(owner.c_str()), owner.size());
-    LOGI("[INFO] Receive event: PACKAGE_REMOVED, userId=%{public}i, appId=%{public}s, appIndex=%{public}d, "
+    LOGI("[INFO]Receive event: PACKAGE_REMOVED, userId=%{public}i, appId=%{public}s, appIndex=%{public}d, "
         "deleteDataNum=%{public}d", userId, appId.c_str(), appIndex, totalDeleteNum);
 }
 
-class SystemEventHandler : public OHOS::EventFwk::CommonEventSubscriber {
+class SystemEventHandler : public CommonEventSubscriber {
 public:
-    SystemEventHandler(const OHOS::EventFwk::CommonEventSubscribeInfo &subscribeInfo) :
-        OHOS::EventFwk::CommonEventSubscriber(subscribeInfo) {}
+    explicit SystemEventHandler(const CommonEventSubscribeInfo &subscribeInfo): CommonEventSubscriber(subscribeInfo) {}
     ~SystemEventHandler() = default;
-    void OnReceiveEvent(const OHOS::EventFwk::CommonEventData &data) override
+    void OnReceiveEvent(const CommonEventData &data) override
     {
         auto want = data.GetWant();
         std::string action = want.GetAction();
-        if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED) {
+        if (action == CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED) {
             OnPackageRemoved(want, false);
-        } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
+        } else if (action == CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
             OnPackageRemoved(want, true);
-        } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
+        } else if (action == CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
             int userId = data.GetCode();
             bool ret = delete_dir_by_user(userId);
             LOGI("[INFO] Receive event: USER_REMOVED, userId=%{public}i, deleteDirRet=%{public}d", userId, ret);
-        } else if (action == OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SCREEN_OFF) {
+        } else if (action == CommonEventSupport::COMMON_EVENT_SCREEN_OFF) {
             delete_crypto_needing_device_unlock();
-            LOGI("[INFO] Receive event: SCREEN_OFF");
+            LOGI("[INFO]Receive event: SCREEN_OFF");
+        } else {
+            LOGW("[WARNING]Receive unknown event: %{public}s", action.c_str());
         }
     }
 };
@@ -76,12 +81,12 @@ static std::shared_ptr<SystemEventHandler> g_eventHandler = nullptr;
 
 bool SubscribeSystemEvent(void)
 {
-    OHOS::EventFwk::MatchingSkills matchingSkills;
-    matchingSkills.AddEvent(OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
-    matchingSkills.AddEvent(OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED);
-    matchingSkills.AddEvent(OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_USER_REMOVED);
-    matchingSkills.AddEvent(OHOS::EventFwk::CommonEventSupport::COMMON_EVENT_SCREEN_OFF);
-    OHOS::EventFwk::CommonEventSubscribeInfo subscriberInfo(matchingSkills);
+    MatchingSkills matchingSkills;
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_REMOVED);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_OFF);
+    CommonEventSubscribeInfo subscriberInfo(matchingSkills);
 
     g_eventHandler = std::make_shared<SystemEventHandler>(subscriberInfo);
     if (g_eventHandler == nullptr) {
@@ -89,7 +94,7 @@ bool SubscribeSystemEvent(void)
         return false;
     }
 
-    return OHOS::EventFwk::CommonEventManager::SubscribeCommonEvent(g_eventHandler);
+    return CommonEventManager::SubscribeCommonEvent(g_eventHandler);
 }
 
 bool UnSubscribeSystemEvent(void)
@@ -99,7 +104,7 @@ bool UnSubscribeSystemEvent(void)
         return false;
     }
 
-    bool res = OHOS::EventFwk::CommonEventManager::UnSubscribeCommonEvent(g_eventHandler);
+    bool res = CommonEventManager::UnSubscribeCommonEvent(g_eventHandler);
     g_eventHandler = nullptr;
     return res;
 }

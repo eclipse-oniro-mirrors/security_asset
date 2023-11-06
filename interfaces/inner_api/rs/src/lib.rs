@@ -31,7 +31,7 @@ extern "C" {
 fn get_remote() -> Result<RemoteObjRef<AssetProxy>> {
     unsafe {
         if !LoadService(SA_ID) {
-            return asset_error_err!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]Load service failed.");
+            return log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]Load service failed.");
         }
     }
 
@@ -39,7 +39,7 @@ fn get_remote() -> Result<RemoteObjRef<AssetProxy>> {
     match object {
         Ok(remote) => Ok(remote),
         Err(e) => {
-            asset_error_err!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed. Error = {}", e)
+            log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed. Error = {}", e)
         },
     }
 }

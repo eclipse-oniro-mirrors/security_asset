@@ -24,6 +24,6 @@ asset_crypto_manager = { path = "../crypto_manager" }
 asset_db_operator = { path = "../db_operator" }
 asset_definition = { path = "../../frameworks/definition" }
 asset_file_operator = { path = "../../frameworks/os_dependency/file" }
-asset_hasher = { path = "../../frameworks/utils/hasher" }
+asset_utils = { path = "../../frameworks/utils" }
 asset_ipc = { path = "../../frameworks/ipc" }
 asset_log = { path = "../../frameworks/os_dependency/log" }

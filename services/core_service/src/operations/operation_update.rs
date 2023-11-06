@@ -17,11 +17,12 @@
 
 use asset_crypto_manager::crypto::Crypto;
 use asset_db_operator::{
-    database_table_helper::DatabaseHelper,
+    database::Database,
     types::{column, DbMap},
 };
-use asset_definition::{asset_error_err, AssetMap, ErrCode, Extension, Result, Tag, Value};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, Result, Tag, Value};
 use asset_log::logi;
+use asset_utils::time;
 
 use crate::{calling_info::CallingInfo, operations::common};
 
@@ -33,7 +34,7 @@ fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
 }
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
-    let time = common::get_system_time()?;
+    let time = time::system_time_in_millis()?;
     db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     Ok(())
 }
@@ -51,7 +52,7 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap) -> Result<()> {
     common::check_value_validity(query)?;
 
     if attrs_to_update.is_empty() {
-        return asset_error_err!(ErrCode::InvalidArgument, "[FATAL]The attributes to update is empty.");
+        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The attributes to update is empty.");
     }
     // Check attributes to update.
     valid_tags = common::NORMAL_LABEL_ATTRS.to_vec();
@@ -69,10 +70,11 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     let mut update_db_data = common::into_db_map(update);
     add_system_attrs(&mut update_db_data)?;
 
+    let mut db = Database::build(calling_info.user_id())?;
     if update.contains_key(&Tag::Secret) {
-        let mut results = DatabaseHelper::query_columns(calling_info.user_id(), &vec![], &query_db_data, None)?;
+        let mut results = db.query_datas(&vec![], &query_db_data, None)?;
         if results.len() != 1 {
-            return asset_error_err!(
+            return log_throw_error!(
                 ErrCode::NotFound,
                 "query to-be-updated asset failed, found [{}] assets",
                 results.len()
@@ -86,9 +88,9 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     }
 
     // call sql to update
-    let update_num = DatabaseHelper::update_datas(calling_info.user_id(), &query_db_data, &update_db_data)?;
+    let update_num = db.update_datas(&query_db_data, &update_db_data)?;
     if update_num == 0 {
-        return asset_error_err!(ErrCode::NotFound, "[FATAL]Update asset failed, update 0 asset.");
+        return log_throw_error!(ErrCode::NotFound, "[FATAL]Update asset failed, update 0 asset.");
     }
     logi!("update {} data", update_num);
     Ok(())

@@ -11,11 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-[package]
-name = "asset_hasher"
-version = "0.1.0"
-edition = "2021"
+import("//build/ohos.gni")
+import("//build/test.gni")
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+module_output_path = "asset/asset_UT_test"
 
-[dependencies]
+ohos_rust_unittest("asset_module_test") {
+  sources = [ "src/lib.rs" ]
+  deps = [
+    "../../../frameworks/definition:asset_definition",
+    "../../../services/crypto_manager:asset_crypto_manager",
+  ]
+  module_out_path = module_output_path
+  subsystem_name = "security"
+  part_name = "asset"
+}

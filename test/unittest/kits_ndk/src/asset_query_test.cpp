@@ -61,7 +61,8 @@ HWTEST_F(AssetQueryTest, AssetQueryTest001, TestSize.Level0)
     Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
     Asset_Attr addAttr[] = {
         { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
-        { .tag = ASSET_TAG_SECRET, .value.blob = funcName }
+        { .tag = ASSET_TAG_SECRET, .value.blob = funcName },
+        { .tag = ASSET_TAG_ACCESSIBILITY, .value.u32 = ASSET_ACCESSIBILITY_DEVICE_POWER_ON },
     };
     ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(addAttr, ARRAY_SIZE(addAttr)));
 

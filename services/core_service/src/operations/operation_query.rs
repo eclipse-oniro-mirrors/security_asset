@@ -19,10 +19,10 @@ use std::cmp::Ordering;
 
 use asset_crypto_manager::crypto::{Crypto, CryptoManager};
 use asset_db_operator::{
-    database_table_helper::DatabaseHelper,
+    database::Database,
     types::{column, DbMap, QueryOptions},
 };
-use asset_definition::{asset_error_err, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value};
+use asset_definition::{log_throw_error, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value};
 use asset_log::logi;
 
 use crate::{calling_info::CallingInfo, operations::common};
@@ -51,21 +51,21 @@ fn exec_crypto(calling: &CallingInfo, db_data: &mut DbMap, challenge: &Vec<u8>, 
     let secret_key = common::build_secret_key(calling, db_data)?;
     let x = match crypto_manager.lock().unwrap().find(&secret_key, challenge) {
         Some(crypto) => {
-            let secret = crypto.exec_crypto(secret, &common::build_aad(db_data), auth_token)?;
+            let secret = crypto.exec_crypt(secret, &common::build_aad(db_data), auth_token)?;
             db_data.insert(column::SECRET, Value::Bytes(secret));
             Ok(())
         },
-        None => return asset_error_err!(ErrCode::CryptoError, "[FATAL][SA]Execute ctypto not found."),
+        None => return log_throw_error!(ErrCode::CryptoError, "[FATAL][SA]Execute ctypto not found."),
     };
     x
 }
 
 fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) -> Result<Vec<AssetMap>> {
-    let mut results = DatabaseHelper::query_columns(calling_info.user_id(), &vec![], db_data, None)?;
+    let mut results = Database::build(calling_info.user_id())?.query_datas(&vec![], db_data, None)?;
     logi!("results len {}", results.len());
     match results.len() {
         0 => {
-            asset_error_err!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.")
+            log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.")
         },
         1 => {
             match results[0].get(column::AUTH_TYPE) {
@@ -82,7 +82,7 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
             into_asset_maps(&results)
         },
         n => {
-            asset_error_err!(
+            log_throw_error!(
                 ErrCode::DatabaseError,
                 "[FATAL]The database contains {} records with the specified alias.",
                 n
@@ -120,9 +120,9 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
 
 pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
     let mut results =
-        DatabaseHelper::query_columns(calling_info.user_id(), &vec![], db_data, Some(&get_query_options(attrs)))?;
+        Database::build(calling_info.user_id())?.query_datas(&vec![], db_data, Some(&get_query_options(attrs)))?;
     if results.is_empty() {
-        return asset_error_err!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
+        return log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
     }
 
     for data in &mut results {
@@ -154,7 +154,7 @@ pub(crate) fn query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<
     match query.get(&Tag::ReturnType) {
         Some(Value::Number(return_type)) if *return_type == (ReturnType::All as u32) => {
             if !query.contains_key(&Tag::Alias) {
-                asset_error_err!(ErrCode::NotSupport, "[FATAL]Batch secret query is not supported.")
+                log_throw_error!(ErrCode::NotSupport, "[FATAL]Batch secret query is not supported.")
             } else {
                 query_all(calling_info, &mut db_data, query)
             }

@@ -15,9 +15,11 @@
 
 //! This module extends the function of Asset data structure.
 
-use std::{collections::HashMap, hash::Hash};
+use std::{collections::HashMap, fmt::Display, hash::Hash};
 
-use super::{asset_error_err, AssetError, Conversion, DataType, ErrCode, Extension, Result, Tag, Value};
+use asset_log::loge;
+
+use super::{log_throw_error, AssetError, Conversion, DataType, ErrCode, Extension, Result, Tag, Value};
 
 /// The mask used to obtain the data type of Asset attribute value.
 const DATA_TYPE_MASK: u32 = 0xF << 28;
@@ -86,7 +88,7 @@ impl Conversion for u32 {
 
 impl<K> Extension<K> for HashMap<K, Value>
 where
-    K: Eq + PartialEq + Hash,
+    K: Eq + PartialEq + Hash + std::fmt::Display,
 {
     fn insert_attr(&mut self, key: K, value: impl Conversion) {
         self.insert(key, value.into_value());
@@ -96,7 +98,7 @@ where
         if let Some(Value::Bool(b)) = self.get(key) {
             Ok(*b)
         } else {
-            asset_error_err!(ErrCode::InvalidArgument, "[FATAL]Get bool attr fail!")
+            log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of bool type failed, key: {}", key)
         }
     }
 
@@ -104,7 +106,7 @@ where
         if let Some(Value::Number(num)) = self.get(key) {
             T::try_from(*num)
         } else {
-            asset_error_err!(ErrCode::InvalidArgument, "[FATAL]Get enum attr fail!")
+            log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of enum type failed, key: {}", key)
         }
     }
 
@@ -112,7 +114,7 @@ where
         if let Some(Value::Number(num)) = self.get(key) {
             Ok(*num)
         } else {
-            asset_error_err!(ErrCode::InvalidArgument, "[FATAL]Get num attr fail!")
+            log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of number type failed, key: {}", key)
         }
     }
 
@@ -120,7 +122,21 @@ where
         if let Some(Value::Bytes(bytes)) = self.get(key) {
             Ok(bytes)
         } else {
-            asset_error_err!(ErrCode::InvalidArgument, "[FATAL]Get bytes attr fail!")
+            log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of bytes type failed, key: {}", key)
         }
+    }
+}
+
+impl Display for AssetError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[{}]: {}", self.code, self.msg)
+    }
+}
+
+impl AssetError {
+    /// Create an AssetError instance.
+    pub fn new(code: ErrCode, msg: String) -> AssetError {
+        loge!("{}", msg);
+        AssetError { code, msg }
     }
 }

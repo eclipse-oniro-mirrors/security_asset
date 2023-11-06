@@ -15,16 +15,14 @@
 
 //! This module is used to provide common capabilities for the Asset operations.
 
-use std::time::{SystemTime, UNIX_EPOCH};
-
 mod argument_check;
 
-pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_value_validity};
+pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_value_validity, CHALLENGE_SIZE};
 
 use asset_crypto_manager::crypto::SecretKey;
 use asset_db_operator::types::{column, DbMap};
-use asset_definition::{asset_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
-use asset_hasher::sha256;
+use asset_definition::{Accessibility, AssetMap, AuthType, Extension, Result, Tag, Value};
+use asset_utils::hasher::sha256;
 
 use crate::calling_info::CallingInfo;
 
@@ -105,13 +103,6 @@ pub(crate) fn into_asset_map(db_data: &DbMap) -> AssetMap {
         }
     }
     map
-}
-
-pub(crate) fn get_system_time() -> Result<Vec<u8>> {
-    let sys_time = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_err(|e| asset_error!(ErrCode::GetSystemTimeError, "[FATAL][SA]Get system time faield [{}].", e))?;
-    Ok(sys_time.as_millis().to_string().as_bytes().to_vec())
 }
 
 pub(crate) fn add_owner_info(calling_info: &CallingInfo, db_data: &mut DbMap) {

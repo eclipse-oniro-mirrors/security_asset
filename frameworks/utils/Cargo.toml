@@ -11,18 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/ohos.gni")
-import("//build/test.gni")
+[package]
+name = "asset_utils"
+version = "0.1.0"
+edition = "2021"
 
-module_output_path = "asset/asset_UT_test"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-ohos_rust_unittest("crypto_manager_test") {
-  sources = [ "src/lib.rs" ]
-  deps = [
-    "../../../frameworks/definition:asset_definition",
-    "../../../services/crypto_manager:asset_crypto_manager",
-  ]
-  module_out_path = module_output_path
-  subsystem_name = "security"
-  part_name = "asset"
-}
+[dependencies]
+asset_definition = { path = "../definition" }

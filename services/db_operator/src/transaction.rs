@@ -13,82 +13,38 @@
  * limitations under the License.
  */
 
-//! for db transaction, support closure.
-//! transaction is auto rollback if not commit by RAII.
+//! This module is used to implement database transactions.
+//! Transaction is auto rollback if not commit by RAII.
 
-use crate::{
-    database::Database,
-    statement::Statement,
-    types::{SqliteErrCode, SQLITE_ERROR, SQLITE_OK},
-};
+use asset_definition::Result;
+
+use crate::database::Database;
 
 /// Transaction for sqlite db
 #[repr(C)]
 pub struct Transaction<'a> {
-    /// point to db
-    db: &'a Database<'a>,
-    started: bool,
+    db: &'a Database,
 }
 
 impl<'a> Transaction<'a> {
-    /// create transaction
-    pub fn new(db: &'a Database) -> Transaction<'a> {
-        Transaction { db, started: false }
+    /// Create a transaction instance.
+    pub(crate) fn new(db: &'a Database) -> Transaction<'a> {
+        Transaction { db }
     }
 
-    /// start transaction
-    pub fn begin(&mut self) -> SqliteErrCode {
-        if self.started {
-            // do nothing
-            return SQLITE_OK;
-        }
-        let sql = "begin transaction";
-        let stmt = Statement::<false>::new(sql, self.db);
-        let ret = stmt.exec(None, 0);
-        if ret == SQLITE_OK {
-            self.started = true;
-        }
-        ret
+    /// Begin a database transaction.
+    /// Once the transaction is begun, the caller must call the rollback or commit function later.
+    pub(crate) fn begin(&mut self) -> Result<()> {
+        self.db.exec("begin transaction")
     }
 
-    /// cancel transaction
-    pub fn rollback(self) -> SqliteErrCode {
-        if !self.started {
-            return SQLITE_ERROR;
-        }
-        let ret = self.rollback_transaction();
-        core::mem::forget(self);
-        ret
+    /// Rollback the database transaction.
+    pub(crate) fn rollback(self) -> Result<()> {
+        self.db.exec("rollback")
     }
 
-    /// cancel transaction
-    fn rollback_transaction(&self) -> SqliteErrCode {
-        let sql = "rollback";
-        let stmt = Statement::<false>::new(sql, self.db);
-        stmt.exec(None, 0)
-    }
-
-    /// commit transaction
-    pub fn commit(self) -> SqliteErrCode {
-        if !self.started {
-            return SQLITE_ERROR;
-        }
-        let sql = "commit";
-        let stmt = Statement::<false>::new(sql, self.db);
-        let ret = stmt.exec(None, 0);
-        core::mem::forget(self);
-        ret
-    }
-}
-
-impl<'a> Drop for Transaction<'a> {
-    fn drop(&mut self) {
-        if self.started {
-            let _ret = self.rollback_transaction();
-            #[cfg(test)]
-            if _ret != SQLITE_OK {
-                println!("drop transaction fail {}", _ret);
-            }
-        }
+    /// Commit the database transaction.
+    pub(crate) fn commit(self) -> Result<()> {
+        self.db.exec("commit")
     }
 }

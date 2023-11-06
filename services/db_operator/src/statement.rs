@@ -13,39 +13,30 @@
  * limitations under the License.
  */
 
-//! sqlite statement impl, support two types of statement: exec and prepare
-//! statement is auto drop by RAII
+//! This module implements database statements and provides precompiled query capabilities.
 
 use core::ffi::c_void;
 use std::ffi::CStr;
 
-use asset_definition::{DataType, Value};
+use asset_definition::{log_throw_error, ErrCode, Result, Value};
 use asset_log::loge;
 
 use crate::{
     database::Database,
-    types::{Sqlite3Callback, SqliteErrCode, SQLITE_ERROR, SQLITE_OK},
+    types::{sqlite_err_handle, SQLITE_DONE, SQLITE_OK, SQLITE_ROW},
 };
 
 type BindCallback = extern "C" fn(p: *mut c_void);
 extern "C" {
     fn SqliteFinalize(stmt: *mut c_void) -> i32;
-    fn SqlitePrepareV2(
-        db: *mut c_void,
-        z_sql: *const u8,
-        n_byte: i32,
-        pp_stmt: *mut *mut c_void,
-        pz_tail: *mut *mut u8,
-    ) -> i32;
+    fn SqlitePrepareV2(db: *mut c_void, z_sql: *const u8, pp_stmt: *mut *mut c_void, pz_tail: *mut *mut u8) -> i32;
     fn SqliteBindBlob(stmt: *mut c_void, index: i32, blob: *const u8, n: i32, callback: Option<BindCallback>) -> i32;
     fn SqliteBindInt64(stmt: *mut c_void, index: i32, value: i64) -> i32;
     fn SqliteStep(stmt: *mut c_void) -> i32;
-    fn SqliteColumnCount(stmt: *mut c_void) -> i32;
     fn SqliteColumnName(stmt: *mut c_void, n: i32) -> *const u8;
     fn SqliteDataCount(stmt: *mut c_void) -> i32;
     fn SqliteColumnBlob(stmt: *mut c_void, i_col: i32) -> *const u8;
     fn SqliteColumnInt64(stmt: *mut c_void, i_col: i32) -> i64;
-    fn SqliteColumnText(stmt: *mut c_void, i_col: i32) -> *const u8;
     fn SqliteColumnBytes(stmt: *mut c_void, i_col: i32) -> i32;
     fn SqliteColumnType(stmt: *mut c_void, i_col: i32) -> i32;
     fn SqliteReset(stmt: *mut c_void) -> i32;
@@ -55,51 +46,24 @@ const SQLITE_INTEGER: i32 = 1;
 const SQLITE_BLOB: i32 = 4;
 const SQLITE_NULL: i32 = 5;
 
-/// sql statement
 #[repr(C)]
-pub struct Statement<'b, const PREPARE: bool> {
-    /// sql string
+pub(crate) struct Statement<'b> {
     pub(crate) sql: String,
-    /// point to db
-    db: &'b Database<'b>,
-    /// raw pointer
-    handle: usize,
+    db: &'b Database,
+    handle: usize, // Poiner to statement.
 }
 
-impl<'b> Statement<'b, false> {
-    /// create a statement without prepare
-    pub fn new(sql: &str, db: &'b Database) -> Statement<'b, false> {
-        let mut sql_s = sql.to_string();
-        sql_s.push('\0');
-        Statement { sql: sql_s, db, handle: 0 }
-    }
-
-    /// execute sql without prepare
-    /// the callback is to process the result set
-    /// the data will be passed into callback function
-    pub fn exec(&self, callback: Option<Sqlite3Callback>, data: usize) -> SqliteErrCode {
-        self.db.exec(self, callback, data)
-    }
-}
-
-impl<'b> Statement<'b, true> {
-    /// wrap for sqlite3_step,
-    /// if step succ, will return SQLITE_DONE for update,insert,delete or SQLITE_ROW for select
-    pub(crate) fn step(&self) -> SqliteErrCode {
-        unsafe { SqliteStep(self.handle as _) }
-    }
-
-    /// prepare a sql, you can use '?' for datas and bind datas later
-    pub(crate) fn prepare(sql: &str, db: &'b Database) -> Result<Statement<'b, true>, SqliteErrCode> {
+impl<'b> Statement<'b> {
+    /// Prepare a sql, you can use '?' for datas and bind datas later.
+    pub(crate) fn prepare(sql: &str, db: &'b Database) -> Result<Statement<'b>> {
         let mut tail = 0usize;
         let mut sql_s = sql.to_string();
         sql_s.push('\0');
-        let mut stmt = Statement { sql: sql_s, db, handle: 0 };
+        let mut stmt = Statement { sql: sql_s, handle: 0, db };
         let ret = unsafe {
             SqlitePrepareV2(
                 db.handle as _,
                 stmt.sql.as_ptr(),
-                -1,
                 &mut stmt.handle as *mut usize as _,
                 &mut tail as *mut usize as _,
             )
@@ -107,71 +71,69 @@ impl<'b> Statement<'b, true> {
         if ret == 0 {
             Ok(stmt)
         } else {
-            Err(ret)
+            db.print_db_msg();
+            log_throw_error!(sqlite_err_handle(ret), "Prepare statement failed, err={}", ret)
         }
     }
 
-    /// bind datas
-    /// data_type is detected by enum Value,
-    /// index is start with 1, for '?' in sql.
-    pub(crate) fn bind_data(&self, index: i32, data: &Value) -> SqliteErrCode {
-        match data {
+    /// Executing the precompiled sql. if succ
+    /// If the execution is successful, return SQLITE_DONE for update, insert, delete and return SQLITE_ROW for select.
+    pub(crate) fn step(&self) -> Result<i32> {
+        let ret = unsafe { SqliteStep(self.handle as _) };
+        if ret != SQLITE_ROW && ret != SQLITE_DONE {
+            self.db.print_db_msg();
+            log_throw_error!(sqlite_err_handle(ret), "Step statement failed, err={}", ret)
+        } else {
+            Ok(ret)
+        }
+    }
+
+    /// Reset statement before bind data for insert statement.
+    #[allow(dead_code)]
+    pub(crate) fn reset(&self) -> Result<()> {
+        let ret = unsafe { SqliteReset(self.handle as _) };
+        if ret != SQLITE_OK {
+            self.db.print_db_msg();
+            log_throw_error!(sqlite_err_handle(ret), "Reset statement failed, err={}", ret)
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Bind data to prepared statement. The index is start from 1.
+    pub(crate) fn bind_data(&self, index: i32, data: &Value) -> Result<()> {
+        let ret = match data {
             Value::Bytes(b) => unsafe { SqliteBindBlob(self.handle as _, index, b.as_ptr(), b.len() as _, None) },
             Value::Number(i) => unsafe { SqliteBindInt64(self.handle as _, index, *i as _) },
             Value::Bool(b) => unsafe { SqliteBindInt64(self.handle as _, index, *b as _) },
+        };
+        if ret != SQLITE_OK {
+            self.db.print_db_msg();
+            log_throw_error!(sqlite_err_handle(ret), "Bind data failed, index={}, err={}", index, ret)
+        } else {
+            Ok(())
         }
     }
 
-    /// you should reset statement before bind data for insert statement
-    pub(crate) fn reset(&self) -> SqliteErrCode {
-        unsafe { SqliteReset(self.handle as _) }
-    }
-
-    /// get column count for select statement
-    pub(crate) fn column_count(&self) -> i32 {
-        unsafe { SqliteColumnCount(self.handle as _) }
-    }
-
-    /// return the column name
-    pub(crate) fn query_column_name(&self, n: i32) -> Result<&str, SqliteErrCode> {
+    /// Query the column name.
+    pub(crate) fn query_column_name(&self, n: i32) -> Result<&str> {
         let s = unsafe { SqliteColumnName(self.handle as _, n) };
         if !s.is_null() {
             let name = unsafe { CStr::from_ptr(s as _) };
             if let Ok(rn) = name.to_str() {
                 return Ok(rn);
-            } else {
-                loge!("asset column name error");
-                return Err(SQLITE_ERROR);
             }
         }
-        Err(SQLITE_ERROR)
+        log_throw_error!(ErrCode::DatabaseError, "[FATAL][DB]Get asset column name failed.")
     }
 
-    /// data count
+    /// Get the count of columns in the query result.
     pub(crate) fn data_count(&self) -> i32 {
         unsafe { SqliteDataCount(self.handle as _) }
     }
 
-    /// query column datas in result set
-    /// data_type is auto detected by Value
-    /// the index if start with 0
-    pub(crate) fn query_column(&self, index: i32, out: &DataType) -> Option<Value> {
-        match out {
-            DataType::Bytes => {
-                let blob = self.query_column_blob(index);
-                if blob.is_empty() {
-                    None
-                } else {
-                    Some(Value::Bytes(blob.to_vec()))
-                }
-            },
-            DataType::Number => Some(Value::Number(self.query_column_int(index))),
-            DataType::Bool => Some(Value::Bool(self.query_column_int(index) != 0)),
-        }
-    }
-
-    /// query columns auto type
-    pub(crate) fn query_columns_auto_type(&self, i: i32) -> Result<Option<Value>, SqliteErrCode> {
+    /// Query column and return a value of the Value type.
+    pub(crate) fn query_column_auto_type(&self, i: i32) -> Result<Option<Value>> {
         let tp = self.column_type(i);
         let data = match tp {
             SQLITE_INTEGER => Some(Value::Number(self.query_column_int(i))),
@@ -184,50 +146,38 @@ impl<'b> Statement<'b, true> {
                 }
             },
             SQLITE_NULL => None,
-            _ => return Err(SQLITE_ERROR),
+            t => return log_throw_error!(ErrCode::DatabaseError, "Unexpect column type: {}.", t),
         };
         Ok(data)
     }
 
-    /// query column datas in result set for blob data
-    /// the index is start with 0
-    pub(crate) fn query_column_blob(&self, index: i32) -> &'b [u8] {
+    /// Query column datas in result set of blob type
+    /// The index is start from 0.
+    pub(crate) fn query_column_blob(&self, index: i32) -> &[u8] {
         let blob = unsafe { SqliteColumnBlob(self.handle as _, index) };
         let len = self.column_bytes(index);
         unsafe { core::slice::from_raw_parts(blob, len as _) }
     }
 
-    /// query column datas in result set for int data
-    /// the index is start with 0
+    /// Query column datas in result set of int type.
+    /// The index is start with 0.
     pub(crate) fn query_column_int(&self, index: i32) -> u32 {
         unsafe { SqliteColumnInt64(self.handle as _, index) as u32 }
     }
 
-    /// query column datas in result set for text data
-    /// the index is start with 0
-    pub(crate) fn query_column_text(&self, index: i32) -> &'b [u8] {
-        let text = unsafe { SqliteColumnText(self.handle as _, index) };
-        let len = self.column_bytes(index);
-        unsafe { core::slice::from_raw_parts(text, len as _) }
-    }
-
-    /// return the bytes of data, you should first call query_column_text or query_column_blob,
-    /// then call column_bytes.
+    /// Get the bytes of data, you should first call query_column_text or query_column_blob,
     pub(crate) fn column_bytes(&self, index: i32) -> i32 {
         unsafe { SqliteColumnBytes(self.handle as _, index) }
     }
 
-    /// return column data_type
+    /// Get the type of column.
     pub(crate) fn column_type(&self, index: i32) -> i32 {
         unsafe { SqliteColumnType(self.handle as _, index) }
     }
 }
 
-impl<'b, const PREPARE: bool> Drop for Statement<'b, PREPARE> {
+impl<'b> Drop for Statement<'b> {
     fn drop(&mut self) {
-        if !PREPARE {
-            return;
-        }
         if self.handle != 0 {
             let ret = unsafe { SqliteFinalize(self.handle as _) };
             if ret != SQLITE_OK {

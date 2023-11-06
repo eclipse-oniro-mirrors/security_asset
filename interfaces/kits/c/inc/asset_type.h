@@ -117,35 +117,35 @@ typedef enum {
     /**
      * A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
      */
-    ASSET_TAG_DATA_LABLE_CRITICAL_1 = ASSET_TYPE_BYTES | 0x20,
+    ASSET_TAG_DATA_LABEL_CRITICAL_1 = ASSET_TYPE_BYTES | 0x20,
     /**
      * A tag whose value is a byte array indicating the second user-defined Asset data label (not allow to update).
      */
-    ASSET_TAG_DATA_LABLE_CRITICAL_2 = ASSET_TYPE_BYTES | 0x21,
+    ASSET_TAG_DATA_LABEL_CRITICAL_2 = ASSET_TYPE_BYTES | 0x21,
     /**
      * A tag whose value is a byte array indicating the third user-defined Asset data label (not allow to update).
      */
-    ASSET_TAG_DATA_LABLE_CRITICAL_3 = ASSET_TYPE_BYTES | 0x22,
+    ASSET_TAG_DATA_LABEL_CRITICAL_3 = ASSET_TYPE_BYTES | 0x22,
     /**
      * A tag whose value is a byte array indicating the fourth user-defined Asset data label (not allow to update).
      */
-    ASSET_TAG_DATA_LABLE_CRITICAL_4 = ASSET_TYPE_BYTES | 0x23,
+    ASSET_TAG_DATA_LABEL_CRITICAL_4 = ASSET_TYPE_BYTES | 0x23,
     /**
      * A tag whose value is a byte array indicating the first user-defined Asset data label (allow to update).
      */
-    ASSET_TAG_DATA_LABLE_NORMAL_1 = ASSET_TYPE_BYTES | 0x30,
+    ASSET_TAG_DATA_LABEL_NORMAL_1 = ASSET_TYPE_BYTES | 0x30,
     /**
      * A tag whose value is a byte array indicating the second user-defined Asset data label (allow to update).
      */
-    ASSET_TAG_DATA_LABLE_NORMAL_2 = ASSET_TYPE_BYTES | 0x31,
+    ASSET_TAG_DATA_LABEL_NORMAL_2 = ASSET_TYPE_BYTES | 0x31,
     /**
      * A tag whose value is a byte array indicating the third user-defined Asset data label (allow to update).
      */
-    ASSET_TAG_DATA_LABLE_NORMAL_3 = ASSET_TYPE_BYTES | 0x32,
+    ASSET_TAG_DATA_LABEL_NORMAL_3 = ASSET_TYPE_BYTES | 0x32,
     /**
      * A tag whose value is a byte array indicating the fourth user-defined Asset data label (allow to update).
      */
-    ASSET_TAG_DATA_LABLE_NORMAL_4 = ASSET_TYPE_BYTES | 0x33,
+    ASSET_TAG_DATA_LABEL_NORMAL_4 = ASSET_TYPE_BYTES | 0x33,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the return type of the queried Asset.
      */
@@ -271,13 +271,17 @@ typedef enum {
  */
 typedef enum {
     /**
+     * The secret value in the Asset can only be accessed after the device is powered on.
+     */
+    ASSET_ACCESSIBILITY_DEVICE_POWER_ON = 0,
+    /**
      * The secret value in the Asset can only be accessed after the device is first unlocked.
      */
-    ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCK = 1,
+    ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED = 1,
     /**
      * The secret value in the Asset can only be accessed while the device is unlocked.
      */
-    ASSET_ACCESSIBILITY_DEVICE_UNLOCK = 2,
+    ASSET_ACCESSIBILITY_DEVICE_UNLOCKED = 2,
 } Asset_Accessibility;
 
 /**

@@ -13,105 +13,75 @@
  * limitations under the License.
  */
 
-//! struct types for db
+//! This module defines the common data structure of the database module.
 
-use core::ffi::c_void;
 use std::{cmp::Ordering, collections::HashMap};
 
-use asset_definition::{DataType, Value};
-
-use crate::database::Database;
-
-/// change data type to sql str
-pub(crate) fn from_data_type_to_str(value: &DataType) -> &'static str {
-    match *value {
-        DataType::Bytes => "BLOB",
-        DataType::Number => "INTEGER",
-        DataType::Bool => "INTEGER",
-    }
-}
-
-/// change data value to str value when build sql
-pub fn from_data_value_to_str_value(value: &Value) -> String {
-    match *value {
-        Value::Number(i) => format!("{}", i),
-        Value::Bytes(_) => String::from("NOT SUPPORTED"),
-        Value::Bool(b) => format!("{}", b),
-    }
-}
+use asset_definition::{DataType, ErrCode, Value};
 
 /// A Map type containing tag-value pairs that describe the attributes of an DB field.
 pub type DbMap = HashMap<&'static str, Value>;
 
-/// query conditions
-pub type Condition = DbMap;
-
 /// Table name of asset database.
-pub const ASSET_TABLE_NAME: &str = "asset_table";
+pub const TABLE_NAME: &str = "asset_table";
 /// Latest data version number.
 pub const DB_DATA_VERSION: u32 = 1;
 /// Column name of asset database.
 pub mod column {
-    /// default column name Id
+    /// Column name of the primary key Id.
     pub const ID: &str = "Id";
-    /// default column name Secret
+    /// Column name of secret cipher.
     pub const SECRET: &str = "Secret";
-    /// default column name Alias
+    /// Column name of data alias.
     pub const ALIAS: &str = "Alias";
-    /// default column name Owner
+    /// Column name of data owner.
     pub const OWNER: &str = "Owner";
-    /// default column name OwnerType
+    /// Column name of owner type.
     pub const OWNER_TYPE: &str = "OwnerType";
-    /// default column name GroupId
+    /// Column name of unique id of a group. (reserved)
     pub const GROUP_ID: &str = "GroupId";
-    /// default column name SyncType
+    /// Column name of data synchronization type.
     pub const SYNC_TYPE: &str = "SyncType";
-    /// default column name Accessibility
+    /// Column name of data accessibility
     pub const ACCESSIBILITY: &str = "Accessibility";
-    /// default column name AuthType
+    /// Column name of the user authentication type supported by the data
     pub const AUTH_TYPE: &str = "AuthType";
-    /// default column name CreateTime
+    /// Column name of data creation time.
     pub const CREATE_TIME: &str = "CreateTime";
-    /// default column name UpdateTime
+    /// Column name of the data update time.
     pub const UPDATE_TIME: &str = "UpdateTime";
-    /// default column name DeleteType
+    /// Column name of the data deletion type.
     pub const DELETE_TYPE: &str = "DeleteType";
-    /// default column name Version
+    /// Column name of the data version number.
     pub const VERSION: &str = "Version";
-    /// default column name RequirePasswordSet
+    /// Column name of if data require password set
     pub const REQUIRE_PASSWORD_SET: &str = "RequirePasswordSet";
-    /// default column name DataLabelCritical_1
+    /// Column name of the first critical data label.
     pub const CRITICAL1: &str = "DataLabelCritical_1";
-    /// default column name DataLabelCritical_2
+    /// Column name of the second critical data label.
     pub const CRITICAL2: &str = "DataLabelCritical_2";
-    /// default column name DataLabelCritical_3
+    /// Column name of the third critical data label.
     pub const CRITICAL3: &str = "DataLabelCritical_3";
-    /// default column name DataLabelCritical_4
+    /// Column name of the fourth critical data label.
     pub const CRITICAL4: &str = "DataLabelCritical_4";
-    /// default column name DataLabelNormal_1
+    /// Column name of the first normal data label.
     pub const NORMAL1: &str = "DataLabelNormal_1";
-    /// default column name DataLabelNormal_2
+    /// Column name of the second normal data label.
     pub const NORMAL2: &str = "DataLabelNormal_2";
-    /// default column name DataLabelNormal_3
+    /// Column name of the third normal data label.
     pub const NORMAL3: &str = "DataLabelNormal_3";
-    /// default column name DataLabelNormal_4
+    /// Column name of the fourth normal data label.
     pub const NORMAL4: &str = "DataLabelNormal_4";
 }
 
-/// column info for create table
 #[repr(C)]
-pub struct ColumnInfo {
-    /// column name
-    pub name: &'static str,
-    /// column data type
-    pub data_type: DataType,
-    /// id auto inc for primary key
-    pub is_primary_key: bool,
-    /// this column should not be null
-    pub not_null: bool,
+pub(crate) struct ColumnInfo {
+    pub(crate) name: &'static str,
+    pub(crate) data_type: DataType,
+    pub(crate) is_primary_key: bool,
+    pub(crate) not_null: bool,
 }
 
-/// columns info for default asset_table
 pub(crate) const COLUMN_INFO: &[ColumnInfo] = &[
     ColumnInfo { name: column::ID, data_type: DataType::Number, is_primary_key: true, not_null: true },
     ColumnInfo { name: column::SECRET, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
@@ -137,46 +107,32 @@ pub(crate) const COLUMN_INFO: &[ColumnInfo] = &[
     ColumnInfo { name: column::NORMAL4, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
 ];
 
-/// result set
-pub type ResultSet = Vec<Vec<Value>>;
-
-/// err msg for database after exec sql
-#[repr(C)]
-pub struct Sqlite3ErrMsg<'a, 'b> {
-    /// error string
-    pub s: &'a str,
-    /// point to database for auto drop
-    pub db: &'b Database<'b>,
-}
-
-/// query options
+/// Options for batch query.
 #[repr(C)]
 pub struct QueryOptions {
-    /// offset param
+    /// The offset of the query result.
     pub offset: Option<u32>,
-    /// limit param
+    /// Maximum number of query results.
     pub limit: Option<u32>,
-    /// order param
-    /// Ordering::Greater => ASC
-    /// Ordering::Less => DESC
+    /// ordering: Ordering::Greater => ASC and Ordering::Less => DESC
     pub order: Option<Ordering>,
-    /// order by columns
+    /// Columns used for sorting��
     pub order_by: Option<Vec<&'static str>>,
 }
 
-/// sqlite error type
-pub type SqliteErrCode = i32;
-/// Successful result
-pub const SQLITE_OK: i32 = 0;
-/// Generic error
-pub const SQLITE_ERROR: i32 = 1;
-/// sqlite3_step() has another row ready
-pub const SQLITE_ROW: i32 = 100;
-/// sqlite3_step() has finished executing
-pub const SQLITE_DONE: i32 = 101;
-/// data: pointer passed by sqlite3_exec
-/// argc: count of ResultSet
-/// argv: Result
-/// az_col_name: Column names
-pub(crate) type Sqlite3Callback =
-    extern "C" fn(data: *mut c_void, argc: i32, argv: *const *const u8, az_col_name: *const *const u8) -> SqliteErrCode;
+pub(crate) const SQLITE_OK: i32 = 0;
+pub(crate) const SQLITE_NOMEM: i32 = 7;
+pub(crate) const SQLITE_CORRUPT: i32 = 11;
+pub(crate) const SQLITE_NOTADB: i32 = 26;
+/// Another row willed queried by function: sqlite3_step().
+pub(crate) const SQLITE_ROW: i32 = 100;
+/// End the execution of function sqlite3_step().
+pub(crate) const SQLITE_DONE: i32 = 101;
+
+pub(crate) fn sqlite_err_handle(ret: i32) -> ErrCode {
+    match ret {
+        SQLITE_CORRUPT | SQLITE_NOTADB => ErrCode::DataCorrupted,
+        SQLITE_NOMEM => ErrCode::OutOfMemory,
+        _ => ErrCode::DatabaseError,
+    }
+}

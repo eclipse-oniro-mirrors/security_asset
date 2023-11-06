@@ -45,7 +45,6 @@ typedef struct AsyncContext {
     Asset_ResultSet resultSet = { 0 };
 } AsyncContext;
 
-
 napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
     size_t expectArgNum = 2);
 

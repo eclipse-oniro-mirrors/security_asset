@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This crate implements the sha256.
+//! This module implements the SHA256 hash algorithm.
 
 const LOWER_BYTES_MASK: u32 = 0xff;
 const BITS_PER_U8: usize = 8;

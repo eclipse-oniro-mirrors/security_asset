@@ -17,15 +17,7 @@ import("//build/test.gni")
 module_output_path = "asset/asset_UT_test"
 
 ohos_rust_static_library("asset_db_operator") {
-  sources = [
-    "src/database.rs",
-    "src/database_table_helper.rs",
-    "src/lib.rs",
-    "src/statement.rs",
-    "src/table.rs",
-    "src/transaction.rs",
-    "src/types.rs",
-  ]
+  sources = [ "src/lib.rs" ]
   deps = [
     ":asset_sqlite3_wrapper",
     "../../frameworks/definition:asset_definition",
@@ -38,13 +30,13 @@ ohos_rust_static_library("asset_db_operator") {
   part_name = "asset"
 }
 
-ohos_rust_unittest("db_operator_test") {
+ohos_rust_unittest("asset_db_operator_test") {
   module_out_path = module_output_path
   sources = [ "src/lib.rs" ]
   deps = [
     ":asset_sqlite3_wrapper",
-    "../../frameworks/os_dependency/log:asset_log",
     "../../frameworks/definition:asset_definition",
+    "../../frameworks/os_dependency/log:asset_log",
   ]
   subsystem_name = "security"
   part_name = "asset"

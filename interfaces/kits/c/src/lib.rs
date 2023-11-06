@@ -24,7 +24,7 @@ use std::{
 };
 
 use asset_log::loge;
-use asset_sdk::{asset_error_err, AssetError, AssetMap, Conversion, DataType, ErrCode, Manager, Tag, Value};
+use asset_sdk::{log_throw_error, AssetError, AssetMap, Conversion, DataType, ErrCode, Manager, Tag, Value};
 
 const RESULT_CODE_SUCCESS: i32 = 0;
 extern "C" {
@@ -251,7 +251,7 @@ impl TryFrom<&Vec<u8>> for AssetBlob {
 
         blob.data = unsafe { AssetMalloc(blob.size) as *mut u8 };
         if blob.data.is_null() {
-            return asset_error_err!(
+            return log_throw_error!(
                 ErrCode::OutOfMemory,
                 "[FATAL][RUST SDK]Unable to allocate memory for Asset_Blob."
             );
@@ -297,7 +297,7 @@ impl TryFrom<&AssetMap> for AssetResult {
         result.attrs =
             unsafe { AssetMalloc(result.count.wrapping_mul(size_of::<AssetAttr>() as u32)) as *mut AssetAttr };
         if result.attrs.is_null() {
-            return asset_error_err!(
+            return log_throw_error!(
                 ErrCode::OutOfMemory,
                 "[FATAL][RUST SDK]Unable to allocate memory for Asset_Result."
             );
@@ -329,7 +329,7 @@ impl TryFrom<&Vec<AssetMap>> for AssetResultSet {
         result_set.results =
             unsafe { AssetMalloc(result_set.count.wrapping_mul(size_of::<AssetResult>() as u32)) as *mut AssetResult };
         if result_set.results.is_null() {
-            return asset_error_err!(
+            return log_throw_error!(
                 ErrCode::OutOfMemory,
                 "[FATAL][RUST SDK]Unable to allocate memory for Asset_ResultSet."
             );

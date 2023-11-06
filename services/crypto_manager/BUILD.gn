@@ -13,20 +13,15 @@
 
 import("//build/ohos.gni")
 import("//build/test.gni")
-COMPONENT_DIR = "//base/security/asset"
 
 ohos_rust_static_library("asset_crypto_manager") {
-  sources = [
-    "src/crypto.rs",
-    "src/huks_ffi.rs",
-    "src/lib.rs",
-  ]
+  sources = [ "src/lib.rs" ]
   deps = [
-    "$COMPONENT_DIR/frameworks/definition:asset_definition",
-    "$COMPONENT_DIR/frameworks/os_dependency/log:asset_log",
-    "crypto_manager_wrapper:crypto_manager_wrapper",
+    ":asset_huks_wrapper",
+    "../../frameworks/definition:asset_definition",
+    "../../frameworks/os_dependency/log:asset_log",
+    "../../frameworks/utils:asset_utils",
   ]
-
   external_deps = [
     "huks:libhukssdk",
     "ipc:ipc_rust",
@@ -34,6 +29,18 @@ ohos_rust_static_library("asset_crypto_manager") {
 
   crate_name = "asset_crypto_manager"
   crate_type = "rlib"
+  subsystem_name = "security"
+  part_name = "asset"
+}
+
+ohos_static_library("asset_huks_wrapper") {
+  include_dirs = [ "inc" ]
+  sources = [ "src/huks_wrapper.c" ]
+  deps = [ "../../frameworks/os_dependency/memory:asset_mem" ]
+  external_deps = [
+    "hilog:libhilog",
+    "huks:libhukssdk",
+  ]
   subsystem_name = "security"
   part_name = "asset"
 }

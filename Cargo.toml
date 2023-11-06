@@ -4,12 +4,12 @@ members = [
     "frameworks/definition",
     "frameworks/ipc",
     "frameworks/os_dependency/log",
-    "frameworks/utils/hasher",
+    "frameworks/utils",
     "interfaces/kits/c",
     "services/core_service",
     "services/crypto_manager",
     "services/db_operator",
     "services/os_dependency",
     "test/unittest/inner_api_rust",
-    "test/unittest/crypto_manager_test",
+    "test/unittest/module_test"
 ]

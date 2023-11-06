@@ -17,7 +17,7 @@
 
 /// Macro to implement TryFrom and Display for enumeration types.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```
 /// impl_tag_trait! {
@@ -44,7 +44,7 @@ macro_rules! impl_tag_trait {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
                     _ => {
-                        $crate::asset_error_err!($crate::ErrCode::InvalidArgument,
+                        $crate::log_throw_error!($crate::ErrCode::InvalidArgument,
                             "[FATAL]Type[{}] try from u32[{}] failed.", stringify!($name), v)
                     }
                 }
@@ -65,7 +65,7 @@ macro_rules! impl_tag_trait {
 
 /// Macro to implement TryFrom and Display for enumeration types.
 ///
-/// # Example
+/// # Examples
 ///
 /// ```
 /// impl_enum_trait! {
@@ -92,7 +92,7 @@ macro_rules! impl_enum_trait {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
                     _ => {
-                        $crate::asset_error_err!($crate::ErrCode::InvalidArgument,
+                        $crate::log_throw_error!($crate::ErrCode::InvalidArgument,
                             "[FATAL]Type[{}] try from u32[{}] failed.", stringify!($name), v)
                     }
                 }
@@ -121,34 +121,15 @@ macro_rules! impl_enum_trait {
     }
 }
 
-/// Construct AssetError and print log.
+/// Print log and throw AssetError.
 ///
 /// # Examples
 ///
 /// ```
-/// asset_error_err!(ErrCode::InvalidArgument, "hello, {}", "world");
+/// log_throw_error!(ErrCode::InvalidArgument, "hello, {}", "world");
 /// ```
 #[macro_export]
-macro_rules! asset_error {
-    ($code:expr, $($arg:tt)*) => {{
-        let str = format!($($arg)*);
-        asset_log::loge!("{}", str);
-        $crate::AssetError {
-            code: $code,
-            msg: str
-        }
-    }};
-}
-
-/// Construct AssetError and print log.
-///
-/// # Examples
-///
-/// ```
-/// asset_error_err!(ErrCode::InvalidArgument, "hello, {}", "world");
-/// ```
-#[macro_export]
-macro_rules! asset_error_err {
+macro_rules! log_throw_error {
     ($code:expr, $($arg:tt)*) => {{
         let str = format!($($arg)*);
         asset_log::loge!("{}", str);

@@ -13,14 +13,7 @@
  * limitations under the License.
  */
 
-//! This module encapsulates the database operation function based on sqlite.
+//! This module defines the common utils.
 
-pub mod database;
-mod statement;
-mod table;
-mod transaction;
-pub mod types;
-
-#[cfg(test)]
-#[path = "test/lib.rs"]
-mod test;
+pub mod hasher;
+pub mod time;

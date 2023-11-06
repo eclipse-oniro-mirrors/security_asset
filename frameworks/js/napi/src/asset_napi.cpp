@@ -45,14 +45,14 @@ napi_value DeclareTag(napi_env env)
     AddUint32Property(env, tag, "AUTH_TOKEN", ASSET_TAG_AUTH_TOKEN);
     AddUint32Property(env, tag, "SYNC_TYPE", ASSET_TAG_SYNC_TYPE);
     AddUint32Property(env, tag, "CONFLICT_RESOLUTION", ASSET_TAG_CONFLICT_RESOLUTION);
-    AddUint32Property(env, tag, "DATA_LABLE_CRITICAL_1", ASSET_TAG_DATA_LABLE_CRITICAL_1);
-    AddUint32Property(env, tag, "DATA_LABLE_CRITICAL_2", ASSET_TAG_DATA_LABLE_CRITICAL_2);
-    AddUint32Property(env, tag, "DATA_LABLE_CRITICAL_3", ASSET_TAG_DATA_LABLE_CRITICAL_3);
-    AddUint32Property(env, tag, "DATA_LABLE_CRITICAL_4", ASSET_TAG_DATA_LABLE_CRITICAL_4);
-    AddUint32Property(env, tag, "DATA_LABLE_NORMAL_1", ASSET_TAG_DATA_LABLE_NORMAL_1);
-    AddUint32Property(env, tag, "DATA_LABLE_NORMAL_2", ASSET_TAG_DATA_LABLE_NORMAL_2);
-    AddUint32Property(env, tag, "DATA_LABLE_NORMAL_3", ASSET_TAG_DATA_LABLE_NORMAL_3);
-    AddUint32Property(env, tag, "DATA_LABLE_NORMAL_4", ASSET_TAG_DATA_LABLE_NORMAL_4);
+    AddUint32Property(env, tag, "DATA_LABEL_CRITICAL_1", ASSET_TAG_DATA_LABEL_CRITICAL_1);
+    AddUint32Property(env, tag, "DATA_LABEL_CRITICAL_2", ASSET_TAG_DATA_LABEL_CRITICAL_2);
+    AddUint32Property(env, tag, "DATA_LABEL_CRITICAL_3", ASSET_TAG_DATA_LABEL_CRITICAL_3);
+    AddUint32Property(env, tag, "DATA_LABEL_CRITICAL_4", ASSET_TAG_DATA_LABEL_CRITICAL_4);
+    AddUint32Property(env, tag, "DATA_LABEL_NORMAL_1", ASSET_TAG_DATA_LABEL_NORMAL_1);
+    AddUint32Property(env, tag, "DATA_LABEL_NORMAL_2", ASSET_TAG_DATA_LABEL_NORMAL_2);
+    AddUint32Property(env, tag, "DATA_LABEL_NORMAL_3", ASSET_TAG_DATA_LABEL_NORMAL_3);
+    AddUint32Property(env, tag, "DATA_LABEL_NORMAL_4", ASSET_TAG_DATA_LABEL_NORMAL_4);
     AddUint32Property(env, tag, "RETURN_TYPE", ASSET_TAG_RETURN_TYPE);
     AddUint32Property(env, tag, "RETURN_LIMIT", ASSET_TAG_RETURN_LIMIT);
     AddUint32Property(env, tag, "RETURN_OFFSET", ASSET_TAG_RETURN_OFFSET);
@@ -92,8 +92,9 @@ napi_value DeclareAccessibility(napi_env env)
 {
     napi_value accessibility = nullptr;
     NAPI_CALL(env, napi_create_object(env, &accessibility));
-    AddUint32Property(env, accessibility, "DEVICE_FIRST_UNLOCK", ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCK);
-    AddUint32Property(env, accessibility, "DEVICE_UNLOCK", ASSET_ACCESSIBILITY_DEVICE_UNLOCK);
+    AddUint32Property(env, accessibility, "DEVICE_POWER_ON", ASSET_ACCESSIBILITY_DEVICE_POWER_ON);
+    AddUint32Property(env, accessibility, "DEVICE_FIRST_UNLOCKED", ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED);
+    AddUint32Property(env, accessibility, "DEVICE_UNLOCKED", ASSET_ACCESSIBILITY_DEVICE_UNLOCKED);
     return accessibility;
 }
 

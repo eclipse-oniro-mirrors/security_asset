@@ -33,12 +33,12 @@ mod calling_info;
 mod operations;
 mod stub;
 mod sys_event;
-mod trace;
+mod trace_scope;
 
 use calling_info::CallingInfo;
 use stub::AssetStub;
 use sys_event::sys_event_log;
-use trace::TraceScope;
+use trace_scope::TraceScope;
 
 const LOG_LABEL: HiLogLabel = HiLogLabel { log_type: LogType::LogCore, domain: 0xD002F70, tag: "Asset" };
 
@@ -46,8 +46,8 @@ define_system_ability!(
     sa: SystemAbility(on_start, on_stop),
 );
 
-const MAX_DELAY_TIMES: u32 = 100;
-const DELAY_INTERVAL: u64 = 200000;
+const MAX_RETRY_TIME: u32 = 5;
+const RETRY_INTERVAL: u64 = 1000;
 
 extern "C" {
     fn SubscribeSystemEvent() -> bool;
@@ -58,17 +58,16 @@ fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
     let service = AssetStub::new_remote_stub(AssetService).expect("create AssetService failed");
     ability.publish(&service.as_object().expect("publish Asset service failed"), SA_ID);
     logi!("[INFO]Asset service on_start");
-    unsafe {
-        for i in 0..MAX_DELAY_TIMES {
-            thread::sleep(Duration::from_millis(DELAY_INTERVAL));
-            if SubscribeSystemEvent() {
-                logi!("SubscribeSystemEvent success, i = {}", i);
+    thread::spawn(|| {
+        for i in 0..MAX_RETRY_TIME {
+            if unsafe { SubscribeSystemEvent() } {
+                logi!("Subscribe system event success.");
                 return;
             }
-            logi!("SubscribeSystemEvent failed {} times", i);
+            logi!("Subscribe system event failed, retry {}", i + 1);
+            thread::sleep(Duration::from_millis(RETRY_INTERVAL));
         }
-        logi!("SubscribeSystemEvent failed");
-    }
+    });
 }
 
 fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {

@@ -15,14 +15,11 @@
 
 //! This module is used to implement cryptographic algorithm operations, including key generation and usage.
 
-use asset_definition::{asset_error, asset_error_err, Accessibility, AuthType, ErrCode, Result};
-use asset_log::{loge, logi};
-use std::sync::Arc;
-use std::sync::Mutex;
-use std::ptr::null;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::{Arc, Mutex};
 
-use crate::huks_ffi::*;
+use asset_definition::{log_throw_error, Accessibility, AssetError, AuthType, ErrCode, Result};
+use asset_log::loge;
+use asset_utils::time;
 
 struct IdentityGuard {
     identity: String,
@@ -31,7 +28,7 @@ struct IdentityGuard {
 impl IdentityGuard {
     fn build() -> Result<Self> {
         let identity = ipc_rust::reset_calling_identity().map_err(|e| {
-            asset_error!(ErrCode::IpcError, "[FATAL][SA]Reset calling identity failed, error is [{}].", e)
+            AssetError::new(ErrCode::IpcError, format!("[FATAL][SA]Reset calling identity failed, error is [{}].", e))
         })?;
         Ok(Self { identity })
     }
@@ -53,13 +50,54 @@ pub struct SecretKey {
     alias: Vec<u8>,
 }
 
-const MAX_ALIAS_SIZE: u32 = 64;
-const VALIAD_CHALLENGE_LEN: usize = 8;
+#[repr(C)]
+struct HksBlob {
+    size: u32,
+    data: *const u8,
+}
+
+#[repr(C)]
+struct OutBlob {
+    size: u32,
+    data: *mut u8,
+}
+
+extern "C" {
+    fn GenerateKey(alias: *const HksBlob, need_auth: bool) -> i32;
+    fn DeleteKey(alias: *const HksBlob) -> i32;
+    fn IsKeyExist(alias: *const HksBlob) -> i32;
+    fn EncryptData(alias: *const HksBlob, aad: *const HksBlob, in_data: *const HksBlob, out_data: *mut OutBlob) -> i32;
+    fn DecryptData(alias: *const HksBlob, aad: *const HksBlob, in_data: *const HksBlob, out_data: *mut OutBlob) -> i32;
+    fn InitKey(
+        alias: *const HksBlob,
+        valid_time: u32,
+        challenge_pos: u32,
+        challenge: *mut OutBlob,
+        handle: *mut OutBlob,
+    ) -> i32;
+    fn ExecCrypt(
+        handle: *const HksBlob,
+        aad: *const HksBlob,
+        auth_token: *const HksBlob,
+        in_data: *const HksBlob,
+        out_data: *mut OutBlob,
+    ) -> i32;
+    fn Drop(handle: *const HksBlob) -> i32;
+}
+
+const HKS_SUCCESS: i32 = 0;
+const HKS_ERROR_NOT_EXIST: i32 = -13;
+const NONCE_SIZE: usize = 12;
+const TAG_SIZE: usize = 16;
+const MAX_ALIAS_SIZE: usize = 64;
+const HANDLE_LEN: usize = 8;
+const CHALLENGE_LEN: usize = 32;
+const CHALLENGE_SLICE_LEN: usize = 8;
 
 impl SecretKey {
-    /// New a secret key
+    /// New a secret key.
     pub fn new(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility) -> Self {
-        let mut alias: Vec<u8> = Vec::with_capacity(MAX_ALIAS_SIZE as usize);
+        let mut alias: Vec<u8> = Vec::with_capacity(MAX_ALIAS_SIZE);
         alias.extend_from_slice(&user_id.to_le_bytes());
         alias.push(b'_');
         alias.extend(owner);
@@ -72,45 +110,42 @@ impl SecretKey {
 
     /// Check whether the secret key exists.
     pub fn exists(&self) -> Result<bool> {
-        let key_data = ConstCryptoBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
+        let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
 
-        let _identity_guard = IdentityGuard::build()?;
-        let ret = unsafe { KeyExist(&key_data as *const ConstCryptoBlob) };
+        let _identity = IdentityGuard::build()?;
+        let ret = unsafe { IsKeyExist(&key_alias as *const HksBlob) };
         match ret {
             HKS_SUCCESS => Ok(true),
             HKS_ERROR_NOT_EXIST => Ok(false),
             _ => {
-                asset_error_err!(ErrCode::CryptoError, "[FATAL]secret key exist check failed ret {}", ret)
+                log_throw_error!(ErrCode::CryptoError, "[FATAL]secret key exist check failed ret {}", ret)
             },
         }
     }
 
     /// Generate the secret key and store in HUKS.
     pub fn generate(&self) -> Result<()> {
-        loge!("start to generate key!!!!");
-        let key_data = ConstCryptoBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
-
-        let _identity_guard = IdentityGuard::build()?;
-        let need_user_auth = self.need_user_auth();
-        let ret = unsafe { GenerateKey(&key_data as *const ConstCryptoBlob, need_user_auth) };
+        let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
+        let _identity = IdentityGuard::build()?;
+        let ret = unsafe { GenerateKey(&key_alias as *const HksBlob, self.need_user_auth()) };
         match ret {
             HKS_SUCCESS => Ok(()),
             _ => {
-                asset_error_err!(ErrCode::CryptoError, "[FATAL]secret key generate failed ret {}", ret)
+                log_throw_error!(ErrCode::CryptoError, "[FATAL]secret key generate failed ret {}", ret)
             },
         }
     }
 
     /// Delete the secret key.
     pub fn delete(&self) -> Result<()> {
-        let key_data = ConstCryptoBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
+        let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
 
-        let _identity_guard = IdentityGuard::build()?;
-        let ret = unsafe { DeleteKey(&key_data as *const ConstCryptoBlob) };
+        let _identity = IdentityGuard::build()?;
+        let ret = unsafe { DeleteKey(&key_alias as *const HksBlob) };
         match ret {
             HKS_SUCCESS => Ok(()),
             _ => {
-                asset_error_err!(ErrCode::CryptoError, "[FATAL]secret key delete failed ret {}", ret)
+                log_throw_error!(ErrCode::CryptoError, "[FATAL]secret key delete failed ret {}", ret)
             },
         }
     }
@@ -126,343 +161,216 @@ impl SecretKey {
     }
 }
 
-/// Crypto struct
+/// Crypto for storing key attributes that require user authentication.
 pub struct Crypto {
-    /// Crypto secretkey
     key: SecretKey,
-    /// crypto mode for crypto
-    mode: HksKeyPurpose,
-    /// chanllenge from HksInit
     challenge: Vec<u8>,
-    /// handle from HksInit
     handle: Vec<u8>,
-    /// challege position for huks
     challenge_pos: u32,
-    /// timeout time, reserved, 600s max
+    valid_time: u32,
     exp_time: u64,
-    /// crypto have been initailized
-    initailized: bool,
-}
-
-impl Drop for Crypto {
-    fn drop(&mut self) {
-        loge!("drop crypto handle = {:?}, challenge = {:?}", self.handle, self.challenge);
-        // in param
-        let param = CryptParam { crypto_mode: self.mode, challenge_pos: self.challenge_pos,
-                exp_time: 0, aad_data: null(), auth_token: null()};
-        let mut handle_data = CryptoBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
-
-        let res = IdentityGuard::build();
-        if res.is_ok() {
-            unsafe { DropCrypto(&param as *const CryptParam, &mut handle_data as *mut CryptoBlob) };
-        }
-    }
 }
 
 impl Crypto {
-    /// New a crypto struct
-    pub fn new(mode: HksKeyPurpose, key: SecretKey, challenge_pos: u32, exp_time: u32) -> Self {
-        let now = SystemTime::now();
-        let since_the_epoch = now.duration_since(UNIX_EPOCH).expect("Time went backwards");
-        let now_second = since_the_epoch.as_secs();
-        logi!("now time is {}", now_second);
-
-        Self {
+    /// Create a crypto instance.
+    pub fn build(key: SecretKey, challenge_pos: u32, valid_time: u32) -> Result<Self> {
+        let current_time = time::system_time_in_seconds()?;
+        Ok(Self {
             key,
-            mode,
-            challenge: vec![0; CHALLENGE_LEN as usize],
-            handle: vec![0; HANDLE_LEN as usize],
+            challenge: vec![0; CHALLENGE_LEN],
+            handle: vec![0; HANDLE_LEN],
             challenge_pos,
-            exp_time: now_second + exp_time as u64,
-            initailized: false,
-        }
+            valid_time,
+            exp_time: current_time + valid_time as u64,
+        })
     }
 
-    /// Start HuksInit
-    pub fn init_crypto(&mut self) -> Result<Vec<u8>> {
-        let now = SystemTime::now();
-        let since_the_epoch = now.duration_since(UNIX_EPOCH).expect("Time went backwards");
-        let now_second = since_the_epoch.as_secs();
-        logi!("now time is {}", now_second);
-        if now_second >= self.exp_time {
-            return asset_error_err!(ErrCode::AuthTokenExpired, "[FATAL]init crypto time expired {}", now_second);
-        }
+    /// Init secret key and get challenge.
+    pub fn init_key(&mut self) -> Result<&Vec<u8>> {
+        let key_alias = HksBlob { size: self.key.alias.len() as u32, data: self.key.alias.as_ptr() };
+        let mut challenge = OutBlob { size: self.challenge.len() as u32, data: self.challenge.as_mut_ptr() };
+        let mut handle = OutBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
 
-        if self.mode != HKS_KEY_PURPOSE_DECRYPT {
-            return asset_error_err!(ErrCode::CryptoError, "[FATAL]only support decrypt");
-        }
-
-        // in param
-        let param = CryptParam {
-            crypto_mode: self.mode,
-            challenge_pos: self.challenge_pos,
-            exp_time: (self.exp_time - now_second) as u32,
-            aad_data: null(),
-            auth_token: null()
-        };
-
-        let key_data = ConstCryptoBlob { size: self.key.alias.len() as u32, data: self.key.alias.as_ptr() };
-
-        // out param
-        let mut challenge_data = CryptoBlob { size: self.challenge.len() as u32, data: self.challenge.as_mut_ptr() };
-
-        let mut handle_data = CryptoBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
-
-        let _identity_guard = IdentityGuard::build()?;
+        let _identity = IdentityGuard::build()?;
         let ret = unsafe {
-            InitCryptoWrapper(
-                &param as *const CryptParam,
-                &key_data as *const ConstCryptoBlob,
-                &mut challenge_data as *mut CryptoBlob,
-                &mut handle_data as *mut CryptoBlob,
+            InitKey(
+                &key_alias as *const HksBlob,
+                self.valid_time,
+                self.challenge_pos,
+                &mut challenge as *mut OutBlob,
+                &mut handle as *mut OutBlob,
             )
         };
         match ret {
-            HKS_SUCCESS => {
-                loge!("init crypto success handle = {:?}, challenge = {:?}", self.handle, self.challenge);
-                self.initailized = true;
-                Ok(self.challenge.clone())
-            },
-            _ => {
-                asset_error_err!(ErrCode::CryptoError, "[FATAL]crypto init failed ret {}", ret)
-            },
+            HKS_SUCCESS => Ok(&self.challenge),
+            _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS init key failed, ret: {}", ret),
         }
     }
 
-    /// Exec encrypt or decrypt
-    pub fn exec_crypto(&self, msg: &Vec<u8>, aad: &Vec<u8>, auth_token: &Vec<u8>) -> Result<Vec<u8>> {
-        let now = SystemTime::now();
-        let since_the_epoch = now.duration_since(UNIX_EPOCH).expect("Time went backwards");
-        let now_second = since_the_epoch.as_secs();
-        logi!("now time is {}", now_second);
-        if now_second >= self.exp_time {
-            return asset_error_err!(ErrCode::AuthTokenExpired, "[FATAL]exec crypto time expired {}", now_second);
+    /// Decrypt data that requires user authentication.
+    pub fn exec_crypt(&self, cipher: &Vec<u8>, aad: &Vec<u8>, auth_token: &Vec<u8>) -> Result<Vec<u8>> {
+        if time::system_time_in_seconds()? >= self.exp_time {
+            // todo: 超期要清理session
+            return log_throw_error!(ErrCode::AuthTokenExpired, "[FATAL]The user authentication token has expired.");
         }
 
-        if self.mode != HKS_KEY_PURPOSE_DECRYPT {
-            return asset_error_err!(ErrCode::CryptoError, "[FATAL]unsupported crypto mode");
+        if cipher.len() <= (TAG_SIZE + NONCE_SIZE) {
+            return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The cipher length is too short.");
         }
 
-        if !self.initailized {
-            return asset_error_err!(ErrCode::CryptoError, "[FATAL]crypto not initailize");
-        }
+        let aad = HksBlob { size: aad.len() as u32, data: aad.as_ptr() };
+        let auth_token = HksBlob { size: auth_token.len() as u32, data: auth_token.as_ptr() };
+        let handle = HksBlob { size: self.handle.len() as u32, data: self.handle.as_ptr() };
+        let in_data = HksBlob { size: cipher.len() as u32, data: cipher.as_ptr() };
+        let mut msg: Vec<u8> = vec![0; cipher.len() - TAG_SIZE - NONCE_SIZE];
+        let mut out_data = OutBlob { size: msg.len() as u32, data: msg.as_mut_ptr() };
 
-        // out param
-        if msg.len() <= (AEAD_SIZE + NONCE_SIZE) as usize {
-            return asset_error_err!(ErrCode::InvalidArgument, "[FATAL]invalid msg");
-        }
-        let mut cipher: Vec<u8> = vec![0; msg.len() - AEAD_SIZE as usize - NONCE_SIZE as usize];
-
-        // in param
-        let aad_data = ConstCryptoBlob { size: aad.len() as u32, data: aad.as_ptr() };
-
-        let auth_token = ConstCryptoBlob { size: auth_token.len() as u32, data: auth_token.as_ptr() };
-
-        let param = CryptParam { crypto_mode: self.mode, challenge_pos: self.challenge_pos, exp_time: 0,
-            aad_data: &aad_data as *const ConstCryptoBlob, auth_token: &auth_token as *const ConstCryptoBlob};
-
-        let handle_data = ConstCryptoBlob { size: self.handle.len() as u32, data: self.handle.as_ptr() };
-
-        let in_data = ConstCryptoBlob { size: msg.len() as u32, data: msg.as_ptr() };
-
-        let mut out_data = CryptoBlob { size: cipher.len() as u32, data: cipher.as_mut_ptr() };
-
-        let _identity_guard = IdentityGuard::build()?;
+        let _identity = IdentityGuard::build()?;
         let ret = unsafe {
-            ExecCryptoWrapper(
-                &param as *const CryptParam,
-                &handle_data as *const ConstCryptoBlob,
-                &in_data as *const ConstCryptoBlob,
-                &mut out_data as *mut CryptoBlob,
+            ExecCrypt(
+                &handle as *const HksBlob,
+                &aad as *const HksBlob,
+                &auth_token as *const HksBlob,
+                &in_data as *const HksBlob,
+                &mut out_data as *mut OutBlob,
             )
         };
         match ret {
-            HKS_SUCCESS => Ok(cipher),
-            _ => {
-                asset_error_err!(ErrCode::CryptoError, "[FATAL]execute crypto error ret {}", ret)
-            },
+            HKS_SUCCESS => Ok(msg),
+            _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS execute crypt failed, ret: {}", ret),
         }
     }
 
-    /// Signle function call for encrypt
+    /// Encrypt data at one-time.
     pub fn encrypt(key: &SecretKey, msg: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>> {
-        // out param
-        let mut cipher: Vec<u8> = vec![0; msg.len() + AEAD_SIZE as usize + NONCE_SIZE as usize];
-        let key_alias = ConstCryptoBlob { size: key.alias.len() as u32, data: key.alias.as_ptr() };
+        let mut cipher: Vec<u8> = vec![0; msg.len() + TAG_SIZE + NONCE_SIZE];
+        let key_alias = HksBlob { size: key.alias.len() as u32, data: key.alias.as_ptr() };
+        let aad_data = HksBlob { size: aad.len() as u32, data: aad.as_ptr() };
+        let in_data = HksBlob { size: msg.len() as u32, data: msg.as_ptr() };
+        let mut out_data = OutBlob { size: cipher.len() as u32, data: cipher.as_mut_ptr() };
 
-        let aad_data = ConstCryptoBlob { size: aad.len() as u32, data: aad.as_ptr() };
-
-        let in_data = ConstCryptoBlob { size: msg.len() as u32, data: msg.as_ptr() };
-
-        let mut out_data = CryptoBlob { size: cipher.len() as u32, data: cipher.as_mut_ptr() };
-
-        let _identity_guard = IdentityGuard::build()?;
+        let _identity = IdentityGuard::build()?;
         let ret = unsafe {
-            EncryptWrapper(
-                &key_alias as *const ConstCryptoBlob,
-                &aad_data as *const ConstCryptoBlob,
-                &in_data as *const ConstCryptoBlob,
-                &mut out_data as *mut CryptoBlob,
+            EncryptData(
+                &key_alias as *const HksBlob,
+                &aad_data as *const HksBlob,
+                &in_data as *const HksBlob,
+                &mut out_data as *mut OutBlob,
             )
         };
         match ret {
             HKS_SUCCESS => Ok(cipher),
-            _ => {
-                asset_error_err!(ErrCode::CryptoError, "[FATAL]encrypto error ret {}", ret)
-            },
+            _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS encrypt failed, ret: {}", ret),
         }
     }
 
-    /// Signle function call for decrypt
+    /// Encrypt data at one-time.
     pub fn decrypt(key: &SecretKey, cipher: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>> {
-        if cipher.len() <= (AEAD_SIZE + NONCE_SIZE) as usize {
-            return asset_error_err!(ErrCode::InvalidArgument, "[FATAL]invalid cipher");
+        if cipher.len() <= (TAG_SIZE + NONCE_SIZE) {
+            return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The cipher length is too short.");
         }
-        // out param
-        let mut plain: Vec<u8> = vec![0; cipher.len() - AEAD_SIZE as usize - NONCE_SIZE as usize];
 
-        let key_alias = ConstCryptoBlob { size: key.alias.len() as u32, data: key.alias.as_ptr() };
+        let mut plain: Vec<u8> = vec![0; cipher.len() - TAG_SIZE - NONCE_SIZE];
+        let key_alias = HksBlob { size: key.alias.len() as u32, data: key.alias.as_ptr() };
+        let aad_data = HksBlob { size: aad.len() as u32, data: aad.as_ptr() };
+        let in_data = HksBlob { size: cipher.len() as u32, data: cipher.as_ptr() };
+        let mut out_data = OutBlob { size: plain.len() as u32, data: plain.as_mut_ptr() };
 
-        let aad_data = ConstCryptoBlob { size: aad.len() as u32, data: aad.as_ptr() };
-
-        let in_data = ConstCryptoBlob { size: cipher.len() as u32, data: cipher.as_ptr() };
-
-        let mut out_data = CryptoBlob { size: plain.len() as u32, data: plain.as_mut_ptr() };
-
-        let _identity_guard = IdentityGuard::build()?;
+        let _identity = IdentityGuard::build()?;
         let ret = unsafe {
-            DecryptWrapper(
-                &key_alias as *const ConstCryptoBlob,
-                &aad_data as *const ConstCryptoBlob,
-                &in_data as *const ConstCryptoBlob,
-                &mut out_data as *mut CryptoBlob,
+            DecryptData(
+                &key_alias as *const HksBlob,
+                &aad_data as *const HksBlob,
+                &in_data as *const HksBlob,
+                &mut out_data as *mut OutBlob,
             )
         };
         match ret {
             HKS_SUCCESS => Ok(plain),
-            _ => {
-                asset_error_err!(ErrCode::CryptoError, "[FATAL]decrypto error ret {}", ret)
-            },
+            _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS decrypt failed, ret: {}", ret),
+        }
+    }
+
+    fn challenge_match(&self, challenge: &Vec<u8>) -> bool {
+        if challenge.len() != CHALLENGE_LEN {
+            return false;
+        }
+
+        let index = self.challenge_pos as usize;
+        get_challenge_slice(challenge, index) == get_challenge_slice(&self.challenge, index)
+    }
+}
+
+impl Drop for Crypto {
+    fn drop(&mut self) {
+        let handle = HksBlob { size: self.handle.len() as u32, data: self.handle.as_ptr() };
+        let identity = IdentityGuard::build();
+        if identity.is_ok() {
+            unsafe { Drop(&handle as *const HksBlob) };
         }
     }
 }
 
-/// Crypto Manager struct
+const CRYPTO_CAPACITY: usize = 16;
+
+/// Manages the crypto that required user authentication.
 pub struct CryptoManager {
-    crypto_vec: Vec<Crypto>,
+    cryptos: Vec<Crypto>,
 }
 
-/// concurrency is not handlled in these impl, plese handle it
 impl CryptoManager {
-    /// new crypto manager
     fn new() -> Self {
-        //
-        Self { crypto_vec: vec![] }
+        Self { cryptos: vec![] }
     }
 
-    /// get single instance for cryptomgr
+    /// Get the single instance of CryptoManager.
     pub fn get_instance() -> Arc<Mutex<CryptoManager>> {
         static mut INSTANCE: Option<Arc<Mutex<CryptoManager>>> = None;
         unsafe { INSTANCE.get_or_insert_with(|| Arc::new(Mutex::new(CryptoManager::new()))).clone() }
     }
 
-    fn challenge_cmp(challenge: &Vec<u8>, crypto: &Crypto) -> bool {
-        if challenge.len() != CHALLENGE_LEN as usize {
-            loge!("[FATAL]invalid challenge len {}", challenge.len());
-            return false;
-        }
-
-        let index = crypto.challenge_pos as usize;
-        if get_valiad_challenge(challenge, index) == get_valiad_challenge(&crypto.challenge, index) {
-            return true;
-        }
-
-        false
-    }
-
-    /// add a crypto in manager, not allow insert crypto with same challenge
+    /// Add the crypto to manager.
     pub fn add(&mut self, crypto: Crypto) -> Result<()> {
-        loge!("crypto add, add challenge = {:?}", crypto.challenge);
-        for temp_crypto in self.crypto_vec.iter() {
-            if crypto.challenge.as_slice() == temp_crypto.challenge.as_slice() {
-                return asset_error_err!(
-                    ErrCode::CryptoError,
-                    "[FATAL]crypto manager not allow insert crypto with same challenge"
-                );
-            }
+        if self.cryptos.len() >= CRYPTO_CAPACITY {
+            log_throw_error!(ErrCode::LimitExceeded, "The number of cryptos exceeds the upper limit.")
+        } else {
+            self.cryptos.push(crypto);
+            Ok(())
         }
-        self.crypto_vec.push(crypto);
-        Ok(())
     }
 
-    /// remove a crypto in manager
+    /// Remove the crypto from manager.
     pub fn remove(&mut self, challenge: &Vec<u8>) {
-        let mut delete_index: Vec<usize> = vec![];
-        for (index, crypto) in self.crypto_vec.iter().enumerate() {
-            loge!(
-                "crypto remove compare, index = {}, ori_chanllenge = {:?} tar_challenge = {:?}",
-                index,
-                challenge,
-                crypto.challenge
-            );
-            match Self::challenge_cmp(challenge, crypto) {
-                true => delete_index.push(index),
-                false => continue,
-            }
-        }
-
-        let delete_num = delete_index.len();
-        delete_index.sort();
-        for x in 0..delete_num {
-            loge!("delete crypto index = {}", x);
-            self.crypto_vec.remove(delete_index[delete_num - x - 1]);
-        }
+        self.cryptos.retain(|crypto| !crypto.challenge_match(challenge));
     }
 
-    /// find a crypto in manager, donnot use this function return value with add&remove
-    pub fn find(&self, secret_key: &SecretKey, challenge: &Vec<u8>) -> Option<&Crypto> {
-        for crypto in self.crypto_vec.iter() {
-            if secret_key.alias.as_slice() != crypto.key.alias.as_slice() {
-                continue;
-            }
-
-            match Self::challenge_cmp(challenge, crypto) {
-                true => return Some(crypto),
-                false => continue,
+    /// Find the crypto with the specified alias and challenge slice from manager.
+    pub fn find(&mut self, secret_key: &SecretKey, challenge: &Vec<u8>) -> Option<&Crypto> {
+        for crypto in self.cryptos.iter() {
+            if secret_key.alias.eq(&crypto.key.alias) && crypto.challenge_match(challenge) {
+                return Some(crypto);
             }
         }
-        loge!("crypto not found\n");
+        loge!("Can not found the crypto.");
         None
     }
 
-    /// remove device_unlock crypto in crypto mgr
-    pub fn remove_device_unlock(&mut self) {
-        let mut delete_index: Vec<usize> = vec![];
-        for (index, crypto) in self.crypto_vec.iter().enumerate() {
-            if crypto.key.need_device_unlock() {
-                delete_index.push(index);
-            }
-        }
-
-        let delete_num = delete_index.len();
-        delete_index.sort();
-        for x in 0..delete_num {
-            loge!("delete crypto index = {}", x);
-            self.crypto_vec.remove(delete_index[delete_num - x - 1]);
-        }
+    /// Remove cryptos that required device to be unlocked.
+    pub fn remove_need_device_unlocked(&mut self) {
+        self.cryptos.retain(|crypto| !crypto.key.need_device_unlock());
     }
 }
 
-/// get valiad challenge
-pub fn get_valiad_challenge(challenge: &[u8], index: usize) -> &[u8] {
-    let start = index * VALIAD_CHALLENGE_LEN;
-    let end = start + VALIAD_CHALLENGE_LEN;
+/// Get the challenge slice from the specified index.
+pub fn get_challenge_slice(challenge: &[u8], index: usize) -> &[u8] {
+    let start = index * CHALLENGE_SLICE_LEN;
+    let end = start + CHALLENGE_SLICE_LEN;
     &challenge[start..end]
 }
 
-/// set valiad challenge
-pub fn set_valiad_challenge(valiad_challenge: &[u8], index: usize, challenge: &mut [u8]) {
-    let start = index * VALIAD_CHALLENGE_LEN;
-    let end = start + VALIAD_CHALLENGE_LEN;
-    challenge[start..end].copy_from_slice(valiad_challenge);
+/// Get the challenge slice to the specified index.
+pub fn set_challenge_slice(challenge_slice: &[u8], index: usize, challenge: &mut [u8]) {
+    let start = index * CHALLENGE_SLICE_LEN;
+    let end = start + CHALLENGE_SLICE_LEN;
+    challenge[start..end].copy_from_slice(challenge_slice);
 }

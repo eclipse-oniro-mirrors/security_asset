@@ -12,7 +12,7 @@
 # limitations under the License.
 
 [package]
-name = "crypto_manager_test"
+name = "asset_module_test"
 version = "0.1.0"
 edition = "2021"
 
@@ -21,3 +21,4 @@ edition = "2021"
 [dependencies]
 asset_definition = { path = "../../../frameworks/definition" }
 asset_crypto_manager = { path = "../../../services/crypto_manager" }
+asset_db_operator = { path = "../../../services/db_operator" }

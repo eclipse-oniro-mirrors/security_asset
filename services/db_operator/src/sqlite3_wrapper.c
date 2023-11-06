@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include <stddef.h>
 #include <stdint.h>
 
 #include "sqlite3sym.h"
@@ -27,9 +28,9 @@ int SqliteCloseV2(void *db)
     return sqlite3_close_v2((sqlite3 *)db);
 }
 
-int SqliteExec(void *db, const char *zSql, sqlite3_callback xCallback, void *pArg, char **pzErrMsg)
+int SqliteExec(void *db, const char *zSql, char **pzErrMsg)
 {
-    return sqlite3_exec((sqlite3 *)db, zSql, xCallback, pArg, pzErrMsg);
+    return sqlite3_exec((sqlite3 *)db, zSql, NULL, NULL, pzErrMsg);
 }
 
 int SqliteFinalize(void *pStmt)
@@ -47,9 +48,9 @@ int SqliteChanges(void *db)
     return sqlite3_changes((sqlite3 *)db);
 }
 
-int SqlitePrepareV2(void *db, const char *zSql, int nByte, void **ppStmt, const char **pzTail)
+int SqlitePrepareV2(void *db, const char *zSql, void **ppStmt, const char **pzTail)
 {
-    return sqlite3_prepare_v2((sqlite3 *)db, zSql, nByte, (sqlite3_stmt **)ppStmt, pzTail);
+    return sqlite3_prepare_v2((sqlite3 *)db, zSql, -1, (sqlite3_stmt **)ppStmt, pzTail);
 }
 
 int SqliteBindBlob(void *pStmt, int index, const void *zData, int nData, void(*xDel)(void*))
@@ -70,11 +71,6 @@ const char *SqliteErrMsg(void *db)
 int SqliteStep(void *pStmt)
 {
     return sqlite3_step((sqlite3_stmt *)pStmt);
-}
-
-int  SqliteColumnCount(void *pStmt)
-{
-    return sqlite3_column_count((sqlite3_stmt *)pStmt);
 }
 
 const char *SqliteColumnName(void *pStmt, int col)
@@ -100,11 +96,6 @@ int SqliteColumnInt(void *pStmt, int col)
 int64_t SqliteColumnInt64(void *pStmt, int col)
 {
     return sqlite3_column_int64((sqlite3_stmt *)pStmt, col);
-}
-
-const unsigned char *SqliteColumnText(void *pStmt, int col)
-{
-    return sqlite3_column_text((sqlite3_stmt *)pStmt, col);
 }
 
 int SqliteColumnBytes(void *pStmt, int col)

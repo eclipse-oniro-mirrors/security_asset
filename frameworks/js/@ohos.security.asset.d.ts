@@ -171,19 +171,26 @@ declare namespace asset {
    */
   enum Accessibility {
     /**
+     * The secret value in the Asset can only be accessed after the device is powered on.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
+    DEVICE_POWER_ON = 0,
+    /**
      * The secret value in the Asset can only be accessed after the device is first unlocked.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DEVICE_FIRST_UNLOCK = 1,
+    DEVICE_FIRST_UNLOCKED = 1,
     /**
      * The secret value in the Asset can only be accessed while the device is unlocked.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DEVICE_UNLOCK = 2,
+    DEVICE_UNLOCKED = 2,
   }
 
   /**
@@ -435,56 +442,56 @@ declare namespace asset {
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_CRITICAL_1 = TagType.BYTES | 0x20,
+    DATA_LABEL_CRITICAL_1 = TagType.BYTES | 0x20,
     /**
      * A tag whose value is a byte array indicating the second user-defined Asset data label (not allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_CRITICAL_2 = TagType.BYTES | 0x21,
+    DATA_LABEL_CRITICAL_2 = TagType.BYTES | 0x21,
     /**
      * A tag whose value is a byte array indicating the third user-defined Asset data label (not allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_CRITICAL_3 = TagType.BYTES | 0x22,
+    DATA_LABEL_CRITICAL_3 = TagType.BYTES | 0x22,
     /**
      * A tag whose value is a byte array indicating the fourth user-defined Asset data label (not allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_CRITICAL_4 = TagType.BYTES | 0x23,
+    DATA_LABEL_CRITICAL_4 = TagType.BYTES | 0x23,
     /**
      * A tag whose value is a byte array indicating the first user-defined Asset data label (allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_NORMAL_1 = TagType.BYTES | 0x30,
+    DATA_LABEL_NORMAL_1 = TagType.BYTES | 0x30,
     /**
      * A tag whose value is a byte array indicating the second user-defined Asset data label (allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_NORMAL_2 = TagType.BYTES | 0x31,
+    DATA_LABEL_NORMAL_2 = TagType.BYTES | 0x31,
     /**
      * A tag whose value is a byte array indicating the third user-defined Asset data label (allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_NORMAL_3 = TagType.BYTES | 0x32,
+    DATA_LABEL_NORMAL_3 = TagType.BYTES | 0x32,
     /**
      * A tag whose value is a byte array indicating the fourth user-defined Asset data label (allow to update).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_LABLE_NORMAL_4 = TagType.BYTES | 0x33,
+    DATA_LABEL_NORMAL_4 = TagType.BYTES | 0x33,
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the return type of the queried Asset.
      *

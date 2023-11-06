@@ -88,6 +88,7 @@ bool GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *o
     }
 
     if (ret && memcpy_s(ownerInfo, *infoLen, info.c_str(), info.size()) == EOK) {
+        LOGI("[INFO]Calling userId: %d, info: %s", userId, info.c_str());
         *infoLen = info.size();
         return true;
     }

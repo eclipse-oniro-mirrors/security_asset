@@ -15,18 +15,17 @@
 
 //! This module is used to insert an Asset with a specified alias.
 
-use asset_constants::OwnerType;
 use asset_crypto_manager::crypto::{Crypto, SecretKey};
 use asset_db_operator::{
     database::Database,
-    database_table_helper::{do_transaction, DatabaseHelper},
     types::{column, DbMap, DB_DATA_VERSION},
 };
 use asset_definition::{
-    asset_error_err, Accessibility, AssetMap, AuthType, ConflictResolution, DeleteType, ErrCode, Extension, Result,
+    log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, DeleteType, ErrCode, Extension, Result,
     SyncType, Tag, Value,
 };
-use asset_log::{loge, logi};
+use asset_log::logi;
+use asset_utils::time;
 
 use crate::{calling_info::CallingInfo, operations::common};
 
@@ -38,7 +37,7 @@ fn generate_key_if_needed(secret_key: &SecretKey) -> Result<()> {
             secret_key.generate()
         },
         _ => {
-            asset_error_err!(ErrCode::CryptoError, "[FATAL]HUKS failed to check whether the key exists.")
+            log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS failed to check whether the key exists.")
         },
     }
 }
@@ -53,33 +52,20 @@ fn encrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     Ok(())
 }
 
-fn replace_db_record(calling_info: &CallingInfo, query_db_data: &DbMap, replace_db_data: &DbMap) -> Result<()> {
-    let replace_callback = |db: &Database| -> bool {
-        if db.delete_datas(query_db_data).is_err() {
-            loge!("remove asset in replace operation failed!");
-            return false;
-        }
-        if db.insert_datas(replace_db_data).is_err() {
-            loge!("insert asset in replace operation failed!");
-            return false;
-        }
-        true
-    };
-
-    if !do_transaction(calling_info.user_id(), replace_callback)? {
-        return asset_error_err!(ErrCode::DatabaseError, "[FATAL]Execute do_transaction in replace_db_record failed!");
-    }
-    Ok(())
-}
-
-fn resolve_conflict(calling_info: &CallingInfo, attrs: &AssetMap, query: &DbMap, db_data: &mut DbMap) -> Result<()> {
+fn resolve_conflict(
+    calling: &CallingInfo,
+    db: &Database,
+    attrs: &AssetMap,
+    query: &DbMap,
+    db_data: &mut DbMap,
+) -> Result<()> {
     match attrs.get(&Tag::ConflictResolution) {
         Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {
-            encrypt(calling_info, db_data)?;
-            replace_db_record(calling_info, query, db_data)
+            encrypt(calling, db_data)?;
+            db.replace_datas(query, db_data)
         },
         _ => {
-            asset_error_err!(ErrCode::Duplicated, "[FATAL][SA]The specified alias already exists.")
+            log_throw_error!(ErrCode::Duplicated, "[FATAL][SA]The specified alias already exists.")
         },
     }
 }
@@ -96,7 +82,7 @@ fn get_query_condition(calling_info: &CallingInfo, attrs: &AssetMap) -> Result<D
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     db_data.insert(column::VERSION, Value::Number(DB_DATA_VERSION));
 
-    let time = common::get_system_time()?;
+    let time = time::system_time_in_millis()?;
     db_data.insert(column::CREATE_TIME, Value::Bytes(time.clone()));
     db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     Ok(())
@@ -112,19 +98,22 @@ fn add_default_attrs(db_data: &mut DbMap) {
 }
 
 const REQUIRED_ATTRS: [Tag; 2] = [Tag::Secret, Tag::Alias];
-
 const OPTIONAL_ATTRS: [Tag; 3] = [Tag::Secret, Tag::ConflictResolution, Tag::DeleteType];
+const SYSTEM_USER_ID_MAX: i32 = 99;
 
 fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    if calling_info.owner_type() != OwnerType::Native as u32 {
+    if calling_info.user_id() > SYSTEM_USER_ID_MAX {
         return Ok(());
     }
-    let access =
+    let accessibility =
         attributes.get_enum_attr::<Accessibility>(&Tag::Accessibility).unwrap_or(Accessibility::DeviceFirstUnlocked);
-    if access == Accessibility::DevicePowerOn {
+    if accessibility == Accessibility::DevicePowerOn {
         return Ok(());
     }
-    asset_error_err!(ErrCode::InvalidArgument, "[FATAL][SA]Native can not use asset with accessibility as {}.", access)
+    log_throw_error!(
+        ErrCode::InvalidArgument,
+        "[FATAL][SA]System user data cannot be protected by the lock screen password."
+    )
 }
 
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
@@ -152,11 +141,12 @@ pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<(
     add_default_attrs(&mut db_data);
 
     let query = get_query_condition(calling_info, attributes)?;
-    if DatabaseHelper::is_data_exists(calling_info.user_id(), &query)? {
-        resolve_conflict(calling_info, attributes, &query, &mut db_data)
+    let mut db = Database::build(calling_info.user_id())?;
+    if db.is_data_exists(&query)? {
+        resolve_conflict(calling_info, &db, attributes, &query, &mut db_data)
     } else {
         encrypt(calling_info, &mut db_data)?;
-        let insert_num = DatabaseHelper::insert_datas(calling_info.user_id(), &db_data)?;
+        let insert_num = db.insert_datas(&db_data)?;
         logi!("insert {} data", insert_num);
         Ok(())
     }

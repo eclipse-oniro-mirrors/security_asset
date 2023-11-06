@@ -19,7 +19,7 @@
 
 use ipc_rust::{FromRemoteObj, IRemoteBroker, IRemoteObj, IpcResult, MsgParcel, RemoteObj, RemoteObjRef};
 
-use asset_definition::{asset_error, asset_error_err, AssetMap, ErrCode, Result};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
 use asset_ipc::{deserialize_maps, ipc_err_handle, serialize_map, IAsset, IpcCode, IPC_SUCCESS, SA_NAME};
 
 /// Proxy of Asset Service.
@@ -60,29 +60,36 @@ impl AssetProxy {
             IPC_SUCCESS => Ok(reply),
             e => {
                 let msg = reply.read::<String>().map_err(ipc_err_handle)?;
-                asset_error_err!(ErrCode::try_from(e)?, "{}", msg)
+                log_throw_error!(ErrCode::try_from(e)?, "{}", msg)
             },
         }
     }
 }
 
+fn new_parcel() -> Result<MsgParcel> {
+    match MsgParcel::new() {
+        Some(p) => Ok(p),
+        None => log_throw_error!(ErrCode::IpcError, "[FATAL]Get MsgParcel failed."),
+    }
+}
+
 impl IAsset for AssetProxy {
     fn add(&self, attributes: &AssetMap) -> Result<()> {
-        let mut parcel = MsgParcel::new().ok_or(asset_error!(ErrCode::IpcError, "[FATAL]Get MsgParcel fail."))?;
+        let mut parcel = new_parcel()?;
         serialize_map(attributes, &mut parcel.borrowed())?;
         self.send_request(parcel, IpcCode::Add)?;
         Ok(())
     }
 
     fn remove(&self, query: &AssetMap) -> Result<()> {
-        let mut parcel = MsgParcel::new().ok_or(asset_error!(ErrCode::IpcError, "[FATAL]Get MsgParcel fail."))?;
+        let mut parcel = new_parcel()?;
         serialize_map(query, &mut parcel.borrowed())?;
         self.send_request(parcel, IpcCode::Remove)?;
         Ok(())
     }
 
     fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
-        let mut parcel = MsgParcel::new().ok_or(asset_error!(ErrCode::IpcError, "[FATAL]Get MsgParcel fail."))?;
+        let mut parcel = new_parcel()?;
         serialize_map(query, &mut parcel.borrowed())?;
         serialize_map(attributes_to_update, &mut parcel.borrowed())?;
         self.send_request(parcel, IpcCode::Update)?;
@@ -90,7 +97,7 @@ impl IAsset for AssetProxy {
     }
 
     fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>> {
-        let mut parcel = MsgParcel::new().ok_or(asset_error!(ErrCode::IpcError, "[FATAL]Get MsgParcel fail."))?;
+        let mut parcel = new_parcel()?;
         serialize_map(query, &mut parcel.borrowed())?;
         let reply = self.send_request(parcel, IpcCode::PreQuery)?;
         let res = reply.read::<Vec<u8>>().map_err(ipc_err_handle)?;
@@ -98,7 +105,7 @@ impl IAsset for AssetProxy {
     }
 
     fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>> {
-        let mut parcel = MsgParcel::new().ok_or(asset_error!(ErrCode::IpcError, "[FATAL]Get MsgParcel fail."))?;
+        let mut parcel = new_parcel()?;
         serialize_map(query, &mut parcel.borrowed())?;
         let mut reply = self.send_request(parcel, IpcCode::Query)?;
         let res = deserialize_maps(&reply.borrowed())?;
@@ -106,7 +113,7 @@ impl IAsset for AssetProxy {
     }
 
     fn post_query(&self, query: &AssetMap) -> Result<()> {
-        let mut parcel = MsgParcel::new().ok_or(asset_error!(ErrCode::IpcError, "[FATAL]Get MsgParcel fail."))?;
+        let mut parcel = new_parcel()?;
         serialize_map(query, &mut parcel.borrowed())?;
         self.send_request(parcel, IpcCode::PostQuery)?;
         Ok(())

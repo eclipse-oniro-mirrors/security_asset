@@ -21,7 +21,7 @@ ohos_rust_shared_library("asset_service") {
     "../../frameworks/ipc:asset_ipc",
     "../../frameworks/os_dependency/file:asset_file_operator",
     "../../frameworks/os_dependency/log:asset_log",
-    "../../frameworks/utils/hasher:asset_hasher",
+    "../../frameworks/utils:asset_utils",
     "../crypto_manager:asset_crypto_manager",
     "../db_operator:asset_db_operator",
     "../os_dependency:asset_os_dependency",

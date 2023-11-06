@@ -13,14 +13,5 @@
  * limitations under the License.
  */
 
-//! This module encapsulates the database operation function based on sqlite.
-
-pub mod database;
-mod statement;
-mod table;
-mod transaction;
-pub mod types;
-
-#[cfg(test)]
-#[path = "test/lib.rs"]
-mod test;
+#[path = "crypto_manager/lib.rs"]
+mod crypto_manager;
