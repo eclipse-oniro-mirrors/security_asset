@@ -116,7 +116,7 @@ pub struct QueryOptions {
     pub limit: Option<u32>,
     /// ordering: Ordering::Greater => ASC and Ordering::Less => DESC
     pub order: Option<Ordering>,
-    /// Columns used for sorting��
+    /// Columns used for sorting.
     pub order_by: Option<Vec<&'static str>>,
 }
 
