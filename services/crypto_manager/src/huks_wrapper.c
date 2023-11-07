@@ -24,11 +24,6 @@ static const uint32_t TAG_SIZE = 16;
 static const uint32_t NONCE_SIZE = 12;
 
 #define ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
-typedef struct {
-    int32_t cryptoMode;
-    uint32_t challengePos;
-    uint32_t expTime;
-} CryptParam;
 
 static int32_t BuildParamSet(struct HksParamSet **paramSet, const struct HksParam *params, uint32_t paramCount)
 {

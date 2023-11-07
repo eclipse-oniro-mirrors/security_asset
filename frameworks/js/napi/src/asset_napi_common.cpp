@@ -36,7 +36,7 @@ namespace {
 
 #define NAPI_THROW_BASE(env, condition, ret, code, message)             \
 if ((condition)) {                                                      \
-    LOGE("[FATAL][NAPI]%{public}s" message);                                     \
+    LOGE("[FATAL][NAPI]%{public}s", (message));                         \
     napi_throw_error((env), std::to_string((code)).c_str(), message);   \
     return (ret);                                                       \
 }
@@ -63,7 +63,7 @@ if ((theCall) != napi_ok) {                 \
 if ((condition)) {                                                                      \
     char msg[MAX_MESSAGE_LEN] = { 0 };                                                  \
     (void)sprintf_s(msg, MAX_MESSAGE_LEN, "AssetTag(0x%08x) " message, tag);            \
-    LOGE("[FATAL][NAPI]%{public}s", msg);                                                      \
+    LOGE("[FATAL][NAPI]%{public}s", (msg));                                             \
     napi_throw_error((env), std::to_string(ASSET_INVALID_ARGUMENT).c_str(), msg);       \
     return napi_invalid_arg;                                                            \
 }
