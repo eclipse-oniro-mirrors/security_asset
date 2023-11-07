@@ -41,23 +41,18 @@ fn delete_key(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: A
 ///
 /// The caller must ensure that the owner pointer is valid.
 #[no_mangle]
-pub unsafe extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) -> i32 {
+pub unsafe extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) {
     let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner, owner_size as usize).to_vec() };
     let owner_hash: Vec<u8> = sha256(&owner);
     let mut cond = DbMap::new();
     cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
     cond.insert(column::OWNER, Value::Bytes(owner));
-    let Ok(mut db) = Database::build(user_id) else { return 0 };
-    match db.delete_datas(&cond) {
-        Ok(remove_num) => {
-            delete_key(user_id, &owner_hash, AuthType::None, Accessibility::DeviceFirstUnlocked);
-            delete_key(user_id, &owner_hash, AuthType::None, Accessibility::DeviceUnlocked);
-            delete_key(user_id, &owner_hash, AuthType::Any, Accessibility::DeviceFirstUnlocked);
-            delete_key(user_id, &owner_hash, AuthType::Any, Accessibility::DeviceUnlocked);
-            remove_num
-        },
-        _ => 0,
-    }
+    let Ok(mut db) = Database::build(user_id) else { return };
+    let _ = db.delete_datas(&cond);
+    delete_key(user_id, &owner_hash, AuthType::None, Accessibility::DeviceFirstUnlocked);
+    delete_key(user_id, &owner_hash, AuthType::None, Accessibility::DeviceUnlocked);
+    delete_key(user_id, &owner_hash, AuthType::Any, Accessibility::DeviceFirstUnlocked);
+    delete_key(user_id, &owner_hash, AuthType::Any, Accessibility::DeviceUnlocked);
 }
 
 /// Function called from C programming language to Rust programming language for delete dir by user.

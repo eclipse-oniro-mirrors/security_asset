@@ -88,10 +88,12 @@ fn query_with_offset_without_limit() {
         add_default_asset(new_name.as_bytes(), new_name.as_bytes()).unwrap();
     }
 
-    let offset = 3;
-
+    let offset = 15;
     let query = AssetMap::from([(Tag::ReturnOffset, Value::Number(offset))]);
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
+    let offset = 3;
+    let query = AssetMap::from([(Tag::ReturnOffset, Value::Number(offset))]);
     assert_eq!(asset_num - offset, asset_sdk::Manager::build().unwrap().query(&query).unwrap().len() as u32);
 
     for i in 0..(asset_num - offset) {
@@ -111,6 +113,11 @@ fn query_with_limit_with_without_offset() {
     }
 
     let mut query = AssetMap::new();
+    let limit = 15u32;
+    query.insert_attr(Tag::ReturnLimit, limit);
+    let assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
+    assert_eq!(asset_num, assets.len() as u32);
+
     let limit = 3u32;
     query.insert_attr(Tag::ReturnLimit, limit);
     let assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
