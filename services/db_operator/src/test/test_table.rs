@@ -294,3 +294,28 @@ fn upgrade_table() {
         .is_ok());
     fs::remove_dir_all("/data/asset_test/0").unwrap();
 }
+
+#[test]
+fn replace_datas() {
+    fs::create_dir_all("/data/asset_test/0").unwrap();
+    let db = Database::build(0).unwrap();
+    let table = Table::new("table_name", &db);
+
+    let columns = &[
+        ColumnInfo { name: "id", is_primary_key: true, not_null: true, data_type: DataType::Number },
+        ColumnInfo { name: "alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+    ];
+    table.create(columns).unwrap();
+    let datas = DbMap::from([("id", Value::Number(1)), ("alias", Value::Bytes(b"alias1".to_vec()))]);
+    assert_eq!(table.insert_row(&datas).unwrap(), 1);
+    let datas = DbMap::from([("id", Value::Number(2)), ("alias", Value::Bytes(b"alias2".to_vec()))]);
+    assert_eq!(table.insert_row(&datas).unwrap(), 1);
+
+    let conditions = DbMap::from([("id", Value::Number(2))]);
+    let datas = DbMap::from([("id", Value::Number(3)), ("alias", Value::Bytes(b"alias3".to_vec()))]);
+    table.replace_row(&conditions, &datas).unwrap();
+    assert!(table.is_data_exists(&datas).unwrap());
+
+    assert_eq!(table.count_datas(&conditions).unwrap(), 0);
+    fs::remove_dir_all("/data/asset_test/0").unwrap();
+}

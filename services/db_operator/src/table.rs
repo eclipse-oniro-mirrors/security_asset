@@ -25,6 +25,7 @@ use asset_definition::{log_throw_error, DataType, ErrCode, Result, Value};
 use crate::{
     database::Database,
     statement::Statement,
+    transaction::Transaction,
     types::{ColumnInfo, DbMap, QueryOptions, SQLITE_ROW},
 };
 
@@ -391,5 +392,15 @@ impl<'a> Table<'a> {
             sql.push_str(" NOT NULL");
         }
         self.db.exec(sql.as_str())
+    }
+
+    pub(crate) fn replace_row(&self, condition: &DbMap, datas: &DbMap) -> Result<()> {
+        let mut trans = Transaction::new(self.db);
+        trans.begin()?;
+        if self.delete_row(condition).is_ok() && self.insert_row(datas).is_ok() {
+            trans.commit()
+        } else {
+            trans.rollback()
+        }
     }
 }

@@ -54,7 +54,7 @@ fn encrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
 
 fn resolve_conflict(
     calling: &CallingInfo,
-    db: &Database,
+    db: &mut Database,
     attrs: &AssetMap,
     query: &DbMap,
     db_data: &mut DbMap,
@@ -143,7 +143,7 @@ pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<(
     let query = get_query_condition(calling_info, attributes)?;
     let mut db = Database::build(calling_info.user_id())?;
     if db.is_data_exists(&query)? {
-        resolve_conflict(calling_info, &db, attributes, &query, &mut db_data)
+        resolve_conflict(calling_info, &mut db, attributes, &query, &mut db_data)
     } else {
         encrypt(calling_info, &mut db_data)?;
         let insert_num = db.insert_datas(&db_data)?;

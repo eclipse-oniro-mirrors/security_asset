@@ -25,7 +25,6 @@ use asset_log::{loge, logi};
 use crate::{
     statement::Statement,
     table::Table,
-    transaction::Transaction,
     types::{sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, SQLITE_OK, TABLE_NAME},
 };
 
@@ -362,16 +361,10 @@ impl Database {
     }
 
     /// Delete old data and insert new data.
-    pub fn replace_datas(&self, condition: &DbMap, datas: &DbMap) -> Result<()> {
-        let table = Table::new(TABLE_NAME, self);
+    pub fn replace_datas(&mut self, condition: &DbMap, datas: &DbMap) -> Result<()> {
         let _lock = self.db_lock.mtx.lock().unwrap();
-        let mut trans = Transaction::new(self);
-        trans.begin()?;
-        if table.delete_row(condition).is_ok() && table.insert_row(datas).is_ok() {
-            trans.commit()
-        } else {
-            trans.rollback()
-        }
+        let closure = |e: &Table| e.replace_row(condition, datas);
+        self.execute_and_backup(true, closure)
     }
 }
 
