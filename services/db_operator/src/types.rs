@@ -18,7 +18,6 @@
 use std::{cmp::Ordering, collections::HashMap};
 
 use asset_definition::{DataType, ErrCode, Value};
-use asset_log::loge;
 
 /// A Map type containing tag-value pairs that describe the attributes of an DB field.
 pub type DbMap = HashMap<&'static str, Value>;
@@ -131,9 +130,6 @@ pub(crate) const SQLITE_ROW: i32 = 100;
 pub(crate) const SQLITE_DONE: i32 = 101;
 
 pub(crate) fn sqlite_err_handle(ret: i32) -> ErrCode {
-    if ret != SQLITE_DONE && ret != SQLITE_OK {
-        loge!("sqlite3 ret {}", ret);
-    }
     match ret {
         SQLITE_CORRUPT | SQLITE_NOTADB => ErrCode::DataCorrupted,
         SQLITE_NOMEM => ErrCode::OutOfMemory,
