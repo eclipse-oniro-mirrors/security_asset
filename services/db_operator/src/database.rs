@@ -38,26 +38,26 @@ extern "C" {
 }
 
 /// each user have a Database file
-pub(crate) struct UserDbFile {
+pub(crate) struct UserDbLock {
     pub(crate) user_id: i32,
     pub(crate) mtx: Mutex<i32>,
 }
 
-static USER_DB_LOCK_LIST: Mutex<Vec<&'static UserDbFile>> = Mutex::new(Vec::new());
+static USER_DB_LOCK_LIST: Mutex<Vec<&'static UserDbLock>> = Mutex::new(Vec::new());
 
 /// If the user exists, the reference to the lock is returned.
 /// Otherwise, a new lock is created and its reference is returned.
-fn get_file_lock_by_user_id(user_id: i32) -> &'static UserDbFile {
+fn get_file_lock_by_user_id(user_id: i32) -> &'static UserDbLock {
     let mut list = USER_DB_LOCK_LIST.lock().unwrap();
     for f in list.iter() {
         if f.user_id == user_id {
             return f;
         }
     }
-    let nf = Box::new(UserDbFile { user_id, mtx: Mutex::new(user_id) });
+    let nf = Box::new(UserDbLock { user_id, mtx: Mutex::new(user_id) });
     // SAFETY: We just push item into USER_DB_LOCK_LIST, never remove item or modify item,
     // so return a reference of leak item is safe.
-    let nf: &'static UserDbFile = Box::leak(nf);
+    let nf: &'static UserDbLock = Box::leak(nf);
     list.push(nf);
     list[list.len() - 1]
 }
@@ -68,7 +68,7 @@ pub struct Database {
     pub(crate) path: String,
     pub(crate) backup_path: String,
     pub(crate) handle: usize, // Pointer to the database connection.
-    pub(crate) user_file: &'static UserDbFile,
+    pub(crate) db_lock: &'static UserDbLock,
 }
 
 /// Callback for database upgrade.
@@ -97,8 +97,8 @@ impl Database {
         let path = fmt_db_path(user_id);
         let backup_path = fmt_backup_path(path.as_str());
         let lock = get_file_lock_by_user_id(user_id);
-        let mut db = Database { path, backup_path, handle: 0, user_file: lock };
-        let _lock = db.user_file.mtx.lock().unwrap();
+        let mut db = Database { path, backup_path, handle: 0, db_lock: lock };
+        let _lock = db.db_lock.mtx.lock().unwrap();
         db.open_and_recovery()?;
         db.execute_and_backup(true, |e: &Table| e.create(COLUMN_INFO))?;
         Ok(db)
@@ -146,7 +146,7 @@ impl Database {
 
     /// Get database version, default is 0.
     pub(crate) fn get_version(&self) -> Result<u32> {
-        let _lock = self.user_file.mtx.lock().unwrap();
+        let _lock = self.db_lock.mtx.lock().unwrap();
         let stmt = Statement::prepare("pragma user_version", self)?;
         stmt.step()?;
         let version = stmt.query_column_int(0);
@@ -254,7 +254,7 @@ impl Database {
     ///
     #[inline(always)]
     pub fn insert_datas(&mut self, datas: &DbMap) -> Result<i32> {
-        let _lock = self.user_file.mtx.lock().unwrap();
+        let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.insert_row(datas);
         self.execute_and_backup(true, closure)
     }
@@ -281,7 +281,7 @@ impl Database {
     ///
     #[inline(always)]
     pub fn delete_datas(&mut self, condition: &DbMap) -> Result<i32> {
-        let _lock = self.user_file.mtx.lock().unwrap();
+        let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.delete_row(condition);
         self.execute_and_backup(true, closure)
     }
@@ -306,7 +306,7 @@ impl Database {
     /// ```
     #[inline(always)]
     pub fn update_datas(&mut self, condition: &DbMap, datas: &DbMap) -> Result<i32> {
-        let _lock = self.user_file.mtx.lock().unwrap();
+        let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.update_row(condition, datas);
         self.execute_and_backup(true, closure)
     }
@@ -328,7 +328,7 @@ impl Database {
     /// ```
     #[inline(always)]
     pub fn is_data_exists(&mut self, condition: &DbMap) -> Result<bool> {
-        let _lock = self.user_file.mtx.lock().unwrap();
+        let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.is_data_exists(condition);
         self.execute_and_backup(false, closure)
     }
@@ -356,7 +356,7 @@ impl Database {
         condition: &DbMap,
         query_options: Option<&QueryOptions>,
     ) -> Result<Vec<DbMap>> {
-        let _lock = self.user_file.mtx.lock().unwrap();
+        let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.query_row(columns, condition, query_options, COLUMN_INFO);
         self.execute_and_backup(false, closure)
     }
@@ -364,7 +364,7 @@ impl Database {
     /// Delete old data and insert new data.
     pub fn replace_datas(&self, condition: &DbMap, datas: &DbMap) -> Result<()> {
         let table = Table::new(TABLE_NAME, self);
-        let _lock = self.user_file.mtx.lock().unwrap();
+        let _lock = self.db_lock.mtx.lock().unwrap();
         let mut trans = Transaction::new(self);
         trans.begin()?;
         if table.delete_row(condition).is_ok() && table.insert_row(datas).is_ok() {
@@ -372,44 +372,6 @@ impl Database {
         } else {
             trans.rollback()
         }
-    }
-}
-
-/// transaction callback func, do NOT lock database in this callback function
-/// return true if want to commit, false if want to rollback
-/// the func can be a closure or a function like this:
-/// pub type TransactionCallback = fn(db: &Database) -> bool;
-///
-/// do transaction
-/// if commit, return true
-/// if rollback, return false
-pub fn do_transaction<F: Fn(&Database) -> bool>(user_id: i32, callback: F) -> Result<bool> {
-    let db = match Database::build(user_id) {
-        Ok(o) => o,
-        Err(e) => {
-            loge!("[FATAL]Transaction open db fail");
-            return Err(e);
-        },
-    };
-
-    let mut trans = Transaction::new(&db);
-    let _lock = db.user_file.mtx.lock().unwrap();
-    if let Err(ret) = trans.begin() {
-        loge!("[FATAL]Transaction begin fail");
-        return Err(ret);
-    }
-    if callback(&db) {
-        if let Err(ret) = trans.commit() {
-            loge!("[FATAL]Transaction commit fail");
-            return Err(ret);
-        }
-        Ok(true)
-    } else {
-        if let Err(ret) = trans.rollback() {
-            loge!("[FATAL]Transaction rollback fail");
-            return Err(ret);
-        }
-        Ok(false)
     }
 }
 

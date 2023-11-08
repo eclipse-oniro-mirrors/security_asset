@@ -13,77 +13,38 @@
  * limitations under the License.
  */
 
-//! for db transaction, support closure.
-//! transaction is auto rollback if not commit by RAII.
+//! This module is used to implement database transactions.
+//! Transaction is auto rollback if not commit by RAII.
 
-use asset_definition::{log_throw_error, ErrCode, Result};
+use asset_definition::Result;
 
 use crate::database::Database;
 
 /// Transaction for sqlite db
 #[repr(C)]
 pub struct Transaction<'a> {
-    /// point to db
     db: &'a Database,
-    started: bool,
 }
 
 impl<'a> Transaction<'a> {
-    /// create transaction
-    pub fn new(db: &'a Database) -> Transaction<'a> {
-        Transaction { db, started: false }
+    /// Create a transaction instance.
+    pub(crate) fn new(db: &'a Database) -> Transaction<'a> {
+        Transaction { db }
     }
 
-    /// start transaction
-    pub fn begin(&mut self) -> Result<()> {
-        if self.started {
-            // do nothing
-            return Ok(());
-        }
-        let sql = "begin transaction";
-        let ret = self.db.exec(sql);
-        if ret.is_ok() {
-            self.started = true;
-        }
-        ret
+    /// Begin a database transaction.
+    /// Once the transaction is begun, the caller must call the rollback or commit function later.
+    pub(crate) fn begin(&mut self) -> Result<()> {
+        self.db.exec("begin transaction")
     }
 
-    /// cancel transaction
-    pub fn rollback(self) -> Result<()> {
-        if !self.started {
-            return log_throw_error!(ErrCode::DatabaseError, "[FATAL]Transaction rollback without begin");
-        }
-        let ret = self.rollback_transaction();
-        core::mem::forget(self);
-        ret
+    /// Rollback the database transaction.
+    pub(crate) fn rollback(self) -> Result<()> {
+        self.db.exec("rollback")
     }
 
-    /// cancel transaction
-    fn rollback_transaction(&self) -> Result<()> {
-        let sql = "rollback";
-        self.db.exec(sql)
-    }
-
-    /// commit transaction
-    pub fn commit(self) -> Result<()> {
-        if !self.started {
-            return log_throw_error!(ErrCode::DatabaseError, "[FATAL]Transaction commit without begin");
-        }
-        let sql = "commit";
-        let ret = self.db.exec(sql);
-        core::mem::forget(self);
-        ret
-    }
-}
-
-impl<'a> Drop for Transaction<'a> {
-    fn drop(&mut self) {
-        if self.started {
-            let _ret = self.rollback_transaction();
-            #[cfg(test)]
-            if _ret.is_err() {
-                println!("drop transaction fail");
-            }
-        }
+    /// Commit the database transaction.
+    pub(crate) fn commit(self) -> Result<()> {
+        self.db.exec("commit")
     }
 }
