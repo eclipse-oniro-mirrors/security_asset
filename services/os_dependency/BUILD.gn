@@ -50,6 +50,7 @@ ohos_rust_shared_ffi("asset_service_ffi") {
     "../crypto_manager:asset_crypto_manager",
     "../db_operator:asset_db_operator",
   ]
+  external_deps = [ "hilog:libhilog" ]
   crate_name = "asset_service_ffi"
   subsystem_name = "security"
   part_name = "asset"

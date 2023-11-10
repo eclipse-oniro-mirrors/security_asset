@@ -24,6 +24,7 @@ ohos_rust_shared_library("asset_sdk") {
 
   external_deps = [
     "c_utils:utils",
+    "hilog:libhilog",
     "ipc:ipc_rust",
     "samgr:rust_samgr",
   ]
