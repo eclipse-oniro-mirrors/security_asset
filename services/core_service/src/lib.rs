@@ -52,12 +52,21 @@ const RETRY_INTERVAL: u64 = 1000;
 extern "C" {
     fn SubscribeSystemEvent() -> bool;
     fn UnSubscribeSystemEvent() -> bool;
+    fn RegisterCommonEventListener() -> bool;
+    fn DeregisterCommonEventListener() -> bool;
 }
 
 fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
     let service = AssetStub::new_remote_stub(AssetService).expect("create AssetService failed");
     ability.publish(&service.as_object().expect("publish Asset service failed"), SA_ID);
     logi!("[INFO]Asset service on_start");
+    thread::spawn(|| {
+        if unsafe { RegisterCommonEventListener() } {
+            logi!("comment event listener success.");
+        } else {
+            logi!("comment event listener failed.")
+        }
+    });
     thread::spawn(|| {
         for i in 0..MAX_RETRY_TIME {
             if unsafe { SubscribeSystemEvent() } {
@@ -74,6 +83,7 @@ fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {
     logi!("[INFO]Asset service on_stop");
     unsafe {
         UnSubscribeSystemEvent();
+        DeregisterCommonEventListener();
     }
 }
 

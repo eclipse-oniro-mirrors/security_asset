@@ -21,7 +21,8 @@ ohos_static_library("asset_os_dependency") {
   sources = [
     "src/bms_wrapper.cpp",
     "src/os_account_wrapper.cpp",
-    "src/system_event_wrapper.cpp",
+    "src/system_ability_wrapper.cpp",
+    "src/system_event_wrapper.cpp"
   ]
   deps = [ ":asset_service_ffi" ]
   external_deps = [
@@ -34,6 +35,7 @@ ohos_static_library("asset_os_dependency") {
     "hilog:libhilog",
     "ipc:ipc_single",
     "os_account:os_account_innerkits",
+    "samgr:samgr_proxy",
   ]
   subsystem_name = "security"
   part_name = "asset"
