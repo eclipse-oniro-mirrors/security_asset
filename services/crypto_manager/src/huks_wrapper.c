@@ -68,7 +68,7 @@ static int32_t AddAuthGenParams(struct HksParamSet *paramSet)
         { .tag = HKS_TAG_KEY_AUTH_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_DECRYPT },
         { .tag = HKS_TAG_KEY_AUTH_ACCESS_TYPE, .uint32Param = HKS_AUTH_ACCESS_ALWAYS_VALID },
         { .tag = HKS_TAG_BATCH_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_DECRYPT },
-        { .tag = HKS_TAG_CHALLENGE_TYPE, .uint32Param = HKS_CHALLENGE_TYPE_NORMAL }, // todo: normal
+        { .tag = HKS_TAG_CHALLENGE_TYPE, .uint32Param = HKS_CHALLENGE_TYPE_NORMAL },
         { .tag = HKS_TAG_USER_AUTH_TYPE, .uint32Param =
             HKS_USER_AUTH_TYPE_FINGERPRINT | HKS_USER_AUTH_TYPE_FACE | HKS_USER_AUTH_TYPE_PIN }
     };
