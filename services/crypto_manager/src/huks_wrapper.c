@@ -68,7 +68,7 @@ static int32_t AddAuthGenParams(struct HksParamSet *paramSet)
         { .tag = HKS_TAG_KEY_AUTH_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_DECRYPT },
         { .tag = HKS_TAG_KEY_AUTH_ACCESS_TYPE, .uint32Param = HKS_AUTH_ACCESS_ALWAYS_VALID },
         { .tag = HKS_TAG_BATCH_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_DECRYPT },
-        { .tag = HKS_TAG_CHALLENGE_TYPE, .uint32Param = HKS_CHALLENGE_TYPE_CUSTOM },
+        { .tag = HKS_TAG_CHALLENGE_TYPE, .uint32Param = HKS_CHALLENGE_TYPE_NORMAL }, // todo: normal
         { .tag = HKS_TAG_USER_AUTH_TYPE, .uint32Param =
             HKS_USER_AUTH_TYPE_FINGERPRINT | HKS_USER_AUTH_TYPE_FACE | HKS_USER_AUTH_TYPE_PIN }
     };
@@ -201,14 +201,13 @@ int32_t DecryptData(const struct HksBlob *alias, const struct HksBlob *aad, cons
     return ret;
 }
 
-int32_t InitKey(const struct HksBlob *alias, uint32_t validTime, uint32_t challengePos,
+int32_t InitKey(const struct HksBlob *alias, uint32_t validTime,
     struct HksBlob *challenge, struct HksBlob *handle)
 {
     struct HksParam initParams[] = {
         { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES},
         { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_DECRYPT },
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
-        { .tag = HKS_TAG_CHALLENGE_POS, .uint32Param = challengePos },
         { .tag = HKS_TAG_IS_BATCH_OPERATION, .boolParam = true },
         { .tag = HKS_TAG_BATCH_OPERATION_TIMEOUT, .uint32Param = validTime },
     };

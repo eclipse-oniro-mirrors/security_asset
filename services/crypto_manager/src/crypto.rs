@@ -72,7 +72,6 @@ extern "C" {
     fn InitKey(
         alias: *const HksBlob,
         valid_time: u32,
-        challenge_pos: u32,
         challenge: *mut OutBlob,
         handle: *mut OutBlob,
     ) -> i32;
@@ -93,7 +92,6 @@ const TAG_SIZE: usize = 16;
 const MAX_ALIAS_SIZE: usize = 64;
 const HANDLE_LEN: usize = 8;
 const CHALLENGE_LEN: usize = 32;
-const CHALLENGE_SLICE_LEN: usize = 8;
 
 impl SecretKey {
     /// New a secret key.
@@ -180,20 +178,18 @@ pub struct Crypto {
     key: SecretKey,
     challenge: Vec<u8>,
     handle: Vec<u8>,
-    challenge_pos: u32,
     valid_time: u32,
     exp_time: u64,
 }
 
 impl Crypto {
     /// Create a crypto instance.
-    pub fn build(key: SecretKey, challenge_pos: u32, valid_time: u32) -> Result<Self> {
+    pub fn build(key: SecretKey, valid_time: u32) -> Result<Self> {
         let current_time = time::system_time_in_seconds()?;
         Ok(Self {
             key,
             challenge: vec![0; CHALLENGE_LEN],
             handle: vec![0; HANDLE_LEN],
-            challenge_pos,
             valid_time,
             exp_time: current_time + valid_time as u64,
         })
@@ -210,7 +206,6 @@ impl Crypto {
             InitKey(
                 &key_alias as *const HksBlob,
                 self.valid_time,
-                self.challenge_pos,
                 &mut challenge as *mut OutBlob,
                 &mut handle as *mut OutBlob,
             )
@@ -304,15 +299,6 @@ impl Crypto {
             _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS decrypt failed, ret: {}", ret),
         }
     }
-
-    fn challenge_match(&self, challenge: &Vec<u8>) -> bool {
-        if challenge.len() != CHALLENGE_LEN {
-            return false;
-        }
-
-        let index = self.challenge_pos as usize;
-        get_challenge_slice(challenge, index) == get_challenge_slice(&self.challenge, index)
-    }
 }
 
 impl Drop for Crypto {
@@ -355,14 +341,13 @@ impl CryptoManager {
 
     /// Remove the crypto from manager.
     pub fn remove(&mut self, challenge: &Vec<u8>) {
-        self.cryptos.retain(|crypto| !crypto.challenge_match(challenge)); // todo: crypto.challenge.eq(challenge)
+        self.cryptos.retain(|crypto| !crypto.challenge.eq(challenge));
     }
 
     /// Find the crypto with the specified alias and challenge slice from manager.
-    pub fn find(&mut self, secret_key: &SecretKey, challenge: &Vec<u8>) -> Option<&Crypto> {
-        // todo: 删除secret_key入参，challenge对比修改成上述格式
+    pub fn find(&mut self, challenge: &Vec<u8>) -> Option<&Crypto> {
         for crypto in self.cryptos.iter() {
-            if secret_key.alias.eq(&crypto.key.alias) && crypto.challenge_match(challenge) {
+            if crypto.challenge.eq(challenge) {
                 return Some(crypto);
             }
         }
@@ -374,19 +359,4 @@ impl CryptoManager {
     pub fn remove_need_device_unlocked(&mut self) {
         self.cryptos.retain(|crypto| !crypto.key.need_device_unlock());
     }
-}
-
-// todo: 这两个函数应该用不上，删除调用点
-/// Get the challenge slice from the specified index.
-pub fn get_challenge_slice(challenge: &[u8], index: usize) -> &[u8] {
-    let start = index * CHALLENGE_SLICE_LEN;
-    let end = start + CHALLENGE_SLICE_LEN;
-    &challenge[start..end]
-}
-
-/// Get the challenge slice to the specified index.
-pub fn set_challenge_slice(challenge_slice: &[u8], index: usize, challenge: &mut [u8]) {
-    let start = index * CHALLENGE_SLICE_LEN;
-    let end = start + CHALLENGE_SLICE_LEN;
-    challenge[start..end].copy_from_slice(challenge_slice);
 }

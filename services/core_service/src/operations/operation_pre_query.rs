@@ -15,7 +15,7 @@
 
 //! This module prepares for querying Asset that required secondary identity authentication.
 
-use asset_crypto_manager::crypto::{get_challenge_slice, set_challenge_slice, Crypto, CryptoManager, SecretKey};
+use asset_crypto_manager::crypto::{Crypto, CryptoManager, SecretKey};
 use asset_db_operator::{
     database::Database,
     types::{column, DbMap},
@@ -43,21 +43,24 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     }
 }
 
-fn query_access_types(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<Accessibility>> {
-    let results = Database::build(calling_info.user_id())?.query_datas(&vec![column::ACCESSIBILITY], db_data, None)?;
+fn query_access_type_require_pwd_set(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Accessibility, bool)> {
+    let results = Database::build(calling_info.user_id())?
+        .query_datas(&vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET], db_data, None)?;
     if results.is_empty() {
-        return log_throw_error!(ErrCode::NotFound, "[FATAL][SA]The data to be queried does not exist.");
+        return log_throw_error!(ErrCode::NotFound, "[FATAL][SA]Pre Query result not found.");
     }
-    // 返回值必须是有且只有一个，如果是没找到，返回not found, 如果是多个，返回not support
-
-    let mut access_types = Vec::new();
-    for db_result in results {
-        match db_result.get(&column::ACCESSIBILITY) {
-            Some(Value::Number(access_type)) => access_types.push(Accessibility::try_from(*access_type)?),
-            _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][SA]Pre Query Accessibility invalid."),
-        }
+    if results.len() > 1 {
+        return log_throw_error!(ErrCode::NotSupport, "[FATAL][SA]Not support more than one kind of pwd type.")
     }
-    Ok(access_types)
+    let access_type = match results[0].get(&column::ACCESSIBILITY) {
+        Some(Value::Number(access_type)) => Accessibility::try_from(*access_type)?,
+        _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][SA]Pre Query Accessibility invalid."),
+    };
+    let require_password_set = match results[0].get(&column::REQUIRE_PASSWORD_SET) {
+        Some(Value::Bool(require_password_set)) => require_password_set,
+        _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][SA]Pre Query require_password_set invalid."),
+    };
+    Ok((access_type, *require_password_set))
 }
 
 pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
@@ -67,27 +70,14 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
     common::add_owner_info(calling_info, &mut db_data);
     db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::Any as u32));
 
-    let access_types = query_access_types(calling_info, &db_data)?;
-    if access_types.is_empty() {
-        return log_throw_error!(ErrCode::NotFound, "[FATAL][SA]Pre Query result not found.");
-    }
-
+    let (access_type, require_password_set) = query_access_type_require_pwd_set(calling_info, &db_data)?;
     let valid_time = query.get_num_attr(&Tag::AuthValidityPeriod).unwrap_or(DEFAULT_AUTH_VALIDITY);
-    let mut challenge = vec![0; common::CHALLENGE_SIZE];
-    let mut cryptos = Vec::with_capacity(4);
-    for (idx, access_type) in access_types.iter().enumerate() { // todo: for循环去掉
-        let secret_key = SecretKey::new(calling_info.user_id(), calling_info.owner_info(), AuthType::Any, *access_type, true);
-        let mut crypto = Crypto::build(secret_key, idx as u32, valid_time)?;
-
-        let tmp_challenge = crypto.init_key()?;
-        set_challenge_slice(get_challenge_slice(tmp_challenge, idx), idx, &mut challenge);
-        cryptos.push(crypto);
-    }
-
+    let secret_key = SecretKey::new(
+            calling_info.user_id(), calling_info.owner_info(), AuthType::Any, access_type, require_password_set);
+    let mut crypto = Crypto::build(secret_key, valid_time)?;
+    let challenge = crypto.init_key()?.to_vec();
     let arc_crypto_manager = CryptoManager::get_instance();
     let mut crypto_manager = arc_crypto_manager.lock().unwrap();
-    for crypto in cryptos {
-        crypto_manager.add(crypto)?;
-    }
+    crypto_manager.add(crypto)?;
     Ok(challenge)
 }

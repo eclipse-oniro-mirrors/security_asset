@@ -45,11 +45,10 @@ fn decrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     Ok(())
 }
 
-fn exec_crypto(calling: &CallingInfo, db_data: &mut DbMap, challenge: &Vec<u8>, auth_token: &Vec<u8>) -> Result<()> {
+fn exec_crypto(db_data: &mut DbMap, challenge: &Vec<u8>, auth_token: &Vec<u8>) -> Result<()> {
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
     let crypto_manager = CryptoManager::get_instance();
-    let secret_key = common::build_secret_key(calling, db_data)?;
-    let x = match crypto_manager.lock().unwrap().find(&secret_key, challenge) {
+    let x = match crypto_manager.lock().unwrap().find(challenge) {
         Some(crypto) => {
             let secret = crypto.exec_crypt(secret, &common::build_aad(db_data), auth_token)?;
             db_data.insert(column::SECRET, Value::Bytes(secret));
@@ -73,7 +72,7 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
                     common::check_required_tags(query, &SEC_QUERY_OPTIONAL_ATTRS)?;
                     let challenge = query.get_bytes_attr(&Tag::AuthChallenge)?;
                     let auth_token = query.get_bytes_attr(&Tag::AuthToken)?;
-                    exec_crypto(calling_info, &mut results[0], challenge, auth_token)?;
+                    exec_crypto(&mut results[0], challenge, auth_token)?;
                 },
                 _ => {
                     decrypt(calling_info, &mut results[0])?;

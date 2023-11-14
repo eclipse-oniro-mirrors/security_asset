@@ -17,7 +17,7 @@
 
 mod argument_check;
 
-pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_value_validity, CHALLENGE_SIZE};
+pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_value_validity};
 
 use asset_crypto_manager::crypto::SecretKey;
 use asset_db_operator::types::{column, DbMap};

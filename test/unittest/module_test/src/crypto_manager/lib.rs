@@ -66,7 +66,7 @@ fn crypto_init() {
     let secret_key = SecretKey::new(6, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked, false);
     secret_key.generate().unwrap();
 
-    let mut crypto = Crypto::build(secret_key.clone(), 0, 600).unwrap();
+    let mut crypto = Crypto::build(secret_key.clone(), 600).unwrap();
     crypto.init_key().unwrap();
     let _ = secret_key.delete();
 }
@@ -79,7 +79,7 @@ fn crypto_exec() {
     let msg = vec![1, 2, 3, 4, 5, 6];
     let aad = vec![0; AAD_SIZE as usize];
     let cipher = Crypto::encrypt(&secret_key, &msg, &aad).unwrap();
-    let mut crypto = Crypto::build(secret_key.clone(), 0, 600).unwrap();
+    let mut crypto = Crypto::build(secret_key.clone(), 600).unwrap();
     crypto.init_key().unwrap();
 
     let authtoken = vec![0; 148];
@@ -89,27 +89,17 @@ fn crypto_exec() {
 
 #[test]
 fn crypto_manager() {
-    let mut challenge = vec![0; 32usize];
 
     let secret_key1 = SecretKey::new(8, &vec![b'2'], AuthType::Any, Accessibility::DeviceFirstUnlocked, false);
     secret_key1.generate().unwrap();
-    let mut crypto1 = Crypto::build(secret_key1.clone(), 0, 600).unwrap();
-    let challenge1 = crypto1.init_key().unwrap();
-    set_challenge_slice(get_challenge_slice(challenge1, 0), 0, &mut challenge);
-
-    let secret_key2 = SecretKey::new(8, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked, false);
-    secret_key2.generate().unwrap();
-    let mut crypto2 = Crypto::build(secret_key2.clone(), 1, 600).unwrap();
-    let challenge2 = crypto2.init_key().unwrap();
-    set_challenge_slice(get_challenge_slice(challenge2, 1), 1, &mut challenge);
+    let mut crypto1 = Crypto::build(secret_key1.clone(), 600).unwrap();
+    let challenge = crypto1.init_key().unwrap();
 
     let arc_crypto_manager = CryptoManager::get_instance();
     let mut crypto_manager = arc_crypto_manager.lock().unwrap();
     crypto_manager.add(crypto1).unwrap();
-    crypto_manager.add(crypto2).unwrap();
 
-    crypto_manager.find(&secret_key1, &challenge).unwrap();
-    crypto_manager.find(&secret_key2, &challenge).unwrap();
+    crypto_manager.find(&challenge).unwrap();
 
     crypto_manager.remove(&challenge);
 
