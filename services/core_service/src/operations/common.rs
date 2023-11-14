@@ -22,7 +22,6 @@ pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_v
 use asset_crypto_manager::crypto::SecretKey;
 use asset_db_operator::types::{column, DbMap};
 use asset_definition::{Accessibility, AssetMap, AuthType, Extension, Result, Tag, Value};
-use asset_utils::hasher::sha256;
 
 use crate::calling_info::CallingInfo;
 
@@ -113,7 +112,8 @@ pub(crate) fn add_owner_info(calling_info: &CallingInfo, db_data: &mut DbMap) {
 pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<SecretKey> {
     let auth_type = attrs.get_enum_attr::<AuthType>(&column::AUTH_TYPE)?;
     let access_type = attrs.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
-    Ok(SecretKey::new(calling.user_id(), &sha256(calling.owner_info()), auth_type, access_type))
+    let require_password_set = attrs.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
+    Ok(SecretKey::new(calling.user_id(), calling.owner_info(), auth_type, access_type, require_password_set))
 }
 
 pub(crate) fn build_aad(attrs: &DbMap) -> Vec<u8> {

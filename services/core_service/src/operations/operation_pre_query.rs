@@ -21,7 +21,6 @@ use asset_db_operator::{
     types::{column, DbMap},
 };
 use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
-use asset_utils::hasher::sha256;
 
 use crate::{calling_info::CallingInfo, operations::common};
 
@@ -49,6 +48,7 @@ fn query_access_types(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec
     if results.is_empty() {
         return log_throw_error!(ErrCode::NotFound, "[FATAL][SA]The data to be queried does not exist.");
     }
+    // 返回值必须是有且只有一个，如果是没找到，返回not found, 如果是多个，返回not support
 
     let mut access_types = Vec::new();
     for db_result in results {
@@ -73,11 +73,10 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
     }
 
     let valid_time = query.get_num_attr(&Tag::AuthValidityPeriod).unwrap_or(DEFAULT_AUTH_VALIDITY);
-    let owner_hash = sha256(calling_info.owner_info());
     let mut challenge = vec![0; common::CHALLENGE_SIZE];
     let mut cryptos = Vec::with_capacity(4);
-    for (idx, access_type) in access_types.iter().enumerate() {
-        let secret_key = SecretKey::new(calling_info.user_id(), &owner_hash, AuthType::Any, *access_type);
+    for (idx, access_type) in access_types.iter().enumerate() { // todo: for循环去掉
+        let secret_key = SecretKey::new(calling_info.user_id(), calling_info.owner_info(), AuthType::Any, *access_type, true);
         let mut crypto = Crypto::build(secret_key, idx as u32, valid_time)?;
 
         let tmp_challenge = crypto.init_key()?;

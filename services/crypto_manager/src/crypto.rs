@@ -19,6 +19,7 @@ use std::sync::{Arc, Mutex};
 
 use asset_definition::{log_throw_error, Accessibility, AssetError, AuthType, ErrCode, Result};
 use asset_log::loge;
+use asset_utils::hasher::sha256;
 use asset_utils::time;
 
 struct IdentityGuard {
@@ -96,16 +97,29 @@ const CHALLENGE_SLICE_LEN: usize = 8;
 
 impl SecretKey {
     /// New a secret key.
-    pub fn new(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility) -> Self {
+    pub fn new(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility,
+        require_password_set: bool) -> Self {
         let mut alias: Vec<u8> = Vec::with_capacity(MAX_ALIAS_SIZE);
         alias.extend_from_slice(&user_id.to_le_bytes());
         alias.push(b'_');
         alias.extend(owner);
-        alias.push(b'_');
-        alias.extend_from_slice(&(auth_type as u32).to_le_bytes());
-        alias.push(b'_');
-        alias.extend_from_slice(&(access_type as u32).to_le_bytes());
-        Self { auth_type, access_type, alias }
+        if auth_type != AuthType::None {
+            alias.push(b'_');
+            alias.extend_from_slice(&(auth_type as u32).to_le_bytes());
+            loge!("alisa contain auth type")
+        }
+        if access_type != Accessibility::DeviceFirstUnlocked {
+            alias.push(b'_');
+            alias.extend_from_slice(&(access_type as u32).to_le_bytes());
+            loge!("alisa contain accessibility")
+        }
+        if require_password_set {
+            alias.push(b'_');
+            alias.extend_from_slice(&(require_password_set as u32).to_le_bytes());
+            loge!("alisa contain require_password_set")
+        }
+        alias = sha256(&alias);
+        Self { auth_type, access_type, alias}
     }
 
     /// Check whether the secret key exists.
@@ -341,11 +355,12 @@ impl CryptoManager {
 
     /// Remove the crypto from manager.
     pub fn remove(&mut self, challenge: &Vec<u8>) {
-        self.cryptos.retain(|crypto| !crypto.challenge_match(challenge));
+        self.cryptos.retain(|crypto| !crypto.challenge_match(challenge)); // todo: crypto.challenge.eq(challenge)
     }
 
     /// Find the crypto with the specified alias and challenge slice from manager.
     pub fn find(&mut self, secret_key: &SecretKey, challenge: &Vec<u8>) -> Option<&Crypto> {
+        // todo: 删除secret_key入参，challenge对比修改成上述格式
         for crypto in self.cryptos.iter() {
             if secret_key.alias.eq(&crypto.key.alias) && crypto.challenge_match(challenge) {
                 return Some(crypto);
@@ -361,6 +376,7 @@ impl CryptoManager {
     }
 }
 
+// todo: 这两个函数应该用不上，删除调用点
 /// Get the challenge slice from the specified index.
 pub fn get_challenge_slice(challenge: &[u8], index: usize) -> &[u8] {
     let start = index * CHALLENGE_SLICE_LEN;

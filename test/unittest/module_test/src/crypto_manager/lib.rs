@@ -20,23 +20,23 @@ pub const AAD_SIZE: u32 = 8;
 
 #[test]
 fn generate_and_delete() {
-    let secret_key = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlocked);
+    let secret_key = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlocked, false);
     secret_key.generate().unwrap();
     assert!(secret_key.delete().is_ok())
 }
 
 #[test]
 fn user_auth_key() {
-    let need_auth = SecretKey::new(2, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked);
-    let do_not_need_auth = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlocked);
+    let need_auth = SecretKey::new(2, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked, false);
+    let do_not_need_auth = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlocked, false);
     assert!(need_auth.need_user_auth());
     assert!(!do_not_need_auth.need_user_auth());
 }
 
 #[test]
 fn device_unlock_key() {
-    let need_unlock = SecretKey::new(3, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlocked);
-    let do_not_need_unlock = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceFirstUnlocked);
+    let need_unlock = SecretKey::new(3, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlocked, false);
+    let do_not_need_unlock = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceFirstUnlocked, false);
     assert!(need_unlock.need_device_unlock());
     assert!(!do_not_need_unlock.need_device_unlock());
 }
@@ -44,7 +44,7 @@ fn device_unlock_key() {
 #[test]
 fn encrypt_and_decrypt() {
     // generate key
-    let secret_key = SecretKey::new(4, &vec![b'2'], AuthType::None, Accessibility::DeviceFirstUnlocked);
+    let secret_key = SecretKey::new(4, &vec![b'2'], AuthType::None, Accessibility::DeviceFirstUnlocked, false);
     secret_key.generate().unwrap();
 
     // encrypt data
@@ -63,7 +63,7 @@ fn encrypt_and_decrypt() {
 
 #[test]
 fn crypto_init() {
-    let secret_key = SecretKey::new(6, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked);
+    let secret_key = SecretKey::new(6, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked, false);
     secret_key.generate().unwrap();
 
     let mut crypto = Crypto::build(secret_key.clone(), 0, 600).unwrap();
@@ -73,7 +73,7 @@ fn crypto_init() {
 
 #[test]
 fn crypto_exec() {
-    let secret_key = SecretKey::new(7, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked);
+    let secret_key = SecretKey::new(7, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked, false);
     secret_key.generate().unwrap();
 
     let msg = vec![1, 2, 3, 4, 5, 6];
@@ -91,13 +91,13 @@ fn crypto_exec() {
 fn crypto_manager() {
     let mut challenge = vec![0; 32usize];
 
-    let secret_key1 = SecretKey::new(8, &vec![b'2'], AuthType::Any, Accessibility::DeviceFirstUnlocked);
+    let secret_key1 = SecretKey::new(8, &vec![b'2'], AuthType::Any, Accessibility::DeviceFirstUnlocked, false);
     secret_key1.generate().unwrap();
     let mut crypto1 = Crypto::build(secret_key1.clone(), 0, 600).unwrap();
     let challenge1 = crypto1.init_key().unwrap();
     set_challenge_slice(get_challenge_slice(challenge1, 0), 0, &mut challenge);
 
-    let secret_key2 = SecretKey::new(8, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked);
+    let secret_key2 = SecretKey::new(8, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked, false);
     secret_key2.generate().unwrap();
     let mut crypto2 = Crypto::build(secret_key2.clone(), 1, 600).unwrap();
     let challenge2 = crypto2.init_key().unwrap();
