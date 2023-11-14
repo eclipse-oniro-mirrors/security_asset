@@ -16,7 +16,7 @@
 #ifndef SYSTEM_ABILITY_WRAPPER
 #define SYSTEM_ABILITY_WRAPPER
 
-#include "system_ability_manager_proxy.h"
+#include "if_system_ability_manager.h"
 #include "system_ability_status_change_stub.h"
 
 #ifdef __cplusplus

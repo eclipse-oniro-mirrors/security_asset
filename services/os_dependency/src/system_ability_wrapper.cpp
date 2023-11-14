@@ -19,7 +19,6 @@
 
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
-#include "system_ability_manager_proxy.h"
 #include "system_ability_status_change_stub.h"
 
 #include "asset_log.h"
