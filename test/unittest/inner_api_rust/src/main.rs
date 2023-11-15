@@ -18,6 +18,8 @@ mod common;
 
 mod add;
 mod add_abnormal;
+mod pre_query;
+mod pre_query_abnormal;
 mod query;
 mod query_abnormal;
 mod remove;
