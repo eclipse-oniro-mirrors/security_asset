@@ -1,0 +1,176 @@
+/*
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+use crate::common::*;
+use asset_sdk::*;
+
+#[test]
+fn pre_query_non_exist_with_alias() {
+    let alias = function!().as_bytes();
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::Alias, alias.to_owned());
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+}
+
+#[test]
+fn pre_query_with_wrong_alias() {
+    let function_name = function!().as_bytes();
+    add_default_second_control_asset(function_name, function_name).unwrap();
+
+    let alias_new = "pre_query_with_wrong_alias_wrong_alias".as_bytes();
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::Alias, alias_new.to_owned());
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    remove_by_alias(function_name).unwrap();
+}
+
+#[test]
+fn pre_query_with_wrong_alias_auth_type() {
+    let function_name = function!().as_bytes();
+    asset_sdk::Manager::build()
+        .unwrap()
+        .add(&AssetMap::from([
+            (Tag::Alias, Value::Bytes(function_name.to_vec())),
+            (Tag::Secret, Value::Bytes(function_name.to_vec())),
+            (Tag::Accessibility, Value::Number(Accessibility::DevicePowerOn as u32)),
+            (Tag::AuthType, Value::Number(AuthType::None as u32)),
+        ]))
+        .unwrap();
+
+    let alias_new = "pre_query_with_wrong_alias_wrong_alias_auth_type".as_bytes();
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::Alias, alias_new.to_owned());
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    remove_by_alias(function_name).unwrap();
+}
+
+#[test]
+fn pre_query_with_wrong_accessibility() {
+    let function_name = function!().as_bytes();
+    add_default_second_control_asset(function_name, function_name).unwrap();
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlocked);
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    remove_by_alias(function_name).unwrap();
+}
+
+#[test]
+fn pre_query_with_wrong_auth_type() {
+    let function_name = function!().as_bytes();
+    add_default_second_control_asset(function_name, function_name).unwrap();
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::AuthType, AuthType::None);
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    remove_by_alias(function_name).unwrap();
+}
+
+#[test]
+fn pre_query_with_wrong_delete_type() {
+    let function_name = function!().as_bytes();
+    add_default_second_control_asset(function_name, function_name).unwrap();
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::DeleteType, DeleteType::WhenUserRemoved);
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    remove_by_alias(function_name).unwrap();
+}
+
+#[test]
+fn pre_query_with_wrong_sync_type() {
+    let function_name = function!().as_bytes();
+    add_default_second_control_asset(function_name, function_name).unwrap();
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::SyncType, SyncType::TrustedAccount);
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    remove_by_alias(function_name).unwrap();
+}
+
+#[test]
+fn pre_query_with_wrong_require_password_set() {
+    let function_name = function!().as_bytes();
+    add_default_second_control_asset(function_name, function_name).unwrap();
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::RequirePasswordSet, false);
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    remove_by_alias(function_name).unwrap();
+}
+
+#[test]
+fn pre_query_normal() {
+    let function_name = function!().as_bytes();
+    add_default_second_control_asset(function_name, function_name).unwrap();
+    let mut query = AssetMap::new();
+    let mut challenges = vec![];
+    let challenge = asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap();
+    assert_eq!(CHALLENGE_SIZE, challenge.len());
+    challenges.push(challenge);
+    query.insert_attr(Tag::Alias, function_name.to_owned());
+    query.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
+    query.insert_attr(Tag::AuthType, AuthType::Any);
+    query.insert_attr(Tag::DeleteType, DeleteType::WhenPackageRemoved);
+    query.insert_attr(Tag::SyncType, SyncType::ThisDevice);
+    query.insert_attr(Tag::RequirePasswordSet, true);
+    let challenge = asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap();
+    assert_eq!(CHALLENGE_SIZE, challenge.len());
+    challenges.push(challenge);
+    for challenge in challenges.into_iter() {
+        let mut query = AssetMap::new();
+        query.insert_attr(Tag::AuthChallenge, challenge);
+        asset_sdk::Manager::build().unwrap().post_query(&query).unwrap();
+    }
+    remove_by_alias(function_name).unwrap();
+}
+
+#[test]
+fn pre_query_max_times() {
+    let function_name = function!().as_bytes();
+    add_default_second_control_asset(function_name, function_name).unwrap();
+    let query = AssetMap::new();
+    let mut challenges = vec![];
+    for _i in 0..CRYPTO_CAPACITY {
+        let challenge = asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap();
+        assert_eq!(CHALLENGE_SIZE, challenge.len());
+        challenges.push(challenge);
+    }
+    expect_error_eq(ErrCode::LimitExceeded, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    for challenge in challenges.into_iter() {
+        let mut query = AssetMap::new();
+        query.insert_attr(Tag::AuthChallenge, challenge);
+        asset_sdk::Manager::build().unwrap().post_query(&query).unwrap();
+    }
+    remove_by_alias(function_name).unwrap();
+}
+
+#[test]
+fn pre_query_more_than_one_kind_type() {
+    let function_name = function!().as_bytes();
+    add_default_second_control_asset(function_name, function_name).unwrap();
+    let new_alias = "pre_query_more_than_one_kind_type_".as_bytes();
+    asset_sdk::Manager::build()
+        .unwrap()
+        .add(&AssetMap::from([
+            (Tag::Alias, Value::Bytes(new_alias.to_vec())),
+            (Tag::Secret, Value::Bytes(new_alias.to_vec())),
+            (Tag::Accessibility, Value::Number(Accessibility::DevicePowerOn as u32)),
+            (Tag::AuthType, Value::Number(AuthType::Any as u32)),
+            (Tag::DeleteType, Value::Number(DeleteType::WhenPackageRemoved as u32)),
+            (Tag::SyncType, Value::Number(SyncType::ThisDevice as u32)),
+            (Tag::RequirePasswordSet, Value::Bool(false)),
+        ]))
+        .unwrap();
+    let query = AssetMap::new();
+    expect_error_eq(ErrCode::NotSupport, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    remove_by_alias(function_name).unwrap();
+    remove_by_alias(new_alias).unwrap();
+}

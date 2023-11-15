@@ -15,7 +15,9 @@
 
 #![allow(dead_code)]
 
-use asset_sdk::{Accessibility, AssetError, AssetMap, ErrCode, Result, ReturnType, Tag, Value};
+use asset_sdk::{
+    Accessibility, AssetError, AssetMap, AuthType, DeleteType, ErrCode, Result, ReturnType, SyncType, Tag, Value,
+};
 
 #[macro_export]
 macro_rules! function {
@@ -31,6 +33,7 @@ macro_rules! function {
 pub(crate) const MIN_NUMBER_VALUE: u32 = 0;
 pub(crate) const MAX_RETURN_LIMIT: u32 = 0x10000; // 65536
 pub(crate) const MAX_AUTH_VALID_PERIOD: u32 = 600; // 10min
+pub(crate) const CRYPTO_CAPACITY: u32 = 16;
 
 pub(crate) const MIN_ARRAY_SIZE: usize = 0;
 pub(crate) const MAX_ARRAY_SIZE: usize = 1024;
@@ -78,6 +81,18 @@ pub(crate) fn add_default_asset(alias: &[u8], secret: &[u8]) -> Result<()> {
         (Tag::Alias, Value::Bytes(alias.to_vec())),
         (Tag::Secret, Value::Bytes(secret.to_vec())),
         (Tag::Accessibility, Value::Number(Accessibility::DevicePowerOn as u32)),
+    ]))
+}
+
+pub(crate) fn add_default_second_control_asset(alias: &[u8], secret: &[u8]) -> Result<()> {
+    asset_sdk::Manager::build()?.add(&AssetMap::from([
+        (Tag::Alias, Value::Bytes(alias.to_vec())),
+        (Tag::Secret, Value::Bytes(secret.to_vec())),
+        (Tag::Accessibility, Value::Number(Accessibility::DevicePowerOn as u32)),
+        (Tag::AuthType, Value::Number(AuthType::Any as u32)),
+        (Tag::DeleteType, Value::Number(DeleteType::WhenPackageRemoved as u32)),
+        (Tag::SyncType, Value::Number(SyncType::ThisDevice as u32)),
+        (Tag::RequirePasswordSet, Value::Bool(true)),
     ]))
 }
 
