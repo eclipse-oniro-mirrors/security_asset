@@ -16,7 +16,7 @@
 #![allow(dead_code)]
 
 use asset_sdk::{
-    Accessibility, AssetError, AssetMap, AuthType, DeleteType, ErrCode, Result, ReturnType, SyncType, Tag, Value,
+    Accessibility, AssetError, AssetMap, AuthType, ErrCode, Result, ReturnType, Tag, Value,
 };
 
 #[macro_export]
@@ -84,15 +84,12 @@ pub(crate) fn add_default_asset(alias: &[u8], secret: &[u8]) -> Result<()> {
     ]))
 }
 
-pub(crate) fn add_default_second_control_asset(alias: &[u8], secret: &[u8]) -> Result<()> {
+pub(crate) fn add_default_auth_asset(alias: &[u8], secret: &[u8]) -> Result<()> {
     asset_sdk::Manager::build()?.add(&AssetMap::from([
         (Tag::Alias, Value::Bytes(alias.to_vec())),
         (Tag::Secret, Value::Bytes(secret.to_vec())),
         (Tag::Accessibility, Value::Number(Accessibility::DevicePowerOn as u32)),
         (Tag::AuthType, Value::Number(AuthType::Any as u32)),
-        (Tag::DeleteType, Value::Number(DeleteType::WhenPackageRemoved as u32)),
-        (Tag::SyncType, Value::Number(SyncType::ThisDevice as u32)),
-        (Tag::RequirePasswordSet, Value::Bool(true)),
     ]))
 }
 

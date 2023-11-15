@@ -32,7 +32,7 @@ impl Conversion for Tag {
             _ if DataType::Number as u32 == mask => DataType::Number,
             _ if DataType::Bytes as u32 == mask => DataType::Bytes,
             _ => {
-                panic!("Unexpected data type, it should be uint32 or bytes.");
+                panic!("Unexpected data type, it should be bool, uint32 or bytes.");
             },
         }
     }

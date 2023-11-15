@@ -25,33 +25,12 @@ fn pre_query_non_exist_with_alias() {
 }
 
 #[test]
-fn pre_query_with_wrong_alias() {
+fn pre_query_with_wrong_auth_type() {
     let function_name = function!().as_bytes();
-    add_default_second_control_asset(function_name, function_name).unwrap();
+    add_default_asset(function_name, function_name).unwrap();
 
-    let alias_new = "pre_query_with_wrong_alias_wrong_alias".as_bytes();
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Alias, alias_new.to_owned());
-    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
-    remove_by_alias(function_name).unwrap();
-}
-
-#[test]
-fn pre_query_with_wrong_alias_auth_type() {
-    let function_name = function!().as_bytes();
-    asset_sdk::Manager::build()
-        .unwrap()
-        .add(&AssetMap::from([
-            (Tag::Alias, Value::Bytes(function_name.to_vec())),
-            (Tag::Secret, Value::Bytes(function_name.to_vec())),
-            (Tag::Accessibility, Value::Number(Accessibility::DevicePowerOn as u32)),
-            (Tag::AuthType, Value::Number(AuthType::None as u32)),
-        ]))
-        .unwrap();
-
-    let alias_new = "pre_query_with_wrong_alias_wrong_alias_auth_type".as_bytes();
-    let mut query = AssetMap::new();
-    query.insert_attr(Tag::Alias, alias_new.to_owned());
+    query.insert_attr(Tag::Alias, function_name.to_owned());
     expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
     remove_by_alias(function_name).unwrap();
 }
@@ -59,7 +38,8 @@ fn pre_query_with_wrong_alias_auth_type() {
 #[test]
 fn pre_query_with_wrong_accessibility() {
     let function_name = function!().as_bytes();
-    add_default_second_control_asset(function_name, function_name).unwrap();
+    add_default_auth_asset(function_name, function_name).unwrap();
+
     let mut query = AssetMap::new();
     query.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlocked);
     expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
@@ -67,9 +47,10 @@ fn pre_query_with_wrong_accessibility() {
 }
 
 #[test]
-fn pre_query_with_wrong_auth_type() {
+fn pre_query_with_unsupported_auth_type() {
     let function_name = function!().as_bytes();
-    add_default_second_control_asset(function_name, function_name).unwrap();
+    add_default_auth_asset(function_name, function_name).unwrap();
+
     let mut query = AssetMap::new();
     query.insert_attr(Tag::AuthType, AuthType::None);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
@@ -79,7 +60,8 @@ fn pre_query_with_wrong_auth_type() {
 #[test]
 fn pre_query_with_wrong_delete_type() {
     let function_name = function!().as_bytes();
-    add_default_second_control_asset(function_name, function_name).unwrap();
+    add_default_auth_asset(function_name, function_name).unwrap();
+
     let mut query = AssetMap::new();
     query.insert_attr(Tag::DeleteType, DeleteType::WhenUserRemoved);
     expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
@@ -89,7 +71,8 @@ fn pre_query_with_wrong_delete_type() {
 #[test]
 fn pre_query_with_wrong_sync_type() {
     let function_name = function!().as_bytes();
-    add_default_second_control_asset(function_name, function_name).unwrap();
+    add_default_auth_asset(function_name, function_name).unwrap();
+
     let mut query = AssetMap::new();
     query.insert_attr(Tag::SyncType, SyncType::TrustedAccount);
     expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
@@ -99,22 +82,33 @@ fn pre_query_with_wrong_sync_type() {
 #[test]
 fn pre_query_with_wrong_require_password_set() {
     let function_name = function!().as_bytes();
-    add_default_second_control_asset(function_name, function_name).unwrap();
+    add_default_auth_asset(function_name, function_name).unwrap();
+
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::RequirePasswordSet, false);
+    query.insert_attr(Tag::RequirePasswordSet, true);
     expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
     remove_by_alias(function_name).unwrap();
 }
 
 #[test]
-fn pre_query_normal() {
+fn pre_query_batch_data() {
     let function_name = function!().as_bytes();
-    add_default_second_control_asset(function_name, function_name).unwrap();
+    add_default_auth_asset(function_name, function_name).unwrap();
+
     let mut query = AssetMap::new();
-    let mut challenges = vec![];
     let challenge = asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap();
     assert_eq!(CHALLENGE_SIZE, challenge.len());
-    challenges.push(challenge);
+
+    query.insert_attr(Tag::AuthChallenge, challenge);
+    asset_sdk::Manager::build().unwrap().post_query(&query).unwrap();
+
+    remove_by_alias(function_name).unwrap();
+}
+
+#[test]
+fn pre_query_single_data() {
+    let function_name = function!().as_bytes();
+    let mut query = AssetMap::new();
     query.insert_attr(Tag::Alias, function_name.to_owned());
     query.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     query.insert_attr(Tag::AuthType, AuthType::Any);
@@ -123,19 +117,19 @@ fn pre_query_normal() {
     query.insert_attr(Tag::RequirePasswordSet, true);
     let challenge = asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap();
     assert_eq!(CHALLENGE_SIZE, challenge.len());
-    challenges.push(challenge);
-    for challenge in challenges.into_iter() {
-        let mut query = AssetMap::new();
-        query.insert_attr(Tag::AuthChallenge, challenge);
-        asset_sdk::Manager::build().unwrap().post_query(&query).unwrap();
-    }
+
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::AuthChallenge, challenge);
+    asset_sdk::Manager::build().unwrap().post_query(&query).unwrap();
+
     remove_by_alias(function_name).unwrap();
 }
 
 #[test]
 fn pre_query_max_times() {
     let function_name = function!().as_bytes();
-    add_default_second_control_asset(function_name, function_name).unwrap();
+    add_default_auth_asset(function_name, function_name).unwrap();
+
     let query = AssetMap::new();
     let mut challenges = vec![];
     for _i in 0..CRYPTO_CAPACITY {
@@ -144,6 +138,7 @@ fn pre_query_max_times() {
         challenges.push(challenge);
     }
     expect_error_eq(ErrCode::LimitExceeded, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+
     for challenge in challenges.into_iter() {
         let mut query = AssetMap::new();
         query.insert_attr(Tag::AuthChallenge, challenge);
@@ -153,20 +148,18 @@ fn pre_query_max_times() {
 }
 
 #[test]
-fn pre_query_more_than_one_kind_type() {
+fn pre_query_multiple_data_type() {
     let function_name = function!().as_bytes();
-    add_default_second_control_asset(function_name, function_name).unwrap();
-    let new_alias = "pre_query_more_than_one_kind_type_".as_bytes();
+    add_default_auth_asset(function_name, function_name).unwrap();
+
+    let new_alias = "test_alias_c".as_bytes();
     asset_sdk::Manager::build()
         .unwrap()
         .add(&AssetMap::from([
             (Tag::Alias, Value::Bytes(new_alias.to_vec())),
             (Tag::Secret, Value::Bytes(new_alias.to_vec())),
-            (Tag::Accessibility, Value::Number(Accessibility::DevicePowerOn as u32)),
+            (Tag::Accessibility, Value::Number(Accessibility::DeviceFirstUnlocked as u32)),
             (Tag::AuthType, Value::Number(AuthType::Any as u32)),
-            (Tag::DeleteType, Value::Number(DeleteType::WhenPackageRemoved as u32)),
-            (Tag::SyncType, Value::Number(SyncType::ThisDevice as u32)),
-            (Tag::RequirePasswordSet, Value::Bool(false)),
         ]))
         .unwrap();
     let query = AssetMap::new();

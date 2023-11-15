@@ -17,7 +17,6 @@
 //! The managed data can be user input. Because we will prepare and bind data.
 
 use core::ffi::c_void;
-use core::panic;
 use std::cmp::Ordering;
 
 use asset_definition::{log_throw_error, DataType, ErrCode, Result, Value};
@@ -137,13 +136,13 @@ fn build_sql_query_options(query_options: Option<&QueryOptions>, sql: &mut Strin
     }
 }
 
-fn get_column_info(columns: &'static [ColumnInfo], db_column: &str) -> &'static ColumnInfo {
+fn get_column_info(columns: &'static [ColumnInfo], db_column: &str) -> Result<&'static ColumnInfo> {
     for column in columns.iter() {
         if column.name.eq(db_column) {
-            return column;
+            return Ok(column);
         }
     }
-    panic!()
+    log_throw_error!(ErrCode::DataCorrupted, "Database is corrupted.")
 }
 
 impl<'a> Table<'a> {
@@ -305,7 +304,7 @@ impl<'a> Table<'a> {
             let n = stmt.data_count();
             for i in 0..n {
                 let column_name = stmt.query_column_name(i)?;
-                let column_info = get_column_info(column_info, column_name);
+                let column_info = get_column_info(column_info, column_name)?;
                 match stmt.query_column_auto_type(i)? {
                     Some(Value::Number(n)) if column_info.data_type == DataType::Bool => {
                         record.insert(column_info.name, Value::Bool(n != 0))

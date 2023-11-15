@@ -25,7 +25,7 @@ use asset_log::{loge, logi};
 use crate::{
     statement::Statement,
     table::Table,
-    types::{sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, SQLITE_OK, TABLE_NAME},
+    types::{sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, SQLITE_OK, TABLE_NAME, column},
 };
 
 extern "C" {
@@ -247,9 +247,10 @@ impl Database {
     /// use asset_definition::Value;
     /// use asset_db_operator::{database::Database, types::{column, DbMap}};
     ///
-    /// // SQL: insert into table_name(Owner,Alias,value) values('owner','alias','insert_value')
+    /// // SQL: insert into table_name(Owner,OwnerType,Alias,value) values('owner',1,'alias','insert_value')
     /// let datas = DbMap::new();
     /// datas.insert(column::OWNER, Value::Bytes(b"owner".to_ver()));
+    /// datas.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
     /// datas.insert(column::ALIAS, Value::Bytes(b"alias".to_ver()));
     /// datas.insert("value", Value::Bytes(b"insert_value".to_vec()));
     /// let user_id = 100;
@@ -259,7 +260,17 @@ impl Database {
     #[inline(always)]
     pub fn insert_datas(&mut self, datas: &DbMap) -> Result<i32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
-        let closure = |e: &Table| e.insert_row(datas);
+        let closure = |e: &Table| {
+            let mut query = DbMap::new();
+            query.insert(column::ALIAS, datas[&column::ALIAS].clone());
+            query.insert(column::OWNER, datas[&column::OWNER].clone());
+            query.insert(column::OWNER_TYPE, datas[&column::OWNER_TYPE].clone());
+            if e.is_data_exists(&query)? {
+                log_throw_error!(ErrCode::Duplicated, "[FATAL]The data with the specified alias already exists.")
+            } else {
+                e.insert_row(datas)
+            }
+        };
         self.execute_and_backup(true, closure)
     }
 
@@ -273,9 +284,10 @@ impl Database {
     /// use asset_definition::Value;
     /// use asset_db_operator::{database::Database, types::{column, DbMap}};
     ///
-    /// // SQL: delete from table_name where Owner='owner' and Alias='alias' and value='delete_value'
+    /// // SQL: delete from table_name where Owner='owner' and OwnerType=1 and Alias='alias' and value='delete_value'
     /// let datas = DbMap::new();
     /// datas.insert(column::OWNER, Value::Bytes(b"owner".to_ver()));
+    /// datas.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
     /// datas.insert(column::ALIAS, Value::Bytes(b"alias".to_ver()));
     /// datas.insert("value", Value::Bytes(b"delete_value".to_vec()));
     /// let user_id = 100;
@@ -300,10 +312,11 @@ impl Database {
     /// use asset_definition::Value;
     /// use asset_db_operator::{database::Database, types::{column, DbMap}};
     ///
-    /// // SQL: update table_name set alias='update_value' where Owner='owner' and Alias='alias'
-    /// let condition = DbMap.new();
-    /// condition.insert(column::OWNER, Value::Bytes(b"owner".to_ver()));
-    /// condition.insert(column::ALIAS, Value::Bytes(b"alias".to_ver()));
+    /// // SQL: update table_name set alias='update_value' where Owner='owner' and OwnerType=1 and Alias='alias'
+    /// let cond = DbMap.new();
+    /// cond.insert(column::OWNER, Value::Bytes(b"owner".to_ver()));
+    /// cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
+    /// cond.insert(column::ALIAS, Value::Bytes(b"alias".to_ver()));
     /// let datas = DbMap::from([("alias", Value::Bytes(b"update_value".to_vec()))]);
     /// let user_id = 100;
     /// let ret = Database::build(user_id)?.update_datas(&condition, &datas);
@@ -323,9 +336,10 @@ impl Database {
     /// use asset_definition::Value;
     /// use asset_db_operator::{database::Database, types::{column, DbMap}};
     ///
-    /// // SQL: select count(*) as count from table_name where Owner='owner' and Alias='alias'
+    /// // SQL: select count(*) as count from table_name where Owner='owner' and OwnerType=1 and Alias='alias'
     /// let datas = DbMap::new();
     /// datas.insert(column::OWNER, Value::Bytes(b"owner".to_ver()));
+    /// datas.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
     /// datas.insert(column::ALIAS, Value::Bytes(b"alias".to_ver()));
     /// let user_id = 100;
     /// let exist = Database::build(user_id)?.is_data_exists(&datas);
@@ -346,9 +360,10 @@ impl Database {
     /// use asset_definition::Value;
     /// use asset_db_operator::{database::Database, types::{column, DbMap}};
     ///
-    /// // SQL: select * from table_name where Owner='owner' and Alias='alias'
+    /// // SQL: select * from table_name where Owner='owner' and OwnerType=1 and Alias='alias'
     /// let cond = DbMap::new();
     /// cond.insert(column::OWNER, Value::Bytes(b"owner".to_ver()));
+    /// cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
     /// cond.insert(column::ALIAS, Value::Bytes(b"alias".to_ver()));
     /// let user_id = 100;
     /// let ret = Database::build(user_id)?.query_datas(&vec![], &cond, None);

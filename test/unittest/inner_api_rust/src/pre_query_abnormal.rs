@@ -29,7 +29,6 @@ fn pre_query_invalid_alias() {
 #[test]
 fn pre_query_invalid_accessibility() {
     let mut query = AssetMap::new();
-
     query.insert_attr(Tag::Accessibility, (Accessibility::DeviceUnlocked as u32) + 1);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
 }

@@ -27,7 +27,7 @@ use system_ability_fwk_rust::{define_system_ability, IMethod, ISystemAbility, RS
 
 use asset_definition::{AssetMap, Result};
 use asset_ipc::{IAsset, SA_ID};
-use asset_log::logi;
+use asset_log::{logi, loge};
 
 mod calling_info;
 mod operations;
@@ -52,8 +52,17 @@ extern "C" {
 }
 
 fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
-    let service = AssetStub::new_remote_stub(AssetService).expect("create AssetService failed");
-    ability.publish(&service.as_object().expect("publish Asset service failed"), SA_ID);
+    let Some(service) = AssetStub::new_remote_stub(AssetService) else {
+        loge!("Create AssetService failed!");
+        return;
+    };
+
+    let Some(obj) = service.as_object() else {
+        loge!("Public Asset service failed!");
+        return;
+    };
+
+    ability.publish(&obj, SA_ID);
     logi!("[INFO]Asset service on_start");
     thread::spawn(|| {
         if unsafe { SubscribeSystemAbility() } {
@@ -75,8 +84,11 @@ fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {
 #[link_section = ".init_array"]
 static A: extern "C" fn() = {
     extern "C" fn init() {
-        let r_sa = SystemAbility::new_system_ability(SA_ID, true).expect("create Asset service failed");
-        r_sa.register();
+        let Some(sa) = SystemAbility::new_system_ability(SA_ID, true) else {
+            loge!("Create Asset service failed.");
+            return;
+        };
+        sa.register();
     }
     init
 };

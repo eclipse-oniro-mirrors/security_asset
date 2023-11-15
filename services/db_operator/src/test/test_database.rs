@@ -19,12 +19,14 @@ use std::{
     io::Write,
 };
 
+use asset_constants::OwnerType;
+use asset_definition::{Extension, Value};
+
 use crate::{
     database::Database,
     table::Table,
     types::{column, DbMap, QueryOptions, TABLE_NAME},
 };
-use asset_definition::{Extension, Value};
 
 const DB_DATA: [(&str, Value); 9] = [
     (column::OWNER_TYPE, Value::Number(1)),
@@ -52,6 +54,7 @@ fn open_db_and_insert_data() -> Database {
     def.insert(column::SECRET, Value::Bytes(column::SECRET.as_bytes().to_vec()));
     def.insert(column::ALIAS, Value::Bytes(column::ALIAS.as_bytes().to_vec()));
     def.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
+    def.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
     let mut db = Database::build(0).unwrap();
     let count = db.insert_datas(&def).unwrap();
     assert_eq!(count, 1);
@@ -104,6 +107,7 @@ fn insert_data_with_different_alias() {
     def.insert(column::SECRET, Value::Bytes(column::SECRET.as_bytes().to_vec()));
     def.insert(column::ALIAS, Value::Bytes(column::ALIAS.as_bytes().to_vec()));
     def.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
+    def.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
 
     let mut db = Database::build(0).unwrap();
     let count = db.insert_datas(&def).unwrap();
@@ -166,6 +170,8 @@ fn query_ordered_data() {
     def.insert(column::SECRET, Value::Bytes(column::SECRET.as_bytes().to_vec()));
     def.insert(column::ALIAS, Value::Bytes(column::ALIAS.as_bytes().to_vec()));
     def.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
+    def.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
+
     let mut db = Database::build(0).unwrap();
     let count = db.insert_datas(&def).unwrap();
     assert_eq!(count, 1);
@@ -219,6 +225,8 @@ fn backup_and_restore() {
     def.insert(column::SECRET, Value::Bytes(column::SECRET.as_bytes().to_vec()));
     def.insert(column::ALIAS, Value::Bytes(column::ALIAS.as_bytes().to_vec()));
     def.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
+    def.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
+
     db.insert_datas(&def).unwrap();
     drop(db);
 

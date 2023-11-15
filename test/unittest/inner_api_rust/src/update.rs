@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-use core::panic;
-
 use crate::common::*;
 use asset_sdk::*;
 
@@ -73,7 +71,7 @@ fn update_attr_normal() {
 
     asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap();
     let query_res = &query_attr_by_alias(alias).unwrap()[0];
-    let Value::Bytes(label_normal_query) = query_res.get(&Tag::DataLabelNormal1).unwrap() else { panic!() };
+    let label_normal_query = query_res.get_bytes_attr(&Tag::DataLabelNormal1).unwrap();
     assert_eq!(label_normal, label_normal_query);
 
     remove_by_alias(alias).unwrap();

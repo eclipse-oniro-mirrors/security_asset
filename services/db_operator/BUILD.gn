@@ -35,6 +35,7 @@ ohos_rust_unittest("asset_db_operator_test") {
   sources = [ "src/lib.rs" ]
   deps = [
     ":asset_sqlite3_wrapper",
+    "../../frameworks/constants:asset_constants",
     "../../frameworks/definition:asset_definition",
     "../../frameworks/os_dependency/log:asset_log",
   ]
