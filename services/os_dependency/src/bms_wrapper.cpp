@@ -35,7 +35,7 @@ bool GetHapInfo(int32_t userId, uint32_t tokenId, std::string &info)
     HapTokenInfo tokenInfo;
     int32_t ret = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
     if (ret != RET_SUCCESS) {
-        LOGE("[FATAL]Get hap token info failed, ret = %d", ret);
+        LOGE("[FATAL]Get hap token info failed, ret = %{public}d", ret);
         return false;
     }
 
@@ -55,7 +55,7 @@ bool GetProcessInfo(uint32_t tokenId, uint64_t uid, std::string &info)
     NativeTokenInfo tokenInfo;
     int32_t ret = AccessTokenKit::GetNativeTokenInfo(tokenId, tokenInfo);
     if (ret != RET_SUCCESS) {
-        LOGE("[FATAL]Get native token info failed, ret = %d", ret);
+        LOGE("[FATAL]Get native token info failed, ret = %{public}d", ret);
         return false;
     }
 
@@ -84,11 +84,11 @@ bool GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *o
             ret = GetProcessInfo(tokenId, uid, info);
             break;
         default:
-            LOGE("[FATAL]Unsupported calling type: %d", tokenType);
+            LOGE("[FATAL]Unsupported calling type: %{public}d", tokenType);
     }
 
     if (ret && memcpy_s(ownerInfo, *infoLen, info.c_str(), info.size()) == EOK) {
-        LOGI("[INFO]Calling userId: %d, info: %s", userId, info.c_str());
+        LOGI("[INFO]Calling userId: %{public}d, info: %{public}s", userId, info.c_str());
         *infoLen = info.size();
         return true;
     }

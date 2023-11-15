@@ -76,9 +76,6 @@ hdc shell "./data/asset_module_test --test-threads=1"
 # 格式化BUILD.gn文件（在asset目录下执行）
 find -name "*.gn" -or -name "*.gni" | xargs ../../../prebuilts/build-tools/linux-x86/bin/gn format
 
-# 批量整改gn文件格式（在asset目录下执行）
-find -name "*.gn" | xargs ../../../prebuilts/build-tools/linux-x86/bin/gn format
-
 # 代码格式化（在asset目录下执行）
 cargo fmt
 

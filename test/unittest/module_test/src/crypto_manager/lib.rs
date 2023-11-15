@@ -89,19 +89,26 @@ fn crypto_exec() {
 
 #[test]
 fn crypto_manager() {
-
     let secret_key1 = SecretKey::new(8, &vec![b'2'], AuthType::Any, Accessibility::DeviceFirstUnlocked, false);
     secret_key1.generate().unwrap();
     let mut crypto1 = Crypto::build(secret_key1.clone(), 600).unwrap();
-    let challenge = crypto1.init_key().unwrap();
+    let challenge1 = crypto1.init_key().unwrap();
+
+    let secret_key2 = SecretKey::new(8, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked);
+    secret_key2.generate().unwrap();
+    let mut crypto2 = Crypto::build(secret_key2.clone(), 1, 600).unwrap();
+    let challenge2 = crypto2.init_key().unwrap();
 
     let arc_crypto_manager = CryptoManager::get_instance();
     let mut crypto_manager = arc_crypto_manager.lock().unwrap();
     crypto_manager.add(crypto1).unwrap();
+    crypto_manager.add(crypto2).unwrap();
 
-    crypto_manager.find(&challenge).unwrap();
+    crypto_manager.find(&challenge1).unwrap();
+    crypto_manager.find(&challenge2).unwrap();
 
-    crypto_manager.remove(&challenge);
+    crypto_manager.remove(&challenge1);
+    crypto_manager.remove(&challenge2);
 
     let _ = secret_key1.delete();
     let _ = secret_key2.delete();

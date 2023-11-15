@@ -16,32 +16,12 @@
 #ifndef SYSTEM_ABILITY_WRAPPER
 #define SYSTEM_ABILITY_WRAPPER
 
-#include "if_system_ability_manager.h"
-#include "system_ability_status_change_stub.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-bool RegisterCommonEventListener(void);
-bool DeregisterCommonEventListener(void);
-
-class SystemAbilityHandler : public OHOS::SystemAbilityStatusChangeStub {
-public:
-    SystemAbilityHandler();
-    ~SystemAbilityHandler() = default;
-    void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override;
-    void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override;
-};
-
-class SystemAbilityManager {
-public:
-    static const int32_t LIBCESFWK_SERVICES_ID = 3299;
-    static bool RegisterCommonEventListener(void);
-    static bool DeregisterCommonEventListener(void);
-private:
-    static OHOS::sptr<OHOS::ISystemAbilityManager> GetSystemAbility(void);
-};
+bool SubscribeSystemAbility(void);
+bool UnSubscribeSystemAbility(void);
 
 #ifdef __cplusplus
 }

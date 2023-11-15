@@ -27,8 +27,13 @@ use asset_definition::{Accessibility, AuthType, Value};
 use asset_file_operator::delete_user_db_dir;
 use asset_log::loge;
 
-fn delete_key(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility,
-    require_password_set: bool) {
+fn delete_key(
+    user_id: i32,
+    owner: &Vec<u8>,
+    auth_type: AuthType,
+    access_type: Accessibility,
+    require_password_set: bool,
+) {
     let secret_key = SecretKey::new(user_id, owner, auth_type, access_type, require_password_set);
     if let Err(e) = secret_key.delete() {
         loge!("Delete huks key failed, error = {}", e);

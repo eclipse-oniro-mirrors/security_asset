@@ -66,10 +66,6 @@ impl CallingInfo {
         &self.owner_info
     }
 
-    pub(crate) fn owner_info_str(&self) -> String {
-        String::from_utf8_lossy(&self.owner_info).to_string()
-    }
-
     pub(crate) fn user_id(&self) -> i32 {
         self.user_id
     }

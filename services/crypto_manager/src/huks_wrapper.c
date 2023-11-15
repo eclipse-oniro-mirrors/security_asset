@@ -201,8 +201,7 @@ int32_t DecryptData(const struct HksBlob *alias, const struct HksBlob *aad, cons
     return ret;
 }
 
-int32_t InitKey(const struct HksBlob *alias, uint32_t validTime,
-    struct HksBlob *challenge, struct HksBlob *handle)
+int32_t InitKey(const struct HksBlob *alias, uint32_t validTime, struct HksBlob *challenge, struct HksBlob *handle)
 {
     struct HksParam initParams[] = {
         { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES},

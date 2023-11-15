@@ -19,6 +19,7 @@
 
 #include "if_system_ability_manager.h"
 #include "iservice_registry.h"
+#include "system_ability_definition.h"
 #include "system_ability_status_change_stub.h"
 
 #include "asset_log.h"
@@ -27,92 +28,82 @@
 using namespace std;
 using namespace OHOS;
 
-static sptr<SystemAbilityHandler> abilityListener;
-
 static constexpr int32_t RETRY_TIMES_FOR_SAMGR = 50;
 static constexpr int32_t RETRY_DURATION_US = 200 * 1000;
 
-bool SystemAbilityManager::RegisterCommonEventListener(void)
-{
-    sptr<ISystemAbilityManager> samgrProxy = GetSystemAbility();
-    if (samgrProxy == nullptr) {
-        LOGE("wait for samgr time out (10s)");
-        return false;
-    }
-    abilityListener = new (std::nothrow) SystemAbilityHandler();
-    if (abilityListener == nullptr) {
-        LOGE("New ability listener failed.");
-        return false;
-    }
-    int32_t ret = samgrProxy->SubscribeSystemAbility(LIBCESFWK_SERVICES_ID, abilityListener);
-    if (ret != ERR_OK) {
-        LOGE("Subscribe common event systemAbility fail.");
-        return false;
-    }
-    return true;
-}
+class SystemAbilityHandler : public OHOS::SystemAbilityStatusChangeStub {
+public:
+    SystemAbilityHandler() {};
+    ~SystemAbilityHandler() = default;
+    void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override
+    {
+        if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
+            return;
+        }
 
-bool SystemAbilityManager::DeregisterCommonEventListener(void)
-{
-    sptr<ISystemAbilityManager> samgrProxy = GetSystemAbility();
-    if (samgrProxy == nullptr || abilityListener == nullptr) {
-        LOGE("Params is invalid.");
-        return false;
+        if (!SubscribeSystemEvent()) {
+            LOGE("Subscribe system event failed.");
+        }
     }
-    if (samgrProxy->UnSubscribeSystemAbility(LIBCESFWK_SERVICES_ID, abilityListener) != ERR_OK ||
-        !UnSubscribeSystemEvent()) {
-        LOGE("UnSubscribe common event systemAbility fail.");
-        return false;
+    void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override
+    {
+        if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
+            return;
+        }
+        if (!UnSubscribeSystemEvent()) {
+            LOGE("UnSubscribe system event failed.");
+        }
     }
-    return true;
-}
+};
 
-OHOS::sptr<OHOS::ISystemAbilityManager> SystemAbilityManager::GetSystemAbility(void)
+static sptr<OHOS::ISystemAbilityManager> GetSystemAbility(void)
 {
     int32_t retryCount = RETRY_TIMES_FOR_SAMGR;
-    sptr<ISystemAbilityManager> samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-    while (samgrProxy == nullptr) {
-        LOGE("waiting for samgr...");
-        if (retryCount > 0) {
-            usleep(RETRY_DURATION_US);
-            samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
-        } else {
-            LOGE("wait for samgr time out (10s)");
-            return nullptr;
-        }
+    OHOS::sptr<ISystemAbilityManager> samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    while (samgrProxy == nullptr && retryCount > 0) {
+        usleep(RETRY_DURATION_US);
+        samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         retryCount--;
     }
     return samgrProxy;
 }
 
-SystemAbilityHandler::SystemAbilityHandler() {}
+static OHOS::sptr<SystemAbilityHandler> abilityHandler;
 
-void SystemAbilityHandler::OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId)
+bool SubscribeSystemAbility()
 {
-    if (systemAbilityId != SystemAbilityManager::LIBCESFWK_SERVICES_ID) {
-        LOGE("Current sa is invalid.");
-        return;
+    OHOS::sptr<ISystemAbilityManager> samgrProxy = GetSystemAbility();
+    if (samgrProxy == nullptr) {
+        LOGE("Get system ability failed");
+        return false;
     }
-    if (!SubscribeSystemEvent()) {
-        LOGE("Init comment event fail.");
+
+    abilityHandler = new (std::nothrow) SystemAbilityHandler();
+    if (abilityHandler == nullptr) {
+        LOGE("Create system ability handler failed.");
+        return false;
     }
+
+    int32_t ret = samgrProxy->SubscribeSystemAbility(COMMON_EVENT_SERVICE_ID, abilityHandler);
+    if (ret != ERR_OK) {
+        LOGE("Subscribe system ability failed.");
+        return false;
+    }
+    return true;
 }
-void SystemAbilityHandler::OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId)
+
+bool UnSubscribeSystemAbility()
 {
-    LOGI("start OnRemoveSystemAbility.");
-    if (systemAbilityId != SystemAbilityManager::LIBCESFWK_SERVICES_ID) {
-        LOGE("Current sa is invalid.");
-        return;
+    OHOS::sptr<ISystemAbilityManager> samgrProxy = GetSystemAbility();
+    if (samgrProxy == nullptr || abilityHandler == nullptr) {
+        return false;
     }
-    if (!UnSubscribeSystemEvent()) {
-        LOGE("Destroy comment event fail.");
+
+    if (samgrProxy->UnSubscribeSystemAbility(COMMON_EVENT_SERVICE_ID, abilityHandler) != ERR_OK ||
+        !UnSubscribeSystemEvent()) {
+        LOGE("UnSubscribe system ability or system event failed.");
+        return false;
     }
-}
 
-bool RegisterCommonEventListener() {
-    return SystemAbilityManager::RegisterCommonEventListener();
-}
-
-bool DeregisterCommonEventListener() {
-    return SystemAbilityManager::DeregisterCommonEventListener();
+    return true;
 }

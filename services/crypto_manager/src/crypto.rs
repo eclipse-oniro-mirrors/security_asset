@@ -17,31 +17,11 @@
 
 use std::sync::{Arc, Mutex};
 
-use asset_definition::{log_throw_error, Accessibility, AssetError, AuthType, ErrCode, Result};
-use asset_log::loge;
+use asset_definition::{log_throw_error, Accessibility, AuthType, ErrCode, Result};
 use asset_utils::hasher::sha256;
 use asset_utils::time;
 
-struct IdentityGuard {
-    identity: String,
-}
-
-impl IdentityGuard {
-    fn build() -> Result<Self> {
-        let identity = ipc_rust::reset_calling_identity().map_err(|e| {
-            AssetError::new(ErrCode::IpcError, format!("[FATAL][SA]Reset calling identity failed, error is [{}].", e))
-        })?;
-        Ok(Self { identity })
-    }
-}
-
-impl Drop for IdentityGuard {
-    fn drop(&mut self) {
-        if !ipc_rust::set_calling_identity(self.identity.clone()) {
-            loge!("[FATAL][SA]Set calling identity failed.");
-        }
-    }
-}
+use super::identity_scope::IdentityScope;
 
 /// Struct to store key attributes, excluding key materials.
 #[derive(Clone)]
@@ -69,12 +49,7 @@ extern "C" {
     fn IsKeyExist(alias: *const HksBlob) -> i32;
     fn EncryptData(alias: *const HksBlob, aad: *const HksBlob, in_data: *const HksBlob, out_data: *mut OutBlob) -> i32;
     fn DecryptData(alias: *const HksBlob, aad: *const HksBlob, in_data: *const HksBlob, out_data: *mut OutBlob) -> i32;
-    fn InitKey(
-        alias: *const HksBlob,
-        valid_time: u32,
-        challenge: *mut OutBlob,
-        handle: *mut OutBlob,
-    ) -> i32;
+    fn InitKey(alias: *const HksBlob, valid_time: u32, challenge: *mut OutBlob, handle: *mut OutBlob) -> i32;
     fn ExecCrypt(
         handle: *const HksBlob,
         aad: *const HksBlob,
@@ -95,8 +70,13 @@ const CHALLENGE_LEN: usize = 32;
 
 impl SecretKey {
     /// New a secret key.
-    pub fn new(user_id: i32, owner: &Vec<u8>, auth_type: AuthType, access_type: Accessibility,
-        require_password_set: bool) -> Self {
+    pub fn new(
+        user_id: i32,
+        owner: &Vec<u8>,
+        auth_type: AuthType,
+        access_type: Accessibility,
+        require_password_set: bool,
+    ) -> Self {
         let mut alias: Vec<u8> = Vec::with_capacity(MAX_ALIAS_SIZE);
         alias.extend_from_slice(&user_id.to_le_bytes());
         alias.push(b'_');
@@ -104,27 +84,24 @@ impl SecretKey {
         if auth_type != AuthType::None {
             alias.push(b'_');
             alias.extend_from_slice(&(auth_type as u32).to_le_bytes());
-            loge!("alisa contain auth type")
         }
         if access_type != Accessibility::DeviceFirstUnlocked {
             alias.push(b'_');
             alias.extend_from_slice(&(access_type as u32).to_le_bytes());
-            loge!("alisa contain accessibility")
         }
         if require_password_set {
             alias.push(b'_');
             alias.extend_from_slice(&(require_password_set as u32).to_le_bytes());
-            loge!("alisa contain require_password_set")
         }
         alias = sha256(&alias);
-        Self { auth_type, access_type, alias}
+        Self { auth_type, access_type, alias }
     }
 
     /// Check whether the secret key exists.
     pub fn exists(&self) -> Result<bool> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
 
-        let _identity = IdentityGuard::build()?;
+        let _identity = IdentityScope::build()?;
         let ret = unsafe { IsKeyExist(&key_alias as *const HksBlob) };
         match ret {
             HKS_SUCCESS => Ok(true),
@@ -138,7 +115,7 @@ impl SecretKey {
     /// Generate the secret key and store in HUKS.
     pub fn generate(&self) -> Result<()> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
-        let _identity = IdentityGuard::build()?;
+        let _identity = IdentityScope::build()?;
         let ret = unsafe { GenerateKey(&key_alias as *const HksBlob, self.need_user_auth()) };
         match ret {
             HKS_SUCCESS => Ok(()),
@@ -152,7 +129,7 @@ impl SecretKey {
     pub fn delete(&self) -> Result<()> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
 
-        let _identity = IdentityGuard::build()?;
+        let _identity = IdentityScope::build()?;
         let ret = unsafe { DeleteKey(&key_alias as *const HksBlob) };
         match ret {
             HKS_SUCCESS => Ok(()),
@@ -201,7 +178,7 @@ impl Crypto {
         let mut challenge = OutBlob { size: self.challenge.len() as u32, data: self.challenge.as_mut_ptr() };
         let mut handle = OutBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
 
-        let _identity = IdentityGuard::build()?;
+        let _identity = IdentityScope::build()?;
         let ret = unsafe {
             InitKey(
                 &key_alias as *const HksBlob,
@@ -218,11 +195,6 @@ impl Crypto {
 
     /// Decrypt data that requires user authentication.
     pub fn exec_crypt(&self, cipher: &Vec<u8>, aad: &Vec<u8>, auth_token: &Vec<u8>) -> Result<Vec<u8>> {
-        if time::system_time_in_seconds()? >= self.exp_time {
-            // todo: 超期要清理session
-            return log_throw_error!(ErrCode::AuthTokenExpired, "[FATAL]The user authentication token has expired.");
-        }
-
         if cipher.len() <= (TAG_SIZE + NONCE_SIZE) {
             return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The cipher length is too short.");
         }
@@ -234,7 +206,7 @@ impl Crypto {
         let mut msg: Vec<u8> = vec![0; cipher.len() - TAG_SIZE - NONCE_SIZE];
         let mut out_data = OutBlob { size: msg.len() as u32, data: msg.as_mut_ptr() };
 
-        let _identity = IdentityGuard::build()?;
+        let _identity = IdentityScope::build()?;
         let ret = unsafe {
             ExecCrypt(
                 &handle as *const HksBlob,
@@ -258,7 +230,7 @@ impl Crypto {
         let in_data = HksBlob { size: msg.len() as u32, data: msg.as_ptr() };
         let mut out_data = OutBlob { size: cipher.len() as u32, data: cipher.as_mut_ptr() };
 
-        let _identity = IdentityGuard::build()?;
+        let _identity = IdentityScope::build()?;
         let ret = unsafe {
             EncryptData(
                 &key_alias as *const HksBlob,
@@ -285,7 +257,7 @@ impl Crypto {
         let in_data = HksBlob { size: cipher.len() as u32, data: cipher.as_ptr() };
         let mut out_data = OutBlob { size: plain.len() as u32, data: plain.as_mut_ptr() };
 
-        let _identity = IdentityGuard::build()?;
+        let _identity = IdentityScope::build()?;
         let ret = unsafe {
             DecryptData(
                 &key_alias as *const HksBlob,
@@ -304,7 +276,7 @@ impl Crypto {
 impl Drop for Crypto {
     fn drop(&mut self) {
         let handle = HksBlob { size: self.handle.len() as u32, data: self.handle.as_ptr() };
-        let identity = IdentityGuard::build();
+        let identity = IdentityScope::build();
         if identity.is_ok() {
             unsafe { Drop(&handle as *const HksBlob) };
         }
@@ -331,6 +303,7 @@ impl CryptoManager {
 
     /// Add the crypto to manager.
     pub fn add(&mut self, crypto: Crypto) -> Result<()> {
+        self.remove_expired_crypto()?;
         if self.cryptos.len() >= CRYPTO_CAPACITY {
             log_throw_error!(ErrCode::LimitExceeded, "The number of cryptos exceeds the upper limit.")
         } else {
@@ -339,24 +312,30 @@ impl CryptoManager {
         }
     }
 
+    /// Find the crypto with the specified alias and challenge slice from manager.
+    pub fn find(&mut self, challenge: &Vec<u8>) -> Result<&Crypto> {
+        self.remove_expired_crypto()?;
+        for crypto in self.cryptos.iter() {
+            if crypto.challenge.eq(challenge) {
+                return Ok(crypto);
+            }
+        }
+        log_throw_error!(ErrCode::NotFound, "The crypto expires or does not exist. Call the preQuery first.")
+    }
+
     /// Remove the crypto from manager.
     pub fn remove(&mut self, challenge: &Vec<u8>) {
         self.cryptos.retain(|crypto| !crypto.challenge.eq(challenge));
     }
 
-    /// Find the crypto with the specified alias and challenge slice from manager.
-    pub fn find(&mut self, challenge: &Vec<u8>) -> Option<&Crypto> {
-        for crypto in self.cryptos.iter() {
-            if crypto.challenge.eq(challenge) {
-                return Some(crypto);
-            }
-        }
-        loge!("Can not found the crypto.");
-        None
-    }
-
     /// Remove cryptos that required device to be unlocked.
     pub fn remove_need_device_unlocked(&mut self) {
         self.cryptos.retain(|crypto| !crypto.key.need_device_unlock());
+    }
+
+    fn remove_expired_crypto(&mut self) -> Result<()> {
+        let now = time::system_time_in_seconds()?;
+        self.cryptos.retain(|crypto| crypto.exp_time < now);
+        Ok(())
     }
 }

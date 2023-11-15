@@ -26,12 +26,11 @@ pub(crate) struct TraceScope {
 }
 
 impl TraceScope {
-    // Copies from `Hitrace`.
-    const HITRACE_TAG_HUKS: u64 = 1u64 << 25;
+    const HITRACE_TAG_SECURITY: u64 = 1u64 << 7;
 
     /// Starts tracing.
     pub(crate) fn trace(value: &str) -> Self {
-        let trace = Self { label: Self::HITRACE_TAG_HUKS };
+        let trace = Self { label: Self::HITRACE_TAG_SECURITY };
         start_trace(trace.label, value);
         trace
     }

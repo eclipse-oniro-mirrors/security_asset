@@ -18,7 +18,7 @@
 use std::{
     ffi::{c_char, CString},
     thread,
-    time::{Duration, Instant},
+    time::Instant,
 };
 
 use hilog_rust::{error, hilog, HiLogLabel, LogType};
@@ -37,7 +37,7 @@ mod trace_scope;
 
 use calling_info::CallingInfo;
 use stub::AssetStub;
-use sys_event::sys_event_log;
+use sys_event::upload_system_event;
 use trace_scope::TraceScope;
 
 const LOG_LABEL: HiLogLabel = HiLogLabel { log_type: LogType::LogCore, domain: 0xD002F70, tag: "Asset" };
@@ -46,14 +46,9 @@ define_system_ability!(
     sa: SystemAbility(on_start, on_stop),
 );
 
-const MAX_RETRY_TIME: u32 = 5;
-const RETRY_INTERVAL: u64 = 1000;
-
 extern "C" {
-    fn SubscribeSystemEvent() -> bool;
-    fn UnSubscribeSystemEvent() -> bool;
-    fn RegisterCommonEventListener() -> bool;
-    fn DeregisterCommonEventListener() -> bool;
+    fn SubscribeSystemAbility() -> bool;
+    fn UnSubscribeSystemAbility() -> bool;
 }
 
 fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
@@ -61,20 +56,10 @@ fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
     ability.publish(&service.as_object().expect("publish Asset service failed"), SA_ID);
     logi!("[INFO]Asset service on_start");
     thread::spawn(|| {
-        if unsafe { RegisterCommonEventListener() } {
-            logi!("comment event listener success.");
+        if unsafe { SubscribeSystemAbility() } {
+            logi!("Subscribe system ability success.");
         } else {
-            logi!("comment event listener failed.")
-        }
-    });
-    thread::spawn(|| {
-        for i in 0..MAX_RETRY_TIME {
-            if unsafe { SubscribeSystemEvent() } {
-                logi!("Subscribe system event success.");
-                return;
-            }
-            logi!("Subscribe system event failed, retry {}", i + 1);
-            thread::sleep(Duration::from_millis(RETRY_INTERVAL));
+            logi!("Subscribe system ability failed.")
         }
     });
 }
@@ -82,8 +67,7 @@ fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
 fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {
     logi!("[INFO]Asset service on_stop");
     unsafe {
-        UnSubscribeSystemEvent();
-        DeregisterCommonEventListener();
+        let _ = UnSubscribeSystemAbility();
     }
 }
 
@@ -99,54 +83,52 @@ static A: extern "C" fn() = {
 
 struct AssetService;
 
+impl AssetService {
+    fn execute<T, F: Fn(&AssetMap, &CallingInfo) -> Result<T>>(
+        func_name: &str,
+        attrs: &AssetMap,
+        func: F,
+    ) -> Result<T> {
+        let start = Instant::now();
+        let _trace = TraceScope::trace(func_name);
+        let calling_info = CallingInfo::build()?;
+        upload_system_event(func(attrs, &calling_info), &calling_info, start, func_name)
+    }
+}
+
 impl IRemoteBroker for AssetService {}
 
 impl IAsset for AssetService {
     fn add(&self, attributes: &AssetMap) -> Result<()> {
-        let fun_name = "add";
-        let start = Instant::now();
-        let _trace = TraceScope::trace(fun_name);
-        let calling_info = CallingInfo::build()?;
-        sys_event_log(operations::add(attributes, &calling_info), &calling_info, start, fun_name)
+        AssetService::execute(hisysevent::function!(), attributes, operations::add)
     }
 
     fn remove(&self, query: &AssetMap) -> Result<()> {
-        let fun_name = "remove";
-        let start = Instant::now();
-        let _trace = TraceScope::trace(fun_name);
-        let calling_info = CallingInfo::build()?;
-        sys_event_log(operations::remove(query, &calling_info), &calling_info, start, fun_name)
+        AssetService::execute(hisysevent::function!(), query, operations::remove)
     }
 
     fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
-        let fun_name = "update";
+        let func_name = hisysevent::function!();
         let start = Instant::now();
-        let _trace = TraceScope::trace(fun_name);
+        let _trace = TraceScope::trace(func_name);
         let calling_info = CallingInfo::build()?;
-        sys_event_log(operations::update(query, attributes_to_update, &calling_info), &calling_info, start, fun_name)
+        upload_system_event(
+            operations::update(query, attributes_to_update, &calling_info),
+            &calling_info,
+            start,
+            func_name,
+        )
     }
 
     fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>> {
-        let fun_name = "pre_query";
-        let start = Instant::now();
-        let _trace = TraceScope::trace(fun_name);
-        let calling_info = CallingInfo::build()?;
-        sys_event_log(operations::pre_query(query, &calling_info), &calling_info, start, fun_name)
+        AssetService::execute(hisysevent::function!(), query, operations::pre_query)
     }
 
     fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>> {
-        let fun_name = "query";
-        let start = Instant::now();
-        let _trace = TraceScope::trace(fun_name);
-        let calling_info = CallingInfo::build()?;
-        sys_event_log(operations::query(query, &calling_info), &calling_info, start, fun_name)
+        AssetService::execute(hisysevent::function!(), query, operations::query)
     }
 
     fn post_query(&self, query: &AssetMap) -> Result<()> {
-        let fun_name = "post_query";
-        let start = Instant::now();
-        let _trace = TraceScope::trace(fun_name);
-        let calling_info = CallingInfo::build()?;
-        sys_event_log(operations::post_query(query, &calling_info), &calling_info, start, fun_name)
+        AssetService::execute(hisysevent::function!(), query, operations::post_query)
     }
 }

@@ -25,7 +25,7 @@ use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCo
 use crate::{calling_info::CallingInfo, operations::common};
 
 const OPTIONAL_ATTRS: [Tag; 1] = [Tag::AuthValidityPeriod];
-const DEFAULT_AUTH_VALIDITY: u32 = 60;
+const DEFAULT_AUTH_VALIDITY_IN_SECS: u32 = 60;
 
 fn check_arguments(attributes: &AssetMap) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
@@ -43,24 +43,24 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     }
 }
 
-fn query_access_type_require_pwd_set(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Accessibility, bool)> {
-    let results = Database::build(calling_info.user_id())?
-        .query_datas(&vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET], db_data, None)?;
-    if results.is_empty() {
-        return log_throw_error!(ErrCode::NotFound, "[FATAL][SA]Pre Query result not found.");
+fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Accessibility, bool)> {
+    let results = Database::build(calling_info.user_id())?.query_datas(
+        &vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET],
+        db_data,
+        None,
+    )?;
+    match results.len() {
+        0 => log_throw_error!(ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found."),
+        1 => {
+            let access_type = results[0].get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
+            let require_password_set = results[0].get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
+            Ok((access_type, require_password_set))
+        },
+        _ => log_throw_error!(
+            ErrCode::NotSupport,
+            "[FATAL][SA]Data of multiple access control types cannot be accessed at the same time."
+        ),
     }
-    if results.len() > 1 {
-        return log_throw_error!(ErrCode::NotSupport, "[FATAL][SA]Not support more than one kind of pwd type.")
-    }
-    let access_type = match results[0].get(&column::ACCESSIBILITY) {
-        Some(Value::Number(access_type)) => Accessibility::try_from(*access_type)?,
-        _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][SA]Pre Query Accessibility invalid."),
-    };
-    let require_password_set = match results[0].get(&column::REQUIRE_PASSWORD_SET) {
-        Some(Value::Bool(require_password_set)) => require_password_set,
-        _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][SA]Pre Query require_password_set invalid."),
-    };
-    Ok((access_type, *require_password_set))
 }
 
 pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
@@ -70,14 +70,18 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
     common::add_owner_info(calling_info, &mut db_data);
     db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::Any as u32));
 
-    let (access_type, require_password_set) = query_access_type_require_pwd_set(calling_info, &db_data)?;
-    let valid_time = query.get_num_attr(&Tag::AuthValidityPeriod).unwrap_or(DEFAULT_AUTH_VALIDITY);
+    let (access_type, require_password_set) = query_key_attrs(calling_info, &db_data)?;
+    let valid_time = query.get_num_attr(&Tag::AuthValidityPeriod).unwrap_or(DEFAULT_AUTH_VALIDITY_IN_SECS);
     let secret_key = SecretKey::new(
-            calling_info.user_id(), calling_info.owner_info(), AuthType::Any, access_type, require_password_set);
+        calling_info.user_id(),
+        calling_info.owner_info(),
+        AuthType::Any,
+        access_type,
+        require_password_set,
+    );
     let mut crypto = Crypto::build(secret_key, valid_time)?;
     let challenge = crypto.init_key()?.to_vec();
-    let arc_crypto_manager = CryptoManager::get_instance();
-    let mut crypto_manager = arc_crypto_manager.lock().unwrap();
-    crypto_manager.add(crypto)?;
+    let crypto_manager = CryptoManager::get_instance();
+    crypto_manager.lock().unwrap().add(crypto)?;
     Ok(challenge)
 }

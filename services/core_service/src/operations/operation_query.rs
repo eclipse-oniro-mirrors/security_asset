@@ -45,34 +45,33 @@ fn decrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     Ok(())
 }
 
-fn exec_crypto(db_data: &mut DbMap, challenge: &Vec<u8>, auth_token: &Vec<u8>) -> Result<()> {
+fn exec_crypto(query: &AssetMap, db_data: &mut DbMap) -> Result<()> {
+    common::check_required_tags(query, &AUTH_QUERY_ATTRS)?;
+    let challenge = query.get_bytes_attr(&Tag::AuthChallenge)?;
+    let auth_token = query.get_bytes_attr(&Tag::AuthToken)?;
+
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
-    let crypto_manager = CryptoManager::get_instance();
-    let x = match crypto_manager.lock().unwrap().find(challenge) {
-        Some(crypto) => {
+    let arc_crypto_manager = CryptoManager::get_instance();
+    let mut manager = arc_crypto_manager.lock().unwrap();
+    match manager.find(challenge) {
+        Ok(crypto) => {
             let secret = crypto.exec_crypt(secret, &common::build_aad(db_data), auth_token)?;
             db_data.insert(column::SECRET, Value::Bytes(secret));
             Ok(())
         },
-        None => return log_throw_error!(ErrCode::CryptoError, "[FATAL][SA]Execute ctypto not found."),
-    };
-    x
+        Err(e) => Err(e)
+    }
 }
 
 fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) -> Result<Vec<AssetMap>> {
     let mut results = Database::build(calling_info.user_id())?.query_datas(&vec![], db_data, None)?;
     logi!("results len {}", results.len());
     match results.len() {
-        0 => {
-            log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.")
-        },
+        0 => log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist."),
         1 => {
             match results[0].get(column::AUTH_TYPE) {
                 Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
-                    common::check_required_tags(query, &SEC_QUERY_OPTIONAL_ATTRS)?;
-                    let challenge = query.get_bytes_attr(&Tag::AuthChallenge)?;
-                    let auth_token = query.get_bytes_attr(&Tag::AuthToken)?;
-                    exec_crypto(&mut results[0], challenge, auth_token)?;
+                    exec_crypto(query, &mut results[0])?;
                 },
                 _ => {
                     decrypt(calling_info, &mut results[0])?;
@@ -133,7 +132,7 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
 
 const OPTIONAL_ATTRS: [Tag; 6] =
     [Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderedBy, Tag::ReturnType, Tag::AuthToken, Tag::AuthChallenge];
-const SEC_QUERY_OPTIONAL_ATTRS: [Tag; 2] = [Tag::AuthChallenge, Tag::AuthToken];
+const AUTH_QUERY_ATTRS: [Tag; 2] = [Tag::AuthChallenge, Tag::AuthToken];
 
 fn check_arguments(attributes: &AssetMap) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();

@@ -17,47 +17,12 @@
 
 use std::time::Instant;
 
+use asset_definition::Result;
 use asset_log::{loge, logi};
+
 use hisysevent::{build_number_param, build_str_param, write, EventType, HiSysEventParam};
 
-use asset_definition::Result;
-
 use crate::calling_info::CallingInfo;
-
-/// System events structure which base on `Hisysevent`.
-pub(crate) struct SysEvent<'a> {
-    event_kind: EventKind,
-    inner_type: EventType,
-    params: Vec<HiSysEventParam<'a>>,
-}
-
-impl<'a> SysEvent<'a> {
-    const DOMAIN: &str = "ASSET";
-
-    pub(crate) const FUNCTION: &str = "FUNCTION";
-    pub(crate) const USER_ID: &str = "USER_ID";
-    pub(crate) const CALLER: &str = "CALLER";
-    pub(crate) const ERROR_CODE: &str = "ERROR_CODE";
-    pub(crate) const RUN_TIME: &str = "RUN_TIME";
-    pub(crate) const EXTRA: &str = "EXTRA";
-
-    pub(crate) fn task_fault() -> Self {
-        Self { event_kind: EventKind::Fault, inner_type: EventType::Fault, params: Vec::new() }
-    }
-
-    pub(crate) fn task_info_statistics() -> Self {
-        Self { event_kind: EventKind::Statistics, inner_type: EventType::Statistic, params: Vec::new() }
-    }
-
-    pub(crate) fn param(mut self, param: HiSysEventParam<'a>) -> Self {
-        self.params.push(param);
-        self
-    }
-
-    pub(crate) fn write(self) {
-        write(Self::DOMAIN, self.event_kind.as_str(), self.inner_type, self.params.as_slice());
-    }
-}
 
 enum EventKind {
     Fault,
@@ -76,43 +41,79 @@ impl EventKind {
     }
 }
 
-pub(crate) fn sys_event_log<T>(
+/// System events structure which base on `Hisysevent`.
+struct SysEvent<'a> {
+    event_kind: EventKind,
+    inner_type: EventType,
+    params: Vec<HiSysEventParam<'a>>,
+}
+
+impl<'a> SysEvent<'a> {
+    const DOMAIN: &str = "ASSET";
+
+    pub(crate) const FUNCTION: &str = "FUNCTION";
+    pub(crate) const USER_ID: &str = "USER_ID";
+    pub(crate) const CALLER: &str = "CALLER";
+    pub(crate) const ERROR_CODE: &str = "ERROR_CODE";
+    pub(crate) const RUN_TIME: &str = "RUN_TIME";
+    pub(crate) const EXTRA: &str = "EXTRA";
+
+    fn new_fault() -> Self {
+        Self { event_kind: EventKind::Fault, inner_type: EventType::Fault, params: Vec::new() }
+    }
+
+    fn new_statistics() -> Self {
+        Self { event_kind: EventKind::Statistics, inner_type: EventType::Statistic, params: Vec::new() }
+    }
+
+    fn set_param(mut self, param: HiSysEventParam<'a>) -> Self {
+        self.params.push(param);
+        self
+    }
+
+    fn write(self) {
+        write(Self::DOMAIN, self.event_kind.as_str(), self.inner_type, self.params.as_slice());
+    }
+}
+
+pub(crate) fn upload_system_event<T>(
     result: Result<T>,
     calling_info: &CallingInfo,
     start_time: Instant,
-    fun_name: &str,
+    func_name: &str,
 ) -> Result<T> {
+    let owner_info = String::from_utf8_lossy(calling_info.owner_info()).to_string();
     match &result {
         Ok(_) => {
             let duration = start_time.elapsed();
-            SysEvent::task_info_statistics()
-                .param(build_str_param!(SysEvent::FUNCTION, fun_name))
-                .param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
-                .param(build_str_param!(SysEvent::CALLER, calling_info.owner_info_str()))
-                .param(build_number_param!(SysEvent::RUN_TIME, duration.as_millis() as u32))
-                .param(build_str_param!(SysEvent::EXTRA, ""))
+            SysEvent::new_statistics()
+                .set_param(build_str_param!(SysEvent::FUNCTION, func_name))
+                .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
+                .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
+                .set_param(build_number_param!(SysEvent::RUN_TIME, duration.as_millis() as u32))
+                .set_param(build_str_param!(SysEvent::EXTRA, ""))
                 .write();
             logi!(
-                "[INFO] use fun:[{}], user_id:[{}], caller:[{}], run_time:[{}]",
-                fun_name,
+                "[INFO]Calling fun:[{}], user_id:[{}], caller:[{}], run_time:[{}]",
+                func_name,
                 calling_info.user_id(),
-                calling_info.owner_info_str(),
+                owner_info,
                 duration.as_millis()
             )
         },
         Err(e) => {
-            SysEvent::task_fault()
-                .param(build_str_param!(SysEvent::FUNCTION, "add"))
-                .param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
-                .param(build_str_param!(SysEvent::CALLER, calling_info.owner_info_str()))
-                .param(build_number_param!(SysEvent::ERROR_CODE, e.code as i32))
-                .param(build_str_param!(SysEvent::EXTRA, e.msg.clone()))
+            SysEvent::new_fault()
+                .set_param(build_str_param!(SysEvent::FUNCTION, "add"))
+                .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
+                .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
+                .set_param(build_number_param!(SysEvent::ERROR_CODE, e.code as i32))
+                .set_param(build_str_param!(SysEvent::EXTRA, e.msg.clone()))
                 .write();
             loge!(
-                "[ERROR] use fun:[{}], user_id:[{}], caller:[{}], error_code:[{}], error_msg:[{}]",
-                fun_name,
+                "[ERROR]Calling fun:[{}], user_id:[{}], caller:[{}], error_code:[{}], error_msg:[{}]",
+                func_name,
                 calling_info.user_id(),
-                calling_info.owner_info_str(),
+                owner_info,
                 e.code,
                 e.msg.clone()
             );

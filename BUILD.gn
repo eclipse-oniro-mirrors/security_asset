@@ -33,6 +33,7 @@ group("asset_bin_test") {
     "services/db_operator:asset_db_operator_test",
     "test/unittest/inner_api_rust:asset_rust_test",
     "test/unittest/kits_ndk:asset_ndk_test",
+
     # "test/unittest/module_test:asset_module_test", # todo
   ]
 }

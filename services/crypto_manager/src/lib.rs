@@ -15,5 +15,5 @@
 
 //! This module is used to manage the life cycle of Asset.
 
-#[path = "crypto.rs"]
 pub mod crypto;
+mod identity_scope;
