@@ -16,6 +16,7 @@
 #ifndef ASSET_LOG_H
 #define ASSET_LOG_H
 
+#undef HILOG_RAWFORMAT
 #include "hilog/log.h"
 
 #undef LOG_PUBLIC
