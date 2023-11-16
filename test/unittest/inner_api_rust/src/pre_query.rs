@@ -108,6 +108,18 @@ fn pre_query_batch_data() {
 #[test]
 fn pre_query_single_data() {
     let function_name = function!().as_bytes();
+    asset_sdk::Manager::build()
+    .unwrap()
+    .add(&AssetMap::from([
+        (Tag::Alias, Value::Bytes(function_name.to_vec())),
+        (Tag::Secret, Value::Bytes(function_name.to_vec())),
+        (Tag::Accessibility, Value::Number(Accessibility::DevicePowerOn as u32)),
+        (Tag::AuthType, Value::Number(AuthType::Any as u32)),
+        (Tag::DeleteType, Value::Number(DeleteType::WhenPackageRemoved as u32)),
+        (Tag::SyncType, Value::Number(SyncType::ThisDevice as u32)),
+        (Tag::RequirePasswordSet, Value::Bool(true)),
+    ]))
+    .unwrap();
     let mut query = AssetMap::new();
     query.insert_attr(Tag::Alias, function_name.to_owned());
     query.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
@@ -158,8 +170,9 @@ fn pre_query_multiple_data_type() {
         .add(&AssetMap::from([
             (Tag::Alias, Value::Bytes(new_alias.to_vec())),
             (Tag::Secret, Value::Bytes(new_alias.to_vec())),
-            (Tag::Accessibility, Value::Number(Accessibility::DeviceFirstUnlocked as u32)),
+            (Tag::Accessibility, Value::Number(Accessibility::DevicePowerOn as u32)),
             (Tag::AuthType, Value::Number(AuthType::Any as u32)),
+            (Tag::RequirePasswordSet, Value::Bool(true)),
         ]))
         .unwrap();
     let query = AssetMap::new();

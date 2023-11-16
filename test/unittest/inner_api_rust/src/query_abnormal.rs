@@ -147,6 +147,26 @@ fn query_invalid_auth_token() {
 }
 
 #[test]
+fn query_with_auth_token_without_auth_challenge() {
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::Alias, vec![]);
+    query.insert_attr(Tag::AuthType, AuthType::Any);
+    query.insert_attr(Tag::ReturnType, ReturnType::All);
+    query.insert_attr(Tag::AuthToken, vec![0; AUTH_TOKEN_SIZE]);
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+}
+
+#[test]
+fn query_with_auth_challenge_without_auth_token() {
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::Alias, vec![]);
+    query.insert_attr(Tag::AuthType, AuthType::Any);
+    query.insert_attr(Tag::ReturnType, ReturnType::All);
+    query.insert_attr(Tag::AuthChallenge, vec![0; CHALLENGE_SIZE]);
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+}
+
+#[test]
 fn query_bytes_tag_with_unmatched_type() {
     let mut tags_bytes = [CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat();
     tags_bytes.extend(&[Tag::AuthToken, Tag::AuthChallenge, Tag::Alias]);

@@ -250,3 +250,23 @@ fn query_with_order_with_unreadible() {
     suffix.sort_by(|a, b| b.cmp(a));
     query_with_order(&order, &suffix);
 }
+
+#[test]
+fn query_with_wrong_auth_token() {
+    let function_name = function!().as_bytes();
+    add_default_auth_asset(function_name, function_name).unwrap();
+
+    let mut query = AssetMap::new();
+    let challenge = asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap();
+    query.insert_attr(Tag::Alias, function_name.to_owned());
+    query.insert_attr(Tag::AuthType, AuthType::Any);
+    query.insert_attr(Tag::ReturnType, ReturnType::All);
+    query.insert_attr(Tag::AuthToken, vec![0; AUTH_TOKEN_SIZE]);
+    query.insert_attr(Tag::AuthChallenge, challenge.clone());
+    expect_error_eq(ErrCode::CryptoError, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::AuthChallenge, challenge);
+    asset_sdk::Manager::build().unwrap().post_query(&query).unwrap();
+    remove_by_alias(function_name).unwrap();
+}
