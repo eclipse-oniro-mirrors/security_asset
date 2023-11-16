@@ -125,10 +125,6 @@ fn pre_query_unsupported_tags() {
         Tag::Secret,
         Tag::AuthChallenge,
         Tag::AuthToken,
-        Tag::ReturnLimit,
-        Tag::ReturnOffset,
-        Tag::ReturnOrderedBy,
-        Tag::ReturnType,
     ];
     for tag in tags_bytes {
         let mut query = AssetMap::new();
@@ -136,7 +132,13 @@ fn pre_query_unsupported_tags() {
         expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
     }
 
-    let tags_num = [Tag::ConflictResolution];
+    let tags_num = [
+        Tag::ConflictResolution,
+        Tag::ReturnLimit,
+        Tag::ReturnOffset,
+        Tag::ReturnOrderedBy,
+        Tag::ReturnType,
+    ];
     for tag in tags_num {
         let mut query = AssetMap::new();
         query.insert_attr(tag, 1);
