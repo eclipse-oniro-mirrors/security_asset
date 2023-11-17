@@ -16,4 +16,18 @@
 //! This module is used to manage the life cycle of Asset.
 
 pub mod crypto;
+pub mod crypto_manager;
 mod identity_scope;
+pub mod secret_key;
+
+#[repr(C)]
+struct HksBlob {
+    size: u32,
+    data: *const u8,
+}
+
+#[repr(C)]
+struct OutBlob {
+    size: u32,
+    data: *mut u8,
+}

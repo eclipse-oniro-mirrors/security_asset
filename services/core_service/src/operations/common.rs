@@ -19,7 +19,7 @@ mod argument_check;
 
 pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_value_validity};
 
-use asset_crypto_manager::crypto::SecretKey;
+use asset_crypto_manager::secret_key::SecretKey;
 use asset_db_operator::types::{column, DbMap};
 use asset_definition::{Accessibility, AssetMap, AuthType, Extension, Result, Tag, Value};
 

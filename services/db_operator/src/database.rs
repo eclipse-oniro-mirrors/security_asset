@@ -19,13 +19,14 @@
 use core::ffi::c_void;
 use std::{ffi::CStr, fs, ptr::null_mut, sync::Mutex};
 
-use asset_definition::{log_throw_error, ErrCode, Result};
+use asset_constants::OwnerType;
+use asset_definition::{log_throw_error, ErrCode, Extension, Result};
 use asset_log::{loge, logi};
 
 use crate::{
     statement::Statement,
     table::Table,
-    types::{sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, SQLITE_OK, TABLE_NAME, column},
+    types::{column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, SQLITE_OK, TABLE_NAME},
 };
 
 extern "C" {
@@ -259,12 +260,12 @@ impl Database {
     ///
     #[inline(always)]
     pub fn insert_datas(&mut self, datas: &DbMap) -> Result<i32> {
-        let _lock = self.db_lock.mtx.lock().unwrap();
+        let _lock: std::sync::MutexGuard<'_, i32> = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| {
             let mut query = DbMap::new();
-            query.insert(column::ALIAS, datas[&column::ALIAS].clone());
-            query.insert(column::OWNER, datas[&column::OWNER].clone());
-            query.insert(column::OWNER_TYPE, datas[&column::OWNER_TYPE].clone());
+            query.insert_attr(column::ALIAS, datas.get_bytes_attr(&column::ALIAS)?.clone());
+            query.insert_attr(column::OWNER, datas.get_bytes_attr(&column::OWNER)?.clone());
+            query.insert_attr(column::OWNER_TYPE, datas.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?);
             if e.is_data_exists(&query)? {
                 log_throw_error!(ErrCode::Duplicated, "[FATAL]The data with the specified alias already exists.")
             } else {

@@ -12,7 +12,7 @@
 # limitations under the License.
 
 [package]
-name = "os_dependency"
+name = "asset_system_ability"
 version = "0.1.0"
 edition = "2021"
 
@@ -24,5 +24,4 @@ asset_crypto_manager = { path = "../../services/crypto_manager" }
 asset_definition = { path = "../../frameworks/definition" }
 asset_db_operator = { path = "../../services/db_operator" }
 asset_file_operator = { path = "../../frameworks/os_dependency/file" }
-asset_utils = { path = "../../frameworks/utils" }
 asset_log = { path = "../../frameworks/os_dependency/log" }

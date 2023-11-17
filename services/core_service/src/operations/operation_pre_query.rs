@@ -15,7 +15,7 @@
 
 //! This module prepares for querying Asset that required secondary identity authentication.
 
-use asset_crypto_manager::crypto::{Crypto, CryptoManager, SecretKey};
+use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager, secret_key::SecretKey};
 use asset_db_operator::{
     database::Database,
     types::{column, DbMap},

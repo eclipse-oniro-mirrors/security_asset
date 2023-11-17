@@ -22,19 +22,13 @@
 
 #include "asset_log.h"
 
-extern "C" {
-    void delete_data_by_owner(int32_t user_id, const uint8_t *owner, uint32_t owner_size);
-    bool delete_dir_by_user(int32_t user_id);
-    void delete_crypto_needing_device_unlock();
-}
-
 namespace {
 using namespace OHOS::AppExecFwk::Constants;
 using namespace OHOS::EventFwk;
 
 const char * const APP_ID = "appId";
 
-void OnPackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp)
+void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPackageRemoved onPackageRemoved)
 {
     int userId = want.GetIntParam(USER_ID, INVALID_USERID);
     std::string appId = want.GetStringParam(APP_ID);
@@ -46,40 +40,56 @@ void OnPackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp)
     }
 
     std::string owner = appId + '_' + std::to_string(appIndex);
-    delete_data_by_owner(userId, reinterpret_cast<const uint8_t *>(owner.c_str()), owner.size());
+    if (onPackageRemoved != nullptr) {
+        onPackageRemoved(userId, reinterpret_cast<const uint8_t *>(owner.c_str()), owner.size());
+    }
     LOGI("[INFO]Receive event: PACKAGE_REMOVED, userId=%{public}i, appId=%{public}s, appIndex=%{public}d, ",
         userId, appId.c_str(), appIndex);
 }
 
 class SystemEventHandler : public CommonEventSubscriber {
 public:
-    explicit SystemEventHandler(const CommonEventSubscribeInfo &subscribeInfo): CommonEventSubscriber(subscribeInfo) {}
+    explicit SystemEventHandler(const CommonEventSubscribeInfo &subscribeInfo, OnPackageRemoved onPackageRemoved,
+        OnUserRemoved onUserRemoved, OnScreenOff onScreenOff): CommonEventSubscriber(subscribeInfo)
+    {
+        this->onPackageRemoved = onPackageRemoved;
+        this->onUserRemoved = onUserRemoved;
+        this->onScreenOff = onScreenOff;
+    }
     ~SystemEventHandler() = default;
     void OnReceiveEvent(const CommonEventData &data) override
     {
         auto want = data.GetWant();
         std::string action = want.GetAction();
         if (action == CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED) {
-            OnPackageRemoved(want, false);
+            HandlePackageRemoved(want, false, this->onPackageRemoved);
         } else if (action == CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
-            OnPackageRemoved(want, true);
+            HandlePackageRemoved(want, true, this->onPackageRemoved);
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
             int userId = data.GetCode();
-            bool ret = delete_dir_by_user(userId);
-            LOGI("[INFO] Receive event: USER_REMOVED, userId=%{public}i, deleteDirRet=%{public}d", userId, ret);
+            if (this->onUserRemoved != nullptr) {
+                this->onUserRemoved(userId);
+            }
+            LOGI("[INFO] Receive event: USER_REMOVED, userId=%{public}i", userId);
         } else if (action == CommonEventSupport::COMMON_EVENT_SCREEN_OFF) {
-            delete_crypto_needing_device_unlock();
+            if (this->onScreenOff != nullptr) {
+                this->onScreenOff();
+            }
             LOGI("[INFO]Receive event: SCREEN_OFF");
         } else {
             LOGW("[WARNING]Receive unknown event: %{public}s", action.c_str());
         }
     }
+private:
+    OnPackageRemoved onPackageRemoved;
+    OnUserRemoved onUserRemoved;
+    OnScreenOff onScreenOff;
 };
+
+std::shared_ptr<SystemEventHandler> g_eventHandler = nullptr;
 }
 
-static std::shared_ptr<SystemEventHandler> g_eventHandler = nullptr;
-
-bool SubscribeSystemEvent(void)
+bool SubscribeSystemEvent(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff)
 {
     MatchingSkills matchingSkills;
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
@@ -88,7 +98,7 @@ bool SubscribeSystemEvent(void)
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_OFF);
     CommonEventSubscribeInfo subscriberInfo(matchingSkills);
 
-    g_eventHandler = std::make_shared<SystemEventHandler>(subscriberInfo);
+    g_eventHandler = std::make_shared<SystemEventHandler>(subscriberInfo, onPackageRemoved, onUserRemoved, onScreenOff);
     if (g_eventHandler == nullptr) {
         LOGE("[FATAL]Asset system event handler is nullptr.");
         return false;

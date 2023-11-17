@@ -27,7 +27,8 @@ use system_ability_fwk_rust::{define_system_ability, IMethod, ISystemAbility, RS
 
 use asset_definition::{AssetMap, Result};
 use asset_ipc::{IAsset, SA_ID};
-use asset_log::{logi, loge};
+use asset_log::{loge, logi};
+use asset_system_ability::{subscribe_system_abillity, unsubscribe_system_ability};
 
 mod calling_info;
 mod operations;
@@ -46,11 +47,6 @@ define_system_ability!(
     sa: SystemAbility(on_start, on_stop),
 );
 
-extern "C" {
-    fn SubscribeSystemAbility() -> bool;
-    fn UnSubscribeSystemAbility() -> bool;
-}
-
 fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
     let Some(service) = AssetStub::new_remote_stub(AssetService) else {
         loge!("Create AssetService failed!");
@@ -64,20 +60,12 @@ fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
 
     ability.publish(&obj, SA_ID);
     logi!("[INFO]Asset service on_start");
-    thread::spawn(|| {
-        if unsafe { SubscribeSystemAbility() } {
-            logi!("Subscribe system ability success.");
-        } else {
-            logi!("Subscribe system ability failed.")
-        }
-    });
+    thread::spawn(subscribe_system_abillity);
 }
 
 fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {
     logi!("[INFO]Asset service on_stop");
-    unsafe {
-        let _ = UnSubscribeSystemAbility();
-    }
+    unsubscribe_system_ability();
 }
 
 #[used]

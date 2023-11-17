@@ -25,67 +25,76 @@
 #include "asset_log.h"
 #include "system_event_wrapper.h"
 
-using namespace std;
-using namespace OHOS;
-
-static constexpr int32_t RETRY_TIMES_FOR_SAMGR = 50;
-static constexpr int32_t RETRY_DURATION_US = 200 * 1000;
+namespace {
+const int32_t RETRY_TIMES_FOR_SAMGR = 50;
+const int32_t RETRY_DURATION_US = 200 * 1000;
 
 class SystemAbilityHandler : public OHOS::SystemAbilityStatusChangeStub {
 public:
-    SystemAbilityHandler() {};
+    SystemAbilityHandler(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff)
+        : onPackageRemoved(onPackageRemoved), onUserRemoved(onUserRemoved), onScreenOff(onScreenOff) {};
     ~SystemAbilityHandler() = default;
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override
     {
-        if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
+        if (systemAbilityId != OHOS::COMMON_EVENT_SERVICE_ID) {
             return;
         }
 
-        if (!SubscribeSystemEvent()) {
+        if (SubscribeSystemEvent(onPackageRemoved, onUserRemoved, onScreenOff)) {
+            LOGI("Subscribe system event success.");
+        } else {
             LOGE("Subscribe system event failed.");
         }
     }
     void OnRemoveSystemAbility(int32_t systemAbilityId, const std::string& deviceId) override
     {
-        if (systemAbilityId != COMMON_EVENT_SERVICE_ID) {
+        if (systemAbilityId != OHOS::COMMON_EVENT_SERVICE_ID) {
             return;
         }
-        if (!UnSubscribeSystemEvent()) {
+        if (UnSubscribeSystemEvent()) {
+            LOGI("UnSubscribe system event success.");
+        } else {
             LOGE("UnSubscribe system event failed.");
         }
     }
+private:
+    OnPackageRemoved onPackageRemoved;
+    OnUserRemoved onUserRemoved;
+    OnScreenOff onScreenOff;
 };
 
-static sptr<OHOS::ISystemAbilityManager> GetSystemAbility(void)
+OHOS::sptr<OHOS::ISystemAbilityManager> GetSystemAbility(void)
 {
     int32_t retryCount = RETRY_TIMES_FOR_SAMGR;
-    OHOS::sptr<ISystemAbilityManager> samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    OHOS::sptr<OHOS::ISystemAbilityManager> samgrProxy =
+        OHOS::SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     while (samgrProxy == nullptr && retryCount > 0) {
         usleep(RETRY_DURATION_US);
-        samgrProxy = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+        samgrProxy = OHOS::SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
         retryCount--;
     }
     return samgrProxy;
 }
 
-static OHOS::sptr<SystemAbilityHandler> abilityHandler;
+OHOS::sptr<SystemAbilityHandler> abilityHandler;
+} // namespace
 
-bool SubscribeSystemAbility()
+bool SubscribeSystemAbility(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff)
 {
-    OHOS::sptr<ISystemAbilityManager> samgrProxy = GetSystemAbility();
+    OHOS::sptr<OHOS::ISystemAbilityManager> samgrProxy = GetSystemAbility();
     if (samgrProxy == nullptr) {
         LOGE("Get system ability failed");
         return false;
     }
 
-    abilityHandler = new (std::nothrow) SystemAbilityHandler();
+    abilityHandler = new (std::nothrow) SystemAbilityHandler(onPackageRemoved, onUserRemoved, onScreenOff);
     if (abilityHandler == nullptr) {
         LOGE("Create system ability handler failed.");
         return false;
     }
 
-    int32_t ret = samgrProxy->SubscribeSystemAbility(COMMON_EVENT_SERVICE_ID, abilityHandler);
-    if (ret != ERR_OK) {
+    int32_t ret = samgrProxy->SubscribeSystemAbility(OHOS::COMMON_EVENT_SERVICE_ID, abilityHandler);
+    if (ret != OHOS::ERR_OK) {
         LOGE("Subscribe system ability failed.");
         return false;
     }
@@ -94,12 +103,12 @@ bool SubscribeSystemAbility()
 
 bool UnSubscribeSystemAbility()
 {
-    OHOS::sptr<ISystemAbilityManager> samgrProxy = GetSystemAbility();
+    OHOS::sptr<OHOS::ISystemAbilityManager> samgrProxy = GetSystemAbility();
     if (samgrProxy == nullptr || abilityHandler == nullptr) {
         return false;
     }
 
-    if (samgrProxy->UnSubscribeSystemAbility(COMMON_EVENT_SERVICE_ID, abilityHandler) != ERR_OK ||
+    if (samgrProxy->UnSubscribeSystemAbility(OHOS::COMMON_EVENT_SERVICE_ID, abilityHandler) != OHOS::ERR_OK ||
         !UnSubscribeSystemEvent()) {
         LOGE("UnSubscribe system ability or system event failed.");
         return false;

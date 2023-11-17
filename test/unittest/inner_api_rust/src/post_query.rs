@@ -33,6 +33,7 @@ fn post_query_with_wrong_auth_challenge() {
 
     query.insert_attr(Tag::AuthChallenge, vec![0; CHALLENGE_SIZE]);
     assert!(asset_sdk::Manager::build().unwrap().post_query(&query).is_ok());
+
     query.insert_attr(Tag::AuthChallenge, challenge);
     asset_sdk::Manager::build().unwrap().post_query(&query).unwrap();
     remove_by_alias(function_name).unwrap();

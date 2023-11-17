@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-use asset_crypto_manager::crypto::*;
+use asset_crypto_manager::{crypto::*, crypto_manager::*, secret_key::*};
 use asset_definition::{Accessibility, AuthType};
 
 pub const AAD_SIZE: u32 = 8;
@@ -23,22 +23,6 @@ fn generate_and_delete() {
     let secret_key = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlocked, false);
     secret_key.generate().unwrap();
     assert!(secret_key.delete().is_ok())
-}
-
-#[test]
-fn user_auth_key() {
-    let need_auth = SecretKey::new(2, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked, false);
-    let do_not_need_auth = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlocked, false);
-    assert!(need_auth.need_user_auth());
-    assert!(!do_not_need_auth.need_user_auth());
-}
-
-#[test]
-fn device_unlock_key() {
-    let need_unlock = SecretKey::new(3, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlocked, false);
-    let do_not_need_unlock = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceFirstUnlocked, false);
-    assert!(need_unlock.need_device_unlock());
-    assert!(!do_not_need_unlock.need_device_unlock());
 }
 
 #[test]

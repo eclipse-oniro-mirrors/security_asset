@@ -24,7 +24,6 @@ ohos_static_library("asset_os_dependency") {
     "src/system_ability_wrapper.cpp",
     "src/system_event_wrapper.cpp",
   ]
-  deps = [ ":asset_service_ffi" ]
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
@@ -41,19 +40,20 @@ ohos_static_library("asset_os_dependency") {
   part_name = "asset"
 }
 
-ohos_rust_shared_ffi("asset_service_ffi") {
+ohos_rust_static_library("asset_system_ability") {
   sources = [ "src/lib.rs" ]
   deps = [
     "../../frameworks/constants:asset_constants",
     "../../frameworks/definition:asset_definition",
     "../../frameworks/os_dependency/file:asset_file_operator",
     "../../frameworks/os_dependency/log:asset_log",
-    "../../frameworks/utils:asset_utils",
     "../crypto_manager:asset_crypto_manager",
     "../db_operator:asset_db_operator",
+    ":asset_os_dependency",
   ]
   external_deps = [ "hilog:libhilog" ]
-  crate_name = "asset_service_ffi"
+  crate_name = "asset_system_ability"
+  crate_type = "rlib"
   subsystem_name = "security"
   part_name = "asset"
 }

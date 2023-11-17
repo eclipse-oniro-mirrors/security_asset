@@ -108,25 +108,13 @@ fn pre_query_batch_data() {
 #[test]
 fn pre_query_single_data() {
     let function_name = function!().as_bytes();
-    asset_sdk::Manager::build()
-    .unwrap()
-    .add(&AssetMap::from([
-        (Tag::Alias, Value::Bytes(function_name.to_vec())),
-        (Tag::Secret, Value::Bytes(function_name.to_vec())),
-        (Tag::Accessibility, Value::Number(Accessibility::DevicePowerOn as u32)),
-        (Tag::AuthType, Value::Number(AuthType::Any as u32)),
-        (Tag::DeleteType, Value::Number(DeleteType::WhenPackageRemoved as u32)),
-        (Tag::SyncType, Value::Number(SyncType::ThisDevice as u32)),
-        (Tag::RequirePasswordSet, Value::Bool(true)),
-    ]))
-    .unwrap();
+    add_default_auth_asset(function_name, function_name).unwrap();
+
     let mut query = AssetMap::new();
     query.insert_attr(Tag::Alias, function_name.to_owned());
     query.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     query.insert_attr(Tag::AuthType, AuthType::Any);
-    query.insert_attr(Tag::DeleteType, DeleteType::WhenPackageRemoved);
-    query.insert_attr(Tag::SyncType, SyncType::ThisDevice);
-    query.insert_attr(Tag::RequirePasswordSet, true);
+    query.insert_attr(Tag::RequirePasswordSet, false);
     let challenge = asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap();
     assert_eq!(CHALLENGE_SIZE, challenge.len());
 

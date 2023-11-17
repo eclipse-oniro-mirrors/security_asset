@@ -41,11 +41,7 @@ fn post_query_bytes_tag_with_unmatched_type() {
 
 #[test]
 fn post_query_unsupported_tags() {
-    let mut tags_bytes = vec![
-        Tag::Secret,
-        Tag::Alias,
-        Tag::AuthToken
-    ];
+    let mut tags_bytes = vec![Tag::Secret, Tag::Alias, Tag::AuthToken];
     let labels_bytes = [CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat();
     tags_bytes.extend(labels_bytes);
     for tag in tags_bytes {

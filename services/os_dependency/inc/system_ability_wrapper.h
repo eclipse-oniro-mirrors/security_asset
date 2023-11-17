@@ -16,11 +16,13 @@
 #ifndef SYSTEM_ABILITY_WRAPPER
 #define SYSTEM_ABILITY_WRAPPER
 
+#include "system_event_wrapper.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-bool SubscribeSystemAbility(void);
+bool SubscribeSystemAbility(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff);
 bool UnSubscribeSystemAbility(void);
 
 #ifdef __cplusplus

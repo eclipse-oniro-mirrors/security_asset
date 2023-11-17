@@ -15,7 +15,7 @@
 
 //! This module is used to insert an Asset with a specified alias.
 
-use asset_crypto_manager::crypto::{Crypto, SecretKey};
+use asset_crypto_manager::{crypto::Crypto, secret_key::SecretKey};
 use asset_db_operator::{
     database::Database,
     types::{column, DbMap, DB_DATA_VERSION},

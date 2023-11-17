@@ -121,24 +121,15 @@ fn pre_query_number_tag_with_unmatched_type() {
 
 #[test]
 fn pre_query_unsupported_tags() {
-    let tags_bytes = [
-        Tag::Secret,
-        Tag::AuthChallenge,
-        Tag::AuthToken,
-    ];
+    let tags_bytes = [Tag::Secret, Tag::AuthChallenge, Tag::AuthToken];
     for tag in tags_bytes {
         let mut query = AssetMap::new();
         query.insert_attr(tag, vec![0; MIN_ARRAY_SIZE + 1]);
         expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
     }
 
-    let tags_num = [
-        Tag::ConflictResolution,
-        Tag::ReturnLimit,
-        Tag::ReturnOffset,
-        Tag::ReturnOrderedBy,
-        Tag::ReturnType,
-    ];
+    let tags_num =
+        [Tag::ConflictResolution, Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderedBy, Tag::ReturnType];
     for tag in tags_num {
         let mut query = AssetMap::new();
         query.insert_attr(tag, 1);

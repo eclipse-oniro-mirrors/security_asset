@@ -20,7 +20,7 @@ use std::{
 };
 
 use asset_constants::OwnerType;
-use asset_definition::{Extension, Value};
+use asset_definition::{ErrCode, Extension, Value};
 
 use crate::{
     database::Database,
@@ -227,7 +227,7 @@ fn backup_and_restore() {
     def.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
     def.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
 
-    db.insert_datas(&def).unwrap();
+    db.query_datas(&vec![], &def, None).unwrap();
     drop(db);
 
     // Destroy the backup database.
@@ -236,10 +236,25 @@ fn backup_and_restore() {
 
     // Recovery the backup database.
     let mut db = Database::build(0).unwrap();
-    db.insert_datas(&def).unwrap();
+    db.query_datas(&vec![], &def, None).unwrap();
     let ret = db
         .query_datas(&vec![], &DbMap::from([(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()))]), None)
         .unwrap();
-    assert_eq!(ret.len(), 3);
+    assert_eq!(ret.len(), 1);
+    remove_dir();
+}
+
+#[test]
+fn insert_duplicated_data() {
+    let mut db = open_db_and_insert_data();
+
+    let mut def = DbMap::from(DB_DATA);
+    def.insert(column::SECRET, Value::Bytes(column::SECRET.as_bytes().to_vec()));
+    def.insert(column::ALIAS, Value::Bytes(column::ALIAS.as_bytes().to_vec()));
+    def.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
+    def.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
+    assert_eq!(ErrCode::Duplicated, db.insert_datas(&def).unwrap_err().code);
+
+    drop(db);
     remove_dir();
 }

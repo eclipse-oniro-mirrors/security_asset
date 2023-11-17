@@ -17,7 +17,7 @@
 
 use std::cmp::Ordering;
 
-use asset_crypto_manager::crypto::{Crypto, CryptoManager};
+use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager};
 use asset_db_operator::{
     database::Database,
     types::{column, DbMap, QueryOptions},
@@ -59,7 +59,7 @@ fn exec_crypto(query: &AssetMap, db_data: &mut DbMap) -> Result<()> {
             db_data.insert(column::SECRET, Value::Bytes(secret));
             Ok(())
         },
-        Err(e) => Err(e)
+        Err(e) => Err(e),
     }
 }
 

@@ -16,11 +16,17 @@
 #ifndef SYSTEM_EVENT_WRAPPER
 #define SYSTEM_EVENT_WRAPPER
 
+#include <stdint.h>
+
+typedef void (*OnPackageRemoved)(int32_t, const uint8_t *owner, uint32_t ownerSize);
+typedef void (*OnUserRemoved)(int32_t);
+typedef void (*OnScreenOff)();
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-bool SubscribeSystemEvent(void);
+bool SubscribeSystemEvent(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff);
 bool UnSubscribeSystemEvent(void);
 
 #ifdef __cplusplus
