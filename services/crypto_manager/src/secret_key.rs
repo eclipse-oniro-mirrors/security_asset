@@ -19,18 +19,20 @@ use asset_definition::{log_throw_error, Accessibility, AuthType, ErrCode, Result
 use asset_utils::hasher;
 
 use crate::identity_scope::IdentityScope;
-use crate::HksBlob;
+use crate::{HksBlob, HksAuthStorageLevel, KeyId};
 
 /// Struct to store key attributes, excluding key materials.
 #[derive(Clone)]
 pub struct SecretKey {
     auth_type: AuthType,
     access_type: Accessibility,
+    require_password_set: bool,
+    user_id: i32,
     alias: Vec<u8>,
 }
 
 extern "C" {
-    fn GenerateKey(alias: *const HksBlob, need_auth: bool) -> i32;
+    fn GenerateKey(keyId: *const KeyId, need_auth: bool, require_password_set: bool) -> i32;
     fn DeleteKey(alias: *const HksBlob) -> i32;
     fn IsKeyExist(alias: *const HksBlob) -> i32;
 }
@@ -75,7 +77,7 @@ impl SecretKey {
         require_password_set: bool,
     ) -> Self {
         let alias = calculate_key_alias(user_id, owner, auth_type, access_type, require_password_set);
-        Self { auth_type, access_type, alias }
+        Self { auth_type, access_type, require_password_set, user_id, alias }
     }
 
     /// Check whether the secret key exists.
@@ -96,8 +98,13 @@ impl SecretKey {
     /// Generate the secret key and store in HUKS.
     pub fn generate(&self) -> Result<()> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
+        let key_id = KeyId {
+            alias: key_alias,
+            user_id: self.user_id,
+            access_type: HksAuthStorageLevel::from(self.access_type)
+        };
         let _identity = IdentityScope::build()?;
-        let ret = unsafe { GenerateKey(&key_alias as *const HksBlob, self.need_user_auth()) };
+        let ret = unsafe { GenerateKey(&key_id as *const KeyId, self.need_user_auth(), self.require_password_set) };
         match ret {
             HKS_SUCCESS => Ok(()),
             _ => {
@@ -156,5 +163,15 @@ impl SecretKey {
     /// Get the key alias.
     pub(crate) fn alias(&self) -> &Vec<u8> {
         &self.alias
+    }
+
+    /// Get the key user id
+    pub(crate) fn user_id(&self) -> i32 {
+        self.user_id
+    }
+
+    /// Get the key access type
+    pub(crate) fn access_type(&self) -> Accessibility {
+        self.access_type
     }
 }

@@ -25,6 +25,12 @@ static const uint32_t NONCE_SIZE = 12;
 
 #define ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
 
+struct KeyId {
+    struct HksBlob alias;
+    int32_t user_id;
+    enum HksAuthStorageLevel access_type;
+};
+
 static int32_t BuildParamSet(struct HksParamSet **paramSet, const struct HksParam *params, uint32_t paramCount)
 {
     int32_t ret = HksInitParamSet(paramSet);
@@ -50,14 +56,16 @@ static int32_t BuildParamSet(struct HksParamSet **paramSet, const struct HksPara
     return ret;
 }
 
-static int32_t AddCommonGenParams(struct HksParamSet *paramSet)
+static int32_t AddCommonGenParams(struct HksParamSet *paramSet, const struct KeyId *keyId)
 {
     struct HksParam commonParams[] = {
         { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
         { .tag = HKS_TAG_PURPOSE, .uint32Param = HKS_KEY_PURPOSE_ENCRYPT | HKS_KEY_PURPOSE_DECRYPT },
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
-        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM }
+        { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
+        // { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->access_type },
+        // { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->user_id },
     };
     return HksAddParams(paramSet, commonParams, ARRAY_SIZE(commonParams));
 }
@@ -75,7 +83,15 @@ static int32_t AddAuthGenParams(struct HksParamSet *paramSet)
     return HksAddParams(paramSet, authParams, ARRAY_SIZE(authParams));
 }
 
-int32_t GenerateKey(const struct HksBlob *alias, bool needAuth)
+static int32_t AddRequirePwdParams(struct HksParamSet *paramSet)
+{
+    struct HksParam authParams[] = {
+        // { .tag = HKS_TAG_IS_DEVICE_PASSWORD_SET, .boolParam = true }
+    };
+    return HksAddParams(paramSet, authParams, ARRAY_SIZE(authParams));
+}
+
+int32_t GenerateKey(const struct KeyId *keyId, bool needAuth, bool requirePasswordSet)
 {
     struct HksParamSet *paramSet = NULL;
     int32_t ret = HKS_SUCCESS;
@@ -86,7 +102,7 @@ int32_t GenerateKey(const struct HksBlob *alias, bool needAuth)
             break;
         }
 
-        ret = AddCommonGenParams(paramSet);
+        ret = AddCommonGenParams(paramSet, keyId);
         if (ret != HKS_SUCCESS) {
             LOGE("[FATAL]HUKS add common params failed. error=%{public}d", ret);
             break;
@@ -100,13 +116,21 @@ int32_t GenerateKey(const struct HksBlob *alias, bool needAuth)
             }
         }
 
+        if (requirePasswordSet) {
+            ret = AddRequirePwdParams(paramSet);
+            if (ret != HKS_SUCCESS) {
+                LOGE("[FATAL]HUKS add require password set params failed. error=%{public}d", ret);
+                break;
+            }
+        }
+
         ret = HksBuildParamSet(&paramSet);
         if (ret != HKS_SUCCESS) {
             LOGE("[FATAL]HUKS build param set failed. error=%{public}d", ret);
             break;
         }
 
-        ret = HksGenerateKey(alias, paramSet, NULL);
+        ret = HksGenerateKey(&keyId->alias, paramSet, NULL);
         if (ret != HKS_SUCCESS) {
             LOGE("[FATAL]HUKS generate key failed. error=%{public}d", ret);
         }
@@ -126,8 +150,8 @@ int32_t IsKeyExist(const struct HksBlob *alias)
     return HksKeyExist(alias, NULL);
 }
 
-int32_t EncryptData(const struct HksBlob *alias, const struct HksBlob *aad,
-    const struct HksBlob *inData, struct HksBlob *outData)
+int32_t EncryptData(const struct KeyId *keyId, const struct HksBlob *aad, const struct HksBlob *inData,
+    struct HksBlob *outData)
 {
     struct HksParam encryptParams[] = {
         { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES },
@@ -135,7 +159,9 @@ int32_t EncryptData(const struct HksBlob *alias, const struct HksBlob *aad,
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
-        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = *aad }
+        { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = *aad },
+        // { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->access_type },
+        // { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->user_id },
     };
     struct HksParamSet *encryptParamSet = NULL;
     int32_t ret = BuildParamSet(&encryptParamSet, encryptParams, ARRAY_SIZE(encryptParams));
@@ -145,7 +171,7 @@ int32_t EncryptData(const struct HksBlob *alias, const struct HksBlob *aad,
 
     uint8_t handle[sizeof(uint64_t)] = { 0 };
     struct HksBlob handleBlob = { sizeof(uint64_t), handle };
-    ret = HksInit(alias, encryptParamSet, &handleBlob, NULL);
+    ret = HksInit(&keyId->alias, encryptParamSet, &handleBlob, NULL);
     if (ret != HKS_SUCCESS) {
         LOGE("[FATAL]HUKS encrypt init failed. error=%{public}d", ret);
         HksFreeParamSet(&encryptParamSet);
@@ -160,7 +186,7 @@ int32_t EncryptData(const struct HksBlob *alias, const struct HksBlob *aad,
     return ret;
 }
 
-int32_t DecryptData(const struct HksBlob *alias, const struct HksBlob *aad, const struct HksBlob *inData,
+int32_t DecryptData(const struct KeyId *keyId, const struct HksBlob *aad, const struct HksBlob *inData,
     struct HksBlob *outData)
 {
     struct HksBlob cipher = { inData->size - NONCE_SIZE - TAG_SIZE, inData->data };
@@ -176,7 +202,9 @@ int32_t DecryptData(const struct HksBlob *alias, const struct HksBlob *aad, cons
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
         { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = *aad },
         { .tag = HKS_TAG_NONCE, .blob = nonce },
-        { .tag = HKS_TAG_AE_TAG, .blob = tag }
+        { .tag = HKS_TAG_AE_TAG, .blob = tag },
+        // { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->access_type },
+        // { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->user_id },
     };
 
     int32_t ret = BuildParamSet(&decryptParamSet, decryptParams, ARRAY_SIZE(decryptParams));
@@ -186,7 +214,7 @@ int32_t DecryptData(const struct HksBlob *alias, const struct HksBlob *aad, cons
 
     uint8_t handle[sizeof(uint64_t)] = { 0 };
     struct HksBlob handleBlob = { sizeof(uint64_t), handle };
-    ret = HksInit(alias, decryptParamSet, &handleBlob, NULL);
+    ret = HksInit(&keyId->alias, decryptParamSet, &handleBlob, NULL);
     if (ret != HKS_SUCCESS) {
         LOGE("[FATAL]HUKS decrypt init failed. error=%{public}d", ret);
         HksFreeParamSet(&decryptParamSet);
@@ -201,7 +229,7 @@ int32_t DecryptData(const struct HksBlob *alias, const struct HksBlob *aad, cons
     return ret;
 }
 
-int32_t InitKey(const struct HksBlob *alias, uint32_t validTime, struct HksBlob *challenge, struct HksBlob *handle)
+int32_t InitKey(const struct KeyId *keyId, uint32_t validTime, struct HksBlob *challenge, struct HksBlob *handle)
 {
     struct HksParam initParams[] = {
         { .tag = HKS_TAG_ALGORITHM, .uint32Param = HKS_ALG_AES},
@@ -209,6 +237,8 @@ int32_t InitKey(const struct HksBlob *alias, uint32_t validTime, struct HksBlob 
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_IS_BATCH_OPERATION, .boolParam = true },
         { .tag = HKS_TAG_BATCH_OPERATION_TIMEOUT, .uint32Param = validTime },
+        // { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->access_type },
+        // { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->user_id },
     };
     struct HksParamSet *paramSet = NULL;
     int32_t ret = BuildParamSet(&paramSet, initParams, ARRAY_SIZE(initParams));
@@ -216,7 +246,7 @@ int32_t InitKey(const struct HksBlob *alias, uint32_t validTime, struct HksBlob 
         return ret;
     }
 
-    ret = HksInit(alias, paramSet, handle, challenge);
+    ret = HksInit(&keyId->alias, paramSet, handle, challenge);
     HksFreeParamSet(&paramSet);
     if (ret != HKS_SUCCESS) {
         LOGE("[FATAL]HUKS batch decrypt init failed. error=%{public}d", ret);

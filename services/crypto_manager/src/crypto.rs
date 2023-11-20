@@ -18,12 +18,12 @@
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_utils::time;
 
-use crate::{identity_scope::IdentityScope, secret_key::SecretKey, HksBlob, OutBlob};
+use crate::{identity_scope::IdentityScope, secret_key::SecretKey, HksBlob, HksAuthStorageLevel, KeyId, OutBlob};
 
 extern "C" {
-    fn EncryptData(alias: *const HksBlob, aad: *const HksBlob, in_data: *const HksBlob, out_data: *mut OutBlob) -> i32;
-    fn DecryptData(alias: *const HksBlob, aad: *const HksBlob, in_data: *const HksBlob, out_data: *mut OutBlob) -> i32;
-    fn InitKey(alias: *const HksBlob, valid_time: u32, challenge: *mut OutBlob, handle: *mut OutBlob) -> i32;
+    fn EncryptData(keyId: *const KeyId, aad: *const HksBlob, in_data: *const HksBlob, out_data: *mut OutBlob) -> i32;
+    fn DecryptData(keyId: *const KeyId, aad: *const HksBlob, in_data: *const HksBlob, out_data: *mut OutBlob) -> i32;
+    fn InitKey(keyId: *const KeyId, valid_time: u32, challenge: *mut OutBlob, handle: *mut OutBlob) -> i32;
     fn ExecCrypt(
         handle: *const HksBlob,
         aad: *const HksBlob,
@@ -67,11 +67,16 @@ impl Crypto {
         let key_alias = HksBlob { size: self.key.alias().len() as u32, data: self.key.alias().as_ptr() };
         let mut challenge = OutBlob { size: self.challenge.len() as u32, data: self.challenge.as_mut_ptr() };
         let mut handle = OutBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
+        let key_id = KeyId {
+            alias: key_alias,
+            user_id: self.key.user_id(),
+            access_type: HksAuthStorageLevel::from(self.key.access_type())
+        };
 
         let _identity = IdentityScope::build()?;
         let ret = unsafe {
             InitKey(
-                &key_alias as *const HksBlob,
+                &key_id as *const KeyId,
                 self.valid_time,
                 &mut challenge as *mut OutBlob,
                 &mut handle as *mut OutBlob,
@@ -119,11 +124,16 @@ impl Crypto {
         let aad_data = HksBlob { size: aad.len() as u32, data: aad.as_ptr() };
         let in_data = HksBlob { size: msg.len() as u32, data: msg.as_ptr() };
         let mut out_data = OutBlob { size: cipher.len() as u32, data: cipher.as_mut_ptr() };
+        let key_id = KeyId {
+            alias: key_alias,
+            user_id: key.user_id(),
+            access_type: HksAuthStorageLevel::from(key.access_type())
+        };
 
         let _identity = IdentityScope::build()?;
         let ret = unsafe {
             EncryptData(
-                &key_alias as *const HksBlob,
+                &key_id as *const KeyId,
                 &aad_data as *const HksBlob,
                 &in_data as *const HksBlob,
                 &mut out_data as *mut OutBlob,
@@ -146,11 +156,16 @@ impl Crypto {
         let aad_data = HksBlob { size: aad.len() as u32, data: aad.as_ptr() };
         let in_data = HksBlob { size: cipher.len() as u32, data: cipher.as_ptr() };
         let mut out_data = OutBlob { size: plain.len() as u32, data: plain.as_mut_ptr() };
+        let key_id = KeyId {
+            alias: key_alias,
+            user_id: key.user_id(),
+            access_type: HksAuthStorageLevel::from(key.access_type())
+        };
 
         let _identity = IdentityScope::build()?;
         let ret = unsafe {
             DecryptData(
-                &key_alias as *const HksBlob,
+                &key_id as *const KeyId,
                 &aad_data as *const HksBlob,
                 &in_data as *const HksBlob,
                 &mut out_data as *mut OutBlob,

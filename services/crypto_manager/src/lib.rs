@@ -20,6 +20,8 @@ pub mod crypto_manager;
 mod identity_scope;
 pub mod secret_key;
 
+use asset_definition::Accessibility;
+
 #[repr(C)]
 struct HksBlob {
     size: u32,
@@ -30,4 +32,29 @@ struct HksBlob {
 struct OutBlob {
     size: u32,
     data: *mut u8,
+}
+
+/// this enumerate is to match huks enumerate HksAuthStorageLevel
+#[repr(C)]
+enum HksAuthStorageLevel {
+    Ece = 1, // Accessibility DeviceUnlocked
+    Ce = 2,  // Accessibility DeviceFirstUnlocked
+    De = 3,  // Accessibility DevicePowerOn
+}
+
+impl From<Accessibility> for HksAuthStorageLevel {
+    fn from(value: Accessibility) -> Self {
+        match value {
+            Accessibility::DeviceUnlocked => HksAuthStorageLevel::Ece,
+            Accessibility::DeviceFirstUnlocked => HksAuthStorageLevel::Ce,
+            Accessibility::DevicePowerOn => HksAuthStorageLevel::De
+        }
+    }
+}
+
+#[repr(C)]
+struct KeyId {
+    alias: HksBlob,
+    user_id: i32,
+    access_type: HksAuthStorageLevel
 }
