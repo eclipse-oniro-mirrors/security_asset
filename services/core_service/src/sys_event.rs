@@ -72,6 +72,7 @@ impl<'a> SysEvent<'a> {
     }
 
     fn write(self) {
+        // todo yyd 将self.event_kind.as_str() 抽掉 把kind干掉  inner_type就叫event_type即可
         write(Self::DOMAIN, self.event_kind.as_str(), self.inner_type, self.params.as_slice());
     }
 }
@@ -103,7 +104,7 @@ pub(crate) fn upload_system_event<T>(
         },
         Err(e) => {
             SysEvent::new_fault()
-                .set_param(build_str_param!(SysEvent::FUNCTION, "add"))
+                .set_param(build_str_param!(SysEvent::FUNCTION, func_name))
                 .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
                 .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
                 .set_param(build_number_param!(SysEvent::ERROR_CODE, e.code as i32))

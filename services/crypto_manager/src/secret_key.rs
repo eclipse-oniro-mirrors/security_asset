@@ -52,8 +52,12 @@ fn calculate_key_alias(
     alias.extend_from_slice(&user_id.to_le_bytes());
     alias.push(b'_');
     alias.extend(owner);
+    // todo 每个搞个default trait 在噻的时候调用default
     if auth_type != AuthType::None {
         alias.push(b'_');
+        // todo 下面的都加上Tag 给每一个类型加一个trait dispaly的trait
+        // alias.push(Tag::to_string(&Tag::AuthType));
+        // alias.push(b':');
         alias.extend_from_slice(&(auth_type as u32).to_le_bytes());
     }
     if access_type != Accessibility::DeviceFirstUnlocked {
@@ -104,6 +108,7 @@ impl SecretKey {
             access_type: HksAuthStorageLevel::from(self.access_type)
         };
         let _identity = IdentityScope::build()?;
+        // todo yyd 将require_password_set封装成函数获取值
         let ret = unsafe { GenerateKey(&key_id as *const KeyId, self.need_user_auth(), self.require_password_set) };
         match ret {
             HKS_SUCCESS => Ok(()),

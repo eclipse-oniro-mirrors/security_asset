@@ -97,7 +97,7 @@ impl AssetService {
 }
 
 impl IRemoteBroker for AssetService {}
-
+/// todo yyd 把调用函数的使用宏来代替 统一代码格式
 impl IAsset for AssetService {
     fn add(&self, attributes: &AssetMap) -> Result<()> {
         AssetService::execute(hisysevent::function!(), attributes, operations::add)

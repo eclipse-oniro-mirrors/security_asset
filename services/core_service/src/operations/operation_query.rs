@@ -73,9 +73,7 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
                 Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
                     exec_crypto(query, &mut results[0])?;
                 },
-                _ => {
-                    decrypt(calling_info, &mut results[0])?;
-                },
+                _ => decrypt(calling_info, &mut results[0])?,
             };
             into_asset_maps(&results)
         },

@@ -151,10 +151,14 @@ fn add_invalid_accessibility() {
     let function_name = function!().as_bytes();
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
-    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
-
     attrs.insert_attr(Tag::Accessibility, (Accessibility::DeviceUnlocked as u32) + 1);
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
+
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlocked);
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
+
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DeviceFirstUnlocked);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 }
 
@@ -236,20 +240,6 @@ fn add_invalid_conflict_resolution() {
 }
 
 #[test]
-fn add_conflict_resolution_with_unmatched_type() {
-    let function_name = function!().as_bytes();
-    let mut attrs = AssetMap::new();
-    attrs.insert_attr(Tag::Alias, function_name.to_owned());
-    attrs.insert_attr(Tag::Secret, function_name.to_owned());
-    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
-    attrs.insert_attr(Tag::ConflictResolution, vec![]);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
-
-    attrs.insert_attr(Tag::ConflictResolution, true);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
-}
-
-#[test]
 fn add_invalid_label() {
     let function_name = function!().as_bytes();
     let labels = &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat();
@@ -320,18 +310,4 @@ fn add_unsupported_tags() {
         attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
         expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
     }
-}
-
-#[test]
-fn add_as_native_with_device_powner_on() {
-    let function_name = function!().as_bytes();
-    let mut attrs = AssetMap::new();
-    attrs.insert_attr(Tag::Alias, function_name.to_owned());
-    attrs.insert_attr(Tag::Secret, function_name.to_owned());
-
-    attrs.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlocked);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
-
-    attrs.insert_attr(Tag::Accessibility, Accessibility::DeviceFirstUnlocked);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 }

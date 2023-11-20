@@ -74,7 +74,7 @@ impl CryptoManager {
 
     fn remove_expired_crypto(&mut self) -> Result<()> {
         let now = time::system_time_in_seconds()?;
-        self.cryptos.retain(|crypto| crypto.expire_time() > now);
+        self.cryptos.retain(|crypto| crypto.expire_time() >= now);
         Ok(())
     }
 }

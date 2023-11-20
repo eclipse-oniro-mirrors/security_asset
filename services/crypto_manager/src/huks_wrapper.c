@@ -25,6 +25,7 @@ static const uint32_t NONCE_SIZE = 12;
 
 #define ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
 
+// todo yyd access_type 修改一下名称 改为 storageLevel user_id改为userId
 struct KeyId {
     struct HksBlob alias;
     int32_t user_id;
@@ -56,6 +57,7 @@ static int32_t BuildParamSet(struct HksParamSet **paramSet, const struct HksPara
     return ret;
 }
 
+// todo yyd 入参在前 出参在后 修改本函数的顺序 其它的都看一眼
 static int32_t AddCommonGenParams(struct HksParamSet *paramSet, const struct KeyId *keyId)
 {
     struct HksParam commonParams[] = {
@@ -83,6 +85,7 @@ static int32_t AddAuthGenParams(struct HksParamSet *paramSet)
     return HksAddParams(paramSet, authParams, ARRAY_SIZE(authParams));
 }
 
+// todo yyd 把这个函数不要了 放回去
 static int32_t AddRequirePwdParams(struct HksParamSet *paramSet)
 {
     struct HksParam authParams[] = {

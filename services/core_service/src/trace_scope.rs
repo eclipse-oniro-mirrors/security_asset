@@ -37,7 +37,7 @@ impl TraceScope {
 }
 
 impl Drop for TraceScope {
-    // The timing will end automatically when the structure drops.
+    // Finish tracing. The timing will end automatically when the structure drops.
     fn drop(&mut self) {
         finish_trace(self.label);
     }

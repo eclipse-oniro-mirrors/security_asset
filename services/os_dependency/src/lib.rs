@@ -58,6 +58,8 @@ extern "C" {
 /// Subscribe to the add and remove events of system abilities.
 pub fn subscribe_system_abillity() {
     unsafe {
+        // todo SubscribeSystemEvent(onPackageRemoved, onUserRemoved, onScreenOff)
+        // todo yyd 测试hap写入一条数据 然后重启 卸载hap 看数据有没有清除掉 如果不行 调一下61行 优先级第一
         if SubscribeSystemAbility(delete_data_by_owner, delete_dir_by_user, delete_crypto_need_unlock) {
             loge!("Subscribe system ability success.");
         } else {

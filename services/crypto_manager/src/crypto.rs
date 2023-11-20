@@ -124,6 +124,7 @@ impl Crypto {
         let aad_data = HksBlob { size: aad.len() as u32, data: aad.as_ptr() };
         let in_data = HksBlob { size: msg.len() as u32, data: msg.as_ptr() };
         let mut out_data = OutBlob { size: cipher.len() as u32, data: cipher.as_mut_ptr() };
+        // todo yyd KeyId 加 new的构造函数 统一风格
         let key_id = KeyId {
             alias: key_alias,
             user_id: key.user_id(),
