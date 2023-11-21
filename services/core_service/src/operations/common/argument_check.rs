@@ -35,7 +35,7 @@ const MAX_LABEL_SIZE: usize = 512;
 const AUTH_TOKEN_SIZE: usize = 148;
 const CHALLENGE_SIZE: usize = 32;
 const SYNC_TYPE_MIN_BITS: u32 = 0;
-const SYNC_TYPE_MAX_BITS: u32 = 3;
+const SYNC_TYPE_MAX_BITS: u32 = 2;
 const DELETE_TYPE_MIN_BITS: u32 = 1;
 const DELETE_TYPE_MAX_BITS: u32 = 2;
 

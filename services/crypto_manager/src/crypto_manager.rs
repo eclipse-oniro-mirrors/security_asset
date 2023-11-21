@@ -18,7 +18,6 @@
 use std::sync::{Arc, Mutex};
 
 use asset_definition::{log_throw_error, ErrCode, Result};
-use asset_utils::time;
 
 use crate::crypto::Crypto;
 
@@ -73,8 +72,7 @@ impl CryptoManager {
     }
 
     fn remove_expired_crypto(&mut self) -> Result<()> {
-        let now = time::system_time_in_seconds()?;
-        self.cryptos.retain(|crypto| crypto.expire_time() >= now);
+        self.cryptos.retain(|crypto| crypto.start_time().elapsed().as_secs() <= crypto.valid_time() as u64);
         Ok(())
     }
 }

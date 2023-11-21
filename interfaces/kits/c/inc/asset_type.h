@@ -315,13 +315,9 @@ typedef enum {
      */
     ASSET_SYNC_TYPE_THIS_DEVICE = 1 << 0,
     /**
-     * An Asset with this attribute value can only be transferred out to a device of trusted account.
-     */
-    ASSET_SYNC_TYPE_TRUSTED_ACCOUNT = 1 << 1,
-    /**
      * An Asset with this attribute value can only be transferred out to a trusted device (user authorized).
      */
-    ASSET_SYNC_TYPE_TRUSTED_DEVICE = 1 << 2,
+    ASSET_SYNC_TYPE_TRUSTED_DEVICE = 1 << 1,
 } Asset_SyncType;
 
 /**

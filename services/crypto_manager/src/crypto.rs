@@ -15,10 +15,11 @@
 
 //! This module is used to implement cryptographic algorithm operations, including key usage.
 
-use asset_definition::{log_throw_error, ErrCode, Result};
-use asset_utils::time;
+use std::time::Instant;
 
-use crate::{identity_scope::IdentityScope, secret_key::SecretKey, HksBlob, HksAuthStorageLevel, KeyId, OutBlob};
+use asset_definition::{log_throw_error, ErrCode, Result};
+
+use crate::{identity_scope::IdentityScope, secret_key::SecretKey, HksBlob, KeyId, OutBlob};
 
 extern "C" {
     fn EncryptData(keyId: *const KeyId, aad: *const HksBlob, in_data: *const HksBlob, out_data: *mut OutBlob) -> i32;
@@ -46,19 +47,18 @@ pub struct Crypto {
     challenge: Vec<u8>,
     handle: Vec<u8>,
     valid_time: u32,
-    exp_time: u64,
+    start_time: Instant,
 }
 
 impl Crypto {
     /// Create a crypto instance.
     pub fn build(key: SecretKey, valid_time: u32) -> Result<Self> {
-        let current_time = time::system_time_in_seconds()?;
         Ok(Self {
             key,
             challenge: vec![0; CHALLENGE_LEN],
             handle: vec![0; HANDLE_LEN],
             valid_time,
-            exp_time: current_time + valid_time as u64,
+            start_time: Instant::now(),
         })
     }
 
@@ -67,11 +67,7 @@ impl Crypto {
         let key_alias = HksBlob { size: self.key.alias().len() as u32, data: self.key.alias().as_ptr() };
         let mut challenge = OutBlob { size: self.challenge.len() as u32, data: self.challenge.as_mut_ptr() };
         let mut handle = OutBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
-        let key_id = KeyId {
-            alias: key_alias,
-            user_id: self.key.user_id(),
-            access_type: HksAuthStorageLevel::from(self.key.access_type())
-        };
+        let key_id = KeyId::new(self.key.user_id(), key_alias, self.key.access_type());
 
         let _identity = IdentityScope::build()?;
         let ret = unsafe {
@@ -124,12 +120,7 @@ impl Crypto {
         let aad_data = HksBlob { size: aad.len() as u32, data: aad.as_ptr() };
         let in_data = HksBlob { size: msg.len() as u32, data: msg.as_ptr() };
         let mut out_data = OutBlob { size: cipher.len() as u32, data: cipher.as_mut_ptr() };
-        // todo yyd KeyId 加 new的构造函数 统一风格
-        let key_id = KeyId {
-            alias: key_alias,
-            user_id: key.user_id(),
-            access_type: HksAuthStorageLevel::from(key.access_type())
-        };
+        let key_id = KeyId::new(key.user_id(), key_alias, key.access_type());
 
         let _identity = IdentityScope::build()?;
         let ret = unsafe {
@@ -157,11 +148,7 @@ impl Crypto {
         let aad_data = HksBlob { size: aad.len() as u32, data: aad.as_ptr() };
         let in_data = HksBlob { size: cipher.len() as u32, data: cipher.as_ptr() };
         let mut out_data = OutBlob { size: plain.len() as u32, data: plain.as_mut_ptr() };
-        let key_id = KeyId {
-            alias: key_alias,
-            user_id: key.user_id(),
-            access_type: HksAuthStorageLevel::from(key.access_type())
-        };
+        let key_id = KeyId::new(key.user_id(), key_alias, key.access_type());
 
         let _identity = IdentityScope::build()?;
         let ret = unsafe {
@@ -182,8 +169,12 @@ impl Crypto {
         &self.challenge
     }
 
-    pub(crate) fn expire_time(&self) -> u64 {
-        self.exp_time
+    pub(crate) fn start_time(&self) -> &Instant {
+        &self.start_time
+    }
+
+    pub(crate) fn valid_time(&self) -> u32 {
+        self.valid_time
     }
 
     pub(crate) fn secret_key(&self) -> &SecretKey {

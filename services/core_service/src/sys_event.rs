@@ -17,39 +17,22 @@
 
 use std::time::Instant;
 
+use asset_constants::CallingInfo;
 use asset_definition::Result;
 use asset_log::{loge, logi};
 
 use hisysevent::{build_number_param, build_str_param, write, EventType, HiSysEventParam};
 
-use crate::calling_info::CallingInfo;
-
-enum EventKind {
-    Fault,
-    Statistics,
-}
-
-impl EventKind {
-    const ASSET_FAULT: &str = "ASSET_FAULT";
-    const ASSET_STATISTICS: &str = "ASSET_STATISTICS";
-
-    fn as_str(&self) -> &str {
-        match self {
-            EventKind::Fault => Self::ASSET_FAULT,
-            EventKind::Statistics => Self::ASSET_STATISTICS,
-        }
-    }
-}
-
 /// System events structure which base on `Hisysevent`.
 struct SysEvent<'a> {
-    event_kind: EventKind,
-    inner_type: EventType,
+    event_type: EventType,
     params: Vec<HiSysEventParam<'a>>,
 }
 
 impl<'a> SysEvent<'a> {
     const DOMAIN: &str = "ASSET";
+    const ASSET_FAULT: &str = "SECRET_STORE_OPERATION_FAILED";
+    const ASSET_STATISTIC: &str = "SECRET_STORE_INFO_COLLECTION";
 
     pub(crate) const FUNCTION: &str = "FUNCTION";
     pub(crate) const USER_ID: &str = "USER_ID";
@@ -58,12 +41,8 @@ impl<'a> SysEvent<'a> {
     pub(crate) const RUN_TIME: &str = "RUN_TIME";
     pub(crate) const EXTRA: &str = "EXTRA";
 
-    fn new_fault() -> Self {
-        Self { event_kind: EventKind::Fault, inner_type: EventType::Fault, params: Vec::new() }
-    }
-
-    fn new_statistics() -> Self {
-        Self { event_kind: EventKind::Statistics, inner_type: EventType::Statistic, params: Vec::new() }
+    fn new(event_type: EventType) -> Self {
+        Self { event_type, params: Vec::new() }
     }
 
     fn set_param(mut self, param: HiSysEventParam<'a>) -> Self {
@@ -72,8 +51,12 @@ impl<'a> SysEvent<'a> {
     }
 
     fn write(self) {
-        // todo yyd 将self.event_kind.as_str() 抽掉 把kind干掉  inner_type就叫event_type即可
-        write(Self::DOMAIN, self.event_kind.as_str(), self.inner_type, self.params.as_slice());
+        let event_name = match self.event_type {
+            EventType::Fault => Self::ASSET_FAULT,
+            EventType::Statistic => Self::ASSET_STATISTIC,
+            _ => "UNKNOWN_EVENT",
+        };
+        write(Self::DOMAIN, event_name, self.event_type, self.params.as_slice());
     }
 }
 
@@ -87,7 +70,7 @@ pub(crate) fn upload_system_event<T>(
     match &result {
         Ok(_) => {
             let duration = start_time.elapsed();
-            SysEvent::new_statistics()
+            SysEvent::new(EventType::Statistic)
                 .set_param(build_str_param!(SysEvent::FUNCTION, func_name))
                 .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
                 .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
@@ -103,7 +86,7 @@ pub(crate) fn upload_system_event<T>(
             )
         },
         Err(e) => {
-            SysEvent::new_fault()
+            SysEvent::new(EventType::Fault)
                 .set_param(build_str_param!(SysEvent::FUNCTION, func_name))
                 .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
                 .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))

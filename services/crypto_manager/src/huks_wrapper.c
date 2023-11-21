@@ -25,11 +25,10 @@ static const uint32_t NONCE_SIZE = 12;
 
 #define ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
 
-// todo yyd access_type 修改一下名称 改为 storageLevel user_id改为userId
 struct KeyId {
+    int32_t userId;
     struct HksBlob alias;
-    int32_t user_id;
-    enum HksAuthStorageLevel access_type;
+    // enum HksAuthStorageLevel storageLevel;
 };
 
 static int32_t BuildParamSet(struct HksParamSet **paramSet, const struct HksParam *params, uint32_t paramCount)
@@ -57,7 +56,6 @@ static int32_t BuildParamSet(struct HksParamSet **paramSet, const struct HksPara
     return ret;
 }
 
-// todo yyd 入参在前 出参在后 修改本函数的顺序 其它的都看一眼
 static int32_t AddCommonGenParams(struct HksParamSet *paramSet, const struct KeyId *keyId)
 {
     struct HksParam commonParams[] = {
@@ -66,8 +64,8 @@ static int32_t AddCommonGenParams(struct HksParamSet *paramSet, const struct Key
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
-        // { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->access_type },
-        // { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->user_id },
+        // { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->storageLevel },
+        // { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->userId },
     };
     return HksAddParams(paramSet, commonParams, ARRAY_SIZE(commonParams));
 }
@@ -81,15 +79,6 @@ static int32_t AddAuthGenParams(struct HksParamSet *paramSet)
         { .tag = HKS_TAG_CHALLENGE_TYPE, .uint32Param = HKS_CHALLENGE_TYPE_NORMAL },
         { .tag = HKS_TAG_USER_AUTH_TYPE, .uint32Param =
             HKS_USER_AUTH_TYPE_FINGERPRINT | HKS_USER_AUTH_TYPE_FACE | HKS_USER_AUTH_TYPE_PIN }
-    };
-    return HksAddParams(paramSet, authParams, ARRAY_SIZE(authParams));
-}
-
-// todo yyd 把这个函数不要了 放回去
-static int32_t AddRequirePwdParams(struct HksParamSet *paramSet)
-{
-    struct HksParam authParams[] = {
-        // { .tag = HKS_TAG_IS_DEVICE_PASSWORD_SET, .boolParam = true }
     };
     return HksAddParams(paramSet, authParams, ARRAY_SIZE(authParams));
 }
@@ -120,9 +109,10 @@ int32_t GenerateKey(const struct KeyId *keyId, bool needAuth, bool requirePasswo
         }
 
         if (requirePasswordSet) {
-            ret = AddRequirePwdParams(paramSet);
+            struct HksParam tempParam = { .tag = HKS_TAG_IS_DEVICE_PASSWORD_SET, .boolParam = true };
+            ret = HksAddParams(paramSet, &tempParam, 1); // 1: add one param to paramSet
             if (ret != HKS_SUCCESS) {
-                LOGE("[FATAL]HUKS add require password set params failed. error=%{public}d", ret);
+                LOGE("[FATAL]HUKS add requirePasswordSet param failed. error=%{public}d", ret);
                 break;
             }
         }
@@ -163,8 +153,8 @@ int32_t EncryptData(const struct KeyId *keyId, const struct HksBlob *aad, const 
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
         { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = *aad },
-        // { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->access_type },
-        // { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->user_id },
+        // { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->storageLevel },
+        // { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->userId },
     };
     struct HksParamSet *encryptParamSet = NULL;
     int32_t ret = BuildParamSet(&encryptParamSet, encryptParams, ARRAY_SIZE(encryptParams));
@@ -206,8 +196,8 @@ int32_t DecryptData(const struct KeyId *keyId, const struct HksBlob *aad, const 
         { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = *aad },
         { .tag = HKS_TAG_NONCE, .blob = nonce },
         { .tag = HKS_TAG_AE_TAG, .blob = tag },
-        // { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->access_type },
-        // { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->user_id },
+        // { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->storageLevel },
+        // { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->userId },
     };
 
     int32_t ret = BuildParamSet(&decryptParamSet, decryptParams, ARRAY_SIZE(decryptParams));
@@ -240,8 +230,8 @@ int32_t InitKey(const struct KeyId *keyId, uint32_t validTime, struct HksBlob *c
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_IS_BATCH_OPERATION, .boolParam = true },
         { .tag = HKS_TAG_BATCH_OPERATION_TIMEOUT, .uint32Param = validTime },
-        // { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->access_type },
-        // { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->user_id },
+        // { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->storageLevel },
+        // { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->userId },
     };
     struct HksParamSet *paramSet = NULL;
     int32_t ret = BuildParamSet(&paramSet, initParams, ARRAY_SIZE(initParams));

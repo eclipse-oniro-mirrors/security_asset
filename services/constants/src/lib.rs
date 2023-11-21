@@ -16,6 +16,8 @@
 //! This crate defines the common constants.
 
 use asset_definition::impl_enum_trait;
+mod calling_info;
+pub use calling_info::CallingInfo;
 
 impl_enum_trait! {
     /// The type of the calling.

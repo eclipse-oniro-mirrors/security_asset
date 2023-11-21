@@ -15,11 +15,12 @@
 
 //! This module is used to delete the Asset, including single and batch deletion.
 
+use asset_constants::CallingInfo;
 use asset_db_operator::database::Database;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
 use asset_log::logi;
 
-use crate::{calling_info::CallingInfo, operations::common};
+use crate::operations::common;
 
 fn check_arguments(attributes: &AssetMap) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();

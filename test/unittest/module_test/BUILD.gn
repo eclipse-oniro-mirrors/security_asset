@@ -21,6 +21,7 @@ ohos_rust_unittest("asset_module_test") {
   deps = [
     "../../../frameworks/definition:asset_definition",
     "../../../services/crypto_manager:asset_crypto_manager",
+    "../../../services/constants:asset_constants",
   ]
   external_deps = [ "hilog:libhilog" ]
   module_out_path = module_output_path

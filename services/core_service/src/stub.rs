@@ -19,7 +19,7 @@ use ipc_rust::{BorrowedMsgParcel, FileDesc, IRemoteStub, IpcResult, IpcStatusCod
 
 use asset_definition::{AssetError, Result};
 use asset_ipc::{deserialize_map, serialize_maps, IAsset, IpcCode, IPC_SUCCESS, SA_NAME};
-use asset_log::{loge, logi};
+use asset_log::loge;
 
 /// IPC stub type.
 pub struct AssetStub(Box<dyn IAsset + Sync + Send>);
@@ -56,18 +56,14 @@ fn asset_err_handle(e: AssetError) -> IpcStatusCode {
     IpcStatusCode::InvalidValue
 }
 
-fn reply_handle(code: IpcCode, ret: Result<()>, reply: &mut BorrowedMsgParcel) -> IpcResult<()> {
-    let mut result = IPC_SUCCESS;
+fn reply_handle(ret: Result<()>, reply: &mut BorrowedMsgParcel) -> IpcResult<()> {
     match ret {
-        Ok(_) => reply.write::<u32>(&IPC_SUCCESS)?,
+        Ok(_) => reply.write::<u32>(&IPC_SUCCESS),
         Err(e) => {
             reply.write::<u32>(&(e.code as u32))?;
-            reply.write::<String>(&e.msg)?;
-            result = e.code as u32;
+            reply.write::<String>(&e.msg)
         },
     }
-    logi!("[INFO]on_remote_request end, calling function: {}, result code: {}", code, result);
-    Ok(())
 }
 
 fn on_remote_request(
@@ -78,28 +74,27 @@ fn on_remote_request(
 ) -> IpcResult<()> {
     let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
     let map = deserialize_map(data).map_err(asset_err_handle)?;
-    logi!("[INFO]on_remote_request enter, calling function: {}", ipc_code);
     match ipc_code {
-        IpcCode::Add => reply_handle(ipc_code, stub.add(&map), reply),
-        IpcCode::Remove => reply_handle(ipc_code, stub.remove(&map), reply),
+        IpcCode::Add => reply_handle(stub.add(&map), reply),
+        IpcCode::Remove => reply_handle(stub.remove(&map), reply),
         IpcCode::Update => {
             let update_map = deserialize_map(data).map_err(asset_err_handle)?;
-            reply_handle(ipc_code, stub.update(&map, &update_map), reply)
+            reply_handle(stub.update(&map, &update_map), reply)
         },
         IpcCode::PreQuery => match stub.pre_query(&map) {
             Ok(res) => {
-                reply_handle(ipc_code, Ok(()), reply)?;
+                reply_handle(Ok(()), reply)?;
                 reply.write::<Vec<u8>>(&res)
             },
-            Err(e) => reply_handle(ipc_code, Err(e), reply),
+            Err(e) => reply_handle(Err(e), reply),
         },
         IpcCode::Query => match stub.query(&map) {
             Ok(res) => {
-                reply_handle(ipc_code, Ok(()), reply)?;
+                reply_handle(Ok(()), reply)?;
                 serialize_maps(&res, reply).map_err(asset_err_handle)
             },
-            Err(e) => reply_handle(ipc_code, Err(e), reply),
+            Err(e) => reply_handle(Err(e), reply),
         },
-        IpcCode::PostQuery => reply_handle(ipc_code, stub.post_query(&map), reply),
+        IpcCode::PostQuery => reply_handle(stub.post_query(&map), reply),
     }
 }

@@ -34,12 +34,11 @@ struct OutBlob {
     data: *mut u8,
 }
 
-/// this enumerate is to match huks enumerate HksAuthStorageLevel
 #[repr(C)]
 enum HksAuthStorageLevel {
-    Ece = 1, // Accessibility DeviceUnlocked
-    Ce = 2,  // Accessibility DeviceFirstUnlocked
-    De = 3,  // Accessibility DevicePowerOn
+    Ece = 1,
+    Ce = 2,
+    De = 3,
 }
 
 impl From<Accessibility> for HksAuthStorageLevel {
@@ -47,14 +46,21 @@ impl From<Accessibility> for HksAuthStorageLevel {
         match value {
             Accessibility::DeviceUnlocked => HksAuthStorageLevel::Ece,
             Accessibility::DeviceFirstUnlocked => HksAuthStorageLevel::Ce,
-            Accessibility::DevicePowerOn => HksAuthStorageLevel::De
+            Accessibility::DevicePowerOn => HksAuthStorageLevel::De,
         }
     }
 }
 
 #[repr(C)]
 struct KeyId {
-    alias: HksBlob,
     user_id: i32,
-    access_type: HksAuthStorageLevel
+    alias: HksBlob,
+    storage_level: HksAuthStorageLevel,
+}
+
+impl KeyId {
+    fn new(user_id: i32, alias: HksBlob, accessibility: Accessibility) -> Self {
+        let storage_level = HksAuthStorageLevel::from(accessibility);
+        Self { user_id, alias, storage_level }
+    }
 }

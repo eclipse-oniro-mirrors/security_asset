@@ -1,11 +1,11 @@
 [workspace]
 members = [
-    "frameworks/constants",
     "frameworks/definition",
     "frameworks/ipc",
     "frameworks/os_dependency/log",
     "frameworks/utils",
     "interfaces/kits/c",
+    "services/constants",
     "services/core_service",
     "services/crypto_manager",
     "services/db_operator",

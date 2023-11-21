@@ -16,12 +16,12 @@ import("//build/ohos.gni")
 ohos_rust_shared_library("asset_service") {
   sources = [ "src/lib.rs" ]
   deps = [
-    "../../frameworks/constants:asset_constants",
     "../../frameworks/definition:asset_definition",
     "../../frameworks/ipc:asset_ipc",
     "../../frameworks/os_dependency/file:asset_file_operator",
     "../../frameworks/os_dependency/log:asset_log",
     "../../frameworks/utils:asset_utils",
+    "../constants:asset_constants",
     "../crypto_manager:asset_crypto_manager",
     "../db_operator:asset_db_operator",
     "../os_dependency:asset_system_ability",

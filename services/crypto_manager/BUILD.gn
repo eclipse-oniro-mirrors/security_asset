@@ -18,6 +18,7 @@ ohos_rust_static_library("asset_crypto_manager") {
   sources = [ "src/lib.rs" ]
   deps = [
     ":asset_huks_wrapper",
+    "../constants:asset_constants",
     "../../frameworks/definition:asset_definition",
     "../../frameworks/os_dependency/log:asset_log",
     "../../frameworks/utils:asset_utils",

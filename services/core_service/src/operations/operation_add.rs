@@ -15,6 +15,7 @@
 
 //! This module is used to insert an Asset with a specified alias.
 
+use asset_constants::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, secret_key::SecretKey};
 use asset_db_operator::{
     database::Database,
@@ -27,7 +28,7 @@ use asset_definition::{
 use asset_log::logi;
 use asset_utils::time;
 
-use crate::{calling_info::CallingInfo, operations::common};
+use crate::operations::common;
 
 fn generate_key_if_needed(secret_key: &SecretKey) -> Result<()> {
     match secret_key.exists() {
@@ -89,9 +90,9 @@ fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
 }
 
 fn add_default_attrs(db_data: &mut DbMap) {
-    db_data.entry(column::ACCESSIBILITY).or_insert(Value::Number(Accessibility::DeviceFirstUnlocked as u32));
-    db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::None as u32));
-    db_data.entry(column::SYNC_TYPE).or_insert(Value::Number(SyncType::Never as u32));
+    db_data.entry(column::ACCESSIBILITY).or_insert(Value::Number(Accessibility::default() as u32));
+    db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::default() as u32));
+    db_data.entry(column::SYNC_TYPE).or_insert(Value::Number(SyncType::default() as u32));
     db_data.entry(column::REQUIRE_PASSWORD_SET).or_insert(Value::Bool(false));
     let delete_type = DeleteType::WhenUserRemoved as u32 | DeleteType::WhenPackageRemoved as u32;
     db_data.entry(column::DELETE_TYPE).or_insert(Value::Number(delete_type));

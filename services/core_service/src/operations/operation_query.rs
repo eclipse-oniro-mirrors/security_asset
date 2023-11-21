@@ -17,6 +17,7 @@
 
 use std::cmp::Ordering;
 
+use asset_constants::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager};
 use asset_db_operator::{
     database::Database,
@@ -25,7 +26,7 @@ use asset_db_operator::{
 use asset_definition::{log_throw_error, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value};
 use asset_log::logi;
 
-use crate::{calling_info::CallingInfo, operations::common};
+use crate::operations::common;
 
 fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
     let mut map_set = Vec::new();

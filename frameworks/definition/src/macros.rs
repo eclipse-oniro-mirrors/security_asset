@@ -139,3 +139,22 @@ macro_rules! log_throw_error {
         })
     }};
 }
+
+/// Impl from trait for u32.
+///
+/// # Examples
+///
+/// ```
+/// impl_from_for_u32!(Accessibility);
+/// ```
+#[macro_export]
+macro_rules! impl_from_for_u32 {
+    ($t:ty) => {
+        impl From<$t> for u32 {
+            #[inline(always)]
+            fn from(value: $t) -> Self {
+                value as u32
+            }
+        }
+    };
+}

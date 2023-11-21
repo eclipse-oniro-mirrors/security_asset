@@ -25,18 +25,17 @@ use hilog_rust::{error, hilog, HiLogLabel, LogType};
 use ipc_rust::{IRemoteBroker, RemoteObj};
 use system_ability_fwk_rust::{define_system_ability, IMethod, ISystemAbility, RSystemAbility};
 
-use asset_definition::{AssetMap, Result};
+use asset_constants::CallingInfo;
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
 use asset_ipc::{IAsset, SA_ID};
 use asset_log::{loge, logi};
 use asset_system_ability::{subscribe_system_abillity, unsubscribe_system_ability};
 
-mod calling_info;
 mod operations;
 mod stub;
 mod sys_event;
 mod trace_scope;
 
-use calling_info::CallingInfo;
 use stub::AssetStub;
 use sys_event::upload_system_event;
 use trace_scope::TraceScope;
@@ -47,20 +46,27 @@ define_system_ability!(
     sa: SystemAbility(on_start, on_stop),
 );
 
-fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
+fn start_service<T: ISystemAbility + IMethod>(ability: &T) -> Result<()> {
     let Some(service) = AssetStub::new_remote_stub(AssetService) else {
-        loge!("Create AssetService failed!");
-        return;
+        return log_throw_error!(ErrCode::IpcError, "Create AssetService failed!");
     };
 
     let Some(obj) = service.as_object() else {
-        loge!("Public Asset service failed!");
-        return;
+        return log_throw_error!(ErrCode::IpcError, "Public Asset service failed!");
     };
 
     ability.publish(&obj, SA_ID);
     logi!("[INFO]Asset service on_start");
     thread::spawn(subscribe_system_abillity);
+    Ok(())
+}
+
+fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
+    let func_name = hisysevent::function!();
+    let start = Instant::now();
+    let _trace = TraceScope::trace(func_name);
+    let calling_info = CallingInfo::new_self();
+    let _ = upload_system_event(start_service(ability), &calling_info, start, func_name);
 }
 
 fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {
@@ -83,52 +89,39 @@ static A: extern "C" fn() = {
 
 struct AssetService;
 
-impl AssetService {
-    fn execute<T, F: Fn(&AssetMap, &CallingInfo) -> Result<T>>(
-        func_name: &str,
-        attrs: &AssetMap,
-        func: F,
-    ) -> Result<T> {
+macro_rules! execute {
+    ($func:path, $($args:expr), *) => {{
+        let func_name = hisysevent::function!();
+        let calling_info = CallingInfo::build()?;
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
-        let calling_info = CallingInfo::build()?;
-        upload_system_event(func(attrs, &calling_info), &calling_info, start, func_name)
-    }
+        upload_system_event($func($($args), *, &calling_info), &calling_info, start, func_name)
+    }};
 }
 
 impl IRemoteBroker for AssetService {}
-/// todo yyd 把调用函数的使用宏来代替 统一代码格式
 impl IAsset for AssetService {
     fn add(&self, attributes: &AssetMap) -> Result<()> {
-        AssetService::execute(hisysevent::function!(), attributes, operations::add)
+        execute!(operations::add, attributes)
     }
 
     fn remove(&self, query: &AssetMap) -> Result<()> {
-        AssetService::execute(hisysevent::function!(), query, operations::remove)
+        execute!(operations::remove, query)
     }
 
     fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
-        let func_name = hisysevent::function!();
-        let start = Instant::now();
-        let _trace = TraceScope::trace(func_name);
-        let calling_info = CallingInfo::build()?;
-        upload_system_event(
-            operations::update(query, attributes_to_update, &calling_info),
-            &calling_info,
-            start,
-            func_name,
-        )
+        execute!(operations::update, query, attributes_to_update)
     }
 
     fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>> {
-        AssetService::execute(hisysevent::function!(), query, operations::pre_query)
+        execute!(operations::pre_query, query)
     }
 
     fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>> {
-        AssetService::execute(hisysevent::function!(), query, operations::query)
+        execute!(operations::query, query)
     }
 
     fn post_query(&self, query: &AssetMap) -> Result<()> {
-        AssetService::execute(hisysevent::function!(), query, operations::post_query)
+        execute!(operations::post_query, query)
     }
 }

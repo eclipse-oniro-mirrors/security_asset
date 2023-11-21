@@ -20,7 +20,7 @@
 
 typedef void (*OnPackageRemoved)(int32_t, const uint8_t *owner, uint32_t ownerSize);
 typedef void (*OnUserRemoved)(int32_t);
-typedef void (*OnScreenOff)();
+typedef void (*OnScreenOff)(void);
 
 #ifdef __cplusplus
 extern "C" {

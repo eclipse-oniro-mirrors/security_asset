@@ -19,7 +19,10 @@ use std::{collections::HashMap, fmt::Display, hash::Hash};
 
 use asset_log::loge;
 
-use super::{log_throw_error, AssetError, Conversion, DataType, ErrCode, Extension, Result, Tag, Value};
+use super::{
+    impl_from_for_u32, log_throw_error, Accessibility, AssetError, AuthType, Conversion, DataType, ErrCode, Extension,
+    Result, Tag, Value,
+};
 
 /// The mask used to obtain the data type of Asset attribute value.
 const DATA_TYPE_MASK: u32 = 0xF << 28;
@@ -140,3 +143,6 @@ impl AssetError {
         AssetError { code, msg }
     }
 }
+
+impl_from_for_u32!(AuthType);
+impl_from_for_u32!(Accessibility);

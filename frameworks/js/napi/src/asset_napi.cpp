@@ -44,7 +44,7 @@ napi_value DeclareTag(napi_env env)
     AddUint32Property(env, tag, "AUTH_CHALLENGE", ASSET_TAG_AUTH_CHALLENGE);
     AddUint32Property(env, tag, "AUTH_TOKEN", ASSET_TAG_AUTH_TOKEN);
     AddUint32Property(env, tag, "SYNC_TYPE", ASSET_TAG_SYNC_TYPE);
-    AddUint32Property(env, tag, "DELETE_TYPE", ASSET_TAG_DELETE_TYPE)
+    AddUint32Property(env, tag, "DELETE_TYPE", ASSET_TAG_DELETE_TYPE);
     AddUint32Property(env, tag, "CONFLICT_RESOLUTION", ASSET_TAG_CONFLICT_RESOLUTION);
     AddUint32Property(env, tag, "DATA_LABEL_CRITICAL_1", ASSET_TAG_DATA_LABEL_CRITICAL_1);
     AddUint32Property(env, tag, "DATA_LABEL_CRITICAL_2", ASSET_TAG_DATA_LABEL_CRITICAL_2);
@@ -114,7 +114,6 @@ napi_value DeclareSyncType(napi_env env)
     NAPI_CALL(env, napi_create_object(env, &syncType));
     AddUint32Property(env, syncType, "NEVER", ASSET_SYNC_TYPE_NEVER);
     AddUint32Property(env, syncType, "THIS_DEVICE", ASSET_SYNC_TYPE_THIS_DEVICE);
-    AddUint32Property(env, syncType, "TRUSTED_ACCOUNT", ASSET_SYNC_TYPE_TRUSTED_ACCOUNT);
     AddUint32Property(env, syncType, "TRUSTED_DEVICE", ASSET_SYNC_TYPE_TRUSTED_DEVICE);
     return syncType;
 }

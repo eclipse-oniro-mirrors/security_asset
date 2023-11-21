@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+use asset_constants::{CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto::*, crypto_manager::*, secret_key::*};
 use asset_definition::{Accessibility, AuthType};
 
@@ -20,7 +21,8 @@ pub const AAD_SIZE: u32 = 8;
 
 #[test]
 fn generate_and_delete() {
-    let secret_key = SecretKey::new(1, &vec![b'2'], AuthType::None, Accessibility::DeviceUnlocked, false);
+    let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
+    let secret_key = SecretKey::new(&calling_info, AuthType::None, Accessibility::DeviceUnlocked, false);
     secret_key.generate().unwrap();
     assert!(secret_key.delete().is_ok())
 }
@@ -28,7 +30,8 @@ fn generate_and_delete() {
 #[test]
 fn encrypt_and_decrypt() {
     // generate key
-    let secret_key = SecretKey::new(4, &vec![b'2'], AuthType::None, Accessibility::DeviceFirstUnlocked, false);
+    let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
+    let secret_key = SecretKey::new(&calling_info, AuthType::None, Accessibility::DeviceFirstUnlocked, false);
     secret_key.generate().unwrap();
 
     // encrypt data
@@ -47,7 +50,8 @@ fn encrypt_and_decrypt() {
 
 #[test]
 fn crypto_init() {
-    let secret_key = SecretKey::new(6, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked, false);
+    let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
+    let secret_key = SecretKey::new(&calling_info, AuthType::Any, Accessibility::DeviceUnlocked, false);
     secret_key.generate().unwrap();
 
     let mut crypto = Crypto::build(secret_key.clone(), 600).unwrap();
@@ -57,7 +61,8 @@ fn crypto_init() {
 
 #[test]
 fn crypto_exec() {
-    let secret_key = SecretKey::new(7, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked, false);
+    let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
+    let secret_key = SecretKey::new(&calling_info, AuthType::Any, Accessibility::DeviceUnlocked, false);
     secret_key.generate().unwrap();
 
     let msg = vec![1, 2, 3, 4, 5, 6];
@@ -73,12 +78,13 @@ fn crypto_exec() {
 
 #[test]
 fn crypto_manager() {
-    let secret_key1 = SecretKey::new(8, &vec![b'2'], AuthType::Any, Accessibility::DeviceFirstUnlocked, false);
+    let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
+    let secret_key1 = SecretKey::new(&calling_info, AuthType::Any, Accessibility::DeviceFirstUnlocked, false);
     secret_key1.generate().unwrap();
     let mut crypto1 = Crypto::build(secret_key1.clone(), 600).unwrap();
     let challenge1 = crypto1.init_key().unwrap().clone();
 
-    let secret_key2 = SecretKey::new(8, &vec![b'2'], AuthType::Any, Accessibility::DeviceUnlocked, false);
+    let secret_key2 = SecretKey::new(&calling_info, AuthType::Any, Accessibility::DeviceUnlocked, false);
     secret_key2.generate().unwrap();
     let mut crypto2 = Crypto::build(secret_key2.clone(), 600).unwrap();
     let challenge2 = crypto2.init_key().unwrap().clone();

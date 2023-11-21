@@ -15,10 +15,11 @@
 
 //! This module is used to clear resources after query the Asset that required secondary identity authentication.
 
+use asset_constants::CallingInfo;
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{AssetMap, Extension, Result, Tag};
 
-use crate::{calling_info::CallingInfo, operations::common};
+use crate::operations::common;
 
 const REQUIRED_ATTRS: [Tag; 1] = [Tag::AuthChallenge];
 

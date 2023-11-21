@@ -146,7 +146,7 @@ declare namespace asset {
    */
   function postQuery(handle: AssetMap): Promise<void>;
 
-   /**
+  /**
    * A Map type containing tag-value pairs that describe the attributes of an Asset.
    *
    * @syscap SystemCapability.Security.Asset
@@ -240,19 +240,12 @@ declare namespace asset {
      */
     THIS_DEVICE = 1 << 0,
     /**
-     * An Asset with this attribute value can only be transferred out to a device of trusted account.
-     *
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    TRUSTED_ACCOUNT = 1 << 1,
-    /**
      * An Asset with this attribute value can only be transferred out to a trusted device (user authorized).
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    TRUSTED_DEVICE = 1 << 2,
+    TRUSTED_DEVICE = 1 << 1,
   }
 
   /**

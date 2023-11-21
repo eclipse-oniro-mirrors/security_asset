@@ -231,11 +231,13 @@ impl_enum_trait! {
     #[derive(Debug)]
     #[derive(Clone, Copy)]
     #[derive(PartialEq, Eq)]
+    #[derive(Default)]
     pub enum Accessibility {
         /// The secret value in the Asset can only be accessed after the device power on.
         DevicePowerOn = 0,
 
         /// The secret value in the Asset can only be accessed after the device is first unlocked.
+        #[default]
         DeviceFirstUnlocked = 1,
 
         /// The secret value in the Asset can only be accessed while the device is unlocked.
@@ -248,8 +250,10 @@ impl_enum_trait! {
     #[derive(Debug)]
     #[derive(Clone, Copy)]
     #[derive(PartialEq, Eq)]
+    #[derive(Default)]
     pub enum AuthType {
         /// The access to an Asset doesn't require user authentication.
+        #[default]
         None = 0x00,
 
         /// The access to an Asset requires user authentication using either PIN/pattern/password or biometric traits.
@@ -262,18 +266,17 @@ impl_enum_trait! {
     #[derive(Debug)]
     #[derive(Clone, Copy)]
     #[derive(PartialEq, Eq)]
+    #[derive(Default)]
     pub enum SyncType {
         /// An Asset with this attribute value is never allowed to be transferred out.
+        #[default]
         Never = 0,
 
         /// An Asset with this attribute value can only be restored to the device from which it was transferred out.
         ThisDevice = 1 << 0,
 
-        /// An Asset with this attribute value can only be transferred out to a device of trusted account.
-        TrustedAccount = 1 << 1,
-
         /// An Asset with this attribute value can only be transferred out to a trusted device (user authorized).
-        TrustedDevice = 1 << 2,
+        TrustedDevice = 1 << 1,
     }
 }
 
@@ -292,22 +295,26 @@ impl_enum_trait! {
 
 impl_enum_trait! {
     /// An enum type indicates the strategy for conflict resolution when handling duplicated Asset alias.
+    #[derive(Default)]
     pub enum ConflictResolution {
         /// Directly overwrite an Asset with duplicated alias when a conflict is detected.
         Overwrite = 0,
 
         /// Throw an error so that the caller can take measures when a conflict is detected.
+        #[default]
         ThrowError = 1,
     }
 }
 
 impl_enum_trait! {
     /// An enum type indicates the return type of the queried Asset.
+    #[derive(Default)]
     pub enum ReturnType {
         /// Specify that the return data should contain both secret value and attributes.
         All = 0,
 
         /// Specify that the return data contains only attributes.
+        #[default]
         Attributes = 1,
     }
 }

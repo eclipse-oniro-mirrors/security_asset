@@ -15,6 +15,7 @@
 
 //! This module prepares for querying Asset that required secondary identity authentication.
 
+use asset_constants::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager, secret_key::SecretKey};
 use asset_db_operator::{
     database::Database,
@@ -22,7 +23,7 @@ use asset_db_operator::{
 };
 use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
 
-use crate::{calling_info::CallingInfo, operations::common};
+use crate::operations::common;
 
 const OPTIONAL_ATTRS: [Tag; 1] = [Tag::AuthValidityPeriod];
 const DEFAULT_AUTH_VALIDITY_IN_SECS: u32 = 60;
@@ -72,13 +73,7 @@ pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<
 
     let (access_type, require_password_set) = query_key_attrs(calling_info, &db_data)?;
     let valid_time = query.get_num_attr(&Tag::AuthValidityPeriod).unwrap_or(DEFAULT_AUTH_VALIDITY_IN_SECS);
-    let secret_key = SecretKey::new(
-        calling_info.user_id(),
-        calling_info.owner_info(),
-        AuthType::Any,
-        access_type,
-        require_password_set,
-    );
+    let secret_key = SecretKey::new(calling_info, AuthType::Any, access_type, require_password_set);
     let mut crypto = Crypto::build(secret_key, valid_time)?;
     let challenge = crypto.init_key()?.to_vec();
     let crypto_manager = CryptoManager::get_instance();

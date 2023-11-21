@@ -15,11 +15,12 @@
 
 //! This module is used to implement cryptographic algorithm operations, including key generation.
 
+use asset_constants::CallingInfo;
 use asset_definition::{log_throw_error, Accessibility, AuthType, ErrCode, Result};
 use asset_utils::hasher;
 
 use crate::identity_scope::IdentityScope;
-use crate::{HksBlob, HksAuthStorageLevel, KeyId};
+use crate::{HksBlob, KeyId};
 
 /// Struct to store key attributes, excluding key materials.
 #[derive(Clone)]
@@ -41,47 +42,47 @@ const HKS_SUCCESS: i32 = 0;
 const MAX_ALIAS_SIZE: usize = 64;
 const HKS_ERROR_NOT_EXIST: i32 = -13;
 
+fn append_attr<T>(tag: &str, value: T, vec: &mut Vec<u8>)
+where
+    T: Default + std::cmp::PartialEq,
+    u32: std::convert::From<T>,
+{
+    if value != T::default() {
+        vec.push(b'_');
+        vec.extend_from_slice(tag.as_bytes());
+        vec.push(b':');
+        vec.extend_from_slice(&u32::from(value).to_le_bytes());
+    }
+}
+
 fn calculate_key_alias(
-    user_id: i32,
-    owner: &Vec<u8>,
+    calling_info: &CallingInfo,
     auth_type: AuthType,
     access_type: Accessibility,
     require_password_set: bool,
 ) -> Vec<u8> {
     let mut alias: Vec<u8> = Vec::with_capacity(MAX_ALIAS_SIZE);
-    alias.extend_from_slice(&user_id.to_le_bytes());
+    alias.extend_from_slice(&calling_info.user_id().to_le_bytes());
     alias.push(b'_');
-    alias.extend(owner);
-    // todo 每个搞个default trait 在噻的时候调用default
-    if auth_type != AuthType::None {
-        alias.push(b'_');
-        // todo 下面的都加上Tag 给每一个类型加一个trait dispaly的trait
-        // alias.push(Tag::to_string(&Tag::AuthType));
-        // alias.push(b':');
-        alias.extend_from_slice(&(auth_type as u32).to_le_bytes());
-    }
-    if access_type != Accessibility::DeviceFirstUnlocked {
-        alias.push(b'_');
-        alias.extend_from_slice(&(access_type as u32).to_le_bytes());
-    }
-    if require_password_set {
-        alias.push(b'_');
-        alias.extend_from_slice(&(require_password_set as u32).to_le_bytes());
-    }
+    alias.extend_from_slice(&calling_info.owner_type().to_le_bytes());
+    alias.push(b'_');
+    alias.extend(calling_info.owner_info());
+    append_attr::<AuthType>("AuthType", auth_type, &mut alias);
+    append_attr::<Accessibility>("Accessibility", access_type, &mut alias);
+    append_attr::<bool>("RequirePasswordSet", require_password_set, &mut alias);
     hasher::sha256(&alias)
 }
 
 impl SecretKey {
     /// New a secret key.
     pub fn new(
-        user_id: i32,
-        owner: &Vec<u8>,
+        calling_info: &CallingInfo,
         auth_type: AuthType,
         access_type: Accessibility,
         require_password_set: bool,
     ) -> Self {
-        let alias = calculate_key_alias(user_id, owner, auth_type, access_type, require_password_set);
-        Self { auth_type, access_type, require_password_set, user_id, alias }
+        let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set);
+        Self { auth_type, access_type, require_password_set, user_id: calling_info.user_id(), alias }
     }
 
     /// Check whether the secret key exists.
@@ -102,13 +103,8 @@ impl SecretKey {
     /// Generate the secret key and store in HUKS.
     pub fn generate(&self) -> Result<()> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
-        let key_id = KeyId {
-            alias: key_alias,
-            user_id: self.user_id,
-            access_type: HksAuthStorageLevel::from(self.access_type)
-        };
+        let key_id = KeyId::new(self.user_id, key_alias, self.access_type);
         let _identity = IdentityScope::build()?;
-        // todo yyd 将require_password_set封装成函数获取值
         let ret = unsafe { GenerateKey(&key_id as *const KeyId, self.need_user_auth(), self.require_password_set) };
         match ret {
             HKS_SUCCESS => Ok(()),
@@ -124,20 +120,20 @@ impl SecretKey {
     }
 
     /// Delete secret key by owner.
-    pub fn delete_by_owner(user_id: i32, owner: &Vec<u8>) {
+    pub fn delete_by_owner(calling_info: &CallingInfo) {
         let accessibilitys =
             [Accessibility::DevicePowerOn, Accessibility::DeviceFirstUnlocked, Accessibility::DeviceUnlocked];
         for accessibility in accessibilitys.into_iter() {
-            let alias = calculate_key_alias(user_id, owner, AuthType::None, accessibility, true);
+            let alias = calculate_key_alias(calling_info, AuthType::None, accessibility, true);
             let _ = Self::delete_key(&alias);
 
-            let alias = calculate_key_alias(user_id, owner, AuthType::Any, accessibility, true);
+            let alias = calculate_key_alias(calling_info, AuthType::Any, accessibility, true);
             let _ = Self::delete_key(&alias);
 
-            let alias = calculate_key_alias(user_id, owner, AuthType::None, accessibility, false);
+            let alias = calculate_key_alias(calling_info, AuthType::None, accessibility, false);
             let _ = Self::delete_key(&alias);
 
-            let alias = calculate_key_alias(user_id, owner, AuthType::Any, accessibility, false);
+            let alias = calculate_key_alias(calling_info, AuthType::Any, accessibility, false);
             let _ = Self::delete_key(&alias);
         }
     }

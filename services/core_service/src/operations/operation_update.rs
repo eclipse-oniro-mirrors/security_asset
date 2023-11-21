@@ -15,6 +15,7 @@
 
 //! This module is used to update the specified alias of Asset.
 
+use asset_constants::CallingInfo;
 use asset_crypto_manager::crypto::Crypto;
 use asset_db_operator::{
     database::Database,
@@ -24,7 +25,7 @@ use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, Result, Ta
 use asset_log::logi;
 use asset_utils::time;
 
-use crate::{calling_info::CallingInfo, operations::common};
+use crate::operations::common;
 
 fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
     let secret_key = common::build_secret_key(calling_info, db_data)?;

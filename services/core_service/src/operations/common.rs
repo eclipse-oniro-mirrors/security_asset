@@ -19,11 +19,10 @@ mod argument_check;
 
 pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_value_validity};
 
+use asset_constants::CallingInfo;
 use asset_crypto_manager::secret_key::SecretKey;
 use asset_db_operator::types::{column, DbMap};
 use asset_definition::{Accessibility, AssetMap, AuthType, Extension, Result, Tag, Value};
-
-use crate::calling_info::CallingInfo;
 
 const TAG_COLUMN_TABLE: [(Tag, &str); 15] = [
     (Tag::Secret, column::SECRET),
@@ -113,7 +112,7 @@ pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<S
     let auth_type = attrs.get_enum_attr::<AuthType>(&column::AUTH_TYPE)?;
     let access_type = attrs.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
     let require_password_set = attrs.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
-    Ok(SecretKey::new(calling.user_id(), calling.owner_info(), auth_type, access_type, require_password_set))
+    Ok(SecretKey::new(calling, auth_type, access_type, require_password_set))
 }
 
 pub(crate) fn build_aad(attrs: &DbMap) -> Vec<u8> {

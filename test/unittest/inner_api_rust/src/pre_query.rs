@@ -74,18 +74,7 @@ fn pre_query_with_wrong_sync_type() {
     add_default_auth_asset(function_name, function_name).unwrap();
 
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::SyncType, SyncType::TrustedAccount);
-    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
-    remove_by_alias(function_name).unwrap();
-}
-
-#[test]
-fn pre_query_with_wrong_require_password_set() {
-    let function_name = function!().as_bytes();
-    add_default_auth_asset(function_name, function_name).unwrap();
-
-    let mut query = AssetMap::new();
-    query.insert_attr(Tag::RequirePasswordSet, true);
+    query.insert_attr(Tag::SyncType, SyncType::TrustedDevice);
     expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
     remove_by_alias(function_name).unwrap();
 }

@@ -57,7 +57,7 @@ fn query_invalid_auth_type() {
 #[test]
 fn query_invalid_sync_type() {
     let mut query = AssetMap::new();
-    let sync_type = SyncType::ThisDevice as u32 | SyncType::TrustedAccount as u32 | SyncType::TrustedDevice as u32;
+    let sync_type = SyncType::ThisDevice as u32 | SyncType::TrustedDevice as u32;
     query.insert_attr(Tag::SyncType, sync_type + 1);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 }

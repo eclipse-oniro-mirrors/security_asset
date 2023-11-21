@@ -19,6 +19,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+asset_constants = { path = "../../../services/constants" }
 asset_definition = { path = "../../../frameworks/definition" }
 asset_crypto_manager = { path = "../../../services/crypto_manager" }
 asset_db_operator = { path = "../../../services/db_operator" }

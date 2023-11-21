@@ -17,13 +17,15 @@
 
 use ipc_rust::get_calling_uid;
 
-use asset_constants::OwnerType;
 use asset_definition::{log_throw_error, ErrCode, Result};
 
-pub(crate) struct CallingInfo {
+use super::OwnerType;
+
+/// The identity of calling process.
+pub struct CallingInfo {
+    user_id: i32,
     owner_type: OwnerType,
     owner_info: Vec<u8>,
-    user_id: i32,
 }
 
 extern "C" {
@@ -43,7 +45,18 @@ pub(crate) fn get_user_id(uid: u64) -> Result<i32> {
 }
 
 impl CallingInfo {
-    pub(crate) fn build() -> Result<Self> {
+    /// Build identity of current process.
+    pub fn new_self() -> Self {
+        Self::new(0, OwnerType::Native, "huks_service_3510".as_bytes().to_vec())
+    }
+
+    /// Build identity of the specified owner.
+    pub fn new(user_id: i32, owner_type: OwnerType, owner_info: Vec<u8>) -> Self {
+        Self { user_id, owner_type, owner_info }
+    }
+
+    /// Build a instance of CallingInfo.
+    pub fn build() -> Result<Self> {
         let uid = get_calling_uid();
         let user_id: i32 = get_user_id(uid)?;
         let mut owner_info = vec![0u8; 256];
@@ -55,18 +68,21 @@ impl CallingInfo {
             }
         }
         owner_info.truncate(len as usize);
-        Ok(CallingInfo { owner_type, owner_info, user_id })
+        Ok(CallingInfo { user_id, owner_type, owner_info })
     }
 
-    pub(crate) fn owner_type(&self) -> u32 {
+    /// Get owner type of calling.
+    pub fn owner_type(&self) -> u32 {
         self.owner_type as u32
     }
 
-    pub(crate) fn owner_info(&self) -> &Vec<u8> {
+    /// Get owner info of calling.
+    pub fn owner_info(&self) -> &Vec<u8> {
         &self.owner_info
     }
 
-    pub(crate) fn user_id(&self) -> i32 {
+    /// Get user id of calling.
+    pub fn user_id(&self) -> i32 {
         self.user_id
     }
 }

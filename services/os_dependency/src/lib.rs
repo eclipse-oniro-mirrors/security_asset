@@ -17,7 +17,7 @@
 
 use std::slice;
 
-use asset_constants::OwnerType;
+use asset_constants::{CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
 use asset_db_operator::{
     database::Database,
@@ -34,7 +34,8 @@ extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u
     cond.insert(column::OWNER, Value::Bytes(owner.clone()));
     let Ok(mut db) = Database::build(user_id) else { return };
     let _ = db.delete_datas(&cond);
-    SecretKey::delete_by_owner(user_id, &owner)
+    let calling_info = CallingInfo::new(user_id, OwnerType::Hap, owner);
+    SecretKey::delete_by_owner(&calling_info)
 }
 
 extern "C" fn delete_dir_by_user(user_id: i32) {
@@ -53,17 +54,27 @@ extern "C" {
         onScreenOff: extern "C" fn(),
     ) -> bool;
     fn UnSubscribeSystemAbility() -> bool;
+    fn SubscribeSystemEvent(
+        onPackageRemoved: extern "C" fn(i32, *const u8, u32),
+        onUserRemoved: extern "C" fn(i32),
+        onScreenOff: extern "C" fn(),
+    ) -> bool;
+    fn UnSubscribeSystemEvent() -> bool;
 }
 
 /// Subscribe to the add and remove events of system abilities.
 pub fn subscribe_system_abillity() {
     unsafe {
-        // todo SubscribeSystemEvent(onPackageRemoved, onUserRemoved, onScreenOff)
-        // todo yyd 测试hap写入一条数据 然后重启 卸载hap 看数据有没有清除掉 如果不行 调一下61行 优先级第一
-        if SubscribeSystemAbility(delete_data_by_owner, delete_dir_by_user, delete_crypto_need_unlock) {
-            loge!("Subscribe system ability success.");
+        if SubscribeSystemEvent(delete_data_by_owner, delete_dir_by_user, delete_crypto_need_unlock) {
+            logi!("Subscribe system event success.");
         } else {
-            logi!("Subscribe system ability failed.")
+            loge!("Subscribe system event failed.")
+        }
+
+        if SubscribeSystemAbility(delete_data_by_owner, delete_dir_by_user, delete_crypto_need_unlock) {
+            logi!("Subscribe system ability success.");
+        } else {
+            loge!("Subscribe system ability failed.")
         }
     }
 }
@@ -73,6 +84,10 @@ pub fn unsubscribe_system_ability() {
     unsafe {
         if !UnSubscribeSystemAbility() {
             loge!("Unsubscribe system ability failed.")
+        }
+
+        if !UnSubscribeSystemEvent() {
+            loge!("Unsubscribe system event failed.")
         }
     }
 }
