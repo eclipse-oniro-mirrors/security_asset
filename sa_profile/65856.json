@@ -4,7 +4,7 @@
         {
             "name": 65856,
             "libpath": "libasset_service.dylib.so",
-            "run-on-create": false,
+            "run-on-create": true,
             "distributed": false,
             "dump_level": 1
         }
