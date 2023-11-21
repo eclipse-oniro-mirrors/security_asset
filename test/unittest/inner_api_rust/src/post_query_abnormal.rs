@@ -55,7 +55,6 @@ fn post_query_unsupported_tags() {
         Tag::AuthType,
         Tag::AuthValidityPeriod,
         Tag::SyncType,
-        Tag::DeleteType,
         Tag::ReturnType,
         Tag::ReturnLimit,
         Tag::ReturnOffset,
@@ -68,7 +67,7 @@ fn post_query_unsupported_tags() {
         expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().post_query(&query).unwrap_err());
     }
 
-    let tags_bool = [Tag::RequirePasswordSet];
+    let tags_bool = [Tag::RequirePasswordSet, Tag::IsPersistent];
     for tag in tags_bool {
         let mut query = AssetMap::new();
         query.insert_attr(tag, true);

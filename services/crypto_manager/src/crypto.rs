@@ -36,6 +36,7 @@ extern "C" {
 }
 
 const HKS_SUCCESS: i32 = 0;
+const HKS_ERROR_KEY_AUTH_VERIFY_FAILED: i32 = -47;
 const NONCE_SIZE: usize = 12;
 const TAG_SIZE: usize = 16;
 const HANDLE_LEN: usize = 8;
@@ -109,6 +110,9 @@ impl Crypto {
         };
         match ret {
             HKS_SUCCESS => Ok(msg),
+            HKS_ERROR_KEY_AUTH_VERIFY_FAILED => {
+                log_throw_error!(ErrCode::AccessDenied, "[FATAL]HUKS verify auth token failed")
+            },
             _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS execute crypt failed, ret: {}", ret),
         }
     }

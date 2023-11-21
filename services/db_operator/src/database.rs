@@ -21,7 +21,7 @@ use std::{ffi::CStr, fs, ptr::null_mut, sync::Mutex};
 
 use asset_constants::OwnerType;
 use asset_definition::{log_throw_error, ErrCode, Extension, Result};
-use asset_log::{loge, logi};
+use asset_log::loge;
 
 use crate::{
     statement::Statement,
@@ -120,10 +120,13 @@ impl Database {
 
     /// Open the database connection and recovery the database if the connection fails.
     fn open_and_recovery(&mut self) -> Result<()> {
-        match self.open() {
+        let result = self.open();
+        #[cfg(test)]
+        let result = match result {
             Err(ret) if ret.code == ErrCode::DataCorrupted => self.recovery(),
             ret => ret,
-        }
+        };
+        result
     }
 
     /// Close database connection.
@@ -135,8 +138,9 @@ impl Database {
     }
 
     // Recovery the corrupt database and reopen it.
+    #[cfg(test)]
     pub(crate) fn recovery(&mut self) -> Result<()> {
-        logi!("[WARNING]Database is corrupt, start to recovery, path={}", self.path);
+        loge!("[WARNING]Database is corrupt, start to recovery, path={}", self.path);
         self.close();
         if let Err(e) = fs::copy(&self.backup_path, &self.path) {
             return log_throw_error!(ErrCode::FileOperationError, "[FATAL][DB]Recovery database failed, err={}", e);
@@ -168,12 +172,13 @@ impl Database {
     /// Delete database file.
     pub fn delete(user_id: i32) -> Result<()> {
         let path = fmt_db_path(user_id);
-        let backup_path = fmt_backup_path(&path);
+        let _backup_path = fmt_backup_path(&path);
         if let Err(e) = fs::remove_file(path) {
             return log_throw_error!(ErrCode::FileOperationError, "[FATAL][DB]Delete database failed, err={}", e);
         }
 
-        if let Err(e) = fs::remove_file(backup_path) {
+        #[cfg(test)]
+        if let Err(e) = fs::remove_file(_backup_path) {
             return log_throw_error!(
                 ErrCode::FileOperationError,
                 "[FATAL][DB]Delete backup database failed, err={}",
@@ -221,9 +226,11 @@ impl Database {
 
     /// do same operation in backup database when do something in main db
     /// backup every success operation, recovery every fail operation
-    pub(crate) fn execute_and_backup<T, F: Fn(&Table) -> Result<T>>(&mut self, modified: bool, func: F) -> Result<T> {
+    pub(crate) fn execute_and_backup<T, F: Fn(&Table) -> Result<T>>(&mut self, _modified: bool, func: F) -> Result<T> {
         let table = Table::new(TABLE_NAME, self);
-        let ret = match func(&table) {
+        let result = func(&table);
+        #[cfg(test)]
+        let result = match result {
             Err(ret) if ret.code == ErrCode::DataCorrupted => {
                 self.recovery()?;
                 let table = Table::new(TABLE_NAME, self); // Database handle will be changed.
@@ -232,10 +239,11 @@ impl Database {
             ret => ret,
         };
 
-        if ret.is_ok() && modified && fs::copy(&self.path, &self.backup_path).is_err() {
+        #[cfg(test)]
+        if result.is_ok() && _modified && fs::copy(&self.path, &self.backup_path).is_err() {
             loge!("[WARNING]Backup database {} failed", self.backup_path);
         }
-        ret
+        result
     }
 
     /// Insert datas into database.

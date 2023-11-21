@@ -108,14 +108,15 @@ int32_t GenerateKey(const struct KeyId *keyId, bool needAuth, bool requirePasswo
             }
         }
 
-        if (requirePasswordSet) {
-            struct HksParam tempParam = { .tag = HKS_TAG_IS_DEVICE_PASSWORD_SET, .boolParam = true };
-            ret = HksAddParams(paramSet, &tempParam, 1); // 1: add one param to paramSet
-            if (ret != HKS_SUCCESS) {
-                LOGE("[FATAL]HUKS add requirePasswordSet param failed. error=%{public}d", ret);
-                break;
-            }
-        }
+        (void)requirePasswordSet;
+        // if (requirePasswordSet) {
+        //     struct HksParam tempParam = { .tag = HKS_TAG_IS_DEVICE_PASSWORD_SET, .boolParam = true };
+        //     ret = HksAddParams(paramSet, &tempParam, 1); // 1: add one param to paramSet
+        //     if (ret != HKS_SUCCESS) {
+        //         LOGE("[FATAL]HUKS add requirePasswordSet param failed. error=%{public}d", ret);
+        //         break;
+        //     }
+        // }
 
         ret = HksBuildParamSet(&paramSet);
         if (ret != HKS_SUCCESS) {

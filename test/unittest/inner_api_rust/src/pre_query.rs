@@ -58,12 +58,12 @@ fn pre_query_with_unsupported_auth_type() {
 }
 
 #[test]
-fn pre_query_with_wrong_delete_type() {
+fn pre_query_with_wrong_persistent() {
     let function_name = function!().as_bytes();
     add_default_auth_asset(function_name, function_name).unwrap();
 
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::DeleteType, DeleteType::WhenUserRemoved);
+    query.insert_attr(Tag::IsPersistent, true);
     expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
     remove_by_alias(function_name).unwrap();
 }

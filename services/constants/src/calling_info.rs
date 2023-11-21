@@ -28,9 +28,25 @@ pub struct CallingInfo {
     owner_info: Vec<u8>,
 }
 
+#[allow(dead_code)]
+#[repr(C)]
+enum ResultCode {
+    Success = 0,
+    InvalidArgument = 1,
+    BmsError = 2,
+    AccessTokenError = 3,
+    Unsupported = 4,
+}
+
 extern "C" {
     fn GetUserIdByUid(uid: u64, userId: &mut i32) -> bool;
-    fn GetOwnerInfo(userId: i32, uid: u64, ownerType: *mut OwnerType, ownerInfo: *mut u8, infoLen: *mut u32) -> bool;
+    fn GetOwnerInfo(
+        userId: i32,
+        uid: u64,
+        ownerType: *mut OwnerType,
+        ownerInfo: *mut u8,
+        infoLen: *mut u32,
+    ) -> ResultCode;
 }
 
 pub(crate) fn get_user_id(uid: u64) -> Result<i32> {
@@ -62,13 +78,19 @@ impl CallingInfo {
         let mut owner_info = vec![0u8; 256];
         let mut len = 256u32;
         let mut owner_type = OwnerType::Hap;
-        unsafe {
-            if !GetOwnerInfo(user_id, uid, &mut owner_type, owner_info.as_mut_ptr(), &mut len) {
-                return log_throw_error!(ErrCode::BmsError, "[FATAL]Get owner info from bms failed.");
-            }
+        let err = unsafe { GetOwnerInfo(user_id, uid, &mut owner_type, owner_info.as_mut_ptr(), &mut len) };
+        match err {
+            ResultCode::Success => {
+                owner_info.truncate(len as usize);
+                Ok(CallingInfo { user_id, owner_type, owner_info })
+            },
+            ResultCode::InvalidArgument => log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Invalid argument."),
+            ResultCode::BmsError => log_throw_error!(ErrCode::BmsError, "[FATAL]Get owner info from bms failed."),
+            ResultCode::AccessTokenError => {
+                log_throw_error!(ErrCode::AccessTokenError, "[FATAL]Get process info failed.")
+            },
+            ResultCode::Unsupported => log_throw_error!(ErrCode::NotSupport, "[FATAL]Unsupported calling type."),
         }
-        owner_info.truncate(len as usize);
-        Ok(CallingInfo { user_id, owner_type, owner_info })
     }
 
     /// Get owner type of calling.

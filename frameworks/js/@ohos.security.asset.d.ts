@@ -27,8 +27,24 @@ declare namespace asset {
   /**
    * Add an Asset.
    *
+   * @permission ohos.permission.STORE_PERSISTENT_DATA
    * @param { AssetMap } attributes - a map object containing attributes of the Asset to be added.
    * @param { AsyncCallback<void> } callback - the callback function for add operation.
+   * @throws { BusinessError } 201 - Permission denied.
+   * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 24000001 - Service unavailable.
+   * @throws { BusinessError } 24000003 - Data already exists.
+   * @throws { BusinessError } 24000005 - Device status mismatch.
+   * @throws { BusinessError } 24000006 - Out of memory.
+   * @throws { BusinessError } 24000007 - Data corrupted.
+   * @throws { BusinessError } 24000008 - Database operation failed.
+   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
+   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
+   * @throws { BusinessError } 24000011 - Key manager is abnormal.
+   * @throws { BusinessError } 24000012 - Account manager is abnormal.
+   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
+   * @throws { BusinessError } 24000014 - File operation failed.
+   * @throws { BusinessError } 24000015 - Get system time failed.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
@@ -37,8 +53,24 @@ declare namespace asset {
   /**
    * Add an Asset.
    *
+   * @permission ohos.permission.STORE_PERSISTENT_DATA
    * @param { AssetMap } attributes - a map object containing attributes of the Asset to be added.
    * @returns { Promise<void> } the promise object returned by the function.
+   * @throws { BusinessError } 201 - Permission denied.
+   * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 24000001 - Service unavailable.
+   * @throws { BusinessError } 24000003 - Data already exists.
+   * @throws { BusinessError } 24000005 - Device status mismatch.
+   * @throws { BusinessError } 24000006 - Out of memory.
+   * @throws { BusinessError } 24000007 - Data corrupted.
+   * @throws { BusinessError } 24000008 - Database operation failed.
+   * @throws { BusinessError } 24000009 - Key management service is abnormal.
+   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
+   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
+   * @throws { BusinessError } 24000012 - Account manager is abnormal.
+   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
+   * @throws { BusinessError } 24000014 - File operation failed.
+   * @throws { BusinessError } 24000015 - Get system time failed.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
@@ -49,6 +81,17 @@ declare namespace asset {
    *
    * @param { AssetMap } query - a map object containing attributes of the Asset to be removed.
    * @param { AsyncCallback<void> } callback - the callback function for remove operation.
+   * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 24000001 - Service unavailable.
+   * @throws { BusinessError } 24000002 - Data not found.
+   * @throws { BusinessError } 24000006 - Out of memory.
+   * @throws { BusinessError } 24000007 - Data corrupted.
+   * @throws { BusinessError } 24000008 - Database operation failed.
+   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
+   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
+   * @throws { BusinessError } 24000011 - Algorithm operation failed.
+   * @throws { BusinessError } 24000012 - Account manager is abnormal.
+   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
@@ -59,6 +102,16 @@ declare namespace asset {
    *
    * @param { AssetMap } query - a map object containing attributes of the Asset to be removed.
    * @returns { Promise<void> } the promise object returned by the function.
+   * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 24000001 - Service unavailable.
+   * @throws { BusinessError } 24000002 - Data not found.
+   * @throws { BusinessError } 24000006 - Out of memory.
+   * @throws { BusinessError } 24000007 - Data corrupted.
+   * @throws { BusinessError } 24000008 - Database operation failed.
+   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
+   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
+   * @throws { BusinessError } 24000012 - Account manager is abnormal.
+   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
@@ -70,6 +123,19 @@ declare namespace asset {
    * @param { AssetMap } query - a map object containing attributes of the Asset to be updated.
    * @param { AssetMap } attributesToUpdate - a map object containing attributes with new values.
    * @param { AsyncCallback<void> } callback - the callback function for update operation.
+   * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 24000001 - Service unavailable.
+   * @throws { BusinessError } 24000002 - Data not found.
+   * @throws { BusinessError } 24000005 - Device status mismatch.
+   * @throws { BusinessError } 24000006 - Out of memory.
+   * @throws { BusinessError } 24000007 - Data corrupted.
+   * @throws { BusinessError } 24000008 - Database operation failed.
+   * @throws { BusinessError } 24000009 - Key management service is abnormal.
+   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
+   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
+   * @throws { BusinessError } 24000012 - Account manager is abnormal.
+   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
+   * @throws { BusinessError } 24000015 - Get system time failed.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
@@ -81,6 +147,19 @@ declare namespace asset {
    * @param { AssetMap } query - a map object containing attributes of the Asset to be updated.
    * @param { AssetMap } attributesToUpdate - a map object containing attributes with new values.
    * @returns { Promise<void> } the promise object returned by the function.
+   * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 24000001 - Service unavailable.
+   * @throws { BusinessError } 24000002 - Data not found.
+   * @throws { BusinessError } 24000005 - Device status mismatch.
+   * @throws { BusinessError } 24000006 - Out of memory.
+   * @throws { BusinessError } 24000007 - Data corrupted.
+   * @throws { BusinessError } 24000008 - Database operation failed.
+   * @throws { BusinessError } 24000009 - Key management service is abnormal.
+   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
+   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
+   * @throws { BusinessError } 24000012 - Account manager is abnormal.
+   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
+   * @throws { BusinessError } 24000015 - Get system time failed.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
@@ -91,6 +170,20 @@ declare namespace asset {
    *
    * @param { AssetMap } query - a map object containing attributes of the Asset to be queried.
    * @param { AsyncCallback<Uint8Array> } callback - the callback function for pre-query operation.
+   * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 801 - Capability not supported.
+   * @throws { BusinessError } 24000001 - Service unavailable.
+   * @throws { BusinessError } 24000002 - Data not found.
+   * @throws { BusinessError } 24000005 - Device status mismatch.
+   * @throws { BusinessError } 24000006 - Out of memory.
+   * @throws { BusinessError } 24000007 - Data corrupted.
+   * @throws { BusinessError } 24000008 - Database operation failed.
+   * @throws { BusinessError } 24000009 - Key management service is abnormal.
+   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
+   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
+   * @throws { BusinessError } 24000012 - Account manager is abnormal.
+   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
+   * @throws { BusinessError } 24000016 - Capacity exceeds the limit.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
@@ -101,6 +194,20 @@ declare namespace asset {
    *
    * @param { AssetMap } query - a map object containing attributes of the Asset to be queried.
    * @returns { Promise<Uint8Array> } the promise object returned by the function.
+   * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 801 - Capability not supported.
+   * @throws { BusinessError } 24000001 - Service unavailable.
+   * @throws { BusinessError } 24000002 - Data not found.
+   * @throws { BusinessError } 24000005 - Device status mismatch.
+   * @throws { BusinessError } 24000006 - Out of memory.
+   * @throws { BusinessError } 24000007 - Data corrupted.
+   * @throws { BusinessError } 24000008 - Database operation failed.
+   * @throws { BusinessError } 24000009 - Key management service is abnormal.
+   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
+   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
+   * @throws { BusinessError } 24000012 - Account manager is abnormal.
+   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
+   * @throws { BusinessError } 24000016 - Capacity exceeds the limit.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
@@ -111,6 +218,20 @@ declare namespace asset {
    *
    * @param { AssetMap } query - a map object containing attributes of the Asset to be queried.
    * @param { AsyncCallback<Array<AssetMap>> } callback - the callback function for query operation.
+   * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 801 - Capability not supported.
+   * @throws { BusinessError } 24000001 - Service unavailable.
+   * @throws { BusinessError } 24000002 - Data not found.
+   * @throws { BusinessError } 24000004 - Access denied.
+   * @throws { BusinessError } 24000005 - Device status mismatch.
+   * @throws { BusinessError } 24000006 - Out of memory.
+   * @throws { BusinessError } 24000007 - Data corrupted.
+   * @throws { BusinessError } 24000008 - Database operation failed.
+   * @throws { BusinessError } 24000009 - Key management service is abnormal.
+   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
+   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
+   * @throws { BusinessError } 24000012 - Account manager is abnormal.
+   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
@@ -121,6 +242,20 @@ declare namespace asset {
    *
    * @param { AssetMap } query - a map object containing attributes of the Asset to be queried.
    * @returns { Promise<Array<AssetMap>> } the promise object returned by the function.
+   * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 801 - Capability not supported.
+   * @throws { BusinessError } 24000001 - Service unavailable.
+   * @throws { BusinessError } 24000002 - Data not found.
+   * @throws { BusinessError } 24000004 - Access denied.
+   * @throws { BusinessError } 24000005 - Device status mismatch.
+   * @throws { BusinessError } 24000006 - Out of memory.
+   * @throws { BusinessError } 24000007 - Data corrupted.
+   * @throws { BusinessError } 24000008 - Database operation failed.
+   * @throws { BusinessError } 24000009 - Key management service is abnormal.
+   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
+   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
+   * @throws { BusinessError } 24000012 - Account manager is abnormal.
+   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
@@ -131,6 +266,13 @@ declare namespace asset {
    *
    * @param { AssetMap } handle - a map object contains the handle returned by {@link preQuery}.
    * @param { AsyncCallback<void> } callback - the callback function for post-query operation.
+   * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 24000001 - Service unavailable.
+   * @throws { BusinessError } 24000006 - Out of memory.
+   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
+   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
+   * @throws { BusinessError } 24000012 - Account manager is abnormal.
+   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
@@ -141,6 +283,13 @@ declare namespace asset {
    *
    * @param { AssetMap } handle - a map object contains the handle returned by {@link preQuery}.
    * @returns { Promise<void> } the promise object returned by the function.
+   * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 24000001 - Service unavailable.
+   * @throws { BusinessError } 24000006 - Out of memory.
+   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
+   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
+   * @throws { BusinessError } 24000012 - Account manager is abnormal.
+   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
    * @syscap SystemCapability.Security.Asset
    * @since 11
    */
@@ -246,30 +395,6 @@ declare namespace asset {
      * @since 11
      */
     TRUSTED_DEVICE = 1 << 1,
-  }
-
-  /**
-   * An enum type indicates the type of when to delete Asset.
-   *
-   * @enum { number }
-   * @syscap SystemCapability.Security.Asset
-   * @since 11
-   */
-  enum DeleteType {
-    /**
-     * The Asset is deleted when the user space it belongs to is removed.
-     *
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    WHEN_USER_REMOVED = 1 << 0,
-    /**
-     * The Asset is deleted when the package it belongs to is removed.
-     *
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    WHEN_PACKAGE_REMOVED = 1 << 1,
   }
 
   /**
@@ -381,7 +506,7 @@ declare namespace asset {
      */
     ACCESSIBILITY = TagType.NUMBER | 0x03,
     /**
-     * A tag whose value is a bool indicating whether a screen lock password is set for the device.
+     * A tag whose value is a bool indicating whether a screen lock password is required for the device.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
@@ -423,12 +548,12 @@ declare namespace asset {
      */
     SYNC_TYPE = TagType.NUMBER | 0x10,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating when to delete Asset.
+     * A tag whose value is a bool indicating whether Asset is stored persistently.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DELETE_TYPE = TagType.NUMBER | 0x11,
+    IS_PERSISTENT = TagType.BOOL | 0x11,
     /**
      * A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
      *
@@ -580,47 +705,47 @@ declare namespace asset {
      */
     ACCESS_DENIED = 24000004,
     /**
-     * The error code indicates that the authentication token has expired.
-     *
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    AUTH_TOKEN_EXPIRED = 24000005,
-    /**
      * The error code indicates that the screen lock status mismatches.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    STATUS_MISMATCH = 24000006,
+    STATUS_MISMATCH = 24000005,
     /**
      * The error code indicates insufficient memory.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    OUT_OF_MEMRORY = 24000007,
+    OUT_OF_MEMRORY = 24000006,
     /**
-     * The error code indicates that the Asset or encryption key is corrupted.
+     * The error code indicates that the Asset is corrupted.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATA_CORRUPTED = 24000008,
-    /**
-     * The error code indicates that the ipc communication is failed.
-     *
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    IPC_ERROR = 24000009,
+    DATA_CORRUPTED = 24000007,
     /**
      * The error code indicates that the database operation is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    DATABASE_ERROR = 24000010,
+    DATABASE_ERROR = 24000008,
+    /**
+     * The error code indicates that the cryptography operation is failed.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
+    CRYPTO_ERROR = 24000009,
+    /**
+     * The error code indicates that the ipc communication is failed.
+     *
+     * @syscap SystemCapability.Security.Asset
+     * @since 11
+     */
+    IPC_ERROR = 24000010,
     /**
      * The error code indicates that the operation of calling bundle manager service is failed.
      *
@@ -629,54 +754,40 @@ declare namespace asset {
      */
     BMS_ERROR = 24000011,
     /**
-     * The error code indicates that the cryptography operation is failed.
-     *
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    CRYPTO_ERROR = 24000012,
-    /**
      * The error code indicates that the operation of calling OS account service is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    ACCOUNT_ERROR = 24000013,
-    /**
-     * The error code indicates that the operation of calling common event service is failed.
-     *
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    COMMON_EVENT_ERROR = 24000014,
+    ACCOUNT_ERROR = 24000012,
     /**
      * The error code indicates that the operation of calling access token service is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    ACCESS_TOKEN_ERROR = 24000015,
+    ACCESS_TOKEN_ERROR = 24000013,
     /**
      * The error code indicates that the operation of file is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    FILE_OPERATION_ERROR = 24000016,
+    FILE_OPERATION_ERROR = 24000014,
     /**
      * The error code indicates that the operation of getting system time is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    GET_SYSTEM_TIME_ERROR = 24000017,
+    GET_SYSTEM_TIME_ERROR = 24000015,
     /**
      * The error code indicates that the amount of map element or other limited quotas exceed the limit.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
-    LIMIT_EXCEEDED = 24000018,
+    LIMIT_EXCEEDED = 24000016,
   }
 }
 

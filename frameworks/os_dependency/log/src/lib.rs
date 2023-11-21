@@ -29,6 +29,16 @@ pub fn log_func_i(log: &str) {
     hilog_rust::info!(log_label, "{}", @public(log));
 }
 
+/// the function to print log, and may be should not be used instead of logw
+pub fn log_func_w(log: &str) {
+    let log_label = hilog_rust::HiLogLabel {
+        log_type: hilog_rust::LogType::LogCore,
+        domain: 0xD002F70, // Security Domain ID: 0xD002F00 - 0xD002FFF
+        tag: "Asset",
+    };
+    hilog_rust::warn!(log_label, "{}", @public(log));
+}
+
 /// the function to print log, and may be should not be used instead of loge
 pub fn log_func_e(log: &str) {
     let log_label = hilog_rust::HiLogLabel {
@@ -50,6 +60,20 @@ pub fn log_func_e(log: &str) {
 macro_rules! logi {
     ($($arg:tt)*) => (
         $crate::log_func_i(&format!($($arg)*));
+    );
+}
+
+/// Print logs at the info level.
+///
+/// # Examples
+///
+/// ```
+/// logw!("hello, {}", "world");
+/// ```
+#[macro_export]
+macro_rules! logw {
+    ($($arg:tt)*) => (
+        $crate::log_func_w(&format!($($arg)*));
     );
 }
 

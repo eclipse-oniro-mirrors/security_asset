@@ -85,26 +85,6 @@ fn update_query_invalid_accessibility() {
 }
 
 #[test]
-fn update_query_required_pwd_with_unmatched_type() {
-    let function_name = function!().as_bytes();
-    let mut update = AssetMap::new();
-    update.insert_attr(Tag::Secret, function_name.to_owned());
-    let mut query = AssetMap::new();
-    query.insert_attr(Tag::Alias, function_name.to_owned());
-    query.insert_attr(Tag::RequirePasswordSet, vec![]);
-    expect_error_eq(
-        ErrCode::InvalidArgument,
-        asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err(),
-    );
-
-    query.insert_attr(Tag::RequirePasswordSet, 0);
-    expect_error_eq(
-        ErrCode::InvalidArgument,
-        asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err(),
-    );
-}
-
-#[test]
 fn update_query_invalid_auth_type() {
     let function_name = function!().as_bytes();
     let mut update = AssetMap::new();
@@ -140,21 +120,6 @@ fn update_query_invalid_sync_type() {
 }
 
 #[test]
-fn update_query_invalid_delete_type() {
-    let function_name = function!().as_bytes();
-    let mut update = AssetMap::new();
-    update.insert_attr(Tag::Secret, function_name.to_owned());
-    let mut query = AssetMap::new();
-    query.insert_attr(Tag::Alias, function_name.to_owned());
-    let delete_type = DeleteType::WhenPackageRemoved as u32 | DeleteType::WhenUserRemoved as u32;
-    query.insert_attr(Tag::DeleteType, delete_type + 1);
-    expect_error_eq(
-        ErrCode::InvalidArgument,
-        asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err(),
-    );
-}
-
-#[test]
 fn update_query_invalid_label() {
     let function_name = function!().as_bytes();
     let mut update = AssetMap::new();
@@ -170,6 +135,30 @@ fn update_query_invalid_label() {
         );
 
         query.insert_attr(label, vec![0; MAX_LABEL_SIZE + 1]);
+        expect_error_eq(
+            ErrCode::InvalidArgument,
+            asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err(),
+        );
+    }
+}
+
+#[test]
+fn update_query_bool_tag_with_unmatched_type() {
+    let tags = [Tag::RequirePasswordSet, Tag::IsPersistent];
+    let function_name = function!().as_bytes();
+    let mut update = AssetMap::new();
+    update.insert_attr(Tag::Secret, function_name.to_owned());
+
+    for tag in tags {
+        let mut query = AssetMap::new();
+        query.insert_attr(Tag::Alias, function_name.to_owned());
+        query.insert_attr(tag, vec![]);
+        expect_error_eq(
+            ErrCode::InvalidArgument,
+            asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err(),
+        );
+
+        query.insert_attr(tag, 0);
         expect_error_eq(
             ErrCode::InvalidArgument,
             asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err(),
@@ -206,7 +195,7 @@ fn update_query_number_tag_with_unmatched_type() {
     let function_name = function!().as_bytes();
     let mut update = AssetMap::new();
     update.insert_attr(Tag::Secret, function_name.to_owned());
-    let tags_num = [Tag::Accessibility, Tag::AuthType, Tag::SyncType, Tag::DeleteType];
+    let tags_num = [Tag::Accessibility, Tag::AuthType, Tag::SyncType];
     for tag in tags_num {
         let mut query = AssetMap::new();
         query.insert_attr(Tag::Alias, function_name.to_owned());
@@ -363,7 +352,7 @@ fn update_unsupported_tags() {
         Tag::Accessibility,
         Tag::AuthType,
         Tag::SyncType,
-        Tag::DeleteType,
+        Tag::IsPersistent,
         Tag::RequirePasswordSet,
         Tag::AuthValidityPeriod,
         Tag::ConflictResolution,

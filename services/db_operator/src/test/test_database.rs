@@ -33,7 +33,7 @@ const DB_DATA: [(&str, Value); 9] = [
     (column::SYNC_TYPE, Value::Number(1)),
     (column::ACCESSIBILITY, Value::Number(1)),
     (column::AUTH_TYPE, Value::Number(1)),
-    (column::DELETE_TYPE, Value::Number(1)),
+    (column::IS_PERSISTENT, Value::Bool(true)),
     (column::VERSION, Value::Number(1)),
     (column::CREATE_TIME, Value::Number(1)),
     (column::UPDATE_TIME, Value::Number(1)),

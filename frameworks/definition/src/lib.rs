@@ -71,8 +71,8 @@ impl_tag_trait! {
         /// A tag whose value is a 32-bit unsigned integer indicating the type of Asset synchronization.
         SyncType = DataType::Number as isize | 0x10,
 
-        /// A tag whose value is a 32-bit unsigned integer indicating when to delete Asset.
-        DeleteType = DataType::Number as isize | 0x11,
+        /// A tag whose value is a bool indicating whether Asset is stored persistently.
+        IsPersistent = DataType::Bool as isize | 0x11,
 
         /// A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
         DataLabelCritical1 = DataType::Bytes as isize | 0x20,
@@ -169,47 +169,41 @@ impl_enum_trait! {
         /// The error code indicates that the access to Asset is denied.
         AccessDenied = 24000004,
 
-        /// The error code indicates that the authentication token has expired.
-        AuthTokenExpired = 24000005,
-
         /// The error code indicates that the screen lock status mismatches.
-        StatusMismatch = 24000006,
+        StatusMismatch = 24000005,
 
         /// The error code indicates insufficient memory.
-        OutOfMemory = 24000007,
+        OutOfMemory = 24000006,
 
-        /// The error code indicates that the Asset or encryption key is corrupted.
-        DataCorrupted = 24000008,
-
-        /// The error code indicates that the ipc communication is abnormal.
-        IpcError = 24000009,
+        /// The error code indicates that the Asset is corrupted.
+        DataCorrupted = 24000007,
 
         /// The error code indicates that the database operation is failed.
-        DatabaseError = 24000010,
+        DatabaseError = 24000008,
+
+        /// The error code indicates that the cryptography operation is failed.
+        CryptoError = 24000009,
+
+        /// The error code indicates that the ipc communication is abnormal.
+        IpcError = 24000010,
 
         /// The error code indicates that the operation of calling bundle manager service is failed.
         BmsError = 24000011,
 
-        /// The error code indicates that the cryptography operation is failed.
-        CryptoError = 24000012,
-
         /// The error code indicates that the operation of calling OS account service is failed.
-        AccountError = 24000013,
-
-        /// The error code indicates that the operation of calling common event service is failed.
-        CommonEventError = 24000014,
+        AccountError = 24000012,
 
         /// The error code indicates that the operation of calling access token service is failed.
-        AccessTokenError = 24000015,
+        AccessTokenError = 24000013,
 
         /// The error code indicates that the operation of file is failed.
-        FileOperationError = 24000016,
+        FileOperationError = 24000014,
 
         /// The error code indicates that the operation of getting system time failed.
-        GetSystemTimeError = 24000017,
+        GetSystemTimeError = 24000015,
 
         /// The error code indicates that the amount of map element or other limited quotas exceed the limit.
-        LimitExceeded = 24000018,
+        LimitExceeded = 24000016,
     }
 }
 
@@ -277,19 +271,6 @@ impl_enum_trait! {
 
         /// An Asset with this attribute value can only be transferred out to a trusted device (user authorized).
         TrustedDevice = 1 << 1,
-    }
-}
-
-impl_enum_trait! {
-    /// An enum type indicates the type of when to delete Asset.
-    #[derive(Debug)]
-    #[derive(PartialEq, Eq)]
-    pub enum DeleteType {
-        /// The Asset is deleted when the user space it belongs to is removed.
-        WhenUserRemoved = 1 << 0,
-
-        /// The Asset is deleted when the package it belongs to is removed.
-        WhenPackageRemoved = 1 << 1,
     }
 }
 

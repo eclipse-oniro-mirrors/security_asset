@@ -30,7 +30,7 @@ const TAG_COLUMN_TABLE: [(Tag, &str); 15] = [
     (Tag::Accessibility, column::ACCESSIBILITY),
     (Tag::AuthType, column::AUTH_TYPE),
     (Tag::SyncType, column::SYNC_TYPE),
-    (Tag::DeleteType, column::DELETE_TYPE),
+    (Tag::IsPersistent, column::IS_PERSISTENT),
     (Tag::RequirePasswordSet, column::REQUIRE_PASSWORD_SET),
     (Tag::DataLabelCritical1, column::CRITICAL1),
     (Tag::DataLabelCritical2, column::CRITICAL2),
@@ -51,7 +51,7 @@ const AAD_ATTR: [&str; 14] = [
     column::ACCESSIBILITY,
     column::REQUIRE_PASSWORD_SET,
     column::AUTH_TYPE,
-    column::DELETE_TYPE,
+    column::IS_PERSISTENT,
     column::VERSION,
     column::CRITICAL1,
     column::CRITICAL2,
@@ -66,7 +66,7 @@ pub(crate) const NORMAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4];
 
 pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 6] =
-    [Tag::Alias, Tag::Accessibility, Tag::AuthType, Tag::DeleteType, Tag::SyncType, Tag::RequirePasswordSet];
+    [Tag::Alias, Tag::Accessibility, Tag::AuthType, Tag::IsPersistent, Tag::SyncType, Tag::RequirePasswordSet];
 
 pub(crate) fn get_cloumn_name(tag: Tag) -> Option<&'static str> {
     for (table_tag, table_column) in TAG_COLUMN_TABLE {

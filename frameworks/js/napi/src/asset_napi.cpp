@@ -44,7 +44,7 @@ napi_value DeclareTag(napi_env env)
     AddUint32Property(env, tag, "AUTH_CHALLENGE", ASSET_TAG_AUTH_CHALLENGE);
     AddUint32Property(env, tag, "AUTH_TOKEN", ASSET_TAG_AUTH_TOKEN);
     AddUint32Property(env, tag, "SYNC_TYPE", ASSET_TAG_SYNC_TYPE);
-    AddUint32Property(env, tag, "DELETE_TYPE", ASSET_TAG_DELETE_TYPE);
+    AddUint32Property(env, tag, "IS_PERSISTENT", ASSET_TAG_IS_PERSISTENT);
     AddUint32Property(env, tag, "CONFLICT_RESOLUTION", ASSET_TAG_CONFLICT_RESOLUTION);
     AddUint32Property(env, tag, "DATA_LABEL_CRITICAL_1", ASSET_TAG_DATA_LABEL_CRITICAL_1);
     AddUint32Property(env, tag, "DATA_LABEL_CRITICAL_2", ASSET_TAG_DATA_LABEL_CRITICAL_2);
@@ -72,16 +72,14 @@ napi_value DeclareErrorCode(napi_env env)
     AddUint32Property(env, errorCode, "NOT_FOUND", ASSET_NOT_FOUND);
     AddUint32Property(env, errorCode, "DUPLICATED", ASSET_DUPLICATED);
     AddUint32Property(env, errorCode, "ACCESS_DENIED", ASSET_ACCESS_DENIED);
-    AddUint32Property(env, errorCode, "AUTH_TOKEN_EXPIRED", ASSET_AUTH_TOKEN_EXPIRED);
     AddUint32Property(env, errorCode, "STATUS_MISMATCH", ASSET_STATUS_MISMATCH);
     AddUint32Property(env, errorCode, "OUT_OF_MEMRORY", ASSET_OUT_OF_MEMRORY);
     AddUint32Property(env, errorCode, "DATA_CORRUPTED", ASSET_DATA_CORRUPTED);
-    AddUint32Property(env, errorCode, "IPC_ERROR", ASSET_IPC_ERROR);
     AddUint32Property(env, errorCode, "DATABASE_ERROR", ASSET_DATABASE_ERROR);
-    AddUint32Property(env, errorCode, "BMS_ERROR", ASSET_BMS_ERROR);
     AddUint32Property(env, errorCode, "CRYPTO_ERROR", ASSET_CRYPTO_ERROR);
+    AddUint32Property(env, errorCode, "IPC_ERROR", ASSET_IPC_ERROR);
+    AddUint32Property(env, errorCode, "BMS_ERROR", ASSET_BMS_ERROR);
     AddUint32Property(env, errorCode, "ACCOUNT_ERROR", ASSET_ACCOUNT_ERROR);
-    AddUint32Property(env, errorCode, "COMMON_EVENT_ERROR", ASSET_COMMON_EVENT_ERROR);
     AddUint32Property(env, errorCode, "ACCESS_TOKEN_ERROR", ASSET_ACCESS_TOKEN_ERROR);
     AddUint32Property(env, errorCode, "FILE_OPERATION_ERROR", ASSET_FILE_OPERATION_ERROR);
     AddUint32Property(env, errorCode, "GET_SYSTEM_TIME_ERROR", ASSET_GET_SYSTEM_TIME_ERROR);
@@ -116,15 +114,6 @@ napi_value DeclareSyncType(napi_env env)
     AddUint32Property(env, syncType, "THIS_DEVICE", ASSET_SYNC_TYPE_THIS_DEVICE);
     AddUint32Property(env, syncType, "TRUSTED_DEVICE", ASSET_SYNC_TYPE_TRUSTED_DEVICE);
     return syncType;
-}
-
-napi_value DeclareDeleteType(napi_env env)
-{
-    napi_value deleteType = nullptr;
-    NAPI_CALL(env, napi_create_object(env, &deleteType));
-    AddUint32Property(env, deleteType, "WHEN_USER_REMOVED", ASSET_DELETE_WHEN_USER_REMOVED);
-    AddUint32Property(env, deleteType, "WHEN_PACKAGE_REMOVED", ASSET_DELETE_WHEN_PACKAGE_REMOVED);
-    return deleteType;
 }
 
 napi_value DeclareConflictResolution(napi_env env)
@@ -223,7 +212,6 @@ napi_value Register(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("Accessibility", DeclareAccessibility(env)),
         DECLARE_NAPI_PROPERTY("AuthType", DeclareAuthType(env)),
         DECLARE_NAPI_PROPERTY("SyncType", DeclareSyncType(env)),
-        DECLARE_NAPI_PROPERTY("DeleteType", DeclareDeleteType(env)),
         DECLARE_NAPI_PROPERTY("ConflictResolution", DeclareConflictResolution(env)),
         DECLARE_NAPI_PROPERTY("ReturnType", DeclareReturnType(env)),
     };

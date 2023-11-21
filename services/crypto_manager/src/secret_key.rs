@@ -144,7 +144,7 @@ impl SecretKey {
         let _identity = IdentityScope::build()?;
         let ret = unsafe { DeleteKey(&key_alias as *const HksBlob) };
         match ret {
-            HKS_SUCCESS => Ok(()),
+            HKS_SUCCESS | HKS_ERROR_NOT_EXIST => Ok(()),
             _ => {
                 log_throw_error!(ErrCode::CryptoError, "[FATAL]secret key delete failed ret {}", ret)
             },

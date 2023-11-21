@@ -50,8 +50,8 @@ pub mod column {
     pub const CREATE_TIME: &str = "CreateTime";
     /// Column name of the data update time.
     pub const UPDATE_TIME: &str = "UpdateTime";
-    /// Column name of the data deletion type.
-    pub const DELETE_TYPE: &str = "DeleteType";
+    /// Column name of the data persistence attribute.
+    pub const IS_PERSISTENT: &str = "IsPersistent";
     /// Column name of the data version number.
     pub const VERSION: &str = "Version";
     /// Column name of if data require password set
@@ -94,7 +94,7 @@ pub(crate) const COLUMN_INFO: &[ColumnInfo] = &[
     ColumnInfo { name: column::AUTH_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
     ColumnInfo { name: column::CREATE_TIME, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
     ColumnInfo { name: column::UPDATE_TIME, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
-    ColumnInfo { name: column::DELETE_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::IS_PERSISTENT, data_type: DataType::Bool, is_primary_key: false, not_null: true },
     ColumnInfo { name: column::VERSION, data_type: DataType::Number, is_primary_key: false, not_null: true },
     ColumnInfo { name: column::REQUIRE_PASSWORD_SET, data_type: DataType::Bool, is_primary_key: false, not_null: true },
     ColumnInfo { name: column::CRITICAL1, data_type: DataType::Bytes, is_primary_key: false, not_null: false },

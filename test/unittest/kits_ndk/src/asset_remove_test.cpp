@@ -65,7 +65,7 @@ HWTEST_F(AssetRemoveTest, AssetRemoveTest001, TestSize.Level0)
         { .tag = ASSET_TAG_REQUIRE_PASSWORD_SET, .value.boolean = false },
         { .tag = ASSET_TAG_AUTH_TYPE, .value.u32 = ASSET_AUTH_TYPE_NONE },
         { .tag = ASSET_TAG_SYNC_TYPE, .value.u32 = ASSET_SYNC_TYPE_NEVER },
-        { .tag = ASSET_TAG_DELETE_TYPE, .value.u32 = ASSET_DELETE_WHEN_PACKAGE_REMOVED },
+        { .tag = ASSET_TAG_IS_PERSISTENT, .value.boolean = false },
         { .tag = ASSET_TAG_DATA_LABEL_NORMAL_1, .value.blob = funcName },
         { .tag = ASSET_TAG_DATA_LABEL_NORMAL_2, .value.blob = funcName },
         { .tag = ASSET_TAG_DATA_LABEL_NORMAL_3, .value.blob = funcName },
@@ -82,7 +82,7 @@ HWTEST_F(AssetRemoveTest, AssetRemoveTest001, TestSize.Level0)
         { .tag = ASSET_TAG_REQUIRE_PASSWORD_SET, .value.boolean = false },
         { .tag = ASSET_TAG_AUTH_TYPE, .value.u32 = ASSET_AUTH_TYPE_NONE },
         { .tag = ASSET_TAG_SYNC_TYPE, .value.u32 = ASSET_SYNC_TYPE_NEVER },
-        { .tag = ASSET_TAG_DELETE_TYPE, .value.u32 = ASSET_DELETE_WHEN_PACKAGE_REMOVED },
+        { .tag = ASSET_TAG_IS_PERSISTENT, .value.boolean = false },
         { .tag = ASSET_TAG_DATA_LABEL_NORMAL_1, .value.blob = funcName },
         { .tag = ASSET_TAG_DATA_LABEL_NORMAL_2, .value.blob = funcName },
         { .tag = ASSET_TAG_DATA_LABEL_NORMAL_3, .value.blob = funcName },
@@ -133,7 +133,7 @@ HWTEST_F(AssetRemoveTest, AssetRemoveTest002, TestSize.Level0)
  */
 HWTEST_F(AssetRemoveTest, AssetRemoveTest003, TestSize.Level0)
 {
-    int arr[] = { ASSET_TAG_ACCESSIBILITY, ASSET_TAG_AUTH_TYPE, ASSET_TAG_SYNC_TYPE, ASSET_TAG_DELETE_TYPE };
+    int arr[] = { ASSET_TAG_ACCESSIBILITY, ASSET_TAG_AUTH_TYPE, ASSET_TAG_SYNC_TYPE, ASSET_TAG_IS_PERSISTENT };
     for (int i = 0; i < ARRAY_SIZE(arr); i++) {
         Asset_Blob tmpBlob = { .size = strlen(__func__), .data = nullptr };
         Asset_Attr attr[] = {

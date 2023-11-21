@@ -30,67 +30,73 @@ using namespace AppExecFwk;
 using namespace Security::AccessToken;
 
 namespace {
-bool GetHapInfo(int32_t userId, uint32_t tokenId, std::string &info)
+ResultCode GetHapInfo(int32_t userId, uint32_t tokenId, std::string &info)
 {
     HapTokenInfo tokenInfo;
     int32_t ret = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
     if (ret != RET_SUCCESS) {
         LOGE("[FATAL]Get hap token info failed, ret = %{public}d", ret);
-        return false;
+        return ACCESS_TOKEN_ERROR;
     }
 
     AppExecFwk::BundleMgrClient bmsClient;
     AppExecFwk::BundleInfo bundleInfo;
     if (!bmsClient.GetBundleInfo(tokenInfo.bundleName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE, bundleInfo, userId)) {
         LOGE("[FATAL]Get bundle info failed!");
-        return false;
+        return BMS_ERROR;
     }
 
     info = bundleInfo.appId + "_" + std::to_string(bundleInfo.appIndex);
-    return true;
+    return SUCCESS;
 }
 
-bool GetProcessInfo(uint32_t tokenId, uint64_t uid, std::string &info)
+ResultCode GetProcessInfo(uint32_t tokenId, uint64_t uid, std::string &info)
 {
     NativeTokenInfo tokenInfo;
     int32_t ret = AccessTokenKit::GetNativeTokenInfo(tokenId, tokenInfo);
     if (ret != RET_SUCCESS) {
         LOGE("[FATAL]Get native token info failed, ret = %{public}d", ret);
-        return false;
+        return ACCESS_TOKEN_ERROR;
     }
 
     info = tokenInfo.processName + "_" + std::to_string(uid);
-    return true;
+    return SUCCESS;
 }
 } // namespace
 
-bool GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen)
+ResultCode GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen)
 {
     if (ownerType == NULL || ownerInfo == NULL || infoLen == NULL) {
-        return false;
+        return INVALID_ARGUMENT;
     }
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
     std::string info;
-    bool ret = false;
+    ResultCode code = SUCCESS;
     switch (tokenType) {
         case ATokenTypeEnum::TOKEN_HAP:
             *ownerType = HAP;
-            ret = GetHapInfo(userId, tokenId, info);
+            code = GetHapInfo(userId, tokenId, info);
             break;
         case ATokenTypeEnum::TOKEN_NATIVE:
         case ATokenTypeEnum::TOKEN_SHELL:
             *ownerType = NATIVE;
-            ret = GetProcessInfo(tokenId, uid, info);
+            code = GetProcessInfo(tokenId, uid, info);
             break;
         default:
             LOGE("[FATAL]Unsupported calling type: %{public}d", tokenType);
+            code = UNSUPPORTED;
     }
 
-    if (ret && memcpy_s(ownerInfo, *infoLen, info.c_str(), info.size()) == EOK) {
-        LOGI("[INFO]Calling userId: %{public}d, info: %{public}s", userId, info.c_str());
-        *infoLen = info.size();
-        return true;
+    if (code != SUCCESS) {
+        return code;
     }
-    return false;
+
+    if (memcpy_s(ownerInfo, *infoLen, info.c_str(), info.size()) != EOK) {
+        LOGE("The owner buffer is too small. Expect size: %{public}zu, actual size: %{public}u", info.size(), *infoLen);
+        return INVALID_ARGUMENT;
+    }
+
+    *infoLen = info.size();
+    return SUCCESS;
 }

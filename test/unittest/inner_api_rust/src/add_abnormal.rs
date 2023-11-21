@@ -163,20 +163,6 @@ fn add_invalid_accessibility() {
 }
 
 #[test]
-fn add_required_pwd_with_unmatched_type() {
-    let function_name = function!().as_bytes();
-    let mut attrs = AssetMap::new();
-    attrs.insert_attr(Tag::Alias, function_name.to_owned());
-    attrs.insert_attr(Tag::Secret, function_name.to_owned());
-    attrs.insert_attr(Tag::RequirePasswordSet, vec![]);
-    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
-
-    attrs.insert_attr(Tag::RequirePasswordSet, 0);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
-}
-
-#[test]
 fn add_invalid_auth_type() {
     let function_name = function!().as_bytes();
     let mut attrs = AssetMap::new();
@@ -217,18 +203,6 @@ fn add_sync_type_with_max_len() {
 }
 
 #[test]
-fn add_invalid_delete_type() {
-    let function_name = function!().as_bytes();
-    let mut attrs = AssetMap::new();
-    attrs.insert_attr(Tag::Alias, function_name.to_owned());
-    attrs.insert_attr(Tag::Secret, function_name.to_owned());
-    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
-    let delete_type = DeleteType::WhenPackageRemoved as u32 | DeleteType::WhenUserRemoved as u32;
-    attrs.insert_attr(Tag::DeleteType, delete_type + 1);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
-}
-
-#[test]
 fn add_invalid_conflict_resolution() {
     let function_name = function!().as_bytes();
     let mut attrs = AssetMap::new();
@@ -257,7 +231,24 @@ fn add_invalid_label() {
 }
 
 #[test]
-fn add_label_with_unmatched_type() {
+fn add_bool_tag_with_unmatched_type() {
+    let tags = [Tag::RequirePasswordSet, Tag::IsPersistent];
+    let function_name = function!().as_bytes();
+    for tag in tags {
+        let mut attrs = AssetMap::new();
+        attrs.insert_attr(Tag::Alias, function_name.to_owned());
+        attrs.insert_attr(Tag::Secret, function_name.to_owned());
+        attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
+        attrs.insert_attr(tag, vec![]);
+        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
+
+        attrs.insert_attr(tag, 0);
+        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
+    }
+}
+
+#[test]
+fn add_bytes_tag_with_unmatched_type() {
     let function_name = function!().as_bytes();
     let labels = &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat();
     for &label in labels {
@@ -275,7 +266,7 @@ fn add_label_with_unmatched_type() {
 
 #[test]
 fn add_number_tag_with_unmatched_type() {
-    let tags_num = [Tag::Accessibility, Tag::AuthType, Tag::SyncType, Tag::DeleteType, Tag::ConflictResolution];
+    let tags_num = [Tag::Accessibility, Tag::AuthType, Tag::SyncType, Tag::ConflictResolution];
     for tag in tags_num {
         let mut attrs = AssetMap::new();
         attrs.insert_attr(tag, vec![]);

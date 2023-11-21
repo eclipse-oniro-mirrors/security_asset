@@ -111,9 +111,9 @@ typedef enum {
      */
     ASSET_TAG_SYNC_TYPE = ASSET_TYPE_NUMBER | 0x10,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating when to delete Asset.
+     * A tag whose value is a bool indicating whether Asset is stored persistently.
      */
-    ASSET_TAG_DELETE_TYPE = ASSET_TYPE_NUMBER | 0x11,
+    ASSET_TAG_IS_PERSISTENT = ASSET_TYPE_BOOL | 0x11,
     /**
      * A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
      */
@@ -207,61 +207,53 @@ typedef enum {
      */
     ASSET_ACCESS_DENIED = 24000004,
     /**
-     * The error code indicates that the authentication token has expired.
-     */
-    ASSET_AUTH_TOKEN_EXPIRED = 24000005,
-    /**
      * The error code indicates that the screen lock status mismatches.
      */
-    ASSET_STATUS_MISMATCH = 24000006,
+    ASSET_STATUS_MISMATCH = 24000005,
     /**
      * The error code indicates insufficient memory.
      */
-    ASSET_OUT_OF_MEMRORY = 24000007,
+    ASSET_OUT_OF_MEMRORY = 24000006,
     /**
-     * The error code indicates that the Asset or encryption key is corrupted.
+     * The error code indicates that the Asset is corrupted.
      */
-    ASSET_DATA_CORRUPTED = 24000008,
-    /**
-     * The error code indicates that the ipc communication is failed.
-     */
-    ASSET_IPC_ERROR = 24000009,
+    ASSET_DATA_CORRUPTED = 24000007,
     /**
      * The error code indicates that the database operation is failed.
      */
-    ASSET_DATABASE_ERROR = 24000010,
+    ASSET_DATABASE_ERROR = 24000008,
+    /**
+     * The error code indicates that the cryptography operation is failed.
+     */
+    ASSET_CRYPTO_ERROR = 2400009,
+    /**
+     * The error code indicates that the ipc communication is failed.
+     */
+    ASSET_IPC_ERROR = 24000010,
     /**
      * The error code indicates that the operation of calling bundle manager service is failed.
      */
     ASSET_BMS_ERROR = 24000011,
     /**
-     * The error code indicates that the cryptography operation is failed.
-     */
-    ASSET_CRYPTO_ERROR = 24000012,
-    /**
      * The error code indicates that the operation of calling OS account service is failed.
      */
-    ASSET_ACCOUNT_ERROR = 24000013,
-    /**
-     * The error code indicates that the operation of calling common event service is failed.
-     */
-    ASSET_COMMON_EVENT_ERROR = 24000014,
+    ASSET_ACCOUNT_ERROR = 24000012,
     /**
      * The error code indicates that the operation of calling access token service is failed.
      */
-    ASSET_ACCESS_TOKEN_ERROR = 24000015,
+    ASSET_ACCESS_TOKEN_ERROR = 24000013,
     /**
      * The error code indicates that the operation of file is failed.
      */
-    ASSET_FILE_OPERATION_ERROR = 24000016,
+    ASSET_FILE_OPERATION_ERROR = 24000014,
     /**
      * The error code indicates that the operation of getting system time is failed.
      */
-    ASSET_GET_SYSTEM_TIME_ERROR = 24000017,
+    ASSET_GET_SYSTEM_TIME_ERROR = 24000015,
     /**
      * The error code indicates that the amount of map element or other limited quotas exceed the limit.
      */
-    ASSET_LIMIT_EXCEEDED = 24000018,
+    ASSET_LIMIT_EXCEEDED = 24000016,
 } Asset_ResultCode;
 
 /**
@@ -319,22 +311,6 @@ typedef enum {
      */
     ASSET_SYNC_TYPE_TRUSTED_DEVICE = 1 << 1,
 } Asset_SyncType;
-
-/**
- * @brief enum type indicates the type of when to delete Asset.
- *
- * @since 11
- */
-typedef enum {
-    /**
-     * The Asset is deleted when the user space it belongs to is removed.
-     */
-    ASSET_DELETE_WHEN_USER_REMOVED = 1 << 0,
-    /**
-     * The Asset is deleted when the package it belongs to is removed.
-     */
-    ASSET_DELETE_WHEN_PACKAGE_REMOVED = 1 << 1,
-} Asset_DeleteType;
 
 /**
  * @brief An enum type indicates the strategy for conflict resolution when handling duplicated Asset alias.

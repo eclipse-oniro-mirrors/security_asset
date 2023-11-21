@@ -34,16 +34,6 @@ fn pre_query_invalid_accessibility() {
 }
 
 #[test]
-fn pre_query_required_pwd_with_unmatched_type() {
-    let mut query = AssetMap::new();
-    query.insert_attr(Tag::RequirePasswordSet, vec![]);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
-
-    query.insert_attr(Tag::RequirePasswordSet, 0);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
-}
-
-#[test]
 fn pre_query_invalid_auth_type() {
     let mut query = AssetMap::new();
     query.insert_attr(Tag::AuthType, (AuthType::None as u32) + 1);
@@ -58,14 +48,6 @@ fn pre_query_invalid_sync_type() {
     let mut query = AssetMap::new();
     let sync_type = SyncType::ThisDevice as u32 | SyncType::TrustedDevice as u32;
     query.insert_attr(Tag::SyncType, sync_type + 1);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
-}
-
-#[test]
-fn pre_query_invalid_delete_type() {
-    let mut query = AssetMap::new();
-    let delete_type = DeleteType::WhenPackageRemoved as u32 | DeleteType::WhenUserRemoved as u32;
-    query.insert_attr(Tag::DeleteType, delete_type + 1);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
 }
 
@@ -93,6 +75,19 @@ fn pre_query_invalid_label() {
 }
 
 #[test]
+fn pre_query_bool_tag_with_unmatched_type() {
+    let tags = [Tag::RequirePasswordSet, Tag::IsPersistent];
+    for tag in tags {
+        let mut query = AssetMap::new();
+        query.insert_attr(tag, vec![]);
+        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+
+        query.insert_attr(tag, 0);
+        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    }
+}
+
+#[test]
 fn pre_query_bytes_tag_with_unmatched_type() {
     let mut tags_bytes = [CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat();
     tags_bytes.extend(&[Tag::Alias]);
@@ -108,7 +103,7 @@ fn pre_query_bytes_tag_with_unmatched_type() {
 
 #[test]
 fn pre_query_number_tag_with_unmatched_type() {
-    let tags_num = [Tag::Accessibility, Tag::AuthType, Tag::SyncType, Tag::DeleteType, Tag::AuthValidityPeriod];
+    let tags_num = [Tag::Accessibility, Tag::AuthType, Tag::SyncType, Tag::AuthValidityPeriod];
     for tag in tags_num {
         let mut query = AssetMap::new();
         query.insert_attr(tag, vec![]);

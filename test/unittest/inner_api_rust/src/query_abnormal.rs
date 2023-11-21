@@ -35,16 +35,6 @@ fn query_invalid_accessibility() {
 }
 
 #[test]
-fn query_required_pwd_with_unmatched_type() {
-    let mut query = AssetMap::new();
-    query.insert_attr(Tag::RequirePasswordSet, vec![]);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-
-    query.insert_attr(Tag::RequirePasswordSet, 0);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
 fn query_invalid_auth_type() {
     let mut query = AssetMap::new();
     query.insert_attr(Tag::AuthType, (AuthType::None as u32) + 1);
@@ -59,14 +49,6 @@ fn query_invalid_sync_type() {
     let mut query = AssetMap::new();
     let sync_type = SyncType::ThisDevice as u32 | SyncType::TrustedDevice as u32;
     query.insert_attr(Tag::SyncType, sync_type + 1);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
-}
-
-#[test]
-fn query_invalid_delete_type() {
-    let mut query = AssetMap::new();
-    let delete_type = DeleteType::WhenPackageRemoved as u32 | DeleteType::WhenUserRemoved as u32;
-    query.insert_attr(Tag::DeleteType, delete_type + 1);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 }
 
@@ -102,7 +84,7 @@ fn query_invalid_return_ordered_by() {
         Tag::RequirePasswordSet,
         Tag::AuthType,
         Tag::SyncType,
-        Tag::DeleteType,
+        Tag::IsPersistent,
         Tag::AuthValidityPeriod,
         Tag::ReturnType,
         Tag::ReturnLimit,
@@ -167,6 +149,19 @@ fn query_with_auth_challenge_without_auth_token() {
 }
 
 #[test]
+fn query_bool_tag_with_unmatched_type() {
+    let tags = [Tag::RequirePasswordSet, Tag::IsPersistent];
+    for tag in tags {
+        let mut query = AssetMap::new();
+        query.insert_attr(tag, vec![]);
+        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+
+        query.insert_attr(tag, 0);
+        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+    }
+}
+
+#[test]
 fn query_bytes_tag_with_unmatched_type() {
     let mut tags_bytes = [CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat();
     tags_bytes.extend(&[Tag::AuthToken, Tag::AuthChallenge, Tag::Alias]);
@@ -186,7 +181,6 @@ fn query_number_tag_with_unmatched_type() {
         Tag::Accessibility,
         Tag::AuthType,
         Tag::SyncType,
-        Tag::DeleteType,
         Tag::ReturnLimit,
         Tag::ReturnOffset,
         Tag::ReturnOrderedBy,

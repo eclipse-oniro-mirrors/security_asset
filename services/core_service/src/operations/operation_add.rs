@@ -22,8 +22,8 @@ use asset_db_operator::{
     types::{column, DbMap, DB_DATA_VERSION},
 };
 use asset_definition::{
-    log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, DeleteType, ErrCode, Extension, Result,
-    SyncType, Tag, Value,
+    log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, Result, SyncType, Tag,
+    Value,
 };
 use asset_log::logi;
 use asset_utils::time;
@@ -93,13 +93,12 @@ fn add_default_attrs(db_data: &mut DbMap) {
     db_data.entry(column::ACCESSIBILITY).or_insert(Value::Number(Accessibility::default() as u32));
     db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::default() as u32));
     db_data.entry(column::SYNC_TYPE).or_insert(Value::Number(SyncType::default() as u32));
-    db_data.entry(column::REQUIRE_PASSWORD_SET).or_insert(Value::Bool(false));
-    let delete_type = DeleteType::WhenUserRemoved as u32 | DeleteType::WhenPackageRemoved as u32;
-    db_data.entry(column::DELETE_TYPE).or_insert(Value::Number(delete_type));
+    db_data.entry(column::REQUIRE_PASSWORD_SET).or_insert(Value::Bool(bool::default()));
+    db_data.entry(column::IS_PERSISTENT).or_insert(Value::Bool(bool::default()));
 }
 
 const REQUIRED_ATTRS: [Tag; 2] = [Tag::Secret, Tag::Alias];
-const OPTIONAL_ATTRS: [Tag; 3] = [Tag::Secret, Tag::ConflictResolution, Tag::DeleteType];
+const OPTIONAL_ATTRS: [Tag; 3] = [Tag::Secret, Tag::ConflictResolution, Tag::IsPersistent];
 const SYSTEM_USER_ID_MAX: i32 = 99;
 
 fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {

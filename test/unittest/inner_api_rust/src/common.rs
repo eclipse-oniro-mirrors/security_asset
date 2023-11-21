@@ -43,8 +43,6 @@ pub(crate) const AUTH_TOKEN_SIZE: usize = 148;
 pub(crate) const CHALLENGE_SIZE: usize = 32;
 pub(crate) const SYNC_TYPE_MIN_BITS: u32 = 0;
 pub(crate) const SYNC_TYPE_MAX_BITS: u32 = 3;
-pub(crate) const DELETE_TYPE_MIN_BITS: u32 = 1;
-pub(crate) const DELETE_TYPE_MAX_BITS: u32 = 2;
 
 pub(crate) const CRITICAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelCritical1, Tag::DataLabelCritical2, Tag::DataLabelCritical3, Tag::DataLabelCritical4];

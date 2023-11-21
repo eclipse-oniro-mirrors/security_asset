@@ -36,8 +36,6 @@ const AUTH_TOKEN_SIZE: usize = 148;
 const CHALLENGE_SIZE: usize = 32;
 const SYNC_TYPE_MIN_BITS: u32 = 0;
 const SYNC_TYPE_MAX_BITS: u32 = 2;
-const DELETE_TYPE_MIN_BITS: u32 = 1;
-const DELETE_TYPE_MAX_BITS: u32 = 2;
 
 fn check_data_type(tag: &Tag, value: &Value) -> Result<()> {
     if tag.data_type() != value.data_type() {
@@ -134,13 +132,12 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::Secret => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_ARRAY_SIZE),
         Tag::Alias => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_ALIAS_SIZE),
         Tag::Accessibility => check_enum_variant::<Accessibility>(tag, value),
-        Tag::RequirePasswordSet => Ok(()),
+        Tag::RequirePasswordSet | Tag::IsPersistent => Ok(()),
         Tag::AuthType => check_enum_variant::<AuthType>(tag, value),
         Tag::AuthValidityPeriod => check_number_range(tag, value, MIN_NUMBER_VALUE, MAX_AUTH_VALID_PERIOD),
         Tag::AuthChallenge => check_array_size(tag, value, CHALLENGE_SIZE - 1, CHALLENGE_SIZE),
         Tag::AuthToken => check_array_size(tag, value, AUTH_TOKEN_SIZE - 1, AUTH_TOKEN_SIZE),
         Tag::SyncType => check_valid_bits(tag, value, SYNC_TYPE_MIN_BITS, SYNC_TYPE_MAX_BITS),
-        Tag::DeleteType => check_valid_bits(tag, value, DELETE_TYPE_MIN_BITS, DELETE_TYPE_MAX_BITS),
         Tag::ConflictResolution => check_enum_variant::<ConflictResolution>(tag, value),
         Tag::DataLabelCritical1 | Tag::DataLabelCritical2 | Tag::DataLabelCritical3 | Tag::DataLabelCritical4 => {
             check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_LABEL_SIZE)

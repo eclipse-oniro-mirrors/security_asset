@@ -74,7 +74,7 @@ pub trait IAsset: ipc_rust::IRemoteBroker {
 /// serialize the map to parcel
 pub fn serialize_map(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<()> {
     if map.len() as u32 > MAX_MAP_CAPACITY {
-        return log_throw_error!(ErrCode::LimitExceeded, "[FALTAL][IPC]The map size exceeds the limit.");
+        return log_throw_error!(ErrCode::InvalidArgument, "[FALTAL][IPC]The map size exceeds the limit.");
     }
     parcel.write(&(map.len() as u32)).map_err(ipc_err_handle)?;
     for (&tag, value) in map.iter() {
@@ -100,7 +100,7 @@ pub fn serialize_map(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<(
 pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
     let len = parcel.read::<u32>().map_err(ipc_err_handle)?;
     if len > MAX_MAP_CAPACITY {
-        return log_throw_error!(ErrCode::LimitExceeded, "[FATAL][IPC]The map size exceeds the limit.");
+        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][IPC]The map size exceeds the limit.");
     }
     let mut map = AssetMap::with_capacity(len as usize);
     for _ in 0..len {
@@ -127,7 +127,7 @@ pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
 /// Serialize the collection of map to parcel.
 pub fn serialize_maps(vec: &Vec<AssetMap>, parcel: &mut BorrowedMsgParcel) -> Result<()> {
     if vec.len() as u32 > MAX_VEC_CAPACITY {
-        return log_throw_error!(ErrCode::LimitExceeded, "[FATAL][IPC]The vector size exceeds the limit.");
+        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][IPC]The vector size exceeds the limit.");
     }
     parcel.write::<u32>(&(vec.len() as u32)).map_err(ipc_err_handle)?;
     for map in vec.iter() {
@@ -140,7 +140,7 @@ pub fn serialize_maps(vec: &Vec<AssetMap>, parcel: &mut BorrowedMsgParcel) -> Re
 pub fn deserialize_maps(parcel: &BorrowedMsgParcel) -> Result<Vec<AssetMap>> {
     let len = parcel.read::<u32>().map_err(ipc_err_handle)?;
     if len > MAX_VEC_CAPACITY {
-        return log_throw_error!(ErrCode::LimitExceeded, "[FATAL][IPC]The vector size exceeds the limit.");
+        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][IPC]The vector size exceeds the limit.");
     }
     let mut res_vec = Vec::with_capacity(len as usize);
     for _i in 0..len {
