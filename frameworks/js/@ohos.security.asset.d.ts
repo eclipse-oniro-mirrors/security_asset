@@ -32,6 +32,7 @@ declare namespace asset {
    * @param { AsyncCallback<void> } callback - the callback function for add operation.
    * @throws { BusinessError } 201 - Permission denied.
    * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 801 - Capability not supported.
    * @throws { BusinessError } 24000001 - Service unavailable.
    * @throws { BusinessError } 24000003 - Data already exists.
    * @throws { BusinessError } 24000005 - Device status mismatch.
@@ -58,6 +59,7 @@ declare namespace asset {
    * @returns { Promise<void> } the promise object returned by the function.
    * @throws { BusinessError } 201 - Permission denied.
    * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 801 - Capability not supported.
    * @throws { BusinessError } 24000001 - Service unavailable.
    * @throws { BusinessError } 24000003 - Data already exists.
    * @throws { BusinessError } 24000005 - Device status mismatch.
@@ -82,6 +84,7 @@ declare namespace asset {
    * @param { AssetMap } query - a map object containing attributes of the Asset to be removed.
    * @param { AsyncCallback<void> } callback - the callback function for remove operation.
    * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 801 - Capability not supported.
    * @throws { BusinessError } 24000001 - Service unavailable.
    * @throws { BusinessError } 24000002 - Data not found.
    * @throws { BusinessError } 24000006 - Out of memory.
@@ -103,6 +106,7 @@ declare namespace asset {
    * @param { AssetMap } query - a map object containing attributes of the Asset to be removed.
    * @returns { Promise<void> } the promise object returned by the function.
    * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 801 - Capability not supported.
    * @throws { BusinessError } 24000001 - Service unavailable.
    * @throws { BusinessError } 24000002 - Data not found.
    * @throws { BusinessError } 24000006 - Out of memory.
@@ -124,6 +128,7 @@ declare namespace asset {
    * @param { AssetMap } attributesToUpdate - a map object containing attributes with new values.
    * @param { AsyncCallback<void> } callback - the callback function for update operation.
    * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 801 - Capability not supported.
    * @throws { BusinessError } 24000001 - Service unavailable.
    * @throws { BusinessError } 24000002 - Data not found.
    * @throws { BusinessError } 24000005 - Device status mismatch.
@@ -148,6 +153,7 @@ declare namespace asset {
    * @param { AssetMap } attributesToUpdate - a map object containing attributes with new values.
    * @returns { Promise<void> } the promise object returned by the function.
    * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 801 - Capability not supported.
    * @throws { BusinessError } 24000001 - Service unavailable.
    * @throws { BusinessError } 24000002 - Data not found.
    * @throws { BusinessError } 24000005 - Device status mismatch.
@@ -267,6 +273,7 @@ declare namespace asset {
    * @param { AssetMap } handle - a map object contains the handle returned by {@link preQuery}.
    * @param { AsyncCallback<void> } callback - the callback function for post-query operation.
    * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 801 - Capability not supported.
    * @throws { BusinessError } 24000001 - Service unavailable.
    * @throws { BusinessError } 24000006 - Out of memory.
    * @throws { BusinessError } 24000010 - IPC communication is abnormal.
@@ -284,6 +291,7 @@ declare namespace asset {
    * @param { AssetMap } handle - a map object contains the handle returned by {@link preQuery}.
    * @returns { Promise<void> } the promise object returned by the function.
    * @throws { BusinessError } 401 - Invalid argument.
+   * @throws { BusinessError } 801 - Capability not supported.
    * @throws { BusinessError } 24000001 - Service unavailable.
    * @throws { BusinessError } 24000006 - Out of memory.
    * @throws { BusinessError } 24000010 - IPC communication is abnormal.
