@@ -36,7 +36,7 @@ enum ResultCode {
 };
 
 ResultCode GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen);
-
+bool PermissionCheck(void);
 #ifdef __cplusplus
 }
 #endif

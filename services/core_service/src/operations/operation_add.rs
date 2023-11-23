@@ -116,6 +116,17 @@ fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo)
     )
 }
 
+extern "C" {
+    fn PermissionCheck() -> bool;
+}
+
+fn permission_check(attributes: &AssetMap) -> Result<()> {
+    if attributes.get(&Tag::IsPersistent).is_some() && unsafe { !PermissionCheck() } {
+        return log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Permission check failed.");
+    }
+    Ok(())
+}
+
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     common::check_required_tags(attributes, &REQUIRED_ATTRS)?;
 
@@ -125,7 +136,8 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
-    check_accessibity_validity(attributes, calling_info)
+    check_accessibity_validity(attributes, calling_info)?;
+    permission_check(attributes)
 }
 
 pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
