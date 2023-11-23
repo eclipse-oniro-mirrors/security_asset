@@ -27,4 +27,12 @@ ohos_rust_unittest("asset_module_test") {
   module_out_path = module_output_path
   subsystem_name = "security"
   part_name = "asset"
+  rustflags = [
+    "-Cinstrument-coverage",
+    "-Zprofile",
+    "-Ccodegen-units=1",
+    "-Copt-level=0",
+    "-Coverflow-checks=off",
+    "-Zpanic_abort_tests",
+  ]
 }
