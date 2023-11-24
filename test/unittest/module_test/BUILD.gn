@@ -46,10 +46,14 @@ ohos_unittest("asset_unit_test") {
   sources = [
     "src/bms_wrapper_test.cpp",
     "src/os_account_wrapper_test.cpp",
+    "src/samgr_wrapper_test.cpp",
     "src/system_ability_wrapper_test.cpp",
     "src/system_event_wrapper_test.cpp",
   ]
-  deps = [ "../../../services/os_dependency:asset_os_dependency" ]
+  deps = [
+    "../../../services/os_dependency:asset_os_dependency",
+    "../../../frameworks/os_dependency/samgr:asset_samgr"
+  ]
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",

@@ -15,8 +15,13 @@
 
 //! This module defines the interface of the Asset Rust SDK.
 
+use std::{
+    time::Instant,
+};
+
 pub use asset_definition::*;
 
+use asset_log::logi;
 use ipc_rust::RemoteObjRef;
 
 use asset_ipc::{IAsset, SA_ID};
@@ -24,7 +29,19 @@ use asset_ipc::{IAsset, SA_ID};
 mod proxy;
 use proxy::AssetProxy;
 
+extern "C" {
+    fn LoadService(id: i32) -> bool;
+}
+
 fn get_remote() -> Result<RemoteObjRef<AssetProxy>> {
+    let start = Instant::now();
+    unsafe {
+        if !LoadService(SA_ID) {
+            return log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]Load service failed.");
+        }
+    }
+    let duration = start.elapsed();
+    logi!("[INFO]Calling sa time: [{}]", duration.as_millis());
     let object = rust_samgr::get_service_proxy::<AssetProxy>(SA_ID);
     match object {
         Ok(remote) => Ok(remote),

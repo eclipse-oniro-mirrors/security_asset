@@ -24,9 +24,7 @@ namespace {
     std::mutex g_serviceLock;
 }
 
-extern "C" bool LoadService(int32_t saId);
-
-bool LoadService(int32_t saId)
+extern "C" bool LoadService(int32_t saId)
 {
     auto samgrProxy = OHOS::SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (samgrProxy == nullptr) {
