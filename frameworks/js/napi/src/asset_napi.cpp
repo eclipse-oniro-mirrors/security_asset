@@ -67,7 +67,6 @@ napi_value DeclareErrorCode(napi_env env)
     NAPI_CALL(env, napi_create_object(env, &errorCode));
     AddUint32Property(env, errorCode, "PERMISSION_DENIED", ASSET_PERMISSION_DENIED);
     AddUint32Property(env, errorCode, "INVALID_ARGUMENT", ASSET_INVALID_ARGUMENT);
-    AddUint32Property(env, errorCode, "NOT_SUPPORTED", ASSET_NOT_SUPPORTED);
     AddUint32Property(env, errorCode, "SERVICE_UNAVAILABLE", ASSET_SERVICE_UNAVAILABLE);
     AddUint32Property(env, errorCode, "NOT_FOUND", ASSET_NOT_FOUND);
     AddUint32Property(env, errorCode, "DUPLICATED", ASSET_DUPLICATED);
@@ -84,6 +83,7 @@ napi_value DeclareErrorCode(napi_env env)
     AddUint32Property(env, errorCode, "FILE_OPERATION_ERROR", ASSET_FILE_OPERATION_ERROR);
     AddUint32Property(env, errorCode, "GET_SYSTEM_TIME_ERROR", ASSET_GET_SYSTEM_TIME_ERROR);
     AddUint32Property(env, errorCode, "LIMIT_EXCEEDED", ASSET_LIMIT_EXCEEDED);
+    AddUint32Property(env, errorCode, "UNSUPPORTED", ASSET_UNSUPPORTED);
     return errorCode;
 }
 

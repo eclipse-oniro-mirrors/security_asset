@@ -29,7 +29,7 @@ const std::unordered_map<int32_t, const char *> ERR_MSGS = {
     { ASSET_SUCCESS, "The operation is successful." },
     { ASSET_PERMISSION_DENIED, "The caller doesn't have permission to operate." },
     { ASSET_INVALID_ARGUMENT, "The argument is invalid." },
-    { ASSET_NOT_SUPPORTED, "The capability is not supported." },
+    { ASSET_UNSUPPORTED, "The capability is not supported." },
     { ASSET_SERVICE_UNAVAILABLE, "The Asset service is unavailable." },
     { ASSET_NOT_FOUND, "The queried Asset can not be found." },
     { ASSET_DUPLICATED, "The added Asset already exists." },

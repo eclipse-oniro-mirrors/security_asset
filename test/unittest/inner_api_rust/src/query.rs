@@ -171,7 +171,7 @@ fn query_with_return_all_without_alias() {
     add_default_asset(function_name, function_name).unwrap();
 
     let query = AssetMap::from([(Tag::ReturnType, Value::Number(ReturnType::All as u32))]);
-    expect_error_eq(ErrCode::NotSupport, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+    expect_error_eq(ErrCode::Unsupported, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
     remove_by_alias(function_name).unwrap();
 }

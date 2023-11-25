@@ -153,7 +153,7 @@ fn pre_query_multiple_data_type() {
         ]))
         .unwrap();
     let query = AssetMap::new();
-    expect_error_eq(ErrCode::NotSupport, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    expect_error_eq(ErrCode::Unsupported, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
     remove_by_alias(function_name).unwrap();
     remove_by_alias(new_alias).unwrap();
 }
