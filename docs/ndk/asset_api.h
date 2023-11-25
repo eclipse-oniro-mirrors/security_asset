@@ -43,9 +43,9 @@
 extern "C" {
 #endif
 /**
- * @brief 增加一条Asset数据。
+ * @brief 增加一条关键资产。
  *
- * @param attributes 指向包含待添加到Asset数据的属性数组的指针。
+ * @param attributes 指向包含待添加到关键资产的属性数组的指针。
  * @param attrCnt attributes数组中元素的个数。
  * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误代码。
  * @since 11
@@ -53,9 +53,9 @@ extern "C" {
 int32_t OH_Asset_Add(const Asset_Attr *attributes, uint32_t attrCnt);
 
 /**
- * @brief 删除符合匹配条件的一条或多条Asset数据。
+ * @brief 删除符合匹配条件的一条或多条关键资产。
  *
- * @param query 指向包含用来匹配待删除Asset数据的属性数组的指针。
+ * @param query 指向包含用来匹配待删除关键资产的属性数组的指针。
  * @param queryCnt query数组中元素的个数。
  * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误代码。
  * @since 11
@@ -63,11 +63,11 @@ int32_t OH_Asset_Add(const Asset_Attr *attributes, uint32_t attrCnt);
 int32_t OH_Asset_Remove(const Asset_Attr *query, uint32_t queryCnt);
 
 /**
- * @brief 更新符合匹配条件的一条Asset数据。
+ * @brief 更新符合匹配条件的一条关键资产。
  *
- * @param query 指向包含用来匹配待更新Asset数据的属性数组的指针。
+ * @param query 指向包含用来匹配待更新关键资产的属性数组的指针。
  * @param queryCnt query数组中元素的个数。
- * @param attributesToUpdate 指向包含更新的Asset数据的属性数组的指针。
+ * @param attributesToUpdate 指向包含更新的关键资产的属性数组的指针。
  * @param updateCnt attributesToUpdate数组中元素的个数。
  * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误代码。
  * @since 11
@@ -76,9 +76,9 @@ int32_t OH_Asset_Update(const Asset_Attr *query, uint32_t queryCnt,
     const Asset_Attr *attributesToUpdate, uint32_t updateCnt);
 
 /**
- * @brief 对于需要用户认证的Asset数据的查询前的预处理（例如获取挑战值challenge）。
+ * @brief 对于需要用户认证的关键资产的查询前的预处理（例如获取挑战值challenge）。
  *
- * @param query 指向包含用来匹配待查询Asset数据的属性数组的指针。
+ * @param query 指向包含用来匹配待查询关键资产的属性数组的指针。
  * @param queryCnt query数组中元素的个数。
  * @param challenge 获取到的挑战值指针，在后续调用{@link OH_Asset_Query}时使用。
  * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误代码。
@@ -87,9 +87,9 @@ int32_t OH_Asset_Update(const Asset_Attr *query, uint32_t queryCnt,
 int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob *challenge);
 
 /**
- * @brief 查询一条或多条符合匹配条件的Asset数据。
+ * @brief 查询一条或多条符合匹配条件的关键资产。
  *
- * @param query 指向包含用来匹配待查询Asset数据的属性数组的指针。
+ * @param query 指向包含用来匹配待查询关键资产的属性数组的指针。
  * @param queryCnt query数组中元素的个数。
  * @param result 指向包含查询结果的数组的指针。
  * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误代码。
@@ -98,7 +98,7 @@ int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob
 int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultSet *resultSet);
 
 /**
- * @brief 对于需要用户认证的Asset数据的查询后的后置处理（例如释放资源）。
+ * @brief 对于需要用户认证的关键资产的查询后的后置处理（例如释放资源）。
  *
  * @param handle 指向从{@link OH_Asset_PreQuery}中获取的包含挑战值的数组指针。
  * @param handleCnt handle数组中元素的个数。

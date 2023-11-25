@@ -20,7 +20,7 @@
  * @addtogroup AssetTypeApi
  * @{
  *
- * @brief Defines the enumerated values, data structures and error codes used by Asset APIs.
+ * @brief 该模块定义了Asset 接口使用到的枚举值、数据结构和错误码。
  *
  * @syscap SystemCapability.Security.Asset
  * @since 11
@@ -29,7 +29,7 @@
 /**
  * @file asset_type.h
  *
- * @brief Defines the enumerated values, data structures and error codes used by Asset APIs.
+ * @brief 定义了Asset 接口使用到的枚举值、数据结构和错误码。
  *
  * @since 11
  */
@@ -42,388 +42,388 @@ extern "C" {
 #endif
 
 /**
- * @brief An enum type containing the data type definitions for Asset attribute value.
+ * @brief Asset属性值的数据类型定义的枚举类型。
  *
  * @since 11
  */
 typedef enum {
     /**
-     * The data type of Asset attribute value is bool.
+     * Asset属性值是bool数据类型。
      */
     ASSET_TYPE_BOOL = 0x1 << 28,
     /**
-     * The data type of Asset attribute value is uint32.
+     * Asset属性值是uint32数据类型。
      */
     ASSET_TYPE_NUMBER = 0x2 << 28,
     /**
-     * The data type of Asset attribute value is byte array.
+     * Asset属性值是byte数据类型。
      */
     ASSET_TYPE_BYTES = 0x3 << 28,
 } Asset_TagType;
 
 /**
- * @brief The mask used to obtain the data type of Asset attribute value.
+ * @brief 用于获取Asset属性值的数据类型的掩码。
  *
  * @since 11
  */
 #define ASSET_TAG_TYPE_MASK (0xF << 28)
 
 /**
- * @brief An enum type containing the Asset attribute tags.
+ * @brief Asset属性标记枚举。
  *
  * @since 11
  */
 typedef enum {
     /**
-     * A tag whose value is a byte array indicating the sensitive user data such as passwords and tokens.
+     * 表示用户敏感数据，如口令、令牌等，其值为bytes类型。
      */
     ASSET_TAG_SECRET = ASSET_TYPE_BYTES | 0x01,
     /**
-     * A tag whose value is a byte array identifying an Asset.
+     * 表示一个关键资产的标识，其值为bytes类型。
      */
     ASSET_TAG_ALIAS = ASSET_TYPE_BYTES | 0x02,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating when the Asset can be accessed.
+     * 表示关键资产何时可访问，其值为uint32类型。
      */
     ASSET_TAG_ACCESSIBILITY = ASSET_TYPE_NUMBER | 0x03,
     /**
-     * A tag whose value is a bool indicating whether a screen lock password is set for the device.
+     * 表示关键资产是否在设备是否设置了锁屏密码时可用，其值为bool类型。
      */
     ASSET_TAG_REQUIRE_PASSWORD_SET = ASSET_TYPE_BOOL | 0x04,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the user authentication type for Asset access control.
+     * 表示关键资产需要的用户认证类型，其值为uint32类型。
      */
     ASSET_TAG_AUTH_TYPE = ASSET_TYPE_NUMBER | 0x05,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the validity period in seconds of user authentication.
+     * 表示用户认证的有效时间，其值为uint32类型，单位为秒。
      */
     ASSET_TAG_AUTH_VALIDITY_PERIOD = ASSET_TYPE_NUMBER | 0x06,
     /**
-     * A tag whose value is a byte array indicating the authentication challenge for anti-replay protection.
+     * 表示认证时抗重放用的挑战值，其值为bytes类型。
      */
     ASSET_TAG_AUTH_CHALLENGE = ASSET_TYPE_BYTES | 0x07,
     /**
-     * A tag whose value is a byte array indicating the authentication token after a user is verified.
+     * 表示用户认证后获取到的认证令牌，其值为bytes类型。
      */
     ASSET_TAG_AUTH_TOKEN = ASSET_TYPE_BYTES | 0x08,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the type of Asset synchronization.
+     * 表示关键资产的同步类型，其值为uint32类型。
      */
     ASSET_TAG_SYNC_TYPE = ASSET_TYPE_NUMBER | 0x10,
     /**
-     * A tag whose value is a bool indicating whether Asset is stored persistently.
+     * 表示关键资产是否需持久化存储，其值为bool类型。
      */
     ASSET_TAG_IS_PERSISTENT = ASSET_TYPE_BOOL | 0x11,
     /**
-     * A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
+     * 表示一个用户可自定义传入的字段，该字段不可被更新，其值为bytes类型。
      */
     ASSET_TAG_DATA_LABEL_CRITICAL_1 = ASSET_TYPE_BYTES | 0x20,
     /**
-     * A tag whose value is a byte array indicating the second user-defined Asset data label (not allow to update).
+     * 表示一个用户可自定义传入的字段，该字段不可被更新，其值为bytes类型。
      */
     ASSET_TAG_DATA_LABEL_CRITICAL_2 = ASSET_TYPE_BYTES | 0x21,
     /**
-     * A tag whose value is a byte array indicating the third user-defined Asset data label (not allow to update).
+     * 表示一个用户可自定义传入的字段，该字段不可被更新，其值为bytes类型。
      */
     ASSET_TAG_DATA_LABEL_CRITICAL_3 = ASSET_TYPE_BYTES | 0x22,
     /**
-     * A tag whose value is a byte array indicating the fourth user-defined Asset data label (not allow to update).
+     * 表示一个用户可自定义传入的字段，该字段不可被更新，其值为bytes类型。
      */
     ASSET_TAG_DATA_LABEL_CRITICAL_4 = ASSET_TYPE_BYTES | 0x23,
     /**
-     * A tag whose value is a byte array indicating the first user-defined Asset data label (allow to update).
+     * 表示一个用户可自定义传入的字段，该字段可被更新，其值为bytes类型。
      */
     ASSET_TAG_DATA_LABEL_NORMAL_1 = ASSET_TYPE_BYTES | 0x30,
     /**
-     * A tag whose value is a byte array indicating the second user-defined Asset data label (allow to update).
+     * 表示一个用户可自定义传入的字段，该字段可被更新，其值为bytes类型。
      */
     ASSET_TAG_DATA_LABEL_NORMAL_2 = ASSET_TYPE_BYTES | 0x31,
     /**
-     * A tag whose value is a byte array indicating the third user-defined Asset data label (allow to update).
+     * 表示一个用户可自定义传入的字段，该字段可被更新，其值为bytes类型。
      */
     ASSET_TAG_DATA_LABEL_NORMAL_3 = ASSET_TYPE_BYTES | 0x32,
     /**
-     * A tag whose value is a byte array indicating the fourth user-defined Asset data label (allow to update).
+     * 表示一个用户可自定义传入的字段，该字段可被更新，其值为bytes类型。
      */
     ASSET_TAG_DATA_LABEL_NORMAL_4 = ASSET_TYPE_BYTES | 0x33,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the return type of the queried Asset.
+     * 表示查询关键资产时的返回类型，其值为uint32类型。
      */
     ASSET_TAG_RETURN_TYPE = ASSET_TYPE_NUMBER | 0x40,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the maximum number of returned Assets in one query.
+     * 表示查询关键资产时的最大返回数量，其值为uint32类型。
      */
     ASSET_TAG_RETURN_LIMIT = ASSET_TYPE_NUMBER | 0x41,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the offset of return data in batch query.
+     * 表示查询关键资产时的偏移量，其值为uint32类型。
      */
     ASSET_TAG_RETURN_OFFSET = ASSET_TYPE_NUMBER | 0x42,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
+     * 表示查询关键资产时的排序依据，其值为uint32类型。
      */
     ASSET_TAG_RETURN_ORDERED_BY = ASSET_TYPE_NUMBER | 0x43,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
+     * 表示增加关键资产时的冲突处理策略，其值为uint32类型。
      */
     ASSET_TAG_CONFLICT_RESOLUTION = ASSET_TYPE_NUMBER | 0x44,
 } Asset_Tag;
 
 /**
- * @brief An enum type containing the Asset result codes.
+ * @brief Asset操作的返回结果码。
  *
  * @since 11
  */
 typedef enum {
     /**
-     * The result code indicates that the operation is successful.
+     * 表示操作成功。
      */
     ASSET_SUCCESS = 0,
     /**
-     * The error code indicates that the caller doesn't have permission to operate.
+     * 表示调用者没有权限。
      */
     ASSET_PERMISSION_DENIED = 201,
     /**
-     * The error code indicates that the argument is invalid.
+     * 表示参数错误。
      */
     ASSET_INVALID_ARGUMENT = 401,
     /**
-     * The error code indicates that the Asset service is unavailable.
+     * 表示关键资产服务不可用。
      */
     ASSET_SERVICE_UNAVAILABLE = 24000001,
     /**
-     * The error code indicates that the queried Asset can not be found.
+     * 表示未找到关键资产。
      */
     ASSET_NOT_FOUND = 24000002,
     /**
-     * The error code indicates that the added Asset already exists.
+     * 表示关键资产已存在。
      */
     ASSET_DUPLICATED = 24000003,
     /**
-     * The error code indicates that the access to Asset is denied.
+     * 表示拒绝访问关键资产。
      */
     ASSET_ACCESS_DENIED = 24000004,
     /**
-     * The error code indicates that the screen lock status mismatches.
+     * 表示锁屏状态不匹配。
      */
     ASSET_STATUS_MISMATCH = 24000005,
     /**
-     * The error code indicates insufficient memory.
+     * 表示系统内存不足。
      */
     ASSET_OUT_OF_MEMRORY = 24000006,
     /**
-     * The error code indicates that the Asset is corrupted.
+     * 表示关键资产损坏。
      */
     ASSET_DATA_CORRUPTED = 24000007,
     /**
-     * The error code indicates that the database operation is failed.
+     * 表示数据库操作失败。
      */
     ASSET_DATABASE_ERROR = 24000008,
     /**
-     * The error code indicates that the cryptography operation is failed.
+     * 表示算法库操作失败。
      */
     ASSET_CRYPTO_ERROR = 2400009,
     /**
-     * The error code indicates that the ipc communication is failed.
+     * 表示进程通信错误。
      */
     ASSET_IPC_ERROR = 24000010,
     /**
-     * The error code indicates that the operation of calling bundle manager service is failed.
+     * 表示包管理服务异常。
      */
     ASSET_BMS_ERROR = 24000011,
     /**
-     * The error code indicates that the operation of calling OS account service is failed.
+     * 表示账号系统异常。
      */
     ASSET_ACCOUNT_ERROR = 24000012,
     /**
-     * The error code indicates that the operation of calling access token service is failed.
+     * 表示访问控制服务异常。
      */
     ASSET_ACCESS_TOKEN_ERROR = 24000013,
     /**
-     * The error code indicates that the operation of file is failed.
+     * 表示文件操作失败。
      */
     ASSET_FILE_OPERATION_ERROR = 24000014,
     /**
-     * The error code indicates that the operation of getting system time is failed.
+     * 表示获取系统时间失败。
      */
     ASSET_GET_SYSTEM_TIME_ERROR = 24000015,
     /**
-     * The error code indicates that the amount of map element or other limited quotas exceed the limit.
+     * 表示缓存数量超限。
      */
     ASSET_LIMIT_EXCEEDED = 24000016,
     /**
-     * The error code indicates that the capability is not supported.
+     * 表示该子功能不支持。
      */
     ASSET_UNSUPPORTED = 24000017,
 } Asset_ResultCode;
 
 /**
- * @brief An enum type indicates when the Asset is accessible.
+ * @brief 该组枚举用来指定关键资产何时可访问。
  *
  * @since 11
  */
 typedef enum {
     /**
-     * The secret value in the Asset can only be accessed after the device is powered on.
+     * 关键资产密码需要设备开机后可访问。
      */
     ASSET_ACCESSIBILITY_DEVICE_POWER_ON = 0,
     /**
-     * The secret value in the Asset can only be accessed after the device is first unlocked.
+     * 关键资产密码需要设备第一次解锁后可访问。
      */
     ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED = 1,
     /**
-     * The secret value in the Asset can only be accessed while the device is unlocked.
+     * 关键资产密码需要设备解锁状态可访问。
      */
     ASSET_ACCESSIBILITY_DEVICE_UNLOCKED = 2,
 } Asset_Accessibility;
 
 /**
- * @brief An enum type indicates the user authentication type for Asset access control.
+ * @brief 该组枚举用来指定关键资产需要的用户认证类型。
  *
  * @since 11
  */
 typedef enum {
     /**
-     * The access to an Asset doesn't require user authentication.
+     * 不需要用户认证。
      */
     ASSET_AUTH_TYPE_NONE = 0x00,
     /**
-     * The access to an Asset requires user authentication using either PIN/pattern/password or biometric traits.
+     * 通过PIN、模式、密码或生物特征进行用户身份验证都可以。
      */
     ASSET_AUTH_TYPE_ANY = 0xFF,
 } Asset_AuthType;
 
 /**
- * @brief An enum type indicates the type of Asset synchronization.
+ * @brief 该组枚举用来指定关键资产的同步类型。
  *
  * @since 11
  */
 typedef enum {
     /**
-     * An Asset with this attribute value is never allowed to be transferred out.
+     * 永不同步。
      */
     ASSET_SYNC_TYPE_NEVER = 0,
     /**
-     * An Asset with this attribute value can only be restored to the device from which it was transferred out.
+     * 具有此属性值的关键资产只能恢复到其转出的设备。
      */
     ASSET_SYNC_TYPE_THIS_DEVICE = 1 << 0,
     /**
-     * An Asset with this attribute value can only be transferred out to a trusted device (user authorized).
+     * 具有此属性值的关键资产只能转移到可信设备（用户授权）。
      */
     ASSET_SYNC_TYPE_TRUSTED_DEVICE = 1 << 1,
 } Asset_SyncType;
 
 /**
- * @brief An enum type indicates the strategy for conflict resolution when handling duplicated Asset alias.
+ * @brief 该组枚举用来指定关键资产别名重复时的冲突处理策略。
  *
  * @since 11
  */
 typedef enum {
     /**
-     * Directly overwrite an Asset with duplicated alias when a conflict is detected.
+     * 覆盖老的关键资产。
      */
     ASSET_CONFLICT_OVERWRITE = 0,
     /**
-     * Throw an error so that the caller can take measures when a conflict is detected.
+     * 抛出错误，以便调用者在检测到冲突时采取措施。
      */
     ASSET_CONFLICT_THROW_ERROR = 1,
 } Asset_ConflictResolution;
 
 /**
- * @brief An enum type indicates the return type of the queried Asset.
+ * @brief 该组枚举用来指定查询关键资产时的返回类型。
  *
  * @since 11
  */
 typedef enum {
     /**
-     * Specify that the return data should contain both secret value and attributes.
+     * 表示返回数据应同时包含密码和属性。
      */
     ASSET_RETURN_ALL = 0,
     /**
-     * Specify that the return data contains only attributes.
+     * 表示返回数据时只包含属性。
      */
     ASSET_RETURN_ATTRIBUTES = 1,
 } Asset_ReturnType;
 
 /**
- * @brief A type that indicates the Asset attribute whose value is a byte array.
+ * @brief 关键资产中使用的bytes类型，其值为字节数组。
  *
  * @since 11
  */
 typedef struct {
     /**
-     * The size of byte array.
+     * 表示字节数组的大小。
      */
     uint32_t size;
     /**
-     * The data of byte array.
+     * 指向字节数组的数据。
      */
     uint8_t *data;
 } Asset_Blob;
 
 /**
- * @brief A type that indicates the secret or attribute value of an Asset tag.
+ * @brief 该类型用于传入关键资产属性。
  *
  * @since 11
  */
 typedef union {
     /**
-     * Value of the asset attribute whose data type is bool.
+     * 该字段用于传入bool类型的关键资产数据。
      */
     bool boolean;
     /**
-     * Value of the asset attribute whose data type is uint32.
+     * 该字段用于传入uint32类型的关键资产数据。
      */
     uint32_t u32;
     /**
-     * Value of the asset attribute whose data type is byte array.
+     * 该字段用于传入bytes类型的关键资产数据。
      */
     Asset_Blob blob;
 } Asset_Value;
 
 /**
- * @brief A type that indicates the tag-value pair of the Asset attribute.
+ * @brief 该类型用关键资产属性的键-值对。
  *
  * @since 11
  */
 typedef struct {
     /**
-     * The tag of the Asset attribute.
+     * 关键资产属性名称。
      */
     uint32_t tag;
     /**
-     * The value of the Asset attribute.
+     * 关键资产属性对应值。
      */
     Asset_Value value;
 } Asset_Attr;
 
 /**
- * @brief A type that indicates the query result of an Asset record.
+ * @brief 该类型用于表示关键资产属性的键-值对集合。
  *
  * @since 11
  */
 typedef struct {
     /**
-     * The count of an Asset attributes.
+     * 关键资产属性的键值对的数组大小。
      */
     uint32_t count;
     /**
-     * The attributes of an Asset.
+     * 指向关键资产属性的键值对的数组。
      */
     Asset_Attr *attrs;
 } Asset_Result;
 
 /**
- * @brief A type that indicates the Asset query result set.
+ * @brief 该类型用于表示查询关键资产返回结果集合的类型。
  *
  * @since 11
  */
 typedef struct {
     /**
-     * The count of the result set.
+     * 关键资产属性的键-值对集合数组的大小。
      */
     uint32_t count;
     /**
-     * The query result set.
+     * 指向关键资产属性的键-值对集合数组。
      */
     Asset_Result *results;
 } Asset_ResultSet;
