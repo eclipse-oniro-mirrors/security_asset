@@ -32,10 +32,21 @@ extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u
     let mut cond = DbMap::new();
     cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
     cond.insert(column::OWNER, Value::Bytes(owner.clone()));
+    cond.insert(column::IS_PERSISTENT, Value::Bool(false));
     let Ok(mut db) = Database::build(user_id) else { return };
     let _ = db.delete_datas(&cond);
     let calling_info = CallingInfo::new(user_id, OwnerType::Hap, owner);
-    SecretKey::delete_by_owner(&calling_info)
+
+    cond.insert(column::IS_PERSISTENT, Value::Bool(true));
+    match db.query_datas(&vec![], &cond, None) {
+        Ok(data) if data.is_empty() => SecretKey::delete_by_owner(&calling_info),
+        Ok(_) => {
+            logi!("The delete owner have msg left, won't delete huks key!")
+        },
+        Err(e) => {
+            loge!("Query delete owner left data fail, ErrorCode:[{}]", e.code)
+        },
+    }
 }
 
 extern "C" fn delete_dir_by_user(user_id: i32) {

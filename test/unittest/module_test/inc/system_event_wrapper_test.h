@@ -4,7 +4,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,31 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef BMS_WRAPPER
-#define BMS_WRAPPER
+#ifndef SYSTEM_EVENT_WRAPPER_TEST_H
+#define SYSTEM_EVENT_WRAPPER_TEST_H
 
-#include <stdint.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-enum OwnerType {
-    HAP = 0,
-    NATIVE = 1,
-};
-
-enum ResultCode {
-    SUCCESS = 0,
-    INVALID_ARGUMENT = 1,
-    BMS_ERROR = 2,
-    ACCESS_TOKEN_ERROR = 3,
-};
-
-ResultCode GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen);
-bool PermissionCheck(void);
-#ifdef __cplusplus
+namespace UnitTest::AssetSystemEventWrapperTest {
+int AssetSystemEventWrapperTest001(void);
+int AssetSystemEventWrapperTest002(void);
 }
-#endif
 
-#endif
+#endif // SYSTEM_EVENT_WRAPPER_TEST_H

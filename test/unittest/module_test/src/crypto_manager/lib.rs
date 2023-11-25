@@ -24,6 +24,8 @@ fn generate_and_delete() {
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
     let secret_key = SecretKey::new(&calling_info, AuthType::None, Accessibility::DeviceUnlocked, false);
     secret_key.generate().unwrap();
+    secret_key.exists().unwrap();
+    SecretKey::delete_by_owner(&calling_info);
     assert!(secret_key.delete().is_ok())
 }
 
@@ -99,6 +101,8 @@ fn crypto_manager() {
 
     crypto_manager.remove(&challenge1);
     crypto_manager.remove(&challenge2);
+
+    crypto_manager.remove_need_device_unlocked();
 
     let _ = secret_key1.delete();
     let _ = secret_key2.delete();
