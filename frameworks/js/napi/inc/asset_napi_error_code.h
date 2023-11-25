@@ -45,7 +45,7 @@ const std::unordered_map<int32_t, const char *> ERR_MSGS = {
     { ASSET_ACCESS_TOKEN_ERROR, "The operation of calling access token service is failed." },
     { ASSET_FILE_OPERATION_ERROR, "The operation of file is failed." },
     { ASSET_GET_SYSTEM_TIME_ERROR, "The operation of getting system time is failed." },
-    { ASSET_LIMIT_EXCEEDED, "The amount of map element or other limited quotas exceed the limit." },
+    { ASSET_LIMIT_EXCEEDED, "The cache exceeds the limit." },
 };
 
 inline const char *GetErrorMessage(int32_t errCode)

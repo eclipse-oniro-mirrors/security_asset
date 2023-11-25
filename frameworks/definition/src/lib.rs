@@ -199,7 +199,7 @@ impl_enum_trait! {
         /// The error code indicates that the operation of getting system time failed.
         GetSystemTimeError = 24000015,
 
-        /// The error code indicates that the amount of map element or other limited quotas exceed the limit.
+        /// The error code indicates that the cache exceeds the limit.
         LimitExceeded = 24000016,
 
         /// The error code indicates that the capability is not supported.

@@ -439,7 +439,7 @@ function preQuery(query: AssetMap, callback: AsyncCallback<Uint8Array>): void
 | 24000011 | The operation of calling bundle manager service is failed.   |
 | 24000012 | The operation of calling OS account service is failed.       |
 | 24000013 | The operation of calling access token service is failed.     |
-| 24000016 | The amount of map element or other limited quotas exceed the limit. |
+| 24000016 | The cache exceeds the limit.                                 |
 | 24000017 | The capability is not supported.                             |
 
 **示例代码：**
@@ -507,7 +507,7 @@ function preQuery(query: AssetMap): Promise<Uint8Array>
 | 24000011 | The operation of calling bundle manager service is failed.   |
 | 24000012 | The operation of calling OS account service is failed.       |
 | 24000013 | The operation of calling access token service is failed.     |
-| 24000016 | The amount of map element or other limited quotas exceed the limit. |
+| 24000016 | The cache exceeds the limit.                                 |
 | 24000017 | The capability is not supported.                             |
 
 **示例代码：**

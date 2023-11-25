@@ -247,7 +247,7 @@ typedef enum {
      */
     ASSET_GET_SYSTEM_TIME_ERROR = 24000015,
     /**
-     * The error code indicates that the amount of map element or other limited quotas exceed the limit.
+     * The error code indicates that the cache exceeds the limit.
      */
     ASSET_LIMIT_EXCEEDED = 24000016,
     /**
