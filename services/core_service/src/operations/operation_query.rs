@@ -151,7 +151,7 @@ pub(crate) fn query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<
     match query.get(&Tag::ReturnType) {
         Some(Value::Number(return_type)) if *return_type == (ReturnType::All as u32) => {
             if !query.contains_key(&Tag::Alias) {
-                log_throw_error!(ErrCode::NotSupport, "[FATAL]Batch secret query is not supported.")
+                log_throw_error!(ErrCode::Unsupported, "[FATAL]Batch secret query is not supported.")
             } else {
                 query_all(calling_info, &mut db_data, query)
             }

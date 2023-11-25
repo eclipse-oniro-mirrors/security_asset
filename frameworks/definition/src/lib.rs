@@ -154,9 +154,6 @@ impl_enum_trait! {
         /// The error code indicates that the argument is invalid.
         InvalidArgument = 401,
 
-        /// The error code indicates that the capability is not supported.
-        NotSupport = 801,
-
         /// The error code indicates that the Asset service is unavailable.
         ServiceUnavailable = 24000001,
 
@@ -204,6 +201,9 @@ impl_enum_trait! {
 
         /// The error code indicates that the amount of map element or other limited quotas exceed the limit.
         LimitExceeded = 24000016,
+
+        /// The error code indicates that the capability is not supported.
+        Unsupported = 24000017,
     }
 }
 

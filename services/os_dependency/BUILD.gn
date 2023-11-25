@@ -39,21 +39,3 @@ ohos_static_library("asset_os_dependency") {
   subsystem_name = "security"
   part_name = "asset"
 }
-
-ohos_rust_static_library("asset_system_ability") {
-  sources = [ "src/lib.rs" ]
-  deps = [
-    ":asset_os_dependency",
-    "../../frameworks/definition:asset_definition",
-    "../../frameworks/os_dependency/file:asset_file_operator",
-    "../../frameworks/os_dependency/log:asset_log",
-    "../constants:asset_constants",
-    "../crypto_manager:asset_crypto_manager",
-    "../db_operator:asset_db_operator",
-  ]
-  external_deps = [ "hilog:libhilog" ]
-  crate_name = "asset_system_ability"
-  crate_type = "rlib"
-  subsystem_name = "security"
-  part_name = "asset"
-}

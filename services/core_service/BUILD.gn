@@ -24,7 +24,7 @@ ohos_rust_shared_library("asset_service") {
     "../constants:asset_constants",
     "../crypto_manager:asset_crypto_manager",
     "../db_operator:asset_db_operator",
-    "../os_dependency:asset_system_ability",
+    "../os_dependency:asset_os_dependency",
   ]
 
   external_deps = [

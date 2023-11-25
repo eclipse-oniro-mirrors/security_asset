@@ -9,7 +9,6 @@ members = [
     "services/core_service",
     "services/crypto_manager",
     "services/db_operator",
-    "services/os_dependency",
     "test/unittest/inner_api_rust",
     "test/unittest/module_test"
 ]

@@ -84,8 +84,8 @@ ResultCode GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint
             code = GetProcessInfo(tokenId, uid, info);
             break;
         default:
-            LOGE("[FATAL]Unsupported calling type: %{public}d", tokenType);
-            code = UNSUPPORTED;
+            LOGE("[FATAL]Invalid calling type: %{public}d", tokenType);
+            code = INVALID_ARGUMENT;
     }
 
     if (code != SUCCESS) {

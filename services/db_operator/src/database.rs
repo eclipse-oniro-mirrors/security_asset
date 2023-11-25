@@ -158,19 +158,22 @@ impl Database {
     }
 
     /// Update the database version for database upgrade.
-    pub fn set_version(&self, ver: u32) -> Result<()> {
+    #[allow(dead_code)]
+    pub(crate) fn set_version(&self, ver: u32) -> Result<()> {
         let sql = format!("pragma user_version = {}", ver);
         self.exec(sql.as_str())
     }
 
     /// Upgrade database to new version.
-    pub fn upgrade(&self, ver: u32, callback: UpgradeDbCallback) -> Result<()> {
+    #[allow(dead_code)]
+    pub(crate) fn upgrade(&self, ver: u32, callback: UpgradeDbCallback) -> Result<()> {
         let version_old = self.get_version()?;
         callback(self, version_old, ver)
     }
 
     /// Delete database file.
-    pub fn delete(user_id: i32) -> Result<()> {
+    #[allow(dead_code)]
+    pub(crate) fn delete(user_id: i32) -> Result<()> {
         let path = fmt_db_path(user_id);
         let _backup_path = fmt_backup_path(&path);
         if let Err(e) = fs::remove_file(path) {

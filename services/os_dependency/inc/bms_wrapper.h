@@ -32,7 +32,6 @@ enum ResultCode {
     INVALID_ARGUMENT = 1,
     BMS_ERROR = 2,
     ACCESS_TOKEN_ERROR = 3,
-    UNSUPPORTED = 4,
 };
 
 ResultCode GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen);

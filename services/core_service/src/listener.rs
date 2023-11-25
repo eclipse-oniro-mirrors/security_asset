@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! This module is used to adapt to the functions on which assets depend.
+//! This module is used to subscribe common event and system ability.
 
 use std::slice;
 
@@ -63,7 +63,7 @@ extern "C" {
 }
 
 /// Subscribe to the add and remove events of system abilities.
-pub fn subscribe_system_abillity() {
+pub(crate) fn subscribe() {
     unsafe {
         if SubscribeSystemEvent(delete_data_by_owner, delete_dir_by_user, delete_crypto_need_unlock) {
             logi!("Subscribe system event success.");
@@ -80,7 +80,7 @@ pub fn subscribe_system_abillity() {
 }
 
 /// Unsubscribe to the add and remove events of system abilities.
-pub fn unsubscribe_system_ability() {
+pub(crate) fn unsubscribe() {
     unsafe {
         if !UnSubscribeSystemAbility() {
             loge!("Unsubscribe system ability failed.")

@@ -19,7 +19,6 @@ ohos_rust_shared_library("asset_sdk") {
     "../../../frameworks/definition:asset_definition",
     "../../../frameworks/ipc:asset_ipc",
     "../../../frameworks/os_dependency/log:asset_log",
-    "../../../frameworks/os_dependency/samgr:asset_samgr",
   ]
 
   external_deps = [

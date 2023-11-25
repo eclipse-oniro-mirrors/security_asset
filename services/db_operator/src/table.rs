@@ -346,7 +346,7 @@ impl<'a> Table<'a> {
     /// let exits = table
     ///     .is_data_exists(&DbMap::from([("id", Value::Number(3)), ("alias", Value::Bytes(b"alias"))]));
     /// ```
-    pub fn is_data_exists(&self, cond: &DbMap) -> Result<bool> {
+    pub(crate) fn is_data_exists(&self, cond: &DbMap) -> Result<bool> {
         let ret = self.count_datas(cond);
         match ret {
             Ok(count) => Ok(count > 0),

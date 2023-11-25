@@ -187,10 +187,6 @@ typedef enum {
      */
     ASSET_INVALID_ARGUMENT = 401,
     /**
-     * The error code indicates that the capability is not supported.
-     */
-    ASSET_NOT_SUPPORTED = 801,
-    /**
      * The error code indicates that the Asset service is unavailable.
      */
     ASSET_SERVICE_UNAVAILABLE = 24000001,
@@ -254,6 +250,10 @@ typedef enum {
      * The error code indicates that the amount of map element or other limited quotas exceed the limit.
      */
     ASSET_LIMIT_EXCEEDED = 24000016,
+    /**
+     * The error code indicates that the capability is not supported.
+     */
+    ASSET_UNSUPPORTED = 24000017,
 } Asset_ResultCode;
 
 /**

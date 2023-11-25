@@ -35,7 +35,6 @@ enum ResultCode {
     InvalidArgument = 1,
     BmsError = 2,
     AccessTokenError = 3,
-    Unsupported = 4,
 }
 
 extern "C" {
@@ -89,7 +88,6 @@ impl CallingInfo {
             ResultCode::AccessTokenError => {
                 log_throw_error!(ErrCode::AccessTokenError, "[FATAL]Get process info failed.")
             },
-            ResultCode::Unsupported => log_throw_error!(ErrCode::NotSupport, "[FATAL]Unsupported calling type."),
         }
     }
 

@@ -29,8 +29,8 @@ use asset_constants::CallingInfo;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
 use asset_ipc::{IAsset, SA_ID};
 use asset_log::{loge, logi};
-use asset_system_ability::{subscribe_system_abillity, unsubscribe_system_ability};
 
+mod listener;
 mod operations;
 mod stub;
 mod sys_event;
@@ -57,7 +57,7 @@ fn start_service<T: ISystemAbility + IMethod>(ability: &T) -> Result<()> {
 
     ability.publish(&obj, SA_ID);
     logi!("[INFO]Asset service on_start");
-    thread::spawn(subscribe_system_abillity);
+    thread::spawn(listener::subscribe);
     Ok(())
 }
 
@@ -71,7 +71,7 @@ fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
 
 fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {
     logi!("[INFO]Asset service on_stop");
-    unsubscribe_system_ability();
+    listener::unsubscribe();
 }
 
 #[used]

@@ -18,7 +18,7 @@ ohos_static_library("asset_samgr") {
   include_dirs = [ "../log/inc" ]
   external_deps = [
     "hilog:libhilog",
-    "ipc:ipc_core",
+    "ipc:ipc_single",
     "samgr:samgr_proxy",
   ]
   subsystem_name = "security"

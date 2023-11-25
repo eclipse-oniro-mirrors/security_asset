@@ -58,7 +58,7 @@ fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Acces
             Ok((access_type, require_password_set))
         },
         _ => log_throw_error!(
-            ErrCode::NotSupport,
+            ErrCode::Unsupported,
             "[FATAL][SA]Data of multiple access control types cannot be accessed at the same time."
         ),
     }
