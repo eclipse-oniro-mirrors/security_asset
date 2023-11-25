@@ -18,7 +18,7 @@
 use std::time::Instant;
 
 use asset_constants::CallingInfo;
-use asset_definition::Result;
+use asset_definition::{AssetError, Result};
 use asset_log::{loge, logi};
 
 use hisysevent::{build_number_param, build_str_param, write, EventType, HiSysEventParam};
@@ -60,48 +60,53 @@ impl<'a> SysEvent<'a> {
     }
 }
 
+pub(crate) fn upload_statistic_system_event(calling_info: &CallingInfo, start_time: Instant, func_name: &str) {
+    let duration = start_time.elapsed();
+    let owner_info = String::from_utf8_lossy(calling_info.owner_info()).to_string();
+    SysEvent::new(EventType::Statistic)
+        .set_param(build_str_param!(SysEvent::FUNCTION, func_name))
+        .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
+        .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
+        .set_param(build_number_param!(SysEvent::RUN_TIME, duration.as_millis() as u32))
+        .set_param(build_str_param!(SysEvent::EXTRA, ""))
+        .write();
+    logi!(
+        "[INFO]Calling fun:[{}], user_id:[{}], caller:[{}], run_time:[{}]",
+        func_name,
+        calling_info.user_id(),
+        owner_info,
+        duration.as_millis()
+    )
+}
+
+pub(crate) fn upload_fault_system_event(calling_info: &CallingInfo, func_name: &str, e: &AssetError) {
+    let owner_info = String::from_utf8_lossy(calling_info.owner_info()).to_string();
+    SysEvent::new(EventType::Fault)
+        .set_param(build_str_param!(SysEvent::FUNCTION, func_name))
+        .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
+        .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
+        .set_param(build_number_param!(SysEvent::ERROR_CODE, e.code as i32))
+        .set_param(build_str_param!(SysEvent::EXTRA, e.msg.clone()))
+        .write();
+    loge!(
+        "[ERROR]Calling fun:[{}], user_id:[{}], caller:[{}], error_code:[{}], error_msg:[{}]",
+        func_name,
+        calling_info.user_id(),
+        owner_info,
+        e.code,
+        e.msg.clone()
+    );
+}
+
 pub(crate) fn upload_system_event<T>(
     result: Result<T>,
     calling_info: &CallingInfo,
     start_time: Instant,
     func_name: &str,
 ) -> Result<T> {
-    let owner_info = String::from_utf8_lossy(calling_info.owner_info()).to_string();
     match &result {
-        Ok(_) => {
-            let duration = start_time.elapsed();
-            SysEvent::new(EventType::Statistic)
-                .set_param(build_str_param!(SysEvent::FUNCTION, func_name))
-                .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
-                .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
-                .set_param(build_number_param!(SysEvent::RUN_TIME, duration.as_millis() as u32))
-                .set_param(build_str_param!(SysEvent::EXTRA, ""))
-                .write();
-            logi!(
-                "[INFO]Calling fun:[{}], user_id:[{}], caller:[{}], run_time:[{}]",
-                func_name,
-                calling_info.user_id(),
-                owner_info,
-                duration.as_millis()
-            )
-        },
-        Err(e) => {
-            SysEvent::new(EventType::Fault)
-                .set_param(build_str_param!(SysEvent::FUNCTION, func_name))
-                .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
-                .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
-                .set_param(build_number_param!(SysEvent::ERROR_CODE, e.code as i32))
-                .set_param(build_str_param!(SysEvent::EXTRA, e.msg.clone()))
-                .write();
-            loge!(
-                "[ERROR]Calling fun:[{}], user_id:[{}], caller:[{}], error_code:[{}], error_msg:[{}]",
-                func_name,
-                calling_info.user_id(),
-                owner_info,
-                e.code,
-                e.msg.clone()
-            );
-        },
+        Ok(_) => upload_statistic_system_event(calling_info, start_time, func_name),
+        Err(e) => upload_fault_system_event(calling_info, func_name, e),
     }
     result
 }

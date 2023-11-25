@@ -23,9 +23,17 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap},
 };
-use asset_definition::Value;
+use asset_definition::{AssetError, Value};
 use asset_file_operator::delete_user_db_dir;
 use asset_log::{loge, logi};
+
+use crate::sys_event::upload_fault_system_event;
+
+fn upload_delete_data_error(e: &AssetError) {
+    let calling_info = CallingInfo::new_self();
+    let func_name = hisysevent::function!();
+    upload_fault_system_event(&calling_info, func_name, e);
+}
 
 extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) {
     let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner, owner_size as usize).to_vec() };
@@ -33,13 +41,27 @@ extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u
     cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
     cond.insert(column::OWNER, Value::Bytes(owner.clone()));
     cond.insert(column::IS_PERSISTENT, Value::Bool(false));
-    let Ok(mut db) = Database::build(user_id) else { return };
-    let _ = db.delete_datas(&cond);
+    let mut db = match Database::build(user_id) {
+        Ok(db) => db,
+        Err(e) => {
+            upload_delete_data_error(&e);
+            return
+        }
+    };
+    let tmp = db.delete_datas(&cond);
+    if let Err(e) = tmp {
+        upload_delete_data_error(&e);
+    }
     let calling_info = CallingInfo::new(user_id, OwnerType::Hap, owner);
 
     cond.insert(column::IS_PERSISTENT, Value::Bool(true));
     match db.query_datas(&vec![], &cond, None) {
-        Ok(data) if data.is_empty() => SecretKey::delete_by_owner(&calling_info),
+        Ok(data) if data.is_empty() => {
+            let res = SecretKey::delete_by_owner(&calling_info);
+            if let Err(e) = res {
+                upload_delete_data_error(&e);
+            }
+        },
         Ok(_) => {
             logi!("The delete owner have msg left, won't delete huks key!")
         },

@@ -120,22 +120,28 @@ impl SecretKey {
     }
 
     /// Delete secret key by owner.
-    pub fn delete_by_owner(calling_info: &CallingInfo) {
+    pub fn delete_by_owner(calling_info: &CallingInfo) -> Result<()> {
+        let mut res = Ok(());
         let accessibilitys =
             [Accessibility::DevicePowerOn, Accessibility::DeviceFirstUnlocked, Accessibility::DeviceUnlocked];
         for accessibility in accessibilitys.into_iter() {
             let alias = calculate_key_alias(calling_info, AuthType::None, accessibility, true);
-            let _ = Self::delete_key(&alias);
+            let tmp = Self::delete_key(&alias);
+            res = if tmp.is_err() { tmp } else { res };
 
             let alias = calculate_key_alias(calling_info, AuthType::Any, accessibility, true);
-            let _ = Self::delete_key(&alias);
+            let tmp = Self::delete_key(&alias);
+            res = if tmp.is_err() { tmp } else { res };
 
             let alias = calculate_key_alias(calling_info, AuthType::None, accessibility, false);
-            let _ = Self::delete_key(&alias);
+            let tmp = Self::delete_key(&alias);
+            res = if tmp.is_err() { tmp } else { res };
 
             let alias = calculate_key_alias(calling_info, AuthType::Any, accessibility, false);
-            let _ = Self::delete_key(&alias);
+            let tmp = Self::delete_key(&alias);
+            res = if tmp.is_err() { tmp } else { res };
         }
+        res
     }
 
     fn delete_key(alias: &Vec<u8>) -> Result<()> {

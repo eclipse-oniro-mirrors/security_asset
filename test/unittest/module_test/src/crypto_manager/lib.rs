@@ -25,7 +25,7 @@ fn generate_and_delete() {
     let secret_key = SecretKey::new(&calling_info, AuthType::None, Accessibility::DeviceUnlocked, false);
     secret_key.generate().unwrap();
     secret_key.exists().unwrap();
-    SecretKey::delete_by_owner(&calling_info);
+    let _ = SecretKey::delete_by_owner(&calling_info);
     assert!(secret_key.delete().is_ok())
 }
 
