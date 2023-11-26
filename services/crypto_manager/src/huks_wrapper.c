@@ -19,17 +19,7 @@
 #include "hks_param.h"
 
 #include "asset_log.h"
-
-static const uint32_t TAG_SIZE = 16;
-static const uint32_t NONCE_SIZE = 12;
-
-#define ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
-
-struct KeyId {
-    int32_t userId;
-    struct HksBlob alias;
-    // enum HksAuthStorageLevel storageLevel;
-};
+#include "huks_wrapper.h"
 
 static int32_t BuildParamSet(struct HksParamSet **paramSet, const struct HksParam *params, uint32_t paramCount)
 {

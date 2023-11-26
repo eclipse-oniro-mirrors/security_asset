@@ -41,7 +41,8 @@ ohos_unittest("asset_unit_test") {
   module_out_path = module_output_path
   include_dirs = [
     "inc",
-    "../../../services/os_dependency/inc"
+    "../../../services/os_dependency/inc",
+    "../../../services/crypto_manager/src"
   ]
   sources = [
     "src/bms_wrapper_test.cpp",
@@ -49,10 +50,12 @@ ohos_unittest("asset_unit_test") {
     "src/samgr_wrapper_test.cpp",
     "src/system_ability_wrapper_test.cpp",
     "src/system_event_wrapper_test.cpp",
+    "src/huks_wrapper_test.cpp",
   ]
   deps = [
     "../../../services/os_dependency:asset_os_dependency",
-    "../../../frameworks/os_dependency/samgr:asset_samgr"
+    "../../../frameworks/os_dependency/samgr:asset_samgr",
+    "../../../services/crypto_manager:asset_huks_wrapper"
   ]
   external_deps = [
     "ability_base:want",
@@ -65,5 +68,6 @@ ohos_unittest("asset_unit_test") {
     "ipc:ipc_single",
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
+    "huks:libhukssdk",
   ]
 }
