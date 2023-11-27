@@ -717,7 +717,7 @@ try {
 
 ## asset.postQuery
 
-function postQuery(handle: AssetMap, callback: AsyncCallback<void>): void
+function postQuery(handle: AssetMap): Promise<void>
 
 关键资产查询后的资源释放。仅查询需要用户认证的关键资产，且在本函数前asset.preQuery调用成功后需要调用。使用Promise方式异步返回结果。
 
@@ -804,7 +804,7 @@ type Value = boolean | number | Uint8Array;
 | ACCESSIBILITY             | 类型为number，取值范围详见[asset.Accessibility](#asset.Accessibility) | 访问控制属性                                                 |
 | REQUIRE_PASSWORD_SET      | 类型为bool                                                   | 关键资产是否仅在设置了锁屏密码的情况下可访问                 |
 | AUTH_TYPE                 | 类型为number，详见[asset.AuthType](#asset.AuthType)          | 访问关键资产所需的用户认证类型                               |
-| AUTH_VALIDITY_PERIOD      | 类型为number，取值范围：1-600                                | 用户认证的有效期                                             |
+| AUTH_VALIDITY_PERIOD      | 类型为number，取值范围：1-600，单位为秒                                | 用户认证的有效期                                             |
 | AUTH_CHALLENGE            | 类型为Uint8Array，长度为32字节                               | 用户认证使用的挑战值                                         |
 | AUTH_TOKEN                | 类型为Uint8Array，长度为148字节                              | 认证通过的授权令牌                                           |
 | SYNC_TYPE                 | 类型为number，取值范围详见[asset.SyncType](#asset.SyncType)  | 关键资产支持的同步类型                                       |
