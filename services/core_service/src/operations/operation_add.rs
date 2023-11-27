@@ -117,12 +117,12 @@ fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo)
 }
 
 extern "C" {
-    fn PermissionCheck() -> bool;
+    fn CheckPermission() -> bool;
 }
 
-fn permission_check(attributes: &AssetMap) -> Result<()> {
-    if attributes.get(&Tag::IsPersistent).is_some() && unsafe { !PermissionCheck() } {
-        return log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Permission check failed.");
+fn check_permission(attributes: &AssetMap) -> Result<()> {
+    if attributes.get(&Tag::IsPersistent).is_some() && unsafe { !CheckPermission() } {
+        return log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
     }
     Ok(())
 }
@@ -137,7 +137,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
     check_accessibity_validity(attributes, calling_info)?;
-    permission_check(attributes)
+    check_permission(attributes)
 }
 
 pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {

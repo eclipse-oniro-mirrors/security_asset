@@ -23,51 +23,40 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap},
 };
-use asset_definition::{AssetError, Value};
+use asset_definition::{log_throw_error, ErrCode, Result, Value};
 use asset_file_operator::delete_user_db_dir;
 use asset_log::{loge, logi};
 
 use crate::sys_event::upload_fault_system_event;
 
-fn upload_delete_data_error(e: &AssetError) {
-    let calling_info = CallingInfo::new_self();
-    let func_name = hisysevent::function!();
-    upload_fault_system_event(&calling_info, func_name, e);
-}
-
-extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) {
-    let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner, owner_size as usize).to_vec() };
+fn delete_on_package_removed(user_id: i32, owner: Vec<u8>) -> Result<()> {
     let mut cond = DbMap::new();
     cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
     cond.insert(column::OWNER, Value::Bytes(owner.clone()));
     cond.insert(column::IS_PERSISTENT, Value::Bool(false));
-    let mut db = match Database::build(user_id) {
-        Ok(db) => db,
-        Err(e) => {
-            upload_delete_data_error(&e);
-            return
-        }
-    };
-    let tmp = db.delete_datas(&cond);
-    if let Err(e) = tmp {
-        upload_delete_data_error(&e);
-    }
-    let calling_info = CallingInfo::new(user_id, OwnerType::Hap, owner);
+    let mut db = Database::build(user_id)?;
+    let _ = db.delete_datas(&cond)?;
 
+    let calling_info = CallingInfo::new(user_id, OwnerType::Hap, owner);
     cond.insert(column::IS_PERSISTENT, Value::Bool(true));
     match db.query_datas(&vec![], &cond, None) {
-        Ok(data) if data.is_empty() => {
-            let res = SecretKey::delete_by_owner(&calling_info);
-            if let Err(e) = res {
-                upload_delete_data_error(&e);
-            }
-        },
+        Ok(data) if !data.is_empty() => SecretKey::delete_by_owner(&calling_info),
         Ok(_) => {
-            logi!("The delete owner have msg left, won't delete huks key!")
+            logi!("The owner wants to retain data after uninstallation. Do not delete key in HUKS!");
+            Ok(())
         },
         Err(e) => {
-            loge!("Query delete owner left data fail, ErrorCode:[{}]", e.code)
+            log_throw_error!(ErrCode::DatabaseError, "Querying the owner's remain data failed, ErrorCode:[{}]", e.code)
         },
+    }
+}
+
+extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) {
+    let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner, owner_size as usize).to_vec() };
+    let res = delete_on_package_removed(user_id, owner);
+    if let Err(e) = res {
+        let calling_info = CallingInfo::new_self();
+        upload_fault_system_event(&calling_info, "on_package_removed", &e);
     }
 }
 

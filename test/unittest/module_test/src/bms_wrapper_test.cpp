@@ -115,12 +115,12 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest004, TestSize.Level0)
 
 /**
  * @tc.name: AssetBmsWrapperTest.AssetBmsWrapperTest005
- * @tc.desc: Test asset func PermissionCheck, expect BMS_ERROR
+ * @tc.desc: Test asset func CheckPermission, expect BMS_ERROR
  * @tc.type: FUNC
  * @tc.result:0
  */
 HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest005, TestSize.Level0)
 {
-    ASSERT_EQ(false, PermissionCheck());
+    ASSERT_EQ(false, CheckPermission());
 }
 }

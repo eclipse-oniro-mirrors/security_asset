@@ -43,7 +43,7 @@ fn add_all_tags() {
     attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     attrs.insert_attr(Tag::AuthType, AuthType::Any);
     attrs.insert_attr(Tag::SyncType, SyncType::ThisDevice);
-    // attrs.insert_attr(Tag::IsPersistent, true);
+    attrs.insert_attr(Tag::IsPersistent, false);
     attrs.insert_attr(Tag::RequirePasswordSet, false);
     attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::Overwrite);
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
@@ -63,7 +63,7 @@ fn add_all_tags() {
     assert_eq!(Accessibility::DevicePowerOn, res[0].get_enum_attr::<Accessibility>(&Tag::Accessibility).unwrap());
     assert_eq!(AuthType::Any, res[0].get_enum_attr::<AuthType>(&Tag::AuthType).unwrap());
     assert_eq!(SyncType::ThisDevice, res[0].get_enum_attr::<SyncType>(&Tag::SyncType).unwrap());
-    // assert!(res[0].get_bool_attr(&Tag::IsPersistent).unwrap());
+    assert!(!res[0].get_bool_attr(&Tag::IsPersistent).unwrap());
     assert!(!res[0].get_bool_attr(&Tag::RequirePasswordSet).unwrap());
 
     remove_by_alias(alias).unwrap();

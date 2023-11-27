@@ -101,16 +101,15 @@ ResultCode GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint
     return SUCCESS;
 }
 
-bool PermissionCheck(void)
+bool CheckPermission(void)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    int result = AccessTokenKit::VerifyAccessToken(tokenId,
-        "ohos.permission.STORE_PERSISTENT_DATA");
+    int result = AccessTokenKit::VerifyAccessToken(tokenId, "ohos.permission.STORE_PERSISTENT_DATA");
     if (result == PERMISSION_GRANTED) {
-        LOGI("[INFO]Check Permission success!");
+        LOGI("[INFO]Check permission success!");
         return true;
     } else {
-        LOGI("[INFO]Check Permission failed!");
+        LOGI("[INFO]Check permission failed, ret=%d", result);
         return false;
     }
 }
