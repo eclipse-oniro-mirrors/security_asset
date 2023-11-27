@@ -45,6 +45,7 @@ ohos_shared_library("asset_ndk") {
     "hilog:libhilog",
   ]
 
+  branch_protector_ret = "pac_ret"
   sanitize = {
     integer_overflow = true
     cfi = true
@@ -53,12 +54,10 @@ ohos_shared_library("asset_ndk") {
     boundary_sanitize = true
     ubsan = true
   }
-  ldflags = [ "--coverage" ]
   cflags = [
     "-Wall",
     "-Werror",
     "-fPIC",
-    "--coverage",
   ]
 
   relative_install_dir = "ndk"
