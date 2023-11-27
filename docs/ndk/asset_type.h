@@ -20,7 +20,7 @@
  * @addtogroup AssetTypeApi
  * @{
  *
- * @brief 该模块定义了Asset 接口使用到的枚举值、数据结构和错误码。
+ * @brief 该模块定义了Asset接口使用到的枚举值、数据结构和错误码。
  *
  * @syscap SystemCapability.Security.Asset
  * @since 11
@@ -29,7 +29,7 @@
 /**
  * @file asset_type.h
  *
- * @brief 定义了Asset 接口使用到的枚举值、数据结构和错误码。
+ * @brief 定义了Asset接口使用到的枚举值、数据结构和错误码。
  *
  * @since 11
  */
