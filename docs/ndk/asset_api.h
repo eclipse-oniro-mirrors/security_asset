@@ -66,10 +66,10 @@ int32_t OH_Asset_Remove(const Asset_Attr *query, uint32_t queryCnt);
 /**
  * @brief 更新符合匹配条件的一条关键资产。
  *
- * @param query 指向包含用来匹配待更新关键资产的属性数组的指针。
- * @param queryCnt query数组中元素的个数。
+ * @param query 待更新关键资产的搜索条件。
+ * @param queryCnt 待更新关键资产搜索条件的个数。
  * @param attributesToUpdate 待更新关键资产的属性集合。
- * @param updateCnt attributesToUpdate数组中元素的个数。
+ * @param updateCnt 待更新关键资产的属性数量。
  * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误码。
  * @since 11
  */
@@ -79,9 +79,9 @@ int32_t OH_Asset_Update(const Asset_Attr *query, uint32_t queryCnt,
 /**
  * @brief 查询的预处理，用于需要用户认证的关键资产。
  *
- * @param query 指向包含用来匹配待查询关键资产的属性数组的指针。
- * @param queryCnt query数组中元素的个数。
- * @param challenge 获取到的挑战值指针，在后续调用{@link OH_Asset_Query}时使用。
+ * @param query 待查询关键资产的搜索条件。
+ * @param queryCnt 待查询关键资产搜索条件的个数。
+ * @param challenge 挑战值，在后续调用{@link OH_Asset_Query}时使用。
  * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误码。
  * @since 11
  */
@@ -90,9 +90,9 @@ int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob
 /**
  * @brief 查询一条或多条符合匹配条件的关键资产。
  *
- * @param query 指向包含用来匹配待查询关键资产的属性数组的指针。
- * @param queryCnt query数组中元素的个数。
- * @param result 指向包含查询结果的数组的指针。
+ * @param query 待查询关键资产的搜索条件。
+ * @param queryCnt 待查询关键资产搜索条件的个数。
+ * @param resultSet 查询结果列表。
  * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误码。
  * @since 11
  */
@@ -101,8 +101,8 @@ int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultS
 /**
  * @brief 查询的后置处理，用于需要用户认证的关键资产。
  *
- * @param handle 指向从{@link OH_Asset_PreQuery}中获取的包含挑战值的数组指针。
- * @param handleCnt handle数组中元素的个数。
+ * @param handle 包含从{@link OH_Asset_PreQuery}中获取的挑战值的句柄属性集合。
+ * @param handleCnt 句柄属性集合中元素的个数。
  * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误码。
  * @since 11
  */
@@ -111,8 +111,8 @@ int32_t OH_Asset_PostQuery(const Asset_Attr *handle, uint32_t handleCnt);
 /**
  * @brief 解析查询结果，并获取指定的属性值。
  *
- * @param result 指向包含从{@link OH_Asset_Query}中获取的查询结果的数组指针。
- * @param tag 指定属性的标签。
+ * @param result 从{@link OH_Asset_Query}中获取的查询结果。
+ * @param tag 待获取的属性标签。
  * @return 如果操作成功，则以{@link #Asset_Attr}的形式返回属性，该属性不需要业务进行释放；
  *    否则返回NULL。
  * @since 11
@@ -122,7 +122,7 @@ Asset_Attr *OH_Asset_ParseAttr(const Asset_Result *result, Asset_Tag tag);
 /**
  * @brief 释放挑战值所占用的内存。
  *
- * @param blob 指向需要释放的{@link #OH_Asset_PreQuery} AssetBlob的指针。// todo
+ * @param blob 从{@link #OH_Asset_PreQuery}获取的挑战值。
  * @since 11
  */
 void OH_Asset_FreeBlob(Asset_Blob *blob);
@@ -130,7 +130,7 @@ void OH_Asset_FreeBlob(Asset_Blob *blob);
 /**
  * @brief 释放查询结果所占用的内存。
  *
- * @param resultSet 指向从{@link #OH_Asset_Query}得到的查询结果的指针。
+ * @param resultSet 从{@link #OH_Asset_Query}得到的查询结果列表。
  * @since 11
  */
 void OH_Asset_FreeResultSet(Asset_ResultSet *resultSet);

@@ -17,10 +17,10 @@
 #define ASSET_TYPE_H
 
 /**
- * @addtogroup AssetTypeApi
+ * @addtogroup AssetType
  * @{
  *
- * @brief 该模块定义了Asset接口使用到的枚举值、数据结构和错误码。
+ * @brief 提供调用ASSET接口需要使用的枚举值、数据结构和错误码。
  *
  * @syscap SystemCapability.Security.Asset
  * @since 11
@@ -29,7 +29,7 @@
 /**
  * @file asset_type.h
  *
- * @brief 定义了Asset接口使用到的枚举值、数据结构和错误码。
+ * @brief 声明调用ASSET接口需要使用的枚举值、数据结构和错误码。
  *
  * @since 11
  */
@@ -169,7 +169,7 @@ typedef enum {
 } Asset_Tag;
 
 /**
- * @brief Asset操作的返回结果码。
+ * @brief 调用ASSET返回的结果码。
  *
  * @since 11
  */
