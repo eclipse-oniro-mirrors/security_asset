@@ -25,7 +25,8 @@
  * @addtogroup AssetApi
  * @{
  *
- * @brief 该模块描述Asset对用户敏感数据（如密码、Token等）的生命周期管理能力，包括添加、删除、更新、查询等。
+ * @brief 提供用户短敏感数据的安全存储及管理能力，包括新增、删除、更新、查询等。
+ * 其中，短敏感数据可以是密码类（账号/密码）、Token类（应用凭据）、其他关键明文（如银行卡号）等长度较短的用户敏感数据。
  *
  * @syscap SystemCapability.Security.Asset
  * @since 11
@@ -34,7 +35,7 @@
 /**
  * @file asset_api.h
  *
- * @brief 描述用于访问Asset的接口。
+ * @brief 声明用于访问关键资产的接口。
  *
  * @since 11
  */
@@ -43,21 +44,21 @@
 extern "C" {
 #endif
 /**
- * @brief 增加一条关键资产。
+ * @brief 新增一条关键资产。
  *
- * @param attributes 指向包含待添加到关键资产的属性数组的指针。
- * @param attrCnt attributes数组中元素的个数。
- * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误代码。
+ * @param attributes 待新增关键资产的属性集合。
+ * @param attrCnt 待新增关键资产的属性数量。
+ * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误码。
  * @since 11
  */
 int32_t OH_Asset_Add(const Asset_Attr *attributes, uint32_t attrCnt);
 
 /**
- * @brief 删除符合匹配条件的一条或多条关键资产。
+ * @brief 删除符合条件的一条或多条关键资产。
  *
- * @param query 指向包含用来匹配待删除关键资产的属性数组的指针。
- * @param queryCnt query数组中元素的个数。
- * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误代码。
+ * @param query 待删除关键资产的搜索条件。
+ * @param queryCnt 待删除关键资产搜索条件的个数。
+ * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误码。
  * @since 11
  */
 int32_t OH_Asset_Remove(const Asset_Attr *query, uint32_t queryCnt);
@@ -67,21 +68,21 @@ int32_t OH_Asset_Remove(const Asset_Attr *query, uint32_t queryCnt);
  *
  * @param query 指向包含用来匹配待更新关键资产的属性数组的指针。
  * @param queryCnt query数组中元素的个数。
- * @param attributesToUpdate 指向包含更新的关键资产的属性数组的指针。
+ * @param attributesToUpdate 待更新关键资产的属性集合。
  * @param updateCnt attributesToUpdate数组中元素的个数。
- * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误代码。
+ * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误码。
  * @since 11
  */
 int32_t OH_Asset_Update(const Asset_Attr *query, uint32_t queryCnt,
     const Asset_Attr *attributesToUpdate, uint32_t updateCnt);
 
 /**
- * @brief 对于需要用户认证的关键资产的查询前的预处理（例如获取挑战值challenge）。
+ * @brief 查询的预处理，用于需要用户认证的关键资产。
  *
  * @param query 指向包含用来匹配待查询关键资产的属性数组的指针。
  * @param queryCnt query数组中元素的个数。
  * @param challenge 获取到的挑战值指针，在后续调用{@link OH_Asset_Query}时使用。
- * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误代码。
+ * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误码。
  * @since 11
  */
 int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob *challenge);
@@ -92,23 +93,23 @@ int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob
  * @param query 指向包含用来匹配待查询关键资产的属性数组的指针。
  * @param queryCnt query数组中元素的个数。
  * @param result 指向包含查询结果的数组的指针。
- * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误代码。
+ * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误码。
  * @since 11
  */
 int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultSet *resultSet);
 
 /**
- * @brief 对于需要用户认证的关键资产的查询后的后置处理（例如释放资源）。
+ * @brief 查询的后置处理，用于需要用户认证的关键资产。
  *
  * @param handle 指向从{@link OH_Asset_PreQuery}中获取的包含挑战值的数组指针。
  * @param handleCnt handle数组中元素的个数。
- * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误代码。
+ * @return 如果操作成功，则返回{@link Asset_ResultCode#ASSET_SUCCESS}；否则返回错误码。
  * @since 11
  */
 int32_t OH_Asset_PostQuery(const Asset_Attr *handle, uint32_t handleCnt);
 
 /**
- * @brief 解析AssetResult以获取指定的属性。
+ * @brief 解析查询结果，并获取指定的属性值。
  *
  * @param result 指向包含从{@link OH_Asset_Query}中获取的查询结果的数组指针。
  * @param tag 指定属性的标签。
@@ -119,15 +120,15 @@ int32_t OH_Asset_PostQuery(const Asset_Attr *handle, uint32_t handleCnt);
 Asset_Attr *OH_Asset_ParseAttr(const Asset_Result *result, Asset_Tag tag);
 
 /**
- * @brief 释放从{@link #OH_Asset_PreQuery}中获取的AssetBlob的内存。
+ * @brief 释放挑战值所占用的内存。
  *
- * @param blob 指向需要释放的AssetBlob的指针。
+ * @param blob 指向需要释放的{@link #OH_Asset_PreQuery} AssetBlob的指针。// todo
  * @since 11
  */
 void OH_Asset_FreeBlob(Asset_Blob *blob);
 
 /**
- * @brief 释放从{@link #OH_Asset_Query}中获取的AssetResultSet的内存。
+ * @brief 释放查询结果所占用的内存。
  *
  * @param resultSet 指向从{@link #OH_Asset_Query}得到的查询结果的指针。
  * @since 11

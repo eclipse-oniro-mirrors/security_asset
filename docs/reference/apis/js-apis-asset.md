@@ -768,19 +768,6 @@ try {
 }
 ```
 
-## asset.AssetMap
-
-type AssetMap = Map<Tag, Value>
-
-描述关键资产属性的键-值对集合，每个键最多传入一次。
-
-**系统能力：** SystemCapability.Security.Asset
-
-| 名称        | 值                            | 说明               |
-| ----------- | ----------------------------- | ------------------ |
-| asset.Tag   | 见[asset.Tag](#asset.Tag)     | 关键资产属性名称   |
-| asset.Value | 见[asset.Value](#asset.Value) | 关键资产属性对应值 |
-
 ## asset.Tag
 
 关键资产属性名称，用作[asset.AssetMap](#asset.AssetMap)的键。
@@ -795,7 +782,15 @@ type Value = boolean | number | Uint8Array;
 
 **系统能力：** SystemCapability.Security.Asset
 
-**asset.AssetMap参数：**
+## asset.AssetMap
+
+type AssetMap = Map<Tag, Value>
+
+描述关键资产属性的键-值对集合，每个键最多传入一次。
+
+**系统能力：** SystemCapability.Security.Asset
+
+**参数：**
 
 | 属性名（类型：asset.Tag） | 属性值（类型：asset.Value）                                  | 说明                                                         |
 | ------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
