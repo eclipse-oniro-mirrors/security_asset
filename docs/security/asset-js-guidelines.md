@@ -97,7 +97,6 @@ Asset在基础关键资产管理能力之外，提供了可选的用户认证访
 | ALIAS | 关键资产别名，每条关键资产的唯一索引。单条查询时必传。 |
 | ACCESSIBILITY    | 访问控制属性，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) |
 | AUTH_TYPE   | 访问关键资产所需的用户认证类，取值范围详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) |
-| SYNC_TYPE   | 关键资产支持的同步类，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) |
 | DATA_LABEL_CRITICAL_1   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
 | DATA_LABEL_CRITICAL_2   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
 | DATA_LABEL_CRITICAL_3   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
@@ -162,7 +161,6 @@ Asset在基础关键资产管理能力之外，提供了可选的用户认证访
 | ALIAS | 关键资产别名，每条关键资产的唯一索引。单条查询时必传。 |
 | ACCESSIBILITY    | 访问控制属性，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) |
 | AUTH_TYPE   | 访问关键资产所需的用户认证类，取值范围详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) |
-| SYNC_TYPE   | 关键资产支持的同步类，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) |
 | DATA_LABEL_CRITICAL_1   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
 | DATA_LABEL_CRITICAL_2   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
 | DATA_LABEL_CRITICAL_3   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
@@ -244,12 +242,11 @@ attributesToUpdate的可选参数有：
 
 接口和使用方式可参考：
 
-[function add(attributes: AssetMap, callback: AsyncCallback<void>): void](../reference/apis/js-apis-asset.md#asset.add)
+[function remove(query: AssetMap, callback: AsyncCallback<void>): void](../reference/apis/js-apis-asset.md#asset.remove)
 
-[function add(attributes: AssetMap): Promise<void>](../reference/apis/js-apis-asset.md#asset.add-1)
+[function remove(query: AssetMap): Promise<void>](../reference/apis/js-apis-asset.md#asset.remove-1)
 
-| 必选参数名称 | 描述 |
-| -------- | -------- |
+该接口无必选参数，当如空参时，删除该业务所属所有关键资产数据。
 
 
 - 代码示例
@@ -259,4 +256,15 @@ attributesToUpdate的可选参数有：
 
 | 可选参数名称 | 描述 |
 | -------- | -------- |
-
+| ALIAS | 关键资产别名，每条关键资产的唯一索引。 |
+| ACCESSIBILITY    | 访问控制属性，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) |
+| AUTH_TYPE   | 访问关键资产所需的用户认证类，取值范围详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) |
+| SYNC_TYPE   | 关键资产支持的同步类，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) |
+| DATA_LABEL_CRITICAL_1   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_CRITICAL_2   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_CRITICAL_3   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_CRITICAL_4   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_NORMAL_1   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+| DATA_LABEL_NORMAL_2   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+| DATA_LABEL_NORMAL_3   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+| DATA_LABEL_NORMAL_4   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
