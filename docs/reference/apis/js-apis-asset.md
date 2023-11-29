@@ -16,7 +16,7 @@ import asset from '@ohos.security.asset';
 
 function add(attributes: AssetMap, callback: AsyncCallback<void>): void
 
-写入关键资产，使用Callback回调异步返回结果。
+新增一条关键资产，使用Callback回调异步返回结果。
 
 **需要权限**：ohos.permission.STORE_PERSISTENT_DATA
 
@@ -26,7 +26,7 @@ function add(attributes: AssetMap, callback: AsyncCallback<void>): void
 
 | 参数名     | 类型                 | 必填 | 说明                                                         |
 | ---------- | -------------------- | ---- | ------------------------------------------------------------ |
-| attributes | AssetMap             | 是   | 待写入关键资产及其属性，包括关键资产明文、访问控制属性、自定义数据等。 |
+| attributes | AssetMap             | 是   | 待新增关键资产的属性集合，包括关键资产明文、访问控制属性、自定义数据等。 |
 | callback   | AsyncCallback\<void> | 是   | 关键资产写入结果的回调，未捕获到error代表关键资产写入成功，若捕获到error，则代表关键资产写入失败。 |
 
 **错误码：**
@@ -85,7 +85,7 @@ try {
 
 function add(attributes: AssetMap): Promise<void>
 
-写入关键资产，使用Promise方式异步返回结果。
+新增一条关键资产，使用Promise方式异步返回结果。
 
 **需要权限**：ohos.permission.STORE_PERSISTENT_DATA
 
@@ -95,7 +95,7 @@ function add(attributes: AssetMap): Promise<void>
 
 | 参数名     | 类型     | 必填 | 说明                                                         |
 | ---------- | -------- | ---- | ------------------------------------------------------------ |
-| attributes | AssetMap | 是   | 待写入关键资产及其属性，包括关键资产明文、访问控制属性、自定义数据等。 |
+| attributes | AssetMap | 是   | 待新增关键资产的属性集合，包括关键资产明文、访问控制属性、自定义数据等。 |
 
 **返回值：**
 
@@ -156,7 +156,7 @@ try {
 
 function remove(query: AssetMap, callback: AsyncCallback<void>): void
 
-销毁关键资产，使用Callback回调异步返回结果。
+删除符合条件的一条或多条关键资产，使用Callback回调异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -164,7 +164,7 @@ function remove(query: AssetMap, callback: AsyncCallback<void>): void
 
 | 参数名   | 类型                 | 必填 | 说明                                                         |
 | -------- | -------------------- | ---- | ------------------------------------------------------------ |
-| query    | AssetMap             | 是   | 关键资产删除条件，如别名、访问控制属性、自定义数据等。       |
+| query    | AssetMap             | 是   | 待删除关键资产的搜索条件，如别名、访问控制属性、自定义数据等。       |
 | callback | AsyncCallback\<void> | 是   | 关键资产删除结果的回调，未捕获到error代表关键资产销毁成功，若捕获到error，则代表关键资产销毁失败。 |
 
 **错误码：**
@@ -216,7 +216,7 @@ try {
 
 function remove(query: AssetMap): Promise<void>
 
-销毁关键资产，使用Promise方式异步返回结果。
+删除符合条件的一条或多条关键资产，使用Promise方式异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -224,7 +224,7 @@ function remove(query: AssetMap): Promise<void>
 
 | 参数名 | 类型     | 必填 | 说明                                                   |
 | ------ | -------- | ---- | ------------------------------------------------------ |
-| query  | AssetMap | 是   | 关键资产删除条件，如别名、访问控制属性、自定义数据等。 |
+| query  | AssetMap | 是   | 待删除关键资产的搜索条件，如别名、访问控制属性、自定义数据等。 |
 
 **返回值：**
 
@@ -278,7 +278,7 @@ try {
 
 function update(query: AssetMap, attributesToUpdate: AssetMap, callback: AsyncCallback<void>): void
 
-更新关键资产，使用Callback回调异步返回结果。
+更新符合匹配条件的一条关键资产，使用Callback回调异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -286,8 +286,8 @@ function update(query: AssetMap, attributesToUpdate: AssetMap, callback: AsyncCa
 
 | 参数名             | 类型                 | 必填 | 说明                                                         |
 | ------------------ | -------------------- | ---- | ------------------------------------------------------------ |
-| query              | AssetMap             | 是   | 待更新关键资产的查询条件，如关键资产别名、访问控制属性、自定义数据等。 |
-| attributesToUpdate | AssetMap             | 是   | 待更新关键资产及其属性，如关键资产明文、自定义数据等。       |
+| query              | AssetMap             | 是   | 待更新关键资产的搜索条件，如关键资产别名、访问控制属性、自定义数据等。 |
+| attributesToUpdate | AssetMap             | 是   | 待更新关键资产的属性集合，如关键资产明文、自定义数据等。       |
 | callback           | AsyncCallback\<void> | 是   | 关键资产更新结果的回调，未捕获到error代表关键资产更新成功，若捕获到error，则代表关键资产更新失败。 |
 
 **错误码：**
@@ -343,7 +343,7 @@ try {
 
 function update(query: AssetMap, attributesToUpdate: AssetMap): Promise<void>
 
-更新关键资产，使用Promise方式异步返回结果。
+更新符合匹配条件的一条关键资产，使用Promise方式异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -351,8 +351,8 @@ function update(query: AssetMap, attributesToUpdate: AssetMap): Promise<void>
 
 | 参数名             | 类型     | 必填 | 说明                                                         |
 | ------------------ | -------- | ---- | ------------------------------------------------------------ |
-| query              | AssetMap | 是   | 待更新关键资产的查询条件，如关键资产别名、访问控制属性、自定义数据等。 |
-| attributesToUpdate | AssetMap | 是   | 待更新关键资产及其属性，如关键资产明文、自定义数据等。       |
+| query              | AssetMap | 是   | 待更新关键资产的搜索条件，如关键资产别名、访问控制属性、自定义数据等。 |
+| attributesToUpdate | AssetMap | 是   | 待更新关键资产的属性集合，如关键资产明文、自定义数据等。       |
 
 **返回值：**
 
@@ -410,7 +410,7 @@ try {
 
 function preQuery(query: AssetMap, callback: AsyncCallback<Uint8Array>): void
 
-预查询关键资产，返回安全随机数，仅查询需要用户认证的关键资产时需要调用。在用户认证成功后，应当随后调用asset.query、asset.postQuery。使用Callback回调异步返回结果。
+查询的预处理，用于需要用户认证的关键资产。在用户认证成功后，应当随后调用asset.query、asset.postQuery。使用Callback回调异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -418,7 +418,7 @@ function preQuery(query: AssetMap, callback: AsyncCallback<Uint8Array>): void
 
 | 参数名   | 类型                       | 必填 | 说明                                                         |
 | -------- | -------------------------- | ---- | ------------------------------------------------------------ |
-| query    | AssetMap                   | 是   | 关键资产查询条件，如别名、访问控制属性、自定义数据等。       |
+| query    | AssetMap                   | 是   | 待查询关键资产的搜索条件，如别名、访问控制属性、自定义数据等。       |
 | callback | AsyncCallback\<Uint8Array> | 是   | 关键资产预查询结果的回调，未捕获到error时，返回安全随机数，表示预查询成功，若捕获到error，则代表关键资产预查询失败。 |
 
 **错误码：**
@@ -473,7 +473,7 @@ try {
 
 function preQuery(query: AssetMap): Promise<Uint8Array>
 
-预查询关键资产，返回安全随机数，仅查询需要用户认证的关键资产时需要调用。在用户认证成功后，应当随后调用asset.query、asset.postQuery。使用Promist方式异步返回结果。
+查询的预处理，用于需要用户认证的关键资产。在用户认证成功后，应当随后调用asset.query、asset.postQuery。使用Promist方式异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -481,7 +481,7 @@ function preQuery(query: AssetMap): Promise<Uint8Array>
 
 | 参数名 | 类型     | 必填 | 说明                                                   |
 | ------ | -------- | ---- | ------------------------------------------------------ |
-| query  | AssetMap | 是   | 关键资产查询条件，如别名、访问控制属性、自定义数据等。 |
+| query  | AssetMap | 是   | 待查询关键资产的搜索条件，如别名、访问控制属性、自定义数据等。 |
 
 **返回值：**
 
@@ -538,7 +538,7 @@ try {
 
 function query(query: AssetMap, callback: AsyncCallback<Array<AssetMap>>): void
 
-查询关键资产。若查询需要用户认证的关键资产，则需要在本函数前调用asset.preQuery，在本函数户后调用asset.postQuery。使用Callback回调异步返回结果。
+查询一条或多条符合匹配条件的关键资产。若查询需要用户认证的关键资产，则需要在本函数前调用asset.preQuery，在本函数户后调用asset.postQuery。使用Callback回调异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -546,8 +546,8 @@ function query(query: AssetMap, callback: AsyncCallback<Array<AssetMap>>): void
 
 | 参数名   | 类型                       | 必填 | 说明                                                         |
 | -------- | -------------------------- | ---- | ------------------------------------------------------------ |
-| query    | AssetMap                   | 是   | 关键资产查询条件，如别名、访问控制属性、自定义数据等。       |
-| callback | AsyncCallback\<Uint8Array> | 是   | 关键资产查询结果的回调，未捕获到error时，返回关键资产明文或属性，表示查询成功，若捕获到error，则代表关键资产查询失败。 |
+| query    | AssetMap                   | 是   | 待查询关键资产的搜索条件，如别名、访问控制属性、自定义数据等。       |
+| callback | AsyncCallback\<Uint8Array> | 是   | 关键资产查询结果的回调，未捕获到error时，返回查询结果列表，表示查询成功，若捕获到error，则代表关键资产查询失败。 |
 
 **错误码：**
 
@@ -601,7 +601,7 @@ try {
 
 function query(query: AssetMap): Promise<Array<AssetMap>>
 
-查询关键资产。若查询需要用户认证的关键资产，则需要在本函数前调用asset.preQuery，在本函数户后调用asset.postQuery。使用Promise回调异步返回结果。
+查询一条或多条符合匹配条件的关键资产。若查询需要用户认证的关键资产，则需要在本函数前调用asset.preQuery，在本函数户后调用asset.postQuery。使用Promise回调异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -609,14 +609,13 @@ function query(query: AssetMap): Promise<Array<AssetMap>>
 
 | 参数名   | 类型                            | 必填 | 说明                                                         |
 | -------- | ------------------------------- | ---- | ------------------------------------------------------------ |
-| query    | AssetMap                        | 是   | 关键资产查询条件，如别名、访问控制属性、自定义数据等。       |
-| callback | AsyncCallback\<Array<AssetMap>> | 是   | 关键资产查询结果的回调，未捕获到error时，返回关键资产明文或属性，表示查询成功，若捕获到error，则代表关键资产查询失败。 |
+| query    | AssetMap                        | 是   | 待查询关键资产的搜索条件，如别名、访问控制属性、自定义数据等。       |
 
 **返回值：**
 
 | 类型                     | 说明                                  |
 | ------------------------ | ------------------------------------- |
-| Promise<Array<AssetMap>> | Promise对象，返回关键资产明文或属性。 |
+| Promise<Array<AssetMap>> | Promise对象，返回查询结果列表。 |
 
 **错误码：**
 
@@ -668,7 +667,7 @@ try {
 
 function postQuery(handle: AssetMap, callback: AsyncCallback<void>): void
 
-关键资产查询后的资源释放。仅查询需要用户认证的关键资产，且在本函数前asset.preQuery调用成功后需要调用。使用Callback回调异步返回结果。
+查询的后置处理，用于需要用户认证的关键资产。仅查询需要用户认证的关键资产，且在本函数前asset.preQuery调用成功后需要调用。使用Callback回调异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -719,7 +718,7 @@ try {
 
 function postQuery(handle: AssetMap): Promise<void>
 
-关键资产查询后的资源释放。仅查询需要用户认证的关键资产，且在本函数前asset.preQuery调用成功后需要调用。使用Promise方式异步返回结果。
+查询的后置处理，用于需要用户认证的关键资产。仅查询需要用户认证的关键资产，且在本函数前asset.preQuery调用成功后需要调用。使用Promise方式异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
