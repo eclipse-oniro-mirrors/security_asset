@@ -15,6 +15,8 @@
 
 //! This module is used to insert an Asset with a specified alias.
 
+use std::sync::Mutex;
+
 use asset_constants::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, secret_key::SecretKey};
 use asset_db_operator::{
@@ -30,12 +32,21 @@ use asset_utils::time;
 
 use crate::operations::common;
 
+static GEN_KEN_LOC: Mutex<()> = Mutex::new(());
+
 fn generate_key_if_needed(secret_key: &SecretKey) -> Result<()> {
     match secret_key.exists() {
         Ok(true) => Ok(()),
         Ok(false) => {
-            logi!("[INFO]The key does not exist, generate it.");
-            secret_key.generate()
+            let _lock = GEN_KEN_LOC.lock().unwrap();
+            match secret_key.exists() {
+                Ok(true) => Ok(()),
+                Ok(false) => {
+                    logi!("[INFO]The key does not exist, generate it.");
+                    secret_key.generate()
+                }
+                _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS failed to check whether the key exists.")
+            }
         },
         _ => {
             log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS failed to check whether the key exists.")
