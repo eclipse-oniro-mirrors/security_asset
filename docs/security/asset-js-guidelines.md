@@ -20,7 +20,7 @@
 
 应用/浏览器调用ASSET保护密码类数据（后文统称为“关键资产”），可以参照以下流程进行开发。
 
-###  <img src="../../figures/flowchat-no-auth-required.png" alt="flowchat" style="zoom:40%;" />
+ <img src="../../figures/flowchat-no-auth-required.png" alt="flowchat" style="zoom:40%;" />
 
 1. 业务查询符合条件的关键资产属性，根据查询成功/失败，判断关键资产是否存在。开发步骤参考[查询无需用户认证的关键资产](#查询无需用户认证的关键资产)  **// todo 待修改**
 2. 如果关键资产不存在，新增关键资产，开发步骤参考  **// todo 待修改***
@@ -29,8 +29,6 @@
   * 查询关键资产明文，开发步骤参考  **// todo 待修改**
 
 ## 场景2：保护需要用户身份认证的密码 
-
-
 
 xxx
 
@@ -41,8 +39,6 @@ Asset在基础关键资产管理能力之外，提供了可选的用户认证访
 ### 流程图
 
   <img src="../../figures/flowchat-auth-required.png" alt="flowchat" style="zoom:40%;" />
-
-
 
 ## 新增关键资产
 
@@ -56,42 +52,128 @@ Asset在基础关键资产管理能力之外，提供了可选的用户认证访
 
 参数列表：
 
-| 必选参数名称 | 描述 |
-| -------- | -------- |
-| ALIAS    | 关键资产别名，每条关键资产的唯一索引 |
-| SECRET   | 关键资产明文 |
-
-| 可选参数名称 | 描述 |
-| -------- | -------- |
-| ACCESSIBILITY    | 访问控制属性，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) |
-| REQUIRE_PASSWORD_SET   | 关键资产是否仅在设置了锁屏密码的情况下可访问 |
-| AUTH_TYPE   | 访问关键资产所需的用户认证类，取值范围详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) |
-| SYNC_TYPE   | 关键资产支持的同步类，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) |
-| CONFLICT_RESOLUTION   | 写入同别名的关键资产时的处理策略，取值范围详见[asset.ConflictResolution](../reference/apis/js-apis-asset.md#asset.ConflictResolution) |
-| DATA_LABEL_CRITICAL_1   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_CRITICAL_2   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_CRITICAL_3   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_CRITICAL_4   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_NORMAL_1   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_2   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_3   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_4   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| IS_PERSISTENT   | 关键资产在应用卸载时是否需要保留<br>**需要权限：ohos.permission.STORE_PERSISTENT_DATA** |
-
+| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明                                                         |
+| --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------ |
+| SECRET                | 类型为Uint8Array，长度为1-1024字节                           | 必选     | 关键资产明文                                                 |
+| ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 必选     | 关键资产别名，每条关键资产的唯一索引                         |
+| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 访问控制属性                                                 |
+| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 关键资产是否仅在设置了锁屏密码的情况下可访问                 |
+| AUTH_TYPE             | 类型为number，详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) | 可选     | 访问关键资产所需的用户认证类型                               |
+| SYNC_TYPE             | 类型为number，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) | 可选     | 关键资产支持的同步类型                                       |
+| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 关键资产在应用卸载时是否需要保留<br>**需要权限：**ohos.permission.STORE_PERSISTENT_DATA |
+| DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
+| DATA_LABEL_CRITICAL_2 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
+| DATA_LABEL_CRITICAL_3 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
+| DATA_LABEL_CRITICAL_4 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
+| DATA_LABEL_NORMAL_1   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
+| DATA_LABEL_NORMAL_2   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
+| DATA_LABEL_NORMAL_3   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
+| DATA_LABEL_NORMAL_4   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
+| CONFLICT_RESOLUTION   | 类型为number，取值范围详见[asset.ConflictResolution](../reference/apis/js-apis-asset.md#asset.ConflictResolution) | 可选     | 写入同别名的关键资产时的处理策略                             |
 
 ### 代码示例
 
-  xxx
+以Callback形式的接口调用为例，写入一条密码是demo_pwd，别名是demo_alias，附加属性是demo_label的数据，该数据在用户首次解锁设备后可被访问。
+
+```typescript
+import asset from '@ohos.security.asset';
+import util from '@ohos.util';
+import { BusinessError } from '@ohos.base';
+
+function StringToArray(str: string): Uint8Array {
+  let textEncoder = new util.TextEncoder();
+  return textEncoder.encodeInto(str);
+}
+
+let attr: asset.AssetMap = new Map();
+attr.set(asset.Tag.SECRET, StringToArray('demo_pwd'));
+attr.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
+attr.set(asset.Tag.DATA_LABEL_NORMAL_1, StringToArray('demo_label'));
+try {
+    asset.add(attr, (error: BusinessError) => {
+        if (error) {
+            console.error(`Failed to add Asset.`);
+        } else {
+            console.info(`Asset added successfully.`);
+        }
+    });
+} catch (error) {
+    console.error(`Failed to add Asset.`);
+}
+```
 
 
 ### 约束和限制
 
-会话？？性能？？并发？？存储数量？？
+* 基于别名的访问
+
+关键资产以密文的形式存储在ASSET数据库中，以业务身份 + 别名作为唯一索引。故业务需要保证每条关键资产的别名唯一。
+
+* 业务自定义数据存储
+
+ASSET为业务预留了8个关键资产自定义属性，命名以"DATA_LABEL"开头。对于超过8个自定义属性的情况，业务可以将多段数据按照一定的格式（如JSON）拼接到同一个ASSET属性中。
+
+ASSET对部分属性会进行完整性保护，这部分属性命名以"DATA_LABEL_CRITICAL"开头，且写入后不支持更新。
 
 
 ## 查询关键资产
 
-### 查询无需用户认证的关键资产
+	### 接口介绍
+
+### 代码示例
+
+#### 查询单条关键资产明文
+
+#### 查询单条关键资产属性
+
+#### 批量查询关键资产属性
+
+### 约束和限制
+
+
+
+## 查询需要用户认证的关键资产
+
+### 接口介绍
+
+接口文档链接：
+
+[function query(query: AssetMap, callback: AsyncCallback<Array<AssetMap>>): void](../reference/apis/js-apis-asset.md#asset.query)
+
+[function query(query: AssetMap): Promise<Array<AssetMap>>](../reference/apis/js-apis-asset.md#asset.query-1)
+
+参数列表：
+
+| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选       | 说明                                                         |
+| --------------------- | ------------------------------------------------------------ | -------------- | ------------------------------------------------------------ |
+| ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 单条查询时必选 | 关键资产别名，每条关键资产的唯一索引;                        |
+| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选           | 访问控制属性                                                 |
+| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选           | 关键资产是否仅在设置了锁屏密码的情况下可访问                 |
+| AUTH_TYPE             | 类型为number，详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) | 可选           | 访问关键资产所需的用户认证类型                               |
+| SYNC_TYPE             | 类型为number，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) | 可选           | 关键资产支持的同步类型                                       |
+| IS_PERSISTENT         | 类型为bool                                                   | 可选           | 关键资产在应用卸载时是否需要保留                             |
+| DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选           | 关键资产附属信息，内容由业务自定义且有完整性保护             |
+| DATA_LABEL_CRITICAL_2 | 类型为Uint8Array，长度为1-512字节                            | 可选           | 关键资产附属信息，内容由业务自定义且有完整性保护             |
+| DATA_LABEL_CRITICAL_3 | 类型为Uint8Array，长度为1-512字节                            | 可选           | 关键资产附属信息，内容由业务自定义且有完整性保护             |
+| DATA_LABEL_CRITICAL_4 | 类型为Uint8Array，长度为1-512字节                            | 可选           | 关键资产附属信息，内容由业务自定义且有完整性保护             |
+| DATA_LABEL_NORMAL_1   | 类型为Uint8Array，长度为1-512字节                            | 可选           | 关键资产附属信息，内容由业务自定义且无完整性保护             |
+| DATA_LABEL_NORMAL_2   | 类型为Uint8Array，长度为1-512字节                            | 可选           | 关键资产附属信息，内容由业务自定义且无完整性保护             |
+| DATA_LABEL_NORMAL_3   | 类型为Uint8Array，长度为1-512字节                            | 可选           | 关键资产附属信息，内容由业务自定义且无完整性保护             |
+| DATA_LABEL_NORMAL_4   | 类型为Uint8Array，长度为1-512字节                            | 可选           | 关键资产附属信息，内容由业务自定义且无完整性保护             |
+| RETURN_TYPE           | 类型为number，取值范围详见[asset.ReturnType](#asset.ReturnType) | 可选           | 关键资产查询结果类型                                         |
+| RETURN_LIMIT          | 类型为number                                                 | 批量查询可选   | 关键资产查询结果数量                                         |
+| RETURN_OFFSET         | 类型为number，取值范围：1-65536                              | 批量查询可选   | 满足查询条件的关键资产偏移量                                 |
+| RETURN_ORDERED_BY     | 类型为number，取值范围：asset.Tag.DATA_LABEL_xxx             | 批量查询可选   | 关键资产查询结果排序依据，仅支持指定按照附属信息排序，不指定的情况下，默认按照关键资产写入的顺序排序。 |
+
+### 代码示例
+
+
+
+### 约束和限制
+
+
+
 - 使用场景
 
 业务向Asset中写入关键资产数据后，可以通过该能力将数据读取出来。读取关键资产数据可分为单条查询和批量查询两种。精确查询时可获取到关键资产（asset.Tag.SECRET），必传关键资产别名（asset.Tag.SECRET.ALIAS）；批量查询时可获取到关键资产属性，不传关键资产别名（asset.Tag.SECRET.ALIAS）。
@@ -132,9 +214,6 @@ Asset在基础关键资产管理能力之外，提供了可选的用户认证访
 
 
 - 约束限制（会话？？性能？？并发？？存储数量？？）
-
-
-### 需要用户认证
 
 - 使用场景
 
@@ -209,8 +288,13 @@ Asset在基础关键资产管理能力之外，提供了可选的用户认证访
 
 - 约束限制（会话？？性能？？并发？？存储数量？？）
 
-
 ## 更新关键资产
+
+	### 接口介绍
+
+### 代码示例
+
+### 约束和限制
 
 - 使用场景
 
@@ -252,6 +336,12 @@ attributesToUpdate的可选参数有：
 
 
 ## 删除关键资产
+
+	### 接口介绍
+
+### 代码示例
+
+### 约束和限制
 
 - 使用场景
 

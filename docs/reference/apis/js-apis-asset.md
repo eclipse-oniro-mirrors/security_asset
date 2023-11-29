@@ -791,7 +791,7 @@ type AssetMap = Map<Tag, Value>
 | ------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | SECRET                    | 类型为Uint8Array，长度为1-1024字节                           | 关键资产明文                                                 |
 | ALIAS                     | 类型为Uint8Array，长度为1-256字节                            | 关键资产别名，每条关键资产的唯一索引                         |
-| ACCESSIBILITY             | 类型为number，取值范围详见[asset.Accessibility](#asset.Accessibility) | 访问控制属性                                                 |
+| ACCESSIBILITY             | 类型为number，取值范围详见[asset.Accessibility](#asset.Accessibility) | 基于锁屏状态的访问控制                                       |
 | REQUIRE_PASSWORD_SET      | 类型为bool                                                   | 关键资产是否仅在设置了锁屏密码的情况下可访问                 |
 | AUTH_TYPE                 | 类型为number，详见[asset.AuthType](#asset.AuthType)          | 访问关键资产所需的用户认证类型                               |
 | AUTH_VALIDITY_PERIOD      | 类型为number，取值范围：1-600，单位为秒                      | 用户认证的有效期                                             |
@@ -799,8 +799,8 @@ type AssetMap = Map<Tag, Value>
 | AUTH_TOKEN                | 类型为Uint8Array，长度为148字节                              | 认证通过的授权令牌                                           |
 | SYNC_TYPE                 | 类型为number，取值范围详见[asset.SyncType](#asset.SyncType)  | 关键资产支持的同步类型                                       |
 | IS_PERSISTENT             | 类型为bool                                                   | 关键资产在应用卸载时是否需要保留<br>**需要权限：**ohos.permission.STORE_PERSISTENT_DATA<br/>**备注：**仅在调用[asset.add](#asset.add)函数时传入该属性需要校验权限 |
-| DATA_LABEL_CRITICAL_1     | 类型为Uint8Array，长度为1-512字节                            | *关键资产附属信息，内容由业务自定义且有完整性保护            |
-| DATA_LABEL_CRITICAL_2     | 类型为Uint8Array，长度为1-512字节                            | \* @permission ohos.permission.STORE_PERSISTENT_DATA关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_CRITICAL_1     | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且有完整性保护             |
+| DATA_LABEL_CRITICAL_2     | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且有完整性保护             |
 | DATA_LABEL_CRITICAL_3     | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且有完整性保护             |
 | DATA_LABEL_CRITICAL_4     | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且有完整性保护             |
 | DATA_LABEL_NORMAL_1       | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且无完整性保护             |
