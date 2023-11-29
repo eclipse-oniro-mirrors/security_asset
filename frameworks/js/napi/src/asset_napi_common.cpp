@@ -220,25 +220,14 @@ napi_value GetUint8Array(napi_env env, const Asset_Blob *blob)
     if (blob->data == nullptr || blob->size == 0 || blob->size > MAX_BUFFER_LEN) {
         return nullptr;
     }
-    // Create a temp array to store the blob value.
-    uint8_t *tmp = static_cast<uint8_t *>(AssetMalloc(blob->size));
-    NAPI_THROW(env, tmp == nullptr, ASSET_OUT_OF_MEMRORY, "Unable to allocate memory for out challenge.");
-    (void)memcpy_s(tmp, blob->size, blob->data, blob->size);
 
-    // Create napi array to store the uint8_t array.
-    napi_value array = nullptr;
-    napi_status status = napi_create_external_arraybuffer(env, tmp, blob->size,
-        [](napi_env env, void *data, void *hint) {
-            AssetFree(data);
-        },
-        nullptr, &array);
-    if (status != napi_ok) {
-        AssetFree(tmp);
-        GET_AND_THROW_LAST_ERROR(env);
-        return nullptr;
-    }
+    void *data = nullptr;
+    napi_value buffer = nullptr;
+    NAPI_CALL(env, napi_create_arraybuffer(env, blob->size, &data, &buffer));
+    (void)memcpy_s(data, blob->size, blob->data, blob->size);
+
     napi_value result = nullptr;
-    NAPI_CALL(env, napi_create_typedarray(env, napi_uint8_array, blob->size, array, 0, &result));
+    NAPI_CALL(env, napi_create_typedarray(env, napi_uint8_array, blob->size, buffer, 0, &result));
     return result;
 }
 
