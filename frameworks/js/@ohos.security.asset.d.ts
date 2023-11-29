@@ -27,7 +27,6 @@ declare namespace asset {
   /**
    * Add an Asset.
    *
-   * @permission ohos.permission.STORE_PERSISTENT_DATA
    * @param { AssetMap } attributes - a map object containing attributes of the Asset to be added.
    * @param { AsyncCallback<void> } callback - the callback function for add operation.
    * @throws { BusinessError } 201 - Permission denied.
@@ -53,7 +52,6 @@ declare namespace asset {
   /**
    * Add an Asset.
    *
-   * @permission ohos.permission.STORE_PERSISTENT_DATA
    * @param { AssetMap } attributes - a map object containing attributes of the Asset to be added.
    * @returns { Promise<void> } the promise object returned by the function.
    * @throws { BusinessError } 201 - Permission denied.
@@ -549,7 +547,9 @@ declare namespace asset {
     SYNC_TYPE = TagType.NUMBER | 0x10,
     /**
      * A tag whose value is a bool indicating whether Asset is stored persistently.
+     * The permission needs to be verified only when this attribute is set in the {@link add} function.
      *
+     * @permission ohos.permission.STORE_PERSISTENT_DATA
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
