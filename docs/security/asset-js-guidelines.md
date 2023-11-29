@@ -9,7 +9,7 @@
 
 用户再次进入登录界面时，应用/浏览器可从ASSET中查询用户密码明文，并自动填充到密码输入框，用户只需点击“登录”按钮即可完成账号登录，极大地提升了用户的登录体验。
 
- <img src="../../figures/login.png" alt="login" style="zoom:80%;" />
+ <img src="../../figures/login.png" alt="login" style="zoom:40%;" />
 
 
 
@@ -23,7 +23,7 @@
 
 
 
- <img src="../../figures/flowchat-no-auth-required.png" alt="flowchat" style="zoom:75%;" />
+###  <img src="../../figures/flowchat-no-auth-required.png" alt="flowchat" style="zoom:40%;" />
 
 1. 业务查询符合条件的关键资产属性，根据是否查询出结果判断关键资产是否存在，开发步骤参考[查询无需用户认证的关键资产](#查询无需用户认证的关键资产)  **// todo 待修改**
 2. 如果关键资产不存在，新增关键资产，开发步骤参考  **// todo 待修改***
@@ -43,7 +43,7 @@ Asset在基础关键资产管理能力之外，提供了可选的用户认证访
 
 ### 流程图
 
-  <img src="../../figures/flowchat-auth-required.png" alt="flowchat" style="zoom:75%;" />
+  <img src="../../figures/flowchat-auth-required.png" alt="flowchat" style="zoom:40%;" />
 
 
 
