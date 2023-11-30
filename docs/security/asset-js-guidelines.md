@@ -24,7 +24,7 @@
 
 1. 业务查询符合条件的关键资产属性，根据查询成功/失败，判断关键资产是否存在。开发步骤参考[查询关键资产](#查询关键资产)，代码示例参考[查询单条关键资产属性](#查询单条关键资产属性)
 2. 如果关键资产不存在，业务可选择：
-    * 新增关键资产，开发步骤参考[新增关键资产](#新增关键资产) 
+    * 新增关键资产，开发步骤参考[新增关键资产](#新增关键资产)
 3. 如果关键资产存在，业务可选择：
     * 删除关键资产，开发步骤参考[删除关键资产](#删除关键资产)
     * 更新关键资产，开发步骤参考[更新关键资产](#更新关键资产)
@@ -46,7 +46,7 @@
 
 1. 业务查询符合条件的关键资产属性，根据查询成功/失败，判断关键资产是否存在。开发步骤参考[查询关键资产](#查询关键资产)，代码示例参考[查询单条关键资产属性](#查询单条关键资产属性)
 2. 如果关键资产不存在，业务可选择：
-    * 新增关键资产，开发步骤参考[新增关键资产](#新增关键资产) 
+    * 新增关键资产，开发步骤参考[新增关键资产](#新增关键资产)
 3. 如果关键资产存在，业务可选择：
     * 删除关键资产，开发步骤参考[删除关键资产](#删除关键资产)
     * 更新关键资产，开发步骤参考[更新关键资产](#更新关键资产)
@@ -378,7 +378,7 @@ try {
             console.info(`Succeeded in pre-querying Asset.`);
             userAuthenticate(data, (isSuccess: boolean, authToken: Uint8Array) => {
               if (isSuccess) {
-                  
+
               }
             })
         }
@@ -400,88 +400,121 @@ try {
 
 ### 接口介绍
 
-### 代码示例
-
-### 约束和限制
-
-- 使用场景
-
-业务可以更改在Asset存储的部分关键资产数据，当前支持更改关键资产（asset.Tag.SECRET）和自定义的Normal Label字段（asset.Tag.DATA_LABEL_NORMAL_xxx）。
-
-- 接口和必选参数介绍（参数名、参数类型、参数限制）
-
-接口和使用方式可参考：
+接口文档链接：
 
 [function update(query: AssetMap, attributesToUpdate: AssetMap, callback: AsyncCallback<void>): void](../reference/apis/js-apis-asset.md#asset.update)
 
 [function update(query: AssetMap, attributesToUpdate: AssetMap): Promise<void>](../reference/apis/js-apis-asset.md#asset.update-1)
 
-该接口有query和attributesToUpdate两个参数集。其中query是待更新关键资产的查询条件，如关键资产别名、访问控制属性、自定义数据等。attributesToUpdate是待更新关键资产及其属性，如关键资产明文、自定义数据等。
+query的参数列表：
 
-query的必选参数有：
-
-| 必选参数名称 | 描述 |
-| -------- | -------- |
-| ALIAS | 关键资产别名，每条关键资产的唯一索引。单条查询时必传。 |
-
-query无可选参数。
-
-attributesToUpdate无必选参数。
-
-attributesToUpdate的可选参数有：
-
-| 可选参数名称 | 描述 |
-| -------- | -------- |
-| DATA_LABEL_NORMAL_1   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_2   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_3   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_4   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| SECRET   | 关键资产明文 |
+| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明   |
+| --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------ |
+| ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 必选     | 关键资产别名，每条关键资产的唯一索引                         |
 
 
-- 代码示例
+attributesToUpdate的参数列表：
 
+
+| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明                                                         |
+| --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------ |
+| SECRET                | 类型为Uint8Array，长度为1-1024字节                           | 可选     | 关键资产明文                                                 |
+| DATA_LABEL_NORMAL_1   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
+| DATA_LABEL_NORMAL_2   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
+| DATA_LABEL_NORMAL_3   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
+| DATA_LABEL_NORMAL_4   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
+
+### 代码示例
+
+以Callback形式的接口调用为例，更新别名是demo_alias的关键资产。
+
+```typescript
+import asset from '@ohos.security.asset';
+import util from '@ohos.util';
+import { BusinessError } from '@ohos.base';
+
+function StringToArray(str: string): Uint8Array {
+  let textEncoder = new util.TextEncoder();
+  return textEncoder.encodeInto(str);
+}
+
+let query: asset.AssetMap = new Map();
+query.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+let attrsToUpdate: asset.AssetMap = new Map();
+attrsToUpdate.set(asset.Tag.SECRET, StringToArray('demo_pwd_new'));
+try {
+    asset.update(query, attrsToUpdate, (error: BusinessError) => {
+        if (error) {
+            console.error(`Failed to update Asset.`);
+        } else {
+            console.info(`Asset updated successfully.`);
+        }
+    });
+} catch (error) {
+    console.error(`Failed to update Asset.`);
+}
+```
+
+### 约束和限制
 
 
 ## 删除关键资产
 
 ### 接口介绍
 
-### 代码示例
-
-### 约束和限制
-
-- 使用场景
-
-业务在该阶段将需要Asset管理的关键资产数据传给Asset，并在此阶段可以指定该关键资产数据的访问控制策略、同步策略等属性。
-
-- 接口和必选参数介绍（参数名、参数类型、参数限制）
-
-接口和使用方式可参考：
+接口文档链接：
 
 [function remove(query: AssetMap, callback: AsyncCallback<void>): void](../reference/apis/js-apis-asset.md#asset.remove)
 
 [function remove(query: AssetMap): Promise<void>](../reference/apis/js-apis-asset.md#asset.remove-1)
 
-该接口无必选参数，当如空参时，删除该业务所属所有关键资产数据。
+参数列表：
 
+| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明                                                         |
+| --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------ |
+| ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 可选     | 关键资产别名，每条关键资产的唯一索引;                        |
+| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 访问控制属性                                                 |
+| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 关键资产是否仅在设置了锁屏密码的情况下可访问                 |
+| AUTH_TYPE             | 类型为number，详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) | 可选     | 访问关键资产所需的用户认证类型                               |
+| SYNC_TYPE             | 类型为number，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) | 可选     | 关键资产支持的同步类型                                       |
+| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 关键资产在应用卸载时是否需要保留                             |
+| DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
+| DATA_LABEL_CRITICAL_2 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
+| DATA_LABEL_CRITICAL_3 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
+| DATA_LABEL_CRITICAL_4 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
+| DATA_LABEL_NORMAL_1   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
+| DATA_LABEL_NORMAL_2   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
+| DATA_LABEL_NORMAL_3   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
+| DATA_LABEL_NORMAL_4   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
+| RETURN_TYPE           | 类型为number，取值范围详见[asset.ReturnType](#asset.ReturnType) | 可选     | 关键资产查询结果类型                                         |
 
-- 代码示例
+### 代码示例
 
+以Callback形式的接口调用为例，删除别名是demo_alias的关键资产。
 
-- 可选参数介绍
+```typescript
+import asset from '@ohos.security.asset';
+import util from '@ohos.util';
+import { BusinessError } from '@ohos.base';
 
-| 可选参数名称 | 描述 |
-| -------- | -------- |
-| ALIAS | 关键资产别名，每条关键资产的唯一索引。 |
-| ACCESSIBILITY    | 访问控制属性，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) |
-| AUTH_TYPE   | 访问关键资产所需的用户认证类，取值范围详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) |
-| SYNC_TYPE   | 关键资产支持的同步类，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) |
-| DATA_LABEL_CRITICAL_1   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_CRITICAL_2   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_CRITICAL_3   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_CRITICAL_4   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_NORMAL_1   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_2   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_3   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_4   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+function StringToArray(str: string): Uint8Array {
+  let textEncoder = new util.TextEncoder();
+  return textEncoder.encodeInto(str);
+}
+
+let query: asset.AssetMap = new Map();
+query.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+try {
+    asset.remove(query, (error: BusinessError) => {
+        if (error) {
+            console.error(`Failed to remove Asset.`);
+        } else {
+            console.info(`Asset removed successfully.`);
+        }
+    });
+} catch (error) {
+    console.error(`Failed to remove Asset.`);
+}
+```
+
+### 约束和限制
