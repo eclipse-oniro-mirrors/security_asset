@@ -44,13 +44,13 @@
 
  <img src="../../figures/flowchat-auth-required.png" alt="flowchat" style="zoom:40%;" />
 
-1. 业务查询符合条件的关键资产属性，根据查询成功/失败，判断关键资产是否存在。开发步骤参考[查询无需用户认证的关键资产](#查询无需用户认证的关键资产)  **// todo 待修改**
+1. 业务查询符合条件的关键资产属性，根据查询成功/失败，判断关键资产是否存在。开发步骤参考[查询关键资产](#查询关键资产)，代码示例参考[查询单条关键资产属性](#查询单条关键资产属性)
 2. 如果关键资产不存在，业务可选择：
-    * 新增关键资产，开发步骤参考  **// todo 待修改**
+    * 新增关键资产，开发步骤参考[新增关键资产](#新增关键资产) 
 3. 如果关键资产存在，业务可选择：
-    * 删除关键资产，开发步骤参考  **// todo 待修改**
-    * 修改关键资产，开发步骤参考  **// todo 待修改**
-    * 查询关键资产明文，开发步骤包括预处理、用户认证、查询明文、后置处理，参考  **// todo 待修改**
+    * 删除关键资产，开发步骤参考[删除关键资产](#删除关键资产)
+    * 更新关键资产，开发步骤参考[更新关键资产](#更新关键资产)
+    * 查询关键资产明文，开发步骤包括预处理、用户认证、查询明文、后置处理，参考[查询需要用户认证的关键资产](#查询需要用户认证的关键资产)
 
 ## 新增关键资产
 
@@ -270,137 +270,135 @@ try {
 
 接口文档链接：
 
-[function query(query: AssetMap, callback: AsyncCallback<Array<AssetMap>>): void](../reference/apis/js-apis-asset.md#asset.query)
+| 接口清单                                                     |
+| ------------------------------------------------------------ |
+| [function preQuery(query: AssetMap, callback: AsyncCallback<Uint8Array>): void](../reference/apis/js-apis-asset.md#asset.reQuery)<br>[function preQuery(query: AssetMap): Promise<Uint8Array>](../reference/apis/js-apis-asset.md#asset.reQuery-1) |
+| [function query(query: AssetMap, callback: AsyncCallback<Array<AssetMap>>): void](../reference/apis/js-apis-asset.md#asset.query)<br>[function query(query: AssetMap): Promise<Array<AssetMap>>](../reference/apis/js-apis-asset.md#asset.query-1) |
+| [function postQuery(handle: AssetMap, callback: AsyncCallback<void>): void](../reference/apis/js-apis-asset.md#asset.postQuery)<br>[function postQuery(handle: AssetMap): Promise<void>](../reference/apis/js-apis-asset.md#asset.postQuery-1) |
 
-[function query(query: AssetMap): Promise<Array<AssetMap>>](../reference/apis/js-apis-asset.md#asset.query-1)
+preQuery参数列表
 
-参数列表：
+| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明                                             |
+| --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------ |
+| ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 可选     | 关键资产别名，每条关键资产的唯一索引;            |
+| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 访问控制属性                                     |
+| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 关键资产是否仅在设置了锁屏密码的情况下可访问     |
+| AUTH_TYPE             | 类型为number，详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) | 可选     | 访问关键资产所需的用户认证类型                   |
+| AUTH_VALIDITY_PERIOD  | 类型为number，取值范围：1-600，单位为秒                      | 可选     | 用户认证的有效期                                 |
+| SYNC_TYPE             | 类型为number，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) | 可选     | 关键资产支持的同步类型                           |
+| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 关键资产在应用卸载时是否需要保留                 |
+| DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_CRITICAL_2 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_CRITICAL_3 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_CRITICAL_4 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_NORMAL_1   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+| DATA_LABEL_NORMAL_2   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+| DATA_LABEL_NORMAL_3   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+| DATA_LABEL_NORMAL_4   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+
+query参数列表
+
+| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明                                             |
+| --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------ |
+| ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 必选     | 关键资产别名，每条关键资产的唯一索引;            |
+| AUTH_CHALLENGE        | 类型为Uint8Array，长度为32字节                               | 必选     | 用户认证使用的挑战值                             |
+| AUTH_TOKEN            | 类型为Uint8Array，长度为148字节                              | 必选     | 认证通过的授权令牌                               |
+| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 访问控制属性                                     |
+| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 关键资产是否仅在设置了锁屏密码的情况下可访问     |
+| AUTH_TYPE             | 类型为number，详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) | 可选     | 访问关键资产所需的用户认证类型                   |
+| SYNC_TYPE             | 类型为number，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) | 可选     | 关键资产支持的同步类型                           |
+| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 关键资产在应用卸载时是否需要保留                 |
+| DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_CRITICAL_2 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_CRITICAL_3 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_CRITICAL_4 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_NORMAL_1   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+| DATA_LABEL_NORMAL_2   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+| DATA_LABEL_NORMAL_3   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+| DATA_LABEL_NORMAL_4   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+
+postQuery参数列表
+
+| 属性名（asset.Tag） | 属性值（asset.Value）          | 是否必选 | 说明                 |
+| ------------------- | ------------------------------ | -------- | -------------------- |
+| AUTH_CHALLENGE      | 类型为Uint8Array，长度为32字节 | 必选     | 用户认证使用的挑战值 |
 
 ### 代码示例
 
+以Callback形式的接口调用为例，查询别名是demo_alias的关键资产。
 
+```typescript
+import asset from '@ohos.security.asset';
+import util from '@ohos.util';
+import { BusinessError } from '@ohos.base';
+
+function StringToArray(str: string): Uint8Array {
+  let textEncoder = new util.TextEncoder();
+  return textEncoder.encodeInto(str);
+}
+
+async function userAuthenticate(challenge: Uint8Array, callback: (isSuccess: boolean, challenge: Uint8Array) => void) {
+  const authParam: userAuth.AuthParam = {
+    challenge: challenge,
+    authType: [userAuth.UserAuthType.PIN],
+    authTrustLevel: userAuth.AuthTrustLevel.ATL1,
+  };
+  const widgetParam: userAuth.WidgetParam = {
+    title: '请输入锁屏密码',
+  };
+  try {
+    let userAuthInstance = userAuth.getUserAuthInstance(authParam, widgetParam);
+    userAuthInstance.on('result', {
+      onResult(result) {
+        if (result.result == 12500000) {
+          console.info(`User identity authentication succeeded.`);
+          callback(true, result.token)
+        } else {
+          console.error(`User identity authentication failed.`);
+          callback(false, new Uint8Array(0))
+        }
+      }
+    });
+    userAuthInstance.start();
+  } catch (error) {
+    console.error(`User identity authentication failed.`);
+    callback(false, new Uint8Array(0))
+  }
+}
+
+
+
+let query: asset.AssetMap = new Map();
+query.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+try {
+    asset.preQuery(query, (error: BusinessError, data: Uint8Array) => {
+        if (error) {
+            console.error(`Failed to pre-query Asset.`);
+        } else {
+            console.info(`Succeeded in pre-querying Asset.`);
+            userAuthenticate(data, (isSuccess: boolean, authToken: Uint8Array) => {
+              if (isSuccess) {
+                  
+              }
+            })
+        }
+    });
+} catch (error) {
+    console.error(`Failed to pre-query Asset.`);
+}
+
+
+```
 
 ### 约束和限制
 
 
 
-- 使用场景
 
-业务向Asset中写入关键资产数据后，可以通过该能力将数据读取出来。读取关键资产数据可分为单条查询和批量查询两种。精确查询时可获取到关键资产（asset.Tag.SECRET），必传关键资产别名（asset.Tag.SECRET.ALIAS）；批量查询时可获取到关键资产属性，不传关键资产别名（asset.Tag.SECRET.ALIAS）。
-
-- 接口和必选参数介绍
-
-接口和使用方式可参考：
-
-[function query(query: AssetMap, callback: AsyncCallback<Array<AssetMap>>): void](../reference/apis/js-apis-asset.md#asset.query)
-
-[function query(query: AssetMap): Promise<Array<AssetMap>>](../reference/apis/js-apis-asset.md#asset.query-1)
-
-无必选参数。当参数为空时，批量查询属主所有关键资产属性。
-
-- 代码示例
-
-
-- 可选参数介绍
-
-| 可选参数名称 | 描述 |
-| -------- | -------- |
-| ALIAS | 关键资产别名，每条关键资产的唯一索引。单条查询时必传。 |
-| ACCESSIBILITY    | 访问控制属性，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) |
-| AUTH_TYPE   | 访问关键资产所需的用户认证类，取值范围详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) |
-| DATA_LABEL_CRITICAL_1   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_CRITICAL_2   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_CRITICAL_3   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_CRITICAL_4   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_NORMAL_1   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_2   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_3   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_4   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| SYNC_TYPE   | 关键资产支持的同步类，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) |
-| RETURN_TYPE   | 关键资产查询结果类型，取值范围详见[asset.ReturnType](../reference/apis/js-apis-asset.md#asset.ReturnType)。**当需要查询关键资产明文时必传asset.ReturnType.ALL，仅支持单条查询时使用。** |
-| RETURN_LIMIT   | 关键资产查询结果数量 |
-| RETURN_OFFSET   | 满足查询条件的关键资产偏移量 |
-| RETURN_ORDERED_BY   | 关键资产查询结果排序依据，仅支持指定按照附属信息排序，不指定的情况下，默认按照关键资产写入的顺序排序。取值范围：asset.Tag.DATA_LABEL_xxx |
-
-
-- 约束限制（会话？？性能？？并发？？存储数量？？）
-
-- 使用场景
-
-当访问需要用户授权才能访问的关键资产数据时，如仅查询关键资产属性，与上文不传RETURN_TYPE或传入ATTRIBUTES时相同；如需查询关键资产明文，除了上述步骤外，需要使用预查询、后查询接口进行用户认证相关操作。
-
-- 接口和必选参数介绍（参数名、参数类型、参数限制）
-
-接口和使用方式可参考：
-[function preQuery(query: AssetMap, callback: AsyncCallback<Uint8Array>): void](../reference/apis/js-apis-asset.md#asset.preQuery)
-
-[function preQuery(query: AssetMap): Promise<Uint8Array>](../reference/apis/js-apis-asset.md#asset.preQuery-1)
-
-无必选参数。当参数为空时，为所有关键资产的查询做预处理准备。
-
-| 可选参数名称 | 描述 |
-| -------- | -------- |
-| ALIAS | 关键资产别名，每条关键资产的唯一索引。单条查询时必传。 |
-| ACCESSIBILITY    | 访问控制属性，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) |
-| AUTH_TYPE   | 访问关键资产所需的用户认证类，取值范围详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) |
-| SYNC_TYPE   | 关键资产支持的同步类，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) |
-| AUTH_VALIDITY_PERIOD   | 用户认证的有效期，取值范围：1-600，单位为秒 |
-| DATA_LABEL_CRITICAL_1   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_CRITICAL_2   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_CRITICAL_3   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_CRITICAL_4   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_NORMAL_1   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_2   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_3   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_4   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-
-[function query(query: AssetMap, callback: AsyncCallback<Array<AssetMap>>): void](../reference/apis/js-apis-asset.md#asset.query)
-
-[function query(query: AssetMap): Promise<Array<AssetMap>>](../reference/apis/js-apis-asset.md#asset.query-1)
-
-| 必选参数名称 | 描述 |
-| -------- | -------- |
-| RETURN_TYPE   | 关键资产查询结果类型，取值范围详见[asset.ReturnType](../reference/apis/js-apis-asset.md#asset.ReturnType)。需传入asset.ReturnType.ALL |
-| AUTH_CHALLENGE   | 用户认证使用的挑战值 |
-| AUTH_TOKEN   | 认证通过的授权令牌 |
-
-| 可选参数名称 | 描述 |
-| -------- | -------- |
-| ALIAS | 关键资产别名，每条关键资产的唯一索引。单条查询时必传。 |
-| ACCESSIBILITY    | 访问控制属性，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) |
-| AUTH_TYPE   | 访问关键资产所需的用户认证类，取值范围详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) |
-| DATA_LABEL_CRITICAL_1   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_CRITICAL_2   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_CRITICAL_3   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_CRITICAL_4   | 关键资产附属信息，内容由业务自定义且有完整性保护 |
-| DATA_LABEL_NORMAL_1   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_2   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_3   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| DATA_LABEL_NORMAL_4   | 关键资产附属信息，内容由业务自定义且无完整性保护 |
-| SYNC_TYPE   | 关键资产支持的同步类，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) |
-| RETURN_LIMIT   | 关键资产查询结果数量 |
-| RETURN_OFFSET   | 满足查询条件的关键资产偏移量 |
-| RETURN_ORDERED_BY   | 关键资产查询结果排序依据，仅支持指定按照附属信息排序，不指定的情况下，默认按照关键资产写入的顺序排序。取值范围：asset.Tag.DATA_LABEL_xxx |
-
-[function postQuery(handle: AssetMap, callback: AsyncCallback<void>): void](../reference/apis/js-apis-asset.md#asset.postQuery)
-
-[function postQuery(handle: AssetMap): Promise<void>](../reference/apis/js-apis-asset.md#asset.postQuery-1)
-
-| 必选参数名称 | 描述 |
-| -------- | -------- |
-| AUTH_CHALLENGE   | 用户认证使用的挑战值 |
-
-
-- 代码示例
-
-
-
-
-- 约束限制（会话？？性能？？并发？？存储数量？？）
 
 ## 更新关键资产
 
-	### 接口介绍
+### 接口介绍
 
 ### 代码示例
 
@@ -447,7 +445,7 @@ attributesToUpdate的可选参数有：
 
 ## 删除关键资产
 
-	### 接口介绍
+### 接口介绍
 
 ### 代码示例
 
