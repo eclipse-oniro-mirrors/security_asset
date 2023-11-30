@@ -56,16 +56,16 @@ import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 import { BusinessError } from '@ohos.base';
 
-function StringToArray(str: string): Uint8Array {
+function stringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
 let attr: asset.AssetMap = new Map();
-attr.set(asset.Tag.SECRET, StringToArray('demo_pwd'));
-attr.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+attr.set(asset.Tag.SECRET, stringToArray('demo_pwd'));
+attr.set(asset.Tag.ALIAS, stringToArray('demo_alias'));
 attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
-attr.set(asset.Tag.DATA_LABEL_NORMAL_1, StringToArray('demo_label'));
+attr.set(asset.Tag.DATA_LABEL_NORMAL_1, stringToArray('demo_label'));
 try {
     asset.add(attr, (error: BusinessError) => {
         if (error) {
@@ -127,16 +127,16 @@ function add(attributes: AssetMap): Promise<void>
 import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 
-function StringToArray(str: string): Uint8Array {
+function stringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
 let attr: asset.AssetMap = new Map();
-attr.set(asset.Tag.SECRET, StringToArray('demo_pwd'));
-attr.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+attr.set(asset.Tag.SECRET, stringToArray('demo_pwd'));
+attr.set(asset.Tag.ALIAS, stringToArray('demo_alias'));
 attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
-attr.set(asset.Tag.DATA_LABEL_NORMAL_1, StringToArray('demo_label'));
+attr.set(asset.Tag.DATA_LABEL_NORMAL_1, stringToArray('demo_label'));
 try {
     asset.add(attr).then(() => {
         console.info(`Asset added successfully.`);
@@ -188,13 +188,13 @@ import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 import { BusinessError } from '@ohos.base';
 
-function StringToArray(str: string): Uint8Array {
+function stringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
 let query: asset.AssetMap = new Map();
-query.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+query.set(asset.Tag.ALIAS, stringToArray('demo_alias'));
 try {
     asset.remove(query, (error: BusinessError) => {
         if (error) {
@@ -252,13 +252,13 @@ function remove(query: AssetMap): Promise<void>
 import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 
-function StringToArray(str: string): Uint8Array {
+function stringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
 let query: asset.AssetMap = new Map();
-query.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+query.set(asset.Tag.ALIAS, stringToArray('demo_alias'));
 try {
     asset.remove(query).then(() => {
         console.info(`Asset removed successfully.`);
@@ -313,15 +313,15 @@ import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 import { BusinessError } from '@ohos.base';
 
-function StringToArray(str: string): Uint8Array {
+function stringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
 let query: asset.AssetMap = new Map();
-query.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+query.set(asset.Tag.ALIAS, stringToArray('demo_alias'));
 let attrsToUpdate: asset.AssetMap = new Map();
-attrsToUpdate.set(asset.Tag.SECRET, StringToArray('demo_pwd_new'));
+attrsToUpdate.set(asset.Tag.SECRET, stringToArray('demo_pwd_new'));
 try {
     asset.update(query, attrsToUpdate, (error: BusinessError) => {
         if (error) {
@@ -382,15 +382,15 @@ function update(query: AssetMap, attributesToUpdate: AssetMap): Promise<void>
 import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 
-function StringToArray(str: string): Uint8Array {
+function stringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
 let query: asset.AssetMap = new Map();
-query.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+query.set(asset.Tag.ALIAS, stringToArray('demo_alias'));
 let attrsToUpdate: asset.AssetMap = new Map();
-attrsToUpdate.set(asset.Tag.SECRET, StringToArray('demo_pwd_new'));
+attrsToUpdate.set(asset.Tag.SECRET, stringToArray('demo_pwd_new'));
 try {
     asset.update(query, attrsToUpdate).then(() => {
         console.info(`Asset updated successfully.`);
@@ -445,13 +445,13 @@ import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 import { BusinessError } from '@ohos.base';
 
-function StringToArray(str: string): Uint8Array {
+function stringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
 let query: asset.AssetMap = new Map();
-query.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+query.set(asset.Tag.ALIAS, stringToArray('demo_alias'));
 try {
     asset.preQuery(query, (error: BusinessError) => {
         if (error) {
@@ -512,13 +512,13 @@ function preQuery(query: AssetMap): Promise<Uint8Array>
 import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 
-function StringToArray(str: string): Uint8Array {
+function stringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
 let query: asset.AssetMap = new Map();
-query.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+query.set(asset.Tag.ALIAS, stringToArray('demo_alias'));
 try {
     asset.preQuery(query).then(() => {
         console.info(`Succeeded in pre-querying Asset.`);
@@ -573,13 +573,13 @@ import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 import { BusinessError } from '@ohos.base';
 
-function StringToArray(str: string): Uint8Array {
+function stringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
 let query: asset.AssetMap = new Map();
-query.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+query.set(asset.Tag.ALIAS, stringToArray('demo_alias'));
 try {
     asset.query(query, (error: BusinessError) => {
         if (error) {
@@ -641,13 +641,13 @@ import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 import { BusinessError } from '@ohos.base';
 
-function StringToArray(str: string): Uint8Array {
+function stringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
 let query: asset.AssetMap = new Map();
-query.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+query.set(asset.Tag.ALIAS, stringToArray('demo_alias'));
 try {
     asset.query(query).then(() => {
         console.info(`Asset query succeeded.`);

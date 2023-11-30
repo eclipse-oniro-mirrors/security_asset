@@ -1,4 +1,4 @@
-# 关键资产存储服务（ASSET）开发指导
+# 关键资产存储服务开发指导（ArkTS）
 
 [toc]
 
@@ -92,16 +92,16 @@ import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 import { BusinessError } from '@ohos.base';
 
-function StringToArray(str: string): Uint8Array {
+function stringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
 let attr: asset.AssetMap = new Map();
-attr.set(asset.Tag.SECRET, StringToArray('demo_pwd'));
-attr.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+attr.set(asset.Tag.SECRET, stringToArray('demo_pwd'));
+attr.set(asset.Tag.ALIAS, stringToArray('demo_alias'));
 attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
-attr.set(asset.Tag.DATA_LABEL_NORMAL_1, StringToArray('demo_label'));
+attr.set(asset.Tag.DATA_LABEL_NORMAL_1, stringToArray('demo_label'));
 try {
     asset.add(attr, (error: BusinessError) => {
         if (error) {
@@ -171,13 +171,13 @@ import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 import { BusinessError } from '@ohos.base';
 
-function StringToArray(str: string): Uint8Array {
+function stringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
 let query: asset.AssetMap = new Map();
-query.set(asset.Tag.ALIAS, StringToArray('demo_alias')); // 指定了关键资产别名，最多查询到一条满足条件的关键资产
+query.set(asset.Tag.ALIAS, stringToArray('demo_alias')); // 指定了关键资产别名，最多查询到一条满足条件的关键资产
 query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ALL);  // 此处表示需要返回每条关键资产的所有信息，即属性+明文
 try {
     asset.query(query, (error: BusinessError) => {
@@ -201,14 +201,14 @@ import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 import { BusinessError } from '@ohos.base';
 
-function StringToArray(str: string): Uint8Array {
+function stringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
 let query: asset.AssetMap = new Map();
 query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ATTRIBUTES); // 此处表示需要返回仅返回关键资产属性，不包含关键资产明文
-query.set(asset.Tag.DATA_LABEL_NORMAL_1, StringToArray('demo_label'));
+query.set(asset.Tag.DATA_LABEL_NORMAL_1, stringToArray('demo_label'));
 query.set(asset.Tag.RETURN_LIMIT, 10);
 query.set(asset.Tag.RETURN_OFFSET, 5);
 query.set(asset.Tag.RETURN_ORDERED_BY, asset.Tag.DATA_LABEL_NORMAL_1);
@@ -234,14 +234,14 @@ import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 import { BusinessError } from '@ohos.base';
 
-function StringToArray(str: string): Uint8Array {
+function stringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
 let query: asset.AssetMap = new Map();
 query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ATTRIBUTES); // 此处表示需要返回仅返回关键资产属性，不包含关键资产明文
-query.set(asset.Tag.DATA_LABEL_NORMAL_1, StringToArray('demo_label'));
+query.set(asset.Tag.DATA_LABEL_NORMAL_1, stringToArray('demo_label'));
 query.set(asset.Tag.RETURN_OFFSET, 5); // 此处表示查询结果的偏移量，即从满足条件的第5条关键资产开始返回
 query.set(asset.Tag.RETURN_LIMIT, 10); // 此处表示查询10条满足条件的关键资产
 query.set(asset.Tag.RETURN_ORDERED_BY, asset.Tag.DATA_LABEL_NORMAL_1); // 此处查询结果以DATA_LABEL_NORMAL_1属性内容排序
@@ -303,6 +303,7 @@ query参数列表
 | ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 必选     | 关键资产别名，每条关键资产的唯一索引;            |
 | AUTH_CHALLENGE        | 类型为Uint8Array，长度为32字节                               | 必选     | 用户认证使用的挑战值                             |
 | AUTH_TOKEN            | 类型为Uint8Array，长度为148字节                              | 必选     | 认证通过的授权令牌                               |
+| RETURN_TYPE           | 类型为number，asset.ReturnType.ALL                           | 必选     | 关键资产查询结果类型                             |
 | ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 访问控制属性                                     |
 | REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 关键资产是否仅在设置了锁屏密码的情况下可访问     |
 | AUTH_TYPE             | 类型为number，详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) | 可选     | 访问关键资产所需的用户认证类型                   |
@@ -325,19 +326,20 @@ postQuery参数列表
 
 ### 代码示例
 
-以Callback形式的接口调用为例，查询别名是demo_alias的关键资产。
+以Callback形式的接口调用为例，查询别名是demo_alias且需要用户认证的关键资产。
 
 ```typescript
 import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 import { BusinessError } from '@ohos.base';
+import userAuth from '@ohos.userIAM.userAuth';
 
 function StringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
-async function userAuthenticate(challenge: Uint8Array, callback: (isSuccess: boolean, challenge: Uint8Array) => void) {
+async function userAuthenticate(challenge: Uint8Array, callback: (isSuccess: boolean, authToken: Uint8Array) => void) {
   const authParam: userAuth.AuthParam = {
     challenge: challenge,
     authType: [userAuth.UserAuthType.PIN],
@@ -366,35 +368,85 @@ async function userAuthenticate(challenge: Uint8Array, callback: (isSuccess: boo
   }
 }
 
-
-
-let query: asset.AssetMap = new Map();
-query.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
-try {
+async function preQueryAsset(callback: (isSuccess: boolean, challenge: Uint8Array) => void) {
+  let query: asset.AssetMap = new Map();
+  query.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+  try {
     asset.preQuery(query, (error: BusinessError, data: Uint8Array) => {
-        if (error) {
-            console.error(`Failed to pre-query Asset.`);
-        } else {
-            console.info(`Succeeded in pre-querying Asset.`);
-            userAuthenticate(data, (isSuccess: boolean, authToken: Uint8Array) => {
-              if (isSuccess) {
-
-              }
-            })
-        }
+      if (error) {
+        console.error(`Failed to pre-query Asset.`);
+        callback(false, new Uint8Array(0))
+      } else {
+        console.info(`Succeeded in pre-querying Asset.`);
+        callback(false, data)
+      }
     });
-} catch (error) {
+  } catch (error) {
     console.error(`Failed to pre-query Asset.`);
+    callback(false, new Uint8Array(0))
+  }
 }
 
+async function queryAsset(challenge: Uint8Array, authToken: Uint8Array, callback: ()=>void) {
+  let query: asset.AssetMap = new Map();
+  query.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+  query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ALL);
+  query.set(asset.Tag.AUTH_CHALLENGE, challenge);
+  query.set(asset.Tag.AUTH_TOKEN, authToken)
+  try {
+    asset.query(query, (error: BusinessError) => {
+      if (error) {
+        console.error(`Failed to query Asset.`);
+      } else {
+        console.info(`Asset query succeeded.`);
+      }
+      callback();
+    });
+  } catch (error) {
+    console.error(`Failed to query Asset.`);
+    callback();
+  }
+}
 
+async function postQueryAsset(challenge: Uint8Array) {
+  let handle: asset.AssetMap = new Map();
+  handle.set(asset.Tag.AUTH_CHALLENGE, challenge);
+  try {
+    asset.query(handle, (error: BusinessError) => {
+      if (error) {
+        console.error(`Failed to post-query Asset.`);
+      } else {
+        console.info(`Succeeded in post-querying Asset.`);
+      }
+    });
+  } catch (error) {
+    console.error(`Failed to post-query Asset.`);
+  }
+}
+
+// step1. 首先，调用asset.preQuery获取挑战值
+preQueryAsset((isSuccess: boolean, challenge: Uint8Array) => {
+  if (isSuccess) {
+    // step2. 传入挑战值，拉起用户认证框
+    userAuthenticate(challenge, (isSuccess: boolean, authToken: Uint8Array) => {
+      if (isSuccess) {
+        // step3.1 用户认证通过后，传入挑战值和授权令牌，查询关键资产明文
+        queryAsset(challenge, authToken, () => {
+          // step4. 最后，无论关键资产明文查询是否成功，都需要调用asset.postQuery进行查询的后置处理，进行资源释放。
+          postQueryAsset(challenge);
+        })
+      } else {
+        // step3.2 用户认证不通过，也需要传入挑战值，调用asset.postQuery进行查询的后置处理，进行资源释放。
+        postQueryAsset(challenge);
+      }
+    })
+  }
+})
 ```
 
 ### 约束和限制
 
-
-
-
+NA
 
 ## 更新关键资产
 
@@ -408,9 +460,22 @@ try {
 
 query的参数列表：
 
-| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明   |
-| --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------ |
-| ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 必选     | 关键资产别名，每条关键资产的唯一索引                         |
+| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明                                             |
+| --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------ |
+| ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 必选     | 关键资产别名，每条关键资产的唯一索引;            |
+| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 访问控制属性                                     |
+| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 关键资产是否仅在设置了锁屏密码的情况下可访问     |
+| AUTH_TYPE             | 类型为number，详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) | 可选     | 访问关键资产所需的用户认证类型                   |
+| SYNC_TYPE             | 类型为number，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) | 可选     | 关键资产支持的同步类型                           |
+| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 关键资产在应用卸载时是否需要保留                 |
+| DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_CRITICAL_2 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_CRITICAL_3 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_CRITICAL_4 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_NORMAL_1   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+| DATA_LABEL_NORMAL_2   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+| DATA_LABEL_NORMAL_3   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+| DATA_LABEL_NORMAL_4   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护 |
 
 
 attributesToUpdate的参数列表：
@@ -426,22 +491,22 @@ attributesToUpdate的参数列表：
 
 ### 代码示例
 
-以Callback形式的接口调用为例，更新别名是demo_alias的关键资产。
+以Callback形式的接口调用为例，更新别名是demo_alias的关键资产，将关键资产明文更新为demo_pwd_new。
 
 ```typescript
 import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 import { BusinessError } from '@ohos.base';
 
-function StringToArray(str: string): Uint8Array {
+function stringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
 let query: asset.AssetMap = new Map();
-query.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+query.set(asset.Tag.ALIAS, stringToArray('demo_alias'));
 let attrsToUpdate: asset.AssetMap = new Map();
-attrsToUpdate.set(asset.Tag.SECRET, StringToArray('demo_pwd_new'));
+attrsToUpdate.set(asset.Tag.SECRET, stringToArray('demo_pwd_new'));
 try {
     asset.update(query, attrsToUpdate, (error: BusinessError) => {
         if (error) {
@@ -457,6 +522,8 @@ try {
 
 ### 约束和限制
 
+NA
+
 
 ## 删除关键资产
 
@@ -470,23 +537,22 @@ try {
 
 参数列表：
 
-| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明                                                         |
-| --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------ |
-| ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 可选     | 关键资产别名，每条关键资产的唯一索引;                        |
-| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 访问控制属性                                                 |
-| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 关键资产是否仅在设置了锁屏密码的情况下可访问                 |
-| AUTH_TYPE             | 类型为number，详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) | 可选     | 访问关键资产所需的用户认证类型                               |
-| SYNC_TYPE             | 类型为number，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) | 可选     | 关键资产支持的同步类型                                       |
-| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 关键资产在应用卸载时是否需要保留                             |
-| DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
-| DATA_LABEL_CRITICAL_2 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
-| DATA_LABEL_CRITICAL_3 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
-| DATA_LABEL_CRITICAL_4 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
-| DATA_LABEL_NORMAL_1   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
-| DATA_LABEL_NORMAL_2   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
-| DATA_LABEL_NORMAL_3   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
-| DATA_LABEL_NORMAL_4   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
-| RETURN_TYPE           | 类型为number，取值范围详见[asset.ReturnType](#asset.ReturnType) | 可选     | 关键资产查询结果类型                                         |
+| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明                                             |
+| --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------ |
+| ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 可选     | 关键资产别名，每条关键资产的唯一索引;            |
+| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 访问控制属性                                     |
+| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 关键资产是否仅在设置了锁屏密码的情况下可访问     |
+| AUTH_TYPE             | 类型为number，详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) | 可选     | 访问关键资产所需的用户认证类型                   |
+| SYNC_TYPE             | 类型为number，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) | 可选     | 关键资产支持的同步类型                           |
+| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 关键资产在应用卸载时是否需要保留                 |
+| DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_CRITICAL_2 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_CRITICAL_3 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_CRITICAL_4 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
+| DATA_LABEL_NORMAL_1   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+| DATA_LABEL_NORMAL_2   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+| DATA_LABEL_NORMAL_3   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护 |
+| DATA_LABEL_NORMAL_4   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护 |
 
 ### 代码示例
 
@@ -497,13 +563,13 @@ import asset from '@ohos.security.asset';
 import util from '@ohos.util';
 import { BusinessError } from '@ohos.base';
 
-function StringToArray(str: string): Uint8Array {
+function stringToArray(str: string): Uint8Array {
   let textEncoder = new util.TextEncoder();
   return textEncoder.encodeInto(str);
 }
 
 let query: asset.AssetMap = new Map();
-query.set(asset.Tag.ALIAS, StringToArray('demo_alias'));
+query.set(asset.Tag.ALIAS, stringToArray('demo_alias')); // 此处指定别名删除，也可不指定别名删除多条数据
 try {
     asset.remove(query, (error: BusinessError) => {
         if (error) {
@@ -518,3 +584,5 @@ try {
 ```
 
 ### 约束和限制
+
+NA
