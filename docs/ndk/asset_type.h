@@ -112,7 +112,7 @@ typedef enum {
     ASSET_TAG_SYNC_TYPE = ASSET_TYPE_NUMBER | 0x10,
     /**
      * 表示关键资产是否需持久化存储，其值为bool类型。
-     * 仅在调用{@link OH_Asset_Add}函数时传入该属性需要校验权限。
+     * 仅在调用OH_Asset_Add函数时传入该属性需要校验权限。
      *
      * @permission ohos.permission.STORE_PERSISTENT_DATA
      */
