@@ -378,5 +378,7 @@ static napi_value RemoveAsset(napi_env env, napi_callback_info info) {
 
 ### 约束和限制
 
-NA
+无
 
+// todo: 依据js guide lines修改本文，并将函数重新封装
+// todo: ndk type资料修改，根据js刷新

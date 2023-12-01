@@ -25,11 +25,11 @@ function add(attributes: AssetMap, callback: AsyncCallback<void>): void
 | 参数名     | 类型                 | 必填 | 说明                                                         |
 | ---------- | -------------------- | ---- | ------------------------------------------------------------ |
 | attributes | AssetMap             | 是   | 待新增关键资产的属性集合，包括关键资产明文、访问控制属性、自定义数据等。 |
-| callback   | AsyncCallback\<void> | 是   | 关键资产写入结果的回调，未捕获到error代表关键资产写入成功，若捕获到error，则代表关键资产写入失败。 |
+| callback   | AsyncCallback\<void> | 是   | 关键资产新增结果的回调，未捕获到error代表关键资产新增成功，若捕获到error，则代表关键资产新增失败。 |
 
 **错误码：**
 
-以下错误码的详细介绍请参见[关键资产存储错误码](../errorcodes/errorcode-asset.md)
+以下错误码的详细介绍请参见[关键资产存储服务错误码](../errorcodes/errorcode-asset.md)
 
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
@@ -101,7 +101,7 @@ function add(attributes: AssetMap): Promise<void>
 
 **错误码：**
 
-以下错误码的详细介绍请参见[关键资产存储错误码](../errorcodes/errorcode-asset.md)
+以下错误码的详细介绍请参见[关键资产存储服务错误码](../errorcodes/errorcode-asset.md)
 
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
@@ -161,11 +161,11 @@ function remove(query: AssetMap, callback: AsyncCallback<void>): void
 | 参数名   | 类型                 | 必填 | 说明                                                         |
 | -------- | -------------------- | ---- | ------------------------------------------------------------ |
 | query    | AssetMap             | 是   | 待删除关键资产的搜索条件，如别名、访问控制属性、自定义数据等。       |
-| callback | AsyncCallback\<void> | 是   | 关键资产删除结果的回调，未捕获到error代表关键资产销毁成功，若捕获到error，则代表关键资产销毁失败。 |
+| callback | AsyncCallback\<void> | 是   | 关键资产删除结果的回调，未捕获到error代表关键资产删除成功，若捕获到error，则代表关键资产删除失败。 |
 
 **错误码：**
 
-以下错误码的详细介绍请参见[关键资产存储错误码](../errorcodes/errorcode-asset.md)
+以下错误码的详细介绍请参见[关键资产存储服务错误码](../errorcodes/errorcode-asset.md)
 
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
@@ -230,7 +230,7 @@ function remove(query: AssetMap): Promise<void>
 
 **错误码：**
 
-以下错误码的详细介绍请参见[关键资产存储错误码](../errorcodes/errorcode-asset.md)
+以下错误码的详细介绍请参见[关键资产存储服务错误码](../errorcodes/errorcode-asset.md)
 
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
@@ -274,7 +274,7 @@ try {
 
 function update(query: AssetMap, attributesToUpdate: AssetMap, callback: AsyncCallback<void>): void
 
-更新符合匹配条件的一条关键资产，使用Callback回调异步返回结果。
+更新符合条件的一条关键资产，使用Callback回调异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -288,7 +288,7 @@ function update(query: AssetMap, attributesToUpdate: AssetMap, callback: AsyncCa
 
 **错误码：**
 
-以下错误码的详细介绍请参见[关键资产存储错误码](../errorcodes/errorcode-asset.md)
+以下错误码的详细介绍请参见[关键资产存储服务错误码](../errorcodes/errorcode-asset.md)
 
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
@@ -339,7 +339,7 @@ try {
 
 function update(query: AssetMap, attributesToUpdate: AssetMap): Promise<void>
 
-更新符合匹配条件的一条关键资产，使用Promise方式异步返回结果。
+更新符合条件的一条关键资产，使用Promise方式异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -358,7 +358,7 @@ function update(query: AssetMap, attributesToUpdate: AssetMap): Promise<void>
 
 **错误码：**
 
-以下错误码的详细介绍请参见[关键资产存储错误码](../errorcodes/errorcode-asset.md)
+以下错误码的详细介绍请参见[关键资产存储服务错误码](../errorcodes/errorcode-asset.md)
 
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
@@ -406,7 +406,7 @@ try {
 
 function preQuery(query: AssetMap, callback: AsyncCallback<Uint8Array>): void
 
-查询的预处理，用于需要用户认证的关键资产。在用户认证成功后，应当随后调用asset.query、asset.postQuery。使用Callback回调异步返回结果。
+查询的预处理，用于需要用户认证的关键资产。在用户认证成功后，应当随后调用[asset.query](#asset.query)、[asset.postQuery](#asset.postQuery)。使用Callback回调异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -414,12 +414,12 @@ function preQuery(query: AssetMap, callback: AsyncCallback<Uint8Array>): void
 
 | 参数名   | 类型                       | 必填 | 说明                                                         |
 | -------- | -------------------------- | ---- | ------------------------------------------------------------ |
-| query    | AssetMap                   | 是   | 待查询关键资产的搜索条件，如别名、访问控制属性、自定义数据等。       |
-| callback | AsyncCallback\<Uint8Array> | 是   | 关键资产预查询结果的回调，未捕获到error时，返回安全随机数，表示预查询成功，若捕获到error，则代表关键资产预查询失败。 |
+| query    | AssetMap                   | 是   | 关键资产的查询条件，如别名、访问控制属性、自定义数据等。       |
+| callback | AsyncCallback\<Uint8Array> | 是   | 关键资产查询预处理结果的回调，未捕获到error时，返回挑战值，表示预处理成功，若捕获到error，则代表关键资产预处理失败。<br>注：挑战值用于后续用户认证。 |
 
 **错误码：**
 
-以下错误码的详细介绍请参见[关键资产存储错误码](../errorcodes/errorcode-asset.md)
+以下错误码的详细介绍请参见[关键资产存储服务错误码](../errorcodes/errorcode-asset.md)
 
 | 错误码ID | 错误信息                                                     |
 | -------- | ------------------------------------------------------------ |
@@ -469,7 +469,7 @@ try {
 
 function preQuery(query: AssetMap): Promise<Uint8Array>
 
-查询的预处理，用于需要用户认证的关键资产。在用户认证成功后，应当随后调用asset.query、asset.postQuery。使用Promist方式异步返回结果。
+查询的预处理，用于需要用户认证的关键资产。在用户认证成功后，应当随后调用[asset.query](#asset.query)、[asset.postQuery](#asset.postQuery)。使用Promist方式异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -477,17 +477,17 @@ function preQuery(query: AssetMap): Promise<Uint8Array>
 
 | 参数名 | 类型     | 必填 | 说明                                                   |
 | ------ | -------- | ---- | ------------------------------------------------------ |
-| query  | AssetMap | 是   | 待查询关键资产的搜索条件，如别名、访问控制属性、自定义数据等。 |
+| query  | AssetMap | 是   | 关键资产的查询条件，如别名、访问控制属性、自定义数据等。 |
 
 **返回值：**
 
 | 类型                | 说明                                                  |
 | ------------------- | ----------------------------------------------------- |
-| Promise<Uint8Array> | Promise对象，返回安全随机数，作为用户认证时的挑战值。 |
+| Promise<Uint8Array> | Promise对象，返回挑战值。<br>注：挑战值用于后续用户认证。 |
 
 **错误码：**
 
-以下错误码的详细介绍请参见[关键资产存储错误码](../errorcodes/errorcode-asset.md)
+以下错误码的详细介绍请参见[关键资产存储服务错误码](../errorcodes/errorcode-asset.md)
 
 | 错误码ID | 错误信息                                                     |
 | -------- | ------------------------------------------------------------ |
@@ -534,7 +534,7 @@ try {
 
 function query(query: AssetMap, callback: AsyncCallback<Array<AssetMap>>): void
 
-查询一条或多条符合匹配条件的关键资产。若查询需要用户认证的关键资产，则需要在本函数前调用asset.preQuery，在本函数户后调用asset.postQuery。使用Callback回调异步返回结果。
+查询一条或多条符合条件的关键资产。若查询需要用户认证的关键资产，则需要在本函数前调用[asset.preQuery](#asset.preQuery)，在本函数后调用[asset.postQuery](#asset.postQuery)，开发步骤请参考[开发指导](../../security/asset-js-guidelines.md#查询需要用户认证的关键资产)。使用Callback回调异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -542,12 +542,12 @@ function query(query: AssetMap, callback: AsyncCallback<Array<AssetMap>>): void
 
 | 参数名   | 类型                       | 必填 | 说明                                                         |
 | -------- | -------------------------- | ---- | ------------------------------------------------------------ |
-| query    | AssetMap                   | 是   | 待查询关键资产的搜索条件，如别名、访问控制属性、自定义数据等。       |
+| query    | AssetMap                   | 是   | 关键资产的查询条件，如别名、访问控制属性、自定义数据等。       |
 | callback | AsyncCallback\<Uint8Array> | 是   | 关键资产查询结果的回调，未捕获到error时，返回查询结果列表，表示查询成功，若捕获到error，则代表关键资产查询失败。 |
 
 **错误码：**
 
-以下错误码的详细介绍请参见[关键资产存储错误码](../errorcodes/errorcode-asset.md)
+以下错误码的详细介绍请参见[关键资产存储服务错误码](../errorcodes/errorcode-asset.md)
 
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
@@ -597,7 +597,7 @@ try {
 
 function query(query: AssetMap): Promise<Array<AssetMap>>
 
-查询一条或多条符合匹配条件的关键资产。若查询需要用户认证的关键资产，则需要在本函数前调用asset.preQuery，在本函数户后调用asset.postQuery。使用Promise回调异步返回结果。
+查询一条或多条符合匹配条件的关键资产。若查询需要用户认证的关键资产，则需要在本函数前调用[asset.preQuery](#asset.preQuery)，在本函数后调用[asset.postQuery](#asset.postQuery)，开发步骤请参考[开发指导](../../security/asset-js-guidelines.md#查询需要用户认证的关键资产)。使用Promise回调异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -605,7 +605,7 @@ function query(query: AssetMap): Promise<Array<AssetMap>>
 
 | 参数名   | 类型                            | 必填 | 说明                                                         |
 | -------- | ------------------------------- | ---- | ------------------------------------------------------------ |
-| query    | AssetMap                        | 是   | 待查询关键资产的搜索条件，如别名、访问控制属性、自定义数据等。       |
+| query    | AssetMap                        | 是   | 关键资产的查询条件，如别名、访问控制属性、自定义数据等。       |
 
 **返回值：**
 
@@ -615,7 +615,7 @@ function query(query: AssetMap): Promise<Array<AssetMap>>
 
 **错误码：**
 
-以下错误码的详细介绍请参见[关键资产存储错误码](../errorcodes/errorcode-asset.md)
+以下错误码的详细介绍请参见[关键资产存储服务错误码](../errorcodes/errorcode-asset.md)
 
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
@@ -663,7 +663,7 @@ try {
 
 function postQuery(handle: AssetMap, callback: AsyncCallback<void>): void
 
-查询的后置处理，用于需要用户认证的关键资产。仅查询需要用户认证的关键资产，且在本函数前asset.preQuery调用成功后需要调用。使用Callback回调异步返回结果。
+查询的后置处理（如：资源释放），用于需要用户认证的关键资产。需与[asset.preQuery](#asset.preQuery)函数成对出现。使用Callback回调异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -671,12 +671,12 @@ function postQuery(handle: AssetMap, callback: AsyncCallback<void>): void
 
 | 参数名   | 类型                 | 必填 | 说明                                                         |
 | -------- | -------------------- | ---- | ------------------------------------------------------------ |
-| handle   | AssetMap             | 是   | 待释放的资源句柄，即asset.preQuery执行成功返回的安全随机数。 |
-| callback | AsyncCallback\<void> | 是   | 资源释放的回调，未捕获到error代表处理成功，若捕获到error，则代表处理失败。 |
+| handle   | AssetMap             | 是   | 待处理的查询句柄，当前包含[asset.preQuery](#asset.preQuery)执行成功返回的挑战值。 |
+| callback | AsyncCallback\<void> | 是   | 后置处理的回调，未捕获到error代表处理成功，若捕获到error，则代表处理失败。 |
 
 **错误码：**
 
-以下错误码的详细介绍请参见[关键资产存储错误码](../errorcodes/errorcode-asset.md)
+以下错误码的详细介绍请参见[关键资产存储服务错误码](../errorcodes/errorcode-asset.md)
 
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
@@ -695,7 +695,7 @@ import asset from '@ohos.security.asset';
 import { BusinessError } from '@ohos.base';
 
 let handle: asset.AssetMap = new Map();
-// 此处传入的new Uint8Array(32)仅作为示例，实际应传入asset.preQuery执行成功返回的安全随机数
+// 此处传入的new Uint8Array(32)仅作为示例，实际应传入asset.preQuery执行成功返回的挑战值。
 handle.set(asset.Tag.AUTH_CHALLENGE, new Uint8Array(32));
 try {
     asset.postQuery(handle, (error: BusinessError) => {
@@ -714,7 +714,7 @@ try {
 
 function postQuery(handle: AssetMap): Promise<void>
 
-查询的后置处理，用于需要用户认证的关键资产。仅查询需要用户认证的关键资产，且在本函数前asset.preQuery调用成功后需要调用。使用Promise方式异步返回结果。
+查询的后置处理，用于需要用户认证的关键资产。需与[asset.preQuery](#asset.preQuery)函数成对出现。使用Promise方式异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -722,7 +722,7 @@ function postQuery(handle: AssetMap): Promise<void>
 
 | 参数名 | 类型     | 必填 | 说明                                                         |
 | ------ | -------- | ---- | ------------------------------------------------------------ |
-| handle | AssetMap | 是   | 待释放的资源句柄，即asset.preQuery执行成功返回的安全随机数。 |
+| handle | AssetMap | 是   | 待处理的查询句柄，当前包含[asset.preQuery](#asset.preQuery)执行成功返回的挑战值。 |
 
 **返回值：**
 
@@ -732,7 +732,7 @@ function postQuery(handle: AssetMap): Promise<void>
 
 **错误码：**
 
-以下错误码的详细介绍请参见[关键资产存储错误码](../errorcodes/errorcode-asset.md)
+以下错误码的详细介绍请参见[关键资产存储服务错误码](../errorcodes/errorcode-asset.md)
 
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
@@ -765,7 +765,7 @@ try {
 
 ## asset.Tag
 
-关键资产属性名称，用作[asset.AssetMap](#asset.AssetMap)的键。
+关键资产属性的名称，用作[asset.AssetMap](#asset.AssetMap)的键。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -773,7 +773,7 @@ try {
 
 type Value = boolean | number | Uint8Array;
 
-关键资产属性值，用作[asset.AssetMap](#asset.AssetMap)的值。
+关键资产属性的内容，用作[asset.AssetMap](#asset.AssetMap)的值。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -781,49 +781,43 @@ type Value = boolean | number | Uint8Array;
 
 type AssetMap = Map<Tag, Value>
 
-描述关键资产属性的键-值对集合，每个键最多传入一次。
+关键资产属性的键-值对集合。
 
 **系统能力：** SystemCapability.Security.Asset
 
 **参数：**
 
-| 属性名（类型：asset.Tag） | 属性值（类型：asset.Value）                                  | 说明                                                         |
+| 属性名称（类型：asset.Tag） | 属性内容（类型：asset.Value）                                  | 说明                                                         |
 | ------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | SECRET                    | 类型为Uint8Array，长度为1-1024字节                           | 关键资产明文                                                 |
 | ALIAS                     | 类型为Uint8Array，长度为1-256字节                            | 关键资产别名，每条关键资产的唯一索引                         |
 | ACCESSIBILITY             | 类型为number，取值范围详见[asset.Accessibility](#asset.Accessibility) | 基于锁屏状态的访问控制                                       |
-| REQUIRE_PASSWORD_SET      | 类型为bool                                                   | 关键资产是否仅在设置了锁屏密码的情况下可访问                 |
+| REQUIRE_PASSWORD_SET      | 类型为bool                                                   | 是否仅在设置了锁屏密码的情况下，可访问关键资产                 |
 | AUTH_TYPE                 | 类型为number，取值范围详见[asset.AuthType](#asset.AuthType)  | 访问关键资产所需的用户认证类型                               |
 | AUTH_VALIDITY_PERIOD      | 类型为number，取值范围：1-600，单位为秒                      | 用户认证的有效期                                             |
-| AUTH_CHALLENGE            | 类型为Uint8Array，长度为32字节                               | 用户认证使用的挑战值                                         |
-| AUTH_TOKEN                | 类型为Uint8Array，长度为148字节                              | 认证通过的授权令牌                                           |
+| AUTH_CHALLENGE            | 类型为Uint8Array，长度为32字节                               | 用户认证的挑战值                                         |
+| AUTH_TOKEN                | 类型为Uint8Array，长度为148字节                              | 用户认证通过的授权令牌                                           |
 | SYNC_TYPE                 | 类型为number，取值范围详见[asset.SyncType](#asset.SyncType)  | 关键资产支持的同步类型                                       |
-| IS_PERSISTENT             | 类型为bool                                                   | 关键资产在应用卸载时是否需要保留<br>**需要权限：**ohos.permission.STORE_PERSISTENT_DATA<br/>**备注：**仅在调用[asset.add](#asset.add)函数时传入该属性需要校验权限 |
-| DATA_LABEL_CRITICAL_1     | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且有完整性保护             |
-| DATA_LABEL_CRITICAL_2     | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且有完整性保护             |
-| DATA_LABEL_CRITICAL_3     | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且有完整性保护             |
-| DATA_LABEL_CRITICAL_4     | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且有完整性保护             |
-| DATA_LABEL_NORMAL_1       | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且无完整性保护             |
-| DATA_LABEL_NORMAL_2       | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且无完整性保护             |
-| DATA_LABEL_NORMAL_3       | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且无完整性保护             |
-| DATA_LABEL_NORMAL_4       | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且无完整性保护             |
-| RETURN_TYPE               | 类型为number，取值范围详见[asset.ReturnType](#asset.ReturnType) | 关键资产查询结果类型                                         |
-| RETURN_LIMIT              | 类型为number                                                 | 关键资产查询结果数量                                         |
-| RETURN_OFFSET             | 类型为number，取值范围：1-65536                              | 满足查询条件的关键资产偏移量                                 |
-| RETURN_ORDERED_BY         | 类型为number，取值范围：asset.Tag.DATA_LABEL_xxx             | 关键资产查询结果排序依据，仅支持指定按照附属信息排序，不指定的情况下，默认按照关键资产写入的顺序排序。 |
-| CONFLICT_RESOLUTION       | 类型为number，取值范围详见[asset.ConflictResolution](#asset.ConflictResolution) | 写入同别名的关键资产时的处理策略                             |
+| IS_PERSISTENT             | 类型为bool                                                   | 在应用卸载时是否需要保留关键资产<br>**需要权限：**ohos.permission.STORE_PERSISTENT_DATA<br/>**备注：**仅在调用[asset.add](#asset.add)函数并传入该属性时需要校验权限 |
+| DATA_LABEL_CRITICAL_1<br>DATA_LABEL_CRITICAL_2<br>DATA_LABEL_CRITICAL_3<br>DATA_LABEL_CRITICAL_4     | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且**有完整性保护**             |
+| DATA_LABEL_NORMAL_1<br>DATA_LABEL_NORMAL_2<br>DATA_LABEL_NORMAL_3<br>DATA_LABEL_NORMAL_4       | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且**无完整性保护**             |
+| RETURN_TYPE               | 类型为number，取值范围详见[asset.ReturnType](#asset.ReturnType) | 关键资产查询返回的结果类型                                         |
+| RETURN_LIMIT              | 类型为number                                                 | 关键资产查询返回的结果数量                                         |
+| RETURN_OFFSET             | 类型为number，取值范围：1-65536                              | 关键资产查询返回的结果偏移量<br>注：用于分批查询场景，指定从第几个开始返回                                 |
+| RETURN_ORDERED_BY         | 类型为number，取值范围：asset.Tag.DATA_LABEL_xxx             | 关键资产查询返回的结果排序依据，仅支持按照附属信息排序，不指定的情况下，默认按照关键资产新增的顺序返回。 |
+| CONFLICT_RESOLUTION       | 类型为number，取值范围详见[asset.ConflictResolution](#asset.ConflictResolution) | 新增同别名的关键资产时的处理策略                             |
 
 ## asset.Accessibility
 
-关键资产的访问控制属性。
+关键资产基于锁屏状态的访问控制。
 
 **系统能力：** SystemCapability.Security.Asset
 
 | 名称                  | 值   | 说明                                                         |
 | --------------------- | ---- | ------------------------------------------------------------ |
-| DEVICE_POWER_ON       | 0    | 关键资产在设备开机后可访问                                   |
-| DEVICE_FIRST_UNLOCKED | 1    | 关键资产在设备首次解锁后可访问<br>**备注：**设备未设置锁屏密码时，等同于设备开机后可访问 |
-| DEVICE_UNLOCKED       | 2    | 关键资产在设备处于解锁状态时可访问<br/>**备注：**设备未设置锁屏密码时，等同于设备开机后可访问 |
+| DEVICE_POWER_ON       | 0    | 开机后可访问                                   |
+| DEVICE_FIRST_UNLOCKED | 1    | 首次解锁后可访问<br>**备注：**未设置锁屏密码时，等同于开机后可访问 |
+| DEVICE_UNLOCKED       | 2    | 解锁状态时可访问<br/>**备注：**未设置锁屏密码时，等同于开机后可访问 |
 
 ## asset.AuthType
 
@@ -845,27 +839,27 @@ type AssetMap = Map<Tag, Value>
 | 名称           | 值   | 说明                                             |
 | -------------- | ---- | ------------------------------------------------ |
 | NEVER          | 0    | 不允许同步关键资产                               |
-| THIS_DEVICE    | 1    | 只在本设备进行同步，如PC备份场景，仅在设备还原。 |
-| TRUSTED_DEVICE | 2    | 只在可信设备间进行同步，如克隆场景。             |
+| THIS_DEVICE    | 1    | 只在本设备进行同步，如仅在本设备还原的备份场景。    |
+| TRUSTED_DEVICE | 2    | 只在可信设备间进行同步，如克隆场景。               |
 
 ## asset.ReturnType
 
-关键资产查询结果类型。
+关键资产查询返回的结果类型。
 
 **系统能力：** SystemCapability.Security.Asset
 
 | 名称       | 值   | 说明                                                         |
 | ---------- | ---- | ------------------------------------------------------------ |
-| ALL        | 0    | 返回关键资产明文及属性<br/>**备注：**仅支持查询单条关键资产明文 |
-| ATTRIBUTES | 1    | 返回关键资产属性，不含关键资产明文<br>**备注：**无需解密，可批量查询多条关键资产 |
+| ALL        | 0    | 返回关键资产明文及属性<br/>**备注：**查询单条关键资产明文时，需设置此类型 |
+| ATTRIBUTES | 1    | 返回关键资产属性，不含关键资产明文<br>**备注：**批量查询关键资产属性时，需设置此类型 |
 
 ## asset.ConflictResolution
 
-写入同别名的关键资产时的处理策略。
+新增关键资产时的冲突（如：别名相同）处理策略。
 
 **系统能力：** SystemCapability.Security.Asset
 
 | 名称        | 值   | 说明                         |
 | ----------- | ---- | ---------------------------- |
-| OVERWRITE   | 0    | 覆盖同别名的关键资产数据     |
+| OVERWRITE   | 0    | 覆盖原有的关键资产     |
 | THROW_ERROR | 1    | 抛出异常，由业务进行后续处理 |

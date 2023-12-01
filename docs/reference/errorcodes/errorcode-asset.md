@@ -1,4 +1,5 @@
 # 关键资产存储错误码
+// todo: 错误码描述信息全局更新下，包括JS、NDK的DOC
 
 > **说明：**
 >
@@ -32,24 +33,24 @@ The queried Asset can not be found.
 **处理步骤**
 
 1. 根据别名确认该关键资产是否已经写入过，或已经删除。
-2. 重新写入关键资产，再查询该关键资产。
+2. 重新写入关键资产，再访问该关键资产。
 
 ## 24000003 关键资产已存在
 
 **错误信息**
 
-The added Asset already exists.
+The added Asset already exists. 
 
 **可能原因**
 
-业务请求写入同别名的关键资产，即asset.Tag.ALIAS属性相同的关键资产。
+已存在同别名（asset.Tag.ALIAS相同）的关键资产。
 
 **处理步骤**
 
 请先确认写入同别名的关键资产是否符合预期，如果不符合需排查别名是否错误，如果符合则可通过以下任意一种方式处理：
 
-1. 先调用asset.remove销毁该别名的关键资产，再调用asset.add重新写入。
-2. 调用asset.add时，需要指定参数asset.Tag.CONFLICT_RESOLUTION的值为asset.ConflictResolution.OVERWRITE
+1. 先调用asset.remove删除同别名的关键资产，再调用asset.add重新写入。
+2. 调用asset.add时，指定参数asset.Tag.CONFLICT_RESOLUTION的值为asset.ConflictResolution.OVERWRITE
 
 ## 24000004 拒绝访问关键资产
 
@@ -59,14 +60,15 @@ The access to Asset is denied.
 
 **可能原因**
 
-1. 业务在调用asset.query查询关键资产前，没有调用asset.preQuery预查询关键资产。
+1. 在访问需要用户认证的关键资产前，用户认证失败。
 
-2. 用户在访问需要用户认证的关键资产前，没有进行用户认证。
+2. 挑战值与授权令牌不匹配。
 
 **处理步骤**
 
-1. 业务在调用asset.query查询关键资产前，先调用asset.preQuery预查询关键资产。
-2. 用户在访问需要用户认证的关键资产前，先进行用户认证。
+1. 用户在访问需要用户认证的关键资产前，先进行用户认证。
+
+2. 传递匹配的挑战值与授权令牌。
 
 ## 24000005 锁屏状态不匹配
 
@@ -76,13 +78,13 @@ The screen lock status mismatches.
 
 **可能原因**
 
-1. 在设备处于未设置锁屏密码的状态下，访问仅设备设置密码时才允许访问的关键资产。
-2. 在设备未完成首次解锁的状态下，访问仅设备首次解锁才允许访问的关键资产。
-3. 在设备未处于解锁状态下，访问仅设备处于解锁才允许访问的关键资产。
+1. 在设备处于未设置锁屏密码的状态下，访问仅设置密码才允许访问的关键资产。
+2. 在设备未完成首次解锁的状态下，访问仅首次解锁后才允许访问的关键资产。
+3. 在设备未处于解锁状态下，访问仅解锁时才允许访问的关键资产。
 
 **处理步骤**
 
-给设备设置锁屏密码或解锁后，再访问关键资产。
+设置锁屏密码或解锁后，再访问关键资产。
 
 ## 24000006 系统内存不足
 
@@ -96,7 +98,7 @@ Insufficient memory.
 
 **处理步骤**
 
-清理后台，重新发起处理请求。
+关闭已打开的其他应用，重新发起处理请求。
 
 ## 24000007 关键资产损坏
 
@@ -106,13 +108,11 @@ The Asset is corrupted.
 
 **可能原因**
 
-因设备掉电导致存储的关键资产损坏。
+因设备掉电或存储系统异常导致的关键资产文件损坏。
 
 **处理步骤**
 
-调试阶段：删除data/service/el1/public/asset_service/asset.db文件，重新发起处理请求。
-
-发布阶段：恢复出厂设置。
+恢复出厂设置。
 
 ## 24000008 数据库操作失败
 
@@ -154,7 +154,7 @@ IPC communication is failed.
 
 **处理步骤**
 
-查看错误信息，排查进程IPC通信异常原因。
+查看错误信息，排查IPC通信异常原因。
 
 ## 24000011 包管理服务异常
 
@@ -164,7 +164,7 @@ The operation of calling bundle manager service is failed.
 
 **可能原因**
 
-包管理（Bundle Framework）服务异常。
+包管理服务异常。
 
 **处理步骤**
 
@@ -178,7 +178,7 @@ The operation of calling OS account service is failed.
 
 **可能原因**
 
-账号系统（OS Account）异常。
+账号系统异常。
 
 **处理步骤**
 
@@ -192,7 +192,7 @@ The operation of calling access token service is failed.
 
 **可能原因**
 
-访问控制（Access Token）服务异常。
+访问控制服务异常。
 
 **处理步骤**
 
@@ -206,11 +206,12 @@ The operation of file is failed.
 
 **可能原因**
 
-业务手动删除了设备中data/service/el1/public/asset_service某一级目录
+1. 业务手动删除了设备中data/service/el1/public/asset_service某一级目录。
+2. 文件系统损坏。
 
 **处理步骤**
 
-重启设备。
+重启设备，若仍未解决，请恢复出厂设置。
 
 ## 24000015 获取系统时间失败
 

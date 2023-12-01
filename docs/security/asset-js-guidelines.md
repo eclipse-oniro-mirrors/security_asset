@@ -56,11 +56,11 @@
 
 ### 接口介绍
 
-接口文档链接：
+接口文档链接：// todo : 1. 加\<void> 2. 刷表格
 
-[function add(attributes: AssetMap, callback: AsyncCallback<void>): void](../reference/apis/js-apis-asset.md#asset.add)
+[function add(attributes: AssetMap, callback: AsyncCallback\<void>): void](../reference/apis/js-apis-asset.md#asset.add)
 
-[function add(attributes: AssetMap): Promise<void>](../reference/apis/js-apis-asset.md#asset.add-1)
+[function add(attributes: AssetMap): Promise\<void>](../reference/apis/js-apis-asset.md#asset.add-1)
 
 参数列表：
 
@@ -126,7 +126,7 @@ try {
 
 ASSET为业务预留了8个关键资产自定义属性，命名以"DATA_LABEL"开头。对于超过8个自定义属性的情况，业务可以将多段数据按照一定的格式（如JSON）拼接到同一个ASSET属性中。
 
-ASSET对部分属性会进行完整性保护，这部分属性命名以"DATA_LABEL_CRITICAL"开头，且写入后不支持更新。
+ASSET对部分属性会进行完整性保护，这部分属性命名以"DATA_LABEL_CRITICAL"开头，写入后不支持更新。
 
 
 ## 查询关键资产
@@ -178,7 +178,7 @@ function stringToArray(str: string): Uint8Array {
 
 let query: asset.AssetMap = new Map();
 query.set(asset.Tag.ALIAS, stringToArray('demo_alias')); // 指定了关键资产别名，最多查询到一条满足条件的关键资产
-query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ALL);  // 此处表示需要返回每条关键资产的所有信息，即属性+明文
+query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ALL);  // 此处表示需要返回关键资产的所有信息，即属性+明文
 try {
     asset.query(query, (error: BusinessError) => {
         if (error) {
@@ -208,7 +208,7 @@ function stringToArray(str: string): Uint8Array {
 
 let query: asset.AssetMap = new Map();
 query.set(asset.Tag.ALIAS, stringToArray('demo_alias'));       // 指定了关键资产别名，最多查询到一条满足条件的关键资产
-query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ATTRIBUTES); // 此处表示需要返回仅返回关键资产属性，不包含关键资产明文
+query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ATTRIBUTES); // 此处表示仅返回关键资产属性，不包含关键资产明文
 try {
     asset.query(query, (error: BusinessError) => {
         if (error) {
@@ -237,7 +237,7 @@ function stringToArray(str: string): Uint8Array {
 }
 
 let query: asset.AssetMap = new Map();
-query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ATTRIBUTES); // 此处表示需要返回仅返回关键资产属性，不包含关键资产明文
+query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ATTRIBUTES); // 此处表示仅返回关键资产属性，不包含关键资产明文
 query.set(asset.Tag.DATA_LABEL_NORMAL_1, stringToArray('demo_label'));
 query.set(asset.Tag.RETURN_OFFSET, 5); // 此处表示查询结果的偏移量，即从满足条件的第5条关键资产开始返回
 query.set(asset.Tag.RETURN_LIMIT, 10); // 此处表示查询10条满足条件的关键资产
@@ -421,7 +421,7 @@ async function postQueryAsset(challenge: Uint8Array) {
   }
 }
 
-// step1. 首先，调用asset.preQuery获取挑战值
+// step1. 调用asset.preQuery获取挑战值
 preQueryAsset((isSuccess: boolean, challenge: Uint8Array) => {
   if (isSuccess) {
     // step2. 传入挑战值，拉起用户认证框
@@ -429,11 +429,11 @@ preQueryAsset((isSuccess: boolean, challenge: Uint8Array) => {
       if (isSuccess) {
         // step3.1 用户认证通过后，传入挑战值和授权令牌，查询关键资产明文
         queryAsset(challenge, authToken, () => {
-          // step4. 最后，无论关键资产明文查询是否成功，都需要调用asset.postQuery进行查询的后置处理，进行资源释放。
+          // step4. 无论关键资产明文查询是否成功，都需要调用asset.postQuery进行查询的后置处理，如资源释放。
           postQueryAsset(challenge);
         })
       } else {
-        // step3.2 用户认证不通过，也需要传入挑战值，调用asset.postQuery进行查询的后置处理，进行资源释放。
+        // step3.2 用户认证不通过，也需要传入挑战值，调用asset.postQuery进行查询的后置处理，如资源释放。
         postQueryAsset(challenge);
       }
     })
@@ -443,7 +443,7 @@ preQueryAsset((isSuccess: boolean, challenge: Uint8Array) => {
 
 ### 约束和限制
 
-NA
+无
 
 ## 更新关键资产
 
@@ -488,7 +488,7 @@ attributesToUpdate的参数列表：
 
 ### 代码示例
 
-以Callback形式的接口调用为例，更新别名是demo_alias的关键资产，将关键资产明文更新为demo_pwd_new，附加属性更新成demo_label_new。
+以Callback形式的接口调用为例，更新别名是demo_alias的关键资产，将关键资产明文更新为demo_pwd_new，附属属性更新成demo_label_new。
 
 ```typescript
 import asset from '@ohos.security.asset';
@@ -520,7 +520,7 @@ try {
 
 ### 约束和限制
 
-NA
+无
 
 
 ## 删除关键资产
@@ -567,7 +567,7 @@ function stringToArray(str: string): Uint8Array {
 }
 
 let query: asset.AssetMap = new Map();
-query.set(asset.Tag.ALIAS, stringToArray('demo_alias')); // 此处指定别名删除，也可不指定别名删除多条数据
+query.set(asset.Tag.ALIAS, stringToArray('demo_alias')); // 此处指定别名删除单条数据，也可不指定别名删除多条数据
 try {
     asset.remove(query, (error: BusinessError) => {
         if (error) {
@@ -583,4 +583,4 @@ try {
 
 ### 约束和限制
 
-NA
+无
