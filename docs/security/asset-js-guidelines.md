@@ -64,15 +64,15 @@
 
 参数列表：
 
-| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明                                                         |
+| 属性名称（asset.Tag）   | 属性内容（asset.Value）                                        | 是否必选 | 说明                                                         |
 | --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------ |
 | SECRET                | 类型为Uint8Array，长度为1-1024字节                           | 必选     | 关键资产明文                                                 |
 | ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 必选     | 关键资产别名，每条关键资产的唯一索引                         |
-| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 访问控制属性                                                 |
-| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 关键资产是否仅在设置了锁屏密码的情况下可访问                 |
+| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 基于锁屏状态的访问控制                                                 |
+| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 是否仅在设置了锁屏密码的情况下，可访问关键资产                 |
 | AUTH_TYPE             | 类型为number，取值范围详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) | 可选     | 访问关键资产所需的用户认证类型                               |
 | SYNC_TYPE             | 类型为number，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) | 可选     | 关键资产支持的同步类型                                       |
-| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 关键资产在应用卸载时是否需要保留<br>**需要权限：**ohos.permission.STORE_PERSISTENT_DATA |
+| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 在应用卸载时是否需要保留关键资产<br>**需要权限：**ohos.permission.STORE_PERSISTENT_DATA |
 | DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
 | DATA_LABEL_CRITICAL_2 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
 | DATA_LABEL_CRITICAL_3 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
@@ -81,7 +81,7 @@
 | DATA_LABEL_NORMAL_2   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
 | DATA_LABEL_NORMAL_3   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
 | DATA_LABEL_NORMAL_4   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
-| CONFLICT_RESOLUTION   | 类型为number，取值范围详见[asset.ConflictResolution](../reference/apis/js-apis-asset.md#asset.ConflictResolution) | 可选     | 写入同别名的关键资产时的处理策略                             |
+| CONFLICT_RESOLUTION   | 类型为number，取值范围详见[asset.ConflictResolution](../reference/apis/js-apis-asset.md#asset.ConflictResolution) | 可选     | 新增关键资产时的冲突（如：别名相同）处理策略                             |
 
 ### 代码示例
 
@@ -139,14 +139,14 @@ ASSET对部分属性会进行完整性保护，这部分属性命名以"DATA_LAB
 
 参数列表：
 
-| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明                                                         |
+| 属性名称（asset.Tag）   | 属性内容（asset.Value）                                        | 是否必选 | 说明                                                         |
 | --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------ |
 | ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 可选     | 关键资产别名，每条关键资产的唯一索引;                        |
-| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 访问控制属性                                                 |
-| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 关键资产是否仅在设置了锁屏密码的情况下可访问                 |
+| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 基于锁屏状态的访问控制                                                 |
+| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 是否仅在设置了锁屏密码的情况下，可访问关键资产                 |
 | AUTH_TYPE             | 类型为number，取值范围详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) | 可选     | 访问关键资产所需的用户认证类型                               |
 | SYNC_TYPE             | 类型为number，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) | 可选     | 关键资产支持的同步类型                                       |
-| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 关键资产在应用卸载时是否需要保留                             |
+| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 在应用卸载时是否需要保留关键资产                             |
 | DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
 | DATA_LABEL_CRITICAL_2 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
 | DATA_LABEL_CRITICAL_3 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
@@ -155,10 +155,10 @@ ASSET对部分属性会进行完整性保护，这部分属性命名以"DATA_LAB
 | DATA_LABEL_NORMAL_2   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
 | DATA_LABEL_NORMAL_3   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
 | DATA_LABEL_NORMAL_4   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
-| RETURN_TYPE           | 类型为number，取值范围详见[asset.ReturnType](#asset.ReturnType) | 可选     | 关键资产查询结果类型                                         |
-| RETURN_LIMIT          | 类型为number                                                 | 可选     | 关键资产查询结果数量                                         |
-| RETURN_OFFSET         | 类型为number，取值范围：1-65536                              | 可选     | 满足查询条件的关键资产偏移量                                 |
-| RETURN_ORDERED_BY     | 类型为number，取值范围：asset.Tag.DATA_LABEL_xxx             | 可选     | 关键资产查询结果排序依据，仅支持指定按照附属信息排序，不指定的情况下，默认按照关键资产写入的顺序排序。 |
+| RETURN_TYPE           | 类型为number，取值范围详见[asset.ReturnType](#asset.ReturnType) | 可选     | 关键资产查询返回的结果类型                                         |
+| RETURN_LIMIT          | 类型为number                                                 | 可选     | 关键资产查询返回的结果数量                                         |
+| RETURN_OFFSET         | 类型为number，取值范围：1-65536                              | 可选     | 关键资产查询返回的结果偏移量<br>注：用于分批查询场景，指定从第几个开始返回                                 |
+| RETURN_ORDERED_BY     | 类型为number，取值范围：asset.Tag.DATA_LABEL_xxx             | 可选     | 关键资产查询返回的结果排序依据，仅支持按照附属信息排序，不指定的情况下，默认按照关键资产新增的顺序返回。 |
 
 ### 代码示例
 
@@ -275,15 +275,15 @@ try {
 
 preQuery参数列表
 
-| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明                                             |
+| 属性名称（asset.Tag）   | 属性内容（asset.Value）                                        | 是否必选 | 说明                                             |
 | --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------ |
 | ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 可选     | 关键资产别名，每条关键资产的唯一索引;            |
-| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 访问控制属性                                     |
-| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 关键资产是否仅在设置了锁屏密码的情况下可访问     |
+| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 基于锁屏状态的访问控制                                     |
+| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 是否仅在设置了锁屏密码的情况下，可访问关键资产     |
 | AUTH_TYPE             | 类型为number，取值范围详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) | 可选     | 访问关键资产所需的用户认证类型                   |
 | AUTH_VALIDITY_PERIOD  | 类型为number，取值范围：1-600，单位为秒                      | 可选     | 用户认证的有效期                                 |
 | SYNC_TYPE             | 类型为number，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) | 可选     | 关键资产支持的同步类型                           |
-| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 关键资产在应用卸载时是否需要保留                 |
+| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 在应用卸载时是否需要保留关键资产                 |
 | DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
 | DATA_LABEL_CRITICAL_2 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
 | DATA_LABEL_CRITICAL_3 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
@@ -295,17 +295,17 @@ preQuery参数列表
 
 query参数列表
 
-| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明                                             |
+| 属性名称（asset.Tag）   | 属性内容（asset.Value）                                        | 是否必选 | 说明                                             |
 | --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------ |
 | ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 必选     | 关键资产别名，每条关键资产的唯一索引;            |
-| AUTH_CHALLENGE        | 类型为Uint8Array，长度为32字节                               | 必选     | 用户认证使用的挑战值                             |
-| AUTH_TOKEN            | 类型为Uint8Array，长度为148字节                              | 必选     | 认证通过的授权令牌                               |
-| RETURN_TYPE           | 类型为number，asset.ReturnType.ALL                           | 必选     | 关键资产查询结果类型                             |
-| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 访问控制属性                                     |
-| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 关键资产是否仅在设置了锁屏密码的情况下可访问     |
+| AUTH_CHALLENGE        | 类型为Uint8Array，长度为32字节                               | 必选     | 用户认证的挑战值                             |
+| AUTH_TOKEN            | 类型为Uint8Array，长度为148字节                              | 必选     | 用户认证通过的授权令牌                               |
+| RETURN_TYPE           | 类型为number，asset.ReturnType.ALL                           | 必选     | 关键资产查询返回的结果类型                             |
+| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 基于锁屏状态的访问控制                                     |
+| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 是否仅在设置了锁屏密码的情况下，可访问关键资产     |
 | AUTH_TYPE             | 类型为number，取值范围详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) | 可选     | 访问关键资产所需的用户认证类型                   |
 | SYNC_TYPE             | 类型为number，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) | 可选     | 关键资产支持的同步类型                           |
-| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 关键资产在应用卸载时是否需要保留                 |
+| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 在应用卸载时是否需要保留关键资产                 |
 | DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
 | DATA_LABEL_CRITICAL_2 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
 | DATA_LABEL_CRITICAL_3 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
@@ -317,9 +317,9 @@ query参数列表
 
 postQuery参数列表
 
-| 属性名（asset.Tag） | 属性值（asset.Value）          | 是否必选 | 说明                 |
+| 属性名称（asset.Tag） | 属性内容（asset.Value）          | 是否必选 | 说明                 |
 | ------------------- | ------------------------------ | -------- | -------------------- |
-| AUTH_CHALLENGE      | 类型为Uint8Array，长度为32字节 | 必选     | 用户认证使用的挑战值 |
+| AUTH_CHALLENGE      | 类型为Uint8Array，长度为32字节 | 必选     | 用户认证的挑战值 |
 
 ### 代码示例
 
@@ -457,14 +457,14 @@ preQueryAsset((isSuccess: boolean, challenge: Uint8Array) => {
 
 query的参数列表：
 
-| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明                                             |
+| 属性名称（asset.Tag）   | 属性内容（asset.Value）                                        | 是否必选 | 说明                                             |
 | --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------ |
 | ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 必选     | 关键资产别名，每条关键资产的唯一索引;            |
-| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 访问控制属性                                     |
-| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 关键资产是否仅在设置了锁屏密码的情况下可访问     |
+| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 基于锁屏状态的访问控制                                     |
+| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 是否仅在设置了锁屏密码的情况下，可访问关键资产     |
 | AUTH_TYPE             | 类型为number，取值范围详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) | 可选     | 访问关键资产所需的用户认证类型                   |
 | SYNC_TYPE             | 类型为number，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) | 可选     | 关键资产支持的同步类型                           |
-| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 关键资产在应用卸载时是否需要保留                 |
+| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 在应用卸载时是否需要保留关键资产                 |
 | DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
 | DATA_LABEL_CRITICAL_2 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
 | DATA_LABEL_CRITICAL_3 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
@@ -478,7 +478,7 @@ query的参数列表：
 attributesToUpdate的参数列表：
 
 
-| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明                                                         |
+| 属性名称（asset.Tag）   | 属性内容（asset.Value）                                        | 是否必选 | 说明                                                         |
 | --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------ |
 | SECRET                | 类型为Uint8Array，长度为1-1024字节                           | 可选     | 关键资产明文                                                 |
 | DATA_LABEL_NORMAL_1   | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
@@ -535,14 +535,14 @@ try {
 
 参数列表：
 
-| 属性名（asset.Tag）   | 属性值（asset.Value）                                        | 是否必选 | 说明                                             |
+| 属性名称（asset.Tag）   | 属性内容（asset.Value）                                        | 是否必选 | 说明                                             |
 | --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------ |
 | ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 可选     | 关键资产别名，每条关键资产的唯一索引;            |
-| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 访问控制属性                                     |
-| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 关键资产是否仅在设置了锁屏密码的情况下可访问     |
+| ACCESSIBILITY         | 类型为number，取值范围详见[asset.Accessibility](../reference/apis/js-apis-asset.md#asset.Accessibility) | 可选     | 基于锁屏状态的访问控制                                     |
+| REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 是否仅在设置了锁屏密码的情况下，可访问关键资产     |
 | AUTH_TYPE             | 类型为number，取值范围详见[asset.AuthType](../reference/apis/js-apis-asset.md#asset.AuthType) | 可选     | 访问关键资产所需的用户认证类型                   |
 | SYNC_TYPE             | 类型为number，取值范围详见[asset.SyncType](../reference/apis/js-apis-asset.md#asset.SyncType) | 可选     | 关键资产支持的同步类型                           |
-| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 关键资产在应用卸载时是否需要保留                 |
+| IS_PERSISTENT         | 类型为bool                                                   | 可选     | 在应用卸载时是否需要保留关键资产                 |
 | DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
 | DATA_LABEL_CRITICAL_2 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
 | DATA_LABEL_CRITICAL_3 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |

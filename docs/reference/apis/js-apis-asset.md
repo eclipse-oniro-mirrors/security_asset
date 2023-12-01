@@ -805,7 +805,7 @@ type AssetMap = Map<Tag, Value>
 | RETURN_LIMIT              | 类型为number                                                 | 关键资产查询返回的结果数量                                         |
 | RETURN_OFFSET             | 类型为number，取值范围：1-65536                              | 关键资产查询返回的结果偏移量<br>注：用于分批查询场景，指定从第几个开始返回                                 |
 | RETURN_ORDERED_BY         | 类型为number，取值范围：asset.Tag.DATA_LABEL_xxx             | 关键资产查询返回的结果排序依据，仅支持按照附属信息排序，不指定的情况下，默认按照关键资产新增的顺序返回。 |
-| CONFLICT_RESOLUTION       | 类型为number，取值范围详见[asset.ConflictResolution](#asset.ConflictResolution) | 新增同别名的关键资产时的处理策略                             |
+| CONFLICT_RESOLUTION       | 类型为number，取值范围详见[asset.ConflictResolution](#asset.ConflictResolution) | 新增关键资产时的冲突（如：别名相同）处理策略                             |
 
 ## asset.Accessibility
 
