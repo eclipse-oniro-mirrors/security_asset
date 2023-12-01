@@ -656,7 +656,7 @@ declare namespace asset {
    */
   enum ErrorCode {
     /**
-     * The error code indicates that the caller doesn't have permission to operate.
+     * The error code indicates that the caller doesn't have the permission.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
@@ -670,7 +670,7 @@ declare namespace asset {
      */
     INVALID_ARGUMENT = 401,
     /**
-     * The error code indicates that the Asset service is unavailable.
+     * The error code indicates that the ASSET Service is unavailable.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
@@ -684,7 +684,7 @@ declare namespace asset {
      */
     NOT_FOUND = 24000002,
     /**
-     * The error code indicates that the added Asset already exists.
+     * The error code indicates that the Asset already exists.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
@@ -740,21 +740,21 @@ declare namespace asset {
      */
     IPC_ERROR = 24000010,
     /**
-     * The error code indicates that the operation of calling bundle manager service is failed.
+     * The error code indicates that the operation of calling Bundle Manager Service is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
     BMS_ERROR = 24000011,
     /**
-     * The error code indicates that the operation of calling OS account service is failed.
+     * The error code indicates that the operation of calling OS Account Service is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11
      */
     ACCOUNT_ERROR = 24000012,
     /**
-     * The error code indicates that the operation of calling access token service is failed.
+     * The error code indicates that the operation of calling Access Token Service is failed.
      *
      * @syscap SystemCapability.Security.Asset
      * @since 11

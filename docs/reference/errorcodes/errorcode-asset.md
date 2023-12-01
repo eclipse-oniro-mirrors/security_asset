@@ -1,5 +1,4 @@
 # 关键资产存储错误码
-// todo: 错误码描述信息全局更新下，包括JS、NDK的DOC
 
 > **说明：**
 >
@@ -9,7 +8,7 @@
 
 **错误信息**
 
-The Asset service is unavailable.
+The ASSET Service is unavailable.
 
 **可能原因**
 
@@ -39,7 +38,7 @@ The queried Asset can not be found.
 
 **错误信息**
 
-The added Asset already exists. 
+The Asset already exists.
 
 **可能原因**
 
@@ -160,7 +159,7 @@ IPC communication is failed.
 
 **错误信息**
 
-The operation of calling bundle manager service is failed.
+The operation of calling Bundle Manager Service is failed.
 
 **可能原因**
 
@@ -174,7 +173,7 @@ The operation of calling bundle manager service is failed.
 
 **错误信息**
 
-The operation of calling OS account service is failed.
+The operation of calling OS Account Service is failed.
 
 **可能原因**
 
@@ -188,7 +187,7 @@ The operation of calling OS account service is failed.
 
 **错误信息**
 
-The operation of calling access token service is failed.
+The operation of calling Access Token Service is failed.
 
 **可能原因**
 

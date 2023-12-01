@@ -182,7 +182,7 @@ typedef enum {
      */
     ASSET_SUCCESS = 0,
     /**
-     * The error code indicates that the caller doesn't have permission to operate.
+     * The error code indicates that the caller doesn't have the permission.
      */
     ASSET_PERMISSION_DENIED = 201,
     /**
@@ -190,7 +190,7 @@ typedef enum {
      */
     ASSET_INVALID_ARGUMENT = 401,
     /**
-     * The error code indicates that the Asset service is unavailable.
+     * The error code indicates that the ASSET Service is unavailable.
      */
     ASSET_SERVICE_UNAVAILABLE = 24000001,
     /**
@@ -198,7 +198,7 @@ typedef enum {
      */
     ASSET_NOT_FOUND = 24000002,
     /**
-     * The error code indicates that the added Asset already exists.
+     * The error code indicates that the Asset already exists.
      */
     ASSET_DUPLICATED = 24000003,
     /**
@@ -230,15 +230,15 @@ typedef enum {
      */
     ASSET_IPC_ERROR = 24000010,
     /**
-     * The error code indicates that the operation of calling bundle manager service is failed.
+     * The error code indicates that the operation of calling Bundle Manager Service is failed.
      */
     ASSET_BMS_ERROR = 24000011,
     /**
-     * The error code indicates that the operation of calling OS account service is failed.
+     * The error code indicates that the operation of calling OS Account Service is failed.
      */
     ASSET_ACCOUNT_ERROR = 24000012,
     /**
-     * The error code indicates that the operation of calling access token service is failed.
+     * The error code indicates that the operation of calling Access Token Service is failed.
      */
     ASSET_ACCESS_TOKEN_ERROR = 24000013,
     /**

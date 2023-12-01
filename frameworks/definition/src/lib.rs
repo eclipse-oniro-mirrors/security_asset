@@ -148,19 +148,19 @@ impl_enum_trait! {
     #[derive(Debug)]
     #[derive(Eq, Hash, PartialEq)]
     pub enum ErrCode {
-        /// The error code indicates that the caller doesn't have permission to operate.
+        /// The error code indicates that the caller doesn't have the permission.
         PermissionDenied = 201,
 
         /// The error code indicates that the argument is invalid.
         InvalidArgument = 401,
 
-        /// The error code indicates that the Asset service is unavailable.
+        /// The error code indicates that the ASSET Service is unavailable.
         ServiceUnavailable = 24000001,
 
         /// The error code indicates that the queried Asset can not be found.
         NotFound = 24000002,
 
-        /// The error code indicates that the added Asset already exists.
+        /// The error code indicates that the Asset already exists.
         Duplicated = 24000003,
 
         /// The error code indicates that the access to Asset is denied.
@@ -184,13 +184,13 @@ impl_enum_trait! {
         /// The error code indicates that the ipc communication is abnormal.
         IpcError = 24000010,
 
-        /// The error code indicates that the operation of calling bundle manager service is failed.
+        /// The error code indicates that the operation of calling Bundle Manager Service is failed.
         BmsError = 24000011,
 
-        /// The error code indicates that the operation of calling OS account service is failed.
+        /// The error code indicates that the operation of calling OS Account Service is failed.
         AccountError = 24000012,
 
-        /// The error code indicates that the operation of calling access token service is failed.
+        /// The error code indicates that the operation of calling Access Token Service is failed.
         AccessTokenError = 24000013,
 
         /// The error code indicates that the operation of file is failed.

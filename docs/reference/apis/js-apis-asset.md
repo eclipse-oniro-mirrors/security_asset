@@ -33,19 +33,19 @@ function add(attributes: AssetMap, callback: AsyncCallback<void>): void
 
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
-| 201      | The caller doesn't have permission to operate.             |
+| 201      | The caller doesn't have the permission.                    |
 | 401      | The argument is invalid.                                   |
-| 24000001 | The Asset service is unavailable.                          |
-| 24000003 | The added Asset already exists.                            |
+| 24000001 | The ASSET Service is unavailable.                          |
+| 24000003 | The Asset already exists.                                  |
 | 24000005 | The screen lock status mismatches.                         |
 | 24000006 | Insufficient memory.                                       |
 | 24000007 | The Asset is corrupted.                                    |
 | 24000008 | The database operation is failed.                          |
 | 24000009 | The cryptography operation is failed.                      |
 | 24000010 | IPC communication is failed                                |
-| 24000011 | The operation of calling bundle manager service is failed. |
-| 24000012 | The operation of calling OS account service is failed.     |
-| 24000013 | The operation of calling access token service is failed.   |
+| 24000011 | The operation of calling Bundle Manager Service is failed. |
+| 24000012 | The operation of calling OS Account Service is failed.     |
+| 24000013 | The operation of calling Access Token Service is failed.   |
 | 24000014 | The operation of file is failed.                           |
 | 24000015 | The operation of getting system time is failed.            |
 
@@ -105,19 +105,19 @@ function add(attributes: AssetMap): Promise<void>
 
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
-| 201      | The caller doesn't have permission to operate.             |
+| 201      | The caller doesn't have the permission.                    |
 | 401      | The argument is invalid.                                   |
-| 24000001 | The Asset service is unavailable.                          |
-| 24000003 | The added Asset already exists.                            |
+| 24000001 | The ASSET Service is unavailable.                          |
+| 24000003 | The Asset already exists.                                  |
 | 24000005 | The screen lock status mismatches.                         |
 | 24000006 | Insufficient memory.                                       |
 | 24000007 | The Asset is corrupted.                                    |
 | 24000008 | The database operation is failed.                          |
 | 24000009 | The cryptography operation is failed.                      |
 | 24000010 | IPC communication is failed                                |
-| 24000011 | The operation of calling bundle manager service is failed. |
-| 24000012 | The operation of calling OS account service is failed.     |
-| 24000013 | The operation of calling access token service is failed.   |
+| 24000011 | The operation of calling Bundle Manager Service is failed. |
+| 24000012 | The operation of calling OS Account Service is failed.     |
+| 24000013 | The operation of calling Access Token Service is failed.   |
 | 24000014 | The operation of file is failed.                           |
 | 24000015 | The operation of getting system time is failed.            |
 
@@ -170,16 +170,16 @@ function remove(query: AssetMap, callback: AsyncCallback<void>): void
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
 | 401      | The argument is invalid.                                   |
-| 24000001 | The Asset service is unavailable.                          |
+| 24000001 | The ASSET Service is unavailable.                          |
 | 24000002 | The queried Asset can not be found.                        |
 | 24000006 | Insufficient memory.                                       |
 | 24000007 | The Asset is corrupted.                                    |
 | 24000008 | The database operation is failed.                          |
 | 24000009 | The cryptography operation is failed.                      |
 | 24000010 | IPC communication is failed                                |
-| 24000011 | The operation of calling bundle manager service is failed. |
-| 24000012 | The operation of calling OS account service is failed.     |
-| 24000013 | The operation of calling access token service is failed.   |
+| 24000011 | The operation of calling Bundle Manager Service is failed. |
+| 24000012 | The operation of calling OS Account Service is failed.     |
+| 24000013 | The operation of calling Access Token Service is failed.   |
 
 **示例代码：**
 
@@ -235,16 +235,16 @@ function remove(query: AssetMap): Promise<void>
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
 | 401      | The argument is invalid.                                   |
-| 24000001 | The Asset service is unavailable.                          |
+| 24000001 | The ASSET Service is unavailable.                          |
 | 24000002 | The queried Asset can not be found.                        |
 | 24000006 | Insufficient memory.                                       |
 | 24000007 | The Asset is corrupted.                                    |
 | 24000008 | The database operation is failed.                          |
 | 24000009 | The cryptography operation is failed.                      |
 | 24000010 | IPC communication is failed                                |
-| 24000011 | The operation of calling bundle manager service is failed. |
-| 24000012 | The operation of calling OS account service is failed.     |
-| 24000013 | The operation of calling access token service is failed.   |
+| 24000011 | The operation of calling Bundle Manager Service is failed. |
+| 24000012 | The operation of calling OS Account Service is failed.     |
+| 24000013 | The operation of calling Access Token Service is failed.   |
 
 **示例代码：**
 
@@ -293,7 +293,7 @@ function update(query: AssetMap, attributesToUpdate: AssetMap, callback: AsyncCa
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
 | 401      | The argument is invalid.                                   |
-| 24000001 | The Asset service is unavailable.                          |
+| 24000001 | The ASSET Service is unavailable.                          |
 | 24000002 | The queried Asset can not be found.                        |
 | 24000005 | The screen lock status mismatches.                         |
 | 24000006 | Insufficient memory.                                       |
@@ -301,9 +301,9 @@ function update(query: AssetMap, attributesToUpdate: AssetMap, callback: AsyncCa
 | 24000008 | The database operation is failed.                          |
 | 24000009 | The cryptography operation is failed.                      |
 | 24000010 | IPC communication is failed                                |
-| 24000011 | The operation of calling bundle manager service is failed. |
-| 24000012 | The operation of calling OS account service is failed.     |
-| 24000013 | The operation of calling access token service is failed.   |
+| 24000011 | The operation of calling Bundle Manager Service is failed. |
+| 24000012 | The operation of calling OS Account Service is failed.     |
+| 24000013 | The operation of calling Access Token Service is failed.   |
 | 24000015 | The operation of getting system time is failed.            |
 
 **示例代码：**
@@ -363,7 +363,7 @@ function update(query: AssetMap, attributesToUpdate: AssetMap): Promise<void>
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
 | 401      | The argument is invalid.                                   |
-| 24000001 | The Asset service is unavailable.                          |
+| 24000001 | The ASSET Service is unavailable.                          |
 | 24000002 | The queried Asset can not be found.                        |
 | 24000005 | The screen lock status mismatches.                         |
 | 24000006 | Insufficient memory.                                       |
@@ -371,9 +371,9 @@ function update(query: AssetMap, attributesToUpdate: AssetMap): Promise<void>
 | 24000008 | The database operation is failed.                          |
 | 24000009 | The cryptography operation is failed.                      |
 | 24000010 | IPC communication is failed                                |
-| 24000011 | The operation of calling bundle manager service is failed. |
-| 24000012 | The operation of calling OS account service is failed.     |
-| 24000013 | The operation of calling access token service is failed.   |
+| 24000011 | The operation of calling Bundle Manager Service is failed. |
+| 24000012 | The operation of calling OS Account Service is failed.     |
+| 24000013 | The operation of calling Access Token Service is failed.   |
 | 24000015 | The operation of getting system time is failed.            |
 
 **示例代码：**
@@ -424,7 +424,7 @@ function preQuery(query: AssetMap, callback: AsyncCallback<Uint8Array>): void
 | 错误码ID | 错误信息                                                     |
 | -------- | ------------------------------------------------------------ |
 | 401      | The argument is invalid.                                     |
-| 24000001 | The Asset service is unavailable.                            |
+| 24000001 | The ASSET Service is unavailable.                            |
 | 24000002 | The queried Asset can not be found.                          |
 | 24000005 | The screen lock status mismatches.                           |
 | 24000006 | Insufficient memory.                                         |
@@ -432,9 +432,9 @@ function preQuery(query: AssetMap, callback: AsyncCallback<Uint8Array>): void
 | 24000008 | The database operation is failed.                            |
 | 24000009 | The cryptography operation is failed.                        |
 | 24000010 | IPC communication is failed                                  |
-| 24000011 | The operation of calling bundle manager service is failed.   |
-| 24000012 | The operation of calling OS account service is failed.       |
-| 24000013 | The operation of calling access token service is failed.     |
+| 24000011 | The operation of calling Bundle Manager Service is failed.   |
+| 24000012 | The operation of calling OS Account Service is failed.       |
+| 24000013 | The operation of calling Access Token Service is failed.     |
 | 24000016 | The cache exceeds the limit.                                 |
 | 24000017 | The capability is not supported.                             |
 
@@ -492,7 +492,7 @@ function preQuery(query: AssetMap): Promise<Uint8Array>
 | 错误码ID | 错误信息                                                     |
 | -------- | ------------------------------------------------------------ |
 | 401      | The argument is invalid.                                     |
-| 24000001 | The Asset service is unavailable.                            |
+| 24000001 | The ASSET Service is unavailable.                            |
 | 24000002 | The queried Asset can not be found.                          |
 | 24000005 | The screen lock status mismatches.                           |
 | 24000006 | Insufficient memory.                                         |
@@ -500,9 +500,9 @@ function preQuery(query: AssetMap): Promise<Uint8Array>
 | 24000008 | The database operation is failed.                            |
 | 24000009 | The cryptography operation is failed.                        |
 | 24000010 | IPC communication is failed                                  |
-| 24000011 | The operation of calling bundle manager service is failed.   |
-| 24000012 | The operation of calling OS account service is failed.       |
-| 24000013 | The operation of calling access token service is failed.     |
+| 24000011 | The operation of calling Bundle Manager Service is failed.   |
+| 24000012 | The operation of calling OS Account Service is failed.       |
+| 24000013 | The operation of calling Access Token Service is failed.     |
 | 24000016 | The cache exceeds the limit.                                 |
 | 24000017 | The capability is not supported.                             |
 
@@ -552,7 +552,7 @@ function query(query: AssetMap, callback: AsyncCallback<Array<AssetMap>>): void
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
 | 401      | The argument is invalid.                                   |
-| 24000001 | The Asset service is unavailable.                          |
+| 24000001 | The ASSET Service is unavailable.                          |
 | 24000002 | The queried Asset can not be found.                        |
 | 24000004 | The access to Asset is denied.                             |
 | 24000005 | The screen lock status mismatches.                         |
@@ -561,9 +561,9 @@ function query(query: AssetMap, callback: AsyncCallback<Array<AssetMap>>): void
 | 24000008 | The database operation is failed.                          |
 | 24000009 | The cryptography operation is failed.                      |
 | 24000010 | IPC communication is failed                                |
-| 24000011 | The operation of calling bundle manager service is failed. |
-| 24000012 | The operation of calling OS account service is failed.     |
-| 24000013 | The operation of calling access token service is failed.   |
+| 24000011 | The operation of calling Bundle Manager Service is failed. |
+| 24000012 | The operation of calling OS Account Service is failed.     |
+| 24000013 | The operation of calling Access Token Service is failed.   |
 | 24000017 | The capability is not supported.                           |
 
 **示例代码：**
@@ -620,7 +620,7 @@ function query(query: AssetMap): Promise<Array<AssetMap>>
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
 | 401      | The argument is invalid.                                   |
-| 24000001 | The Asset service is unavailable.                          |
+| 24000001 | The ASSET Service is unavailable.                          |
 | 24000002 | The queried Asset can not be found.                        |
 | 24000004 | The access to Asset is denied.                             |
 | 24000005 | The screen lock status mismatches.                         |
@@ -629,9 +629,9 @@ function query(query: AssetMap): Promise<Array<AssetMap>>
 | 24000008 | The database operation is failed.                          |
 | 24000009 | The cryptography operation is failed.                      |
 | 24000010 | IPC communication is failed                                |
-| 24000011 | The operation of calling bundle manager service is failed. |
-| 24000012 | The operation of calling OS account service is failed.     |
-| 24000013 | The operation of calling access token service is failed.   |
+| 24000011 | The operation of calling Bundle Manager Service is failed. |
+| 24000012 | The operation of calling OS Account Service is failed.     |
+| 24000013 | The operation of calling Access Token Service is failed.   |
 | 24000017 | The capability is not supported.                           |
 
 **示例代码：**
@@ -681,12 +681,12 @@ function postQuery(handle: AssetMap, callback: AsyncCallback<void>): void
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
 | 401      | The argument is invalid.                                   |
-| 24000001 | The Asset service is unavailable.                          |
+| 24000001 | The ASSET Service is unavailable.                          |
 | 24000006 | Insufficient memory.                                       |
 | 24000010 | IPC communication is failed                                |
-| 24000011 | The operation of calling bundle manager service is failed. |
-| 24000012 | The operation of calling OS account service is failed.     |
-| 24000013 | The operation of calling access token service is failed.   |
+| 24000011 | The operation of calling Bundle Manager Service is failed. |
+| 24000012 | The operation of calling OS Account Service is failed.     |
+| 24000013 | The operation of calling Access Token Service is failed.   |
 
 **示例代码：**
 
@@ -737,12 +737,12 @@ function postQuery(handle: AssetMap): Promise<void>
 | 错误码ID | 错误信息                                                   |
 | -------- | ---------------------------------------------------------- |
 | 401      | The argument is invalid.                                   |
-| 24000001 | The Asset service is unavailable.                          |
+| 24000001 | The ASSET Service is unavailable.                          |
 | 24000006 | Insufficient memory.                                       |
 | 24000010 | IPC communication is failed                                |
-| 24000011 | The operation of calling bundle manager service is failed. |
-| 24000012 | The operation of calling OS account service is failed.     |
-| 24000013 | The operation of calling access token service is failed.   |
+| 24000011 | The operation of calling Bundle Manager Service is failed. |
+| 24000012 | The operation of calling OS Account Service is failed.     |
+| 24000013 | The operation of calling Access Token Service is failed.   |
 
 **示例代码：**
 
