@@ -44,10 +44,10 @@
 | ------------------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------ |
 | ASSET_TAG_SECRET                | 类型为uint8[]，长度为1-1024字节                              | 必选     | 关键资产明文                                                 |
 | ASSET_TAG_ALIAS                 | 类型为uint8[]，长度为1-256字节                               | 必选     | 关键资产别名，每条关键资产的唯一索引                         |
-| ASSET_TAG_ACCESSIBILITY         | 类型为uint32_t，取值范围详见[Asset_Accessibility](../reference/native-apis/_asset_type_api.md#Asset_Accessibility) | 可选     | 基于锁屏状态的访问控制                                                 |
+| ASSET_TAG_ACCESSIBILITY         | 类型为uint32_t，取值范围详见[Asset_Accessibility](../reference/native-apis/_asset_type.md#Asset_Accessibility) | 可选     | 基于锁屏状态的访问控制                                                 |
 | ASSET_TAG_REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 是否仅在设置了锁屏密码的情况下，可访问关键资产                 |
-| ASSET_TAG_AUTH_TYPE             | 类型为uint32_t，取值范围详见[Asset_AuthType](../reference/native-apis/_asset_type_api.md#Asset_AuthType) | 可选     | 访问关键资产所需的用户认证类型                               |
-| ASSET_TAG_SYNC_TYPE             | 类型为uint32_t，取值范围详见[Asset_SyncType](../reference/native-apis/_asset_type_api.md#Asset_SyncType) | 可选     | 关键资产支持的同步类型                                       |
+| ASSET_TAG_AUTH_TYPE             | 类型为uint32_t，取值范围详见[Asset_AuthType](../reference/native-apis/_asset_type.md#Asset_AuthType) | 可选     | 访问关键资产所需的用户认证类型                               |
+| ASSET_TAG_SYNC_TYPE             | 类型为uint32_t，取值范围详见[Asset_SyncType](../reference/native-apis/_asset_type.md#Asset_SyncType) | 可选     | 关键资产支持的同步类型                                       |
 | ASSET_TAG_IS_PERSISTENT         | 类型为bool                                                   | 可选     | 在应用卸载时是否需要保留关键资产<br>**需要权限：**ohos.permission.STORE_PERSISTENT_DATA |
 | ASSET_TAG_DATA_LABEL_CRITICAL_1 | 类型为uint8[]，长度为1-512字节                               | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
 | ASSET_TAG_DATA_LABEL_CRITICAL_2 | 类型为uint8[]，长度为1-512字节                               | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
@@ -57,7 +57,7 @@
 | ASSET_TAG_DATA_LABEL_NORMAL_2   | 类型为uint8[]，长度为1-512字节                               | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
 | ASSET_TAG_DATA_LABEL_NORMAL_3   | 类型为uint8[]，长度为1-512字节                               | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
 | ASSET_TAG_DATA_LABEL_NORMAL_4   | 类型为uint8[]，长度为1-512字节                               | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
-| ASSET_TAG_CONFLICT_RESOLUTION   | 类型为uint32_t，取值范围详见[Asset_ConflictResolution](../reference/native-apis/_asset_type_api.md#Asset_ConflictResolution) | 可选     | 新增关键资产时的冲突（如：别名相同）处理策略                             |
+| ASSET_TAG_CONFLICT_RESOLUTION   | 类型为uint32_t，取值范围详见[Asset_ConflictResolution](../reference/native-apis/_asset_type.md#Asset_ConflictResolution) | 可选     | 新增关键资产时的冲突（如：别名相同）处理策略                             |
 
 ### 代码示例
 
@@ -117,10 +117,10 @@ ASSET对部分属性会进行完整性保护，这部分属性命名以"ASSET_TA
 | 属性名称（asset.Tag）             | 属性内容（asset.Value）                                        | 是否必选 | 说明                                                         |
 | ------------------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------ |
 | ASSET_TAG_ALIAS                 | 类型为uint8[]，长度为1-256字节                               | 可选     | 关键资产别名，每条关键资产的唯一索引;                        |
-| ASSET_TAG_ACCESSIBILITY         | 类型为uint32_t，取值范围详见[Asset_Accessibility](../reference/native-apis/_asset_type_api.md#Asset_Accessibility) | 可选     | 基于锁屏状态的访问控制                                                 |
+| ASSET_TAG_ACCESSIBILITY         | 类型为uint32_t，取值范围详见[Asset_Accessibility](../reference/native-apis/_asset_type.md#Asset_Accessibility) | 可选     | 基于锁屏状态的访问控制                                                 |
 | ASSET_TAG_REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 是否仅在设置了锁屏密码的情况下，可访问关键资产                 |
-| ASSET_TAG_AUTH_TYPE             | 类型为uint32_t，取值范围详见[Asset_AuthType](../reference/native-apis/_asset_type_api.md#Asset_AuthType) | 可选     | 访问关键资产所需的用户认证类型                               |
-| ASSET_TAG_SYNC_TYPE             | 类型为uint32_t，取值范围详见[Asset_SyncType](../reference/native-apis/_asset_type_api.md#Asset_SyncType) | 可选     | 关键资产支持的同步类型                                       |
+| ASSET_TAG_AUTH_TYPE             | 类型为uint32_t，取值范围详见[Asset_AuthType](../reference/native-apis/_asset_type.md#Asset_AuthType) | 可选     | 访问关键资产所需的用户认证类型                               |
+| ASSET_TAG_SYNC_TYPE             | 类型为uint32_t，取值范围详见[Asset_SyncType](../reference/native-apis/_asset_type.md#Asset_SyncType) | 可选     | 关键资产支持的同步类型                                       |
 | ASSET_TAG_IS_PERSISTENT         | 类型为bool                                                   | 可选     | 在应用卸载时是否需要保留关键资产                             |
 | ASSET_TAG_DATA_LABEL_CRITICAL_1 | 类型为uint8[]，长度为1-512字节                               | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
 | ASSET_TAG_DATA_LABEL_CRITICAL_2 | 类型为uint8[]，长度为1-512字节                               | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
@@ -130,7 +130,7 @@ ASSET对部分属性会进行完整性保护，这部分属性命名以"ASSET_TA
 | ASSET_TAG_DATA_LABEL_NORMAL_2   | 类型为uint8[]，长度为1-512字节                               | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
 | ASSET_TAG_DATA_LABEL_NORMAL_3   | 类型为uint8[]，长度为1-512字节                               | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
 | ASSET_TAG_DATA_LABEL_NORMAL_4   | 类型为uint8[]，长度为1-512字节                               | 可选     | 关键资产附属信息，内容由业务自定义且无完整性保护             |
-| ASSET_TAG_RETURN_TYPE           | 类型为uint32_t，取值范围详见[Asset_ReturnType](../reference/native-apis/_asset_type_api.md#Asset_ReturnType) | 可选     | 关键资产查询返回的结果类型                                         |
+| ASSET_TAG_RETURN_TYPE           | 类型为uint32_t，取值范围详见[Asset_ReturnType](../reference/native-apis/_asset_type.md#Asset_ReturnType) | 可选     | 关键资产查询返回的结果类型                                         |
 | ASSET_TAG_RETURN_LIMIT          | 类型为uint32_t                                               | 可选     | 关键资产查询返回的结果数量                                         |
 | ASSET_TAG_RETURN_OFFSET         | 类型为uint32_t，取值范围：1-65536                            | 可选     | 关键资产查询返回的结果偏移量<br>注：用于分批查询场景，指定从第几个开始返回                                 |
 | ASSET_TAG_RETURN_ORDERED_BY     | 类型为uint32_t，取值范围：ASSET_TAG_DATA_LABEL_xxx           | 可选     | 关键资产查询返回的结果排序依据，仅支持按照附属信息排序，不指定的情况下，默认按照关键资产新增的顺序返回。 |
@@ -250,10 +250,10 @@ query的参数列表：
 | 属性名称（asset.Tag）             | 属性内容（asset.Value）                                        | 是否必选 | 说明                                             |
 | ------------------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------ |
 | ASSET_TAG_ALIAS                 | 类型为uint8[]，长度为1-256字节                               | 必选     | 关键资产别名，每条关键资产的唯一索引;            |
-| ASSET_TAG_ACCESSIBILITY         | 类型为uint32_t，取值范围详见[Asset_Accessibility](../reference/native-apis/_asset_type_api.md#Asset_Accessibility) | 可选     | 基于锁屏状态的访问控制                                     |
+| ASSET_TAG_ACCESSIBILITY         | 类型为uint32_t，取值范围详见[Asset_Accessibility](../reference/native-apis/_asset_type.md#Asset_Accessibility) | 可选     | 基于锁屏状态的访问控制                                     |
 | ASSET_TAG_REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 是否仅在设置了锁屏密码的情况下，可访问关键资产     |
-| ASSET_TAG_AUTH_TYPE             | 类型为uint32_t，取值范围详见[Asset_AuthType](../reference/native-apis/_asset_type_api.md#Asset_AuthType) | 可选     | 访问关键资产所需的用户认证类型                   |
-| ASSET_TAG_SYNC_TYPE             | 类型为uint32_t，取值范围详见[Asset_SyncType](../reference/native-apis/_asset_type_api.md#Asset_SyncType) | 可选     | 关键资产支持的同步类型                           |
+| ASSET_TAG_AUTH_TYPE             | 类型为uint32_t，取值范围详见[Asset_AuthType](../reference/native-apis/_asset_type.md#Asset_AuthType) | 可选     | 访问关键资产所需的用户认证类型                   |
+| ASSET_TAG_SYNC_TYPE             | 类型为uint32_t，取值范围详见[Asset_SyncType](../reference/native-apis/_asset_type.md#Asset_SyncType) | 可选     | 关键资产支持的同步类型                           |
 | ASSET_TAG_IS_PERSISTENT         | 类型为bool                                                   | 可选     | 在应用卸载时是否需要保留关键资产                 |
 | ASSET_TAG_DATA_LABEL_CRITICAL_1 | 类型为uint8[]，长度为1-512字节                               | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
 | ASSET_TAG_DATA_LABEL_CRITICAL_2 | 类型为uint8[]，长度为1-512字节                               | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
@@ -327,10 +327,10 @@ NA
 | 属性名称（asset.Tag）             | 属性内容（asset.Value）                                        | 是否必选 | 说明                                             |
 | ------------------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------ |
 | ASSET_TAG_ALIAS                 | 类型为uint8[]，长度为1-256字节                               | 可选     | 关键资产别名，每条关键资产的唯一索引;            |
-| ASSET_TAG_ACCESSIBILITY         | 类型为uint32_t，取值范围详见[Asset_Accessibility](../reference/native-apis/_asset_type_api.md#Asset_Accessibility) | 可选     | 基于锁屏状态的访问控制                                     |
+| ASSET_TAG_ACCESSIBILITY         | 类型为uint32_t，取值范围详见[Asset_Accessibility](../reference/native-apis/_asset_type.md#Asset_Accessibility) | 可选     | 基于锁屏状态的访问控制                                     |
 | ASSET_TAG_REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 是否仅在设置了锁屏密码的情况下，可访问关键资产     |
-| ASSET_TAG_AUTH_TYPE             | 类型为uint32_t，取值范围详见[Asset_AuthType](../reference/native-apis/_asset_type_api.md#Asset_AuthType) | 可选     | 访问关键资产所需的用户认证类型                   |
-| ASSET_TAG_SYNC_TYPE             | 类型为uint32_t，取值范围详见[Asset_SyncType](../reference/native-apis/_asset_type_api.md#Asset_SyncType) | 可选     | 关键资产支持的同步类型                           |
+| ASSET_TAG_AUTH_TYPE             | 类型为uint32_t，取值范围详见[Asset_AuthType](../reference/native-apis/_asset_type.md#Asset_AuthType) | 可选     | 访问关键资产所需的用户认证类型                   |
+| ASSET_TAG_SYNC_TYPE             | 类型为uint32_t，取值范围详见[Asset_SyncType](../reference/native-apis/_asset_type.md#Asset_SyncType) | 可选     | 关键资产支持的同步类型                           |
 | ASSET_TAG_IS_PERSISTENT         | 类型为bool                                                   | 可选     | 在应用卸载时是否需要保留关键资产                 |
 | ASSET_TAG_DATA_LABEL_CRITICAL_1 | 类型为uint8[]，长度为1-512字节                               | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
 | ASSET_TAG_DATA_LABEL_CRITICAL_2 | 类型为uint8[]，长度为1-512字节                               | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
