@@ -20,7 +20,7 @@
  * @addtogroup AssetType
  * @{
  *
- * @brief 提供调用ASSET接口需要使用的枚举值、数据结构和错误码。
+ * @brief 提供关键资产存储服务中通用的枚举值、数据结构和错误码。
  *
  * @syscap SystemCapability.Security.Asset
  * @since 11
@@ -29,7 +29,7 @@
 /**
  * @file asset_type.h
  *
- * @brief 声明调用ASSET接口需要使用的枚举值、数据结构和错误码。
+ * @brief 定义关键资产存储服务中通用的枚举值、数据结构和错误码。
  *
  * @since 11
  */
@@ -42,34 +42,34 @@ extern "C" {
 #endif
 
 /**
- * @brief Asset属性值的数据类型定义的枚举类型。
+ * @brief 关键资产属性的类型定义。
  *
  * @since 11
  */
 typedef enum {
     /**
-     * Asset属性值是bool数据类型。
+     * 标识关键资产属性的类型是bool。
      */
     ASSET_TYPE_BOOL = 0x1 << 28,
     /**
-     * Asset属性值是uint32数据类型。
+     * 标识关键资产属性的类型是uint32_t。
      */
     ASSET_TYPE_NUMBER = 0x2 << 28,
     /**
-     * Asset属性值是byte数据类型。
+     * 标识关键资产属性的类型是byte数组。
      */
     ASSET_TYPE_BYTES = 0x3 << 28,
 } Asset_TagType;
 
 /**
- * @brief 用于获取Asset属性值的数据类型的掩码。
+ * @brief 用于获取关键资产属性类型的掩码。
  *
  * @since 11
  */
 #define ASSET_TAG_TYPE_MASK (0xF << 28)
 
 /**
- * @brief Asset属性标记枚举。
+ * @brief 关键资产属性的名称。
  *
  * @since 11
  */
@@ -166,7 +166,7 @@ typedef enum {
      */
     ASSET_TAG_RETURN_ORDERED_BY = ASSET_TYPE_NUMBER | 0x43,
     /**
-     * 表示增加关键资产时的冲突处理策略，其值为uint32类型。
+     * 表示新增关键资产时的冲突处理策略，其值为uint32类型。
      */
     ASSET_TAG_CONFLICT_RESOLUTION = ASSET_TYPE_NUMBER | 0x44,
 } Asset_Tag;
@@ -260,95 +260,95 @@ typedef enum {
 } Asset_ResultCode;
 
 /**
- * @brief 该组枚举用来指定关键资产何时可访问。
+ * @brief 基于锁屏状态的访问控制类型。
  *
  * @since 11
  */
 typedef enum {
     /**
-     * 关键资产密码需要设备开机后可访问。
+     * 开机后可访问。
      */
     ASSET_ACCESSIBILITY_DEVICE_POWER_ON = 0,
     /**
-     * 关键资产密码需要设备第一次解锁后可访问。
+     * 首次解锁后可访问。
      */
     ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED = 1,
     /**
-     * 关键资产密码需要设备解锁状态可访问。
+     * 解锁时可访问。
      */
     ASSET_ACCESSIBILITY_DEVICE_UNLOCKED = 2,
 } Asset_Accessibility;
 
 /**
- * @brief 该组枚举用来指定关键资产需要的用户认证类型。
+ * @brief 关键资产支持的用户认证类型。
  *
  * @since 11
  */
 typedef enum {
     /**
-     * 不需要用户认证。
+     * 访问关键资产前无需用户认证。
      */
     ASSET_AUTH_TYPE_NONE = 0x00,
     /**
-     * 通过PIN、模式、密码或生物特征进行用户身份验证都可以。
+     * 任意一种用户认证方式（PIN码、人脸、指纹等）通过后，均可访问关键资产。
      */
     ASSET_AUTH_TYPE_ANY = 0xFF,
 } Asset_AuthType;
 
 /**
- * @brief 该组枚举用来指定关键资产的同步类型。
+ * @brief 关键资产支持的同步类型。
  *
  * @since 11
  */
 typedef enum {
     /**
-     * 永不同步。
+     * 不允许同步关键资产。
      */
     ASSET_SYNC_TYPE_NEVER = 0,
     /**
-     * 具有此属性值的关键资产只能恢复到其转出的设备。
+     * 只在本设备进行同步，如仅在本设备还原的备份场景。
      */
     ASSET_SYNC_TYPE_THIS_DEVICE = 1 << 0,
     /**
-     * 具有此属性值的关键资产只能转移到可信设备（用户授权）。
+     * 只在可信设备间进行同步，如克隆场景。
      */
     ASSET_SYNC_TYPE_TRUSTED_DEVICE = 1 << 1,
 } Asset_SyncType;
 
 /**
- * @brief 该组枚举用来指定关键资产别名重复时的冲突处理策略。
+ * @brief 新增关键资产时的冲突（如：别名相同）处理策略。
  *
  * @since 11
  */
 typedef enum {
     /**
-     * 覆盖老的关键资产。
+     * 覆盖原本的关键资产。
      */
     ASSET_CONFLICT_OVERWRITE = 0,
     /**
-     * 抛出错误，以便调用者在检测到冲突时采取措施。
+     * 抛出异常，由业务进行后续处理。
      */
     ASSET_CONFLICT_THROW_ERROR = 1,
 } Asset_ConflictResolution;
 
 /**
- * @brief 该组枚举用来指定查询关键资产时的返回类型。
+ * @brief 关键资产查询返回的结果类型。
  *
  * @since 11
  */
 typedef enum {
     /**
-     * 表示返回数据应同时包含密码和属性。
+     * 返回关键资产明文及属性。
      */
     ASSET_RETURN_ALL = 0,
     /**
-     * 表示返回数据时只包含属性。
+     * 返回关键资产属性，不含关键资产明文。
      */
     ASSET_RETURN_ATTRIBUTES = 1,
 } Asset_ReturnType;
 
 /**
- * @brief 关键资产中使用的bytes类型，其值为字节数组。
+ * @brief 二进制数组类型，即不定长的字节数组。
  *
  * @since 11
  */
@@ -358,33 +358,33 @@ typedef struct {
      */
     uint32_t size;
     /**
-     * 指向字节数组的数据。
+     * 指向字节数组的指针。
      */
     uint8_t *data;
 } Asset_Blob;
 
 /**
- * @brief 该类型用于传入关键资产属性。
+ * @brief 关键资产属性内容。
  *
  * @since 11
  */
 typedef union {
     /**
-     * 该字段用于传入bool类型的关键资产数据。
+     * 该字段用于传入bool类型的关键资产。
      */
     bool boolean;
     /**
-     * 该字段用于传入uint32类型的关键资产数据。
+     * 该字段用于传入uint32类型的关键资产。
      */
     uint32_t u32;
     /**
-     * 该字段用于传入bytes类型的关键资产数据。
+     * 该字段用于传入bytes类型的关键资产。
      */
     Asset_Blob blob;
 } Asset_Value;
 
 /**
- * @brief 该类型用关键资产属性的键-值对。
+ * @brief 关键资产属性。
  *
  * @since 11
  */
@@ -394,39 +394,39 @@ typedef struct {
      */
     uint32_t tag;
     /**
-     * 关键资产属性对应值。
+     * 关键资产属性内容。
      */
     Asset_Value value;
 } Asset_Attr;
 
 /**
- * @brief 该类型用于表示关键资产属性的键-值对集合。
+ * @brief 关键资产查询结果，用于定义一条关键资产。
  *
  * @since 11
  */
 typedef struct {
     /**
-     * 关键资产属性的键值对的数组大小。
+     * 关键资产属性的个数。
      */
     uint32_t count;
     /**
-     * 指向关键资产属性的键值对的数组。
+     * 指向关键资产属性数组的指针。
      */
     Asset_Attr *attrs;
 } Asset_Result;
 
 /**
- * @brief 该类型用于表示查询关键资产返回结果集合的类型。
+ * @brief 关键资产查询结果集合，用于定义多条关键资产。
  *
  * @since 11
  */
 typedef struct {
     /**
-     * 关键资产属性的键-值对集合数组的大小。
+     * 关键资产的条数。
      */
     uint32_t count;
     /**
-     * 指向关键资产属性的键-值对集合数组。
+     * 指向关键资产数组的指针。
      */
     Asset_Result *results;
 } Asset_ResultSet;

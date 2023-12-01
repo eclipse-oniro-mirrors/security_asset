@@ -56,7 +56,7 @@
 
 ### 接口介绍
 
-接口文档链接：// todo : 1. 加\<void> 2. 刷表格
+接口文档链接：
 
 [function add(attributes: AssetMap, callback: AsyncCallback\<void>): void](../reference/apis/js-apis-asset.md#asset.add)
 
@@ -85,7 +85,7 @@
 
 ### 代码示例
 
-以Callback形式的接口调用为例，写入一条密码是demo_pwd，别名是demo_alias，附加属性是demo_label的数据，该数据在用户首次解锁设备后可被访问。
+以Callback形式的接口调用为例，写入一条密码是demo_pwd，别名是demo_alias，附属信息是demo_label的数据，该数据在用户首次解锁设备后可被访问。
 
 ```typescript
 import asset from '@ohos.security.asset';

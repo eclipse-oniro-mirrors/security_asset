@@ -61,15 +61,14 @@
 
 ### 代码示例
 
-写入一条密码是demo_pwd，别名是demo_alias，附加属性是demo_label的数据，该数据在用户首次解锁设备后可被访问。
+写入一条密码是demo_pwd，别名是demo_alias，附属信息是demo_label的数据，该数据在用户首次解锁设备后可被访问。
 
 ```c
 #include <string.h>
-#include "napi/native_api.h"
 
 #include "asset_api.h"
 
-static napi_value AddAsset(napi_env env, napi_callback_info info) {
+void AddAsset() {
     static const char *SECRET = "demo_pwd";
     static const char *ALIAS = "demo_alias";
     static const char *LABEL = "demo_label";
@@ -85,9 +84,11 @@ static napi_value AddAsset(napi_env env, napi_callback_info info) {
     };
 
     int32_t ret = OH_Asset_Add(attr, sizeof(attr) / sizeof(attr[0]));
-    napi_value result;
-    napi_create_int32(env, ret, &result);
-    return result;
+    if (ret == ASSET_SUCCESS) {
+        // Asset added successfully.
+    } else {
+        // Failed to add Asset.
+    }
 }
 ```
 
@@ -142,16 +143,15 @@ ASSET对部分属性会进行完整性保护，这部分属性命名以"ASSET_TA
 
 ```c
 #include <string.h>
-#include "napi/native_api.h"
 
 #include "asset_api.h"
 
-static napi_value QueryAsset(napi_env env, napi_callback_info info) {
+void QueryAsset() {
     static const char *ALIAS = "demo_alias";
     Asset_Blob alias = { (uint32_t)(strlen(ALIAS)), (uint8_t *)ALIAS };
     Asset_Attr attr[] = {
         { .tag = ASSET_TAG_ALIAS, .value.blob = alias },  // 指定了关键资产别名，最多查询到一条满足条件的关键资产
-        { .tag = ASSET_TAG_RETURN_TYPE, .value.u32 = ASSET_RETURN_ALL },  // 此处表示需要返回每条关键资产的所有信息，即属性+明文
+        { .tag = ASSET_TAG_RETURN_TYPE, .value.u32 = ASSET_RETURN_ALL },  // 此处表示需要返回关键资产的所有信息，即属性+明文
     };
 
     Asset_ResultSet resultSet = {0};
@@ -164,9 +164,6 @@ static napi_value QueryAsset(napi_env env, napi_callback_info info) {
         }
     }
     OH_Asset_FreeResultSet(&resultSet);
-    napi_value result;
-    napi_create_int32(env, ret, &result);
-    return result;
 }
 ```
 
@@ -176,16 +173,15 @@ static napi_value QueryAsset(napi_env env, napi_callback_info info) {
 
 ```c
 #include <string.h>
-#include "napi/native_api.h"
 
 #include "asset_api.h"
 
-static napi_value QueryAttributes(napi_env env, napi_callback_info info) {
+void QueryAttributes() {
     static const char *ALIAS = "demo_alias";
     Asset_Blob alias = { (uint32_t)(strlen(ALIAS)), (uint8_t *)ALIAS };
     Asset_Attr attr[] = {
         { .tag = ASSET_TAG_ALIAS, .value.blob = alias }, // 指定了关键资产别名，最多查询到一条满足条件的关键资产
-        { .tag = ASSET_TAG_RETURN_TYPE, .value.u32 = ASSET_RETURN_ATTRIBUTES }, // 此处表示需要返回仅返回关键资产属性，不包含关键资产明文
+        { .tag = ASSET_TAG_RETURN_TYPE, .value.u32 = ASSET_RETURN_ATTRIBUTES }, // 此处表示仅返回关键资产属性，不包含关键资产明文
     };
 
     Asset_ResultSet resultSet = {0};
@@ -198,23 +194,19 @@ static napi_value QueryAttributes(napi_env env, napi_callback_info info) {
         }
     }
     OH_Asset_FreeResultSet(&resultSet);
-    napi_value result;
-    napi_create_int32(env, ret, &result);
-    return result;
 }
 ```
 
 #### 批量查询关键资产属性
 
-以Callback形式的接口调用为例，批量查询标签1是demo_label的关键资产属性，从第5条满足条件的结果开始返回，一共返回10条，且返回结果以DATA_LABEL_NORMAL_1属性内容排序。
+批量查询附属信息是demo_label的关键资产属性，从第5条满足条件的结果开始返回，一共返回10条，且返回结果以DATA_LABEL_NORMAL_1属性内容排序。
 
 ```c
 #include <string.h>
-#include "napi/native_api.h"
 
 #include "asset_api.h"
 
-static napi_value BatchQuery(napi_env env, napi_callback_info info) {
+void BatchQuery() {
     static const char *LABEL = "demo_label";
     Asset_Blob label = { (uint32_t)(strlen(LABEL)), (uint8_t *)LABEL };
 
@@ -236,9 +228,6 @@ static napi_value BatchQuery(napi_env env, napi_callback_info info) {
         }
     }
     OH_Asset_FreeResultSet(&resultSet);
-    napi_value result;
-    napi_create_int32(env, ret, &result);
-    return result;
 }
 ```
 
@@ -289,15 +278,14 @@ attributesToUpdate的参数列表：
 
 ### 代码示例
 
-更新别名是demo_alias的关键资产，将关键资产明文更新为demo_pwd_new，附加属性更新成demo_label_new。
+更新别名是demo_alias的关键资产，将关键资产明文更新为demo_pwd_new，附属信息更新成demo_label_new。
 
 ```c
 #include <string.h>
-#include "napi/native_api.h"
 
 #include "asset_api.h"
 
-static napi_value UpdateAsset(napi_env env, napi_callback_info info) {
+void UpdateAsset() {
     static const char *ALIAS = "demo_alias";
     static const char *SECRET = "demo_pwd_new";
     static const char *LABEL = "demo_label_new";
@@ -313,9 +301,11 @@ static napi_value UpdateAsset(napi_env env, napi_callback_info info) {
 
     int32_t ret = OH_Asset_Update(query, sizeof(query) / sizeof(query[0]), attributesToUpdate,
                                   sizeof(attributesToUpdate) / sizeof(attributesToUpdate[0]));
-    napi_value result;
-    napi_create_int32(env, ret, &result);
-    return result;
+    if (ret == ASSET_SUCCESS) {
+        // Asset updated successfully.
+    } else {
+        // Failed to update Asset.
+    }
 }
 ```
 
@@ -357,11 +347,10 @@ NA
 
 ```c
 #include <string.h>
-#include "napi/native_api.h"
 
 #include "asset_api.h"
 
-static napi_value RemoveAsset(napi_env env, napi_callback_info info) {
+void RemoveAsset() {
     static const char *ALIAS = "demo_alias";
     Asset_Blob alias = { (uint32_t)(strlen(ALIAS)), (uint8_t *)ALIAS };
 
@@ -370,9 +359,11 @@ static napi_value RemoveAsset(napi_env env, napi_callback_info info) {
     };
 
     int32_t ret = OH_Asset_Remove(attr, sizeof(attr) / sizeof(attr[0]));
-    napi_value result;
-    napi_create_int32(env, ret, &result);
-    return result;
+    if (ret == ASSET_SUCCESS) {
+        // Asset removed successfully.
+    } else {
+        // Failed to remove Asset.
+    }
 }
 ```
 
@@ -380,5 +371,3 @@ static napi_value RemoveAsset(napi_env env, napi_callback_info info) {
 
 无
 
-// todo: 依据js guide lines修改本文，并将函数重新封装
-// todo: ndk type资料修改，根据js刷新

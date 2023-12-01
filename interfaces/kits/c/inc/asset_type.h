@@ -17,7 +17,7 @@
 #define ASSET_TYPE_H
 
 /**
- * @addtogroup AssetTypeApi
+ * @addtogroup AssetType
  * @{
  *
  * @brief Defines the enumerated values, data structures and error codes used by Asset APIs.

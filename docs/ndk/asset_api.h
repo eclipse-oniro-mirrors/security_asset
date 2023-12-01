@@ -64,7 +64,7 @@ int32_t OH_Asset_Add(const Asset_Attr *attributes, uint32_t attrCnt);
 int32_t OH_Asset_Remove(const Asset_Attr *query, uint32_t queryCnt);
 
 /**
- * @brief 更新符合匹配条件的一条关键资产。
+ * @brief 更新符合条件的一条关键资产。
  *
  * @param query 待更新关键资产的搜索条件。
  * @param queryCnt 待更新关键资产搜索条件的个数。
@@ -79,8 +79,8 @@ int32_t OH_Asset_Update(const Asset_Attr *query, uint32_t queryCnt,
 /**
  * @brief 查询的预处理，用于需要用户认证的关键资产。
  *
- * @param query 待查询关键资产的搜索条件。
- * @param queryCnt 待查询关键资产搜索条件的个数。
+ * @param query 关键资产的查询条件。
+ * @param queryCnt 关键资产查询条件的个数。
  * @param challenge 挑战值，在后续调用OH_Asset_Query时使用。
  * @return 如果操作成功，则返回ASSET_SUCCESS；否则返回错误码。
  * @since 11
@@ -88,10 +88,10 @@ int32_t OH_Asset_Update(const Asset_Attr *query, uint32_t queryCnt,
 int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob *challenge);
 
 /**
- * @brief 查询一条或多条符合匹配条件的关键资产。
+ * @brief 查询一条或多条符合条件的关键资产。
  *
- * @param query 待查询关键资产的搜索条件。
- * @param queryCnt 待查询关键资产搜索条件的个数。
+ * @param query 关键资产的查询条件。
+ * @param queryCnt 关键资产查询条件的个数。
  * @param resultSet 查询结果列表。
  * @return 如果操作成功，则返回ASSET_SUCCESS；否则返回错误码。
  * @since 11
@@ -101,7 +101,7 @@ int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultS
 /**
  * @brief 查询的后置处理，用于需要用户认证的关键资产。
  *
- * @param handle 包含从OH_Asset_PreQuery中获取的挑战值的句柄属性集合。
+ * @param handle 待处理的查询句柄，当前包含OH_Asset_PreQuery执行成功返回的挑战值。
  * @param handleCnt 句柄属性集合中元素的个数。
  * @return 如果操作成功，则返回ASSET_SUCCESS；否则返回错误码。
  * @since 11
@@ -113,8 +113,7 @@ int32_t OH_Asset_PostQuery(const Asset_Attr *handle, uint32_t handleCnt);
  *
  * @param result 从OH_Asset_Query中获取的查询结果。
  * @param tag 待获取的属性标签。
- * @return 如果操作成功，则以Asset_Attr的形式返回属性，该属性不需要业务进行释放；
- *    否则返回NULL。
+ * @return 如果操作成功，则以Asset_Attr的形式返回属性，该属性不需要业务进行释放；否则返回NULL。
  * @since 11
  */
 Asset_Attr *OH_Asset_ParseAttr(const Asset_Result *result, Asset_Tag tag);

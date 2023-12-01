@@ -2,7 +2,7 @@
 
 - 模块
     - [AssetApi](_asset_api.md)
-    - [AssetTypeApi](_asset_type_api.md)
+    - [AssetType](_asset_type.md)
 - 头文件和结构体
     - 头文件
         - [asset_api.h](asset__api_8h.md)
@@ -13,3 +13,4 @@
         - [Asset_Result](_asset___result.md)
         - [Asset_ResultSet](_asset___result_set.md)
         - [Asset_Value](union_asset___value.md)
+
