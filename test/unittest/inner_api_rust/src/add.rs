@@ -43,7 +43,6 @@ fn add_all_tags() {
     attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     attrs.insert_attr(Tag::AuthType, AuthType::Any);
     attrs.insert_attr(Tag::SyncType, SyncType::ThisDevice);
-    attrs.insert_attr(Tag::IsPersistent, false);
     attrs.insert_attr(Tag::RequirePasswordSet, false);
     attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::Overwrite);
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
@@ -202,5 +201,8 @@ fn add_is_persistent_auth_wrong() {
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
     attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     attrs.insert_attr(Tag::IsPersistent, true);
-    expect_error_eq(ErrCode::AccountError, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
+    expect_error_eq(ErrCode::PermissionDenied, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
+
+    attrs.insert_attr(Tag::IsPersistent, false);
+    expect_error_eq(ErrCode::PermissionDenied, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 }

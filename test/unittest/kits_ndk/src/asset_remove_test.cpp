@@ -65,7 +65,6 @@ HWTEST_F(AssetRemoveTest, AssetRemoveTest001, TestSize.Level0)
         { .tag = ASSET_TAG_REQUIRE_PASSWORD_SET, .value.boolean = false },
         { .tag = ASSET_TAG_AUTH_TYPE, .value.u32 = ASSET_AUTH_TYPE_NONE },
         { .tag = ASSET_TAG_SYNC_TYPE, .value.u32 = ASSET_SYNC_TYPE_NEVER },
-        { .tag = ASSET_TAG_IS_PERSISTENT, .value.boolean = false },
         { .tag = ASSET_TAG_DATA_LABEL_NORMAL_1, .value.blob = funcName },
         { .tag = ASSET_TAG_DATA_LABEL_NORMAL_2, .value.blob = funcName },
         { .tag = ASSET_TAG_DATA_LABEL_NORMAL_3, .value.blob = funcName },
@@ -75,7 +74,7 @@ HWTEST_F(AssetRemoveTest, AssetRemoveTest001, TestSize.Level0)
         { .tag = ASSET_TAG_DATA_LABEL_CRITICAL_3, .value.blob = funcName },
         { .tag = ASSET_TAG_DATA_LABEL_CRITICAL_4, .value.blob = funcName }
     };
-    OH_Asset_Add(attr, ARRAY_SIZE(attr));
+    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
     Asset_Attr attr2[] = {
         { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
         { .tag = ASSET_TAG_ACCESSIBILITY, .value.u32 = ASSET_ACCESSIBILITY_DEVICE_POWER_ON },
@@ -133,7 +132,7 @@ HWTEST_F(AssetRemoveTest, AssetRemoveTest002, TestSize.Level0)
  */
 HWTEST_F(AssetRemoveTest, AssetRemoveTest003, TestSize.Level0)
 {
-    int arr[] = { ASSET_TAG_ACCESSIBILITY, ASSET_TAG_AUTH_TYPE, ASSET_TAG_SYNC_TYPE, ASSET_TAG_IS_PERSISTENT };
+    int arr[] = { ASSET_TAG_ACCESSIBILITY, ASSET_TAG_AUTH_TYPE, ASSET_TAG_SYNC_TYPE };
     for (int i = 0; i < ARRAY_SIZE(arr); i++) {
         Asset_Blob tmpBlob = { .size = strlen(__func__), .data = nullptr };
         Asset_Attr attr[] = {
