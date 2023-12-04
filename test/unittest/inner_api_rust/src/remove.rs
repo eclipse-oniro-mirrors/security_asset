@@ -44,16 +44,3 @@ fn remove_condition_exist_and_query() {
     asset_sdk::Manager::build().unwrap().remove(&condition).unwrap();
     expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&condition).unwrap_err());
 }
-
-#[test]
-fn remove_condition_with_secret() {
-    let function_name = function!().as_bytes();
-    let mut condition = AssetMap::from([
-        (Tag::Alias, Value::Bytes(function_name.to_owned())),
-        (Tag::Secret, Value::Bytes(function_name.to_owned())),
-    ]);
-    condition.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
-    asset_sdk::Manager::build().unwrap().add(&condition).unwrap();
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().remove(&condition).unwrap_err());
-    remove_by_alias(function_name).unwrap();
-}

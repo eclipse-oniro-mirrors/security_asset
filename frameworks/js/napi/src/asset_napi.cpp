@@ -162,7 +162,7 @@ napi_value NapiUpdate(napi_env env, napi_callback_info info)
             context->result = OH_Asset_Update(&context->attrs[0], context->attrs.size(),
                 &context->updateAttrs[0], context->updateAttrs.size());
         };
-    return NapiEntry(env, info, __func__, execute, UPDATE_MAX_ARGS_NUM);
+    return NapiEntry(env, info, __func__, execute, UPDATE_ARGS_NUM);
 }
 
 napi_value NapiPreQuery(napi_env env, napi_callback_info info)

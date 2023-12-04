@@ -13,8 +13,6 @@
  * limitations under the License.
  */
 
-import type { AsyncCallback } from './@ohos.base';
-
 /**
  * This module provides the capabilities for life cycle management of sensitive user data (Asset) such as passwords
  * and tokens, including adding, removing, updating, and querying.
@@ -24,31 +22,6 @@ import type { AsyncCallback } from './@ohos.base';
  * @since 11
  */
 declare namespace asset {
-  /**
-   * Add an Asset.
-   *
-   * @param { AssetMap } attributes - a map object containing attributes of the Asset to be added.
-   * @param { AsyncCallback<void> } callback - the callback function for add operation.
-   * @throws { BusinessError } 201 - Permission denied.
-   * @throws { BusinessError } 401 - Invalid argument.
-   * @throws { BusinessError } 24000001 - Service unavailable.
-   * @throws { BusinessError } 24000003 - Data already exists.
-   * @throws { BusinessError } 24000005 - Device status mismatch.
-   * @throws { BusinessError } 24000006 - Out of memory.
-   * @throws { BusinessError } 24000007 - Data corrupted.
-   * @throws { BusinessError } 24000008 - Database operation failed.
-   * @throws { BusinessError } 24000009 - Key manager is abnormal.
-   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
-   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
-   * @throws { BusinessError } 24000012 - Account manager is abnormal.
-   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
-   * @throws { BusinessError } 24000014 - File operation failed.
-   * @throws { BusinessError } 24000015 - Get system time failed.
-   * @syscap SystemCapability.Security.Asset
-   * @since 11
-   */
-  function add(attributes: AssetMap, callback: AsyncCallback<void>): void;
-
   /**
    * Add an Asset.
    *
@@ -78,27 +51,6 @@ declare namespace asset {
    * Remove one or more Assets that match a search query.
    *
    * @param { AssetMap } query - a map object containing attributes of the Asset to be removed.
-   * @param { AsyncCallback<void> } callback - the callback function for remove operation.
-   * @throws { BusinessError } 401 - Invalid argument.
-   * @throws { BusinessError } 24000001 - Service unavailable.
-   * @throws { BusinessError } 24000002 - Data not found.
-   * @throws { BusinessError } 24000006 - Out of memory.
-   * @throws { BusinessError } 24000007 - Data corrupted.
-   * @throws { BusinessError } 24000008 - Database operation failed.
-   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
-   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
-   * @throws { BusinessError } 24000011 - Algorithm operation failed.
-   * @throws { BusinessError } 24000012 - Account manager is abnormal.
-   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
-   * @syscap SystemCapability.Security.Asset
-   * @since 11
-   */
-  function remove(query: AssetMap, callback: AsyncCallback<void>): void;
-
-  /**
-   * Remove one or more Assets that match a search query.
-   *
-   * @param { AssetMap } query - a map object containing attributes of the Asset to be removed.
    * @returns { Promise<void> } the promise object returned by the function.
    * @throws { BusinessError } 401 - Invalid argument.
    * @throws { BusinessError } 24000001 - Service unavailable.
@@ -114,30 +66,6 @@ declare namespace asset {
    * @since 11
    */
   function remove(query: AssetMap): Promise<void>;
-
-  /**
-   * Update an Asset that matches a search query.
-   *
-   * @param { AssetMap } query - a map object containing attributes of the Asset to be updated.
-   * @param { AssetMap } attributesToUpdate - a map object containing attributes with new values.
-   * @param { AsyncCallback<void> } callback - the callback function for update operation.
-   * @throws { BusinessError } 401 - Invalid argument.
-   * @throws { BusinessError } 24000001 - Service unavailable.
-   * @throws { BusinessError } 24000002 - Data not found.
-   * @throws { BusinessError } 24000005 - Device status mismatch.
-   * @throws { BusinessError } 24000006 - Out of memory.
-   * @throws { BusinessError } 24000007 - Data corrupted.
-   * @throws { BusinessError } 24000008 - Database operation failed.
-   * @throws { BusinessError } 24000009 - Key management service is abnormal.
-   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
-   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
-   * @throws { BusinessError } 24000012 - Account manager is abnormal.
-   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
-   * @throws { BusinessError } 24000015 - Get system time failed.
-   * @syscap SystemCapability.Security.Asset
-   * @since 11
-   */
-  function update(query: AssetMap, attributesToUpdate: AssetMap, callback: AsyncCallback<void>): void;
 
   /**
    * Update an Asset that matches a search query.
@@ -167,30 +95,6 @@ declare namespace asset {
    * Preprocessing (e.g. get challenge) for querying one or more Assets that require user authentication.
    *
    * @param { AssetMap } query - a map object containing attributes of the Asset to be queried.
-   * @param { AsyncCallback<Uint8Array> } callback - the callback function for pre-query operation.
-   * @throws { BusinessError } 401 - Invalid argument.
-   * @throws { BusinessError } 24000001 - Service unavailable.
-   * @throws { BusinessError } 24000002 - Data not found.
-   * @throws { BusinessError } 24000005 - Device status mismatch.
-   * @throws { BusinessError } 24000006 - Out of memory.
-   * @throws { BusinessError } 24000007 - Data corrupted.
-   * @throws { BusinessError } 24000008 - Database operation failed.
-   * @throws { BusinessError } 24000009 - Key management service is abnormal.
-   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
-   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
-   * @throws { BusinessError } 24000012 - Account manager is abnormal.
-   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
-   * @throws { BusinessError } 24000016 - Capacity exceeds the limit.
-   * @throws { BusinessError } 24000017 - Capability not supported.
-   * @syscap SystemCapability.Security.Asset
-   * @since 11
-   */
-  function preQuery(query: AssetMap, callback: AsyncCallback<Uint8Array>): void;
-
-  /**
-   * Preprocessing (e.g. get challenge) for querying one or more Assets that require user authentication.
-   *
-   * @param { AssetMap } query - a map object containing attributes of the Asset to be queried.
    * @returns { Promise<Uint8Array> } the promise object returned by the function.
    * @throws { BusinessError } 401 - Invalid argument.
    * @throws { BusinessError } 24000001 - Service unavailable.
@@ -215,30 +119,6 @@ declare namespace asset {
    * Query one or more Assets that match a search query.
    *
    * @param { AssetMap } query - a map object containing attributes of the Asset to be queried.
-   * @param { AsyncCallback<Array<AssetMap>> } callback - the callback function for query operation.
-   * @throws { BusinessError } 401 - Invalid argument.
-   * @throws { BusinessError } 24000001 - Service unavailable.
-   * @throws { BusinessError } 24000002 - Data not found.
-   * @throws { BusinessError } 24000004 - Access denied.
-   * @throws { BusinessError } 24000005 - Device status mismatch.
-   * @throws { BusinessError } 24000006 - Out of memory.
-   * @throws { BusinessError } 24000007 - Data corrupted.
-   * @throws { BusinessError } 24000008 - Database operation failed.
-   * @throws { BusinessError } 24000009 - Key management service is abnormal.
-   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
-   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
-   * @throws { BusinessError } 24000012 - Account manager is abnormal.
-   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
-   * @throws { BusinessError } 24000017 - Capability not supported.
-   * @syscap SystemCapability.Security.Asset
-   * @since 11
-   */
-  function query(query: AssetMap, callback: AsyncCallback<Array<AssetMap>>): void;
-
-  /**
-   * Query one or more Assets that match a search query.
-   *
-   * @param { AssetMap } query - a map object containing attributes of the Asset to be queried.
    * @returns { Promise<Array<AssetMap>> } the promise object returned by the function.
    * @throws { BusinessError } 401 - Invalid argument.
    * @throws { BusinessError } 24000001 - Service unavailable.
@@ -258,23 +138,6 @@ declare namespace asset {
    * @since 11
    */
   function query(query: AssetMap): Promise<Array<AssetMap>>;
-
-  /**
-   * Post-processing (e.g. release cached resource) for querying multiple Assets that require user authentication.
-   *
-   * @param { AssetMap } handle - a map object contains the handle returned by {@link preQuery}.
-   * @param { AsyncCallback<void> } callback - the callback function for post-query operation.
-   * @throws { BusinessError } 401 - Invalid argument.
-   * @throws { BusinessError } 24000001 - Service unavailable.
-   * @throws { BusinessError } 24000006 - Out of memory.
-   * @throws { BusinessError } 24000010 - IPC communication is abnormal.
-   * @throws { BusinessError } 24000011 - Bundle framework is abnormal.
-   * @throws { BusinessError } 24000012 - Account manager is abnormal.
-   * @throws { BusinessError } 24000013 - Access token manager is abnormal.
-   * @syscap SystemCapability.Security.Asset
-   * @since 11
-   */
-  function postQuery(handle: AssetMap, callback: AsyncCallback<void>): void;
 
   /**
    * Post-processing (e.g. release cached resource) for querying multiple Assets that require user authentication.

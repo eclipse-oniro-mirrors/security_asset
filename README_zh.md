@@ -1,10 +1,8 @@
-# 关键资产存储服务（ASSET）
-
-[toc]
+# 关键资产存储服务(ASSET)
 
 ## 简介
 
-关键资产存储服务（ASSET），提供了用户短敏感数据的安全存储及管理能力。其中，短敏感数据可以是密码类（账号/密码）、Token类（应用凭据）、其他关键明文（如银行卡号）等长度较短的用户敏感数据。
+关键资产存储服务(ASSET)，提供了用户短敏感数据的安全存储及管理能力。其中，短敏感数据可以是密码类（账号/密码）、Token类（应用凭据）、其他关键明文（如银行卡号）等长度较短的用户敏感数据。
 
 关键资产存储服务的架构如下图所示。
 
@@ -29,7 +27,7 @@
 ├── frameworks              # 框架层代码
 │   ├── definition          # 通用数据类型定义
 │   ├── ipc                 # IPC接口定义
-│   ├── js                  # JS-Native交互模块
+│   ├── js                  # JS-C/C++交互模块
 │   ├── os_dependency       # 通用系统能力适配模块
 │   └── utils               # 工具方法
 ├── interfaces              # 对外提供的接口
@@ -49,13 +47,13 @@
 
 [JS API说明文档](./docs/reference/apis/js-apis-asset.md)
 
-[Native API说明文档](./docs/reference/native-apis/Readme-CN.md)
+[C/C++ API说明文档](./docs/reference/native-apis/Readme-CN.md)
 
 ### 使用说明
 
 [ArkTS开发指导](./docs/security/asset-js-guidelines.md)
 
-[Native开发指导](./docs/security/asset-native-guidelines.md)
+[C/C++开发指导](./docs/security/asset-native-guidelines.md)
 
 ## 相关仓
 **[通用密钥库系统（HUKS）](https://gitee.com/openharmony/security_huks)**

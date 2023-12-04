@@ -27,13 +27,12 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 
-#define UPDATE_MAX_ARGS_NUM 3
+#define UPDATE_ARGS_NUM 2
 
 typedef struct AsyncContext {
     // common
     napi_async_work work = nullptr;
     napi_deferred deferred = nullptr;
-    napi_ref callback = nullptr;
 
     // input
     std::vector<Asset_Attr> attrs;
@@ -46,7 +45,7 @@ typedef struct AsyncContext {
 } AsyncContext;
 
 napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
-    size_t expectArgNum = 2);
+    size_t expectArgNum = 1);
 
 } // Asset
 } // Security

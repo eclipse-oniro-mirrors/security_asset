@@ -31,7 +31,6 @@ namespace Asset {
 namespace {
 #define MAX_BUFFER_LEN 1024
 #define MAX_MESSAGE_LEN 128
-#define CALLBACK_ARGS_NUM 2
 #define MAX_ARGS_NUM 5
 
 #define NAPI_THROW_BASE(env, condition, ret, code, message)             \
@@ -91,10 +90,6 @@ void DestroyAsyncContext(napi_env env, AsyncContext *context)
     if (context->work != nullptr) {
         napi_delete_async_work(env, context->work);
         context->work = nullptr;
-    }
-    if (context->callback != nullptr) {
-        napi_delete_reference(env, context->callback);
-        context->callback = nullptr;
     }
 
     OH_Asset_FreeResultSet(&context->resultSet);
@@ -193,18 +188,6 @@ napi_status ParseMapParam(napi_env env, napi_value arg, std::vector<Asset_Attr> 
     }
 
     NAPI_THROW_RETURN_ERR(env, !done, ASSET_INVALID_ARGUMENT, "Parse entry of map failed.");
-    return napi_ok;
-}
-
-napi_status ParseCallbackParam(napi_env env, napi_value arg, napi_ref *callback)
-{
-    // check value type
-    napi_valuetype valueType = napi_undefined;
-    NAPI_CALL_RETURN_ERR(env, napi_typeof(env, arg, &valueType));
-    NAPI_THROW_RETURN_ERR(env, valueType != napi_function, ASSET_INVALID_ARGUMENT, "Expect AsyncCallback type.");
-
-    // create callback reference
-    NAPI_CALL_RETURN_ERR(env, napi_create_reference(env, arg, 1, callback));
     return napi_ok;
 }
 
@@ -320,31 +303,11 @@ void ResolvePromise(napi_env env, AsyncContext *context)
     }
 }
 
-void ResolveCallback(napi_env env, AsyncContext *context)
-{
-    napi_value cbArgs[CALLBACK_ARGS_NUM] = { 0 };
-    size_t index = 0;
-    if (context->result == ASSET_SUCCESS) {
-        cbArgs[index++] = GetUndefinedValue(env);
-        cbArgs[index++] = GetBusinessValue(env, context);
-    } else {
-        cbArgs[index++] = GetBusinessError(env, context->result);
-    }
-
-    napi_value callback = nullptr;
-    NAPI_CALL_RETURN_VOID(env, napi_get_reference_value(env, context->callback, &callback));
-    NAPI_CALL_RETURN_VOID(env, napi_call_function(env, nullptr, callback, index, cbArgs, nullptr));
-}
-
 napi_value CreateAsyncWork(napi_env env, AsyncContext *context, const char *funcName,
     napi_async_execute_callback execute)
 {
     napi_value result;
-    if (context->callback == nullptr) {
-        NAPI_CALL(env, napi_create_promise(env, &context->deferred, &result));
-    } else {
-        NAPI_CALL(env, napi_get_undefined(env, &result));
-    }
+    NAPI_CALL(env, napi_create_promise(env, &context->deferred, &result));
 
     napi_value resource = nullptr;
     NAPI_CALL(env, napi_create_string_utf8(env, funcName, NAPI_AUTO_LENGTH, &resource));
@@ -352,11 +315,7 @@ napi_value CreateAsyncWork(napi_env env, AsyncContext *context, const char *func
         env, nullptr, resource, execute,
         [](napi_env env, napi_status status, void *data) {
             AsyncContext *asyncContext = static_cast<AsyncContext *>(data);
-            if (asyncContext->callback != nullptr) {
-                ResolveCallback(env, asyncContext);
-            } else {
-                ResolvePromise(env, asyncContext);
-            }
+            ResolvePromise(env, asyncContext);
             DestroyAsyncContext(env, asyncContext);
         },
         static_cast<void *>(context), &context->work));
@@ -372,7 +331,7 @@ napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName
     size_t argc = expectArgNum;
     napi_value argv[MAX_ARGS_NUM] = { 0 };
     NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-    NAPI_THROW(env, argc < (expectArgNum - 1), ASSET_INVALID_ARGUMENT, "The number of arguments is insufficient.");
+    NAPI_THROW(env, argc < expectArgNum, ASSET_INVALID_ARGUMENT, "The number of arguments is insufficient.");
 
     AsyncContext *context = CreateAsyncContext();
     NAPI_THROW(env, context == nullptr, ASSET_OUT_OF_MEMRORY, "Unable to allocate memory for AsyncContext.");
@@ -384,14 +343,9 @@ napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName
             break;
         }
 
-        if (expectArgNum == UPDATE_MAX_ARGS_NUM &&
+        if (expectArgNum == UPDATE_ARGS_NUM &&
             ParseMapParam(env, argv[index++], context->updateAttrs) != napi_ok) {
             LOGE("Parse second map parameter failed.");
-            break;
-        }
-
-        if (index < argc && ParseCallbackParam(env, argv[index], &context->callback) != napi_ok) {
-            LOGE("Parse async callback parameter failed.");
             break;
         }
 

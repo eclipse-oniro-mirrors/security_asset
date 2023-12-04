@@ -206,7 +206,7 @@ enum Asset_Tag
 | ASSET_TAG_AUTH_CHALLENGE  | 表示认证时抗重放用的挑战值，其值为bytes类型。 |
 | ASSET_TAG_AUTH_TOKEN  | 表示用户认证后获取到的认证令牌，其值为bytes类型。 |
 | ASSET_TAG_SYNC_TYPE  | 表示关键资产的同步类型，其值为uint32类型。 |
-| ASSET_TAG_IS_PERSISTENT  | 表示关键资产是否需持久化存储，其值为bool类型。<br>仅在调用OH_Asset_Add函数时传入该属性需要校验权限。<br>**需要权限：**ohos.permission.STORE_PERSISTENT_DATA |
+| ASSET_TAG_IS_PERSISTENT  | 表示关键资产是否需持久化存储，其值为bool类型。<br>仅在调用OH_Asset_Add函数时传入该属性需要校验权限。<br>**需要权限：** ohos.permission.STORE_PERSISTENT_DATA |
 | ASSET_TAG_DATA_LABEL_CRITICAL_1  | 表示一个用户可自定义传入的字段，该字段不可被更新，其值为bytes类型。 |
 | ASSET_TAG_DATA_LABEL_CRITICAL_2  | 表示一个用户可自定义传入的字段，该字段不可被更新，其值为bytes类型。 |
 | ASSET_TAG_DATA_LABEL_CRITICAL_3  | 表示一个用户可自定义传入的字段，该字段不可被更新，其值为bytes类型。 |
