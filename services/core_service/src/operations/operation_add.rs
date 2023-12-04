@@ -32,20 +32,20 @@ use asset_utils::time;
 
 use crate::operations::common;
 
-static GEN_KEN_LOC: Mutex<()> = Mutex::new(());
+static GEN_KEY_MUTEX: Mutex<()> = Mutex::new(());
 
 fn generate_key_if_needed(secret_key: &SecretKey) -> Result<()> {
     match secret_key.exists() {
         Ok(true) => Ok(()),
         Ok(false) => {
-            let _lock = GEN_KEN_LOC.lock().unwrap();
+            let _lock = GEN_KEY_MUTEX.lock().unwrap();
             match secret_key.exists() {
                 Ok(true) => Ok(()),
                 Ok(false) => {
                     logi!("[INFO]The key does not exist, generate it.");
                     secret_key.generate()
-                }
-                _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS failed to check whether the key exists.")
+                },
+                _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS failed to check whether the key exists."),
             }
         },
         _ => {

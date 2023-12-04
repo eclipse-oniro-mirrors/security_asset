@@ -96,9 +96,9 @@ bool SubscribeSystemEvent(OnPackageRemoved onPackageRemoved, OnUserRemoved onUse
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_REMOVED);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_OFF);
-    CommonEventSubscribeInfo subscriberInfo(matchingSkills);
+    CommonEventSubscribeInfo info(matchingSkills);
     if (g_eventHandler == nullptr) {
-        g_eventHandler = std::make_shared<SystemEventHandler>(subscriberInfo, onPackageRemoved, onUserRemoved, onScreenOff);
+        g_eventHandler = std::make_shared<SystemEventHandler>(info, onPackageRemoved, onUserRemoved, onScreenOff);
         if (g_eventHandler == nullptr) {
             LOGE("[FATAL]Asset system event handler is nullptr.");
             return false;

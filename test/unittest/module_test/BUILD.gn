@@ -37,7 +37,7 @@ ohos_rust_unittest("asset_module_test") {
   ]
 }
 
-ohos_unittest("asset_unit_test") {
+ohos_unittest("asset_dependency_test") {
   module_out_path = module_output_path
   include_dirs = [
     "inc",
