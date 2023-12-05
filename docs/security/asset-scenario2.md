@@ -1,4 +1,8 @@
-# 场景2：保护需要用户身份认证的密码
+# 保护需要用户认证的密码类数据
+
+>  **说明：**
+>
+> 密码类数据可以是密码、登录令牌、信用卡号等用户敏感数据。
 
 ## 场景描述
 
@@ -8,13 +12,13 @@
 
 ## 关键流程
 
-业务调用ASSET保护需要用户身份认证的关键资产，可以参照以下流程进行开发。
+业务调用ASSET保护需要用户认证的关键资产，可以参照以下流程进行开发。
 
 > **说明：**
 >
 > 由于统一用户认证（UserIAM）只提供ArkTS接口，故本场景只支持使用ArkTS语言开发。
 
- <img src="../../figures/flowchat-auth-required.png" alt="flowchat" style="zoom:40%;" />
+ <img src="figures/flowchat-auth-required.png" alt="flowchat" style="zoom:40%;" />
 
 1. 业务查询符合条件的关键资产属性，根据查询成功/失败，判断关键资产是否存在。开发步骤参考[查询关键资产](asset-js-query.md)，代码示例参考[查询单条关键资产属性](asset-js-query.md#查询单条关键资产属性)
 2. 如果关键资产不存在，业务可选择：

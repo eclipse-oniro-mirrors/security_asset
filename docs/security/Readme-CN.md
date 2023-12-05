@@ -1,0 +1,19 @@
+# 安全
+
+- 关键资产存储服务
+    - [关键资产存储服务概述](asset-overview.md)
+    - 常见场景
+        - [保护密码类数据](asset-scenario1.md)
+        - [保护需要用户认证的密码类数据](asset-scenario2.md)
+    - 关键资产存储服务开发指导(ArkTS)
+        - [新增关键资产(ArkTS)](asset-js-add.md)
+        - [删除关键资产(ArkTS)](asset-js-remove.md)
+        - [更新关键资产(ArkTS)](asset-js-update.md)
+        - [查询关键资产(ArkTS)](asset-js-query.md)
+        - [查询需要用户认证的关键资产(ArkTS)](asset-js-query-auth.md)
+    - 关键资产存储服务开发指导(C/C++)
+        - [新增关键资产(C/C++)](asset-native-add.md)
+        - [删除关键资产(C/C++)](asset-native-remove.md)
+        - [更新关键资产(C/C++)](asset-native-update.md)
+        - [查询关键资产(C/C++)](asset-native-query.md)
+
