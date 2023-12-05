@@ -34,10 +34,10 @@ query参数列表
 
 | 属性名称（Tag）        | 属性内容（Value）                                             | 是否必选  | 说明                                             |
 | --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------ |
-| ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 必选     | 关键资产别名，每条关键资产的唯一索引;            |
-| AUTH_CHALLENGE        | 类型为Uint8Array，长度为32字节                               | 必选     | 用户认证的挑战值                             |
-| AUTH_TOKEN            | 类型为Uint8Array，长度为148字节                              | 必选     | 用户认证通过的授权令牌                               |
-| RETURN_TYPE           | 类型为number，asset.ReturnType.ALL                           | 必选     | 关键资产查询返回的结果类型                             |
+| ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 必选     | 关键资产别名，每条关键资产的唯一索引;           |
+| AUTH_CHALLENGE        | 类型为Uint8Array，长度为32字节                               | 必选     | 用户认证的挑战值                              |
+| AUTH_TOKEN            | 类型为Uint8Array，长度为148字节                              | 必选     | 用户认证通过的授权令牌                         |
+| RETURN_TYPE           | 类型为number，asset.ReturnType.ALL                           | 必选     | 关键资产查询返回的结果类型                    |
 | ACCESSIBILITY         | 类型为number，取值范围详见[Accessibility](../reference/apis/js-apis-asset.md#Accessibility) | 可选     | 基于锁屏状态的访问控制                                     |
 | REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 是否仅在设置了锁屏密码的情况下，可访问关键资产     |
 | AUTH_TYPE             | 类型为number，取值范围详见[AuthType](../reference/apis/js-apis-asset.md#AuthType) | 可选     | 访问关键资产所需的用户认证类型                   |

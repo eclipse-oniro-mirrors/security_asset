@@ -6,7 +6,7 @@
 
 关键资产存储服务的架构如下图所示。
 
-![ASSET架构图](figures/asset_architecture.png)
+![ASSET架构图](figures/asset-architecture.png)
 
 应用接入关键资产存储服务后，可以进行如下操作：
 

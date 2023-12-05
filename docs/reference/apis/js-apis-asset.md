@@ -271,7 +271,7 @@ try {
 
 query(query: AssetMap): Promise<Array<AssetMap>>
 
-查询一条或多条符合匹配条件的关键资产。若查询需要用户认证的关键资产，则需要在本函数前调用[asset.preQuery](#asset.preQuery)，在本函数后调用[asset.postQuery](#asset.postQuery)，开发步骤请参考[开发指导](../../security/asset-js-guidelines.md#查询需要用户认证的关键资产)。使用Promise回调异步返回结果。
+查询一条或多条符合条件的关键资产。若查询需要用户认证的关键资产，则需要在本函数前调用[asset.preQuery](#asset.preQuery)，在本函数后调用[asset.postQuery](#asset.postQuery)，开发步骤请参考[开发指导](../../security/asset-js-query-auth.md)。使用Promise回调异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -419,8 +419,14 @@ type AssetMap = Map<Tag, Value>
 | AUTH_TOKEN                | 类型为Uint8Array，长度为148字节                              | 用户认证通过的授权令牌                                           |
 | SYNC_TYPE                 | 类型为number，取值范围详见[SyncType](#SyncType)  | 关键资产支持的同步类型                                       |
 | IS_PERSISTENT             | 类型为bool                                                   | 在应用卸载时是否需要保留关键资产<br>**需要权限：** ohos.permission.STORE_PERSISTENT_DATA<br/>**备注：** 仅在调用[asset.add](#asset.add)函数并传入该属性时需要校验权限 |
-| DATA_LABEL_CRITICAL_1<br>DATA_LABEL_CRITICAL_2<br>DATA_LABEL_CRITICAL_3<br>DATA_LABEL_CRITICAL_4     | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且**有完整性保护**             |
-| DATA_LABEL_NORMAL_1<br>DATA_LABEL_NORMAL_2<br>DATA_LABEL_NORMAL_3<br>DATA_LABEL_NORMAL_4       | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且**无完整性保护**             |
+| DATA_LABEL_CRITICAL_1     | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且**有完整性保护**             |
+| DATA_LABEL_CRITICAL_2 | 类型为Uint8Array，长度为1-512字节 | 关键资产附属信息，内容由业务自定义且**有完整性保护** |
+| DATA_LABEL_CRITICAL_3 | 类型为Uint8Array，长度为1-512字节 | 关键资产附属信息，内容由业务自定义且**有完整性保护** |
+| DATA_LABEL_CRITICAL_4 | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且**有完整性保护** |
+| DATA_LABEL_NORMAL_1       | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且**无完整性保护**             |
+| DATA_LABEL_NORMAL_2 | 类型为Uint8Array，长度为1-512字节 | 关键资产附属信息，内容由业务自定义且**无完整性保护** |
+| DATA_LABEL_NORMAL_3 | 类型为Uint8Array，长度为1-512字节 | 关键资产附属信息，内容由业务自定义且**无完整性保护** |
+| DATA_LABEL_NORMAL_4 | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且**无完整性保护** |
 | RETURN_TYPE               | 类型为number，取值范围详见[ReturnType](#ReturnType) | 关键资产查询返回的结果类型                                         |
 | RETURN_LIMIT              | 类型为number                                                 | 关键资产查询返回的结果数量                                         |
 | RETURN_OFFSET             | 类型为number，取值范围：1-65536                              | 关键资产查询返回的结果偏移量<br>**说明：** 用于分批查询场景，指定从第几个开始返回                                 |

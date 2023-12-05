@@ -137,7 +137,7 @@ int32_t OH_Asset_PreQuery (const Asset_Attr * query, uint32_t queryCnt, Asset_Bl
 int32_t OH_Asset_Query (const Asset_Attr * query, uint32_t queryCnt, Asset_ResultSet * resultSet )
 ```
 **描述**
-查询一条或多条符合匹配条件的关键资产。
+查询一条或多条符合条件的关键资产。
 
 **起始版本：** 11
 
