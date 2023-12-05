@@ -10,6 +10,10 @@
 
 业务调用ASSET保护需要用户身份认证的关键资产，可以参照以下流程进行开发。
 
+> **说明：**
+>
+> 由于统一用户认证（UserIAM）只提供ArkTS接口，故本场景只支持使用ArkTS语言开发。
+
  <img src="../../figures/flowchat-auth-required.png" alt="flowchat" style="zoom:40%;" />
 
 1. 业务查询符合条件的关键资产属性，根据查询成功/失败，判断关键资产是否存在。开发步骤参考[查询关键资产](asset-js-query.md)，代码示例参考[查询单条关键资产属性](asset-js-query.md#查询单条关键资产属性)

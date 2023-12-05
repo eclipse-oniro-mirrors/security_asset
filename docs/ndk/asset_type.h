@@ -48,15 +48,15 @@ extern "C" {
  */
 typedef enum {
     /**
-     * 标识关键资产属性的类型是bool。
+     * 标识关键资产属性的类型是布尔。
      */
     ASSET_TYPE_BOOL = 0x1 << 28,
     /**
-     * 标识关键资产属性的类型是uint32_t。
+     * 标识关键资产属性的类型是整型。
      */
     ASSET_TYPE_NUMBER = 0x2 << 28,
     /**
-     * 标识关键资产属性的类型是byte数组。
+     * 标识关键资产属性的类型是字节数组。
      */
     ASSET_TYPE_BYTES = 0x3 << 28,
 } Asset_TagType;

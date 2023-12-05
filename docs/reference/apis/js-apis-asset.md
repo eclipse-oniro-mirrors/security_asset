@@ -385,11 +385,49 @@ try {
 }
 ```
 
-## Tag
+## TagType
 
-关键资产属性的名称，用作[AssetMap](#AssetMap)的键。
+枚举，关键资产属性支持的数据类型。
 
 **系统能力：** SystemCapability.Security.Asset
+
+| 名称   | 值         | 说明                                     |
+| ------ | ---------- | ---------------------------------------- |
+| BOOL   | 0x01 << 28 | 标识关键资产属性对应的数据类型是布尔     |
+| NUMBER | 0x02 << 28 | 标识关键资产属性对应的数据类型是整型     |
+| BYTES  | 0x03 << 28 | 标识关键资产属性对应的数据类型是字节数组 |
+
+## Tag
+
+枚举，关键资产支持的属性名称类型，用作[AssetMap](#AssetMap)的键。
+
+**系统能力：** SystemCapability.Security.Asset
+
+| 名称 | 值                                  | 说明                                                         |
+| ------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| SECRET                    | TagType.BYTES &#124; 0x01  | 关键资产明文                                                 |
+| ALIAS                     | TagType.BYTES &#124; 0x02 | 关键资产别名，每条关键资产的唯一索引                         |
+| ACCESSIBILITY             | TagType.NUMBER &#124; 0x03 | 基于锁屏状态的访问控制                                       |
+| REQUIRE_PASSWORD_SET      | TagType.BOOL &#124; 0x04                   | 是否仅在设置了锁屏密码的情况下，可访问关键资产                 |
+| AUTH_TYPE                 | TagType.NUMBER &#124; 0x05 | 访问关键资产所需的用户认证类型                               |
+| AUTH_VALIDITY_PERIOD      | TagType.NUMBER &#124; 0x06 | 用户认证的有效期                                             |
+| AUTH_CHALLENGE            | TagType.BYTES &#124; 0x07     | 用户认证的挑战值                                         |
+| AUTH_TOKEN                | TagType.BYTES &#124; 0x08    | 用户认证通过的授权令牌                                           |
+| SYNC_TYPE                 | TagType.NUMBER &#124; 0x10 | 关键资产支持的同步类型                                       |
+| IS_PERSISTENT             | TagType.BOOL &#124; 0x11                         | 在应用卸载时是否需要保留关键资产<br>**需要权限：** ohos.permission.STORE_PERSISTENT_DATA<br/>**备注：** 仅在调用[asset.add](#asset.add)函数并传入该属性时需要校验权限 |
+| DATA_LABEL_CRITICAL_1     | TagType.BYTES &#124; 0x20 | 关键资产附属信息，内容由业务自定义且**有完整性保护**             |
+| DATA_LABEL_CRITICAL_2 | TagType.BYTES &#124; 0x21 | 关键资产附属信息，内容由业务自定义且**有完整性保护** |
+| DATA_LABEL_CRITICAL_3 | TagType.BYTES &#124; 0x22 | 关键资产附属信息，内容由业务自定义且**有完整性保护** |
+| DATA_LABEL_CRITICAL_4 | TagType.BYTES &#124; 0x23  | 关键资产附属信息，内容由业务自定义且**有完整性保护** |
+| DATA_LABEL_NORMAL_1       | TagType.BYTES &#124; 0x30 | 关键资产附属信息，内容由业务自定义且**无完整性保护**             |
+| DATA_LABEL_NORMAL_2 | TagType.BYTES &#124; 0x31 | 关键资产附属信息，内容由业务自定义且**无完整性保护** |
+| DATA_LABEL_NORMAL_3 | TagType.BYTES &#124; 0x32 | 关键资产附属信息，内容由业务自定义且**无完整性保护** |
+| DATA_LABEL_NORMAL_4 | TagType.BYTES &#124; 0x33  | 关键资产附属信息，内容由业务自定义且**无完整性保护** |
+| RETURN_TYPE               | TagType.NUMBER &#124; 0x40 | 关键资产查询返回的结果类型                                         |
+| RETURN_LIMIT              | TagType.NUMBER &#124; 0x41                      | 关键资产查询返回的结果数量                                         |
+| RETURN_OFFSET             | TagType.NUMBER &#124; 0x42   | 关键资产查询返回的结果偏移量<br>**说明：** 用于分批查询场景，指定从第几个开始返回                                 |
+| RETURN_ORDERED_BY         | TagType.NUMBER &#124; 0x43 | 关键资产查询返回的结果排序依据，仅支持按照附属信息排序<br>**说明：** 默认按照关键资产新增的顺序返回。 |
+| CONFLICT_RESOLUTION       | TagType.NUMBER &#124; 0x44 | 新增关键资产时的冲突（如：别名相同）处理策略                             |
 
 ## Value
 
@@ -406,32 +444,6 @@ type AssetMap = Map<Tag, Value>
 关键资产属性的键-值对集合。
 
 **系统能力：** SystemCapability.Security.Asset
-
-| 属性名称（Tag） | 属性内容（Value）                                  | 说明                                                         |
-| ------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| SECRET                    | 类型为Uint8Array，长度为1-1024字节                           | 关键资产明文                                                 |
-| ALIAS                     | 类型为Uint8Array，长度为1-256字节                            | 关键资产别名，每条关键资产的唯一索引                         |
-| ACCESSIBILITY             | 类型为number，取值范围详见[Accessibility](#Accessibility) | 基于锁屏状态的访问控制                                       |
-| REQUIRE_PASSWORD_SET      | 类型为bool                                                   | 是否仅在设置了锁屏密码的情况下，可访问关键资产                 |
-| AUTH_TYPE                 | 类型为number，取值范围详见[AuthType](#AuthType)  | 访问关键资产所需的用户认证类型                               |
-| AUTH_VALIDITY_PERIOD      | 类型为number，取值范围：1-600，单位为秒                      | 用户认证的有效期                                             |
-| AUTH_CHALLENGE            | 类型为Uint8Array，长度为32字节                               | 用户认证的挑战值                                         |
-| AUTH_TOKEN                | 类型为Uint8Array，长度为148字节                              | 用户认证通过的授权令牌                                           |
-| SYNC_TYPE                 | 类型为number，取值范围详见[SyncType](#SyncType)  | 关键资产支持的同步类型                                       |
-| IS_PERSISTENT             | 类型为bool                                                   | 在应用卸载时是否需要保留关键资产<br>**需要权限：** ohos.permission.STORE_PERSISTENT_DATA<br/>**备注：** 仅在调用[asset.add](#asset.add)函数并传入该属性时需要校验权限 |
-| DATA_LABEL_CRITICAL_1     | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且**有完整性保护**             |
-| DATA_LABEL_CRITICAL_2 | 类型为Uint8Array，长度为1-512字节 | 关键资产附属信息，内容由业务自定义且**有完整性保护** |
-| DATA_LABEL_CRITICAL_3 | 类型为Uint8Array，长度为1-512字节 | 关键资产附属信息，内容由业务自定义且**有完整性保护** |
-| DATA_LABEL_CRITICAL_4 | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且**有完整性保护** |
-| DATA_LABEL_NORMAL_1       | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且**无完整性保护**             |
-| DATA_LABEL_NORMAL_2 | 类型为Uint8Array，长度为1-512字节 | 关键资产附属信息，内容由业务自定义且**无完整性保护** |
-| DATA_LABEL_NORMAL_3 | 类型为Uint8Array，长度为1-512字节 | 关键资产附属信息，内容由业务自定义且**无完整性保护** |
-| DATA_LABEL_NORMAL_4 | 类型为Uint8Array，长度为1-512字节                            | 关键资产附属信息，内容由业务自定义且**无完整性保护** |
-| RETURN_TYPE               | 类型为number，取值范围详见[ReturnType](#ReturnType) | 关键资产查询返回的结果类型                                         |
-| RETURN_LIMIT              | 类型为number                                                 | 关键资产查询返回的结果数量                                         |
-| RETURN_OFFSET             | 类型为number，取值范围：1-65536                              | 关键资产查询返回的结果偏移量<br>**说明：** 用于分批查询场景，指定从第几个开始返回                                 |
-| RETURN_ORDERED_BY         | 类型为number，取值范围：asset.Tag.DATA_LABEL_xxx             | 关键资产查询返回的结果排序依据，仅支持按照附属信息排序<br>**说明：** 默认按照关键资产新增的顺序返回。 |
-| CONFLICT_RESOLUTION       | 类型为number，取值范围详见[ConflictResolution](#ConflictResolution) | 新增关键资产时的冲突（如：别名相同）处理策略                             |
 
 ## Accessibility
 
@@ -466,11 +478,11 @@ type AssetMap = Map<Tag, Value>
 
 **系统能力：** SystemCapability.Security.Asset
 
-| 名称           | 值   | 说明                                             |
-| -------------- | ---- | ------------------------------------------------ |
-| NEVER          | 0    | 不允许同步关键资产。                             |
-| THIS_DEVICE    | 1    | 只在本设备进行同步，如仅在本设备还原的备份场景。 |
-| TRUSTED_DEVICE | 2    | 只在可信设备间进行同步，如克隆场景。             |
+| 名称           | 值     | 说明                                             |
+| -------------- | ------ | ------------------------------------------------ |
+| NEVER          | 0      | 不允许同步关键资产。                             |
+| THIS_DEVICE    | 1 << 0 | 只在本设备进行同步，如仅在本设备还原的备份场景。 |
+| TRUSTED_DEVICE | 1 << 1 | 只在可信设备间进行同步，如克隆场景。             |
 
 ## ReturnType
 
