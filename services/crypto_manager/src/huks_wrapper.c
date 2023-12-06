@@ -54,8 +54,8 @@ static int32_t AddCommonGenParams(struct HksParamSet *paramSet, const struct Key
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
-        // { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->storageLevel },
-        // { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->userId },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->storageLevel },
+        { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->userId },
     };
     return HksAddParams(paramSet, commonParams, ARRAY_SIZE(commonParams));
 }
@@ -98,15 +98,14 @@ int32_t GenerateKey(const struct KeyId *keyId, bool needAuth, bool requirePasswo
             }
         }
 
-        (void)requirePasswordSet;
-        // if (requirePasswordSet) {
-        //     struct HksParam tempParam = { .tag = HKS_TAG_IS_DEVICE_PASSWORD_SET, .boolParam = true };
-        //     ret = HksAddParams(paramSet, &tempParam, 1); // 1: add one param to paramSet
-        //     if (ret != HKS_SUCCESS) {
-        //         LOGE("[FATAL]HUKS add requirePasswordSet param failed. error=%{public}d", ret);
-        //         break;
-        //     }
-        // }
+        if (requirePasswordSet) {
+            struct HksParam tempParam = { .tag = HKS_TAG_IS_DEVICE_PASSWORD_SET, .boolParam = true };
+            ret = HksAddParams(paramSet, &tempParam, 1); // 1: add one param to paramSet
+            if (ret != HKS_SUCCESS) {
+                LOGE("[FATAL]HUKS add requirePasswordSet param failed. error=%{public}d", ret);
+                break;
+            }
+        }
 
         ret = HksBuildParamSet(&paramSet);
         if (ret != HKS_SUCCESS) {
@@ -144,8 +143,8 @@ int32_t EncryptData(const struct KeyId *keyId, const struct HksBlob *aad, const 
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
         { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = *aad },
-        // { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->storageLevel },
-        // { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->userId },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->storageLevel },
+        { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->userId },
     };
     struct HksParamSet *encryptParamSet = NULL;
     int32_t ret = BuildParamSet(&encryptParamSet, encryptParams, ARRAY_SIZE(encryptParams));
@@ -187,8 +186,8 @@ int32_t DecryptData(const struct KeyId *keyId, const struct HksBlob *aad, const 
         { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = *aad },
         { .tag = HKS_TAG_NONCE, .blob = nonce },
         { .tag = HKS_TAG_AE_TAG, .blob = tag },
-        // { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->storageLevel },
-        // { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->userId },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->storageLevel },
+        { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->userId },
     };
 
     int32_t ret = BuildParamSet(&decryptParamSet, decryptParams, ARRAY_SIZE(decryptParams));
@@ -221,8 +220,8 @@ int32_t InitKey(const struct KeyId *keyId, uint32_t validTime, struct HksBlob *c
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_IS_BATCH_OPERATION, .boolParam = true },
         { .tag = HKS_TAG_BATCH_OPERATION_TIMEOUT, .uint32Param = validTime },
-        // { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->storageLevel },
-        // { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->userId },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->storageLevel },
+        { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->userId },
     };
     struct HksParamSet *paramSet = NULL;
     int32_t ret = BuildParamSet(&paramSet, initParams, ARRAY_SIZE(initParams));

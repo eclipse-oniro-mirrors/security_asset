@@ -19,7 +19,10 @@ use std::time::Instant;
 
 use asset_definition::{log_throw_error, ErrCode, Result};
 
-use crate::{identity_scope::IdentityScope, secret_key::SecretKey, HksBlob, KeyId, OutBlob};
+use crate::{
+    identity_scope::IdentityScope, secret_key::SecretKey, HksBlob, KeyId, OutBlob, HKS_ERROR_DEVICE_PASSWORD_UNSET,
+    HKS_ERROR_KEY_AUTH_VERIFY_FAILED, HKS_ERROR_NO_PERMISSION, HKS_SUCCESS,
+};
 
 extern "C" {
     fn EncryptData(keyId: *const KeyId, aad: *const HksBlob, in_data: *const HksBlob, out_data: *mut OutBlob) -> i32;
@@ -35,8 +38,6 @@ extern "C" {
     fn Drop(handle: *const HksBlob) -> i32;
 }
 
-const HKS_SUCCESS: i32 = 0;
-const HKS_ERROR_KEY_AUTH_VERIFY_FAILED: i32 = -47;
 const NONCE_SIZE: usize = 12;
 const TAG_SIZE: usize = 16;
 const HANDLE_LEN: usize = 8;
@@ -81,6 +82,9 @@ impl Crypto {
         };
         match ret {
             HKS_SUCCESS => Ok(&self.challenge),
+            HKS_ERROR_NO_PERMISSION | HKS_ERROR_DEVICE_PASSWORD_UNSET => {
+                log_throw_error!(ErrCode::StatusMismatch, "[FATAL]Screen status does not match, ret: {}", ret)
+            },
             _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS init key failed, ret: {}", ret),
         }
     }
@@ -113,6 +117,9 @@ impl Crypto {
             HKS_ERROR_KEY_AUTH_VERIFY_FAILED => {
                 log_throw_error!(ErrCode::AccessDenied, "[FATAL]HUKS verify auth token failed")
             },
+            HKS_ERROR_DEVICE_PASSWORD_UNSET => {
+                log_throw_error!(ErrCode::StatusMismatch, "[FATAL]Screen status does not match, ret: {}", ret)
+            },
             _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS execute crypt failed, ret: {}", ret),
         }
     }
@@ -137,6 +144,9 @@ impl Crypto {
         };
         match ret {
             HKS_SUCCESS => Ok(cipher),
+            HKS_ERROR_NO_PERMISSION | HKS_ERROR_DEVICE_PASSWORD_UNSET => {
+                log_throw_error!(ErrCode::StatusMismatch, "[FATAL]Screen status does not match, ret: {}", ret)
+            },
             _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS encrypt failed, ret: {}", ret),
         }
     }
@@ -165,6 +175,9 @@ impl Crypto {
         };
         match ret {
             HKS_SUCCESS => Ok(plain),
+            HKS_ERROR_NO_PERMISSION | HKS_ERROR_DEVICE_PASSWORD_UNSET => {
+                log_throw_error!(ErrCode::StatusMismatch, "[FATAL]Screen status does not match, ret: {}", ret)
+            },
             _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS decrypt failed, ret: {}", ret),
         }
     }

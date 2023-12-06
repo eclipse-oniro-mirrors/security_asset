@@ -20,7 +20,9 @@ use asset_definition::{log_throw_error, Accessibility, AuthType, ErrCode, Result
 use asset_utils::hasher;
 
 use crate::identity_scope::IdentityScope;
-use crate::{HksBlob, KeyId};
+use crate::{
+    HksBlob, KeyId, HKS_ERROR_DEVICE_PASSWORD_UNSET, HKS_ERROR_NOT_EXIST, HKS_ERROR_NO_PERMISSION, HKS_SUCCESS,
+};
 
 /// Struct to store key attributes, excluding key materials.
 #[derive(Clone)]
@@ -38,9 +40,7 @@ extern "C" {
     fn IsKeyExist(alias: *const HksBlob) -> i32;
 }
 
-const HKS_SUCCESS: i32 = 0;
 const MAX_ALIAS_SIZE: usize = 64;
-const HKS_ERROR_NOT_EXIST: i32 = -13;
 
 fn append_attr<T>(tag: &str, value: T, vec: &mut Vec<u8>)
 where
@@ -94,6 +94,7 @@ impl SecretKey {
         match ret {
             HKS_SUCCESS => Ok(true),
             HKS_ERROR_NOT_EXIST => Ok(false),
+            HKS_ERROR_NO_PERMISSION => log_throw_error!(ErrCode::StatusMismatch, "[FATAL]Screen status does not match"),
             _ => {
                 log_throw_error!(ErrCode::CryptoError, "[FATAL]secret key exist check failed ret {}", ret)
             },
@@ -108,6 +109,9 @@ impl SecretKey {
         let ret = unsafe { GenerateKey(&key_id as *const KeyId, self.need_user_auth(), self.require_password_set) };
         match ret {
             HKS_SUCCESS => Ok(()),
+            HKS_ERROR_NO_PERMISSION | HKS_ERROR_DEVICE_PASSWORD_UNSET => {
+                log_throw_error!(ErrCode::StatusMismatch, "[FATAL]Screen status does not match, ret: {}", ret)
+            },
             _ => {
                 log_throw_error!(ErrCode::CryptoError, "[FATAL]secret key generate failed ret {}", ret)
             },
@@ -151,6 +155,7 @@ impl SecretKey {
         let ret = unsafe { DeleteKey(&key_alias as *const HksBlob) };
         match ret {
             HKS_SUCCESS | HKS_ERROR_NOT_EXIST => Ok(()),
+            HKS_ERROR_NO_PERMISSION => log_throw_error!(ErrCode::StatusMismatch, "[FATAL]Screen status does not match"),
             _ => {
                 log_throw_error!(ErrCode::CryptoError, "[FATAL]secret key delete failed ret {}", ret)
             },

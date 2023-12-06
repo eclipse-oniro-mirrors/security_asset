@@ -32,7 +32,7 @@ static const uint32_t NONCE_SIZE = 12;
 struct KeyId {
     int32_t userId;
     struct HksBlob alias;
-    // enum HksAuthStorageLevel storageLevel;
+    enum HksAuthStorageLevel storageLevel;
 };
 
 int32_t GenerateKey(const struct KeyId *keyId, bool needAuth, bool requirePasswordSet);

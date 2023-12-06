@@ -22,6 +22,12 @@ pub mod secret_key;
 
 use asset_definition::Accessibility;
 
+const HKS_SUCCESS: i32 = 0;
+const HKS_ERROR_NO_PERMISSION: i32 = -5;
+const HKS_ERROR_NOT_EXIST: i32 = -13;
+const HKS_ERROR_KEY_AUTH_VERIFY_FAILED: i32 = -47;
+const HKS_ERROR_DEVICE_PASSWORD_UNSET: i32 = -139;
+
 #[repr(C)]
 struct HksBlob {
     size: u32,
