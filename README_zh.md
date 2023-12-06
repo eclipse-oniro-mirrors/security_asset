@@ -51,9 +51,7 @@
 
 ### 使用说明
 
-[ArkTS开发指导](./docs/security/asset-js-guidelines.md)
-
-[C/C++开发指导](./docs/security/asset-native-guidelines.md)
+[开发指导](./docs/security/Readme-CN.md)
 
 ## 相关仓
 **[通用密钥库系统（HUKS）](https://gitee.com/openharmony/security_huks)**

@@ -48,7 +48,7 @@ extern "C" {
  */
 typedef enum {
     /**
-     * 标识关键资产属性的类型是布尔。
+     * 标识关键资产属性的类型是布尔类型。
      */
     ASSET_TYPE_BOOL = 0x1 << 28,
     /**
@@ -56,7 +56,7 @@ typedef enum {
      */
     ASSET_TYPE_NUMBER = 0x2 << 28,
     /**
-     * 标识关键资产属性的类型是字节数组。
+     * 标识关键资产属性的类型是字节数组类型。
      */
     ASSET_TYPE_BYTES = 0x3 << 28,
 } Asset_TagType;
@@ -99,7 +99,7 @@ typedef enum {
      */
     ASSET_TAG_AUTH_VALIDITY_PERIOD = ASSET_TYPE_NUMBER | 0x06,
     /**
-     * 表示认证时抗重放用的挑战值，其值为bytes类型。
+     * 表示认证时防重放用的挑战值，其值为bytes类型。
      */
     ASSET_TAG_AUTH_CHALLENGE = ASSET_TYPE_BYTES | 0x07,
     /**

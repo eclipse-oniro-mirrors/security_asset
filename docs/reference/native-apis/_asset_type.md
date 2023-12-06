@@ -203,7 +203,7 @@ enum Asset_Tag
 | ASSET_TAG_REQUIRE_PASSWORD_SET  | 表示关键资产是否在设备是否设置了锁屏密码时可用，其值为bool类型。 |
 | ASSET_TAG_AUTH_TYPE  | 表示关键资产需要的用户认证类型，其值为uint32类型。 |
 | ASSET_TAG_AUTH_VALIDITY_PERIOD  | 表示用户认证的有效时间，其值为uint32类型，单位为秒。 |
-| ASSET_TAG_AUTH_CHALLENGE  | 表示认证时抗重放用的挑战值，其值为bytes类型。 |
+| ASSET_TAG_AUTH_CHALLENGE  | 表示认证时防重放用的挑战值，其值为bytes类型。 |
 | ASSET_TAG_AUTH_TOKEN  | 表示用户认证后获取到的认证令牌，其值为bytes类型。 |
 | ASSET_TAG_SYNC_TYPE  | 表示关键资产的同步类型，其值为uint32类型。 |
 | ASSET_TAG_IS_PERSISTENT  | 表示关键资产是否需持久化存储，其值为bool类型。<br>仅在调用OH_Asset_Add函数时传入该属性需要校验权限。<br>**需要权限：** ohos.permission.STORE_PERSISTENT_DATA |
