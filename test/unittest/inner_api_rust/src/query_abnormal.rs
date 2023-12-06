@@ -131,7 +131,7 @@ fn query_invalid_auth_token() {
 #[test]
 fn query_with_auth_token_without_auth_challenge() {
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Alias, vec![]);
+    query.insert_attr(Tag::Alias, vec![1]);
     query.insert_attr(Tag::AuthType, AuthType::Any);
     query.insert_attr(Tag::ReturnType, ReturnType::All);
     query.insert_attr(Tag::AuthToken, vec![0; AUTH_TOKEN_SIZE]);
@@ -141,7 +141,7 @@ fn query_with_auth_token_without_auth_challenge() {
 #[test]
 fn query_with_auth_challenge_without_auth_token() {
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Alias, vec![]);
+    query.insert_attr(Tag::Alias, vec![1]);
     query.insert_attr(Tag::AuthType, AuthType::Any);
     query.insert_attr(Tag::ReturnType, ReturnType::All);
     query.insert_attr(Tag::AuthChallenge, vec![0; CHALLENGE_SIZE]);
