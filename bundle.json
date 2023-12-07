@@ -62,6 +62,16 @@
                         "header_files": [],
                         "header_base": []
                     }
+                },
+                {
+                    "name": "//base/security/asset/interfaces/kits/c:asset_ndk",
+                    "header": {
+                        "header_files": [
+                            "asset_api.h",
+                            "asset_type.h"
+                        ],
+                        "header_base": "//base/security/asset/interfaces/kits/c/inc"
+                    }
                 }
             ],
             "test": [

@@ -224,7 +224,7 @@ typedef enum {
     /**
      * The error code indicates that the cryptography operation is failed.
      */
-    ASSET_CRYPTO_ERROR = 2400009,
+    ASSET_CRYPTO_ERROR = 24000009,
     /**
      * The error code indicates that the ipc communication is failed.
      */

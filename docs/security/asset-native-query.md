@@ -53,7 +53,7 @@ void QueryAsset() {
     if (ret == ASSET_SUCCESS) {
         // Parse the resultSet.
         for (uint32_t i = 0; i < resultSet.count; i++) {
-            // Parse the secret.
+            // Parse the secret: the data is secret->blob.data, the size is secret->blob.size.
             Asset_Attr *secret = OH_Asset_ParseAttr(resultSet.results + i, ASSET_TAG_SECRET);
         }
     }
@@ -83,7 +83,7 @@ void QueryAttributes() {
     if (ret == ASSET_SUCCESS) {
         // Parse the result.
         for (uint32_t i = 0; i < resultSet.count; i++) {
-        // Parse the data label.
+        // Parse the data label: the data is label->blob.data, the size is label->blob.size.
             Asset_Attr *label = OH_Asset_ParseAttr(resultSet.results + i, ASSET_TAG_DATA_LABEL_NORMAL_1);
         }
     }
@@ -117,7 +117,7 @@ void BatchQuery() {
     if (ret == ASSET_SUCCESS) {
         // Parse the result.
         for (uint32_t i = 0; i < resultSet.count; i++) {
-            // Parse the data alias.
+            // Parse the data alias: the data is alias->blob.data, the size is alias->blob.size..
             Asset_Attr *alias = OH_Asset_ParseAttr(resultSet.results + i, ASSET_TAG_ALIAS);
         }
     }

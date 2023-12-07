@@ -224,7 +224,7 @@ typedef enum {
     /**
      * 表示算法库操作失败。
      */
-    ASSET_CRYPTO_ERROR = 2400009,
+    ASSET_CRYPTO_ERROR = 24000009,
     /**
      * 表示进程通信错误。
      */
