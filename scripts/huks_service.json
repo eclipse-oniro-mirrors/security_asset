@@ -9,7 +9,7 @@
             "dump_level": 1
         },
         {
-            "name": 65856,
+            "name": 8100,
             "libpath": "libasset_service.dylib.so",
             "run-on-create": true,
             "distributed": false,

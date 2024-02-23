@@ -15,6 +15,6 @@ import("//build/ohos.gni")
 import("//build/ohos/sa_profile/sa_profile.gni")
 
 ohos_sa_profile("asset_sa_profiles") {
-  sources = [ "65856.json" ]
+  sources = [ "8100.json" ]
   part_name = "asset"
 }
