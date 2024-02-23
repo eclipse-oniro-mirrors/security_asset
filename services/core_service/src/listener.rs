@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,7 +15,7 @@
 
 //! This module is used to subscribe common event and system ability.
 
-use std::slice;
+use std::{slice, time::Instant};
 
 use asset_constants::{CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
@@ -41,9 +41,16 @@ fn delete_on_package_removed(user_id: i32, owner: Vec<u8>) -> Result<bool> {
     db.is_data_exists(&cond)
 }
 
+fn clear_cryptos(calling_info: &CallingInfo) {
+    let crypto_manager = CryptoManager::get_instance();
+    crypto_manager.lock().unwrap().remove_by_calling_info(calling_info);
+}
+
 extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) {
+    let start_time = Instant::now();
     let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner, owner_size as usize).to_vec() };
     let calling_info = CallingInfo::new(user_id, OwnerType::Hap, owner.clone());
+    clear_cryptos(&calling_info);
     let res = match delete_on_package_removed(user_id, owner) {
         Ok(true) => {
             logi!("The owner wants to retain data after uninstallation. Do not delete key in HUKS!");
@@ -52,7 +59,7 @@ extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u
         Ok(false) => SecretKey::delete_by_owner(&calling_info),
         Err(e) => {
             // Report the database operation fault event.
-            upload_fault_system_event(&calling_info, "on_package_removed", &e);
+            upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e);
             SecretKey::delete_by_owner(&calling_info)
         },
     };
@@ -60,7 +67,7 @@ extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u
     if let Err(e) = res {
         // Report the key operation fault event.
         let calling_info = CallingInfo::new_self();
-        upload_fault_system_event(&calling_info, "on_package_removed", &e);
+        upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e);
     }
 }
 

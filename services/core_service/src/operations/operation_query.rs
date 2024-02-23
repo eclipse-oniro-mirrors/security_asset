@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,10 +21,11 @@ use asset_constants::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager};
 use asset_db_operator::{
     database::Database,
-    types::{column, DbMap, QueryOptions},
+    types::{column, DbMap, QueryOptions, DB_DATA_VERSION},
 };
-use asset_definition::{log_throw_error, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value};
-use asset_log::logi;
+use asset_definition::{
+    log_throw_error, throw_error, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value,
+};
 
 use crate::operations::common;
 
@@ -38,15 +39,35 @@ fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
     Ok(map_set)
 }
 
+fn upgrade_version(db: &mut Database, calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
+    db_data.insert_attr(column::VERSION, DB_DATA_VERSION);
+    let secret = db_data.get_bytes_attr(&column::SECRET)?;
+    let secret_key = common::build_secret_key(calling_info, db_data)?;
+    let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data)?)?;
+
+    let mut update_data = DbMap::new();
+    update_data.insert(column::SECRET, Value::Bytes(cipher));
+    update_data.insert_attr(column::VERSION, DB_DATA_VERSION);
+
+    let mut query_data = DbMap::new();
+    query_data.insert_attr(column::ID, db_data.get_num_attr(&column::ID)?);
+
+    let update_num = db.update_datas(&query_data, &update_data)?;
+    if update_num == 0 {
+        return log_throw_error!(ErrCode::NotFound, "[FATAL]Upgrade asset failed.");
+    }
+    Ok(())
+}
+
 fn decrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
     let secret_key = common::build_secret_key(calling_info, db_data)?;
-    let secret = Crypto::decrypt(&secret_key, secret, &common::build_aad(db_data))?;
+    let secret = Crypto::decrypt(&secret_key, secret, &common::build_aad(db_data)?)?;
     db_data.insert(column::SECRET, Value::Bytes(secret));
     Ok(())
 }
 
-fn exec_crypto(query: &AssetMap, db_data: &mut DbMap) -> Result<()> {
+fn exec_crypto(calling_info: &CallingInfo, query: &AssetMap, db_data: &mut DbMap) -> Result<()> {
     common::check_required_tags(query, &AUTH_QUERY_ATTRS)?;
     let challenge = query.get_bytes_attr(&Tag::AuthChallenge)?;
     let auth_token = query.get_bytes_attr(&Tag::AuthToken)?;
@@ -54,9 +75,9 @@ fn exec_crypto(query: &AssetMap, db_data: &mut DbMap) -> Result<()> {
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
     let arc_crypto_manager = CryptoManager::get_instance();
     let mut manager = arc_crypto_manager.lock().unwrap();
-    match manager.find(challenge) {
+    match manager.find(calling_info, challenge) {
         Ok(crypto) => {
-            let secret = crypto.exec_crypt(secret, &common::build_aad(db_data), auth_token)?;
+            let secret = crypto.exec_crypt(secret, &common::build_aad(db_data)?, auth_token)?;
             db_data.insert(column::SECRET, Value::Bytes(secret));
             Ok(())
         },
@@ -65,17 +86,20 @@ fn exec_crypto(query: &AssetMap, db_data: &mut DbMap) -> Result<()> {
 }
 
 fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) -> Result<Vec<AssetMap>> {
-    let mut results = Database::build(calling_info.user_id())?.query_datas(&vec![], db_data, None)?;
-    logi!("results len {}", results.len());
+    let mut db = Database::build(calling_info.user_id())?;
+    let mut results = db.query_datas(&vec![], db_data, None)?;
     match results.len() {
-        0 => log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist."),
+        0 => throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist."),
         1 => {
             match results[0].get(column::AUTH_TYPE) {
                 Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
-                    exec_crypto(query, &mut results[0])?;
+                    exec_crypto(calling_info, query, &mut results[0])?;
                 },
                 _ => decrypt(calling_info, &mut results[0])?,
             };
+            if common::need_upgrade(&results[0])? {
+                upgrade_version(&mut db, calling_info, &mut results[0])?;
+            }
             into_asset_maps(&results)
         },
         n => {
@@ -119,7 +143,7 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
     let mut results =
         Database::build(calling_info.user_id())?.query_datas(&vec![], db_data, Some(&get_query_options(attrs)))?;
     if results.is_empty() {
-        return log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
+        return throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
     }
 
     for data in &mut results {
@@ -144,6 +168,11 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
 
 pub(crate) fn query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<AssetMap>> {
     check_arguments(query)?;
+
+    // Check database directory exist.
+    if !asset_file_operator::is_user_db_dir_exist(calling_info.user_id()) {
+        return throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
+    }
 
     let mut db_data = common::into_db_map(query);
     common::add_owner_info(calling_info, &mut db_data);

@@ -18,6 +18,7 @@
 #include <cstring>
 #include <gtest/gtest.h>
 
+#include "asset_type.h"
 #include "bms_wrapper.h"
 
 using namespace testing::ext;
@@ -57,12 +58,12 @@ void AssetBmsWrapperTest::TearDown(void)
  */
 HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest001, TestSize.Level0)
 {
-    OwnerType ownerType = NATIVE;
+    OwnerType ownerType = CURRENT;
     uint8_t ownerInfo[256] = { 0 };
     uint32_t infoLen = 256;
     int32_t userId = 0;
     uint64_t uid = 0;
-    ASSERT_EQ(SUCCESS, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, &infoLen));
+    ASSERT_EQ(ASSET_SUCCESS, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, &infoLen));
 }
 
 /**
@@ -78,7 +79,7 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest002, TestSize.Level0)
     uint32_t infoLen = 256;
     int32_t userId = 0;
     uint64_t uid = 0;
-    ASSERT_EQ(INVALID_ARGUMENT, GetOwnerInfo(userId, uid, ownerType, ownerInfo, &infoLen));
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, GetOwnerInfo(userId, uid, ownerType, ownerInfo, &infoLen));
 }
 
 /**
@@ -89,12 +90,12 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest002, TestSize.Level0)
  */
 HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest003, TestSize.Level0)
 {
-    OwnerType ownerType = NATIVE;
+    OwnerType ownerType = CURRENT;
     uint8_t* ownerInfo = nullptr;
     uint32_t infoLen = 256;
     int32_t userId = 0;
     uint64_t uid = 0;
-    ASSERT_EQ(INVALID_ARGUMENT, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, &infoLen));
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, &infoLen));
 }
 
 /**
@@ -105,12 +106,12 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest003, TestSize.Level0)
  */
 HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest004, TestSize.Level0)
 {
-    OwnerType ownerType = NATIVE;
+    OwnerType ownerType = CURRENT;
     uint8_t ownerInfo[256] = { 0 };
     uint32_t* infoLen = nullptr;
     int32_t userId = 0;
     uint64_t uid = 0;
-    ASSERT_EQ(INVALID_ARGUMENT, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, infoLen));
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, infoLen));
 }
 
 /**

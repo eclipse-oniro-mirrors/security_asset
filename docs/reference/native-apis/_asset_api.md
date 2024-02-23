@@ -4,7 +4,7 @@
 ## 概述
 
 提供用户短敏感数据的安全存储及管理能力，包括新增、删除、更新、查询等。
-其中，短敏感数据可以是密码类（账号/密码）、Token类（应用凭据）、其他关键明文（如银行卡号）等长度较短的用户敏感数据。
+其中，短敏感数据可以是密码类（账号/密码）、Token类（应用凭据）、其它关键明文（如银行卡号）等长度较短的用户敏感数据。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -28,9 +28,9 @@
 | [OH_Asset_Add](#oh_asset_add) (const [Asset_Attr](_asset___attr.md) \*attributes, uint32_t attrCnt) | 新增一条关键资产。  |
 | [OH_Asset_Remove](#oh_asset_remove) (const [Asset_Attr](_asset___attr.md) \*query, uint32_t queryCnt) | 删除符合条件的一条或多条关键资产。 |
 | [OH_Asset_Update](#oh_asset_update) (const [Asset_Attr](_asset___attr.md) \*query, uint32_t queryCnt, const [Asset_Attr](_asset___attr.md) \*attributesToUpdate, uint32_t updateCnt) | 更新符合条件的一条关键资产。 |
-| [OH_Asset_PreQuery](#oh_asset_prequery) (const [Asset_Attr](_asset___attr.md) \*query, uint32_t queryCnt, [Asset_Blob](_asset___blob.md) \*challenge) | 查询的预处理，用于需要用户认证的关键资产。 |
+| [OH_Asset_PreQuery](#oh_asset_prequery) (const [Asset_Attr](_asset___attr.md) \*query, uint32_t queryCnt, [Asset_Blob](_asset___blob.md) \*challenge) | 查询的预处理，用于需要用户校验的关键资产。 |
 | [OH_Asset_Query](#oh_asset_query) (const [Asset_Attr](_asset___attr.md) \*query, uint32_t queryCnt, [Asset_ResultSet](_asset___result_set.md) \*resultSet) | 查询一条或多条符合条件的关键资产。 |
-| [OH_Asset_PostQuery](#oh_asset_postquery) (const [Asset_Attr](_asset___attr.md) \*handle, uint32_t handleCnt) | 查询的后置处理，用于需要用户认证的关键资产。 |
+| [OH_Asset_PostQuery](#oh_asset_postquery) (const [Asset_Attr](_asset___attr.md) \*handle, uint32_t handleCnt) | 查询的后置处理，用于需要用户校验的关键资产。 |
 | [OH_Asset_ParseAttr](#oh_asset_parseattr) (const [Asset_Result](_asset___result.md) \*result, [Asset_Tag](_asset_type.md#asset_tag) tag) | 解析查询结果，并获取指定的属性值。 |
 | [OH_Asset_FreeBlob](#oh_asset_freeblob) ([Asset_Blob](_asset___blob.md) \*blob) | 释放挑战值所占用的内存。 |
 | [OH_Asset_FreeResultSet](#oh_asset_freeresultset) ([Asset_ResultSet](_asset___result_set.md) \*resultSet) | 释放查询结果所占用的内存。 |
@@ -114,7 +114,7 @@ int32_t OH_Asset_Update (const Asset_Attr * query, uint32_t queryCnt, const Asse
 int32_t OH_Asset_PreQuery (const Asset_Attr * query, uint32_t queryCnt, Asset_Blob * challenge )
 ```
 **描述**
-查询的预处理，用于需要用户认证的关键资产。
+查询的预处理，用于需要用户校验的关键资产。
 
 **起始版本：** 11
 
@@ -124,7 +124,7 @@ int32_t OH_Asset_PreQuery (const Asset_Attr * query, uint32_t queryCnt, Asset_Bl
 | -------- | -------- |
 | query | 关键资产的查询条件。 |
 | queryCnt | 关键资产查询条件的个数。 |
-| challenge | 挑战值，用于后续用户认证。 |
+| challenge | 挑战值，用于后续用户校验。 |
 
 **返回：**
 
@@ -160,7 +160,7 @@ int32_t OH_Asset_PostQuery (const Asset_Attr * handle, uint32_t handleCnt )
 ```
 
 **描述**
-查询的后置处理，用于需要用户认证的关键资产。
+查询的后置处理，用于需要用户校验的关键资产。
 
 **起始版本：** 11
 

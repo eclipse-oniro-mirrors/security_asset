@@ -24,17 +24,10 @@ extern "C" {
 
 enum OwnerType {
     HAP = 0,
-    NATIVE = 1,
+    CURRENT = 1,
 };
 
-enum ResultCode {
-    SUCCESS = 0,
-    INVALID_ARGUMENT = 1,
-    BMS_ERROR = 2,
-    ACCESS_TOKEN_ERROR = 3,
-};
-
-ResultCode GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen);
+int32_t GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen);
 bool CheckPermission(void);
 
 #ifdef __cplusplus

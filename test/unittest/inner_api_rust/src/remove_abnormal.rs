@@ -27,10 +27,10 @@ fn remove_invalid_alias() {
 }
 
 #[test]
-fn remove_invalid_accessibility() {
+fn remove_invalid_availability() {
     let mut query = AssetMap::new();
 
-    query.insert_attr(Tag::Accessibility, (Accessibility::DeviceUnlocked as u32) + 1);
+    query.insert_attr(Tag::Availability, (Availability::DeviceUnlocked as u32) + 1);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().remove(&query).unwrap_err());
 }
 
@@ -94,7 +94,7 @@ fn remove_bytes_tag_with_unmatched_type() {
 
 #[test]
 fn remove_number_tag_with_unmatched_type() {
-    let tags_bytes = [Tag::Accessibility, Tag::AuthType, Tag::SyncType];
+    let tags_bytes = [Tag::Availability, Tag::AuthType, Tag::SyncType];
     for tag in tags_bytes {
         let mut query = AssetMap::new();
         query.insert_attr(tag, vec![]);

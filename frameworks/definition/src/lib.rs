@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -49,7 +49,7 @@ impl_tag_trait! {
         Alias = DataType::Bytes as isize | 0x02,
 
         /// A tag whose value is a 32-bit unsigned integer indicating when the Asset can be accessed.
-        Accessibility = DataType::Number as isize | 0x03,
+        Availability = DataType::Number as isize | 0x03,
 
         /// A tag whose value is a bool indicating whether a screen lock password is set for the device.
         RequirePasswordSet = DataType::Bool as isize | 0x04,
@@ -169,7 +169,7 @@ impl_enum_trait! {
         /// The error code indicates that the screen lock status mismatches.
         StatusMismatch = 24000005,
 
-        /// The error code indicates insufficient memory.
+        /// The error code indicates insufficient rom.
         OutOfMemory = 24000006,
 
         /// The error code indicates that the Asset is corrupted.
@@ -222,11 +222,12 @@ pub type Result<T> = std::result::Result<T, AssetError>;
 
 impl_enum_trait! {
     /// An enum type indicates when the Asset is accessible.
+    #[repr(C)]
     #[derive(Debug)]
     #[derive(Clone, Copy)]
     #[derive(PartialEq, Eq)]
     #[derive(Default)]
-    pub enum Accessibility {
+    pub enum Availability {
         /// The secret value in the Asset can only be accessed after the device power on.
         DevicePowerOn = 0,
 

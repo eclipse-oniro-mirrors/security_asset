@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +19,38 @@
 #include "hks_param.h"
 
 #include "asset_log.h"
+#include "asset_type.h"
 #include "huks_wrapper.h"
+
+static enum HksAuthStorageLevel AvailabilityToHksAuthStorageLevel(enum Availability availability)
+{
+    switch (availability) {
+        case DEVICE_POWERED_ON:
+            return HKS_AUTH_STORAGE_LEVEL_DE;
+        case DEVICE_FIRST_UNLOCKED:
+            return HKS_AUTH_STORAGE_LEVEL_CE;
+        default:
+            return HKS_AUTH_STORAGE_LEVEL_ECE;
+    }
+}
+
+static int32_t HuksErrorTransfer(int32_t ret)
+{
+    switch (ret) {
+        case HKS_SUCCESS:
+            return ASSET_SUCCESS;
+        case HKS_ERROR_NO_PERMISSION:
+        case HKS_ERROR_DEVICE_PASSWORD_UNSET:
+            return ASSET_STATUS_MISMATCH;
+        case HKS_ERROR_NOT_EXIST:
+            return ASSET_NOT_FOUND;
+        case HKS_ERROR_KEY_AUTH_FAILED:
+        case HKS_ERROR_KEY_AUTH_VERIFY_FAILED:
+            return ASSET_ACCESS_DENIED;
+        default:
+            return ASSET_CRYPTO_ERROR;
+    }
+}
 
 static int32_t BuildParamSet(struct HksParamSet **paramSet, const struct HksParam *params, uint32_t paramCount)
 {
@@ -40,7 +71,7 @@ static int32_t BuildParamSet(struct HksParamSet **paramSet, const struct HksPara
 
     ret = HksBuildParamSet(paramSet);
     if (ret != HKS_SUCCESS) {
-        LOGE("[FATAL]HUKS build param set failed. error=%{public}d", ret);
+        LOGE("[FATAL]HUKS construct param set failed. error=%{public}d", ret);
         HksFreeParamSet(paramSet);
     }
     return ret;
@@ -54,8 +85,8 @@ static int32_t AddCommonGenParams(struct HksParamSet *paramSet, const struct Key
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
-        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->storageLevel },
-        { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->userId },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AvailabilityToHksAuthStorageLevel(keyId->availability) },
+        { .tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = keyId->userId },
     };
     return HksAddParams(paramSet, commonParams, ARRAY_SIZE(commonParams));
 }
@@ -109,7 +140,7 @@ int32_t GenerateKey(const struct KeyId *keyId, bool needAuth, bool requirePasswo
 
         ret = HksBuildParamSet(&paramSet);
         if (ret != HKS_SUCCESS) {
-            LOGE("[FATAL]HUKS build param set failed. error=%{public}d", ret);
+            LOGE("[FATAL]HUKS construct param set failed. error=%{public}d", ret);
             break;
         }
 
@@ -120,17 +151,41 @@ int32_t GenerateKey(const struct KeyId *keyId, bool needAuth, bool requirePasswo
     } while (0);
 
     HksFreeParamSet(&paramSet);
-    return ret;
+    return HuksErrorTransfer(ret);
 }
 
-int32_t DeleteKey(const struct HksBlob *alias)
+int32_t DeleteKey(const struct KeyId *keyId)
 {
-    return HksDeleteKey(alias, NULL);
+    struct HksParam params[] = {
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AvailabilityToHksAuthStorageLevel(keyId->availability) },
+        { .tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = keyId->userId },
+    };
+    struct HksParamSet *paramSet = NULL;
+    int32_t ret = BuildParamSet(&paramSet, params, ARRAY_SIZE(params));
+    if (ret != HKS_SUCCESS) {
+        return HuksErrorTransfer(ret);
+    }
+
+    ret = HksDeleteKey(&keyId->alias, paramSet);
+    HksFreeParamSet(&paramSet);
+    return HuksErrorTransfer(ret);
 }
 
-int32_t IsKeyExist(const struct HksBlob *alias)
+int32_t IsKeyExist(const struct KeyId *keyId)
 {
-    return HksKeyExist(alias, NULL);
+    struct HksParam params[] = {
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AvailabilityToHksAuthStorageLevel(keyId->availability) },
+        { .tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = keyId->userId },
+    };
+    struct HksParamSet *paramSet = NULL;
+    int32_t ret = BuildParamSet(&paramSet, params, ARRAY_SIZE(params));
+    if (ret != HKS_SUCCESS) {
+        return HuksErrorTransfer(ret);
+    }
+
+    ret = HksKeyExist(&keyId->alias, paramSet);
+    HksFreeParamSet(&paramSet);
+    return HuksErrorTransfer(ret);
 }
 
 int32_t EncryptData(const struct KeyId *keyId, const struct HksBlob *aad, const struct HksBlob *inData,
@@ -143,13 +198,13 @@ int32_t EncryptData(const struct KeyId *keyId, const struct HksBlob *aad, const 
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
         { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = *aad },
-        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->storageLevel },
-        { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->userId },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AvailabilityToHksAuthStorageLevel(keyId->availability) },
+        { .tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = keyId->userId },
     };
     struct HksParamSet *encryptParamSet = NULL;
     int32_t ret = BuildParamSet(&encryptParamSet, encryptParams, ARRAY_SIZE(encryptParams));
     if (ret != HKS_SUCCESS) {
-        return ret;
+        return HuksErrorTransfer(ret);
     }
 
     uint8_t handle[sizeof(uint64_t)] = { 0 };
@@ -158,7 +213,7 @@ int32_t EncryptData(const struct KeyId *keyId, const struct HksBlob *aad, const 
     if (ret != HKS_SUCCESS) {
         LOGE("[FATAL]HUKS encrypt init failed. error=%{public}d", ret);
         HksFreeParamSet(&encryptParamSet);
-        return ret;
+        return HuksErrorTransfer(ret);
     }
 
     ret = HksFinish(&handleBlob, encryptParamSet, inData, outData);
@@ -166,7 +221,7 @@ int32_t EncryptData(const struct KeyId *keyId, const struct HksBlob *aad, const 
     if (ret != HKS_SUCCESS) {
         LOGE("[FATAL]HUKS encrypt finish failed. error=%{public}d", ret);
     }
-    return ret;
+    return HuksErrorTransfer(ret);
 }
 
 int32_t DecryptData(const struct KeyId *keyId, const struct HksBlob *aad, const struct HksBlob *inData,
@@ -186,13 +241,13 @@ int32_t DecryptData(const struct KeyId *keyId, const struct HksBlob *aad, const 
         { .tag = HKS_TAG_ASSOCIATED_DATA, .blob = *aad },
         { .tag = HKS_TAG_NONCE, .blob = nonce },
         { .tag = HKS_TAG_AE_TAG, .blob = tag },
-        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->storageLevel },
-        { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->userId },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AvailabilityToHksAuthStorageLevel(keyId->availability) },
+        { .tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = keyId->userId },
     };
 
     int32_t ret = BuildParamSet(&decryptParamSet, decryptParams, ARRAY_SIZE(decryptParams));
     if (ret != HKS_SUCCESS) {
-        return ret;
+        return HuksErrorTransfer(ret);
     }
 
     uint8_t handle[sizeof(uint64_t)] = { 0 };
@@ -201,7 +256,7 @@ int32_t DecryptData(const struct KeyId *keyId, const struct HksBlob *aad, const 
     if (ret != HKS_SUCCESS) {
         LOGE("[FATAL]HUKS decrypt init failed. error=%{public}d", ret);
         HksFreeParamSet(&decryptParamSet);
-        return ret;
+        return HuksErrorTransfer(ret);
     }
 
     ret = HksFinish(&handleBlob, decryptParamSet, &cipher, outData);
@@ -209,7 +264,7 @@ int32_t DecryptData(const struct KeyId *keyId, const struct HksBlob *aad, const 
     if (ret != HKS_SUCCESS) {
         LOGE("[FATAL]HUKS decrypt finish failed. error=%{public}d", ret);
     }
-    return ret;
+    return HuksErrorTransfer(ret);
 }
 
 int32_t InitKey(const struct KeyId *keyId, uint32_t validTime, struct HksBlob *challenge, struct HksBlob *handle)
@@ -220,13 +275,13 @@ int32_t InitKey(const struct KeyId *keyId, uint32_t validTime, struct HksBlob *c
         { .tag = HKS_TAG_KEY_SIZE, .uint32Param = HKS_AES_KEY_SIZE_256 },
         { .tag = HKS_TAG_IS_BATCH_OPERATION, .boolParam = true },
         { .tag = HKS_TAG_BATCH_OPERATION_TIMEOUT, .uint32Param = validTime },
-        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = (uint32_t)keyId->storageLevel },
-        { .tag = HKS_TAG_SPECIFIC_USER_ID, .uint32Param = (uint32_t)keyId->userId },
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AvailabilityToHksAuthStorageLevel(keyId->availability) },
+        { .tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = keyId->userId },
     };
     struct HksParamSet *paramSet = NULL;
     int32_t ret = BuildParamSet(&paramSet, initParams, ARRAY_SIZE(initParams));
     if (ret != HKS_SUCCESS) {
-        return ret;
+        return HuksErrorTransfer(ret);
     }
 
     ret = HksInit(&keyId->alias, paramSet, handle, challenge);
@@ -234,7 +289,7 @@ int32_t InitKey(const struct KeyId *keyId, uint32_t validTime, struct HksBlob *c
     if (ret != HKS_SUCCESS) {
         LOGE("[FATAL]HUKS batch decrypt init failed. error=%{public}d", ret);
     }
-    return ret;
+    return HuksErrorTransfer(ret);
 }
 
 int32_t ExecCrypt(const struct HksBlob *handle, const struct HksBlob *aad, const struct HksBlob *authToken,
@@ -258,7 +313,7 @@ int32_t ExecCrypt(const struct HksBlob *handle, const struct HksBlob *aad, const
     struct HksParamSet *paramSet = NULL;
     int32_t ret = BuildParamSet(&paramSet, updateParams, ARRAY_SIZE(updateParams));
     if (ret != HKS_SUCCESS) {
-        return ret;
+        return HuksErrorTransfer(ret);
     }
 
     struct HksBlob cipher = { inData->size - NONCE_SIZE - TAG_SIZE, inData->data };
@@ -267,7 +322,7 @@ int32_t ExecCrypt(const struct HksBlob *handle, const struct HksBlob *aad, const
     if (ret != HKS_SUCCESS) {
         LOGE("[FATAL]HUKS batch decrypt update failed. error=%{public}d", ret);
     }
-    return ret;
+    return HuksErrorTransfer(ret);
 }
 
 int32_t Drop(const struct HksBlob *handle)
@@ -278,7 +333,7 @@ int32_t Drop(const struct HksBlob *handle)
     struct HksParamSet *paramSet = NULL;
     int32_t ret = BuildParamSet(&paramSet, NULL, 0);
     if (ret != HKS_SUCCESS) {
-        return ret;
+        return HuksErrorTransfer(ret);
     }
 
     ret = HksFinish(handle, paramSet, &inData, &outData);
@@ -286,5 +341,5 @@ int32_t Drop(const struct HksBlob *handle)
     if (ret != HKS_SUCCESS) {
         LOGE("[FATAL]HUKS batch decrypt finish failed. error=%{public}d", ret);
     }
-    return ret;
+    return HuksErrorTransfer(ret);
 }

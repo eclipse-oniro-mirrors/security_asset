@@ -20,17 +20,18 @@
  * @addtogroup AssetType
  * @{
  *
- * @brief Defines the enumerated values, data structures and error codes used by Asset APIs.
+ * @brief Provides the enums, structs, and error codes used in the Asset APIs.
  *
- * @syscap SystemCapability.Security.Asset
  * @since 11
  */
 
 /**
  * @file asset_type.h
  *
- * @brief Defines the enumerated values, data structures and error codes used by Asset APIs.
+ * @brief Defines the enums, structs, and error codes used in the Asset APIs.
  *
+ * @kit Asset Store Kit
+ * @syscap SystemCapability.Security.Asset
  * @since 11
  */
 
@@ -42,391 +43,394 @@ extern "C" {
 #endif
 
 /**
- * @brief An enum type containing the data type definitions for Asset attribute value.
+ * @brief Enumerates the types of the asset attribute tags.
  *
  * @since 11
  */
 typedef enum {
     /**
-     * The data type of Asset attribute value is bool.
+     * The asset attribute tag is a Boolean value.
      */
     ASSET_TYPE_BOOL = 0x1 << 28,
     /**
-     * The data type of Asset attribute value is uint32.
+     * The asset attribute tag is a number.
      */
     ASSET_TYPE_NUMBER = 0x2 << 28,
     /**
-     * The data type of Asset attribute value is byte array.
+     * The asset attribute tag is an array of bytes.
      */
     ASSET_TYPE_BYTES = 0x3 << 28,
 } Asset_TagType;
 
 /**
- * @brief The mask used to obtain the data type of Asset attribute value.
+ * @brief Defines the mask used to obtain the type of the asset attribute tag.
  *
  * @since 11
  */
 #define ASSET_TAG_TYPE_MASK (0xF << 28)
 
 /**
- * @brief An enum type containing the Asset attribute tags.
+ * @brief Enumerates the asset attribute tags.
  *
  * @since 11
  */
 typedef enum {
     /**
-     * A tag whose value is a byte array indicating the sensitive user data such as passwords and tokens.
+     * Sensitive user data in the form of bytes, such as passwords and tokens.
      */
     ASSET_TAG_SECRET = ASSET_TYPE_BYTES | 0x01,
     /**
-     * A tag whose value is a byte array identifying an Asset.
+     * Asset alias (identifier) in the form of bytes.
      */
     ASSET_TAG_ALIAS = ASSET_TYPE_BYTES | 0x02,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating when the Asset can be accessed.
+     * Time when the asset is accessible. The value is of the uint32 type, which is a 32-bit unsigned integer.
      */
-    ASSET_TAG_ACCESSIBILITY = ASSET_TYPE_NUMBER | 0x03,
+    ASSET_TAG_AVAILABILITY = ASSET_TYPE_NUMBER | 0x03,
     /**
-     * A tag whose value is a bool indicating whether a screen lock password is set for the device.
+     * A Boolean value indicating whether the asset is available only with a lock screen password.
      */
     ASSET_TAG_REQUIRE_PASSWORD_SET = ASSET_TYPE_BOOL | 0x04,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the user authentication type for Asset access control.
+     * User authentication type for the asset. The value is of the uint32 type.
      */
     ASSET_TAG_AUTH_TYPE = ASSET_TYPE_NUMBER | 0x05,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the validity period in seconds of user authentication.
+     * Validity period of the user authentication, in seconds. The value is of the uint32 type.
      */
     ASSET_TAG_AUTH_VALIDITY_PERIOD = ASSET_TYPE_NUMBER | 0x06,
     /**
-     * A tag whose value is a byte array indicating the authentication challenge for anti-replay protection.
+     * Challenge value, in the form of bytes, used for anti-replay during the authentication.
      */
     ASSET_TAG_AUTH_CHALLENGE = ASSET_TYPE_BYTES | 0x07,
     /**
-     * A tag whose value is a byte array indicating the authentication token after a user is verified.
+     * Authentication token, in the form of bytes, obtained after a successful user authentication.
      */
     ASSET_TAG_AUTH_TOKEN = ASSET_TYPE_BYTES | 0x08,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the type of Asset synchronization.
+     * Asset synchronization type. The value is of the uint32 type.
      */
     ASSET_TAG_SYNC_TYPE = ASSET_TYPE_NUMBER | 0x10,
     /**
-     * A tag whose value is a bool indicating whether Asset is stored persistently.
-     * The permission needs to be verified only when this attribute is set in the {@link OH_Asset_Add} function.
+     * A Boolean value indicating whether the asset needs to be stored persistently.
+     * The ohos.permission.STORE_PERSISTENT_DATA permission is required if <b>OH_Asset_Add</b> is called with this tag.
      *
      * @permission ohos.permission.STORE_PERSISTENT_DATA
      */
     ASSET_TAG_IS_PERSISTENT = ASSET_TYPE_BOOL | 0x11,
     /**
-     * A tag whose value is a byte array indicating the first user-defined Asset data label (not allow to update).
+     * An immutable custom field, in the form of bytes.
      */
     ASSET_TAG_DATA_LABEL_CRITICAL_1 = ASSET_TYPE_BYTES | 0x20,
     /**
-     * A tag whose value is a byte array indicating the second user-defined Asset data label (not allow to update).
+     * An immutable custom field, in the form of bytes.
      */
     ASSET_TAG_DATA_LABEL_CRITICAL_2 = ASSET_TYPE_BYTES | 0x21,
     /**
-     * A tag whose value is a byte array indicating the third user-defined Asset data label (not allow to update).
+     * An immutable custom field, in the form of bytes.
      */
     ASSET_TAG_DATA_LABEL_CRITICAL_3 = ASSET_TYPE_BYTES | 0x22,
     /**
-     * A tag whose value is a byte array indicating the fourth user-defined Asset data label (not allow to update).
+     * An immutable custom field, in the form of bytes.
      */
     ASSET_TAG_DATA_LABEL_CRITICAL_4 = ASSET_TYPE_BYTES | 0x23,
     /**
-     * A tag whose value is a byte array indicating the first user-defined Asset data label (allow to update).
+     * A mutable custom field, in the form of bytes.
      */
     ASSET_TAG_DATA_LABEL_NORMAL_1 = ASSET_TYPE_BYTES | 0x30,
     /**
-     * A tag whose value is a byte array indicating the second user-defined Asset data label (allow to update).
+     * A mutable custom field, in the form of bytes.
      */
     ASSET_TAG_DATA_LABEL_NORMAL_2 = ASSET_TYPE_BYTES | 0x31,
     /**
-     * A tag whose value is a byte array indicating the third user-defined Asset data label (allow to update).
+     * A mutable custom field, in the form of bytes.
      */
     ASSET_TAG_DATA_LABEL_NORMAL_3 = ASSET_TYPE_BYTES | 0x32,
     /**
-     * A tag whose value is a byte array indicating the fourth user-defined Asset data label (allow to update).
+     * A mutable custom field, in the form of bytes.
      */
     ASSET_TAG_DATA_LABEL_NORMAL_4 = ASSET_TYPE_BYTES | 0x33,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the return type of the queried Asset.
+     * Return type of the queried asset. The value is of the uint32 type.
      */
     ASSET_TAG_RETURN_TYPE = ASSET_TYPE_NUMBER | 0x40,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the maximum number of returned Assets in one query.
+     * Maximum number of assets that can be returned at a time if multiple asset records match the specified conditions.
+     * The value is of the uint32 type.
      */
     ASSET_TAG_RETURN_LIMIT = ASSET_TYPE_NUMBER | 0x41,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the offset of return data in batch query.
+     * Offset that indicates the start asset when multiple asset records are returned. The value is of the uint32 type.
      */
     ASSET_TAG_RETURN_OFFSET = ASSET_TYPE_NUMBER | 0x42,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating how the query results are sorted.
+     * Sorting order of the assets in the query result. The value is of the uint32 type.
      */
     ASSET_TAG_RETURN_ORDERED_BY = ASSET_TYPE_NUMBER | 0x43,
     /**
-     * A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
+     * Policy used to resolve the conflict occurred when an asset is added. The value is of the uint32 type.
      */
     ASSET_TAG_CONFLICT_RESOLUTION = ASSET_TYPE_NUMBER | 0x44,
 } Asset_Tag;
 
 /**
- * @brief An enum type containing the Asset result codes.
+ * @brief Enumerates the result codes used in the ASSET APIs.
  *
  * @since 11
  */
 typedef enum {
     /**
-     * The result code indicates that the operation is successful.
+     * The operation is successful.
      */
     ASSET_SUCCESS = 0,
     /**
-     * The error code indicates that the caller doesn't have the permission.
+     * The caller does not have the required permission.
      */
     ASSET_PERMISSION_DENIED = 201,
     /**
-     * The error code indicates that the argument is invalid.
+     * The parameter is invalid.
      */
     ASSET_INVALID_ARGUMENT = 401,
     /**
-     * The error code indicates that the ASSET Service is unavailable.
+     * The asset service is unavailable.
      */
     ASSET_SERVICE_UNAVAILABLE = 24000001,
     /**
-     * The error code indicates that the queried Asset can not be found.
+     * The asset is not found.
      */
     ASSET_NOT_FOUND = 24000002,
     /**
-     * The error code indicates that the Asset already exists.
+     * The asset already exists.
      */
     ASSET_DUPLICATED = 24000003,
     /**
-     * The error code indicates that the access to Asset is denied.
+     * The access to the asset is denied.
      */
     ASSET_ACCESS_DENIED = 24000004,
     /**
-     * The error code indicates that the screen lock status mismatches.
+     * The lock screen status does not match the access control type specified.
      */
     ASSET_STATUS_MISMATCH = 24000005,
     /**
-     * The error code indicates insufficient memory.
+     * The system rom is insufficient.
      */
-    ASSET_OUT_OF_MEMRORY = 24000006,
+    ASSET_OUT_OF_ROM = 24000006,
     /**
-     * The error code indicates that the Asset is corrupted.
+     * The asset is corrupted.
      */
     ASSET_DATA_CORRUPTED = 24000007,
     /**
-     * The error code indicates that the database operation is failed.
+     * The database operation failed.
      */
     ASSET_DATABASE_ERROR = 24000008,
     /**
-     * The error code indicates that the cryptography operation is failed.
+     * The cryptography operation failed.
      */
     ASSET_CRYPTO_ERROR = 24000009,
     /**
-     * The error code indicates that the ipc communication is failed.
+     * The inter-process communication (IPC) failed.
      */
     ASSET_IPC_ERROR = 24000010,
     /**
-     * The error code indicates that the operation of calling Bundle Manager Service is failed.
+     * The Bundle Manager service is abnormal.
      */
     ASSET_BMS_ERROR = 24000011,
     /**
-     * The error code indicates that the operation of calling OS Account Service is failed.
+     * The Account service is abnormal.
      */
     ASSET_ACCOUNT_ERROR = 24000012,
     /**
-     * The error code indicates that the operation of calling Access Token Service is failed.
+     * The Access Token service is abnormal.
      */
     ASSET_ACCESS_TOKEN_ERROR = 24000013,
     /**
-     * The error code indicates that the operation of file is failed.
+     * The file operation failed.
      */
     ASSET_FILE_OPERATION_ERROR = 24000014,
     /**
-     * The error code indicates that the operation of getting system time is failed.
+     * The operation for obtaining the system time failed.
      */
     ASSET_GET_SYSTEM_TIME_ERROR = 24000015,
     /**
-     * The error code indicates that the cache exceeds the limit.
+     * The number of cached assets exceeds the limit.
      */
     ASSET_LIMIT_EXCEEDED = 24000016,
     /**
-     * The error code indicates that the capability is not supported.
+     * The function is not supported.
      */
     ASSET_UNSUPPORTED = 24000017,
 } Asset_ResultCode;
 
 /**
- * @brief An enum type indicates when the Asset is accessible.
+ * @brief Enumerates the types of the access control based on the lock screen status.
  *
  * @since 11
  */
 typedef enum {
     /**
-     * The secret value in the Asset can only be accessed after the device is powered on.
+     * The asset can be accessed after the device is powered on.
      */
-    ASSET_ACCESSIBILITY_DEVICE_POWER_ON = 0,
+    ASSET_AVAILABILITY_DEVICE_POWERED_ON = 0,
     /**
-     * The secret value in the Asset can only be accessed after the device is first unlocked.
+     * The asset can be accessed only after the device is unlocked for the first time.
      */
-    ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED = 1,
+    ASSET_AVAILABILITY_DEVICE_FIRST_UNLOCKED = 1,
     /**
-     * The secret value in the Asset can only be accessed while the device is unlocked.
+     * The asset can be accessed only after the device is unlocked.
      */
-    ASSET_ACCESSIBILITY_DEVICE_UNLOCKED = 2,
-} Asset_Accessibility;
+    ASSET_AVAILABILITY_DEVICE_UNLOCKED = 2,
+} Asset_Availability;
 
 /**
- * @brief An enum type indicates the user authentication type for Asset access control.
+ * @brief Enumerates the user authentication types supported for assets.
  *
  * @since 11
  */
 typedef enum {
     /**
-     * The access to an Asset doesn't require user authentication.
+     * No user authentication is required before the asset is accessed.
      */
     ASSET_AUTH_TYPE_NONE = 0x00,
     /**
-     * The access to an Asset requires user authentication using either PIN/pattern/password or biometric traits.
+     * The asset can be accessed if any user authentication (such as PIN, facial, or fingerprint authentication) is
+     * successful.
      */
     ASSET_AUTH_TYPE_ANY = 0xFF,
 } Asset_AuthType;
 
 /**
- * @brief An enum type indicates the type of Asset synchronization.
+ * @brief Enumerates the asset synchronization types.
  *
  * @since 11
  */
 typedef enum {
     /**
-     * An Asset with this attribute value is never allowed to be transferred out.
+     * Asset synchronization is not allowed.
      */
     ASSET_SYNC_TYPE_NEVER = 0,
     /**
-     * An Asset with this attribute value can only be restored to the device from which it was transferred out.
+     * Asset synchronization is allowed only on the local device, for example, in data restoration on the local device.
      */
     ASSET_SYNC_TYPE_THIS_DEVICE = 1 << 0,
     /**
-     * An Asset with this attribute value can only be transferred out to a trusted device (user authorized).
+     * Asset synchronization is allowed only between trusted devices, for example, in the case of cloning.
      */
     ASSET_SYNC_TYPE_TRUSTED_DEVICE = 1 << 1,
 } Asset_SyncType;
 
 /**
- * @brief An enum type indicates the strategy for conflict resolution when handling duplicated Asset alias.
+ * @brief Enumerates the policies for resolving the conflict (for example, duplicate alias) occurred when
+ * an asset is added.
  *
  * @since 11
  */
 typedef enum {
     /**
-     * Directly overwrite an Asset with duplicated alias when a conflict is detected.
+     * Overwrite the existing asset.
      */
     ASSET_CONFLICT_OVERWRITE = 0,
     /**
-     * Throw an error so that the caller can take measures when a conflict is detected.
+     * Throw an exception for the service to perform subsequent processing.
      */
     ASSET_CONFLICT_THROW_ERROR = 1,
 } Asset_ConflictResolution;
 
 /**
- * @brief An enum type indicates the return type of the queried Asset.
+ * @brief Enumerates the types of the asset query result.
  *
  * @since 11
  */
 typedef enum {
     /**
-     * Specify that the return data should contain both secret value and attributes.
+     * The query result contains the asset in plaintext and its attributes.
      */
     ASSET_RETURN_ALL = 0,
     /**
-     * Specify that the return data contains only attributes.
+     * The query result contains only the asset attributes.
      */
     ASSET_RETURN_ATTRIBUTES = 1,
 } Asset_ReturnType;
 
 /**
- * @brief A type that indicates the Asset attribute whose value is a byte array.
+ * @brief Defines an asset value in the forma of a binary array, that is, a variable-length byte array.
  *
  * @since 11
  */
 typedef struct {
     /**
-     * The size of byte array.
+     * Size of the byte array.
      */
     uint32_t size;
     /**
-     * The data of byte array.
+     * Pointer to the byte array.
      */
     uint8_t *data;
 } Asset_Blob;
 
 /**
- * @brief A type that indicates the secret or attribute value of an Asset tag.
+ * @brief Defines the value (content) of an asset attribute.
  *
  * @since 11
  */
 typedef union {
     /**
-     * Value of the asset attribute whose data type is bool.
+     * Asset of the Boolean type.
      */
     bool boolean;
     /**
-     * Value of the asset attribute whose data type is uint32.
+     * Asset of the uint32 type.
      */
     uint32_t u32;
     /**
-     * Value of the asset attribute whose data type is byte array.
+     * Asset of the bytes type.
      */
     Asset_Blob blob;
 } Asset_Value;
 
 /**
- * @brief A type that indicates the tag-value pair of the Asset attribute.
+ * @brief Defines an asset attribute.
  *
  * @since 11
  */
 typedef struct {
     /**
-     * The tag of the Asset attribute.
+     * Tag of the asset attribute.
      */
     uint32_t tag;
     /**
-     * The value of the Asset attribute.
+     * Value of the asset attribute.
      */
     Asset_Value value;
 } Asset_Attr;
 
 /**
- * @brief A type that indicates the query result of an Asset record.
+ * @brief Represents information about an asset.
  *
  * @since 11
  */
 typedef struct {
     /**
-     * The count of an Asset attributes.
+     * Number of asset attributes.
      */
     uint32_t count;
     /**
-     * The attributes of an Asset.
+     * Pointer to the array of the asset attributes.
      */
     Asset_Attr *attrs;
 } Asset_Result;
 
 /**
- * @brief A type that indicates the Asset query result set.
+ * @brief Represents information about a set of assets.
  *
  * @since 11
  */
 typedef struct {
     /**
-     * The count of the result set.
+     * Number of assets.
      */
     uint32_t count;
     /**
-     * The query result set.
+     * Pointer to the array of the assets.
      */
     Asset_Result *results;
 } Asset_ResultSet;

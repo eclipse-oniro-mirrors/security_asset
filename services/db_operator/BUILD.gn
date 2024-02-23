@@ -1,4 +1,4 @@
-# Copyright (C) 2023 Huawei Device Co., Ltd.
+# Copyright (c) 2023 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -42,14 +42,6 @@ ohos_rust_unittest("asset_db_operator_test") {
   ]
   subsystem_name = "security"
   part_name = "asset"
-  rustflags = [
-    "-Cinstrument-coverage",
-    "-Zprofile",
-    "-Ccodegen-units=1",
-    "-Copt-level=0",
-    "-Coverflow-checks=off",
-    "-Zpanic_abort_tests",
-  ]
 }
 
 ohos_static_library("asset_sqlite3_wrapper") {

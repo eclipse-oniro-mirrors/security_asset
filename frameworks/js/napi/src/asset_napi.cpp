@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "napi/native_api.h"
-#include "napi/native_node_api.h"
+#include "napi/api.h"
+#include "napi/node_api.h"
 
 #include "asset_api.h"
 #include "asset_napi_common.h"
@@ -37,7 +37,7 @@ napi_value DeclareTag(napi_env env)
     NAPI_CALL(env, napi_create_object(env, &tag));
     AddUint32Property(env, tag, "SECRET", ASSET_TAG_SECRET);
     AddUint32Property(env, tag, "ALIAS", ASSET_TAG_ALIAS);
-    AddUint32Property(env, tag, "ACCESSIBILITY", ASSET_TAG_ACCESSIBILITY);
+    AddUint32Property(env, tag, "AVAILABILITY", ASSET_TAG_AVAILABILITY);
     AddUint32Property(env, tag, "REQUIRE_PASSWORD_SET", ASSET_TAG_REQUIRE_PASSWORD_SET);
     AddUint32Property(env, tag, "AUTH_TYPE", ASSET_TAG_AUTH_TYPE);
     AddUint32Property(env, tag, "AUTH_VALIDITY_PERIOD", ASSET_TAG_AUTH_VALIDITY_PERIOD);
@@ -72,7 +72,7 @@ napi_value DeclareErrorCode(napi_env env)
     AddUint32Property(env, errorCode, "DUPLICATED", ASSET_DUPLICATED);
     AddUint32Property(env, errorCode, "ACCESS_DENIED", ASSET_ACCESS_DENIED);
     AddUint32Property(env, errorCode, "STATUS_MISMATCH", ASSET_STATUS_MISMATCH);
-    AddUint32Property(env, errorCode, "OUT_OF_MEMRORY", ASSET_OUT_OF_MEMRORY);
+    AddUint32Property(env, errorCode, "OUT_OF_ROM", ASSET_OUT_OF_ROM);
     AddUint32Property(env, errorCode, "DATA_CORRUPTED", ASSET_DATA_CORRUPTED);
     AddUint32Property(env, errorCode, "DATABASE_ERROR", ASSET_DATABASE_ERROR);
     AddUint32Property(env, errorCode, "CRYPTO_ERROR", ASSET_CRYPTO_ERROR);
@@ -87,14 +87,14 @@ napi_value DeclareErrorCode(napi_env env)
     return errorCode;
 }
 
-napi_value DeclareAccessibility(napi_env env)
+napi_value DeclareAvailability(napi_env env)
 {
-    napi_value accessibility = nullptr;
-    NAPI_CALL(env, napi_create_object(env, &accessibility));
-    AddUint32Property(env, accessibility, "DEVICE_POWER_ON", ASSET_ACCESSIBILITY_DEVICE_POWER_ON);
-    AddUint32Property(env, accessibility, "DEVICE_FIRST_UNLOCKED", ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED);
-    AddUint32Property(env, accessibility, "DEVICE_UNLOCKED", ASSET_ACCESSIBILITY_DEVICE_UNLOCKED);
-    return accessibility;
+    napi_value availability = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &availability));
+    AddUint32Property(env, availability, "DEVICE_POWERED_ON", ASSET_AVAILABILITY_DEVICE_POWERED_ON);
+    AddUint32Property(env, availability, "DEVICE_FIRST_UNLOCKED", ASSET_AVAILABILITY_DEVICE_FIRST_UNLOCKED);
+    AddUint32Property(env, availability, "DEVICE_UNLOCKED", ASSET_AVAILABILITY_DEVICE_UNLOCKED);
+    return availability;
 }
 
 napi_value DeclareAuthType(napi_env env)
@@ -144,6 +144,21 @@ napi_value NapiAdd(napi_env env, napi_callback_info info)
     return NapiEntry(env, info, __func__, execute);
 }
 
+napi_value NapiAddSync(napi_env env, napi_callback_info info)
+{
+    std::vector<Asset_Attr> attrs;
+    do {
+        if (ParseParam(env, info, attrs) != napi_ok) {
+            break;
+        }
+
+        int32_t result = OH_Asset_Add(&attrs[0], attrs.size());
+        CHECK_RESULT_BREAK(env, result);
+    } while (false);
+    FreeAssetAttrs(attrs);
+    return nullptr;
+}
+
 napi_value NapiRemove(napi_env env, napi_callback_info info)
 {
     napi_async_execute_callback execute =
@@ -152,6 +167,21 @@ napi_value NapiRemove(napi_env env, napi_callback_info info)
             context->result = OH_Asset_Remove(&context->attrs[0], context->attrs.size());
         };
     return NapiEntry(env, info, __func__, execute);
+}
+
+napi_value NapiRemoveSync(napi_env env, napi_callback_info info)
+{
+    std::vector<Asset_Attr> attrs;
+    do {
+        if (ParseParam(env, info, attrs) != napi_ok) {
+            break;
+        }
+
+        int32_t result = OH_Asset_Remove(&attrs[0], attrs.size());
+        CHECK_RESULT_BREAK(env, result);
+    } while (false);
+    FreeAssetAttrs(attrs);
+    return nullptr;
 }
 
 napi_value NapiUpdate(napi_env env, napi_callback_info info)
@@ -165,6 +195,22 @@ napi_value NapiUpdate(napi_env env, napi_callback_info info)
     return NapiEntry(env, info, __func__, execute, UPDATE_ARGS_NUM);
 }
 
+napi_value NapiUpdateSync(napi_env env, napi_callback_info info)
+{
+    std::vector<Asset_Attr> attrs;
+    std::vector<Asset_Attr> updateAttrs;
+    do {
+        if (ParseParam(env, info, UPDATE_ARGS_NUM, attrs, updateAttrs) != napi_ok) {
+            break;
+        }
+        int32_t result = OH_Asset_Update(&attrs[0], attrs.size(), &updateAttrs[0], updateAttrs.size());
+        CHECK_RESULT_BREAK(env, result);
+    } while (false);
+    FreeAssetAttrs(attrs);
+    FreeAssetAttrs(updateAttrs);
+    return nullptr;
+}
+
 napi_value NapiPreQuery(napi_env env, napi_callback_info info)
 {
     napi_async_execute_callback execute =
@@ -173,6 +219,25 @@ napi_value NapiPreQuery(napi_env env, napi_callback_info info)
             context->result = OH_Asset_PreQuery(&context->attrs[0], context->attrs.size(), &context->challenge);
         };
     return NapiEntry(env, info, __func__, execute);
+}
+
+napi_value NapiPreQuerySync(napi_env env, napi_callback_info info)
+{
+    std::vector<Asset_Attr> attrs;
+    Asset_Blob challenge = { 0 };
+    napi_value result = nullptr;
+    do {
+        if (ParseParam(env, info, attrs) != napi_ok) {
+            break;
+        }
+
+        int32_t res = OH_Asset_PreQuery(&attrs[0], attrs.size(), &challenge);
+        CHECK_RESULT_BREAK(env, res);
+        result = CreateJsUint8Array(env, challenge);
+    } while (false);
+    OH_Asset_FreeBlob(&challenge);
+    FreeAssetAttrs(attrs);
+    return result;
 }
 
 napi_value NapiQuery(napi_env env, napi_callback_info info)
@@ -185,6 +250,25 @@ napi_value NapiQuery(napi_env env, napi_callback_info info)
     return NapiEntry(env, info, __func__, execute);
 }
 
+napi_value NapiQuerySync(napi_env env, napi_callback_info info)
+{
+    std::vector<Asset_Attr> attrs;
+    Asset_ResultSet resultSet = { 0 };
+    napi_value result = nullptr;
+    do {
+        if (ParseParam(env, info, attrs) != napi_ok) {
+            break;
+        }
+
+        int32_t res = OH_Asset_Query(&attrs[0], attrs.size(), &resultSet);
+        CHECK_RESULT_BREAK(env, res);
+        result = CreateJsMapArray(env, resultSet);
+    } while (false);
+    OH_Asset_FreeResultSet(&resultSet);
+    FreeAssetAttrs(attrs);
+    return result;
+}
+
 napi_value NapiPostQuery(napi_env env, napi_callback_info info)
 {
     napi_async_execute_callback execute =
@@ -195,21 +279,42 @@ napi_value NapiPostQuery(napi_env env, napi_callback_info info)
     return NapiEntry(env, info, __func__, execute);
 }
 
+napi_value NapiPostQuerySync(napi_env env, napi_callback_info info)
+{
+    std::vector<Asset_Attr> attrs;
+    do {
+        if (ParseParam(env, info, attrs) != napi_ok) {
+            break;
+        }
+
+        int32_t result = OH_Asset_PostQuery(&attrs[0], attrs.size());
+        CHECK_RESULT_BREAK(env, result);
+    } while (false);
+    FreeAssetAttrs(attrs);
+    return nullptr;
+}
+
 napi_value Register(napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
         // register function
         DECLARE_NAPI_FUNCTION("add", NapiAdd),
+        DECLARE_NAPI_FUNCTION("addSync", NapiAddSync),
         DECLARE_NAPI_FUNCTION("remove", NapiRemove),
+        DECLARE_NAPI_FUNCTION("removeSync", NapiRemoveSync),
         DECLARE_NAPI_FUNCTION("update", NapiUpdate),
+        DECLARE_NAPI_FUNCTION("updateSync", NapiUpdateSync),
         DECLARE_NAPI_FUNCTION("preQuery", NapiPreQuery),
+        DECLARE_NAPI_FUNCTION("preQuerySync", NapiPreQuerySync),
         DECLARE_NAPI_FUNCTION("query", NapiQuery),
+        DECLARE_NAPI_FUNCTION("querySync", NapiQuerySync),
         DECLARE_NAPI_FUNCTION("postQuery", NapiPostQuery),
+        DECLARE_NAPI_FUNCTION("postQuerySync", NapiPostQuerySync),
 
         // register enumerate
         DECLARE_NAPI_PROPERTY("Tag", DeclareTag(env)),
         DECLARE_NAPI_PROPERTY("ErrorCode", DeclareErrorCode(env)),
-        DECLARE_NAPI_PROPERTY("Accessibility", DeclareAccessibility(env)),
+        DECLARE_NAPI_PROPERTY("Availability", DeclareAvailability(env)),
         DECLARE_NAPI_PROPERTY("AuthType", DeclareAuthType(env)),
         DECLARE_NAPI_PROPERTY("SyncType", DeclareSyncType(env)),
         DECLARE_NAPI_PROPERTY("ConflictResolution", DeclareConflictResolution(env)),

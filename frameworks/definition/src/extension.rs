@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -20,7 +20,7 @@ use std::{collections::HashMap, fmt::Display, hash::Hash};
 use asset_log::loge;
 
 use super::{
-    impl_from_for_u32, log_throw_error, Accessibility, AssetError, AuthType, Conversion, DataType, ErrCode, Extension,
+    impl_from_for_u32, log_throw_error, Availability, AssetError, AuthType, Conversion, DataType, ErrCode, Extension,
     Result, Tag, Value,
 };
 
@@ -145,4 +145,4 @@ impl AssetError {
 }
 
 impl_from_for_u32!(AuthType);
-impl_from_for_u32!(Accessibility);
+impl_from_for_u32!(Availability);

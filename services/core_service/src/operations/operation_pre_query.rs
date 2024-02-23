@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,7 +21,7 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap},
 };
-use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
+use asset_definition::{log_throw_error, Availability, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
 
 use crate::operations::common;
 
@@ -44,16 +44,16 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     }
 }
 
-fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Accessibility, bool)> {
+fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Availability, bool)> {
     let results = Database::build(calling_info.user_id())?.query_datas(
-        &vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET],
+        &vec![column::AVAILABILITY, column::REQUIRE_PASSWORD_SET],
         db_data,
         None,
     )?;
     match results.len() {
         0 => log_throw_error!(ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found."),
         1 => {
-            let access_type = results[0].get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
+            let access_type = results[0].get_enum_attr::<Availability>(&column::AVAILABILITY)?;
             let require_password_set = results[0].get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
             Ok((access_type, require_password_set))
         },
@@ -67,12 +67,20 @@ fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Acces
 pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
     check_arguments(query)?;
 
+    // Check database directory exist.
+    if !asset_file_operator::is_user_db_dir_exist(calling_info.user_id()) {
+        return log_throw_error!(ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found.");
+    }
+
     let mut db_data = common::into_db_map(query);
     common::add_owner_info(calling_info, &mut db_data);
     db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::Any as u32));
 
     let (access_type, require_password_set) = query_key_attrs(calling_info, &db_data)?;
-    let valid_time = query.get_num_attr(&Tag::AuthValidityPeriod).unwrap_or(DEFAULT_AUTH_VALIDITY_IN_SECS);
+    let valid_time = match query.get(&Tag::AuthValidityPeriod) {
+        Some(Value::Number(num)) => *num,
+        _ => DEFAULT_AUTH_VALIDITY_IN_SECS,
+    };
     let secret_key = SecretKey::new(calling_info, AuthType::Any, access_type, require_password_set);
     let mut crypto = Crypto::build(secret_key, valid_time)?;
     let challenge = crypto.init_key()?.to_vec();

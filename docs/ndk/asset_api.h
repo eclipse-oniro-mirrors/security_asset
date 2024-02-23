@@ -26,9 +26,8 @@
  * @{
  *
  * @brief 提供用户短敏感数据的安全存储及管理能力，包括新增、删除、更新、查询等。
- * 其中，短敏感数据可以是密码类（账号/密码）、Token类（应用凭据）、其他关键明文（如银行卡号）等长度较短的用户敏感数据。
+ * 其中，短敏感数据可以是密码类（账号/密码）、Token类（应用凭据）、其它关键明文（如银行卡号）等长度较短的用户敏感数据。
  *
- * @syscap SystemCapability.Security.Asset
  * @since 11
  */
 
@@ -37,6 +36,8 @@
  *
  * @brief 声明用于访问关键资产的接口。
  *
+ * @kit Asset Store Kit
+ * @syscap SystemCapability.Security.Asset
  * @since 11
  */
 
@@ -77,7 +78,7 @@ int32_t OH_Asset_Update(const Asset_Attr *query, uint32_t queryCnt,
     const Asset_Attr *attributesToUpdate, uint32_t updateCnt);
 
 /**
- * @brief 查询的预处理，用于需要用户认证的关键资产。
+ * @brief 查询的预处理，用于需要用户校验的关键资产。
  *
  * @param query 关键资产的查询条件。
  * @param queryCnt 关键资产查询条件的个数。
@@ -99,7 +100,7 @@ int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob
 int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultSet *resultSet);
 
 /**
- * @brief 查询的后置处理，用于需要用户认证的关键资产。
+ * @brief 查询的后置处理，用于需要用户校验的关键资产。
  *
  * @param handle 待处理的查询句柄，当前包含OH_Asset_PreQuery执行成功返回的挑战值。
  * @param handleCnt 句柄属性集合中元素的个数。

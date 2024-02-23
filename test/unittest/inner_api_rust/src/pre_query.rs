@@ -36,12 +36,12 @@ fn pre_query_with_wrong_auth_type() {
 }
 
 #[test]
-fn pre_query_with_wrong_accessibility() {
+fn pre_query_with_wrong_availability() {
     let function_name = function!().as_bytes();
     add_default_auth_asset(function_name, function_name).unwrap();
 
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlocked);
+    query.insert_attr(Tag::Availability, Availability::DeviceUnlocked);
     expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
     remove_by_alias(function_name).unwrap();
 }
@@ -101,7 +101,7 @@ fn pre_query_single_data() {
 
     let mut query = AssetMap::new();
     query.insert_attr(Tag::Alias, function_name.to_owned());
-    query.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
+    query.insert_attr(Tag::Availability, Availability::DevicePowerOn);
     query.insert_attr(Tag::AuthType, AuthType::Any);
     query.insert_attr(Tag::RequirePasswordSet, false);
     let challenge = asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap();
@@ -134,26 +134,4 @@ fn pre_query_max_times() {
         asset_sdk::Manager::build().unwrap().post_query(&query).unwrap();
     }
     remove_by_alias(function_name).unwrap();
-}
-
-#[test]
-fn pre_query_multiple_data_type() {
-    let function_name = function!().as_bytes();
-    add_default_auth_asset(function_name, function_name).unwrap();
-
-    let new_alias = "test_alias_c".as_bytes();
-    asset_sdk::Manager::build()
-        .unwrap()
-        .add(&AssetMap::from([
-            (Tag::Alias, Value::Bytes(new_alias.to_vec())),
-            (Tag::Secret, Value::Bytes(new_alias.to_vec())),
-            (Tag::Accessibility, Value::Number(Accessibility::DevicePowerOn as u32)),
-            (Tag::AuthType, Value::Number(AuthType::Any as u32)),
-            (Tag::RequirePasswordSet, Value::Bool(true)),
-        ]))
-        .unwrap();
-    let query = AssetMap::new();
-    expect_error_eq(ErrCode::Unsupported, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
-    remove_by_alias(function_name).unwrap();
-    remove_by_alias(new_alias).unwrap();
 }

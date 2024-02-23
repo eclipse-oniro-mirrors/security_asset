@@ -51,7 +51,7 @@ fn post_query_unsupported_tags() {
     }
 
     let tags_num = [
-        Tag::Accessibility,
+        Tag::Availability,
         Tag::AuthType,
         Tag::AuthValidityPeriod,
         Tag::SyncType,

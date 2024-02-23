@@ -17,7 +17,12 @@ ohos_ndk_library("libasset_ndk") {
   output_name = "asset_ndk"
   output_extension = "z.so"
   ndk_description_file = "./libasset.ndk.json"
-  min_compact_version = "1"
+  min_compact_version = "11"
+  system_capability = "SystemCapability.Security.Asset"
+  system_capability_headers = [
+    "inc/asset_api.h",
+    "inc/asset_type.h",
+  ]
 }
 
 ohos_ndk_headers("asset_header") {
@@ -37,7 +42,7 @@ ohos_shared_library("asset_ndk") {
   sources = [ "src/asset_api.c" ]
   deps = [
     ":asset_sdk_ffi",
-    "../../../frameworks/os_dependency/memory:asset_mem",
+    "../../../frameworks/os_dependency/rom:asset_mem",
   ]
 
   external_deps = [
@@ -69,7 +74,7 @@ ohos_rust_shared_ffi("asset_sdk_ffi") {
   sources = [ "src/lib.rs" ]
   deps = [
     "../../../frameworks/os_dependency/log:asset_log",
-    "../../../frameworks/os_dependency/memory:asset_mem",
+    "../../../frameworks/os_dependency/rom:asset_mem",
     "../../inner_api/rs:asset_sdk",
   ]
   crate_name = "asset_sdk_ffi"

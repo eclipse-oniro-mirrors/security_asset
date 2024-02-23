@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,9 +19,13 @@ use ipc_rust::get_calling_uid;
 
 use asset_definition::{log_throw_error, ErrCode, Result};
 
+use crate::{transfer_error_code, SUCCESS};
+
 use super::OwnerType;
 
 /// The identity of calling process.
+#[derive(Clone)]
+#[derive(PartialEq, Eq)]
 pub struct CallingInfo {
     user_id: i32,
     owner_type: OwnerType,
@@ -39,13 +43,7 @@ enum ResultCode {
 
 extern "C" {
     fn GetUserIdByUid(uid: u64, userId: &mut i32) -> bool;
-    fn GetOwnerInfo(
-        userId: i32,
-        uid: u64,
-        ownerType: *mut OwnerType,
-        ownerInfo: *mut u8,
-        infoLen: *mut u32,
-    ) -> ResultCode;
+    fn GetOwnerInfo(userId: i32, uid: u64, ownerType: *mut OwnerType, ownerInfo: *mut u8, infoLen: *mut u32) -> i32;
 }
 
 pub(crate) fn get_user_id(uid: u64) -> Result<i32> {
@@ -54,7 +52,7 @@ pub(crate) fn get_user_id(uid: u64) -> Result<i32> {
         if GetUserIdByUid(uid, &mut user_id) {
             Ok(user_id)
         } else {
-            log_throw_error!(ErrCode::AccountError, "[FATAL]Get front user id failed.")
+            log_throw_error!(ErrCode::AccountError, "[FATAL]Get user id failed.")
         }
     }
 }
@@ -79,15 +77,11 @@ impl CallingInfo {
         let mut owner_type = OwnerType::Hap;
         let err = unsafe { GetOwnerInfo(user_id, uid, &mut owner_type, owner_info.as_mut_ptr(), &mut len) };
         match err {
-            ResultCode::Success => {
+            SUCCESS => {
                 owner_info.truncate(len as usize);
                 Ok(CallingInfo { user_id, owner_type, owner_info })
             },
-            ResultCode::InvalidArgument => log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Invalid argument."),
-            ResultCode::BmsError => log_throw_error!(ErrCode::BmsError, "[FATAL]Get owner info from bms failed."),
-            ResultCode::AccessTokenError => {
-                log_throw_error!(ErrCode::AccessTokenError, "[FATAL]Get process info failed.")
-            },
+            _ => Err(transfer_error_code(ErrCode::try_from(err as u32)?)),
         }
     }
 

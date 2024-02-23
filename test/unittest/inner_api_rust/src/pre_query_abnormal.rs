@@ -27,9 +27,9 @@ fn pre_query_invalid_alias() {
 }
 
 #[test]
-fn pre_query_invalid_accessibility() {
+fn pre_query_invalid_availability() {
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Accessibility, (Accessibility::DeviceUnlocked as u32) + 1);
+    query.insert_attr(Tag::Availability, (Availability::DeviceUnlocked as u32) + 1);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
 }
 
@@ -103,7 +103,7 @@ fn pre_query_bytes_tag_with_unmatched_type() {
 
 #[test]
 fn pre_query_number_tag_with_unmatched_type() {
-    let tags_num = [Tag::Accessibility, Tag::AuthType, Tag::SyncType, Tag::AuthValidityPeriod];
+    let tags_num = [Tag::Availability, Tag::AuthType, Tag::SyncType, Tag::AuthValidityPeriod];
     for tag in tags_num {
         let mut query = AssetMap::new();
         query.insert_attr(tag, vec![]);

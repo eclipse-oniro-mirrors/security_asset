@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,10 +19,9 @@ use asset_constants::CallingInfo;
 use asset_crypto_manager::crypto::Crypto;
 use asset_db_operator::{
     database::Database,
-    types::{column, DbMap},
+    types::{column, DbMap, DB_DATA_VERSION},
 };
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, Result, Tag, Value};
-use asset_log::logi;
 use asset_utils::time;
 
 use crate::operations::common;
@@ -30,7 +29,7 @@ use crate::operations::common;
 fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
     let secret_key = common::build_secret_key(calling_info, db_data)?;
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
-    let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data))?;
+    let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data)?)?;
     Ok(cipher)
 }
 
@@ -62,6 +61,11 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap) -> Result<()> {
     common::check_value_validity(attrs_to_update)
 }
 
+fn upgrade_to_latest_version(origin_db_data: &mut DbMap, update_db_data: &mut DbMap) {
+    origin_db_data.insert_attr(column::VERSION, DB_DATA_VERSION);
+    update_db_data.insert_attr(column::VERSION, DB_DATA_VERSION);
+}
+
 pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     check_arguments(query, update)?;
 
@@ -84,6 +88,10 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
 
         let result = results.get_mut(0).unwrap();
         result.insert(column::SECRET, update[&Tag::Secret].clone());
+
+        if common::need_upgrade(result)? {
+            upgrade_to_latest_version(result, &mut update_db_data);
+        }
         let cipher = encrypt(calling_info, result)?;
         update_db_data.insert(column::SECRET, Value::Bytes(cipher));
     }
@@ -93,6 +101,5 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     if update_num == 0 {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]Update asset failed, update 0 asset.");
     }
-    logi!("update {} data", update_num);
     Ok(())
 }

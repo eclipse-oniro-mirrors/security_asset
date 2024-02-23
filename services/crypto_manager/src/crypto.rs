@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,12 +17,10 @@
 
 use std::time::Instant;
 
+use asset_constants::{transfer_error_code, SUCCESS};
 use asset_definition::{log_throw_error, ErrCode, Result};
 
-use crate::{
-    identity_scope::IdentityScope, secret_key::SecretKey, HksBlob, KeyId, OutBlob, HKS_ERROR_DEVICE_PASSWORD_UNSET,
-    HKS_ERROR_KEY_AUTH_VERIFY_FAILED, HKS_ERROR_NO_PERMISSION, HKS_SUCCESS,
-};
+use crate::{secret_key::SecretKey, HksBlob, KeyId, OutBlob};
 
 extern "C" {
     fn EncryptData(keyId: *const KeyId, aad: *const HksBlob, in_data: *const HksBlob, out_data: *mut OutBlob) -> i32;
@@ -69,9 +67,8 @@ impl Crypto {
         let key_alias = HksBlob { size: self.key.alias().len() as u32, data: self.key.alias().as_ptr() };
         let mut challenge = OutBlob { size: self.challenge.len() as u32, data: self.challenge.as_mut_ptr() };
         let mut handle = OutBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
-        let key_id = KeyId::new(self.key.user_id(), key_alias, self.key.access_type());
+        let key_id = KeyId::new(self.key.calling_info().user_id(), key_alias, self.key.access_type());
 
-        let _identity = IdentityScope::build()?;
         let ret = unsafe {
             InitKey(
                 &key_id as *const KeyId,
@@ -81,11 +78,8 @@ impl Crypto {
             )
         };
         match ret {
-            HKS_SUCCESS => Ok(&self.challenge),
-            HKS_ERROR_NO_PERMISSION | HKS_ERROR_DEVICE_PASSWORD_UNSET => {
-                log_throw_error!(ErrCode::StatusMismatch, "[FATAL]Screen status does not match, ret: {}", ret)
-            },
-            _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS init key failed, ret: {}", ret),
+            SUCCESS => Ok(&self.challenge),
+            _ => Err(transfer_error_code(ErrCode::try_from(ret as u32)?)),
         }
     }
 
@@ -102,7 +96,6 @@ impl Crypto {
         let mut msg: Vec<u8> = vec![0; cipher.len() - TAG_SIZE - NONCE_SIZE];
         let mut out_data = OutBlob { size: msg.len() as u32, data: msg.as_mut_ptr() };
 
-        let _identity = IdentityScope::build()?;
         let ret = unsafe {
             ExecCrypt(
                 &handle as *const HksBlob,
@@ -113,14 +106,8 @@ impl Crypto {
             )
         };
         match ret {
-            HKS_SUCCESS => Ok(msg),
-            HKS_ERROR_KEY_AUTH_VERIFY_FAILED => {
-                log_throw_error!(ErrCode::AccessDenied, "[FATAL]HUKS verify auth token failed")
-            },
-            HKS_ERROR_DEVICE_PASSWORD_UNSET => {
-                log_throw_error!(ErrCode::StatusMismatch, "[FATAL]Screen status does not match, ret: {}", ret)
-            },
-            _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS execute crypt failed, ret: {}", ret),
+            SUCCESS => Ok(msg),
+            _ => Err(transfer_error_code(ErrCode::try_from(ret as u32)?)),
         }
     }
 
@@ -131,9 +118,8 @@ impl Crypto {
         let aad_data = HksBlob { size: aad.len() as u32, data: aad.as_ptr() };
         let in_data = HksBlob { size: msg.len() as u32, data: msg.as_ptr() };
         let mut out_data = OutBlob { size: cipher.len() as u32, data: cipher.as_mut_ptr() };
-        let key_id = KeyId::new(key.user_id(), key_alias, key.access_type());
+        let key_id = KeyId::new(key.calling_info().user_id(), key_alias, key.access_type());
 
-        let _identity = IdentityScope::build()?;
         let ret = unsafe {
             EncryptData(
                 &key_id as *const KeyId,
@@ -143,11 +129,8 @@ impl Crypto {
             )
         };
         match ret {
-            HKS_SUCCESS => Ok(cipher),
-            HKS_ERROR_NO_PERMISSION | HKS_ERROR_DEVICE_PASSWORD_UNSET => {
-                log_throw_error!(ErrCode::StatusMismatch, "[FATAL]Screen status does not match, ret: {}", ret)
-            },
-            _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS encrypt failed, ret: {}", ret),
+            SUCCESS => Ok(cipher),
+            _ => Err(transfer_error_code(ErrCode::try_from(ret as u32)?)),
         }
     }
 
@@ -162,9 +145,8 @@ impl Crypto {
         let aad_data = HksBlob { size: aad.len() as u32, data: aad.as_ptr() };
         let in_data = HksBlob { size: cipher.len() as u32, data: cipher.as_ptr() };
         let mut out_data = OutBlob { size: plain.len() as u32, data: plain.as_mut_ptr() };
-        let key_id = KeyId::new(key.user_id(), key_alias, key.access_type());
+        let key_id = KeyId::new(key.calling_info().user_id(), key_alias, key.access_type());
 
-        let _identity = IdentityScope::build()?;
         let ret = unsafe {
             DecryptData(
                 &key_id as *const KeyId,
@@ -174,12 +156,13 @@ impl Crypto {
             )
         };
         match ret {
-            HKS_SUCCESS => Ok(plain),
-            HKS_ERROR_NO_PERMISSION | HKS_ERROR_DEVICE_PASSWORD_UNSET => {
-                log_throw_error!(ErrCode::StatusMismatch, "[FATAL]Screen status does not match, ret: {}", ret)
-            },
-            _ => log_throw_error!(ErrCode::CryptoError, "[FATAL]HUKS decrypt failed, ret: {}", ret),
+            SUCCESS => Ok(plain),
+            _ => Err(transfer_error_code(ErrCode::try_from(ret as u32)?)),
         }
+    }
+
+    pub(crate) fn key(&self) -> &SecretKey {
+        &self.key
     }
 
     pub(crate) fn challenge(&self) -> &Vec<u8> {
@@ -193,18 +176,11 @@ impl Crypto {
     pub(crate) fn valid_time(&self) -> u32 {
         self.valid_time
     }
-
-    pub(crate) fn secret_key(&self) -> &SecretKey {
-        &self.key
-    }
 }
 
 impl Drop for Crypto {
     fn drop(&mut self) {
         let handle = HksBlob { size: self.handle.len() as u32, data: self.handle.as_ptr() };
-        let identity = IdentityScope::build();
-        if identity.is_ok() {
-            unsafe { Drop(&handle as *const HksBlob) };
-        }
+        unsafe { Drop(&handle as *const HksBlob) };
     }
 }

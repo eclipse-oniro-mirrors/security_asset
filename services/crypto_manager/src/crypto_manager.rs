@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,6 +17,7 @@
 
 use std::sync::{Arc, Mutex};
 
+use asset_constants::CallingInfo;
 use asset_definition::{log_throw_error, ErrCode, Result};
 
 use crate::crypto::Crypto;
@@ -51,10 +52,10 @@ impl CryptoManager {
     }
 
     /// Find the crypto with the specified alias and challenge slice from manager.
-    pub fn find(&mut self, challenge: &Vec<u8>) -> Result<&Crypto> {
+    pub fn find(&mut self, calling_info: &CallingInfo, challenge: &Vec<u8>) -> Result<&Crypto> {
         self.remove_expired_crypto()?;
         for crypto in self.cryptos.iter() {
-            if crypto.challenge().eq(challenge) {
+            if crypto.challenge().eq(challenge) && crypto.key().calling_info().eq(calling_info) {
                 return Ok(crypto);
             }
         }
@@ -62,13 +63,20 @@ impl CryptoManager {
     }
 
     /// Remove the crypto from manager.
-    pub fn remove(&mut self, challenge: &Vec<u8>) {
-        self.cryptos.retain(|crypto| !crypto.challenge().eq(challenge));
+    pub fn remove(&mut self, calling_info: &CallingInfo, challenge: &Vec<u8>) {
+        self.cryptos.retain(|crypto|
+            crypto.key().calling_info() != calling_info || !crypto.challenge().eq(challenge)
+        );
+    }
+
+    /// Remove the crypto by calling info.
+    pub fn remove_by_calling_info(&mut self, calling_info: &CallingInfo) {
+        self.cryptos.retain(|crypto| crypto.key().calling_info() != calling_info );
     }
 
     /// Remove cryptos that required device to be unlocked.
     pub fn remove_need_device_unlocked(&mut self) {
-        self.cryptos.retain(|crypto| !crypto.secret_key().need_device_unlock());
+        self.cryptos.retain(|crypto| !crypto.key().need_device_unlock());
     }
 
     fn remove_expired_crypto(&mut self) -> Result<()> {

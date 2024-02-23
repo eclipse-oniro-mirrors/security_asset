@@ -35,7 +35,7 @@ const std::unordered_map<int32_t, const char *> ERR_MSGS = {
     { ASSET_DUPLICATED, "The Asset already exists." },
     { ASSET_ACCESS_DENIED, "The access to Asset is denied." },
     { ASSET_STATUS_MISMATCH, "The screen lock status mismatches." },
-    { ASSET_OUT_OF_MEMRORY, "Insufficient memory." },
+    { ASSET_OUT_OF_ROM, "Insufficient rom." },
     { ASSET_DATA_CORRUPTED, "The Asset is corrupted." },
     { ASSET_DATABASE_ERROR, "The database operation is failed." },
     { ASSET_CRYPTO_ERROR, "The cryptography operation is failed." },

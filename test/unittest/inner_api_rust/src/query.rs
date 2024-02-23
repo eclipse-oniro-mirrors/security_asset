@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+use std::collections::HashMap;
+
 use crate::common::*;
 use asset_sdk::*;
 
@@ -48,7 +50,7 @@ fn query_without_alias_with_wrong_condition() {
     add.insert_attr(Tag::RequirePasswordSet, false);
     add.insert_attr(Tag::Alias, function_name.to_owned());
     add.insert_attr(Tag::Secret, function_name.to_owned());
-    add.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
+    add.insert_attr(Tag::Availability, Availability::DevicePowerOn);
     asset_sdk::Manager::build().unwrap().add(&add).unwrap();
 
     let mut query = AssetMap::new();
@@ -263,10 +265,183 @@ fn query_with_wrong_auth_token() {
     query.insert_attr(Tag::ReturnType, ReturnType::All);
     query.insert_attr(Tag::AuthToken, vec![0; AUTH_TOKEN_SIZE]);
     query.insert_attr(Tag::AuthChallenge, challenge.clone());
-    expect_error_eq(ErrCode::CryptoError, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+    expect_error_eq(ErrCode::AccessDenied, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
     let mut query = AssetMap::new();
     query.insert_attr(Tag::AuthChallenge, challenge);
     asset_sdk::Manager::build().unwrap().post_query(&query).unwrap();
+    remove_by_alias(function_name).unwrap();
+}
+
+#[test]
+fn query_with_bytes_tag() {
+    let function_name = function!().as_bytes();
+    add_all_tags_asset(function_name).unwrap();
+    let alias = "default_alias".as_bytes();
+    add_default_asset(alias, alias).unwrap();
+
+    let mut bytes_tags: HashMap<Tag, &[u8]> = HashMap::new();
+    bytes_tags.insert(Tag::Alias, function_name);
+    bytes_tags.insert(Tag::DataLabelCritical1, CRITICAL_LABEL1);
+    bytes_tags.insert(Tag::DataLabelCritical2, CRITICAL_LABEL2);
+    bytes_tags.insert(Tag::DataLabelCritical3, CRITICAL_LABEL3);
+    bytes_tags.insert(Tag::DataLabelCritical4, CRITICAL_LABEL4);
+    bytes_tags.insert(Tag::DataLabelNormal1, NORMAL_LABEL1);
+    bytes_tags.insert(Tag::DataLabelNormal2, NORMAL_LABEL2);
+    bytes_tags.insert(Tag::DataLabelNormal3, NORMAL_LABEL3);
+    bytes_tags.insert(Tag::DataLabelNormal4, NORMAL_LABEL4);
+
+    for (tag, val) in bytes_tags.into_iter() {
+        let mut query = AssetMap::new();
+        query.insert_attr(tag, val.to_vec());
+        let assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
+        assert_eq!(1, assets.len() as u32);
+    }
+    remove_by_alias(function_name).unwrap();
+    remove_by_alias(alias).unwrap();
+}
+
+#[test]
+fn query_with_availability() {
+    let function_name = function!().as_bytes();
+    add_all_tags_asset(function_name).unwrap();
+
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::Availability, Availability::DevicePowerOn);
+    let assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
+    assert_eq!(1, assets.len() as u32);
+
+    query.insert_attr(Tag::Availability, Availability::DeviceUnlocked);
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+
+    query.insert_attr(Tag::Availability, Availability::DeviceFirstUnlocked);
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+    remove_by_alias(function_name).unwrap();
+}
+
+#[test]
+fn query_with_return_order_by() {
+    let alias = "return_order_by_alias".as_bytes();
+    let mut attrs = AssetMap::new();
+    let normal_label = "return_order_by_label1".as_bytes();
+    attrs.insert_attr(Tag::Alias, alias.to_vec());
+    attrs.insert_attr(Tag::Secret, alias.to_vec());
+    attrs.insert_attr(Tag::DataLabelNormal1, normal_label.to_vec());
+    attrs.insert_attr(Tag::Availability, Availability::DevicePowerOn as u32);
+    asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
+
+    let function_name = function!().as_bytes();
+    add_all_tags_asset(function_name).unwrap();
+
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::ReturnOrderedBy, Tag::DataLabelNormal1 as u32);
+    let mut assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
+    let expect_query_len = 2;
+    assert_eq!(expect_query_len, assets.len() as u32);
+    assert!(assets[0].get_bytes_attr(&Tag::DataLabelNormal1).unwrap().eq(NORMAL_LABEL1));
+
+    query.remove(&Tag::ReturnOrderedBy);
+    assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
+    assert_eq!(expect_query_len, assets.len() as u32);
+    assert!(!assets[0].get_bytes_attr(&Tag::DataLabelNormal1).unwrap().eq(NORMAL_LABEL1));
+
+    remove_by_alias(function_name).unwrap();
+    remove_by_alias(alias).unwrap();
+}
+
+#[test]
+fn query_with_return_limit() {
+    let function_name = function!().as_bytes();
+    add_all_tags_asset(function_name).unwrap();
+    let alias = "default_return_limit".as_bytes();
+    add_default_asset(alias, alias).unwrap();
+
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::ReturnLimit, 1);
+    let mut assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
+    assert_eq!(1, assets.len() as u32);
+
+    query.insert_attr(Tag::ReturnLimit, 0);
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+
+    query.remove(&Tag::ReturnLimit);
+    assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
+    let expect_query_len = 2;
+    assert_eq!(expect_query_len, assets.len() as u32);
+    remove_by_alias(function_name).unwrap();
+    remove_by_alias(alias).unwrap();
+}
+
+#[test]
+fn query_with_return_offset() {
+    let function_name = function!().as_bytes();
+    add_all_tags_asset(function_name).unwrap();
+    let alias = "default_return_offset".as_bytes();
+    add_default_asset(alias, alias).unwrap();
+
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::ReturnOffset, 1);
+    let mut assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
+    assert_eq!(1, assets.len() as u32);
+
+    query.remove(&Tag::ReturnOffset);
+    assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
+    let expect_query_len = 2;
+    assert_eq!(expect_query_len, assets.len() as u32);
+
+    let offset_start = 2;
+    query.insert_attr(Tag::ReturnOffset, offset_start);
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+    remove_by_alias(function_name).unwrap();
+    remove_by_alias(alias).unwrap();
+}
+
+#[test]
+fn query_with_return_type() {
+    let function_name = function!().as_bytes();
+    add_all_tags_asset(function_name).unwrap();
+
+    let mut query = AssetMap::new();
+    query.insert_attr(Tag::ReturnType, ReturnType::Attributes as u32);
+    let assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
+    assert_eq!(1, assets.len() as u32);
+
+    query.insert_attr(Tag::ReturnType, ReturnType::All as u32);
+    expect_error_eq(ErrCode::Unsupported, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+    remove_by_alias(function_name).unwrap();
+}
+
+#[test]
+fn query_with_auth_type() {
+    let function_name = function!().as_bytes();
+    add_all_tags_asset(function_name).unwrap();
+    let alias = "default_number_alias".as_bytes();
+    add_default_asset(alias, alias).unwrap();
+
+    for auth_type in vec![AuthType::Any as u32, AuthType::None as u32].into_iter() {
+        let mut query = AssetMap::new();
+        query.insert_attr(Tag::AuthType, auth_type);
+        let assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
+        assert_eq!(1, assets.len() as u32);
+    }
+    remove_by_alias(function_name).unwrap();
+    remove_by_alias(alias).unwrap();
+}
+
+#[test]
+fn query_with_sync_type() {
+    let function_name = function!().as_bytes();
+    add_all_tags_asset(function_name).unwrap();
+
+    let mut query = AssetMap::new();
+    let mut sync_type = SyncType::ThisDevice as u32 | SyncType::TrustedDevice as u32;
+    query.insert_attr(Tag::SyncType, sync_type);
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+
+    sync_type = SyncType::ThisDevice as u32;
+    query.insert_attr(Tag::SyncType, sync_type);
+    let assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
+    assert_eq!(1, assets.len() as u32);
+
     remove_by_alias(function_name).unwrap();
 }

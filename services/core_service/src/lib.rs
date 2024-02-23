@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -40,7 +40,7 @@ use stub::AssetStub;
 use sys_event::upload_system_event;
 use trace_scope::TraceScope;
 
-const LOG_LABEL: HiLogLabel = HiLogLabel { log_type: LogType::LogCore, domain: 0xD002F70, tag: "Asset" };
+const LOG_LABEL: HiLogLabel = HiLogLabel { log_type: LogType::LogCore, domain: 0xD002F08, tag: "Asset" };
 
 define_system_ability!(
     sa: SystemAbility(on_start, on_stop),
@@ -52,7 +52,7 @@ fn start_service<T: ISystemAbility + IMethod>(ability: &T) -> Result<()> {
     };
 
     let Some(obj) = service.as_object() else {
-        return log_throw_error!(ErrCode::IpcError, "Public Asset service failed!");
+        return log_throw_error!(ErrCode::IpcError, "Asset service as_object failed!");
     };
 
     ability.publish(&obj, SA_ID);

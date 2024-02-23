@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -140,12 +140,30 @@ macro_rules! log_throw_error {
     }};
 }
 
+/// Throw AssetError.
+///
+/// # Examples
+///
+/// ```
+/// throw_error!(ErrCode::InvalidArgument, "hello, {}", "world");
+/// ```
+#[macro_export]
+macro_rules! throw_error {
+    ($code:expr, $($arg:tt)*) => {{
+        let str = format!($($arg)*);
+        Err($crate::AssetError {
+            code: $code,
+            msg: str
+        })
+    }};
+}
+
 /// Impl from trait for u32.
 ///
 /// # Examples
 ///
 /// ```
-/// impl_from_for_u32!(Accessibility);
+/// impl_from_for_u32!(Availability);
 /// ```
 #[macro_export]
 macro_rules! impl_from_for_u32 {

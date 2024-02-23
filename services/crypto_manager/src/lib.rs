@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -17,16 +17,9 @@
 
 pub mod crypto;
 pub mod crypto_manager;
-mod identity_scope;
 pub mod secret_key;
 
-use asset_definition::Accessibility;
-
-const HKS_SUCCESS: i32 = 0;
-const HKS_ERROR_NO_PERMISSION: i32 = -5;
-const HKS_ERROR_NOT_EXIST: i32 = -13;
-const HKS_ERROR_KEY_AUTH_VERIFY_FAILED: i32 = -47;
-const HKS_ERROR_DEVICE_PASSWORD_UNSET: i32 = -139;
+use asset_definition::Availability;
 
 #[repr(C)]
 struct HksBlob {
@@ -41,32 +34,14 @@ struct OutBlob {
 }
 
 #[repr(C)]
-enum HksAuthStorageLevel {
-    Ece = 1,
-    Ce = 2,
-    De = 3,
-}
-
-impl From<Accessibility> for HksAuthStorageLevel {
-    fn from(value: Accessibility) -> Self {
-        match value {
-            Accessibility::DeviceUnlocked => HksAuthStorageLevel::Ece,
-            Accessibility::DeviceFirstUnlocked => HksAuthStorageLevel::Ce,
-            Accessibility::DevicePowerOn => HksAuthStorageLevel::De,
-        }
-    }
-}
-
-#[repr(C)]
 struct KeyId {
     user_id: i32,
     alias: HksBlob,
-    storage_level: HksAuthStorageLevel,
+    availability: Availability,
 }
 
 impl KeyId {
-    fn new(user_id: i32, alias: HksBlob, accessibility: Accessibility) -> Self {
-        let storage_level = HksAuthStorageLevel::from(accessibility);
-        Self { user_id, alias, storage_level }
+    fn new(user_id: i32, alias: HksBlob, availability: Availability) -> Self {
+        Self { user_id, alias, availability }
     }
 }

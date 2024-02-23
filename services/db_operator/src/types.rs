@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,8 +24,11 @@ pub type DbMap = HashMap<&'static str, Value>;
 
 /// Table name of asset database.
 pub const TABLE_NAME: &str = "asset_table";
+
+/// Version 1 number
+pub const DB_DATA_VERSION_V1: u32 = 1;
 /// Latest data version number.
-pub const DB_DATA_VERSION: u32 = 1;
+pub const DB_DATA_VERSION: u32 = 2;
 /// Column name of asset database.
 pub mod column {
     /// Column name of the primary key Id.
@@ -42,8 +45,8 @@ pub mod column {
     pub const GROUP_ID: &str = "GroupId";
     /// Column name of data synchronization type.
     pub const SYNC_TYPE: &str = "SyncType";
-    /// Column name of data accessibility
-    pub const ACCESSIBILITY: &str = "Accessibility";
+    /// Column name of data availability
+    pub const AVAILABILITY: &str = "Availability";
     /// Column name of the user authentication type supported by the data
     pub const AUTH_TYPE: &str = "AuthType";
     /// Column name of data creation time.
@@ -90,7 +93,7 @@ pub(crate) const COLUMN_INFO: &[ColumnInfo] = &[
     ColumnInfo { name: column::OWNER_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
     ColumnInfo { name: column::GROUP_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
     ColumnInfo { name: column::SYNC_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
-    ColumnInfo { name: column::ACCESSIBILITY, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::AVAILABILITY, data_type: DataType::Number, is_primary_key: false, not_null: true },
     ColumnInfo { name: column::AUTH_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
     ColumnInfo { name: column::CREATE_TIME, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
     ColumnInfo { name: column::UPDATE_TIME, data_type: DataType::Bytes, is_primary_key: false, not_null: true },

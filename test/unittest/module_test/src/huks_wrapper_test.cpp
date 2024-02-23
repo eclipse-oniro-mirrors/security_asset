@@ -13,15 +13,38 @@
  * limitations under the License.
  */
 
-#include "os_account_wrapper_test.h"
+#include "huks_wrapper_test.h"
 
 #include <cstring>
 #include <gtest/gtest.h>
 
+#include "nativetoken_kit.h"
+#include "token_setproc.h"
+
+#include "asset_type.h"
 #include "huks_wrapper.h"
 
 using namespace testing::ext;
 namespace UnitTest::HuksWrapperTest {
+int GrantSelfPermission()
+{
+    const char *permissions[] = {
+        "ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS"
+    };
+    NativeTokenInfoParams info = {
+        .dcapsNum = 0,
+        .permsNum = 1,
+        .aclsNum = 0,
+        .dcaps = nullptr,
+        .perms = permissions,
+        .acls = nullptr,
+        .processName = "asset_bin_test",
+        .aplStr = "system_basic",
+    };
+    uint64_t tokenId = GetAccessTokenId(&info);
+    return SetSelfTokenID(tokenId);
+}
+
 class HuksWrapperTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -35,6 +58,7 @@ public:
 
 void HuksWrapperTest::SetUpTestCase(void)
 {
+    ASSERT_EQ(0, GrantSelfPermission());
 }
 
 void HuksWrapperTest::TearDownTestCase(void)
@@ -59,10 +83,10 @@ HWTEST_F(HuksWrapperTest, HuksWrapperTest001, TestSize.Level0)
 {
     char tmpKeyAlias[] = "AESCipherKeyAlias001";
     struct HksBlob keyAlias = { (uint32_t)strlen(tmpKeyAlias), (uint8_t *)tmpKeyAlias };
-    struct KeyId keyId = { 0, keyAlias };
-    ASSERT_EQ(HKS_SUCCESS, GenerateKey(&keyId, true, false));
-    ASSERT_EQ(HKS_SUCCESS, IsKeyExist(&keyAlias));
-    ASSERT_EQ(HKS_SUCCESS, DeleteKey(&keyAlias));
+    struct KeyId keyId = { 0, keyAlias, DEVICE_POWERED_ON };
+    ASSERT_EQ(ASSET_SUCCESS, GenerateKey(&keyId, true, false));
+    ASSERT_EQ(ASSET_SUCCESS, IsKeyExist(&keyId));
+    ASSERT_EQ(ASSET_SUCCESS, DeleteKey(&keyId));
 }
 
 /**
@@ -75,8 +99,8 @@ HWTEST_F(HuksWrapperTest, HuksWrapperTest002, TestSize.Level0)
 {
     char tmpKeyAlias[] = "AESCipherKeyAlias002";
     struct HksBlob keyAlias = { (uint32_t)strlen(tmpKeyAlias), (uint8_t *)tmpKeyAlias };
-    struct KeyId keyId = { 0, keyAlias };
-    ASSERT_EQ(HKS_SUCCESS, GenerateKey(&keyId, false, false));
+    struct KeyId keyId = { 0, keyAlias, DEVICE_POWERED_ON };
+    ASSERT_EQ(ASSET_SUCCESS, GenerateKey(&keyId, false, false));
 
     uint8_t msg[6] = { 1, 2, 3, 4, 5, 6 };
     struct HksBlob inData = { 6, msg };
@@ -85,9 +109,9 @@ HWTEST_F(HuksWrapperTest, HuksWrapperTest002, TestSize.Level0)
     uint8_t aad[8] = { 0 };
     struct HksBlob aadData = { 8, aad };
 
-    ASSERT_EQ(HKS_SUCCESS, EncryptData(&keyId, &aadData, &inData, &outData));
-    ASSERT_EQ(HKS_SUCCESS, DecryptData(&keyId, &aadData, &outData, &inData));
-    ASSERT_EQ(HKS_SUCCESS, DeleteKey(&keyAlias));
+    ASSERT_EQ(ASSET_SUCCESS, EncryptData(&keyId, &aadData, &inData, &outData));
+    ASSERT_EQ(ASSET_SUCCESS, DecryptData(&keyId, &aadData, &outData, &inData));
+    ASSERT_EQ(ASSET_SUCCESS, DeleteKey(&keyId));
 }
 
 /**
@@ -100,8 +124,8 @@ HWTEST_F(HuksWrapperTest, HuksWrapperTest003, TestSize.Level0)
 {
     char tmpKeyAlias[] = "AESCipherKeyAlias003";
     struct HksBlob keyAlias = { (uint32_t)strlen(tmpKeyAlias), (uint8_t *)tmpKeyAlias };
-    struct KeyId keyId = { 0, keyAlias };
-    ASSERT_EQ(HKS_SUCCESS, GenerateKey(&keyId, true, false));
+    struct KeyId keyId = { 0, keyAlias, DEVICE_POWERED_ON };
+    ASSERT_EQ(ASSET_SUCCESS, GenerateKey(&keyId, true, false));
 
     uint8_t msg[6] = { 1, 2, 3, 4, 5, 6 };
     struct HksBlob inData = { 6, msg };
@@ -109,19 +133,35 @@ HWTEST_F(HuksWrapperTest, HuksWrapperTest003, TestSize.Level0)
     struct HksBlob outData = { 6 + TAG_SIZE + NONCE_SIZE, plain };
     uint8_t aad[8] = { 0 };
     struct HksBlob aadData = { 8, aad };
-    ASSERT_EQ(HKS_SUCCESS, EncryptData(&keyId, &aadData, &inData, &outData));
+    ASSERT_EQ(ASSET_SUCCESS, EncryptData(&keyId, &aadData, &inData, &outData));
 
     uint8_t challenge[32] = { 0 };
     struct HksBlob challengeData = { 32, challenge };
     uint8_t handle[8] = { 0 };
     struct HksBlob handleData = { 8, handle };
-    ASSERT_EQ(HKS_SUCCESS, InitKey(&keyId, 600, &challengeData, &handleData));
+    ASSERT_EQ(ASSET_SUCCESS, InitKey(&keyId, 600, &challengeData, &handleData));
 
-    uint8_t authtoken[148] = { 0 };
-    struct HksBlob authtokenData = { 148, authtoken };
+    uint8_t authToken[148] = { 0 };
+    struct HksBlob authTokenData = { 148, authToken };
     /* auth token is not ok, result in update&finish fail */
-    (void)ExecCrypt(&handleData, &aadData, &authtokenData, &outData, &inData);
-    (void)Drop(&handleData);
-    ASSERT_EQ(HKS_SUCCESS, DeleteKey(&keyAlias));
+    ASSERT_EQ(ASSET_ACCESS_DENIED, ExecCrypt(&handleData, &aadData, &authTokenData, &outData, &inData));
+    ASSERT_EQ(ASSET_NOT_FOUND, Drop(&handleData));
+    ASSERT_EQ(ASSET_SUCCESS, DeleteKey(&keyId));
+}
+
+/**
+ * @tc.name: HuksWrapperTest.HuksWrapperTest004
+ * @tc.desc: Test huks wrapper func, for secrect key generate/exists/delete cross user.
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(HuksWrapperTest, HuksWrapperTest004, TestSize.Level0)
+{
+    char tmpKeyAlias[] = "AESCipherKeyAlias004";
+    struct HksBlob keyAlias = { (uint32_t)strlen(tmpKeyAlias), (uint8_t *)tmpKeyAlias };
+    struct KeyId keyId = { 100, keyAlias, DEVICE_FIRST_UNLOCKED };
+    ASSERT_EQ(ASSET_SUCCESS, GenerateKey(&keyId, false, false));
+    ASSERT_EQ(ASSET_SUCCESS, IsKeyExist(&keyId));
+    ASSERT_EQ(ASSET_SUCCESS, DeleteKey(&keyId));
 }
 }

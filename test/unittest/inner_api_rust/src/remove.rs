@@ -37,7 +37,7 @@ fn remove_condition_exist_and_query() {
         (Tag::Secret, Value::Bytes(function_name.to_owned())),
         (Tag::DataLabelCritical2, Value::Bytes(critical_label.to_owned())),
     ]);
-    condition.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
+    condition.insert_attr(Tag::Availability, Availability::DevicePowerOn);
     asset_sdk::Manager::build().unwrap().add(&condition).unwrap();
     condition.remove(&Tag::Alias);
     condition.remove(&Tag::Secret);

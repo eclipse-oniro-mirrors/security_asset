@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,7 +18,6 @@
 use asset_constants::CallingInfo;
 use asset_db_operator::database::Database;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
-use asset_log::logi;
 
 use crate::operations::common;
 
@@ -33,6 +32,11 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
 pub(crate) fn remove(query: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     check_arguments(query)?;
 
+    // Check database directory exist.
+    if !asset_file_operator::is_user_db_dir_exist(calling_info.user_id()) {
+        return log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");
+    }
+
     let mut db_data = common::into_db_map(query);
     common::add_owner_info(calling_info, &mut db_data);
 
@@ -41,9 +45,6 @@ pub(crate) fn remove(query: &AssetMap, calling_info: &CallingInfo) -> Result<()>
         0 => {
             log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.")
         },
-        n => {
-            logi!("[INFO]Successfully deleted {} database records", n);
-            Ok(())
-        },
+        _ => Ok(()),
     }
 }

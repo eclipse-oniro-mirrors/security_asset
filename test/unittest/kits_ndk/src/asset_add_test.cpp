@@ -97,7 +97,7 @@ HWTEST_F(AssetAddTest, AssetAddTest001, TestSize.Level0)
     Asset_Attr attr[] = {
         { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
         { .tag = ASSET_TAG_SECRET, .value.blob = funcName },
-        { .tag = ASSET_TAG_ACCESSIBILITY, .value.u32 = ASSET_ACCESSIBILITY_DEVICE_POWER_ON },
+        { .tag = ASSET_TAG_AVAILABILITY, .value.u32 = ASSET_AVAILABILITY_DEVICE_POWERED_ON },
         { .tag = ASSET_TAG_REQUIRE_PASSWORD_SET, .value.boolean = false },
         { .tag = ASSET_TAG_AUTH_TYPE, .value.u32 = ASSET_AUTH_TYPE_NONE },
         { .tag = ASSET_TAG_SYNC_TYPE, .value.u32 = ASSET_SYNC_TYPE_NEVER },
@@ -136,7 +136,7 @@ HWTEST_F(AssetAddTest, AssetAddTest002, TestSize.Level0)
     Asset_Attr attr[] = {
         { .tag = ASSET_TAG_ALIAS, .value.blob = alias },
         { .tag = ASSET_TAG_SECRET, .value.blob = secret },
-        { .tag = ASSET_TAG_ACCESSIBILITY, .value.u32 = ASSET_ACCESSIBILITY_DEVICE_POWER_ON },
+        { .tag = ASSET_TAG_AVAILABILITY, .value.u32 = ASSET_AVAILABILITY_DEVICE_POWERED_ON },
     };
     ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
 }
@@ -152,7 +152,7 @@ HWTEST_F(AssetAddTest, AssetAddTest003, TestSize.Level0)
     Asset_Attr attr[] = {
         { .tag = ASSET_TAG_ALIAS, .value.u32 = 1 },
         { .tag = ASSET_TAG_SECRET, .value.boolean = true },
-        { .tag = ASSET_TAG_ACCESSIBILITY, .value.u32 = ASSET_ACCESSIBILITY_DEVICE_POWER_ON },
+        { .tag = ASSET_TAG_AVAILABILITY, .value.u32 = ASSET_AVAILABILITY_DEVICE_POWERED_ON },
     };
     ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
 }
@@ -171,7 +171,7 @@ HWTEST_F(AssetAddTest, AssetAddTest004, TestSize.Level0)
         { .tag = ASSET_TAG_ALIAS, .value.blob = alias },
         { .tag = ASSET_TAG_SECRET, .value.blob = secret },
         { .tag = ASSET_TAG_AUTH_TYPE, .value.boolean = false },
-        { .tag = ASSET_TAG_ACCESSIBILITY, .value.u32 = ASSET_ACCESSIBILITY_DEVICE_POWER_ON },
+        { .tag = ASSET_TAG_AVAILABILITY, .value.u32 = ASSET_AVAILABILITY_DEVICE_POWERED_ON },
     };
     ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
 }
@@ -190,7 +190,7 @@ HWTEST_F(AssetAddTest, AssetAddTest005, TestSize.Level0)
         { .tag = ASSET_TAG_ALIAS, .value.blob = alias },
         { .tag = ASSET_TAG_SECRET, .value.blob = secret },
         { .tag = ASSET_TAG_REQUIRE_PASSWORD_SET, .value.blob = secret },
-        { .tag = ASSET_TAG_ACCESSIBILITY, .value.u32 = ASSET_ACCESSIBILITY_DEVICE_POWER_ON },
+        { .tag = ASSET_TAG_AVAILABILITY, .value.u32 = ASSET_AVAILABILITY_DEVICE_POWERED_ON },
     };
     ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
 }
@@ -207,7 +207,7 @@ HWTEST_F(AssetAddTest, AssetAddTest006, TestSize.Level0)
     Asset_Attr attr[] = {
         { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
         { .tag = ASSET_TAG_SECRET, .value.blob = funcName },
-        { .tag = ASSET_TAG_ACCESSIBILITY, .value.u32 = ASSET_ACCESSIBILITY_DEVICE_POWER_ON },
+        { .tag = ASSET_TAG_AVAILABILITY, .value.u32 = ASSET_AVAILABILITY_DEVICE_POWERED_ON },
     };
     ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
     ASSERT_EQ(ASSET_DUPLICATED, OH_Asset_Add(attr, ARRAY_SIZE(attr)));

@@ -1,5 +1,5 @@
 {
-    "process": "huks_service",
+    "process": "asset_service",
     "systemability": [
         {
             "name": 65856,

@@ -28,16 +28,14 @@ use crate::{
     types::{column, DbMap, QueryOptions, TABLE_NAME},
 };
 
-const DB_DATA: [(&str, Value); 9] = [
+const DB_DATA: [(&str, Value); 7] = [
     (column::OWNER_TYPE, Value::Number(1)),
     (column::SYNC_TYPE, Value::Number(1)),
-    (column::ACCESSIBILITY, Value::Number(1)),
+    (column::AVAILABILITY, Value::Number(1)),
     (column::AUTH_TYPE, Value::Number(1)),
     (column::IS_PERSISTENT, Value::Bool(true)),
     (column::VERSION, Value::Number(1)),
-    (column::CREATE_TIME, Value::Number(1)),
-    (column::UPDATE_TIME, Value::Number(1)),
-    (column::REQUIRE_PASSWORD_SET, Value::Number(0)),
+    (column::REQUIRE_PASSWORD_SET, Value::Bool(false)),
 ];
 
 fn create_dir() {
@@ -51,14 +49,20 @@ fn remove_dir() {
 fn open_db_and_insert_data() -> Database {
     create_dir();
     let mut def = DbMap::from(DB_DATA);
-    def.insert(column::SECRET, Value::Bytes(column::SECRET.as_bytes().to_vec()));
-    def.insert(column::ALIAS, Value::Bytes(column::ALIAS.as_bytes().to_vec()));
-    def.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
-    def.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
+    add_bytes_column(&mut def);
     let mut db = Database::build(0).unwrap();
     let count = db.insert_datas(&def).unwrap();
     assert_eq!(count, 1);
     db
+}
+
+fn add_bytes_column(db_data: &mut DbMap) {
+    db_data.insert(column::SECRET, Value::Bytes(column::SECRET.as_bytes().to_vec()));
+    db_data.insert(column::ALIAS, Value::Bytes(column::ALIAS.as_bytes().to_vec()));
+    db_data.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
+    db_data.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
+    db_data.insert(column::CREATE_TIME, Value::Bytes(column::CREATE_TIME.as_bytes().to_vec()));
+    db_data.insert(column::UPDATE_TIME, Value::Bytes(column::UPDATE_TIME.as_bytes().to_vec()));
 }
 
 #[test]
@@ -104,10 +108,7 @@ fn create_delete_asset_table() {
 fn insert_data_with_different_alias() {
     create_dir();
     let mut def = DbMap::from(DB_DATA);
-    def.insert(column::SECRET, Value::Bytes(column::SECRET.as_bytes().to_vec()));
-    def.insert(column::ALIAS, Value::Bytes(column::ALIAS.as_bytes().to_vec()));
-    def.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
-    def.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
+    add_bytes_column(&mut def);
 
     let mut db = Database::build(0).unwrap();
     let count = db.insert_datas(&def).unwrap();
@@ -151,13 +152,18 @@ fn update_data() {
     let mut datas = DbMap::new();
     datas.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
     datas.insert(column::ALIAS, Value::Bytes(column::ALIAS.as_bytes().to_vec()));
-    let update_time = 2;
-    let count = db.update_datas(&datas, &DbMap::from([(column::UPDATE_TIME, Value::Number(update_time))])).unwrap();
+    let update_time: Vec<u8> = vec![2];
+    let count =
+        db.update_datas(&datas, &DbMap::from([(column::UPDATE_TIME, Value::Bytes(update_time.clone()))])).unwrap();
     assert_eq!(count, 1);
 
     let res = db.query_datas(&vec![], &datas, None).unwrap();
     assert_eq!(res.len(), 1);
-    assert_eq!(update_time, res[0].get_num_attr(&column::UPDATE_TIME).unwrap());
+    let query_update_time = res[0].get_bytes_attr(&column::UPDATE_TIME).unwrap();
+    assert_eq!(update_time.len(), query_update_time.len());
+    for (ins, qy) in update_time.iter().zip(query_update_time.iter()) {
+        assert_eq!(*ins, *qy);
+    }
 
     remove_dir();
 }
@@ -167,10 +173,7 @@ fn query_ordered_data() {
     // insert two data
     create_dir();
     let mut def = DbMap::from(DB_DATA);
-    def.insert(column::SECRET, Value::Bytes(column::SECRET.as_bytes().to_vec()));
-    def.insert(column::ALIAS, Value::Bytes(column::ALIAS.as_bytes().to_vec()));
-    def.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
-    def.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
+    add_bytes_column(&mut def);
 
     let mut db = Database::build(0).unwrap();
     let count = db.insert_datas(&def).unwrap();
@@ -222,10 +225,7 @@ fn backup_and_restore() {
     // Recovery the main database.
     let mut db = Database::build(0).unwrap();
     let mut def = DbMap::from(DB_DATA);
-    def.insert(column::SECRET, Value::Bytes(column::SECRET.as_bytes().to_vec()));
-    def.insert(column::ALIAS, Value::Bytes(column::ALIAS.as_bytes().to_vec()));
-    def.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
-    def.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
+    add_bytes_column(&mut def);
 
     db.query_datas(&vec![], &def, None).unwrap();
     drop(db);
@@ -249,12 +249,23 @@ fn insert_duplicated_data() {
     let mut db = open_db_and_insert_data();
 
     let mut def = DbMap::from(DB_DATA);
-    def.insert(column::SECRET, Value::Bytes(column::SECRET.as_bytes().to_vec()));
-    def.insert(column::ALIAS, Value::Bytes(column::ALIAS.as_bytes().to_vec()));
-    def.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
-    def.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
+    add_bytes_column(&mut def);
     assert_eq!(ErrCode::Duplicated, db.insert_datas(&def).unwrap_err().code);
 
+    drop(db);
+    remove_dir();
+}
+
+#[test]
+fn query_mismatch_type_data() {
+    create_dir();
+    let mut data = DbMap::from(DB_DATA);
+    add_bytes_column(&mut data);
+    data.insert(column::CREATE_TIME, Value::Number(1));
+    let mut db = Database::build(0).unwrap();
+    db.insert_datas(&data).unwrap();
+
+    assert_eq!(ErrCode::DataCorrupted, db.query_datas(&vec![], &data, None).unwrap_err().code);
     drop(db);
     remove_dir();
 }

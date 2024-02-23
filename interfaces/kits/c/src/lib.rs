@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,12 +16,7 @@
 //! This module implements the function of Asset SDK from C to RUST.
 
 use core::ffi::c_void;
-use std::{
-    convert::TryFrom,
-    mem::{size_of, ManuallyDrop},
-    result::Result,
-    slice,
-};
+use std::{convert::TryFrom, mem::size_of, result::Result, slice};
 
 use asset_log::loge;
 use asset_sdk::{log_throw_error, AssetError, AssetMap, Conversion, DataType, ErrCode, Manager, Tag, Value};
@@ -238,6 +233,7 @@ pub struct AssetAttr {
 
 /// Blob of Asset with a c representation.
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub struct AssetBlob {
     size: u32,
     data: *mut u8,
@@ -253,7 +249,7 @@ impl TryFrom<&Vec<u8>> for AssetBlob {
         if blob.data.is_null() {
             return log_throw_error!(
                 ErrCode::OutOfMemory,
-                "[FATAL][RUST SDK]Unable to allocate memory for Asset_Blob."
+                "[FATAL][RUST SDK]Unable to allocate rom for Asset_Blob."
             );
         }
         unsafe { std::ptr::copy_nonoverlapping(vec.as_ptr(), blob.data, blob.size as usize) };
@@ -265,7 +261,7 @@ impl TryFrom<&Vec<u8>> for AssetBlob {
 union AssetValue {
     boolean: bool,
     uint32: u32,
-    blob: ManuallyDrop<AssetBlob>,
+    blob: AssetBlob,
 }
 
 impl TryFrom<&Value> for AssetValue {
@@ -276,7 +272,7 @@ impl TryFrom<&Value> for AssetValue {
         match value {
             Value::Bool(v) => out.boolean = *v,
             Value::Number(v) => out.uint32 = *v,
-            Value::Bytes(v) => out.blob = ManuallyDrop::new(AssetBlob::try_from(v)?),
+            Value::Bytes(v) => out.blob = AssetBlob::try_from(v)?,
         }
         Ok(out)
     }
@@ -299,7 +295,7 @@ impl TryFrom<&AssetMap> for AssetResult {
         if result.attrs.is_null() {
             return log_throw_error!(
                 ErrCode::OutOfMemory,
-                "[FATAL][RUST SDK]Unable to allocate memory for Asset_Result."
+                "[FATAL][RUST SDK]Unable to allocate rom for Asset_Result."
             );
         }
 
@@ -331,7 +327,7 @@ impl TryFrom<&Vec<AssetMap>> for AssetResultSet {
         if result_set.results.is_null() {
             return log_throw_error!(
                 ErrCode::OutOfMemory,
-                "[FATAL][RUST SDK]Unable to allocate memory for Asset_ResultSet."
+                "[FATAL][RUST SDK]Unable to allocate rom for Asset_ResultSet."
             );
         }
         for (i, map) in maps.iter().enumerate() {

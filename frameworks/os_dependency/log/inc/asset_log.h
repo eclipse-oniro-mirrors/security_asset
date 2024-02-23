@@ -28,7 +28,6 @@
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002F08
 
-#define LOGD(fmt, arg...) \
 HILOG_DEBUG(LOG_CORE, "%" LOG_PUBLIC "s[%" LOG_PUBLIC "u]: " fmt "\n", __func__, __LINE__, ##arg)
 
 #define LOGI(fmt, arg...) \

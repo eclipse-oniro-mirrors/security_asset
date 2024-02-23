@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include <ctime>
+
 #include "system_event_wrapper.h"
 
 #include "bundle_constants.h"
@@ -59,6 +61,7 @@ public:
     ~SystemEventHandler() = default;
     void OnReceiveEvent(const CommonEventData &data) override
     {
+        long startTime = std::clock();
         auto want = data.GetWant();
         std::string action = want.GetAction();
         if (action == CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED) {
@@ -75,7 +78,7 @@ public:
             if (this->onScreenOff != nullptr) {
                 this->onScreenOff();
             }
-            LOGI("[INFO]Receive event: SCREEN_OFF");
+            LOGI("[INFO]Receive event: SCREEN_OFF, start_time: %{public}ld", startTime);
         } else {
             LOGW("[WARNING]Receive unknown event: %{public}s", action.c_str());
         }
@@ -98,7 +101,8 @@ bool SubscribeSystemEvent(OnPackageRemoved onPackageRemoved, OnUserRemoved onUse
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_OFF);
     CommonEventSubscribeInfo info(matchingSkills);
     if (g_eventHandler == nullptr) {
-        g_eventHandler = std::make_shared<SystemEventHandler>(info, onPackageRemoved, onUserRemoved, onScreenOff);
+        g_eventHandler = std::shared_ptr<SystemEventHandler>(
+            new (std::nothrow) SystemEventHandler(info, onPackageRemoved, onUserRemoved, onScreenOff));
         if (g_eventHandler == nullptr) {
             LOGE("[FATAL]Asset system event handler is nullptr.");
             return false;

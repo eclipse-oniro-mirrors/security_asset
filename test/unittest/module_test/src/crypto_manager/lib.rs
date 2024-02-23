@@ -13,16 +13,59 @@
  * limitations under the License.
  */
 
+use std::ffi::{c_char, CString};
+use std::ptr;
+
 use asset_constants::{CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto::*, crypto_manager::*, secret_key::*};
-use asset_definition::{Accessibility, AuthType};
+use asset_definition::{Availability, AuthType, ErrCode};
 
 pub const AAD_SIZE: u32 = 8;
 
+#[repr(C)]
+struct TokenInfoParams {
+    dcaps_num: i32,
+    perms_num: i32,
+    acls_num: i32,
+    dcaps: *const *const c_char,
+    perms: *const *const c_char,
+    acls: *const *const c_char,
+    process_name: *const c_char,
+    apl_str: *const c_char,
+}
+
+extern "C" {
+    fn GetAccessTokenId(token_info: *mut TokenInfoParams) -> u64;
+    fn SetSelfTokenID(token_id: u64) -> i32;
+}
+
+/// Init access token ID for current process
+fn grant_self_permission() -> i32 {
+    let perms_str = CString::new("ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS").unwrap();
+    let name = CString::new("asset_bin_test").unwrap();
+    let apl = CString::new("system_basic").unwrap();
+    let mut param = TokenInfoParams {
+        dcaps_num: 0,
+        perms_num: 1,
+        acls_num: 0,
+        dcaps: ptr::null(),
+        perms: &perms_str.as_ptr(),
+        acls: ptr::null(),
+        process_name: name.as_ptr(),
+        apl_str: apl.as_ptr(),
+    };
+
+    unsafe {
+        let token_id = GetAccessTokenId(&mut param as *mut TokenInfoParams);
+        SetSelfTokenID(token_id)
+    }
+}
+
 #[test]
 fn generate_and_delete() {
+    assert_eq!(0, grant_self_permission());
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
-    let secret_key = SecretKey::new(&calling_info, AuthType::None, Accessibility::DeviceUnlocked, false);
+    let secret_key = SecretKey::new(&calling_info, AuthType::None, Availability::DevicePowerOn, false);
     secret_key.generate().unwrap();
     secret_key.exists().unwrap();
     let _ = SecretKey::delete_by_owner(&calling_info);
@@ -31,9 +74,10 @@ fn generate_and_delete() {
 
 #[test]
 fn encrypt_and_decrypt() {
+    assert_eq!(0, grant_self_permission());
     // generate key
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
-    let secret_key = SecretKey::new(&calling_info, AuthType::None, Accessibility::DeviceFirstUnlocked, false);
+    let secret_key = SecretKey::new(&calling_info, AuthType::None, Availability::DevicePowerOn, false);
     secret_key.generate().unwrap();
 
     // encrypt data
@@ -52,8 +96,9 @@ fn encrypt_and_decrypt() {
 
 #[test]
 fn crypto_init() {
+    assert_eq!(0, grant_self_permission());
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
-    let secret_key = SecretKey::new(&calling_info, AuthType::Any, Accessibility::DeviceUnlocked, false);
+    let secret_key = SecretKey::new(&calling_info, AuthType::Any, Availability::DevicePowerOn, false);
     secret_key.generate().unwrap();
 
     let mut crypto = Crypto::build(secret_key.clone(), 600).unwrap();
@@ -63,8 +108,9 @@ fn crypto_init() {
 
 #[test]
 fn crypto_exec() {
+    assert_eq!(0, grant_self_permission());
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
-    let secret_key = SecretKey::new(&calling_info, AuthType::Any, Accessibility::DeviceUnlocked, false);
+    let secret_key = SecretKey::new(&calling_info, AuthType::Any, Availability::DevicePowerOn, false);
     secret_key.generate().unwrap();
 
     let msg = vec![1, 2, 3, 4, 5, 6];
@@ -80,13 +126,14 @@ fn crypto_exec() {
 
 #[test]
 fn crypto_manager() {
+    assert_eq!(0, grant_self_permission());
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
-    let secret_key1 = SecretKey::new(&calling_info, AuthType::Any, Accessibility::DeviceFirstUnlocked, false);
+    let secret_key1 = SecretKey::new(&calling_info, AuthType::Any, Availability::DevicePowerOn, false);
     secret_key1.generate().unwrap();
     let mut crypto1 = Crypto::build(secret_key1.clone(), 600).unwrap();
     let challenge1 = crypto1.init_key().unwrap().clone();
 
-    let secret_key2 = SecretKey::new(&calling_info, AuthType::Any, Accessibility::DeviceUnlocked, false);
+    let secret_key2 = SecretKey::new(&calling_info, AuthType::Any, Availability::DevicePowerOn, false);
     secret_key2.generate().unwrap();
     let mut crypto2 = Crypto::build(secret_key2.clone(), 600).unwrap();
     let challenge2 = crypto2.init_key().unwrap().clone();
@@ -96,11 +143,16 @@ fn crypto_manager() {
     crypto_manager.add(crypto1).unwrap();
     crypto_manager.add(crypto2).unwrap();
 
-    crypto_manager.find(&challenge1).unwrap();
-    crypto_manager.find(&challenge2).unwrap();
+    let calling_info_2 = CallingInfo::new(0, OwnerType::Native, vec![b'3']);
+    crypto_manager.find(&calling_info, &challenge1).unwrap();
+    crypto_manager.find(&calling_info, &challenge2).unwrap();
+    assert_eq!(ErrCode::NotFound, crypto_manager.find(&calling_info_2, &challenge2).err().unwrap().code);
 
-    crypto_manager.remove(&challenge1);
-    crypto_manager.remove(&challenge2);
+    crypto_manager.remove(&calling_info, &challenge1);
+    crypto_manager.remove(&calling_info_2, &challenge2);
+    crypto_manager.find(&calling_info, &challenge2).unwrap();
+    crypto_manager.remove(&calling_info, &challenge2);
+    assert_eq!(ErrCode::NotFound, crypto_manager.find(&calling_info, &challenge2).err().unwrap().code);
 
     crypto_manager.remove_need_device_unlocked();
 

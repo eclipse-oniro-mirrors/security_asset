@@ -1,4 +1,4 @@
-# Copyright (C) 2023 Huawei Device Co., Ltd.
+# Copyright (c) 2023 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -35,9 +35,14 @@ ohos_rust_static_library("asset_crypto_manager") {
 }
 
 ohos_static_library("asset_huks_wrapper") {
-  include_dirs = [ "inc" ]
+  include_dirs = [
+    "inc",
+    "../../interfaces/kits/c/inc",
+  ]
   sources = [ "src/huks_wrapper.c" ]
-  deps = [ "../../frameworks/os_dependency/memory:asset_mem" ]
+  deps = [
+    "../../frameworks/os_dependency/rom:asset_mem",
+  ]
   external_deps = [
     "hilog:libhilog",
     "huks:libhukssdk",

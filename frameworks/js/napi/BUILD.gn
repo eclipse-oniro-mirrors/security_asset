@@ -22,7 +22,7 @@ ohos_shared_library("asset_napi") {
 
   deps = [
     "../../../interfaces/kits/c:asset_ndk",
-    "../../os_dependency/memory:asset_mem",
+    "../../os_dependency/rom:asset_mem",
   ]
 
   external_deps = [

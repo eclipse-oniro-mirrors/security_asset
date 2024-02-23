@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -28,11 +28,11 @@ fn check_arguments(query: &AssetMap) -> Result<()> {
     common::check_value_validity(query)
 }
 
-pub(crate) fn post_query(handle: &AssetMap, _calling_info: &CallingInfo) -> Result<()> {
+pub(crate) fn post_query(handle: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     check_arguments(handle)?;
     let challenge = handle.get_bytes_attr(&Tag::AuthChallenge)?;
 
     let crypto_manager = CryptoManager::get_instance();
-    crypto_manager.lock().unwrap().remove(challenge);
+    crypto_manager.lock().unwrap().remove(calling_info, challenge);
     Ok(())
 }

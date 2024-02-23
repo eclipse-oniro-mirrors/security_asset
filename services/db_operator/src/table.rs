@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +19,7 @@
 use core::ffi::c_void;
 use std::cmp::Ordering;
 
-use asset_definition::{log_throw_error, DataType, ErrCode, Result, Value};
+use asset_definition::{log_throw_error, Conversion, DataType, ErrCode, Result, Value};
 
 use crate::{
     database::Database,
@@ -309,7 +309,8 @@ impl<'a> Table<'a> {
                     Some(Value::Number(n)) if column_info.data_type == DataType::Bool => {
                         record.insert(column_info.name, Value::Bool(n != 0))
                     },
-                    Some(n) => record.insert(column_info.name, n),
+                    Some(n) if n.data_type() == column_info.data_type => record.insert(column_info.name, n),
+                    Some(_) => return log_throw_error!(ErrCode::DataCorrupted, "The data in DB has been tampered with."),
                     None => continue,
                 };
             }

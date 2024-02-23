@@ -25,18 +25,21 @@
  * @addtogroup AssetApi
  * @{
  *
- * @brief Describes the Asset capability of life cycle management of sensitive user data, such as passwords
- *    and tokens, including adding, removing, updating, and querying.
+ * @brief Provides APIs for storing and managing short sensitive data of users, including adding, deleting, updating,
+ * and querying the data.
+ * The short sensitive data refers to sensitive data shorter than 1024 bytes, including the user passwords
+ * (accounts/passwords), token data (APP credentials), and critical data in plaintext (bank card numbers).
  *
- * @syscap SystemCapability.Security.Asset
  * @since 11
  */
 
 /**
  * @file asset_api.h
  *
- * @brief Declares the APIs used to access the Asset.
+ * @brief Declares the APIs for accessing assets.
  *
+ * @kit Asset Store Kit
+ * @syscap SystemCapability.Security.Asset
  * @since 11
  */
 
@@ -44,101 +47,94 @@
 extern "C" {
 #endif
 /**
- * @brief Add an Asset.
+ * @brief Adds an asset.
  *
- * @param attributes Indicates the pointer to the array including attributes of the Asset to be added.
- * @param attrCnt Indicates the count of elements in attributes array.
- * @return Returns {@link Asset_ResultCode#ASSET_SUCCESS} if the operation is successful;
- *    returns an error code otherwise.
+ * @param attributes Pointer to the attributes of the asset to add.
+ * @param attributes Number of the attributes of the asset to add.
+ * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
  * @since 11
  */
 int32_t OH_Asset_Add(const Asset_Attr *attributes, uint32_t attrCnt);
 
 /**
- * @brief Remove one or more Assets that match a search query.
+ * @brief Removes one or more assets.
  *
- * @param query Indicates the pointer to the array including attributes of the Asset to be removed.
- * @param queryCnt Indicates the count of elements in query array.
- * @return Returns {@link Asset_ResultCode#ASSET_SUCCESS} if the operation is successful;
- *    returns an error code otherwise.
+ * @param query Pointer to the conditions for removing the assets.
+ * @param queryCnt Number of conditions for removing the assets.
+ * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
  * @since 11
  */
 int32_t OH_Asset_Remove(const Asset_Attr *query, uint32_t queryCnt);
 
 /**
- * @brief Update an Asset that matches a search query.
+ * @brief Updates an asset.
  *
- * @param query Indicates the pointer to a array of attributes of the Asset to be updated.
- * @param queryCnt Indicates the count of elements in query array.
- * @param attributesToUpdate Indicates the pointer to the array including attributes with new values.
- * @param updateCnt Indicates the count of elements in attributesToUpdate array.
- * @return Returns {@link Asset_ResultCode#ASSET_SUCCESS} if the operation is successful;
- *    returns an error code otherwise.
+ * @param query Pointer to the conditions for updating the asset.
+ * @param queryCnt Number of conditions for updating the asset.
+ * @param attributes Pointer to the attributes of the asset to update.
+ * @param attributes Number of the attributes of the asset to update.
+ * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
  * @since 11
  */
 int32_t OH_Asset_Update(const Asset_Attr *query, uint32_t queryCnt,
     const Asset_Attr *attributesToUpdate, uint32_t updateCnt);
 
 /**
- * @brief Preprocessing (e.g. get challenge) for querying one or more Assets that require user authentication.
+ * @brief Preprocesses data before querying the asset that can be accessed only after a successful user authentication.
  *
- * @param query Indicates the pointer to the array including attributes of the Asset to be queried.
- * @param queryCnt Indicates the count of elements in query array.
- * @param challenge Indicates the pointer to the challenge value obtained
-*      which is used later in {@link OH_Asset_Query}.
- * @return Returns {@link Asset_ResultCode#ASSET_SUCCESS} if the operation is successful;
- *    returns an error code otherwise.
+ * @param query Pointer to the search criteria of the asset.
+ * @param queryCnt Number of the search criteria.
+ * @param challenge Pointer to the challenge value to be used when <b>OH_Asset_Query</b> is called.
+ * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
  * @since 11
  */
 int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob *challenge);
 
 /**
- * @brief Query one or more Assets that match a search query.
+ * @brief Queries assets.
  *
- * @param query Indicates the pointer to the array including attributes of the Asset to be queried.
- * @param queryCnt Indicates the count of elements in query array.
- * @param result Indicates pointer to the array including query results.
- * @return Returns {@link Asset_ResultCode#ASSET_SUCCESS} if the operation is successful;
- *    returns an error code otherwise.
+ * @param query Pointer to the search criteria.
+ * @param queryCnt Number of the search criteria.
+ * @param resultSet Pointer to the query result obtained.
+ * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
  * @since 11
  */
 int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultSet *resultSet);
 
 /**
- * @brief Post-processing (e.g. release cached resource) for querying multiple Assets that require user authentication.
+ * @brief Processes data after the query of the asset that requires user authentication.
  *
- * @param handle Indicates the pointer to the array including challenge obtained from {@link OH_Asset_PreQuery}.
- * @param handleCnt Indicates the count of elements in handle array.
- * @return Returns {@link Asset_ResultCode#ASSET_SUCCESS} if the operation is successful;
- *    returns an error code otherwise.
+ * @param handle Pointer to the handle of the data to process, which includes the challenge value returned by
+ *     <b>OH_Asset_PreQuery</b>.
+ * @param handleCnt Number of the elements in the handle attribute set.
+ * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
  * @since 11
  */
 int32_t OH_Asset_PostQuery(const Asset_Attr *handle, uint32_t handleCnt);
 
 /**
- * @brief Parse the AssetResult to get the specified attribute.
+ * @brief Parses the query result to obtain the specified attribute value.
  *
- * @param result Indicates the pointer to the array including query results obtained from {@link OH_Asset_Query}.
- * @param tag Indicates the tag of specified attribute.
- * @return Returns the attribute in form of {@link #Asset_Attr} if the operation is successful which does not
- *    need to be released;
- *    returns NULL otherwise.
+ * @param result Pointer to the query result to parse, which is obtained by <b>OH_Asset_Query</b>.
+ * @param tag Tag of the attribute to obtain.
+ * @return Returns <b>Asset_Attr</b> obtained if the operation is successful; returns <b>NULL</b> otherwise.
+ *     The attribute does not need to be released by the service.
  * @since 11
  */
 Asset_Attr *OH_Asset_ParseAttr(const Asset_Result *result, Asset_Tag tag);
 
 /**
- * @brief Release the AssetBlob obtained from {@link #OH_Asset_PreQuery}.
+ * @brief Releases the rom occupied by the challenge value.
  *
- * @param blob Indicates the pointer to blob which needs to be freed.
+ * @param blob Pointer to the challenge value (obtained by <b>OH_Asset_PreQuery</b>) to release.
  * @since 11
  */
 void OH_Asset_FreeBlob(Asset_Blob *blob);
 
 /**
- * @brief Release the AssetResultSet obtained from {@link #OH_Asset_Query}.
+ * @brief Releases the rom occupied by the query result.
  *
- * @param resultSet Indicates the pointer to the query results obtained from {@link #OH_Asset_Query}.
+ * @param resultSet Pointer to the query result (obtained by <b>OH_Asset_Query</b>) to release.
  * @since 11
  */
 void OH_Asset_FreeResultSet(Asset_ResultSet *resultSet);

@@ -27,10 +27,10 @@ fn query_invalid_alias() {
 }
 
 #[test]
-fn query_invalid_accessibility() {
+fn query_invalid_availability() {
     let mut query = AssetMap::new();
 
-    query.insert_attr(Tag::Accessibility, (Accessibility::DeviceUnlocked as u32) + 1);
+    query.insert_attr(Tag::Availability, (Availability::DeviceUnlocked as u32) + 1);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 }
 
@@ -80,7 +80,7 @@ fn query_invalid_return_ordered_by() {
     let tags = [
         Tag::Secret,
         Tag::Alias,
-        Tag::Accessibility,
+        Tag::Availability,
         Tag::RequirePasswordSet,
         Tag::AuthType,
         Tag::SyncType,
@@ -130,22 +130,28 @@ fn query_invalid_auth_token() {
 
 #[test]
 fn query_with_auth_token_without_auth_challenge() {
+    let function_name = function!().as_bytes();
+    add_default_auth_asset(function_name, function_name).unwrap();
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Alias, vec![1]);
+    query.insert_attr(Tag::Alias, function_name.to_owned());
     query.insert_attr(Tag::AuthType, AuthType::Any);
     query.insert_attr(Tag::ReturnType, ReturnType::All);
     query.insert_attr(Tag::AuthToken, vec![0; AUTH_TOKEN_SIZE]);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+    remove_by_alias(function_name).unwrap();
 }
 
 #[test]
 fn query_with_auth_challenge_without_auth_token() {
+    let function_name = function!().as_bytes();
+    add_default_auth_asset(function_name, function_name).unwrap();
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Alias, vec![1]);
+    query.insert_attr(Tag::Alias, function_name.to_owned());
     query.insert_attr(Tag::AuthType, AuthType::Any);
     query.insert_attr(Tag::ReturnType, ReturnType::All);
     query.insert_attr(Tag::AuthChallenge, vec![0; CHALLENGE_SIZE]);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
+    remove_by_alias(function_name).unwrap();
 }
 
 #[test]
@@ -178,7 +184,7 @@ fn query_bytes_tag_with_unmatched_type() {
 #[test]
 fn query_number_tag_with_unmatched_type() {
     let tags_num = [
-        Tag::Accessibility,
+        Tag::Availability,
         Tag::AuthType,
         Tag::SyncType,
         Tag::ReturnLimit,

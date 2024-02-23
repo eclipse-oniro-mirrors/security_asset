@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "os_account_wrapper_test.h"
+#include "samgr_wrapper_test.h"
 
 #include <cstring>
 #include <gtest/gtest.h>

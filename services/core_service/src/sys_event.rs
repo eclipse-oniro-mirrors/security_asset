@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -71,15 +71,21 @@ pub(crate) fn upload_statistic_system_event(calling_info: &CallingInfo, start_ti
         .set_param(build_str_param!(SysEvent::EXTRA, ""))
         .write();
     logi!(
-        "[INFO]Calling fun:[{}], user_id:[{}], caller:[{}], run_time:[{}]",
+        "[INFO]Calling fun:[{}], user_id:[{}], caller:[{}], start_time:[{:?}], run_time:[{}]",
         func_name,
         calling_info.user_id(),
         owner_info,
+        start_time,
         duration.as_millis()
     )
 }
 
-pub(crate) fn upload_fault_system_event(calling_info: &CallingInfo, func_name: &str, e: &AssetError) {
+pub(crate) fn upload_fault_system_event(
+    calling_info: &CallingInfo,
+    start_time: Instant,
+    func_name: &str,
+    e: &AssetError,
+) {
     let owner_info = String::from_utf8_lossy(calling_info.owner_info()).to_string();
     SysEvent::new(EventType::Fault)
         .set_param(build_str_param!(SysEvent::FUNCTION, func_name))
@@ -89,10 +95,11 @@ pub(crate) fn upload_fault_system_event(calling_info: &CallingInfo, func_name: &
         .set_param(build_str_param!(SysEvent::EXTRA, e.msg.clone()))
         .write();
     loge!(
-        "[ERROR]Calling fun:[{}], user_id:[{}], caller:[{}], error_code:[{}], error_msg:[{}]",
+        "[ERROR]Calling fun:[{}], user_id:[{}], caller:[{}], start_time:[{:?}], error_code:[{}], error_msg:[{}]",
         func_name,
         calling_info.user_id(),
         owner_info,
+        start_time,
         e.code,
         e.msg.clone()
     );
@@ -106,7 +113,7 @@ pub(crate) fn upload_system_event<T>(
 ) -> Result<T> {
     match &result {
         Ok(_) => upload_statistic_system_event(calling_info, start_time, func_name),
-        Err(e) => upload_fault_system_event(calling_info, func_name, e),
+        Err(e) => upload_fault_system_event(calling_info, start_time, func_name, e),
     }
     result
 }
