@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,7 +19,7 @@ pub mod crypto;
 pub mod crypto_manager;
 pub mod secret_key;
 
-use asset_definition::Availability;
+use asset_definition::Accessibility;
 
 #[repr(C)]
 struct HksBlob {
@@ -37,11 +37,11 @@ struct OutBlob {
 struct KeyId {
     user_id: i32,
     alias: HksBlob,
-    availability: Availability,
+    accessibility: Accessibility,
 }
 
 impl KeyId {
-    fn new(user_id: i32, alias: HksBlob, availability: Availability) -> Self {
-        Self { user_id, alias, availability }
+    fn new(user_id: i32, alias: HksBlob, accessibility: Accessibility) -> Self {
+        Self { user_id, alias, accessibility }
     }
 }

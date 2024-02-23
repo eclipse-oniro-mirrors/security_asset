@@ -50,7 +50,7 @@ fn query_without_alias_with_wrong_condition() {
     add.insert_attr(Tag::RequirePasswordSet, false);
     add.insert_attr(Tag::Alias, function_name.to_owned());
     add.insert_attr(Tag::Secret, function_name.to_owned());
-    add.insert_attr(Tag::Availability, Availability::DevicePowerOn);
+    add.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     asset_sdk::Manager::build().unwrap().add(&add).unwrap();
 
     let mut query = AssetMap::new();
@@ -302,19 +302,19 @@ fn query_with_bytes_tag() {
 }
 
 #[test]
-fn query_with_availability() {
+fn query_with_accessibility() {
     let function_name = function!().as_bytes();
     add_all_tags_asset(function_name).unwrap();
 
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Availability, Availability::DevicePowerOn);
+    query.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     let assets = asset_sdk::Manager::build().unwrap().query(&query).unwrap();
     assert_eq!(1, assets.len() as u32);
 
-    query.insert_attr(Tag::Availability, Availability::DeviceUnlocked);
+    query.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlocked);
     expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
-    query.insert_attr(Tag::Availability, Availability::DeviceFirstUnlocked);
+    query.insert_attr(Tag::Accessibility, Accessibility::DeviceFirstUnlocked);
     expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
     remove_by_alias(function_name).unwrap();
 }
@@ -327,7 +327,7 @@ fn query_with_return_order_by() {
     attrs.insert_attr(Tag::Alias, alias.to_vec());
     attrs.insert_attr(Tag::Secret, alias.to_vec());
     attrs.insert_attr(Tag::DataLabelNormal1, normal_label.to_vec());
-    attrs.insert_attr(Tag::Availability, Availability::DevicePowerOn as u32);
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn as u32);
     asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
 
     let function_name = function!().as_bytes();

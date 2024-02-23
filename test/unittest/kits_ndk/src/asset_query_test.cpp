@@ -62,7 +62,7 @@ HWTEST_F(AssetQueryTest, AssetQueryTest001, TestSize.Level0)
     Asset_Attr addAttr[] = {
         { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
         { .tag = ASSET_TAG_SECRET, .value.blob = funcName },
-        { .tag = ASSET_TAG_AVAILABILITY, .value.u32 = ASSET_AVAILABILITY_DEVICE_POWERED_ON },
+        { .tag = ASSET_TAG_ACCESSIBILITY, .value.u32 = ASSET_ACCESSIBILITY_DEVICE_POWERED_ON },
     };
     ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(addAttr, ARRAY_SIZE(addAttr)));
 

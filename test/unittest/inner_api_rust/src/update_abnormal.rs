@@ -70,14 +70,14 @@ fn update_query_alias_with_unmatched_type() {
 }
 
 #[test]
-fn update_query_invalid_availability() {
+fn update_query_invalid_accessibility() {
     let function_name = function!().as_bytes();
     let mut update = AssetMap::new();
     update.insert_attr(Tag::Secret, function_name.to_owned());
     let mut query = AssetMap::new();
     query.insert_attr(Tag::Alias, function_name.to_owned());
 
-    query.insert_attr(Tag::Availability, (Availability::DeviceUnlocked as u32) + 1);
+    query.insert_attr(Tag::Accessibility, (Accessibility::DeviceUnlocked as u32) + 1);
     expect_error_eq(
         ErrCode::InvalidArgument,
         asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err(),
@@ -195,7 +195,7 @@ fn update_query_number_tag_with_unmatched_type() {
     let function_name = function!().as_bytes();
     let mut update = AssetMap::new();
     update.insert_attr(Tag::Secret, function_name.to_owned());
-    let tags_num = [Tag::Availability, Tag::AuthType, Tag::SyncType];
+    let tags_num = [Tag::Accessibility, Tag::AuthType, Tag::SyncType];
     for tag in tags_num {
         let mut query = AssetMap::new();
         query.insert_attr(Tag::Alias, function_name.to_owned());
@@ -349,7 +349,7 @@ fn update_unsupported_tags() {
     }
 
     let tags_num = [
-        Tag::Availability,
+        Tag::Accessibility,
         Tag::AuthType,
         Tag::SyncType,
         Tag::IsPersistent,

@@ -18,8 +18,8 @@
 
 #include <vector>
 
-#include "napi/api.h"
-#include "napi/node_api.h"
+#include "napi/native_api.h"
+#include "napi/native_node_api.h"
 
 #include "asset_type.h"
 

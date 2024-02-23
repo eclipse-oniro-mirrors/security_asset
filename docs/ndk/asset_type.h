@@ -30,6 +30,7 @@
  *
  * @brief 定义关键资产存储服务中通用的枚举值、数据结构和错误码。
  *
+ * @library libasset_ndk.z.so
  * @kit Asset Store Kit
  * @syscap SystemCapability.Security.Asset
  * @since 11
@@ -86,25 +87,25 @@ typedef enum {
     /**
      * 表示关键资产何时可访问，其值为uint32类型。
      */
-    ASSET_TAG_AVAILABILITY = ASSET_TYPE_NUMBER | 0x03,
+    ASSET_TAG_ACCESSIBILITY = ASSET_TYPE_NUMBER | 0x03,
     /**
      * 表示关键资产是否在设备是否设置了锁屏密码时可用，其值为bool类型。
      */
     ASSET_TAG_REQUIRE_PASSWORD_SET = ASSET_TYPE_BOOL | 0x04,
     /**
-     * 表示关键资产需要的用户校验类型，其值为uint32类型。
+     * 表示关键资产需要的用户认证类型，其值为uint32类型。
      */
     ASSET_TAG_AUTH_TYPE = ASSET_TYPE_NUMBER | 0x05,
     /**
-     * 表示用户校验的有效时间，其值为uint32类型，单位为秒。
+     * 表示用户认证的有效时间，其值为uint32类型，单位为秒。
      */
     ASSET_TAG_AUTH_VALIDITY_PERIOD = ASSET_TYPE_NUMBER | 0x06,
     /**
-     * 表示校验时防重放用的挑战值，其值为bytes类型。
+     * 表示认证时防重放用的挑战值，其值为bytes类型。
      */
     ASSET_TAG_AUTH_CHALLENGE = ASSET_TYPE_BYTES | 0x07,
     /**
-     * 表示用户校验后获取到的校验令牌，其值为bytes类型。
+     * 表示用户认证后获取到的认证令牌，其值为bytes类型。
      */
     ASSET_TAG_AUTH_TOKEN = ASSET_TYPE_BYTES | 0x08,
     /**
@@ -155,7 +156,7 @@ typedef enum {
      */
     ASSET_TAG_RETURN_TYPE = ASSET_TYPE_NUMBER | 0x40,
     /**
-     * 表示查询关键资产时的至大返回数量，其值为uint32类型。
+     * 表示查询关键资产时的最大返回数量，其值为uint32类型。
      */
     ASSET_TAG_RETURN_LIMIT = ASSET_TYPE_NUMBER | 0x41,
     /**
@@ -213,7 +214,7 @@ typedef enum {
     /**
      * 表示系统内存不足。
      */
-    ASSET_OUT_OF_ROM = 24000006,
+    ASSET_OUT_OF_MEMORY = 24000006,
     /**
      * 表示关键资产损坏。
      */
@@ -269,29 +270,29 @@ typedef enum {
     /**
      * 开机后可访问。
      */
-    ASSET_AVAILABILITY_DEVICE_POWERED_ON = 0,
+    ASSET_ACCESSIBILITY_DEVICE_POWERED_ON = 0,
     /**
-     * 第次解锁后可访问。
+     * 首次解锁后可访问。
      */
-    ASSET_AVAILABILITY_DEVICE_FIRST_UNLOCKED = 1,
+    ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED = 1,
     /**
      * 解锁时可访问。
      */
-    ASSET_AVAILABILITY_DEVICE_UNLOCKED = 2,
-} Asset_Availability;
+    ASSET_ACCESSIBILITY_DEVICE_UNLOCKED = 2,
+} Asset_Accessibility;
 
 /**
- * @brief 关键资产支持的用户校验类型。
+ * @brief 关键资产支持的用户认证类型。
  *
  * @since 11
  */
 typedef enum {
     /**
-     * 访问关键资产前无需用户校验。
+     * 访问关键资产前无需用户认证。
      */
     ASSET_AUTH_TYPE_NONE = 0x00,
     /**
-     * 任意一种用户校验方式（PIN码、人脸、指纹等）通过后，均可访问关键资产。
+     * 任意一种用户认证方式（PIN码、人脸、指纹等）通过后，均可访问关键资产。
      */
     ASSET_AUTH_TYPE_ANY = 0xFF,
 } Asset_AuthType;

@@ -36,12 +36,12 @@ fn pre_query_with_wrong_auth_type() {
 }
 
 #[test]
-fn pre_query_with_wrong_availability() {
+fn pre_query_with_wrong_accessibility() {
     let function_name = function!().as_bytes();
     add_default_auth_asset(function_name, function_name).unwrap();
 
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::Availability, Availability::DeviceUnlocked);
+    query.insert_attr(Tag::Accessibility, Accessibility::DeviceUnlocked);
     expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
     remove_by_alias(function_name).unwrap();
 }
@@ -101,7 +101,7 @@ fn pre_query_single_data() {
 
     let mut query = AssetMap::new();
     query.insert_attr(Tag::Alias, function_name.to_owned());
-    query.insert_attr(Tag::Availability, Availability::DevicePowerOn);
+    query.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     query.insert_attr(Tag::AuthType, AuthType::Any);
     query.insert_attr(Tag::RequirePasswordSet, false);
     let challenge = asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap();

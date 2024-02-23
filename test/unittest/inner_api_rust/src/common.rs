@@ -86,7 +86,7 @@ pub(crate) fn add_default_asset(alias: &[u8], secret: &[u8]) -> Result<()> {
     asset_sdk::Manager::build()?.add(&AssetMap::from([
         (Tag::Alias, Value::Bytes(alias.to_vec())),
         (Tag::Secret, Value::Bytes(secret.to_vec())),
-        (Tag::Availability, Value::Number(Availability::DevicePowerOn as u32)),
+        (Tag::Accessibility, Value::Number(Accessibility::DevicePowerOn as u32)),
     ]))
 }
 
@@ -94,7 +94,7 @@ pub(crate) fn add_default_auth_asset(alias: &[u8], secret: &[u8]) -> Result<()> 
     asset_sdk::Manager::build()?.add(&AssetMap::from([
         (Tag::Alias, Value::Bytes(alias.to_vec())),
         (Tag::Secret, Value::Bytes(secret.to_vec())),
-        (Tag::Availability, Value::Number(Availability::DevicePowerOn as u32)),
+        (Tag::Accessibility, Value::Number(Accessibility::DevicePowerOn as u32)),
         (Tag::AuthType, Value::Number(AuthType::Any as u32)),
     ]))
 }
@@ -111,7 +111,7 @@ pub(crate) fn add_all_tags_asset(alias: &[u8]) -> Result<()> {
     attrs.insert_attr(Tag::DataLabelCritical2, CRITICAL_LABEL2.to_owned());
     attrs.insert_attr(Tag::DataLabelCritical3, CRITICAL_LABEL3.to_owned());
     attrs.insert_attr(Tag::DataLabelCritical4, CRITICAL_LABEL4.to_owned());
-    attrs.insert_attr(Tag::Availability, Availability::DevicePowerOn);
+    attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     attrs.insert_attr(Tag::AuthType, AuthType::Any);
     attrs.insert_attr(Tag::SyncType, SyncType::ThisDevice);
     attrs.insert_attr(Tag::RequirePasswordSet, false);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,7 +21,7 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap},
 };
-use asset_definition::{log_throw_error, Availability, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
+use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
 
 use crate::operations::common;
 
@@ -44,16 +44,16 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     }
 }
 
-fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Availability, bool)> {
+fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Accessibility, bool)> {
     let results = Database::build(calling_info.user_id())?.query_datas(
-        &vec![column::AVAILABILITY, column::REQUIRE_PASSWORD_SET],
+        &vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET],
         db_data,
         None,
     )?;
     match results.len() {
         0 => log_throw_error!(ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found."),
         1 => {
-            let access_type = results[0].get_enum_attr::<Availability>(&column::AVAILABILITY)?;
+            let access_type = results[0].get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
             let require_password_set = results[0].get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
             Ok((access_type, require_password_set))
         },

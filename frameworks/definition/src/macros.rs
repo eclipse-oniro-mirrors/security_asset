@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -163,7 +163,7 @@ macro_rules! throw_error {
 /// # Examples
 ///
 /// ```
-/// impl_from_for_u32!(Availability);
+/// impl_from_for_u32!(Accessibility);
 /// ```
 #[macro_export]
 macro_rules! impl_from_for_u32 {

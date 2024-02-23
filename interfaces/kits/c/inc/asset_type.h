@@ -30,6 +30,7 @@
  *
  * @brief Defines the enums, structs, and error codes used in the Asset APIs.
  *
+ * @library libasset_ndk.z.so
  * @kit Asset Store Kit
  * @syscap SystemCapability.Security.Asset
  * @since 11
@@ -86,7 +87,7 @@ typedef enum {
     /**
      * Time when the asset is accessible. The value is of the uint32 type, which is a 32-bit unsigned integer.
      */
-    ASSET_TAG_AVAILABILITY = ASSET_TYPE_NUMBER | 0x03,
+    ASSET_TAG_ACCESSIBILITY = ASSET_TYPE_NUMBER | 0x03,
     /**
      * A Boolean value indicating whether the asset is available only with a lock screen password.
      */
@@ -212,9 +213,9 @@ typedef enum {
      */
     ASSET_STATUS_MISMATCH = 24000005,
     /**
-     * The system rom is insufficient.
+     * The system memory is insufficient.
      */
-    ASSET_OUT_OF_ROM = 24000006,
+    ASSET_OUT_OF_MEMORY = 24000006,
     /**
      * The asset is corrupted.
      */
@@ -270,16 +271,16 @@ typedef enum {
     /**
      * The asset can be accessed after the device is powered on.
      */
-    ASSET_AVAILABILITY_DEVICE_POWERED_ON = 0,
+    ASSET_ACCESSIBILITY_DEVICE_POWERED_ON = 0,
     /**
      * The asset can be accessed only after the device is unlocked for the first time.
      */
-    ASSET_AVAILABILITY_DEVICE_FIRST_UNLOCKED = 1,
+    ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED = 1,
     /**
      * The asset can be accessed only after the device is unlocked.
      */
-    ASSET_AVAILABILITY_DEVICE_UNLOCKED = 2,
-} Asset_Availability;
+    ASSET_ACCESSIBILITY_DEVICE_UNLOCKED = 2,
+} Asset_Accessibility;
 
 /**
  * @brief Enumerates the user authentication types supported for assets.

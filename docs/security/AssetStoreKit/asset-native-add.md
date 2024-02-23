@@ -12,9 +12,9 @@
 | ------------------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------ |
 | ASSET_TAG_SECRET                | 类型为uint8[]，长度为1-1024字节                              | 必选     | 关键资产明文                                                 |
 | ASSET_TAG_ALIAS                 | 类型为uint8[]，长度为1-256字节                               | 必选     | 关键资产别名，每条关键资产的唯一索引                         |
-| ASSET_TAG_AVAILABILITY         | 类型为uint32_t，取值范围详见[Asset_Availability](../reference/native-apis/_asset_type.md#asset_availability) | 可选     | 基于锁屏状态的访问控制                                                 |
+| ASSET_TAG_ACCESSIBILITY         | 类型为uint32_t，取值范围详见[Asset_Accessibility](../reference/native-apis/_asset_type.md#asset_accessibility) | 可选     | 基于锁屏状态的访问控制                                                 |
 | ASSET_TAG_REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 是否仅在设置了锁屏密码的情况下，可访问关键资产                 |
-| ASSET_TAG_AUTH_TYPE             | 类型为uint32_t，取值范围详见[Asset_AuthType](../reference/native-apis/_asset_type.md#asset_authtype) | 可选     | 访问关键资产所需的用户校验类型                               |
+| ASSET_TAG_AUTH_TYPE             | 类型为uint32_t，取值范围详见[Asset_AuthType](../reference/native-apis/_asset_type.md#asset_authtype) | 可选     | 访问关键资产所需的用户认证类型                               |
 | ASSET_TAG_SYNC_TYPE             | 类型为uint32_t，取值范围详见[Asset_SyncType](../reference/native-apis/_asset_type.md#asset_synctype) | 可选     | 关键资产支持的同步类型                                       |
 | ASSET_TAG_IS_PERSISTENT         | 类型为bool                                                   | 可选     | 在应用卸载时是否需要保留关键资产<br>**需要权限：** ohos.permission.STORE_PERSISTENT_DATA |
 | ASSET_TAG_DATA_LABEL_CRITICAL_1 | 类型为uint8[]，长度为1-512字节                               | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
@@ -29,7 +29,7 @@
 
 ## 代码示例
 
-新增一条密码是demo_pwd，别名是demo_alias，附属信息是demo_label的数据，该数据在用户第次解锁设备后可被访问。
+新增一条密码是demo_pwd，别名是demo_alias，附属信息是demo_label的数据，该数据在用户首次解锁设备后可被访问。
 
 ```c
 #include <string.h>
@@ -45,7 +45,7 @@ void AddAsset() {
     Asset_Blob alias = { (uint32_t)(strlen(ALIAS)), (uint8_t *)ALIAS };
     Asset_Blob label = { (uint32_t)(strlen(LABEL)), (uint8_t *)LABEL };
     Asset_Attr attr[] = {
-        { .tag = ASSET_TAG_AVAILABILITY, .value.u32 = ASSET_AVAILABILITY_DEVICE_FIRST_UNLOCKED },
+        { .tag = ASSET_TAG_ACCESSIBILITY, .value.u32 = ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED },
         { .tag = ASSET_TAG_SECRET, .value.blob = secret },
         { .tag = ASSET_TAG_ALIAS, .value.blob = alias },
         { .tag = ASSET_TAG_DATA_LABEL_NORMAL_1, .value.blob = label },

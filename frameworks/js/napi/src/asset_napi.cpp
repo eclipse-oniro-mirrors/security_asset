@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include "napi/api.h"
-#include "napi/node_api.h"
+#include "napi/native_api.h"
+#include "napi/native_node_api.h"
 
 #include "asset_api.h"
 #include "asset_napi_common.h"
@@ -37,7 +37,7 @@ napi_value DeclareTag(napi_env env)
     NAPI_CALL(env, napi_create_object(env, &tag));
     AddUint32Property(env, tag, "SECRET", ASSET_TAG_SECRET);
     AddUint32Property(env, tag, "ALIAS", ASSET_TAG_ALIAS);
-    AddUint32Property(env, tag, "AVAILABILITY", ASSET_TAG_AVAILABILITY);
+    AddUint32Property(env, tag, "ACCESSIBILITY", ASSET_TAG_ACCESSIBILITY);
     AddUint32Property(env, tag, "REQUIRE_PASSWORD_SET", ASSET_TAG_REQUIRE_PASSWORD_SET);
     AddUint32Property(env, tag, "AUTH_TYPE", ASSET_TAG_AUTH_TYPE);
     AddUint32Property(env, tag, "AUTH_VALIDITY_PERIOD", ASSET_TAG_AUTH_VALIDITY_PERIOD);
@@ -72,7 +72,7 @@ napi_value DeclareErrorCode(napi_env env)
     AddUint32Property(env, errorCode, "DUPLICATED", ASSET_DUPLICATED);
     AddUint32Property(env, errorCode, "ACCESS_DENIED", ASSET_ACCESS_DENIED);
     AddUint32Property(env, errorCode, "STATUS_MISMATCH", ASSET_STATUS_MISMATCH);
-    AddUint32Property(env, errorCode, "OUT_OF_ROM", ASSET_OUT_OF_ROM);
+    AddUint32Property(env, errorCode, "OUT_OF_MEMORY", ASSET_OUT_OF_MEMORY);
     AddUint32Property(env, errorCode, "DATA_CORRUPTED", ASSET_DATA_CORRUPTED);
     AddUint32Property(env, errorCode, "DATABASE_ERROR", ASSET_DATABASE_ERROR);
     AddUint32Property(env, errorCode, "CRYPTO_ERROR", ASSET_CRYPTO_ERROR);
@@ -87,14 +87,14 @@ napi_value DeclareErrorCode(napi_env env)
     return errorCode;
 }
 
-napi_value DeclareAvailability(napi_env env)
+napi_value DeclareAccessibility(napi_env env)
 {
-    napi_value availability = nullptr;
-    NAPI_CALL(env, napi_create_object(env, &availability));
-    AddUint32Property(env, availability, "DEVICE_POWERED_ON", ASSET_AVAILABILITY_DEVICE_POWERED_ON);
-    AddUint32Property(env, availability, "DEVICE_FIRST_UNLOCKED", ASSET_AVAILABILITY_DEVICE_FIRST_UNLOCKED);
-    AddUint32Property(env, availability, "DEVICE_UNLOCKED", ASSET_AVAILABILITY_DEVICE_UNLOCKED);
-    return availability;
+    napi_value accessibility = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &accessibility));
+    AddUint32Property(env, accessibility, "DEVICE_POWERED_ON", ASSET_ACCESSIBILITY_DEVICE_POWERED_ON);
+    AddUint32Property(env, accessibility, "DEVICE_FIRST_UNLOCKED", ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED);
+    AddUint32Property(env, accessibility, "DEVICE_UNLOCKED", ASSET_ACCESSIBILITY_DEVICE_UNLOCKED);
+    return accessibility;
 }
 
 napi_value DeclareAuthType(napi_env env)
@@ -314,7 +314,7 @@ napi_value Register(napi_env env, napi_value exports)
         // register enumerate
         DECLARE_NAPI_PROPERTY("Tag", DeclareTag(env)),
         DECLARE_NAPI_PROPERTY("ErrorCode", DeclareErrorCode(env)),
-        DECLARE_NAPI_PROPERTY("Availability", DeclareAvailability(env)),
+        DECLARE_NAPI_PROPERTY("Accessibility", DeclareAccessibility(env)),
         DECLARE_NAPI_PROPERTY("AuthType", DeclareAuthType(env)),
         DECLARE_NAPI_PROPERTY("SyncType", DeclareSyncType(env)),
         DECLARE_NAPI_PROPERTY("ConflictResolution", DeclareConflictResolution(env)),

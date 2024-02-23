@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -249,7 +249,7 @@ impl TryFrom<&Vec<u8>> for AssetBlob {
         if blob.data.is_null() {
             return log_throw_error!(
                 ErrCode::OutOfMemory,
-                "[FATAL][RUST SDK]Unable to allocate rom for Asset_Blob."
+                "[FATAL][RUST SDK]Unable to allocate memory for Asset_Blob."
             );
         }
         unsafe { std::ptr::copy_nonoverlapping(vec.as_ptr(), blob.data, blob.size as usize) };
@@ -295,7 +295,7 @@ impl TryFrom<&AssetMap> for AssetResult {
         if result.attrs.is_null() {
             return log_throw_error!(
                 ErrCode::OutOfMemory,
-                "[FATAL][RUST SDK]Unable to allocate rom for Asset_Result."
+                "[FATAL][RUST SDK]Unable to allocate memory for Asset_Result."
             );
         }
 
@@ -327,7 +327,7 @@ impl TryFrom<&Vec<AssetMap>> for AssetResultSet {
         if result_set.results.is_null() {
             return log_throw_error!(
                 ErrCode::OutOfMemory,
-                "[FATAL][RUST SDK]Unable to allocate rom for Asset_ResultSet."
+                "[FATAL][RUST SDK]Unable to allocate memory for Asset_ResultSet."
             );
         }
         for (i, map) in maps.iter().enumerate() {

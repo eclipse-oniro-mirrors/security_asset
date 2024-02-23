@@ -56,7 +56,7 @@ int32_t GetProcessInfo(uint32_t tokenId, uint64_t uid, std::string &info)
     NativeTokenInfo tokenInfo;
     int32_t ret = AccessTokenKit::GetNativeTokenInfo(tokenId, tokenInfo);
     if (ret != RET_SUCCESS) {
-        LOGE("[FATAL]Get current token info failed, ret = %{public}d", ret);
+        LOGE("[FATAL]Get native token info failed, ret = %{public}d", ret);
         return ASSET_ACCESS_TOKEN_ERROR;
     }
 
@@ -79,9 +79,9 @@ int32_t GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t
             *ownerType = HAP;
             code = GetHapInfo(userId, tokenId, info);
             break;
-        case ATokenTypeEnum::TOKEN_CURRENT:
+        case ATokenTypeEnum::TOKEN_NATIVE:
         case ATokenTypeEnum::TOKEN_SHELL:
-            *ownerType = CURRENT;
+            *ownerType = NATIVE;
             code = GetProcessInfo(tokenId, uid, info);
             break;
         default:

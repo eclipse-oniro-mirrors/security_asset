@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -24,7 +24,7 @@ use asset_db_operator::{
     types::{column, DbMap, DB_DATA_VERSION},
 };
 use asset_definition::{
-    log_throw_error, Availability, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, Result, SyncType, Tag,
+    log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, Result, SyncType, Tag,
     Value,
 };
 use asset_log::logi;
@@ -99,7 +99,7 @@ fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
 }
 
 fn add_default_attrs(db_data: &mut DbMap) {
-    db_data.entry(column::AVAILABILITY).or_insert(Value::Number(Availability::default() as u32));
+    db_data.entry(column::ACCESSIBILITY).or_insert(Value::Number(Accessibility::default() as u32));
     db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::default() as u32));
     db_data.entry(column::SYNC_TYPE).or_insert(Value::Number(SyncType::default() as u32));
     db_data.entry(column::REQUIRE_PASSWORD_SET).or_insert(Value::Bool(bool::default()));
@@ -114,9 +114,9 @@ fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo)
     if calling_info.user_id() > SYSTEM_USER_ID_MAX {
         return Ok(());
     }
-    let availability =
-        attributes.get_enum_attr::<Availability>(&Tag::Availability).unwrap_or(Availability::DeviceFirstUnlocked);
-    if availability == Availability::DevicePowerOn {
+    let accessibility =
+        attributes.get_enum_attr::<Accessibility>(&Tag::Accessibility).unwrap_or(Accessibility::DeviceFirstUnlocked);
+    if accessibility == Accessibility::DevicePowerOn {
         return Ok(());
     }
     log_throw_error!(

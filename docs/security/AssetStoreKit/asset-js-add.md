@@ -12,9 +12,9 @@
 | --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------ |
 | SECRET                | 类型为Uint8Array，长度为1-1024字节                           | 必选     | 关键资产明文                                              |
 | ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 必选     | 关键资产别名，每条关键资产的唯一索引                        |
-| AVAILABILITY         | 类型为number，取值范围详见[Availability](../reference/apis/js-apis-asset.md#availability) | 可选     | 基于锁屏状态的访问控制      |
+| ACCESSIBILITY         | 类型为number，取值范围详见[Accessibility](../reference/apis/js-apis-asset.md#accessibility) | 可选     | 基于锁屏状态的访问控制      |
 | REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 是否仅在设置了锁屏密码的情况下，可访问关键资产              |
-| AUTH_TYPE             | 类型为number，取值范围详见[AuthType](../reference/apis/js-apis-asset.md#authtype) | 可选     | 访问关键资产所需的用户校验类型         |
+| AUTH_TYPE             | 类型为number，取值范围详见[AuthType](../reference/apis/js-apis-asset.md#authtype) | 可选     | 访问关键资产所需的用户认证类型         |
 | SYNC_TYPE             | 类型为number，取值范围详见[SyncType](../reference/apis/js-apis-asset.md#synctype) | 可选     | 关键资产支持的同步类型                |
 | IS_PERSISTENT         | 类型为bool                                                   | 可选     | 在应用卸载时是否需要保留关键资产<br>**需要权限：** ohos.permission.STORE_PERSISTENT_DATA |
 | DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
@@ -29,7 +29,7 @@
 
 ## 代码示例
 
-新增一条密码是demo_pwd，别名是demo_alias，附属信息是demo_label的数据，该数据在用户第次解锁设备后可被访问。
+新增一条密码是demo_pwd，别名是demo_alias，附属信息是demo_label的数据，该数据在用户首次解锁设备后可被访问。
 
 ```typescript
 import { asset } from '@kit.AssetStoreKit';
@@ -43,7 +43,7 @@ function stringToArray(str: string): Uint8Array {
 let attr: asset.AssetMap = new Map();
 attr.set(asset.Tag.SECRET, stringToArray('demo_pwd'));
 attr.set(asset.Tag.ALIAS, stringToArray('demo_alias'));
-attr.set(asset.Tag.AVAILABILITY, asset.Availability.DEVICE_FIRST_UNLOCKED);
+attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
 attr.set(asset.Tag.DATA_LABEL_NORMAL_1, stringToArray('demo_label'));
 try {
   asset.add(attr).then(() => {

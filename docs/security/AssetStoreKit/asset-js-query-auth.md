@@ -1,4 +1,4 @@
-# 查询需要用户校验的关键资产(ArkTS)
+# 查询需要用户认证的关键资产(ArkTS)
 
 ## 接口介绍
 
@@ -15,10 +15,10 @@ preQuery参数列表
 | 属性名称（Tag）        | 属性内容（Value）                                             | 是否必选  | 说明                                             |
 | --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------ |
 | ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 可选     | 关键资产别名，每条关键资产的唯一索引;            |
-| AVAILABILITY         | 类型为number，取值范围详见[Availability](../reference/apis/js-apis-asset.md#availability) | 可选     | 基于锁屏状态的访问控制                                     |
+| ACCESSIBILITY         | 类型为number，取值范围详见[Accessibility](../reference/apis/js-apis-asset.md#accessibility) | 可选     | 基于锁屏状态的访问控制                                     |
 | REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 是否仅在设置了锁屏密码的情况下，可访问关键资产     |
-| AUTH_TYPE             | 类型为number，取值范围详见[AuthType](../reference/apis/js-apis-asset.md#authtype) | 可选     | 访问关键资产所需的用户校验类型                   |
-| AUTH_VALIDITY_PERIOD  | 类型为number，取值范围：1-600，单位为秒                      | 可选     | 用户校验的有效期                                 |
+| AUTH_TYPE             | 类型为number，取值范围详见[AuthType](../reference/apis/js-apis-asset.md#authtype) | 可选     | 访问关键资产所需的用户认证类型                   |
+| AUTH_VALIDITY_PERIOD  | 类型为number，取值范围：1-600，单位为秒                      | 可选     | 用户认证的有效期                                 |
 | SYNC_TYPE             | 类型为number，取值范围详见[SyncType](../reference/apis/js-apis-asset.md#synctype) | 可选     | 关键资产支持的同步类型                           |
 | IS_PERSISTENT         | 类型为bool                                                   | 可选     | 在应用卸载时是否需要保留关键资产                 |
 | DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
@@ -35,12 +35,12 @@ query参数列表
 | 属性名称（Tag）        | 属性内容（Value）                                             | 是否必选  | 说明                                             |
 | --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------ |
 | ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 必选     | 关键资产别名，每条关键资产的唯一索引;           |
-| AUTH_CHALLENGE        | 类型为Uint8Array，长度为32字节                               | 必选     | 用户校验的挑战值                              |
-| AUTH_TOKEN            | 类型为Uint8Array，长度为148字节                              | 必选     | 用户校验通过的授权令牌                         |
+| AUTH_CHALLENGE        | 类型为Uint8Array，长度为32字节                               | 必选     | 用户认证的挑战值                              |
+| AUTH_TOKEN            | 类型为Uint8Array，长度为148字节                              | 必选     | 用户认证通过的授权令牌                         |
 | RETURN_TYPE           | 类型为number，asset.ReturnType.ALL                           | 必选     | 关键资产查询返回的结果类型                    |
-| AVAILABILITY         | 类型为number，取值范围详见[Availability](../reference/apis/js-apis-asset.md#availability) | 可选     | 基于锁屏状态的访问控制                                     |
+| ACCESSIBILITY         | 类型为number，取值范围详见[Accessibility](../reference/apis/js-apis-asset.md#accessibility) | 可选     | 基于锁屏状态的访问控制                                     |
 | REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 是否仅在设置了锁屏密码的情况下，可访问关键资产     |
-| AUTH_TYPE             | 类型为number，取值范围详见[AuthType](../reference/apis/js-apis-asset.md#authtype) | 可选     | 访问关键资产所需的用户校验类型                   |
+| AUTH_TYPE             | 类型为number，取值范围详见[AuthType](../reference/apis/js-apis-asset.md#authtype) | 可选     | 访问关键资产所需的用户认证类型                   |
 | SYNC_TYPE             | 类型为number，取值范围详见[SyncType](../reference/apis/js-apis-asset.md#synctype) | 可选     | 关键资产支持的同步类型                           |
 | IS_PERSISTENT         | 类型为bool                                                   | 可选     | 在应用卸载时是否需要保留关键资产                 |
 | DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护 |
@@ -56,11 +56,11 @@ postQuery参数列表
 
 | 属性名称（Tag）      | 属性内容（Value）               | 是否必选  | 说明                 |
 | ------------------- | ------------------------------ | -------- | -------------------- |
-| AUTH_CHALLENGE      | 类型为Uint8Array，长度为32字节 | 必选     | 用户校验的挑战值 |
+| AUTH_CHALLENGE      | 类型为Uint8Array，长度为32字节 | 必选     | 用户认证的挑战值 |
 
 ## 代码示例
 
-查询别名是demo_alias且需要用户校验的关键资产。
+查询别名是demo_alias且需要用户认证的关键资产。
 
 ```typescript
 import { asset } from '@kit.AssetStoreKit';
@@ -139,9 +139,9 @@ async function queryAsset() {
   // step1. 调用asset.preQuery获取挑战值
   preQueryAsset().then(async (challenge: Uint8Array) => {
     try {
-      // step2. 传入挑战值，拉起用户校验框
+      // step2. 传入挑战值，拉起用户认证框
       let authToken: Uint8Array = await userAuthenticate(challenge);
-      // step3 用户校验通过后，传入挑战值和授权令牌，查询关键资产明文
+      // step3 用户认证通过后，传入挑战值和授权令牌，查询关键资产明文
       let query: asset.AssetMap = new Map();
       query.set(asset.Tag.ALIAS, stringToArray('demo_alias'));
       query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ALL);

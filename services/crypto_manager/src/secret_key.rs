@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 //! This module is used to implement cryptographic algorithm operations, including key generation.
 
 use asset_constants::{transfer_error_code, CallingInfo, SUCCESS};
-use asset_definition::{Availability, AuthType, ErrCode, Result};
+use asset_definition::{Accessibility, AuthType, ErrCode, Result};
 use asset_utils::hasher;
 
 use crate::{HksBlob, KeyId};
@@ -25,7 +25,7 @@ use crate::{HksBlob, KeyId};
 #[derive(Clone)]
 pub struct SecretKey {
     auth_type: AuthType,
-    access_type: Availability,
+    access_type: Accessibility,
     require_password_set: bool,
     alias: Vec<u8>,
     calling_info: CallingInfo,
@@ -55,7 +55,7 @@ where
 fn calculate_key_alias(
     calling_info: &CallingInfo,
     auth_type: AuthType,
-    access_type: Availability,
+    access_type: Accessibility,
     require_password_set: bool,
 ) -> Vec<u8> {
     let mut alias: Vec<u8> = Vec::with_capacity(MAX_ALIAS_SIZE);
@@ -65,7 +65,7 @@ fn calculate_key_alias(
     alias.push(b'_');
     alias.extend(calling_info.owner_info());
     append_attr::<AuthType>("AuthType", auth_type, &mut alias);
-    append_attr::<Availability>("Availability", access_type, &mut alias);
+    append_attr::<Accessibility>("Accessibility", access_type, &mut alias);
     append_attr::<bool>("RequirePasswordSet", require_password_set, &mut alias);
     hasher::sha256(&alias)
 }
@@ -75,7 +75,7 @@ impl SecretKey {
     pub fn new(
         calling_info: &CallingInfo,
         auth_type: AuthType,
-        access_type: Availability,
+        access_type: Accessibility,
         require_password_set: bool,
     ) -> Self {
         let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set);
@@ -125,22 +125,22 @@ impl SecretKey {
     /// Delete secret key by owner.
     pub fn delete_by_owner(calling_info: &CallingInfo) -> Result<()> {
         let mut res = Ok(());
-        let availabilitys =
-            [Availability::DevicePowerOn, Availability::DeviceFirstUnlocked, Availability::DeviceUnlocked];
-        for availability in availabilitys.into_iter() {
-            let secret_key = SecretKey::new(calling_info, AuthType::None, availability, true);
+        let accessibilitys =
+            [Accessibility::DevicePowerOn, Accessibility::DeviceFirstUnlocked, Accessibility::DeviceUnlocked];
+        for accessibility in accessibilitys.into_iter() {
+            let secret_key = SecretKey::new(calling_info, AuthType::None, accessibility, true);
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new(calling_info, AuthType::Any, availability, true);
+            let secret_key = SecretKey::new(calling_info, AuthType::Any, accessibility, true);
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new(calling_info, AuthType::None, availability, false);
+            let secret_key = SecretKey::new(calling_info, AuthType::None, accessibility, false);
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new(calling_info, AuthType::Any, availability, false);
+            let secret_key = SecretKey::new(calling_info, AuthType::Any, accessibility, false);
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
         }
@@ -154,7 +154,7 @@ impl SecretKey {
 
     /// Determine whether device unlock is required.
     pub(crate) fn need_device_unlock(&self) -> bool {
-        self.access_type == Availability::DeviceUnlocked
+        self.access_type == Accessibility::DeviceUnlocked
     }
 
     /// Get the key alias.
@@ -163,7 +163,7 @@ impl SecretKey {
     }
 
     /// Get the key access type
-    pub(crate) fn access_type(&self) -> Availability {
+    pub(crate) fn access_type(&self) -> Accessibility {
         self.access_type
     }
 

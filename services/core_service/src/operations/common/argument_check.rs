@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 //! This module is used to verify the validity of asset attributes.
 
 use asset_definition::{
-    log_throw_error, Availability, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, Result, ReturnType,
+    log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, Result, ReturnType,
     Tag, Value,
 };
 
@@ -131,7 +131,7 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
     match tag {
         Tag::Secret => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_ARRAY_SIZE),
         Tag::Alias => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_ALIAS_SIZE),
-        Tag::Availability => check_enum_variant::<Availability>(tag, value),
+        Tag::Accessibility => check_enum_variant::<Accessibility>(tag, value),
         Tag::RequirePasswordSet | Tag::IsPersistent => Ok(()),
         Tag::AuthType => check_enum_variant::<AuthType>(tag, value),
         Tag::AuthValidityPeriod => check_number_range(tag, value, MIN_NUMBER_VALUE, MAX_AUTH_VALID_PERIOD),

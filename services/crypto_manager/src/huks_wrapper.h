@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -29,7 +29,7 @@ static const uint32_t NONCE_SIZE = 12;
 
 #define ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
 
-enum Availability {
+enum Accessibility {
     DEVICE_POWERED_ON = 0,
     DEVICE_FIRST_UNLOCKED = 1,
     DEVICE_UNLOCKED = 2,
@@ -38,7 +38,7 @@ enum Availability {
 struct KeyId {
     int32_t userId;
     struct HksBlob alias;
-    enum Availability availability;
+    enum Accessibility accessibility;
 };
 
 int32_t GenerateKey(const struct KeyId *keyId, bool needAuth, bool requirePasswordSet);

@@ -11,9 +11,9 @@
 | 属性名称（Tag）        | 属性内容（Value）                                             | 是否必选  | 说明                                                         |
 | --------------------- | ------------------------------------------------------------ | -------- | ------------------------------------------------------------ |
 | ALIAS                 | 类型为Uint8Array，长度为1-256字节                            | 可选     | 关键资产别名，每条关键资产的唯一索引;                        |
-| AVAILABILITY         | 类型为number，取值范围详见[Availability](../reference/apis/js-apis-asset.md#availability) | 可选     | 基于锁屏状态的访问控制                                                 |
+| ACCESSIBILITY         | 类型为number，取值范围详见[Accessibility](../reference/apis/js-apis-asset.md#accessibility) | 可选     | 基于锁屏状态的访问控制                                                 |
 | REQUIRE_PASSWORD_SET  | 类型为bool                                                   | 可选     | 是否仅在设置了锁屏密码的情况下，可访问关键资产                 |
-| AUTH_TYPE             | 类型为number，取值范围详见[AuthType](../reference/apis/js-apis-asset.md#authtype) | 可选     | 访问关键资产所需的用户校验类型                               |
+| AUTH_TYPE             | 类型为number，取值范围详见[AuthType](../reference/apis/js-apis-asset.md#authtype) | 可选     | 访问关键资产所需的用户认证类型                               |
 | SYNC_TYPE             | 类型为number，取值范围详见[SyncType](../reference/apis/js-apis-asset.md#synctype) | 可选     | 关键资产支持的同步类型                                       |
 | IS_PERSISTENT         | 类型为bool                                                   | 可选     | 在应用卸载时是否需要保留关键资产                             |
 | DATA_LABEL_CRITICAL_1 | 类型为Uint8Array，长度为1-512字节                            | 可选     | 关键资产附属信息，内容由业务自定义且有完整性保护             |
@@ -51,7 +51,7 @@ function arrayToString(arr: Uint8Array): string {
 }
 
 let query: asset.AssetMap = new Map();
-query.set(asset.Tag.ALIAS, stringToArray('demo_alias')); // 指定了关键资产别名，至多查询到一条满足条件的关键资产
+query.set(asset.Tag.ALIAS, stringToArray('demo_alias')); // 指定了关键资产别名，最多查询到一条满足条件的关键资产
 query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ALL);  // 此处表示需要返回关键资产的所有信息，即属性+明文
 try {
   asset.query(query).then((res: Array<asset.AssetMap>) => {
@@ -83,13 +83,13 @@ function stringToArray(str: string): Uint8Array {
 }
 
 let query: asset.AssetMap = new Map();
-query.set(asset.Tag.ALIAS, stringToArray('demo_alias'));       // 指定了关键资产别名，至多查询到一条满足条件的关键资产
+query.set(asset.Tag.ALIAS, stringToArray('demo_alias'));       // 指定了关键资产别名，最多查询到一条满足条件的关键资产
 query.set(asset.Tag.RETURN_TYPE, asset.ReturnType.ATTRIBUTES); // 此处表示仅返回关键资产属性，不包含关键资产明文
 try {
   asset.query(query).then((res: Array<asset.AssetMap>) => {
     for (let i = 0; i < res.length; i++) {
       // parse the attribute.
-      let availability: number = res[i].get(asset.Tag.AVAILABILITY) as number;
+      let accessibility: number = res[i].get(asset.Tag.ACCESSIBILITY) as number;
     }
   }).catch (() => {
     console.error(`Failed to query Asset.`);
@@ -122,7 +122,7 @@ try {
   asset.query(query).then((res: Array<asset.AssetMap>) => {
     for (let i = 0; i < res.length; i++) {
       // parse the attribute.
-      let availability: number = res[i].get(asset.Tag.AVAILABILITY) as number;
+      let accessibility: number = res[i].get(asset.Tag.ACCESSIBILITY) as number;
     }
   }).catch (() => {
     console.error(`Failed to query Asset.`);

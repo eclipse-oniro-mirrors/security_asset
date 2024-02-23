@@ -1,6 +1,6 @@
 # @ohos.security.asset (关键资产存储服务)
 
-关键资产存储服务提供了用户短敏感数据的安全存储及管理能力。其中，短敏感数据可以是密码类（账号/密码）、Token类（应用凭据）、其它关键明文（如银行卡号）等长度较短的用户敏感数据。
+关键资产存储服务提供了用户短敏感数据的安全存储及管理能力。其中，短敏感数据可以是密码类（账号/密码）、Token类（应用凭据）、其他关键明文（如银行卡号）等长度较短的用户敏感数据。
 
 >  **说明：**
 >
@@ -41,7 +41,7 @@ add(attributes: AssetMap): Promise\<void>
 | 24000001 | The ASSET Service is unavailable.                          |
 | 24000003 | The Asset already exists.                                  |
 | 24000005 | The screen lock status mismatches.                         |
-| 24000006 | Insufficient rom.                                       |
+| 24000006 | Insufficient memory.                                       |
 | 24000007 | The Asset is corrupted.                                    |
 | 24000008 | The database operation is failed.                          |
 | 24000009 | The cryptography operation is failed.                      |
@@ -66,7 +66,7 @@ function stringToArray(str: string): Uint8Array {
 let attr: asset.AssetMap = new Map();
 attr.set(asset.Tag.SECRET, stringToArray('demo_pwd'));
 attr.set(asset.Tag.ALIAS, stringToArray('demo_alias'));
-attr.set(asset.Tag.AVAILABILITY, asset.Availability.DEVICE_FIRST_UNLOCKED);
+attr.set(asset.Tag.ACCESSIBILITY, asset.Accessibility.DEVICE_FIRST_UNLOCKED);
 attr.set(asset.Tag.DATA_LABEL_NORMAL_1, stringToArray('demo_label'));
 try {
   asset.add(attr).then(() => {
@@ -106,7 +106,7 @@ remove(query: AssetMap): Promise\<void>
 | 401      | The argument is invalid.                                   |
 | 24000001 | The ASSET Service is unavailable.                          |
 | 24000002 | The queried Asset can not be found.                        |
-| 24000006 | Insufficient rom.                                       |
+| 24000006 | Insufficient memory.                                       |
 | 24000007 | The Asset is corrupted.                                    |
 | 24000008 | The database operation is failed.                          |
 | 24000009 | The cryptography operation is failed.                      |
@@ -168,7 +168,7 @@ update(query: AssetMap, attributesToUpdate: AssetMap): Promise\<void>
 | 24000001 | The ASSET Service is unavailable.                          |
 | 24000002 | The queried Asset can not be found.                        |
 | 24000005 | The screen lock status mismatches.                         |
-| 24000006 | Insufficient rom.                                       |
+| 24000006 | Insufficient memory.                                       |
 | 24000007 | The Asset is corrupted.                                    |
 | 24000008 | The database operation is failed.                          |
 | 24000009 | The cryptography operation is failed.                      |
@@ -208,7 +208,7 @@ try {
 
 preQuery(query: AssetMap): Promise\<Uint8Array>
 
-查询的预处理，用于需要用户校验的关键资产。在用户校验成功后，应当随后调用[asset.query](#asset.query)、[asset.postQuery](#asset.postquery)。使用Promist方式异步返回结果。
+查询的预处理，用于需要用户认证的关键资产。在用户认证成功后，应当随后调用[asset.query](#asset.query)、[asset.postQuery](#asset.postquery)。使用Promist方式异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -220,7 +220,7 @@ preQuery(query: AssetMap): Promise\<Uint8Array>
 
 | 类型                | 说明                                                  |
 | ------------------- | ----------------------------------------------------- |
-| Promise\<Uint8Array> | Promise对象，返回挑战值。<br>**说明：** 挑战值用于后续用户校验。 |
+| Promise\<Uint8Array> | Promise对象，返回挑战值。<br>**说明：** 挑战值用于后续用户认证。 |
 
 **错误码：**
 
@@ -232,7 +232,7 @@ preQuery(query: AssetMap): Promise\<Uint8Array>
 | 24000001 | The ASSET Service is unavailable.                            |
 | 24000002 | The queried Asset can not be found.                          |
 | 24000005 | The screen lock status mismatches.                           |
-| 24000006 | Insufficient rom.                                         |
+| 24000006 | Insufficient memory.                                         |
 | 24000007 | The Asset is corrupted.                                      |
 | 24000008 | The database operation is failed.                            |
 | 24000009 | The cryptography operation is failed.                        |
@@ -271,7 +271,7 @@ try {
 
 query(query: AssetMap): Promise\<Array\<AssetMap>>
 
-查询一条或多条符合条件的关键资产。若查询需要用户校验的关键资产，则需要在本函数前调用[asset.preQuery](#asset.prequery)，在本函数后调用[asset.postQuery](#asset.postquery)，开发步骤请参考[开发指导](../../security/asset-js-query-auth.md)。使用Promise回调异步返回结果。
+查询一条或多条符合条件的关键资产。若查询需要用户认证的关键资产，则需要在本函数前调用[asset.preQuery](#asset.prequery)，在本函数后调用[asset.postQuery](#asset.postquery)，开发步骤请参考[开发指导](../../security/asset-js-query-auth.md)。使用Promise回调异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -296,7 +296,7 @@ query(query: AssetMap): Promise\<Array\<AssetMap>>
 | 24000002 | The queried Asset can not be found.                        |
 | 24000004 | The access to Asset is denied.                             |
 | 24000005 | The screen lock status mismatches.                         |
-| 24000006 | Insufficient rom.                                       |
+| 24000006 | Insufficient memory.                                       |
 | 24000007 | The Asset is corrupted.                                    |
 | 24000008 | The database operation is failed.                          |
 | 24000009 | The cryptography operation is failed.                      |
@@ -323,7 +323,7 @@ try {
   asset.query(query).then((res: Array<asset.AssetMap>) => {
     for (let i = 0; i < res.length; i++) {
       // parse the attribute.
-      let availability: number = res[i].get(asset.Tag.AVAILABILITY) as number;
+      let accessibility: number = res[i].get(asset.Tag.ACCESSIBILITY) as number;
     }
     console.info(`Asset query succeeded.`);
   }).catch (() => {
@@ -338,7 +338,7 @@ try {
 
 postQuery(handle: AssetMap): Promise\<void>
 
-查询的后置处理，用于需要用户校验的关键资产。需与[asset.preQuery](#asset.prequery)函数成对出现。使用Promise方式异步返回结果。
+查询的后置处理，用于需要用户认证的关键资产。需与[asset.preQuery](#asset.prequery)函数成对出现。使用Promise方式异步返回结果。
 
 **系统能力：** SystemCapability.Security.Asset
 
@@ -360,7 +360,7 @@ postQuery(handle: AssetMap): Promise\<void>
 | -------- | ---------------------------------------------------------- |
 | 401      | The argument is invalid.                                   |
 | 24000001 | The ASSET Service is unavailable.                          |
-| 24000006 | Insufficient rom.                                       |
+| 24000006 | Insufficient memory.                                       |
 | 24000010 | IPC communication is failed                                |
 | 24000011 | The operation of calling Bundle Manager Service is failed. |
 | 24000012 | The operation of calling OS Account Service is failed.     |
@@ -407,12 +407,12 @@ try {
 | ------------------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | SECRET                    | TagType.BYTES &#124; 0x01  | 关键资产明文                                                 |
 | ALIAS                     | TagType.BYTES &#124; 0x02 | 关键资产别名，每条关键资产的唯一索引                         |
-| AVAILABILITY             | TagType.NUMBER &#124; 0x03 | 基于锁屏状态的访问控制                                       |
+| ACCESSIBILITY             | TagType.NUMBER &#124; 0x03 | 基于锁屏状态的访问控制                                       |
 | REQUIRE_PASSWORD_SET      | TagType.BOOL &#124; 0x04                   | 是否仅在设置了锁屏密码的情况下，可访问关键资产                 |
-| AUTH_TYPE                 | TagType.NUMBER &#124; 0x05 | 访问关键资产所需的用户校验类型                               |
-| AUTH_VALIDITY_PERIOD      | TagType.NUMBER &#124; 0x06 | 用户校验的有效期                                             |
-| AUTH_CHALLENGE            | TagType.BYTES &#124; 0x07     | 用户校验的挑战值                                         |
-| AUTH_TOKEN                | TagType.BYTES &#124; 0x08    | 用户校验通过的授权令牌                                           |
+| AUTH_TYPE                 | TagType.NUMBER &#124; 0x05 | 访问关键资产所需的用户认证类型                               |
+| AUTH_VALIDITY_PERIOD      | TagType.NUMBER &#124; 0x06 | 用户认证的有效期                                             |
+| AUTH_CHALLENGE            | TagType.BYTES &#124; 0x07     | 用户认证的挑战值                                         |
+| AUTH_TOKEN                | TagType.BYTES &#124; 0x08    | 用户认证通过的授权令牌                                           |
 | SYNC_TYPE                 | TagType.NUMBER &#124; 0x10 | 关键资产支持的同步类型                                       |
 | IS_PERSISTENT             | TagType.BOOL &#124; 0x11                         | 在应用卸载时是否需要保留关键资产<br>**需要权限：** ohos.permission.STORE_PERSISTENT_DATA<br/>**备注：** 仅在调用[asset.add](#asset.add)函数并传入该属性时需要校验权限 |
 | DATA_LABEL_CRITICAL_1     | TagType.BYTES &#124; 0x20 | 关键资产附属信息，内容由业务自定义且**有完整性保护**             |
@@ -445,7 +445,7 @@ type AssetMap = Map\<Tag, Value>
 
 **系统能力：** SystemCapability.Security.Asset
 
-## Availability
+## Accessibility
 
 枚举，关键资产基于锁屏状态的访问控制类型。
 
@@ -454,19 +454,19 @@ type AssetMap = Map\<Tag, Value>
 | 名称                  | 值   | 说明                                                         |
 | --------------------- | ---- | ------------------------------------------------------------ |
 | DEVICE_POWERED_ON     | 0    | 开机后可访问                                   |
-| DEVICE_FIRST_UNLOCKED | 1    | 第次解锁后可访问<br>**备注：** 未设置锁屏密码时，等同于开机后可访问 |
+| DEVICE_FIRST_UNLOCKED | 1    | 首次解锁后可访问<br>**备注：** 未设置锁屏密码时，等同于开机后可访问 |
 | DEVICE_UNLOCKED       | 2    | 解锁状态时可访问<br/>**备注：** 未设置锁屏密码时，等同于开机后可访问 |
 
 ## AuthType
 
-枚举，关键资产支持的用户校验类型。
+枚举，关键资产支持的用户认证类型。
 
 **系统能力：** SystemCapability.Security.Asset
 
 | 名称 | 值   | 说明                                                         |
 | ---- | ---- | ------------------------------------------------------------ |
-| NONE | 0    | 访问关键资产前无需用户校验。                                 |
-| ANY  | 255  | 任意一种用户校验方式（PIN码、人脸、指纹等）通过后，均可访问关键资产。 |
+| NONE | 0    | 访问关键资产前无需用户认证。                                 |
+| ANY  | 255  | 任意一种用户认证方式（PIN码、人脸、指纹等）通过后，均可访问关键资产。 |
 
 ## SyncType
 

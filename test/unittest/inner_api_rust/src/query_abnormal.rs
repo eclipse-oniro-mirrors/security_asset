@@ -27,10 +27,10 @@ fn query_invalid_alias() {
 }
 
 #[test]
-fn query_invalid_availability() {
+fn query_invalid_accessibility() {
     let mut query = AssetMap::new();
 
-    query.insert_attr(Tag::Availability, (Availability::DeviceUnlocked as u32) + 1);
+    query.insert_attr(Tag::Accessibility, (Accessibility::DeviceUnlocked as u32) + 1);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 }
 
@@ -80,7 +80,7 @@ fn query_invalid_return_ordered_by() {
     let tags = [
         Tag::Secret,
         Tag::Alias,
-        Tag::Availability,
+        Tag::Accessibility,
         Tag::RequirePasswordSet,
         Tag::AuthType,
         Tag::SyncType,
@@ -184,7 +184,7 @@ fn query_bytes_tag_with_unmatched_type() {
 #[test]
 fn query_number_tag_with_unmatched_type() {
     let tags_num = [
-        Tag::Availability,
+        Tag::Accessibility,
         Tag::AuthType,
         Tag::SyncType,
         Tag::ReturnLimit,

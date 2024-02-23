@@ -2,7 +2,7 @@
 
 > **说明：**
 >
-> 以下仅介绍本模块特有错误码，通用错误码请参考[通用错误码说明文档](https://gitee.com/openharmony/docs/blob/master/zh-cn/APP-dev/reference/errorcodes/errorcode-universal.md)。
+> 以下仅介绍本模块特有错误码，通用错误码请参考[通用错误码说明文档](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/errorcodes/errorcode-universal.md)。
 
 ## 24000001 关键资产服务不可用
 
@@ -59,13 +59,13 @@ The access to Asset is denied.
 
 **可能原因**
 
-1. 在访问需要用户校验的关键资产前，用户校验失败。
+1. 在访问需要用户认证的关键资产前，用户认证失败。
 
 2. 挑战值与授权令牌不匹配。
 
 **处理步骤**
 
-1. 用户在访问需要用户校验的关键资产前，先进行用户校验。
+1. 用户在访问需要用户认证的关键资产前，先进行用户认证。
 
 2. 传递匹配的挑战值与授权令牌。
 
@@ -78,7 +78,7 @@ The screen lock status mismatches.
 **可能原因**
 
 1. 在设备处于未设置锁屏密码的状态下，访问仅设置密码才允许访问的关键资产。
-2. 在设备未完成第次解锁的状态下，访问仅第次解锁后才允许访问的关键资产。
+2. 在设备未完成首次解锁的状态下，访问仅首次解锁后才允许访问的关键资产。
 3. 在设备未处于解锁状态下，访问仅解锁时才允许访问的关键资产。
 
 **处理步骤**
@@ -89,7 +89,7 @@ The screen lock status mismatches.
 
 **错误信息**
 
-Insufficient rom.
+Insufficient memory.
 
 **可能原因**
 
@@ -97,7 +97,7 @@ Insufficient rom.
 
 **处理步骤**
 
-关闭已打开的其它应用，重新发起处理请求。
+关闭已打开的其他应用，重新发起处理请求。
 
 ## 24000007 关键资产损坏
 

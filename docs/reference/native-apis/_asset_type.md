@@ -43,10 +43,10 @@
 | 名称 | 描述 |
 | -------- | -------- |
 | [Asset_TagType](#asset_tagtype) { <br/>ASSET_TYPE_BOOL = 0x1 &lt;&lt; 28, <br/>ASSET_TYPE_NUMBER = 0x2 &lt;&lt; 28, <br/>ASSET_TYPE_BYTES = 0x3 &lt;&lt; 28 <br/>} | 关键资产属性的类型定义。 |
-| [Asset_Tag](#asset_tag) {<br/>ASSET_TAG_SECRET = ASSET_TYPE_BYTES \| 0x01, <br/>ASSET_TAG_ALIAS = ASSET_TYPE_BYTES \| 0x02, <br/>ASSET_TAG_AVAILABILITY = ASSET_TYPE_NUMBER \| 0x03, <br/>ASSET_TAG_REQUIRE_PASSWORD_SET = ASSET_TYPE_BOOL \| 0x04,<br/>ASSET_TAG_AUTH_TYPE = ASSET_TYPE_NUMBER \| 0x05, <br/>ASSET_TAG_AUTH_VALIDITY_PERIOD = ASSET_TYPE_NUMBER \| 0x06, <br/>ASSET_TAG_AUTH_CHALLENGE = ASSET_TYPE_BYTES \| 0x07, <br/>ASSET_TAG_AUTH_TOKEN = ASSET_TYPE_BYTES \| 0x08,<br/>ASSET_TAG_SYNC_TYPE = ASSET_TYPE_NUMBER \| 0x10, <br/>ASSET_TAG_IS_PERSISTENT = ASSET_TYPE_BOOL \| 0x11, <br/>ASSET_TAG_DATA_LABEL_CRITICAL_1 = ASSET_TYPE_BYTES \| 0x20, <br/>ASSET_TAG_DATA_LABEL_CRITICAL_2 = ASSET_TYPE_BYTES \| 0x21,<br/>ASSET_TAG_DATA_LABEL_CRITICAL_3 = ASSET_TYPE_BYTES \| 0x22, <br/>ASSET_TAG_DATA_LABEL_CRITICAL_4 = ASSET_TYPE_BYTES \| 0x23, <br/>ASSET_TAG_DATA_LABEL_NORMAL_1 = ASSET_TYPE_BYTES \| 0x30, <br/>ASSET_TAG_DATA_LABEL_NORMAL_2 = ASSET_TYPE_BYTES \| 0x31,<br/>ASSET_TAG_DATA_LABEL_NORMAL_3 = ASSET_TYPE_BYTES \| 0x32, <br/>ASSET_TAG_DATA_LABEL_NORMAL_4 = ASSET_TYPE_BYTES \| 0x33, <br/>ASSET_TAG_RETURN_TYPE = ASSET_TYPE_NUMBER \| 0x40, <br/>ASSET_TAG_RETURN_LIMIT = ASSET_TYPE_NUMBER \| 0x41,<br/>ASSET_TAG_RETURN_OFFSET = ASSET_TYPE_NUMBER \| 0x42, <br/>ASSET_TAG_RETURN_ORDERED_BY = ASSET_TYPE_NUMBER \| 0x43, <br/>ASSET_TAG_CONFLICT_RESOLUTION = ASSET_TYPE_NUMBER \| 0x44<br/>} | 关键资产属性的名称。 |
-| [Asset_ResultCode](#asset_resultcode) {<br/>ASSET_SUCCESS = 0, <br/>ASSET_PERMISSION_DENIED = 201, <br/>ASSET_INVALID_ARGUMENT = 401, <br/>ASSET_SERVICE_UNAVAILABLE = 24000001,<br/>ASSET_NOT_FOUND = 24000002, <br/>ASSET_DUPLICATED = 24000003, <br/>ASSET_ACCESS_DENIED = 24000004, <br/>ASSET_STATUS_MISMATCH = 24000005,<br/>ASSET_OUT_OF_ROM = 24000006, <br/>ASSET_DATA_CORRUPTED = 24000007, <br/>ASSET_DATABASE_ERROR = 24000008, <br/>ASSET_CRYPTO_ERROR = 24000009,<br/>ASSET_IPC_ERROR = 24000010, <br/>ASSET_BMS_ERROR = 24000011, <br/>ASSET_ACCOUNT_ERROR = 24000012, <br/>ASSET_ACCESS_TOKEN_ERROR = 24000013,<br/>ASSET_FILE_OPERATION_ERROR = 24000014, <br/>ASSET_GET_SYSTEM_TIME_ERROR = 24000015, <br/>ASSET_LIMIT_EXCEEDED = 24000016, <br/>ASSET_UNSUPPORTED = 24000017<br/>} | 调用ASSET返回的结果码。 |
-| [Asset_Availability](#asset_availability) { <br/>ASSET_AVAILABILITY_DEVICE_POWERED_ON = 0, <br/>ASSET_AVAILABILITY_DEVICE_FIRST_UNLOCKED = 1, <br/>ASSET_AVAILABILITY_DEVICE_UNLOCKED = 2 <br/>} | 基于锁屏状态的访问控制类型。 |
-| [Asset_AuthType](#asset_authtype) { <br/>ASSET_AUTH_TYPE_NONE = 0x00, <br/>ASSET_AUTH_TYPE_ANY = 0xFF <br/>} | 关键资产支持的用户校验类型。 |
+| [Asset_Tag](#asset_tag) {<br/>ASSET_TAG_SECRET = ASSET_TYPE_BYTES \| 0x01, <br/>ASSET_TAG_ALIAS = ASSET_TYPE_BYTES \| 0x02, <br/>ASSET_TAG_ACCESSIBILITY = ASSET_TYPE_NUMBER \| 0x03, <br/>ASSET_TAG_REQUIRE_PASSWORD_SET = ASSET_TYPE_BOOL \| 0x04,<br/>ASSET_TAG_AUTH_TYPE = ASSET_TYPE_NUMBER \| 0x05, <br/>ASSET_TAG_AUTH_VALIDITY_PERIOD = ASSET_TYPE_NUMBER \| 0x06, <br/>ASSET_TAG_AUTH_CHALLENGE = ASSET_TYPE_BYTES \| 0x07, <br/>ASSET_TAG_AUTH_TOKEN = ASSET_TYPE_BYTES \| 0x08,<br/>ASSET_TAG_SYNC_TYPE = ASSET_TYPE_NUMBER \| 0x10, <br/>ASSET_TAG_IS_PERSISTENT = ASSET_TYPE_BOOL \| 0x11, <br/>ASSET_TAG_DATA_LABEL_CRITICAL_1 = ASSET_TYPE_BYTES \| 0x20, <br/>ASSET_TAG_DATA_LABEL_CRITICAL_2 = ASSET_TYPE_BYTES \| 0x21,<br/>ASSET_TAG_DATA_LABEL_CRITICAL_3 = ASSET_TYPE_BYTES \| 0x22, <br/>ASSET_TAG_DATA_LABEL_CRITICAL_4 = ASSET_TYPE_BYTES \| 0x23, <br/>ASSET_TAG_DATA_LABEL_NORMAL_1 = ASSET_TYPE_BYTES \| 0x30, <br/>ASSET_TAG_DATA_LABEL_NORMAL_2 = ASSET_TYPE_BYTES \| 0x31,<br/>ASSET_TAG_DATA_LABEL_NORMAL_3 = ASSET_TYPE_BYTES \| 0x32, <br/>ASSET_TAG_DATA_LABEL_NORMAL_4 = ASSET_TYPE_BYTES \| 0x33, <br/>ASSET_TAG_RETURN_TYPE = ASSET_TYPE_NUMBER \| 0x40, <br/>ASSET_TAG_RETURN_LIMIT = ASSET_TYPE_NUMBER \| 0x41,<br/>ASSET_TAG_RETURN_OFFSET = ASSET_TYPE_NUMBER \| 0x42, <br/>ASSET_TAG_RETURN_ORDERED_BY = ASSET_TYPE_NUMBER \| 0x43, <br/>ASSET_TAG_CONFLICT_RESOLUTION = ASSET_TYPE_NUMBER \| 0x44<br/>} | 关键资产属性的名称。 |
+| [Asset_ResultCode](#asset_resultcode) {<br/>ASSET_SUCCESS = 0, <br/>ASSET_PERMISSION_DENIED = 201, <br/>ASSET_INVALID_ARGUMENT = 401, <br/>ASSET_SERVICE_UNAVAILABLE = 24000001,<br/>ASSET_NOT_FOUND = 24000002, <br/>ASSET_DUPLICATED = 24000003, <br/>ASSET_ACCESS_DENIED = 24000004, <br/>ASSET_STATUS_MISMATCH = 24000005,<br/>ASSET_OUT_OF_MEMORY = 24000006, <br/>ASSET_DATA_CORRUPTED = 24000007, <br/>ASSET_DATABASE_ERROR = 24000008, <br/>ASSET_CRYPTO_ERROR = 24000009,<br/>ASSET_IPC_ERROR = 24000010, <br/>ASSET_BMS_ERROR = 24000011, <br/>ASSET_ACCOUNT_ERROR = 24000012, <br/>ASSET_ACCESS_TOKEN_ERROR = 24000013,<br/>ASSET_FILE_OPERATION_ERROR = 24000014, <br/>ASSET_GET_SYSTEM_TIME_ERROR = 24000015, <br/>ASSET_LIMIT_EXCEEDED = 24000016, <br/>ASSET_UNSUPPORTED = 24000017<br/>} | 调用ASSET返回的结果码。 |
+| [Asset_Accessibility](#asset_accessibility) { <br/>ASSET_ACCESSIBILITY_DEVICE_POWERED_ON = 0, <br/>ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED = 1, <br/>ASSET_ACCESSIBILITY_DEVICE_UNLOCKED = 2 <br/>} | 基于锁屏状态的访问控制类型。 |
+| [Asset_AuthType](#asset_authtype) { <br/>ASSET_AUTH_TYPE_NONE = 0x00, <br/>ASSET_AUTH_TYPE_ANY = 0xFF <br/>} | 关键资产支持的用户认证类型。 |
 | [Asset_SyncType](#asset_synctype) { <br/>ASSET_SYNC_TYPE_NEVER = 0, <br/>ASSET_SYNC_TYPE_THIS_DEVICE = 1 &lt;&lt; 0, <br/>ASSET_SYNC_TYPE_TRUSTED_DEVICE = 1 &lt;&lt; 1 <br/>} | 关键资产支持的同步类型。 |
 | [Asset_ConflictResolution](#asset_conflictresolution) { <br/>ASSET_CONFLICT_OVERWRITE = 0, <br/>ASSET_CONFLICT_THROW_ERROR = 1 <br/>} | 新增关键资产时的冲突（如：别名相同）处理策略。 |
 | [Asset_ReturnType](#asset_returntype) { <br/>ASSET_RETURN_ALL = 0, <br/>ASSET_RETURN_ATTRIBUTES = 1 <br/>} | 关键资产查询返回的结果类型。 |
@@ -69,10 +69,10 @@
 ## 枚举类型说明
 
 
-### Asset_Availability
+### Asset_Accessibility
 
 ```
-enum Asset_Availability
+enum Asset_Accessibility
 ```
 **描述**
 基于锁屏状态的访问控制类型。
@@ -81,9 +81,9 @@ enum Asset_Availability
 
 | 枚举值 | 描述 |
 | -------- | -------- |
-| ASSET_AVAILABILITY_DEVICE_POWERED_ON  | 开机后可访问。 |
-| ASSET_AVAILABILITY_DEVICE_FIRST_UNLOCKED  | 第次解锁后可访问。 |
-| ASSET_AVAILABILITY_DEVICE_UNLOCKED  | 解锁时可访问。 |
+| ASSET_ACCESSIBILITY_DEVICE_POWERED_ON  | 开机后可访问。 |
+| ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED  | 首次解锁后可访问。 |
+| ASSET_ACCESSIBILITY_DEVICE_UNLOCKED  | 解锁时可访问。 |
 
 
 ### Asset_AuthType
@@ -92,14 +92,14 @@ enum Asset_Availability
 enum Asset_AuthType
 ```
 **描述**
-关键资产支持的用户校验类型。
+关键资产支持的用户认证类型。
 
 **起始版本：** 11
 
 | 枚举值 | 描述 |
 | -------- | -------- |
-| ASSET_AUTH_TYPE_NONE  | 访问关键资产前无需用户校验。 |
-| ASSET_AUTH_TYPE_ANY  | 任意一种用户校验方式（PIN码、人脸、指纹等）通过后，均可访问关键资产。 |
+| ASSET_AUTH_TYPE_NONE  | 访问关键资产前无需用户认证。 |
+| ASSET_AUTH_TYPE_ANY  | 任意一种用户认证方式（PIN码、人脸、指纹等）通过后，均可访问关键资产。 |
 
 
 ### Asset_ConflictResolution
@@ -138,7 +138,7 @@ enum Asset_ResultCode
 | ASSET_DUPLICATED  | 表示关键资产已存在。 |
 | ASSET_ACCESS_DENIED  | 表示拒绝访问关键资产。 |
 | ASSET_STATUS_MISMATCH  | 表示锁屏状态不匹配。 |
-| ASSET_OUT_OF_ROM  | 表示系统内存不足。 |
+| ASSET_OUT_OF_MEMORY  | 表示系统内存不足。 |
 | ASSET_DATA_CORRUPTED  | 表示关键资产损坏。 |
 | ASSET_DATABASE_ERROR  | 表示数据库操作失败。 |
 | ASSET_CRYPTO_ERROR  | 表示算法库操作失败。 |
@@ -199,12 +199,12 @@ enum Asset_Tag
 | -------- | -------- |
 | ASSET_TAG_SECRET  | 表示用户敏感数据，如口令、令牌等，其值为bytes类型。 |
 | ASSET_TAG_ALIAS  | 表示一个关键资产的标识，其值为bytes类型。 |
-| ASSET_TAG_AVAILABILITY  | 表示关键资产何时可访问，其值为uint32类型。 |
+| ASSET_TAG_ACCESSIBILITY  | 表示关键资产何时可访问，其值为uint32类型。 |
 | ASSET_TAG_REQUIRE_PASSWORD_SET  | 表示关键资产是否在设备是否设置了锁屏密码时可用，其值为bool类型。 |
-| ASSET_TAG_AUTH_TYPE  | 表示关键资产需要的用户校验类型，其值为uint32类型。 |
-| ASSET_TAG_AUTH_VALIDITY_PERIOD  | 表示用户校验的有效时间，其值为uint32类型，单位为秒。 |
-| ASSET_TAG_AUTH_CHALLENGE  | 表示校验时防重放用的挑战值，其值为bytes类型。 |
-| ASSET_TAG_AUTH_TOKEN  | 表示用户校验后获取到的校验令牌，其值为bytes类型。 |
+| ASSET_TAG_AUTH_TYPE  | 表示关键资产需要的用户认证类型，其值为uint32类型。 |
+| ASSET_TAG_AUTH_VALIDITY_PERIOD  | 表示用户认证的有效时间，其值为uint32类型，单位为秒。 |
+| ASSET_TAG_AUTH_CHALLENGE  | 表示认证时防重放用的挑战值，其值为bytes类型。 |
+| ASSET_TAG_AUTH_TOKEN  | 表示用户认证后获取到的认证令牌，其值为bytes类型。 |
 | ASSET_TAG_SYNC_TYPE  | 表示关键资产的同步类型，其值为uint32类型。 |
 | ASSET_TAG_IS_PERSISTENT  | 表示关键资产是否需持久化存储，其值为bool类型。<br>仅在调用OH_Asset_Add函数时传入该属性需要校验权限。<br>**需要权限：** ohos.permission.STORE_PERSISTENT_DATA |
 | ASSET_TAG_DATA_LABEL_CRITICAL_1  | 表示一个用户可自定义传入的字段，该字段不可被更新，其值为bytes类型。 |
@@ -216,7 +216,7 @@ enum Asset_Tag
 | ASSET_TAG_DATA_LABEL_NORMAL_3  | 表示一个用户可自定义传入的字段，该字段可被更新，其值为bytes类型。 |
 | ASSET_TAG_DATA_LABEL_NORMAL_4  | 表示一个用户可自定义传入的字段，该字段可被更新，其值为bytes类型。 |
 | ASSET_TAG_RETURN_TYPE  | 表示查询关键资产时的返回类型，其值为uint32类型。 |
-| ASSET_TAG_RETURN_LIMIT  | 表示查询关键资产时的至大返回数量，其值为uint32类型。 |
+| ASSET_TAG_RETURN_LIMIT  | 表示查询关键资产时的最大返回数量，其值为uint32类型。 |
 | ASSET_TAG_RETURN_OFFSET  | 表示查询关键资产时的偏移量，其值为uint32类型。 |
 | ASSET_TAG_RETURN_ORDERED_BY  | 表示查询关键资产时的排序依据，其值为uint32类型。 |
 | ASSET_TAG_CONFLICT_RESOLUTION  | 表示增加关键资产时的冲突处理策略，其值为uint32类型。 |

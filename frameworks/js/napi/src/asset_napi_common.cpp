@@ -109,7 +109,7 @@ napi_status ParseByteArray(napi_env env, napi_value value, uint32_t tag, Asset_B
     CHECK_ASSET_TAG(env, length == 0 || length > MAX_BUFFER_LEN, tag, "Invalid array length.");
 
     blob.data = static_cast<uint8_t *>(AssetMalloc(length));
-    NAPI_THROW_RETURN_ERR(env, blob.data == nullptr, ASSET_OUT_OF_ROM, "Unable to allocate rom for Asset_Blob.");
+    NAPI_THROW_RETURN_ERR(env, blob.data == nullptr, ASSET_OUT_OF_MEMORY, "Unable to allocate memory for Asset_Blob.");
 
     (void)memcpy_s(blob.data, length, rawData, length);
     blob.size = static_cast<uint32_t>(length);
@@ -373,7 +373,7 @@ napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName
     size_t expectArgNum)
 {
     AsyncContext *context = CreateAsyncContext();
-    NAPI_THROW(env, context == nullptr, ASSET_OUT_OF_ROM, "Unable to allocate rom for AsyncContext.");
+    NAPI_THROW(env, context == nullptr, ASSET_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
 
     do {
         if (ParseParam(env, info, expectArgNum, context->attrs, context->updateAttrs) != napi_ok) {

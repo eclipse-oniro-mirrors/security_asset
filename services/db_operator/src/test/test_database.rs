@@ -31,7 +31,7 @@ use crate::{
 const DB_DATA: [(&str, Value); 7] = [
     (column::OWNER_TYPE, Value::Number(1)),
     (column::SYNC_TYPE, Value::Number(1)),
-    (column::AVAILABILITY, Value::Number(1)),
+    (column::ACCESSIBILITY, Value::Number(1)),
     (column::AUTH_TYPE, Value::Number(1)),
     (column::IS_PERSISTENT, Value::Bool(true)),
     (column::VERSION, Value::Number(1)),

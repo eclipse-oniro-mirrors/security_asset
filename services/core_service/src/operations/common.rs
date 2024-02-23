@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (C) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,12 +22,12 @@ pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_v
 use asset_constants::CallingInfo;
 use asset_crypto_manager::secret_key::SecretKey;
 use asset_db_operator::types::{column, DbMap, DB_DATA_VERSION, DB_DATA_VERSION_V1};
-use asset_definition::{log_throw_error, Availability, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
+use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
 
 const TAG_COLUMN_TABLE: [(Tag, &str); 15] = [
     (Tag::Secret, column::SECRET),
     (Tag::Alias, column::ALIAS),
-    (Tag::Availability, column::AVAILABILITY),
+    (Tag::Accessibility, column::ACCESSIBILITY),
     (Tag::AuthType, column::AUTH_TYPE),
     (Tag::SyncType, column::SYNC_TYPE),
     (Tag::IsPersistent, column::IS_PERSISTENT),
@@ -48,7 +48,7 @@ const AAD_ATTR: [&str; 14] = [
     column::OWNER_TYPE,
     column::GROUP_ID,
     column::SYNC_TYPE,
-    column::AVAILABILITY,
+    column::ACCESSIBILITY,
     column::REQUIRE_PASSWORD_SET,
     column::AUTH_TYPE,
     column::IS_PERSISTENT,
@@ -66,7 +66,7 @@ pub(crate) const NORMAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4];
 
 pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 6] =
-    [Tag::Alias, Tag::Availability, Tag::AuthType, Tag::IsPersistent, Tag::SyncType, Tag::RequirePasswordSet];
+    [Tag::Alias, Tag::Accessibility, Tag::AuthType, Tag::IsPersistent, Tag::SyncType, Tag::RequirePasswordSet];
 
 pub(crate) fn get_cloumn_name(tag: Tag) -> Option<&'static str> {
     for (table_tag, table_column) in TAG_COLUMN_TABLE {
@@ -110,7 +110,7 @@ pub(crate) fn add_owner_info(calling_info: &CallingInfo, db_data: &mut DbMap) {
 
 pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<SecretKey> {
     let auth_type = attrs.get_enum_attr::<AuthType>(&column::AUTH_TYPE)?;
-    let access_type = attrs.get_enum_attr::<Availability>(&column::AVAILABILITY)?;
+    let access_type = attrs.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
     let require_password_set = attrs.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
     Ok(SecretKey::new(calling, auth_type, access_type, require_password_set))
 }

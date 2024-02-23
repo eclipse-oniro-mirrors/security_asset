@@ -58,7 +58,7 @@ void AssetBmsWrapperTest::TearDown(void)
  */
 HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest001, TestSize.Level0)
 {
-    OwnerType ownerType = CURRENT;
+    OwnerType ownerType = NATIVE;
     uint8_t ownerInfo[256] = { 0 };
     uint32_t infoLen = 256;
     int32_t userId = 0;
@@ -90,7 +90,7 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest002, TestSize.Level0)
  */
 HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest003, TestSize.Level0)
 {
-    OwnerType ownerType = CURRENT;
+    OwnerType ownerType = NATIVE;
     uint8_t* ownerInfo = nullptr;
     uint32_t infoLen = 256;
     int32_t userId = 0;
@@ -106,7 +106,7 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest003, TestSize.Level0)
  */
 HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest004, TestSize.Level0)
 {
-    OwnerType ownerType = CURRENT;
+    OwnerType ownerType = NATIVE;
     uint8_t ownerInfo[256] = { 0 };
     uint32_t* infoLen = nullptr;
     int32_t userId = 0;

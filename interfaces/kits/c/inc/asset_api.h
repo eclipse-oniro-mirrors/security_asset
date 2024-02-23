@@ -28,7 +28,7 @@
  * @brief Provides APIs for storing and managing short sensitive data of users, including adding, deleting, updating,
  * and querying the data.
  * The short sensitive data refers to sensitive data shorter than 1024 bytes, including the user passwords
- * (accounts/passwords), token data (APP credentials), and critical data in plaintext (bank card numbers).
+ * (accounts/passwords), token data (application credentials), and critical data in plaintext (bank card numbers).
  *
  * @since 11
  */
@@ -38,6 +38,7 @@
  *
  * @brief Declares the APIs for accessing assets.
  *
+ * @library libasset_ndk.z.so
  * @kit Asset Store Kit
  * @syscap SystemCapability.Security.Asset
  * @since 11
@@ -124,7 +125,7 @@ int32_t OH_Asset_PostQuery(const Asset_Attr *handle, uint32_t handleCnt);
 Asset_Attr *OH_Asset_ParseAttr(const Asset_Result *result, Asset_Tag tag);
 
 /**
- * @brief Releases the rom occupied by the challenge value.
+ * @brief Releases the memory occupied by the challenge value.
  *
  * @param blob Pointer to the challenge value (obtained by <b>OH_Asset_PreQuery</b>) to release.
  * @since 11
@@ -132,7 +133,7 @@ Asset_Attr *OH_Asset_ParseAttr(const Asset_Result *result, Asset_Tag tag);
 void OH_Asset_FreeBlob(Asset_Blob *blob);
 
 /**
- * @brief Releases the rom occupied by the query result.
+ * @brief Releases the memory occupied by the query result.
  *
  * @param resultSet Pointer to the query result (obtained by <b>OH_Asset_Query</b>) to release.
  * @since 11
