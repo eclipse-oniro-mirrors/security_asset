@@ -42,6 +42,14 @@
     └── os_dependency       # 系统能力适配模块
 ```
 
+## 编译构建
+
+以rk3568为例，编译命令如下：
+
+```
+./build.sh --product-name rk3568 --build-target asset --ccache
+```
+
 ## 说明
 ### 接口说明
 
