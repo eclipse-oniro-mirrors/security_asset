@@ -1,0 +1,29 @@
+[
+    {
+        "name": "OH_Asset_Add"
+    },
+    {
+        "name": "OH_Asset_Remove"
+    },
+    {
+        "name": "OH_Asset_Update"
+    },
+    {
+        "name": "OH_Asset_PreQuery"
+    },
+    {
+        "name": "OH_Asset_Query"
+    },
+    {
+        "name": "OH_Asset_PostQuery"
+    },
+    {
+        "name": "OH_Asset_ParseAttr"
+    },
+    {
+        "name": "OH_Asset_FreeBlob"
+    },
+    {
+        "name": "OH_Asset_FreeResultSet"
+    }
+]
