@@ -22,7 +22,7 @@ use asset_definition::{
 };
 
 /// SA id for Asset service.
-pub const SA_ID: i32 = 0x00010140;
+pub const SA_ID: i32 = 8100;
 /// SA name for Asset service.
 pub const SA_NAME: &str = "security_asset_service";
 /// IPC result code.
