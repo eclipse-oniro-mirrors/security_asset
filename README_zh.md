@@ -11,8 +11,8 @@
 应用接入关键资产存储服务后，可以进行如下操作：
 
 - 新增关键资产，ASSET 首先为应用生成独属于它的密钥，然后使用该密钥对关键资产进行加密，最后将关键资产密文存储到数据库。
-- 更新关键资产，ASSET 使用新增阶段生成的密钥，对新的关键资产进行加密，并覆盖数据库中的相应记录。
-- 查询关键资产，ASSET 首先根据应用指定的查询条件，从数据库中读取关键资产密文，然后校验应用的访问控制权限，验证通过后，使用新增阶段生成的密钥，对关键资产密文进行解密，最后将明文数据返回给应用。
+- 更新关键资产，ASSET 使用独属于该应用的密钥，对新的关键资产进行加密，并覆盖数据库中的相应记录。
+- 查询关键资产，ASSET 首先根据应用指定的查询条件，从数据库中读取关键资产密文，然后校验应用的访问控制权限，验证通过后，使用独属于该应用的密钥，对关键资产密文进行解密，最后将明文数据返回给应用。
 - 删除关键资产，ASSET 根据应用指定的删除条件，从数据库中查找并删除符合条件的关键资产记录。
 
 关键资产的安全存储，依赖底层的通用密钥库系统。具体来说，关键资产的加/解密操作以及访问控制校验，都由通用密钥库系统在安全环境（如可信执行环境）中完成，即使系统被攻破，也能保证用户敏感数据不发生泄露。
@@ -46,20 +46,22 @@
 
 以rk3568为例，编译命令如下：
 
-```
-./build.sh --product-name rk3568 --build-target asset --ccache
+```bash
+# 本模块源码编译命令
+./build.sh --product-name rk3568 --ccache --build-target asset
+
+# 本模块测试代码编译命令
+./build.sh --product-name rk3568 --ccache --build-target asset_bin_test
 ```
 
 ## 说明
 ### 接口说明
 
-[JS API说明文档](./docs/reference/apis/js-apis-asset.md)
-
-[C/C++ API说明文档](./docs/reference/native-apis/Readme-CN.md)
+[接口文档](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-asset-store-kit/Readme-CN.md)
 
 ### 使用说明
 
-[开发指导](./docs/security/Readme-CN.md)
+[开发指导](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/security/AssetStoreKit/Readme-CN.md)
 
 ## 相关仓
 **[通用密钥库系统（HUKS）](https://gitee.com/openharmony/security_huks)**
