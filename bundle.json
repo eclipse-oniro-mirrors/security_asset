@@ -1,6 +1,6 @@
 {
     "name": "@ohos/asset",
-    "description": "The provider of key and password storage and management",
+    "description": "The asset store service (ASSET) provides secure storage and management of sensitive data.",
     "version": "4.1",
     "license": "Apache License 2.0",
     "publishAs": "code-segment",
