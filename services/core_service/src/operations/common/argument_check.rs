@@ -30,7 +30,7 @@ const MIN_ARRAY_SIZE: usize = 0;
 pub const MAX_ARRAY_SIZE: usize = 1024;
 
 const MAX_ALIAS_SIZE: usize = 256;
-const MAX_LABEL_SIZE: usize = 512;
+const MAX_LABEL_SIZE: usize = 2048;
 
 const AUTH_TOKEN_SIZE: usize = 148;
 const CHALLENGE_SIZE: usize = 32;

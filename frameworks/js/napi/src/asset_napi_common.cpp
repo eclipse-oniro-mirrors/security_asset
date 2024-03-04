@@ -29,7 +29,7 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 namespace {
-#define MAX_BUFFER_LEN 1024
+#define MAX_BUFFER_LEN 2048
 #define MAX_MESSAGE_LEN 128
 #define MAX_ARGS_NUM 5
 #define NORMAL_ARGS_NUM 1
