@@ -43,11 +43,10 @@
                 "napi",
                 "safwk",
                 "samgr",
+                "sqlite",
                 "os_account"
             ],
-            "third_party": [
-                "sqlite"
-            ]
+            "third_party": []
         },
         "build": {
             "group_type": {
