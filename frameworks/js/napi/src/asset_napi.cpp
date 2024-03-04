@@ -144,21 +144,6 @@ napi_value NapiAdd(napi_env env, napi_callback_info info)
     return NapiEntry(env, info, __func__, execute);
 }
 
-napi_value NapiAddSync(napi_env env, napi_callback_info info)
-{
-    std::vector<Asset_Attr> attrs;
-    do {
-        if (ParseParam(env, info, attrs) != napi_ok) {
-            break;
-        }
-
-        int32_t result = OH_Asset_Add(&attrs[0], attrs.size());
-        CHECK_RESULT_BREAK(env, result);
-    } while (false);
-    FreeAssetAttrs(attrs);
-    return nullptr;
-}
-
 napi_value NapiRemove(napi_env env, napi_callback_info info)
 {
     napi_async_execute_callback execute =
@@ -167,21 +152,6 @@ napi_value NapiRemove(napi_env env, napi_callback_info info)
             context->result = OH_Asset_Remove(&context->attrs[0], context->attrs.size());
         };
     return NapiEntry(env, info, __func__, execute);
-}
-
-napi_value NapiRemoveSync(napi_env env, napi_callback_info info)
-{
-    std::vector<Asset_Attr> attrs;
-    do {
-        if (ParseParam(env, info, attrs) != napi_ok) {
-            break;
-        }
-
-        int32_t result = OH_Asset_Remove(&attrs[0], attrs.size());
-        CHECK_RESULT_BREAK(env, result);
-    } while (false);
-    FreeAssetAttrs(attrs);
-    return nullptr;
 }
 
 napi_value NapiUpdate(napi_env env, napi_callback_info info)
@@ -195,22 +165,6 @@ napi_value NapiUpdate(napi_env env, napi_callback_info info)
     return NapiEntry(env, info, __func__, execute, UPDATE_ARGS_NUM);
 }
 
-napi_value NapiUpdateSync(napi_env env, napi_callback_info info)
-{
-    std::vector<Asset_Attr> attrs;
-    std::vector<Asset_Attr> updateAttrs;
-    do {
-        if (ParseParam(env, info, UPDATE_ARGS_NUM, attrs, updateAttrs) != napi_ok) {
-            break;
-        }
-        int32_t result = OH_Asset_Update(&attrs[0], attrs.size(), &updateAttrs[0], updateAttrs.size());
-        CHECK_RESULT_BREAK(env, result);
-    } while (false);
-    FreeAssetAttrs(attrs);
-    FreeAssetAttrs(updateAttrs);
-    return nullptr;
-}
-
 napi_value NapiPreQuery(napi_env env, napi_callback_info info)
 {
     napi_async_execute_callback execute =
@@ -219,25 +173,6 @@ napi_value NapiPreQuery(napi_env env, napi_callback_info info)
             context->result = OH_Asset_PreQuery(&context->attrs[0], context->attrs.size(), &context->challenge);
         };
     return NapiEntry(env, info, __func__, execute);
-}
-
-napi_value NapiPreQuerySync(napi_env env, napi_callback_info info)
-{
-    std::vector<Asset_Attr> attrs;
-    Asset_Blob challenge = { 0 };
-    napi_value result = nullptr;
-    do {
-        if (ParseParam(env, info, attrs) != napi_ok) {
-            break;
-        }
-
-        int32_t res = OH_Asset_PreQuery(&attrs[0], attrs.size(), &challenge);
-        CHECK_RESULT_BREAK(env, res);
-        result = CreateJsUint8Array(env, challenge);
-    } while (false);
-    OH_Asset_FreeBlob(&challenge);
-    FreeAssetAttrs(attrs);
-    return result;
 }
 
 napi_value NapiQuery(napi_env env, napi_callback_info info)
@@ -250,25 +185,6 @@ napi_value NapiQuery(napi_env env, napi_callback_info info)
     return NapiEntry(env, info, __func__, execute);
 }
 
-napi_value NapiQuerySync(napi_env env, napi_callback_info info)
-{
-    std::vector<Asset_Attr> attrs;
-    Asset_ResultSet resultSet = { 0 };
-    napi_value result = nullptr;
-    do {
-        if (ParseParam(env, info, attrs) != napi_ok) {
-            break;
-        }
-
-        int32_t res = OH_Asset_Query(&attrs[0], attrs.size(), &resultSet);
-        CHECK_RESULT_BREAK(env, res);
-        result = CreateJsMapArray(env, resultSet);
-    } while (false);
-    OH_Asset_FreeResultSet(&resultSet);
-    FreeAssetAttrs(attrs);
-    return result;
-}
-
 napi_value NapiPostQuery(napi_env env, napi_callback_info info)
 {
     napi_async_execute_callback execute =
@@ -279,37 +195,16 @@ napi_value NapiPostQuery(napi_env env, napi_callback_info info)
     return NapiEntry(env, info, __func__, execute);
 }
 
-napi_value NapiPostQuerySync(napi_env env, napi_callback_info info)
-{
-    std::vector<Asset_Attr> attrs;
-    do {
-        if (ParseParam(env, info, attrs) != napi_ok) {
-            break;
-        }
-
-        int32_t result = OH_Asset_PostQuery(&attrs[0], attrs.size());
-        CHECK_RESULT_BREAK(env, result);
-    } while (false);
-    FreeAssetAttrs(attrs);
-    return nullptr;
-}
-
 napi_value Register(napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
         // register function
         DECLARE_NAPI_FUNCTION("add", NapiAdd),
-        DECLARE_NAPI_FUNCTION("addSync", NapiAddSync),
         DECLARE_NAPI_FUNCTION("remove", NapiRemove),
-        DECLARE_NAPI_FUNCTION("removeSync", NapiRemoveSync),
         DECLARE_NAPI_FUNCTION("update", NapiUpdate),
-        DECLARE_NAPI_FUNCTION("updateSync", NapiUpdateSync),
         DECLARE_NAPI_FUNCTION("preQuery", NapiPreQuery),
-        DECLARE_NAPI_FUNCTION("preQuerySync", NapiPreQuerySync),
         DECLARE_NAPI_FUNCTION("query", NapiQuery),
-        DECLARE_NAPI_FUNCTION("querySync", NapiQuerySync),
         DECLARE_NAPI_FUNCTION("postQuery", NapiPostQuery),
-        DECLARE_NAPI_FUNCTION("postQuerySync", NapiPostQuerySync),
 
         // register enumerate
         DECLARE_NAPI_PROPERTY("Tag", DeclareTag(env)),
