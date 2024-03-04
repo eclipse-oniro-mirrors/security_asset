@@ -337,7 +337,7 @@ napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName
     NAPI_THROW(env, argc < expectArgNum, ASSET_INVALID_ARGUMENT, "The number of arguments is insufficient.");
 
     AsyncContext *context = CreateAsyncContext();
-    NAPI_THROW(env, context == nullptr, ASSET_OUT_OF_MEMRORY, "Unable to allocate memory for AsyncContext.");
+    NAPI_THROW(env, context == nullptr, ASSET_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
 
     do {
         size_t index = 0;
