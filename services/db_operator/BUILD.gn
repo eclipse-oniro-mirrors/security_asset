@@ -46,7 +46,7 @@ ohos_rust_unittest("asset_db_operator_test") {
 
 ohos_static_library("asset_sqlite3_wrapper") {
   sources = [ "src/sqlite3_wrapper.c" ]
-  deps = [ "third_party/sqlite:sqlite" ]
+  deps = [ "//third_party/sqlite:sqlite" ]
   subsystem_name = "security"
   part_name = "asset"
 }
