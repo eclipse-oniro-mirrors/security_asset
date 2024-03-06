@@ -32,12 +32,11 @@ namespace {
 #define MAX_BUFFER_LEN 1024
 #define MAX_MESSAGE_LEN 128
 #define MAX_ARGS_NUM 5
-#define NORMAL_ARGS_NUM 1
 
 #define NAPI_THROW_BASE(env, condition, ret, code, message)             \
 if ((condition)) {                                                      \
     LOGE("[FATAL][NAPI]%{public}s", (message));                         \
-    napi_throw((env), CreateJsError((env), (code), (message)));         \
+    napi_throw_error((env), std::to_string((code)).c_str(), message);   \
     return (ret);                                                       \
 }
 
@@ -64,13 +63,18 @@ if ((condition)) {                                                              
     char msg[MAX_MESSAGE_LEN] = { 0 };                                                  \
     (void)sprintf_s(msg, MAX_MESSAGE_LEN, "AssetTag(0x%08x) " message, tag);            \
     LOGE("[FATAL][NAPI]%{public}s", (msg));                                             \
-    napi_throw((env), CreateJsError((env), ASSET_INVALID_ARGUMENT, (msg)));             \
+    napi_throw_error((env), std::to_string(ASSET_INVALID_ARGUMENT).c_str(), msg);       \
     return napi_invalid_arg;                                                            \
 }
 
-bool IsBlobValid(const Asset_Blob &blob)
+void FreeAssetAttrs(std::vector<Asset_Attr> &attrs)
 {
-    return blob.data != nullptr && blob.size != 0;
+    for (auto attr : attrs) {
+        if ((attr.tag & ASSET_TAG_TYPE_MASK) == ASSET_TYPE_BYTES) {
+            OH_Asset_FreeBlob(&attr.value.blob);
+        }
+    }
+    attrs.clear();
 }
 
 AsyncContext *CreateAsyncContext()
@@ -156,94 +160,6 @@ napi_value GetIteratorNext(napi_env env, napi_value iterator, napi_value func, b
     return next;
 }
 
-napi_value GetUndefinedValue(napi_env env)
-{
-    napi_value value = nullptr;
-    NAPI_CALL(env, napi_get_undefined(env, &value));
-    return value;
-}
-
-napi_value CreateJsMap(napi_env env, const Asset_Result &result)
-{
-    napi_value global = nullptr;
-    napi_value mapFunc = nullptr;
-    napi_value map = nullptr;
-    NAPI_CALL(env, napi_get_global(env, &global));
-    NAPI_CALL(env, napi_get_named_property(env, global, "Map", &mapFunc));
-    NAPI_CALL(env, napi_new_instance(env, mapFunc, 0, nullptr, &map));
-    napi_value setFunc = nullptr;
-    NAPI_CALL(env, napi_get_named_property(env, map, "set", &setFunc));
-    for (uint32_t i = 0; i < result.count; i++) {
-        napi_value key = nullptr;
-        napi_value value = nullptr;
-        NAPI_CALL(env, napi_create_uint32(env, result.attrs[i].tag, &key));
-        switch (result.attrs[i].tag & ASSET_TAG_TYPE_MASK) {
-            case ASSET_TYPE_BOOL:
-                NAPI_CALL(env, napi_get_boolean(env, result.attrs[i].value.boolean, &value));
-                break;
-            case ASSET_TYPE_NUMBER:
-                NAPI_CALL(env, napi_create_uint32(env, result.attrs[i].value.u32, &value));
-                break;
-            case ASSET_TYPE_BYTES:
-                value = CreateJsUint8Array(env, result.attrs[i].value.blob);
-                break;
-            default:
-                return nullptr;
-        }
-
-        napi_value setArgs[] = { key, value };
-        NAPI_CALL(env, napi_call_function(env, map, setFunc, sizeof(setArgs) / sizeof(setArgs[0]), setArgs, nullptr));
-    }
-    return map;
-}
-
-napi_value GetBusinessValue(napi_env env, AsyncContext *context)
-{
-    // Processing the return value of the PreQueryAsset function.
-    if (IsBlobValid(context->challenge)) {
-        return CreateJsUint8Array(env, context->challenge);
-    }
-
-    // Processing the return value of the QueryAsset function.
-    if (context->resultSet.results != nullptr && context->resultSet.count != 0) {
-        return CreateJsMapArray(env, context->resultSet);
-    }
-
-    return GetUndefinedValue(env);
-}
-
-void ResolvePromise(napi_env env, AsyncContext *context)
-{
-    napi_value result = nullptr;
-    if (context->result == ASSET_SUCCESS) {
-        result = GetBusinessValue(env, context);
-        NAPI_CALL_RETURN_VOID(env, napi_resolve_deferred(env, context->deferred, result));
-    } else {
-        result = CreateJsError(env, context->result);
-        NAPI_CALL_RETURN_VOID(env, napi_reject_deferred(env, context->deferred, result));
-    }
-}
-
-napi_value CreateAsyncWork(napi_env env, AsyncContext *context, const char *funcName,
-    napi_async_execute_callback execute)
-{
-    napi_value result = nullptr;
-    NAPI_CALL(env, napi_create_promise(env, &context->deferred, &result));
-
-    napi_value resource = nullptr;
-    NAPI_CALL(env, napi_create_string_utf8(env, funcName, NAPI_AUTO_LENGTH, &resource));
-    NAPI_CALL(env, napi_create_async_work(
-        env, nullptr, resource, execute,
-        [](napi_env env, napi_status status, void *data) {
-            AsyncContext *asyncContext = static_cast<AsyncContext *>(data);
-            ResolvePromise(env, asyncContext);
-            DestroyAsyncContext(env, asyncContext);
-        },
-        static_cast<void *>(context), &context->work));
-    NAPI_CALL(env, napi_queue_async_work(env, context->work));
-    return result;
-}
-
 napi_status ParseMapParam(napi_env env, napi_value arg, std::vector<Asset_Attr> &attrs)
 {
     // check map type
@@ -278,29 +194,99 @@ napi_status ParseMapParam(napi_env env, napi_value arg, std::vector<Asset_Attr> 
     return napi_ok;
 }
 
-} // anonymous namespace
-
-void FreeAssetAttrs(std::vector<Asset_Attr> &attrs)
+napi_value GetUndefinedValue(napi_env env)
 {
-    for (auto attr : attrs) {
-        if ((attr.tag & ASSET_TAG_TYPE_MASK) == ASSET_TYPE_BYTES) {
-            OH_Asset_FreeBlob(&attr.value.blob);
-        }
+    napi_value value = nullptr;
+    NAPI_CALL(env, napi_get_undefined(env, &value));
+    return value;
+}
+
+napi_value GetUint8Array(napi_env env, const Asset_Blob *blob)
+{
+    if (blob->data == nullptr || blob->size == 0 || blob->size > MAX_BUFFER_LEN) {
+        return nullptr;
     }
-    attrs.clear();
+
+    void *data = nullptr;
+    napi_value buffer = nullptr;
+    NAPI_CALL(env, napi_create_arraybuffer(env, blob->size, &data, &buffer));
+    (void)memcpy_s(data, blob->size, blob->data, blob->size);
+
+    napi_value result = nullptr;
+    NAPI_CALL(env, napi_create_typedarray(env, napi_uint8_array, blob->size, buffer, 0, &result));
+    return result;
 }
 
-napi_value CreateJsError(napi_env env, int32_t errCode)
+napi_value GetMapObject(napi_env env, Asset_Result *result)
 {
-    return CreateJsError(env, errCode, GetErrorMessage(errCode));
+    napi_value global = nullptr;
+    napi_value mapFunc = nullptr;
+    napi_value map = nullptr;
+    NAPI_CALL(env, napi_get_global(env, &global));
+    NAPI_CALL(env, napi_get_named_property(env, global, "Map", &mapFunc));
+    NAPI_CALL(env, napi_new_instance(env, mapFunc, 0, nullptr, &map));
+    napi_value setFunc = nullptr;
+    NAPI_CALL(env, napi_get_named_property(env, map, "set", &setFunc));
+    for (uint32_t i = 0; i < result->count; i++) {
+        napi_value key = nullptr;
+        napi_value value = nullptr;
+        NAPI_CALL(env, napi_create_uint32(env, result->attrs[i].tag, &key));
+        switch (result->attrs[i].tag & ASSET_TAG_TYPE_MASK) {
+            case ASSET_TYPE_BOOL:
+                NAPI_CALL(env, napi_get_boolean(env, result->attrs[i].value.boolean, &value));
+                break;
+            case ASSET_TYPE_NUMBER:
+                NAPI_CALL(env, napi_create_uint32(env, result->attrs[i].value.u32, &value));
+                break;
+            case ASSET_TYPE_BYTES:
+                value = GetUint8Array(env, &result->attrs[i].value.blob);
+                break;
+            default:
+                return nullptr;
+        }
+
+        napi_value setArgs[] = { key, value };
+        NAPI_CALL(env, napi_call_function(env, map, setFunc, sizeof(setArgs) / sizeof(setArgs[0]), setArgs, nullptr));
+    }
+    return map;
 }
 
-napi_value CreateJsError(napi_env env, int32_t errCode, const char *errorMsg)
+napi_value GetMapArray(napi_env env, Asset_ResultSet *resultSet)
+{
+    napi_value array = nullptr;
+    NAPI_CALL(env, napi_create_array(env, &array));
+    for (uint32_t i = 0; i < resultSet->count; i++) {
+        if (resultSet->results[i].attrs == nullptr || resultSet->results[i].count == 0) {
+            return nullptr;
+        }
+        napi_value map = GetMapObject(env, &resultSet->results[i]);
+        NAPI_CALL(env, napi_set_element(env, array, i, map));
+    }
+    return array;
+}
+
+napi_value GetBusinessValue(napi_env env, AsyncContext *context)
+{
+    // Processing the return value of the PreQueryAsset function.
+    if (context->challenge.data != nullptr && context->challenge.size != 0) {
+        return GetUint8Array(env, &context->challenge);
+    }
+
+    // Processing the return value of the QueryAsset function.
+    if (context->resultSet.results != nullptr && context->resultSet.count != 0) {
+        return GetMapArray(env, &context->resultSet);
+    }
+
+    return GetUndefinedValue(env);
+}
+
+napi_value GetBusinessError(napi_env env, int32_t errCode)
 {
     napi_value code = nullptr;
     NAPI_CALL(env, napi_create_int32(env, errCode, &code));
 
     napi_value message = nullptr;
+    const char *errorMsg = GetErrorMessage(errCode);
     NAPI_CALL(env, napi_create_string_utf8(env, errorMsg, strlen(errorMsg), &message));
 
     napi_value result = nullptr;
@@ -308,75 +294,61 @@ napi_value CreateJsError(napi_env env, int32_t errCode, const char *errorMsg)
     return result;
 }
 
-napi_value CreateJsMapArray(napi_env env, const Asset_ResultSet &resultSet)
+void ResolvePromise(napi_env env, AsyncContext *context)
 {
-    napi_value array = nullptr;
-    NAPI_CALL(env, napi_create_array(env, &array));
-    for (uint32_t i = 0; i < resultSet.count; i++) {
-        if (resultSet.results[i].attrs == nullptr || resultSet.results[i].count == 0) {
-            return nullptr;
-        }
-        napi_value map = CreateJsMap(env, resultSet.results[i]);
-        NAPI_CALL(env, napi_set_element(env, array, i, map));
+    napi_value result = nullptr;
+    if (context->result == ASSET_SUCCESS) {
+        result = GetBusinessValue(env, context);
+        NAPI_CALL_RETURN_VOID(env, napi_resolve_deferred(env, context->deferred, result));
+    } else {
+        result = GetBusinessError(env, context->result);
+        NAPI_CALL_RETURN_VOID(env, napi_reject_deferred(env, context->deferred, result));
     }
-    return array;
 }
 
-napi_value CreateJsUint8Array(napi_env env, const Asset_Blob &blob)
+napi_value CreateAsyncWork(napi_env env, AsyncContext *context, const char *funcName,
+    napi_async_execute_callback execute)
 {
-    if (!IsBlobValid(blob) || blob.size > MAX_BUFFER_LEN) {
-        return nullptr;
-    }
+    napi_value result;
+    NAPI_CALL(env, napi_create_promise(env, &context->deferred, &result));
 
-    void *data = nullptr;
-    napi_value buffer = nullptr;
-    NAPI_CALL(env, napi_create_arraybuffer(env, blob.size, &data, &buffer));
-    (void)memcpy_s(data, blob.size, blob.data, blob.size);
-
-    napi_value result = nullptr;
-    NAPI_CALL(env, napi_create_typedarray(env, napi_uint8_array, blob.size, buffer, 0, &result));
+    napi_value resource = nullptr;
+    NAPI_CALL(env, napi_create_string_utf8(env, funcName, NAPI_AUTO_LENGTH, &resource));
+    NAPI_CALL(env, napi_create_async_work(
+        env, nullptr, resource, execute,
+        [](napi_env env, napi_status status, void *data) {
+            AsyncContext *asyncContext = static_cast<AsyncContext *>(data);
+            ResolvePromise(env, asyncContext);
+            DestroyAsyncContext(env, asyncContext);
+        },
+        static_cast<void *>(context), &context->work));
+    NAPI_CALL(env, napi_queue_async_work(env, context->work));
     return result;
 }
 
-napi_status ParseParam(napi_env env, napi_callback_info info, std::vector<Asset_Attr> &attrs)
-{
-    std::vector<Asset_Attr> updateAttrs;
-    return ParseParam(env, info, NORMAL_ARGS_NUM, attrs, updateAttrs);
-}
-
-napi_status ParseParam(napi_env env, napi_callback_info info, size_t expectArgNum, std::vector<Asset_Attr> &attrs,
-    std::vector<Asset_Attr> &updateAttrs)
-{
-    napi_value argv[MAX_ARGS_NUM] = { 0 };
-    size_t argc = expectArgNum;
-    NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-    NAPI_THROW_RETURN_ERR(env, argc < expectArgNum, ASSET_INVALID_ARGUMENT,
-        "The number of arguments is insufficient.");
-    size_t index = 0;
-    napi_status ret = ParseMapParam(env, argv[index++], attrs);
-    if (ret != napi_ok) {
-        LOGE("Parse first map parameter failed.");
-        return ret;
-    }
-
-    if (expectArgNum == UPDATE_ARGS_NUM) {
-        ret = ParseMapParam(env, argv[index++], updateAttrs);
-        if (ret != napi_ok) {
-            LOGE("Parse second map parameter failed.");
-            return ret;
-        }
-    }
-    return napi_ok;
-}
+} // anonymous namespace
 
 napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
     size_t expectArgNum)
 {
+    size_t argc = expectArgNum;
+    napi_value argv[MAX_ARGS_NUM] = { 0 };
+    NAPI_CALL(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+    NAPI_THROW(env, argc < expectArgNum, ASSET_INVALID_ARGUMENT, "The number of arguments is insufficient.");
+
     AsyncContext *context = CreateAsyncContext();
     NAPI_THROW(env, context == nullptr, ASSET_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
 
     do {
-        if (ParseParam(env, info, expectArgNum, context->attrs, context->updateAttrs) != napi_ok) {
+        size_t index = 0;
+        if (ParseMapParam(env, argv[index++], context->attrs) != napi_ok) {
+            LOGE("Parse first map parameter failed.");
+            break;
+        }
+
+        if (expectArgNum == UPDATE_ARGS_NUM &&
+            ParseMapParam(env, argv[index++], context->updateAttrs) != napi_ok) {
+            LOGE("Create async work failed.");
             break;
         }
 

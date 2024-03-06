@@ -46,7 +46,9 @@
                 "sqlite",
                 "os_account"
             ],
-            "third_party": []
+            "third_party": [
+                "sqlite"
+            ]
         },
         "build": {
             "group_type": {
