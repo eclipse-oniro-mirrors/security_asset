@@ -348,7 +348,7 @@ napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName
 
         if (expectArgNum == UPDATE_ARGS_NUM &&
             ParseMapParam(env, argv[index++], context->updateAttrs) != napi_ok) {
-            LOGE("Create async work failed.");
+            LOGE("Parse second map parameter failed.");
             break;
         }
 
