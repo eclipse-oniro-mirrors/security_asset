@@ -13,26 +13,6 @@
 
 import("//build/ohos.gni")
 
-ohos_ndk_library("libasset_ndk") {
-  output_name = "asset_ndk"
-  output_extension = "z.so"
-  ndk_description_file = "./libasset.ndk.json"
-  min_compact_version = "11"
-  system_capability = "SystemCapability.Security.Asset"
-  system_capability_headers = [
-    "inc/asset_api.h",
-    "inc/asset_type.h",
-  ]
-}
-
-ohos_ndk_headers("asset_header") {
-  dest_dir = "$ndk_headers_out_dir/asset"
-  sources = [
-    "inc/asset_api.h",
-    "inc/asset_type.h",
-  ]
-}
-
 config("asset_config") {
   include_dirs = [ "inc" ]
 }
