@@ -61,6 +61,16 @@ napi_value DeclareTag(napi_env env)
     return tag;
 }
 
+napi_value DeclareTagType(napi_env env)
+{
+    napi_value tagType = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &tagType));
+    AddUint32Property(env, tagType, "BOOL", ASSET_TYPE_BOOL);
+    AddUint32Property(env, tagType, "NUMBER", ASSET_TYPE_NUMBER);
+    AddUint32Property(env, tagType, "BYTES", ASSET_TYPE_BYTES);
+    return tagType;
+}
+
 napi_value DeclareErrorCode(napi_env env)
 {
     napi_value errorCode = nullptr;
@@ -208,6 +218,7 @@ napi_value Register(napi_env env, napi_value exports)
 
         // register enumerate
         DECLARE_NAPI_PROPERTY("Tag", DeclareTag(env)),
+        DECLARE_NAPI_PROPERTY("TagType", DeclareTagType(env)),
         DECLARE_NAPI_PROPERTY("ErrorCode", DeclareErrorCode(env)),
         DECLARE_NAPI_PROPERTY("Accessibility", DeclareAccessibility(env)),
         DECLARE_NAPI_PROPERTY("AuthType", DeclareAuthType(env)),
