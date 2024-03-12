@@ -21,12 +21,13 @@
 typedef void (*OnPackageRemoved)(int32_t, const uint8_t *owner, uint32_t ownerSize);
 typedef void (*OnUserRemoved)(int32_t);
 typedef void (*OnScreenOff)(void);
+typedef void (*OnCharging)(void);
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-bool SubscribeSystemEvent(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff);
+bool SubscribeSystemEvent(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff, OnCharging onCharging);
 bool UnSubscribeSystemEvent(void);
 
 #ifdef __cplusplus

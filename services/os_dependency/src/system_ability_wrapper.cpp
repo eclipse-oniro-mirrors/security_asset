@@ -31,8 +31,8 @@ const int32_t RETRY_DURATION_US = 200 * 1000;
 
 class SystemAbilityHandler : public OHOS::SystemAbilityStatusChangeStub {
 public:
-    SystemAbilityHandler(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff)
-        : onPackageRemoved(onPackageRemoved), onUserRemoved(onUserRemoved), onScreenOff(onScreenOff) {};
+    SystemAbilityHandler(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff, OnCharging onCharging)
+        : onPackageRemoved(onPackageRemoved), onUserRemoved(onUserRemoved), onScreenOff(onScreenOff), onCharging(onCharging)  {};
     ~SystemAbilityHandler() = default;
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override
     {
@@ -40,7 +40,7 @@ public:
             return;
         }
 
-        if (SubscribeSystemEvent(onPackageRemoved, onUserRemoved, onScreenOff)) {
+        if (SubscribeSystemEvent(onPackageRemoved, onUserRemoved, onScreenOff, onCharging)) {
             LOGI("Subscribe system event success.");
         } else {
             LOGE("Subscribe system event failed.");
@@ -61,6 +61,7 @@ private:
     OnPackageRemoved onPackageRemoved;
     OnUserRemoved onUserRemoved;
     OnScreenOff onScreenOff;
+    OnCharging onCharging;
 };
 
 OHOS::sptr<OHOS::ISystemAbilityManager> GetSystemAbility(void)
@@ -79,7 +80,7 @@ OHOS::sptr<OHOS::ISystemAbilityManager> GetSystemAbility(void)
 OHOS::sptr<SystemAbilityHandler> abilityHandler;
 } // namespace
 
-bool SubscribeSystemAbility(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff)
+bool SubscribeSystemAbility(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff, OnCharging onCharging)
 {
     OHOS::sptr<OHOS::ISystemAbilityManager> samgrProxy = GetSystemAbility();
     if (samgrProxy == nullptr) {
@@ -87,7 +88,7 @@ bool SubscribeSystemAbility(OnPackageRemoved onPackageRemoved, OnUserRemoved onU
         return false;
     }
 
-    abilityHandler = new (std::nothrow) SystemAbilityHandler(onPackageRemoved, onUserRemoved, onScreenOff);
+    abilityHandler = new (std::nothrow) SystemAbilityHandler(onPackageRemoved, onUserRemoved, onScreenOff, onCharging);
     if (abilityHandler == nullptr) {
         LOGE("Create system ability handler failed.");
         return false;

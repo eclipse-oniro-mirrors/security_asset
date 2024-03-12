@@ -67,3 +67,28 @@ pub fn delete_user_db_dir(user_id: i32) -> Result<()> {
         },
     }
 }
+
+fn fmt_db_path(dir_path: &str) -> String {
+    let mut bp = dir_path.to_string();
+    bp.push_str("/asset.db");
+    bp
+}
+
+fn fmt_backup_path(path: &str) -> String {
+    let mut bp = path.to_string();
+    bp.push_str(".backup");
+    bp
+}
+
+/// Backup all users db.
+pub fn backup_all_db() -> Result<()> {
+    for entry in fs::read_dir(ROOT_PATH)? {
+        let entry = entry?;
+        if let Some(dir_path) = entry.path().to_str() {
+            let db_path = fmt_db_path(dir_path);
+            let backup_path = fmt_backup_path(db_path.as_str());
+            fs::copy(&db_path, backup_path)?;
+        }
+    }
+    Ok(())
+}

@@ -24,7 +24,7 @@ use asset_db_operator::{
     types::{column, DbMap},
 };
 use asset_definition::{Result, Value};
-use asset_file_operator::delete_user_db_dir;
+use asset_file_operator::{backup_all_db, delete_user_db_dir};
 use asset_log::{loge, logi};
 
 use crate::sys_event::upload_fault_system_event;
@@ -80,17 +80,31 @@ extern "C" fn delete_crypto_need_unlock() {
     crypto_manager.lock().unwrap().remove_need_device_unlocked();
 }
 
+extern "C" fn backup_db() {
+    let start_time = Instant::now();
+    match backup_all_db() {
+        Ok(_) => (),
+        Err(e) => {
+            // Report the file operator fault event.
+            let calling_info = CallingInfo::new_self();
+            upload_fault_system_event(&calling_info, start_time, "backup_db", &e);
+        },
+    }
+}
+
 extern "C" {
     fn SubscribeSystemAbility(
         onPackageRemoved: extern "C" fn(i32, *const u8, u32),
         onUserRemoved: extern "C" fn(i32),
         onScreenOff: extern "C" fn(),
+        onCharging: extern "C" fn(),
     ) -> bool;
     fn UnSubscribeSystemAbility() -> bool;
     fn SubscribeSystemEvent(
         onPackageRemoved: extern "C" fn(i32, *const u8, u32),
         onUserRemoved: extern "C" fn(i32),
         onScreenOff: extern "C" fn(),
+        onCharging: extern "C" fn(),
     ) -> bool;
     fn UnSubscribeSystemEvent() -> bool;
 }
@@ -98,13 +112,13 @@ extern "C" {
 /// Subscribe to the add and remove events of system abilities.
 pub(crate) fn subscribe() {
     unsafe {
-        if SubscribeSystemEvent(delete_data_by_owner, delete_dir_by_user, delete_crypto_need_unlock) {
+        if SubscribeSystemEvent(delete_data_by_owner, delete_dir_by_user, delete_crypto_need_unlock, backup_db) {
             logi!("Subscribe system event success.");
         } else {
             loge!("Subscribe system event failed.")
         }
 
-        if SubscribeSystemAbility(delete_data_by_owner, delete_dir_by_user, delete_crypto_need_unlock) {
+        if SubscribeSystemAbility(delete_data_by_owner, delete_dir_by_user, delete_crypto_need_unlock, backup_db) {
             logi!("Subscribe system ability success.");
         } else {
             loge!("Subscribe system ability failed.")

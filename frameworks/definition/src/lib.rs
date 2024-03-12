@@ -15,7 +15,7 @@
 
 //! This module defines asset-related data structures.
 
-use std::collections::HashMap;
+use std::{collections::HashMap, io};
 
 mod extension;
 #[macro_use]
@@ -215,6 +215,15 @@ pub struct AssetError {
 
     /// Error message for error occurred.
     pub msg: String,
+}
+
+impl From<io::Error> for AssetError {
+    fn from(error: io::Error) -> Self {
+        AssetError {
+            code: (ErrCode::FileOperationError),
+            msg: (format!("[FATAL]Backup db failed! error is [{error}]"))
+        }
+    }
 }
 
 /// Alias of the Asset result type.

@@ -121,7 +121,6 @@ impl Database {
     /// Open the database connection and recovery the database if the connection fails.
     fn open_and_recovery(&mut self) -> Result<()> {
         let result = self.open();
-        #[cfg(test)]
         let result = match result {
             Err(ret) if ret.code == ErrCode::DataCorrupted => self.recovery(),
             ret => ret,
@@ -138,7 +137,6 @@ impl Database {
     }
 
     // Recovery the corrupt database and reopen it.
-    #[cfg(test)]
     pub(crate) fn recovery(&mut self) -> Result<()> {
         loge!("[WARNING]Database is corrupt, start to recovery, path={}", self.path);
         self.close();
@@ -180,7 +178,6 @@ impl Database {
             return log_throw_error!(ErrCode::FileOperationError, "[FATAL][DB]Delete database failed, err={}", e);
         }
 
-        #[cfg(test)]
         if let Err(e) = fs::remove_file(_backup_path) {
             return log_throw_error!(
                 ErrCode::FileOperationError,
@@ -232,7 +229,6 @@ impl Database {
     pub(crate) fn execute_and_backup<T, F: Fn(&Table) -> Result<T>>(&mut self, _modified: bool, func: F) -> Result<T> {
         let table = Table::new(TABLE_NAME, self);
         let result = func(&table);
-        #[cfg(test)]
         let result = match result {
             Err(ret) if ret.code == ErrCode::DataCorrupted => {
                 self.recovery()?;
@@ -241,11 +237,6 @@ impl Database {
             },
             ret => ret,
         };
-
-        #[cfg(test)]
-        if result.is_ok() && _modified && fs::copy(&self.path, &self.backup_path).is_err() {
-            loge!("[WARNING]Backup database {} failed", self.backup_path);
-        }
         result
     }
 
