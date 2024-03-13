@@ -52,7 +52,8 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
 class SystemEventHandler : public CommonEventSubscriber {
 public:
     explicit SystemEventHandler(const CommonEventSubscribeInfo &subscribeInfo, OnPackageRemoved onPackageRemoved,
-        OnUserRemoved onUserRemoved, OnScreenOff onScreenOff, OnCharging onCharging): CommonEventSubscriber(subscribeInfo)
+        OnUserRemoved onUserRemoved, OnScreenOff onScreenOff, OnCharging onCharging): 
+        CommonEventSubscriber(subscribeInfo)
     {
         this->onPackageRemoved = onPackageRemoved;
         this->onUserRemoved = onUserRemoved;
@@ -84,7 +85,7 @@ public:
             if (this->onCharging != nullptr) {
                 this->onCharging();
             }
-            LOGI("[INFO]Receive event: SCREEN_OFF, start_time: %{public}ld", startTime);
+            LOGI("[INFO]Receive event: CHARGING, start_time: %{public}ld", startTime);
         } else {
             LOGW("[WARNING]Receive unknown event: %{public}s", action.c_str());
         }
@@ -99,7 +100,8 @@ private:
 std::shared_ptr<SystemEventHandler> g_eventHandler = nullptr;
 }
 
-bool SubscribeSystemEvent(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff, OnCharging onCharging)
+bool SubscribeSystemEvent(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff, 
+    OnCharging onCharging)
 {
     MatchingSkills matchingSkills;
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);

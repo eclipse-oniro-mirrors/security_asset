@@ -15,7 +15,7 @@
 
 //! This module extends the function of Asset data structure.
 
-use std::{collections::HashMap, fmt::Display, hash::Hash};
+use std::{collections::HashMap, fmt::Display, hash::Hash, io};
 
 use asset_log::loge;
 
@@ -141,6 +141,15 @@ impl AssetError {
     pub fn new(code: ErrCode, msg: String) -> AssetError {
         loge!("{}", msg);
         AssetError { code, msg }
+    }
+}
+
+impl From<io::Error> for AssetError {
+    fn from(error: io::Error) -> Self {
+        AssetError {
+            code: (ErrCode::FileOperationError),
+            msg: (format!("[FATAL]Backup db failed! error is [{error}]"))
+        }
     }
 }
 

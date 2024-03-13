@@ -31,8 +31,9 @@ const int32_t RETRY_DURATION_US = 200 * 1000;
 
 class SystemAbilityHandler : public OHOS::SystemAbilityStatusChangeStub {
 public:
-    SystemAbilityHandler(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff, OnCharging onCharging)
-        : onPackageRemoved(onPackageRemoved), onUserRemoved(onUserRemoved), onScreenOff(onScreenOff), onCharging(onCharging)  {};
+    SystemAbilityHandler(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff, 
+        OnCharging onCharging) : onPackageRemoved(onPackageRemoved), onUserRemoved(onUserRemoved), 
+        onScreenOff(onScreenOff), onCharging(onCharging)  {};
     ~SystemAbilityHandler() = default;
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override
     {
@@ -80,7 +81,8 @@ OHOS::sptr<OHOS::ISystemAbilityManager> GetSystemAbility(void)
 OHOS::sptr<SystemAbilityHandler> abilityHandler;
 } // namespace
 
-bool SubscribeSystemAbility(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff, OnCharging onCharging)
+bool SubscribeSystemAbility(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff, 
+    OnCharging onCharging)
 {
     OHOS::sptr<OHOS::ISystemAbilityManager> samgrProxy = GetSystemAbility();
     if (samgrProxy == nullptr) {

@@ -15,7 +15,7 @@
 
 //! This module is used to subscribe common event and system ability.
 
-use std::{slice, time::Instant};
+use std::{fs::{self, DirEntry}, slice, time::Instant};
 
 use asset_constants::{CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
@@ -24,10 +24,13 @@ use asset_db_operator::{
     types::{column, DbMap},
 };
 use asset_definition::{Result, Value};
-use asset_file_operator::{backup_all_db, delete_user_db_dir};
+use asset_file_operator::{delete_user_db_dir, visit_root_dir};
 use asset_log::{loge, logi};
 
 use crate::sys_event::upload_fault_system_event;
+
+const ASSET_DB: &str = "asset.db";
+const BACKUP_SUFFIX: &str = ".backup";
 
 fn delete_on_package_removed(user_id: i32, owner: Vec<u8>) -> Result<bool> {
     let mut cond = DbMap::new();
@@ -80,9 +83,19 @@ extern "C" fn delete_crypto_need_unlock() {
     crypto_manager.lock().unwrap().remove_need_device_unlocked();
 }
 
+fn process_backup(entry: &DirEntry) -> Result<()> {
+    if let Ok(file_name) = entry.file_name().into_string() {
+        if file_name == ASSET_DB {
+            let backup_path = entry.path().with_extension(BACKUP_SUFFIX);
+            fs::copy(entry.path(), backup_path)?;
+        }
+    }
+    Ok(())
+}
+
 extern "C" fn backup_db() {
     let start_time = Instant::now();
-    match backup_all_db() {
+    match visit_root_dir(&process_backup) {
         Ok(_) => (),
         Err(e) => {
             // Report the file operator fault event.

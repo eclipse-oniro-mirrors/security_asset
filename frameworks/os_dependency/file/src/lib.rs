@@ -15,7 +15,7 @@
 
 //! This file implement the file operations.
 
-use std::{fs, path::Path};
+use std::{fs::{self, DirEntry}, path::Path};
 
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_log::logi;
@@ -68,26 +68,22 @@ pub fn delete_user_db_dir(user_id: i32) -> Result<()> {
     }
 }
 
-fn fmt_db_path(dir_path: &str) -> String {
-    let mut bp = dir_path.to_string();
-    bp.push_str("/asset.db");
-    bp
+/// visit root path and execute func
+pub fn visit_root_dir(cb: &dyn Fn(&DirEntry) -> Result<()>) -> Result<()> {
+    let root_path = Path::new(ROOT_PATH);
+    visit_dirs(root_path, cb)
 }
 
-fn fmt_backup_path(path: &str) -> String {
-    let mut bp = path.to_string();
-    bp.push_str(".backup");
-    bp
-}
-
-/// Backup all users db.
-pub fn backup_all_db() -> Result<()> {
-    for entry in fs::read_dir(ROOT_PATH)? {
-        let entry = entry?;
-        if let Some(dir_path) = entry.path().to_str() {
-            let db_path = fmt_db_path(dir_path);
-            let backup_path = fmt_backup_path(db_path.as_str());
-            fs::copy(&db_path, backup_path)?;
+fn visit_dirs(dir: &Path, cb: &dyn Fn(&DirEntry) -> Result<()>) -> Result<()> {
+    if dir.is_dir() {
+        for entry in fs::read_dir(dir)? {
+            let entry = entry?;
+            let path = entry.path();
+            if path.is_dir() {
+                visit_dirs(&path, cb)?;
+            } else {
+                cb(&entry)?;
+            }
         }
     }
     Ok(())
