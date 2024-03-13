@@ -27,7 +27,7 @@ typedef void (*OnCharging)(void);
 extern "C" {
 #endif
 
-bool SubscribeSystemEvent(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff, 
+bool SubscribeSystemEvent(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff,
     OnCharging onCharging);
 bool UnSubscribeSystemEvent(void);
 

@@ -52,8 +52,8 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
 class SystemEventHandler : public CommonEventSubscriber {
 public:
     explicit SystemEventHandler(const CommonEventSubscribeInfo &subscribeInfo, OnPackageRemoved onPackageRemoved,
-        OnUserRemoved onUserRemoved, OnScreenOff onScreenOff, OnCharging onCharging): 
-        CommonEventSubscriber(subscribeInfo)
+        OnUserRemoved onUserRemoved, OnScreenOff onScreenOff, OnCharging onCharging)
+        : CommonEventSubscriber(subscribeInfo)
     {
         this->onPackageRemoved = onPackageRemoved;
         this->onUserRemoved = onUserRemoved;
@@ -100,7 +100,7 @@ private:
 std::shared_ptr<SystemEventHandler> g_eventHandler = nullptr;
 }
 
-bool SubscribeSystemEvent(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff, 
+bool SubscribeSystemEvent(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff,
     OnCharging onCharging)
 {
     MatchingSkills matchingSkills;
