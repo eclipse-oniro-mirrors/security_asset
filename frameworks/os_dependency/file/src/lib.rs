@@ -15,7 +15,7 @@
 
 //! This file implement the file operations.
 
-use std::{fs::{self, DirEntry}, path::Path};
+use std::{fs, path::Path};
 
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_log::logi;
@@ -66,25 +66,4 @@ pub fn delete_user_db_dir(user_id: i32) -> Result<()> {
             log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Delete dir failed! error is [{}]", e)
         },
     }
-}
-
-/// visit root path and execute func
-pub fn visit_root_dir(cb: &dyn Fn(&DirEntry) -> Result<()>) -> Result<()> {
-    let root_path = Path::new(ROOT_PATH);
-    visit_dirs(root_path, cb)
-}
-
-fn visit_dirs(dir: &Path, cb: &dyn Fn(&DirEntry) -> Result<()>) -> Result<()> {
-    if dir.is_dir() {
-        for entry in fs::read_dir(dir)? {
-            let entry = entry?;
-            let path = entry.path();
-            if path.is_dir() {
-                visit_dirs(&path, cb)?;
-            } else {
-                cb(&entry)?;
-            }
-        }
-    }
-    Ok(())
 }

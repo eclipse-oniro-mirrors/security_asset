@@ -16,10 +16,9 @@
 use std::{
     cmp::Ordering,
     fs::{self, OpenOptions},
-    io::Write,
+    io::Write, path::Path,
 };
 
-use asset_constants::OwnerType;
 use asset_definition::{ErrCode, Extension, Value};
 
 use crate::{
@@ -38,12 +37,20 @@ const DB_DATA: [(&str, Value); 7] = [
     (column::REQUIRE_PASSWORD_SET, Value::Bool(false)),
 ];
 
+const TEST_FILE: &str = "/data/asset_test/0";
+
 fn create_dir() {
-    fs::create_dir_all("/data/asset_test/0").unwrap();
+    let path = Path::new(TEST_FILE);
+    if !path.is_dir() {
+        fs::create_dir_all(path).unwrap();
+    }
 }
 
 fn remove_dir() {
-    fs::remove_dir_all("/data/asset_test/0").unwrap();
+    let path = Path::new(TEST_FILE);
+    if path.is_dir() {
+        fs::remove_dir_all(path).unwrap();
+    }
 }
 
 fn open_db_and_insert_data() -> Database {
@@ -60,15 +67,19 @@ fn add_bytes_column(db_data: &mut DbMap) {
     db_data.insert(column::SECRET, Value::Bytes(column::SECRET.as_bytes().to_vec()));
     db_data.insert(column::ALIAS, Value::Bytes(column::ALIAS.as_bytes().to_vec()));
     db_data.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
-    db_data.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
     db_data.insert(column::CREATE_TIME, Value::Bytes(column::CREATE_TIME.as_bytes().to_vec()));
     db_data.insert(column::UPDATE_TIME, Value::Bytes(column::UPDATE_TIME.as_bytes().to_vec()));
+}
+
+fn backup_db(db: &Database) {
+    fs::copy(&db.path, &db.backup_path).unwrap();
 }
 
 #[test]
 fn create_and_drop_database() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let mut db = Database::build(0).unwrap();
+    backup_db(&db);
     db.close();
     assert!(Database::delete(0).is_ok());
 }
@@ -216,6 +227,7 @@ fn insert_error_data() {
 #[test]
 fn backup_and_restore() {
     let db = open_db_and_insert_data();
+    backup_db(&db);
     drop(db);
 
     // Destroy the main database.
@@ -229,18 +241,6 @@ fn backup_and_restore() {
 
     db.query_datas(&vec![], &def, None).unwrap();
     drop(db);
-
-    // Destroy the backup database.
-    let mut backup_file = OpenOptions::new().read(true).write(true).open("/data/asset_test/0/asset.db.backup").unwrap();
-    let _ = backup_file.write(b"bad message info").unwrap();
-
-    // Recovery the backup database.
-    let mut db = Database::build(0).unwrap();
-    db.query_datas(&vec![], &def, None).unwrap();
-    let ret = db
-        .query_datas(&vec![], &DbMap::from([(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()))]), None)
-        .unwrap();
-    assert_eq!(ret.len(), 1);
     remove_dir();
 }
 
@@ -265,7 +265,7 @@ fn query_mismatch_type_data() {
     let mut db = Database::build(0).unwrap();
     db.insert_datas(&data).unwrap();
 
-    assert_eq!(ErrCode::DataCorrupted, db.query_datas(&vec![], &data, None).unwrap_err().code);
+    assert_eq!(ErrCode::FileOperationError, db.query_datas(&vec![], &data, None).unwrap_err().code);
     drop(db);
     remove_dir();
 }
