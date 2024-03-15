@@ -41,14 +41,14 @@ const TEST_FILE: &str = "/data/asset_test/0";
 
 fn create_dir() {
     let path = Path::new(TEST_FILE);
-    if !path.is_dir() {
+    if !path.exists() {
         fs::create_dir_all(path).unwrap();
     }
 }
 
 fn remove_dir() {
     let path = Path::new(TEST_FILE);
-    if path.is_dir() {
+    if path.exists() {
         fs::remove_dir_all(path).unwrap();
     }
 }
