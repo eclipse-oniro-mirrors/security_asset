@@ -15,7 +15,7 @@
 
 //! This module is used to subscribe common event and system ability.
 
-use std::{slice, time::Instant};
+use std::{fs::{self, DirEntry}, slice, time::Instant};
 
 use asset_constants::{CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
@@ -28,6 +28,10 @@ use asset_file_operator::delete_user_db_dir;
 use asset_log::{loge, logi};
 
 use crate::sys_event::upload_fault_system_event;
+
+const ASSET_DB: &str = "asset.db";
+const BACKUP_SUFFIX: &str = ".backup";
+const ROOT_PATH: &str = "data/service/el1/public/asset_service";
 
 fn delete_on_package_removed(user_id: i32, owner: Vec<u8>) -> Result<bool> {
     let mut cond = DbMap::new();
@@ -80,17 +84,51 @@ extern "C" fn delete_crypto_need_unlock() {
     crypto_manager.lock().unwrap().remove_need_device_unlocked();
 }
 
+extern "C" fn backup_db() {
+    let start_time = Instant::now();
+    match backup_all_db(&start_time) {
+        Ok(_) => (),
+        Err(e) => {
+            let calling_info = CallingInfo::new_self();
+            upload_fault_system_event(&calling_info, start_time, "backup_db", &e);
+        },
+    }
+}
+
+fn backup_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
+    let from_path = entry.path().with_file_name(format!("{}/{}", user_id, ASSET_DB)).to_string_lossy().to_string();
+    Database::check_db_accessible(from_path.clone(), user_id)?;
+    let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
+    fs::copy(from_path, backup_path)?;
+    Ok(())
+}
+
+fn backup_all_db(start_time: &Instant) -> Result<()> {
+    for entry in fs::read_dir(ROOT_PATH)? {
+        let entry = entry?;
+        if let Ok(user_id) = entry.file_name().to_string_lossy().to_string().parse::<i32>() {
+            if let Err(e) = backup_db_if_accessible(&entry, user_id) {
+                let calling_info = CallingInfo::new_self();
+                upload_fault_system_event(&calling_info, *start_time, &format!("backup_db_{}", user_id), &e);
+            }
+        }
+    }
+    Ok(())
+}
+
 extern "C" {
     fn SubscribeSystemAbility(
         onPackageRemoved: extern "C" fn(i32, *const u8, u32),
         onUserRemoved: extern "C" fn(i32),
         onScreenOff: extern "C" fn(),
+        onCharging: extern "C" fn(),
     ) -> bool;
     fn UnSubscribeSystemAbility() -> bool;
     fn SubscribeSystemEvent(
         onPackageRemoved: extern "C" fn(i32, *const u8, u32),
         onUserRemoved: extern "C" fn(i32),
         onScreenOff: extern "C" fn(),
+        onCharging: extern "C" fn(),
     ) -> bool;
     fn UnSubscribeSystemEvent() -> bool;
 }
@@ -98,13 +136,13 @@ extern "C" {
 /// Subscribe to the add and remove events of system abilities.
 pub(crate) fn subscribe() {
     unsafe {
-        if SubscribeSystemEvent(delete_data_by_owner, delete_dir_by_user, delete_crypto_need_unlock) {
+        if SubscribeSystemEvent(delete_data_by_owner, delete_dir_by_user, delete_crypto_need_unlock, backup_db) {
             logi!("Subscribe system event success.");
         } else {
             loge!("Subscribe system event failed.")
         }
 
-        if SubscribeSystemAbility(delete_data_by_owner, delete_dir_by_user, delete_crypto_need_unlock) {
+        if SubscribeSystemAbility(delete_data_by_owner, delete_dir_by_user, delete_crypto_need_unlock, backup_db) {
             logi!("Subscribe system ability success.");
         } else {
             loge!("Subscribe system ability failed.")

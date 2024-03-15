@@ -22,7 +22,8 @@
 extern "C" {
 #endif
 
-bool SubscribeSystemAbility(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff);
+bool SubscribeSystemAbility(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff,
+    OnCharging onCharging);
 bool UnSubscribeSystemAbility(void);
 
 #ifdef __cplusplus

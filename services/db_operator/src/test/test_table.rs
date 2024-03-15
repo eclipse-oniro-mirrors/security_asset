@@ -42,7 +42,7 @@ fn create_delete_table() {
 }
 
 #[test]
-fn table_recovery() {
+fn table_restore() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let mut db = Database::build(0).unwrap();
     let table = Table::new("table_name", &db);

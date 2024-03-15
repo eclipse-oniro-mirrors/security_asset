@@ -62,6 +62,10 @@ void OnScreenOffCallback(void)
 {
 }
 
+void OnChargingCallback(void)
+{
+}
+
 /**
  * @tc.name: AssetSystemAbilityWrapperTest.AssetSystemAbilityWrapperTest001
  * @tc.desc: Test asset func SubscribeSystemEvent, expect ACCESS_TOKEN_ERROR
@@ -73,7 +77,8 @@ HWTEST_F(AssetSystemAbilityWrapperTest, AssetSystemAbilityWrapperTest001, TestSi
     OnPackageRemoved onPackageRemovedPtr = &PackageRemovedCallback;
     OnUserRemoved onUserRemovedPtr = &OnUserRemovedCallback;
     OnScreenOff onScreenOffPtr = &OnScreenOffCallback;
-    ASSERT_EQ(true, SubscribeSystemEvent(onPackageRemovedPtr, onUserRemovedPtr, onScreenOffPtr));
+    OnCharging onChargingPtr = &OnChargingCallback;
+    ASSERT_EQ(true, SubscribeSystemEvent(onPackageRemovedPtr, onUserRemovedPtr, onScreenOffPtr, onChargingPtr));
 }
 
 /**
