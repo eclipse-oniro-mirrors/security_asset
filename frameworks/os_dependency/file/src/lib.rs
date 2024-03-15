@@ -15,7 +15,7 @@
 
 //! This file implement the file operations.
 
-use std::{fmt::format, fs::{self, DirEntry}, path::Path};
+use std::{fs::{self, DirEntry}, path::Path};
 
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_log::logi;
