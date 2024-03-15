@@ -15,7 +15,7 @@
 
 //! This module is used to subscribe common event and system ability.
 
-use std::{fs::{self, DirEntry}, slice, time::Instant, path::Path};
+use std::{fs, slice, time::Instant};
 
 use asset_constants::{CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
@@ -24,13 +24,11 @@ use asset_db_operator::{
     types::{column, DbMap},
 };
 use asset_definition::{Result, Value};
-use asset_file_operator::delete_user_db_dir;
+use asset_file_operator::{backup_db_if_available, delete_user_db_dir};
 use asset_log::{loge, logi};
 
 use crate::sys_event::upload_fault_system_event;
 
-const ASSET_DB: &str = "asset.db";
-const BACKUP_SUFFIX: &str = ".backup";
 const ROOT_PATH: &str = "data/service/el1/public/asset_service";
 
 fn delete_on_package_removed(user_id: i32, owner: Vec<u8>) -> Result<bool> {
@@ -84,20 +82,9 @@ extern "C" fn delete_crypto_need_unlock() {
     crypto_manager.lock().unwrap().remove_need_device_unlocked();
 }
 
-fn process_backup(entry: &DirEntry, user_id: i32) -> Result<()> {
-    if let Ok(file_name) = entry.file_name().into_string() {
-        if file_name == ASSET_DB {
-            Database::check_db(entry.path().with_file_name(ASSET_DB).to_string_lossy().to_string(), user_id)?;
-            let backup_path = entry.path().with_file_name(format!("{}{}", ASSET_DB, BACKUP_SUFFIX));
-            fs::copy(entry.path(), backup_path)?;
-        }
-    }
-    Ok(())
-}
-
 extern "C" fn backup_db() {
     let start_time = Instant::now();
-    match visit_root_dir(&process_backup) {
+    match backup_all_db(&start_time) {
         Ok(_) => (),
         Err(e) => {
             let calling_info = CallingInfo::new_self();
@@ -106,30 +93,13 @@ extern "C" fn backup_db() {
     }
 }
 
-fn visit_root_dir(cb: &dyn Fn(&DirEntry, i32) -> Result<()>) -> Result<()> {
-    let root_path = Path::new(ROOT_PATH);
-    visit_dirs(root_path, cb)
-}
-
-fn visit_dirs(dir: &Path, cb: &dyn Fn(&DirEntry, i32) -> Result<()>) -> Result<()> {
-    let start_time = Instant::now();
-    if !dir.is_dir() {
-        return Ok(());
-    }
-    for entry in fs::read_dir(dir)? {
+fn backup_all_db(start_time: &Instant) -> Result<()> {
+    for entry in fs::read_dir(ROOT_PATH)? {
         let entry = entry?;
-        let path = entry.path();
         if let Ok(user_id) = entry.file_name().to_string_lossy().to_string().parse::<i32>() {
-            for entry in fs::read_dir(path)? {
-                let entry = entry?;
-                let path = entry.path();
-                if path.is_dir() {
-                    continue;
-                }
-                if let Err(e) = cb(&entry, user_id) {
-                    let calling_info = CallingInfo::new_self();
-                    upload_fault_system_event(&calling_info, start_time, &format!("backup_db_{}", user_id), &e);
-                }
+            if let Err(e) = backup_db_if_available(&entry, user_id) {
+                let calling_info = CallingInfo::new_self();
+                upload_fault_system_event(&calling_info, *start_time, &format!("backup_db_{}", user_id), &e);
             }
         }
     }

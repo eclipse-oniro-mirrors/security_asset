@@ -16,6 +16,7 @@ import("//build/ohos.gni")
 ohos_rust_static_library("asset_file_operator") {
   sources = [ "src/lib.rs" ]
   deps = [
+    "../../../services/db_operator:asset_db_operator",
     "../../definition:asset_definition",
     "../log:asset_log",
   ]

@@ -105,7 +105,7 @@ impl Database {
     }
 
     /// check is db ok
-    pub fn check_db(path: String, user_id: i32) -> Result<()> {
+    pub fn check_db_available(path: String, user_id: i32) -> Result<()> {
         let lock = get_file_lock_by_user_id(user_id);
         let mut db = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock };
         db.open()?;
