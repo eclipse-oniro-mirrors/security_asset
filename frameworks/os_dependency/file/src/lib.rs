@@ -15,16 +15,12 @@
 
 //! This file implement the file operations.
 
-use std::{fs::{self, DirEntry}, path::Path};
+use std::{fs, path::Path};
 
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_log::logi;
 
-use asset_db_operator::database::Database;
-
 const ROOT_PATH: &str = "data/service/el1/public/asset_service";
-const ASSET_DB: &str = "asset.db";
-const BACKUP_SUFFIX: &str = ".backup";
 
 fn construct_user_path(user_id: i32) -> String {
     format!("{}/{}", ROOT_PATH, user_id)
@@ -70,13 +66,4 @@ pub fn delete_user_db_dir(user_id: i32) -> Result<()> {
             log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Delete dir failed! error is [{}]", e)
         },
     }
-}
-
-/// Backup database if the database is available
-pub fn backup_db_if_available(entry: &DirEntry, user_id: i32) -> Result<()> {
-    let from_path = entry.path().with_file_name(format!("{}/{}", user_id, ASSET_DB)).to_string_lossy().to_string();
-    Database::check_db_available(from_path.clone(), user_id)?;
-    let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
-    fs::copy(from_path, backup_path)?;
-    Ok(())
 }

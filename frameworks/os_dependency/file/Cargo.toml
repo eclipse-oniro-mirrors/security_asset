@@ -21,4 +21,3 @@ edition = "2021"
 [dependencies]
 asset_definition = { path = "../../../frameworks/definition" }
 asset_log = { path = "../../../frameworks/os_dependency/log" }
-asset_db_operator = { path = "../../../services/db_operator" }
