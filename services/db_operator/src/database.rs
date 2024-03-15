@@ -99,8 +99,8 @@ impl Database {
         let lock = get_file_lock_by_user_id(user_id);
         let mut db = Database { path, backup_path, handle: 0, db_lock: lock };
         let _lock = db.db_lock.mtx.lock().unwrap();
-        db.open_and_recovery()?;
-        db.recovery_if_exec_fail(|e: &Table| e.create(COLUMN_INFO))?;
+        db.open_and_restore()?;
+        db.restore_if_exec_fail(|e: &Table| e.create(COLUMN_INFO))?;
         Ok(db)
     }
 
@@ -127,11 +127,11 @@ impl Database {
         }
     }
 
-    /// Open the database connection and recovery the database if the connection fails.
-    fn open_and_recovery(&mut self) -> Result<()> {
+    /// Open the database connection and restore the database if the connection fails.
+    fn open_and_restore(&mut self) -> Result<()> {
         let result = self.open();
         let result = match result {
-            Err(ret) if ret.code == ErrCode::DataCorrupted => self.recovery(),
+            Err(ret) if ret.code == ErrCode::DataCorrupted => self.restore(),
             ret => ret,
         };
         result
@@ -146,8 +146,8 @@ impl Database {
     }
 
     // Recovery the corrupt database and reopen it.
-    pub(crate) fn recovery(&mut self) -> Result<()> {
-        loge!("[WARNING]Database is corrupt, start to recovery");
+    pub(crate) fn restore(&mut self) -> Result<()> {
+        loge!("[WARNING]Database is corrupt, start to restore");
         self.close();
         if let Err(e) = fs::copy(&self.backup_path, &self.path) {
             return log_throw_error!(ErrCode::FileOperationError, "[FATAL][DB]Recovery database failed, err={}", e);
@@ -233,13 +233,13 @@ impl Database {
         }
     }
 
-    /// execute func in db, if failed and error code is data corrupted then recovery
-    pub(crate) fn recovery_if_exec_fail<T, F: Fn(&Table) -> Result<T>>(&mut self, func: F) -> Result<T> {
+    /// execute func in db, if failed and error code is data corrupted then restore
+    pub(crate) fn restore_if_exec_fail<T, F: Fn(&Table) -> Result<T>>(&mut self, func: F) -> Result<T> {
         let table = Table::new(TABLE_NAME, self);
         let result = func(&table);
         match result {
             Err(ret) if ret.code == ErrCode::DataCorrupted => {
-                self.recovery()?;
+                self.restore()?;
                 let table = Table::new(TABLE_NAME, self); // Database handle will be changed.
                 func(&table)
             },
@@ -281,7 +281,7 @@ impl Database {
                 e.insert_row(datas)
             }
         };
-        self.recovery_if_exec_fail(closure)
+        self.restore_if_exec_fail(closure)
     }
 
     /// Delete datas from database.
@@ -309,7 +309,7 @@ impl Database {
     pub fn delete_datas(&mut self, condition: &DbMap) -> Result<i32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.delete_row(condition);
-        self.recovery_if_exec_fail(closure)
+        self.restore_if_exec_fail(closure)
     }
 
     /// Update datas in database.
@@ -335,7 +335,7 @@ impl Database {
     pub fn update_datas(&mut self, condition: &DbMap, datas: &DbMap) -> Result<i32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.update_row(condition, datas);
-        self.recovery_if_exec_fail(closure)
+        self.restore_if_exec_fail(closure)
     }
 
     /// Check whether data exists in the database.
@@ -358,7 +358,7 @@ impl Database {
     pub fn is_data_exists(&mut self, condition: &DbMap) -> Result<bool> {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.is_data_exists(condition);
-        self.recovery_if_exec_fail(closure)
+        self.restore_if_exec_fail(closure)
     }
 
     /// Query data that meets specified conditions(can be empty) from the database.
@@ -387,14 +387,14 @@ impl Database {
     ) -> Result<Vec<DbMap>> {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.query_row(columns, condition, query_options, COLUMN_INFO);
-        self.recovery_if_exec_fail(closure)
+        self.restore_if_exec_fail(closure)
     }
 
     /// Delete old data and insert new data.
     pub fn replace_datas(&mut self, condition: &DbMap, datas: &DbMap) -> Result<()> {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.replace_row(condition, datas);
-        self.recovery_if_exec_fail(closure)
+        self.restore_if_exec_fail(closure)
     }
 }
 
