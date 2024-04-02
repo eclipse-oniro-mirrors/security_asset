@@ -19,6 +19,12 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+hilog_rust = { git = "https://gitee.com/openharmony/hiviewdfx_hilog.git" }
+system_ability_fwk = { git = "https://gitee.com/openharmony/systemabilitymgr_safwk" }
+hitrace_meter_rust = { git = "https://gitee.com/openharmony/hiviewdfx_hitrace.git" }
+hisysevent = { git = "https://gitee.com/openharmony/hiviewdfx_hisysevent.git" }
+ipc = { git = "https://gitee.com/openharmony/communication_ipc" }
+
 asset_constants = { path = "../constants" }
 asset_crypto_manager = { path = "../crypto_manager" }
 asset_db_operator = { path = "../db_operator" }

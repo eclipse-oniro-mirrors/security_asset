@@ -15,7 +15,7 @@
 
 //! This module defines IPC interfaces and constants.
 
-use ipc_rust::{BorrowedMsgParcel, IpcStatusCode};
+use ipc::{parcel::MsgParcel, IpcStatusCode};
 
 use asset_definition::{
     impl_enum_trait, log_throw_error, AssetError, AssetMap, Conversion, DataType, ErrCode, Result, Tag, Value,
@@ -36,7 +36,7 @@ impl_enum_trait! {
     #[derive(Clone, Copy)]
     pub enum IpcCode {
         /// Code for AddAsset.
-        Add = ipc_rust::FIRST_CALL_TRANSACTION,
+        Add = ipc::FIRST_CALL_TRANSACTION,
         /// Code for RemoveAsset.
         Remove,
         /// Code for UpdateAsset.
@@ -50,29 +50,8 @@ impl_enum_trait! {
     }
 }
 
-/// Function between proxy and stub of Asset service.
-pub trait IAsset: ipc_rust::IRemoteBroker {
-    /// Add an Asset.
-    fn add(&self, attributes: &AssetMap) -> Result<()>;
-
-    /// Remove one or more Assets that match a search query.
-    fn remove(&self, query: &AssetMap) -> Result<()>;
-
-    /// Update an Asset that matches a search query.
-    fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()>;
-
-    /// Preprocessing for querying one or more Assets that require user authentication.
-    fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>>;
-
-    /// Query one or more Assets that match a search query.
-    fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>>;
-
-    /// Post-processing for querying multiple Assets that require user authentication.
-    fn post_query(&self, query: &AssetMap) -> Result<()>;
-}
-
 /// serialize the map to parcel
-pub fn serialize_map(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<()> {
+pub fn serialize_map(map: &AssetMap, parcel: &mut MsgParcel) -> Result<()> {
     if map.len() as u32 > MAX_MAP_CAPACITY {
         return log_throw_error!(ErrCode::InvalidArgument, "[FALTAL][IPC]The map size exceeds the limit.");
     }
@@ -97,7 +76,7 @@ pub fn serialize_map(map: &AssetMap, parcel: &mut BorrowedMsgParcel) -> Result<(
 }
 
 /// deserialize the map from parcel
-pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
+pub fn deserialize_map(parcel: &mut MsgParcel) -> Result<AssetMap> {
     let len = parcel.read::<u32>().map_err(ipc_err_handle)?;
     if len > MAX_MAP_CAPACITY {
         return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][IPC]The map size exceeds the limit.");
@@ -125,7 +104,7 @@ pub fn deserialize_map(parcel: &BorrowedMsgParcel) -> Result<AssetMap> {
 }
 
 /// Serialize the collection of map to parcel.
-pub fn serialize_maps(vec: &Vec<AssetMap>, parcel: &mut BorrowedMsgParcel) -> Result<()> {
+pub fn serialize_maps(vec: &Vec<AssetMap>, parcel: &mut MsgParcel) -> Result<()> {
     if vec.len() as u32 > MAX_VEC_CAPACITY {
         return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][IPC]The vector size exceeds the limit.");
     }
@@ -137,7 +116,7 @@ pub fn serialize_maps(vec: &Vec<AssetMap>, parcel: &mut BorrowedMsgParcel) -> Re
 }
 
 /// Deserialize the collection of map from parcel.
-pub fn deserialize_maps(parcel: &BorrowedMsgParcel) -> Result<Vec<AssetMap>> {
+pub fn deserialize_maps(parcel: &mut MsgParcel) -> Result<Vec<AssetMap>> {
     let len = parcel.read::<u32>().map_err(ipc_err_handle)?;
     if len > MAX_VEC_CAPACITY {
         return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][IPC]The vector size exceeds the limit.");
