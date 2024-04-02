@@ -18,7 +18,7 @@
 #include <string>
 #include <gtest/gtest.h>
 
-#include "asset_api.h"
+#include "asset_system_api.h"
 #include "asset_test_common.h"
 
 using namespace testing::ext;
@@ -58,82 +58,82 @@ void AssetUpdateTest::TearDown(void)
  */
 HWTEST_F(AssetUpdateTest, AssetUpdateTest001, TestSize.Level0)
 {
-    Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
-    Asset_Attr addAttr[] = {
-        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
-        { .tag = ASSET_TAG_SECRET, .value.blob = funcName },
-        { .tag = ASSET_TAG_ACCESSIBILITY, .value.u32 = ASSET_ACCESSIBILITY_DEVICE_POWERED_ON },
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    AssetAttr addAttr[] = {
+        { .tag = ASSET_SYSTEM_TAG_ALIAS, .value.blob = funcName },
+        { .tag = ASSET_SYSTEM_TAG_SECRET, .value.blob = funcName },
+        { .tag = ASSET_SYSTEM_TAG_ACCESSIBILITY, .value.u32 = ASSET_SYSTEM_ACCESSIBILITY_DEVICE_POWERED_ON },
     };
-    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(addAttr, ARRAY_SIZE(addAttr)));
+    ASSERT_EQ(ASSET_SYSTEM_SUCCESS, AssetAdd(addAttr, ARRAY_SIZE(addAttr)));
 
-    Asset_Attr queryAttr[] = {
-        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName }
+    AssetAttr queryAttr[] = {
+        { .tag = ASSET_SYSTEM_TAG_ALIAS, .value.blob = funcName }
     };
     const char *secretNew = "secret_new";
-    Asset_Attr updateAttr[] = {
+    AssetAttr updateAttr[] = {
         {
-            .tag = ASSET_TAG_SECRET,
+            .tag = ASSET_SYSTEM_TAG_SECRET,
             .value.blob = {
                 .size = strlen(secretNew), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(secretNew))
             }
         }
     };
-    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Update(queryAttr, ARRAY_SIZE(queryAttr), updateAttr, ARRAY_SIZE(updateAttr)));
+    ASSERT_EQ(ASSET_SYSTEM_SUCCESS, AssetUpdate(queryAttr, ARRAY_SIZE(queryAttr), updateAttr, ARRAY_SIZE(updateAttr)));
 
-    ASSERT_EQ(ASSET_SUCCESS, RemoveByAlias(__func__));
+    ASSERT_EQ(ASSET_SYSTEM_SUCCESS, RemoveByAlias(__func__));
 }
 
 /**
  * @tc.name: AssetUpdateTest.AssetUpdateTest002
- * @tc.desc: Update with empty update attr, expect ASSET_INVALID_ARGUMENT
+ * @tc.desc: Update with empty update attr, expect ASSET_SYSTEM_INVALID_ARGUMENT
  * @tc.type: FUNC
  * @tc.result:0
  */
 HWTEST_F(AssetUpdateTest, AssetUpdateTest002, TestSize.Level0)
 {
-    Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
-    Asset_Attr queryAttr[] = {
-        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName }
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    AssetAttr queryAttr[] = {
+        { .tag = ASSET_SYSTEM_TAG_ALIAS, .value.blob = funcName }
     };
-    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Update(queryAttr, ARRAY_SIZE(queryAttr), nullptr, 0));
+    ASSERT_EQ(ASSET_SYSTEM_INVALID_ARGUMENT, AssetUpdate(queryAttr, ARRAY_SIZE(queryAttr), nullptr, 0));
 }
 
 /**
  * @tc.name: AssetUpdateTest.AssetUpdateTest003
- * @tc.desc: Update with empty query attr, expect ASSET_INVALID_ARGUMENT
+ * @tc.desc: Update with empty query attr, expect ASSET_SYSTEM_INVALID_ARGUMENT
  * @tc.type: FUNC
  * @tc.result:0
  */
 HWTEST_F(AssetUpdateTest, AssetUpdateTest003, TestSize.Level0)
 {
-    Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
-    Asset_Attr updateAttr[] = {
-        { .tag = ASSET_TAG_SECRET, .value.blob = funcName }
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    AssetAttr updateAttr[] = {
+        { .tag = ASSET_SYSTEM_TAG_SECRET, .value.blob = funcName }
     };
-    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Update(nullptr, 0, updateAttr, ARRAY_SIZE(updateAttr)));
+    ASSERT_EQ(ASSET_SYSTEM_INVALID_ARGUMENT, AssetUpdate(nullptr, 0, updateAttr, ARRAY_SIZE(updateAttr)));
 }
 
 /**
  * @tc.name: AssetUpdateTest.AssetUpdateTest004
- * @tc.desc: Update non-exist asset, expect ASSET_NOT_FOUND
+ * @tc.desc: Update non-exist asset, expect ASSET_SYSTEM_NOT_FOUND
  * @tc.type: FUNC
  * @tc.result:0
  */
 HWTEST_F(AssetUpdateTest, AssetUpdateTest004, TestSize.Level0)
 {
-    Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
-    Asset_Attr queryAttr[] = {
-        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName }
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    AssetAttr queryAttr[] = {
+        { .tag = ASSET_SYSTEM_TAG_ALIAS, .value.blob = funcName }
     };
     const char *secretNew = "secret_new";
-    Asset_Attr updateAttr[] = {
+    AssetAttr updateAttr[] = {
         {
-            .tag = ASSET_TAG_SECRET,
+            .tag = ASSET_SYSTEM_TAG_SECRET,
             .value.blob = {
                 .size = strlen(secretNew), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(secretNew))
             }
         }
     };
-    ASSERT_EQ(ASSET_NOT_FOUND, OH_Asset_Update(queryAttr, ARRAY_SIZE(queryAttr), updateAttr, ARRAY_SIZE(updateAttr)));
+    ASSERT_EQ(ASSET_SYSTEM_NOT_FOUND, AssetUpdate(queryAttr, ARRAY_SIZE(queryAttr), updateAttr, ARRAY_SIZE(updateAttr)));
 }
 }

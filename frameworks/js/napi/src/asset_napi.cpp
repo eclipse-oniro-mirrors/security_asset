@@ -169,6 +169,16 @@ napi_value NapiAddSync(napi_env env, napi_callback_info info)
     return nullptr;
 }
 
+napi_value NapiAddAsUser(napi_env env, napi_callback_info info)
+{
+    napi_async_execute_callback execute =
+        [](napi_env env, void *data) {
+            AsyncContext *context = static_cast<AsyncContext *>(data);
+            context->result = OH_Asset_Add(&context->attrs[0], context->attrs.size());
+        };
+    return NapiEntry(env, info, __func__, execute);
+}
+
 napi_value NapiRemove(napi_env env, napi_callback_info info)
 {
     napi_async_execute_callback execute =
@@ -310,6 +320,7 @@ napi_value Register(napi_env env, napi_value exports)
         // register function
         DECLARE_NAPI_FUNCTION("add", NapiAdd),
         DECLARE_NAPI_FUNCTION("addSync", NapiAddSync),
+        DECLARE_NAPI_FUNCTION("addAsUser", NapiAddAsUser),
         DECLARE_NAPI_FUNCTION("remove", NapiRemove),
         DECLARE_NAPI_FUNCTION("removeSync", NapiRemoveSync),
         DECLARE_NAPI_FUNCTION("update", NapiUpdate),

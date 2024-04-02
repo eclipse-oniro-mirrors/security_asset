@@ -28,5 +28,5 @@ ohos_unittest("asset_ndk_test") {
     "src/asset_test_common.cpp",
     "src/asset_update_test.cpp",
   ]
-  deps = [ "../../../interfaces/kits/c:asset_ndk" ]
+  deps = [ "../../../interfaces/inner_api/c:asset_sdk" ]
 }

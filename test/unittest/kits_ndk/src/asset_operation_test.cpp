@@ -18,7 +18,7 @@
 #include <string>
 #include <gtest/gtest.h>
 
-#include "asset_api.h"
+#include "asset_system_api.h"
 #include "asset_test_common.h"
 
 using namespace testing::ext;
@@ -58,7 +58,7 @@ void AssetOperationTest::TearDown(void)
  */
 HWTEST_F(AssetOperationTest, AssetOperationTest001, TestSize.Level0)
 {
-    OH_Asset_FreeBlob(nullptr);
+    AssetFreeBlob(nullptr);
 }
 
 /**
@@ -69,8 +69,8 @@ HWTEST_F(AssetOperationTest, AssetOperationTest001, TestSize.Level0)
  */
 HWTEST_F(AssetOperationTest, AssetOperationTest002, TestSize.Level0)
 {
-    Asset_Blob blob = { .size = 0, .data = nullptr };
-    OH_Asset_FreeBlob(&blob);
+    AssetBlob blob = { .size = 0, .data = nullptr };
+    AssetFreeBlob(&blob);
 }
 
 /**
@@ -81,8 +81,8 @@ HWTEST_F(AssetOperationTest, AssetOperationTest002, TestSize.Level0)
  */
 HWTEST_F(AssetOperationTest, AssetOperationTest003, TestSize.Level0)
 {
-    Asset_Blob blob = { .size = 0, .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
-    OH_Asset_FreeBlob(&blob);
+    AssetBlob blob = { .size = 0, .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    AssetFreeBlob(&blob);
 }
 
 /**
@@ -93,7 +93,7 @@ HWTEST_F(AssetOperationTest, AssetOperationTest003, TestSize.Level0)
  */
 HWTEST_F(AssetOperationTest, AssetOperationTest004, TestSize.Level0)
 {
-    OH_Asset_FreeResultSet(nullptr);
+    AssetFreeResultSet(nullptr);
 }
 
 /**
@@ -104,7 +104,7 @@ HWTEST_F(AssetOperationTest, AssetOperationTest004, TestSize.Level0)
  */
 HWTEST_F(AssetOperationTest, AssetOperationTest005, TestSize.Level0)
 {
-    Asset_ResultSet resultSet = { .count = 0, .results = nullptr };
-    OH_Asset_FreeResultSet(&resultSet);
+    AssetResultSet resultSet = { .count = 0, .results = nullptr };
+    AssetFreeResultSet(&resultSet);
 }
 }
