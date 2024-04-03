@@ -28,7 +28,7 @@ static const uint32_t TAG_SIZE = 16;
 static const uint32_t NONCE_SIZE = 12;
 
 #define ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
-#define ASSET_ROOT_USER_UPPERBOUND 100
+#define ASSET_ROOT_USER_UPPERBOUND 99
 
 enum Accessibility {
     DEVICE_POWERED_ON = 0,

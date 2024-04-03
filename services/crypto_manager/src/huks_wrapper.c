@@ -77,7 +77,7 @@ static int32_t BuildParamSet(struct HksParamSet **paramSet, const struct HksPara
             return ret;
         }
 
-        if (userId >= ASSET_ROOT_USER_UPPERBOUND) {
+        if (userId > ASSET_ROOT_USER_UPPERBOUND) {
             ret = AddAppointUserIdParams(*paramSet, userId);
             if (ret != HKS_SUCCESS) {
                 LOGE("[FATAL]HUKS add specific userId failed. error=%{public}d", ret);
@@ -138,7 +138,7 @@ int32_t GenerateKey(const struct KeyId *keyId, bool needAuth, bool requirePasswo
             break;
         }
 
-        if (keyId->userId >= ASSET_ROOT_USER_UPPERBOUND) {
+        if (keyId->userId > ASSET_ROOT_USER_UPPERBOUND) {
             ret = AddAppointUserIdParams(paramSet, keyId->userId);
             if (ret != HKS_SUCCESS) {
                 LOGE("[FATAL]HUKS add specific userId failed. error=%{public}d", ret);
