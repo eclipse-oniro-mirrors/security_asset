@@ -149,6 +149,7 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::ReturnLimit => check_number_range(tag, value, MIN_NUMBER_VALUE, MAX_RETURN_LIMIT),
         Tag::ReturnOffset => Ok(()),
         Tag::ReturnOrderedBy => check_tag_range(tag, value, &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat()),
+        Tag::AppointUserId => Ok(()),
     }
 }
 

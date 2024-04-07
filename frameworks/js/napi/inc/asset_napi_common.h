@@ -63,10 +63,10 @@ napi_value CreateJsMapArray(napi_env env, const AssetResultSet &resultSet);
 napi_status ParseParam(napi_env env, napi_callback_info info, std::vector<AssetAttr> &attrs);
 
 napi_status ParseParam(napi_env env, napi_callback_info info, size_t expectArgNum, std::vector<AssetAttr> &attrs,
-    std::vector<AssetAttr> &updateAttrs);
+    std::vector<AssetAttr> &updateAttrs, bool isUpdate, bool isApplintUserId);
 
 napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
-    size_t expectArgNum = 1);
+    size_t expectArgNum = 1, bool isUpdate = false, bool isAppointUserId = false);
 
 } // Asset
 } // Security

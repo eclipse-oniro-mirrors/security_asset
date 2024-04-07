@@ -42,12 +42,15 @@ fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
 const QUERY_REQUIRED_ATTRS: [Tag; 1] = [Tag::Alias];
 const UPDATE_OPTIONAL_ATTRS: [Tag; 1] = [Tag::Secret];
 
-fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap) -> Result<()> {
+fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // Check attributes used to query.
     common::check_required_tags(query, &QUERY_REQUIRED_ATTRS)?;
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
+    if calling_info.has_appoint_user_id() {
+        valid_tags.extend_from_slice(&common::APPOINT_USER_ID);
+    }
     common::check_tag_validity(query, &valid_tags)?;
     common::check_value_validity(query)?;
 
@@ -66,8 +69,11 @@ fn upgrade_to_latest_version(origin_db_data: &mut DbMap, update_db_data: &mut Db
     update_db_data.insert_attr(column::VERSION, DB_DATA_VERSION);
 }
 
-pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    check_arguments(query, update)?;
+pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &mut CallingInfo) -> Result<()> {
+    if let Some(Value::Number(num)) = query.get(&Tag::AppointUserId) {
+        calling_info.set_appoint_user_id(*num as i32)?;
+    }
+    check_arguments(query, update, calling_info)?;
 
     let mut query_db_data = common::into_db_map(query);
     common::add_owner_info(calling_info, &mut query_db_data);
@@ -75,7 +81,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     let mut update_db_data = common::into_db_map(update);
     add_system_attrs(&mut update_db_data)?;
 
-    let mut db = Database::build(calling_info.user_id())?;
+    let mut db = Database::build(calling_info.stored_user_id())?;
     if update.contains_key(&Tag::Secret) {
         let mut results = db.query_datas(&vec![], &query_db_data, None)?;
         if results.len() != 1 {

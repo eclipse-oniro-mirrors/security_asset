@@ -176,7 +176,7 @@ napi_value NapiAddAsUser(napi_env env, napi_callback_info info)
             AsyncContext *context = static_cast<AsyncContext *>(data);
             context->result = AssetAdd(&context->attrs[0], context->attrs.size());
         };
-    return NapiEntry(env, info, __func__, execute);
+    return NapiEntry(env, info, __func__, execute, 2, false, true);
 }
 
 napi_value NapiRemove(napi_env env, napi_callback_info info)
@@ -204,6 +204,16 @@ napi_value NapiRemoveSync(napi_env env, napi_callback_info info)
     return nullptr;
 }
 
+napi_value NapiRemoveAsUser(napi_env env, napi_callback_info info)
+{
+    napi_async_execute_callback execute =
+        [](napi_env env, void *data) {
+            AsyncContext *context = static_cast<AsyncContext *>(data);
+            context->result = AssetRemove(&context->attrs[0], context->attrs.size());
+        };
+    return NapiEntry(env, info, __func__, execute, 2, false, true);
+}
+
 napi_value NapiUpdate(napi_env env, napi_callback_info info)
 {
     napi_async_execute_callback execute =
@@ -212,7 +222,7 @@ napi_value NapiUpdate(napi_env env, napi_callback_info info)
             context->result = AssetUpdate(&context->attrs[0], context->attrs.size(),
                 &context->updateAttrs[0], context->updateAttrs.size());
         };
-    return NapiEntry(env, info, __func__, execute, UPDATE_ARGS_NUM);
+    return NapiEntry(env, info, __func__, execute, UPDATE_ARGS_NUM, true);
 }
 
 napi_value NapiUpdateSync(napi_env env, napi_callback_info info)
@@ -220,7 +230,7 @@ napi_value NapiUpdateSync(napi_env env, napi_callback_info info)
     std::vector<AssetAttr> attrs;
     std::vector<AssetAttr> updateAttrs;
     do {
-        if (ParseParam(env, info, UPDATE_ARGS_NUM, attrs, updateAttrs) != napi_ok) {
+        if (ParseParam(env, info, UPDATE_ARGS_NUM, attrs, updateAttrs, true, false) != napi_ok) {
             break;
         }
         int32_t result = AssetUpdate(&attrs[0], attrs.size(), &updateAttrs[0], updateAttrs.size());
@@ -229,6 +239,17 @@ napi_value NapiUpdateSync(napi_env env, napi_callback_info info)
     FreeAssetAttrs(attrs);
     FreeAssetAttrs(updateAttrs);
     return nullptr;
+}
+
+napi_value NapiUpdateAsUser(napi_env env, napi_callback_info info)
+{
+    napi_async_execute_callback execute =
+        [](napi_env env, void *data) {
+            AsyncContext *context = static_cast<AsyncContext *>(data);
+            context->result = AssetUpdate(&context->attrs[0], context->attrs.size(),
+                &context->updateAttrs[0], context->updateAttrs.size());
+        };
+    return NapiEntry(env, info, __func__, execute, UPDATE_ARGS_NUM + 1, true, true);
 }
 
 napi_value NapiPreQuery(napi_env env, napi_callback_info info)
@@ -260,6 +281,16 @@ napi_value NapiPreQuerySync(napi_env env, napi_callback_info info)
     return result;
 }
 
+napi_value NapiPreQueryAsUser(napi_env env, napi_callback_info info)
+{
+    napi_async_execute_callback execute =
+        [](napi_env env, void *data) {
+            AsyncContext *context = static_cast<AsyncContext *>(data);
+            context->result = AssetPreQuery(&context->attrs[0], context->attrs.size(), &context->challenge);
+        };
+    return NapiEntry(env, info, __func__, execute, 2, false, true);
+}
+
 napi_value NapiQuery(napi_env env, napi_callback_info info)
 {
     napi_async_execute_callback execute =
@@ -289,6 +320,16 @@ napi_value NapiQuerySync(napi_env env, napi_callback_info info)
     return result;
 }
 
+napi_value NapiQueryAsUser(napi_env env, napi_callback_info info)
+{
+    napi_async_execute_callback execute =
+        [](napi_env env, void *data) {
+            AsyncContext *context = static_cast<AsyncContext *>(data);
+            context->result = AssetQuery(&context->attrs[0], context->attrs.size(), &context->resultSet);
+        };
+    return NapiEntry(env, info, __func__, execute, 2, false, true);
+}
+
 napi_value NapiPostQuery(napi_env env, napi_callback_info info)
 {
     napi_async_execute_callback execute =
@@ -314,6 +355,16 @@ napi_value NapiPostQuerySync(napi_env env, napi_callback_info info)
     return nullptr;
 }
 
+napi_value NapiPostQueryAsUser(napi_env env, napi_callback_info info)
+{
+    napi_async_execute_callback execute =
+        [](napi_env env, void *data) {
+            AsyncContext *context = static_cast<AsyncContext *>(data);
+            context->result = AssetPostQuery(&context->attrs[0], context->attrs.size());
+        };
+    return NapiEntry(env, info, __func__, execute, 2, false, true);
+}
+
 napi_value Register(napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
@@ -323,14 +374,19 @@ napi_value Register(napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("addAsUser", NapiAddAsUser),
         DECLARE_NAPI_FUNCTION("remove", NapiRemove),
         DECLARE_NAPI_FUNCTION("removeSync", NapiRemoveSync),
+        DECLARE_NAPI_FUNCTION("removeAsUser", NapiRemoveAsUser),
         DECLARE_NAPI_FUNCTION("update", NapiUpdate),
         DECLARE_NAPI_FUNCTION("updateSync", NapiUpdateSync),
+        DECLARE_NAPI_FUNCTION("updateAsUser", NapiUpdateAsUser),
         DECLARE_NAPI_FUNCTION("preQuery", NapiPreQuery),
         DECLARE_NAPI_FUNCTION("preQuerySync", NapiPreQuerySync),
+        DECLARE_NAPI_FUNCTION("preQueryAsUser", NapiPreQueryAsUser),
         DECLARE_NAPI_FUNCTION("query", NapiQuery),
         DECLARE_NAPI_FUNCTION("querySync", NapiQuerySync),
+        DECLARE_NAPI_FUNCTION("queryAsUser", NapiQueryAsUser),
         DECLARE_NAPI_FUNCTION("postQuery", NapiPostQuery),
         DECLARE_NAPI_FUNCTION("postQuerySync", NapiPostQuerySync),
+        DECLARE_NAPI_FUNCTION("postQueryAsUser", NapiPostQueryAsUser),
 
         // register enumerate
         DECLARE_NAPI_PROPERTY("Tag", DeclareTag(env)),

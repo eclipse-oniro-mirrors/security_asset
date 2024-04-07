@@ -341,11 +341,11 @@ napi_value CreateJsUint8Array(napi_env env, const AssetBlob &blob)
 napi_status ParseParam(napi_env env, napi_callback_info info, std::vector<AssetAttr> &attrs)
 {
     std::vector<AssetAttr> updateAttrs;
-    return ParseParam(env, info, NORMAL_ARGS_NUM, attrs, updateAttrs);
+    return ParseParam(env, info, NORMAL_ARGS_NUM, attrs, updateAttrs, true, false);
 }
 
 napi_status ParseParam(napi_env env, napi_callback_info info, size_t expectArgNum, std::vector<AssetAttr> &attrs,
-    std::vector<AssetAttr> &updateAttrs)
+    std::vector<AssetAttr> &updateAttrs, bool isUpdate = false, bool isAppointUserId = false)
 {
     napi_value argv[MAX_ARGS_NUM] = { 0 };
     size_t argc = expectArgNum;
@@ -353,13 +353,28 @@ napi_status ParseParam(napi_env env, napi_callback_info info, size_t expectArgNu
     NAPI_THROW_RETURN_ERR(env, argc < expectArgNum, ASSET_SYSTEM_INVALID_ARGUMENT,
         "The number of arguments is insufficient.");
     size_t index = 0;
+
+    napi_value appointUserId = nullptr;
+    // get appointUserId
+    if (isAppointUserId) {
+        NAPI_CALL_RETURN_ERR(env, napi_get_element(env, argv[index++], 0, &appointUserId));
+    }
+
     napi_status ret = ParseMapParam(env, argv[index++], attrs);
     if (ret != napi_ok) {
         LOGE("Parse first map parameter failed.");
         return ret;
     }
 
-    if (expectArgNum == UPDATE_ARGS_NUM) {
+    // add appointUserId into map
+    if (isAppointUserId) {
+        AssetAttr param = { 0 };
+        param.tag = ASSET_SYSTEM_TAG_USER_ID;
+        NAPI_CALL_RETURN_ERR(env, napi_get_value_uint32(env, appointUserId, &param.value.u32));
+        attrs.push_back(param);
+    }
+
+    if (isUpdate) {
         ret = ParseMapParam(env, argv[index++], updateAttrs);
         if (ret != napi_ok) {
             LOGE("Parse second map parameter failed.");
@@ -370,13 +385,13 @@ napi_status ParseParam(napi_env env, napi_callback_info info, size_t expectArgNu
 }
 
 napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
-    size_t expectArgNum)
+    size_t expectArgNum, bool isUpdate, bool isAppointUserId)
 {
     AsyncContext *context = CreateAsyncContext();
     NAPI_THROW(env, context == nullptr, ASSET_SYSTEM_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
 
     do {
-        if (ParseParam(env, info, expectArgNum, context->attrs, context->updateAttrs) != napi_ok) {
+        if (ParseParam(env, info, expectArgNum, context->attrs, context->updateAttrs, isUpdate, isAppointUserId) != napi_ok) {
             break;
         }
 

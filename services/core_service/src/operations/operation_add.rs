@@ -111,7 +111,7 @@ const OPTIONAL_ATTRS: [Tag; 3] = [Tag::Secret, Tag::ConflictResolution, Tag::IsP
 const SYSTEM_USER_ID_MAX: i32 = 99;
 
 fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    if calling_info.user_id() > SYSTEM_USER_ID_MAX {
+    if calling_info.stored_user_id() > SYSTEM_USER_ID_MAX {
         return Ok(());
     }
     let accessibility =
@@ -143,17 +143,23 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
+    if calling_info.has_appoint_user_id() {
+        valid_tags.extend_from_slice(&common::APPOINT_USER_ID);
+    }
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
     check_accessibity_validity(attributes, calling_info)?;
     check_permission(attributes)
 }
 
-pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+pub(crate) fn add(attributes: &AssetMap, calling_info: &mut CallingInfo) -> Result<()> {
+    if let Some(Value::Number(num)) = attributes.get(&Tag::AppointUserId) {
+        calling_info.set_appoint_user_id(*num as i32)?;
+    }
     check_arguments(attributes, calling_info)?;
 
     // Create database directory if not exists.
-    asset_file_operator::create_user_db_dir(calling_info.user_id())?;
+    asset_file_operator::create_user_db_dir(calling_info.stored_user_id())?;
 
     // Fill all attributes to DbMap.
     let mut db_data = common::into_db_map(attributes);
@@ -162,7 +168,7 @@ pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<(
     add_default_attrs(&mut db_data);
 
     let query = get_query_condition(calling_info, attributes)?;
-    let mut db = Database::build(calling_info.user_id())?;
+    let mut db = Database::build(calling_info.stored_user_id())?;
     if db.is_data_exists(&query)? {
         resolve_conflict(calling_info, &mut db, attributes, &query, &mut db_data)
     } else {

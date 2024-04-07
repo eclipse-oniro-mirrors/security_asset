@@ -157,6 +157,10 @@ typedef enum {
      * Policy used to resolve the conflict occurred when an asset is added. The value is of the uint32 type.
      */
     ASSET_SYSTEM_TAG_CONFLICT_RESOLUTION = ASSET_SYSTEM_TYPE_NUMBER | 0x44,
+    /**
+     * Tag used to store appoint user id. The value is of the uint32 type.
+     */
+    ASSET_SYSTEM_TAG_USER_ID = ASSET_SYSTEM_TYPE_NUMBER | 0x45,
 } AssetTag;
 
 /**
@@ -171,7 +175,10 @@ typedef enum {
     /**
      * The caller does not have the required permission.
      */
-    ASSET_SYSTEM_PERMISSION_DENIED = 201,
+    ASSET_SYSTEM_PERMISSION_DENIED = 201,/**
+     * The caller not system application.
+     */
+    ASSET_SYSTEM_NOT_SYSTEM_APPLICATION = 202,
     /**
      * The parameter is invalid.
      */

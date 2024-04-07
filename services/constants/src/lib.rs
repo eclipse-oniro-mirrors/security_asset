@@ -20,6 +20,8 @@ mod calling_info;
 pub use calling_info::CallingInfo;
 /// success code.
 pub const SUCCESS: i32 = 0;
+/// root user upper bound
+pub const ROOT_USER_UPPERBOUND: i32 = 99;
 
 impl_enum_trait! {
     /// The type of the calling.

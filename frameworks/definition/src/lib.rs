@@ -112,6 +112,9 @@ impl_tag_trait! {
 
         /// A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
         ConflictResolution = DataType::Number as isize | 0x44,
+
+        /// A tag whose value is a 32-bit unsigned integer indicating the appoint user id.
+        AppointUserId = DataType::Number as isize | 0x45,
     }
 }
 
@@ -150,6 +153,9 @@ impl_enum_trait! {
     pub enum ErrCode {
         /// The error code indicates that the caller doesn't have the permission.
         PermissionDenied = 201,
+
+        /// The error code indicates that the caller is not system user.
+        NotSystemUser = 202,
 
         /// The error code indicates that the argument is invalid.
         InvalidArgument = 401,
