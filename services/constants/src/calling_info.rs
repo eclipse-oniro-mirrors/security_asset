@@ -15,7 +15,7 @@
 
 //! This module implements the capability of processing the identity information of the Asset caller.
 
-use ipc_rust::get_calling_uid;
+use ipc::Skeleton;
 
 use asset_definition::{log_throw_error, ErrCode, Result};
 
@@ -70,7 +70,7 @@ impl CallingInfo {
 
     /// Build a instance of CallingInfo.
     pub fn build() -> Result<Self> {
-        let uid = get_calling_uid();
+        let uid = Skeleton::calling_uid();
         let user_id: i32 = get_user_id(uid)?;
         let mut owner_info = vec![0u8; 256];
         let mut len = 256u32;

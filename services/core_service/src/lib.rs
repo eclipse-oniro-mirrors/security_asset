@@ -15,19 +15,13 @@
 
 //! This module implements the Asset service.
 
-use std::{
-    ffi::{c_char, CString},
-    thread,
-    time::Instant,
-};
+use std::{thread, time::Instant};
 
-use hilog_rust::{error, hilog, HiLogLabel, LogType};
-use ipc_rust::{IRemoteBroker, RemoteObj};
-use system_ability_fwk_rust::{define_system_ability, IMethod, ISystemAbility, RSystemAbility};
+use system_ability_fwk::ability::{Ability, PublishHandler};
 
 use asset_constants::CallingInfo;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
-use asset_ipc::{IAsset, SA_ID};
+use asset_ipc::SA_ID;
 use asset_log::{loge, logi};
 
 mod listener;
@@ -36,52 +30,46 @@ mod stub;
 mod sys_event;
 mod trace_scope;
 
-use stub::AssetStub;
 use sys_event::upload_system_event;
 use trace_scope::TraceScope;
 
-const LOG_LABEL: HiLogLabel = HiLogLabel { log_type: LogType::LogCore, domain: 0xD002F08, tag: "Asset" };
+struct AssetAbility;
 
-define_system_ability!(
-    sa: SystemAbility(on_start, on_stop),
-);
+impl Ability for AssetAbility {
+    fn on_start(&self, handler: PublishHandler) {
+        let func_name = hisysevent::function!();
+        let start = Instant::now();
+        let _trace = TraceScope::trace(func_name);
+        let calling_info = CallingInfo::new_self();
 
-fn start_service<T: ISystemAbility + IMethod>(ability: &T) -> Result<()> {
-    let Some(service) = AssetStub::new_remote_stub(AssetService) else {
-        return log_throw_error!(ErrCode::IpcError, "Create AssetService failed!");
+        let _ = upload_system_event(start_service(handler), &calling_info, start, func_name);
+    }
+
+    fn on_stop(&self) {
+        logi!("[INFO]Asset service on_stop");
+        listener::unsubscribe();
+    }
+}
+
+fn start_service(handler: PublishHandler) -> Result<()> {
+    if handler.publish(AssetService) {
+        return log_throw_error!(ErrCode::IpcError, "Asset publish stub object failed");
     };
 
-    let Some(obj) = service.as_object() else {
-        return log_throw_error!(ErrCode::IpcError, "Asset service as_object failed!");
-    };
-
-    ability.publish(&obj, SA_ID);
     logi!("[INFO]Asset service on_start");
     thread::spawn(listener::subscribe);
     Ok(())
-}
-
-fn on_start<T: ISystemAbility + IMethod>(ability: &T) {
-    let func_name = hisysevent::function!();
-    let start = Instant::now();
-    let _trace = TraceScope::trace(func_name);
-    let calling_info = CallingInfo::new_self();
-    let _ = upload_system_event(start_service(ability), &calling_info, start, func_name);
-}
-
-fn on_stop<T: ISystemAbility + IMethod>(_ability: &T) {
-    logi!("[INFO]Asset service on_stop");
-    listener::unsubscribe();
 }
 
 #[used]
 #[link_section = ".init_array"]
 static A: extern "C" fn() = {
     extern "C" fn init() {
-        let Some(sa) = SystemAbility::new_system_ability(SA_ID, true) else {
+        let Some(sa) = AssetAbility.build_system_ability(SA_ID, true) else {
             loge!("Create Asset service failed.");
             return;
         };
+
         sa.register();
     }
     init
@@ -99,8 +87,7 @@ macro_rules! execute {
     }};
 }
 
-impl IRemoteBroker for AssetService {}
-impl IAsset for AssetService {
+impl AssetService {
     fn add(&self, attributes: &AssetMap) -> Result<()> {
         execute!(operations::add, attributes)
     }
