@@ -44,7 +44,8 @@
                 "safwk",
                 "samgr",
                 "sqlite",
-                "os_account"
+                "os_account",
+                "ylong_runtime"
             ],
             "third_party": []
         },

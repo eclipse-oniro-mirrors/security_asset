@@ -15,7 +15,7 @@
 
 //! This module is used to manage crypto in cache.
 
-use std::sync::{Arc, Mutex};
+use std::{cmp::max, sync::{Arc, Mutex}};
 
 use asset_constants::CallingInfo;
 use asset_definition::{log_throw_error, ErrCode, Result};
@@ -77,6 +77,16 @@ impl CryptoManager {
     /// Remove cryptos that required device to be unlocked.
     pub fn remove_need_device_unlocked(&mut self) {
         self.cryptos.retain(|crypto| !crypto.key().need_device_unlock());
+    }
+
+    /// Get last crypto expire time.
+    pub fn max_crypto_expire_duration(&mut self) -> u64 {
+        self.remove_expired_crypto().unwrap();
+        let mut max_time = 0;
+        for crypto in &self.cryptos {
+            max_time = max(crypto.valid_time() as u64 - crypto.start_time().elapsed().as_secs(), max_time)
+        }
+        max_time
     }
 
     fn remove_expired_crypto(&mut self) -> Result<()> {

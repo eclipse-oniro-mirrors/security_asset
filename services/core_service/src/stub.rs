@@ -21,10 +21,14 @@ use asset_definition::{AssetError, Result};
 use asset_ipc::{deserialize_map, serialize_maps, IpcCode, IPC_SUCCESS, SA_NAME};
 use asset_log::loge;
 
-use crate::AssetService;
+use crate::{counter::AutoCounter, unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
 
 impl RemoteStub for AssetService {
     fn on_remote_request(&self, code: u32, data: &mut ipc::parcel::MsgParcel, reply: &mut ipc::parcel::MsgParcel) -> i32 {
+        let _counter_user = AutoCounter::new();
+        self.system_ability.cancel_idle();
+        unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
+
         match on_remote_request(self, code, data, reply) {
             Ok(_) => IPC_SUCCESS as i32,
             Err(e) => e as i32,

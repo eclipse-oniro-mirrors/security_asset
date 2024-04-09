@@ -27,7 +27,7 @@ use asset_definition::{Result, Value};
 use asset_file_operator::delete_user_db_dir;
 use asset_log::{loge, logi};
 
-use crate::sys_event::upload_fault_system_event;
+use crate::{sys_event::upload_fault_system_event, counter::AutoCounter};
 
 const ASSET_DB: &str = "asset.db";
 const BACKUP_SUFFIX: &str = ".backup";
@@ -50,7 +50,8 @@ fn clear_cryptos(calling_info: &CallingInfo) {
     crypto_manager.lock().unwrap().remove_by_calling_info(calling_info);
 }
 
-extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) {
+pub(crate) extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) {
+    let _counter_user = AutoCounter::new();
     let start_time = Instant::now();
     let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner, owner_size as usize).to_vec() };
     let calling_info = CallingInfo::new(user_id, OwnerType::Hap, owner.clone());
@@ -76,15 +77,18 @@ extern "C" fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u
 }
 
 extern "C" fn delete_dir_by_user(user_id: i32) {
+    let _counter_user = AutoCounter::new();
     let _ = delete_user_db_dir(user_id);
 }
 
 extern "C" fn delete_crypto_need_unlock() {
+    let _counter_user = AutoCounter::new();
     let crypto_manager = CryptoManager::get_instance();
     crypto_manager.lock().unwrap().remove_need_device_unlocked();
 }
 
-extern "C" fn backup_db() {
+pub(crate) extern "C" fn backup_db() {
+    let _counter_user = AutoCounter::new();
     let start_time = Instant::now();
     match backup_all_db(&start_time) {
         Ok(_) => (),
