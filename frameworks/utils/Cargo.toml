@@ -20,3 +20,4 @@ edition = "2021"
 
 [dependencies]
 asset_definition = { path = "../definition" }
+asset_log = { path = "../os_dependency/log" }

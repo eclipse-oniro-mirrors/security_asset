@@ -60,7 +60,7 @@ pub(crate) fn get_user_id(uid: u64) -> Result<i32> {
 impl CallingInfo {
     /// Build identity of current process.
     pub fn new_self() -> Self {
-        Self::new(0, OwnerType::Native, "huks_service_3510".as_bytes().to_vec())
+        Self::new(0, OwnerType::Native, "asset_service_8100".as_bytes().to_vec())
     }
 
     /// Build identity of the specified owner.
