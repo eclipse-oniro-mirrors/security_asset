@@ -59,7 +59,7 @@ fn calculate_key_alias(
     require_password_set: bool,
 ) -> Vec<u8> {
     let mut alias: Vec<u8> = Vec::with_capacity(MAX_ALIAS_SIZE);
-    alias.extend_from_slice(&calling_info.user_id().to_le_bytes());
+    alias.extend_from_slice(&calling_info.stored_user_id().to_le_bytes());
     alias.push(b'_');
     alias.extend_from_slice(&calling_info.owner_type().to_le_bytes());
     alias.push(b'_');

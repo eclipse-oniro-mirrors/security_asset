@@ -68,6 +68,8 @@ pub(crate) const NORMAL_LABEL_ATTRS: [Tag; 4] =
 pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 6] =
     [Tag::Alias, Tag::Accessibility, Tag::AuthType, Tag::IsPersistent, Tag::SyncType, Tag::RequirePasswordSet];
 
+pub(crate) const APPOINT_USER_ID: [Tag; 1] = [ Tag::AppointUserId ];
+
 pub(crate) fn get_cloumn_name(tag: Tag) -> Option<&'static str> {
     for (table_tag, table_column) in TAG_COLUMN_TABLE {
         if table_tag == tag {

@@ -40,7 +40,7 @@ ohos_unittest("asset_dependency_test") {
   part_name = "asset"
   include_dirs = [
     "inc",
-    "../../../interfaces/kits/c/inc",
+    "../../../interfaces/inner_api/c/inc",
     "../../../services/os_dependency/inc",
     "../../../services/crypto_manager/src",
   ]

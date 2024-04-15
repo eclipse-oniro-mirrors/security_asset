@@ -28,11 +28,15 @@ use crate::operations::common;
 const OPTIONAL_ATTRS: [Tag; 1] = [Tag::AuthValidityPeriod];
 const DEFAULT_AUTH_VALIDITY_IN_SECS: u32 = 60;
 
-fn check_arguments(attributes: &AssetMap) -> Result<()> {
+fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
+
+    if calling_info.has_appoint_user_id() {
+        valid_tags.extend_from_slice(&common::APPOINT_USER_ID);
+    }
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
 
@@ -45,7 +49,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
 }
 
 fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Accessibility, bool)> {
-    let results = Database::build(calling_info.user_id())?.query_datas(
+    let results = Database::build(calling_info.stored_user_id())?.query_datas(
         &vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET],
         db_data,
         None,
@@ -64,11 +68,14 @@ fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Acces
     }
 }
 
-pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
-    check_arguments(query)?;
+pub(crate) fn pre_query(query: &AssetMap, calling_info: &mut CallingInfo) -> Result<Vec<u8>> {
+    if let Some(Value::Number(num)) = query.get(&Tag::AppointUserId) {
+        calling_info.set_appoint_user_id(*num as i32)?;
+    }
+    check_arguments(query, calling_info)?;
 
     // Check database directory exist.
-    if !asset_file_operator::is_user_db_dir_exist(calling_info.user_id()) {
+    if !asset_file_operator::is_user_db_dir_exist(calling_info.stored_user_id()) {
         return log_throw_error!(ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found.");
     }
 

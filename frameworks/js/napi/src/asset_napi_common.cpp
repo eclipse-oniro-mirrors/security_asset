@@ -19,11 +19,11 @@
 
 #include "securec.h"
 
-#include "asset_api.h"
 #include "asset_log.h"
 #include "asset_mem.h"
 #include "asset_napi_error_code.h"
-#include "asset_type.h"
+#include "asset_system_api.h"
+#include "asset_system_type.h"
 
 namespace OHOS {
 namespace Security {
@@ -64,11 +64,11 @@ if ((condition)) {                                                              
     char msg[MAX_MESSAGE_LEN] = { 0 };                                                  \
     (void)sprintf_s(msg, MAX_MESSAGE_LEN, "AssetTag(0x%08x) " message, tag);            \
     LOGE("[FATAL][NAPI]%{public}s", (msg));                                             \
-    napi_throw((env), CreateJsError((env), ASSET_INVALID_ARGUMENT, (msg)));             \
+    napi_throw((env), CreateJsError((env), ASSET_SYSTEM_INVALID_ARGUMENT, (msg)));             \
     return napi_invalid_arg;                                                            \
 }
 
-bool IsBlobValid(const Asset_Blob &blob)
+bool IsBlobValid(const AssetBlob &blob)
 {
     return blob.data != nullptr && blob.size != 0;
 }
@@ -88,14 +88,14 @@ void DestroyAsyncContext(napi_env env, AsyncContext *context)
         context->work = nullptr;
     }
 
-    OH_Asset_FreeResultSet(&context->resultSet);
-    OH_Asset_FreeBlob(&context->challenge);
+    AssetFreeResultSet(&context->resultSet);
+    AssetFreeBlob(&context->challenge);
     FreeAssetAttrs(context->updateAttrs);
     FreeAssetAttrs(context->attrs);
     AssetFree(context);
 }
 
-napi_status ParseByteArray(napi_env env, napi_value value, uint32_t tag, Asset_Blob &blob)
+napi_status ParseByteArray(napi_env env, napi_value value, uint32_t tag, AssetBlob &blob)
 {
     napi_typedarray_type arrayType;
     size_t length = 0;
@@ -109,33 +109,33 @@ napi_status ParseByteArray(napi_env env, napi_value value, uint32_t tag, Asset_B
     CHECK_ASSET_TAG(env, length == 0 || length > MAX_BUFFER_LEN, tag, "Invalid array length.");
 
     blob.data = static_cast<uint8_t *>(AssetMalloc(length));
-    NAPI_THROW_RETURN_ERR(env, blob.data == nullptr, ASSET_OUT_OF_MEMORY, "Unable to allocate memory for Asset_Blob.");
+    NAPI_THROW_RETURN_ERR(env, blob.data == nullptr, ASSET_SYSTEM_OUT_OF_MEMORY, "Unable to allocate memory for AssetBlob.");
 
     (void)memcpy_s(blob.data, length, rawData, length);
     blob.size = static_cast<uint32_t>(length);
     return napi_ok;
 }
 
-napi_status ParseAssetAttribute(napi_env env, napi_value tag, napi_value value, Asset_Attr &attr)
+napi_status ParseAssetAttribute(napi_env env, napi_value tag, napi_value value, AssetAttr &attr)
 {
     // parse tag
     napi_valuetype type = napi_undefined;
     NAPI_CALL_RETURN_ERR(env, napi_typeof(env, tag, &type));
-    NAPI_THROW_RETURN_ERR(env, type != napi_number, ASSET_INVALID_ARGUMENT, "The tag type of map should be number.");
+    NAPI_THROW_RETURN_ERR(env, type != napi_number, ASSET_SYSTEM_INVALID_ARGUMENT, "The tag type of map should be number.");
     NAPI_CALL_RETURN_ERR(env, napi_get_value_uint32(env, tag, &attr.tag));
 
     // parse value
     NAPI_CALL_RETURN_ERR(env, napi_typeof(env, value, &type));
-    switch (attr.tag & ASSET_TAG_TYPE_MASK) {
-        case ASSET_TYPE_BOOL:
+    switch (attr.tag & ASSET_SYSTEM_TAG_TYPE_MASK) {
+        case ASSET_SYSTEM_TYPE_BOOL:
             CHECK_ASSET_TAG(env, type != napi_boolean, attr.tag, "Expect type napi_boolean.");
             NAPI_CALL_RETURN_ERR(env, napi_get_value_bool(env, value, &attr.value.boolean));
             break;
-        case ASSET_TYPE_NUMBER:
+        case ASSET_SYSTEM_TYPE_NUMBER:
             CHECK_ASSET_TAG(env, type != napi_number, attr.tag, "Expect type napi_number.");
             NAPI_CALL_RETURN_ERR(env, napi_get_value_uint32(env, value, &attr.value.u32));
             break;
-        case ASSET_TYPE_BYTES:
+        case ASSET_SYSTEM_TYPE_BYTES:
             CHECK_ASSET_TAG(env, type != napi_object, attr.tag, "Expect type napi_object.");
             NAPI_CALL_RETURN_ERR(env, ParseByteArray(env, value, attr.tag, attr.value.blob));
             break;
@@ -163,7 +163,7 @@ napi_value GetUndefinedValue(napi_env env)
     return value;
 }
 
-napi_value CreateJsMap(napi_env env, const Asset_Result &result)
+napi_value CreateJsMap(napi_env env, const AssetResult &result)
 {
     napi_value global = nullptr;
     napi_value mapFunc = nullptr;
@@ -177,14 +177,14 @@ napi_value CreateJsMap(napi_env env, const Asset_Result &result)
         napi_value key = nullptr;
         napi_value value = nullptr;
         NAPI_CALL(env, napi_create_uint32(env, result.attrs[i].tag, &key));
-        switch (result.attrs[i].tag & ASSET_TAG_TYPE_MASK) {
-            case ASSET_TYPE_BOOL:
+        switch (result.attrs[i].tag & ASSET_SYSTEM_TAG_TYPE_MASK) {
+            case ASSET_SYSTEM_TYPE_BOOL:
                 NAPI_CALL(env, napi_get_boolean(env, result.attrs[i].value.boolean, &value));
                 break;
-            case ASSET_TYPE_NUMBER:
+            case ASSET_SYSTEM_TYPE_NUMBER:
                 NAPI_CALL(env, napi_create_uint32(env, result.attrs[i].value.u32, &value));
                 break;
-            case ASSET_TYPE_BYTES:
+            case ASSET_SYSTEM_TYPE_BYTES:
                 value = CreateJsUint8Array(env, result.attrs[i].value.blob);
                 break;
             default:
@@ -215,7 +215,7 @@ napi_value GetBusinessValue(napi_env env, AsyncContext *context)
 void ResolvePromise(napi_env env, AsyncContext *context)
 {
     napi_value result = nullptr;
-    if (context->result == ASSET_SUCCESS) {
+    if (context->result == ASSET_SYSTEM_SUCCESS) {
         result = GetBusinessValue(env, context);
         NAPI_CALL_RETURN_VOID(env, napi_resolve_deferred(env, context->deferred, result));
     } else {
@@ -244,12 +244,12 @@ napi_value CreateAsyncWork(napi_env env, AsyncContext *context, const char *func
     return result;
 }
 
-napi_status ParseMapParam(napi_env env, napi_value arg, std::vector<Asset_Attr> &attrs)
+napi_status ParseMapParam(napi_env env, napi_value arg, std::vector<AssetAttr> &attrs)
 {
     // check map type
     bool isMap = false;
     NAPI_CALL_RETURN_ERR(env, napi_is_map(env, arg, &isMap));
-    NAPI_THROW_RETURN_ERR(env, !isMap, ASSET_INVALID_ARGUMENT, "Expect Map type.");
+    NAPI_THROW_RETURN_ERR(env, !isMap, ASSET_SYSTEM_INVALID_ARGUMENT, "Expect Map type.");
 
     // parse map object
     napi_value entriesFunc = nullptr;
@@ -269,22 +269,22 @@ napi_status ParseMapParam(napi_env env, napi_value arg, std::vector<Asset_Attr> 
         NAPI_CALL_BREAK(env, napi_get_element(env, entry, 0, &key));
         NAPI_CALL_BREAK(env, napi_get_element(env, entry, 1, &value));
 
-        Asset_Attr param = { 0 };
+        AssetAttr param = { 0 };
         NAPI_CALL_BREAK(env, ParseAssetAttribute(env, key, value, param));
         attrs.push_back(param);
     }
 
-    NAPI_THROW_RETURN_ERR(env, !done, ASSET_INVALID_ARGUMENT, "Parse entry of map failed.");
+    NAPI_THROW_RETURN_ERR(env, !done, ASSET_SYSTEM_INVALID_ARGUMENT, "Parse entry of map failed.");
     return napi_ok;
 }
 
 } // anonymous namespace
 
-void FreeAssetAttrs(std::vector<Asset_Attr> &attrs)
+void FreeAssetAttrs(std::vector<AssetAttr> &attrs)
 {
     for (auto attr : attrs) {
-        if ((attr.tag & ASSET_TAG_TYPE_MASK) == ASSET_TYPE_BYTES) {
-            OH_Asset_FreeBlob(&attr.value.blob);
+        if ((attr.tag & ASSET_SYSTEM_TAG_TYPE_MASK) == ASSET_SYSTEM_TYPE_BYTES) {
+            AssetFreeBlob(&attr.value.blob);
         }
     }
     attrs.clear();
@@ -308,7 +308,7 @@ napi_value CreateJsError(napi_env env, int32_t errCode, const char *errorMsg)
     return result;
 }
 
-napi_value CreateJsMapArray(napi_env env, const Asset_ResultSet &resultSet)
+napi_value CreateJsMapArray(napi_env env, const AssetResultSet &resultSet)
 {
     napi_value array = nullptr;
     NAPI_CALL(env, napi_create_array(env, &array));
@@ -322,7 +322,7 @@ napi_value CreateJsMapArray(napi_env env, const Asset_ResultSet &resultSet)
     return array;
 }
 
-napi_value CreateJsUint8Array(napi_env env, const Asset_Blob &blob)
+napi_value CreateJsUint8Array(napi_env env, const AssetBlob &blob)
 {
     if (!IsBlobValid(blob) || blob.size > MAX_BUFFER_LEN) {
         return nullptr;
@@ -338,28 +338,43 @@ napi_value CreateJsUint8Array(napi_env env, const Asset_Blob &blob)
     return result;
 }
 
-napi_status ParseParam(napi_env env, napi_callback_info info, std::vector<Asset_Attr> &attrs)
+napi_status ParseParam(napi_env env, napi_callback_info info, std::vector<AssetAttr> &attrs)
 {
-    std::vector<Asset_Attr> updateAttrs;
-    return ParseParam(env, info, NORMAL_ARGS_NUM, attrs, updateAttrs);
+    std::vector<AssetAttr> updateAttrs;
+    return ParseParam(env, info, NORMAL_ARGS_NUM, attrs, updateAttrs, true, false);
 }
 
-napi_status ParseParam(napi_env env, napi_callback_info info, size_t expectArgNum, std::vector<Asset_Attr> &attrs,
-    std::vector<Asset_Attr> &updateAttrs)
+napi_status ParseParam(napi_env env, napi_callback_info info, size_t expectArgNum, std::vector<AssetAttr> &attrs,
+    std::vector<AssetAttr> &updateAttrs, bool isUpdate = false, bool isAppointUserId = false)
 {
     napi_value argv[MAX_ARGS_NUM] = { 0 };
     size_t argc = expectArgNum;
     NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-    NAPI_THROW_RETURN_ERR(env, argc < expectArgNum, ASSET_INVALID_ARGUMENT,
+    NAPI_THROW_RETURN_ERR(env, argc < expectArgNum, ASSET_SYSTEM_INVALID_ARGUMENT,
         "The number of arguments is insufficient.");
     size_t index = 0;
+
+    napi_value appointUserId = nullptr;
+    // get appointUserId
+    if (isAppointUserId) {
+        NAPI_CALL_RETURN_ERR(env, napi_get_element(env, argv[index++], 0, &appointUserId));
+    }
+
     napi_status ret = ParseMapParam(env, argv[index++], attrs);
     if (ret != napi_ok) {
         LOGE("Parse first map parameter failed.");
         return ret;
     }
 
-    if (expectArgNum == UPDATE_ARGS_NUM) {
+    // add appointUserId into map
+    if (isAppointUserId) {
+        AssetAttr param = { 0 };
+        param.tag = ASSET_SYSTEM_TAG_USER_ID;
+        NAPI_CALL_RETURN_ERR(env, napi_get_value_uint32(env, appointUserId, &param.value.u32));
+        attrs.push_back(param);
+    }
+
+    if (isUpdate) {
         ret = ParseMapParam(env, argv[index++], updateAttrs);
         if (ret != napi_ok) {
             LOGE("Parse second map parameter failed.");
@@ -370,13 +385,13 @@ napi_status ParseParam(napi_env env, napi_callback_info info, size_t expectArgNu
 }
 
 napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
-    size_t expectArgNum)
+    size_t expectArgNum, bool isUpdate, bool isAppointUserId)
 {
     AsyncContext *context = CreateAsyncContext();
-    NAPI_THROW(env, context == nullptr, ASSET_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
+    NAPI_THROW(env, context == nullptr, ASSET_SYSTEM_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
 
     do {
-        if (ParseParam(env, info, expectArgNum, context->attrs, context->updateAttrs) != napi_ok) {
+        if (ParseParam(env, info, expectArgNum, context->attrs, context->updateAttrs, isUpdate, isAppointUserId) != napi_ok) {
             break;
         }
 

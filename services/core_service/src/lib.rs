@@ -123,10 +123,10 @@ struct AssetService {
 macro_rules! execute {
     ($func:path, $($args:expr), *) => {{
         let func_name = hisysevent::function!();
-        let calling_info = CallingInfo::build()?;
+        let mut calling_info = CallingInfo::build()?;
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
-        upload_system_event($func($($args), *, &calling_info), &calling_info, start, func_name)
+        upload_system_event($func($($args), *, &mut calling_info), &calling_info, start, func_name)
     }};
 }
 
