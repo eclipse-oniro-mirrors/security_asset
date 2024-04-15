@@ -18,40 +18,40 @@
 #include <string>
 #include <gtest/gtest.h>
 
-#include "asset_system_api.h"
+#include "asset_api.h"
 
 int32_t RemoveByAlias(const char *alias)
 {
-    AssetAttr attr[] = {
+    Asset_Attr attr[] = {
         {
-            .tag = ASSET_SYSTEM_TAG_ALIAS,
+            .tag = ASSET_TAG_ALIAS,
             .value.blob = {
                 .size = strlen(alias),
                 .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias))
             }
         }
     };
-    return AssetRemove(attr, ARRAY_SIZE(attr));
+    return OH_Asset_Remove(attr, ARRAY_SIZE(attr));
 }
 
-int32_t QueryByAlias(const char *alias, AssetResultSet *resultSet)
+int32_t QueryByAlias(const char *alias, Asset_ResultSet *resultSet)
 {
-    AssetAttr attr[] = {
+    Asset_Attr attr[] = {
         {
-            .tag = ASSET_SYSTEM_TAG_ALIAS,
+            .tag = ASSET_TAG_ALIAS,
             .value.blob = {
                 .size = strlen(alias),
                 .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias))
             }
         }, {
-            .tag = ASSET_SYSTEM_TAG_RETURN_TYPE,
-            .value.u32 = ASSET_SYSTEM_RETURN_ALL
+            .tag = ASSET_TAG_RETURN_TYPE,
+            .value.u32 = ASSET_RETURN_ALL
         }
     };
-    return AssetQuery(attr, ARRAY_SIZE(attr), resultSet);
+    return OH_Asset_Query(attr, ARRAY_SIZE(attr), resultSet);
 }
 
-bool CompareBlob(const AssetBlob *blob1, const AssetBlob *blob2)
+bool CompareBlob(const Asset_Blob *blob1, const Asset_Blob *blob2)
 {
     if (blob1->size != blob2->size) {
         return false;

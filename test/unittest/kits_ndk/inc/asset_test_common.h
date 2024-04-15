@@ -19,7 +19,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "asset_system_type.h"
+#include "asset_type.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,8 +28,8 @@ extern "C" {
 #define ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
 
 int32_t RemoveByAlias(const char *alias);
-int32_t QueryByAlias(const char *alias, AssetResultSet *resultSet);
-bool CompareBlob(const AssetBlob *blob1, const AssetBlob *blob2);
+int32_t QueryByAlias(const char *alias, Asset_ResultSet *resultSet);
+bool CompareBlob(const Asset_Blob *blob1, const Asset_Blob *blob2);
 
 #ifdef __cplusplus
 }

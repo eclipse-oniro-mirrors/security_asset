@@ -17,7 +17,7 @@
 
 #include <gtest/gtest.h>
 
-#include "asset_system_api.h"
+#include "asset_api.h"
 #include "asset_test_common.h"
 
 using namespace testing::ext;
@@ -57,41 +57,41 @@ void AssetRemoveTest::TearDown(void)
  */
 HWTEST_F(AssetRemoveTest, AssetRemoveTest001, TestSize.Level0)
 {
-    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
-    AssetAttr attr[] = {
-        { .tag = ASSET_SYSTEM_TAG_ALIAS, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_SECRET, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_ACCESSIBILITY, .value.u32 = ASSET_SYSTEM_ACCESSIBILITY_DEVICE_POWERED_ON },
-        { .tag = ASSET_SYSTEM_TAG_REQUIRE_PASSWORD_SET, .value.boolean = false },
-        { .tag = ASSET_SYSTEM_TAG_AUTH_TYPE, .value.u32 = ASSET_SYSTEM_AUTH_TYPE_NONE },
-        { .tag = ASSET_SYSTEM_TAG_SYNC_TYPE, .value.u32 = ASSET_SYSTEM_SYNC_TYPE_NEVER },
-        { .tag = ASSET_SYSTEM_TAG_DATA_LABEL_NORMAL_1, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_DATA_LABEL_NORMAL_2, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_DATA_LABEL_NORMAL_3, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_DATA_LABEL_NORMAL_4, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_DATA_LABEL_CRITICAL_1, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_DATA_LABEL_CRITICAL_2, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_DATA_LABEL_CRITICAL_3, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_DATA_LABEL_CRITICAL_4, .value.blob = funcName }
+    Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    Asset_Attr attr[] = {
+        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = ASSET_TAG_SECRET, .value.blob = funcName },
+        { .tag = ASSET_TAG_ACCESSIBILITY, .value.u32 = ASSET_ACCESSIBILITY_DEVICE_POWERED_ON },
+        { .tag = ASSET_TAG_REQUIRE_PASSWORD_SET, .value.boolean = false },
+        { .tag = ASSET_TAG_AUTH_TYPE, .value.u32 = ASSET_AUTH_TYPE_NONE },
+        { .tag = ASSET_TAG_SYNC_TYPE, .value.u32 = ASSET_SYNC_TYPE_NEVER },
+        { .tag = ASSET_TAG_DATA_LABEL_NORMAL_1, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABEL_NORMAL_2, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABEL_NORMAL_3, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABEL_NORMAL_4, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABEL_CRITICAL_1, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABEL_CRITICAL_2, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABEL_CRITICAL_3, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABEL_CRITICAL_4, .value.blob = funcName }
     };
-    ASSERT_EQ(ASSET_SYSTEM_SUCCESS, AssetAdd(attr, ARRAY_SIZE(attr)));
-    AssetAttr attr2[] = {
-        { .tag = ASSET_SYSTEM_TAG_ALIAS, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_ACCESSIBILITY, .value.u32 = ASSET_SYSTEM_ACCESSIBILITY_DEVICE_POWERED_ON },
-        { .tag = ASSET_SYSTEM_TAG_REQUIRE_PASSWORD_SET, .value.boolean = false },
-        { .tag = ASSET_SYSTEM_TAG_AUTH_TYPE, .value.u32 = ASSET_SYSTEM_AUTH_TYPE_NONE },
-        { .tag = ASSET_SYSTEM_TAG_SYNC_TYPE, .value.u32 = ASSET_SYSTEM_SYNC_TYPE_NEVER },
-        { .tag = ASSET_SYSTEM_TAG_IS_PERSISTENT, .value.boolean = false },
-        { .tag = ASSET_SYSTEM_TAG_DATA_LABEL_NORMAL_1, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_DATA_LABEL_NORMAL_2, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_DATA_LABEL_NORMAL_3, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_DATA_LABEL_NORMAL_4, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_DATA_LABEL_CRITICAL_1, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_DATA_LABEL_CRITICAL_2, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_DATA_LABEL_CRITICAL_3, .value.blob = funcName },
-        { .tag = ASSET_SYSTEM_TAG_DATA_LABEL_CRITICAL_4, .value.blob = funcName }
+    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
+    Asset_Attr attr2[] = {
+        { .tag = ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = ASSET_TAG_ACCESSIBILITY, .value.u32 = ASSET_ACCESSIBILITY_DEVICE_POWERED_ON },
+        { .tag = ASSET_TAG_REQUIRE_PASSWORD_SET, .value.boolean = false },
+        { .tag = ASSET_TAG_AUTH_TYPE, .value.u32 = ASSET_AUTH_TYPE_NONE },
+        { .tag = ASSET_TAG_SYNC_TYPE, .value.u32 = ASSET_SYNC_TYPE_NEVER },
+        { .tag = ASSET_TAG_IS_PERSISTENT, .value.boolean = false },
+        { .tag = ASSET_TAG_DATA_LABEL_NORMAL_1, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABEL_NORMAL_2, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABEL_NORMAL_3, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABEL_NORMAL_4, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABEL_CRITICAL_1, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABEL_CRITICAL_2, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABEL_CRITICAL_3, .value.blob = funcName },
+        { .tag = ASSET_TAG_DATA_LABEL_CRITICAL_4, .value.blob = funcName }
     };
-    ASSERT_EQ(ASSET_SYSTEM_SUCCESS, AssetRemove(attr2, ARRAY_SIZE(attr2)));
+    ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Remove(attr2, ARRAY_SIZE(attr2)));
 }
 
 /**
@@ -103,24 +103,24 @@ HWTEST_F(AssetRemoveTest, AssetRemoveTest001, TestSize.Level0)
 HWTEST_F(AssetRemoveTest, AssetRemoveTest002, TestSize.Level0)
 {
     int arr[] = {
-        ASSET_SYSTEM_TAG_ALIAS,
-        ASSET_SYSTEM_TAG_DATA_LABEL_NORMAL_1, ASSET_SYSTEM_TAG_DATA_LABEL_NORMAL_2,
-        ASSET_SYSTEM_TAG_DATA_LABEL_NORMAL_3, ASSET_SYSTEM_TAG_DATA_LABEL_NORMAL_4,
-        ASSET_SYSTEM_TAG_DATA_LABEL_CRITICAL_1, ASSET_SYSTEM_TAG_DATA_LABEL_CRITICAL_2,
-        ASSET_SYSTEM_TAG_DATA_LABEL_CRITICAL_3, ASSET_SYSTEM_TAG_DATA_LABEL_CRITICAL_4
+        ASSET_TAG_ALIAS,
+        ASSET_TAG_DATA_LABEL_NORMAL_1, ASSET_TAG_DATA_LABEL_NORMAL_2,
+        ASSET_TAG_DATA_LABEL_NORMAL_3, ASSET_TAG_DATA_LABEL_NORMAL_4,
+        ASSET_TAG_DATA_LABEL_CRITICAL_1, ASSET_TAG_DATA_LABEL_CRITICAL_2,
+        ASSET_TAG_DATA_LABEL_CRITICAL_3, ASSET_TAG_DATA_LABEL_CRITICAL_4
     };
     for (int i = 0; i < ARRAY_SIZE(arr); i++) {
-        AssetBlob tmpBlob = { .size = strlen(__func__), .data = nullptr };
-        AssetAttr attr[] = {
+        Asset_Blob tmpBlob = { .size = strlen(__func__), .data = nullptr };
+        Asset_Attr attr[] = {
             { .tag = arr[i], .value.blob = tmpBlob }
         };
-        ASSERT_EQ(ASSET_SYSTEM_INVALID_ARGUMENT, AssetRemove(attr, ARRAY_SIZE(attr)));
+        ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Remove(attr, ARRAY_SIZE(attr)));
 
         attr[0].value.u32 = 0;
-        ASSERT_EQ(ASSET_SYSTEM_INVALID_ARGUMENT, AssetRemove(attr, ARRAY_SIZE(attr)));
+        ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Remove(attr, ARRAY_SIZE(attr)));
 
         attr[0].value.boolean = true;
-        ASSERT_EQ(ASSET_SYSTEM_INVALID_ARGUMENT, AssetRemove(attr, ARRAY_SIZE(attr)));
+        ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Remove(attr, ARRAY_SIZE(attr)));
     }
 }
 
@@ -132,17 +132,17 @@ HWTEST_F(AssetRemoveTest, AssetRemoveTest002, TestSize.Level0)
  */
 HWTEST_F(AssetRemoveTest, AssetRemoveTest003, TestSize.Level0)
 {
-    int arr[] = { ASSET_SYSTEM_TAG_ACCESSIBILITY, ASSET_SYSTEM_TAG_AUTH_TYPE, ASSET_SYSTEM_TAG_SYNC_TYPE };
+    int arr[] = { ASSET_TAG_ACCESSIBILITY, ASSET_TAG_AUTH_TYPE, ASSET_TAG_SYNC_TYPE };
     for (int i = 0; i < ARRAY_SIZE(arr); i++) {
-        AssetBlob tmpBlob = { .size = strlen(__func__), .data = nullptr };
-        AssetAttr attr[] = {
+        Asset_Blob tmpBlob = { .size = strlen(__func__), .data = nullptr };
+        Asset_Attr attr[] = {
             { .tag = arr[i], .value.blob = tmpBlob }
         };
-        ASSERT_EQ(ASSET_SYSTEM_INVALID_ARGUMENT, AssetRemove(attr, ARRAY_SIZE(attr)));
+        ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Remove(attr, ARRAY_SIZE(attr)));
 
         tmpBlob = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
         attr[0].value.blob = tmpBlob;
-        ASSERT_EQ(ASSET_SYSTEM_INVALID_ARGUMENT, AssetRemove(attr, ARRAY_SIZE(attr)));
+        ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Remove(attr, ARRAY_SIZE(attr)));
     }
 }
 }
