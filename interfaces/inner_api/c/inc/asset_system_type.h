@@ -20,7 +20,7 @@
  * @file asset_system_type.h
  *
  * @brief Defines the enums, structs, and error codes used in the Asset APIs.
- * 
+ *
  * @since 11
  */
 

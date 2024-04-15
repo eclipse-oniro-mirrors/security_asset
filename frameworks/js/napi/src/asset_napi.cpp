@@ -176,7 +176,7 @@ napi_value NapiAddAsUser(napi_env env, napi_callback_info info)
             AsyncContext *context = static_cast<AsyncContext *>(data);
             context->result = AssetAdd(&context->attrs[0], context->attrs.size());
         };
-    return NapiEntry(env, info, __func__, execute, 2, false, true);
+    return NapiEntry(env, info, __func__, execute, AS_USER_ARGS_NUM, false, true);
 }
 
 napi_value NapiRemove(napi_env env, napi_callback_info info)
@@ -211,7 +211,7 @@ napi_value NapiRemoveAsUser(napi_env env, napi_callback_info info)
             AsyncContext *context = static_cast<AsyncContext *>(data);
             context->result = AssetRemove(&context->attrs[0], context->attrs.size());
         };
-    return NapiEntry(env, info, __func__, execute, 2, false, true);
+    return NapiEntry(env, info, __func__, execute, AS_USER_ARGS_NUM, false, true);
 }
 
 napi_value NapiUpdate(napi_env env, napi_callback_info info)
@@ -288,7 +288,7 @@ napi_value NapiPreQueryAsUser(napi_env env, napi_callback_info info)
             AsyncContext *context = static_cast<AsyncContext *>(data);
             context->result = AssetPreQuery(&context->attrs[0], context->attrs.size(), &context->challenge);
         };
-    return NapiEntry(env, info, __func__, execute, 2, false, true);
+    return NapiEntry(env, info, __func__, execute, AS_USER_ARGS_NUM, false, true);
 }
 
 napi_value NapiQuery(napi_env env, napi_callback_info info)
@@ -327,7 +327,7 @@ napi_value NapiQueryAsUser(napi_env env, napi_callback_info info)
             AsyncContext *context = static_cast<AsyncContext *>(data);
             context->result = AssetQuery(&context->attrs[0], context->attrs.size(), &context->resultSet);
         };
-    return NapiEntry(env, info, __func__, execute, 2, false, true);
+    return NapiEntry(env, info, __func__, execute, AS_USER_ARGS_NUM, false, true);
 }
 
 napi_value NapiPostQuery(napi_env env, napi_callback_info info)
@@ -362,7 +362,7 @@ napi_value NapiPostQueryAsUser(napi_env env, napi_callback_info info)
             AsyncContext *context = static_cast<AsyncContext *>(data);
             context->result = AssetPostQuery(&context->attrs[0], context->attrs.size());
         };
-    return NapiEntry(env, info, __func__, execute, 2, false, true);
+    return NapiEntry(env, info, __func__, execute, AS_USER_ARGS_NUM, false, true);
 }
 
 napi_value Register(napi_env env, napi_value exports)

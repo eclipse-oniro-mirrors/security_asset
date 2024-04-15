@@ -109,7 +109,8 @@ napi_status ParseByteArray(napi_env env, napi_value value, uint32_t tag, AssetBl
     CHECK_ASSET_TAG(env, length == 0 || length > MAX_BUFFER_LEN, tag, "Invalid array length.");
 
     blob.data = static_cast<uint8_t *>(AssetMalloc(length));
-    NAPI_THROW_RETURN_ERR(env, blob.data == nullptr, ASSET_SYSTEM_OUT_OF_MEMORY, "Unable to allocate memory for AssetBlob.");
+    NAPI_THROW_RETURN_ERR(
+        env, blob.data == nullptr, ASSET_SYSTEM_OUT_OF_MEMORY, "Unable to allocate memory for AssetBlob.");
 
     (void)memcpy_s(blob.data, length, rawData, length);
     blob.size = static_cast<uint32_t>(length);
@@ -121,7 +122,8 @@ napi_status ParseAssetAttribute(napi_env env, napi_value tag, napi_value value, 
     // parse tag
     napi_valuetype type = napi_undefined;
     NAPI_CALL_RETURN_ERR(env, napi_typeof(env, tag, &type));
-    NAPI_THROW_RETURN_ERR(env, type != napi_number, ASSET_SYSTEM_INVALID_ARGUMENT, "The tag type of map should be number.");
+    NAPI_THROW_RETURN_ERR(
+        env, type != napi_number, ASSET_SYSTEM_INVALID_ARGUMENT, "The tag type of map should be number.");
     NAPI_CALL_RETURN_ERR(env, napi_get_value_uint32(env, tag, &attr.tag));
 
     // parse value
@@ -391,7 +393,8 @@ napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName
     NAPI_THROW(env, context == nullptr, ASSET_SYSTEM_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
 
     do {
-        if (ParseParam(env, info, expectArgNum, context->attrs, context->updateAttrs, isUpdate, isAppointUserId) != napi_ok) {
+        if (ParseParam(
+            env, info, expectArgNum, context->attrs, context->updateAttrs, isUpdate, isAppointUserId) != napi_ok) {
             break;
         }
 

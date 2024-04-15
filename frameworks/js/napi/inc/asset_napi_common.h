@@ -27,6 +27,7 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 
+#define AS_USER_ARGS_NUM 2
 #define UPDATE_ARGS_NUM 2
 
 #define CHECK_RESULT_BREAK(env, ret)                        \
