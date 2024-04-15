@@ -45,6 +45,7 @@ ohos_unittest("asset_dependency_test") {
     "../../../services/crypto_manager/src",
   ]
   sources = [
+    "src/asset_system_api_test.cpp",
     "src/bms_wrapper_test.cpp",
     "src/os_account_wrapper_test.cpp",
     "src/samgr_wrapper_test.cpp",
@@ -57,7 +58,8 @@ ohos_unittest("asset_dependency_test") {
   deps = [
     "../../../services/os_dependency:asset_os_dependency",
     "../../../frameworks/os_dependency/samgr:asset_samgr",
-    "../../../services/crypto_manager:asset_huks_wrapper"
+    "../../../services/crypto_manager:asset_huks_wrapper",
+    "../../../interfaces/inner_api/c:asset_sdk"
   ]
   external_deps = [
     "ability_base:want",
