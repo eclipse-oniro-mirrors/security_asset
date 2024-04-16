@@ -45,7 +45,7 @@ ohos_unittest("asset_dependency_test") {
     "../../../services/crypto_manager/src",
   ]
   sources = [
-    "src/asset_system_api_test.cpp",
+    "src/sec_asset_api_test.cpp",
     "src/bms_wrapper_test.cpp",
     "src/os_account_wrapper_test.cpp",
     "src/samgr_wrapper_test.cpp",

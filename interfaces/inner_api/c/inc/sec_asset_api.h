@@ -14,31 +14,31 @@
  */
 
 /**
- * @file inner_asset_api.h
+ * @file sec_asset_api.h
  *
  * @brief Declares asset operation inner interface.
  *
- * @since 12
+ * @since 11
  */
 
-#ifndef ASSET_SYSTEM_API_H
-#define ASSET_SYSTEM_API_H
+#ifndef SEC_ASSET_API_H
+#define SEC_ASSET_API_H
 
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "asset_system_type.h"
-
+#include "sec_asset_type.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 /**
  * @brief Adds an asset.
  *
  * @param attributes Pointer to the attributes of the asset to add.
  * @param attributes Number of the attributes of the asset to add.
- * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
+ * @return Returns <b>SEC_ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
  * @since 11
  */
 int32_t AssetAdd(const AssetAttr *attributes, uint32_t attrCnt);
@@ -48,7 +48,7 @@ int32_t AssetAdd(const AssetAttr *attributes, uint32_t attrCnt);
  *
  * @param query Pointer to the conditions for removing the assets.
  * @param queryCnt Number of conditions for removing the assets.
- * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
+ * @return Returns <b>SEC_ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
  * @since 11
  */
 int32_t AssetRemove(const AssetAttr *query, uint32_t queryCnt);
@@ -60,7 +60,7 @@ int32_t AssetRemove(const AssetAttr *query, uint32_t queryCnt);
  * @param queryCnt Number of conditions for updating the asset.
  * @param attributes Pointer to the attributes of the asset to update.
  * @param attributes Number of the attributes of the asset to update.
- * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
+ * @return Returns <b>SEC_ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
  * @since 11
  */
 int32_t AssetUpdate(const AssetAttr *query, uint32_t queryCnt,
@@ -72,7 +72,7 @@ int32_t AssetUpdate(const AssetAttr *query, uint32_t queryCnt,
  * @param query Pointer to the search criteria of the asset.
  * @param queryCnt Number of the search criteria.
  * @param challenge Pointer to the challenge value to be used when <b>AssetQuery</b> is called.
- * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
+ * @return Returns <b>SEC_ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
  * @since 11
  */
 int32_t AssetPreQuery(const AssetAttr *query, uint32_t queryCnt, AssetBlob *challenge);
@@ -83,7 +83,7 @@ int32_t AssetPreQuery(const AssetAttr *query, uint32_t queryCnt, AssetBlob *chal
  * @param query Pointer to the search criteria.
  * @param queryCnt Number of the search criteria.
  * @param resultSet Pointer to the query result obtained.
- * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
+ * @return Returns <b>SEC_ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
  * @since 11
  */
 int32_t AssetQuery(const AssetAttr *query, uint32_t queryCnt, AssetResultSet *resultSet);
@@ -94,7 +94,7 @@ int32_t AssetQuery(const AssetAttr *query, uint32_t queryCnt, AssetResultSet *re
  * @param handle Pointer to the handle of the data to process, which includes the challenge value returned by
  *     <b>AssetPreQuery</b>.
  * @param handleCnt Number of the elements in the handle attribute set.
- * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
+ * @return Returns <b>SEC_ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
  * @since 11
  */
 int32_t AssetPostQuery(const AssetAttr *handle, uint32_t handleCnt);
@@ -130,5 +130,4 @@ void AssetFreeResultSet(AssetResultSet *resultSet);
 }
 #endif
 
-/** @} */
-#endif // ASSET_SYSTEM_API_H
+#endif // SEC_ASSET_API_H

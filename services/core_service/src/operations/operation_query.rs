@@ -153,25 +153,24 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
     into_asset_maps(&results)
 }
 
-const OPTIONAL_ATTRS: [Tag; 6] =
-    [Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderedBy, Tag::ReturnType, Tag::AuthToken, Tag::AuthChallenge];
+const OPTIONAL_ATTRS: [Tag; 7] =
+    [Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderedBy, Tag::ReturnType, Tag::AuthToken, Tag::AuthChallenge,
+    Tag::SpecificUserId];
 const AUTH_QUERY_ATTRS: [Tag; 2] = [Tag::AuthChallenge, Tag::AuthToken];
 
-fn check_arguments(attributes: &AssetMap, calling_info: &mut CallingInfo) -> Result<()> {
+fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
-    if calling_info.has_appoint_user_id() {
-        valid_tags.extend_from_slice(&common::APPOINT_USER_ID);
-    }
+    common::check_system_permission_if_needed(calling_info.has_specific_user_id())?;
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)
 }
 
 pub(crate) fn query(query: &AssetMap, calling_info: &mut CallingInfo) -> Result<Vec<AssetMap>> {
-    if let Some(Value::Number(num)) = query.get(&Tag::AppointUserId) {
-        calling_info.set_appoint_user_id(*num as i32)?;
+    if let Some(Value::Number(num)) = query.get(&Tag::SpecificUserId) {
+        calling_info.set_specific_user_id(*num as i32)?;
     }
     check_arguments(query, calling_info)?;
 

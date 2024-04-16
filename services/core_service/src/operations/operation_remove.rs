@@ -21,20 +21,21 @@ use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, Tag, Value};
 
 use crate::operations::common;
 
+const OPTIONAL_ATTRS: [Tag; 1] = [Tag::SpecificUserId];
+
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
-    if calling_info.has_appoint_user_id() {
-        valid_tags.extend_from_slice(&common::APPOINT_USER_ID);
-    }
+    valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
+    common::check_system_permission_if_needed(calling_info.has_specific_user_id())?;
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)
 }
 
 pub(crate) fn remove(query: &AssetMap, calling_info: &mut CallingInfo) -> Result<()> {
-    if let Some(Value::Number(num)) = query.get(&Tag::AppointUserId) {
-        calling_info.set_appoint_user_id(*num as i32)?;
+    if let Some(Value::Number(num)) = query.get(&Tag::SpecificUserId) {
+        calling_info.set_specific_user_id(*num as i32)?;
     }
     check_arguments(query, calling_info)?;
 

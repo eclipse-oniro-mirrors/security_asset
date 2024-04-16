@@ -28,7 +28,7 @@ use super::OwnerType;
 #[derive(PartialEq, Eq)]
 pub struct CallingInfo {
     user_id: i32,
-    appoint_user_id: Option<i32>,
+    specific_user_id: Option<i32>,
     owner_type: OwnerType,
     owner_info: Vec<u8>,
 }
@@ -66,7 +66,7 @@ impl CallingInfo {
 
     /// Build identity of the specified owner.
     pub fn new(user_id: i32, owner_type: OwnerType, owner_info: Vec<u8>) -> Self {
-        Self { user_id, appoint_user_id: None, owner_type, owner_info }
+        Self { user_id, specific_user_id: None, owner_type, owner_info }
     }
 
     /// Build a instance of CallingInfo.
@@ -80,7 +80,7 @@ impl CallingInfo {
         match err {
             SUCCESS => {
                 owner_info.truncate(len as usize);
-                Ok(CallingInfo { user_id, appoint_user_id: None, owner_type, owner_info })
+                Ok(CallingInfo { user_id, specific_user_id: None, owner_type, owner_info })
             },
             _ => Err(transfer_error_code(ErrCode::try_from(err as u32)?)),
         }
@@ -101,31 +101,24 @@ impl CallingInfo {
         self.user_id
     }
 
-    /// Set appoint user id of calling.
-    pub fn set_appoint_user_id(&mut self, appoint_user_id: i32) -> Result<()> {
+    /// Set specific user id of calling.
+    pub fn set_specific_user_id(&mut self, specific_user_id: i32) -> Result<()> {
         if self.user_id < 0 || self.user_id > ROOT_USER_UPPERBOUND {
             return log_throw_error!(ErrCode::NotSystemUser, "[FATAL]The caller is not system user.");
         }
 
-        if appoint_user_id <= ROOT_USER_UPPERBOUND {
-            return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The appoint user id must over 100.");
-        }
-
-        self.appoint_user_id = Some(appoint_user_id);
+        self.specific_user_id = Some(specific_user_id);
         Ok(())
     }
 
-    /// have appoint user id
-    pub fn has_appoint_user_id(&self) -> bool {
-        match self.appoint_user_id {
-            Some(_value) => true,
-            None => false,
-        }
+    /// have specific user id
+    pub fn has_specific_user_id(&self) -> bool {
+        self.specific_user_id.is_some()
     }
 
-    /// get stored user id. if appoint user id is None user userId else use appoint userId
+    /// get stored user id. if specific user id is None user userId else use specific userId
     pub fn stored_user_id(&self) -> i32 {
-        match self.appoint_user_id {
+        match self.specific_user_id {
             Some(value) => value,
             None => self.user_id(),
         }

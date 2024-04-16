@@ -21,7 +21,7 @@
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
-#include "asset_system_type.h"
+#include "sec_asset_type.h"
 
 namespace OHOS {
 namespace Security {
@@ -31,7 +31,7 @@ namespace Asset {
 #define UPDATE_ARGS_NUM 2
 
 #define CHECK_RESULT_BREAK(env, ret)                        \
-if ((ret) != ASSET_SYSTEM_SUCCESS) {                               \
+if ((ret) != SEC_ASSET_SUCCESS) {                        \
     napi_throw((env), CreateJsError((env), (ret)));         \
     break;                                                  \
 }
@@ -67,7 +67,7 @@ napi_status ParseParam(napi_env env, napi_callback_info info, size_t expectArgNu
     std::vector<AssetAttr> &updateAttrs, bool isUpdate, bool isApplintUserId);
 
 napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
-    size_t expectArgNum = 1, bool isUpdate = false, bool isAppointUserId = false);
+    size_t expectArgNum = 1, bool isUpdate = false, bool isSpecificUserId = false);
 
 } // Asset
 } // Security

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "asset_system_api.h"
+#include "sec_asset_api.h"
 
 #include "securec.h"
 
@@ -98,7 +98,7 @@ void AssetFreeResultSet(AssetResultSet *resultSet)
             continue;
         }
         for (uint32_t j = 0; j < attrCnt; j++) {
-            if ((attrs[j].tag & ASSET_SYSTEM_TAG_TYPE_MASK) == ASSET_SYSTEM_TYPE_BYTES) {
+            if ((attrs[j].tag & SEC_ASSET_TAG_TYPE_MASK) == SEC_ASSET_TYPE_BYTES) {
                 AssetFreeBlob(&attrs[j].value.blob);
             }
         }

@@ -40,6 +40,7 @@ fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
 }
 
 const QUERY_REQUIRED_ATTRS: [Tag; 1] = [Tag::Alias];
+const QUERY_OPTIONAL_ATTRS: [Tag; 1] = [Tag::SpecificUserId];
 const UPDATE_OPTIONAL_ATTRS: [Tag; 1] = [Tag::Secret];
 
 fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
@@ -48,11 +49,10 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
-    if calling_info.has_appoint_user_id() {
-        valid_tags.extend_from_slice(&common::APPOINT_USER_ID);
-    }
+    valid_tags.extend_from_slice(&QUERY_OPTIONAL_ATTRS);
     common::check_tag_validity(query, &valid_tags)?;
     common::check_value_validity(query)?;
+    common::check_system_permission_if_needed(calling_info.has_specific_user_id())?;
 
     if attrs_to_update.is_empty() {
         return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The attributes to update is empty.");
@@ -70,8 +70,8 @@ fn upgrade_to_latest_version(origin_db_data: &mut DbMap, update_db_data: &mut Db
 }
 
 pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &mut CallingInfo) -> Result<()> {
-    if let Some(Value::Number(num)) = query.get(&Tag::AppointUserId) {
-        calling_info.set_appoint_user_id(*num as i32)?;
+    if let Some(Value::Number(num)) = query.get(&Tag::SpecificUserId) {
+        calling_info.set_specific_user_id(*num as i32)?;
     }
     check_arguments(query, update, calling_info)?;
 

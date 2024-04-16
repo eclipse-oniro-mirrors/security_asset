@@ -25,7 +25,7 @@ use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCo
 
 use crate::operations::common;
 
-const OPTIONAL_ATTRS: [Tag; 1] = [Tag::AuthValidityPeriod];
+const OPTIONAL_ATTRS: [Tag; 2] = [Tag::AuthValidityPeriod, Tag::SpecificUserId];
 const DEFAULT_AUTH_VALIDITY_IN_SECS: u32 = 60;
 
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
@@ -34,11 +34,9 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
 
-    if calling_info.has_appoint_user_id() {
-        valid_tags.extend_from_slice(&common::APPOINT_USER_ID);
-    }
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
+    common::check_system_permission_if_needed(calling_info.has_specific_user_id())?;
 
     match attributes.get(&Tag::AuthType) {
         Some(Value::Number(val)) if *val == (AuthType::None as u32) => {
@@ -69,8 +67,8 @@ fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Acces
 }
 
 pub(crate) fn pre_query(query: &AssetMap, calling_info: &mut CallingInfo) -> Result<Vec<u8>> {
-    if let Some(Value::Number(num)) = query.get(&Tag::AppointUserId) {
-        calling_info.set_appoint_user_id(*num as i32)?;
+    if let Some(Value::Number(num)) = query.get(&Tag::SpecificUserId) {
+        calling_info.set_specific_user_id(*num as i32)?;
     }
     check_arguments(query, calling_info)?;
 

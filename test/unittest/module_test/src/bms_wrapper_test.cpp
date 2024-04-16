@@ -18,7 +18,7 @@
 #include <cstring>
 #include <gtest/gtest.h>
 
-#include "asset_system_type.h"
+#include "sec_asset_type.h"
 #include "bms_wrapper.h"
 
 using namespace testing::ext;
@@ -63,7 +63,7 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest001, TestSize.Level0)
     uint32_t infoLen = 256;
     int32_t userId = 0;
     uint64_t uid = 0;
-    ASSERT_EQ(ASSET_SYSTEM_SUCCESS, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, &infoLen));
+    ASSERT_EQ(SEC_ASSET_SUCCESS, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, &infoLen));
 }
 
 /**
@@ -79,7 +79,7 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest002, TestSize.Level0)
     uint32_t infoLen = 256;
     int32_t userId = 0;
     uint64_t uid = 0;
-    ASSERT_EQ(ASSET_SYSTEM_INVALID_ARGUMENT, GetOwnerInfo(userId, uid, ownerType, ownerInfo, &infoLen));
+    ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT, GetOwnerInfo(userId, uid, ownerType, ownerInfo, &infoLen));
 }
 
 /**
@@ -95,7 +95,7 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest003, TestSize.Level0)
     uint32_t infoLen = 256;
     int32_t userId = 0;
     uint64_t uid = 0;
-    ASSERT_EQ(ASSET_SYSTEM_INVALID_ARGUMENT, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, &infoLen));
+    ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, &infoLen));
 }
 
 /**
@@ -111,17 +111,39 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest004, TestSize.Level0)
     uint32_t* infoLen = nullptr;
     int32_t userId = 0;
     uint64_t uid = 0;
-    ASSERT_EQ(ASSET_SYSTEM_INVALID_ARGUMENT, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, infoLen));
+    ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, infoLen));
 }
 
 /**
  * @tc.name: AssetBmsWrapperTest.AssetBmsWrapperTest005
- * @tc.desc: Test asset func CheckPermission, expect BMS_ERROR
+ * @tc.desc: Test asset func CheckPersistentPermission, expect BMS_ERROR
  * @tc.type: FUNC
  * @tc.result:0
  */
 HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest005, TestSize.Level0)
 {
-    ASSERT_EQ(false, CheckPermission());
+    ASSERT_EQ(false, CheckPersistentPermission());
+}
+
+/**
+ * @tc.name: AssetBmsWrapperTest.AssetBmsWrapperTest006
+ * @tc.desc: Test asset func CheckInteractPermission, expect ERROR
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest006, TestSize.Level0)
+{
+    ASSERT_EQ(true, CheckInteractPermission());
+}
+
+/**
+ * @tc.name: AssetBmsWrapperTest.AssetBmsWrapperTest007
+ * @tc.desc: Test asset func CheckSystemHapPermission, expect ERROR
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest007, TestSize.Level0)
+{
+    ASSERT_EQ(true, CheckSystemHapPermission());
 }
 }

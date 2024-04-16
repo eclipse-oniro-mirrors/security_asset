@@ -22,19 +22,20 @@ use asset_definition::{AssetMap, Extension, Result, Tag, Value};
 use crate::operations::common;
 
 const REQUIRED_ATTRS: [Tag; 1] = [Tag::AuthChallenge];
+const OPTIONAL_ATTRS: [Tag; 1] = [Tag::SpecificUserId];
 
 fn check_arguments(query: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    common::check_required_tags(query, &REQUIRED_ATTRS)?;
+
     let mut valid_tags = REQUIRED_ATTRS.to_vec();
-    if calling_info.has_appoint_user_id() {
-        valid_tags.extend_from_slice(&common::APPOINT_USER_ID);
-    }
-    common::check_required_tags(query, &valid_tags)?;
+    valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
+    common::check_system_permission_if_needed(calling_info.has_specific_user_id())?;
     common::check_value_validity(query)
 }
 
 pub(crate) fn post_query(handle: &AssetMap, calling_info: &mut CallingInfo) -> Result<()> {
-    if let Some(Value::Number(num)) = handle.get(&Tag::AppointUserId) {
-        calling_info.set_appoint_user_id(*num as i32)?;
+    if let Some(Value::Number(num)) = handle.get(&Tag::SpecificUserId) {
+        calling_info.set_specific_user_id(*num as i32)?;
     }
     check_arguments(handle, calling_info)?;
     let challenge = handle.get_bytes_attr(&Tag::AuthChallenge)?;

@@ -19,7 +19,7 @@ config("asset_config") {
 
 ohos_shared_library("asset_sdk") {
   public_configs = [ ":asset_config" ]
-  sources = [ "src/asset_system_api.c" ]
+  sources = [ "src/sec_asset_api.c" ]
   deps = [
     ":asset_sdk_ffi",
     "../../../frameworks/os_dependency/log:asset_log",
@@ -46,7 +46,7 @@ ohos_shared_library("asset_sdk") {
     "-fPIC",
   ]
 
-  relative_install_dir = "ndk"
+  innerapi_tags = [ "platformsdk" ]
   subsystem_name = "security"
   part_name = "asset"
 }

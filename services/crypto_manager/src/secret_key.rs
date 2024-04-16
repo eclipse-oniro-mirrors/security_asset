@@ -91,7 +91,7 @@ impl SecretKey {
     /// Check whether the secret key exists.
     pub fn exists(&self) -> Result<bool> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
-        let key_id = KeyId::new(self.calling_info().user_id(), key_alias, self.access_type);
+        let key_id = KeyId::new(self.calling_info().stored_user_id(), key_alias, self.access_type);
         let ret = unsafe { IsKeyExist(&key_id as *const KeyId) };
         match ret {
             SUCCESS => Ok(true),
@@ -103,7 +103,7 @@ impl SecretKey {
     /// Generate the secret key and store in HUKS.
     pub fn generate(&self) -> Result<()> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
-        let key_id = KeyId::new(self.calling_info().user_id(), key_alias, self.access_type);
+        let key_id = KeyId::new(self.calling_info().stored_user_id(), key_alias, self.access_type);
         let ret = unsafe { GenerateKey(&key_id as *const KeyId, self.need_user_auth(), self.require_password_set) };
         match ret {
             SUCCESS => Ok(()),
@@ -114,7 +114,7 @@ impl SecretKey {
     /// Delete the secret key.
     pub fn delete(&self) -> Result<()> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
-        let key_id = KeyId::new(self.calling_info().user_id(), key_alias, self.access_type);
+        let key_id = KeyId::new(self.calling_info().stored_user_id(), key_alias, self.access_type);
         let ret = unsafe { DeleteKey(&key_id as *const KeyId) };
         match ret {
             ret if ((ret == ErrCode::NotFound as i32) || ret == SUCCESS) => Ok(()),

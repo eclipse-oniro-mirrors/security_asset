@@ -113,8 +113,8 @@ impl_tag_trait! {
         /// A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
         ConflictResolution = DataType::Number as isize | 0x44,
 
-        /// A tag whose value is a 32-bit unsigned integer indicating the appoint user id.
-        AppointUserId = DataType::Number as isize | 0x45,
+        /// A tag whose value is a 32-bit unsigned integer indicating the specific user id.
+        SpecificUserId = DataType::Number as isize | 0x45,
     }
 }
 

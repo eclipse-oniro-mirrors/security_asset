@@ -21,6 +21,7 @@
 #include "accesstoken_kit.h"
 #include "bundle_mgr_client.h"
 #include "hap_token_info.h"
+#include "tokenid_kit.h"
 #include "ipc_skeleton.h"
 
 #include "asset_type.h"
@@ -63,6 +64,32 @@ int32_t GetProcessInfo(uint32_t tokenId, uint64_t uid, std::string &info)
     info = tokenInfo.processName + "_" + std::to_string(uid);
     return ASSET_SUCCESS;
 }
+
+bool CheckSystemApp(void)
+{
+    auto accessTokenId = IPCSkeleton::GetCallingFullTokenID();
+    bool isSystemApp = TokenIdKit::IsSystemAppByFullTokenID(accessTokenId);
+    if (isSystemApp) {
+        LOGI("[INFO]Check system app success!");
+        return true;
+    } else {
+        LOGI("[INFO]Check system app failed");
+        return false;
+    }
+}
+
+bool CheckPermission(const char* permission)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    int result = AccessTokenKit::VerifyAccessToken(tokenId, permission);
+    if (result == PERMISSION_GRANTED) {
+        LOGI("[INFO]Check permission success!");
+        return true;
+    } else {
+        LOGI("[INFO]Check permission failed, ret=%d", result);
+        return false;
+    }
+}
 } // namespace
 
 int32_t GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen)
@@ -102,15 +129,25 @@ int32_t GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t
     return ASSET_SUCCESS;
 }
 
-bool CheckPermission(void)
+bool CheckPersistentPermission(void)
+{
+    const char* permission = "ohos.permission.STORE_PERSISTENT_DATA";
+    return CheckPermission(permission);
+}
+
+bool CheckInteractPermission(void)
+{
+    const char* permission = "ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS";
+    return CheckPermission(permission);
+}
+
+bool CheckSystemHapPermission(void)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    int result = AccessTokenKit::VerifyAccessToken(tokenId, "ohos.permission.STORE_PERSISTENT_DATA");
-    if (result == PERMISSION_GRANTED) {
-        LOGI("[INFO]Check permission success!");
-        return true;
-    } else {
-        LOGI("[INFO]Check permission failed, ret=%d", result);
-        return false;
+    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
+    bool res = true;
+    if(tokenType == ATokenTypeEnum::TOKEN_HAP) {
+        res = CheckSystemApp();
     }
+    return res;
 }

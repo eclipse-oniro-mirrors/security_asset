@@ -17,7 +17,8 @@
 
 mod argument_check;
 
-pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_value_validity, MAX_ARRAY_SIZE};
+pub(crate) use argument_check::{
+    check_required_tags, check_system_permission_if_needed, check_tag_validity, check_value_validity, MAX_ARRAY_SIZE};
 
 use asset_constants::CallingInfo;
 use asset_crypto_manager::secret_key::SecretKey;
@@ -67,8 +68,6 @@ pub(crate) const NORMAL_LABEL_ATTRS: [Tag; 4] =
 
 pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 6] =
     [Tag::Alias, Tag::Accessibility, Tag::AuthType, Tag::IsPersistent, Tag::SyncType, Tag::RequirePasswordSet];
-
-pub(crate) const APPOINT_USER_ID: [Tag; 1] = [ Tag::AppointUserId ];
 
 pub(crate) fn get_cloumn_name(tag: Tag) -> Option<&'static str> {
     for (table_tag, table_column) in TAG_COLUMN_TABLE {

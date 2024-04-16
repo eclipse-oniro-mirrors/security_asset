@@ -17,8 +17,8 @@
 #include "napi/native_node_api.h"
 
 #include "asset_napi_common.h"
-#include "asset_system_api.h"
-#include "asset_system_type.h"
+#include "sec_asset_api.h"
+#include "sec_asset_type.h"
 
 using namespace OHOS::Security::Asset;
 
@@ -35,29 +35,29 @@ napi_value DeclareTag(napi_env env)
 {
     napi_value tag = nullptr;
     NAPI_CALL(env, napi_create_object(env, &tag));
-    AddUint32Property(env, tag, "SECRET", ASSET_SYSTEM_TAG_SECRET);
-    AddUint32Property(env, tag, "ALIAS", ASSET_SYSTEM_TAG_ALIAS);
-    AddUint32Property(env, tag, "ACCESSIBILITY", ASSET_SYSTEM_TAG_ACCESSIBILITY);
-    AddUint32Property(env, tag, "REQUIRE_PASSWORD_SET", ASSET_SYSTEM_TAG_REQUIRE_PASSWORD_SET);
-    AddUint32Property(env, tag, "AUTH_TYPE", ASSET_SYSTEM_TAG_AUTH_TYPE);
-    AddUint32Property(env, tag, "AUTH_VALIDITY_PERIOD", ASSET_SYSTEM_TAG_AUTH_VALIDITY_PERIOD);
-    AddUint32Property(env, tag, "AUTH_CHALLENGE", ASSET_SYSTEM_TAG_AUTH_CHALLENGE);
-    AddUint32Property(env, tag, "AUTH_TOKEN", ASSET_SYSTEM_TAG_AUTH_TOKEN);
-    AddUint32Property(env, tag, "SYNC_TYPE", ASSET_SYSTEM_TAG_SYNC_TYPE);
-    AddUint32Property(env, tag, "IS_PERSISTENT", ASSET_SYSTEM_TAG_IS_PERSISTENT);
-    AddUint32Property(env, tag, "CONFLICT_RESOLUTION", ASSET_SYSTEM_TAG_CONFLICT_RESOLUTION);
-    AddUint32Property(env, tag, "DATA_LABEL_CRITICAL_1", ASSET_SYSTEM_TAG_DATA_LABEL_CRITICAL_1);
-    AddUint32Property(env, tag, "DATA_LABEL_CRITICAL_2", ASSET_SYSTEM_TAG_DATA_LABEL_CRITICAL_2);
-    AddUint32Property(env, tag, "DATA_LABEL_CRITICAL_3", ASSET_SYSTEM_TAG_DATA_LABEL_CRITICAL_3);
-    AddUint32Property(env, tag, "DATA_LABEL_CRITICAL_4", ASSET_SYSTEM_TAG_DATA_LABEL_CRITICAL_4);
-    AddUint32Property(env, tag, "DATA_LABEL_NORMAL_1", ASSET_SYSTEM_TAG_DATA_LABEL_NORMAL_1);
-    AddUint32Property(env, tag, "DATA_LABEL_NORMAL_2", ASSET_SYSTEM_TAG_DATA_LABEL_NORMAL_2);
-    AddUint32Property(env, tag, "DATA_LABEL_NORMAL_3", ASSET_SYSTEM_TAG_DATA_LABEL_NORMAL_3);
-    AddUint32Property(env, tag, "DATA_LABEL_NORMAL_4", ASSET_SYSTEM_TAG_DATA_LABEL_NORMAL_4);
-    AddUint32Property(env, tag, "RETURN_TYPE", ASSET_SYSTEM_TAG_RETURN_TYPE);
-    AddUint32Property(env, tag, "RETURN_LIMIT", ASSET_SYSTEM_TAG_RETURN_LIMIT);
-    AddUint32Property(env, tag, "RETURN_OFFSET", ASSET_SYSTEM_TAG_RETURN_OFFSET);
-    AddUint32Property(env, tag, "RETURN_ORDERED_BY", ASSET_SYSTEM_TAG_RETURN_ORDERED_BY);
+    AddUint32Property(env, tag, "SECRET", SEC_ASSET_TAG_SECRET);
+    AddUint32Property(env, tag, "ALIAS", SEC_ASSET_TAG_ALIAS);
+    AddUint32Property(env, tag, "ACCESSIBILITY", SEC_ASSET_TAG_ACCESSIBILITY);
+    AddUint32Property(env, tag, "REQUIRE_PASSWORD_SET", SEC_ASSET_TAG_REQUIRE_PASSWORD_SET);
+    AddUint32Property(env, tag, "AUTH_TYPE", SEC_ASSET_TAG_AUTH_TYPE);
+    AddUint32Property(env, tag, "AUTH_VALIDITY_PERIOD", SEC_ASSET_TAG_AUTH_VALIDITY_PERIOD);
+    AddUint32Property(env, tag, "AUTH_CHALLENGE", SEC_ASSET_TAG_AUTH_CHALLENGE);
+    AddUint32Property(env, tag, "AUTH_TOKEN", SEC_ASSET_TAG_AUTH_TOKEN);
+    AddUint32Property(env, tag, "SYNC_TYPE", SEC_ASSET_TAG_SYNC_TYPE);
+    AddUint32Property(env, tag, "IS_PERSISTENT", SEC_ASSET_TAG_IS_PERSISTENT);
+    AddUint32Property(env, tag, "CONFLICT_RESOLUTION", SEC_ASSET_TAG_CONFLICT_RESOLUTION);
+    AddUint32Property(env, tag, "DATA_LABEL_CRITICAL_1", SEC_ASSET_TAG_DATA_LABEL_CRITICAL_1);
+    AddUint32Property(env, tag, "DATA_LABEL_CRITICAL_2", SEC_ASSET_TAG_DATA_LABEL_CRITICAL_2);
+    AddUint32Property(env, tag, "DATA_LABEL_CRITICAL_3", SEC_ASSET_TAG_DATA_LABEL_CRITICAL_3);
+    AddUint32Property(env, tag, "DATA_LABEL_CRITICAL_4", SEC_ASSET_TAG_DATA_LABEL_CRITICAL_4);
+    AddUint32Property(env, tag, "DATA_LABEL_NORMAL_1", SEC_ASSET_TAG_DATA_LABEL_NORMAL_1);
+    AddUint32Property(env, tag, "DATA_LABEL_NORMAL_2", SEC_ASSET_TAG_DATA_LABEL_NORMAL_2);
+    AddUint32Property(env, tag, "DATA_LABEL_NORMAL_3", SEC_ASSET_TAG_DATA_LABEL_NORMAL_3);
+    AddUint32Property(env, tag, "DATA_LABEL_NORMAL_4", SEC_ASSET_TAG_DATA_LABEL_NORMAL_4);
+    AddUint32Property(env, tag, "RETURN_TYPE", SEC_ASSET_TAG_RETURN_TYPE);
+    AddUint32Property(env, tag, "RETURN_LIMIT", SEC_ASSET_TAG_RETURN_LIMIT);
+    AddUint32Property(env, tag, "RETURN_OFFSET", SEC_ASSET_TAG_RETURN_OFFSET);
+    AddUint32Property(env, tag, "RETURN_ORDERED_BY", SEC_ASSET_TAG_RETURN_ORDERED_BY);
     return tag;
 }
 
@@ -65,9 +65,9 @@ napi_value DeclareTagType(napi_env env)
 {
     napi_value tagType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &tagType));
-    AddUint32Property(env, tagType, "BOOL", ASSET_SYSTEM_TYPE_BOOL);
-    AddUint32Property(env, tagType, "NUMBER", ASSET_SYSTEM_TYPE_NUMBER);
-    AddUint32Property(env, tagType, "BYTES", ASSET_SYSTEM_TYPE_BYTES);
+    AddUint32Property(env, tagType, "BOOL", SEC_ASSET_TYPE_BOOL);
+    AddUint32Property(env, tagType, "NUMBER", SEC_ASSET_TYPE_NUMBER);
+    AddUint32Property(env, tagType, "BYTES", SEC_ASSET_TYPE_BYTES);
     return tagType;
 }
 
@@ -75,25 +75,26 @@ napi_value DeclareErrorCode(napi_env env)
 {
     napi_value errorCode = nullptr;
     NAPI_CALL(env, napi_create_object(env, &errorCode));
-    AddUint32Property(env, errorCode, "PERMISSION_DENIED", ASSET_SYSTEM_PERMISSION_DENIED);
-    AddUint32Property(env, errorCode, "INVALID_ARGUMENT", ASSET_SYSTEM_INVALID_ARGUMENT);
-    AddUint32Property(env, errorCode, "SERVICE_UNAVAILABLE", ASSET_SYSTEM_SERVICE_UNAVAILABLE);
-    AddUint32Property(env, errorCode, "NOT_FOUND", ASSET_SYSTEM_NOT_FOUND);
-    AddUint32Property(env, errorCode, "DUPLICATED", ASSET_SYSTEM_DUPLICATED);
-    AddUint32Property(env, errorCode, "ACCESS_DENIED", ASSET_SYSTEM_ACCESS_DENIED);
-    AddUint32Property(env, errorCode, "STATUS_MISMATCH", ASSET_SYSTEM_STATUS_MISMATCH);
-    AddUint32Property(env, errorCode, "OUT_OF_MEMORY", ASSET_SYSTEM_OUT_OF_MEMORY);
-    AddUint32Property(env, errorCode, "DATA_CORRUPTED", ASSET_SYSTEM_DATA_CORRUPTED);
-    AddUint32Property(env, errorCode, "DATABASE_ERROR", ASSET_SYSTEM_DATABASE_ERROR);
-    AddUint32Property(env, errorCode, "CRYPTO_ERROR", ASSET_SYSTEM_CRYPTO_ERROR);
-    AddUint32Property(env, errorCode, "IPC_ERROR", ASSET_SYSTEM_IPC_ERROR);
-    AddUint32Property(env, errorCode, "BMS_ERROR", ASSET_SYSTEM_BMS_ERROR);
-    AddUint32Property(env, errorCode, "ACCOUNT_ERROR", ASSET_SYSTEM_ACCOUNT_ERROR);
-    AddUint32Property(env, errorCode, "ACCESS_TOKEN_ERROR", ASSET_SYSTEM_ACCESS_TOKEN_ERROR);
-    AddUint32Property(env, errorCode, "FILE_OPERATION_ERROR", ASSET_SYSTEM_FILE_OPERATION_ERROR);
-    AddUint32Property(env, errorCode, "GET_SYSTEM_TIME_ERROR", ASSET_SYSTEM_GET_SYSTEM_TIME_ERROR);
-    AddUint32Property(env, errorCode, "LIMIT_EXCEEDED", ASSET_SYSTEM_LIMIT_EXCEEDED);
-    AddUint32Property(env, errorCode, "UNSUPPORTED", ASSET_SYSTEM_UNSUPPORTED);
+    AddUint32Property(env, errorCode, "PERMISSION_DENIED", SEC_ASSET_PERMISSION_DENIED);
+    AddUint32Property(env, errorCode, "NOT_SYSTEM_APPLICATION", SEC_ASSET_NOT_SYSTEM_APPLICATION);
+    AddUint32Property(env, errorCode, "INVALID_ARGUMENT", SEC_ASSET_INVALID_ARGUMENT);
+    AddUint32Property(env, errorCode, "SERVICE_UNAVAILABLE", SEC_ASSET_SERVICE_UNAVAILABLE);
+    AddUint32Property(env, errorCode, "NOT_FOUND", SEC_ASSET_NOT_FOUND);
+    AddUint32Property(env, errorCode, "DUPLICATED", SEC_ASSET_DUPLICATED);
+    AddUint32Property(env, errorCode, "ACCESS_DENIED", SEC_ASSET_ACCESS_DENIED);
+    AddUint32Property(env, errorCode, "STATUS_MISMATCH", SEC_ASSET_STATUS_MISMATCH);
+    AddUint32Property(env, errorCode, "OUT_OF_MEMORY", SEC_ASSET_OUT_OF_MEMORY);
+    AddUint32Property(env, errorCode, "DATA_CORRUPTED", SEC_ASSET_DATA_CORRUPTED);
+    AddUint32Property(env, errorCode, "DATABASE_ERROR", SEC_ASSET_DATABASE_ERROR);
+    AddUint32Property(env, errorCode, "CRYPTO_ERROR", SEC_ASSET_CRYPTO_ERROR);
+    AddUint32Property(env, errorCode, "IPC_ERROR", SEC_ASSET_IPC_ERROR);
+    AddUint32Property(env, errorCode, "BMS_ERROR", SEC_ASSET_BMS_ERROR);
+    AddUint32Property(env, errorCode, "ACCOUNT_ERROR", SEC_ASSET_ACCOUNT_ERROR);
+    AddUint32Property(env, errorCode, "ACCESS_TOKEN_ERROR", SEC_ASSET_ACCESS_TOKEN_ERROR);
+    AddUint32Property(env, errorCode, "FILE_OPERATION_ERROR", SEC_ASSET_FILE_OPERATION_ERROR);
+    AddUint32Property(env, errorCode, "GET_SYSTEM_TIME_ERROR", SEC_ASSET_GET_SYSTEM_TIME_ERROR);
+    AddUint32Property(env, errorCode, "LIMIT_EXCEEDED", SEC_ASSET_LIMIT_EXCEEDED);
+    AddUint32Property(env, errorCode, "UNSUPPORTED", SEC_ASSET_UNSUPPORTED);
     return errorCode;
 }
 
@@ -101,9 +102,9 @@ napi_value DeclareAccessibility(napi_env env)
 {
     napi_value accessibility = nullptr;
     NAPI_CALL(env, napi_create_object(env, &accessibility));
-    AddUint32Property(env, accessibility, "DEVICE_POWERED_ON", ASSET_SYSTEM_ACCESSIBILITY_DEVICE_POWERED_ON);
-    AddUint32Property(env, accessibility, "DEVICE_FIRST_UNLOCKED", ASSET_SYSTEM_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED);
-    AddUint32Property(env, accessibility, "DEVICE_UNLOCKED", ASSET_SYSTEM_ACCESSIBILITY_DEVICE_UNLOCKED);
+    AddUint32Property(env, accessibility, "DEVICE_POWERED_ON", SEC_ASSET_ACCESSIBILITY_DEVICE_POWERED_ON);
+    AddUint32Property(env, accessibility, "DEVICE_FIRST_UNLOCKED", SEC_ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED);
+    AddUint32Property(env, accessibility, "DEVICE_UNLOCKED", SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED);
     return accessibility;
 }
 
@@ -111,8 +112,8 @@ napi_value DeclareAuthType(napi_env env)
 {
     napi_value authType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &authType));
-    AddUint32Property(env, authType, "NONE", ASSET_SYSTEM_AUTH_TYPE_NONE);
-    AddUint32Property(env, authType, "ANY", ASSET_SYSTEM_AUTH_TYPE_ANY);
+    AddUint32Property(env, authType, "NONE", SEC_ASSET_AUTH_TYPE_NONE);
+    AddUint32Property(env, authType, "ANY", SEC_ASSET_AUTH_TYPE_ANY);
     return authType;
 }
 
@@ -120,9 +121,9 @@ napi_value DeclareSyncType(napi_env env)
 {
     napi_value syncType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &syncType));
-    AddUint32Property(env, syncType, "NEVER", ASSET_SYSTEM_SYNC_TYPE_NEVER);
-    AddUint32Property(env, syncType, "THIS_DEVICE", ASSET_SYSTEM_SYNC_TYPE_THIS_DEVICE);
-    AddUint32Property(env, syncType, "TRUSTED_DEVICE", ASSET_SYSTEM_SYNC_TYPE_TRUSTED_DEVICE);
+    AddUint32Property(env, syncType, "NEVER", SEC_ASSET_SYNC_TYPE_NEVER);
+    AddUint32Property(env, syncType, "THIS_DEVICE", SEC_ASSET_SYNC_TYPE_THIS_DEVICE);
+    AddUint32Property(env, syncType, "TRUSTED_DEVICE", SEC_ASSET_SYNC_TYPE_TRUSTED_DEVICE);
     return syncType;
 }
 
@@ -130,8 +131,8 @@ napi_value DeclareConflictResolution(napi_env env)
 {
     napi_value conflictResolution = nullptr;
     NAPI_CALL(env, napi_create_object(env, &conflictResolution));
-    AddUint32Property(env, conflictResolution, "OVERWRITE", ASSET_SYSTEM_CONFLICT_OVERWRITE);
-    AddUint32Property(env, conflictResolution, "THROW_ERROR", ASSET_SYSTEM_CONFLICT_THROW_ERROR);
+    AddUint32Property(env, conflictResolution, "OVERWRITE", SEC_ASSET_CONFLICT_OVERWRITE);
+    AddUint32Property(env, conflictResolution, "THROW_ERROR", SEC_ASSET_CONFLICT_THROW_ERROR);
     return conflictResolution;
 }
 
@@ -139,8 +140,8 @@ napi_value DeclareReturnType(napi_env env)
 {
     napi_value returnType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &returnType));
-    AddUint32Property(env, returnType, "ALL", ASSET_SYSTEM_RETURN_ALL);
-    AddUint32Property(env, returnType, "ATTRIBUTES", ASSET_SYSTEM_RETURN_ATTRIBUTES);
+    AddUint32Property(env, returnType, "ALL", SEC_ASSET_RETURN_ALL);
+    AddUint32Property(env, returnType, "ATTRIBUTES", SEC_ASSET_RETURN_ATTRIBUTES);
     return returnType;
 }
 

@@ -15,6 +15,7 @@
 
 //! This module is used to verify the validity of asset attributes.
 
+use asset_constants::ROOT_USER_UPPERBOUND;
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, Result, ReturnType,
     Tag, Value,
@@ -149,8 +150,18 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::ReturnLimit => check_number_range(tag, value, MIN_NUMBER_VALUE, MAX_RETURN_LIMIT),
         Tag::ReturnOffset => Ok(()),
         Tag::ReturnOrderedBy => check_tag_range(tag, value, &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat()),
-        Tag::AppointUserId => Ok(()),
+        Tag::SpecificUserId => check_specific_user_id_range(tag, value),
     }
+}
+
+fn check_specific_user_id_range(tag: &Tag, value: &Value) -> Result<()> {
+    let Value::Number(n) = value else {
+        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
+    };
+    if *n <= ROOT_USER_UPPERBOUND as u32 {
+        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The specific user id must over 100.");
+    }
+    Ok(())
 }
 
 pub(crate) fn check_value_validity(attrs: &AssetMap) -> Result<()> {
@@ -174,6 +185,23 @@ pub(crate) fn check_tag_validity(attrs: &AssetMap, valid_tags: &[Tag]) -> Result
     for tag in attrs.keys() {
         if !valid_tags.contains(tag) {
             return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);
+        }
+    }
+    Ok(())
+}
+
+extern "C" {
+    fn CheckInteractPermission() -> bool;
+    fn CheckSystemHapPermission() -> bool;
+}
+
+pub(crate) fn check_system_permission_if_needed(need_system_permission_check: bool) -> Result<()> {
+    if need_system_permission_check {
+        if unsafe { !CheckSystemHapPermission() } {
+            return log_throw_error!(ErrCode::NotSystemUser, "[FATAL]The caller is not system user.");
+        }
+        if unsafe { !CheckInteractPermission() } {
+            return log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
         }
     }
     Ok(())

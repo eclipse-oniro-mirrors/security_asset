@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ASSET_SYSTEM_API_TEST_H
-#define ASSET_SYSTEM_API_TEST_H
+#ifndef SEC_ASSET_API_TEST_H
+#define SEC_ASSET_API_TEST_H
 
 #define ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
 #define SPECIFIC_USER_ID 100
@@ -23,6 +23,7 @@ namespace UnitTest::AssetSystemApiTest {
 int AssetSystemApiTest001(void);
 int AssetSystemApiTest002(void);
 int AssetSystemApiTest003(void);
+int AssetSystemApiTest004(void);
 }
 
-#endif // ASSET_SYSTEM_API_TEST_H
+#endif // SEC_ASSET_API_TEST_H
