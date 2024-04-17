@@ -46,7 +46,6 @@ ohos_shared_library("asset_sdk") {
     "-fPIC",
   ]
 
-  innerapi_tags = [ "platformsdk" ]
   subsystem_name = "security"
   part_name = "asset"
 }
@@ -59,7 +58,6 @@ ohos_rust_shared_ffi("asset_sdk_ffi") {
     "../rs:asset_sdk",
   ]
   crate_name = "asset_sdk_ffi"
-  innerapi_tags = [ "platformsdk" ]
   subsystem_name = "security"
   part_name = "asset"
 }
