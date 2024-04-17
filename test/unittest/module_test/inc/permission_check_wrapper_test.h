@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2023 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,18 +13,13 @@
  * limitations under the License.
  */
 
-#ifndef SEC_ASSET_API_TEST_H
-#define SEC_ASSET_API_TEST_H
+#ifndef PERMISSION_CHECK_WRAPPER_TEST_H
+#define PERMISSION_CHECK_WRAPPER_TEST_H
 
-#define ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
-#define SPECIFIC_USER_ID 100
-
-namespace UnitTest::AssetSystemApiTest {
-int AssetSystemApiTest001(void);
-int AssetSystemApiTest002(void);
-int AssetSystemApiTest003(void);
-int AssetSystemApiTest004(void);
-int AssetSystemApiTest005(void);
+namespace UnitTest::AssetPermissionCheckWrapperTest {
+int AssetPermissionCheckWrapperTest001(void);
+int AssetPermissionCheckWrapperTest002(void);
+int AssetPermissionCheckWrapperTest003(void);
 }
 
-#endif // SEC_ASSET_API_TEST_H
+#endif // BMS_WRAPPER_TEST_H

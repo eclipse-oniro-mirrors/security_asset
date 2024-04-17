@@ -96,7 +96,7 @@ impl Ability for AssetAbility {
 
 fn start_service(handler: Handler) -> Result<()> {
     common_event::subscribe();
-    if handler.publish(AssetService::new(handler.clone())) {
+    if !handler.publish(AssetService::new(handler.clone())) {
         return log_throw_error!(ErrCode::IpcError, "Asset publish stub object failed");
     };
     Ok(())

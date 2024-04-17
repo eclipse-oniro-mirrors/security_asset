@@ -310,20 +310,31 @@ HWTEST_F(AssetSystemApiTest, AssetSystemApiTest004, TestSize.Level0)
 
 /**
  * @tc.name: AssetSystemApiTest.AssetSystemApiTest005
- * @tc.desc: Test asset func AssetAdd expect ERROR
+ * @tc.desc: Test asset func AssetUpdate expect SUCCESS
  * @tc.type: FUNC
  * @tc.result:0
  */
 HWTEST_F(AssetSystemApiTest, AssetSystemApiTest005, TestSize.Level0)
 {
     AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
-    AssetAttr attr[] = {
+    AssetAttr addAttr[] = {
         { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_SECRET, .value.blob = funcName },
-        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID - 1 },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID },
         { .tag = SEC_ASSET_TAG_ACCESSIBILITY, .value.u32 = SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED },
-        { .tag = SEC_ASSET_TAG_AUTH_TYPE, .value.u32 = SEC_ASSET_AUTH_TYPE_ANY }
     };
-    ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT, AssetAdd(attr, ARRAY_SIZE(attr)));
+    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetAdd(addAttr, ARRAY_SIZE(addAttr)));
+
+    AssetAttr queryAttr[] = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName }
+    };
+    const char *secretNew = "secret_new";
+    AssetAttr updateAttr[] = {
+        { .tag = SEC_ASSET_TAG_SECRET, .value.blob =
+            { .size = strlen(secretNew), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(secretNew)) } }
+    };
+    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetUpdate(queryAttr, ARRAY_SIZE(queryAttr), updateAttr, ARRAY_SIZE(updateAttr)));
+
+    ASSERT_EQ(SEC_ASSET_SUCCESS, RemoveByAlias(__func__));
 }
 }

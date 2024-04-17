@@ -15,7 +15,7 @@
 
 //! This module is used to verify the validity of asset attributes.
 
-use asset_constants::ROOT_USER_UPPERBOUND;
+use asset_constants::{CallingInfo, ROOT_USER_UPPERBOUND};
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, Result, ReturnType,
     Tag, Value,
