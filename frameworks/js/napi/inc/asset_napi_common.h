@@ -28,6 +28,7 @@ namespace Security {
 namespace Asset {
 
 #define AS_USER_ARGS_NUM 2
+#define AS_USER_UPDATE_ARGS_NUM 2
 #define UPDATE_ARGS_NUM 2
 
 #define CHECK_RESULT_BREAK(env, ret)                        \
@@ -63,11 +64,14 @@ napi_value CreateJsMapArray(napi_env env, const AssetResultSet &resultSet);
 
 napi_status ParseParam(napi_env env, napi_callback_info info, std::vector<AssetAttr> &attrs);
 
-napi_status ParseParam(napi_env env, napi_callback_info info, size_t expectArgNum, std::vector<AssetAttr> &attrs,
-    std::vector<AssetAttr> &updateAttrs, bool isUpdate, bool isApplintUserId);
+napi_status ParseParam(napi_env env, napi_callback_info info, std::vector<AssetAttr> &attrs,
+    std::vector<AssetAttr> &updateAttrs, size_t expectArgNum);
 
 napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
-    size_t expectArgNum = 1, bool isUpdate = false, bool isSpecificUserId = false);
+    size_t expectArgNum = 1);
+
+napi_value NapiEntryAsUser(napi_env env, napi_callback_info info, const char *funcName,
+    napi_async_execute_callback execute, size_t expectArgNum = AS_USER_ARGS_NUM);
 
 } // Asset
 } // Security

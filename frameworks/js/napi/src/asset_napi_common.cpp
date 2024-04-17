@@ -280,6 +280,28 @@ napi_status ParseMapParam(napi_env env, napi_value arg, std::vector<AssetAttr> &
     return napi_ok;
 }
 
+napi_status ParseJsArgs(napi_env env, napi_callback_info info, napi_value *value, size_t valueSize)
+{
+    size_t argc = valueSize;
+    NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, value, nullptr, nullptr));
+    NAPI_THROW_RETURN_ERR(env, argc < valueSize, SEC_ASSET_INVALID_ARGUMENT,
+        "The number of arguments is insufficient.");
+    return napi_ok;
+}
+
+napi_status ParseJsUserId(napi_env env, napi_value arg, std::vector<AssetAttr> &attrs)
+{
+    napi_valuetype type = napi_undefined;
+    NAPI_CALL_RETURN_ERR(env, napi_typeof(env, arg, &type));
+    NAPI_THROW_RETURN_ERR(env, type != napi_number, SEC_ASSET_INVALID_ARGUMENT, "The type of userId should be number.");
+
+    AssetAttr param = { 0 };
+    param.tag = SEC_ASSET_TAG_USER_ID;
+    NAPI_CALL_RETURN_ERR(env, napi_get_value_uint32(env, arg, &param.value.u32));
+    attrs.push_back(param);
+    return napi_ok;
+}
+
 } // anonymous namespace
 
 void FreeAssetAttrs(std::vector<AssetAttr> &attrs)
@@ -343,40 +365,25 @@ napi_value CreateJsUint8Array(napi_env env, const AssetBlob &blob)
 napi_status ParseParam(napi_env env, napi_callback_info info, std::vector<AssetAttr> &attrs)
 {
     std::vector<AssetAttr> updateAttrs;
-    return ParseParam(env, info, NORMAL_ARGS_NUM, attrs, updateAttrs, false, false);
+    return ParseParam(env, info, attrs, updateAttrs, NORMAL_ARGS_NUM);
 }
 
-napi_status ParseParam(napi_env env, napi_callback_info info, size_t expectArgNum, std::vector<AssetAttr> &attrs,
-    std::vector<AssetAttr> &updateAttrs, bool isUpdate = false, bool isSpecificUserId = false)
+napi_status ParseParam(napi_env env, napi_callback_info info, std::vector<AssetAttr> &attrs,
+    std::vector<AssetAttr> &updateAttrs, size_t expectArgNum)
 {
     napi_value argv[MAX_ARGS_NUM] = { 0 };
-    size_t argc = expectArgNum;
-    NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-    NAPI_THROW_RETURN_ERR(env, argc < expectArgNum, SEC_ASSET_INVALID_ARGUMENT,
-        "The number of arguments is insufficient.");
-    size_t index = 0;
-
-    napi_value specificUserId = nullptr;
-    // get SpecificUserId
-    if (isSpecificUserId) {
-        NAPI_CALL_RETURN_ERR(env, napi_get_element(env, argv[index++], 0, &specificUserId));
+    napi_status ret = ParseJsArgs(env, info, argv, expectArgNum);
+    if (ret != napi_ok) {
+        return ret;
     }
 
-    napi_status ret = ParseMapParam(env, argv[index++], attrs);
+    size_t index = 0;
+    ret = ParseMapParam(env, argv[index++], attrs);
     if (ret != napi_ok) {
         LOGE("Parse first map parameter failed.");
         return ret;
     }
-
-    // add SpecificUserId into map
-    if (isSpecificUserId) {
-        AssetAttr param = { 0 };
-        param.tag = SEC_ASSET_TAG_USER_ID;
-        NAPI_CALL_RETURN_ERR(env, napi_get_value_uint32(env, specificUserId, &param.value.u32));
-        attrs.push_back(param);
-    }
-
-    if (isUpdate) {
+    if (expectArgNum == UPDATE_ARGS_NUM) {
         ret = ParseMapParam(env, argv[index++], updateAttrs);
         if (ret != napi_ok) {
             LOGE("Parse second map parameter failed.");
@@ -387,15 +394,70 @@ napi_status ParseParam(napi_env env, napi_callback_info info, size_t expectArgNu
 }
 
 napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
-    size_t expectArgNum, bool isUpdate, bool isSpecificUserId)
+    size_t expectArgNum)
 {
     AsyncContext *context = CreateAsyncContext();
     NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
 
     do {
-        if (ParseParam(
-            env, info, expectArgNum, context->attrs, context->updateAttrs, isUpdate, isSpecificUserId) != napi_ok) {
+        napi_value argv[MAX_ARGS_NUM] = { 0 };
+        if (ParseJsArgs(env, info, argv, expectArgNum) != napi_ok) {
             break;
+        }
+
+        size_t index = 0;
+        napi_status ret = ParseMapParam(env, argv[index++], context->attrs);
+        if (ret != napi_ok) {
+            LOGE("Parse first map parameter failed.");
+            break;
+        }
+        if (expectArgNum == UPDATE_ARGS_NUM) {
+            ret = ParseMapParam(env, argv[index++], context->updateAttrs);
+            if (ret != napi_ok) {
+                LOGE("Parse second map parameter failed.");
+                break;
+            }
+        }
+
+        napi_value promise = CreateAsyncWork(env, context, funcName, execute);
+        if (promise == nullptr) {
+            LOGE("Create async work failed.");
+            break;
+        }
+        return promise;
+    } while (0);
+    DestroyAsyncContext(env, context);
+    return nullptr;
+}
+
+napi_value NapiEntryAsUser(napi_env env, napi_callback_info info, const char *funcName,
+    napi_async_execute_callback execute, size_t expectArgNum)
+{
+    AsyncContext *context = CreateAsyncContext();
+    NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
+
+    do {
+        napi_value argv[MAX_ARGS_NUM] = { 0 };
+        if (ParseJsArgs(env, info, argv, expectArgNum) != napi_ok) {
+            break;
+        }
+
+        size_t index = 0;
+        if (ParseJsUserId(env, argv[index++], context->attrs) != napi_ok) {
+            break;
+        }
+
+        napi_status ret = ParseMapParam(env, argv[index++], context->attrs);
+        if (ret != napi_ok) {
+            LOGE("Parse first map parameter failed.");
+            break;
+        }
+        if (expectArgNum == AS_USER_UPDATE_ARGS_NUM) {
+            ret = ParseMapParam(env, argv[index++], context->updateAttrs);
+            if (ret != napi_ok) {
+                LOGE("Parse second map parameter failed.");
+                break;
+            }
         }
 
         napi_value promise = CreateAsyncWork(env, context, funcName, execute);
