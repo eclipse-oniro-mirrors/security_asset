@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef SEC_ASSET_API_TEST_H
-#define SEC_ASSET_API_TEST_H
+#ifndef ASSET_SYSTEM_API_TEST_H
+#define ASSET_SYSTEM_API_TEST_H
 
 #define ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
 #define SPECIFIC_USER_ID 100
@@ -27,4 +27,4 @@ int AssetSystemApiTest004(void);
 int AssetSystemApiTest005(void);
 }
 
-#endif // SEC_ASSET_API_TEST_H
+#endif // ASSET_SYSTEM_API_TEST_H

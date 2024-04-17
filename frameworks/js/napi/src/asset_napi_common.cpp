@@ -22,8 +22,8 @@
 #include "asset_log.h"
 #include "asset_mem.h"
 #include "asset_napi_error_code.h"
-#include "sec_asset_api.h"
-#include "sec_asset_type.h"
+#include "asset_system_api.h"
+#include "asset_system_type.h"
 
 namespace OHOS {
 namespace Security {
@@ -64,7 +64,7 @@ if ((condition)) {                                                              
     char msg[MAX_MESSAGE_LEN] = { 0 };                                                  \
     (void)sprintf_s(msg, MAX_MESSAGE_LEN, "AssetTag(0x%08x) " message, tag);            \
     LOGE("[FATAL][NAPI]%{public}s", (msg));                                             \
-    napi_throw((env), CreateJsError((env), SEC_ASSET_INVALID_ARGUMENT, (msg)));             \
+    napi_throw((env), CreateJsError((env), SEC_ASSET_INVALID_ARGUMENT, (msg)));         \
     return napi_invalid_arg;                                                            \
 }
 

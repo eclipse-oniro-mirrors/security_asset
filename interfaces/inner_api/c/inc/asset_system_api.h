@@ -14,20 +14,20 @@
  */
 
 /**
- * @file sec_asset_api.h
+ * @file asset_system_api.h
  *
  * @brief Declares asset operation inner interface.
  *
  * @since 11
  */
 
-#ifndef SEC_ASSET_API_H
-#define SEC_ASSET_API_H
+#ifndef ASSET_SYSTEM_API_H
+#define ASSET_SYSTEM_API_H
 
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "sec_asset_type.h"
+#include "asset_system_type.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -130,4 +130,4 @@ void AssetFreeResultSet(AssetResultSet *resultSet);
 }
 #endif
 
-#endif // SEC_ASSET_API_H
+#endif // ASSET_SYSTEM_API_H

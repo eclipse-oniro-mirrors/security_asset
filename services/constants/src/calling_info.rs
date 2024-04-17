@@ -19,7 +19,7 @@ use ipc::Skeleton;
 
 use asset_definition::{log_throw_error, ErrCode, Result};
 
-use crate::{transfer_error_code, ROOT_USER_UPPERBOUND, SUCCESS};
+use crate::{transfer_error_code, SUCCESS};
 
 use super::OwnerType;
 
@@ -47,7 +47,8 @@ extern "C" {
     fn GetOwnerInfo(userId: i32, uid: u64, ownerType: *mut OwnerType, ownerInfo: *mut u8, infoLen: *mut u32) -> i32;
 }
 
-pub(crate) fn get_user_id(uid: u64) -> Result<i32> {
+/// Get the caller user id.
+pub fn get_user_id(uid: u64) -> Result<i32> {
     unsafe {
         let mut user_id = 0;
         if GetUserIdByUid(uid, &mut user_id) {
@@ -103,10 +104,6 @@ impl CallingInfo {
 
     /// Set specific user id of calling.
     pub fn set_specific_user_id(&mut self, specific_user_id: i32) -> Result<()> {
-        if self.user_id < 0 || self.user_id > ROOT_USER_UPPERBOUND {
-            return log_throw_error!(ErrCode::NotSystemUser, "[FATAL]The caller is not system user.");
-        }
-
         self.specific_user_id = Some(specific_user_id);
         Ok(())
     }

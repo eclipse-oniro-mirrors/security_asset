@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 
-#ifndef SEC_ASSET_TYPE_H
-#define SEC_ASSET_TYPE_H
+#ifndef ASSET_SYSTEM_TYPE_H
+#define ASSET_SYSTEM_TYPE_H
 
 /**
- * @file sec_asset_type.h
+ * @file asset_system_type.h
  *
  * @brief Defines the enums, structs, and error codes used in the Asset APIs.
  *
@@ -407,4 +407,4 @@ typedef struct {
 }
 #endif
 
-#endif // SEC_ASSET_TYPE_H
+#endif // ASSET_SYSTEM_TYPE_H

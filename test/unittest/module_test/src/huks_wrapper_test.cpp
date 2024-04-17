@@ -21,7 +21,7 @@
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 
-#include "sec_asset_type.h"
+#include "asset_system_type.h"
 #include "huks_wrapper.h"
 
 using namespace testing::ext;

@@ -37,12 +37,12 @@ bool CheckSystemApp(void)
         LOGI("[INFO]Check system app success!");
         return true;
     } else {
-        LOGI("[INFO]Check system app failed");
+        LOGE("[FATAL]Check system app failed");
         return false;
     }
 }
 
-bool CheckPermission(const char* permission)
+bool CheckPermission(const char *permission)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     int result = AccessTokenKit::VerifyAccessToken(tokenId, permission);
@@ -50,7 +50,7 @@ bool CheckPermission(const char* permission)
         LOGI("[INFO]Check permission success!");
         return true;
     } else {
-        LOGI("[INFO]Check permission failed, ret=%d", result);
+        LOGE("[FATAL]Check permission failed, ret=%d", result);
         return false;
     }
 }
@@ -72,9 +72,5 @@ bool CheckSystemHapPermission(void)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
-    bool res = true;
-    if(tokenType == ATokenTypeEnum::TOKEN_HAP) {
-        res = CheckSystemApp();
-    }
-    return res;
+    return (tokenType == ATokenTypeEnum::TOKEN_HAP) ? CheckSystemApp() : true;
 }

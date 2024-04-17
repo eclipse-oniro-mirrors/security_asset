@@ -15,8 +15,8 @@
 
 #include "asset_api.h"
 
-#include "sec_asset_api.h"
-#include "sec_asset_type.h"
+#include "asset_system_api.h"
+#include "asset_system_type.h"
 
 int32_t OH_Asset_Add(const Asset_Attr *attributes, uint32_t attrCnt)
 {

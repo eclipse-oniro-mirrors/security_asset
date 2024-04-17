@@ -17,6 +17,8 @@
 
 use std::time::Instant;
 
+use ipc::Skeleton;
+
 use asset_constants::CallingInfo;
 use asset_definition::{AssetError, Result};
 use asset_log::{loge, logi};
@@ -68,11 +70,7 @@ pub(crate) fn upload_statistic_system_event(calling_info: &CallingInfo, start_ti
         .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
         .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
         .set_param(build_number_param!(SysEvent::RUN_TIME, duration.as_millis() as u32))
-        .set_param(build_str_param!(SysEvent::EXTRA, 
-            match calling_info.has_specific_user_id() {
-                true => format!("specific user id is:[{}]", calling_info.stored_user_id()),
-                false => String::new(),
-            }))
+        .set_param(build_str_param!(SysEvent::EXTRA, format!("calling uid is:[{}]", Skeleton::calling_uid())))
         .write();
     logi!(
         "[INFO]Calling fun:[{}], user_id:[{}], specific_user_id:[{}] caller:[{}], start_time:[{:?}], run_time:[{}]",
@@ -100,7 +98,7 @@ pub(crate) fn upload_fault_system_event(
         .set_param(build_str_param!(SysEvent::EXTRA, e.msg.clone()))
         .write();
     loge!(
-        "[ERROR]Calling fun:[{}], user_id:[{}], specific_user_id:[{}], 
+        "[ERROR]Calling fun:[{}], user_id:[{}], specific_user_id:[{}],
         caller:[{}], start_time:[{:?}], error_code:[{}], error_msg:[{}]",
         func_name,
         calling_info.user_id(),

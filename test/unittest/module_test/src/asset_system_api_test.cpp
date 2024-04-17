@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "sec_asset_api_test.h"
+#include "asset_system_api_test.h"
 
 #include <cstring>
 #include <gtest/gtest.h>
@@ -21,8 +21,8 @@
 #include "nativetoken_kit.h"
 #include "token_setproc.h"
 
-#include "sec_asset_api.h"
-#include "sec_asset_type.h"
+#include "asset_system_api.h"
+#include "asset_system_type.h"
 
 using namespace testing::ext;
 namespace UnitTest::AssetSystemApiTest {
@@ -121,8 +121,8 @@ bool CheckMatchAttrResult(const AssetAttr *attrs, uint32_t attrCnt, const AssetR
 int32_t RemoveByAlias(const char *alias)
 {
     AssetAttr attr[] = {
-        { .tag = SEC_ASSET_TAG_ALIAS, 
-          .value.blob = { .size = strlen(alias), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias)) } }, 
+        { .tag = SEC_ASSET_TAG_ALIAS,
+          .value.blob = { .size = strlen(alias), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias)) } },
         { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID }
     };
     return AssetRemove(attr, ARRAY_SIZE(attr));
@@ -131,7 +131,7 @@ int32_t RemoveByAlias(const char *alias)
 int32_t QueryByAlias(const char *alias, AssetResultSet *resultSet)
 {
     AssetAttr attr[] = {
-        { .tag = SEC_ASSET_TAG_ALIAS, 
+        { .tag = SEC_ASSET_TAG_ALIAS,
           .value.blob = { .size = strlen(alias), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias)) } },
         { .tag = SEC_ASSET_TAG_RETURN_TYPE, .value.u32 = SEC_ASSET_RETURN_ALL },
         { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID }
@@ -317,16 +317,18 @@ HWTEST_F(AssetSystemApiTest, AssetSystemApiTest004, TestSize.Level0)
 HWTEST_F(AssetSystemApiTest, AssetSystemApiTest005, TestSize.Level0)
 {
     AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
-    AssetAttr addAttr[] = {
+    AssetAttr attr[] = {
         { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_SECRET, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID },
         { .tag = SEC_ASSET_TAG_ACCESSIBILITY, .value.u32 = SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED },
+        { .tag = SEC_ASSET_TAG_AUTH_TYPE, .value.u32 = SEC_ASSET_AUTH_TYPE_ANY }
     };
-    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetAdd(addAttr, ARRAY_SIZE(addAttr)));
+    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetAdd(attr, ARRAY_SIZE(attr)));
 
     AssetAttr queryAttr[] = {
-        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName }
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID },
     };
     const char *secretNew = "secret_new";
     AssetAttr updateAttr[] = {

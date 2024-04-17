@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "sec_asset_api.h"
+#include "asset_system_api.h"
 
 #include "securec.h"
 

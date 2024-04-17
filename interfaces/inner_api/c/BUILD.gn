@@ -19,7 +19,7 @@ config("asset_config") {
 
 ohos_shared_library("asset_sdk") {
   public_configs = [ ":asset_config" ]
-  sources = [ "src/sec_asset_api.c" ]
+  sources = [ "src/asset_system_api.c" ]
   deps = [
     ":asset_sdk_ffi",
     "../../../frameworks/os_dependency/log:asset_log",

@@ -18,7 +18,7 @@
 #include <cstring>
 #include <gtest/gtest.h>
 
-#include "sec_asset_type.h"
+#include "asset_system_type.h"
 #include "bms_wrapper.h"
 
 using namespace testing::ext;

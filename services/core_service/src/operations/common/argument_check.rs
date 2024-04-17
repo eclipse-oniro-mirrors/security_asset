@@ -15,7 +15,9 @@
 
 //! This module is used to verify the validity of asset attributes.
 
-use asset_constants::{CallingInfo, ROOT_USER_UPPERBOUND};
+use ipc::Skeleton;
+
+use asset_constants::{get_user_id, ROOT_USER_UPPERBOUND};
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, Result, ReturnType,
     Tag, Value,
@@ -111,6 +113,16 @@ fn check_number_range(tag: &Tag, value: &Value, min: u32, max: u32) -> Result<()
     Ok(())
 }
 
+fn check_number_lower_bound(tag: &Tag, value: &Value, min: u32) -> Result<()> {
+    let Value::Number(n) = value else {
+        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
+    };
+    if *n <= min {
+        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The specific user id must over 100.");
+    }
+    Ok(())
+}
+
 fn check_tag_range(tag: &Tag, value: &Value, tags: &[Tag]) -> Result<()> {
     let Value::Number(n) = value else {
         return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
@@ -150,18 +162,8 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::ReturnLimit => check_number_range(tag, value, MIN_NUMBER_VALUE, MAX_RETURN_LIMIT),
         Tag::ReturnOffset => Ok(()),
         Tag::ReturnOrderedBy => check_tag_range(tag, value, &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat()),
-        Tag::SpecificUserId => check_specific_user_id_range(tag, value),
+        Tag::SpecificUserId => check_number_lower_bound(tag, value, ROOT_USER_UPPERBOUND),
     }
-}
-
-fn check_specific_user_id_range(tag: &Tag, value: &Value) -> Result<()> {
-    let Value::Number(n) = value else {
-        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
-    };
-    if *n <= ROOT_USER_UPPERBOUND as u32 {
-        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The specific user id must over 100.");
-    }
-    Ok(())
 }
 
 pub(crate) fn check_value_validity(attrs: &AssetMap) -> Result<()> {
@@ -202,6 +204,12 @@ pub(crate) fn check_system_permission_if_needed(need_system_permission_check: bo
         }
         if unsafe { !CheckInteractPermission() } {
             return log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
+        }
+
+        let uid = Skeleton::calling_uid();
+        let user_id: i32 = get_user_id(uid)?;
+        if user_id < 0 || user_id > ROOT_USER_UPPERBOUND as i32 {
+            return log_throw_error!(ErrCode::NotSystemUser, "[FATAL]The caller is not system user.");
         }
     }
     Ok(())

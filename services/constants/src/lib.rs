@@ -17,11 +17,11 @@
 
 use asset_definition::{impl_enum_trait, AssetError, ErrCode};
 mod calling_info;
-pub use calling_info::CallingInfo;
+pub use calling_info::{get_user_id, CallingInfo};
 /// success code.
 pub const SUCCESS: i32 = 0;
 /// root user upper bound
-pub const ROOT_USER_UPPERBOUND: i32 = 99;
+pub const ROOT_USER_UPPERBOUND: u32 = 99;
 
 impl_enum_trait! {
     /// The type of the calling.

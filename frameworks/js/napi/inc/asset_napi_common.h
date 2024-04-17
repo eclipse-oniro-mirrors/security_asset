@@ -21,18 +21,18 @@
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
-#include "sec_asset_type.h"
+#include "asset_system_type.h"
 
 namespace OHOS {
 namespace Security {
 namespace Asset {
 
 #define AS_USER_ARGS_NUM 2
-#define AS_USER_UPDATE_ARGS_NUM 2
+#define AS_USER_UPDATE_ARGS_NUM 3
 #define UPDATE_ARGS_NUM 2
 
 #define CHECK_RESULT_BREAK(env, ret)                        \
-if ((ret) != SEC_ASSET_SUCCESS) {                        \
+if ((ret) != SEC_ASSET_SUCCESS) {                           \
     napi_throw((env), CreateJsError((env), (ret)));         \
     break;                                                  \
 }

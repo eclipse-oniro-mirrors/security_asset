@@ -17,8 +17,8 @@
 #include "napi/native_node_api.h"
 
 #include "asset_napi_common.h"
-#include "sec_asset_api.h"
-#include "sec_asset_type.h"
+#include "asset_system_api.h"
+#include "asset_system_type.h"
 
 using namespace OHOS::Security::Asset;
 

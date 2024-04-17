@@ -19,7 +19,7 @@
 #include <unordered_map>
 #include <stdint.h>
 
-#include "sec_asset_type.h"
+#include "asset_system_type.h"
 
 namespace OHOS {
 namespace Security {
