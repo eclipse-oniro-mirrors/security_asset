@@ -15,6 +15,8 @@
 
 //! This module is used to verify the validity of asset attributes.
 
+use std::{ffi::CString, os::raw::c_char};
+
 use ipc::Skeleton;
 
 use asset_constants::{get_user_id, ROOT_USER_UPPERBOUND};
@@ -193,16 +195,20 @@ pub(crate) fn check_tag_validity(attrs: &AssetMap, valid_tags: &[Tag]) -> Result
 }
 
 extern "C" {
-    fn CheckInteractPermission() -> bool;
+    fn CheckPermission(permission: *const c_char) -> bool;
     fn CheckSystemHapPermission() -> bool;
 }
 
-pub(crate) fn check_system_permission_if_needed(need_system_permission_check: bool) -> Result<()> {
-    if need_system_permission_check {
+pub(crate) fn check_system_permission(attrs: &AssetMap) -> Result<()> {
+    if attrs.get(&Tag::SpecificUserId).is_some() {
         if unsafe { !CheckSystemHapPermission() } {
             return log_throw_error!(ErrCode::NotSystemUser, "[FATAL]The caller is not system user.");
         }
-        if unsafe { !CheckInteractPermission() } {
+
+        let permission_str = "ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS";
+        let c_string = CString::new(permission_str).expect("CString::new failed");
+        let c_ptr = c_string.as_ptr();
+        if unsafe { !CheckPermission(c_ptr) } {
             return log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
         }
 

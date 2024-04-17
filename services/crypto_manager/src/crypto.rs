@@ -67,7 +67,7 @@ impl Crypto {
         let key_alias = HksBlob { size: self.key.alias().len() as u32, data: self.key.alias().as_ptr() };
         let mut challenge = OutBlob { size: self.challenge.len() as u32, data: self.challenge.as_mut_ptr() };
         let mut handle = OutBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
-        let key_id = KeyId::new(self.key.calling_info().stored_user_id(), key_alias, self.key.access_type());
+        let key_id = KeyId::new(self.key.calling_info().user_id(), key_alias, self.key.access_type());
 
         let ret = unsafe {
             InitKey(
@@ -118,7 +118,7 @@ impl Crypto {
         let aad_data = HksBlob { size: aad.len() as u32, data: aad.as_ptr() };
         let in_data = HksBlob { size: msg.len() as u32, data: msg.as_ptr() };
         let mut out_data = OutBlob { size: cipher.len() as u32, data: cipher.as_mut_ptr() };
-        let key_id = KeyId::new(key.calling_info().stored_user_id(), key_alias, key.access_type());
+        let key_id = KeyId::new(key.calling_info().user_id(), key_alias, key.access_type());
 
         let ret = unsafe {
             EncryptData(
@@ -145,7 +145,7 @@ impl Crypto {
         let aad_data = HksBlob { size: aad.len() as u32, data: aad.as_ptr() };
         let in_data = HksBlob { size: cipher.len() as u32, data: cipher.as_ptr() };
         let mut out_data = OutBlob { size: plain.len() as u32, data: plain.as_mut_ptr() };
-        let key_id = KeyId::new(key.calling_info().stored_user_id(), key_alias, key.access_type());
+        let key_id = KeyId::new(key.calling_info().user_id(), key_alias, key.access_type());
 
         let ret = unsafe {
             DecryptData(

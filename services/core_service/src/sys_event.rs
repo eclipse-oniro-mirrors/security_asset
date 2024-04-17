@@ -76,7 +76,7 @@ pub(crate) fn upload_statistic_system_event(calling_info: &CallingInfo, start_ti
         "[INFO]Calling fun:[{}], user_id:[{}], specific_user_id:[{}] caller:[{}], start_time:[{:?}], run_time:[{}]",
         func_name,
         calling_info.user_id(),
-        calling_info.stored_user_id(),
+        calling_info.user_id(),
         owner_info,
         start_time,
         duration.as_millis()
@@ -102,7 +102,7 @@ pub(crate) fn upload_fault_system_event(
         caller:[{}], start_time:[{:?}], error_code:[{}], error_msg:[{}]",
         func_name,
         calling_info.user_id(),
-        calling_info.stored_user_id(),
+        calling_info.user_id(),
         owner_info,
         start_time,
         e.code,

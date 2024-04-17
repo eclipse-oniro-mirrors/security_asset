@@ -15,7 +15,7 @@
 
 //! This module is used to insert an Asset with a specified alias.
 
-use std::sync::Mutex;
+use std::{ffi::CString, os::raw::c_char, sync::Mutex};
 
 use asset_constants::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, secret_key::SecretKey};
@@ -111,7 +111,7 @@ const OPTIONAL_ATTRS: [Tag; 4] = [Tag::Secret, Tag::ConflictResolution, Tag::IsP
 const SYSTEM_USER_ID_MAX: i32 = 99;
 
 fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    if calling_info.stored_user_id() > SYSTEM_USER_ID_MAX {
+    if calling_info.user_id() > SYSTEM_USER_ID_MAX {
         return Ok(());
     }
     let accessibility =
@@ -126,12 +126,17 @@ fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo)
 }
 
 extern "C" {
-    fn CheckPersistentPermission() -> bool;
+    fn CheckPermission(permission: *const c_char) -> bool;
 }
 
 fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
-    if attributes.get(&Tag::IsPersistent).is_some() && unsafe { !CheckPersistentPermission() } {
-        return log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
+    if attributes.get(&Tag::IsPersistent).is_some() {
+        let permission_str = "ohos.permission.STORE_PERSISTENT_DATA";
+        let c_string = CString::new(permission_str).expect("CString::new failed");
+        let c_ptr = c_string.as_ptr();
+        if unsafe { !CheckPermission(c_ptr) } {
+            return log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
+        }
     }
     Ok(())
 }
@@ -146,18 +151,15 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
     check_accessibity_validity(attributes, calling_info)?;
-    common::check_system_permission_if_needed(calling_info.has_specific_user_id())?;
+    common::check_system_permission(attributes)?;
     check_persistent_permission(attributes)
 }
 
-pub(crate) fn add(attributes: &AssetMap, calling_info: &mut CallingInfo) -> Result<()> {
-    if let Some(Value::Number(num)) = attributes.get(&Tag::SpecificUserId) {
-        calling_info.set_specific_user_id(*num as i32)?;
-    }
+pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     check_arguments(attributes, calling_info)?;
 
     // Create database directory if not exists.
-    asset_file_operator::create_user_db_dir(calling_info.stored_user_id())?;
+    asset_file_operator::create_user_db_dir(calling_info.user_id())?;
 
     // Fill all attributes to DbMap.
     let mut db_data = common::into_db_map(attributes);
@@ -166,7 +168,7 @@ pub(crate) fn add(attributes: &AssetMap, calling_info: &mut CallingInfo) -> Resu
     add_default_attrs(&mut db_data);
 
     let query = get_query_condition(calling_info, attributes)?;
-    let mut db = Database::build(calling_info.stored_user_id())?;
+    let mut db = Database::build(calling_info.user_id())?;
     if db.is_data_exists(&query)? {
         resolve_conflict(calling_info, &mut db, attributes, &query, &mut db_data)
     } else {

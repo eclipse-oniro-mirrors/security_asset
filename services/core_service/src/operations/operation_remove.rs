@@ -17,37 +17,34 @@
 
 use asset_constants::CallingInfo;
 use asset_db_operator::database::Database;
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, Tag, Value};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, Tag};
 
 use crate::operations::common;
 
 const OPTIONAL_ATTRS: [Tag; 1] = [Tag::SpecificUserId];
 
-fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+fn check_arguments(attributes: &AssetMap) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
-    common::check_system_permission_if_needed(calling_info.has_specific_user_id())?;
+    common::check_system_permission(attributes)?;
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)
 }
 
-pub(crate) fn remove(query: &AssetMap, calling_info: &mut CallingInfo) -> Result<()> {
-    if let Some(Value::Number(num)) = query.get(&Tag::SpecificUserId) {
-        calling_info.set_specific_user_id(*num as i32)?;
-    }
-    check_arguments(query, calling_info)?;
+pub(crate) fn remove(query: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    check_arguments(query)?;
 
     // Check database directory exist.
-    if !asset_file_operator::is_user_db_dir_exist(calling_info.stored_user_id()) {
+    if !asset_file_operator::is_user_db_dir_exist(calling_info.user_id()) {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");
     }
 
     let mut db_data = common::into_db_map(query);
     common::add_owner_info(calling_info, &mut db_data);
 
-    let remove_num = Database::build(calling_info.stored_user_id())?.delete_datas(&db_data)?;
+    let remove_num = Database::build(calling_info.user_id())?.delete_datas(&db_data)?;
     match remove_num {
         0 => {
             log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.")

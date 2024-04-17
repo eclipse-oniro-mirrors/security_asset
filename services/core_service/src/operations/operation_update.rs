@@ -43,7 +43,7 @@ const QUERY_REQUIRED_ATTRS: [Tag; 1] = [Tag::Alias];
 const QUERY_OPTIONAL_ATTRS: [Tag; 1] = [Tag::SpecificUserId];
 const UPDATE_OPTIONAL_ATTRS: [Tag; 1] = [Tag::Secret];
 
-fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap) -> Result<()> {
     // Check attributes used to query.
     common::check_required_tags(query, &QUERY_REQUIRED_ATTRS)?;
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
@@ -52,7 +52,7 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &
     valid_tags.extend_from_slice(&QUERY_OPTIONAL_ATTRS);
     common::check_tag_validity(query, &valid_tags)?;
     common::check_value_validity(query)?;
-    common::check_system_permission_if_needed(calling_info.has_specific_user_id())?;
+    common::check_system_permission(query)?;
 
     if attrs_to_update.is_empty() {
         return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The attributes to update is empty.");
@@ -69,11 +69,8 @@ fn upgrade_to_latest_version(origin_db_data: &mut DbMap, update_db_data: &mut Db
     update_db_data.insert_attr(column::VERSION, DB_DATA_VERSION);
 }
 
-pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &mut CallingInfo) -> Result<()> {
-    if let Some(Value::Number(num)) = query.get(&Tag::SpecificUserId) {
-        calling_info.set_specific_user_id(*num as i32)?;
-    }
-    check_arguments(query, update, calling_info)?;
+pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    check_arguments(query, update)?;
 
     let mut query_db_data = common::into_db_map(query);
     common::add_owner_info(calling_info, &mut query_db_data);
@@ -81,7 +78,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &mut Cal
     let mut update_db_data = common::into_db_map(update);
     add_system_attrs(&mut update_db_data)?;
 
-    let mut db = Database::build(calling_info.stored_user_id())?;
+    let mut db = Database::build(calling_info.user_id())?;
     if update.contains_key(&Tag::Secret) {
         let mut results = db.query_datas(&vec![], &query_db_data, None)?;
         if results.len() != 1 {

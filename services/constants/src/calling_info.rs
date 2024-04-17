@@ -17,7 +17,7 @@
 
 use ipc::Skeleton;
 
-use asset_definition::{log_throw_error, ErrCode, Result};
+use asset_definition::{log_throw_error, ErrCode, Result, Value};
 
 use crate::{transfer_error_code, SUCCESS};
 
@@ -28,7 +28,6 @@ use super::OwnerType;
 #[derive(PartialEq, Eq)]
 pub struct CallingInfo {
     user_id: i32,
-    specific_user_id: Option<i32>,
     owner_type: OwnerType,
     owner_info: Vec<u8>,
 }
@@ -67,13 +66,13 @@ impl CallingInfo {
 
     /// Build identity of the specified owner.
     pub fn new(user_id: i32, owner_type: OwnerType, owner_info: Vec<u8>) -> Self {
-        Self { user_id, specific_user_id: None, owner_type, owner_info }
+        Self { user_id, owner_type, owner_info }
     }
 
     /// Build a instance of CallingInfo.
-    pub fn build() -> Result<Self> {
+    pub fn build(specific_user_id: Option<Value>) -> Result<Self> {
         let uid = Skeleton::calling_uid();
-        let user_id: i32 = get_user_id(uid)?;
+        let mut user_id: i32 = get_user_id(uid)?;
         let mut owner_info = vec![0u8; 256];
         let mut len = 256u32;
         let mut owner_type = OwnerType::Hap;
@@ -81,7 +80,10 @@ impl CallingInfo {
         match err {
             SUCCESS => {
                 owner_info.truncate(len as usize);
-                Ok(CallingInfo { user_id, specific_user_id: None, owner_type, owner_info })
+                if let Some(Value::Number(num)) = specific_user_id {
+                    user_id = num as i32;
+                }
+                Ok(CallingInfo { user_id, owner_type, owner_info })
             },
             _ => Err(transfer_error_code(ErrCode::try_from(err as u32)?)),
         }
@@ -100,24 +102,5 @@ impl CallingInfo {
     /// Get user id of calling.
     pub fn user_id(&self) -> i32 {
         self.user_id
-    }
-
-    /// Set specific user id of calling.
-    pub fn set_specific_user_id(&mut self, specific_user_id: i32) -> Result<()> {
-        self.specific_user_id = Some(specific_user_id);
-        Ok(())
-    }
-
-    /// have specific user id
-    pub fn has_specific_user_id(&self) -> bool {
-        self.specific_user_id.is_some()
-    }
-
-    /// get stored user id. if specific user id is None user userId else use specific userId
-    pub fn stored_user_id(&self) -> i32 {
-        match self.specific_user_id {
-            Some(value) => value,
-            None => self.user_id(),
-        }
     }
 }

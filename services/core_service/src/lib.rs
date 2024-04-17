@@ -15,7 +15,7 @@
 
 //! This module implements the Asset service.
 
-use std::{time::{Duration, Instant}};
+use std::time::{Duration, Instant};
 
 use samgr::manage::SystemAbilityManager;
 use system_ability_fwk::{ability::{Ability, Handler}, cxx_share::SystemAbilityOnDemandReason};
@@ -23,7 +23,7 @@ use ylong_runtime::time::sleep;
 
 use asset_constants::CallingInfo;
 use asset_crypto_manager::crypto_manager::CryptoManager;
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Tag, Result};
 use asset_ipc::SA_ID;
 use asset_log::{loge, logi};
 
@@ -121,12 +121,13 @@ struct AssetService {
 }
 
 macro_rules! execute {
-    ($func:path, $($args:expr), *) => {{
+    ($func:path, $first_arg:expr, $($args:expr), *) => {{
         let func_name = hisysevent::function!();
-        let mut calling_info = CallingInfo::build()?;
+        let specific_user_id = $first_arg.get(&Tag::SpecificUserId);
+        let calling_info = CallingInfo::build(specific_user_id.cloned())?;
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
-        upload_system_event($func($($args), *, &mut calling_info), &calling_info, start, func_name)
+        upload_system_event($func($($args), *, &calling_info), &calling_info, start, func_name)
     }};
 }
 
@@ -136,26 +137,26 @@ impl AssetService {
     }
 
     fn add(&self, attributes: &AssetMap) -> Result<()> {
-        execute!(operations::add, attributes)
+        execute!(operations::add, attributes, attributes)
     }
 
     fn remove(&self, query: &AssetMap) -> Result<()> {
-        execute!(operations::remove, query)
+        execute!(operations::remove, query, query)
     }
 
     fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
-        execute!(operations::update, query, attributes_to_update)
+        execute!(operations::update, query, query, attributes_to_update)
     }
 
     fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>> {
-        execute!(operations::pre_query, query)
+        execute!(operations::pre_query, query, query)
     }
 
     fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>> {
-        execute!(operations::query, query)
+        execute!(operations::query, query, query)
     }
 
     fn post_query(&self, query: &AssetMap) -> Result<()> {
-        execute!(operations::post_query, query)
+        execute!(operations::post_query, query, query)
     }
 }

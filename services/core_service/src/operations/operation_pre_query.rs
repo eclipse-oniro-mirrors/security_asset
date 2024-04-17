@@ -28,7 +28,7 @@ use crate::operations::common;
 const OPTIONAL_ATTRS: [Tag; 2] = [Tag::AuthValidityPeriod, Tag::SpecificUserId];
 const DEFAULT_AUTH_VALIDITY_IN_SECS: u32 = 60;
 
-fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+fn check_arguments(attributes: &AssetMap) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
@@ -36,7 +36,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
 
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
-    common::check_system_permission_if_needed(calling_info.has_specific_user_id())?;
+    common::check_system_permission(attributes)?;
 
     match attributes.get(&Tag::AuthType) {
         Some(Value::Number(val)) if *val == (AuthType::None as u32) => {
@@ -47,7 +47,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
 }
 
 fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Accessibility, bool)> {
-    let results = Database::build(calling_info.stored_user_id())?.query_datas(
+    let results = Database::build(calling_info.user_id())?.query_datas(
         &vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET],
         db_data,
         None,
@@ -66,14 +66,11 @@ fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Acces
     }
 }
 
-pub(crate) fn pre_query(query: &AssetMap, calling_info: &mut CallingInfo) -> Result<Vec<u8>> {
-    if let Some(Value::Number(num)) = query.get(&Tag::SpecificUserId) {
-        calling_info.set_specific_user_id(*num as i32)?;
-    }
-    check_arguments(query, calling_info)?;
+pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
+    check_arguments(query)?;
 
     // Check database directory exist.
-    if !asset_file_operator::is_user_db_dir_exist(calling_info.stored_user_id()) {
+    if !asset_file_operator::is_user_db_dir_exist(calling_info.user_id()) {
         return log_throw_error!(ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found.");
     }
 

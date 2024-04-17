@@ -22,8 +22,7 @@
 extern "C" {
 #endif
 
-bool CheckInteractPermission(void);
-bool CheckPersistentPermission(void);
+bool CheckPermission(const char *permission);
 bool CheckSystemHapPermission(void);
 
 #ifdef __cplusplus

@@ -42,6 +42,8 @@ bool CheckSystemApp(void)
     }
 }
 
+} // namespace
+
 bool CheckPermission(const char *permission)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
@@ -53,19 +55,6 @@ bool CheckPermission(const char *permission)
         LOGE("[FATAL]Check permission failed, ret=%d", result);
         return false;
     }
-}
-} // namespace
-
-bool CheckPersistentPermission(void)
-{
-    const char* permission = "ohos.permission.STORE_PERSISTENT_DATA";
-    return CheckPermission(permission);
-}
-
-bool CheckInteractPermission(void)
-{
-    const char* permission = "ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS";
-    return CheckPermission(permission);
 }
 
 bool CheckSystemHapPermission(void)

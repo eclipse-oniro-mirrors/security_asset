@@ -18,7 +18,7 @@
 mod argument_check;
 
 pub(crate) use argument_check::{
-    check_required_tags, check_system_permission_if_needed, check_tag_validity, check_value_validity, MAX_ARRAY_SIZE};
+    check_required_tags, check_system_permission, check_tag_validity, check_value_validity, MAX_ARRAY_SIZE};
 
 use asset_constants::CallingInfo;
 use asset_crypto_manager::secret_key::SecretKey;
