@@ -14,27 +14,17 @@
 import("//build/ohos.gni")
 import("//build/test.gni")
 
-module_output_path = "asset/asset_UT_test"
-
-ohos_unittest("asset_ndk_test") {
-  module_out_path = module_output_path
-  subsystem_name = "security"
-  part_name = "asset"
+ohos_static_library("asset_test_common") {
+  sources = [ "src/asset_test_common.cpp" ]
   include_dirs = [
     "inc",
     "../../../interfaces/inner_api/c/inc",
     "../../../interfaces/kits/c/inc",
-    "../common/inc",
   ]
-  sources = [
-    "src/asset_add_test.cpp",
-    "src/asset_query_test.cpp",
-    "src/asset_remove_test.cpp",
-    "src/asset_update_test.cpp",
-  ]
+  subsystem_name = "security"
+  part_name = "asset"
   deps = [
     "../../../interfaces/inner_api/c:asset_sdk",
     "../../../interfaces/kits/c:asset_ndk",
-    "../common:asset_test_common"
   ]
 }

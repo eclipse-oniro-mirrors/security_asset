@@ -75,7 +75,7 @@ HWTEST_F(AssetQueryTest, AssetQueryTest001, TestSize.Level0)
     ASSERT_EQ(1, resultSet.count);
 
     OH_Asset_FreeResultSet(&resultSet);
-    ASSERT_EQ(ASSET_SUCCESS, RemoveByAlias(__func__));
+    ASSERT_EQ(ASSET_SUCCESS, RemoveByAliasNdk(__func__));
 }
 
 /**

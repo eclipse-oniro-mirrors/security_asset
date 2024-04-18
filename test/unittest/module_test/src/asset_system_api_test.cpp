@@ -23,6 +23,7 @@
 
 #include "asset_system_api.h"
 #include "asset_system_type.h"
+#include "asset_test_common.h"
 
 using namespace testing::ext;
 namespace UnitTest::AssetSystemApiTest {
@@ -73,72 +74,6 @@ void AssetSystemApiTest::TearDown(void)
 {
 }
 
-bool CompareBlob(const AssetBlob *blob1, const AssetBlob *blob2)
-{
-    if (blob1->size != blob2->size) {
-        return false;
-    }
-    return memcmp(blob1->data, blob2->data, blob1->size) == 0;
-}
-
-bool CheckMatchAttrResult(const AssetAttr *attrs, uint32_t attrCnt, const AssetResult *result)
-{
-    for (uint32_t i = 0; i < attrCnt; i++) {
-        if (attrs[i].tag == SEC_ASSET_TAG_CONFLICT_RESOLUTION) {
-            continue;
-        }
-        AssetAttr *res = AssetParseAttr(result, static_cast<AssetTag>(attrs[i].tag));
-        if (res == nullptr) {
-            return false;
-        }
-        switch (attrs[i].tag & SEC_ASSET_TAG_TYPE_MASK) {
-            case SEC_ASSET_TYPE_BOOL:
-                if (attrs[i].value.boolean != res->value.boolean) {
-                    printf("tag is %x, %u vs %u", attrs[i].tag, attrs[i].value.boolean, res->value.boolean);
-                    return false;
-                }
-                break;
-            case SEC_ASSET_TYPE_NUMBER:
-                if (attrs[i].value.u32 != res->value.u32) {
-                    printf("tag is %x, %u vs %u", attrs[i].tag, attrs[i].value.u32, res->value.u32);
-                    return false;
-                }
-                break;
-            case SEC_ASSET_TYPE_BYTES:
-                if (!CompareBlob(&attrs[i].value.blob, &res->value.blob)) {
-                    printf("tag is %x, len %u vs len %u", attrs[i].tag, attrs[i].value.blob.size, res->value.blob.size);
-                    return false;
-                }
-                break;
-            default:
-                return false;
-        };
-    }
-    return true;
-}
-
-
-int32_t RemoveByAlias(const char *alias)
-{
-    AssetAttr attr[] = {
-        { .tag = SEC_ASSET_TAG_ALIAS,
-          .value.blob = { .size = strlen(alias), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias)) } },
-        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID }
-    };
-    return AssetRemove(attr, ARRAY_SIZE(attr));
-}
-
-int32_t QueryByAlias(const char *alias, AssetResultSet *resultSet)
-{
-    AssetAttr attr[] = {
-        { .tag = SEC_ASSET_TAG_ALIAS,
-          .value.blob = { .size = strlen(alias), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias)) } },
-        { .tag = SEC_ASSET_TAG_RETURN_TYPE, .value.u32 = SEC_ASSET_RETURN_ALL },
-        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID }
-    };
-    return AssetQuery(attr, ARRAY_SIZE(attr), resultSet);
-}
-
 /**
  * @tc.name: AssetSystemApiTest.AssetSystemApiTest001
  * @tc.desc: Test asset func AssetAdd specific user id, expect SUCCESS
@@ -168,7 +103,7 @@ HWTEST_F(AssetSystemApiTest, AssetSystemApiTest001, TestSize.Level0)
     };
     ASSERT_EQ(SEC_ASSET_SUCCESS, AssetAdd(attr, ARRAY_SIZE(attr)));
     AssetResultSet resultSet = { 0 };
-    ASSERT_EQ(SEC_ASSET_SUCCESS, QueryByAlias(__func__, &resultSet));
+    ASSERT_EQ(SEC_ASSET_SUCCESS, QueryByAliasSdk(__func__, &resultSet));
     ASSERT_EQ(1, resultSet.count);
     AssetResult result = resultSet.results[0];
     AssetAttr attr2[] = {
@@ -188,9 +123,9 @@ HWTEST_F(AssetSystemApiTest, AssetSystemApiTest001, TestSize.Level0)
         { .tag = SEC_ASSET_TAG_DATA_LABEL_CRITICAL_3, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_DATA_LABEL_CRITICAL_4, .value.blob = funcName }
     };
-    ASSERT_TRUE(CheckMatchAttrResult(attr2, ARRAY_SIZE(attr2), &result));
+    ASSERT_TRUE(CheckMatchAttrResultSdk(attr2, ARRAY_SIZE(attr2), &result));
     AssetFreeResultSet(&resultSet);
-    ASSERT_EQ(SEC_ASSET_SUCCESS, RemoveByAlias(__func__));
+    ASSERT_EQ(SEC_ASSET_SUCCESS, RemoveByAliasSdk(__func__));
 }
 
 /**
@@ -220,7 +155,7 @@ HWTEST_F(AssetSystemApiTest, AssetSystemApiTest002, TestSize.Level0)
     ASSERT_EQ(1, resultSet.count);
 
     AssetFreeResultSet(&resultSet);
-    ASSERT_EQ(SEC_ASSET_SUCCESS, RemoveByAlias(__func__));
+    ASSERT_EQ(SEC_ASSET_SUCCESS, RemoveByAliasSdk(__func__));
 }
 
 /**
@@ -337,6 +272,6 @@ HWTEST_F(AssetSystemApiTest, AssetSystemApiTest005, TestSize.Level0)
     };
     ASSERT_EQ(SEC_ASSET_SUCCESS, AssetUpdate(queryAttr, ARRAY_SIZE(queryAttr), updateAttr, ARRAY_SIZE(updateAttr)));
 
-    ASSERT_EQ(SEC_ASSET_SUCCESS, RemoveByAlias(__func__));
+    ASSERT_EQ(SEC_ASSET_SUCCESS, RemoveByAliasSdk(__func__));
 }
 }

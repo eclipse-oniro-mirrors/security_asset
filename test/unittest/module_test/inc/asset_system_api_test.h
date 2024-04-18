@@ -16,9 +16,6 @@
 #ifndef ASSET_SYSTEM_API_TEST_H
 #define ASSET_SYSTEM_API_TEST_H
 
-#define ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
-#define SPECIFIC_USER_ID 100
-
 namespace UnitTest::AssetSystemApiTest {
 int AssetSystemApiTest001(void);
 int AssetSystemApiTest002(void);

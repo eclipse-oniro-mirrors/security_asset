@@ -41,11 +41,12 @@ ohos_unittest("asset_dependency_test") {
   include_dirs = [
     "inc",
     "../../../interfaces/inner_api/c/inc",
+    "../../../interfaces/kits/c/inc",
     "../../../services/os_dependency/inc",
     "../../../services/crypto_manager/src",
+    "../common/inc",
   ]
   sources = [
-    "src/asset_system_api_test.cpp",
     "src/bms_wrapper_test.cpp",
     "src/os_account_wrapper_test.cpp",
     "src/samgr_wrapper_test.cpp",
@@ -53,13 +54,16 @@ ohos_unittest("asset_dependency_test") {
     "src/system_event_wrapper_test.cpp",
   ]
   if (enable_local_test) {
+    sources += ["src/asset_system_api_test.cpp"]
     sources += ["src/huks_wrapper_test.cpp"]
   }
   deps = [
     "../../../services/os_dependency:asset_os_dependency",
     "../../../frameworks/os_dependency/samgr:asset_samgr",
     "../../../services/crypto_manager:asset_huks_wrapper",
-    "../../../interfaces/inner_api/c:asset_sdk"
+    "../../../interfaces/inner_api/c:asset_sdk",
+    "../../../interfaces/kits/c:asset_ndk",
+    "../common:asset_test_common"
   ]
   external_deps = [
     "ability_base:want",
