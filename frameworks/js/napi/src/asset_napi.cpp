@@ -231,7 +231,7 @@ napi_value NapiUpdateSync(napi_env env, napi_callback_info info)
     std::vector<AssetAttr> attrs;
     std::vector<AssetAttr> updateAttrs;
     do {
-        if (ParseParam(env, info, attrs, updateAttrs, UPDATE_ARGS_NUM) != napi_ok) {
+        if (ParseParam(env, info, UPDATE_ARGS_NUM, attrs, updateAttrs) != napi_ok) {
             break;
         }
         int32_t result = AssetUpdate(&attrs[0], attrs.size(), &updateAttrs[0], updateAttrs.size());

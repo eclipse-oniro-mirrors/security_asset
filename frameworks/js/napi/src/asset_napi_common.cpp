@@ -365,11 +365,11 @@ napi_value CreateJsUint8Array(napi_env env, const AssetBlob &blob)
 napi_status ParseParam(napi_env env, napi_callback_info info, std::vector<AssetAttr> &attrs)
 {
     std::vector<AssetAttr> updateAttrs;
-    return ParseParam(env, info, attrs, updateAttrs, NORMAL_ARGS_NUM);
+    return ParseParam(env, info, NORMAL_ARGS_NUM, attrs, updateAttrs);
 }
 
-napi_status ParseParam(napi_env env, napi_callback_info info, std::vector<AssetAttr> &attrs,
-    std::vector<AssetAttr> &updateAttrs, size_t expectArgNum)
+napi_status ParseParam(napi_env env, napi_callback_info info, size_t expectArgNum, std::vector<AssetAttr> &attrs,
+    std::vector<AssetAttr> &updateAttrs)
 {
     napi_value argv[MAX_ARGS_NUM] = { 0 };
     napi_status ret = ParseJsArgs(env, info, argv, expectArgNum);
@@ -393,6 +393,36 @@ napi_status ParseParam(napi_env env, napi_callback_info info, std::vector<AssetA
     return napi_ok;
 }
 
+napi_status ParseAsUserParam(napi_env env, napi_callback_info info, size_t expectArgNum, std::vector<AssetAttr> &attrs,
+    std::vector<AssetAttr> &updateAttrs)
+{
+    napi_value argv[MAX_ARGS_NUM] = { 0 };
+    napi_status ret = ParseJsArgs(env, info, argv, expectArgNum);
+    if (ret != napi_ok) {
+        return ret;
+    }
+
+    size_t index = 0;
+    ret = ParseJsUserId(env, argv[index++], attrs);
+    if (ret != napi_ok) {
+        return ret;
+    }
+
+    ret = ParseMapParam(env, argv[index++], attrs);
+    if (ret != napi_ok) {
+        LOGE("Parse first map parameter failed.");
+        return ret;
+    }
+    if (expectArgNum == AS_USER_UPDATE_ARGS_NUM) {
+        ret = ParseMapParam(env, argv[index++], updateAttrs);
+        if (ret != napi_ok) {
+            LOGE("Parse second map parameter failed.");
+            return ret;
+        }
+    }
+    return napi_ok;
+}
+
 napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
     size_t expectArgNum)
 {
@@ -400,23 +430,8 @@ napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName
     NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
 
     do {
-        napi_value argv[MAX_ARGS_NUM] = { 0 };
-        if (ParseJsArgs(env, info, argv, expectArgNum) != napi_ok) {
+        if (ParseParam(env, info, expectArgNum, context->attrs, context->updateAttrs) != napi_ok) {
             break;
-        }
-
-        size_t index = 0;
-        napi_status ret = ParseMapParam(env, argv[index++], context->attrs);
-        if (ret != napi_ok) {
-            LOGE("Parse first map parameter failed.");
-            break;
-        }
-        if (expectArgNum == UPDATE_ARGS_NUM) {
-            ret = ParseMapParam(env, argv[index++], context->updateAttrs);
-            if (ret != napi_ok) {
-                LOGE("Parse second map parameter failed.");
-                break;
-            }
         }
 
         napi_value promise = CreateAsyncWork(env, context, funcName, execute);
@@ -437,27 +452,8 @@ napi_value NapiEntryAsUser(napi_env env, napi_callback_info info, const char *fu
     NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
 
     do {
-        napi_value argv[MAX_ARGS_NUM] = { 0 };
-        if (ParseJsArgs(env, info, argv, expectArgNum) != napi_ok) {
+        if (ParseAsUserParam(env, info, expectArgNum, context->attrs, context->updateAttrs) != napi_ok) {
             break;
-        }
-
-        size_t index = 0;
-        if (ParseJsUserId(env, argv[index++], context->attrs) != napi_ok) {
-            break;
-        }
-
-        napi_status ret = ParseMapParam(env, argv[index++], context->attrs);
-        if (ret != napi_ok) {
-            LOGE("Parse first map parameter failed.");
-            break;
-        }
-        if (expectArgNum == AS_USER_UPDATE_ARGS_NUM) {
-            ret = ParseMapParam(env, argv[index++], context->updateAttrs);
-            if (ret != napi_ok) {
-                LOGE("Parse second map parameter failed.");
-                break;
-            }
         }
 
         napi_value promise = CreateAsyncWork(env, context, funcName, execute);
