@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "permission_check_wrapper.h"
+#include "access_token_wrapper.h"
 
 #include <cstring>
 #include "securec.h"

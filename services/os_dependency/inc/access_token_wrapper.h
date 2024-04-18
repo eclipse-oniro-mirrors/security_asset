@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef PERMISSION_CHECK_WRAPPER
-#define PERMISSION_CHECK_WRAPPER
+#ifndef ACCESS_TOKEN_WRAPPER
+#define ACCESS_TOKEN_WRAPPER
 
 #include <stdint.h>
 

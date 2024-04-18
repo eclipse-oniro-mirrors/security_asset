@@ -16,7 +16,7 @@
 /**
  * @file asset_system_api.h
  *
- * @brief Declares asset operation inner interface.
+ * @brief Declares asset operation system interface.
  *
  * @since 11
  */

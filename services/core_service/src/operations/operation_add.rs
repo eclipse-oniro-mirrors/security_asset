@@ -131,10 +131,8 @@ extern "C" {
 
 fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
     if attributes.get(&Tag::IsPersistent).is_some() {
-        let permission_str = "ohos.permission.STORE_PERSISTENT_DATA";
-        let c_string = CString::new(permission_str).expect("CString::new failed");
-        let c_ptr = c_string.as_ptr();
-        if unsafe { !CheckPermission(c_ptr) } {
+        let permission = CString::new("ohos.permission.STORE_PERSISTENT_DATA").unwrap();
+        if unsafe { !CheckPermission(permission.as_ptr()) } {
             return log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
         }
     }

@@ -46,7 +46,7 @@ extern "C" {
     fn GetOwnerInfo(userId: i32, uid: u64, ownerType: *mut OwnerType, ownerInfo: *mut u8, infoLen: *mut u32) -> i32;
 }
 
-/// Get the caller user id.
+/// Calculate user id.
 pub fn get_user_id(uid: u64) -> Result<i32> {
     unsafe {
         let mut user_id = 0;

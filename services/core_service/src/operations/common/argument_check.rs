@@ -15,11 +15,7 @@
 
 //! This module is used to verify the validity of asset attributes.
 
-use std::{ffi::CString, os::raw::c_char};
-
-use ipc::Skeleton;
-
-use asset_constants::{get_user_id, ROOT_USER_UPPERBOUND};
+use asset_constants::ROOT_USER_UPPERBOUND;
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, Result, ReturnType,
     Tag, Value,
@@ -120,7 +116,12 @@ fn check_number_lower_bound(tag: &Tag, value: &Value, min: u32) -> Result<()> {
         return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
     };
     if *n <= min {
-        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The specific user id must over 100.");
+        return log_throw_error!(
+            ErrCode::InvalidArgument,
+            "[FATAL]The value[{}] of Tag[{}] is not in the valid number range.",
+            *n,
+            tag
+        );
     }
     Ok(())
 }
@@ -189,33 +190,6 @@ pub(crate) fn check_tag_validity(attrs: &AssetMap, valid_tags: &[Tag]) -> Result
     for tag in attrs.keys() {
         if !valid_tags.contains(tag) {
             return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);
-        }
-    }
-    Ok(())
-}
-
-extern "C" {
-    fn CheckPermission(permission: *const c_char) -> bool;
-    fn CheckSystemHapPermission() -> bool;
-}
-
-pub(crate) fn check_system_permission(attrs: &AssetMap) -> Result<()> {
-    if attrs.get(&Tag::SpecificUserId).is_some() {
-        if unsafe { !CheckSystemHapPermission() } {
-            return log_throw_error!(ErrCode::NotSystemUser, "[FATAL]The caller is not system user.");
-        }
-
-        let permission_str = "ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS";
-        let c_string = CString::new(permission_str).expect("CString::new failed");
-        let c_ptr = c_string.as_ptr();
-        if unsafe { !CheckPermission(c_ptr) } {
-            return log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
-        }
-
-        let uid = Skeleton::calling_uid();
-        let user_id: i32 = get_user_id(uid)?;
-        if user_id < 0 || user_id > ROOT_USER_UPPERBOUND as i32 {
-            return log_throw_error!(ErrCode::NotSystemUser, "[FATAL]The caller is not system user.");
         }
     }
     Ok(())

@@ -28,9 +28,9 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
-    common::check_system_permission(attributes)?;
     common::check_tag_validity(attributes, &valid_tags)?;
-    common::check_value_validity(attributes)
+    common::check_value_validity(attributes)?;
+    common::check_system_permission(attributes)
 }
 
 pub(crate) fn remove(query: &AssetMap, calling_info: &CallingInfo) -> Result<()> {

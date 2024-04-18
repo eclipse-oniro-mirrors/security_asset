@@ -154,8 +154,8 @@ impl_enum_trait! {
         /// The error code indicates that the caller doesn't have the permission.
         PermissionDenied = 201,
 
-        /// The error code indicates that the caller is not system user.
-        NotSystemUser = 202,
+        /// The error code indicates that the caller is not system application.
+        NotSystemApplication = 202,
 
         /// The error code indicates that the argument is invalid.
         InvalidArgument = 401,

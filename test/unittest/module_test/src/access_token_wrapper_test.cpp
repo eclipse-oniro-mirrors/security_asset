@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
-#include "permission_check_wrapper_test.h"
+#include "access_token_wrapper_test.h"
 
 #include <cstring>
 #include <gtest/gtest.h>
 
 #include "asset_system_type.h"
-#include "permission_check_wrapper.h"
+#include "access_token_wrapper.h"
 
 using namespace testing::ext;
 namespace UnitTest::AssetPermissionCheckWrapperTest {

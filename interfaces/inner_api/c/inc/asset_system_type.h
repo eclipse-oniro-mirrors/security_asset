@@ -171,7 +171,8 @@ typedef enum {
     /**
      * The caller does not have the required permission.
      */
-    SEC_ASSET_PERMISSION_DENIED = 201,/**
+    SEC_ASSET_PERMISSION_DENIED = 201,
+    /**
      * The caller not system application.
      */
     SEC_ASSET_NOT_SYSTEM_APPLICATION = 202,

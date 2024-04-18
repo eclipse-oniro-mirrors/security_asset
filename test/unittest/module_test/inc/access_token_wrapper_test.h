@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef PERMISSION_CHECK_WRAPPER_TEST_H
-#define PERMISSION_CHECK_WRAPPER_TEST_H
+#ifndef ACCESS_TOKEN_WRAPPER_TEST_H
+#define ACCESS_TOKEN_WRAPPER_TEST_H
 
 namespace UnitTest::AssetPermissionCheckWrapperTest {
 int AssetPermissionCheckWrapperTest001(void);
 int AssetPermissionCheckWrapperTest002(void);
 }
 
-#endif // BMS_WRAPPER_TEST_H
+#endif // ACCESS_TOKEN_WRAPPER_TEST_H

@@ -20,9 +20,9 @@ ohos_static_library("asset_os_dependency") {
     "../../interfaces/kits/c/inc",
   ]
   sources = [
+    "src/access_token_wrapper.cpp",
     "src/bms_wrapper.cpp",
     "src/os_account_wrapper.cpp",
-    "src/permission_check_wrapper.cpp",
     "src/system_ability_wrapper.cpp",
     "src/system_event_wrapper.cpp",
   ]
