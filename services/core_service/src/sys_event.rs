@@ -73,9 +73,8 @@ pub(crate) fn upload_statistic_system_event(calling_info: &CallingInfo, start_ti
         .set_param(build_str_param!(SysEvent::EXTRA, format!("calling uid is:[{}]", Skeleton::calling_uid())))
         .write();
     logi!(
-        "[INFO]Calling fun:[{}], user_id:[{}], specific_user_id:[{}] caller:[{}], start_time:[{:?}], run_time:[{}]",
+        "[INFO]Calling fun:[{}], user_id:[{}], caller:[{}], start_time:[{:?}], run_time:[{}]",
         func_name,
-        calling_info.user_id(),
         calling_info.user_id(),
         owner_info,
         start_time,
