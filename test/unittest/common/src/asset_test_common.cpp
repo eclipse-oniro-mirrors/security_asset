@@ -75,10 +75,7 @@ int32_t QueryByAliasSdk(const char *alias, AssetResultSet *resultSet)
 
 bool CompareBlobNdk(const Asset_Blob *blob1, const Asset_Blob *blob2)
 {
-    if (blob1->size != blob2->size) {
-        return false;
-    }
-    return memcmp(blob1->data, blob2->data, blob1->size) == 0;
+    return CompareBlobSdk((const AssetBlob *)blob1, (const AssetBlob *)blob2);
 }
 
 bool CompareBlobSdk(const AssetBlob *blob1, const AssetBlob *blob2)
@@ -91,38 +88,7 @@ bool CompareBlobSdk(const AssetBlob *blob1, const AssetBlob *blob2)
 
 bool CheckMatchAttrResultNdk(const Asset_Attr *attrs, uint32_t attrCnt, const Asset_Result *result)
 {
-    for (uint32_t i = 0; i < attrCnt; i++) {
-        if (attrs[i].tag == ASSET_TAG_CONFLICT_RESOLUTION) {
-            continue;
-        }
-        Asset_Attr *res = OH_Asset_ParseAttr(result, static_cast<Asset_Tag>(attrs[i].tag));
-        if (res == nullptr) {
-            return false;
-        }
-        switch (attrs[i].tag & ASSET_TAG_TYPE_MASK) {
-            case ASSET_TYPE_BOOL:
-                if (attrs[i].value.boolean != res->value.boolean) {
-                    printf("tag is %x, %u vs %u", attrs[i].tag, attrs[i].value.boolean, res->value.boolean);
-                    return false;
-                }
-                break;
-            case ASSET_TYPE_NUMBER:
-                if (attrs[i].value.u32 != res->value.u32) {
-                    printf("tag is %x, %u vs %u", attrs[i].tag, attrs[i].value.u32, res->value.u32);
-                    return false;
-                }
-                break;
-            case ASSET_TYPE_BYTES:
-                if (!CompareBlobNdk(&attrs[i].value.blob, &res->value.blob)) {
-                    printf("tag is %x, len %u vs len %u", attrs[i].tag, attrs[i].value.blob.size, res->value.blob.size);
-                    return false;
-                }
-                break;
-            default:
-                return false;
-        };
-    }
-    return true;
+    return CheckMatchAttrResultSdk((const AssetAttr *)attrs, attrCnt, (const AssetResult *)result);
 }
 
 bool CheckMatchAttrResultSdk(const AssetAttr *attrs, uint32_t attrCnt, const AssetResult *result)
