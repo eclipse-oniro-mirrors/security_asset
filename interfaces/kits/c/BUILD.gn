@@ -22,9 +22,7 @@ ohos_shared_library("asset_ndk") {
   sources = [ "src/asset_api.c" ]
   deps = [ "../../inner_api/c:asset_sdk" ]
 
-  external_deps = [
-    "hilog:libhilog",
-  ]
+  external_deps = [ "hilog:libhilog" ]
 
   branch_protector_ret = "pac_ret"
   sanitize = {
