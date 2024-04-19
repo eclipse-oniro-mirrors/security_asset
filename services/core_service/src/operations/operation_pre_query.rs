@@ -31,6 +31,7 @@ const DEFAULT_AUTH_VALIDITY_IN_SECS: u32 = 60;
 fn check_arguments(attributes: &AssetMap) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
+    valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
 

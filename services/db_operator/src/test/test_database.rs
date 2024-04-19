@@ -88,9 +88,9 @@ fn create_and_drop_database() {
 fn database_version() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let db = Database::build(0).unwrap();
-    assert_eq!(0, db.get_version().unwrap());
-    assert!(db.set_version(1).is_ok());
     assert_eq!(1, db.get_version().unwrap());
+    assert!(db.set_version(2).is_ok());
+    assert_eq!(2, db.get_version().unwrap());
     let _ = Database::delete(0);
 }
 

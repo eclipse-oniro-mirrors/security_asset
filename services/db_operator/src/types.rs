@@ -75,6 +75,14 @@ pub mod column {
     pub const NORMAL3: &str = "DataLabelNormal_3";
     /// Column name of the fourth normal data label.
     pub const NORMAL4: &str = "DataLabelNormal_4";
+    /// Column name of the first normal local data label.
+    pub const NORMAL_LOCAL1: &str = "DataLabelNormalLocal_1";
+    /// Column name of the second normal local data label.
+    pub const NORMAL_LOCAL2: &str = "DataLabelNormalLocal_2";
+    /// Column name of the third normal local data label.
+    pub const NORMAL_LOCAL3: &str = "DataLabelNormalLocal_3";
+    /// Column name of the fourth normal local data label.
+    pub const NORMAL_LOCAL4: &str = "DataLabelNormalLocal_4";
 }
 
 #[repr(C)]
@@ -108,6 +116,47 @@ pub(crate) const COLUMN_INFO: &[ColumnInfo] = &[
     ColumnInfo { name: column::NORMAL2, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
     ColumnInfo { name: column::NORMAL3, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
     ColumnInfo { name: column::NORMAL4, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+];
+
+pub(crate) const COLUMN_INFO_V2: &[ColumnInfo] = &[
+    ColumnInfo { name: column::ID, data_type: DataType::Number, is_primary_key: true, not_null: true },
+    ColumnInfo { name: column::SECRET, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::ALIAS, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::OWNER, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::OWNER_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::GROUP_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::SYNC_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::ACCESSIBILITY, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::AUTH_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::CREATE_TIME, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::UPDATE_TIME, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::IS_PERSISTENT, data_type: DataType::Bool, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::VERSION, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::REQUIRE_PASSWORD_SET, data_type: DataType::Bool, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::CRITICAL1, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::CRITICAL2, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::CRITICAL3, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::CRITICAL4, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::NORMAL1, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::NORMAL2, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::NORMAL3, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::NORMAL4, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::NORMAL_LOCAL1, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::NORMAL_LOCAL2, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::NORMAL_LOCAL3, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::NORMAL_LOCAL4, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+];
+
+pub(crate) struct UpgradeColumnInfo {
+    pub(crate) base_info: ColumnInfo,
+    pub(crate) default_value: Option<Value>,
+}
+
+pub(crate) const UPGRADE_COLUMN_INFO: &[UpgradeColumnInfo] = &[
+    UpgradeColumnInfo { base_info: ColumnInfo { name: column::NORMAL_LOCAL1, data_type: DataType::Bytes, is_primary_key: false, not_null: false }, default_value: None },
+    UpgradeColumnInfo { base_info: ColumnInfo { name: column::NORMAL_LOCAL2, data_type: DataType::Bytes, is_primary_key: false, not_null: false }, default_value: None },
+    UpgradeColumnInfo { base_info: ColumnInfo { name: column::NORMAL_LOCAL3, data_type: DataType::Bytes, is_primary_key: false, not_null: false }, default_value: None },
+    UpgradeColumnInfo { base_info: ColumnInfo { name: column::NORMAL_LOCAL4, data_type: DataType::Bytes, is_primary_key: false, not_null: false }, default_value: None },
 ];
 
 /// Options for batch query.

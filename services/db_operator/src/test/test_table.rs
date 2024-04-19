@@ -270,26 +270,26 @@ fn upgrade_table() {
     table.create(columns).unwrap();
     assert!(table
         .add_column(
-            ColumnInfo { name: "value", is_primary_key: false, not_null: false, data_type: DataType::Bytes },
-            None
+            &ColumnInfo { name: "value", is_primary_key: false, not_null: false, data_type: DataType::Bytes },
+            &None
         )
         .is_ok());
     assert!(table
         .add_column(
-            ColumnInfo { name: "value1", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
-            None
+            &ColumnInfo { name: "value1", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
+            &None
         )
         .is_err());
     assert!(table
         .add_column(
-            ColumnInfo { name: "value2", is_primary_key: true, not_null: true, data_type: DataType::Number },
-            None
+            &ColumnInfo { name: "value2", is_primary_key: true, not_null: true, data_type: DataType::Number },
+            &None
         )
         .is_err());
     assert!(table
         .add_column(
-            ColumnInfo { name: "value3", is_primary_key: false, not_null: true, data_type: DataType::Number },
-            Some(Value::Number(1))
+            &ColumnInfo { name: "value3", is_primary_key: false, not_null: true, data_type: DataType::Number },
+            &Some(Value::Number(1))
         )
         .is_ok());
     fs::remove_dir_all("/data/asset_test/0").unwrap();

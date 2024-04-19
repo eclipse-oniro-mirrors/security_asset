@@ -26,12 +26,13 @@ use asset_crypto_manager::secret_key::SecretKey;
 use asset_db_operator::types::{column, DbMap, DB_DATA_VERSION, DB_DATA_VERSION_V1};
 use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
 
-const TAG_COLUMN_TABLE: [(Tag, &str); 15] = [
+const TAG_COLUMN_TABLE: [(Tag, &str); 20] = [
     (Tag::Secret, column::SECRET),
     (Tag::Alias, column::ALIAS),
     (Tag::Accessibility, column::ACCESSIBILITY),
     (Tag::AuthType, column::AUTH_TYPE),
     (Tag::SyncType, column::SYNC_TYPE),
+    (Tag::UpdateTime, column::UPDATE_TIME),
     (Tag::IsPersistent, column::IS_PERSISTENT),
     (Tag::RequirePasswordSet, column::REQUIRE_PASSWORD_SET),
     (Tag::DataLabelCritical1, column::CRITICAL1),
@@ -42,6 +43,10 @@ const TAG_COLUMN_TABLE: [(Tag, &str); 15] = [
     (Tag::DataLabelNormal2, column::NORMAL2),
     (Tag::DataLabelNormal3, column::NORMAL3),
     (Tag::DataLabelNormal4, column::NORMAL4),
+    (Tag::DataLabelNormalLocal1, column::NORMAL_LOCAL1),
+    (Tag::DataLabelNormalLocal2, column::NORMAL_LOCAL2),
+    (Tag::DataLabelNormalLocal3, column::NORMAL_LOCAL3),
+    (Tag::DataLabelNormalLocal4, column::NORMAL_LOCAL4),
 ];
 
 const AAD_ATTR: [&str; 14] = [
@@ -66,6 +71,9 @@ pub(crate) const CRITICAL_LABEL_ATTRS: [Tag; 4] =
 
 pub(crate) const NORMAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4];
+
+pub(crate) const NORMAL_LOCAL_LABEL_ATTRS: [Tag; 4] =
+    [Tag::DataLabelNormalLocal1, Tag::DataLabelNormalLocal2, Tag::DataLabelNormalLocal3, Tag::DataLabelNormalLocal4];
 
 pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 6] =
     [Tag::Alias, Tag::Accessibility, Tag::AuthType, Tag::IsPersistent, Tag::SyncType, Tag::RequirePasswordSet];

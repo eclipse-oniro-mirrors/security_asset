@@ -98,6 +98,26 @@ impl_tag_trait! {
         /// A tag whose value is a byte array indicating the fourth user-defined Asset data label (allow to update).
         DataLabelNormal4 = DataType::Bytes as isize | 0x33,
 
+        /// A local tag whose value is a byte array indicating
+        /// the first user-defined Asset data label (allow to update).
+        /// The information of a local tag will not be synchronized.
+        DataLabelNormalLocal1 = DataType::Bytes as isize | 0x34,
+
+        /// A local tag whose value is a byte array indicating
+        /// the second user-defined Asset data label (allow to update).
+        /// The information of a local tag will not be synchronized.
+        DataLabelNormalLocal2 = DataType::Bytes as isize | 0x35,
+
+        /// A local tag whose value is a byte array indicating
+        /// the third user-defined Asset data label (allow to update).
+        /// The information of a local tag will not be synchronized.
+        DataLabelNormalLocal3 = DataType::Bytes as isize | 0x36,
+
+        /// A local tag whose value is a byte array indicating
+        /// the fourth user-defined Asset data label (allow to update).
+        /// The information of a local tag will not be synchronized.
+        DataLabelNormalLocal4 = DataType::Bytes as isize | 0x37,
+
         /// A tag whose value is a 32-bit unsigned integer indicating the return type of the queried Asset.
         ReturnType = DataType::Number as isize | 0x40,
 
@@ -113,8 +133,11 @@ impl_tag_trait! {
         /// A tag whose value is a 32-bit unsigned integer indicating the strategy for resolving Asset conflicts.
         ConflictResolution = DataType::Number as isize | 0x44,
 
+        /// A tag whose value is a byte array indicating the update time of an Asset.
+        UpdateTime = DataType::Bytes as isize | 0x45,
+
         /// A tag whose value is a 32-bit unsigned integer indicating the specific user id.
-        SpecificUserId = DataType::Number as isize | 0x45,
+        SpecificUserId = DataType::Number as isize | 0x47,
     }
 }
 

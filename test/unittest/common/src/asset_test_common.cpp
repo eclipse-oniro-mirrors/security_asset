@@ -95,7 +95,7 @@ bool CheckMatchAttrResultNdk(const Asset_Attr *attrs, uint32_t attrCnt, const As
 bool CheckMatchAttrResultSdk(const AssetAttr *attrs, uint32_t attrCnt, const AssetResult *result)
 {
     for (uint32_t i = 0; i < attrCnt; i++) {
-        if (attrs[i].tag == SEC_ASSET_TAG_CONFLICT_RESOLUTION) {
+        if (attrs[i].tag == SEC_ASSET_TAG_CONFLICT_RESOLUTION || attrs[i].tag == SEC_ASSET_TAG_USER_ID) {
             continue;
         }
         AssetAttr *res = AssetParseAttr(result, static_cast<AssetTag>(attrs[i].tag));

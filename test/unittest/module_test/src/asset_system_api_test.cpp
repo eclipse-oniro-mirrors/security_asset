@@ -96,6 +96,10 @@ HWTEST_F(AssetSystemApiTest, AssetSystemApiTest001, TestSize.Level0)
         { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_2, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_3, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_4, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_1, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_2, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_3, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_4, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_DATA_LABEL_CRITICAL_1, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_DATA_LABEL_CRITICAL_2, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_DATA_LABEL_CRITICAL_3, .value.blob = funcName },
@@ -106,24 +110,7 @@ HWTEST_F(AssetSystemApiTest, AssetSystemApiTest001, TestSize.Level0)
     ASSERT_EQ(SEC_ASSET_SUCCESS, QueryByAliasSdk(__func__, &resultSet));
     ASSERT_EQ(1, resultSet.count);
     AssetResult result = resultSet.results[0];
-    AssetAttr attr2[] = {
-        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
-        { .tag = SEC_ASSET_TAG_SECRET, .value.blob = funcName },
-        { .tag = SEC_ASSET_TAG_ACCESSIBILITY, .value.u32 = SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED },
-        { .tag = SEC_ASSET_TAG_REQUIRE_PASSWORD_SET, .value.boolean = false },
-        { .tag = SEC_ASSET_TAG_AUTH_TYPE, .value.u32 = SEC_ASSET_AUTH_TYPE_NONE },
-        { .tag = SEC_ASSET_TAG_SYNC_TYPE, .value.u32 = SEC_ASSET_SYNC_TYPE_NEVER },
-        { .tag = SEC_ASSET_TAG_CONFLICT_RESOLUTION, .value.u32 = SEC_ASSET_CONFLICT_OVERWRITE },
-        { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_1, .value.blob = funcName },
-        { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_2, .value.blob = funcName },
-        { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_3, .value.blob = funcName },
-        { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_4, .value.blob = funcName },
-        { .tag = SEC_ASSET_TAG_DATA_LABEL_CRITICAL_1, .value.blob = funcName },
-        { .tag = SEC_ASSET_TAG_DATA_LABEL_CRITICAL_2, .value.blob = funcName },
-        { .tag = SEC_ASSET_TAG_DATA_LABEL_CRITICAL_3, .value.blob = funcName },
-        { .tag = SEC_ASSET_TAG_DATA_LABEL_CRITICAL_4, .value.blob = funcName }
-    };
-    ASSERT_TRUE(CheckMatchAttrResultSdk(attr2, ARRAY_SIZE(attr2), &result));
+    ASSERT_TRUE(CheckMatchAttrResultSdk(attr, ARRAY_SIZE(attr), &result));
     AssetFreeResultSet(&resultSet);
     ASSERT_EQ(SEC_ASSET_SUCCESS, RemoveByAliasSdk(__func__));
 }
@@ -179,6 +166,10 @@ HWTEST_F(AssetSystemApiTest, AssetSystemApiTest003, TestSize.Level0)
         { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_2, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_3, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_4, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_1, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_2, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_3, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_4, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_DATA_LABEL_CRITICAL_1, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_DATA_LABEL_CRITICAL_2, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_DATA_LABEL_CRITICAL_3, .value.blob = funcName },
@@ -197,6 +188,10 @@ HWTEST_F(AssetSystemApiTest, AssetSystemApiTest003, TestSize.Level0)
         { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_2, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_3, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_4, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_1, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_2, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_3, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_4, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_DATA_LABEL_CRITICAL_1, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_DATA_LABEL_CRITICAL_2, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_DATA_LABEL_CRITICAL_3, .value.blob = funcName },
