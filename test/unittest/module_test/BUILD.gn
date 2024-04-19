@@ -11,9 +11,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//base/security/asset/asset.gni")
 import("//build/ohos.gni")
 import("//build/test.gni")
-import("//base/security/asset/asset.gni")
 
 module_output_path = "asset/asset_UT_test"
 
@@ -21,8 +21,8 @@ ohos_rust_unittest("asset_module_test") {
   sources = [ "src/lib.rs" ]
   deps = [
     "../../../frameworks/definition:asset_definition",
-    "../../../services/crypto_manager:asset_crypto_manager",
     "../../../services/constants:asset_constants",
+    "../../../services/crypto_manager:asset_crypto_manager",
   ]
   external_deps = [
     "access_token:libnativetoken",
@@ -53,15 +53,15 @@ ohos_unittest("asset_dependency_test") {
     "src/system_event_wrapper_test.cpp",
   ]
   if (enable_local_test) {
-    sources += ["src/asset_system_api_test.cpp"]
-    sources += ["src/huks_wrapper_test.cpp"]
+    sources += [ "src/asset_system_api_test.cpp" ]
+    sources += [ "src/huks_wrapper_test.cpp" ]
   }
   deps = [
-    "../../../services/os_dependency:asset_os_dependency",
-    "../../../services/crypto_manager:asset_huks_wrapper",
     "../../../interfaces/inner_api/c:asset_sdk",
     "../../../interfaces/kits/c:asset_ndk",
-    "../common:asset_test_common"
+    "../../../services/crypto_manager:asset_huks_wrapper",
+    "../../../services/os_dependency:asset_os_dependency",
+    "../common:asset_test_common",
   ]
   external_deps = [
     "ability_base:want",
@@ -73,9 +73,9 @@ ohos_unittest("asset_dependency_test") {
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "hilog:libhilog",
+    "huks:libhukssdk",
     "ipc:ipc_single",
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
-    "huks:libhukssdk",
   ]
 }

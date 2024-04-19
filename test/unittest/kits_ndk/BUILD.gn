@@ -35,6 +35,6 @@ ohos_unittest("asset_ndk_test") {
   deps = [
     "../../../interfaces/inner_api/c:asset_sdk",
     "../../../interfaces/kits/c:asset_ndk",
-    "../common:asset_test_common"
+    "../common:asset_test_common",
   ]
 }

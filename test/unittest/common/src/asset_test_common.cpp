@@ -26,7 +26,7 @@ int32_t RemoveByAliasNdk(const char *alias)
         {
             .tag = ASSET_TAG_ALIAS,
             .value.blob = {
-                .size = strlen(alias),
+                .size = static_cast<uint32_t>(strlen(alias)),
                 .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias))
             }
         }
@@ -38,7 +38,8 @@ int32_t RemoveByAliasSdk(const char *alias)
 {
     AssetAttr attr[] = {
         { .tag = SEC_ASSET_TAG_ALIAS,
-          .value.blob = { .size = strlen(alias), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias)) } },
+          .value.blob = { .size = static_cast<uint32_t>(strlen(alias)),
+              .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias)) } },
         { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID }
     };
     return AssetRemove(attr, ARRAY_SIZE(attr));
@@ -50,7 +51,7 @@ int32_t QueryByAliasNdk(const char *alias, Asset_ResultSet *resultSet)
         {
             .tag = ASSET_TAG_ALIAS,
             .value.blob = {
-                .size = strlen(alias),
+                .size = static_cast<uint32_t>(strlen(alias)),
                 .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias))
             }
         }, {
@@ -66,7 +67,7 @@ int32_t QueryByAliasSdk(const char *alias, AssetResultSet *resultSet)
     AssetAttr attr[] = {
         { .tag = SEC_ASSET_TAG_ALIAS,
           .value.blob = { .size = static_cast<uint32_t>(strlen(alias)),
-          .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias)) } },
+              .data = reinterpret_cast<uint8_t*>(const_cast<char*>(alias)) } },
         { .tag = SEC_ASSET_TAG_RETURN_TYPE, .value.u32 = SEC_ASSET_RETURN_ALL },
         { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID }
     };

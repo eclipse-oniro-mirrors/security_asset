@@ -121,13 +121,21 @@ struct AssetService {
 }
 
 macro_rules! execute {
-    ($func:path, $first_arg:expr, $($args:expr), *) => {{
+    ($func:path, $args:expr) => {{
         let func_name = hisysevent::function!();
-        let specific_user_id = $first_arg.get(&Tag::SpecificUserId);
+        let specific_user_id = $args.get(&Tag::SpecificUserId);
         let calling_info = CallingInfo::build(specific_user_id.cloned())?;
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
-        upload_system_event($func($($args), *, &calling_info), &calling_info, start, func_name)
+        upload_system_event($func($args, &calling_info), &calling_info, start, func_name)
+    }};
+    ($func:path, $args1:expr, $args2:expr) => {{
+        let func_name = hisysevent::function!();
+        let specific_user_id = $args1.get(&Tag::SpecificUserId);
+        let calling_info = CallingInfo::build(specific_user_id.cloned())?;
+        let start = Instant::now();
+        let _trace = TraceScope::trace(func_name);
+        upload_system_event($func($args1, $args2, &calling_info), &calling_info, start, func_name)
     }};
 }
 
@@ -137,26 +145,26 @@ impl AssetService {
     }
 
     fn add(&self, attributes: &AssetMap) -> Result<()> {
-        execute!(operations::add, attributes, attributes)
+        execute!(operations::add, attributes)
     }
 
     fn remove(&self, query: &AssetMap) -> Result<()> {
-        execute!(operations::remove, query, query)
+        execute!(operations::remove, query)
     }
 
     fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
-        execute!(operations::update, query, query, attributes_to_update)
+        execute!(operations::update, query, attributes_to_update)
     }
 
     fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>> {
-        execute!(operations::pre_query, query, query)
+        execute!(operations::pre_query, query)
     }
 
     fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>> {
-        execute!(operations::query, query, query)
+        execute!(operations::query, query)
     }
 
     fn post_query(&self, query: &AssetMap) -> Result<()> {
-        execute!(operations::post_query, query, query)
+        execute!(operations::post_query, query)
     }
 }
