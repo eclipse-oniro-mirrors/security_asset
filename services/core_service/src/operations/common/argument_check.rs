@@ -15,6 +15,7 @@
 
 //! This module is used to verify the validity of asset attributes.
 
+use asset_constants::ROOT_USER_UPPERBOUND;
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, Result, ReturnType,
     Tag, Value,
@@ -110,6 +111,21 @@ fn check_number_range(tag: &Tag, value: &Value, min: u32, max: u32) -> Result<()
     Ok(())
 }
 
+fn check_number_lower_bound(tag: &Tag, value: &Value, min: u32) -> Result<()> {
+    let Value::Number(n) = value else {
+        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
+    };
+    if *n <= min {
+        return log_throw_error!(
+            ErrCode::InvalidArgument,
+            "[FATAL]The value[{}] of Tag[{}] is not in the valid number range.",
+            *n,
+            tag
+        );
+    }
+    Ok(())
+}
+
 fn check_tag_range(tag: &Tag, value: &Value, tags: &[Tag]) -> Result<()> {
     let Value::Number(n) = value else {
         return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
@@ -149,6 +165,7 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::ReturnLimit => check_number_range(tag, value, MIN_NUMBER_VALUE, MAX_RETURN_LIMIT),
         Tag::ReturnOffset => Ok(()),
         Tag::ReturnOrderedBy => check_tag_range(tag, value, &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat()),
+        Tag::SpecificUserId => check_number_lower_bound(tag, value, ROOT_USER_UPPERBOUND),
     }
 }
 

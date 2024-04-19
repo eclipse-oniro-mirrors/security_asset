@@ -28,7 +28,6 @@ enum OwnerType {
 };
 
 int32_t GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen);
-bool CheckPermission(void);
 
 #ifdef __cplusplus
 }

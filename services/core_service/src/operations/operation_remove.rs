@@ -17,16 +17,20 @@
 
 use asset_constants::CallingInfo;
 use asset_db_operator::database::Database;
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, Tag};
 
 use crate::operations::common;
+
+const OPTIONAL_ATTRS: [Tag; 1] = [Tag::SpecificUserId];
 
 fn check_arguments(attributes: &AssetMap) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
+    valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
-    common::check_value_validity(attributes)
+    common::check_value_validity(attributes)?;
+    common::check_system_permission(attributes)
 }
 
 pub(crate) fn remove(query: &AssetMap, calling_info: &CallingInfo) -> Result<()> {

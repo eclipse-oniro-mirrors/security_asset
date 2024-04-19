@@ -80,7 +80,7 @@ HWTEST_F(AssetUpdateTest, AssetUpdateTest001, TestSize.Level0)
     };
     ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Update(queryAttr, ARRAY_SIZE(queryAttr), updateAttr, ARRAY_SIZE(updateAttr)));
 
-    ASSERT_EQ(ASSET_SUCCESS, RemoveByAlias(__func__));
+    ASSERT_EQ(ASSET_SUCCESS, RemoveByAliasNdk(__func__));
 }
 
 /**

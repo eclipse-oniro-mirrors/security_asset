@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef SAMGR_WRAPPER_TEST_H
-#define SAMGR_WRAPPER_TEST_H
+#ifndef ACCESS_TOKEN_WRAPPER_TEST_H
+#define ACCESS_TOKEN_WRAPPER_TEST_H
 
-namespace UnitTest::AssetSamgrWrapperTest {
-int AssetSamgrWrapperTest001(void);
-int AssetSamgrWrapperTest002(void);
-int AssetSamgrWrapperTest003(void);
+namespace UnitTest::AssetPermissionCheckWrapperTest {
+int AssetPermissionCheckWrapperTest001(void);
+int AssetPermissionCheckWrapperTest002(void);
 }
 
-#endif // SAMGR_WRAPPER_TEST_H
+#endif // ACCESS_TOKEN_WRAPPER_TEST_H

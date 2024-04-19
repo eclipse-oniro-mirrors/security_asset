@@ -15,7 +15,7 @@
 
 //! This module is used to insert an Asset with a specified alias.
 
-use std::sync::Mutex;
+use std::{ffi::CString, os::raw::c_char, sync::Mutex};
 
 use asset_constants::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, secret_key::SecretKey};
@@ -107,7 +107,7 @@ fn add_default_attrs(db_data: &mut DbMap) {
 }
 
 const REQUIRED_ATTRS: [Tag; 2] = [Tag::Secret, Tag::Alias];
-const OPTIONAL_ATTRS: [Tag; 3] = [Tag::Secret, Tag::ConflictResolution, Tag::IsPersistent];
+const OPTIONAL_ATTRS: [Tag; 4] = [Tag::Secret, Tag::ConflictResolution, Tag::IsPersistent, Tag::SpecificUserId];
 const SYSTEM_USER_ID_MAX: i32 = 99;
 
 fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
@@ -126,12 +126,15 @@ fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo)
 }
 
 extern "C" {
-    fn CheckPermission() -> bool;
+    fn CheckPermission(permission: *const c_char) -> bool;
 }
 
-fn check_permission(attributes: &AssetMap) -> Result<()> {
-    if attributes.get(&Tag::IsPersistent).is_some() && unsafe { !CheckPermission() } {
-        return log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
+fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
+    if attributes.get(&Tag::IsPersistent).is_some() {
+        let permission = CString::new("ohos.permission.STORE_PERSISTENT_DATA").unwrap();
+        if unsafe { !CheckPermission(permission.as_ptr()) } {
+            return log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
+        }
     }
     Ok(())
 }
@@ -146,7 +149,8 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
     check_accessibity_validity(attributes, calling_info)?;
-    check_permission(attributes)
+    common::check_system_permission(attributes)?;
+    check_persistent_permission(attributes)
 }
 
 pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {

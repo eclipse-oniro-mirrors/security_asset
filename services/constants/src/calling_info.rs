@@ -17,7 +17,7 @@
 
 use ipc::Skeleton;
 
-use asset_definition::{log_throw_error, ErrCode, Result};
+use asset_definition::{log_throw_error, ErrCode, Result, Value};
 
 use crate::{transfer_error_code, SUCCESS};
 
@@ -46,7 +46,8 @@ extern "C" {
     fn GetOwnerInfo(userId: i32, uid: u64, ownerType: *mut OwnerType, ownerInfo: *mut u8, infoLen: *mut u32) -> i32;
 }
 
-pub(crate) fn get_user_id(uid: u64) -> Result<i32> {
+/// Calculate user id.
+pub fn get_user_id(uid: u64) -> Result<i32> {
     unsafe {
         let mut user_id = 0;
         if GetUserIdByUid(uid, &mut user_id) {
@@ -69,9 +70,9 @@ impl CallingInfo {
     }
 
     /// Build a instance of CallingInfo.
-    pub fn build() -> Result<Self> {
+    pub fn build(specific_user_id: Option<Value>) -> Result<Self> {
         let uid = Skeleton::calling_uid();
-        let user_id: i32 = get_user_id(uid)?;
+        let mut user_id: i32 = get_user_id(uid)?;
         let mut owner_info = vec![0u8; 256];
         let mut len = 256u32;
         let mut owner_type = OwnerType::Hap;
@@ -79,6 +80,9 @@ impl CallingInfo {
         match err {
             SUCCESS => {
                 owner_info.truncate(len as usize);
+                if let Some(Value::Number(num)) = specific_user_id {
+                    user_id = num as i32;
+                }
                 Ok(CallingInfo { user_id, owner_type, owner_info })
             },
             _ => Err(transfer_error_code(ErrCode::try_from(err as u32)?)),

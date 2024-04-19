@@ -63,6 +63,7 @@ int32_t GetProcessInfo(uint32_t tokenId, uint64_t uid, std::string &info)
     info = tokenInfo.processName + "_" + std::to_string(uid);
     return ASSET_SUCCESS;
 }
+
 } // namespace
 
 int32_t GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen)
@@ -100,17 +101,4 @@ int32_t GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t
 
     *infoLen = info.size();
     return ASSET_SUCCESS;
-}
-
-bool CheckPermission(void)
-{
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    int result = AccessTokenKit::VerifyAccessToken(tokenId, "ohos.permission.STORE_PERSISTENT_DATA");
-    if (result == PERMISSION_GRANTED) {
-        LOGI("[INFO]Check permission success!");
-        return true;
-    } else {
-        LOGI("[INFO]Check permission failed, ret=%d", result);
-        return false;
-    }
 }

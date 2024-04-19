@@ -20,16 +20,23 @@
 #include <stdlib.h>
 
 #include "asset_type.h"
+#include "asset_system_type.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
+#define SPECIFIC_USER_ID 100
 
-int32_t RemoveByAlias(const char *alias);
-int32_t QueryByAlias(const char *alias, Asset_ResultSet *resultSet);
-bool CompareBlob(const Asset_Blob *blob1, const Asset_Blob *blob2);
+int32_t RemoveByAliasNdk(const char *alias);
+int32_t RemoveByAliasSdk(const char *alias);
+int32_t QueryByAliasNdk(const char *alias, Asset_ResultSet *resultSet);
+int32_t QueryByAliasSdk(const char *alias, AssetResultSet *resultSet);
+bool CompareBlobNdk(const Asset_Blob *blob1, const Asset_Blob *blob2);
+bool CompareBlobSdk(const AssetBlob *blob1, const AssetBlob *blob2);
+bool CheckMatchAttrResultNdk(const Asset_Attr *attrs, uint32_t attrCnt, const Asset_Result *result);
+bool CheckMatchAttrResultSdk(const AssetAttr *attrs, uint32_t attrCnt, const AssetResult *result);
 
 #ifdef __cplusplus
 }

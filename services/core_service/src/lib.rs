@@ -15,7 +15,7 @@
 
 //! This module implements the Asset service.
 
-use std::{time::{Duration, Instant}};
+use std::time::{Duration, Instant};
 
 use samgr::manage::SystemAbilityManager;
 use system_ability_fwk::{ability::{Ability, Handler}, cxx_share::SystemAbilityOnDemandReason};
@@ -23,7 +23,7 @@ use ylong_runtime::time::sleep;
 
 use asset_constants::CallingInfo;
 use asset_crypto_manager::crypto_manager::CryptoManager;
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Tag, Result};
 use asset_ipc::SA_ID;
 use asset_log::{loge, logi};
 
@@ -96,7 +96,7 @@ impl Ability for AssetAbility {
 
 fn start_service(handler: Handler) -> Result<()> {
     common_event::subscribe();
-    if handler.publish(AssetService::new(handler.clone())) {
+    if !handler.publish(AssetService::new(handler.clone())) {
         return log_throw_error!(ErrCode::IpcError, "Asset publish stub object failed");
     };
     Ok(())
@@ -121,12 +121,21 @@ struct AssetService {
 }
 
 macro_rules! execute {
-    ($func:path, $($args:expr), *) => {{
+    ($func:path, $args:expr) => {{
         let func_name = hisysevent::function!();
-        let calling_info = CallingInfo::build()?;
+        let specific_user_id = $args.get(&Tag::SpecificUserId);
+        let calling_info = CallingInfo::build(specific_user_id.cloned())?;
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
-        upload_system_event($func($($args), *, &calling_info), &calling_info, start, func_name)
+        upload_system_event($func($args, &calling_info), &calling_info, start, func_name)
+    }};
+    ($func:path, $args1:expr, $args2:expr) => {{
+        let func_name = hisysevent::function!();
+        let specific_user_id = $args1.get(&Tag::SpecificUserId);
+        let calling_info = CallingInfo::build(specific_user_id.cloned())?;
+        let start = Instant::now();
+        let _trace = TraceScope::trace(func_name);
+        upload_system_event($func($args1, $args2, &calling_info), &calling_info, start, func_name)
     }};
 }
 

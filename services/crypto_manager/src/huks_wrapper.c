@@ -52,12 +52,12 @@ static int32_t HuksErrorTransfer(int32_t ret)
     }
 }
 
-static int32_t AddAppointUserIdParams(struct HksParamSet *paramSet, int32_t userId)
+static int32_t AddSpecificUserIdParams(struct HksParamSet *paramSet, int32_t userId)
 {
-    struct HksParam appointUserIdParams[] = {
+    struct HksParam specificUserIdParams[] = {
         { .tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = userId },
     };
-    return HksAddParams(paramSet, appointUserIdParams, ARRAY_SIZE(appointUserIdParams));
+    return HksAddParams(paramSet, specificUserIdParams, ARRAY_SIZE(specificUserIdParams));
 }
 
 static int32_t BuildParamSet(struct HksParamSet **paramSet, const struct HksParam *params, uint32_t paramCount,
@@ -78,7 +78,7 @@ static int32_t BuildParamSet(struct HksParamSet **paramSet, const struct HksPara
         }
 
         if (userId > ASSET_ROOT_USER_UPPERBOUND) {
-            ret = AddAppointUserIdParams(*paramSet, userId);
+            ret = AddSpecificUserIdParams(*paramSet, userId);
             if (ret != HKS_SUCCESS) {
                 LOGE("[FATAL]HUKS add specific userId failed. error=%{public}d", ret);
                 HksFreeParamSet(paramSet);
@@ -139,7 +139,7 @@ int32_t GenerateKey(const struct KeyId *keyId, bool needAuth, bool requirePasswo
         }
 
         if (keyId->userId > ASSET_ROOT_USER_UPPERBOUND) {
-            ret = AddAppointUserIdParams(paramSet, keyId->userId);
+            ret = AddSpecificUserIdParams(paramSet, keyId->userId);
             if (ret != HKS_SUCCESS) {
                 LOGE("[FATAL]HUKS add specific userId failed. error=%{public}d", ret);
                 break;

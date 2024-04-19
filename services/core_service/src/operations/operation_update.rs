@@ -40,6 +40,7 @@ fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
 }
 
 const QUERY_REQUIRED_ATTRS: [Tag; 1] = [Tag::Alias];
+const QUERY_OPTIONAL_ATTRS: [Tag; 1] = [Tag::SpecificUserId];
 const UPDATE_OPTIONAL_ATTRS: [Tag; 1] = [Tag::Secret];
 
 fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap) -> Result<()> {
@@ -48,8 +49,10 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
+    valid_tags.extend_from_slice(&QUERY_OPTIONAL_ATTRS);
     common::check_tag_validity(query, &valid_tags)?;
     common::check_value_validity(query)?;
+    common::check_system_permission(query)?;
 
     if attrs_to_update.is_empty() {
         return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The attributes to update is empty.");

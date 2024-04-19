@@ -49,42 +49,6 @@ void AssetAddTest::TearDown(void)
 {
 }
 
-bool checkMatchAttrResult(const Asset_Attr *attrs, uint32_t attrCnt, const Asset_Result *result)
-{
-    for (uint32_t i = 0; i < attrCnt; i++) {
-        if (attrs[i].tag == ASSET_TAG_CONFLICT_RESOLUTION) {
-            continue;
-        }
-        Asset_Attr *res = OH_Asset_ParseAttr(result, static_cast<Asset_Tag>(attrs[i].tag));
-        if (res == nullptr) {
-            return false;
-        }
-        switch (attrs[i].tag & ASSET_TAG_TYPE_MASK) {
-            case ASSET_TYPE_BOOL:
-                if (attrs[i].value.boolean != res->value.boolean) {
-                    printf("tag is %x, %u vs %u", attrs[i].tag, attrs[i].value.boolean, res->value.boolean);
-                    return false;
-                }
-                break;
-            case ASSET_TYPE_NUMBER:
-                if (attrs[i].value.u32 != res->value.u32) {
-                    printf("tag is %x, %u vs %u", attrs[i].tag, attrs[i].value.u32, res->value.u32);
-                    return false;
-                }
-                break;
-            case ASSET_TYPE_BYTES:
-                if (!CompareBlob(&attrs[i].value.blob, &res->value.blob)) {
-                    printf("tag is %x, len %u vs len %u", attrs[i].tag, attrs[i].value.blob.size, res->value.blob.size);
-                    return false;
-                }
-                break;
-            default:
-                return false;
-        };
-    }
-    return true;
-}
-
 /**
  * @tc.name: AssetAddTest.AssetAddTest001
  * @tc.desc: Add asset with all attrs, then query, expect success and match
@@ -114,13 +78,13 @@ HWTEST_F(AssetAddTest, AssetAddTest001, TestSize.Level0)
     ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
 
     Asset_ResultSet resultSet = { 0 };
-    ASSERT_EQ(ASSET_SUCCESS, QueryByAlias(__func__, &resultSet));
+    ASSERT_EQ(ASSET_SUCCESS, QueryByAliasNdk(__func__, &resultSet));
     ASSERT_EQ(1, resultSet.count);
     Asset_Result result = resultSet.results[0];
-    ASSERT_EQ(true, checkMatchAttrResult(attr, ARRAY_SIZE(attr), &result));
+    ASSERT_EQ(true, CheckMatchAttrResultNdk(attr, ARRAY_SIZE(attr), &result));
 
     OH_Asset_FreeResultSet(&resultSet);
-    ASSERT_EQ(ASSET_SUCCESS, RemoveByAlias(__func__));
+    ASSERT_EQ(ASSET_SUCCESS, RemoveByAliasNdk(__func__));
 }
 
 /**
@@ -212,7 +176,7 @@ HWTEST_F(AssetAddTest, AssetAddTest006, TestSize.Level0)
     ASSERT_EQ(ASSET_SUCCESS, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
     ASSERT_EQ(ASSET_DUPLICATED, OH_Asset_Add(attr, ARRAY_SIZE(attr)));
 
-    ASSERT_EQ(ASSET_SUCCESS, RemoveByAlias(__func__));
+    ASSERT_EQ(ASSET_SUCCESS, RemoveByAliasNdk(__func__));
 }
 
 /**

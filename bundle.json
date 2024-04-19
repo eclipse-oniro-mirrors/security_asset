@@ -64,13 +64,13 @@
                     }
                 },
                 {
-                    "name": "//base/security/asset/interfaces/kits/c:asset_ndk",
+                    "name": "//base/security/asset/interfaces/inner_api/c:asset_sdk",
                     "header": {
                         "header_files": [
-                            "asset_api.h",
-                            "asset_type.h"
+                            "asset_system_api.h",
+                            "asset_system_type.h"
                         ],
-                        "header_base": "//base/security/asset/interfaces/kits/c/inc"
+                        "header_base": "//base/security/asset/interfaces/inner_api/c/inc"
                     }
                 }
             ],

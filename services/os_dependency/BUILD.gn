@@ -20,6 +20,7 @@ ohos_static_library("asset_os_dependency") {
     "../../interfaces/kits/c/inc",
   ]
   sources = [
+    "src/access_token_wrapper.cpp",
     "src/bms_wrapper.cpp",
     "src/os_account_wrapper.cpp",
     "src/system_ability_wrapper.cpp",
@@ -28,6 +29,7 @@ ohos_static_library("asset_os_dependency") {
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
+    "access_token:libtokenid_sdk",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",

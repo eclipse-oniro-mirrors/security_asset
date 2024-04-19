@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,17 +13,15 @@
  * limitations under the License.
  */
 
-#ifndef BMS_WRAPPER_TEST_H
-#define BMS_WRAPPER_TEST_H
+#ifndef ASSET_SYSTEM_API_TEST_H
+#define ASSET_SYSTEM_API_TEST_H
 
-namespace UnitTest::AssetBmsWrapperTest {
-int AssetBmsWrapperTest001(void);
-int AssetBmsWrapperTest002(void);
-int AssetBmsWrapperTest003(void);
-int AssetBmsWrapperTest004(void);
-int AssetBmsWrapperTest005(void);
-int AssetBmsWrapperTest006(void);
-int AssetBmsWrapperTest007(void);
+namespace UnitTest::AssetSystemApiTest {
+int AssetSystemApiTest001(void);
+int AssetSystemApiTest002(void);
+int AssetSystemApiTest003(void);
+int AssetSystemApiTest004(void);
+int AssetSystemApiTest005(void);
 }
 
-#endif // BMS_WRAPPER_TEST_H
+#endif // ASSET_SYSTEM_API_TEST_H

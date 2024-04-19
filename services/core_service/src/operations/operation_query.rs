@@ -153,8 +153,9 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
     into_asset_maps(&results)
 }
 
-const OPTIONAL_ATTRS: [Tag; 6] =
-    [Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderedBy, Tag::ReturnType, Tag::AuthToken, Tag::AuthChallenge];
+const OPTIONAL_ATTRS: [Tag; 7] =
+    [Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderedBy, Tag::ReturnType, Tag::AuthToken, Tag::AuthChallenge,
+    Tag::SpecificUserId];
 const AUTH_QUERY_ATTRS: [Tag; 2] = [Tag::AuthChallenge, Tag::AuthToken];
 
 fn check_arguments(attributes: &AssetMap) -> Result<()> {
@@ -163,7 +164,8 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
-    common::check_value_validity(attributes)
+    common::check_value_validity(attributes)?;
+    common::check_system_permission(attributes)
 }
 
 pub(crate) fn query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<AssetMap>> {
