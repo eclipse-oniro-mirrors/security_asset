@@ -45,16 +45,12 @@ pub fn transfer_error_code(err_code: ErrCode) -> AssetError {
         ErrCode::StatusMismatch => {
             AssetError::new(ErrCode::StatusMismatch, "[FATAL]Screen status does not match".to_string())
         },
-        ErrCode::InvalidArgument => {
-            AssetError::new(ErrCode::InvalidArgument, "[FATAL]Invalid argument.".to_string())
-        },
-        ErrCode::BmsError => {
-            AssetError::new(ErrCode::BmsError, "[FATAL]Get owner info from bms failed.".to_string())
-        },
+        ErrCode::InvalidArgument => AssetError::new(ErrCode::InvalidArgument, "[FATAL]Invalid argument.".to_string()),
+        ErrCode::BmsError => AssetError::new(ErrCode::BmsError, "[FATAL]Get owner info from bms failed.".to_string()),
         ErrCode::AccessTokenError => {
             AssetError::new(ErrCode::AccessTokenError, "[FATAL]Get process info failed.".to_string())
         },
-        _ => AssetError::new(ErrCode::CryptoError, "[FATAL]HUKS execute crypt failed".to_string())
+        _ => AssetError::new(ErrCode::CryptoError, "[FATAL]HUKS execute crypt failed".to_string()),
     }
 }
 

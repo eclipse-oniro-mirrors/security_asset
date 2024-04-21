@@ -24,13 +24,13 @@ use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
 use crate::common_event::listener;
 
 const USER_ID: &str = "userId";
-const SANDBOX_APP_INDEX: &str = "sandbox_app_index"; 
+const SANDBOX_APP_INDEX: &str = "sandbox_app_index";
 const APP_ID: &str = "appId";
 
-fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {    
+fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
     let Some(user_id) = want.get(USER_ID) else {
         loge!("[FATIL]Get removed owner info failed, get userId fail");
-        return; 
+        return;
     };
     let Some(app_id) = want.get(APP_ID) else {
         loge!("[FATIL]Get removed owner info failed, get appId fail");
@@ -38,14 +38,14 @@ fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
     };
 
     let mut app_index = 0;
-    if is_sandbox { 
+    if is_sandbox {
         app_index = match want.get(SANDBOX_APP_INDEX) {
             Some(v) => match v.parse::<i32>() {
                 Ok(parsed_value) => parsed_value,
                 Err(_) => {
                     loge!("[FATAL]Get removed owner info failed, failed to parse appIndex");
                     return;
-                }
+                },
             },
             None => {
                 loge!("[FATIL]Get removed owner info failed, get appIndex fail");
@@ -59,12 +59,12 @@ fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
         Err(_) => {
             loge!("[FATIL]Get removed user_id failed, failed to parse user_id");
             return;
-        }
+        },
     };
     listener::delete_data_by_owner(user_id, owner.as_ptr(), owner.len() as u32);
 }
 
-pub(crate)fn handle_common_event(reason: SystemAbilityOnDemandReason) {
+pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
     let reason_name: String = reason.name;
     if reason_name == "usual.event.PACKAGE_REMOVED" {
         let want = reason.extra_data.want();

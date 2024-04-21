@@ -153,10 +153,42 @@ pub(crate) struct UpgradeColumnInfo {
 }
 
 pub(crate) const UPGRADE_COLUMN_INFO: &[UpgradeColumnInfo] = &[
-    UpgradeColumnInfo { base_info: ColumnInfo { name: column::NORMAL_LOCAL1, data_type: DataType::Bytes, is_primary_key: false, not_null: false }, default_value: None },
-    UpgradeColumnInfo { base_info: ColumnInfo { name: column::NORMAL_LOCAL2, data_type: DataType::Bytes, is_primary_key: false, not_null: false }, default_value: None },
-    UpgradeColumnInfo { base_info: ColumnInfo { name: column::NORMAL_LOCAL3, data_type: DataType::Bytes, is_primary_key: false, not_null: false }, default_value: None },
-    UpgradeColumnInfo { base_info: ColumnInfo { name: column::NORMAL_LOCAL4, data_type: DataType::Bytes, is_primary_key: false, not_null: false }, default_value: None },
+    UpgradeColumnInfo {
+        base_info: ColumnInfo {
+            name: column::NORMAL_LOCAL1,
+            data_type: DataType::Bytes,
+            is_primary_key: false,
+            not_null: false,
+        },
+        default_value: None,
+    },
+    UpgradeColumnInfo {
+        base_info: ColumnInfo {
+            name: column::NORMAL_LOCAL2,
+            data_type: DataType::Bytes,
+            is_primary_key: false,
+            not_null: false,
+        },
+        default_value: None,
+    },
+    UpgradeColumnInfo {
+        base_info: ColumnInfo {
+            name: column::NORMAL_LOCAL3,
+            data_type: DataType::Bytes,
+            is_primary_key: false,
+            not_null: false,
+        },
+        default_value: None,
+    },
+    UpgradeColumnInfo {
+        base_info: ColumnInfo {
+            name: column::NORMAL_LOCAL4,
+            data_type: DataType::Bytes,
+            is_primary_key: false,
+            not_null: false,
+        },
+        default_value: None,
+    },
 ];
 
 /// Options for batch query.

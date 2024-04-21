@@ -79,13 +79,7 @@ impl SecretKey {
         require_password_set: bool,
     ) -> Self {
         let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set);
-        Self {
-            auth_type,
-            access_type,
-            require_password_set,
-            alias,
-            calling_info: calling_info.clone(),
-        }
+        Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() }
     }
 
     /// Check whether the secret key exists.

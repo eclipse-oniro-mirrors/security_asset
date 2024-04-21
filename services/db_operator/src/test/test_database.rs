@@ -16,7 +16,8 @@
 use std::{
     cmp::Ordering,
     fs::{self, OpenOptions},
-    io::Write, path::Path,
+    io::Write,
+    path::Path,
 };
 
 use asset_definition::{ErrCode, Extension, Value};

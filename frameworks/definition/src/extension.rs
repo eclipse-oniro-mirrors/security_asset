@@ -148,7 +148,7 @@ impl From<io::Error> for AssetError {
     fn from(error: io::Error) -> Self {
         AssetError {
             code: (ErrCode::FileOperationError),
-            msg: (format!("[FATAL]Backup db failed! error is [{error}]"))
+            msg: (format!("[FATAL]Backup db failed! error is [{error}]")),
         }
     }
 }

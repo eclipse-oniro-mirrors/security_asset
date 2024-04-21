@@ -42,7 +42,10 @@ pub(crate) fn check_system_permission(attrs: &AssetMap) -> Result<()> {
         let user_id: i32 = get_user_id(uid)?;
         if user_id < 0 || user_id > ROOT_USER_UPPERBOUND as i32 {
             return log_throw_error!(
-                ErrCode::AccessDenied, "[FATAL]The caller user_id is: {}. Not in range[0, 99]", user_id);
+                ErrCode::AccessDenied,
+                "[FATAL]The caller user_id is: {}. Not in range[0, 99]",
+                user_id
+            );
         }
     }
     Ok(())

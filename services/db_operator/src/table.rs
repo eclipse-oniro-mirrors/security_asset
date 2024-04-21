@@ -26,7 +26,7 @@ use crate::{
     database::Database,
     statement::Statement,
     transaction::Transaction,
-    types::{UpgradeColumnInfo, ColumnInfo, DbMap, QueryOptions, SQLITE_ROW},
+    types::{ColumnInfo, DbMap, QueryOptions, UpgradeColumnInfo, SQLITE_ROW},
 };
 
 extern "C" {
@@ -340,7 +340,9 @@ impl<'a> Table<'a> {
                         record.insert(column_info.name, Value::Bool(n != 0))
                     },
                     Some(n) if n.data_type() == column_info.data_type => record.insert(column_info.name, n),
-                    Some(_) => return log_throw_error!(ErrCode::DataCorrupted, "The data in DB has been tampered with."),
+                    Some(_) => {
+                        return log_throw_error!(ErrCode::DataCorrupted, "The data in DB has been tampered with.")
+                    },
                     None => continue,
                 };
             }

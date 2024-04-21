@@ -18,12 +18,15 @@
 use std::time::{Duration, Instant};
 
 use samgr::manage::SystemAbilityManager;
-use system_ability_fwk::{ability::{Ability, Handler}, cxx_share::SystemAbilityOnDemandReason};
+use system_ability_fwk::{
+    ability::{Ability, Handler},
+    cxx_share::SystemAbilityOnDemandReason,
+};
 use ylong_runtime::time::sleep;
 
 use asset_constants::CallingInfo;
 use asset_crypto_manager::crypto_manager::CryptoManager;
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Tag, Result};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, Tag};
 use asset_ipc::SA_ID;
 use asset_log::{loge, logi};
 
@@ -39,7 +42,7 @@ use sys_event::upload_system_event;
 use trace_scope::TraceScope;
 
 use crate::counter::Counter;
-use crate::unload_handler::{UnloadHandler, SEC_TO_MILLISEC, DELAYED_UNLOAD_TIME_IN_SEC};
+use crate::unload_handler::{UnloadHandler, DELAYED_UNLOAD_TIME_IN_SEC, SEC_TO_MILLISEC};
 
 struct AssetAbility;
 
@@ -80,8 +83,11 @@ impl Ability for AssetAbility {
 
         let counter = Counter::get_instance();
         if counter.lock().unwrap().count() > 0 {
-            logi!("[INFO]Asset service on idle not success for use_account: {}, delay time: {}s",
-                counter.lock().unwrap().count(), DELAYED_UNLOAD_TIME_IN_SEC);
+            logi!(
+                "[INFO]Asset service on idle not success for use_account: {}, delay time: {}s",
+                counter.lock().unwrap().count(),
+                DELAYED_UNLOAD_TIME_IN_SEC
+            );
             return DELAYED_UNLOAD_TIME_IN_SEC * SEC_TO_MILLISEC;
         }
         logi!("[INFO]Asset service on_idle.");
@@ -117,7 +123,7 @@ static A: extern "C" fn() = {
 };
 
 struct AssetService {
-    system_ability: system_ability_fwk::ability::Handler
+    system_ability: system_ability_fwk::ability::Handler,
 }
 
 macro_rules! execute {

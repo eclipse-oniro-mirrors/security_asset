@@ -24,7 +24,12 @@ use asset_log::loge;
 use crate::{counter::AutoCounter, unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
 
 impl RemoteStub for AssetService {
-    fn on_remote_request(&self, code: u32, data: &mut ipc::parcel::MsgParcel, reply: &mut ipc::parcel::MsgParcel) -> i32 {
+    fn on_remote_request(
+        &self,
+        code: u32,
+        data: &mut ipc::parcel::MsgParcel,
+        reply: &mut ipc::parcel::MsgParcel,
+    ) -> i32 {
         let _counter_user = AutoCounter::new();
         self.system_ability.cancel_idle();
         unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
@@ -79,6 +84,6 @@ fn reply_handle(ret: Result<()>, reply: &mut MsgParcel) -> IpcResult<()> {
         Err(e) => {
             reply.write::<u32>(&(e.code as u32))?;
             reply.write::<String>(&e.msg)
-        }
+        },
     }
 }

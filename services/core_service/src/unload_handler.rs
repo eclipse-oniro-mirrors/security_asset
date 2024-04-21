@@ -16,7 +16,6 @@
 //! This module is used to Asset service unload handler.
 
 /// Manages the unload request.
-
 use std::sync::{Arc, Mutex};
 
 use ylong_runtime::task::JoinHandle;
