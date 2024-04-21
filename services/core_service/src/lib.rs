@@ -123,7 +123,7 @@ struct AssetService {
 macro_rules! execute {
     ($func:path, $args:expr) => {{
         let func_name = hisysevent::function!();
-        let specific_user_id = $args.get(&Tag::SpecificUserId);
+        let specific_user_id = $args.get(&Tag::UserId);
         let calling_info = CallingInfo::build(specific_user_id.cloned())?;
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
@@ -131,7 +131,7 @@ macro_rules! execute {
     }};
     ($func:path, $args1:expr, $args2:expr) => {{
         let func_name = hisysevent::function!();
-        let specific_user_id = $args1.get(&Tag::SpecificUserId);
+        let specific_user_id = $args1.get(&Tag::UserId);
         let calling_info = CallingInfo::build(specific_user_id.cloned())?;
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);

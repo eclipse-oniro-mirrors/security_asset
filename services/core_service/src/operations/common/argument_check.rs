@@ -111,21 +111,6 @@ fn check_number_range(tag: &Tag, value: &Value, min: u32, max: u32) -> Result<()
     Ok(())
 }
 
-fn check_number_lower_bound(tag: &Tag, value: &Value, min: u32) -> Result<()> {
-    let Value::Number(n) = value else {
-        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
-    };
-    if *n <= min {
-        return log_throw_error!(
-            ErrCode::InvalidArgument,
-            "[FATAL]The value[{}] of Tag[{}] is not in the valid number range.",
-            *n,
-            tag
-        );
-    }
-    Ok(())
-}
-
 fn check_tag_range(tag: &Tag, value: &Value, tags: &[Tag]) -> Result<()> {
     let Value::Number(n) = value else {
         return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
@@ -170,7 +155,7 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::ReturnOffset => Ok(()),
         Tag::ReturnOrderedBy => check_tag_range(tag, value, &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS,
             NORMAL_LOCAL_LABEL_ATTRS].concat()),
-        Tag::SpecificUserId => check_number_lower_bound(tag, value, ROOT_USER_UPPERBOUND),
+        Tag::UserId => check_number_range(tag, value, ROOT_USER_UPPERBOUND, i32::MAX as u32),
         Tag::UpdateTime => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_ARRAY_SIZE),
     }
 }

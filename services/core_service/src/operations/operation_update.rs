@@ -40,7 +40,7 @@ fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
 }
 
 const QUERY_REQUIRED_ATTRS: [Tag; 1] = [Tag::Alias];
-const QUERY_OPTIONAL_ATTRS: [Tag; 1] = [Tag::SpecificUserId];
+const QUERY_OPTIONAL_ATTRS: [Tag; 1] = [Tag::UserId];
 const UPDATE_OPTIONAL_ATTRS: [Tag; 1] = [Tag::Secret];
 
 fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap) -> Result<()> {

@@ -30,3 +30,15 @@ bool GetUserIdByUid(uint64_t uid, int32_t *userId)
     *userId = userIdTmp;
     return true;
 }
+
+bool IsUserIdExist(int32_t userId, bool *exist)
+{
+    bool isUserIdExist;
+    int ret = OHOS::AccountSA::OsAccountManager::IsOsAccountExists(userId, isUserIdExist);
+    if (ret != 0) {
+        LOGE("[FATAL]Check user id failed! res is %{public}i", ret);
+        return false;
+    }
+    *exist = isUserIdExist;
+    return true;
+}

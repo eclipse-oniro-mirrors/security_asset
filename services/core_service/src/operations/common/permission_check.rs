@@ -28,7 +28,7 @@ extern "C" {
 }
 
 pub(crate) fn check_system_permission(attrs: &AssetMap) -> Result<()> {
-    if attrs.get(&Tag::SpecificUserId).is_some() {
+    if attrs.get(&Tag::UserId).is_some() {
         if unsafe { !CheckSystemHapPermission() } {
             return log_throw_error!(ErrCode::NotSystemApplication, "[FATAL]The caller is not system application.");
         }

@@ -22,7 +22,7 @@ use asset_definition::{AssetMap, Extension, Result, Tag};
 use crate::operations::common;
 
 const REQUIRED_ATTRS: [Tag; 1] = [Tag::AuthChallenge];
-const OPTIONAL_ATTRS: [Tag; 1] = [Tag::SpecificUserId];
+const OPTIONAL_ATTRS: [Tag; 1] = [Tag::UserId];
 
 fn check_arguments(query: &AssetMap) -> Result<()> {
     common::check_required_tags(query, &REQUIRED_ATTRS)?;
