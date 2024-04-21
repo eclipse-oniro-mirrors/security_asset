@@ -24,9 +24,21 @@ bool GetUserIdByUid(uint64_t uid, int32_t *userId)
     int userIdTmp;
     int res = OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userIdTmp);
     if (res != 0) {
-        LOGE("[FATAL]Get user id from uid failed! res is %{public}i", res);
+        LOGE("[FATAL]Get user id from uid failed! res is %{public}d", res);
         return false;
     }
     *userId = userIdTmp;
+    return true;
+}
+
+bool IsUserIdExist(int32_t userId, bool *exist)
+{
+    bool isUserIdExist;
+    int ret = OHOS::AccountSA::OsAccountManager::IsOsAccountExists(userId, isUserIdExist);
+    if (ret != 0) {
+        LOGE("[FATAL]Check user id failed! res is %{public}d", ret);
+        return false;
+    }
+    *exist = isUserIdExist;
     return true;
 }

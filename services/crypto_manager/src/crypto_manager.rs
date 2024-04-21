@@ -15,7 +15,10 @@
 
 //! This module is used to manage crypto in cache.
 
-use std::{cmp::max, sync::{Arc, Mutex}};
+use std::{
+    cmp::max,
+    sync::{Arc, Mutex},
+};
 
 use asset_constants::CallingInfo;
 use asset_definition::{log_throw_error, ErrCode, Result};
@@ -64,14 +67,12 @@ impl CryptoManager {
 
     /// Remove the crypto from manager.
     pub fn remove(&mut self, calling_info: &CallingInfo, challenge: &Vec<u8>) {
-        self.cryptos.retain(|crypto|
-            crypto.key().calling_info() != calling_info || !crypto.challenge().eq(challenge)
-        );
+        self.cryptos.retain(|crypto| crypto.key().calling_info() != calling_info || !crypto.challenge().eq(challenge));
     }
 
     /// Remove the crypto by calling info.
     pub fn remove_by_calling_info(&mut self, calling_info: &CallingInfo) {
-        self.cryptos.retain(|crypto| crypto.key().calling_info() != calling_info );
+        self.cryptos.retain(|crypto| crypto.key().calling_info() != calling_info);
     }
 
     /// Remove cryptos that required device to be unlocked.

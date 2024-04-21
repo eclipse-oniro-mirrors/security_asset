@@ -25,7 +25,7 @@ use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCo
 
 use crate::operations::common;
 
-const OPTIONAL_ATTRS: [Tag; 2] = [Tag::AuthValidityPeriod, Tag::SpecificUserId];
+const OPTIONAL_ATTRS: [Tag; 2] = [Tag::AuthValidityPeriod, Tag::UserId];
 const DEFAULT_AUTH_VALIDITY_IN_SECS: u32 = 60;
 
 fn check_arguments(attributes: &AssetMap) -> Result<()> {

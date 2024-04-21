@@ -16,7 +16,6 @@
 //! This module is used to Asset service counter.
 
 /// Manages the count.
-
 use std::sync::{Arc, Mutex};
 
 pub(crate) struct Counter {
@@ -56,7 +55,7 @@ impl AutoCounter {
     pub fn new() -> Self {
         let counter = Counter::get_instance();
         counter.lock().unwrap().increase_count();
-        Self{}
+        Self {}
     }
 }
 

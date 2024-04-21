@@ -21,7 +21,7 @@ use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, Tag};
 
 use crate::operations::common;
 
-const OPTIONAL_ATTRS: [Tag; 1] = [Tag::SpecificUserId];
+const OPTIONAL_ATTRS: [Tag; 1] = [Tag::UserId];
 
 fn check_arguments(attributes: &AssetMap) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();

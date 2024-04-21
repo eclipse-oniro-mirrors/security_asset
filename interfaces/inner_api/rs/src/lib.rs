@@ -104,7 +104,7 @@ impl Manager {
             e => {
                 let msg = reply.read::<String>().map_err(ipc_err_handle)?;
                 log_throw_error!(ErrCode::try_from(e)?, "{}", msg)
-            }
+            },
         }
     }
 }

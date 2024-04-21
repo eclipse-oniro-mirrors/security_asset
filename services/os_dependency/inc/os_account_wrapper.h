@@ -23,6 +23,7 @@ extern "C" {
 #endif
 
 bool GetUserIdByUid(uint64_t uid, int32_t *userId);
+bool IsUserIdExist(int32_t userId, bool *exist);
 
 #ifdef __cplusplus
 }

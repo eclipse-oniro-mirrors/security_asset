@@ -15,9 +15,9 @@
 
 //! This crate defines the common constants.
 
-use asset_definition::{impl_enum_trait, AssetError, ErrCode};
+use asset_definition::{impl_enum_trait, log_throw_error, AssetError, ErrCode, Result};
 mod calling_info;
-pub use calling_info::{get_user_id, CallingInfo};
+pub use calling_info::CallingInfo;
 /// success code.
 pub const SUCCESS: i32 = 0;
 /// root user upper bound
@@ -45,15 +45,41 @@ pub fn transfer_error_code(err_code: ErrCode) -> AssetError {
         ErrCode::StatusMismatch => {
             AssetError::new(ErrCode::StatusMismatch, "[FATAL]Screen status does not match".to_string())
         },
-        ErrCode::InvalidArgument => {
-            AssetError::new(ErrCode::InvalidArgument, "[FATAL]Invalid argument.".to_string())
-        },
-        ErrCode::BmsError => {
-            AssetError::new(ErrCode::BmsError, "[FATAL]Get owner info from bms failed.".to_string())
-        },
+        ErrCode::InvalidArgument => AssetError::new(ErrCode::InvalidArgument, "[FATAL]Invalid argument.".to_string()),
+        ErrCode::BmsError => AssetError::new(ErrCode::BmsError, "[FATAL]Get owner info from bms failed.".to_string()),
         ErrCode::AccessTokenError => {
             AssetError::new(ErrCode::AccessTokenError, "[FATAL]Get process info failed.".to_string())
         },
-        _ => AssetError::new(ErrCode::CryptoError, "[FATAL]HUKS execute crypt failed".to_string())
+        _ => AssetError::new(ErrCode::CryptoError, "[FATAL]HUKS execute crypt failed".to_string()),
+    }
+}
+
+extern "C" {
+    fn GetUserIdByUid(uid: u64, userId: &mut i32) -> bool;
+    fn IsUserIdExist(userId: i32, exist: &mut bool) -> bool;
+}
+
+/// Calculate user id.
+pub fn get_user_id(uid: u64) -> Result<i32> {
+    unsafe {
+        let mut user_id = 0;
+        if GetUserIdByUid(uid, &mut user_id) {
+            Ok(user_id)
+        } else {
+            log_throw_error!(ErrCode::AccountError, "[FATAL]Get user id failed.")
+        }
+    }
+}
+
+/// Check user id exist.
+#[allow(dead_code)]
+pub fn is_user_id_exist(user_id: i32) -> Result<bool> {
+    unsafe {
+        let mut exist = false;
+        if IsUserIdExist(user_id, &mut exist) {
+            Ok(exist)
+        } else {
+            log_throw_error!(ErrCode::AccountError, "[FATAL]Check user id failed.")
+        }
     }
 }

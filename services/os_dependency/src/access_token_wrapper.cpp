@@ -52,7 +52,7 @@ bool CheckPermission(const char *permission)
         LOGI("[INFO]Check permission success!");
         return true;
     } else {
-        LOGE("[FATAL]Check permission failed, ret=%d", result);
+        LOGE("[FATAL]Check permission failed, ret=%{public}d", result);
         return false;
     }
 }

@@ -36,7 +36,7 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
     std::string appId = want.GetStringParam(APP_ID);
     int appIndex = isSandBoxApp ? want.GetIntParam(SANDBOX_APP_INDEX, -1) : 0;
     if (appId.empty() || userId == INVALID_USERID || appIndex == -1) {
-        LOGE("[FATAL]Get removed owner info failed, userId=%{public}i, appId=%{public}s, appIndex=%{public}d",
+        LOGE("[FATAL]Get removed owner info failed, userId=%{public}d, appId=%{public}s, appIndex=%{public}d",
             userId, appId.c_str(), appIndex);
         return;
     }
@@ -45,7 +45,7 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
     if (onPackageRemoved != nullptr) {
         onPackageRemoved(userId, reinterpret_cast<const uint8_t *>(owner.c_str()), owner.size());
     }
-    LOGI("[INFO]Receive event: PACKAGE_REMOVED, userId=%{public}i, appId=%{public}s, appIndex=%{public}d, ",
+    LOGI("[INFO]Receive event: PACKAGE_REMOVED, userId=%{public}d, appId=%{public}s, appIndex=%{public}d, ",
         userId, appId.c_str(), appIndex);
 }
 
@@ -75,7 +75,7 @@ public:
             if (this->onUserRemoved != nullptr) {
                 this->onUserRemoved(userId);
             }
-            LOGI("[INFO] Receive event: USER_REMOVED, userId=%{public}i", userId);
+            LOGI("[INFO] Receive event: USER_REMOVED, userId=%{public}d", userId);
         } else if (action == CommonEventSupport::COMMON_EVENT_SCREEN_OFF) {
             if (this->onScreenOff != nullptr) {
                 this->onScreenOff();

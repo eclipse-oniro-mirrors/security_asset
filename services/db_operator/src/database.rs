@@ -21,12 +21,15 @@ use std::{ffi::CStr, fs, ptr::null_mut, sync::Mutex};
 
 use asset_constants::OwnerType;
 use asset_definition::{log_throw_error, ErrCode, Extension, Result};
-use asset_log::{logi, loge};
+use asset_log::{loge, logi};
 
 use crate::{
     statement::Statement,
     table::Table,
-    types::{column, sqlite_err_handle, DbMap, QueryOptions, UPGRADE_COLUMN_INFO, COLUMN_INFO, COLUMN_INFO_V2, SQLITE_OK, TABLE_NAME},
+    types::{
+        column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, COLUMN_INFO_V2, SQLITE_OK, TABLE_NAME,
+        UPGRADE_COLUMN_INFO,
+    },
 };
 
 extern "C" {
@@ -101,7 +104,7 @@ impl Database {
         let _lock = db.db_lock.mtx.lock().unwrap();
         db.open_and_restore()?;
         db.restore_if_exec_fail(|e: &Table| e.create(COLUMN_INFO_V2))?;
-        db.upgrade(1, |_, _, _|Ok(()))?;
+        db.upgrade(1, |_, _, _| Ok(()))?;
         Ok(db)
     }
 

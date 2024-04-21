@@ -17,9 +17,9 @@
 
 use ipc::Skeleton;
 
-use asset_definition::{log_throw_error, ErrCode, Result, Value};
+use asset_definition::{ErrCode, Result, Value};
 
-use crate::{transfer_error_code, SUCCESS};
+use crate::{get_user_id, transfer_error_code, SUCCESS};
 
 use super::OwnerType;
 
@@ -42,20 +42,7 @@ enum ResultCode {
 }
 
 extern "C" {
-    fn GetUserIdByUid(uid: u64, userId: &mut i32) -> bool;
     fn GetOwnerInfo(userId: i32, uid: u64, ownerType: *mut OwnerType, ownerInfo: *mut u8, infoLen: *mut u32) -> i32;
-}
-
-/// Calculate user id.
-pub fn get_user_id(uid: u64) -> Result<i32> {
-    unsafe {
-        let mut user_id = 0;
-        if GetUserIdByUid(uid, &mut user_id) {
-            Ok(user_id)
-        } else {
-            log_throw_error!(ErrCode::AccountError, "[FATAL]Get user id failed.")
-        }
-    }
 }
 
 impl CallingInfo {

@@ -15,7 +15,11 @@
 
 //! This module is used to subscribe common event and system ability.
 
-use std::{fs::{self, DirEntry}, slice, time::Instant};
+use std::{
+    fs::{self, DirEntry},
+    slice,
+    time::Instant,
+};
 
 use asset_constants::{CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
@@ -27,7 +31,7 @@ use asset_definition::{Result, Value};
 use asset_file_operator::delete_user_db_dir;
 use asset_log::{loge, logi};
 
-use crate::{sys_event::upload_fault_system_event, counter::AutoCounter};
+use crate::{counter::AutoCounter, sys_event::upload_fault_system_event};
 
 const ASSET_DB: &str = "asset.db";
 const BACKUP_SUFFIX: &str = ".backup";
