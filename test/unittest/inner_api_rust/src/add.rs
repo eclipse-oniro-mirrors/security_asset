@@ -29,6 +29,10 @@ fn add_all_tags() {
     assert_eq!(NORMAL_LABEL2, *res[0].get_bytes_attr(&Tag::DataLabelNormal2).unwrap());
     assert_eq!(NORMAL_LABEL3, *res[0].get_bytes_attr(&Tag::DataLabelNormal3).unwrap());
     assert_eq!(NORMAL_LABEL4, *res[0].get_bytes_attr(&Tag::DataLabelNormal4).unwrap());
+    assert_eq!(NORMAL_LOCAL_LABEL1, *res[0].get_bytes_attr(&Tag::DataLabelNormalLocal1).unwrap());
+    assert_eq!(NORMAL_LOCAL_LABEL2, *res[0].get_bytes_attr(&Tag::DataLabelNormalLocal2).unwrap());
+    assert_eq!(NORMAL_LOCAL_LABEL3, *res[0].get_bytes_attr(&Tag::DataLabelNormalLocal3).unwrap());
+    assert_eq!(NORMAL_LOCAL_LABEL4, *res[0].get_bytes_attr(&Tag::DataLabelNormalLocal4).unwrap());
     assert_eq!(CRITICAL_LABEL1, *res[0].get_bytes_attr(&Tag::DataLabelCritical1).unwrap());
     assert_eq!(CRITICAL_LABEL2, *res[0].get_bytes_attr(&Tag::DataLabelCritical2).unwrap());
     assert_eq!(CRITICAL_LABEL3, *res[0].get_bytes_attr(&Tag::DataLabelCritical3).unwrap());

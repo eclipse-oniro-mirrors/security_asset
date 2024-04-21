@@ -21,12 +21,12 @@ use std::{ffi::CStr, fs, ptr::null_mut, sync::Mutex};
 
 use asset_constants::OwnerType;
 use asset_definition::{log_throw_error, ErrCode, Extension, Result};
-use asset_log::loge;
+use asset_log::{logi, loge};
 
 use crate::{
     statement::Statement,
     table::Table,
-    types::{column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, SQLITE_OK, TABLE_NAME},
+    types::{column, sqlite_err_handle, DbMap, QueryOptions, UPGRADE_COLUMN_INFO, COLUMN_INFO, COLUMN_INFO_V2, SQLITE_OK, TABLE_NAME},
 };
 
 extern "C" {
@@ -100,7 +100,8 @@ impl Database {
         let mut db = Database { path, backup_path, handle: 0, db_lock: lock };
         let _lock = db.db_lock.mtx.lock().unwrap();
         db.open_and_restore()?;
-        db.restore_if_exec_fail(|e: &Table| e.create(COLUMN_INFO))?;
+        db.restore_if_exec_fail(|e: &Table| e.create(COLUMN_INFO_V2))?;
+        db.upgrade(1, |_, _, _|Ok(()))?;
         Ok(db)
     }
 
@@ -156,12 +157,18 @@ impl Database {
     }
 
     /// Get database version, default is 0.
-    pub(crate) fn get_version(&self) -> Result<u32> {
-        let _lock = self.db_lock.mtx.lock().unwrap();
+    fn get_db_version(&self) -> Result<u32> {
         let stmt = Statement::prepare("pragma user_version", self)?;
         stmt.step()?;
         let version = stmt.query_column_int(0);
         Ok(version)
+    }
+
+    /// Get database version, default is 0.
+    #[allow(dead_code)]
+    pub(crate) fn get_version(&self) -> Result<u32> {
+        let _lock = self.db_lock.mtx.lock().unwrap();
+        self.get_db_version()
     }
 
     /// Update the database version for database upgrade.
@@ -173,8 +180,13 @@ impl Database {
 
     /// Upgrade database to new version.
     #[allow(dead_code)]
-    pub(crate) fn upgrade(&self, ver: u32, callback: UpgradeDbCallback) -> Result<()> {
-        let version_old = self.get_version()?;
+    pub fn upgrade(&mut self, ver: u32, callback: UpgradeDbCallback) -> Result<()> {
+        let version_old = self.get_db_version()?;
+        logi!("current database version: {}", version_old);
+        if version_old >= ver {
+            return Ok(());
+        }
+        self.restore_if_exec_fail(|e: &Table| e.upgrade(ver, UPGRADE_COLUMN_INFO))?;
         callback(self, version_old, ver)
     }
 
@@ -209,7 +221,7 @@ impl Database {
     }
 
     /// execute sql without prepare
-    pub(crate) fn exec(&self, sql: &str) -> Result<()> {
+    pub fn exec(&self, sql: &str) -> Result<()> {
         let mut sql_s = sql.to_string();
         sql_s.push('\0');
         let mut msg: *mut u8 = null_mut();
@@ -386,7 +398,7 @@ impl Database {
         query_options: Option<&QueryOptions>,
     ) -> Result<Vec<DbMap>> {
         let _lock = self.db_lock.mtx.lock().unwrap();
-        let closure = |e: &Table| e.query_row(columns, condition, query_options, COLUMN_INFO);
+        let closure = |e: &Table| e.query_row(columns, condition, query_options, COLUMN_INFO_V2);
         self.restore_if_exec_fail(closure)
     }
 

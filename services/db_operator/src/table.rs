@@ -20,12 +20,13 @@ use core::ffi::c_void;
 use std::cmp::Ordering;
 
 use asset_definition::{log_throw_error, Conversion, DataType, ErrCode, Result, Value};
+use asset_log::logi;
 
 use crate::{
     database::Database,
     statement::Statement,
     transaction::Transaction,
-    types::{ColumnInfo, DbMap, QueryOptions, SQLITE_ROW},
+    types::{UpgradeColumnInfo, ColumnInfo, DbMap, QueryOptions, SQLITE_ROW},
 };
 
 extern "C" {
@@ -150,7 +151,6 @@ impl<'a> Table<'a> {
         Table { table_name: table_name.to_string(), db }
     }
 
-    #[allow(dead_code)]
     pub(crate) fn exist(&self) -> Result<bool> {
         let sql = format!("select * from sqlite_master where type ='table' and name = '{}'", self.table_name);
         let stmt = Statement::prepare(sql.as_str(), self.db)?;
@@ -171,6 +171,10 @@ impl<'a> Table<'a> {
     /// Create a table with name 'table_name'.
     /// The columns is descriptions for each column.
     pub(crate) fn create(&self, columns: &[ColumnInfo]) -> Result<()> {
+        let is_exist = self.exist()?;
+        if is_exist {
+            return Ok(());
+        }
         let mut sql = format!("CREATE TABLE IF NOT EXISTS {}(", self.table_name);
         for i in 0..columns.len() {
             let column = &columns[i];
@@ -188,7 +192,33 @@ impl<'a> Table<'a> {
             };
         }
         sql.push_str(");");
-        self.db.exec(sql.as_str())
+        let mut trans = Transaction::new(self.db);
+        trans.begin()?;
+        if self.db.exec(sql.as_str()).is_ok() && self.db.set_version(1).is_ok() {
+            trans.commit()
+        } else {
+            trans.rollback()
+        }
+    }
+
+    pub(crate) fn upgrade(&self, ver: u32, columns: &[UpgradeColumnInfo]) -> Result<()> {
+        let is_exist = self.exist()?;
+        if !is_exist {
+            return Ok(());
+        }
+        logi!("upgrade table!");
+        let mut trans = Transaction::new(self.db);
+        trans.begin()?;
+        for item in columns {
+            if self.add_column(&item.base_info, &item.default_value).is_err() {
+                return trans.rollback();
+            }
+        }
+        if self.db.set_version(ver).is_err() {
+            trans.rollback()
+        } else {
+            trans.commit()
+        }
     }
 
     /// Insert a row into table, and datas is the value to be insert.
@@ -374,8 +404,7 @@ impl<'a> Table<'a> {
     ///     Some(Value::Number(0)),
     /// );
     /// ```
-    #[allow(dead_code)]
-    pub(crate) fn add_column(&self, column: ColumnInfo, default_value: Option<Value>) -> Result<()> {
+    pub(crate) fn add_column(&self, column: &ColumnInfo, default_value: &Option<Value>) -> Result<()> {
         if column.is_primary_key {
             return log_throw_error!(ErrCode::InvalidArgument, "The primary key already exists in the table.");
         }
@@ -386,7 +415,7 @@ impl<'a> Table<'a> {
         let mut sql = format!("ALTER TABLE {} ADD COLUMN {} {}", self.table_name, column.name, data_type);
         if let Some(data) = default_value {
             sql.push_str(" DEFAULT ");
-            sql.push_str(&from_data_value_to_str_value(&data));
+            sql.push_str(&from_data_value_to_str_value(data));
         }
         if column.not_null {
             sql.push_str(" NOT NULL");

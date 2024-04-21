@@ -134,6 +134,22 @@ typedef enum {
      */
     SEC_ASSET_TAG_DATA_LABEL_NORMAL_4 = SEC_ASSET_TYPE_BYTES | 0x33,
     /**
+     * A mutable custom field, in the form of bytes. The information of a local tag will not be synchronized.
+     */
+    SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_1 = SEC_ASSET_TYPE_BYTES | 0x34,
+    /**
+     * A mutable custom field, in the form of bytes. The information of a local tag will not be synchronized.
+     */
+    SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_2 = SEC_ASSET_TYPE_BYTES | 0x35,
+    /**
+     * A mutable custom field, in the form of bytes. The information of a local tag will not be synchronized.
+     */
+    SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_3 = SEC_ASSET_TYPE_BYTES | 0x36,
+    /**
+     * A mutable custom field, in the form of bytes. The information of a local tag will not be synchronized.
+     */
+    SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_4 = SEC_ASSET_TYPE_BYTES | 0x37,
+    /**
      * Return type of the queried asset. The value is of the uint32 type.
      */
     SEC_ASSET_TAG_RETURN_TYPE = SEC_ASSET_TYPE_NUMBER | 0x40,
@@ -155,9 +171,13 @@ typedef enum {
      */
     SEC_ASSET_TAG_CONFLICT_RESOLUTION = SEC_ASSET_TYPE_NUMBER | 0x44,
     /**
+     * A tag whose value is a byte array indicating the update time of an Asset.
+     */
+    SEC_ASSET_TAG_UPDATE_TIME = SEC_ASSET_TYPE_BYTES | 0x45,
+    /**
      * Tag used to store specific user id. The value is of the uint32 type.
      */
-    SEC_ASSET_TAG_USER_ID = SEC_ASSET_TYPE_NUMBER | 0x45,
+    SEC_ASSET_TAG_USER_ID = SEC_ASSET_TYPE_NUMBER | 0x47,
 } AssetTag;
 
 /**

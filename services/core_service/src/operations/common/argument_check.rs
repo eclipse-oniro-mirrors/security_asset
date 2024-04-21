@@ -21,7 +21,7 @@ use asset_definition::{
     Tag, Value,
 };
 
-use crate::operations::common::{CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS};
+use crate::operations::common::{CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS, NORMAL_LOCAL_LABEL_ATTRS};
 
 const MIN_NUMBER_VALUE: u32 = 0;
 const MAX_RETURN_LIMIT: u32 = 0x10000; // 65536
@@ -161,11 +161,17 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::DataLabelNormal1 | Tag::DataLabelNormal2 | Tag::DataLabelNormal3 | Tag::DataLabelNormal4 => {
             check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_LABEL_SIZE)
         },
+        Tag::DataLabelNormalLocal1 | Tag::DataLabelNormalLocal2 |
+            Tag::DataLabelNormalLocal3 | Tag::DataLabelNormalLocal4 => {
+            check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_LABEL_SIZE)
+        },
         Tag::ReturnType => check_enum_variant::<ReturnType>(tag, value),
         Tag::ReturnLimit => check_number_range(tag, value, MIN_NUMBER_VALUE, MAX_RETURN_LIMIT),
         Tag::ReturnOffset => Ok(()),
-        Tag::ReturnOrderedBy => check_tag_range(tag, value, &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat()),
+        Tag::ReturnOrderedBy => check_tag_range(tag, value, &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS,
+            NORMAL_LOCAL_LABEL_ATTRS].concat()),
         Tag::SpecificUserId => check_number_lower_bound(tag, value, ROOT_USER_UPPERBOUND),
+        Tag::UpdateTime => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_ARRAY_SIZE),
     }
 }
 

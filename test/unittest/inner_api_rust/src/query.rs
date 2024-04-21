@@ -290,6 +290,10 @@ fn query_with_bytes_tag() {
     bytes_tags.insert(Tag::DataLabelNormal2, NORMAL_LABEL2);
     bytes_tags.insert(Tag::DataLabelNormal3, NORMAL_LABEL3);
     bytes_tags.insert(Tag::DataLabelNormal4, NORMAL_LABEL4);
+    bytes_tags.insert(Tag::DataLabelNormalLocal1, NORMAL_LOCAL_LABEL1);
+    bytes_tags.insert(Tag::DataLabelNormalLocal2, NORMAL_LOCAL_LABEL2);
+    bytes_tags.insert(Tag::DataLabelNormalLocal3, NORMAL_LOCAL_LABEL3);
+    bytes_tags.insert(Tag::DataLabelNormalLocal4, NORMAL_LOCAL_LABEL4);
 
     for (tag, val) in bytes_tags.into_iter() {
         let mut query = AssetMap::new();

@@ -54,10 +54,15 @@ napi_value DeclareTag(napi_env env)
     AddUint32Property(env, tag, "DATA_LABEL_NORMAL_2", SEC_ASSET_TAG_DATA_LABEL_NORMAL_2);
     AddUint32Property(env, tag, "DATA_LABEL_NORMAL_3", SEC_ASSET_TAG_DATA_LABEL_NORMAL_3);
     AddUint32Property(env, tag, "DATA_LABEL_NORMAL_4", SEC_ASSET_TAG_DATA_LABEL_NORMAL_4);
+    AddUint32Property(env, tag, "DATA_LABEL_NORMAL_LOCAL1", SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_1);
+    AddUint32Property(env, tag, "DATA_LABEL_NORMAL_LOCAL2", SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_2);
+    AddUint32Property(env, tag, "DATA_LABEL_NORMAL_LOCAL3", SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_3);
+    AddUint32Property(env, tag, "DATA_LABEL_NORMAL_LOCAL4", SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_4);
     AddUint32Property(env, tag, "RETURN_TYPE", SEC_ASSET_TAG_RETURN_TYPE);
     AddUint32Property(env, tag, "RETURN_LIMIT", SEC_ASSET_TAG_RETURN_LIMIT);
     AddUint32Property(env, tag, "RETURN_OFFSET", SEC_ASSET_TAG_RETURN_OFFSET);
     AddUint32Property(env, tag, "RETURN_ORDERED_BY", SEC_ASSET_TAG_RETURN_ORDERED_BY);
+    AddUint32Property(env, tag, "UPDATE_TIME", SEC_ASSET_TAG_UPDATE_TIME);
     return tag;
 }
 
