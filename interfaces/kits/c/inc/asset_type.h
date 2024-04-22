@@ -153,18 +153,26 @@ typedef enum {
     ASSET_TAG_DATA_LABEL_NORMAL_4 = ASSET_TYPE_BYTES | 0x33,
     /**
      * A mutable custom field, in the form of bytes. The information of a local tag will not be synchronized.
+     *
+     * @since 12
      */
     ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_1 = ASSET_TYPE_BYTES | 0x34,
     /**
      * A mutable custom field, in the form of bytes. The information of a local tag will not be synchronized.
+     *
+     * @since 12
      */
     ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_2 = ASSET_TYPE_BYTES | 0x35,
     /**
      * A mutable custom field, in the form of bytes. The information of a local tag will not be synchronized.
+     *
+     * @since 12
      */
     ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_3 = ASSET_TYPE_BYTES | 0x36,
     /**
      * A mutable custom field, in the form of bytes. The information of a local tag will not be synchronized.
+     *
+     * @since 12
      */
     ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_4 = ASSET_TYPE_BYTES | 0x37,
     /**
@@ -190,8 +198,16 @@ typedef enum {
     ASSET_TAG_CONFLICT_RESOLUTION = ASSET_TYPE_NUMBER | 0x44,
     /**
      * A tag whose value is a byte array indicating the update time of an Asset.
+     *
+     * @since 12
      */
     ASSET_TAG_UPDATE_TIME = ASSET_TYPE_BYTES | 0x45,
+    /**
+     * A tag whose value is the uint32 type indicating the additional action.
+     *
+     * @since 12
+     */
+    ASSET_TAG_OPERATION_TYPE = ASSET_TYPE_NUMBER | 0x46,
 } Asset_Tag;
 
 /**
@@ -337,6 +353,12 @@ typedef enum {
      * Asset synchronization is allowed only between trusted devices, for example, in the case of cloning.
      */
     ASSET_SYNC_TYPE_TRUSTED_DEVICE = 1 << 1,
+    /**
+     * Asset synchronization is allowed only between devices with trusted accounts.
+     *
+     * @since 12
+     */
+    ASSET_SYNC_TYPE_TRUSTED_ACCOUNT = 1 << 2,
 } Asset_SyncType;
 
 /**
@@ -371,6 +393,22 @@ typedef enum {
      */
     ASSET_RETURN_ATTRIBUTES = 1,
 } Asset_ReturnType;
+
+/**
+ * @brief Enumerates the types of the additional action.
+ *
+ * @since 12
+ */
+typedef enum {
+    /**
+     * Synchronization is required during operation.
+     */
+    ASSET_NEED_SYNC = 0,
+    /**
+     * Logout is required during operation.
+     */
+    ASSET_NEED_LOGOUT = 1,
+} Asset_OperationType;
 
 /**
  * @brief Defines an asset value in the forma of a binary array, that is, a variable-length byte array.
