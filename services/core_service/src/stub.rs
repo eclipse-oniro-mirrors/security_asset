@@ -19,9 +19,12 @@ use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 
 use asset_definition::{AssetError, Result};
 use asset_ipc::{deserialize_map, serialize_maps, IpcCode, IPC_SUCCESS, SA_NAME};
-use asset_log::loge;
+use asset_log::{loge, logi};
 
 use crate::{counter::AutoCounter, unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
+
+const UPGRADE_CODE: u32 = 18100;
+const UPGRADE_TOKEN: &str = "OHOS.Updater.RestoreData";
 
 impl RemoteStub for AssetService {
     fn on_remote_request(
@@ -33,6 +36,10 @@ impl RemoteStub for AssetService {
         let _counter_user = AutoCounter::new();
         self.system_ability.cancel_idle();
         unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
+
+        if code == UPGRADE_CODE {
+            return on_extension_request(self, code, data, reply);
+        }
 
         match on_remote_request(self, code, data, reply) {
             Ok(_) => IPC_SUCCESS as i32,
@@ -46,6 +53,13 @@ impl RemoteStub for AssetService {
 }
 
 fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+    match data.read_interface_token() {
+        Ok(interface_token) if interface_token == stub.descriptor() => {},
+        _ => {
+            loge!("[FATAL][SA]Invalid interface token.");
+            return Err(IpcStatusCode::Failed);
+        }
+    }
     let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
     let map = deserialize_map(data).map_err(asset_err_handle)?;
     match ipc_code {
@@ -70,6 +84,23 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
             Err(e) => reply_handle(Err(e), reply),
         },
         IpcCode::PostQuery => reply_handle(stub.post_query(&map), reply),
+    }
+}
+
+fn on_extension_request(_stub: &AssetService, _code: u32, data: &mut MsgParcel, _reply: &mut MsgParcel) -> i32 {
+    match data.read_interface_token() {
+        Ok(interface_token) if interface_token == UPGRADE_TOKEN => {},
+        _ => {
+            loge!("[FATAL][SA]Invalid interface token.");
+            return IpcStatusCode::Failed as i32;
+        }
+    };
+    match data.read::<i32>() {
+        Ok(user_id) => {
+            logi!("[INFO]User id is {}.", user_id);
+            IPC_SUCCESS as i32
+        }
+        _ => IpcStatusCode::Failed as i32
     }
 }
 
