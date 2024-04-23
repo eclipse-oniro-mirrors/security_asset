@@ -114,7 +114,7 @@ impl Manager {
         }
     }
 
-    fn descriptor() -> &'static str {
+    fn descriptor(&self) -> &'static str {
         SA_NAME
     }
 }
