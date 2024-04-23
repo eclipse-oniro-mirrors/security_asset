@@ -24,7 +24,7 @@ use asset_log::{loge, logi};
 use crate::{counter::AutoCounter, unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
 
 const UPGRADE_CODE: u32 = 18100;
-const UPGRADE_TOKEN: &'static str = "OHOS.Updater.RestoreData";
+const UPGRADE_TOKEN: &str = "OHOS.Updater.RestoreData";
 
 impl RemoteStub for AssetService {
     fn on_remote_request(
@@ -37,7 +37,7 @@ impl RemoteStub for AssetService {
         self.system_ability.cancel_idle();
         unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
 
-        if (code == UPGRADE_CODE) {
+        if code == UPGRADE_CODE {
             return on_extension_request(self, code, data, reply);
         }
 
@@ -54,7 +54,7 @@ impl RemoteStub for AssetService {
 
 fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
     match data.read_interface_token() {
-        Ok(interface_token) if interface_token == self.descriptor() => {},
+        Ok(interface_token) if interface_token == stub.descriptor() => {},
         _ => {
             loge!("[FATAL][SA]Invalid interface token.");
             Err(IpcStatusCode::failed);
@@ -92,15 +92,15 @@ fn on_extension_request(stub: &AssetService, code: u32, data: &mut MsgParcel, re
         Ok(interface_token) if interface_token == UPGRADE_TOKEN => {},
         _ => {
             loge!("[FATAL][SA]Invalid interface token.");
-            IpcStatusCode::failed as i32;
+            return IpcStatusCode::failed as i32;
         }
     }
-    match parcel.read::<i32>() {
+    match data.read::<i32>() {
         Ok(user_id) => {
             logi!("[INFO]User id is {}.", user_id);
             IPC_SUCCESS as i32,
         }
-        _ => IpcStatusCode::failed as i32;
+        _ => IpcStatusCode::failed as i32,
     }
 }
 
