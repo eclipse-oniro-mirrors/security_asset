@@ -57,7 +57,7 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
         Ok(interface_token) if interface_token == stub.descriptor() => {},
         _ => {
             loge!("[FATAL][SA]Invalid interface token.");
-            Err(IpcStatusCode::Failed);
+            return Err(IpcStatusCode::Failed);
         }
     }
     let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
