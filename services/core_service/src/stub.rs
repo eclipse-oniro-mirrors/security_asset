@@ -57,7 +57,7 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
         Ok(interface_token) if interface_token == stub.descriptor() => {},
         _ => {
             loge!("[FATAL][SA]Invalid interface token.");
-            Err(IpcStatusCode::failed);
+            Err(IpcStatusCode::Failed);
         }
     }
     let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
@@ -87,20 +87,20 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
     }
 }
 
-fn on_extension_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
+fn on_extension_request(_stub: &AssetService, _code: u32, data: &mut MsgParcel, _reply: &mut MsgParcel) -> i32 {
     match data.read_interface_token() {
         Ok(interface_token) if interface_token == UPGRADE_TOKEN => {},
         _ => {
             loge!("[FATAL][SA]Invalid interface token.");
-            return IpcStatusCode::failed as i32;
+            return IpcStatusCode::Failed as i32;
         }
-    }
+    };
     match data.read::<i32>() {
         Ok(user_id) => {
             logi!("[INFO]User id is {}.", user_id);
-            IPC_SUCCESS as i32,
+            IPC_SUCCESS as i32
         }
-        _ => IpcStatusCode::failed as i32,
+        _ => IpcStatusCode::Failed as i32
     }
 }
 
