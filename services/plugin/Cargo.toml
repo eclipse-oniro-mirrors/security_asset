@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Copyright (c) 2024 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11,15 +11,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/ohos.gni")
-import("//build/test.gni")
+[package]
+name = "asset_plugin"
+version = "0.1.0"
+edition = "2021"
 
-module_output_path = "asset/asset_UT_test"
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-ohos_rust_unittest("asset_rust_test") {
-  module_out_path = module_output_path
-  sources = [ "src/main.rs" ]
-  deps = [ "../../../interfaces/inner_api/rs:asset_sdk_rust" ]
-  subsystem_name = "security"
-  part_name = "asset"
-}
+[dependencies]
+asset_constants = { path = "../constants" }
+asset_definition = { path = "../../frameworks/definition" }
+asset_log = { path = "../../frameworks/os_dependency/log" }
