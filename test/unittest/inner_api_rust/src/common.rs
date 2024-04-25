@@ -39,7 +39,7 @@ pub(crate) const MAX_ARRAY_SIZE: usize = 1024;
 pub(crate) const MAX_ALIAS_SIZE: usize = 256;
 pub(crate) const MAX_LABEL_SIZE: usize = 2048;
 
-pub(crate) const AUTH_TOKEN_SIZE: usize = 148;
+pub(crate) const AUTH_TOKEN_SIZE: usize = 280;
 pub(crate) const CHALLENGE_SIZE: usize = 32;
 pub(crate) const SYNC_TYPE_MIN_BITS: u32 = 0;
 pub(crate) const SYNC_TYPE_MAX_BITS: u32 = 2;

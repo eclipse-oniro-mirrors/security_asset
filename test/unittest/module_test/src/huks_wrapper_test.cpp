@@ -141,8 +141,8 @@ HWTEST_F(HuksWrapperTest, HuksWrapperTest003, TestSize.Level0)
     struct HksBlob handleData = { 8, handle };
     ASSERT_EQ(SEC_ASSET_SUCCESS, InitKey(&keyId, 600, &challengeData, &handleData));
 
-    uint8_t authToken[148] = { 0 };
-    struct HksBlob authTokenData = { 148, authToken };
+    uint8_t authToken[280] = { 0 };
+    struct HksBlob authTokenData = { 280, authToken };
     /* auth token is not ok, result in update&finish fail */
     ASSERT_EQ(SEC_ASSET_ACCESS_DENIED, ExecCrypt(&handleData, &aadData, &authTokenData, &outData, &inData));
     ASSERT_EQ(SEC_ASSET_NOT_FOUND, Drop(&handleData));
