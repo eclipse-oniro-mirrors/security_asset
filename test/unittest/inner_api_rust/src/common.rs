@@ -34,7 +34,7 @@ pub(crate) const MAX_AUTH_VALID_PERIOD: u32 = 600; // 10min
 pub(crate) const CRYPTO_CAPACITY: u32 = 16;
 
 pub(crate) const MIN_ARRAY_SIZE: usize = 0;
-pub(crate) const MAX_ARRAY_SIZE: usize = 1024;
+pub(crate) const MAX_SECRET_SIZE: usize = 1024;
 
 pub(crate) const MAX_ALIAS_SIZE: usize = 256;
 pub(crate) const MAX_LABEL_SIZE: usize = 2048;
