@@ -19,7 +19,7 @@ module_output_path = "asset/asset_UT_test"
 ohos_rust_unittest("asset_rust_test") {
   module_out_path = module_output_path
   sources = [ "src/main.rs" ]
-  deps = [ "../../../interfaces/inner_api/rs:asset_sdk" ]
+  deps = [ "../../../interfaces/inner_api/rs:asset_sdk_rust" ]
   subsystem_name = "security"
   part_name = "asset"
 }

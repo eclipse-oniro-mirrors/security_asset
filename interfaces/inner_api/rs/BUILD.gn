@@ -13,7 +13,7 @@
 
 import("//build/ohos.gni")
 
-ohos_rust_shared_library("asset_sdk") {
+ohos_rust_shared_library("asset_sdk_rust") {
   sources = [ "src/lib.rs" ]
   deps = [
     "../../../frameworks/definition:asset_definition",

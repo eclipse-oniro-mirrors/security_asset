@@ -15,7 +15,7 @@
 
 //! This module is used to verify the validity of asset attributes.
 
-use asset_constants::ROOT_USER_UPPERBOUND;
+use asset_constants::{is_user_id_exist, ROOT_USER_UPPERBOUND};
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, Result, ReturnType,
     Tag, Value,
@@ -157,7 +157,17 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::ReturnOrderedBy => {
             check_tag_range(tag, value, &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS, NORMAL_LOCAL_LABEL_ATTRS].concat())
         },
-        Tag::UserId => check_number_range(tag, value, ROOT_USER_UPPERBOUND, i32::MAX as u32),
+        Tag::UserId => {
+            check_number_range(tag, value, ROOT_USER_UPPERBOUND, i32::MAX as u32)?;
+            let Value::Number(n) = value else {
+                return log_throw_error!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
+            };
+            match is_user_id_exist(*n as i32) {
+                Ok(res) if res => Ok(()),
+                Ok(_) => log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The user id [{}] is not exist.", *n),
+                Err(e) => Err(e),
+            }
+        },
         Tag::UpdateTime => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_TIME_SIZE),
     }
 }
