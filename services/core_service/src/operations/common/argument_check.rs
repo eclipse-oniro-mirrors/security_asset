@@ -34,7 +34,7 @@ const MAX_TIME_SIZE: usize = 1024;
 const MAX_ALIAS_SIZE: usize = 256;
 pub const MAX_LABEL_SIZE: usize = 2048;
 
-const AUTH_TOKEN_SIZE: usize = 148;
+const AUTH_TOKEN_SIZE: usize = 280;
 const CHALLENGE_SIZE: usize = 32;
 const SYNC_TYPE_MIN_BITS: u32 = 0;
 const SYNC_TYPE_MAX_BITS: u32 = 2;
