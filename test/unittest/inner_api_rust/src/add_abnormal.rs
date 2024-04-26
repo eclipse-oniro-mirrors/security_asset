@@ -114,7 +114,7 @@ fn add_secret_with_max_len() {
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
-    attrs.insert_attr(Tag::Secret, vec![0; MAX_ARRAY_SIZE]);
+    attrs.insert_attr(Tag::Secret, vec![0; MAX_SECRET_SIZE]);
     assert!(asset_sdk::Manager::build().unwrap().add(&attrs).is_ok());
 
     remove_by_alias(function_name).unwrap();
@@ -129,7 +129,7 @@ fn add_invalid_secret() {
     attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 
-    attrs.insert_attr(Tag::Secret, vec![0; MAX_ARRAY_SIZE + 1]);
+    attrs.insert_attr(Tag::Secret, vec![0; MAX_SECRET_SIZE + 1]);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
 }
 

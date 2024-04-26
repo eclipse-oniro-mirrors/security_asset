@@ -23,7 +23,7 @@ fn add_all_tags() {
 
     let res = query_attr_by_alias(alias).unwrap();
     assert_eq!(1, res.len());
-    assert_eq!(14, res[0].len());
+    assert_eq!(19, res[0].len());
     assert_eq!(alias, *res[0].get_bytes_attr(&Tag::Alias).unwrap());
     assert_eq!(NORMAL_LABEL1, *res[0].get_bytes_attr(&Tag::DataLabelNormal1).unwrap());
     assert_eq!(NORMAL_LABEL2, *res[0].get_bytes_attr(&Tag::DataLabelNormal2).unwrap());
@@ -57,7 +57,7 @@ fn add_required_tags() {
 
     let res = query_all_by_alias(func_name).unwrap();
     assert_eq!(1, res.len());
-    assert_eq!(7, res[0].len());
+    assert_eq!(8, res[0].len());
     assert_eq!(func_name, *res[0].get_bytes_attr(&Tag::Alias).unwrap());
     assert_eq!(func_name, *res[0].get_bytes_attr(&Tag::Secret).unwrap());
     assert_eq!(Accessibility::DevicePowerOn, res[0].get_enum_attr::<Accessibility>(&Tag::Accessibility).unwrap());

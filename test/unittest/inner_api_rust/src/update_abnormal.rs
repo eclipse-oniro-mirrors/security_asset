@@ -274,7 +274,7 @@ fn update_invalid_secret() {
         asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err(),
     );
 
-    update.insert_attr(Tag::Secret, vec![0; MAX_ARRAY_SIZE + 1]);
+    update.insert_attr(Tag::Secret, vec![0; MAX_SECRET_SIZE + 1]);
     expect_error_eq(
         ErrCode::InvalidArgument,
         asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err(),

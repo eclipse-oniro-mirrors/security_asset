@@ -28,10 +28,11 @@ const MAX_RETURN_LIMIT: u32 = 0x10000; // 65536
 const MAX_AUTH_VALID_PERIOD: u32 = 600; // 10min
 
 const MIN_ARRAY_SIZE: usize = 0;
-pub const MAX_ARRAY_SIZE: usize = 1024;
+const MAX_SECRET_SIZE: usize = 1024;
+const MAX_TIME_SIZE: usize = 1024;
 
 const MAX_ALIAS_SIZE: usize = 256;
-const MAX_LABEL_SIZE: usize = 2048;
+pub const MAX_LABEL_SIZE: usize = 2048;
 
 const AUTH_TOKEN_SIZE: usize = 148;
 const CHALLENGE_SIZE: usize = 32;
@@ -130,7 +131,7 @@ fn check_tag_range(tag: &Tag, value: &Value, tags: &[Tag]) -> Result<()> {
 
 fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
     match tag {
-        Tag::Secret => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_ARRAY_SIZE),
+        Tag::Secret => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_SECRET_SIZE),
         Tag::Alias => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_ALIAS_SIZE),
         Tag::Accessibility => check_enum_variant::<Accessibility>(tag, value),
         Tag::RequirePasswordSet | Tag::IsPersistent => Ok(()),
@@ -157,7 +158,7 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
             check_tag_range(tag, value, &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS, NORMAL_LOCAL_LABEL_ATTRS].concat())
         },
         Tag::UserId => check_number_range(tag, value, ROOT_USER_UPPERBOUND, i32::MAX as u32),
-        Tag::UpdateTime => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_ARRAY_SIZE),
+        Tag::UpdateTime => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_TIME_SIZE),
     }
 }
 

@@ -62,7 +62,7 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest001, TestSize.Level0)
     uint8_t ownerInfo[256] = { 0 };
     uint32_t infoLen = 256;
     int32_t userId = 0;
-    uint64_t uid = 0;
+    uint64_t uid = 6226;
     ASSERT_EQ(SEC_ASSET_SUCCESS, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, &infoLen));
 }
 

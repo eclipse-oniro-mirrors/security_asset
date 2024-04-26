@@ -18,7 +18,7 @@
 mod argument_check;
 mod permission_check;
 
-pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_value_validity, MAX_ARRAY_SIZE};
+pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_value_validity, MAX_LABEL_SIZE};
 pub(crate) use permission_check::check_system_permission;
 
 use asset_constants::CallingInfo;
@@ -140,7 +140,7 @@ fn build_aad_v1(attrs: &DbMap) -> Vec<u8> {
 
 fn to_hex(bytes: &Vec<u8>) -> Result<Vec<u8>> {
     let bytes_len = bytes.len();
-    if bytes_len > MAX_ARRAY_SIZE {
+    if bytes_len > MAX_LABEL_SIZE {
         return log_throw_error!(ErrCode::DataCorrupted, "The data in DB has been tampered with.");
     }
 
