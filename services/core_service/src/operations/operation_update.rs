@@ -60,6 +60,7 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap) -> Result<()> {
     }
     // Check attributes to update.
     valid_tags = common::NORMAL_LABEL_ATTRS.to_vec();
+    valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&UPDATE_OPTIONAL_ATTRS);
     common::check_tag_validity(attrs_to_update, &valid_tags)?;
     common::check_value_validity(attrs_to_update)
