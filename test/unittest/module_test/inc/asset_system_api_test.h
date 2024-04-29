@@ -16,6 +16,8 @@
 #ifndef ASSET_SYSTEM_API_TEST_H
 #define ASSET_SYSTEM_API_TEST_H
 
+#define NOT_FOUND_USER_ID 103
+
 namespace UnitTest::AssetSystemApiTest {
 int AssetSystemApiTest001(void);
 int AssetSystemApiTest002(void);
@@ -27,6 +29,14 @@ int AssetSystemApiTest007(void);
 int AssetSystemApiTest008(void);
 int AssetSystemApiTest009(void);
 int AssetSystemApiTest010(void);
+int AssetSystemApiTest011(void);
+int AssetSystemApiTest012(void);
+int AssetSystemApiTest013(void);
+int AssetSystemApiTest014(void);
+int AssetSystemApiTest015(void);
+int AssetSystemApiTest016(void);
+int AssetSystemApiTest017(void);
+int AssetSystemApiTest018(void);
 }
 
 #endif // ASSET_SYSTEM_API_TEST_H

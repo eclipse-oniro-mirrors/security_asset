@@ -22,13 +22,18 @@ use samgr::manage::SystemAbilityManager;
 
 use asset_ipc::{deserialize_maps, ipc_err_handle, serialize_map, IpcCode, IPC_SUCCESS, SA_ID, SA_NAME};
 
-const LOAD_TIMEOUT_IN_SECONDS: i32 = 2;
+const LOAD_TIMEOUT_IN_SECONDS: i32 = 4;
 
 fn get_remote() -> Result<RemoteObj> {
-    match SystemAbilityManager::load_system_ability(SA_ID, LOAD_TIMEOUT_IN_SECONDS) {
+    match SystemAbilityManager::check_system_ability(SA_ID) {
         Some(remote) => Ok(remote),
         None => {
-            log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
+            match SystemAbilityManager::load_system_ability(SA_ID, LOAD_TIMEOUT_IN_SECONDS) {
+                Some(remote) => Ok(remote),
+                None => {
+                    log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
+                },
+            }
         },
     }
 }

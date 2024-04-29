@@ -78,7 +78,7 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest002, TestSize.Level0)
     uint8_t ownerInfo[256] = { 0 };
     uint32_t infoLen = 256;
     int32_t userId = 0;
-    uint64_t uid = 0;
+    uint64_t uid = 6226;
     ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT, GetOwnerInfo(userId, uid, ownerType, ownerInfo, &infoLen));
 }
 
@@ -94,7 +94,7 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest003, TestSize.Level0)
     uint8_t* ownerInfo = nullptr;
     uint32_t infoLen = 256;
     int32_t userId = 0;
-    uint64_t uid = 0;
+    uint64_t uid = 6226;
     ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, &infoLen));
 }
 
@@ -110,7 +110,7 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest004, TestSize.Level0)
     uint8_t ownerInfo[256] = { 0 };
     uint32_t* infoLen = nullptr;
     int32_t userId = 0;
-    uint64_t uid = 0;
+    uint64_t uid = 6226;
     ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, infoLen));
 }
 }

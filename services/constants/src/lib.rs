@@ -72,7 +72,6 @@ pub fn get_user_id(uid: u64) -> Result<i32> {
 }
 
 /// Check user id exist.
-#[allow(dead_code)]
 pub fn is_user_id_exist(user_id: i32) -> Result<bool> {
     unsafe {
         let mut exist = false;

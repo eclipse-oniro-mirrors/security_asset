@@ -58,7 +58,7 @@ void AssetOsAccountWrapperTest::TearDown(void)
 HWTEST_F(AssetOsAccountWrapperTest, AssetOsAccountWrapperTest001, TestSize.Level0)
 {
     int32_t userId = 1000;
-    uint32_t uid = 0;
+    uint32_t uid = 6226;
     ASSERT_EQ(true, GetUserIdByUid(uid, &userId));
 }
 

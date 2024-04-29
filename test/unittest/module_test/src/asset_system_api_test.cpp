@@ -299,7 +299,7 @@ HWTEST_F(AssetSystemApiTest, AssetSystemApiTest006, TestSize.Level0)
 
 /**
  * @tc.name: AssetSystemApiTest.AssetSystemApiTest007
- * @tc.desc: Test asset func AssetQuery expect SUCCESS
+ * @tc.desc: Test asset func AssetQuery expect FAIL
  * @tc.type: FUNC
  * @tc.result:0
  */
@@ -393,5 +393,162 @@ HWTEST_F(AssetSystemApiTest, AssetSystemApiTest010, TestSize.Level0)
         { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = 0 }
     };
     ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT, AssetPostQuery(attr2, ARRAY_SIZE(attr2)));
+}
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest011
+ * @tc.desc: Test asset func AssetAdd expect FAIL
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest011, TestSize.Level0)
+{
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    AssetAttr attr[] = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_SECRET, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = NOT_FOUND_USER_ID },
+        { .tag = SEC_ASSET_TAG_ACCESSIBILITY, .value.u32 = SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED },
+        { .tag = SEC_ASSET_TAG_AUTH_TYPE, .value.u32 = SEC_ASSET_AUTH_TYPE_ANY }
+    };
+    ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT, AssetAdd(attr, ARRAY_SIZE(attr)));
+}
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest012
+ * @tc.desc: Test asset func AssetQuery expect FAIL
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest012, TestSize.Level0)
+{
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    AssetResultSet resultSet = { 0 };
+    AssetAttr queryAttr[] = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = NOT_FOUND_USER_ID },
+        { .tag = SEC_ASSET_TAG_RETURN_TYPE, .value.u32 = SEC_ASSET_RETURN_ALL }
+    };
+    ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT, AssetQuery(queryAttr, ARRAY_SIZE(queryAttr), &resultSet));
+}
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest013
+ * @tc.desc: Test asset func AssetRemove expect FAIL
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest013, TestSize.Level0)
+{
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    AssetAttr attr[] = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_ACCESSIBILITY, .value.u32 = SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED },
+        { .tag = SEC_ASSET_TAG_REQUIRE_PASSWORD_SET, .value.boolean = false },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = NOT_FOUND_USER_ID },
+        { .tag = SEC_ASSET_TAG_AUTH_TYPE, .value.u32 = SEC_ASSET_AUTH_TYPE_NONE },
+        { .tag = SEC_ASSET_TAG_SYNC_TYPE, .value.u32 = SEC_ASSET_SYNC_TYPE_NEVER },
+        { .tag = SEC_ASSET_TAG_IS_PERSISTENT, .value.boolean = false }
+    };
+    ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT, AssetRemove(attr, ARRAY_SIZE(attr)));
+}
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest014
+ * @tc.desc: Test asset func AssetPreQuery expect FAIL
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest014, TestSize.Level0)
+{
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    AssetBlob challenge = { 0 };
+    AssetAttr attr[] = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = NOT_FOUND_USER_ID }
+    };
+    ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT, AssetPreQuery(attr, ARRAY_SIZE(attr), &challenge));
+}
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest015
+ * @tc.desc: Test asset func AssetPostQuery expect FAIL
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest015, TestSize.Level0)
+{
+    AssetBlob challenge = { 0 };
+    AssetAttr attr[] = {
+        { .tag = SEC_ASSET_TAG_AUTH_CHALLENGE, .value.blob = challenge },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = NOT_FOUND_USER_ID }
+    };
+    ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT, AssetPostQuery(attr, ARRAY_SIZE(attr)));
+}
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest016
+ * @tc.desc: Test asset func AssetUpdate expect FAIL
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest016, TestSize.Level0)
+{
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    AssetAttr queryAttr[] = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = NOT_FOUND_USER_ID },
+    };
+    const char *secretNew = "secret_new";
+    AssetAttr updateAttr[] = {
+        { .tag = SEC_ASSET_TAG_SECRET, .value.blob =
+            { .size = strlen(secretNew), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(secretNew)) } }
+    };
+    ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT,
+        AssetUpdate(queryAttr, ARRAY_SIZE(queryAttr), updateAttr, ARRAY_SIZE(updateAttr)));
+}
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest017
+ * @tc.desc: Test asset func AssetUpdate expect FAIL
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest017, TestSize.Level0)
+{
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    AssetAttr queryAttr[] = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = 0 },
+    };
+    const char *secretNew = "secret_new";
+    AssetAttr updateAttr[] = {
+        { .tag = SEC_ASSET_TAG_SECRET, .value.blob =
+            { .size = strlen(secretNew), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(secretNew)) } }
+    };
+    ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT,
+        AssetUpdate(queryAttr, ARRAY_SIZE(queryAttr), updateAttr, ARRAY_SIZE(updateAttr)));
+}
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest018
+ * @tc.desc: Test asset func AssetUpdate expect FAIL
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest018, TestSize.Level0)
+{
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    AssetAttr queryAttr[] = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = -1 },
+    };
+    const char *secretNew = "secret_new";
+    AssetAttr updateAttr[] = {
+        { .tag = SEC_ASSET_TAG_SECRET, .value.blob =
+            { .size = strlen(secretNew), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(secretNew)) } }
+    };
+    ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT,
+        AssetUpdate(queryAttr, ARRAY_SIZE(queryAttr), updateAttr, ARRAY_SIZE(updateAttr)));
 }
 }
