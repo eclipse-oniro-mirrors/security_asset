@@ -94,6 +94,11 @@ fn fmt_backup_path(path: &str) -> String {
     bp
 }
 
+/// Get asset storage path.
+pub fn get_path() -> String {
+    ROOT_PATH.to_string()
+}
+
 impl Database {
     /// Create a database.
     pub fn build(user_id: i32) -> Result<Database> {

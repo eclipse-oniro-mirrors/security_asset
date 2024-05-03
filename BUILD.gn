@@ -20,6 +20,7 @@ group("asset_component") {
     "interfaces/kits/c:asset_ndk",
     "sa_profile:asset_sa_profiles",
     "services/core_service:asset_service",
+    "services/plugin:asset_plugin",
   ]
 
   if (support_jsapi) {

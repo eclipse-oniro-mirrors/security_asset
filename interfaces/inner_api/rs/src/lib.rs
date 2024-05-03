@@ -16,6 +16,7 @@
 //! This module defines the interface of the Asset Rust SDK.
 
 pub use asset_definition::*;
+pub mod plugin_interface;
 
 use ipc::{parcel::MsgParcel, remote::RemoteObj};
 use samgr::manage::SystemAbilityManager;
