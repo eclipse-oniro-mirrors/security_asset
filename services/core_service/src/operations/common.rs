@@ -24,7 +24,12 @@ pub(crate) use permission_check::check_system_permission;
 use asset_constants::CallingInfo;
 use asset_crypto_manager::secret_key::SecretKey;
 use asset_db_operator::types::{column, DbMap, DB_DATA_VERSION, DB_DATA_VERSION_V1};
-use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
+use asset_definition::{
+    log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value, OperationType
+};
+use asset_log::{logi, loge};
+use asset_plugin::asset_plugin::AssetPlugin;
+use asset_sdk::plugin_interface::{EventType, ExtDbMap};
 
 const TAG_COLUMN_TABLE: [(Tag, &str); 20] = [
     (Tag::Secret, column::SECRET),
@@ -77,6 +82,8 @@ pub(crate) const NORMAL_LOCAL_LABEL_ATTRS: [Tag; 4] =
 
 pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 6] =
     [Tag::Alias, Tag::Accessibility, Tag::AuthType, Tag::IsPersistent, Tag::SyncType, Tag::RequirePasswordSet];
+
+pub(crate) const ASSET_SYNC_ATTRS: [Tag; 1] = [Tag::OperationType];
 
 pub(crate) fn get_cloumn_name(tag: Tag) -> Option<&'static str> {
     for (table_tag, table_column) in TAG_COLUMN_TABLE {
@@ -179,4 +186,36 @@ pub(crate) fn build_aad(attrs: &DbMap) -> Result<Vec<u8>> {
 pub(crate) fn need_upgrade(db_date: &DbMap) -> Result<bool> {
     let version = db_date.get_num_attr(&column::VERSION)?;
     Ok(version != DB_DATA_VERSION)
+}
+
+pub(crate) fn inform_asset_ext(input: &AssetMap, user_id: i32) {
+    if let Some(Value::Number(operation_type)) = input.get(&Tag::OperationType) {
+        match operation_type {
+            x if *x == OperationType::NeedSync as u32 => {
+                let arc_asset_plugin = AssetPlugin::get_instance();
+                let mut asset_plugin = arc_asset_plugin.lock().unwrap();
+                if let Ok(load) = asset_plugin.load_plugin() {
+                    let mut params = ExtDbMap::new();
+                    params.insert("UserId", Value::Number(user_id as u32));
+                    match load.process_event(EventType::Sync, &params) {
+                        Ok(()) => logi!("process sync ext event success."),
+                        Err(code) => loge!("process sync ext event failed, code: {}", code),
+                    }
+                }
+            },
+            x if *x == OperationType::NeedLogout as u32 => {
+                let arc_asset_plugin = AssetPlugin::get_instance();
+                let mut asset_plugin = arc_asset_plugin.lock().unwrap();
+                if let Ok(load) = asset_plugin.load_plugin() {
+                    let mut params = ExtDbMap::new();
+                    params.insert("UserId", Value::Number(user_id as u32));
+                    match load.process_event(EventType::Logout, &params) {
+                        Ok(()) => logi!("process logout ext event success."),
+                        Err(code) => loge!("process logout ext event failed, code: {}", code),
+                    }
+                }
+            },
+            _ => {},
+        }
+    }
 }

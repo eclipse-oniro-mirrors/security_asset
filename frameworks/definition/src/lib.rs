@@ -136,6 +136,9 @@ impl_tag_trait! {
         /// A tag whose value is a byte array indicating the update time of an Asset.
         UpdateTime = DataType::Bytes as isize | 0x45,
 
+        /// A tag whose value is a byte array indicating the update time of an Asset.
+        OperationType = DataType::Number as isize | 0x46,
+
         /// A tag whose value is a 32-bit unsigned integer indicating the specific user id.
         UserId = DataType::Number as isize | 0x47,
     }
@@ -301,6 +304,9 @@ impl_enum_trait! {
 
         /// An Asset with this attribute value can only be transferred out to a trusted device (user authorized).
         TrustedDevice = 1 << 1,
+
+        /// An Asset with this attribute value can only be transferred out to a trusted device (user authorized).
+        TrustedAccount = 1 << 2,
     }
 }
 
@@ -319,6 +325,44 @@ impl_enum_trait! {
 
 impl_enum_trait! {
     /// An enum type indicates the return type of the queried Asset.
+    #[derive(Debug)]
+    #[derive(Clone, Copy)]
+    #[derive(PartialEq, Eq)]
+    #[derive(Default)]
+    pub enum LocalStatus {
+        /// Specify that the return data should contain both secret value and attributes.
+        #[default]
+        Local = 0,
+
+        /// Specify that the return data contains only attributes.
+        Cloud = 1 << 0,
+    }
+}
+
+impl_enum_trait! {
+    /// An enum type indicates the return type of the queried Asset.
+    #[derive(Debug)]
+    #[derive(Clone, Copy)]
+    #[derive(PartialEq, Eq)]
+    #[derive(Default)]
+    pub enum SyncStatus {
+        /// Specify that the return data should contain both secret value and attributes.
+        #[default]
+        NoNeedSync = 0,
+
+        /// Specify that the return data contains only attributes.
+        SyncAdd = 1 << 0,
+
+        /// Specify that the return data contains only attributes.
+        SyncDel = 1 << 1,
+
+        /// Specify that the return data contains only attributes.
+        SyncUpdate = 1 << 2,
+    }
+}
+
+impl_enum_trait! {
+    /// An enum type indicates the return type of the queried Asset.
     #[derive(Default)]
     pub enum ReturnType {
         /// Specify that the return data should contain both secret value and attributes.
@@ -327,6 +371,19 @@ impl_enum_trait! {
         /// Specify that the return data contains only attributes.
         #[default]
         Attributes = 1,
+    }
+}
+
+impl_enum_trait! {
+    /// An enum type indicates the return type of the queried Asset.
+    #[derive(Default)]
+    pub enum OperationType {
+        /// Specify that the return data should contain both secret value and attributes.
+        #[default]
+        NeedSync = 0,
+
+        /// Specify that the return data contains only attributes.
+        NeedLogout = 1,
     }
 }
 

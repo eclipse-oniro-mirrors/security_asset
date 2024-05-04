@@ -177,6 +177,10 @@ typedef enum {
     /**
      * Tag used to store specific user id. The value is of the uint32 type.
      */
+    SEC_ASSET_TAG_OPERATION_TYPE = SEC_ASSET_TYPE_NUMBER | 0x46,
+    /**
+     * Tag used to store specific user id. The value is of the uint32 type.
+     */
     SEC_ASSET_TAG_USER_ID = SEC_ASSET_TYPE_NUMBER | 0x47,
 } AssetTag;
 
@@ -319,6 +323,10 @@ typedef enum {
      * Asset synchronization is allowed only between trusted devices, for example, in the case of cloning.
      */
     SEC_ASSET_SYNC_TYPE_TRUSTED_DEVICE = 1 << 1,
+    /**
+     * Asset synchronization is allowed only between trusted devices, for example, in the case of cloning.
+     */
+    SEC_ASSET_SYNC_TYPE_TRUSTED_ACCOUNT = 1 << 2,
 } AssetSyncType;
 
 /**
@@ -349,6 +357,20 @@ typedef enum {
      */
     SEC_ASSET_RETURN_ATTRIBUTES = 1,
 } AssetReturnType;
+
+/**
+ * @brief Enumerates the types of the asset query result.
+ */
+typedef enum {
+    /**
+     * The query result contains the asset in plaintext and its attributes.
+     */
+    SEC_ASSET_NEED_SYNC = 0,
+    /**
+     * The query result contains only the asset attributes.
+     */
+    SEC_ASSET_NEED_LOGOUT = 1,
+} AssetOperationType;
 
 /**
  * @brief Defines an asset value in the forma of a binary array, that is, a variable-length byte array.

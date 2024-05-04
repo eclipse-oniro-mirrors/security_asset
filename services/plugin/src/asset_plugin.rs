@@ -109,7 +109,7 @@ impl IAssetPluginCtx for AssetContext {
     /// Removes an asset from the database.
     fn remove(&mut self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
         self.data_base.as_mut().ok_or(ErrCode::InvalidArgument as u32)?
-            .delete_datas(attributes)
+            .delete_datas(attributes, None)
             .map_err(|e| e.code as u32)
     }
 

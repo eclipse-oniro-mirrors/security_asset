@@ -63,6 +63,7 @@ napi_value DeclareTag(napi_env env)
     AddUint32Property(env, tag, "RETURN_OFFSET", SEC_ASSET_TAG_RETURN_OFFSET);
     AddUint32Property(env, tag, "RETURN_ORDERED_BY", SEC_ASSET_TAG_RETURN_ORDERED_BY);
     AddUint32Property(env, tag, "UPDATE_TIME", SEC_ASSET_TAG_UPDATE_TIME);
+    AddUint32Property(env, tag, "OPERATION_TYPE", SEC_ASSET_TAG_OPERATION_TYPE);
     return tag;
 }
 
@@ -129,6 +130,7 @@ napi_value DeclareSyncType(napi_env env)
     AddUint32Property(env, syncType, "NEVER", SEC_ASSET_SYNC_TYPE_NEVER);
     AddUint32Property(env, syncType, "THIS_DEVICE", SEC_ASSET_SYNC_TYPE_THIS_DEVICE);
     AddUint32Property(env, syncType, "TRUSTED_DEVICE", SEC_ASSET_SYNC_TYPE_TRUSTED_DEVICE);
+    AddUint32Property(env, syncType, "TRUSTED_ACCOUNT", SEC_ASSET_SYNC_TYPE_TRUSTED_ACCOUNT);
     return syncType;
 }
 
@@ -148,6 +150,15 @@ napi_value DeclareReturnType(napi_env env)
     AddUint32Property(env, returnType, "ALL", SEC_ASSET_RETURN_ALL);
     AddUint32Property(env, returnType, "ATTRIBUTES", SEC_ASSET_RETURN_ATTRIBUTES);
     return returnType;
+}
+
+napi_value DeclareOperationType(napi_env env)
+{
+    napi_value operationType = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &operationType));
+    AddUint32Property(env, operationType, "NEED_SYNC", SEC_ASSET_NEED_SYNC);
+    AddUint32Property(env, operationType, "NEED_LOGOUT", SEC_ASSET_NEED_LOGOUT);
+    return operationType;
 }
 
 napi_value NapiAdd(napi_env env, napi_callback_info info)
@@ -403,6 +414,7 @@ napi_value Register(napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("SyncType", DeclareSyncType(env)),
         DECLARE_NAPI_PROPERTY("ConflictResolution", DeclareConflictResolution(env)),
         DECLARE_NAPI_PROPERTY("ReturnType", DeclareReturnType(env)),
+        DECLARE_NAPI_PROPERTY("OperationType", DeclareOperationType(env)),
     };
 
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
