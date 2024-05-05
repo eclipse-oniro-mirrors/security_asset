@@ -83,6 +83,14 @@ pub mod column {
     pub const NORMAL_LOCAL3: &str = "DataLabelNormalLocal_3";
     /// Column name of the fourth normal local data label.
     pub const NORMAL_LOCAL4: &str = "DataLabelNormalLocal_4";
+    /// Column name of the first normal local data label.
+    pub const GLOBAL_ID: &str = "GlobalId";
+    /// Column name of the second normal local data label.
+    pub const CLOUD_VERSION: &str = "CloudVersion";
+    /// Column name of the third normal local data label.
+    pub const LOCAL_STATUS: &str = "LocalStatus";
+    /// Column name of the fourth normal local data label.
+    pub const SYNC_STATUS: &str = "SyncStatus";
 }
 
 #[repr(C)]
@@ -145,6 +153,10 @@ pub(crate) const COLUMN_INFO_V2: &[ColumnInfo] = &[
     ColumnInfo { name: column::NORMAL_LOCAL2, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
     ColumnInfo { name: column::NORMAL_LOCAL3, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
     ColumnInfo { name: column::NORMAL_LOCAL4, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::CLOUD_VERSION, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::LOCAL_STATUS, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::SYNC_STATUS, data_type: DataType::Number, is_primary_key: false, not_null: true },
 ];
 
 pub(crate) struct UpgradeColumnInfo {
@@ -188,6 +200,42 @@ pub(crate) const UPGRADE_COLUMN_INFO: &[UpgradeColumnInfo] = &[
             not_null: false,
         },
         default_value: None,
+    },
+    UpgradeColumnInfo {
+        base_info: ColumnInfo {
+            name: column::GLOBAL_ID,
+            data_type: DataType::Bytes,
+            is_primary_key: false,
+            not_null: true,
+        },
+        default_value: None,
+    },
+    UpgradeColumnInfo {
+        base_info: ColumnInfo {
+            name: column::CLOUD_VERSION,
+            data_type: DataType::Bytes,
+            is_primary_key: false,
+            not_null: false,
+        },
+        default_value: None,
+    },
+    UpgradeColumnInfo {
+        base_info: ColumnInfo {
+            name: column::LOCAL_STATUS,
+            data_type: DataType::Number,
+            is_primary_key: false,
+            not_null: true,
+        },
+        default_value: Some(Value::Number(0)),
+    },
+    UpgradeColumnInfo {
+        base_info: ColumnInfo {
+            name: column::SYNC_STATUS,
+            data_type: DataType::Number,
+            is_primary_key: false,
+            not_null: true,
+        },
+        default_value: Some(Value::Number(0)),
     },
 ];
 

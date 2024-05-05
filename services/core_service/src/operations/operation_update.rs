@@ -21,7 +21,7 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap, DB_DATA_VERSION},
 };
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, Result, Tag, Value};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, Result, Tag, Value, LocalStatus, SyncStatus};
 use asset_utils::time;
 
 use crate::operations::common;
@@ -33,10 +33,22 @@ fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
     Ok(cipher)
 }
 
-fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
-    let time = time::system_time_in_millis()?;
-    db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
+fn is_only_change_local_labels(update: &AssetMap) -> bool {
+    let valid_tags = common::NORMAL_LOCAL_LABEL_ATTRS.to_vec();
+    common::check_tag_validity(update, &valid_tags).is_ok()
+}
+
+fn add_system_attrs(update: &AssetMap, db_data: &mut DbMap) -> Result<()> {
+    if !is_only_change_local_labels(update) {
+        let time = time::system_time_in_millis()?;
+        db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
+    }
     Ok(())
+}
+
+fn add_normal_attrs(db_data: &mut DbMap) {
+    db_data.insert(column::LOCAL_STATUS, Value::Number(LocalStatus::Local as u32));
+    db_data.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncUpdate as u32));
 }
 
 const QUERY_REQUIRED_ATTRS: [Tag; 1] = [Tag::Alias];
@@ -61,6 +73,7 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap) -> Result<()> {
     // Check attributes to update.
     valid_tags = common::NORMAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
+    valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&UPDATE_OPTIONAL_ATTRS);
     common::check_tag_validity(attrs_to_update, &valid_tags)?;
     common::check_value_validity(attrs_to_update)
@@ -78,7 +91,24 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     common::add_owner_info(calling_info, &mut query_db_data);
 
     let mut update_db_data = common::into_db_map(update);
-    add_system_attrs(&mut update_db_data)?;
+    add_system_attrs(update, &mut update_db_data)?;
+    add_normal_attrs(&mut update_db_data);
+
+    let mut results =
+        Database::build(calling_info.user_id())?.query_datas(&vec![], &query_db_data, None)?;
+    if results.is_empty() {
+        return log_throw_error!(ErrCode::NotFound, "[FATAL]The asset to update is not found.");
+    }
+    results.retain(|data| {
+        if let Some(Value::Number(status)) = data.get(&column::SYNC_STATUS) {
+            !matches!(status, x if *x == SyncStatus::SyncDel as u32)
+        } else {
+            true
+        }
+    });
+    if results.is_empty() {
+        return log_throw_error!(ErrCode::NotFound, "[FATAL]The asset to update is not found.");
+    }
 
     let mut db = Database::build(calling_info.user_id())?;
     if update.contains_key(&Tag::Secret) {
@@ -106,5 +136,8 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     if update_num == 0 {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]Update asset failed, update 0 asset.");
     }
+
+    common::inform_asset_ext(update, calling_info.user_id());
+
     Ok(())
 }

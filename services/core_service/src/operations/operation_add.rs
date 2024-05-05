@@ -25,7 +25,7 @@ use asset_db_operator::{
 };
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, Result, SyncType, Tag,
-    Value,
+    Value, LocalStatus, SyncStatus
 };
 use asset_log::logi;
 use asset_utils::time;
@@ -75,7 +75,15 @@ fn resolve_conflict(
             db.replace_datas(query, db_data)
         },
         _ => {
-            log_throw_error!(ErrCode::Duplicated, "[FATAL][SA]The specified alias already exists.")
+            let mut condition = query.clone();
+            condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
+            condition.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
+            if db.is_data_exists(&condition)? {
+                encrypt(calling, db_data)?;
+                db.replace_datas(&condition, db_data)
+            } else {
+                log_throw_error!(ErrCode::Duplicated, "[FATAL][SA]The specified alias already exists.")
+            }
         },
     }
 }
@@ -104,6 +112,8 @@ fn add_default_attrs(db_data: &mut DbMap) {
     db_data.entry(column::SYNC_TYPE).or_insert(Value::Number(SyncType::default() as u32));
     db_data.entry(column::REQUIRE_PASSWORD_SET).or_insert(Value::Bool(bool::default()));
     db_data.entry(column::IS_PERSISTENT).or_insert(Value::Bool(bool::default()));
+    db_data.entry(column::LOCAL_STATUS).or_insert(Value::Number(LocalStatus::Local as u32));
+    db_data.entry(column::SYNC_STATUS).or_insert(Value::Number(SyncStatus::SyncAdd as u32));
 }
 
 const REQUIRED_ATTRS: [Tag; 2] = [Tag::Secret, Tag::Alias];
@@ -146,6 +156,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
+    valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
@@ -154,7 +165,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     check_persistent_permission(attributes)
 }
 
-pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     check_arguments(attributes, calling_info)?;
 
     // Create database directory if not exists.
@@ -175,4 +186,12 @@ pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<(
         let _ = db.insert_datas(&db_data)?;
         Ok(())
     }
+}
+
+pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    let local_res = local_add(attributes, calling_info);
+
+    common::inform_asset_ext(attributes, calling_info.user_id());
+
+    local_res
 }

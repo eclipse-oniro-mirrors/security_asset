@@ -23,7 +23,7 @@ pub use asset_definition::{Value};
 pub type ExtDbMap = HashMap<&'static str, Value>;
 
 /// An enumeration representing different event types related to specific operations.
-#[derive(Default)]
+#[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub enum EventType {
     /// Sync operate.
     #[default]

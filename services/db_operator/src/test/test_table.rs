@@ -128,7 +128,7 @@ fn data_life_circle() {
     datas.insert_attr("Owner", b"owner2".to_vec());
     datas.insert_attr("Alias", b"alias3".to_vec());
     assert_eq!(1, table.update_row(&datas, &DbMap::from([("value", Value::Bytes(b"dddd".to_vec()))])).unwrap());
-    assert_eq!(1, table.delete_row(&datas).unwrap());
+    assert_eq!(1, table.delete_row(&datas, None).unwrap());
     fs::remove_dir_all("/data/asset_test/0").unwrap();
 }
 
@@ -251,7 +251,7 @@ fn update_delete_row() {
     let datas = DbMap::from([("alias", Value::Bytes(b"test_update".to_vec()))]);
     assert_eq!(table.update_row(&conditions, &datas).unwrap(), 1);
     assert!(table.is_data_exists(&datas).unwrap());
-    assert_eq!(table.delete_row(&conditions).unwrap(), 1);
+    assert_eq!(table.delete_row(&conditions, None).unwrap(), 1);
     assert!(!table.is_data_exists(&conditions).unwrap());
 
     fs::remove_dir_all("/data/asset_test/0").unwrap();

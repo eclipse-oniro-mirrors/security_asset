@@ -43,7 +43,7 @@ fn delete_on_package_removed(user_id: i32, owner: Vec<u8>) -> Result<bool> {
     cond.insert(column::OWNER, Value::Bytes(owner));
     cond.insert(column::IS_PERSISTENT, Value::Bool(false));
     let mut db = Database::build(user_id)?;
-    let _ = db.delete_datas(&cond)?;
+    let _ = db.delete_datas(&cond, None)?;
 
     cond.insert(column::IS_PERSISTENT, Value::Bool(true));
     db.is_data_exists(&cond)

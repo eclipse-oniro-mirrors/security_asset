@@ -24,7 +24,7 @@ use asset_db_operator::{
     types::{column, DbMap, QueryOptions, DB_DATA_VERSION},
 };
 use asset_definition::{
-    log_throw_error, throw_error, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value,
+    log_throw_error, throw_error, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value, SyncStatus
 };
 
 use crate::operations::common;
@@ -146,6 +146,14 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
         return throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
     }
 
+    results.retain(|data| {
+        if let Some(Value::Number(status)) = data.get(&column::SYNC_STATUS) {
+            !matches!(status, x if *x == SyncStatus::SyncDel as u32)
+        } else {
+            true
+        }
+    });
+
     for data in &mut results {
         data.remove(&column::SECRET);
     }
@@ -169,6 +177,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
+    valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
@@ -177,6 +186,8 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
 
 pub(crate) fn query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<AssetMap>> {
     check_arguments(query)?;
+
+    common::inform_asset_ext(query, calling_info.user_id());
 
     // Check database directory exist.
     if !asset_file_operator::is_user_db_dir_exist(calling_info.user_id()) {

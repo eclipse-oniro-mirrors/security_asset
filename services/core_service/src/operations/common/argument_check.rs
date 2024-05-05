@@ -18,7 +18,7 @@
 use asset_constants::{is_user_id_exist, ROOT_USER_UPPERBOUND};
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, Result, ReturnType,
-    Tag, Value,
+    Tag, Value, OperationType
 };
 
 use crate::operations::common::{CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS, NORMAL_LOCAL_LABEL_ATTRS};
@@ -37,7 +37,7 @@ pub const MAX_LABEL_SIZE: usize = 2048;
 const AUTH_TOKEN_SIZE: usize = 280;
 const CHALLENGE_SIZE: usize = 32;
 const SYNC_TYPE_MIN_BITS: u32 = 0;
-const SYNC_TYPE_MAX_BITS: u32 = 2;
+const SYNC_TYPE_MAX_BITS: u32 = 3;
 
 fn check_data_type(tag: &Tag, value: &Value) -> Result<()> {
     if tag.data_type() != value.data_type() {
@@ -171,6 +171,7 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         },
         Tag::UserId => check_user_id(tag, value),
         Tag::UpdateTime => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_TIME_SIZE),
+        Tag::OperationType => check_enum_variant::<OperationType>(tag, value),
     }
 }
 

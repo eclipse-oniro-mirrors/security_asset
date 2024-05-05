@@ -22,6 +22,7 @@ ohos_rust_shared_library("asset_service") {
     "../../frameworks/os_dependency/file:asset_file_operator",
     "../../frameworks/os_dependency/log:asset_log",
     "../../frameworks/utils:asset_utils",
+    "../../interfaces/inner_api/rs:asset_sdk_rust",
     "../constants:asset_constants",
     "../crypto_manager:asset_crypto_manager",
     "../db_operator:asset_db_operator",

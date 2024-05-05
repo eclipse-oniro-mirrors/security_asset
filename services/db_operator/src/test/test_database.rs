@@ -148,7 +148,7 @@ fn delete_data() {
     let ret = db.is_data_exists(&datas).unwrap();
     assert!(ret);
 
-    let count = db.delete_datas(&datas).unwrap();
+    let count = db.delete_datas(&datas, None).unwrap();
     assert_eq!(count, 1);
 
     let ret = db.is_data_exists(&datas).unwrap();

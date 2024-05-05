@@ -73,8 +73,12 @@ fn build_sql_where(conditions: &DbMap, sql: &mut String) {
     if !conditions.is_empty() {
         sql.push_str(" where ");
         for (i, column_name) in conditions.keys().enumerate() {
-            sql.push_str(column_name);
-            sql.push_str("=?");
+            if *column_name == "SyncType" {
+                sql.push_str("(SyncType & ?) <> 0");
+            } else {
+                sql.push_str(column_name);
+                sql.push_str("=?");
+            }
             if i != conditions.len() - 1 {
                 sql.push_str(" and ")
             }
@@ -133,6 +137,25 @@ fn build_sql_query_options(query_options: Option<&QueryOptions>, sql: &mut Strin
             }
         } else if let Some(offset) = option.offset {
             sql.push_str(format!(" limit -1 offset {}", offset).as_str());
+        }
+    }
+}
+
+fn build_sql_reverse_condition(reverse_condition: Option<&DbMap>, sql: &mut String) {
+    if let Some(conditions) = reverse_condition {
+        if !conditions.is_empty() {
+            sql.push_str(" and ");
+            for (i, column_name) in conditions.keys().enumerate() {
+                if *column_name == "SyncType" {
+                    sql.push_str("(SyncType & ?) == 0");
+                } else {
+                    sql.push_str(column_name);
+                    sql.push_str("<>?");
+                }
+                if i != conditions.len() - 1 {
+                    sql.push_str(" and ")
+                }
+            }
         }
     }
 }
@@ -257,14 +280,18 @@ impl<'a> Table<'a> {
     /// ```
     /// // SQL: delete from table_name where id=2
     /// let condition = &DbMap::from([("id", Value::Number(2)]);
-    /// let ret = table.delete_row(condition);
+    /// let ret = table.delete_row(condition, None);
     /// ```
-    pub(crate) fn delete_row(&self, condition: &DbMap) -> Result<i32> {
+    pub(crate) fn delete_row(&self, condition: &DbMap, reverse_condition: Option<&DbMap>) -> Result<i32> {
         let mut sql = format!("delete from {}", self.table_name);
         build_sql_where(condition, &mut sql);
+        build_sql_reverse_condition(reverse_condition, &mut sql);
         let stmt = Statement::prepare(&sql, self.db)?;
         let mut index = 1;
         bind_datas(condition, &stmt, &mut index)?;
+        if let Some(datas) = reverse_condition {
+            bind_datas(datas, &stmt, &mut index)?;
+        }
         stmt.step()?;
         let count = unsafe { SqliteChanges(self.db.handle as _) };
         Ok(count)
@@ -428,7 +455,7 @@ impl<'a> Table<'a> {
     pub(crate) fn replace_row(&self, condition: &DbMap, datas: &DbMap) -> Result<()> {
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
-        if self.delete_row(condition).is_ok() && self.insert_row(datas).is_ok() {
+        if self.delete_row(condition, None).is_ok() && self.insert_row(datas).is_ok() {
             trans.commit()
         } else {
             trans.rollback()
