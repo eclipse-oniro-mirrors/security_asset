@@ -73,7 +73,7 @@ fn on_app_request() -> Result<()> {
         ASET_SUCCESS => {
             name.truncate(name_len as usize);
         },
-        _ => return Err(AssetError::new(ErrCode::BmsError, "[FATAL]Get hap name failed.".to_string()))
+        _ => return Err(AssetError::new(ErrCode::BmsError, "[FATAL]Get calling package name failed.".to_string()))
     }
 
     let arc_asset_plugin = AssetPlugin::get_instance();
