@@ -29,7 +29,8 @@ use asset_definition::{Result, Value};
 use asset_file_operator::delete_user_db_dir;
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID};
+use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME,
+    PARAM_NAME_USER_ID};
 
 use crate::{counter::AutoCounter, sys_event::upload_fault_system_event};
 
