@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -64,6 +64,48 @@ int32_t GetProcessInfo(uint32_t tokenId, uint64_t uid, std::string &info)
     return ASSET_SUCCESS;
 }
 
+int32_t GetHapBundleName(int32_t userId, uint32_t tokenId, uint8_t *name, uint32_t *nameLen, int32_t *appIndex)
+{
+    HapTokenInfo hapTokenInfo;
+    int32_t ret = AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
+    if (ret != RET_SUCCESS) {
+        LOGE("[FATAL]Get hap token info failed, ret = %{public}d", ret);
+        return ASSET_ACCESS_TOKEN_ERROR;
+    }
+    if (memcpy_s(name, *nameLen, hapTokenInfo.bundleName.c_str(), hapTokenInfo.bundleName.size()) != EOK) {
+        LOGE("[FATAL]The name buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
+            hapTokenInfo.bundleName.size(), *nameLen);
+        return ASSET_ACCESS_TOKEN_ERROR;
+    }
+    *nameLen = hapTokenInfo.bundleName.size();
+    AppExecFwk::BundleMgrClient bmsClient;
+    AppExecFwk::BundleInfo bundleInfo;
+    if (!bmsClient.GetBundleInfo(hapTokenInfo.bundleName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
+        bundleInfo, userId)) {
+        LOGE("[FATAL]Get bundle info failed!");
+        return ASSET_BMS_ERROR;
+    }
+    *appIndex = bundleInfo.appIndex;
+    return ASSET_SUCCESS;
+}
+
+int32_t GetNativePackageName(uint32_t tokenId, uint8_t *name, uint32_t *nameLen)
+{
+    NativeTokenInfo nativeTokenInfo;
+    int32_t ret = AccessTokenKit::GetNativeTokenInfo(tokenId, nativeTokenInfo);
+    if (ret != RET_SUCCESS) {
+        LOGE("[FATAL]Get native token info failed, ret = %{public}d", ret);
+        return ASSET_ACCESS_TOKEN_ERROR;
+    }
+    if (memcpy_s(name, *nameLen, nativeTokenInfo.processName.c_str(),
+        nativeTokenInfo.processName.size()) != EOK) {
+        LOGE("[FATAL]The name buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
+            nativeTokenInfo.processName.size(), *nameLen);
+        return ASSET_ACCESS_TOKEN_ERROR;
+    }
+    *nameLen = nativeTokenInfo.processName.size();
+    return ASSET_SUCCESS;
+}
 } // namespace
 
 int32_t GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen)
@@ -101,4 +143,26 @@ int32_t GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t
 
     *infoLen = info.size();
     return ASSET_SUCCESS;
+}
+
+int32_t GetCallingName(int32_t userId, uint8_t *name, uint32_t *nameLen, bool *isHap, int32_t *appIndex)
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
+    int32_t code = ASSET_SUCCESS;
+    switch (tokenType) {
+        case ATokenTypeEnum::TOKEN_HAP:
+            *isHap = true;
+            code = GetHapBundleName(userId, tokenId, name, nameLen, appIndex);
+            break;
+        case ATokenTypeEnum::TOKEN_NATIVE:
+        case ATokenTypeEnum::TOKEN_SHELL:
+            *isHap = false;
+            code = GetNativePackageName(tokenId, name, nameLen);
+            break;
+        default:
+            LOGE("[FATAL]Invalid calling type: %{public}d", tokenType);
+            code = ASSET_INVALID_ARGUMENT;
+    }
+    return code;
 }

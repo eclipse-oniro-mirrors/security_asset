@@ -28,6 +28,7 @@ enum OwnerType {
 };
 
 int32_t GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen);
+int32_t GetCallingName(int32_t userId, uint8_t *name, uint32_t *nameLen, bool *isHap, int32_t *appIndex);
 
 #ifdef __cplusplus
 }
