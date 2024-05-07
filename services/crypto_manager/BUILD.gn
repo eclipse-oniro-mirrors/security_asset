@@ -18,10 +18,10 @@ ohos_rust_static_library("asset_crypto_manager") {
   sources = [ "src/lib.rs" ]
   deps = [
     ":asset_huks_wrapper",
-    "../constants:asset_constants",
     "../../frameworks/definition:asset_definition",
     "../../frameworks/os_dependency/log:asset_log",
     "../../frameworks/utils:asset_utils",
+    "../constants:asset_constants",
   ]
   external_deps = [
     "huks:libhukssdk",
@@ -40,9 +40,7 @@ ohos_static_library("asset_huks_wrapper") {
     "../../interfaces/kits/c/inc",
   ]
   sources = [ "src/huks_wrapper.c" ]
-  deps = [
-    "../../frameworks/os_dependency/memory:asset_mem",
-  ]
+  deps = [ "../../frameworks/os_dependency/memory:asset_mem" ]
   external_deps = [
     "hilog:libhilog",
     "huks:libhukssdk",
