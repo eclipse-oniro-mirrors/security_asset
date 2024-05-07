@@ -29,7 +29,7 @@ use asset_definition::{Result, Value};
 use asset_file_operator::delete_user_db_dir;
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::plugin_interface::{EventType, ExtDbMap};
+use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID};
 
 use crate::{counter::AutoCounter, sys_event::upload_fault_system_event};
 
@@ -93,9 +93,9 @@ pub(crate) extern "C" fn on_package_removed(user_id: i32, owner: *const u8, owne
     let mut asset_plugin = arc_asset_plugin.lock().unwrap();
     if let Ok(load) = asset_plugin.load_plugin() {
         let mut params = ExtDbMap::new();
-        params.insert("UserId", Value::Number(user_id as u32));
-        params.insert("PackageName", Value::Bytes(bundle_name.as_bytes().to_vec()));
-        params.insert("AppIndex", Value::Number(app_index as u32));
+        params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
+        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(bundle_name.as_bytes().to_vec()));
+        params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
         match load.process_event(EventType::OnPackageRemove, &params) {
             Ok(()) => logi!("process package remove event success."),
             Err(code) => loge!("process package remove event failed, code: {}", code),
@@ -135,8 +135,8 @@ pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8) {
     let mut asset_plugin = arc_asset_plugin.lock().unwrap();
     if let Ok(load) = asset_plugin.load_plugin() {
         let mut params = ExtDbMap::new();
-        params.insert("UserId", Value::Number(user_id as u32));
-        params.insert("PackageName", Value::Bytes(bundle_name.as_bytes().to_vec()));
+        params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
+        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(bundle_name.as_bytes().to_vec()));
         match load.process_event(EventType::OnAppRestore, &params) {
             Ok(()) => logi!("process app restore event success."),
             Err(code) => loge!("process app restore event failed, code: {}", code),
@@ -151,7 +151,7 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
     let mut asset_plugin = arc_asset_plugin.lock().unwrap();
     if let Ok(load) = asset_plugin.load_plugin() {
         let mut params = ExtDbMap::new();
-        params.insert("UserId", Value::Number(user_id as u32));
+        params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
         match load.process_event(EventType::OnAppRestore, &params) {
             Ok(()) => logi!("process user unlocked event success."),
             Err(code) => loge!("process user unlocked event failed, code: {}", code),

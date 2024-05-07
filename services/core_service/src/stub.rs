@@ -22,7 +22,7 @@ use asset_definition::{AssetError, Result};
 use asset_ipc::{deserialize_map, serialize_maps, IpcCode, IPC_SUCCESS, SA_NAME};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::{plugin_interface::{EventType, ExtDbMap}, ErrCode, Value};
+use asset_sdk::{plugin_interface::{EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID}, ErrCode, Value};
 
 use crate::{counter::AutoCounter, unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
 
@@ -80,10 +80,11 @@ fn on_app_request() -> Result<()> {
     let mut asset_plugin = arc_asset_plugin.lock().unwrap();
     if let Ok(load) = asset_plugin.load_plugin() {
         let mut params = ExtDbMap::new();
-        params.insert("UserId", Value::Number(user_id as u32));
-        params.insert("BundleName", Value::Bytes(name));
+        params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
+        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(name));
+        params.insert(PARAM_NAME_IS_HAP, Value::Bool(is_hap));
         if is_hap {
-            params.insert("AppIndex", Value::Number(app_index as u32));
+            params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
         }
         match load.process_event(EventType::OnAppCall, &params) {
             Ok(()) => return Ok(()),
@@ -146,7 +147,7 @@ fn on_extension_request(_stub: &AssetService, _code: u32, data: &mut MsgParcel, 
             let mut asset_plugin = arc_asset_plugin.lock().unwrap();
             if let Ok(load) = asset_plugin.load_plugin() {
                 let mut params = ExtDbMap::new();
-                params.insert("UserId", Value::Number(user_id as u32));
+                params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
                 match load.process_event(EventType::OnDeviceUpgrade, &params) {
                     Ok(()) => logi!("process device upgrade event success."),
                     Err(code) => loge!("process device upgrade event failed, code: {}", code),
