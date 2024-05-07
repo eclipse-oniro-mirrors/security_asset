@@ -44,8 +44,10 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
     }
 
     std::string owner = appId + '_' + std::to_string(appIndex);
+    std::string bundleName = want.GetStringParam(BUNDLE_NAME);
     if (onPackageRemoved != nullptr) {
-        onPackageRemoved(userId, reinterpret_cast<const uint8_t *>(owner.c_str()), owner.size());
+        onPackageRemoved(userId, reinterpret_cast<const uint8_t *>(owner.c_str()), owner.size(),
+            reinterpret_cast<const uint8_t *>(bundleName.c_str()), appIndex);
     }
     LOGI("[INFO]Receive event: PACKAGE_REMOVED, userId=%{public}d, appId=%{public}s, appIndex=%{public}d, ",
         userId, appId.c_str(), appIndex);
@@ -84,9 +86,9 @@ public:
         } else if (action == COMMON_EVENT_RESTORE_START) {
             if (this->eventCallBack->onAppRestore != nullptr) {
                 int userId = data.GetCode();
-                std::string appId = want.GetStringParam(BUNDLE_NAME);
+                std::string bundleName = want.GetStringParam(BUNDLE_NAME);
 
-                this->eventCallBack->onAppRestore(userId, reinterpret_cast<const uint8_t *>(appId.c_str()));
+                this->eventCallBack->onAppRestore(userId, reinterpret_cast<const uint8_t *>(bundleName.c_str()));
             }
             LOGI("[INFO]Receive event: RESTORE_START, start_time: %{public}ld", startTime);
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_UNLOCKED) {

@@ -18,11 +18,11 @@
 
 #include <stdint.h>
 
-typedef void (*OnPackageRemoved)(int32_t, const uint8_t *owner, uint32_t ownerSize);
+typedef void (*OnPackageRemoved)(int32_t, const uint8_t *, uint32_t, const uint8_t *, int32_t);
 typedef void (*OnUserRemoved)(int32_t);
 typedef void (*OnScreenOff)(void);
 typedef void (*OnCharging)(void);
-typedef void (*OnAppRestore)(int32_t, const uint8_t *owner);
+typedef void (*OnAppRestore)(int32_t, const uint8_t *);
 typedef void (*OnUserUnlocked)(int32_t);
 
 typedef struct {

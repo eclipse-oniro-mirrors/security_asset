@@ -62,7 +62,11 @@ fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
             return;
         },
     };
-    listener::delete_data_by_owner(user_id, owner.as_ptr(), owner.len() as u32);
+    let Some(bundle_name) = want.get(BUNDLE_NAME) else {
+        loge!("[FATIL]Get restore app info failed, get bundle name failed.");
+        return;
+    };
+    listener::on_package_removed(user_id, owner.as_ptr(), owner.len() as u32, bundle_name.as_ptr(), app_index);
 }
 
 pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
