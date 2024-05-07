@@ -97,5 +97,19 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
         };
 
         listener::on_app_restore(user_id, bundle_name.as_ptr());
+    } else if reason_name == "usual.event.USER_UNLOCKED" {
+        let want = reason.extra_data.want();
+        let Some(user_id) = want.get(USER_ID) else {
+            loge!("[FATIL]Get user unlocked info failed, get user id failed.");
+            return;
+        };
+        let user_id = match user_id.parse::<i32>() {
+            Ok(parsed_value) => parsed_value,
+            Err(_) => {
+                loge!("[FATIL]Get user unlocked info failed, failed to parse user id.");
+                return;
+            }
+        };
+        listener::on_user_unlocked(user_id);
     }
 }

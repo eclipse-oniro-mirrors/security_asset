@@ -81,12 +81,19 @@ public:
                 this->eventCallBack->onCharging();
             }
             LOGI("[INFO]Receive event: CHARGING, start_time: %{public}ld", startTime);
-        }  else if (action == COMMON_EVENT_RESTORE_START) {
+        } else if (action == COMMON_EVENT_RESTORE_START) {
             if (this->eventCallBack->onAppRestore != nullptr) {
                 int userId = data.GetCode();
                 std::string appId = want.GetStringParam(BUNDLE_NAME);
 
                 this->eventCallBack->onAppRestore(userId, reinterpret_cast<const uint8_t *>(appId.c_str()));
+            }
+            LOGI("[INFO]Receive event: RESTORE_START, start_time: %{public}ld", startTime);
+        } else if (action == CommonEventSupport::COMMON_EVENT_USER_UNLOCKED) {
+            if (this->eventCallBack->onUserUnlocked != nullptr) {
+                int userId = data.GetCode();
+
+                this->eventCallBack->onUserUnlocked(userId);
             }
             LOGI("[INFO]Receive event: RESTORE_START, start_time: %{public}ld", startTime);
         } else {
@@ -108,6 +115,7 @@ bool SubscribeSystemEvent(const EventCallBack *eventCallBack)
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_REMOVED);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_OFF);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_CHARGING);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_UNLOCKED);
     matchingSkills.AddEvent(COMMON_EVENT_RESTORE_START);
     CommonEventSubscribeInfo info(matchingSkills);
     if (g_eventHandler == nullptr) {

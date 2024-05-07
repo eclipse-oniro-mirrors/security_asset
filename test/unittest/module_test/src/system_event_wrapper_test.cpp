@@ -69,6 +69,10 @@ void OnAppRestore(int32_t packageId, const uint8_t *owner)
 {
 }
 
+void OnUserUnlocked(int32_t userId)
+{
+}
+
 /**
  * @tc.name: AssetSystemEventWrapperTest.AssetSystemEventWrapperTest001
  * @tc.desc: Test asset func SubscribeSystemEvent, expect ACCESS_TOKEN_ERROR
@@ -82,7 +86,8 @@ HWTEST_F(AssetSystemEventWrapperTest, AssetSystemEventWrapperTest001, TestSize.L
         OnUserRemovedCallback,
         OnScreenOffCallback,
         OnChargingCallback,
-        OnAppRestore
+        OnAppRestore,
+        OnUserUnlocked
     };
     ASSERT_EQ(true, SubscribeSystemEvent(&call_back));
 }

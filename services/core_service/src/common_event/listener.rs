@@ -114,11 +114,27 @@ pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8) {
         let mut params = ExtDbMap::new();
         params.insert("UserId", Value::Number(user_id as u32));
         params.insert("PackageName", Value::Bytes(bundle_name.as_bytes().to_vec()));
-        match load.process_event(EventType::OnAppUpgrade, &params) {
-            Ok(()) => logi!("process app upgrade event success."),
-            Err(code) => loge!("process app upgrade event failed, code: {}", code),
+        match load.process_event(EventType::OnAppRestore, &params) {
+            Ok(()) => logi!("process app restore event success."),
+            Err(code) => loge!("process app restore event failed, code: {}", code),
         }
     }
+}
+
+pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
+    logi!("[INFO]On user -{}- unlocked.", user_id);
+
+    let arc_asset_plugin = AssetPlugin::get_instance();
+    let mut asset_plugin = arc_asset_plugin.lock().unwrap();
+    if let Ok(load) = asset_plugin.load_plugin() {
+        let mut params = ExtDbMap::new();
+        params.insert("UserId", Value::Number(user_id as u32));
+        match load.process_event(EventType::OnAppRestore, &params) {
+            Ok(()) => logi!("process user unlocked event success."),
+            Err(code) => loge!("process user unlocked event failed, code: {}", code),
+        }
+    }
+
 }
 
 fn backup_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
@@ -149,6 +165,7 @@ struct EventCallBack {
     on_screen_off: extern "C" fn(),
     on_charging: extern "C" fn(),
     on_app_restore: extern "C" fn(i32, *const u8),
+    on_user_unlocked: extern "C" fn(i32),
 }
 
 extern "C" {
@@ -170,7 +187,8 @@ pub(crate) fn subscribe() {
             on_user_removed: delete_dir_by_user,
             on_screen_off: delete_crypto_need_unlock,
             on_charging: backup_db,
-            on_app_restore
+            on_app_restore,
+            on_user_unlocked
         };
         if SubscribeSystemEvent(&call_back) {
             logi!("Subscribe system event success.");

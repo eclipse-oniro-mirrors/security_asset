@@ -36,7 +36,7 @@ pub enum EventType {
     OnDeviceUpgrade,
 
     /// App upgrade event.
-    OnAppUpgrade,
+    OnAppRestore,
 
     /// User unlock envent.
     OnUserUnlocked,
