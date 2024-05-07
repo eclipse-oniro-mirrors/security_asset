@@ -16,9 +16,7 @@
 //! This module is used to subscribe common event and system ability.
 
 use std::{
-    fs::{self, DirEntry},
-    slice,
-    time::Instant,
+    ffi::CStr, fs::{self, DirEntry}, slice, time::Instant
 };
 
 use asset_constants::{CallingInfo, OwnerType};
@@ -30,6 +28,8 @@ use asset_db_operator::{
 use asset_definition::{Result, Value};
 use asset_file_operator::delete_user_db_dir;
 use asset_log::{loge, logi};
+use asset_plugin::asset_plugin::AssetPlugin;
+use asset_sdk::plugin_interface::{EventType, ExtDbMap};
 
 use crate::{counter::AutoCounter, sys_event::upload_fault_system_event};
 
@@ -103,6 +103,24 @@ pub(crate) extern "C" fn backup_db() {
     }
 }
 
+pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8) {
+    let c_str = unsafe { CStr::from_ptr(bundle_name) };
+    let bundle_name = c_str.to_string_lossy().into_owned();
+    logi!("[INFO]On app -{}-{}- restore.", user_id, bundle_name);
+
+    let arc_asset_plugin = AssetPlugin::get_instance();
+    let mut asset_plugin = arc_asset_plugin.lock().unwrap();
+    if let Ok(load) = asset_plugin.load_plugin() {
+        let mut params = ExtDbMap::new();
+        params.insert("UserId", Value::Number(user_id as u32));
+        params.insert("PackageName", Value::Bytes(bundle_name.as_bytes().to_vec()));
+        match load.process_event(EventType::OnAppUpgrade, &params) {
+            Ok(()) => logi!("process app upgrade event success."),
+            Err(code) => loge!("process app upgrade event failed, code: {}", code),
+        }
+    }
+}
+
 fn backup_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
     let from_path = entry.path().with_file_name(format!("{}/{}", user_id, ASSET_DB)).to_string_lossy().to_string();
     Database::check_db_accessible(from_path.clone(), user_id)?;
@@ -124,19 +142,22 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
     Ok(())
 }
 
+#[repr(C)]
+struct EventCallBack {
+    on_package_remove: extern "C" fn(i32, *const u8, u32),
+    on_user_removed: extern "C" fn(i32),
+    on_screen_off: extern "C" fn(),
+    on_charging: extern "C" fn(),
+    on_app_restore: extern "C" fn(i32, *const u8),
+}
+
 extern "C" {
     fn SubscribeSystemAbility(
-        onPackageRemoved: extern "C" fn(i32, *const u8, u32),
-        onUserRemoved: extern "C" fn(i32),
-        onScreenOff: extern "C" fn(),
-        onCharging: extern "C" fn(),
+        eventCallBack: &EventCallBack
     ) -> bool;
     fn UnSubscribeSystemAbility() -> bool;
     fn SubscribeSystemEvent(
-        onPackageRemoved: extern "C" fn(i32, *const u8, u32),
-        onUserRemoved: extern "C" fn(i32),
-        onScreenOff: extern "C" fn(),
-        onCharging: extern "C" fn(),
+        eventCallBack: &EventCallBack
     ) -> bool;
     fn UnSubscribeSystemEvent() -> bool;
 }
@@ -144,13 +165,20 @@ extern "C" {
 /// Subscribe to the add and remove events of system abilities.
 pub(crate) fn subscribe() {
     unsafe {
-        if SubscribeSystemEvent(delete_data_by_owner, delete_dir_by_user, delete_crypto_need_unlock, backup_db) {
+        let call_back = EventCallBack {
+            on_package_remove: delete_data_by_owner,
+            on_user_removed: delete_dir_by_user,
+            on_screen_off: delete_crypto_need_unlock,
+            on_charging: backup_db,
+            on_app_restore
+        };
+        if SubscribeSystemEvent(&call_back) {
             logi!("Subscribe system event success.");
         } else {
             loge!("Subscribe system event failed.")
         }
 
-        if SubscribeSystemAbility(delete_data_by_owner, delete_dir_by_user, delete_crypto_need_unlock, backup_db) {
+        if SubscribeSystemAbility(&call_back) {
             logi!("Subscribe system ability success.");
         } else {
             loge!("Subscribe system ability failed.")

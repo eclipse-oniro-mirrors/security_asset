@@ -65,6 +65,10 @@ void OnChargingCallback(void)
 {
 }
 
+void OnAppRestore(int32_t packageId, const uint8_t *owner)
+{
+}
+
 /**
  * @tc.name: AssetSystemEventWrapperTest.AssetSystemEventWrapperTest001
  * @tc.desc: Test asset func SubscribeSystemEvent, expect ACCESS_TOKEN_ERROR
@@ -73,11 +77,14 @@ void OnChargingCallback(void)
  */
 HWTEST_F(AssetSystemEventWrapperTest, AssetSystemEventWrapperTest001, TestSize.Level0)
 {
-    OnPackageRemoved onPackageRemovedPtr = &PackageRemovedCallback;
-    OnUserRemoved onUserRemovedPtr = &OnUserRemovedCallback;
-    OnScreenOff onScreenOffPtr = &OnScreenOffCallback;
-    OnCharging onChargingPtr = &OnChargingCallback;
-    ASSERT_EQ(true, SubscribeSystemEvent(onPackageRemovedPtr, onUserRemovedPtr, onScreenOffPtr, onChargingPtr));
+    EventCallBack call_back = {
+        PackageRemovedCallback,
+        OnUserRemovedCallback,
+        OnScreenOffCallback,
+        OnChargingCallback,
+        OnAppRestore
+    };
+    ASSERT_EQ(true, SubscribeSystemEvent(&call_back));
 }
 
 /**

@@ -31,6 +31,21 @@ pub enum EventType {
 
     /// Logout operate.
     Logout = 1,
+
+    /// Device upgrade event.
+    OnDeviceUpgrade,
+
+    /// App upgrade event.
+    OnAppUpgrade,
+
+    /// User unlock envent.
+    OnUserUnlocked,
+
+    /// App call event.
+    OnAppCall,
+
+    /// Package remove event.
+    OnPackageRemove,
 }
 
 /// An enumeration representing different plugin types.

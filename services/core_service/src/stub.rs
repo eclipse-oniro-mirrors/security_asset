@@ -20,6 +20,8 @@ use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 use asset_definition::{AssetError, Result};
 use asset_ipc::{deserialize_map, serialize_maps, IpcCode, IPC_SUCCESS, SA_NAME};
 use asset_log::{loge, logi};
+use asset_plugin::asset_plugin::AssetPlugin;
+use asset_sdk::{plugin_interface::{EventType, ExtDbMap}, Value};
 
 use crate::{counter::AutoCounter, unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
 
@@ -98,6 +100,16 @@ fn on_extension_request(_stub: &AssetService, _code: u32, data: &mut MsgParcel, 
     match data.read::<i32>() {
         Ok(user_id) => {
             logi!("[INFO]User id is {}.", user_id);
+            let arc_asset_plugin = AssetPlugin::get_instance();
+            let mut asset_plugin = arc_asset_plugin.lock().unwrap();
+            if let Ok(load) = asset_plugin.load_plugin() {
+                let mut params = ExtDbMap::new();
+                params.insert("UserId", Value::Number(user_id as u32));
+                match load.process_event(EventType::OnDeviceUpgrade, &params) {
+                    Ok(()) => logi!("process device upgrade event success."),
+                    Err(code) => loge!("process device upgrade event failed, code: {}", code),
+                }
+            }
             IPC_SUCCESS as i32
         }
         _ => IpcStatusCode::Failed as i32

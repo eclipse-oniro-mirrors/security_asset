@@ -26,6 +26,7 @@ use crate::common_event::listener;
 const USER_ID: &str = "userId";
 const SANDBOX_APP_INDEX: &str = "sandbox_app_index";
 const APP_ID: &str = "appId";
+const BUNDLE_NAME: &str = "bundleName";
 
 fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
     let Some(user_id) = want.get(USER_ID) else {
@@ -77,5 +78,24 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
         let _ = delete_user_db_dir(reason.extra_data.code);
     } else if reason_name == "usual.event.CHARGING" {
         listener::backup_db();
+    } else if reason_name == "COMMON_EVENT_RESTORE_START" {
+        let want = reason.extra_data.want();
+        let Some(user_id) = want.get(USER_ID) else {
+            loge!("[FATIL]Get restore app info failed, get user id failed.");
+            return;
+        };
+        let user_id = match user_id.parse::<i32>() {
+            Ok(parsed_value) => parsed_value,
+            Err(_) => {
+                loge!("[FATIL]Get restore app info failed, failed to parse user id.");
+                return;
+            }
+        };
+        let Some(bundle_name) = want.get(BUNDLE_NAME) else {
+            loge!("[FATIL]Get restore app info failed, get bundle name failed.");
+            return;
+        };
+
+        listener::on_app_restore(user_id, bundle_name.as_ptr());
     }
 }

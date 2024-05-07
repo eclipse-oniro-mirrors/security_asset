@@ -29,6 +29,8 @@ using namespace OHOS::AppExecFwk::Constants;
 using namespace OHOS::EventFwk;
 
 const char * const APP_ID = "appId";
+const char * const COMMON_EVENT_RESTORE_START = "COMMON_EVENT_RESTORE_START";
+const char * const BUNDLE_NAME = "bundleName";
 
 void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPackageRemoved onPackageRemoved)
 {
@@ -51,15 +53,8 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
 
 class SystemEventHandler : public CommonEventSubscriber {
 public:
-    explicit SystemEventHandler(const CommonEventSubscribeInfo &subscribeInfo, OnPackageRemoved onPackageRemoved,
-        OnUserRemoved onUserRemoved, OnScreenOff onScreenOff, OnCharging onCharging)
-        : CommonEventSubscriber(subscribeInfo)
-    {
-        this->onPackageRemoved = onPackageRemoved;
-        this->onUserRemoved = onUserRemoved;
-        this->onScreenOff = onScreenOff;
-        this->onCharging = onCharging;
-    }
+    explicit SystemEventHandler(const CommonEventSubscribeInfo &subscribeInfo, const EventCallBack *eventCallBack)
+        : CommonEventSubscriber(subscribeInfo), eventCallBack(eventCallBack) {}
     ~SystemEventHandler() = default;
     void OnReceiveEvent(const CommonEventData &data) override
     {
@@ -67,41 +62,45 @@ public:
         auto want = data.GetWant();
         std::string action = want.GetAction();
         if (action == CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED) {
-            HandlePackageRemoved(want, false, this->onPackageRemoved);
+            HandlePackageRemoved(want, false, this->eventCallBack->onPackageRemoved);
         } else if (action == CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
-            HandlePackageRemoved(want, true, this->onPackageRemoved);
+            HandlePackageRemoved(want, true, this->eventCallBack->onPackageRemoved);
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
             int userId = data.GetCode();
-            if (this->onUserRemoved != nullptr) {
-                this->onUserRemoved(userId);
+            if (this->eventCallBack->onUserRemoved != nullptr) {
+                this->eventCallBack->onUserRemoved(userId);
             }
             LOGI("[INFO] Receive event: USER_REMOVED, userId=%{public}d", userId);
         } else if (action == CommonEventSupport::COMMON_EVENT_SCREEN_OFF) {
-            if (this->onScreenOff != nullptr) {
-                this->onScreenOff();
+            if (this->eventCallBack->onScreenOff != nullptr) {
+                this->eventCallBack->onScreenOff();
             }
             LOGI("[INFO]Receive event: SCREEN_OFF, start_time: %{public}ld", startTime);
         } else if (action == CommonEventSupport::COMMON_EVENT_CHARGING) {
-            if (this->onCharging != nullptr) {
-                this->onCharging();
+            if (this->eventCallBack->onCharging != nullptr) {
+                this->eventCallBack->onCharging();
             }
             LOGI("[INFO]Receive event: CHARGING, start_time: %{public}ld", startTime);
+        }  else if (action == COMMON_EVENT_RESTORE_START) {
+            if (this->eventCallBack->onAppRestore != nullptr) {
+                int userId = data.GetCode();
+                std::string appId = want.GetStringParam(BUNDLE_NAME);
+
+                this->eventCallBack->onAppRestore(userId, reinterpret_cast<const uint8_t *>(appId.c_str()));
+            }
+            LOGI("[INFO]Receive event: RESTORE_START, start_time: %{public}ld", startTime);
         } else {
             LOGW("[WARNING]Receive unknown event: %{public}s", action.c_str());
         }
     }
 private:
-    OnPackageRemoved onPackageRemoved;
-    OnUserRemoved onUserRemoved;
-    OnScreenOff onScreenOff;
-    OnCharging onCharging;
+    const EventCallBack *eventCallBack;
 };
 
 std::shared_ptr<SystemEventHandler> g_eventHandler = nullptr;
 }
 
-bool SubscribeSystemEvent(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff,
-    OnCharging onCharging)
+bool SubscribeSystemEvent(const EventCallBack *eventCallBack)
 {
     MatchingSkills matchingSkills;
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
@@ -109,10 +108,11 @@ bool SubscribeSystemEvent(OnPackageRemoved onPackageRemoved, OnUserRemoved onUse
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_REMOVED);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_OFF);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_CHARGING);
+    matchingSkills.AddEvent(COMMON_EVENT_RESTORE_START);
     CommonEventSubscribeInfo info(matchingSkills);
     if (g_eventHandler == nullptr) {
         g_eventHandler = std::shared_ptr<SystemEventHandler>(
-            new (std::nothrow) SystemEventHandler(info, onPackageRemoved, onUserRemoved, onScreenOff, onCharging));
+            new (std::nothrow) SystemEventHandler(info, eventCallBack));
         if (g_eventHandler == nullptr) {
             LOGE("[FATAL]Asset system event handler is nullptr.");
             return false;
