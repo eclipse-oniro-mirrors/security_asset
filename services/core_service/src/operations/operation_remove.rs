@@ -65,30 +65,19 @@ pub(crate) fn remove(query: &AssetMap, calling_info: &CallingInfo) -> Result<()>
     add_system_attrs(&mut update_db_data)?;
     add_normal_attrs(&mut update_db_data);
 
-    let mut results =
-        Database::build(calling_info.user_id())?.query_datas(&vec![], &db_data, None)?;
-    if results.is_empty() {
-        return log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");
-    }
-    results.retain(|data| {
-        if let Some(Value::Number(status)) = data.get(&column::SYNC_STATUS) {
-            !matches!(status, x if *x == SyncStatus::SyncDel as u32)
-        } else {
-            true
-        }
-    });
+    let results = Database::build(calling_info.user_id())?.query_datas(&vec![], &db_data, None, true)?;
     if results.is_empty() {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");
     }
 
-    let update_num = Database::build(calling_info.user_id())?.update_datas(&db_data, &update_db_data)?;
+    let update_num = Database::build(calling_info.user_id())?.update_datas(&db_data, true, &update_db_data)?;
     if update_num == 0 {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");
     }
 
     let mut reverse_condition = DbMap::new();
     reverse_condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
-    let remove_num = Database::build(calling_info.user_id())?.delete_datas(&db_data, Some(&reverse_condition))?;
+    let remove_num = Database::build(calling_info.user_id())?.delete_datas(&db_data, Some(&reverse_condition), false)?;
     logi!("Delete num: {}", remove_num);
 
     common::inform_asset_ext(query, calling_info.user_id());

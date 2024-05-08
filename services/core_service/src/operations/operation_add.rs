@@ -72,15 +72,15 @@ fn resolve_conflict(
     match attrs.get(&Tag::ConflictResolution) {
         Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {
             encrypt(calling, db_data)?;
-            db.replace_datas(query, db_data)
+            db.replace_datas(query, false, db_data)
         },
         _ => {
             let mut condition = query.clone();
             condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
             condition.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
-            if db.is_data_exists(&condition)? {
+            if db.is_data_exists(&condition, false)? {
                 encrypt(calling, db_data)?;
-                db.replace_datas(&condition, db_data)
+                db.replace_datas(&condition, false, db_data)
             } else {
                 log_throw_error!(ErrCode::Duplicated, "[FATAL][SA]The specified alias already exists.")
             }
@@ -179,7 +179,7 @@ fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 
     let query = get_query_condition(calling_info, attributes)?;
     let mut db = Database::build(calling_info.user_id())?;
-    if db.is_data_exists(&query)? {
+    if db.is_data_exists(&query, false)? {
         resolve_conflict(calling_info, &mut db, attributes, &query, &mut db_data)
     } else {
         encrypt(calling_info, &mut db_data)?;
