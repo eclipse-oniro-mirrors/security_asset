@@ -27,7 +27,7 @@ use crate::{
     statement::Statement,
     table::Table,
     types::{
-        column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, COLUMN_INFO_V2, SQLITE_OK, TABLE_NAME,
+        column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, SQLITE_OK, TABLE_NAME,
         UPGRADE_COLUMN_INFO,
     },
 };
@@ -108,7 +108,7 @@ impl Database {
         let mut db = Database { path, backup_path, handle: 0, db_lock: lock };
         let _lock = db.db_lock.mtx.lock().unwrap();
         db.open_and_restore()?;
-        db.restore_if_exec_fail(|e: &Table| e.create(COLUMN_INFO_V2))?;
+        db.restore_if_exec_fail(|e: &Table| e.create(COLUMN_INFO))?;
         db.upgrade(1, |_, _, _| Ok(()))?;
         Ok(db)
     }
@@ -406,7 +406,7 @@ impl Database {
         query_options: Option<&QueryOptions>,
     ) -> Result<Vec<DbMap>> {
         let _lock = self.db_lock.mtx.lock().unwrap();
-        let closure = |e: &Table| e.query_row(columns, condition, query_options, COLUMN_INFO_V2);
+        let closure = |e: &Table| e.query_row(columns, condition, query_options, COLUMN_INFO);
         self.restore_if_exec_fail(closure)
     }
 
