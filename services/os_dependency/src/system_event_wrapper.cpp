@@ -97,7 +97,7 @@ public:
 
                 this->eventCallBack->onUserUnlocked(userId);
             }
-            LOGI("[INFO]Receive event: RESTORE_START, start_time: %{public}ld", startTime);
+            LOGI("[INFO]Receive event: USER_UNLOCKED, start_time: %{public}ld", startTime);
         } else {
             LOGW("[WARNING]Receive unknown event: %{public}s", action.c_str());
         }
