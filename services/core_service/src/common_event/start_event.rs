@@ -83,12 +83,13 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
     } else if reason_name == "usual.event.CHARGING" {
         listener::backup_db();
     } else if reason_name == "COMMON_EVENT_RESTORE_START" {
+        let user_id = reason.extra_data.code;
         let want = reason.extra_data.want();
         let Some(bundle_name) = want.get(BUNDLE_NAME) else {
             loge!("[FATIL]Get restore app info failed, get bundle name failed.");
             return;
         };
-        listener::on_app_restore(reason.extra_data.code, bundle_name.as_ptr());
+        listener::on_app_restore(user_id, bundle_name.as_ptr());
     } else if reason_name == "usual.event.USER_UNLOCKED" {
         listener::on_user_unlocked(reason.extra_data.code);
     }
