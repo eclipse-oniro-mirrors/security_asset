@@ -143,6 +143,8 @@ macro_rules! execute {
         let calling_info = CallingInfo::build(specific_user_id.cloned())?;
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
+        // Create database directory if not exists.
+        asset_file_operator::create_user_db_dir(calling_info.user_id())?;
         upload_system_event($func($args, &calling_info), &calling_info, start, func_name)
     }};
     ($func:path, $args1:expr, $args2:expr) => {{
@@ -151,6 +153,8 @@ macro_rules! execute {
         let calling_info = CallingInfo::build(specific_user_id.cloned())?;
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
+        // Create database directory if not exists.
+        asset_file_operator::create_user_db_dir(calling_info.user_id())?;
         upload_system_event($func($args1, $args2, &calling_info), &calling_info, start, func_name)
     }};
 }

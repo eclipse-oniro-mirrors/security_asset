@@ -53,11 +53,6 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
 pub(crate) fn remove(query: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     check_arguments(query)?;
 
-    // Check database directory exist.
-    if !asset_file_operator::is_user_db_dir_exist(calling_info.user_id()) {
-        return log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");
-    }
-
     let mut db_data = common::into_db_map(query);
     common::add_owner_info(calling_info, &mut db_data);
 
