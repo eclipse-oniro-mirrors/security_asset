@@ -94,25 +94,14 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     add_system_attrs(update, &mut update_db_data)?;
     add_normal_attrs(&mut update_db_data);
 
-    let mut results =
-        Database::build(calling_info.user_id())?.query_datas(&vec![], &query_db_data, None)?;
-    if results.is_empty() {
-        return log_throw_error!(ErrCode::NotFound, "[FATAL]The asset to update is not found.");
-    }
-    results.retain(|data| {
-        if let Some(Value::Number(status)) = data.get(&column::SYNC_STATUS) {
-            !matches!(status, x if *x == SyncStatus::SyncDel as u32)
-        } else {
-            true
-        }
-    });
+    let results = Database::build(calling_info.user_id())?.query_datas(&vec![], &query_db_data, None, true)?;
     if results.is_empty() {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]The asset to update is not found.");
     }
 
     let mut db = Database::build(calling_info.user_id())?;
     if update.contains_key(&Tag::Secret) {
-        let mut results = db.query_datas(&vec![], &query_db_data, None)?;
+        let mut results = db.query_datas(&vec![], &query_db_data, None, true)?;
         if results.len() != 1 {
             return log_throw_error!(
                 ErrCode::NotFound,
@@ -132,7 +121,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     }
 
     // call sql to update
-    let update_num = db.update_datas(&query_db_data, &update_db_data)?;
+    let update_num = db.update_datas(&query_db_data, true, &update_db_data)?;
     if update_num == 0 {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]Update asset failed, update 0 asset.");
     }

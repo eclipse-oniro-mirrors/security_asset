@@ -24,7 +24,7 @@ use asset_db_operator::{
     types::{column, DbMap, QueryOptions, DB_DATA_VERSION},
 };
 use asset_definition::{
-    log_throw_error, throw_error, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value, SyncStatus
+    log_throw_error, throw_error, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value
 };
 
 use crate::operations::common;
@@ -52,7 +52,7 @@ fn upgrade_version(db: &mut Database, calling_info: &CallingInfo, db_data: &mut 
     let mut query_data = DbMap::new();
     query_data.insert_attr(column::ID, db_data.get_num_attr(&column::ID)?);
 
-    let update_num = db.update_datas(&query_data, &update_data)?;
+    let update_num = db.update_datas(&query_data, true, &update_data)?;
     if update_num == 0 {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]Upgrade asset failed.");
     }
@@ -87,7 +87,7 @@ fn exec_crypto(calling_info: &CallingInfo, query: &AssetMap, db_data: &mut DbMap
 
 fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) -> Result<Vec<AssetMap>> {
     let mut db = Database::build(calling_info.user_id())?;
-    let mut results = db.query_datas(&vec![], db_data, None)?;
+    let mut results = db.query_datas(&vec![], db_data, None, true)?;
     match results.len() {
         0 => throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist."),
         1 => {
@@ -141,18 +141,10 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
 
 pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
     let mut results =
-        Database::build(calling_info.user_id())?.query_datas(&vec![], db_data, Some(&get_query_options(attrs)))?;
+        Database::build(calling_info.user_id())?.query_datas(&vec![], db_data, Some(&get_query_options(attrs)), true)?;
     if results.is_empty() {
         return throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
     }
-
-    results.retain(|data| {
-        if let Some(Value::Number(status)) = data.get(&column::SYNC_STATUS) {
-            !matches!(status, x if *x == SyncStatus::SyncDel as u32)
-        } else {
-            true
-        }
-    });
 
     for data in &mut results {
         data.remove(&column::SECRET);

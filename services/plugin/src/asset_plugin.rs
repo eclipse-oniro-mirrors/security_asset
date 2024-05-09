@@ -102,21 +102,21 @@ impl IAssetPluginCtx for AssetContext {
     /// Queries the asset database.
     fn query(&mut self, attributes: &ExtDbMap) -> std::result::Result<Vec<ExtDbMap>, u32> {
         self.data_base.as_mut().ok_or(ErrCode::InvalidArgument as u32)?
-            .query_datas(&vec![], attributes, None)
+            .query_datas(&vec![], attributes, None, false)
             .map_err(|e| e.code as u32)
     }
 
     /// Removes an asset from the database.
     fn remove(&mut self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
         self.data_base.as_mut().ok_or(ErrCode::InvalidArgument as u32)?
-            .delete_datas(attributes, None)
+            .delete_datas(attributes, None, false)
             .map_err(|e| e.code as u32)
     }
 
     /// Updates the attributes of an asset in the database.
     fn update(&mut self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> std::result::Result<i32, u32> {
         self.data_base.as_mut().ok_or(ErrCode::InvalidArgument as u32)?
-            .update_datas(attributes, attrs_to_update)
+            .update_datas(attributes, false, attrs_to_update)
             .map_err(|e| e.code as u32)
     }
 

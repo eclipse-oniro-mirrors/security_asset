@@ -131,8 +131,8 @@ fn insert_data_with_different_alias() {
     assert_eq!(count, 1);
 
     let ret = db
-        .query_datas(&vec![], &DbMap::from([(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()))]), None)
-        .unwrap();
+        .query_datas(&vec![], &DbMap::from([(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()))]),
+            None, false).unwrap();
     assert_eq!(ret.len(), 2);
     remove_dir();
 }
@@ -145,13 +145,13 @@ fn delete_data() {
     datas.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
     datas.insert(column::ALIAS, Value::Bytes(column::ALIAS.as_bytes().to_vec()));
 
-    let ret = db.is_data_exists(&datas).unwrap();
+    let ret = db.is_data_exists(&datas, false).unwrap();
     assert!(ret);
 
-    let count = db.delete_datas(&datas, None).unwrap();
+    let count = db.delete_datas(&datas, None, false).unwrap();
     assert_eq!(count, 1);
 
-    let ret = db.is_data_exists(&datas).unwrap();
+    let ret = db.is_data_exists(&datas, false).unwrap();
     assert!(!ret);
 
     remove_dir();
@@ -166,10 +166,11 @@ fn update_data() {
     datas.insert(column::ALIAS, Value::Bytes(column::ALIAS.as_bytes().to_vec()));
     let update_time: Vec<u8> = vec![2];
     let count =
-        db.update_datas(&datas, &DbMap::from([(column::UPDATE_TIME, Value::Bytes(update_time.clone()))])).unwrap();
+        db.update_datas(&datas, true,
+            &DbMap::from([(column::UPDATE_TIME, Value::Bytes(update_time.clone()))])).unwrap();
     assert_eq!(count, 1);
 
-    let res = db.query_datas(&vec![], &datas, None).unwrap();
+    let res = db.query_datas(&vec![], &datas, None, false).unwrap();
     assert_eq!(res.len(), 1);
     let query_update_time = res[0].get_bytes_attr(&column::UPDATE_TIME).unwrap();
     assert_eq!(update_time.len(), query_update_time.len());
@@ -207,6 +208,7 @@ fn query_ordered_data() {
             &vec![column::ID, column::ALIAS],
             &DbMap::from([(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()))]),
             Some(&query),
+            false
         )
         .unwrap();
     assert_eq!(res.len(), 2);
@@ -240,7 +242,7 @@ fn backup_and_restore() {
     let mut def = DbMap::from(DB_DATA);
     add_bytes_column(&mut def);
 
-    db.query_datas(&vec![], &def, None).unwrap();
+    db.query_datas(&vec![], &def, None, false).unwrap();
     drop(db);
     remove_dir();
 }
@@ -266,7 +268,7 @@ fn query_mismatch_type_data() {
     let mut db = Database::build(0).unwrap();
     db.insert_datas(&data).unwrap();
 
-    assert_eq!(ErrCode::FileOperationError, db.query_datas(&vec![], &data, None).unwrap_err().code);
+    assert_eq!(ErrCode::FileOperationError, db.query_datas(&vec![], &data, None, false).unwrap_err().code);
     drop(db);
     remove_dir();
 }
