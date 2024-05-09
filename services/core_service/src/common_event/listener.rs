@@ -129,7 +129,7 @@ pub(crate) extern "C" fn backup_db() {
 
 pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8) {
     let c_str = unsafe { CStr::from_ptr(bundle_name) };
-    let bundle_name = c_str.to_string_lossy().into_owned();
+    let bundle_name = c_str.to_string_lossy().clone().to_string();
     logi!("[INFO]On app -{}-{}- restore.", user_id, bundle_name);
 
     let arc_asset_plugin = AssetPlugin::get_instance();
@@ -153,7 +153,7 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
     if let Ok(load) = asset_plugin.load_plugin() {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
-        match load.process_event(EventType::OnAppRestore, &params) {
+        match load.process_event(EventType::OnUserUnlocked, &params) {
             Ok(()) => logi!("process user unlocked event success."),
             Err(code) => loge!("process user unlocked event failed, code: {}", code),
         }
