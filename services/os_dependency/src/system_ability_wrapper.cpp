@@ -31,7 +31,7 @@ const int32_t RETRY_DURATION_US = 200 * 1000;
 
 class SystemAbilityHandler : public OHOS::SystemAbilityStatusChangeStub {
 public:
-    SystemAbilityHandler(const EventCallBack eventCallBack) : eventCallBack(eventCallBack) {};
+    explicit SystemAbilityHandler(const EventCallBack eventCallBack) : eventCallBack(eventCallBack) {};
     ~SystemAbilityHandler() = default;
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override
     {
