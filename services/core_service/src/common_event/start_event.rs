@@ -86,25 +86,26 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
     } else if reason_name == "usual.event.CHARGING" {
         listener::backup_db();
     } else if reason_name == "COMMON_EVENT_RESTORE_START" {
-        let Some(user_id) = want.get(USER_ID) else {
-            loge!("[FATIL]Get restore app info failed, get userId fail");
-            return;
-        };
-        let user_id = match user_id.parse::<i32>() {
-            Ok(parsed_value) => parsed_value,
-            Err(_) => {
-                loge!("[FATIL]Get restore app info failed, failed to parse user_id");
+        let want = reason.extra_data.want();
+        let user_id = match want.get(USER_ID) {
+            Some(v) => match v.parse::<i32>() {
+                Ok(parsed_value) => parsed_value,
+                Err(_) => {
+                    loge!("[FATIL]Get restore app info failed, failed to parse user_id");
+                    return;
+                },
+            },
+            None => {
+                loge!("[FATIL]Get restore app info failed, get userId fail");
                 return;
             },
         };
-        let want = reason.extra_data.want();
         let Some(bundle_name) = want.get(BUNDLE_NAME) else {
             loge!("[FATIL]Get restore app info failed, get bundle name failed.");
             return;
         };
         let mut bundle_name = bundle_name.clone();
         bundle_name.push('\0');
-
         let app_index = match want.get(APP_RESTORE_INDEX) {
             Some(v) => match v.parse::<i32>() {
                 Ok(parsed_value) => parsed_value,
@@ -114,7 +115,8 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
                 },
             },
             None => {
-                0
+                loge!("[FATIL]Get restore app info failed, failed to get appIndex");
+                return;
             },
         };
         listener::on_app_restore(user_id, bundle_name.as_ptr(), app_index);
