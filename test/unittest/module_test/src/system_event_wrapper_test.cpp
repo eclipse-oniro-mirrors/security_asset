@@ -90,7 +90,7 @@ HWTEST_F(AssetSystemEventWrapperTest, AssetSystemEventWrapperTest001, TestSize.L
         OnAppRestore,
         OnUserUnlocked
     };
-    ASSERT_EQ(true, SubscribeSystemEvent(&call_back));
+    ASSERT_EQ(true, SubscribeSystemEvent(call_back));
 }
 
 /**
