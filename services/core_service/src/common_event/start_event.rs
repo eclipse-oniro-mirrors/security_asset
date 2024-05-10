@@ -27,6 +27,7 @@ const USER_ID: &str = "userId";
 const SANDBOX_APP_INDEX: &str = "sandbox_app_index";
 const APP_ID: &str = "appId";
 const BUNDLE_NAME: &str = "bundleName";
+const APP_RESTORE_INDEX: &str = "index";
 
 fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
     let Some(user_id) = want.get(USER_ID) else {
@@ -104,7 +105,7 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
         let mut bundle_name = bundle_name.clone();
         bundle_name.push('\0');
 
-        let app_index = match want.get(SANDBOX_APP_INDEX) {
+        let app_index = match want.get(APP_RESTORE_INDEX) {
             Some(v) => match v.parse::<i32>() {
                 Ok(parsed_value) => parsed_value,
                 Err(_) => {
