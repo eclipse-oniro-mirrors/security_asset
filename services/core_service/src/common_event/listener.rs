@@ -86,7 +86,13 @@ pub(crate) extern "C" fn on_package_removed(user_id: i32, owner: *const u8, owne
     delete_data_by_owner(user_id, owner, owner_size);
 
     let c_str = unsafe { CStr::from_ptr(bundle_name) };
-    let bundle_name = c_str.to_str().clone();
+    let bundle_name = match c_str.to_str() {
+        Ok(s) => s.to_string(),
+        Err(e) => {
+            loge!("[FATAL]Parse sting from bundle name failed.");
+            return;
+        }
+    };
 
     logi!("[INFO]On app -{}-{}-{}- removed.", user_id, bundle_name, app_index);
 
@@ -129,7 +135,13 @@ pub(crate) extern "C" fn backup_db() {
 
 pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, app_index: i32) {
     let c_str = unsafe { CStr::from_ptr(bundle_name) };
-    let bundle_name = c_str.to_str().clone();
+    let bundle_name = match c_str.to_str() {
+        Ok(s) => s.to_string(),
+        Err(e) => {
+            loge!("[FATAL]Parse sting from bundle name failed.");
+            return;
+        }
+    };
     logi!("[INFO]On app -{}-{}- restore.", user_id, bundle_name);
 
     let arc_asset_plugin = AssetPlugin::get_instance();
