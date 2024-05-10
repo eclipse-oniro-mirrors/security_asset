@@ -85,10 +85,8 @@ pub(crate) extern "C" fn on_package_removed(user_id: i32, owner: *const u8, owne
     app_index: i32) {
     delete_data_by_owner(user_id, owner, owner_size);
 
-    let bundle_name = bundle_name.clone();
-
     let c_str = unsafe { CStr::from_ptr(bundle_name) };
-    let bundle_name = c_str.to_string_lossy().into_owned();
+    let bundle_name = c_str.to_str().clone();
 
     logi!("[INFO]On app -{}-{}-{}- removed.", user_id, bundle_name, app_index);
 
@@ -129,10 +127,9 @@ pub(crate) extern "C" fn backup_db() {
     }
 }
 
-pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8) {
-    let bundle_name = bundle_name.clone();
+pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, app_index: i32) {
     let c_str = unsafe { CStr::from_ptr(bundle_name) };
-    let bundle_name = c_str.to_string_lossy().into_owned();
+    let bundle_name = c_str.to_str().clone();
     logi!("[INFO]On app -{}-{}- restore.", user_id, bundle_name);
 
     let arc_asset_plugin = AssetPlugin::get_instance();
@@ -141,6 +138,7 @@ pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8) {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
         params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(bundle_name.as_bytes().to_vec()));
+        params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
         match load.process_event(EventType::OnAppRestore, &params) {
             Ok(()) => logi!("process app restore event success."),
             Err(code) => loge!("process app restore event failed, code: {}", code),
@@ -191,7 +189,7 @@ struct EventCallBack {
     on_user_removed: extern "C" fn(i32),
     on_screen_off: extern "C" fn(),
     on_charging: extern "C" fn(),
-    on_app_restore: extern "C" fn(i32, *const u8),
+    on_app_restore: extern "C" fn(i32, *const u8, i32),
     on_user_unlocked: extern "C" fn(i32),
 }
 

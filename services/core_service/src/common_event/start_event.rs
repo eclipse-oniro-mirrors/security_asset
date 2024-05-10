@@ -93,7 +93,21 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
         };
         let mut bundle_name = bundle_name.clone();
         bundle_name.push('\0');
-        listener::on_app_restore(user_id, bundle_name.as_ptr());
+
+        let app_index = match want.get(SANDBOX_APP_INDEX) {
+            Some(v) => match v.parse::<i32>() {
+                Ok(parsed_value) => parsed_value,
+                Err(_) => {
+                    loge!("[FATAL]Get restore app info failed, failed to parse appIndex");
+                    return;
+                },
+            },
+            None => {
+                loge!("[FATIL]Get restore app info failed, get appIndex fail");
+                return;
+            },
+        };
+        listener::on_app_restore(user_id, bundle_name.as_ptr(), app_index);
     } else if reason_name == "usual.event.USER_UNLOCKED" {
         listener::on_user_unlocked(reason.extra_data.code);
     }

@@ -22,7 +22,7 @@ typedef void (*OnPackageRemoved)(int32_t, const uint8_t *, uint32_t, const uint8
 typedef void (*OnUserRemoved)(int32_t);
 typedef void (*OnScreenOff)(void);
 typedef void (*OnCharging)(void);
-typedef void (*OnAppRestore)(int32_t, const uint8_t *);
+typedef void (*OnAppRestore)(int32_t, const uint8_t *, int32_t);
 typedef void (*OnUserUnlocked)(int32_t);
 
 typedef struct {

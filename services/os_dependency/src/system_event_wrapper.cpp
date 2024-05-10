@@ -88,7 +88,15 @@ public:
                 int userId = data.GetCode();
                 std::string bundleName = want.GetStringParam(BUNDLE_NAME);
 
-                this->eventCallBack->onAppRestore(userId, reinterpret_cast<const uint8_t *>(bundleName.c_str()));
+                int appIndex = want.GetIntParam(SANDBOX_APP_INDEX, -1) : 0;
+                if (appIndex == -1) {
+                    LOGE("[FATAL]Get app restore info failed, userId=%{public}d,  appIndex=%{public}d",
+                        userId, appIndex);
+                    return;
+                }
+
+                this->eventCallBack->onAppRestore(userId,
+                    reinterpret_cast<const uint8_t *>(bundleName.c_str()), appIndex);
             }
             LOGI("[INFO]Receive event: RESTORE_START, start_time: %{public}ld", startTime);
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_UNLOCKED) {
