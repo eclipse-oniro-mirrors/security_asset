@@ -85,7 +85,17 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
     } else if reason_name == "usual.event.CHARGING" {
         listener::backup_db();
     } else if reason_name == "COMMON_EVENT_RESTORE_START" {
-        let user_id = reason.extra_data.code;
+        let Some(user_id) = want.get(USER_ID) else {
+            loge!("[FATIL]Get restore app info failed, get userId fail");
+            return;
+        };
+        let user_id = match user_id.parse::<i32>() {
+            Ok(parsed_value) => parsed_value,
+            Err(_) => {
+                loge!("[FATIL]Get restore app info failed, failed to parse user_id");
+                return;
+            },
+        };
         let want = reason.extra_data.want();
         let Some(bundle_name) = want.get(BUNDLE_NAME) else {
             loge!("[FATIL]Get restore app info failed, get bundle name failed.");
