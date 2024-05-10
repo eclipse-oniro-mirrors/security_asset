@@ -66,6 +66,8 @@ fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
         loge!("[FATIL]Get restore app info failed, get bundle name failed.");
         return;
     };
+    let mut bundle_name = bundle_name.clone();
+    bundle_name.push('\0');
     listener::on_package_removed(user_id, owner.as_ptr(), owner.len() as u32, bundle_name.as_ptr(), app_index);
 }
 
@@ -89,6 +91,8 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
             loge!("[FATIL]Get restore app info failed, get bundle name failed.");
             return;
         };
+        let mut bundle_name = bundle_name.clone();
+        bundle_name.push('\0');
         listener::on_app_restore(user_id, bundle_name.as_ptr());
     } else if reason_name == "usual.event.USER_UNLOCKED" {
         listener::on_user_unlocked(reason.extra_data.code);

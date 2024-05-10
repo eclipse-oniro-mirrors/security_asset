@@ -85,6 +85,8 @@ pub(crate) extern "C" fn on_package_removed(user_id: i32, owner: *const u8, owne
     app_index: i32) {
     delete_data_by_owner(user_id, owner, owner_size);
 
+    let bundle_name = bundle_name.clone();
+
     let c_str = unsafe { CStr::from_ptr(bundle_name) };
     let bundle_name = c_str.to_string_lossy().into_owned();
 
@@ -128,8 +130,9 @@ pub(crate) extern "C" fn backup_db() {
 }
 
 pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8) {
+    let bundle_name = bundle_name.clone();
     let c_str = unsafe { CStr::from_ptr(bundle_name) };
-    let bundle_name = c_str.to_string_lossy().clone().to_string();
+    let bundle_name = c_str.to_string_lossy().into_owned();
     logi!("[INFO]On app -{}-{}- restore.", user_id, bundle_name);
 
     let arc_asset_plugin = AssetPlugin::get_instance();
