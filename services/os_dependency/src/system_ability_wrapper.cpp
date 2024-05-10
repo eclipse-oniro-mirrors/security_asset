@@ -31,7 +31,7 @@ const int32_t RETRY_DURATION_US = 200 * 1000;
 
 class SystemAbilityHandler : public OHOS::SystemAbilityStatusChangeStub {
 public:
-    SystemAbilityHandler(const EventCallBack *eventCallBack) : eventCallBack(eventCallBack) {};
+    SystemAbilityHandler(const EventCallBack eventCallBack) : eventCallBack(eventCallBack) {};
     ~SystemAbilityHandler() = default;
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override
     {
@@ -57,7 +57,7 @@ public:
         }
     }
 private:
-    const EventCallBack *eventCallBack;
+    const EventCallBack eventCallBack;
 };
 
 OHOS::sptr<OHOS::ISystemAbilityManager> GetSystemAbility(void)
@@ -76,7 +76,7 @@ OHOS::sptr<OHOS::ISystemAbilityManager> GetSystemAbility(void)
 OHOS::sptr<SystemAbilityHandler> abilityHandler;
 } // namespace
 
-bool SubscribeSystemAbility(const EventCallBack *eventCallBack)
+bool SubscribeSystemAbility(const EventCallBack eventCallBack)
 {
     OHOS::sptr<OHOS::ISystemAbilityManager> samgrProxy = GetSystemAbility();
     if (samgrProxy == nullptr) {

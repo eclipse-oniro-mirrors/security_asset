@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-bool SubscribeSystemAbility(const EventCallBack *eventCallBack);
+bool SubscribeSystemAbility(const EventCallBack eventCallBack);
 bool UnSubscribeSystemAbility(void);
 
 #ifdef __cplusplus

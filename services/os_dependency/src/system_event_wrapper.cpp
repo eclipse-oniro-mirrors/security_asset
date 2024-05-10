@@ -55,7 +55,7 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
 
 class SystemEventHandler : public CommonEventSubscriber {
 public:
-    explicit SystemEventHandler(const CommonEventSubscribeInfo &subscribeInfo, const EventCallBack *eventCallBack)
+    explicit SystemEventHandler(const CommonEventSubscribeInfo &subscribeInfo, const EventCallBack eventCallBack)
         : CommonEventSubscriber(subscribeInfo), eventCallBack(eventCallBack) {}
     ~SystemEventHandler() = default;
     void OnReceiveEvent(const CommonEventData &data) override
@@ -64,27 +64,27 @@ public:
         auto want = data.GetWant();
         std::string action = want.GetAction();
         if (action == CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED) {
-            HandlePackageRemoved(want, false, this->eventCallBack->onPackageRemoved);
+            HandlePackageRemoved(want, false, this->eventCallBack.onPackageRemoved);
         } else if (action == CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
-            HandlePackageRemoved(want, true, this->eventCallBack->onPackageRemoved);
+            HandlePackageRemoved(want, true, this->eventCallBack.onPackageRemoved);
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
             int userId = data.GetCode();
-            if (this->eventCallBack->onUserRemoved != nullptr) {
-                this->eventCallBack->onUserRemoved(userId);
+            if (this->eventCallBack.onUserRemoved != nullptr) {
+                this->eventCallBack.onUserRemoved(userId);
             }
             LOGI("[INFO] Receive event: USER_REMOVED, userId=%{public}d", userId);
         } else if (action == CommonEventSupport::COMMON_EVENT_SCREEN_OFF) {
-            if (this->eventCallBack->onScreenOff != nullptr) {
-                this->eventCallBack->onScreenOff();
+            if (this->eventCallBack.onScreenOff != nullptr) {
+                this->eventCallBack.onScreenOff();
             }
             LOGI("[INFO]Receive event: SCREEN_OFF, start_time: %{public}ld", startTime);
         } else if (action == CommonEventSupport::COMMON_EVENT_CHARGING) {
-            if (this->eventCallBack->onCharging != nullptr) {
-                this->eventCallBack->onCharging();
+            if (this->eventCallBack.onCharging != nullptr) {
+                this->eventCallBack.onCharging();
             }
             LOGI("[INFO]Receive event: CHARGING, start_time: %{public}ld", startTime);
         } else if (action == COMMON_EVENT_RESTORE_START) {
-            if (this->eventCallBack->onAppRestore != nullptr) {
+            if (this->eventCallBack.onAppRestore != nullptr) {
                 int userId = data.GetCode();
                 std::string bundleName = want.GetStringParam(BUNDLE_NAME);
 
@@ -94,15 +94,15 @@ public:
                     appIndex = 0;
                 }
 
-                this->eventCallBack->onAppRestore(userId,
+                this->eventCallBack.onAppRestore(userId,
                     reinterpret_cast<const uint8_t *>(bundleName.c_str()), appIndex);
             }
             LOGI("[INFO]Receive event: RESTORE_START, start_time: %{public}ld", startTime);
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_UNLOCKED) {
-            if (this->eventCallBack->onUserUnlocked != nullptr) {
+            if (this->eventCallBack.onUserUnlocked != nullptr) {
                 int userId = data.GetCode();
 
-                this->eventCallBack->onUserUnlocked(userId);
+                this->eventCallBack.onUserUnlocked(userId);
             }
             LOGI("[INFO]Receive event: USER_UNLOCKED, start_time: %{public}ld", startTime);
         } else {
@@ -110,13 +110,13 @@ public:
         }
     }
 private:
-    const EventCallBack *eventCallBack;
+    const EventCallBack eventCallBack;
 };
 
 std::shared_ptr<SystemEventHandler> g_eventHandler = nullptr;
 }
 
-bool SubscribeSystemEvent(const EventCallBack *eventCallBack)
+bool SubscribeSystemEvent(const EventCallBack eventCallBack)
 {
     MatchingSkills matchingSkills;
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);

@@ -195,6 +195,7 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
     Ok(())
 }
 
+#[derive(Clone)]
 #[repr(C)]
 struct EventCallBack {
     on_package_remove: extern "C" fn(i32, *const u8, u32, *const u8, i32),
@@ -207,11 +208,11 @@ struct EventCallBack {
 
 extern "C" {
     fn SubscribeSystemAbility(
-        eventCallBack: &EventCallBack
+        eventCallBack: EventCallBack
     ) -> bool;
     fn UnSubscribeSystemAbility() -> bool;
     fn SubscribeSystemEvent(
-        eventCallBack: &EventCallBack
+        eventCallBack: EventCallBack
     ) -> bool;
     fn UnSubscribeSystemEvent() -> bool;
 }
@@ -227,13 +228,13 @@ pub(crate) fn subscribe() {
             on_app_restore,
             on_user_unlocked
         };
-        if SubscribeSystemEvent(&call_back) {
+        if SubscribeSystemEvent(call_back.clone()) {
             logi!("Subscribe system event success.");
         } else {
             loge!("Subscribe system event failed.")
         }
 
-        if SubscribeSystemAbility(&call_back) {
+        if SubscribeSystemAbility(call_back) {
             logi!("Subscribe system ability success.");
         } else {
             loge!("Subscribe system ability failed.")

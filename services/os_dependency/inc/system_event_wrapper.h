@@ -38,7 +38,7 @@ typedef struct {
 extern "C" {
 #endif
 
-bool SubscribeSystemEvent(const EventCallBack *eventCallBack);
+bool SubscribeSystemEvent(const EventCallBack eventCallBack);
 bool UnSubscribeSystemEvent(void);
 
 #ifdef __cplusplus
