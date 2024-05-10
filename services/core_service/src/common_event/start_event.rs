@@ -103,8 +103,7 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
                 },
             },
             None => {
-                loge!("[FATIL]Get restore app info failed, get appIndex fail");
-                return;
+                0
             },
         };
         listener::on_app_restore(user_id, bundle_name.as_ptr(), app_index);

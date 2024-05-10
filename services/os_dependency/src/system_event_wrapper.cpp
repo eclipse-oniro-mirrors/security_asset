@@ -90,9 +90,8 @@ public:
 
                 int appIndex = want.GetIntParam(SANDBOX_APP_INDEX, -1);
                 if (appIndex == -1) {
-                    LOGE("[FATAL]Get app restore info failed, userId=%{public}d,  appIndex=%{public}d",
-                        userId, appIndex);
-                    return;
+                    LOGI("[INFO]Get app restore info failed, default as index 0.");
+                    appIndex = 0;
                 }
 
                 this->eventCallBack->onAppRestore(userId,
