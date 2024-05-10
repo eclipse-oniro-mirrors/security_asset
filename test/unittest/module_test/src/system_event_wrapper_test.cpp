@@ -66,7 +66,7 @@ void OnChargingCallback(void)
 {
 }
 
-void OnAppRestore(int32_t packageId, const uint8_t *owner)
+void OnAppRestore(int32_t packageId, const uint8_t *owner, int32_t appIndex)
 {
 }
 

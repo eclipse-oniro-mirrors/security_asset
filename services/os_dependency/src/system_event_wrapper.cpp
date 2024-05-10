@@ -88,7 +88,7 @@ public:
                 int userId = data.GetCode();
                 std::string bundleName = want.GetStringParam(BUNDLE_NAME);
 
-                int appIndex = want.GetIntParam(SANDBOX_APP_INDEX, -1) : 0;
+                int appIndex = want.GetIntParam(SANDBOX_APP_INDEX, -1);
                 if (appIndex == -1) {
                     LOGE("[FATAL]Get app restore info failed, userId=%{public}d,  appIndex=%{public}d",
                         userId, appIndex);
