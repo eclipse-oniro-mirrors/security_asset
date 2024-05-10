@@ -58,7 +58,7 @@ fn table_restore() {
     fs::copy("/data/asset_test/0/asset.db.backup", "/data/asset_test/0/asset.db").unwrap();
     db.open().unwrap();
     let table = Table::new("table_name", &db);
-    let count = table.count_datas(&DbMap::new()).unwrap();
+    let count = table.count_datas(&DbMap::new(), false).unwrap();
     assert_eq!(count, 1);
     db.close();
     fs::remove_dir_all("/data/asset_test/0").unwrap();
@@ -119,16 +119,16 @@ fn data_life_circle() {
     datas.insert_attr("Owner", b"owner1".to_vec());
     datas.insert_attr("Alias", b"alias1".to_vec());
     let table = Table::new("table_name", &db);
-    assert!(table.is_data_exists(&datas).unwrap());
+    assert!(table.is_data_exists(&datas, false).unwrap());
 
     datas.insert_attr("Owner", b"owner1".to_vec());
     datas.insert_attr("Alias", b"alias2".to_vec());
-    assert!(!table.is_data_exists(&datas).unwrap());
+    assert!(!table.is_data_exists(&datas, false).unwrap());
 
     datas.insert_attr("Owner", b"owner2".to_vec());
     datas.insert_attr("Alias", b"alias3".to_vec());
-    assert_eq!(1, table.update_row(&datas, &DbMap::from([("value", Value::Bytes(b"dddd".to_vec()))])).unwrap());
-    assert_eq!(1, table.delete_row(&datas, None).unwrap());
+    assert_eq!(1, table.update_row(&datas, false, &DbMap::from([("value", Value::Bytes(b"dddd".to_vec()))])).unwrap());
+    assert_eq!(1, table.delete_row(&datas, None, false).unwrap());
     fs::remove_dir_all("/data/asset_test/0").unwrap();
 }
 
@@ -220,12 +220,12 @@ fn insert_query_row() {
     let datas = DbMap::from([("alias", Value::Bytes(b"alias1".to_vec()))]);
     assert_eq!(table.insert_row(&datas).unwrap(), 1);
 
-    let result_set = table.query_row(&vec![], &DbMap::new(), None, columns).unwrap();
+    let result_set = table.query_row(&vec![], &DbMap::new(), None, false, columns).unwrap();
     assert_eq!(result_set.len(), 2);
 
-    let count = table.count_datas(&DbMap::new()).unwrap();
+    let count = table.count_datas(&DbMap::new(), false).unwrap();
     assert_eq!(count, 2);
-    let count = table.count_datas(&DbMap::from([("id", Value::Number(3))])).unwrap();
+    let count = table.count_datas(&DbMap::from([("id", Value::Number(3))]), false).unwrap();
     assert_eq!(count, 1);
 
     fs::remove_dir_all("/data/asset_test/0").unwrap();
@@ -249,10 +249,10 @@ fn update_delete_row() {
 
     let conditions = DbMap::from([("id", Value::Number(2))]);
     let datas = DbMap::from([("alias", Value::Bytes(b"test_update".to_vec()))]);
-    assert_eq!(table.update_row(&conditions, &datas).unwrap(), 1);
-    assert!(table.is_data_exists(&datas).unwrap());
-    assert_eq!(table.delete_row(&conditions, None).unwrap(), 1);
-    assert!(!table.is_data_exists(&conditions).unwrap());
+    assert_eq!(table.update_row(&conditions, false, &datas).unwrap(), 1);
+    assert!(table.is_data_exists(&datas, false).unwrap());
+    assert_eq!(table.delete_row(&conditions, None, false).unwrap(), 1);
+    assert!(!table.is_data_exists(&conditions, false).unwrap());
 
     fs::remove_dir_all("/data/asset_test/0").unwrap();
 }
@@ -313,9 +313,9 @@ fn replace_datas() {
 
     let conditions = DbMap::from([("id", Value::Number(2))]);
     let datas = DbMap::from([("id", Value::Number(3)), ("alias", Value::Bytes(b"alias3".to_vec()))]);
-    table.replace_row(&conditions, &datas).unwrap();
-    assert!(table.is_data_exists(&datas).unwrap());
+    table.replace_row(&conditions, false, &datas).unwrap();
+    assert!(table.is_data_exists(&datas, false).unwrap());
 
-    assert_eq!(table.count_datas(&conditions).unwrap(), 0);
+    assert_eq!(table.count_datas(&conditions, false).unwrap(), 0);
     fs::remove_dir_all("/data/asset_test/0").unwrap();
 }

@@ -52,6 +52,7 @@ fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Acces
         &vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET],
         db_data,
         None,
+        true,
     )?;
     match results.len() {
         0 => log_throw_error!(ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found."),

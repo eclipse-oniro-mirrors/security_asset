@@ -295,7 +295,7 @@ impl Database {
             query.insert_attr(column::ALIAS, datas.get_bytes_attr(&column::ALIAS)?.clone());
             query.insert_attr(column::OWNER, datas.get_bytes_attr(&column::OWNER)?.clone());
             query.insert_attr(column::OWNER_TYPE, datas.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?);
-            if e.is_data_exists(&query)? {
+            if e.is_data_exists(&query, false)? {
                 log_throw_error!(ErrCode::Duplicated, "[FATAL]The data with the specified alias already exists.")
             } else {
                 e.insert_row(datas)
@@ -321,14 +321,15 @@ impl Database {
     /// datas.insert(column::ALIAS, Value::Bytes(b"alias".to_ver()));
     /// datas.insert("value", Value::Bytes(b"delete_value".to_vec()));
     /// let user_id = 100;
-    /// let ret = Database::build(user_id)?.delete_datas(&cond, None);
+    /// let ret = Database::build(user_id)?.delete_datas(&cond, None, false);
     /// ```
     ///
     ///
     #[inline(always)]
-    pub fn delete_datas(&mut self, condition: &DbMap, reverse_condition: Option<&DbMap>) -> Result<i32> {
+    pub fn delete_datas(&mut self, condition: &DbMap, reverse_condition: Option<&DbMap>,
+        is_filter_sync: bool) -> Result<i32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
-        let closure = |e: &Table| e.delete_row(condition, reverse_condition);
+        let closure = |e: &Table| e.delete_row(condition, reverse_condition, is_filter_sync);
         self.restore_if_exec_fail(closure)
     }
 
@@ -349,12 +350,12 @@ impl Database {
     /// cond.insert(column::ALIAS, Value::Bytes(b"alias".to_ver()));
     /// let datas = DbMap::from([("alias", Value::Bytes(b"update_value".to_vec()))]);
     /// let user_id = 100;
-    /// let ret = Database::build(user_id)?.update_datas(&condition, &datas);
+    /// let ret = Database::build(user_id)?.update_datas(&condition, true, &datas);
     /// ```
     #[inline(always)]
-    pub fn update_datas(&mut self, condition: &DbMap, datas: &DbMap) -> Result<i32> {
+    pub fn update_datas(&mut self, condition: &DbMap, is_filter_sync: bool, datas: &DbMap) -> Result<i32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
-        let closure = |e: &Table| e.update_row(condition, datas);
+        let closure = |e: &Table| e.update_row(condition, is_filter_sync, datas);
         self.restore_if_exec_fail(closure)
     }
 
@@ -372,12 +373,12 @@ impl Database {
     /// datas.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
     /// datas.insert(column::ALIAS, Value::Bytes(b"alias".to_ver()));
     /// let user_id = 100;
-    /// let exist = Database::build(user_id)?.is_data_exists(&datas);
+    /// let exist = Database::build(user_id)?.is_data_exists(&datas, false);
     /// ```
     #[inline(always)]
-    pub fn is_data_exists(&mut self, condition: &DbMap) -> Result<bool> {
+    pub fn is_data_exists(&mut self, condition: &DbMap, is_filter_sync: bool) -> Result<bool> {
         let _lock = self.db_lock.mtx.lock().unwrap();
-        let closure = |e: &Table| e.is_data_exists(condition);
+        let closure = |e: &Table| e.is_data_exists(condition, is_filter_sync);
         self.restore_if_exec_fail(closure)
     }
 
@@ -396,7 +397,7 @@ impl Database {
     /// cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
     /// cond.insert(column::ALIAS, Value::Bytes(b"alias".to_ver()));
     /// let user_id = 100;
-    /// let ret = Database::build(user_id)?.query_datas(&vec![], &cond, None);
+    /// let ret = Database::build(user_id)?.query_datas(&vec![], &cond, None, false);
     /// ```
     #[inline(always)]
     pub fn query_datas(
@@ -404,16 +405,17 @@ impl Database {
         columns: &Vec<&'static str>,
         condition: &DbMap,
         query_options: Option<&QueryOptions>,
+        is_filter_sync: bool,
     ) -> Result<Vec<DbMap>> {
         let _lock = self.db_lock.mtx.lock().unwrap();
-        let closure = |e: &Table| e.query_row(columns, condition, query_options, COLUMN_INFO);
+        let closure = |e: &Table| e.query_row(columns, condition, query_options, is_filter_sync, COLUMN_INFO);
         self.restore_if_exec_fail(closure)
     }
 
     /// Delete old data and insert new data.
-    pub fn replace_datas(&mut self, condition: &DbMap, datas: &DbMap) -> Result<()> {
+    pub fn replace_datas(&mut self, condition: &DbMap, is_filter_sync: bool, datas: &DbMap) -> Result<()> {
         let _lock = self.db_lock.mtx.lock().unwrap();
-        let closure = |e: &Table| e.replace_row(condition, datas);
+        let closure = |e: &Table| e.replace_row(condition, is_filter_sync, datas);
         self.restore_if_exec_fail(closure)
     }
 }

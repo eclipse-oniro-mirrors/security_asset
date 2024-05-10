@@ -48,6 +48,18 @@ fn bind_datas(datas: &DbMap, stmt: &Statement, index: &mut i32) -> Result<()> {
     Ok(())
 }
 
+fn bind_where_datas(datas: &DbMap, stmt: &Statement, index: &mut i32) -> Result<()> {
+    for (key, value) in datas.iter() {
+        if *key == "SyncType" {
+            stmt.bind_data(*index, value)?;
+            *index += 1;
+        }
+        stmt.bind_data(*index, value)?;
+        *index += 1;
+    }
+    Ok(())
+}
+
 #[inline(always)]
 fn build_sql_columns_not_empty(columns: &Vec<&str>, sql: &mut String) {
     for i in 0..columns.len() {
@@ -69,18 +81,26 @@ fn build_sql_columns(columns: &Vec<&str>, sql: &mut String) {
 }
 
 #[inline(always)]
-fn build_sql_where(conditions: &DbMap, sql: &mut String) {
-    if !conditions.is_empty() {
+fn build_sql_where(conditions: &DbMap, filter: bool, sql: &mut String) {
+    if !conditions.is_empty() || filter {
         sql.push_str(" where ");
-        for (i, column_name) in conditions.keys().enumerate() {
-            if *column_name == "SyncType" {
-                sql.push_str("(SyncType & ?) <> 0");
-            } else {
-                sql.push_str(column_name);
-                sql.push_str("=?");
+        if filter {
+            sql.push_str("SyncStatus <> 2");
+            if !conditions.is_empty() {
+                sql.push_str(" and ");
             }
-            if i != conditions.len() - 1 {
-                sql.push_str(" and ")
+        }
+        if !conditions.is_empty() {
+            for (i, column_name) in conditions.keys().enumerate() {
+                if *column_name == "SyncType" {
+                    sql.push_str("(SyncType & ?) = ?");
+                } else {
+                    sql.push_str(column_name);
+                    sql.push_str("=?");
+                }
+                if i != conditions.len() - 1 {
+                    sql.push_str(" and ")
+                }
             }
         }
     }
@@ -280,15 +300,16 @@ impl<'a> Table<'a> {
     /// ```
     /// // SQL: delete from table_name where id=2
     /// let condition = &DbMap::from([("id", Value::Number(2)]);
-    /// let ret = table.delete_row(condition, None);
+    /// let ret = table.delete_row(condition, None, false);
     /// ```
-    pub(crate) fn delete_row(&self, condition: &DbMap, reverse_condition: Option<&DbMap>) -> Result<i32> {
+    pub(crate) fn delete_row(&self, condition: &DbMap, reverse_condition: Option<&DbMap>,
+        is_filter_sync: bool) -> Result<i32> {
         let mut sql = format!("delete from {}", self.table_name);
-        build_sql_where(condition, &mut sql);
+        build_sql_where(condition, is_filter_sync, &mut sql);
         build_sql_reverse_condition(reverse_condition, &mut sql);
         let stmt = Statement::prepare(&sql, self.db)?;
         let mut index = 1;
-        bind_datas(condition, &stmt, &mut index)?;
+        bind_where_datas(condition, &stmt, &mut index)?;
         if let Some(datas) = reverse_condition {
             bind_datas(datas, &stmt, &mut index)?;
         }
@@ -305,9 +326,9 @@ impl<'a> Table<'a> {
     /// // SQL: update table_name set alias='update_value' where id=2
     /// let condition = &DbMap::from([("id", Value::Number(2)]);
     /// let datas = &DbMap::from([("alias", Value::Bytes(b"update_value")]);
-    /// let ret = table.update_row(conditions, datas);
+    /// let ret = table.update_row(conditions, false, datas);
     /// ```
-    pub(crate) fn update_row(&self, condition: &DbMap, datas: &DbMap) -> Result<i32> {
+    pub(crate) fn update_row(&self, condition: &DbMap, is_filter_sync: bool, datas: &DbMap) -> Result<i32> {
         let mut sql = format!("update {} set ", self.table_name);
         for (i, column_name) in datas.keys().enumerate() {
             sql.push_str(column_name);
@@ -316,11 +337,11 @@ impl<'a> Table<'a> {
                 sql.push(',');
             }
         }
-        build_sql_where(condition, &mut sql);
+        build_sql_where(condition, is_filter_sync, &mut sql);
         let stmt = Statement::prepare(&sql, self.db)?;
         let mut index = 1;
         bind_datas(datas, &stmt, &mut index)?;
-        bind_datas(condition, &stmt, &mut index)?;
+        bind_where_datas(condition, &stmt, &mut index)?;
         stmt.step()?;
         let count = unsafe { SqliteChanges(self.db.handle as _) };
         Ok(count)
@@ -334,13 +355,14 @@ impl<'a> Table<'a> {
     ///
     /// ```
     /// // SQL: select alias,blobs from table_name
-    /// let result_set = table.query_datas_with_key_value(&vec!["alias", "blobs"], &vec![]);
+    /// let result_set = table.query_datas_with_key_value(&vec!["alias", "blobs"], false, &vec![]);
     /// ```
     pub(crate) fn query_row(
         &self,
         columns: &Vec<&'static str>,
         condition: &DbMap,
         query_options: Option<&QueryOptions>,
+        is_filter_sync: bool,
         column_info: &'static [ColumnInfo],
     ) -> Result<Vec<DbMap>> {
         let mut sql = String::from("select ");
@@ -350,11 +372,11 @@ impl<'a> Table<'a> {
         build_sql_columns(columns, &mut sql);
         sql.push_str(" from ");
         sql.push_str(self.table_name.as_str());
-        build_sql_where(condition, &mut sql);
+        build_sql_where(condition, is_filter_sync, &mut sql);
         build_sql_query_options(query_options, &mut sql);
         let stmt = Statement::prepare(&sql, self.db)?;
         let mut index = 1;
-        bind_datas(condition, &stmt, &mut index)?;
+        bind_where_datas(condition, &stmt, &mut index)?;
         let mut result = vec![];
         while stmt.step()? == SQLITE_ROW {
             let mut record = DbMap::new();
@@ -384,14 +406,14 @@ impl<'a> Table<'a> {
     ///
     /// ```
     /// // SQL: select count(*) as count from table_name where id=3
-    /// let count = table.count_datas(&DbMap::from([("id", Value::Number(3))]));
+    /// let count = table.count_datas(&DbMap::from([("id", Value::Number(3))]), false);
     /// ```
-    pub(crate) fn count_datas(&self, condition: &DbMap) -> Result<u32> {
+    pub(crate) fn count_datas(&self, condition: &DbMap, is_filter_sync: bool) -> Result<u32> {
         let mut sql = format!("select count(*) as count from {}", self.table_name);
-        build_sql_where(condition, &mut sql);
+        build_sql_where(condition, is_filter_sync, &mut sql);
         let stmt = Statement::prepare(&sql, self.db)?;
         let mut index = 1;
-        bind_datas(condition, &stmt, &mut index)?;
+        bind_where_datas(condition, &stmt, &mut index)?;
         stmt.step()?;
         let count = stmt.query_column_int(0);
         Ok(count)
@@ -404,10 +426,10 @@ impl<'a> Table<'a> {
     /// ```
     /// // SQL: select count(*) as count from table_name where id=3 and alias='alias'
     /// let exits = table
-    ///     .is_data_exists(&DbMap::from([("id", Value::Number(3)), ("alias", Value::Bytes(b"alias"))]));
+    ///     .is_data_exists(&DbMap::from([("id", Value::Number(3)), ("alias", Value::Bytes(b"alias"))]), false);
     /// ```
-    pub(crate) fn is_data_exists(&self, cond: &DbMap) -> Result<bool> {
-        let ret = self.count_datas(cond);
+    pub(crate) fn is_data_exists(&self, cond: &DbMap, is_filter_sync: bool) -> Result<bool> {
+        let ret = self.count_datas(cond, is_filter_sync);
         match ret {
             Ok(count) => Ok(count > 0),
             Err(e) => Err(e),
@@ -452,10 +474,10 @@ impl<'a> Table<'a> {
         self.db.exec(sql.as_str())
     }
 
-    pub(crate) fn replace_row(&self, condition: &DbMap, datas: &DbMap) -> Result<()> {
+    pub(crate) fn replace_row(&self, condition: &DbMap, is_filter_sync: bool, datas: &DbMap) -> Result<()> {
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
-        if self.delete_row(condition, None).is_ok() && self.insert_row(datas).is_ok() {
+        if self.delete_row(condition, None, is_filter_sync).is_ok() && self.insert_row(datas).is_ok() {
             trans.commit()
         } else {
             trans.rollback()
