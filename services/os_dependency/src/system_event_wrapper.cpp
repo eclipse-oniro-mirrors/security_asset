@@ -85,7 +85,7 @@ public:
             LOGI("[INFO]Receive event: CHARGING, start_time: %{public}ld", startTime);
         } else if (action == COMMON_EVENT_RESTORE_START) {
             if (this->eventCallBack.onAppRestore != nullptr) {
-                int userId = data.GetCode();
+                int userId = want.GetIntParam(USER_ID, INVALID_USERID);
                 std::string bundleName = want.GetStringParam(BUNDLE_NAME);
 
                 int appIndex = want.GetIntParam(SANDBOX_APP_INDEX, -1);
