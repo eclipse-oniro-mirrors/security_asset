@@ -89,7 +89,7 @@ pub(crate) extern "C" fn on_package_removed(user_id: i32, owner: *const u8, owne
     let bundle_name = match c_str.to_str() {
         Ok(s) => s.to_string(),
         Err(e) => {
-            loge!("[FATAL]Parse sting from bundle name failed.");
+            loge!("[FATAL]Parse sting from bundle name failed, error is {}.", e);
             return;
         }
     };
@@ -138,7 +138,7 @@ pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, ap
     let bundle_name = match c_str.to_str() {
         Ok(s) => s.to_string(),
         Err(e) => {
-            loge!("[FATAL]Parse sting from bundle name failed.");
+            loge!("[FATAL]Parse sting from bundle name failed, error is {}.", e);
             return;
         }
     };
