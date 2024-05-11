@@ -168,9 +168,6 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
 fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     check_arguments(attributes, calling_info)?;
 
-    // Create database directory if not exists.
-    asset_file_operator::create_user_db_dir(calling_info.user_id())?;
-
     // Fill all attributes to DbMap.
     let mut db_data = common::into_db_map(attributes);
     common::add_owner_info(calling_info, &mut db_data);

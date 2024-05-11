@@ -181,11 +181,6 @@ pub(crate) fn query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<
 
     common::inform_asset_ext(query, calling_info.user_id());
 
-    // Check database directory exist.
-    if !asset_file_operator::is_user_db_dir_exist(calling_info.user_id()) {
-        return throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
-    }
-
     let mut db_data = common::into_db_map(query);
     common::add_owner_info(calling_info, &mut db_data);
 

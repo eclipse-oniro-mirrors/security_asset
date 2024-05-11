@@ -71,11 +71,6 @@ fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Acces
 pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
     check_arguments(query)?;
 
-    // Check database directory exist.
-    if !asset_file_operator::is_user_db_dir_exist(calling_info.user_id()) {
-        return log_throw_error!(ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found.");
-    }
-
     let mut db_data = common::into_db_map(query);
     common::add_owner_info(calling_info, &mut db_data);
     db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::Any as u32));
