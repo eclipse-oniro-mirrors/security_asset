@@ -85,7 +85,7 @@ pub(crate) extern "C" fn on_package_removed(user_id: i32, owner: *const u8, owne
     app_index: i32) {
     delete_data_by_owner(user_id, owner, owner_size);
 
-    let c_str = unsafe { CStr::from_ptr(bundle_name as *const i8) };
+    let c_str = unsafe { CStr::from_ptr(bundle_name as _) };
     let bundle_name = match c_str.to_str() {
         Ok(s) => s.to_string(),
         Err(e) => {
@@ -134,7 +134,7 @@ pub(crate) extern "C" fn backup_db() {
 }
 
 pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, app_index: i32) {
-    let c_str = unsafe { CStr::from_ptr(bundle_name as *const i8) };
+    let c_str = unsafe { CStr::from_ptr(bundle_name as _) };
     let bundle_name = match c_str.to_str() {
         Ok(s) => s.to_string(),
         Err(e) => {
