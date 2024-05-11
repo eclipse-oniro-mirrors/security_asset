@@ -44,7 +44,7 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
     }
 
     std::string owner = appId + '_' + std::to_string(appIndex);
-    std::string bundleName = want.GetStringParam(BUNDLE_NAME);
+    std::string bundleName = want.GetBundle();
     if (onPackageRemoved != nullptr) {
         onPackageRemoved(userId, reinterpret_cast<const uint8_t *>(owner.c_str()), owner.size(),
             reinterpret_cast<const uint8_t *>(bundleName.c_str()), appIndex);
