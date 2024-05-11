@@ -29,7 +29,7 @@ use asset_definition::{
 };
 use asset_log::{logi, loge};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::plugin_interface::{EventType, ExtDbMap};
+use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_USER_ID};
 
 const TAG_COLUMN_TABLE: [(Tag, &str); 20] = [
     (Tag::Secret, column::SECRET),
@@ -196,7 +196,7 @@ pub(crate) fn inform_asset_ext(input: &AssetMap, user_id: i32) {
                 let mut asset_plugin = arc_asset_plugin.lock().unwrap();
                 if let Ok(load) = asset_plugin.load_plugin() {
                     let mut params = ExtDbMap::new();
-                    params.insert("UserId", Value::Number(user_id as u32));
+                    params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
                     match load.process_event(EventType::Sync, &params) {
                         Ok(()) => logi!("process sync ext event success."),
                         Err(code) => loge!("process sync ext event failed, code: {}", code),
@@ -208,7 +208,7 @@ pub(crate) fn inform_asset_ext(input: &AssetMap, user_id: i32) {
                 let mut asset_plugin = arc_asset_plugin.lock().unwrap();
                 if let Ok(load) = asset_plugin.load_plugin() {
                     let mut params = ExtDbMap::new();
-                    params.insert("UserId", Value::Number(user_id as u32));
+                    params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
                     match load.process_event(EventType::Logout, &params) {
                         Ok(()) => logi!("process logout ext event success."),
                         Err(code) => loge!("process logout ext event failed, code: {}", code),

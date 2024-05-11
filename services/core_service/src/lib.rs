@@ -58,7 +58,6 @@ pub(crate) fn unload_sa(duration: u64) {
 impl Ability for AssetAbility {
     fn on_start_with_reason(&self, reason: SystemAbilityOnDemandReason, handler: Handler) {
         logi!("[INFO]Start asset service, reason_id: {:?}", reason.reason_id);
-        common_event::handle_common_event(reason);
 
         let func_name = hisysevent::function!();
         let start = Instant::now();
@@ -66,6 +65,7 @@ impl Ability for AssetAbility {
         let calling_info = CallingInfo::new_self();
 
         let _ = upload_system_event(start_service(handler), &calling_info, start, func_name);
+        common_event::handle_common_event(reason);
         unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
     }
 

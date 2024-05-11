@@ -18,17 +18,27 @@
 
 #include <stdint.h>
 
-typedef void (*OnPackageRemoved)(int32_t, const uint8_t *owner, uint32_t ownerSize);
+typedef void (*OnPackageRemoved)(int32_t, const uint8_t *, uint32_t, const uint8_t *, int32_t);
 typedef void (*OnUserRemoved)(int32_t);
 typedef void (*OnScreenOff)(void);
 typedef void (*OnCharging)(void);
+typedef void (*OnAppRestore)(int32_t, const uint8_t *, int32_t);
+typedef void (*OnUserUnlocked)(int32_t);
+
+typedef struct {
+    OnPackageRemoved onPackageRemoved;
+    OnUserRemoved onUserRemoved;
+    OnScreenOff onScreenOff;
+    OnCharging onCharging;
+    OnAppRestore onAppRestore;
+    OnUserUnlocked onUserUnlocked;
+} EventCallBack;
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-bool SubscribeSystemEvent(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff,
-    OnCharging onCharging);
+bool SubscribeSystemEvent(const EventCallBack eventCallBack);
 bool UnSubscribeSystemEvent(void);
 
 #ifdef __cplusplus

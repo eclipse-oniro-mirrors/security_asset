@@ -31,9 +31,7 @@ const int32_t RETRY_DURATION_US = 200 * 1000;
 
 class SystemAbilityHandler : public OHOS::SystemAbilityStatusChangeStub {
 public:
-    SystemAbilityHandler(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff,
-        OnCharging onCharging) : onPackageRemoved(onPackageRemoved), onUserRemoved(onUserRemoved),
-        onScreenOff(onScreenOff), onCharging(onCharging)  {};
+    explicit SystemAbilityHandler(const EventCallBack eventCallBack) : eventCallBack(eventCallBack) {};
     ~SystemAbilityHandler() = default;
     void OnAddSystemAbility(int32_t systemAbilityId, const std::string &deviceId) override
     {
@@ -41,7 +39,7 @@ public:
             return;
         }
 
-        if (SubscribeSystemEvent(onPackageRemoved, onUserRemoved, onScreenOff, onCharging)) {
+        if (SubscribeSystemEvent(eventCallBack)) {
             LOGI("Subscribe system event success.");
         } else {
             LOGE("Subscribe system event failed.");
@@ -59,10 +57,7 @@ public:
         }
     }
 private:
-    OnPackageRemoved onPackageRemoved;
-    OnUserRemoved onUserRemoved;
-    OnScreenOff onScreenOff;
-    OnCharging onCharging;
+    const EventCallBack eventCallBack;
 };
 
 OHOS::sptr<OHOS::ISystemAbilityManager> GetSystemAbility(void)
@@ -81,8 +76,7 @@ OHOS::sptr<OHOS::ISystemAbilityManager> GetSystemAbility(void)
 OHOS::sptr<SystemAbilityHandler> abilityHandler;
 } // namespace
 
-bool SubscribeSystemAbility(OnPackageRemoved onPackageRemoved, OnUserRemoved onUserRemoved, OnScreenOff onScreenOff,
-    OnCharging onCharging)
+bool SubscribeSystemAbility(const EventCallBack eventCallBack)
 {
     OHOS::sptr<OHOS::ISystemAbilityManager> samgrProxy = GetSystemAbility();
     if (samgrProxy == nullptr) {
@@ -90,7 +84,7 @@ bool SubscribeSystemAbility(OnPackageRemoved onPackageRemoved, OnUserRemoved onU
         return false;
     }
 
-    abilityHandler = new (std::nothrow) SystemAbilityHandler(onPackageRemoved, onUserRemoved, onScreenOff, onCharging);
+    abilityHandler = new (std::nothrow) SystemAbilityHandler(eventCallBack);
     if (abilityHandler == nullptr) {
         LOGE("Create system ability handler failed.");
         return false;

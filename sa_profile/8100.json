@@ -12,7 +12,9 @@
                     { "name": "usual.event.PACKAGE_REMOVED" },
                     { "name": "usual.event.SANDBOX_PACKAGE_REMOVED" },
                     { "name": "usual.event.USER_REMOVED" },
-                    { "name": "usual.event.CHARGING" }
+                    { "name": "usual.event.CHARGING" },
+                    { "name": "usual.event.USER_UNLOCKED" },
+                    { "name": "COMMON_EVENT_RESTORE_START" }
                 ]
             }
         }

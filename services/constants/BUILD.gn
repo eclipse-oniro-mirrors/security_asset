@@ -20,9 +20,7 @@ ohos_rust_static_library("asset_constants") {
     "../../frameworks/os_dependency/log:asset_log",
     "../os_dependency:asset_os_dependency",
   ]
-  external_deps = [
-    "ipc:ipc_rust",
-  ]
+  external_deps = [ "ipc:ipc_rust" ]
   crate_name = "asset_constants"
   crate_type = "rlib"
   subsystem_name = "security"

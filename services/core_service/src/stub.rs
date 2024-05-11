@@ -15,11 +15,15 @@
 
 //! This module implements the stub of the Asset service.
 
-use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
+use asset_constants::get_user_id;
+use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode, Skeleton};
 
 use asset_definition::{AssetError, Result};
 use asset_ipc::{deserialize_map, serialize_maps, IpcCode, IPC_SUCCESS, SA_NAME};
 use asset_log::{loge, logi};
+use asset_plugin::asset_plugin::AssetPlugin;
+use asset_sdk::{plugin_interface::{EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP,
+    PARAM_NAME_USER_ID}, ErrCode, Value};
 
 use crate::{counter::AutoCounter, unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
 
@@ -52,6 +56,45 @@ impl RemoteStub for AssetService {
     }
 }
 
+extern "C" {
+    fn GetCallingName(userId: i32, name: *mut u8, nameLen: *mut u32, isHap: *mut bool, appIndex: *mut i32) -> i32;
+}
+const ASET_SUCCESS: i32 = 0;
+
+fn on_app_request() -> Result<()> {
+    let uid = Skeleton::calling_uid();
+    let user_id = get_user_id(uid)?;
+    let mut name = vec![0u8; 256];
+    let mut name_len = 256u32;
+    let mut app_index = 256i32;
+    let mut is_hap = false;
+    let res = unsafe { GetCallingName(user_id, name.as_mut_ptr(), &mut name_len,
+        &mut is_hap, &mut app_index) };
+    match res {
+        ASET_SUCCESS => {
+            name.truncate(name_len as usize);
+        },
+        _ => return Err(AssetError::new(ErrCode::BmsError, "[FATAL]Get calling package name failed.".to_string()))
+    }
+
+    let arc_asset_plugin = AssetPlugin::get_instance();
+    let mut asset_plugin = arc_asset_plugin.lock().unwrap();
+    if let Ok(load) = asset_plugin.load_plugin() {
+        let mut params = ExtDbMap::new();
+        params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
+        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(name));
+        params.insert(PARAM_NAME_IS_HAP, Value::Bool(is_hap));
+        if is_hap {
+            params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
+        }
+        match load.process_event(EventType::OnAppCall, &params) {
+            Ok(()) => return Ok(()),
+            Err(code) => return Err(AssetError::new(ErrCode::BmsError, format!("process on app call event failed, code: {}", code)))
+        }
+    }
+    Ok(())
+}
+
 fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
     match data.read_interface_token() {
         Ok(interface_token) if interface_token == stub.descriptor() => {},
@@ -61,6 +104,9 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
         }
     }
     let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
+
+    on_app_request().map_err(asset_err_handle)?;
+
     let map = deserialize_map(data).map_err(asset_err_handle)?;
     match ipc_code {
         IpcCode::Add => reply_handle(stub.add(&map), reply),
@@ -98,6 +144,16 @@ fn on_extension_request(_stub: &AssetService, _code: u32, data: &mut MsgParcel, 
     match data.read::<i32>() {
         Ok(user_id) => {
             logi!("[INFO]User id is {}.", user_id);
+            let arc_asset_plugin = AssetPlugin::get_instance();
+            let mut asset_plugin = arc_asset_plugin.lock().unwrap();
+            if let Ok(load) = asset_plugin.load_plugin() {
+                let mut params = ExtDbMap::new();
+                params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
+                match load.process_event(EventType::OnDeviceUpgrade, &params) {
+                    Ok(()) => logi!("process device upgrade event success."),
+                    Err(code) => loge!("process device upgrade event failed, code: {}", code),
+                }
+            }
             IPC_SUCCESS as i32
         }
         _ => IpcStatusCode::Failed as i32

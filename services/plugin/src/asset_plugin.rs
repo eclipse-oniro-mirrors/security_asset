@@ -87,6 +87,9 @@ pub struct AssetContext {
 impl IAssetPluginCtx for AssetContext {
     /// Initializes the plugin before usage.
     fn init(&mut self, user_id: i32) -> std::result::Result<(), u32> {
+        // Create database directory if not exists.
+        asset_file_operator::create_user_db_dir(user_id).map_err(|e| e.code as u32)?;
+
         let db = Database::build(user_id).map_err(|e| e.code as u32)?;
         self.data_base = Some(db);
         Ok(())

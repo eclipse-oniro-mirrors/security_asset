@@ -49,7 +49,8 @@ void AssetSystemEventWrapperTest::TearDown(void)
 {
 }
 
-void PackageRemovedCallback(int32_t packageId, const uint8_t *owner, uint32_t ownerSize)
+void PackageRemovedCallback(int32_t packageId, const uint8_t *owner, uint32_t ownerSize,
+    const uint8_t *bundleName, int32_t appIndex)
 {
 }
 
@@ -65,6 +66,14 @@ void OnChargingCallback(void)
 {
 }
 
+void OnAppRestore(int32_t packageId, const uint8_t *owner, int32_t appIndex)
+{
+}
+
+void OnUserUnlocked(int32_t userId)
+{
+}
+
 /**
  * @tc.name: AssetSystemEventWrapperTest.AssetSystemEventWrapperTest001
  * @tc.desc: Test asset func SubscribeSystemEvent, expect ACCESS_TOKEN_ERROR
@@ -73,11 +82,15 @@ void OnChargingCallback(void)
  */
 HWTEST_F(AssetSystemEventWrapperTest, AssetSystemEventWrapperTest001, TestSize.Level0)
 {
-    OnPackageRemoved onPackageRemovedPtr = &PackageRemovedCallback;
-    OnUserRemoved onUserRemovedPtr = &OnUserRemovedCallback;
-    OnScreenOff onScreenOffPtr = &OnScreenOffCallback;
-    OnCharging onChargingPtr = &OnChargingCallback;
-    ASSERT_EQ(true, SubscribeSystemEvent(onPackageRemovedPtr, onUserRemovedPtr, onScreenOffPtr, onChargingPtr));
+    EventCallBack call_back = {
+        PackageRemovedCallback,
+        OnUserRemovedCallback,
+        OnScreenOffCallback,
+        OnChargingCallback,
+        OnAppRestore,
+        OnUserUnlocked
+    };
+    ASSERT_EQ(true, SubscribeSystemEvent(call_back));
 }
 
 /**

@@ -17,6 +17,7 @@ ohos_rust_static_library("asset_plugin") {
   sources = [ "src/lib.rs" ]
   deps = [
     "../../frameworks/definition:asset_definition",
+    "../../frameworks/os_dependency/file:asset_file_operator",
     "../../frameworks/os_dependency/log:asset_log",
     "../../frameworks/utils:asset_utils",
     "../../interfaces/inner_api/rs:asset_sdk_rust",

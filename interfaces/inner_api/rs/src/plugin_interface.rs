@@ -31,7 +31,34 @@ pub enum EventType {
 
     /// Logout operate.
     Logout = 1,
+
+    /// Device upgrade event.
+    OnDeviceUpgrade,
+
+    /// App upgrade event.
+    OnAppRestore,
+
+    /// User unlock envent.
+    OnUserUnlocked,
+
+    /// App call event.
+    OnAppCall,
+
+    /// Package remove event.
+    OnPackageRemove,
 }
+
+/// param name for bundle name
+pub const PARAM_NAME_BUNDLE_NAME: &str = "BundleName";
+
+/// param name for user id
+pub const PARAM_NAME_USER_ID: &str = "UserId";
+
+/// param name for user id
+pub const PARAM_NAME_APP_INDEX: &str = "AppIndex";
+
+/// param name for whether is hap
+pub const PARAM_NAME_IS_HAP: &str = "IsHap";
 
 /// An enumeration representing different plugin types.
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
