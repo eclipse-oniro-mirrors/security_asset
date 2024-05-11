@@ -186,7 +186,7 @@ impl_enum_trait! {
         /// The error code indicates that the argument is invalid.
         InvalidArgument = 401,
 
-        /// The error code indicates that the ASSET Service is unavailable.
+        /// The error code indicates that the ASSET service is unavailable.
         ServiceUnavailable = 24000001,
 
         /// The error code indicates that the queried Asset can not be found.
