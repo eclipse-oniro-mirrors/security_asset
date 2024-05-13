@@ -86,6 +86,8 @@ fn on_app_request() -> Result<()> {
         params.insert(PARAM_NAME_IS_HAP, Value::Bool(is_hap));
         if is_hap {
             params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
+        } else {
+            params.insert(PARAM_NAME_APP_INDEX, Value::Number(0));
         }
         match load.process_event(EventType::OnAppCall, &params) {
             Ok(()) => return Ok(()),
