@@ -216,85 +216,45 @@ typedef enum {
  * @since 11
  */
 typedef enum {
-    /**
-     * The operation is successful.
-     */
+    /** @error The operation is successful. */
     ASSET_SUCCESS = 0,
-    /**
-     * The caller does not have the required permission.
-     */
+    /** @error The caller doesn't have the permission. */
     ASSET_PERMISSION_DENIED = 201,
-    /**
-     * The parameter is invalid.
-     */
+    /** @error The parameter is invalid. */
     ASSET_INVALID_ARGUMENT = 401,
-    /**
-     * The asset service is unavailable.
-     */
+    /** @error The ASSET service is unavailable. */
     ASSET_SERVICE_UNAVAILABLE = 24000001,
-    /**
-     * The asset is not found.
-     */
+    /** @error The asset is not found. */
     ASSET_NOT_FOUND = 24000002,
-    /**
-     * The asset already exists.
-     */
+    /** @error The asset already exists. */
     ASSET_DUPLICATED = 24000003,
-    /**
-     * The access to the asset is denied.
-     */
+    /** @error Access to the asset is denied. */
     ASSET_ACCESS_DENIED = 24000004,
-    /**
-     * The lock screen status does not match the access control type specified.
-     */
+    /** @error The screen lock status does not match. */
     ASSET_STATUS_MISMATCH = 24000005,
-    /**
-     * The system memory is insufficient.
-     */
+    /** @error Insufficient memory. */
     ASSET_OUT_OF_MEMORY = 24000006,
-    /**
-     * The asset is corrupted.
-     */
+    /** @error The asset is corrupted. */
     ASSET_DATA_CORRUPTED = 24000007,
-    /**
-     * The database operation failed.
-     */
+    /** @error The database operation failed. */
     ASSET_DATABASE_ERROR = 24000008,
-    /**
-     * The cryptography operation failed.
-     */
+    /** @error The cryptography operation failed. */
     ASSET_CRYPTO_ERROR = 24000009,
-    /**
-     * The inter-process communication (IPC) failed.
-     */
+    /** @error IPC failed. */
     ASSET_IPC_ERROR = 24000010,
-    /**
-     * The Bundle Manager service is abnormal.
-     */
+    /** @error Calling the Bundle Manager service failed. */
     ASSET_BMS_ERROR = 24000011,
-    /**
-     * The Account service is abnormal.
-     */
+    /** @error Calling the OS Account service failed. */
     ASSET_ACCOUNT_ERROR = 24000012,
-    /**
-     * The Access Token service is abnormal.
-     */
+    /** @error Calling the Access Token service failed. */
     ASSET_ACCESS_TOKEN_ERROR = 24000013,
-    /**
-     * The file operation failed.
-     */
+    /** @error The file operation failed. */
     ASSET_FILE_OPERATION_ERROR = 24000014,
-    /**
-     * The operation for obtaining the system time failed.
-     */
+    /** @error Getting the system time failed. */
     ASSET_GET_SYSTEM_TIME_ERROR = 24000015,
-    /**
-     * The number of cached assets exceeds the limit.
-     */
+    /** @error The cache exceeds the limit. */
     ASSET_LIMIT_EXCEEDED = 24000016,
-    /**
-     * The function is not supported.
-     */
+    /** @error The capability is not supported. */
     ASSET_UNSUPPORTED = 24000017,
 } Asset_ResultCode;
 
