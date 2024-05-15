@@ -104,6 +104,7 @@ static int32_t AddCommonGenParams(struct HksParamSet *paramSet, const struct Key
         { .tag = HKS_TAG_PADDING, .uint32Param = HKS_PADDING_NONE },
         { .tag = HKS_TAG_BLOCK_MODE, .uint32Param = HKS_MODE_GCM },
         { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AccessibilityToHksAuthStorageLevel(keyId->accessibility) },
+        { .tag = HKS_TAG_IS_ALLOWED_DATA_WRAP, .boolParam = true },
     };
     return HksAddParams(paramSet, commonParams, ARRAY_SIZE(commonParams));
 }
