@@ -17,8 +17,11 @@
 #include "napi/native_node_api.h"
 
 #include "asset_napi_common.h"
+#include "argument_check.h"
 #include "asset_system_api.h"
 #include "asset_system_type.h"
+
+#include <stdint.h>
 
 using namespace OHOS::Security::Asset;
 
@@ -161,6 +164,37 @@ napi_value DeclareOperationType(napi_env env)
     return operationType;
 }
 
+int32_t CheckAddArgs(napi_env env, const std::vector<AssetAttr> &attrs)
+{
+    std::vector<uint32_t> required_tags = {
+        SEC_ASSET_TAG_SECRET,
+        SEC_ASSET_TAG_ALIAS
+    };
+    std::vector<uint32_t> optional_tags = {
+        SEC_ASSET_TAG_SECRET,
+        SEC_ASSET_TAG_CONFLICT_RESOLUTION,
+        SEC_ASSET_TAG_IS_PERSISTENT,
+        SEC_ASSET_TAG_USER_ID
+    };
+    std::vector<uint32_t> valid_tags;
+    std::copy(critical_label_tags.begin(), critical_label_tags.end(), std::back_inserter(valid_tags));
+    std::copy(normal_label_tags.begin(), normal_label_tags.end(), std::back_inserter(valid_tags));
+    std::copy(normal_local_label_tags.begin(), normal_local_label_tags.end(), std::back_inserter(valid_tags));
+    std::copy(access_control_tags.begin(), access_control_tags.end(), std::back_inserter(valid_tags));
+    std::copy(optional_tags.begin(), optional_tags.end(), std::back_inserter(valid_tags));
+
+    if (!CheckAssetRequiredTag(env, attrs, required_tags)) {
+        return -1;
+    }
+    if (!CheckAssetTagValidity(env, attrs, valid_tags)) {
+        return -1;
+    }
+    if (!CheckAssetValueValidity(env, attrs)) {
+        return -1;
+    }
+    return 0;
+}
+
 napi_value NapiAdd(napi_env env, napi_callback_info info)
 {
     napi_async_execute_callback execute =
@@ -176,6 +210,10 @@ napi_value NapiAddSync(napi_env env, napi_callback_info info)
     std::vector<AssetAttr> attrs;
     do {
         if (ParseParam(env, info, attrs) != napi_ok) {
+            break;
+        }
+
+        if (CheckAddArgs(env, attrs) != 0) {
             break;
         }
 
