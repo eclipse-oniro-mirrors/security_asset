@@ -15,10 +15,6 @@
 #include "access_token_wrapper.h"
 #include "bms_wrapper.h"
 
-
-namespace OHOS {
-namespace Security {
-namespace Asset {
 namespace {
 #define MAX_MESSAGE_LEN 128
 
@@ -343,7 +339,3 @@ bool CheckAssetValueValidity(napi_env env, const std::vector<AssetAttr> &attrs)
     }
     return true;
 }
-
-} // Asset
-} // Security
-} // OHOS
