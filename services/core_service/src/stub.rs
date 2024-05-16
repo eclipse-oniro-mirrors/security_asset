@@ -94,7 +94,7 @@ fn on_app_request(code: &IpcCode, param_map: &AssetMap) -> Result<()> {
         _ => return Err(AssetError::new(ErrCode::BmsError, "[FATAL]Get calling package name failed.".to_string()))
     }
 
-    if *code == IpcCode::Remove && param_map.len() == 0 {
+    if code == &IpcCode::Remove && param_map.is_empty() {
             name.truncate(name_len as usize);
             return remove_all_ext_data(&user_id, &name, &app_index);
     }
