@@ -67,7 +67,7 @@ fn remove_all_ext_data(user_id: &i32, package_name: &Vec<u8>, app_index: &i32) -
     if let Ok(load) = asset_plugin.load_plugin() {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(*user_id as u32));
-        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(package_name));
+        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(package_name.to_owned()));
         params.insert(PARAM_NAME_APP_INDEX, Value::Number(*app_index as u32));
         match load.process_event(EventType::OnPackageClear, &params) {
             Ok(()) => return Ok(()),
@@ -94,7 +94,7 @@ fn on_app_request(code: &IpcCode, param_map: &AssetMap) -> Result<()> {
         _ => return Err(AssetError::new(ErrCode::BmsError, "[FATAL]Get calling package name failed.".to_string()))
     }
 
-    if code == &IpcCode::Remove && param_map.len() == 0 {
+    if *code == IpcCode::Remove && param_map.len() == 0 {
             name.truncate(name_len as usize);
             return remove_all_ext_data(&user_id, &name, &app_index);
     }
