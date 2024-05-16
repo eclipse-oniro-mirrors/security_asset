@@ -52,7 +52,25 @@ extern "C" {
  *
  * @param attributes Pointer to the attributes of the asset to add.
  * @param attributes Number of the attributes of the asset to add.
- * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
+ * @return {@link ASSET_SUCCESS} 0 - The operation is successful.
+ *     {@link ASSET_PERMISSION_DENIED} 201 - The caller doesn't have the permission.
+ *     {@link ASSET_INVALID_ARGUMENT} 401 - Parameter error. Possible causes:
+ *         1. Mandatory parameters are left unspecified.
+ *         2. Incorrect parameter types.
+ *         3. Parameter verification failed.
+ *     {@link ASSET_SERVICE_UNAVAILABLE} 24000001 - The ASSET service is unavailable.
+ *     {@link ASSET_DUPLICATED} 24000003 - The asset already exists.
+ *     {@link ASSET_STATUS_MISMATCH} 24000005 - The screen lock status does not match.
+ *     {@link ASSET_OUT_OF_MEMORY} 24000006 - Insufficient memory.
+ *     {@link ASSET_DATA_CORRUPTED} 24000007 - The asset is corrupted.
+ *     {@link ASSET_DATABASE_ERROR} 24000008 - The database operation failed.
+ *     {@link ASSET_CRYPTO_ERROR} 24000009 - The cryptography operation failed.
+ *     {@link ASSET_IPC_ERROR} 24000010 - IPC failed.
+ *     {@link ASSET_BMS_ERROR} 24000011 - Calling the Bundle Manager service failed.
+ *     {@link ASSET_ACCOUNT_ERROR} 24000012 - Calling the OS Account service failed.
+ *     {@link ASSET_ACCESS_TOKEN_ERROR} 24000013 - Calling the Access Token service failed.
+ *     {@link ASSET_FILE_OPERATION_ERROR} 24000014 - The file operation failed.
+ *     {@link ASSET_GET_SYSTEM_TIME_ERROR} 24000015 - Getting the system time failed.
  * @since 11
  */
 int32_t OH_Asset_Add(const Asset_Attr *attributes, uint32_t attrCnt);
@@ -62,7 +80,20 @@ int32_t OH_Asset_Add(const Asset_Attr *attributes, uint32_t attrCnt);
  *
  * @param query Pointer to the conditions for removing the assets.
  * @param queryCnt Number of conditions for removing the assets.
- * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
+ * @return {@link ASSET_SUCCESS} 0 - The operation is successful.
+ *     {@link ASSET_INVALID_ARGUMENT} 401 - Parameter error. Possible causes:
+ *         1. Incorrect parameter types.
+ *         2. Parameter verification failed.
+ *     {@link ASSET_SERVICE_UNAVAILABLE} 24000001 - The ASSET service is unavailable.
+ *     {@link ASSET_NOT_FOUND} 24000002 - The asset is not found.
+ *     {@link ASSET_OUT_OF_MEMORY} 24000006 - Insufficient memory.
+ *     {@link ASSET_DATA_CORRUPTED} 24000007 - The asset is corrupted.
+ *     {@link ASSET_DATABASE_ERROR} 24000008 - The database operation failed.
+ *     {@link ASSET_IPC_ERROR} 24000010 - IPC failed.
+ *     {@link ASSET_BMS_ERROR} 24000011 - Calling the Bundle Manager service failed.
+ *     {@link ASSET_ACCOUNT_ERROR} 24000012 - Calling the OS Account service failed.
+ *     {@link ASSET_ACCESS_TOKEN_ERROR} 24000013 - Calling the Access Token service failed.
+ *     {@link ASSET_GET_SYSTEM_TIME_ERROR} 24000015 - Getting the system time failed.
  * @since 11
  */
 int32_t OH_Asset_Remove(const Asset_Attr *query, uint32_t queryCnt);
@@ -74,7 +105,23 @@ int32_t OH_Asset_Remove(const Asset_Attr *query, uint32_t queryCnt);
  * @param queryCnt Number of conditions for updating the asset.
  * @param attributes Pointer to the attributes of the asset to update.
  * @param attributes Number of the attributes of the asset to update.
- * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
+ * @return {@link ASSET_SUCCESS} 0 - The operation is successful.
+ *     {@link ASSET_INVALID_ARGUMENT} 401 - Parameter error. Possible causes:
+ *         1. Mandatory parameters are left unspecified.
+ *         2. Incorrect parameter types.
+ *         3. Parameter verification failed.
+ *     {@link ASSET_SERVICE_UNAVAILABLE} 24000001 - The ASSET service is unavailable.
+ *     {@link ASSET_NOT_FOUND} 24000002 - The asset is not found.
+ *     {@link ASSET_STATUS_MISMATCH} 24000005 - The screen lock status does not match.
+ *     {@link ASSET_OUT_OF_MEMORY} 24000006 - Insufficient memory.
+ *     {@link ASSET_DATA_CORRUPTED} 24000007 - The asset is corrupted.
+ *     {@link ASSET_DATABASE_ERROR} 24000008 - The database operation failed.
+ *     {@link ASSET_CRYPTO_ERROR} 24000009 - The cryptography operation failed.
+ *     {@link ASSET_IPC_ERROR} 24000010 - IPC failed.
+ *     {@link ASSET_BMS_ERROR} 24000011 - Calling the Bundle Manager service failed.
+ *     {@link ASSET_ACCOUNT_ERROR} 24000012 - Calling the OS Account service failed.
+ *     {@link ASSET_ACCESS_TOKEN_ERROR} 24000013 - Calling the Access Token service failed.
+ *     {@link ASSET_GET_SYSTEM_TIME_ERROR} 24000015 - Getting the system time failed.
  * @since 11
  */
 int32_t OH_Asset_Update(const Asset_Attr *query, uint32_t queryCnt,
@@ -86,7 +133,23 @@ int32_t OH_Asset_Update(const Asset_Attr *query, uint32_t queryCnt,
  * @param query Pointer to the search criteria of the asset.
  * @param queryCnt Number of the search criteria.
  * @param challenge Pointer to the challenge value to be used when <b>OH_Asset_Query</b> is called.
- * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
+ * @return {@link ASSET_SUCCESS} 0 - The operation is successful.
+ *     {@link ASSET_INVALID_ARGUMENT} 401 - Parameter error. Possible causes:
+ *         1. Incorrect parameter types.
+ *         2. Parameter verification failed.
+ *     {@link ASSET_SERVICE_UNAVAILABLE} 24000001 - The ASSET service is unavailable.
+ *     {@link ASSET_NOT_FOUND} 24000002 - The asset is not found.
+ *     {@link ASSET_STATUS_MISMATCH} 24000005 - The screen lock status does not match.
+ *     {@link ASSET_OUT_OF_MEMORY} 24000006 - Insufficient memory.
+ *     {@link ASSET_DATA_CORRUPTED} 24000007 - The asset is corrupted.
+ *     {@link ASSET_DATABASE_ERROR} 24000008 - The database operation failed.
+ *     {@link ASSET_CRYPTO_ERROR} 24000009 - The cryptography operation failed.
+ *     {@link ASSET_IPC_ERROR} 24000010 - IPC failed.
+ *     {@link ASSET_BMS_ERROR} 24000011 - Calling the Bundle Manager service failed.
+ *     {@link ASSET_ACCOUNT_ERROR} 24000012 - Calling the OS Account service failed.
+ *     {@link ASSET_ACCESS_TOKEN_ERROR} 24000013 - Calling the Access Token service failed.
+ *     {@link ASSET_LIMIT_EXCEEDED} 24000016 - The cache exceeds the limit.
+ *     {@link ASSET_UNSUPPORTED} 24000017 - The capability is not supported.
  * @since 11
  */
 int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob *challenge);
@@ -97,7 +160,23 @@ int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob
  * @param query Pointer to the search criteria.
  * @param queryCnt Number of the search criteria.
  * @param resultSet Pointer to the query result obtained.
- * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
+ * @return {@link ASSET_SUCCESS} 0 - The operation is successful.
+ *     {@link ASSET_INVALID_ARGUMENT} 401 - Parameter error. Possible causes:
+ *         1. Incorrect parameter types.
+ *         2. Parameter verification failed.
+ *     {@link ASSET_SERVICE_UNAVAILABLE} 24000001 - The ASSET service is unavailable.
+ *     {@link ASSET_NOT_FOUND} 24000002 - The asset is not found.
+ *     {@link ASSET_ACCESS_DENIED} 24000004 - Access to the asset is denied.
+ *     {@link ASSET_STATUS_MISMATCH} 24000005 - The screen lock status does not match.
+ *     {@link ASSET_OUT_OF_MEMORY} 24000006 - Insufficient memory.
+ *     {@link ASSET_DATA_CORRUPTED} 24000007 - The asset is corrupted.
+ *     {@link ASSET_DATABASE_ERROR} 24000008 - The database operation failed.
+ *     {@link ASSET_CRYPTO_ERROR} 24000009 - The cryptography operation failed.
+ *     {@link ASSET_IPC_ERROR} 24000010 - IPC failed.
+ *     {@link ASSET_BMS_ERROR} 24000011 - Calling the Bundle Manager service failed.
+ *     {@link ASSET_ACCOUNT_ERROR} 24000012 - Calling the OS Account service failed.
+ *     {@link ASSET_ACCESS_TOKEN_ERROR} 24000013 - Calling the Access Token service failed.
+ *     {@link ASSET_UNSUPPORTED} 24000017 - The capability is not supported.
  * @since 11
  */
 int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultSet *resultSet);
@@ -108,7 +187,17 @@ int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultS
  * @param handle Pointer to the handle of the data to process, which includes the challenge value returned by
  *     <b>OH_Asset_PreQuery</b>.
  * @param handleCnt Number of the elements in the handle attribute set.
- * @return Returns <b>ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
+ * @return {@link ASSET_SUCCESS} 0 - The operation is successful.
+ *     {@link ASSET_INVALID_ARGUMENT} 401 - Parameter error. Possible causes:
+ *         1. Mandatory parameters are left unspecified.
+ *         2. Incorrect parameter types.
+ *         3. Parameter verification failed.
+ *     {@link ASSET_SERVICE_UNAVAILABLE} 24000001 - The ASSET service is unavailable.
+ *     {@link ASSET_OUT_OF_MEMORY} 24000006 - Insufficient memory.
+ *     {@link ASSET_IPC_ERROR} 24000010 - IPC failed.
+ *     {@link ASSET_BMS_ERROR} 24000011 - Calling the Bundle Manager service failed.
+ *     {@link ASSET_ACCOUNT_ERROR} 24000012 - Calling the OS Account service failed.
+ *     {@link ASSET_ACCESS_TOKEN_ERROR} 24000013 - Calling the Access Token service failed.
  * @since 11
  */
 int32_t OH_Asset_PostQuery(const Asset_Attr *handle, uint32_t handleCnt);
