@@ -76,8 +76,23 @@ bool CheckAssetRequiredTag(napi_env env, const std::vector<AssetAttr> &attrs,
 
 bool CheckAssetTagValidity(napi_env env, const std::vector<AssetAttr> &attrs, const std::vector<uint32_t> &valid_tags);
 
-bool CheckAssetValueValidity(napi_env env, const std::vector<AssetAttr> &attrs);
+bool CheckAssetDataType(napi_env env, const AssetAttr &attr);
 
+bool CheckArraySize(napi_env env, const AssetAttr &attr, uint32_t min, uint32_t max);
+
+bool CheckEnumVariant(napi_env env, const AssetAttr &attr, std::vector<uint32_t> &enum_vec);
+
+bool CheckNumberRange(napi_env env, const AssetAttr &attr, uint32_t min, uint32_t max);
+
+bool CheckValidBits(napi_env env, const AssetAttr &attr, uint32_t min_bits, uint32_t max_bits);
+
+bool CheckTagRange(napi_env env, const AssetAttr &attr, std::vector<uint32_t> &tags);
+
+bool CheckUserId(napi_env env, const AssetAttr &attr);
+
+bool CheckAssetDataValue(napi_env env, const AssetAttr &attr);
+
+bool CheckAssetValueValidity(napi_env env, const std::vector<AssetAttr> &attrs);
 }
 
 } // Asset
