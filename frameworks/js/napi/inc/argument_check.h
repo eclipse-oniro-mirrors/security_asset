@@ -11,7 +11,6 @@
 namespace OHOS {
 namespace Security {
 namespace Asset {
-namespace {
 std::vector<uint32_t> critical_label_tags = {
     SEC_ASSET_TAG_DATA_LABEL_CRITICAL_1,
     SEC_ASSET_TAG_DATA_LABEL_CRITICAL_2,
@@ -93,7 +92,6 @@ bool CheckUserId(napi_env env, const AssetAttr &attr);
 bool CheckAssetDataValue(napi_env env, const AssetAttr &attr);
 
 bool CheckAssetValueValidity(napi_env env, const std::vector<AssetAttr> &attrs);
-}
 
 } // Asset
 } // Security
