@@ -1,4 +1,5 @@
 #include "asset_napi_common.h"
+#include "argument_check.h"
 
 #include <vector>
 #include <algorithm>
@@ -13,11 +14,12 @@
 #include "os_account_wrapper.h"
 #include "access_token_wrapper.h"
 #include "bms_wrapper.h"
-#include "argument_check.h"
+
 
 namespace OHOS {
 namespace Security {
 namespace Asset {
+namespace {
 #define MAX_MESSAGE_LEN 128
 
 #define MIN_ARRAY_SIZE 0
@@ -35,38 +37,6 @@ namespace Asset {
 #define I32_MAX 0x7FFFFFFF
 #define MAX_TIME_SIZE 1024
 #define SYSTEM_USER_ID_MAX 99
-
-bool CheckAssetRequiredTag(napi_env env, const std::vector<AssetAttr> &attrs,
-    const std::vector<uint32_t> &required_tags)
-{
-    for (uint32_t required_tag : required_tags) {
-        auto it = std::find_if(attrs.begin(), attrs.end(), [required_tag](AssetAttr &attr) {
-            return attr.tag == required_tag;
-        });
-        if (it == attrs.end()) {
-            char msg[MAX_MESSAGE_LEN] = { 0 };
-            (void)sprintf_s(msg, MAX_MESSAGE_LEN, "Missing required tag[AssetTag(%s)].", g_tagMap[required_tag]);
-            LOGE("[FATAL][NAPI]%{public}s", (msg));
-            napi_throw((env), CreateJsError((env), SEC_ASSET_INVALID_ARGUMENT, (msg)));
-            return false;
-        }
-    }
-    return true;
-}
-
-bool CheckAssetTagValidity(napi_env env, const std::vector<AssetAttr> &attrs, const std::vector<uint32_t> &valid_tags)
-{
-    for (AssetAttr attr : attrs) {
-        if (std::count(valid_tags.begin(), valid_tags.end(), attr.tag) == 0) {
-            char msg[MAX_MESSAGE_LEN] = { 0 };
-            (void)sprintf_s(msg, MAX_MESSAGE_LEN, "Illegal tag[AssetTag(%s)].", g_tagMap[attr.tag]);
-            LOGE("[FATAL][NAPI]%{public}s", (msg));
-            napi_throw((env), CreateJsError((env), SEC_ASSET_INVALID_ARGUMENT, (msg)));
-            return false;
-        }
-    }
-    return true;
-}
 
 bool CheckAssetDataType(napi_env env, const AssetAttr &attr)
 {
@@ -322,6 +292,40 @@ bool CheckAssetDataValue(napi_env env, const AssetAttr &attr)
                 return false;
             }
             break;
+        }
+    }
+    return true;
+}
+
+} // anonymous namespace
+
+bool CheckAssetRequiredTag(napi_env env, const std::vector<AssetAttr> &attrs,
+    const std::vector<uint32_t> &required_tags)
+{
+    for (uint32_t required_tag : required_tags) {
+        auto it = std::find_if(attrs.begin(), attrs.end(), [required_tag](AssetAttr &attr) {
+            return attr.tag == required_tag;
+        });
+        if (it == attrs.end()) {
+            char msg[MAX_MESSAGE_LEN] = { 0 };
+            (void)sprintf_s(msg, MAX_MESSAGE_LEN, "Missing required tag[AssetTag(%s)].", g_tagMap[required_tag]);
+            LOGE("[FATAL][NAPI]%{public}s", (msg));
+            napi_throw((env), CreateJsError((env), SEC_ASSET_INVALID_ARGUMENT, (msg)));
+            return false;
+        }
+    }
+    return true;
+}
+
+bool CheckAssetTagValidity(napi_env env, const std::vector<AssetAttr> &attrs, const std::vector<uint32_t> &valid_tags)
+{
+    for (AssetAttr attr : attrs) {
+        if (std::count(valid_tags.begin(), valid_tags.end(), attr.tag) == 0) {
+            char msg[MAX_MESSAGE_LEN] = { 0 };
+            (void)sprintf_s(msg, MAX_MESSAGE_LEN, "Illegal tag[AssetTag(%s)].", g_tagMap[attr.tag]);
+            LOGE("[FATAL][NAPI]%{public}s", (msg));
+            napi_throw((env), CreateJsError((env), SEC_ASSET_INVALID_ARGUMENT, (msg)));
+            return false;
         }
     }
     return true;

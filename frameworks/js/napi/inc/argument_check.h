@@ -1,5 +1,5 @@
-#ifndef CHECK_ARGUMENT_H
-#define CHECK_ARGUMENT_H
+#ifndef ARGUMENT_CHECK_H
+#define ARGUMENT_CHECK_H
 
 #include <vector>
 
@@ -11,6 +11,7 @@
 namespace OHOS {
 namespace Security {
 namespace Asset {
+
 std::vector<uint32_t> critical_label_tags = {
     SEC_ASSET_TAG_DATA_LABEL_CRITICAL_1,
     SEC_ASSET_TAG_DATA_LABEL_CRITICAL_2,
@@ -75,26 +76,10 @@ bool CheckAssetRequiredTag(napi_env env, const std::vector<AssetAttr> &attrs,
 
 bool CheckAssetTagValidity(napi_env env, const std::vector<AssetAttr> &attrs, const std::vector<uint32_t> &valid_tags);
 
-bool CheckAssetDataType(napi_env env, const AssetAttr &attr);
-
-bool CheckArraySize(napi_env env, const AssetAttr &attr, uint32_t min, uint32_t max);
-
-bool CheckEnumVariant(napi_env env, const AssetAttr &attr, std::vector<uint32_t> &enum_vec);
-
-bool CheckNumberRange(napi_env env, const AssetAttr &attr, uint32_t min, uint32_t max);
-
-bool CheckValidBits(napi_env env, const AssetAttr &attr, uint32_t min_bits, uint32_t max_bits);
-
-bool CheckTagRange(napi_env env, const AssetAttr &attr, std::vector<uint32_t> &tags);
-
-bool CheckUserId(napi_env env, const AssetAttr &attr);
-
-bool CheckAssetDataValue(napi_env env, const AssetAttr &attr);
-
 bool CheckAssetValueValidity(napi_env env, const std::vector<AssetAttr> &attrs);
 
 } // Asset
 } // Security
 } // OHOS
 
-#endif // CHECK_ARGUMENT_H
+#endif // ARGUMENT_CHECK_H
