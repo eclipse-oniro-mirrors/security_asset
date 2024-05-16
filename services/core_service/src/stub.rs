@@ -23,7 +23,7 @@ use asset_ipc::{deserialize_map, serialize_maps, IpcCode, IPC_SUCCESS, SA_NAME};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::{plugin_interface::{EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP,
-    PARAM_NAME_USER_ID}, ErrCode, Value};
+    PARAM_NAME_USER_ID}, AssetMap, ErrCode, Value};
 
 use crate::{counter::AutoCounter, unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
 
@@ -61,14 +61,14 @@ extern "C" {
 }
 const ASET_SUCCESS: i32 = 0;
 
-fn remove_all_ext_data(user_id: &i32, package_name: &str, app_index: &i32) -> Result<()> {
+fn remove_all_ext_data(user_id: &i32, package_name: &Vec<u8>, app_index: &i32) -> Result<()> {
     let arc_asset_plugin = AssetPlugin::get_instance();
     let mut asset_plugin = arc_asset_plugin.lock().unwrap();
     if let Ok(load) = asset_plugin.load_plugin() {
         let mut params = ExtDbMap::new();
-        params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
-        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(name));
-        params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
+        params.insert(PARAM_NAME_USER_ID, Value::Number(*user_id as u32));
+        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(package_name));
+        params.insert(PARAM_NAME_APP_INDEX, Value::Number(*app_index as u32));
         match load.process_event(EventType::OnPackageClear, &params) {
             Ok(()) => return Ok(()),
             Err(code) => return Err(AssetError::new(ErrCode::BmsError,
@@ -79,7 +79,7 @@ fn remove_all_ext_data(user_id: &i32, package_name: &str, app_index: &i32) -> Re
 }
 
 fn on_app_request(code: &IpcCode, param_map: &AssetMap) -> Result<()> {
-    let uid = Skeleton::calling_uid();
+    let uid: u64 = Skeleton::calling_uid();
     let user_id = get_user_id(uid)?;
     let mut name = vec![0u8; 256];
     let mut name_len = 256u32;
@@ -94,7 +94,7 @@ fn on_app_request(code: &IpcCode, param_map: &AssetMap) -> Result<()> {
         _ => return Err(AssetError::new(ErrCode::BmsError, "[FATAL]Get calling package name failed.".to_string()))
     }
 
-    if code == IpcCode::Remove && param_map.len() == 0 {
+    if code == &IpcCode::Remove && param_map.len() == 0 {
             name.truncate(name_len as usize);
             return remove_all_ext_data(&user_id, &name, &app_index);
     }
