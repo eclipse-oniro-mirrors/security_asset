@@ -129,8 +129,9 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
 
     let ext_res = on_app_request(&ipc_code, &map);
     if ext_res.is_err() {
-        loge!("[ERROR][SA]Call ext failed, error is [code: {}] [msg: {}].", ext_res.unwrap_err().code,
-            ext_res.unwrap_err().msg);
+        let error = ext_res.unwrap_err();
+        loge!("[ERROR][SA]Call ext failed, error is [code: {}] [msg: {}].", &error.code,
+            &error.msg);
     }
 
     match ipc_code {
