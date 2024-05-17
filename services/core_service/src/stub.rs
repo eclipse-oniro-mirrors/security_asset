@@ -95,8 +95,8 @@ fn on_app_request(code: &IpcCode, param_map: &AssetMap) -> Result<()> {
     }
 
     if code == &IpcCode::Remove && param_map.is_empty() {
-            name.truncate(name_len as usize);
-            return remove_all_ext_data(&user_id, &name, &app_index);
+        name.truncate(name_len as usize);
+        return remove_all_ext_data(&user_id, &name, &app_index);
     }
 
     let arc_asset_plugin = AssetPlugin::get_instance();
@@ -131,10 +131,7 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
 
     match ipc_code {
         IpcCode::Add => reply_handle(stub.add(&map), reply),
-        IpcCode::Remove => reply_handle({
-
-            stub.remove(&map)
-        }, reply),
+        IpcCode::Remove => reply_handle(stub.remove(&map), reply),
         IpcCode::Update => {
             let update_map = deserialize_map(data).map_err(asset_err_handle)?;
             reply_handle(stub.update(&map, &update_map), reply)

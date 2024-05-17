@@ -47,7 +47,7 @@ pub enum EventType {
     /// Package remove event.
     OnPackageRemove,
 
-    /// Package remove event.
+    /// Package clear event.
     OnPackageClear,
 }
 
