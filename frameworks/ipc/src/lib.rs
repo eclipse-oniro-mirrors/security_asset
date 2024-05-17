@@ -34,6 +34,7 @@ const MAX_VEC_CAPACITY: u32 = 0x10000;
 impl_enum_trait! {
     /// Code used to identify the function to be called.
     #[derive(Clone, Copy)]
+    #[derive(Eq, PartialEq)]
     pub enum IpcCode {
         /// Code for AddAsset.
         Add = ipc::FIRST_CALL_TRANSACTION,

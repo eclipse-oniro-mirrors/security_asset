@@ -23,7 +23,7 @@ use asset_ipc::{deserialize_map, serialize_maps, IpcCode, IPC_SUCCESS, SA_NAME};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::{plugin_interface::{EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP,
-    PARAM_NAME_USER_ID}, ErrCode, Value};
+    PARAM_NAME_USER_ID}, AssetMap, ErrCode, Value};
 
 use crate::{counter::AutoCounter, unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
 
@@ -61,12 +61,29 @@ extern "C" {
 }
 const ASET_SUCCESS: i32 = 0;
 
-fn on_app_request() -> Result<()> {
-    let uid = Skeleton::calling_uid();
+fn remove_all_ext_data(user_id: &i32, package_name: &Vec<u8>, app_index: &i32) -> Result<()> {
+    let arc_asset_plugin = AssetPlugin::get_instance();
+    let mut asset_plugin = arc_asset_plugin.lock().unwrap();
+    if let Ok(load) = asset_plugin.load_plugin() {
+        let mut params = ExtDbMap::new();
+        params.insert(PARAM_NAME_USER_ID, Value::Number(*user_id as u32));
+        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(package_name.to_owned()));
+        params.insert(PARAM_NAME_APP_INDEX, Value::Number(*app_index as u32));
+        match load.process_event(EventType::OnPackageClear, &params) {
+            Ok(()) => return Ok(()),
+            Err(code) => return Err(AssetError::new(ErrCode::BmsError,
+                format!("process on package clear data failed, code: {}", code)))
+        }
+    }
+    Ok(())
+}
+
+fn on_app_request(code: &IpcCode, param_map: &AssetMap) -> Result<()> {
+    let uid: u64 = Skeleton::calling_uid();
     let user_id = get_user_id(uid)?;
     let mut name = vec![0u8; 256];
     let mut name_len = 256u32;
-    let mut app_index = 256i32;
+    let mut app_index = 0;
     let mut is_hap = false;
     let res = unsafe { GetCallingName(user_id, name.as_mut_ptr(), &mut name_len,
         &mut is_hap, &mut app_index) };
@@ -77,6 +94,11 @@ fn on_app_request() -> Result<()> {
         _ => return Err(AssetError::new(ErrCode::BmsError, "[FATAL]Get calling package name failed.".to_string()))
     }
 
+    if code == &IpcCode::Remove && param_map.is_empty() {
+        name.truncate(name_len as usize);
+        return remove_all_ext_data(&user_id, &name, &app_index);
+    }
+
     let arc_asset_plugin = AssetPlugin::get_instance();
     let mut asset_plugin = arc_asset_plugin.lock().unwrap();
     if let Ok(load) = asset_plugin.load_plugin() {
@@ -84,11 +106,7 @@ fn on_app_request() -> Result<()> {
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
         params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(name));
         params.insert(PARAM_NAME_IS_HAP, Value::Bool(is_hap));
-        if is_hap {
-            params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
-        } else {
-            params.insert(PARAM_NAME_APP_INDEX, Value::Number(0));
-        }
+        params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
         match load.process_event(EventType::OnAppCall, &params) {
             Ok(()) => return Ok(()),
             Err(code) => return Err(AssetError::new(ErrCode::BmsError, format!("process on app call event failed, code: {}", code)))
@@ -107,9 +125,10 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
     }
     let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
 
-    on_app_request().map_err(asset_err_handle)?;
-
     let map = deserialize_map(data).map_err(asset_err_handle)?;
+
+    on_app_request(&ipc_code, &map).map_err(asset_err_handle)?;
+
     match ipc_code {
         IpcCode::Add => reply_handle(stub.add(&map), reply),
         IpcCode::Remove => reply_handle(stub.remove(&map), reply),
