@@ -192,9 +192,7 @@ pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
     if let Some(Value::Number(operation_type)) = input.get(&Tag::OperationType) {
         match operation_type {
             x if *x == OperationType::NeedSync as u32 => {
-                let arc_asset_plugin = AssetPlugin::get_instance();
-                let mut asset_plugin = arc_asset_plugin.lock().unwrap();
-                if let Ok(load) = asset_plugin.load_plugin() {
+                if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
                     let owner_info_str = String::from_utf8_lossy(calling_info.owner_info()).to_string();
                     let owner_info_vec: Vec<_> = owner_info_str.split('_').collect();
                     let caller_name = owner_info_vec[0];
@@ -208,9 +206,7 @@ pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
                 }
             },
             x if *x == OperationType::NeedLogout as u32 => {
-                let arc_asset_plugin = AssetPlugin::get_instance();
-                let mut asset_plugin = arc_asset_plugin.lock().unwrap();
-                if let Ok(load) = asset_plugin.load_plugin() {
+                if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
                     let owner_info_str = String::from_utf8_lossy(calling_info.owner_info()).to_string();
                     let owner_info_vec: Vec<_> = owner_info_str.split('_').collect();
                     let caller_name = owner_info_vec[0];
