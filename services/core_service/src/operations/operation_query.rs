@@ -179,7 +179,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
 pub(crate) fn query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<AssetMap>> {
     check_arguments(query)?;
 
-    common::inform_asset_ext(query, calling_info.user_id());
+    common::inform_asset_ext(calling_info, query);
 
     let mut db_data = common::into_db_map(query);
     common::add_owner_info(calling_info, &mut db_data);
