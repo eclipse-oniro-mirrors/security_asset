@@ -103,7 +103,7 @@ impl Ability for AssetAbility {
 
 fn start_service(handler: Handler) -> Result<()> {
     let asset_plugin = AssetPlugin::get_instance();
-    match asset_plugin.lock().unwrap().load_plugin() {
+    match asset_plugin.load_plugin() {
         Ok(loader) => {
             let _tr = loader.init(Box::new(AssetContext {data_base: None}));
             logi!("load plugin success.");

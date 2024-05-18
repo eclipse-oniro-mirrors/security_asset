@@ -96,9 +96,7 @@ pub(crate) extern "C" fn on_package_removed(user_id: i32, owner: *const u8, owne
 
     logi!("[INFO]On app -{}-{}-{}- removed.", user_id, bundle_name, app_index);
 
-    let arc_asset_plugin = AssetPlugin::get_instance();
-    let mut asset_plugin = arc_asset_plugin.lock().unwrap();
-    if let Ok(load) = asset_plugin.load_plugin() {
+    if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
         params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(bundle_name.as_bytes().to_vec()));
@@ -144,9 +142,7 @@ pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, ap
     };
     logi!("[INFO]On app -{}-{}- restore.", user_id, bundle_name);
 
-    let arc_asset_plugin = AssetPlugin::get_instance();
-    let mut asset_plugin = arc_asset_plugin.lock().unwrap();
-    if let Ok(load) = asset_plugin.load_plugin() {
+    if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
         params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(bundle_name.as_bytes().to_vec()));
@@ -161,9 +157,7 @@ pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, ap
 pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
     logi!("[INFO]On user -{}- unlocked.", user_id);
 
-    let arc_asset_plugin = AssetPlugin::get_instance();
-    let mut asset_plugin = arc_asset_plugin.lock().unwrap();
-    if let Ok(load) = asset_plugin.load_plugin() {
+    if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
         match load.process_event(EventType::OnUserUnlocked, &params) {

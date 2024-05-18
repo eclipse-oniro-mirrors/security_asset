@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-use std::sync::{Arc, Mutex};
+use std::{cell::RefCell, sync::{Arc, Mutex}};
 use asset_log::{logi, loge};
 use asset_sdk::plugin_interface::{IAssetPluginCtx, IAssetPlugin, ExtDbMap};
 use asset_definition::{Result, ErrCode, log_throw_error};
@@ -22,22 +22,27 @@ use asset_db_operator::{database::Database, database::get_path};
 /// The asset_ext plugin.
 #[derive(Default)]
 pub struct AssetPlugin {
-    lib: Option<libloading::Library>
+    lib: RefCell<Option<libloading::Library>>
 }
+
+static ASSET_OLUGIN_LOCK: Mutex<()> = Mutex::new(());
+
+unsafe impl Sync for AssetPlugin {}
 
 impl AssetPlugin {
     fn new() -> Self {
-        Self { lib: None }
+        Self { lib: RefCell::new(None) }
     }
 
     /// Get the instance of AssetPlugin.
-    pub fn get_instance() -> Arc<Mutex<AssetPlugin>> {
-        static mut INSTANCE: Option<Arc<Mutex<AssetPlugin>>> = None;
-        unsafe { INSTANCE.get_or_insert_with(|| Arc::new(Mutex::new(AssetPlugin::new()))).clone() }
+    pub fn get_instance() -> Arc<AssetPlugin> {
+        static mut INSTANCE: Option<Arc<AssetPlugin>> = None;
+        let _guard = ASSET_OLUGIN_LOCK.lock().unwrap();
+        unsafe { INSTANCE.get_or_insert_with(|| Arc::new(AssetPlugin::new())).clone() }
     }
 
     /// Load the plugin.
-    pub fn load_plugin(&mut self) -> Result<Box<dyn IAssetPlugin>> {
+    pub fn load_plugin(&self) -> Result<Box<dyn IAssetPlugin>> {
         unsafe {
             logi!("start to load asset_ext plugin.");
             let lib = match libloading::Library::new("/system/lib64/libasset_ext_ffi.z.so") {
@@ -62,16 +67,16 @@ impl AssetPlugin {
                 return log_throw_error!(ErrCode::InvalidArgument, "_create_plugin return null.");
             }
 
-            self.lib = Some(lib);
+            *self.lib.borrow_mut() = Some(lib);
             logi!("load asset_ext plugin success.");
             Ok(Box::from_raw(plugin_ptr))
         }
     }
 
     /// Unload plugin.
-    pub fn unload_plugin(&mut self) {
-        if self.lib.is_some() {
-            self.lib = None;
+    pub fn unload_plugin(&self) {
+        if self.lib.borrow().is_some() {
+            *self.lib.borrow_mut() = None;
         }
     }
 }
