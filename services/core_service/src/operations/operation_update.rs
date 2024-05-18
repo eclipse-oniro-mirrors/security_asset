@@ -126,7 +126,7 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
         return log_throw_error!(ErrCode::NotFound, "[FATAL]Update asset failed, update 0 asset.");
     }
 
-    common::inform_asset_ext(update, calling_info.user_id());
+    common::inform_asset_ext(calling_info, update);
 
     Ok(())
 }
