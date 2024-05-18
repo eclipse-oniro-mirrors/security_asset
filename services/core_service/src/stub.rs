@@ -123,9 +123,7 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
 
     let map = deserialize_map(data).map_err(asset_err_handle)?;
 
-    if let Err(e) = on_app_request(&ipc_code, &map) {
-        loge!("[ERROR][SA]Call ext failed, error is [code: {}] [msg: {}].", e.code, e.msg);
-    }
+    on_app_request(&ipc_code, &map).map_err(asset_err_handle)?;
 
     match ipc_code {
         IpcCode::Add => reply_handle(stub.add(&map), reply),
