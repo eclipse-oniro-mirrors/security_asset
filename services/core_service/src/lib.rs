@@ -22,7 +22,7 @@ use system_ability_fwk::{
     ability::{Ability, Handler},
     cxx_share::SystemAbilityOnDemandReason,
 };
-use ylong_runtime::time::sleep;
+use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
 
 use asset_constants::CallingInfo;
 use asset_crypto_manager::crypto_manager::CryptoManager;
@@ -58,7 +58,9 @@ pub(crate) fn unload_sa(duration: u64) {
 impl Ability for AssetAbility {
     fn on_start_with_reason(&self, reason: SystemAbilityOnDemandReason, handler: Handler) {
         logi!("[INFO]Start asset service, reason_id: {:?}", reason.reason_id);
-
+        if let Err(e) = RuntimeBuilder::new_multi_thread().worker_num(1).build_global() {
+            loge!("[WARNING]Ylong new global thread failed! {}", e);
+        };
         let func_name = hisysevent::function!();
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
