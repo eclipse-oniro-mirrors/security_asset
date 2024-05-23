@@ -8,25 +8,35 @@
 
 #include "asset_system_type.h"
 
-const std::vector<uint32_t> critical_label_tags = {
+namespace OHOS {
+namespace Security {
+namespace Asset {
+
+#define NAPI_THROW_RETURN_INVALID_ARGUMENT(env, format, arg...)                     \
+    char msg[MAX_MESSAGE_LEN] = { 0 };                                              \
+    (void)sprintf_s(msg, MAX_MESSAGE_LEN, format, ##arg);                           \
+    LOGE("[FATAL][NAPI]%{public}s", (msg));                                         \
+    napi_throw((env), CreateJsError((env), SEC_ASSET_INVALID_ARGUMENT, (msg)));     \
+
+const std::vector<uint32_t> g_criticalLabelTags = {
     SEC_ASSET_TAG_DATA_LABEL_CRITICAL_1,
     SEC_ASSET_TAG_DATA_LABEL_CRITICAL_2,
     SEC_ASSET_TAG_DATA_LABEL_CRITICAL_3,
     SEC_ASSET_TAG_DATA_LABEL_CRITICAL_4
 };
-const std::vector<uint32_t> normal_label_tags = {
+const std::vector<uint32_t> g_normalLabelTags = {
     SEC_ASSET_TAG_DATA_LABEL_NORMAL_1,
     SEC_ASSET_TAG_DATA_LABEL_NORMAL_2,
     SEC_ASSET_TAG_DATA_LABEL_NORMAL_3,
     SEC_ASSET_TAG_DATA_LABEL_NORMAL_4
 };
-const std::vector<uint32_t> normal_local_label_tags = {
+const std::vector<uint32_t> g_normalLocalLabelTags = {
     SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_1,
     SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_2,
     SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_3,
     SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_4
 };
-const std::vector<uint32_t> access_control_tags = {
+const std::vector<uint32_t> g_accessControlTags = {
     SEC_ASSET_TAG_ALIAS,
     SEC_ASSET_TAG_ACCESSIBILITY,
     SEC_ASSET_TAG_AUTH_TYPE,
@@ -68,10 +78,14 @@ const std::unordered_map<uint32_t, const char *> g_tagMap = {
 };
 
 bool CheckAssetRequiredTag(napi_env env, const std::vector<AssetAttr> &attrs,
-    const std::vector<uint32_t> &required_tags);
+    const std::vector<uint32_t> &requiredTags);
 
-bool CheckAssetTagValidity(napi_env env, const std::vector<AssetAttr> &attrs, const std::vector<uint32_t> &valid_tags);
+bool CheckAssetTagValidity(napi_env env, const std::vector<AssetAttr> &attrs, const std::vector<uint32_t> &validTags);
 
 bool CheckAssetValueValidity(napi_env env, const std::vector<AssetAttr> &attrs);
+
+} // Asset
+} // Security
+} // OHOS
 
 #endif // ARGUMENT_CHECK_H

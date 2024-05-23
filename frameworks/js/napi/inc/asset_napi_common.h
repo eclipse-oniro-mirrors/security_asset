@@ -73,6 +73,12 @@ napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName
 napi_value NapiEntryAsUser(napi_env env, napi_callback_info info, const char *funcName,
     napi_async_execute_callback execute, size_t expectArgNum = AS_USER_ARGS_NUM);
 
+napi_value NapiEntryAdd(napi_env env, napi_callback_info info, const char *funcName,
+    napi_async_execute_callback execute, size_t expectArgNum = 1);
+
+napi_value NapiEntryAsUserAdd(napi_env env, napi_callback_info info, const char *funcName,
+    napi_async_execute_callback execute, size_t expectArgNum = AS_USER_ARGS_NUM);
+
 } // Asset
 } // Security
 } // OHOS

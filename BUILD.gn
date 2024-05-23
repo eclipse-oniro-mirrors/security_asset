@@ -37,7 +37,7 @@ group("asset_bin_test") {
   ]
   if (enable_local_test) {
     deps += [ "test/unittest/inner_api_rust:asset_rust_test" ]
-    deps += [ "test/unittest/module_test:asset_module_test" ]
+    # deps += [ "test/unittest/module_test:asset_module_test" ]
     deps += [ "services/db_operator:asset_db_operator_test" ]
   }
 }

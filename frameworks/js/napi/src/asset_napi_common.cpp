@@ -24,6 +24,7 @@
 #include "asset_napi_error_code.h"
 #include "asset_system_api.h"
 #include "asset_system_type.h"
+#include "asset_napi_add.h"
 
 namespace OHOS {
 namespace Security {
@@ -453,6 +454,58 @@ napi_value NapiEntryAsUser(napi_env env, napi_callback_info info, const char *fu
 
     do {
         if (ParseAsUserParam(env, info, expectArgNum, context->attrs, context->updateAttrs) != napi_ok) {
+            break;
+        }
+
+        napi_value promise = CreateAsyncWork(env, context, funcName, execute);
+        if (promise == nullptr) {
+            LOGE("Create async work failed.");
+            break;
+        }
+        return promise;
+    } while (0);
+    DestroyAsyncContext(env, context);
+    return nullptr;
+}
+
+napi_value NapiEntryAdd(napi_env env, napi_callback_info info, const char *funcName,
+    napi_async_execute_callback execute, size_t expectArgNum)
+{
+    AsyncContext *context = CreateAsyncContext();
+    NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
+
+    do {
+        if (ParseParam(env, info, expectArgNum, context->attrs, context->updateAttrs) != napi_ok) {
+            break;
+        }
+
+        if (CheckAddArgs(env, context->attrs) != napi_ok) {
+            break;
+        }
+
+        napi_value promise = CreateAsyncWork(env, context, funcName, execute);
+        if (promise == nullptr) {
+            LOGE("Create async work failed.");
+            break;
+        }
+        return promise;
+    } while (0);
+    DestroyAsyncContext(env, context);
+    return nullptr;
+}
+
+napi_value NapiEntryAsUserAdd(napi_env env, napi_callback_info info, const char *funcName,
+    napi_async_execute_callback execute, size_t expectArgNum)
+{
+    AsyncContext *context = CreateAsyncContext();
+    NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
+
+    do {
+        if (ParseAsUserParam(env, info, expectArgNum, context->attrs, context->updateAttrs) != napi_ok) {
+            break;
+        }
+
+        if (CheckAddArgs(env, context->attrs) != napi_ok) {
             break;
         }
 

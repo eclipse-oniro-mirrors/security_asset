@@ -16,6 +16,8 @@ import("//build/ohos.gni")
 ohos_shared_library("asset_napi") {
   include_dirs = [ "inc" ]
   sources = [
+    "src/asset_napi_add.cpp",
+    "src/argument_check.cpp",
     "src/asset_napi.cpp",
     "src/asset_napi_common.cpp",
   ]
