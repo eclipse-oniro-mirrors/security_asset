@@ -27,6 +27,7 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 
+#define NORMAL_ARGS_NUM 1
 #define AS_USER_ARGS_NUM 2
 #define AS_USER_UPDATE_ARGS_NUM 3
 #define UPDATE_ARGS_NUM 2
@@ -71,12 +72,6 @@ napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName
     size_t expectArgNum = 1);
 
 napi_value NapiEntryAsUser(napi_env env, napi_callback_info info, const char *funcName,
-    napi_async_execute_callback execute, size_t expectArgNum = AS_USER_ARGS_NUM);
-
-napi_value NapiEntryAdd(napi_env env, napi_callback_info info, const char *funcName,
-    napi_async_execute_callback execute, size_t expectArgNum = 1);
-
-napi_value NapiEntryAsUserAdd(napi_env env, napi_callback_info info, const char *funcName,
     napi_async_execute_callback execute, size_t expectArgNum = AS_USER_ARGS_NUM);
 
 } // Asset
