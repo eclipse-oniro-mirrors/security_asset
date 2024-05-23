@@ -188,7 +188,7 @@ fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     let local_res = local_add(attributes, calling_info);
 
-    common::inform_asset_ext(attributes, calling_info.user_id());
+    common::inform_asset_ext(calling_info, attributes);
 
     local_res
 }

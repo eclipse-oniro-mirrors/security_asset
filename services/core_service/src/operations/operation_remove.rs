@@ -75,7 +75,7 @@ pub(crate) fn remove(query: &AssetMap, calling_info: &CallingInfo) -> Result<()>
     let remove_num = Database::build(calling_info.user_id())?.delete_datas(&db_data, Some(&reverse_condition), false)?;
     logi!("Delete num: {}", remove_num);
 
-    common::inform_asset_ext(query, calling_info.user_id());
+    common::inform_asset_ext(calling_info, query);
 
     Ok(())
 }
