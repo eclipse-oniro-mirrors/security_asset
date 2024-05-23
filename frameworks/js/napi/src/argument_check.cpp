@@ -76,14 +76,11 @@ bool CheckNumberRange(napi_env env, const AssetAttr &attr, uint32_t min, uint32_
 
 bool CheckValidBits(napi_env env, const AssetAttr &attr, uint32_t minBits, uint32_t maxBits)
 {
-    LOGE("111111");
     if (attr.value.u32 >= pow(static_cast<uint32_t>(BINARY_BASE), maxBits) ||
         attr.value.u32 < pow(static_cast<uint32_t>(BINARY_BASE), minBits) - 1) {
-        LOGE("22222");
         NAPI_THROW_RETURN_INVALID_ARGUMENT(env,
             "The value[AssetValue(%u)] of tag[AssetTag(%s)] is an invalid bit number.",
             attr.value.u32, g_tagMap.at(attr.tag));
-        LOGE("33333");
         return false;
     }
     return true;
@@ -254,7 +251,6 @@ bool CheckAssetTagValidity(napi_env env, const std::vector<AssetAttr> &attrs, co
 bool CheckAssetValueValidity(napi_env env, const std::vector<AssetAttr> &attrs)
 {
     for (AssetAttr attr : attrs) {
-        LOGE("00000");
         if (!CheckAssetDataValue(env, attr)) {
             return false;
         }
