@@ -44,13 +44,20 @@ impl AssetPlugin {
     /// Load the plugin.
     pub fn load_plugin(&self) -> Result<Box<dyn IAssetPlugin>> {
         unsafe {
-            logi!("start to load asset_ext plugin.");
-            let lib = match libloading::Library::new("/system/lib64/libasset_ext_ffi.z.so") {
-                Ok(lib) => lib,
-                Err(err) => {
-                    loge!("dlopen libasset_ext_ffi.z.so failed, err: {}", err);
-                    return log_throw_error!(ErrCode::InvalidArgument, "dlopen failed {}", err);
-                }
+            let _guard = ASSET_OLUGIN_LOCK.lock().unwrap();
+            if self.lib.borrow().is_none() {
+                logi!("start to load asset_ext plugin.");
+                match libloading::Library::new("/system/lib64/libasset_ext_ffi.z.so") {
+                    Ok(lib) => *self.lib.borrow_mut() = Some(lib),
+                    Err(err) => {
+                        loge!("dlopen libasset_ext_ffi.z.so failed, err: {}", err);
+                        return log_throw_error!(ErrCode::InvalidArgument, "dlopen failed {}", err);
+                    }
+                };
+            }
+
+            let Some(ref lib) = *self.lib.borrow() else {
+                return log_throw_error!(ErrCode::InvalidArgument, "unexpect error");
             };
 
             let func = match lib.get::<libloading::Symbol<unsafe extern "C" fn() -> *mut dyn IAssetPlugin>>(b"_create_plugin") {
@@ -67,7 +74,6 @@ impl AssetPlugin {
                 return log_throw_error!(ErrCode::InvalidArgument, "_create_plugin return null.");
             }
 
-            *self.lib.borrow_mut() = Some(lib);
             logi!("load asset_ext plugin success.");
             Ok(Box::from_raw(plugin_ptr))
         }
@@ -75,6 +81,7 @@ impl AssetPlugin {
 
     /// Unload plugin.
     pub fn unload_plugin(&self) {
+        let _guard = ASSET_OLUGIN_LOCK.lock().unwrap();
         if self.lib.borrow().is_some() {
             *self.lib.borrow_mut() = None;
         }
