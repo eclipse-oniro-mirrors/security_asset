@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -14,8 +14,8 @@
  */
 
 #include <algorithm>
-#include <cmath>
 #include <climits>
+#include <cmath>
 #include <functional>
 #include <unistd.h>
 #include <unordered_map>
@@ -58,8 +58,8 @@ bool CheckArraySize(napi_env env, const AssetAttr &attr, uint32_t min, uint32_t 
 {
     if (attr.value.blob.size > max || attr.value.blob.size <= min) {
         NAPI_THROW_INVALID_ARGUMENT(env,
-            "The value[AssetValue(%{public}s)] of tag[AssetTag(%{public}s)] has byte length out of range[%{public}u, %{public}u].",
-            attr.value.blob.data, TAG_MAP.at(attr.tag), min, max);
+            "The value of tag[AssetTag(%{public}s)] has byte length out of range[%{public}u, %{public}u].",
+            TAG_MAP.at(attr.tag), min, max);
     }
     return true;
 }
@@ -143,45 +143,16 @@ const std::unordered_map<uint32_t, CheckInterval> CHECK_INTERVAL_FUNC_MAP = {
 
 struct CheckRange {
     std::function<bool(napi_env, const AssetAttr &, std::vector<uint32_t> &)> funcPtr;
-    std::vector<uint32_t> range;
+    const std::vector<uint32_t> range;
 };
 
 const std::unordered_map<uint32_t, CheckRange> CHECK_RANGE_FUNC_MAP = {
-        { SEC_ASSET_TAG_ACCESSIBILITY, { &CheckEnumVariant, {
-            SEC_ASSET_ACCESSIBILITY_DEVICE_POWERED_ON,
-            SEC_ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED,
-            SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED
-        } } },
-        { SEC_ASSET_TAG_AUTH_TYPE, { &CheckEnumVariant, {
-            SEC_ASSET_AUTH_TYPE_NONE,
-            SEC_ASSET_AUTH_TYPE_ANY
-        } } },
-        { SEC_ASSET_TAG_CONFLICT_RESOLUTION, { &CheckEnumVariant, {
-            SEC_ASSET_CONFLICT_OVERWRITE,
-            SEC_ASSET_CONFLICT_THROW_ERROR
-        } } },
-        { SEC_ASSET_TAG_RETURN_TYPE, { &CheckEnumVariant, {
-            SEC_ASSET_RETURN_ALL,
-            SEC_ASSET_RETURN_ATTRIBUTES
-        } } },
-        { SEC_ASSET_TAG_RETURN_ORDERED_BY, { &CheckTagRange, {
-            SEC_ASSET_TAG_DATA_LABEL_CRITICAL_1,
-            SEC_ASSET_TAG_DATA_LABEL_CRITICAL_2,
-            SEC_ASSET_TAG_DATA_LABEL_CRITICAL_3,
-            SEC_ASSET_TAG_DATA_LABEL_CRITICAL_4,
-            SEC_ASSET_TAG_DATA_LABEL_NORMAL_1,
-            SEC_ASSET_TAG_DATA_LABEL_NORMAL_2,
-            SEC_ASSET_TAG_DATA_LABEL_NORMAL_3,
-            SEC_ASSET_TAG_DATA_LABEL_NORMAL_4,
-            SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_1,
-            SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_2,
-            SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_3,
-            SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_4
-        } } },
-        { SEC_ASSET_TAG_OPERATION_TYPE, { &CheckEnumVariant, {
-            SEC_ASSET_NEED_SYNC,
-            SEC_ASSET_NEED_LOGOUT
-        } } }
+        { SEC_ASSET_TAG_ACCESSIBILITY, { &CheckEnumVariant, ASSET_ACCESSIBILITY} },
+        { SEC_ASSET_TAG_AUTH_TYPE, { &CheckEnumVariant, ASSET_AUTH_TYPE } },
+        { SEC_ASSET_TAG_CONFLICT_RESOLUTION, { &CheckEnumVariant, ASSET_CONFLICT_RESOLUTION } },
+        { SEC_ASSET_TAG_RETURN_TYPE, { &CheckEnumVariant, ASSET_RETURN_TYPE } },
+        { SEC_ASSET_TAG_RETURN_ORDERED_BY, { &CheckTagRange, ASSET_RETURN_ORDER_BY_TAGS } },
+        { SEC_ASSET_TAG_OPERATION_TYPE, { &CheckEnumVariant, ASSET_OPERATION_TYPE } }
 };
 
 bool CheckAssetDataValue(napi_env env, const AssetAttr &attr)

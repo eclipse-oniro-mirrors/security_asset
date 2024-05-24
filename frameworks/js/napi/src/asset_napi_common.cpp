@@ -25,49 +25,12 @@
 #include "asset_napi_add.h"
 #include "asset_napi_common.h"
 #include "asset_napi_error_code.h"
+#include "asset_napi_remove.h"
 
 namespace OHOS {
 namespace Security {
 namespace Asset {
-namespace {
-
-#define MAX_BUFFER_LEN 2048
-#define MAX_MESSAGE_LEN 128
-#define MAX_ARGS_NUM 5
-
-#define NAPI_THROW_BASE(env, condition, ret, code, message)             \
-if ((condition)) {                                                      \
-    LOGE("[FATAL][NAPI]%{public}s", (message));                         \
-    napi_throw((env), CreateJsError((env), (code), (message)));         \
-    return (ret);                                                       \
-}
-
-#define NAPI_THROW(env, condition, code, message)                       \
-    NAPI_THROW_BASE(env, condition, nullptr, code, message)
-
-#define NAPI_THROW_RETURN_ERR(env, condition, code, message)            \
-    NAPI_THROW_BASE(env, condition, napi_generic_failure, code, message)
-
-#define NAPI_CALL_BREAK(env, theCall)   \
-if ((theCall) != napi_ok) {             \
-    GET_AND_THROW_LAST_ERROR((env));    \
-    break;                              \
-}
-
-#define NAPI_CALL_RETURN_ERR(env, theCall)  \
-if ((theCall) != napi_ok) {                 \
-    GET_AND_THROW_LAST_ERROR((env));        \
-    return napi_generic_failure;            \
-}
-
-#define CHECK_ASSET_TAG(env, condition, tag, message)                                   \
-if ((condition)) {                                                                      \
-    char msg[MAX_MESSAGE_LEN] = { 0 };                                                  \
-    (void)sprintf_s(msg, MAX_MESSAGE_LEN, "AssetTag(0x%08x) " message, tag);            \
-    LOGE("[FATAL][NAPI]%{public}s", (msg));                                             \
-    napi_throw((env), CreateJsError((env), SEC_ASSET_INVALID_ARGUMENT, (msg)));         \
-    return napi_invalid_arg;                                                            \
-}
+// namespace {
 
 bool IsBlobValid(const AssetBlob &blob)
 {
@@ -303,7 +266,7 @@ napi_status ParseJsUserId(napi_env env, napi_value arg, std::vector<AssetAttr> &
     return napi_ok;
 }
 
-} // anonymous namespace
+// } // anonymous namespace
 
 void FreeAssetAttrs(std::vector<AssetAttr> &attrs)
 {
@@ -385,6 +348,39 @@ napi_status ParseParam(napi_env env, napi_callback_info info, size_t expectArgNu
         return ret;
     }
     if (expectArgNum == UPDATE_ARGS_NUM) {
+        ret = ParseMapParam(env, argv[index++], updateAttrs);
+        if (ret != napi_ok) {
+            LOGE("Parse second map parameter failed.");
+            return ret;
+        }
+    }
+    return napi_ok;
+}
+
+napi_status ParseParam(napi_env env, napi_callback_info info, const NapiCallerArgs &args, std::vector<AssetAttr> &attrs,
+    std::vector<AssetAttr> &updateAttrs)
+{
+    napi_value argv[MAX_ARGS_NUM] = { 0 };
+    napi_status ret = ParseJsArgs(env, info, argv, args.expectArgNum);
+    if (ret != napi_ok) {
+        return ret;
+    }
+
+    size_t index = 0;
+    if (args.isAsUser) {
+        ret = ParseJsUserId(env, argv[index++], attrs);
+        if (ret != napi_ok) {
+            return ret;
+        }
+    }
+
+    ret = ParseMapParam(env, argv[index++], attrs);
+    if (ret != napi_ok) {
+        LOGE("Parse first map parameter failed.");
+        return ret;
+    }
+
+    if (args.isUpdate) {
         ret = ParseMapParam(env, argv[index++], updateAttrs);
         if (ret != napi_ok) {
             LOGE("Parse second map parameter failed.");

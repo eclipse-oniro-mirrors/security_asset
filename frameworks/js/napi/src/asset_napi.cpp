@@ -23,6 +23,7 @@
 
 #include "asset_napi_add.h"
 #include "asset_napi_common.h"
+#include "asset_napi_remove.h"
 
 using namespace OHOS::Security::Asset;
 
@@ -163,41 +164,6 @@ napi_value DeclareOperationType(napi_env env)
     AddUint32Property(env, operationType, "NEED_SYNC", SEC_ASSET_NEED_SYNC);
     AddUint32Property(env, operationType, "NEED_LOGOUT", SEC_ASSET_NEED_LOGOUT);
     return operationType;
-}
-
-napi_value NapiRemove(napi_env env, napi_callback_info info)
-{
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetRemove(&context->attrs[0], context->attrs.size());
-        };
-    return NapiEntry(env, info, __func__, execute);
-}
-
-napi_value NapiRemoveSync(napi_env env, napi_callback_info info)
-{
-    std::vector<AssetAttr> attrs;
-    do {
-        if (ParseParam(env, info, attrs) != napi_ok) {
-            break;
-        }
-
-        int32_t result = AssetRemove(&attrs[0], attrs.size());
-        CHECK_RESULT_BREAK(env, result);
-    } while (false);
-    FreeAssetAttrs(attrs);
-    return nullptr;
-}
-
-napi_value NapiRemoveAsUser(napi_env env, napi_callback_info info)
-{
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetRemove(&context->attrs[0], context->attrs.size());
-        };
-    return NapiEntryAsUser(env, info, __func__, execute);
 }
 
 napi_value NapiUpdate(napi_env env, napi_callback_info info)

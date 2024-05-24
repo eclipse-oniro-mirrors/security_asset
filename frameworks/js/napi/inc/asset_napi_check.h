@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -60,6 +60,45 @@ const std::vector<uint32_t> ACCESS_CONTROL_TAGS = {
     SEC_ASSET_TAG_IS_PERSISTENT,
     SEC_ASSET_TAG_SYNC_TYPE,
     SEC_ASSET_TAG_REQUIRE_PASSWORD_SET
+};
+const std::vector<uint32_t> ASSET_RETURN_ORDER_BY_TAGS = {
+    SEC_ASSET_TAG_DATA_LABEL_CRITICAL_1,
+    SEC_ASSET_TAG_DATA_LABEL_CRITICAL_2,
+    SEC_ASSET_TAG_DATA_LABEL_CRITICAL_3,
+    SEC_ASSET_TAG_DATA_LABEL_CRITICAL_4,
+    SEC_ASSET_TAG_DATA_LABEL_NORMAL_1,
+    SEC_ASSET_TAG_DATA_LABEL_NORMAL_2,
+    SEC_ASSET_TAG_DATA_LABEL_NORMAL_3,
+    SEC_ASSET_TAG_DATA_LABEL_NORMAL_4,
+    SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_1,
+    SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_2,
+    SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_3,
+    SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_4
+};
+const std::vector<uint32_t> ASSET_SYNC_TAGS = {
+    SEC_ASSET_TAG_OPERATION_TYPE
+};
+
+const std::vector<uint32_t> ASSET_ACCESSIBILITY = {
+    SEC_ASSET_ACCESSIBILITY_DEVICE_POWERED_ON,
+    SEC_ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED,
+    SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED
+};
+const std::vector<uint32_t> ASSET_AUTH_TYPE = {
+    SEC_ASSET_AUTH_TYPE_NONE,
+    SEC_ASSET_AUTH_TYPE_ANY
+};
+const std::vector<uint32_t> ASSET_CONFLICT_RESOLUTION = {
+    SEC_ASSET_CONFLICT_OVERWRITE,
+    SEC_ASSET_CONFLICT_THROW_ERROR
+};
+const std::vector<uint32_t> ASSET_RETURN_TYPE = {
+    SEC_ASSET_RETURN_ALL,
+    SEC_ASSET_RETURN_ATTRIBUTES
+};
+const std::vector<uint32_t> ASSET_OPERATION_TYPE = {
+    SEC_ASSET_NEED_SYNC,
+    SEC_ASSET_NEED_LOGOUT
 };
 
 const std::unordered_map<uint32_t, const char *> TAG_MAP = {
