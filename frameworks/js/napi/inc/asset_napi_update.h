@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ASSET_NAPI_ADD_H
-#define ASSET_NAPI_ADD_H
+#ifndef ASSET_NAPI_UPDATE_H
+#define ASSET_NAPI_UPDATE_H
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
@@ -25,14 +25,14 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 
-napi_value NapiAdd(napi_env env, napi_callback_info info);
+napi_value NapiUpdate(napi_env env, napi_callback_info info);
 
-napi_value NapiAddSync(napi_env env, napi_callback_info info);
+napi_value NapiUpdateSync(napi_env env, napi_callback_info info);
 
-napi_value NapiAddAsUser(napi_env env, napi_callback_info info);
+napi_value NapiUpdateAsUser(napi_env env, napi_callback_info info);
 
 } // Asset
 } // Security
 } // OHOS
 
-#endif // ASSET_NAPI_ADD_H
+#endif // ASSET_NAPI_UPDATE_H

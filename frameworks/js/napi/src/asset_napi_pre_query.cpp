@@ -26,29 +26,21 @@
 #include "asset_system_api.h"
 #include "asset_system_type.h"
 
-#include "asset_napi_add.h"
 #include "asset_napi_check.h"
 #include "asset_napi_common.h"
+#include "asset_napi_pre_query.h"
 
 namespace OHOS {
 namespace Security {
 namespace Asset {
 namespace {
 
-const std::vector<uint32_t> REQUIRED_TAGS = {
-    SEC_ASSET_TAG_SECRET,
-    SEC_ASSET_TAG_ALIAS
-};
-
 const std::vector<uint32_t> OPTIONAL_TAGS = {
-    SEC_ASSET_TAG_SECRET,
-    SEC_ASSET_TAG_CONFLICT_RESOLUTION,
-    SEC_ASSET_TAG_IS_PERSISTENT
+    SEC_ASSET_TAG_AUTH_VALIDITY_PERIOD
 };
 
-napi_status CheckAddArgs(napi_env env, const std::vector<AssetAttr> &attrs)
+napi_status CheckPreQueryArgs(napi_env env, const std::vector<AssetAttr> &attrs)
 {
-    IF_FALSE_RETURN(CheckAssetRequiredTag(env, attrs, REQUIRED_TAGS), napi_invalid_arg);
     std::vector<uint32_t> validTags;
     validTags.insert(validTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
@@ -62,44 +54,49 @@ napi_status CheckAddArgs(napi_env env, const std::vector<AssetAttr> &attrs)
 
 } // anonymous namespace
 
-napi_value NapiAdd(napi_env env, napi_callback_info info, const NapiCallerArgs &args)
+napi_value NapiPreQuery(napi_env env, napi_callback_info info, const NapiCallerArgs &args)
 {
-    napi_async_execute_callback execute = [](napi_env env, void *data) {
-        AsyncContext *context = static_cast<AsyncContext *>(data);
-        context->result = AssetAdd(&context->attrs[0], context->attrs.size());
-    };
-    return NapiAsync(env, info, __func__, execute, args, &CheckAddArgs);
+    napi_async_execute_callback execute =
+        [](napi_env env, void *data) {
+            AsyncContext *context = static_cast<AsyncContext *>(data);
+            context->result = AssetPreQuery(&context->attrs[0], context->attrs.size(), &context->challenge);
+        };
+    return NapiAsync(env, info, __func__, execute, args, &CheckPreQueryArgs);
 }
 
-napi_value NapiAdd(napi_env env, napi_callback_info info)
+napi_value NapiPreQuery(napi_env env, napi_callback_info info)
 {
     NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
-    return NapiAdd(env, info, args);
+    return NapiPreQuery(env, info, args);
 }
 
-napi_value NapiAddAsUser(napi_env env, napi_callback_info info)
+napi_value NapiPreQueryAsUser(napi_env env, napi_callback_info info)
 {
     NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true };
-    return NapiAdd(env, info, args);
+    return NapiPreQuery(env, info, args);
 }
 
-napi_value NapiAddSync(napi_env env, napi_callback_info info)
+napi_value NapiPreQuerySync(napi_env env, napi_callback_info info)
 {
     std::vector<AssetAttr> attrs;
+    AssetBlob challenge = { 0 };
+    napi_value result = nullptr;
     do {
         if (ParseParam(env, info, attrs) != napi_ok) {
             break;
         }
 
-        if (CheckAddArgs(env, attrs) != napi_ok) {
+        if (CheckPreQueryArgs(env, attrs) != napi_ok) {
             break;
         }
 
-        int32_t result = AssetAdd(&attrs[0], attrs.size());
-        CHECK_RESULT_BREAK(env, result);
+        int32_t res = AssetPreQuery(&attrs[0], attrs.size(), &challenge);
+        CHECK_RESULT_BREAK(env, res);
+        result = CreateJsUint8Array(env, challenge);
     } while (false);
+    AssetFreeBlob(&challenge);
     FreeAssetAttrs(attrs);
-    return nullptr;
+    return result;
 }
 
 } // Asset

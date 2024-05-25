@@ -26,9 +26,9 @@
 #include "asset_system_api.h"
 #include "asset_system_type.h"
 
-#include "asset_napi_add.h"
 #include "asset_napi_check.h"
 #include "asset_napi_common.h"
+#include "asset_napi_post_query.h"
 
 namespace OHOS {
 namespace Security {
@@ -36,54 +36,48 @@ namespace Asset {
 namespace {
 
 const std::vector<uint32_t> REQUIRED_TAGS = {
-    SEC_ASSET_TAG_SECRET,
-    SEC_ASSET_TAG_ALIAS
+    SEC_ASSET_TAG_AUTH_CHALLENGE
 };
 
 const std::vector<uint32_t> OPTIONAL_TAGS = {
-    SEC_ASSET_TAG_SECRET,
-    SEC_ASSET_TAG_CONFLICT_RESOLUTION,
-    SEC_ASSET_TAG_IS_PERSISTENT
+    SEC_ASSET_TAG_USER_ID
 };
 
-napi_status CheckAddArgs(napi_env env, const std::vector<AssetAttr> &attrs)
+napi_status CheckPostQueryArgs(napi_env env, const std::vector<AssetAttr> &attrs)
 {
     IF_FALSE_RETURN(CheckAssetRequiredTag(env, attrs, REQUIRED_TAGS), napi_invalid_arg);
     std::vector<uint32_t> validTags;
-    validTags.insert(validTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
-    validTags.insert(validTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
-    validTags.insert(validTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
-    validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
+    validTags.insert(validTags.end(), REQUIRED_TAGS.begin(), REQUIRED_TAGS.end());
     validTags.insert(validTags.end(), OPTIONAL_TAGS.begin(), OPTIONAL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, validTags), napi_invalid_arg);
     IF_FALSE_RETURN(CheckAssetValueValidity(env, attrs), napi_invalid_arg);
     return napi_ok;
 }
 
 } // anonymous namespace
 
-napi_value NapiAdd(napi_env env, napi_callback_info info, const NapiCallerArgs &args)
+napi_value NapiPostQuery(napi_env env, napi_callback_info info, const NapiCallerArgs &args)
 {
-    napi_async_execute_callback execute = [](napi_env env, void *data) {
-        AsyncContext *context = static_cast<AsyncContext *>(data);
-        context->result = AssetAdd(&context->attrs[0], context->attrs.size());
-    };
-    return NapiAsync(env, info, __func__, execute, args, &CheckAddArgs);
+    napi_async_execute_callback execute =
+        [](napi_env env, void *data) {
+            AsyncContext *context = static_cast<AsyncContext *>(data);
+            context->result = AssetPostQuery(&context->attrs[0], context->attrs.size());
+        };
+    return NapiAsync(env, info, __func__, execute, args, &CheckPostQueryArgs);
 }
 
-napi_value NapiAdd(napi_env env, napi_callback_info info)
+napi_value NapiPostQuery(napi_env env, napi_callback_info info)
 {
     NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
-    return NapiAdd(env, info, args);
+    return NapiPostQuery(env, info, args);
 }
 
-napi_value NapiAddAsUser(napi_env env, napi_callback_info info)
+napi_value NapiPostQueryAsUser(napi_env env, napi_callback_info info)
 {
     NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true };
-    return NapiAdd(env, info, args);
+    return NapiPostQuery(env, info, args);
 }
 
-napi_value NapiAddSync(napi_env env, napi_callback_info info)
+napi_value NapiPostQuerySync(napi_env env, napi_callback_info info)
 {
     std::vector<AssetAttr> attrs;
     do {
@@ -91,11 +85,11 @@ napi_value NapiAddSync(napi_env env, napi_callback_info info)
             break;
         }
 
-        if (CheckAddArgs(env, attrs) != napi_ok) {
+        if (CheckPostQueryArgs(env, attrs) != napi_ok) {
             break;
         }
 
-        int32_t result = AssetAdd(&attrs[0], attrs.size());
+        int32_t result = AssetPostQuery(&attrs[0], attrs.size());
         CHECK_RESULT_BREAK(env, result);
     } while (false);
     FreeAssetAttrs(attrs);

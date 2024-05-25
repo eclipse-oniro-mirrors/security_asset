@@ -64,7 +64,7 @@ bool CheckArraySize(napi_env env, const AssetAttr &attr, uint32_t min, uint32_t 
     return true;
 }
 
-bool CheckEnumVariant(napi_env env, const AssetAttr &attr, std::vector<uint32_t> &enumVec)
+bool CheckEnumVariant(napi_env env, const AssetAttr &attr, const std::vector<uint32_t> &enumVec)
 {
     auto it = std::find(enumVec.begin(), enumVec.end(), attr.value.u32);
     if (it == enumVec.end()) {
@@ -99,13 +99,13 @@ bool CheckValidBits(napi_env env, const AssetAttr &attr, uint32_t minBits, uint3
     return true;
 }
 
-bool CheckTagRange(napi_env env, const AssetAttr &attr, std::vector<uint32_t> &tags)
+bool CheckTagRange(napi_env env, const AssetAttr &attr, const std::vector<uint32_t> &tags)
 {
     auto it = std::find(tags.begin(), tags.end(), attr.value.u32);
     if (it == tags.end()) {
         NAPI_THROW_INVALID_ARGUMENT(env,
-            "The value[AssetValue(%{public}u)] of tag[AssetTag(%{public}s)] is out of the valid tag range[%{public}s, %{public}s].",
-            attr.value.u32, TAG_MAP.at(attr.tag), TAG_MAP.at(*(tags.begin())), TAG_MAP.at(*(tags.end())));
+            "The value[AssetValue(%{public}u)] of tag[AssetTag(%{public}s)] is not tags start with \"DATA_LABEL\".",
+            attr.value.u32, TAG_MAP.at(attr.tag));
         return false;
     }
     return true;
@@ -142,7 +142,7 @@ const std::unordered_map<uint32_t, CheckInterval> CHECK_INTERVAL_FUNC_MAP = {
 };
 
 struct CheckRange {
-    std::function<bool(napi_env, const AssetAttr &, std::vector<uint32_t> &)> funcPtr;
+    std::function<bool(napi_env, const AssetAttr &, const std::vector<uint32_t> &)> funcPtr;
     const std::vector<uint32_t> range;
 };
 
@@ -192,7 +192,7 @@ bool CheckAssetRequiredTag(napi_env env, const std::vector<AssetAttr> &attrs,
     return true;
 }
 
-bool CheckAssetTagValidity(napi_env env, const std::vector<AssetAttr> &attrs, std::vector<uint32_t> &validTags)
+bool CheckAssetTagValidity(napi_env env, const std::vector<AssetAttr> &attrs, const std::vector<uint32_t> &validTags)
 {
     for (AssetAttr attr : attrs) {
         if (std::count(validTags.begin(), validTags.end(), attr.tag) == 0) {
@@ -209,6 +209,15 @@ bool CheckAssetValueValidity(napi_env env, const std::vector<AssetAttr> &attrs)
         if (!CheckAssetDataValue(env, attr)) {
             return false;
         }
+    }
+    return true;
+}
+
+bool CheckAssetPresence(napi_env env, const std::vector<AssetAttr> &attrs)
+{
+    if (attrs.empty()) {
+        NAPI_THROW_INVALID_ARGUMENT(env, "The attributes to update is empty.");
+        return false;
     }
     return true;
 }

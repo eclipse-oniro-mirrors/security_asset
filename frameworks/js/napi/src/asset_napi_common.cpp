@@ -22,41 +22,17 @@
 #include "asset_system_api.h"
 #include "asset_system_type.h"
 
-#include "asset_napi_add.h"
 #include "asset_napi_common.h"
 #include "asset_napi_error_code.h"
-#include "asset_napi_remove.h"
 
 namespace OHOS {
 namespace Security {
 namespace Asset {
-// namespace {
+namespace {
 
 bool IsBlobValid(const AssetBlob &blob)
 {
     return blob.data != nullptr && blob.size != 0;
-}
-
-AsyncContext *CreateAsyncContext()
-{
-    return static_cast<AsyncContext *>(AssetMalloc(sizeof(AsyncContext)));
-}
-
-void DestroyAsyncContext(napi_env env, AsyncContext *context)
-{
-    if (context == nullptr) {
-        return;
-    }
-    if (context->work != nullptr) {
-        napi_delete_async_work(env, context->work);
-        context->work = nullptr;
-    }
-
-    AssetFreeResultSet(&context->resultSet);
-    AssetFreeBlob(&context->challenge);
-    FreeAssetAttrs(context->updateAttrs);
-    FreeAssetAttrs(context->attrs);
-    AssetFree(context);
 }
 
 napi_status ParseByteArray(napi_env env, napi_value value, uint32_t tag, AssetBlob &blob)
@@ -190,26 +166,6 @@ void ResolvePromise(napi_env env, AsyncContext *context)
     }
 }
 
-napi_value CreateAsyncWork(napi_env env, AsyncContext *context, const char *funcName,
-    napi_async_execute_callback execute)
-{
-    napi_value result = nullptr;
-    NAPI_CALL(env, napi_create_promise(env, &context->deferred, &result));
-
-    napi_value resource = nullptr;
-    NAPI_CALL(env, napi_create_string_utf8(env, funcName, NAPI_AUTO_LENGTH, &resource));
-    NAPI_CALL(env, napi_create_async_work(
-        env, nullptr, resource, execute,
-        [](napi_env env, napi_status status, void *data) {
-            AsyncContext *asyncContext = static_cast<AsyncContext *>(data);
-            ResolvePromise(env, asyncContext);
-            DestroyAsyncContext(env, asyncContext);
-        },
-        static_cast<void *>(context), &context->work));
-    NAPI_CALL(env, napi_queue_async_work(env, context->work));
-    return result;
-}
-
 napi_status ParseMapParam(napi_env env, napi_value arg, std::vector<AssetAttr> &attrs)
 {
     // check map type
@@ -266,7 +222,50 @@ napi_status ParseJsUserId(napi_env env, napi_value arg, std::vector<AssetAttr> &
     return napi_ok;
 }
 
-// } // anonymous namespace
+} // anonymous namespace
+
+AsyncContext *CreateAsyncContext()
+{
+    return static_cast<AsyncContext *>(AssetMalloc(sizeof(AsyncContext)));
+}
+
+void DestroyAsyncContext(napi_env env, AsyncContext *context)
+{
+    if (context == nullptr) {
+        return;
+    }
+    if (context->work != nullptr) {
+        napi_delete_async_work(env, context->work);
+        context->work = nullptr;
+    }
+
+    AssetFreeResultSet(&context->resultSet);
+    AssetFreeBlob(&context->challenge);
+    FreeAssetAttrs(context->updateAttrs);
+    FreeAssetAttrs(context->attrs);
+    AssetFree(context);
+}
+
+napi_value CreateAsyncWork(napi_env env, AsyncContext *context, const char *funcName,
+    napi_async_execute_callback execute)
+{
+    napi_value result = nullptr;
+    NAPI_CALL(env, napi_create_promise(env, &context->deferred, &result));
+
+    napi_value resource = nullptr;
+    NAPI_CALL(env, napi_create_string_utf8(env, funcName, NAPI_AUTO_LENGTH, &resource));
+    NAPI_CALL(env, napi_create_async_work(
+        env, nullptr, resource, execute,
+        [](napi_env env, napi_status status, void *data) {
+            AsyncContext *asyncContext = static_cast<AsyncContext *>(data);
+            ResolvePromise(env, asyncContext);
+            DestroyAsyncContext(env, asyncContext);
+        },
+        static_cast<void *>(context), &context->work));
+    NAPI_CALL(env, napi_queue_async_work(env, context->work));
+    return result;
+}
+
 
 void FreeAssetAttrs(std::vector<AssetAttr> &attrs)
 {
@@ -418,6 +417,58 @@ napi_status ParseAsUserParam(napi_env env, napi_callback_info info, size_t expec
         }
     }
     return napi_ok;
+}
+
+napi_value NapiAsync(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
+    const NapiCallerArgs &args, CheckFuncPtr checkFuncPtr)
+{
+    AsyncContext *context = CreateAsyncContext();
+    NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
+
+    do {
+        if (ParseParam(env, info, args, context->attrs, context->updateAttrs) != napi_ok) {
+            break;
+        }
+
+        if (checkFuncPtr(env, context->attrs) != napi_ok) {
+            break;
+        }
+
+        napi_value promise = CreateAsyncWork(env, context, funcName, execute);
+        if (promise == nullptr) {
+            LOGE("Create async work failed.");
+            break;
+        }
+        return promise;
+    } while (0);
+    DestroyAsyncContext(env, context);
+    return nullptr;
+}
+
+napi_value NapiAsync(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
+    const NapiCallerArgs &args, CheckUpdateFuncPtr checkUpdateFuncPtr)
+{
+    AsyncContext *context = CreateAsyncContext();
+    NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
+
+    do {
+        if (ParseParam(env, info, args, context->attrs, context->updateAttrs) != napi_ok) {
+            break;
+        }
+
+        if (checkUpdateFuncPtr(env, context->attrs, context->updateAttrs) != napi_ok) {
+            break;
+        }
+
+        napi_value promise = CreateAsyncWork(env, context, funcName, execute);
+        if (promise == nullptr) {
+            LOGE("Create async work failed.");
+            break;
+        }
+        return promise;
+    } while (0);
+    DestroyAsyncContext(env, context);
+    return nullptr;
 }
 
 napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,

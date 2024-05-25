@@ -16,11 +16,13 @@
 #ifndef ASSET_NAPI_COMMON_H
 #define ASSET_NAPI_COMMON_H
 
+#include <functional>
 #include <vector>
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
+#include "asset_system_api.h"
 #include "asset_system_type.h"
 
 namespace OHOS {
@@ -102,34 +104,17 @@ typedef struct NapiCallerArgs {
     bool isAsUser;
 } NapiCallerArgs;
 
-bool IsBlobValid(const AssetBlob &blob);
+typedef std::function<napi_status(napi_env, const std::vector<AssetAttr> &)> CheckFuncPtr;
+
+typedef std::function<napi_status(napi_env, const std::vector<AssetAttr> &, const std::vector<AssetAttr> &)>
+    CheckUpdateFuncPtr;
 
 AsyncContext *CreateAsyncContext();
 
 void DestroyAsyncContext(napi_env env, AsyncContext *context);
 
-napi_status ParseByteArray(napi_env env, napi_value value, uint32_t tag, AssetBlob &blob);
-
-napi_status ParseAssetAttribute(napi_env env, napi_value tag, napi_value value, AssetAttr &attr);
-
-napi_value GetIteratorNext(napi_env env, napi_value iterator, napi_value func, bool *done);
-
-napi_value GetUndefinedValue(napi_env env);
-
-napi_value CreateJsMap(napi_env env, const AssetResult &result);
-
-napi_value GetBusinessValue(napi_env env, AsyncContext *context);
-
-void ResolvePromise(napi_env env, AsyncContext *context);
-
 napi_value CreateAsyncWork(napi_env env, AsyncContext *context, const char *funcName,
     napi_async_execute_callback execute);
-
-napi_status ParseMapParam(napi_env env, napi_value arg, std::vector<AssetAttr> &attrs);
-
-napi_status ParseJsArgs(napi_env env, napi_callback_info info, napi_value *value, size_t valueSize);
-
-napi_status ParseJsUserId(napi_env env, napi_value arg, std::vector<AssetAttr> &attrs);
 
 void FreeAssetAttrs(std::vector<AssetAttr> &attrs);
 
@@ -148,6 +133,12 @@ napi_status ParseParam(napi_env env, napi_callback_info info, size_t expectArgNu
 
 napi_status ParseParam(napi_env env, napi_callback_info info, const NapiCallerArgs &args, std::vector<AssetAttr> &attrs,
     std::vector<AssetAttr> &updateAttrs);
+
+napi_value NapiAsync(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
+    const NapiCallerArgs &args, CheckFuncPtr checkFuncPtr);
+
+napi_value NapiAsync(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
+    const NapiCallerArgs &args, CheckUpdateFuncPtr checkUpdateFuncPtr);
 
 napi_value NapiEntry(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
     size_t expectArgNum = 1);

@@ -59,7 +59,8 @@ const std::vector<uint32_t> ACCESS_CONTROL_TAGS = {
     SEC_ASSET_TAG_AUTH_TYPE,
     SEC_ASSET_TAG_IS_PERSISTENT,
     SEC_ASSET_TAG_SYNC_TYPE,
-    SEC_ASSET_TAG_REQUIRE_PASSWORD_SET
+    SEC_ASSET_TAG_REQUIRE_PASSWORD_SET,
+    SEC_ASSET_TAG_USER_ID
 };
 const std::vector<uint32_t> ASSET_RETURN_ORDER_BY_TAGS = {
     SEC_ASSET_TAG_DATA_LABEL_CRITICAL_1,
@@ -136,9 +137,11 @@ const std::unordered_map<uint32_t, const char *> TAG_MAP = {
 bool CheckAssetRequiredTag(napi_env env, const std::vector<AssetAttr> &attrs,
     const std::vector<uint32_t> &requiredTags);
 
-bool CheckAssetTagValidity(napi_env env, const std::vector<AssetAttr> &attrs, std::vector<uint32_t> &validTags);
+bool CheckAssetTagValidity(napi_env env, const std::vector<AssetAttr> &attrs, const std::vector<uint32_t> &validTags);
 
 bool CheckAssetValueValidity(napi_env env, const std::vector<AssetAttr> &attrs);
+
+bool CheckAssetPresence(napi_env env, const std::vector<AssetAttr> &attrs);
 
 } // Asset
 } // Security

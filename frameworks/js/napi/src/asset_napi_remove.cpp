@@ -15,6 +15,7 @@
 
 #include <vector>
 #include <cstdint>
+#include <functional>
 
 #include "securec.h"
 
@@ -35,10 +36,6 @@ namespace Security {
 namespace Asset {
 namespace {
 
-const std::vector<uint32_t> OPTIONAL_TAGS = {
-    SEC_ASSET_TAG_USER_ID
-};
-
 napi_status CheckRemoveArgs(napi_env env, const std::vector<AssetAttr> &attrs)
 {
     std::vector<uint32_t> validTags;
@@ -46,7 +43,6 @@ napi_status CheckRemoveArgs(napi_env env, const std::vector<AssetAttr> &attrs)
     validTags.insert(validTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
-    validTags.insert(validTags.end(), OPTIONAL_TAGS.begin(), OPTIONAL_TAGS.end());
     IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, validTags), napi_invalid_arg);
     IF_FALSE_RETURN(CheckAssetValueValidity(env, attrs), napi_invalid_arg);
     return napi_ok;
@@ -56,32 +52,11 @@ napi_status CheckRemoveArgs(napi_env env, const std::vector<AssetAttr> &attrs)
 
 napi_value NapiRemove(napi_env env, napi_callback_info info, const NapiCallerArgs &args)
 {
-    AsyncContext *context = CreateAsyncContext();
-    NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
-
-    do {
-        if (ParseParam(env, info, args, context->attrs, context->updateAttrs) != napi_ok) {
-            break;
-        }
-
-        if (CheckRemoveArgs(env, context->attrs) != napi_ok) {
-            break;
-        }
-
-        napi_async_execute_callback execute = [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetRemove(&context->attrs[0], context->attrs.size());
-        };
-
-        napi_value promise = CreateAsyncWork(env, context, __func__, execute);
-        if (promise == nullptr) {
-            LOGE("Create async work failed.");
-            break;
-        }
-        return promise;
-    } while (0);
-    DestroyAsyncContext(env, context);
-    return nullptr;
+    napi_async_execute_callback execute = [](napi_env env, void *data) {
+        AsyncContext *context = static_cast<AsyncContext *>(data);
+        context->result = AssetRemove(&context->attrs[0], context->attrs.size());
+    };
+    return NapiAsync(env, info, __func__, execute, args, &CheckRemoveArgs);
 }
 
 napi_value NapiRemove(napi_env env, napi_callback_info info)
@@ -92,17 +67,15 @@ napi_value NapiRemove(napi_env env, napi_callback_info info)
 
 napi_value NapiRemoveAsUser(napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = true };
+    NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true };
     return NapiRemove(env, info, args);
 }
 
 napi_value NapiRemoveSync(napi_env env, napi_callback_info info)
 {
     std::vector<AssetAttr> attrs;
-    std::vector<AssetAttr> updateAttrs;
     do {
-        NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
-        if (ParseParam(env, info, args, attrs, updateAttrs) != napi_ok) {
+        if (ParseParam(env, info, attrs) != napi_ok) {
             break;
         }
 
