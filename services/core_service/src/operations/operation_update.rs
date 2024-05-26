@@ -94,12 +94,12 @@ pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &Calling
     add_system_attrs(update, &mut update_db_data)?;
     add_normal_attrs(&mut update_db_data);
 
-    let results = Database::build(calling_info.user_id())?.query_datas(&vec![], &query_db_data, None, true)?;
+    let mut db = Database::build(calling_info.user_id())?;
+    let results = db.query_datas(&vec![], &query_db_data, None, true)?;
     if results.is_empty() {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]The asset to update is not found.");
     }
 
-    let mut db = Database::build(calling_info.user_id())?;
     if update.contains_key(&Tag::Secret) {
         let mut results = db.query_datas(&vec![], &query_db_data, None, true)?;
         if results.len() != 1 {

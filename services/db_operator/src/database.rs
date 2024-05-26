@@ -148,6 +148,7 @@ impl Database {
 
     /// Close database connection.
     pub(crate) fn close(&mut self) {
+        let _lock = self.db_lock.mtx.lock().unwrap();
         if self.handle != 0 {
             unsafe { SqliteCloseV2(self.handle as _) };
             self.handle = 0;
