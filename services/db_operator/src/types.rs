@@ -181,7 +181,7 @@ pub(crate) const UPGRADE_COLUMN_INFO: &[UpgradeColumnInfo] = &[
             name: column::GLOBAL_ID,
             data_type: DataType::Bytes,
             is_primary_key: false,
-            not_null: true,
+            not_null: false,
         },
         default_value: None,
     },
