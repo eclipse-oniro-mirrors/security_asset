@@ -35,7 +35,7 @@ bool IsBlobValid(const AssetBlob &blob)
     return blob.data != nullptr && blob.size != 0;
 }
 
-napi_status ParseByteArray(napi_env env, napi_value value, uint32_t tag, AssetBlob &blob)
+napi_status ParseByteArray(const napi_env env, napi_value value, uint32_t tag, AssetBlob &blob)
 {
     napi_typedarray_type arrayType;
     size_t length = 0;
@@ -57,7 +57,7 @@ napi_status ParseByteArray(napi_env env, napi_value value, uint32_t tag, AssetBl
     return napi_ok;
 }
 
-napi_status ParseAssetAttribute(napi_env env, napi_value tag, napi_value value, AssetAttr &attr)
+napi_status ParseAssetAttribute(const napi_env env, napi_value tag, napi_value value, AssetAttr &attr)
 {
     // parse tag
     napi_valuetype type = napi_undefined;
@@ -87,7 +87,7 @@ napi_status ParseAssetAttribute(napi_env env, napi_value tag, napi_value value, 
     return napi_ok;
 }
 
-napi_value GetIteratorNext(napi_env env, napi_value iterator, napi_value func, bool *done)
+napi_value GetIteratorNext(const napi_env env, napi_value iterator, napi_value func, bool *done)
 {
     napi_value next = nullptr;
     NAPI_CALL(env, napi_call_function(env, iterator, func, 0, nullptr, &next));
@@ -98,14 +98,14 @@ napi_value GetIteratorNext(napi_env env, napi_value iterator, napi_value func, b
     return next;
 }
 
-napi_value GetUndefinedValue(napi_env env)
+napi_value GetUndefinedValue(const napi_env env)
 {
     napi_value value = nullptr;
     NAPI_CALL(env, napi_get_undefined(env, &value));
     return value;
 }
 
-napi_value CreateJsMap(napi_env env, const AssetResult &result)
+napi_value CreateJsMap(const napi_env env, const AssetResult &result)
 {
     napi_value global = nullptr;
     napi_value mapFunc = nullptr;
@@ -139,7 +139,7 @@ napi_value CreateJsMap(napi_env env, const AssetResult &result)
     return map;
 }
 
-napi_value GetBusinessValue(napi_env env, AsyncContext *context)
+napi_value GetBusinessValue(const napi_env env, AsyncContext *context)
 {
     // Processing the return value of the PreQueryAsset function.
     if (IsBlobValid(context->challenge)) {
@@ -154,7 +154,7 @@ napi_value GetBusinessValue(napi_env env, AsyncContext *context)
     return GetUndefinedValue(env);
 }
 
-void ResolvePromise(napi_env env, AsyncContext *context)
+void ResolvePromise(const napi_env env, AsyncContext *context)
 {
     napi_value result = nullptr;
     if (context->result == SEC_ASSET_SUCCESS) {
@@ -166,7 +166,7 @@ void ResolvePromise(napi_env env, AsyncContext *context)
     }
 }
 
-napi_status ParseMapParam(napi_env env, napi_value arg, std::vector<AssetAttr> &attrs)
+napi_status ParseMapParam(const napi_env env, napi_value arg, std::vector<AssetAttr> &attrs)
 {
     // check map type
     bool isMap = false;
@@ -200,7 +200,7 @@ napi_status ParseMapParam(napi_env env, napi_value arg, std::vector<AssetAttr> &
     return napi_ok;
 }
 
-napi_status ParseJsArgs(napi_env env, napi_callback_info info, napi_value *value, size_t valueSize)
+napi_status ParseJsArgs(const napi_env env, napi_callback_info info, napi_value *value, size_t valueSize)
 {
     size_t argc = valueSize;
     NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, value, nullptr, nullptr));
@@ -209,7 +209,7 @@ napi_status ParseJsArgs(napi_env env, napi_callback_info info, napi_value *value
     return napi_ok;
 }
 
-napi_status ParseJsUserId(napi_env env, napi_value arg, std::vector<AssetAttr> &attrs)
+napi_status ParseJsUserId(const napi_env env, napi_value arg, std::vector<AssetAttr> &attrs)
 {
     napi_valuetype type = napi_undefined;
     NAPI_CALL_RETURN_ERR(env, napi_typeof(env, arg, &type));
@@ -229,7 +229,7 @@ AsyncContext *CreateAsyncContext()
     return static_cast<AsyncContext *>(AssetMalloc(sizeof(AsyncContext)));
 }
 
-void DestroyAsyncContext(napi_env env, AsyncContext *context)
+void DestroyAsyncContext(const napi_env env, AsyncContext *context)
 {
     if (context == nullptr) {
         return;
@@ -246,7 +246,7 @@ void DestroyAsyncContext(napi_env env, AsyncContext *context)
     AssetFree(context);
 }
 
-napi_value CreateAsyncWork(napi_env env, AsyncContext *context, const char *funcName,
+napi_value CreateAsyncWork(const napi_env env, AsyncContext *context, const char *funcName,
     napi_async_execute_callback execute)
 {
     napi_value result = nullptr;
@@ -276,12 +276,12 @@ void FreeAssetAttrs(std::vector<AssetAttr> &attrs)
     attrs.clear();
 }
 
-napi_value CreateJsError(napi_env env, int32_t errCode)
+napi_value CreateJsError(const napi_env env, int32_t errCode)
 {
     return CreateJsError(env, errCode, GetErrorMessage(errCode));
 }
 
-napi_value CreateJsError(napi_env env, int32_t errCode, const char *errorMsg)
+napi_value CreateJsError(const napi_env env, int32_t errCode, const char *errorMsg)
 {
     napi_value code = nullptr;
     NAPI_CALL(env, napi_create_int32(env, errCode, &code));
@@ -294,7 +294,7 @@ napi_value CreateJsError(napi_env env, int32_t errCode, const char *errorMsg)
     return result;
 }
 
-napi_value CreateJsMapArray(napi_env env, const AssetResultSet &resultSet)
+napi_value CreateJsMapArray(const napi_env env, const AssetResultSet &resultSet)
 {
     napi_value array = nullptr;
     NAPI_CALL(env, napi_create_array(env, &array));
@@ -308,7 +308,7 @@ napi_value CreateJsMapArray(napi_env env, const AssetResultSet &resultSet)
     return array;
 }
 
-napi_value CreateJsUint8Array(napi_env env, const AssetBlob &blob)
+napi_value CreateJsUint8Array(const napi_env env, const AssetBlob &blob)
 {
     if (!IsBlobValid(blob) || blob.size > MAX_BUFFER_LEN) {
         return nullptr;
@@ -324,15 +324,15 @@ napi_value CreateJsUint8Array(napi_env env, const AssetBlob &blob)
     return result;
 }
 
-napi_status ParseParam(napi_env env, napi_callback_info info, const NapiCallerArgs &args,
+napi_status ParseParam(const napi_env env, napi_callback_info info, const NapiCallerArgs &args,
     std::vector<AssetAttr> &attrs)
 {
     std::vector<AssetAttr> updateAttrs;
     return ParseParam(env, info, args, attrs, updateAttrs);
 }
 
-napi_status ParseParam(napi_env env, napi_callback_info info, const NapiCallerArgs &args, std::vector<AssetAttr> &attrs,
-    std::vector<AssetAttr> &updateAttrs)
+napi_status ParseParam(const napi_env env, napi_callback_info info, const NapiCallerArgs &args,
+    std::vector<AssetAttr> &attrs, std::vector<AssetAttr> &updateAttrs)
 {
     napi_value argv[MAX_ARGS_NUM] = { 0 };
     napi_status ret = ParseJsArgs(env, info, argv, args.expectArgNum);
@@ -364,7 +364,7 @@ napi_status ParseParam(napi_env env, napi_callback_info info, const NapiCallerAr
     return napi_ok;
 }
 
-napi_value NapiAsync(napi_env env, napi_callback_info info, napi_async_execute_callback execute,
+napi_value NapiAsync(const napi_env env, napi_callback_info info, napi_async_execute_callback execute,
     const NapiCallerArgs &args, CheckFuncPtr checkFunc)
 {
     AsyncContext *context = CreateAsyncContext();

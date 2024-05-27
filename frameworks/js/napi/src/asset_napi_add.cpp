@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include <cstdint>
 #include <vector>
+#include <cstdint>
 
 #include "securec.h"
 
@@ -46,7 +46,7 @@ const std::vector<uint32_t> OPTIONAL_TAGS = {
     SEC_ASSET_TAG_IS_PERSISTENT
 };
 
-napi_status CheckAddArgs(napi_env env, const std::vector<AssetAttr> &attrs)
+napi_status CheckAddArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
     IF_FALSE_RETURN(CheckAssetRequiredTag(env, attrs, REQUIRED_TAGS), napi_invalid_arg);
     std::vector<uint32_t> validTags;
@@ -55,14 +55,14 @@ napi_status CheckAddArgs(napi_env env, const std::vector<AssetAttr> &attrs)
     validTags.insert(validTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), OPTIONAL_TAGS.begin(), OPTIONAL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, validTags), napi_invalid_arg);
+    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, validTags, "Add"), napi_invalid_arg);
     IF_FALSE_RETURN(CheckAssetValueValidity(env, attrs), napi_invalid_arg);
     return napi_ok;
 }
 
 } // anonymous namespace
 
-napi_value NapiAdd(napi_env env, napi_callback_info info, const NapiCallerArgs &args)
+napi_value NapiAdd(const napi_env env, napi_callback_info info, const NapiCallerArgs &args)
 {
     napi_async_execute_callback execute = [](napi_env env, void *data) {
         AsyncContext *context = static_cast<AsyncContext *>(data);
@@ -71,19 +71,19 @@ napi_value NapiAdd(napi_env env, napi_callback_info info, const NapiCallerArgs &
     return NapiAsync(env, info, execute, args, &CheckAddArgs);
 }
 
-napi_value NapiAdd(napi_env env, napi_callback_info info)
+napi_value NapiAdd(const napi_env env, napi_callback_info info)
 {
     NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
     return NapiAdd(env, info, args);
 }
 
-napi_value NapiAddAsUser(napi_env env, napi_callback_info info)
+napi_value NapiAddAsUser(const napi_env env, napi_callback_info info)
 {
     NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true };
     return NapiAdd(env, info, args);
 }
 
-napi_value NapiAddSync(napi_env env, napi_callback_info info)
+napi_value NapiAddSync(const napi_env env, napi_callback_info info)
 {
     std::vector<AssetAttr> attrs;
     NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };

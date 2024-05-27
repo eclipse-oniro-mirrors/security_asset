@@ -35,21 +35,21 @@ namespace Security {
 namespace Asset {
 namespace {
 
-napi_status CheckRemoveArgs(napi_env env, const std::vector<AssetAttr> &attrs)
+napi_status CheckRemoveArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
     std::vector<uint32_t> validTags;
     validTags.insert(validTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, validTags), napi_invalid_arg);
+    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, validTags, "Remove"), napi_invalid_arg);
     IF_FALSE_RETURN(CheckAssetValueValidity(env, attrs), napi_invalid_arg);
     return napi_ok;
 }
 
 } // anonymous namespace
 
-napi_value NapiRemove(napi_env env, napi_callback_info info, const NapiCallerArgs &args)
+napi_value NapiRemove(const napi_env env, napi_callback_info info, const NapiCallerArgs &args)
 {
     napi_async_execute_callback execute = [](napi_env env, void *data) {
         AsyncContext *context = static_cast<AsyncContext *>(data);
@@ -58,19 +58,19 @@ napi_value NapiRemove(napi_env env, napi_callback_info info, const NapiCallerArg
    return NapiAsync(env, info, execute, args, &CheckRemoveArgs);
 }
 
-napi_value NapiRemove(napi_env env, napi_callback_info info)
+napi_value NapiRemove(const napi_env env, napi_callback_info info)
 {
     NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
     return NapiRemove(env, info, args);
 }
 
-napi_value NapiRemoveAsUser(napi_env env, napi_callback_info info)
+napi_value NapiRemoveAsUser(const napi_env env, napi_callback_info info)
 {
     NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true };
     return NapiRemove(env, info, args);
 }
 
-napi_value NapiRemoveSync(napi_env env, napi_callback_info info)
+napi_value NapiRemoveSync(const napi_env env, napi_callback_info info)
 {
     std::vector<AssetAttr> attrs;
     NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };

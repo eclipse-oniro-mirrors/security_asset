@@ -85,28 +85,28 @@ const std::vector<uint32_t> ASSET_SYNC_TAGS = {
     SEC_ASSET_TAG_OPERATION_TYPE
 };
 
-const std::vector<uint32_t> ASSET_ACCESSIBILITY = {
+const std::vector<uint32_t> ASSET_ACCESSIBILITY_VEC = {
     SEC_ASSET_ACCESSIBILITY_DEVICE_POWERED_ON,
     SEC_ASSET_ACCESSIBILITY_DEVICE_FIRST_UNLOCKED,
     SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED
 };
 
-const std::vector<uint32_t> ASSET_AUTH_TYPE = {
+const std::vector<uint32_t> ASSET_AUTH_TYPE_VEC = {
     SEC_ASSET_AUTH_TYPE_NONE,
     SEC_ASSET_AUTH_TYPE_ANY
 };
 
-const std::vector<uint32_t> ASSET_CONFLICT_RESOLUTION = {
+const std::vector<uint32_t> ASSET_CONFLICT_RESOLUTION_VEC = {
     SEC_ASSET_CONFLICT_OVERWRITE,
     SEC_ASSET_CONFLICT_THROW_ERROR
 };
 
-const std::vector<uint32_t> ASSET_RETURN_TYPE = {
+const std::vector<uint32_t> ASSET_RETURN_TYPE_VEC = {
     SEC_ASSET_RETURN_ALL,
     SEC_ASSET_RETURN_ATTRIBUTES
 };
 
-const std::vector<uint32_t> ASSET_OPERATION_TYPE = {
+const std::vector<uint32_t> ASSET_OPERATION_TYPE_VEC = {
     SEC_ASSET_NEED_SYNC,
     SEC_ASSET_NEED_LOGOUT
 };
@@ -143,12 +143,13 @@ const std::unordered_map<uint32_t, const char *> TAG_MAP = {
     { SEC_ASSET_TAG_OPERATION_TYPE, "OPERATION_TYPE" }
 };
 
-bool CheckAssetRequiredTag(napi_env env, const std::vector<AssetAttr> &attrs,
+bool CheckAssetRequiredTag(const napi_env env, const std::vector<AssetAttr> &attrs,
     const std::vector<uint32_t> &requiredTags);
 
-bool CheckAssetTagValidity(napi_env env, const std::vector<AssetAttr> &attrs, const std::vector<uint32_t> &validTags);
+bool CheckAssetTagValidity(const napi_env env, const std::vector<AssetAttr> &attrs,
+    const std::vector<uint32_t> &validTags, const char* funcName);
 
-bool CheckAssetValueValidity(napi_env env, const std::vector<AssetAttr> &attrs);
+bool CheckAssetValueValidity(const napi_env env, const std::vector<AssetAttr> &attrs);
 
 } // Asset
 } // Security

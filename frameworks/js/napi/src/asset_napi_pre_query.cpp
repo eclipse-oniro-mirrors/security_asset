@@ -39,7 +39,7 @@ const std::vector<uint32_t> OPTIONAL_TAGS = {
     SEC_ASSET_TAG_AUTH_VALIDITY_PERIOD
 };
 
-napi_status CheckPreQueryArgs(napi_env env, const std::vector<AssetAttr> &attrs)
+napi_status CheckPreQueryArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
     std::vector<uint32_t> validTags;
     validTags.insert(validTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
@@ -47,14 +47,14 @@ napi_status CheckPreQueryArgs(napi_env env, const std::vector<AssetAttr> &attrs)
     validTags.insert(validTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), OPTIONAL_TAGS.begin(), OPTIONAL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, validTags), napi_invalid_arg);
+    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, validTags, "Pre-query"), napi_invalid_arg);
     IF_FALSE_RETURN(CheckAssetValueValidity(env, attrs), napi_invalid_arg);
     return napi_ok;
 }
 
 } // anonymous namespace
 
-napi_value NapiPreQuery(napi_env env, napi_callback_info info, const NapiCallerArgs &args)
+napi_value NapiPreQuery(const napi_env env, napi_callback_info info, const NapiCallerArgs &args)
 {
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
@@ -64,19 +64,19 @@ napi_value NapiPreQuery(napi_env env, napi_callback_info info, const NapiCallerA
     return NapiAsync(env, info, execute, args, &CheckPreQueryArgs);
 }
 
-napi_value NapiPreQuery(napi_env env, napi_callback_info info)
+napi_value NapiPreQuery(const napi_env env, napi_callback_info info)
 {
     NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
     return NapiPreQuery(env, info, args);
 }
 
-napi_value NapiPreQueryAsUser(napi_env env, napi_callback_info info)
+napi_value NapiPreQueryAsUser(const napi_env env, napi_callback_info info)
 {
     NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true };
     return NapiPreQuery(env, info, args);
 }
 
-napi_value NapiPreQuerySync(napi_env env, napi_callback_info info)
+napi_value NapiPreQuerySync(const napi_env env, napi_callback_info info)
 {
     std::vector<AssetAttr> attrs;
     AssetBlob challenge = { 0 };

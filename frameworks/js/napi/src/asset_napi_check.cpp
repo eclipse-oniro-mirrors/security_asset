@@ -35,8 +35,6 @@ namespace Asset {
 
 namespace {
 
-#define MAX_MESSAGE_LEN 128
-
 #define MIN_ARRAY_SIZE 0
 #define MAX_SECRET_SIZE 1024
 #define MAX_ALIAS_SIZE 256
@@ -53,70 +51,70 @@ namespace {
 #define SYSTEM_USER_ID_MAX 99
 #define BINARY_BASE 2
 
-bool CheckArraySize(napi_env env, const AssetAttr &attr, uint32_t min, uint32_t max)
+bool CheckArraySize(const napi_env env, const AssetAttr &attr, uint32_t min, uint32_t max)
 {
     if (attr.value.blob.size > max || attr.value.blob.size <= min) {
         NAPI_THROW_INVALID_ARGUMENT(env,
-            "The value of tag[AssetTag(%{public}s)] has byte length out of range[%{public}u, %{public}u].",
-            TAG_MAP.at(attr.tag), min, max);
+            "Value byte length[%{public}u] of tag[asset.Tag.%{public}s] is out of range[%{public}u, %{public}u].",
+            attr.value.blob.size, TAG_MAP.at(attr.tag),  min, max);
     }
     return true;
 }
 
-bool CheckEnumVariant(napi_env env, const AssetAttr &attr, const std::vector<uint32_t> &enumVec)
+bool CheckEnumVariant(const napi_env env, const AssetAttr &attr, const std::vector<uint32_t> &enumVec)
 {
     auto it = std::find(enumVec.begin(), enumVec.end(), attr.value.u32);
     if (it == enumVec.end()) {
         NAPI_THROW_INVALID_ARGUMENT(env,
-            "The value[AssetValue(%{public}u)] of tag[AssetTag(%{public}s)] is an illegal enumeration variant.",
+            "Value[%{public}u] of tag[asset.Tag.%{public}s] is an illegal enumeration variant.",
             attr.value.u32, TAG_MAP.at(attr.tag));
         return false;
     }
     return true;
 }
 
-bool CheckNumberRange(napi_env env, const AssetAttr &attr, uint32_t min, uint32_t max)
+bool CheckNumberRange(const napi_env env, const AssetAttr &attr, uint32_t min, uint32_t max)
 {
     if (attr.value.u32 > max || attr.value.u32 <= min) {
         NAPI_THROW_INVALID_ARGUMENT(env,
-            "The value[AssetValue(%{public}u)] of tag[AssetTag(%{public}s)] is out of range[%{public}u, %{public}u].",
+            "Value[%{public}u] of tag[asset.Tag.%{public}s] is out of range[%{public}u, %{public}u].",
             attr.value.u32, TAG_MAP.at(attr.tag), min, max);
         return false;
     }
     return true;
 }
 
-bool CheckValidBits(napi_env env, const AssetAttr &attr, uint32_t minBits, uint32_t maxBits)
+bool CheckValidBits(const napi_env env, const AssetAttr &attr, uint32_t minBits, uint32_t maxBits)
 {
     if (attr.value.u32 >= pow(static_cast<uint32_t>(BINARY_BASE), maxBits) ||
         attr.value.u32 < pow(static_cast<uint32_t>(BINARY_BASE), minBits) - 1) {
         NAPI_THROW_INVALID_ARGUMENT(env,
-            "The value[AssetValue(%{public}u)] of tag[AssetTag(%{public}s)] is an invalid bit number.",
-            attr.value.u32, TAG_MAP.at(attr.tag));
+            "Value[%{public}u] of tag[asset.Tag.%{public}s] has bit count out of range[%{public}u, %{public}u].",
+            attr.value.u32, TAG_MAP.at(attr.tag), minBits, maxBits);
         return false;
     }
     return true;
 }
 
-bool CheckTagRange(napi_env env, const AssetAttr &attr, const std::vector<uint32_t> &tags)
+bool CheckTagRange(const napi_env env, const AssetAttr &attr, const std::vector<uint32_t> &tags)
 {
     auto it = std::find(tags.begin(), tags.end(), attr.value.u32);
     if (it == tags.end()) {
         NAPI_THROW_INVALID_ARGUMENT(env,
-            "The value[AssetValue(%{public}u)] of tag[AssetTag(%{public}s)] is not tags start with \"DATA_LABEL\".",
+            "Value[%{public}u] of tag[AssetTag(%{public}s)] is not tags allowing sorting, which should start with \"DATA_LABEL\".",
             attr.value.u32, TAG_MAP.at(attr.tag));
         return false;
     }
     return true;
 }
 
-struct CheckInterval {
-    std::function<bool(napi_env, const AssetAttr &, uint32_t, uint32_t)> funcPtr;
+struct CheckContinuous {
+    std::function<bool(const napi_env, const AssetAttr &, uint32_t, uint32_t)> funcPtr;
     uint32_t min;
     uint32_t max;
 };
 
-const std::unordered_map<uint32_t, CheckInterval> CHECK_INTERVAL_FUNC_MAP = {
+const std::unordered_map<uint32_t, CheckContinuous> CHECK_CONTINOUS_VEC_FUNC_MAP = {
     { SEC_ASSET_TAG_SECRET, { &CheckArraySize, MIN_ARRAY_SIZE, MAX_SECRET_SIZE } },
     { SEC_ASSET_TAG_ALIAS, { &CheckArraySize, MIN_ARRAY_SIZE, MAX_ALIAS_SIZE } },
     { SEC_ASSET_TAG_AUTH_VALIDITY_PERIOD, { &CheckNumberRange, MIN_NUMBER_VALUE, MAX_AUTH_VALID_PERIOD } },
@@ -140,34 +138,34 @@ const std::unordered_map<uint32_t, CheckInterval> CHECK_INTERVAL_FUNC_MAP = {
     { SEC_ASSET_TAG_UPDATE_TIME, { &CheckArraySize, MIN_ARRAY_SIZE, MAX_TIME_SIZE } }
 };
 
-struct CheckRange {
-    std::function<bool(napi_env, const AssetAttr &, const std::vector<uint32_t> &)> funcPtr;
-    const std::vector<uint32_t> range;
+struct CheckDiscrete {
+    std::function<bool(const napi_env, const AssetAttr &, const std::vector<uint32_t> &)> funcPtr;
+    const std::vector<uint32_t> vec;
 };
 
-const std::unordered_map<uint32_t, CheckRange> CHECK_RANGE_FUNC_MAP = {
-        { SEC_ASSET_TAG_ACCESSIBILITY, { &CheckEnumVariant, ASSET_ACCESSIBILITY} },
-        { SEC_ASSET_TAG_AUTH_TYPE, { &CheckEnumVariant, ASSET_AUTH_TYPE } },
-        { SEC_ASSET_TAG_CONFLICT_RESOLUTION, { &CheckEnumVariant, ASSET_CONFLICT_RESOLUTION } },
-        { SEC_ASSET_TAG_RETURN_TYPE, { &CheckEnumVariant, ASSET_RETURN_TYPE } },
+const std::unordered_map<uint32_t, CheckDiscrete> CHECK_DISCRETE_VEC_FUNC_MAP = {
+        { SEC_ASSET_TAG_ACCESSIBILITY, { &CheckEnumVariant, ASSET_ACCESSIBILITY_VEC } },
+        { SEC_ASSET_TAG_AUTH_TYPE, { &CheckEnumVariant, ASSET_AUTH_TYPE_VEC } },
+        { SEC_ASSET_TAG_CONFLICT_RESOLUTION, { &CheckEnumVariant, ASSET_CONFLICT_RESOLUTION_VEC } },
+        { SEC_ASSET_TAG_RETURN_TYPE, { &CheckEnumVariant, ASSET_RETURN_TYPE_VEC } },
         { SEC_ASSET_TAG_RETURN_ORDERED_BY, { &CheckTagRange, ASSET_RETURN_ORDER_BY_TAGS } },
-        { SEC_ASSET_TAG_OPERATION_TYPE, { &CheckEnumVariant, ASSET_OPERATION_TYPE } }
+        { SEC_ASSET_TAG_OPERATION_TYPE, { &CheckEnumVariant, ASSET_OPERATION_TYPE_VEC } }
 };
 
-bool CheckAssetDataValue(napi_env env, const AssetAttr &attr)
+bool CheckAssetDataValue(const napi_env env, const AssetAttr &attr)
 {
-    if(CHECK_INTERVAL_FUNC_MAP.find(attr.tag) != CHECK_INTERVAL_FUNC_MAP.end()) {
-        auto funcPtr = CHECK_INTERVAL_FUNC_MAP.at(attr.tag).funcPtr;
-        uint32_t min = CHECK_INTERVAL_FUNC_MAP.at(attr.tag).min;
-        uint32_t max = CHECK_INTERVAL_FUNC_MAP.at(attr.tag).max;
-        if(!funcPtr(env, attr, min, max)) {
+    if (CHECK_CONTINOUS_VEC_FUNC_MAP.find(attr.tag) != CHECK_CONTINOUS_VEC_FUNC_MAP.end()) {
+        auto funcPtr = CHECK_CONTINOUS_VEC_FUNC_MAP.at(attr.tag).funcPtr;
+        uint32_t min = CHECK_CONTINOUS_VEC_FUNC_MAP.at(attr.tag).min;
+        uint32_t max = CHECK_CONTINOUS_VEC_FUNC_MAP.at(attr.tag).max;
+        if (!funcPtr(env, attr, min, max)) {
             return false;
         }
     }
-    if(CHECK_RANGE_FUNC_MAP.find(attr.tag) != CHECK_RANGE_FUNC_MAP.end()) {
-        auto funcPtr = CHECK_RANGE_FUNC_MAP.at(attr.tag).funcPtr;
-        auto rangePtr = CHECK_RANGE_FUNC_MAP.at(attr.tag).range;
-        if(!funcPtr(env, attr, rangePtr)) {
+    if (CHECK_DISCRETE_VEC_FUNC_MAP.find(attr.tag) != CHECK_DISCRETE_VEC_FUNC_MAP.end()) {
+        auto funcPtr = CHECK_DISCRETE_VEC_FUNC_MAP.at(attr.tag).funcPtr;
+        auto vecPtr = CHECK_DISCRETE_VEC_FUNC_MAP.at(attr.tag).vec;
+        if (!funcPtr(env, attr, vecPtr)) {
             return false;
         }
     }
@@ -176,33 +174,35 @@ bool CheckAssetDataValue(napi_env env, const AssetAttr &attr)
 
 } // anonymous namespace
 
-bool CheckAssetRequiredTag(napi_env env, const std::vector<AssetAttr> &attrs,
+bool CheckAssetRequiredTag(const napi_env env, const std::vector<AssetAttr> &attrs,
     const std::vector<uint32_t> &requiredTags)
 {
     for (uint32_t requiredTag : requiredTags) {
         auto it = std::find_if(attrs.begin(), attrs.end(), [requiredTag](const AssetAttr &attr) {
             return attr.tag == requiredTag;
-            });
+        });
         if (it == attrs.end()) {
-            NAPI_THROW_INVALID_ARGUMENT(env, "Missing required tag[AssetTag(%{public}s)].", TAG_MAP.at(requiredTag));
+            NAPI_THROW_INVALID_ARGUMENT(env, "Missing required tag[asset.Tag.%{public}s].", TAG_MAP.at(requiredTag));
             return false;
         }
     }
     return true;
 }
 
-bool CheckAssetTagValidity(napi_env env, const std::vector<AssetAttr> &attrs, const std::vector<uint32_t> &validTags)
+bool CheckAssetTagValidity(const napi_env env, const std::vector<AssetAttr> &attrs,
+    const std::vector<uint32_t> &validTags, const char* funcName)
 {
     for (AssetAttr attr : attrs) {
         if (std::count(validTags.begin(), validTags.end(), attr.tag) == 0) {
-            NAPI_THROW_INVALID_ARGUMENT(env, "Illegal tag[AssetTag(%{public}s)].", TAG_MAP.at(attr.tag));
+            NAPI_THROW_INVALID_ARGUMENT(env, "Unsupported tag[asset.Tag.%{public}s] for function[%{public}s].",
+                TAG_MAP.at(attr.tag), funcName);
             return false;
         }
     }
     return true;
 }
 
-bool CheckAssetValueValidity(napi_env env, const std::vector<AssetAttr> &attrs)
+bool CheckAssetValueValidity(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
     for (AssetAttr attr : attrs) {
         if (!CheckAssetDataValue(env, attr)) {

@@ -43,7 +43,7 @@ const std::vector<uint32_t> OPTIONAL_TAGS = {
     SEC_ASSET_TAG_USER_ID
 };
 
-napi_status CheckPostQueryArgs(napi_env env, const std::vector<AssetAttr> &attrs)
+napi_status CheckPostQueryArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
     IF_FALSE_RETURN(CheckAssetRequiredTag(env, attrs, REQUIRED_TAGS), napi_invalid_arg);
     std::vector<uint32_t> validTags;
@@ -55,7 +55,7 @@ napi_status CheckPostQueryArgs(napi_env env, const std::vector<AssetAttr> &attrs
 
 } // anonymous namespace
 
-napi_value NapiPostQuery(napi_env env, napi_callback_info info, const NapiCallerArgs &args)
+napi_value NapiPostQuery(const napi_env env, napi_callback_info info, const NapiCallerArgs &args)
 {
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
@@ -65,19 +65,19 @@ napi_value NapiPostQuery(napi_env env, napi_callback_info info, const NapiCaller
     return NapiAsync(env, info, execute, args, &CheckPostQueryArgs);
 }
 
-napi_value NapiPostQuery(napi_env env, napi_callback_info info)
+napi_value NapiPostQuery(const napi_env env, napi_callback_info info)
 {
     NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
     return NapiPostQuery(env, info, args);
 }
 
-napi_value NapiPostQueryAsUser(napi_env env, napi_callback_info info)
+napi_value NapiPostQueryAsUser(const napi_env env, napi_callback_info info)
 {
     NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true };
     return NapiPostQuery(env, info, args);
 }
 
-napi_value NapiPostQuerySync(napi_env env, napi_callback_info info)
+napi_value NapiPostQuerySync(const napi_env env, napi_callback_info info)
 {
     std::vector<AssetAttr> attrs;
     NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };

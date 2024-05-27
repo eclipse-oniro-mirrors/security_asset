@@ -22,7 +22,6 @@
 #include "asset_system_type.h"
 
 #include "asset_napi_add.h"
-#include "asset_napi_common.h"
 #include "asset_napi_post_query.h"
 #include "asset_napi_pre_query.h"
 #include "asset_napi_query.h"
@@ -33,14 +32,14 @@ using namespace OHOS::Security::Asset;
 
 namespace {
 
-void AddUint32Property(napi_env env, napi_value object, const char *name, uint32_t value)
+void AddUint32Property(const napi_env env, napi_value object, const char *name, uint32_t value)
 {
     napi_value property = nullptr;
     NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, value, &property));
     NAPI_CALL_RETURN_VOID(env, napi_set_named_property(env, object, name, property));
 }
 
-napi_value DeclareTag(napi_env env)
+napi_value DeclareTag(const napi_env env)
 {
     napi_value tag = nullptr;
     NAPI_CALL(env, napi_create_object(env, &tag));
@@ -76,7 +75,7 @@ napi_value DeclareTag(napi_env env)
     return tag;
 }
 
-napi_value DeclareTagType(napi_env env)
+napi_value DeclareTagType(const napi_env env)
 {
     napi_value tagType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &tagType));
@@ -86,7 +85,7 @@ napi_value DeclareTagType(napi_env env)
     return tagType;
 }
 
-napi_value DeclareErrorCode(napi_env env)
+napi_value DeclareErrorCode(const napi_env env)
 {
     napi_value errorCode = nullptr;
     NAPI_CALL(env, napi_create_object(env, &errorCode));
@@ -113,7 +112,7 @@ napi_value DeclareErrorCode(napi_env env)
     return errorCode;
 }
 
-napi_value DeclareAccessibility(napi_env env)
+napi_value DeclareAccessibility(const napi_env env)
 {
     napi_value accessibility = nullptr;
     NAPI_CALL(env, napi_create_object(env, &accessibility));
@@ -123,7 +122,7 @@ napi_value DeclareAccessibility(napi_env env)
     return accessibility;
 }
 
-napi_value DeclareAuthType(napi_env env)
+napi_value DeclareAuthType(const napi_env env)
 {
     napi_value authType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &authType));
@@ -132,7 +131,7 @@ napi_value DeclareAuthType(napi_env env)
     return authType;
 }
 
-napi_value DeclareSyncType(napi_env env)
+napi_value DeclareSyncType(const napi_env env)
 {
     napi_value syncType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &syncType));
@@ -143,7 +142,7 @@ napi_value DeclareSyncType(napi_env env)
     return syncType;
 }
 
-napi_value DeclareConflictResolution(napi_env env)
+napi_value DeclareConflictResolution(const napi_env env)
 {
     napi_value conflictResolution = nullptr;
     NAPI_CALL(env, napi_create_object(env, &conflictResolution));
@@ -152,7 +151,7 @@ napi_value DeclareConflictResolution(napi_env env)
     return conflictResolution;
 }
 
-napi_value DeclareReturnType(napi_env env)
+napi_value DeclareReturnType(const napi_env env)
 {
     napi_value returnType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &returnType));
@@ -161,7 +160,7 @@ napi_value DeclareReturnType(napi_env env)
     return returnType;
 }
 
-napi_value DeclareOperationType(napi_env env)
+napi_value DeclareOperationType(const napi_env env)
 {
     napi_value operationType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &operationType));
@@ -170,7 +169,7 @@ napi_value DeclareOperationType(napi_env env)
     return operationType;
 }
 
-napi_value Register(napi_env env, napi_value exports)
+napi_value Register(const napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
         // register function

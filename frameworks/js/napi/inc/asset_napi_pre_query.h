@@ -25,11 +25,11 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 
-napi_value NapiPreQuery(napi_env env, napi_callback_info info);
+napi_value NapiPreQuery(const napi_env env, napi_callback_info info);
 
-napi_value NapiPreQuerySync(napi_env env, napi_callback_info info);
+napi_value NapiPreQuerySync(const napi_env env, napi_callback_info info);
 
-napi_value NapiPreQueryAsUser(napi_env env, napi_callback_info info);
+napi_value NapiPreQueryAsUser(const napi_env env, napi_callback_info info);
 
 } // Asset
 } // Security

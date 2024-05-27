@@ -43,7 +43,7 @@ const std::vector<uint32_t> UPDATE_OPTIONAL_TAGS = {
     SEC_ASSET_TAG_SECRET
 };
 
-bool CheckAssetPresence(napi_env env, const std::vector<AssetAttr> &attrs)
+bool CheckAssetPresence(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
     if (attrs.empty()) {
         NAPI_THROW_INVALID_ARGUMENT(env, "The attributes to update is empty.");
@@ -52,7 +52,7 @@ bool CheckAssetPresence(napi_env env, const std::vector<AssetAttr> &attrs)
     return true;
 }
 
-napi_status CheckUpdateArgs(napi_env env, const std::vector<AssetAttr> &attrs,
+napi_status CheckUpdateArgs(const napi_env env, const std::vector<AssetAttr> &attrs,
     const std::vector<AssetAttr> &updateAttrs)
 {
     IF_FALSE_RETURN(CheckAssetRequiredTag(env, attrs, QUERY_REQUIRED_TAGS), napi_invalid_arg);
@@ -61,7 +61,7 @@ napi_status CheckUpdateArgs(napi_env env, const std::vector<AssetAttr> &attrs,
     queryValidTags.insert(queryValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, queryValidTags), napi_invalid_arg);
+    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, queryValidTags, "Update"), napi_invalid_arg);
     IF_FALSE_RETURN(CheckAssetValueValidity(env, attrs), napi_invalid_arg);
 
     IF_FALSE_RETURN(CheckAssetPresence(env, updateAttrs), napi_invalid_arg);
@@ -70,13 +70,13 @@ napi_status CheckUpdateArgs(napi_env env, const std::vector<AssetAttr> &attrs,
     updateValidTags.insert(updateValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), UPDATE_OPTIONAL_TAGS.begin(), UPDATE_OPTIONAL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(env, updateAttrs, updateValidTags), napi_invalid_arg);
+    IF_FALSE_RETURN(CheckAssetTagValidity(env, updateAttrs, updateValidTags, "Update"), napi_invalid_arg);
     IF_FALSE_RETURN(CheckAssetValueValidity(env, updateAttrs), napi_invalid_arg);
 
     return napi_ok;
 }
 
-napi_value NapiUpdateAsync(napi_env env, napi_callback_info info, const char *funcName,
+napi_value NapiUpdateAsync(const napi_env env, napi_callback_info info, const char *funcName,
     napi_async_execute_callback execute, const NapiCallerArgs &args)
 {
     AsyncContext *context = CreateAsyncContext();
@@ -104,7 +104,7 @@ napi_value NapiUpdateAsync(napi_env env, napi_callback_info info, const char *fu
 
 } // anonymous namespace
 
-napi_value NapiUpdate(napi_env env, napi_callback_info info, const NapiCallerArgs &args)
+napi_value NapiUpdate(const napi_env env, napi_callback_info info, const NapiCallerArgs &args)
 {
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
@@ -115,19 +115,19 @@ napi_value NapiUpdate(napi_env env, napi_callback_info info, const NapiCallerArg
     return NapiUpdateAsync(env, info, __func__, execute, args);
 }
 
-napi_value NapiUpdate(napi_env env, napi_callback_info info)
+napi_value NapiUpdate(const napi_env env, napi_callback_info info)
 {
     NapiCallerArgs args = { .expectArgNum = UPDATE_ARGS_NUM, .isUpdate = true, .isAsUser = false };
     return NapiUpdate(env, info, args);
 }
 
-napi_value NapiUpdateAsUser(napi_env env, napi_callback_info info)
+napi_value NapiUpdateAsUser(const napi_env env, napi_callback_info info)
 {
     NapiCallerArgs args = { .expectArgNum = AS_USER_UPDATE_ARGS_NUM, .isUpdate = true, .isAsUser = true };
     return NapiUpdate(env, info, args);
 }
 
-napi_value NapiUpdateSync(napi_env env, napi_callback_info info)
+napi_value NapiUpdateSync(const napi_env env, napi_callback_info info)
 {
     std::vector<AssetAttr> attrs;
     std::vector<AssetAttr> updateAttrs;

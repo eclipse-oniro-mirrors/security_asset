@@ -25,14 +25,14 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 
-napi_value NapiUpdate(napi_env env, napi_callback_info info);
+napi_value NapiUpdate(const napi_env env, napi_callback_info info);
 
-napi_value NapiUpdateSync(napi_env env, napi_callback_info info);
+napi_value NapiUpdateSync(const napi_env env, napi_callback_info info);
 
-napi_value NapiUpdateAsUser(napi_env env, napi_callback_info info);
+napi_value NapiUpdateAsUser(const napi_env env, napi_callback_info info);
 
 } // Asset
-} // Securitys
+} // Security
 } // OHOS
 
 #endif // ASSET_NAPI_UPDATE_H

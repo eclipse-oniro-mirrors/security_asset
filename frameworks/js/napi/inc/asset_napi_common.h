@@ -35,7 +35,7 @@ namespace Asset {
 #define UPDATE_ARGS_NUM 2
 
 #define MAX_BUFFER_LEN 2048
-#define MAX_MESSAGE_LEN 128
+#define MAX_MESSAGE_LEN 1280
 #define MAX_ARGS_NUM 5
 
 #define NAPI_THROW_BASE(env, condition, ret, code, message)             \
@@ -83,7 +83,7 @@ if (!(result)) {                                \
     return (returnValue);                       \
 }
 
-typedef struct AsyncContext {
+using AsyncContext = struct AsyncContext {
     // common
     napi_async_work work = nullptr;
     napi_deferred deferred = nullptr;
@@ -96,40 +96,40 @@ typedef struct AsyncContext {
     int32_t result = 0;
     AssetBlob challenge = { 0 };
     AssetResultSet resultSet = { 0 };
-} AsyncContext;
+};
 
-typedef std::function<napi_status(napi_env, const std::vector<AssetAttr> &)> CheckFuncPtr;
+using CheckFuncPtr = std::function<napi_status(const napi_env, const std::vector<AssetAttr> &)>;
 
-typedef struct NapiCallerArgs {
+using NapiCallerArgs = struct NapiCallerArgs {
     size_t expectArgNum;
     bool isUpdate;
     bool isAsUser;
-} NapiCallerArgs;
+};
 
 AsyncContext *CreateAsyncContext();
 
-void DestroyAsyncContext(napi_env env, AsyncContext *context);
+void DestroyAsyncContext(const napi_env env, AsyncContext *context);
 
-napi_value CreateAsyncWork(napi_env env, AsyncContext *context, const char *funcName,
+napi_value CreateAsyncWork(const napi_env env, AsyncContext *context, const char *funcName,
     napi_async_execute_callback execute);
 
 void FreeAssetAttrs(std::vector<AssetAttr> &attrs);
 
-napi_value CreateJsError(napi_env env, int32_t errCode);
+napi_value CreateJsError(const napi_env env, int32_t errCode);
 
-napi_value CreateJsError(napi_env env, int32_t errCode, const char *errorMsg);
+napi_value CreateJsError(const napi_env env, int32_t errCode, const char *errorMsg);
 
-napi_value CreateJsUint8Array(napi_env env, const AssetBlob &blob);
+napi_value CreateJsUint8Array(const napi_env env, const AssetBlob &blob);
 
-napi_value CreateJsMapArray(napi_env env, const AssetResultSet &resultSet);
+napi_value CreateJsMapArray(const napi_env env, const AssetResultSet &resultSet);
 
-napi_status ParseParam(napi_env env, napi_callback_info info, const NapiCallerArgs &args,
+napi_status ParseParam(const napi_env env, napi_callback_info info, const NapiCallerArgs &args,
     std::vector<AssetAttr> &attrs);
 
-napi_status ParseParam(napi_env env, napi_callback_info info, const NapiCallerArgs &args, std::vector<AssetAttr> &attrs,
-    std::vector<AssetAttr> &updateAttrs);
+napi_status ParseParam(const napi_env env, napi_callback_info info, const NapiCallerArgs &args,
+    std::vector<AssetAttr> &attrs, std::vector<AssetAttr> &updateAttrs);
 
-napi_value NapiAsync(napi_env env, napi_callback_info info, napi_async_execute_callback execute,
+napi_value NapiAsync(const napi_env env, napi_callback_info info, napi_async_execute_callback execute,
     const NapiCallerArgs &args, CheckFuncPtr checkFunc);
 
 } // Asset
