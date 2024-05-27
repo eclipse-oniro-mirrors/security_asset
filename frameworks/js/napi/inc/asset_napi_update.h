@@ -25,9 +25,6 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 
-napi_value NapiUpdateAsync(napi_env env, napi_callback_info info, const char *funcName,
-    napi_async_execute_callback execute, const NapiCallerArgs &args);
-
 napi_value NapiUpdate(napi_env env, napi_callback_info info);
 
 napi_value NapiUpdateSync(napi_env env, napi_callback_info info);
@@ -35,7 +32,7 @@ napi_value NapiUpdateSync(napi_env env, napi_callback_info info);
 napi_value NapiUpdateAsUser(napi_env env, napi_callback_info info);
 
 } // Asset
-} // Security
+} // Securitys
 } // OHOS
 
 #endif // ASSET_NAPI_UPDATE_H

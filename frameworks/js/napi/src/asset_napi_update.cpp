@@ -43,6 +43,15 @@ const std::vector<uint32_t> UPDATE_OPTIONAL_TAGS = {
     SEC_ASSET_TAG_SECRET
 };
 
+bool CheckAssetPresence(napi_env env, const std::vector<AssetAttr> &attrs)
+{
+    if (attrs.empty()) {
+        NAPI_THROW_INVALID_ARGUMENT(env, "The attributes to update is empty.");
+        return false;
+    }
+    return true;
+}
+
 napi_status CheckUpdateArgs(napi_env env, const std::vector<AssetAttr> &attrs,
     const std::vector<AssetAttr> &updateAttrs)
 {
@@ -66,8 +75,6 @@ napi_status CheckUpdateArgs(napi_env env, const std::vector<AssetAttr> &attrs,
 
     return napi_ok;
 }
-
-} // anonymous namespace
 
 napi_value NapiUpdateAsync(napi_env env, napi_callback_info info, const char *funcName,
     napi_async_execute_callback execute, const NapiCallerArgs &args)
@@ -94,6 +101,8 @@ napi_value NapiUpdateAsync(napi_env env, napi_callback_info info, const char *fu
     DestroyAsyncContext(env, context);
     return nullptr;
 }
+
+} // anonymous namespace
 
 napi_value NapiUpdate(napi_env env, napi_callback_info info, const NapiCallerArgs &args)
 {

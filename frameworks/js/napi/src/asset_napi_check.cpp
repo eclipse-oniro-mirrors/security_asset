@@ -17,7 +17,6 @@
 #include <climits>
 #include <cmath>
 #include <functional>
-#include <unistd.h>
 #include <unordered_map>
 #include <vector>
 
@@ -209,15 +208,6 @@ bool CheckAssetValueValidity(napi_env env, const std::vector<AssetAttr> &attrs)
         if (!CheckAssetDataValue(env, attr)) {
             return false;
         }
-    }
-    return true;
-}
-
-bool CheckAssetPresence(napi_env env, const std::vector<AssetAttr> &attrs)
-{
-    if (attrs.empty()) {
-        NAPI_THROW_INVALID_ARGUMENT(env, "The attributes to update is empty.");
-        return false;
     }
     return true;
 }

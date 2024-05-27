@@ -150,8 +150,6 @@ bool CheckAssetTagValidity(napi_env env, const std::vector<AssetAttr> &attrs, co
 
 bool CheckAssetValueValidity(napi_env env, const std::vector<AssetAttr> &attrs);
 
-bool CheckAssetPresence(napi_env env, const std::vector<AssetAttr> &attrs);
-
 } // Asset
 } // Security
 } // OHOS
