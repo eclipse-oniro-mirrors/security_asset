@@ -61,18 +61,20 @@ napi_value NapiPreQuery(napi_env env, napi_callback_info info, const NapiCallerA
             AsyncContext *context = static_cast<AsyncContext *>(data);
             context->result = AssetPreQuery(&context->attrs[0], context->attrs.size(), &context->challenge);
         };
-    return NapiAsync(env, info, __func__, execute, args, &CheckPreQueryArgs);
+    return NapiAsync(env, info, __func__, execute, args);
 }
 
 napi_value NapiPreQuery(napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
+    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false,
+        .checkFuncPtr = &CheckPreQueryArgs };
     return NapiPreQuery(env, info, args);
 }
 
 napi_value NapiPreQueryAsUser(napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true };
+    NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true,
+        .checkFuncPtr = &CheckPreQueryArgs };
     return NapiPreQuery(env, info, args);
 }
 

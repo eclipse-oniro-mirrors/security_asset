@@ -62,18 +62,20 @@ napi_value NapiPostQuery(napi_env env, napi_callback_info info, const NapiCaller
             AsyncContext *context = static_cast<AsyncContext *>(data);
             context->result = AssetPostQuery(&context->attrs[0], context->attrs.size());
         };
-    return NapiAsync(env, info, __func__, execute, args, &CheckPostQueryArgs);
+    return NapiAsync(env, info, __func__, execute, args);
 }
 
 napi_value NapiPostQuery(napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
+    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false,
+        .checkFuncPtr = &CheckPostQueryArgs };
     return NapiPostQuery(env, info, args);
 }
 
 napi_value NapiPostQueryAsUser(napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true };
+    NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true,
+        .checkFuncPtr = &CheckPostQueryArgs };
     return NapiPostQuery(env, info, args);
 }
 

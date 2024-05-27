@@ -56,18 +56,20 @@ napi_value NapiRemove(napi_env env, napi_callback_info info, const NapiCallerArg
         AsyncContext *context = static_cast<AsyncContext *>(data);
         context->result = AssetRemove(&context->attrs[0], context->attrs.size());
     };
-    return NapiAsync(env, info, __func__, execute, args, &CheckRemoveArgs);
+    return NapiAsync(env, info, __func__, execute, args);
 }
 
 napi_value NapiRemove(napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
+    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false,
+        .checkFuncPtr = &CheckRemoveArgs };
     return NapiRemove(env, info, args);
 }
 
 napi_value NapiRemoveAsUser(napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true };
+    NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true,
+        .checkFuncPtr = &CheckRemoveArgs };
     return NapiRemove(env, info, args);
 }
 

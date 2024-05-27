@@ -68,18 +68,20 @@ napi_value NapiAdd(napi_env env, napi_callback_info info, const NapiCallerArgs &
         AsyncContext *context = static_cast<AsyncContext *>(data);
         context->result = AssetAdd(&context->attrs[0], context->attrs.size());
     };
-    return NapiAsync(env, info, __func__, execute, args, &CheckAddArgs);
+    return NapiAsync(env, info, __func__, execute, args);
 }
 
 napi_value NapiAdd(napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
+    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false,
+        .checkFuncPtr = &CheckAddArgs };
     return NapiAdd(env, info, args);
 }
 
 napi_value NapiAddAsUser(napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true };
+    NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true,
+        .checkFuncPtr = &CheckAddArgs };
     return NapiAdd(env, info, args);
 }
 
