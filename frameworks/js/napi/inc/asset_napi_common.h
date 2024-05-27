@@ -104,7 +104,6 @@ typedef struct NapiCallerArgs {
     size_t expectArgNum;
     bool isUpdate;
     bool isAsUser;
-    CheckFuncPtr checkFuncPtr;
 } NapiCallerArgs;
 
 AsyncContext *CreateAsyncContext();
@@ -124,22 +123,14 @@ napi_value CreateJsUint8Array(napi_env env, const AssetBlob &blob);
 
 napi_value CreateJsMapArray(napi_env env, const AssetResultSet &resultSet);
 
-napi_status ParseParam(napi_env env, napi_callback_info info, std::vector<AssetAttr> &attrs);
-
-napi_status ParseParam(napi_env env, napi_callback_info info, size_t expectArgNum, std::vector<AssetAttr> &attrs,
-    std::vector<AssetAttr> &updateAttrs);
+napi_status ParseParam(napi_env env, napi_callback_info info, const NapiCallerArgs &args,
+    std::vector<AssetAttr> &attrs);
 
 napi_status ParseParam(napi_env env, napi_callback_info info, const NapiCallerArgs &args, std::vector<AssetAttr> &attrs,
     std::vector<AssetAttr> &updateAttrs);
 
-napi_status ParseMapParam(napi_env env, napi_value arg, std::vector<AssetAttr> &attrs);
-
-napi_status ParseJsArgs(napi_env env, napi_callback_info info, napi_value *value, size_t valueSize);
-
-napi_status ParseJsUserId(napi_env env, napi_value arg, std::vector<AssetAttr> &attrs);
-
-napi_value NapiAsync(napi_env env, napi_callback_info info, const char *funcName, napi_async_execute_callback execute,
-    const NapiCallerArgs &args);
+napi_value NapiAsync(napi_env env, napi_callback_info info, napi_async_execute_callback execute,
+    const NapiCallerArgs &args, CheckFuncPtr checkFunc);
 
 } // Asset
 } // Security

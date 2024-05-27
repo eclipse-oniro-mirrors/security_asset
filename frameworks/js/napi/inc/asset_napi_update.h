@@ -25,21 +25,8 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 
-typedef std::function<napi_status(napi_env, const std::vector<AssetAttr> &, const std::vector<AssetAttr> &)>
-    CheckUpdateFuncPtr;
-
-typedef struct NapiUpdateCallerArgs {
-    size_t expectArgNum;
-    bool isUpdate;
-    bool isAsUser;
-    CheckUpdateFuncPtr checkUpdateFuncPtr;
-} NapiUpdateCallerArgs;
-
-napi_status ParseUpdateParam(napi_env env, napi_callback_info info, const NapiUpdateCallerArgs &args,
-    std::vector<AssetAttr> &attrs, std::vector<AssetAttr> &updateAttrs);
-
 napi_value NapiUpdateAsync(napi_env env, napi_callback_info info, const char *funcName,
-    napi_async_execute_callback execute, const NapiUpdateCallerArgs &args);
+    napi_async_execute_callback execute, const NapiCallerArgs &args);
 
 napi_value NapiUpdate(napi_env env, napi_callback_info info);
 

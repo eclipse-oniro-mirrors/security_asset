@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 
-#include <vector>
 #include <cstdint>
-#include <functional>
+#include <vector>
 
 #include "securec.h"
 
@@ -70,51 +69,18 @@ napi_status CheckUpdateArgs(napi_env env, const std::vector<AssetAttr> &attrs,
 
 } // anonymous namespace
 
-napi_status ParseUpdateParam(napi_env env, napi_callback_info info, const NapiUpdateCallerArgs &args,
-    std::vector<AssetAttr> &attrs, std::vector<AssetAttr> &updateAttrs)
-{
-    napi_value argv[MAX_ARGS_NUM] = { 0 };
-    napi_status ret = ParseJsArgs(env, info, argv, args.expectArgNum);
-    if (ret != napi_ok) {
-        return ret;
-    }
-
-    size_t index = 0;
-    if (args.isAsUser) {
-        ret = ParseJsUserId(env, argv[index++], attrs);
-        if (ret != napi_ok) {
-            return ret;
-        }
-    }
-
-    ret = ParseMapParam(env, argv[index++], attrs);
-    if (ret != napi_ok) {
-        LOGE("Parse first map parameter failed.");
-        return ret;
-    }
-
-    if (args.isUpdate) {
-        ret = ParseMapParam(env, argv[index++], updateAttrs);
-        if (ret != napi_ok) {
-            LOGE("Parse second map parameter failed.");
-            return ret;
-        }
-    }
-    return napi_ok;
-}
-
 napi_value NapiUpdateAsync(napi_env env, napi_callback_info info, const char *funcName,
-    napi_async_execute_callback execute, const NapiUpdateCallerArgs &args)
+    napi_async_execute_callback execute, const NapiCallerArgs &args)
 {
     AsyncContext *context = CreateAsyncContext();
     NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
 
     do {
-        if (ParseUpdateParam(env, info, args, context->attrs, context->updateAttrs) != napi_ok) {
+        if (ParseParam(env, info, args, context->attrs, context->updateAttrs) != napi_ok) {
             break;
         }
 
-        if (args.checkUpdateFuncPtr(env, context->attrs, context->updateAttrs) != napi_ok) {
+        if (CheckUpdateArgs(env, context->attrs, context->updateAttrs) != napi_ok) {
             break;
         }
 
@@ -129,7 +95,7 @@ napi_value NapiUpdateAsync(napi_env env, napi_callback_info info, const char *fu
     return nullptr;
 }
 
-napi_value NapiUpdate(napi_env env, napi_callback_info info, const NapiUpdateCallerArgs &args)
+napi_value NapiUpdate(napi_env env, napi_callback_info info, const NapiCallerArgs &args)
 {
     napi_async_execute_callback execute =
         [](napi_env env, void *data) {
@@ -142,15 +108,13 @@ napi_value NapiUpdate(napi_env env, napi_callback_info info, const NapiUpdateCal
 
 napi_value NapiUpdate(napi_env env, napi_callback_info info)
 {
-    NapiUpdateCallerArgs args = { .expectArgNum = UPDATE_ARGS_NUM, .isUpdate = true, .isAsUser = false,
-        .checkUpdateFuncPtr = &CheckUpdateArgs };
+    NapiCallerArgs args = { .expectArgNum = UPDATE_ARGS_NUM, .isUpdate = true, .isAsUser = false };
     return NapiUpdate(env, info, args);
 }
 
 napi_value NapiUpdateAsUser(napi_env env, napi_callback_info info)
 {
-    NapiUpdateCallerArgs args = { .expectArgNum = AS_USER_UPDATE_ARGS_NUM, .isUpdate = true, .isAsUser = true,
-        .checkUpdateFuncPtr = &CheckUpdateArgs };
+    NapiCallerArgs args = { .expectArgNum = AS_USER_UPDATE_ARGS_NUM, .isUpdate = true, .isAsUser = true };
     return NapiUpdate(env, info, args);
 }
 
@@ -158,8 +122,9 @@ napi_value NapiUpdateSync(napi_env env, napi_callback_info info)
 {
     std::vector<AssetAttr> attrs;
     std::vector<AssetAttr> updateAttrs;
+    NapiCallerArgs args = { .expectArgNum = UPDATE_ARGS_NUM, .isUpdate = true, .isAsUser = false };
     do {
-        if (ParseParam(env, info, UPDATE_ARGS_NUM, attrs, updateAttrs) != napi_ok) {
+        if (ParseParam(env, info, args, attrs, updateAttrs) != napi_ok) {
             break;
         }
 

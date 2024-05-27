@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#include <vector>
 #include <cstdint>
+#include <vector>
 
 #include "securec.h"
 
@@ -68,28 +68,27 @@ napi_value NapiAdd(napi_env env, napi_callback_info info, const NapiCallerArgs &
         AsyncContext *context = static_cast<AsyncContext *>(data);
         context->result = AssetAdd(&context->attrs[0], context->attrs.size());
     };
-    return NapiAsync(env, info, __func__, execute, args);
+    return NapiAsync(env, info, execute, args, &CheckAddArgs);
 }
 
 napi_value NapiAdd(napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false,
-        .checkFuncPtr = &CheckAddArgs };
+    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
     return NapiAdd(env, info, args);
 }
 
 napi_value NapiAddAsUser(napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true,
-        .checkFuncPtr = &CheckAddArgs };
+    NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true };
     return NapiAdd(env, info, args);
 }
 
 napi_value NapiAddSync(napi_env env, napi_callback_info info)
 {
     std::vector<AssetAttr> attrs;
+    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
     do {
-        if (ParseParam(env, info, attrs) != napi_ok) {
+        if (ParseParam(env, info, args, attrs) != napi_ok) {
             break;
         }
 
