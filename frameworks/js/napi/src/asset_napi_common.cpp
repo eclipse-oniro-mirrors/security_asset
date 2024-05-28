@@ -30,6 +30,30 @@ namespace Security {
 namespace Asset {
 namespace {
 
+#define NAPI_THROW_RETURN_ERR(env, condition, code, message)            \
+    NAPI_THROW_BASE(env, condition, napi_generic_failure, code, message)
+
+#define NAPI_CALL_BREAK(env, theCall)   \
+if ((theCall) != napi_ok) {             \
+    GET_AND_THROW_LAST_ERROR((env));    \
+    break;                              \
+}
+
+#define NAPI_CALL_RETURN_ERR(env, theCall)  \
+if ((theCall) != napi_ok) {                 \
+    GET_AND_THROW_LAST_ERROR((env));        \
+    return napi_generic_failure;            \
+}
+
+#define CHECK_ASSET_TAG(env, condition, tag, message)                                   \
+if ((condition)) {                                                                      \
+    char msg[MAX_MESSAGE_LEN] = { 0 };                                                  \
+    (void)sprintf_s(msg, MAX_MESSAGE_LEN, "AssetTag(0x%08x) " message, tag);            \
+    LOGE("[FATAL][NAPI]%{public}s", (msg));                                             \
+    napi_throw((env), CreateJsError((env), SEC_ASSET_INVALID_ARGUMENT, (msg)));         \
+    return napi_invalid_arg;                                                            \
+}
+
 bool IsBlobValid(const AssetBlob &blob)
 {
     return blob.data != nullptr && blob.size != 0;

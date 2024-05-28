@@ -55,7 +55,7 @@ napi_status CheckAddArgs(const napi_env env, const std::vector<AssetAttr> &attrs
     validTags.insert(validTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), OPTIONAL_TAGS.begin(), OPTIONAL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, validTags, "Add"), napi_invalid_arg);
+    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, validTags, "addAsset"), napi_invalid_arg);
     IF_FALSE_RETURN(CheckAssetValueValidity(env, attrs), napi_invalid_arg);
     return napi_ok;
 }

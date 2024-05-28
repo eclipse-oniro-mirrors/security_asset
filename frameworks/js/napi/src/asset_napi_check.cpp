@@ -32,7 +32,6 @@
 namespace OHOS {
 namespace Security {
 namespace Asset {
-
 namespace {
 
 #define MIN_ARRAY_SIZE 0
