@@ -31,10 +31,7 @@ namespace Asset {
 
 #define NORMAL_ARGS_NUM 1
 #define AS_USER_ARGS_NUM 2
-#define AS_USER_UPDATE_ARGS_NUM 3
-#define UPDATE_ARGS_NUM 2
 
-#define MAX_BUFFER_LEN 2048
 #define MAX_MESSAGE_LEN 256
 #define MAX_ARGS_NUM 5
 

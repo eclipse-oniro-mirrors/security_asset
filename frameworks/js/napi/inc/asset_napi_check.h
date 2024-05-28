@@ -147,7 +147,7 @@ bool CheckAssetRequiredTag(const napi_env env, const std::vector<AssetAttr> &att
     const std::vector<uint32_t> &requiredTags);
 
 bool CheckAssetTagValidity(const napi_env env, const std::vector<AssetAttr> &attrs,
-    const std::vector<uint32_t> &validTags, const char* funcName);
+    const std::vector<uint32_t> &validTags);
 
 bool CheckAssetValueValidity(const napi_env env, const std::vector<AssetAttr> &attrs);
 

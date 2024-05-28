@@ -46,7 +46,7 @@ const std::vector<uint32_t> UPDATE_OPTIONAL_TAGS = {
 bool CheckAssetPresence(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
     if (attrs.empty()) {
-        NAPI_THROW_INVALID_ARGUMENT(env, "The attributes to update is empty.");
+        NAPI_THROW_INVALID_ARGUMENT(env, "attributesToUpdate is empty.");
         return false;
     }
     return true;
@@ -61,7 +61,7 @@ napi_status CheckUpdateArgs(const napi_env env, const std::vector<AssetAttr> &at
     queryValidTags.insert(queryValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, queryValidTags, "Update"), napi_invalid_arg);
+    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, queryValidTags), napi_invalid_arg);
     IF_FALSE_RETURN(CheckAssetValueValidity(env, attrs), napi_invalid_arg);
 
     IF_FALSE_RETURN(CheckAssetPresence(env, updateAttrs), napi_invalid_arg);
@@ -70,7 +70,7 @@ napi_status CheckUpdateArgs(const napi_env env, const std::vector<AssetAttr> &at
     updateValidTags.insert(updateValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), UPDATE_OPTIONAL_TAGS.begin(), UPDATE_OPTIONAL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(env, updateAttrs, updateValidTags, "updateAsset"), napi_invalid_arg);
+    IF_FALSE_RETURN(CheckAssetTagValidity(env, updateAttrs, updateValidTags), napi_invalid_arg);
     IF_FALSE_RETURN(CheckAssetValueValidity(env, updateAttrs), napi_invalid_arg);
 
     return napi_ok;

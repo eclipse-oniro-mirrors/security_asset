@@ -55,7 +55,7 @@ bool CheckArraySize(const napi_env env, const AssetAttr &attr, uint32_t min, uin
     if (attr.value.blob.size > max || attr.value.blob.size <= min) {
         NAPI_THROW_INVALID_ARGUMENT(env,
             "Value byte length[%{public}u] of tag[asset.Tag.%{public}s] is out of range[%{public}u, %{public}u].",
-            attr.value.blob.size, TAG_MAP.at(attr.tag),  min, max);
+            attr.value.blob.size, TAG_MAP.at(attr.tag),  min + 1, max);
     }
     return true;
 }
@@ -85,11 +85,10 @@ bool CheckNumberRange(const napi_env env, const AssetAttr &attr, uint32_t min, u
 
 bool CheckValidBits(const napi_env env, const AssetAttr &attr, uint32_t minBits, uint32_t maxBits)
 {
-    if (attr.value.u32 >= pow(static_cast<uint32_t>(BINARY_BASE), maxBits) ||
-        attr.value.u32 < pow(static_cast<uint32_t>(BINARY_BASE), minBits) - 1) {
+    if (attr.value.u32 >= pow(BINARY_BASE, maxBits) || attr.value.u32 < pow(BINARY_BASE, minBits) - 1) {
         NAPI_THROW_INVALID_ARGUMENT(env,
             "Value[%{public}u] of tag[asset.Tag.%{public}s] has bit count out of range[%{public}u, %{public}u].",
-            attr.value.u32, TAG_MAP.at(attr.tag), minBits, maxBits);
+            attr.value.u32, TAG_MAP.at(attr.tag), minBits + 1, maxBits);
         return false;
     }
     return true;
@@ -100,20 +99,20 @@ bool CheckTagRange(const napi_env env, const AssetAttr &attr, const std::vector<
     auto it = std::find(tags.begin(), tags.end(), attr.value.u32);
     if (it == tags.end()) {
         NAPI_THROW_INVALID_ARGUMENT(env,
-            "Value[%{public}u] of tag[AssetTag(%{public}s)] is not tags allowing sorting, which should start with \"DATA_LABEL\".",
+            "Value[0x%{public}u] of tag[asset.Tag.(%{public}s)] is not tags allowed for sorting, which should start with \"DATA_LABEL\".",
             attr.value.u32, TAG_MAP.at(attr.tag));
         return false;
     }
     return true;
 }
 
-struct CheckContinuous {
+struct CheckContinuousRange {
     std::function<bool(const napi_env, const AssetAttr &, uint32_t, uint32_t)> funcPtr;
     uint32_t min;
     uint32_t max;
 };
 
-const std::unordered_map<uint32_t, CheckContinuous> CHECK_CONTINOUS_VEC_FUNC_MAP = {
+const std::unordered_map<uint32_t, CheckContinuousRange> CHECK_CONTINOUS_VEC_FUNC_MAP = {
     { SEC_ASSET_TAG_SECRET, { &CheckArraySize, MIN_ARRAY_SIZE, MAX_SECRET_SIZE } },
     { SEC_ASSET_TAG_ALIAS, { &CheckArraySize, MIN_ARRAY_SIZE, MAX_ALIAS_SIZE } },
     { SEC_ASSET_TAG_AUTH_VALIDITY_PERIOD, { &CheckNumberRange, MIN_NUMBER_VALUE, MAX_AUTH_VALID_PERIOD } },
@@ -137,12 +136,12 @@ const std::unordered_map<uint32_t, CheckContinuous> CHECK_CONTINOUS_VEC_FUNC_MAP
     { SEC_ASSET_TAG_UPDATE_TIME, { &CheckArraySize, MIN_ARRAY_SIZE, MAX_TIME_SIZE } }
 };
 
-struct CheckDiscrete {
+struct CheckDiscreteRange {
     std::function<bool(const napi_env, const AssetAttr &, const std::vector<uint32_t> &)> funcPtr;
-    const std::vector<uint32_t> vec;
+    const std::vector<uint32_t> validRange;
 };
 
-const std::unordered_map<uint32_t, CheckDiscrete> CHECK_DISCRETE_VEC_FUNC_MAP = {
+const std::unordered_map<uint32_t, CheckDiscreteRange> CHECK_DISCRETE_VEC_FUNC_MAP = {
         { SEC_ASSET_TAG_ACCESSIBILITY, { &CheckEnumVariant, ASSET_ACCESSIBILITY_VEC } },
         { SEC_ASSET_TAG_AUTH_TYPE, { &CheckEnumVariant, ASSET_AUTH_TYPE_VEC } },
         { SEC_ASSET_TAG_CONFLICT_RESOLUTION, { &CheckEnumVariant, ASSET_CONFLICT_RESOLUTION_VEC } },
@@ -157,16 +156,12 @@ bool CheckAssetDataValue(const napi_env env, const AssetAttr &attr)
         auto funcPtr = CHECK_CONTINOUS_VEC_FUNC_MAP.at(attr.tag).funcPtr;
         uint32_t min = CHECK_CONTINOUS_VEC_FUNC_MAP.at(attr.tag).min;
         uint32_t max = CHECK_CONTINOUS_VEC_FUNC_MAP.at(attr.tag).max;
-        if (!funcPtr(env, attr, min, max)) {
-            return false;
-        }
+        return funcPtr(env, attr, min, max);
     }
     if (CHECK_DISCRETE_VEC_FUNC_MAP.find(attr.tag) != CHECK_DISCRETE_VEC_FUNC_MAP.end()) {
         auto funcPtr = CHECK_DISCRETE_VEC_FUNC_MAP.at(attr.tag).funcPtr;
-        auto vecPtr = CHECK_DISCRETE_VEC_FUNC_MAP.at(attr.tag).vec;
-        if (!funcPtr(env, attr, vecPtr)) {
-            return false;
-        }
+        auto validRangePtr = CHECK_DISCRETE_VEC_FUNC_MAP.at(attr.tag).validRange;
+        return funcPtr(env, attr, validRangePtr);
     }
     return true;
 }
@@ -189,12 +184,12 @@ bool CheckAssetRequiredTag(const napi_env env, const std::vector<AssetAttr> &att
 }
 
 bool CheckAssetTagValidity(const napi_env env, const std::vector<AssetAttr> &attrs,
-    const std::vector<uint32_t> &validTags, const char* funcName)
+    const std::vector<uint32_t> &validTags)
 {
     for (AssetAttr attr : attrs) {
         if (std::count(validTags.begin(), validTags.end(), attr.tag) == 0) {
-            NAPI_THROW_INVALID_ARGUMENT(env, "Unsupported tag[asset.Tag.%{public}s] for function[%{public}s].",
-                TAG_MAP.at(attr.tag), funcName);
+            NAPI_THROW_INVALID_ARGUMENT(env, "Unsupported tag[asset.Tag.%{public}s] for the function.",
+                TAG_MAP.at(attr.tag));
             return false;
         }
     }

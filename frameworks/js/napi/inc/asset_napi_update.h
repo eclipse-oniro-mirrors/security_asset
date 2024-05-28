@@ -25,6 +25,9 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 
+#define AS_USER_UPDATE_ARGS_NUM 3
+#define UPDATE_ARGS_NUM 2
+
 napi_value NapiUpdate(const napi_env env, napi_callback_info info);
 
 napi_value NapiUpdateSync(const napi_env env, napi_callback_info info);

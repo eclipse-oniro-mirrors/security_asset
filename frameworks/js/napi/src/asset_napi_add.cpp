@@ -42,8 +42,7 @@ const std::vector<uint32_t> REQUIRED_TAGS = {
 
 const std::vector<uint32_t> OPTIONAL_TAGS = {
     SEC_ASSET_TAG_SECRET,
-    SEC_ASSET_TAG_CONFLICT_RESOLUTION,
-    SEC_ASSET_TAG_IS_PERSISTENT
+    SEC_ASSET_TAG_CONFLICT_RESOLUTION
 };
 
 napi_status CheckAddArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
@@ -55,7 +54,7 @@ napi_status CheckAddArgs(const napi_env env, const std::vector<AssetAttr> &attrs
     validTags.insert(validTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), OPTIONAL_TAGS.begin(), OPTIONAL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, validTags, "addAsset"), napi_invalid_arg);
+    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, validTags), napi_invalid_arg);
     IF_FALSE_RETURN(CheckAssetValueValidity(env, attrs), napi_invalid_arg);
     return napi_ok;
 }

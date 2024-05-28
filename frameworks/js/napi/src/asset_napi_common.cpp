@@ -30,6 +30,8 @@ namespace Security {
 namespace Asset {
 namespace {
 
+#define MAX_BUFFER_LEN 2048
+
 #define NAPI_THROW_RETURN_ERR(env, condition, code, message)            \
     NAPI_THROW_BASE(env, condition, napi_generic_failure, code, message)
 
