@@ -99,7 +99,7 @@ bool CheckTagRange(const napi_env env, const AssetAttr &attr, const std::vector<
     auto it = std::find(tags.begin(), tags.end(), attr.value.u32);
     if (it == tags.end()) {
         NAPI_THROW_INVALID_ARGUMENT(env,
-            "Value[0x%{public}u] of tag[asset.Tag.(%{public}s)] is not tags allowed for sorting, which should start with \"DATA_LABEL\".",
+            "Value[0x%{public}X] of tag[asset.Tag.(%{public}s)] is not tags allowed for sorting, which should start with \"DATA_LABEL\".",
             attr.value.u32, TAG_MAP.at(attr.tag));
         return false;
     }
@@ -112,7 +112,7 @@ struct CheckContinuousRange {
     uint32_t max;
 };
 
-const std::unordered_map<uint32_t, CheckContinuousRange> CHECK_CONTINOUS_VEC_FUNC_MAP = {
+const std::unordered_map<uint32_t, CheckContinuousRange> CHECK_CONTINOUS_RANGE_FUNC_MAP = {
     { SEC_ASSET_TAG_SECRET, { &CheckArraySize, MIN_ARRAY_SIZE, MAX_SECRET_SIZE } },
     { SEC_ASSET_TAG_ALIAS, { &CheckArraySize, MIN_ARRAY_SIZE, MAX_ALIAS_SIZE } },
     { SEC_ASSET_TAG_AUTH_VALIDITY_PERIOD, { &CheckNumberRange, MIN_NUMBER_VALUE, MAX_AUTH_VALID_PERIOD } },
@@ -141,7 +141,7 @@ struct CheckDiscreteRange {
     const std::vector<uint32_t> validRange;
 };
 
-const std::unordered_map<uint32_t, CheckDiscreteRange> CHECK_DISCRETE_VEC_FUNC_MAP = {
+const std::unordered_map<uint32_t, CheckDiscreteRange> CHECK_DISCRETE_RANGE_FUNC_MAP = {
     { SEC_ASSET_TAG_ACCESSIBILITY, { &CheckEnumVariant, ASSET_ACCESSIBILITY_VEC } },
     { SEC_ASSET_TAG_AUTH_TYPE, { &CheckEnumVariant, ASSET_AUTH_TYPE_VEC } },
     { SEC_ASSET_TAG_CONFLICT_RESOLUTION, { &CheckEnumVariant, ASSET_CONFLICT_RESOLUTION_VEC } },
@@ -152,15 +152,15 @@ const std::unordered_map<uint32_t, CheckDiscreteRange> CHECK_DISCRETE_VEC_FUNC_M
 
 bool CheckAssetDataValue(const napi_env env, const AssetAttr &attr)
 {
-    if (CHECK_CONTINOUS_VEC_FUNC_MAP.find(attr.tag) != CHECK_CONTINOUS_VEC_FUNC_MAP.end()) {
-        auto funcPtr = CHECK_CONTINOUS_VEC_FUNC_MAP.at(attr.tag).funcPtr;
-        uint32_t min = CHECK_CONTINOUS_VEC_FUNC_MAP.at(attr.tag).min;
-        uint32_t max = CHECK_CONTINOUS_VEC_FUNC_MAP.at(attr.tag).max;
+    if (CHECK_CONTINOUS_RANGE_FUNC_MAP.find(attr.tag) != CHECK_CONTINOUS_RANGE_FUNC_MAP.end()) {
+        auto funcPtr = CHECK_CONTINOUS_RANGE_FUNC_MAP.at(attr.tag).funcPtr;
+        uint32_t min = CHECK_CONTINOUS_RANGE_FUNC_MAP.at(attr.tag).min;
+        uint32_t max = CHECK_CONTINOUS_RANGE_FUNC_MAP.at(attr.tag).max;
         return funcPtr(env, attr, min, max);
     }
-    if (CHECK_DISCRETE_VEC_FUNC_MAP.find(attr.tag) != CHECK_DISCRETE_VEC_FUNC_MAP.end()) {
-        auto funcPtr = CHECK_DISCRETE_VEC_FUNC_MAP.at(attr.tag).funcPtr;
-        auto validRangePtr = CHECK_DISCRETE_VEC_FUNC_MAP.at(attr.tag).validRange;
+    if (CHECK_DISCRETE_RANGE_FUNC_MAP.find(attr.tag) != CHECK_DISCRETE_RANGE_FUNC_MAP.end()) {
+        auto funcPtr = CHECK_DISCRETE_RANGE_FUNC_MAP.at(attr.tag).funcPtr;
+        auto validRangePtr = CHECK_DISCRETE_RANGE_FUNC_MAP.at(attr.tag).validRange;
         return funcPtr(env, attr, validRangePtr);
     }
     return true;

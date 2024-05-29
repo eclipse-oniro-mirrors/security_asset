@@ -46,7 +46,7 @@ const std::vector<uint32_t> UPDATE_OPTIONAL_TAGS = {
 bool CheckAssetPresence(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
     if (attrs.empty()) {
-        NAPI_THROW_INVALID_ARGUMENT(env, "attributesToUpdate is empty.");
+        NAPI_THROW_INVALID_ARGUMENT(env, "Argument[attributesToUpdate] is empty.");
         return false;
     }
     return true;
