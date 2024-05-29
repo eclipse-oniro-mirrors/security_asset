@@ -55,7 +55,7 @@ napi_value NapiRemove(const napi_env env, napi_callback_info info, const NapiCal
         AsyncContext *context = static_cast<AsyncContext *>(data);
         context->result = AssetRemove(&context->attrs[0], context->attrs.size());
     };
-   return NapiAsync(env, info, execute, args, &CheckRemoveArgs);
+    return NapiAsync(env, info, execute, args, &CheckRemoveArgs);
 }
 
 napi_value NapiRemove(const napi_env env, napi_callback_info info)

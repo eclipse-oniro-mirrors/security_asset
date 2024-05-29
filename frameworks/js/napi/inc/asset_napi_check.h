@@ -33,7 +33,7 @@ do {                                                                            
     (void)sprintf_s(msg, MAX_MESSAGE_LEN, format, ##arg);                           \
     LOGE("[FATAL][NAPI]%{public}s", (msg));                                         \
     napi_throw((env), CreateJsError((env), SEC_ASSET_INVALID_ARGUMENT, (msg)));     \
-} while (0);
+} while (0)
 
 const std::vector<uint32_t> CRITICAL_LABEL_TAGS = {
     SEC_ASSET_TAG_DATA_LABEL_CRITICAL_1,

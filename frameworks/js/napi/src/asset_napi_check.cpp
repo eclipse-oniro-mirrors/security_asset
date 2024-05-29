@@ -142,12 +142,12 @@ struct CheckDiscreteRange {
 };
 
 const std::unordered_map<uint32_t, CheckDiscreteRange> CHECK_DISCRETE_VEC_FUNC_MAP = {
-        { SEC_ASSET_TAG_ACCESSIBILITY, { &CheckEnumVariant, ASSET_ACCESSIBILITY_VEC } },
-        { SEC_ASSET_TAG_AUTH_TYPE, { &CheckEnumVariant, ASSET_AUTH_TYPE_VEC } },
-        { SEC_ASSET_TAG_CONFLICT_RESOLUTION, { &CheckEnumVariant, ASSET_CONFLICT_RESOLUTION_VEC } },
-        { SEC_ASSET_TAG_RETURN_TYPE, { &CheckEnumVariant, ASSET_RETURN_TYPE_VEC } },
-        { SEC_ASSET_TAG_RETURN_ORDERED_BY, { &CheckTagRange, ASSET_RETURN_ORDER_BY_TAGS } },
-        { SEC_ASSET_TAG_OPERATION_TYPE, { &CheckEnumVariant, ASSET_OPERATION_TYPE_VEC } }
+    { SEC_ASSET_TAG_ACCESSIBILITY, { &CheckEnumVariant, ASSET_ACCESSIBILITY_VEC } },
+    { SEC_ASSET_TAG_AUTH_TYPE, { &CheckEnumVariant, ASSET_AUTH_TYPE_VEC } },
+    { SEC_ASSET_TAG_CONFLICT_RESOLUTION, { &CheckEnumVariant, ASSET_CONFLICT_RESOLUTION_VEC } },
+    { SEC_ASSET_TAG_RETURN_TYPE, { &CheckEnumVariant, ASSET_RETURN_TYPE_VEC } },
+    { SEC_ASSET_TAG_RETURN_ORDERED_BY, { &CheckTagRange, ASSET_RETURN_ORDER_BY_TAGS } },
+    { SEC_ASSET_TAG_OPERATION_TYPE, { &CheckEnumVariant, ASSET_OPERATION_TYPE_VEC } }
 };
 
 bool CheckAssetDataValue(const napi_env env, const AssetAttr &attr)
