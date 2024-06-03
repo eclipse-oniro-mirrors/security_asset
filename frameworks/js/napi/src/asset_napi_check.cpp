@@ -56,6 +56,7 @@ bool CheckArraySize(const napi_env env, const AssetAttr &attr, uint32_t min, uin
         NAPI_THROW_INVALID_ARGUMENT(env,
             "Value byte length[%{public}u] of tag[asset.Tag.%{public}s] is out of range[%{public}u, %{public}u].",
             attr.value.blob.size, TAG_MAP.at(attr.tag),  min + 1, max);
+        return false;
     }
     return true;
 }
