@@ -100,8 +100,8 @@ bool CheckTagRange(const napi_env env, const AssetAttr &attr, const std::vector<
     auto it = std::find(tags.begin(), tags.end(), attr.value.u32);
     if (it == tags.end()) {
         NAPI_THROW_INVALID_ARGUMENT(env,
-            "Value[0x%{public}X] of tag[asset.Tag.(%{public}s)] is not tags allowed for sorting, which should start with \"DATA_LABEL\".",
-            attr.value.u32, TAG_MAP.at(attr.tag));
+            "Value[0x%{public}X] of tag[asset.Tag.(%{public}s)] is not tags allowed for sorting, "
+            "which should start with \"DATA_LABEL\".", attr.value.u32, TAG_MAP.at(attr.tag));
         return false;
     }
     return true;
