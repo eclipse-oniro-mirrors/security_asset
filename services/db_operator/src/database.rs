@@ -147,12 +147,17 @@ impl Database {
     }
 
     /// Close database connection.
-    pub(crate) fn close(&mut self) {
-        let _lock = self.db_lock.mtx.lock().unwrap();
+    fn close(&mut self) {
         if self.handle != 0 {
             unsafe { SqliteCloseV2(self.handle as _) };
             self.handle = 0;
         }
+    }
+
+    /// Close database connection.
+    pub(crate) fn close_db(&mut self) {
+        let _lock = self.db_lock.mtx.lock().unwrap();
+        self.close()
     }
 
     // Recovery the corrupt database and reopen it.
@@ -423,6 +428,6 @@ impl Database {
 
 impl Drop for Database {
     fn drop(&mut self) {
-        self.close()
+        self.close_db()
     }
 }
