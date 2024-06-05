@@ -153,7 +153,7 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
     into_asset_maps(&results)
 }
 
-const OPTIONAL_ATTRS: [Tag; 7] = [
+const OPTIONAL_ATTRS: [Tag; 6] = [
     Tag::ReturnLimit,
     Tag::ReturnOffset,
     Tag::ReturnOrderedBy,

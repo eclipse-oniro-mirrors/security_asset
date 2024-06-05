@@ -83,7 +83,7 @@ fn create_and_drop_database() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let mut db = Database::build(0).unwrap();
     backup_db(&db);
-    db.close();
+    db.close_db();
     assert!(Database::delete(0).is_ok());
 }
 
@@ -114,7 +114,7 @@ fn create_delete_asset_table() {
     assert!(table.exist().unwrap());
     assert!(table.delete().is_ok());
     assert!(!table.exist().unwrap());
-    db.close();
+    db.close_db();
     let _ = Database::delete(0);
 }
 

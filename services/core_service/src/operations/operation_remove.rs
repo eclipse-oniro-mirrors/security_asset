@@ -20,7 +20,7 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap},
 };
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, Tag, Value, SyncStatus, SyncType};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, Value, SyncStatus, SyncType};
 use asset_utils::time;
 use asset_log::logi;
 

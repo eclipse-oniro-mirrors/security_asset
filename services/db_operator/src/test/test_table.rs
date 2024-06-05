@@ -37,7 +37,7 @@ fn create_delete_table() {
     assert!(table.create(columns).is_ok());
     assert!(table.exist().unwrap());
     table.delete().unwrap();
-    db.close();
+    db.close_db();
     fs::remove_dir_all("/data/asset_test/0").unwrap();
 }
 
@@ -52,7 +52,7 @@ fn table_restore() {
     let count = table.insert_row(&DbMap::from([("Id", Value::Number(1))])).unwrap();
     assert_eq!(count, 1);
     fs::copy("/data/asset_test/0/asset.db", "/data/asset_test/0/asset.db.backup").unwrap();
-    db.close();
+    db.close_db();
 
     fs::remove_file("/data/asset_test/0/asset.db").unwrap();
     fs::copy("/data/asset_test/0/asset.db.backup", "/data/asset_test/0/asset.db").unwrap();
@@ -60,7 +60,7 @@ fn table_restore() {
     let table = Table::new("table_name", &db);
     let count = table.count_datas(&DbMap::new(), false).unwrap();
     assert_eq!(count, 1);
-    db.close();
+    db.close_db();
     fs::remove_dir_all("/data/asset_test/0").unwrap();
 }
 
