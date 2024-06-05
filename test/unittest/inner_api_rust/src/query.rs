@@ -438,7 +438,7 @@ fn query_with_sync_type() {
     add_all_tags_asset(function_name).unwrap();
 
     let mut query = AssetMap::new();
-    let mut sync_type = SyncType::ThisDevice as u32 | SyncType::TrustedDevice as u32;
+    let mut sync_type = SyncType::ThisDevice as u32 | SyncType::TrustedDevice as u32 | SyncType::TrustedAccount as u32;
     query.insert_attr(Tag::SyncType, sync_type);
     expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 

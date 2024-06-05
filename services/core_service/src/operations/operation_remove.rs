@@ -20,13 +20,11 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap},
 };
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, Tag, Value, SyncStatus, SyncType};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, Value, SyncStatus, SyncType};
 use asset_utils::time;
 use asset_log::logi;
 
 use crate::operations::common;
-
-const OPTIONAL_ATTRS: [Tag; 1] = [Tag::UserId];
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     let time = time::system_time_in_millis()?;
@@ -44,7 +42,6 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
-    valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
     common::check_system_permission(attributes)

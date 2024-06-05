@@ -111,7 +111,7 @@ fn update_query_invalid_sync_type() {
     update.insert_attr(Tag::Secret, function_name.to_owned());
     let mut query = AssetMap::new();
     query.insert_attr(Tag::Alias, function_name.to_owned());
-    let sync_type = SyncType::ThisDevice as u32 | SyncType::TrustedDevice as u32;
+    let sync_type = SyncType::ThisDevice as u32 | SyncType::TrustedDevice as u32 | SyncType::TrustedAccount as u32;
     query.insert_attr(Tag::SyncType, sync_type + 1);
     expect_error_eq(
         ErrCode::InvalidArgument,

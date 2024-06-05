@@ -80,8 +80,15 @@ pub(crate) const NORMAL_LABEL_ATTRS: [Tag; 4] =
 pub(crate) const NORMAL_LOCAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelNormalLocal1, Tag::DataLabelNormalLocal2, Tag::DataLabelNormalLocal3, Tag::DataLabelNormalLocal4];
 
-pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 6] =
-    [Tag::Alias, Tag::Accessibility, Tag::AuthType, Tag::IsPersistent, Tag::SyncType, Tag::RequirePasswordSet];
+pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 7] = [
+    Tag::Alias,
+    Tag::Accessibility,
+    Tag::AuthType,
+    Tag::IsPersistent,
+    Tag::SyncType,
+    Tag::RequirePasswordSet,
+    Tag::UserId,
+];
 
 pub(crate) const ASSET_SYNC_ATTRS: [Tag; 1] = [Tag::OperationType];
 

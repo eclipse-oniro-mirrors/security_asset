@@ -28,7 +28,7 @@ use crate::{
     types::{column, DbMap, QueryOptions, TABLE_NAME},
 };
 
-const DB_DATA: [(&str, Value); 7] = [
+const DB_DATA: [(&str, Value); 9] = [
     (column::OWNER_TYPE, Value::Number(1)),
     (column::SYNC_TYPE, Value::Number(1)),
     (column::ACCESSIBILITY, Value::Number(1)),
@@ -36,6 +36,8 @@ const DB_DATA: [(&str, Value); 7] = [
     (column::IS_PERSISTENT, Value::Bool(true)),
     (column::VERSION, Value::Number(1)),
     (column::REQUIRE_PASSWORD_SET, Value::Bool(false)),
+    (column::LOCAL_STATUS, Value::Number(0)),
+    (column::SYNC_STATUS, Value::Number(0)),
 ];
 
 const TEST_FILE: &str = "/data/asset_test/0";
@@ -81,7 +83,7 @@ fn create_and_drop_database() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let mut db = Database::build(0).unwrap();
     backup_db(&db);
-    db.close();
+    db.close_db();
     assert!(Database::delete(0).is_ok());
 }
 
@@ -112,7 +114,7 @@ fn create_delete_asset_table() {
     assert!(table.exist().unwrap());
     assert!(table.delete().is_ok());
     assert!(!table.exist().unwrap());
-    db.close();
+    db.close_db();
     let _ = Database::delete(0);
 }
 

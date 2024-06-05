@@ -76,7 +76,7 @@ int32_t QueryByAliasSdk(const char *alias, AssetResultSet *resultSet)
 
 bool CompareBlobNdk(const Asset_Blob *blob1, const Asset_Blob *blob2)
 {
-    return CompareBlobSdk((const AssetBlob *)blob1, (const AssetBlob *)blob2);
+    return CompareBlobSdk(reinterpret_cast<const AssetBlob *>(blob1), reinterpret_cast<const AssetBlob *>(blob2));
 }
 
 bool CompareBlobSdk(const AssetBlob *blob1, const AssetBlob *blob2)
@@ -89,7 +89,8 @@ bool CompareBlobSdk(const AssetBlob *blob1, const AssetBlob *blob2)
 
 bool CheckMatchAttrResultNdk(const Asset_Attr *attrs, uint32_t attrCnt, const Asset_Result *result)
 {
-    return CheckMatchAttrResultSdk((const AssetAttr *)attrs, attrCnt, (const AssetResult *)result);
+    return CheckMatchAttrResultSdk(reinterpret_cast<const AssetAttr *>(attrs), attrCnt,
+        reinterpret_cast<const AssetResult *>(result));
 }
 
 bool CheckMatchAttrResultSdk(const AssetAttr *attrs, uint32_t attrCnt, const AssetResult *result)
