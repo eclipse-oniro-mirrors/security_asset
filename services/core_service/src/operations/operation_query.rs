@@ -160,7 +160,6 @@ const OPTIONAL_ATTRS: [Tag; 7] = [
     Tag::ReturnType,
     Tag::AuthToken,
     Tag::AuthChallenge,
-    Tag::UserId,
 ];
 const AUTH_QUERY_ATTRS: [Tag; 2] = [Tag::AuthChallenge, Tag::AuthToken];
 

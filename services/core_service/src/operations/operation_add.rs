@@ -117,7 +117,7 @@ fn add_default_attrs(db_data: &mut DbMap) {
 }
 
 const REQUIRED_ATTRS: [Tag; 2] = [Tag::Secret, Tag::Alias];
-const OPTIONAL_ATTRS: [Tag; 4] = [Tag::Secret, Tag::ConflictResolution, Tag::IsPersistent, Tag::UserId];
+const OPTIONAL_ATTRS: [Tag; 2] = [Tag::Secret, Tag::ConflictResolution];
 const SYSTEM_USER_ID_MAX: i32 = 99;
 
 fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {

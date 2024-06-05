@@ -26,8 +26,6 @@ use asset_log::logi;
 
 use crate::operations::common;
 
-const OPTIONAL_ATTRS: [Tag; 1] = [Tag::UserId];
-
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     let time = time::system_time_in_millis()?;
     db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
@@ -44,7 +42,6 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
-    valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
     common::check_system_permission(attributes)
