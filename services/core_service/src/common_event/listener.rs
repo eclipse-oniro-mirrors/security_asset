@@ -25,7 +25,7 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap},
 };
-use asset_definition::{Result, Value};
+use asset_definition::{Result, Value, SyncType};
 use asset_file_operator::delete_user_db_dir;
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
@@ -43,10 +43,12 @@ fn delete_on_package_removed(user_id: i32, owner: Vec<u8>) -> Result<bool> {
     cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
     cond.insert(column::OWNER, Value::Bytes(owner));
     cond.insert(column::IS_PERSISTENT, Value::Bool(false));
+    let mut reverse_condition = DbMap::new();
+    reverse_condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
     let mut db = Database::build(user_id)?;
-    let _ = db.delete_datas(&cond, None, false)?;
+    let _ = db.delete_datas(&cond, Some(&reverse_condition), false)?;
 
-    cond.insert(column::IS_PERSISTENT, Value::Bool(true));
+    cond.remove(column::IS_PERSISTENT);
     db.is_data_exists(&cond, false)
 }
 
