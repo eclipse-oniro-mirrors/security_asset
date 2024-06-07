@@ -16,8 +16,8 @@
 #ifndef ASSET_NAPI_ERROR_CODE_H
 #define ASSET_NAPI_ERROR_CODE_H
 
+#include <cstdint>
 #include <unordered_map>
-#include <stdint.h>
 
 #include "asset_system_type.h"
 

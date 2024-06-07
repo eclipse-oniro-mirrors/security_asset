@@ -13,25 +13,33 @@
  * limitations under the License.
  */
 
+#include <cstdint>
+
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
-#include "asset_napi_common.h"
 #include "asset_system_api.h"
 #include "asset_system_type.h"
+
+#include "asset_napi_add.h"
+#include "asset_napi_post_query.h"
+#include "asset_napi_pre_query.h"
+#include "asset_napi_query.h"
+#include "asset_napi_remove.h"
+#include "asset_napi_update.h"
 
 using namespace OHOS::Security::Asset;
 
 namespace {
 
-void AddUint32Property(napi_env env, napi_value object, const char *name, uint32_t value)
+void AddUint32Property(const napi_env env, napi_value object, const char *name, uint32_t value)
 {
     napi_value property = nullptr;
     NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, value, &property));
     NAPI_CALL_RETURN_VOID(env, napi_set_named_property(env, object, name, property));
 }
 
-napi_value DeclareTag(napi_env env)
+napi_value DeclareTag(const napi_env env)
 {
     napi_value tag = nullptr;
     NAPI_CALL(env, napi_create_object(env, &tag));
@@ -67,7 +75,7 @@ napi_value DeclareTag(napi_env env)
     return tag;
 }
 
-napi_value DeclareTagType(napi_env env)
+napi_value DeclareTagType(const napi_env env)
 {
     napi_value tagType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &tagType));
@@ -77,7 +85,7 @@ napi_value DeclareTagType(napi_env env)
     return tagType;
 }
 
-napi_value DeclareErrorCode(napi_env env)
+napi_value DeclareErrorCode(const napi_env env)
 {
     napi_value errorCode = nullptr;
     NAPI_CALL(env, napi_create_object(env, &errorCode));
@@ -104,7 +112,7 @@ napi_value DeclareErrorCode(napi_env env)
     return errorCode;
 }
 
-napi_value DeclareAccessibility(napi_env env)
+napi_value DeclareAccessibility(const napi_env env)
 {
     napi_value accessibility = nullptr;
     NAPI_CALL(env, napi_create_object(env, &accessibility));
@@ -114,7 +122,7 @@ napi_value DeclareAccessibility(napi_env env)
     return accessibility;
 }
 
-napi_value DeclareAuthType(napi_env env)
+napi_value DeclareAuthType(const napi_env env)
 {
     napi_value authType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &authType));
@@ -123,7 +131,7 @@ napi_value DeclareAuthType(napi_env env)
     return authType;
 }
 
-napi_value DeclareSyncType(napi_env env)
+napi_value DeclareSyncType(const napi_env env)
 {
     napi_value syncType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &syncType));
@@ -134,7 +142,7 @@ napi_value DeclareSyncType(napi_env env)
     return syncType;
 }
 
-napi_value DeclareConflictResolution(napi_env env)
+napi_value DeclareConflictResolution(const napi_env env)
 {
     napi_value conflictResolution = nullptr;
     NAPI_CALL(env, napi_create_object(env, &conflictResolution));
@@ -143,7 +151,7 @@ napi_value DeclareConflictResolution(napi_env env)
     return conflictResolution;
 }
 
-napi_value DeclareReturnType(napi_env env)
+napi_value DeclareReturnType(const napi_env env)
 {
     napi_value returnType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &returnType));
@@ -152,7 +160,7 @@ napi_value DeclareReturnType(napi_env env)
     return returnType;
 }
 
-napi_value DeclareOperationType(napi_env env)
+napi_value DeclareOperationType(const napi_env env)
 {
     napi_value operationType = nullptr;
     NAPI_CALL(env, napi_create_object(env, &operationType));
@@ -161,228 +169,7 @@ napi_value DeclareOperationType(napi_env env)
     return operationType;
 }
 
-napi_value NapiAdd(napi_env env, napi_callback_info info)
-{
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetAdd(&context->attrs[0], context->attrs.size());
-        };
-    return NapiEntry(env, info, __func__, execute);
-}
-
-napi_value NapiAddSync(napi_env env, napi_callback_info info)
-{
-    std::vector<AssetAttr> attrs;
-    do {
-        if (ParseParam(env, info, attrs) != napi_ok) {
-            break;
-        }
-
-        int32_t result = AssetAdd(&attrs[0], attrs.size());
-        CHECK_RESULT_BREAK(env, result);
-    } while (false);
-    FreeAssetAttrs(attrs);
-    return nullptr;
-}
-
-napi_value NapiAddAsUser(napi_env env, napi_callback_info info)
-{
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetAdd(&context->attrs[0], context->attrs.size());
-        };
-    return NapiEntryAsUser(env, info, __func__, execute);
-}
-
-napi_value NapiRemove(napi_env env, napi_callback_info info)
-{
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetRemove(&context->attrs[0], context->attrs.size());
-        };
-    return NapiEntry(env, info, __func__, execute);
-}
-
-napi_value NapiRemoveSync(napi_env env, napi_callback_info info)
-{
-    std::vector<AssetAttr> attrs;
-    do {
-        if (ParseParam(env, info, attrs) != napi_ok) {
-            break;
-        }
-
-        int32_t result = AssetRemove(&attrs[0], attrs.size());
-        CHECK_RESULT_BREAK(env, result);
-    } while (false);
-    FreeAssetAttrs(attrs);
-    return nullptr;
-}
-
-napi_value NapiRemoveAsUser(napi_env env, napi_callback_info info)
-{
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetRemove(&context->attrs[0], context->attrs.size());
-        };
-    return NapiEntryAsUser(env, info, __func__, execute);
-}
-
-napi_value NapiUpdate(napi_env env, napi_callback_info info)
-{
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetUpdate(&context->attrs[0], context->attrs.size(),
-                &context->updateAttrs[0], context->updateAttrs.size());
-        };
-    return NapiEntry(env, info, __func__, execute, UPDATE_ARGS_NUM);
-}
-
-napi_value NapiUpdateSync(napi_env env, napi_callback_info info)
-{
-    std::vector<AssetAttr> attrs;
-    std::vector<AssetAttr> updateAttrs;
-    do {
-        if (ParseParam(env, info, UPDATE_ARGS_NUM, attrs, updateAttrs) != napi_ok) {
-            break;
-        }
-        int32_t result = AssetUpdate(&attrs[0], attrs.size(), &updateAttrs[0], updateAttrs.size());
-        CHECK_RESULT_BREAK(env, result);
-    } while (false);
-    FreeAssetAttrs(attrs);
-    FreeAssetAttrs(updateAttrs);
-    return nullptr;
-}
-
-napi_value NapiUpdateAsUser(napi_env env, napi_callback_info info)
-{
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetUpdate(&context->attrs[0], context->attrs.size(),
-                &context->updateAttrs[0], context->updateAttrs.size());
-        };
-    return NapiEntryAsUser(env, info, __func__, execute, AS_USER_UPDATE_ARGS_NUM);
-}
-
-napi_value NapiPreQuery(napi_env env, napi_callback_info info)
-{
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetPreQuery(&context->attrs[0], context->attrs.size(), &context->challenge);
-        };
-    return NapiEntry(env, info, __func__, execute);
-}
-
-napi_value NapiPreQuerySync(napi_env env, napi_callback_info info)
-{
-    std::vector<AssetAttr> attrs;
-    AssetBlob challenge = { 0 };
-    napi_value result = nullptr;
-    do {
-        if (ParseParam(env, info, attrs) != napi_ok) {
-            break;
-        }
-
-        int32_t res = AssetPreQuery(&attrs[0], attrs.size(), &challenge);
-        CHECK_RESULT_BREAK(env, res);
-        result = CreateJsUint8Array(env, challenge);
-    } while (false);
-    AssetFreeBlob(&challenge);
-    FreeAssetAttrs(attrs);
-    return result;
-}
-
-napi_value NapiPreQueryAsUser(napi_env env, napi_callback_info info)
-{
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetPreQuery(&context->attrs[0], context->attrs.size(), &context->challenge);
-        };
-    return NapiEntryAsUser(env, info, __func__, execute);
-}
-
-napi_value NapiQuery(napi_env env, napi_callback_info info)
-{
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetQuery(&context->attrs[0], context->attrs.size(), &context->resultSet);
-        };
-    return NapiEntry(env, info, __func__, execute);
-}
-
-napi_value NapiQuerySync(napi_env env, napi_callback_info info)
-{
-    std::vector<AssetAttr> attrs;
-    AssetResultSet resultSet = { 0 };
-    napi_value result = nullptr;
-    do {
-        if (ParseParam(env, info, attrs) != napi_ok) {
-            break;
-        }
-
-        int32_t res = AssetQuery(&attrs[0], attrs.size(), &resultSet);
-        CHECK_RESULT_BREAK(env, res);
-        result = CreateJsMapArray(env, resultSet);
-    } while (false);
-    AssetFreeResultSet(&resultSet);
-    FreeAssetAttrs(attrs);
-    return result;
-}
-
-napi_value NapiQueryAsUser(napi_env env, napi_callback_info info)
-{
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetQuery(&context->attrs[0], context->attrs.size(), &context->resultSet);
-        };
-    return NapiEntryAsUser(env, info, __func__, execute);
-}
-
-napi_value NapiPostQuery(napi_env env, napi_callback_info info)
-{
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetPostQuery(&context->attrs[0], context->attrs.size());
-        };
-    return NapiEntry(env, info, __func__, execute);
-}
-
-napi_value NapiPostQuerySync(napi_env env, napi_callback_info info)
-{
-    std::vector<AssetAttr> attrs;
-    do {
-        if (ParseParam(env, info, attrs) != napi_ok) {
-            break;
-        }
-
-        int32_t result = AssetPostQuery(&attrs[0], attrs.size());
-        CHECK_RESULT_BREAK(env, result);
-    } while (false);
-    FreeAssetAttrs(attrs);
-    return nullptr;
-}
-
-napi_value NapiPostQueryAsUser(napi_env env, napi_callback_info info)
-{
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetPostQuery(&context->attrs[0], context->attrs.size());
-        };
-    return NapiEntryAsUser(env, info, __func__, execute);
-}
-
-napi_value Register(napi_env env, napi_value exports)
+napi_value Register(const napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
         // register function
