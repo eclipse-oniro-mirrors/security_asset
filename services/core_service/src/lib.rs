@@ -24,7 +24,7 @@ use system_ability_fwk::{
 };
 use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
 
-use asset_constants::CallingInfo;
+use asset_common::{CallingInfo, Counter};
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, Tag};
 use asset_ipc::SA_ID;
@@ -32,7 +32,6 @@ use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::{AssetPlugin, AssetContext};
 
 mod common_event;
-mod counter;
 mod operations;
 mod stub;
 mod sys_event;
@@ -42,7 +41,6 @@ mod unload_handler;
 use sys_event::upload_system_event;
 use trace_scope::TraceScope;
 
-use crate::counter::Counter;
 use crate::unload_handler::{UnloadHandler, DELAYED_UNLOAD_TIME_IN_SEC, SEC_TO_MILLISEC};
 
 struct AssetAbility;
@@ -108,7 +106,7 @@ fn start_service(handler: Handler) -> Result<()> {
     let asset_plugin = AssetPlugin::get_instance();
     match asset_plugin.load_plugin() {
         Ok(loader) => {
-            let _tr = loader.init(Box::new(AssetContext {data_base: None}));
+            let _tr = loader.init(Box::new(AssetContext {data_base: None, auto_counter: None}));
             logi!("load plugin success.");
         },
         Err(_) => loge!("load plugin failed."),

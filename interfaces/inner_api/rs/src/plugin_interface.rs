@@ -100,6 +100,13 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Returns the storage path for the asset database.
     fn get_storage_path(&self) -> String;
+
+    /// Generate auto counter
+    fn generate_auto_counter(&mut self);
+
+    /// Destroy auto counter
+    fn destory_auto_counter(&mut self);
+
 }
 
 /// Defines a trait `IAssetPlugin` that specifies the required functionality for an asset plugin implementation.

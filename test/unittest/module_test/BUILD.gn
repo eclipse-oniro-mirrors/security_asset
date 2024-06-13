@@ -21,7 +21,7 @@ ohos_rust_unittest("asset_module_test") {
   sources = [ "src/lib.rs" ]
   deps = [
     "../../../frameworks/definition:asset_definition",
-    "../../../services/constants:asset_constants",
+    "../../../services/common:asset_common",
     "../../../services/crypto_manager:asset_crypto_manager",
   ]
   external_deps = [

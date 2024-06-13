@@ -15,7 +15,7 @@
 
 //! This module is used to verify the validity of asset attributes.
 
-use asset_constants::{is_user_id_exist, ROOT_USER_UPPERBOUND};
+use asset_common::{is_user_id_exist, ROOT_USER_UPPERBOUND};
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, Result, ReturnType,
     Tag, Value, OperationType

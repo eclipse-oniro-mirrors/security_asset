@@ -21,7 +21,7 @@ mod permission_check;
 pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_value_validity, MAX_LABEL_SIZE};
 pub(crate) use permission_check::check_system_permission;
 
-use asset_constants::CallingInfo;
+use asset_common::CallingInfo;
 use asset_crypto_manager::secret_key::SecretKey;
 use asset_db_operator::types::{column, DbMap, DB_DATA_VERSION, DB_DATA_VERSION_V1};
 use asset_definition::{

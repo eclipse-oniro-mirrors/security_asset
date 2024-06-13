@@ -17,7 +17,7 @@
 
 use std::time::Instant;
 
-use asset_constants::{transfer_error_code, SUCCESS};
+use asset_common::{transfer_error_code, SUCCESS};
 use asset_definition::{log_throw_error, ErrCode, Result};
 
 use crate::{secret_key::SecretKey, HksBlob, KeyId, OutBlob};

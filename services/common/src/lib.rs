@@ -17,7 +17,9 @@
 
 use asset_definition::{impl_enum_trait, log_throw_error, AssetError, ErrCode, Result};
 mod calling_info;
+mod counter;
 pub use calling_info::CallingInfo;
+pub use counter::{AutoCounter, Counter};
 /// success code.
 pub const SUCCESS: i32 = 0;
 /// root user upper bound

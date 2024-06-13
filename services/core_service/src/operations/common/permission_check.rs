@@ -19,7 +19,7 @@ use std::{ffi::CString, os::raw::c_char};
 
 use ipc::Skeleton;
 
-use asset_constants::{get_user_id, ROOT_USER_UPPERBOUND};
+use asset_common::{get_user_id, ROOT_USER_UPPERBOUND};
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, Tag};
 
 extern "C" {

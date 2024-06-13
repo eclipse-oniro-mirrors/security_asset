@@ -17,7 +17,7 @@
 
 use std::{ffi::CString, os::raw::c_char, sync::Mutex};
 
-use asset_constants::CallingInfo;
+use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, secret_key::SecretKey};
 use asset_db_operator::{
     database::Database,

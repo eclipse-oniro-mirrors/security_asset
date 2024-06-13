@@ -20,7 +20,7 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use asset_constants::CallingInfo;
+use asset_common::CallingInfo;
 use asset_definition::{log_throw_error, ErrCode, Result};
 
 use crate::crypto::Crypto;

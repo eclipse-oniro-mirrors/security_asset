@@ -15,7 +15,7 @@
 
 //! This module implements the stub of the Asset service.
 
-use asset_constants::get_user_id;
+use asset_common::{get_user_id, AutoCounter};
 use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode, Skeleton};
 
 use asset_definition::{AssetError, Result};
@@ -25,7 +25,7 @@ use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::{plugin_interface::{EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP,
     PARAM_NAME_USER_ID}, AssetMap, ErrCode, Value};
 
-use crate::{counter::AutoCounter, unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
+use crate::{unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
 
 const UPGRADE_CODE: u32 = 18100;
 const UPGRADE_TOKEN: &str = "OHOS.Updater.RestoreData";

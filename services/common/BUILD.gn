@@ -13,7 +13,7 @@
 
 import("//build/ohos.gni")
 
-ohos_rust_static_library("asset_constants") {
+ohos_rust_static_library("asset_common") {
   sources = [ "src/lib.rs" ]
   deps = [
     "../../frameworks/definition:asset_definition",
@@ -21,7 +21,7 @@ ohos_rust_static_library("asset_constants") {
     "../os_dependency:asset_os_dependency",
   ]
   external_deps = [ "ipc:ipc_rust" ]
-  crate_name = "asset_constants"
+  crate_name = "asset_common"
   crate_type = "rlib"
   subsystem_name = "security"
   part_name = "asset"

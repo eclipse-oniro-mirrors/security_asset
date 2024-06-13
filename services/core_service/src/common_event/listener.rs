@@ -19,7 +19,7 @@ use std::{
     ffi::CStr, fs::{self, DirEntry}, slice, time::Instant
 };
 
-use asset_constants::{CallingInfo, OwnerType};
+use asset_common::{AutoCounter, CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
 use asset_db_operator::{
     database::Database,
@@ -32,7 +32,7 @@ use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME,
     PARAM_NAME_USER_ID};
 
-use crate::{counter::AutoCounter, sys_event::upload_fault_system_event};
+use crate::sys_event::upload_fault_system_event;
 
 const ASSET_DB: &str = "asset.db";
 const BACKUP_SUFFIX: &str = ".backup";

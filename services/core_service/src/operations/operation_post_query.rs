@@ -15,7 +15,7 @@
 
 //! This module is used to clear resources after query the Asset that required secondary identity authentication.
 
-use asset_constants::CallingInfo;
+use asset_common::CallingInfo;
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{AssetMap, Extension, Result, Tag};
 
