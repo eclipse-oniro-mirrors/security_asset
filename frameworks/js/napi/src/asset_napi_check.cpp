@@ -54,7 +54,7 @@ bool CheckArraySize(const napi_env env, const AssetAttr &attr, uint32_t min, uin
 {
     if (attr.value.blob.size > max || attr.value.blob.size <= min) {
         NAPI_THROW_INVALID_ARGUMENT(env,
-            "Value byte length[%{public}u] of tag[asset.Tag.%{public}s] is out of range[%{public}u, %{public}u].",
+            "Value byte length[%u] of tag[asset.Tag.%s] is out of range[%u, %u].",
             attr.value.blob.size, TAG_MAP.at(attr.tag),  min + 1, max);
         return false;
     }
@@ -66,7 +66,7 @@ bool CheckEnumVariant(const napi_env env, const AssetAttr &attr, const std::vect
     auto it = std::find(enumVec.begin(), enumVec.end(), attr.value.u32);
     if (it == enumVec.end()) {
         NAPI_THROW_INVALID_ARGUMENT(env,
-            "Value[%{public}u] of tag[asset.Tag.%{public}s] is an illegal enumeration variant.",
+            "Value[%u] of tag[asset.Tag.%s] is an illegal enumeration variant.",
             attr.value.u32, TAG_MAP.at(attr.tag));
         return false;
     }
@@ -77,7 +77,7 @@ bool CheckNumberRange(const napi_env env, const AssetAttr &attr, uint32_t min, u
 {
     if (attr.value.u32 > max || attr.value.u32 <= min) {
         NAPI_THROW_INVALID_ARGUMENT(env,
-            "Value[%{public}u] of tag[asset.Tag.%{public}s] is out of range[%{public}u, %{public}u].",
+            "Value[%u] of tag[asset.Tag.%s] is out of range[%u, %u].",
             attr.value.u32, TAG_MAP.at(attr.tag), min, max);
         return false;
     }
@@ -88,7 +88,7 @@ bool CheckValidBits(const napi_env env, const AssetAttr &attr, uint32_t minBits,
 {
     if (attr.value.u32 >= pow(BINARY_BASE, maxBits) || attr.value.u32 < pow(BINARY_BASE, minBits) - 1) {
         NAPI_THROW_INVALID_ARGUMENT(env,
-            "Value[%{public}u] of tag[asset.Tag.%{public}s] has bit count out of range[%{public}u, %{public}u].",
+            "Value[%u] of tag[asset.Tag.%s] has bit count out of range[%u, %u].",
             attr.value.u32, TAG_MAP.at(attr.tag), minBits + 1, maxBits);
         return false;
     }
@@ -100,7 +100,7 @@ bool CheckTagRange(const napi_env env, const AssetAttr &attr, const std::vector<
     auto it = std::find(tags.begin(), tags.end(), attr.value.u32);
     if (it == tags.end()) {
         NAPI_THROW_INVALID_ARGUMENT(env,
-            "Value[0x%{public}X] of tag[asset.Tag.(%{public}s)] is not tags allowed for sorting, "
+            "Value[0x%X] of tag[asset.Tag.(%s)] is not tags allowed for sorting, "
             "which should start with \"DATA_LABEL\".", attr.value.u32, TAG_MAP.at(attr.tag));
         return false;
     }
@@ -177,7 +177,7 @@ bool CheckAssetRequiredTag(const napi_env env, const std::vector<AssetAttr> &att
             return attr.tag == requiredTag;
         });
         if (it == attrs.end()) {
-            NAPI_THROW_INVALID_ARGUMENT(env, "Missing required tag[asset.Tag.%{public}s].", TAG_MAP.at(requiredTag));
+            NAPI_THROW_INVALID_ARGUMENT(env, "Missing required tag[asset.Tag.%s].", TAG_MAP.at(requiredTag));
             return false;
         }
     }
@@ -189,7 +189,7 @@ bool CheckAssetTagValidity(const napi_env env, const std::vector<AssetAttr> &att
 {
     for (AssetAttr attr : attrs) {
         if (std::count(validTags.begin(), validTags.end(), attr.tag) == 0) {
-            NAPI_THROW_INVALID_ARGUMENT(env, "Unsupported tag[asset.Tag.%{public}s] for the function.",
+            NAPI_THROW_INVALID_ARGUMENT(env, "Unsupported tag[asset.Tag.%s] for the function.",
                 TAG_MAP.at(attr.tag));
             return false;
         }
