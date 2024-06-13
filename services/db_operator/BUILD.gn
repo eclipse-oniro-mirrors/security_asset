@@ -22,7 +22,7 @@ ohos_rust_static_library("asset_db_operator") {
     ":asset_sqlite3_wrapper",
     "../../frameworks/definition:asset_definition",
     "../../frameworks/os_dependency/log:asset_log",
-    "../constants:asset_constants",
+    "../common:asset_common",
   ]
 
   crate_name = "asset_db_operator"
@@ -38,7 +38,7 @@ ohos_rust_unittest("asset_db_operator_test") {
     ":asset_sqlite3_wrapper",
     "../../frameworks/definition:asset_definition",
     "../../frameworks/os_dependency/log:asset_log",
-    "../constants:asset_constants",
+    "../common:asset_common",
   ]
   subsystem_name = "security"
   part_name = "asset"

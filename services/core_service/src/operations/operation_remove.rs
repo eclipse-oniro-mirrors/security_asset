@@ -15,7 +15,7 @@
 
 //! This module is used to delete the Asset, including single and batch deletion.
 
-use asset_constants::CallingInfo;
+use asset_common::CallingInfo;
 use asset_db_operator::{
     database::Database,
     types::{column, DbMap},

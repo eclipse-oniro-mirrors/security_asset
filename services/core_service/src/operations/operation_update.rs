@@ -15,7 +15,7 @@
 
 //! This module is used to update the specified alias of Asset.
 
-use asset_constants::CallingInfo;
+use asset_common::CallingInfo;
 use asset_crypto_manager::crypto::Crypto;
 use asset_db_operator::{
     database::Database,

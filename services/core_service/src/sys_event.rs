@@ -19,7 +19,7 @@ use std::time::Instant;
 
 use ipc::Skeleton;
 
-use asset_constants::CallingInfo;
+use asset_common::CallingInfo;
 use asset_definition::{AssetError, Result};
 use asset_log::{loge, logi};
 

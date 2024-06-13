@@ -18,7 +18,8 @@
 /// Manages the count.
 use std::sync::{Arc, Mutex};
 
-pub(crate) struct Counter {
+/// Count asset service use times
+pub struct Counter {
     count: u32,
 }
 
@@ -28,7 +29,7 @@ impl Counter {
     }
 
     /// Get the single instance of Counter.
-    pub(crate) fn get_instance() -> Arc<Mutex<Counter>> {
+    pub fn get_instance() -> Arc<Mutex<Counter>> {
         static mut INSTANCE: Option<Arc<Mutex<Counter>>> = None;
         unsafe { INSTANCE.get_or_insert_with(|| Arc::new(Mutex::new(Counter::new()))).clone() }
     }
@@ -44,14 +45,17 @@ impl Counter {
     }
 
     /// get count.
-    pub(crate) fn count(&mut self) -> u32 {
+    pub fn count(&mut self) -> u32 {
         self.count
     }
 }
 
-pub(crate) struct AutoCounter;
+/// Auto count asset service use times
+#[derive(Default)]
+pub struct AutoCounter;
 
 impl AutoCounter {
+    /// New auto counter instance and add count
     pub fn new() -> Self {
         let counter = Counter::get_instance();
         counter.lock().unwrap().increase_count();

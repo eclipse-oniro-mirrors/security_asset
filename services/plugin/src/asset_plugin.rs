@@ -14,6 +14,7 @@
  */
 
 use std::{cell::RefCell, sync::{Arc, Mutex}};
+use asset_common::AutoCounter;
 use asset_log::{logi, loge};
 use asset_sdk::plugin_interface::{IAssetPluginCtx, IAssetPlugin, ExtDbMap};
 use asset_definition::{Result, ErrCode, log_throw_error};
@@ -22,7 +23,7 @@ use asset_db_operator::{database::Database, database::get_path};
 /// The asset_ext plugin.
 #[derive(Default)]
 pub struct AssetPlugin {
-    lib: RefCell<Option<libloading::Library>>
+    lib: RefCell<Option<libloading::Library>>,
 }
 
 static ASSET_OLUGIN_LOCK: Mutex<()> = Mutex::new(());
@@ -93,6 +94,8 @@ impl AssetPlugin {
 pub struct AssetContext {
     /// The asset database instance.
     pub data_base: Option<Database>,
+    /// The asset auto counter instance.
+    pub auto_counter: Option<AutoCounter>,
 }
 
 #[allow(dead_code)]
@@ -159,5 +162,15 @@ impl IAssetPluginCtx for AssetContext {
     /// Returns the storage path for the asset database.
     fn get_storage_path(&self) -> String {
         get_path()
+    }
+
+    /// Generate auto counter
+    fn generate_auto_counter(&mut self) {
+        self.auto_counter = Some(AutoCounter::new());
+    }
+
+    /// Destroy auto counter
+    fn destory_auto_counter(&mut self) {
+        self.auto_counter = None;
     }
 }

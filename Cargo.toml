@@ -18,7 +18,7 @@ members = [
     "frameworks/os_dependency/log",
     "frameworks/utils",
     "interfaces/inner_api/c",
-    "services/constants",
+    "services/common",
     "services/core_service",
     "services/crypto_manager",
     "services/db_operator",

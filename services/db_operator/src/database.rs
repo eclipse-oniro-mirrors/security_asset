@@ -19,7 +19,7 @@
 use core::ffi::c_void;
 use std::{ffi::CStr, fs, ptr::null_mut, sync::Mutex};
 
-use asset_constants::OwnerType;
+use asset_common::OwnerType;
 use asset_definition::{log_throw_error, ErrCode, Extension, Result};
 use asset_log::{loge, logi};
 

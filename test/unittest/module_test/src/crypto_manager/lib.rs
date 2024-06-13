@@ -16,7 +16,7 @@
 use std::ffi::{c_char, CString};
 use std::ptr;
 
-use asset_constants::{CallingInfo, OwnerType};
+use asset_common::{CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto::*, crypto_manager::*, secret_key::*};
 use asset_definition::{Accessibility, AuthType, ErrCode};
 

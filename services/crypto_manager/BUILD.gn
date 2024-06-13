@@ -21,7 +21,7 @@ ohos_rust_static_library("asset_crypto_manager") {
     "../../frameworks/definition:asset_definition",
     "../../frameworks/os_dependency/log:asset_log",
     "../../frameworks/utils:asset_utils",
-    "../constants:asset_constants",
+    "../common:asset_common",
   ]
   external_deps = [
     "huks:libhukssdk",
