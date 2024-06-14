@@ -14,7 +14,7 @@
  */
 
 use std::{cell::RefCell, sync::{Arc, Mutex}};
-use asset_common::AutoCounter;
+use asset_common::Counter;
 use asset_log::{logi, loge};
 use asset_sdk::plugin_interface::{IAssetPluginCtx, IAssetPlugin, ExtDbMap};
 use asset_definition::{Result, ErrCode, log_throw_error};
@@ -94,8 +94,6 @@ impl AssetPlugin {
 pub struct AssetContext {
     /// The asset database instance.
     pub data_base: Option<Database>,
-    /// The asset auto counter instance.
-    pub auto_counter: Option<AutoCounter>,
 }
 
 #[allow(dead_code)]
@@ -164,13 +162,15 @@ impl IAssetPluginCtx for AssetContext {
         get_path()
     }
 
-    /// Generate auto counter
-    fn generate_auto_counter(&mut self) {
-        self.auto_counter = Some(AutoCounter::new());
+    /// Increase count
+    fn increase_count(&mut self) {
+        let counter = Counter::get_instance();
+        counter.lock().unwrap().increase_count();
     }
 
-    /// Destroy auto counter
-    fn destory_auto_counter(&mut self) {
-        self.auto_counter = None;
+    /// Decrease count
+    fn decrease_count(&mut self) {
+        let counter = Counter::get_instance();
+        counter.lock().unwrap().decrease_count();
     }
 }
