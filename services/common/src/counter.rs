@@ -34,11 +34,13 @@ impl Counter {
         unsafe { INSTANCE.get_or_insert_with(|| Arc::new(Mutex::new(Counter::new()))).clone() }
     }
 
-    fn increase_count(&mut self) {
+    /// Increase count
+    pub fn increase_count(&mut self) {
         self.count += 1;
     }
 
-    fn decrease_count(&mut self) {
+    /// Decrease count
+    pub fn decrease_count(&mut self) {
         if self.count > 0 {
             self.count -= 1;
         }
