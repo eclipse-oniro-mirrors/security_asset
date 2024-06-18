@@ -39,7 +39,7 @@
  * @brief Declares the APIs for accessing assets.
  *
  * @library libasset_ndk.z.so
- * @kit Asset Store Kit
+ * @kit AssetStoreKit
  * @syscap SystemCapability.Security.Asset
  * @since 11
  */

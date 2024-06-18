@@ -11,4 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-enable_local_test = false
+declare_args() {
+  enable_local_test = false
+  asset_access_control_enabled = true
+}
