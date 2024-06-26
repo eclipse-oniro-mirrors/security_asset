@@ -44,9 +44,6 @@ pub enum EventType {
     /// App call event.
     OnAppCall,
 
-    /// Package remove event.
-    OnPackageRemove,
-
     /// Package clear event.
     OnPackageClear,
 }

@@ -19,7 +19,7 @@
 
 #include "asset_log.h"
 
-bool GetUserIdByUid(uint64_t uid, int32_t *userId)
+bool GetUserIdByUid(uint64_t uid, uint32_t *userId)
 {
     int userIdTmp;
     int res = OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userIdTmp);

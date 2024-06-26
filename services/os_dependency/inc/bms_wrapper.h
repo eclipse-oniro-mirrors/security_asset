@@ -27,8 +27,29 @@ enum OwnerType {
     NATIVE = 1,
 };
 
-int32_t GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen);
-int32_t GetCallingName(int32_t userId, uint8_t *name, uint32_t *nameLen, bool *isHap, int32_t *appIndex);
+typedef struct {
+    uint8_t *appId;
+    uint32_t appIdLen;
+    int32_t appIndex;
+} HapInfo;
+
+typedef struct {
+    uint32_t uid;
+} NativeInfo;
+
+typedef struct {
+    int32_t userId;
+    OwnerType ownerType;
+
+    // Bundle name for hap or process name for native.
+    uint8_t *processName;
+    uint32_t processNameLen;
+
+    HapInfo hapInfo;
+    NativeInfo nativeInfo;
+} ProcessInfo;
+
+int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInfo);
 
 #ifdef __cplusplus
 }

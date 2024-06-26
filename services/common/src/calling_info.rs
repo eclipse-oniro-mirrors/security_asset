@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -15,13 +15,9 @@
 
 //! This module implements the capability of processing the identity information of the Asset caller.
 
-use ipc::Skeleton;
+use asset_definition:: Value;
 
-use asset_definition::{ErrCode, Result, Value};
-
-use crate::{get_user_id, transfer_error_code, SUCCESS};
-
-use super::OwnerType;
+use crate::{process_info::ProcessInfoInner, ProcessInfo, OwnerType};
 
 /// The identity of calling process.
 #[derive(Clone)]
@@ -30,19 +26,6 @@ pub struct CallingInfo {
     user_id: i32,
     owner_type: OwnerType,
     owner_info: Vec<u8>,
-}
-
-#[allow(dead_code)]
-#[repr(C)]
-enum ResultCode {
-    Success = 0,
-    InvalidArgument = 1,
-    BmsError = 2,
-    AccessTokenError = 3,
-}
-
-extern "C" {
-    fn GetOwnerInfo(userId: i32, uid: u64, ownerType: *mut OwnerType, ownerInfo: *mut u8, infoLen: *mut u32) -> i32;
 }
 
 impl CallingInfo {
@@ -57,23 +40,26 @@ impl CallingInfo {
     }
 
     /// Build a instance of CallingInfo.
-    pub fn build(specific_user_id: Option<Value>) -> Result<Self> {
-        let uid = Skeleton::calling_uid();
-        let mut user_id: i32 = get_user_id(uid)?;
-        let mut owner_info = vec![0u8; 256];
-        let mut len = 256u32;
-        let mut owner_type = OwnerType::Hap;
-        let err = unsafe { GetOwnerInfo(user_id, uid, &mut owner_type, owner_info.as_mut_ptr(), &mut len) };
-        match err {
-            SUCCESS => {
-                owner_info.truncate(len as usize);
-                if let Some(Value::Number(num)) = specific_user_id {
-                    user_id = num as i32;
-                }
-                Ok(CallingInfo { user_id, owner_type, owner_info })
+    pub fn build(specific_user_id: Option<Value>, process_info: &ProcessInfo) -> Self {
+        let mut owner_info = Vec::new();
+        match &process_info.process_info_inner {
+            ProcessInfoInner::Hap(hap_info) => {
+                owner_info.append(&mut hap_info.app_id.clone());
+                owner_info.append(&mut "_".to_string().as_bytes().to_vec());
+                owner_info.append(&mut hap_info.app_index.to_string().as_bytes().to_vec());
             },
-            _ => Err(transfer_error_code(ErrCode::try_from(err as u32)?)),
-        }
+            ProcessInfoInner::Native(native_info) => {
+                owner_info.append(&mut process_info.process_name.clone());
+                owner_info.append(&mut "_".to_string().as_bytes().to_vec());
+                owner_info.append(&mut native_info.uid.to_string().as_bytes().to_vec());
+            }
+        };
+        let mut user_id = process_info.user_id;
+        if let Some(Value::Number(specific_user_id)) = specific_user_id {
+            user_id = specific_user_id;
+        };
+
+        CallingInfo { user_id: user_id as i32, owner_type: process_info.owner_type, owner_info }
     }
 
     /// Get owner type of calling.
@@ -90,4 +76,94 @@ impl CallingInfo {
     pub fn user_id(&self) -> i32 {
         self.user_id
     }
+}
+
+#[cfg(test)]
+use crate::process_info::{HapInfo, NativeInfo};
+
+#[test]
+fn test_build_callig_info_specific_and_hap() {
+    let specific_user_id = 100;
+    let process_name = "test_process".as_bytes().to_vec();
+    let app_id = "test_app_id".as_bytes().to_vec();
+    let app_index = 0;
+    let process_info = ProcessInfo {
+        user_id: 0,
+        owner_type: OwnerType::Hap,
+        process_name,
+        process_info_inner: ProcessInfoInner::Hap(HapInfo {
+            app_id,
+            app_index,
+        })
+    };
+
+    let calling_info = CallingInfo::build(Some(Value::Number(specific_user_id)), &process_info);
+    assert_eq!(calling_info.user_id(), specific_user_id as i32);
+
+    let owner_info = "test_app_id_0".as_bytes().to_vec();
+    assert_eq!(calling_info.owner_info(), &owner_info);
+}
+
+#[test]
+fn test_build_callig_info_hap() {
+    let process_name = "test_process".as_bytes().to_vec();
+    let app_id = "test_app_id".as_bytes().to_vec();
+    let app_index = 0;
+    let user_id = 0;
+    let process_info = ProcessInfo {
+        user_id,
+        owner_type: OwnerType::Hap,
+        process_name,
+        process_info_inner: ProcessInfoInner::Hap(HapInfo {
+            app_id,
+            app_index,
+        })
+    };
+
+    let calling_info = CallingInfo::build(None, &process_info);
+    assert_eq!(calling_info.user_id(), user_id as i32);
+    let owner_info = "test_app_id_0".as_bytes().to_vec();
+    assert_eq!(calling_info.owner_info(), &owner_info);
+}
+
+#[test]
+fn test_build_callig_info_native() {
+    let process_name = "test_process".as_bytes().to_vec();
+    let user_id = 0;
+    let uid = 999;
+    let process_info = ProcessInfo {
+        user_id,
+        owner_type: OwnerType::Native,
+        process_name,
+        process_info_inner: ProcessInfoInner::Native(NativeInfo {
+            uid
+        })
+    };
+
+    let calling_info = CallingInfo::build(None, &process_info);
+    assert_eq!(calling_info.user_id(), user_id as i32);
+    let owner_info = "test_process_999".as_bytes().to_vec();
+    assert_eq!(calling_info.owner_info(), &owner_info);
+}
+
+#[test]
+fn test_build_callig_info_specific_and_native() {
+    let specific_user_id = 100;
+    let process_name = "test_process".as_bytes().to_vec();
+    let user_id = 0;
+    let uid = 999;
+    let process_info = ProcessInfo {
+        user_id,
+        owner_type: OwnerType::Native,
+        process_name,
+        process_info_inner: ProcessInfoInner::Native(NativeInfo {
+            uid
+        })
+    };
+
+    let calling_info = CallingInfo::build(Some(Value::Number(specific_user_id)), &process_info);
+
+    assert_eq!(calling_info.user_id(), specific_user_id as i32);
+    let owner_info = "test_process_999".as_bytes().to_vec();
+    assert_eq!(calling_info.owner_info(), &owner_info);
 }

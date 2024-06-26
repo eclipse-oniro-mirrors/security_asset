@@ -20,6 +20,7 @@
 
 #include "asset_system_type.h"
 #include "bms_wrapper.h"
+#include "securec.h"
 
 using namespace testing::ext;
 namespace UnitTest::AssetBmsWrapperTest {
@@ -50,67 +51,26 @@ void AssetBmsWrapperTest::TearDown(void)
 {
 }
 
+#define TEST_PROCESS_NAME "shell"
+
 /**
  * @tc.name: AssetBmsWrapperTest.AssetBmsWrapperTest001
- * @tc.desc: Test asset func GetOwnerInfo, expect SUCCESS
+ * @tc.desc: Test asset func GetCallingProcessInfo, expect SEC_ASSET_ACCESS_TOKEN_ERROR
  * @tc.type: FUNC
  * @tc.result:0
  */
 HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest001, TestSize.Level0)
 {
-    OwnerType ownerType = NATIVE;
-    uint8_t ownerInfo[256] = { 0 };
-    uint32_t infoLen = 256;
-    int32_t userId = 0;
-    uint64_t uid = 6226;
-    ASSERT_EQ(SEC_ASSET_SUCCESS, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, &infoLen));
-}
+    const uint32_t processNameLen = 256;
+    uint8_t processName[processNameLen] = { 0 };
 
-/**
- * @tc.name: AssetBmsWrapperTest.AssetBmsWrapperTest002
- * @tc.desc: Test asset func GetOwnerInfo, expect INVALID_ARGUMENT
- * @tc.type: FUNC
- * @tc.result:0
- */
-HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest002, TestSize.Level0)
-{
-    OwnerType* ownerType = nullptr;
-    uint8_t ownerInfo[256] = { 0 };
-    uint32_t infoLen = 256;
-    int32_t userId = 0;
-    uint64_t uid = 6226;
-    ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT, GetOwnerInfo(userId, uid, ownerType, ownerInfo, &infoLen));
-}
+    uint32_t userId = 0;
+    uint32_t uid = 0;
 
-/**
- * @tc.name: AssetBmsWrapperTest.AssetBmsWrapperTest003
- * @tc.desc: Test asset func GetOwnerInfo, expect INVALID_ARGUMENT
- * @tc.type: FUNC
- * @tc.result:0
- */
-HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest003, TestSize.Level0)
-{
-    OwnerType ownerType = NATIVE;
-    uint8_t* ownerInfo = nullptr;
-    uint32_t infoLen = 256;
-    int32_t userId = 0;
-    uint64_t uid = 6226;
-    ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, &infoLen));
-}
-
-/**
- * @tc.name: AssetBmsWrapperTest.AssetBmsWrapperTest004
- * @tc.desc: Test asset func GetOwnerInfo, expect INVALID_ARGUMENT
- * @tc.type: FUNC
- * @tc.result:0
- */
-HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest004, TestSize.Level0)
-{
-    OwnerType ownerType = NATIVE;
-    uint8_t ownerInfo[256] = { 0 };
-    uint32_t* infoLen = nullptr;
-    int32_t userId = 0;
-    uint64_t uid = 6226;
-    ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT, GetOwnerInfo(userId, uid, &ownerType, ownerInfo, infoLen));
+    ProcessInfo processInfo = { 0 };
+    processInfo.processName = processName;
+    processInfo.processNameLen = processNameLen;
+    int32_t ret = GetCallingProcessInfo(userId, uid, &processInfo);
+    ASSERT_EQ(ret, SEC_ASSET_ACCESS_TOKEN_ERROR);
 }
 }

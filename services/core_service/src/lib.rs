@@ -24,7 +24,7 @@ use system_ability_fwk::{
 };
 use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
 
-use asset_common::{CallingInfo, Counter};
+use asset_common::{CallingInfo, Counter, ProcessInfo};
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, Tag};
 use asset_ipc::SA_ID;
@@ -138,20 +138,20 @@ struct AssetService {
 }
 
 macro_rules! execute {
-    ($func:path, $args:expr) => {{
+    ($func:path, $args:expr, $args2:expr) => {{
         let func_name = hisysevent::function!();
         let specific_user_id = $args.get(&Tag::UserId);
-        let calling_info = CallingInfo::build(specific_user_id.cloned())?;
+        let calling_info = CallingInfo::build(specific_user_id.cloned(), $args2);
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
         // Create database directory if not exists.
         asset_file_operator::create_user_db_dir(calling_info.user_id())?;
         upload_system_event($func($args, &calling_info), &calling_info, start, func_name)
     }};
-    ($func:path, $args1:expr, $args2:expr) => {{
+    ($func:path, $args1:expr, $args2:expr, $args3:expr) => {{
         let func_name = hisysevent::function!();
         let specific_user_id = $args1.get(&Tag::UserId);
-        let calling_info = CallingInfo::build(specific_user_id.cloned())?;
+        let calling_info = CallingInfo::build(specific_user_id.cloned(), $args3);
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
         // Create database directory if not exists.
@@ -165,27 +165,27 @@ impl AssetService {
         Self { system_ability: handler }
     }
 
-    fn add(&self, attributes: &AssetMap) -> Result<()> {
-        execute!(operations::add, attributes)
+    fn add(&self, attributes: &AssetMap, process_info: &ProcessInfo) -> Result<()> {
+        execute!(operations::add, attributes, process_info)
     }
 
-    fn remove(&self, query: &AssetMap) -> Result<()> {
-        execute!(operations::remove, query)
+    fn remove(&self, query: &AssetMap, process_info: &ProcessInfo) -> Result<()> {
+        execute!(operations::remove, query, process_info)
     }
 
-    fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
-        execute!(operations::update, query, attributes_to_update)
+    fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap, process_info: &ProcessInfo) -> Result<()> {
+        execute!(operations::update, query, attributes_to_update, process_info)
     }
 
-    fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>> {
-        execute!(operations::pre_query, query)
+    fn pre_query(&self, query: &AssetMap, process_info: &ProcessInfo) -> Result<Vec<u8>> {
+        execute!(operations::pre_query, query, process_info)
     }
 
-    fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>> {
-        execute!(operations::query, query)
+    fn query(&self, query: &AssetMap, process_info: &ProcessInfo) -> Result<Vec<AssetMap>> {
+        execute!(operations::query, query, process_info)
     }
 
-    fn post_query(&self, query: &AssetMap) -> Result<()> {
-        execute!(operations::post_query, query)
+    fn post_query(&self, query: &AssetMap, process_info: &ProcessInfo) -> Result<()> {
+        execute!(operations::post_query, query, process_info)
     }
 }

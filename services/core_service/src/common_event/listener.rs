@@ -29,8 +29,7 @@ use asset_definition::{Result, Value, SyncType};
 use asset_file_operator::delete_user_db_dir;
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME,
-    PARAM_NAME_USER_ID};
+use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID};
 
 use crate::sys_event::upload_fault_system_event;
 
@@ -102,8 +101,11 @@ pub(crate) extern "C" fn on_package_removed(user_id: i32, owner: *const u8, owne
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
         params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(bundle_name.as_bytes().to_vec()));
+
+        // only hap package can be removed
+        params.insert(PARAM_NAME_IS_HAP, true);
         params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
-        match load.process_event(EventType::OnPackageRemove, &params) {
+        match load.process_event(EventType::OnPackageClear, &params) {
             Ok(()) => logi!("process package remove event success."),
             Err(code) => loge!("process package remove event failed, code: {}", code),
         }
