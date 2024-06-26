@@ -103,7 +103,7 @@ pub(crate) extern "C" fn on_package_removed(user_id: i32, owner: *const u8, owne
         params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(bundle_name.as_bytes().to_vec()));
 
         // only hap package can be removed
-        params.insert(PARAM_NAME_IS_HAP, true);
+        params.insert(PARAM_NAME_IS_HAP, Value::Bool(true));
         params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
         match load.process_event(EventType::OnPackageClear, &params) {
             Ok(()) => logi!("process package remove event success."),
