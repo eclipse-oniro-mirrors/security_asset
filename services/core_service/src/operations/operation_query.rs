@@ -175,7 +175,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     common::check_system_permission(attributes)
 }
 
-pub(crate) fn query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<AssetMap>> {
+pub(crate) fn query(calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<AssetMap>> {
     check_arguments(query)?;
 
     common::inform_asset_ext(calling_info, query);

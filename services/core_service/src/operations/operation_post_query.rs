@@ -33,7 +33,7 @@ fn check_arguments(query: &AssetMap) -> Result<()> {
     common::check_value_validity(query)
 }
 
-pub(crate) fn post_query(handle: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+pub(crate) fn post_query(calling_info: &CallingInfo, handle: &AssetMap) -> Result<()> {
     check_arguments(handle)?;
     let challenge = handle.get_bytes_attr(&Tag::AuthChallenge)?;
 

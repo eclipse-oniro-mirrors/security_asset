@@ -47,7 +47,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     common::check_system_permission(attributes)
 }
 
-pub(crate) fn remove(query: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+pub(crate) fn remove(calling_info: &CallingInfo, query: &AssetMap) -> Result<()> {
     check_arguments(query)?;
 
     let mut db_data = common::into_db_map(query);

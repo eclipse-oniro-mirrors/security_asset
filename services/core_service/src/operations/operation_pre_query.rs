@@ -68,7 +68,7 @@ fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Acces
     }
 }
 
-pub(crate) fn pre_query(query: &AssetMap, calling_info: &CallingInfo) -> Result<Vec<u8>> {
+pub(crate) fn pre_query(calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<u8>> {
     check_arguments(query)?;
 
     let mut db_data = common::into_db_map(query);

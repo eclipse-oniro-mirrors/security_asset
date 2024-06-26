@@ -82,7 +82,7 @@ fn upgrade_to_latest_version(origin_db_data: &mut DbMap, update_db_data: &mut Db
     update_db_data.insert_attr(column::VERSION, DB_DATA_VERSION);
 }
 
-pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &AssetMap) -> Result<()> {
     check_arguments(query, update)?;
 
     let mut query_db_data = common::into_db_map(query);

@@ -15,15 +15,15 @@
 
 //! This module implements the stub of the Asset service.
 
-use asset_common::{AutoCounter, OwnerType, ProcessInfo, ProcessInfoInner};
+use asset_common::{AutoCounter, CallingInfo, OwnerType, ProcessInfo, ProcessInfoInner};
 use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 
 use asset_definition::{AssetError, Result};
 use asset_ipc::{deserialize_map, serialize_maps, IpcCode, IPC_SUCCESS, SA_NAME};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::{log_throw_error, plugin_interface::{EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP,
-    PARAM_NAME_USER_ID}, AssetMap, ErrCode, Value};
+use asset_sdk::{log_throw_error, plugin_interface::{EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME,
+    PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID}, ErrCode, Tag, Value};
 
 use crate::{unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
 
@@ -56,26 +56,21 @@ impl RemoteStub for AssetService {
     }
 }
 
-fn on_app_request(code: &IpcCode, param_map: &AssetMap, process_info: &ProcessInfo) -> Result<()> {
+fn on_app_request(process_info: &ProcessInfo, calling_info: &CallingInfo)
+    -> Result<()> {
     let app_index = match &process_info.process_info_inner {
         ProcessInfoInner::Hap(hap_info) => hap_info.app_index,
         ProcessInfoInner::Native(_) => 0
     };
     let mut params = ExtDbMap::new();
-    params.insert(PARAM_NAME_USER_ID, Value::Number(process_info.user_id as u32));
+
+    // to get the real user id to operate Asset
+    params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
     params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(process_info.process_name.clone()));
     params.insert(PARAM_NAME_IS_HAP, Value::Bool(process_info.owner_type == OwnerType::Hap));
     params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
-        if code == &IpcCode::Remove && param_map.is_empty() {
-            match load.process_event(EventType::OnPackageClear, &params) {
-                Ok(()) => return Ok(()),
-                Err(code) => return log_throw_error!(ErrCode::BmsError,
-                    "[FATAL]process on package clear data failed, code: {}", code)
-            }
-        }
-
         match load.process_event(EventType::OnAppCall, &params) {
             Ok(()) => return Ok(()),
             Err(code) => return log_throw_error!(ErrCode::BmsError,
@@ -98,30 +93,31 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
     let map = deserialize_map(data).map_err(asset_err_handle)?;
 
     let process_info = ProcessInfo::build().map_err(asset_err_handle)?;
-    on_app_request(&ipc_code, &map, &process_info).map_err(asset_err_handle)?;
+    let calling_info = CallingInfo::build(map.get(&Tag::UserId).cloned(), &process_info);
+    on_app_request(&process_info, &calling_info).map_err(asset_err_handle)?;
 
     match ipc_code {
-        IpcCode::Add => reply_handle(stub.add(&map, &process_info), reply),
-        IpcCode::Remove => reply_handle(stub.remove(&map, &process_info), reply),
+        IpcCode::Add => reply_handle(stub.add(&calling_info, &map), reply),
+        IpcCode::Remove => reply_handle(stub.remove(&calling_info, &map), reply),
         IpcCode::Update => {
             let update_map = deserialize_map(data).map_err(asset_err_handle)?;
-            reply_handle(stub.update(&map, &update_map, &process_info), reply)
+            reply_handle(stub.update(&calling_info, &map, &update_map), reply)
         },
-        IpcCode::PreQuery => match stub.pre_query(&map, &process_info) {
+        IpcCode::PreQuery => match stub.pre_query(&calling_info, &map) {
             Ok(res) => {
                 reply_handle(Ok(()), reply)?;
                 reply.write::<Vec<u8>>(&res)
             },
             Err(e) => reply_handle(Err(e), reply),
         },
-        IpcCode::Query => match stub.query(&map, &process_info) {
+        IpcCode::Query => match stub.query(&calling_info, &map) {
             Ok(res) => {
                 reply_handle(Ok(()), reply)?;
                 serialize_maps(&res, reply).map_err(asset_err_handle)
             },
             Err(e) => reply_handle(Err(e), reply),
         },
-        IpcCode::PostQuery => reply_handle(stub.post_query(&map, &process_info), reply),
+        IpcCode::PostQuery => reply_handle(stub.post_query(&calling_info, &map), reply),
     }
 }
 
