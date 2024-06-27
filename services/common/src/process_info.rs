@@ -19,7 +19,7 @@ use ipc::Skeleton;
 
 use asset_definition::{log_throw_error, ErrCode, Result};
 
-use crate::{get_user_id, OwnerType};
+use crate::{get_user_id, OwnerType, SUCCESS};
 
 #[repr(C)]
 struct HapInfoFfi {
@@ -81,8 +81,6 @@ pub struct NativeInfo {
     pub uid: u32,
 }
 
-const ASSET_SUCCESS: i32 = 0;
-
 /// process detail information
 #[derive(Clone)]
 #[derive(PartialEq, Eq)]
@@ -120,7 +118,7 @@ impl ProcessInfo {
         let mut app_id: Vec<u8> = vec![0u8; 256];
         let mut process_info_ffi = ProcessInfoFfi::init(user_id, uid as u32, &mut process_name, &mut app_id);
         match unsafe { GetCallingProcessInfo(user_id, uid, &mut process_info_ffi) } {
-            ASSET_SUCCESS => {
+            SUCCESS => {
                 process_name.truncate(process_info_ffi.process_name_len as usize);
                 app_id.truncate(process_info_ffi.hap_info.app_id_len as usize);
             },
