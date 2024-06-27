@@ -42,7 +42,7 @@ struct ProcessInfoFfi {
     process_name_len: u32,
 
     hap_info: HapInfoFfi,
-    native_info: NativeInfoFfi
+    native_info: NativeInfoFfi,
 }
 
 impl ProcessInfoFfi {
@@ -52,14 +52,8 @@ impl ProcessInfoFfi {
             owner_type: 0,
             process_name: process_name.as_mut_ptr(),
             process_name_len: process_name.len() as u32,
-            hap_info: HapInfoFfi {
-                app_id: app_id.as_mut_ptr(),
-                app_id_len: app_id.len() as u32,
-                app_index: 0,
-            },
-            native_info: NativeInfoFfi {
-                uid: uid as u32,
-            },
+            hap_info: HapInfoFfi { app_id: app_id.as_mut_ptr(), app_id_len: app_id.len() as u32, app_index: 0 },
+            native_info: NativeInfoFfi { uid: uid as u32 },
         }
     }
 }
@@ -97,7 +91,7 @@ pub enum ProcessInfoDetail {
     Hap(HapInfo),
 
     /// native-relative information
-    Native(NativeInfo)
+    Native(NativeInfo),
 }
 
 /// The identity of calling process.
@@ -132,25 +126,22 @@ impl ProcessInfo {
             },
             error => {
                 let error = ErrCode::try_from(error as u32)?;
-                return log_throw_error!(error, "[FATAL]Get calling package name failed, res is {}.", error)
-            }
+                return log_throw_error!(error, "[FATAL]Get calling package name failed, res is {}.", error);
+            },
         }
 
         let process_info_detail = match OwnerType::try_from(process_info_ffi.owner_type)? {
-            OwnerType::Hap => ProcessInfoDetail::Hap(HapInfo {
-                app_id,
-                app_index: process_info_ffi.hap_info.app_index
-            }),
-            OwnerType::Native => ProcessInfoDetail::Native(NativeInfo {
-                uid: process_info_ffi.native_info.uid
-            }),
+            OwnerType::Hap => {
+                ProcessInfoDetail::Hap(HapInfo { app_id, app_index: process_info_ffi.hap_info.app_index })
+            },
+            OwnerType::Native => ProcessInfoDetail::Native(NativeInfo { uid: process_info_ffi.native_info.uid }),
         };
 
         Ok(Self {
             user_id,
             owner_type: OwnerType::try_from(process_info_ffi.owner_type)?,
             process_name,
-            process_info_detail
+            process_info_detail,
         })
     }
 }

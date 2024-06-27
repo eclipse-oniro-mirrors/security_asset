@@ -21,7 +21,7 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap, DB_DATA_VERSION},
 };
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, Result, Tag, Value, LocalStatus, SyncStatus};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, LocalStatus, Result, SyncStatus, Tag, Value};
 use asset_utils::time;
 
 use crate::operations::common;

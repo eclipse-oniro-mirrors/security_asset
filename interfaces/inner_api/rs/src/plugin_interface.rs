@@ -15,9 +15,9 @@
 
 //! This module defines the interface of the Asset Rust SDK.
 
+pub use asset_definition::Value;
 use std::any::Any;
 use std::collections::HashMap;
-pub use asset_definition::{Value};
 
 /// Defines a type alias `ExtDbMap` as a `HashMap` with keys of type `&'static str` and values of type `Value`.
 pub type ExtDbMap = HashMap<&'static str, Value>;
@@ -103,7 +103,6 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Decrease count
     fn decrease_count(&mut self);
-
 }
 
 /// Defines a trait `IAssetPlugin` that specifies the required functionality for an asset plugin implementation.

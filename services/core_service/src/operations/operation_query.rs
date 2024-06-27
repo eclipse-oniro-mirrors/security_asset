@@ -24,7 +24,7 @@ use asset_db_operator::{
     types::{column, DbMap, QueryOptions, DB_DATA_VERSION},
 };
 use asset_definition::{
-    log_throw_error, throw_error, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value
+    log_throw_error, throw_error, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value,
 };
 
 use crate::operations::common;
@@ -140,8 +140,12 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
 }
 
 pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
-    let mut results =
-        Database::build(calling_info.user_id())?.query_datas(&vec![], db_data, Some(&get_query_options(attrs)), true)?;
+    let mut results = Database::build(calling_info.user_id())?.query_datas(
+        &vec![],
+        db_data,
+        Some(&get_query_options(attrs)),
+        true,
+    )?;
     if results.is_empty() {
         return throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
     }
@@ -153,14 +157,8 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
     into_asset_maps(&results)
 }
 
-const OPTIONAL_ATTRS: [Tag; 6] = [
-    Tag::ReturnLimit,
-    Tag::ReturnOffset,
-    Tag::ReturnOrderedBy,
-    Tag::ReturnType,
-    Tag::AuthToken,
-    Tag::AuthChallenge,
-];
+const OPTIONAL_ATTRS: [Tag; 6] =
+    [Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderedBy, Tag::ReturnType, Tag::AuthToken, Tag::AuthChallenge];
 const AUTH_QUERY_ATTRS: [Tag; 2] = [Tag::AuthChallenge, Tag::AuthToken];
 
 fn check_arguments(attributes: &AssetMap) -> Result<()> {

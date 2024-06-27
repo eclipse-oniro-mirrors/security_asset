@@ -13,12 +13,15 @@
  * limitations under the License.
  */
 
-use std::{cell::RefCell, sync::{Arc, Mutex}};
 use asset_common::Counter;
-use asset_log::{logi, loge};
-use asset_sdk::plugin_interface::{IAssetPluginCtx, IAssetPlugin, ExtDbMap};
-use asset_definition::{Result, ErrCode, log_throw_error};
-use asset_db_operator::{database::Database, database::get_path};
+use asset_db_operator::{database::get_path, database::Database};
+use asset_definition::{log_throw_error, ErrCode, Result};
+use asset_log::{loge, logi};
+use asset_sdk::plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx};
+use std::{
+    cell::RefCell,
+    sync::{Arc, Mutex},
+};
 
 /// The asset_ext plugin.
 #[derive(Default)]
@@ -53,7 +56,7 @@ impl AssetPlugin {
                     Err(err) => {
                         loge!("dlopen libasset_ext_ffi.z.so failed, err: {}", err);
                         return log_throw_error!(ErrCode::InvalidArgument, "dlopen failed {}", err);
-                    }
+                    },
                 };
             }
 
@@ -61,12 +64,14 @@ impl AssetPlugin {
                 return log_throw_error!(ErrCode::InvalidArgument, "unexpect error");
             };
 
-            let func = match lib.get::<libloading::Symbol<unsafe extern "C" fn() -> *mut dyn IAssetPlugin>>(b"_create_plugin") {
+            let func = match lib
+                .get::<libloading::Symbol<unsafe extern "C" fn() -> *mut dyn IAssetPlugin>>(b"_create_plugin")
+            {
                 Ok(func) => func,
                 Err(err) => {
                     loge!("dlsym _create_plugin failed, err: {}", err);
                     return log_throw_error!(ErrCode::InvalidArgument, "dlsym failed {}", err);
-                }
+                },
             };
 
             let plugin_ptr = func();
@@ -110,51 +115,57 @@ impl IAssetPluginCtx for AssetContext {
 
     /// Adds an asset to the database.
     fn add(&mut self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
-        self.data_base.as_mut().ok_or(ErrCode::InvalidArgument as u32)?
+        self.data_base
+            .as_mut()
+            .ok_or(ErrCode::InvalidArgument as u32)?
             .insert_datas(attributes)
             .map_err(|e| e.code as u32)
     }
 
     /// Queries the asset database.
     fn query(&mut self, attributes: &ExtDbMap) -> std::result::Result<Vec<ExtDbMap>, u32> {
-        self.data_base.as_mut().ok_or(ErrCode::InvalidArgument as u32)?
+        self.data_base
+            .as_mut()
+            .ok_or(ErrCode::InvalidArgument as u32)?
             .query_datas(&vec![], attributes, None, false)
             .map_err(|e| e.code as u32)
     }
 
     /// Removes an asset from the database.
     fn remove(&mut self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
-        self.data_base.as_mut().ok_or(ErrCode::InvalidArgument as u32)?
+        self.data_base
+            .as_mut()
+            .ok_or(ErrCode::InvalidArgument as u32)?
             .delete_datas(attributes, None, false)
             .map_err(|e| e.code as u32)
     }
 
     /// Updates the attributes of an asset in the database.
     fn update(&mut self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> std::result::Result<i32, u32> {
-        self.data_base.as_mut().ok_or(ErrCode::InvalidArgument as u32)?
+        self.data_base
+            .as_mut()
+            .ok_or(ErrCode::InvalidArgument as u32)?
             .update_datas(attributes, false, attrs_to_update)
             .map_err(|e| e.code as u32)
     }
 
     /// Begins a transaction for the asset database.
     fn begin_transaction(&mut self) -> std::result::Result<(), u32> {
-        self.data_base.as_mut().ok_or(ErrCode::InvalidArgument as u32)?
+        self.data_base
+            .as_mut()
+            .ok_or(ErrCode::InvalidArgument as u32)?
             .exec("begin immediate")
             .map_err(|e| e.code as u32)
     }
 
     /// Commits a transaction for the asset database.
     fn commit_transaction(&mut self) -> std::result::Result<(), u32> {
-        self.data_base.as_mut().ok_or(ErrCode::InvalidArgument as u32)?
-            .exec("commit")
-            .map_err(|e| e.code as u32)
+        self.data_base.as_mut().ok_or(ErrCode::InvalidArgument as u32)?.exec("commit").map_err(|e| e.code as u32)
     }
 
     /// Rolls back a transaction for the asset database.
     fn rollback_transaction(&mut self) -> std::result::Result<(), u32> {
-        self.data_base.as_mut().ok_or(ErrCode::InvalidArgument as u32)?
-            .exec("rollback")
-            .map_err(|e| e.code as u32)
+        self.data_base.as_mut().ok_or(ErrCode::InvalidArgument as u32)?.exec("rollback").map_err(|e| e.code as u32)
     }
 
     /// Returns the storage path for the asset database.

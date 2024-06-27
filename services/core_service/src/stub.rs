@@ -22,8 +22,13 @@ use asset_definition::{AssetError, Result};
 use asset_ipc::{deserialize_map, serialize_maps, IpcCode, IPC_SUCCESS, SA_NAME};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::{log_throw_error, plugin_interface::{EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME,
-    PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID}, ErrCode, Tag, Value};
+use asset_sdk::{
+    log_throw_error,
+    plugin_interface::{
+        EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID,
+    },
+    ErrCode, Tag, Value,
+};
 
 use crate::{unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
 
@@ -56,11 +61,10 @@ impl RemoteStub for AssetService {
     }
 }
 
-fn on_app_request(process_info: &ProcessInfo, calling_info: &CallingInfo)
-    -> Result<()> {
+fn on_app_request(process_info: &ProcessInfo, calling_info: &CallingInfo) -> Result<()> {
     let app_index = match &process_info.process_info_detail {
         ProcessInfoDetail::Hap(hap_info) => hap_info.app_index,
-        ProcessInfoDetail::Native(_) => 0
+        ProcessInfoDetail::Native(_) => 0,
     };
     let mut params = ExtDbMap::new();
 
@@ -73,8 +77,9 @@ fn on_app_request(process_info: &ProcessInfo, calling_info: &CallingInfo)
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         match load.process_event(EventType::OnAppCall, &params) {
             Ok(()) => return Ok(()),
-            Err(code) => return log_throw_error!(ErrCode::BmsError,
-                "[FATAL]process on app call event failed, code: {}", code)
+            Err(code) => {
+                return log_throw_error!(ErrCode::BmsError, "[FATAL]process on app call event failed, code: {}", code)
+            },
         }
     }
     Ok(())
@@ -86,7 +91,7 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
         _ => {
             loge!("[FATAL][SA]Invalid interface token.");
             return Err(IpcStatusCode::Failed);
-        }
+        },
     }
     let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
 
@@ -127,7 +132,7 @@ fn on_extension_request(_stub: &AssetService, _code: u32, data: &mut MsgParcel, 
         _ => {
             loge!("[FATAL][SA]Invalid interface token.");
             return IpcStatusCode::Failed as i32;
-        }
+        },
     };
     match data.read::<i32>() {
         Ok(user_id) => {
@@ -141,8 +146,8 @@ fn on_extension_request(_stub: &AssetService, _code: u32, data: &mut MsgParcel, 
                 }
             }
             IPC_SUCCESS as i32
-        }
-        _ => IpcStatusCode::Failed as i32
+        },
+        _ => IpcStatusCode::Failed as i32,
     }
 }
 

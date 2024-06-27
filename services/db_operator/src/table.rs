@@ -302,8 +302,12 @@ impl<'a> Table<'a> {
     /// let condition = &DbMap::from([("id", Value::Number(2)]);
     /// let ret = table.delete_row(condition, None, false);
     /// ```
-    pub(crate) fn delete_row(&self, condition: &DbMap, reverse_condition: Option<&DbMap>,
-        is_filter_sync: bool) -> Result<i32> {
+    pub(crate) fn delete_row(
+        &self,
+        condition: &DbMap,
+        reverse_condition: Option<&DbMap>,
+        is_filter_sync: bool,
+    ) -> Result<i32> {
         let mut sql = format!("delete from {}", self.table_name);
         build_sql_where(condition, is_filter_sync, &mut sql);
         build_sql_reverse_condition(reverse_condition, &mut sql);

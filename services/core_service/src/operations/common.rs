@@ -25,11 +25,11 @@ use asset_common::CallingInfo;
 use asset_crypto_manager::secret_key::SecretKey;
 use asset_db_operator::types::{column, DbMap, DB_DATA_VERSION, DB_DATA_VERSION_V1};
 use asset_definition::{
-    log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value, OperationType
+    log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, OperationType, Result, Tag, Value,
 };
-use asset_log::{logi, loge};
+use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_USER_ID, PARAM_NAME_BUNDLE_NAME};
+use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID};
 
 const TAG_COLUMN_TABLE: [(Tag, &str); 20] = [
     (Tag::Secret, column::SECRET),

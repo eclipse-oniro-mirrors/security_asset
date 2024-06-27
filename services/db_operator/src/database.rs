@@ -26,10 +26,7 @@ use asset_log::{loge, logi};
 use crate::{
     statement::Statement,
     table::Table,
-    types::{
-        column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, SQLITE_OK, TABLE_NAME,
-        UPGRADE_COLUMN_INFO,
-    },
+    types::{column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO},
 };
 
 extern "C" {
@@ -332,8 +329,12 @@ impl Database {
     ///
     ///
     #[inline(always)]
-    pub fn delete_datas(&mut self, condition: &DbMap, reverse_condition: Option<&DbMap>,
-        is_filter_sync: bool) -> Result<i32> {
+    pub fn delete_datas(
+        &mut self,
+        condition: &DbMap,
+        reverse_condition: Option<&DbMap>,
+        is_filter_sync: bool,
+    ) -> Result<i32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.delete_row(condition, reverse_condition, is_filter_sync);
         self.restore_if_exec_fail(closure)

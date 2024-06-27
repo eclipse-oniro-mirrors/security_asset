@@ -17,11 +17,11 @@
 
 use asset_definition::{impl_enum_trait, log_throw_error, AssetError, ErrCode, Result};
 mod calling_info;
-mod process_info;
 mod counter;
+mod process_info;
 pub use calling_info::CallingInfo;
-pub use process_info::{ProcessInfo, ProcessInfoDetail};
 pub use counter::{AutoCounter, Counter};
+pub use process_info::{ProcessInfo, ProcessInfoDetail};
 /// success code.
 pub const SUCCESS: i32 = 0;
 /// root user upper bound

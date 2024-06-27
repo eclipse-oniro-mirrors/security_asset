@@ -15,9 +15,9 @@
 
 //! This module implements the capability of processing the identity information of the Asset caller.
 
-use asset_definition:: Value;
+use asset_definition::Value;
 
-use crate::{process_info::ProcessInfoDetail, ProcessInfo, OwnerType};
+use crate::{process_info::ProcessInfoDetail, OwnerType, ProcessInfo};
 
 /// The identity of calling process.
 #[derive(Clone)]
@@ -52,7 +52,7 @@ impl CallingInfo {
                 owner_info.append(&mut process_info.process_name.clone());
                 owner_info.append(&mut "_".to_string().as_bytes().to_vec());
                 owner_info.append(&mut native_info.uid.to_string().as_bytes().to_vec());
-            }
+            },
         };
         let mut user_id = process_info.user_id;
         if let Some(Value::Number(specific_user_id)) = specific_user_id {
@@ -91,10 +91,7 @@ fn test_build_callig_info_specific_and_hap() {
         user_id: 0,
         owner_type: OwnerType::Hap,
         process_name,
-        process_info_detail: ProcessInfoDetail::Hap(HapInfo {
-            app_id,
-            app_index,
-        })
+        process_info_detail: ProcessInfoDetail::Hap(HapInfo { app_id, app_index }),
     };
 
     let calling_info = CallingInfo::build(Some(Value::Number(specific_user_id)), &process_info);
@@ -114,10 +111,7 @@ fn test_build_callig_info_hap() {
         user_id,
         owner_type: OwnerType::Hap,
         process_name,
-        process_info_detail: ProcessInfoDetail::Hap(HapInfo {
-            app_id,
-            app_index,
-        })
+        process_info_detail: ProcessInfoDetail::Hap(HapInfo { app_id, app_index }),
     };
 
     let calling_info = CallingInfo::build(None, &process_info);
@@ -135,9 +129,7 @@ fn test_build_callig_info_native() {
         user_id,
         owner_type: OwnerType::Native,
         process_name,
-        process_info_detail: ProcessInfoDetail::Native(NativeInfo {
-            uid
-        })
+        process_info_detail: ProcessInfoDetail::Native(NativeInfo { uid }),
     };
 
     let calling_info = CallingInfo::build(None, &process_info);
@@ -156,9 +148,7 @@ fn test_build_callig_info_specific_and_native() {
         user_id,
         owner_type: OwnerType::Native,
         process_name,
-        process_info_detail: ProcessInfoDetail::Native(NativeInfo {
-            uid
-        })
+        process_info_detail: ProcessInfoDetail::Native(NativeInfo { uid }),
     };
 
     let calling_info = CallingInfo::build(Some(Value::Number(specific_user_id)), &process_info);

@@ -24,8 +24,8 @@ use asset_db_operator::{
     types::{column, DbMap, DB_DATA_VERSION},
 };
 use asset_definition::{
-    log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, Result, SyncType, Tag,
-    Value, LocalStatus, SyncStatus
+    log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, LocalStatus, Result,
+    SyncStatus, SyncType, Tag, Value,
 };
 use asset_log::logi;
 use asset_utils::time;

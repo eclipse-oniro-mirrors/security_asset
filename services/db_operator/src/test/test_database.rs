@@ -133,8 +133,13 @@ fn insert_data_with_different_alias() {
     assert_eq!(count, 1);
 
     let ret = db
-        .query_datas(&vec![], &DbMap::from([(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()))]),
-            None, false).unwrap();
+        .query_datas(
+            &vec![],
+            &DbMap::from([(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()))]),
+            None,
+            false,
+        )
+        .unwrap();
     assert_eq!(ret.len(), 2);
     remove_dir();
 }
@@ -167,9 +172,9 @@ fn update_data() {
     datas.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
     datas.insert(column::ALIAS, Value::Bytes(column::ALIAS.as_bytes().to_vec()));
     let update_time: Vec<u8> = vec![2];
-    let count =
-        db.update_datas(&datas, true,
-            &DbMap::from([(column::UPDATE_TIME, Value::Bytes(update_time.clone()))])).unwrap();
+    let count = db
+        .update_datas(&datas, true, &DbMap::from([(column::UPDATE_TIME, Value::Bytes(update_time.clone()))]))
+        .unwrap();
     assert_eq!(count, 1);
 
     let res = db.query_datas(&vec![], &datas, None, false).unwrap();
@@ -210,7 +215,7 @@ fn query_ordered_data() {
             &vec![column::ID, column::ALIAS],
             &DbMap::from([(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()))]),
             Some(&query),
-            false
+            false,
         )
         .unwrap();
     assert_eq!(res.len(), 2);

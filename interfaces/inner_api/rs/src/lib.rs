@@ -28,13 +28,11 @@ const LOAD_TIMEOUT_IN_SECONDS: i32 = 4;
 fn get_remote() -> Result<RemoteObj> {
     match SystemAbilityManager::check_system_ability(SA_ID) {
         Some(remote) => Ok(remote),
-        None => {
-            match SystemAbilityManager::load_system_ability(SA_ID, LOAD_TIMEOUT_IN_SECONDS) {
-                Some(remote) => Ok(remote),
-                None => {
-                    log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
-                },
-            }
+        None => match SystemAbilityManager::load_system_ability(SA_ID, LOAD_TIMEOUT_IN_SECONDS) {
+            Some(remote) => Ok(remote),
+            None => {
+                log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
+            },
         },
     }
 }

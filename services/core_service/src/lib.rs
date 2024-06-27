@@ -29,7 +29,7 @@ use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
 use asset_ipc::SA_ID;
 use asset_log::{loge, logi};
-use asset_plugin::asset_plugin::{AssetPlugin, AssetContext};
+use asset_plugin::asset_plugin::{AssetContext, AssetPlugin};
 
 mod common_event;
 mod operations;
@@ -106,7 +106,7 @@ fn start_service(handler: Handler) -> Result<()> {
     let asset_plugin = AssetPlugin::get_instance();
     match asset_plugin.load_plugin() {
         Ok(loader) => {
-            let _tr = loader.init(Box::new(AssetContext {data_base: None}));
+            let _tr = loader.init(Box::new(AssetContext { data_base: None }));
             logi!("load plugin success.");
         },
         Err(_) => loge!("load plugin failed."),

@@ -17,8 +17,8 @@
 
 use asset_common::{is_user_id_exist, ROOT_USER_UPPERBOUND};
 use asset_definition::{
-    log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, Result, ReturnType,
-    Tag, Value, OperationType
+    log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, OperationType, Result,
+    ReturnType, Tag, Value,
 };
 
 use crate::operations::common::{CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS, NORMAL_LOCAL_LABEL_ATTRS};
