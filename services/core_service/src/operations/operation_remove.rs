@@ -20,9 +20,9 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap},
 };
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, Value, SyncStatus, SyncType};
-use asset_utils::time;
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncStatus, SyncType, Value};
 use asset_log::logi;
+use asset_utils::time;
 
 use crate::operations::common;
 
@@ -47,7 +47,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     common::check_system_permission(attributes)
 }
 
-pub(crate) fn remove(query: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+pub(crate) fn remove(calling_info: &CallingInfo, query: &AssetMap) -> Result<()> {
     check_arguments(query)?;
 
     let mut db_data = common::into_db_map(query);

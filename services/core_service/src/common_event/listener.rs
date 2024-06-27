@@ -16,7 +16,10 @@
 //! This module is used to subscribe common event and system ability.
 
 use std::{
-    ffi::CStr, fs::{self, DirEntry}, slice, time::Instant
+    ffi::CStr,
+    fs::{self, DirEntry},
+    slice,
+    time::Instant,
 };
 
 use asset_common::{AutoCounter, CallingInfo, OwnerType};
@@ -25,12 +28,13 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap},
 };
-use asset_definition::{Result, Value, SyncType};
+use asset_definition::{Result, SyncType, Value};
 use asset_file_operator::delete_user_db_dir;
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME,
-    PARAM_NAME_USER_ID};
+use asset_sdk::plugin_interface::{
+    EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID,
+};
 
 use crate::sys_event::upload_fault_system_event;
 
@@ -83,8 +87,13 @@ fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) {
     }
 }
 
-pub(crate) extern "C" fn on_package_removed(user_id: i32, owner: *const u8, owner_size: u32, bundle_name: *const u8,
-    app_index: i32) {
+pub(crate) extern "C" fn on_package_removed(
+    user_id: i32,
+    owner: *const u8,
+    owner_size: u32,
+    bundle_name: *const u8,
+    app_index: i32,
+) {
     delete_data_by_owner(user_id, owner, owner_size);
 
     let c_str = unsafe { CStr::from_ptr(bundle_name as _) };
@@ -93,7 +102,7 @@ pub(crate) extern "C" fn on_package_removed(user_id: i32, owner: *const u8, owne
         Err(e) => {
             loge!("[FATAL]Parse sting from bundle name failed, error is {}.", e);
             return;
-        }
+        },
     };
 
     logi!("[INFO]On app -{}-{}-{}- removed.", user_id, bundle_name, app_index);
@@ -102,8 +111,11 @@ pub(crate) extern "C" fn on_package_removed(user_id: i32, owner: *const u8, owne
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
         params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(bundle_name.as_bytes().to_vec()));
+
+        // only hap package can be removed
+        params.insert(PARAM_NAME_IS_HAP, Value::Bool(true));
         params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
-        match load.process_event(EventType::OnPackageRemove, &params) {
+        match load.process_event(EventType::OnPackageClear, &params) {
             Ok(()) => logi!("process package remove event success."),
             Err(code) => loge!("process package remove event failed, code: {}", code),
         }
@@ -140,7 +152,7 @@ pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, ap
         Err(e) => {
             loge!("[FATAL]Parse sting from bundle name failed, error is {}.", e);
             return;
-        }
+        },
     };
     logi!("[INFO]On app -{}-{}- restore.", user_id, bundle_name);
 
@@ -167,7 +179,6 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
             Err(code) => loge!("process user unlocked event failed, code: {}", code),
         }
     }
-
 }
 
 fn backup_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
@@ -203,13 +214,9 @@ struct EventCallBack {
 }
 
 extern "C" {
-    fn SubscribeSystemAbility(
-        eventCallBack: EventCallBack
-    ) -> bool;
+    fn SubscribeSystemAbility(eventCallBack: EventCallBack) -> bool;
     fn UnSubscribeSystemAbility() -> bool;
-    fn SubscribeSystemEvent(
-        eventCallBack: EventCallBack
-    ) -> bool;
+    fn SubscribeSystemEvent(eventCallBack: EventCallBack) -> bool;
     fn UnSubscribeSystemEvent() -> bool;
 }
 
@@ -222,7 +229,7 @@ pub(crate) fn subscribe() {
             on_screen_off: delete_crypto_need_unlock,
             on_charging: backup_db,
             on_app_restore,
-            on_user_unlocked
+            on_user_unlocked,
         };
         if SubscribeSystemEvent(call_back.clone()) {
             logi!("Subscribe system event success.");

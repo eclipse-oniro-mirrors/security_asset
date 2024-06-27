@@ -31,40 +31,7 @@ using namespace AppExecFwk;
 using namespace Security::AccessToken;
 
 namespace {
-int32_t GetHapInfo(int32_t userId, uint32_t tokenId, std::string &info)
-{
-    HapTokenInfo tokenInfo;
-    int32_t ret = AccessTokenKit::GetHapTokenInfo(tokenId, tokenInfo);
-    if (ret != RET_SUCCESS) {
-        LOGE("[FATAL]Get hap token info failed, ret = %{public}d", ret);
-        return ASSET_ACCESS_TOKEN_ERROR;
-    }
-
-    AppExecFwk::BundleMgrClient bmsClient;
-    AppExecFwk::BundleInfo bundleInfo;
-    if (!bmsClient.GetBundleInfo(tokenInfo.bundleName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE, bundleInfo, userId)) {
-        LOGE("[FATAL]Get bundle info failed!");
-        return ASSET_BMS_ERROR;
-    }
-
-    info = bundleInfo.appId + "_" + std::to_string(bundleInfo.appIndex);
-    return ASSET_SUCCESS;
-}
-
-int32_t GetProcessInfo(uint32_t tokenId, uint64_t uid, std::string &info)
-{
-    NativeTokenInfo tokenInfo;
-    int32_t ret = AccessTokenKit::GetNativeTokenInfo(tokenId, tokenInfo);
-    if (ret != RET_SUCCESS) {
-        LOGE("[FATAL]Get native token info failed, ret = %{public}d", ret);
-        return ASSET_ACCESS_TOKEN_ERROR;
-    }
-
-    info = tokenInfo.processName + "_" + std::to_string(uid);
-    return ASSET_SUCCESS;
-}
-
-int32_t GetHapBundleName(int32_t userId, uint32_t tokenId, uint8_t *name, uint32_t *nameLen, int32_t *appIndex)
+int32_t GetHapProcessInfo(int32_t userId, uint32_t tokenId, ProcessInfo *processInfo)
 {
     HapTokenInfo hapTokenInfo;
     int32_t ret = AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
@@ -72,12 +39,14 @@ int32_t GetHapBundleName(int32_t userId, uint32_t tokenId, uint8_t *name, uint32
         LOGE("[FATAL]Get hap token info failed, ret = %{public}d", ret);
         return ASSET_ACCESS_TOKEN_ERROR;
     }
-    if (memcpy_s(name, *nameLen, hapTokenInfo.bundleName.c_str(), hapTokenInfo.bundleName.size()) != EOK) {
-        LOGE("[FATAL]The name buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
-            hapTokenInfo.bundleName.size(), *nameLen);
-        return ASSET_ACCESS_TOKEN_ERROR;
+    if (memcpy_s(processInfo->processName, processInfo->processNameLen, hapTokenInfo.bundleName.c_str(),
+        hapTokenInfo.bundleName.size()) != EOK) {
+        LOGE("[FATAL]The processName buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
+            hapTokenInfo.bundleName.size(), processInfo->processNameLen);
+        return ASSET_OUT_OF_MEMORY;
     }
-    *nameLen = hapTokenInfo.bundleName.size();
+    processInfo->processNameLen = hapTokenInfo.bundleName.size();
+
     AppExecFwk::BundleMgrClient bmsClient;
     AppExecFwk::BundleInfo bundleInfo;
     if (!bmsClient.GetBundleInfo(hapTokenInfo.bundleName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
@@ -85,11 +54,20 @@ int32_t GetHapBundleName(int32_t userId, uint32_t tokenId, uint8_t *name, uint32
         LOGE("[FATAL]Get bundle info failed!");
         return ASSET_BMS_ERROR;
     }
-    *appIndex = bundleInfo.appIndex;
+    processInfo->hapInfo.appIndex = bundleInfo.appIndex;
+
+    if (memcpy_s(processInfo->hapInfo.appId, processInfo->hapInfo.appIdLen, hapTokenInfo.appID.c_str(),
+        hapTokenInfo.appID.size()) != EOK) {
+        LOGE("[FATAL]The app id buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
+            hapTokenInfo.appID.size(), processInfo->hapInfo.appIdLen);
+        return ASSET_OUT_OF_MEMORY;
+    }
+    processInfo->hapInfo.appIdLen = hapTokenInfo.appID.size();
+
     return ASSET_SUCCESS;
 }
 
-int32_t GetNativePackageName(uint32_t tokenId, uint8_t *name, uint32_t *nameLen)
+int32_t GetNativeProcessInfo(uint32_t tokenId, uint64_t uid, ProcessInfo *processInfo)
 {
     NativeTokenInfo nativeTokenInfo;
     int32_t ret = AccessTokenKit::GetNativeTokenInfo(tokenId, nativeTokenInfo);
@@ -97,72 +75,38 @@ int32_t GetNativePackageName(uint32_t tokenId, uint8_t *name, uint32_t *nameLen)
         LOGE("[FATAL]Get native token info failed, ret = %{public}d", ret);
         return ASSET_ACCESS_TOKEN_ERROR;
     }
-    if (memcpy_s(name, *nameLen, nativeTokenInfo.processName.c_str(),
+
+    if (memcpy_s(processInfo->processName, processInfo->processNameLen, nativeTokenInfo.processName.c_str(),
         nativeTokenInfo.processName.size()) != EOK) {
-        LOGE("[FATAL]The name buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
-            nativeTokenInfo.processName.size(), *nameLen);
-        return ASSET_ACCESS_TOKEN_ERROR;
+        LOGE("[FATAL]The processName buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
+            nativeTokenInfo.processName.size(), processInfo->processNameLen);
+        return ASSET_OUT_OF_MEMORY;
     }
-    *nameLen = nativeTokenInfo.processName.size();
+    processInfo->processNameLen = nativeTokenInfo.processName.size();
+    processInfo->nativeInfo.uid = uid;
     return ASSET_SUCCESS;
 }
 } // namespace
 
-int32_t GetOwnerInfo(int32_t userId, uint64_t uid, OwnerType *ownerType, uint8_t *ownerInfo, uint32_t *infoLen)
+int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInfo)
 {
-    if (ownerType == NULL || ownerInfo == NULL || infoLen == NULL) {
-        return ASSET_INVALID_ARGUMENT;
-    }
+    processInfo->userId = userId;
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
-    std::string info;
-    int32_t code = ASSET_SUCCESS;
+    int32_t res = ASSET_SUCCESS;
     switch (tokenType) {
         case ATokenTypeEnum::TOKEN_HAP:
-            *ownerType = HAP;
-            code = GetHapInfo(userId, tokenId, info);
+            processInfo->ownerType = HAP;
+            res = GetHapProcessInfo(userId, tokenId, processInfo);
             break;
         case ATokenTypeEnum::TOKEN_NATIVE:
         case ATokenTypeEnum::TOKEN_SHELL:
-            *ownerType = NATIVE;
-            code = GetProcessInfo(tokenId, uid, info);
+            processInfo->ownerType = NATIVE;
+            res = GetNativeProcessInfo(tokenId, uid, processInfo);
             break;
         default:
             LOGE("[FATAL]Invalid calling type: %{public}d", tokenType);
-            code = ASSET_INVALID_ARGUMENT;
+            res = ASSET_INVALID_ARGUMENT;
     }
-
-    if (code != ASSET_SUCCESS) {
-        return code;
-    }
-
-    if (memcpy_s(ownerInfo, *infoLen, info.c_str(), info.size()) != EOK) {
-        LOGE("The owner buffer is too small. Expect size: %{public}zu, actual size: %{public}u", info.size(), *infoLen);
-        return ASSET_INVALID_ARGUMENT;
-    }
-
-    *infoLen = info.size();
-    return ASSET_SUCCESS;
-}
-
-int32_t GetCallingName(int32_t userId, uint8_t *name, uint32_t *nameLen, bool *isHap, int32_t *appIndex)
-{
-    auto tokenId = IPCSkeleton::GetCallingTokenID();
-    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
-    int32_t code = ASSET_SUCCESS;
-    switch (tokenType) {
-        case ATokenTypeEnum::TOKEN_HAP:
-            *isHap = true;
-            code = GetHapBundleName(userId, tokenId, name, nameLen, appIndex);
-            break;
-        case ATokenTypeEnum::TOKEN_NATIVE:
-        case ATokenTypeEnum::TOKEN_SHELL:
-            *isHap = false;
-            code = GetNativePackageName(tokenId, name, nameLen);
-            break;
-        default:
-            LOGE("[FATAL]Invalid calling type: %{public}d", tokenType);
-            code = ASSET_INVALID_ARGUMENT;
-    }
-    return code;
+    return res;
 }

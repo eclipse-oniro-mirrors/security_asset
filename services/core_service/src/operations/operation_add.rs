@@ -24,8 +24,8 @@ use asset_db_operator::{
     types::{column, DbMap, DB_DATA_VERSION},
 };
 use asset_definition::{
-    log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, Result, SyncType, Tag,
-    Value, LocalStatus, SyncStatus
+    log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, LocalStatus, Result,
+    SyncStatus, SyncType, Tag, Value,
 };
 use asset_log::logi;
 use asset_utils::time;
@@ -185,7 +185,7 @@ fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     }
 }
 
-pub(crate) fn add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+pub(crate) fn add(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<()> {
     let local_res = local_add(attributes, calling_info);
 
     common::inform_asset_ext(calling_info, attributes);

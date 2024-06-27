@@ -21,7 +21,7 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap, DB_DATA_VERSION},
 };
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, Result, Tag, Value, LocalStatus, SyncStatus};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, LocalStatus, Result, SyncStatus, Tag, Value};
 use asset_utils::time;
 
 use crate::operations::common;
@@ -82,7 +82,7 @@ fn upgrade_to_latest_version(origin_db_data: &mut DbMap, update_db_data: &mut Db
     update_db_data.insert_attr(column::VERSION, DB_DATA_VERSION);
 }
 
-pub(crate) fn update(query: &AssetMap, update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &AssetMap) -> Result<()> {
     check_arguments(query, update)?;
 
     let mut query_db_data = common::into_db_map(query);

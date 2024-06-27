@@ -18,8 +18,10 @@
 use asset_definition::{impl_enum_trait, log_throw_error, AssetError, ErrCode, Result};
 mod calling_info;
 mod counter;
+mod process_info;
 pub use calling_info::CallingInfo;
 pub use counter::{AutoCounter, Counter};
+pub use process_info::{ProcessInfo, ProcessInfoDetail};
 /// success code.
 pub const SUCCESS: i32 = 0;
 /// root user upper bound
@@ -30,6 +32,7 @@ impl_enum_trait! {
     #[repr(C)]
     #[derive(PartialEq, Eq)]
     #[derive(Copy, Clone)]
+    #[derive(Debug)]
     pub enum OwnerType {
         /// The calling is a application.
         Hap = 0,
@@ -57,12 +60,12 @@ pub fn transfer_error_code(err_code: ErrCode) -> AssetError {
 }
 
 extern "C" {
-    fn GetUserIdByUid(uid: u64, userId: &mut i32) -> bool;
+    fn GetUserIdByUid(uid: u64, userId: &mut u32) -> bool;
     fn IsUserIdExist(userId: i32, exist: &mut bool) -> bool;
 }
 
 /// Calculate user id.
-pub fn get_user_id(uid: u64) -> Result<i32> {
+pub fn get_user_id(uid: u64) -> Result<u32> {
     unsafe {
         let mut user_id = 0;
         if GetUserIdByUid(uid, &mut user_id) {

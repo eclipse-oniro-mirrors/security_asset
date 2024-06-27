@@ -26,6 +26,7 @@ ohos_static_library("asset_os_dependency") {
     "src/system_ability_wrapper.cpp",
     "src/system_event_wrapper.cpp",
   ]
+  deps = [ "../../frameworks/os_dependency/memory:asset_mem" ]
   external_deps = [
     "ability_base:want",
     "access_token:libaccesstoken_sdk",

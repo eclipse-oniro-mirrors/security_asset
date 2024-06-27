@@ -26,10 +26,10 @@ use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
 
 use asset_common::{CallingInfo, Counter};
 use asset_crypto_manager::crypto_manager::CryptoManager;
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, Tag};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
 use asset_ipc::SA_ID;
 use asset_log::{loge, logi};
-use asset_plugin::asset_plugin::{AssetPlugin, AssetContext};
+use asset_plugin::asset_plugin::{AssetContext, AssetPlugin};
 
 mod common_event;
 mod operations;
@@ -106,7 +106,7 @@ fn start_service(handler: Handler) -> Result<()> {
     let asset_plugin = AssetPlugin::get_instance();
     match asset_plugin.load_plugin() {
         Ok(loader) => {
-            let _tr = loader.init(Box::new(AssetContext {data_base: None}));
+            let _tr = loader.init(Box::new(AssetContext { data_base: None }));
             logi!("load plugin success.");
         },
         Err(_) => loge!("load plugin failed."),
@@ -138,25 +138,13 @@ struct AssetService {
 }
 
 macro_rules! execute {
-    ($func:path, $args:expr) => {{
+    ($func:path, $calling_info:expr, $($args:expr),+) => {{
         let func_name = hisysevent::function!();
-        let specific_user_id = $args.get(&Tag::UserId);
-        let calling_info = CallingInfo::build(specific_user_id.cloned())?;
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
         // Create database directory if not exists.
-        asset_file_operator::create_user_db_dir(calling_info.user_id())?;
-        upload_system_event($func($args, &calling_info), &calling_info, start, func_name)
-    }};
-    ($func:path, $args1:expr, $args2:expr) => {{
-        let func_name = hisysevent::function!();
-        let specific_user_id = $args1.get(&Tag::UserId);
-        let calling_info = CallingInfo::build(specific_user_id.cloned())?;
-        let start = Instant::now();
-        let _trace = TraceScope::trace(func_name);
-        // Create database directory if not exists.
-        asset_file_operator::create_user_db_dir(calling_info.user_id())?;
-        upload_system_event($func($args1, $args2, &calling_info), &calling_info, start, func_name)
+        asset_file_operator::create_user_db_dir($calling_info.user_id())?;
+        upload_system_event($func($calling_info, $($args),+), $calling_info, start, func_name)
     }};
 }
 
@@ -165,27 +153,27 @@ impl AssetService {
         Self { system_ability: handler }
     }
 
-    fn add(&self, attributes: &AssetMap) -> Result<()> {
-        execute!(operations::add, attributes)
+    fn add(&self, calling_info: &CallingInfo, attributes: &AssetMap) -> Result<()> {
+        execute!(operations::add, calling_info, attributes)
     }
 
-    fn remove(&self, query: &AssetMap) -> Result<()> {
-        execute!(operations::remove, query)
+    fn remove(&self, calling_info: &CallingInfo, query: &AssetMap) -> Result<()> {
+        execute!(operations::remove, calling_info, query)
     }
 
-    fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
-        execute!(operations::update, query, attributes_to_update)
+    fn update(&self, calling_info: &CallingInfo, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
+        execute!(operations::update, calling_info, query, attributes_to_update)
     }
 
-    fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>> {
-        execute!(operations::pre_query, query)
+    fn pre_query(&self, calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<u8>> {
+        execute!(operations::pre_query, calling_info, query)
     }
 
-    fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>> {
-        execute!(operations::query, query)
+    fn query(&self, calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<AssetMap>> {
+        execute!(operations::query, calling_info, query)
     }
 
-    fn post_query(&self, query: &AssetMap) -> Result<()> {
-        execute!(operations::post_query, query)
+    fn post_query(&self, calling_info: &CallingInfo, query: &AssetMap) -> Result<()> {
+        execute!(operations::post_query, calling_info, query)
     }
 }
