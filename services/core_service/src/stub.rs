@@ -15,7 +15,7 @@
 
 //! This module implements the stub of the Asset service.
 
-use asset_common::{AutoCounter, CallingInfo, OwnerType, ProcessInfo, ProcessInfoInner};
+use asset_common::{AutoCounter, CallingInfo, OwnerType, ProcessInfo, ProcessInfoDetail};
 use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 
 use asset_definition::{AssetError, Result};
@@ -58,9 +58,9 @@ impl RemoteStub for AssetService {
 
 fn on_app_request(process_info: &ProcessInfo, calling_info: &CallingInfo)
     -> Result<()> {
-    let app_index = match &process_info.process_info_inner {
-        ProcessInfoInner::Hap(hap_info) => hap_info.app_index,
-        ProcessInfoInner::Native(_) => 0
+    let app_index = match &process_info.process_info_detail {
+        ProcessInfoDetail::Hap(hap_info) => hap_info.app_index,
+        ProcessInfoDetail::Native(_) => 0
     };
     let mut params = ExtDbMap::new();
 

@@ -92,7 +92,7 @@ const ASSET_SUCCESS: i32 = 0;
 /// process detail information
 #[derive(Clone)]
 #[derive(PartialEq, Eq)]
-pub enum ProcessInfoInner {
+pub enum ProcessInfoDetail {
     /// hap-relative information
     Hap(HapInfo),
 
@@ -114,7 +114,7 @@ pub struct ProcessInfo {
     pub process_name: Vec<u8>,
 
     /// process information
-    pub process_info_inner: ProcessInfoInner,
+    pub process_info_detail: ProcessInfoDetail,
 }
 
 impl ProcessInfo {
@@ -136,12 +136,12 @@ impl ProcessInfo {
             }
         }
 
-        let process_info_inner = match OwnerType::try_from(process_info_ffi.owner_type)? {
-            OwnerType::Hap => ProcessInfoInner::Hap(HapInfo {
+        let process_info_detail = match OwnerType::try_from(process_info_ffi.owner_type)? {
+            OwnerType::Hap => ProcessInfoDetail::Hap(HapInfo {
                 app_id,
                 app_index: process_info_ffi.hap_info.app_index
             }),
-            OwnerType::Native => ProcessInfoInner::Native(NativeInfo {
+            OwnerType::Native => ProcessInfoDetail::Native(NativeInfo {
                 uid: process_info_ffi.native_info.uid
             }),
         };
@@ -150,7 +150,7 @@ impl ProcessInfo {
             user_id,
             owner_type: OwnerType::try_from(process_info_ffi.owner_type)?,
             process_name,
-            process_info_inner
+            process_info_detail
         })
     }
 }

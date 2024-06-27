@@ -20,7 +20,7 @@ mod calling_info;
 mod process_info;
 mod counter;
 pub use calling_info::CallingInfo;
-pub use process_info::{ProcessInfo, ProcessInfoInner};
+pub use process_info::{ProcessInfo, ProcessInfoDetail};
 pub use counter::{AutoCounter, Counter};
 /// success code.
 pub const SUCCESS: i32 = 0;

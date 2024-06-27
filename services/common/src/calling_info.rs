@@ -17,7 +17,7 @@
 
 use asset_definition:: Value;
 
-use crate::{process_info::ProcessInfoInner, ProcessInfo, OwnerType};
+use crate::{process_info::ProcessInfoDetail, ProcessInfo, OwnerType};
 
 /// The identity of calling process.
 #[derive(Clone)]
@@ -42,13 +42,13 @@ impl CallingInfo {
     /// Build a instance of CallingInfo.
     pub fn build(specific_user_id: Option<Value>, process_info: &ProcessInfo) -> Self {
         let mut owner_info = Vec::new();
-        match &process_info.process_info_inner {
-            ProcessInfoInner::Hap(hap_info) => {
+        match &process_info.process_info_detail {
+            ProcessInfoDetail::Hap(hap_info) => {
                 owner_info.append(&mut hap_info.app_id.clone());
                 owner_info.append(&mut "_".to_string().as_bytes().to_vec());
                 owner_info.append(&mut hap_info.app_index.to_string().as_bytes().to_vec());
             },
-            ProcessInfoInner::Native(native_info) => {
+            ProcessInfoDetail::Native(native_info) => {
                 owner_info.append(&mut process_info.process_name.clone());
                 owner_info.append(&mut "_".to_string().as_bytes().to_vec());
                 owner_info.append(&mut native_info.uid.to_string().as_bytes().to_vec());
@@ -91,7 +91,7 @@ fn test_build_callig_info_specific_and_hap() {
         user_id: 0,
         owner_type: OwnerType::Hap,
         process_name,
-        process_info_inner: ProcessInfoInner::Hap(HapInfo {
+        process_info_detail: ProcessInfoDetail::Hap(HapInfo {
             app_id,
             app_index,
         })
@@ -114,7 +114,7 @@ fn test_build_callig_info_hap() {
         user_id,
         owner_type: OwnerType::Hap,
         process_name,
-        process_info_inner: ProcessInfoInner::Hap(HapInfo {
+        process_info_detail: ProcessInfoDetail::Hap(HapInfo {
             app_id,
             app_index,
         })
@@ -135,7 +135,7 @@ fn test_build_callig_info_native() {
         user_id,
         owner_type: OwnerType::Native,
         process_name,
-        process_info_inner: ProcessInfoInner::Native(NativeInfo {
+        process_info_detail: ProcessInfoDetail::Native(NativeInfo {
             uid
         })
     };
@@ -156,7 +156,7 @@ fn test_build_callig_info_specific_and_native() {
         user_id,
         owner_type: OwnerType::Native,
         process_name,
-        process_info_inner: ProcessInfoInner::Native(NativeInfo {
+        process_info_detail: ProcessInfoDetail::Native(NativeInfo {
             uid
         })
     };
