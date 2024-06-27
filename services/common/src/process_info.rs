@@ -53,7 +53,7 @@ impl ProcessInfoFfi {
             process_name: process_name.as_mut_ptr(),
             process_name_len: process_name.len() as u32,
             hap_info: HapInfoFfi { app_id: app_id.as_mut_ptr(), app_id_len: app_id.len() as u32, app_index: 0 },
-            native_info: NativeInfoFfi { uid: uid as u32 },
+            native_info: NativeInfoFfi { uid },
         }
     }
 }

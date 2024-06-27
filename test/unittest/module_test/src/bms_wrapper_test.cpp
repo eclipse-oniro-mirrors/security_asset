@@ -20,7 +20,6 @@
 
 #include "asset_system_type.h"
 #include "bms_wrapper.h"
-#include "securec.h"
 
 using namespace testing::ext;
 namespace UnitTest::AssetBmsWrapperTest {
@@ -50,8 +49,6 @@ void AssetBmsWrapperTest::SetUp(void)
 void AssetBmsWrapperTest::TearDown(void)
 {
 }
-
-#define TEST_PROCESS_NAME "shell"
 
 /**
  * @tc.name: AssetBmsWrapperTest.AssetBmsWrapperTest001
