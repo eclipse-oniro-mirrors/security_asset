@@ -181,6 +181,22 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
     }
 }
 
+pub(crate) extern "C" fn on_schedule_wakeup() {
+    logi!("[INFO]On SA wakes up at a scheduled time(36H).");
+    let default_user_id = 0;
+    let self_bundle_name = "asset_service";
+
+    if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
+        let mut params = ExtDbMap::new();
+        params.insert(PARAM_NAME_USER_ID, Value::Number(default_user_id as u32));
+        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(self_bundle_name.as_bytes().to_vec()));
+        match load.process_event(EventType::Sync, &params) {
+            Ok(()) => logi!("process sync ext event success."),
+            Err(code) => loge!("process sync ext event failed, code: {}", code),
+        }
+    }
+}
+
 fn backup_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
     let from_path = entry.path().with_file_name(format!("{}/{}", user_id, ASSET_DB)).to_string_lossy().to_string();
     Database::check_db_accessible(from_path.clone(), user_id)?;

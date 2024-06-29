@@ -16,6 +16,13 @@
                     { "name": "usual.event.CHARGING" },
                     { "name": "usual.event.USER_UNLOCKED" },
                     { "name": "COMMON_EVENT_RESTORE_START" }
+                ],
+                "timedevent": [
+                    {
+                        "name": "loopevent",
+                        "value": "129600",
+                        "persistence": true
+                    }
                 ]
             }
         }

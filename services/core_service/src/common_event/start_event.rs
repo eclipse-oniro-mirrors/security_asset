@@ -122,5 +122,7 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
         listener::on_app_restore(user_id, bundle_name.as_ptr(), app_index);
     } else if reason_name == "usual.event.USER_UNLOCKED" {
         listener::on_user_unlocked(reason.extra_data.code);
+    } else if reason_name == "loopevent" {
+        listener::on_schedule_wakeup();
     }
 }

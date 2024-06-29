@@ -35,7 +35,12 @@ fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
 
 fn is_only_change_local_labels(update: &AssetMap) -> bool {
     let valid_tags = common::NORMAL_LOCAL_LABEL_ATTRS.to_vec();
-    common::check_tag_validity(update, &valid_tags).is_ok()
+    for tag in update.keys() {
+        if !valid_tags.contains(tag) {
+            return false;
+        }
+    }
+    true
 }
 
 fn add_system_attrs(update: &AssetMap, db_data: &mut DbMap) -> Result<()> {
