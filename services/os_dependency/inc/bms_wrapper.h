@@ -38,7 +38,7 @@ typedef struct {
 } NativeInfo;
 
 typedef struct {
-    int32_t userId;
+    uint32_t userId;
     OwnerType ownerType;
 
     // Bundle name for hap or process name for native.
