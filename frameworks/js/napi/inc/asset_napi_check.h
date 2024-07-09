@@ -27,12 +27,15 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 
-#define NAPI_THROW_INVALID_ARGUMENT(env, format, arg...)                            \
-do {                                                                                \
-    char msg[MAX_MESSAGE_LEN] = { 0 };                                              \
-    (void)sprintf_s(msg, MAX_MESSAGE_LEN, format, ##arg);                           \
-    LOGE("[FATAL][NAPI]%{public}s", (msg));                                         \
-    napi_throw((env), CreateJsError((env), SEC_ASSET_INVALID_ARGUMENT, (msg)));     \
+#define NAPI_THROW_INVALID_ARGUMENT(env, format, arg...)                                            \
+do {                                                                                                \
+    char msg[MAX_MESSAGE_LEN] = { 0 };                                                              \
+    if ((sprintf_s(msg, MAX_MESSAGE_LEN, format, ##arg)) == -1) {                                   \
+        LOGE("[FATAL][NAPI]Failed to create message string, truncation occurred when sprintf_s.");  \
+        break;                                                                                      \
+    }                                                                                               \
+    LOGE("[FATAL][NAPI]%{public}s", (msg));                                                         \
+    napi_throw((env), CreateJsError((env), SEC_ASSET_INVALID_ARGUMENT, (msg)));                     \
 } while (0)
 
 const std::vector<uint32_t> CRITICAL_LABEL_TAGS = {
