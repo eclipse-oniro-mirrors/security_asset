@@ -30,7 +30,7 @@ namespace Asset {
 #define NAPI_THROW_INVALID_ARGUMENT(env, format, arg...)                                            \
 do {                                                                                                \
     char msg[MAX_MESSAGE_LEN] = { 0 };                                                              \
-    if ((sprintf_s(msg, MAX_MESSAGE_LEN, format, ##arg)) < 0) {                                     \
+    if ((sprintf_s(msg, MAX_MESSAGE_LEN, format, ##arg)) == -1) {                                   \
         LOGE("[FATAL][NAPI]Failed to create message string, truncation occurred when sprintf_s.");  \
         break;                                                                                      \
     }                                                                                               \
