@@ -30,7 +30,10 @@ namespace Asset {
 #define NAPI_THROW_INVALID_ARGUMENT(env, format, arg...)                            \
 do {                                                                                \
     char msg[MAX_MESSAGE_LEN] = { 0 };                                              \
-    (void)sprintf_s(msg, MAX_MESSAGE_LEN, format, ##arg);                           \
+    if ((sprintf_s(msg, MAX_MESSAGE_LEN, format, ##arg)) == -1) {                   \
+        LOGE("[FATAL][NAPI]Failed to create message string.");                      \
+        break;                                                                      \
+    }                                                                               \
     LOGE("[FATAL][NAPI]%{public}s", (msg));                                         \
     napi_throw((env), CreateJsError((env), SEC_ASSET_INVALID_ARGUMENT, (msg)));     \
 } while (0)
