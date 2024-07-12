@@ -183,7 +183,7 @@ bool CheckAssetTagValidity(const napi_env env, const std::vector<AssetAttr> &att
 
 bool CheckAssetValueValidity(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
-    return std::any_of(attrs.begin(), attrs.end(), [env](const AssetAttr &attr) {
+    return std::all_of(attrs.begin(), attrs.end(), [env](const AssetAttr &attr) {
         if (CHECK_CONTINOUS_RANGE_FUNC_MAP.find(attr.tag) != CHECK_CONTINOUS_RANGE_FUNC_MAP.end()) {
             auto funcPtr = CHECK_CONTINOUS_RANGE_FUNC_MAP.at(attr.tag).funcPtr;
             uint32_t min = CHECK_CONTINOUS_RANGE_FUNC_MAP.at(attr.tag).min;
