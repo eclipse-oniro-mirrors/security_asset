@@ -56,7 +56,7 @@ if (!(result)) {                                \
     return (returnValue);                       \
 }
 
-using AsyncContext = struct AsyncContext {
+struct AsyncContext {
     // common
     napi_async_work work = nullptr;
     napi_deferred deferred = nullptr;
@@ -73,7 +73,7 @@ using AsyncContext = struct AsyncContext {
 
 using CheckFuncPtr = std::function<napi_status(const napi_env, const std::vector<AssetAttr> &)>;
 
-using NapiCallerArgs = struct NapiCallerArgs {
+struct NapiCallerArgs {
     size_t expectArgNum;
     bool isUpdate;
     bool isAsUser;
