@@ -151,22 +151,6 @@ const std::unordered_map<uint32_t, CheckDiscreteRange> CHECK_DISCRETE_RANGE_FUNC
     { SEC_ASSET_TAG_OPERATION_TYPE, { &CheckEnumVariant, ASSET_OPERATION_TYPE_VEC } }
 };
 
-bool CheckAssetDataValue(const napi_env env, const AssetAttr &attr)
-{
-    if (CHECK_CONTINOUS_RANGE_FUNC_MAP.find(attr.tag) != CHECK_CONTINOUS_RANGE_FUNC_MAP.end()) {
-        auto funcPtr = CHECK_CONTINOUS_RANGE_FUNC_MAP.at(attr.tag).funcPtr;
-        uint32_t min = CHECK_CONTINOUS_RANGE_FUNC_MAP.at(attr.tag).min;
-        uint32_t max = CHECK_CONTINOUS_RANGE_FUNC_MAP.at(attr.tag).max;
-        return funcPtr(env, attr, min, max);
-    }
-    if (CHECK_DISCRETE_RANGE_FUNC_MAP.find(attr.tag) != CHECK_DISCRETE_RANGE_FUNC_MAP.end()) {
-        auto funcPtr = CHECK_DISCRETE_RANGE_FUNC_MAP.at(attr.tag).funcPtr;
-        auto validRangePtr = CHECK_DISCRETE_RANGE_FUNC_MAP.at(attr.tag).validRange;
-        return funcPtr(env, attr, validRangePtr);
-    }
-    return true;
-}
-
 } // anonymous namespace
 
 bool CheckAssetRequiredTag(const napi_env env, const std::vector<AssetAttr> &attrs,
@@ -199,12 +183,20 @@ bool CheckAssetTagValidity(const napi_env env, const std::vector<AssetAttr> &att
 
 bool CheckAssetValueValidity(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
-    for (AssetAttr attr : attrs) {
-        if (!CheckAssetDataValue(env, attr)) {
-            return false;
+    return std::all_of(attrs.begin(), attrs.end(), [env](const AssetAttr &attr) {
+        if (CHECK_CONTINOUS_RANGE_FUNC_MAP.find(attr.tag) != CHECK_CONTINOUS_RANGE_FUNC_MAP.end()) {
+            auto funcPtr = CHECK_CONTINOUS_RANGE_FUNC_MAP.at(attr.tag).funcPtr;
+            uint32_t min = CHECK_CONTINOUS_RANGE_FUNC_MAP.at(attr.tag).min;
+            uint32_t max = CHECK_CONTINOUS_RANGE_FUNC_MAP.at(attr.tag).max;
+            return funcPtr(env, attr, min, max);
         }
-    }
-    return true;
+        if (CHECK_DISCRETE_RANGE_FUNC_MAP.find(attr.tag) != CHECK_DISCRETE_RANGE_FUNC_MAP.end()) {
+            auto funcPtr = CHECK_DISCRETE_RANGE_FUNC_MAP.at(attr.tag).funcPtr;
+            auto validRangePtr = CHECK_DISCRETE_RANGE_FUNC_MAP.at(attr.tag).validRange;
+            return funcPtr(env, attr, validRangePtr);
+        }
+        return true;
+        });
 }
 
 } // Asset
