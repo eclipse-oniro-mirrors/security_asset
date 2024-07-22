@@ -18,6 +18,7 @@
 pub use asset_definition::Value;
 use std::any::Any;
 use std::collections::HashMap;
+use ipc::parcel::MsgParcel;
 
 /// Defines a type alias `ExtDbMap` as a `HashMap` with keys of type `&'static str` and values of type `Value`.
 pub type ExtDbMap = HashMap<&'static str, Value>;
@@ -77,6 +78,9 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     /// Adds an asset to the database.
     fn add(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
 
+    /// Add an asset with replace.
+    fn replace(&mut self, condition: &ExtDbMap, attributes: &ExtDbMap) -> std::result::Result<(), u32>;
+
     /// Queries the asset database.
     fn query(&mut self, attributes: &ExtDbMap) -> Result<Vec<ExtDbMap>, u32>;
 
@@ -115,4 +119,7 @@ pub trait IAssetPlugin: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Process the event.
     fn process_event(&self, event_type: EventType, params: &ExtDbMap) -> Result<(), u32>;
+
+    /// Redirect request.
+    fn redirect_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> Result<(), i32>;
 }
