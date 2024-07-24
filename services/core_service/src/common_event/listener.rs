@@ -49,7 +49,7 @@ fn delete_on_package_removed(user_id: i32, owner: Vec<u8>) -> Result<bool> {
     cond.insert(column::IS_PERSISTENT, Value::Bool(false));
     let mut reverse_condition = DbMap::new();
     reverse_condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
-    let mut db = Database::build(user_id)?;
+    let mut db = Database::build(user_id, None)?;
     let _ = db.delete_datas(&cond, Some(&reverse_condition), false)?;
 
     cond.remove(column::IS_PERSISTENT);

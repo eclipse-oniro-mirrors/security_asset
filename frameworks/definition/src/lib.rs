@@ -141,6 +141,9 @@ impl_tag_trait! {
 
         /// A tag whose value is a 32-bit unsigned integer indicating the specific user id.
         UserId = DataType::Number as isize | 0x47,
+
+        /// A tag whose value is a bool indicating whether the attributes of an asset are required to be encrypted.
+        RequireAttrEncrypted = DataType::Bool as isize | 0x48,
     }
 }
 

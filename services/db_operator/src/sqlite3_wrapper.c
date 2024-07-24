@@ -112,3 +112,8 @@ int SqliteReset(void *pStmt)
 {
     return sqlite3_reset((sqlite3_stmt *)pStmt);
 }
+
+int SqliteKey(void *db, const void *pKey, int nKey)
+{
+    return sqlite3_key((sqlite3 *)db, pKey, nKey);
+}

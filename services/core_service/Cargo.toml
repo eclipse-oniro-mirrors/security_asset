@@ -37,3 +37,4 @@ asset_ipc = { path = "../../frameworks/ipc" }
 asset_log = { path = "../../frameworks/os_dependency/log" }
 asset_plugin = { path = "../plugin" }
 asset_sdk = { path = "../../interfaces/inner_api/rs" }
+openssl = { path = "../../../../../third_party/rust/crates/rust-openssl/openssl" }
