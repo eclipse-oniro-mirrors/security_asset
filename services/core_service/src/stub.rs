@@ -32,8 +32,7 @@ use asset_sdk::{
 
 use crate::{unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
 
-const UPGRADE_CODE: u32 = 18100;
-const UPGRADE_TOKEN: &str = "OHOS.Updater.RestoreData";
+const REDIRECT_START_CODE: u32 = 200;
 
 impl RemoteStub for AssetService {
     fn on_remote_request(
@@ -46,7 +45,7 @@ impl RemoteStub for AssetService {
         self.system_ability.cancel_idle();
         unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
 
-        if code == UPGRADE_CODE {
+        if code >= REDIRECT_START_CODE {
             return on_extension_request(self, code, data, reply);
         }
 
@@ -126,29 +125,20 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
     }
 }
 
-fn on_extension_request(_stub: &AssetService, _code: u32, data: &mut MsgParcel, _reply: &mut MsgParcel) -> i32 {
-    match data.read_interface_token() {
-        Ok(interface_token) if interface_token == UPGRADE_TOKEN => {},
-        _ => {
-            loge!("[FATAL][SA]Invalid interface token.");
-            return IpcStatusCode::Failed as i32;
-        },
-    };
-    match data.read::<i32>() {
-        Ok(user_id) => {
-            logi!("[INFO]User id is {}.", user_id);
-            if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
-                let mut params = ExtDbMap::new();
-                params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
-                match load.process_event(EventType::OnDeviceUpgrade, &params) {
-                    Ok(()) => logi!("process device upgrade event success."),
-                    Err(code) => loge!("process device upgrade event failed, code: {}", code),
-                }
-            }
-            IPC_SUCCESS as i32
-        },
-        _ => IpcStatusCode::Failed as i32,
+fn on_extension_request(_stub: &AssetService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
+    if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
+        match load.redirect_request(code, data, reply) {
+            Ok(()) => {
+                logi!("process redirect request success.");
+                return IPC_SUCCESS as i32;
+            },
+            Err(code) => {
+                loge!("process redirect request failed, code: {}", code);
+                return code as i32;
+            },
+        }
     }
+    IPC_SUCCESS as i32
 }
 
 fn asset_err_handle(e: AssetError) -> IpcStatusCode {

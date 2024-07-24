@@ -14,7 +14,7 @@
  */
 
 use asset_common::Counter;
-use asset_db_operator::{database::get_path, database::Database};
+use asset_db_operator::database::{get_path, Database};
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_log::{loge, logi};
 use asset_sdk::plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx};
@@ -119,6 +119,14 @@ impl IAssetPluginCtx for AssetContext {
             .as_mut()
             .ok_or(ErrCode::InvalidArgument as u32)?
             .insert_datas(attributes)
+            .map_err(|e| e.code as u32)
+    }
+
+    fn replace(&mut self, condition: &ExtDbMap, attributes: &ExtDbMap) -> std::result::Result<(), u32> {
+        self.data_base
+            .as_mut()
+            .ok_or(ErrCode::InvalidArgument as u32)?
+            .replace_datas(condition, false, attributes)
             .map_err(|e| e.code as u32)
     }
 
