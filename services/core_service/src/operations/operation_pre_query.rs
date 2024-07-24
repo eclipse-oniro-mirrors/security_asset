@@ -47,8 +47,15 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     }
 }
 
-fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Accessibility, bool)> {
-    let results = Database::build(calling_info.user_id(), None)?.query_datas(
+fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<(Accessibility, bool)> {
+    let mut db;
+    if attrs.get(&Tag::RequireAttrEncrypted).is_some() {
+        let db_key = common::get_db_key(calling_info)?;
+        db = Database::build(calling_info.user_id(), Some(db_key))?;
+    } else {
+        db = Database::build(calling_info.user_id(), None)?;
+    }
+    let results = db.query_datas(
         &vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET],
         db_data,
         None,
@@ -75,7 +82,7 @@ pub(crate) fn pre_query(calling_info: &CallingInfo, query: &AssetMap) -> Result<
     common::add_owner_info(calling_info, &mut db_data);
     db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::Any as u32));
 
-    let (access_type, require_password_set) = query_key_attrs(calling_info, &db_data)?;
+    let (access_type, require_password_set) = query_key_attrs(calling_info, &db_data, query)?;
     let valid_time = match query.get(&Tag::AuthValidityPeriod) {
         Some(Value::Number(num)) => *num,
         _ => DEFAULT_AUTH_VALIDITY_IN_SECS,
