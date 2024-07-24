@@ -108,7 +108,7 @@ impl IAssetPluginCtx for AssetContext {
         // Create database directory if not exists.
         asset_file_operator::create_user_db_dir(user_id).map_err(|e| e.code as u32)?;
 
-        let db = Database::build(user_id).map_err(|e| e.code as u32)?;
+        let db = Database::build(user_id, None).map_err(|e| e.code as u32)?;
         self.data_base = Some(db);
         Ok(())
     }

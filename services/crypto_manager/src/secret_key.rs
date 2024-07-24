@@ -82,6 +82,17 @@ impl SecretKey {
         Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() }
     }
 
+    /// New a secret key for db key
+    pub fn new_for_db_key(
+        calling_info: &CallingInfo,
+        auth_type: AuthType,
+        access_type: Accessibility,
+        require_password_set: bool,
+        alias: Vec<u8>,
+    ) -> Self {
+        Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() }
+    }
+
     /// Check whether the secret key exists.
     pub fn exists(&self) -> Result<bool> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };

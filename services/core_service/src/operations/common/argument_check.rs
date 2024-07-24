@@ -146,7 +146,7 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::Secret => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_SECRET_SIZE),
         Tag::Alias => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_ALIAS_SIZE),
         Tag::Accessibility => check_enum_variant::<Accessibility>(tag, value),
-        Tag::RequirePasswordSet | Tag::IsPersistent => Ok(()),
+        Tag::RequirePasswordSet | Tag::IsPersistent | Tag::RequireAttrEncrypted => Ok(()),
         Tag::AuthType => check_enum_variant::<AuthType>(tag, value),
         Tag::AuthValidityPeriod => check_number_range(tag, value, MIN_NUMBER_VALUE, MAX_AUTH_VALID_PERIOD),
         Tag::AuthChallenge => check_array_size(tag, value, CHALLENGE_SIZE - 1, CHALLENGE_SIZE),

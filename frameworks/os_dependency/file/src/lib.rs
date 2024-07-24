@@ -67,3 +67,55 @@ pub fn delete_user_db_dir(user_id: i32) -> Result<()> {
         },
     }
 }
+
+fn construct_db_key_cipher_path(user_id: i32) -> String {
+    format!("{}/{}/{}", "data/service/el2", user_id, "asset_service/db_key")
+}
+
+/// Check db key cipher file exist.
+pub fn is_db_key_cipher_file_exist(user_id: i32) -> bool {
+    let path_str = construct_db_key_cipher_path(user_id);
+    let path: &Path = Path::new(&path_str);
+    path.exists()
+}
+
+// /// Delete db_key_cipher_file.
+// pub fn delete_db_key_cipher_file(user_id: i32) -> Result<()> {
+//     if !is_db_key_cipher_file_exist(user_id) {
+//         return Ok(());
+//     }
+
+//     let path_str = construct_db_key_cipher_path(user_id);
+//     let path: &Path = Path::new(&path_str);
+//     match fs::remove_dir_all(path) {
+//         Ok(_) => Ok(()),
+//         Err(e) if e.kind() != std::io::ErrorKind::NotFound => Ok(()),
+//         Err(e) => {
+//             log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Delete dir failed! error is [{}]", e)
+//         },
+//     }
+// }
+
+/// Read db key cipher.
+pub fn read_db_key_cipher(user_id: i32) -> Result<Vec<u8>> {
+    let path_str = construct_db_key_cipher_path(user_id);
+    let path: &Path = Path::new(&path_str);
+    match fs::read(path) {
+        Ok(db_key_cipher) => Ok(db_key_cipher),
+        Err(e) => {
+            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Read db key cipher failed! error is [{}]", e)
+        },
+    }
+}
+
+/// Write db key cipher. If path does not exist, create it automatically.
+pub fn write_db_key_cipher(user_id: i32, db_key_cipher: &Vec<u8>) -> Result<()> {
+    let path_str = construct_db_key_cipher_path(user_id);
+    let path: &Path = Path::new(&path_str);
+    match fs::write(path, db_key_cipher) {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Write db key cipher failed! error is [{}]", e)
+        },
+    }
+}
