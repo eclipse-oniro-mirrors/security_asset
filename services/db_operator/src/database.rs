@@ -179,7 +179,7 @@ impl Database {
     /// Encrypt/Decrypt CE database
     pub fn set_db_key(&mut self) -> Result<()> {
         let ret = unsafe { SqliteKey(self.handle as _, self.db_key.as_ptr() as *const c_void, self.db_key.len() as i32) };
-        self.set_encrypt_algorithm("aes256cbc")?;
+        self.set_encrypt_algorithm("aes-256-gcm")?;
         if ret == SQLITE_OK {
             Ok(())
         } else {

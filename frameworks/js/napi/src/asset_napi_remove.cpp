@@ -42,6 +42,7 @@ napi_status CheckRemoveArgs(const napi_env env, const std::vector<AssetAttr> &at
     validTags.insert(validTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
+    validTags.insert(validTags.end(), ENCRYPTION_TAGS.begin(), ENCRYPTION_TAGS.end());
     IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, validTags), napi_invalid_arg);
     IF_FALSE_RETURN(CheckAssetValueValidity(env, attrs), napi_invalid_arg);
     return napi_ok;

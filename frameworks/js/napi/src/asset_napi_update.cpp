@@ -61,6 +61,7 @@ napi_status CheckUpdateArgs(const napi_env env, const std::vector<AssetAttr> &at
     queryValidTags.insert(queryValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
+    queryValidTags.insert(queryValidTags.end(), ENCRYPTION_TAGS.begin(), ENCRYPTION_TAGS.end());
     IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, queryValidTags), napi_invalid_arg);
     IF_FALSE_RETURN(CheckAssetValueValidity(env, attrs), napi_invalid_arg);
 

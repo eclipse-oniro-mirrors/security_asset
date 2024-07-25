@@ -79,23 +79,6 @@ pub fn is_db_key_cipher_file_exist(user_id: i32) -> bool {
     path.exists()
 }
 
-// /// Delete db_key_cipher_file.
-// pub fn delete_db_key_cipher_file(user_id: i32) -> Result<()> {
-//     if !is_db_key_cipher_file_exist(user_id) {
-//         return Ok(());
-//     }
-
-//     let path_str = construct_db_key_cipher_path(user_id);
-//     let path: &Path = Path::new(&path_str);
-//     match fs::remove_dir_all(path) {
-//         Ok(_) => Ok(()),
-//         Err(e) if e.kind() != std::io::ErrorKind::NotFound => Ok(()),
-//         Err(e) => {
-//             log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Delete dir failed! error is [{}]", e)
-//         },
-//     }
-// }
-
 /// Read db key cipher.
 pub fn read_db_key_cipher(user_id: i32) -> Result<Vec<u8>> {
     let path_str = construct_db_key_cipher_path(user_id);
