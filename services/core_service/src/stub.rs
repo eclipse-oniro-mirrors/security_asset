@@ -138,7 +138,7 @@ fn on_extension_request(_stub: &AssetService, code: u32, data: &mut MsgParcel, r
             },
         }
     }
-    IPC_SUCCESS as i32
+    IpcStatusCode::Failed as i32
 }
 
 fn asset_err_handle(e: AssetError) -> IpcStatusCode {
