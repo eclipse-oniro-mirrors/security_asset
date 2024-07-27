@@ -25,10 +25,19 @@ pub type DbMap = HashMap<&'static str, Value>;
 /// Table name of asset database.
 pub const TABLE_NAME: &str = "asset_table";
 
+/// Version V1 number for upgrade database
+pub const DB_UPGRADE_VERSION_V1: u32 = 0;
+/// Version V2 number for upgrade database
+pub const DB_UPGRADE_VERSION_V2: u32 = 1;
+/// Latest version number for upgrade database
+pub const DB_UPGRADE_VERSION: u32 = 2;
+
 /// Version 1 number
 pub const DB_DATA_VERSION_V1: u32 = 1;
+/// Version 2 number
+pub const DB_DATA_VERSION_V2: u32 = 2;
 /// Latest data version number.
-pub const DB_DATA_VERSION: u32 = 2;
+pub const DB_DATA_VERSION: u32 = 3;
 /// Column name of asset database.
 pub mod column {
     /// Column name of the primary key Id.
@@ -91,6 +100,8 @@ pub mod column {
     pub const LOCAL_STATUS: &str = "LocalStatus";
     /// Column name of the fourth normal local data label.
     pub const SYNC_STATUS: &str = "SyncStatus";
+    /// Column name of the ext data info.
+    pub const EXT_INFO: &str = "ExtInfo";
 }
 
 #[repr(C)]
@@ -132,6 +143,7 @@ pub(crate) const COLUMN_INFO: &[ColumnInfo] = &[
     ColumnInfo { name: column::CLOUD_VERSION, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
     ColumnInfo { name: column::LOCAL_STATUS, data_type: DataType::Number, is_primary_key: false, not_null: true },
     ColumnInfo { name: column::SYNC_STATUS, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::EXT_INFO, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
 ];
 
 pub(crate) struct UpgradeColumnInfo {
@@ -139,7 +151,7 @@ pub(crate) struct UpgradeColumnInfo {
     pub(crate) default_value: Option<Value>,
 }
 
-pub(crate) const UPGRADE_COLUMN_INFO: &[UpgradeColumnInfo] = &[
+pub(crate) const UPGRADE_COLUMN_INFO_V2: &[UpgradeColumnInfo] = &[
     UpgradeColumnInfo {
         base_info: ColumnInfo {
             name: column::NORMAL_LOCAL1,
@@ -211,6 +223,18 @@ pub(crate) const UPGRADE_COLUMN_INFO: &[UpgradeColumnInfo] = &[
             not_null: true,
         },
         default_value: Some(Value::Number(0)),
+    },
+];
+
+pub(crate) const UPGRADE_COLUMN_INFO: &[UpgradeColumnInfo] = &[
+    UpgradeColumnInfo {
+        base_info: ColumnInfo {
+            name: column::EXT_INFO,
+            data_type: DataType::Bytes,
+            is_primary_key: false,
+            not_null: false,
+        },
+        default_value: None,
     },
 ];
 
