@@ -26,7 +26,7 @@ use crate::{
     database::Database,
     statement::Statement,
     transaction::Transaction,
-    types::{ColumnInfo, DbMap, QueryOptions, UpgradeColumnInfo, SQLITE_ROW},
+    types::{ColumnInfo, DbMap, QueryOptions, UpgradeColumnInfo, SQLITE_ROW, DB_UPGRADE_VERSION},
 };
 
 extern "C" {
@@ -237,7 +237,7 @@ impl<'a> Table<'a> {
         sql.push_str(");");
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
-        if self.db.exec(sql.as_str()).is_ok() && self.db.set_version(1).is_ok() {
+        if self.db.exec(sql.as_str()).is_ok() && self.db.set_version(DB_UPGRADE_VERSION).is_ok() {
             trans.commit()
         } else {
             trans.rollback()
