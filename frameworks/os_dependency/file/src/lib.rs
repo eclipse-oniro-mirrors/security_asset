@@ -69,7 +69,7 @@ pub fn delete_user_db_dir(user_id: i32) -> Result<()> {
 }
 
 fn construct_db_key_cipher_path(user_id: i32) -> String {
-    format!("{}/{}/{}", "data/service/el2", user_id, "asset_service/db_key")
+    format!("data/service/el2/{}/asset_service/db_key", user_id)
 }
 
 /// Check db key cipher file exist.

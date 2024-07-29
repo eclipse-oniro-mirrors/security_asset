@@ -28,6 +28,7 @@ use asset_definition::{
 };
 
 use crate::operations::common;
+use crate::database_key;
 
 fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
     let mut map_set = Vec::new();
@@ -86,13 +87,7 @@ fn exec_crypto(calling_info: &CallingInfo, query: &AssetMap, db_data: &mut DbMap
 }
 
 fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) -> Result<Vec<AssetMap>> {
-    let mut db;
-    if query.get(&Tag::RequireAttrEncrypted).is_some() {
-        let db_key = common::get_db_key(calling_info)?;
-        db = Database::build(calling_info.user_id(), Some(db_key))?;
-    } else {
-        db = Database::build(calling_info.user_id(), None)?;
-    }
+    let mut db = database_key::create_db_instance(query, calling_info)?;
     let mut results = db.query_datas(&vec![], db_data, None, true)?;
     match results.len() {
         0 => throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist."),
@@ -146,13 +141,7 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
 }
 
 pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
-    let mut db;
-    if attrs.get(&Tag::RequireAttrEncrypted).is_some() {
-        let db_key = common::get_db_key(calling_info)?;
-        db = Database::build(calling_info.user_id(), Some(db_key))?;
-    } else {
-        db = Database::build(calling_info.user_id(), None)?;
-    }
+    let mut db = database_key::create_db_instance(attrs, calling_info)?;
     let mut results = db.query_datas(
         &vec![],
         db_data,
@@ -181,7 +170,6 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
-    valid_tags.extend_from_slice(&common::ENCRYPTION_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
     common::check_system_permission(attributes)

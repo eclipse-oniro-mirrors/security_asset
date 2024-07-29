@@ -22,17 +22,14 @@ pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_v
 pub(crate) use permission_check::check_system_permission;
 
 use asset_common::CallingInfo;
-use asset_crypto_manager::{crypto::Crypto, secret_key::SecretKey};
-use asset_db_operator::types::{column, DbMap, DB_DATA_VERSION, DB_DATA_VERSION_V1};
+use asset_crypto_manager::secret_key::SecretKey;
+use asset_db_operator::types::{ column, DbMap, DB_DATA_VERSION, DB_DATA_VERSION_V1};
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, OperationType, Result, Tag, Value,
 };
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID};
-
-use openssl::rand::rand_bytes;
-use std::sync::Mutex;
 
 const TAG_COLUMN_TABLE: [(Tag, &str); 20] = [
     (Tag::Secret, column::SECRET),
@@ -83,19 +80,18 @@ pub(crate) const NORMAL_LABEL_ATTRS: [Tag; 4] =
 pub(crate) const NORMAL_LOCAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelNormalLocal1, Tag::DataLabelNormalLocal2, Tag::DataLabelNormalLocal3, Tag::DataLabelNormalLocal4];
 
-pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 7] = [
+pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 8] = [
     Tag::Alias,
     Tag::Accessibility,
     Tag::AuthType,
     Tag::IsPersistent,
     Tag::SyncType,
     Tag::RequirePasswordSet,
+    Tag::RequireAttrEncrypted,
     Tag::UserId,
 ];
 
 pub(crate) const ASSET_SYNC_ATTRS: [Tag; 1] = [Tag::OperationType];
-
-pub(crate) const ENCRYPTION_ATTRS: [Tag; 1] = [Tag::RequireAttrEncrypted];
 
 pub(crate) fn get_cloumn_name(tag: Tag) -> Option<&'static str> {
     for (table_tag, table_column) in TAG_COLUMN_TABLE {
@@ -141,7 +137,7 @@ pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<S
     let auth_type = attrs.get_enum_attr::<AuthType>(&column::AUTH_TYPE)?;
     let access_type = attrs.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
     let require_password_set = attrs.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
-    Ok(SecretKey::new(calling, auth_type, access_type, require_password_set))
+    Ok(SecretKey::new(calling, auth_type, access_type, require_password_set, None))
 }
 
 fn build_aad_v1(attrs: &DbMap) -> Vec<u8> {
@@ -233,73 +229,5 @@ pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
             },
             _ => {},
         }
-    }
-}
-
-fn build_db_key_secret_key(calling_info: &CallingInfo) -> Result<SecretKey> {
-    let auth_type = AuthType::None;
-    let access_type = Accessibility::DeviceFirstUnlocked;
-    let require_password_set = false;
-    let alias = "db_key_secret_key".as_bytes().to_vec();
-
-    Ok(SecretKey::new_for_db_key(calling_info, auth_type, access_type, require_password_set, alias))
-}
-
-fn decrypt_db_key_cipher(calling_info: &CallingInfo, db_key_cipher: &Vec<u8>) -> Result<Vec<u8>> {
-    let secret_key = build_db_key_secret_key(calling_info)?;
-    let aad: Vec<u8> = "trivial_aad_for_db_key".as_bytes().to_vec();
-    let db_key = Crypto::decrypt(&secret_key, db_key_cipher, &aad)?;
-
-    Ok(db_key)
-}
-
-fn generate_db_key() -> Result<Vec<u8>> {
-    const KEY_LEN: usize = 256; // aes-256-gcm
-    let mut db_key = [0; KEY_LEN];
-    rand_bytes(&mut db_key).unwrap();
-
-    Ok(db_key.to_vec())
-}
-
-static GEN_KEY_MUTEX: Mutex<()> = Mutex::new(());
-
-pub(crate) fn generate_key_if_needed(secret_key: &SecretKey) -> Result<()> {
-    match secret_key.exists() {
-        Ok(true) => Ok(()),
-        Ok(false) => {
-            let _lock = GEN_KEY_MUTEX.lock().unwrap();
-            match secret_key.exists() {
-                Ok(true) => Ok(()),
-                Ok(false) => {
-                    logi!("[INFO]The key does not exist, generate it.");
-                    secret_key.generate()
-                },
-                Err(ret) => Err(ret),
-            }
-        },
-        Err(ret) => Err(ret),
-    }
-}
-
-fn encrypt_db_key(calling_info: &CallingInfo, db_key: &Vec<u8>) -> Result<Vec<u8>> {
-    let secret_key = build_db_key_secret_key(calling_info)?;
-    generate_key_if_needed(&secret_key)?;
-    let aad: Vec<u8> = "trivial_aad_for_db_key".as_bytes().to_vec();
-    let db_key_cipher = Crypto::encrypt(&secret_key, db_key, &aad)?;
-
-    Ok(db_key_cipher)
-}
-
-pub(crate) fn get_db_key(calling_info: &CallingInfo) -> Result<Vec<u8>>
-{
-    if asset_file_operator::is_db_key_cipher_file_exist(calling_info.user_id()) {
-        let db_key_cipher = asset_file_operator::read_db_key_cipher(calling_info.user_id())?;
-        let db_key = decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
-        Ok(db_key)
-    } else {
-        let db_key = generate_db_key()?;
-        let db_key_cipher = encrypt_db_key(calling_info, &db_key)?;
-        asset_file_operator::write_db_key_cipher(calling_info.user_id(), &db_key_cipher)?;
-        Ok(db_key)
     }
 }

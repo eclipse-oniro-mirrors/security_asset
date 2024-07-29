@@ -37,23 +37,48 @@ use asset_sdk::plugin_interface::{
 };
 
 use crate::sys_event::upload_fault_system_event;
+use crate::database_key;
 
 const ASSET_DB: &str = "asset.db";
 const BACKUP_SUFFIX: &str = ".backup";
 const ROOT_PATH: &str = "data/service/el1/public/asset_service";
 
-fn delete_on_package_removed(user_id: i32, owner: Vec<u8>) -> Result<bool> {
-    let mut cond = DbMap::new();
-    cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
-    cond.insert(column::OWNER, Value::Bytes(owner));
-    cond.insert(column::IS_PERSISTENT, Value::Bool(false));
+fn delete_on_package_removed(calling_info: &CallingInfo, owner: Vec<u8>) -> Result<bool> {
+    let mut delete_cond = DbMap::new();
+    delete_cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
+    delete_cond.insert(column::OWNER, Value::Bytes(owner.clone()));
+    delete_cond.insert(column::IS_PERSISTENT, Value::Bool(false));
     let mut reverse_condition = DbMap::new();
     reverse_condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
-    let mut db = Database::build(user_id, None)?;
-    let _ = db.delete_datas(&cond, Some(&reverse_condition), false)?;
 
-    cond.remove(column::IS_PERSISTENT);
-    db.is_data_exists(&cond, false)
+    // Delete non-persistent data in de db.
+    let mut de_db = Database::build(calling_info.user_id(), None)?;
+    let _ = de_db.delete_datas(&delete_cond, Some(&reverse_condition), false)?;
+
+    // Check whether there is still persistent data left in de db.
+    let mut check_cond = DbMap::new();
+    check_cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
+    check_cond.insert(column::OWNER, Value::Bytes(owner));
+    let de_db_data_exists = de_db.is_data_exists(&check_cond, false);
+
+    if asset_file_operator::is_db_key_cipher_file_exist(calling_info.user_id()) {
+        // Delete non-persistent data in ce db if db key cipher file exists.
+        let db_key_cipher = asset_file_operator::read_db_key_cipher(calling_info.user_id())?;
+        let db_key = database_key::decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
+        let mut ce_db = Database::build(calling_info.user_id(), Some(&db_key))?;
+        let _ = ce_db.delete_datas(&delete_cond, Some(&reverse_condition), false)?;
+
+        // Check whether there is still persistent data left in ce db.
+        let ce_db_data_exists = ce_db.is_data_exists(&check_cond, false);
+
+        match (de_db_data_exists, ce_db_data_exists) {
+            (Ok(true), Ok(true)) => Ok(true),
+            (Ok(false), _) | (_, Ok(false)) => Ok(false),
+            (Err(e), _) | (_, Err(e)) => Err(e),
+        }
+    } else {
+        de_db_data_exists
+    }
 }
 
 fn clear_cryptos(calling_info: &CallingInfo) {
@@ -67,7 +92,7 @@ fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) {
     let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner, owner_size as usize).to_vec() };
     let calling_info = CallingInfo::new(user_id, OwnerType::Hap, owner.clone());
     clear_cryptos(&calling_info);
-    let res = match delete_on_package_removed(user_id, owner) {
+    let res = match delete_on_package_removed(&calling_info, owner) {
         Ok(true) => {
             logi!("The owner wants to retain data after uninstallation. Do not delete key in HUKS!");
             Ok(())

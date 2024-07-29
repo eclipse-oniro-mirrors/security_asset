@@ -66,6 +66,7 @@ const std::vector<uint32_t> ACCESS_CONTROL_TAGS = {
     SEC_ASSET_TAG_IS_PERSISTENT,
     SEC_ASSET_TAG_SYNC_TYPE,
     SEC_ASSET_TAG_REQUIRE_PASSWORD_SET,
+    SEC_ASSET_TAG_REQUIRE_ATTR_ENCRYPTED,
     SEC_ASSET_TAG_USER_ID
 };
 
@@ -86,10 +87,6 @@ const std::vector<uint32_t> ASSET_RETURN_ORDER_BY_TAGS = {
 
 const std::vector<uint32_t> ASSET_SYNC_TAGS = {
     SEC_ASSET_TAG_OPERATION_TYPE
-};
-
-const std::vector<uint32_t> ENCRYPTION_TAGS = {
-    SEC_ASSET_TAG_REQUIRE_ATTR_ENCRYPTED
 };
 
 const std::vector<uint32_t> ASSET_ACCESSIBILITY_VEC = {

@@ -17,13 +17,11 @@
 
 use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager, secret_key::SecretKey};
-use asset_db_operator::{
-    database::Database,
-    types::{column, DbMap},
-};
+use asset_db_operator::types::{column, DbMap};
 use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
 
 use crate::operations::common;
+use crate::database_key;
 
 const OPTIONAL_ATTRS: [Tag; 1] = [Tag::AuthValidityPeriod];
 const DEFAULT_AUTH_VALIDITY_IN_SECS: u32 = 60;
@@ -48,13 +46,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
 }
 
 fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<(Accessibility, bool)> {
-    let mut db;
-    if attrs.get(&Tag::RequireAttrEncrypted).is_some() {
-        let db_key = common::get_db_key(calling_info)?;
-        db = Database::build(calling_info.user_id(), Some(db_key))?;
-    } else {
-        db = Database::build(calling_info.user_id(), None)?;
-    }
+    let mut db = database_key::create_db_instance(attrs, calling_info)?;
     let results = db.query_datas(
         &vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET],
         db_data,
@@ -87,7 +79,7 @@ pub(crate) fn pre_query(calling_info: &CallingInfo, query: &AssetMap) -> Result<
         Some(Value::Number(num)) => *num,
         _ => DEFAULT_AUTH_VALIDITY_IN_SECS,
     };
-    let secret_key = SecretKey::new(calling_info, AuthType::Any, access_type, require_password_set);
+    let secret_key = SecretKey::new(calling_info, AuthType::Any, access_type, require_password_set, None);
     let mut crypto = Crypto::build(secret_key, valid_time)?;
     let challenge = crypto.init_key()?.to_vec();
     let crypto_manager = CryptoManager::get_instance();

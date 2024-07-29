@@ -16,15 +16,13 @@
 //! This module is used to delete the Asset, including single and batch deletion.
 
 use asset_common::CallingInfo;
-use asset_db_operator::{
-    database::Database,
-    types::{column, DbMap},
-};
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncStatus, SyncType, Tag, Value};
+use asset_db_operator::types::{column, DbMap};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncStatus, SyncType, Value};
 use asset_log::logi;
 use asset_utils::time;
 
 use crate::operations::common;
+use crate::database_key;
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     let time = time::system_time_in_millis()?;
@@ -57,13 +55,7 @@ pub(crate) fn remove(calling_info: &CallingInfo, query: &AssetMap) -> Result<()>
     add_system_attrs(&mut update_db_data)?;
     add_normal_attrs(&mut update_db_data);
 
-    let mut db;
-    if query.get(&Tag::RequireAttrEncrypted).is_some() {
-        let db_key = common::get_db_key(calling_info)?;
-        db = Database::build(calling_info.user_id(), Some(db_key))?;
-    } else {
-        db = Database::build(calling_info.user_id(), None)?;
-    }
+    let mut db = database_key::create_db_instance(query, calling_info)?;
     let results = db.query_datas(&vec![], &db_data, None, true)?;
     if results.is_empty() {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");

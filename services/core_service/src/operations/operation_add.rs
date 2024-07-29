@@ -30,10 +30,11 @@ use asset_definition::{
 use asset_utils::time;
 
 use crate::operations::common;
+use crate::database_key;
 
 fn encrypt_secret(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     let secret_key = common::build_secret_key(calling_info, db_data)?;
-    common::generate_key_if_needed(&secret_key)?;
+    database_key::generate_key_if_needed(&secret_key)?;
 
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
     let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data)?)?;
@@ -137,7 +138,6 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
-    valid_tags.extend_from_slice(&common::ENCRYPTION_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
     check_accessibity_validity(attributes, calling_info)?;
@@ -156,13 +156,7 @@ fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 
     let query = get_query_condition(calling_info, attributes)?;
 
-    let mut db;
-    if attributes.get(&Tag::RequireAttrEncrypted).is_some() {
-        let db_key = common::get_db_key(calling_info)?;
-        db = Database::build(calling_info.user_id(), Some(db_key))?;
-    } else {
-        db = Database::build(calling_info.user_id(), None)?;
-    }
+    let mut db = database_key::create_db_instance(attributes, calling_info)?;
 
     if db.is_data_exists(&query, false)? {
         resolve_conflict(calling_info, &mut db, attributes, &query, &mut db_data)?;

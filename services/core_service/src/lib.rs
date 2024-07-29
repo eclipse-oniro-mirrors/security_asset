@@ -37,6 +37,7 @@ mod stub;
 mod sys_event;
 mod trace_scope;
 mod unload_handler;
+mod database_key;
 
 use sys_event::upload_system_event;
 use trace_scope::TraceScope;

@@ -70,7 +70,6 @@ pub struct Database {
     pub(crate) backup_path: String,
     pub(crate) handle: usize, // Pointer to the database connection.
     pub(crate) db_lock: &'static UserDbLock,
-    pub(crate) db_key: Vec<u8>,
 }
 
 /// Callback for database upgrade.
@@ -88,7 +87,7 @@ fn fmt_de_db_path(user_id: i32) -> String {
 
 #[inline(always)]
 fn fmt_ce_db_path(user_id: i32) -> String {
-    format!("{}/{}/{}", "data/service/el2", user_id, "asset_service/asset.db")
+    format!("data/service/el2/{}/asset_service/asset.db", user_id)
 }
 
 #[inline(always)]
@@ -105,21 +104,20 @@ pub fn get_path() -> String {
 
 impl Database {
     /// Create a database.
-    pub fn build(user_id: i32, db_key: Option<Vec<u8>>) -> Result<Database> {
+    pub fn build(user_id: i32, db_key: Option<&Vec<u8>>) -> Result<Database> {
         let lock = get_file_lock_by_user_id(user_id);
         let mut db;
-        if let Some(db_key) = db_key {
+        if db_key.is_some() {
             let path = fmt_ce_db_path(user_id);
             let backup_path = fmt_backup_path(path.as_str());
-            db = Database { path, backup_path, handle: 0, db_lock: lock, db_key };
+            db = Database { path, backup_path, handle: 0, db_lock: lock};
         } else {
             let path = fmt_de_db_path(user_id);
             let backup_path = fmt_backup_path(path.as_str());
-            let empty_db_key: Vec<u8> = Vec::new();
-            db = Database { path, backup_path, handle: 0, db_lock: lock, db_key: empty_db_key };
+            db = Database { path, backup_path, handle: 0, db_lock: lock};
         }
         let _lock = db.db_lock.mtx.lock().unwrap();
-        db.open_and_restore()?;
+        db.open_and_restore(db_key)?;
         db.restore_if_exec_fail(|e: &Table| e.create(COLUMN_INFO))?;
         db.upgrade(1, |_, _, _| Ok(()))?;
         Ok(db)
@@ -128,8 +126,7 @@ impl Database {
     /// check is db ok
     pub fn check_db_accessible(path: String, user_id: i32) -> Result<()> {
         let lock = get_file_lock_by_user_id(user_id);
-        let empty_db_key: Vec<u8> = Vec::new();
-        let mut db: Database = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock, db_key: empty_db_key };
+        let mut db: Database = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock};
         db.open()?;
         let table = Table::new(TABLE_NAME, &db);
         table.create(COLUMN_INFO)
@@ -150,10 +147,10 @@ impl Database {
     }
 
     /// Open the database connection and restore the database if the connection fails.
-    fn open_and_restore(&mut self) -> Result<()> {
+    fn open_and_restore(&mut self, db_key: Option<&Vec<u8>>) -> Result<()> {
         let result = self.open();
-        if !self.db_key.is_empty() {
-            let _ = self.set_db_key();
+        if let Some(db_key) = db_key {
+            self.set_db_key(db_key)?;
         }
         let result = match result {
             Err(ret) if ret.code == ErrCode::DataCorrupted => self.restore(),
@@ -176,21 +173,14 @@ impl Database {
         self.close()
     }
 
-    /// Encrypt/Decrypt CE database
-    pub fn set_db_key(&mut self) -> Result<()> {
-        let ret = unsafe { SqliteKey(self.handle as _, self.db_key.as_ptr() as *const c_void, self.db_key.len() as i32) };
-        self.set_encrypt_algorithm("aes-256-gcm")?;
+    /// Encrypt/Decrypt CE database.
+    pub fn set_db_key(&mut self, db_key: &Vec<u8>) -> Result<()> {
+        let ret = unsafe { SqliteKey(self.handle as _, db_key.as_ptr() as *const c_void, db_key.len() as i32) };
         if ret == SQLITE_OK {
             Ok(())
         } else {
             log_throw_error!(sqlite_err_handle(ret), "[FATAL][DB]Set database key failed, err={}", ret)
         }
-    }
-
-    /// Set encrypt_algorithm
-    pub fn set_encrypt_algorithm(&mut self, algorithm: &str) -> Result<()> {
-        let sql = format!("pragma cipher = '{}'", algorithm);
-        self.exec(sql.as_str())
     }
 
     // Recovery the corrupt database and reopen it.
