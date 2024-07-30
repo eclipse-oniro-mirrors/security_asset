@@ -238,9 +238,8 @@ fn backup_de_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
     Ok(())
 }
 
-fn backup_ce_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
+fn backup_ce_db(entry: &DirEntry, user_id: i32) -> Result<()> {
     let from_path = entry.path().with_file_name(format!("{}/asset_service/{}", user_id, ASSET_DB)).to_string_lossy().to_string();
-    Database::check_db_accessible(from_path.clone(), user_id)?;
     let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
     fs::copy(from_path, backup_path)?;
 
@@ -271,13 +270,13 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
     for entry in fs::read_dir(CE_ROOT_PATH)? {
         let entry = entry?;
         if let Ok(user_id) = entry.file_name().to_string_lossy().to_string().parse::<i32>() {
-            if let Err(e) = backup_ce_db_if_accessible(&entry, user_id) {
+            if let Err(e) = backup_ce_db(&entry, user_id) {
                 let calling_info = CallingInfo::new_self();
                 upload_fault_system_event(&calling_info, *start_time, &format!("backup_db_{}", user_id), &e);
             }
             if let Err(e) = backup_ce_db_key_cipher(&entry, user_id) {
                 let calling_info = CallingInfo::new_self();
-                upload_fault_system_event(&calling_info, *start_time, &format!("backup_db_key_cipher{}", user_id), &e);
+                upload_fault_system_event(&calling_info, *start_time, &format!("backup_db_key_cipher_{}", user_id), &e);
             }
         }
     }

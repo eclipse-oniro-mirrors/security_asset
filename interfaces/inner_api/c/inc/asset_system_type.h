@@ -175,12 +175,11 @@ typedef enum {
      */
     SEC_ASSET_TAG_UPDATE_TIME = SEC_ASSET_TYPE_BYTES | 0x45,
     /**
-     * Tag used to store specific user id. The value is of the uint32 type.
+     * A tag whose value is the uint32 type indicating the additional action.
      */
     SEC_ASSET_TAG_OPERATION_TYPE = SEC_ASSET_TYPE_NUMBER | 0x46,
     /**
-     * Tag used to indicate whether the attributes of an asset are required to be encrypted. The value is of the bool
-     * type.
+     * A tag whose value is a bool indicating whether the attributes of an asset are required to be encrypted.
      */
     SEC_ASSET_TAG_REQUIRE_ATTR_ENCRYPTED = SEC_ASSET_TYPE_BOOL | 0x47,
     /**
