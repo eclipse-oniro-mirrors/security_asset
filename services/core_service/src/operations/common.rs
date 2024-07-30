@@ -23,7 +23,7 @@ pub(crate) use permission_check::check_system_permission;
 
 use asset_common::CallingInfo;
 use asset_crypto_manager::secret_key::SecretKey;
-use asset_db_operator::types::{ column, DbMap, DB_DATA_VERSION, DB_DATA_VERSION_V1};
+use asset_db_operator::types::{column, DbMap, DB_DATA_VERSION, DB_DATA_VERSION_V1};
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, OperationType, Result, Tag, Value,
 };

@@ -41,7 +41,8 @@ use crate::database_key;
 
 const ASSET_DB: &str = "asset.db";
 const BACKUP_SUFFIX: &str = ".backup";
-const ROOT_PATH: &str = "data/service/el1/public/asset_service";
+const DE_ROOT_PATH: &str = "data/service/el1/public/asset_service";
+const CE_ROOT_PATH: &str = "data/service/el2";
 
 fn delete_on_package_removed(calling_info: &CallingInfo, owner: Vec<u8>) -> Result<bool> {
     let mut delete_cond = DbMap::new();
@@ -71,10 +72,28 @@ fn delete_on_package_removed(calling_info: &CallingInfo, owner: Vec<u8>) -> Resu
         // Check whether there is still persistent data left in ce db.
         let ce_db_data_exists = ce_db.is_data_exists(&check_cond, false);
 
+        let start_time = Instant::now();
         match (de_db_data_exists, ce_db_data_exists) {
-            (Ok(true), Ok(true)) => Ok(true),
-            (Ok(false), _) | (_, Ok(false)) => Ok(false),
-            (Err(e), _) | (_, Err(e)) => Err(e),
+            (Ok(true), _) | (_, Ok(true)) => Ok(true),
+            (Ok(false), Ok(false)) => Ok(false),
+            (Err(e), Ok(_)) | (Ok(_), Err(e)) => {
+                // Report the database operation fault event.
+                upload_fault_system_event(calling_info, start_time, "on_package_removed", &e);
+                // Report the key operation fault event.
+                let calling_info = CallingInfo::new_self();
+                upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e);
+                Err(e)
+            },
+            (Err(e1), Err(e2)) => {
+                // Report the database operation fault event.
+                upload_fault_system_event(calling_info, start_time, "on_package_removed", &e1);
+                upload_fault_system_event(calling_info, start_time, "on_package_removed", &e2);
+                // Report the key operation fault event.
+                let calling_info = CallingInfo::new_self();
+                upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e1);
+                upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e2);
+                Err(e1)
+            },
         }
     } else {
         de_db_data_exists
@@ -87,29 +106,17 @@ fn clear_cryptos(calling_info: &CallingInfo) {
 }
 
 fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) {
-    let _counter_user = AutoCounter::new();
-    let start_time = Instant::now();
     let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner, owner_size as usize).to_vec() };
     let calling_info = CallingInfo::new(user_id, OwnerType::Hap, owner.clone());
     clear_cryptos(&calling_info);
-    let res = match delete_on_package_removed(&calling_info, owner) {
+    let _counter_user = AutoCounter::new();
+    let _ = match delete_on_package_removed(&calling_info, owner) {
         Ok(true) => {
             logi!("The owner wants to retain data after uninstallation. Do not delete key in HUKS!");
             Ok(())
         },
-        Ok(false) => SecretKey::delete_by_owner(&calling_info),
-        Err(e) => {
-            // Report the database operation fault event.
-            upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e);
-            SecretKey::delete_by_owner(&calling_info)
-        },
+        Ok(false) | Err(_) => SecretKey::delete_by_owner(&calling_info)
     };
-
-    if let Err(e) = res {
-        // Report the key operation fault event.
-        let calling_info = CallingInfo::new_self();
-        upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e);
-    }
 }
 
 pub(crate) extern "C" fn on_package_removed(
@@ -222,24 +229,59 @@ pub(crate) extern "C" fn on_schedule_wakeup() {
     }
 }
 
-fn backup_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
+fn backup_de_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
     let from_path = entry.path().with_file_name(format!("{}/{}", user_id, ASSET_DB)).to_string_lossy().to_string();
     Database::check_db_accessible(from_path.clone(), user_id)?;
     let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
     fs::copy(from_path, backup_path)?;
+
+    Ok(())
+}
+
+fn backup_ce_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
+    let from_path = entry.path().with_file_name(format!("{}/asset_service/{}", user_id, ASSET_DB)).to_string_lossy().to_string();
+    Database::check_db_accessible(from_path.clone(), user_id)?;
+    let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
+    fs::copy(from_path, backup_path)?;
+
+    Ok(())
+}
+
+fn backup_ce_db_key_cipher(entry: &DirEntry, user_id: i32) -> Result<()> {
+    let from_path = entry.path().with_file_name(format!("{}/asset_service/db_key", user_id)).to_string_lossy().to_string();
+    let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
+    fs::copy(from_path, backup_path)?;
+
     Ok(())
 }
 
 fn backup_all_db(start_time: &Instant) -> Result<()> {
-    for entry in fs::read_dir(ROOT_PATH)? {
+    // Backup all de db
+    for entry in fs::read_dir(DE_ROOT_PATH)? {
         let entry = entry?;
         if let Ok(user_id) = entry.file_name().to_string_lossy().to_string().parse::<i32>() {
-            if let Err(e) = backup_db_if_accessible(&entry, user_id) {
+            if let Err(e) = backup_de_db_if_accessible(&entry, user_id) {
                 let calling_info = CallingInfo::new_self();
                 upload_fault_system_event(&calling_info, *start_time, &format!("backup_db_{}", user_id), &e);
             }
         }
     }
+
+    // Backup all ce db and db key cipher
+    for entry in fs::read_dir(CE_ROOT_PATH)? {
+        let entry = entry?;
+        if let Ok(user_id) = entry.file_name().to_string_lossy().to_string().parse::<i32>() {
+            if let Err(e) = backup_ce_db_if_accessible(&entry, user_id) {
+                let calling_info = CallingInfo::new_self();
+                upload_fault_system_event(&calling_info, *start_time, &format!("backup_db_{}", user_id), &e);
+            }
+            if let Err(e) = backup_ce_db_key_cipher(&entry, user_id) {
+                let calling_info = CallingInfo::new_self();
+                upload_fault_system_event(&calling_info, *start_time, &format!("backup_db_key_cipher{}", user_id), &e);
+            }
+        }
+    }
+
     Ok(())
 }
 

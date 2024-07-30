@@ -1,4 +1,5 @@
 use openssl::rand::rand_bytes;
+use std::sync::Mutex;
 use asset_common::CallingInfo;
 use asset_crypto_manager::{
     secret_key::SecretKey, crypto::Crypto
@@ -8,7 +9,6 @@ use asset_definition::{
     Accessibility, AssetMap, AuthType, Result, Tag,
 };
 use asset_log::logi;
-use std::sync::Mutex;
 
 fn build_db_key_secret_key(calling_info: &CallingInfo) -> Result<SecretKey> {
     let auth_type = AuthType::None;
@@ -28,8 +28,8 @@ pub(crate) fn decrypt_db_key_cipher(calling_info: &CallingInfo, db_key_cipher: &
 }
 
 fn generate_db_key() -> Result<Vec<u8>> {
-    const KEY_LEN: usize = 256; // aes-256-gcm
-    let mut db_key = [0; KEY_LEN];
+    const KEY_LEN_IN_BYTES: usize = 32; // aes-256-gcm requires key length 256 bits = 32 bytes.
+    let mut db_key = [0; KEY_LEN_IN_BYTES];
     rand_bytes(&mut db_key).unwrap();
 
     Ok(db_key.to_vec())
