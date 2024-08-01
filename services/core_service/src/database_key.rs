@@ -37,7 +37,7 @@ fn generate_db_key() -> Result<Vec<u8>> {
 
 static GEN_KEY_MUTEX: Mutex<()> = Mutex::new(());
 
-pub(crate) fn generate_key_if_needed(secret_key: &SecretKey) -> Result<()> {
+pub(crate) fn generate_secret_key_if_needed(secret_key: &SecretKey) -> Result<()> {
     match secret_key.exists() {
         Ok(true) => Ok(()),
         Ok(false) => {
@@ -57,7 +57,7 @@ pub(crate) fn generate_key_if_needed(secret_key: &SecretKey) -> Result<()> {
 
 fn encrypt_db_key(calling_info: &CallingInfo, db_key: &Vec<u8>) -> Result<Vec<u8>> {
     let secret_key = build_db_key_secret_key(calling_info)?;
-    generate_key_if_needed(&secret_key)?;
+    generate_secret_key_if_needed(&secret_key)?;
     let aad: Vec<u8> = "trivial_aad_for_db_key".as_bytes().to_vec();
     let db_key_cipher = Crypto::encrypt(&secret_key, db_key, &aad)?;
 
@@ -66,15 +66,19 @@ fn encrypt_db_key(calling_info: &CallingInfo, db_key: &Vec<u8>) -> Result<Vec<u8
 
 fn get_db_key(calling_info: &CallingInfo) -> Result<Vec<u8>>
 {
-    if asset_file_operator::is_db_key_cipher_file_exist(calling_info.user_id()).is_ok() {
-        let db_key_cipher = asset_file_operator::read_db_key_cipher(calling_info.user_id())?;
-        let db_key = decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
-        Ok(db_key)
-    } else {
-        let db_key = generate_db_key()?;
-        let db_key_cipher = encrypt_db_key(calling_info, &db_key)?;
-        asset_file_operator::write_db_key_cipher(calling_info.user_id(), &db_key_cipher)?;
-        Ok(db_key)
+    match asset_file_operator::is_db_key_cipher_file_exist(calling_info.user_id()) {
+        Ok(true) => {
+            let db_key_cipher = asset_file_operator::read_db_key_cipher(calling_info.user_id())?;
+            let db_key = decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
+            Ok(db_key)
+        }
+        Ok(false) => {
+            let db_key = generate_db_key()?;
+            let db_key_cipher = encrypt_db_key(calling_info, &db_key)?;
+            asset_file_operator::write_db_key_cipher(calling_info.user_id(), &db_key_cipher)?;
+            Ok(db_key)
+        }
+        Err(e) => Err(e),
     }
 }
 

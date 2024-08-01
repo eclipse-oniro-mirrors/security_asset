@@ -28,9 +28,12 @@ fn is_user_de_dir_exist(user_id: i32) -> Result<()> {
     let path_str = construct_user_de_path(user_id);
     let path: &Path = Path::new(&path_str);
     match path.try_exists() {
-        Ok(_) => Ok(()),
+        Ok(true) => Ok(()),
+        Ok(false) => {
+            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]User DE directory does not exist!")
+        }
         Err(e) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]User DE directory does not exist! error is [{}]", e)
+            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Checking existence of user DE directory failed! error is [{}]", e)
         },
     }
 }
@@ -79,9 +82,12 @@ pub fn is_ce_db_file_exist(user_id: i32) -> Result<()> {
     let path_str = construct_ce_db_path(user_id);
     let path: &Path = Path::new(&path_str);
     match path.try_exists() {
-        Ok(_) => Ok(()),
+        Ok(true) => Ok(()),
+        Ok(false) => {
+            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]CE database file does not exist!")
+        },
         Err(e) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]CE database file does not exist! error is [{}]", e)
+            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Checking existence of CE database file failed! error is [{}]", e)
         },
     }
 }
@@ -91,13 +97,14 @@ fn construct_db_key_cipher_path(user_id: i32) -> String {
 }
 
 /// Check db key cipher file exists.
-pub fn is_db_key_cipher_file_exist(user_id: i32) -> Result<()> {
+pub fn is_db_key_cipher_file_exist(user_id: i32) -> Result<bool> {
     let path_str = construct_db_key_cipher_path(user_id);
     let path: &Path = Path::new(&path_str);
     match path.try_exists() {
-        Ok(_) => Ok(()),
+        Ok(true) => Ok(true),
+        Ok(false) => Ok(false),
         Err(e) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Database key ciphertext file does not exist! error is [{}]", e)
+            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]]Checking existence of database key ciphertext file failed! error is [{}]", e)
         },
     }
 }

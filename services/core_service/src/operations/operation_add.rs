@@ -34,7 +34,7 @@ use crate::database_key;
 
 fn encrypt_secret(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     let secret_key = common::build_secret_key(calling_info, db_data)?;
-    database_key::generate_key_if_needed(&secret_key)?;
+    database_key::generate_secret_key_if_needed(&secret_key)?;
 
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
     let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data)?)?;

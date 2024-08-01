@@ -110,11 +110,11 @@ impl Database {
         if db_key.is_some() {
             let path = fmt_ce_db_path(user_id);
             let backup_path = fmt_backup_path(path.as_str());
-            db = Database { path, backup_path, handle: 0, db_lock: lock};
+            db = Database { path, backup_path, handle: 0, db_lock: lock };
         } else {
             let path = fmt_de_db_path(user_id);
             let backup_path = fmt_backup_path(path.as_str());
-            db = Database { path, backup_path, handle: 0, db_lock: lock};
+            db = Database { path, backup_path, handle: 0, db_lock: lock };
         }
         let _lock = db.db_lock.mtx.lock().unwrap();
         db.open_and_restore(db_key)?;
@@ -123,10 +123,10 @@ impl Database {
         Ok(db)
     }
 
-    /// check is db ok
+    /// Check is db ok
     pub fn check_db_accessible(path: String, user_id: i32) -> Result<()> {
         let lock = get_file_lock_by_user_id(user_id);
-        let mut db: Database = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock};
+        let mut db = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock };
         db.open()?;
         let table = Table::new(TABLE_NAME, &db);
         table.create(COLUMN_INFO)

@@ -28,7 +28,7 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap},
 };
-use asset_definition::{Result, SyncType, Value};
+use asset_definition::{log_throw_error, ErrCode, Result, SyncType, Value};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::plugin_interface::{
@@ -247,12 +247,18 @@ fn backup_ce_db_if_exists(entry: &DirEntry, user_id: i32) -> Result<()> {
 }
 
 fn backup_db_key_cipher_if_exists(entry: &DirEntry, user_id: i32) -> Result<()> {
-    asset_file_operator::is_db_key_cipher_file_exist(user_id)?;
-    let from_path = entry.path().with_file_name(format!("{}/asset_service/db_key", user_id)).to_string_lossy().to_string();
-    let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
-    fs::copy(from_path, backup_path)?;
-
-    Ok(())
+    match asset_file_operator::is_db_key_cipher_file_exist(user_id) {
+        Ok(true) => {
+            let from_path = entry.path().with_file_name(format!("{}/asset_service/db_key", user_id)).to_string_lossy().to_string();
+            let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
+            fs::copy(from_path, backup_path)?;
+            Ok(())
+        }
+        Ok(false) => {
+            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Database key ciphertext file does not exist!")
+        },
+        Err(e) => Err(e),
+    }
 }
 
 fn backup_all_db(start_time: &Instant) -> Result<()> {
