@@ -29,7 +29,6 @@ use asset_db_operator::{
     types::{column, DbMap},
 };
 use asset_definition::{Result, SyncType, Value};
-use asset_file_operator::delete_user_db_dir;
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::plugin_interface::{
@@ -62,8 +61,8 @@ fn delete_on_package_removed(calling_info: &CallingInfo, owner: Vec<u8>) -> Resu
     check_cond.insert(column::OWNER, Value::Bytes(owner));
     let de_db_data_exists = de_db.is_data_exists(&check_cond, false);
 
-    if asset_file_operator::is_db_key_cipher_file_exist(calling_info.user_id()) {
-        // Delete non-persistent data in ce db if db key cipher file exists.
+    if asset_file_operator::is_ce_db_file_exist(calling_info.user_id()).is_ok() {
+        // Delete non-persistent data in ce db if ce db file exists.
         let db_key_cipher = asset_file_operator::read_db_key_cipher(calling_info.user_id())?;
         let db_key = database_key::decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
         let mut ce_db = Database::build(calling_info.user_id(), Some(&db_key))?;
@@ -156,7 +155,7 @@ pub(crate) extern "C" fn on_package_removed(
 
 extern "C" fn delete_dir_by_user(user_id: i32) {
     let _counter_user = AutoCounter::new();
-    let _ = delete_user_db_dir(user_id);
+    let _ = asset_file_operator::delete_user_de_dir(user_id);
 }
 
 extern "C" fn delete_crypto_need_unlock() {
@@ -238,7 +237,8 @@ fn backup_de_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
     Ok(())
 }
 
-fn backup_ce_db(entry: &DirEntry, user_id: i32) -> Result<()> {
+fn backup_ce_db_if_exists(entry: &DirEntry, user_id: i32) -> Result<()> {
+    asset_file_operator::is_ce_db_file_exist(user_id)?;
     let from_path = entry.path().with_file_name(format!("{}/asset_service/{}", user_id, ASSET_DB)).to_string_lossy().to_string();
     let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
     fs::copy(from_path, backup_path)?;
@@ -246,7 +246,8 @@ fn backup_ce_db(entry: &DirEntry, user_id: i32) -> Result<()> {
     Ok(())
 }
 
-fn backup_ce_db_key_cipher(entry: &DirEntry, user_id: i32) -> Result<()> {
+fn backup_db_key_cipher_if_exists(entry: &DirEntry, user_id: i32) -> Result<()> {
+    asset_file_operator::is_db_key_cipher_file_exist(user_id)?;
     let from_path = entry.path().with_file_name(format!("{}/asset_service/db_key", user_id)).to_string_lossy().to_string();
     let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
     fs::copy(from_path, backup_path)?;
@@ -255,26 +256,26 @@ fn backup_ce_db_key_cipher(entry: &DirEntry, user_id: i32) -> Result<()> {
 }
 
 fn backup_all_db(start_time: &Instant) -> Result<()> {
-    // Backup all de db
+    // Backup all de db if accessible.
     for entry in fs::read_dir(DE_ROOT_PATH)? {
         let entry = entry?;
         if let Ok(user_id) = entry.file_name().to_string_lossy().to_string().parse::<i32>() {
             if let Err(e) = backup_de_db_if_accessible(&entry, user_id) {
                 let calling_info = CallingInfo::new_self();
-                upload_fault_system_event(&calling_info, *start_time, &format!("backup_db_{}", user_id), &e);
+                upload_fault_system_event(&calling_info, *start_time, &format!("backup_de_db_{}", user_id), &e);
             }
         }
     }
 
-    // Backup all ce db and db key cipher
+    // Backup all ce db and db key cipher if exists. (todo?: backup ce db if accessible)
     for entry in fs::read_dir(CE_ROOT_PATH)? {
         let entry = entry?;
         if let Ok(user_id) = entry.file_name().to_string_lossy().to_string().parse::<i32>() {
-            if let Err(e) = backup_ce_db(&entry, user_id) {
+            if let Err(e) = backup_ce_db_if_exists(&entry, user_id) {
                 let calling_info = CallingInfo::new_self();
-                upload_fault_system_event(&calling_info, *start_time, &format!("backup_db_{}", user_id), &e);
+                upload_fault_system_event(&calling_info, *start_time, &format!("backup_ce_db_{}", user_id), &e);
             }
-            if let Err(e) = backup_ce_db_key_cipher(&entry, user_id) {
+            if let Err(e) = backup_db_key_cipher_if_exists(&entry, user_id) {
                 let calling_info = CallingInfo::new_self();
                 upload_fault_system_event(&calling_info, *start_time, &format!("backup_db_key_cipher_{}", user_id), &e);
             }

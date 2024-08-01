@@ -66,7 +66,7 @@ fn encrypt_db_key(calling_info: &CallingInfo, db_key: &Vec<u8>) -> Result<Vec<u8
 
 fn get_db_key(calling_info: &CallingInfo) -> Result<Vec<u8>>
 {
-    if asset_file_operator::is_db_key_cipher_file_exist(calling_info.user_id()) {
+    if asset_file_operator::is_db_key_cipher_file_exist(calling_info.user_id()).is_ok() {
         let db_key_cipher = asset_file_operator::read_db_key_cipher(calling_info.user_id())?;
         let db_key = decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
         Ok(db_key)

@@ -20,50 +20,68 @@ use std::{fs, path::Path};
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_log::logi;
 
-const ROOT_PATH: &str = "data/service/el1/public/asset_service";
-
-fn construct_user_path(user_id: i32) -> String {
-    format!("{}/{}", ROOT_PATH, user_id)
+fn construct_user_de_path(user_id: i32) -> String {
+    format!("data/service/el1/public/asset_service/{}", user_id)
 }
 
-/// Check user db dir exist.
-pub fn is_user_db_dir_exist(user_id: i32) -> bool {
-    let path_str = construct_user_path(user_id);
+fn is_user_de_dir_exist(user_id: i32) -> Result<()> {
+    let path_str = construct_user_de_path(user_id);
     let path: &Path = Path::new(&path_str);
-    path.exists()
+    match path.try_exists() {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]User DE directory does not exist! error is [{}]", e)
+        },
+    }
 }
 
-/// Create user database directory.
-pub fn create_user_db_dir(user_id: i32) -> Result<()> {
-    if is_user_db_dir_exist(user_id) {
+/// Create user de directory.
+pub fn create_user_de_dir(user_id: i32) -> Result<()> {
+    if is_user_de_dir_exist(user_id).is_ok() {
         return Ok(());
     }
 
-    logi!("[INFO]Directory is not exist, create it...");
-    let path_str = construct_user_path(user_id);
+    logi!("[INFO]User DE directory does not exist, create it...");
+    let path_str = construct_user_de_path(user_id);
     let path: &Path = Path::new(&path_str);
     match fs::create_dir(path) {
         Ok(_) => Ok(()),
         Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
         Err(e) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Create dir failed! error is [{}]", e)
+            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Create user DE directory failed! error is [{}]", e)
         },
     }
 }
 
-/// Delete user database directory.
-pub fn delete_user_db_dir(user_id: i32) -> Result<()> {
-    if !is_user_db_dir_exist(user_id) {
+/// Delete user de directory.
+pub fn delete_user_de_dir(user_id: i32) -> Result<()> {
+    if is_user_de_dir_exist(user_id).is_err() {
         return Ok(());
     }
 
-    let path_str = construct_user_path(user_id);
+    let path_str = construct_user_de_path(user_id);
     let path: &Path = Path::new(&path_str);
     match fs::remove_dir_all(path) {
         Ok(_) => Ok(()),
         Err(e) if e.kind() != std::io::ErrorKind::NotFound => Ok(()),
         Err(e) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Delete dir failed! error is [{}]", e)
+            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Delete user DE directory failed! error is [{}]", e)
+        },
+    }
+}
+
+fn construct_ce_db_path(user_id: i32) -> String {
+    format!("data/service/el2/{}/asset_service/asset.db", user_id)
+}
+
+/// Check ce db file exists.
+pub fn is_ce_db_file_exist(user_id: i32) -> Result<()> {
+    let path_str = construct_ce_db_path(user_id);
+    let path: &Path = Path::new(&path_str);
+    match path.try_exists() {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]CE database file does not exist! error is [{}]", e)
         },
     }
 }
@@ -72,11 +90,16 @@ fn construct_db_key_cipher_path(user_id: i32) -> String {
     format!("data/service/el2/{}/asset_service/db_key", user_id)
 }
 
-/// Check db key cipher file exist.
-pub fn is_db_key_cipher_file_exist(user_id: i32) -> bool {
+/// Check db key cipher file exists.
+pub fn is_db_key_cipher_file_exist(user_id: i32) -> Result<()> {
     let path_str = construct_db_key_cipher_path(user_id);
     let path: &Path = Path::new(&path_str);
-    path.exists()
+    match path.try_exists() {
+        Ok(_) => Ok(()),
+        Err(e) => {
+            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Database key ciphertext file does not exist! error is [{}]", e)
+        },
+    }
 }
 
 /// Read db key cipher.
@@ -86,7 +109,7 @@ pub fn read_db_key_cipher(user_id: i32) -> Result<Vec<u8>> {
     match fs::read(path) {
         Ok(db_key_cipher) => Ok(db_key_cipher),
         Err(e) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Read db key cipher failed! error is [{}]", e)
+            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Read database key ciphertext failed! error is [{}]", e)
         },
     }
 }
@@ -98,7 +121,7 @@ pub fn write_db_key_cipher(user_id: i32, db_key_cipher: &Vec<u8>) -> Result<()> 
     match fs::write(path, db_key_cipher) {
         Ok(_) => Ok(()),
         Err(e) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Write db key cipher failed! error is [{}]", e)
+            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Write database key ciphertext failed! error is [{}]", e)
         },
     }
 }
