@@ -31,7 +31,7 @@ fn is_user_de_dir_exist(user_id: i32) -> Result<()> {
         Ok(true) => Ok(()),
         Ok(false) => {
             log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]User DE directory does not exist!")
-        }
+        },
         Err(e) => {
             log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Checking existence of user DE directory failed! error is [{}]", e)
         },

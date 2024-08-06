@@ -114,7 +114,7 @@ fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) {
             logi!("The owner wants to retain data after uninstallation. Do not delete key in HUKS!");
             Ok(())
         },
-        Ok(false) | Err(_) => SecretKey::delete_by_owner(&calling_info)
+        Ok(false) | Err(_) => SecretKey::delete_by_owner(&calling_info),
     };
 }
 
@@ -253,7 +253,7 @@ fn backup_db_key_cipher_if_exists(entry: &DirEntry, user_id: i32) -> Result<()> 
             let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
             fs::copy(from_path, backup_path)?;
             Ok(())
-        }
+        },
         Ok(false) => {
             log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Database key ciphertext file does not exist!")
         },

@@ -81,26 +81,26 @@ fn encrypt_db_key(calling_info: &CallingInfo, db_key: &Vec<u8>) -> Result<Vec<u8
     Ok(db_key_cipher)
 }
 
-fn get_db_key(calling_info: &CallingInfo) -> Result<Vec<u8>>
+pub fn get_db_key(calling_info: &CallingInfo) -> Result<Vec<u8>>
 {
     match asset_file_operator::is_db_key_cipher_file_exist(calling_info.user_id()) {
         Ok(true) => {
             let db_key_cipher = asset_file_operator::read_db_key_cipher(calling_info.user_id())?;
             let db_key = decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
             Ok(db_key)
-        }
+        },
         Ok(false) => {
             let db_key = generate_db_key()?;
             let db_key_cipher = encrypt_db_key(calling_info, &db_key)?;
             asset_file_operator::write_db_key_cipher(calling_info.user_id(), &db_key_cipher)?;
             Ok(db_key)
-        }
+        },
         Err(e) => Err(e),
     }
 }
 
 pub(crate) fn create_db_instance(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<Database> {
-   let db = if attributes.get(&Tag::RequireAttrEncrypted).is_some() {
+    let db = if attributes.get(&Tag::RequireAttrEncrypted).is_some() {
         let db_key = get_db_key(calling_info)?;
         Database::build(calling_info.user_id(), Some(&db_key))?
     } else {

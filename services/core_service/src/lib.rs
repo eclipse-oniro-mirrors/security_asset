@@ -143,7 +143,7 @@ macro_rules! execute {
         let func_name = hisysevent::function!();
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
-        // Create database directory if not exists.
+        // Create de database directory if not exists.
         asset_file_operator::create_user_de_dir($calling_info.user_id())?;
         upload_system_event($func($calling_info, $($args),+), $calling_info, start, func_name)
     }};
