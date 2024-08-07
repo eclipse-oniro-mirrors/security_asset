@@ -23,7 +23,7 @@ use asset_crypto_manager::{
 };
 use asset_db_operator::database::Database;
 use asset_definition::{
-    Accessibility, AssetMap, AuthType, Result, Tag,
+    Accessibility, AssetMap, AuthType, Result, Tag, Value
 };
 use asset_log::logi;
 
@@ -100,12 +100,15 @@ pub fn get_db_key(calling_info: &CallingInfo) -> Result<Vec<u8>>
 }
 
 pub(crate) fn create_db_instance(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<Database> {
-    let db = if attributes.get(&Tag::RequireAttrEncrypted).is_some() {
-        let db_key = get_db_key(calling_info)?;
-        Database::build(calling_info.user_id(), Some(&db_key))?
-    } else {
-        Database::build(calling_info.user_id(), None)?
-    };
-
-    Ok(db)
+    match attributes.get(&Tag::RequireAttrEncrypted) {
+        Some(Value::Bool(true)) => {
+            let db_key = get_db_key(calling_info)?;
+            let db = Database::build(calling_info.user_id(), Some(&db_key))?;
+            Ok(db)
+        }
+        _ => {
+            let db = Database::build(calling_info.user_id(), None)?;
+            Ok(db)
+        }
+    }
 }

@@ -60,6 +60,9 @@ pub const PARAM_NAME_APP_INDEX: &str = "AppIndex";
 /// param name for whether is hap
 pub const PARAM_NAME_IS_HAP: &str = "IsHap";
 
+/// param name for whether the attributes of an asset are required to be encrypted.
+pub const PARAM_NAME_REQUIRE_ATTR_ENCRYPTED: &str = "RequireAttrEncrypted";
+
 /// An enumeration representing different plugin types.
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub enum PluginType {

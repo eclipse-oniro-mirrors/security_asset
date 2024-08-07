@@ -42,6 +42,8 @@ const ASSET_DB: &str = "asset.db";
 const BACKUP_SUFFIX: &str = ".backup";
 const DE_ROOT_PATH: &str = "data/service/el1/public/asset_service";
 const CE_ROOT_PATH: &str = "data/service/el2";
+/// success code.
+const SUCCESS: i32 = 0;
 
 fn delete_on_package_removed(calling_info: &CallingInfo, owner: Vec<u8>) -> Result<bool> {
     let mut delete_cond = DbMap::new();
@@ -237,19 +239,19 @@ fn backup_de_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
     Ok(())
 }
 
-fn backup_ce_db_if_exists(entry: &DirEntry, user_id: i32) -> Result<()> {
+fn backup_ce_db_if_exists(user_id: i32) -> Result<()> {
     asset_file_operator::is_ce_db_file_exist(user_id)?;
-    let from_path = entry.path().with_file_name(format!("{}/asset_service/{}", user_id, ASSET_DB)).to_string_lossy().to_string();
+    let from_path = format!("{}/{}/asset_service/{}", CE_ROOT_PATH, user_id, ASSET_DB);
     let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
     fs::copy(from_path, backup_path)?;
 
     Ok(())
 }
 
-fn backup_db_key_cipher_if_exists(entry: &DirEntry, user_id: i32) -> Result<()> {
+fn backup_db_key_cipher_if_exists(user_id: i32) -> Result<()> {
     match asset_file_operator::is_db_key_cipher_file_exist(user_id) {
         Ok(true) => {
-            let from_path = entry.path().with_file_name(format!("{}/asset_service/db_key", user_id)).to_string_lossy().to_string();
+            let from_path = format!("{}/{}/asset_service/db_key", CE_ROOT_PATH, user_id);
             let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
             fs::copy(from_path, backup_path)?;
             Ok(())
@@ -259,6 +261,10 @@ fn backup_db_key_cipher_if_exists(entry: &DirEntry, user_id: i32) -> Result<()> 
         },
         Err(e) => Err(e),
     }
+}
+
+extern "C" {
+    fn GetUserIds(userIdsPtr: *mut i32, userIdsSize: *mut i16) -> i32;
 }
 
 fn backup_all_db(start_time: &Instant) -> Result<()> {
@@ -274,19 +280,27 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
     }
 
     // Backup all ce db and db key cipher if exists. (todo?: backup ce db if accessible)
-    for entry in fs::read_dir(CE_ROOT_PATH)? {
-        let entry = entry?;
-        if let Ok(user_id) = entry.file_name().to_string_lossy().to_string().parse::<i32>() {
-            if let Err(e) = backup_ce_db_if_exists(&entry, user_id) {
+    unsafe {
+        let mut user_ids: Vec<i32> = Vec::new();
+        let user_ids_ptr = user_ids.as_mut_ptr();
+        let mut user_ids_size: i16 = 0;
+        let user_ids_size_ptr = &mut user_ids_size;
+        let ret = GetUserIds(user_ids_ptr, user_ids_size_ptr);
+        if ret != SUCCESS {
+            return log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get user IDs failed.");
+        }
+        let user_ids_slice = slice::from_raw_parts_mut(user_ids_ptr, (*user_ids_size_ptr).try_into().unwrap());
+        for user_id in user_ids_slice.iter() {
+            if let Err(e) = backup_ce_db_if_exists(*user_id) {
                 let calling_info = CallingInfo::new_self();
                 upload_fault_system_event(&calling_info, *start_time, &format!("backup_ce_db_{}", user_id), &e);
             }
-            if let Err(e) = backup_db_key_cipher_if_exists(&entry, user_id) {
+            if let Err(e) = backup_db_key_cipher_if_exists(*user_id) {
                 let calling_info = CallingInfo::new_self();
                 upload_fault_system_event(&calling_info, *start_time, &format!("backup_db_key_cipher_{}", user_id), &e);
             }
         }
-    }
+    };
 
     Ok(())
 }
