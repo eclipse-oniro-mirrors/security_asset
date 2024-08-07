@@ -60,6 +60,14 @@ fn bind_where_datas(datas: &DbMap, stmt: &Statement, index: &mut i32) -> Result<
     Ok(())
 }
 
+fn bind_where_with_specific_condifion(datas: &[Value], stmt: &Statement, index: &mut i32) -> Result<()> {
+    for value in datas.iter() {
+        stmt.bind_data(*index, value)?;
+        *index += 1;
+    }
+    Ok(())
+}
+
 #[inline(always)]
 fn build_sql_columns_not_empty(columns: &Vec<&str>, sql: &mut String) {
     for i in 0..columns.len() {
@@ -317,6 +325,30 @@ impl<'a> Table<'a> {
         if let Some(datas) = reverse_condition {
             bind_datas(datas, &stmt, &mut index)?;
         }
+        stmt.step()?;
+        let count = unsafe { SqliteChanges(self.db.handle as _) };
+        Ok(count)
+    }
+
+    /// Delete row from table with specific condition.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // SQL: delete from table_name where id=2
+    /// let specific_cond = "id".to_string();
+    /// let condition_value = Value::Number(2);
+    /// let ret = table.delete_with_specific_cond(specific_cond, condition_value);
+    /// ```
+    pub(crate)fn delete_with_specific_cond(
+        &self,
+        specific_cond: &str,
+        condition_value: &[Value],
+    ) -> Result<i32> {
+        let sql: String = format!("delete from {} where {}", self.table_name, specific_cond);
+        let stmt = Statement::prepare(&sql, self.db)?;
+        let mut index = 1;
+        bind_where_with_specific_condifion(condition_value, &stmt, &mut index)?;
         stmt.step()?;
         let count = unsafe { SqliteChanges(self.db.handle as _) };
         Ok(count)

@@ -111,7 +111,8 @@ const std::vector<uint32_t> ASSET_RETURN_TYPE_VEC = {
 
 const std::vector<uint32_t> ASSET_OPERATION_TYPE_VEC = {
     SEC_ASSET_NEED_SYNC,
-    SEC_ASSET_NEED_LOGOUT
+    SEC_ASSET_NEED_LOGOUT,
+    SEC_ASSET_NEED_SWITCH_OFF
 };
 
 const std::unordered_map<uint32_t, const char *> TAG_MAP = {

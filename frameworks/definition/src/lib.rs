@@ -378,12 +378,15 @@ impl_enum_trait! {
     /// An enum type indicates the return type of the queried Asset.
     #[derive(Default)]
     pub enum OperationType {
-        /// Specify that the return data should contain both secret value and attributes.
+        /// Trigger Sync.
         #[default]
         NeedSync = 0,
 
-        /// Specify that the return data contains only attributes.
+        /// Logout account to delete local sync asset data.
         NeedLogout = 1,
+
+        /// Switch off to tackle data.
+        NeedSwitchOff = 2,
     }
 }
 

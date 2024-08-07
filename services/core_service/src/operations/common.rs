@@ -226,6 +226,20 @@ pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
                     }
                 }
             },
+            x if *x == OperationType::NeedSwitchOff as u32 => {
+                if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
+                    let owner_info_str = String::from_utf8_lossy(calling_info.owner_info()).to_string();
+                    let owner_info_vec: Vec<_> = owner_info_str.split('_').collect();
+                    let caller_name = owner_info_vec[0];
+                    let mut params = ExtDbMap::new();
+                    params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
+                    params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(caller_name.as_bytes().to_vec()));
+                    match load.process_event(EventType::SwitchOff, &params) {
+                        Ok(()) => logi!("process switch off ext event success."),
+                        Err(code) => loge!("process switch off ext event failed, code: {}", code),
+                    }
+                }
+            },
             _ => {},
         }
     }

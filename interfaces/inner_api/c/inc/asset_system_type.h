@@ -363,13 +363,17 @@ typedef enum {
  */
 typedef enum {
     /**
-     * The query result contains the asset in plaintext and its attributes.
+     * Trigger Sync.
      */
     SEC_ASSET_NEED_SYNC = 0,
     /**
-     * The query result contains only the asset attributes.
+     * Logout account to delete local sync asset data.
      */
     SEC_ASSET_NEED_LOGOUT = 1,
+    /**
+     * Switch off to tackle data.
+     */
+    SEC_ASSET_NEED_SWITCH_OFF = 2,
 } AssetOperationType;
 
 /**
