@@ -220,23 +220,20 @@ pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
                     let mut params = ExtDbMap::new();
                     params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
                     params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(caller_name.as_bytes().to_vec()));
-                    match load.process_event(EventType::Logout, &params) {
-                        Ok(()) => logi!("process logout ext event success."),
-                        Err(code) => loge!("process logout ext event failed, code: {}", code),
+                    match load.process_event(EventType::CleanCloudFlag, &params) {
+                        Ok(()) => logi!("process clean cloud flag ext event success."),
+                        Err(code) => loge!("process clean cloud flag ext event failed, code: {}", code),
                     }
                 }
             },
-            x if *x == OperationType::NeedSwitchOff as u32 => {
+            x if *x == OperationType::NeedDeleteCloudData as u32 => {
                 if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
-                    let owner_info_str = String::from_utf8_lossy(calling_info.owner_info()).to_string();
-                    let owner_info_vec: Vec<_> = owner_info_str.split('_').collect();
-                    let caller_name = owner_info_vec[0];
                     let mut params = ExtDbMap::new();
                     params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
-                    params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(caller_name.as_bytes().to_vec()));
-                    match load.process_event(EventType::SwitchOff, &params) {
-                        Ok(()) => logi!("process switch off ext event success."),
-                        Err(code) => loge!("process switch off ext event failed, code: {}", code),
+                    params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(calling_info.owner_info().clone()));
+                    match load.process_event(EventType::DeleteCloudData, &params) {
+                        Ok(()) => logi!("process delete cloud data ext event success."),
+                        Err(code) => loge!("process delete cloud data ext event failed, code: {}", code),
                     }
                 }
             },

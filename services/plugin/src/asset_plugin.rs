@@ -149,7 +149,7 @@ impl IAssetPluginCtx for AssetContext {
     }
 
     /// Remove assets from the database with sepcific condition.
-    fn remove_with_specific_condi(
+    fn remove_with_specific_cond(
         &mut self, specific_cond: &str,
         condition_value: &[Value]
     ) -> std::result::Result<i32, u32> {

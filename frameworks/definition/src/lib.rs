@@ -382,11 +382,11 @@ impl_enum_trait! {
         #[default]
         NeedSync = 0,
 
-        /// Logout account to delete local sync asset data.
+        /// Logout to clean cloud flag.
         NeedLogout = 1,
 
-        /// Switch off to tackle data.
-        NeedSwitchOff = 2,
+        /// Delete cloud data.
+        NeedDeleteCloudData = 2,
     }
 }
 

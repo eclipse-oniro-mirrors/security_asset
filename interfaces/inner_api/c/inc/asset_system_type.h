@@ -367,13 +367,13 @@ typedef enum {
      */
     SEC_ASSET_NEED_SYNC = 0,
     /**
-     * Logout account to delete local sync asset data.
+     * Logout account to clean cloud flag.
      */
     SEC_ASSET_NEED_LOGOUT = 1,
     /**
-     * Switch off to tackle data.
+     * Delete cloud data.
      */
-    SEC_ASSET_NEED_SWITCH_OFF = 2,
+    SEC_ASSET_NEED_DELETE_CLOUD_DATA = 2,
 } AssetOperationType;
 
 /**
