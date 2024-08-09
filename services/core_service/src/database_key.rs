@@ -81,7 +81,7 @@ fn encrypt_db_key(calling_info: &CallingInfo, db_key: &Vec<u8>) -> Result<Vec<u8
     Ok(db_key_cipher)
 }
 
-pub fn get_db_key(calling_info: &CallingInfo) -> Result<Vec<u8>>
+fn get_db_key(calling_info: &CallingInfo) -> Result<Vec<u8>>
 {
     match asset_file_operator::is_db_key_cipher_file_exist(calling_info.user_id()) {
         Ok(true) => {

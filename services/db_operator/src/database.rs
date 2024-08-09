@@ -26,7 +26,8 @@ use asset_log::{loge, logi};
 use crate::{
     statement::Statement,
     table::Table,
-    types::{column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO},
+    types::{column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO_V2,
+        UPGRADE_COLUMN_INFO, DB_UPGRADE_VERSION_V1, DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION},
 };
 
 extern "C" {
@@ -119,7 +120,7 @@ impl Database {
         let _lock = db.db_lock.mtx.lock().unwrap();
         db.open_and_restore(db_key)?;
         db.restore_if_exec_fail(|e: &Table| e.create(COLUMN_INFO))?;
-        db.upgrade(1, |_, _, _| Ok(()))?;
+        db.upgrade(DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
         Ok(db)
     }
 
@@ -218,12 +219,18 @@ impl Database {
     /// Upgrade database to new version.
     #[allow(dead_code)]
     pub fn upgrade(&mut self, ver: u32, callback: UpgradeDbCallback) -> Result<()> {
-        let version_old = self.get_db_version()?;
+        let mut version_old = self.get_db_version()?;
         logi!("current database version: {}", version_old);
         if version_old >= ver {
             return Ok(());
         }
-        self.restore_if_exec_fail(|e: &Table| e.upgrade(ver, UPGRADE_COLUMN_INFO))?;
+        if version_old == DB_UPGRADE_VERSION_V1 {
+            self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION_V2, UPGRADE_COLUMN_INFO_V2))?;
+            version_old += 1;
+        }
+        if version_old == DB_UPGRADE_VERSION_V2 {
+            self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION, UPGRADE_COLUMN_INFO))?;
+        }
         callback(self, version_old, ver)
     }
 

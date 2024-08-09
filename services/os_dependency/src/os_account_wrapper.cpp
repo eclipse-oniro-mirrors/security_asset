@@ -44,7 +44,7 @@ bool IsUserIdExist(int32_t userId, bool *exist)
     return true;
 }
 
-int32_t GetUserIds(int32_t *userIdsPtr, int16_t *userIdsSize)
+int32_t GetUserIds(int32_t *userIdsPtr, uint16_t *userIdsSize)
 {
     std::vector<OHOS::AccountSA::OsAccountInfo> accountInfos = {};
     int32_t ret = OHOS::AccountSA::OsAccountManager::QueryAllCreatedOsAccounts(accountInfos);
@@ -59,8 +59,10 @@ int32_t GetUserIds(int32_t *userIdsPtr, int16_t *userIdsSize)
     std::vector<int32_t> userIdsVec = { 0 };
     std::transform(accountInfos.begin(), accountInfos.end(), std::back_inserter(userIdsVec),
         [](auto &iter) { return iter.GetLocalId(); });
-    userIdsPtr = userIdsVec.data();
-    *userIdsSize = static_cast<int16_t>(userIdsVec.size());
+    for (size_t i = 0; i < userIdsVec.size(); i++) {
+        userIdsPtr[i] = userIdsVec[i];
+    }
+    *userIdsSize = static_cast<uint16_t>(userIdsVec.size());
 
     return ASSET_SUCCESS;
 }

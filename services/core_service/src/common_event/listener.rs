@@ -264,7 +264,7 @@ fn backup_db_key_cipher_if_exists(user_id: i32) -> Result<()> {
 }
 
 extern "C" {
-    fn GetUserIds(userIdsPtr: *mut i32, userIdsSize: *mut i16) -> i32;
+    fn GetUserIds(userIdsPtr: *mut i32, userIdsSize: *mut u16) -> i32;
 }
 
 fn backup_all_db(start_time: &Instant) -> Result<()> {
@@ -281,9 +281,11 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
 
     // Backup all ce db and db key cipher if exists. (todo?: backup ce db if accessible)
     unsafe {
-        let mut user_ids: Vec<i32> = Vec::new();
+        /* Temporarily allocate at least 256 spaces for user ids.
+        If the number of user ids exceeds 256, this method(with_capacity) will automatically allocate more spaces.*/
+        let mut user_ids: Vec<i32> = Vec::with_capacity(256);
         let user_ids_ptr = user_ids.as_mut_ptr();
-        let mut user_ids_size: i16 = 0;
+        let mut user_ids_size: u16 = 0;
         let user_ids_size_ptr = &mut user_ids_size;
         let ret = GetUserIds(user_ids_ptr, user_ids_size_ptr);
         if ret != SUCCESS {
@@ -293,11 +295,11 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
         for user_id in user_ids_slice.iter() {
             if let Err(e) = backup_ce_db_if_exists(*user_id) {
                 let calling_info = CallingInfo::new_self();
-                upload_fault_system_event(&calling_info, *start_time, &format!("backup_ce_db_{}", user_id), &e);
+                upload_fault_system_event(&calling_info, *start_time, &format!("backup_ce_db_{}", *user_id), &e);
             }
             if let Err(e) = backup_db_key_cipher_if_exists(*user_id) {
                 let calling_info = CallingInfo::new_self();
-                upload_fault_system_event(&calling_info, *start_time, &format!("backup_db_key_cipher_{}", user_id), &e);
+                upload_fault_system_event(&calling_info, *start_time, &format!("backup_db_key_cipher_{}", *user_id), &e);
             }
         }
     };
