@@ -28,7 +28,11 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap},
 };
+use asset_db_key_operator::decrypt_db_key_cipher;
 use asset_definition::{log_throw_error, ErrCode, Result, SyncType, Value};
+use asset_file_operator::{
+    read_db_key_cipher, is_ce_db_file_exist, delete_user_de_dir, is_db_key_cipher_file_exist,
+};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::plugin_interface::{
@@ -36,7 +40,6 @@ use asset_sdk::plugin_interface::{
 };
 
 use crate::sys_event::upload_fault_system_event;
-use crate::database_key;
 
 const ASSET_DB: &str = "asset.db";
 const BACKUP_SUFFIX: &str = ".backup";
@@ -63,10 +66,10 @@ fn delete_on_package_removed(calling_info: &CallingInfo, owner: Vec<u8>) -> Resu
     check_cond.insert(column::OWNER, Value::Bytes(owner));
     let de_db_data_exists = de_db.is_data_exists(&check_cond, false);
 
-    if asset_file_operator::is_ce_db_file_exist(calling_info.user_id()).is_ok() {
+    if is_ce_db_file_exist(calling_info.user_id()).is_ok() {
         // Delete non-persistent data in ce db if ce db file exists.
-        let db_key_cipher = asset_file_operator::read_db_key_cipher(calling_info.user_id())?;
-        let db_key = database_key::decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
+        let db_key_cipher = read_db_key_cipher(calling_info.user_id())?;
+        let db_key = decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
         let mut ce_db = Database::build(calling_info.user_id(), Some(&db_key))?;
         let _ = ce_db.delete_datas(&delete_cond, Some(&reverse_condition), false)?;
 
@@ -157,7 +160,7 @@ pub(crate) extern "C" fn on_package_removed(
 
 extern "C" fn delete_dir_by_user(user_id: i32) {
     let _counter_user = AutoCounter::new();
-    let _ = asset_file_operator::delete_user_de_dir(user_id);
+    let _ = delete_user_de_dir(user_id);
 }
 
 extern "C" fn delete_crypto_need_unlock() {
@@ -240,7 +243,7 @@ fn backup_de_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
 }
 
 fn backup_ce_db_if_exists(user_id: i32) -> Result<()> {
-    asset_file_operator::is_ce_db_file_exist(user_id)?;
+    is_ce_db_file_exist(user_id)?;
     let from_path = format!("{}/{}/asset_service/{}", CE_ROOT_PATH, user_id, ASSET_DB);
     let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
     fs::copy(from_path, backup_path)?;
@@ -249,7 +252,7 @@ fn backup_ce_db_if_exists(user_id: i32) -> Result<()> {
 }
 
 fn backup_db_key_cipher_if_exists(user_id: i32) -> Result<()> {
-    match asset_file_operator::is_db_key_cipher_file_exist(user_id) {
+    match is_db_key_cipher_file_exist(user_id) {
         Ok(true) => {
             let from_path = format!("{}/{}/asset_service/db_key", CE_ROOT_PATH, user_id);
             let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
@@ -279,7 +282,7 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
         }
     }
 
-    // Backup all ce db and db key cipher if exists. (todo?: backup ce db if accessible)
+    // Backup all ce db and db key cipher if exists. (todo1?: backup ce db if accessible. todo2?: do not backup db key cipher.)
     unsafe {
         /* Temporarily allocate at least 256 spaces for user ids.
         If the number of user ids exceeds 256, this method(with_capacity) will automatically allocate more spaces.*/

@@ -23,6 +23,9 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap, DB_DATA_VERSION},
 };
+use asset_db_key_operator::{
+    create_db_instance, generate_secret_key_if_needed,
+};
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, LocalStatus, Result,
     SyncStatus, SyncType, Tag, Value,
@@ -30,11 +33,10 @@ use asset_definition::{
 use asset_utils::time;
 
 use crate::operations::common;
-use crate::database_key;
 
 fn encrypt_secret(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     let secret_key = common::build_secret_key(calling_info, db_data)?;
-    database_key::generate_secret_key_if_needed(&secret_key)?;
+    generate_secret_key_if_needed(&secret_key)?;
 
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
     let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data)?)?;
@@ -156,7 +158,7 @@ fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 
     let query = get_query_condition(calling_info, attributes)?;
 
-    let mut db = database_key::create_db_instance(attributes, calling_info)?;
+    let mut db = create_db_instance(attributes, calling_info)?;
 
     if db.is_data_exists(&query, false)? {
         resolve_conflict(calling_info, &mut db, attributes, &query, &mut db_data)?;

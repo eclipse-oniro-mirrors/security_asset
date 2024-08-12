@@ -18,11 +18,11 @@
 use asset_common::CallingInfo;
 use asset_crypto_manager::crypto::Crypto;
 use asset_db_operator::types::{column, DbMap, DB_DATA_VERSION};
+use asset_db_key_operator::create_db_instance;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, LocalStatus, Result, SyncStatus, Tag, Value};
 use asset_utils::time;
 
 use crate::operations::common;
-use crate::database_key;
 
 fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
     let secret_key = common::build_secret_key(calling_info, db_data)?;
@@ -95,7 +95,7 @@ pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &Asse
     add_system_attrs(update, &mut update_db_data)?;
     add_normal_attrs(&mut update_db_data);
 
-    let mut db = database_key::create_db_instance(query, calling_info)?;
+    let mut db = create_db_instance(query, calling_info)?;
     let results = db.query_datas(&vec![], &query_db_data, None, true)?;
     if results.is_empty() {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]The asset to update is not found.");

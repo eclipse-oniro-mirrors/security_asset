@@ -23,12 +23,12 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap, QueryOptions, DB_DATA_VERSION},
 };
+use asset_db_key_operator::create_db_instance;
 use asset_definition::{
     log_throw_error, throw_error, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value,
 };
 
 use crate::operations::common;
-use crate::database_key;
 
 fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
     let mut map_set = Vec::new();
@@ -87,7 +87,7 @@ fn exec_crypto(calling_info: &CallingInfo, query: &AssetMap, db_data: &mut DbMap
 }
 
 fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) -> Result<Vec<AssetMap>> {
-    let mut db = database_key::create_db_instance(query, calling_info)?;
+    let mut db = create_db_instance(query, calling_info)?;
     let mut results = db.query_datas(&vec![], db_data, None, true)?;
     match results.len() {
         0 => throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist."),
@@ -141,7 +141,7 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
 }
 
 pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
-    let mut db = database_key::create_db_instance(attrs, calling_info)?;
+    let mut db = create_db_instance(attrs, calling_info)?;
     let mut results = db.query_datas(
         &vec![],
         db_data,

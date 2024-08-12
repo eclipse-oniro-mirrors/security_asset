@@ -18,6 +18,7 @@
 use std::collections::HashMap;
 
 use asset_log::{loge, logi};
+use asset_file_operator::delete_user_de_dir;
 use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
 
 use crate::common_event::listener;
@@ -81,7 +82,7 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
         handle_package_removed(&want, true);
     } else if reason_name == "usual.event.USER_REMOVED" {
         logi!("on_start by user remove");
-        let _ = asset_file_operator::delete_user_de_dir(reason.extra_data.code);
+        let _ = delete_user_de_dir(reason.extra_data.code);
     } else if reason_name == "usual.event.CHARGING" {
         listener::backup_db();
     } else if reason_name == "COMMON_EVENT_RESTORE_START" {

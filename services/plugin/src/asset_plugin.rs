@@ -13,9 +13,11 @@
  * limitations under the License.
  */
 
-use asset_common::Counter;
+use asset_common::{CallingInfo, Counter, OwnerType};
 use asset_db_operator::database::{get_path, Database};
+use asset_db_key_operator::get_db_key;
 use asset_definition::{log_throw_error, ErrCode, Result};
+use asset_file_operator::create_user_de_dir;
 use asset_log::{loge, logi};
 use asset_sdk::plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx};
 use std::{
@@ -97,87 +99,168 @@ impl AssetPlugin {
 /// The asset_ext plugin context.
 #[repr(C)]
 pub struct AssetContext {
-    /// The asset database instance.
-    pub data_base: Option<Database>,
+    /// The asset de db instance.
+    pub de_db: Option<Database>,
+    /// The asset ce db instance.
+    pub ce_db: Option<Database>,
 }
 
 #[allow(dead_code)]
 impl IAssetPluginCtx for AssetContext {
     /// Initializes the plugin before usage.
-    fn init(&mut self, user_id: i32) -> std::result::Result<(), u32> {
-        // Create database directory if not exists.
-        asset_file_operator::create_user_de_dir(user_id).map_err(|e| e.code as u32)?;
+    fn init(&mut self, user_id: u32, owner_type: u32, owner_info: Vec<u8>) -> std::result::Result<(), u32> {
+        create_user_de_dir(user_id as i32).map_err(|e| e.code as u32)?;
+        let de_db = Database::build(user_id as i32, None).map_err(|e| e.code as u32)?;
+        self.de_db = Some(de_db);
 
-        let db = Database::build(user_id, None).map_err(|e| e.code as u32)?;
-        self.data_base = Some(db);
+        let owner_type = match owner_type {
+            0 => OwnerType::Hap,
+            1 => OwnerType::Native,
+            _ => return Err(ErrCode::InvalidArgument as u32),
+        };
+        let calling_info = CallingInfo::new(user_id as i32, owner_type, owner_info);
+        let db_key = get_db_key(&calling_info).map_err(|e| e.code as u32)?;
+        let ce_db = Database::build(calling_info.user_id(), Some(&db_key)).map_err(|e| e.code as u32)?;
+        self.ce_db = Some(ce_db);
+
         Ok(())
     }
 
-    /// Adds an asset to the database.
+    /// Adds an asset to de db.
     fn add(&mut self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
-        self.data_base
+        self.de_db
             .as_mut()
             .ok_or(ErrCode::InvalidArgument as u32)?
             .insert_datas(attributes)
             .map_err(|e| e.code as u32)
     }
 
+    /// Adds an asset to ce db.
+    fn ce_add(&mut self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
+        self.ce_db
+            .as_mut()
+            .ok_or(ErrCode::InvalidArgument as u32)?
+            .insert_datas(attributes)
+            .map_err(|e| e.code as u32)
+    }
+
+    /// Adds an asset with replace to de db.
     fn replace(&mut self, condition: &ExtDbMap, attributes: &ExtDbMap) -> std::result::Result<(), u32> {
-        self.data_base
+        self.de_db
             .as_mut()
             .ok_or(ErrCode::InvalidArgument as u32)?
             .replace_datas(condition, false, attributes)
             .map_err(|e| e.code as u32)
     }
 
-    /// Queries the asset database.
+    /// Adds an asset with replace to ce db.
+    fn ce_replace(&mut self, condition: &ExtDbMap, attributes: &ExtDbMap) -> std::result::Result<(), u32> {
+        self.ce_db
+            .as_mut()
+            .ok_or(ErrCode::InvalidArgument as u32)?
+            .replace_datas(condition, false, attributes)
+            .map_err(|e| e.code as u32)
+    }
+
+    /// Queries de db.
     fn query(&mut self, attributes: &ExtDbMap) -> std::result::Result<Vec<ExtDbMap>, u32> {
-        self.data_base
+        self.de_db
             .as_mut()
             .ok_or(ErrCode::InvalidArgument as u32)?
             .query_datas(&vec![], attributes, None, false)
             .map_err(|e| e.code as u32)
     }
 
-    /// Removes an asset from the database.
+    /// Queries ce db.
+    fn ce_query(&mut self, attributes: &ExtDbMap) -> std::result::Result<Vec<ExtDbMap>, u32> {
+        self.ce_db
+            .as_mut()
+            .ok_or(ErrCode::InvalidArgument as u32)?
+            .query_datas(&vec![], attributes, None, false)
+            .map_err(|e| e.code as u32)
+    }
+
+    /// Removes an asset from de db.
     fn remove(&mut self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
-        self.data_base
+        self.de_db
             .as_mut()
             .ok_or(ErrCode::InvalidArgument as u32)?
             .delete_datas(attributes, None, false)
             .map_err(|e| e.code as u32)
     }
 
-    /// Updates the attributes of an asset in the database.
+    /// Removes an asset from ce db.
+    fn ce_remove(&mut self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
+        self.ce_db
+            .as_mut()
+            .ok_or(ErrCode::InvalidArgument as u32)?
+            .delete_datas(attributes, None, false)
+            .map_err(|e| e.code as u32)
+    }
+
+    /// Updates the attributes of an asset in de db.
     fn update(&mut self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> std::result::Result<i32, u32> {
-        self.data_base
+        self.de_db
             .as_mut()
             .ok_or(ErrCode::InvalidArgument as u32)?
             .update_datas(attributes, false, attrs_to_update)
             .map_err(|e| e.code as u32)
     }
 
-    /// Begins a transaction for the asset database.
+    /// Updates the attributes of an asset in ce db.
+    fn ce_update(&mut self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> std::result::Result<i32, u32> {
+        self.ce_db
+            .as_mut()
+            .ok_or(ErrCode::InvalidArgument as u32)?
+            .update_datas(attributes, false, attrs_to_update)
+            .map_err(|e| e.code as u32)
+    }
+
+    /// Begins a transaction for de db.
     fn begin_transaction(&mut self) -> std::result::Result<(), u32> {
-        self.data_base
+        self.de_db
             .as_mut()
             .ok_or(ErrCode::InvalidArgument as u32)?
             .exec("begin immediate")
             .map_err(|e| e.code as u32)
     }
 
-    /// Commits a transaction for the asset database.
+    /// Begins a transaction for ce db.
+    fn ce_begin_transaction(&mut self) -> std::result::Result<(), u32> {
+        self.ce_db
+            .as_mut()
+            .ok_or(ErrCode::InvalidArgument as u32)?
+            .exec("begin immediate")
+            .map_err(|e| e.code as u32)
+    }
+
+    /// Commits a transaction for de db.
     fn commit_transaction(&mut self) -> std::result::Result<(), u32> {
-        self.data_base.as_mut().ok_or(ErrCode::InvalidArgument as u32)?.exec("commit").map_err(|e| e.code as u32)
+        self.de_db.as_mut().ok_or(ErrCode::InvalidArgument as u32)?.exec("commit").map_err(|e| e.code as u32)
     }
 
-    /// Rolls back a transaction for the asset database.
+    /// Commits a transaction for ce db.
+    fn ce_commit_transaction(&mut self) -> std::result::Result<(), u32> {
+        self.ce_db.as_mut().ok_or(ErrCode::InvalidArgument as u32)?.exec("commit").map_err(|e| e.code as u32)
+    }
+
+    /// Rolls back a transaction for de db.
     fn rollback_transaction(&mut self) -> std::result::Result<(), u32> {
-        self.data_base.as_mut().ok_or(ErrCode::InvalidArgument as u32)?.exec("rollback").map_err(|e| e.code as u32)
+        self.de_db.as_mut().ok_or(ErrCode::InvalidArgument as u32)?.exec("rollback").map_err(|e| e.code as u32)
     }
 
-    /// Returns the storage path for the asset database.
+    /// Rolls back a transaction for ce db.
+    fn ce_rollback_transaction(&mut self) -> std::result::Result<(), u32> {
+        self.ce_db.as_mut().ok_or(ErrCode::InvalidArgument as u32)?.exec("rollback").map_err(|e| e.code as u32)
+    }
+
+    /// Returns the storage path for de db.
     fn get_storage_path(&self) -> String {
+        get_path()
+    }
+
+    /// Returns the storage path for ce db.
+    fn ce_get_storage_path(&self) -> String {
         get_path()
     }
 

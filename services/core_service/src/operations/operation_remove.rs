@@ -17,12 +17,12 @@
 
 use asset_common::CallingInfo;
 use asset_db_operator::types::{column, DbMap};
+use asset_db_key_operator::create_db_instance;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncStatus, SyncType, Value};
 use asset_log::logi;
 use asset_utils::time;
 
 use crate::operations::common;
-use crate::database_key;
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     let time = time::system_time_in_millis()?;
@@ -55,7 +55,7 @@ pub(crate) fn remove(calling_info: &CallingInfo, query: &AssetMap) -> Result<()>
     add_system_attrs(&mut update_db_data)?;
     add_normal_attrs(&mut update_db_data);
 
-    let mut db = database_key::create_db_instance(query, calling_info)?;
+    let mut db = create_db_instance(query, calling_info)?;
     let results = db.query_datas(&vec![], &db_data, None, true)?;
     if results.is_empty() {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");

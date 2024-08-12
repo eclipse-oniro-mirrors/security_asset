@@ -157,8 +157,8 @@ pub enum Value {
     Bool(bool),
 
     /// Asset attribute value, whose data type is number.
-    Number(u32),
 
+    Number(u32),
     /// Asset attribute value, whose data type is byte array.
     Bytes(Vec<u8>),
 }

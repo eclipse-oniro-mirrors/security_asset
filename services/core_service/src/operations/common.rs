@@ -29,7 +29,9 @@ use asset_definition::{
 };
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID};
+use asset_sdk::plugin_interface::{
+    EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID, PARAM_NAME_IS_HAP, PARAM_NAME_OWNER_INFO
+};
 
 const TAG_COLUMN_TABLE: [(Tag, &str); 20] = [
     (Tag::Secret, column::SECRET),
@@ -206,6 +208,8 @@ pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
                     let caller_name = owner_info_vec[0];
                     let mut params = ExtDbMap::new();
                     params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
+                    params.insert(PARAM_NAME_IS_HAP, Value::Number(calling_info.owner_type()));
+                    params.insert(PARAM_NAME_OWNER_INFO, Value::Bytes(calling_info.owner_info().to_vec()));
                     params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(caller_name.as_bytes().to_vec()));
                     match load.process_event(EventType::Sync, &params) {
                         Ok(()) => logi!("process sync ext event success."),

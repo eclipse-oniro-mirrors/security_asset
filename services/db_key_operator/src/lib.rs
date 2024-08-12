@@ -25,6 +25,9 @@ use asset_db_operator::database::Database;
 use asset_definition::{
     Accessibility, AssetMap, AuthType, Result, Tag, Value
 };
+use asset_file_operator::{
+    is_db_key_cipher_file_exist, read_db_key_cipher, write_db_key_cipher,
+};
 use asset_log::logi;
 
 fn build_db_key_secret_key(calling_info: &CallingInfo) -> Result<SecretKey> {
@@ -36,7 +39,8 @@ fn build_db_key_secret_key(calling_info: &CallingInfo) -> Result<SecretKey> {
     Ok(SecretKey::new(calling_info, auth_type, access_type, require_password_set, Some(alias)))
 }
 
-pub(crate) fn decrypt_db_key_cipher(calling_info: &CallingInfo, db_key_cipher: &Vec<u8>) -> Result<Vec<u8>> {
+/// Decrypt db key cipher.
+pub fn decrypt_db_key_cipher(calling_info: &CallingInfo, db_key_cipher: &Vec<u8>) -> Result<Vec<u8>> {
     let secret_key = build_db_key_secret_key(calling_info)?;
     let aad: Vec<u8> = "trivial_aad_for_db_key".as_bytes().to_vec();
     let db_key = Crypto::decrypt(&secret_key, db_key_cipher, &aad)?;
@@ -54,7 +58,8 @@ fn generate_db_key() -> Result<Vec<u8>> {
 
 static GEN_KEY_MUTEX: Mutex<()> = Mutex::new(());
 
-pub(crate) fn generate_secret_key_if_needed(secret_key: &SecretKey) -> Result<()> {
+/// Generate secret key if it does not exist.
+pub fn generate_secret_key_if_needed(secret_key: &SecretKey) -> Result<()> {
     match secret_key.exists() {
         Ok(true) => Ok(()),
         Ok(false) => {
@@ -81,25 +86,27 @@ fn encrypt_db_key(calling_info: &CallingInfo, db_key: &Vec<u8>) -> Result<Vec<u8
     Ok(db_key_cipher)
 }
 
-fn get_db_key(calling_info: &CallingInfo) -> Result<Vec<u8>>
+/// Read db key cipher and decrypt if the db key cipher file exists, generate db_key if not.
+pub fn get_db_key(calling_info: &CallingInfo) -> Result<Vec<u8>>
 {
-    match asset_file_operator::is_db_key_cipher_file_exist(calling_info.user_id()) {
+    match is_db_key_cipher_file_exist(calling_info.user_id()) {
         Ok(true) => {
-            let db_key_cipher = asset_file_operator::read_db_key_cipher(calling_info.user_id())?;
+            let db_key_cipher = read_db_key_cipher(calling_info.user_id())?;
             let db_key = decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
             Ok(db_key)
         },
         Ok(false) => {
             let db_key = generate_db_key()?;
             let db_key_cipher = encrypt_db_key(calling_info, &db_key)?;
-            asset_file_operator::write_db_key_cipher(calling_info.user_id(), &db_key_cipher)?;
+            write_db_key_cipher(calling_info.user_id(), &db_key_cipher)?;
             Ok(db_key)
         },
         Err(e) => Err(e),
     }
 }
 
-pub(crate) fn create_db_instance(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<Database> {
+/// Create de db instance if the value of tag "RequireAttrEncrypted" is set to false, Create ce db instance if true.
+pub fn create_db_instance(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<Database> {
     match attributes.get(&Tag::RequireAttrEncrypted) {
         Some(Value::Bool(true)) => {
             let db_key = get_db_key(calling_info)?;

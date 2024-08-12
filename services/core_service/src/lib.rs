@@ -27,6 +27,7 @@ use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
 use asset_common::{CallingInfo, Counter};
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
+use asset_file_operator::create_user_de_dir;
 use asset_ipc::SA_ID;
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::{AssetContext, AssetPlugin};
@@ -37,7 +38,6 @@ mod stub;
 mod sys_event;
 mod trace_scope;
 mod unload_handler;
-mod database_key;
 
 use sys_event::upload_system_event;
 use trace_scope::TraceScope;
@@ -107,7 +107,7 @@ fn start_service(handler: Handler) -> Result<()> {
     let asset_plugin = AssetPlugin::get_instance();
     match asset_plugin.load_plugin() {
         Ok(loader) => {
-            let _tr = loader.init(Box::new(AssetContext { data_base: None }));
+            let _tr = loader.init(Box::new(AssetContext { de_db: None, ce_db: None }));
             logi!("load plugin success.");
         },
         Err(_) => loge!("load plugin failed."),
@@ -144,7 +144,7 @@ macro_rules! execute {
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
         // Create de database directory if not exists.
-        asset_file_operator::create_user_de_dir($calling_info.user_id())?;
+        create_user_de_dir($calling_info.user_id())?;
         upload_system_event($func($calling_info, $($args),+), $calling_info, start, func_name)
     }};
 }
