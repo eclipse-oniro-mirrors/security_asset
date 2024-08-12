@@ -30,8 +30,11 @@ pub enum EventType {
     #[default]
     Sync = 0,
 
-    /// Logout operate.
-    Logout = 1,
+    /// Clean cloud flag.
+    CleanCloudFlag = 1,
+
+    /// Delete cloud data.
+    DeleteCloudData,
 
     /// Device upgrade event.
     OnDeviceUpgrade,
@@ -86,6 +89,9 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Removes an asset from the database.
     fn remove(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
+
+    /// Removes assets from the database with specific condition.
+    fn remove_with_specific_cond(&mut self, specific_cond: &str, condition_value: &[Value]) -> Result<i32, u32>;
 
     /// Updates the attributes of an asset in the database.
     fn update(&mut self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> Result<i32, u32>;

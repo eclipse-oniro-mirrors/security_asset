@@ -20,7 +20,7 @@ use core::ffi::c_void;
 use std::{ffi::CStr, fs, ptr::null_mut, sync::Mutex};
 
 use asset_common::OwnerType;
-use asset_definition::{log_throw_error, ErrCode, Extension, Result};
+use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
 use asset_log::{loge, logi};
 
 use crate::{
@@ -344,6 +344,19 @@ impl Database {
     ) -> Result<i32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.delete_row(condition, reverse_condition, is_filter_sync);
+        self.restore_if_exec_fail(closure)
+    }
+
+    /// Delete datas from database with specific condition.
+    /// If the operation is successful, the number of deleted data is returned.
+    #[inline(always)]
+    pub fn delete_specific_condition_datas(
+        &mut self,
+        specific_cond: &str,
+        condition_value: &[Value],
+    ) -> Result<i32> {
+        let _lock = self.db_lock.mtx.lock().unwrap();
+        let closure = |e: &Table| e.delete_with_specific_cond(specific_cond, condition_value);
         self.restore_if_exec_fail(closure)
     }
 
