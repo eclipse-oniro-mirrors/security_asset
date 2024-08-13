@@ -157,8 +157,8 @@ pub enum Value {
     Bool(bool),
 
     /// Asset attribute value, whose data type is number.
-
     Number(u32),
+
     /// Asset attribute value, whose data type is byte array.
     Bytes(Vec<u8>),
 }
@@ -381,12 +381,15 @@ impl_enum_trait! {
     /// An enum type indicates the return type of the queried Asset.
     #[derive(Default)]
     pub enum OperationType {
-        /// Specify that the return data should contain both secret value and attributes.
+        /// Trigger Sync.
         #[default]
         NeedSync = 0,
 
-        /// Specify that the return data contains only attributes.
+        /// Logout to clean cloud flag.
         NeedLogout = 1,
+
+        /// Delete cloud data.
+        NeedDeleteCloudData = 2,
     }
 }
 

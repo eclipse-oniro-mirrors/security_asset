@@ -16,9 +16,9 @@
 //! This module defines the interface of the Asset Rust SDK.
 
 pub use asset_definition::Value;
+use ipc::parcel::MsgParcel;
 use std::any::Any;
 use std::collections::HashMap;
-use ipc::parcel::MsgParcel;
 
 /// Defines a type alias `ExtDbMap` as a `HashMap` with keys of type `&'static str` and values of type `Value`.
 pub type ExtDbMap = HashMap<&'static str, Value>;
@@ -30,8 +30,11 @@ pub enum EventType {
     #[default]
     Sync = 0,
 
-    /// Logout operate.
-    Logout = 1,
+    /// Clean cloud flag.
+    CleanCloudFlag = 1,
+
+    /// Delete cloud data.
+    DeleteCloudData,
 
     /// Device upgrade event.
     OnDeviceUpgrade,
@@ -76,7 +79,7 @@ pub enum PluginType {
 /// an asset plugin to operate on an asset database.
 pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     /// Initializes the plugin before usage.
-    fn init(&mut self, user_id: u32, owner_type: u32, owner_info: Vec<u8>) -> Result<(), u32>;
+    fn init(&mut self, user_id: i32, owner_type: u32, owner_info: Vec<u8>) -> Result<(), u32>;
 
     /// Adds an asset to de db.
     fn add(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
@@ -101,6 +104,12 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Removes an asset from ce db.
     fn ce_remove(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
+
+    /// Removes assets from de db with specific condition.
+    fn remove_with_specific_cond(&mut self, specific_cond: &str, condition_value: &[Value]) -> Result<i32, u32>;
+
+    /// Removes assets from ce db with specific condition.
+    fn ce_remove_with_specific_cond(&mut self, specific_cond: &str, condition_value: &[Value]) -> Result<i32, u32>;
 
     /// Updates the attributes of an asset in de db.
     fn update(&mut self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> Result<i32, u32>;

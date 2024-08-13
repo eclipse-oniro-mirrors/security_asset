@@ -24,15 +24,13 @@ use std::{
 
 use asset_common::{AutoCounter, CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
+use asset_db_key_operator::decrypt_db_key_cipher;
 use asset_db_operator::{
     database::Database,
     types::{column, DbMap},
 };
-use asset_db_key_operator::decrypt_db_key_cipher;
 use asset_definition::{log_throw_error, ErrCode, Result, SyncType, Value};
-use asset_file_operator::{
-    read_db_key_cipher, is_ce_db_file_exist, delete_user_de_dir, is_db_key_cipher_file_exist,
-};
+use asset_file_operator::{delete_user_de_dir, is_ce_db_file_exist, is_db_key_cipher_file_exist, read_db_key_cipher};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::plugin_interface::{
@@ -302,7 +300,12 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
             }
             if let Err(e) = backup_db_key_cipher_if_exists(*user_id) {
                 let calling_info = CallingInfo::new_self();
-                upload_fault_system_event(&calling_info, *start_time, &format!("backup_db_key_cipher_{}", *user_id), &e);
+                upload_fault_system_event(
+                    &calling_info,
+                    *start_time,
+                    &format!("backup_db_key_cipher_{}", *user_id),
+                    &e,
+                );
             }
         }
     };

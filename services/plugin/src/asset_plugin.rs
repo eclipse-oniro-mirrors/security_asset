@@ -14,12 +14,15 @@
  */
 
 use asset_common::{CallingInfo, Counter, OwnerType};
-use asset_db_operator::database::{get_path, Database};
 use asset_db_key_operator::get_db_key;
+use asset_db_operator::database::{get_path, Database};
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_file_operator::create_user_de_dir;
 use asset_log::{loge, logi};
-use asset_sdk::plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx};
+use asset_sdk::{
+    plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx},
+    Value,
+};
 use std::{
     cell::RefCell,
     sync::{Arc, Mutex},
@@ -108,9 +111,9 @@ pub struct AssetContext {
 #[allow(dead_code)]
 impl IAssetPluginCtx for AssetContext {
     /// Initializes the plugin before usage.
-    fn init(&mut self, user_id: u32, owner_type: u32, owner_info: Vec<u8>) -> std::result::Result<(), u32> {
-        create_user_de_dir(user_id as i32).map_err(|e| e.code as u32)?;
-        let de_db = Database::build(user_id as i32, None).map_err(|e| e.code as u32)?;
+    fn init(&mut self, user_id: i32, owner_type: u32, owner_info: Vec<u8>) -> std::result::Result<(), u32> {
+        create_user_de_dir(user_id).map_err(|e| e.code as u32)?;
+        let de_db = Database::build(user_id, None).map_err(|e| e.code as u32)?;
         self.de_db = Some(de_db);
 
         let owner_type = match owner_type {
@@ -118,7 +121,7 @@ impl IAssetPluginCtx for AssetContext {
             1 => OwnerType::Native,
             _ => return Err(ErrCode::InvalidArgument as u32),
         };
-        let calling_info = CallingInfo::new(user_id as i32, owner_type, owner_info);
+        let calling_info = CallingInfo::new(user_id, owner_type, owner_info);
         let db_key = get_db_key(&calling_info).map_err(|e| e.code as u32)?;
         let ce_db = Database::build(calling_info.user_id(), Some(&db_key)).map_err(|e| e.code as u32)?;
         self.ce_db = Some(ce_db);
@@ -128,20 +131,12 @@ impl IAssetPluginCtx for AssetContext {
 
     /// Adds an asset to de db.
     fn add(&mut self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
-        self.de_db
-            .as_mut()
-            .ok_or(ErrCode::InvalidArgument as u32)?
-            .insert_datas(attributes)
-            .map_err(|e| e.code as u32)
+        self.de_db.as_mut().ok_or(ErrCode::InvalidArgument as u32)?.insert_datas(attributes).map_err(|e| e.code as u32)
     }
 
     /// Adds an asset to ce db.
     fn ce_add(&mut self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
-        self.ce_db
-            .as_mut()
-            .ok_or(ErrCode::InvalidArgument as u32)?
-            .insert_datas(attributes)
-            .map_err(|e| e.code as u32)
+        self.ce_db.as_mut().ok_or(ErrCode::InvalidArgument as u32)?.insert_datas(attributes).map_err(|e| e.code as u32)
     }
 
     /// Adds an asset with replace to de db.
@@ -198,6 +193,32 @@ impl IAssetPluginCtx for AssetContext {
             .map_err(|e| e.code as u32)
     }
 
+    /// Removes assets from de db with sepcific condition.
+    fn remove_with_specific_cond(
+        &mut self,
+        specific_cond: &str,
+        condition_value: &[Value],
+    ) -> std::result::Result<i32, u32> {
+        self.de_db
+            .as_mut()
+            .ok_or(ErrCode::InvalidArgument as u32)?
+            .delete_specific_condition_datas(specific_cond, condition_value)
+            .map_err(|e| e.code as u32)
+    }
+
+    /// Removes assets from ce db with sepcific condition.
+    fn ce_remove_with_specific_cond(
+        &mut self,
+        specific_cond: &str,
+        condition_value: &[Value],
+    ) -> std::result::Result<i32, u32> {
+        self.ce_db
+            .as_mut()
+            .ok_or(ErrCode::InvalidArgument as u32)?
+            .delete_specific_condition_datas(specific_cond, condition_value)
+            .map_err(|e| e.code as u32)
+    }
+
     /// Updates the attributes of an asset in de db.
     fn update(&mut self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> std::result::Result<i32, u32> {
         self.de_db
@@ -218,20 +239,12 @@ impl IAssetPluginCtx for AssetContext {
 
     /// Begins a transaction for de db.
     fn begin_transaction(&mut self) -> std::result::Result<(), u32> {
-        self.de_db
-            .as_mut()
-            .ok_or(ErrCode::InvalidArgument as u32)?
-            .exec("begin immediate")
-            .map_err(|e| e.code as u32)
+        self.de_db.as_mut().ok_or(ErrCode::InvalidArgument as u32)?.exec("begin immediate").map_err(|e| e.code as u32)
     }
 
     /// Begins a transaction for ce db.
     fn ce_begin_transaction(&mut self) -> std::result::Result<(), u32> {
-        self.ce_db
-            .as_mut()
-            .ok_or(ErrCode::InvalidArgument as u32)?
-            .exec("begin immediate")
-            .map_err(|e| e.code as u32)
+        self.ce_db.as_mut().ok_or(ErrCode::InvalidArgument as u32)?.exec("begin immediate").map_err(|e| e.code as u32)
     }
 
     /// Commits a transaction for de db.

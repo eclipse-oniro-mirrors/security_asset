@@ -167,6 +167,7 @@ napi_value DeclareOperationType(const napi_env env)
     NAPI_CALL(env, napi_create_object(env, &operationType));
     AddUint32Property(env, operationType, "NEED_SYNC", SEC_ASSET_NEED_SYNC);
     AddUint32Property(env, operationType, "NEED_LOGOUT", SEC_ASSET_NEED_LOGOUT);
+    AddUint32Property(env, operationType, "NEED_DELETE_CLOUD_DATA", SEC_ASSET_NEED_DELETE_CLOUD_DATA);
     return operationType;
 }
 

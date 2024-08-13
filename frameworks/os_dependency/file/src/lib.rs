@@ -33,7 +33,11 @@ fn is_user_de_dir_exist(user_id: i32) -> Result<()> {
             log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]User DE directory does not exist!")
         },
         Err(e) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Checking existence of user DE directory failed! error is [{}]", e)
+            log_throw_error!(
+                ErrCode::FileOperationError,
+                "[FATAL][SA]Checking existence of user DE directory failed! error is [{}]",
+                e
+            )
         },
     }
 }
@@ -51,7 +55,11 @@ pub fn create_user_de_dir(user_id: i32) -> Result<()> {
         Ok(_) => Ok(()),
         Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
         Err(e) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Create user DE directory failed! error is [{}]", e)
+            log_throw_error!(
+                ErrCode::FileOperationError,
+                "[FATAL][SA]Create user DE directory failed! error is [{}]",
+                e
+            )
         },
     }
 }
@@ -68,7 +76,11 @@ pub fn delete_user_de_dir(user_id: i32) -> Result<()> {
         Ok(_) => Ok(()),
         Err(e) if e.kind() != std::io::ErrorKind::NotFound => Ok(()),
         Err(e) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Delete user DE directory failed! error is [{}]", e)
+            log_throw_error!(
+                ErrCode::FileOperationError,
+                "[FATAL][SA]Delete user DE directory failed! error is [{}]",
+                e
+            )
         },
     }
 }
@@ -87,7 +99,11 @@ pub fn is_ce_db_file_exist(user_id: i32) -> Result<()> {
             log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]CE database file does not exist!")
         },
         Err(e) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Checking existence of CE database file failed! error is [{}]", e)
+            log_throw_error!(
+                ErrCode::FileOperationError,
+                "[FATAL][SA]Checking existence of CE database file failed! error is [{}]",
+                e
+            )
         },
     }
 }
@@ -104,7 +120,11 @@ pub fn is_db_key_cipher_file_exist(user_id: i32) -> Result<bool> {
         Ok(true) => Ok(true),
         Ok(false) => Ok(false),
         Err(e) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]]Checking existence of database key ciphertext file failed! error is [{}]", e)
+            log_throw_error!(
+                ErrCode::FileOperationError,
+                "[FATAL][SA]]Checking existence of database key ciphertext file failed! error is [{}]",
+                e
+            )
         },
     }
 }
@@ -116,7 +136,11 @@ pub fn read_db_key_cipher(user_id: i32) -> Result<Vec<u8>> {
     match fs::read(path) {
         Ok(db_key_cipher) => Ok(db_key_cipher),
         Err(e) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Read database key ciphertext failed! error is [{}]", e)
+            log_throw_error!(
+                ErrCode::FileOperationError,
+                "[FATAL][SA]Read database key ciphertext failed! error is [{}]",
+                e
+            )
         },
     }
 }
@@ -128,7 +152,11 @@ pub fn write_db_key_cipher(user_id: i32, db_key_cipher: &Vec<u8>) -> Result<()> 
     match fs::write(path, db_key_cipher) {
         Ok(_) => Ok(()),
         Err(e) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Write database key ciphertext failed! error is [{}]", e)
+            log_throw_error!(
+                ErrCode::FileOperationError,
+                "[FATAL][SA]Write database key ciphertext failed! error is [{}]",
+                e
+            )
         },
     }
 }

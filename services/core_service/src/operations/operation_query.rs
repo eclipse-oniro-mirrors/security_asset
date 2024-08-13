@@ -19,11 +19,11 @@ use std::cmp::Ordering;
 
 use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager};
+use asset_db_key_operator::create_db_instance;
 use asset_db_operator::{
     database::Database,
     types::{column, DbMap, QueryOptions, DB_DATA_VERSION},
 };
-use asset_db_key_operator::create_db_instance;
 use asset_definition::{
     log_throw_error, throw_error, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value,
 };
@@ -142,12 +142,7 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
 
 pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
     let mut db = create_db_instance(attrs, calling_info)?;
-    let mut results = db.query_datas(
-        &vec![],
-        db_data,
-        Some(&get_query_options(attrs)),
-        true,
-    )?;
+    let mut results = db.query_datas(&vec![], db_data, Some(&get_query_options(attrs)), true)?;
     if results.is_empty() {
         return throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
     }

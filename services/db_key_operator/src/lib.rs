@@ -15,20 +15,14 @@
 
 //! This module implements functions related to Asset database key.
 
+use asset_common::CallingInfo;
+use asset_crypto_manager::{crypto::Crypto, secret_key::SecretKey};
+use asset_db_operator::database::Database;
+use asset_definition::{Accessibility, AssetMap, AuthType, Result, Tag, Value};
+use asset_file_operator::{is_db_key_cipher_file_exist, read_db_key_cipher, write_db_key_cipher};
+use asset_log::logi;
 use openssl::rand::rand_bytes;
 use std::sync::Mutex;
-use asset_common::CallingInfo;
-use asset_crypto_manager::{
-    secret_key::SecretKey, crypto::Crypto
-};
-use asset_db_operator::database::Database;
-use asset_definition::{
-    Accessibility, AssetMap, AuthType, Result, Tag, Value
-};
-use asset_file_operator::{
-    is_db_key_cipher_file_exist, read_db_key_cipher, write_db_key_cipher,
-};
-use asset_log::logi;
 
 fn build_db_key_secret_key(calling_info: &CallingInfo) -> Result<SecretKey> {
     let auth_type = AuthType::None;
@@ -87,8 +81,7 @@ fn encrypt_db_key(calling_info: &CallingInfo, db_key: &Vec<u8>) -> Result<Vec<u8
 }
 
 /// Read db key cipher and decrypt if the db key cipher file exists, generate db_key if not.
-pub fn get_db_key(calling_info: &CallingInfo) -> Result<Vec<u8>>
-{
+pub fn get_db_key(calling_info: &CallingInfo) -> Result<Vec<u8>> {
     match is_db_key_cipher_file_exist(calling_info.user_id()) {
         Ok(true) => {
             let db_key_cipher = read_db_key_cipher(calling_info.user_id())?;
@@ -112,10 +105,10 @@ pub fn create_db_instance(attributes: &AssetMap, calling_info: &CallingInfo) -> 
             let db_key = get_db_key(calling_info)?;
             let db = Database::build(calling_info.user_id(), Some(&db_key))?;
             Ok(db)
-        }
+        },
         _ => {
             let db = Database::build(calling_info.user_id(), None)?;
             Ok(db)
-        }
+        },
     }
 }
