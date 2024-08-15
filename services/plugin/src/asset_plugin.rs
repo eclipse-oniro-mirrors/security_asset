@@ -56,7 +56,7 @@ impl AssetPlugin {
             let _guard = ASSET_OLUGIN_LOCK.lock().unwrap();
             if self.lib.borrow().is_none() {
                 logi!("start to load asset_ext plugin.");
-                match libloading::Library::new("/system/lib64/libasset_ext_ffi.z.so") {
+                match libloading::Library::new("libasset_ext_ffi.z.so") {
                     Ok(lib) => *self.lib.borrow_mut() = Some(lib),
                     Err(err) => {
                         loge!("dlopen libasset_ext_ffi.z.so failed, err: {}", err);
