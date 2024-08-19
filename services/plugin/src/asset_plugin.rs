@@ -17,7 +17,7 @@ use asset_common::{CallingInfo, Counter, OwnerType};
 use asset_db_key_operator::get_db_key;
 use asset_db_operator::database::{get_path, Database};
 use asset_definition::{log_throw_error, ErrCode, Result};
-use asset_file_operator::create_user_de_dir;
+use asset_file_operator::de_operator::create_user_de_dir;
 use asset_log::{loge, logi};
 use asset_sdk::{
     plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx},

@@ -90,7 +90,7 @@ fn fmt_de_db_path(user_id: i32) -> String {
 
 #[inline(always)]
 fn fmt_ce_db_path(user_id: i32) -> String {
-    format!("data/service/el2/{}/asset_service/asset.db", user_id)
+    format!("data/service/el2/{}/asset_service/enc_asset.db", user_id)
 }
 
 #[inline(always)]

@@ -27,7 +27,7 @@ use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
 use asset_common::{CallingInfo, Counter};
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
-use asset_file_operator::create_user_de_dir;
+use asset_file_operator::de_operator::create_user_de_dir;
 use asset_ipc::SA_ID;
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::{AssetContext, AssetPlugin};

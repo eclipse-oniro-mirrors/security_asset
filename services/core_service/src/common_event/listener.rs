@@ -30,7 +30,10 @@ use asset_db_operator::{
     types::{column, DbMap},
 };
 use asset_definition::{log_throw_error, ErrCode, Result, SyncType, Value};
-use asset_file_operator::{delete_user_de_dir, is_ce_db_file_exist, is_db_key_cipher_file_exist, read_db_key_cipher};
+use asset_file_operator::{
+    ce_operator::{is_ce_db_file_exist, is_db_key_cipher_file_exist, read_db_key_cipher},
+    de_operator::delete_user_de_dir,
+};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::plugin_interface::{
@@ -40,6 +43,7 @@ use asset_sdk::plugin_interface::{
 use crate::sys_event::upload_fault_system_event;
 
 const ASSET_DB: &str = "asset.db";
+const ENC_ASSET_DB: &str = "enc_asset.db";
 const BACKUP_SUFFIX: &str = ".backup";
 const DE_ROOT_PATH: &str = "data/service/el1/public/asset_service";
 const CE_ROOT_PATH: &str = "data/service/el2";
@@ -49,7 +53,7 @@ const SUCCESS: i32 = 0;
 fn delete_on_package_removed(calling_info: &CallingInfo, owner: Vec<u8>) -> Result<bool> {
     let mut delete_cond = DbMap::new();
     delete_cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
-    delete_cond.insert(column::OWNER, Value::Bytes(owner.clone()));
+    delete_cond.insert(column::OWNER, Value::Bytes(owner));
     delete_cond.insert(column::IS_PERSISTENT, Value::Bool(false));
     let mut reverse_condition = DbMap::new();
     reverse_condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
@@ -57,20 +61,16 @@ fn delete_on_package_removed(calling_info: &CallingInfo, owner: Vec<u8>) -> Resu
     // Delete non-persistent data in de db.
     let mut de_db = Database::build(calling_info.user_id(), None)?;
     let _ = de_db.delete_datas(&delete_cond, Some(&reverse_condition), false)?;
-
     // Check whether there is still persistent data left in de db.
-    let mut check_cond = DbMap::new();
-    check_cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
-    check_cond.insert(column::OWNER, Value::Bytes(owner));
+    let mut check_cond = delete_cond.clone();
+    check_cond.remove(column::IS_PERSISTENT);
     let de_db_data_exists = de_db.is_data_exists(&check_cond, false);
-
     if is_ce_db_file_exist(calling_info.user_id()).is_ok() {
         // Delete non-persistent data in ce db if ce db file exists.
         let db_key_cipher = read_db_key_cipher(calling_info.user_id())?;
         let db_key = decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
         let mut ce_db = Database::build(calling_info.user_id(), Some(&db_key))?;
         let _ = ce_db.delete_datas(&delete_cond, Some(&reverse_condition), false)?;
-
         // Check whether there is still persistent data left in ce db.
         let ce_db_data_exists = ce_db.is_data_exists(&check_cond, false);
 
@@ -117,7 +117,7 @@ fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) {
             logi!("The owner wants to retain data after uninstallation. Do not delete key in HUKS!");
             Ok(())
         },
-        Ok(false) | Err(_) => SecretKey::delete_by_owner(&calling_info),
+        _ => SecretKey::delete_by_owner(&calling_info),
     };
 }
 
@@ -242,7 +242,7 @@ fn backup_de_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
 
 fn backup_ce_db_if_exists(user_id: i32) -> Result<()> {
     is_ce_db_file_exist(user_id)?;
-    let from_path = format!("{}/{}/asset_service/{}", CE_ROOT_PATH, user_id, ASSET_DB);
+    let from_path = format!("{}/{}/asset_service/{}", CE_ROOT_PATH, user_id, ENC_ASSET_DB);
     let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
     fs::copy(from_path, backup_path)?;
 

@@ -17,7 +17,7 @@
 
 use std::collections::HashMap;
 
-use asset_file_operator::delete_user_de_dir;
+use asset_file_operator::de_operator::delete_user_de_dir;
 use asset_log::{loge, logi};
 use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
 

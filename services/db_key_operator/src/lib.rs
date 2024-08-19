@@ -19,7 +19,7 @@ use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, secret_key::SecretKey};
 use asset_db_operator::database::Database;
 use asset_definition::{Accessibility, AssetMap, AuthType, Result, Tag, Value};
-use asset_file_operator::{is_db_key_cipher_file_exist, read_db_key_cipher, write_db_key_cipher};
+use asset_file_operator::ce_operator::{is_db_key_cipher_file_exist, read_db_key_cipher, write_db_key_cipher};
 use asset_log::logi;
 use openssl::rand::rand_bytes;
 use std::sync::Mutex;
@@ -98,7 +98,7 @@ pub fn get_db_key(calling_info: &CallingInfo) -> Result<Vec<u8>> {
     }
 }
 
-/// Create de db instance if the value of tag "RequireAttrEncrypted" is set to false, Create ce db instance if true.
+/// Create de db instance if the value of tag "RequireAttrEncrypted" is not specified or set to false, Create ce db instance if true.
 pub fn create_db_instance(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<Database> {
     match attributes.get(&Tag::RequireAttrEncrypted) {
         Some(Value::Bool(true)) => {
