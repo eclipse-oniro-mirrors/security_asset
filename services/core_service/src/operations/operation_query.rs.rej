@@ -1,0 +1,19 @@
+diff a/services/core_service/src/operations/operation_query.rs b/services/core_service/src/operations/operation_query.rs	(rejected hunks)
+@@ -86,7 +86,7 @@ fn exec_crypto(calling_info: &CallingInfo, query: &AssetMap, db_data: &mut DbMap
+ }
+ 
+ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) -> Result<Vec<AssetMap>> {
+-    let mut db = Database::build(calling_info.user_id())?;
++    let mut db = Database::build(calling_info)?;
+     let mut results = db.query_datas(&vec![], db_data, None, true)?;
+     match results.len() {
+         0 => throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist."),
+@@ -140,7 +140,7 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
+ }
+ 
+ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
+-    let mut results = Database::build(calling_info.user_id())?.query_datas(
++    let mut results = Database::build(calling_info)?.query_datas(
+         &vec![],
+         db_data,
+         Some(&get_query_options(attrs)),

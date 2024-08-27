@@ -18,6 +18,12 @@
 use asset_definition::{log_throw_error, ErrCode, Result};
 use std::{fs, path::Path};
 
+use crate::common::get_user_dbs;
+
+fn construct_ce_db_dir(user_id: i32) -> String {
+    format!("data/service/el2/{}/asset_service", user_id)
+}
+
 fn construct_ce_db_path(user_id: i32) -> String {
     format!("data/service/el2/{}/asset_service/enc_asset.db", user_id)
 }
@@ -92,4 +98,8 @@ pub fn write_db_key_cipher(user_id: i32, db_key_cipher: &Vec<u8>) -> Result<()> 
             )
         },
     }
+}
+
+pub fn get_ce_user_dbs(user_id: i32) -> Result<Vec<String>> {
+    get_user_dbs(&construct_ce_db_dir(user_id))
 }

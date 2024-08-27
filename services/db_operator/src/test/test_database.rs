@@ -20,6 +20,7 @@ use std::{
     path::Path,
 };
 
+use asset_common::CallingInfo;
 use asset_definition::{ErrCode, Extension, Value};
 
 use crate::{
@@ -60,7 +61,8 @@ fn open_db_and_insert_data() -> Database {
     create_dir();
     let mut def = DbMap::from(DB_DATA);
     add_bytes_column(&mut def);
-    let mut db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let mut db = Database::build(&calling_info).unwrap();
     let count = db.insert_datas(&def).unwrap();
     assert_eq!(count, 1);
     db
@@ -81,7 +83,8 @@ fn backup_db(db: &Database) {
 #[test]
 fn create_and_drop_database() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
-    let mut db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let mut db = Database::build(&calling_info).unwrap();
     backup_db(&db);
     db.close_db();
     assert!(Database::delete(0).is_ok());
@@ -90,7 +93,8 @@ fn create_and_drop_database() {
 #[test]
 fn database_version() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
-    let db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let db = Database::build(&calling_info).unwrap();
     assert_eq!(1, db.get_version().unwrap());
     assert!(db.set_version(2).is_ok());
     assert_eq!(2, db.get_version().unwrap());
@@ -100,7 +104,8 @@ fn database_version() {
 #[test]
 fn error_sql() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
-    let db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let db = Database::build(&calling_info).unwrap();
     let sql = "pragma zzz user_version = {} mmm";
     assert!(db.exec(sql).is_err());
     let _ = Database::delete(0);
@@ -109,7 +114,8 @@ fn error_sql() {
 #[test]
 fn create_delete_asset_table() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
-    let mut db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let mut db = Database::build(&calling_info).unwrap();
     let table = Table::new(TABLE_NAME, &db);
     assert!(table.exist().unwrap());
     assert!(table.delete().is_ok());
@@ -124,7 +130,8 @@ fn insert_data_with_different_alias() {
     let mut def = DbMap::from(DB_DATA);
     add_bytes_column(&mut def);
 
-    let mut db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let mut db = Database::build(&calling_info).unwrap();
     let count = db.insert_datas(&def).unwrap();
     assert_eq!(count, 1);
 
@@ -195,7 +202,8 @@ fn query_ordered_data() {
     let mut def = DbMap::from(DB_DATA);
     add_bytes_column(&mut def);
 
-    let mut db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let mut db = Database::build(&calling_info).unwrap();
     let count = db.insert_datas(&def).unwrap();
     assert_eq!(count, 1);
 
@@ -229,7 +237,8 @@ fn insert_error_data() {
     create_dir();
     let mut datas = DbMap::new();
     datas.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
-    let mut db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let mut db = Database::build(&calling_info).unwrap();
     assert!(db.insert_datas(&datas).is_err());
     remove_dir();
 }
@@ -245,7 +254,8 @@ fn backup_and_restore() {
     let _ = db_file.write(b"buffer buffer buffer").unwrap();
 
     // Recovery the main database.
-    let mut db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let mut db = Database::build(&calling_info).unwrap();
     let mut def = DbMap::from(DB_DATA);
     add_bytes_column(&mut def);
 
@@ -272,7 +282,8 @@ fn query_mismatch_type_data() {
     let mut data = DbMap::from(DB_DATA);
     add_bytes_column(&mut data);
     data.insert(column::CREATE_TIME, Value::Number(1));
-    let mut db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let mut db = Database::build(&calling_info).unwrap();
     db.insert_datas(&data).unwrap();
 
     assert_eq!(ErrCode::FileOperationError, db.query_datas(&vec![], &data, None, false).unwrap_err().code);

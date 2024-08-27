@@ -19,6 +19,8 @@ use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_log::logi;
 use std::{fs, path::Path};
 
+use crate::common::get_user_dbs;
+
 fn construct_user_de_path(user_id: i32) -> String {
     format!("data/service/el1/public/asset_service/{}", user_id)
 }
@@ -82,4 +84,8 @@ pub fn delete_user_de_dir(user_id: i32) -> Result<()> {
             )
         },
     }
+}
+
+pub fn get_de_user_dbs(user_id: i32) -> Result<Vec<String>> {
+    get_user_dbs(&construct_user_de_path(user_id))
 }

@@ -45,20 +45,42 @@ extern "C" {
 pub(crate) struct UserDbLock {
     pub(crate) user_id: i32,
     pub(crate) mtx: Mutex<i32>,
+    #[allow(dead_code)]
+    pub(crate) db_file_name: String,
 }
 
 static USER_DB_LOCK_LIST: Mutex<Vec<&'static UserDbLock>> = Mutex::new(Vec::new());
+static SPLIT_DB_LOCK_LIST: Mutex<Vec<&'static UserDbLock>> = Mutex::new(Vec::new());
+static MAX_BATCH_NUM: u32 = 100;
+static OLD_DB_NAME: &str = "asset";
 
-/// If the user exists, the reference to the lock is returned.
-/// Otherwise, a new lock is created and its reference is returned.
-fn get_file_lock_by_user_id(user_id: i32) -> &'static UserDbLock {
-    let mut list = USER_DB_LOCK_LIST.lock().unwrap();
+fn get_split_db_lock_by_user_id(user_id: i32) -> &'static UserDbLock {
+    let mut list = SPLIT_DB_LOCK_LIST.lock().unwrap();
     for f in list.iter() {
         if f.user_id == user_id {
             return f;
         }
     }
-    let nf = Box::new(UserDbLock { user_id, mtx: Mutex::new(user_id) });
+    let nf = Box::new(
+        UserDbLock { user_id, mtx: Mutex::new(user_id), db_file_name: OLD_DB_NAME.clone().to_string() }
+    );
+    // SAFETY: We just push item into USER_DB_LOCK_LIST, never remove item or modify item,
+    // so return a reference of leak item is safe.
+    let nf: &'static UserDbLock = Box::leak(nf);
+    list.push(nf);
+    list[list.len() - 1]
+}
+
+/// If the user exists, the reference to the lock is returned.
+/// Otherwise, a new lock is created and its reference is returned.
+fn get_file_lock_by_user_id_db_file_name(user_id: i32, db_file_name: String) -> &'static UserDbLock {
+    let mut list = USER_DB_LOCK_LIST.lock().unwrap();
+    for f in list.iter() {
+        if f.user_id == user_id && f.db_file_name == db_file_name {
+            return f;
+        }
+    }
+    let nf = Box::new(UserDbLock { user_id, mtx: Mutex::new(user_id), db_file_name });
     // SAFETY: We just push item into USER_DB_LOCK_LIST, never remove item or modify item,
     // so return a reference of leak item is safe.
     let nf: &'static UserDbLock = Box::leak(nf);
@@ -460,6 +482,16 @@ impl Database {
     ) -> Result<Vec<DbMap>> {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.query_row(columns, condition, query_options, is_filter_sync, COLUMN_INFO);
+        self.restore_if_exec_fail(closure)
+    }
+
+    /// query how many data fit the query condition
+    pub fn query_data_count(
+        &mut self,
+        condition: &DbMap,
+    ) -> Result<u32> {
+        let _lock = self.db_lock.mtx.lock().unwrap();
+        let closure = |e: &Table| e.count_datas(condition, false);
         self.restore_if_exec_fail(closure)
     }
 
