@@ -87,5 +87,5 @@ pub fn delete_user_de_dir(user_id: i32) -> Result<()> {
 }
 
 pub fn get_de_user_dbs(user_id: i32) -> Result<Vec<String>> {
-    get_user_dbs(&construct_user_de_path(user_id))
+    get_user_dbs(user_id, &construct_user_de_path(user_id))
 }
