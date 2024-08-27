@@ -111,11 +111,6 @@ fn fmt_de_db_path(user_id: i32) -> String {
 }
 
 #[inline(always)]
-fn fmt_ce_db_path(user_id: i32) -> String {
-    format!("data/service/el2/{}/asset_service/enc_asset.db", user_id)
-}
-
-#[inline(always)]
 fn fmt_backup_path(path: &str) -> String {
     let mut bp = path.to_string();
     bp.push_str(".backup");
@@ -128,12 +123,17 @@ pub fn get_path() -> String {
 }
 
 #[inline(always)]
-fn fmt_db_path_with_name(user_id: i32, db_name: &str) -> String {
+fn fmt_ce_db_path_with_name(user_id: i32, db_name: &str) -> String {
+    format!("data/service/el2/{}/asset_service/enc_{}.db", user_id, db_name)
+}
+
+#[inline(always)]
+fn fmt_de_db_path_with_name(user_id: i32, db_name: &str) -> String {
     format!("{}/{}/{}.db", ROOT_PATH, user_id, db_name)
 }
 
 fn check_old_db_exist(user_id: i32) -> bool {
-    let path_str = fmt_db_path(user_id);
+    let path_str = fmt_de_db_path(user_id);
     let path = Path::new(&path_str);
     path.exists()
 }
@@ -161,7 +161,11 @@ fn get_db_before_split(user_id: i32) -> Result<Database> {
 }
 
 fn get_db(user_id: i32, db_name: &str, db_key: Option<&Vec<u8>>) -> Result<Database> {
-    let path = fmt_db_path_with_name(user_id, db_name);
+    let path = if db_key.is_some() {
+        fmt_ce_db_path_with_name(user_id, db_name)
+    } else {
+        fmt_de_db_path_with_name(user_id, db_name)
+    };
     let backup_path = fmt_backup_path(path.as_str());
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string());
     let mut db = Database { path, backup_path, handle: 0, db_lock: lock };
@@ -181,7 +185,7 @@ fn get_value_from_db_map(db_map: &DbMap, key: &str) -> Result<Value> {
 
 fn remove_old_db(user_id: i32) -> Result<()> {
     let mut remove_db_files = vec![];
-    let path = fmt_db_path_with_name(user_id, OLD_DB_NAME);
+    let path = fmt_de_db_path_with_name(user_id, OLD_DB_NAME);
     remove_db_files.push(path.clone());
     remove_db_files.push(fmt_backup_path(path.as_str()));
     for file_path in &remove_db_files {
