@@ -103,11 +103,11 @@ pub fn create_db_instance(attributes: &AssetMap, calling_info: &CallingInfo) -> 
     match attributes.get(&Tag::RequireAttrEncrypted) {
         Some(Value::Bool(true)) => {
             let db_key = get_db_key(calling_info)?;
-            let db = Database::build(calling_info.user_id(), Some(&db_key))?;
+            let db = Database::build(calling_info, Some(&db_key))?;
             Ok(db)
         },
         _ => {
-            let db = Database::build(calling_info.user_id(), None)?;
+            let db = Database::build(calling_info, None)?;
             Ok(db)
         },
     }

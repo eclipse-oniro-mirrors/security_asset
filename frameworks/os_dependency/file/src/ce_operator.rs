@@ -16,7 +16,14 @@
 //! This file implements ce file operations.
 
 use asset_definition::{log_throw_error, ErrCode, Result};
+use asset_log::loge;
 use std::{fs, path::Path};
+
+use crate::common::{get_user_dbs, DB_KEY};
+
+fn construct_ce_db_dir(user_id: i32) -> String {
+    format!("data/service/el2/{}/asset_service", user_id)
+}
 
 fn construct_ce_db_path(user_id: i32) -> String {
     format!("data/service/el2/{}/asset_service/enc_asset.db", user_id)
@@ -42,7 +49,7 @@ pub fn is_ce_db_file_exist(user_id: i32) -> Result<()> {
 }
 
 fn construct_db_key_cipher_path(user_id: i32) -> String {
-    format!("data/service/el2/{}/asset_service/db_key", user_id)
+    format!("data/service/el2/{}/asset_service/{}", user_id, DB_KEY)
 }
 
 /// Check db key cipher file exists.
@@ -91,5 +98,16 @@ pub fn write_db_key_cipher(user_id: i32, db_key_cipher: &Vec<u8>) -> Result<()> 
                 e
             )
         },
+    }
+}
+
+/// Obtain ce user dbs
+pub fn get_ce_user_dbs(user_id: i32) -> Result<Vec<String>> {
+    match get_user_dbs(&construct_ce_db_dir(user_id)) {
+        Ok(info) => Ok(info),
+        Err(e) => {
+            loge!("[WARNING]operate ce db failed, failed reason:[{}]", e);
+            Ok(vec![])
+        }
     }
 }

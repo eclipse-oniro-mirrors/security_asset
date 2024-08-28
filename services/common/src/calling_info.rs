@@ -67,6 +67,11 @@ impl CallingInfo {
         self.owner_type as u32
     }
 
+    /// Get owner type enum of calling.
+    pub fn owner_type_enum(&self) -> OwnerType {
+        self.owner_type
+    }
+
     /// Get owner info of calling.
     pub fn owner_info(&self) -> &Vec<u8> {
         &self.owner_info
