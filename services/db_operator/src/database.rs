@@ -17,19 +17,17 @@
 //! Databases are isolated based on users and protected by locks.
 
 use core::ffi::c_void;
-use std::{ffi::CStr, fs, path::Path, ptr::null_mut, sync::Mutex};
+use std::{ffi::CStr, fs, ptr::null_mut, sync::Mutex};
 
 use asset_common::{CallingInfo, OwnerType};
 use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
 use asset_log::{loge, logi};
 
 use crate::{
-    statement::Statement,
-    table::Table,
-    types::{
+    database_file_upgrade::{check_and_split_db, construct_splited_db_name, fmt_de_db_path}, statement::Statement, table::Table, types::{
         column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1,
         DB_UPGRADE_VERSION_V2, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2
-    },
+    }
 };
 
 extern "C" {
@@ -51,10 +49,9 @@ pub(crate) struct UserDbLock {
 
 static USER_DB_LOCK_LIST: Mutex<Vec<&'static UserDbLock>> = Mutex::new(Vec::new());
 static SPLIT_DB_LOCK_LIST: Mutex<Vec<&'static UserDbLock>> = Mutex::new(Vec::new());
-static MAX_BATCH_NUM: u32 = 100;
-static OLD_DB_NAME: &str = "asset";
+pub(crate) static OLD_DB_NAME: &str = "asset";
 
-fn get_split_db_lock_by_user_id(user_id: i32) -> &'static UserDbLock {
+pub(crate) fn get_split_db_lock_by_user_id(user_id: i32) -> &'static UserDbLock {
     let mut list = SPLIT_DB_LOCK_LIST.lock().unwrap();
     for f in list.iter() {
         if f.user_id == user_id {
@@ -73,7 +70,7 @@ fn get_split_db_lock_by_user_id(user_id: i32) -> &'static UserDbLock {
 
 /// If the user exists, the reference to the lock is returned.
 /// Otherwise, a new lock is created and its reference is returned.
-fn get_file_lock_by_user_id_db_file_name(user_id: i32, db_file_name: String) -> &'static UserDbLock {
+pub(crate) fn get_file_lock_by_user_id_db_file_name(user_id: i32, db_file_name: String) -> &'static UserDbLock {
     let mut list = USER_DB_LOCK_LIST.lock().unwrap();
     for f in list.iter() {
         if f.user_id == user_id && f.db_file_name == db_file_name {
@@ -95,23 +92,19 @@ pub struct Database {
     pub(crate) backup_path: String,
     pub(crate) handle: usize, // Pointer to the database connection.
     pub(crate) db_lock: &'static UserDbLock,
+    pub(crate) db_name: String,
 }
 
 /// Callback for database upgrade.
 pub type UpgradeDbCallback = fn(db: &Database, old_ver: u32, new_ver: u32) -> Result<()>;
 
 #[cfg(not(test))]
-const ROOT_PATH: &str = "/data/service/el1/public/asset_service";
+pub(crate) const ROOT_PATH: &str = "/data/service/el1/public/asset_service";
 #[cfg(test)]
-const ROOT_PATH: &str = "/data/asset_test";
+pub(crate) const ROOT_PATH: &str = "/data/asset_test";
 
 #[inline(always)]
-fn fmt_de_db_path(user_id: i32) -> String {
-    format!("{}/{}/asset.db", ROOT_PATH, user_id)
-}
-
-#[inline(always)]
-fn fmt_backup_path(path: &str) -> String {
+pub(crate) fn fmt_backup_path(path: &str) -> String {
     let mut bp = path.to_string();
     bp.push_str(".backup");
     bp
@@ -123,132 +116,29 @@ pub fn get_path() -> String {
 }
 
 #[inline(always)]
-fn fmt_ce_db_path_with_name(user_id: i32, db_name: &str) -> String {
+pub(crate) fn fmt_ce_db_path_with_name(user_id: i32, db_name: &str) -> String {
     format!("data/service/el2/{}/asset_service/enc_{}.db", user_id, db_name)
 }
 
 #[inline(always)]
-fn fmt_de_db_path_with_name(user_id: i32, db_name: &str) -> String {
+pub(crate) fn fmt_de_db_path_with_name(user_id: i32, db_name: &str) -> String {
     format!("{}/{}/{}.db", ROOT_PATH, user_id, db_name)
 }
 
-fn check_old_db_exist(user_id: i32) -> bool {
-    let path_str = fmt_de_db_path(user_id);
-    let path = Path::new(&path_str);
-    path.exists()
-}
-
-/// Use owner_type and owner_info construct db name.
-pub fn construct_splited_db_name(owner_type: OwnerType, owner_info: &[u8]) -> Result<String> {
-    match owner_type {
-        OwnerType::Hap => {
-            let owner_info_string = String::from_utf8_lossy(owner_info).to_string();
-            let split_owner_info: Vec<&str> = owner_info_string.split('_').collect();
-            if let (Some(hap_name), Some(app_index)) = (split_owner_info.first(), split_owner_info.last()) {
-                Ok(format!("Hap_{}_{}", hap_name, app_index))
-            } else {
-                log_throw_error!(ErrCode::DatabaseError, "[FATAL]The queried owner info does not correct.")
-            }
-        },
-        OwnerType::Native => {
-            Ok(format!("Native_{}", String::from_utf8_lossy(owner_info)))
-        }
-    }
-}
-
-fn get_db_before_split(user_id: i32) -> Result<Database> {
-    get_db(user_id, OLD_DB_NAME, None)
-}
-
-fn get_db(user_id: i32, db_name: &str, db_key: Option<&Vec<u8>>) -> Result<Database> {
+pub(crate) fn get_db(user_id: i32, db_name: &str, db_key: Option<&Vec<u8>>) -> Result<Database> {
     let path = if db_key.is_some() {
         fmt_ce_db_path_with_name(user_id, db_name)
     } else {
         fmt_de_db_path_with_name(user_id, db_name)
     };
     let backup_path = fmt_backup_path(path.as_str());
-    let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string());
-    let mut db = Database { path, backup_path, handle: 0, db_lock: lock };
+    let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
+    let mut db = Database { path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string() };
     let _lock = db.db_lock.mtx.lock().unwrap();
     db.open_and_restore(db_key)?;
     db.restore_if_exec_fail(|e: &Table| e.create(COLUMN_INFO))?;
     db.upgrade(DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
     Ok(db)
-}
-
-fn get_value_from_db_map(db_map: &DbMap, key: &str) -> Result<Value> {
-    match db_map.get(key) {
-        Some(value) => Ok(value.clone()),
-        _ => log_throw_error!(ErrCode::DatabaseError, "[FATAL]Get value from {} failed.", key)
-    }
-}
-
-fn remove_old_db(user_id: i32) -> Result<()> {
-    let mut remove_db_files = vec![];
-    let path = fmt_de_db_path_with_name(user_id, OLD_DB_NAME);
-    remove_db_files.push(path.clone());
-    remove_db_files.push(fmt_backup_path(path.as_str()));
-    for file_path in &remove_db_files {
-        fs::remove_file(file_path)?;
-    }
-    Ok(())
-}
-
-fn split_db(user_id: i32) -> Result<()> {
-    // 1. open old db
-    let mut old_db = get_db_before_split(user_id)?;
-
-    // 2. get split db info
-    let empty_condition = DbMap::new();
-    let owner_info_db_list =
-        old_db.query_datas(&vec![column::OWNER_TYPE, column::OWNER], &empty_condition,  None, false)?;
-    for info_map in &owner_info_db_list {
-        // 1. get new db
-        // 1.1 construct db name
-        let owner_type = OwnerType::try_from(info_map.get_num_attr(&column::OWNER_TYPE)?.to_owned())?;
-        let owner_info = info_map.get_bytes_attr(&column::OWNER)?;
-        let new_db_name = construct_splited_db_name(owner_type, owner_info)?;
-        // 1.2 construct new db
-        let mut new_db = get_db(user_id, &new_db_name, None)?;
-
-        // 2. batch insert data from old db to new db.
-        // 2.1 calculate how many times to batch insert.
-        let mut old_data_query_condition = DbMap::new();
-        old_data_query_condition.insert(column::OWNER, Value::Bytes(owner_info.clone()));
-        let query_times = (old_db.query_data_count(&old_data_query_condition)? + MAX_BATCH_NUM - 1) / MAX_BATCH_NUM;
-        let query_options = QueryOptions {offset: None, limit: Some(MAX_BATCH_NUM), order_by: None, order: None};
-        for split_time in 0..query_times {
-            // 3.1 query data in old db
-            let old_data_vec =
-                old_db.query_datas(&vec![], &old_data_query_condition, Some(&query_options), false)?;
-            // 3.2 insert data in new db
-            for data in &old_data_vec {
-                let mut condition = DbMap::new();
-                condition.insert(column::ALIAS, get_value_from_db_map(data, column::ALIAS)?);
-                condition.insert(column::OWNER, get_value_from_db_map(data, column::OWNER)?);
-                condition.insert(column::OWNER_TYPE, get_value_from_db_map(data, column::OWNER_TYPE)?);
-                new_db.replace_datas(&condition, false, data)?;
-                // 3.3 remove data in old db
-                old_db.delete_datas(&condition, None, false)?;
-            }
-            logi!("[INFO]Upgrade [{}] [{}]times", new_db_name, split_time);
-        }
-        logi!("[INFO]Upgrade [{}] success!", new_db_name);
-    }
-    logi!("[INFO]Upgrade all db success!");
-    remove_old_db(user_id)?;
-    Ok(())
-}
-
-fn check_and_split_db(user_id: i32) -> Result<()> {
-    if check_old_db_exist(user_id) {
-        let _lock = get_split_db_lock_by_user_id(user_id).mtx.lock().unwrap();
-        if check_old_db_exist(user_id) {
-            logi!("[INFO]Start split db.");
-            split_db(user_id)?;
-        }
-    }
-    Ok(())
 }
 
 impl Database {
@@ -258,7 +148,7 @@ impl Database {
         get_db(
             calling_info.user_id(),
             &construct_splited_db_name(calling_info.owner_type_enum(),
-            calling_info.owner_info())?,
+            calling_info.owner_info(), db_key.is_some())?,
             db_key
         )
     }
@@ -271,8 +161,8 @@ impl Database {
 
     /// Check is db ok
     pub fn check_db_accessible(path: String, user_id: i32, db_name: String) -> Result<()> {
-        let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name);
-        let mut db = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock };
+        let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.clone());
+        let mut db = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock, db_name };
         db.open()?;
         let table = Table::new(TABLE_NAME, &db);
         table.create(COLUMN_INFO)
@@ -293,7 +183,7 @@ impl Database {
     }
 
     /// Open the database connection and restore the database if the connection fails.
-    fn open_and_restore(&mut self, db_key: Option<&Vec<u8>>) -> Result<()> {
+    pub(crate) fn open_and_restore(&mut self, db_key: Option<&Vec<u8>>) -> Result<()> {
         let result = self.open();
         if let Some(db_key) = db_key {
             self.set_db_key(db_key)?;
@@ -303,6 +193,11 @@ impl Database {
             ret => ret,
         };
         result
+    }
+
+    /// Get db name.
+    pub(crate) fn get_db_name(&mut self) -> &str {
+        &self.db_name
     }
 
     /// Close database connection.

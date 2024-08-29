@@ -117,24 +117,6 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     /// Updates the attributes of an asset in ce db.
     fn ce_update(&mut self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> Result<i32, u32>;
 
-    // /// Begins a transaction for de_db.
-    // fn begin_transaction(&mut self) -> Result<(), u32>;
-
-    // /// Begins a transaction for the ce db.
-    // fn ce_begin_transaction(&mut self) -> Result<(), u32>;
-
-    // /// Commits a transaction for de db.
-    // fn commit_transaction(&mut self) -> Result<(), u32>;
-
-    // /// Commits a transaction for ce db.
-    // fn ce_commit_transaction(&mut self) -> Result<(), u32>;
-
-    // /// Rolls back a transaction for de db.
-    // fn rollback_transaction(&mut self) -> Result<(), u32>;
-
-    // /// Rolls back a transaction for ce db.
-    // fn ce_rollback_transaction(&mut self) -> Result<(), u32>;
-
     /// Returns the storage path for de db.
     fn get_storage_path(&self) -> String;
 

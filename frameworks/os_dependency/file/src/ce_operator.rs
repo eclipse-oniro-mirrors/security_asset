@@ -16,7 +16,6 @@
 //! This file implements ce file operations.
 
 use asset_definition::{log_throw_error, ErrCode, Result};
-use asset_log::loge;
 use std::{fs, path::Path};
 
 use crate::common::{get_user_dbs, DB_KEY};
@@ -103,11 +102,5 @@ pub fn write_db_key_cipher(user_id: i32, db_key_cipher: &Vec<u8>) -> Result<()> 
 
 /// Obtain ce user dbs
 pub fn get_ce_user_dbs(user_id: i32) -> Result<Vec<String>> {
-    match get_user_dbs(&construct_ce_db_dir(user_id)) {
-        Ok(info) => Ok(info),
-        Err(e) => {
-            loge!("[WARNING]operate ce db failed, failed reason:[{}]", e);
-            Ok(vec![])
-        }
-    }
+    get_user_dbs(&construct_ce_db_dir(user_id))
 }

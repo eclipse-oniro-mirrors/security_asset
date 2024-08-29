@@ -24,7 +24,7 @@ use system_ability_fwk::{
 };
 use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
 
-use asset_common::{CallingInfo, Counter};
+use asset_common::{CallingInfo, Counter, OwnerType};
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
 use asset_file_operator::de_operator::create_user_de_dir;
@@ -107,7 +107,7 @@ fn start_service(handler: Handler) -> Result<()> {
     let asset_plugin = AssetPlugin::get_instance();
     match asset_plugin.load_plugin() {
         Ok(loader) => {
-            let _tr = loader.init(Box::new(AssetContext { de_db: None, ce_db: None, user_id: 0 }));
+            let _tr = loader.init(Box::new(AssetContext { user_id: 0, calling_info: CallingInfo::new(0, OwnerType::Hap, vec![]) }));
             logi!("load plugin success.");
         },
         Err(_) => loge!("load plugin failed."),
