@@ -225,12 +225,11 @@ impl IAssetPluginCtx for AssetContext {
     /// Queries ce db.
     fn ce_query(&mut self, attributes: &ExtDbMap) -> std::result::Result<Vec<ExtDbMap>, u32> {
         let db_map = self.ce_db.as_mut().ok_or(ErrCode::InvalidArgument as u32)?;
-        let db_name = get_db_name(attributes)?;
-        if let Some(db) = db_map.get_mut(&db_name) {
-            db.query_datas(&vec![], attributes, None, false).map_err(|e| e.code as u32)
-        } else {
-            Err(ErrCode::InvalidArgument as u32)
+        let mut query_data = vec![];
+        for (_, db) in db_map.iter_mut() {
+            query_data.extend(db.query_datas(&vec![], attributes, None, false).map_err(|e| e.code as u32)?);
         }
+        Ok(query_data)
     }
 
     /// Removes an asset from de db.
@@ -294,12 +293,11 @@ impl IAssetPluginCtx for AssetContext {
     /// Updates the attributes of an asset in ce db.
     fn ce_update(&mut self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> std::result::Result<i32, u32> {
         let db_map = self.ce_db.as_mut().ok_or(ErrCode::InvalidArgument as u32)?;
-        let db_name = get_db_name(attributes)?;
-        if let Some(db) = db_map.get_mut(&db_name) {
-            db.update_datas(attributes, false, attrs_to_update).map_err(|e| e.code as u32)
-        } else {
-            Err(ErrCode::InvalidArgument as u32)
+        let mut total_update_count = 0;
+        for (_, db) in db_map.iter_mut() {
+            total_update_count += db.update_datas(attributes, false, attrs_to_update).map_err(|e| e.code as u32)?;
         }
+        Ok(total_update_count)
     }
 
     // /// Begins a transaction for de db.
