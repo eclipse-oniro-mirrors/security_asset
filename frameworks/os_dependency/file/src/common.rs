@@ -18,9 +18,16 @@
 use asset_definition::Result;
 use std::fs;
 
-const BACKUP_SUFFIX: &str = ".backup";
-const DB_SUFFIX: &str = ".db";
-pub(crate) const DB_KEY: &str = "db_key";
+#[allow(missing_docs)]
+pub const BACKUP_SUFFIX: &str = ".backup";
+#[allow(missing_docs)]
+pub const DB_SUFFIX: &str = ".db";
+#[allow(missing_docs)]
+pub const DB_KEY: &str = "db_key";
+#[allow(missing_docs)]
+pub const DE_ROOT_PATH: &str = "data/service/el1/public/asset_service";
+#[allow(missing_docs)]
+pub const CE_ROOT_PATH: &str = "data/service/el2";
 
 /// Get all db name in user directory.
 pub(crate) fn get_user_dbs(path_str: &str) -> Result<Vec<String>> {

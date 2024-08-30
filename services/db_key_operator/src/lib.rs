@@ -18,7 +18,7 @@
 use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, secret_key::SecretKey};
 use asset_db_operator::database::Database;
-use asset_definition::{Accessibility, AssetMap, AuthType, Result, Tag, Value};
+use asset_definition::{Accessibility, AssetMap, AuthType, Result, Tag, Value, ErrCode, log_throw_error};
 use asset_file_operator::ce_operator::{is_db_key_cipher_file_exist, read_db_key_cipher, write_db_key_cipher};
 use asset_log::logi;
 use openssl::rand::rand_bytes;
@@ -80,21 +80,29 @@ fn encrypt_db_key(calling_info: &CallingInfo, db_key: &Vec<u8>) -> Result<Vec<u8
     Ok(db_key_cipher)
 }
 
+static GET_DB_KEY_MUTEX: Mutex<()> = Mutex::new(());
+
 /// Read db key cipher and decrypt if the db key cipher file exists, generate db_key if not.
 pub fn get_db_key(calling_info: &CallingInfo) -> Result<Vec<u8>> {
     match is_db_key_cipher_file_exist(calling_info.user_id()) {
         Ok(true) => {
-            let db_key_cipher = read_db_key_cipher(calling_info.user_id())?;
-            let db_key = decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
-            Ok(db_key)
+            let _lock = GET_DB_KEY_MUTEX.lock().unwrap();
+            match is_db_key_cipher_file_exist(calling_info.user_id()) {
+                Ok(true) => {
+                    let db_key_cipher = read_db_key_cipher(calling_info.user_id())?;
+                    let db_key = decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
+                    Ok(db_key)
+                },
+                Ok(false) => {
+                    let db_key = generate_db_key()?;
+                    let db_key_cipher = encrypt_db_key(calling_info, &db_key)?;
+                    write_db_key_cipher(calling_info.user_id(), &db_key_cipher)?;
+                    Ok(db_key)
+                },
+                Err(e) => Err(e),
+            }
         },
-        Ok(false) => {
-            let db_key = generate_db_key()?;
-            let db_key_cipher = encrypt_db_key(calling_info, &db_key)?;
-            write_db_key_cipher(calling_info.user_id(), &db_key_cipher)?;
-            Ok(db_key)
-        },
-        Err(e) => Err(e),
+        _ => log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]]Get database key failed!")
     }
 }
 

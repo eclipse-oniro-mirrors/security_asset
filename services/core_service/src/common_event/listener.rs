@@ -31,8 +31,9 @@ use asset_db_operator::{
 };
 use asset_definition::{log_throw_error, ErrCode, Result, SyncType, Value};
 use asset_file_operator::{
-    ce_operator::{is_ce_db_file_exist, is_db_key_cipher_file_exist, read_db_key_cipher},
+    ce_operator::{is_ce_db_file_exist, read_db_key_cipher},
     de_operator::delete_user_de_dir,
+    common::{BACKUP_SUFFIX, DB_SUFFIX, DE_ROOT_PATH, CE_ROOT_PATH},
 };
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
@@ -42,11 +43,6 @@ use asset_sdk::plugin_interface::{
 
 use crate::sys_event::upload_fault_system_event;
 
-const DB_KEY: &str = "db_key";
-const BACKUP_SUFFIX: &str = ".backup";
-const DB_SUFFIX: &str = ".db";
-const DE_ROOT_PATH: &str = "data/service/el1/public/asset_service";
-const CE_ROOT_PATH: &str = "data/service/el2";
 /// success code.
 const SUCCESS: i32 = 0;
 
@@ -64,7 +60,8 @@ fn delete_on_package_removed(owner: Vec<u8>, calling_info: &CallingInfo) -> Resu
     // Check whether there is still persistent data left in de db.
     let mut check_cond = delete_cond.clone();
     check_cond.remove(column::IS_PERSISTENT);
-    let de_db_data_exists = de_db.is_data_exists(&check_cond, false);
+    let de_db_data_exists = de_db.is_data_exists(&check_cond, false)?;
+
     if is_ce_db_file_exist(calling_info.user_id()).is_ok() {
         // Delete non-persistent data in ce db if ce db file exists.
         let db_key_cipher = read_db_key_cipher(calling_info.user_id())?;
@@ -72,33 +69,10 @@ fn delete_on_package_removed(owner: Vec<u8>, calling_info: &CallingInfo) -> Resu
         let mut ce_db = Database::build(calling_info, Some(&db_key))?;
         let _ = ce_db.delete_datas(&delete_cond, Some(&reverse_condition), false)?;
         // Check whether there is still persistent data left in ce db.
-        let ce_db_data_exists = ce_db.is_data_exists(&check_cond, false);
-
-        let start_time = Instant::now();
-        match (de_db_data_exists, ce_db_data_exists) {
-            (Ok(true), _) | (_, Ok(true)) => Ok(true),
-            (Ok(false), Ok(false)) => Ok(false),
-            (Err(e), Ok(_)) | (Ok(_), Err(e)) => {
-                // Report the database operation fault event.
-                upload_fault_system_event(calling_info, start_time, "on_package_removed", &e);
-                // Report the key operation fault event.
-                let calling_info = CallingInfo::new_self();
-                upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e);
-                Err(e)
-            },
-            (Err(e1), Err(e2)) => {
-                // Report the database operation fault event.
-                upload_fault_system_event(calling_info, start_time, "on_package_removed", &e1);
-                upload_fault_system_event(calling_info, start_time, "on_package_removed", &e2);
-                // Report the key operation fault event.
-                let calling_info = CallingInfo::new_self();
-                upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e1);
-                upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e2);
-                Err(e1)
-            },
-        }
+        let ce_db_data_exists = ce_db.is_data_exists(&check_cond, false)?;
+        Ok(de_db_data_exists || ce_db_data_exists)
     } else {
-        de_db_data_exists
+        Ok(de_db_data_exists)
     }
 }
 
@@ -108,17 +82,28 @@ fn clear_cryptos(calling_info: &CallingInfo) {
 }
 
 fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) {
+    let _counter_user = AutoCounter::new();
+    let start_time = Instant::now();
     let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner, owner_size as usize).to_vec() };
     let calling_info = CallingInfo::new(user_id, OwnerType::Hap, owner.clone());
     clear_cryptos(&calling_info);
-    let _counter_user = AutoCounter::new();
-    let _ = match delete_on_package_removed(owner, &calling_info) {
+    let res = match delete_on_package_removed(owner, &calling_info) {
         Ok(true) => {
             logi!("The owner wants to retain data after uninstallation. Do not delete key in HUKS!");
             Ok(())
         },
-        _ => SecretKey::delete_by_owner(&calling_info),
+        Ok(false) => SecretKey::delete_by_owner(&calling_info),
+        Err(e) => {
+            // Report the database operation fault event.
+            upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e);
+            Ok(())
+        },
     };
+    if let Err(e) = res {
+        // Report the key operation fault event.
+        let calling_info = CallingInfo::new_self();
+        upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e);
+    }
 }
 
 pub(crate) extern "C" fn on_package_removed(
@@ -264,21 +249,6 @@ fn backup_ce_db_if_exists(user_id: i32) -> Result<()> {
     Ok(())
 }
 
-fn backup_db_key_cipher_if_exists(user_id: i32) -> Result<()> {
-    match is_db_key_cipher_file_exist(user_id) {
-        Ok(true) => {
-            let from_path = format!("{}/{}/asset_service/{}", CE_ROOT_PATH, user_id, DB_KEY);
-            let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
-            fs::copy(from_path, backup_path)?;
-            Ok(())
-        },
-        Ok(false) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]Database key ciphertext file does not exist!")
-        },
-        Err(e) => Err(e),
-    }
-}
-
 extern "C" {
     fn GetUserIds(userIdsPtr: *mut i32, userIdsSize: *mut u16) -> i32;
 }
@@ -296,34 +266,28 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
     }
 
     // Backup all ce db and db key cipher if exists. (todo1?: backup ce db if accessible. todo2?: do not backup db key cipher.)
+    /* Temporarily allocate at least 256 spaces for user ids.
+    If the number of user ids exceeds 256, this method(with_capacity) will automatically allocate more spaces.*/
+    let mut user_ids: Vec<i32> = Vec::with_capacity(256);
+    let user_ids_ptr = user_ids.as_mut_ptr();
+    let mut user_ids_size: u16 = 0;
+    let user_ids_size_ptr = &mut user_ids_size;
     unsafe {
-        /* Temporarily allocate at least 256 spaces for user ids.
-        If the number of user ids exceeds 256, this method(with_capacity) will automatically allocate more spaces.*/
-        let mut user_ids: Vec<i32> = Vec::with_capacity(256);
-        let user_ids_ptr = user_ids.as_mut_ptr();
-        let mut user_ids_size: u16 = 0;
-        let user_ids_size_ptr = &mut user_ids_size;
         let ret = GetUserIds(user_ids_ptr, user_ids_size_ptr);
         if ret != SUCCESS {
             return log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get user IDs failed.");
         }
-        let user_ids_slice = slice::from_raw_parts_mut(user_ids_ptr, (*user_ids_size_ptr).try_into().unwrap());
-        for user_id in user_ids_slice.iter() {
-            if let Err(e) = backup_ce_db_if_exists(*user_id) {
-                let calling_info = CallingInfo::new_self();
-                upload_fault_system_event(&calling_info, *start_time, &format!("backup_ce_db_{}", *user_id), &e);
-            }
-            if let Err(e) = backup_db_key_cipher_if_exists(*user_id) {
-                let calling_info = CallingInfo::new_self();
-                upload_fault_system_event(
-                    &calling_info,
-                    *start_time,
-                    &format!("backup_db_key_cipher_{}", *user_id),
-                    &e,
-                );
-            }
+    }
+    let user_ids_slice;
+    unsafe {
+        user_ids_slice = slice::from_raw_parts_mut(user_ids_ptr, (*user_ids_size_ptr).try_into().unwrap());
+    }
+    for user_id in user_ids_slice.iter() {
+        if let Err(e) = backup_ce_db_if_exists(*user_id) {
+            let calling_info = CallingInfo::new_self();
+            upload_fault_system_event(&calling_info, *start_time, &format!("backup_ce_db_{}", *user_id), &e);
         }
-    };
+    }
 
     Ok(())
 }
