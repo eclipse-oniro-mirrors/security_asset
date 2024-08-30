@@ -108,7 +108,7 @@ pub struct AssetContext {
 fn get_db_name(attributes: &ExtDbMap, is_ce: bool) -> std::result::Result<String, u32> {
     let owner = attributes.get_bytes_attr(&column::OWNER).map_err(|e| e.code as u32)?;
     let owner_type = attributes.get_enum_attr::<OwnerType>(&column::OWNER_TYPE).map_err(|e| e.code as u32)?;
-    // 通过owner 和owner type 计算数据库名称
+    // use owner and owner type calculate db file name
     construct_splited_db_name(owner_type, owner, is_ce).map_err(|e| e.code as u32)
 }
 
