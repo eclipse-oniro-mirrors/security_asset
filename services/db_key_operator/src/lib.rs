@@ -88,7 +88,7 @@ impl DbKey {
     /// Read db key cipher and decrypt if the db key cipher file exists, generate db_key if not.
     pub fn get_db_key(calling_info: &CallingInfo) -> Result<DbKey> {
         match is_db_key_cipher_file_exist(calling_info.user_id()) {
-            Ok(true) => {
+            Ok(_) => {
                 let _lock = GET_DB_KEY_MUTEX.lock().unwrap();
                 match is_db_key_cipher_file_exist(calling_info.user_id()) {
                     Ok(true) => {
@@ -104,7 +104,7 @@ impl DbKey {
                     Err(e) => Err(e),
                 }
             },
-            _ => log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]]Get database key failed!")
+            Err(_) => log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]]Get database key failed!")
         }
     }
 }
