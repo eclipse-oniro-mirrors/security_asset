@@ -86,7 +86,7 @@ fn delete_in_ce_db_on_package_removed(
     // Delete non-persistent data in ce db if ce db file exists.
     let db_key_cipher = read_db_key_cipher(calling_info.user_id())?;
     let db_key = DbKey::decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
-    let mut ce_db = Database::build(calling_info, Some(&db_key.db_key))?;
+    let mut ce_db = Database::build(calling_info, Some(&db_key))?;
     let _ = ce_db.delete_datas(delete_cond, Some(reverse_condition), false)?;
     // Check whether there is still persistent data left in ce db.
     let ce_db_data_exists = ce_db.is_data_exists(check_cond, false)?;

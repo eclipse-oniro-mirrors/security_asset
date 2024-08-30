@@ -20,7 +20,7 @@ use core::ffi::c_void;
 use std::{ffi::CStr, fs, ptr::null_mut, sync::Mutex};
 
 use asset_common::{CallingInfo, OwnerType};
-use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, Result, Tag, Value};
 use asset_log::{loge, logi};
 use asset_db_key_operator::DbKey;
 

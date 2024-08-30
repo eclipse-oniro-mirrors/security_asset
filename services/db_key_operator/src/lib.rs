@@ -17,8 +17,7 @@
 
 use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, secret_key::SecretKey};
-use asset_db_operator::database::Database;
-use asset_definition::{Accessibility, AssetMap, AuthType, Result, Tag, Value, ErrCode, log_throw_error};
+use asset_definition::{Accessibility, AuthType, Result, ErrCode, log_throw_error};
 use asset_file_operator::ce_operator::{is_db_key_cipher_file_exist, read_db_key_cipher, write_db_key_cipher};
 use asset_log::logi;
 use openssl::rand::rand_bytes;
@@ -34,6 +33,7 @@ fn build_db_key_secret_key(calling_info: &CallingInfo) -> Result<SecretKey> {
 }
 
 static GEN_KEY_MUTEX: Mutex<()> = Mutex::new(());
+static GET_DB_KEY_MUTEX: Mutex<()> = Mutex::new(());
 
 /// Generate secret key if it does not exist.
 pub fn generate_secret_key_if_needed(secret_key: &SecretKey) -> Result<()> {
@@ -54,8 +54,9 @@ pub fn generate_secret_key_if_needed(secret_key: &SecretKey) -> Result<()> {
     }
 }
 
-/// nnnn
+/// db key obj
 pub struct DbKey {
+    /// db key
     pub db_key: Vec<u8>,
 }
 
@@ -64,7 +65,7 @@ impl DbKey {
     pub fn decrypt_db_key_cipher(calling_info: &CallingInfo, db_key_cipher: &Vec<u8>) -> Result<DbKey> {
         let secret_key = build_db_key_secret_key(calling_info)?;
         let aad: Vec<u8> = "trivial_aad_for_db_key".as_bytes().to_vec();
-        db_key = Crypto::decrypt(&secret_key, db_key_cipher, &aad)?;
+        let db_key = Crypto::decrypt(&secret_key, db_key_cipher, &aad)?;
         Ok(Self { db_key })
     }
 
@@ -83,8 +84,6 @@ impl DbKey {
 
         Ok(db_key_cipher)
     }
-
-    static GET_DB_KEY_MUTEX: Mutex<()> = Mutex::new(());
 
     /// Read db key cipher and decrypt if the db key cipher file exists, generate db_key if not.
     pub fn get_db_key(calling_info: &CallingInfo) -> Result<DbKey> {
