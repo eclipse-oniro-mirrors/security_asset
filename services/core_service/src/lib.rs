@@ -25,7 +25,7 @@ use system_ability_fwk::{
 };
 use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
 
-use asset_common::{CallingInfo, Counter, OwnerType};
+use asset_common::{AutoCounter, CallingInfo, Counter, OwnerType};
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
 use asset_file_operator::{common::DE_ROOT_PATH, de_operator::create_user_de_dir};
@@ -104,7 +104,8 @@ impl Ability for AssetAbility {
     }
 }
 
-fn upgrade_process() -> Result<()> {
+async fn upgrade_process() -> Result<()> {
+    let _counter_user = AutoCounter::new();
     for entry in fs::read_dir(DE_ROOT_PATH)? {
         let entry  = entry?;
         if let Ok(user_id) = entry.file_name().to_string_lossy().parse::<i32>() {
@@ -115,7 +116,6 @@ fn upgrade_process() -> Result<()> {
 }
 
 fn start_service(handler: Handler) -> Result<()> {
-    upgrade_process()?;
     let asset_plugin = AssetPlugin::get_instance();
     match asset_plugin.load_plugin() {
         Ok(loader) => {
@@ -129,6 +129,7 @@ fn start_service(handler: Handler) -> Result<()> {
     if !handler.publish(AssetService::new(handler.clone())) {
         return log_throw_error!(ErrCode::IpcError, "Asset publish stub object failed");
     };
+    let _handle = ylong_runtime::spawn(upgrade_process());
     Ok(())
 }
 

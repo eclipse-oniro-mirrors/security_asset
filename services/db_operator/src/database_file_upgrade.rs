@@ -158,6 +158,7 @@ fn split_db(user_id: i32) -> Result<()> {
     Ok(())
 }
 
+/// check db need split or not. If needed, split it by owner.
 pub fn check_and_split_db(user_id: i32) -> Result<()> {
     if check_old_db_exist(user_id) {
         let _lock = get_split_db_lock_by_user_id(user_id).mtx.lock().unwrap();
