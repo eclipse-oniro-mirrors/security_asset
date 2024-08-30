@@ -24,13 +24,12 @@ use std::{
 
 use asset_common::{AutoCounter, CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
-use asset_db_key_operator::DbKey;
 use asset_db_operator::{
     database::Database, database_file_upgrade::construct_splited_db_name, types::{column, DbMap}
 };
 use asset_definition::{log_throw_error, ErrCode, Result, SyncType, Value};
 use asset_file_operator::{
-    ce_operator::{is_db_key_cipher_file_exist, read_db_key_cipher}, common::{BACKUP_SUFFIX, CE_ROOT_PATH, DB_SUFFIX, DE_ROOT_PATH}, de_operator::delete_user_de_dir
+    ce_operator::is_db_key_cipher_file_exist, common::{BACKUP_SUFFIX, CE_ROOT_PATH, DB_SUFFIX, DE_ROOT_PATH}, de_operator::delete_user_de_dir
 };
 use asset_log::{loge, logi, logw};
 use asset_plugin::asset_plugin::AssetPlugin;
@@ -68,7 +67,7 @@ fn delete_in_de_db_on_package_removed(
     check_cond: &DbMap
 ) -> Result<bool> {
     // Delete non-persistent data in de db.
-    let mut de_db = Database::build(calling_info, None)?;
+    let mut de_db = Database::build(calling_info, false)?;
     let _ = de_db.delete_datas(delete_cond, Some(reverse_condition), false)?;
     let de_db_data_exists = de_db.is_data_exists(check_cond, false)?;
     // remove db and backup db
@@ -85,9 +84,7 @@ fn delete_in_ce_db_on_package_removed(
     check_cond: &DbMap,
 ) -> Result<bool> {
     // Delete non-persistent data in ce db if ce db file exists.
-    let db_key_cipher = read_db_key_cipher(calling_info.user_id())?;
-    let db_key = DbKey::decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
-    let mut ce_db = Database::build(calling_info, Some(&db_key))?;
+    let mut ce_db = Database::build(calling_info, true)?;
     let _ = ce_db.delete_datas(delete_cond, Some(reverse_condition), false)?;
     // Check whether there is still persistent data left in ce db.
     let ce_db_data_exists = ce_db.is_data_exists(check_cond, false)?;

@@ -85,6 +85,11 @@ impl DbKey {
         Ok(db_key_cipher)
     }
 
+    /// Check whether the database key exists.
+    pub fn check_existance(user_id: i32) -> Result<bool> {
+        is_db_key_cipher_file_exist(user_id)
+    }
+
     /// Read db key cipher and decrypt if the db key cipher file exists, generate db_key if not.
     pub fn get_db_key(calling_info: &CallingInfo) -> Result<DbKey> {
         match is_db_key_cipher_file_exist(calling_info.user_id()) {

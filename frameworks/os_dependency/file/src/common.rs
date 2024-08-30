@@ -15,8 +15,8 @@
 
 //! This file implements ce file operations.
 
-use asset_definition::Result;
-use std::fs;
+use asset_definition::{log_throw_error, Result, ErrCode};
+use std::{fs, path::Path};
 
 /// Suffix for backup database files.
 pub const BACKUP_SUFFIX: &str = ".backup";
@@ -40,4 +40,20 @@ pub(crate) fn get_user_dbs(path_str: &str) -> Result<Vec<String>> {
         }
     }
     Ok(dbs)
+}
+
+/// Check whether file exists.
+pub fn is_file_exist(path_str: &str) -> Result<bool> {
+    let path: &Path = Path::new(&path_str);
+    match path.try_exists() {
+        Ok(true) => Ok(true),
+        Ok(false) => Ok(false),
+        Err(e) => {
+            log_throw_error!(
+                ErrCode::FileOperationError,
+                "[FATAL][SA]]Checking existence of database key ciphertext file failed! error is [{}]",
+                e
+            )
+        },
+    }
 }

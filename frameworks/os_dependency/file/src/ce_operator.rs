@@ -18,7 +18,7 @@
 use asset_definition::{log_throw_error, ErrCode, Result};
 use std::{fs, path::Path};
 
-use crate::common::{get_user_dbs, DB_KEY};
+use crate::common::{get_user_dbs, DB_KEY, is_file_exist};
 
 fn construct_ce_db_dir(user_id: i32) -> String {
     format!("data/service/el2/{}/asset_service", user_id)
@@ -31,18 +31,7 @@ fn construct_db_key_cipher_path(user_id: i32) -> String {
 /// Check db key cipher file exists.
 pub fn is_db_key_cipher_file_exist(user_id: i32) -> Result<bool> {
     let path_str = construct_db_key_cipher_path(user_id);
-    let path: &Path = Path::new(&path_str);
-    match path.try_exists() {
-        Ok(true) => Ok(true),
-        Ok(false) => Ok(false),
-        Err(e) => {
-            log_throw_error!(
-                ErrCode::FileOperationError,
-                "[FATAL][SA]]Checking existence of database key ciphertext file failed! error is [{}]",
-                e
-            )
-        },
-    }
+    is_file_exist(&path_str)
 }
 
 /// Read db key cipher.
@@ -75,6 +64,25 @@ pub fn write_db_key_cipher(user_id: i32, db_key_cipher: &Vec<u8>) -> Result<()> 
             )
         },
     }
+}
+
+/// Remove all CE file in a specific user space.
+pub fn remove_ce_files(user_id: i32) -> Result<()> {
+    let path_str = construct_ce_db_dir(user_id);
+    for file in fs::read_dir(path_str)? {
+        let file = &file?;
+        match fs::remove_file(file.path().to_string_lossy().to_string()) {
+            Ok(_) => (),
+            Err(e) => {
+                return log_throw_error!(
+                    ErrCode::FileOperationError,
+                    "[FATAL]Remove [{}] failed, error code:[{}]", file.path().to_string_lossy().to_string(),
+                    e
+                )
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Obtain ce user dbs

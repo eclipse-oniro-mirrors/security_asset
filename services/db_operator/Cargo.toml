@@ -23,3 +23,4 @@ asset_common = { path = "../common" }
 asset_definition = { path = "../../frameworks/definition" }
 asset_log = { path = "../../frameworks/os_dependency/log" }
 asset_db_key_operator = { path = "../db_key_operator" }
+asset_file_operator = { path = "../../frameworks/os_dependency/file" }

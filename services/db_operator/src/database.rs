@@ -21,6 +21,7 @@ use std::{ffi::CStr, fs, ptr::null_mut, sync::Mutex};
 
 use asset_common::{CallingInfo, OwnerType};
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, Result, Tag, Value};
+use asset_file_operator::{ce_operator::remove_ce_files, common::is_file_exist};
 use asset_log::{loge, logi};
 use asset_db_key_operator::DbKey;
 
@@ -126,32 +127,58 @@ pub(crate) fn fmt_de_db_path_with_name(user_id: i32, db_name: &str) -> String {
     format!("{}/{}/{}.db", DE_ROOT_PATH, user_id, db_name)
 }
 
-pub(crate) fn get_db(user_id: i32, db_name: &str, db_key: Option<&DbKey>) -> Result<Database> {
-    let path = if db_key.is_some() {
-        fmt_ce_db_path_with_name(user_id, db_name)
-    } else {
+fn check_validity_of_db_key(path: &str, user_id: i32) -> Result<()> {
+    if is_file_exist(path)? && !DbKey::check_existance(user_id)? {
+        loge!("[FATAL]There is database bot no database key. Now all data should be cleared and restart over.");
+        remove_ce_files(user_id)?;
+        return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id)
+    }
+    Ok(())
+}
+
+pub(crate) fn get_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
+    let path = if is_ce {
         fmt_de_db_path_with_name(user_id, db_name)
+    } else {
+        fmt_ce_db_path_with_name(user_id, db_name)
     };
+    let db_key = if is_ce {
+        check_validity_of_db_key(&path, user_id)?;
+        let calling_info = CallingInfo::new_part_info(user_id);
+        match DbKey::get_db_key(&calling_info) {
+            Ok(res) => Some(res),
+            Err(e) if e.code == ErrCode::NotFound || e.code == ErrCode::DataCorrupted => {
+                loge!("[FATAL]The key is corrupted. Now all data should be cleared and restart over, err is {}.",
+                    e.code);
+                remove_ce_files(user_id)?;
+                return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id)
+            }
+            Err(e) => return Err(e)
+        }
+    } else {
+        None
+    };
+
     let backup_path = fmt_backup_path(path.as_str());
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
     let mut db = Database { path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string() };
     let _lock = db.db_lock.mtx.lock().unwrap();
-    db.open_and_restore(db_key)?;
+    db.open_and_restore(db_key.as_ref())?;
     db.restore_if_exec_fail(|e: &Table| e.create(COLUMN_INFO))?;
     db.upgrade(DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
     Ok(db)
 }
 
-/// Create de db instance if the value of tag "RequireAttrEncrypted" is not specified or set to false, Create ce db instance if true.
+/// Create de db instance if the value of tag "RequireAttrEncrypted" is not specified or set to false.
+/// Create ce db instance if true.
 pub fn create_db_instance(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<Database> {
     match attributes.get(&Tag::RequireAttrEncrypted) {
         Some(Value::Bool(true)) => {
-            let db_key = DbKey::get_db_key(calling_info)?;
-            let db = Database::build(calling_info, Some(&db_key))?;
+            let db = Database::build(calling_info, true)?;
             Ok(db)
         },
         _ => {
-            let db = Database::build(calling_info, None)?;
+            let db = Database::build(calling_info, false)?;
             Ok(db)
         },
     }
@@ -159,20 +186,22 @@ pub fn create_db_instance(attributes: &AssetMap, calling_info: &CallingInfo) -> 
 
 impl Database {
     /// Create a database.
-    pub fn build(calling_info: &CallingInfo, db_key: Option<&DbKey>) -> Result<Database> {
-        check_and_split_db(calling_info.user_id())?;
+    pub fn build(calling_info: &CallingInfo, is_ce: bool) -> Result<Database> {
+        if !is_ce {
+            // DE database needs trigger the upgrade action.
+            check_and_split_db(calling_info.user_id())?;
+        }
         get_db(
             calling_info.user_id(),
             &construct_splited_db_name(calling_info.owner_type_enum(),
-            calling_info.owner_info(), db_key.is_some())?,
-            db_key
+            calling_info.owner_info(), is_ce)?, is_ce
         )
     }
 
     /// Create a database from a file name.
-    pub fn build_with_file_name(user_id: i32, db_name: &str, db_key: Option<&DbKey>) -> Result<Database> {
+    pub fn build_with_file_name(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
         check_and_split_db(user_id)?;
-        get_db(user_id, db_name, db_key)
+        get_db(user_id, db_name, is_ce)
     }
 
     /// Check whether de db is ok

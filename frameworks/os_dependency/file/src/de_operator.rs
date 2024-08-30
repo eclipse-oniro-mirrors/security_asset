@@ -19,33 +19,20 @@ use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_log::logi;
 use std::{fs, path::Path};
 
-use crate::common::get_user_dbs;
+use crate::common::{get_user_dbs, is_file_exist};
 
 fn construct_user_de_path(user_id: i32) -> String {
     format!("data/service/el1/public/asset_service/{}", user_id)
 }
 
-fn is_user_de_dir_exist(user_id: i32) -> Result<()> {
+fn is_user_de_dir_exist(user_id: i32) -> Result<bool> {
     let path_str = construct_user_de_path(user_id);
-    let path: &Path = Path::new(&path_str);
-    match path.try_exists() {
-        Ok(true) => Ok(()),
-        Ok(false) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]User DE directory does not exist!")
-        },
-        Err(e) => {
-            log_throw_error!(
-                ErrCode::FileOperationError,
-                "[FATAL][SA]Checking existence of user DE directory failed! error is [{}]",
-                e
-            )
-        },
-    }
+    is_file_exist(&path_str)
 }
 
 /// Create user de directory.
 pub fn create_user_de_dir(user_id: i32) -> Result<()> {
-    if is_user_de_dir_exist(user_id).is_ok() {
+    if is_user_de_dir_exist(user_id)? {
         return Ok(());
     }
 
@@ -67,7 +54,7 @@ pub fn create_user_de_dir(user_id: i32) -> Result<()> {
 
 /// Delete user de directory.
 pub fn delete_user_de_dir(user_id: i32) -> Result<()> {
-    if is_user_de_dir_exist(user_id).is_err() {
+    if !is_user_de_dir_exist(user_id)? {
         return Ok(());
     }
 

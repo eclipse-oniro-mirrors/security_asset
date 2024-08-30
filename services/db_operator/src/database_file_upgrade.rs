@@ -71,7 +71,7 @@ pub fn construct_splited_db_name(owner_type: OwnerType, owner_info: &[u8], is_ce
 }
 
 fn get_db_before_split(user_id: i32) -> Result<Database> {
-    get_db(user_id, OLD_DB_NAME, None)
+    get_db(user_id, OLD_DB_NAME, false)
 }
 
 fn get_value_from_db_map(db_map: &DbMap, key: &str) -> Result<Value> {
@@ -98,7 +98,7 @@ fn get_new_db(user_id: i32, info_map: &DbMap) -> Result<Database> {
     let owner_info = info_map.get_bytes_attr(&column::OWNER)?;
     let new_db_name = construct_splited_db_name(owner_type, owner_info, false)?;
     // 1.2 construct new db
-    get_db(user_id, &new_db_name, None)
+    get_db(user_id, &new_db_name, false)
 }
 
 fn construct_old_query_condition(info_map: &DbMap) -> Result<DbMap> {
