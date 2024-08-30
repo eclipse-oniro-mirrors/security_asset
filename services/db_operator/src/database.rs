@@ -25,7 +25,7 @@ use asset_log::{loge, logi};
 use asset_db_key_operator::DbKey;
 
 use crate::{
-    database_file_upgrade::{check_and_split_db, construct_splited_db_name, fmt_de_db_path}, statement::Statement, table::Table, types::{
+    database_file_upgrade::{check_and_split_db, construct_splited_db_name, fmt_old_de_db_path}, statement::Statement, table::Table, types::{
         column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1,
         DB_UPGRADE_VERSION_V2, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2
     }
@@ -100,9 +100,9 @@ pub struct Database {
 pub type UpgradeDbCallback = fn(db: &Database, old_ver: u32, new_ver: u32) -> Result<()>;
 
 #[cfg(not(test))]
-pub(crate) const ROOT_PATH: &str = "/data/service/el1/public/asset_service";
+pub(crate) const DE_ROOT_PATH: &str = "/data/service/el1/public/asset_service";
 #[cfg(test)]
-pub(crate) const ROOT_PATH: &str = "/data/asset_test";
+pub(crate) const DE_ROOT_PATH: &str = "/data/asset_test";
 
 #[inline(always)]
 pub(crate) fn fmt_backup_path(path: &str) -> String {
@@ -113,7 +113,7 @@ pub(crate) fn fmt_backup_path(path: &str) -> String {
 
 /// Get asset storage path.
 pub fn get_path() -> String {
-    ROOT_PATH.to_string()
+    DE_ROOT_PATH.to_string()
 }
 
 #[inline(always)]
@@ -123,7 +123,7 @@ pub(crate) fn fmt_ce_db_path_with_name(user_id: i32, db_name: &str) -> String {
 
 #[inline(always)]
 pub(crate) fn fmt_de_db_path_with_name(user_id: i32, db_name: &str) -> String {
-    format!("{}/{}/{}.db", ROOT_PATH, user_id, db_name)
+    format!("{}/{}/{}.db", DE_ROOT_PATH, user_id, db_name)
 }
 
 pub(crate) fn get_db(user_id: i32, db_name: &str, db_key: Option<&DbKey>) -> Result<Database> {
@@ -175,8 +175,8 @@ impl Database {
         get_db(user_id, db_name, db_key)
     }
 
-    /// Check is db ok
-    pub fn check_db_accessible(path: String, user_id: i32, db_name: String) -> Result<()> {
+    /// Check whether de db is ok
+    pub fn check_de_db_accessible(path: String, user_id: i32, db_name: String) -> Result<()> {
         let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.clone());
         let mut db = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock, db_name };
         db.open()?;
@@ -293,7 +293,7 @@ impl Database {
     /// Delete database file.
     #[allow(dead_code)]
     pub(crate) fn delete(user_id: i32) -> Result<()> {
-        let path = fmt_de_db_path(user_id);
+        let path = fmt_old_de_db_path(user_id);
         let backup_path = fmt_backup_path(&path);
         if let Err(e) = fs::remove_file(path) {
             return log_throw_error!(ErrCode::FileOperationError, "[FATAL][DB]Delete database failed, err={}", e);

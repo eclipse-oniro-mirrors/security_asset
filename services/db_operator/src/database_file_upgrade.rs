@@ -23,7 +23,7 @@ use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
 use asset_log::logi;
 
 use crate::{
-    database::{fmt_backup_path, fmt_de_db_path_with_name, get_db, get_split_db_lock_by_user_id, Database, OLD_DB_NAME, ROOT_PATH}, types::{
+    database::{fmt_backup_path, fmt_de_db_path_with_name, get_db, get_split_db_lock_by_user_id, Database, OLD_DB_NAME, DE_ROOT_PATH}, types::{
         column, DbMap, QueryOptions,
     }
 };
@@ -33,12 +33,12 @@ const REMOVE_INDEX: usize = 2;
 static MAX_BATCH_NUM: u32 = 100;
 
 #[inline(always)]
-pub(crate) fn fmt_de_db_path(user_id: i32) -> String {
-    format!("{}/{}/asset.db", ROOT_PATH, user_id)
+pub(crate) fn fmt_old_de_db_path(user_id: i32) -> String {
+    format!("{}/{}/asset.db", DE_ROOT_PATH, user_id)
 }
 
 fn check_old_db_exist(user_id: i32) -> bool {
-    let path_str = fmt_de_db_path(user_id);
+    let path_str = fmt_old_de_db_path(user_id);
     let path = Path::new(&path_str);
     path.exists()
 }
@@ -50,7 +50,7 @@ pub fn construct_splited_db_name(owner_type: OwnerType, owner_info: &[u8], is_ce
             let owner_info_string = String::from_utf8_lossy(owner_info).to_string();
             let split_owner_info: Vec<&str> = owner_info_string.split('_').collect();
             if split_owner_info.len() < MINIM_OWNER_INFO_LEN || split_owner_info.last().is_none() {
-                return log_throw_error!(ErrCode::DatabaseError, "[FATAL]The queried owner info does not correct.");
+                return log_throw_error!(ErrCode::DatabaseError, "[FATAL]The queried owner info is not correct.");
             }
             let app_index = split_owner_info.last().unwrap();
             let mut split_owner_info_mut = split_owner_info.clone();
