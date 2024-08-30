@@ -119,7 +119,7 @@ pub fn get_path() -> String {
 
 #[inline(always)]
 pub(crate) fn fmt_ce_db_path_with_name(user_id: i32, db_name: &str) -> String {
-    format!("data/service/el2/{}/asset_service/enc_{}.db", user_id, db_name)
+    format!("data/service/el2/{}/asset_service/{}.db", user_id, db_name)
 }
 
 #[inline(always)]
