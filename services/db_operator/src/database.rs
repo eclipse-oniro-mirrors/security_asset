@@ -138,9 +138,9 @@ fn check_validity_of_db_key(path: &str, user_id: i32) -> Result<()> {
 
 pub(crate) fn get_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
     let path = if is_ce {
-        fmt_de_db_path_with_name(user_id, db_name)
-    } else {
         fmt_ce_db_path_with_name(user_id, db_name)
+    } else {
+        fmt_de_db_path_with_name(user_id, db_name)
     };
     let db_key = if is_ce {
         check_validity_of_db_key(&path, user_id)?;
