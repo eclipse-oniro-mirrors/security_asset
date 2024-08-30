@@ -33,23 +33,6 @@ fn build_db_key_secret_key(calling_info: &CallingInfo) -> Result<SecretKey> {
     Ok(SecretKey::new(calling_info, auth_type, access_type, require_password_set, Some(alias)))
 }
 
-/// Decrypt db key cipher.
-pub fn decrypt_db_key_cipher(calling_info: &CallingInfo, db_key_cipher: &Vec<u8>) -> Result<Vec<u8>> {
-    let secret_key = build_db_key_secret_key(calling_info)?;
-    let aad: Vec<u8> = "trivial_aad_for_db_key".as_bytes().to_vec();
-    let db_key = Crypto::decrypt(&secret_key, db_key_cipher, &aad)?;
-
-    Ok(db_key)
-}
-
-fn generate_db_key() -> Result<Vec<u8>> {
-    const KEY_LEN_IN_BYTES: usize = 32; // aes-256-gcm requires key length 256 bits = 32 bytes.
-    let mut db_key = [0; KEY_LEN_IN_BYTES];
-    rand_bytes(&mut db_key).unwrap();
-
-    Ok(db_key.to_vec())
-}
-
 static GEN_KEY_MUTEX: Mutex<()> = Mutex::new(());
 
 /// Generate secret key if it does not exist.
@@ -71,52 +54,64 @@ pub fn generate_secret_key_if_needed(secret_key: &SecretKey) -> Result<()> {
     }
 }
 
-fn encrypt_db_key(calling_info: &CallingInfo, db_key: &Vec<u8>) -> Result<Vec<u8>> {
-    let secret_key = build_db_key_secret_key(calling_info)?;
-    generate_secret_key_if_needed(&secret_key)?;
-    let aad: Vec<u8> = "trivial_aad_for_db_key".as_bytes().to_vec();
-    let db_key_cipher = Crypto::encrypt(&secret_key, db_key, &aad)?;
-
-    Ok(db_key_cipher)
+/// nnnn
+pub struct DbKey {
+    pub db_key: Vec<u8>,
 }
 
-static GET_DB_KEY_MUTEX: Mutex<()> = Mutex::new(());
+impl DbKey {
+    /// Decrypt db key cipher.
+    pub fn decrypt_db_key_cipher(calling_info: &CallingInfo, db_key_cipher: &Vec<u8>) -> Result<DbKey> {
+        let secret_key = build_db_key_secret_key(calling_info)?;
+        let aad: Vec<u8> = "trivial_aad_for_db_key".as_bytes().to_vec();
+        db_key = Crypto::decrypt(&secret_key, db_key_cipher, &aad)?;
+        Ok(Self { db_key })
+    }
 
-/// Read db key cipher and decrypt if the db key cipher file exists, generate db_key if not.
-pub fn get_db_key(calling_info: &CallingInfo) -> Result<Vec<u8>> {
-    match is_db_key_cipher_file_exist(calling_info.user_id()) {
-        Ok(true) => {
-            let _lock = GET_DB_KEY_MUTEX.lock().unwrap();
-            match is_db_key_cipher_file_exist(calling_info.user_id()) {
-                Ok(true) => {
-                    let db_key_cipher = read_db_key_cipher(calling_info.user_id())?;
-                    let db_key = decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
-                    Ok(db_key)
-                },
-                Ok(false) => {
-                    let db_key = generate_db_key()?;
-                    let db_key_cipher = encrypt_db_key(calling_info, &db_key)?;
-                    write_db_key_cipher(calling_info.user_id(), &db_key_cipher)?;
-                    Ok(db_key)
-                },
-                Err(e) => Err(e),
-            }
-        },
-        _ => log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]]Get database key failed!")
+    fn generate_db_key() -> Result<DbKey> {
+        const KEY_LEN_IN_BYTES: usize = 32; // aes-256-gcm requires key length 256 bits = 32 bytes.
+        let mut db_key = [0; KEY_LEN_IN_BYTES];
+        rand_bytes(&mut db_key).unwrap();
+        Ok(Self { db_key: db_key.to_vec() })
+    }
+
+    fn encrypt_db_key(&self, calling_info: &CallingInfo) -> Result<Vec<u8>> {
+        let secret_key = build_db_key_secret_key(calling_info)?;
+        generate_secret_key_if_needed(&secret_key)?;
+        let aad: Vec<u8> = "trivial_aad_for_db_key".as_bytes().to_vec();
+        let db_key_cipher = Crypto::encrypt(&secret_key, &self.db_key, &aad)?;
+
+        Ok(db_key_cipher)
+    }
+
+    static GET_DB_KEY_MUTEX: Mutex<()> = Mutex::new(());
+
+    /// Read db key cipher and decrypt if the db key cipher file exists, generate db_key if not.
+    pub fn get_db_key(calling_info: &CallingInfo) -> Result<DbKey> {
+        match is_db_key_cipher_file_exist(calling_info.user_id()) {
+            Ok(true) => {
+                let _lock = GET_DB_KEY_MUTEX.lock().unwrap();
+                match is_db_key_cipher_file_exist(calling_info.user_id()) {
+                    Ok(true) => {
+                        let db_key_cipher = read_db_key_cipher(calling_info.user_id())?;
+                        Self::decrypt_db_key_cipher(calling_info, &db_key_cipher)
+                    },
+                    Ok(false) => {
+                        let db_key = Self::generate_db_key()?;
+                        let db_key_cipher = db_key.encrypt_db_key(calling_info)?;
+                        write_db_key_cipher(calling_info.user_id(), &db_key_cipher)?;
+                        Ok(db_key)
+                    },
+                    Err(e) => Err(e),
+                }
+            },
+            _ => log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]]Get database key failed!")
+        }
     }
 }
 
-/// Create de db instance if the value of tag "RequireAttrEncrypted" is not specified or set to false, Create ce db instance if true.
-pub fn create_db_instance(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<Database> {
-    match attributes.get(&Tag::RequireAttrEncrypted) {
-        Some(Value::Bool(true)) => {
-            let db_key = get_db_key(calling_info)?;
-            let db = Database::build(calling_info, Some(&db_key))?;
-            Ok(db)
-        },
-        _ => {
-            let db = Database::build(calling_info, None)?;
-            Ok(db)
-        },
+impl Drop for DbKey {
+    fn drop(&mut self) {
+        self.db_key.fill(0);
     }
 }

@@ -14,7 +14,7 @@
  */
 
 use asset_common::{CallingInfo, Counter, OwnerType};
-use asset_db_key_operator::get_db_key;
+use asset_db_key_operator::DbKey;
 use asset_db_operator::{database::{get_path, Database}, database_file_upgrade::construct_splited_db_name, types::column};
 use asset_definition::{log_throw_error, ErrCode, Extension, Result};
 use asset_file_operator::de_operator::create_user_de_dir;
@@ -137,7 +137,7 @@ impl IAssetPluginCtx for AssetContext {
     /// Adds an asset to ce db.
     fn ce_add(&mut self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
         let db_name = get_db_name(attributes, true)?;
-        let db_key = get_db_key(&self.calling_info).map_err(|e| e.code as u32)?;
+        let db_key = DbKey::get_db_key(&self.calling_info).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, Some(&db_key)).map_err(|e| e.code as u32)?;
         db.insert_datas(attributes).map_err(|e| e.code as u32)
     }
@@ -152,7 +152,7 @@ impl IAssetPluginCtx for AssetContext {
     /// Adds an asset with replace to ce db.
     fn ce_replace(&mut self, condition: &ExtDbMap, attributes: &ExtDbMap) -> std::result::Result<(), u32> {
         let db_name = get_db_name(attributes, true)?;
-        let db_key = get_db_key(&self.calling_info).map_err(|e| e.code as u32)?;
+        let db_key = DbKey::get_db_key(&self.calling_info).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, Some(&db_key)).map_err(|e| e.code as u32)?;
         db.replace_datas(condition, false, attributes).map_err(|e| e.code as u32)
     }
@@ -173,7 +173,7 @@ impl IAssetPluginCtx for AssetContext {
         let ce_dbs = asset_file_operator::ce_operator::get_ce_user_dbs(self.user_id).map_err(|e| e.code as u32)?;
         let mut query_data = vec![];
         for db_name in ce_dbs {
-            let db_key = get_db_key(&self.calling_info).map_err(|e| e.code as u32)?;
+            let db_key = DbKey::get_db_key(&self.calling_info).map_err(|e| e.code as u32)?;
             let mut db = Database::build_with_file_name(self.user_id, &db_name, Some(&db_key)).map_err(|e| e.code as u32)?;
             query_data.extend(db.query_datas(&vec![], attributes, None, false).map_err(|e| e.code as u32)?);
         }
@@ -196,7 +196,7 @@ impl IAssetPluginCtx for AssetContext {
         let ce_dbs = asset_file_operator::ce_operator::get_ce_user_dbs(self.user_id).map_err(|e| e.code as u32)?;
         let mut total_remove_count = 0;
         for db_name in ce_dbs {
-            let db_key = get_db_key(&self.calling_info).map_err(|e| e.code as u32)?;
+            let db_key = DbKey::get_db_key(&self.calling_info).map_err(|e| e.code as u32)?;
             let mut db = Database::build_with_file_name(self.user_id, &db_name, Some(&db_key)).map_err(|e| e.code as u32)?;
             total_remove_count += db.delete_datas(attributes, None, false).map_err(|e| e.code as u32)?;
         }
@@ -227,7 +227,7 @@ impl IAssetPluginCtx for AssetContext {
         let ce_dbs = asset_file_operator::ce_operator::get_ce_user_dbs(self.user_id).map_err(|e| e.code as u32)?;
         let mut total_remove_count = 0;
         for db_name in ce_dbs {
-            let db_key = get_db_key(&self.calling_info).map_err(|e| e.code as u32)?;
+            let db_key = DbKey::get_db_key(&self.calling_info).map_err(|e| e.code as u32)?;
             let mut db = Database::build_with_file_name(self.user_id, &db_name, Some(&db_key)).map_err(|e| e.code as u32)?;
             total_remove_count += db.delete_specific_condition_datas(specific_cond, condition_value).map_err(|e| e.code as u32)?;
         }
@@ -250,7 +250,7 @@ impl IAssetPluginCtx for AssetContext {
         let ce_dbs = asset_file_operator::ce_operator::get_ce_user_dbs(self.user_id).map_err(|e| e.code as u32)?;
         let mut total_update_count = 0;
         for db_name in ce_dbs {
-            let db_key = get_db_key(&self.calling_info).map_err(|e| e.code as u32)?;
+            let db_key = DbKey::get_db_key(&self.calling_info).map_err(|e| e.code as u32)?;
             let mut db = Database::build_with_file_name(self.user_id, &db_name, Some(&db_key)).map_err(|e| e.code as u32)?;
             total_update_count += db.update_datas(attributes, false, attrs_to_update).map_err(|e| e.code as u32)?;
         }

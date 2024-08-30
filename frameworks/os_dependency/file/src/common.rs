@@ -18,15 +18,15 @@
 use asset_definition::Result;
 use std::fs;
 
-#[allow(missing_docs)]
+/// Suffix for backup database files.
 pub const BACKUP_SUFFIX: &str = ".backup";
-#[allow(missing_docs)]
+/// Suffix for database files.
 pub const DB_SUFFIX: &str = ".db";
-#[allow(missing_docs)]
+/// Name for data base key ciphertext file.
 pub const DB_KEY: &str = "db_key";
-#[allow(missing_docs)]
+/// Root path to de user directories.
 pub const DE_ROOT_PATH: &str = "data/service/el1/public/asset_service";
-#[allow(missing_docs)]
+/// Root path to ce user directories.
 pub const CE_ROOT_PATH: &str = "data/service/el2";
 
 /// Get all db name in user directory.

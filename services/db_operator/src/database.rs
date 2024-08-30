@@ -22,6 +22,7 @@ use std::{ffi::CStr, fs, ptr::null_mut, sync::Mutex};
 use asset_common::{CallingInfo, OwnerType};
 use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
 use asset_log::{loge, logi};
+use asset_db_key_operator::DbKey;
 
 use crate::{
     database_file_upgrade::{check_and_split_db, construct_splited_db_name, fmt_de_db_path}, statement::Statement, table::Table, types::{
@@ -125,7 +126,7 @@ pub(crate) fn fmt_de_db_path_with_name(user_id: i32, db_name: &str) -> String {
     format!("{}/{}/{}.db", ROOT_PATH, user_id, db_name)
 }
 
-pub(crate) fn get_db(user_id: i32, db_name: &str, db_key: Option<&Vec<u8>>) -> Result<Database> {
+pub(crate) fn get_db(user_id: i32, db_name: &str, db_key: Option<&DbKey>) -> Result<Database> {
     let path = if db_key.is_some() {
         fmt_ce_db_path_with_name(user_id, db_name)
     } else {
@@ -141,9 +142,24 @@ pub(crate) fn get_db(user_id: i32, db_name: &str, db_key: Option<&Vec<u8>>) -> R
     Ok(db)
 }
 
+/// Create de db instance if the value of tag "RequireAttrEncrypted" is not specified or set to false, Create ce db instance if true.
+pub fn create_db_instance(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<Database> {
+    match attributes.get(&Tag::RequireAttrEncrypted) {
+        Some(Value::Bool(true)) => {
+            let db_key = DbKey::get_db_key(calling_info)?;
+            let db = Database::build(calling_info, Some(&db_key))?;
+            Ok(db)
+        },
+        _ => {
+            let db = Database::build(calling_info, None)?;
+            Ok(db)
+        },
+    }
+}
+
 impl Database {
     /// Create a database.
-    pub fn build(calling_info: &CallingInfo, db_key: Option<&Vec<u8>>) -> Result<Database> {
+    pub fn build(calling_info: &CallingInfo, db_key: Option<&DbKey>) -> Result<Database> {
         check_and_split_db(calling_info.user_id())?;
         get_db(
             calling_info.user_id(),
@@ -154,7 +170,7 @@ impl Database {
     }
 
     /// Create a database from a file name.
-    pub fn build_with_file_name(user_id: i32, db_name: &str, db_key: Option<&Vec<u8>>) -> Result<Database> {
+    pub fn build_with_file_name(user_id: i32, db_name: &str, db_key: Option<&DbKey>) -> Result<Database> {
         check_and_split_db(user_id)?;
         get_db(user_id, db_name, db_key)
     }
@@ -183,7 +199,7 @@ impl Database {
     }
 
     /// Open the database connection and restore the database if the connection fails.
-    pub(crate) fn open_and_restore(&mut self, db_key: Option<&Vec<u8>>) -> Result<()> {
+    pub(crate) fn open_and_restore(&mut self, db_key: Option<&DbKey>) -> Result<()> {
         let result = self.open();
         if let Some(db_key) = db_key {
             self.set_db_key(db_key)?;
@@ -215,8 +231,8 @@ impl Database {
     }
 
     /// Encrypt/Decrypt CE database.
-    pub fn set_db_key(&mut self, db_key: &Vec<u8>) -> Result<()> {
-        let ret = unsafe { SqliteKey(self.handle as _, db_key.as_ptr() as *const c_void, db_key.len() as i32) };
+    pub fn set_db_key(&mut self, db_key: &DbKey) -> Result<()> {
+        let ret = unsafe { SqliteKey(self.handle as _, db_key.db_key.as_ptr() as *const c_void, db_key.db_key.len() as i32) };
         if ret == SQLITE_OK {
             Ok(())
         } else {

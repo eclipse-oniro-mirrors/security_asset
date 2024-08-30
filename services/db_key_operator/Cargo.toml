@@ -23,7 +23,6 @@ openssl = { git = "https://gitee.com/openharmony/third_party_rust_rust-openssl.g
 
 asset_common = { path = "../common" }
 asset_crypto_manager = { path = "../crypto_manager" }
-asset_db_operator = { path = "../db_operator" }
 asset_definition = { path = "../../frameworks/definition" }
 asset_file_operator = { path = "../../frameworks/os_dependency/file" }
 asset_log = { path = "../../frameworks/os_dependency/log" }

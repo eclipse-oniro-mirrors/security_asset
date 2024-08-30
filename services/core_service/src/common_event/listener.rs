@@ -24,18 +24,15 @@ use std::{
 
 use asset_common::{AutoCounter, CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
-use asset_db_key_operator::decrypt_db_key_cipher;
+use asset_db_key_operator::DbKey;
 use asset_db_operator::{
-    database::Database,
-    types::{column, DbMap},
+    database::Database, database_file_upgrade::construct_splited_db_name, types::{column, DbMap}
 };
 use asset_definition::{log_throw_error, ErrCode, Result, SyncType, Value};
 use asset_file_operator::{
-    ce_operator::{is_ce_db_file_exist, read_db_key_cipher},
-    de_operator::delete_user_de_dir,
-    common::{BACKUP_SUFFIX, DB_SUFFIX, DE_ROOT_PATH, CE_ROOT_PATH},
+    ce_operator::{is_db_key_cipher_file_exist, read_db_key_cipher}, common::{BACKUP_SUFFIX, CE_ROOT_PATH, DB_SUFFIX, DE_ROOT_PATH}, de_operator::delete_user_de_dir
 };
-use asset_log::{loge, logi};
+use asset_log::{loge, logi, logw};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID,
@@ -46,30 +43,72 @@ use crate::sys_event::upload_fault_system_event;
 /// success code.
 const SUCCESS: i32 = 0;
 
+fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result<()> {
+    let db_name = construct_splited_db_name(calling_info.owner_type_enum(), calling_info.owner_info(), is_ce)?;
+    for db_path in fs::read_dir(file_path)? {
+        let db_path = db_path?;
+        let db_file_name = db_path.file_name().to_string_lossy().to_string();
+        if db_file_name.contains(&db_name) {
+            match fs::remove_file(&db_path.path().to_string_lossy().to_string()) {
+                Ok(_) => (),
+                Err(e) => {
+                    logw!("[WARNING]Remove db:[{}] failed, error code:[{}]", db_file_name, e);
+                }
+            }
+        }
+    }
+    Ok(())
+}
+
+fn delete_in_de_db_on_package_removed(
+    calling_info: &CallingInfo,
+    delete_cond: &DbMap,
+    reverse_condition: &DbMap,
+    check_cond: &DbMap
+) -> Result<bool> {
+    // Delete non-persistent data in de db.
+    let mut de_db = Database::build(calling_info, None)?;
+    let _ = de_db.delete_datas(delete_cond, Some(reverse_condition), false)?;
+    let de_db_data_exists = de_db.is_data_exists(check_cond, false)?;
+    // remove db and backup db
+    if !de_db_data_exists {
+        remove_db(&format!("{}/{}", DE_ROOT_PATH,calling_info.user_id()), calling_info, false)?;
+    }
+    Ok(de_db_data_exists)
+}
+
+fn delete_in_ce_db_on_package_removed(
+    calling_info: &CallingInfo,
+    delete_cond: &DbMap,
+    reverse_condition: &DbMap,
+    check_cond: &DbMap,
+) -> Result<bool> {
+    // Delete non-persistent data in ce db if ce db file exists.
+    let db_key_cipher = read_db_key_cipher(calling_info.user_id())?;
+    let db_key = DbKey::decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
+    let mut ce_db = Database::build(calling_info, Some(&db_key.db_key))?;
+    let _ = ce_db.delete_datas(delete_cond, Some(reverse_condition), false)?;
+    // Check whether there is still persistent data left in ce db.
+    let ce_db_data_exists = ce_db.is_data_exists(check_cond, false)?;
+    if !ce_db_data_exists {
+        remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
+    }
+    Ok(ce_db_data_exists)
+}
+
 fn delete_on_package_removed(owner: Vec<u8>, calling_info: &CallingInfo) -> Result<bool> {
     let mut delete_cond = DbMap::new();
     delete_cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
-    delete_cond.insert(column::OWNER, Value::Bytes(owner));
+    delete_cond.insert(column::OWNER, Value::Bytes(owner.clone()));
     delete_cond.insert(column::IS_PERSISTENT, Value::Bool(false));
     let mut reverse_condition = DbMap::new();
     reverse_condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
-
-    // Delete non-persistent data in de db.
-    let mut de_db = Database::build(calling_info, None)?;
-    let _ = de_db.delete_datas(&delete_cond, Some(&reverse_condition), false)?;
-    // Check whether there is still persistent data left in de db.
     let mut check_cond = delete_cond.clone();
     check_cond.remove(column::IS_PERSISTENT);
-    let de_db_data_exists = de_db.is_data_exists(&check_cond, false)?;
+    let de_db_data_exists = delete_in_de_db_on_package_removed(calling_info, &delete_cond, &reverse_condition, &check_cond)?;
 
-    if is_ce_db_file_exist(calling_info.user_id()).is_ok() {
-        // Delete non-persistent data in ce db if ce db file exists.
-        let db_key_cipher = read_db_key_cipher(calling_info.user_id())?;
-        let db_key = decrypt_db_key_cipher(calling_info, &db_key_cipher)?;
-        let mut ce_db = Database::build(calling_info, Some(&db_key))?;
-        let _ = ce_db.delete_datas(&delete_cond, Some(&reverse_condition), false)?;
-        // Check whether there is still persistent data left in ce db.
-        let ce_db_data_exists = ce_db.is_data_exists(&check_cond, false)?;
+    if is_db_key_cipher_file_exist(calling_info.user_id())? {
+        let ce_db_data_exists = delete_in_ce_db_on_package_removed(calling_info, &delete_cond, &reverse_condition, &check_cond)?;
         Ok(de_db_data_exists || ce_db_data_exists)
     } else {
         Ok(de_db_data_exists)
@@ -227,20 +266,17 @@ fn backup_de_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
             fs::copy(from_path, backup_path)?;
         }
     }
-
     Ok(())
 }
 
-fn backup_ce_db_if_exists(user_id: i32) -> Result<()> {
-    is_ce_db_file_exist(user_id)?;
-
+fn backup_ce_db(user_id: i32) -> Result<()> {
     let ce_path = format!("{}/{}/asset_service", CE_ROOT_PATH, user_id);
     for db_path in fs::read_dir(ce_path)? {
         let db_path = db_path?;
         let db_name = db_path.file_name().to_string_lossy().to_string();
-        if !db_name.ends_with(BACKUP_SUFFIX) {
+        if db_name.ends_with(DB_SUFFIX) {
             let from_path = db_path.path().to_string_lossy().to_string();
-            Database::check_db_accessible(from_path.clone(), user_id, db_name.clone())?;
+            // todo ce db 不好判断是否可达 协同callingInfo改回来一起上
             let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
             fs::copy(from_path, backup_path)?;
         }
@@ -265,25 +301,26 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
         }
     }
 
-    // Backup all ce db and db key cipher if exists. (todo1?: backup ce db if accessible. todo2?: do not backup db key cipher.)
+    // Backup all ce db if db key cipher file exists.
     /* Temporarily allocate at least 256 spaces for user ids.
     If the number of user ids exceeds 256, this method(with_capacity) will automatically allocate more spaces.*/
     let mut user_ids: Vec<i32> = Vec::with_capacity(256);
     let user_ids_ptr = user_ids.as_mut_ptr();
     let mut user_ids_size: u16 = 0;
     let user_ids_size_ptr = &mut user_ids_size;
+    let ret: i32;
     unsafe {
-        let ret = GetUserIds(user_ids_ptr, user_ids_size_ptr);
-        if ret != SUCCESS {
-            return log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get user IDs failed.");
-        }
+        ret = GetUserIds(user_ids_ptr, user_ids_size_ptr);
+    }
+    if ret != SUCCESS {
+        return log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get user IDs failed.");
     }
     let user_ids_slice;
     unsafe {
         user_ids_slice = slice::from_raw_parts_mut(user_ids_ptr, (*user_ids_size_ptr).try_into().unwrap());
     }
     for user_id in user_ids_slice.iter() {
-        if let Err(e) = backup_ce_db_if_exists(*user_id) {
+        if let Err(e) = backup_ce_db(*user_id) {
             let calling_info = CallingInfo::new_self();
             upload_fault_system_event(&calling_info, *start_time, &format!("backup_ce_db_{}", *user_id), &e);
         }

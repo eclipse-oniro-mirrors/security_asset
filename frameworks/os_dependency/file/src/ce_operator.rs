@@ -24,29 +24,6 @@ fn construct_ce_db_dir(user_id: i32) -> String {
     format!("data/service/el2/{}/asset_service", user_id)
 }
 
-fn construct_ce_db_path(user_id: i32) -> String {
-    format!("data/service/el2/{}/asset_service/enc_asset.db", user_id)
-}
-
-/// Check ce db file exists.
-pub fn is_ce_db_file_exist(user_id: i32) -> Result<()> {
-    let path_str = construct_ce_db_path(user_id);
-    let path: &Path = Path::new(&path_str);
-    match path.try_exists() {
-        Ok(true) => Ok(()),
-        Ok(false) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA]CE database file does not exist!")
-        },
-        Err(e) => {
-            log_throw_error!(
-                ErrCode::FileOperationError,
-                "[FATAL][SA]Checking existence of CE database file failed! error is [{}]",
-                e
-            )
-        },
-    }
-}
-
 fn construct_db_key_cipher_path(user_id: i32) -> String {
     format!("data/service/el2/{}/asset_service/{}", user_id, DB_KEY)
 }

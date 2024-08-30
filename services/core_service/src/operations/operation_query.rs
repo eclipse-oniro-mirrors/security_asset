@@ -19,9 +19,8 @@ use std::cmp::Ordering;
 
 use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager};
-use asset_db_key_operator::create_db_instance;
 use asset_db_operator::{
-    database::Database,
+    database::{create_db_instance, Database},
     types::{column, DbMap, QueryOptions, DB_DATA_VERSION},
 };
 use asset_definition::{

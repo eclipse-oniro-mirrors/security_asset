@@ -19,9 +19,9 @@ use std::{ffi::CString, os::raw::c_char};
 
 use asset_common::CallingInfo;
 use asset_crypto_manager::crypto::Crypto;
-use asset_db_key_operator::{create_db_instance, generate_secret_key_if_needed};
+use asset_db_key_operator::generate_secret_key_if_needed;
 use asset_db_operator::{
-    database::Database,
+    database::{create_db_instance, Database},
     types::{column, DbMap, DB_DATA_VERSION},
 };
 use asset_definition::{
