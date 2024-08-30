@@ -286,7 +286,8 @@ fn backup_ce_db(user_id: i32) -> Result<()> {
 }
 
 extern "C" {
-    fn GetUserIds(userIdsPtr: *mut i32, userIdsSize: *mut u16) -> i32;
+    fn GetUserIds(userIdsPtr: *mut i32, userIdsSize: u32) -> i32;
+    fn GetUsersSize(userIdsSize: *mut u32) -> i32;
 }
 
 fn backup_all_db(start_time: &Instant) -> Result<()> {
@@ -302,19 +303,25 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
     }
 
     // Backup all ce db if db key cipher file exists.
-    /* Temporarily allocate at least 256 spaces for user ids.
-    If the number of user ids exceeds 256, this method(with_capacity) will automatically allocate more spaces.*/
-    let mut user_ids: Vec<i32> = Vec::with_capacity(256);
-    let user_ids_ptr = user_ids.as_mut_ptr();
-    let mut user_ids_size: u16 = 0;
+    let mut user_ids_size: u32 = 0;
     let user_ids_size_ptr = &mut user_ids_size;
-    let ret: i32;
+    let mut ret: i32;
     unsafe {
-        ret = GetUserIds(user_ids_ptr, user_ids_size_ptr);
+        ret = GetUsersSize(user_ids_size_ptr);
+    }
+    if ret != SUCCESS {
+        return log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get users size failed.");
+    }
+
+    let mut user_ids: Vec<i32> = vec![0i32; (*user_ids_size_ptr).try_into().unwrap()];
+    let user_ids_ptr = user_ids.as_mut_ptr();
+    unsafe {
+        ret = GetUserIds(user_ids_ptr, *user_ids_size_ptr);
     }
     if ret != SUCCESS {
         return log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get user IDs failed.");
     }
+
     let user_ids_slice;
     unsafe {
         user_ids_slice = slice::from_raw_parts_mut(user_ids_ptr, (*user_ids_size_ptr).try_into().unwrap());

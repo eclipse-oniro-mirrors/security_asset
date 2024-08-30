@@ -35,7 +35,7 @@ pub(crate) fn get_user_dbs(path_str: &str) -> Result<Vec<String>> {
     for db_path in fs::read_dir(path_str)? {
         let db_path = db_path?;
         let db_file_name = db_path.file_name().to_string_lossy().to_string();
-        if !db_file_name.ends_with(BACKUP_SUFFIX) && db_file_name.ends_with(DB_SUFFIX) {
+        if db_file_name.ends_with(DB_SUFFIX) {
             dbs.push(db_file_name.strip_suffix(DB_SUFFIX).unwrap_or(&db_file_name).to_string())
         }
     }

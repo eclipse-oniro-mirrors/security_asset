@@ -44,7 +44,7 @@ bool IsUserIdExist(int32_t userId, bool *exist)
     return true;
 }
 
-int32_t GetUserIds(int32_t *userIdsPtr, uint16_t *userIdsSize)
+int32_t GetUserIds(int32_t *userIdsPtr, uint32_t userIdsSize)
 {
     std::vector<OHOS::AccountSA::OsAccountInfo> accountInfos = {};
     int32_t ret = OHOS::AccountSA::OsAccountManager::QueryAllCreatedOsAccounts(accountInfos);
@@ -54,15 +54,34 @@ int32_t GetUserIds(int32_t *userIdsPtr, uint16_t *userIdsSize)
     }
     if (accountInfos.empty()) {
         LOGE("[FATAL]accountInfos count %{public}zu", accountInfos.size());
-        return ASSET_SUCCESS;
+        return ASSET_ACCOUNT_ERROR;
     }
     std::vector<int32_t> userIdsVec = { 0 };
     std::transform(accountInfos.begin(), accountInfos.end(), std::back_inserter(userIdsVec),
         [](auto &iter) { return iter.GetLocalId(); });
-    for (size_t i = 0; i < userIdsVec.size(); i++) {
+    for (uint32_t i = 0; i < userIdsSize; i++) {
         userIdsPtr[i] = userIdsVec[i];
     }
-    *userIdsSize = static_cast<uint16_t>(userIdsVec.size());
+
+    return ASSET_SUCCESS;
+}
+
+int32_t GetUsersSize(uint32_t *userIdsSize)
+{
+    std::vector<OHOS::AccountSA::OsAccountInfo> accountInfos = {};
+    int32_t ret = OHOS::AccountSA::OsAccountManager::QueryAllCreatedOsAccounts(accountInfos);
+    if (ret != OHOS::ERR_OK) {
+        LOGE("[FATAL]Query all account id failed! res is %{public}d", ret);
+        return ASSET_ACCOUNT_ERROR;
+    }
+    if (accountInfos.empty()) {
+        LOGE("[FATAL]accountInfos count %{public}zu", accountInfos.size());
+        return ASSET_ACCOUNT_ERROR;
+    }
+    std::vector<int32_t> userIdsVec = { 0 };
+    std::transform(accountInfos.begin(), accountInfos.end(), std::back_inserter(userIdsVec),
+        [](auto &iter) { return iter.GetLocalId(); });
+    *userIdsSize = static_cast<uint32_t>(userIdsVec.size());
 
     return ASSET_SUCCESS;
 }
