@@ -42,6 +42,7 @@ use crate::sys_event::upload_fault_system_event;
 
 /// success code.
 const SUCCESS: i32 = 0;
+const USER_ID_VEC_BUFFER: u32 = 5;
 
 fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result<()> {
     let db_name = construct_splited_db_name(calling_info.owner_type_enum(), calling_info.owner_info(), is_ce)?;
@@ -286,7 +287,7 @@ fn backup_ce_db(user_id: i32) -> Result<()> {
 }
 
 extern "C" {
-    fn GetUserIds(userIdsPtr: *mut i32, userIdsSize: u32) -> i32;
+    fn GetUserIds(userIdsPtr: *mut i32, userIdsSize: *mut u32) -> i32;
     fn GetUsersSize(userIdsSize: *mut u32) -> i32;
 }
 
@@ -313,10 +314,10 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
         return log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get users size failed.");
     }
 
-    let mut user_ids: Vec<i32> = vec![0i32; (*user_ids_size_ptr).try_into().unwrap()];
+    let mut user_ids: Vec<i32> = vec![0i32; (*user_ids_size_ptr + USER_ID_VEC_BUFFER).try_into().unwrap()];
     let user_ids_ptr = user_ids.as_mut_ptr();
     unsafe {
-        ret = GetUserIds(user_ids_ptr, *user_ids_size_ptr);
+        ret = GetUserIds(user_ids_ptr, user_ids_size_ptr);
     }
     if ret != SUCCESS {
         return log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get user IDs failed.");
