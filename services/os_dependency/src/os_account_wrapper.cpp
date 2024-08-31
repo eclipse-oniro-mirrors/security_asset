@@ -66,7 +66,6 @@ int32_t GetUserIds(int32_t *userIdsPtr, uint32_t *userIdsSize)
     for (uint32_t i = 0; i < *userIdsSize; i++) {
         userIdsPtr[i] = userIdsVec[i];
     }
-
     *userIdsSize = static_cast<uint32_t>(userIdsVec.size());
 
     return ASSET_SUCCESS;
@@ -84,7 +83,10 @@ int32_t GetUsersSize(uint32_t *userIdsSize)
         LOGE("[FATAL]accountInfos is empty");
         return ASSET_ACCOUNT_ERROR;
     }
-    *userIdsSize = static_cast<uint32_t>(accountInfos.size());
+    std::vector<int32_t> userIdsVec = { 0 };
+    std::transform(accountInfos.begin(), accountInfos.end(), std::back_inserter(userIdsVec),
+        [](auto &iter) { return iter.GetLocalId(); });
+    *userIdsSize = static_cast<uint32_t>(userIdsVec.size());
 
     return ASSET_SUCCESS;
 }

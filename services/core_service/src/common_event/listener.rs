@@ -42,6 +42,7 @@ use crate::sys_event::upload_fault_system_event;
 /// success code.
 const SUCCESS: i32 = 0;
 const USER_ID_VEC_BUFFER: u32 = 5;
+const MINIMUM_MAIN_USER_ID: i32 = 100;
 
 fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result<()> {
     let db_name = construct_splited_db_name(calling_info.owner_type_enum(), calling_info.owner_info(), is_ce)?;
@@ -268,6 +269,9 @@ fn backup_de_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
 }
 
 fn backup_ce_db(user_id: i32) -> Result<()> {
+    if user_id < MINIMUM_MAIN_USER_ID {
+        return Ok(());
+    }
     let ce_path = format!("{}/{}/asset_service", CE_ROOT_PATH, user_id);
     for db_path in fs::read_dir(ce_path)? {
         let db_path = db_path?;
