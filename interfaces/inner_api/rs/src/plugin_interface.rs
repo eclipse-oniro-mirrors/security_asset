@@ -16,9 +16,9 @@
 //! This module defines the interface of the Asset Rust SDK.
 
 pub use asset_definition::Value;
+use ipc::parcel::MsgParcel;
 use std::any::Any;
 use std::collections::HashMap;
-use ipc::parcel::MsgParcel;
 
 /// Defines a type alias `ExtDbMap` as a `HashMap` with keys of type `&'static str` and values of type `Value`.
 pub type ExtDbMap = HashMap<&'static str, Value>;
@@ -58,10 +58,10 @@ pub const PARAM_NAME_BUNDLE_NAME: &str = "BundleName";
 /// param name for user id
 pub const PARAM_NAME_USER_ID: &str = "UserId";
 
-/// param name for user id
+/// param name for app index
 pub const PARAM_NAME_APP_INDEX: &str = "AppIndex";
 
-/// param name for whether is hap
+/// param name for owner type
 pub const PARAM_NAME_IS_HAP: &str = "IsHap";
 
 /// An enumeration representing different plugin types.
@@ -78,35 +78,47 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     /// Initializes the plugin before usage.
     fn init(&mut self, user_id: i32) -> Result<(), u32>;
 
-    /// Adds an asset to the database.
+    /// Adds an asset to de db.
     fn add(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
 
-    /// Add an asset with replace.
+    /// Adds an asset to ce cb.
+    fn ce_add(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
+
+    /// Adds an asset with replace to de db.
     fn replace(&mut self, condition: &ExtDbMap, attributes: &ExtDbMap) -> std::result::Result<(), u32>;
 
-    /// Queries the asset database.
+    /// Adds an asset with replace to ce db.
+    fn ce_replace(&mut self, condition: &ExtDbMap, attributes: &ExtDbMap) -> std::result::Result<(), u32>;
+
+    /// Queries de db.
     fn query(&mut self, attributes: &ExtDbMap) -> Result<Vec<ExtDbMap>, u32>;
 
-    /// Removes an asset from the database.
+    /// Queries ce db.
+    fn ce_query(&mut self, attributes: &ExtDbMap) -> Result<Vec<ExtDbMap>, u32>;
+
+    /// Removes an asset from de db.
     fn remove(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
 
-    /// Removes assets from the database with specific condition.
+    /// Removes an asset from ce db.
+    fn ce_remove(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
+
+    /// Removes assets from de db with specific condition.
     fn remove_with_specific_cond(&mut self, specific_cond: &str, condition_value: &[Value]) -> Result<i32, u32>;
 
-    /// Updates the attributes of an asset in the database.
+    /// Removes assets from ce db with specific condition.
+    fn ce_remove_with_specific_cond(&mut self, specific_cond: &str, condition_value: &[Value]) -> Result<i32, u32>;
+
+    /// Updates the attributes of an asset in de db.
     fn update(&mut self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> Result<i32, u32>;
 
-    /// Begins a transaction for the asset database.
-    fn begin_transaction(&mut self) -> Result<(), u32>;
+    /// Updates the attributes of an asset in ce db.
+    fn ce_update(&mut self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> Result<i32, u32>;
 
-    /// Commits a transaction for the asset database.
-    fn commit_transaction(&mut self) -> Result<(), u32>;
-
-    /// Rolls back a transaction for the asset database.
-    fn rollback_transaction(&mut self) -> Result<(), u32>;
-
-    /// Returns the storage path for the asset database.
+    /// Returns the storage path for de db.
     fn get_storage_path(&self) -> String;
+
+    /// Returns the storage path for ce db.
+    fn ce_get_storage_path(&self) -> String;
 
     /// Increase count
     fn increase_count(&mut self);

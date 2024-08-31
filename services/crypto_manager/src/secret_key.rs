@@ -77,9 +77,14 @@ impl SecretKey {
         auth_type: AuthType,
         access_type: Accessibility,
         require_password_set: bool,
+        alias: Option<Vec<u8>>,
     ) -> Self {
-        let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set);
-        Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() }
+        if let Some(alias) = alias {
+            Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() }
+        } else {
+            let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set);
+            Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() }
+        }
     }
 
     /// Check whether the secret key exists.
@@ -122,19 +127,19 @@ impl SecretKey {
         let accessibilitys =
             [Accessibility::DevicePowerOn, Accessibility::DeviceFirstUnlocked, Accessibility::DeviceUnlocked];
         for accessibility in accessibilitys.into_iter() {
-            let secret_key = SecretKey::new(calling_info, AuthType::None, accessibility, true);
+            let secret_key = SecretKey::new(calling_info, AuthType::None, accessibility, true, None);
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new(calling_info, AuthType::Any, accessibility, true);
+            let secret_key = SecretKey::new(calling_info, AuthType::Any, accessibility, true, None);
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new(calling_info, AuthType::None, accessibility, false);
+            let secret_key = SecretKey::new(calling_info, AuthType::None, accessibility, false, None);
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new(calling_info, AuthType::Any, accessibility, false);
+            let secret_key = SecretKey::new(calling_info, AuthType::Any, accessibility, false, None);
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
         }

@@ -12,17 +12,17 @@
 # limitations under the License.
 
 [package]
-name = "asset_plugin"
+name = "asset_db_key_operator"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+openssl = { git = "https://gitee.com/openharmony/third_party_rust_rust-openssl.git" }
+
 asset_common = { path = "../common" }
+asset_crypto_manager = { path = "../crypto_manager" }
 asset_definition = { path = "../../frameworks/definition" }
-asset_log = { path = "../../frameworks/os_dependency/log" }
-asset_sdk = { path = "../../interfaces/inner_api/rs" }
-asset_db_key_operator = { path = "../db_key_operator" }
-asset_db_operator = { path = "../db_operator" }
 asset_file_operator = { path = "../../frameworks/os_dependency/file" }
+asset_log = { path = "../../frameworks/os_dependency/log" }

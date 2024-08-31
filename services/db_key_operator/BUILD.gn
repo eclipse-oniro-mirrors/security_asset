@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Copyright (c) 2024 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,37 +13,19 @@
 
 import("//build/ohos.gni")
 
-ohos_rust_shared_library("asset_service") {
+ohos_rust_static_library("asset_db_key_operator") {
   sources = [ "src/lib.rs" ]
   deps = [
-    "../../etc/init:asset_service.rc",
+    "../../../../../third_party/rust/crates/rust-openssl/openssl:lib",
     "../../frameworks/definition:asset_definition",
-    "../../frameworks/ipc:asset_ipc",
     "../../frameworks/os_dependency/file:asset_file_operator",
     "../../frameworks/os_dependency/log:asset_log",
-    "../../frameworks/utils:asset_utils",
-    "../../interfaces/inner_api/rs:asset_sdk_rust",
     "../common:asset_common",
     "../crypto_manager:asset_crypto_manager",
-    "../db_key_operator:asset_db_key_operator",
-    "../db_operator:asset_db_operator",
-    "../os_dependency:asset_os_dependency",
-    "../plugin:asset_plugin",
   ]
 
-  external_deps = [
-    "hilog:hilog_rust",
-    "hilog:libhilog",
-    "hisysevent:hisysevent_rust",
-    "hitrace:hitrace_meter_rust",
-    "ipc:ipc_rust",
-    "safwk:system_ability_fwk_rust",
-    "samgr:samgr_rust",
-    "ylong_runtime:ylong_runtime",
-  ]
-
-  crate_name = "asset_service"
-  crate_type = "dylib"
+  crate_name = "asset_db_key_operator"
+  crate_type = "rlib"
   subsystem_name = "security"
   part_name = "asset"
 }
