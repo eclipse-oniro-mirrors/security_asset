@@ -26,7 +26,7 @@ use crate::{
     database::Database,
     statement::Statement,
     transaction::Transaction,
-    types::{ColumnInfo, DbMap, QueryOptions, UpgradeColumnInfo, SQLITE_ROW, DB_UPGRADE_VERSION},
+    types::{ColumnInfo, DbMap, QueryOptions, UpgradeColumnInfo, DB_UPGRADE_VERSION, SQLITE_ROW},
 };
 
 extern "C" {
@@ -340,11 +340,7 @@ impl<'a> Table<'a> {
     /// let condition_value = Value::Number(2);
     /// let ret = table.delete_with_specific_cond(specific_cond, condition_value);
     /// ```
-    pub(crate)fn delete_with_specific_cond(
-        &self,
-        specific_cond: &str,
-        condition_value: &[Value],
-    ) -> Result<i32> {
+    pub(crate) fn delete_with_specific_cond(&self, specific_cond: &str, condition_value: &[Value]) -> Result<i32> {
         let sql: String = format!("delete from {} where {}", self.table_name, specific_cond);
         let stmt = Statement::prepare(&sql, self.db)?;
         let mut index = 1;

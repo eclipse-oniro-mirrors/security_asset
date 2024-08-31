@@ -17,7 +17,10 @@ use asset_common::Counter;
 use asset_db_operator::database::{get_path, Database};
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_log::{loge, logi};
-use asset_sdk::{plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx}, Value};
+use asset_sdk::{
+    plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx},
+    Value,
+};
 use std::{
     cell::RefCell,
     sync::{Arc, Mutex},
@@ -150,8 +153,9 @@ impl IAssetPluginCtx for AssetContext {
 
     /// Remove assets from the database with sepcific condition.
     fn remove_with_specific_cond(
-        &mut self, specific_cond: &str,
-        condition_value: &[Value]
+        &mut self,
+        specific_cond: &str,
+        condition_value: &[Value],
     ) -> std::result::Result<i32, u32> {
         self.data_base
             .as_mut()

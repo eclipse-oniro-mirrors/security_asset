@@ -16,9 +16,9 @@
 //! This module defines the interface of the Asset Rust SDK.
 
 pub use asset_definition::Value;
+use ipc::parcel::MsgParcel;
 use std::any::Any;
 use std::collections::HashMap;
-use ipc::parcel::MsgParcel;
 
 /// Defines a type alias `ExtDbMap` as a `HashMap` with keys of type `&'static str` and values of type `Value`.
 pub type ExtDbMap = HashMap<&'static str, Value>;
