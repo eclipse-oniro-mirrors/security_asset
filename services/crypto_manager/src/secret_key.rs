@@ -139,8 +139,7 @@ impl SecretKey {
         let accessibilitys =
             [Accessibility::DevicePowerOn, Accessibility::DeviceFirstUnlocked, Accessibility::DeviceUnlocked];
         for accessibility in accessibilitys.into_iter() {
-            let secret_key =
-                SecretKey::new(calling_info, AuthType::None, accessibility, true)?;
+            let secret_key = SecretKey::new(calling_info, AuthType::None, accessibility, true)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
@@ -148,13 +147,11 @@ impl SecretKey {
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key =
-                SecretKey::new(calling_info, AuthType::None, accessibility, false)?;
+            let secret_key = SecretKey::new(calling_info, AuthType::None, accessibility, false)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key =
-                SecretKey::new(calling_info, AuthType::Any, accessibility, false)?;
+            let secret_key = SecretKey::new(calling_info, AuthType::Any, accessibility, false)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
         }
