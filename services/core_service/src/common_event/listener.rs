@@ -258,7 +258,7 @@ fn backup_de_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
     for db_path in fs::read_dir(format!("{}", entry.path().to_string_lossy()))? {
         let db_path = db_path?;
         let db_name = db_path.file_name().to_string_lossy().to_string();
-        if !db_name.ends_with(BACKUP_SUFFIX) && db_name.ends_with(DB_SUFFIX) {
+        if db_name.ends_with(DB_SUFFIX) {
             let from_path = db_path.path().to_string_lossy().to_string();
             Database::check_de_db_accessible(from_path.clone(), user_id, db_name.clone())?;
             let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
@@ -278,7 +278,6 @@ fn backup_ce_db(user_id: i32) -> Result<()> {
         let db_name = db_path.file_name().to_string_lossy().to_string();
         if db_name.ends_with(DB_SUFFIX) {
             let from_path = db_path.path().to_string_lossy().to_string();
-            // todo ce db 不好判断是否可达 协同callingInfo改回来一起上
             let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
             fs::copy(from_path, backup_path)?;
         }
