@@ -27,7 +27,7 @@ use asset_utils::time;
 use crate::operations::common;
 
 fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
-    let secret_key = common::build_secret_key_with_compatibility(calling_info, db_data)?;
+    let secret_key = common::build_secret_key(calling_info, db_data)?;
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
     let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data)?)?;
     Ok(cipher)

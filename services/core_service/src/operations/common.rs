@@ -132,11 +132,11 @@ pub(crate) fn add_owner_info(calling_info: &CallingInfo, db_data: &mut DbMap) {
     db_data.insert(column::OWNER_TYPE, Value::Number(calling_info.owner_type()));
 }
 
-pub(crate) fn build_secret_key_with_compatibility(calling: &CallingInfo, attrs: &DbMap) -> Result<SecretKey> {
+pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<SecretKey> {
     let auth_type = attrs.get_enum_attr::<AuthType>(&column::AUTH_TYPE)?;
     let access_type = attrs.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
     let require_password_set = attrs.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
-    SecretKey::build_with_compatibility(calling, auth_type, access_type, require_password_set)
+    SecretKey::new(calling, auth_type, access_type, require_password_set)
 }
 
 fn build_aad_v1(attrs: &DbMap) -> Vec<u8> {

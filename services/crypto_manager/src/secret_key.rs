@@ -80,28 +80,23 @@ impl SecretKey {
         access_type: Accessibility,
         require_password_set: bool,
     ) -> Result<Self> {
-        let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true)?;
-        Ok(Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() })
-    }
-
-    /// Build secret key with new alias, or with old alias when the
-    pub fn build_with_compatibility(
-        calling_info: &CallingInfo,
-        auth_type: AuthType,
-        access_type: Accessibility,
-        require_password_set: bool,
-    ) -> Result<Self> {
         // Check whether new key exists.
         let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true)?;
-        let key = Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() };
-        if key.exists()? {
-            return Ok(key);
+        let new_key = Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() };
+        if new_key.exists()? {
+            return Ok(new_key);
         }
 
-        // Use old key.
+        // Check whether old key exists.
         logw!("[WARNING]Use old alias key.");
         let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false)?;
-        Ok(Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() })
+        let old_key = Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() };
+        if old_key.exists()? {
+            return Ok(old_key);
+        }
+
+        // Use new key.
+        Ok(new_key)
     }
 
     /// Check whether the secret key exists.
@@ -143,29 +138,25 @@ impl SecretKey {
         let mut res = Ok(());
         let accessibilitys =
             [Accessibility::DevicePowerOn, Accessibility::DeviceFirstUnlocked, Accessibility::DeviceUnlocked];
-        let key_version = 2;
-        // This should loop twice because same input can lead to two key at most.
-        for _ in 0..key_version {
-            for accessibility in accessibilitys.into_iter() {
-                let secret_key =
-                    SecretKey::build_with_compatibility(calling_info, AuthType::None, accessibility, true)?;
-                let tmp = secret_key.delete();
-                res = if tmp.is_err() { tmp } else { res };
+        for accessibility in accessibilitys.into_iter() {
+            let secret_key =
+                SecretKey::new(calling_info, AuthType::None, accessibility, true)?;
+            let tmp = secret_key.delete();
+            res = if tmp.is_err() { tmp } else { res };
 
-                let secret_key = SecretKey::build_with_compatibility(calling_info, AuthType::Any, accessibility, true)?;
-                let tmp = secret_key.delete();
-                res = if tmp.is_err() { tmp } else { res };
+            let secret_key = SecretKey::new(calling_info, AuthType::Any, accessibility, true)?;
+            let tmp = secret_key.delete();
+            res = if tmp.is_err() { tmp } else { res };
 
-                let secret_key =
-                    SecretKey::build_with_compatibility(calling_info, AuthType::None, accessibility, false)?;
-                let tmp = secret_key.delete();
-                res = if tmp.is_err() { tmp } else { res };
+            let secret_key =
+                SecretKey::new(calling_info, AuthType::None, accessibility, false)?;
+            let tmp = secret_key.delete();
+            res = if tmp.is_err() { tmp } else { res };
 
-                let secret_key =
-                    SecretKey::build_with_compatibility(calling_info, AuthType::Any, accessibility, false)?;
-                let tmp = secret_key.delete();
-                res = if tmp.is_err() { tmp } else { res };
-            }
+            let secret_key =
+                SecretKey::new(calling_info, AuthType::Any, accessibility, false)?;
+            let tmp = secret_key.delete();
+            res = if tmp.is_err() { tmp } else { res };
         }
 
         res
