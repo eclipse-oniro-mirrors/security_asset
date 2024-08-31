@@ -42,7 +42,7 @@ fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
 fn upgrade_version(db: &mut Database, calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     db_data.insert_attr(column::VERSION, DB_DATA_VERSION);
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
-    let secret_key = common::build_secret_key(calling_info, db_data)?;
+    let secret_key = common::build_secret_key_with_compatibility(calling_info, db_data)?;
     let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data)?)?;
 
     let mut update_data = DbMap::new();
@@ -61,7 +61,7 @@ fn upgrade_version(db: &mut Database, calling_info: &CallingInfo, db_data: &mut 
 
 fn decrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
-    let secret_key = common::build_secret_key(calling_info, db_data)?;
+    let secret_key = common::build_secret_key_with_compatibility(calling_info, db_data)?;
     let secret = Crypto::decrypt(&secret_key, secret, &common::build_aad(db_data)?)?;
     db_data.insert(column::SECRET, Value::Bytes(secret));
     Ok(())

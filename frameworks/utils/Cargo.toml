@@ -21,3 +21,4 @@ edition = "2021"
 [dependencies]
 asset_definition = { path = "../definition" }
 asset_log = { path = "../os_dependency/log" }
+openssl = { git = "https://gitee.com/openharmony/third_party_rust_rust-openssl.git" }

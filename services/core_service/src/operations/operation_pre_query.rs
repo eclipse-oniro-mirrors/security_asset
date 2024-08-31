@@ -80,7 +80,7 @@ pub(crate) fn pre_query(calling_info: &CallingInfo, query: &AssetMap) -> Result<
         Some(Value::Number(num)) => *num,
         _ => DEFAULT_AUTH_VALIDITY_IN_SECS,
     };
-    let secret_key = SecretKey::new(calling_info, AuthType::Any, access_type, require_password_set);
+    let secret_key = SecretKey::build_with_compatibility(calling_info, AuthType::Any, access_type, require_password_set)?;
     let mut crypto = Crypto::build(secret_key, valid_time)?;
     let challenge = crypto.init_key()?.to_vec();
     let crypto_manager = CryptoManager::get_instance();

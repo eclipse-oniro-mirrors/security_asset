@@ -15,6 +15,9 @@
 
 //! This module implements the SHA256 hash algorithm.
 
+use asset_definition::{log_throw_error, ErrCode, Result};
+use openssl::hash;
+
 const LOWER_BYTES_MASK: u32 = 0xff;
 const BITS_PER_U8: usize = 8;
 const U8_PER_U32: usize = 4;
@@ -134,8 +137,27 @@ fn into_vec_u8(hash: &[u32; 8]) -> Vec<u8> {
     ret.to_vec()
 }
 
-/// the function to execute sha256
-pub fn sha256(message: &[u8]) -> Vec<u8> {
+/// the function to execute sha256 by openssl.
+fn sha256_new(message: &[u8]) -> Result<Vec<u8>> {
+    match hash::hash(hash::MessageDigest::sha256(), message) {
+        Ok(res) => Ok(res.to_vec()),
+        Err(e) => {
+            log_throw_error!(ErrCode::OutOfMemory, "hash failed, error is {}.", e)
+        },
+    }
+}
+
+/// the function to execute sha256 by self-implemented.
+fn sha256_old(message: &[u8]) -> Result<Vec<u8>> {
     let processed_msg = pre_process_msg(message);
-    into_vec_u8(&compress(&processed_msg))
+    Ok(into_vec_u8(&compress(&processed_msg)))
+}
+
+/// the function to execute sha256
+pub fn sha256(standard: bool, message: &[u8]) -> Result<Vec<u8>> {
+    if standard {
+        return sha256_new(message);
+    }
+
+    sha256_old(message)
 }

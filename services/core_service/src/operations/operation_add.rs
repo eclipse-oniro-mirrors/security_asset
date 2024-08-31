@@ -53,7 +53,10 @@ fn generate_key_if_needed(secret_key: &SecretKey) -> Result<()> {
 }
 
 fn encrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
-    let secret_key = common::build_secret_key(calling_info, db_data)?;
+    let auth_type = db_data.get_enum_attr::<AuthType>(&column::AUTH_TYPE)?;
+    let access_type = db_data.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
+    let require_password_set = db_data.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
+    let secret_key = SecretKey::new(calling_info, auth_type, access_type, require_password_set)?;
     generate_key_if_needed(&secret_key)?;
 
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
