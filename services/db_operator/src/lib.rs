@@ -19,6 +19,7 @@ pub mod database;
 mod statement;
 mod table;
 mod transaction;
+pub mod database_file_upgrade;
 pub mod types;
 
 #[cfg(test)]

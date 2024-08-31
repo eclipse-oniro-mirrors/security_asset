@@ -97,8 +97,7 @@ pub(crate) fn upload_fault_system_event(
         .set_param(build_str_param!(SysEvent::EXTRA, e.msg.clone()))
         .write();
     loge!(
-        "[ERROR]Calling fun:[{}], user_id:[{}],
-        caller:[{}], start_time:[{:?}], error_code:[{}], error_msg:[{}]",
+        "[ERROR]Calling fun:[{}], user_id:[{}], caller:[{}], start_time:[{:?}], error_code:[{}], error_msg:[{}]",
         func_name,
         calling_info.user_id(),
         owner_info,

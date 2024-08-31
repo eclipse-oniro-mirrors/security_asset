@@ -16,10 +16,7 @@
 //! This module is used to delete the Asset, including single and batch deletion.
 
 use asset_common::CallingInfo;
-use asset_db_operator::{
-    database::Database,
-    types::{column, DbMap},
-};
+use asset_db_operator::{database::create_db_instance, types::{column, DbMap}};
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncStatus, SyncType, Value};
 use asset_log::logi;
 use asset_utils::time;
@@ -57,7 +54,7 @@ pub(crate) fn remove(calling_info: &CallingInfo, query: &AssetMap) -> Result<()>
     add_system_attrs(&mut update_db_data)?;
     add_normal_attrs(&mut update_db_data);
 
-    let mut db = Database::build(calling_info.user_id())?;
+    let mut db = create_db_instance(query, calling_info)?;
     let results = db.query_datas(&vec![], &db_data, None, true)?;
     if results.is_empty() {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");

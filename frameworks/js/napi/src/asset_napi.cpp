@@ -72,6 +72,7 @@ napi_value DeclareTag(const napi_env env)
     AddUint32Property(env, tag, "RETURN_ORDERED_BY", SEC_ASSET_TAG_RETURN_ORDERED_BY);
     AddUint32Property(env, tag, "UPDATE_TIME", SEC_ASSET_TAG_UPDATE_TIME);
     AddUint32Property(env, tag, "OPERATION_TYPE", SEC_ASSET_TAG_OPERATION_TYPE);
+    AddUint32Property(env, tag, "REQUIRE_ATTR_ENCRYPTED", SEC_ASSET_TAG_REQUIRE_ATTR_ENCRYPTED);
     return tag;
 }
 

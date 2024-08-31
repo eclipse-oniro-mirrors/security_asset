@@ -17,10 +17,7 @@
 
 use asset_common::CallingInfo;
 use asset_crypto_manager::crypto::Crypto;
-use asset_db_operator::{
-    database::Database,
-    types::{column, DbMap, DB_DATA_VERSION},
-};
+use asset_db_operator::{database::create_db_instance, types::{column, DbMap, DB_DATA_VERSION}};
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, LocalStatus, Result, SyncStatus, Tag, Value};
 use asset_utils::time;
 
@@ -97,7 +94,7 @@ pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &Asse
     add_system_attrs(update, &mut update_db_data)?;
     add_normal_attrs(&mut update_db_data);
 
-    let mut db = Database::build(calling_info.user_id())?;
+    let mut db = create_db_instance(query, calling_info)?;
     let results = db.query_datas(&vec![], &query_db_data, None, true)?;
     if results.is_empty() {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]The asset to update is not found.");

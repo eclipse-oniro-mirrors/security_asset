@@ -47,6 +47,8 @@ static int32_t HuksErrorTransfer(int32_t ret)
         case HKS_ERROR_KEY_AUTH_FAILED:
         case HKS_ERROR_KEY_AUTH_VERIFY_FAILED:
             return ASSET_ACCESS_DENIED;
+        case HKS_ERROR_CRYPTO_ENGINE_ERROR:
+            return ASSET_DATA_CORRUPTED;
         default:
             return ASSET_CRYPTO_ERROR;
     }
