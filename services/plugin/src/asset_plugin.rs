@@ -114,15 +114,9 @@ fn get_db_name(attributes: &ExtDbMap, is_ce: bool) -> std::result::Result<String
 #[allow(dead_code)]
 impl IAssetPluginCtx for AssetContext {
     /// Initializes the plugin before usage.
-    fn init(&mut self, user_id: i32, owner_type: u32, owner_info: Vec<u8>) -> std::result::Result<(), u32> {
+    fn init(&mut self, user_id: i32) -> std::result::Result<(), u32> {
         create_user_de_dir(user_id).map_err(|e| e.code as u32)?;
         self.user_id = user_id;
-        let owner_type = match owner_type {
-            0 => OwnerType::Hap,
-            1 => OwnerType::Native,
-            _ => return Err(ErrCode::InvalidArgument as u32),
-        };
-        self.calling_info = CallingInfo::new(user_id, owner_type, owner_info);
         Ok(())
     }
 

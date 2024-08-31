@@ -64,9 +64,6 @@ pub const PARAM_NAME_APP_INDEX: &str = "AppIndex";
 /// param name for owner type
 pub const PARAM_NAME_IS_HAP: &str = "IsHap";
 
-/// param name for owner info
-pub const PARAM_NAME_OWNER_INFO: &str = "OwnerInfo";
-
 /// An enumeration representing different plugin types.
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub enum PluginType {
@@ -79,7 +76,7 @@ pub enum PluginType {
 /// an asset plugin to operate on an asset database.
 pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     /// Initializes the plugin before usage.
-    fn init(&mut self, user_id: i32, owner_type: u32, owner_info: Vec<u8>) -> Result<(), u32>;
+    fn init(&mut self, user_id: i32) -> Result<(), u32>;
 
     /// Adds an asset to de db.
     fn add(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
