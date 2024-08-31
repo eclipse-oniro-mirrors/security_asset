@@ -59,7 +59,7 @@ int32_t GetUserIds(int32_t *userIdsPtr, uint32_t *userIdsSize)
     std::vector<int32_t> userIdsVec = { 0 };
     std::transform(accountInfos.begin(), accountInfos.end(), std::back_inserter(userIdsVec),
         [](auto &iter) { return iter.GetLocalId(); });
-    if(userIdsVec.size() > *userIdsSize) {
+    if (userIdsVec.size() > *userIdsSize) {
         LOGE("[FATAL]Users size increased after getting users size.");
         return ASSET_ACCOUNT_ERROR;
     }
