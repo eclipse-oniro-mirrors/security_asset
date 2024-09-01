@@ -55,6 +55,23 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
         userId, appId.c_str(), appIndex);
 }
 
+void HandleAppRestore(const OHOS::AAFwk::Want &want, OnAppRestore onAppRestore)
+{
+    if (onAppRestore != nullptr) {
+        int userId = want.GetIntParam(USER_ID, INVALID_USERID);
+        std::string bundleName = want.GetStringParam(BUNDLE_NAME);
+
+        int appIndex = want.GetIntParam(SANDBOX_APP_INDEX, -1);
+        if (appIndex == -1) {
+            LOGI("[INFO]Get app restore info failed, default as index 0.");
+            appIndex = 0;
+        }
+
+        onAppRestore(userId, reinterpret_cast<const uint8_t *>(bundleName.c_str()), appIndex);
+        LOGI("[INFO]Receive event: RESTORE_START.");
+    }
+}
+
 class SystemEventHandler : public CommonEventSubscriber {
 public:
     explicit SystemEventHandler(const CommonEventSubscribeInfo &subscribeInfo, const EventCallBack eventCallBack)
@@ -86,20 +103,7 @@ public:
             }
             LOGI("[INFO]Receive event: CHARGING, start_time: %{public}ld", startTime);
         } else if (action == COMMON_EVENT_RESTORE_START) {
-            if (this->eventCallBack.onAppRestore != nullptr) {
-                int userId = want.GetIntParam(USER_ID, INVALID_USERID);
-                std::string bundleName = want.GetStringParam(BUNDLE_NAME);
-
-                int appIndex = want.GetIntParam(SANDBOX_APP_INDEX, -1);
-                if (appIndex == -1) {
-                    LOGI("[INFO]Get app restore info failed, default as index 0.");
-                    appIndex = 0;
-                }
-
-                this->eventCallBack.onAppRestore(userId,
-                    reinterpret_cast<const uint8_t *>(bundleName.c_str()), appIndex);
-            }
-            LOGI("[INFO]Receive event: RESTORE_START, start_time: %{public}ld", startTime);
+            HandleAppRestore(want, this->eventCallBack.onAppRestore);
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_UNLOCKED) {
             if (this->eventCallBack.onUserUnlocked != nullptr) {
                 int userId = data.GetCode();
