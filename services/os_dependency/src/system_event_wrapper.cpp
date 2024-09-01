@@ -30,7 +30,9 @@ using namespace OHOS::EventFwk;
 
 const char * const APP_ID = "appId";
 const char * const COMMON_EVENT_RESTORE_START = "COMMON_EVENT_RESTORE_START";
+const char * const COMMON_EVENT_USER_PIN_CREATED = "USER_PIN_CREATED_EVENT";
 const char * const BUNDLE_NAME = "bundleName";
+const char * const PERMISSION_MANAGE_USER_IDM = "ohos.permission.MANAGE_USER_IDM";
 
 void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPackageRemoved onPackageRemoved)
 {
@@ -105,6 +107,12 @@ public:
                 this->eventCallBack.onUserUnlocked(userId);
             }
             LOGI("[INFO]Receive event: USER_UNLOCKED, start_time: %{public}ld", startTime);
+        } else if (action == COMMON_EVENT_USER_PIN_CREATED) {
+            if (this->eventCallBack.onUserUnlocked != nullptr) {
+                int userId = data.GetCode();
+                this->eventCallBack.onUserUnlocked(userId);
+            }
+            LOGI("[INFO]Receive event: USER_PIN_CREATED_EVENT, start_time: %{public}ld", startTime);
         } else {
             LOGW("[WARNING]Receive unknown event: %{public}s", action.c_str());
         }
@@ -114,10 +122,44 @@ private:
 };
 
 std::shared_ptr<SystemEventHandler> g_eventHandler = nullptr;
+std::shared_ptr<SystemEventHandler> g_pinEventHandler = nullptr;
+bool SubscribePinEvent(const EventCallBack eventCallBack)
+{
+    MatchingSkills matchingSkills;
+    matchingSkills.AddEvent(COMMON_EVENT_USER_PIN_CREATED);
+    CommonEventSubscribeInfo info(matchingSkills);
+    info.SetPermission(PERMISSION_MANAGE_USER_IDM);
+    if (g_pinEventHandler == nullptr) {
+        g_pinEventHandler = std::shared_ptr<SystemEventHandler>(
+            new (std::nothrow) SystemEventHandler(info, eventCallBack));
+        if (g_pinEventHandler == nullptr) {
+            LOGE("[FATAL]Asset pin event handler is nullptr.");
+            return false;
+        }
+    }
+
+    return CommonEventManager::SubscribeCommonEvent(g_pinEventHandler);
+}
+
+bool UnSubscribePinEvent(void)
+{
+    if (g_pinEventHandler == nullptr) {
+        LOGW("Asset pin event handler is nullptr, no need to unsubscribe.");
+        return false;
+    }
+
+    bool res = CommonEventManager::UnSubscribeCommonEvent(g_pinEventHandler);
+    g_pinEventHandler = nullptr;
+    return res;
+}
+
 }
 
 bool SubscribeSystemEvent(const EventCallBack eventCallBack)
 {
+    bool ret = SubscribePinEvent(eventCallBack);
+    LOGI("Subscribe pin event result: %d", ret);
+
     MatchingSkills matchingSkills;
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED);
@@ -141,6 +183,9 @@ bool SubscribeSystemEvent(const EventCallBack eventCallBack)
 
 bool UnSubscribeSystemEvent(void)
 {
+    bool ret = UnSubscribePinEvent();
+    LOGI("UnSubscribe pin event result: %d", ret);
+
     if (g_eventHandler == nullptr) {
         LOGW("Asset system event handler is nullptr, no need to unsubscribe.");
         return false;
