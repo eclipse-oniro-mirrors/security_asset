@@ -59,7 +59,7 @@ fn calculate_key_alias(
     access_type: Accessibility,
     require_password_set: bool,
     standard: bool,
-) -> Result<Vec<u8>> {
+) -> Vec<u8> {
     let mut alias: Vec<u8> = Vec::with_capacity(MAX_ALIAS_SIZE);
     alias.extend_from_slice(&calling_info.user_id().to_le_bytes());
     alias.push(b'_');
@@ -86,7 +86,7 @@ impl SecretKey {
         }
 
         // Check whether new key exists.
-        let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true)?;
+        let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
         let new_key = Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() };
         if new_key.exists()? {
             return Ok(new_key);
@@ -94,7 +94,7 @@ impl SecretKey {
 
         // Check whether old key exists.
         logw!("[WARNING]Use old alias key.");
-        let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false)?;
+        let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false);
         let old_key = Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() };
         if old_key.exists()? {
             return Ok(old_key);

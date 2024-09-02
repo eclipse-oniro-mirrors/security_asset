@@ -15,9 +15,6 @@
 
 //! This module implements the SHA256 hash algorithm.
 
-use asset_definition::{log_throw_error, ErrCode, Result};
-use openssl::hash;
-
 const LOWER_BYTES_MASK: u32 = 0xff;
 const BITS_PER_U8: usize = 8;
 const U8_PER_U32: usize = 4;
@@ -137,24 +134,28 @@ fn into_vec_u8(hash: &[u32; 8]) -> Vec<u8> {
     ret.to_vec()
 }
 
+extern "C" {
+    fn Sha256(input: *const u8, input_len: u32, output: *mut u8);
+}
+
+const SHA256_OUTPUT_LEN: usize = 32;
+
 /// the function to execute sha256 by openssl.
-fn sha256_new(message: &[u8]) -> Result<Vec<u8>> {
-    match hash::hash(hash::MessageDigest::sha256(), message) {
-        Ok(res) => Ok(res.to_vec()),
-        Err(e) => {
-            log_throw_error!(ErrCode::OutOfMemory, "hash failed, error is {}.", e)
-        },
-    }
+fn sha256_new(message: &[u8]) -> Vec<u8> {
+    let mut res = Vec::with_capacity(SHA256_OUTPUT_LEN);
+    unsafe { Sha256(message.as_ptr(), message.len() as u32, res.as_mut_ptr()) }
+
+    res
 }
 
 /// the function to execute sha256 by self-implemented.
-fn sha256_old(message: &[u8]) -> Result<Vec<u8>> {
+fn sha256_old(message: &[u8]) -> Vec<u8> {
     let processed_msg = pre_process_msg(message);
-    Ok(into_vec_u8(&compress(&processed_msg)))
+    into_vec_u8(&compress(&processed_msg))
 }
 
 /// the function to execute sha256
-pub fn sha256(standard: bool, message: &[u8]) -> Result<Vec<u8>> {
+pub fn sha256(standard: bool, message: &[u8]) -> Vec<u8> {
     if standard {
         return sha256_new(message);
     }

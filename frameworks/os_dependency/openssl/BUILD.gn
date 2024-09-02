@@ -13,15 +13,21 @@
 
 import("//build/ohos.gni")
 
-ohos_rust_static_library("asset_utils") {
-  sources = [ "src/lib.rs" ]
-  deps = [
-    "../definition:asset_definition",
-    "../os_dependency/log:asset_log",
-    "../os_dependency/openssl:openssl_wrapper",
+config("asset_config") {
+  include_dirs = [
+    "inc",
+    "../log/inc",
   ]
-  crate_name = "asset_utils"
-  crate_type = "rlib"
+}
+
+ohos_static_library("openssl_wrapper") {
+  public_configs = [ ":asset_config" ]
+  sources = [ "src/openssl_wrapper.c" ]
+  external_deps = [
+    "openssl:libcrypto_shared",
+    "c_utils:utils",
+    "hilog:libhilog",
+  ]
   subsystem_name = "security"
   part_name = "asset"
 }
