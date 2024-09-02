@@ -93,10 +93,10 @@ impl SecretKey {
         }
 
         // Check whether old key exists.
-        logw!("[WARNING]Use old alias key.");
         let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false);
         let old_key = Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() };
         if old_key.exists()? {
+            logw!("[WARNING]Use old alias key.");
             return Ok(old_key);
         }
 
