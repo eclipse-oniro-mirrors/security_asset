@@ -24,7 +24,7 @@
 #include "asset_log.h"
 
 // The caller should ensure the memory safety, that the points should point at valid memory.
-void Sha256(const uint8_t* input, uint32_t intputLen, uint8_t* output)
+void Sha256(const uint8_t *input, uint32_t intputLen, uint8_t *output)
 {
     if (input == NULL || intputLen == 0 || output == NULL) {
         LOGE("invalid input for sha256");
