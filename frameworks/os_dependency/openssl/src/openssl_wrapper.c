@@ -30,5 +30,6 @@ void Sha256(const uint8_t* input, uint32_t intputLen, uint8_t* output)
         LOGE("invalid input for sha256");
         return;
     }
+
     (void)SHA256((const unsigned char *)input, intputLen, (unsigned char *)output);
 }

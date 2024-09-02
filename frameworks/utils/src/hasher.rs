@@ -142,9 +142,8 @@ const SHA256_OUTPUT_LEN: usize = 32;
 
 /// the function to execute sha256 by openssl.
 fn sha256_new(message: &[u8]) -> Vec<u8> {
-    let mut res = Vec::with_capacity(SHA256_OUTPUT_LEN);
+    let mut res = vec![0; SHA256_OUTPUT_LEN];
     unsafe { Sha256(message.as_ptr(), message.len() as u32, res.as_mut_ptr()) }
-
     res
 }
 
