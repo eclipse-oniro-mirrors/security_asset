@@ -18,7 +18,7 @@ ohos_rust_static_library("asset_utils") {
   deps = [
     "../definition:asset_definition",
     "../os_dependency/log:asset_log",
-    "../os_dependency/openssl:openssl_wrapper",
+    "../os_dependency/openssl:asset_openssl_wrapper",
   ]
   crate_name = "asset_utils"
   crate_type = "rlib"

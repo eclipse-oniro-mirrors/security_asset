@@ -20,7 +20,7 @@ config("asset_config") {
   ]
 }
 
-ohos_static_library("openssl_wrapper") {
+ohos_static_library("asset_openssl_wrapper") {
   public_configs = [ ":asset_config" ]
   sources = [ "src/openssl_wrapper.c" ]
   external_deps = [
@@ -28,6 +28,9 @@ ohos_static_library("openssl_wrapper") {
     "hilog:libhilog",
     "openssl:libcrypto_shared",
   ]
+
+  branch_protector_ret = "pac_ret"
+
   subsystem_name = "security"
   part_name = "asset"
 }
