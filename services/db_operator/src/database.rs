@@ -26,10 +26,13 @@ use asset_log::{loge, logi};
 use asset_db_key_operator::DbKey;
 
 use crate::{
-    database_file_upgrade::{check_and_split_db, construct_splited_db_name, fmt_old_de_db_path}, statement::Statement, table::Table, types::{
+    statement::Statement,
+    table::Table,
+    types::{
         column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1,
-        DB_UPGRADE_VERSION_V2, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2
-    }
+        DB_UPGRADE_VERSION_V2, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2,
+    },
+    database_file_upgrade::{check_and_split_db, construct_splited_db_name, fmt_old_de_db_path},
 };
 
 extern "C" {

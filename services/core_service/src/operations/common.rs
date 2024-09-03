@@ -139,7 +139,7 @@ pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<S
     let auth_type = attrs.get_enum_attr::<AuthType>(&column::AUTH_TYPE)?;
     let access_type = attrs.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
     let require_password_set = attrs.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
-    Ok(SecretKey::new(calling, auth_type, access_type, require_password_set, None))
+    SecretKey::new(calling, auth_type, access_type, require_password_set, None)
 }
 
 fn build_aad_v1(attrs: &DbMap) -> Vec<u8> {

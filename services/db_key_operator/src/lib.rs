@@ -29,7 +29,7 @@ fn build_db_key_secret_key(calling_info: &CallingInfo) -> Result<SecretKey> {
     let require_password_set = false;
     let alias = "db_key_secret_key".as_bytes().to_vec();
 
-    Ok(SecretKey::new(calling_info, auth_type, access_type, require_password_set, Some(alias)))
+    SecretKey::new(calling_info, auth_type, access_type, require_password_set, Some(alias))
 }
 
 static GEN_KEY_MUTEX: Mutex<()> = Mutex::new(());

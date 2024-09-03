@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Copyright (c) 2024 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11,17 +11,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/ohos.gni")
-
-ohos_rust_static_library("asset_utils") {
-  sources = [ "src/lib.rs" ]
-  deps = [
-    "../definition:asset_definition",
-    "../os_dependency/log:asset_log",
-    "../os_dependency/openssl:asset_openssl_wrapper",
-  ]
-  crate_name = "asset_utils"
-  crate_type = "rlib"
-  subsystem_name = "security"
-  part_name = "asset"
-}
+use_small_heuristics="MAX"
+match_block_trailing_comma=true
+newline_style="Unix"
+merge_derives = false
+max_width = 120
