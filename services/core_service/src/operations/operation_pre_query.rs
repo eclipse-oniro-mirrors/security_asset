@@ -17,7 +17,10 @@
 
 use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager, secret_key::SecretKey};
-use asset_db_operator::{database::create_db_instance, types::{column, DbMap}};
+use asset_db_operator::{
+    database::create_db_instance,
+    types::{column, DbMap},
+};
 use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
 
 use crate::operations::common;

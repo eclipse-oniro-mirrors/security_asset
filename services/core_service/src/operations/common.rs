@@ -29,9 +29,7 @@ use asset_definition::{
 };
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::plugin_interface::{
-    EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID,
-};
+use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID};
 
 const TAG_COLUMN_TABLE: [(Tag, &str); 20] = [
     (Tag::Secret, column::SECRET),

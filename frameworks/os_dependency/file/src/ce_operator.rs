@@ -18,7 +18,7 @@
 use asset_definition::{log_throw_error, ErrCode, Result};
 use std::{fs, path::Path};
 
-use crate::common::{get_user_dbs, DB_KEY, is_file_exist};
+use crate::common::{get_user_dbs, is_file_exist, DB_KEY};
 
 fn construct_ce_db_dir(user_id: i32) -> String {
     format!("data/service/el2/{}/asset_service", user_id)
@@ -76,10 +76,11 @@ pub fn remove_ce_files(user_id: i32) -> Result<()> {
             Err(e) => {
                 return log_throw_error!(
                     ErrCode::FileOperationError,
-                    "[FATAL]Remove [{}] failed, error code:[{}]", file.path().to_string_lossy().to_string(),
+                    "[FATAL]Remove [{}] failed, error code:[{}]",
+                    file.path().to_string_lossy().to_string(),
                     e
                 )
-            }
+            },
         }
     }
     Ok(())

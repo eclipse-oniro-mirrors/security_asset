@@ -20,19 +20,19 @@ use core::ffi::c_void;
 use std::{ffi::CStr, fs, ptr::null_mut, sync::Mutex};
 
 use asset_common::{CallingInfo, OwnerType};
+use asset_db_key_operator::DbKey;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, Result, Tag, Value};
 use asset_file_operator::{ce_operator::remove_ce_files, common::is_file_exist};
 use asset_log::{loge, logi};
-use asset_db_key_operator::DbKey;
 
 use crate::{
+    database_file_upgrade::{check_and_split_db, construct_splited_db_name, fmt_old_de_db_path},
     statement::Statement,
     table::Table,
     types::{
         column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1,
         DB_UPGRADE_VERSION_V2, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2,
     },
-    database_file_upgrade::{check_and_split_db, construct_splited_db_name, fmt_old_de_db_path},
 };
 
 extern "C" {
@@ -63,9 +63,7 @@ pub(crate) fn get_split_db_lock_by_user_id(user_id: i32) -> &'static UserDbLock 
             return f;
         }
     }
-    let nf = Box::new(
-        UserDbLock { user_id, mtx: Mutex::new(user_id), db_file_name: OLD_DB_NAME.clone().to_string() }
-    );
+    let nf = Box::new(UserDbLock { user_id, mtx: Mutex::new(user_id), db_file_name: OLD_DB_NAME.clone().to_string() });
     // SAFETY: We just push item into USER_DB_LOCK_LIST, never remove item or modify item,
     // so return a reference of leak item is safe.
     let nf: &'static UserDbLock = Box::leak(nf);
@@ -134,29 +132,28 @@ fn check_validity_of_db_key(path: &str, user_id: i32) -> Result<()> {
     if is_file_exist(path)? && !DbKey::check_existance(user_id)? {
         loge!("[FATAL]There is database bot no database key. Now all data should be cleared and restart over.");
         remove_ce_files(user_id)?;
-        return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id)
+        return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
     }
     Ok(())
 }
 
 pub(crate) fn get_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
-    let path = if is_ce {
-        fmt_ce_db_path_with_name(user_id, db_name)
-    } else {
-        fmt_de_db_path_with_name(user_id, db_name)
-    };
+    let path =
+        if is_ce { fmt_ce_db_path_with_name(user_id, db_name) } else { fmt_de_db_path_with_name(user_id, db_name) };
     let db_key = if is_ce {
         check_validity_of_db_key(&path, user_id)?;
         let calling_info = CallingInfo::new_part_info(user_id);
         match DbKey::get_db_key(&calling_info) {
             Ok(res) => Some(res),
             Err(e) if e.code == ErrCode::NotFound || e.code == ErrCode::DataCorrupted => {
-                loge!("[FATAL]The key is corrupted. Now all data should be cleared and restart over, err is {}.",
-                    e.code);
+                loge!(
+                    "[FATAL]The key is corrupted. Now all data should be cleared and restart over, err is {}.",
+                    e.code
+                );
                 remove_ce_files(user_id)?;
-                return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id)
-            }
-            Err(e) => return Err(e)
+                return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
+            },
+            Err(e) => return Err(e),
         }
     } else {
         None
@@ -196,8 +193,8 @@ impl Database {
         }
         get_db(
             calling_info.user_id(),
-            &construct_splited_db_name(calling_info.owner_type_enum(),
-            calling_info.owner_info(), is_ce)?, is_ce
+            &construct_splited_db_name(calling_info.owner_type_enum(), calling_info.owner_info(), is_ce)?,
+            is_ce,
         )
     }
 
@@ -264,7 +261,8 @@ impl Database {
 
     /// Encrypt/Decrypt CE database.
     pub fn set_db_key(&mut self, db_key: &DbKey) -> Result<()> {
-        let ret = unsafe { SqliteKey(self.handle as _, db_key.db_key.as_ptr() as *const c_void, db_key.db_key.len() as i32) };
+        let ret =
+            unsafe { SqliteKey(self.handle as _, db_key.db_key.as_ptr() as *const c_void, db_key.db_key.len() as i32) };
         if ret == SQLITE_OK {
             Ok(())
         } else {
@@ -550,10 +548,7 @@ impl Database {
     }
 
     /// query how many data fit the query condition
-    pub fn query_data_count(
-        &mut self,
-        condition: &DbMap,
-    ) -> Result<u32> {
+    pub fn query_data_count(&mut self, condition: &DbMap) -> Result<u32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.count_datas(condition, false);
         self.restore_if_exec_fail(closure)

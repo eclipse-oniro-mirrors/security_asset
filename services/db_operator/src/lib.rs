@@ -16,10 +16,10 @@
 //! This module encapsulates the database operation function based on sqlite.
 
 pub mod database;
+pub mod database_file_upgrade;
 mod statement;
 mod table;
 mod transaction;
-pub mod database_file_upgrade;
 pub mod types;
 
 #[cfg(test)]

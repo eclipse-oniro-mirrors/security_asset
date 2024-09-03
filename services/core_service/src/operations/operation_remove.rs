@@ -16,7 +16,10 @@
 //! This module is used to delete the Asset, including single and batch deletion.
 
 use asset_common::CallingInfo;
-use asset_db_operator::{database::create_db_instance, types::{column, DbMap}};
+use asset_db_operator::{
+    database::create_db_instance,
+    types::{column, DbMap},
+};
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncStatus, SyncType, Value};
 use asset_log::logi;
 use asset_utils::time;

@@ -15,7 +15,10 @@
 
 //! This module implements the Asset service.
 
-use std::{fs, time::{Duration, Instant}};
+use std::{
+    fs,
+    time::{Duration, Instant},
+};
 
 use asset_db_operator::database_file_upgrade::check_and_split_db;
 use samgr::manage::SystemAbilityManager;
@@ -107,7 +110,7 @@ impl Ability for AssetAbility {
 async fn upgrade_process() -> Result<()> {
     let _counter_user = AutoCounter::new();
     for entry in fs::read_dir(DE_ROOT_PATH)? {
-        let entry  = entry?;
+        let entry = entry?;
         if let Ok(user_id) = entry.file_name().to_string_lossy().parse::<i32>() {
             check_and_split_db(user_id)?;
         }
@@ -119,7 +122,8 @@ fn start_service(handler: Handler) -> Result<()> {
     let asset_plugin = AssetPlugin::get_instance();
     match asset_plugin.load_plugin() {
         Ok(loader) => {
-            let _tr = loader.init(Box::new(AssetContext { user_id: 0, calling_info: CallingInfo::new(0, OwnerType::Hap, vec![]) }));
+            let _tr = loader
+                .init(Box::new(AssetContext { user_id: 0, calling_info: CallingInfo::new(0, OwnerType::Hap, vec![]) }));
             logi!("load plugin success.");
         },
         Err(_) => loge!("load plugin failed."),
