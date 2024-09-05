@@ -56,13 +56,13 @@ int32_t GetHapProcessInfo(int32_t userId, uint32_t tokenId, ProcessInfo *process
     }
     processInfo->hapInfo.appIndex = bundleInfo.appIndex;
 
-    if (memcpy_s(processInfo->hapInfo.appId, processInfo->hapInfo.appIdLen, hapTokenInfo.appID.c_str(),
-        hapTokenInfo.appID.size()) != EOK) {
+    if (memcpy_s(processInfo->hapInfo.appId, processInfo->hapInfo.appIdLen, bundleInfo.appId.c_str(),
+        bundleInfo.appId.size()) != EOK) {
         LOGE("[FATAL]The app id buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
-            hapTokenInfo.appID.size(), processInfo->hapInfo.appIdLen);
+            bundleInfo.appId.size(), processInfo->hapInfo.appIdLen);
         return ASSET_OUT_OF_MEMORY;
     }
-    processInfo->hapInfo.appIdLen = hapTokenInfo.appID.size();
+    processInfo->hapInfo.appIdLen = bundleInfo.appId.size();
 
     return ASSET_SUCCESS;
 }
