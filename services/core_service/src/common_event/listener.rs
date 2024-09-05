@@ -25,11 +25,15 @@ use std::{
 use asset_common::{AutoCounter, CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
 use asset_db_operator::{
-    database::Database, database_file_upgrade::construct_splited_db_name, types::{column, DbMap}
+    database::Database,
+    database_file_upgrade::construct_splited_db_name,
+    types::{column, DbMap},
 };
 use asset_definition::{log_throw_error, ErrCode, Result, SyncType, Value};
 use asset_file_operator::{
-    ce_operator::is_db_key_cipher_file_exist, common::{BACKUP_SUFFIX, CE_ROOT_PATH, DB_SUFFIX, DE_ROOT_PATH}, de_operator::delete_user_de_dir
+    ce_operator::is_db_key_cipher_file_exist,
+    common::{BACKUP_SUFFIX, CE_ROOT_PATH, DB_SUFFIX, DE_ROOT_PATH},
+    de_operator::delete_user_de_dir,
 };
 use asset_log::{loge, logi, logw};
 use asset_plugin::asset_plugin::AssetPlugin;
@@ -54,7 +58,7 @@ fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result
                 Ok(_) => (),
                 Err(e) => {
                     logw!("[WARNING]Remove db:[{}] failed, error code:[{}]", db_file_name, e);
-                }
+                },
             }
         }
     }
@@ -65,7 +69,7 @@ fn delete_in_de_db_on_package_removed(
     calling_info: &CallingInfo,
     delete_cond: &DbMap,
     reverse_condition: &DbMap,
-    check_cond: &DbMap
+    check_cond: &DbMap,
 ) -> Result<bool> {
     // Delete non-persistent data in de db.
     let mut de_db = Database::build(calling_info, false)?;
@@ -73,7 +77,7 @@ fn delete_in_de_db_on_package_removed(
     let de_db_data_exists = de_db.is_data_exists(check_cond, false)?;
     // remove db and backup db
     if !de_db_data_exists {
-        remove_db(&format!("{}/{}", DE_ROOT_PATH,calling_info.user_id()), calling_info, false)?;
+        remove_db(&format!("{}/{}", DE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
     }
     Ok(de_db_data_exists)
 }
@@ -104,10 +108,12 @@ fn delete_on_package_removed(owner: Vec<u8>, calling_info: &CallingInfo) -> Resu
     reverse_condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
     let mut check_cond = delete_cond.clone();
     check_cond.remove(column::IS_PERSISTENT);
-    let de_db_data_exists = delete_in_de_db_on_package_removed(calling_info, &delete_cond, &reverse_condition, &check_cond)?;
+    let de_db_data_exists =
+        delete_in_de_db_on_package_removed(calling_info, &delete_cond, &reverse_condition, &check_cond)?;
 
     if is_db_key_cipher_file_exist(calling_info.user_id())? {
-        let ce_db_data_exists = delete_in_ce_db_on_package_removed(calling_info, &delete_cond, &reverse_condition, &check_cond)?;
+        let ce_db_data_exists =
+            delete_in_ce_db_on_package_removed(calling_info, &delete_cond, &reverse_condition, &check_cond)?;
         Ok(de_db_data_exists || ce_db_data_exists)
     } else {
         Ok(de_db_data_exists)

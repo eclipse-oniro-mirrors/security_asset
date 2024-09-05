@@ -82,7 +82,7 @@ impl SecretKey {
         alias: Option<Vec<u8>>,
     ) -> Result<Self> {
         if let Some(alias) = alias {
-            return Ok(Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() })
+            return Ok(Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() });
         }
 
         // Check whether new key exists.

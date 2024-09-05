@@ -14,7 +14,11 @@
  */
 
 use asset_common::{CallingInfo, Counter, OwnerType};
-use asset_db_operator::{database::{get_path, Database}, database_file_upgrade::construct_splited_db_name, types::column};
+use asset_db_operator::{
+    database::{get_path, Database},
+    database_file_upgrade::construct_splited_db_name,
+    types::column,
+};
 use asset_definition::{log_throw_error, ErrCode, Extension, Result};
 use asset_file_operator::de_operator::create_user_de_dir;
 use asset_log::{loge, logi};
@@ -22,7 +26,10 @@ use asset_sdk::{
     plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx},
     Value,
 };
-use std::{cell::RefCell, sync::{Arc, Mutex}};
+use std::{
+    cell::RefCell,
+    sync::{Arc, Mutex},
+};
 
 /// The asset_ext plugin.
 #[derive(Default)]
@@ -202,7 +209,8 @@ impl IAssetPluginCtx for AssetContext {
         let mut total_remove_count = 0;
         for db_name in de_dbs {
             let mut db = Database::build_with_file_name(self.user_id, &db_name, false).map_err(|e| e.code as u32)?;
-            total_remove_count += db.delete_specific_condition_datas(specific_cond, condition_value).map_err(|e| e.code as u32)?;
+            total_remove_count +=
+                db.delete_specific_condition_datas(specific_cond, condition_value).map_err(|e| e.code as u32)?;
         }
         Ok(total_remove_count)
     }
@@ -217,7 +225,8 @@ impl IAssetPluginCtx for AssetContext {
         let mut total_remove_count = 0;
         for db_name in ce_dbs {
             let mut db = Database::build_with_file_name(self.user_id, &db_name, true).map_err(|e| e.code as u32)?;
-            total_remove_count += db.delete_specific_condition_datas(specific_cond, condition_value).map_err(|e| e.code as u32)?;
+            total_remove_count +=
+                db.delete_specific_condition_datas(specific_cond, condition_value).map_err(|e| e.code as u32)?;
         }
         Ok(total_remove_count)
     }

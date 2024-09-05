@@ -17,7 +17,10 @@
 
 use asset_common::CallingInfo;
 use asset_crypto_manager::crypto::Crypto;
-use asset_db_operator::{database::create_db_instance, types::{column, DbMap, DB_DATA_VERSION}};
+use asset_db_operator::{
+    database::create_db_instance,
+    types::{column, DbMap, DB_DATA_VERSION},
+};
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, LocalStatus, Result, SyncStatus, Tag, Value};
 use asset_utils::time;
 

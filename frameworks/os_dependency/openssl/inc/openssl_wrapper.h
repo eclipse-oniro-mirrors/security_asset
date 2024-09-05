@@ -25,6 +25,8 @@ extern "C" {
 // The caller should ensure the memory safety, that the points should point at valid memory.
 void Sha256(const uint8_t *input, uint32_t intputLen, uint8_t *output);
 
+int32_t GenerateRandom(uint8_t *random, uint32_t randomLen);
+
 #ifdef __cplusplus
 }
 #endif

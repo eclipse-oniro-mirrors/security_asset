@@ -15,12 +15,11 @@
 
 //! This module implements functions related to Asset database key.
 
-use asset_common::CallingInfo;
+use asset_common::{CallingInfo, SUCCESS};
 use asset_crypto_manager::{crypto::Crypto, secret_key::SecretKey};
-use asset_definition::{Accessibility, AuthType, Result};
+use asset_definition::{log_throw_error, Accessibility, AuthType, ErrCode, Result};
 use asset_file_operator::ce_operator::{is_db_key_cipher_file_exist, read_db_key_cipher, write_db_key_cipher};
 use asset_log::logi;
-use openssl::rand::rand_bytes;
 use std::sync::Mutex;
 
 fn build_db_key_secret_key(calling_info: &CallingInfo) -> Result<SecretKey> {
@@ -54,6 +53,10 @@ pub fn generate_secret_key_if_needed(secret_key: &SecretKey) -> Result<()> {
     }
 }
 
+extern "C" {
+    fn GenerateRandom(random: *mut u8, random_len: u32) -> i32;
+}
+
 /// db key obj
 pub struct DbKey {
     /// db key
@@ -72,7 +75,10 @@ impl DbKey {
     fn generate_db_key() -> Result<DbKey> {
         const KEY_LEN_IN_BYTES: usize = 32; // aes-256-gcm requires key length 256 bits = 32 bytes.
         let mut db_key = [0; KEY_LEN_IN_BYTES];
-        rand_bytes(&mut db_key).unwrap();
+
+        if unsafe { GenerateRandom(db_key.as_mut_ptr(), db_key.len() as u32) } != SUCCESS {
+            return log_throw_error!(ErrCode::CryptoError, "[FATAL]Generate random failed!");
+        }
         Ok(Self { db_key: db_key.to_vec() })
     }
 
@@ -110,7 +116,7 @@ impl DbKey {
                         write_db_key_cipher(calling_info.user_id(), &db_key_cipher)?;
                         Ok(db_key)
                     },
-                    Err(e) => Err(e)
+                    Err(e) => Err(e),
                 }
             },
             Err(e) => Err(e),

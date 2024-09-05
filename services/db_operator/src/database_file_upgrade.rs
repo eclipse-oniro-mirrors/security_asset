@@ -23,9 +23,11 @@ use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
 use asset_log::logi;
 
 use crate::{
-    database::{fmt_backup_path, fmt_de_db_path_with_name, get_db, get_split_db_lock_by_user_id, Database, OLD_DB_NAME, DE_ROOT_PATH}, types::{
-        column, DbMap, QueryOptions,
-    }
+    database::{
+        fmt_backup_path, fmt_de_db_path_with_name, get_db, get_split_db_lock_by_user_id, Database, DE_ROOT_PATH,
+        OLD_DB_NAME,
+    },
+    types::{column, DbMap, QueryOptions},
 };
 
 const MINIM_OWNER_INFO_LEN: usize = 3;
@@ -62,7 +64,7 @@ pub fn construct_splited_db_name(owner_type: OwnerType, owner_info: &[u8], is_ce
         },
         OwnerType::Native => {
             format!("Native_{}", String::from_utf8_lossy(owner_info))
-        }
+        },
     };
     if is_ce {
         res = format!("enc_{}", res)
@@ -77,7 +79,7 @@ fn get_db_before_split(user_id: i32) -> Result<Database> {
 fn get_value_from_db_map(db_map: &DbMap, key: &str) -> Result<Value> {
     match db_map.get(key) {
         Some(value) => Ok(value.clone()),
-        _ => log_throw_error!(ErrCode::DatabaseError, "[FATAL]Get value from {} failed.", key)
+        _ => log_throw_error!(ErrCode::DatabaseError, "[FATAL]Get value from {} failed.", key),
     }
 }
 
@@ -113,12 +115,16 @@ fn calculate_batch_split_times(old_data_query_condition: &DbMap, old_db: &mut Da
     Ok(query_times)
 }
 
-fn migrate_data(old_db: &mut Database, new_db: &mut Database, split_time: u32, old_data_query_condition: &DbMap) -> Result<()> {
+fn migrate_data(
+    old_db: &mut Database,
+    new_db: &mut Database,
+    split_time: u32,
+    old_data_query_condition: &DbMap,
+) -> Result<()> {
     // 3.1 query data in old db
-    let query_options = QueryOptions {offset: None, limit: Some(MAX_BATCH_NUM), order_by: None, order: None};
+    let query_options = QueryOptions { offset: None, limit: Some(MAX_BATCH_NUM), order_by: None, order: None };
 
-    let old_data_vec =
-    old_db.query_datas(&vec![], old_data_query_condition, Some(&query_options), false)?;
+    let old_data_vec = old_db.query_datas(&vec![], old_data_query_condition, Some(&query_options), false)?;
     // 3.2 insert data in new db
     for data in &old_data_vec {
         let mut condition = DbMap::new();
@@ -142,7 +148,7 @@ fn split_db(user_id: i32) -> Result<()> {
     // 2. get split db info
     let empty_condition = DbMap::new();
     let owner_info_db_list =
-        old_db.query_datas(&vec![column::OWNER_TYPE, column::OWNER], &empty_condition,  None, false)?;
+        old_db.query_datas(&vec![column::OWNER_TYPE, column::OWNER], &empty_condition, None, false)?;
     for info_map in &owner_info_db_list {
         // 1. get new db
         let mut new_db = get_new_db(user_id, info_map)?;
