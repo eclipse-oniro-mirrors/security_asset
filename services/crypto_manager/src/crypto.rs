@@ -17,7 +17,7 @@
 
 use std::time::Instant;
 
-use asset_common::{transfer_error_code, SUCCESS};
+use asset_common::{transfer_error_code, CallingInfo, SUCCESS};
 use asset_definition::{log_throw_error, ErrCode, Result};
 
 use crate::{secret_key::SecretKey, HksBlob, KeyId, OutBlob};
@@ -44,6 +44,7 @@ const CHALLENGE_LEN: usize = 32;
 /// Crypto for storing key attributes that require user authentication.
 pub struct Crypto {
     key: SecretKey,
+    calling_info: CallingInfo,
     challenge: Vec<u8>,
     handle: Vec<u8>,
     valid_time: u32,
@@ -52,9 +53,10 @@ pub struct Crypto {
 
 impl Crypto {
     /// Create a crypto instance.
-    pub fn build(key: SecretKey, valid_time: u32) -> Result<Self> {
+    pub fn build(key: SecretKey, calling_info: CallingInfo, valid_time: u32) -> Result<Self> {
         Ok(Self {
             key,
+            calling_info,
             challenge: vec![0; CHALLENGE_LEN],
             handle: vec![0; HANDLE_LEN],
             valid_time,
@@ -67,7 +69,7 @@ impl Crypto {
         let key_alias = HksBlob { size: self.key.alias().len() as u32, data: self.key.alias().as_ptr() };
         let mut challenge = OutBlob { size: self.challenge.len() as u32, data: self.challenge.as_mut_ptr() };
         let mut handle = OutBlob { size: self.handle.len() as u32, data: self.handle.as_mut_ptr() };
-        let key_id = KeyId::new(self.key.calling_info().user_id(), key_alias, self.key.access_type());
+        let key_id = KeyId::new(self.key.user_id(), key_alias, self.key.access_type());
 
         let ret = unsafe {
             InitKey(
@@ -118,7 +120,7 @@ impl Crypto {
         let aad_data = HksBlob { size: aad.len() as u32, data: aad.as_ptr() };
         let in_data = HksBlob { size: msg.len() as u32, data: msg.as_ptr() };
         let mut out_data = OutBlob { size: cipher.len() as u32, data: cipher.as_mut_ptr() };
-        let key_id = KeyId::new(key.calling_info().user_id(), key_alias, key.access_type());
+        let key_id = KeyId::new(key.user_id(), key_alias, key.access_type());
 
         let ret = unsafe {
             EncryptData(
@@ -145,7 +147,7 @@ impl Crypto {
         let aad_data = HksBlob { size: aad.len() as u32, data: aad.as_ptr() };
         let in_data = HksBlob { size: cipher.len() as u32, data: cipher.as_ptr() };
         let mut out_data = OutBlob { size: plain.len() as u32, data: plain.as_mut_ptr() };
-        let key_id = KeyId::new(key.calling_info().user_id(), key_alias, key.access_type());
+        let key_id = KeyId::new(key.user_id(), key_alias, key.access_type());
 
         let ret = unsafe {
             DecryptData(
@@ -163,6 +165,10 @@ impl Crypto {
 
     pub(crate) fn key(&self) -> &SecretKey {
         &self.key
+    }
+
+    pub(crate) fn calling_info(&self) -> &CallingInfo {
+        &self.calling_info
     }
 
     pub(crate) fn challenge(&self) -> &Vec<u8> {

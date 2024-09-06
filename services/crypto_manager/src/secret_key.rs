@@ -29,7 +29,7 @@ pub struct SecretKey {
     access_type: Accessibility,
     require_password_set: bool,
     alias: Vec<u8>,
-    calling_info: CallingInfo,
+    user_id: i32,
 }
 
 extern "C" {
@@ -72,29 +72,35 @@ fn calculate_key_alias(
     hasher::sha256(standard, &alias)
 }
 
-impl SecretKey {
-    /// New a secret key.
-    pub fn new(
+impl SecretKey{
+    /// New a secret key with the input key alias argument.
+    pub fn new_with_alias(
+        user_id: i32,
+        auth_type: AuthType,
+        access_type: Accessibility,
+        require_password_set: bool,
+        alias: Vec<u8>,
+    ) -> Result<Self> {
+        Ok(Self { user_id, auth_type, access_type, require_password_set, alias})
+    }
+
+    /// Calculate key alias and then new a secret key.
+    pub fn new_without_alias(
         calling_info: &CallingInfo,
         auth_type: AuthType,
         access_type: Accessibility,
         require_password_set: bool,
-        alias: Option<Vec<u8>>,
     ) -> Result<Self> {
-        if let Some(alias) = alias {
-            return Ok(Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() });
-        }
-
         // Check whether new key exists.
         let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
-        let new_key = Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() };
+        let new_key = Self { user_id: calling_info.user_id(), auth_type, access_type, require_password_set, alias };
         if new_key.exists()? {
             return Ok(new_key);
         }
 
         // Check whether old key exists.
         let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false);
-        let old_key = Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() };
+        let old_key = Self { user_id: calling_info.user_id(), auth_type, access_type, require_password_set, alias };
         if old_key.exists()? {
             logw!("[WARNING]Use old alias key.");
             return Ok(old_key);
@@ -107,7 +113,7 @@ impl SecretKey {
     /// Check whether the secret key exists.
     pub fn exists(&self) -> Result<bool> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
-        let key_id = KeyId::new(self.calling_info().user_id(), key_alias, self.access_type);
+        let key_id = KeyId::new(self.user_id, key_alias, self.access_type);
         let ret = unsafe { IsKeyExist(&key_id as *const KeyId) };
         match ret {
             SUCCESS => Ok(true),
@@ -119,7 +125,7 @@ impl SecretKey {
     /// Generate the secret key and store in HUKS.
     pub fn generate(&self) -> Result<()> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
-        let key_id = KeyId::new(self.calling_info().user_id(), key_alias, self.access_type);
+        let key_id = KeyId::new(self.user_id, key_alias, self.access_type);
         let ret = unsafe { GenerateKey(&key_id as *const KeyId, self.need_user_auth(), self.require_password_set) };
         match ret {
             SUCCESS => Ok(()),
@@ -130,7 +136,7 @@ impl SecretKey {
     /// Delete the secret key.
     pub fn delete(&self) -> Result<()> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
-        let key_id = KeyId::new(self.calling_info().user_id(), key_alias, self.access_type);
+        let key_id = KeyId::new(self.user_id, key_alias, self.access_type);
         let ret = unsafe { DeleteKey(&key_id as *const KeyId) };
         match ret {
             ret if ((ret == ErrCode::NotFound as i32) || ret == SUCCESS) => Ok(()),
@@ -144,19 +150,19 @@ impl SecretKey {
         let accessibilitys =
             [Accessibility::DevicePowerOn, Accessibility::DeviceFirstUnlocked, Accessibility::DeviceUnlocked];
         for accessibility in accessibilitys.into_iter() {
-            let secret_key = SecretKey::new(calling_info, AuthType::None, accessibility, true, None)?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::None, accessibility, true)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new(calling_info, AuthType::Any, accessibility, true, None)?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, accessibility, true)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new(calling_info, AuthType::None, accessibility, false, None)?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::None, accessibility, false)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new(calling_info, AuthType::Any, accessibility, false, None)?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, accessibility, false)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
         }
@@ -184,8 +190,8 @@ impl SecretKey {
         self.access_type
     }
 
-    /// Get the key calling info
-    pub(crate) fn calling_info(&self) -> &CallingInfo {
-        &self.calling_info
+    /// Get the key user id.
+    pub(crate) fn user_id(&self) -> i32 {
+        self.user_id
     }
 }

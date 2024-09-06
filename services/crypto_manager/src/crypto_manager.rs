@@ -58,7 +58,7 @@ impl CryptoManager {
     pub fn find(&mut self, calling_info: &CallingInfo, challenge: &Vec<u8>) -> Result<&Crypto> {
         self.remove_expired_crypto()?;
         for crypto in self.cryptos.iter() {
-            if crypto.challenge().eq(challenge) && crypto.key().calling_info().eq(calling_info) {
+            if crypto.challenge().eq(challenge) && crypto.calling_info().eq(calling_info) {
                 return Ok(crypto);
             }
         }
@@ -67,12 +67,12 @@ impl CryptoManager {
 
     /// Remove the crypto from manager.
     pub fn remove(&mut self, calling_info: &CallingInfo, challenge: &Vec<u8>) {
-        self.cryptos.retain(|crypto| crypto.key().calling_info() != calling_info || !crypto.challenge().eq(challenge));
+        self.cryptos.retain(|crypto| crypto.calling_info() != calling_info || !crypto.challenge().eq(challenge));
     }
 
     /// Remove the crypto by calling info.
     pub fn remove_by_calling_info(&mut self, calling_info: &CallingInfo) {
-        self.cryptos.retain(|crypto| crypto.key().calling_info() != calling_info);
+        self.cryptos.retain(|crypto| crypto.calling_info() != calling_info);
     }
 
     /// Remove cryptos that required device to be unlocked.

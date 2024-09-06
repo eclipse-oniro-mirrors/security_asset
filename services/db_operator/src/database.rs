@@ -138,8 +138,7 @@ pub(crate) fn get_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Databas
         if is_ce { fmt_ce_db_path_with_name(user_id, db_name) } else { fmt_de_db_path_with_name(user_id, db_name) };
     let db_key = if is_ce {
         check_validity_of_db_key(&path, user_id)?;
-        let calling_info = CallingInfo::new_part_info(user_id);
-        match DbKey::get_db_key(&calling_info) {
+        match DbKey::get_db_key(user_id) {
             Ok(res) => Some(res),
             Err(e) if e.code == ErrCode::NotFound || e.code == ErrCode::DataCorrupted => {
                 loge!(
@@ -200,11 +199,15 @@ impl Database {
         get_db(user_id, db_name, is_ce)
     }
 
-    /// Check whether de db is ok
-    pub fn check_de_db_accessible(path: String, user_id: i32, db_name: String) -> Result<()> {
+    /// Check whether db is ok
+    pub fn check_db_accessible(path: String, user_id: i32, db_name: String, db_key: Option<&DbKey>) -> Result<()> {
         let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.clone());
         let mut db = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock, db_name };
-        db.open()?;
+        if db_key.is_some() {
+            db.open_and_restore(db_key)?
+        } else {
+            db.open()?;
+        }
         let table = Table::new(TABLE_NAME, &db);
         table.create(COLUMN_INFO)
     }
@@ -256,9 +259,9 @@ impl Database {
     }
 
     /// Encrypt/Decrypt CE database.
-    pub fn set_db_key(&mut self, db_key: &DbKey) -> Result<()> {
+    pub fn set_db_key(&mut self, p_key: &DbKey) -> Result<()> {
         let ret =
-            unsafe { SqliteKey(self.handle as _, db_key.db_key.as_ptr() as *const c_void, db_key.db_key.len() as i32) };
+            unsafe { SqliteKey(self.handle as _, p_key.db_key.as_ptr() as *const c_void, p_key.db_key.len() as i32) };
         if ret == SQLITE_OK {
             Ok(())
         } else {
