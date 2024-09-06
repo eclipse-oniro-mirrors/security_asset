@@ -53,7 +53,9 @@ fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result
     for db_path in fs::read_dir(file_path)? {
         let db_path = db_path?;
         let db_file_name = db_path.file_name().to_string_lossy().to_string();
-        if db_file_name.contains(&db_name) {
+        let origin_db_name = format!("{}{}", db_name, DB_SUFFIX);
+        let backup_db_name = format!("{}{}", origin_db_name, BACKUP_SUFFIX);
+        if db_file_name == origin_db_name || db_file_name == backup_db_name {
             match fs::remove_file(&db_path.path().to_string_lossy().to_string()) {
                 Ok(_) => (),
                 Err(e) => {
@@ -110,7 +112,7 @@ fn delete_on_package_removed(owner: Vec<u8>, calling_info: &CallingInfo) -> Resu
     delete_cond.insert(column::IS_PERSISTENT, Value::Bool(false));
     let mut reverse_condition = DbMap::new();
     reverse_condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
-    let mut check_cond = DbMap::new();
+    let check_cond = DbMap::new();
     let de_db_data_exists =
         delete_in_de_db_on_package_removed(calling_info, &delete_cond, &reverse_condition, &check_cond)?;
 
