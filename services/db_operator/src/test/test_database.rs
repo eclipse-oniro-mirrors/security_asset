@@ -62,7 +62,9 @@ fn open_db_and_insert_data() -> Database {
     let mut def = DbMap::from(DB_DATA);
     add_bytes_column(&mut def);
     let calling_info = CallingInfo::new_self();
-    let mut db = Database::build(&calling_info, false).unwrap();
+    let mut db = Database::build(
+        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+    ).unwrap();
     let count = db.insert_datas(&def).unwrap();
     assert_eq!(count, 1);
     db
@@ -84,7 +86,9 @@ fn backup_db(db: &Database) {
 fn create_and_drop_database() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
-    let mut db = Database::build(&calling_info, false).unwrap();
+    let mut db = Database::build(
+        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+    ).unwrap();
     backup_db(&db);
     db.close_db();
     assert!(Database::delete(0).is_ok());
@@ -94,7 +98,9 @@ fn create_and_drop_database() {
 fn database_version() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
-    let db = Database::build(&calling_info, false).unwrap();
+    let db = Database::build(
+        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+    ).unwrap();
     assert_eq!(1, db.get_version().unwrap());
     assert!(db.set_version(2).is_ok());
     assert_eq!(2, db.get_version().unwrap());
@@ -105,7 +111,9 @@ fn database_version() {
 fn error_sql() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
-    let db = Database::build(&calling_info, false).unwrap();
+    let db = Database::build(
+        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+    ).unwrap();
     let sql = "pragma zzz user_version = {} mmm";
     assert!(db.exec(sql).is_err());
     let _ = Database::delete(0);
@@ -115,7 +123,9 @@ fn error_sql() {
 fn create_delete_asset_table() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
-    let mut db = Database::build(&calling_info, false).unwrap();
+    let mut db = Database::build(
+        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+    ).unwrap();
     let table = Table::new(TABLE_NAME, &db);
     assert!(table.exist().unwrap());
     assert!(table.delete().is_ok());
@@ -131,7 +141,9 @@ fn insert_data_with_different_alias() {
     add_bytes_column(&mut def);
 
     let calling_info = CallingInfo::new_self();
-    let mut db = Database::build(&calling_info, false).unwrap();
+    let mut db = Database::build(
+        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+    ).unwrap();
     let count = db.insert_datas(&def).unwrap();
     assert_eq!(count, 1);
 
@@ -203,7 +215,9 @@ fn query_ordered_data() {
     add_bytes_column(&mut def);
 
     let calling_info = CallingInfo::new_self();
-    let mut db = Database::build(&calling_info, false).unwrap();
+    let mut db = Database::build(
+        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+    ).unwrap();
     let count = db.insert_datas(&def).unwrap();
     assert_eq!(count, 1);
 
@@ -238,7 +252,9 @@ fn insert_error_data() {
     let mut datas = DbMap::new();
     datas.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
     let calling_info = CallingInfo::new_self();
-    let mut db = Database::build(&calling_info, false).unwrap();
+    let mut db = Database::build(
+        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+    ).unwrap();
     assert!(db.insert_datas(&datas).is_err());
     remove_dir();
 }
@@ -255,7 +271,9 @@ fn backup_and_restore() {
 
     // Recovery the main database.
     let calling_info = CallingInfo::new_self();
-    let mut db = Database::build(&calling_info, false).unwrap();
+    let mut db = Database::build(
+        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+    ).unwrap();
     let mut def = DbMap::from(DB_DATA);
     add_bytes_column(&mut def);
 
@@ -283,7 +301,9 @@ fn query_mismatch_type_data() {
     add_bytes_column(&mut data);
     data.insert(column::CREATE_TIME, Value::Number(1));
     let calling_info = CallingInfo::new_self();
-    let mut db = Database::build(&calling_info, false).unwrap();
+    let mut db = Database::build(
+        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+    ).unwrap();
     db.insert_datas(&data).unwrap();
 
     assert_eq!(ErrCode::FileOperationError, db.query_datas(&vec![], &data, None, false).unwrap_err().code);
