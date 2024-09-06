@@ -110,8 +110,7 @@ fn delete_on_package_removed(owner: Vec<u8>, calling_info: &CallingInfo) -> Resu
     delete_cond.insert(column::IS_PERSISTENT, Value::Bool(false));
     let mut reverse_condition = DbMap::new();
     reverse_condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
-    let mut check_cond = delete_cond.clone();
-    check_cond.remove(column::IS_PERSISTENT);
+    let mut check_cond = DbMap::new();
     let de_db_data_exists =
         delete_in_de_db_on_package_removed(calling_info, &delete_cond, &reverse_condition, &check_cond)?;
 
