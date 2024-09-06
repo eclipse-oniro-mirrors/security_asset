@@ -38,6 +38,7 @@ With the APIs provided by ASSET, you can quickly integrate system-wide encrypted
     ├── constants           # Constants of the service layer
     ├── core_service        # Core service module
     ├── crypto_manager      # Data encryption/decryption module
+    ├── db_key_operator     # Database key management module
     ├── db_operator         # Data management module
     └── os_dependency       # System capability adaptation module
 ```
