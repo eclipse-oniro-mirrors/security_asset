@@ -21,6 +21,7 @@ use std::{convert::TryFrom, mem::size_of, result::Result, slice};
 use asset_log::loge;
 use asset_sdk::{log_throw_error, AssetError, AssetMap, Conversion, DataType, ErrCode, Manager, Tag, Value};
 
+const MAX_MAP_CAPACITY: u32 = 64;
 const RESULT_CODE_SUCCESS: i32 = 0;
 extern "C" {
     fn AssetMalloc(size: u32) -> *mut c_void;
@@ -29,6 +30,10 @@ extern "C" {
 fn into_map(attributes: *const AssetAttr, attr_cnt: u32) -> Option<AssetMap> {
     if attributes.is_null() && attr_cnt != 0 {
         loge!("[FATAL][RUST SDK]Attributes is null.");
+        return None;
+    }
+    if attr_cnt > MAX_MAP_CAPACITY {
+        loge!("[FATAL][RUST SDK]Number of attributes exceeds limit.");
         return None;
     }
 
