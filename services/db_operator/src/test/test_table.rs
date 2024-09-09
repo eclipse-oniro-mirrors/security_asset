@@ -58,11 +58,11 @@ fn table_restore() {
         .unwrap();
     let count = table.insert_row(&DbMap::from([("Id", Value::Number(1))])).unwrap();
     assert_eq!(count, 1);
-    fs::copy("/data/asset_test/0/asset.db", "/data/asset_test/0/asset.db.backup").unwrap();
+    fs::copy("/data/asset_test/0/Native_asset_service_8100.db", "/data/asset_test/0/Native_asset_service_8100.db.backup").unwrap();
     db.close_db();
 
-    fs::remove_file("/data/asset_test/0/asset.db").unwrap();
-    fs::copy("/data/asset_test/0/asset.db.backup", "/data/asset_test/0/asset.db").unwrap();
+    fs::remove_file("/data/asset_test/0/Native_asset_service_8100.db").unwrap();
+    fs::copy("/data/asset_test/0/Native_asset_service_8100.db.backup", "/data/asset_test/0/Native_asset_service_8100.db").unwrap();
     db.open().unwrap();
     let table = Table::new("table_name", &db);
     let count = table.count_datas(&DbMap::new(), false).unwrap();

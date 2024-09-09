@@ -91,7 +91,7 @@ fn create_and_drop_database() {
     ).unwrap();
     backup_db(&db);
     db.close_db();
-    assert!(Database::delete(0).is_ok());
+    assert!(Database::delete(0, &db.db_name).is_ok());
 }
 
 #[test]
@@ -101,10 +101,10 @@ fn database_version() {
     let db = Database::build(
         calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false
     ).unwrap();
-    assert_eq!(1, db.get_version().unwrap());
-    assert!(db.set_version(2).is_ok());
     assert_eq!(2, db.get_version().unwrap());
-    let _ = Database::delete(0);
+    assert!(db.set_version(3).is_ok());
+    assert_eq!(3, db.get_version().unwrap());
+    let _ = Database::delete(0, &db.db_name);
 }
 
 #[test]
@@ -116,7 +116,7 @@ fn error_sql() {
     ).unwrap();
     let sql = "pragma zzz user_version = {} mmm";
     assert!(db.exec(sql).is_err());
-    let _ = Database::delete(0);
+    let _ = Database::delete(0, &db.db_name);
 }
 
 #[test]
@@ -131,7 +131,7 @@ fn create_delete_asset_table() {
     assert!(table.delete().is_ok());
     assert!(!table.exist().unwrap());
     db.close_db();
-    let _ = Database::delete(0);
+    let _ = Database::delete(0, &db.db_name);
 }
 
 #[test]
@@ -266,7 +266,8 @@ fn backup_and_restore() {
     drop(db);
 
     // Destroy the main database.
-    let mut db_file = OpenOptions::new().read(true).write(true).open("/data/asset_test/0/asset.db").unwrap();
+    let mut db_file =
+        OpenOptions::new().read(true).write(true).open("/data/asset_test/0/Native_asset_service_8100.db").unwrap();
     let _ = db_file.write(b"buffer buffer buffer").unwrap();
 
     // Recovery the main database.

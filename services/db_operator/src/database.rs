@@ -27,7 +27,7 @@ use asset_log::{loge, logi};
 use lazy_static::lazy_static;
 
 use crate::{
-    database_file_upgrade::{check_and_split_db, construct_splited_db_name, fmt_old_de_db_path},
+    database_file_upgrade::{check_and_split_db, construct_splited_db_name},
     statement::Statement,
     table::Table,
     types::{
@@ -58,7 +58,7 @@ lazy_static! {
 }
 
 pub(crate) fn get_split_db_lock_by_user_id(user_id: i32) -> &'static UserDbLock {
-    let mut map  = SPLIT_DB_LOCK_MAP.lock().unwrap();
+    let mut map = SPLIT_DB_LOCK_MAP.lock().unwrap();
     if let Some(&lock) = map.get(&user_id) {
         return lock;
     }
@@ -321,8 +321,8 @@ impl Database {
 
     /// Delete database file.
     #[allow(dead_code)]
-    pub(crate) fn delete(user_id: i32) -> Result<()> {
-        let path = fmt_old_de_db_path(user_id);
+    pub(crate) fn delete(user_id: i32, db_name: &str) -> Result<()> {
+        let path = fmt_de_db_path_with_name(user_id, db_name);
         let backup_path = fmt_backup_path(&path);
         if let Err(e) = fs::remove_file(path) {
             return log_throw_error!(ErrCode::FileOperationError, "[FATAL][DB]Delete database failed, err={}", e);
