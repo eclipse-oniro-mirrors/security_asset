@@ -65,7 +65,7 @@ fn grant_self_permission() -> i32 {
 fn generate_and_delete() {
     assert_eq!(0, grant_self_permission());
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
-    let secret_key = SecretKey::new(&calling_info, AuthType::None, Accessibility::DevicePowerOn, false, None).unwrap();
+    let secret_key = SecretKey::new_without_alias(&calling_info, AuthType::None, Accessibility::DevicePowerOn, false).unwrap();
     secret_key.generate().unwrap();
     secret_key.exists().unwrap();
     let _ = SecretKey::delete_by_owner(&calling_info);
@@ -77,7 +77,7 @@ fn encrypt_and_decrypt() {
     assert_eq!(0, grant_self_permission());
     // generate key
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
-    let secret_key = SecretKey::new(&calling_info, AuthType::None, Accessibility::DevicePowerOn, false, None).unwrap();
+    let secret_key = SecretKey::new_without_alias(&calling_info, AuthType::None, Accessibility::DevicePowerOn, false).unwrap();
     secret_key.generate().unwrap();
 
     // encrypt data
@@ -98,10 +98,10 @@ fn encrypt_and_decrypt() {
 fn crypto_init() {
     assert_eq!(0, grant_self_permission());
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
-    let secret_key = SecretKey::new(&calling_info, AuthType::Any, Accessibility::DevicePowerOn, false, None).unwrap();
+    let secret_key = SecretKey::new_without_alias(&calling_info, AuthType::Any, Accessibility::DevicePowerOn, false).unwrap();
     secret_key.generate().unwrap();
 
-    let mut crypto = Crypto::build(secret_key.clone(), 600).unwrap();
+    let mut crypto = Crypto::build(secret_key.clone(), calling_info, 600).unwrap();
     crypto.init_key().unwrap();
     let _ = secret_key.delete();
 }
@@ -110,13 +110,13 @@ fn crypto_init() {
 fn crypto_exec() {
     assert_eq!(0, grant_self_permission());
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
-    let secret_key = SecretKey::new(&calling_info, AuthType::Any, Accessibility::DevicePowerOn, false, None).unwrap();
+    let secret_key = SecretKey::new_without_alias(&calling_info, AuthType::Any, Accessibility::DevicePowerOn, false).unwrap();
     secret_key.generate().unwrap();
 
     let msg = vec![1, 2, 3, 4, 5, 6];
     let aad = vec![0; AAD_SIZE as usize];
     let cipher = Crypto::encrypt(&secret_key, &msg, &aad).unwrap();
-    let mut crypto = Crypto::build(secret_key.clone(), 600).unwrap();
+    let mut crypto = Crypto::build(secret_key.clone(), calling_info, 600).unwrap();
     crypto.init_key().unwrap();
 
     let authtoken = vec![0; 280];
@@ -128,14 +128,14 @@ fn crypto_exec() {
 fn crypto_manager() {
     assert_eq!(0, grant_self_permission());
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
-    let secret_key1 = SecretKey::new(&calling_info, AuthType::Any, Accessibility::DevicePowerOn, false, None).unwrap();
+    let secret_key1 = SecretKey::new_without_alias(&calling_info, AuthType::Any, Accessibility::DevicePowerOn, false).unwrap();
     secret_key1.generate().unwrap();
-    let mut crypto1 = Crypto::build(secret_key1.clone(), 600).unwrap();
+    let mut crypto1 = Crypto::build(secret_key1.clone(), calling_info.clone(), 600).unwrap();
     let challenge1 = crypto1.init_key().unwrap().clone();
 
-    let secret_key2 = SecretKey::new(&calling_info, AuthType::Any, Accessibility::DevicePowerOn, false, None).unwrap();
+    let secret_key2 = SecretKey::new_without_alias(&calling_info, AuthType::Any, Accessibility::DevicePowerOn, false).unwrap();
     secret_key2.generate().unwrap();
-    let mut crypto2 = Crypto::build(secret_key2.clone(), 600).unwrap();
+    let mut crypto2 = Crypto::build(secret_key2.clone(), calling_info.clone(), 600).unwrap();
     let challenge2 = crypto2.init_key().unwrap().clone();
 
     let arc_crypto_manager = CryptoManager::get_instance();

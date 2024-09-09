@@ -38,6 +38,7 @@
     ├── constants           # 服务层常量定义
     ├── core_service        # 核心处理模块
     ├── crypto_manager      # 数据加密模块
+    ├── db_key_operator     # 数据库密钥管理模块
     ├── db_operator         # 数据管理模块
     └── os_dependency       # 系统能力适配模块
 ```

@@ -29,6 +29,7 @@ use asset_db_operator::{
     database_file_upgrade::construct_splited_db_name,
     types::{column, DbMap},
 };
+use asset_db_key_operator::DbKey;
 use asset_definition::{log_throw_error, ErrCode, Result, SyncType, Value};
 use asset_file_operator::{
     ce_operator::is_db_key_cipher_file_exist,
@@ -53,7 +54,9 @@ fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result
     for db_path in fs::read_dir(file_path)? {
         let db_path = db_path?;
         let db_file_name = db_path.file_name().to_string_lossy().to_string();
-        if db_file_name.contains(&db_name) {
+        let origin_db_name = format!("{}{}", db_name, DB_SUFFIX);
+        let backup_db_name = format!("{}{}", origin_db_name, BACKUP_SUFFIX);
+        if db_file_name == origin_db_name || db_file_name == backup_db_name {
             match fs::remove_file(&db_path.path().to_string_lossy().to_string()) {
                 Ok(_) => (),
                 Err(e) => {
@@ -72,7 +75,9 @@ fn delete_in_de_db_on_package_removed(
     check_cond: &DbMap,
 ) -> Result<bool> {
     // Delete non-persistent data in de db.
-    let mut de_db = Database::build(calling_info, false)?;
+    let mut de_db = Database::build(
+        calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false
+    )?;
     let _ = de_db.delete_datas(delete_cond, Some(reverse_condition), false)?;
     let de_db_data_exists = de_db.is_data_exists(check_cond, false)?;
     // remove db and backup db
@@ -89,7 +94,9 @@ fn delete_in_ce_db_on_package_removed(
     check_cond: &DbMap,
 ) -> Result<bool> {
     // Delete non-persistent data in ce db if ce db file exists.
-    let mut ce_db = Database::build(calling_info, true)?;
+    let mut ce_db = Database::build(
+        calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), true
+    )?;
     let _ = ce_db.delete_datas(delete_cond, Some(reverse_condition), false)?;
     // Check whether there is still persistent data left in ce db.
     let ce_db_data_exists = ce_db.is_data_exists(check_cond, false)?;
@@ -106,8 +113,7 @@ fn delete_on_package_removed(owner: Vec<u8>, calling_info: &CallingInfo) -> Resu
     delete_cond.insert(column::IS_PERSISTENT, Value::Bool(false));
     let mut reverse_condition = DbMap::new();
     reverse_condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
-    let mut check_cond = delete_cond.clone();
-    check_cond.remove(column::IS_PERSISTENT);
+    let check_cond = DbMap::new();
     let de_db_data_exists =
         delete_in_de_db_on_package_removed(calling_info, &delete_cond, &reverse_condition, &check_cond)?;
 
@@ -266,7 +272,7 @@ fn backup_de_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
         let db_name = db_path.file_name().to_string_lossy().to_string();
         if db_name.ends_with(DB_SUFFIX) {
             let from_path = db_path.path().to_string_lossy().to_string();
-            Database::check_de_db_accessible(from_path.clone(), user_id, db_name.clone())?;
+            Database::check_db_accessible(from_path.clone(), user_id, db_name.clone(), None)?;
             let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
             fs::copy(from_path, backup_path)?;
         }
@@ -274,7 +280,7 @@ fn backup_de_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
     Ok(())
 }
 
-fn backup_ce_db(user_id: i32) -> Result<()> {
+fn backup_ce_db_if_accessible(user_id: i32) -> Result<()> {
     if user_id < MINIMUM_MAIN_USER_ID {
         return Ok(());
     }
@@ -284,6 +290,8 @@ fn backup_ce_db(user_id: i32) -> Result<()> {
         let db_name = db_path.file_name().to_string_lossy().to_string();
         if db_name.ends_with(DB_SUFFIX) {
             let from_path = db_path.path().to_string_lossy().to_string();
+            let db_key = DbKey::get_db_key(user_id)?;
+            Database::check_db_accessible(from_path.clone(), user_id, db_name.clone(), Some(&db_key))?;
             let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
             fs::copy(from_path, backup_path)?;
         }
@@ -334,7 +342,7 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
         user_ids_slice = slice::from_raw_parts_mut(user_ids_ptr, (*user_ids_size_ptr).try_into().unwrap());
     }
     for user_id in user_ids_slice.iter() {
-        if let Err(e) = backup_ce_db(*user_id) {
+        if let Err(e) = backup_ce_db_if_accessible(*user_id) {
             let calling_info = CallingInfo::new_self();
             upload_fault_system_event(&calling_info, *start_time, &format!("backup_ce_db_{}", *user_id), &e);
         }
