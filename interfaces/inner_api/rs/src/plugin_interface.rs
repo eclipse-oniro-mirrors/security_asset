@@ -117,9 +117,6 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     /// Returns the storage path for de db.
     fn get_storage_path(&self) -> String;
 
-    /// Returns the storage path for ce db.
-    fn ce_get_storage_path(&self) -> String;
-
     /// Increase count
     fn increase_count(&mut self);
 

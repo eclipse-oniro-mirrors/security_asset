@@ -258,11 +258,6 @@ impl IAssetPluginCtx for AssetContext {
         get_path()
     }
 
-    /// Returns the storage path for ce db.
-    fn ce_get_storage_path(&self) -> String {
-        get_path()
-    }
-
     /// Increase count
     fn increase_count(&mut self) {
         let counter = Counter::get_instance();
