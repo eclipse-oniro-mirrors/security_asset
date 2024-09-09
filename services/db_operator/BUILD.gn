@@ -44,6 +44,7 @@ ohos_rust_unittest("asset_db_operator_test") {
     "../../frameworks/os_dependency/log:asset_log",
     "../common:asset_common",
     "../db_key_operator:asset_db_key_operator",
+    "//third_party/rust/crates/lazy-static.rs:lib",
   ]
 
   external_deps = [ "hilog:libhilog" ]

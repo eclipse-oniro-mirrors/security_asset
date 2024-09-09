@@ -130,12 +130,12 @@ fn crypto_manager() {
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2']);
     let secret_key1 = SecretKey::new_without_alias(&calling_info, AuthType::Any, Accessibility::DevicePowerOn, false).unwrap();
     secret_key1.generate().unwrap();
-    let mut crypto1 = Crypto::build(secret_key1.clone(), calling_info, 600).unwrap();
+    let mut crypto1 = Crypto::build(secret_key1.clone(), calling_info.clone(), 600).unwrap();
     let challenge1 = crypto1.init_key().unwrap().clone();
 
     let secret_key2 = SecretKey::new_without_alias(&calling_info, AuthType::Any, Accessibility::DevicePowerOn, false).unwrap();
     secret_key2.generate().unwrap();
-    let mut crypto2 = Crypto::build(secret_key2.clone(), calling_info, 600).unwrap();
+    let mut crypto2 = Crypto::build(secret_key2.clone(), calling_info.clone(), 600).unwrap();
     let challenge2 = crypto2.init_key().unwrap().clone();
 
     let arc_crypto_manager = CryptoManager::get_instance();

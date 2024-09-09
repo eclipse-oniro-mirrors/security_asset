@@ -34,7 +34,7 @@ fn create_delete_table() {
     ];
     let calling_info = CallingInfo::new_self();
     let mut db = Database::build(
-        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+        calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false
     ).unwrap();
     let table = Table::new("table_name", &db);
     assert!(!table.exist().unwrap());
@@ -50,7 +50,7 @@ fn table_restore() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let mut db = Database::build(
-        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+        calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false
     ).unwrap();
     let table = Table::new("table_name", &db);
     table
@@ -76,7 +76,7 @@ fn insert_test_data() -> Database {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let db = Database::build(
-        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+        calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false
     ).unwrap();
     let columns = &[
         ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
@@ -147,7 +147,7 @@ fn single_data() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let db = Database::build(
-        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+        calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false
     ).unwrap();
     let table = Table::new("table_name", &db);
     let columns = &[
@@ -181,7 +181,7 @@ fn multiple_data() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let db = Database::build(
-        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+        calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false
     ).unwrap();
     let table = Table::new("table_name", &db);
     let columns = &[
@@ -224,7 +224,7 @@ fn insert_query_row() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let db = Database::build(
-        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+        calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false
     ).unwrap();
     let table = Table::new("table_name", &db);
 
@@ -255,7 +255,7 @@ fn update_delete_row() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let db = Database::build(
-        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+        calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false
     ).unwrap();
     let table = Table::new("table_name", &db);
 
@@ -284,7 +284,7 @@ fn upgrade_table() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let db = Database::build(
-        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+        calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false
     ).unwrap();
     let table = Table::new("table_name", &db);
 
@@ -325,7 +325,7 @@ fn replace_datas() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let db = Database::build(
-        &calling_info.user_id(), &calling_info.owner_type_enum(), &calling_info.owner_info(), false
+        calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false
     ).unwrap();
     let table = Table::new("table_name", &db);
 
