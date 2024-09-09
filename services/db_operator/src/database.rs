@@ -64,6 +64,8 @@ pub(crate) fn get_split_db_lock_by_user_id(user_id: i32) -> &'static UserDbLock 
     }
 
     let nf = Box::new(UserDbLock { mtx: Mutex::new(user_id) });
+    // SAFETY: We just push item into SPLIT_DB_LOCK_MAP, never remove item or modify item,
+    // so return a reference of leak item is safe.
     let nf: &'static UserDbLock = Box::leak(nf);
     map.insert(user_id, nf);
     nf
@@ -79,6 +81,8 @@ pub(crate) fn get_file_lock_by_user_id_db_file_name(user_id: i32, db_file_name: 
     }
 
     let nf = Box::new(UserDbLock { mtx: Mutex::new(user_id) });
+    // SAFETY: We just push item into USER_DB_LOCK_MAP, never remove item or modify item,
+    // so return a reference of leak item is safe.
     let nf: &'static UserDbLock = Box::leak(nf);
     map.insert((user_id, db_file_name), nf);
     nf
