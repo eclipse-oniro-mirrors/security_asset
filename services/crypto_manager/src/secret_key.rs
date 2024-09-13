@@ -36,6 +36,7 @@ extern "C" {
     fn GenerateKey(keyId: *const KeyId, need_auth: bool, require_password_set: bool) -> i32;
     fn DeleteKey(keyId: *const KeyId) -> i32;
     fn IsKeyExist(keyId: *const KeyId) -> i32;
+    fn RenameKeyAlias(keyId: *const KeyId, newKeyAlias: *const HksBlob) -> i32;
 }
 
 const MAX_ALIAS_SIZE: usize = 64;
