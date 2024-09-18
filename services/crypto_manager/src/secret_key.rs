@@ -40,6 +40,7 @@ extern "C" {
 }
 
 const MAX_ALIAS_SIZE: usize = 64;
+const KEY_PREFIX: [u8; 2] = [b'1', b'_'];
 
 fn append_attr<T>(tag: &str, value: T, vec: &mut Vec<u8>)
 where
@@ -71,6 +72,31 @@ fn calculate_key_alias(
     append_attr::<Accessibility>("Accessibility", access_type, &mut alias);
     append_attr::<bool>("RequirePasswordSet", require_password_set, &mut alias);
     hasher::sha256(standard, &alias)
+}
+
+/// Rename a secret key alias.
+pub fn rename_key_alias(
+    calling_info: &CallingInfo,
+    auth_type: AuthType,
+    access_type: Accessibility,
+    require_password_set: bool,
+) -> Result<()> {
+    // Check whether new key exists.
+    let mut alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
+    let new_key = SecretKey { user_id: calling_info.user_id(), auth_type, access_type, require_password_set, alias: alias.clone() };
+    if !new_key.exists()? {
+        // If new key does not exist, check whether old key exists.
+        alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false);
+    }
+    let alias_blob = HksBlob { size: alias.len() as u32, data: alias.as_ptr() };
+    let key_id = KeyId::new(calling_info.user_id(), alias_blob, access_type);
+    let prefixed_alias = [KEY_PREFIX.to_vec(), alias].concat();
+    let prefixed_alias_blob = HksBlob { size: prefixed_alias.len() as u32, data: prefixed_alias.as_ptr() };
+    let ret = unsafe { RenameKeyAlias(&key_id as *const KeyId, &prefixed_alias_blob as *const HksBlob) };
+    match ret {
+        SUCCESS => Ok(()),
+        _ => Err(transfer_error_code(ErrCode::try_from(ret as u32)?)),
+    }
 }
 
 impl SecretKey{

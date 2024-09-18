@@ -20,6 +20,7 @@ use core::ffi::c_void;
 use std::{collections::HashMap, ffi::CStr, fs, ptr::null_mut, sync::Mutex};
 
 use asset_common::{CallingInfo, OwnerType};
+use asset_crypto_manager::secret_key::rename_key_alias;
 use asset_db_key_operator::DbKey;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, Result, Tag, Value};
 use asset_file_operator::{ce_operator::remove_ce_files, common::is_file_exist};
@@ -164,7 +165,7 @@ pub(crate) fn get_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Databas
     let _lock = db.db_lock.mtx.lock().unwrap();
     db.open_and_restore(db_key.as_ref())?;
     db.restore_if_exec_fail(|e: &Table| e.create(COLUMN_INFO))?;
-    db.upgrade(DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
+    db.upgrade(user_id, DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
     Ok(db)
 }
 
@@ -307,7 +308,7 @@ impl Database {
 
     /// Upgrade database to new version.
     #[allow(dead_code)]
-    pub fn upgrade(&mut self, ver: u32, callback: UpgradeDbCallback) -> Result<()> {
+    pub fn upgrade(&mut self, user_id: i32, ver: u32, callback: UpgradeDbCallback) -> Result<()> {
         let mut version_old = self.get_db_version()?;
         logi!("current database version: {}", version_old);
         if version_old >= ver {
@@ -320,7 +321,32 @@ impl Database {
         if version_old == DB_UPGRADE_VERSION_V2 {
             self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION, UPGRADE_COLUMN_INFO))?;
         }
+
+        self.upgrade_key_alias(user_id)?;
+
         callback(self, version_old, ver)
+    }
+
+    /// Upgrade database to new version.
+    fn upgrade_key_alias(&mut self, user_id: i32) -> Result<()> {
+        let results = self.query_locked_datas(
+            &vec![column::OWNER_TYPE, column::OWNER, column::AUTH_TYPE, column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET],
+            &DbMap::new(),
+            None,
+            true
+            )?;
+
+        for result in results {
+            let owner_type = result.get_enum_attr(&column::OWNER_TYPE)?;
+            let owner_info = result.get_bytes_attr(&column::OWNER)?;
+            let calling_info = CallingInfo::new(user_id, owner_type, owner_info.to_vec());
+            let auth_type = result.get_enum_attr(&column::AUTH_TYPE)?;
+            let access_type = result.get_enum_attr(&column::ACCESSIBILITY)?;
+            let require_password_set = result.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
+            rename_key_alias(&calling_info, auth_type, access_type, require_password_set)?;
+        }
+
+        Ok(())
     }
 
     /// Delete database file.
@@ -546,6 +572,34 @@ impl Database {
         is_filter_sync: bool,
     ) -> Result<Vec<DbMap>> {
         let _lock = self.db_lock.mtx.lock().unwrap();
+        let closure = |e: &Table| e.query_row(columns, condition, query_options, is_filter_sync, COLUMN_INFO);
+        self.restore_if_exec_fail(closure)
+    }
+
+    /// Query data that meets specified conditions(can be empty) from the database.
+    /// If the operation is successful, the resultSet is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use asset_definition::Value;
+    /// use asset_db_operator::{database::Database, types::{column, DbMap}};
+    ///
+    /// // SQL: select * from table_name where Owner='owner' and OwnerType=1 and Alias='alias'
+    /// let cond = DbMap::new();
+    /// cond.insert(column::OWNER, Value::Bytes(b"owner".to_ver()));
+    /// cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
+    /// cond.insert(column::ALIAS, Value::Bytes(b"alias".to_ver()));
+    /// let user_id = 100;
+    /// let ret = Database::build(user_id)?.query_locked_datas(&vec![], &cond, None, false);
+    /// ```
+    pub fn query_locked_datas(
+        &mut self,
+        columns: &Vec<&'static str>,
+        condition: &DbMap,
+        query_options: Option<&QueryOptions>,
+        is_filter_sync: bool,
+    ) -> Result<Vec<DbMap>> {
         let closure = |e: &Table| e.query_row(columns, condition, query_options, is_filter_sync, COLUMN_INFO);
         self.restore_if_exec_fail(closure)
     }
