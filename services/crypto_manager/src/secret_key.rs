@@ -74,18 +74,6 @@ fn calculate_key_alias(
     hasher::sha256(standard, &alias)
 }
 
-fn check_prefixed_key_exists(
-    user_id: i32,
-    auth_type: AuthType,
-    access_type: Accessibility,
-    require_password_set: bool,
-    alias: &[u8],
-) -> Result<bool> {
-    let prefixed_alias = [ALIAS_PREFIX.to_vec(), alias.to_vec()].concat();
-    let key = SecretKey { user_id, auth_type, access_type, require_password_set, alias: prefixed_alias };
-    key.exists()
-}
-
 fn check_key_exists(
     user_id: i32,
     auth_type: AuthType,
@@ -133,7 +121,7 @@ pub fn rename_key_alias(
     let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias.clone()].concat();
     let prefixed_new_alias_blob = HksBlob { size: prefixed_new_alias.len() as u32, data: prefixed_new_alias.as_ptr() };
 
-    if check_prefixed_key_exists(
+    if check_key_exists(
         calling_info.user_id(),
         auth_type,
         access_type,
