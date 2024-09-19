@@ -16,7 +16,7 @@
 //! This module is used to implement cryptographic algorithm operations, including key generation.
 
 use asset_common::{transfer_error_code, CallingInfo, SUCCESS};
-use asset_definition::{Accessibility, AuthType, ErrCode, Result};
+use asset_definition::{Accessibility, AuthType, ErrCode, Result, log_throw_error};
 use asset_log::{loge, logi, logw};
 use asset_utils::hasher;
 
@@ -186,16 +186,16 @@ impl SecretKey {
         let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias.clone()].concat();
 
         // Check whether key with prefixed new alias exists.
-        let latest_key = Self {
+        let key = Self {
             user_id: calling_info.user_id(),
             auth_type,
             access_type,
             require_password_set,
             alias: prefixed_new_alias,
         };
-        if latest_key.exists()? {
+        if key.exists()? {
             logi!("[INFO]Use secret key with prefixed new alias.");
-            return Ok(latest_key);
+            return Ok(key);
         }
 
         // Check whether key with new alias exists.
@@ -214,7 +214,7 @@ impl SecretKey {
             return Ok(key);
         }
 
-        Ok(latest_key)
+        log_throw_error!(ErrCode::NotFound, "[FATAL]Secret key does not exist.")
     }
 
     /// Check whether the secret key exists.
