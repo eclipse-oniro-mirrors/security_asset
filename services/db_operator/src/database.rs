@@ -32,7 +32,9 @@ use crate::{
     statement::Statement,
     table::Table,
     types::{
-        column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1, DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2
+        column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1,
+        DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO,
+        UPGRADE_COLUMN_INFO_V2,
     },
 };
 
@@ -174,13 +176,19 @@ pub fn create_db_instance(attributes: &AssetMap, calling_info: &CallingInfo) -> 
     match attributes.get(&Tag::RequireAttrEncrypted) {
         Some(Value::Bool(true)) => {
             let db = Database::build(
-                calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), true
+                calling_info.user_id(),
+                calling_info.owner_type_enum(),
+                calling_info.owner_info(),
+                true,
             )?;
             Ok(db)
         },
         _ => {
             let db = Database::build(
-                calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false
+                calling_info.user_id(),
+                calling_info.owner_type_enum(),
+                calling_info.owner_info(),
+                false,
             )?;
             Ok(db)
         },
@@ -333,11 +341,17 @@ impl Database {
     /// Upgrade database to new version.
     fn upgrade_key_alias(&mut self, user_id: i32) -> Result<bool> {
         let results = self.query_locked_datas(
-            &vec![column::OWNER_TYPE, column::OWNER, column::AUTH_TYPE, column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET],
+            &vec![
+                column::OWNER_TYPE,
+                column::OWNER,
+                column::AUTH_TYPE,
+                column::ACCESSIBILITY,
+                column::REQUIRE_PASSWORD_SET,
+            ],
             &DbMap::new(),
             None,
-            true
-            )?;
+            true,
+        )?;
 
         let mut upgrade_result = true;
         for result in results {
