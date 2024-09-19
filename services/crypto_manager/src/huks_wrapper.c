@@ -371,6 +371,7 @@ int32_t RenameKeyAlias(const struct KeyId *keyId, const struct HksBlob *newKeyAl
 {
     struct HksParam params[] = {
         { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AccessibilityToHksAuthStorageLevel(keyId->accessibility) },
+        { .tag = HKS_TAG_IS_COPY_NEW_KEY, .boolParam = true },
     };
     struct HksParamSet *paramSet = NULL;
     int32_t ret = BuildParamSet(&paramSet, params, ARRAY_SIZE(params), keyId->userId);

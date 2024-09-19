@@ -97,7 +97,7 @@ fn check_key_exists(
     key.exists()
 }
 
-fn get_key_id(
+fn get_existing_key_id(
     calling_info: &CallingInfo,
     auth_type: AuthType,
     access_type: Accessibility,
@@ -119,7 +119,6 @@ fn get_key_id(
         return Some(key_id);
     }
 
-    loge!("[FATAL]Secret key does not exist.");
     None
 }
 
@@ -144,7 +143,7 @@ pub fn rename_key_alias(
         return Ok(true);
     }
 
-    if let Some(key_id) = get_key_id(calling_info, auth_type, access_type, require_password_set) {
+    if let Some(key_id) = get_existing_key_id(calling_info, auth_type, access_type, require_password_set) {
         let ret = unsafe { RenameKeyAlias(&key_id as *const KeyId, &prefixed_new_alias_blob as *const HksBlob) };
         match ret {
             SUCCESS => Ok(true),
@@ -158,6 +157,7 @@ pub fn rename_key_alias(
             },
         }
     } else {
+        loge!("[FATAL]Secret key does not exist.");
         Ok(false)
     }
 }
