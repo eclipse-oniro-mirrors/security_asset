@@ -32,8 +32,7 @@ use crate::{
     statement::Statement,
     table::Table,
     types::{
-        column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1,
-        DB_UPGRADE_VERSION_V2, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2,
+        column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1, DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2
     },
 };
 
@@ -319,16 +318,20 @@ impl Database {
             version_old += 1;
         }
         if version_old == DB_UPGRADE_VERSION_V2 {
-            self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION, UPGRADE_COLUMN_INFO))?;
+            self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION_V3, UPGRADE_COLUMN_INFO))?;
+            version_old += 1;
         }
 
-        self.upgrade_key_alias(user_id)?;
+        if version_old == DB_UPGRADE_VERSION_V3 && self.upgrade_key_alias(user_id)? {
+            self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION, UPGRADE_COLUMN_INFO))?;
+            version_old += 1;
+        }
 
         callback(self, version_old, ver)
     }
 
     /// Upgrade database to new version.
-    fn upgrade_key_alias(&mut self, user_id: i32) -> Result<()> {
+    fn upgrade_key_alias(&mut self, user_id: i32) -> Result<bool> {
         let results = self.query_locked_datas(
             &vec![column::OWNER_TYPE, column::OWNER, column::AUTH_TYPE, column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET],
             &DbMap::new(),
@@ -336,6 +339,7 @@ impl Database {
             true
             )?;
 
+        let mut upgrade_result = true;
         for result in results {
             let owner_type = result.get_enum_attr(&column::OWNER_TYPE)?;
             let owner_info = result.get_bytes_attr(&column::OWNER)?;
@@ -343,10 +347,11 @@ impl Database {
             let auth_type = result.get_enum_attr(&column::AUTH_TYPE)?;
             let access_type = result.get_enum_attr(&column::ACCESSIBILITY)?;
             let require_password_set = result.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
-            rename_key_alias(&calling_info, auth_type, access_type, require_password_set)?;
+            // Return false as long as a call for renaming key alias returned false.
+            upgrade_result |= rename_key_alias(&calling_info, auth_type, access_type, require_password_set)?;
         }
 
-        Ok(())
+        Ok(upgrade_result)
     }
 
     /// Delete database file.
