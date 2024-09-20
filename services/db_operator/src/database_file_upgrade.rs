@@ -24,8 +24,7 @@ use asset_log::logi;
 
 use crate::{
     database::{
-        fmt_backup_path, fmt_de_db_path_with_name, get_db, get_split_db_lock_by_user_id, Database, DE_ROOT_PATH,
-        OLD_DB_NAME,
+        fmt_backup_path, fmt_de_db_path_with_name, get_db, get_split_db_lock_by_user_id, Database, DE_ROOT_PATH, OLD_DB_NAME
     },
     types::{column, DbMap, QueryOptions},
 };
@@ -74,6 +73,19 @@ pub fn construct_splited_db_name(owner_type: OwnerType, owner_info: &[u8], is_ce
 
 fn get_db_before_split(user_id: i32) -> Result<Database> {
     get_db(user_id, OLD_DB_NAME, false)
+}
+
+/// Trigger upgrading db_version and key alias
+pub fn get_all_db_before_split() -> Result<Vec<Database>> {
+    let mut db_vec = Vec::new();
+    for entry in fs::read_dir(DE_ROOT_PATH)? {
+        let entry = entry?;
+        if let Ok(user_id) = entry.file_name().to_string_lossy().parse::<i32>() {
+            db_vec.push(get_db_before_split(user_id)?);
+        }
+    }
+
+    Ok(db_vec)
 }
 
 fn get_value_from_db_map(db_map: &DbMap, key: &str) -> Result<Value> {
@@ -169,8 +181,13 @@ pub fn check_and_split_db(user_id: i32) -> Result<()> {
     if check_old_db_exist(user_id) {
         let _lock = get_split_db_lock_by_user_id(user_id).mtx.lock().unwrap();
         if check_old_db_exist(user_id) {
-            logi!("[INFO]Start split db.");
+            logi!("[INFO]Start splitting db.");
+            // Upgrading db_version and key alias is also triggered.
             split_db(user_id)?;
+        } else {
+            logi!("[INFO]Do not start splitting db.");
+            // Trigger upgrading db_version and key alias.
+            let _ = get_db_before_split(user_id);
         }
     }
     Ok(())

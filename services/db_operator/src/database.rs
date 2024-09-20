@@ -338,9 +338,8 @@ impl Database {
         callback(self, version_old, ver)
     }
 
-    /// Upgrade database to new version.
     fn upgrade_key_alias(&mut self, user_id: i32) -> Result<bool> {
-        let results = self.query_locked_datas(
+        let query_results = self.query_locked_datas(
             &vec![
                 column::OWNER_TYPE,
                 column::OWNER,
@@ -354,13 +353,13 @@ impl Database {
         )?;
 
         let mut upgrade_result = true;
-        for result in results {
-            let owner_type = result.get_enum_attr(&column::OWNER_TYPE)?;
-            let owner_info = result.get_bytes_attr(&column::OWNER)?;
+        for query_result in query_results {
+            let owner_type = query_result.get_enum_attr(&column::OWNER_TYPE)?;
+            let owner_info = query_result.get_bytes_attr(&column::OWNER)?;
             let calling_info = CallingInfo::new(user_id, owner_type, owner_info.to_vec());
-            let auth_type = result.get_enum_attr(&column::AUTH_TYPE)?;
-            let access_type = result.get_enum_attr(&column::ACCESSIBILITY)?;
-            let require_password_set = result.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
+            let auth_type = query_result.get_enum_attr(&column::AUTH_TYPE)?;
+            let access_type = query_result.get_enum_attr(&column::ACCESSIBILITY)?;
+            let require_password_set = query_result.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
             // upgrade_result is set to false as long as any call in the loop for renaming key alias returned false.
             upgrade_result &= rename_key_alias(&calling_info, auth_type, access_type, require_password_set)?;
         }
