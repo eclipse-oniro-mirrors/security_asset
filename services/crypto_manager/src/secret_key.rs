@@ -172,16 +172,16 @@ impl SecretKey {
         let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias.clone()].concat();
 
         // Check whether key with prefixed new alias exists.
-        let key = Self {
+        let latest_key = Self {
             user_id: calling_info.user_id(),
             auth_type,
             access_type,
             require_password_set,
             alias: prefixed_new_alias,
         };
-        if key.exists()? {
+        if latest_key.exists()? {
             logi!("[INFO]Use secret key with prefixed new alias.");
-            return Ok(key);
+            return Ok(latest_key);
         }
 
         // Check whether key with new alias exists.
@@ -201,7 +201,7 @@ impl SecretKey {
             return Ok(key);
         }
 
-        log_throw_error!(ErrCode::NotFound, "[FATAL]Secret key does not exist.")
+        Ok(latest_key)
     }
 
     /// Check whether the secret key exists.
