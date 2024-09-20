@@ -361,8 +361,8 @@ impl Database {
             let auth_type = result.get_enum_attr(&column::AUTH_TYPE)?;
             let access_type = result.get_enum_attr(&column::ACCESSIBILITY)?;
             let require_password_set = result.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
-            // Return false as long as a call for renaming key alias returned false.
-            upgrade_result |= rename_key_alias(&calling_info, auth_type, access_type, require_password_set)?;
+            // upgrade_result is set to false as long as any call in the loop for renaming key alias returned false.
+            upgrade_result &= rename_key_alias(&calling_info, auth_type, access_type, require_password_set)?;
         }
 
         Ok(upgrade_result)
