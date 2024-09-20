@@ -75,19 +75,6 @@ fn get_db_before_split(user_id: i32) -> Result<Database> {
     get_db(user_id, OLD_DB_NAME, false)
 }
 
-/// Trigger upgrading db_version and key alias
-pub fn get_all_db_before_split() -> Result<Vec<Database>> {
-    let mut db_vec = Vec::new();
-    for entry in fs::read_dir(DE_ROOT_PATH)? {
-        let entry = entry?;
-        if let Ok(user_id) = entry.file_name().to_string_lossy().parse::<i32>() {
-            db_vec.push(get_db_before_split(user_id)?);
-        }
-    }
-
-    Ok(db_vec)
-}
-
 fn get_value_from_db_map(db_map: &DbMap, key: &str) -> Result<Value> {
     match db_map.get(key) {
         Some(value) => Ok(value.clone()),
@@ -113,6 +100,25 @@ fn get_new_db(user_id: i32, info_map: &DbMap) -> Result<Database> {
     let new_db_name = construct_splited_db_name(owner_type, owner_info, false)?;
     // 1.2 construct new db
     get_db(user_id, &new_db_name, false)
+}
+
+/// Get all new db
+pub fn get_all_new_db() -> Result<Vec<Database>> {
+    let mut db_vec = Vec::new();
+    for entry in fs::read_dir(DE_ROOT_PATH)? {
+        let entry = entry?;
+        if let Ok(user_id) = entry.file_name().to_string_lossy().parse::<i32>() {
+            // 1.1 extract db name stem from new db name
+            if let Some(new_db_name_stem) = entry.file_name().to_string_lossy().split('.').next() {
+                // 1.2 construct new db
+                let db = get_db(user_id, new_db_name_stem, false)?;
+                // 1.3 push new db into vec
+                db_vec.push(db);
+            }
+        }
+    }
+
+    Ok(db_vec)
 }
 
 fn construct_old_query_condition(info_map: &DbMap) -> Result<DbMap> {
