@@ -103,18 +103,16 @@ fn get_new_db(user_id: i32, info_map: &DbMap) -> Result<Database> {
 }
 
 /// Get all new db
-pub fn get_all_new_db() -> Result<Vec<Database>> {
+pub fn get_all_new_db(user_id: i32) -> Result<Vec<Database>> {
     let mut db_vec = Vec::new();
-    for entry in fs::read_dir(DE_ROOT_PATH)? {
+    for entry in fs::read_dir(format!("{}/{}", DE_ROOT_PATH, user_id))? {
         let entry = entry?;
-        if let Ok(user_id) = entry.file_name().to_string_lossy().parse::<i32>() {
-            // 1.1 extract db name stem from new db name
-            if let Some(new_db_name_stem) = entry.file_name().to_string_lossy().split('.').next() {
-                // 1.2 construct new db
-                let db = get_db(user_id, new_db_name_stem, false)?;
-                // 1.3 push new db into vec
-                db_vec.push(db);
-            }
+        // 1.1 extract db name before extension from new db name
+        if let Some(position) = entry.file_name().to_string_lossy().find(".db") {
+            // 1.2 construct new db
+            let db = get_db(user_id, &entry.file_name().to_string_lossy()[..position], false)?;
+            // 1.3 push new db into vec
+            db_vec.push(db);
         }
     }
 

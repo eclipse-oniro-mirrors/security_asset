@@ -239,7 +239,7 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
     logi!("[INFO]On user -{}- unlocked.", user_id);
 
     // Trigger upgrading db version and key alias
-    match get_all_new_db() {
+    match get_all_new_db(user_id) {
         Ok(_) => logi!("Upgrade db version and key alias succeeded."),
         Err(e) => loge!("Upgrade db version and key alias failed, err is: {}", e),
     }
