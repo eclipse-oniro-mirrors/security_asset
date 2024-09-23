@@ -91,16 +91,16 @@ fn get_existing_key_id(
     access_type: Accessibility,
     require_password_set: bool,
 ) -> Option<KeyId> {
-    let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
-    if let Ok(true) = check_key_exists(calling_info.user_id(), auth_type, access_type, require_password_set, &new_alias)
+    let new_alias = &calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
+    if let Ok(true) = check_key_exists(calling_info.user_id(), auth_type, access_type, require_password_set, new_alias)
     {
         let new_alias_blob = HksBlob { size: new_alias.len() as u32, data: new_alias.as_ptr() };
         let key_id = KeyId::new(calling_info.user_id(), new_alias_blob, access_type);
         return Some(key_id);
     }
 
-    let old_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false);
-    if let Ok(true) = check_key_exists(calling_info.user_id(), auth_type, access_type, require_password_set, &old_alias)
+    let old_alias = &calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false);
+    if let Ok(true) = check_key_exists(calling_info.user_id(), auth_type, access_type, require_password_set, old_alias)
     {
         let old_alias_blob = HksBlob { size: old_alias.len() as u32, data: old_alias.as_ptr() };
         let key_id = KeyId::new(calling_info.user_id(), old_alias_blob, access_type);
@@ -118,14 +118,14 @@ pub fn rename_key_alias(
     require_password_set: bool,
 ) -> Result<bool> {
     let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
-    let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias.clone()].concat();
+    let prefixed_new_alias = &[ALIAS_PREFIX.to_vec(), new_alias].concat();
 
     if check_key_exists(
         calling_info.user_id(),
         auth_type,
         access_type,
         require_password_set,
-        &prefixed_new_alias,
+        prefixed_new_alias,
     )? {
         return Ok(true);
     }
@@ -207,6 +207,7 @@ impl SecretKey {
     /// Check whether the secret key exists.
     pub fn exists(&self) -> Result<bool> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
+
         let key_id = KeyId::new(self.user_id, key_alias, self.access_type);
         let ret = unsafe { IsKeyExist(&key_id as *const KeyId) };
         match ret {
