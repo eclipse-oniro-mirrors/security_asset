@@ -192,7 +192,7 @@ pub fn check_and_split_db(user_id: i32) -> Result<()> {
         } else {
             logi!("[INFO]Do not start splitting db.");
             // Trigger upgrading db_version and key alias.
-            let _ = get_db_before_split(user_id);
+            let _ = get_all_new_db(user_id)?;
         }
     }
     Ok(())

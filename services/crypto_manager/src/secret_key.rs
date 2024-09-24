@@ -127,7 +127,7 @@ pub fn rename_key_alias(
     require_password_set: bool,
 ) -> Result<bool> {
     let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
-    let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), (&new_alias).to_vec()].concat();
+    let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias].concat();
 
     if let Some(alias) = get_existing_key_alias(calling_info, auth_type, access_type, require_password_set) {
         if prefixed_new_alias == alias {
@@ -214,7 +214,6 @@ impl SecretKey {
     /// Check whether the secret key exists.
     pub fn exists(&self) -> Result<bool> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
-
         let key_id = KeyId::new(self.user_id, key_alias, self.access_type);
         let ret = unsafe { IsKeyExist(&key_id as *const KeyId) };
         match ret {
