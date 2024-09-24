@@ -228,7 +228,7 @@ pub(crate) const UPGRADE_COLUMN_INFO_V2: &[UpgradeColumnInfo] = &[
     },
 ];
 
-pub(crate) const UPGRADE_COLUMN_INFO: &[UpgradeColumnInfo] = &[UpgradeColumnInfo {
+pub(crate) const UPGRADE_COLUMN_INFO_V3: &[UpgradeColumnInfo] = &[UpgradeColumnInfo {
     base_info: ColumnInfo {
         name: column::EXT_INFO,
         data_type: DataType::Bytes,
@@ -237,6 +237,8 @@ pub(crate) const UPGRADE_COLUMN_INFO: &[UpgradeColumnInfo] = &[UpgradeColumnInfo
     },
     default_value: None,
 }];
+
+pub(crate) const UPGRADE_COLUMN_INFO: &[UpgradeColumnInfo] = &[];
 
 /// Options for batch query.
 #[repr(C)]

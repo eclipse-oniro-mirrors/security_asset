@@ -74,37 +74,46 @@ fn calculate_key_alias(
     hasher::sha256(standard, &alias)
 }
 
-fn check_key_exists(
-    user_id: i32,
-    auth_type: AuthType,
-    access_type: Accessibility,
-    require_password_set: bool,
-    alias: &[u8],
-) -> Result<bool> {
-    let key = SecretKey { user_id, auth_type, access_type, require_password_set, alias: alias.to_vec() };
-    key.exists()
-}
-
-fn get_existing_key_id(
+fn get_existing_key_alias(
     calling_info: &CallingInfo,
     auth_type: AuthType,
     access_type: Accessibility,
     require_password_set: bool,
-) -> Option<KeyId> {
-    let new_alias = &calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
-    if let Ok(true) = check_key_exists(calling_info.user_id(), auth_type, access_type, require_password_set, new_alias)
-    {
-        let new_alias_blob = HksBlob { size: new_alias.len() as u32, data: new_alias.as_ptr() };
-        let key_id = KeyId::new(calling_info.user_id(), new_alias_blob, access_type);
-        return Some(key_id);
+) -> Option<Vec<u8>> {
+    let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
+    let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias.clone()].concat();
+    let key = SecretKey {
+        user_id: calling_info.user_id(),
+        auth_type,
+        access_type,
+        require_password_set,
+        alias: prefixed_new_alias.clone(),
+    };
+    if let Ok(true) = key.exists() {
+        return Some(prefixed_new_alias);
     }
 
-    let old_alias = &calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false);
-    if let Ok(true) = check_key_exists(calling_info.user_id(), auth_type, access_type, require_password_set, old_alias)
-    {
-        let old_alias_blob = HksBlob { size: old_alias.len() as u32, data: old_alias.as_ptr() };
-        let key_id = KeyId::new(calling_info.user_id(), old_alias_blob, access_type);
-        return Some(key_id);
+    let key = SecretKey {
+        user_id: calling_info.user_id(),
+        auth_type,
+        access_type,
+        require_password_set,
+        alias: new_alias.clone(),
+    };
+    if let Ok(true) = key.exists() {
+        return Some(new_alias);
+    }
+
+    let old_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false);
+    let key = SecretKey {
+        user_id: calling_info.user_id(),
+        auth_type,
+        access_type,
+        require_password_set,
+        alias: old_alias.clone(),
+    };
+    if let Ok(true) = key.exists() {
+        return Some(old_alias);
     }
 
     None
@@ -118,20 +127,18 @@ pub fn rename_key_alias(
     require_password_set: bool,
 ) -> Result<bool> {
     let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
-    let prefixed_new_alias = &[ALIAS_PREFIX.to_vec(), new_alias].concat();
+    let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), (&new_alias).to_vec()].concat();
 
-    if check_key_exists(
-        calling_info.user_id(),
-        auth_type,
-        access_type,
-        require_password_set,
-        prefixed_new_alias,
-    )? {
-        return Ok(true);
-    }
-
-    if let Some(key_id) = get_existing_key_id(calling_info, auth_type, access_type, require_password_set) {
-        let prefixed_new_alias_blob = HksBlob { size: prefixed_new_alias.len() as u32, data: prefixed_new_alias.as_ptr() };
+    if let Some(alias) = get_existing_key_alias(calling_info, auth_type, access_type, require_password_set) {
+        if prefixed_new_alias == alias {
+            return Ok(true);
+        }
+        let alias_ref = &alias;
+        let alias_blob = HksBlob { size: alias.len() as u32, data: alias_ref.as_ptr() };
+        let key_id = KeyId::new(calling_info.user_id(), alias_blob, access_type);
+        let prefixed_new_alias_ref = &prefixed_new_alias;
+        let prefixed_new_alias_blob =
+            HksBlob { size: prefixed_new_alias.len() as u32, data: prefixed_new_alias_ref.as_ptr() };
         let ret = unsafe { RenameKeyAlias(&key_id as *const KeyId, &prefixed_new_alias_blob as *const HksBlob) };
         match ret {
             SUCCESS => Ok(true),

@@ -34,7 +34,7 @@ use crate::{
     types::{
         column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1,
         DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO,
-        UPGRADE_COLUMN_INFO_V2,
+        UPGRADE_COLUMN_INFO_V2, UPGRADE_COLUMN_INFO_V3,
     },
 };
 
@@ -326,7 +326,7 @@ impl Database {
             version_old += 1;
         }
         if version_old == DB_UPGRADE_VERSION_V2 {
-            self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION_V3, UPGRADE_COLUMN_INFO))?;
+            self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION_V3, UPGRADE_COLUMN_INFO_V3))?;
             version_old += 1;
         }
 
