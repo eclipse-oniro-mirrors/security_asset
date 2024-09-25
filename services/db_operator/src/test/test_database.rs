@@ -21,12 +21,13 @@ use std::{
 };
 
 use asset_common::CallingInfo;
+use asset_crypto_manager::secret_key::SecretKey;
 use asset_definition::{ErrCode, Extension, Value};
 
 use crate::{
     database::Database,
     table::Table,
-    types::{column, DbMap, QueryOptions, TABLE_NAME},
+    types::{column, DbMap, QueryOptions, TABLE_NAME, DB_UPGRADE_VERSION},
 };
 
 const DB_DATA: [(&str, Value); 9] = [
@@ -35,7 +36,7 @@ const DB_DATA: [(&str, Value); 9] = [
     (column::ACCESSIBILITY, Value::Number(1)),
     (column::AUTH_TYPE, Value::Number(1)),
     (column::IS_PERSISTENT, Value::Bool(true)),
-    (column::VERSION, Value::Number(1)),
+    (column::VERSION, Value::Number(2)),
     (column::REQUIRE_PASSWORD_SET, Value::Bool(false)),
     (column::LOCAL_STATUS, Value::Number(0)),
     (column::SYNC_STATUS, Value::Number(0)),
@@ -306,6 +307,39 @@ fn query_mismatch_type_data() {
     db.insert_datas(&data).unwrap();
 
     assert_eq!(ErrCode::FileOperationError, db.query_datas(&vec![], &data, None, false).unwrap_err().code);
+    drop(db);
+    remove_dir();
+}
+
+#[test]
+fn upgrade_database_version() {
+    create_dir();
+    let calling_info = CallingInfo::new_self();
+    let mut db =
+        Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
+            .unwrap();
+
+    assert_eq!(DB_UPGRADE_VERSION, db.get_version().unwrap());
+    drop(db);
+    remove_dir();
+}
+
+#[test]
+fn upgrade_ce_key_alias() {
+    create_dir();
+    let calling_info = CallingInfo::new_self();
+    let mut db =
+        Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
+            .unwrap();
+
+    let key = SecretKey::new_without_alias(
+        calling_info.user_id(),
+        Value::Number(1),
+        Value::Number(0),
+        Bool(true),
+    ).unwrap();
+
+    assert_eq!(DB_UPGRADE_VERSION, key.get_version().unwrap());
     drop(db);
     remove_dir();
 }

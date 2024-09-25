@@ -189,11 +189,11 @@ pub fn check_and_split_db(user_id: i32) -> Result<()> {
             logi!("[INFO]Start splitting db.");
             // Upgrading db_version and key alias is also triggered.
             split_db(user_id)?;
-        } else {
-            logi!("[INFO]Do not start splitting db.");
-            // Trigger upgrading db_version and key alias.
-            let _ = get_all_new_db(user_id)?;
         }
+    } else {
+        logi!("[INFO]Do not start splitting db.");
+        // Trigger upgrading db_version and key alias.
+        let _ = get_all_new_db(user_id)?;
     }
     Ok(())
 }

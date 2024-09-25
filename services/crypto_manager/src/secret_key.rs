@@ -131,6 +131,7 @@ pub fn rename_key_alias(
 
     if let Some(alias) = get_existing_key_alias(calling_info, auth_type, access_type, require_password_set) {
         if prefixed_new_alias == alias {
+            logi!("[INFO][{access_type}] Secret key alias has already been renamed successfully.");
             return Ok(true);
         }
         let alias_ref = &alias;
@@ -141,17 +142,20 @@ pub fn rename_key_alias(
             HksBlob { size: prefixed_new_alias.len() as u32, data: prefixed_new_alias_ref.as_ptr() };
         let ret = unsafe { RenameKeyAlias(&key_id as *const KeyId, &prefixed_new_alias_blob as *const HksBlob) };
         match ret {
-            SUCCESS => Ok(true),
+            SUCCESS => {
+                logi!("[INFO]Rename [{access_type}] secret key alias success.");
+                Ok(true)
+            },
             _ => {
                 loge!(
-                    "[FATAL]Rename key alias failed, err is {}.",
+                    "[FATAL]Rename [{access_type}] secret key alias failed, err is {}.",
                     transfer_error_code(ErrCode::try_from(ret as u32)?)
                 );
                 Ok(false)
             },
         }
     } else {
-        loge!("[FATAL]Secret key does not exist.");
+        loge!("[FATAL][{access_type}] secret key does not exist.");
         Ok(false)
     }
 }
