@@ -23,7 +23,7 @@ use asset_utils::hasher;
 use crate::{HksBlob, KeyId};
 
 /// Struct to store key attributes, excluding key materials.
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SecretKey {
     auth_type: AuthType,
     access_type: Accessibility,
@@ -55,7 +55,8 @@ where
     }
 }
 
-fn calculate_key_alias(
+/// Calculate key alias
+pub fn calculate_key_alias(
     calling_info: &CallingInfo,
     auth_type: AuthType,
     access_type: Accessibility,

@@ -21,7 +21,7 @@ use std::{
 };
 
 use asset_common::CallingInfo;
-use asset_crypto_manager::secret_key::SecretKey;
+use asset_crypto_manager::secret_key::{SecretKey, calculate_key_alias};
 use asset_definition::{ErrCode, Extension, Value};
 
 use crate::{
@@ -325,6 +325,38 @@ fn upgrade_database_version() {
 }
 
 #[test]
+fn upgrade_de_key_alias() {
+    create_dir();
+    let calling_info = CallingInfo::new_self();
+    let mut db =
+        Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
+            .unwrap();
+
+    let key1 = SecretKey::new_without_alias(
+        calling_info.user_id(),
+        Value::Number(1),
+        Value::Number(0),
+        Bool(true)
+    ).unwrap();
+
+    let new_alias = calculate_key_alias(&calling_info, Value::Number(1), Value::Number(0), Bool(true), true);
+    let prefixed_new_alias = [[b'1', b'_'].to_vec(), new_alias].concat();
+    let key2 = SecretKey::new_with_alias(
+        calling_info.user_id(),
+        Value::Number(1),
+        Value::Number(0),
+        Bool(true),
+        prefixed_new_alias
+    ).unwrap();
+
+    assert_eq!(key1, key2);
+    drop(db);
+    drop(key1);
+    drop(key2);
+    remove_dir();
+}
+
+#[test]
 fn upgrade_ce_key_alias() {
     create_dir();
     let calling_info = CallingInfo::new_self();
@@ -332,14 +364,58 @@ fn upgrade_ce_key_alias() {
         Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
             .unwrap();
 
-    let key = SecretKey::new_without_alias(
+    let key1 = SecretKey::new_without_alias(
         calling_info.user_id(),
         Value::Number(1),
-        Value::Number(0),
-        Bool(true),
+        Value::Number(1),
+        Bool(true)
     ).unwrap();
 
-    assert_eq!(DB_UPGRADE_VERSION, key.get_version().unwrap());
+    let new_alias = calculate_key_alias(&calling_info, Value::Number(1), Value::Number(1), Bool(true), true);
+    let prefixed_new_alias = [[b'1', b'_'].to_vec(), new_alias].concat();
+    let key2 = SecretKey::new_with_alias(
+        calling_info.user_id(),
+        Value::Number(1),
+        Value::Number(1),
+        Bool(true),
+        prefixed_new_alias
+    ).unwrap();
+
+    assert_eq!(key1, key2);
     drop(db);
+    drop(key1);
+    drop(key2);
+    remove_dir();
+}
+
+
+fn upgrade_ece_key_alias() {
+    create_dir();
+    let calling_info = CallingInfo::new_self();
+    let mut db =
+        Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
+            .unwrap();
+
+    let key1 = SecretKey::new_without_alias(
+        calling_info.user_id(),
+        Value::Number(1),
+        Value::Number(2),
+        Bool(true)
+    ).unwrap();
+
+    let new_alias = calculate_key_alias(&calling_info, Value::Number(1), Value::Number(2), Bool(true), true);
+    let prefixed_new_alias = [[b'1', b'_'].to_vec(), new_alias].concat();
+    let key2 = SecretKey::new_with_alias(
+        calling_info.user_id(),
+        Value::Number(1),
+        Value::Number(2),
+        Bool(true),
+        prefixed_new_alias
+    ).unwrap();
+
+    assert_eq!(key1, key2);
+    drop(db);
+    drop(key1);
+    drop(key2);
     remove_dir();
 }
