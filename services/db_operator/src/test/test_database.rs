@@ -21,13 +21,17 @@ use std::{
 };
 
 use asset_common::CallingInfo;
-use asset_crypto_manager::secret_key::{SecretKey, calculate_key_alias};
-use asset_definition::{ErrCode, Extension, Value};
+use asset_crypto_manager::{
+    crypto::Crypto,
+    secret_key::{calculate_key_alias, SecretKey},
+};
+use asset_db_key_operator::generate_secret_key_if_needed;
+use asset_definition::{Accessibility, AuthType, ErrCode, Extension, Value};
 
 use crate::{
     database::Database,
     table::Table,
-    types::{column, DbMap, QueryOptions, TABLE_NAME, DB_UPGRADE_VERSION},
+    types::{column, DbMap, QueryOptions, DB_UPGRADE_VERSION, TABLE_NAME},
 };
 
 const DB_DATA: [(&str, Value); 9] = [
@@ -36,6 +40,18 @@ const DB_DATA: [(&str, Value); 9] = [
     (column::ACCESSIBILITY, Value::Number(1)),
     (column::AUTH_TYPE, Value::Number(1)),
     (column::IS_PERSISTENT, Value::Bool(true)),
+    (column::VERSION, Value::Number(2)),
+    (column::REQUIRE_PASSWORD_SET, Value::Bool(false)),
+    (column::LOCAL_STATUS, Value::Number(0)),
+    (column::SYNC_STATUS, Value::Number(0)),
+];
+
+const DB_DE_DATA: [(&str, Value); 9] = [
+    (column::OWNER_TYPE, Value::Number(1)),
+    (column::SYNC_TYPE, Value::Number(1)),
+    (column::ACCESSIBILITY, Value::Number(0)),
+    (column::AUTH_TYPE, Value::Number(0)),
+    (column::IS_PERSISTENT, Value::Bool(false)),
     (column::VERSION, Value::Number(2)),
     (column::REQUIRE_PASSWORD_SET, Value::Bool(false)),
     (column::LOCAL_STATUS, Value::Number(0)),
@@ -81,6 +97,14 @@ fn add_bytes_column(db_data: &mut DbMap) {
 
 fn backup_db(db: &Database) {
     fs::copy(&db.path, &db.backup_path).unwrap();
+}
+
+fn encrypt_secret(db_data: &mut DbMap, secret_key: SecretKey) {
+    generate_secret_key_if_needed(&secret_key).unwrap();
+
+    let secret = db_data.get_bytes_attr(&column::SECRET).unwrap();
+    let cipher = Crypto::encrypt(&secret_key, secret, &"aad".as_bytes().to_vec()).unwrap();
+    db_data.insert(column::SECRET, Value::Bytes(cipher));
 }
 
 #[test]
@@ -312,109 +336,38 @@ fn query_mismatch_type_data() {
 }
 
 #[test]
-fn upgrade_database_version() {
+fn upgrade_database_version_and_de_key_alias() {
     create_dir();
     let calling_info = CallingInfo::new_self();
+
+    let mut data = DbMap::from(DB_DE_DATA);
+    add_bytes_column(&mut data);
+
+    let key1 = SecretKey::new_without_alias(calling_info.user_id(), AuthType::Any, Accessibility::DevicePowerOn, false)
+        .unwrap();
+    encrypt_secret(&mut data, key1.clone());
+
     let mut db =
         Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
             .unwrap();
+    db.insert_datas(&data).unwrap();
+    db.upgrade(calling_info.user_id(), DB_UPGRADE_VERSION, |_, _, _| Ok(())).unwrap();
 
     assert_eq!(DB_UPGRADE_VERSION, db.get_version().unwrap());
     drop(db);
-    remove_dir();
-}
 
-#[test]
-fn upgrade_de_key_alias() {
-    create_dir();
-    let calling_info = CallingInfo::new_self();
-    let mut db =
-        Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
-            .unwrap();
-
-    let key1 = SecretKey::new_without_alias(
-        calling_info.user_id(),
-        Value::Number(1),
-        Value::Number(0),
-        Bool(true)
-    ).unwrap();
-
-    let new_alias = calculate_key_alias(&calling_info, Value::Number(1), Value::Number(0), Bool(true), true);
+    let new_alias = calculate_key_alias(&calling_info, AuthType::Any, Accessibility::DevicePowerOn, false, true);
     let prefixed_new_alias = [[b'1', b'_'].to_vec(), new_alias].concat();
     let key2 = SecretKey::new_with_alias(
         calling_info.user_id(),
-        Value::Number(1),
-        Value::Number(0),
-        Bool(true),
-        prefixed_new_alias
-    ).unwrap();
+        AuthType::Any,
+        Accessibility::DevicePowerOn,
+        false,
+        prefixed_new_alias,
+    )
+    .unwrap();
 
     assert_eq!(key1, key2);
-    drop(db);
-    drop(key1);
-    drop(key2);
-    remove_dir();
-}
-
-#[test]
-fn upgrade_ce_key_alias() {
-    create_dir();
-    let calling_info = CallingInfo::new_self();
-    let mut db =
-        Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
-            .unwrap();
-
-    let key1 = SecretKey::new_without_alias(
-        calling_info.user_id(),
-        Value::Number(1),
-        Value::Number(1),
-        Bool(true)
-    ).unwrap();
-
-    let new_alias = calculate_key_alias(&calling_info, Value::Number(1), Value::Number(1), Bool(true), true);
-    let prefixed_new_alias = [[b'1', b'_'].to_vec(), new_alias].concat();
-    let key2 = SecretKey::new_with_alias(
-        calling_info.user_id(),
-        Value::Number(1),
-        Value::Number(1),
-        Bool(true),
-        prefixed_new_alias
-    ).unwrap();
-
-    assert_eq!(key1, key2);
-    drop(db);
-    drop(key1);
-    drop(key2);
-    remove_dir();
-}
-
-
-fn upgrade_ece_key_alias() {
-    create_dir();
-    let calling_info = CallingInfo::new_self();
-    let mut db =
-        Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
-            .unwrap();
-
-    let key1 = SecretKey::new_without_alias(
-        calling_info.user_id(),
-        Value::Number(1),
-        Value::Number(2),
-        Bool(true)
-    ).unwrap();
-
-    let new_alias = calculate_key_alias(&calling_info, Value::Number(1), Value::Number(2), Bool(true), true);
-    let prefixed_new_alias = [[b'1', b'_'].to_vec(), new_alias].concat();
-    let key2 = SecretKey::new_with_alias(
-        calling_info.user_id(),
-        Value::Number(1),
-        Value::Number(2),
-        Bool(true),
-        prefixed_new_alias
-    ).unwrap();
-
-    assert_eq!(key1, key2);
-    drop(db);
     drop(key1);
     drop(key2);
     remove_dir();
