@@ -27,7 +27,7 @@ use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey}
 use asset_db_key_operator::DbKey;
 use asset_db_operator::{
     database::Database,
-    database_file_upgrade::{construct_splited_db_name, get_all_new_db},
+    database_file_upgrade::{construct_splited_db_name, trigger_db_upgrade},
     types::{column, DbMap},
 };
 use asset_definition::{log_throw_error, ErrCode, Result, SyncType, Value};
@@ -239,8 +239,8 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
     logi!("[INFO]On user -{}- unlocked.", user_id);
 
     // Trigger upgrading db version and key alias
-    match get_all_new_db(user_id) {
-        Ok(_) => logi!("upgrade db version and key alias on user-unlocked success."),
+    match trigger_db_upgrade(user_id) {
+        Ok(()) => logi!("upgrade db version and key alias on user-unlocked success."),
         Err(e) => loge!("upgrade db version and key alias on user-unlocked failed, err is: {}", e),
     }
 

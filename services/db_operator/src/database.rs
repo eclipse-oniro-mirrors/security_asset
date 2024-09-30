@@ -339,7 +339,7 @@ impl Database {
     }
 
     fn upgrade_key_alias(&mut self, user_id: i32) -> Result<bool> {
-        let query_results = self.query_locked_datas(
+        let query_results = self.query_data_without_lock(
             &vec![
                 column::OWNER_TYPE,
                 column::OWNER,
@@ -609,9 +609,9 @@ impl Database {
     /// cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
     /// cond.insert(column::ALIAS, Value::Bytes(b"alias".to_ver()));
     /// let user_id = 100;
-    /// let ret = Database::build(user_id)?.query_locked_datas(&vec![], &cond, None, false);
+    /// let ret = Database::build(user_id)?.query_data_without_lock(&vec![], &cond, None, false);
     /// ```
-    pub fn query_locked_datas(
+    pub fn query_data_without_lock(
         &mut self,
         columns: &Vec<&'static str>,
         condition: &DbMap,

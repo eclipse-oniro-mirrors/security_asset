@@ -103,21 +103,17 @@ fn get_new_db(user_id: i32, info_map: &DbMap) -> Result<Database> {
     get_db(user_id, &new_db_name, false)
 }
 
-/// Get all new db
-pub fn get_all_new_db(user_id: i32) -> Result<Vec<Database>> {
-    let mut db_vec = Vec::new();
+/// Trigger upgrade of database version and renaming secret key alias.
+pub fn trigger_db_upgrade(user_id: i32) -> Result<()> {
     for entry in fs::read_dir(format!("{}/{}", DE_ROOT_PATH, user_id))? {
         let entry = entry?;
-        // 1.1 extract db name before extension from new db name
-        if let Some(position) = entry.file_name().to_string_lossy().find(".db") {
-            // 1.2 construct new db
-            let db = get_db(user_id, &entry.file_name().to_string_lossy()[..position], false)?;
-            // 1.3 push new db into vec
-            db_vec.push(db);
+        if entry.file_name().to_string_lossy().ends_with(".db") {
+            if let Some(file_name_stem) = entry.file_name().to_string_lossy().strip_suffix(".db") {
+                let _ = get_db(user_id, file_name_stem, false)?;
+            }
         }
     }
-
-    Ok(db_vec)
+    Ok(())
 }
 
 fn construct_old_query_condition(info_map: &DbMap) -> Result<DbMap> {
@@ -187,13 +183,11 @@ pub fn check_and_split_db(user_id: i32) -> Result<()> {
         let _lock = get_split_db_lock_by_user_id(user_id).mtx.lock().unwrap();
         if check_old_db_exist(user_id) {
             logi!("[INFO]Start splitting db.");
-            // Upgrading db_version and key alias is also triggered.
             split_db(user_id)?;
         }
     } else {
         logi!("[INFO]Do not start splitting db.");
-        // Trigger upgrading db_version and key alias.
-        let _ = get_all_new_db(user_id)?;
+        trigger_db_upgrade(user_id)?;
     }
     Ok(())
 }
