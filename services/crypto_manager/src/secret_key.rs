@@ -36,6 +36,7 @@ enum KeyAliasVersion {
     V1(Vec<u8>), // Old secret key alias
     V2(Vec<u8>), // New secret key alias
     V3,          // Prefixed new secret key alias
+    None,
 }
 
 extern "C" {
@@ -86,7 +87,7 @@ fn get_existing_key_alias(
     auth_type: AuthType,
     access_type: Accessibility,
     require_password_set: bool,
-) -> Option<KeyAliasVersion> {
+) -> KeyAliasVersion {
     let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
     let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias.clone()].concat();
     let key = SecretKey {
@@ -97,7 +98,7 @@ fn get_existing_key_alias(
         alias: prefixed_new_alias.clone(),
     };
     if let Ok(true) = key.exists() {
-        return Some(KeyAliasVersion::V3);
+        return KeyAliasVersion::V3;
     }
 
     let key = SecretKey {
@@ -108,7 +109,7 @@ fn get_existing_key_alias(
         alias: new_alias.clone(),
     };
     if let Ok(true) = key.exists() {
-        return Some(KeyAliasVersion::V2(new_alias));
+        return KeyAliasVersion::V2(new_alias);
     }
 
     let old_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false);
@@ -120,10 +121,10 @@ fn get_existing_key_alias(
         alias: old_alias.clone(),
     };
     if let Ok(true) = key.exists() {
-        return Some(KeyAliasVersion::V1(old_alias));
+        return KeyAliasVersion::V1(old_alias);
     }
 
-    None
+    KeyAliasVersion::None
 }
 
 /// Rename a secret key alias.
@@ -133,41 +134,39 @@ pub fn rename_key_alias(
     access_type: Accessibility,
     require_password_set: bool,
 ) -> Result<bool> {
-    if let Some(alias_version) = get_existing_key_alias(calling_info, auth_type, access_type, require_password_set) {
-        match alias_version {
-            KeyAliasVersion::V3 => {
-                logi!("[INFO][{access_type}] Secret key alias has already been renamed successfully.");
-                Ok(true)
-            },
-            KeyAliasVersion::V2(alias) | KeyAliasVersion::V1(alias) => {
-                let alias_ref = &alias;
-                let alias_blob = HksBlob { size: alias.len() as u32, data: alias_ref.as_ptr() };
-                let key_id = KeyId::new(calling_info.user_id(), alias_blob, access_type);
-                let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
-                let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias].concat();
-                let prefixed_new_alias_ref = &prefixed_new_alias;
-                let prefixed_new_alias_blob =
-                    HksBlob { size: prefixed_new_alias.len() as u32, data: prefixed_new_alias_ref.as_ptr() };
-                let ret =
-                    unsafe { RenameKeyAlias(&key_id as *const KeyId, &prefixed_new_alias_blob as *const HksBlob) };
-                match ret {
-                    SUCCESS => {
-                        logi!("[INFO]Rename [{access_type}] secret key alias success.");
-                        Ok(true)
-                    },
-                    _ => {
-                        loge!(
-                            "[FATAL]Rename [{access_type}] secret key alias failed, err is {}.",
-                            transfer_error_code(ErrCode::try_from(ret as u32)?)
-                        );
-                        Ok(false)
-                    },
-                }
-            },
-        }
-    } else {
-        loge!("[FATAL][{access_type}] secret key does not exist.");
-        Ok(false)
+    match get_existing_key_alias(calling_info, auth_type, access_type, require_password_set) {
+        KeyAliasVersion::V3 => {
+            logi!("[INFO][{access_type}] Secret key alias has already been renamed successfully.");
+            Ok(true)
+        },
+        KeyAliasVersion::V2(alias) | KeyAliasVersion::V1(alias) => {
+            let alias_ref = &alias;
+            let alias_blob = HksBlob { size: alias.len() as u32, data: alias_ref.as_ptr() };
+            let key_id = KeyId::new(calling_info.user_id(), alias_blob, access_type);
+            let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
+            let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias].concat();
+            let prefixed_new_alias_ref = &prefixed_new_alias;
+            let prefixed_new_alias_blob =
+                HksBlob { size: prefixed_new_alias.len() as u32, data: prefixed_new_alias_ref.as_ptr() };
+            let ret = unsafe { RenameKeyAlias(&key_id as *const KeyId, &prefixed_new_alias_blob as *const HksBlob) };
+            match ret {
+                SUCCESS => {
+                    logi!("[INFO]Rename [{access_type}] secret key alias success.");
+                    Ok(true)
+                },
+                _ => {
+                    loge!(
+                        "[FATAL]Rename [{access_type}] secret key alias failed, err is {}.",
+                        transfer_error_code(ErrCode::try_from(ret as u32)?)
+                    );
+                    Ok(false)
+                },
+            }
+        },
+        KeyAliasVersion::None => {
+            loge!("[FATAL][{access_type}] secret key does not exist.");
+            Ok(false)
+        },
     }
 }
 
@@ -192,8 +191,6 @@ impl SecretKey {
     ) -> Result<Self> {
         let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
         let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias.clone()].concat();
-
-        // Check whether key with prefixed new alias exists.
         let key = Self {
             user_id: calling_info.user_id(),
             auth_type,
