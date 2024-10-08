@@ -127,6 +127,28 @@ fn get_existing_key_alias(
     Ok(KeyAliasVersion::None)
 }
 
+fn huks_rename_key_alias(
+    calling_info: &CallingInfo,
+    auth_type: AuthType,
+    access_type: Accessibility,
+    require_password_set: bool,
+    alias: Vec<u8>
+) -> i32 {
+    // Prepare secret key id with outdated alias.
+    let alias_ref = &alias;
+    let alias_blob = HksBlob { size: alias.len() as u32, data: alias_ref.as_ptr() };
+    let key_id = KeyId::new(calling_info.user_id(), alias_blob, access_type);
+
+    // Prepare secret key alias to be replaced in.
+    let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
+    let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias].concat();
+    let prefixed_new_alias_ref = &prefixed_new_alias;
+    let prefixed_new_alias_blob =
+        HksBlob { size: prefixed_new_alias.len() as u32, data: prefixed_new_alias_ref.as_ptr() };
+
+    unsafe { RenameKeyAlias(&key_id as *const KeyId, &prefixed_new_alias_blob as *const HksBlob) }
+}
+
 /// Rename a secret key alias.
 pub fn rename_key_alias(
     calling_info: &CallingInfo,
@@ -140,27 +162,16 @@ pub fn rename_key_alias(
             Ok(true)
         },
         KeyAliasVersion::V2(alias) | KeyAliasVersion::V1(alias) => {
-            let alias_ref = &alias;
-            let alias_blob = HksBlob { size: alias.len() as u32, data: alias_ref.as_ptr() };
-            let key_id = KeyId::new(calling_info.user_id(), alias_blob, access_type);
-            let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
-            let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias].concat();
-            let prefixed_new_alias_ref = &prefixed_new_alias;
-            let prefixed_new_alias_blob =
-                HksBlob { size: prefixed_new_alias.len() as u32, data: prefixed_new_alias_ref.as_ptr() };
-            let ret = unsafe { RenameKeyAlias(&key_id as *const KeyId, &prefixed_new_alias_blob as *const HksBlob) };
-            match ret {
-                SUCCESS => {
-                    logi!("[INFO]Rename alias of [{access_type}]-typed secret key success.");
-                    Ok(true)
-                },
-                _ => {
-                    loge!(
-                        "[FATAL]Rename alias of [{access_type}]-typed secret key failed, err is {}.",
-                        transfer_error_code(ErrCode::try_from(ret as u32)?)
-                    );
-                    Ok(false)
-                },
+            let ret = huks_rename_key_alias(calling_info, auth_type, access_type, require_password_set, alias);
+            if let SUCCESS = ret {
+                logi!("[INFO]Rename alias of [{access_type}]-typed secret key success.");
+                Ok(true)
+            } else {
+                loge!(
+                    "[FATAL]Rename alias of [{access_type}]-typed secret key failed, err is {}.",
+                    transfer_error_code(ErrCode::try_from(ret as u32)?)
+                );
+                Ok(false)
             }
         },
         KeyAliasVersion::None => {
