@@ -20,14 +20,16 @@ use core::ffi::c_void;
 use std::{ffi::CStr, fs, ptr::null_mut, sync::Mutex};
 
 use asset_common::OwnerType;
-use asset_definition::{log_throw_error, ErrCode, Extension, Result};
+use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
 use asset_log::{loge, logi};
 
 use crate::{
     statement::Statement,
     table::Table,
-    types::{column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO_V2,
-        UPGRADE_COLUMN_INFO, DB_UPGRADE_VERSION_V1, DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION},
+    types::{
+        column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1,
+        DB_UPGRADE_VERSION_V2, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2,
+    },
 };
 
 extern "C" {
@@ -344,6 +346,19 @@ impl Database {
     ) -> Result<i32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.delete_row(condition, reverse_condition, is_filter_sync);
+        self.restore_if_exec_fail(closure)
+    }
+
+    /// Delete datas from database with specific condition.
+    /// If the operation is successful, the number of deleted data is returned.
+    #[inline(always)]
+    pub fn delete_specific_condition_datas(
+        &mut self,
+        specific_cond: &str,
+        condition_value: &[Value],
+    ) -> Result<i32> {
+        let _lock = self.db_lock.mtx.lock().unwrap();
+        let closure = |e: &Table| e.delete_with_specific_cond(specific_cond, condition_value);
         self.restore_if_exec_fail(closure)
     }
 

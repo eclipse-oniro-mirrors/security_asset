@@ -45,7 +45,8 @@
                 "samgr",
                 "sqlite",
                 "os_account",
-                "ylong_runtime"
+                "ylong_runtime",
+                "openssl"
             ],
             "third_party": []
         },

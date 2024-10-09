@@ -17,6 +17,7 @@
 
 use asset_common::{transfer_error_code, CallingInfo, SUCCESS};
 use asset_definition::{Accessibility, AuthType, ErrCode, Result};
+use asset_log::logw;
 use asset_utils::hasher;
 
 use crate::{HksBlob, KeyId};
@@ -57,6 +58,7 @@ fn calculate_key_alias(
     auth_type: AuthType,
     access_type: Accessibility,
     require_password_set: bool,
+    standard: bool,
 ) -> Vec<u8> {
     let mut alias: Vec<u8> = Vec::with_capacity(MAX_ALIAS_SIZE);
     alias.extend_from_slice(&calling_info.user_id().to_le_bytes());
@@ -67,7 +69,7 @@ fn calculate_key_alias(
     append_attr::<AuthType>("AuthType", auth_type, &mut alias);
     append_attr::<Accessibility>("Accessibility", access_type, &mut alias);
     append_attr::<bool>("RequirePasswordSet", require_password_set, &mut alias);
-    hasher::sha256(&alias)
+    hasher::sha256(standard, &alias)
 }
 
 impl SecretKey {
@@ -77,9 +79,24 @@ impl SecretKey {
         auth_type: AuthType,
         access_type: Accessibility,
         require_password_set: bool,
-    ) -> Self {
-        let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set);
-        Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() }
+    ) -> Result<Self> {
+        // Check whether new key exists.
+        let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
+        let new_key = Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() };
+        if new_key.exists()? {
+            return Ok(new_key);
+        }
+
+        // Check whether old key exists.
+        let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false);
+        let old_key = Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() };
+        if old_key.exists()? {
+            logw!("[WARNING]Use old alias key.");
+            return Ok(old_key);
+        }
+
+        // Use new key.
+        Ok(new_key)
     }
 
     /// Check whether the secret key exists.
@@ -122,19 +139,19 @@ impl SecretKey {
         let accessibilitys =
             [Accessibility::DevicePowerOn, Accessibility::DeviceFirstUnlocked, Accessibility::DeviceUnlocked];
         for accessibility in accessibilitys.into_iter() {
-            let secret_key = SecretKey::new(calling_info, AuthType::None, accessibility, true);
+            let secret_key = SecretKey::new(calling_info, AuthType::None, accessibility, true)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new(calling_info, AuthType::Any, accessibility, true);
+            let secret_key = SecretKey::new(calling_info, AuthType::Any, accessibility, true)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new(calling_info, AuthType::None, accessibility, false);
+            let secret_key = SecretKey::new(calling_info, AuthType::None, accessibility, false)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new(calling_info, AuthType::Any, accessibility, false);
+            let secret_key = SecretKey::new(calling_info, AuthType::Any, accessibility, false)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
         }
