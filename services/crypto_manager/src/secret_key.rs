@@ -98,6 +98,7 @@ fn get_existing_key_alias(
         alias: prefixed_new_alias.clone(),
     };
     if key.exists()? {
+        logi!("[INFO][{access_type}]-typed secret key with version 3 alias exists.");
         return Ok(KeyAliasVersion::V3);
     }
 
@@ -109,6 +110,7 @@ fn get_existing_key_alias(
         alias: new_alias.clone(),
     };
     if key.exists()? {
+        logi!("[INFO][{access_type}]-typed secret key with version 2 alias exists.");
         return Ok(KeyAliasVersion::V2(new_alias));
     }
 
@@ -121,9 +123,11 @@ fn get_existing_key_alias(
         alias: old_alias.clone(),
     };
     if key.exists()? {
+        logi!("[INFO][{access_type}]-typed secret key with version 1 alias exists.");
         return Ok(KeyAliasVersion::V1(old_alias));
     }
 
+    loge!("[INFO][{access_type}]-typed secret key does not exist.");
     Ok(KeyAliasVersion::None)
 }
 
