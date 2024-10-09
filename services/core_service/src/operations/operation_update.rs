@@ -43,16 +43,22 @@ fn is_only_change_local_labels(update: &AssetMap) -> bool {
     true
 }
 
-fn add_system_attrs(update: &AssetMap, db_data: &mut DbMap) -> Result<()> {
+fn add_attrs(update: &AssetMap, db_data: &mut DbMap) -> Result<()> {
     if !is_only_change_local_labels(update) {
-        let time = time::system_time_in_millis()?;
-        db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
+        add_system_attrs(db_data)?;
+        add_normal_attrs(db_data);
     }
+    db_data.insert(column::LOCAL_STATUS, Value::Number(LocalStatus::Local as u32));
+    Ok(())
+}
+
+fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
+    let time = time::system_time_in_millis()?;
+    db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     Ok(())
 }
 
 fn add_normal_attrs(db_data: &mut DbMap) {
-    db_data.insert(column::LOCAL_STATUS, Value::Number(LocalStatus::Local as u32));
     db_data.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncUpdate as u32));
 }
 
@@ -94,8 +100,8 @@ pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &Asse
     common::add_owner_info(calling_info, &mut query_db_data);
 
     let mut update_db_data = common::into_db_map(update);
-    add_system_attrs(update, &mut update_db_data)?;
-    add_normal_attrs(&mut update_db_data);
+
+    add_attrs(update, &mut update_db_data)?;
 
     let mut db = create_db_instance(query, calling_info)?;
     let results = db.query_datas(&vec![], &query_db_data, None, true)?;
