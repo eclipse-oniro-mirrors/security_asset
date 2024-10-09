@@ -136,7 +136,7 @@ fn huks_rename_key_alias(
     auth_type: AuthType,
     access_type: Accessibility,
     require_password_set: bool,
-    alias: Vec<u8>
+    alias: Vec<u8>,
 ) -> i32 {
     // Prepare secret key id with outdated alias.
     let alias_ref = &alias;

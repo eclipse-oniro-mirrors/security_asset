@@ -20,6 +20,7 @@ use std::{fs, path::Path};
 
 use asset_common::OwnerType;
 use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
+use asset_file_operator::common::DB_SUFFIX;
 use asset_log::logi;
 
 use crate::{
@@ -107,8 +108,8 @@ fn get_new_db(user_id: i32, info_map: &DbMap) -> Result<Database> {
 pub fn trigger_db_upgrade(user_id: i32) -> Result<()> {
     for entry in fs::read_dir(format!("{}/{}", DE_ROOT_PATH, user_id))? {
         let entry = entry?;
-        if entry.file_name().to_string_lossy().ends_with(".db") {
-            if let Some(file_name_stem) = entry.file_name().to_string_lossy().strip_suffix(".db") {
+        if entry.file_name().to_string_lossy().ends_with(DB_SUFFIX) {
+            if let Some(file_name_stem) = entry.file_name().to_string_lossy().strip_suffix(DB_SUFFIX) {
                 let _ = get_db(user_id, file_name_stem, false)?;
             }
         }
