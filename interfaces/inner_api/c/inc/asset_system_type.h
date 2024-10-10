@@ -363,13 +363,17 @@ typedef enum {
  */
 typedef enum {
     /**
-     * The query result contains the asset in plaintext and its attributes.
+     * Trigger Sync.
      */
     SEC_ASSET_NEED_SYNC = 0,
     /**
-     * The query result contains only the asset attributes.
+     * Logout account to clean cloud flag.
      */
     SEC_ASSET_NEED_LOGOUT = 1,
+    /**
+     * Delete cloud data.
+     */
+    SEC_ASSET_NEED_DELETE_CLOUD_DATA = 2,
 } AssetOperationType;
 
 /**

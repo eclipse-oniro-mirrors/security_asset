@@ -134,8 +134,30 @@ fn into_vec_u8(hash: &[u32; 8]) -> Vec<u8> {
     ret.to_vec()
 }
 
-/// the function to execute sha256
-pub fn sha256(message: &[u8]) -> Vec<u8> {
+extern "C" {
+    fn Sha256(input: *const u8, input_len: u32, output: *mut u8);
+}
+
+const SHA256_OUTPUT_LEN: usize = 32;
+
+/// the function to execute sha256 by openssl.
+fn sha256_new(message: &[u8]) -> Vec<u8> {
+    let mut res = vec![0; SHA256_OUTPUT_LEN];
+    unsafe { Sha256(message.as_ptr(), message.len() as u32, res.as_mut_ptr()) }
+    res
+}
+
+/// the function to execute sha256 by self-implemented.
+fn sha256_old(message: &[u8]) -> Vec<u8> {
     let processed_msg = pre_process_msg(message);
     into_vec_u8(&compress(&processed_msg))
+}
+
+/// the function to execute sha256
+pub fn sha256(standard: bool, message: &[u8]) -> Vec<u8> {
+    if standard {
+        return sha256_new(message);
+    }
+
+    sha256_old(message)
 }

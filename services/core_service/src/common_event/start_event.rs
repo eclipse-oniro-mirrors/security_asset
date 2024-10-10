@@ -124,5 +124,8 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
         listener::on_user_unlocked(reason.extra_data.code);
     } else if reason_name == "loopevent" {
         listener::on_schedule_wakeup();
+    } else if reason_name == "USER_PIN_CREATED_EVENT" {
+        logi!("[INFO]On user -{}- pin created.", reason.extra_data.code);
+        listener::on_user_unlocked(reason.extra_data.code);
     }
 }

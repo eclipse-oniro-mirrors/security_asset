@@ -17,7 +17,7 @@ use asset_common::Counter;
 use asset_db_operator::database::{get_path, Database};
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_log::{loge, logi};
-use asset_sdk::plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx};
+use asset_sdk::{plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx}, Value};
 use std::{
     cell::RefCell,
     sync::{Arc, Mutex},
@@ -51,7 +51,7 @@ impl AssetPlugin {
             let _guard = ASSET_OLUGIN_LOCK.lock().unwrap();
             if self.lib.borrow().is_none() {
                 logi!("start to load asset_ext plugin.");
-                match libloading::Library::new("/system/lib64/libasset_ext_ffi.z.so") {
+                match libloading::Library::new("libasset_ext_ffi.z.so") {
                     Ok(lib) => *self.lib.borrow_mut() = Some(lib),
                     Err(err) => {
                         loge!("dlopen libasset_ext_ffi.z.so failed, err: {}", err);
@@ -145,6 +145,18 @@ impl IAssetPluginCtx for AssetContext {
             .as_mut()
             .ok_or(ErrCode::InvalidArgument as u32)?
             .delete_datas(attributes, None, false)
+            .map_err(|e| e.code as u32)
+    }
+
+    /// Remove assets from the database with sepcific condition.
+    fn remove_with_specific_cond(
+        &mut self, specific_cond: &str,
+        condition_value: &[Value]
+    ) -> std::result::Result<i32, u32> {
+        self.data_base
+            .as_mut()
+            .ok_or(ErrCode::InvalidArgument as u32)?
+            .delete_specific_condition_datas(specific_cond, condition_value)
             .map_err(|e| e.code as u32)
     }
 
