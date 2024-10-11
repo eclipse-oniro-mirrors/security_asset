@@ -72,7 +72,7 @@ fn calculate_key_alias(
     hasher::sha256(standard, &alias)
 }
 
-impl SecretKey{
+impl SecretKey {
     /// New a secret key with the input key alias argument.
     pub fn new_with_alias(
         user_id: i32,
@@ -81,7 +81,7 @@ impl SecretKey{
         require_password_set: bool,
         alias: Vec<u8>,
     ) -> Result<Self> {
-        Ok(Self { user_id, auth_type, access_type, require_password_set, alias})
+        Ok(Self { user_id, auth_type, access_type, require_password_set, alias })
     }
 
     /// Calculate key alias and then new a secret key.
