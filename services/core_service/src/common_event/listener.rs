@@ -208,18 +208,21 @@ lazy_static! {
 }
 
 pub(crate) extern "C" fn backup_db() {
+    let _counter_user = AutoCounter::new();
     let cur_time = Instant::now();
-    let mut record_time = RECORD_TIME.lock().unwrap();
 
-    if record_time.is_none() || cur_time.duration_since(record_time.unwrap()) > Duration::new(3600, 0) {
+    let mut record_time = RECORD_TIME.lock().expect("Failed to lock RECORD_TIME");
+
+    let should_backup = match *record_time {
+        Some(ref last_time) => cur_time.duration_since(*last_time) > Duration::new(3600, 0),
+        None => true,
+    };
+
+    if should_backup {
         *record_time = Some(cur_time);
-
-        match backup_all_db(&cur_time) {
-            Ok(_) => (),
-            Err(e) => {
-                let calling_info = CallingInfo::new_self();
-                upload_fault_system_event(&calling_info, cur_time, "backup_db", &e);
-            },
+        if let Err(e) = backup_all_db(&cur_time) {
+            let calling_info = CallingInfo::new_self();
+            upload_fault_system_event(&calling_info, cur_time, "backup_db", &e);
         }
     }
 }
