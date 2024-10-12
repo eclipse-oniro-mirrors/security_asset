@@ -16,3 +16,4 @@ match_block_trailing_comma=true
 newline_style="Unix"
 merge_derives = false
 max_width = 120
+reorder_imports = true

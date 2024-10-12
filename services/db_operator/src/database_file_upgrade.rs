@@ -26,7 +26,7 @@ use asset_log::logi;
 use crate::{
     database::{
         fmt_backup_path, fmt_de_db_path_with_name, get_db, get_split_db_lock_by_user_id, Database, DE_ROOT_PATH,
-        OLD_DB_NAME,
+        CE_ROOT_PATH, OLD_DB_NAME,
     },
     types::{column, DbMap, QueryOptions},
 };
@@ -106,11 +106,19 @@ fn get_new_db(user_id: i32, info_map: &DbMap) -> Result<Database> {
 
 /// Trigger upgrade of database version and renaming secret key alias.
 pub fn trigger_db_upgrade(user_id: i32) -> Result<()> {
-    for entry in fs::read_dir(format!("{}/{}", DE_ROOT_PATH, user_id))? {
+    for entry in fs::read_dir(format!("{DE_ROOT_PATH}/{user_id}"))? {
         let entry = entry?;
         if entry.file_name().to_string_lossy().ends_with(DB_SUFFIX) {
             if let Some(file_name_stem) = entry.file_name().to_string_lossy().strip_suffix(DB_SUFFIX) {
                 let _ = get_db(user_id, file_name_stem, false)?;
+            }
+        }
+    }
+    for entry in fs::read_dir(format!("{CE_ROOT_PATH}/{user_id}/asset_service"))? {
+        let entry = entry?;
+        if entry.file_name().to_string_lossy().ends_with(DB_SUFFIX) {
+            if let Some(file_name_stem) = entry.file_name().to_string_lossy().strip_suffix(DB_SUFFIX) {
+                let _ = get_db(user_id, file_name_stem, true)?;
             }
         }
     }

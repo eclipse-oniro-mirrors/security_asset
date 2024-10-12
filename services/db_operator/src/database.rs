@@ -108,6 +108,8 @@ pub(crate) const DE_ROOT_PATH: &str = "/data/service/el1/public/asset_service";
 #[cfg(test)]
 pub(crate) const DE_ROOT_PATH: &str = "/data/asset_test";
 
+pub(crate) const CE_ROOT_PATH: &str = "/data/service/el2";
+
 #[inline(always)]
 pub(crate) fn fmt_backup_path(path: &str) -> String {
     let mut bp = path.to_string();
@@ -329,7 +331,6 @@ impl Database {
             self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION_V3, UPGRADE_COLUMN_INFO_V3))?;
             version_old += 1;
         }
-
         if version_old == DB_UPGRADE_VERSION_V3 && self.upgrade_key_alias(user_id)? {
             self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION, UPGRADE_COLUMN_INFO))?;
             version_old += 1;
