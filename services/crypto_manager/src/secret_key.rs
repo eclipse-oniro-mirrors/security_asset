@@ -135,7 +135,6 @@ fn get_existing_key_alias(
         loge!("[Fatal]Can not determine whether [{access_type}]-typed secret key with v1 alias exists. err is {e}.");
     }
 
-    loge!("[INFO][{access_type}]-typed secret key does not exist.");
     KeyAliasVersion::None
 }
 
@@ -187,9 +186,9 @@ pub fn rename_key_alias(
             }
         },
         KeyAliasVersion::None => {
-            loge!("[FATAL][{access_type}]-typed secret key does not exist.");
+            loge!("[FATAL]Get alias of [{access_type}]-typed secret key failed.");
             Ok(false)
-        },
+        }
     }
 }
 

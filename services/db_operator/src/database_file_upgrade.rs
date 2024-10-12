@@ -105,20 +105,17 @@ fn get_new_db(user_id: i32, info_map: &DbMap) -> Result<Database> {
 }
 
 /// Trigger upgrade of database version and renaming secret key alias.
-pub fn trigger_db_upgrade(user_id: i32) -> Result<()> {
-    for entry in fs::read_dir(format!("{DE_ROOT_PATH}/{user_id}"))? {
+pub fn trigger_db_upgrade(user_id: i32, is_ce: bool) -> Result<()> {
+    let path = if is_ce {
+        format!("{}/{}/asset_service", CE_ROOT_PATH, user_id)
+    } else {
+        format!("{}/{}", DE_ROOT_PATH, user_id)
+    };
+    for entry in fs::read_dir(path)? {
         let entry = entry?;
         if entry.file_name().to_string_lossy().ends_with(DB_SUFFIX) {
             if let Some(file_name_stem) = entry.file_name().to_string_lossy().strip_suffix(DB_SUFFIX) {
-                let _ = get_db(user_id, file_name_stem, DB_UPGRADE_VERSION, false)?;
-            }
-        }
-    }
-    for entry in fs::read_dir(format!("{CE_ROOT_PATH}/{user_id}/asset_service"))? {
-        let entry = entry?;
-        if entry.file_name().to_string_lossy().ends_with(DB_SUFFIX) {
-            if let Some(file_name_stem) = entry.file_name().to_string_lossy().strip_suffix(DB_SUFFIX) {
-                let _ = get_db(user_id, file_name_stem, DB_UPGRADE_VERSION, true)?;
+                let _ = get_db(user_id, file_name_stem, DB_UPGRADE_VERSION, is_ce)?;
             }
         }
     }
@@ -196,7 +193,7 @@ pub fn check_and_split_db(user_id: i32) -> Result<()> {
         }
     } else {
         logi!("[INFO]Do not start splitting db.");
-        trigger_db_upgrade(user_id)?;
+        trigger_db_upgrade(user_id, false)?;
     }
     Ok(())
 }

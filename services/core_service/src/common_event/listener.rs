@@ -238,10 +238,16 @@ pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, ap
 pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
     logi!("[INFO]On user -{}- unlocked.", user_id);
 
-    // Trigger upgrading db version and key alias
-    match trigger_db_upgrade(user_id) {
-        Ok(()) => logi!("upgrade db version and key alias on user-unlocked success."),
-        Err(e) => loge!("upgrade db version and key alias on user-unlocked failed, err is: {}", e),
+    // Trigger upgrading de db version and key alias
+    match trigger_db_upgrade(user_id, false) {
+        Ok(()) => logi!("upgrade de db version and key alias on user-unlocked success."),
+        Err(e) => loge!("upgrade de db version and key alias on user-unlocked failed, err is: {}", e),
+    }
+
+    // Trigger upgrading ce db version and key alias
+    match trigger_db_upgrade(user_id, true) {
+        Ok(()) => logi!("upgrade de db version and key alias on user-unlocked success."),
+        Err(e) => loge!("upgrade de db version and key alias on user-unlocked failed, err is: {}", e),
     }
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
