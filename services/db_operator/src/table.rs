@@ -26,7 +26,9 @@ use crate::{
     database::Database,
     statement::Statement,
     transaction::Transaction,
-    types::{ColumnInfo, DbMap, QueryOptions, UpgradeColumnInfo, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V3, SQLITE_ROW},
+    types::{
+        ColumnInfo, DbMap, QueryOptions, UpgradeColumnInfo, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V3, SQLITE_ROW,
+    },
 };
 
 extern "C" {

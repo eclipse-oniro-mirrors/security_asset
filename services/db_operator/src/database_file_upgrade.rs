@@ -25,8 +25,8 @@ use asset_log::logi;
 
 use crate::{
     database::{
-        fmt_backup_path, fmt_de_db_path_with_name, get_db, get_split_db_lock_by_user_id, Database, DE_ROOT_PATH,
-        CE_ROOT_PATH, OLD_DB_NAME,
+        fmt_backup_path, fmt_de_db_path_with_name, get_db, get_split_db_lock_by_user_id, Database, CE_ROOT_PATH,
+        DE_ROOT_PATH, OLD_DB_NAME,
     },
     types::{column, DbMap, QueryOptions, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V3},
 };

@@ -86,48 +86,57 @@ fn get_existing_key_alias(
     auth_type: AuthType,
     access_type: Accessibility,
     require_password_set: bool,
-) -> Result<KeyAliasVersion> {
+) -> KeyAliasVersion {
     let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
     let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias.clone()].concat();
-    let key = SecretKey {
+    let ret = SecretKey {
         user_id: calling_info.user_id(),
         auth_type,
         access_type,
         require_password_set,
         alias: prefixed_new_alias.clone(),
-    };
-    if key.exists()? {
-        logi!("[INFO][{access_type}]-typed secret key with version 3 alias exists.");
-        return Ok(KeyAliasVersion::V3);
+    }
+    .exists();
+    if let Ok(true) = ret {
+        logi!("[INFO][{access_type}]-typed secret key with v3 alias exists.");
+        return KeyAliasVersion::V3;
+    } else if let Err(e) = ret {
+        loge!("[Fatal]Can not determine whether [{access_type}]-typed secret key with v3 alias exists. err is {e}.");
     }
 
-    let key = SecretKey {
+    let ret = SecretKey {
         user_id: calling_info.user_id(),
         auth_type,
         access_type,
         require_password_set,
         alias: new_alias.clone(),
-    };
-    if key.exists()? {
-        logi!("[INFO][{access_type}]-typed secret key with version 2 alias exists.");
-        return Ok(KeyAliasVersion::V2(new_alias));
+    }
+    .exists();
+    if let Ok(true) = ret {
+        logi!("[INFO][{access_type}]-typed secret key with v2 alias exists.");
+        return KeyAliasVersion::V2(new_alias);
+    } else if let Err(e) = ret {
+        loge!("[Fatal]Can not determine whether [{access_type}]-typed secret key with v2 alias exists. err is {e}.");
     }
 
     let old_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false);
-    let key = SecretKey {
+    let ret = SecretKey {
         user_id: calling_info.user_id(),
         auth_type,
         access_type,
         require_password_set,
         alias: old_alias.clone(),
-    };
-    if key.exists()? {
-        logi!("[INFO][{access_type}]-typed secret key with version 1 alias exists.");
-        return Ok(KeyAliasVersion::V1(old_alias));
+    }
+    .exists();
+    if let Ok(true) = ret {
+        logi!("[INFO][{access_type}]-typed secret key with v1 alias exists.");
+        return KeyAliasVersion::V1(old_alias);
+    } else if let Err(e) = ret {
+        loge!("[Fatal]Can not determine whether [{access_type}]-typed secret key with v1 alias exists. err is {e}.");
     }
 
     loge!("[INFO][{access_type}]-typed secret key does not exist.");
-    Ok(KeyAliasVersion::None)
+    KeyAliasVersion::None
 }
 
 fn huks_rename_key_alias(
@@ -159,7 +168,7 @@ pub fn rename_key_alias(
     access_type: Accessibility,
     require_password_set: bool,
 ) -> Result<bool> {
-    match get_existing_key_alias(calling_info, auth_type, access_type, require_password_set)? {
+    match get_existing_key_alias(calling_info, auth_type, access_type, require_password_set) {
         KeyAliasVersion::V3 => {
             logi!("[INFO]Alias of [{access_type}]-typed secret key has already been renamed successfully.");
             Ok(true)
