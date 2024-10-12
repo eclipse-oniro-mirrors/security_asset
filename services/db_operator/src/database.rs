@@ -141,7 +141,7 @@ fn check_validity_of_db_key(path: &str, user_id: i32) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn get_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
+pub(crate) fn get_db(user_id: i32, db_name: &str, upgrade_db_version: u32, is_ce: bool) -> Result<Database> {
     let path =
         if is_ce { fmt_ce_db_path_with_name(user_id, db_name) } else { fmt_de_db_path_with_name(user_id, db_name) };
     let db_key = if is_ce {
@@ -167,8 +167,12 @@ pub(crate) fn get_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Databas
     let mut db = Database { path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string() };
     let _lock = db.db_lock.mtx.lock().unwrap();
     db.open_and_restore(db_key.as_ref())?;
-    db.restore_if_exec_fail(|e: &Table| e.create(COLUMN_INFO))?;
-    db.upgrade(user_id, DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
+    if upgrade_db_version == DB_UPGRADE_VERSION_V3 {
+        db.restore_if_exec_fail(|e: &Table| e.create_v3(COLUMN_INFO))?;
+    } else {
+        db.restore_if_exec_fail(|e: &Table| e.create(COLUMN_INFO))?;
+    }
+    db.upgrade(user_id, upgrade_db_version, |_, _, _| Ok(()))?;
     Ok(db)
 }
 
@@ -204,13 +208,13 @@ impl Database {
             // DE database needs trigger the upgrade action.
             check_and_split_db(user_id)?;
         }
-        get_db(user_id, &construct_splited_db_name(owner_type, owner_info, is_ce)?, is_ce)
+        get_db(user_id, &construct_splited_db_name(owner_type, owner_info, is_ce)?, DB_UPGRADE_VERSION, is_ce)
     }
 
     /// Create a database from a file name.
     pub fn build_with_file_name(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
         check_and_split_db(user_id)?;
-        get_db(user_id, db_name, is_ce)
+        get_db(user_id, db_name, DB_UPGRADE_VERSION, is_ce)
     }
 
     /// Check whether db is ok
