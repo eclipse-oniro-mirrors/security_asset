@@ -13,5 +13,5 @@
 
 declare_args() {
   enable_local_test = false
-  asset_access_control_enabled = true
+  asset_access_control_enabled = false
 }
