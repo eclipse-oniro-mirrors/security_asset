@@ -188,7 +188,7 @@ pub fn rename_key_alias(
         KeyAliasVersion::None => {
             loge!("[FATAL]Get alias of [{access_type}]-typed secret key failed.");
             Ok(false)
-        }
+        },
     }
 }
 
