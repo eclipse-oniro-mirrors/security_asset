@@ -29,6 +29,7 @@ ohos_rust_shared_library("asset_service") {
     "../db_operator:asset_db_operator",
     "../os_dependency:asset_os_dependency",
     "../plugin:asset_plugin",
+    "//third_party/rust/crates/lazy-static.rs:lib",
   ]
 
   external_deps = [

@@ -174,13 +174,19 @@ pub fn create_db_instance(attributes: &AssetMap, calling_info: &CallingInfo) -> 
     match attributes.get(&Tag::RequireAttrEncrypted) {
         Some(Value::Bool(true)) => {
             let db = Database::build(
-                calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), true
+                calling_info.user_id(),
+                calling_info.owner_type_enum(),
+                calling_info.owner_info(),
+                true,
             )?;
             Ok(db)
         },
         _ => {
             let db = Database::build(
-                calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false
+                calling_info.user_id(),
+                calling_info.owner_type_enum(),
+                calling_info.owner_info(),
+                false,
             )?;
             Ok(db)
         },
