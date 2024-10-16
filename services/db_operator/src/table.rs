@@ -199,6 +199,27 @@ fn get_column_info(columns: &'static [ColumnInfo], db_column: &str) -> Result<&'
     log_throw_error!(ErrCode::DataCorrupted, "Database is corrupted.")
 }
 
+fn build_sql_create(table_name: &String, columns: &[ColumnInfo]) -> String {
+    let mut sql = format!("CREATE TABLE IF NOT EXISTS {}(", table_name);
+    for i in 0..columns.len() {
+        let column = &columns[i];
+        sql.push_str(column.name);
+        sql.push(' ');
+        sql.push_str(from_data_type_to_str(&column.data_type));
+        if column.is_primary_key {
+            sql.push_str(" PRIMARY KEY");
+        }
+        if column.not_null {
+            sql.push_str(" NOT NULL");
+        }
+        if i != columns.len() - 1 {
+            sql.push(',')
+        };
+    }
+    sql.push_str(");");
+    sql
+}
+
 impl<'a> Table<'a> {
     pub(crate) fn new(table_name: &str, db: &'a Database) -> Table<'a> {
         Table { table_name: table_name.to_string(), db }
@@ -228,26 +249,12 @@ impl<'a> Table<'a> {
         if is_exist {
             return Ok(());
         }
-        let mut sql = format!("CREATE TABLE IF NOT EXISTS {}(", self.table_name);
-        for i in 0..columns.len() {
-            let column = &columns[i];
-            sql.push_str(column.name);
-            sql.push(' ');
-            sql.push_str(from_data_type_to_str(&column.data_type));
-            if column.is_primary_key {
-                sql.push_str(" PRIMARY KEY");
-            }
-            if column.not_null {
-                sql.push_str(" NOT NULL");
-            }
-            if i != columns.len() - 1 {
-                sql.push(',')
-            };
-        }
-        sql.push_str(");");
+
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
-        if self.db.exec(sql.as_str()).is_ok() && self.db.set_version(DB_UPGRADE_VERSION).is_ok() {
+        if self.db.exec(build_sql_create(&self.table_name, columns).as_str()).is_ok()
+            && self.db.set_version(DB_UPGRADE_VERSION).is_ok()
+        {
             trans.commit()
         } else {
             trans.rollback()
@@ -261,26 +268,12 @@ impl<'a> Table<'a> {
         if is_exist {
             return Ok(());
         }
-        let mut sql = format!("CREATE TABLE IF NOT EXISTS {}(", self.table_name);
-        for i in 0..columns.len() {
-            let column = &columns[i];
-            sql.push_str(column.name);
-            sql.push(' ');
-            sql.push_str(from_data_type_to_str(&column.data_type));
-            if column.is_primary_key {
-                sql.push_str(" PRIMARY KEY");
-            }
-            if column.not_null {
-                sql.push_str(" NOT NULL");
-            }
-            if i != columns.len() - 1 {
-                sql.push(',')
-            };
-        }
-        sql.push_str(");");
+
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
-        if self.db.exec(sql.as_str()).is_ok() && self.db.set_version(DB_UPGRADE_VERSION_V3).is_ok() {
+        if self.db.exec(build_sql_create(&self.table_name, columns).as_str()).is_ok()
+            && self.db.set_version(DB_UPGRADE_VERSION_V3).is_ok()
+        {
             trans.commit()
         } else {
             trans.rollback()

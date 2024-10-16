@@ -74,7 +74,7 @@ pub fn construct_splited_db_name(owner_type: OwnerType, owner_info: &[u8], is_ce
 }
 
 fn get_db_before_split(user_id: i32) -> Result<Database> {
-    get_db(user_id, OLD_DB_NAME, DB_UPGRADE_VERSION, false)
+    get_db(user_id, OLD_DB_NAME, DB_UPGRADE_VERSION_V3, false)
 }
 
 fn get_value_from_db_map(db_map: &DbMap, key: &str) -> Result<Value> {
