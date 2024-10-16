@@ -321,26 +321,36 @@ impl Database {
 
     /// Upgrade database to new version.
     #[allow(dead_code)]
-    pub fn upgrade(&mut self, user_id: i32, ver: u32, callback: UpgradeDbCallback) -> Result<()> {
-        let mut version_old = self.get_db_version()?;
-        logi!("current database version: {}", version_old);
-        if version_old >= ver {
+    pub fn upgrade(&mut self, user_id: i32, target_ver: u32, callback: UpgradeDbCallback) -> Result<()> {
+        let mut current_ver = self.get_db_version()?;
+        logi!("current database version: {}", current_ver);
+        if current_ver >= target_ver {
             return Ok(());
         }
-        if version_old == DB_UPGRADE_VERSION_V1 {
-            self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION_V2, UPGRADE_COLUMN_INFO_V2))?;
-            version_old += 1;
-        }
-        if version_old == DB_UPGRADE_VERSION_V2 {
-            self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION_V3, UPGRADE_COLUMN_INFO_V3))?;
-            version_old += 1;
-        }
-        if version_old == DB_UPGRADE_VERSION_V3 && self.upgrade_key_alias(user_id)? {
-            self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION, UPGRADE_COLUMN_INFO))?;
-            version_old += 1;
+
+        while current_ver < target_ver {
+            match current_ver {
+                DB_UPGRADE_VERSION_V1 => {
+                    self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION_V2, UPGRADE_COLUMN_INFO_V2))?;
+                    current_ver += 1;
+                },
+                DB_UPGRADE_VERSION_V2 => {
+                    self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION_V3, UPGRADE_COLUMN_INFO_V3))?;
+                    current_ver += 1;
+                },
+                DB_UPGRADE_VERSION_V3 => {
+                    if self.upgrade_key_alias(user_id)? {
+                        self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION, UPGRADE_COLUMN_INFO))?;
+                        current_ver += 1;
+                    } else {
+                        break;
+                    }
+                },
+                _ => (),
+            }
         }
 
-        callback(self, version_old, ver)
+        callback(self, current_ver, target_ver)
     }
 
     fn upgrade_key_alias(&mut self, user_id: i32) -> Result<bool> {
