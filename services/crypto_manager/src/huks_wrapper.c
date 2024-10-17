@@ -366,3 +366,23 @@ int32_t Drop(const struct HksBlob *handle)
     }
     return HuksErrorTransfer(ret);
 }
+
+int32_t RenameKeyAlias(const struct KeyId *keyId, const struct HksBlob *newKeyAlias)
+{
+    struct HksParam params[] = {
+        { .tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = AccessibilityToHksAuthStorageLevel(keyId->accessibility) },
+        { .tag = HKS_TAG_IS_COPY_NEW_KEY, .boolParam = true },
+    };
+    struct HksParamSet *paramSet = NULL;
+    int32_t ret = BuildParamSet(&paramSet, params, ARRAY_SIZE(params), keyId->userId);
+    if (ret != HKS_SUCCESS) {
+        return HuksErrorTransfer(ret);
+    }
+
+    ret = HksRenameKeyAlias(&keyId->alias, paramSet, newKeyAlias);
+    HksFreeParamSet(&paramSet);
+    if (ret != HKS_SUCCESS) {
+        LOGE("[FATAL]HUKS rename key alias failed. error=%{public}d", ret);
+    }
+    return HuksErrorTransfer(ret);
+}

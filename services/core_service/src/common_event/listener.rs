@@ -30,7 +30,7 @@ use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey}
 use asset_db_key_operator::DbKey;
 use asset_db_operator::{
     database::Database,
-    database_file_upgrade::construct_splited_db_name,
+    database_file_upgrade::{construct_splited_db_name, trigger_db_upgrade},
     types::{column, DbMap},
 };
 use asset_definition::{log_throw_error, ErrCode, Result, SyncType, Value};
@@ -253,6 +253,18 @@ pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, ap
 pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
     logi!("[INFO]On user -{}- unlocked.", user_id);
 
+    // Trigger upgrading de db version and key alias
+    match trigger_db_upgrade(user_id, false) {
+        Ok(()) => logi!("upgrade de db version and key alias on user-unlocked success."),
+        Err(e) => loge!("upgrade de db version and key alias on user-unlocked failed, err is: {}", e),
+    }
+
+    // Trigger upgrading ce db version and key alias
+    match trigger_db_upgrade(user_id, true) {
+        Ok(()) => logi!("upgrade de db version and key alias on user-unlocked success."),
+        Err(e) => loge!("upgrade de db version and key alias on user-unlocked failed, err is: {}", e),
+    }
+
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
@@ -330,7 +342,7 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
         }
     }
 
-    // Backup all ce db if db key cipher file exists.
+    // Backup all ce db if accessible.
     let mut user_ids_size: u32 = 0;
     let user_ids_size_ptr = &mut user_ids_size;
     let mut ret: i32;

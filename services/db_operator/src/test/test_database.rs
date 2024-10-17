@@ -35,7 +35,7 @@ const DB_DATA: [(&str, Value); 9] = [
     (column::ACCESSIBILITY, Value::Number(1)),
     (column::AUTH_TYPE, Value::Number(1)),
     (column::IS_PERSISTENT, Value::Bool(true)),
-    (column::VERSION, Value::Number(1)),
+    (column::VERSION, Value::Number(2)),
     (column::REQUIRE_PASSWORD_SET, Value::Bool(false)),
     (column::LOCAL_STATUS, Value::Number(0)),
     (column::SYNC_STATUS, Value::Number(0)),
@@ -100,9 +100,9 @@ fn database_version() {
     let calling_info = CallingInfo::new_self();
     let db = Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
         .unwrap();
-    assert_eq!(2, db.get_version().unwrap());
-    assert!(db.set_version(3).is_ok());
     assert_eq!(3, db.get_version().unwrap());
+    assert!(db.set_version(2).is_ok());
+    assert_eq!(2, db.get_version().unwrap());
     let _ = Database::delete(0, &db.db_name);
 }
 

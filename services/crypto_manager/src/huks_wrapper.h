@@ -53,6 +53,7 @@ int32_t InitKey(const struct KeyId *keyId, uint32_t validTime, struct HksBlob *c
 int32_t ExecCrypt(const struct HksBlob *handle, const struct HksBlob *aad, const struct HksBlob *authToken,
     const struct HksBlob *inData, struct HksBlob *outData);
 int32_t Drop(const struct HksBlob *handle);
+int32_t RenameKeyAlias(const struct KeyId *keyId, const struct HksBlob *newKeyAlias);
 
 #ifdef __cplusplus
 }

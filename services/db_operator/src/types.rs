@@ -29,8 +29,10 @@ pub const TABLE_NAME: &str = "asset_table";
 pub const DB_UPGRADE_VERSION_V1: u32 = 0;
 /// Version V2 number for upgrade database
 pub const DB_UPGRADE_VERSION_V2: u32 = 1;
+/// Version V3 number for upgrade database
+pub const DB_UPGRADE_VERSION_V3: u32 = 2;
 /// Latest version number for upgrade database
-pub const DB_UPGRADE_VERSION: u32 = 2;
+pub const DB_UPGRADE_VERSION: u32 = 3;
 
 /// Version 1 number
 pub const DB_DATA_VERSION_V1: u32 = 1;
@@ -226,7 +228,7 @@ pub(crate) const UPGRADE_COLUMN_INFO_V2: &[UpgradeColumnInfo] = &[
     },
 ];
 
-pub(crate) const UPGRADE_COLUMN_INFO: &[UpgradeColumnInfo] = &[UpgradeColumnInfo {
+pub(crate) const UPGRADE_COLUMN_INFO_V3: &[UpgradeColumnInfo] = &[UpgradeColumnInfo {
     base_info: ColumnInfo {
         name: column::EXT_INFO,
         data_type: DataType::Bytes,
@@ -235,6 +237,8 @@ pub(crate) const UPGRADE_COLUMN_INFO: &[UpgradeColumnInfo] = &[UpgradeColumnInfo
     },
     default_value: None,
 }];
+
+pub(crate) const UPGRADE_COLUMN_INFO: &[UpgradeColumnInfo] = &[];
 
 /// Options for batch query.
 #[repr(C)]
