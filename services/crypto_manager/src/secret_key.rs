@@ -157,32 +157,29 @@ pub fn rename_key_alias(
     auth_type: AuthType,
     access_type: Accessibility,
     require_password_set: bool,
-) -> Result<bool> {
+) -> bool {
     match get_existing_key_alias(calling_info, auth_type, access_type, require_password_set) {
         Ok(KeyAliasVersion::V3) => {
             logi!("[INFO]Alias of [{access_type}]-typed secret key has already been renamed successfully.");
-            Ok(true)
+            true
         },
         Ok(KeyAliasVersion::V2(alias)) | Ok(KeyAliasVersion::V1(alias)) => {
             let ret = huks_rename_key_alias(calling_info, auth_type, access_type, require_password_set, alias);
             if let SUCCESS = ret {
                 logi!("[INFO]Rename alias of [{access_type}]-typed secret key success.");
-                Ok(true)
+                true
             } else {
-                loge!(
-                    "[FATAL]Rename alias of [{access_type}]-typed secret key failed, err is {}.",
-                    transfer_error_code(ErrCode::try_from(ret as u32)?)
-                );
-                Ok(false)
+                loge!("[FATAL]Rename alias of [{access_type}]-typed secret key failed, err is {}.", ret);
+                false
             }
         },
         Ok(KeyAliasVersion::None) => {
             loge!("[FATAL][{access_type}]-typed secret key does not exist.");
-            Ok(false)
+            false
         },
         Err(e) => {
             loge!("[FATAL]Can not determine whether [{access_type}]-typed secret key exists, err is {}", e);
-            Ok(false)
+            false
         },
     }
 }

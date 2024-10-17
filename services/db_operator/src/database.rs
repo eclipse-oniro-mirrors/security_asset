@@ -168,7 +168,7 @@ pub(crate) fn get_db(user_id: i32, db_name: &str, upgrade_db_version: u32, is_ce
     let _lock = db.db_lock.mtx.lock().unwrap();
     db.open_and_restore(db_key.as_ref())?;
     if upgrade_db_version == DB_UPGRADE_VERSION_V3 {
-        db.restore_if_exec_fail(|e: &Table| e.create_v3(COLUMN_INFO))?;
+        db.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, upgrade_db_version))?;
     } else {
         db.restore_if_exec_fail(|e: &Table| e.create(COLUMN_INFO))?;
     }
@@ -346,7 +346,7 @@ impl Database {
                         break;
                     }
                 },
-                _ => (),
+                _ => break,
             }
         }
 
@@ -376,7 +376,7 @@ impl Database {
             let access_type = query_result.get_enum_attr(&column::ACCESSIBILITY)?;
             let require_password_set = query_result.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
             // upgrade_result is set to false as long as any call in the loop for renaming key alias returned false.
-            upgrade_result &= rename_key_alias(&calling_info, auth_type, access_type, require_password_set)?;
+            upgrade_result &= rename_key_alias(&calling_info, auth_type, access_type, require_password_set);
         }
 
         Ok(upgrade_result)
