@@ -191,9 +191,7 @@ pub fn check_and_split_db(user_id: i32) -> Result<()> {
             logi!("[INFO]Start splitting db.");
             split_db(user_id)?;
         }
-    } else {
-        logi!("[INFO]Do not start splitting db.");
-        trigger_db_upgrade(user_id, false)?;
     }
+    trigger_db_upgrade(user_id, false)?;
     Ok(())
 }
