@@ -85,7 +85,7 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
         let _ = delete_user_de_dir(reason.extra_data.code);
     } else if reason_name == "usual.event.CHARGING" {
         listener::backup_db();
-    } else if reason_name == "COMMON_EVENT_RESTORE_START" {
+    } else if reason_name == "usual.event.RESTORE_START" {
         let want = reason.extra_data.want();
         let user_id = match want.get(USER_ID) {
             Some(v) => match v.parse::<i32>() {
