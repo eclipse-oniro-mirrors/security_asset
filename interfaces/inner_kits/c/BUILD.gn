@@ -11,12 +11,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-[package]
-name = "asset_test"
-version = "0.1.0"
-edition = "2021"
+import("//build/ohos.gni")
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
-[dependencies]
-asset_sdk = { path = "../../../interfaces/inner_api/rs" }
+ohos_rust_shared_ffi("asset_sdk_ffi") {
+  sources = [ "src/lib.rs" ]
+  deps = [
+    "../../../frameworks/os_dependency/log:asset_log",
+    "../../../frameworks/os_dependency/memory:asset_mem",
+    "../rs:asset_sdk_rust",
+  ]
+  crate_name = "asset_sdk_ffi"
+  subsystem_name = "security"
+  part_name = "asset"
+}

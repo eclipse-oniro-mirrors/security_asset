@@ -25,13 +25,14 @@
 
 ```bash
 ├── frameworks              # 框架层代码
+│   ├── c                   # C-Rust交互模块
 │   ├── definition          # 通用数据类型定义
 │   ├── ipc                 # IPC接口定义
 │   ├── js                  # JS-C/C++交互模块
 │   ├── os_dependency       # 通用系统能力适配模块
 │   └── utils               # 工具方法
 ├── interfaces              # 对外提供的接口
-│   ├── inner_api           # 提供给系统服务调用的接口
+│   ├── inner_kits          # 提供给系统服务调用的接口
 │   └── kits                # 提供给应用调用的接口
 ├── sa_profile              # 系统服务配置文件
 └── services                # 服务层代码

@@ -40,7 +40,7 @@ ohos_unittest("asset_dependency_test") {
   part_name = "asset"
   include_dirs = [
     "inc",
-    "../../../interfaces/inner_api/c/inc",
+    "../../../interfaces/inner_kits/c/inc",
     "../../../interfaces/kits/c/inc",
     "../../../services/os_dependency/inc",
     "../../../services/crypto_manager/src",
@@ -58,7 +58,7 @@ ohos_unittest("asset_dependency_test") {
     "src/system_event_wrapper_test.cpp",
   ]
   deps = [
-    "../../../interfaces/inner_api/c:asset_sdk",
+    "../../../frameworks/c/system_api:asset_sdk",
     "../../../interfaces/kits/c:asset_ndk",
     "../../../services/crypto_manager:asset_huks_wrapper",
     "../../../services/os_dependency:asset_os_dependency",

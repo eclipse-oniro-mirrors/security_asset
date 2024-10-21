@@ -71,13 +71,11 @@ impl Ability for AssetAbility {
 
         let _ = upload_system_event(start_service(handler), &calling_info, start, func_name);
         common_event::handle_common_event(reason);
-        unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
     }
 
     fn on_active(&self, reason: SystemAbilityOnDemandReason) {
         logi!("[INFO]Asset service on_active.");
         common_event::handle_common_event(reason);
-        unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
     }
 
     fn on_idle(&self, _reason: SystemAbilityOnDemandReason) -> i32 {

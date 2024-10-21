@@ -25,13 +25,14 @@ With the APIs provided by ASSET, you can quickly integrate system-wide encrypted
 
 ```bash
 ├── frameworks              # Framework code
+│   ├── c                   # Code for interaction between C and Rust
 │   ├── definition          # Definitions of common data types
 │   ├── ipc                 # IPC APIs
 │   ├── js                  # Code for interaction between JS and C/C++
 │   ├── os_dependency       # Adaptation of universal system capabilities
 │   └── utils               # Utility APIs
 ├── interfaces              # APIs exposed externally
-│   ├── inner_api           # APIs for system abilities (SAs)
+│   ├── inner_kits          # APIs for system abilities (SAs)
 │   └── kits                # APIs for user applications
 ├── sa_profile              # SA profiles
 └── services                # Service layer code

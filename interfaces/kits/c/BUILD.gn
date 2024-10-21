@@ -20,7 +20,7 @@ config("asset_config") {
 ohos_shared_library("asset_ndk") {
   public_configs = [ ":asset_config" ]
   sources = [ "src/asset_api.c" ]
-  deps = [ "../../inner_api/c:asset_sdk" ]
+  deps = [ "../../../frameworks/c/system_api:asset_sdk" ]
 
   external_deps = [ "hilog:libhilog" ]
 

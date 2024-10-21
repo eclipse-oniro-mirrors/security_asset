@@ -261,8 +261,8 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
 
     // Trigger upgrading ce db version and key alias
     match trigger_db_upgrade(user_id, true) {
-        Ok(()) => logi!("upgrade de db version and key alias on user-unlocked success."),
-        Err(e) => loge!("upgrade de db version and key alias on user-unlocked failed, err is: {}", e),
+        Ok(()) => logi!("upgrade ce db version and key alias on user-unlocked success."),
+        Err(e) => loge!("upgrade ce db version and key alias on user-unlocked failed, err is: {}", e),
     }
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {

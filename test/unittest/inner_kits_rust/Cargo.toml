@@ -11,20 +11,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/ohos.gni")
-import("//build/test.gni")
+[package]
+name = "asset_test"
+version = "0.1.0"
+edition = "2021"
 
-ohos_static_library("asset_test_common") {
-  sources = [ "src/asset_test_common.cpp" ]
-  include_dirs = [
-    "inc",
-    "../../../interfaces/inner_kits/c/inc",
-    "../../../interfaces/kits/c/inc",
-  ]
-  subsystem_name = "security"
-  part_name = "asset"
-  deps = [
-    "../../../frameworks/c/system_api:asset_sdk",
-    "../../../interfaces/kits/c:asset_ndk",
-  ]
-}
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+asset_sdk = { path = "../../../interfaces/inner_kits/rs" }

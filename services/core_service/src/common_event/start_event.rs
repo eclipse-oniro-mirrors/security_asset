@@ -21,7 +21,7 @@ use asset_file_operator::de_operator::delete_user_de_dir;
 use asset_log::{loge, logi};
 use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
 
-use crate::common_event::listener;
+use crate::{common_event::listener, unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa};
 
 const USER_ID: &str = "userId";
 const SANDBOX_APP_INDEX: &str = "sandbox_app_index";
@@ -128,4 +128,5 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
         logi!("[INFO]On user -{}- pin created.", reason.extra_data.code);
         listener::on_user_unlocked(reason.extra_data.code);
     }
+    unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
 }
