@@ -36,5 +36,5 @@ asset_utils = { path = "../../frameworks/utils" }
 asset_ipc = { path = "../../frameworks/ipc" }
 asset_log = { path = "../../frameworks/os_dependency/log" }
 asset_plugin = { path = "../plugin" }
-asset_sdk = { path = "../../interfaces/inner_api/rs" }
+asset_sdk = { path = "../../interfaces/inner_kits/rs" }
 lazy_static = "1.0.0"
