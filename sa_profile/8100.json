@@ -15,7 +15,7 @@
                     { "name": "usual.event.USER_REMOVED" },
                     { "name": "usual.event.CHARGING" },
                     { "name": "usual.event.USER_UNLOCKED" },
-                    { "name": "COMMON_EVENT_RESTORE_START" },
+                    { "name": "usual.event.RESTORE_START" },
                     { "name": "USER_PIN_CREATED_EVENT" }
                 ],
                 "timedevent": [
