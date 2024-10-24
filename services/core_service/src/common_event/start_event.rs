@@ -83,6 +83,7 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
     } else if reason_name == "usual.event.USER_REMOVED" {
         logi!("on_start by user remove");
         let _ = delete_user_de_dir(reason.extra_data.code);
+        listener::notify_on_user_removed(reason.extra_data.code);
     } else if reason_name == "usual.event.CHARGING" {
         listener::backup_db();
     } else if reason_name == "usual.event.RESTORE_START" {

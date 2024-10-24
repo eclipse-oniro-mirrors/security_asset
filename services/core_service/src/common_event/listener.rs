@@ -192,9 +192,10 @@ pub(crate) extern "C" fn on_package_removed(
     }
 }
 
-extern "C" fn delete_dir_by_user(user_id: i32) {
+extern "C" fn on_user_removed(user_id: i32) {
     let _counter_user = AutoCounter::new();
     let _ = delete_user_de_dir(user_id);
+    notify_on_user_removed(user_id);
 }
 
 extern "C" fn delete_crypto_need_unlock() {
@@ -271,6 +272,19 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
         match load.process_event(EventType::OnUserUnlocked, &params) {
             Ok(()) => logi!("process user unlocked event success."),
             Err(code) => loge!("process user unlocked event failed, code: {}", code),
+        }
+    }
+}
+
+pub(crate) fn notify_on_user_removed(user_id: i32) {
+    logi!("[INFO]On user remove [{}]", user_id);
+
+    if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
+        let mut params = ExtDbMap::new();
+        params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
+        match load.process_event(EventType::OnUserRemoved, &params) {
+            Ok(()) => logi!("process user removed event success."),
+            Err(code) => loge!("process user removed event failed, code: {}", code),
         }
     }
 }
@@ -399,7 +413,7 @@ pub(crate) fn subscribe() {
     unsafe {
         let call_back = EventCallBack {
             on_package_remove: on_package_removed,
-            on_user_removed: delete_dir_by_user,
+            on_user_removed,
             on_screen_off: delete_crypto_need_unlock,
             on_charging: backup_db,
             on_app_restore,

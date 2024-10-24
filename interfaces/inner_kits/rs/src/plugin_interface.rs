@@ -50,6 +50,9 @@ pub enum EventType {
 
     /// Package clear event.
     OnPackageClear,
+
+    /// User removed.
+    OnUserRemoved,
 }
 
 /// param name for bundle name
