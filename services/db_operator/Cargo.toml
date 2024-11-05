@@ -20,5 +20,6 @@ edition = "2021"
 
 [dependencies]
 asset_common = { path = "../common" }
+asset_crypto_manager = { path = "../crypto_manager" }
 asset_definition = { path = "../../frameworks/definition" }
 asset_log = { path = "../../frameworks/os_dependency/log" }

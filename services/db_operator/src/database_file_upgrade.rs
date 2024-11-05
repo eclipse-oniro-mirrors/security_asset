@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 
-//! This module encapsulates the database operation function based on sqlite.
+//! This module provides interfaces for database management.
+//! Databases are isolated based on users and protected by locks.
 
-pub mod database;
-pub mod database_file_upgrade;
-mod statement;
-mod table;
-mod transaction;
-pub mod types;
+use asset_definition::Result;
 
-#[cfg(test)]
-#[path = "test/lib.rs"]
-mod test;
+use crate::database::Database;
+
+/// Trigger upgrade of database version and renaming secret key alias.
+pub fn trigger_db_upgrade(user_id: i32) -> Result<()> {
+    let _ = Database::build(user_id)?;
+    Ok(())
+}

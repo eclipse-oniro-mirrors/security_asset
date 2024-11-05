@@ -19,8 +19,9 @@
 use core::ffi::c_void;
 use std::{ffi::CStr, fs, ptr::null_mut, sync::Mutex};
 
-use asset_common::OwnerType;
+use asset_common::{CallingInfo, OwnerType};
 use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
+use asset_crypto_manager::secret_key::rename_key_alias;
 use asset_log::{loge, logi};
 
 use crate::{
@@ -28,7 +29,8 @@ use crate::{
     table::Table,
     types::{
         column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1,
-        DB_UPGRADE_VERSION_V2, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2,
+        DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO,
+        UPGRADE_COLUMN_INFO_V2, UPGRADE_COLUMN_INFO_V3,
     },
 };
 
@@ -109,7 +111,7 @@ impl Database {
         let _lock = db.db_lock.mtx.lock().unwrap();
         db.open_and_restore()?;
         db.restore_if_exec_fail(|e: &Table| e.create(COLUMN_INFO))?;
-        db.upgrade(DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
+        db.upgrade(user_id, DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
         Ok(db)
     }
 
@@ -194,20 +196,64 @@ impl Database {
 
     /// Upgrade database to new version.
     #[allow(dead_code)]
-    pub fn upgrade(&mut self, ver: u32, callback: UpgradeDbCallback) -> Result<()> {
-        let mut version_old = self.get_db_version()?;
-        logi!("current database version: {}", version_old);
-        if version_old >= ver {
+    pub fn upgrade(&mut self, user_id: i32, target_ver: u32, callback: UpgradeDbCallback) -> Result<()> {
+        let mut current_ver = self.get_db_version()?;
+        logi!("current database version: {}", current_ver);
+        if current_ver >= target_ver {
             return Ok(());
         }
-        if version_old == DB_UPGRADE_VERSION_V1 {
-            self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION_V2, UPGRADE_COLUMN_INFO_V2))?;
-            version_old += 1;
+        while current_ver < target_ver {
+            match current_ver {
+                DB_UPGRADE_VERSION_V1 => {
+                    self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION_V2, UPGRADE_COLUMN_INFO_V2))?;
+                    current_ver += 1;
+                },
+                DB_UPGRADE_VERSION_V2 => {
+                    self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION_V3, UPGRADE_COLUMN_INFO_V3))?;
+                    current_ver += 1;
+                },
+                DB_UPGRADE_VERSION_V3 => {
+                    if self.upgrade_key_alias(user_id)? {
+                        self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION, UPGRADE_COLUMN_INFO))?;
+                        current_ver += 1;
+                    } else {
+                        break;
+                    }
+                },
+                _ => break,
+            }
         }
-        if version_old == DB_UPGRADE_VERSION_V2 {
-            self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION, UPGRADE_COLUMN_INFO))?;
+
+        callback(self, current_ver, target_ver)
+    }
+
+    fn upgrade_key_alias(&mut self, user_id: i32) -> Result<bool> {
+        let query_results = self.query_data_without_lock(
+            &vec![
+                column::OWNER_TYPE,
+                column::OWNER,
+                column::AUTH_TYPE,
+                column::ACCESSIBILITY,
+                column::REQUIRE_PASSWORD_SET,
+            ],
+            &DbMap::new(),
+            None,
+            true,
+        )?;
+
+        let mut upgrade_result = true;
+        for query_result in query_results {
+            let owner_type = query_result.get_enum_attr(&column::OWNER_TYPE)?;
+            let owner_info = query_result.get_bytes_attr(&column::OWNER)?;
+            let calling_info = CallingInfo::new(user_id, owner_type, owner_info.to_vec());
+            let auth_type = query_result.get_enum_attr(&column::AUTH_TYPE)?;
+            let access_type = query_result.get_enum_attr(&column::ACCESSIBILITY)?;
+            let require_password_set = query_result.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
+            // upgrade_result is set to false as long as any call in the loop for renaming key alias returned false.
+            upgrade_result &= rename_key_alias(&calling_info, auth_type, access_type, require_password_set);
         }
-        callback(self, version_old, ver)
+
+        Ok(upgrade_result)
     }
 
     /// Delete database file.
@@ -437,6 +483,34 @@ impl Database {
         is_filter_sync: bool,
     ) -> Result<Vec<DbMap>> {
         let _lock = self.db_lock.mtx.lock().unwrap();
+        let closure = |e: &Table| e.query_row(columns, condition, query_options, is_filter_sync, COLUMN_INFO);
+        self.restore_if_exec_fail(closure)
+    }
+
+    /// Query data that meets specified conditions(can be empty) from the database.
+    /// If the operation is successful, the resultSet is returned.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use asset_definition::Value;
+    /// use asset_db_operator::{database::Database, types::{column, DbMap}};
+    ///
+    /// // SQL: select * from table_name where Owner='owner' and OwnerType=1 and Alias='alias'
+    /// let cond = DbMap::new();
+    /// cond.insert(column::OWNER, Value::Bytes(b"owner".to_ver()));
+    /// cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Native as u32));
+    /// cond.insert(column::ALIAS, Value::Bytes(b"alias".to_ver()));
+    /// let user_id = 100;
+    /// let ret = Database::build(user_id)?.query_data_without_lock(&vec![], &cond, None, false);
+    /// ```
+    pub fn query_data_without_lock(
+        &mut self,
+        columns: &Vec<&'static str>,
+        condition: &DbMap,
+        query_options: Option<&QueryOptions>,
+        is_filter_sync: bool,
+    ) -> Result<Vec<DbMap>> {
         let closure = |e: &Table| e.query_row(columns, condition, query_options, is_filter_sync, COLUMN_INFO);
         self.restore_if_exec_fail(closure)
     }

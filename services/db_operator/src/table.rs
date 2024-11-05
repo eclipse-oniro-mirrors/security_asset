@@ -219,9 +219,9 @@ impl<'a> Table<'a> {
         self.db.exec(&sql)
     }
 
-    /// Create a table with name 'table_name'.
+    /// Create a table with name 'table_name' at specific version.
     /// The columns is descriptions for each column.
-    pub(crate) fn create(&self, columns: &[ColumnInfo]) -> Result<()> {
+    pub(crate) fn create_with_version(&self, columns: &[ColumnInfo], version: u32) -> Result<()> {
         let is_exist = self.exist()?;
         if is_exist {
             return Ok(());
@@ -245,11 +245,17 @@ impl<'a> Table<'a> {
         sql.push_str(");");
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
-        if self.db.exec(sql.as_str()).is_ok() && self.db.set_version(DB_UPGRADE_VERSION).is_ok() {
+        if self.db.exec(sql.as_str()).is_ok() && self.db.set_version(version).is_ok() {
             trans.commit()
         } else {
             trans.rollback()
         }
+    }
+
+    /// Create a table with name 'table_name'.
+    /// The columns is descriptions for each column.
+    pub(crate) fn create(&self, columns: &[ColumnInfo]) -> Result<()> {
+        self.create_with_version(columns, DB_UPGRADE_VERSION)
     }
 
     pub(crate) fn upgrade(&self, ver: u32, columns: &[UpgradeColumnInfo]) -> Result<()> {

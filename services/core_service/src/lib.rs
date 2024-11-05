@@ -15,8 +15,9 @@
 
 //! This module implements the Asset service.
 
-use std::time::{Duration, Instant};
+use std::{fs, time::{Duration, Instant}};
 
+use asset_db_operator::database_file_upgrade::trigger_db_upgrade;
 use samgr::manage::SystemAbilityManager;
 use system_ability_fwk::{
     ability::{Ability, Handler},
@@ -24,7 +25,7 @@ use system_ability_fwk::{
 };
 use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
 
-use asset_common::{CallingInfo, Counter};
+use asset_common::{AutoCounter, CallingInfo, Counter};
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
 use asset_ipc::SA_ID;
@@ -102,6 +103,19 @@ impl Ability for AssetAbility {
     }
 }
 
+const ROOT_PATH: &str = "data/service/el1/public/asset_service";
+
+async fn upgrade_process() -> Result<()> {
+    let _counter_user = AutoCounter::new();
+    for entry in fs::read_dir(ROOT_PATH)? {
+        let entry = entry?;
+        if let Ok(user_id) = entry.file_name().to_string_lossy().parse::<i32>() {
+            trigger_db_upgrade(user_id)?;
+        }
+    }
+    Ok(())
+}
+
 fn start_service(handler: Handler) -> Result<()> {
     let asset_plugin = AssetPlugin::get_instance();
     match asset_plugin.load_plugin() {
@@ -116,6 +130,7 @@ fn start_service(handler: Handler) -> Result<()> {
     if !handler.publish(AssetService::new(handler.clone())) {
         return log_throw_error!(ErrCode::IpcError, "Asset publish stub object failed");
     };
+    let _handle = ylong_runtime::spawn(upgrade_process());
     Ok(())
 }
 
