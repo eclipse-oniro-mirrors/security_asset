@@ -26,6 +26,7 @@ use asset_common::{AutoCounter, CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
 use asset_db_operator::{
     database::Database,
+    database_file_upgrade::trigger_db_upgrade,
     types::{column, DbMap},
 };
 use asset_definition::{Result, SyncType, Value};
@@ -170,6 +171,12 @@ pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, ap
 
 pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
     logi!("[INFO]On user -{}- unlocked.", user_id);
+
+    // Trigger upgrading db version and key alias
+    match trigger_db_upgrade(user_id) {
+        Ok(()) => logi!("upgrade db version and key alias on user-unlocked success."),
+        Err(e) => loge!("upgrade db version and key alias on user-unlocked failed, err is: {}", e),
+    }
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();

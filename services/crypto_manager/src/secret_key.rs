@@ -17,7 +17,7 @@
 
 use asset_common::{transfer_error_code, CallingInfo, SUCCESS};
 use asset_definition::{Accessibility, AuthType, ErrCode, Result};
-use asset_log::logw;
+use asset_log::{loge, logi};
 use asset_utils::hasher;
 
 use crate::{HksBlob, KeyId};
@@ -32,13 +32,22 @@ pub struct SecretKey {
     calling_info: CallingInfo,
 }
 
+enum KeyAliasVersion {
+    V1(Vec<u8>), // Old secret key alias
+    V2(Vec<u8>), // New secret key alias
+    V3,          // Prefixed new secret key alias
+    None,
+}
+
 extern "C" {
     fn GenerateKey(keyId: *const KeyId, need_auth: bool, require_password_set: bool) -> i32;
     fn DeleteKey(keyId: *const KeyId) -> i32;
     fn IsKeyExist(keyId: *const KeyId) -> i32;
+    fn RenameKeyAlias(keyId: *const KeyId, newKeyAlias: *const HksBlob) -> i32;
 }
 
 const MAX_ALIAS_SIZE: usize = 64;
+const ALIAS_PREFIX: [u8; 2] = [b'1', b'_'];
 
 fn append_attr<T>(tag: &str, value: T, vec: &mut Vec<u8>)
 where
@@ -72,6 +81,109 @@ fn calculate_key_alias(
     hasher::sha256(standard, &alias)
 }
 
+fn get_existing_key_alias(
+    calling_info: &CallingInfo,
+    auth_type: AuthType,
+    access_type: Accessibility,
+    require_password_set: bool,
+) -> Result<KeyAliasVersion> {
+    let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
+    let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias.clone()].concat();
+    let key = SecretKey {
+        auth_type,
+        access_type,
+        require_password_set,
+        alias: prefixed_new_alias.clone(),
+        calling_info: calling_info.clone(),
+    };
+    if key.exists()? {
+        logi!("[INFO][{access_type}]-typed secret key with v3 alias exists.");
+        return Ok(KeyAliasVersion::V3);
+    }
+
+    let key = SecretKey {
+        auth_type,
+        access_type,
+        require_password_set,
+        alias: new_alias.clone(),
+        calling_info: calling_info.clone(),
+    };
+    if key.exists()? {
+        logi!("[INFO][{access_type}]-typed secret key with v2 alias exists.");
+        return Ok(KeyAliasVersion::V2(new_alias));
+    }
+
+    let old_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false);
+    let key = SecretKey {
+        auth_type,
+        access_type,
+        require_password_set,
+        alias: old_alias.clone(),
+        calling_info: calling_info.clone(),
+    };
+    if key.exists()? {
+        logi!("[INFO][{access_type}]-typed secret key with v1 alias exists.");
+        return Ok(KeyAliasVersion::V1(old_alias));
+    }
+
+    Ok(KeyAliasVersion::None)
+}
+
+fn huks_rename_key_alias(
+    calling_info: &CallingInfo,
+    auth_type: AuthType,
+    access_type: Accessibility,
+    require_password_set: bool,
+    alias: Vec<u8>,
+) -> i32 {
+    // Prepare secret key id with outdated alias.
+    let alias_ref = &alias;
+    let alias_blob = HksBlob { size: alias.len() as u32, data: alias_ref.as_ptr() };
+    let key_id = KeyId::new(calling_info.user_id(), alias_blob, access_type);
+
+    // Prepare secret key alias to be replaced in.
+    let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
+    let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias].concat();
+    let prefixed_new_alias_ref = &prefixed_new_alias;
+    let prefixed_new_alias_blob =
+        HksBlob { size: prefixed_new_alias.len() as u32, data: prefixed_new_alias_ref.as_ptr() };
+
+    unsafe { RenameKeyAlias(&key_id as *const KeyId, &prefixed_new_alias_blob as *const HksBlob) }
+}
+
+/// Rename a secret key alias.
+pub fn rename_key_alias(
+    calling_info: &CallingInfo,
+    auth_type: AuthType,
+    access_type: Accessibility,
+    require_password_set: bool,
+) -> bool {
+    match get_existing_key_alias(calling_info, auth_type, access_type, require_password_set) {
+        Ok(KeyAliasVersion::V3) => {
+            logi!("[INFO]Alias of [{access_type}]-typed secret key has already been renamed successfully.");
+            true
+        },
+        Ok(KeyAliasVersion::V2(alias)) | Ok(KeyAliasVersion::V1(alias)) => {
+            let ret = huks_rename_key_alias(calling_info, auth_type, access_type, require_password_set, alias);
+            if let SUCCESS = ret {
+                logi!("[INFO]Rename alias of [{access_type}]-typed secret key success.");
+                true
+            } else {
+                loge!("[FATAL]Rename alias of [{access_type}]-typed secret key failed, err is {}.", ret);
+                false
+            }
+        },
+        Ok(KeyAliasVersion::None) => {
+            loge!("[FATAL][{access_type}]-typed secret key does not exist.");
+            false
+        },
+        Err(e) => {
+            loge!("[FATAL]Can not determine whether [{access_type}]-typed secret key exists, err is {}", e);
+            false
+        },
+    }
+}
+
 impl SecretKey {
     /// New a secret key.
     pub fn new(
@@ -80,23 +192,16 @@ impl SecretKey {
         access_type: Accessibility,
         require_password_set: bool,
     ) -> Result<Self> {
-        // Check whether new key exists.
-        let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
-        let new_key = Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() };
-        if new_key.exists()? {
-            return Ok(new_key);
-        }
-
-        // Check whether old key exists.
-        let alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false);
-        let old_key = Self { auth_type, access_type, require_password_set, alias, calling_info: calling_info.clone() };
-        if old_key.exists()? {
-            logw!("[WARNING]Use old alias key.");
-            return Ok(old_key);
-        }
-
-        // Use new key.
-        Ok(new_key)
+        let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
+        let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias.clone()].concat();
+        let key = Self {
+            auth_type,
+            access_type,
+            require_password_set,
+            alias: prefixed_new_alias,
+            calling_info: calling_info.clone(),
+        };
+        Ok(key)
     }
 
     /// Check whether the secret key exists.
