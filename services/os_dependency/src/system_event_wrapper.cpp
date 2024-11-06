@@ -29,7 +29,7 @@ using namespace OHOS::AppExecFwk::Constants;
 using namespace OHOS::EventFwk;
 
 const char * const APP_ID = "appId";
-const char * const COMMON_EVENT_RESTORE_START = "COMMON_EVENT_RESTORE_START";
+const char * const COMMON_EVENT_RESTORE_START = "usual.event.RESTORE_START";
 const char * const COMMON_EVENT_USER_PIN_CREATED = "USER_PIN_CREATED_EVENT";
 const char * const BUNDLE_NAME = "bundleName";
 const char * const PERMISSION_MANAGE_USER_IDM = "ohos.permission.MANAGE_USER_IDM";
