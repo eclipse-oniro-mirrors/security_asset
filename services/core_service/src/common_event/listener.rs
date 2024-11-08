@@ -277,7 +277,7 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
 }
 
 pub(crate) fn notify_on_user_removed(user_id: i32) {
-    logi!("[INFO]On user remove [{}]", user_id);
+    logi!("[INFO]On user remove [{}].", user_id);
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
