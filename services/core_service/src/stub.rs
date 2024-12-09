@@ -18,7 +18,7 @@
 use asset_common::{AutoCounter, CallingInfo, OwnerType, ProcessInfo, ProcessInfoDetail};
 use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 
-use asset_definition::{AssetError, Result};
+use asset_definition::{AssetError, AssetMap, Result};
 use asset_ipc::{deserialize_map, serialize_maps, IpcCode, IPC_SUCCESS, SA_NAME};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
@@ -33,6 +33,7 @@ use asset_sdk::{
 use crate::{unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
 
 const REDIRECT_START_CODE: u32 = 200;
+const MAX_GROUP_ID_LEN: usize = 127;
 
 impl RemoteStub for AssetService {
     fn on_remote_request(
@@ -84,6 +85,24 @@ fn on_app_request(process_info: &ProcessInfo, calling_info: &CallingInfo) -> Res
     Ok(())
 }
 
+fn check_group_arugments(map: &AssetMap) -> IpcResult<()> {
+    if let Some(Value::Bytes(group)) = map.get(&Tag::GroupId) {
+        if map.get(&Tag::IsPersistent).is_some() {
+            loge!("[FATAL][SA]Invalid argument, group asset is not allowed to be stored persistently.");
+            return Err(IpcStatusCode::Einval);
+        }
+        if group.len() > MAX_GROUP_ID_LEN {
+            loge!(
+                "[FATAL][SA]Invalid argument, the length of the value of Tag[{}] exceeds limit {}.",
+                &Tag::GroupId,
+                MAX_GROUP_ID_LEN
+            );
+            return Err(IpcStatusCode::Einval);
+        }
+    }
+    Ok(())
+}
+
 fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
     match data.read_interface_token() {
         Ok(interface_token) if interface_token == stub.descriptor() => {},
@@ -95,8 +114,8 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
     let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
 
     let map = deserialize_map(data).map_err(asset_err_handle)?;
-
-    let process_info = ProcessInfo::build().map_err(asset_err_handle)?;
+    check_group_arugments(&map)?;
+    let process_info = ProcessInfo::build(map.get(&Tag::GroupId)).map_err(asset_err_handle)?;
     let calling_info = CallingInfo::build(map.get(&Tag::UserId).cloned(), &process_info);
     on_app_request(&process_info, &calling_info).map_err(asset_err_handle)?;
 

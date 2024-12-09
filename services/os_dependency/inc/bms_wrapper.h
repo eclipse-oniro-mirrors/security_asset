@@ -31,6 +31,10 @@ typedef struct {
     uint8_t *appId;
     uint32_t appIdLen;
     int32_t appIndex;
+    uint8_t *groupId;
+    uint32_t groupIdLen;
+    uint8_t *developerId;
+    uint8_t developerIdLen;
 } HapInfo;
 
 typedef struct {

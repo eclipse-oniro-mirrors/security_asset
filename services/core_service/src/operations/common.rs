@@ -80,7 +80,7 @@ pub(crate) const NORMAL_LABEL_ATTRS: [Tag; 4] =
 pub(crate) const NORMAL_LOCAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelNormalLocal1, Tag::DataLabelNormalLocal2, Tag::DataLabelNormalLocal3, Tag::DataLabelNormalLocal4];
 
-pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 8] = [
+pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 9] = [
     Tag::Alias,
     Tag::Accessibility,
     Tag::AuthType,
@@ -88,6 +88,7 @@ pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 8] = [
     Tag::SyncType,
     Tag::RequirePasswordSet,
     Tag::RequireAttrEncrypted,
+    Tag::GroupId,
     Tag::UserId,
 ];
 
@@ -131,6 +132,12 @@ pub(crate) fn into_asset_map(db_data: &DbMap) -> AssetMap {
 pub(crate) fn add_owner_info(calling_info: &CallingInfo, db_data: &mut DbMap) {
     db_data.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
     db_data.insert(column::OWNER_TYPE, Value::Number(calling_info.owner_type()));
+}
+
+pub(crate) fn add_group_info(group: &Option<Vec<u8>>, db_data: &mut DbMap) {
+    if let Some(group) = group {
+        db_data.insert(column::GROUP_ID, Value::Bytes(group.clone()));
+    };
 }
 
 pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<SecretKey> {

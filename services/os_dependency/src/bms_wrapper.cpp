@@ -31,14 +31,7 @@ using namespace AppExecFwk;
 using namespace Security::AccessToken;
 
 namespace {
-int32_t GetHapProcessInfo(int32_t userId, uint32_t tokenId, ProcessInfo *processInfo)
-{
-    HapTokenInfo hapTokenInfo;
-    int32_t ret = AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
-    if (ret != RET_SUCCESS) {
-        LOGE("[FATAL]Get hap token info failed, ret = %{public}d", ret);
-        return ASSET_ACCESS_TOKEN_ERROR;
-    }
+int32_t GetFromHapTokenInfo(uint32_t tokenId, HapTokenInfo hapTokenInfo, ProcessInfo *processInfo) {
     if (memcpy_s(processInfo->processName, processInfo->processNameLen, hapTokenInfo.bundleName.c_str(),
         hapTokenInfo.bundleName.size()) != EOK) {
         LOGE("[FATAL]The processName buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
@@ -47,13 +40,10 @@ int32_t GetHapProcessInfo(int32_t userId, uint32_t tokenId, ProcessInfo *process
     }
     processInfo->processNameLen = hapTokenInfo.bundleName.size();
 
-    AppExecFwk::BundleMgrClient bmsClient;
-    AppExecFwk::BundleInfo bundleInfo;
-    if (!bmsClient.GetBundleInfo(hapTokenInfo.bundleName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
-        bundleInfo, userId)) {
-        LOGE("[FATAL]Get bundle info failed!");
-        return ASSET_BMS_ERROR;
-    }
+    return ASSET_SUCCESS;
+}
+
+int32_t GetFromBundleInfo(AppExecFwk::BundleInfo bundleInfo, ProcessInfo *processInfo) {
     processInfo->hapInfo.appIndex = bundleInfo.appIndex;
 
     if (memcpy_s(processInfo->hapInfo.appId, processInfo->hapInfo.appIdLen, bundleInfo.appId.c_str(),
@@ -64,7 +54,49 @@ int32_t GetHapProcessInfo(int32_t userId, uint32_t tokenId, ProcessInfo *process
     }
     processInfo->hapInfo.appIdLen = bundleInfo.appId.size();
 
+    if (processInfo->hapInfo.groupIdLen != 0 && processInfo->hapInfo.developerIdLen != 0) {
+        for (const AppExecFwk::AssetAccessGroups &group : bundleInfo.applicationInfo.assetAccessGroups) {
+            if (std::memcmp(processInfo->hapInfo.groupId, group.assetGroupId.data(),
+                processInfo->hapInfo.groupIdLen) == 0) {
+                LOGI("[INFO]Found matching group id.");
+                if (memcpy_s(processInfo->hapInfo.developerId, processInfo->hapInfo.developerIdLen,
+                    group.developerId.c_str(), group.developerId.size()) != EOK) {
+                    LOGE("[FATAL]The developer id buffer is too small. Expect size: %{public}zu, "
+                    "actual size: %{public}u", group.developerId.size(), processInfo->hapInfo.developerIdLen);
+                    return ASSET_OUT_OF_MEMORY;
+                }
+                processInfo->hapInfo.developerIdLen = group.developerId.size();
+                return ASSET_SUCCESS;
+            }
+        }
+        LOGE("[FATAL]No matching group id found!");
+        return ASSET_PERMISSION_DENIED;
+    }
+
     return ASSET_SUCCESS;
+}
+
+int32_t GetHapProcessInfo(int32_t userId, uint32_t tokenId, ProcessInfo *processInfo)
+{
+    HapTokenInfo hapTokenInfo;
+    int32_t ret = AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
+    if (ret != RET_SUCCESS) {
+        LOGE("[FATAL]Get hap token info failed, ret = %{public}d", ret);
+        return ASSET_ACCESS_TOKEN_ERROR;
+    }
+    ret = GetFromHapTokenInfo(tokenId, hapTokenInfo, processInfo);
+    if (ret != ASSET_SUCCESS) {
+        return ret;
+    }
+
+    AppExecFwk::BundleMgrClient bmsClient;
+    AppExecFwk::BundleInfo bundleInfo;
+    if (!bmsClient.GetBundleInfo(hapTokenInfo.bundleName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
+        bundleInfo, userId)) {
+        LOGE("[FATAL]Get bundle info failed!");
+        return ASSET_BMS_ERROR;
+    }
+    return GetFromBundleInfo(bundleInfo, processInfo);
 }
 
 int32_t GetNativeProcessInfo(uint32_t tokenId, uint64_t uid, ProcessInfo *processInfo)

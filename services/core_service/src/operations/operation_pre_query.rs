@@ -18,7 +18,7 @@
 use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager, secret_key::SecretKey};
 use asset_db_operator::{
-    database::create_db_instance,
+    database::build_db,
     types::{column, DbMap},
 };
 use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
@@ -48,7 +48,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
 }
 
 fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<(Accessibility, bool)> {
-    let mut db = create_db_instance(attrs, calling_info)?;
+    let mut db = build_db(attrs, calling_info)?;
     let results = db.query_datas(&vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET], db_data, None, true)?;
     match results.len() {
         0 => log_throw_error!(ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found."),

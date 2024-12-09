@@ -72,9 +72,14 @@ fn calculate_key_alias(
     let mut alias: Vec<u8> = Vec::with_capacity(MAX_ALIAS_SIZE);
     alias.extend_from_slice(&calling_info.user_id().to_le_bytes());
     alias.push(b'_');
-    alias.extend_from_slice(&calling_info.owner_type().to_le_bytes());
-    alias.push(b'_');
-    alias.extend(calling_info.owner_info());
+    match calling_info.group() {
+        Some(group) => alias.extend(group),
+        None => {
+            alias.extend_from_slice(&calling_info.owner_type().to_le_bytes());
+            alias.push(b'_');
+            alias.extend(calling_info.owner_info());
+        },
+    }
     append_attr::<AuthType>("AuthType", auth_type, &mut alias);
     append_attr::<Accessibility>("Accessibility", access_type, &mut alias);
     append_attr::<bool>("RequirePasswordSet", require_password_set, &mut alias);

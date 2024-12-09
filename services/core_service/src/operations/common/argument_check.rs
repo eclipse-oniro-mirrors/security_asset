@@ -172,6 +172,7 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::UserId => check_user_id(tag, value),
         Tag::UpdateTime => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_TIME_SIZE),
         Tag::OperationType => check_enum_variant::<OperationType>(tag, value),
+        Tag::GroupId => Ok(()),
     }
 }
 

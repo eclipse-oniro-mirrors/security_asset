@@ -18,14 +18,14 @@
 
 use std::{fs, path::Path};
 
-use asset_common::OwnerType;
+use asset_common::{CallingInfo, OwnerType};
 use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
 use asset_file_operator::common::DB_SUFFIX;
 use asset_log::logi;
 
 use crate::{
     database::{
-        fmt_backup_path, fmt_de_db_path_with_name, get_db, get_normal_db, get_split_db_lock_by_user_id, Database,
+        fmt_backup_path, fmt_de_db_path_with_name, get_db, get_db_by_type, get_split_db_lock_by_user_id, Database,
         CE_ROOT_PATH, DE_ROOT_PATH, OLD_DB_NAME,
     },
     types::{column, DbMap, QueryOptions, DB_UPGRADE_VERSION_V3},
@@ -47,24 +47,28 @@ fn check_old_db_exist(user_id: i32) -> bool {
 }
 
 /// Use owner_type and owner_info construct db name.
-pub fn construct_splited_db_name(owner_type: OwnerType, owner_info: &[u8], is_ce: bool) -> Result<String> {
-    let mut res: String = match owner_type {
+pub fn construct_splited_db_name(calling_info: &CallingInfo, is_ce: bool) -> Result<String> {
+    let mut res: String = match calling_info.owner_type_enum() {
         OwnerType::Hap => {
-            let owner_info_string = String::from_utf8_lossy(owner_info).to_string();
-            let split_owner_info: Vec<&str> = owner_info_string.split('_').collect();
-            if split_owner_info.len() < MINIM_OWNER_INFO_LEN || split_owner_info.last().is_none() {
-                return log_throw_error!(ErrCode::DatabaseError, "[FATAL]The queried owner info is not correct.");
+            if let Some(group) = calling_info.group() {
+                format!("Group_{}", String::from_utf8_lossy(group))
+            } else {
+                let owner_info_string = String::from_utf8_lossy(calling_info.owner_info()).to_string();
+                let split_owner_info: Vec<&str> = owner_info_string.split('_').collect();
+                if split_owner_info.len() < MINIM_OWNER_INFO_LEN || split_owner_info.last().is_none() {
+                    return log_throw_error!(ErrCode::DatabaseError, "[FATAL]The queried owner info is not correct.");
+                }
+                let app_index = split_owner_info.last().unwrap();
+                let mut split_owner_info_mut = split_owner_info.clone();
+                for _ in 0..REMOVE_INDEX {
+                    split_owner_info_mut.pop();
+                }
+                let owner_info = split_owner_info_mut.join("_").clone();
+                format!("Hap_{}_{}", owner_info, app_index)
             }
-            let app_index = split_owner_info.last().unwrap();
-            let mut split_owner_info_mut = split_owner_info.clone();
-            for _ in 0..REMOVE_INDEX {
-                split_owner_info_mut.pop();
-            }
-            let owner_info = split_owner_info_mut.join("_").clone();
-            format!("Hap_{}_{}", owner_info, app_index)
         },
         OwnerType::Native => {
-            format!("Native_{}", String::from_utf8_lossy(owner_info))
+            format!("Native_{}", String::from_utf8_lossy(calling_info.owner_info()))
         },
     };
     if is_ce {
@@ -74,7 +78,8 @@ pub fn construct_splited_db_name(owner_type: OwnerType, owner_info: &[u8], is_ce
 }
 
 fn get_db_before_split(user_id: i32) -> Result<Database> {
-    get_db(user_id, OLD_DB_NAME, DB_UPGRADE_VERSION_V3, None)
+    let db_path = fmt_de_db_path_with_name(user_id, OLD_DB_NAME);
+    get_db_by_type(user_id, OLD_DB_NAME, db_path, DB_UPGRADE_VERSION_V3, None)
 }
 
 fn get_value_from_db_map(db_map: &DbMap, key: &str) -> Result<Value> {
@@ -99,9 +104,11 @@ fn get_new_db(user_id: i32, info_map: &DbMap) -> Result<Database> {
     // 1.1 construct db name
     let owner_type = OwnerType::try_from(info_map.get_num_attr(&column::OWNER_TYPE)?.to_owned())?;
     let owner_info = info_map.get_bytes_attr(&column::OWNER)?;
-    let new_db_name = construct_splited_db_name(owner_type, owner_info, false)?;
+    let calling_info = CallingInfo::new(user_id, owner_type, owner_info.to_vec(), None);
+    let new_db_name = construct_splited_db_name(&calling_info, false)?;
     // 1.2 construct new db
-    get_db(user_id, &new_db_name, DB_UPGRADE_VERSION_V3, None)
+    let db_path = fmt_de_db_path_with_name(user_id, &new_db_name);
+    get_db_by_type(user_id, &new_db_name, db_path, DB_UPGRADE_VERSION_V3, None)
 }
 
 /// Trigger upgrade of database version and renaming secret key alias.
@@ -115,7 +122,7 @@ pub fn trigger_db_upgrade(user_id: i32, is_ce: bool) -> Result<()> {
         let entry = entry?;
         if entry.file_name().to_string_lossy().ends_with(DB_SUFFIX) {
             if let Some(file_name_stem) = entry.file_name().to_string_lossy().strip_suffix(DB_SUFFIX) {
-                let _ = get_normal_db(user_id, file_name_stem, is_ce)?;
+                let _ = get_db(user_id, file_name_stem, is_ce)?;
             }
         }
     }

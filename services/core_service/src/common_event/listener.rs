@@ -53,7 +53,7 @@ const USER_ID_VEC_BUFFER: u32 = 5;
 const MINIMUM_MAIN_USER_ID: i32 = 100;
 
 fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result<()> {
-    let db_name = construct_splited_db_name(calling_info.owner_type_enum(), calling_info.owner_info(), is_ce)?;
+    let db_name = construct_splited_db_name(calling_info, is_ce)?;
     for db_path in fs::read_dir(file_path)? {
         let db_path = db_path?;
         let db_file_name = db_path.file_name().to_string_lossy().to_string();
@@ -78,8 +78,7 @@ fn delete_in_de_db_on_package_removed(
     check_cond: &DbMap,
 ) -> Result<bool> {
     // Delete non-persistent data in de db.
-    let mut de_db =
-        Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)?;
+    let mut de_db = Database::build(calling_info, false)?;
     let _ = de_db.delete_datas(delete_cond, Some(reverse_condition), false)?;
     let de_db_data_exists = de_db.is_data_exists(check_cond, false)?;
     // remove db and backup db
@@ -96,8 +95,7 @@ fn delete_in_ce_db_on_package_removed(
     check_cond: &DbMap,
 ) -> Result<bool> {
     // Delete non-persistent data in ce db if ce db file exists.
-    let mut ce_db =
-        Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), true)?;
+    let mut ce_db = Database::build(calling_info, true)?;
     let _ = ce_db.delete_datas(delete_cond, Some(reverse_condition), false)?;
     // Check whether there is still persistent data left in ce db.
     let ce_db_data_exists = ce_db.is_data_exists(check_cond, false)?;
@@ -136,7 +134,7 @@ fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) {
     let _counter_user = AutoCounter::new();
     let start_time = Instant::now();
     let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner, owner_size as usize).to_vec() };
-    let calling_info = CallingInfo::new(user_id, OwnerType::Hap, owner.clone());
+    let calling_info = CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), None);
     clear_cryptos(&calling_info);
     let res = match delete_on_package_removed(owner, &calling_info) {
         Ok(true) => {

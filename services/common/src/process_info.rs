@@ -17,7 +17,7 @@
 
 use ipc::Skeleton;
 
-use asset_definition::{log_throw_error, ErrCode, Result};
+use asset_definition::{log_throw_error, ErrCode, Result, Value};
 
 use crate::{get_user_id, OwnerType, SUCCESS};
 
@@ -26,6 +26,10 @@ struct HapInfoFfi {
     app_id: *mut u8,
     app_id_len: u32,
     app_index: i32,
+    group_id: *const u8,
+    group_id_len: u8,
+    developer_id: *mut u8,
+    developer_id_len: u8,
 }
 
 #[repr(C)]
@@ -46,13 +50,36 @@ struct ProcessInfoFfi {
 }
 
 impl ProcessInfoFfi {
-    fn init(user_id: u32, uid: u32, process_name: &mut Vec<u8>, app_id: &mut Vec<u8>) -> Self {
+    fn init(
+        user_id: u32,
+        uid: u32,
+        process_name: &mut Vec<u8>,
+        app_id: &mut Vec<u8>,
+        (group_id, developer_id): (&Option<Vec<u8>>, &mut Option<Vec<u8>>),
+    ) -> Self {
+        let (app_id, app_id_len) = (app_id.as_mut_ptr(), app_id.len() as u32);
+        let (group_id, group_id_len) = match group_id {
+            Some(group_id) => (group_id.as_ptr(), group_id.len() as u8),
+            None => (std::ptr::null(), 0),
+        };
+        let (developer_id, developer_id_len) = match developer_id {
+            Some(developer_id) => (developer_id.as_mut_ptr(), developer_id.len() as u8),
+            None => (std::ptr::null_mut(), 0),
+        };
         ProcessInfoFfi {
             user_id,
             owner_type: 0,
             process_name: process_name.as_mut_ptr(),
             process_name_len: process_name.len() as u32,
-            hap_info: HapInfoFfi { app_id: app_id.as_mut_ptr(), app_id_len: app_id.len() as u32, app_index: 0 },
+            hap_info: HapInfoFfi {
+                app_id,
+                app_id_len,
+                app_index: 0,
+                group_id,
+                group_id_len,
+                developer_id,
+                developer_id_len,
+            },
             native_info: NativeInfoFfi { uid },
         }
     }
@@ -71,6 +98,12 @@ pub struct HapInfo {
 
     /// app index
     pub app_index: i32,
+
+    /// group id for a hap
+    pub group_id: Option<Vec<u8>>,
+
+    /// developer id for a hap
+    pub developer_id: Option<Vec<u8>>,
 }
 
 /// native-relative information
@@ -111,16 +144,24 @@ pub struct ProcessInfo {
 
 impl ProcessInfo {
     /// Build process info.
-    pub fn build() -> Result<Self> {
+    pub fn build(group_attr: Option<&Value>) -> Result<Self> {
         let uid = Skeleton::calling_uid();
         let user_id = get_user_id(uid)?;
         let mut process_name = vec![0u8; 256];
-        let mut app_id: Vec<u8> = vec![0u8; 256];
-        let mut process_info_ffi = ProcessInfoFfi::init(user_id, uid as u32, &mut process_name, &mut app_id);
+        let mut app_id = vec![0u8; 256];
+        let (group_id, mut developer_id) = match group_attr {
+            Some(Value::Bytes(group_attr)) => (Some(group_attr.clone()), Some(vec![0u8; 20])),
+            _ => (None, None),
+        };
+        let mut process_info_ffi =
+            ProcessInfoFfi::init(user_id, uid as u32, &mut process_name, &mut app_id, (&group_id, &mut developer_id));
         match unsafe { GetCallingProcessInfo(user_id, uid, &mut process_info_ffi) } {
             SUCCESS => {
                 process_name.truncate(process_info_ffi.process_name_len as usize);
                 app_id.truncate(process_info_ffi.hap_info.app_id_len as usize);
+                if let Some(developer_id) = &mut developer_id {
+                    developer_id.truncate(process_info_ffi.hap_info.developer_id_len as usize);
+                }
             },
             error => {
                 let error = ErrCode::try_from(error as u32)?;
@@ -129,9 +170,12 @@ impl ProcessInfo {
         }
 
         let process_info_detail = match OwnerType::try_from(process_info_ffi.owner_type)? {
-            OwnerType::Hap => {
-                ProcessInfoDetail::Hap(HapInfo { app_id, app_index: process_info_ffi.hap_info.app_index })
-            },
+            OwnerType::Hap => ProcessInfoDetail::Hap(HapInfo {
+                app_id,
+                app_index: process_info_ffi.hap_info.app_index,
+                group_id,
+                developer_id,
+            }),
             OwnerType::Native => ProcessInfoDetail::Native(NativeInfo { uid: process_info_ffi.native_info.uid }),
         };
 

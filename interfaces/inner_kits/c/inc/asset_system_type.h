@@ -183,6 +183,10 @@ typedef enum {
      */
     SEC_ASSET_TAG_REQUIRE_ATTR_ENCRYPTED = SEC_ASSET_TYPE_BOOL | 0x47,
     /**
+     * A tag whose value is a byte array indicating the group id an asset belongs to.
+     */
+    SEC_ASSET_TAG_GROUP_ID = SEC_ASSET_TYPE_BYTES | 0x48,
+    /**
      * Tag used to store specific user id. The value is of the uint32 type.
      */
     SEC_ASSET_TAG_USER_ID = SEC_ASSET_TYPE_NUMBER | 0x100,

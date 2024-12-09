@@ -21,7 +21,7 @@ use asset_common::CallingInfo;
 use asset_crypto_manager::crypto::Crypto;
 use asset_db_key_operator::generate_secret_key_if_needed;
 use asset_db_operator::{
-    database::{create_db_instance, Database},
+    database::{build_db, Database},
     types::{column, DbMap, DB_DATA_VERSION},
 };
 use asset_definition::{
@@ -151,12 +151,13 @@ fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // Fill all attributes to DbMap.
     let mut db_data = common::into_db_map(attributes);
     common::add_owner_info(calling_info, &mut db_data);
+    common::add_group_info(calling_info.group(), &mut db_data);
     add_system_attrs(&mut db_data)?;
     add_default_attrs(&mut db_data);
 
     let query = get_query_condition(calling_info, attributes)?;
 
-    let mut db = create_db_instance(attributes, calling_info)?;
+    let mut db = build_db(attributes, calling_info)?;
 
     if db.is_data_exists(&query, false)? {
         resolve_conflict(calling_info, &mut db, attributes, &query, &mut db_data)?;
