@@ -34,6 +34,7 @@ use crate::{unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService}
 
 const REDIRECT_START_CODE: u32 = 200;
 const MAX_GROUP_ID_LEN: usize = 127;
+const MIN_GROUP_ID_LEN: usize = 7;
 
 impl RemoteStub for AssetService {
     fn on_remote_request(
@@ -91,10 +92,11 @@ fn check_group_arugments(map: &AssetMap) -> IpcResult<()> {
             loge!("[FATAL][SA]Invalid argument, group asset is not allowed to be stored persistently.");
             return Err(IpcStatusCode::Einval);
         }
-        if group.len() > MAX_GROUP_ID_LEN {
+        if group.len() > MAX_GROUP_ID_LEN || group.len() < MIN_GROUP_ID_LEN {
             loge!(
-                "[FATAL][SA]Invalid argument, the length of the value of Tag[{}] exceeds limit {}.",
+                "[FATAL][SA]Invalid argument, the length of the value of Tag[{}] is not in the range [{}, {}].",
                 &Tag::GroupId,
+                MIN_GROUP_ID_LEN,
                 MAX_GROUP_ID_LEN
             );
             return Err(IpcStatusCode::Einval);

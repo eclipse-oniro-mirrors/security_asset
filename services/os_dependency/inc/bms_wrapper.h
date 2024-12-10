@@ -17,6 +17,7 @@
 #define BMS_WRAPPER
 
 #include <stdint.h>
+#include "asset_type.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,13 +29,10 @@ enum OwnerType {
 };
 
 typedef struct {
-    uint8_t *appId;
-    uint32_t appIdLen;
     int32_t appIndex;
-    uint8_t *groupId;
-    uint32_t groupIdLen;
-    uint8_t *developerId;
-    uint8_t developerIdLen;
+    Asset_Blob appId;
+    Asset_Blob groupId;
+    Asset_Blob developerId;
 } HapInfo;
 
 typedef struct {
@@ -44,11 +42,8 @@ typedef struct {
 typedef struct {
     uint32_t userId;
     OwnerType ownerType;
-
     // Bundle name for hap or process name for native.
-    uint8_t *processName;
-    uint32_t processNameLen;
-
+    Asset_Blob processName;
     HapInfo hapInfo;
     NativeInfo nativeInfo;
 } ProcessInfo;

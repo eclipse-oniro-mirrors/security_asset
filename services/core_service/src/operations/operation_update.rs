@@ -96,9 +96,7 @@ fn upgrade_to_latest_version(origin_db_data: &mut DbMap, update_db_data: &mut Db
 pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &AssetMap) -> Result<()> {
     check_arguments(query, update)?;
 
-    let mut query_db_data = common::into_db_map(query);
-    common::add_owner_info(calling_info, &mut query_db_data);
-
+    let query_db_data = common::into_db_map(query);
     let mut update_db_data = common::into_db_map(update);
 
     add_attrs(update, &mut update_db_data)?;

@@ -50,8 +50,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
 pub(crate) fn remove(calling_info: &CallingInfo, query: &AssetMap) -> Result<()> {
     check_arguments(query)?;
 
-    let mut db_data = common::into_db_map(query);
-    common::add_owner_info(calling_info, &mut db_data);
+    let db_data = common::into_db_map(query);
 
     let mut update_db_data = DbMap::new();
     add_system_attrs(&mut update_db_data)?;

@@ -15,9 +15,8 @@
 
 //! This module implements the capability of processing the identity information of the Asset caller.
 
-use asset_definition::Value;
-
 use crate::{process_info::ProcessInfoDetail, OwnerType, ProcessInfo};
+use asset_definition::Value;
 
 /// The identity of calling process.
 #[derive(Clone)]
@@ -142,7 +141,7 @@ fn test_build_callig_info_hap() {
         user_id,
         owner_type: OwnerType::Hap,
         process_name,
-        process_info_detail: ProcessInfoDetail::Hap(HapInfo { app_id, app_index, group_id, developer_id  }),
+        process_info_detail: ProcessInfoDetail::Hap(HapInfo { app_id, app_index, group_id, developer_id }),
     };
 
     let calling_info = CallingInfo::build(None, &process_info);

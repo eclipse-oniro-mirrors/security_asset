@@ -22,6 +22,7 @@ use asset_common::{CallingInfo, OwnerType};
 use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
 use asset_file_operator::common::DB_SUFFIX;
 use asset_log::logi;
+use asset_utils::hasher;
 
 use crate::{
     database::{
@@ -51,7 +52,7 @@ pub fn construct_splited_db_name(calling_info: &CallingInfo, is_ce: bool) -> Res
     let mut res: String = match calling_info.owner_type_enum() {
         OwnerType::Hap => {
             if let Some(group) = calling_info.group() {
-                format!("Group_{}", String::from_utf8_lossy(group))
+                format!("Group_{}", String::from_utf8_lossy(&hasher::sha256(true, group)))
             } else {
                 let owner_info_string = String::from_utf8_lossy(calling_info.owner_info()).to_string();
                 let split_owner_info: Vec<&str> = owner_info_string.split('_').collect();

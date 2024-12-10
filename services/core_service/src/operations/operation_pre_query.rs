@@ -68,7 +68,6 @@ pub(crate) fn pre_query(calling_info: &CallingInfo, query: &AssetMap) -> Result<
     check_arguments(query)?;
 
     let mut db_data = common::into_db_map(query);
-    common::add_owner_info(calling_info, &mut db_data);
     db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::Any as u32));
 
     let (access_type, require_password_set) = query_key_attrs(calling_info, &db_data, query)?;

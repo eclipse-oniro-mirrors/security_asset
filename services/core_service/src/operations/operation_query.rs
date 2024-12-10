@@ -175,7 +175,6 @@ pub(crate) fn query(calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<
     common::inform_asset_ext(calling_info, query);
 
     let mut db_data = common::into_db_map(query);
-    common::add_owner_info(calling_info, &mut db_data);
 
     match query.get(&Tag::ReturnType) {
         Some(Value::Number(return_type)) if *return_type == (ReturnType::All as u32) => {

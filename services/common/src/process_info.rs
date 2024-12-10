@@ -19,17 +19,14 @@ use ipc::Skeleton;
 
 use asset_definition::{log_throw_error, ErrCode, Result, Value};
 
-use crate::{get_user_id, OwnerType, SUCCESS};
+use crate::{get_user_id, ConstAssetBlob, MutAssetBlob, OwnerType, SUCCESS};
 
 #[repr(C)]
 struct HapInfoFfi {
-    app_id: *mut u8,
-    app_id_len: u32,
     app_index: i32,
-    group_id: *const u8,
-    group_id_len: u8,
-    developer_id: *mut u8,
-    developer_id_len: u8,
+    app_id: MutAssetBlob,
+    group_id: ConstAssetBlob,
+    developer_id: MutAssetBlob,
 }
 
 #[repr(C)]
@@ -41,10 +38,7 @@ struct NativeInfoFfi {
 struct ProcessInfoFfi {
     user_id: u32,
     owner_type: u32,
-
-    process_name: *mut u8,
-    process_name_len: u32,
-
+    process_name: MutAssetBlob,
     hap_info: HapInfoFfi,
     native_info: NativeInfoFfi,
 }
@@ -57,29 +51,21 @@ impl ProcessInfoFfi {
         app_id: &mut Vec<u8>,
         (group_id, developer_id): (&Option<Vec<u8>>, &mut Option<Vec<u8>>),
     ) -> Self {
-        let (app_id, app_id_len) = (app_id.as_mut_ptr(), app_id.len() as u32);
-        let (group_id, group_id_len) = match group_id {
-            Some(group_id) => (group_id.as_ptr(), group_id.len() as u8),
-            None => (std::ptr::null(), 0),
+        let process_name = MutAssetBlob { data: process_name.as_mut_ptr(), size: process_name.len() as u32 };
+        let app_id = MutAssetBlob { data: app_id.as_mut_ptr(), size: app_id.len() as u32 };
+        let group_id = match group_id {
+            Some(group_id) => ConstAssetBlob { data: group_id.as_ptr(), size: group_id.len() as u32 },
+            None => ConstAssetBlob { data: std::ptr::null(), size: 0 },
         };
-        let (developer_id, developer_id_len) = match developer_id {
-            Some(developer_id) => (developer_id.as_mut_ptr(), developer_id.len() as u8),
-            None => (std::ptr::null_mut(), 0),
+        let developer_id = match developer_id {
+            Some(developer_id) => MutAssetBlob { data: developer_id.as_mut_ptr(), size: developer_id.len() as u32 },
+            None => MutAssetBlob { data: std::ptr::null_mut(), size: 0 },
         };
         ProcessInfoFfi {
             user_id,
             owner_type: 0,
-            process_name: process_name.as_mut_ptr(),
-            process_name_len: process_name.len() as u32,
-            hap_info: HapInfoFfi {
-                app_id,
-                app_id_len,
-                app_index: 0,
-                group_id,
-                group_id_len,
-                developer_id,
-                developer_id_len,
-            },
+            process_name,
+            hap_info: HapInfoFfi { app_index: 0, app_id, group_id, developer_id },
             native_info: NativeInfoFfi { uid },
         }
     }
@@ -157,10 +143,10 @@ impl ProcessInfo {
             ProcessInfoFfi::init(user_id, uid as u32, &mut process_name, &mut app_id, (&group_id, &mut developer_id));
         match unsafe { GetCallingProcessInfo(user_id, uid, &mut process_info_ffi) } {
             SUCCESS => {
-                process_name.truncate(process_info_ffi.process_name_len as usize);
-                app_id.truncate(process_info_ffi.hap_info.app_id_len as usize);
+                process_name.truncate(process_info_ffi.process_name.size as usize);
+                app_id.truncate(process_info_ffi.hap_info.app_id.size as usize);
                 if let Some(developer_id) = &mut developer_id {
-                    developer_id.truncate(process_info_ffi.hap_info.developer_id_len as usize);
+                    developer_id.truncate(process_info_ffi.hap_info.developer_id.size as usize);
                 }
             },
             error => {

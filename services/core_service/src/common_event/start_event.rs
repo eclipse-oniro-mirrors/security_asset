@@ -28,7 +28,6 @@ const SANDBOX_APP_INDEX: &str = "sandbox_app_index";
 const APP_ID: &str = "appId";
 const BUNDLE_NAME: &str = "bundleName";
 const APP_RESTORE_INDEX: &str = "index";
-// const ALL_GROUPS: &str = "";
 
 fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
     let Some(user_id) = want.get(USER_ID) else {
@@ -39,10 +38,6 @@ fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
         loge!("[FATIL]Get removed owner info failed, get appId fail");
         return;
     };
-    // let all_groups = match want.get(ALL_GROUPS) {
-    //     Some(all_groups) => Some(all_groups),
-    //     None => logi!("[INFO]No groups are found")
-    // }
 
     let mut app_index = 0;
     if is_sandbox {

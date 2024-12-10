@@ -31,41 +31,41 @@ using namespace AppExecFwk;
 using namespace Security::AccessToken;
 
 namespace {
-int32_t GetFromHapTokenInfo(uint32_t tokenId, HapTokenInfo hapTokenInfo, ProcessInfo *processInfo) {
-    if (memcpy_s(processInfo->processName, processInfo->processNameLen, hapTokenInfo.bundleName.c_str(),
+int32_t GetFromHapTokenInfo(const HapTokenInfo hapTokenInfo, ProcessInfo *processInfo) {
+    if (memcpy_s(processInfo->processName.data, processInfo->processName.size, hapTokenInfo.bundleName.c_str(),
         hapTokenInfo.bundleName.size()) != EOK) {
         LOGE("[FATAL]The processName buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
-            hapTokenInfo.bundleName.size(), processInfo->processNameLen);
+            hapTokenInfo.bundleName.size(), processInfo->processName.size);
         return ASSET_OUT_OF_MEMORY;
     }
-    processInfo->processNameLen = hapTokenInfo.bundleName.size();
+    processInfo->processName.size = hapTokenInfo.bundleName.size();
 
     return ASSET_SUCCESS;
 }
 
-int32_t GetFromBundleInfo(AppExecFwk::BundleInfo bundleInfo, ProcessInfo *processInfo) {
+int32_t GetFromBundleInfo(const AppExecFwk::BundleInfo bundleInfo, ProcessInfo *processInfo) {
     processInfo->hapInfo.appIndex = bundleInfo.appIndex;
 
-    if (memcpy_s(processInfo->hapInfo.appId, processInfo->hapInfo.appIdLen, bundleInfo.appId.c_str(),
+    if (memcpy_s(processInfo->hapInfo.appId.data, processInfo->hapInfo.appId.size, bundleInfo.appId.c_str(),
         bundleInfo.appId.size()) != EOK) {
         LOGE("[FATAL]The app id buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
-            bundleInfo.appId.size(), processInfo->hapInfo.appIdLen);
+            bundleInfo.appId.size(), processInfo->hapInfo.appId.size);
         return ASSET_OUT_OF_MEMORY;
     }
-    processInfo->hapInfo.appIdLen = bundleInfo.appId.size();
+    processInfo->hapInfo.appId.size = bundleInfo.appId.size();
 
-    if (processInfo->hapInfo.groupIdLen != 0 && processInfo->hapInfo.developerIdLen != 0) {
+    if (processInfo->hapInfo.groupId.size != 0 && processInfo->hapInfo.developerId.size != 0) {
         for (const AppExecFwk::AssetAccessGroups &group : bundleInfo.applicationInfo.assetAccessGroups) {
-            if (std::memcmp(processInfo->hapInfo.groupId, group.assetGroupId.data(),
-                processInfo->hapInfo.groupIdLen) == 0) {
+            if (std::memcmp(processInfo->hapInfo.groupId.data, group.assetGroupId.data(),
+                processInfo->hapInfo.groupId.size) == 0) {
                 LOGI("[INFO]Found matching group id.");
-                if (memcpy_s(processInfo->hapInfo.developerId, processInfo->hapInfo.developerIdLen,
+                if (memcpy_s(processInfo->hapInfo.developerId.data, processInfo->hapInfo.developerId.size,
                     group.developerId.c_str(), group.developerId.size()) != EOK) {
                     LOGE("[FATAL]The developer id buffer is too small. Expect size: %{public}zu, "
-                    "actual size: %{public}u", group.developerId.size(), processInfo->hapInfo.developerIdLen);
+                    "actual size: %{public}u", group.developerId.size(), processInfo->hapInfo.developerId.size);
                     return ASSET_OUT_OF_MEMORY;
                 }
-                processInfo->hapInfo.developerIdLen = group.developerId.size();
+                processInfo->hapInfo.developerId.size = group.developerId.size();
                 return ASSET_SUCCESS;
             }
         }
@@ -84,7 +84,7 @@ int32_t GetHapProcessInfo(int32_t userId, uint32_t tokenId, ProcessInfo *process
         LOGE("[FATAL]Get hap token info failed, ret = %{public}d", ret);
         return ASSET_ACCESS_TOKEN_ERROR;
     }
-    ret = GetFromHapTokenInfo(tokenId, hapTokenInfo, processInfo);
+    ret = GetFromHapTokenInfo(hapTokenInfo, processInfo);
     if (ret != ASSET_SUCCESS) {
         return ret;
     }
@@ -108,13 +108,13 @@ int32_t GetNativeProcessInfo(uint32_t tokenId, uint64_t uid, ProcessInfo *proces
         return ASSET_ACCESS_TOKEN_ERROR;
     }
 
-    if (memcpy_s(processInfo->processName, processInfo->processNameLen, nativeTokenInfo.processName.c_str(),
+    if (memcpy_s(processInfo->processName.data, processInfo->processName.size, nativeTokenInfo.processName.c_str(),
         nativeTokenInfo.processName.size()) != EOK) {
         LOGE("[FATAL]The processName buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
-            nativeTokenInfo.processName.size(), processInfo->processNameLen);
+            nativeTokenInfo.processName.size(), processInfo->processName.size);
         return ASSET_OUT_OF_MEMORY;
     }
-    processInfo->processNameLen = nativeTokenInfo.processName.size();
+    processInfo->processName.size = nativeTokenInfo.processName.size();
     processInfo->nativeInfo.uid = uid;
     return ASSET_SUCCESS;
 }

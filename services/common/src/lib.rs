@@ -27,6 +27,18 @@ pub const SUCCESS: i32 = 0;
 /// root user upper bound
 pub const ROOT_USER_UPPERBOUND: u32 = 99;
 
+#[repr(C)]
+struct ConstAssetBlob {
+    data: *const u8,
+    size: u32,
+}
+
+#[repr(C)]
+struct MutAssetBlob {
+    data: *mut u8,
+    size: u32,
+}
+
 impl_enum_trait! {
     /// The type of the calling.
     #[repr(C)]
