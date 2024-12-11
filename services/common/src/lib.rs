@@ -26,17 +26,36 @@ pub use process_info::{ProcessInfo, ProcessInfoDetail};
 pub const SUCCESS: i32 = 0;
 /// root user upper bound
 pub const ROOT_USER_UPPERBOUND: u32 = 99;
+/// Separator in owner info of calling info between app id and app index.
+pub const OWNER_INFO_SEPARATOR: char = '_';
+/// Separator in group of calling info between developer id and group id.
+pub const GROUP_SEPARATOR: char = ',';
 
+/// Immutable asset blob
 #[repr(C)]
-struct ConstAssetBlob {
-    data: *const u8,
-    size: u32,
+pub struct ConstAssetBlob {
+    /// Immutable data
+    pub data: *const u8,
+    /// Data size
+    pub size: u32,
 }
 
+/// Immutable asset blob array
 #[repr(C)]
-struct MutAssetBlob {
-    data: *mut u8,
-    size: u32,
+pub struct ConstAssetBlobArray {
+    /// Immutable blobs
+    pub blobs: *const ConstAssetBlob,
+    /// blobs size
+    pub size: u32,
+}
+
+/// Mutable asset blob
+#[repr(C)]
+pub struct MutAssetBlob {
+    /// Mutable data
+    pub data: *mut u8,
+    /// Data size
+    pub size: u32,
 }
 
 impl_enum_trait! {

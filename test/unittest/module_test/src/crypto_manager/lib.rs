@@ -13,8 +13,11 @@
  * limitations under the License.
  */
 
-use std::ffi::{c_char, CString};
 use std::ptr;
+use std::{
+    ffi::{c_char, CString},
+    ptr::null,
+};
 
 use asset_common::{CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto::*, crypto_manager::*, secret_key::*};
@@ -48,9 +51,9 @@ fn grant_self_permission() -> i32 {
         dcaps_num: 0,
         perms_num: 1,
         acls_num: 0,
-        dcaps: ptr::null(),
+        dcaps: null(),
         perms: &perms_str.as_ptr(),
-        acls: ptr::null(),
+        acls: null(),
         process_name: name.as_ptr(),
         apl_str: apl.as_ptr(),
     };

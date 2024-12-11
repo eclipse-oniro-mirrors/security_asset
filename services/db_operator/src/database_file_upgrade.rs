@@ -18,7 +18,7 @@
 
 use std::{fs, path::Path};
 
-use asset_common::{CallingInfo, OwnerType};
+use asset_common::{CallingInfo, OwnerType, OWNER_INFO_SEPARATOR};
 use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
 use asset_file_operator::common::DB_SUFFIX;
 use asset_log::logi;
@@ -55,7 +55,7 @@ pub fn construct_splited_db_name(calling_info: &CallingInfo, is_ce: bool) -> Res
                 format!("Group_{}", String::from_utf8_lossy(&hasher::sha256(true, group)))
             } else {
                 let owner_info_string = String::from_utf8_lossy(calling_info.owner_info()).to_string();
-                let split_owner_info: Vec<&str> = owner_info_string.split('_').collect();
+                let split_owner_info: Vec<&str> = owner_info_string.split(OWNER_INFO_SEPARATOR).collect();
                 if split_owner_info.len() < MINIM_OWNER_INFO_LEN || split_owner_info.last().is_none() {
                     return log_throw_error!(ErrCode::DatabaseError, "[FATAL]The queried owner info is not correct.");
                 }

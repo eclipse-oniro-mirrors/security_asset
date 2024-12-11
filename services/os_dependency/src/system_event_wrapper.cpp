@@ -33,6 +33,7 @@ const char * const COMMON_EVENT_RESTORE_START = "usual.event.RESTORE_START";
 const char * const COMMON_EVENT_USER_PIN_CREATED = "USER_PIN_CREATED_EVENT";
 const char * const BUNDLE_NAME = "bundleName";
 const char * const PERMISSION_MANAGE_USER_IDM = "ohos.permission.MANAGE_USER_IDM";
+const char * const OWNER_INFO_SEPARATOR = "_";
 
 void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPackageRemoved onPackageRemoved)
 {
@@ -45,7 +46,7 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
         return;
     }
 
-    std::string owner = appId + '_' + std::to_string(appIndex);
+    std::string owner = appId + OWNER_INFO_SEPARATOR + std::to_string(appIndex);
     std::string bundleName = want.GetBundle();
     if (onPackageRemoved != nullptr) {
         onPackageRemoved(userId, reinterpret_cast<const uint8_t *>(owner.c_str()), owner.size(),

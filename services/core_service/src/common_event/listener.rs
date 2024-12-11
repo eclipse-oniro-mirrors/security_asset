@@ -25,13 +25,16 @@ use std::{
 
 use lazy_static::lazy_static;
 
-use asset_common::{AutoCounter, CallingInfo, OwnerType};
+use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, OwnerType};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
 use asset_db_key_operator::DbKey;
 use asset_db_operator::{
     database::Database,
     database_file_upgrade::{construct_splited_db_name, trigger_db_upgrade},
-    types::{column, DbMap},
+    types::{
+        column::{self},
+        DbMap,
+    },
 };
 use asset_definition::{log_throw_error, ErrCode, Result, SyncType, Value};
 use asset_file_operator::{
@@ -45,7 +48,7 @@ use asset_sdk::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID,
 };
 
-use crate::sys_event::upload_fault_system_event;
+use crate::{sys_event::upload_fault_system_event, PackageInfoFfi};
 
 /// success code.
 const SUCCESS: i32 = 0;
@@ -71,55 +74,63 @@ fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result
     Ok(())
 }
 
-fn delete_in_de_db_on_package_removed(
-    calling_info: &CallingInfo,
-    delete_cond: &DbMap,
-    reverse_condition: &DbMap,
-    check_cond: &DbMap,
-) -> Result<bool> {
-    // Delete non-persistent data in de db.
+fn delete_in_de_db_on_package_removed(calling_info: &CallingInfo, reverse_condition: &DbMap) -> Result<Option<bool>> {
     let mut de_db = Database::build(calling_info, false)?;
-    let _ = de_db.delete_datas(delete_cond, Some(reverse_condition), false)?;
-    let de_db_data_exists = de_db.is_data_exists(check_cond, false)?;
-    // remove db and backup db
-    if !de_db_data_exists {
-        remove_db(&format!("{}/{}", DE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
+    let mut delete_condition = DbMap::new();
+    match calling_info.group() {
+        Some(_) => {
+            delete_condition.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
+            delete_condition.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
+            let _ = de_db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
+            Ok(None)
+        },
+        None => {
+            delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
+            let _ = de_db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
+            let check_conditon = DbMap::new();
+            let de_db_data_exists = de_db.is_data_exists(&check_conditon, false)?;
+            if !de_db_data_exists {
+                remove_db(&format!("{}/{}", DE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
+            }
+            Ok(Some(de_db_data_exists))
+        },
     }
-    Ok(de_db_data_exists)
 }
 
-fn delete_in_ce_db_on_package_removed(
-    calling_info: &CallingInfo,
-    delete_cond: &DbMap,
-    reverse_condition: &DbMap,
-    check_cond: &DbMap,
-) -> Result<bool> {
-    // Delete non-persistent data in ce db if ce db file exists.
+fn delete_in_ce_db_on_package_removed(calling_info: &CallingInfo, reverse_condition: &DbMap) -> Result<Option<bool>> {
     let mut ce_db = Database::build(calling_info, true)?;
-    let _ = ce_db.delete_datas(delete_cond, Some(reverse_condition), false)?;
-    // Check whether there is still persistent data left in ce db.
-    let ce_db_data_exists = ce_db.is_data_exists(check_cond, false)?;
-    if !ce_db_data_exists {
-        remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
+    let mut delete_condition = DbMap::new();
+    match calling_info.group() {
+        Some(_) => {
+            delete_condition.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
+            delete_condition.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
+            let _ = ce_db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
+            Ok(None)
+        },
+        None => {
+            delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
+            let _ = ce_db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
+            let check_conditon = DbMap::new();
+            let ce_db_data_exists = ce_db.is_data_exists(&check_conditon, false)?;
+            if !ce_db_data_exists {
+                remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
+            }
+            Ok(Some(ce_db_data_exists))
+        },
     }
-    Ok(ce_db_data_exists)
 }
 
-fn delete_on_package_removed(owner: Vec<u8>, calling_info: &CallingInfo) -> Result<bool> {
-    let mut delete_cond = DbMap::new();
-    delete_cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
-    delete_cond.insert(column::OWNER, Value::Bytes(owner.clone()));
-    delete_cond.insert(column::IS_PERSISTENT, Value::Bool(false));
+fn delete_on_package_removed(calling_info: &CallingInfo) -> Result<Option<bool>> {
     let mut reverse_condition = DbMap::new();
     reverse_condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
-    let check_cond = DbMap::new();
-    let de_db_data_exists =
-        delete_in_de_db_on_package_removed(calling_info, &delete_cond, &reverse_condition, &check_cond)?;
+    let de_db_data_exists = delete_in_de_db_on_package_removed(calling_info, &reverse_condition)?;
 
     if is_db_key_cipher_file_exist(calling_info.user_id())? {
-        let ce_db_data_exists =
-            delete_in_ce_db_on_package_removed(calling_info, &delete_cond, &reverse_condition, &check_cond)?;
-        Ok(de_db_data_exists || ce_db_data_exists)
+        let ce_db_data_exists = delete_in_ce_db_on_package_removed(calling_info, &reverse_condition)?;
+        match (de_db_data_exists, ce_db_data_exists) {
+            (Some(de_db_data_exists), Some(ce_db_data_exists)) => Ok(Some(de_db_data_exists || ce_db_data_exists)),
+            _ => Ok(None),
+        }
     } else {
         Ok(de_db_data_exists)
     }
@@ -130,41 +141,59 @@ fn clear_cryptos(calling_info: &CallingInfo) {
     crypto_manager.lock().unwrap().remove_by_calling_info(calling_info);
 }
 
-fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) {
+fn delete_data_by_owner(user_id: i32, owner: ConstAssetBlob, groups: ConstAssetBlobArray) {
     let _counter_user = AutoCounter::new();
     let start_time = Instant::now();
-    let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner, owner_size as usize).to_vec() };
-    let calling_info = CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), None);
-    clear_cryptos(&calling_info);
-    let res = match delete_on_package_removed(owner, &calling_info) {
-        Ok(true) => {
-            logi!("The owner wants to retain data after uninstallation. Do not delete key in HUKS!");
-            Ok(())
-        },
-        Ok(false) => SecretKey::delete_by_owner(&calling_info),
-        Err(e) => {
-            // Report the database operation fault event.
+    let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner.data, owner.size as usize).to_vec() };
+    clear_cryptos(&CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), None));
+    let mut calling_infos: Vec<CallingInfo> = Vec::new();
+    if !groups.blobs.is_null() && groups.size != 0 {
+        unsafe {
+            let groups_slice = slice::from_raw_parts(groups.blobs, groups.size as usize);
+            for group_slice in groups_slice {
+                let group = slice::from_raw_parts(group_slice.data, group_slice.size as usize);
+                calling_infos.push(CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), Some(group.to_vec())));
+            }
+        }
+    } else {
+        calling_infos.push(CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), None));
+    }
+
+    for calling_info in calling_infos {
+        let res = match delete_on_package_removed(&calling_info) {
+            Ok(Some(true)) => {
+                logi!(
+                    "The owner wants to retain data in its owner dbs after uninstallation. Do not delete key in HUKS!"
+                );
+                Ok(())
+            },
+            Ok(Some(false)) => {
+                logi!(
+                    "The owner do not want to retain data in its owner dbs after uninstallation. Delete key in HUKS!"
+                );
+                SecretKey::delete_by_owner(&calling_info)
+            },
+            Ok(None) => {
+                logi!("The owner can not retain data in its group dbs after uninstallation.");
+                Ok(())
+            },
+            Err(e) => {
+                // Report the database operation fault event.
+                upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e);
+                Ok(())
+            },
+        };
+        if let Err(e) = res {
+            // Report the key operation fault event.
+            let calling_info = CallingInfo::new_self();
             upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e);
-            Ok(())
-        },
-    };
-    if let Err(e) = res {
-        // Report the key operation fault event.
-        let calling_info = CallingInfo::new_self();
-        upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e);
+        }
     }
 }
 
-pub(crate) extern "C" fn on_package_removed(
-    user_id: i32,
-    owner: *const u8,
-    owner_size: u32,
-    bundle_name: *const u8,
-    app_index: i32,
-) {
-    delete_data_by_owner(user_id, owner, owner_size);
-
-    let c_str = unsafe { CStr::from_ptr(bundle_name as _) };
+pub(crate) extern "C" fn on_package_removed(package_info: PackageInfoFfi) {
+    delete_data_by_owner(package_info.user_id, package_info.owner, package_info.groups);
+    let c_str = unsafe { CStr::from_ptr(package_info.bundle_name as _) };
     let bundle_name = match c_str.to_str() {
         Ok(s) => s.to_string(),
         Err(e) => {
@@ -173,16 +202,16 @@ pub(crate) extern "C" fn on_package_removed(
         },
     };
 
-    logi!("[INFO]On app -{}-{}-{}- removed.", user_id, bundle_name, app_index);
+    logi!("[INFO]On app -{}-{}-{}- removed.", package_info.user_id, bundle_name, package_info.app_index);
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
-        params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
+        params.insert(PARAM_NAME_USER_ID, Value::Number(package_info.user_id as u32));
         params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(bundle_name.as_bytes().to_vec()));
 
         // only hap package can be removed
         params.insert(PARAM_NAME_IS_HAP, Value::Bool(true));
-        params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
+        params.insert(PARAM_NAME_APP_INDEX, Value::Number(package_info.app_index as u32));
         match load.process_event(EventType::OnPackageClear, &params) {
             Ok(()) => logi!("process package remove event success."),
             Err(code) => loge!("process package remove event failed, code: {}", code),
@@ -391,7 +420,7 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
 #[derive(Clone)]
 #[repr(C)]
 struct EventCallBack {
-    on_package_remove: extern "C" fn(i32, *const u8, u32, *const u8, i32),
+    on_package_removed: extern "C" fn(PackageInfoFfi),
     on_user_removed: extern "C" fn(i32),
     on_screen_off: extern "C" fn(),
     on_charging: extern "C" fn(),
@@ -410,7 +439,7 @@ extern "C" {
 pub(crate) fn subscribe() {
     unsafe {
         let call_back = EventCallBack {
-            on_package_remove: on_package_removed,
+            on_package_removed,
             on_user_removed,
             on_screen_off: delete_crypto_need_unlock,
             on_charging: backup_db,

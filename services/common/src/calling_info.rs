@@ -15,7 +15,7 @@
 
 //! This module implements the capability of processing the identity information of the Asset caller.
 
-use crate::{process_info::ProcessInfoDetail, OwnerType, ProcessInfo};
+use crate::{process_info::ProcessInfoDetail, OwnerType, ProcessInfo, GROUP_SEPARATOR};
 use asset_definition::Value;
 
 /// The identity of calling process.
@@ -61,7 +61,7 @@ impl CallingInfo {
                     (Some(group_id), Some(developer_id)) => {
                         let mut group_vec: Vec<u8> = Vec::new();
                         group_vec.extend(developer_id);
-                        group_vec.push(b',');
+                        group_vec.push(GROUP_SEPARATOR as u8);
                         group_vec.extend(group_id);
                         Some(group_vec)
                     },

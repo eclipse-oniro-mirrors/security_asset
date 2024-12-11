@@ -15,6 +15,8 @@
 
 //! This module implements the capability of processing the identity information of the Asset caller.
 
+use std::ptr::{null, null_mut};
+
 use ipc::Skeleton;
 
 use asset_definition::{log_throw_error, ErrCode, Result, Value};
@@ -55,11 +57,11 @@ impl ProcessInfoFfi {
         let app_id = MutAssetBlob { data: app_id.as_mut_ptr(), size: app_id.len() as u32 };
         let group_id = match group_id {
             Some(group_id) => ConstAssetBlob { data: group_id.as_ptr(), size: group_id.len() as u32 },
-            None => ConstAssetBlob { data: std::ptr::null(), size: 0 },
+            None => ConstAssetBlob { data: null(), size: 0 },
         };
         let developer_id = match developer_id {
             Some(developer_id) => MutAssetBlob { data: developer_id.as_mut_ptr(), size: developer_id.len() as u32 },
-            None => MutAssetBlob { data: std::ptr::null_mut(), size: 0 },
+            None => MutAssetBlob { data: null_mut(), size: 0 },
         };
         ProcessInfoFfi {
             user_id,

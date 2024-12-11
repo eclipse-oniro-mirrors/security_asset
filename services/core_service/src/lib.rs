@@ -28,7 +28,7 @@ use system_ability_fwk::{
 };
 use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
 
-use asset_common::{AutoCounter, CallingInfo, Counter};
+use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Counter};
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
 use asset_file_operator::{common::DE_ROOT_PATH, de_operator::create_user_de_dir};
@@ -49,6 +49,27 @@ use trace_scope::TraceScope;
 use crate::unload_handler::{UnloadHandler, DELAYED_UNLOAD_TIME_IN_SEC, SEC_TO_MILLISEC};
 
 struct AssetAbility;
+
+trait WantParser<T> {
+    fn parse(&self) -> Result<T>;
+}
+
+struct PackageInfo {
+    user_id: i32,
+    app_index: i32,
+    app_id: String,
+    groups: Option<Vec<String>>,
+    bundle_name: String,
+}
+
+#[repr(C)]
+struct PackageInfoFfi {
+    user_id: i32,
+    app_index: i32,
+    owner: ConstAssetBlob,
+    groups: ConstAssetBlobArray,
+    bundle_name: *const u8,
+}
 
 pub(crate) fn unload_sa(duration: u64) {
     let unload_handler = UnloadHandler::get_instance();
