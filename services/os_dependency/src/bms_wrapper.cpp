@@ -44,8 +44,6 @@ int32_t GetFromHapTokenInfo(const HapTokenInfo hapTokenInfo, ProcessInfo *proces
 }
 
 int32_t GetFromBundleInfo(const AppExecFwk::BundleInfo bundleInfo, ProcessInfo *processInfo) {
-    processInfo->hapInfo.appIndex = bundleInfo.appIndex;
-
     if (memcpy_s(processInfo->hapInfo.appId.data, processInfo->hapInfo.appId.size, bundleInfo.appId.c_str(),
         bundleInfo.appId.size()) != EOK) {
         LOGE("[FATAL]The app id buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
@@ -55,6 +53,10 @@ int32_t GetFromBundleInfo(const AppExecFwk::BundleInfo bundleInfo, ProcessInfo *
     processInfo->hapInfo.appId.size = bundleInfo.appId.size();
 
     if (processInfo->hapInfo.groupId.size != 0 && processInfo->hapInfo.developerId.size != 0) {
+        if (bundleInfo.appIndex != 0) {
+            LOGE("[FATAL]app with non-zero app index is not allowed to access groups!");
+            return ASSET_PERMISSION_DENIED;
+        }
         for (const AppExecFwk::AssetAccessGroups &group : bundleInfo.applicationInfo.assetAccessGroups) {
             if (std::memcmp(processInfo->hapInfo.groupId.data, group.assetGroupId.data(),
                 processInfo->hapInfo.groupId.size) == 0) {
@@ -72,6 +74,7 @@ int32_t GetFromBundleInfo(const AppExecFwk::BundleInfo bundleInfo, ProcessInfo *
         LOGE("[FATAL]No matching group id found!");
         return ASSET_PERMISSION_DENIED;
     }
+    processInfo->hapInfo.appIndex = bundleInfo.appIndex;
 
     return ASSET_SUCCESS;
 }

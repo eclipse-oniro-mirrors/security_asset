@@ -52,8 +52,15 @@ impl WantParser<PackageInfo> for HashMap<String, String> {
             return log_throw_error!(ErrCode::InvalidArgument, "[FATIL]Get removed owner info failed, get appId fail");
         };
 
-        let app_index;
+        // parse bundle name from want
+        let Some(bundle_name) = self.get(BUNDLE_NAME) else {
+            return log_throw_error!(ErrCode::InvalidArgument, "[FATIL]Get restore appIndex fail");
+        };
+        let mut bundle_name = bundle_name.clone();
+        bundle_name.push('\0');
+
         // parse sandbox app index from want
+        let app_index;
         match self.get(SANDBOX_APP_INDEX) {
             Some(v) => match v.parse::<i32>() {
                 Ok(sandbox_app_index) => app_index = sandbox_app_index,
@@ -62,18 +69,15 @@ impl WantParser<PackageInfo> for HashMap<String, String> {
             None => return log_throw_error!(ErrCode::InvalidArgument, "[FATIL]Get removed appIndex fail"),
         };
 
-        // parse bundle name from want
-        let Some(bundle_name) = self.get(BUNDLE_NAME) else {
-            return log_throw_error!(ErrCode::InvalidArgument, "[FATIL]Get restore appIndex fail");
-        };
-        let mut bundle_name = bundle_name.clone();
-        bundle_name.push('\0');
-
         // parse groups from want
-        let developer_id = self.get(DEVELOPER_ID);
-        let group_ids = self.get(GROUP_IDS);
-        let groups: Option<Vec<String>> = match (developer_id, group_ids) {
+        let groups: Option<Vec<String>> = match (self.get(DEVELOPER_ID), self.get(GROUP_IDS)) {
             (Some(developer_id), Some(group_ids)) => {
+                if app_index != 0 {
+                    return log_throw_error!(
+                        ErrCode::PermissionDenied,
+                        "[FATIL]App with non-zero app index is not allowed to access groups!"
+                    );
+                }
                 let groups: Vec<String> =
                     group_ids.split(GROUP_SEPARATOR).map(|group_id| group_id.to_string()).collect();
                 Some(groups.iter().map(|group_id| format!("{},{}", developer_id, group_id)).collect())
