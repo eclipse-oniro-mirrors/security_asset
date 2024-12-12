@@ -33,7 +33,10 @@ const char * const COMMON_EVENT_RESTORE_START = "usual.event.RESTORE_START";
 const char * const COMMON_EVENT_USER_PIN_CREATED = "USER_PIN_CREATED_EVENT";
 const char * const BUNDLE_NAME = "bundleName";
 const char * const PERMISSION_MANAGE_USER_IDM = "ohos.permission.MANAGE_USER_IDM";
+const char * const DEVELOPER_ID = "developerId";
+const char * const GROUP_IDS = "assetAccessGroups";
 const char * const OWNER_INFO_SEPARATOR = "_";
+const char * const GROUP_SEPARATOR = ",";
 
 void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPackageRemoved onPackageRemoved)
 {
@@ -45,13 +48,36 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
             userId, appId.c_str(), appIndex);
         return;
     }
-
     std::string owner = appId + OWNER_INFO_SEPARATOR + std::to_string(appIndex);
+    Const_Asset_Blob ownerBlob = { .size = owner.size(), .data = reinterpret_cast<const uint8_t *>(owner.c_str()) };
     std::string bundleName = want.GetBundle();
-    if (onPackageRemoved != nullptr) {
-        onPackageRemoved(userId, reinterpret_cast<const uint8_t *>(owner.c_str()), owner.size(),
-            reinterpret_cast<const uint8_t *>(bundleName.c_str()), appIndex);
+    std::string developerId = want.GetStringParam(DEVELOPER_ID);
+    std::string groupIds = want.GetStringParam(GROUP_IDS);
+    std::vector<Const_Asset_Blob> groups;
+    if (!developerId.empty() && !groupIds.empty()) {
+        if (appIndex != 0) {
+            LOGE("[FATAL]App with non-zero app index is not allowed to access groups, appIndex=%{public}d", appIndex);
+            return;
+        }
+        size_t start = 0;
+        size_t end = groupIds.find(GROUP_SEPARATOR);
+        while (end != std::string::npos) {
+            std::string group = developerId + GROUP_SEPARATOR + groupIds.substr(start, end - start);
+            groups.push_back({ .size = group.size(), .data = reinterpret_cast<const uint8_t *>(group.c_str()) });
+            start = end + 1;
+            end = groupIds.find(GROUP_SEPARATOR, start);
+        }
+        std::string group = developerId + GROUP_SEPARATOR + groupIds.substr(start, end);
+        groups.push_back({ .size = group.size(), .data = reinterpret_cast<const uint8_t *>(group.c_str()) });
     }
+    Const_Asset_Blob_Array groupsBlobArray = { .size = groups.size(),
+        .blob = reinterpret_cast<const Const_Asset_Blob *>(&groups[0]) };
+
+    if (onPackageRemoved != nullptr) {
+        onPackageRemoved({ userId, appIndex, ownerBlob, groupsBlobArray,
+            reinterpret_cast<const uint8_t *>(bundleName.c_str()) });
+    }
+
     LOGI("[INFO]Receive event: PACKAGE_REMOVED, userId=%{public}d, appId=%{public}s, appIndex=%{public}d, ",
         userId, appId.c_str(), appIndex);
 }
