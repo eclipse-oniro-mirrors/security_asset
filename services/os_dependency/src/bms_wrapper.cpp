@@ -19,9 +19,12 @@
 #include "securec.h"
 
 #include "accesstoken_kit.h"
+#include "app_provision_info.h"
 #include "bundle_mgr_client.h"
+#include "bundle_mgr_interface.h"
 #include "hap_token_info.h"
 #include "ipc_skeleton.h"
+#include "iservice_registry.h"
 
 #include "asset_type.h"
 #include "asset_log.h"
@@ -31,7 +34,26 @@ using namespace AppExecFwk;
 using namespace Security::AccessToken;
 
 namespace {
-int32_t GetFromHapTokenInfo(const HapTokenInfo hapTokenInfo, ProcessInfo *processInfo) {
+constexpr int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
+
+sptr<IBundleMgr> GetBundleMgr()
+{
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemAbilityManager == nullptr) {
+        LOGE("[FATAL]systemAbilityManager is nullptr, please check.");
+        return nullptr;
+    }
+    auto bundleMgrRemoteObj = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (bundleMgrRemoteObj == nullptr) {
+        LOGE("[FATAL]bundleMgrRemoteObj is nullptr, please check.");
+        return nullptr;
+    }
+    return iface_cast<IBundleMgr>(bundleMgrRemoteObj);
+}
+
+int32_t FillProcessInfoWithHapInfo(int32_t userId, AppExecFwk::AppProvisionInfo appProvisionInfo,
+    const HapTokenInfo hapTokenInfo, const AppExecFwk::BundleInfo bundleInfo, ProcessInfo *processInfo)
+{
     if (memcpy_s(processInfo->processName.data, processInfo->processName.size, hapTokenInfo.bundleName.c_str(),
         hapTokenInfo.bundleName.size()) != EOK) {
         LOGE("[FATAL]The processName buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
@@ -40,10 +62,6 @@ int32_t GetFromHapTokenInfo(const HapTokenInfo hapTokenInfo, ProcessInfo *proces
     }
     processInfo->processName.size = hapTokenInfo.bundleName.size();
 
-    return ASSET_SUCCESS;
-}
-
-int32_t GetFromBundleInfo(const AppExecFwk::BundleInfo bundleInfo, ProcessInfo *processInfo) {
     if (memcpy_s(processInfo->hapInfo.appId.data, processInfo->hapInfo.appId.size, bundleInfo.appId.c_str(),
         bundleInfo.appId.size()) != EOK) {
         LOGE("[FATAL]The app id buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
@@ -54,20 +72,28 @@ int32_t GetFromBundleInfo(const AppExecFwk::BundleInfo bundleInfo, ProcessInfo *
 
     if (processInfo->hapInfo.groupId.size != 0 && processInfo->hapInfo.developerId.size != 0) {
         if (bundleInfo.appIndex != 0) {
-            LOGE("[FATAL]app with non-zero app index is not allowed to access groups!");
+            LOGE("[FATAL]App with non-zero app index is not allowed to access groups!");
             return ASSET_PERMISSION_DENIED;
         }
-        for (const AppExecFwk::AssetAccessGroups &group : bundleInfo.applicationInfo.assetAccessGroups) {
-            if (std::memcmp(processInfo->hapInfo.groupId.data, group.assetGroupId.data(),
-                processInfo->hapInfo.groupId.size) == 0) {
+        for (const std::string &groupId : bundleInfo.applicationInfo.assetAccessGroups) {
+            if (memcmp(processInfo->hapInfo.groupId.data, groupId.data(), processInfo->hapInfo.groupId.size) == 0) {
                 LOGI("[INFO]Found matching group id.");
+                auto bundleMgr = GetBundleMgr();
+                if (bundleMgr == nullptr) {
+                    LOGE("[FATAL]Get bundle manager failed!");
+                    return ASSET_BMS_ERROR;
+                }
+                if (bundleMgr->GetAppProvisionInfo(hapTokenInfo.bundleName, userId, appProvisionInfo) != RET_SUCCESS) {
+                    LOGE("[FATAL]Get app provision info failed!");
+                    return ASSET_BMS_ERROR;
+                }
                 if (memcpy_s(processInfo->hapInfo.developerId.data, processInfo->hapInfo.developerId.size,
-                    group.developerId.c_str(), group.developerId.size()) != EOK) {
-                    LOGE("[FATAL]The developer id buffer is too small. Expect size: %{public}zu, "
-                    "actual size: %{public}u", group.developerId.size(), processInfo->hapInfo.developerId.size);
+                    appProvisionInfo.developerId.c_str(), appProvisionInfo.developerId.size()) != EOK) {
+                    LOGE("[FATAL]The developer id buffer is too small. Expect size: %{public}zu, actual size: "
+                    "%{public}u", appProvisionInfo.developerId.size(), processInfo->hapInfo.developerId.size);
                     return ASSET_OUT_OF_MEMORY;
                 }
-                processInfo->hapInfo.developerId.size = group.developerId.size();
+                processInfo->hapInfo.developerId.size = appProvisionInfo.developerId.size();
                 return ASSET_SUCCESS;
             }
         }
@@ -75,6 +101,20 @@ int32_t GetFromBundleInfo(const AppExecFwk::BundleInfo bundleInfo, ProcessInfo *
         return ASSET_PERMISSION_DENIED;
     }
     processInfo->hapInfo.appIndex = bundleInfo.appIndex;
+
+    return ASSET_SUCCESS;
+}
+
+int32_t FillProcessInfoWithNativeInfo(NativeTokenInfo nativeTokenInfo, uint64_t uid, ProcessInfo *processInfo)
+{
+    if (memcpy_s(processInfo->processName.data, processInfo->processName.size, nativeTokenInfo.processName.c_str(),
+        nativeTokenInfo.processName.size()) != EOK) {
+        LOGE("[FATAL]The processName buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
+            nativeTokenInfo.processName.size(), processInfo->processName.size);
+        return ASSET_OUT_OF_MEMORY;
+    }
+    processInfo->processName.size = nativeTokenInfo.processName.size();
+    processInfo->nativeInfo.uid = uid;
 
     return ASSET_SUCCESS;
 }
@@ -87,19 +127,16 @@ int32_t GetHapProcessInfo(int32_t userId, uint32_t tokenId, ProcessInfo *process
         LOGE("[FATAL]Get hap token info failed, ret = %{public}d", ret);
         return ASSET_ACCESS_TOKEN_ERROR;
     }
-    ret = GetFromHapTokenInfo(hapTokenInfo, processInfo);
-    if (ret != ASSET_SUCCESS) {
-        return ret;
-    }
 
     AppExecFwk::BundleMgrClient bmsClient;
     AppExecFwk::BundleInfo bundleInfo;
-    if (!bmsClient.GetBundleInfo(hapTokenInfo.bundleName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
-        bundleInfo, userId)) {
+    if (!bmsClient.GetBundleInfo(hapTokenInfo.bundleName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE, bundleInfo, userId)) {
         LOGE("[FATAL]Get bundle info failed!");
         return ASSET_BMS_ERROR;
     }
-    return GetFromBundleInfo(bundleInfo, processInfo);
+    AppExecFwk::AppProvisionInfo appProvisionInfo;
+
+    return FillProcessInfoWithHapInfo(userId, appProvisionInfo, hapTokenInfo, bundleInfo, processInfo);
 }
 
 int32_t GetNativeProcessInfo(uint32_t tokenId, uint64_t uid, ProcessInfo *processInfo)
@@ -111,15 +148,7 @@ int32_t GetNativeProcessInfo(uint32_t tokenId, uint64_t uid, ProcessInfo *proces
         return ASSET_ACCESS_TOKEN_ERROR;
     }
 
-    if (memcpy_s(processInfo->processName.data, processInfo->processName.size, nativeTokenInfo.processName.c_str(),
-        nativeTokenInfo.processName.size()) != EOK) {
-        LOGE("[FATAL]The processName buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
-            nativeTokenInfo.processName.size(), processInfo->processName.size);
-        return ASSET_OUT_OF_MEMORY;
-    }
-    processInfo->processName.size = nativeTokenInfo.processName.size();
-    processInfo->nativeInfo.uid = uid;
-    return ASSET_SUCCESS;
+    return FillProcessInfoWithNativeInfo(nativeTokenInfo, uid, processInfo);
 }
 } // namespace
 
