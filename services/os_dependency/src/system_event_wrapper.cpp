@@ -52,14 +52,14 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
         return;
     }
     std::string owner = appId + OWNER_INFO_SEPARATOR + std::to_string(appIndex);
-    Asset_ConstBlob ownerBlob = { .data = reinterpret_cast<const uint8_t *>(owner.c_str()), .size = owner.size() };
+    ConstAssetBlob ownerBlob = { .size = owner.size(), .data = reinterpret_cast<const uint8_t *>(owner.c_str()) };
 
     // parse bundle name from want
     std::string bundleName = want.GetBundle();
     // parse groups from want
     std::string developerId = want.GetStringParam(DEVELOPER_ID);
     std::string groupIds = want.GetStringParam(GROUP_IDS);
-    std::vector<Asset_ConstBlob> groups;
+    std::vector<ConstAssetBlob> groups;
     if (!developerId.empty() && !groupIds.empty()) {
         if (appIndex != 0) {
             LOGE("[FATAL]App with non-zero app index is not allowed to access groups, appIndex=%{public}d", appIndex);
@@ -74,8 +74,8 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
         std::string group = developerId + GROUP_SEPARATOR + groupIds.substr(start, end);
         groups.push_back({ .data = reinterpret_cast<const uint8_t *>(group.c_str()), .size = group.size() });
     }
-    Asset_ConstBlobArray groupBlobArray = { .size = groups.size(),
-        .blob = reinterpret_cast<const Asset_ConstBlob *>(&groups[0]) };
+    ConstAssetBlobArray groupBlobArray = { .size = groups.size(),
+        .blob = reinterpret_cast<const ConstAssetBlob *>(&groups[0]) };
 
     if (onPackageRemoved != nullptr) {
         onPackageRemoved({ userId, appIndex, ownerBlob, groupBlobArray,

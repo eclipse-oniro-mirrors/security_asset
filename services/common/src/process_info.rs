@@ -53,15 +53,15 @@ impl ProcessInfoFfi {
         app_id: &mut Vec<u8>,
         (group_id, developer_id): (&Option<Vec<u8>>, &mut Option<Vec<u8>>),
     ) -> Self {
-        let process_name = MutAssetBlob { data: process_name.as_mut_ptr(), size: process_name.len() as u32 };
-        let app_id = MutAssetBlob { data: app_id.as_mut_ptr(), size: app_id.len() as u32 };
+        let process_name = MutAssetBlob { size: process_name.len() as u32, data: process_name.as_mut_ptr() };
+        let app_id = MutAssetBlob { size: app_id.len() as u32, data: app_id.as_mut_ptr() };
         let group_id = match group_id {
-            Some(group_id) => ConstAssetBlob { data: group_id.as_ptr(), size: group_id.len() as u32 },
-            None => ConstAssetBlob { data: null(), size: 0 },
+            Some(group_id) => ConstAssetBlob { size: group_id.len() as u32, data: group_id.as_ptr() },
+            None => ConstAssetBlob { size: 0, data: null() },
         };
         let developer_id = match developer_id {
-            Some(developer_id) => MutAssetBlob { data: developer_id.as_mut_ptr(), size: developer_id.len() as u32 },
-            None => MutAssetBlob { data: null_mut(), size: 0 },
+            Some(developer_id) => MutAssetBlob { size: developer_id.len() as u32, data: developer_id.as_mut_ptr() },
+            None => MutAssetBlob { size: 0, data: null_mut() },
         };
         ProcessInfoFfi {
             user_id,

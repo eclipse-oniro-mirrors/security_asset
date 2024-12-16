@@ -21,18 +21,18 @@
 typedef struct {
     const uint8_t *data;
     uint32_t size;
-} Asset_ConstBlob;
+} ConstAssetBlob;
 
 typedef struct {
-    const Asset_ConstBlob *blob;
+    const ConstAssetBlob *blob;
     uint32_t size;
-} Asset_ConstBlobArray;
+} ConstAssetBlobArray;
 
 typedef struct {
     int32_t userId;
     int32_t appIndex;
-    Asset_ConstBlob owner;
-    Asset_ConstBlobArray groups;
+    ConstAssetBlob owner;
+    ConstAssetBlobArray groups;
     const uint8_t *bundleName;
 } PackageInfo;
 

@@ -96,14 +96,14 @@ fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
         }
         let user_id = package_info.user_id;
         let owner_str = format!("{}_{}", package_info.app_id, package_info.app_index);
-        let owner = ConstAssetBlob { data: owner_str.as_ptr(), size: owner_str.len() as u32 };
+        let owner = ConstAssetBlob { size: owner_str.len() as u32, data: owner_str.as_ptr() };
         let app_index = package_info.app_index;
         let groups: Option<Vec<ConstAssetBlob>> = package_info.groups.map(|group| {
-            group.iter().map(|group| ConstAssetBlob { data: group.as_ptr(), size: group.len() as u32 }).collect()
+            group.iter().map(|group| ConstAssetBlob { size: group.len() as u32, data: group.as_ptr() }).collect()
         });
         let groups = match groups {
-            Some(groups) => ConstAssetBlobArray { blobs: groups.as_ptr(), size: groups.len() as u32 },
-            None => ConstAssetBlobArray { blobs: null(), size: 0 },
+            Some(groups) => ConstAssetBlobArray { size: groups.len() as u32, blobs: groups.as_ptr() },
+            None => ConstAssetBlobArray { size: 0, blobs: null() },
         };
         let bundle_name = package_info.bundle_name.as_ptr();
         listener::on_package_removed(PackageInfoFfi { user_id, app_index, owner, groups, bundle_name });

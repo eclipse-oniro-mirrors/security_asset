@@ -34,28 +34,28 @@ pub const GROUP_SEPARATOR: char = ',';
 /// Immutable asset blob
 #[repr(C)]
 pub struct ConstAssetBlob {
-    /// Immutable data
-    pub data: *const u8,
     /// Data size
     pub size: u32,
+    /// Immutable data
+    pub data: *const u8,
 }
 
 /// Immutable asset blob array
 #[repr(C)]
 pub struct ConstAssetBlobArray {
-    /// Immutable blobs
-    pub blobs: *const ConstAssetBlob,
     /// blobs size
     pub size: u32,
+    /// Immutable blobs
+    pub blobs: *const ConstAssetBlob,
 }
 
 /// Mutable asset blob
 #[repr(C)]
 pub struct MutAssetBlob {
-    /// Mutable data
-    pub data: *mut u8,
     /// Data size
     pub size: u32,
+    /// Mutable data
+    pub data: *mut u8,
 }
 
 impl_enum_trait! {
