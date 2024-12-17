@@ -132,7 +132,10 @@ fn delete_on_package_removed(calling_info: &CallingInfo) -> Result<Option<bool>>
             _ => Ok(None),
         }
     } else {
-        Ok(de_db_data_exists)
+        match de_db_data_exists {
+            Some(de_db_data_exists) => Ok(Some(de_db_data_exists)),
+            _ => Ok(None),
+        }
     }
 }
 
@@ -146,7 +149,9 @@ fn delete_data_by_owner(user_id: i32, owner: ConstAssetBlob, groups: ConstAssetB
     let start_time = Instant::now();
     let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner.data, owner.size as usize).to_vec() };
     clear_cryptos(&CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), None));
+
     let mut calling_infos: Vec<CallingInfo> = Vec::new();
+    calling_infos.push(CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), None));
     if !groups.blobs.is_null() && groups.size != 0 {
         unsafe {
             let groups_slice = slice::from_raw_parts(groups.blobs, groups.size as usize);
@@ -155,10 +160,7 @@ fn delete_data_by_owner(user_id: i32, owner: ConstAssetBlob, groups: ConstAssetB
                 calling_infos.push(CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), Some(group.to_vec())));
             }
         }
-    } else {
-        calling_infos.push(CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), None));
     }
-
     for calling_info in calling_infos {
         let res = match delete_on_package_removed(&calling_info) {
             Ok(Some(true)) => {
