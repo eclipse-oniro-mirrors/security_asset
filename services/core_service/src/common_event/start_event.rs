@@ -66,7 +66,7 @@ impl WantParser<PackageInfo> for HashMap<String, String> {
                 Ok(sandbox_app_index) => app_index = sandbox_app_index,
                 Err(_) => return log_throw_error!(ErrCode::InvalidArgument, "[FATIL]Parse removed appIndex fail"),
             },
-            None => return log_throw_error!(ErrCode::InvalidArgument, "[FATIL]Get removed appIndex fail"),
+            None => app_index = 0,
         };
 
         // parse groups from want
