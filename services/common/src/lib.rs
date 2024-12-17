@@ -19,7 +19,7 @@ use asset_definition::{impl_enum_trait, log_throw_error, AssetError, ErrCode, Re
 mod calling_info;
 mod counter;
 mod process_info;
-pub use calling_info::CallingInfo;
+pub use calling_info::{CallingInfo, Group};
 pub use counter::{AutoCounter, Counter};
 pub use process_info::{ProcessInfo, ProcessInfoDetail};
 /// success code.

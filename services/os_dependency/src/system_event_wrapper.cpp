@@ -58,27 +58,29 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
     std::string bundleName = want.GetBundle();
     // parse groups from want
     std::string developerId = want.GetStringParam(DEVELOPER_ID);
-    std::string groupIds = want.GetStringParam(GROUP_IDS);
-    std::vector<ConstAssetBlob> groups;
+    ConstAssetBlob developerIdBlob = { .size = developerId.size(),
+        .data = reinterpret_cast<const uint8_t *>(developerId.c_str()) };
+    std::string groupIdsStr = want.GetStringParam(GROUP_IDS);
+    std::vector<ConstAssetBlob> groupIds;
     if (!developerId.empty() && !groupIds.empty()) {
         if (appIndex != 0) {
             LOGE("[FATAL]App with non-zero app index is not allowed to access groups, appIndex=%{public}d", appIndex);
             return;
         }
         size_t start = 0, end;
-        while ((end = groupIds.find(GROUP_SEPARATOR, start)) != std::string::npos) {
-            std::string group = developerId + GROUP_SEPARATOR + groupIds.substr(start, end - start);
-            groups.push_back({ .data = reinterpret_cast<const uint8_t *>(group.c_str()), .size = group.size() });
+        while ((end = groupIdsStr.find(GROUP_SEPARATOR, start)) != std::string::npos) {
+            std::string groupId = groupIdsStr.substr(start, end - start);
+            groupIds.push_back({ .size = groupId.size(), .data = reinterpret_cast<const uint8_t *>(groupId.c_str()) });
             start = end;
         }
-        std::string group = developerId + GROUP_SEPARATOR + groupIds.substr(start, end);
-        groups.push_back({ .data = reinterpret_cast<const uint8_t *>(group.c_str()), .size = group.size() });
+        std::string groupId = groupIdsStr.substr(start, end);
+        groupIds.push_back({ .size = groupId.size(), .data = reinterpret_cast<const uint8_t *>(groupId.c_str()) });
     }
-    ConstAssetBlobArray groupBlobArray = { .size = groups.size(),
-        .blob = reinterpret_cast<const ConstAssetBlob *>(&groups[0]) };
+    ConstAssetBlobArray groupIdsBlobArray = { .size = groupIds.size(),
+        .blob = reinterpret_cast<const ConstAssetBlob *>(&groupIds[0]) };
 
     if (onPackageRemoved != nullptr) {
-        onPackageRemoved({ userId, appIndex, ownerBlob, groupBlobArray,
+        onPackageRemoved({ userId, appIndex, ownerBlob, developerIdBlob, groupIdsBlobArray,
             reinterpret_cast<const uint8_t *>(bundleName.c_str()) });
     }
 

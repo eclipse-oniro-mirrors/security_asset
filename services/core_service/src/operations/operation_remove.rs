@@ -36,19 +36,20 @@ fn add_normal_attrs(db_data: &mut DbMap) {
     db_data.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
 }
 
-fn check_arguments(attributes: &AssetMap) -> Result<()> {
+fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
+    common::check_group_validity(attributes, calling_info)?;
     common::check_value_validity(attributes)?;
     common::check_system_permission(attributes)
 }
 
 pub(crate) fn remove(calling_info: &CallingInfo, query: &AssetMap) -> Result<()> {
-    check_arguments(query)?;
+    check_arguments(query, calling_info)?;
 
     let db_data = common::into_db_map(query);
 

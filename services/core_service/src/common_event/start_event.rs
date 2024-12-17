@@ -70,22 +70,23 @@ impl WantParser<PackageInfo> for HashMap<String, String> {
         };
 
         // parse groups from want
-        let groups: Option<Vec<String>> = match (self.get(DEVELOPER_ID), self.get(GROUP_IDS)) {
-            (Some(developer_id), Some(group_ids)) => {
-                if app_index != 0 {
-                    return log_throw_error!(
-                        ErrCode::PermissionDenied,
-                        "[FATIL]App with non-zero app index is not allowed to access groups!"
-                    );
-                }
-                let groups: Vec<String> =
-                    group_ids.split(GROUP_SEPARATOR).map(|group_id| group_id.to_string()).collect();
-                Some(groups.iter().map(|group_id| format!("{},{}", developer_id, group_id)).collect())
-            },
-            _ => None,
-        };
+        let (developer_id, group_ids): (Option<String>, Option<Vec<String>>) =
+            match (self.get(DEVELOPER_ID), self.get(GROUP_IDS)) {
+                (Some(developer_id), Some(group_ids)) => {
+                    if app_index != 0 {
+                        return log_throw_error!(
+                            ErrCode::PermissionDenied,
+                            "[FATIL]App with non-zero app index is not allowed to access groups!"
+                        );
+                    }
+                    let group_ids: Vec<String> =
+                        group_ids.split(GROUP_SEPARATOR).map(|group_id| group_id.to_string()).collect();
+                    (Some(developer_id.to_string()), Some(group_ids))
+                },
+                _ => (None, None),
+            };
 
-        Ok(PackageInfo { user_id, app_index, app_id: app_id.to_string(), groups, bundle_name })
+        Ok(PackageInfo { user_id, app_index, app_id: app_id.to_string(), developer_id, group_ids, bundle_name })
     }
 }
 
@@ -98,15 +99,29 @@ fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
         let owner_str = format!("{}_{}", package_info.app_id, package_info.app_index);
         let owner = ConstAssetBlob { size: owner_str.len() as u32, data: owner_str.as_ptr() };
         let app_index = package_info.app_index;
-        let groups: Option<Vec<ConstAssetBlob>> = package_info.groups.map(|group| {
-            group.iter().map(|group| ConstAssetBlob { size: group.len() as u32, data: group.as_ptr() }).collect()
+        let developer_id = match package_info.developer_id {
+            Some(developer_id) => ConstAssetBlob { size: developer_id.len() as u32, data: developer_id.as_ptr() },
+            None => ConstAssetBlob { size: 0, data: null() },
+        };
+        let group_ids: Option<Vec<ConstAssetBlob>> = package_info.group_ids.map(|group_ids| {
+            group_ids
+                .iter()
+                .map(|group_id| ConstAssetBlob { size: group_id.len() as u32, data: group_id.as_ptr() })
+                .collect()
         });
-        let groups = match groups {
-            Some(groups) => ConstAssetBlobArray { size: groups.len() as u32, blobs: groups.as_ptr() },
+        let group_ids = match group_ids {
+            Some(group_ids) => ConstAssetBlobArray { size: group_ids.len() as u32, blobs: group_ids.as_ptr() },
             None => ConstAssetBlobArray { size: 0, blobs: null() },
         };
         let bundle_name = package_info.bundle_name.as_ptr();
-        listener::on_package_removed(PackageInfoFfi { user_id, app_index, owner, groups, bundle_name });
+        listener::on_package_removed(PackageInfoFfi {
+            user_id,
+            app_index,
+            owner,
+            developer_id,
+            group_ids,
+            bundle_name,
+        });
     };
 }
 

@@ -25,7 +25,7 @@ use std::{
 
 use lazy_static::lazy_static;
 
-use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, OwnerType};
+use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Group, OwnerType};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
 use asset_db_key_operator::DbKey;
 use asset_db_operator::{
@@ -144,39 +144,52 @@ fn clear_cryptos(calling_info: &CallingInfo) {
     crypto_manager.lock().unwrap().remove_by_calling_info(calling_info);
 }
 
-fn delete_data_by_owner(user_id: i32, owner: ConstAssetBlob, groups: ConstAssetBlobArray) {
+fn construct_calling_infos(
+    user_id: i32,
+    owner: Vec<u8>,
+    developer_id: ConstAssetBlob,
+    group_ids: ConstAssetBlobArray,
+) -> Vec<CallingInfo> {
+    let mut calling_infos = vec![CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), None)];
+    if !group_ids.blobs.is_null() && group_ids.size != 0 && !developer_id.data.is_null() && developer_id.size != 0 {
+        let developer_id = unsafe { slice::from_raw_parts(developer_id.data, developer_id.size as usize) };
+        let group_ids_slice = unsafe { slice::from_raw_parts(group_ids.blobs, group_ids.size as usize) };
+        for group_id_slice in group_ids_slice {
+            let group_id = unsafe { slice::from_raw_parts(group_id_slice.data, group_id_slice.size as usize) };
+            calling_infos.push(CallingInfo::new(
+                user_id,
+                OwnerType::Hap,
+                owner.clone(),
+                Some(Group { developer_id: developer_id.to_vec(), group_id: group_id.to_vec() }),
+            ));
+        }
+    }
+    calling_infos
+}
+
+fn delete_data_by_owner(
+    user_id: i32,
+    owner: ConstAssetBlob,
+    developer_id: ConstAssetBlob,
+    group_ids: ConstAssetBlobArray,
+) {
     let _counter_user = AutoCounter::new();
     let start_time = Instant::now();
     let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner.data, owner.size as usize).to_vec() };
     clear_cryptos(&CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), None));
 
-    let mut calling_infos: Vec<CallingInfo> = Vec::new();
-    calling_infos.push(CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), None));
-    if !groups.blobs.is_null() && groups.size != 0 {
-        unsafe {
-            let groups_slice = slice::from_raw_parts(groups.blobs, groups.size as usize);
-            for group_slice in groups_slice {
-                let group = slice::from_raw_parts(group_slice.data, group_slice.size as usize);
-                calling_infos.push(CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), Some(group.to_vec())));
-            }
-        }
-    }
-    for calling_info in calling_infos {
+    for calling_info in construct_calling_infos(user_id, owner.clone(), developer_id, group_ids) {
         let res = match delete_on_package_removed(&calling_info) {
             Ok(Some(true)) => {
-                logi!(
-                    "The owner wants to retain data in its owner dbs after uninstallation. Do not delete key in HUKS!"
-                );
+                logi!("Retain data in owner dbs after uninstallation. Do not delete owner key in HUKS!");
                 Ok(())
             },
             Ok(Some(false)) => {
-                logi!(
-                    "The owner do not want to retain data in its owner dbs after uninstallation. Delete key in HUKS!"
-                );
+                logi!("Do not retain data in its owner dbs after uninstallation. Delete owner key in HUKS!");
                 SecretKey::delete_by_owner(&calling_info)
             },
             Ok(None) => {
-                logi!("The owner can not retain data in its group dbs after uninstallation.");
+                logi!("Do not retain data in its group dbs after uninstallation. Do not delete group key in HUKS!");
                 Ok(())
             },
             Err(e) => {
@@ -194,7 +207,7 @@ fn delete_data_by_owner(user_id: i32, owner: ConstAssetBlob, groups: ConstAssetB
 }
 
 pub(crate) extern "C" fn on_package_removed(package_info: PackageInfoFfi) {
-    delete_data_by_owner(package_info.user_id, package_info.owner, package_info.groups);
+    delete_data_by_owner(package_info.user_id, package_info.owner, package_info.developer_id, package_info.group_ids);
     let c_str = unsafe { CStr::from_ptr(package_info.bundle_name as _) };
     let bundle_name = match c_str.to_str() {
         Ok(s) => s.to_string(),
@@ -389,26 +402,19 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
     let mut user_ids_size: u32 = 0;
     let user_ids_size_ptr = &mut user_ids_size;
     let mut ret: i32;
-    unsafe {
-        ret = GetUsersSize(user_ids_size_ptr);
-    }
+    ret = unsafe { GetUsersSize(user_ids_size_ptr) };
     if ret != SUCCESS {
         return log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get users size failed.");
     }
 
     let mut user_ids: Vec<i32> = vec![0i32; (*user_ids_size_ptr + USER_ID_VEC_BUFFER).try_into().unwrap()];
     let user_ids_ptr = user_ids.as_mut_ptr();
-    unsafe {
-        ret = GetUserIds(user_ids_ptr, user_ids_size_ptr);
-    }
+    ret = unsafe { GetUserIds(user_ids_ptr, user_ids_size_ptr) };
     if ret != SUCCESS {
         return log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get user IDs failed.");
     }
 
-    let user_ids_slice;
-    unsafe {
-        user_ids_slice = slice::from_raw_parts_mut(user_ids_ptr, (*user_ids_size_ptr).try_into().unwrap());
-    }
+    let user_ids_slice = unsafe { slice::from_raw_parts_mut(user_ids_ptr, (*user_ids_size_ptr).try_into().unwrap()) };
     for user_id in user_ids_slice.iter() {
         if let Err(e) = backup_ce_db_if_accessible(*user_id) {
             let calling_info = CallingInfo::new_self();

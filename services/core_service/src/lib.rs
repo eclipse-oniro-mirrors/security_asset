@@ -58,7 +58,8 @@ struct PackageInfo {
     user_id: i32,
     app_index: i32,
     app_id: String,
-    groups: Option<Vec<String>>,
+    developer_id: Option<String>,
+    group_ids: Option<Vec<String>>,
     bundle_name: String,
 }
 
@@ -67,7 +68,8 @@ struct PackageInfoFfi {
     user_id: i32,
     app_index: i32,
     owner: ConstAssetBlob,
-    groups: ConstAssetBlobArray,
+    developer_id: ConstAssetBlob,
+    group_ids: ConstAssetBlobArray,
     bundle_name: *const u8,
 }
 

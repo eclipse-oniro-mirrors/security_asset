@@ -53,8 +53,8 @@ sptr<IBundleMgr> GetBundleMgr()
     return iface_cast<IBundleMgr>(bundleMgrRemoteObj);
 }
 
-int32_t FillProcessInfoWithHapInfo(const int32_t appIndex, const AppExecFwk::AppProvisionInfo appProvisionInfo,
-    const AppExecFwk::BundleInfo bundleInfo, const std::string bundleName, ProcessInfo *processInfo)
+int32_t FillProcessInfoWithHapInfo(int32_t appIndex, const AppExecFwk::AppProvisionInfo &appProvisionInfo,
+    const AppExecFwk::BundleInfo &bundleInfo, const std::string &bundleName, ProcessInfo *processInfo)
 {
     if (memcpy_s(processInfo->processName.data, processInfo->processName.size, bundleName.c_str(), bundleName.size())
         != EOK) {
@@ -73,8 +73,8 @@ int32_t FillProcessInfoWithHapInfo(const int32_t appIndex, const AppExecFwk::App
     processInfo->hapInfo.appId.size = bundleInfo.appId.size();
 
     processInfo->hapInfo.appIndex = appIndex;
-    if (processInfo->hapInfo.groupId.data == nullptr && processInfo->hapInfo.groupId.size == 0 &&
-        processInfo->hapInfo.developerId.data == nullptr && processInfo->hapInfo.developerId.size == 0) {
+    if (processInfo->hapInfo.groupId.data == nullptr || processInfo->hapInfo.groupId.size == 0 ||
+        processInfo->hapInfo.developerId.data == nullptr || processInfo->hapInfo.developerId.size == 0) {
         return ASSET_SUCCESS;
     }
     if (processInfo->hapInfo.appIndex != 0) {
@@ -82,7 +82,8 @@ int32_t FillProcessInfoWithHapInfo(const int32_t appIndex, const AppExecFwk::App
         return ASSET_PERMISSION_DENIED;
     }
     for (const std::string &groupId : bundleInfo.applicationInfo.assetAccessGroups) {
-        if (memcmp(processInfo->hapInfo.groupId.data, groupId.data(), processInfo->hapInfo.groupId.size) == 0) {
+        if (groupId.size() <= processInfo->hapInfo.groupId.size &&
+            memcmp(processInfo->hapInfo.groupId.data, groupId.data(), processInfo->hapInfo.groupId.size) == 0) {
             LOGI("[INFO]Found matching group id.");
             if (memcpy_s(processInfo->hapInfo.developerId.data, processInfo->hapInfo.developerId.size,
                 appProvisionInfo.developerId.c_str(), appProvisionInfo.developerId.size()) != EOK) {
@@ -95,10 +96,10 @@ int32_t FillProcessInfoWithHapInfo(const int32_t appIndex, const AppExecFwk::App
         }
     }
     LOGE("[FATAL]No matching group id found!");
-    return ASSET_PERMISSION_DENIED;
+    return ASSET_INVALID_ARGUMENT;
 }
 
-int32_t FillProcessInfoWithNativeInfo(NativeTokenInfo nativeTokenInfo, uint64_t uid, ProcessInfo *processInfo)
+int32_t FillProcessInfoWithNativeInfo(const NativeTokenInfo &nativeTokenInfo, uint64_t uid, ProcessInfo *processInfo)
 {
     if (memcpy_s(processInfo->processName.data, processInfo->processName.size, nativeTokenInfo.processName.c_str(),
         nativeTokenInfo.processName.size()) != EOK) {
@@ -111,7 +112,7 @@ int32_t FillProcessInfoWithNativeInfo(NativeTokenInfo nativeTokenInfo, uint64_t 
     return ASSET_SUCCESS;
 }
 
-int32_t GetHapProcessInfo(int32_t userId, uint64_t uid, ProcessInfo *processInfo)
+int32_t GetHapProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInfo)
 {
     // Get bundle name and app index
     auto bundleMgr = GetBundleMgr();

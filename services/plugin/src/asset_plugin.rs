@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-use asset_common::{CallingInfo, Counter, OwnerType};
+use asset_common::{CallingInfo, Counter, Group, OwnerType, GROUP_SEPARATOR};
 use asset_db_operator::{
     database::{get_path, Database},
     database_file_upgrade::construct_splited_db_name,
@@ -113,7 +113,12 @@ fn get_db_name(user_id: i32, attributes: &ExtDbMap, is_ce: bool) -> std::result:
     let owner_info = attributes.get_bytes_attr(&column::OWNER).map_err(|e| e.code as u32)?;
     let owner_type = attributes.get_enum_attr::<OwnerType>(&column::OWNER_TYPE).map_err(|e| e.code as u32)?;
     let calling_info = match attributes.get_bytes_attr(&column::GROUP_ID).map_err(|e| e.code as u32) {
-        Ok(group) => CallingInfo::new(user_id, owner_type, owner_info.to_vec(), Some(group.to_vec())),
+        Ok(group) => {
+            let mut parts = group.split(|&byte| byte == GROUP_SEPARATOR as u8);
+            let developer_id: Vec<u8> = parts.next().unwrap().to_vec();
+            let group_id: Vec<u8> = parts.next().unwrap().to_vec();
+            CallingInfo::new(user_id, owner_type, owner_info.to_vec(), Some(Group { developer_id, group_id }))
+        },
         _ => CallingInfo::new(user_id, owner_type, owner_info.to_vec(), None),
     };
     construct_splited_db_name(&calling_info, is_ce).map_err(|e| e.code as u32)

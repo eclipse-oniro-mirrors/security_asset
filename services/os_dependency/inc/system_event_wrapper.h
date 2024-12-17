@@ -19,20 +19,21 @@
 #include <stdint.h>
 
 typedef struct {
-    const uint8_t *data;
     uint32_t size;
+    const uint8_t *data;
 } ConstAssetBlob;
 
 typedef struct {
-    const ConstAssetBlob *blob;
     uint32_t size;
+    const ConstAssetBlob *blob;
 } ConstAssetBlobArray;
 
 typedef struct {
     int32_t userId;
     int32_t appIndex;
     ConstAssetBlob owner;
-    ConstAssetBlobArray groups;
+    ConstAssetBlob developerId;
+    ConstAssetBlobArray groupIds;
     const uint8_t *bundleName;
 } PackageInfo;
 

@@ -21,11 +21,21 @@ use asset_definition::Value;
 /// The identity of calling process.
 #[derive(Clone)]
 #[derive(PartialEq, Eq)]
+pub struct Group {
+    /// The developer id.
+    pub developer_id: Vec<u8>,
+    /// The group id.
+    pub group_id: Vec<u8>,
+}
+
+/// The identity of calling process.
+#[derive(Clone)]
+#[derive(PartialEq, Eq)]
 pub struct CallingInfo {
     user_id: i32,
     owner_type: OwnerType,
     owner_info: Vec<u8>,
-    group: Option<Vec<u8>>,
+    group: Option<Group>,
 }
 
 impl CallingInfo {
@@ -40,15 +50,15 @@ impl CallingInfo {
     }
 
     /// Build identity of the specified owner.
-    pub fn new(user_id: i32, owner_type: OwnerType, owner_info: Vec<u8>, group: Option<Vec<u8>>) -> Self {
+    pub fn new(user_id: i32, owner_type: OwnerType, owner_info: Vec<u8>, group: Option<Group>) -> Self {
         Self { user_id, owner_type, owner_info, group }
     }
 
     /// Build a instance of CallingInfo.
-    pub fn build(user_id_attr: Option<Value>, process_info: &ProcessInfo) -> Self {
+    pub fn build(specific_user_id: Option<Value>, process_info: &ProcessInfo) -> Self {
         let mut user_id = process_info.user_id;
-        if let Some(Value::Number(user_id_attr)) = user_id_attr {
-            user_id = user_id_attr;
+        if let Some(Value::Number(specific_user_id)) = specific_user_id {
+            user_id = specific_user_id;
         };
 
         let mut owner_info = Vec::new();
@@ -57,13 +67,9 @@ impl CallingInfo {
                 owner_info.append(&mut hap_info.app_id.clone());
                 owner_info.append(&mut "_".to_string().as_bytes().to_vec());
                 owner_info.append(&mut hap_info.app_index.to_string().as_bytes().to_vec());
-                let group = match (&hap_info.group_id, &hap_info.developer_id) {
-                    (Some(group_id), Some(developer_id)) => {
-                        let mut group_vec: Vec<u8> = Vec::new();
-                        group_vec.extend(developer_id);
-                        group_vec.push(GROUP_SEPARATOR as u8);
-                        group_vec.extend(group_id);
-                        Some(group_vec)
+                let group = match (&hap_info.developer_id, &hap_info.group_id) {
+                    (Some(developer_id), Some(group_id)) => {
+                        Some(Group { developer_id: developer_id.to_vec(), group_id: group_id.to_vec() })
                     },
                     _ => None,
                 };
@@ -98,9 +104,34 @@ impl CallingInfo {
         self.user_id
     }
 
-    /// Get group of calling.
-    pub fn group(&self) -> &Option<Vec<u8>> {
-        &self.group
+    /// Get developer id of calling.
+    pub fn developer_id(&self) -> Option<&Vec<u8>> {
+        match &self.group {
+            Some(group) => Some(&group.developer_id),
+            _ => None,
+        }
+    }
+
+    /// Get group id of calling.
+    pub fn group_id(&self) -> Option<&Vec<u8>> {
+        match &self.group {
+            Some(group) => Some(&group.group_id),
+            _ => None,
+        }
+    }
+
+    /// Get group (developer id + group id) of calling.
+    pub fn group(&self) -> Option<Vec<u8>> {
+        match &self.group {
+            Some(group) => {
+                let mut group_vec: Vec<u8> = Vec::new();
+                group_vec.extend(group.developer_id.clone());
+                group_vec.push(GROUP_SEPARATOR as u8);
+                group_vec.extend(group.group_id.clone());
+                Some(group_vec)
+            },
+            _ => None,
+        }
     }
 }
 

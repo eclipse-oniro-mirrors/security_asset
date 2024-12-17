@@ -46,13 +46,12 @@ struct ProcessInfoFfi {
 }
 
 impl ProcessInfoFfi {
-    fn init(
-        user_id: u32,
-        uid: u32,
+    fn build(
+        group_id: &Option<Vec<u8>>,
         process_name: &mut Vec<u8>,
         app_id: &mut Vec<u8>,
-        (group_id, developer_id): (&Option<Vec<u8>>, &mut Option<Vec<u8>>),
-    ) -> Self {
+        developer_id: &mut Option<Vec<u8>>,
+    ) -> Result<Self> {
         let process_name = MutAssetBlob { size: process_name.len() as u32, data: process_name.as_mut_ptr() };
         let app_id = MutAssetBlob { size: app_id.len() as u32, data: app_id.as_mut_ptr() };
         let group_id = match group_id {
@@ -63,13 +62,13 @@ impl ProcessInfoFfi {
             Some(developer_id) => MutAssetBlob { size: developer_id.len() as u32, data: developer_id.as_mut_ptr() },
             None => MutAssetBlob { size: 0, data: null_mut() },
         };
-        ProcessInfoFfi {
-            user_id,
-            owner_type: 0,
+        Ok(ProcessInfoFfi {
+            user_id: 0,
+            owner_type: OwnerType::Hap as u32,
             process_name,
             hap_info: HapInfoFfi { app_index: 0, app_id, group_id, developer_id },
-            native_info: NativeInfoFfi { uid },
-        }
+            native_info: NativeInfoFfi { uid: 0 },
+        })
     }
 }
 
@@ -141,8 +140,7 @@ impl ProcessInfo {
             Some(Value::Bytes(group_attr)) => (Some(group_attr.clone()), Some(vec![0u8; 20])),
             _ => (None, None),
         };
-        let mut process_info_ffi =
-            ProcessInfoFfi::init(user_id, uid as u32, &mut process_name, &mut app_id, (&group_id, &mut developer_id));
+        let mut process_info_ffi = ProcessInfoFfi::build(&group_id, &mut process_name, &mut app_id, &mut developer_id)?;
         match unsafe { GetCallingProcessInfo(user_id, uid, &mut process_info_ffi) } {
             SUCCESS => {
                 process_name.truncate(process_info_ffi.process_name.size as usize);
@@ -168,7 +166,7 @@ impl ProcessInfo {
         };
 
         Ok(Self {
-            user_id,
+            user_id: process_info_ffi.user_id,
             owner_type: OwnerType::try_from(process_info_ffi.owner_type)?,
             process_name,
             process_info_detail,

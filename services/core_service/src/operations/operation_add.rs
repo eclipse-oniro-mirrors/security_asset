@@ -137,6 +137,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
+    common::check_group_validity(attributes, calling_info)?;
     common::check_value_validity(attributes)?;
     check_accessibity_validity(attributes, calling_info)?;
     common::check_system_permission(attributes)?;

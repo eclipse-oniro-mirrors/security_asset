@@ -47,13 +47,26 @@ fn check_old_db_exist(user_id: i32) -> bool {
     path.exists()
 }
 
+fn to_hex(bytes: &Vec<u8>) -> Result<Vec<u8>> {
+    let bytes_len = bytes.len();
+    let scale_capacity = 2;
+    let mut hex_vec = Vec::with_capacity(bytes_len * scale_capacity);
+    for byte in bytes.iter() {
+        hex_vec.extend(format!("{:02x}", byte).as_bytes());
+    }
+    Ok(hex_vec)
+}
+
 /// Use owner_type and owner_info construct db name.
 pub fn construct_splited_db_name(calling_info: &CallingInfo, is_ce: bool) -> Result<String> {
     let mut res: String = match calling_info.owner_type_enum() {
-        OwnerType::Hap => {
-            if let Some(group) = calling_info.group() {
-                format!("Group_{}", String::from_utf8_lossy(&hasher::sha256(true, group)))
-            } else {
+        OwnerType::Hap => match (calling_info.developer_id(), calling_info.group_id()) {
+            (Some(developer_id), Some(group_id)) => format!(
+                "Group_{}_{}",
+                String::from_utf8_lossy(developer_id),
+                String::from_utf8_lossy(&to_hex(&hasher::sha256(true, group_id))?)
+            ),
+            _ => {
                 let owner_info_string = String::from_utf8_lossy(calling_info.owner_info()).to_string();
                 let split_owner_info: Vec<&str> = owner_info_string.split(OWNER_INFO_SEPARATOR).collect();
                 if split_owner_info.len() < MINIM_OWNER_INFO_LEN || split_owner_info.last().is_none() {
@@ -66,7 +79,7 @@ pub fn construct_splited_db_name(calling_info: &CallingInfo, is_ce: bool) -> Res
                 }
                 let owner_info = split_owner_info_mut.join("_").clone();
                 format!("Hap_{}_{}", owner_info, app_index)
-            }
+            },
         },
         OwnerType::Native => {
             format!("Native_{}", String::from_utf8_lossy(calling_info.owner_info()))

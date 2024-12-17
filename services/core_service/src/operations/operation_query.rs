@@ -157,7 +157,7 @@ const OPTIONAL_ATTRS: [Tag; 6] =
     [Tag::ReturnLimit, Tag::ReturnOffset, Tag::ReturnOrderedBy, Tag::ReturnType, Tag::AuthToken, Tag::AuthChallenge];
 const AUTH_QUERY_ATTRS: [Tag; 2] = [Tag::AuthChallenge, Tag::AuthToken];
 
-fn check_arguments(attributes: &AssetMap) -> Result<()> {
+fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
@@ -165,12 +165,13 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
+    common::check_group_validity(attributes, calling_info)?;
     common::check_value_validity(attributes)?;
     common::check_system_permission(attributes)
 }
 
 pub(crate) fn query(calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<AssetMap>> {
-    check_arguments(query)?;
+    check_arguments(query, calling_info)?;
 
     common::inform_asset_ext(calling_info, query);
 

@@ -18,7 +18,9 @@
 mod argument_check;
 mod permission_check;
 
-pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_value_validity, MAX_LABEL_SIZE};
+pub(crate) use argument_check::{
+    check_group_validity, check_required_tags, check_tag_validity, check_value_validity, MAX_LABEL_SIZE,
+};
 pub(crate) use permission_check::check_system_permission;
 
 use asset_common::{CallingInfo, OWNER_INFO_SEPARATOR};
@@ -133,7 +135,7 @@ pub(crate) fn add_calling_info(calling_info: &CallingInfo, db_data: &mut DbMap) 
     db_data.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
     db_data.insert(column::OWNER_TYPE, Value::Number(calling_info.owner_type()));
     if let Some(group) = calling_info.group() {
-        db_data.insert(column::GROUP_ID, Value::Bytes(group.clone()));
+        db_data.insert(column::GROUP_ID, Value::Bytes(group));
     };
 }
 
