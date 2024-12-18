@@ -17,7 +17,7 @@
 
 use std::{ffi::CString, os::raw::c_char};
 
-use asset_common::CallingInfo;
+use asset_common::{CallingInfo, OwnerType};
 use asset_crypto_manager::crypto::Crypto;
 use asset_db_key_operator::generate_secret_key_if_needed;
 use asset_db_operator::{
@@ -117,6 +117,7 @@ fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo)
 
 extern "C" {
     fn CheckPermission(permission: *const c_char) -> bool;
+    fn CheckSystemHapPermission() -> bool;
 }
 
 fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
@@ -125,6 +126,22 @@ fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
         if unsafe { !CheckPermission(permission.as_ptr()) } {
             return log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
         }
+    }
+    Ok(())
+}
+
+fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    if attributes.get(&Tag::SyncType).is_none() ||
+        (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0 {
+        return Ok(());
+    }
+    match calling_info.owner_type_enum() {
+        OwnerType::Hap => {
+            if unsafe { !CheckSystemHapPermission() } {
+                return log_throw_error!(ErrCode::NotSystemApplication, "[FATAL]The caller is not system application.");
+            }
+        },
+        OwnerType::Native => (),
     }
     Ok(())
 }
@@ -142,7 +159,8 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     common::check_value_validity(attributes)?;
     check_accessibity_validity(attributes, calling_info)?;
     common::check_system_permission(attributes)?;
-    check_persistent_permission(attributes)
+    check_persistent_permission(attributes)?;
+    check_sync_permission(attributes, calling_info)
 }
 
 fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
