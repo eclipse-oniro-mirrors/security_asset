@@ -250,9 +250,10 @@ lazy_static! {
     static ref RECORD_TIME: Mutex<Option<Instant>> = Mutex::new(None);
 }
 
-pub(crate) extern "C" fn backup_db() {
+async fn backup_db_sync() {
     let _counter_user = AutoCounter::new();
     let cur_time = Instant::now();
+    logi!("[INFO]Start backup db.");
 
     let mut record_time = RECORD_TIME.lock().expect("Failed to lock RECORD_TIME");
 
@@ -268,6 +269,11 @@ pub(crate) extern "C" fn backup_db() {
             upload_fault_system_event(&calling_info, cur_time, "backup_db", &e);
         }
     }
+    logi!("[INFO]Finish backup db.");
+}
+
+pub(crate) extern "C" fn backup_db() {
+    let _handle = ylong_runtime::spawn(backup_db_sync());
 }
 
 pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, app_index: i32) {

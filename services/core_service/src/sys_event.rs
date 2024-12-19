@@ -20,7 +20,9 @@ use std::time::Instant;
 use ipc::Skeleton;
 
 use asset_common::CallingInfo;
-use asset_definition::{AssetError, Result};
+use asset_definition::{
+    Accessibility, AssetError, AssetMap, AuthType, Extension, OperationType, Result, ReturnType, SyncType, Tag,
+};
 use asset_log::{loge, logi};
 
 use hisysevent::{build_number_param, build_str_param, write, EventType, HiSysEventParam};
@@ -62,7 +64,50 @@ impl<'a> SysEvent<'a> {
     }
 }
 
-pub(crate) fn upload_statistic_system_event(calling_info: &CallingInfo, start_time: Instant, func_name: &str) {
+const EXTRA_ATTRS: [Tag; 7] = [
+    Tag::SyncType,
+    Tag::Accessibility,
+    Tag::RequirePasswordSet,
+    Tag::AuthType,
+    Tag::OperationType,
+    Tag::ReturnType,
+    Tag::RequireAttrEncrypted,
+];
+
+fn transfer_tag_to_string(tags: &[Tag], attributes: &AssetMap) -> Result<String> {
+    let mut ext_info = "".to_string();
+    for tag in tags {
+        if attributes.get(tag).is_none() {
+            continue;
+        }
+        let tag_value = match tag {
+            Tag::SyncType => format!("{}", attributes.get_num_attr(tag).unwrap_or(SyncType::default() as u32)),
+            Tag::Accessibility => format!("{}", attributes.get_enum_attr(tag).unwrap_or(Accessibility::default())),
+            Tag::RequirePasswordSet => format!("{}", attributes.get_bool_attr(tag).unwrap_or(false)),
+            Tag::AuthType => format!("{}", attributes.get_enum_attr(tag).unwrap_or(AuthType::default())),
+            Tag::ReturnType => format!("{}", attributes.get_enum_attr(tag).unwrap_or(ReturnType::default())),
+            Tag::RequireAttrEncrypted => format!("{}", attributes.get_bool_attr(tag).unwrap_or(false)),
+            Tag::OperationType => {
+                format!("{}", attributes.get_num_attr(tag).unwrap_or(OperationType::default() as u32))
+            },
+            _ => String::new(),
+        };
+        ext_info += &format!("{}:{};", tag, tag_value);
+    }
+    Ok(ext_info)
+}
+
+fn construct_ext_info(attributes: &AssetMap) -> Result<String> {
+    let tags = EXTRA_ATTRS.to_vec();
+    transfer_tag_to_string(&tags, attributes)
+}
+
+pub(crate) fn upload_statistic_system_event(
+    calling_info: &CallingInfo,
+    start_time: Instant,
+    func_name: &str,
+    ext_info: &str,
+) {
     let duration = start_time.elapsed();
     let owner_info = String::from_utf8_lossy(calling_info.owner_info()).to_string();
     SysEvent::new(EventType::Statistic)
@@ -70,8 +115,12 @@ pub(crate) fn upload_statistic_system_event(calling_info: &CallingInfo, start_ti
         .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
         .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
         .set_param(build_number_param!(SysEvent::RUN_TIME, duration.as_millis() as u32))
-        .set_param(build_str_param!(SysEvent::EXTRA, format!("CallingUid={}", Skeleton::calling_uid())))
+        .set_param(build_str_param!(
+            SysEvent::EXTRA,
+            format!("CallingUid={} ext_info={}", Skeleton::calling_uid(), ext_info)
+        ))
         .write();
+    logi!("[INFO]CallingUid=[{}] ext_info=[{}]", Skeleton::calling_uid(), ext_info);
     logi!(
         "[INFO]Calling fun:[{}], user_id:[{}], caller:[{}], start_time:[{:?}], run_time:[{}]",
         func_name,
@@ -112,9 +161,11 @@ pub(crate) fn upload_system_event<T>(
     calling_info: &CallingInfo,
     start_time: Instant,
     func_name: &str,
+    attributes: &AssetMap,
 ) -> Result<T> {
+    let ext_info = construct_ext_info(attributes)?;
     match &result {
-        Ok(_) => upload_statistic_system_event(calling_info, start_time, func_name),
+        Ok(_) => upload_statistic_system_event(calling_info, start_time, func_name, &ext_info),
         Err(e) => upload_fault_system_event(calling_info, start_time, func_name, e),
     }
     result
