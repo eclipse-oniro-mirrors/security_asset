@@ -17,7 +17,7 @@
 
 use std::{ffi::CString, os::raw::c_char};
 
-use asset_common::CallingInfo;
+use asset_common::{CallingInfo, OwnerType};
 use asset_crypto_manager::crypto::Crypto;
 use asset_db_key_operator::generate_secret_key_if_needed;
 use asset_db_operator::{
@@ -129,6 +129,22 @@ fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
     Ok(())
 }
 
+fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    if attributes.get(&Tag::SyncType).is_none() ||
+        (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0 {
+        return Ok(());
+    }
+    match calling_info.owner_type_enum() {
+        OwnerType::Hap => {
+            if calling_info.app_index() > 0 {
+                return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller is not support store sync data.")
+            }
+        },
+        OwnerType::Native => (),
+    }
+    Ok(())
+}
+
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     common::check_required_tags(attributes, &REQUIRED_ATTRS)?;
 
@@ -141,6 +157,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
     check_accessibity_validity(attributes, calling_info)?;
+    check_sync_permission(attributes, calling_info)?;
     common::check_system_permission(attributes)?;
     check_persistent_permission(attributes)
 }
