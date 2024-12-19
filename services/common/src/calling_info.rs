@@ -86,6 +86,21 @@ impl CallingInfo {
     pub fn user_id(&self) -> i32 {
         self.user_id
     }
+
+    /// Get appindex.
+    pub fn app_index(&self) -> u32 {
+        match self.owner_type_enum() {
+            OwnerType::Hap => {
+                let owner_info_str = String::from_utf8_lossy(self.owner_info()).to_string();
+                let owner_info_vec: Vec<_> = owner_info_str.split('_').collect();
+                match owner_info_vec.last().unwrap().parse::<u32>() {
+                    Ok(num) => num,
+                    Err(_e) => 0,
+                }
+            },
+            OwnerType::Native=> 0
+        }
+    }
 }
 
 #[cfg(test)]
