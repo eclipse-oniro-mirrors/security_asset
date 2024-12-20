@@ -140,7 +140,6 @@ public:
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_UNLOCKED) {
             if (this->eventCallBack.onUserUnlocked != nullptr) {
                 int userId = data.GetCode();
-
                 this->eventCallBack.onUserUnlocked(userId);
             }
             LOGI("[INFO]Receive event: USER_UNLOCKED, start_time: %{public}ld", startTime);

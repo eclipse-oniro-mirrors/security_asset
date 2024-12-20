@@ -55,6 +55,11 @@ const SUCCESS: i32 = 0;
 const USER_ID_VEC_BUFFER: u32 = 5;
 const MINIMUM_MAIN_USER_ID: i32 = 100;
 
+enum DataExist {
+    OwnerData(bool),
+    GroupData(bool),
+}
+
 fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result<()> {
     let db_name = construct_splited_db_name(calling_info, is_ce)?;
     for db_path in fs::read_dir(file_path)? {
@@ -74,53 +79,61 @@ fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result
     Ok(())
 }
 
-fn delete_in_de_db_on_package_removed(calling_info: &CallingInfo, reverse_condition: &DbMap) -> Result<Option<bool>> {
-    let mut de_db = Database::build(calling_info, false)?;
+fn delete_in_de_db_on_package_removed(calling_info: &CallingInfo, reverse_condition: &DbMap) -> Result<DataExist> {
+    let mut db = Database::build(calling_info, false)?;
     let mut delete_condition = DbMap::new();
+    let check_condition = DbMap::new();
     match calling_info.group() {
         Some(_) => {
             delete_condition.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
             delete_condition.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
-            let _ = de_db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
-            Ok(None)
-        },
-        None => {
-            delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
-            let _ = de_db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
-            let check_conditon = DbMap::new();
-            let de_db_data_exists = de_db.is_data_exists(&check_conditon, false)?;
-            if !de_db_data_exists {
+            let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
+            let data_exists = db.is_data_exists(&check_condition, false)?;
+            if !data_exists {
                 remove_db(&format!("{}/{}", DE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
             }
-            Ok(Some(de_db_data_exists))
+            Ok(DataExist::GroupData(data_exists))
+        },
+        None => {
+            delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
+            let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
+            let data_exists = db.is_data_exists(&check_condition, false)?;
+            if !data_exists {
+                remove_db(&format!("{}/{}", DE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
+            }
+            Ok(DataExist::OwnerData(data_exists))
         },
     }
 }
 
-fn delete_in_ce_db_on_package_removed(calling_info: &CallingInfo, reverse_condition: &DbMap) -> Result<Option<bool>> {
-    let mut ce_db = Database::build(calling_info, true)?;
+fn delete_in_ce_db_on_package_removed(calling_info: &CallingInfo, reverse_condition: &DbMap) -> Result<DataExist> {
+    let mut db = Database::build(calling_info, true)?;
     let mut delete_condition = DbMap::new();
+    let check_condition = DbMap::new();
     match calling_info.group() {
         Some(_) => {
             delete_condition.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
             delete_condition.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
-            let _ = ce_db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
-            Ok(None)
+            let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
+            let data_exists = db.is_data_exists(&check_condition, false)?;
+            if !data_exists {
+                remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
+            }
+            Ok(DataExist::GroupData(data_exists))
         },
         None => {
             delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
-            let _ = ce_db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
-            let check_conditon = DbMap::new();
-            let ce_db_data_exists = ce_db.is_data_exists(&check_conditon, false)?;
-            if !ce_db_data_exists {
+            let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
+            let data_exists = db.is_data_exists(&check_condition, false)?;
+            if !data_exists {
                 remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
             }
-            Ok(Some(ce_db_data_exists))
+            Ok(DataExist::OwnerData(data_exists))
         },
     }
 }
 
-fn delete_on_package_removed(calling_info: &CallingInfo) -> Result<Option<bool>> {
+fn delete_on_package_removed(calling_info: &CallingInfo) -> Result<DataExist> {
     let mut reverse_condition = DbMap::new();
     reverse_condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
     let de_db_data_exists = delete_in_de_db_on_package_removed(calling_info, &reverse_condition)?;
@@ -128,14 +141,16 @@ fn delete_on_package_removed(calling_info: &CallingInfo) -> Result<Option<bool>>
     if is_db_key_cipher_file_exist(calling_info.user_id())? {
         let ce_db_data_exists = delete_in_ce_db_on_package_removed(calling_info, &reverse_condition)?;
         match (de_db_data_exists, ce_db_data_exists) {
-            (Some(de_db_data_exists), Some(ce_db_data_exists)) => Ok(Some(de_db_data_exists || ce_db_data_exists)),
-            _ => Ok(None),
+            (DataExist::OwnerData(de_db_data_exists), DataExist::OwnerData(ce_db_data_exists)) => {
+                Ok(DataExist::OwnerData(de_db_data_exists || ce_db_data_exists))
+            },
+            (DataExist::GroupData(de_db_data_exists), DataExist::GroupData(ce_db_data_exists)) => {
+                Ok(DataExist::GroupData(de_db_data_exists || ce_db_data_exists))
+            },
+            _ => log_throw_error!(ErrCode::AccessDenied, "[FATAL][SA]Cannot delete owner and group data at same time"),
         }
     } else {
-        match de_db_data_exists {
-            Some(de_db_data_exists) => Ok(Some(de_db_data_exists)),
-            _ => Ok(None),
-        }
+        Ok(de_db_data_exists)
     }
 }
 
@@ -176,21 +191,25 @@ fn delete_data_by_owner(
     let _counter_user = AutoCounter::new();
     let start_time = Instant::now();
     let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner.data, owner.size as usize).to_vec() };
-    clear_cryptos(&CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), None));
 
     for calling_info in construct_calling_infos(user_id, owner.clone(), developer_id, group_ids) {
+        clear_cryptos(&calling_info);
         let res = match delete_on_package_removed(&calling_info) {
-            Ok(Some(true)) => {
-                logi!("Retain data in owner dbs after uninstallation. Do not delete owner key in HUKS!");
+            Ok(DataExist::OwnerData(true)) => {
+                logi!("Retain data in owner db after uninstallation. Do not delete owner key in HUKS.");
                 Ok(())
             },
-            Ok(Some(false)) => {
-                logi!("Do not retain data in its owner dbs after uninstallation. Delete owner key in HUKS!");
+            Ok(DataExist::OwnerData(false)) => {
+                logi!("Do not retain data in its owner db after uninstallation. Delete owner key in HUKS.");
                 SecretKey::delete_by_owner(&calling_info)
             },
-            Ok(None) => {
-                logi!("Do not retain data in its group dbs after uninstallation. Do not delete group key in HUKS!");
+            Ok(DataExist::GroupData(true)) => {
+                logi!("Other owners' data remain in group db after uninstallation. Do not delete group key in HUKS.");
                 Ok(())
+            },
+            Ok(DataExist::GroupData(false)) => {
+                logi!("No data remain in group db after uninstallation. Delete group key in HUKS.");
+                SecretKey::delete_by_owner(&calling_info)
             },
             Err(e) => {
                 // Report the database operation fault event.

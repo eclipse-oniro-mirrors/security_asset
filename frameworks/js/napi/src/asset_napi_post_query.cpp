@@ -40,6 +40,7 @@ const std::vector<uint32_t> REQUIRED_TAGS = {
 };
 
 const std::vector<uint32_t> OPTIONAL_TAGS = {
+    SEC_ASSET_TAG_GROUP_ID,
     SEC_ASSET_TAG_USER_ID
 };
 

@@ -329,7 +329,6 @@ impl<'a> Table<'a> {
         let mut sql = format!("delete from {}", self.table_name);
         build_sql_where(condition, is_filter_sync, &mut sql);
         build_sql_reverse_condition(condition, reverse_condition, &mut sql);
-        logi!("[cxc]sql:[{}]", sql);
         let stmt = Statement::prepare(&sql, self.db)?;
         let mut index = 1;
         bind_where_datas(condition, &stmt, &mut index)?;
