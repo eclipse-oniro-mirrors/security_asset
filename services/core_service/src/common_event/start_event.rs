@@ -128,4 +128,5 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
         logi!("[INFO]On user -{}- pin created.", reason.extra_data.code);
         listener::on_user_unlocked(reason.extra_data.code);
     }
+    logi!("[INFO]Finish handle common event. [{}]", reason_name);
 }

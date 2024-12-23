@@ -19,8 +19,11 @@ use std::{
     ffi::CStr,
     fs::{self, DirEntry},
     slice,
-    time::Instant,
+    sync::Mutex,
+    time::{Duration, Instant},
 };
+
+use lazy_static::lazy_static;
 
 use asset_common::{AutoCounter, CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
@@ -134,16 +137,34 @@ extern "C" fn delete_crypto_need_unlock() {
     crypto_manager.lock().unwrap().remove_need_device_unlocked();
 }
 
-pub(crate) extern "C" fn backup_db() {
+lazy_static! {
+    static ref RECORD_TIME: Mutex<Option<Instant>> = Mutex::new(None);
+}
+
+async fn backup_db_sync() {
     let _counter_user = AutoCounter::new();
-    let start_time = Instant::now();
-    match backup_all_db(&start_time) {
-        Ok(_) => (),
-        Err(e) => {
+    let cur_time = Instant::now();
+    logi!("[INFO]Start backup db.");
+
+    let mut record_time = RECORD_TIME.lock().expect("Failed to lock RECORD_TIME");
+
+    let should_backup = match *record_time {
+        Some(ref last_time) => cur_time.duration_since(*last_time) > Duration::new(3600, 0),
+        None => true,
+    };
+
+    if should_backup {
+        *record_time = Some(cur_time);
+        if let Err(e) = backup_all_db(&cur_time) {
             let calling_info = CallingInfo::new_self();
-            upload_fault_system_event(&calling_info, start_time, "backup_db", &e);
-        },
+            upload_fault_system_event(&calling_info, cur_time, "backup_db", &e);
+        }
     }
+    logi!("[INFO]Finish backup db.");
+}
+
+pub(crate) extern "C" fn backup_db() {
+    let _handle = ylong_runtime::spawn(backup_db_sync());
 }
 
 pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, app_index: i32) {
