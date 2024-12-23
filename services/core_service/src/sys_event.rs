@@ -117,7 +117,8 @@ pub(crate) fn upload_statistic_system_event(
         .set_param(build_number_param!(SysEvent::RUN_TIME, duration.as_millis() as u32))
         .set_param(build_str_param!(
             SysEvent::EXTRA,
-            format!("CallingUid={} ext_info={}", Skeleton::calling_uid(), ext_info)
+            format!("CallingUid={} ext_info={} caller_owner_type={}",
+                Skeleton::calling_uid(), ext_info, calling_info.owner_type())
         ))
         .write();
     logi!("[INFO]CallingUid=[{}] ext_info=[{}]", Skeleton::calling_uid(), ext_info);

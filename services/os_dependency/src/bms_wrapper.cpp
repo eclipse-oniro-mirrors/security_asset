@@ -169,7 +169,11 @@ int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *proces
     int32_t res = ASSET_SUCCESS;
     switch (tokenType) {
         case ATokenTypeEnum::TOKEN_HAP:
-            processInfo->ownerType = HAP;
+            if(processInfo->hapInfo.groupId.data != nullptr) {
+                processInfo->ownerType = GROUP;
+            } else {
+                processInfo->ownerType = HAP;
+            }
             res = GetHapProcessInfo(userId, uid, processInfo);
             break;
         case ATokenTypeEnum::TOKEN_NATIVE:

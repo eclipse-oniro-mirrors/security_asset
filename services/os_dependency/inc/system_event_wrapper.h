@@ -34,7 +34,7 @@ typedef struct {
     ConstAssetBlob owner;
     ConstAssetBlob developerId;
     ConstAssetBlobArray groupIds;
-    const uint8_t *bundleName;
+    ConstAssetBlob bundleName;
 } PackageInfo;
 
 typedef void (*OnPackageRemoved)(PackageInfo);

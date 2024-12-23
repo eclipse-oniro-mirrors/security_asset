@@ -60,30 +60,29 @@ fn to_hex(bytes: &Vec<u8>) -> Result<Vec<u8>> {
 /// Use owner_type and owner_info construct db name.
 pub fn construct_splited_db_name(calling_info: &CallingInfo, is_ce: bool) -> Result<String> {
     let mut res: String = match calling_info.owner_type_enum() {
-        OwnerType::Hap => match (calling_info.developer_id(), calling_info.group_id()) {
+        OwnerType::Group => match (calling_info.developer_id(), calling_info.group_id()) {
             (Some(developer_id), Some(group_id)) => format!(
                 "Group_{}_{}",
                 String::from_utf8_lossy(developer_id),
                 String::from_utf8_lossy(&to_hex(&hasher::sha256(true, group_id))?)
             ),
-            _ => {
-                let owner_info_string = String::from_utf8_lossy(calling_info.owner_info()).to_string();
-                let split_owner_info: Vec<&str> = owner_info_string.split(OWNER_INFO_SEPARATOR).collect();
-                if split_owner_info.len() < MINIM_OWNER_INFO_LEN || split_owner_info.last().is_none() {
-                    return log_throw_error!(ErrCode::DatabaseError, "[FATAL]The queried owner info is not correct.");
-                }
-                let app_index = split_owner_info.last().unwrap();
-                let mut split_owner_info_mut = split_owner_info.clone();
-                for _ in 0..REMOVE_INDEX {
-                    split_owner_info_mut.pop();
-                }
-                let owner_info = split_owner_info_mut.join("_").clone();
-                format!("Hap_{}_{}", owner_info, app_index)
-            },
+            _ => return log_throw_error!(ErrCode::DatabaseError, "[FATAL]Wrong queried owner group info."),
         },
-        OwnerType::Native => {
-            format!("Native_{}", String::from_utf8_lossy(calling_info.owner_info()))
+        OwnerType::Hap => {
+            let owner_info_string = String::from_utf8_lossy(calling_info.owner_info()).to_string();
+            let split_owner_info: Vec<&str> = owner_info_string.split(OWNER_INFO_SEPARATOR).collect();
+            if split_owner_info.len() < MINIM_OWNER_INFO_LEN || split_owner_info.last().is_none() {
+                return log_throw_error!(ErrCode::DatabaseError, "[FATAL]Wrong queried owner info!");
+            }
+            let app_index = split_owner_info.last().unwrap();
+            let mut split_owner_info_mut = split_owner_info.clone();
+            for _ in 0..REMOVE_INDEX {
+                split_owner_info_mut.pop();
+            }
+            let owner_info = split_owner_info_mut.join("_").clone();
+            format!("Hap_{}_{}", owner_info, app_index)
         },
+        OwnerType::Native => format!("Native_{}", String::from_utf8_lossy(calling_info.owner_info())),
     };
     if is_ce {
         res = format!("enc_{}", res)

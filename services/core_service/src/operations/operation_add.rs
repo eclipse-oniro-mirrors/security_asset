@@ -134,7 +134,7 @@ fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> R
         return Ok(());
     }
     match calling_info.owner_type_enum() {
-        OwnerType::Hap => {
+        OwnerType::Hap | OwnerType::Group => {
             if calling_info.app_index() > 0 {
                 return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller is not support store sync data.");
             }

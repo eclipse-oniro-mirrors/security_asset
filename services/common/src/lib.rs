@@ -69,6 +69,8 @@ impl_enum_trait! {
         Hap = 0,
         /// The calling is a native process.
         Native = 1,
+        /// The calling is a group,
+        Group = 2,
     }
 }
 

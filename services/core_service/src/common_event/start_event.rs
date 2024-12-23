@@ -113,7 +113,8 @@ fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
             Some(group_ids) => ConstAssetBlobArray { size: group_ids.len() as u32, blobs: group_ids.as_ptr() },
             None => ConstAssetBlobArray { size: 0, blobs: null() },
         };
-        let bundle_name = package_info.bundle_name.as_ptr();
+        let bundle_name =
+            ConstAssetBlob { size: package_info.bundle_name.len() as u32, data: package_info.bundle_name.as_ptr() };
         listener::on_package_removed(PackageInfoFfi {
             user_id,
             app_index,

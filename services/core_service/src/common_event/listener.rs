@@ -85,7 +85,6 @@ fn delete_in_de_db_on_package_removed(calling_info: &CallingInfo, reverse_condit
     let check_condition = DbMap::new();
     match calling_info.group() {
         Some(_) => {
-            delete_condition.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
             delete_condition.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
             let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
             let data_exists = db.is_data_exists(&check_condition, false)?;
@@ -112,7 +111,6 @@ fn delete_in_ce_db_on_package_removed(calling_info: &CallingInfo, reverse_condit
     let check_condition = DbMap::new();
     match calling_info.group() {
         Some(_) => {
-            delete_condition.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
             delete_condition.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
             let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
             let data_exists = db.is_data_exists(&check_condition, false)?;
@@ -173,7 +171,7 @@ fn construct_calling_infos(
             let group_id = unsafe { slice::from_raw_parts(group_id_slice.data, group_id_slice.size as usize) };
             calling_infos.push(CallingInfo::new(
                 user_id,
-                OwnerType::Hap,
+                OwnerType::Group,
                 owner.clone(),
                 Some(Group { developer_id: developer_id.to_vec(), group_id: group_id.to_vec() }),
             ));
@@ -227,21 +225,21 @@ fn delete_data_by_owner(
 
 pub(crate) extern "C" fn on_package_removed(package_info: PackageInfoFfi) {
     delete_data_by_owner(package_info.user_id, package_info.owner, package_info.developer_id, package_info.group_ids);
-    let c_str = unsafe { CStr::from_ptr(package_info.bundle_name as _) };
-    let bundle_name = match c_str.to_str() {
-        Ok(s) => s.to_string(),
-        Err(e) => {
-            loge!("[FATAL]Parse sting from bundle name failed, error is {}.", e);
-            return;
-        },
-    };
 
-    logi!("[INFO]On app -{}-{}-{}- removed.", package_info.user_id, bundle_name, package_info.app_index);
+    let bundle_name: Vec<u8> = unsafe {
+        slice::from_raw_parts(package_info.bundle_name.data, package_info.bundle_name.size as usize).to_vec()
+    };
+    logi!(
+        "[INFO]On app -{}-{}-{}- removed.",
+        package_info.user_id,
+        String::from_utf8_lossy(&bundle_name),
+        package_info.app_index
+    );
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(package_info.user_id as u32));
-        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(bundle_name.as_bytes().to_vec()));
+        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(bundle_name));
 
         // only hap package can be removed
         params.insert(PARAM_NAME_IS_HAP, Value::Bool(true));

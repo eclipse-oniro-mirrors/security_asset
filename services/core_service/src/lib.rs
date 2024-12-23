@@ -70,7 +70,7 @@ struct PackageInfoFfi {
     owner: ConstAssetBlob,
     developer_id: ConstAssetBlob,
     group_ids: ConstAssetBlobArray,
-    bundle_name: *const u8,
+    bundle_name: ConstAssetBlob,
 }
 
 pub(crate) fn unload_sa(duration: u64) {
