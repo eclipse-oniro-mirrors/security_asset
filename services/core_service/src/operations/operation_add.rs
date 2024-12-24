@@ -163,8 +163,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     check_accessibity_validity(attributes, calling_info)?;
     check_sync_permission(attributes, calling_info)?;
     common::check_system_permission(attributes)?;
-    check_persistent_permission(attributes)?;
-    check_sync_permission(attributes, calling_info)
+    check_persistent_permission(attributes)
 }
 
 fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
