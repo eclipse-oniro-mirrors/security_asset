@@ -140,6 +140,9 @@ fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> R
             if unsafe { !CheckSystemHapPermission() } {
                 return log_throw_error!(ErrCode::NotSystemApplication, "[FATAL]The caller is not system application.");
             }
+            if calling_info.app_index() > 0 {
+                return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller is not support store sync data.")
+            }
         },
         OwnerType::Native => (),
     }
@@ -158,6 +161,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_value_validity(attributes)?;
     check_accessibity_validity(attributes, calling_info)?;
+    check_sync_permission(attributes, calling_info)?;
     common::check_system_permission(attributes)?;
     check_persistent_permission(attributes)?;
     check_sync_permission(attributes, calling_info)
