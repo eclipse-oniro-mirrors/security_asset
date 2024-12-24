@@ -155,13 +155,21 @@ struct AssetService {
 }
 
 macro_rules! execute {
-    ($func:path, $calling_info:expr, $first_arg:expr, $($args:expr),*) => {{
+    ($func:path, $calling_info:expr, $first_arg:expr) => {{
         let func_name = hisysevent::function!();
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
         // Create de database directory if not exists.
         create_user_de_dir($calling_info.user_id())?;
-        upload_system_event($func($calling_info, $first_arg, $($args),*), $calling_info, start, func_name, $first_arg)
+        upload_system_event($func($calling_info, $first_arg), $calling_info, start, func_name, $first_arg)
+    }};
+    ($func:path, $calling_info:expr, $first_arg:expr, $second_arg:expr) => {{
+        let func_name = hisysevent::function!();
+        let start = Instant::now();
+        let _trace = TraceScope::trace(func_name);
+        // Create de database directory if not exists.
+        create_user_de_dir($calling_info.user_id())?;
+        upload_system_event($func($calling_info, $first_arg, $second_arg), $calling_info, start, func_name, $first_arg)
     }};
 }
 
@@ -171,11 +179,11 @@ impl AssetService {
     }
 
     fn add(&self, calling_info: &CallingInfo, attributes: &AssetMap) -> Result<()> {
-        execute!(operations::add, calling_info, attributes,)
+        execute!(operations::add, calling_info, attributes)
     }
 
     fn remove(&self, calling_info: &CallingInfo, query: &AssetMap) -> Result<()> {
-        execute!(operations::remove, calling_info, query,)
+        execute!(operations::remove, calling_info, query)
     }
 
     fn update(&self, calling_info: &CallingInfo, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
@@ -183,14 +191,14 @@ impl AssetService {
     }
 
     fn pre_query(&self, calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<u8>> {
-        execute!(operations::pre_query, calling_info, query,)
+        execute!(operations::pre_query, calling_info, query)
     }
 
     fn query(&self, calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<AssetMap>> {
-        execute!(operations::query, calling_info, query,)
+        execute!(operations::query, calling_info, query)
     }
 
     fn post_query(&self, calling_info: &CallingInfo, query: &AssetMap) -> Result<()> {
-        execute!(operations::post_query, calling_info, query,)
+        execute!(operations::post_query, calling_info, query)
     }
 }
