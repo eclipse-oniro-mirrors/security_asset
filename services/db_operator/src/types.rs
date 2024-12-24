@@ -52,7 +52,7 @@ pub mod column {
     pub const OWNER: &str = "Owner";
     /// Column name of owner type.
     pub const OWNER_TYPE: &str = "OwnerType";
-    /// Column name of unique id of a group.
+    /// Column name of (developerId + "," + groupId) of a group.
     pub const GROUP_ID: &str = "GroupId";
     /// Column name of data synchronization type.
     pub const SYNC_TYPE: &str = "SyncType";

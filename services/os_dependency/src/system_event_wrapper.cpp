@@ -29,6 +29,7 @@ using namespace OHOS::AppExecFwk::Constants;
 using namespace OHOS::EventFwk;
 
 const char * const APP_ID = "appId";
+const char * const APP_INDEX = "appIndex";
 const char * const COMMON_EVENT_RESTORE_START = "usual.event.RESTORE_START";
 const char * const COMMON_EVENT_USER_PIN_CREATED = "USER_PIN_CREATED_EVENT";
 const char * const BUNDLE_NAME = "bundleName";
@@ -42,7 +43,7 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
 {
     int userId = want.GetIntParam(USER_ID, INVALID_USERID);
     std::string appId = want.GetStringParam(APP_ID);
-    int appIndex = isSandBoxApp ? want.GetIntParam(SANDBOX_APP_INDEX, -1) : 0;
+    int appIndex = isSandBoxApp ? want.GetIntParam(SANDBOX_APP_INDEX, -1) : want.GetIntParam(APP_INDEX, -1);
     if (appId.empty() || userId == INVALID_USERID || appIndex == -1) {
         LOGE("[FATAL]Get removed owner info failed, userId=%{public}d, appId=%{public}s, appIndex=%{public}d",
             userId, appId.c_str(), appIndex);
@@ -60,21 +61,21 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
         .data = reinterpret_cast<const uint8_t *>(developerId.c_str()) };
     std::string groupIds = want.GetStringParam(GROUP_IDS);
     std::vector<ConstAssetBlob> groupIdBlobs;
-    std::string groupId;
+    std::vector<std::string> groupIdStrs;
     if (!developerId.empty() && !groupIds.empty()) {
-        if (appIndex != 0) {
-            LOGE("[FATAL]App with non-zero app index is not allowed to access groups, appIndex=%{public}d", appIndex);
-            return;
-        }
         size_t start = 0;
         size_t end;
+        size_t index = 0;
         while ((end = groupIds.find(GROUP_SEPARATOR, start)) != std::string::npos) {
-            groupId = groupIds.substr(start, end - start);
-            groupIdBlobs.push_back({ .size = groupId.size(), .data = reinterpret_cast<const uint8_t *>(groupId.c_str()) });
+            groupIdStrs[index] = groupIds.substr(start, end - start);
+            groupIdBlobs.push_back({ .size = groupIdStrs[index].size(),
+                .data = reinterpret_cast<const uint8_t *>(groupIdStrs[index].c_str()) });
+            index++;
             start = end;
         }
-        groupId = groupIds.substr(start, end);
-        groupIdBlobs.push_back({ .size = groupId.size(), .data = reinterpret_cast<const uint8_t *>(groupId.c_str()) });
+        groupIdStrs[index] = groupIds.substr(start, end);
+        groupIdBlobs.push_back({ .size = groupIdStrs[index].size(),
+            .data = reinterpret_cast<const uint8_t *>(groupIdStrs[index].c_str()) });
     }
     ConstAssetBlobArray groupIdBlobArray = { .size = groupIdBlobs.size(),
         .blob = reinterpret_cast<const ConstAssetBlob *>(&groupIdBlobs[0]) };

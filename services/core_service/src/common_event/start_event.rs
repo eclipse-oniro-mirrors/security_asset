@@ -20,7 +20,7 @@ use std::{collections::HashMap, ptr::null};
 use asset_common::{ConstAssetBlob, ConstAssetBlobArray, GROUP_SEPARATOR};
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_file_operator::de_operator::delete_user_de_dir;
-use asset_log::{loge, logi};
+use asset_log::{loge, logi, logw};
 use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
 
 use crate::{
@@ -30,75 +30,73 @@ use crate::{
 
 const USER_ID: &str = "userId";
 const SANDBOX_APP_INDEX: &str = "sandbox_app_index";
+const APP_INDEX: &str = "appIndex";
+const APP_RESTORE_INDEX: &str = "index";
 const APP_ID: &str = "appId";
 const BUNDLE_NAME: &str = "bundleName";
-const APP_RESTORE_INDEX: &str = "index";
 const DEVELOPER_ID: &str = "developerId";
 const GROUP_IDS: &str = "assetAccessGroups";
 
-impl WantParser<PackageInfo> for HashMap<String, String> {
-    fn parse(&self) -> Result<PackageInfo> {
+struct PackageRemovedWant<'a>(&'a HashMap<String, String>);
+impl WantParser<PackageInfo, bool> for PackageRemovedWant<'_> {
+    fn parse(&self, is_sandbox: Option<bool>) -> Result<PackageInfo> {
         // parse user id from want
-        let Some(user_id) = self.get(USER_ID) else {
-            return log_throw_error!(ErrCode::InvalidArgument, "[FATIL]Get removed user id fail");
+        let Some(user_id) = self.0.get(USER_ID) else {
+            return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed userId fail");
         };
         let user_id = match user_id.parse::<i32>() {
-            Ok(parsed_value) => parsed_value,
-            Err(_) => return log_throw_error!(ErrCode::InvalidArgument, "[FATIL]Parse removed userId fail"),
+            Ok(user_id) => user_id,
+            _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Parse removed userId fail"),
         };
 
         // parse app id from want
-        let Some(app_id) = self.get(APP_ID) else {
-            return log_throw_error!(ErrCode::InvalidArgument, "[FATIL]Get removed owner info failed, get appId fail");
+        let Some(app_id) = self.0.get(APP_ID) else {
+            return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed ownerInfo fail, get appId fail");
         };
+        let app_id = app_id.to_string();
 
         // parse bundle name from want
-        let Some(bundle_name) = self.get(BUNDLE_NAME) else {
-            return log_throw_error!(ErrCode::InvalidArgument, "[FATIL]Get restore appIndex fail");
+        let Some(bundle_name) = self.0.get(BUNDLE_NAME) else {
+            return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get restore appInfo fail, get bundleName fail");
         };
-        let mut bundle_name = bundle_name.clone();
-        bundle_name.push('\0');
+        let bundle_name = bundle_name.to_string();
 
-        // parse sandbox app index from want
-        let app_index;
-        match self.get(SANDBOX_APP_INDEX) {
-            Some(v) => match v.parse::<i32>() {
-                Ok(sandbox_app_index) => app_index = sandbox_app_index,
-                Err(_) => return log_throw_error!(ErrCode::InvalidArgument, "[FATIL]Parse removed appIndex fail"),
-            },
-            None => app_index = 0,
+        // parse app index from want
+        let app_index = if is_sandbox.unwrap() {
+            match self.0.get(SANDBOX_APP_INDEX) {
+                Some(sandbox_app_index) => sandbox_app_index,
+                _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed sandbox appIndex fail"),
+            }
+        } else {
+            logw!("[WARNING]Not sandbox app, getting non-sandbox appIndex (main or clone)!");
+            match self.0.get(APP_INDEX) {
+                Some(app_index) => app_index,
+                _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed appIndex fail"),
+            }
+        };
+        let app_index = match app_index.parse::<i32>() {
+            Ok(app_index) => app_index,
+            _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Parse removed appIndex fail"),
         };
 
         // parse groups from want
-        let (developer_id, group_ids): (Option<String>, Option<Vec<String>>) =
-            match (self.get(DEVELOPER_ID), self.get(GROUP_IDS)) {
-                (Some(developer_id), Some(group_ids)) => {
-                    if app_index != 0 {
-                        return log_throw_error!(
-                            ErrCode::PermissionDenied,
-                            "[FATIL]App with non-zero app index is not allowed to access groups!"
-                        );
-                    }
-                    let group_ids: Vec<String> =
-                        group_ids.split(GROUP_SEPARATOR).map(|group_id| group_id.to_string()).collect();
-                    (Some(developer_id.to_string()), Some(group_ids))
-                },
-                _ => (None, None),
-            };
+        let (developer_id, group_ids) = match (self.0.get(DEVELOPER_ID), self.0.get(GROUP_IDS)) {
+            (Some(developer_id), Some(group_ids)) => {
+                let group_ids: Vec<String> =
+                    group_ids.split(GROUP_SEPARATOR).map(|group_id| group_id.to_string()).collect();
+                (Some(developer_id.to_string()), Some(group_ids))
+            },
+            _ => (None, None),
+        };
 
-        Ok(PackageInfo { user_id, app_index, app_id: app_id.to_string(), developer_id, group_ids, bundle_name })
+        Ok(PackageInfo { user_id, app_index, app_id, developer_id, group_ids, bundle_name })
     }
 }
 
 fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
-    if let Ok(mut package_info) = want.parse() {
-        if !is_sandbox {
-            package_info.app_index = 0;
-        }
-        let user_id = package_info.user_id;
+    if let Ok(package_info) = PackageRemovedWant(want).parse(Some(is_sandbox)) {
         let owner_str = format!("{}_{}", package_info.app_id, package_info.app_index);
         let owner = ConstAssetBlob { size: owner_str.len() as u32, data: owner_str.as_ptr() };
-        let app_index = package_info.app_index;
         let developer_id = match package_info.developer_id {
             Some(developer_id) => ConstAssetBlob { size: developer_id.len() as u32, data: developer_id.as_ptr() },
             None => ConstAssetBlob { size: 0, data: null() },
@@ -116,8 +114,8 @@ fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
         let bundle_name =
             ConstAssetBlob { size: package_info.bundle_name.len() as u32, data: package_info.bundle_name.as_ptr() };
         listener::on_package_removed(PackageInfoFfi {
-            user_id,
-            app_index,
+            user_id: package_info.user_id,
+            app_index: package_info.app_index,
             owner,
             developer_id,
             group_ids,
