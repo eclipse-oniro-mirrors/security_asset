@@ -117,6 +117,7 @@ fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo)
 
 extern "C" {
     fn CheckPermission(permission: *const c_char) -> bool;
+    fn CheckSystemHapPermission() -> bool;
 }
 
 fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
@@ -136,6 +137,9 @@ fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> R
     }
     match calling_info.owner_type_enum() {
         OwnerType::Hap => {
+            if unsafe { !CheckSystemHapPermission() } {
+                return log_throw_error!(ErrCode::NotSystemApplication, "[FATAL]The caller is not system application.");
+            }
             if calling_info.app_index() > 0 {
                 return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller is not support store sync data.")
             }
