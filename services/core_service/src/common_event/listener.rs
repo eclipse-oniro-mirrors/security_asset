@@ -194,11 +194,11 @@ fn delete_data_by_owner(
         clear_cryptos(&calling_info);
         let res = match delete_on_package_removed(&calling_info) {
             Ok(DataExist::OwnerData(true)) => {
-                logi!("Retain data in owner db after uninstallation. Do not delete owner key in HUKS.");
+                logi!("Data remain in owner db after uninstallation. Do not delete owner key in HUKS.");
                 Ok(())
             },
             Ok(DataExist::OwnerData(false)) => {
-                logi!("Do not retain data in its owner db after uninstallation. Delete owner key in HUKS.");
+                logi!("No data remain in owner db after uninstallation. Delete owner key in HUKS.");
                 SecretKey::delete_by_owner(&calling_info)
             },
             Ok(DataExist::GroupData(true)) => {

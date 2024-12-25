@@ -47,14 +47,14 @@ fn check_old_db_exist(user_id: i32) -> bool {
     path.exists()
 }
 
-fn to_hex(bytes: &Vec<u8>) -> Result<Vec<u8>> {
+fn to_hex(bytes: &Vec<u8>) -> Vec<u8> {
     let bytes_len = bytes.len();
     let scale_capacity = 2;
     let mut hex_vec = Vec::with_capacity(bytes_len * scale_capacity);
     for byte in bytes.iter() {
         hex_vec.extend(format!("{:02x}", byte).as_bytes());
     }
-    Ok(hex_vec)
+    hex_vec
 }
 
 /// Use owner_type and owner_info construct db name.
@@ -63,8 +63,8 @@ pub fn construct_splited_db_name(calling_info: &CallingInfo, is_ce: bool) -> Res
         OwnerType::Group => match (calling_info.developer_id(), calling_info.group_id()) {
             (Some(developer_id), Some(group_id)) => format!(
                 "Group_{}_{}",
-                String::from_utf8_lossy(developer_id),
-                String::from_utf8_lossy(&to_hex(&hasher::sha256(true, group_id))?)
+                String::from_utf8_lossy(developer_id).trim_end_matches('\0'),
+                String::from_utf8_lossy(&to_hex(&hasher::sha256(true, group_id)))
             ),
             _ => return log_throw_error!(ErrCode::DatabaseError, "[FATAL]Wrong queried owner group info."),
         },
