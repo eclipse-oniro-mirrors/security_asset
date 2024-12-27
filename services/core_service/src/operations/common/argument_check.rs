@@ -210,7 +210,7 @@ pub(crate) fn check_group_validity(attrs: &AssetMap, calling_info: &CallingInfo)
         if let Some(Value::Bool(true)) = attrs.get(&Tag::IsPersistent) {
             return log_throw_error!(
                 ErrCode::InvalidArgument,
-                "[FATAL]The tag [{}] is not allowed when the value of tag [{}] is set to true.",
+                "[FATAL]The value of the tag [{}] cannot be set to true when the tag [{}] is specified.",
                 &Tag::IsPersistent,
                 &Tag::GroupId
             );

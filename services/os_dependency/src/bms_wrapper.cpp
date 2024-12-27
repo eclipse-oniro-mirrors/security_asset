@@ -109,16 +109,16 @@ int32_t GetBundleInfo(AppExecFwk::BundleMgrClient bmsClient, uint32_t userId, Pr
 
 int32_t GetAppProvisionInfo(sptr<IBundleMgr> bundleMgr, uint32_t userId, ProcessInfo *processInfo)
 {
+    if (processInfo->hapInfo.developerId.data == nullptr || processInfo->hapInfo.developerId.size == 0) {
+        return ASSET_SUCCESS;
+    }
+
     AppExecFwk::AppProvisionInfo appProvisionInfo;
     std::string bundleName(reinterpret_cast<const char*>(processInfo->processName.data), processInfo->processName.size);
     int32_t ret = bundleMgr->GetAppProvisionInfo(bundleName, userId, appProvisionInfo);
     if (ret != RET_SUCCESS) {
         LOGE("[FATAL]Get app provision info failed!");
         return ASSET_BMS_ERROR;
-    }
-
-    if (processInfo->hapInfo.developerId.data == nullptr || processInfo->hapInfo.developerId.size == 0) {
-        return ASSET_SUCCESS;
     }
 
     if (memcpy_s(processInfo->hapInfo.developerId.data, processInfo->hapInfo.developerId.size,
@@ -183,7 +183,7 @@ int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *proces
     int32_t res = ASSET_SUCCESS;
     switch (tokenType) {
         case ATokenTypeEnum::TOKEN_HAP:
-            if(processInfo->hapInfo.groupId.data != nullptr) {
+            if (processInfo->hapInfo.groupId.data != nullptr) {
                 processInfo->ownerType = GROUP;
             } else {
                 processInfo->ownerType = HAP;

@@ -39,6 +39,24 @@ const char * const GROUP_IDS = "assetAccessGroups";
 const char * const OWNER_INFO_SEPARATOR = "_";
 const char * const GROUP_SEPARATOR = ",";
 
+void ParseGroupIds(const std::string &groupIds, std::vector<std::string> groupIdStrs,
+    std::vector<ConstAssetBlob> groupIdBlobs)
+{
+    if (!groupIds.empty()) {
+        size_t start = 0;
+        size_t end;
+        while ((end = groupIds.find(GROUP_SEPARATOR, start)) != std::string::npos) {
+            groupIdStrs.push_back(groupIds.substr(start, end - start));
+            start = end;
+        }
+        groupIdStrs.push_back(groupIds.substr(start, end));
+        for (const std::string &groupIdStr : groupIdStrs) {
+            groupIdBlobs.push_back({ .size = groupIdStr.size(),
+                .data = reinterpret_cast<const uint8_t *>(groupIdStr.c_str()) });
+        }
+    }
+}
+
 void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPackageRemoved onPackageRemoved)
 {
     int userId = want.GetIntParam(USER_ID, INVALID_USERID);
@@ -62,21 +80,7 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
     std::string groupIds = want.GetStringParam(GROUP_IDS);
     std::vector<ConstAssetBlob> groupIdBlobs;
     std::vector<std::string> groupIdStrs;
-    if (!developerId.empty() && !groupIds.empty()) {
-        size_t start = 0;
-        size_t end;
-        size_t index = 0;
-        while ((end = groupIds.find(GROUP_SEPARATOR, start)) != std::string::npos) {
-            groupIdStrs[index] = groupIds.substr(start, end - start);
-            groupIdBlobs.push_back({ .size = groupIdStrs[index].size(),
-                .data = reinterpret_cast<const uint8_t *>(groupIdStrs[index].c_str()) });
-            index++;
-            start = end;
-        }
-        groupIdStrs[index] = groupIds.substr(start, end);
-        groupIdBlobs.push_back({ .size = groupIdStrs[index].size(),
-            .data = reinterpret_cast<const uint8_t *>(groupIdStrs[index].c_str()) });
-    }
+    ParseGroupIds(groupIds, groupIdStrs, groupIdBlobs);
     ConstAssetBlobArray groupIdBlobArray = { .size = groupIdBlobs.size(),
         .blob = reinterpret_cast<const ConstAssetBlob *>(&groupIdBlobs[0]) };
 
