@@ -29,6 +29,7 @@ using namespace OHOS::AppExecFwk::Constants;
 using namespace OHOS::EventFwk;
 
 const char * const APP_ID = "appId";
+const char * const APP_INDEX = "appIndex";
 const char * const COMMON_EVENT_RESTORE_START = "usual.event.RESTORE_START";
 const char * const COMMON_EVENT_USER_PIN_CREATED = "USER_PIN_CREATED_EVENT";
 const char * const BUNDLE_NAME = "bundleName";
@@ -38,7 +39,7 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
 {
     int userId = want.GetIntParam(USER_ID, INVALID_USERID);
     std::string appId = want.GetStringParam(APP_ID);
-    int appIndex = isSandBoxApp ? want.GetIntParam(SANDBOX_APP_INDEX, -1) : 0;
+    int appIndex = isSandBoxApp ? want.GetIntParam(SANDBOX_APP_INDEX, -1) : want.GetIntParam(APP_INDEX, -1);
     if (appId.empty() || userId == INVALID_USERID || appIndex == -1) {
         LOGE("[FATAL]Get removed owner info failed, userId=%{public}d, appId=%{public}s, appIndex=%{public}d",
             userId, appId.c_str(), appIndex);

@@ -28,6 +28,7 @@ const SANDBOX_APP_INDEX: &str = "sandbox_app_index";
 const APP_ID: &str = "appId";
 const BUNDLE_NAME: &str = "bundleName";
 const APP_RESTORE_INDEX: &str = "index";
+const APP_INDEX: &str = "appIndex";
 
 fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
     let Some(user_id) = want.get(USER_ID) else {
@@ -39,22 +40,20 @@ fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
         return;
     };
 
-    let mut app_index = 0;
-    if is_sandbox {
-        app_index = match want.get(SANDBOX_APP_INDEX) {
-            Some(v) => match v.parse::<i32>() {
-                Ok(parsed_value) => parsed_value,
-                Err(_) => {
-                    loge!("[FATAL]Get removed owner info failed, failed to parse appIndex");
-                    return;
-                },
-            },
-            None => {
-                loge!("[FATIL]Get removed owner info failed, get appIndex fail");
+    let app_index_get_key = if is_sandbox { SANDBOX_APP_INDEX } else { APP_INDEX };
+    let app_index = match want.get(app_index_get_key) {
+        Some(v) => match v.parse::<i32>() {
+            Ok(parsed_value) => parsed_value,
+            Err(_) => {
+                loge!("[FATAL]Get removed owner info failed, failed to parse appIndex");
                 return;
             },
-        }
-    }
+        },
+        None => {
+            loge!("[FATIL]Get removed owner info failed, get appIndex fail");
+            return;
+        },
+    };
     let owner = format!("{}_{}", app_id, app_index);
     let user_id = match user_id.parse::<i32>() {
         Ok(parsed_value) => parsed_value,
