@@ -75,7 +75,7 @@ int32_t GetBundleNameAndAppIndex(sptr<IBundleMgr> bundleMgr, uint64_t uid, Proce
     return ASSET_SUCCESS;
 }
 
-int32_t GetBundleInfo(AppExecFwk::BundleMgrClient bmsClient, uint32_t userId, ProcessInfo *processInfo)
+int32_t GetBundleInfo(AppExecFwk::BundleMgrClient &bmsClient, uint32_t userId, ProcessInfo *processInfo)
 {
     AppExecFwk::BundleInfo bundleInfo;
     std::string bundleName(reinterpret_cast<const char*>(processInfo->processName.data), processInfo->processName.size);
@@ -127,6 +127,7 @@ int32_t GetAppProvisionInfo(sptr<IBundleMgr> bundleMgr, uint32_t userId, Process
             appProvisionInfo.developerId.size(), processInfo->hapInfo.developerId.size);
         return ASSET_OUT_OF_MEMORY;
     }
+    processInfo->hapInfo.developerId.size = appProvisionInfo.developerId.size();
 
     return ASSET_SUCCESS;
 }

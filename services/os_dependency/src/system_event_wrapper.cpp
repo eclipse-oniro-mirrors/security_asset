@@ -39,8 +39,18 @@ const char * const GROUP_IDS = "assetAccessGroups";
 const char * const OWNER_INFO_SEPARATOR = "_";
 const char * const GROUP_SEPARATOR = ",";
 
-void ParseGroupIds(const std::string &groupIds, std::vector<std::string> groupIdStrs,
-    std::vector<ConstAssetBlob> groupIdBlobs)
+void ParseDeveloperId(const std::string &developerId, ConstAssetBlob &developerIdBlob)
+{
+    if (!developerId.empty()) {
+        developerIdBlob = { .size = developerId.size(),
+            .data = reinterpret_cast<const uint8_t *>(developerId.c_str()) };
+    } else {
+        developerIdBlob = { .size = 0, .data = nullptr };
+    }
+}
+
+void ParseGroupIds(const std::string &groupIds, std::vector<std::string> &groupIdStrs,
+    std::vector<ConstAssetBlob> &groupIdBlobs, ConstAssetBlobArray &groupIdBlobArray)
 {
     if (!groupIds.empty()) {
         size_t start = 0;
@@ -54,6 +64,10 @@ void ParseGroupIds(const std::string &groupIds, std::vector<std::string> groupId
             groupIdBlobs.push_back({ .size = groupIdStr.size(),
                 .data = reinterpret_cast<const uint8_t *>(groupIdStr.c_str()) });
         }
+        groupIdBlobArray = { .size = groupIdBlobs.size(),
+            .blob = reinterpret_cast<const ConstAssetBlob *>(&groupIdBlobs[0]) };
+    } else {
+        groupIdBlobArray = { .size = 0, .blob = nullptr };
     }
 }
 
@@ -75,14 +89,13 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
         .data = reinterpret_cast<const uint8_t *>(bundleName.c_str()) };
 
     std::string developerId = want.GetStringParam(DEVELOPER_ID);
-    ConstAssetBlob developerIdBlob = { .size = developerId.size(),
-        .data = reinterpret_cast<const uint8_t *>(developerId.c_str()) };
+    ConstAssetBlob developerIdBlob;
+    ParseDeveloperId(developerId, developerIdBlob);
     std::string groupIds = want.GetStringParam(GROUP_IDS);
     std::vector<ConstAssetBlob> groupIdBlobs;
     std::vector<std::string> groupIdStrs;
-    ParseGroupIds(groupIds, groupIdStrs, groupIdBlobs);
-    ConstAssetBlobArray groupIdBlobArray = { .size = groupIdBlobs.size(),
-        .blob = reinterpret_cast<const ConstAssetBlob *>(&groupIdBlobs[0]) };
+    ConstAssetBlobArray groupIdBlobArray;
+    ParseGroupIds(groupIds, groupIdStrs, groupIdBlobs, groupIdBlobArray);
 
     if (onPackageRemoved != nullptr) {
         onPackageRemoved({ userId, appIndex, ownerBlob, developerIdBlob, groupIdBlobArray, bundleNameBlob });
