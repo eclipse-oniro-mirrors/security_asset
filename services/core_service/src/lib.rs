@@ -50,8 +50,8 @@ use crate::unload_handler::{UnloadHandler, DELAYED_UNLOAD_TIME_IN_SEC, SEC_TO_MI
 
 struct AssetAbility;
 
-trait WantParser<T, H> {
-    fn parse(&self, helper: Option<H>) -> Result<T>;
+trait WantParser<T> {
+    fn parse(&self) -> Result<T>;
 }
 
 struct PackageInfo {

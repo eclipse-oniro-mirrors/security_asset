@@ -38,8 +38,8 @@ const DEVELOPER_ID: &str = "developerId";
 const GROUP_IDS: &str = "assetAccessGroups";
 
 struct PackageRemovedWant<'a>(&'a HashMap<String, String>);
-impl WantParser<PackageInfo, bool> for PackageRemovedWant<'_> {
-    fn parse(&self, is_sandbox: Option<bool>) -> Result<PackageInfo> {
+impl WantParser<PackageInfo> for PackageRemovedWant<'_> {
+    fn parse(&self) -> Result<PackageInfo> {
         // parse user id from want
         let Some(user_id) = self.0.get(USER_ID) else {
             return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed userId fail!");
@@ -62,17 +62,15 @@ impl WantParser<PackageInfo, bool> for PackageRemovedWant<'_> {
         let bundle_name = bundle_name.to_string();
 
         // parse app index from want
-        let app_index = if is_sandbox.unwrap() {
-            match self.0.get(SANDBOX_APP_INDEX) {
-                Some(sandbox_app_index) => sandbox_app_index,
-                _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed sandbox appIndex fail!"),
-            }
-        } else {
-            logw!("[WARNING]Not sandbox app, getting non-sandbox(main or clone) appIndex!");
-            match self.0.get(APP_INDEX) {
-                Some(app_index) => app_index,
-                _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed appIndex fail!"),
-            }
+        let app_index = match self.0.get(SANDBOX_APP_INDEX) {
+            Some(sandbox_app_index) => sandbox_app_index,
+            _ => {
+                logw!("[WARNING]Not sandbox app, getting non-sandbox(main or clone) appIndex!");
+                match self.0.get(APP_INDEX) {
+                    Some(app_index) => app_index,
+                    _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed appIndex fail!"),
+                }
+            },
         };
         let app_index = match app_index.parse::<i32>() {
             Ok(app_index) => app_index,
@@ -93,8 +91,8 @@ impl WantParser<PackageInfo, bool> for PackageRemovedWant<'_> {
     }
 }
 
-fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
-    if let Ok(package_info) = PackageRemovedWant(want).parse(Some(is_sandbox)) {
+fn handle_package_removed(want: &HashMap<String, String>) {
+    if let Ok(package_info) = PackageRemovedWant(want).parse() {
         let owner_str = format!("{}_{}", package_info.app_id, package_info.app_index);
         let owner = ConstAssetBlob { size: owner_str.len() as u32, data: owner_str.as_ptr() };
         let developer_id = match package_info.developer_id {
@@ -126,12 +124,9 @@ fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
 
 pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
     let reason_name: String = reason.name;
-    if reason_name == "usual.event.PACKAGE_REMOVED" {
+    if reason_name == "usual.event.PACKAGE_REMOVED" || reason_name == "usual.event.SANDBOX_PACKAGE_REMOVED" {
         let want = reason.extra_data.want();
-        handle_package_removed(&want, false);
-    } else if reason_name == "usual.event.SANDBOX_PACKAGE_REMOVED" {
-        let want = reason.extra_data.want();
-        handle_package_removed(&want, true);
+        handle_package_removed(&want);
     } else if reason_name == "usual.event.USER_REMOVED" {
         logi!("on_start by user remove");
         let _ = delete_user_de_dir(reason.extra_data.code);
