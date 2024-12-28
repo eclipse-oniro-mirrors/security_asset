@@ -15,7 +15,7 @@
 
 //! This module is used to verify the validity of asset attributes.
 
-use asset_common::{is_user_id_exist, ROOT_USER_UPPERBOUND};
+use asset_common::{is_user_id_exist, CallingInfo, OwnerType, ROOT_USER_UPPERBOUND};
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, OperationType, Result,
     ReturnType, Tag, Value,
@@ -33,6 +33,9 @@ const MAX_TIME_SIZE: usize = 1024;
 
 const MAX_ALIAS_SIZE: usize = 256;
 pub const MAX_LABEL_SIZE: usize = 2048;
+
+const MAX_GROUP_ID_LEN: usize = 127;
+const MIN_GROUP_ID_LEN: usize = 7;
 
 const AUTH_TOKEN_SIZE: usize = 280;
 const CHALLENGE_SIZE: usize = 32;
@@ -172,6 +175,7 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::UserId => check_user_id(tag, value),
         Tag::UpdateTime => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_TIME_SIZE),
         Tag::OperationType => check_enum_variant::<OperationType>(tag, value),
+        Tag::GroupId => check_array_size(tag, value, MIN_GROUP_ID_LEN, MAX_GROUP_ID_LEN),
     }
 }
 
@@ -196,6 +200,28 @@ pub(crate) fn check_tag_validity(attrs: &AssetMap, valid_tags: &[Tag]) -> Result
     for tag in attrs.keys() {
         if !valid_tags.contains(tag) {
             return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);
+        }
+    }
+    Ok(())
+}
+
+pub(crate) fn check_group_validity(attrs: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    if attrs.get(&Tag::GroupId).is_some() {
+        if let Some(Value::Bool(true)) = attrs.get(&Tag::IsPersistent) {
+            return log_throw_error!(
+                ErrCode::InvalidArgument,
+                "[FATAL]The value of the tag [{}] cannot be set to true when the tag [{}] is specified.",
+                &Tag::IsPersistent,
+                &Tag::GroupId
+            );
+        }
+        if calling_info.owner_type_enum() == OwnerType::Native {
+            return log_throw_error!(
+                ErrCode::Unsupported,
+                "[FATAL]The tag [{}] is not yet supported for [{}] owner.",
+                &Tag::GroupId,
+                OwnerType::Native
+            );
         }
     }
     Ok(())

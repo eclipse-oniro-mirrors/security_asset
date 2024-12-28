@@ -20,8 +20,9 @@ use std::time::Instant;
 use ipc::Skeleton;
 
 use asset_common::CallingInfo;
-use asset_definition::{AssetError, Accessibility, Result, AssetMap, AuthType, Extension, OperationType,
-    ReturnType, SyncType, Tag};
+use asset_definition::{
+    Accessibility, AssetError, AssetMap, AuthType, Extension, OperationType, Result, ReturnType, SyncType, Tag,
+};
 use asset_log::{loge, logi};
 
 use hisysevent::{build_number_param, build_str_param, write, EventType, HiSysEventParam};
@@ -63,8 +64,15 @@ impl<'a> SysEvent<'a> {
     }
 }
 
-const EXTRA_ATTRS: [Tag; 7] = [Tag::SyncType, Tag::Accessibility, Tag::RequirePasswordSet, Tag::AuthType,
-    Tag::OperationType, Tag::ReturnType, Tag::RequireAttrEncrypted];
+const EXTRA_ATTRS: [Tag; 7] = [
+    Tag::SyncType,
+    Tag::Accessibility,
+    Tag::RequirePasswordSet,
+    Tag::AuthType,
+    Tag::OperationType,
+    Tag::ReturnType,
+    Tag::RequireAttrEncrypted,
+];
 
 fn transfer_tag_to_string(tags: &[Tag], attributes: &AssetMap) -> Result<String> {
     let mut ext_info = "".to_string();
@@ -79,7 +87,9 @@ fn transfer_tag_to_string(tags: &[Tag], attributes: &AssetMap) -> Result<String>
             Tag::AuthType => format!("{}", attributes.get_enum_attr(tag).unwrap_or(AuthType::default())),
             Tag::ReturnType => format!("{}", attributes.get_enum_attr(tag).unwrap_or(ReturnType::default())),
             Tag::RequireAttrEncrypted => format!("{}", attributes.get_bool_attr(tag).unwrap_or(false)),
-            Tag::OperationType => format!("{}", attributes.get_num_attr(tag).unwrap_or(OperationType::default() as u32)),
+            Tag::OperationType => {
+                format!("{}", attributes.get_num_attr(tag).unwrap_or(OperationType::default() as u32))
+            },
             _ => String::new(),
         };
         ext_info += &format!("{}:{};", tag, tag_value);
@@ -105,8 +115,15 @@ pub(crate) fn upload_statistic_system_event(
         .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
         .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
         .set_param(build_number_param!(SysEvent::RUN_TIME, duration.as_millis() as u32))
-        .set_param(build_str_param!(SysEvent::EXTRA,
-            format!("CallingUid={} ext_info={}", Skeleton::calling_uid(), ext_info)))
+        .set_param(build_str_param!(
+            SysEvent::EXTRA,
+            format!(
+                "CallingUid={} ext_info={} caller_owner_type={}",
+                Skeleton::calling_uid(),
+                ext_info,
+                calling_info.owner_type()
+            )
+        ))
         .write();
     logi!("[INFO]CallingUid=[{}] ext_info=[{}]", Skeleton::calling_uid(), ext_info);
     logi!(

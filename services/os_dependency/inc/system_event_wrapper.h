@@ -18,7 +18,26 @@
 
 #include <stdint.h>
 
-typedef void (*OnPackageRemoved)(int32_t, const uint8_t *, uint32_t, const uint8_t *, int32_t);
+typedef struct {
+    uint32_t size;
+    const uint8_t *data;
+} ConstAssetBlob;
+
+typedef struct {
+    uint32_t size;
+    const ConstAssetBlob *blob;
+} ConstAssetBlobArray;
+
+typedef struct {
+    int32_t userId;
+    int32_t appIndex;
+    ConstAssetBlob owner;
+    ConstAssetBlob developerId;
+    ConstAssetBlobArray groupIds;
+    ConstAssetBlob bundleName;
+} PackageInfo;
+
+typedef void (*OnPackageRemoved)(PackageInfo);
 typedef void (*OnUserRemoved)(int32_t);
 typedef void (*OnScreenOff)(void);
 typedef void (*OnCharging)(void);

@@ -21,7 +21,7 @@ use asset_common::{CallingInfo, OwnerType};
 use asset_crypto_manager::crypto::Crypto;
 use asset_db_key_operator::generate_secret_key_if_needed;
 use asset_db_operator::{
-    database::{create_db_instance, Database},
+    database::{build_db, Database},
     types::{column, DbMap, DB_DATA_VERSION},
 };
 use asset_definition::{
@@ -68,12 +68,10 @@ fn resolve_conflict(
     }
 }
 
-fn get_query_condition(calling_info: &CallingInfo, attrs: &AssetMap) -> Result<DbMap> {
+fn get_query_condition(attrs: &AssetMap) -> Result<DbMap> {
     let alias = attrs.get_bytes_attr(&Tag::Alias)?;
     let mut query = DbMap::new();
     query.insert(column::ALIAS, Value::Bytes(alias.clone()));
-    query.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
-    query.insert(column::OWNER_TYPE, Value::Number(calling_info.owner_type()));
     Ok(query)
 }
 
@@ -131,17 +129,18 @@ fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
 }
 
 fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    if attributes.get(&Tag::SyncType).is_none() ||
-        (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0 {
+    if attributes.get(&Tag::SyncType).is_none()
+        || (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0
+    {
         return Ok(());
     }
     match calling_info.owner_type_enum() {
-        OwnerType::Hap => {
+        OwnerType::Hap | OwnerType::Group => {
             if unsafe { !CheckSystemHapPermission() } {
                 return log_throw_error!(ErrCode::NotSystemApplication, "[FATAL]The caller is not system application.");
             }
             if calling_info.app_index() > 0 {
-                return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller is not support store sync data.")
+                return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller is not support store sync data.");
             }
         },
         OwnerType::Native => (),
@@ -159,6 +158,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
+    common::check_group_validity(attributes, calling_info)?;
     common::check_value_validity(attributes)?;
     check_accessibity_validity(attributes, calling_info)?;
     check_sync_permission(attributes, calling_info)?;
@@ -171,13 +171,12 @@ fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 
     // Fill all attributes to DbMap.
     let mut db_data = common::into_db_map(attributes);
-    common::add_owner_info(calling_info, &mut db_data);
+    common::add_calling_info(calling_info, &mut db_data);
     add_system_attrs(&mut db_data)?;
     add_default_attrs(&mut db_data);
+    let query = get_query_condition(attributes)?;
 
-    let query = get_query_condition(calling_info, attributes)?;
-
-    let mut db = create_db_instance(attributes, calling_info)?;
+    let mut db = build_db(attributes, calling_info)?;
 
     if db.is_data_exists(&query, false)? {
         resolve_conflict(calling_info, &mut db, attributes, &query, &mut db_data)?;

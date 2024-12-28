@@ -50,8 +50,7 @@ void AssetSystemAbilityWrapperTest::TearDown(void)
 {
 }
 
-void PackageRemovedCallback(int32_t packageId, const uint8_t *owner, uint32_t ownerSize,
-    const uint8_t *bundleName, int32_t appIndex)
+void PackageRemovedCallback(PackageInfo)
 {
 }
 

@@ -49,6 +49,8 @@ namespace {
 #define MAX_TIME_SIZE 1024
 #define SYSTEM_USER_ID_MAX 99
 #define BINARY_BASE 2
+#define MIN_GROUP_ID_SIZE 7
+#define MAX_GROUP_ID_SIZE 127
 
 bool CheckArraySize(const napi_env env, const AssetAttr &attr, uint32_t min, uint32_t max)
 {
@@ -133,6 +135,7 @@ const std::unordered_map<uint32_t, CheckContinuousRange> CHECK_CONTINOUS_RANGE_F
     { SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_3, { &CheckArraySize, MIN_ARRAY_SIZE, MAX_LABEL_SIZE } },
     { SEC_ASSET_TAG_DATA_LABEL_NORMAL_LOCAL_4, { &CheckArraySize, MIN_ARRAY_SIZE, MAX_LABEL_SIZE } },
     { SEC_ASSET_TAG_RETURN_LIMIT, { &CheckNumberRange, MIN_NUMBER_VALUE, MAX_RETURN_LIMIT } },
+    { SEC_ASSET_TAG_GROUP_ID, { &CheckArraySize, MIN_GROUP_ID_SIZE, MAX_GROUP_ID_SIZE } },
     { SEC_ASSET_TAG_USER_ID, { &CheckNumberRange, ROOT_USER_UPPERBOUND, INT32_MAX } },
     { SEC_ASSET_TAG_UPDATE_TIME, { &CheckArraySize, MIN_ARRAY_SIZE, MAX_TIME_SIZE } }
 };

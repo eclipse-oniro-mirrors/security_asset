@@ -34,6 +34,8 @@ use crate::{unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService}
 
 const REDIRECT_START_CODE: u32 = 200;
 
+const HAP_OWNER_TYPES: [OwnerType; 2] = [OwnerType::Hap, OwnerType::Group];
+
 impl RemoteStub for AssetService {
     fn on_remote_request(
         &self,
@@ -70,7 +72,7 @@ fn on_app_request(process_info: &ProcessInfo, calling_info: &CallingInfo) -> Res
     // to get the real user id to operate Asset
     params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
     params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(process_info.process_name.clone()));
-    params.insert(PARAM_NAME_IS_HAP, Value::Bool(process_info.owner_type == OwnerType::Hap));
+    params.insert(PARAM_NAME_IS_HAP, Value::Bool(HAP_OWNER_TYPES.contains(&process_info.owner_type)));
     params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
@@ -95,8 +97,7 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
     let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
 
     let map = deserialize_map(data).map_err(asset_err_handle)?;
-
-    let process_info = ProcessInfo::build().map_err(asset_err_handle)?;
+    let process_info = ProcessInfo::build(map.get(&Tag::GroupId)).map_err(asset_err_handle)?;
     let calling_info = CallingInfo::build(map.get(&Tag::UserId).cloned(), &process_info);
     on_app_request(&process_info, &calling_info).map_err(asset_err_handle)?;
 

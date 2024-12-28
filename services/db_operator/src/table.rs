@@ -169,10 +169,14 @@ fn build_sql_query_options(query_options: Option<&QueryOptions>, sql: &mut Strin
     }
 }
 
-fn build_sql_reverse_condition(reverse_condition: Option<&DbMap>, sql: &mut String) {
+fn build_sql_reverse_condition(condition: &DbMap, reverse_condition: Option<&DbMap>, sql: &mut String) {
     if let Some(conditions) = reverse_condition {
         if !conditions.is_empty() {
-            sql.push_str(" and ");
+            if !condition.is_empty() {
+                sql.push_str(" and ");
+            } else {
+                sql.push_str(" where ");
+            }
             for (i, column_name) in conditions.keys().enumerate() {
                 if *column_name == "SyncType" {
                     sql.push_str("(SyncType & ?) == 0");
@@ -324,7 +328,7 @@ impl<'a> Table<'a> {
     ) -> Result<i32> {
         let mut sql = format!("delete from {}", self.table_name);
         build_sql_where(condition, is_filter_sync, &mut sql);
-        build_sql_reverse_condition(reverse_condition, &mut sql);
+        build_sql_reverse_condition(condition, reverse_condition, &mut sql);
         let stmt = Statement::prepare(&sql, self.db)?;
         let mut index = 1;
         bind_where_datas(condition, &stmt, &mut index)?;

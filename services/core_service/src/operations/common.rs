@@ -18,10 +18,12 @@
 mod argument_check;
 mod permission_check;
 
-pub(crate) use argument_check::{check_required_tags, check_tag_validity, check_value_validity, MAX_LABEL_SIZE};
+pub(crate) use argument_check::{
+    check_group_validity, check_required_tags, check_tag_validity, check_value_validity, MAX_LABEL_SIZE,
+};
 pub(crate) use permission_check::check_system_permission;
 
-use asset_common::CallingInfo;
+use asset_common::{CallingInfo, OWNER_INFO_SEPARATOR};
 use asset_crypto_manager::secret_key::SecretKey;
 use asset_db_operator::types::{column, DbMap, DB_DATA_VERSION, DB_DATA_VERSION_V1};
 use asset_definition::{
@@ -80,7 +82,7 @@ pub(crate) const NORMAL_LABEL_ATTRS: [Tag; 4] =
 pub(crate) const NORMAL_LOCAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelNormalLocal1, Tag::DataLabelNormalLocal2, Tag::DataLabelNormalLocal3, Tag::DataLabelNormalLocal4];
 
-pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 8] = [
+pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 9] = [
     Tag::Alias,
     Tag::Accessibility,
     Tag::AuthType,
@@ -88,6 +90,7 @@ pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 8] = [
     Tag::SyncType,
     Tag::RequirePasswordSet,
     Tag::RequireAttrEncrypted,
+    Tag::GroupId,
     Tag::UserId,
 ];
 
@@ -128,9 +131,12 @@ pub(crate) fn into_asset_map(db_data: &DbMap) -> AssetMap {
     map
 }
 
-pub(crate) fn add_owner_info(calling_info: &CallingInfo, db_data: &mut DbMap) {
+pub(crate) fn add_calling_info(calling_info: &CallingInfo, db_data: &mut DbMap) {
     db_data.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
     db_data.insert(column::OWNER_TYPE, Value::Number(calling_info.owner_type()));
+    if let Some(group) = calling_info.group() {
+        db_data.insert(column::GROUP_ID, Value::Bytes(group));
+    };
 }
 
 pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<SecretKey> {
@@ -202,7 +208,7 @@ pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
             x if *x == OperationType::NeedSync as u32 => {
                 if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
                     let owner_info_str = String::from_utf8_lossy(calling_info.owner_info()).to_string();
-                    let owner_info_vec: Vec<_> = owner_info_str.split('_').collect();
+                    let owner_info_vec: Vec<_> = owner_info_str.split(OWNER_INFO_SEPARATOR).collect();
                     let caller_name = owner_info_vec[0];
                     let mut params = ExtDbMap::new();
                     params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
@@ -216,7 +222,7 @@ pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
             x if *x == OperationType::NeedLogout as u32 => {
                 if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
                     let owner_info_str = String::from_utf8_lossy(calling_info.owner_info()).to_string();
-                    let owner_info_vec: Vec<_> = owner_info_str.split('_').collect();
+                    let owner_info_vec: Vec<_> = owner_info_str.split(OWNER_INFO_SEPARATOR).collect();
                     let caller_name = owner_info_vec[0];
                     let mut params = ExtDbMap::new();
                     params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));

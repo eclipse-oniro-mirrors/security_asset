@@ -28,7 +28,7 @@ use system_ability_fwk::{
 };
 use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
 
-use asset_common::{AutoCounter, CallingInfo, Counter, OwnerType};
+use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Counter};
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
 use asset_file_operator::{common::DE_ROOT_PATH, de_operator::create_user_de_dir};
@@ -50,6 +50,29 @@ use crate::unload_handler::{UnloadHandler, DELAYED_UNLOAD_TIME_IN_SEC, SEC_TO_MI
 
 struct AssetAbility;
 
+trait WantParser<T> {
+    fn parse(&self) -> Result<T>;
+}
+
+struct PackageInfo {
+    user_id: i32,
+    app_index: i32,
+    app_id: String,
+    developer_id: Option<String>,
+    group_ids: Option<Vec<String>>,
+    bundle_name: String,
+}
+
+#[repr(C)]
+struct PackageInfoFfi {
+    user_id: i32,
+    app_index: i32,
+    owner: ConstAssetBlob,
+    developer_id: ConstAssetBlob,
+    group_ids: ConstAssetBlobArray,
+    bundle_name: ConstAssetBlob,
+}
+
 pub(crate) fn unload_sa(duration: u64) {
     let unload_handler = UnloadHandler::get_instance();
     unload_handler.lock().unwrap().update_task(ylong_runtime::spawn(async move {
@@ -69,8 +92,7 @@ impl Ability for AssetAbility {
         let _trace = TraceScope::trace(func_name);
         let calling_info = CallingInfo::new_self();
 
-        let _ = upload_system_event(
-            start_service(handler), &calling_info, start, func_name, &AssetMap::new());
+        let _ = upload_system_event(start_service(handler), &calling_info, start, func_name, &AssetMap::new());
         common_event::handle_common_event(reason);
     }
 
@@ -121,8 +143,7 @@ fn start_service(handler: Handler) -> Result<()> {
     let asset_plugin = AssetPlugin::get_instance();
     match asset_plugin.load_plugin() {
         Ok(loader) => {
-            let _tr = loader
-                .init(Box::new(AssetContext { user_id: 0, calling_info: CallingInfo::new(0, OwnerType::Hap, vec![]) }));
+            let _tr = loader.init(Box::new(AssetContext { user_id: 0 }));
             logi!("load plugin success.");
         },
         Err(_) => loge!("load plugin failed."),

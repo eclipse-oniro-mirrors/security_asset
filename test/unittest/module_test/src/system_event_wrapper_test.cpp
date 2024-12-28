@@ -18,6 +18,7 @@
 #include <cstring>
 #include <gtest/gtest.h>
 
+#include "system_ability_wrapper.h"
 #include "system_event_wrapper.h"
 
 using namespace testing::ext;
@@ -49,8 +50,7 @@ void AssetSystemEventWrapperTest::TearDown(void)
 {
 }
 
-void PackageRemovedCallback(int32_t packageId, const uint8_t *owner, uint32_t ownerSize,
-    const uint8_t *bundleName, int32_t appIndex)
+void PackageRemovedCallback(PackageInfo)
 {
 }
 

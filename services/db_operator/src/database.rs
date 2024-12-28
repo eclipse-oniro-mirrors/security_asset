@@ -141,15 +141,16 @@ fn check_validity_of_db_key(path: &str, user_id: i32) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn get_db(user_id: i32, db_name: &str, upgrade_db_version: u32, db_key: Option<&DbKey>) -> Result<Database> {
-    let path = if db_key.is_some() {
-        fmt_ce_db_path_with_name(user_id, db_name)
-    } else {
-        fmt_de_db_path_with_name(user_id, db_name)
-    };
-    let backup_path = fmt_backup_path(path.as_str());
+pub(crate) fn get_db_by_type(
+    user_id: i32,
+    db_name: &str,
+    db_path: String,
+    upgrade_db_version: u32,
+    db_key: Option<&DbKey>,
+) -> Result<Database> {
+    let backup_path = fmt_backup_path(&db_path);
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
-    let mut db = Database { path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string() };
+    let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string() };
     let _lock = db.db_lock.mtx.lock().unwrap();
     db.open_and_restore(db_key)?;
     db.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, upgrade_db_version))?;
@@ -157,13 +158,12 @@ pub(crate) fn get_db(user_id: i32, db_name: &str, upgrade_db_version: u32, db_ke
     Ok(db)
 }
 
-pub(crate) fn get_normal_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
-    let path =
-        if is_ce { fmt_ce_db_path_with_name(user_id, db_name) } else { fmt_de_db_path_with_name(user_id, db_name) };
-    let db_key = if is_ce {
-        check_validity_of_db_key(&path, user_id)?;
-        match DbKey::get_db_key(user_id) {
-            Ok(res) => Some(res),
+pub(crate) fn get_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
+    let (db_path, db_key) = if is_ce {
+        let db_path = fmt_ce_db_path_with_name(user_id, db_name);
+        check_validity_of_db_key(&db_path, user_id)?;
+        let db_key = match DbKey::get_db_key(user_id) {
+            Ok(db_key) => Some(db_key),
             Err(e) if e.code == ErrCode::NotFound || e.code == ErrCode::DataCorrupted => {
                 loge!(
                     "[FATAL]The key is corrupted. Now all data should be cleared and restart over, err is {}.",
@@ -173,52 +173,39 @@ pub(crate) fn get_normal_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<
                 return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
             },
             Err(e) => return Err(e),
-        }
+        };
+        (db_path, db_key)
     } else {
-        None
+        let db_path = fmt_de_db_path_with_name(user_id, db_name);
+        (db_path, None)
     };
-    get_db(user_id, db_name, DB_UPGRADE_VERSION, db_key.as_ref())
+
+    get_db_by_type(user_id, db_name, db_path, DB_UPGRADE_VERSION, db_key.as_ref())
 }
 
+/// Create ce db instance if the value of tag "RequireAttrEncrypted" is set to true.
 /// Create de db instance if the value of tag "RequireAttrEncrypted" is not specified or set to false.
-/// Create ce db instance if true.
-pub fn create_db_instance(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<Database> {
+pub fn build_db(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<Database> {
     match attributes.get(&Tag::RequireAttrEncrypted) {
-        Some(Value::Bool(true)) => {
-            let db = Database::build(
-                calling_info.user_id(),
-                calling_info.owner_type_enum(),
-                calling_info.owner_info(),
-                true,
-            )?;
-            Ok(db)
-        },
-        _ => {
-            let db = Database::build(
-                calling_info.user_id(),
-                calling_info.owner_type_enum(),
-                calling_info.owner_info(),
-                false,
-            )?;
-            Ok(db)
-        },
+        Some(Value::Bool(true)) => Ok(Database::build(calling_info, true)?),
+        _ => Ok(Database::build(calling_info, false)?),
     }
 }
 
 impl Database {
-    /// Create a database.
-    pub fn build(user_id: i32, owner_type: OwnerType, owner_info: &[u8], is_ce: bool) -> Result<Database> {
+    /// Create a database without a given file name.
+    pub fn build(calling_info: &CallingInfo, is_ce: bool) -> Result<Database> {
         if !is_ce {
             // DE database needs trigger the upgrade action.
-            check_and_split_db(user_id)?;
+            check_and_split_db(calling_info.user_id())?;
         }
-        get_normal_db(user_id, &construct_splited_db_name(owner_type, owner_info, is_ce)?, is_ce)
+        get_db(calling_info.user_id(), &construct_splited_db_name(calling_info, is_ce)?, is_ce)
     }
 
     /// Create a database from a file name.
     pub fn build_with_file_name(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
         check_and_split_db(user_id)?;
-        get_normal_db(user_id, db_name, is_ce)
+        get_db(user_id, db_name, is_ce)
     }
 
     /// Check whether db is ok
@@ -374,7 +361,7 @@ impl Database {
         for query_result in query_results {
             let owner_type = query_result.get_enum_attr(&column::OWNER_TYPE)?;
             let owner_info = query_result.get_bytes_attr(&column::OWNER)?;
-            let calling_info = CallingInfo::new(user_id, owner_type, owner_info.to_vec());
+            let calling_info = CallingInfo::new(user_id, owner_type, owner_info.to_vec(), None);
             let auth_type = query_result.get_enum_attr(&column::AUTH_TYPE)?;
             let access_type = query_result.get_enum_attr(&column::ACCESSIBILITY)?;
             let require_password_set = query_result.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;

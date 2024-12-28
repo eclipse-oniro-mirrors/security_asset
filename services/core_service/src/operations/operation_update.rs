@@ -18,7 +18,7 @@
 use asset_common::CallingInfo;
 use asset_crypto_manager::crypto::Crypto;
 use asset_db_operator::{
-    database::create_db_instance,
+    database::build_db,
     types::{column, DbMap, DB_DATA_VERSION},
 };
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, LocalStatus, Result, SyncStatus, Tag, Value};
@@ -65,7 +65,7 @@ fn add_normal_attrs(db_data: &mut DbMap) {
 const QUERY_REQUIRED_ATTRS: [Tag; 1] = [Tag::Alias];
 const UPDATE_OPTIONAL_ATTRS: [Tag; 1] = [Tag::Secret];
 
-fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap) -> Result<()> {
+fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // Check attributes used to query.
     common::check_required_tags(query, &QUERY_REQUIRED_ATTRS)?;
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
@@ -73,6 +73,7 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap) -> Result<()> {
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     common::check_tag_validity(query, &valid_tags)?;
+    common::check_group_validity(query, calling_info)?;
     common::check_value_validity(query)?;
     common::check_system_permission(query)?;
 
@@ -94,16 +95,14 @@ fn upgrade_to_latest_version(origin_db_data: &mut DbMap, update_db_data: &mut Db
 }
 
 pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &AssetMap) -> Result<()> {
-    check_arguments(query, update)?;
+    check_arguments(query, update, calling_info)?;
 
-    let mut query_db_data = common::into_db_map(query);
-    common::add_owner_info(calling_info, &mut query_db_data);
-
+    let query_db_data = common::into_db_map(query);
     let mut update_db_data = common::into_db_map(update);
 
     add_attrs(update, &mut update_db_data)?;
 
-    let mut db = create_db_instance(query, calling_info)?;
+    let mut db = build_db(query, calling_info)?;
     let results = db.query_datas(&vec![], &query_db_data, None, true)?;
     if results.is_empty() {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]The asset to update is not found.");

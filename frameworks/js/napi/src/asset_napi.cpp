@@ -73,6 +73,7 @@ napi_value DeclareTag(const napi_env env)
     AddUint32Property(env, tag, "UPDATE_TIME", SEC_ASSET_TAG_UPDATE_TIME);
     AddUint32Property(env, tag, "OPERATION_TYPE", SEC_ASSET_TAG_OPERATION_TYPE);
     AddUint32Property(env, tag, "REQUIRE_ATTR_ENCRYPTED", SEC_ASSET_TAG_REQUIRE_ATTR_ENCRYPTED);
+    AddUint32Property(env, tag, "GROUP_ID", SEC_ASSET_TAG_GROUP_ID);
     return tag;
 }
 

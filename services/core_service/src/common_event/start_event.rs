@@ -15,70 +15,118 @@
 
 //! This module is used to handle start event.
 
-use std::collections::HashMap;
+use std::{collections::HashMap, ptr::null};
 
+use asset_common::{ConstAssetBlob, ConstAssetBlobArray, GROUP_SEPARATOR};
+use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_file_operator::de_operator::delete_user_de_dir;
-use asset_log::{loge, logi};
+use asset_log::{loge, logi, logw};
 use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
 
-use crate::{common_event::listener, unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa};
+use crate::{
+    common_event::listener, unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, PackageInfo, PackageInfoFfi,
+    WantParser,
+};
 
 const USER_ID: &str = "userId";
 const SANDBOX_APP_INDEX: &str = "sandbox_app_index";
+const APP_INDEX: &str = "appIndex";
+const APP_RESTORE_INDEX: &str = "index";
 const APP_ID: &str = "appId";
 const BUNDLE_NAME: &str = "bundleName";
-const APP_RESTORE_INDEX: &str = "index";
-const APP_INDEX: &str = "appIndex";
+const DEVELOPER_ID: &str = "developerId";
+const GROUP_IDS: &str = "assetAccessGroups";
 
-fn handle_package_removed(want: &HashMap<String, String>, is_sandbox: bool) {
-    let Some(user_id) = want.get(USER_ID) else {
-        loge!("[FATIL]Get removed owner info failed, get userId fail");
-        return;
-    };
-    let Some(app_id) = want.get(APP_ID) else {
-        loge!("[FATIL]Get removed owner info failed, get appId fail");
-        return;
-    };
+struct PackageRemovedWant<'a>(&'a HashMap<String, String>);
+impl WantParser<PackageInfo> for PackageRemovedWant<'_> {
+    fn parse(&self) -> Result<PackageInfo> {
+        // parse user id from want
+        let Some(user_id) = self.0.get(USER_ID) else {
+            return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed userId fail!");
+        };
+        let user_id = match user_id.parse::<i32>() {
+            Ok(user_id) => user_id,
+            _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Parse removed userId fail!"),
+        };
 
-    let app_index_get_key = if is_sandbox { SANDBOX_APP_INDEX } else { APP_INDEX };
-    let app_index = match want.get(app_index_get_key) {
-        Some(v) => match v.parse::<i32>() {
-            Ok(parsed_value) => parsed_value,
-            Err(_) => {
-                loge!("[FATAL]Get removed owner info failed, failed to parse appIndex");
-                return;
+        // parse app id from want
+        let Some(app_id) = self.0.get(APP_ID) else {
+            return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed ownerInfo fail, get appId fail!");
+        };
+        let app_id = app_id.to_string();
+
+        // parse bundle name from want
+        let Some(bundle_name) = self.0.get(BUNDLE_NAME) else {
+            return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get restore appInfo fail, get bundleName fail!");
+        };
+        let bundle_name = bundle_name.to_string();
+
+        // parse app index from want
+        let app_index = match self.0.get(SANDBOX_APP_INDEX) {
+            Some(sandbox_app_index) => sandbox_app_index,
+            _ => {
+                logw!("[WARNING]Not sandbox app, getting non-sandbox(main or clone) appIndex!");
+                match self.0.get(APP_INDEX) {
+                    Some(app_index) => app_index,
+                    _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed appIndex fail!"),
+                }
             },
-        },
-        None => {
-            loge!("[FATIL]Get removed owner info failed, get appIndex fail");
-            return;
-        },
+        };
+        let app_index = match app_index.parse::<i32>() {
+            Ok(app_index) => app_index,
+            _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Parse removed appIndex fail!"),
+        };
+
+        // parse groups from want
+        let (developer_id, group_ids) = match (self.0.get(DEVELOPER_ID), self.0.get(GROUP_IDS)) {
+            (Some(developer_id), Some(group_ids)) => {
+                let group_ids: Vec<String> =
+                    group_ids.split(GROUP_SEPARATOR).map(|group_id| group_id.to_string()).collect();
+                (Some(developer_id.to_string()), Some(group_ids))
+            },
+            _ => (None, None),
+        };
+
+        Ok(PackageInfo { user_id, app_index, app_id, developer_id, group_ids, bundle_name })
+    }
+}
+
+fn handle_package_removed(want: &HashMap<String, String>) {
+    if let Ok(package_info) = PackageRemovedWant(want).parse() {
+        let owner_str = format!("{}_{}", package_info.app_id, package_info.app_index);
+        let owner = ConstAssetBlob { size: owner_str.len() as u32, data: owner_str.as_ptr() };
+        let developer_id = match package_info.developer_id {
+            Some(developer_id) => ConstAssetBlob { size: developer_id.len() as u32, data: developer_id.as_ptr() },
+            None => ConstAssetBlob { size: 0, data: null() },
+        };
+        let group_ids: Option<Vec<ConstAssetBlob>> = package_info.group_ids.map(|group_ids| {
+            group_ids
+                .iter()
+                .map(|group_id| ConstAssetBlob { size: group_id.len() as u32, data: group_id.as_ptr() })
+                .collect()
+        });
+        let group_ids = match group_ids {
+            Some(group_ids) => ConstAssetBlobArray { size: group_ids.len() as u32, blobs: group_ids.as_ptr() },
+            None => ConstAssetBlobArray { size: 0, blobs: null() },
+        };
+        let bundle_name =
+            ConstAssetBlob { size: package_info.bundle_name.len() as u32, data: package_info.bundle_name.as_ptr() };
+        listener::on_package_removed(PackageInfoFfi {
+            user_id: package_info.user_id,
+            app_index: package_info.app_index,
+            owner,
+            developer_id,
+            group_ids,
+            bundle_name,
+        });
     };
-    let owner = format!("{}_{}", app_id, app_index);
-    let user_id = match user_id.parse::<i32>() {
-        Ok(parsed_value) => parsed_value,
-        Err(_) => {
-            loge!("[FATIL]Get removed user_id failed, failed to parse user_id");
-            return;
-        },
-    };
-    let Some(bundle_name) = want.get(BUNDLE_NAME) else {
-        loge!("[FATIL]Get restore app info failed, get bundle name failed.");
-        return;
-    };
-    let mut bundle_name = bundle_name.clone();
-    bundle_name.push('\0');
-    listener::on_package_removed(user_id, owner.as_ptr(), owner.len() as u32, bundle_name.as_ptr(), app_index);
 }
 
 pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
     let reason_name: String = reason.name;
-    if reason_name == "usual.event.PACKAGE_REMOVED" {
+    if reason_name == "usual.event.PACKAGE_REMOVED" || reason_name == "usual.event.SANDBOX_PACKAGE_REMOVED" {
         let want = reason.extra_data.want();
-        handle_package_removed(&want, false);
-    } else if reason_name == "usual.event.SANDBOX_PACKAGE_REMOVED" {
-        let want = reason.extra_data.want();
-        handle_package_removed(&want, true);
+        handle_package_removed(&want);
     } else if reason_name == "usual.event.USER_REMOVED" {
         logi!("on_start by user remove");
         let _ = delete_user_de_dir(reason.extra_data.code);

@@ -34,6 +34,42 @@ const char * const COMMON_EVENT_RESTORE_START = "usual.event.RESTORE_START";
 const char * const COMMON_EVENT_USER_PIN_CREATED = "USER_PIN_CREATED_EVENT";
 const char * const BUNDLE_NAME = "bundleName";
 const char * const PERMISSION_MANAGE_USER_IDM = "ohos.permission.MANAGE_USER_IDM";
+const char * const DEVELOPER_ID = "developerId";
+const char * const GROUP_IDS = "assetAccessGroups";
+const char * const OWNER_INFO_SEPARATOR = "_";
+const char * const GROUP_SEPARATOR = ",";
+
+void ParseDeveloperId(const std::string &developerId, ConstAssetBlob &developerIdBlob)
+{
+    if (!developerId.empty()) {
+        developerIdBlob = { .size = developerId.size(),
+            .data = reinterpret_cast<const uint8_t *>(developerId.c_str()) };
+    } else {
+        developerIdBlob = { .size = 0, .data = nullptr };
+    }
+}
+
+void ParseGroupIds(const std::string &groupIds, std::vector<std::string> &groupIdStrs,
+    std::vector<ConstAssetBlob> &groupIdBlobs, ConstAssetBlobArray &groupIdBlobArray)
+{
+    if (!groupIds.empty()) {
+        size_t start = 0;
+        size_t end;
+        while ((end = groupIds.find(GROUP_SEPARATOR, start)) != std::string::npos) {
+            groupIdStrs.push_back(groupIds.substr(start, end - start));
+            start = end;
+        }
+        groupIdStrs.push_back(groupIds.substr(start, end));
+        for (const std::string &groupIdStr : groupIdStrs) {
+            groupIdBlobs.push_back({ .size = groupIdStr.size(),
+                .data = reinterpret_cast<const uint8_t *>(groupIdStr.c_str()) });
+        }
+        groupIdBlobArray = { .size = groupIdBlobs.size(),
+            .blob = reinterpret_cast<const ConstAssetBlob *>(&groupIdBlobs[0]) };
+    } else {
+        groupIdBlobArray = { .size = 0, .blob = nullptr };
+    }
+}
 
 void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPackageRemoved onPackageRemoved)
 {
@@ -45,15 +81,27 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
             userId, appId.c_str(), appIndex);
         return;
     }
+    std::string owner = appId + OWNER_INFO_SEPARATOR + std::to_string(appIndex);
+    ConstAssetBlob ownerBlob = { .size = owner.size(), .data = reinterpret_cast<const uint8_t *>(owner.c_str()) };
 
-    std::string owner = appId + '_' + std::to_string(appIndex);
     std::string bundleName = want.GetBundle();
+    ConstAssetBlob bundleNameBlob = { .size = bundleName.size(),
+        .data = reinterpret_cast<const uint8_t *>(bundleName.c_str()) };
+
+    std::string developerId = want.GetStringParam(DEVELOPER_ID);
+    ConstAssetBlob developerIdBlob;
+    ParseDeveloperId(developerId, developerIdBlob);
+    std::string groupIds = want.GetStringParam(GROUP_IDS);
+    std::vector<ConstAssetBlob> groupIdBlobs;
+    std::vector<std::string> groupIdStrs;
+    ConstAssetBlobArray groupIdBlobArray;
+    ParseGroupIds(groupIds, groupIdStrs, groupIdBlobs, groupIdBlobArray);
+
     if (onPackageRemoved != nullptr) {
-        onPackageRemoved(userId, reinterpret_cast<const uint8_t *>(owner.c_str()), owner.size(),
-            reinterpret_cast<const uint8_t *>(bundleName.c_str()), appIndex);
+        onPackageRemoved({ userId, appIndex, ownerBlob, developerIdBlob, groupIdBlobArray, bundleNameBlob });
     }
-    LOGI("[INFO]Receive event: PACKAGE_REMOVED, userId=%{public}d, appId=%{public}s, appIndex=%{public}d, ",
-        userId, appId.c_str(), appIndex);
+    LOGI("[INFO]Receive event: PACKAGE_REMOVED, userId=%{public}d, appId=%{public}s, appIndex=%{public}d", userId,
+        appId.c_str(), appIndex);
 }
 
 void HandleAppRestore(const OHOS::AAFwk::Want &want, OnAppRestore onAppRestore)
@@ -108,7 +156,6 @@ public:
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_UNLOCKED) {
             if (this->eventCallBack.onUserUnlocked != nullptr) {
                 int userId = data.GetCode();
-
                 this->eventCallBack.onUserUnlocked(userId);
             }
             LOGI("[INFO]Receive event: USER_UNLOCKED, start_time: %{public}ld", startTime);

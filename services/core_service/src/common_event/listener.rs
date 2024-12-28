@@ -25,13 +25,16 @@ use std::{
 
 use lazy_static::lazy_static;
 
-use asset_common::{AutoCounter, CallingInfo, OwnerType};
+use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Group, OwnerType};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
 use asset_db_key_operator::DbKey;
 use asset_db_operator::{
     database::Database,
     database_file_upgrade::{construct_splited_db_name, trigger_db_upgrade},
-    types::{column, DbMap},
+    types::{
+        column::{self},
+        DbMap,
+    },
 };
 use asset_definition::{log_throw_error, ErrCode, Result, SyncType, Value};
 use asset_file_operator::{
@@ -45,15 +48,20 @@ use asset_sdk::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID,
 };
 
-use crate::sys_event::upload_fault_system_event;
+use crate::{sys_event::upload_fault_system_event, PackageInfoFfi};
 
 /// success code.
 const SUCCESS: i32 = 0;
 const USER_ID_VEC_BUFFER: u32 = 5;
 const MINIMUM_MAIN_USER_ID: i32 = 100;
 
+enum DataExist {
+    OwnerData(bool),
+    GroupData(bool),
+}
+
 fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result<()> {
-    let db_name = construct_splited_db_name(calling_info.owner_type_enum(), calling_info.owner_info(), is_ce)?;
+    let db_name = construct_splited_db_name(calling_info, is_ce)?;
     for db_path in fs::read_dir(file_path)? {
         let db_path = db_path?;
         let db_file_name = db_path.file_name().to_string_lossy().to_string();
@@ -71,57 +79,74 @@ fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result
     Ok(())
 }
 
-fn delete_in_de_db_on_package_removed(
-    calling_info: &CallingInfo,
-    delete_cond: &DbMap,
-    reverse_condition: &DbMap,
-    check_cond: &DbMap,
-) -> Result<bool> {
-    // Delete non-persistent data in de db.
-    let mut de_db =
-        Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)?;
-    let _ = de_db.delete_datas(delete_cond, Some(reverse_condition), false)?;
-    let de_db_data_exists = de_db.is_data_exists(check_cond, false)?;
-    // remove db and backup db
-    if !de_db_data_exists {
-        remove_db(&format!("{}/{}", DE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
+fn delete_in_de_db_on_package_removed(calling_info: &CallingInfo, reverse_condition: &DbMap) -> Result<DataExist> {
+    let mut db = Database::build(calling_info, false)?;
+    let mut delete_condition = DbMap::new();
+    let check_condition = DbMap::new();
+    match calling_info.group() {
+        Some(_) => {
+            delete_condition.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
+            let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
+            let data_exists = db.is_data_exists(&check_condition, false)?;
+            if !data_exists {
+                remove_db(&format!("{}/{}", DE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
+            }
+            Ok(DataExist::GroupData(data_exists))
+        },
+        None => {
+            delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
+            let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
+            let data_exists = db.is_data_exists(&check_condition, false)?;
+            if !data_exists {
+                remove_db(&format!("{}/{}", DE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
+            }
+            Ok(DataExist::OwnerData(data_exists))
+        },
     }
-    Ok(de_db_data_exists)
 }
 
-fn delete_in_ce_db_on_package_removed(
-    calling_info: &CallingInfo,
-    delete_cond: &DbMap,
-    reverse_condition: &DbMap,
-    check_cond: &DbMap,
-) -> Result<bool> {
-    // Delete non-persistent data in ce db if ce db file exists.
-    let mut ce_db =
-        Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), true)?;
-    let _ = ce_db.delete_datas(delete_cond, Some(reverse_condition), false)?;
-    // Check whether there is still persistent data left in ce db.
-    let ce_db_data_exists = ce_db.is_data_exists(check_cond, false)?;
-    if !ce_db_data_exists {
-        remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
+fn delete_in_ce_db_on_package_removed(calling_info: &CallingInfo, reverse_condition: &DbMap) -> Result<DataExist> {
+    let mut db = Database::build(calling_info, true)?;
+    let mut delete_condition = DbMap::new();
+    let check_condition = DbMap::new();
+    match calling_info.group() {
+        Some(_) => {
+            delete_condition.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
+            let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
+            let data_exists = db.is_data_exists(&check_condition, false)?;
+            if !data_exists {
+                remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
+            }
+            Ok(DataExist::GroupData(data_exists))
+        },
+        None => {
+            delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
+            let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
+            let data_exists = db.is_data_exists(&check_condition, false)?;
+            if !data_exists {
+                remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
+            }
+            Ok(DataExist::OwnerData(data_exists))
+        },
     }
-    Ok(ce_db_data_exists)
 }
 
-fn delete_on_package_removed(owner: Vec<u8>, calling_info: &CallingInfo) -> Result<bool> {
-    let mut delete_cond = DbMap::new();
-    delete_cond.insert(column::OWNER_TYPE, Value::Number(OwnerType::Hap as u32));
-    delete_cond.insert(column::OWNER, Value::Bytes(owner.clone()));
-    delete_cond.insert(column::IS_PERSISTENT, Value::Bool(false));
+fn delete_on_package_removed(calling_info: &CallingInfo) -> Result<DataExist> {
     let mut reverse_condition = DbMap::new();
     reverse_condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
-    let check_cond = DbMap::new();
-    let de_db_data_exists =
-        delete_in_de_db_on_package_removed(calling_info, &delete_cond, &reverse_condition, &check_cond)?;
+    let de_db_data_exists = delete_in_de_db_on_package_removed(calling_info, &reverse_condition)?;
 
     if is_db_key_cipher_file_exist(calling_info.user_id())? {
-        let ce_db_data_exists =
-            delete_in_ce_db_on_package_removed(calling_info, &delete_cond, &reverse_condition, &check_cond)?;
-        Ok(de_db_data_exists || ce_db_data_exists)
+        let ce_db_data_exists = delete_in_ce_db_on_package_removed(calling_info, &reverse_condition)?;
+        match (de_db_data_exists, ce_db_data_exists) {
+            (DataExist::OwnerData(de_db_data_exists), DataExist::OwnerData(ce_db_data_exists)) => {
+                Ok(DataExist::OwnerData(de_db_data_exists || ce_db_data_exists))
+            },
+            (DataExist::GroupData(de_db_data_exists), DataExist::GroupData(ce_db_data_exists)) => {
+                Ok(DataExist::GroupData(de_db_data_exists || ce_db_data_exists))
+            },
+            _ => log_throw_error!(ErrCode::AccessDenied, "[FATAL][SA]Cannot delete owner and group data at same time"),
+        }
     } else {
         Ok(de_db_data_exists)
     }
@@ -132,59 +157,93 @@ fn clear_cryptos(calling_info: &CallingInfo) {
     crypto_manager.lock().unwrap().remove_by_calling_info(calling_info);
 }
 
-fn delete_data_by_owner(user_id: i32, owner: *const u8, owner_size: u32) {
+fn construct_calling_infos(
+    user_id: i32,
+    owner: Vec<u8>,
+    developer_id: ConstAssetBlob,
+    group_ids: ConstAssetBlobArray,
+) -> Vec<CallingInfo> {
+    let mut calling_infos = vec![CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), None)];
+    if !group_ids.blobs.is_null() && group_ids.size != 0 && !developer_id.data.is_null() && developer_id.size != 0 {
+        let developer_id = unsafe { slice::from_raw_parts(developer_id.data, developer_id.size as usize) };
+        let group_ids_slice = unsafe { slice::from_raw_parts(group_ids.blobs, group_ids.size as usize) };
+        for group_id_slice in group_ids_slice {
+            let group_id = unsafe { slice::from_raw_parts(group_id_slice.data, group_id_slice.size as usize) };
+            calling_infos.push(CallingInfo::new(
+                user_id,
+                OwnerType::Group,
+                owner.clone(),
+                Some(Group { developer_id: developer_id.to_vec(), group_id: group_id.to_vec() }),
+            ));
+        }
+    }
+    calling_infos
+}
+
+fn delete_data_by_owner(
+    user_id: i32,
+    owner: ConstAssetBlob,
+    developer_id: ConstAssetBlob,
+    group_ids: ConstAssetBlobArray,
+) {
     let _counter_user = AutoCounter::new();
     let start_time = Instant::now();
-    let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner, owner_size as usize).to_vec() };
-    let calling_info = CallingInfo::new(user_id, OwnerType::Hap, owner.clone());
-    clear_cryptos(&calling_info);
-    let res = match delete_on_package_removed(owner, &calling_info) {
-        Ok(true) => {
-            logi!("The owner wants to retain data after uninstallation. Do not delete key in HUKS!");
-            Ok(())
-        },
-        Ok(false) => SecretKey::delete_by_owner(&calling_info),
-        Err(e) => {
-            // Report the database operation fault event.
+    let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner.data, owner.size as usize).to_vec() };
+
+    for calling_info in construct_calling_infos(user_id, owner.clone(), developer_id, group_ids) {
+        clear_cryptos(&calling_info);
+        let res = match delete_on_package_removed(&calling_info) {
+            Ok(DataExist::OwnerData(true)) => {
+                logi!("Data remain in owner db after uninstallation. Do not delete owner key in HUKS.");
+                Ok(())
+            },
+            Ok(DataExist::OwnerData(false)) => {
+                logi!("No data remain in owner db after uninstallation. Delete owner key in HUKS.");
+                SecretKey::delete_by_owner(&calling_info)
+            },
+            Ok(DataExist::GroupData(true)) => {
+                logi!("Other owners' data remain in group db after uninstallation. Do not delete group key in HUKS.");
+                Ok(())
+            },
+            Ok(DataExist::GroupData(false)) => {
+                logi!("No data remain in group db after uninstallation. Delete group key in HUKS.");
+                SecretKey::delete_by_owner(&calling_info)
+            },
+            Err(e) => {
+                // Report the database operation fault event.
+                upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e);
+                Ok(())
+            },
+        };
+        if let Err(e) = res {
+            // Report the key operation fault event.
+            let calling_info = CallingInfo::new_self();
             upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e);
-            Ok(())
-        },
-    };
-    if let Err(e) = res {
-        // Report the key operation fault event.
-        let calling_info = CallingInfo::new_self();
-        upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e);
+        }
     }
 }
 
-pub(crate) extern "C" fn on_package_removed(
-    user_id: i32,
-    owner: *const u8,
-    owner_size: u32,
-    bundle_name: *const u8,
-    app_index: i32,
-) {
-    delete_data_by_owner(user_id, owner, owner_size);
+pub(crate) extern "C" fn on_package_removed(package_info: PackageInfoFfi) {
+    delete_data_by_owner(package_info.user_id, package_info.owner, package_info.developer_id, package_info.group_ids);
 
-    let c_str = unsafe { CStr::from_ptr(bundle_name as _) };
-    let bundle_name = match c_str.to_str() {
-        Ok(s) => s.to_string(),
-        Err(e) => {
-            loge!("[FATAL]Parse sting from bundle name failed, error is {}.", e);
-            return;
-        },
+    let bundle_name: Vec<u8> = unsafe {
+        slice::from_raw_parts(package_info.bundle_name.data, package_info.bundle_name.size as usize).to_vec()
     };
-
-    logi!("[INFO]On app -{}-{}-{}- removed.", user_id, bundle_name, app_index);
+    logi!(
+        "[INFO]On app -{}-{}-{}- removed.",
+        package_info.user_id,
+        String::from_utf8_lossy(&bundle_name),
+        package_info.app_index
+    );
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
-        params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
-        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(bundle_name.as_bytes().to_vec()));
+        params.insert(PARAM_NAME_USER_ID, Value::Number(package_info.user_id as u32));
+        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(bundle_name));
 
         // only hap package can be removed
         params.insert(PARAM_NAME_IS_HAP, Value::Bool(true));
-        params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
+        params.insert(PARAM_NAME_APP_INDEX, Value::Number(package_info.app_index as u32));
         match load.process_event(EventType::OnPackageClear, &params) {
             Ok(()) => logi!("process package remove event success."),
             Err(code) => loge!("process package remove event failed, code: {}", code),
@@ -366,26 +425,19 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
     let mut user_ids_size: u32 = 0;
     let user_ids_size_ptr = &mut user_ids_size;
     let mut ret: i32;
-    unsafe {
-        ret = GetUsersSize(user_ids_size_ptr);
-    }
+    ret = unsafe { GetUsersSize(user_ids_size_ptr) };
     if ret != SUCCESS {
         return log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get users size failed.");
     }
 
     let mut user_ids: Vec<i32> = vec![0i32; (*user_ids_size_ptr + USER_ID_VEC_BUFFER).try_into().unwrap()];
     let user_ids_ptr = user_ids.as_mut_ptr();
-    unsafe {
-        ret = GetUserIds(user_ids_ptr, user_ids_size_ptr);
-    }
+    ret = unsafe { GetUserIds(user_ids_ptr, user_ids_size_ptr) };
     if ret != SUCCESS {
         return log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get user IDs failed.");
     }
 
-    let user_ids_slice;
-    unsafe {
-        user_ids_slice = slice::from_raw_parts_mut(user_ids_ptr, (*user_ids_size_ptr).try_into().unwrap());
-    }
+    let user_ids_slice = unsafe { slice::from_raw_parts_mut(user_ids_ptr, (*user_ids_size_ptr).try_into().unwrap()) };
     for user_id in user_ids_slice.iter() {
         if let Err(e) = backup_ce_db_if_accessible(*user_id) {
             let calling_info = CallingInfo::new_self();
@@ -399,7 +451,7 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
 #[derive(Clone)]
 #[repr(C)]
 struct EventCallBack {
-    on_package_remove: extern "C" fn(i32, *const u8, u32, *const u8, i32),
+    on_package_removed: extern "C" fn(PackageInfoFfi),
     on_user_removed: extern "C" fn(i32),
     on_screen_off: extern "C" fn(),
     on_charging: extern "C" fn(),
@@ -416,7 +468,7 @@ extern "C" {
 pub(crate) fn subscribe() {
     unsafe {
         let call_back = EventCallBack {
-            on_package_remove: on_package_removed,
+            on_package_removed,
             on_user_removed,
             on_screen_off: delete_crypto_need_unlock,
             on_charging: backup_db,

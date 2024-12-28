@@ -18,7 +18,7 @@
 use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager, secret_key::SecretKey};
 use asset_db_operator::{
-    database::create_db_instance,
+    database::build_db,
     types::{column, DbMap},
 };
 use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
@@ -28,7 +28,7 @@ use crate::operations::common;
 const OPTIONAL_ATTRS: [Tag; 1] = [Tag::AuthValidityPeriod];
 const DEFAULT_AUTH_VALIDITY_IN_SECS: u32 = 60;
 
-fn check_arguments(attributes: &AssetMap) -> Result<()> {
+fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
@@ -36,6 +36,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
 
     common::check_tag_validity(attributes, &valid_tags)?;
+    common::check_group_validity(attributes, calling_info)?;
     common::check_value_validity(attributes)?;
     common::check_system_permission(attributes)?;
 
@@ -48,7 +49,7 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
 }
 
 fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<(Accessibility, bool)> {
-    let mut db = create_db_instance(attrs, calling_info)?;
+    let mut db = build_db(attrs, calling_info)?;
     let results = db.query_datas(&vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET], db_data, None, true)?;
     match results.len() {
         0 => log_throw_error!(ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found."),
@@ -65,10 +66,9 @@ fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap
 }
 
 pub(crate) fn pre_query(calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<u8>> {
-    check_arguments(query)?;
+    check_arguments(query, calling_info)?;
 
     let mut db_data = common::into_db_map(query);
-    common::add_owner_info(calling_info, &mut db_data);
     db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::Any as u32));
 
     let (access_type, require_password_set) = query_key_attrs(calling_info, &db_data, query)?;

@@ -16,7 +16,13 @@
 //! This module implements the function of Asset SDK from C to RUST.
 
 use core::ffi::c_void;
-use std::{convert::TryFrom, mem::size_of, result::Result, slice};
+use std::{
+    convert::TryFrom,
+    mem::size_of,
+    ptr::{copy_nonoverlapping, null_mut},
+    result::Result,
+    slice,
+};
 
 use asset_log::loge;
 use asset_sdk::{log_throw_error, AssetError, AssetMap, Conversion, DataType, ErrCode, Manager, Tag, Value};
@@ -248,7 +254,7 @@ impl TryFrom<&Vec<u8>> for AssetBlob {
     type Error = AssetError;
 
     fn try_from(vec: &Vec<u8>) -> Result<Self, Self::Error> {
-        let mut blob = AssetBlob { size: vec.len() as u32, data: std::ptr::null_mut() };
+        let mut blob = AssetBlob { size: vec.len() as u32, data: null_mut() };
 
         blob.data = unsafe { AssetMalloc(blob.size) as *mut u8 };
         if blob.data.is_null() {
@@ -257,7 +263,7 @@ impl TryFrom<&Vec<u8>> for AssetBlob {
                 "[FATAL][RUST SDK]Unable to allocate memory for Asset_Blob."
             );
         }
-        unsafe { std::ptr::copy_nonoverlapping(vec.as_ptr(), blob.data, blob.size as usize) };
+        unsafe { copy_nonoverlapping(vec.as_ptr(), blob.data, blob.size as usize) };
         Ok(blob)
     }
 }
@@ -293,7 +299,7 @@ impl TryFrom<&AssetMap> for AssetResult {
     type Error = AssetError;
 
     fn try_from(map: &AssetMap) -> Result<Self, Self::Error> {
-        let mut result = AssetResult { count: map.len() as u32, attrs: std::ptr::null_mut() };
+        let mut result = AssetResult { count: map.len() as u32, attrs: null_mut() };
 
         result.attrs =
             unsafe { AssetMalloc(result.count.wrapping_mul(size_of::<AssetAttr>() as u32)) as *mut AssetAttr };
@@ -326,7 +332,7 @@ impl TryFrom<&Vec<AssetMap>> for AssetResultSet {
     type Error = AssetError;
 
     fn try_from(maps: &Vec<AssetMap>) -> Result<Self, Self::Error> {
-        let mut result_set = AssetResultSet { count: maps.len() as u32, results: std::ptr::null_mut() };
+        let mut result_set = AssetResultSet { count: maps.len() as u32, results: null_mut() };
         result_set.results =
             unsafe { AssetMalloc(result_set.count.wrapping_mul(size_of::<AssetResult>() as u32)) as *mut AssetResult };
         if result_set.results.is_null() {

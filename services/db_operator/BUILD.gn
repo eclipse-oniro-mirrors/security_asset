@@ -23,6 +23,7 @@ ohos_rust_static_library("asset_db_operator") {
     "../../frameworks/definition:asset_definition",
     "../../frameworks/os_dependency/file:asset_file_operator",
     "../../frameworks/os_dependency/log:asset_log",
+    "../../frameworks/utils:asset_utils",
     "../common:asset_common",
     "../crypto_manager:asset_crypto_manager",
     "../db_key_operator:asset_db_key_operator",

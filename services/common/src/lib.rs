@@ -19,13 +19,44 @@ use asset_definition::{impl_enum_trait, log_throw_error, AssetError, ErrCode, Re
 mod calling_info;
 mod counter;
 mod process_info;
-pub use calling_info::CallingInfo;
+pub use calling_info::{CallingInfo, Group};
 pub use counter::{AutoCounter, Counter};
 pub use process_info::{ProcessInfo, ProcessInfoDetail};
 /// success code.
 pub const SUCCESS: i32 = 0;
 /// root user upper bound
 pub const ROOT_USER_UPPERBOUND: u32 = 99;
+/// Separator in owner info of calling info between app id and app index.
+pub const OWNER_INFO_SEPARATOR: char = '_';
+/// Separator in group of calling info between developer id and group id.
+pub const GROUP_SEPARATOR: char = ',';
+
+/// Immutable asset blob
+#[repr(C)]
+pub struct ConstAssetBlob {
+    /// Data size
+    pub size: u32,
+    /// Immutable data
+    pub data: *const u8,
+}
+
+/// Immutable asset blob array
+#[repr(C)]
+pub struct ConstAssetBlobArray {
+    /// blobs size
+    pub size: u32,
+    /// Immutable blobs
+    pub blobs: *const ConstAssetBlob,
+}
+
+/// Mutable asset blob
+#[repr(C)]
+pub struct MutAssetBlob {
+    /// Data size
+    pub size: u32,
+    /// Mutable data
+    pub data: *mut u8,
+}
 
 impl_enum_trait! {
     /// The type of the calling.
@@ -38,6 +69,8 @@ impl_enum_trait! {
         Hap = 0,
         /// The calling is a native process.
         Native = 1,
+        /// The calling is a group,
+        Group = 2,
     }
 }
 
