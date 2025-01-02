@@ -57,7 +57,7 @@ void ParseGroupIds(const std::string &groupIds, std::vector<std::string> &groupI
         size_t end;
         while ((end = groupIds.find(GROUP_SEPARATOR, start)) != std::string::npos) {
             groupIdStrs.push_back(groupIds.substr(start, end - start));
-            start = end;
+            start = ++end;
         }
         groupIdStrs.push_back(groupIds.substr(start, end));
         for (const std::string &groupIdStr : groupIdStrs) {
