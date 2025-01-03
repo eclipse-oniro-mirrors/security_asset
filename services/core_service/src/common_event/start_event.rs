@@ -95,18 +95,18 @@ fn handle_package_removed(want: &HashMap<String, String>) {
     if let Ok(package_info) = PackageRemovedWant(want).parse() {
         let owner_str = format!("{}_{}", package_info.app_id, package_info.app_index);
         let owner = ConstAssetBlob { size: owner_str.len() as u32, data: owner_str.as_ptr() };
-        let developer_id = match package_info.developer_id {
+        let developer_id = match package_info.developer_id() {
             Some(developer_id) => ConstAssetBlob { size: developer_id.len() as u32, data: developer_id.as_ptr() },
             None => ConstAssetBlob { size: 0, data: null() },
         };
-        let group_ids: Option<Vec<ConstAssetBlob>> = package_info.group_ids.map(|group_ids| {
-            group_ids
-                .iter()
-                .map(|group_id| ConstAssetBlob { size: group_id.len() as u32, data: group_id.as_ptr() })
-                .collect()
-        });
-        let group_ids = match group_ids {
-            Some(group_ids) => ConstAssetBlobArray { size: group_ids.len() as u32, blobs: group_ids.as_ptr() },
+        let mut group_id_blobs: Vec<ConstAssetBlob> = Vec::new();
+        let group_ids = match package_info.group_ids() {
+            Some(group_ids) => {
+                for group_id in group_ids {
+                    group_id_blobs.push(ConstAssetBlob { size: group_id.len() as u32, data: group_id.as_ptr() });
+                }
+                ConstAssetBlobArray { size: group_id_blobs.len() as u32, blobs: group_id_blobs.as_ptr() }
+            },
             None => ConstAssetBlobArray { size: 0, blobs: null() },
         };
         let bundle_name =

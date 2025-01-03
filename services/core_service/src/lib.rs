@@ -73,6 +73,16 @@ struct PackageInfoFfi {
     bundle_name: ConstAssetBlob,
 }
 
+impl PackageInfo {
+    fn developer_id(&self) -> &Option<String> {
+        &self.developer_id
+    }
+
+    fn group_ids(&self) -> &Option<Vec<String>> {
+        &self.group_ids
+    }
+}
+
 pub(crate) fn unload_sa(duration: u64) {
     let unload_handler = UnloadHandler::get_instance();
     unload_handler.lock().unwrap().update_task(ylong_runtime::spawn(async move {
