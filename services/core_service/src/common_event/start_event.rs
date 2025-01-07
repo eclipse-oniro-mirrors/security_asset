@@ -17,11 +17,11 @@
 
 use std::collections::HashMap;
 
-use asset_file_operator::delete_user_db_dir;
+use asset_file_operator::de_operator::delete_user_de_dir;
 use asset_log::{loge, logi};
 use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
 
-use crate::common_event::listener;
+use crate::{common_event::listener, unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa};
 
 const USER_ID: &str = "userId";
 const SANDBOX_APP_INDEX: &str = "sandbox_app_index";
@@ -81,7 +81,8 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
         handle_package_removed(&want, true);
     } else if reason_name == "usual.event.USER_REMOVED" {
         logi!("on_start by user remove");
-        let _ = delete_user_db_dir(reason.extra_data.code);
+        let _ = delete_user_de_dir(reason.extra_data.code);
+        listener::notify_on_user_removed(reason.extra_data.code);
     } else if reason_name == "usual.event.CHARGING" {
         listener::backup_db();
     } else if reason_name == "usual.event.RESTORE_START" {
@@ -128,4 +129,5 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
         listener::on_user_unlocked(reason.extra_data.code);
     }
     logi!("[INFO]Finish handle common event. [{}]", reason_name);
+    unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
 }

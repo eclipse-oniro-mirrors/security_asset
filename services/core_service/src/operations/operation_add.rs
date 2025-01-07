@@ -15,46 +15,26 @@
 
 //! This module is used to insert an Asset with a specified alias.
 
-use std::{ffi::CString, os::raw::c_char, sync::Mutex};
+use std::{ffi::CString, os::raw::c_char};
 
 use asset_common::{CallingInfo, OwnerType};
-use asset_crypto_manager::{crypto::Crypto, secret_key::SecretKey};
+use asset_crypto_manager::crypto::Crypto;
+use asset_db_key_operator::generate_secret_key_if_needed;
 use asset_db_operator::{
-    database::Database,
+    database::{create_db_instance, Database},
     types::{column, DbMap, DB_DATA_VERSION},
 };
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, LocalStatus, Result,
     SyncStatus, SyncType, Tag, Value,
 };
-use asset_log::logi;
 use asset_utils::time;
 
 use crate::operations::common;
 
-static GEN_KEY_MUTEX: Mutex<()> = Mutex::new(());
-
-fn generate_key_if_needed(secret_key: &SecretKey) -> Result<()> {
-    match secret_key.exists() {
-        Ok(true) => Ok(()),
-        Ok(false) => {
-            let _lock = GEN_KEY_MUTEX.lock().unwrap();
-            match secret_key.exists() {
-                Ok(true) => Ok(()),
-                Ok(false) => {
-                    logi!("[INFO]The key does not exist, generate it.");
-                    secret_key.generate()
-                },
-                Err(ret) => Err(ret),
-            }
-        },
-        Err(ret) => Err(ret),
-    }
-}
-
-fn encrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
+fn encrypt_secret(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     let secret_key = common::build_secret_key(calling_info, db_data)?;
-    generate_key_if_needed(&secret_key)?;
+    generate_secret_key_if_needed(&secret_key)?;
 
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
     let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data)?)?;
@@ -71,7 +51,7 @@ fn resolve_conflict(
 ) -> Result<()> {
     match attrs.get(&Tag::ConflictResolution) {
         Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {
-            encrypt(calling, db_data)?;
+            encrypt_secret(calling, db_data)?;
             db.replace_datas(query, false, db_data)
         },
         _ => {
@@ -79,7 +59,7 @@ fn resolve_conflict(
             condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
             condition.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
             if db.is_data_exists(&condition, false)? {
-                encrypt(calling, db_data)?;
+                encrypt_secret(calling, db_data)?;
                 db.replace_datas(&condition, false, db_data)
             } else {
                 log_throw_error!(ErrCode::Duplicated, "[FATAL][SA]The specified alias already exists.")
@@ -192,14 +172,17 @@ fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     add_default_attrs(&mut db_data);
 
     let query = get_query_condition(calling_info, attributes)?;
-    let mut db = Database::build(calling_info.user_id())?;
+
+    let mut db = create_db_instance(attributes, calling_info)?;
+
     if db.is_data_exists(&query, false)? {
-        resolve_conflict(calling_info, &mut db, attributes, &query, &mut db_data)
+        resolve_conflict(calling_info, &mut db, attributes, &query, &mut db_data)?;
     } else {
-        encrypt(calling_info, &mut db_data)?;
+        encrypt_secret(calling_info, &mut db_data)?;
         let _ = db.insert_datas(&db_data)?;
-        Ok(())
     }
+
+    Ok(())
 }
 
 pub(crate) fn add(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<()> {

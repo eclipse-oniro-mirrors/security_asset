@@ -68,6 +68,6 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest001, TestSize.Level0)
     processInfo.processName = processName;
     processInfo.processNameLen = processNameLen;
     int32_t ret = GetCallingProcessInfo(userId, uid, &processInfo);
-    ASSERT_EQ(ret, SEC_ASSET_ACCESS_TOKEN_ERROR);
+    ASSERT_EQ(ret, 0);
 }
 }

@@ -20,7 +20,7 @@ use std::cmp::Ordering;
 use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager};
 use asset_db_operator::{
-    database::Database,
+    database::{create_db_instance, Database},
     types::{column, DbMap, QueryOptions, DB_DATA_VERSION},
 };
 use asset_definition::{
@@ -59,7 +59,7 @@ fn upgrade_version(db: &mut Database, calling_info: &CallingInfo, db_data: &mut 
     Ok(())
 }
 
-fn decrypt(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
+fn decrypt_secret(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
     let secret_key = common::build_secret_key(calling_info, db_data)?;
     let secret = Crypto::decrypt(&secret_key, secret, &common::build_aad(db_data)?)?;
@@ -86,7 +86,7 @@ fn exec_crypto(calling_info: &CallingInfo, query: &AssetMap, db_data: &mut DbMap
 }
 
 fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) -> Result<Vec<AssetMap>> {
-    let mut db = Database::build(calling_info.user_id())?;
+    let mut db = create_db_instance(query, calling_info)?;
     let mut results = db.query_datas(&vec![], db_data, None, true)?;
     match results.len() {
         0 => throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist."),
@@ -95,7 +95,7 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
                 Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
                     exec_crypto(calling_info, query, &mut results[0])?;
                 },
-                _ => decrypt(calling_info, &mut results[0])?,
+                _ => decrypt_secret(calling_info, &mut results[0])?,
             };
             if common::need_upgrade(&results[0])? {
                 upgrade_version(&mut db, calling_info, &mut results[0])?;
@@ -140,12 +140,8 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
 }
 
 pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
-    let mut results = Database::build(calling_info.user_id())?.query_datas(
-        &vec![],
-        db_data,
-        Some(&get_query_options(attrs)),
-        true,
-    )?;
+    let mut db = create_db_instance(attrs, calling_info)?;
+    let mut results = db.query_datas(&vec![], db_data, Some(&get_query_options(attrs)), true)?;
     if results.is_empty() {
         return throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
     }

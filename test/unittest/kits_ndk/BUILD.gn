@@ -22,18 +22,19 @@ ohos_unittest("asset_ndk_test") {
   part_name = "asset"
   include_dirs = [
     "inc",
-    "../../../interfaces/inner_api/c/inc",
+    "../../../interfaces/inner_kits/c/inc",
     "../../../interfaces/kits/c/inc",
     "../common/inc",
   ]
   sources = [
     "src/asset_add_test.cpp",
+    "src/asset_auth_query_test.cpp",
     "src/asset_query_test.cpp",
     "src/asset_remove_test.cpp",
     "src/asset_update_test.cpp",
   ]
   deps = [
-    "../../../interfaces/inner_api/c:asset_sdk",
+    "../../../frameworks/c/system_api:asset_sdk",
     "../../../interfaces/kits/c:asset_ndk",
     "../common:asset_test_common",
   ]

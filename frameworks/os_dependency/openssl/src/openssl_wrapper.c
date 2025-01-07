@@ -15,6 +15,7 @@
 
 #include "openssl_wrapper.h"
 
+#include <openssl/rand.h>
 #include <openssl/sha.h>
 #include <stdlib.h>
 #include <string.h>
@@ -32,4 +33,13 @@ void Sha256(const uint8_t *input, uint32_t intputLen, uint8_t *output)
     }
 
     (void)SHA256((const unsigned char *)input, intputLen, (unsigned char *)output);
+}
+
+int32_t GenerateRandom(uint8_t *random, uint32_t randomLen)
+{
+    if (RAND_priv_bytes(random, randomLen) < 0) {
+        LOGE("Generate random failed!");
+        return -1;
+    }
+    return 0;
 }

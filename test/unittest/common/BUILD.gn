@@ -18,13 +18,13 @@ ohos_static_library("asset_test_common") {
   sources = [ "src/asset_test_common.cpp" ]
   include_dirs = [
     "inc",
-    "../../../interfaces/inner_api/c/inc",
+    "../../../interfaces/inner_kits/c/inc",
     "../../../interfaces/kits/c/inc",
   ]
   subsystem_name = "security"
   part_name = "asset"
   deps = [
-    "../../../interfaces/inner_api/c:asset_sdk",
+    "../../../frameworks/c/system_api:asset_sdk",
     "../../../interfaces/kits/c:asset_ndk",
   ]
 }

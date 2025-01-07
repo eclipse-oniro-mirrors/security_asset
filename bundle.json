@@ -56,22 +56,22 @@
                     "//base/security/asset:asset_component"
                 ]
             },
-            "inner_api": [
+            "inner_kits": [
                 {
-                    "name": "//base/security/asset/interfaces/inner_api/rs:asset_sdk_rust",
+                    "name": "//base/security/asset/interfaces/inner_kits/rs:asset_sdk_rust",
                     "header": {
                         "header_files": [],
                         "header_base": []
                     }
                 },
                 {
-                    "name": "//base/security/asset/interfaces/inner_api/c:asset_sdk",
+                    "name": "//base/security/asset/frameworks/c/system_api:asset_sdk",
                     "header": {
                         "header_files": [
                             "asset_system_api.h",
                             "asset_system_type.h"
                         ],
-                        "header_base": "//base/security/asset/interfaces/inner_api/c/inc"
+                        "header_base": "//base/security/asset/interfaces/inner_kits/c/inc"
                     }
                 }
             ],

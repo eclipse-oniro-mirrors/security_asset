@@ -29,7 +29,7 @@ pub struct SecretKey {
     access_type: Accessibility,
     require_password_set: bool,
     alias: Vec<u8>,
-    calling_info: CallingInfo,
+    user_id: i32,
 }
 
 enum KeyAliasVersion {
@@ -90,11 +90,11 @@ fn get_existing_key_alias(
     let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
     let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias.clone()].concat();
     let key = SecretKey {
+        user_id: calling_info.user_id(),
         auth_type,
         access_type,
         require_password_set,
         alias: prefixed_new_alias.clone(),
-        calling_info: calling_info.clone(),
     };
     if key.exists()? {
         logi!("[INFO][{access_type}]-typed secret key with v3 alias exists.");
@@ -102,11 +102,11 @@ fn get_existing_key_alias(
     }
 
     let key = SecretKey {
+        user_id: calling_info.user_id(),
         auth_type,
         access_type,
         require_password_set,
         alias: new_alias.clone(),
-        calling_info: calling_info.clone(),
     };
     if key.exists()? {
         logi!("[INFO][{access_type}]-typed secret key with v2 alias exists.");
@@ -115,11 +115,11 @@ fn get_existing_key_alias(
 
     let old_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, false);
     let key = SecretKey {
+        user_id: calling_info.user_id(),
         auth_type,
         access_type,
         require_password_set,
         alias: old_alias.clone(),
-        calling_info: calling_info.clone(),
     };
     if key.exists()? {
         logi!("[INFO][{access_type}]-typed secret key with v1 alias exists.");
@@ -185,8 +185,19 @@ pub fn rename_key_alias(
 }
 
 impl SecretKey {
-    /// New a secret key.
-    pub fn new(
+    /// New a secret key with the input key alias argument.
+    pub fn new_with_alias(
+        user_id: i32,
+        auth_type: AuthType,
+        access_type: Accessibility,
+        require_password_set: bool,
+        alias: Vec<u8>,
+    ) -> Result<Self> {
+        Ok(Self { user_id, auth_type, access_type, require_password_set, alias })
+    }
+
+    /// Calculate key alias and then new a secret key.
+    pub fn new_without_alias(
         calling_info: &CallingInfo,
         auth_type: AuthType,
         access_type: Accessibility,
@@ -195,11 +206,11 @@ impl SecretKey {
         let new_alias = calculate_key_alias(calling_info, auth_type, access_type, require_password_set, true);
         let prefixed_new_alias = [ALIAS_PREFIX.to_vec(), new_alias.clone()].concat();
         let key = Self {
+            user_id: calling_info.user_id(),
             auth_type,
             access_type,
             require_password_set,
             alias: prefixed_new_alias,
-            calling_info: calling_info.clone(),
         };
         Ok(key)
     }
@@ -207,7 +218,7 @@ impl SecretKey {
     /// Check whether the secret key exists.
     pub fn exists(&self) -> Result<bool> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
-        let key_id = KeyId::new(self.calling_info().user_id(), key_alias, self.access_type);
+        let key_id = KeyId::new(self.user_id, key_alias, self.access_type);
         let ret = unsafe { IsKeyExist(&key_id as *const KeyId) };
         match ret {
             SUCCESS => Ok(true),
@@ -219,7 +230,7 @@ impl SecretKey {
     /// Generate the secret key and store in HUKS.
     pub fn generate(&self) -> Result<()> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
-        let key_id = KeyId::new(self.calling_info().user_id(), key_alias, self.access_type);
+        let key_id = KeyId::new(self.user_id, key_alias, self.access_type);
         let ret = unsafe { GenerateKey(&key_id as *const KeyId, self.need_user_auth(), self.require_password_set) };
         match ret {
             SUCCESS => Ok(()),
@@ -230,7 +241,7 @@ impl SecretKey {
     /// Delete the secret key.
     pub fn delete(&self) -> Result<()> {
         let key_alias = HksBlob { size: self.alias.len() as u32, data: self.alias.as_ptr() };
-        let key_id = KeyId::new(self.calling_info().user_id(), key_alias, self.access_type);
+        let key_id = KeyId::new(self.user_id, key_alias, self.access_type);
         let ret = unsafe { DeleteKey(&key_id as *const KeyId) };
         match ret {
             ret if ((ret == ErrCode::NotFound as i32) || ret == SUCCESS) => Ok(()),
@@ -244,22 +255,23 @@ impl SecretKey {
         let accessibilitys =
             [Accessibility::DevicePowerOn, Accessibility::DeviceFirstUnlocked, Accessibility::DeviceUnlocked];
         for accessibility in accessibilitys.into_iter() {
-            let secret_key = SecretKey::new(calling_info, AuthType::None, accessibility, true)?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::None, accessibility, true)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new(calling_info, AuthType::Any, accessibility, true)?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, accessibility, true)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new(calling_info, AuthType::None, accessibility, false)?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::None, accessibility, false)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new(calling_info, AuthType::Any, accessibility, false)?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, accessibility, false)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
         }
+
         res
     }
 
@@ -283,8 +295,8 @@ impl SecretKey {
         self.access_type
     }
 
-    /// Get the key calling info
-    pub(crate) fn calling_info(&self) -> &CallingInfo {
-        &self.calling_info
+    /// Get the key user id.
+    pub(crate) fn user_id(&self) -> i32 {
+        self.user_id
     }
 }

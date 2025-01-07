@@ -17,14 +17,18 @@
 //! Databases are isolated based on users and protected by locks.
 
 use core::ffi::c_void;
-use std::{ffi::CStr, fs, ptr::null_mut, sync::Mutex};
+use std::{collections::HashMap, ffi::CStr, fs, ptr::null_mut, sync::Mutex};
 
 use asset_common::{CallingInfo, OwnerType};
-use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
 use asset_crypto_manager::secret_key::rename_key_alias;
+use asset_db_key_operator::DbKey;
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, Result, Tag, Value};
+use asset_file_operator::{ce_operator::remove_ce_files, common::is_file_exist};
 use asset_log::{loge, logi};
+use lazy_static::lazy_static;
 
 use crate::{
+    database_file_upgrade::{check_and_split_db, construct_splited_db_name},
     statement::Statement,
     table::Table,
     types::{
@@ -40,31 +44,50 @@ extern "C" {
     fn SqliteExec(db: *mut c_void, sql: *const u8, msg: *mut *mut u8) -> i32;
     fn SqliteFree(data: *mut c_void);
     fn SqliteErrMsg(db: *mut c_void) -> *const u8;
+    fn SqliteKey(db: *mut c_void, pKey: *const c_void, nKey: i32) -> i32;
 }
 
 /// each user have a Database file
 pub(crate) struct UserDbLock {
-    pub(crate) user_id: i32,
     pub(crate) mtx: Mutex<i32>,
 }
 
-static USER_DB_LOCK_LIST: Mutex<Vec<&'static UserDbLock>> = Mutex::new(Vec::new());
+pub(crate) static OLD_DB_NAME: &str = "asset";
+
+lazy_static! {
+    static ref SPLIT_DB_LOCK_MAP: Mutex<HashMap<i32, &'static UserDbLock>> = Mutex::new(HashMap::new());
+    static ref USER_DB_LOCK_MAP: Mutex<HashMap<(i32, String), &'static UserDbLock>> = Mutex::new(HashMap::new());
+}
+
+pub(crate) fn get_split_db_lock_by_user_id(user_id: i32) -> &'static UserDbLock {
+    let mut map = SPLIT_DB_LOCK_MAP.lock().unwrap();
+    if let Some(&lock) = map.get(&user_id) {
+        return lock;
+    }
+
+    let nf = Box::new(UserDbLock { mtx: Mutex::new(user_id) });
+    // SAFETY: We just push item into SPLIT_DB_LOCK_MAP, never remove item or modify item,
+    // so return a reference of leak item is safe.
+    let nf: &'static UserDbLock = Box::leak(nf);
+    map.insert(user_id, nf);
+    nf
+}
 
 /// If the user exists, the reference to the lock is returned.
 /// Otherwise, a new lock is created and its reference is returned.
-fn get_file_lock_by_user_id(user_id: i32) -> &'static UserDbLock {
-    let mut list = USER_DB_LOCK_LIST.lock().unwrap();
-    for f in list.iter() {
-        if f.user_id == user_id {
-            return f;
-        }
+pub(crate) fn get_file_lock_by_user_id_db_file_name(user_id: i32, db_file_name: String) -> &'static UserDbLock {
+    let mut map = USER_DB_LOCK_MAP.lock().unwrap();
+
+    if let Some(&lock) = map.get(&(user_id, db_file_name.clone())) {
+        return lock;
     }
-    let nf = Box::new(UserDbLock { user_id, mtx: Mutex::new(user_id) });
-    // SAFETY: We just push item into USER_DB_LOCK_LIST, never remove item or modify item,
+
+    let nf = Box::new(UserDbLock { mtx: Mutex::new(user_id) });
+    // SAFETY: We just push item into USER_DB_LOCK_MAP, never remove item or modify item,
     // so return a reference of leak item is safe.
     let nf: &'static UserDbLock = Box::leak(nf);
-    list.push(nf);
-    list[list.len() - 1]
+    map.insert((user_id, db_file_name), nf);
+    nf
 }
 
 /// Struct used to store database files and connection information.
@@ -74,23 +97,21 @@ pub struct Database {
     pub(crate) backup_path: String,
     pub(crate) handle: usize, // Pointer to the database connection.
     pub(crate) db_lock: &'static UserDbLock,
+    pub(crate) db_name: String,
 }
 
 /// Callback for database upgrade.
 pub type UpgradeDbCallback = fn(db: &Database, old_ver: u32, new_ver: u32) -> Result<()>;
 
 #[cfg(not(test))]
-const ROOT_PATH: &str = "/data/service/el1/public/asset_service";
+pub(crate) const DE_ROOT_PATH: &str = "/data/service/el1/public/asset_service";
 #[cfg(test)]
-const ROOT_PATH: &str = "/data/asset_test";
+pub(crate) const DE_ROOT_PATH: &str = "/data/asset_test";
+
+pub(crate) const CE_ROOT_PATH: &str = "/data/service/el2";
 
 #[inline(always)]
-fn fmt_db_path(user_id: i32) -> String {
-    format!("{}/{}/asset.db", ROOT_PATH, user_id)
-}
-
-#[inline(always)]
-fn fmt_backup_path(path: &str) -> String {
+pub(crate) fn fmt_backup_path(path: &str) -> String {
     let mut bp = path.to_string();
     bp.push_str(".backup");
     bp
@@ -98,33 +119,122 @@ fn fmt_backup_path(path: &str) -> String {
 
 /// Get asset storage path.
 pub fn get_path() -> String {
-    ROOT_PATH.to_string()
+    DE_ROOT_PATH.to_string()
+}
+
+#[inline(always)]
+pub(crate) fn fmt_ce_db_path_with_name(user_id: i32, db_name: &str) -> String {
+    format!("data/service/el2/{}/asset_service/{}.db", user_id, db_name)
+}
+
+#[inline(always)]
+pub(crate) fn fmt_de_db_path_with_name(user_id: i32, db_name: &str) -> String {
+    format!("{}/{}/{}.db", DE_ROOT_PATH, user_id, db_name)
+}
+
+fn check_validity_of_db_key(path: &str, user_id: i32) -> Result<()> {
+    if is_file_exist(path)? && !DbKey::check_existance(user_id)? {
+        loge!("[FATAL]There is database bot no database key. Now all data should be cleared and restart over.");
+        remove_ce_files(user_id)?;
+        return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
+    }
+    Ok(())
+}
+
+pub(crate) fn get_db(user_id: i32, db_name: &str, upgrade_db_version: u32, db_key: Option<&DbKey>) -> Result<Database> {
+    let path = if db_key.is_some() {
+        fmt_ce_db_path_with_name(user_id, db_name)
+    } else {
+        fmt_de_db_path_with_name(user_id, db_name)
+    };
+    let backup_path = fmt_backup_path(path.as_str());
+    let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
+    let mut db = Database { path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string() };
+    let _lock = db.db_lock.mtx.lock().unwrap();
+    db.open_and_restore(db_key)?;
+    db.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, upgrade_db_version))?;
+    db.upgrade(user_id, upgrade_db_version, |_, _, _| Ok(()))?;
+    Ok(db)
+}
+
+pub(crate) fn get_normal_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
+    let path =
+        if is_ce { fmt_ce_db_path_with_name(user_id, db_name) } else { fmt_de_db_path_with_name(user_id, db_name) };
+    let db_key = if is_ce {
+        check_validity_of_db_key(&path, user_id)?;
+        match DbKey::get_db_key(user_id) {
+            Ok(res) => Some(res),
+            Err(e) if e.code == ErrCode::NotFound || e.code == ErrCode::DataCorrupted => {
+                loge!(
+                    "[FATAL]The key is corrupted. Now all data should be cleared and restart over, err is {}.",
+                    e.code
+                );
+                remove_ce_files(user_id)?;
+                return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
+            },
+            Err(e) => return Err(e),
+        }
+    } else {
+        None
+    };
+    get_db(user_id, db_name, DB_UPGRADE_VERSION, db_key.as_ref())
+}
+
+/// Create de db instance if the value of tag "RequireAttrEncrypted" is not specified or set to false.
+/// Create ce db instance if true.
+pub fn create_db_instance(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<Database> {
+    match attributes.get(&Tag::RequireAttrEncrypted) {
+        Some(Value::Bool(true)) => {
+            let db = Database::build(
+                calling_info.user_id(),
+                calling_info.owner_type_enum(),
+                calling_info.owner_info(),
+                true,
+            )?;
+            Ok(db)
+        },
+        _ => {
+            let db = Database::build(
+                calling_info.user_id(),
+                calling_info.owner_type_enum(),
+                calling_info.owner_info(),
+                false,
+            )?;
+            Ok(db)
+        },
+    }
 }
 
 impl Database {
     /// Create a database.
-    pub fn build(user_id: i32) -> Result<Database> {
-        let path = fmt_db_path(user_id);
-        let backup_path = fmt_backup_path(path.as_str());
-        let lock = get_file_lock_by_user_id(user_id);
-        let mut db = Database { path, backup_path, handle: 0, db_lock: lock };
-        let _lock = db.db_lock.mtx.lock().unwrap();
-        db.open_and_restore()?;
-        db.restore_if_exec_fail(|e: &Table| e.create(COLUMN_INFO))?;
-        db.upgrade(user_id, DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
-        Ok(db)
+    pub fn build(user_id: i32, owner_type: OwnerType, owner_info: &[u8], is_ce: bool) -> Result<Database> {
+        if !is_ce {
+            // DE database needs trigger the upgrade action.
+            check_and_split_db(user_id)?;
+        }
+        get_normal_db(user_id, &construct_splited_db_name(owner_type, owner_info, is_ce)?, is_ce)
     }
 
-    /// check is db ok
-    pub fn check_db_accessible(path: String, user_id: i32) -> Result<()> {
-        let lock = get_file_lock_by_user_id(user_id);
-        let mut db = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock };
-        db.open()?;
+    /// Create a database from a file name.
+    pub fn build_with_file_name(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
+        check_and_split_db(user_id)?;
+        get_normal_db(user_id, db_name, is_ce)
+    }
+
+    /// Check whether db is ok
+    pub fn check_db_accessible(path: String, user_id: i32, db_name: String, db_key: Option<&DbKey>) -> Result<()> {
+        let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.clone());
+        let mut db = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock, db_name };
+        if db_key.is_some() {
+            db.open_and_restore(db_key)?
+        } else {
+            db.open()?;
+        }
         let table = Table::new(TABLE_NAME, &db);
         table.create(COLUMN_INFO)
     }
 
-    // Open database connection.
+    /// Open database connection.
     pub(crate) fn open(&mut self) -> Result<()> {
         let mut path_c = self.path.clone();
         path_c.push('\0');
@@ -139,13 +249,21 @@ impl Database {
     }
 
     /// Open the database connection and restore the database if the connection fails.
-    fn open_and_restore(&mut self) -> Result<()> {
+    pub(crate) fn open_and_restore(&mut self, db_key: Option<&DbKey>) -> Result<()> {
         let result = self.open();
+        if let Some(db_key) = db_key {
+            self.set_db_key(db_key)?;
+        }
         let result = match result {
             Err(ret) if ret.code == ErrCode::DataCorrupted => self.restore(),
             ret => ret,
         };
         result
+    }
+
+    /// Get db name.
+    pub(crate) fn get_db_name(&mut self) -> &str {
+        &self.db_name
     }
 
     /// Close database connection.
@@ -160,6 +278,17 @@ impl Database {
     pub(crate) fn close_db(&mut self) {
         let _lock = self.db_lock.mtx.lock().unwrap();
         self.close()
+    }
+
+    /// Encrypt/Decrypt CE database.
+    pub fn set_db_key(&mut self, p_key: &DbKey) -> Result<()> {
+        let ret =
+            unsafe { SqliteKey(self.handle as _, p_key.db_key.as_ptr() as *const c_void, p_key.db_key.len() as i32) };
+        if ret == SQLITE_OK {
+            Ok(())
+        } else {
+            log_throw_error!(sqlite_err_handle(ret), "[FATAL][DB]Set database key failed, err={}", ret)
+        }
     }
 
     // Recovery the corrupt database and reopen it.
@@ -258,8 +387,8 @@ impl Database {
 
     /// Delete database file.
     #[allow(dead_code)]
-    pub(crate) fn delete(user_id: i32) -> Result<()> {
-        let path = fmt_db_path(user_id);
+    pub(crate) fn delete(user_id: i32, db_name: &str) -> Result<()> {
+        let path = fmt_de_db_path_with_name(user_id, db_name);
         let backup_path = fmt_backup_path(&path);
         if let Err(e) = fs::remove_file(path) {
             return log_throw_error!(ErrCode::FileOperationError, "[FATAL][DB]Delete database failed, err={}", e);
@@ -398,11 +527,7 @@ impl Database {
     /// Delete datas from database with specific condition.
     /// If the operation is successful, the number of deleted data is returned.
     #[inline(always)]
-    pub fn delete_specific_condition_datas(
-        &mut self,
-        specific_cond: &str,
-        condition_value: &[Value],
-    ) -> Result<i32> {
+    pub fn delete_specific_condition_datas(&mut self, specific_cond: &str, condition_value: &[Value]) -> Result<i32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.delete_with_specific_cond(specific_cond, condition_value);
         self.restore_if_exec_fail(closure)
@@ -512,6 +637,13 @@ impl Database {
         is_filter_sync: bool,
     ) -> Result<Vec<DbMap>> {
         let closure = |e: &Table| e.query_row(columns, condition, query_options, is_filter_sync, COLUMN_INFO);
+        self.restore_if_exec_fail(closure)
+    }
+
+    /// query how many data fit the query condition
+    pub fn query_data_count(&mut self, condition: &DbMap) -> Result<u32> {
+        let _lock = self.db_lock.mtx.lock().unwrap();
+        let closure = |e: &Table| e.count_datas(condition, false);
         self.restore_if_exec_fail(closure)
     }
 

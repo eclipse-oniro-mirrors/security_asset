@@ -24,10 +24,11 @@ samgr = { git = "https://gitee.com/openharmony/systemabilitymgr_samgr.git" }
 system_ability_fwk = { git = "https://gitee.com/openharmony/systemabilitymgr_safwk" }
 hisysevent = { git = "https://gitee.com/openharmony/hiviewdfx_hisysevent.git" }
 ipc = { git = "https://gitee.com/openharmony/communication_ipc" }
-ylong_runtime = { git = "https://gitee.com/openharmony/commonlibrary_rust_ylong_runtime.git", features = ["full"]}
+ylong_runtime = { git = "https://gitee.com/openharmony/commonlibrary_rust_ylong_runtime.git", features = ["full"] }
 
 asset_common = { path = "../common" }
 asset_crypto_manager = { path = "../crypto_manager" }
+asset_db_key_operator = { path = "../db_key_operator" }
 asset_db_operator = { path = "../db_operator" }
 asset_definition = { path = "../../frameworks/definition" }
 asset_file_operator = { path = "../../frameworks/os_dependency/file" }
@@ -35,4 +36,5 @@ asset_utils = { path = "../../frameworks/utils" }
 asset_ipc = { path = "../../frameworks/ipc" }
 asset_log = { path = "../../frameworks/os_dependency/log" }
 asset_plugin = { path = "../plugin" }
-asset_sdk = { path = "../../interfaces/inner_api/rs" }
+asset_sdk = { path = "../../interfaces/inner_kits/rs" }
+lazy_static = "1.0.0"
