@@ -143,6 +143,7 @@ async fn upgrade_process() -> Result<()> {
     for entry in fs::read_dir(DE_ROOT_PATH)? {
         let entry = entry?;
         if let Ok(user_id) = entry.file_name().to_string_lossy().parse::<i32>() {
+            logi!("[INFO]start to check and split db in upgrade process.");
             check_and_split_db(user_id)?;
         }
     }
