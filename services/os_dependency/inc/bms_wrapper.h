@@ -23,6 +23,8 @@
 extern "C" {
 #endif
 
+#define ARRAY_SIZE(arr) ((sizeof(arr)) / (sizeof((arr)[0])))
+
 enum OwnerType {
     HAP = 0,
     NATIVE = 1,

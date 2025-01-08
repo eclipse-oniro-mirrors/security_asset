@@ -38,6 +38,16 @@ using namespace Security::AccessToken;
 namespace {
 constexpr int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
 
+const char * const UPGRADE_HAP_LIST[] = ASSET_UPGRADE_HAP_CONFIG;
+
+bool AssetMemCmp(const void *ptr1, const void *ptr2, uint32_t size1, uint32_t size2)
+{
+    if (size1 != size2) {
+        return false;
+    }
+    return memcmp(ptr1, ptr2, size1) == EOK;
+}
+
 sptr<IBundleMgr> GetBundleMgr()
 {
     auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
@@ -132,6 +142,20 @@ int32_t GetAppProvisionInfo(sptr<IBundleMgr> bundleMgr, uint32_t userId, Process
     return ASSET_SUCCESS;
 }
 
+void ModifyAppindex(ProcessInfo *processInfo)
+{
+    for (uint32_t i = 0; i < ARRAY_SIZE(UPGRADE_HAP_LIST); ++i) {
+        if (AssetMemCmp(UPGRADE_HAP_LIST[i],
+            processInfo->hapInfo.appId.data,
+            strlen(UPGRADE_HAP_LIST[i]),
+            processInfo->hapInfo.appId.size)) {
+            LOGI("[INFO]app: %{public}s appIndex changed to 0", UPGRADE_HAP_LIST[i]);
+            processInfo->hapInfo.appIndex = 0;
+            return;
+        }
+    }
+}
+
 int32_t GetHapProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInfo)
 {
     auto bundleMgr = GetBundleMgr();
@@ -150,6 +174,8 @@ int32_t GetHapProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInf
     if (ret != ASSET_SUCCESS) {
         return ret;
     }
+
+    ModifyAppindex(processInfo);
 
     return GetAppProvisionInfo(bundleMgr, userId, processInfo);
 }

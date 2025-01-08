@@ -19,7 +19,10 @@
         "syscap": [
             "SystemCapability.Security.Asset"
         ],
-        "features": [ "asset_access_control_enabled" ],
+        "features": [
+            "asset_access_control_enabled",
+            "asset_upgrade_hap_list"
+        ],
         "adapted_system_type": [
             "standard"
         ],
