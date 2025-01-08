@@ -14,6 +14,8 @@
  */
 
 #include "bms_wrapper.h"
+#include "bundle_mgr_interface.h"
+#include "iservice_registry.h"
 
 #include <cstring>
 #include "securec.h"
@@ -31,38 +33,62 @@ using namespace AppExecFwk;
 using namespace Security::AccessToken;
 
 namespace {
-int32_t GetHapProcessInfo(int32_t userId, uint32_t tokenId, ProcessInfo *processInfo)
+constexpr int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
+
+sptr<IBundleMgr> GetBundleMgr()
 {
-    HapTokenInfo hapTokenInfo;
-    int32_t ret = AccessTokenKit::GetHapTokenInfo(tokenId, hapTokenInfo);
-    if (ret != RET_SUCCESS) {
-        LOGE("[FATAL]Get hap token info failed, ret = %{public}d", ret);
-        return ASSET_ACCESS_TOKEN_ERROR;
+    auto systemAbilityManager = SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
+    if (systemAbilityManager == nullptr) {
+        LOGE("[FATAL]systemAbilityManager is nullptr, please check.");
+        return nullptr;
     }
-    if (memcpy_s(processInfo->processName, processInfo->processNameLen, hapTokenInfo.bundleName.c_str(),
-        hapTokenInfo.bundleName.size()) != EOK) {
+    auto bundleMgrRemoteObj = systemAbilityManager->GetSystemAbility(BUNDLE_MGR_SERVICE_SYS_ABILITY_ID);
+    if (bundleMgrRemoteObj == nullptr) {
+        LOGE("[FATAL]bundleMgrRemoteObj is nullptr, please check.");
+        return nullptr;
+    }
+    return iface_cast<IBundleMgr>(bundleMgrRemoteObj);
+}
+
+int32_t GetHapProcessInfo(int32_t userId, uint64_t uid, ProcessInfo *processInfo)
+{
+    auto bundleMgr = GetBundleMgr();
+    if (bundleMgr == nullptr) {
+        LOGE("[FATAL]bundleMgr is nullptr, please check.");
+        return ASSET_BMS_ERROR;
+    }
+    int32_t appIndex = 0;
+    std::string bundleName;
+    int32_t ret = bundleMgr->GetNameAndIndexForUid(uid, bundleName, appIndex);
+    if (ret != RET_SUCCESS) {
+        LOGE("[FATAL]GetNameAndIndexForUid get bundleName and appIndex failed. ret:%{public}d", ret);
+        return ASSET_BMS_ERROR;
+    }
+    processInfo->hapInfo.appIndex = appIndex;
+
+    if (memcpy_s(processInfo->processName, processInfo->processNameLen, bundleName.c_str(),
+        bundleName.size()) != EOK) {
         LOGE("[FATAL]The processName buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
-            hapTokenInfo.bundleName.size(), processInfo->processNameLen);
+            bundleName.size(), processInfo->processNameLen);
         return ASSET_OUT_OF_MEMORY;
     }
-    processInfo->processNameLen = hapTokenInfo.bundleName.size();
+    processInfo->processNameLen = bundleName.size();
 
     AppExecFwk::BundleMgrClient bmsClient;
     AppExecFwk::BundleInfo bundleInfo;
-    if (!bmsClient.GetBundleInfo(hapTokenInfo.bundleName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
+    if (!bmsClient.GetBundleInfo(bundleName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE,
         bundleInfo, userId)) {
         LOGE("[FATAL]Get bundle info failed!");
         return ASSET_BMS_ERROR;
     }
-    processInfo->hapInfo.appIndex = bundleInfo.appIndex;
 
-    if (memcpy_s(processInfo->hapInfo.appId, processInfo->hapInfo.appIdLen, hapTokenInfo.appID.c_str(),
-        hapTokenInfo.appID.size()) != EOK) {
+    if (memcpy_s(processInfo->hapInfo.appId, processInfo->hapInfo.appIdLen, bundleInfo.appId.c_str(),
+        bundleInfo.appId.size()) != EOK) {
         LOGE("[FATAL]The app id buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
-            hapTokenInfo.appID.size(), processInfo->hapInfo.appIdLen);
+            bundleInfo.appId.size(), processInfo->hapInfo.appIdLen);
         return ASSET_OUT_OF_MEMORY;
     }
-    processInfo->hapInfo.appIdLen = hapTokenInfo.appID.size();
+    processInfo->hapInfo.appIdLen = bundleInfo.appId.size();
 
     return ASSET_SUCCESS;
 }
@@ -97,7 +123,7 @@ int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *proces
     switch (tokenType) {
         case ATokenTypeEnum::TOKEN_HAP:
             processInfo->ownerType = HAP;
-            res = GetHapProcessInfo(userId, tokenId, processInfo);
+            res = GetHapProcessInfo(userId, uid, processInfo);
             break;
         case ATokenTypeEnum::TOKEN_NATIVE:
         case ATokenTypeEnum::TOKEN_SHELL:

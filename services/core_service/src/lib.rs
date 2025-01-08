@@ -15,9 +15,12 @@
 
 //! This module implements the Asset service.
 
-use std::{fs, time::{Duration, Instant}};
+use std::{
+    fs,
+    time::{Duration, Instant},
+};
 
-use asset_db_operator::database_file_upgrade::trigger_db_upgrade;
+use asset_db_operator::database_file_upgrade::check_and_split_db;
 use samgr::manage::SystemAbilityManager;
 use system_ability_fwk::{
     ability::{Ability, Handler},
@@ -25,9 +28,10 @@ use system_ability_fwk::{
 };
 use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
 
-use asset_common::{AutoCounter, CallingInfo, Counter};
+use asset_common::{AutoCounter, CallingInfo, Counter, OwnerType};
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
+use asset_file_operator::{common::DE_ROOT_PATH, de_operator::create_user_de_dir};
 use asset_ipc::SA_ID;
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::{AssetContext, AssetPlugin};
@@ -67,13 +71,11 @@ impl Ability for AssetAbility {
 
         let _ = upload_system_event(start_service(handler), &calling_info, start, func_name);
         common_event::handle_common_event(reason);
-        unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
     }
 
     fn on_active(&self, reason: SystemAbilityOnDemandReason) {
         logi!("[INFO]Asset service on_active.");
         common_event::handle_common_event(reason);
-        unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
     }
 
     fn on_idle(&self, _reason: SystemAbilityOnDemandReason) -> i32 {
@@ -103,14 +105,12 @@ impl Ability for AssetAbility {
     }
 }
 
-const ROOT_PATH: &str = "data/service/el1/public/asset_service";
-
 async fn upgrade_process() -> Result<()> {
     let _counter_user = AutoCounter::new();
-    for entry in fs::read_dir(ROOT_PATH)? {
+    for entry in fs::read_dir(DE_ROOT_PATH)? {
         let entry = entry?;
         if let Ok(user_id) = entry.file_name().to_string_lossy().parse::<i32>() {
-            trigger_db_upgrade(user_id)?;
+            check_and_split_db(user_id)?;
         }
     }
     Ok(())
@@ -120,7 +120,8 @@ fn start_service(handler: Handler) -> Result<()> {
     let asset_plugin = AssetPlugin::get_instance();
     match asset_plugin.load_plugin() {
         Ok(loader) => {
-            let _tr = loader.init(Box::new(AssetContext { data_base: None }));
+            let _tr = loader
+                .init(Box::new(AssetContext { user_id: 0, calling_info: CallingInfo::new(0, OwnerType::Hap, vec![]) }));
             logi!("load plugin success.");
         },
         Err(_) => loge!("load plugin failed."),
@@ -157,8 +158,8 @@ macro_rules! execute {
         let func_name = hisysevent::function!();
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
-        // Create database directory if not exists.
-        asset_file_operator::create_user_db_dir($calling_info.user_id())?;
+        // Create de database directory if not exists.
+        create_user_de_dir($calling_info.user_id())?;
         upload_system_event($func($calling_info, $($args),+), $calling_info, start, func_name)
     }};
 }

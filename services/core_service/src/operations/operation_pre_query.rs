@@ -18,7 +18,7 @@
 use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager, secret_key::SecretKey};
 use asset_db_operator::{
-    database::Database,
+    database::create_db_instance,
     types::{column, DbMap},
 };
 use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
@@ -47,13 +47,9 @@ fn check_arguments(attributes: &AssetMap) -> Result<()> {
     }
 }
 
-fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap) -> Result<(Accessibility, bool)> {
-    let results = Database::build(calling_info.user_id())?.query_datas(
-        &vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET],
-        db_data,
-        None,
-        true,
-    )?;
+fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<(Accessibility, bool)> {
+    let mut db = create_db_instance(attrs, calling_info)?;
+    let results = db.query_datas(&vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET], db_data, None, true)?;
     match results.len() {
         0 => log_throw_error!(ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found."),
         1 => {
@@ -75,13 +71,13 @@ pub(crate) fn pre_query(calling_info: &CallingInfo, query: &AssetMap) -> Result<
     common::add_owner_info(calling_info, &mut db_data);
     db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::Any as u32));
 
-    let (access_type, require_password_set) = query_key_attrs(calling_info, &db_data)?;
+    let (access_type, require_password_set) = query_key_attrs(calling_info, &db_data, query)?;
     let valid_time = match query.get(&Tag::AuthValidityPeriod) {
         Some(Value::Number(num)) => *num,
         _ => DEFAULT_AUTH_VALIDITY_IN_SECS,
     };
-    let secret_key = SecretKey::new(calling_info, AuthType::Any, access_type, require_password_set)?;
-    let mut crypto = Crypto::build(secret_key, valid_time)?;
+    let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, access_type, require_password_set)?;
+    let mut crypto = Crypto::build(secret_key, calling_info.clone(), valid_time)?;
     let challenge = crypto.init_key()?.to_vec();
     let crypto_manager = CryptoManager::get_instance();
     crypto_manager.lock().unwrap().add(crypto)?;

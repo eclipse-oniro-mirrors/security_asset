@@ -15,6 +15,7 @@
 
 use std::fs;
 
+use asset_common::CallingInfo;
 use asset_definition::{DataType, Extension, Value};
 
 use crate::{
@@ -31,7 +32,10 @@ fn create_delete_table() {
         ColumnInfo { name: "id", is_primary_key: true, not_null: true, data_type: DataType::Number },
         ColumnInfo { name: "alias", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
     ];
-    let mut db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let mut db =
+        Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
+            .unwrap();
     let table = Table::new("table_name", &db);
     assert!(!table.exist().unwrap());
     assert!(table.create(columns).is_ok());
@@ -44,18 +48,29 @@ fn create_delete_table() {
 #[test]
 fn table_restore() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
-    let mut db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let mut db =
+        Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
+            .unwrap();
     let table = Table::new("table_name", &db);
     table
         .create(&[ColumnInfo { name: "Id", data_type: DataType::Number, is_primary_key: true, not_null: true }])
         .unwrap();
     let count = table.insert_row(&DbMap::from([("Id", Value::Number(1))])).unwrap();
     assert_eq!(count, 1);
-    fs::copy("/data/asset_test/0/asset.db", "/data/asset_test/0/asset.db.backup").unwrap();
+    fs::copy(
+        "/data/asset_test/0/Native_asset_service_8100.db",
+        "/data/asset_test/0/Native_asset_service_8100.db.backup",
+    )
+    .unwrap();
     db.close_db();
 
-    fs::remove_file("/data/asset_test/0/asset.db").unwrap();
-    fs::copy("/data/asset_test/0/asset.db.backup", "/data/asset_test/0/asset.db").unwrap();
+    fs::remove_file("/data/asset_test/0/Native_asset_service_8100.db").unwrap();
+    fs::copy(
+        "/data/asset_test/0/Native_asset_service_8100.db.backup",
+        "/data/asset_test/0/Native_asset_service_8100.db",
+    )
+    .unwrap();
     db.open().unwrap();
     let table = Table::new("table_name", &db);
     let count = table.count_datas(&DbMap::new(), false).unwrap();
@@ -67,7 +82,9 @@ fn table_restore() {
 #[cfg(test)]
 fn insert_test_data() -> Database {
     fs::create_dir_all("/data/asset_test/0").unwrap();
-    let db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let db = Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
+        .unwrap();
     let columns = &[
         ColumnInfo { name: "Id", is_primary_key: true, not_null: true, data_type: DataType::Number },
         ColumnInfo { name: "Owner", is_primary_key: false, not_null: true, data_type: DataType::Bytes },
@@ -135,7 +152,9 @@ fn data_life_circle() {
 #[test]
 fn single_data() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
-    let db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let db = Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
+        .unwrap();
     let table = Table::new("table_name", &db);
     let columns = &[
         ColumnInfo { name: "id", is_primary_key: true, not_null: true, data_type: DataType::Number },
@@ -166,7 +185,9 @@ fn single_data() {
 #[test]
 fn multiple_data() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
-    let db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let db = Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
+        .unwrap();
     let table = Table::new("table_name", &db);
     let columns = &[
         ColumnInfo { name: "id", is_primary_key: true, not_null: true, data_type: DataType::Number },
@@ -206,7 +227,9 @@ fn multiple_data() {
 #[test]
 fn insert_query_row() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
-    let db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let db = Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
+        .unwrap();
     let table = Table::new("table_name", &db);
 
     let columns = &[
@@ -234,7 +257,9 @@ fn insert_query_row() {
 #[test]
 fn update_delete_row() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
-    let db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let db = Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
+        .unwrap();
     let table = Table::new("table_name", &db);
 
     let columns = &[
@@ -260,7 +285,9 @@ fn update_delete_row() {
 #[test]
 fn upgrade_table() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
-    let db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let db = Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
+        .unwrap();
     let table = Table::new("table_name", &db);
 
     let columns = &[
@@ -298,7 +325,9 @@ fn upgrade_table() {
 #[test]
 fn replace_datas() {
     fs::create_dir_all("/data/asset_test/0").unwrap();
-    let db = Database::build(0).unwrap();
+    let calling_info = CallingInfo::new_self();
+    let db = Database::build(calling_info.user_id(), calling_info.owner_type_enum(), calling_info.owner_info(), false)
+        .unwrap();
     let table = Table::new("table_name", &db);
 
     let columns = &[

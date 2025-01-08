@@ -16,7 +16,8 @@
                     { "name": "usual.event.CHARGING" },
                     { "name": "usual.event.USER_UNLOCKED" },
                     { "name": "usual.event.RESTORE_START" },
-                    { "name": "USER_PIN_CREATED_EVENT" }
+                    { "name": "USER_PIN_CREATED_EVENT" },
+                    { "name": "usual.event.BOOT_COMPLETED" }
                 ],
                 "timedevent": [
                     {

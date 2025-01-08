@@ -80,13 +80,14 @@ pub(crate) const NORMAL_LABEL_ATTRS: [Tag; 4] =
 pub(crate) const NORMAL_LOCAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelNormalLocal1, Tag::DataLabelNormalLocal2, Tag::DataLabelNormalLocal3, Tag::DataLabelNormalLocal4];
 
-pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 7] = [
+pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 8] = [
     Tag::Alias,
     Tag::Accessibility,
     Tag::AuthType,
     Tag::IsPersistent,
     Tag::SyncType,
     Tag::RequirePasswordSet,
+    Tag::RequireAttrEncrypted,
     Tag::UserId,
 ];
 
@@ -136,7 +137,7 @@ pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<S
     let auth_type = attrs.get_enum_attr::<AuthType>(&column::AUTH_TYPE)?;
     let access_type = attrs.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
     let require_password_set = attrs.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
-    SecretKey::new(calling, auth_type, access_type, require_password_set)
+    SecretKey::new_without_alias(calling, auth_type, access_type, require_password_set)
 }
 
 fn build_aad_v1(attrs: &DbMap) -> Vec<u8> {
