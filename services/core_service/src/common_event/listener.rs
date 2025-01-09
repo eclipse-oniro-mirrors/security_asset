@@ -115,7 +115,7 @@ fn delete_in_ce_db_on_package_removed(calling_info: &CallingInfo, reverse_condit
             let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
             let data_exists = db.is_data_exists(&check_condition, false)?;
             if !data_exists {
-                remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
+                remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, true)?;
             }
             Ok(DataExist::GroupData(data_exists))
         },
@@ -124,7 +124,7 @@ fn delete_in_ce_db_on_package_removed(calling_info: &CallingInfo, reverse_condit
             let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
             let data_exists = db.is_data_exists(&check_condition, false)?;
             if !data_exists {
-                remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
+                remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, true)?;
             }
             Ok(DataExist::OwnerData(data_exists))
         },
