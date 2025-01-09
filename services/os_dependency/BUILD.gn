@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//base/security/asset/config.gni")
 import("//build/ohos.gni")
 
 ohos_static_library("asset_os_dependency") {
@@ -40,6 +41,7 @@ ohos_static_library("asset_os_dependency") {
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
   ]
+  cflags = [ "-DASSET_UPGRADE_HAP_CONFIG=${asset_upgrade_hap_list}" ]
   subsystem_name = "security"
   part_name = "asset"
 }
