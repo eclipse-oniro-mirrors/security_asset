@@ -21,7 +21,7 @@
         ],
         "features": [
             "asset_access_control_enabled",
-            "asset_upgrade_hap_list"
+            "asset_split_hap_list"
         ],
         "adapted_system_type": [
             "standard"
