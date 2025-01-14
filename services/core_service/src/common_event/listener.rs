@@ -171,7 +171,7 @@ fn construct_calling_infos(
             let group_id = unsafe { slice::from_raw_parts(group_id_slice.data, group_id_slice.size as usize) };
             calling_infos.push(CallingInfo::new(
                 user_id,
-                OwnerType::Group,
+                OwnerType::HapGroup,
                 owner.clone(),
                 Some(Group { developer_id: developer_id.to_vec(), group_id: group_id.to_vec() }),
             ));

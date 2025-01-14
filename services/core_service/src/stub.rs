@@ -34,7 +34,7 @@ use crate::{unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService}
 
 const REDIRECT_START_CODE: u32 = 200;
 
-const HAP_OWNER_TYPES: [OwnerType; 2] = [OwnerType::Hap, OwnerType::Group];
+const HAP_OWNER_TYPES: [OwnerType; 2] = [OwnerType::Hap, OwnerType::HapGroup];
 
 impl RemoteStub for AssetService {
     fn on_remote_request(

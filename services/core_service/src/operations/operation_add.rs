@@ -143,7 +143,7 @@ fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> R
                 return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
             }
         },
-        OwnerType::Group => {
+        OwnerType::HapGroup => {
             return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
         },
         OwnerType::Native => (),

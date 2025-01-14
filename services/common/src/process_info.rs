@@ -156,7 +156,7 @@ impl ProcessInfo {
         }
 
         let process_info_detail = match OwnerType::try_from(process_info_ffi.owner_type)? {
-            OwnerType::Hap | OwnerType::Group => ProcessInfoDetail::Hap(HapInfo {
+            OwnerType::Hap | OwnerType::HapGroup => ProcessInfoDetail::Hap(HapInfo {
                 app_id,
                 app_index: process_info_ffi.hap_info.app_index,
                 group_id,

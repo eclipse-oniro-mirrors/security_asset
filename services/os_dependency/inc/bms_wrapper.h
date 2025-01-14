@@ -26,7 +26,7 @@ extern "C" {
 enum OwnerType {
     HAP = 0,
     NATIVE = 1,
-    GROUP = 2,
+    HAP_GROUP = 2,
 };
 
 typedef struct {

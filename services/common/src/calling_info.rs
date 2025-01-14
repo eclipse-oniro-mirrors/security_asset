@@ -137,7 +137,7 @@ impl CallingInfo {
     /// Get appindex.
     pub fn app_index(&self) -> u32 {
         match self.owner_type_enum() {
-            OwnerType::Hap | OwnerType::Group => {
+            OwnerType::Hap | OwnerType::HapGroup => {
                 let owner_info_str = String::from_utf8_lossy(self.owner_info()).to_string();
                 let owner_info_vec: Vec<_> = owner_info_str.split('_').collect();
                 match owner_info_vec.last().unwrap().parse::<u32>() {
