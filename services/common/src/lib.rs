@@ -24,7 +24,7 @@ pub use counter::{AutoCounter, Counter};
 pub use process_info::{ProcessInfo, ProcessInfoDetail};
 /// success code.
 pub const SUCCESS: i32 = 0;
-/// root user upper bound
+/// root user upper bound.
 pub const ROOT_USER_UPPERBOUND: u32 = 99;
 /// Separator in owner info of calling info between app id and app index.
 pub const OWNER_INFO_SEPARATOR: char = '_';
@@ -65,12 +65,12 @@ impl_enum_trait! {
     #[derive(Copy, Clone)]
     #[derive(Debug)]
     pub enum OwnerType {
-        /// The calling is a application.
+        /// The calling is an application.
         Hap = 0,
         /// The calling is a native process.
         Native = 1,
-        /// The calling is a group,
-        Group = 2,
+        /// The calling is a group of applications.
+        HapGroup = 2,
     }
 }
 

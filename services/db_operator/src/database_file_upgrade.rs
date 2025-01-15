@@ -60,7 +60,7 @@ fn to_hex(bytes: &Vec<u8>) -> Vec<u8> {
 /// Use owner_type and owner_info construct db name.
 pub fn construct_splited_db_name(calling_info: &CallingInfo, is_ce: bool) -> Result<String> {
     let mut res: String = match calling_info.owner_type_enum() {
-        OwnerType::Group => match (calling_info.developer_id(), calling_info.group_id()) {
+        OwnerType::HapGroup => match (calling_info.developer_id(), calling_info.group_id()) {
             (Some(developer_id), Some(group_id)) => format!(
                 "Group_{}_{}",
                 String::from_utf8_lossy(developer_id).trim_end_matches('\0'),

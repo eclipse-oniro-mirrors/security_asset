@@ -211,7 +211,7 @@ int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *proces
     switch (tokenType) {
         case ATokenTypeEnum::TOKEN_HAP:
             if (processInfo->hapInfo.groupId.data != nullptr) {
-                processInfo->ownerType = GROUP;
+                processInfo->ownerType = HAP_GROUP;
             } else {
                 processInfo->ownerType = HAP;
             }
