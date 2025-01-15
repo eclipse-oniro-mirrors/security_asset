@@ -223,6 +223,13 @@ pub(crate) fn check_group_validity(attrs: &AssetMap, calling_info: &CallingInfo)
                 OwnerType::Native
             );
         }
+        if calling_info.app_index() > 0 {
+            return log_throw_error!(
+                ErrCode::Unsupported,
+                "[FATAL]The tag [{}] is not yet supported for clone or sandbox app.",
+                &Tag::GroupId
+            );
+        }
     }
     Ok(())
 }
