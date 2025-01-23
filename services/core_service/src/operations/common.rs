@@ -83,7 +83,7 @@ pub(crate) const NORMAL_LABEL_ATTRS: [Tag; 4] =
 pub(crate) const NORMAL_LOCAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelNormalLocal1, Tag::DataLabelNormalLocal2, Tag::DataLabelNormalLocal3, Tag::DataLabelNormalLocal4];
 
-pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 9] = [
+pub(crate) const ACCESS_CONTROL_ATTRS: [Tag; 10] = [
     Tag::Alias,
     Tag::Accessibility,
     Tag::AuthType,
