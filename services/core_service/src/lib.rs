@@ -69,7 +69,7 @@ impl Ability for AssetAbility {
         let _trace = TraceScope::trace(func_name);
         let calling_info = CallingInfo::new_self();
 
-        let _ = upload_system_event(start_service(handler), &calling_info, start, func_name);
+        let _ = upload_system_event(start_service(handler), &calling_info, start, func_name, &AssetMap::new());
         common_event::handle_common_event(reason);
     }
 
@@ -154,13 +154,21 @@ struct AssetService {
 }
 
 macro_rules! execute {
-    ($func:path, $calling_info:expr, $($args:expr),+) => {{
+    ($func:path, $calling_info:expr, $first_arg:expr) => {{
         let func_name = hisysevent::function!();
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
         // Create de database directory if not exists.
         create_user_de_dir($calling_info.user_id())?;
-        upload_system_event($func($calling_info, $($args),+), $calling_info, start, func_name)
+        upload_system_event($func($calling_info, $first_arg), $calling_info, start, func_name, $first_arg)
+    }};
+    ($func:path, $calling_info:expr, $first_arg:expr, $second_arg:expr) => {{
+        let func_name = hisysevent::function!();
+        let start = Instant::now();
+        let _trace = TraceScope::trace(func_name);
+        // Create de database directory if not exists.
+        create_user_de_dir($calling_info.user_id())?;
+        upload_system_event($func($calling_info, $first_arg, $second_arg), $calling_info, start, func_name, $first_arg)
     }};
 }
 
