@@ -13,9 +13,6 @@
  * limitations under the License.
  */
 
-#ifndef ASSET_TYPE_H
-#define ASSET_TYPE_H
-
 /**
  * @addtogroup AssetType
  * @{
