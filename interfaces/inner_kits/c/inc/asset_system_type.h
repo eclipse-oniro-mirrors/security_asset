@@ -187,6 +187,10 @@ typedef enum {
      */
     SEC_ASSET_TAG_GROUP_ID = SEC_ASSET_TYPE_BYTES | 0x48,
     /**
+     * A tag whose value is a 32-bit unsigned integer indicating the type of Asset encapsulation.
+     */
+    SEC_ASSET_TAG_WRAP_TYPE = SEC_ASSET_TYPE_BYTES | 0x49,
+    /**
      * Tag used to store specific user id. The value is of the uint32 type.
      */
     SEC_ASSET_TAG_USER_ID = SEC_ASSET_TYPE_NUMBER | 0x100,
@@ -336,6 +340,20 @@ typedef enum {
      */
     SEC_ASSET_SYNC_TYPE_TRUSTED_ACCOUNT = 1 << 2,
 } AssetSyncType;
+
+/**
+ * @brief An enum type indicates the type of Asset encapsulation.
+ */
+typedef enum {
+    /**
+     * An Asset with this attribute value is never allowed to be wrapped up.
+     */
+    SEC_ASSET_WRAP_TYPE_NEVER = 0,
+    /**
+     * An Asset with this attribute value can only be wrapped or unwrapped on devices logged in with trusted accounts.
+     */
+    SEC_ASSET_WRAP_TYPE_TRUSTED_ACCOUNT = 1,
+} AssetWrapType;
 
 /**
  * @brief Enumerates the policies for resolving the conflict (for example, duplicate alias) occurred when

@@ -28,6 +28,7 @@ use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, LocalStatus, Result,
     SyncStatus, SyncType, Tag, Value,
 };
+use asset_sdk::WrapType;
 use asset_utils::time;
 
 use crate::operations::common;
@@ -92,10 +93,11 @@ fn add_default_attrs(db_data: &mut DbMap) {
     db_data.entry(column::IS_PERSISTENT).or_insert(Value::Bool(bool::default()));
     db_data.entry(column::LOCAL_STATUS).or_insert(Value::Number(LocalStatus::Local as u32));
     db_data.entry(column::SYNC_STATUS).or_insert(Value::Number(SyncStatus::SyncAdd as u32));
+    db_data.entry(column::WRAP_TYPE).or_insert(Value::Number(WrapType::default() as u32));
 }
 
 const REQUIRED_ATTRS: [Tag; 2] = [Tag::Secret, Tag::Alias];
-const OPTIONAL_ATTRS: [Tag; 2] = [Tag::Secret, Tag::ConflictResolution];
+const OPTIONAL_ATTRS: [Tag; 3] = [Tag::Secret, Tag::ConflictResolution, Tag::WrapType];
 const SYSTEM_USER_ID_MAX: i32 = 99;
 
 fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {

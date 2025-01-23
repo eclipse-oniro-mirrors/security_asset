@@ -20,6 +20,7 @@ use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, OperationType, Result,
     ReturnType, Tag, Value,
 };
+use asset_sdk::WrapType;
 
 use crate::operations::common::{CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS, NORMAL_LOCAL_LABEL_ATTRS};
 
@@ -176,6 +177,7 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::UpdateTime => check_array_size(tag, value, MIN_ARRAY_SIZE, MAX_TIME_SIZE),
         Tag::OperationType => check_enum_variant::<OperationType>(tag, value),
         Tag::GroupId => check_array_size(tag, value, MIN_GROUP_ID_LEN, MAX_GROUP_ID_LEN),
+        Tag::WrapType => check_enum_variant::<WrapType>(tag, value),
     }
 }
 
