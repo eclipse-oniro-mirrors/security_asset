@@ -145,6 +145,15 @@ napi_value DeclareSyncType(const napi_env env)
     return syncType;
 }
 
+napi_value DeclareWrapType(const napi_env env)
+{
+    napi_value syncType = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &syncType));
+    AddUint32Property(env, syncType, "NEVER", SEC_ASSET_WRAP_TYPE_NEVER);
+    AddUint32Property(env, syncType, "TRUSTED_ACCOUNT", SEC_ASSET_WRAP_TYPE_TRUSTED_ACCOUNT);
+    return syncType;
+}
+
 napi_value DeclareConflictResolution(const napi_env env)
 {
     napi_value conflictResolution = nullptr;
@@ -206,6 +215,7 @@ napi_value Register(const napi_env env, napi_value exports)
         DECLARE_NAPI_PROPERTY("ConflictResolution", DeclareConflictResolution(env)),
         DECLARE_NAPI_PROPERTY("ReturnType", DeclareReturnType(env)),
         DECLARE_NAPI_PROPERTY("OperationType", DeclareOperationType(env)),
+        DECLARE_NAPI_PROPERTY("WrapType", DeclareWrapType(env)),
     };
 
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
