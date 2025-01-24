@@ -189,7 +189,7 @@ typedef enum {
     /**
      * A tag whose value is a 32-bit unsigned integer indicating the type of Asset encapsulation.
      */
-    SEC_ASSET_TAG_WRAP_TYPE = SEC_ASSET_TYPE_BYTES | 0x49,
+    SEC_ASSET_TAG_WRAP_TYPE = SEC_ASSET_TYPE_NUMBER | 0x49,
     /**
      * Tag used to store specific user id. The value is of the uint32 type.
      */
