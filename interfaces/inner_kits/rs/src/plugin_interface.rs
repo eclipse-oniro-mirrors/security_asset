@@ -18,6 +18,7 @@
 pub use asset_definition::Value;
 use ipc::parcel::MsgParcel;
 use std::any::Any;
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
 /// Defines a type alias `ExtDbMap` as a `HashMap` with keys of type `&'static str` and values of type `Value`.
@@ -53,6 +54,19 @@ pub enum EventType {
 
     /// User removed.
     OnUserRemoved,
+}
+
+/// Options for batch query.
+#[repr(C)]
+pub struct ExtQueryOptions {
+    /// The offset of the query result.
+    pub offset: Option<u32>,
+    /// Maximum number of query results.
+    pub limit: Option<u32>,
+    /// ordering: Ordering::Greater => ASC and Ordering::Less => DESC
+    pub order: Option<Ordering>,
+    /// Columns used for sorting.
+    pub order_by: Option<Vec<&'static str>>,
 }
 
 /// param name for bundle name
@@ -98,6 +112,11 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Queries ce db.
     fn ce_query(&mut self, attributes: &ExtDbMap) -> Result<Vec<ExtDbMap>, u32>;
+
+    /// Query db with attributes to a certain db. Normal, Group, CE.
+    fn query_certain_db(
+        &mut self, db_info: &ExtDbMap, attributes: &ExtDbMap, query_options: &ExtQueryOptions, is_ce: bool
+    ) -> Result<Vec<ExtDbMap>, u32>;
 
     /// Removes an asset from de db.
     fn remove(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;

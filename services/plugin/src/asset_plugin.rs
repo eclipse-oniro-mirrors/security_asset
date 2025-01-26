@@ -23,7 +23,7 @@ use asset_definition::{log_throw_error, ErrCode, Extension, Result};
 use asset_file_operator::de_operator::create_user_de_dir;
 use asset_log::{loge, logi};
 use asset_sdk::{
-    plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx},
+    plugin_interface::{ExtDbMap, ExtQueryOptions, IAssetPlugin, IAssetPluginCtx},
     Value,
 };
 use std::{
@@ -181,6 +181,14 @@ impl IAssetPluginCtx for AssetContext {
             query_data.extend(db.query_datas(&vec![], attributes, None, false).map_err(|e| e.code as u32)?);
         }
         Ok(query_data)
+    }
+
+    /// Query db with attributes to a certain db. Normal, Group, CE.
+    fn query_certain_db(
+        &mut self, db_info: &ExtDbMap, attributes: &ExtDbMap, query_options: &ExtQueryOptions, is_ce: bool) -> std::result::Result<Vec<ExtDbMap>, u32> {
+        let db_name = get_db_name(self.user_id, db_info, is_ce)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+        db.query_datas(&vec![], attributes, query_options, true).map_err(|e| e.code as u32)
     }
 
     /// Removes an asset from de db.
