@@ -81,6 +81,12 @@ pub const PARAM_NAME_APP_INDEX: &str = "AppIndex";
 /// param name for owner type
 pub const PARAM_NAME_IS_HAP: &str = "IsHap";
 
+/// param name for return offset
+pub const RETURN_OFFSET: &str  = "ReturnOffset";
+
+/// param name for return limit
+pub const RETURN_LIMIT: &str  = "ReturnLimit";
+
 /// An enumeration representing different plugin types.
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub enum PluginType {
@@ -115,7 +121,7 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Query db with attributes to a certain db. Normal, Group, CE.
     fn query_certain_db(
-        &mut self, db_info: &ExtDbMap, attributes: &ExtDbMap, query_options: &ExtQueryOptions, is_ce: bool
+        &mut self, db_info: &ExtDbMap, attributes: &ExtDbMap, query_options: &ExtDbMap, is_ce: bool
     ) -> Result<Vec<ExtDbMap>, u32>;
 
     /// Removes an asset from de db.
