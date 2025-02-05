@@ -23,7 +23,7 @@ use asset_definition::{log_throw_error, ErrCode, Extension, Result};
 use asset_file_operator::de_operator::create_user_de_dir;
 use asset_log::{loge, logi};
 use asset_sdk::{
-    plugin_interface::{ExtDbMap, ExtQueryOptions, IAssetPlugin, IAssetPluginCtx, RETURN_LIMIT, RETURN_OFFSET}, Tag, Value
+    plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, RETURN_LIMIT, RETURN_OFFSET}, Value
 };
 use std::{
     cell::RefCell,
