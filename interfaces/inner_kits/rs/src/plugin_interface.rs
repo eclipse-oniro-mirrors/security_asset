@@ -130,6 +130,9 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     /// Removes an asset from ce db.
     fn ce_remove(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
 
+    /// Removes an asset from a certain db. Normal, Group, CE.
+    fn remove_certain_db(&mut self, db_info: &ExtDbMap, attributes: &ExtDbMap, is_ce: bool) -> Result<i32, u32>;
+
     /// Removes assets from de db with specific condition.
     fn remove_with_specific_cond(&mut self, specific_cond: &str, condition_value: &[Value]) -> Result<i32, u32>;
 

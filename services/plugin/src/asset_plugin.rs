@@ -227,6 +227,13 @@ impl IAssetPluginCtx for AssetContext {
         Ok(total_remove_count)
     }
 
+    /// Removes an asset from a certain db. Normal, Group, CE.
+    fn remove_certain_db(&mut self, db_info: &ExtDbMap, attributes: &ExtDbMap, is_ce: bool) -> Result<i32, u32> {
+        let db_name = get_db_name(self.user_id, db_info, is_ce)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+        db.delete_datas(attributes, None, false).map_err(|e| e.code as u32)
+    }
+
     /// Removes assets from de db with sepcific condition.
     fn remove_with_specific_cond(
         &mut self,
