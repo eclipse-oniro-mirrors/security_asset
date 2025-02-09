@@ -154,8 +154,8 @@ fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> R
 }
 
 fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    if (attributes.get(&Tag::WrapType).is_none()
-        || attributes.get_enum_attr::<WrapType>(&Tag::WrapType)? == WrapType::Never)
+    if attributes.get(&Tag::WrapType).is_none()
+        || attributes.get_enum_attr::<WrapType>(&Tag::WrapType)? == WrapType::Never
     {
         return Ok(());
     }
