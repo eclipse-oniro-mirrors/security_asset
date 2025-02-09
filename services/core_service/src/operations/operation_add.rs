@@ -131,10 +131,8 @@ fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
 }
 
 fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    if (attributes.get(&Tag::SyncType).is_none()
-        || (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0) &&
-        (attributes.get(&Tag::WrapType).is_none()
-        || attributes.get_enum_attr::<WrapType>(&Tag::WrapType)? == WrapType::Never)
+    if attributes.get(&Tag::SyncType).is_none()
+        || (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0
     {
         return Ok(());
     }
@@ -155,6 +153,23 @@ fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> R
     Ok(())
 }
 
+fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    if (attributes.get(&Tag::WrapType).is_none()
+        || attributes.get_enum_attr::<WrapType>(&Tag::WrapType)? == WrapType::Never)
+    {
+        return Ok(());
+    }
+    match calling_info.owner_type_enum() {
+        OwnerType::Hap | OwnerType::HapGroup => {
+            if calling_info.app_index() > 0 {
+                return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing wrap data.");
+            }
+        },
+        OwnerType::Native => (),
+    }
+    Ok(())
+}
+
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     common::check_required_tags(attributes, &REQUIRED_ATTRS)?;
 
@@ -169,6 +184,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     common::check_value_validity(attributes)?;
     check_accessibity_validity(attributes, calling_info)?;
     check_sync_permission(attributes, calling_info)?;
+    check_wrap_permission(attributes, calling_info)?;
     common::check_system_permission(attributes)?;
     check_persistent_permission(attributes)
 }
