@@ -133,7 +133,8 @@ fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
 fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     if (attributes.get(&Tag::SyncType).is_none()
         || (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0) &&
-        (attributes.get(&Tag::WrapType).is_none() || attributes.get_enum_attr(&Tag::WrapType)? == WrapType::Never)
+        (attributes.get(&Tag::WrapType).is_none()
+        || attributes.get_enum_attr::<WrapType>(&Tag::WrapType)? == WrapType::Never)
     {
         return Ok(());
     }
