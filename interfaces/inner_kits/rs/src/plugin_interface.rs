@@ -56,19 +56,6 @@ pub enum EventType {
     OnUserRemoved,
 }
 
-/// Options for batch query.
-#[repr(C)]
-pub struct ExtQueryOptions {
-    /// The offset of the query result.
-    pub offset: Option<u32>,
-    /// Maximum number of query results.
-    pub limit: Option<u32>,
-    /// ordering: Ordering::Greater => ASC and Ordering::Less => DESC
-    pub order: Option<Ordering>,
-    /// Columns used for sorting.
-    pub order_by: Option<Vec<&'static str>>,
-}
-
 /// param name for bundle name
 pub const PARAM_NAME_BUNDLE_NAME: &str = "BundleName";
 

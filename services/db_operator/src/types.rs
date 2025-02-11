@@ -17,7 +17,7 @@
 
 use std::{cmp::Ordering, collections::HashMap};
 
-use asset_definition::{DataType, ErrCode, Value};
+use asset_definition::{DataType, ErrCode, Value, WrapType};
 
 /// A Map type containing tag-value pairs that describe the attributes of an DB field.
 pub type DbMap = HashMap<&'static str, Value>;
@@ -254,7 +254,7 @@ pub(crate) const UPGRADE_COLUMN_INFO: &[UpgradeColumnInfo] = &[UpgradeColumnInfo
         is_primary_key: false,
         not_null: true,
     },
-    default_value: Some(Value::Number(0)),
+    default_value: Some(Value::Number(WrapType::Never as u32)),
 }];
 
 /// Options for batch query.
