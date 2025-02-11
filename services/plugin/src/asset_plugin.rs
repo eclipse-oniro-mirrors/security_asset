@@ -17,14 +17,13 @@ use asset_common::{CallingInfo, Counter, Group, OwnerType, GROUP_SEPARATOR};
 use asset_db_operator::{
     database::{get_path, Database},
     database_file_upgrade::construct_splited_db_name,
-    types::column,
+    types::{column, QueryOptions},
 };
 use asset_definition::{log_throw_error, ErrCode, Extension, Result};
 use asset_file_operator::de_operator::create_user_de_dir;
 use asset_log::{loge, logi};
 use asset_sdk::{
-    plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx},
-    Value,
+    plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, RETURN_LIMIT, RETURN_OFFSET}, Value
 };
 use std::{
     cell::RefCell,
@@ -124,6 +123,21 @@ fn get_db_name(user_id: i32, attributes: &ExtDbMap, is_ce: bool) -> std::result:
     construct_splited_db_name(&calling_info, is_ce).map_err(|e| e.code as u32)
 }
 
+fn get_query_options(attrs: &ExtDbMap) -> QueryOptions {
+    QueryOptions {
+        offset: match attrs.get(RETURN_OFFSET) {
+            Some(Value::Number(offset)) => Some(*offset),
+            _ => None,
+        },
+        limit: match attrs.get(RETURN_LIMIT) {
+            Some(Value::Number(limit)) => Some(*limit),
+            _ => None,
+        },
+        order_by: None,
+        order: None,
+    }
+}
+
 #[allow(dead_code)]
 impl IAssetPluginCtx for AssetContext {
     /// Initializes the plugin before usage.
@@ -183,6 +197,14 @@ impl IAssetPluginCtx for AssetContext {
         Ok(query_data)
     }
 
+    /// Query db with attributes to a certain db. Normal, Group, CE.
+    fn query_certain_db(
+        &mut self, db_info: &ExtDbMap, attributes: &ExtDbMap, query_options: &ExtDbMap, is_ce: bool) -> std::result::Result<Vec<ExtDbMap>, u32> {
+        let db_name = get_db_name(self.user_id, db_info, is_ce)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+        db.query_datas(&vec![], attributes, Some(&get_query_options(query_options)), true).map_err(|e| e.code as u32)
+    }
+
     /// Removes an asset from de db.
     fn remove(&mut self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
         let de_dbs = asset_file_operator::de_operator::get_de_user_dbs(self.user_id).map_err(|e| e.code as u32)?;
@@ -203,6 +225,13 @@ impl IAssetPluginCtx for AssetContext {
             total_remove_count += db.delete_datas(attributes, None, false).map_err(|e| e.code as u32)?;
         }
         Ok(total_remove_count)
+    }
+
+    /// Removes an asset from a certain db. Normal, Group, CE.
+    fn remove_certain_db(&mut self, db_info: &ExtDbMap, attributes: &ExtDbMap, is_ce: bool) -> std::result::Result<i32, u32> {
+        let db_name = get_db_name(self.user_id, db_info, is_ce)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+        db.delete_datas(attributes, None, false).map_err(|e| e.code as u32)
     }
 
     /// Removes assets from de db with sepcific condition.

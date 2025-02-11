@@ -68,6 +68,7 @@ const std::vector<uint32_t> ACCESS_CONTROL_TAGS = {
     SEC_ASSET_TAG_REQUIRE_PASSWORD_SET,
     SEC_ASSET_TAG_REQUIRE_ATTR_ENCRYPTED,
     SEC_ASSET_TAG_GROUP_ID,
+    SEC_ASSET_TAG_WRAP_TYPE,
     SEC_ASSET_TAG_USER_ID
 };
 
@@ -111,6 +112,11 @@ const std::vector<uint32_t> ASSET_RETURN_TYPE_VEC = {
     SEC_ASSET_RETURN_ATTRIBUTES
 };
 
+const std::vector<uint32_t> ASSET_WRAP_TYPE_VEC = {
+    SEC_ASSET_WRAP_TYPE_NEVER,
+    SEC_ASSET_WRAP_TYPE_TRUSTED_ACCOUNT
+};
+
 const std::unordered_map<uint32_t, const char *> TAG_MAP = {
     { SEC_ASSET_TAG_SECRET, "SECRET" },
     { SEC_ASSET_TAG_ALIAS, "ALIAS" },
@@ -143,6 +149,7 @@ const std::unordered_map<uint32_t, const char *> TAG_MAP = {
     { SEC_ASSET_TAG_OPERATION_TYPE, "OPERATION_TYPE" },
     { SEC_ASSET_TAG_REQUIRE_ATTR_ENCRYPTED, "REQUIRE_ATTR_ENCRYPTED" },
     { SEC_ASSET_TAG_GROUP_ID, "GROUP_ID" },
+    { SEC_ASSET_TAG_WRAP_TYPE, "WRAP_TYPE" },
     { SEC_ASSET_TAG_USER_ID, "USER_ID" },
 };
 

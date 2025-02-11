@@ -28,6 +28,7 @@ use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, LocalStatus, Result,
     SyncStatus, SyncType, Tag, Value,
 };
+use asset_sdk::WrapType;
 use asset_utils::time;
 
 use crate::operations::common;
@@ -92,10 +93,11 @@ fn add_default_attrs(db_data: &mut DbMap) {
     db_data.entry(column::IS_PERSISTENT).or_insert(Value::Bool(bool::default()));
     db_data.entry(column::LOCAL_STATUS).or_insert(Value::Number(LocalStatus::Local as u32));
     db_data.entry(column::SYNC_STATUS).or_insert(Value::Number(SyncStatus::SyncAdd as u32));
+    db_data.entry(column::WRAP_TYPE).or_insert(Value::Number(WrapType::default() as u32));
 }
 
 const REQUIRED_ATTRS: [Tag; 2] = [Tag::Secret, Tag::Alias];
-const OPTIONAL_ATTRS: [Tag; 2] = [Tag::Secret, Tag::ConflictResolution];
+const OPTIONAL_ATTRS: [Tag; 3] = [Tag::Secret, Tag::ConflictResolution, Tag::WrapType];
 const SYSTEM_USER_ID_MAX: i32 = 99;
 
 fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
@@ -151,6 +153,23 @@ fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> R
     Ok(())
 }
 
+fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    if attributes.get(&Tag::WrapType).is_none()
+        || attributes.get_enum_attr::<WrapType>(&Tag::WrapType)? == WrapType::Never
+    {
+        return Ok(());
+    }
+    match calling_info.owner_type_enum() {
+        OwnerType::Hap | OwnerType::HapGroup => {
+            if calling_info.app_index() > 0 {
+                return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing wrap data.");
+            }
+        },
+        OwnerType::Native => (),
+    }
+    Ok(())
+}
+
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     common::check_required_tags(attributes, &REQUIRED_ATTRS)?;
 
@@ -165,6 +184,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     common::check_value_validity(attributes)?;
     check_accessibity_validity(attributes, calling_info)?;
     check_sync_permission(attributes, calling_info)?;
+    check_wrap_permission(attributes, calling_info)?;
     common::check_system_permission(attributes)?;
     check_persistent_permission(attributes)
 }

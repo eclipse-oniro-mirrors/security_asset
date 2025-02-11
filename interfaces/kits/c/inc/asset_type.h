@@ -13,9 +13,6 @@
  * limitations under the License.
  */
 
-#ifndef ASSET_TYPE_H
-#define ASSET_TYPE_H
-
 /**
  * @addtogroup AssetType
  * @{
@@ -35,6 +32,9 @@
  * @syscap SystemCapability.Security.Asset
  * @since 11
  */
+
+#ifndef ASSET_TYPE_H
+#define ASSET_TYPE_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -220,6 +220,12 @@ typedef enum {
      * @since 16
      */
     ASSET_TAG_GROUP_ID = ASSET_TYPE_BYTES | 0x48,
+    /**
+     * A tag whose value is a 32-bit unsigned integer indicating the type of Asset encapsulation.
+     *
+     * @since 16
+     */
+    ASSET_TAG_WRAP_TYPE = ASSET_TYPE_BYTES | 0x49,
 } Asset_Tag;
 
 /**
@@ -332,6 +338,22 @@ typedef enum {
      */
     ASSET_SYNC_TYPE_TRUSTED_ACCOUNT = 1 << 2,
 } Asset_SyncType;
+
+/**
+ * @brief An enum type indicates the type of Asset encapsulation.
+ *
+ * @since 16
+ */
+typedef enum {
+    /**
+     * An Asset with this attribute value is never allowed to be wrapped up.
+     */
+    ASSET_WRAP_TYPE_NEVER = 0,
+    /**
+     * An Asset with this attribute value can only be wrapped or unwrapped on devices logged in with trusted accounts.
+     */
+    ASSET_WRAP_TYPE_TRUSTED_ACCOUNT = 1,
+} Asset_WrapType;
 
 /**
  * @brief Enumerates the policies for resolving the conflict (for example, duplicate alias) occurred when

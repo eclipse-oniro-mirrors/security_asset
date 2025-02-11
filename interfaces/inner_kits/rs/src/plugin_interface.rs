@@ -67,6 +67,12 @@ pub const PARAM_NAME_APP_INDEX: &str = "AppIndex";
 /// param name for owner type
 pub const PARAM_NAME_IS_HAP: &str = "IsHap";
 
+/// param name for return offset
+pub const RETURN_OFFSET: &str  = "ReturnOffset";
+
+/// param name for return limit
+pub const RETURN_LIMIT: &str  = "ReturnLimit";
+
 /// An enumeration representing different plugin types.
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub enum PluginType {
@@ -99,11 +105,19 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     /// Queries ce db.
     fn ce_query(&mut self, attributes: &ExtDbMap) -> Result<Vec<ExtDbMap>, u32>;
 
+    /// Query db with attributes to a certain db. Normal, Group, CE.
+    fn query_certain_db(
+        &mut self, db_info: &ExtDbMap, attributes: &ExtDbMap, query_options: &ExtDbMap, is_ce: bool
+    ) -> Result<Vec<ExtDbMap>, u32>;
+
     /// Removes an asset from de db.
     fn remove(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
 
     /// Removes an asset from ce db.
     fn ce_remove(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
+
+    /// Removes an asset from a certain db. Normal, Group, CE.
+    fn remove_certain_db(&mut self, db_info: &ExtDbMap, attributes: &ExtDbMap, is_ce: bool) -> Result<i32, u32>;
 
     /// Removes assets from de db with specific condition.
     fn remove_with_specific_cond(&mut self, specific_cond: &str, condition_value: &[Value]) -> Result<i32, u32>;

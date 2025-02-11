@@ -145,6 +145,9 @@ impl_tag_trait! {
         /// A tag whose value is a byte array indicating the group id an asset belongs to.
         GroupId = DataType::Bytes as isize | 0x48,
 
+        /// A tag whose value is a 32-bit unsigned integer indicating the type of Asset encapsulation.
+        WrapType = DataType::Number as isize | 0x49,
+
         /// A tag whose value is a 32-bit unsigned integer indicating the specific user id.
         UserId = DataType::Number as isize | 0x100,
     }
@@ -313,6 +316,22 @@ impl_enum_trait! {
 
         /// An Asset with this attribute value can only be transferred out to a trusted device (user authorized).
         TrustedAccount = 1 << 2,
+    }
+}
+
+impl_enum_trait! {
+    /// An enum type indicates the type of Asset synchronization.
+    #[derive(Debug)]
+    #[derive(Clone, Copy)]
+    #[derive(PartialEq, Eq)]
+    #[derive(Default)]
+    pub enum WrapType {
+        /// An Asset with this attribute value is never allowed to be wrapped up.
+        #[default]
+        Never = 0,
+
+        /// An Asset with this attribute value can only be wrapped or unwrapped on devices logged in with trusted accounts.
+        TrustedAccount = 1,
     }
 }
 
