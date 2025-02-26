@@ -56,6 +56,7 @@ ohos_unittest("asset_dependency_test") {
     "src/os_account_wrapper_test.cpp",
     "src/system_ability_wrapper_test.cpp",
     "src/system_event_wrapper_test.cpp",
+    "src/asset_mem_wrapper_test.cpp"
   ]
   deps = [
     "../../../frameworks/c/system_api:asset_sdk",
