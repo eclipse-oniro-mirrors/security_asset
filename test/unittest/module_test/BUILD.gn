@@ -61,6 +61,7 @@ ohos_unittest("asset_dependency_test") {
   ]
   deps = [
     "../../../frameworks/c/system_api:asset_sdk",
+    "../../../frameworks/os_dependency/memory:asset_mem",
     "../../../interfaces/kits/c:asset_ndk",
     "../../../services/crypto_manager:asset_huks_wrapper",
     "../../../services/os_dependency:asset_os_dependency",
