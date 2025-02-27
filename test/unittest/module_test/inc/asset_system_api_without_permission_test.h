@@ -20,23 +20,6 @@
 
 namespace UnitTest::AssetSystemApiWithoutPermissionTest {
 int AssetSystemApiWithoutPermissionTest001(void);
-int AssetSystemApiWithoutPermissionTest002(void);
-int AssetSystemApiWithoutPermissionTest003(void);
-int AssetSystemApiWithoutPermissionTest004(void);
-int AssetSystemApiWithoutPermissionTest005(void);
-int AssetSystemApiWithoutPermissionTest006(void);
-int AssetSystemApiWithoutPermissionTest007(void);
-int AssetSystemApiWithoutPermissionTest008(void);
-int AssetSystemApiWithoutPermissionTest009(void);
-int AssetSystemApiWithoutPermissionTest010(void);
-int AssetSystemApiWithoutPermissionTest011(void);
-int AssetSystemApiWithoutPermissionTest012(void);
-int AssetSystemApiWithoutPermissionTest013(void);
-int AssetSystemApiWithoutPermissionTest014(void);
-int AssetSystemApiWithoutPermissionTest015(void);
-int AssetSystemApiWithoutPermissionTest016(void);
-int AssetSystemApiWithoutPermissionTest017(void);
-int AssetSystemApiWithoutPermissionTest018(void);
 }
 
 #endif // ASSET_SYSTEM_API_WITHOUT_PERMISSION_TEST_H
