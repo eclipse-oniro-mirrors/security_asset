@@ -71,7 +71,7 @@ HWTEST_F(AssetSystemApiWithoutPermissionTest, AssetSystemApiWithoutPermissionTes
     result.attrs = (AssetAttr *)AssetMalloc(numAttrs * sizeof(AssetAttr));
 
     // 检查内存分配是否成功
-    if (result.attrs == NULL) {
+    if (result.attrs == nullptr) {
         return;
     }
 
@@ -82,7 +82,7 @@ HWTEST_F(AssetSystemApiWithoutPermissionTest, AssetSystemApiWithoutPermissionTes
     // 初始化第二个 AssetAttr
     result.attrs[1].tag = 2; // 假设标签为 2
     result.attrs[1].value.boolean = true; // 假设值为 true，类型为 bool
-    ASSERT_EQ(NULL, AssetParseAttr(&result, SEC_ASSET_TAG_WRAP_TYPE));
+    ASSERT_EQ(nullptr, AssetParseAttr(&result, SEC_ASSET_TAG_WRAP_TYPE));
     AssetFree(result.attrs);
 }
 }

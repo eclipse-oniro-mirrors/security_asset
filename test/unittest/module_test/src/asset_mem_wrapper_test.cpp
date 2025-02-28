@@ -57,7 +57,7 @@ void AssetMemWrapperTest::TearDown(void)
  */
 HWTEST_F(AssetMemWrapperTest, AssetMemWrapperTest001, TestSize.Level0)
 {
-    ASSERT_EQ(NULL, AssetMalloc(0));
+    ASSERT_EQ(nullptr, AssetMalloc(0));
 }
 
 /**
@@ -68,7 +68,7 @@ HWTEST_F(AssetMemWrapperTest, AssetMemWrapperTest001, TestSize.Level0)
  */
 HWTEST_F(AssetMemWrapperTest, AssetMemWrapperTest002, TestSize.Level0)
 {
-    AssetFree(NULL);
+    AssetFree(nullptr);
 }
 
 /**
