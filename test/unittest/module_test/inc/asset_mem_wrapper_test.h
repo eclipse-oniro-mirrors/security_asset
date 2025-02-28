@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 
- #ifndef ACCESS_MEM_WRAPPER_TEST_H
- #define ACCESS_MEM_WRAPPER_TEST_H
+#ifndef ACCESS_MEM_WRAPPER_TEST_H
+#define ACCESS_MEM_WRAPPER_TEST_H
 
- namespace UnitTest::AssetMemWrapperTest {
- int AssetMemWrapperTest001(void);
- int AssetMemWrapperTest002(void);
- int AssetMemWrapperTest003(void);
- }
+namespace UnitTest::AssetMemWrapperTest {
+int AssetMemWrapperTest001(void);
+int AssetMemWrapperTest002(void);
+int AssetMemWrapperTest003(void);
+}
 
- #endif // ACCESS_MEM_WRAPPER_TEST_H
+#endif // ACCESS_MEM_WRAPPER_TEST_H
