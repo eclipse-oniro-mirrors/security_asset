@@ -57,7 +57,7 @@ void AssetSystemApiWithoutPermissionTest::TearDown(void)
 
 /**
  * @tc.name: AssetSystemApiWithoutPermissionTest.AssetSystemApiWithoutPermissionTest001
- * @tc.desc: Test asset func AssetAdd specific user id, expect SUCCESS
+ * @tc.desc: Test asset func AssetParseAttr, expect nullptr
  * @tc.type: FUNC
  * @tc.result:0
  */

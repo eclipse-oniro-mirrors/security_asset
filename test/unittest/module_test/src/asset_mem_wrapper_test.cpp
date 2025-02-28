@@ -51,7 +51,7 @@ void AssetMemWrapperTest::TearDown(void)
 
 /**
  * @tc.name: AssetMemWrapperTest.AssetMemWrapperTest001
- * @tc.desc: Test asset func AssetMalloc, expect NULL
+ * @tc.desc: Test asset func AssetMalloc, expect nullptr
  * @tc.type: FUNC
  * @tc.result:0
  */
@@ -73,7 +73,7 @@ HWTEST_F(AssetMemWrapperTest, AssetMemWrapperTest002, TestSize.Level0)
 
 /**
  * @tc.name: AssetMemWrapperTest.AssetMemWrapperTest003
- * @tc.desc: Test asset func AssetFree
+ * @tc.desc: Test asset func AssetMemCmp, expect 0
  * @tc.type: FUNC
  * @tc.result:0
  */
