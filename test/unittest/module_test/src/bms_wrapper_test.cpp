@@ -65,8 +65,9 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest001, TestSize.Level0)
     uint32_t uid = 0;
 
     ProcessInfo processInfo = { 0 };
-    processInfo.processName = processName;
-    processInfo.processNameLen = processNameLen;
+    processInfo.ownerType = NATIVE;
+    processInfo.processName = { .size = processNameLen, .data = processName };
+    processInfo.nativeInfo = { .uid = 0 };
     int32_t ret = GetCallingProcessInfo(userId, uid, &processInfo);
     ASSERT_EQ(ret, 0);
 }
