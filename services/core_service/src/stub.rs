@@ -44,6 +44,7 @@ impl RemoteStub for AssetService {
         reply: &mut ipc::parcel::MsgParcel,
     ) -> i32 {
         let _counter_user = AutoCounter::new();
+        logi!("[INFO]Start cancel idle");
         self.system_ability.cancel_idle();
         unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
 
