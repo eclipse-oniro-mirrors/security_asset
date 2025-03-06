@@ -87,6 +87,7 @@ pub(crate) fn unload_sa(duration: u64) {
     let unload_handler = UnloadHandler::get_instance();
     unload_handler.lock().unwrap().update_task(ylong_runtime::spawn(async move {
         sleep(Duration::from_secs(duration)).await;
+        logi!("[INFO]Start unload asset service");
         SystemAbilityManager::unload_system_ability(SA_ID);
     }));
 }
