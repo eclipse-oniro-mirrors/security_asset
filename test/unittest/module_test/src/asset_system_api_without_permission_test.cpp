@@ -65,23 +65,21 @@ HWTEST_F(AssetSystemApiWithoutPermissionTest, AssetSystemApiWithoutPermissionTes
 {
     uint32_t numAttrs = 2;
 
-    // 分配内存给 AssetResult
+    // allocate memory for AssetResult
     AssetResult result;
     result.count = numAttrs;
     result.attrs = (AssetAttr *)AssetMalloc(numAttrs * sizeof(AssetAttr));
 
-    // 检查内存分配是否成功
     if (result.attrs == nullptr) {
         return;
     }
 
-    // 初始化第一个 AssetAttr
-    result.attrs[0].tag = 1; // 假设标签为 1
-    result.attrs[0].value.u32 = 42; // 假设值为 42，类型为 uint32_t
+    // initialize result
+    result.attrs[0].tag = 1;
+    result.attrs[0].value.u32 = 42;
 
-    // 初始化第二个 AssetAttr
-    result.attrs[1].tag = 2; // 假设标签为 2
-    result.attrs[1].value.boolean = true; // 假设值为 true，类型为 bool
+    result.attrs[1].tag = 2;
+    result.attrs[1].value.boolean = true;
     ASSERT_EQ(nullptr, AssetParseAttr(&result, SEC_ASSET_TAG_WRAP_TYPE));
     AssetFree(result.attrs);
 }
