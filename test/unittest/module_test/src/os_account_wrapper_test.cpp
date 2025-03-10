@@ -98,7 +98,7 @@ HWTEST_F(AssetOsAccountWrapperTest, AssetOsAccountWrapperTest004, TestSize.Level
 {
     int32_t userIds[10];
     uint32_t userIdsSize = 10;
-    ASSERT_EQ(ASSET_SUCCESS, GetUserIds(userIds, &userIdsSize));
+    ASSERT_EQ(0, GetUserIds(userIds, &userIdsSize));
 }
 
 /**
@@ -110,6 +110,6 @@ HWTEST_F(AssetOsAccountWrapperTest, AssetOsAccountWrapperTest004, TestSize.Level
 HWTEST_F(AssetOsAccountWrapperTest, AssetOsAccountWrapperTest005, TestSize.Level0)
 {
     uint32_t userIdsSize = 10;
-    ASSERT_EQ(ASSET_SUCCESS, GetUsersSize(&userIdsSize));
+    ASSERT_EQ(0, GetUsersSize(&userIdsSize));
 }
 }
