@@ -53,11 +53,11 @@ ohos_unittest("asset_dependency_test") {
     sources += [ "src/bms_wrapper_test.cpp" ]
     sources += [ "src/system_ability_wrapper_test.cpp" ]
     sources += [ "src/system_event_wrapper_test.cpp" ]
+    sources += [ "src/os_account_wrapper_test.cpp" ]
   }
   sources += [
     "src/asset_mem_wrapper_test.cpp",
     "src/asset_system_api_without_permission_test.cpp",
-    "src/os_account_wrapper_test.cpp",
   ]
   deps = [
     "../../../frameworks/c/system_api:asset_sdk",
