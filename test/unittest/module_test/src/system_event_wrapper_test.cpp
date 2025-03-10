@@ -76,7 +76,7 @@ void OnUserUnlocked(int32_t userId)
 
 /**
  * @tc.name: AssetSystemEventWrapperTest.AssetSystemEventWrapperTest001
- * @tc.desc: Test asset func SubscribeSystemEvent, expect ACCESS_TOKEN_ERROR
+ * @tc.desc: Test asset func SubscribeSystemEvent, expect true
  * @tc.type: FUNC
  * @tc.result:0
  */
@@ -95,12 +95,85 @@ HWTEST_F(AssetSystemEventWrapperTest, AssetSystemEventWrapperTest001, TestSize.L
 
 /**
  * @tc.name: AssetSystemEventWrapperTest.AssetSystemEventWrapperTest002
- * @tc.desc: Test asset func UnSubscribeSystemEvent, expect BMS_ERROR
+ * @tc.desc: Test asset func UnSubscribeSystemEvent, expect true
  * @tc.type: FUNC
  * @tc.result:0
  */
 HWTEST_F(AssetSystemEventWrapperTest, AssetSystemEventWrapperTest002, TestSize.Level0)
 {
     ASSERT_EQ(true, UnSubscribeSystemEvent());
+    ASSERT_EQ(false, UnSubscribeSystemEvent());
+}
+
+/**
+ * @tc.name: AssetSystemEventWrapperTest.AssetSystemEventWrapperTest003
+ * @tc.desc: Test asset func ParseDeveloperId, expect true
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemEventWrapperTest, AssetSystemEventWrapperTest003, TestSize.Level0)
+{
+    ConstAssetBlob blob;
+    std::string developerId = "test_developer";
+
+    ParseDeveloperId(developerId, blob);
+    ASSERT_EQ(blob.size, developerId.size());
+}
+
+/**
+ * @tc.name: AssetSystemEventWrapperTest.AssetSystemEventWrapperTest004
+ * @tc.desc: Test asset func ParseDeveloperId, expect true
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemEventWrapperTest, AssetSystemEventWrapperTest004, TestSize.Level0)
+{
+    ConstAssetBlob blob;
+    std::string developerId = "";
+
+    ParseDeveloperId(developerId, blob);
+    ASSERT_EQ(blob.size, 0);
+    ASSERT_EQ(blob.data, nullptr);
+}
+
+/**
+ * @tc.name: AssetSystemEventWrapperTest.AssetSystemEventWrapperTest005
+ * @tc.desc: Test asset func ParseGroupIds, expect true
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemEventWrapperTest, AssetSystemEventWrapperTest005, TestSize.Level0)
+{
+    std::string groupIds = "group1,group2,group3";
+    std::vector<std::string> groupIdStrs;
+    std::vector<ConstAssetBlob> groupIdBlobs;
+    ConstAssetBlobArray groupIdBlobArray;
+
+    ParseGroupIds(groupIds, groupIdStrs, groupIdBlobs, groupIdBlobArray);
+
+    ASSERT_EQ(groupIdStrs.size(), 3);
+    ASSERT_EQ(groupIdStrs[0], "group1");
+    ASSERT_EQ(groupIdStrs[1], "group2");
+    ASSERT_EQ(groupIdStrs[2], "group3");
+    ASSERT_EQ(groupIdBlobArray.size, 3);
+}
+
+/**
+ * @tc.name: AssetSystemEventWrapperTest.AssetSystemEventWrapperTest006
+ * @tc.desc: Test asset func ParseGroupIds, expect true
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemEventWrapperTest, AssetSystemEventWrapperTest006, TestSize.Level0)
+{
+    std::string groupIds = "";
+    std::vector<std::string> groupIdStrs;
+    std::vector<ConstAssetBlob> groupIdBlobs;
+    ConstAssetBlobArray groupIdBlobArray;
+
+    ParseGroupIds(groupIds, groupIdStrs, groupIdBlobs, groupIdBlobArray);
+
+    ASSERT_EQ(groupIdBlobArray.size, 0);
+    ASSERT_EQ(groupIdBlobArray.blob, nullptr);
 }
 }

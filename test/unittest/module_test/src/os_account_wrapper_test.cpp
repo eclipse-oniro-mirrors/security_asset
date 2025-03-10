@@ -64,14 +64,52 @@ HWTEST_F(AssetOsAccountWrapperTest, AssetOsAccountWrapperTest001, TestSize.Level
 
 /**
  * @tc.name: AssetOsAccountWrapperTest.AssetOsAccountWrapperTest002
- * @tc.desc: Test asset func GetOwnerInfo, expect BMS_ERROR
+ * @tc.desc: Test asset func IsUserIdExist, expect true
  * @tc.type: FUNC
  * @tc.result:0
  */
 HWTEST_F(AssetOsAccountWrapperTest, AssetOsAccountWrapperTest002, TestSize.Level0)
 {
-    uint32_t userId = 1000;
-    uint32_t uid = 100;
-    ASSERT_EQ(true, GetUserIdByUid(uid, &userId));
+    int32_t userId = 100;
+    bool exist;
+    ASSERT_EQ(true, IsUserIdExist(userId, &exist));
+}
+
+/**
+ * @tc.name: AssetOsAccountWrapperTest.AssetOsAccountWrapperTest003
+ * @tc.desc: Test asset func IsUserIdExist, expect false
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetOsAccountWrapperTest, AssetOsAccountWrapperTest003, TestSize.Level0)
+{
+    int32_t userId = -1;
+    bool exist;
+    ASSERT_EQ(false, IsUserIdExist(userId, &exist));
+}
+
+/**
+ * @tc.name: AssetOsAccountWrapperTest.AssetOsAccountWrapperTest004
+ * @tc.desc: Test asset func IsUserIdExist, expect false
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetOsAccountWrapperTest, AssetOsAccountWrapperTest004, TestSize.Level0)
+{
+    int32_t userIds[10];
+    uint32_t userIdsSize = 10;
+    ASSERT_EQ(0, GetUserIds(userIds, &userIdsSize));
+}
+
+/**
+ * @tc.name: AssetOsAccountWrapperTest.AssetOsAccountWrapperTest005
+ * @tc.desc: Test asset func IsUserIdExist, expect false
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetOsAccountWrapperTest, AssetOsAccountWrapperTest005, TestSize.Level0)
+{
+    uint32_t userIdsSize = 10;
+    ASSERT_EQ(0, GetUsersSize(&userIdsSize));
 }
 }

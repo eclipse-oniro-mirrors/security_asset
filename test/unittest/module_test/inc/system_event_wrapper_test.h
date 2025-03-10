@@ -19,6 +19,14 @@
 namespace UnitTest::AssetSystemEventWrapperTest {
 int AssetSystemEventWrapperTest001(void);
 int AssetSystemEventWrapperTest002(void);
+int AssetSystemEventWrapperTest003(void);
+int AssetSystemEventWrapperTest004(void);
+int AssetSystemEventWrapperTest005(void);
+int AssetSystemEventWrapperTest006(void);
+int AssetSystemEventWrapperTest007(void);
+int AssetSystemEventWrapperTest008(void);
+int AssetSystemEventWrapperTest009(void);
+int AssetSystemEventWrapperTest010(void);
 }
 
 #endif // SYSTEM_EVENT_WRAPPER_TEST_H

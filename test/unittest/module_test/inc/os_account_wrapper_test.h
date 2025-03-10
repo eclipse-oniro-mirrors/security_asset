@@ -19,6 +19,9 @@
 namespace UnitTest::AssetOsAccountWrapperTest {
 int AssetOsAccountWrapperTest001(void);
 int AssetOsAccountWrapperTest002(void);
+int AssetOsAccountWrapperTest003(void);
+int AssetOsAccountWrapperTest004(void);
+int AssetOsAccountWrapperTest005(void);
 }
 
 #endif // OS_ACCOUNT_WRAPPER_TEST_H
