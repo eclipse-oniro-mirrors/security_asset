@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-use std::ptr;
 use std::{
     ffi::{c_char, CString},
     ptr::null,
