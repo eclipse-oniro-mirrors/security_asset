@@ -43,6 +43,7 @@ ohos_unittest("asset_dependency_test") {
     "../../../interfaces/inner_kits/c/inc",
     "../../../interfaces/kits/c/inc",
     "../../../services/os_dependency/inc",
+    "../../../services/os_dependency/src",
     "../../../services/crypto_manager/src",
     "../common/inc",
   ]
