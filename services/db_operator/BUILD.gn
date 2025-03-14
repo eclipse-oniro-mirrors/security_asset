@@ -14,7 +14,7 @@
 import("//build/ohos.gni")
 import("//build/test.gni")
 
-module_output_path = "asset/asset_UT_test"
+module_output_path = "asset/asset"
 
 ohos_rust_static_library("asset_db_operator") {
   sources = [ "src/lib.rs" ]
