@@ -20,6 +20,7 @@
 
 #include "system_ability_wrapper.h"
 #include "system_event_wrapper.h"
+#include "base/security/asset/services/os_dependency/src/system_event_wrapper.cpp"
 
 using namespace testing::ext;
 namespace UnitTest::AssetSystemEventWrapperTest {
