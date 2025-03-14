@@ -14,7 +14,7 @@
 import("//build/ohos.gni")
 import("//build/test.gni")
 
-module_output_path = "asset/asset_UT_test"
+module_output_path = "asset/asset"
 
 ohos_rust_unittest("asset_rust_test") {
   module_out_path = module_output_path
