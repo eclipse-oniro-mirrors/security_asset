@@ -22,6 +22,7 @@ use asset_db_operator::{
 };
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncStatus, SyncType, Value};
 use asset_log::logi;
+use asset_sdk::Tag;
 use asset_utils::time;
 
 use crate::operations::common;
