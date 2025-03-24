@@ -20,9 +20,8 @@ use asset_db_operator::{
     database::build_db,
     types::{column, DbMap},
 };
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncStatus, SyncType, Value};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncStatus, SyncType, Value, Tag};
 use asset_log::logi;
-use asset_sdk::Tag;
 use asset_utils::time;
 
 use crate::operations::common;
