@@ -21,6 +21,7 @@ ohos_shared_library("asset_ndk") {
   public_configs = [ ":asset_config" ]
   sources = [ "src/asset_api.c" ]
   deps = [ "../../../frameworks/c/system_api:asset_sdk" ]
+  innerapi_tags = [ "ndk" ]
 
   external_deps = [ "hilog:libhilog" ]
 
@@ -39,7 +40,6 @@ ohos_shared_library("asset_ndk") {
     "-fPIC",
   ]
 
-  relative_install_dir = "ndk"
   subsystem_name = "security"
   part_name = "asset"
 }
