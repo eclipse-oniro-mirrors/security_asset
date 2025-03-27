@@ -166,6 +166,9 @@ fn build_sql_query_options(query_options: Option<&QueryOptions>, sql: &mut Strin
         } else if let Some(offset) = option.offset {
             sql.push_str(format!(" limit -1 offset {}", offset).as_str());
         }
+        if let Some(sql_where) = &option.amend {
+            sql.push_str(sql_where);
+        }
     }
 }
 

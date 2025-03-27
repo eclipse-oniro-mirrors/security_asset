@@ -161,7 +161,8 @@ fn migrate_data(
     old_data_query_condition: &DbMap,
 ) -> Result<()> {
     // 3.1 query data in old db
-    let query_options = QueryOptions { offset: None, limit: Some(MAX_BATCH_NUM), order_by: None, order: None };
+    let query_options =
+        QueryOptions { offset: None, limit: Some(MAX_BATCH_NUM), order_by: None, order: None, amend: None };
 
     let old_data_vec = old_db.query_datas(&vec![], old_data_query_condition, Some(&query_options), false)?;
     // 3.2 insert data in new db

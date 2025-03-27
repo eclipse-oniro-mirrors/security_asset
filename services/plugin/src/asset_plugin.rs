@@ -19,11 +19,12 @@ use asset_db_operator::{
     database_file_upgrade::construct_splited_db_name,
     types::{column, QueryOptions},
 };
-use asset_definition::{log_throw_error, ErrCode, Extension, Result};
+use asset_definition::{log_throw_error, ErrCode, Extension, Result, SyncType};
 use asset_file_operator::de_operator::create_user_de_dir;
 use asset_log::{loge, logi};
 use asset_sdk::{
-    plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, RETURN_LIMIT, RETURN_OFFSET}, Value
+    plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, RETURN_LIMIT, RETURN_OFFSET},
+    Value,
 };
 use std::{
     cell::RefCell,
@@ -135,6 +136,7 @@ fn get_query_options(attrs: &ExtDbMap) -> QueryOptions {
         },
         order_by: None,
         order: None,
+        amend: None,
     }
 }
 
@@ -197,9 +199,33 @@ impl IAssetPluginCtx for AssetContext {
         Ok(query_data)
     }
 
+    fn query_temp(
+        &mut self,
+        db_name: &str,
+        columns: &[&'static str],
+        is_ce: bool,
+    ) -> std::result::Result<Vec<ExtDbMap>, u32> {
+        let mut db = Database::build_with_file_name(self.user_id, db_name, is_ce).map_err(|e| e.code as u32)?;
+        let condition = ExtDbMap::new();
+        let mut sql_where = String::from(" where ");
+        sql_where.push_str(&format!("(SyncType & {0}) = {0} ", SyncType::ThisDevice as u32));
+        sql_where.push_str("and ");
+        sql_where.push_str("SyncStatus <> 2 ");
+        let query_options =
+            QueryOptions { offset: None, limit: None, order: None, order_by: None, amend: Some(sql_where) };
+        let query_data =
+            db.query_datas(&columns.to_vec(), &condition, Some(&query_options), false).map_err(|e| e.code as u32)?;
+        Ok(query_data)
+    }
+
     /// Query db with attributes to a certain db. Normal, Group, CE.
     fn query_certain_db(
-        &mut self, db_info: &ExtDbMap, attributes: &ExtDbMap, query_options: &ExtDbMap, is_ce: bool) -> std::result::Result<Vec<ExtDbMap>, u32> {
+        &mut self,
+        db_info: &ExtDbMap,
+        attributes: &ExtDbMap,
+        query_options: &ExtDbMap,
+        is_ce: bool,
+    ) -> std::result::Result<Vec<ExtDbMap>, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
         db.query_datas(&vec![], attributes, Some(&get_query_options(query_options)), true).map_err(|e| e.code as u32)
@@ -228,7 +254,12 @@ impl IAssetPluginCtx for AssetContext {
     }
 
     /// Removes an asset from a certain db. Normal, Group, CE.
-    fn remove_certain_db(&mut self, db_info: &ExtDbMap, attributes: &ExtDbMap, is_ce: bool) -> std::result::Result<i32, u32> {
+    fn remove_certain_db(
+        &mut self,
+        db_info: &ExtDbMap,
+        attributes: &ExtDbMap,
+        is_ce: bool,
+    ) -> std::result::Result<i32, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
         db.delete_datas(attributes, None, false).map_err(|e| e.code as u32)

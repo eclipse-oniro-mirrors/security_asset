@@ -68,10 +68,10 @@ pub const PARAM_NAME_APP_INDEX: &str = "AppIndex";
 pub const PARAM_NAME_IS_HAP: &str = "IsHap";
 
 /// param name for return offset
-pub const RETURN_OFFSET: &str  = "ReturnOffset";
+pub const RETURN_OFFSET: &str = "ReturnOffset";
 
 /// param name for return limit
-pub const RETURN_LIMIT: &str  = "ReturnLimit";
+pub const RETURN_LIMIT: &str = "ReturnLimit";
 
 /// An enumeration representing different plugin types.
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
@@ -105,9 +105,16 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     /// Queries ce db.
     fn ce_query(&mut self, attributes: &ExtDbMap) -> Result<Vec<ExtDbMap>, u32>;
 
+    /// Queries for temp db.
+    fn query_temp(&mut self, db_name: &str, columns: &[&'static str], is_ce: bool) -> Result<Vec<ExtDbMap>, u32>;
+
     /// Query db with attributes to a certain db. Normal, Group, CE.
     fn query_certain_db(
-        &mut self, db_info: &ExtDbMap, attributes: &ExtDbMap, query_options: &ExtDbMap, is_ce: bool
+        &mut self,
+        db_info: &ExtDbMap,
+        attributes: &ExtDbMap,
+        query_options: &ExtDbMap,
+        is_ce: bool,
     ) -> Result<Vec<ExtDbMap>, u32>;
 
     /// Removes an asset from de db.
@@ -154,4 +161,7 @@ pub trait IAssetPlugin: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Redirect request.
     fn redirect_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> Result<(), i32>;
+
+    /// On SA Extension.
+    fn on_sa_extension(&self, extension: String, data: &mut MsgParcel, reply: &mut MsgParcel) -> Result<(), i32>;
 }

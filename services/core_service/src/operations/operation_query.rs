@@ -136,6 +136,7 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
                 None
             }
         },
+        amend: None,
     }
 }
 
