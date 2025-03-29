@@ -208,7 +208,7 @@ impl IAssetPluginCtx for AssetContext {
         let mut db = Database::build_with_file_name(self.user_id, db_name, is_ce).map_err(|e| e.code as u32)?;
         let condition = ExtDbMap::new();
         let mut sql_where = String::from(" where ");
-        sql_where.push_str(&format!("(SyncType & {0}) = {0} ", SyncType::ThisDevice as u32));
+        sql_where.push_str(&format!("(SyncType & {0}) = {0} ", SyncType::TrustedDevice as u32));
         sql_where.push_str("and ");
         sql_where.push_str("SyncStatus <> 2 ");
         let query_options =
