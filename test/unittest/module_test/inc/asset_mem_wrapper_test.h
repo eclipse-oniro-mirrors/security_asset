@@ -19,7 +19,6 @@
 namespace UnitTest::AssetMemWrapperTest {
 int AssetMemWrapperTest001(void);
 int AssetMemWrapperTest002(void);
-int AssetMemWrapperTest003(void);
 }
 
 #endif // ACCESS_MEM_WRAPPER_TEST_H
