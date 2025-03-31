@@ -171,11 +171,10 @@ fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> R
     if attributes.get(&Tag::SyncType).is_none()
         || (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0
     {
-        return Ok(());
+        Ok(())
     } else {
-        return log_throw_error!(ErrCode::Unsupported, "[FATAL]trusted account data can not be set need wrap data.");
+        log_throw_error!(ErrCode::Unsupported, "[FATAL]trusted account data can not be set need wrap data.")
     }
-    Ok(())
 }
 
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
