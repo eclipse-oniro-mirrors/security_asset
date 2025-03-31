@@ -51,33 +51,23 @@ void AssetMemWrapperTest::TearDown(void)
 
 /**
  * @tc.name: AssetMemWrapperTest.AssetMemWrapperTest001
- * @tc.desc: Test asset func AssetMalloc, expect nullptr
+ * @tc.desc: Test asset func AssetFree, AssetMalloc, expect nullptr
  * @tc.type: FUNC
  * @tc.result:0
  */
 HWTEST_F(AssetMemWrapperTest, AssetMemWrapperTest001, TestSize.Level0)
 {
+    AssetFree(nullptr);
     ASSERT_EQ(nullptr, AssetMalloc(0));
 }
 
 /**
  * @tc.name: AssetMemWrapperTest.AssetMemWrapperTest002
- * @tc.desc: Test asset func AssetFree
- * @tc.type: FUNC
- * @tc.result:0
- */
-HWTEST_F(AssetMemWrapperTest, AssetMemWrapperTest002, TestSize.Level0)
-{
-    AssetFree(nullptr);
-}
-
-/**
- * @tc.name: AssetMemWrapperTest.AssetMemWrapperTest003
  * @tc.desc: Test asset func AssetMemCmp, expect 0
  * @tc.type: FUNC
  * @tc.result:0
  */
-HWTEST_F(AssetMemWrapperTest, AssetMemWrapperTest003, TestSize.Level0)
+HWTEST_F(AssetMemWrapperTest, AssetMemWrapperTest002, TestSize.Level0)
 {
     const uint32_t size = 5;
     uint8_t array1[size] = {1, 2, 3, 4, 5};
