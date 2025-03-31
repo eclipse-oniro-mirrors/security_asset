@@ -167,6 +167,14 @@ fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> R
         },
         OwnerType::Native => (),
     }
+
+    if attributes.get(&Tag::SyncType).is_none()
+        || (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0
+    {
+        return Ok(());
+    } else {
+        return log_throw_error!(ErrCode::Unsupported, "[FATAL]trusted account data can not be set need wrap data.");
+    }
     Ok(())
 }
 
