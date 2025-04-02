@@ -106,7 +106,13 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     fn ce_query(&mut self, attributes: &ExtDbMap) -> Result<Vec<ExtDbMap>, u32>;
 
     /// Queries for temp db.
-    fn query_temp(&mut self, db_name: &str, columns: &[&'static str], is_ce: bool) -> Result<Vec<ExtDbMap>, u32>;
+    fn query_temp(
+        &mut self, db_name: &str,
+        columns: &[&'static str],
+        limit: u32,
+        offset: u32,
+        is_ce: bool
+    ) -> Result<Vec<ExtDbMap>, u32>;
 
     /// Query db with attributes to a certain db. Normal, Group, CE.
     fn query_certain_db(

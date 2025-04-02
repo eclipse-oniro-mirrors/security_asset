@@ -203,6 +203,8 @@ impl IAssetPluginCtx for AssetContext {
         &mut self,
         db_name: &str,
         columns: &[&'static str],
+        limit: u32,
+        offset: u32,
         is_ce: bool,
     ) -> std::result::Result<Vec<ExtDbMap>, u32> {
         let mut db = Database::build_with_file_name(self.user_id, db_name, is_ce).map_err(|e| e.code as u32)?;
@@ -212,7 +214,7 @@ impl IAssetPluginCtx for AssetContext {
         sql_where.push_str("and ");
         sql_where.push_str("SyncStatus <> 2 ");
         let query_options =
-            QueryOptions { offset: None, limit: None, order: None, order_by: None, amend: Some(sql_where) };
+            QueryOptions { offset: Some(offset), limit: Some(limit), order: None, order_by: None, amend: Some(sql_where) };
         let query_data =
             db.query_datas(&columns.to_vec(), &condition, Some(&query_options), false).map_err(|e| e.code as u32)?;
         Ok(query_data)
