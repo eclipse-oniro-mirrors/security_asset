@@ -26,7 +26,8 @@
                         "persistence": true
                     }
                 ]
-            }
+            },
+            "extension": ["backup", "restore"]
         }
     ]
 }

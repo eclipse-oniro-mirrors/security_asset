@@ -15,13 +15,12 @@
 
 //! This module implements the Asset service.
 
+use ipc::parcel::MsgParcel;
+use samgr::manage::SystemAbilityManager;
 use std::{
     fs,
     time::{Duration, Instant},
 };
-
-use asset_db_operator::database_file_upgrade::check_and_split_db;
-use samgr::manage::SystemAbilityManager;
 use system_ability_fwk::{
     ability::{Ability, Handler},
     cxx_share::SystemAbilityOnDemandReason,
@@ -30,6 +29,7 @@ use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
 
 use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Counter};
 use asset_crypto_manager::crypto_manager::CryptoManager;
+use asset_db_operator::database_file_upgrade::check_and_split_db;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
 use asset_file_operator::{common::DE_ROOT_PATH, de_operator::create_user_de_dir};
 use asset_ipc::SA_ID;
@@ -136,6 +136,18 @@ impl Ability for AssetAbility {
     fn on_stop(&self) {
         logi!("[INFO]Asset service on_stop");
         common_event::unsubscribe();
+    }
+
+    fn on_extension(&self, extension: String, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
+        logi!("[INFO]Asset on_extension, extension is {}", extension);
+        if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
+            match load.on_sa_extension(extension, data, reply) {
+                Ok(()) => logi!("process sa extension event success."),
+                Err(code) => loge!("process sa extension event failed, code: {}", code),
+            };
+        }
+        logi!("[INFO]Asset on_extension end");
+        0
     }
 }
 
