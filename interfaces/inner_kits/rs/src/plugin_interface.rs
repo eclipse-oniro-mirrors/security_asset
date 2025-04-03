@@ -105,8 +105,8 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     /// Queries ce db.
     fn ce_query(&mut self, attributes: &ExtDbMap) -> Result<Vec<ExtDbMap>, u32>;
 
-    /// Queries for temp db.
-    fn query_temp(
+    /// Query synchronizable data.
+    fn query_synchronizable_data(
         &mut self, db_name: &str,
         columns: &[&'static str],
         limit: u32,

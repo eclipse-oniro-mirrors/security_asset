@@ -199,7 +199,7 @@ impl IAssetPluginCtx for AssetContext {
         Ok(query_data)
     }
 
-    fn query_temp(
+    fn query_synchronizable_data(
         &mut self,
         db_name: &str,
         columns: &[&'static str],
@@ -211,8 +211,7 @@ impl IAssetPluginCtx for AssetContext {
         let condition = ExtDbMap::new();
         let mut sql_where = String::from(" where ");
         sql_where.push_str(&format!("(SyncType & {0}) = {0} ", SyncType::TrustedDevice as u32));
-        sql_where.push_str("and ");
-        sql_where.push_str("SyncStatus <> 2 ");
+        sql_where.push_str("and SyncStatus <> 2 ");
         let query_options =
             QueryOptions { offset: Some(offset), limit: Some(limit), order: None, order_by: None, amend: Some(sql_where) };
         let query_data =
