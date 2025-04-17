@@ -19,7 +19,7 @@ use asset_db_operator::{
     database_file_upgrade::construct_splited_db_name,
     types::{column, QueryOptions},
 };
-use asset_definition::{log_throw_error, ErrCode, Extension, Result, SyncType};
+use asset_definition::{log_throw_error, ErrCode, Extension, Result};
 use asset_file_operator::de_operator::create_user_de_dir;
 use asset_log::{loge, logi};
 use asset_sdk::{
@@ -199,21 +199,19 @@ impl IAssetPluginCtx for AssetContext {
         Ok(query_data)
     }
 
-    fn query_synchronizable_data(
+    fn query_target_data(
         &mut self,
         db_name: &str,
         columns: &[&'static str],
+        sql_where: &str,
         limit: u32,
         offset: u32,
         is_ce: bool,
     ) -> std::result::Result<Vec<ExtDbMap>, u32> {
         let mut db = Database::build_with_file_name(self.user_id, db_name, is_ce).map_err(|e| e.code as u32)?;
         let condition = ExtDbMap::new();
-        let mut sql_where = String::from(" where ");
-        sql_where.push_str(&format!("(SyncType & {0}) = {0} ", SyncType::TrustedDevice as u32));
-        sql_where.push_str("and SyncStatus <> 2 ");
         let query_options =
-            QueryOptions { offset: Some(offset), limit: Some(limit), order: None, order_by: None, amend: Some(sql_where) };
+            QueryOptions { offset: Some(offset), limit: Some(limit), order: None, order_by: None, amend: Some(sql_where.to_string()) };
         let query_data =
             db.query_datas(&columns.to_vec(), &condition, Some(&query_options), false).map_err(|e| e.code as u32)?;
         Ok(query_data)
