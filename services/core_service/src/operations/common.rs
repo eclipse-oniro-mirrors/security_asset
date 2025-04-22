@@ -57,7 +57,7 @@ const TAG_COLUMN_TABLE: [(Tag, &str); 21] = [
     (Tag::WrapType, column::WRAP_TYPE),
 ];
 
-const AAD_ATTR: [&str; 14] = [
+const AAD_ATTR: [&str; 15] = [
     column::ALIAS,
     column::OWNER,
     column::OWNER_TYPE,
