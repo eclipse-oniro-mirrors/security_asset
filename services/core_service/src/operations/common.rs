@@ -216,11 +216,10 @@ fn build_aad_v2(attrs: &DbMap) -> Result<Vec<u8>> {
                 continue;
             }
             aad.extend(format!("{}:", column).as_bytes());
-            match attrs.get(val) {
-                Some(Value::Bytes(bytes)) => aad.extend(to_hex(bytes)?),
-                Some(Value::Number(num)) => aad.extend(num.to_le_bytes()),
-                Some(Value::Bool(num)) => aad.push(*num as u8),
-                None => (),
+            match val {
+                Value::Bytes(bytes) => aad.extend(to_hex(bytes)?),
+                Value::Number(num) => aad.extend(num.to_le_bytes()),
+                Value::Bool(num) => aad.push(*num as u8),
             }
             aad.push(b'_');
         }
