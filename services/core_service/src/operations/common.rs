@@ -27,7 +27,7 @@ use asset_common::{CallingInfo, OWNER_INFO_SEPARATOR};
 use asset_crypto_manager::secret_key::SecretKey;
 use asset_db_operator::types::{column, DbMap, DB_DATA_VERSION, DB_DATA_VERSION_V1};
 use asset_definition::{
-    log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, OperationType, Result, Tag, Value,
+    log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, OperationType, Result, Tag, Value, WrapType
 };
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
@@ -57,7 +57,7 @@ const TAG_COLUMN_TABLE: [(Tag, &str); 21] = [
     (Tag::WrapType, column::WRAP_TYPE),
 ];
 
-const AAD_ATTR: [&str; 14] = [
+const AAD_ATTR: [&str; 15] = [
     column::ALIAS,
     column::OWNER,
     column::OWNER_TYPE,
@@ -72,6 +72,7 @@ const AAD_ATTR: [&str; 14] = [
     column::CRITICAL2,
     column::CRITICAL3,
     column::CRITICAL4,
+    column::WRAP_TYPE,
 ];
 
 pub(crate) const CRITICAL_LABEL_ATTRS: [Tag; 4] =
@@ -156,9 +157,24 @@ pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<S
     SecretKey::new_without_alias(calling, auth_type, access_type, require_password_set)
 }
 
+fn check_if_need_addition_aad(attr: &str, map: &DbMap) -> bool {
+    match attr {
+        column::WRAP_TYPE => {
+            match map.get_enum_attr::<WrapType>(&attr) {
+                Ok(v) => v != WrapType::default(),
+                Err(_) => false,
+            }
+        },
+        _ => true,
+    }
+}
+
 fn build_aad_v1(attrs: &DbMap) -> Vec<u8> {
     let mut aad = Vec::new();
     for column in &AAD_ATTR {
+        if !check_if_need_addition_aad(column, attrs) {
+            continue;
+        }
         match attrs.get(column) {
             Some(Value::Bytes(bytes)) => aad.extend(bytes),
             Some(Value::Number(num)) => aad.extend(num.to_le_bytes()),
@@ -186,6 +202,9 @@ fn to_hex(bytes: &Vec<u8>) -> Result<Vec<u8>> {
 fn build_aad_v2(attrs: &DbMap) -> Result<Vec<u8>> {
     let mut aad = Vec::new();
     for column in &AAD_ATTR {
+        if !check_if_need_addition_aad(column, attrs) {
+            continue;
+        }
         aad.extend(format!("{}:", column).as_bytes());
         match attrs.get(column) {
             Some(Value::Bytes(bytes)) => aad.extend(to_hex(bytes)?),
