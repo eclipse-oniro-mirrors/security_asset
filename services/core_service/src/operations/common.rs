@@ -177,7 +177,7 @@ fn build_aad_v1(attrs: &DbMap) -> Vec<u8> {
                 continue;
             }
             match val {
-                Value::Bytes(bytes) => aad.extend(to_hex(bytes)?),
+                Value::Bytes(bytes) => aad.extend(bytes),
                 Value::Number(num) => aad.extend(num.to_le_bytes()),
                 Value::Bool(num) => aad.push(*num as u8),
             }
