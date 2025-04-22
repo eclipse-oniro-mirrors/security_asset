@@ -27,7 +27,7 @@ use asset_common::{CallingInfo, OWNER_INFO_SEPARATOR};
 use asset_crypto_manager::secret_key::SecretKey;
 use asset_db_operator::types::{column, DbMap, DB_DATA_VERSION, DB_DATA_VERSION_V1};
 use asset_definition::{
-    log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, OperationType, Result, Tag, Value,
+    log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, OperationType, Result, Tag, Value, WrapType
 };
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
@@ -73,6 +73,8 @@ const AAD_ATTR: [&str; 14] = [
     column::CRITICAL3,
     column::CRITICAL4,
 ];
+
+const AAD_ADDITION: [&str; 1] = [ column::WRAP_TYPE ];
 
 pub(crate) const CRITICAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelCritical1, Tag::DataLabelCritical2, Tag::DataLabelCritical3, Tag::DataLabelCritical4];
@@ -183,6 +185,18 @@ fn to_hex(bytes: &Vec<u8>) -> Result<Vec<u8>> {
     Ok(hex_vec)
 }
 
+fn check_if_need_addition_aad(attr: &str, map: &DbMap) -> bool {
+    match attr {
+        column::WRAP_TYPE => {
+            match map.get_enum_attr::<WrapType>(&attr) {
+                Ok(v) => v != WrapType::default(),
+                Err(_) => false,
+            }
+        },
+        _ => false,
+    }
+}
+
 fn build_aad_v2(attrs: &DbMap) -> Result<Vec<u8>> {
     let mut aad = Vec::new();
     for column in &AAD_ATTR {
@@ -194,6 +208,22 @@ fn build_aad_v2(attrs: &DbMap) -> Result<Vec<u8>> {
             None => (),
         }
         aad.push(b'_');
+    }
+
+    for column in &AAD_ADDITION {
+        if let Some(val) = attrs.get(column) {
+            if !check_if_need_addition_aad(column, attrs) {
+                continue;
+            }
+            aad.extend(format!("{}:", column).as_bytes());
+            match attrs.get(val) {
+                Some(Value::Bytes(bytes)) => aad.extend(to_hex(bytes)?),
+                Some(Value::Number(num)) => aad.extend(num.to_le_bytes()),
+                Some(Value::Bool(num)) => aad.push(*num as u8),
+                None => (),
+            }
+            aad.push(b'_');
+        }
     }
     Ok(aad)
 }
