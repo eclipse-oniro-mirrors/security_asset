@@ -72,9 +72,8 @@ const AAD_ATTR: [&str; 14] = [
     column::CRITICAL2,
     column::CRITICAL3,
     column::CRITICAL4,
+    column::WRAP_TYPE,
 ];
-
-const AAD_ADDITION: [&str; 1] = [ column::WRAP_TYPE ];
 
 pub(crate) const CRITICAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelCritical1, Tag::DataLabelCritical2, Tag::DataLabelCritical3, Tag::DataLabelCritical4];
@@ -158,14 +157,30 @@ pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<S
     SecretKey::new_without_alias(calling, auth_type, access_type, require_password_set)
 }
 
+fn check_if_need_addition_aad(attr: &str, map: &DbMap) -> bool {
+    match attr {
+        column::WRAP_TYPE => {
+            match map.get_enum_attr::<WrapType>(&attr) {
+                Ok(v) => v != WrapType::default(),
+                Err(_) => false,
+            }
+        },
+        _ => true,
+    }
+}
+
 fn build_aad_v1(attrs: &DbMap) -> Vec<u8> {
     let mut aad = Vec::new();
     for column in &AAD_ATTR {
-        match attrs.get(column) {
-            Some(Value::Bytes(bytes)) => aad.extend(bytes),
-            Some(Value::Number(num)) => aad.extend(num.to_le_bytes()),
-            Some(Value::Bool(num)) => aad.push(*num as u8),
-            None => continue,
+        if let Some(val) = attrs.get(column) {
+            if !check_if_need_addition_aad(column, attrs) {
+                continue;
+            }
+            match val {
+                Value::Bytes(bytes) => aad.extend(to_hex(bytes)?),
+                Value::Number(num) => aad.extend(num.to_le_bytes()),
+                Value::Bool(num) => aad.push(*num as u8),
+            }
         }
     }
     aad
@@ -185,32 +200,9 @@ fn to_hex(bytes: &Vec<u8>) -> Result<Vec<u8>> {
     Ok(hex_vec)
 }
 
-fn check_if_need_addition_aad(attr: &str, map: &DbMap) -> bool {
-    match attr {
-        column::WRAP_TYPE => {
-            match map.get_enum_attr::<WrapType>(&attr) {
-                Ok(v) => v != WrapType::default(),
-                Err(_) => false,
-            }
-        },
-        _ => false,
-    }
-}
-
 fn build_aad_v2(attrs: &DbMap) -> Result<Vec<u8>> {
     let mut aad = Vec::new();
     for column in &AAD_ATTR {
-        aad.extend(format!("{}:", column).as_bytes());
-        match attrs.get(column) {
-            Some(Value::Bytes(bytes)) => aad.extend(to_hex(bytes)?),
-            Some(Value::Number(num)) => aad.extend(num.to_le_bytes()),
-            Some(Value::Bool(num)) => aad.push(*num as u8),
-            None => (),
-        }
-        aad.push(b'_');
-    }
-
-    for column in &AAD_ADDITION {
         if let Some(val) = attrs.get(column) {
             if !check_if_need_addition_aad(column, attrs) {
                 continue;
