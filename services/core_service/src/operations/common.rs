@@ -172,15 +172,14 @@ fn check_if_need_addition_aad(attr: &str, map: &DbMap) -> bool {
 fn build_aad_v1(attrs: &DbMap) -> Vec<u8> {
     let mut aad = Vec::new();
     for column in &AAD_ATTR {
-        if let Some(val) = attrs.get(column) {
-            if !check_if_need_addition_aad(column, attrs) {
-                continue;
-            }
-            match val {
-                Value::Bytes(bytes) => aad.extend(bytes),
-                Value::Number(num) => aad.extend(num.to_le_bytes()),
-                Value::Bool(num) => aad.push(*num as u8),
-            }
+        if !check_if_need_addition_aad(column, attrs) {
+            continue;
+        }
+        match attrs.get(column) {
+            Some(Value::Bytes(bytes)) => aad.extend(bytes),
+            Some(Value::Number(num)) => aad.extend(num.to_le_bytes()),
+            Some(Value::Bool(num)) => aad.push(*num as u8),
+            None => continue,
         }
     }
     aad
@@ -203,18 +202,17 @@ fn to_hex(bytes: &Vec<u8>) -> Result<Vec<u8>> {
 fn build_aad_v2(attrs: &DbMap) -> Result<Vec<u8>> {
     let mut aad = Vec::new();
     for column in &AAD_ATTR {
-        if let Some(val) = attrs.get(column) {
-            if !check_if_need_addition_aad(column, attrs) {
-                continue;
-            }
-            aad.extend(format!("{}:", column).as_bytes());
-            match val {
-                Value::Bytes(bytes) => aad.extend(to_hex(bytes)?),
-                Value::Number(num) => aad.extend(num.to_le_bytes()),
-                Value::Bool(num) => aad.push(*num as u8),
-            }
-            aad.push(b'_');
+        if !check_if_need_addition_aad(column, attrs) {
+            continue;
         }
+        aad.extend(format!("{}:", column).as_bytes());
+        match attrs.get(column) {
+            Some(Value::Bytes(bytes)) => aad.extend(to_hex(bytes)?),
+            Some(Value::Number(num)) => aad.extend(num.to_le_bytes()),
+            Some(Value::Bool(num)) => aad.push(*num as u8),
+            None => (),
+        }
+        aad.push(b'_');
     }
     Ok(aad)
 }
