@@ -202,8 +202,8 @@ fn modify_sync_type(db: &mut DbMap) -> Result<()> {
     }
     if unsafe { !CheckSystemHapPermission() } {
         logw!("[FATAL]The caller is not system application. Modify store sync type!");
-        db.insert(&column::SYNC_TYPE,
-            Value::Number(db.get_num_attr(&column::SYNC_TYPE)? - SyncType::TrustedAccount as u32))
+        db.insert(column::SYNC_TYPE,
+            Value::Number(db.get_num_attr(&column::SYNC_TYPE)? - SyncType::TrustedAccount as u32));
     }
     Ok(())
 }
@@ -213,7 +213,7 @@ fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 
     // Fill all attributes to DbMap.
     let mut db_data = common::into_db_map(attributes);
-    modify_sync_type(&mut db_data);
+    modify_sync_type(&mut db_data)?;
     common::add_calling_info(calling_info, &mut db_data);
     add_system_attrs(&mut db_data)?;
     add_default_attrs(&mut db_data);
