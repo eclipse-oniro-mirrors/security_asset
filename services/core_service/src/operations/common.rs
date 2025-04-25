@@ -18,12 +18,14 @@
 mod argument_check;
 mod permission_check;
 
+use std::time::Instant;
+
 pub(crate) use argument_check::{
     check_group_validity, check_required_tags, check_tag_validity, check_value_validity, MAX_LABEL_SIZE,
 };
 pub(crate) use permission_check::check_system_permission;
 
-use asset_common::{CallingInfo, OWNER_INFO_SEPARATOR};
+use asset_common::{CallingInfo, OwnerType, OWNER_INFO_SEPARATOR};
 use asset_crypto_manager::secret_key::SecretKey;
 use asset_db_operator::types::{column, DbMap, DB_DATA_VERSION, DB_DATA_VERSION_V1};
 use asset_definition::{
@@ -32,6 +34,8 @@ use asset_definition::{
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID};
+
+use crate::sys_event::upload_statistic_system_event;
 
 const TAG_COLUMN_TABLE: [(Tag, &str); 21] = [
     (Tag::Secret, column::SECRET),
@@ -220,6 +224,12 @@ fn build_aad_v2(attrs: &DbMap) -> Result<Vec<u8>> {
 pub(crate) fn build_aad(attrs: &DbMap) -> Result<Vec<u8>> {
     let version = attrs.get_num_attr(&column::VERSION)?;
     if version == DB_DATA_VERSION_V1 {
+        let tmp_calling_info = CallingInfo::new_part_info(
+            attrs.get_bytes_attr(&column::OWNER)?.clone(),
+            attrs.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?
+        );
+        upload_statistic_system_event(
+            &tmp_calling_info, Instant::now(), "V1_AAD_DATA", "V1_AAD_DATA");
         Ok(build_aad_v1(attrs))
     } else {
         build_aad_v2(attrs)
