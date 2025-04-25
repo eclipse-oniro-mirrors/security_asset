@@ -122,7 +122,7 @@ fn handle_package_removed(want: &HashMap<String, String>) {
     };
 }
 
-pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
+fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
     let reason_name: String = reason.name;
     if reason_name == "usual.event.PACKAGE_REMOVED" || reason_name == "usual.event.SANDBOX_PACKAGE_REMOVED" {
         let want = reason.extra_data.want();
@@ -177,5 +177,12 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
         listener::on_user_unlocked(reason.extra_data.code);
     }
     logi!("[INFO]Finish handle common event. [{}]", reason_name);
+}
+
+pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
+    ylong_runtime::spawn_blocking(move || {
+        process_common_event_async(reason)
+    });
     unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
 }
+
