@@ -18,6 +18,8 @@
 mod argument_check;
 mod permission_check;
 
+use std::time::Instant;
+
 pub(crate) use argument_check::{
     check_group_validity, check_required_tags, check_tag_validity, check_value_validity, MAX_LABEL_SIZE,
 };
