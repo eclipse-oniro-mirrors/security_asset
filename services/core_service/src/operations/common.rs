@@ -226,7 +226,7 @@ pub(crate) fn build_aad(attrs: &DbMap) -> Result<Vec<u8>> {
     if version == DB_DATA_VERSION_V1 {
         let tmp_calling_info = CallingInfo::new_part_info(
             attrs.get_bytes_attr(&column::OWNER)?.clone(),
-            attrs.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)
+            attrs.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?
         );
         upload_statistic_system_event(
             &tmp_calling_info, Instant::now(), "V1_AAD_DATA", "V1_AAD_DATA");
