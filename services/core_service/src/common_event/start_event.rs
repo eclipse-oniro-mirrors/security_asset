@@ -185,4 +185,3 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
     });
     unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
 }
-
