@@ -25,15 +25,23 @@ use asset_ipc::{deserialize_maps, ipc_err_handle, serialize_map, IpcCode, IPC_SU
 
 const LOAD_TIMEOUT_IN_SECONDS: i32 = 4;
 
-fn get_remote() -> Result<RemoteObj> {
-    match SystemAbilityManager::check_system_ability(SA_ID) {
+fn load_asset_service() -> Result<RemoteObj> {
+    match SystemAbilityManager::load_system_ability(SA_ID, LOAD_TIMEOUT_IN_SECONDS) {
         Some(remote) => Ok(remote),
-        None => match SystemAbilityManager::load_system_ability(SA_ID, LOAD_TIMEOUT_IN_SECONDS) {
-            Some(remote) => Ok(remote),
-            None => {
-                log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
-            },
+        None => {
+            log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
         },
+    }
+}
+
+fn get_remote(need_check: bool) -> Result<RemoteObj> {
+    if need_check {
+        match SystemAbilityManager::check_system_ability(SA_ID) {
+            Some(remote) => Ok(remote),
+            None => load_asset_service()
+        }
+    } else {
+        load_asset_service()
     }
 }
 
@@ -46,7 +54,7 @@ pub struct Manager {
 impl Manager {
     /// Build and initialize the Manager.
     pub fn build() -> Result<Self> {
-        let remote = get_remote()?;
+        let remote = get_remote(true)?;
         Ok(Self { remote })
     }
 
@@ -55,7 +63,15 @@ impl Manager {
         let mut parcel = MsgParcel::new();
         parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
         serialize_map(attributes, &mut parcel)?;
-        self.send_request(parcel, IpcCode::Add)?;
+        match self.send_request(parcel, IpcCode::Add) {
+            Ok(_) => (),
+            Err(e) => match e.code {
+                ErrCode::ServiceUnavailable => {
+                    self.send_request(parcel, IpcCode::Add)?;
+                },
+                _ => return e;
+            }
+        }
         Ok(())
     }
 

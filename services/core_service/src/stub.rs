@@ -15,7 +15,7 @@
 
 //! This module implements the stub of the Asset service.
 
-use asset_common::{AutoCounter, CallingInfo, OwnerType, ProcessInfo, ProcessInfoDetail};
+use asset_common::{AutoCounter, CallingInfo, Counter, OwnerType, ProcessInfo, ProcessInfoDetail};
 use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 
 use asset_definition::{AssetError, Result};
@@ -43,9 +43,15 @@ impl RemoteStub for AssetService {
         data: &mut ipc::parcel::MsgParcel,
         reply: &mut ipc::parcel::MsgParcel,
     ) -> i32 {
+        let counter = Counter::get_instance();
+        if counter.lock().unwrap().is_stop() {
+            return ErrCode::ServiceUnavailable as i32;
+        }
         let _counter_user = AutoCounter::new();
         logi!("[INFO]Start cancel idle");
-        self.system_ability.cancel_idle();
+        if !self.system_ability.cancel_idle() {
+            return ErrCode::ServiceUnavailable as i32;
+        }
         unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
 
         if code >= REDIRECT_START_CODE {

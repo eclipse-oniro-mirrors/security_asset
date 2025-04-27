@@ -21,11 +21,12 @@ use std::sync::{Arc, Mutex};
 /// Count asset service use times
 pub struct Counter {
     count: u32,
+    is_stop: bool,
 }
 
 impl Counter {
     fn new() -> Self {
-        Self { count: 0 }
+        Self { count: 0, is_stop: false }
     }
 
     /// Get the single instance of Counter.
@@ -47,8 +48,18 @@ impl Counter {
     }
 
     /// get count.
-    pub fn count(&mut self) -> u32 {
+    pub fn count(&self) -> u32 {
         self.count
+    }
+
+    /// get is_stop.
+    pub fn is_stop(&self) -> bool {
+        self.is_stop
+    }
+
+    /// set service stop
+    pub fn service_stop(&mut self) {
+        self.is_stop = true
     }
 }
 
