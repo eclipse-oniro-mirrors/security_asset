@@ -51,6 +51,35 @@ pub struct Manager {
     remote: RemoteObj,
 }
 
+macro_rules! process_request {
+    ($func:path, $manager:expr, $first_arg:expr) => {{
+        let mut parcel = MsgParcel::new();
+        parcel.write_interface_token(manager.descriptor()).map_err(ipc_err_handle)?;
+        serialize_map(attributes, &mut parcel)?;
+        match manager.send_request(parcel, first_arg) {
+            Ok(_) => (),
+            Err(e) => match e.code {
+                ErrCode::ServiceUnavailable => {
+                    let mut parcel = MsgParcel::new();
+                    parcel.write_interface_token(manager.descriptor()).map_err(ipc_err_handle)?;
+                    serialize_map(attributes, &mut parcel)?;
+                    manager.send_request(parcel, first_arg)?;
+                },
+                _ => return Err(e)
+            }
+        }
+        Ok(())
+    }};
+    ($func:path, $calling_info:expr, $first_arg:expr, $second_arg:expr) => {{
+        let func_name = hisysevent::function!();
+        let start = Instant::now();
+        let _trace = TraceScope::trace(func_name);
+        // Create de database directory if not exists.
+        create_user_de_dir($calling_info.user_id())?;
+        upload_system_event($func($calling_info, $first_arg, $second_arg), $calling_info, start, func_name, $first_arg)
+    }};
+}
+
 impl Manager {
     /// Build and initialize the Manager.
     pub fn build() -> Result<Self> {
@@ -60,19 +89,7 @@ impl Manager {
 
     /// Add an Asset.
     pub fn add(&self, attributes: &AssetMap) -> Result<()> {
-        let mut parcel = MsgParcel::new();
-        parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
-        serialize_map(attributes, &mut parcel)?;
-        match self.send_request(parcel, IpcCode::Add) {
-            Ok(_) => (),
-            Err(e) => match e.code {
-                ErrCode::ServiceUnavailable => {
-                    self.send_request(parcel, IpcCode::Add)?;
-                },
-                _ => return e;
-            }
-        }
-        Ok(())
+        process_request!(&self, IpcCode::Add)
     }
 
     /// Remove one or more Assets that match a search query.
