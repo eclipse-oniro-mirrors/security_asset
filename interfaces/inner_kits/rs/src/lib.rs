@@ -108,7 +108,7 @@ impl Manager {
         match self.send_request(parcel, ipc_code) {
             Ok(msg) => Ok(msg),
             Err(e) => match e.code {
-                ErrCode::ServiceUnavailable | ErrCode::IpcError => {
+                ErrCode::ServiceUnavailable => {
                     self.rebuild()?;
                     let mut parcel = MsgParcel::new();
                     parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
@@ -132,7 +132,7 @@ impl Manager {
         match self.send_request(parcel, ipc_code) {
             Ok(msg) => Ok(msg),
             Err(e) => match e.code {
-                ErrCode::ServiceUnavailable | ErrCode::IpcError => {
+                ErrCode::ServiceUnavailable => {
                     self.rebuild()?;
                     let mut parcel = MsgParcel::new();
                     parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
