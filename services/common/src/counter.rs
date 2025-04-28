@@ -58,7 +58,7 @@ impl Counter {
     }
 
     /// set service stop
-    pub fn service_stop(&mut self) {
+    pub fn stop(&mut self) {
         self.is_stop = true
     }
 }

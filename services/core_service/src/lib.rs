@@ -135,9 +135,9 @@ impl Ability for AssetAbility {
 
     fn on_stop(&self) {
         logi!("[INFO]Asset service on_stop");
-        common_event::unsubscribe();
         let counter = Counter::get_instance();
-        counter.lock().unwrap().service_stop();
+        counter.lock().unwrap().stop();
+        common_event::unsubscribe();
     }
 
     fn on_extension(&self, extension: String, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
