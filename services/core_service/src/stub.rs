@@ -46,13 +46,17 @@ impl RemoteStub for AssetService {
         let counter = Counter::get_instance();
         if counter.lock().unwrap().is_stop() {
             loge!("[FATAL]Service is stop.");
-            return ErrCode::ServiceUnavailable as i32;
+            let _ = reply_handle(
+                Err(AssetError { code: ErrCode::ServiceUnavailable, msg: "service stop".to_string() }), reply);
+            return IPC_SUCCESS as i32;
         }
         let _counter_user = AutoCounter::new();
         logi!("[INFO]Start cancel idle");
         if !self.system_ability.cancel_idle() {
             loge!("[FATAL]Cancel idle failed. Service is stop.");
-            return ErrCode::ServiceUnavailable as i32;
+            let _ = reply_handle(
+                Err(AssetError { code: ErrCode::ServiceUnavailable, msg: "service stop".to_string() }), reply);
+            return IPC_SUCCESS as i32;
         }
         unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
 
