@@ -45,10 +45,10 @@ if ((condition)) {                                                      \
 #define NAPI_THROW(env, condition, code, message)                       \
     NAPI_THROW_BASE(env, condition, nullptr, code, message)
 
-#define CHECK_RESULT_BREAK(env, ret)                        \
-if ((ret) != SEC_ASSET_SUCCESS) {                           \
-    napi_throw((env), CreateJsError((env), (ret)));         \
-    break;                                                  \
+#define IF_ERROR_THROW_RETURN(env, result, returnValue)    \
+if ((result) != nullptr) {                                 \
+    napi_throw((env), (result));                           \
+    return napi_invalid_arg;                               \
 }
 
 #define IF_FALSE_RETURN(result, returnValue)    \
@@ -56,37 +56,10 @@ if (!(result)) {                                \
     return (returnValue);                       \
 }
 
-struct AsyncContext {
-    // common
-    napi_async_work work = nullptr;
-    napi_deferred deferred = nullptr;
-
-    // input
-    std::vector<AssetAttr> attrs;
-    std::vector<AssetAttr> updateAttrs;
-
-    // output
-    int32_t result = 0;
-    AssetBlob challenge = { 0 };
-    AssetResultSet resultSet = { 0 };
-};
-
-using CheckFuncPtr = std::function<napi_status(const napi_env, const std::vector<AssetAttr> &)>;
-
-struct NapiCallerArgs {
-    size_t expectArgNum;
-    bool isUpdate;
-    bool isAsUser;
-};
-
-AsyncContext *CreateAsyncContext();
-
-void DestroyAsyncContext(const napi_env env, AsyncContext *context);
-
-napi_value CreateAsyncWork(const napi_env env, AsyncContext *context, const char *funcName,
-    napi_async_execute_callback execute);
-
-void FreeAssetAttrs(std::vector<AssetAttr> &attrs);
+#define IF_ERR_RETURN(result)                   \
+if ((result) != napi_ok) {                      \
+    return (result);                            \
+}
 
 napi_value CreateJsError(const napi_env env, int32_t errCode);
 
@@ -96,14 +69,20 @@ napi_value CreateJsUint8Array(const napi_env env, const AssetBlob &blob);
 
 napi_value CreateJsMapArray(const napi_env env, const AssetResultSet &resultSet);
 
-napi_status ParseParam(const napi_env env, napi_callback_info info, const NapiCallerArgs &args,
-    std::vector<AssetAttr> &attrs);
+napi_value CreateJsUndefined(const napi_env env);
 
-napi_status ParseParam(const napi_env env, napi_callback_info info, const NapiCallerArgs &args,
-    std::vector<AssetAttr> &attrs, std::vector<AssetAttr> &updateAttrs);
+napi_status ParseJsArgs(const napi_env env, napi_callback_info info, napi_value *value, size_t valueSize);
 
-napi_value NapiAsync(const napi_env env, napi_callback_info info, napi_async_execute_callback execute,
-    const NapiCallerArgs &args, CheckFuncPtr checkFunc);
+napi_status ParseJsMap(const napi_env env, napi_value arg, std::vector<AssetAttr> &attrs);
+
+napi_status ParseJsUserId(const napi_env env, napi_value arg, std::vector<AssetAttr> &attrs);
+
+napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName, uint32_t propertyValue);
+
+napi_value CreateAsyncWork(const napi_env env, napi_callback_info info, std::unique_ptr<BaseContext> context,
+    const char *resourceName);
+
+napi_value CreateSyncWork(const napi_env env, napi_callback_info info, std::unique_ptr<BaseContext> context);
 
 } // Asset
 } // Security

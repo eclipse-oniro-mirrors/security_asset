@@ -49,6 +49,11 @@ int32_t OH_Asset_PostQuery(const Asset_Attr *handle, uint32_t handleCnt)
     return AssetPostQuery((const AssetAttr *)handle, handleCnt);
 }
 
+int32_t OH_Asset_QuerySyncResult(const Asset_Attr *query, uint32_t queryCnt, Asset_SyncResult *syncResult)
+{
+    return AssetQuerySyncResult((const AssetAttr *)query, queryCnt, (AssetSyncResult *)syncResult);
+}
+
 Asset_Attr *OH_Asset_ParseAttr(const Asset_Result *result, Asset_Tag tag)
 {
     return (Asset_Attr *)AssetParseAttr((const AssetResult *)result, (AssetTag)tag);

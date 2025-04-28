@@ -34,6 +34,8 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 namespace {
+const uint32_t QUERY_ARG_COUNT = 1;
+const uint32_t QUERY_ARG_COUNT_AS_USER = 2;
 
 const std::vector<uint32_t> REQUIRED_TAGS = {
     SEC_ASSET_TAG_AUTH_CHALLENGE
@@ -46,56 +48,72 @@ const std::vector<uint32_t> OPTIONAL_TAGS = {
 
 napi_status CheckPostQueryArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
-    IF_FALSE_RETURN(CheckAssetRequiredTag(env, attrs, REQUIRED_TAGS), napi_invalid_arg);
+    IF_ERROR_THROW_RETURN(CheckAssetRequiredTag(env, attrs, REQUIRED_TAGS));
     std::vector<uint32_t> validTags;
     validTags.insert(validTags.end(), REQUIRED_TAGS.begin(), REQUIRED_TAGS.end());
     validTags.insert(validTags.end(), OPTIONAL_TAGS.begin(), OPTIONAL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetValueValidity(env, attrs), napi_invalid_arg);
+    IF_ERROR_THROW_RETURN(CheckAssetValueValidity(env, attrs));
     return napi_ok;
 }
 
+napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *context)
+{
+    BaseContext *context = reinterpret_cast<BaseContext *>(context);
+    napi_value argv[QUERY_ARG_COUNT] = { 0 };
+    IF_ERR_RETURN(ParseJsArgs(env, info, argv, QUERY_ARG_COUNT));
+    IF_ERR_RETURN(ParseJsMap(env, argv[0], context->attrs));
+    IF_ERR_RETURN(CheckPostQueryArgs(env, context->attrs));
+    return napi_ok;
+}
+
+napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContext *context)
+{
+    BaseContext *context = reinterpret_cast<BaseContext *>(context);
+    napi_value argv[QUERY_ARG_COUNT_AS_USER] = { 0 };
+    IF_ERR_RETURN(ParseJsArgs(env, info, argv, QUERY_ARG_COUNT_AS_USER));
+    uint32_t index = 0;
+    IF_ERR_RETURN(ParseJsMap(env, argv[index++], context->attrs));
+    IF_ERR_RETURN(ParseJsUserId(env, argv[index++], context->attrs));
+    IF_ERR_RETURN(CheckPostQueryArgs(env, context->attrs));
+    return napi_ok;
+}
 } // anonymous namespace
 
-napi_value NapiPostQuery(const napi_env env, napi_callback_info info, const NapiCallerArgs &args)
+napi_value NapiPostQuery(const napi_env env, napi_callback_info info, bool asUser, bool async)
 {
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetPostQuery(&context->attrs[0], context->attrs.size());
-        };
-    return NapiAsync(env, info, execute, args, &CheckPostQueryArgs);
+    auto context = std::unique_ptr<BaseContext>(new (std::nothrow)BaseContext());
+    NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for Context.");
+
+    context->parse = asUser ? ParseAttrMapAsUser : ParseAttrMap;
+    context->execute = [](napi_env env, void *data) {
+        BaseContext *context = static_cast<BaseContext *>(context);
+        context->result = AssetPostQuery(&context->attrs[0], context->attrs.size());
+    };
+
+    context->resolve = [](napi_env env, BaseContext *context) -> napi_value {
+        return CreateJsUndefined(env);
+    };
+
+    if (async) {
+        return CreateAsyncWork(env, info, std::move(context), __func__);
+    } else {
+        return CreateSyncWork(env, info, context);
+    }
 }
 
 napi_value NapiPostQuery(const napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
-    return NapiPostQuery(env, info, args);
+    return NapiPostQuery(env, info, false, true);
 }
 
 napi_value NapiPostQueryAsUser(const napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true };
-    return NapiPostQuery(env, info, args);
+    return NapiPostQuery(env, info, true, true);
 }
 
 napi_value NapiPostQuerySync(const napi_env env, napi_callback_info info)
 {
-    std::vector<AssetAttr> attrs;
-    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
-    do {
-        if (ParseParam(env, info, args, attrs) != napi_ok) {
-            break;
-        }
-
-        if (CheckPostQueryArgs(env, attrs) != napi_ok) {
-            break;
-        }
-
-        int32_t result = AssetPostQuery(&attrs[0], attrs.size());
-        CHECK_RESULT_BREAK(env, result);
-    } while (false);
-    FreeAssetAttrs(attrs);
-    return nullptr;
+    return NapiPostQuery(env, info, false, false);
 }
 
 } // Asset

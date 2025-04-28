@@ -100,6 +100,17 @@ int32_t AssetQuery(const AssetAttr *query, uint32_t queryCnt, AssetResultSet *re
 int32_t AssetPostQuery(const AssetAttr *handle, uint32_t handleCnt);
 
 /**
+ * @brief Query the result of synchronization.
+ *
+ * @param query Pointer to the search criteria.
+ * @param queryCnt Number of the search criteria.
+ * @param syncResult Pointer to the synchronization result obtained.
+ * @return Returns <b>SEC_ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
+ * @since 20
+ */
+int32_t AssetQuerySyncResult(const Asset_Attr *query, uint32_t queryCnt, Asset_SyncResult *syncResult);
+
+ /**
  * @brief Parses the query result to obtain the specified attribute value.
  *
  * @param result Pointer to the query result to parse, which is obtained by <b>AssetQuery</b>.

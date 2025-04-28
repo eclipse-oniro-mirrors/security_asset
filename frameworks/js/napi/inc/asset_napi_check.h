@@ -27,15 +27,15 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 
-#define NAPI_THROW_INVALID_ARGUMENT(env, format, arg...)                                            \
+#define RETURN_JS_ERROR(env, format, arg...)                                                        \
 do {                                                                                                \
     char msg[MAX_MESSAGE_LEN] = { 0 };                                                              \
     if ((sprintf_s(msg, MAX_MESSAGE_LEN, format, ##arg)) == -1) {                                   \
         LOGE("[FATAL][NAPI]Failed to create message string, truncation occurred when sprintf_s.");  \
-        break;                                                                                      \
+        return CreateJsError((env), SEC_ASSET_PARAM_VERIFICATION_FAILED);                           \
     }                                                                                               \
     LOGE("[FATAL][NAPI]%{public}s", (msg));                                                         \
-    napi_throw((env), CreateJsError((env), SEC_ASSET_INVALID_ARGUMENT, (msg)));                     \
+    return CreateJsError((env), SEC_ASSET_PARAM_VERIFICATION_FAILED, (msg));                        \
 } while (0)
 
 const std::vector<uint32_t> CRITICAL_LABEL_TAGS = {
@@ -153,13 +153,13 @@ const std::unordered_map<uint32_t, const char *> TAG_MAP = {
     { SEC_ASSET_TAG_USER_ID, "USER_ID" },
 };
 
-bool CheckAssetRequiredTag(const napi_env env, const std::vector<AssetAttr> &attrs,
+napi_value CheckAssetRequiredTag(const napi_env env, const std::vector<AssetAttr> &attrs,
     const std::vector<uint32_t> &requiredTags);
 
-bool CheckAssetTagValidity(const napi_env env, const std::vector<AssetAttr> &attrs,
+napi_value CheckAssetTagValidity(const napi_env env, const std::vector<AssetAttr> &attrs,
     const std::vector<uint32_t> &validTags);
 
-bool CheckAssetValueValidity(const napi_env env, const std::vector<AssetAttr> &attrs);
+napi_value CheckAssetValueValidity(const napi_env env, const std::vector<AssetAttr> &attrs);
 
 } // Asset
 } // Security

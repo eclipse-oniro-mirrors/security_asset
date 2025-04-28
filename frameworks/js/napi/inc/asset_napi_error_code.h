@@ -30,7 +30,6 @@ const std::unordered_map<int32_t, const char *> ERR_MSGS = {
     { SEC_ASSET_PERMISSION_DENIED, "The caller doesn't have the permission." },
     { SEC_ASSET_NOT_SYSTEM_APPLICATION, "Non-system applications use system APIs." },
     { SEC_ASSET_INVALID_ARGUMENT, "The argument is invalid." },
-    { SEC_ASSET_UNSUPPORTED, "The capability is not supported." },
     { SEC_ASSET_SERVICE_UNAVAILABLE, "The ASSET service is unavailable." },
     { SEC_ASSET_NOT_FOUND, "The asset is not found." },
     { SEC_ASSET_DUPLICATED, "The asset already exists." },
@@ -47,6 +46,8 @@ const std::unordered_map<int32_t, const char *> ERR_MSGS = {
     { SEC_ASSET_FILE_OPERATION_ERROR, "The file operation failed." },
     { SEC_ASSET_GET_SYSTEM_TIME_ERROR, "Getting the system time failed." },
     { SEC_ASSET_LIMIT_EXCEEDED, "The cache exceeds the limit." },
+    { SEC_ASSET_UNSUPPORTED, "The capability is not supported." },
+    { SEC_ASSET_PARAM_VERIFICATION_FAILED, "Parameter verification failed." },
 };
 
 inline const char *GetErrorMessage(int32_t errCode)

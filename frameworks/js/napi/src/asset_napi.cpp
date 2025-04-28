@@ -112,6 +112,7 @@ napi_value DeclareErrorCode(const napi_env env)
     AddUint32Property(env, errorCode, "GET_SYSTEM_TIME_ERROR", SEC_ASSET_GET_SYSTEM_TIME_ERROR);
     AddUint32Property(env, errorCode, "LIMIT_EXCEEDED", SEC_ASSET_LIMIT_EXCEEDED);
     AddUint32Property(env, errorCode, "UNSUPPORTED", SEC_ASSET_UNSUPPORTED);
+    AddUint32Property(env, errorCode, "PARAM_VERIFICATION_FAILED", SEC_ASSET_PARAM_VERIFICATION_FAILED);
     return errorCode;
 }
 
@@ -204,6 +205,7 @@ napi_value Register(const napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("postQuery", NapiPostQuery),
         DECLARE_NAPI_FUNCTION("postQuerySync", NapiPostQuerySync),
         DECLARE_NAPI_FUNCTION("postQueryAsUser", NapiPostQueryAsUser),
+        DECLARE_NAPI_FUNCTION("querySyncResult", NapiQuerySyncResult),
 
         // register enumerate
         DECLARE_NAPI_PROPERTY("Tag", DeclareTag(env)),

@@ -19,17 +19,16 @@
 
 #include "asset_log.h"
 #include "asset_mem.h"
-#include "asset_system_api.h"
 #include "asset_system_type.h"
 
 #include "asset_napi_common.h"
+#include "asset_napi_context.h"
 #include "asset_napi_error_code.h"
 
 namespace OHOS {
 namespace Security {
 namespace Asset {
 namespace {
-
 #define MAX_BUFFER_LEN 2048
 
 #define NAPI_THROW_RETURN_ERR(env, condition, code, message)            \
@@ -124,13 +123,6 @@ napi_value GetIteratorNext(const napi_env env, napi_value iterator, napi_value f
     return next;
 }
 
-napi_value GetUndefinedValue(const napi_env env)
-{
-    napi_value value = nullptr;
-    NAPI_CALL(env, napi_get_undefined(env, &value));
-    return value;
-}
-
 napi_value CreateJsMap(const napi_env env, const AssetResult &result)
 {
     napi_value global = nullptr;
@@ -165,34 +157,33 @@ napi_value CreateJsMap(const napi_env env, const AssetResult &result)
     return map;
 }
 
-napi_value GetBusinessValue(const napi_env env, AsyncContext *context)
+void ResolvePromise(const napi_env env, BaseContext *context)
 {
-    // Processing the return value of the PreQueryAsset function.
-    if (IsBlobValid(context->challenge)) {
-        return CreateJsUint8Array(env, context->challenge);
+    if (context->error != nullptr) {
+        NAPI_CALL_RETURN_VOID(env, napi_reject_deferred(env, context->deferred, context->error));
+        return;
     }
 
-    // Processing the return value of the QueryAsset function.
-    if (context->resultSet.results != nullptr && context->resultSet.count != 0) {
-        return CreateJsMapArray(env, context->resultSet);
-    }
-
-    return GetUndefinedValue(env);
-}
-
-void ResolvePromise(const napi_env env, AsyncContext *context)
-{
-    napi_value result = nullptr;
     if (context->result == SEC_ASSET_SUCCESS) {
-        result = GetBusinessValue(env, context);
+        napi_value result = context->resolve(env, context);
         NAPI_CALL_RETURN_VOID(env, napi_resolve_deferred(env, context->deferred, result));
     } else {
-        result = CreateJsError(env, context->result);
+        napi_value result = CreateJsError(env, context->result);
         NAPI_CALL_RETURN_VOID(env, napi_reject_deferred(env, context->deferred, result));
     }
 }
+} // anonymous namespace
 
-napi_status ParseMapParam(const napi_env env, napi_value arg, std::vector<AssetAttr> &attrs)
+napi_status ParseJsArgs(const napi_env env, napi_callback_info info, napi_value *value, size_t valueSize)
+{
+    size_t argc = valueSize;
+    NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, value, nullptr, nullptr));
+    NAPI_THROW_RETURN_ERR(env, argc < valueSize, SEC_ASSET_INVALID_ARGUMENT,
+        "Mandatory parameters are left unspecified.");
+    return napi_ok;
+}
+
+napi_status ParseJsMap(const napi_env env, napi_value arg, std::vector<AssetAttr> &attrs)
 {
     // check map type
     bool isMap = false;
@@ -226,15 +217,6 @@ napi_status ParseMapParam(const napi_env env, napi_value arg, std::vector<AssetA
     return napi_ok;
 }
 
-napi_status ParseJsArgs(const napi_env env, napi_callback_info info, napi_value *value, size_t valueSize)
-{
-    size_t argc = valueSize;
-    NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, value, nullptr, nullptr));
-    NAPI_THROW_RETURN_ERR(env, argc < valueSize, SEC_ASSET_INVALID_ARGUMENT,
-        "The number of arguments is insufficient.");
-    return napi_ok;
-}
-
 napi_status ParseJsUserId(const napi_env env, napi_value arg, std::vector<AssetAttr> &attrs)
 {
     napi_valuetype type = napi_undefined;
@@ -246,60 +228,6 @@ napi_status ParseJsUserId(const napi_env env, napi_value arg, std::vector<AssetA
     NAPI_CALL_RETURN_ERR(env, napi_get_value_uint32(env, arg, &param.value.u32));
     attrs.push_back(param);
     return napi_ok;
-}
-
-} // anonymous namespace
-
-AsyncContext *CreateAsyncContext()
-{
-    return static_cast<AsyncContext *>(AssetMalloc(sizeof(AsyncContext)));
-}
-
-void DestroyAsyncContext(const napi_env env, AsyncContext *context)
-{
-    if (context == nullptr) {
-        return;
-    }
-    if (context->work != nullptr) {
-        napi_delete_async_work(env, context->work);
-        context->work = nullptr;
-    }
-
-    AssetFreeResultSet(&context->resultSet);
-    AssetFreeBlob(&context->challenge);
-    FreeAssetAttrs(context->updateAttrs);
-    FreeAssetAttrs(context->attrs);
-    AssetFree(context);
-}
-
-napi_value CreateAsyncWork(const napi_env env, AsyncContext *context, const char *funcName,
-    napi_async_execute_callback execute)
-{
-    napi_value result = nullptr;
-    NAPI_CALL(env, napi_create_promise(env, &context->deferred, &result));
-
-    napi_value resource = nullptr;
-    NAPI_CALL(env, napi_create_string_utf8(env, funcName, NAPI_AUTO_LENGTH, &resource));
-    NAPI_CALL(env, napi_create_async_work(
-        env, nullptr, resource, execute,
-        [](napi_env env, napi_status status, void *data) {
-            AsyncContext *asyncContext = static_cast<AsyncContext *>(data);
-            ResolvePromise(env, asyncContext);
-            DestroyAsyncContext(env, asyncContext);
-        },
-        static_cast<void *>(context), &context->work));
-    NAPI_CALL(env, napi_queue_async_work(env, context->work));
-    return result;
-}
-
-void FreeAssetAttrs(std::vector<AssetAttr> &attrs)
-{
-    for (auto attr : attrs) {
-        if ((attr.tag & SEC_ASSET_TAG_TYPE_MASK) == SEC_ASSET_TYPE_BYTES) {
-            AssetFreeBlob(&attr.value.blob);
-        }
-    }
-    attrs.clear();
 }
 
 napi_value CreateJsError(const napi_env env, int32_t errCode)
@@ -320,20 +248,6 @@ napi_value CreateJsError(const napi_env env, int32_t errCode, const char *errorM
     return result;
 }
 
-napi_value CreateJsMapArray(const napi_env env, const AssetResultSet &resultSet)
-{
-    napi_value array = nullptr;
-    NAPI_CALL(env, napi_create_array(env, &array));
-    for (uint32_t i = 0; i < resultSet.count; i++) {
-        if (resultSet.results[i].attrs == nullptr || resultSet.results[i].count == 0) {
-            return nullptr;
-        }
-        napi_value map = CreateJsMap(env, resultSet.results[i]);
-        NAPI_CALL(env, napi_set_element(env, array, i, map));
-    }
-    return array;
-}
-
 napi_value CreateJsUint8Array(const napi_env env, const AssetBlob &blob)
 {
     if (!IsBlobValid(blob) || blob.size > MAX_BUFFER_LEN) {
@@ -350,70 +264,65 @@ napi_value CreateJsUint8Array(const napi_env env, const AssetBlob &blob)
     return result;
 }
 
-napi_status ParseParam(const napi_env env, napi_callback_info info, const NapiCallerArgs &args,
-    std::vector<AssetAttr> &attrs)
+napi_value CreateJsMapArray(const napi_env env, const AssetResultSet &resultSet)
 {
-    std::vector<AssetAttr> updateAttrs;
-    return ParseParam(env, info, args, attrs, updateAttrs);
+    napi_value array = nullptr;
+    NAPI_CALL(env, napi_create_array(env, &array));
+    for (uint32_t i = 0; i < resultSet.count; i++) {
+        if (resultSet.results[i].attrs == nullptr || resultSet.results[i].count == 0) {
+            return nullptr;
+        }
+        napi_value map = CreateJsMap(env, resultSet.results[i]);
+        NAPI_CALL(env, napi_set_element(env, array, i, map));
+    }
+    return array;
 }
 
-napi_status ParseParam(const napi_env env, napi_callback_info info, const NapiCallerArgs &args,
-    std::vector<AssetAttr> &attrs, std::vector<AssetAttr> &updateAttrs)
+napi_value CreateJsUndefined(const napi_env env)
 {
-    napi_value argv[MAX_ARGS_NUM] = { 0 };
-    napi_status ret = ParseJsArgs(env, info, argv, args.expectArgNum);
-    if (ret != napi_ok) {
-        return ret;
-    }
+    napi_value value = nullptr;
+    NAPI_CALL(env, napi_get_undefined(env, &value));
+    return value;
+}
 
-    size_t index = 0;
-    if (args.isAsUser) {
-        ret = ParseJsUserId(env, argv[index++], attrs);
-        if (ret != napi_ok) {
-            return ret;
-        }
-    }
-
-    ret = ParseMapParam(env, argv[index++], attrs);
-    if (ret != napi_ok) {
-        LOGE("Parse first map parameter failed.");
-        return ret;
-    }
-
-    if (args.isUpdate) {
-        ret = ParseMapParam(env, argv[index++], updateAttrs);
-        if (ret != napi_ok) {
-            LOGE("Parse second map parameter failed.");
-            return ret;
-        }
-    }
+napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName, uint32_t propertyValue)
+{
+    napi_value property = nullptr;
+    NAPI_CALL_RETURN_ERR(env, napi_create_uint32(env, propertyValue, &property));
+    NAPI_CALL_RETURN_ERR(env, napi_set_named_property(env, object, propertyName, property));
     return napi_ok;
 }
 
-napi_value NapiAsync(const napi_env env, napi_callback_info info, napi_async_execute_callback execute,
-    const NapiCallerArgs &args, CheckFuncPtr checkFunc)
+napi_value CreateAsyncWork(const napi_env env, napi_callback_info info, std::unique_ptr<BaseContext> context,
+    const char *resourceName)
 {
-    AsyncContext *context = CreateAsyncContext();
-    NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
+    if (context->parse != nullptr) {
+        NAPI_CALL(env, context->parse(env, info, context));
+    }
 
-    do {
-        if (ParseParam(env, info, args, context->attrs, context->updateAttrs) != napi_ok) {
-            break;
-        }
+    napi_value promise;
+    NAPI_CALL(env, napi_create_promise(env, &context->deferred, &promise));
+    napi_value resource = nullptr;
+    NAPI_CALL(env, napi_create_string_utf8(env, resourceName, NAPI_AUTO_LENGTH, *resource));
+    NPAI_CALL(env, napi_create_async_work(env, nullptr, resource, context->execute,
+        [](napi_env env, napi_status status, void *data) {
+            BaseContext *context = static_cast<BaseContext *>(data);
+            ResolvePromise(env, context);
+            delete context;
+        }, static_cast<void *(context.get()), &context->work));
+    NAPI_CALL(env, napi_queue_async_work(env, context->work));
+    context->release();
+    return promise;
+}
 
-        if (checkFunc(env, context->attrs) != napi_ok) {
-            break;
-        }
+napi_value CreateSyncWork(const napi_env env, napi_callback_info info, std::unique_ptr<BaseContext> context)
+{
+    if (context->parse != nullptr) {
+        NAPI_CALL(env, context->parse(env, info, context.get()));
+    }
 
-        napi_value promise = CreateAsyncWork(env, context, __func__, execute);
-        if (promise == nullptr) {
-            LOGE("Create async work failed.");
-            break;
-        }
-        return promise;
-    } while (0);
-    DestroyAsyncContext(env, context);
-    return nullptr;
+    context->execute(env, context.get());
+    return context->resolve(env, context.get());
 }
 
 } // Asset
