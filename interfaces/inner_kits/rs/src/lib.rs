@@ -25,15 +25,23 @@ use asset_ipc::{deserialize_maps, ipc_err_handle, serialize_map, IpcCode, IPC_SU
 
 const LOAD_TIMEOUT_IN_SECONDS: i32 = 4;
 
-fn get_remote() -> Result<RemoteObj> {
-    match SystemAbilityManager::check_system_ability(SA_ID) {
+fn load_asset_service() -> Result<RemoteObj> {
+    match SystemAbilityManager::load_system_ability(SA_ID, LOAD_TIMEOUT_IN_SECONDS) {
         Some(remote) => Ok(remote),
-        None => match SystemAbilityManager::load_system_ability(SA_ID, LOAD_TIMEOUT_IN_SECONDS) {
-            Some(remote) => Ok(remote),
-            None => {
-                log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
-            },
+        None => {
+            log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
         },
+    }
+}
+
+fn get_remote(need_check: bool) -> Result<RemoteObj> {
+    if need_check {
+        match SystemAbilityManager::check_system_ability(SA_ID) {
+            Some(remote) => Ok(remote),
+            None => load_asset_service()
+        }
+    } else {
+        load_asset_service()
     }
 }
 
@@ -46,65 +54,95 @@ pub struct Manager {
 impl Manager {
     /// Build and initialize the Manager.
     pub fn build() -> Result<Self> {
-        let remote = get_remote()?;
+        let remote = get_remote(true)?;
         Ok(Self { remote })
     }
 
     /// Add an Asset.
-    pub fn add(&self, attributes: &AssetMap) -> Result<()> {
-        let mut parcel = MsgParcel::new();
-        parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
-        serialize_map(attributes, &mut parcel)?;
-        self.send_request(parcel, IpcCode::Add)?;
+    pub fn add(&mut self, attributes: &AssetMap) -> Result<()> {
+        self.process_one_agr_request(attributes, IpcCode::Add)?;
         Ok(())
     }
 
     /// Remove one or more Assets that match a search query.
-    pub fn remove(&self, query: &AssetMap) -> Result<()> {
-        let mut parcel = MsgParcel::new();
-        parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
-        serialize_map(query, &mut parcel)?;
-        self.send_request(parcel, IpcCode::Remove)?;
+    pub fn remove(&mut self, query: &AssetMap) -> Result<()> {
+        self.process_one_agr_request(query, IpcCode::Remove)?;
         Ok(())
     }
 
     /// Update an Asset that matches a search query.
-    pub fn update(&self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
-        let mut parcel = MsgParcel::new();
-        parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
-        serialize_map(query, &mut parcel)?;
-        serialize_map(attributes_to_update, &mut parcel)?;
-        self.send_request(parcel, IpcCode::Update)?;
+    pub fn update(&mut self, query: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
+        self.process_two_agr_request(query, attributes_to_update, IpcCode::Update)?;
         Ok(())
     }
 
     /// Preprocessing for querying one or more Assets that require user authentication.
-    pub fn pre_query(&self, query: &AssetMap) -> Result<Vec<u8>> {
-        let mut parcel = MsgParcel::new();
-        parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
-        serialize_map(query, &mut parcel)?;
-        let mut reply = self.send_request(parcel, IpcCode::PreQuery)?;
+    pub fn pre_query(&mut self, query: &AssetMap) -> Result<Vec<u8>> {
+        let mut reply = self.process_one_agr_request(query, IpcCode::PreQuery)?;
         let res = reply.read::<Vec<u8>>().map_err(ipc_err_handle)?;
         Ok(res)
     }
 
     /// Query one or more Assets that match a search query.
-    pub fn query(&self, query: &AssetMap) -> Result<Vec<AssetMap>> {
-        let mut parcel = MsgParcel::new();
-        parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
-        serialize_map(query, &mut parcel)?;
-        let mut reply = self.send_request(parcel, IpcCode::Query)?;
+    pub fn query(&mut self, query: &AssetMap) -> Result<Vec<AssetMap>> {
+        let mut reply = self.process_one_agr_request(query, IpcCode::Query)?;
         let res = deserialize_maps(&mut reply)?;
         Ok(res)
     }
 
     /// Post-processing for querying multiple Assets that require user authentication.
-    pub fn post_query(&self, query: &AssetMap) -> Result<()> {
+    pub fn post_query(&mut self, query: &AssetMap) -> Result<()> {
+        self.process_one_agr_request(query, IpcCode::PostQuery)?;
+        Ok(())
+    }
+
+    fn rebuild(&mut self) -> Result<()> {
+        self.remote = get_remote(false)?;
+        Ok(())
+    }
+
+    fn process_one_agr_request(&mut self, attributes: &AssetMap, ipc_code: IpcCode) -> Result<MsgParcel> {
+        let mut parcel = MsgParcel::new();
+        parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
+        serialize_map(attributes, &mut parcel)?;
+        match self.send_request(parcel, ipc_code) {
+            Ok(msg) => Ok(msg),
+            Err(e) => match e.code {
+                ErrCode::ServiceUnavailable => {
+                    self.rebuild()?;
+                    let mut parcel = MsgParcel::new();
+                    parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
+                    serialize_map(attributes, &mut parcel)?;
+                    self.send_request(parcel, ipc_code)
+                },
+                _ => Err(e)
+            }
+        }
+    }
+
+    fn process_two_agr_request(&mut self,
+        query: &AssetMap,
+        attributes_to_update: &AssetMap,
+        ipc_code: IpcCode
+    ) -> Result<MsgParcel> {
         let mut parcel = MsgParcel::new();
         parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
         serialize_map(query, &mut parcel)?;
-        self.send_request(parcel, IpcCode::PostQuery)?;
-        Ok(())
+        serialize_map(attributes_to_update, &mut parcel)?;
+        match self.send_request(parcel, ipc_code) {
+            Ok(msg) => Ok(msg),
+            Err(e) => match e.code {
+                ErrCode::ServiceUnavailable => {
+                    self.rebuild()?;
+                    let mut parcel = MsgParcel::new();
+                    parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
+                    serialize_map(query, &mut parcel)?;
+                    serialize_map(attributes_to_update, &mut parcel)?;
+                    self.send_request(parcel, ipc_code)
+                },
+                _ => Err(e)
+            }
+        }
     }
 
     fn send_request(&self, mut parcel: MsgParcel, ipc_code: IpcCode) -> Result<MsgParcel> {
