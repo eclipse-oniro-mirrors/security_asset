@@ -252,7 +252,7 @@ pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
                     let mut params = ExtDbMap::new();
                     params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
                     params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(caller_name.as_bytes().to_vec()));
-                    match load.process_event(EventType::Sync, &params) {
+                    match load.process_event(EventType::Sync, &mut params) {
                         Ok(()) => logi!("process sync ext event success."),
                         Err(code) => loge!("process sync ext event failed, code: {}", code),
                     }
@@ -266,7 +266,7 @@ pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
                     let mut params = ExtDbMap::new();
                     params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
                     params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(caller_name.as_bytes().to_vec()));
-                    match load.process_event(EventType::CleanCloudFlag, &params) {
+                    match load.process_event(EventType::CleanCloudFlag, &mut params) {
                         Ok(()) => logi!("process clean cloud flag ext event success."),
                         Err(code) => loge!("process clean cloud flag ext event failed, code: {}", code),
                     }
@@ -277,7 +277,7 @@ pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
                     let mut params = ExtDbMap::new();
                     params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
                     params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(calling_info.owner_info().clone()));
-                    match load.process_event(EventType::DeleteCloudData, &params) {
+                    match load.process_event(EventType::DeleteCloudData, &mut params) {
                         Ok(()) => logi!("process delete cloud data ext event success."),
                         Err(code) => loge!("process delete cloud data ext event failed, code: {}", code),
                     }

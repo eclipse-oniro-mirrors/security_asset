@@ -236,8 +236,13 @@ pub extern "C" fn post_query_asset(handle: *const AssetAttr, handle_cnt: u32) ->
 }
 
 /// Function called from C programming language to Rust programming language for querying sync result.
+///
+/// # Safety
+///
+/// The caller must ensure that the sync_result pointer is valid.
 #[no_mangle]
-pub extern "C" fn query_sync_result(query: *const AssetAttr, query_cnt: u32, sync_result: *mut SyncResult) -> i32 {
+pub unsafe extern "C" fn query_sync_result(query: *const AssetAttr, query_cnt: u32,
+    sync_result: *mut SyncResult) -> i32 {
     let map = match into_map(query, query_cnt) {
         Some(map) => map,
         None => return ErrCode::ParamVerificationFailed as i32,
@@ -254,11 +259,19 @@ pub extern "C" fn query_sync_result(query: *const AssetAttr, query_cnt: u32, syn
     };
 
     match manager.query_sync_result(&map) {
-        Err(e) => e.code as i32,
+        Err(e) => map_err(e.code),
         Ok(res) => {
-            *sync_result = res; // TODO: remove unsafe
+            *sync_result = res;
             RESULT_CODE_SUCCESS
         }
+    }
+}
+
+fn map_err(err_code: ErrCode) -> i32 {
+    if err_code == ErrCode::InvalidArgument {
+        ErrCode::ParamVerificationFailed as i32
+    } else {
+        err_code as i32
     }
 }
 

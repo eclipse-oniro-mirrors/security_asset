@@ -134,7 +134,7 @@ pub fn deserialize_maps(parcel: &mut MsgParcel) -> Result<Vec<AssetMap>> {
 
 /// Serialize the sync result to parcel.
 pub fn serialize_sync_result(sync_result: &SyncResult, parcel: &mut MsgParcel) -> Result<()> {
-    parcel.write::<i32>(&sync_result.error_code).map_err(ipc_err_handle)?;
+    parcel.write::<i32>(&sync_result.result_code).map_err(ipc_err_handle)?;
     parcel.write::<u32>(&sync_result.total_count).map_err(ipc_err_handle)?;
     parcel.write::<u32>(&sync_result.failed_count).map_err(ipc_err_handle)
 }
@@ -142,7 +142,7 @@ pub fn serialize_sync_result(sync_result: &SyncResult, parcel: &mut MsgParcel) -
 /// Deserialize the sync result from parcel.
 pub fn deserialize_sync_result(parcel: &mut MsgParcel) -> Result<SyncResult> {
     Ok(SyncResult {
-        error_code: parcel.read::<i32>().map_err(ipc_err_handle)?,
+        result_code: parcel.read::<i32>().map_err(ipc_err_handle)?,
         total_count: parcel.read::<u32>().map_err(ipc_err_handle)?,
         failed_count: parcel.read::<u32>().map_err(ipc_err_handle)?
     })

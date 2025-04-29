@@ -34,27 +34,28 @@ void FreeAssetAttrs(std::vector<AssetAttr> &attrs)
 
 BaseContext::~BaseContext()
 {
-    if (context->work != nullptr) {
-        napi_delete_async_work(env, context->work);
-        context->work = nullptr;
+    if (work != nullptr && env != nullptr) {
+        napi_delete_async_work(env, work);
+        work = nullptr;
+        env = nullptr;
     }
 
-    FreeAssetAttrs(context->attrs);
+    FreeAssetAttrs(attrs);
 }
 
 PreQueryContext::~PreQueryContext()
 {
-    AssetFreeBlob(&context->challenge);
+    AssetFreeBlob(&challenge);
 }
 
 QueryContext::~QueryContext()
 {
-    AssetFreeResultSet(&context->resultSet);
+    AssetFreeResultSet(&resultSet);
 }
 
 UpdateContext::~UpdateContext()
 {
-    FreeAssetAttrs(context->updateAttrs);
+    FreeAssetAttrs(updateAttrs);
 }
 
 } // Asset

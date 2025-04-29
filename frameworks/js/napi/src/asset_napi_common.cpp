@@ -311,6 +311,7 @@ napi_value CreateAsyncWork(const napi_env env, napi_callback_info info, std::uni
             ResolvePromise(env, context);
             delete context;
         }, static_cast<void *>(context.get()), &context->work));
+    context->env = env;
     NAPI_CALL(env, napi_queue_async_work(env, context->work));
     context.release();
     return promise;

@@ -15,6 +15,7 @@
 
 #include "asset_napi_query_sync_result.h"
 
+#include "asset_log.h"
 #include "asset_system_api.h"
 #include "asset_system_type.h"
 
@@ -48,27 +49,28 @@ napi_value NapiQuerySyncResult(const napi_env env, napi_callback_info info)
     auto context = std::unique_ptr<QuerySyncResultContext>(new (std::nothrow)QuerySyncResultContext());
     NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for Context.");
 
-    context->parse = [](napi_env env, napi_callback_info info, BaseContext *context) -> napi_status {
-        QuerySyncResultContext *context = reinterpret_cast<QuerySyncResultContext *>(context);
+    context->parse = [](napi_env env, napi_callback_info info, BaseContext *baseContext) -> napi_status {
+        QuerySyncResultContext *context = reinterpret_cast<QuerySyncResultContext *>(baseContext);
         napi_value argv[ARG_COUNT] = { 0 };
         IF_ERR_RETURN(ParseJsArgs(env, info, argv, ARG_COUNT));
         IF_ERR_RETURN(ParseJsMap(env, argv[0], context->attrs));
+        return napi_ok;
     };
 
     context->execute = [](napi_env env, void *data) {
-        QuerySyncResultContext *context = static_cast<QuerySyncResultContext *>(context);
-        context->error = CheckQuerySyncResultArgs(emv, context->attrs);
+        QuerySyncResultContext *context = static_cast<QuerySyncResultContext *>(data);
+        context->error = CheckQuerySyncResultArgs(env, context->attrs);
         if (context->error != nullptr) {
             return;
         }
         context->result = AssetQuerySyncResult(&context->attrs[0], context->attrs.size(), &context->syncResult);
     };
 
-    context->resolve = [](napi_env env, BaseContext *context) -> napi_value {
-        QuerySyncResultContext *context = static_cast<QuerySyncResultContext *>(context);
+    context->resolve = [](napi_env env, BaseContext *baseContext) -> napi_value {
+        QuerySyncResultContext *context = static_cast<QuerySyncResultContext *>(baseContext);
         napi_value syncResult = nullptr;
         NAPI_CALL(env, napi_create_object(env, &syncResult));
-        NAPI_CALL(env, NapiSetProperty(env, syncResult, "errorCode", context->syncResult.errorCode));
+        NAPI_CALL(env, NapiSetProperty(env, syncResult, "resultCode", context->syncResult.resultCode));
         NAPI_CALL(env, NapiSetProperty(env, syncResult, "totalCount", context->syncResult.totalCount));
         NAPI_CALL(env, NapiSetProperty(env, syncResult, "failedCount", context->syncResult.failedCount));
         return syncResult;

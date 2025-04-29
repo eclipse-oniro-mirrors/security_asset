@@ -20,7 +20,7 @@
 #include "asset_system_type.h"
 
 #include "asset_napi_check.h"
-#include "asset_napi_check.h"
+#include "asset_napi_common.h"
 
 namespace OHOS {
 namespace Security {
