@@ -29,6 +29,7 @@ class BaseContext {
 public:
     virtual ~BaseContext();
 
+    napi_env env = nullptr;
     napi_async_work work = nullptr;
     napi_deferred deferred = nullptr;
     napi_value error = nullptr;

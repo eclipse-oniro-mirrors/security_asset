@@ -450,7 +450,7 @@ pub trait Conversion {
 #[derive(Default)]
 pub struct SyncResult {
     /// The result code of synchronization.
-    pub error_code: i32,
+    pub result_code: i32,
     /// The total count of synchronized Assets.
     pub total_count: u32,
     /// The count of Assets that fail to synchronize.

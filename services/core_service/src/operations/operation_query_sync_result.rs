@@ -18,7 +18,7 @@
 use asset_common::CallingInfo;
 use asset_definition::{AssetMap, Result, SyncResult};
 
-pub(crate) fn query_sync_result(calling_info: &CallingInfo, query: &AssetMap) -> Result<SyncResult> {
+pub(crate) fn query_sync_result(_calling_info: &CallingInfo, _query: &AssetMap) -> Result<SyncResult> {
     // TODO: 实现逻辑
     Ok(SyncResult::default())
 }

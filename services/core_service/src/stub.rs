@@ -128,7 +128,8 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
             Ok(res) => {
                 reply_handle(Ok(()), reply)?;
                 serialize_sync_result(&res, reply).map_err(asset_err_handle)
-            }
+            },
+            Err(e) => reply_handle(Err(e), reply),
         }
     }
 }

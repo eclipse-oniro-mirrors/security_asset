@@ -20,9 +20,11 @@ ohos_shared_library("asset_napi") {
     "src/asset_napi_add.cpp",
     "src/asset_napi_check.cpp",
     "src/asset_napi_common.cpp",
+    "src/asset_napi_context.cpp",
     "src/asset_napi_post_query.cpp",
     "src/asset_napi_pre_query.cpp",
     "src/asset_napi_query.cpp",
+    "src/asset_napi_query_sync_result.cpp",
     "src/asset_napi_remove.cpp",
     "src/asset_napi_update.cpp",
   ]
