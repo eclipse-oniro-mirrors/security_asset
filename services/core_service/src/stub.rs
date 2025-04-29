@@ -19,7 +19,7 @@ use asset_common::{AutoCounter, CallingInfo, OwnerType, ProcessInfo, ProcessInfo
 use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 
 use asset_definition::{AssetError, Result};
-use asset_ipc::{deserialize_map, serialize_maps, IpcCode, IPC_SUCCESS, SA_NAME};
+use asset_ipc::{deserialize_map, serialize_maps, serialize_sync_result, IpcCode, IPC_SUCCESS, SA_NAME};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::{
@@ -124,6 +124,12 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
             Err(e) => reply_handle(Err(e), reply),
         },
         IpcCode::PostQuery => reply_handle(stub.post_query(&calling_info, &map), reply),
+        IpcCode::QuerySyncResult => match stub.query_sync_result(&calling_info, &map) {
+            Ok(res) => {
+                reply_handle(Ok(()), reply)?;
+                serialize_sync_result(&res, reply).map_err(asset_err_handle)
+            }
+        }
     }
 }
 

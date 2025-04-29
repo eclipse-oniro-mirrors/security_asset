@@ -15,6 +15,8 @@
 
 #include "asset_napi_context.h"
 
+#include "asset_system_api.h"
+
 namespace OHOS {
 namespace Security {
 namespace Asset {
@@ -58,4 +60,3 @@ UpdateContext::~UpdateContext()
 } // Asset
 } // Security
 } // OHOS
-    

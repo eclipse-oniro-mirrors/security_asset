@@ -21,7 +21,8 @@ pub mod plugin_interface;
 use ipc::{parcel::MsgParcel, remote::RemoteObj};
 use samgr::manage::SystemAbilityManager;
 
-use asset_ipc::{deserialize_maps, ipc_err_handle, serialize_map, IpcCode, IPC_SUCCESS, SA_ID, SA_NAME};
+use asset_ipc::{deserialize_maps, deserialize_sync_result, ipc_err_handle, serialize_map,
+    IpcCode, IPC_SUCCESS, SA_ID, SA_NAME};
 
 const LOAD_TIMEOUT_IN_SECONDS: i32 = 4;
 
@@ -105,6 +106,16 @@ impl Manager {
         serialize_map(query, &mut parcel)?;
         self.send_request(parcel, IpcCode::PostQuery)?;
         Ok(())
+    }
+
+    /// Query the result of synchronization.
+    pub fn query_sync_result(&self, query: &AssetMap) -> Result<SyncResult> {
+        let mut parcel = MsgParcel::new();
+        parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
+        serialize_map(query, &mut parcel)?;
+        let mut reply = self.send_request(parcel, IpcCode::QuerySyncResult)?;
+        let sync_result = deserialize_sync_result(&mut reply)?;
+        Ok(sync_result)
     }
 
     fn send_request(&self, mut parcel: MsgParcel, ipc_code: IpcCode) -> Result<MsgParcel> {

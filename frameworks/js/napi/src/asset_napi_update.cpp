@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,22 +13,16 @@
  * limitations under the License.
  */
 
-#include <cstdint>
-#include <vector>
+#include "asset_napi_update.h"
 
 #include "securec.h"
 
-#include "napi/native_api.h"
-#include "napi/native_node_api.h"
-
 #include "asset_log.h"
-#include "asset_mem.h"
 #include "asset_system_api.h"
 #include "asset_system_type.h"
 
 #include "asset_napi_check.h"
 #include "asset_napi_common.h"
-#include "asset_napi_update.h"
 
 namespace OHOS {
 namespace Security {
@@ -56,30 +50,30 @@ napi_value CheckAssetPresence(const napi_env env, const std::vector<AssetAttr> &
 napi_status CheckUpdateArgs(const napi_env env, const std::vector<AssetAttr> &attrs,
     const std::vector<AssetAttr> &updateAttrs)
 {
-    IF_ERROR_THROW_RETURN(CheckAssetRequiredTag(env, attrs, QUERY_REQUIRED_TAGS));
+    IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, QUERY_REQUIRED_TAGS));
     std::vector<uint32_t> queryValidTags;
     queryValidTags.insert(queryValidTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
-    IF_ERROR_THROW_RETURN(CheckAssetTagValidity(env, attrs, queryValidTags));
-    IF_ERROR_THROW_RETURN(CheckAssetValueValidity(env, attrs));
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, queryValidTags));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs));
 
-    IF_ERROR_THROW_RETURN(CheckAssetPresence(env, updateAttrs));
+    IF_ERROR_THROW_RETURN(env, CheckAssetPresence(env, updateAttrs));
     std::vector<uint32_t> updateValidTags;
     updateValidTags.insert(updateValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), UPDATE_OPTIONAL_TAGS.begin(), UPDATE_OPTIONAL_TAGS.end());
-    IF_ERROR_THROW_RETURN(CheckAssetTagValidity(env, updateAttrs, updateValidTags));
-    IF_ERROR_THROW_RETURN(CheckAssetValueValidity(env, updateAttrs));
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, updateAttrs, updateValidTags));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, updateAttrs));
 
     return napi_ok;
 }
 
-napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *context)
+napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *baseContext)
 {
-    BaseContext *context = reinterpret_cast<BaseContext *>(context);
+    UpdateContext *context = reinterpret_cast<UpdateContext *>(baseContext);
     napi_value argv[UPDATE_ARG_COUNT] = { 0 };
     IF_ERR_RETURN(ParseJsArgs(env, info, argv, UPDATE_ARG_COUNT));
     uint32_t index = 0;
@@ -89,9 +83,9 @@ napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *con
     return napi_ok;
 }
 
-napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContext *context)
+napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContext *baseContext)
 {
-    BaseContext *context = reinterpret_cast<BaseContext *>(context);
+    UpdateContext *context = reinterpret_cast<UpdateContext *>(baseContext);
     napi_value argv[UPDATE_ARG_COUNT_AS_USER] = { 0 };
     IF_ERR_RETURN(ParseJsArgs(env, info, argv, UPDATE_ARG_COUNT_AS_USER));
     uint32_t index = 0;
@@ -110,7 +104,7 @@ napi_value NapiUpdate(const napi_env env, napi_callback_info info, bool asUser, 
 
     context->parse = asUser ? ParseAttrMapAsUser : ParseAttrMap;
     context->execute = [](napi_env env, void *data) {
-        BaseContext *context = static_cast<BaseContext *>(context);
+        UpdateContext *context = static_cast<UpdateContext *>(data);
         context->result = AssetUpdate(&context->attrs[0], context->attrs.size(),
             &context->updateAttrs[0], context->updateAttrs.size());
     };
@@ -122,7 +116,7 @@ napi_value NapiUpdate(const napi_env env, napi_callback_info info, bool asUser, 
     if (async) {
         return CreateAsyncWork(env, info, std::move(context), __func__);
     } else {
-        return CreateSyncWork(env, info, context);
+        return CreateSyncWork(env, info, context.get());
     }
 }
 

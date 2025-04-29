@@ -108,7 +108,7 @@ int32_t AssetPostQuery(const AssetAttr *handle, uint32_t handleCnt);
  * @return Returns <b>SEC_ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
  * @since 20
  */
-int32_t AssetQuerySyncResult(const Asset_Attr *query, uint32_t queryCnt, Asset_SyncResult *syncResult);
+int32_t AssetQuerySyncResult(const AssetAttr *query, uint32_t queryCnt, AssetSyncResult *syncResult);
 
  /**
  * @brief Parses the query result to obtain the specified attribute value.

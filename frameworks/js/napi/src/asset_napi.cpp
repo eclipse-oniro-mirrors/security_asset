@@ -25,6 +25,7 @@
 #include "asset_napi_post_query.h"
 #include "asset_napi_pre_query.h"
 #include "asset_napi_query.h"
+#include "asset_napi_query_sync_result.h"
 #include "asset_napi_remove.h"
 #include "asset_napi_update.h"
 

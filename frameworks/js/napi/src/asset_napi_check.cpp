@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include "asset_napi_check.h"
+
 #include <algorithm>
 #include <climits>
 #include <cmath>
@@ -23,10 +25,8 @@
 #include "securec.h"
 
 #include "asset_log.h"
-#include "asset_system_api.h"
 #include "asset_system_type.h"
 
-#include "asset_napi_check.h"
 #include "asset_napi_common.h"
 
 namespace OHOS {
@@ -86,7 +86,7 @@ napi_value CheckValidBits(const napi_env env, const AssetAttr &attr, uint32_t mi
         RETURN_JS_ERROR(env, "Value[%u] of tag[asset.Tag.%s] has bit count out of range[%u, %u].",
             attr.value.u32, TAG_MAP.at(attr.tag), minBits + 1, maxBits);
     }
-    napi_value
+    return nullptr;
 }
 
 napi_value CheckTagRange(const napi_env env, const AssetAttr &attr, const std::vector<uint32_t> &tags)

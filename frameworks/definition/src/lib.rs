@@ -245,6 +245,9 @@ impl_enum_trait! {
 
         /// The error code indicates that the capability is not supported.
         Unsupported = 24000017,
+
+        /// The error code indicates that verifying the parameter failed.
+        ParamVerificationFailed = 24000018,
     }
 }
 
@@ -440,4 +443,16 @@ pub trait Conversion {
 
     /// Convert the Asset Enum type to the Value variant.
     fn into_value(self) -> Value;
+}
+
+/// The error of synchronization.
+#[repr(C)]
+#[derive(Default)]
+pub struct SyncResult {
+    /// The result code of synchronization.
+    pub error_code: i32,
+    /// The total count of synchronized Assets.
+    pub total_count: u32,
+    /// The count of Assets that fail to synchronize.
+    pub failed_count: u32,
 }

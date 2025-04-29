@@ -25,7 +25,7 @@ use std::{
 };
 
 use asset_log::loge;
-use asset_sdk::{log_throw_error, AssetError, AssetMap, Conversion, DataType, ErrCode, Manager, Tag, Value};
+use asset_sdk::{log_throw_error, AssetError, AssetMap, Conversion, DataType, ErrCode, Manager, SyncResult, Tag, Value};
 
 const MAX_MAP_CAPACITY: u32 = 64;
 const RESULT_CODE_SUCCESS: i32 = 0;
@@ -232,6 +232,33 @@ pub extern "C" fn post_query_asset(handle: *const AssetAttr, handle_cnt: u32) ->
         e.code as i32
     } else {
         RESULT_CODE_SUCCESS
+    }
+}
+
+/// Function called from C programming language to Rust programming language for querying sync result.
+#[no_mangle]
+pub extern "C" fn query_sync_result(query: *const AssetAttr, query_cnt: u32, sync_result: *mut SyncResult) -> i32 {
+    let map = match into_map(query, query_cnt) {
+        Some(map) => map,
+        None => return ErrCode::ParamVerificationFailed as i32,
+    };
+
+    if sync_result.is_null() {
+        loge!("[FATAL][RUST SDK]result set is null");
+        return ErrCode::ParamVerificationFailed as i32;
+    }
+
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return e.code as i32,
+    };
+
+    match manager.query_sync_result(&map) {
+        Err(e) => e.code as i32,
+        Ok(res) => {
+            *sync_result = res; // TODO: remove unsafe
+            RESULT_CODE_SUCCESS
+        }
     }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,24 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef ASSET_NAPI_QUERY_H
-#define ASSET_NAPI_QUERY_H
+//! This module is used to query the result of synchronization.
 
-#include "napi/native_api.h"
-#include "napi/native_node_api.h"
+use asset_common::CallingInfo;
+use asset_definition::{AssetMap, Result, SyncResult};
 
-namespace OHOS {
-namespace Security {
-namespace Asset {
-
-napi_value NapiQuery(const napi_env env, napi_callback_info info);
-
-napi_value NapiQuerySync(const napi_env env, napi_callback_info info);
-
-napi_value NapiQueryAsUser(const napi_env env, napi_callback_info info);
-
-} // Asset
-} // Security
-} // OHOS
-
-#endif // ASSET_NAPI_QUERY_H
+pub(crate) fn query_sync_result(calling_info: &CallingInfo, query: &AssetMap) -> Result<SyncResult> {
+    // TODO: 实现逻辑
+    Ok(SyncResult::default())
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -16,14 +16,14 @@
 #ifndef ASSET_NAPI_COMMON_H
 #define ASSET_NAPI_COMMON_H
 
-#include <functional>
 #include <vector>
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
-#include "asset_system_api.h"
 #include "asset_system_type.h"
+
+#include "asset_napi_context.h"
 
 namespace OHOS {
 namespace Security {
@@ -45,7 +45,7 @@ if ((condition)) {                                                      \
 #define NAPI_THROW(env, condition, code, message)                       \
     NAPI_THROW_BASE(env, condition, nullptr, code, message)
 
-#define IF_ERROR_THROW_RETURN(env, result, returnValue)    \
+#define IF_ERROR_THROW_RETURN(env, result)                 \
 if ((result) != nullptr) {                                 \
     napi_throw((env), (result));                           \
     return napi_invalid_arg;                               \
@@ -82,7 +82,7 @@ napi_status NapiSetProperty(const napi_env env, napi_value object, const char *p
 napi_value CreateAsyncWork(const napi_env env, napi_callback_info info, std::unique_ptr<BaseContext> context,
     const char *resourceName);
 
-napi_value CreateSyncWork(const napi_env env, napi_callback_info info, std::unique_ptr<BaseContext> context);
+napi_value CreateSyncWork(const napi_env env, napi_callback_info info, BaseContext *context);
 
 } // Asset
 } // Security

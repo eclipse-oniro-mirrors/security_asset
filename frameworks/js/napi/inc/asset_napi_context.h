@@ -56,7 +56,7 @@ class UpdateContext : public BaseContext {
 public:
     ~UpdateContext();
     std::vector<AssetAttr> updateAttrs;
-}
+};
 
 class QuerySyncResultContext : public BaseContext {
 public:

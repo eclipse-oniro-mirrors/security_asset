@@ -15,9 +15,11 @@
 
 #include "asset_napi_query_sync_result.h"
 
+#include "asset_system_api.h"
+#include "asset_system_type.h"
+
 #include "asset_napi_check.h"
 #include "asset_napi_common.h"
-#include "asset_system_type.h"
 
 namespace OHOS {
 namespace Security {
@@ -36,7 +38,7 @@ napi_value CheckQuerySyncResultArgs(napi_env env, const std::vector<AssetAttr> &
     if (error != nullptr) {
         return error;
     }
-    
+
     return CheckAssetValueValidity(env, attrs);
 }
 } // anonymous namespace

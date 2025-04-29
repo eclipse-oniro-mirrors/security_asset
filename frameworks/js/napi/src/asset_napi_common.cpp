@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 
+#include "asset_napi_common.h"
+
 #include <vector>
 
 #include "securec.h"
@@ -21,7 +23,6 @@
 #include "asset_mem.h"
 #include "asset_system_type.h"
 
-#include "asset_napi_common.h"
 #include "asset_napi_context.h"
 #include "asset_napi_error_code.h"
 
@@ -297,32 +298,32 @@ napi_value CreateAsyncWork(const napi_env env, napi_callback_info info, std::uni
     const char *resourceName)
 {
     if (context->parse != nullptr) {
-        NAPI_CALL(env, context->parse(env, info, context));
+        NAPI_CALL(env, context->parse(env, info, context.get()));
     }
 
     napi_value promise;
     NAPI_CALL(env, napi_create_promise(env, &context->deferred, &promise));
     napi_value resource = nullptr;
-    NAPI_CALL(env, napi_create_string_utf8(env, resourceName, NAPI_AUTO_LENGTH, *resource));
-    NPAI_CALL(env, napi_create_async_work(env, nullptr, resource, context->execute,
+    NAPI_CALL(env, napi_create_string_utf8(env, resourceName, NAPI_AUTO_LENGTH, &resource));
+    NAPI_CALL(env, napi_create_async_work(env, nullptr, resource, context->execute,
         [](napi_env env, napi_status status, void *data) {
             BaseContext *context = static_cast<BaseContext *>(data);
             ResolvePromise(env, context);
             delete context;
-        }, static_cast<void *(context.get()), &context->work));
+        }, static_cast<void *>(context.get()), &context->work));
     NAPI_CALL(env, napi_queue_async_work(env, context->work));
-    context->release();
+    context.release();
     return promise;
 }
 
-napi_value CreateSyncWork(const napi_env env, napi_callback_info info, std::unique_ptr<BaseContext> context)
+napi_value CreateSyncWork(const napi_env env, napi_callback_info info, BaseContext *context)
 {
     if (context->parse != nullptr) {
-        NAPI_CALL(env, context->parse(env, info, context.get()));
+        NAPI_CALL(env, context->parse(env, info, context));
     }
 
-    context->execute(env, context.get());
-    return context->resolve(env, context.get());
+    context->execute(env, context);
+    return context->resolve(env, context);
 }
 
 } // Asset

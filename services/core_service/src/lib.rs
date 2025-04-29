@@ -30,7 +30,7 @@ use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
 use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Counter};
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_db_operator::database_file_upgrade::check_and_split_db;
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncResult};
 use asset_file_operator::{common::DE_ROOT_PATH, de_operator::create_user_de_dir};
 use asset_ipc::SA_ID;
 use asset_log::{loge, logi};
@@ -245,5 +245,9 @@ impl AssetService {
 
     fn post_query(&self, calling_info: &CallingInfo, query: &AssetMap) -> Result<()> {
         execute!(operations::post_query, calling_info, query)
+    }
+
+    fn query_sync_result(&self, calling_info: &CallingInfo, query: &AssetMap) -> Result<SyncResult> {
+        execute!(operations::query_sync_result, calling_info, query)
     }
 }

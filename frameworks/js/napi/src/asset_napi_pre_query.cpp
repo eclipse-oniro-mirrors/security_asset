@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,22 +13,19 @@
  * limitations under the License.
  */
 
+#include "asset_napi_pre_query.h"
+
 #include <cstdint>
 #include <vector>
 
 #include "securec.h"
 
-#include "napi/native_api.h"
-#include "napi/native_node_api.h"
-
 #include "asset_log.h"
-#include "asset_mem.h"
 #include "asset_system_api.h"
 #include "asset_system_type.h"
 
 #include "asset_napi_check.h"
 #include "asset_napi_common.h"
-#include "asset_napi_pre_query.h"
 
 namespace OHOS {
 namespace Security {
@@ -49,14 +46,13 @@ napi_status CheckPreQueryArgs(const napi_env env, const std::vector<AssetAttr> &
     validTags.insert(validTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), OPTIONAL_TAGS.begin(), OPTIONAL_TAGS.end());
-    IF_ERROR_THROW_RETURN(CheckAssetTagValidity(env, attrs, validTags));
-    IF_ERROR_THROW_RETURN(CheckAssetValueValidity(env, attrs));
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, validTags));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs));
     return napi_ok;
 }
 
 napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *context)
 {
-    BaseContext *context = reinterpret_cast<BaseContext *>(context);
     napi_value argv[QUERY_ARG_COUNT] = { 0 };
     IF_ERR_RETURN(ParseJsArgs(env, info, argv, QUERY_ARG_COUNT));
     IF_ERR_RETURN(ParseJsMap(env, argv[0], context->attrs));
@@ -66,7 +62,6 @@ napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *con
 
 napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContext *context)
 {
-    BaseContext *context = reinterpret_cast<BaseContext *>(context);
     napi_value argv[QUERY_ARG_COUNT_AS_USER] = { 0 };
     IF_ERR_RETURN(ParseJsArgs(env, info, argv, QUERY_ARG_COUNT_AS_USER));
     uint32_t index = 0;
@@ -84,19 +79,19 @@ napi_value NapiPreQuery(const napi_env env, napi_callback_info info, bool asUser
 
     context->parse = asUser ? ParseAttrMapAsUser : ParseAttrMap;
     context->execute = [](napi_env env, void *data) {
-        PreQueryContext *context = static_cast<PreQueryContext *>(context);
+        PreQueryContext *context = static_cast<PreQueryContext *>(data);
         context->result = AssetPreQuery(&context->attrs[0], context->attrs.size(), &context->challenge);
     };
 
-    context->resolve = [](napi_env env, BaseContext *context) -> napi_value {
-        PreQueryContext *context = static_cast<PreQueryContext *>(context);
+    context->resolve = [](napi_env env, BaseContext *baseContext) -> napi_value {
+        PreQueryContext *context = static_cast<PreQueryContext *>(baseContext);
         return CreateJsUint8Array(env, context->challenge);
     };
 
     if (async) {
         return CreateAsyncWork(env, info, std::move(context), __func__);
     } else {
-        return CreateSyncWork(env, info, context);
+        return CreateSyncWork(env, info, context.get());
     }
 }
 
