@@ -44,9 +44,6 @@ fn map_err(code: u32) -> AssetError {
 pub(crate) fn query_sync_result(calling_info: &CallingInfo, query: &AssetMap) -> Result<SyncResult> {
     check_arguments(query, calling_info)?;
 
-    // OwnerType: SA、HAP、HAP_GROUP
-    // Owner: appId, processName
-    // RequireAttrEncrypted: true\false
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
