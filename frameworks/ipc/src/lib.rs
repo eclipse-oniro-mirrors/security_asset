@@ -150,5 +150,11 @@ pub fn deserialize_sync_result(parcel: &mut MsgParcel) -> Result<SyncResult> {
 
 /// Convert ipc error into Asset error.
 pub fn ipc_err_handle(e: IpcStatusCode) -> AssetError {
-    AssetError::new(ErrCode::IpcError, format!("[FATAL][IPC]Ipc status code = {}", e))
+    match e {
+        IpcStatusCode::ServiceDied => AssetError::new(
+            ErrCode::ServiceUnavailable,
+            format!("[FATAL][IPC]Ipc status code = {}", e as i32)),
+        _ => AssetError::new(ErrCode::IpcError, format!("[FATAL][IPC]Ipc status code = {}", e)),
+    }
+
 }

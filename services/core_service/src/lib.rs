@@ -135,6 +135,8 @@ impl Ability for AssetAbility {
 
     fn on_stop(&self) {
         logi!("[INFO]Asset service on_stop");
+        let counter = Counter::get_instance();
+        counter.lock().unwrap().stop();
         common_event::unsubscribe();
     }
 

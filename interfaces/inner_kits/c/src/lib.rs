@@ -81,7 +81,7 @@ pub extern "C" fn add_asset(attributes: *const AssetAttr, attr_cnt: u32) -> i32 
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let manager = match Manager::build() {
+    let mut manager = match Manager::build() {
         Ok(manager) => manager,
         Err(e) => return e.code as i32,
     };
@@ -101,7 +101,7 @@ pub extern "C" fn remove_asset(query: *const AssetAttr, query_cnt: u32) -> i32 {
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let manager = match Manager::build() {
+    let mut manager = match Manager::build() {
         Ok(manager) => manager,
         Err(e) => return e.code as i32,
     };
@@ -131,7 +131,7 @@ pub extern "C" fn update_asset(
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let manager = match Manager::build() {
+    let mut manager = match Manager::build() {
         Ok(manager) => manager,
         Err(e) => return e.code as i32,
     };
@@ -160,7 +160,7 @@ pub unsafe extern "C" fn pre_query_asset(query: *const AssetAttr, query_cnt: u32
         return ErrCode::InvalidArgument as i32;
     }
 
-    let manager = match Manager::build() {
+    let mut manager = match Manager::build() {
         Ok(manager) => manager,
         Err(e) => return e.code as i32,
     };
@@ -196,7 +196,7 @@ pub unsafe extern "C" fn query_asset(query: *const AssetAttr, query_cnt: u32, re
         return ErrCode::InvalidArgument as i32;
     }
 
-    let manager = match Manager::build() {
+    let mut manager = match Manager::build() {
         Ok(manager) => manager,
         Err(e) => return e.code as i32,
     };
@@ -223,7 +223,7 @@ pub extern "C" fn post_query_asset(handle: *const AssetAttr, handle_cnt: u32) ->
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let manager = match Manager::build() {
+    let mut manager = match Manager::build() {
         Ok(manager) => manager,
         Err(e) => return e.code as i32,
     };
@@ -253,7 +253,7 @@ pub unsafe extern "C" fn query_sync_result(query: *const AssetAttr, query_cnt: u
         return ErrCode::ParamVerificationFailed as i32;
     }
 
-    let manager = match Manager::build() {
+    let mut manager = match Manager::build() {
         Ok(manager) => manager,
         Err(e) => return e.code as i32,
     };

@@ -267,7 +267,7 @@ lazy_static! {
     static ref RECORD_TIME: Mutex<Option<Instant>> = Mutex::new(None);
 }
 
-async fn backup_db_sync() {
+pub(crate) extern "C" fn backup_db() {
     let _counter_user = AutoCounter::new();
     let cur_time = Instant::now();
     logi!("[INFO]Start backup db.");
@@ -287,10 +287,6 @@ async fn backup_db_sync() {
         }
     }
     logi!("[INFO]Finish backup db.");
-}
-
-pub(crate) extern "C" fn backup_db() {
-    let _handle = ylong_runtime::spawn(backup_db_sync());
 }
 
 pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, app_index: i32) {
