@@ -27,15 +27,15 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 
-#define RETURN_JS_ERROR(env, format, arg...)                                                        \
+#define RETURN_JS_ERROR(env, errorCode, format, arg...)                                             \
 do {                                                                                                \
     char msg[MAX_MESSAGE_LEN] = { 0 };                                                              \
     if ((sprintf_s(msg, MAX_MESSAGE_LEN, format, ##arg)) == -1) {                                   \
         LOGE("[FATAL][NAPI]Failed to create message string, truncation occurred when sprintf_s.");  \
-        return CreateJsError((env), SEC_ASSET_PARAM_VERIFICATION_FAILED);                           \
+        return CreateJsError((env), (errorCode));                                                   \
     }                                                                                               \
     LOGE("[FATAL][NAPI]%{public}s", (msg));                                                         \
-    return CreateJsError((env), SEC_ASSET_PARAM_VERIFICATION_FAILED, (msg));                        \
+    return CreateJsError((env), (errorCode), (msg));                                                \
 } while (0)
 
 const std::vector<uint32_t> CRITICAL_LABEL_TAGS = {
@@ -154,12 +154,12 @@ const std::unordered_map<uint32_t, const char *> TAG_MAP = {
 };
 
 napi_value CheckAssetRequiredTag(const napi_env env, const std::vector<AssetAttr> &attrs,
-    const std::vector<uint32_t> &requiredTags);
+    const std::vector<uint32_t> &requiredTags, uint32_t errorCode);
 
 napi_value CheckAssetTagValidity(const napi_env env, const std::vector<AssetAttr> &attrs,
-    const std::vector<uint32_t> &validTags);
+    const std::vector<uint32_t> &validTags, uint32_t errorCode);
 
-napi_value CheckAssetValueValidity(const napi_env env, const std::vector<AssetAttr> &attrs);
+napi_value CheckAssetValueValidity(const napi_env env, const std::vector<AssetAttr> &attrs, uint32_t errorCode);
 
 } // Asset
 } // Security

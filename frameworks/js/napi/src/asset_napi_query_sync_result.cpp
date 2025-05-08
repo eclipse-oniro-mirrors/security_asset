@@ -35,12 +35,12 @@ const std::vector<uint32_t> OPTIONAL_TAGS = {
 
 napi_value CheckQuerySyncResultArgs(napi_env env, const std::vector<AssetAttr> &attrs)
 {
-    napi_value error = CheckAssetTagValidity(env, attrs, OPTIONAL_TAGS);
+    napi_value error = CheckAssetTagValidity(env, attrs, OPTIONAL_TAGS, SEC_ASSET_PARAM_VERIFICATION_FAILED);
     if (error != nullptr) {
         return error;
     }
 
-    return CheckAssetValueValidity(env, attrs);
+    return CheckAssetValueValidity(env, attrs, SEC_ASSET_PARAM_VERIFICATION_FAILED);
 }
 } // anonymous namespace
 

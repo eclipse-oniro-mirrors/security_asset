@@ -52,55 +52,58 @@ namespace {
 #define MIN_GROUP_ID_SIZE 7
 #define MAX_GROUP_ID_SIZE 127
 
-napi_value CheckArraySize(const napi_env env, const AssetAttr &attr, uint32_t min, uint32_t max)
+napi_value CheckArraySize(const napi_env env, const AssetAttr &attr, uint32_t min, uint32_t max, uint32_t errorCode)
 {
     if (attr.value.blob.size > max || attr.value.blob.size <= min) {
-        RETURN_JS_ERROR(env, "Value byte length[%u] of tag[asset.Tag.%s] is out of range[%u, %u].",
+        RETURN_JS_ERROR(env, errorCode, "Value byte length[%u] of tag[asset.Tag.%s] is out of range[%u, %u].",
             attr.value.blob.size, TAG_MAP.at(attr.tag),  min + 1, max);
     }
     return nullptr;
 }
 
-napi_value CheckEnumVariant(const napi_env env, const AssetAttr &attr, const std::vector<uint32_t> &enumVec)
+napi_value CheckEnumVariant(const napi_env env, const AssetAttr &attr, const std::vector<uint32_t> &enumVec,
+    uint32_t errorCode)
 {
     auto it = std::find(enumVec.begin(), enumVec.end(), attr.value.u32);
     if (it == enumVec.end()) {
-        RETURN_JS_ERROR(env, "Value[%u] of tag[asset.Tag.%s] is an illegal enumeration variant.",
+        RETURN_JS_ERROR(env, errorCode, "Value[%u] of tag[asset.Tag.%s] is an illegal enumeration variant.",
             attr.value.u32, TAG_MAP.at(attr.tag));
     }
     return nullptr;
 }
 
-napi_value CheckNumberRange(const napi_env env, const AssetAttr &attr, uint32_t min, uint32_t max)
+napi_value CheckNumberRange(const napi_env env, const AssetAttr &attr, uint32_t min, uint32_t max, uint32_t errorCode)
 {
     if (attr.value.u32 > max || attr.value.u32 <= min) {
-        RETURN_JS_ERROR(env, "Value[%u] of tag[asset.Tag.%s] is out of range[%u, %u].",
+        RETURN_JS_ERROR(env, errorCode, "Value[%u] of tag[asset.Tag.%s] is out of range[%u, %u].",
             attr.value.u32, TAG_MAP.at(attr.tag), min, max);
     }
     return nullptr;
 }
 
-napi_value CheckValidBits(const napi_env env, const AssetAttr &attr, uint32_t minBits, uint32_t maxBits)
+napi_value CheckValidBits(const napi_env env, const AssetAttr &attr, uint32_t minBits, uint32_t maxBits,
+    uint32_t errorCode)
 {
     if (attr.value.u32 >= pow(BINARY_BASE, maxBits) || attr.value.u32 < pow(BINARY_BASE, minBits) - 1) {
-        RETURN_JS_ERROR(env, "Value[%u] of tag[asset.Tag.%s] has bit count out of range[%u, %u].",
+        RETURN_JS_ERROR(env, errorCode, "Value[%u] of tag[asset.Tag.%s] has bit count out of range[%u, %u].",
             attr.value.u32, TAG_MAP.at(attr.tag), minBits + 1, maxBits);
     }
     return nullptr;
 }
 
-napi_value CheckTagRange(const napi_env env, const AssetAttr &attr, const std::vector<uint32_t> &tags)
+napi_value CheckTagRange(const napi_env env, const AssetAttr &attr, const std::vector<uint32_t> &tags,
+    uint32_t errorCode)
 {
     auto it = std::find(tags.begin(), tags.end(), attr.value.u32);
     if (it == tags.end()) {
-        RETURN_JS_ERROR(env, "Value[0x%X] of tag[asset.Tag.(%s)] is not tags allowed for sorting, "
+        RETURN_JS_ERROR(env, errorCode, "Value[0x%X] of tag[asset.Tag.(%s)] is not tags allowed for sorting, "
             "which should start with \"DATA_LABEL\".", attr.value.u32, TAG_MAP.at(attr.tag));
     }
     return nullptr;
 }
 
 struct CheckContinuousRange {
-    std::function<napi_value(const napi_env, const AssetAttr &, uint32_t, uint32_t)> funcPtr;
+    std::function<napi_value(const napi_env, const AssetAttr &, uint32_t, uint32_t, uint32_t)> funcPtr;
     uint32_t min;
     uint32_t max;
 };
@@ -131,7 +134,7 @@ const std::unordered_map<uint32_t, CheckContinuousRange> CHECK_CONTINOUS_RANGE_F
 };
 
 struct CheckDiscreteRange {
-    std::function<napi_value(const napi_env, const AssetAttr &, const std::vector<uint32_t> &)> funcPtr;
+    std::function<napi_value(const napi_env, const AssetAttr &, const std::vector<uint32_t> &, uint32_t)> funcPtr;
     const std::vector<uint32_t> validRange;
 };
 
@@ -147,44 +150,44 @@ const std::unordered_map<uint32_t, CheckDiscreteRange> CHECK_DISCRETE_RANGE_FUNC
 } // anonymous namespace
 
 napi_value CheckAssetRequiredTag(const napi_env env, const std::vector<AssetAttr> &attrs,
-    const std::vector<uint32_t> &requiredTags)
+    const std::vector<uint32_t> &requiredTags, uint32_t errorCode)
 {
     for (uint32_t requiredTag : requiredTags) {
         auto it = std::find_if(attrs.begin(), attrs.end(), [requiredTag](const AssetAttr &attr) {
             return attr.tag == requiredTag;
         });
         if (it == attrs.end()) {
-            RETURN_JS_ERROR(env, "Missing required tag[asset.Tag.%s].", TAG_MAP.at(requiredTag));
+            RETURN_JS_ERROR(env, errorCode, "Missing required tag[asset.Tag.%s].", TAG_MAP.at(requiredTag));
         }
     }
     return nullptr;
 }
 
 napi_value CheckAssetTagValidity(const napi_env env, const std::vector<AssetAttr> &attrs,
-    const std::vector<uint32_t> &validTags)
+    const std::vector<uint32_t> &validTags, uint32_t errorCode)
 {
     for (AssetAttr attr : attrs) {
         if (std::count(validTags.begin(), validTags.end(), attr.tag) == 0) {
-            RETURN_JS_ERROR(env, "Unsupported tag[asset.Tag.%s] for the function.", TAG_MAP.at(attr.tag));
+            RETURN_JS_ERROR(env, errorCode, "Unsupported tag[asset.Tag.%s] for the function.", TAG_MAP.at(attr.tag));
         }
     }
     return nullptr;
 }
 
-napi_value CheckAssetValueValidity(const napi_env env, const std::vector<AssetAttr> &attrs)
+napi_value CheckAssetValueValidity(const napi_env env, const std::vector<AssetAttr> &attrs, uint32_t errorCode)
 {
     napi_value error = nullptr;
     for (auto attr : attrs) {
         if (CHECK_CONTINOUS_RANGE_FUNC_MAP.find(attr.tag) != CHECK_CONTINOUS_RANGE_FUNC_MAP.end()) {
             auto checkRange = CHECK_CONTINOUS_RANGE_FUNC_MAP.at(attr.tag);
-            error = checkRange.funcPtr(env, attr, checkRange.min, checkRange.max);
+            error = checkRange.funcPtr(env, attr, checkRange.min, checkRange.max, errorCode);
             if (error != nullptr) {
                 return error;
             }
         }
         if (CHECK_DISCRETE_RANGE_FUNC_MAP.find(attr.tag) != CHECK_DISCRETE_RANGE_FUNC_MAP.end()) {
             auto checkRange = CHECK_DISCRETE_RANGE_FUNC_MAP.at(attr.tag);
-            error = checkRange.funcPtr(env, attr, checkRange.validRange);
+            error = checkRange.funcPtr(env, attr, checkRange.validRange, errorCode);
             if (error != nullptr) {
                 return error;
             }

@@ -40,11 +40,11 @@ const std::vector<uint32_t> OPTIONAL_TAGS = {
 
 napi_status CheckPostQueryArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
-    IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, REQUIRED_TAGS));
+    IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, REQUIRED_TAGS, SEC_ASSET_INVALID_ARGUMENT));
     std::vector<uint32_t> validTags;
     validTags.insert(validTags.end(), REQUIRED_TAGS.begin(), REQUIRED_TAGS.end());
     validTags.insert(validTags.end(), OPTIONAL_TAGS.begin(), OPTIONAL_TAGS.end());
-    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
     return napi_ok;
 }
 

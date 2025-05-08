@@ -28,8 +28,8 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 namespace {
-const uint32_t UPDATE_ARG_COUNT = 1;
-const uint32_t UPDATE_ARG_COUNT_AS_USER = 2;
+const uint32_t UPDATE_ARG_COUNT = 2;
+const uint32_t UPDATE_ARG_COUNT_AS_USER = 3;
 
 const std::vector<uint32_t> QUERY_REQUIRED_TAGS = {
     SEC_ASSET_TAG_ALIAS
@@ -42,7 +42,7 @@ const std::vector<uint32_t> UPDATE_OPTIONAL_TAGS = {
 napi_value CheckAssetPresence(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
     if (attrs.empty()) {
-        RETURN_JS_ERROR(env, "Argument[attributesToUpdate] is empty.");
+        RETURN_JS_ERROR(env, SEC_ASSET_INVALID_ARGUMENT, "Argument[attributesToUpdate] is empty.");
     }
     return nullptr;
 }
@@ -50,14 +50,14 @@ napi_value CheckAssetPresence(const napi_env env, const std::vector<AssetAttr> &
 napi_status CheckUpdateArgs(const napi_env env, const std::vector<AssetAttr> &attrs,
     const std::vector<AssetAttr> &updateAttrs)
 {
-    IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, QUERY_REQUIRED_TAGS));
+    IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, QUERY_REQUIRED_TAGS, SEC_ASSET_INVALID_ARGUMENT));
     std::vector<uint32_t> queryValidTags;
     queryValidTags.insert(queryValidTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
-    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, queryValidTags));
-    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs));
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, queryValidTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
 
     IF_ERROR_THROW_RETURN(env, CheckAssetPresence(env, updateAttrs));
     std::vector<uint32_t> updateValidTags;
@@ -65,8 +65,8 @@ napi_status CheckUpdateArgs(const napi_env env, const std::vector<AssetAttr> &at
     updateValidTags.insert(updateValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), UPDATE_OPTIONAL_TAGS.begin(), UPDATE_OPTIONAL_TAGS.end());
-    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, updateAttrs, updateValidTags));
-    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, updateAttrs));
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, updateAttrs, updateValidTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, updateAttrs, SEC_ASSET_INVALID_ARGUMENT));
 
     return napi_ok;
 }
@@ -99,7 +99,7 @@ napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContex
 
 napi_value NapiUpdate(const napi_env env, napi_callback_info info, bool asUser, bool async)
 {
-    auto context = std::unique_ptr<BaseContext>(new (std::nothrow)BaseContext());
+    auto context = std::unique_ptr<UpdateContext>(new (std::nothrow)UpdateContext());
     NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for Context.");
 
     context->parse = asUser ? ParseAttrMapAsUser : ParseAttrMap;

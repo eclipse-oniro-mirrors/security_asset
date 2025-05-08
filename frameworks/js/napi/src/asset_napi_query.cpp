@@ -47,8 +47,8 @@ napi_status CheckQueryArgs(const napi_env env, const std::vector<AssetAttr> &att
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
     validTags.insert(validTags.end(), OPTIONAL_TAGS.begin(), OPTIONAL_TAGS.end());
-    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, validTags));
-    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs));
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, validTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
     return napi_ok;
 }
 
@@ -75,7 +75,7 @@ napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContex
 
 napi_value NapiQuery(const napi_env env, napi_callback_info info, bool asUser, bool async)
 {
-    auto context = std::unique_ptr<PreQueryContext>(new (std::nothrow)PreQueryContext());
+    auto context = std::unique_ptr<QueryContext>(new (std::nothrow)QueryContext());
     NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for Context.");
 
     context->parse = asUser ? ParseAttrMapAsUser : ParseAttrMap;

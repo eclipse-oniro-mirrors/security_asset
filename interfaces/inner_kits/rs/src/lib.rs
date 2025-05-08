@@ -99,9 +99,18 @@ impl Manager {
 
     /// Query the result of synchronization.
     pub fn query_sync_result(&mut self, query: &AssetMap) -> Result<SyncResult> {
-        let mut reply = self.process_one_agr_request(query, IpcCode::QuerySyncResult)?;
-        let sync_result = deserialize_sync_result(&mut reply)?;
-        Ok(sync_result)
+        match self.process_one_agr_request(query, IpcCode::QuerySyncResult) {
+            Ok(mut reply) => {
+                let sync_result = deserialize_sync_result(&mut reply)?;
+                Ok(sync_result)
+            },
+            Err(mut e) => {
+                if e.code == ErrCode::InvalidArgument {
+                    e.code = ErrCode::ParamVerificationFailed;
+                }
+                Err(e)
+            }
+        }
     }
 
     fn rebuild(&mut self) -> Result<()> {

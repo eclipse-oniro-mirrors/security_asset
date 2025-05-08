@@ -323,6 +323,10 @@ napi_value CreateSyncWork(const napi_env env, napi_callback_info info, BaseConte
         NAPI_CALL(env, context->parse(env, info, context));
     }
 
+    if (context->result != SEC_ASSET_SUCCESS) {
+        napi_throw(env, CreateJsError(env, context->result));
+        return nullptr;
+    }
     context->execute(env, context);
     return context->resolve(env, context);
 }

@@ -25,7 +25,7 @@ fn query_sync_result_without_attr() {
 #[test]
 fn query_sync_result_with_attr() {
     let mut attrs = AssetMap::new();
-    attrs.insert_attr(Tag::RequirePasswordSet, true);
+    attrs.insert_attr(Tag::RequireAttrEncrypted, true);
     asset_sdk::Manager::build().unwrap().query_sync_result(&attrs).unwrap();
 }
 

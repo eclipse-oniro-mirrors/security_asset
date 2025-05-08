@@ -48,7 +48,9 @@ pub(crate) fn query_sync_result(calling_info: &CallingInfo, query: &AssetMap) ->
         params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
         params.insert(PARAM_NAME_OWNER_INFO, Value::Bytes(calling_info.owner_info().clone()));
         params.insert(PARAM_NAME_OWNER_TYPE, Value::Number(calling_info.owner_type() as u32));
-        params.insert(PARAM_NAME_REQUIRE_ATTR_ENCRYPTED, Value::Bool(query.get_bool_attr(&Tag::RequireAttrEncrypted)?));
+        if let Some(Value::Bool(b)) = query.get(&Tag::RequireAttrEncrypted) {
+            params.insert(PARAM_NAME_REQUIRE_ATTR_ENCRYPTED, Value::Bool(*b));
+        }
         if let Some(group) = calling_info.group() {
             params.insert(PARAM_NAME_GROUP_ID, Value::Bytes(group.clone()));
         }

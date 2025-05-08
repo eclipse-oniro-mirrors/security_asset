@@ -19,6 +19,7 @@
 namespace UnitTest::AssetQuerySyncResultTest {
 int AssetQuerySyncResultTest001(void);
 int AssetQuerySyncResultTest002(void);
+int AssetQuerySyncResultTest003(void);
 }
 
 #endif // ASSET_QUERY_SYNC_RESULT_TEST_H

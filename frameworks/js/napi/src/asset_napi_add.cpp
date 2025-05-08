@@ -42,7 +42,7 @@ const std::vector<uint32_t> OPTIONAL_TAGS = {
 
 napi_status CheckAddArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
-    IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, REQUIRED_TAGS));
+    IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, REQUIRED_TAGS, SEC_ASSET_INVALID_ARGUMENT));
     std::vector<uint32_t> validTags;
     validTags.insert(validTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
@@ -50,8 +50,8 @@ napi_status CheckAddArgs(const napi_env env, const std::vector<AssetAttr> &attrs
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
     validTags.insert(validTags.end(), OPTIONAL_TAGS.begin(), OPTIONAL_TAGS.end());
-    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, validTags));
-    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs));
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, validTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
     return napi_ok;
 }
 

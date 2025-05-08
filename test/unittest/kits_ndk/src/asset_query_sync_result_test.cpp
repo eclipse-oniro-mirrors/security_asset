@@ -77,4 +77,20 @@ HWTEST_F(AssetQuerySyncResultTest, AssetQuerySyncResultTest002, TestSize.Level0)
     Asset_SyncResult result = { 0 };
     ASSERT_EQ(ASSET_SUCCESS, OH_Asset_QuerySyncResult(attr, ARRAY_SIZE(attr), &result));
 }
+
+/**
+ * @tc.name: AssetQuerySyncResultTest.AssetQuerySyncResultTest003
+ * @tc.desc: query sync result of group, expect ASSET_UNSUPPORTED.
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+ HWTEST_F(AssetQuerySyncResultTest, AssetQuerySyncResultTest003, TestSize.Level0)
+ {
+    Asset_Blob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+     Asset_Attr attr[] = {
+         { .tag = ASSET_TAG_GROUP_ID, .value.blob = funcName },
+     };
+     Asset_SyncResult result = { 0 };
+     ASSERT_EQ(ASSET_UNSUPPORTED, OH_Asset_QuerySyncResult(attr, ARRAY_SIZE(attr), &result));
+ }
 }
