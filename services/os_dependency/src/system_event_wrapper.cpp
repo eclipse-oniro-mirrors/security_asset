@@ -39,9 +39,13 @@ const char * const GROUP_IDS = "assetAccessGroups";
 const char * const OWNER_INFO_SEPARATOR = "_";
 const char * const GROUP_SEPARATOR = ",";
 
-void ParseDeveloperId(const std::string &developerId, ConstAssetBlob &developerIdBlob)
+void ParseDeveloperId(std::string developerId, ConstAssetBlob &developerIdBlob)
 {
     if (!developerId.empty()) {
+        size_t pos = developerId.find('.');
+        if (pos != std::string::npos) {
+            developerId = developerId.substr(pos + 1);
+        }
         developerIdBlob = { .size = developerId.size(),
             .data = reinterpret_cast<const uint8_t *>(developerId.c_str()) };
     } else {
