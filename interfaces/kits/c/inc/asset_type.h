@@ -279,7 +279,7 @@ typedef enum {
      *
      * @since 20
      */
-     ASSET_PARAM_VERIFICATION_FAILED = 24000018,
+    ASSET_PARAM_VERIFICATION_FAILED = 24000018,
 } Asset_ResultCode;
 
 /**
@@ -499,7 +499,7 @@ typedef struct {
  *
  * @since 20
  */
- typedef struct {
+typedef struct {
     /**
      * The result code of synchronization.
      */

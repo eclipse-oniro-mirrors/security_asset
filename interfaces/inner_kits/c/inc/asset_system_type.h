@@ -287,7 +287,7 @@ typedef enum {
     /**
      * Parameter verification failed.
      */
-     SEC_ASSET_PARAM_VERIFICATION_FAILED = 24000018,
+    SEC_ASSET_PARAM_VERIFICATION_FAILED = 24000018,
 } AssetResultCode;
 
 /**
@@ -485,7 +485,7 @@ typedef struct {
  *
  * @since 20
  */
- typedef struct {
+typedef struct {
     /**
      * The result code of synchronization.
      */
