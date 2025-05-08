@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,20 +13,13 @@
  * limitations under the License.
  */
 
-#[macro_use]
-mod common;
+#ifndef ASSET_QUERY_SYNC_RESULT_TEST_H
+#define ASSET_QUERY_SYNC_RESULT_TEST_H
 
-mod add;
-mod add_abnormal;
-mod post_query;
-mod post_query_abnormal;
-mod pre_query;
-mod pre_query_abnormal;
-mod query;
-mod query_abnormal;
-mod remove;
-mod remove_abnormal;
-mod update;
-mod update_abnormal;
-mod query_sync_result;
-mod query_sync_result_abnormal;
+namespace UnitTest::AssetQuerySyncResultTest {
+int AssetQuerySyncResultTest001(void);
+int AssetQuerySyncResultTest002(void);
+int AssetQuerySyncResultTest003(void);
+}
+
+#endif // ASSET_QUERY_SYNC_RESULT_TEST_H

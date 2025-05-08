@@ -447,6 +447,7 @@ pub trait Conversion {
 
 /// The error of synchronization.
 #[repr(C)]
+#[derive(Debug)]
 #[derive(Default)]
 pub struct SyncResult {
     /// The result code of synchronization.

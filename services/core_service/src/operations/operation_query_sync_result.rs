@@ -38,7 +38,6 @@ fn map_err(code: u32) -> AssetError {
         Ok(code) => AssetError{ code, msg: "get sync result failed".to_string() },
         Err(err) => err
     }
-    // TODO: map the result code
 }
 
 pub(crate) fn query_sync_result(calling_info: &CallingInfo, query: &AssetMap) -> Result<SyncResult> {
@@ -64,6 +63,3 @@ pub(crate) fn query_sync_result(calling_info: &CallingInfo, query: &AssetMap) ->
     }
     Ok(SyncResult::default())
 }
-
-// TODO： write and read file in extension
-// {RequireAttrEncrypted: true, OwnerType: SA, Owner: processName, resultCode: 0, totalCount: 10, failedCount: 0};

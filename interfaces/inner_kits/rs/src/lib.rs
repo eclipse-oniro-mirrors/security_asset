@@ -97,16 +97,16 @@ impl Manager {
         Ok(())
     }
 
+    /// Query the result of synchronization.
+    pub fn query_sync_result(&mut self, query: &AssetMap) -> Result<SyncResult> {
+        let mut reply = self.process_one_agr_request(query, IpcCode::QuerySyncResult)?;
+        let sync_result = deserialize_sync_result(&mut reply)?;
+        Ok(sync_result)
+    }
+
     fn rebuild(&mut self) -> Result<()> {
         self.remote = get_remote(false)?;
         Ok(())
-    }
-
-    /// Query the result of synchronization.
-    pub fn query_sync_result(&self, query: &AssetMap) -> Result<SyncResult> {
-        self.process_one_agr_request(query, IpcCode::QuerySyncResult)?;
-        let sync_result = deserialize_sync_result(&mut reply)?;
-        Ok(sync_result)
     }
 
     fn process_one_agr_request(&mut self, attributes: &AssetMap, ipc_code: IpcCode) -> Result<MsgParcel> {
