@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -37,7 +37,7 @@ pub struct AssetPlugin {
     lib: RefCell<Option<libloading::Library>>,
 }
 
-static ASSET_OLUGIN_LOCK: Mutex<()> = Mutex::new(());
+static ASSET_PLUGIN_LOCK: Mutex<()> = Mutex::new(());
 
 unsafe impl Sync for AssetPlugin {}
 
@@ -49,14 +49,14 @@ impl AssetPlugin {
     /// Get the instance of AssetPlugin.
     pub fn get_instance() -> Arc<AssetPlugin> {
         static mut INSTANCE: Option<Arc<AssetPlugin>> = None;
-        let _guard = ASSET_OLUGIN_LOCK.lock().unwrap();
+        let _guard = ASSET_PLUGIN_LOCK.lock().unwrap();
         unsafe { INSTANCE.get_or_insert_with(|| Arc::new(AssetPlugin::new())).clone() }
     }
 
     /// Load the plugin.
     pub fn load_plugin(&self) -> Result<Box<dyn IAssetPlugin>> {
         unsafe {
-            let _guard = ASSET_OLUGIN_LOCK.lock().unwrap();
+            let _guard = ASSET_PLUGIN_LOCK.lock().unwrap();
             if self.lib.borrow().is_none() {
                 logi!("start to load asset_ext plugin.");
                 match libloading::Library::new("libasset_ext_ffi.z.so") {
@@ -95,7 +95,7 @@ impl AssetPlugin {
 
     /// Unload plugin.
     pub fn unload_plugin(&self) {
-        let _guard = ASSET_OLUGIN_LOCK.lock().unwrap();
+        let _guard = ASSET_PLUGIN_LOCK.lock().unwrap();
         if self.lib.borrow().is_some() {
             *self.lib.borrow_mut() = None;
         }
