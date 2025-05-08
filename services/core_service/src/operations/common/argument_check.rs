@@ -38,7 +38,7 @@ pub const MAX_LABEL_SIZE: usize = 2048;
 const MAX_GROUP_ID_LEN: usize = 127;
 const MIN_GROUP_ID_LEN: usize = 7;
 
-const AUTH_TOKEN_SIZE: usize = 280;
+const AUTH_TOKEN_SIZE: usize = 344;
 const CHALLENGE_SIZE: usize = 32;
 const SYNC_TYPE_MIN_BITS: u32 = 0;
 const SYNC_TYPE_MAX_BITS: u32 = 3;

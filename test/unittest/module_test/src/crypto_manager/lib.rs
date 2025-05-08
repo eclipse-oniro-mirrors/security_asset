@@ -125,7 +125,7 @@ fn crypto_exec() {
     let mut crypto = Crypto::build(secret_key.clone(), calling_info, 600).unwrap();
     crypto.init_key().unwrap();
 
-    let authtoken = vec![0; 280];
+    let authtoken = vec![0; 344];
     assert!(crypto.exec_crypt(&cipher, &aad, &authtoken).is_err());
     let _ = secret_key.delete();
 }
