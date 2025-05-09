@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ASSET_NAPI_QUERY_H
-#define ASSET_NAPI_QUERY_H
+#ifndef ASSET_NAPI_QUERY_SYNC_RESULT_H
+#define ASSET_NAPI_QUERY_SYNC_RESULT_H
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
@@ -23,14 +23,9 @@ namespace OHOS {
 namespace Security {
 namespace Asset {
 
-napi_value NapiQuery(const napi_env env, napi_callback_info info);
-
-napi_value NapiQuerySync(const napi_env env, napi_callback_info info);
-
-napi_value NapiQueryAsUser(const napi_env env, napi_callback_info info);
+napi_value NapiQuerySyncResult(const napi_env env, napi_callback_info info);
 
 } // Asset
 } // Security
 } // OHOS
-
-#endif // ASSET_NAPI_QUERY_H
+#endif // ASSET_NAPI_QUERY_SYNC_RESULT_H

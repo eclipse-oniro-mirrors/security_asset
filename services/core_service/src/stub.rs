@@ -18,8 +18,7 @@
 use asset_common::{AutoCounter, CallingInfo, Counter, OwnerType, ProcessInfo, ProcessInfoDetail};
 use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 
-use asset_definition::{AssetError, Result};
-use asset_ipc::{deserialize_map, serialize_maps, IpcCode, IPC_SUCCESS, SA_NAME};
+use asset_ipc::{deserialize_map, serialize_maps, serialize_sync_result, IpcCode, IPC_SUCCESS, SA_NAME};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::{
@@ -27,7 +26,7 @@ use asset_sdk::{
     plugin_interface::{
         EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID,
     },
-    ErrCode, Tag, Value,
+    AssetError, ErrCode, Result, Tag, Value,
 };
 
 use crate::{unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
@@ -75,7 +74,12 @@ impl RemoteStub for AssetService {
     }
 }
 
-fn on_app_request(process_info: &ProcessInfo, calling_info: &CallingInfo) -> Result<()> {
+fn on_app_request(code: IpcCode, process_info: &ProcessInfo, calling_info: &CallingInfo) -> Result<()> {
+    if code as u32 > IpcCode::PostQuery as u32 {
+        // No need to process upgrade event.
+        return Ok(())
+    }
+
     let app_index = match &process_info.process_info_detail {
         ProcessInfoDetail::Hap(hap_info) => hap_info.app_index,
         ProcessInfoDetail::Native(_) => 0,
@@ -89,7 +93,7 @@ fn on_app_request(process_info: &ProcessInfo, calling_info: &CallingInfo) -> Res
     params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
-        match load.process_event(EventType::OnAppCall, &params) {
+        match load.process_event(EventType::OnAppCall, &mut params) {
             Ok(()) => return Ok(()),
             Err(code) => {
                 return log_throw_error!(ErrCode::BmsError, "[FATAL]process on app call event failed, code: {}", code)
@@ -112,7 +116,7 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
     let map = deserialize_map(data).map_err(asset_err_handle)?;
     let process_info = ProcessInfo::build(map.get(&Tag::GroupId)).map_err(asset_err_handle)?;
     let calling_info = CallingInfo::build(map.get(&Tag::UserId).cloned(), &process_info);
-    on_app_request(&process_info, &calling_info).map_err(asset_err_handle)?;
+    on_app_request(ipc_code, &process_info, &calling_info).map_err(asset_err_handle)?;
 
     match ipc_code {
         IpcCode::Add => reply_handle(stub.add(&calling_info, &map), reply),
@@ -136,6 +140,13 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
             Err(e) => reply_handle(Err(e), reply),
         },
         IpcCode::PostQuery => reply_handle(stub.post_query(&calling_info, &map), reply),
+        IpcCode::QuerySyncResult => match stub.query_sync_result(&calling_info, &map) {
+            Ok(res) => {
+                reply_handle(Ok(()), reply)?;
+                serialize_sync_result(&res, reply).map_err(asset_err_handle)
+            },
+            Err(e) => reply_handle(Err(e), reply),
+        }
     }
 }
 

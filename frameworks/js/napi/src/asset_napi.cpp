@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,6 +25,7 @@
 #include "asset_napi_post_query.h"
 #include "asset_napi_pre_query.h"
 #include "asset_napi_query.h"
+#include "asset_napi_query_sync_result.h"
 #include "asset_napi_remove.h"
 #include "asset_napi_update.h"
 
@@ -112,6 +113,7 @@ napi_value DeclareErrorCode(const napi_env env)
     AddUint32Property(env, errorCode, "GET_SYSTEM_TIME_ERROR", SEC_ASSET_GET_SYSTEM_TIME_ERROR);
     AddUint32Property(env, errorCode, "LIMIT_EXCEEDED", SEC_ASSET_LIMIT_EXCEEDED);
     AddUint32Property(env, errorCode, "UNSUPPORTED", SEC_ASSET_UNSUPPORTED);
+    AddUint32Property(env, errorCode, "PARAM_VERIFICATION_FAILED", SEC_ASSET_PARAM_VERIFICATION_FAILED);
     return errorCode;
 }
 
@@ -204,6 +206,7 @@ napi_value Register(const napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("postQuery", NapiPostQuery),
         DECLARE_NAPI_FUNCTION("postQuerySync", NapiPostQuerySync),
         DECLARE_NAPI_FUNCTION("postQueryAsUser", NapiPostQueryAsUser),
+        DECLARE_NAPI_FUNCTION("querySyncResult", NapiQuerySyncResult),
 
         // register enumerate
         DECLARE_NAPI_PROPERTY("Tag", DeclareTag(env)),

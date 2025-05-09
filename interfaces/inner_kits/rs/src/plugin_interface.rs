@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -53,6 +53,9 @@ pub enum EventType {
 
     /// User removed.
     OnUserRemoved,
+
+    /// Query the result of synchronization.
+    QuerySyncResult,
 }
 
 /// param name for bundle name
@@ -65,6 +68,30 @@ pub const PARAM_NAME_USER_ID: &str = "UserId";
 pub const PARAM_NAME_APP_INDEX: &str = "AppIndex";
 
 /// param name for owner type
+pub const PARAM_NAME_OWNER_TYPE: &str = "OwnerType";
+
+/// param name for owner info
+pub const PARAM_NAME_OWNER_INFO: &str = "OwnerInfo";
+
+/// param name for developer id
+pub const PARAM_NAME_DEVELOPER_ID: &str = "DeveloperId";
+
+/// param name for group id
+pub const PARAM_NAME_GROUP_ID: &str = "GroupId";
+
+/// param name for attribute encryption type
+pub const PARAM_NAME_REQUIRE_ATTR_ENCRYPTED: &str = "RequireAttrEncrypted";
+
+/// param name for result code
+pub const PARAM_NAME_RESULT_CODE: &str = "ResultCode";
+
+/// param name for total count
+pub const PARAM_NAME_TOTAL_COUNT: &str = "TotalCount";
+
+/// param name for failed count
+pub const PARAM_NAME_FAILED_COUNT: &str = "FailedCount";
+
+/// param name for hap type
 pub const PARAM_NAME_IS_HAP: &str = "IsHap";
 
 /// param name for return offset
@@ -164,7 +191,7 @@ pub trait IAssetPlugin: Any + Sync + Send + std::panic::RefUnwindSafe {
     fn uninit(&self);
 
     /// Process the event.
-    fn process_event(&self, event_type: EventType, params: &ExtDbMap) -> Result<(), u32>;
+    fn process_event(&self, event_type: EventType, params: &mut ExtDbMap) -> Result<(), u32>;
 
     /// Redirect request.
     fn redirect_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> Result<(), i32>;

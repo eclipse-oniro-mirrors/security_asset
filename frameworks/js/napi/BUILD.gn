@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Copyright (c) 2023-2025 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -20,9 +20,11 @@ ohos_shared_library("asset_napi") {
     "src/asset_napi_add.cpp",
     "src/asset_napi_check.cpp",
     "src/asset_napi_common.cpp",
+    "src/asset_napi_context.cpp",
     "src/asset_napi_post_query.cpp",
     "src/asset_napi_pre_query.cpp",
     "src/asset_napi_query.cpp",
+    "src/asset_napi_query_sync_result.cpp",
     "src/asset_napi_remove.cpp",
     "src/asset_napi_update.cpp",
   ]

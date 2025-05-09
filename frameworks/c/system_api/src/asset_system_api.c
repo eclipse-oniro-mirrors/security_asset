@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -27,6 +27,7 @@ int32_t update_asset(const AssetAttr *query, uint32_t query_cnt,
 int32_t pre_query_asset(const AssetAttr *query, uint32_t query_cnt, AssetBlob *challenge);
 int32_t query_asset(const AssetAttr *query, uint32_t query_cnt, AssetResultSet *result_set);
 int32_t post_query_asset(const AssetAttr *handle, uint32_t handle_cnt);
+int32_t query_sync_result(const AssetAttr *query, uint32_t query_cnt, AssetSyncResult *sync_result);
 
 int32_t AssetAdd(const AssetAttr *attributes, uint32_t attrCnt)
 {
@@ -57,6 +58,11 @@ int32_t AssetQuery(const AssetAttr *query, uint32_t queryCnt, AssetResultSet *re
 int32_t AssetPostQuery(const AssetAttr *handle, uint32_t handleCnt)
 {
     return post_query_asset(handle, handleCnt);
+}
+
+int32_t AssetQuerySyncResult(const AssetAttr *query, uint32_t queryCnt, AssetSyncResult *syncResult)
+{
+    return query_sync_result(query, queryCnt, syncResult);
 }
 
 AssetAttr *AssetParseAttr(const AssetResult *result, AssetTag tag)

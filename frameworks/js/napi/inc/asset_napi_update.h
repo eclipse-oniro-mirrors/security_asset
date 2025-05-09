@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -19,14 +19,9 @@
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
-#include "asset_napi_common.h"
-
 namespace OHOS {
 namespace Security {
 namespace Asset {
-
-#define AS_USER_UPDATE_ARGS_NUM 3
-#define UPDATE_ARGS_NUM 2
 
 napi_value NapiUpdate(const napi_env env, napi_callback_info info);
 

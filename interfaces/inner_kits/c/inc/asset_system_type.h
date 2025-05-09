@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -284,6 +284,10 @@ typedef enum {
      * The function is not supported.
      */
     SEC_ASSET_UNSUPPORTED = 24000017,
+    /**
+     * Parameter verification failed.
+     */
+    SEC_ASSET_PARAM_VERIFICATION_FAILED = 24000018,
 } AssetResultCode;
 
 /**
@@ -475,6 +479,26 @@ typedef struct {
      */
     AssetResult *results;
 } AssetResultSet;
+
+/**
+ * @brief Represents information about the synchronization result.
+ *
+ * @since 20
+ */
+typedef struct {
+    /**
+     * The result code of synchronization.
+     */
+    int32_t resultCode;
+    /**
+     * The total count of synchronized Assets.
+     */
+    uint32_t totalCount;
+    /**
+     * The count of Assets that fail to synchronize.
+     */
+    uint32_t failedCount;
+} AssetSyncResult;
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -245,6 +245,9 @@ impl_enum_trait! {
 
         /// The error code indicates that the capability is not supported.
         Unsupported = 24000017,
+
+        /// The error code indicates that verifying the parameter failed.
+        ParamVerificationFailed = 24000018,
     }
 }
 
@@ -349,39 +352,39 @@ impl_enum_trait! {
 }
 
 impl_enum_trait! {
-    /// An enum type indicates the return type of the queried Asset.
+    /// An enum type indicates the local status of the Asset.
     #[derive(Debug)]
     #[derive(Clone, Copy)]
     #[derive(PartialEq, Eq)]
     #[derive(Default)]
     pub enum LocalStatus {
-        /// Specify that the return data should contain both secret value and attributes.
+        /// Specify that the Asset have not been synchronized.
         #[default]
         Local = 0,
 
-        /// Specify that the return data contains only attributes.
+        /// Specify that the Asset have been synchronized to the cloud.
         Cloud = 1 << 0,
     }
 }
 
 impl_enum_trait! {
-    /// An enum type indicates the return type of the queried Asset.
+    /// An enum type indicates the synchronization status of Asset.
     #[derive(Debug)]
     #[derive(Clone, Copy)]
     #[derive(PartialEq, Eq)]
     #[derive(Default)]
     pub enum SyncStatus {
-        /// Specify that the return data should contain both secret value and attributes.
+        /// Specify that the asset does not need to be synchronized.
         #[default]
         NoNeedSync = 0,
 
-        /// Specify that the return data contains only attributes.
+        /// Specify that the added asset to be synchronized.
         SyncAdd = 1 << 0,
 
-        /// Specify that the return data contains only attributes.
+        /// Specify that the deleted asset to be synchronized.
         SyncDel = 1 << 1,
 
-        /// Specify that the return data contains only attributes.
+        /// Specify that the updated asset to be synchronized.
         SyncUpdate = 1 << 2,
     }
 }
@@ -440,4 +443,17 @@ pub trait Conversion {
 
     /// Convert the Asset Enum type to the Value variant.
     fn into_value(self) -> Value;
+}
+
+/// The error of synchronization.
+#[repr(C)]
+#[derive(Debug)]
+#[derive(Default)]
+pub struct SyncResult {
+    /// The result code of synchronization.
+    pub result_code: i32,
+    /// The total count of synchronized Assets.
+    pub total_count: u32,
+    /// The count of Assets that fail to synchronize.
+    pub failed_count: u32,
 }

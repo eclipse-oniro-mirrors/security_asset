@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -21,7 +21,8 @@ pub mod plugin_interface;
 use ipc::{parcel::MsgParcel, remote::RemoteObj};
 use samgr::manage::SystemAbilityManager;
 
-use asset_ipc::{deserialize_maps, ipc_err_handle, serialize_map, IpcCode, IPC_SUCCESS, SA_ID, SA_NAME};
+use asset_ipc::{deserialize_maps, deserialize_sync_result, ipc_err_handle, serialize_map,
+    IpcCode, IPC_SUCCESS, SA_ID, SA_NAME};
 
 const LOAD_TIMEOUT_IN_SECONDS: i32 = 4;
 
@@ -94,6 +95,22 @@ impl Manager {
     pub fn post_query(&mut self, query: &AssetMap) -> Result<()> {
         self.process_one_agr_request(query, IpcCode::PostQuery)?;
         Ok(())
+    }
+
+    /// Query the result of synchronization.
+    pub fn query_sync_result(&mut self, query: &AssetMap) -> Result<SyncResult> {
+        match self.process_one_agr_request(query, IpcCode::QuerySyncResult) {
+            Ok(mut reply) => {
+                let sync_result = deserialize_sync_result(&mut reply)?;
+                Ok(sync_result)
+            },
+            Err(mut e) => {
+                if e.code == ErrCode::InvalidArgument {
+                    e.code = ErrCode::ParamVerificationFailed;
+                }
+                Err(e)
+            }
+        }
     }
 
     fn rebuild(&mut self) -> Result<()> {
