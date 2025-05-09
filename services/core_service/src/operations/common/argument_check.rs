@@ -38,7 +38,8 @@ pub const MAX_LABEL_SIZE: usize = 2048;
 const MAX_GROUP_ID_LEN: usize = 127;
 const MIN_GROUP_ID_LEN: usize = 7;
 
-const AUTH_TOKEN_SIZE: usize = 344;
+const AUTH_TOKEN_MIN_SIZE: usize = 0;
+const AUTH_TOKEN_MAX_SIZE: usize = 1024;
 const CHALLENGE_SIZE: usize = 32;
 const SYNC_TYPE_MIN_BITS: u32 = 0;
 const SYNC_TYPE_MAX_BITS: u32 = 3;
@@ -154,7 +155,7 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
         Tag::AuthType => check_enum_variant::<AuthType>(tag, value),
         Tag::AuthValidityPeriod => check_number_range(tag, value, MIN_NUMBER_VALUE, MAX_AUTH_VALID_PERIOD),
         Tag::AuthChallenge => check_array_size(tag, value, CHALLENGE_SIZE - 1, CHALLENGE_SIZE),
-        Tag::AuthToken => check_array_size(tag, value, AUTH_TOKEN_SIZE - 1, AUTH_TOKEN_SIZE),
+        Tag::AuthToken => check_array_size(tag, value, AUTH_TOKEN_MIN_SIZE, AUTH_TOKEN_MAX_SIZE),
         Tag::SyncType => check_valid_bits(tag, value, SYNC_TYPE_MIN_BITS, SYNC_TYPE_MAX_BITS),
         Tag::ConflictResolution => check_enum_variant::<ConflictResolution>(tag, value),
         Tag::DataLabelCritical1 | Tag::DataLabelCritical2 | Tag::DataLabelCritical3 | Tag::DataLabelCritical4 => {

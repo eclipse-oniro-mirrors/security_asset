@@ -121,10 +121,10 @@ fn query_invalid_auth_challenge() {
 #[test]
 fn query_invalid_auth_token() {
     let mut query = AssetMap::new();
-    query.insert_attr(Tag::AuthToken, vec![0; AUTH_TOKEN_SIZE - 1]);
+    query.insert_attr(Tag::AuthToken, vec![]);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 
-    query.insert_attr(Tag::AuthToken, vec![0; AUTH_TOKEN_SIZE + 1]);
+    query.insert_attr(Tag::AuthToken, vec![0; AUTH_TOKEN_MAX_SIZE + 1]);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
 }
 
@@ -136,7 +136,7 @@ fn query_with_auth_token_without_auth_challenge() {
     query.insert_attr(Tag::Alias, function_name.to_owned());
     query.insert_attr(Tag::AuthType, AuthType::Any);
     query.insert_attr(Tag::ReturnType, ReturnType::All);
-    query.insert_attr(Tag::AuthToken, vec![0; AUTH_TOKEN_SIZE]);
+    query.insert_attr(Tag::AuthToken, vec![0; AUTH_TOKEN_MAX_SIZE]);
     expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().query(&query).unwrap_err());
     remove_by_alias(function_name).unwrap();
 }
