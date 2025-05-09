@@ -137,7 +137,7 @@ impl ProcessInfo {
         let mut process_name = vec![0u8; 256];
         let mut app_id = vec![0u8; 256];
         let (group_id, mut developer_id) = match group_attr {
-            Some(Value::Bytes(group_attr)) => (Some(group_attr.clone()), Some(vec![0u8; 20])),
+            Some(Value::Bytes(group_attr)) => (Some(group_attr.clone()), Some(vec![0u8; 128])),
             _ => (None, None),
         };
         let mut process_info_ffi = ProcessInfoFfi::build(&group_id, &mut process_name, &mut app_id, &mut developer_id)?;
