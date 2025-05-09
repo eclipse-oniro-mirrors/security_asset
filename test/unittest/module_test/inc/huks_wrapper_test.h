@@ -20,6 +20,8 @@ namespace UnitTest::HuksWrapperTest {
 int HuksWrapperTest001(void);
 int HuksWrapperTest002(void);
 int HuksWrapperTest003(void);
+int HuksWrapperTest004(void);
+int HuksWrapperTest005(void);
 }
 
 #endif // HUKS_WRAPPER_TEST_H
