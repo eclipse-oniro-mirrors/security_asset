@@ -79,7 +79,7 @@ HWTEST_F(AssetAuthQueryTest, AssetAuthQueryTest001, TestSize.Level0)
         { .tag = ASSET_TAG_AUTH_CHALLENGE, .value.blob = challenge },
         { .tag = ASSET_TAG_AUTH_TOKEN, .value.blob = funcName },
     };
-    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Query(queryAttr, ARRAY_SIZE(queryAttr), &queryResultSet));
+    ASSERT_EQ(ASSET_ACCESS_DENIED, OH_Asset_Query(queryAttr, ARRAY_SIZE(queryAttr), &queryResultSet));
 
     Asset_Attr postQueryAttr[] = {
         { .tag = ASSET_TAG_AUTH_CHALLENGE, .value.blob = challenge },
