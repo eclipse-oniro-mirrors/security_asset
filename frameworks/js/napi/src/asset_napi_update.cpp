@@ -89,9 +89,9 @@ napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContex
     napi_value argv[UPDATE_ARG_COUNT_AS_USER] = { 0 };
     IF_ERR_RETURN(ParseJsArgs(env, info, argv, UPDATE_ARG_COUNT_AS_USER));
     uint32_t index = 0;
+    IF_ERR_RETURN(ParseJsUserId(env, argv[index++], context->attrs));
     IF_ERR_RETURN(ParseJsMap(env, argv[index++], context->attrs));
     IF_ERR_RETURN(ParseJsMap(env, argv[index++], context->updateAttrs));
-    IF_ERR_RETURN(ParseJsUserId(env, argv[index++], context->attrs));
     IF_ERR_RETURN(CheckUpdateArgs(env, context->attrs, context->updateAttrs));
     return napi_ok;
 }
