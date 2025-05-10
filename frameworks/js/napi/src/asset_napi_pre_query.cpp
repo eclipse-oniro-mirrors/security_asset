@@ -65,8 +65,8 @@ napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContex
     napi_value argv[QUERY_ARG_COUNT_AS_USER] = { 0 };
     IF_ERR_RETURN(ParseJsArgs(env, info, argv, QUERY_ARG_COUNT_AS_USER));
     uint32_t index = 0;
-    IF_ERR_RETURN(ParseJsMap(env, argv[index++], context->attrs));
     IF_ERR_RETURN(ParseJsUserId(env, argv[index++], context->attrs));
+    IF_ERR_RETURN(ParseJsMap(env, argv[index++], context->attrs));
     IF_ERR_RETURN(CheckPreQueryArgs(env, context->attrs));
     return napi_ok;
 }
