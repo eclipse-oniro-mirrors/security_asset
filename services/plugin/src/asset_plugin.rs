@@ -210,8 +210,13 @@ impl IAssetPluginCtx for AssetContext {
     ) -> std::result::Result<Vec<ExtDbMap>, u32> {
         let mut db = Database::build_with_file_name(self.user_id, db_name, is_ce).map_err(|e| e.code as u32)?;
         let condition = ExtDbMap::new();
-        let query_options =
-            QueryOptions { offset: Some(offset), limit: Some(limit), order: None, order_by: None, amend: Some(sql_where.to_string()) };
+        let query_options = QueryOptions {
+            offset: Some(offset),
+            limit: Some(limit),
+            order: None,
+            order_by: None,
+            amend: Some(sql_where.to_string()),
+        };
         let query_data =
             db.query_datas(&columns.to_vec(), &condition, Some(&query_options), false).map_err(|e| e.code as u32)?;
         Ok(query_data)

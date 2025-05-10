@@ -202,8 +202,10 @@ fn modify_sync_type(db: &mut DbMap) -> Result<()> {
     }
     if unsafe { !CheckSystemHapPermission() } {
         logw!("[FATAL]The caller is not system application. Modify store sync type!");
-        db.insert(column::SYNC_TYPE,
-            Value::Number(db.get_num_attr(&column::SYNC_TYPE)? - SyncType::TrustedAccount as u32));
+        db.insert(
+            column::SYNC_TYPE,
+            Value::Number(db.get_num_attr(&column::SYNC_TYPE)? - SyncType::TrustedAccount as u32),
+        );
     }
     Ok(())
 }

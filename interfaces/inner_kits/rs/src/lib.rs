@@ -21,8 +21,9 @@ pub mod plugin_interface;
 use ipc::{parcel::MsgParcel, remote::RemoteObj};
 use samgr::manage::SystemAbilityManager;
 
-use asset_ipc::{deserialize_maps, deserialize_sync_result, ipc_err_handle, serialize_map,
-    IpcCode, IPC_SUCCESS, SA_ID, SA_NAME};
+use asset_ipc::{
+    deserialize_maps, deserialize_sync_result, ipc_err_handle, serialize_map, IpcCode, IPC_SUCCESS, SA_ID, SA_NAME,
+};
 
 const LOAD_TIMEOUT_IN_SECONDS: i32 = 4;
 
@@ -39,7 +40,7 @@ fn get_remote(need_check: bool) -> Result<RemoteObj> {
     if need_check {
         match SystemAbilityManager::check_system_ability(SA_ID) {
             Some(remote) => Ok(remote),
-            None => load_asset_service()
+            None => load_asset_service(),
         }
     } else {
         load_asset_service()
@@ -109,7 +110,7 @@ impl Manager {
                     e.code = ErrCode::ParamVerificationFailed;
                 }
                 Err(e)
-            }
+            },
         }
     }
 
@@ -132,15 +133,16 @@ impl Manager {
                     serialize_map(attributes, &mut parcel)?;
                     self.send_request(parcel, ipc_code)
                 },
-                _ => Err(e)
-            }
+                _ => Err(e),
+            },
         }
     }
 
-    fn process_two_agr_request(&mut self,
+    fn process_two_agr_request(
+        &mut self,
         query: &AssetMap,
         attributes_to_update: &AssetMap,
-        ipc_code: IpcCode
+        ipc_code: IpcCode,
     ) -> Result<MsgParcel> {
         let mut parcel = MsgParcel::new();
         parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
@@ -157,8 +159,8 @@ impl Manager {
                     serialize_map(attributes_to_update, &mut parcel)?;
                     self.send_request(parcel, ipc_code)
                 },
-                _ => Err(e)
-            }
+                _ => Err(e),
+            },
         }
     }
 

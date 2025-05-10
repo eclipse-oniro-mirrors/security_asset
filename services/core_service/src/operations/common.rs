@@ -29,7 +29,7 @@ use asset_common::{CallingInfo, OwnerType, OWNER_INFO_SEPARATOR};
 use asset_crypto_manager::secret_key::SecretKey;
 use asset_db_operator::types::{column, DbMap, DB_DATA_VERSION, DB_DATA_VERSION_V1};
 use asset_definition::{
-    log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, OperationType, Result, Tag, Value, WrapType
+    log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, OperationType, Result, Tag, Value, WrapType,
 };
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
@@ -163,11 +163,9 @@ pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<S
 
 fn check_if_need_addition_aad(attr: &str, map: &DbMap) -> bool {
     match attr {
-        column::WRAP_TYPE => {
-            match map.get_enum_attr::<WrapType>(&attr) {
-                Ok(v) => v != WrapType::default(),
-                Err(_) => false,
-            }
+        column::WRAP_TYPE => match map.get_enum_attr::<WrapType>(&attr) {
+            Ok(v) => v != WrapType::default(),
+            Err(_) => false,
         },
         _ => true,
     }
@@ -226,10 +224,9 @@ pub(crate) fn build_aad(attrs: &DbMap) -> Result<Vec<u8>> {
     if version == DB_DATA_VERSION_V1 {
         let tmp_calling_info = CallingInfo::new_part_info(
             attrs.get_bytes_attr(&column::OWNER)?.clone(),
-            attrs.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?
+            attrs.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?,
         );
-        upload_statistic_system_event(
-            &tmp_calling_info, Instant::now(), "V1_AAD_DATA", "V1_AAD_DATA");
+        upload_statistic_system_event(&tmp_calling_info, Instant::now(), "V1_AAD_DATA", "V1_AAD_DATA");
         Ok(build_aad_v1(attrs))
     } else {
         build_aad_v2(attrs)

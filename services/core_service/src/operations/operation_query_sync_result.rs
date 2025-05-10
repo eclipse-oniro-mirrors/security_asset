@@ -18,9 +18,10 @@
 use asset_common::CallingInfo;
 use asset_definition::{AssetError, AssetMap, ErrCode, Extension, Result, SyncResult, Tag, Value};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::plugin_interface::{ EventType, ExtDbMap, PARAM_NAME_USER_ID, PARAM_NAME_OWNER_INFO,
-    PARAM_NAME_OWNER_TYPE, PARAM_NAME_REQUIRE_ATTR_ENCRYPTED, PARAM_NAME_GROUP_ID, PARAM_NAME_RESULT_CODE,
-    PARAM_NAME_TOTAL_COUNT, PARAM_NAME_FAILED_COUNT };
+use asset_sdk::plugin_interface::{
+    EventType, ExtDbMap, PARAM_NAME_FAILED_COUNT, PARAM_NAME_GROUP_ID, PARAM_NAME_OWNER_INFO, PARAM_NAME_OWNER_TYPE,
+    PARAM_NAME_REQUIRE_ATTR_ENCRYPTED, PARAM_NAME_RESULT_CODE, PARAM_NAME_TOTAL_COUNT, PARAM_NAME_USER_ID,
+};
 
 use crate::operations::common;
 
@@ -35,8 +36,8 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
 
 fn map_err(code: u32) -> AssetError {
     match ErrCode::try_from(code) {
-        Ok(code) => AssetError{ code, msg: "get sync result failed".to_string() },
-        Err(err) => err
+        Ok(code) => AssetError { code, msg: "get sync result failed".to_string() },
+        Err(err) => err,
     }
 }
 
@@ -55,12 +56,14 @@ pub(crate) fn query_sync_result(calling_info: &CallingInfo, query: &AssetMap) ->
             params.insert(PARAM_NAME_GROUP_ID, Value::Bytes(group.clone()));
         }
         match load.process_event(EventType::QuerySyncResult, &mut params) {
-            Ok(()) => return Ok(SyncResult {
-                result_code: params.get_num_attr(&PARAM_NAME_RESULT_CODE)? as i32,
-                total_count: params.get_num_attr(&PARAM_NAME_TOTAL_COUNT)?,
-                failed_count: params.get_num_attr(&PARAM_NAME_FAILED_COUNT)?,
-            }),
-            Err(code) => return Err(map_err(code))
+            Ok(()) => {
+                return Ok(SyncResult {
+                    result_code: params.get_num_attr(&PARAM_NAME_RESULT_CODE)? as i32,
+                    total_count: params.get_num_attr(&PARAM_NAME_TOTAL_COUNT)?,
+                    failed_count: params.get_num_attr(&PARAM_NAME_FAILED_COUNT)?,
+                })
+            },
+            Err(code) => return Err(map_err(code)),
         }
     }
     Ok(SyncResult::default())

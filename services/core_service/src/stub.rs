@@ -46,7 +46,9 @@ impl RemoteStub for AssetService {
         if counter.lock().unwrap().is_stop() {
             loge!("[FATAL]Service is stop.");
             let _ = reply_handle(
-                Err(AssetError { code: ErrCode::ServiceUnavailable, msg: "service stop".to_string() }), reply);
+                Err(AssetError { code: ErrCode::ServiceUnavailable, msg: "service stop".to_string() }),
+                reply,
+            );
             return IPC_SUCCESS as i32;
         }
         let _counter_user = AutoCounter::new();
@@ -54,7 +56,9 @@ impl RemoteStub for AssetService {
         if !self.system_ability.cancel_idle() {
             loge!("[FATAL]Cancel idle failed. Service is stop.");
             let _ = reply_handle(
-                Err(AssetError { code: ErrCode::ServiceUnavailable, msg: "service stop".to_string() }), reply);
+                Err(AssetError { code: ErrCode::ServiceUnavailable, msg: "service stop".to_string() }),
+                reply,
+            );
             return IPC_SUCCESS as i32;
         }
         unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
@@ -77,7 +81,7 @@ impl RemoteStub for AssetService {
 fn on_app_request(code: IpcCode, process_info: &ProcessInfo, calling_info: &CallingInfo) -> Result<()> {
     if code as u32 > IpcCode::PostQuery as u32 {
         // No need to process upgrade event.
-        return Ok(())
+        return Ok(());
     }
 
     let app_index = match &process_info.process_info_detail {
@@ -146,7 +150,7 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
                 serialize_sync_result(&res, reply).map_err(asset_err_handle)
             },
             Err(e) => reply_handle(Err(e), reply),
-        }
+        },
     }
 }
 

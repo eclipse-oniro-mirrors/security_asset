@@ -134,12 +134,13 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Query target data.
     fn query_target_data(
-        &mut self, db_name: &str,
+        &mut self,
+        db_name: &str,
         columns: &[&'static str],
         sql_where: &str,
         limit: u32,
         offset: u32,
-        is_ce: bool
+        is_ce: bool,
     ) -> Result<Vec<ExtDbMap>, u32>;
 
     /// Query db with attributes to a certain db. Normal, Group, CE.
