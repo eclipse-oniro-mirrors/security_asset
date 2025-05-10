@@ -185,8 +185,6 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
 }
 
 pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
-    ylong_runtime::spawn_blocking(move || {
-        process_common_event_async(reason)
-    });
+    ylong_runtime::spawn_blocking(move || process_common_event_async(reason));
     unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
 }

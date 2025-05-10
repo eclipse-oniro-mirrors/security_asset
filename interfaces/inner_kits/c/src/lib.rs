@@ -25,7 +25,9 @@ use std::{
 };
 
 use asset_log::loge;
-use asset_sdk::{log_throw_error, AssetError, AssetMap, Conversion, DataType, ErrCode, Manager, SyncResult, Tag, Value};
+use asset_sdk::{
+    log_throw_error, AssetError, AssetMap, Conversion, DataType, ErrCode, Manager, SyncResult, Tag, Value,
+};
 
 const MAX_MAP_CAPACITY: u32 = 64;
 const RESULT_CODE_SUCCESS: i32 = 0;
@@ -241,8 +243,11 @@ pub extern "C" fn post_query_asset(handle: *const AssetAttr, handle_cnt: u32) ->
 ///
 /// The caller must ensure that the sync_result pointer is valid.
 #[no_mangle]
-pub unsafe extern "C" fn query_sync_result(query: *const AssetAttr, query_cnt: u32,
-    sync_result: *mut SyncResult) -> i32 {
+pub unsafe extern "C" fn query_sync_result(
+    query: *const AssetAttr,
+    query_cnt: u32,
+    sync_result: *mut SyncResult,
+) -> i32 {
     let map = match into_map(query, query_cnt) {
         Some(map) => map,
         None => return ErrCode::ParamVerificationFailed as i32,
@@ -263,7 +268,7 @@ pub unsafe extern "C" fn query_sync_result(query: *const AssetAttr, query_cnt: u
         Ok(res) => {
             *sync_result = res;
             RESULT_CODE_SUCCESS
-        }
+        },
     }
 }
 
