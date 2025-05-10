@@ -50,7 +50,7 @@ napi_status CheckPostQueryArgs(const napi_env env, const std::vector<AssetAttr> 
 
 napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *context)
 {
-    napi_value argv[QUERY_ARG_COUNT] = { 0 };
+    napi_value argv[MAX_ARGS_NUM] = { 0 };
     IF_ERR_RETURN(ParseJsArgs(env, info, argv, QUERY_ARG_COUNT));
     IF_ERR_RETURN(ParseJsMap(env, argv[0], context->attrs));
     IF_ERR_RETURN(CheckPostQueryArgs(env, context->attrs));
@@ -59,7 +59,7 @@ napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *con
 
 napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContext *context)
 {
-    napi_value argv[QUERY_ARG_COUNT_AS_USER] = { 0 };
+    napi_value argv[MAX_ARGS_NUM] = { 0 };
     IF_ERR_RETURN(ParseJsArgs(env, info, argv, QUERY_ARG_COUNT_AS_USER));
     uint32_t index = 0;
     IF_ERR_RETURN(ParseJsUserId(env, argv[index++], context->attrs));
