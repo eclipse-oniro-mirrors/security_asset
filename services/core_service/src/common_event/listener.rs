@@ -456,6 +456,8 @@ struct EventCallBack {
 }
 
 extern "C" {
+    fn SubscribeSystemAbility(eventCallBack: EventCallBack) -> bool;
+    fn UnSubscribeSystemAbility() -> bool;
     fn SubscribeSystemEvent(eventCallBack: EventCallBack) -> bool;
     fn UnSubscribeSystemEvent() -> bool;
 }
@@ -474,7 +476,12 @@ pub(crate) fn subscribe() {
         if SubscribeSystemEvent(call_back.clone()) {
             logi!("Subscribe system event success.");
         } else {
-            loge!("Subscribe system event failed.")
+            loge!("Subscribe system event failed. Subscribe System Ability wait system event service start.");
+            if SubscribeSystemAbility(call_back) {
+                logi!("Subscribe system ability success.");
+            } else {
+                loge!("Subscribe system ability failed.")
+            }
         }
     }
 }
@@ -482,6 +489,10 @@ pub(crate) fn subscribe() {
 /// Unsubscribe to the add and remove events of system abilities.
 pub(crate) fn unsubscribe() {
     unsafe {
+        if !UnSubscribeSystemAbility() {
+            loge!("Unsubscribe system ability failed.")
+        }
+
         if !UnSubscribeSystemEvent() {
             loge!("Unsubscribe system event failed.")
         }
