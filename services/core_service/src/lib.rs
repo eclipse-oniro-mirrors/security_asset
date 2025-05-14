@@ -175,10 +175,10 @@ fn start_service(handler: Handler) -> Result<()> {
         Err(_) => loge!("load plugin failed."),
     }
 
-    common_event::subscribe();
     if !handler.publish(AssetService::new(handler.clone())) {
         return log_throw_error!(ErrCode::IpcError, "Asset publish stub object failed");
     };
+    common_event::subscribe();
     let _handle = ylong_runtime::spawn(upgrade_process());
     Ok(())
 }
