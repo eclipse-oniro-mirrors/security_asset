@@ -24,7 +24,7 @@ use asset_log::{loge, logi, logw};
 use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
 
 use crate::{
-    common_event::listener, unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, PackageInfo, PackageInfoFfi,
+    common_event::listener, PackageInfo, PackageInfoFfi,
     WantParser,
 };
 
@@ -186,5 +186,4 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
 
 pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
     ylong_runtime::spawn_blocking(move || process_common_event_async(reason));
-    unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
 }

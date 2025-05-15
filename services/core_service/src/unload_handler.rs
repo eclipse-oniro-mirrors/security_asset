@@ -16,31 +16,79 @@
 //! This module is used to Asset service unload handler.
 
 /// Manages the unload request.
-use std::sync::{atomic::AtomicBool, Arc, Mutex};
+use std::{mem::MaybeUninit, sync::{atomic::AtomicBool, Arc, Mutex, Once}};
 
-pub(crate) struct UnloadHandler {
-    task_flag: Option<Arc<AtomicBool>>,
-}
+use asset_ipc::SA_ID;
+use asset_log::logi;
+use ylong_runtime::sync::mpsc::{unbounded_channel, UnboundedSender};
 
-pub(crate) static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 20;
+pub(crate) static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 60;
 pub(crate) static SEC_TO_MILLISEC: i32 = 1000;
 
-impl UnloadHandler {
-    fn new() -> Self {
-        Self { task_flag: None }
+pub(crate) struct TaskManager {
+    tx: UnboundedSender<i32>,
+    rx: UnboundedReceiver<i32>,
+ }
+
+pub(crate) struct TaskManagerRx {
+    rx: UnboundedReceiver<i32>,
+}
+
+pub struct TaskManagerTx {
+    tx: UnboundedSender<i32>,
+}
+
+static mut APP_STATE_LISTENER: MaybeUninit<TaskManager> = MaybeUninit::uninit();
+static ONCE: Once = Once::new();
+
+impl TaskManager {
+    pub(crate) fn init() {
+        unsafe {
+            ONCE.call_once(|| {
+                APP_STATE_LISTENER.write(Self::process());
+            });
+        }
     }
 
-    /// Get the single instance of UnloadHandler.
-    pub(crate) fn get_instance() -> Arc<Mutex<UnloadHandler>> {
-        static mut INSTANCE: Option<Arc<Mutex<UnloadHandler>>> = None;
-        unsafe { INSTANCE.get_or_insert_with(|| Arc::new(Mutex::new(UnloadHandler::new()))).clone() }
-    }
-
-    /// update task in unload handler
-    pub(crate) fn update_task(&mut self, new_task_flag: Arc<AtomicBool>) {
-        if let Some(t) = &self.task_flag {
-            t.store(true, std::sync::atomic::Ordering::Release);
-        };
-        self.task_flag = Some(new_task_flag);
+    fn process() {
+        let (tx, rx) = unbounded_channel();
+        let tx = TaskManagerTx::new(tx);
+        let rx = TaskManagerRx::new(rx);
+        runtime_spawn(send_unload_sa_req(tx.clone()));
+        rx.run();
+        Self{ tx, rx }
     }
 }
+
+impl TaskManagerRx {
+    async fn run(mut self) {
+        loop {
+            let counter = Counter::get_instance();
+            if counter.lock().unwrap().count() > 0 {
+                continue;
+            }
+            self.unload_sa();
+        }
+    }
+
+    fn unload_sa(&mut self) {
+        logi!("[INFO]Start unload asset service");
+        SystemAbilityManager::unload_system_ability(SA_ID);
+    }
+}
+
+pub(crate) fn runtime_spawn<F: Future<Output = ()> + Send + Sync + 'static>(
+    fut: F,
+) -> JoinHandle<()> {
+    ylong_runtime::spawn(Box::into_pin(
+        Box::new(fut) as Box<dyn Future<Output = ()> + Send + Sync>
+    ))
+}
+
+async fn send_unload_sa_req(tx: UnboundedSender<i32>) {
+    loop {
+        ylong_runtime::time::sleep(Duration::from_secs(DELAYED_UNLOAD_TIME_IN_SEC)).await;
+        let _ = tx.send(1);
+    }
+}
+

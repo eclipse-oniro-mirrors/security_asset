@@ -17,6 +17,7 @@
 
 use ipc::parcel::MsgParcel;
 use samgr::manage::SystemAbilityManager;
+use unload_handler::TaskManager;
 use std::{
     fs, sync::{atomic::AtomicBool, Arc}, time::{Duration, Instant}
 };
@@ -45,7 +46,7 @@ mod unload_handler;
 use sys_event::upload_system_event;
 use trace_scope::TraceScope;
 
-use crate::unload_handler::{UnloadHandler, DELAYED_UNLOAD_TIME_IN_SEC, SEC_TO_MILLISEC};
+use crate::unload_handler::SEC_TO_MILLISEC;
 
 struct AssetAbility;
 
@@ -82,19 +83,8 @@ impl PackageInfo {
     }
 }
 
-pub(crate) fn unload_sa(duration: u64) {
-    let task_flag = Arc::new(AtomicBool::new(false));
-    let set_task = task_flag.clone();
-    let unload_handler = UnloadHandler::get_instance();
-    ylong_runtime::spawn(async move {
-        ylong_runtime::time::sleep(Duration::from_secs(duration)).await;
-        if task_flag.load(std::sync::atomic::Ordering::Acquire) {
-            return;
-        }
-        logi!("[INFO]Start unload asset service");
-        SystemAbilityManager::unload_system_ability(SA_ID);
-    });
-    unload_handler.lock().unwrap().update_task(set_task);
+pub(crate) fn unload_sa() {
+    TaskManager::init();
 }
 
 impl Ability for AssetAbility {
@@ -110,6 +100,7 @@ impl Ability for AssetAbility {
 
         let _ = upload_system_event(start_service(handler), &calling_info, start, func_name, &AssetMap::new());
         common_event::handle_common_event(reason);
+        unload_sa();
     }
 
     fn on_active(&self, reason: SystemAbilityOnDemandReason) {
