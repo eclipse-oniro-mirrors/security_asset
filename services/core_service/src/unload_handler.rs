@@ -27,15 +27,18 @@ use ylong_runtime::{sync::mpsc::{unbounded_channel, UnboundedReceiver, Unbounded
 pub(crate) static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 20;
 pub(crate) static SEC_TO_MILLISEC: i32 = 1000;
 
+#[derive(Clone)]
 pub(crate) struct TaskManager {
     tx: UnboundedSender<i32>,
     rx: UnboundedReceiver<i32>,
- }
+}
 
+#[derive(Clone)]
 pub(crate) struct TaskManagerRx {
     rx: UnboundedReceiver<i32>,
 }
 
+#[derive(Clone)]
 pub struct TaskManagerTx {
     tx: UnboundedSender<i32>,
 }
@@ -52,13 +55,13 @@ impl TaskManager {
         }
     }
 
-    fn process() {
+    fn process() -> TaskManager {
         let (tx, rx) = unbounded_channel();
-        let tx = TaskManagerTx::new(tx);
-        let rx = TaskManagerRx::new(rx);
+        let tx = TaskManagerTx{ tx };
+        let rx = TaskManagerRx{ rx };
         runtime_spawn(send_unload_sa_req(tx.clone()));
         rx.run();
-        Self{ tx, rx }
+        TaskManager { tx, rx }
     }
 }
 
@@ -89,7 +92,7 @@ pub(crate) fn runtime_spawn<F: Future<Output = ()> + Send + Sync + 'static>(
 
 async fn send_unload_sa_req(tx: UnboundedSender<i32>) {
     loop {
-        ylong_runtime::time::sleep(Duration::from_secs(DELAYED_UNLOAD_TIME_IN_SEC)).await;
+        ylong_runtime::time::sleep(Duration::from_secs(DELAYED_UNLOAD_TIME_IN_SEC as u64)).await;
         let _ = tx.send(1);
     }
 }
