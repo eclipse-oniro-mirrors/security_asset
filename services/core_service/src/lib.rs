@@ -18,14 +18,13 @@
 use ipc::parcel::MsgParcel;
 use samgr::manage::SystemAbilityManager;
 use std::{
-    fs,
-    time::{Duration, Instant},
+    fs, sync::{atomic::AtomicBool, Arc}, time::{Duration, Instant}
 };
 use system_ability_fwk::{
     ability::{Ability, Handler},
     cxx_share::SystemAbilityOnDemandReason,
 };
-use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
+use ylong_runtime::builder::RuntimeBuilder;
 
 use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Counter};
 use asset_crypto_manager::crypto_manager::CryptoManager;
@@ -84,12 +83,18 @@ impl PackageInfo {
 }
 
 pub(crate) fn unload_sa(duration: u64) {
+    let task_flag = Arc::new(AtomicBool::new(false));
+    let set_task = task_flag.clone();
     let unload_handler = UnloadHandler::get_instance();
-    unload_handler.lock().unwrap().update_task(ylong_runtime::spawn(async move {
-        sleep(Duration::from_secs(duration)).await;
+    ylong_runtime::spawn(async move {
+        ylong_runtime::time::sleep(Duration::from_secs(duration)).await;
+        if task_flag.load(std::sync::atomic::Ordering::Acquire) {
+            return;
+        }
         logi!("[INFO]Start unload asset service");
         SystemAbilityManager::unload_system_ability(SA_ID);
-    }));
+    });
+    unload_handler.lock().unwrap().update_task(set_task);
 }
 
 impl Ability for AssetAbility {

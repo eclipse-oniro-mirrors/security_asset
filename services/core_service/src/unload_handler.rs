@@ -16,12 +16,12 @@
 //! This module is used to Asset service unload handler.
 
 /// Manages the unload request.
-use std::sync::{Arc, Mutex};
+use std::sync::{atomic::AtomicBool, Arc, Mutex};
 
 use ylong_runtime::task::JoinHandle;
 
 pub(crate) struct UnloadHandler {
-    task: Option<JoinHandle<()>>,
+    task_flag: Option<Arc<AtomicBool>>,
 }
 
 pub(crate) static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 20;
@@ -29,7 +29,7 @@ pub(crate) static SEC_TO_MILLISEC: i32 = 1000;
 
 impl UnloadHandler {
     fn new() -> Self {
-        Self { task: None }
+        Self { task_flag: None }
     }
 
     /// Get the single instance of UnloadHandler.
@@ -39,10 +39,10 @@ impl UnloadHandler {
     }
 
     /// update task in unload handler
-    pub(crate) fn update_task(&mut self, new_task: JoinHandle<()>) {
-        if let Some(t) = &self.task {
-            t.cancel();
+    pub(crate) fn update_task(&mut self, new_task_flag: Arc<AtomicBool>) {
+        if let Some(t) = &self.task_flag {
+            t.store(true, std::sync::atomic::Ordering::Release);
         };
-        self.task = Some(new_task);
+        self.task_flag = Some(new_task_flag);
     }
 }
