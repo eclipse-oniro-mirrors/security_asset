@@ -16,10 +16,9 @@
 //! This module implements the Asset service.
 
 use ipc::parcel::MsgParcel;
-use samgr::manage::SystemAbilityManager;
-use unload_handler::TaskManager;
+use unload_handler::{TaskManager, DELAYED_UNLOAD_TIME_IN_SEC};
 use std::{
-    fs, sync::{atomic::AtomicBool, Arc}, time::{Duration, Instant}
+    fs, time::Instant
 };
 use system_ability_fwk::{
     ability::{Ability, Handler},

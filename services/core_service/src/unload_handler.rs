@@ -16,13 +16,15 @@
 //! This module is used to Asset service unload handler.
 
 /// Manages the unload request.
-use std::{mem::MaybeUninit, sync::{atomic::AtomicBool, Arc, Mutex, Once}};
+use std::{future::Future, mem::MaybeUninit, sync::Once, time::Duration};
 
+use asset_common::Counter;
 use asset_ipc::SA_ID;
 use asset_log::logi;
-use ylong_runtime::sync::mpsc::{unbounded_channel, UnboundedSender};
+use samgr::manage::SystemAbilityManager;
+use ylong_runtime::{sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender}, task::JoinHandle};
 
-pub(crate) static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 60;
+pub(crate) static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 20;
 pub(crate) static SEC_TO_MILLISEC: i32 = 1000;
 
 pub(crate) struct TaskManager {
