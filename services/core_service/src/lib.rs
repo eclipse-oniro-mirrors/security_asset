@@ -16,9 +16,10 @@
 //! This module implements the Asset service.
 
 use ipc::parcel::MsgParcel;
+use samgr::manage::SystemAbilityManager;
 use unload_handler::{TaskManager, DELAYED_UNLOAD_TIME_IN_SEC};
 use std::{
-    fs, time::Instant
+    fs, time::{Duration, Instant}
 };
 use system_ability_fwk::{
     ability::{Ability, Handler},
@@ -83,7 +84,17 @@ impl PackageInfo {
 }
 
 pub(crate) fn unload_sa() {
-    TaskManager::init();
+    ylong_runtime::spawn(async move {
+        loop {
+            ylong_runtime::time::sleep(Duration::from_secs(DELAYED_UNLOAD_TIME_IN_SEC));
+            let counter = Counter::get_instance();
+            if counter.lock().unwrap().count() > 0 {
+                continue;
+            }
+            logi!("[INFO]Start unload asset service");
+            SystemAbilityManager::unload_system_ability(SA_ID);
+        }
+    })
 }
 
 impl Ability for AssetAbility {
