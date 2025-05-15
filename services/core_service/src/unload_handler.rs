@@ -20,7 +20,7 @@ use std::{future::Future, mem::MaybeUninit, sync::Once, time::Duration};
 
 use asset_common::Counter;
 use asset_ipc::SA_ID;
-use asset_log::logi;
+use asset_log::{loge, logi};
 use samgr::manage::SystemAbilityManager;
 use ylong_runtime::{sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender}, task::JoinHandle};
 
@@ -28,7 +28,6 @@ pub(crate) static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 20;
 pub(crate) static SEC_TO_MILLISEC: i32 = 1000;
 
 pub(crate) struct TaskManager {
-    tx: TaskManagerTx,
     rx: TaskManagerRx,
 }
 
@@ -38,7 +37,16 @@ pub(crate) struct TaskManagerRx {
 
 #[derive(Clone)]
 pub struct TaskManagerTx {
-    tx: UnboundedSender<i32>,
+    pub(crate) tx: UnboundedSender<i32>,
+}
+
+impl TaskManagerTx {
+    pub(crate) fn send_event(&self, event: i32) -> bool {
+        if self.tx.send(event).is_err() {
+            return false;
+        }
+        true
+    }
 }
 
 static mut APP_STATE_LISTENER: MaybeUninit<TaskManager> = MaybeUninit::uninit();
@@ -53,19 +61,26 @@ impl TaskManager {
         }
     }
 
-    fn process() -> TaskManager {
+    fn process() -> TaskManagerTx {
         let (tx, rx) = unbounded_channel();
         let tx = TaskManagerTx{ tx };
         let rx = TaskManagerRx{ rx };
         runtime_spawn(send_unload_sa_req(tx.clone()));
         rx.run();
-        TaskManager { tx, rx }
+        tx
     }
 }
 
 impl TaskManagerRx {
     async fn run(mut self) {
         loop {
+            let event = match self.rx.recv().await {
+                Ok(event) => event,
+                Err(e) => {
+                    loge!("TaskManager receives error {:?}", e);
+                    continue;
+                }
+            };
             let counter = Counter::get_instance();
             if counter.lock().unwrap().count() > 0 {
                 continue;
@@ -74,7 +89,7 @@ impl TaskManagerRx {
         }
     }
 
-    fn unload_sa(&mut self) {
+    fn unload_sa(&self) {
         logi!("[INFO]Start unload asset service");
         SystemAbilityManager::unload_system_ability(SA_ID);
     }
@@ -88,10 +103,10 @@ pub(crate) fn runtime_spawn<F: Future<Output = ()> + Send + Sync + 'static>(
     ))
 }
 
-async fn send_unload_sa_req(tx: UnboundedSender<i32>) {
+async fn send_unload_sa_req(tx: TaskManagerTx) {
     loop {
         ylong_runtime::time::sleep(Duration::from_secs(DELAYED_UNLOAD_TIME_IN_SEC as u64)).await;
-        let _ = tx.send(1);
+        let _ = tx.send_event(1);
     }
 }
 
