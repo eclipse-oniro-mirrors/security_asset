@@ -27,13 +27,11 @@ use ylong_runtime::{sync::mpsc::{unbounded_channel, UnboundedReceiver, Unbounded
 pub(crate) static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 20;
 pub(crate) static SEC_TO_MILLISEC: i32 = 1000;
 
-#[derive(Clone)]
 pub(crate) struct TaskManager {
-    tx: UnboundedSender<i32>,
-    rx: UnboundedReceiver<i32>,
+    tx: TaskManagerTx,
+    rx: TaskManagerRx,
 }
 
-#[derive(Clone)]
 pub(crate) struct TaskManagerRx {
     rx: UnboundedReceiver<i32>,
 }
