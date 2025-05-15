@@ -18,8 +18,6 @@
 /// Manages the unload request.
 use std::sync::{atomic::AtomicBool, Arc, Mutex};
 
-use ylong_runtime::task::JoinHandle;
-
 pub(crate) struct UnloadHandler {
     task_flag: Option<Arc<AtomicBool>>,
 }
