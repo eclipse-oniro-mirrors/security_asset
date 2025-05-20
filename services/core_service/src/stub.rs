@@ -107,6 +107,19 @@ fn on_app_request(code: IpcCode, process_info: &ProcessInfo, calling_info: &Call
     Ok(())
 }
 
+macro_rules! unwrap_or_return {
+    ($result:expr, $reply:expr) => {
+        match $result {
+            Ok(val) => val,
+            Err(e) => {
+                $reply.write::<u32>(&(e.code as u32))?;
+                $reply.write::<String>(&e.msg)?;
+                return Ok(());
+            },
+        }
+    };
+}
+
 fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
     match data.read_interface_token() {
         Ok(interface_token) if interface_token == stub.descriptor() => {},
@@ -115,12 +128,12 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
             return Err(IpcStatusCode::Failed);
         },
     }
-    let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
+    let ipc_code = unwrap_or_return!(IpcCode::try_from(code), reply);
 
-    let map = deserialize_map(data).map_err(asset_err_handle)?;
-    let process_info = ProcessInfo::build(map.get(&Tag::GroupId)).map_err(asset_err_handle)?;
+    let map = unwrap_or_return!(deserialize_map(data), reply);
+    let process_info = unwrap_or_return!(ProcessInfo::build(map.get(&Tag::GroupId)), reply);
     let calling_info = CallingInfo::build(map.get(&Tag::UserId).cloned(), &process_info);
-    on_app_request(ipc_code, &process_info, &calling_info).map_err(asset_err_handle)?;
+    unwrap_or_return!(on_app_request(ipc_code, &process_info, &calling_info), reply);
 
     match ipc_code {
         IpcCode::Add => reply_handle(stub.add(&calling_info, &map), reply),

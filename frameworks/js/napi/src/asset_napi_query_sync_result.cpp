@@ -71,6 +71,10 @@ napi_value NapiQuerySyncResult(const napi_env env, napi_callback_info info)
         napi_value syncResult = nullptr;
         NAPI_CALL(env, napi_create_object(env, &syncResult));
         NAPI_CALL(env, NapiSetProperty(env, syncResult, "resultCode", context->syncResult.resultCode));
+        if (context->syncResult.resultCode != SEC_ASSET_SUCCESS && context->syncResult.totalCount == 0) {
+            LOGI("Generic error found, not need to set totalCount and failedCount.");
+            return syncResult;
+        }
         NAPI_CALL(env, NapiSetProperty(env, syncResult, "totalCount", context->syncResult.totalCount));
         NAPI_CALL(env, NapiSetProperty(env, syncResult, "failedCount", context->syncResult.failedCount));
         return syncResult;
