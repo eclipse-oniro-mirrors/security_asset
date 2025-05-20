@@ -314,10 +314,10 @@ impl Database {
     #[allow(dead_code)]
     pub fn upgrade(&mut self, user_id: i32, target_ver: u32, callback: UpgradeDbCallback) -> Result<()> {
         let mut current_ver = self.get_db_version()?;
-        logi!("current database version: {}", current_ver);
         if current_ver >= target_ver {
             return Ok(());
         }
+        logi!("current database version: {}, target version: {}", current_ver, target_ver);
         while current_ver < target_ver {
             match current_ver {
                 DB_UPGRADE_VERSION_V1 => {
