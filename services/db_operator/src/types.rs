@@ -268,6 +268,8 @@ pub struct QueryOptions {
     pub order: Option<Ordering>,
     /// Columns used for sorting.
     pub order_by: Option<Vec<&'static str>>,
+    /// Add extra to where.
+    pub amend: Option<String>,
 }
 
 pub(crate) const SQLITE_OK: i32 = 0;
