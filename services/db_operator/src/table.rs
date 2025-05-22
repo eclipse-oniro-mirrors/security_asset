@@ -142,6 +142,9 @@ fn from_data_value_to_str_value(value: &Value) -> String {
 
 fn build_sql_query_options(query_options: Option<&QueryOptions>, sql: &mut String) {
     if let Some(option) = query_options {
+        if let Some(sql_where) = &option.amend {
+            sql.push_str(sql_where);
+        }
         if let Some(order_by) = &option.order_by {
             if !order_by.is_empty() {
                 sql.push_str(" order by ");
