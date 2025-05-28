@@ -36,9 +36,9 @@ group("asset_bin_test") {
     "test/unittest/module_test:asset_dependency_test",
   ]
   if (enable_local_test) {
-    deps += [ "test/unittest/inner_kits_rust:asset_rust_test" ]
-    deps += [ "test/unittest/module_test:asset_module_test" ]
-    deps += [ "services/common:asset_calling_info_test" ]
-    deps += [ "services/db_operator:asset_db_operator_test" ]
+    deps += [ "test/unittest/inner_kits_rust:rust_asset_inner_test" ]
+    deps += [ "test/unittest/module_test:rust_asset_module_test" ]
+    deps += [ "services/common:rust_asset_calling_info_test" ]
+    deps += [ "services/db_operator:rust_asset_db_operator_test" ]
   }
 }

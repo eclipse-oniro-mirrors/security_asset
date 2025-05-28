@@ -17,7 +17,7 @@ import("//build/test.gni")
 
 module_output_path = "asset/asset"
 
-ohos_rust_unittest("asset_module_test") {
+ohos_rust_unittest("rust_asset_module_test") {
   sources = [ "src/lib.rs" ]
   deps = [
     "../../../frameworks/definition:asset_definition",
