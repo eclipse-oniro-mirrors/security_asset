@@ -36,7 +36,7 @@ ohos_rust_static_library("asset_db_operator") {
   part_name = "asset"
 }
 
-ohos_rust_unittest("asset_db_operator_test") {
+ohos_rust_unittest("rust_asset_db_operator_test") {
   module_out_path = module_output_path
   sources = [ "src/lib.rs" ]
   deps = [
