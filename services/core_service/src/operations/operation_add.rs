@@ -70,9 +70,14 @@ fn resolve_conflict(
     }
 }
 
-fn get_query_condition(attrs: &AssetMap) -> Result<DbMap> {
+fn get_query_condition(attrs: &AssetMap, calling_info: &CallingInfo) -> Result<DbMap> {
     let alias = attrs.get_bytes_attr(&Tag::Alias)?;
     let mut query = DbMap::new();
+    if calling_info.group().is_some() {
+        common::add_group(calling_info, &mut query);
+    } else {
+        common::add_owner_info(calling_info, &mut query);
+    }
     query.insert(column::ALIAS, Value::Bytes(alias.clone()));
     Ok(query)
 }
@@ -219,7 +224,7 @@ fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     common::add_calling_info(calling_info, &mut db_data);
     add_system_attrs(&mut db_data)?;
     add_default_attrs(&mut db_data);
-    let query = get_query_condition(attributes)?;
+    let query = get_query_condition(attributes, calling_info)?;
 
     let mut db = build_db(attributes, calling_info)?;
 
