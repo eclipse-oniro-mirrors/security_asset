@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -25,7 +25,9 @@ use std::{
 };
 
 use asset_log::loge;
-use asset_sdk::{log_throw_error, AssetError, AssetMap, Conversion, DataType, ErrCode, Manager, Tag, Value};
+use asset_sdk::{
+    log_throw_error, AssetError, AssetMap, Conversion, DataType, ErrCode, Manager, SyncResult, Tag, Value,
+};
 
 const MAX_MAP_CAPACITY: u32 = 64;
 const RESULT_CODE_SUCCESS: i32 = 0;
@@ -81,7 +83,7 @@ pub extern "C" fn add_asset(attributes: *const AssetAttr, attr_cnt: u32) -> i32 
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let manager = match Manager::build() {
+    let mut manager = match Manager::build() {
         Ok(manager) => manager,
         Err(e) => return e.code as i32,
     };
@@ -101,7 +103,7 @@ pub extern "C" fn remove_asset(query: *const AssetAttr, query_cnt: u32) -> i32 {
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let manager = match Manager::build() {
+    let mut manager = match Manager::build() {
         Ok(manager) => manager,
         Err(e) => return e.code as i32,
     };
@@ -131,7 +133,7 @@ pub extern "C" fn update_asset(
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let manager = match Manager::build() {
+    let mut manager = match Manager::build() {
         Ok(manager) => manager,
         Err(e) => return e.code as i32,
     };
@@ -160,7 +162,7 @@ pub unsafe extern "C" fn pre_query_asset(query: *const AssetAttr, query_cnt: u32
         return ErrCode::InvalidArgument as i32;
     }
 
-    let manager = match Manager::build() {
+    let mut manager = match Manager::build() {
         Ok(manager) => manager,
         Err(e) => return e.code as i32,
     };
@@ -196,7 +198,7 @@ pub unsafe extern "C" fn query_asset(query: *const AssetAttr, query_cnt: u32, re
         return ErrCode::InvalidArgument as i32;
     }
 
-    let manager = match Manager::build() {
+    let mut manager = match Manager::build() {
         Ok(manager) => manager,
         Err(e) => return e.code as i32,
     };
@@ -223,7 +225,7 @@ pub extern "C" fn post_query_asset(handle: *const AssetAttr, handle_cnt: u32) ->
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let manager = match Manager::build() {
+    let mut manager = match Manager::build() {
         Ok(manager) => manager,
         Err(e) => return e.code as i32,
     };
@@ -232,6 +234,49 @@ pub extern "C" fn post_query_asset(handle: *const AssetAttr, handle_cnt: u32) ->
         e.code as i32
     } else {
         RESULT_CODE_SUCCESS
+    }
+}
+
+/// Function called from C programming language to Rust programming language for querying sync result.
+///
+/// # Safety
+///
+/// The caller must ensure that the sync_result pointer is valid.
+#[no_mangle]
+pub unsafe extern "C" fn query_sync_result(
+    query: *const AssetAttr,
+    query_cnt: u32,
+    sync_result: *mut SyncResult,
+) -> i32 {
+    let map = match into_map(query, query_cnt) {
+        Some(map) => map,
+        None => return ErrCode::ParamVerificationFailed as i32,
+    };
+
+    if sync_result.is_null() {
+        loge!("[FATAL][RUST SDK]result set is null");
+        return ErrCode::ParamVerificationFailed as i32;
+    }
+
+    let mut manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return e.code as i32,
+    };
+
+    match manager.query_sync_result(&map) {
+        Err(e) => map_err(e.code),
+        Ok(res) => {
+            *sync_result = res;
+            RESULT_CODE_SUCCESS
+        },
+    }
+}
+
+fn map_err(err_code: ErrCode) -> i32 {
+    if err_code == ErrCode::InvalidArgument {
+        ErrCode::ParamVerificationFailed as i32
+    } else {
+        err_code as i32
     }
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,27 +13,21 @@
  * limitations under the License.
  */
 
-#include <cstdint>
-#include <vector>
-
-#include "securec.h"
-
-#include "napi/native_api.h"
-#include "napi/native_node_api.h"
+#include "asset_napi_query.h"
 
 #include "asset_log.h"
-#include "asset_mem.h"
 #include "asset_system_api.h"
 #include "asset_system_type.h"
 
 #include "asset_napi_check.h"
 #include "asset_napi_common.h"
-#include "asset_napi_query.h"
 
 namespace OHOS {
 namespace Security {
 namespace Asset {
 namespace {
+const uint32_t QUERY_ARG_COUNT = 1;
+const uint32_t QUERY_ARG_COUNT_AS_USER = 2;
 
 const std::vector<uint32_t> OPTIONAL_TAGS = {
     SEC_ASSET_TAG_RETURN_LIMIT,
@@ -42,7 +36,6 @@ const std::vector<uint32_t> OPTIONAL_TAGS = {
     SEC_ASSET_TAG_RETURN_TYPE,
     SEC_ASSET_TAG_AUTH_TOKEN,
     SEC_ASSET_TAG_AUTH_CHALLENGE,
-
 };
 
 napi_status CheckQueryArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
@@ -54,57 +47,68 @@ napi_status CheckQueryArgs(const napi_env env, const std::vector<AssetAttr> &att
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
     validTags.insert(validTags.end(), OPTIONAL_TAGS.begin(), OPTIONAL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, validTags), napi_invalid_arg);
-    IF_FALSE_RETURN(CheckAssetValueValidity(env, attrs), napi_invalid_arg);
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, validTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
     return napi_ok;
 }
 
+napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *context)
+{
+    napi_value argv[MAX_ARGS_NUM] = { 0 };
+    IF_ERR_RETURN(ParseJsArgs(env, info, argv, QUERY_ARG_COUNT));
+    IF_ERR_RETURN(ParseJsMap(env, argv[0], context->attrs));
+    IF_ERR_RETURN(CheckQueryArgs(env, context->attrs));
+    return napi_ok;
+}
+
+napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContext *context)
+{
+    napi_value argv[MAX_ARGS_NUM] = { 0 };
+    IF_ERR_RETURN(ParseJsArgs(env, info, argv, QUERY_ARG_COUNT_AS_USER));
+    uint32_t index = 0;
+    IF_ERR_RETURN(ParseJsUserId(env, argv[index++], context->attrs));
+    IF_ERR_RETURN(ParseJsMap(env, argv[index++], context->attrs));
+    IF_ERR_RETURN(CheckQueryArgs(env, context->attrs));
+    return napi_ok;
+}
 } // anonymous namespace
 
-napi_value NapiQuery(const napi_env env, napi_callback_info info, const NapiCallerArgs &args)
+napi_value NapiQuery(const napi_env env, napi_callback_info info, bool asUser, bool async)
 {
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetQuery(&context->attrs[0], context->attrs.size(), &context->resultSet);
-        };
-    return NapiAsync(env, info, execute, args, &CheckQueryArgs);
+    auto context = std::unique_ptr<QueryContext>(new (std::nothrow)QueryContext());
+    NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for Context.");
+
+    context->parse = asUser ? ParseAttrMapAsUser : ParseAttrMap;
+    context->execute = [](napi_env env, void *data) {
+        QueryContext *context = static_cast<QueryContext *>(data);
+        context->result = AssetQuery(&context->attrs[0], context->attrs.size(), &context->resultSet);
+    };
+
+    context->resolve = [](napi_env env, BaseContext *baseContext) -> napi_value {
+        QueryContext *context = static_cast<QueryContext *>(baseContext);
+        return CreateJsMapArray(env, context->resultSet);
+    };
+
+    if (async) {
+        return CreateAsyncWork(env, info, std::move(context), __func__);
+    } else {
+        return CreateSyncWork(env, info, context.get());
+    }
 }
 
 napi_value NapiQuery(const napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
-    return NapiQuery(env, info, args);
+    return NapiQuery(env, info, false, true);
 }
 
 napi_value NapiQueryAsUser(const napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true };
-    return NapiQuery(env, info, args);
+    return NapiQuery(env, info, true, true);
 }
 
 napi_value NapiQuerySync(const napi_env env, napi_callback_info info)
 {
-    std::vector<AssetAttr> attrs;
-    AssetResultSet resultSet = { 0 };
-    napi_value result = nullptr;
-    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
-    do {
-        if (ParseParam(env, info, args, attrs) != napi_ok) {
-            break;
-        }
-
-        if (CheckQueryArgs(env, attrs) != napi_ok) {
-            break;
-        }
-
-        int32_t res = AssetQuery(&attrs[0], attrs.size(), &resultSet);
-        CHECK_RESULT_BREAK(env, res);
-        result = CreateJsMapArray(env, resultSet);
-    } while (false);
-    AssetFreeResultSet(&resultSet);
-    FreeAssetAttrs(attrs);
-    return result;
+    return NapiQuery(env, info, false, false);
 }
 
 } // Asset

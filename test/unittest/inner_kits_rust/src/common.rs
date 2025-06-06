@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -39,10 +39,13 @@ pub(crate) const MAX_SECRET_SIZE: usize = 1024;
 pub(crate) const MAX_ALIAS_SIZE: usize = 256;
 pub(crate) const MAX_LABEL_SIZE: usize = 2048;
 
-pub(crate) const AUTH_TOKEN_SIZE: usize = 280;
+pub(crate) const MAX_AUTH_TOKEN_SIZE: usize = 1024;
 pub(crate) const CHALLENGE_SIZE: usize = 32;
 pub(crate) const SYNC_TYPE_MIN_BITS: u32 = 0;
 pub(crate) const SYNC_TYPE_MAX_BITS: u32 = 3;
+
+pub(crate) const MIN_GROUP_ID_SIZE: usize = 7;
+pub(crate) const MAX_GROUP_ID_SIZE: usize = 127;
 
 pub(crate) const CRITICAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelCritical1, Tag::DataLabelCritical2, Tag::DataLabelCritical3, Tag::DataLabelCritical4];

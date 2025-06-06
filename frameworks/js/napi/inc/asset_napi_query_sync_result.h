@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,20 +13,19 @@
  * limitations under the License.
  */
 
-#[macro_use]
-mod common;
+#ifndef ASSET_NAPI_QUERY_SYNC_RESULT_H
+#define ASSET_NAPI_QUERY_SYNC_RESULT_H
 
-mod add;
-mod add_abnormal;
-mod post_query;
-mod post_query_abnormal;
-mod pre_query;
-mod pre_query_abnormal;
-mod query;
-mod query_abnormal;
-mod query_sync_result;
-mod query_sync_result_abnormal;
-mod remove;
-mod remove_abnormal;
-mod update;
-mod update_abnormal;
+#include "napi/native_api.h"
+#include "napi/native_node_api.h"
+
+namespace OHOS {
+namespace Security {
+namespace Asset {
+
+napi_value NapiQuerySyncResult(const napi_env env, napi_callback_info info);
+
+} // Asset
+} // Security
+} // OHOS
+#endif // ASSET_NAPI_QUERY_SYNC_RESULT_H

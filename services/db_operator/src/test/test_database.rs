@@ -217,6 +217,7 @@ fn query_ordered_data() {
         offset: Some(0),
         order: Some(Ordering::Greater),
         order_by: Some(vec![column::ALIAS]),
+        amend: None,
     };
     let res = db
         .query_datas(

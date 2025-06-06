@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -30,7 +30,7 @@ use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
 use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Counter};
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_db_operator::database_file_upgrade::check_and_split_db;
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncResult};
 use asset_file_operator::{common::DE_ROOT_PATH, de_operator::create_user_de_dir};
 use asset_ipc::SA_ID;
 use asset_log::{loge, logi};
@@ -95,7 +95,7 @@ pub(crate) fn unload_sa(duration: u64) {
 impl Ability for AssetAbility {
     fn on_start_with_reason(&self, reason: SystemAbilityOnDemandReason, handler: Handler) {
         logi!("[INFO]Start asset service, reason_id: {:?}", reason.reason_id);
-        if let Err(e) = RuntimeBuilder::new_multi_thread().worker_num(1).build_global() {
+        if let Err(e) = RuntimeBuilder::new_multi_thread().worker_num(1).max_blocking_pool_size(1).build_global() {
             loge!("[WARNING]Ylong new global thread failed! {}", e);
         };
         let func_name = hisysevent::function!();
@@ -135,6 +135,8 @@ impl Ability for AssetAbility {
 
     fn on_stop(&self) {
         logi!("[INFO]Asset service on_stop");
+        let counter = Counter::get_instance();
+        counter.lock().unwrap().stop();
         common_event::unsubscribe();
     }
 
@@ -245,5 +247,9 @@ impl AssetService {
 
     fn post_query(&self, calling_info: &CallingInfo, query: &AssetMap) -> Result<()> {
         execute!(operations::post_query, calling_info, query)
+    }
+
+    fn query_sync_result(&self, calling_info: &CallingInfo, query: &AssetMap) -> Result<SyncResult> {
+        execute!(operations::query_sync_result, calling_info, query)
     }
 }

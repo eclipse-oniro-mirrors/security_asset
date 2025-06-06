@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,20 +18,24 @@
 mod argument_check;
 mod permission_check;
 
+use std::time::Instant;
+
 pub(crate) use argument_check::{
     check_group_validity, check_required_tags, check_tag_validity, check_value_validity, MAX_LABEL_SIZE,
 };
 pub(crate) use permission_check::check_system_permission;
 
-use asset_common::{CallingInfo, OWNER_INFO_SEPARATOR};
+use asset_common::{CallingInfo, OwnerType, OWNER_INFO_SEPARATOR};
 use asset_crypto_manager::secret_key::SecretKey;
 use asset_db_operator::types::{column, DbMap, DB_DATA_VERSION, DB_DATA_VERSION_V1};
 use asset_definition::{
-    log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, OperationType, Result, Tag, Value,
+    log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, OperationType, Result, Tag, Value, WrapType,
 };
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID};
+
+use crate::sys_event::upload_statistic_system_event;
 
 const TAG_COLUMN_TABLE: [(Tag, &str); 21] = [
     (Tag::Secret, column::SECRET),
@@ -57,7 +61,7 @@ const TAG_COLUMN_TABLE: [(Tag, &str); 21] = [
     (Tag::WrapType, column::WRAP_TYPE),
 ];
 
-const AAD_ATTR: [&str; 14] = [
+const AAD_ATTR: [&str; 15] = [
     column::ALIAS,
     column::OWNER,
     column::OWNER_TYPE,
@@ -72,6 +76,7 @@ const AAD_ATTR: [&str; 14] = [
     column::CRITICAL2,
     column::CRITICAL3,
     column::CRITICAL4,
+    column::WRAP_TYPE,
 ];
 
 pub(crate) const CRITICAL_LABEL_ATTRS: [Tag; 4] =
@@ -133,12 +138,20 @@ pub(crate) fn into_asset_map(db_data: &DbMap) -> AssetMap {
     map
 }
 
-pub(crate) fn add_calling_info(calling_info: &CallingInfo, db_data: &mut DbMap) {
+pub(crate) fn add_owner_info(calling_info: &CallingInfo, db_data: &mut DbMap) {
     db_data.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
     db_data.insert(column::OWNER_TYPE, Value::Number(calling_info.owner_type()));
+}
+
+pub(crate) fn add_group(calling_info: &CallingInfo, db_data: &mut DbMap) {
     if let Some(group) = calling_info.group() {
         db_data.insert(column::GROUP_ID, Value::Bytes(group));
     };
+}
+
+pub(crate) fn add_calling_info(calling_info: &CallingInfo, db_data: &mut DbMap) {
+    add_owner_info(calling_info, db_data);
+    add_group(calling_info, db_data);
 }
 
 pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<SecretKey> {
@@ -148,9 +161,22 @@ pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<S
     SecretKey::new_without_alias(calling, auth_type, access_type, require_password_set)
 }
 
+fn check_if_need_addition_aad(attr: &str, map: &DbMap) -> bool {
+    match attr {
+        column::WRAP_TYPE => match map.get_enum_attr::<WrapType>(&attr) {
+            Ok(v) => v != WrapType::default(),
+            Err(_) => false,
+        },
+        _ => true,
+    }
+}
+
 fn build_aad_v1(attrs: &DbMap) -> Vec<u8> {
     let mut aad = Vec::new();
     for column in &AAD_ATTR {
+        if !check_if_need_addition_aad(column, attrs) {
+            continue;
+        }
         match attrs.get(column) {
             Some(Value::Bytes(bytes)) => aad.extend(bytes),
             Some(Value::Number(num)) => aad.extend(num.to_le_bytes()),
@@ -178,6 +204,9 @@ fn to_hex(bytes: &Vec<u8>) -> Result<Vec<u8>> {
 fn build_aad_v2(attrs: &DbMap) -> Result<Vec<u8>> {
     let mut aad = Vec::new();
     for column in &AAD_ATTR {
+        if !check_if_need_addition_aad(column, attrs) {
+            continue;
+        }
         aad.extend(format!("{}:", column).as_bytes());
         match attrs.get(column) {
             Some(Value::Bytes(bytes)) => aad.extend(to_hex(bytes)?),
@@ -193,6 +222,11 @@ fn build_aad_v2(attrs: &DbMap) -> Result<Vec<u8>> {
 pub(crate) fn build_aad(attrs: &DbMap) -> Result<Vec<u8>> {
     let version = attrs.get_num_attr(&column::VERSION)?;
     if version == DB_DATA_VERSION_V1 {
+        let tmp_calling_info = CallingInfo::new_part_info(
+            attrs.get_bytes_attr(&column::OWNER)?.clone(),
+            attrs.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?,
+        );
+        upload_statistic_system_event(&tmp_calling_info, Instant::now(), "V1_AAD_DATA", "V1_AAD_DATA");
         Ok(build_aad_v1(attrs))
     } else {
         build_aad_v2(attrs)
@@ -215,7 +249,7 @@ pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
                     let mut params = ExtDbMap::new();
                     params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
                     params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(caller_name.as_bytes().to_vec()));
-                    match load.process_event(EventType::Sync, &params) {
+                    match load.process_event(EventType::Sync, &mut params) {
                         Ok(()) => logi!("process sync ext event success."),
                         Err(code) => loge!("process sync ext event failed, code: {}", code),
                     }
@@ -229,7 +263,7 @@ pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
                     let mut params = ExtDbMap::new();
                     params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
                     params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(caller_name.as_bytes().to_vec()));
-                    match load.process_event(EventType::CleanCloudFlag, &params) {
+                    match load.process_event(EventType::CleanCloudFlag, &mut params) {
                         Ok(()) => logi!("process clean cloud flag ext event success."),
                         Err(code) => loge!("process clean cloud flag ext event failed, code: {}", code),
                     }
@@ -240,7 +274,7 @@ pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
                     let mut params = ExtDbMap::new();
                     params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
                     params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(calling_info.owner_info().clone()));
-                    match load.process_event(EventType::DeleteCloudData, &params) {
+                    match load.process_event(EventType::DeleteCloudData, &mut params) {
                         Ok(()) => logi!("process delete cloud data ext event success."),
                         Err(code) => loge!("process delete cloud data ext event failed, code: {}", code),
                     }

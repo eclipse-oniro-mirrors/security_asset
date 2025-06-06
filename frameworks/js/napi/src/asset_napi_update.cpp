@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,27 +13,23 @@
  * limitations under the License.
  */
 
-#include <cstdint>
-#include <vector>
+#include "asset_napi_update.h"
 
 #include "securec.h"
 
-#include "napi/native_api.h"
-#include "napi/native_node_api.h"
-
 #include "asset_log.h"
-#include "asset_mem.h"
 #include "asset_system_api.h"
 #include "asset_system_type.h"
 
 #include "asset_napi_check.h"
 #include "asset_napi_common.h"
-#include "asset_napi_update.h"
 
 namespace OHOS {
 namespace Security {
 namespace Asset {
 namespace {
+const uint32_t UPDATE_ARG_COUNT = 2;
+const uint32_t UPDATE_ARG_COUNT_AS_USER = 3;
 
 const std::vector<uint32_t> QUERY_REQUIRED_TAGS = {
     SEC_ASSET_TAG_ALIAS
@@ -43,110 +39,100 @@ const std::vector<uint32_t> UPDATE_OPTIONAL_TAGS = {
     SEC_ASSET_TAG_SECRET
 };
 
-bool CheckAssetPresence(const napi_env env, const std::vector<AssetAttr> &attrs)
+napi_value CheckAssetPresence(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
     if (attrs.empty()) {
-        NAPI_THROW_INVALID_ARGUMENT(env, "Argument[attributesToUpdate] is empty.");
-        return false;
+        RETURN_JS_ERROR(env, SEC_ASSET_INVALID_ARGUMENT, "Argument[attributesToUpdate] is empty.");
     }
-    return true;
+    return nullptr;
 }
 
 napi_status CheckUpdateArgs(const napi_env env, const std::vector<AssetAttr> &attrs,
     const std::vector<AssetAttr> &updateAttrs)
 {
-    IF_FALSE_RETURN(CheckAssetRequiredTag(env, attrs, QUERY_REQUIRED_TAGS), napi_invalid_arg);
+    IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, QUERY_REQUIRED_TAGS, SEC_ASSET_INVALID_ARGUMENT));
     std::vector<uint32_t> queryValidTags;
     queryValidTags.insert(queryValidTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, queryValidTags), napi_invalid_arg);
-    IF_FALSE_RETURN(CheckAssetValueValidity(env, attrs), napi_invalid_arg);
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, queryValidTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
 
-    IF_FALSE_RETURN(CheckAssetPresence(env, updateAttrs), napi_invalid_arg);
+    IF_ERROR_THROW_RETURN(env, CheckAssetPresence(env, updateAttrs));
     std::vector<uint32_t> updateValidTags;
     updateValidTags.insert(updateValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), UPDATE_OPTIONAL_TAGS.begin(), UPDATE_OPTIONAL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(env, updateAttrs, updateValidTags), napi_invalid_arg);
-    IF_FALSE_RETURN(CheckAssetValueValidity(env, updateAttrs), napi_invalid_arg);
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, updateAttrs, updateValidTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, updateAttrs, SEC_ASSET_INVALID_ARGUMENT));
 
     return napi_ok;
 }
 
-napi_value NapiUpdateAsync(const napi_env env, napi_callback_info info, const char *funcName,
-    napi_async_execute_callback execute, const NapiCallerArgs &args)
+napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *baseContext)
 {
-    AsyncContext *context = CreateAsyncContext();
-    NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for AsyncContext.");
-
-    do {
-        if (ParseParam(env, info, args, context->attrs, context->updateAttrs) != napi_ok) {
-            break;
-        }
-
-        if (CheckUpdateArgs(env, context->attrs, context->updateAttrs) != napi_ok) {
-            break;
-        }
-
-        napi_value promise = CreateAsyncWork(env, context, funcName, execute);
-        if (promise == nullptr) {
-            LOGE("Create async work failed.");
-            break;
-        }
-        return promise;
-    } while (0);
-    DestroyAsyncContext(env, context);
-    return nullptr;
+    UpdateContext *context = reinterpret_cast<UpdateContext *>(baseContext);
+    napi_value argv[MAX_ARGS_NUM] = { 0 };
+    IF_ERR_RETURN(ParseJsArgs(env, info, argv, UPDATE_ARG_COUNT));
+    uint32_t index = 0;
+    IF_ERR_RETURN(ParseJsMap(env, argv[index++], context->attrs));
+    IF_ERR_RETURN(ParseJsMap(env, argv[index++], context->updateAttrs));
+    IF_ERR_RETURN(CheckUpdateArgs(env, context->attrs, context->updateAttrs));
+    return napi_ok;
 }
 
+napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContext *baseContext)
+{
+    UpdateContext *context = reinterpret_cast<UpdateContext *>(baseContext);
+    napi_value argv[MAX_ARGS_NUM] = { 0 };
+    IF_ERR_RETURN(ParseJsArgs(env, info, argv, UPDATE_ARG_COUNT_AS_USER));
+    uint32_t index = 0;
+    IF_ERR_RETURN(ParseJsUserId(env, argv[index++], context->attrs));
+    IF_ERR_RETURN(ParseJsMap(env, argv[index++], context->attrs));
+    IF_ERR_RETURN(ParseJsMap(env, argv[index++], context->updateAttrs));
+    IF_ERR_RETURN(CheckUpdateArgs(env, context->attrs, context->updateAttrs));
+    return napi_ok;
+}
 } // anonymous namespace
 
-napi_value NapiUpdate(const napi_env env, napi_callback_info info, const NapiCallerArgs &args)
+napi_value NapiUpdate(const napi_env env, napi_callback_info info, bool asUser, bool async)
 {
-    napi_async_execute_callback execute =
-        [](napi_env env, void *data) {
-            AsyncContext *context = static_cast<AsyncContext *>(data);
-            context->result = AssetUpdate(&context->attrs[0], context->attrs.size(),
-                &context->updateAttrs[0], context->updateAttrs.size());
-        };
-    return NapiUpdateAsync(env, info, __func__, execute, args);
+    auto context = std::unique_ptr<UpdateContext>(new (std::nothrow)UpdateContext());
+    NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for Context.");
+
+    context->parse = asUser ? ParseAttrMapAsUser : ParseAttrMap;
+    context->execute = [](napi_env env, void *data) {
+        UpdateContext *context = static_cast<UpdateContext *>(data);
+        context->result = AssetUpdate(&context->attrs[0], context->attrs.size(),
+            &context->updateAttrs[0], context->updateAttrs.size());
+    };
+
+    context->resolve = [](napi_env env, BaseContext *context) -> napi_value {
+        return CreateJsUndefined(env);
+    };
+
+    if (async) {
+        return CreateAsyncWork(env, info, std::move(context), __func__);
+    } else {
+        return CreateSyncWork(env, info, context.get());
+    }
 }
 
 napi_value NapiUpdate(const napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = UPDATE_ARGS_NUM, .isUpdate = true, .isAsUser = false };
-    return NapiUpdate(env, info, args);
+    return NapiUpdate(env, info, false, true);
 }
 
 napi_value NapiUpdateAsUser(const napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = AS_USER_UPDATE_ARGS_NUM, .isUpdate = true, .isAsUser = true };
-    return NapiUpdate(env, info, args);
+    return NapiUpdate(env, info, true, true);
 }
 
 napi_value NapiUpdateSync(const napi_env env, napi_callback_info info)
 {
-    std::vector<AssetAttr> attrs;
-    std::vector<AssetAttr> updateAttrs;
-    NapiCallerArgs args = { .expectArgNum = UPDATE_ARGS_NUM, .isUpdate = true, .isAsUser = false };
-    do {
-        if (ParseParam(env, info, args, attrs, updateAttrs) != napi_ok) {
-            break;
-        }
-
-        if (CheckUpdateArgs(env, attrs, updateAttrs) != napi_ok) {
-            break;
-        }
-
-        int32_t result = AssetUpdate(&attrs[0], attrs.size(), &updateAttrs[0], updateAttrs.size());
-        CHECK_RESULT_BREAK(env, result);
-    } while (false);
-    FreeAssetAttrs(attrs);
-    FreeAssetAttrs(updateAttrs);
-    return nullptr;
+    return NapiUpdate(env, info, false, false);
 }
 
 } // Asset

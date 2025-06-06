@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -18,7 +18,8 @@
 use ipc::{parcel::MsgParcel, IpcStatusCode};
 
 use asset_definition::{
-    impl_enum_trait, log_throw_error, AssetError, AssetMap, Conversion, DataType, ErrCode, Result, Tag, Value,
+    impl_enum_trait, log_throw_error, AssetError, AssetMap, Conversion, DataType, ErrCode, Result, SyncResult, Tag,
+    Value,
 };
 
 /// SA id for Asset service.
@@ -48,6 +49,8 @@ impl_enum_trait! {
         Query,
         /// Code for PostQueryAsset.
         PostQuery,
+        /// Code for QuerySyncResult.
+        QuerySyncResult,
     }
 }
 
@@ -129,7 +132,28 @@ pub fn deserialize_maps(parcel: &mut MsgParcel) -> Result<Vec<AssetMap>> {
     Ok(res_vec)
 }
 
+/// Serialize the sync result to parcel.
+pub fn serialize_sync_result(sync_result: &SyncResult, parcel: &mut MsgParcel) -> Result<()> {
+    parcel.write::<i32>(&sync_result.result_code).map_err(ipc_err_handle)?;
+    parcel.write::<u32>(&sync_result.total_count).map_err(ipc_err_handle)?;
+    parcel.write::<u32>(&sync_result.failed_count).map_err(ipc_err_handle)
+}
+
+/// Deserialize the sync result from parcel.
+pub fn deserialize_sync_result(parcel: &mut MsgParcel) -> Result<SyncResult> {
+    Ok(SyncResult {
+        result_code: parcel.read::<i32>().map_err(ipc_err_handle)?,
+        total_count: parcel.read::<u32>().map_err(ipc_err_handle)?,
+        failed_count: parcel.read::<u32>().map_err(ipc_err_handle)?,
+    })
+}
+
 /// Convert ipc error into Asset error.
 pub fn ipc_err_handle(e: IpcStatusCode) -> AssetError {
-    AssetError::new(ErrCode::IpcError, format!("[FATAL][IPC]Ipc status code = {}", e))
+    match e {
+        IpcStatusCode::ServiceDied => {
+            AssetError::new(ErrCode::ServiceUnavailable, format!("[FATAL][IPC]Ipc status code = {}", e as i32))
+        },
+        _ => AssetError::new(ErrCode::IpcError, format!("[FATAL][IPC]Ipc status code = {}", e)),
+    }
 }

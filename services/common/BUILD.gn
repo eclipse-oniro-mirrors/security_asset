@@ -30,7 +30,7 @@ ohos_rust_static_library("asset_common") {
 
 module_output_path = "asset/asset"
 
-ohos_rust_unittest("asset_calling_info_test") {
+ohos_rust_unittest("rust_asset_calling_info_test") {
   module_out_path = module_output_path
   sources = [ "src/lib.rs" ]
   deps = [

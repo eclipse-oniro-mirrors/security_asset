@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,27 +13,21 @@
  * limitations under the License.
  */
 
-#include <cstdint>
-#include <vector>
-
-#include "securec.h"
-
-#include "napi/native_api.h"
-#include "napi/native_node_api.h"
+#include "asset_napi_remove.h"
 
 #include "asset_log.h"
-#include "asset_mem.h"
 #include "asset_system_api.h"
 #include "asset_system_type.h"
 
 #include "asset_napi_check.h"
 #include "asset_napi_common.h"
-#include "asset_napi_remove.h"
 
 namespace OHOS {
 namespace Security {
 namespace Asset {
 namespace {
+const uint32_t REMOVE_ARG_COUNT = 1;
+const uint32_t REMOVE_ARG_COUNT_AS_USER = 2;
 
 napi_status CheckRemoveArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
@@ -42,52 +36,67 @@ napi_status CheckRemoveArgs(const napi_env env, const std::vector<AssetAttr> &at
     validTags.insert(validTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(env, attrs, validTags), napi_invalid_arg);
-    IF_FALSE_RETURN(CheckAssetValueValidity(env, attrs), napi_invalid_arg);
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, validTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
     return napi_ok;
 }
 
+napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *context)
+{
+    napi_value argv[MAX_ARGS_NUM] = { 0 };
+    IF_ERR_RETURN(ParseJsArgs(env, info, argv, REMOVE_ARG_COUNT));
+    IF_ERR_RETURN(ParseJsMap(env, argv[0], context->attrs));
+    IF_ERR_RETURN(CheckRemoveArgs(env, context->attrs));
+    return napi_ok;
+}
+
+napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContext *context)
+{
+    napi_value argv[MAX_ARGS_NUM] = { 0 };
+    IF_ERR_RETURN(ParseJsArgs(env, info, argv, REMOVE_ARG_COUNT_AS_USER));
+    uint32_t index = 0;
+    IF_ERR_RETURN(ParseJsUserId(env, argv[index++], context->attrs));
+    IF_ERR_RETURN(ParseJsMap(env, argv[index++], context->attrs));
+    IF_ERR_RETURN(CheckRemoveArgs(env, context->attrs));
+    return napi_ok;
+}
 } // anonymous namespace
 
-napi_value NapiRemove(const napi_env env, napi_callback_info info, const NapiCallerArgs &args)
+napi_value NapiRemove(const napi_env env, napi_callback_info info, bool asUser, bool async)
 {
-    napi_async_execute_callback execute = [](napi_env env, void *data) {
-        AsyncContext *context = static_cast<AsyncContext *>(data);
+    auto context = std::unique_ptr<BaseContext>(new (std::nothrow)BaseContext());
+    NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for Context.");
+
+    context->parse = asUser ? ParseAttrMapAsUser : ParseAttrMap;
+    context->execute = [](napi_env env, void *data) {
+        BaseContext *context = static_cast<BaseContext *>(data);
         context->result = AssetRemove(&context->attrs[0], context->attrs.size());
     };
-    return NapiAsync(env, info, execute, args, &CheckRemoveArgs);
+
+    context->resolve = [](napi_env env, BaseContext *context) -> napi_value {
+        return CreateJsUndefined(env);
+    };
+
+    if (async) {
+        return CreateAsyncWork(env, info, std::move(context), __func__);
+    } else {
+        return CreateSyncWork(env, info, context.get());
+    }
 }
 
 napi_value NapiRemove(const napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
-    return NapiRemove(env, info, args);
+    return NapiRemove(env, info, false, true);
 }
 
 napi_value NapiRemoveAsUser(const napi_env env, napi_callback_info info)
 {
-    NapiCallerArgs args = { .expectArgNum = AS_USER_ARGS_NUM, .isUpdate = false, .isAsUser = true };
-    return NapiRemove(env, info, args);
+    return NapiRemove(env, info, true, true);
 }
 
 napi_value NapiRemoveSync(const napi_env env, napi_callback_info info)
 {
-    std::vector<AssetAttr> attrs;
-    NapiCallerArgs args = { .expectArgNum = NORMAL_ARGS_NUM, .isUpdate = false, .isAsUser = false };
-    do {
-        if (ParseParam(env, info, args, attrs) != napi_ok) {
-            break;
-        }
-
-        if (CheckRemoveArgs(env, attrs) != napi_ok) {
-            break;
-        }
-
-        int32_t result = AssetRemove(&attrs[0], attrs.size());
-        CHECK_RESULT_BREAK(env, result);
-    } while (false);
-    FreeAssetAttrs(attrs);
-    return nullptr;
+    return NapiRemove(env, info, false, false);
 }
 
 } // Asset

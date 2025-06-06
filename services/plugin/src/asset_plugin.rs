@@ -37,7 +37,7 @@ pub struct AssetPlugin {
     lib: RefCell<Option<libloading::Library>>,
 }
 
-static ASSET_OLUGIN_LOCK: Mutex<()> = Mutex::new(());
+static ASSET_PLUGIN_LOCK: Mutex<()> = Mutex::new(());
 
 unsafe impl Sync for AssetPlugin {}
 
@@ -49,14 +49,14 @@ impl AssetPlugin {
     /// Get the instance of AssetPlugin.
     pub fn get_instance() -> Arc<AssetPlugin> {
         static mut INSTANCE: Option<Arc<AssetPlugin>> = None;
-        let _guard = ASSET_OLUGIN_LOCK.lock().unwrap();
+        let _guard = ASSET_PLUGIN_LOCK.lock().unwrap();
         unsafe { INSTANCE.get_or_insert_with(|| Arc::new(AssetPlugin::new())).clone() }
     }
 
     /// Load the plugin.
     pub fn load_plugin(&self) -> Result<Box<dyn IAssetPlugin>> {
         unsafe {
-            let _guard = ASSET_OLUGIN_LOCK.lock().unwrap();
+            let _guard = ASSET_PLUGIN_LOCK.lock().unwrap();
             if self.lib.borrow().is_none() {
                 logi!("start to load asset_ext plugin.");
                 match libloading::Library::new("libasset_ext_ffi.z.so") {
@@ -95,7 +95,7 @@ impl AssetPlugin {
 
     /// Unload plugin.
     pub fn unload_plugin(&self) {
-        let _guard = ASSET_OLUGIN_LOCK.lock().unwrap();
+        let _guard = ASSET_PLUGIN_LOCK.lock().unwrap();
         if self.lib.borrow().is_some() {
             *self.lib.borrow_mut() = None;
         }
@@ -112,8 +112,8 @@ pub struct AssetContext {
 fn get_db_name(user_id: i32, attributes: &ExtDbMap, is_ce: bool) -> std::result::Result<String, u32> {
     let owner_info = attributes.get_bytes_attr(&column::OWNER).map_err(|e| e.code as u32)?;
     let owner_type = attributes.get_enum_attr::<OwnerType>(&column::OWNER_TYPE).map_err(|e| e.code as u32)?;
-    let calling_info = match attributes.get_bytes_attr(&column::GROUP_ID).map_err(|e| e.code as u32) {
-        Ok(group) => {
+    let calling_info = match attributes.get(&column::GROUP_ID) {
+        Some(Value::Bytes(group)) => {
             let mut parts = group.split(|&byte| byte == GROUP_SEPARATOR as u8);
             let developer_id: Vec<u8> = parts.next().unwrap().to_vec();
             let group_id: Vec<u8> = parts.next().unwrap().to_vec();

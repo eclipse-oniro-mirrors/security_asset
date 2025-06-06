@@ -28,6 +28,7 @@ use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, LocalStatus, Result,
     SyncStatus, SyncType, Tag, Value,
 };
+use asset_log::logw;
 use asset_sdk::WrapType;
 use asset_utils::time;
 
@@ -143,9 +144,6 @@ fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> R
     }
     match calling_info.owner_type_enum() {
         OwnerType::Hap => {
-            if unsafe { !CheckSystemHapPermission() } {
-                return log_throw_error!(ErrCode::NotSystemApplication, "[FATAL]The caller is not system application.");
-            }
             if calling_info.app_index() > 0 {
                 return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
             }
@@ -172,7 +170,14 @@ fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> R
         },
         OwnerType::Native => (),
     }
-    Ok(())
+
+    if attributes.get(&Tag::SyncType).is_none()
+        || (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0
+    {
+        Ok(())
+    } else {
+        log_throw_error!(ErrCode::Unsupported, "[FATAL]trusted account data can not be set need wrap data.")
+    }
 }
 
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
@@ -194,11 +199,28 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     check_persistent_permission(attributes)
 }
 
+fn modify_sync_type(db: &mut DbMap) -> Result<()> {
+    if db.get(&column::SYNC_TYPE).is_none()
+        || (db.get_num_attr(&column::SYNC_TYPE)? & SyncType::TrustedAccount as u32) == 0
+    {
+        return Ok(());
+    }
+    if unsafe { !CheckSystemHapPermission() } {
+        logw!("[FATAL]The caller is not system application. Modify store sync type!");
+        db.insert(
+            column::SYNC_TYPE,
+            Value::Number(db.get_num_attr(&column::SYNC_TYPE)? - SyncType::TrustedAccount as u32),
+        );
+    }
+    Ok(())
+}
+
 fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     check_arguments(attributes, calling_info)?;
 
     // Fill all attributes to DbMap.
     let mut db_data = common::into_db_map(attributes);
+    modify_sync_type(&mut db_data)?;
     common::add_calling_info(calling_info, &mut db_data);
     add_system_attrs(&mut db_data)?;
     add_default_attrs(&mut db_data);

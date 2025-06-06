@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2024-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 
-#include "asset_add_test.h"
 #include "asset_auth_query_test.h"
 
 #include <string>
@@ -80,7 +79,7 @@ HWTEST_F(AssetAuthQueryTest, AssetAuthQueryTest001, TestSize.Level0)
         { .tag = ASSET_TAG_AUTH_CHALLENGE, .value.blob = challenge },
         { .tag = ASSET_TAG_AUTH_TOKEN, .value.blob = funcName },
     };
-    ASSERT_EQ(ASSET_INVALID_ARGUMENT, OH_Asset_Query(queryAttr, ARRAY_SIZE(queryAttr), &queryResultSet));
+    ASSERT_EQ(ASSET_ACCESS_DENIED, OH_Asset_Query(queryAttr, ARRAY_SIZE(queryAttr), &queryResultSet));
 
     Asset_Attr postQueryAttr[] = {
         { .tag = ASSET_TAG_AUTH_CHALLENGE, .value.blob = challenge },

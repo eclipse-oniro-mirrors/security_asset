@@ -20,7 +20,7 @@ use asset_db_operator::{
     database::build_db,
     types::{column, DbMap},
 };
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncStatus, SyncType, Value};
+use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncStatus, SyncType, Tag, Value};
 use asset_log::logi;
 use asset_utils::time;
 
@@ -51,7 +51,12 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
 pub(crate) fn remove(calling_info: &CallingInfo, query: &AssetMap) -> Result<()> {
     check_arguments(query, calling_info)?;
 
-    let db_data = common::into_db_map(query);
+    let mut db_data = common::into_db_map(query);
+    if query.get(&Tag::GroupId).is_some() {
+        common::add_group(calling_info, &mut db_data);
+    } else {
+        common::add_owner_info(calling_info, &mut db_data);
+    }
 
     let mut update_db_data = DbMap::new();
     add_system_attrs(&mut update_db_data)?;

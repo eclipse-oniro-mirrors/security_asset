@@ -17,7 +17,7 @@
 
 use std::{collections::HashMap, ptr::null};
 
-use asset_common::{ConstAssetBlob, ConstAssetBlobArray, GROUP_SEPARATOR};
+use asset_common::{AutoCounter, ConstAssetBlob, ConstAssetBlobArray, GROUP_SEPARATOR};
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_file_operator::de_operator::delete_user_de_dir;
 use asset_log::{loge, logi, logw};
@@ -78,16 +78,20 @@ impl WantParser<PackageInfo> for PackageRemovedWant<'_> {
         };
 
         // parse groups from want
-        let (developer_id, group_ids) = match (self.0.get(DEVELOPER_ID), self.0.get(GROUP_IDS)) {
+        let (main_developer_id, group_ids) = match (self.0.get(DEVELOPER_ID), self.0.get(GROUP_IDS)) {
             (Some(developer_id), Some(group_ids)) => {
+                let mut main_developer_id = developer_id.to_string();
+                if let Some(pos) = developer_id.find('.') {
+                    main_developer_id.drain(..=pos);
+                }
                 let group_ids: Vec<String> =
                     group_ids.split(GROUP_SEPARATOR).map(|group_id| group_id.to_string()).collect();
-                (Some(developer_id.to_string()), Some(group_ids))
+                (Some(main_developer_id), Some(group_ids))
             },
             _ => (None, None),
         };
 
-        Ok(PackageInfo { user_id, app_index, app_id, developer_id, group_ids, bundle_name })
+        Ok(PackageInfo { user_id, app_index, app_id, developer_id: main_developer_id, group_ids, bundle_name })
     }
 }
 
@@ -122,7 +126,8 @@ fn handle_package_removed(want: &HashMap<String, String>) {
     };
 }
 
-pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
+fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
+    let _counter_user = AutoCounter::new();
     let reason_name: String = reason.name;
     if reason_name == "usual.event.PACKAGE_REMOVED" || reason_name == "usual.event.SANDBOX_PACKAGE_REMOVED" {
         let want = reason.extra_data.want();
@@ -177,5 +182,9 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
         listener::on_user_unlocked(reason.extra_data.code);
     }
     logi!("[INFO]Finish handle common event. [{}]", reason_name);
+}
+
+pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
+    ylong_runtime::spawn_blocking(move || process_common_event_async(reason));
     unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
 }

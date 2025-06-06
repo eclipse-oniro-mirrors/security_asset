@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -244,7 +244,7 @@ pub(crate) extern "C" fn on_package_removed(package_info: PackageInfoFfi) {
         // only hap package can be removed
         params.insert(PARAM_NAME_IS_HAP, Value::Bool(true));
         params.insert(PARAM_NAME_APP_INDEX, Value::Number(package_info.app_index as u32));
-        match load.process_event(EventType::OnPackageClear, &params) {
+        match load.process_event(EventType::OnPackageClear, &mut params) {
             Ok(()) => logi!("process package remove event success."),
             Err(code) => loge!("process package remove event failed, code: {}", code),
         }
@@ -267,7 +267,7 @@ lazy_static! {
     static ref RECORD_TIME: Mutex<Option<Instant>> = Mutex::new(None);
 }
 
-async fn backup_db_sync() {
+pub(crate) extern "C" fn backup_db() {
     let _counter_user = AutoCounter::new();
     let cur_time = Instant::now();
     logi!("[INFO]Start backup db.");
@@ -289,10 +289,6 @@ async fn backup_db_sync() {
     logi!("[INFO]Finish backup db.");
 }
 
-pub(crate) extern "C" fn backup_db() {
-    let _handle = ylong_runtime::spawn(backup_db_sync());
-}
-
 pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, app_index: i32) {
     let c_str = unsafe { CStr::from_ptr(bundle_name as _) };
     let bundle_name = match c_str.to_str() {
@@ -309,7 +305,7 @@ pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, ap
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
         params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(bundle_name.as_bytes().to_vec()));
         params.insert(PARAM_NAME_APP_INDEX, Value::Number(app_index as u32));
-        match load.process_event(EventType::OnAppRestore, &params) {
+        match load.process_event(EventType::OnAppRestore, &mut params) {
             Ok(()) => logi!("process app restore event success."),
             Err(code) => loge!("process app restore event failed, code: {}", code),
         }
@@ -334,7 +330,7 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
-        match load.process_event(EventType::OnUserUnlocked, &params) {
+        match load.process_event(EventType::OnUserUnlocked, &mut params) {
             Ok(()) => logi!("process user unlocked event success."),
             Err(code) => loge!("process user unlocked event failed, code: {}", code),
         }
@@ -347,7 +343,7 @@ pub(crate) fn notify_on_user_removed(user_id: i32) {
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
-        match load.process_event(EventType::OnUserRemoved, &params) {
+        match load.process_event(EventType::OnUserRemoved, &mut params) {
             Ok(()) => logi!("process user removed event success."),
             Err(code) => loge!("process user removed event failed, code: {}", code),
         }
@@ -363,7 +359,7 @@ pub(crate) extern "C" fn on_schedule_wakeup() {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(default_user_id as u32));
         params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(self_bundle_name.as_bytes().to_vec()));
-        match load.process_event(EventType::Sync, &params) {
+        match load.process_event(EventType::Sync, &mut params) {
             Ok(()) => logi!("process sync ext event success."),
             Err(code) => loge!("process sync ext event failed, code: {}", code),
         }

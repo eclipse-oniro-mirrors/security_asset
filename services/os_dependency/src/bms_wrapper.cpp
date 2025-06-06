@@ -131,13 +131,20 @@ int32_t GetAppProvisionInfo(sptr<IBundleMgr> bundleMgr, uint32_t userId, Process
         return ASSET_BMS_ERROR;
     }
 
-    if (memcpy_s(processInfo->hapInfo.developerId.data, processInfo->hapInfo.developerId.size,
-        appProvisionInfo.developerId.c_str(), appProvisionInfo.developerId.size()) != EOK) {
+    std::string mainDeveloperId;
+    size_t pos = appProvisionInfo.developerId.find('.');
+    if (pos != std::string::npos) {
+        mainDeveloperId = appProvisionInfo.developerId.substr(pos + 1);
+    } else {
+        mainDeveloperId = appProvisionInfo.developerId;
+    }
+    if (memcpy_s(processInfo->hapInfo.developerId.data, processInfo->hapInfo.developerId.size, mainDeveloperId.c_str(),
+        mainDeveloperId.size()) != EOK) {
         LOGE("[FATAL]The developer id buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
-            appProvisionInfo.developerId.size(), processInfo->hapInfo.developerId.size);
+            mainDeveloperId.size(), processInfo->hapInfo.developerId.size);
         return ASSET_OUT_OF_MEMORY;
     }
-    processInfo->hapInfo.developerId.size = appProvisionInfo.developerId.size();
+    processInfo->hapInfo.developerId.size = mainDeveloperId.size();
 
     return ASSET_SUCCESS;
 }
