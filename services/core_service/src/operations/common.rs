@@ -133,12 +133,20 @@ pub(crate) fn into_asset_map(db_data: &DbMap) -> AssetMap {
     map
 }
 
-pub(crate) fn add_calling_info(calling_info: &CallingInfo, db_data: &mut DbMap) {
+pub(crate) fn add_owner_info(calling_info: &CallingInfo, db_data: &mut DbMap) {
     db_data.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
     db_data.insert(column::OWNER_TYPE, Value::Number(calling_info.owner_type()));
+}
+
+pub(crate) fn add_group(calling_info: &CallingInfo, db_data: &mut DbMap) {
     if let Some(group) = calling_info.group() {
         db_data.insert(column::GROUP_ID, Value::Bytes(group));
     };
+}
+
+pub(crate) fn add_calling_info(calling_info: &CallingInfo, db_data: &mut DbMap) {
+    add_owner_info(calling_info, db_data);
+    add_group(calling_info, db_data);
 }
 
 pub(crate) fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<SecretKey> {
