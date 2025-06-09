@@ -531,7 +531,7 @@ impl Database {
     #[inline(always)]
     pub fn delete_batch_datas(&mut self, condition: &DbMap, update_datas: &DbMap, aliases: &[Vec<u8>]) -> Result<i32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
-        let closure = |e: &Table| e.update_and_delete_batch_datas(condition, update_datas, aliases);
+        let closure = |e: &Table| e.local_delete_batch_datas(condition, update_datas, aliases);
         self.restore_if_exec_fail(closure)
     }
 
