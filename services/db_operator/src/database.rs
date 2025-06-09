@@ -528,7 +528,10 @@ impl Database {
 
     /// Delete datas from database with specific condition.
     /// If the operation is successful, the number of deleted data is returned.
+<<<<<<< HEAD
     #[inline(always)]
+=======
+>>>>>>> c6000e536bd3afccb73bd164186b5a9da3a182f6
     pub fn delete_batch_datas(&mut self, condition: &DbMap, update_datas: &DbMap, aliases: &[Vec<u8>]) -> Result<i32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.update_and_delete_batch_datas(condition, update_datas, aliases);

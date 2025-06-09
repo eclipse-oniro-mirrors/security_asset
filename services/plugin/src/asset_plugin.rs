@@ -119,7 +119,11 @@ fn convert_db_map(attributes: &ExtDbMap) -> Result<DbMap> {
     Ok(db_map)
 }
 
+<<<<<<< HEAD
 fn get_db_name(user_id: i32, attributes: &ExtDbMap, is_ce: bool) -> std::result::Result<String, AssetError> {
+=======
+fn get_db_name(user_id: i32, attributes: &ExtDbMap, is_ce: bool) -> std::result::Result<String, u32> {
+>>>>>>> c6000e536bd3afccb73bd164186b5a9da3a182f6
     let owner_info = attributes.get_bytes_attr(&column::OWNER)?;
     let owner_type = attributes.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?;
     let calling_info = match attributes.get(&column::GROUP_ID) {
