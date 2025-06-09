@@ -17,15 +17,16 @@ use asset_common::{CallingInfo, Counter, Group, OwnerType, GROUP_SEPARATOR};
 use asset_db_operator::{
     database::{get_path, Database},
     database_file_upgrade::construct_splited_db_name,
-    types::{column, QueryOptions},
+    types::{column, DbMap, QueryOptions},
 };
-use asset_definition::{log_throw_error, ErrCode, Extension, Result};
 use asset_file_operator::de_operator::create_user_de_dir;
 use asset_log::{loge, logi};
 use asset_sdk::{
+    log_throw_error,
     plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, RETURN_LIMIT, RETURN_OFFSET},
-    Value,
+    AssetError, ErrCode, Extension, Result, SyncStatus, Value,
 };
+use asset_utils::time;
 use std::{
     cell::RefCell,
     sync::{Arc, Mutex},
@@ -109,9 +110,18 @@ pub struct AssetContext {
     pub user_id: i32,
 }
 
-fn get_db_name(user_id: i32, attributes: &ExtDbMap, is_ce: bool) -> std::result::Result<String, u32> {
-    let owner_info = attributes.get_bytes_attr(&column::OWNER).map_err(|e| e.code as u32)?;
-    let owner_type = attributes.get_enum_attr::<OwnerType>(&column::OWNER_TYPE).map_err(|e| e.code as u32)?;
+fn convert_db_map(attributes: &ExtDbMap) -> Result<DbMap> {
+    let owner_info = attributes.get_bytes_attr(&column::OWNER)?;
+    let owner_type = attributes.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?;
+    let mut db_map = DbMap::new();
+    db_map.insert_attr(column::OWNER, owner_info.clone());
+    db_map.insert_attr(column::OWNER_TYPE, owner_type);
+    Ok(db_map)
+}
+
+fn get_db_name(user_id: i32, attributes: &ExtDbMap, is_ce: bool) -> std::result::Result<String, AssetError> {
+    let owner_info = attributes.get_bytes_attr(&column::OWNER)?;
+    let owner_type = attributes.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?;
     let calling_info = match attributes.get(&column::GROUP_ID) {
         Some(Value::Bytes(group)) => {
             let mut parts = group.split(|&byte| byte == GROUP_SEPARATOR as u8);
@@ -121,7 +131,7 @@ fn get_db_name(user_id: i32, attributes: &ExtDbMap, is_ce: bool) -> std::result:
         },
         _ => CallingInfo::new(user_id, owner_type, owner_info.to_vec(), None),
     };
-    construct_splited_db_name(&calling_info, is_ce).map_err(|e| e.code as u32)
+    construct_splited_db_name(&calling_info, is_ce)
 }
 
 fn get_query_options(attrs: &ExtDbMap) -> QueryOptions {
@@ -151,28 +161,28 @@ impl IAssetPluginCtx for AssetContext {
 
     /// Adds an asset to de db.
     fn add(&mut self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
-        let db_name = get_db_name(self.user_id, attributes, false)?;
+        let db_name = get_db_name(self.user_id, attributes, false).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, false).map_err(|e| e.code as u32)?;
         db.insert_datas(attributes).map_err(|e| e.code as u32)
     }
 
     /// Adds an asset to ce db.
     fn ce_add(&mut self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
-        let db_name = get_db_name(self.user_id, attributes, true)?;
+        let db_name = get_db_name(self.user_id, attributes, true).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, true).map_err(|e| e.code as u32)?;
         db.insert_datas(attributes).map_err(|e| e.code as u32)
     }
 
     /// Adds an asset with replace to de db.
     fn replace(&mut self, condition: &ExtDbMap, attributes: &ExtDbMap) -> std::result::Result<(), u32> {
-        let db_name = get_db_name(self.user_id, attributes, false)?;
+        let db_name = get_db_name(self.user_id, attributes, false).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, false).map_err(|e| e.code as u32)?;
         db.replace_datas(condition, false, attributes).map_err(|e| e.code as u32)
     }
 
     /// Adds an asset with replace to ce db.
     fn ce_replace(&mut self, condition: &ExtDbMap, attributes: &ExtDbMap) -> std::result::Result<(), u32> {
-        let db_name = get_db_name(self.user_id, attributes, true)?;
+        let db_name = get_db_name(self.user_id, attributes, true).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, true).map_err(|e| e.code as u32)?;
         db.replace_datas(condition, false, attributes).map_err(|e| e.code as u32)
     }
@@ -230,7 +240,7 @@ impl IAssetPluginCtx for AssetContext {
         query_options: &ExtDbMap,
         is_ce: bool,
     ) -> std::result::Result<Vec<ExtDbMap>, u32> {
-        let db_name = get_db_name(self.user_id, db_info, is_ce)?;
+        let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
         db.query_datas(&vec![], attributes, Some(&get_query_options(query_options)), true).map_err(|e| e.code as u32)
     }
@@ -257,6 +267,20 @@ impl IAssetPluginCtx for AssetContext {
         Ok(total_remove_count)
     }
 
+    /// Removes assets with aliases.
+    fn batch_remove(&mut self, attributes: &ExtDbMap, aliases: &[Vec<u8>], require_attr_encrypted: bool) -> Result<()> {
+        let db_name = get_db_name(self.user_id, attributes, require_attr_encrypted)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, require_attr_encrypted)?;
+        let condition = convert_db_map(attributes)?;
+        let mut update_datas = DbMap::new();
+        let time = time::system_time_in_millis()?;
+        update_datas.insert(column::UPDATE_TIME, Value::Bytes(time));
+        update_datas.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
+        let total_removed_count = db.delete_batch_datas(&condition, &update_datas, aliases)?;
+        logi!("total removed count = {}", total_removed_count);
+        Ok(())
+    }
+
     /// Removes an asset from a certain db. Normal, Group, CE.
     fn remove_certain_db(
         &mut self,
@@ -264,7 +288,7 @@ impl IAssetPluginCtx for AssetContext {
         attributes: &ExtDbMap,
         is_ce: bool,
     ) -> std::result::Result<i32, u32> {
-        let db_name = get_db_name(self.user_id, db_info, is_ce)?;
+        let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
         db.delete_datas(attributes, None, false).map_err(|e| e.code as u32)
     }
