@@ -19,7 +19,7 @@
 use core::ffi::c_void;
 use std::cmp::Ordering;
 
-use asset_definition::{log_throw_error, Conversion, DataType, ErrCode, Result, Value};
+use asset_definition::{log_throw_error, Conversion, DataType, ErrCode, Result, SyncType,  Value};
 use asset_log::logi;
 
 use crate::{
@@ -57,6 +57,28 @@ fn bind_where_datas(datas: &DbMap, stmt: &Statement, index: &mut i32) -> Result<
         stmt.bind_data(*index, value)?;
         *index += 1;
     }
+    Ok(())
+}
+
+fn bind_alias_list(aliases: &[Vec<u8>], stmt: &Statement, index: &mut i32) -> Result<()> {
+    for value in aliases {
+        stmt.bind_data(*index, &value::Bytes(value.to_vec()))?;
+        *index += 1;
+    }
+    Ok(())
+}
+
+fn bind_sync(stmt: &Statement, index: &mut i32) -> Result<()> {
+    stmt.bind_data(*index, &value::Number(SyncType::TrustedAccount as u32))?;
+    *index += 1;
+    stmt.bind_data(*index, &Value::Number(SyncType::TrustedAccount as u32))?;
+    *index += 1;
+    Ok(())
+}
+
+fn bind_not_sync(stmt: &Statement, index: &mut i32) -> Result<()> {
+    stmt.bind_data(*index, &Value::Number(SyncType::TrustedAccount as u32))?;
+    *index += 1;
     Ok(())
 }
 
@@ -115,6 +137,13 @@ fn build_sql_where(conditions: &DbMap, filter: bool, sql: &mut String) {
 }
 
 #[inline(always)]
+fn build_sql_alias_list(len: usize, sql: &mut String) {
+    sql.push_str(" and alias in (");
+    build_sql_values(len, sql);
+    sql.push_str(") ");
+}
+
+#[inline(always)]
 fn build_sql_values(len: usize, sql: &mut String) {
     for i in 0..len {
         sql.push('?');
@@ -122,6 +151,16 @@ fn build_sql_values(len: usize, sql: &mut String) {
             sql.push(',');
         }
     }
+}
+
+#[inline(always)]
+fn build_sql_sync(sql: &mut String) {
+    sql.push_str(" and (SyncType & ?) = ?");
+}
+
+#[inline(always)]
+fn build_sql_not_sync(sql: &mut String) {
+    sql.push_str(" and (SyncType & ?) = 0");
 }
 
 fn from_data_type_to_str(value: &DataType) -> &'static str {
@@ -360,6 +399,69 @@ impl<'a> Table<'a> {
         bind_where_with_specific_condifion(condition_value, &stmt, &mut index)?;
         stmt.step()?;
         let count = unsafe { SqliteChanges(self.db.handle as _) };
+        Ok(count)
+    }
+
+    fn update_batch_datas_by_aliases(&self, datas: &DbMap, condition: &DbMap, aliases: &[Vec<u8>]) -> Result<i32> {
+        let mut sql = format!("update {} set  ", self.table_name);
+        for (i, column_name) in datas.keys.enumerate() {
+            sql.push_str(column_name);
+            sql.push_str("=?");
+            if i != data.len() - 1 {
+                sql.push(',');
+            }
+        }
+        build_sql_where(condition, true, &mut sql);
+        build_sql_alias_list(aliases.len(), &mut sql);
+        build_sql_sync(&mut sql);
+        let stmt = Statement::prepare(&sql, self.db)?;
+        let mut index = 1;
+        bind_datas(datas, &stmt, &mut index)?;
+        bind_where_datas(condition, &stmt, &mut index)?;
+        bind_alias_list(aliases, &stmt, &mut index)?;
+        bind_sync(&stmt, &mut index)?;
+        stmt.step()?;
+        let count = unsafe{ SqliteChanges(self.db.handle as _) };
+        Ok(count)
+    }
+
+    fn delete_batch_datas_by_aliases(&self, condition: &DbMap, aliases: &[Vec<u8>]) -> Result<i32> {
+        let mut sql = format!("delete from {}", self.table_name);
+        build_sql_where(condition, true, &mut sql);
+        build_sql_alias_list(aliases.len(), &mut sql);
+        build_sql_not_sync(&mut sql);
+        let mut index = 1;
+        let stmt = Statement::prepare(&sql, self.db)?;
+        bind_datas(datas, &stmt, &mut index)?;
+        bind_alias_list(aliases, &stmt, &mut index)?;
+        bind_not_sync(&stmt, &mut index)?;
+        stmt.step()?;
+        let count = unsafe{ SqliteChanges(self.db.handle as _) };
+        Ok(count)
+    }
+
+    pub(crate) fn update_and_delete_batch_datas(
+        &self,
+        condition: &DbMap,
+        datas: &DbMap,
+        aliases: &[Vec<u8>],
+    ) -> Result<i32> {
+        let mut trans = Transaction::new(self.db);
+        trans.begin()?;
+        let mut count = match self.update_batch_datas_by_aliases(condition, datas, aliases) {
+            Ok(count) => count,
+            Err(e) => return Err(e),
+        };
+
+        count += match self.delete_batch_datas_by_aliases(condition, aliases) {
+            Ok(count) => count,
+            Err(e) => {
+                trans.rollback()?;
+                return Err(e);
+            },
+        };
+
+        trans.commit()?;
         Ok(count)
     }
 
