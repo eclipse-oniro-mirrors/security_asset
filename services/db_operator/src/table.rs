@@ -19,7 +19,7 @@
 use core::ffi::c_void;
 use std::cmp::Ordering;
 
-use asset_definition::{log_throw_error, Conversion, DataType, ErrCode, Result, SyncType,  Value};
+use asset_definition::{log_throw_error, Conversion, DataType, ErrCode, Result, SyncType, Value};
 use asset_log::logi;
 
 use crate::{
@@ -403,11 +403,11 @@ impl<'a> Table<'a> {
     }
 
     fn update_sync_datas_by_aliases(&self, condition: &DbMap, datas: &DbMap, aliases: &[Value]) -> Result<i32> {
-        let mut sql = format!("update {} set  ", self.table_name);
-        for (i, column_name) in datas.keys.enumerate() {
+        let mut sql = format!("update {} set ", self.table_name);
+        for (i, column_name) in datas.keys().enumerate() {
             sql.push_str(column_name);
             sql.push_str("=?");
-            if i != data.len() - 1 {
+            if i != datas.len() - 1 {
                 sql.push(',');
             }
         }
@@ -422,7 +422,7 @@ impl<'a> Table<'a> {
         let sync_type = Value::Number(SyncType::TrustedAccount as u32);
         bind_sync(&stmt, &sync_type, &mut index)?;
         stmt.step()?;
-        let count = unsafe{ SqliteChanges(self.db.handle as _) };
+        let count = unsafe { SqliteChanges(self.db.handle as _) };
         logi!("update sync data count = {}", count);
         Ok(count)
     }
@@ -434,13 +434,13 @@ impl<'a> Table<'a> {
         build_sql_not_sync(&mut sql);
         let mut index = 1;
         let stmt = Statement::prepare(&sql, self.db)?;
-        bind_datas(datas, &stmt, &mut index)?;
+        bind_datas(condition, &stmt, &mut index)?;
         bind_alias_list(aliases, &stmt, &mut index)?;
         let sync_type = Value::Number(SyncType::TrustedAccount as u32);
         bind_not_sync(&stmt, &sync_type, &mut index)?;
         stmt.step()?;
-        let count = unsafe{ SqliteChanges(self.db.handle as _) };
-        logi!("update sync data count = {}", count);
+        let count = unsafe { SqliteChanges(self.db.handle as _) };
+        logi!("delete local data count = {}", count);
         Ok(count)
     }
 
