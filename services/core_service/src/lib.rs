@@ -96,6 +96,10 @@ pub(crate) fn unload_sa() {
             if counter.lock().unwrap().count() > 0 {
                 continue;
             }
+            let task_manager = TaskManager::get_instance();
+            if !task_manager.lock().unwrap().is_empty() {
+                continue;
+            }
 
             logi!("[INFO]Start unload asset service");
             SystemAbilityManager::unload_system_ability(SA_ID);
