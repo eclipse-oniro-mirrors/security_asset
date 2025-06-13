@@ -314,10 +314,10 @@ impl Database {
     #[allow(dead_code)]
     pub fn upgrade(&mut self, user_id: i32, target_ver: u32, callback: UpgradeDbCallback) -> Result<()> {
         let mut current_ver = self.get_db_version()?;
-        logi!("current database version: {}", current_ver);
         if current_ver >= target_ver {
             return Ok(());
         }
+        logi!("current database version: {}, target version: {}", current_ver, target_ver);
         while current_ver < target_ver {
             match current_ver {
                 DB_UPGRADE_VERSION_V1 => {
@@ -501,7 +501,7 @@ impl Database {
     /// datas.insert(column::ALIAS, Value::Bytes(b"alias".to_ver()));
     /// datas.insert("value", Value::Bytes(b"delete_value".to_vec()));
     /// let user_id = 100;
-    /// let ret = Database::build(user_id)?.delete_datas(&cond, None, false);
+    /// let ret = Database::build(user_id)?.delete_datas(&datas, None, false);
     /// ```
     ///
     ///
@@ -523,6 +523,15 @@ impl Database {
     pub fn delete_specific_condition_datas(&mut self, specific_cond: &str, condition_value: &[Value]) -> Result<i32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.delete_with_specific_cond(specific_cond, condition_value);
+        self.restore_if_exec_fail(closure)
+    }
+
+    /// Delete datas from database with specific condition.
+    /// If the operation is successful, the number of deleted data is returned.
+    #[inline(always)]
+    pub fn delete_batch_datas(&mut self, condition: &DbMap, update_datas: &DbMap, aliases: &[Vec<u8>]) -> Result<i32> {
+        let _lock = self.db_lock.mtx.lock().unwrap();
+        let closure = |e: &Table| e.local_delete_batch_datas(condition, update_datas, aliases);
         self.restore_if_exec_fail(closure)
     }
 

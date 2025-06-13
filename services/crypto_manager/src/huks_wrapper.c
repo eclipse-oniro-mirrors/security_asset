@@ -48,6 +48,7 @@ static int32_t HuksErrorTransfer(int32_t ret)
         case HKS_ERROR_KEY_AUTH_VERIFY_FAILED:
         case HKS_ERROR_CHECK_GET_AUTH_TOKEN_FAILED:
         case HKS_ERROR_INVALID_AUTH_TOKEN:
+        case HKS_ERROR_KEY_AUTH_TIME_OUT:
             return ASSET_ACCESS_DENIED;
         case HKS_ERROR_CRYPTO_ENGINE_ERROR:
             return ASSET_DATA_CORRUPTED;
