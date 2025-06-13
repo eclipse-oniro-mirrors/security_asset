@@ -17,7 +17,7 @@
 
 use std::{collections::HashMap, ptr::null};
 
-use asset_common::{AutoCounter, ConstAssetBlob, ConstAssetBlobArray, GROUP_SEPARATOR};
+use asset_common::{AutoCounter, ConstAssetBlob, ConstAssetBlobArray, TaskManager, GROUP_SEPARATOR};
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_file_operator::de_operator::delete_user_de_dir;
 use asset_log::{loge, logi, logw};
@@ -185,5 +185,7 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
 }
 
 pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
-    ylong_runtime::spawn_blocking(move || process_common_event_async(reason));
+    let handle = ylong_runtime::spawn_blocking(move || process_common_event_async(reason));
+    let task_manager = TaskManager::get_instance();
+    task_manager.lock().unwrap().push_task(handle);
 }

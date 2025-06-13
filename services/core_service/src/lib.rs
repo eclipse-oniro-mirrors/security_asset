@@ -19,7 +19,7 @@ use ipc::parcel::MsgParcel;
 use samgr::manage::SystemAbilityManager;
 use unload_handler::DELAYED_UNLOAD_TIME_IN_SEC;
 use std::{
-    fs, time::{Duration, Instant}
+    fs, task, time::{Duration, Instant}
 };
 use system_ability_fwk::{
     ability::{Ability, Handler},
@@ -27,7 +27,7 @@ use system_ability_fwk::{
 };
 use ylong_runtime::builder::RuntimeBuilder;
 
-use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Counter};
+use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Counter, TaskManager};
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_db_operator::database_file_upgrade::check_and_split_db;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncResult};
@@ -191,7 +191,9 @@ fn start_service(handler: Handler) -> Result<()> {
         return log_throw_error!(ErrCode::IpcError, "Asset publish stub object failed");
     };
     common_event::subscribe();
-    let _handle = ylong_runtime::spawn(upgrade_process());
+    let handle = ylong_runtime::spawn(upgrade_process());
+    let task_manager = TaskManager::get_instance();
+    task_manager.lock().unwrap().push_task(handle);
     Ok(())
 }
 
