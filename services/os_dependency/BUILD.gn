@@ -26,6 +26,7 @@ ohos_static_library("asset_os_dependency") {
     "src/os_account_wrapper.cpp",
     "src/system_ability_wrapper.cpp",
     "src/system_event_wrapper.cpp",
+    "src/data_size_wrapper.cpp",
   ]
   deps = [ "../../frameworks/os_dependency/memory:asset_mem" ]
   external_deps = [
@@ -40,6 +41,7 @@ ohos_static_library("asset_os_dependency") {
     "ipc:ipc_single",
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
+    "hisysevent:libhisysevent",
   ]
   cflags = [ "-DASSET_UPGRADE_HAP_CONFIG=${asset_split_hap_list}" ]
   subsystem_name = "security"

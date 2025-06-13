@@ -47,7 +47,9 @@ use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID,
 };
+use asset_utils::time::system_time_in_seconds;
 
+use crate::data_size_mod::handle_data_size_upload;
 use crate::{sys_event::upload_fault_system_event, PackageInfoFfi};
 
 /// success code.
@@ -327,6 +329,18 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
         Err(e) => loge!("upgrade ce db version and key alias on user-unlocked failed, err is: {}", e),
     }
 
+    let unix_time = match system_time_in_seconds() {
+        Ok(t) => t,
+        Err(e) => {
+            loge!("get system time(sec) failed, err is {}", e);
+            0
+        },
+    };
+
+    if let Err(e) = handle_data_size_upload(unix_time) {
+        loge!("Failed to handle data upload: {}", e);
+    }
+    
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));

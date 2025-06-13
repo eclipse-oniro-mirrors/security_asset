@@ -25,7 +25,9 @@ use asset_definition::{
 };
 use asset_log::{loge, logi};
 
-use hisysevent::{build_number_param, build_str_param, write, EventType, HiSysEventParam};
+use hisysevent::{
+    build_number_param, build_str_param, build_string_array_params, write, EventType, HiSysEventParam
+};
 
 /// System events structure which base on `Hisysevent`.
 struct SysEvent<'a> {
@@ -174,4 +176,59 @@ pub(crate) fn upload_system_event<T>(
         Err(e) => upload_fault_system_event(calling_info, start_time, func_name, e),
     }
     result
+}
+
+struct DataEvent<'a> {
+    event_type: EventType,
+    params: Vec<HiSysEventParam<'a>>,
+}
+
+impl<'a> DataEvent<'a> {
+    const DOMAIN: &str = "FILEMANAGEMENT";
+    const DATA_STATISTIC: &str = "USER_DATA_SIZE";
+
+    pub(crate) const COMPONENT_NAME: &str = "COMPONENT_NAME";
+    pub(crate) const PARTITION_NAME: &str = "PARTITION_NAME";
+    pub(crate) const REMAIN_PARTITION_SIZE: &str = "REMAIN_PARTITION_SIZE";
+    pub(crate) const FILE_OF_FOLDER_PATH: &str = "FILE_OF_FOLDER_PATH";
+    pub(crate) const FILE_OF_FOLDER_SIZE: &str = "FILE_OF_FOLDER_SIZE";
+
+    fn new(event_type: EventType) -> Self {
+        Self { event_type, params: Vec::new() }
+    }
+
+    fn set_param(mut self, param: HiSysEventParam<'a>) -> Self {
+        self.params.push(param);
+        self
+    }
+
+    fn write(self) {
+        let event_name = match self.event_type {
+            EventType::Statistic => Self::DATA_STATISTIC,
+            _ => "UNKNOWN_EVENT",
+        };
+        write(Self::DOMAIN, event_name, self.event_type, self.params.as_slice());
+    }
+}
+
+pub(crate) fn upload_data_size(
+    component_name: &str,
+    partition_name: &str,
+    remain_partition_name: f64,
+    file_of_folder_path: Vec<String>,
+    file_of_folder_size: Vec<u64>,
+) {
+    let folder_path: Vec<&str> = file_of_folder_path.iter().map(|s| s.as_str()).collect();
+    let folder_path_slice: &[&str] = &folder_path;
+
+    let formatted = format!("{:?}", file_of_folder_size);
+    let folders_size_str = formatted.as_str();
+
+    DataEvent::new(EventType::Statistic)
+        .set_param(build_str_param!(DataEvent::COMPONENT_NAME, component_name))
+        .set_param(build_str_param!(DataEvent::PARTITION_NAME, partition_name))
+        .set_param(build_number_param!(DataEvent::REMAIN_PARTITION_SIZE, remain_partition_name))
+        .set_param(build_string_array_params!(DataEvent::FILE_OF_FOLDER_PATH, file_of_folder_path))
+        .set_param(build_str_param!(DataEvent::FILE_OF_FOLDER_SIZE, file_of_folder_size))
+        .write();
 }

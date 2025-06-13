@@ -35,7 +35,9 @@ use asset_file_operator::{common::DE_ROOT_PATH, de_operator::create_user_de_dir}
 use asset_ipc::SA_ID;
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::{AssetContext, AssetPlugin};
+use asset_utils::time::system_time_in_seconds;
 
+mod data_size_mod;
 mod common_event;
 mod operations;
 mod stub;
@@ -46,6 +48,7 @@ mod unload_handler;
 use sys_event::upload_system_event;
 use trace_scope::TraceScope;
 
+use crate::data_size_mod::handle_data_size_upload;
 use crate::unload_handler::{UnloadHandler, DELAYED_UNLOAD_TIME_IN_SEC, SEC_TO_MILLISEC};
 
 struct AssetAbility;
@@ -208,6 +211,8 @@ macro_rules! execute {
         let _trace = TraceScope::trace(func_name);
         // Create de database directory if not exists.
         create_user_de_dir($calling_info.user_id())?;
+        let unix_time = system_time_in_seconds()?;
+        handle_data_size_upload(unix_time)?;
         upload_system_event($func($calling_info, $first_arg), $calling_info, start, func_name, $first_arg)
     }};
     ($func:path, $calling_info:expr, $first_arg:expr, $second_arg:expr) => {{
