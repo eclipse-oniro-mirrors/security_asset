@@ -87,10 +87,16 @@ pub(crate) fn unload_sa() {
     ylong_runtime::spawn(async move {
         loop {
             ylong_runtime::time::sleep(Duration::from_secs(DELAYED_UNLOAD_TIME_IN_SEC as u64)).await;
+            let crypto_manager = CryptoManager::get_instance();
+            let max_crypto_expire_duration = crypto_manager.lock().unwrap().max_crypto_expire_duration();
+            if max_crypto_expire_duration > 0 {
+                continue;
+            }
             let counter = Counter::get_instance();
             if counter.lock().unwrap().count() > 0 {
                 continue;
             }
+
             logi!("[INFO]Start unload asset service");
             SystemAbilityManager::unload_system_ability(SA_ID);
         }
