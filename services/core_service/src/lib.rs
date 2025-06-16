@@ -19,7 +19,7 @@ use ipc::parcel::MsgParcel;
 use samgr::manage::SystemAbilityManager;
 use unload_handler::DELAYED_UNLOAD_TIME_IN_SEC;
 use std::{
-    fs, task, time::{Duration, Instant}
+    fs, time::{Duration, Instant}
 };
 use system_ability_fwk::{
     ability::{Ability, Handler},
@@ -169,7 +169,14 @@ impl Ability for AssetAbility {
     }
 }
 
-async fn upgrade_process() -> Result<()> {
+async fn execute_upgrade_process() {
+    match upgrade_process() {
+        Ok(()) => (),
+        Err(e) => loge!("upgrade failed, error is:[{}]", e.code)
+    }
+}
+
+fn upgrade_process() -> Result<()> {
     let _counter_user = AutoCounter::new();
     for entry in fs::read_dir(DE_ROOT_PATH)? {
         let entry = entry?;
@@ -195,7 +202,7 @@ fn start_service(handler: Handler) -> Result<()> {
         return log_throw_error!(ErrCode::IpcError, "Asset publish stub object failed");
     };
     common_event::subscribe();
-    let handle = ylong_runtime::spawn(upgrade_process());
+    let handle = ylong_runtime::spawn(execute_upgrade_process());
     let task_manager = TaskManager::get_instance();
     task_manager.lock().unwrap().push_task(handle);
     Ok(())
