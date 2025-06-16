@@ -24,8 +24,7 @@ use asset_log::{loge, logi, logw};
 use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
 
 use crate::{
-    common_event::listener, PackageInfo, PackageInfoFfi,
-    WantParser,
+    common_event::listener, unload_sa, PackageInfo, PackageInfoFfi, WantParser
 };
 
 const USER_ID: &str = "userId";
@@ -188,4 +187,5 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
     let handle = ylong_runtime::spawn_blocking(move || process_common_event_async(reason));
     let task_manager = TaskManager::get_instance();
     task_manager.lock().unwrap().push_task(handle);
+    unload_sa();
 }

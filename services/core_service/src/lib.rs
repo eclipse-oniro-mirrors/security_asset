@@ -17,7 +17,6 @@
 
 use ipc::parcel::MsgParcel;
 use samgr::manage::SystemAbilityManager;
-use unload_handler::DELAYED_UNLOAD_TIME_IN_SEC;
 use std::{
     fs, time::{Duration, Instant}
 };
@@ -41,12 +40,9 @@ mod operations;
 mod stub;
 mod sys_event;
 mod trace_scope;
-mod unload_handler;
 
 use sys_event::upload_system_event;
 use trace_scope::TraceScope;
-
-use crate::unload_handler::SEC_TO_MILLISEC;
 
 struct AssetAbility;
 
@@ -72,6 +68,9 @@ struct PackageInfoFfi {
     group_ids: ConstAssetBlobArray,
     bundle_name: ConstAssetBlob,
 }
+
+static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 20;
+static SEC_TO_MILLISEC: i32 = 1000;
 
 impl PackageInfo {
     fn developer_id(&self) -> &Option<String> {
@@ -103,6 +102,7 @@ pub(crate) fn unload_sa() {
 
             logi!("[INFO]Start unload asset service");
             SystemAbilityManager::unload_system_ability(SA_ID);
+            break;
         }
     });
 }
@@ -120,7 +120,6 @@ impl Ability for AssetAbility {
 
         let _ = upload_system_event(start_service(handler), &calling_info, start, func_name, &AssetMap::new());
         common_event::handle_common_event(reason);
-        unload_sa();
     }
 
     fn on_active(&self, reason: SystemAbilityOnDemandReason) {
