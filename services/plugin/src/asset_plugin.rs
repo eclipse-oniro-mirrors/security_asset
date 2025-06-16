@@ -27,6 +27,7 @@ use asset_sdk::{
     AssetError, ErrCode, Extension, Result, SyncStatus, Value,
 };
 use asset_utils::time;
+use ylong_runtime::task::JoinHandle;
 use std::{
     cell::RefCell,
     sync::{Arc, Mutex},
