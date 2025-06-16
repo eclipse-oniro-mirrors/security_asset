@@ -29,7 +29,7 @@ use asset_sdk::{
     AssetError, ErrCode, Result, Tag, Value,
 };
 
-use crate::{unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, AssetService};
+use crate::AssetService;
 
 const REDIRECT_START_CODE: u32 = 200;
 
@@ -61,7 +61,6 @@ impl RemoteStub for AssetService {
             );
             return IPC_SUCCESS as i32;
         }
-        unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
 
         if code >= REDIRECT_START_CODE {
             return on_extension_request(self, code, data, reply);

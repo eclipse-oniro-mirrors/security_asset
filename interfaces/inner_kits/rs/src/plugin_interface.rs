@@ -17,6 +17,7 @@
 
 pub use asset_definition::{AssetError, Value};
 use ipc::parcel::MsgParcel;
+use ylong_runtime::task::JoinHandle;
 use std::any::Any;
 use std::collections::HashMap;
 
@@ -189,6 +190,9 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Decrease count
     fn decrease_count(&mut self);
+
+    /// Add task
+    fn add_task(&mut self, handle: JoinHandle<()>);
 }
 
 /// Defines a trait `IAssetPlugin` that specifies the required functionality for an asset plugin implementation.

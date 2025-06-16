@@ -21,6 +21,7 @@ edition = "2021"
 [dependencies]
 samgr = { git = "https://gitee.com/openharmony/systemabilitymgr_samgr.git" }
 ipc = { git = "https://gitee.com/openharmony/communication_ipc.git" }
+ylong_runtime = { git = "https://gitee.com/openharmony/commonlibrary_rust_ylong_runtime.git", features = ["full"] }
 
 asset_definition = { path = "../../../frameworks/definition" }
 asset_log = { path = "../../../frameworks/os_dependency/log" }
