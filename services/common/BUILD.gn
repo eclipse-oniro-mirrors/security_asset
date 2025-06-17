@@ -21,7 +21,10 @@ ohos_rust_static_library("asset_common") {
     "../../frameworks/os_dependency/log:asset_log",
     "../os_dependency:asset_os_dependency",
   ]
-  external_deps = [ "ipc:ipc_rust" ]
+  external_deps = [
+    "ipc:ipc_rust",
+    "ylong_runtime:ylong_runtime",
+  ]
   crate_name = "asset_common"
   crate_type = "rlib"
   subsystem_name = "security"
@@ -41,6 +44,7 @@ ohos_rust_unittest("asset_calling_info_test") {
   external_deps = [
     "hilog:libhilog",
     "ipc:ipc_rust",
+    "ylong_runtime:ylong_runtime",
   ]
   subsystem_name = "security"
   part_name = "asset"

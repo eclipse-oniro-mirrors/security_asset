@@ -19,9 +19,11 @@ use asset_definition::{impl_enum_trait, log_throw_error, AssetError, ErrCode, Re
 mod calling_info;
 mod counter;
 mod process_info;
+mod task_manager;
 pub use calling_info::{CallingInfo, Group};
 pub use counter::{AutoCounter, Counter};
 pub use process_info::{ProcessInfo, ProcessInfoDetail};
+pub use task_manager::TaskManager;
 /// success code.
 pub const SUCCESS: i32 = 0;
 /// root user upper bound.
