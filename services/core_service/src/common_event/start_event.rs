@@ -24,7 +24,7 @@ use asset_log::{loge, logi, logw};
 use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
 
 use crate::{
-    common_event::listener, unload_handler::DELAYED_UNLOAD_TIME_IN_SEC, unload_sa, PackageInfo, PackageInfoFfi,
+    common_event::listener, unload_sa, PackageInfo, PackageInfoFfi,
     WantParser,
 };
 
@@ -177,5 +177,5 @@ pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
         listener::on_user_unlocked(reason.extra_data.code);
     }
     logi!("[INFO]Finish handle common event. [{}]", reason_name);
-    unload_sa(DELAYED_UNLOAD_TIME_IN_SEC as u64);
+    unload_sa();
 }
