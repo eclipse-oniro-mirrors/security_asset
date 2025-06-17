@@ -17,7 +17,7 @@
 
 use std::{collections::HashMap, ptr::null};
 
-use asset_common::{ConstAssetBlob, ConstAssetBlobArray, TaskManager, GROUP_SEPARATOR};
+use asset_common::{ConstAssetBlob, ConstAssetBlobArray, GROUP_SEPARATOR};
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_file_operator::de_operator::delete_user_de_dir;
 use asset_log::{loge, logi, logw};
