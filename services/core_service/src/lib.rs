@@ -26,9 +26,9 @@ use system_ability_fwk::{
     ability::{Ability, Handler},
     cxx_share::SystemAbilityOnDemandReason,
 };
-use ylong_runtime::{builder::RuntimeBuilder, time::sleep};
+use ylong_runtime::builder::RuntimeBuilder;
 
-use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Counter};
+use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Counter, TaskManager};
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result};
 use asset_file_operator::{common::DE_ROOT_PATH, de_operator::create_user_de_dir};
@@ -41,12 +41,9 @@ mod operations;
 mod stub;
 mod sys_event;
 mod trace_scope;
-mod unload_handler;
 
 use sys_event::upload_system_event;
 use trace_scope::TraceScope;
-
-use crate::unload_handler::{UnloadHandler, DELAYED_UNLOAD_TIME_IN_SEC, SEC_TO_MILLISEC};
 
 struct AssetAbility;
 
@@ -73,6 +70,9 @@ struct PackageInfoFfi {
     bundle_name: ConstAssetBlob,
 }
 
+static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 20;
+static SEC_TO_MILLISEC: i32 = 1000;
+
 impl PackageInfo {
     fn developer_id(&self) -> &Option<String> {
         &self.developer_id
@@ -83,13 +83,29 @@ impl PackageInfo {
     }
 }
 
-pub(crate) fn unload_sa(duration: u64) {
-    let unload_handler = UnloadHandler::get_instance();
-    unload_handler.lock().unwrap().update_task(ylong_runtime::spawn(async move {
-        sleep(Duration::from_secs(duration)).await;
-        logi!("[INFO]Start unload asset service");
-        SystemAbilityManager::unload_system_ability(SA_ID);
-    }));
+pub(crate) fn unload_sa() {
+    ylong_runtime::spawn(async move {
+        loop {
+            ylong_runtime::time::sleep(Duration::from_secs(DELAYED_UNLOAD_TIME_IN_SEC as u64)).await;
+            let crypto_manager = CryptoManager::get_instance();
+            let max_crypto_expire_duration = crypto_manager.lock().unwrap().max_crypto_expire_duration();
+            if max_crypto_expire_duration > 0 {
+                continue;
+            }
+            let counter = Counter::get_instance();
+            if counter.lock().unwrap().count() > 0 {
+                continue;
+            }
+            let task_manager = TaskManager::get_instance();
+            if !task_manager.lock().unwrap().is_empty() {
+                continue;
+            }
+
+            logi!("[INFO]Start unload asset service");
+            SystemAbilityManager::unload_system_ability(SA_ID);
+            break;
+        }
+    });
 }
 
 impl Ability for AssetAbility {
@@ -139,7 +155,14 @@ impl Ability for AssetAbility {
     }
 }
 
-async fn upgrade_process() -> Result<()> {
+async fn execute_upgrade_process() {
+    match upgrade_process() {
+        Ok(()) => (),
+        Err(e) => loge!("upgrade failed, error is:[{}]", e.code)
+    }
+}
+
+fn upgrade_process() -> Result<()> {
     let _counter_user = AutoCounter::new();
     for entry in fs::read_dir(DE_ROOT_PATH)? {
         let entry = entry?;
@@ -165,7 +188,9 @@ fn start_service(handler: Handler) -> Result<()> {
     if !handler.publish(AssetService::new(handler.clone())) {
         return log_throw_error!(ErrCode::IpcError, "Asset publish stub object failed");
     };
-    let _handle = ylong_runtime::spawn(upgrade_process());
+    let handle = ylong_runtime::spawn(execute_upgrade_process());
+    let task_manager = TaskManager::get_instance();
+    task_manager.lock().unwrap().push_task(handle);
     Ok(())
 }
 

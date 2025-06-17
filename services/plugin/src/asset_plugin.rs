@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-use asset_common::{CallingInfo, Counter, Group, OwnerType, GROUP_SEPARATOR};
+use asset_common::{CallingInfo, Counter, Group, OwnerType, TaskManager, GROUP_SEPARATOR};
 use asset_db_operator::{
     database::{get_path, Database},
     database_file_upgrade::construct_splited_db_name,
@@ -29,6 +29,7 @@ use std::{
     cell::RefCell,
     sync::{Arc, Mutex},
 };
+use ylong_runtime::task::JoinHandle;
 
 /// The asset_ext plugin.
 #[derive(Default)]
@@ -303,5 +304,11 @@ impl IAssetPluginCtx for AssetContext {
     fn decrease_count(&mut self) {
         let counter = Counter::get_instance();
         counter.lock().unwrap().decrease_count();
+    }
+
+    /// Add task
+    fn add_task(&mut self, handle: JoinHandle<()>) {
+        let task_manager = TaskManager::get_instance();
+        task_manager.lock().unwrap().push_task(handle);
     }
 }
