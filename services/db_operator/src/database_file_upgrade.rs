@@ -19,7 +19,7 @@
 use std::{fs, path::Path};
 
 use asset_common::{CallingInfo, OwnerType, OWNER_INFO_SEPARATOR};
-use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
+use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value, WrapType};
 use asset_file_operator::common::DB_SUFFIX;
 use asset_log::logi;
 use asset_utils::hasher;
@@ -172,6 +172,7 @@ fn migrate_data(
         condition.insert(column::OWNER, get_value_from_db_map(data, column::OWNER)?);
         condition.insert(column::OWNER_TYPE, get_value_from_db_map(data, column::OWNER_TYPE)?);
         let mut data_clone = data.clone();
+        data_clone.insert(column::WRAP_TYPE, Value::Number(WrapType::default()));
         data_clone.remove(column::ID);
         new_db.replace_datas(&condition, false, &data_clone)?;
         // 3.3 remove data in old db
