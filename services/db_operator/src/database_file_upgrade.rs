@@ -172,7 +172,7 @@ fn migrate_data(
         condition.insert(column::OWNER, get_value_from_db_map(data, column::OWNER)?);
         condition.insert(column::OWNER_TYPE, get_value_from_db_map(data, column::OWNER_TYPE)?);
         let mut data_clone = data.clone();
-        data_clone.insert(column::WRAP_TYPE, Value::Number(WrapType::default()));
+        data_clone.insert(column::WRAP_TYPE, Value::Number(WrapType::default() as u32));
         data_clone.remove(column::ID);
         new_db.replace_datas(&condition, false, &data_clone)?;
         // 3.3 remove data in old db
