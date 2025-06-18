@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef DATA_SIZE_WRAPPER
-#define DATA_SIZE_WRAPPER
+#ifndef FILE_OPERATOR_WRAPPER
+#define FILE_OPERATOR_WRAPPER
 
 #include <string>
 #include <vector>
@@ -23,8 +23,8 @@
 extern "C" {
 #endif
 
-double GetRemainPartitionSize(const char* path);
-uint64_t GetDirSize(const char* path);
+int32_t GetRemainPartitionSize(const char *partitionName, double *partitionSize);
+int32_t GetDirSize(const char *dir, uint64_t *dirSize);
 
 #ifdef __cplusplus
 }

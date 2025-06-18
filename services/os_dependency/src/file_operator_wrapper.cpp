@@ -21,31 +21,34 @@
 
  #include "directory_ex.h"
  #include "asset_log.h"
+ #include "asset_type.h"
 
  using namespace OHOS;
 
- constexpr double INVAILD_QUOTA = -2.00;
-
- double GetRemainPartitionSize(const char* path)
+ int32_t GetRemainPartitionSize(const char *partitionName, double *partitionSize)
  {
-    std::string partitionName(path);
-    if(partitionName.empty()) {
+    if(partitionName == nullptr) {
         LOGE("Fail to get partition name");
-        return INVAILD_QUOTA;
+        return ASSET_INVALID_ARGUMENT;
     }
     struct statfs stat;
-    if (statfs(partitionName.c_str(), &stat) != 0) {
-        LOGE("Partition '%s' does not exist", partitionName.c_str());
-        return INVAILD_QUOTA;
+    if (statfs(partitionName, &stat) != 0) {
+        LOGE("Failed to get partition information for '%s'", partitionName);
+        return ASSET_FILE_OPERATION_ERROR;
     }
-    /* charge Byte size to M */
+    /* Calculate free space in megabytes */
     constexpr double units = 1024.0;
-    return (static_cast<double>(stat.f_bfree) / units) * (static_cast<double>(stat.f_bsize) / units);
+    *partitionSize = (static_cast<double>(stat.f_bfree) / units) * (static_cast<double>(stat.f_bsize) / units);
+    return ASSET_SUCCESS;
  }
 
- uint64_t GetDirSize(const char* path)
+ uint64_t GetDirSize(const char *dir, uint64_t *dirSize)
  {
-    const std::string pathStr(path);
-    uint64_t dirSize = GetFolderSize(pathStr);
+    const std::string pathStr(dir);
+    if(pathStr.empty()) {
+        LOGE("Fail to get dir name.");
+        return ASSET_INVALID_ARGUMENT;
+    }
+    *dirSize = GetFolderSize(pathStr);  
     return dirSize;
  }

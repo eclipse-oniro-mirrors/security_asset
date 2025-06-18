@@ -26,7 +26,7 @@ ohos_static_library("asset_os_dependency") {
     "src/os_account_wrapper.cpp",
     "src/system_ability_wrapper.cpp",
     "src/system_event_wrapper.cpp",
-    "src/data_size_wrapper.cpp",
+    "src/file_operator_wrapper.cpp",
   ]
   deps = [ "../../frameworks/os_dependency/memory:asset_mem" ]
   external_deps = [

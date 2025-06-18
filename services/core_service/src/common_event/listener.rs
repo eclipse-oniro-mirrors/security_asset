@@ -36,18 +36,19 @@ use asset_db_operator::{
         DbMap,
     },
 };
+
 use asset_definition::{log_throw_error, ErrCode, Result, SyncType, Value};
 use asset_file_operator::{
     ce_operator::is_db_key_cipher_file_exist,
     common::{BACKUP_SUFFIX, CE_ROOT_PATH, DB_SUFFIX, DE_ROOT_PATH},
     de_operator::delete_user_de_dir,
 };
+
 use asset_log::{loge, logi, logw};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID,
 };
-use asset_utils::time::system_time_in_seconds;
 
 use crate::data_size_mod::handle_data_size_upload;
 use crate::{sys_event::upload_fault_system_event, PackageInfoFfi};
@@ -329,18 +330,10 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
         Err(e) => loge!("upgrade ce db version and key alias on user-unlocked failed, err is: {}", e),
     }
 
-    let unix_time = match system_time_in_seconds() {
-        Ok(t) => t,
-        Err(e) => {
-            loge!("get system time(sec) failed, err is {}", e);
-            0
-        },
-    };
-
-    if let Err(e) = handle_data_size_upload(unix_time) {
+    if let Err(e) = handle_data_size_upload() {
         loge!("Failed to handle data upload: {}", e);
     }
-    
+
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));

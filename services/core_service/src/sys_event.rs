@@ -33,12 +33,16 @@ use hisysevent::{
 struct SysEvent<'a> {
     event_type: EventType,
     params: Vec<HiSysEventParam<'a>>,
+    domain: &'static str,
+    event_name: &'static str,
 }
 
 impl<'a> SysEvent<'a> {
-    const DOMAIN: &str = "ASSET";
+    const ASSET_DOMAIN: &str = "ASSET";
+    const FILEMANAGEMENT_DOMAIN: &str = "FILEMANAGEMENT";
     const ASSET_FAULT: &str = "SECRET_STORE_OPERATION_FAILED";
     const ASSET_STATISTIC: &str = "SECRET_STORE_INFO_COLLECTION";
+    cosnt FILEMANAGEMENT_STATISTIC: &str = "DATA_USER_SIZE";
 
     pub(crate) const FUNCTION: &str = "FUNCTION";
     pub(crate) const USER_ID: &str = "USER_ID";
@@ -46,9 +50,14 @@ impl<'a> SysEvent<'a> {
     pub(crate) const ERROR_CODE: &str = "ERROR_CODE";
     pub(crate) const RUN_TIME: &str = "RUN_TIME";
     pub(crate) const EXTRA: &str = "EXTRA";
+    pub(crate) const COMPONENT_NAME: &str = "COMPONENT_NAME";
+    pub(crate) const PARTITION_NAME: &str = "PARTITION_NAME";
+    pub(crate) const REMAIN_PARTITION_SIZE: &str = "REMAIN_PARTITION_SIZE";
+    pub(crate) const FILE_OF_FOLDER_PATH: &str = "FILE_OF_FOLDER_PATH";
+    pub(crate) const FILE_OF_FOLDER_SIZE: &str = "FILE_OF_FOLDER_SIZE";
 
-    fn new(event_type: EventType) -> Self {
-        Self { event_type, params: Vec::new() }
+    fn new(event_type: EventType, domain: &'static str, event_name: &'static str) -> Self {
+        Self { event_type, domain, event_name, params: Vec::new() }
     }
 
     fn set_param(mut self, param: HiSysEventParam<'a>) -> Self {
@@ -57,12 +66,7 @@ impl<'a> SysEvent<'a> {
     }
 
     fn write(self) {
-        let event_name = match self.event_type {
-            EventType::Fault => Self::ASSET_FAULT,
-            EventType::Statistic => Self::ASSET_STATISTIC,
-            _ => "UNKNOWN_EVENT",
-        };
-        write(Self::DOMAIN, event_name, self.event_type, self.params.as_slice());
+        write(self.domain, self.event_name, self.event_type, self.params.as_slice());
     }
 }
 
@@ -112,7 +116,7 @@ pub(crate) fn upload_statistic_system_event(
 ) {
     let duration = start_time.elapsed();
     let owner_info = String::from_utf8_lossy(calling_info.owner_info()).to_string();
-    SysEvent::new(EventType::Statistic)
+    SysEvent::new(EventType::Statistic, SysEvent::ASSET_DOMAIN, SysEvent::ASSET_STATISTIC)
         .set_param(build_str_param!(SysEvent::FUNCTION, func_name))
         .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
         .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
@@ -145,7 +149,7 @@ pub(crate) fn upload_fault_system_event(
     e: &AssetError,
 ) {
     let owner_info = String::from_utf8_lossy(calling_info.owner_info()).to_string();
-    SysEvent::new(EventType::Fault)
+    SysEvent::new(EventType::Fault, SysEvent::ASSET_DOMAIN, SysEvent::ASSET_FAULT)
         .set_param(build_str_param!(SysEvent::FUNCTION, func_name))
         .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
         .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
@@ -178,39 +182,7 @@ pub(crate) fn upload_system_event<T>(
     result
 }
 
-struct DataEvent<'a> {
-    event_type: EventType,
-    params: Vec<HiSysEventParam<'a>>,
-}
-
-impl<'a> DataEvent<'a> {
-    const DOMAIN: &str = "FILEMANAGEMENT";
-    const DATA_STATISTIC: &str = "USER_DATA_SIZE";
-
-    pub(crate) const COMPONENT_NAME: &str = "COMPONENT_NAME";
-    pub(crate) const PARTITION_NAME: &str = "PARTITION_NAME";
-    pub(crate) const REMAIN_PARTITION_SIZE: &str = "REMAIN_PARTITION_SIZE";
-    pub(crate) const FILE_OF_FOLDER_PATH: &str = "FILE_OF_FOLDER_PATH";
-    pub(crate) const FILE_OF_FOLDER_SIZE: &str = "FILE_OF_FOLDER_SIZE";
-
-    fn new(event_type: EventType) -> Self {
-        Self { event_type, params: Vec::new() }
-    }
-
-    fn set_param(mut self, param: HiSysEventParam<'a>) -> Self {
-        self.params.push(param);
-        self
-    }
-
-    fn write(self) {
-        let event_name = match self.event_type {
-            EventType::Statistic => Self::DATA_STATISTIC,
-            _ => "UNKNOWN_EVENT",
-        };
-        write(Self::DOMAIN, event_name, self.event_type, self.params.as_slice());
-    }
-}
-
+/// upload data size
 pub(crate) fn upload_data_size(
     component_name: &str,
     partition_name: &str,
@@ -224,11 +196,11 @@ pub(crate) fn upload_data_size(
     let formatted = format!("{:?}", file_of_folder_size);
     let folders_size_str = formatted.as_str();
 
-    DataEvent::new(EventType::Statistic)
-        .set_param(build_str_param!(DataEvent::COMPONENT_NAME, component_name))
-        .set_param(build_str_param!(DataEvent::PARTITION_NAME, partition_name))
-        .set_param(build_number_param!(DataEvent::REMAIN_PARTITION_SIZE, remain_partition_name))
-        .set_param(build_string_array_params!(DataEvent::FILE_OF_FOLDER_PATH, file_of_folder_path))
-        .set_param(build_str_param!(DataEvent::FILE_OF_FOLDER_SIZE, file_of_folder_size))
+    SysEvent::new(EventType::Statistic, SysEvent::FILEMANAGEMENT_DOMAIN, SysEvent::FILEMANAGEMENT_STATISTIC)
+        .set_param(build_str_param!(SysEvent::COMPONENT_NAME, component_name))
+        .set_param(build_str_param!(SysEvent::PARTITION_NAME, partition_name))
+        .set_param(build_number_param!(SysEvent::REMAIN_PARTITION_SIZE, remain_partition_name))
+        .set_param(build_string_array_params!(SysEvent::FILE_OF_FOLDER_PATH, file_of_folder_path))
+        .set_param(build_str_param!(SysEvent::FILE_OF_FOLDER_SIZE, file_of_folder_size))
         .write();
 }

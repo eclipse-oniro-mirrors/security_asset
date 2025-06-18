@@ -15,15 +15,12 @@
 
 //! This file implements ce file operations.
 
-use asset_definition::{log_throw_error, ErrCode, Result};
-use asset_log::logi;
-use std::{fs, path::Path, slice, sync::Mutex};
 use crate::de_operator::{read_record_time, write_record_time};
+use asset_definition::{log_throw_error, AssetError, ErrCode, Result};
 use lazy_static::lazy_static; 
+use std::{fs, path::Path, slice, sync::Mutex};
 
-
-const SUCCESS: i32 = 0;
-const USER_ID_VEC_BUFFER: u32 = 5;
+/// The minimum user id.
 const MINIMUM_MAIN_USER_ID: i32 = 100;
 /// Suffix for backup database files.
 pub const BACKUP_SUFFIX: &str = ".backup";
@@ -35,8 +32,10 @@ pub const DB_KEY: &str = "db_key";
 pub const DE_ROOT_PATH: &str = "data/service/el1/public/asset_service";
 /// Root path to ce user directories.
 pub const CE_ROOT_PATH: &str = "data/service/el2";
-/// Root path to de clone directories.
-pub const DE_CLONE_PATH: &str = "data/service/el1/public/asset_clone";
+/// Asset migration path.
+pub const MIGRATION_PATH: &str = "data/service/el1/public/asset_migration";
+/// One day secs.
+pub const ONE_DAY_SECS: u64 = 86400;
 
 lazy_static! {
     static ref RECORD_UNIX_FILE_MUTEX: Mutex<()> = Mutex::new(());
@@ -71,32 +70,35 @@ pub fn is_file_exist(path_str: &str) -> Result<bool> {
     }
 }
 
-extern "C" {
-    fn GetUserIds(userIdsPtr: *mut i32, userIdsSize: *mut u32) -> i32;
-    fn GetUsersSize(userIdsSize: *mut u32) -> i32;
-}
-
 /// get all asset user db
 pub fn get_db_dirs() -> Result<Vec<String>> {
     let mut dirs = vec![];
     dirs.push(String::from(DE_ROOT_PATH));
-    dirs.push(String::from(DE_CLONE_PATH));
+    dirs.push(String::from(MIGRATION_PATH));
 
-    let mut user_ids_size: u32 = 0;
-    let user_ids_size_ptr = &mut user_ids_size;
-    let mut ret: i32 = unsafe{ GetUsersSize(user_ids_size_ptr) };
-    if ret != SUCCESS {
-        return log_throw_error!(ErrCode::AccountError, "[FATAL] Get users size failed.");
+    let ce_root_path = Path::new(CE_ROOT_PATH);
+    let ce_dirs = fs::read_dir(ce_root_path);
+
+    let mut user_ids = Vec::new();
+    for entry in ce_dirs {
+        let entry = entry?;
+
+        let path = entry.path();
+        if !path.is_dir() {
+            continue;
+        }
+
+        let dir_name = path.file_name().add_then(|n| n.to_str()).ok_or_else(|| AssetError {
+            code: ErrCode::FileOperationError,
+            msg: "[FATAL] Failed to get directory name".to_string(),
+        })?;
+
+        if let Ok(user_id) = dir_name.parse::<i32>() {
+            user_ids.push(user_id);
+        }
     }
 
-    let mut user_ids: Vec<i32> = vec![0i32; (*user_ids_size_ptr + USER_ID_VEC_BUFFER).try_into().unwrap()];
-    let user_ids_ptr = user_ids.as_mut_ptr();
-    ret = unsafe{ GetUserIds(user_ids_ptr, user_ids_size_ptr) };
-    if ret != SUCCESS {
-        return log_throw_error!(ErrCode::AccountError, "[FATAL] Get users IDs failed.");
-    }
-
-    let user_ids_slice = unsafe { slice::from_raw_parts(user_ids_ptr, user_ids_size.try_into().unwrap()) };
+    let user_ids_slice = user_ids.as_slice();
     for user_id in user_ids_slice {
         if *user_id < MINIMUM_MAIN_USER_ID {
             continue;
@@ -115,18 +117,17 @@ pub fn should_upload_data_size(unix_time: u64) -> Result<bool> {
     match is_file_exist(&path_str) {
         Ok(true) => {
             let prev_time = read_record_time(&path_str)?;
-            if unix_time - prev_time > 86400 {
+            if unix_time - prev_time > ONE_DAY_SECS {
                 write_record_time(&path_str, unix_time)?;
                 Ok(true)
-            }
-            else {
+            } else {
                 Ok(false)
             }
-        }
+        },
         Ok(false) => {
             write_record_time(&path_str, unix_time)?;
             Ok(true)
-        }
+        },
         Err(e) => Err(e)
     }
 }

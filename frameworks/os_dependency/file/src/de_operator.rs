@@ -85,12 +85,9 @@ pub fn read_record_time(path_str: &str) -> Result<u64> {
     let trim_time = time_str.trim();
     match trim_time.parse::<u64>() {
         Ok(unix_time) => Ok(unix_time),
-        Err(e) => {
-            log_throw_error!(
-                ErrCode::FileOperationError,
-                "[FATAL] Read record time failed! error is [{}]",
-                e
-            )
+        Err(_) => {
+            eprintln!("[WARNING] Failed to parse time from file. Return 0 as a default");
+            Ok(0)
         },
     }
 }
