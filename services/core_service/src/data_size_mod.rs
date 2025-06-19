@@ -62,7 +62,7 @@ pub (crate) fn handle_data_size_upload(unix_time: u64) -> Result<()> {
         let folder_path = get_db_dirs()?;
         let folders_size = get_folders_size(&folder_path)?;
         let remain_size = get_remain_partition_size(PARTITION)?;
-        upload_data_size(COMPONENT, PARTITION, remain_size, folder_path, folders_size);
+        upload_data_size(remain_size, folder_path, folders_size);
     }
     Ok(())
 }
