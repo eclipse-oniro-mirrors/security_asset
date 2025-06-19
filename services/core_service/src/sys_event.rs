@@ -29,6 +29,11 @@ use hisysevent::{
     build_number_param, build_str_param, build_string_array_params, write, EventType, HiSysEventParam
 };
 
+ /// Component name.
+ pub const COMPONENT: &str = "Asset";
+ /// Partition name.
+ pub const PARTITION: &str = "/data";
+
 /// System events structure which base on `Hisysevent`.
 struct SysEvent<'a> {
     event_type: EventType,
@@ -184,8 +189,6 @@ pub(crate) fn upload_system_event<T>(
 
 /// upload data size
 pub(crate) fn upload_data_size(
-    component_name: &str,
-    partition_name: &str,
     remain_partition_name: f64,
     file_of_folder_path: Vec<String>,
     file_of_folder_size: Vec<u64>,
@@ -197,8 +200,8 @@ pub(crate) fn upload_data_size(
     let folders_size_str = formatted.as_str();
 
     SysEvent::new(EventType::Statistic, SysEvent::FILEMANAGEMENT_DOMAIN, SysEvent::FILEMANAGEMENT_STATISTIC)
-        .set_param(build_str_param!(SysEvent::COMPONENT_NAME, component_name))
-        .set_param(build_str_param!(SysEvent::PARTITION_NAME, partition_name))
+        .set_param(build_str_param!(SysEvent::COMPONENT_NAME, COMPONENT))
+        .set_param(build_str_param!(SysEvent::PARTITION_NAME, PARTITION))
         .set_param(build_number_param!(SysEvent::REMAIN_PARTITION_SIZE, remain_partition_name))
         .set_param(build_string_array_params!(SysEvent::FILE_OF_FOLDER_PATH, file_of_folder_path))
         .set_param(build_str_param!(SysEvent::FILE_OF_FOLDER_SIZE, file_of_folder_size))

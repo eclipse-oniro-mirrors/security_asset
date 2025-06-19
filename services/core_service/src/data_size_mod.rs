@@ -15,18 +15,13 @@
 
  //! This module is used to get Asset file size.
 
- use crate::sys_event::upload_data_size;
+ use crate::sys_event::{COMPONENT, upload_data_size};
  use asset_definition::{log_throw_error, ErrCode, Result};
  use asset_file_operator::common::{get_db_dirs, should_upload_data_size};
  use asset_utils::time::system_time_in_seconds;
  use std::ffi::CString;
  use std::os::raw::c_char;
 
-
- /// Partition name.
- pub const PARTITION: &str = "/data";
- /// Component name.
- pub const COMPONENT: &str = "Asset";
 
  extern "C" {
     fn GetRemainPartitionSize(partition_name: *const c_char, partition_size: *mut f64) -> i32;

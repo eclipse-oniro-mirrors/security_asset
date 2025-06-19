@@ -1,4 +1,4 @@
- /*
+/*
  * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,7 @@ int32_t GetRemainPartitionSize(const char *partitionName, double *partitionSize)
     }
     struct statfs stat;
     if (statfs(partitionName, &stat) != 0) {
-        LOGE("Failed to get partition information for '%s'", partitionName);
+        LOGE("Failed to get partition information for %{public}s", partitionName);
         return ASSET_FILE_OPERATION_ERROR;
     }
     /* Calculate free space in megabytes */
