@@ -52,7 +52,6 @@ impl RemoteStub for AssetService {
             return IPC_SUCCESS as i32;
         }
         let _counter_user = AutoCounter::new();
-        logi!("[INFO]Start cancel idle");
         if !self.system_ability.cancel_idle() {
             loge!("[FATAL]Cancel idle failed. Service is stop.");
             let _ = reply_handle(

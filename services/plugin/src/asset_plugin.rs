@@ -90,7 +90,6 @@ impl AssetPlugin {
                 return log_throw_error!(ErrCode::InvalidArgument, "_create_plugin return null.");
             }
 
-            logi!("load asset_ext plugin success.");
             Ok(Box::from_raw(plugin_ptr))
         }
     }

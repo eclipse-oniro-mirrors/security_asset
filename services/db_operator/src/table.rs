@@ -309,7 +309,6 @@ impl<'a> Table<'a> {
         if !is_exist {
             return Ok(());
         }
-        logi!("upgrade table!");
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
         for item in columns {
