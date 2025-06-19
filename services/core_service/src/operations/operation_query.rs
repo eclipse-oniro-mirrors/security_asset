@@ -15,7 +15,7 @@
 
 //! This module is used to query the Asset, including single and batch query.
 
-use std::cmp::Ordering;
+use std::{cmp::Ordering, time::{SystemTime, UNIX_EPOCH}};
 
 use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager};
@@ -89,7 +89,13 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
     let mut db = build_db(query, calling_info)?;
     let mut results = db.query_datas(&vec![], db_data, None, true)?;
     match results.len() {
-        0 => throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist."),
+        0 => {
+            let time = match SystemTime::now().duration_since(UNIX_EPOCH) {
+                Ok(d) => Ok(d.as_millis()),
+                Err(e) => log_throw_error!(ErrCode::GetSystemTimeError, "[FATAL]Get system time failed, err: {}", e),
+            };
+            throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist. {}", time);
+        },
         1 => {
             match results[0].get(column::AUTH_TYPE) {
                 Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
@@ -144,7 +150,11 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
     let mut db = build_db(attrs, calling_info)?;
     let mut results = db.query_datas(&vec![], db_data, Some(&get_query_options(attrs)), true)?;
     if results.is_empty() {
-        return throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
+        let time = match SystemTime::now().duration_since(UNIX_EPOCH) {
+            Ok(d) => Ok(d.as_millis()),
+            Err(e) => log_throw_error!(ErrCode::GetSystemTimeError, "[FATAL]Get system time failed, err: {}", e),
+        }
+        return throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist. {}", time); 
     }
 
     for data in &mut results {
