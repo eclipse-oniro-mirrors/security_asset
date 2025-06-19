@@ -28,3 +28,10 @@ SECRET_STORE_OPERATION_FAILED:
   CALLER: {type: STRING, desc: caller info}
   ERROR_CODE: {type: INT32, desc: error code}
   EXTRA: {type: STRING, desc: extra data}
+
+USER_DATA_SIZE:
+  __BASE: {type: STATISTIC, level: CRITICAL, desc: statistic data size for asset}
+  COMPONENT_NAME: {type: STRING, desc: component name}
+  PARTITION_NAME: {type: STRING, desc: partition name}
+  FILE_OF_FOLDER_PATH: {type: STRING, desc: file of folder path}
+  FILE_OF_FOLDER_SIZE: {type: STRING, desc: file of folder size}
