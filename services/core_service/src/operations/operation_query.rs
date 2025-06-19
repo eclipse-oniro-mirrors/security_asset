@@ -153,7 +153,7 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
         let time = match SystemTime::now().duration_since(UNIX_EPOCH) {
             Ok(d) => Ok(d.as_millis()),
             Err(e) => log_throw_error!(ErrCode::GetSystemTimeError, "[FATAL]Get system time failed, err: {}", e),
-        }
+        };
         return throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist. {}", time); 
     }
 
