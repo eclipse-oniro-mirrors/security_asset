@@ -88,8 +88,7 @@ fn exec_crypto(calling_info: &CallingInfo, query: &AssetMap, db_data: &mut DbMap
 fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) -> Result<Vec<AssetMap>> {
     let mut db = build_db(query, calling_info)?;
     let mut results = db.query_datas(&vec![], db_data, None, true)?;
-    match results.len() {
-        0 => throw_error!(ErrCode::NotFound, ""),
+    match results.len() throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist."),
         1 => {
             match results[0].get(column::AUTH_TYPE) {
                 Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
@@ -144,7 +143,7 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
     let mut db = build_db(attrs, calling_info)?;
     let mut results = db.query_datas(&vec![], db_data, Some(&get_query_options(attrs)), true)?;
     if results.is_empty() {
-        return throw_error!(ErrCode::NotFound, ""); 
+        return throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist."); 
     }
 
     for data in &mut results {
