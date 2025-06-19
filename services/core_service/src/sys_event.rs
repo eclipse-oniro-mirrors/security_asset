@@ -126,9 +126,8 @@ pub(crate) fn upload_statistic_system_event(
         ))
         .write();
     logi!(
-        "[INFO]CallingUid=[{}], Calling fun:[{}], user_id:[{}], caller:[{}],
+        "[INFO]Calling fun:[{}], user_id:[{}], caller:[{}],
         start_time:[{:?}], run_time:[{}], ext_info=[{}]",
-        Skeleton::calling_uid(),
         func_name,
         calling_info.user_id(),
         owner_info,
