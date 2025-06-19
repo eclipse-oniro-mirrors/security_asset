@@ -50,5 +50,5 @@
         return ASSET_INVALID_ARGUMENT;
     }
     *dirSize = GetFolderSize(pathStr);  
-    return dirSize;
+    return ASSET_SUCCESS;
  }
