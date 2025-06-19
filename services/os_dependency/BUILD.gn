@@ -41,7 +41,6 @@ ohos_static_library("asset_os_dependency") {
     "ipc:ipc_single",
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
-    "hisysevent:libhisysevent",
   ]
   cflags = [ "-DASSET_UPGRADE_HAP_CONFIG=${asset_split_hap_list}" ]
   subsystem_name = "security"

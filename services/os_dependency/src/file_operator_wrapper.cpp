@@ -13,20 +13,20 @@
  * limitations under the License.
  */
 
- 
- #include "data_size_wrapper.h"
- #include <sys/statfs.h>
- #include <cstring>
- #include <dirent.h>
 
- #include "directory_ex.h"
- #include "asset_log.h"
- #include "asset_type.h"
+#include "data_size_wrapper.h"
+#include <sys/statfs.h>
+#include <cstring>
+#include <dirent.h>
 
- using namespace OHOS;
+#include "directory_ex.h"
+#include "asset_log.h"
+#include "asset_type.h"
 
- int32_t GetRemainPartitionSize(const char *partitionName, double *partitionSize)
- {
+using namespace OHOS;
+
+int32_t GetRemainPartitionSize(const char *partitionName, double *partitionSize)
+{
     if(partitionName == nullptr) {
         LOGE("Fail to get partition name");
         return ASSET_INVALID_ARGUMENT;
@@ -40,10 +40,10 @@
     constexpr double units = 1024.0;
     *partitionSize = (static_cast<double>(stat.f_bfree) / units) * (static_cast<double>(stat.f_bsize) / units);
     return ASSET_SUCCESS;
- }
+}
 
- uint64_t GetDirSize(const char *dir, uint64_t *dirSize)
- {
+uint64_t GetDirSize(const char *dir, uint64_t *dirSize)
+{
     const std::string pathStr(dir);
     if(pathStr.empty()) {
         LOGE("Fail to get dir name.");
@@ -51,4 +51,4 @@
     }
     *dirSize = GetFolderSize(pathStr);  
     return ASSET_SUCCESS;
- }
+}

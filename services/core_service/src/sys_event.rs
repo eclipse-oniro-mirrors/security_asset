@@ -42,7 +42,7 @@ impl<'a> SysEvent<'a> {
     const FILEMANAGEMENT_DOMAIN: &str = "FILEMANAGEMENT";
     const ASSET_FAULT: &str = "SECRET_STORE_OPERATION_FAILED";
     const ASSET_STATISTIC: &str = "SECRET_STORE_INFO_COLLECTION";
-    cosnt FILEMANAGEMENT_STATISTIC: &str = "DATA_USER_SIZE";
+    cosnt FILEMANAGEMENT_STATISTIC: &str = "USER_DATA_SIZE";
 
     pub(crate) const FUNCTION: &str = "FUNCTION";
     pub(crate) const USER_ID: &str = "USER_ID";
