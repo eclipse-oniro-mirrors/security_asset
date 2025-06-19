@@ -170,7 +170,7 @@ impl Manager {
             IPC_SUCCESS => Ok(reply),
             e => {
                 let msg = reply.read::<String>().map_err(ipc_err_handle)?;
-                log_throw_error!(ErrCode::try_from(e)?, "{}", msg)
+                throw_error!(ErrCode::try_from(e)?, "{}", msg)
             },
         }
     }
