@@ -305,7 +305,6 @@ impl<'a> Table<'a> {
     }
 
     fn is_column_exist(&self, column: &str) -> bool {
-        let query_column_info = COLUMN_INFO.iter().filter(|col| col.name == column).collect::<Vec<_>>();
         let query_option = QueryOptions {
             offset: None,
             limit: Some(1),
@@ -313,7 +312,7 @@ impl<'a> Table<'a> {
             order_by: None,
             amend: None
         };
-        self.query_row(column, &DbMap::new(), Some(&query_option), false, &query_column_info).is_ok()
+        self.query_row(&vec![column], &DbMap::new(), Some(&query_option), false, COLUMN_INFO).is_ok()
     }
 
     pub(crate) fn upgrade(&self, ver: u32, columns: &[UpgradeColumnInfo]) -> Result<()> {

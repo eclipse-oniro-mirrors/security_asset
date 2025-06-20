@@ -19,7 +19,7 @@
 use std::{fs, path::Path};
 
 use asset_common::{CallingInfo, OwnerType, OWNER_INFO_SEPARATOR};
-use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value, WrapType};
+use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
 use asset_file_operator::common::DB_SUFFIX;
 use asset_log::logi;
 use asset_utils::hasher;
@@ -29,7 +29,7 @@ use crate::{
         fmt_backup_path, fmt_de_db_path_with_name, get_db, get_db_by_type, get_split_db_lock_by_user_id, Database,
         CE_ROOT_PATH, DE_ROOT_PATH, OLD_DB_NAME,
     },
-    types::{column, DbMap, QueryOptions, DB_UPGRADE_VERSION},
+    types::{column, DbMap, QueryOptions},
 };
 
 const MINIM_OWNER_INFO_LEN: usize = 3;
