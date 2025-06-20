@@ -145,7 +145,6 @@ pub(crate) fn get_db_by_type(
     user_id: i32,
     db_name: &str,
     db_path: String,
-    upgrade_db_version: u32,
     db_key: Option<&DbKey>,
 ) -> Result<Database> {
     let backup_path = fmt_backup_path(&db_path);
@@ -155,7 +154,7 @@ pub(crate) fn get_db_by_type(
     db.open_and_restore(db_key)?;
     // when create db table always use newest version.
     db.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, DB_UPGRADE_VERSION))?;
-    db.upgrade(user_id, upgrade_db_version, |_, _, _| Ok(()))?;
+    db.upgrade(user_id, DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
     Ok(db)
 }
 
@@ -181,7 +180,7 @@ pub(crate) fn get_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Databas
         (db_path, None)
     };
 
-    get_db_by_type(user_id, db_name, db_path, DB_UPGRADE_VERSION, db_key.as_ref())
+    get_db_by_type(user_id, db_name, db_path, db_key.as_ref())
 }
 
 /// Create ce db instance if the value of tag "RequireAttrEncrypted" is set to true.
