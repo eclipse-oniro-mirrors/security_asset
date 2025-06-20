@@ -29,7 +29,7 @@ use crate::{
         fmt_backup_path, fmt_de_db_path_with_name, get_db, get_db_by_type, get_split_db_lock_by_user_id, Database,
         CE_ROOT_PATH, DE_ROOT_PATH, OLD_DB_NAME,
     },
-    types::{column, DbMap, QueryOptions, DB_UPGRADE_VERSION_V3},
+    types::{column, DbMap, QueryOptions, DB_UPGRADE_VERSION},
 };
 
 const MINIM_OWNER_INFO_LEN: usize = 3;
@@ -92,7 +92,7 @@ pub fn construct_splited_db_name(calling_info: &CallingInfo, is_ce: bool) -> Res
 
 fn get_db_before_split(user_id: i32) -> Result<Database> {
     let db_path = fmt_de_db_path_with_name(user_id, OLD_DB_NAME);
-    get_db_by_type(user_id, OLD_DB_NAME, db_path, DB_UPGRADE_VERSION_V3, None)
+    get_db_by_type(user_id, OLD_DB_NAME, db_path, DB_UPGRADE_VERSION, None)
 }
 
 fn get_value_from_db_map(db_map: &DbMap, key: &str) -> Result<Value> {
@@ -121,7 +121,7 @@ fn get_new_db(user_id: i32, info_map: &DbMap) -> Result<Database> {
     let new_db_name = construct_splited_db_name(&calling_info, false)?;
     // 1.2 construct new db
     let db_path = fmt_de_db_path_with_name(user_id, &new_db_name);
-    get_db_by_type(user_id, &new_db_name, db_path, DB_UPGRADE_VERSION_V3, None)
+    get_db_by_type(user_id, &new_db_name, db_path, DB_UPGRADE_VERSION, None)
 }
 
 /// Trigger upgrade of database version and renaming secret key alias.
@@ -172,7 +172,6 @@ fn migrate_data(
         condition.insert(column::OWNER, get_value_from_db_map(data, column::OWNER)?);
         condition.insert(column::OWNER_TYPE, get_value_from_db_map(data, column::OWNER_TYPE)?);
         let mut data_clone = data.clone();
-        data_clone.insert(column::WRAP_TYPE, Value::Number(WrapType::default() as u32));
         data_clone.remove(column::ID);
         new_db.replace_datas(&condition, false, &data_clone)?;
         // 3.3 remove data in old db
