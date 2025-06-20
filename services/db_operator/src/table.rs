@@ -313,8 +313,8 @@ impl<'a> Table<'a> {
         trans.begin()?;
         for item in columns {
             if self.add_column(&item.base_info, &item.default_value).is_err() {
-                if (ver == DB_UPGRADE_VERSION &&
-                    self.query_row(item.base_info.name, &DbMap::new(), None, false, COLUMN_INFO).is_ok()) {
+                if (self.query_row(item.base_info.name, &DbMap::new(), None,
+                    false, COLUMN_INFO).is_ok()) {
                     continue;
                 }
                 return trans.rollback();
