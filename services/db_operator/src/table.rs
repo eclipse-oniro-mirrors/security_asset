@@ -26,7 +26,7 @@ use crate::{
     database::Database,
     statement::Statement,
     transaction::Transaction,
-    types::{ColumnInfo, DbMap, QueryOptions, UpgradeColumnInfo, DB_UPGRADE_VERSION, SQLITE_ROW},
+    types::{ColumnInfo, DbMap, QueryOptions, UpgradeColumnInfo, COLUMN_INFO, DB_UPGRADE_VERSION, SQLITE_ROW},
 };
 
 extern "C" {
@@ -304,6 +304,17 @@ impl<'a> Table<'a> {
         self.create_with_version(columns, DB_UPGRADE_VERSION)
     }
 
+    fn is_column_exist(&self, column: &'static str) -> bool {
+        let query_option = QueryOptions {
+            offset: None,
+            limit: Some(1),
+            order: None,
+            order_by: None,
+            amend: None
+        };
+        self.query_row(&vec![column], &DbMap::new(), Some(&query_option), false, COLUMN_INFO).is_ok()
+    }
+
     pub(crate) fn upgrade(&self, ver: u32, columns: &[UpgradeColumnInfo]) -> Result<()> {
         let is_exist = self.exist()?;
         if !is_exist {
@@ -313,6 +324,9 @@ impl<'a> Table<'a> {
         trans.begin()?;
         for item in columns {
             if self.add_column(&item.base_info, &item.default_value).is_err() {
+                if self.is_column_exist(item.base_info.name) {
+                    continue;
+                }
                 return trans.rollback();
             }
         }
