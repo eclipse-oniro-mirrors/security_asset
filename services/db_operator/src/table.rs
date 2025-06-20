@@ -304,7 +304,7 @@ impl<'a> Table<'a> {
         self.create_with_version(columns, DB_UPGRADE_VERSION)
     }
 
-    fn is_column_exist(&self, column: &str) -> bool {
+    fn is_column_exist(&self, column: &'static str) -> bool {
         let query_option = QueryOptions {
             offset: None,
             limit: Some(1),
