@@ -291,10 +291,15 @@ impl<'a> Table<'a> {
         sql.push_str(");");
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
-        if self.db.exec(sql.as_str()).is_ok() && self.db.set_version(version).is_ok() {
-            trans.commit()
+        if let Err(e) = self.db.exec(sql.as_str()) {
+            trans.rollback()?;
+            return Err(e);
+        }
+        if let Err(e) = self.db.set_version(version) {
+            trans.rollback()?;
+            Err(e)
         } else {
-            trans.rollback()
+            trans.commit()
         }
     }
 
@@ -312,12 +317,14 @@ impl<'a> Table<'a> {
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
         for item in columns {
-            if self.add_column(&item.base_info, &item.default_value).is_err() {
-                return trans.rollback();
+            if let Err(e) = self.add_column(&item.base_info, &item.default_value) {
+                trans.rollback()?;
+                return Err(e);
             }
         }
-        if self.db.set_version(ver).is_err() {
-            trans.rollback()
+        if let Err(e) = self.db.set_version(ver) {
+            trans.rollback()?;
+            Err(e)
         } else {
             trans.commit()
         }
@@ -631,10 +638,15 @@ impl<'a> Table<'a> {
     pub(crate) fn replace_row(&self, condition: &DbMap, is_filter_sync: bool, datas: &DbMap) -> Result<()> {
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
-        if self.delete_row(condition, None, is_filter_sync).is_ok() && self.insert_row(datas).is_ok() {
-            trans.commit()
+        if let Err(e) = self.delete_row(condition, None, is_filter_sync) {
+            trans.rollback()?;
+            return Err(e);
+        }
+        if let Err(e) = self.insert_row(datas) {
+            trans.rollback()?;
+            Err(e);
         } else {
-            trans.rollback()
+            trans.commit()
         }
     }
 }
