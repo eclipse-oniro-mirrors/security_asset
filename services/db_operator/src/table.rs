@@ -26,7 +26,7 @@ use crate::{
     database::Database,
     statement::Statement,
     transaction::Transaction,
-    types::{ColumnInfo, DbMap, QueryOptions, UpgradeColumnInfo, DB_UPGRADE_VERSION, SQLITE_ROW},
+    types::{ColumnInfo, DbMap, QueryOptions, UpgradeColumnInfo, COLUMN_INFO, DB_UPGRADE_VERSION, SQLITE_ROW},
 };
 
 extern "C" {
@@ -313,6 +313,10 @@ impl<'a> Table<'a> {
         trans.begin()?;
         for item in columns {
             if self.add_column(&item.base_info, &item.default_value).is_err() {
+                if (ver == DB_UPGRADE_VERSION &&
+                    self.query_row(item.base_info.name, &DbMap::new(), None, false, COLUMN_INFO).is_ok()) {
+                    continue;
+                }
                 return trans.rollback();
             }
         }

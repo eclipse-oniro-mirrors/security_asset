@@ -418,9 +418,6 @@ impl Database {
         if !msg.is_null() {
             let s = unsafe { CStr::from_ptr(msg as _) };
             if let Ok(rs) = s.to_str() {
-                if rs.contains("duplicate column") {
-                    return Ok(());
-                }
                 return log_throw_error!(
                     sqlite_err_handle(ret),
                     "[FATAL]Database execute sql failed. error code={}, error msg={}",
