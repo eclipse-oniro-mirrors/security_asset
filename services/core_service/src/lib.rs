@@ -241,7 +241,6 @@ macro_rules! execute {
         let _trace = TraceScope::trace(func_name);
         // Create de database directory if not exists.
         create_user_de_dir($calling_info.user_id())?;
-        handle_data_size_upload()?;
         upload_system_event($func($calling_info, $first_arg), $calling_info, start, func_name, $first_arg)
     }};
     ($func:path, $calling_info:expr, $first_arg:expr, $second_arg:expr) => {{

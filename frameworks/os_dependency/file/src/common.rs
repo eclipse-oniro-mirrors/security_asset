@@ -15,7 +15,7 @@
 
 //! This file implements ce file operations.
 
-use asset_definition::{log_throw_error, AssetError, ErrCode, Result};
+use asset_definition::{log_throw_error, ErrCode, Result};
 use std::{fs, path::Path};
 
 /// Suffix for backup database files.
