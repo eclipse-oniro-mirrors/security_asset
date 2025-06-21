@@ -25,9 +25,7 @@ use asset_definition::{
 };
 use asset_log::{loge, logi};
 
-use hisysevent::{
-    build_number_param, build_str_param, build_string_array_params, write, EventType, HiSysEventParam
-};
+use hisysevent::{build_number_param, build_str_param, build_string_array_params, write, EventType, HiSysEventParam};
 
 /// Component name.
 const COMPONENT: &str = "Asset";

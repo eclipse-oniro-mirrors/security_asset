@@ -15,13 +15,9 @@
 
 //! This file implements ce file operations.
 
-use crate::de_operator::{read_record_time, write_record_time};
 use asset_definition::{log_throw_error, AssetError, ErrCode, Result};
-use lazy_static::lazy_static; 
-use std::{fs, path::Path, slice, sync::Mutex};
+use std::{fs, path::Path};
 
-/// The minimum user id.
-const MINIMUM_MAIN_USER_ID: i32 = 100;
 /// Suffix for backup database files.
 pub const BACKUP_SUFFIX: &str = ".backup";
 /// Suffix for database files.
@@ -32,7 +28,6 @@ pub const DB_KEY: &str = "db_key";
 pub const DE_ROOT_PATH: &str = "data/service/el1/public/asset_service";
 /// Root path to ce user directories.
 pub const CE_ROOT_PATH: &str = "data/service/el2";
-
 
 /// Get all db name in user directory.
 pub(crate) fn get_user_dbs(path_str: &str) -> Result<Vec<String>> {

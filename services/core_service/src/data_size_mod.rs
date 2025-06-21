@@ -41,7 +41,7 @@ lazy_static! {
 }
 
 /// get remain partition size
-pub(crate) fn get_remain_partition_size(partition: &str) -> Result<f64> {
+fn get_remain_partition_size(partition: &str) -> Result<f64> {
     let partition_cstr = CString::new(partition)?;
     let mut remain_size: f64 = 0.0;
     let ret_code: i32 = unsafe { GetRemainPartitionSize(partition_cstr.as_ptr(), &mut remain_size) };
@@ -52,7 +52,7 @@ pub(crate) fn get_remain_partition_size(partition: &str) -> Result<f64> {
 }
 
 /// get all asset folders size
-pub fn get_folders_size(paths: &[String]) -> Result<Vec<u64>> {
+fn get_folders_size(paths: &[String]) -> Result<Vec<u64>> {
     let mut folders_size = vec![];
 
     for path in path.iter() {
@@ -64,7 +64,7 @@ pub fn get_folders_size(paths: &[String]) -> Result<Vec<u64>> {
 }
 
 /// read record unix time 
-pub fn read_record_time(path_str: &str) -> Result<u64> {
+fn read_record_time(path_str: &str) -> Result<u64> {
     let path: &Path = Path::new(&path_str);
     let time_str = fs::read_to_string(path)?;
     let trim_time = time_str.trim();
@@ -78,7 +78,7 @@ pub fn read_record_time(path_str: &str) -> Result<u64> {
 }
 
 /// write record unix time
-pub fn write_record_time(path_str: &str, unix_time: u64) -> Result<()> {
+fn write_record_time(path_str: &str, unix_time: u64) -> Result<()> {
     let path: &Path = Path::new(&path_str);
     let time_str = unix_time.to_string();
     fs::write(path, time_str)?;
@@ -86,7 +86,7 @@ pub fn write_record_time(path_str: &str, unix_time: u64) -> Result<()> {
 }
 
 /// get all asset user db
-pub fn get_db_dirs() -> Result<Vec<String>> {
+fn get_db_dirs() -> Result<Vec<String>> {
     let mut dirs = vec![];
     dirs.push(String::from(DE_ROOT_PATH));
     let migration_dir = Path::new(MIGRATION_PATH);
@@ -115,7 +115,7 @@ pub fn get_db_dirs() -> Result<Vec<String>> {
 }
 
 /// check time for uploading data size
-pub fn should_upload_data_size(unix_time: u64) -> Result<bool> {
+fn should_upload_data_size(unix_time: u64) -> Result<bool> {
     let path_str = format!("{}/record_unix_time.txt", DE_ROOT_PATH);
     let _lock = RECORD_UNIX_FILE_MUTEX.lock().unwrap();
     match is_file_exist(&path_str) {
