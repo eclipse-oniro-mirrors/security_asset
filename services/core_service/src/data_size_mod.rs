@@ -137,7 +137,7 @@ fn should_upload_data_size(unix_time: u64) -> Result<bool> {
 }
 
 /// handle data upload
-pub (crate) fn handle_data_size_upload(unix_time: u64) -> Result<()> {
+pub (crate) fn handle_data_size_upload() -> Result<()> {
     let unix_time = system_time_in_seconds()?;
     if should_upload_data_size(unix_time)? {
         let folder_path = get_db_dirs()?;
