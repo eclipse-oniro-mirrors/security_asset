@@ -27,7 +27,7 @@ using namespace OHOS;
 
 int32_t GetRemainPartitionSize(const char *partitionName, double *partitionSize)
 {
-    if(partitionName == nullptr) {
+    if (partitionName == nullptr) {
         LOGE("Fail to get partition name");
         return ASSET_INVALID_ARGUMENT;
     }
