@@ -15,7 +15,7 @@
 
 //! This module is used to get Asset file size.
 
-use crate::sys_event::{upload_data_size， PARTITION};
+use crate::sys_event::{upload_data_size, PARTITION};
 use asset_common::SUCCESS;
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_file_operator::common::{is_file_exist, CE_ROOT_PATH, DE_ROOT_PATH};
