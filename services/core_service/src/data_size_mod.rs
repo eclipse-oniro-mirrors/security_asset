@@ -96,7 +96,7 @@ fn get_db_dirs() -> Result<Vec<String>> {
 
     let mut max_user_ids_size: u32 = 5;
     let user_ids_size_ptr = &mut max_user_ids_size;
-    let user_ids: Vec<i32> = vec![0i32; (*user_ids_size_ptr + USER_ID_VEC_BUFFER).try_into().unwrap()];
+    let mut user_ids: Vec<i32> = vec![0i32; (*user_ids_size_ptr + USER_ID_VEC_BUFFER).try_into().unwrap()];
     let user_ids_ptr = user_ids.as_mut_ptr();
     let ret = unsafe { GetUserIds(user_ids_ptr, user_ids_size_ptr) };
     if ret != SUCCESS {
