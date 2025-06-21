@@ -47,7 +47,7 @@ use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID,
 };
-
+use crate::data_size_mod::handle_data_size_upload;
 use crate::{sys_event::upload_fault_system_event, PackageInfoFfi};
 
 /// success code.
@@ -325,6 +325,10 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
     match trigger_db_upgrade(user_id, true) {
         Ok(()) => logi!("upgrade ce db version and key alias on user-unlocked success."),
         Err(e) => loge!("upgrade ce db version and key alias on user-unlocked failed, err is: {}", e),
+    }
+
+    if let Err(e) = handle_data_size_upload() {
+        loge!("Failed to handle data upload: {}", e);
     }
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {

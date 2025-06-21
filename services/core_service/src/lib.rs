@@ -35,6 +35,7 @@ use asset_ipc::SA_ID;
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::{AssetContext, AssetPlugin};
 
+mod data_size_mod;
 mod common_event;
 mod operations;
 mod stub;
@@ -43,6 +44,8 @@ mod trace_scope;
 
 use sys_event::upload_system_event;
 use trace_scope::TraceScope;
+
+use crate::data_size_mod::handle_data_size_upload;
 
 struct AssetAbility;
 
@@ -117,13 +120,18 @@ impl Ability for AssetAbility {
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
         let calling_info = CallingInfo::new_self();
-
         let _ = upload_system_event(start_service(handler), &calling_info, start, func_name, &AssetMap::new());
+        if let Err(e) = handle_data_size_upload() {
+            loge!("Failed to handle data upload: {}", e);
+        }
         common_event::handle_common_event(reason);
     }
 
     fn on_active(&self, reason: SystemAbilityOnDemandReason) {
         logi!("[INFO]Asset service on_active.");
+        if let Err(e) = handle_data_size_upload() {
+            loge!("Failed to handle data upload: {}", e);
+        }
         common_event::handle_common_event(reason);
     }
 
