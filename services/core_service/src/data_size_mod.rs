@@ -57,7 +57,7 @@ fn get_folders_size(paths: &[String]) -> Result<Vec<u64>> {
 
     for folder_path in paths.iter() {
         let path_cstr = CString::new(folder_path.as_str())?;
-        let mut folder_size: u64 = unsafe { GetDirSize(path_cstr.as_ptr()) };
+        let folder_size: u64 = unsafe { GetDirSize(path_cstr.as_ptr()) };
         folders_size.push(folder_size);
     }
     Ok(folders_size)
