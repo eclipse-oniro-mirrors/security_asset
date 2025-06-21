@@ -55,8 +55,8 @@ fn get_remain_partition_size(partition: &str) -> Result<f64> {
 fn get_folders_size(paths: &[String]) -> Result<Vec<u64>> {
     let mut folders_size = vec![];
 
-    for path in path.iter() {
-        let path_cstr = CString::new(path.as_str())?;
+    for folder_path in paths.iter() {
+        let path_cstr = CString::new(folder_path.as_str())?;
         let mut folder_size: u64 = unsafe { GetDirSize(path_cstr.as_ptr()) };
         folders_size.push(folder_size);
     }
