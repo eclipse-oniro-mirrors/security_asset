@@ -46,7 +46,6 @@ use sys_event::upload_system_event;
 use trace_scope::TraceScope;
 
 use crate::data_size_mod::handle_data_size_upload;
-use crate::unload_handler::{UnloadHandler, DELAYED_UNLOAD_TIME_IN_SEC, SEC_TO_MILLISEC};
 
 struct AssetAbility;
 
