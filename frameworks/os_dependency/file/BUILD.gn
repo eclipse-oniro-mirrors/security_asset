@@ -18,7 +18,6 @@ ohos_rust_static_library("asset_file_operator") {
   deps = [
     "../../definition:asset_definition",
     "../log:asset_log",
-    "//thrid_party/rust/crates/lazy-static.rs.lib",
   ]
 
   crate_name = "asset_file_operator"
