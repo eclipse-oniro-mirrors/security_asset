@@ -77,25 +77,3 @@ pub fn delete_user_de_dir(user_id: i32) -> Result<()> {
 pub fn get_de_user_dbs(user_id: i32) -> Result<Vec<String>> {
     get_user_dbs(&construct_user_de_path(user_id))
 }
-
-/// read record unix time 
-pub fn read_record_time(path_str: &str) -> Result<u64> {
-    let path: &Path = Path::new(&path_str);
-    let time_str = fs::read_to_string(path)?;
-    let trim_time = time_str.trim();
-    match trim_time.parse::<u64>() {
-        Ok(unix_time) => Ok(unix_time),
-        Err(_) => {
-            eprintln!("[WARNING] Failed to parse time from file. Return 0 as a default");
-            Ok(0)
-        },
-    }
-}
-
-/// write record unix time
-pub fn write_record_time(path_str: &str, unix_time: u64) -> Result<()> {
-    let path: &Path = Path::new(&path_str);
-    let time_str = unix_time.to_string();
-    fs::write(path, time_str)?;
-    Ok(())
-}

@@ -16,15 +16,14 @@
 #ifndef FILE_OPERATOR_WRAPPER
 #define FILE_OPERATOR_WRAPPER
 
-#include <string>
-#include <vector>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 int32_t GetRemainPartitionSize(const char *partitionName, double *partitionSize);
-int32_t GetDirSize(const char *dir, uint64_t *dirSize);
+uint64_t GetDirSize(const char *dir);
 
 #ifdef __cplusplus
 }

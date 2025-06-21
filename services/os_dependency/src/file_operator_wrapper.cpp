@@ -42,13 +42,7 @@ int32_t GetRemainPartitionSize(const char *partitionName, double *partitionSize)
     return ASSET_SUCCESS;
 }
 
-uint64_t GetDirSize(const char *dir, uint64_t *dirSize)
+uint64_t GetDirSize(const char *dir)
 {
-    const std::string pathStr(dir);
-    if(pathStr.empty()) {
-        LOGE("Fail to get dir name.");
-        return ASSET_INVALID_ARGUMENT;
-    }
-    *dirSize = GetFolderSize(pathStr);  
-    return ASSET_SUCCESS;
+    return GetFolderSize(dir);
 }

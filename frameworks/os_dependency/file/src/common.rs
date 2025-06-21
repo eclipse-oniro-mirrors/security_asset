@@ -32,14 +32,7 @@ pub const DB_KEY: &str = "db_key";
 pub const DE_ROOT_PATH: &str = "data/service/el1/public/asset_service";
 /// Root path to ce user directories.
 pub const CE_ROOT_PATH: &str = "data/service/el2";
-/// Asset migration path.
-pub const MIGRATION_PATH: &str = "data/service/el1/public/asset_migration";
-/// One day secs.
-pub const ONE_DAY_SECS: u64 = 86400;
 
-lazy_static! {
-    static ref RECORD_UNIX_FILE_MUTEX: Mutex<()> = Mutex::new(());
-}
 
 /// Get all db name in user directory.
 pub(crate) fn get_user_dbs(path_str: &str) -> Result<Vec<String>> {
@@ -67,67 +60,5 @@ pub fn is_file_exist(path_str: &str) -> Result<bool> {
                 e
             )
         },
-    }
-}
-
-/// get all asset user db
-pub fn get_db_dirs() -> Result<Vec<String>> {
-    let mut dirs = vec![];
-    dirs.push(String::from(DE_ROOT_PATH));
-    dirs.push(String::from(MIGRATION_PATH));
-
-    let ce_root_path = Path::new(CE_ROOT_PATH);
-    let ce_dirs = fs::read_dir(ce_root_path);
-
-    let mut user_ids = Vec::new();
-    for entry in ce_dirs {
-        let entry = entry?;
-
-        let path = entry.path();
-        if !path.is_dir() {
-            continue;
-        }
-
-        let dir_name = path.file_name().add_then(|n| n.to_str()).ok_or_else(|| AssetError {
-            code: ErrCode::FileOperationError,
-            msg: "[FATAL] Failed to get directory name".to_string(),
-        })?;
-
-        if let Ok(user_id) = dir_name.parse::<i32>() {
-            user_ids.push(user_id);
-        }
-    }
-
-    let user_ids_slice = user_ids.as_slice();
-    for user_id in user_ids_slice {
-        if *user_id < MINIMUM_MAIN_USER_ID {
-            continue;
-        }
-        let ce_path = format!("{}/{}/asset_service", CE_ROOT_PATH, user_id);
-        dirs.push(ce_path);
-    }
-    Ok(dirs)
-}
-
-/// check time for uploading data size
-pub fn should_upload_data_size(unix_time: u64) -> Result<bool> {
-    let path_str = format!("{}/record_unix_time.txt", DE_ROOT_PATH);
-    let _lock = RECORD_UNIX_FILE_MUTEX.lock().unwrap();
-
-    match is_file_exist(&path_str) {
-        Ok(true) => {
-            let prev_time = read_record_time(&path_str)?;
-            if unix_time - prev_time > ONE_DAY_SECS {
-                write_record_time(&path_str, unix_time)?;
-                Ok(true)
-            } else {
-                Ok(false)
-            }
-        },
-        Ok(false) => {
-            write_record_time(&path_str, unix_time)?;
-            Ok(true)
-        },
-        Err(e) => Err(e)
     }
 }
