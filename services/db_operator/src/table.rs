@@ -334,6 +334,7 @@ impl<'a> Table<'a> {
                 }
                 trans.rollback()?;
                 return Err(e);
+            }
         }
         if let Err(e) = self.db.set_version(ver) {
             trans.rollback()?;
