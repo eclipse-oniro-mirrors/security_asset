@@ -356,12 +356,11 @@ pub(crate) fn notify_on_user_removed(user_id: i32) {
 
 pub(crate) extern "C" fn on_schedule_wakeup() {
     logi!("[INFO]On SA wakes up at a scheduled time(36H).");
-    let default_user_id = 0;
     let self_bundle_name = "asset_service";
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
-        params.insert(PARAM_NAME_USER_ID, Value::Number(default_user_id as u32));
+        params.insert(PARAM_NAME_USER_ID, Value::Number(MINIMUM_MAIN_USER_ID as u32));
         params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(self_bundle_name.as_bytes().to_vec()));
         match load.process_event(EventType::Sync, &mut params) {
             Ok(()) => logi!("process sync ext event success."),
