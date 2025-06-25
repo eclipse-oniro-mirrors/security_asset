@@ -25,6 +25,9 @@ pub type DbMap = HashMap<&'static str, Value>;
 /// Table name of asset database.
 pub const TABLE_NAME: &str = "asset_table";
 
+/// Table name for cloud adapt.
+pub(crate) const ADAPT_CLOUD_TABLE: &str = "adapt_cloud_table";
+
 /// Version V1 number for upgrade database
 pub const DB_UPGRADE_VERSION_V1: u32 = 0;
 /// Version V2 number for upgrade database
@@ -112,6 +115,14 @@ pub mod column {
     pub const WRAP_TYPE: &str = "WrapType";
 }
 
+/// Column name of asset database.
+pub mod adapt_column {
+    /// Column name of the global id.
+    pub const OLD_GLOBAL_ID: &str = "OldGlobalId";
+    /// Column name of the adapt global id.
+    pub const ADAPT_GLOBAL_ID: &str = "AdaptGlobalId";
+}
+
 #[repr(C)]
 pub(crate) struct ColumnInfo {
     pub(crate) name: &'static str,
@@ -153,6 +164,11 @@ pub(crate) const COLUMN_INFO: &[ColumnInfo] = &[
     ColumnInfo { name: column::SYNC_STATUS, data_type: DataType::Number, is_primary_key: false, not_null: true },
     ColumnInfo { name: column::EXT_INFO, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
     ColumnInfo { name: column::WRAP_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
+];
+
+pub(crate) const ADAPT_CLOUD_COLUMN_INFO: &[ColumnInfo] = &[
+    ColumnInfo { name: adapt_column::OLD_GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: adapt_column::ADAPT_GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
 ];
 
 pub(crate) struct UpgradeColumnInfo {
