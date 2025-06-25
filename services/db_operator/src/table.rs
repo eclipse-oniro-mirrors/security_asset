@@ -658,7 +658,7 @@ impl<'a> Table<'a> {
         }
         if let Err(e) = self.insert_row(datas) {
             trans.rollback()?;
-            Err(e);
+            Err(e)
         } else {
             trans.commit()
         }
