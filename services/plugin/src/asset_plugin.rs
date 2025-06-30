@@ -369,7 +369,7 @@ impl IAssetPluginCtx for AssetContext {
     ) -> std::result::Result<i32, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
-        db.delete_adapt_data(attributes, adapt_attributes, None, false).map_err(|e| e.code as u32)
+        db.delete_adapt_data(attributes, adapt_attributes).map_err(|e| e.code as u32)
     }
 
     /// Updates the attributes of an asset in de db.
