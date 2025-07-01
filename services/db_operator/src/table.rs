@@ -374,7 +374,7 @@ impl<'a> Table<'a> {
     pub(crate) fn insert_adapt_data_row(&self, datas: &DbMap, adapt_attributes: &DbMap) -> Result<i32> {
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
-        if let Ok(insert_num) = self.insert_row(datas).is_ok() {
+        if let Ok(insert_num) = self.insert_row(datas) {
             if adapt_attributes.is_empty() || self.insert_row_with_table_name(adapt_attributes, ADAPT_CLOUD_TABLE).is_ok() {
                 trans.commit()?;
                 return Ok(insert_num)
