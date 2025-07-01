@@ -446,9 +446,9 @@ impl Database {
     }
 
     /// Create adapt cloud table for adaptation.
-    pub fn create_adapt_cloud_table(&self) -> Result<()> {
+    pub fn create_adapt_cloud_table(&mut self) -> Result<()> {
         let is_adapt_table_exist;
-        let table = Table::new(ADAPT_CLOUD_TABLE, db);
+        let table = Table::new(ADAPT_CLOUD_TABLE, self);
         if table.exist()? {
             return Ok(())
         }
@@ -659,7 +659,8 @@ impl Database {
         is_filter_sync: bool
     ) -> Result<Vec<DbMap>> {
         let _lock = self.db_lock.mtx.lock().unwrap();
-        let closure = |e: &Table| e.query_connect_table_row(columns, condition, query_options, is_filter_sync, COLUMN_INFO + ADAPT_CLOUD_COLUMN_INFO);
+        let combine_column_info: Vec<ColumnInfo> = COLUMN_INFO.iter().chain(ADAPT_CLOUD_COLUMN_INFO.iter()).cloned().collect();
+        let closure = |e: &Table| e.query_connect_table_row(columns, condition, query_options, is_filter_sync, &combine_column_info);
         self.restore_if_exec_fail(closure)
     }
 

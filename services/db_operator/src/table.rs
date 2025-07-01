@@ -371,7 +371,7 @@ impl<'a> Table<'a> {
     }
 
     // insert adapt data
-    pub(crate) fn insert_adapt_data_row(&self, datas: &DbMap, adapt_attributes: &DbMap) -> Result<i32> {
+    pub(crate) fn insert_adapt_data_row(&self, datas: &DbMap, adapt_attributes: &DbMap) -> Result<()> {
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
         if self.insert_row(datas).is_ok() &&
@@ -379,7 +379,7 @@ impl<'a> Table<'a> {
             trans.commit()
         } else {
             trans.rollback();
-            log_throw_error!("insert adapt data failed!", ErrCode::DatabaseError)
+            log_throw_error!(ErrCode::DatabaseError, "insert adapt data failed!")
         }
     }
 
@@ -398,7 +398,7 @@ impl<'a> Table<'a> {
         reverse_condition: Option<&DbMap>,
         is_filter_sync: bool,
     ) -> Result<i32> {
-        delete_row_with_table_name(condition, reverse_condition, is_filter_sync, self.table_name)
+        self.delete_row_with_table_name(condition, reverse_condition, is_filter_sync, self.table_name)
     }
 
     // Delete row from table with table name.
@@ -427,12 +427,13 @@ impl<'a> Table<'a> {
     pub(crate) fn delete_adapt_data_row(&self, datas: &DbMap, adapt_attributes: &DbMap) -> Result<i32> {
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
-        if self.delete_row(datas, None, false).is_ok() &&
+        if let Ok(delete_num) = self.delete_row(datas, None, false) &&
             (adapt_attributes.is_empty() || self.delete_row_with_table_name(adapt_attributes, None, false, ADAPT_CLOUD_TABLE).is_ok()) {
-            trans.commit()
+            trans.commit()?;
+            Ok(delete_num)
         } else {
             trans.rollback();
-            log_throw_error!("delete adapt data failed!", ErrCode::DatabaseError)
+            log_throw_error!(ErrCode::DatabaseError, "delete adapt data failed!")
         }
     }
 
@@ -634,7 +635,7 @@ impl<'a> Table<'a> {
         build_sql_columns(columns, &mut sql);
         sql.push_str(" from ");
         sql.push_str(self.table_name.as_str());
-        slq.push_str(format!(
+        sql.push_str(format!(
             " LEFT JOIN {} ON {}.{} = {}.{}",
             ADAPT_CLOUD_TABLE, self.table_name.as_str(),
             column::GLOBAL_ID, ADAPT_CLOUD_TABLE, adapt_column::OLD_GLOBAL_ID)
