@@ -124,6 +124,7 @@ pub mod adapt_column {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub(crate) struct ColumnInfo {
     pub(crate) name: &'static str,
     pub(crate) data_type: DataType,

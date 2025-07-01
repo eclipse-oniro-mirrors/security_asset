@@ -371,16 +371,17 @@ impl<'a> Table<'a> {
     }
 
     // insert adapt data
-    pub(crate) fn insert_adapt_data_row(&self, datas: &DbMap, adapt_attributes: &DbMap) -> Result<()> {
+    pub(crate) fn insert_adapt_data_row(&self, datas: &DbMap, adapt_attributes: &DbMap) -> Result<i32> {
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
-        if self.insert_row(datas).is_ok() &&
-            (adapt_attributes.is_empty() || self.insert_row_with_table_name(adapt_attributes, ADAPT_CLOUD_TABLE).is_ok()) {
-            trans.commit()
-        } else {
-            trans.rollback();
-            log_throw_error!(ErrCode::DatabaseError, "insert adapt data failed!")
+        if let Ok(insert_num) = self.insert_row(datas).is_ok() {
+            if adapt_attributes.is_empty() || self.insert_row_with_table_name(adapt_attributes, ADAPT_CLOUD_TABLE).is_ok() {
+                trans.commit()?;
+                return Ok(insert_num)
+            }
         }
+        trans.rollback()?;
+        log_throw_error!(ErrCode::DatabaseError, "insert adapt data failed!")
     }
 
     /// Delete row from table.
@@ -398,7 +399,7 @@ impl<'a> Table<'a> {
         reverse_condition: Option<&DbMap>,
         is_filter_sync: bool,
     ) -> Result<i32> {
-        self.delete_row_with_table_name(condition, reverse_condition, is_filter_sync, self.table_name)
+        self.delete_row_with_table_name(condition, reverse_condition, is_filter_sync, &self.table_name)
     }
 
     // Delete row from table with table name.
@@ -427,14 +428,15 @@ impl<'a> Table<'a> {
     pub(crate) fn delete_adapt_data_row(&self, datas: &DbMap, adapt_attributes: &DbMap) -> Result<i32> {
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
-        if let Ok(delete_num) = self.delete_row(datas, None, false) &&
-            (adapt_attributes.is_empty() || self.delete_row_with_table_name(adapt_attributes, None, false, ADAPT_CLOUD_TABLE).is_ok()) {
-            trans.commit()?;
-            Ok(delete_num)
-        } else {
-            trans.rollback();
-            log_throw_error!(ErrCode::DatabaseError, "delete adapt data failed!")
+        if let Ok(delete_num) = self.delete_row(datas, None, false) {
+            if adapt_attributes.is_empty() || self.delete_row_with_table_name(adapt_attributes, None, false, ADAPT_CLOUD_TABLE).is_ok() {
+                trans.commit()?;
+                return Ok(delete_num)
+            }
+
         }
+        trans.rollback();
+        log_throw_error!(ErrCode::DatabaseError, "delete adapt data failed!")
     }
 
     /// Delete row from table with specific condition.
@@ -638,7 +640,7 @@ impl<'a> Table<'a> {
         sql.push_str(format!(
             " LEFT JOIN {} ON {}.{} = {}.{}",
             ADAPT_CLOUD_TABLE, self.table_name.as_str(),
-            column::GLOBAL_ID, ADAPT_CLOUD_TABLE, adapt_column::OLD_GLOBAL_ID)
+            column::GLOBAL_ID, ADAPT_CLOUD_TABLE, adapt_column::OLD_GLOBAL_ID).as_str()
         );
         build_sql_where(condition, is_filter_sync, &mut sql);
         build_sql_query_options(query_options, &mut sql);

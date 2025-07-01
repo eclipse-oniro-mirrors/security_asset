@@ -32,7 +32,7 @@ use crate::{
     statement::Statement,
     table::Table,
     types::{
-        column, sqlite_err_handle, DbMap, QueryOptions, ADAPT_CLOUD_COLUMN_INFO, ADAPT_CLOUD_TABLE, COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1, DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3, DB_UPGRADE_VERSION_V4, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2, UPGRADE_COLUMN_INFO_V3, UPGRADE_COLUMN_INFO_V4
+        column, sqlite_err_handle, ColumnInfo, DbMap, QueryOptions, ADAPT_CLOUD_COLUMN_INFO, ADAPT_CLOUD_TABLE, COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1, DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3, DB_UPGRADE_VERSION_V4, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2, UPGRADE_COLUMN_INFO_V3, UPGRADE_COLUMN_INFO_V4
     },
 };
 
@@ -447,7 +447,6 @@ impl Database {
 
     /// Create adapt cloud table for adaptation.
     pub fn create_adapt_cloud_table(&mut self) -> Result<()> {
-        let is_adapt_table_exist;
         let table = Table::new(ADAPT_CLOUD_TABLE, self);
         if table.exist()? {
             return Ok(())
