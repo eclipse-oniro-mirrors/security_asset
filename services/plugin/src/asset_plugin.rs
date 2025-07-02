@@ -163,10 +163,8 @@ impl IAssetPluginCtx for AssetContext {
     fn create_adapt_cloud_table_for_specific_db(
         &mut self,
         db_info: &ExtDbMap,
-        attributes: &ExtDbMap,
-        query_options: &ExtDbMap,
         is_ce: bool,
-    ) -> std::result::Result<Vec<ExtDbMap>, u32> {
+    ) -> std::result::Result<(), u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
         db.create_adapt_cloud_table().map_err(|e| e.code as u32)

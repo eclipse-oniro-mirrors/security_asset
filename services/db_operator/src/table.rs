@@ -435,7 +435,7 @@ impl<'a> Table<'a> {
             }
 
         }
-        trans.rollback();
+        trans.rollback()?;
         log_throw_error!(ErrCode::DatabaseError, "delete adapt data failed!")
     }
 

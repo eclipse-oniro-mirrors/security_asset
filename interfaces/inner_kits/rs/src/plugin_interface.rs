@@ -119,10 +119,8 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     fn create_adapt_cloud_table_for_specific_db(
         &mut self,
         db_info: &ExtDbMap,
-        attributes: &ExtDbMap,
-        query_options: &ExtDbMap,
         is_ce: bool,
-    ) -> Result<Vec<ExtDbMap>, u32>;
+    ) -> Result<(), u32>;
 
     /// Adds an asset to de db.
     fn add(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
@@ -166,7 +164,6 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
         &mut self,
         db_info: &ExtDbMap,
         attributes: &ExtDbMap,
-        query_options: &ExtDbMap,
         is_ce: bool,
     ) -> Result<Vec<ExtDbMap>, u32>;
 

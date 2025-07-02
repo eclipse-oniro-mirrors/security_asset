@@ -32,7 +32,7 @@ use crate::{
     statement::Statement,
     table::Table,
     types::{
-        column, sqlite_err_handle, ColumnInfo, DbMap, QueryOptions, ADAPT_CLOUD_COLUMN_INFO, ADAPT_CLOUD_TABLE, COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1, DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3, DB_UPGRADE_VERSION_V4, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2, UPGRADE_COLUMN_INFO_V3, UPGRADE_COLUMN_INFO_V4
+        column, sqlite_err_handle, DbMap, QueryOptions, ADAPT_CLOUD_COLUMN_INFO, ADAPT_CLOUD_TABLE, COLUMN_INFO, COMBINE_COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1, DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3, DB_UPGRADE_VERSION_V4, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2, UPGRADE_COLUMN_INFO_V3, UPGRADE_COLUMN_INFO_V4
     },
 };
 
@@ -658,8 +658,7 @@ impl Database {
         is_filter_sync: bool
     ) -> Result<Vec<DbMap>> {
         let _lock = self.db_lock.mtx.lock().unwrap();
-        let combine_column_info: Vec<ColumnInfo> = COLUMN_INFO.iter().chain(ADAPT_CLOUD_COLUMN_INFO.iter()).cloned().collect();
-        let closure = |e: &Table| e.query_connect_table_row(columns, condition, query_options, is_filter_sync, &combine_column_info);
+        let closure = |e: &Table| e.query_connect_table_row(columns, condition, query_options, is_filter_sync, COMBINE_COLUMN_INFO);
         self.restore_if_exec_fail(closure)
     }
 
