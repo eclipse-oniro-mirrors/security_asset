@@ -172,7 +172,6 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
         &mut self,
         db_info: &ExtDbMap,
         attributes: &ExtDbMap,
-        query_options: &ExtDbMap,
         is_ce: bool,
     ) -> Result<Vec<ExtDbMap>, u32>;
 
