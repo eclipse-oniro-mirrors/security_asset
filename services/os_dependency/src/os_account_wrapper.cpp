@@ -63,7 +63,7 @@ int32_t GetUserIds(int32_t *userIdsPtr, uint32_t *userIdsSize)
         LOGE("[FATAL]Users size increased after getting users size.");
         return ASSET_ACCOUNT_ERROR;
     }
-    for (uint32_t i = 0; i < *userIdsSize; i++) {
+    for (uint32_t i = 0; i < userIdsVec.size(); i++) {
         userIdsPtr[i] = userIdsVec[i];
     }
     *userIdsSize = static_cast<uint32_t>(userIdsVec.size());

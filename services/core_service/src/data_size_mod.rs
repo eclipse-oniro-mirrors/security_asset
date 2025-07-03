@@ -21,7 +21,7 @@ use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_file_operator::common::{is_file_exist, CE_ROOT_PATH, DE_ROOT_PATH};
 use asset_utils::time::system_time_in_seconds;
 use lazy_static::lazy_static;
-use std::{ffi::CString, fs, os::raw::c_char, path::Path, slice, sync::Mutex};
+use std::{ffi::CString, fs, os::raw::c_char, path::Path, sync::Mutex};
 
 /// The buffer for userId vec.
 pub const USER_ID_VEC_BUFFER: u32 = 5;
@@ -42,7 +42,7 @@ lazy_static! {
 
 /// get remain partition size
 fn get_remain_partition_size(partition: &str) -> Result<f64> {
-    let partition_cstr = CString::new(partition)?;
+    let partition_cstr = CString::new(partition).unwrap();
     let mut remain_size: f64 = 0.0;
     let ret_code: i32 = unsafe { GetRemainPartitionSize(partition_cstr.as_ptr(), &mut remain_size) };
     if ret_code != 0 {
@@ -56,7 +56,7 @@ fn get_folders_size(paths: &[String]) -> Result<Vec<u64>> {
     let mut folders_size = vec![];
 
     for folder_path in paths.iter() {
-        let path_cstr = CString::new(folder_path.as_str())?;
+        let path_cstr = CString::new(folder_path.as_str()).unwrap();
         let folder_size: u64 = unsafe { GetDirSize(path_cstr.as_ptr()) };
         folders_size.push(folder_size);
     }
@@ -89,25 +89,23 @@ fn write_record_time(path_str: &str, unix_time: u64) -> Result<()> {
 fn get_db_dirs() -> Result<Vec<String>> {
     let mut dirs = vec![];
     dirs.push(String::from(DE_ROOT_PATH));
-    let migration_dir = Path::new(MIGRATION_PATH);
-    if migration_dir.is_dir() {
+    if is_file_exist(MIGRATION_PATH)? {
         dirs.push(String::from(MIGRATION_PATH));
     }
 
-    let mut max_user_ids_size: u32 = 5;
-    let user_ids_size_ptr = &mut max_user_ids_size;
-    let mut user_ids: Vec<i32> = vec![0i32; (*user_ids_size_ptr + USER_ID_VEC_BUFFER).try_into().unwrap()];
+    let mut user_ids_size: u32 = USER_ID_VEC_BUFFER;
+    let mut user_ids: Vec<i32> = vec![0i32; user_ids_size as usize];
+    let user_ids_size_ptr = &mut user_ids_size;
     let user_ids_ptr = user_ids.as_mut_ptr();
-    let ret = unsafe { GetUserIds(user_ids_ptr, user_ids_size_ptr) };
+    let ret: i32 = unsafe { GetUserIds(user_ids_ptr, user_ids_size_ptr) };
     if ret != SUCCESS {
         return log_throw_error!(ErrCode::AccountError, "[FATAL] Get users IDs failed.");
     }
 
-    let user_ids_slice = unsafe { slice::from_raw_parts(user_ids_ptr, max_user_ids_size.try_into().unwrap()) };
-    for user_id in user_ids_slice {
+    user_ids.truncate(user_ids_size as usize);
+    for user_id in &user_ids {
         let ce_path = format!("{}/{}/asset_service", CE_ROOT_PATH, user_id);
-        let asset_ce_path = Path::new(&ce_path);
-        if asset_ce_path.is_dir() {
+        if is_file_exist(&ce_path)? {
             dirs.push(ce_path);
         }
     }
@@ -115,31 +113,29 @@ fn get_db_dirs() -> Result<Vec<String>> {
 }
 
 /// check time for uploading data size
-fn should_upload_data_size(unix_time: u64) -> Result<bool> {
-    let path_str = format!("{}/record_unix_time.txt", DE_ROOT_PATH);
-    let _lock = RECORD_UNIX_FILE_MUTEX.lock().unwrap();
-    match is_file_exist(&path_str) {
+fn should_upload_data_size(path_str: &str, unix_time: u64) -> bool {
+    match is_file_exist(path_str) {
         Ok(true) => {
-            let prev_time = read_record_time(&path_str)?;
-            if unix_time - prev_time > ONE_DAY_SECS {
-                write_record_time(&path_str, unix_time)?;
-                Ok(true)
-            } else {
-                Ok(false)
+            let prev_time = match read_record_time(path_str) {
+                Ok(prev_time) => prev_time,
+                Err(_) => return true,
+            };
+            if unix_time > prev_time && unix_time - prev_time < ONE_DAY_SECS {
+                return false;
             }
-        },
-        Ok(false) => {
-            write_record_time(&path_str, unix_time)?;
-            Ok(true)
-        },
-        Err(e) => Err(e)
+            true
+        }
+        _ => true
     }
 }
 
 /// handle data upload
 pub (crate) fn handle_data_size_upload() -> Result<()> {
     let unix_time = system_time_in_seconds()?;
-    if should_upload_data_size(unix_time)? {
+    let path_str = format!("{}/record_unix_time.txt", DE_ROOT_PATH);
+    let _lock = RECORD_UNIX_FILE_MUTEX.lock().unwrap();
+    if should_upload_data_size(&path_str, unix_time) {
+        write_record_time(&path_str, unix_time)?;
         let folder_path = get_db_dirs()?;
         let folders_size = get_folders_size(&folder_path)?;
         let remain_size = get_remain_partition_size(PARTITION)?;
