@@ -259,10 +259,11 @@ impl IAssetPluginCtx for AssetContext {
         attributes: &ExtDbMap,
         query_options: &ExtDbMap,
         is_ce: bool,
+        is_filter_sync: bool,
     ) -> std::result::Result<Vec<ExtDbMap>, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
-        db.query_datas(&vec![], attributes, Some(&get_query_options(query_options)), true).map_err(|e| e.code as u32)
+        db.query_datas(&vec![], attributes, Some(&get_query_options(query_options)), is_filter_sync).map_err(|e| e.code as u32)
     }
 
     /// Query db with attributes to a certain db. Normal, Group, CE.
@@ -274,7 +275,7 @@ impl IAssetPluginCtx for AssetContext {
     ) -> std::result::Result<Vec<ExtDbMap>, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
-        db.query_datas_with_connect_table(&vec![], attributes, None, true).map_err(|e| e.code as u32)
+        db.query_datas_with_connect_table(&vec![], attributes, None, false).map_err(|e| e.code as u32)
     }
 
     /// Removes an asset from de db.

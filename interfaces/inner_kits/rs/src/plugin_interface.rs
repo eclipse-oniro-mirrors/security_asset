@@ -166,6 +166,7 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
         attributes: &ExtDbMap,
         query_options: &ExtDbMap,
         is_ce: bool,
+        is_filter_sync: bool,
     ) -> Result<Vec<ExtDbMap>, u32>;
 
     /// Query db with attributes to a certain db. Normal, CE.
