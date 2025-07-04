@@ -433,7 +433,7 @@ impl<'a> Table<'a> {
         if !datas.is_empty() {
             delete_num = match self.delete_row(datas, None, false) {
                 Ok(num) => num,
-                Err(e) => {
+                Err(_e) => {
                     trans.rollback()?;
                     return log_throw_error!(ErrCode::DatabaseError, "delete adapt data failed!")
                 }
@@ -443,7 +443,7 @@ impl<'a> Table<'a> {
         if !adapt_attributes.is_empty() {
             delete_num = match self.delete_row_with_table_name(adapt_attributes, None, false, ADAPT_CLOUD_TABLE) {
                 Ok(num) => num,
-                Err(e) => {
+                Err(_e) => {
                     trans.rollback()?;
                     return log_throw_error!(ErrCode::DatabaseError, "delete adapt data failed!")
                 }
