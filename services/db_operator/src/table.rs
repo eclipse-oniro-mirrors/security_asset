@@ -428,15 +428,29 @@ impl<'a> Table<'a> {
     pub(crate) fn delete_adapt_data_row(&self, datas: &DbMap, adapt_attributes: &DbMap) -> Result<i32> {
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
-        if let Ok(delete_num) = self.delete_row(datas, None, false) {
-            if adapt_attributes.is_empty() || self.delete_row_with_table_name(adapt_attributes, None, false, ADAPT_CLOUD_TABLE).is_ok() {
-                trans.commit()?;
-                return Ok(delete_num)
+        // if datas is empty do not delete data in it.
+        let mut delete_num = 0;
+        if !datas.is_empty() {
+            delete_num = match self.delete_row(datas, None, false) {
+                Ok(num) => num,
+                Err(e) => {
+                    trans.rollback()?;
+                    return log_throw_error!(ErrCode::DatabaseError, "delete adapt data failed!")
+                }
             }
-
         }
-        trans.rollback()?;
-        log_throw_error!(ErrCode::DatabaseError, "delete adapt data failed!")
+        // if adapt_attributes is empty do not delete data in adapt table.
+        if !adapt_attributes.is_empty() {
+            delete_num = match self.delete_row_with_table_name(adapt_attributes, None, false, ADAPT_CLOUD_TABLE) {
+                Ok(num) => num,
+                Err(e) => {
+                    trans.rollback()?;
+                    return log_throw_error!(ErrCode::DatabaseError, "delete adapt data failed!")
+                }
+            }
+        }
+        trans.commit()?;
+        Ok(delete_num)
     }
 
     /// Delete row from table with specific condition.
