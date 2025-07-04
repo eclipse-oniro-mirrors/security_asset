@@ -170,7 +170,7 @@ pub(crate) const COLUMN_INFO: &[ColumnInfo] = &[
 ];
 
 pub(crate) const ADAPT_CLOUD_COLUMN_INFO: &[ColumnInfo] = &[
-    ColumnInfo { name: adapt_column::OLD_GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: true, not_null: true },
+    ColumnInfo { name: adapt_column::OLD_GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
     ColumnInfo { name: adapt_column::NEW_GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
     ColumnInfo { name: adapt_column::NEW_CLOUD_VERSION, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
 ];
