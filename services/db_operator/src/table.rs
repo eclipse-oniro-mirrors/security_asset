@@ -640,7 +640,7 @@ impl<'a> Table<'a> {
         sql.push_str(format!(
             " LEFT JOIN {} ON {}.{} = {}.{}",
             ADAPT_CLOUD_TABLE, self.table_name.as_str(),
-            column::GLOBAL_ID, ADAPT_CLOUD_TABLE, adapt_column::OLD_GLOBAL_ID).as_str()
+            column::GLOBAL_ID, ADAPT_CLOUD_TABLE, adapt_column::OLD_GLOBAL_ID, adapt_column::NEW_CLOUD_VERSION).as_str()
         );
         build_sql_where(condition, is_filter_sync, &mut sql);
         build_sql_query_options(query_options, &mut sql);

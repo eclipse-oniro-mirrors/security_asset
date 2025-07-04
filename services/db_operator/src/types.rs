@@ -119,8 +119,10 @@ pub mod column {
 pub mod adapt_column {
     /// Column name of the global id.
     pub const OLD_GLOBAL_ID: &str = "OldGlobalId";
-    /// Column name of the adapt global id.
-    pub const ADAPT_GLOBAL_ID: &str = "AdaptGlobalId";
+    /// Column name of the new global id.
+    pub const NEW_GLOBAL_ID: &str = "NewGlobalId";
+    /// Column name of the new data CloudVersion.
+    pub const NEW_CLOUD_VERSION: &str = "NewCloudVersion";
 }
 
 #[repr(C)]
@@ -169,7 +171,8 @@ pub(crate) const COLUMN_INFO: &[ColumnInfo] = &[
 
 pub(crate) const ADAPT_CLOUD_COLUMN_INFO: &[ColumnInfo] = &[
     ColumnInfo { name: adapt_column::OLD_GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
-    ColumnInfo { name: adapt_column::ADAPT_GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: adapt_column::NEW_GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: adapt_column::NEW_CLOUD_VERSION, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
 ];
 
 pub(crate) const COMBINE_COLUMN_INFO: &[ColumnInfo] = &[
@@ -206,7 +209,8 @@ pub(crate) const COMBINE_COLUMN_INFO: &[ColumnInfo] = &[
     ColumnInfo { name: column::EXT_INFO, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
     ColumnInfo { name: column::WRAP_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
     ColumnInfo { name: adapt_column::OLD_GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
-    ColumnInfo { name: adapt_column::ADAPT_GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: adapt_column::NEW_GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: adapt_column::NEW_CLOUD_VERSION, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
 ];
 
 pub(crate) struct UpgradeColumnInfo {
