@@ -188,7 +188,7 @@ impl IAssetPluginCtx for AssetContext {
     fn add_cloud_adapt_data(
         &mut self, attributes: &ExtDbMap, adapt_attributes: &ExtDbMap, is_ce: bool,
     ) -> std::result::Result<i32, u32> {
-        let db_name = get_db_name(self.user_id, attributes, false).map_err(|e| e.code as u32)?;
+        let db_name = get_db_name(self.user_id, attributes, is_ce).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
         db.insert_cloud_adapt_data(attributes, adapt_attributes).map_err(|e| e.code as u32)
     }
