@@ -47,6 +47,7 @@ use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID,
 };
+
 use crate::data_size_mod::handle_data_size_upload;
 use crate::{sys_event::upload_fault_system_event, PackageInfoFfi};
 

@@ -51,7 +51,7 @@ pub fn is_file_exist(path_str: &str) -> Result<bool> {
         Err(e) => {
             log_throw_error!(
                 ErrCode::FileOperationError,
-                "[FATAL][SA]]Checking existence of database key ciphertext file failed! error is [{}]",
+                "[FATAL][SA] Failed to check existence of file! error: {}",
                 e
             )
         },
