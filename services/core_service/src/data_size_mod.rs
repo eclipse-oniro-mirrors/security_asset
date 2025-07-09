@@ -120,7 +120,7 @@ fn should_upload_data_size(path_str: &str, unix_time: u64) -> bool {
                 Ok(prev_time) => prev_time,
                 Err(_) => return true,
             };
-            if unix_time > prev_time && unix_time - prev_time < ONE_DAY_SECS {
+            if unix_time >= prev_time && unix_time - prev_time < ONE_DAY_SECS {
                 return false;
             }
             true
