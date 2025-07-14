@@ -213,6 +213,5 @@ pub fn check_and_split_db(user_id: i32) -> Result<()> {
             split_db(user_id)?;
         }
     }
-    trigger_db_upgrade(user_id, false)?;
     Ok(())
 }
