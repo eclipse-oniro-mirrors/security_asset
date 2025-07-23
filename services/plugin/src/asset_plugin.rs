@@ -159,6 +159,17 @@ impl IAssetPluginCtx for AssetContext {
         Ok(())
     }
 
+    /// Create adapt cloud table for certain asset db.
+    fn create_adapt_cloud_table_for_specific_db(
+        &mut self,
+        db_info: &ExtDbMap,
+        is_ce: bool,
+    ) -> std::result::Result<(), u32> {
+        let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+        db.create_adapt_cloud_table().map_err(|e| e.code as u32)
+    }
+
     /// Adds an asset to de db.
     fn add(&mut self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
         let db_name = get_db_name(self.user_id, attributes, false).map_err(|e| e.code as u32)?;
@@ -171,6 +182,15 @@ impl IAssetPluginCtx for AssetContext {
         let db_name = get_db_name(self.user_id, attributes, true).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, true).map_err(|e| e.code as u32)?;
         db.insert_datas(attributes).map_err(|e| e.code as u32)
+    }
+
+    /// Adds an asset to db in asset and adapt table.
+    fn add_cloud_adapt_data(
+        &mut self, attributes: &ExtDbMap, adapt_attributes: &ExtDbMap, is_ce: bool,
+    ) -> std::result::Result<i32, u32> {
+        let db_name = get_db_name(self.user_id, attributes, is_ce).map_err(|e| e.code as u32)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+        db.insert_cloud_adapt_data(attributes, adapt_attributes).map_err(|e| e.code as u32)
     }
 
     /// Adds an asset with replace to de db.
@@ -239,10 +259,23 @@ impl IAssetPluginCtx for AssetContext {
         attributes: &ExtDbMap,
         query_options: &ExtDbMap,
         is_ce: bool,
+        is_filter_sync: bool,
     ) -> std::result::Result<Vec<ExtDbMap>, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
-        db.query_datas(&vec![], attributes, Some(&get_query_options(query_options)), true).map_err(|e| e.code as u32)
+        db.query_datas(&vec![], attributes, Some(&get_query_options(query_options)), is_filter_sync).map_err(|e| e.code as u32)
+    }
+
+    /// Query db with attributes to a certain db. Normal, Group, CE.
+    fn query_certain_db_with_connect_table(
+        &mut self,
+        db_info: &ExtDbMap,
+        attributes: &ExtDbMap,
+        is_ce: bool,
+    ) -> std::result::Result<Vec<ExtDbMap>, u32> {
+        let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+        db.query_datas_with_connect_table(&vec![], attributes, None, false).map_err(|e| e.code as u32)
     }
 
     /// Removes an asset from de db.
@@ -323,6 +356,19 @@ impl IAssetPluginCtx for AssetContext {
                 db.delete_specific_condition_datas(specific_cond, condition_value).map_err(|e| e.code as u32)?;
         }
         Ok(total_remove_count)
+    }
+
+    /// Remove an asset to db in asset and adapt table.
+    fn remove_cloud_adapt_data(
+        &mut self,
+        db_info: &ExtDbMap,
+        attributes: &ExtDbMap,
+        adapt_attributes: &ExtDbMap,
+        is_ce: bool,
+    ) -> std::result::Result<i32, u32> {
+        let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+        db.delete_adapt_data(attributes, adapt_attributes).map_err(|e| e.code as u32)
     }
 
     /// Updates the attributes of an asset in de db.

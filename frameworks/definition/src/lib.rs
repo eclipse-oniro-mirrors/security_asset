@@ -23,6 +23,7 @@ pub mod macros;
 
 impl_enum_trait! {
     /// An enum type containing the data type definitions for Asset attribute value.
+    #[derive(Clone, Copy)]
     #[derive(Eq, PartialEq)]
     pub enum DataType {
         /// The data type of Asset attribute value is bool.

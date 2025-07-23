@@ -32,9 +32,7 @@ use crate::{
     statement::Statement,
     table::Table,
     types::{
-        column, sqlite_err_handle, DbMap, QueryOptions, COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1,
-        DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3, DB_UPGRADE_VERSION_V4, SQLITE_OK, TABLE_NAME,
-        UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2, UPGRADE_COLUMN_INFO_V3, UPGRADE_COLUMN_INFO_V4,
+        column, sqlite_err_handle, DbMap, QueryOptions, ADAPT_CLOUD_COLUMN_INFO, ADAPT_CLOUD_TABLE, COLUMN_INFO, COMBINE_COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1, DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3, DB_UPGRADE_VERSION_V4, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2, UPGRADE_COLUMN_INFO_V3, UPGRADE_COLUMN_INFO_V4
     },
 };
 
@@ -145,7 +143,6 @@ pub(crate) fn get_db_by_type(
     user_id: i32,
     db_name: &str,
     db_path: String,
-    upgrade_db_version: u32,
     db_key: Option<&DbKey>,
 ) -> Result<Database> {
     let backup_path = fmt_backup_path(&db_path);
@@ -153,8 +150,9 @@ pub(crate) fn get_db_by_type(
     let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string() };
     let _lock = db.db_lock.mtx.lock().unwrap();
     db.open_and_restore(db_key)?;
-    db.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, upgrade_db_version))?;
-    db.upgrade(user_id, upgrade_db_version, |_, _, _| Ok(()))?;
+    // when create db table always use newest version.
+    db.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, DB_UPGRADE_VERSION))?;
+    db.upgrade(user_id, DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
     Ok(db)
 }
 
@@ -180,7 +178,7 @@ pub(crate) fn get_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Databas
         (db_path, None)
     };
 
-    get_db_by_type(user_id, db_name, db_path, DB_UPGRADE_VERSION, db_key.as_ref())
+    get_db_by_type(user_id, db_name, db_path, db_key.as_ref())
 }
 
 /// Create ce db instance if the value of tag "RequireAttrEncrypted" is set to true.
@@ -447,6 +445,15 @@ impl Database {
         }
     }
 
+    /// Create adapt cloud table for adaptation.
+    pub fn create_adapt_cloud_table(&mut self) -> Result<()> {
+        let table = Table::new(ADAPT_CLOUD_TABLE, self);
+        if table.exist()? {
+            return Ok(())
+        }
+        table.create(ADAPT_CLOUD_COLUMN_INFO)
+    }
+
     /// Insert datas into database.
     /// The datas is a map of column-data pair.
     /// If the operation is successful, the number of inserted data is returned.
@@ -479,6 +486,23 @@ impl Database {
                 log_throw_error!(ErrCode::Duplicated, "[FATAL]The data with the specified alias already exists.")
             } else {
                 e.insert_row(datas)
+            }
+        };
+        self.restore_if_exec_fail(closure)
+    }
+
+    /// Insert data in asset and adapt table.
+    pub fn insert_cloud_adapt_data(&mut self, datas: &DbMap, adapt_attributes: &DbMap) -> Result<i32> {
+        let _lock: std::sync::MutexGuard<'_, i32> = self.db_lock.mtx.lock().unwrap();
+        let closure = |e: &Table| {
+            let mut query = DbMap::new();
+            query.insert_attr(column::ALIAS, datas.get_bytes_attr(&column::ALIAS)?.clone());
+            query.insert_attr(column::OWNER, datas.get_bytes_attr(&column::OWNER)?.clone());
+            query.insert_attr(column::OWNER_TYPE, datas.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?);
+            if e.is_data_exists(&query, false)? {
+                log_throw_error!(ErrCode::Duplicated, "[FATAL]The data with the specified alias already exists.")
+            } else {
+                e.insert_adapt_data_row(datas, adapt_attributes)
             }
         };
         self.restore_if_exec_fail(closure)
@@ -532,6 +556,17 @@ impl Database {
     pub fn delete_batch_datas(&mut self, condition: &DbMap, update_datas: &DbMap, aliases: &[Vec<u8>]) -> Result<i32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.local_delete_batch_datas(condition, update_datas, aliases);
+        self.restore_if_exec_fail(closure)
+    }
+
+    /// Delete datas from database with specific condition.
+    pub fn delete_adapt_data(
+        &mut self,
+        condition: &DbMap,
+        adapt_attributes: &DbMap,
+    ) -> Result<i32> {
+        let _lock = self.db_lock.mtx.lock().unwrap();
+        let closure = |e: &Table| e.delete_adapt_data_row(condition, adapt_attributes);
         self.restore_if_exec_fail(closure)
     }
 
@@ -611,6 +646,19 @@ impl Database {
     ) -> Result<Vec<DbMap>> {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.query_row(columns, condition, query_options, is_filter_sync, COLUMN_INFO);
+        self.restore_if_exec_fail(closure)
+    }
+
+    /// Query datas from database with connect table.
+    #[inline(always)]
+    pub fn query_datas_with_connect_table(&mut self,
+        columns: &Vec<&'static str>,
+        condition: &DbMap,
+        query_options: Option<&QueryOptions>,
+        is_filter_sync: bool
+    ) -> Result<Vec<DbMap>> {
+        let _lock = self.db_lock.mtx.lock().unwrap();
+        let closure = |e: &Table| e.query_connect_table_row(columns, condition, query_options, is_filter_sync, COMBINE_COLUMN_INFO);
         self.restore_if_exec_fail(closure)
     }
 

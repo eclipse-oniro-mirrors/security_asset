@@ -25,6 +25,9 @@ pub type DbMap = HashMap<&'static str, Value>;
 /// Table name of asset database.
 pub const TABLE_NAME: &str = "asset_table";
 
+/// Table name for cloud adapt.
+pub(crate) const ADAPT_CLOUD_TABLE: &str = "adapt_cloud_table";
+
 /// Version V1 number for upgrade database
 pub const DB_UPGRADE_VERSION_V1: u32 = 0;
 /// Version V2 number for upgrade database
@@ -112,7 +115,18 @@ pub mod column {
     pub const WRAP_TYPE: &str = "WrapType";
 }
 
+/// Column name of asset database.
+pub mod adapt_column {
+    /// Column name of the global id.
+    pub const OLD_GLOBAL_ID: &str = "OldGlobalId";
+    /// Column name of the new global id.
+    pub const NEW_GLOBAL_ID: &str = "NewGlobalId";
+    /// Column name of the new data CloudVersion.
+    pub const NEW_CLOUD_VERSION: &str = "NewCloudVersion";
+}
+
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub(crate) struct ColumnInfo {
     pub(crate) name: &'static str,
     pub(crate) data_type: DataType,
@@ -153,6 +167,50 @@ pub(crate) const COLUMN_INFO: &[ColumnInfo] = &[
     ColumnInfo { name: column::SYNC_STATUS, data_type: DataType::Number, is_primary_key: false, not_null: true },
     ColumnInfo { name: column::EXT_INFO, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
     ColumnInfo { name: column::WRAP_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
+];
+
+pub(crate) const ADAPT_CLOUD_COLUMN_INFO: &[ColumnInfo] = &[
+    ColumnInfo { name: adapt_column::OLD_GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: adapt_column::NEW_GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: adapt_column::NEW_CLOUD_VERSION, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+];
+
+pub(crate) const COMBINE_COLUMN_INFO: &[ColumnInfo] = &[
+    ColumnInfo { name: column::ID, data_type: DataType::Number, is_primary_key: true, not_null: true },
+    ColumnInfo { name: column::SECRET, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::ALIAS, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::OWNER, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::OWNER_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::GROUP_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::SYNC_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::ACCESSIBILITY, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::AUTH_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::CREATE_TIME, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::UPDATE_TIME, data_type: DataType::Bytes, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::IS_PERSISTENT, data_type: DataType::Bool, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::VERSION, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::REQUIRE_PASSWORD_SET, data_type: DataType::Bool, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::CRITICAL1, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::CRITICAL2, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::CRITICAL3, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::CRITICAL4, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::NORMAL1, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::NORMAL2, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::NORMAL3, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::NORMAL4, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::NORMAL_LOCAL1, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::NORMAL_LOCAL2, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::NORMAL_LOCAL3, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::NORMAL_LOCAL4, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::CLOUD_VERSION, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::LOCAL_STATUS, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::SYNC_STATUS, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: column::EXT_INFO, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: column::WRAP_TYPE, data_type: DataType::Number, is_primary_key: false, not_null: true },
+    ColumnInfo { name: adapt_column::OLD_GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: adapt_column::NEW_GLOBAL_ID, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
+    ColumnInfo { name: adapt_column::NEW_CLOUD_VERSION, data_type: DataType::Bytes, is_primary_key: false, not_null: false },
 ];
 
 pub(crate) struct UpgradeColumnInfo {

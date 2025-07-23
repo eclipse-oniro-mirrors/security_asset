@@ -26,7 +26,7 @@ use crate::{
     database::Database,
     statement::Statement,
     transaction::Transaction,
-    types::{ColumnInfo, DbMap, QueryOptions, UpgradeColumnInfo, DB_UPGRADE_VERSION, SQLITE_ROW},
+    types::{adapt_column, column, ColumnInfo, DbMap, QueryOptions, UpgradeColumnInfo, ADAPT_CLOUD_TABLE, COLUMN_INFO, DB_UPGRADE_VERSION, SQLITE_ROW},
 };
 
 extern "C" {
@@ -309,6 +309,17 @@ impl<'a> Table<'a> {
         self.create_with_version(columns, DB_UPGRADE_VERSION)
     }
 
+    fn is_column_exist(&self, column: &'static str) -> bool {
+        let query_option = QueryOptions {
+            offset: None,
+            limit: Some(1),
+            order: None,
+            order_by: None,
+            amend: None
+        };
+        self.query_row(&vec![column], &DbMap::new(), Some(&query_option), false, COLUMN_INFO).is_ok()
+    }
+
     pub(crate) fn upgrade(&self, ver: u32, columns: &[UpgradeColumnInfo]) -> Result<()> {
         let is_exist = self.exist()?;
         if !is_exist {
@@ -318,6 +329,9 @@ impl<'a> Table<'a> {
         trans.begin()?;
         for item in columns {
             if let Err(e) = self.add_column(&item.base_info, &item.default_value) {
+                if self.is_column_exist(item.base_info.name) {
+                    continue;
+                }
                 trans.rollback()?;
                 return Err(e);
             }
@@ -340,7 +354,11 @@ impl<'a> Table<'a> {
     /// let ret = table.insert_row(datas);
     /// ```
     pub(crate) fn insert_row(&self, datas: &DbMap) -> Result<i32> {
-        let mut sql = format!("insert into {} (", self.table_name);
+        self.insert_row_with_table_name(datas, &self.table_name)
+    }
+
+    pub(crate) fn insert_row_with_table_name(&self, datas: &DbMap, table_name: &str) -> Result<i32> {
+        let mut sql = format!("insert into {} (", table_name);
         for (i, column_name) in datas.keys().enumerate() {
             sql.push_str(column_name);
             if i != datas.len() - 1 {
@@ -359,6 +377,20 @@ impl<'a> Table<'a> {
         Ok(count)
     }
 
+    // insert adapt data
+    pub(crate) fn insert_adapt_data_row(&self, datas: &DbMap, adapt_attributes: &DbMap) -> Result<i32> {
+        let mut trans = Transaction::new(self.db);
+        trans.begin()?;
+        if let Ok(insert_num) = self.insert_row(datas) {
+            if adapt_attributes.is_empty() || self.insert_row_with_table_name(adapt_attributes, ADAPT_CLOUD_TABLE).is_ok() {
+                trans.commit()?;
+                return Ok(insert_num)
+            }
+        }
+        trans.rollback()?;
+        log_throw_error!(ErrCode::DatabaseError, "insert adapt data failed!")
+    }
+
     /// Delete row from table.
     ///
     /// # Examples
@@ -374,7 +406,18 @@ impl<'a> Table<'a> {
         reverse_condition: Option<&DbMap>,
         is_filter_sync: bool,
     ) -> Result<i32> {
-        let mut sql = format!("delete from {}", self.table_name);
+        self.delete_row_with_table_name(condition, reverse_condition, is_filter_sync, &self.table_name)
+    }
+
+    // Delete row from table with table name.
+    pub(crate) fn delete_row_with_table_name(
+        &self,
+        condition: &DbMap,
+        reverse_condition: Option<&DbMap>,
+        is_filter_sync: bool,
+        table_name: &str
+    ) -> Result<i32> {
+        let mut sql = format!("delete from {}", table_name);
         build_sql_where(condition, is_filter_sync, &mut sql);
         build_sql_reverse_condition(condition, reverse_condition, &mut sql);
         let stmt = Statement::prepare(&sql, self.db)?;
@@ -386,6 +429,35 @@ impl<'a> Table<'a> {
         stmt.step()?;
         let count = unsafe { SqliteChanges(self.db.handle as _) };
         Ok(count)
+    }
+
+    // delete adapt data
+    pub(crate) fn delete_adapt_data_row(&self, datas: &DbMap, adapt_attributes: &DbMap) -> Result<i32> {
+        let mut trans = Transaction::new(self.db);
+        trans.begin()?;
+        // if datas is empty do not delete data in it.
+        let mut delete_num = 0;
+        if !datas.is_empty() {
+            delete_num = match self.delete_row(datas, None, false) {
+                Ok(num) => num,
+                Err(_e) => {
+                    trans.rollback()?;
+                    return log_throw_error!(ErrCode::DatabaseError, "delete adapt data failed!")
+                }
+            }
+        }
+        // if adapt_attributes is empty do not delete data in adapt table.
+        if !adapt_attributes.is_empty() {
+            delete_num = match self.delete_row_with_table_name(adapt_attributes, None, false, ADAPT_CLOUD_TABLE) {
+                Ok(num) => num,
+                Err(_e) => {
+                    trans.rollback()?;
+                    return log_throw_error!(ErrCode::DatabaseError, "delete adapt data failed!")
+                }
+            }
+        }
+        trans.commit()?;
+        Ok(delete_num)
     }
 
     /// Delete row from table with specific condition.
@@ -561,6 +633,64 @@ impl<'a> Table<'a> {
         Ok(result)
     }
 
+    /// Query row from table.
+    /// If length of columns is 0, all table columns are queried. (eg. select * xxx)
+    /// If length of condition is 0, all data in the table is queried.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// // SQL: select alias,blobs from table_name
+    /// let result_set = table.query_datas_with_key_value(&vec!["alias", "blobs"], false, &vec![]);
+    /// ```
+    pub(crate) fn query_connect_table_row(
+        &self,
+        columns: &Vec<&'static str>,
+        condition: &DbMap,
+        query_options: Option<&QueryOptions>,
+        is_filter_sync: bool,
+        column_info: &'static [ColumnInfo],
+    ) -> Result<Vec<DbMap>> {
+        let mut sql = String::from("select ");
+        if !columns.is_empty() {
+            sql.push_str("distinct ");
+        }
+        build_sql_columns(columns, &mut sql);
+        sql.push_str(" from ");
+        sql.push_str(self.table_name.as_str());
+        sql.push_str(format!(
+            " LEFT JOIN {} ON {}.{} = {}.{}",
+            ADAPT_CLOUD_TABLE, self.table_name.as_str(),
+            column::GLOBAL_ID, ADAPT_CLOUD_TABLE, adapt_column::OLD_GLOBAL_ID).as_str()
+        );
+        build_sql_where(condition, is_filter_sync, &mut sql);
+        build_sql_query_options(query_options, &mut sql);
+        let stmt = Statement::prepare(&sql, self.db)?;
+        let mut index = 1;
+        bind_where_datas(condition, &stmt, &mut index)?;
+        let mut result = vec![];
+        while stmt.step()? == SQLITE_ROW {
+            let mut record = DbMap::new();
+            let n = stmt.data_count();
+            for i in 0..n {
+                let column_name = stmt.query_column_name(i)?;
+                let column_info = get_column_info(column_info, column_name)?;
+                match stmt.query_column_auto_type(i)? {
+                    Some(Value::Number(n)) if column_info.data_type == DataType::Bool => {
+                        record.insert(column_info.name, Value::Bool(n != 0))
+                    },
+                    Some(n) if n.data_type() == column_info.data_type => record.insert(column_info.name, n),
+                    Some(_) => {
+                        return log_throw_error!(ErrCode::DataCorrupted, "The data in DB has been tampered with.")
+                    },
+                    None => continue,
+                };
+            }
+            result.push(record);
+        }
+        Ok(result)
+    }
+
     /// Count the number of datas with query condition(can be empty).
     ///
     /// # Examples
@@ -644,7 +774,7 @@ impl<'a> Table<'a> {
         }
         if let Err(e) = self.insert_row(datas) {
             trans.rollback()?;
-            Err(e);
+            Err(e)
         } else {
             trans.commit()
         }

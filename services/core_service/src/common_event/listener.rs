@@ -48,6 +48,7 @@ use asset_sdk::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID,
 };
 
+use crate::data_size_mod::handle_data_size_upload;
 use crate::{sys_event::upload_fault_system_event, PackageInfoFfi};
 
 /// success code.
@@ -327,6 +328,10 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
         Err(e) => loge!("upgrade ce db version and key alias on user-unlocked failed, err is: {}", e),
     }
 
+    if let Err(e) = handle_data_size_upload() {
+        loge!("Failed to handle data upload: {}", e);
+    }
+
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
@@ -352,12 +357,11 @@ pub(crate) fn notify_on_user_removed(user_id: i32) {
 
 pub(crate) extern "C" fn on_schedule_wakeup() {
     logi!("[INFO]On SA wakes up at a scheduled time(36H).");
-    let default_user_id = 0;
     let self_bundle_name = "asset_service";
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
-        params.insert(PARAM_NAME_USER_ID, Value::Number(default_user_id as u32));
+        params.insert(PARAM_NAME_USER_ID, Value::Number(MINIMUM_MAIN_USER_ID as u32));
         params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(self_bundle_name.as_bytes().to_vec()));
         match load.process_event(EventType::Sync, &mut params) {
             Ok(()) => logi!("process sync ext event success."),
