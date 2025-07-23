@@ -32,13 +32,13 @@ public:
     napi_env env = nullptr;
     napi_async_work work = nullptr;
     napi_deferred deferred = nullptr;
-    napi_value error = nullptr;
     std::vector<AssetAttr> attrs;
     int32_t result = SEC_ASSET_INVALID_ARGUMENT;
 
     std::function<napi_status(const napi_env, napi_callback_info, BaseContext *)> parse;
     napi_async_execute_callback execute;
     std::function<napi_value(napi_env, BaseContext *)> resolve;
+    std::function<napi_value(napi_env, BaseContext *)> check;
 };
 
 class PreQueryContext : public BaseContext {

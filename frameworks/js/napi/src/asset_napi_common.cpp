@@ -160,11 +160,6 @@ napi_value CreateJsMap(const napi_env env, const AssetResult &result)
 
 void ResolvePromise(const napi_env env, BaseContext *context)
 {
-    if (context->error != nullptr) {
-        NAPI_CALL_RETURN_VOID(env, napi_reject_deferred(env, context->deferred, context->error));
-        return;
-    }
-
     if (context->result == SEC_ASSET_SUCCESS) {
         napi_value result = context->resolve(env, context);
         NAPI_CALL_RETURN_VOID(env, napi_resolve_deferred(env, context->deferred, result));
@@ -303,6 +298,13 @@ napi_value CreateAsyncWork(const napi_env env, napi_callback_info info, std::uni
 
     napi_value promise;
     NAPI_CALL(env, napi_create_promise(env, &context->deferred, &promise));
+    if (context->check != nullptr) {
+        napi_value error = context->check(env, context.get());
+        if (error != nullptr) {
+            NAPI_CALL(env, napi_reject_deferred(env, context->deferred, error));
+            return promise;
+        }
+    }
     napi_value resource = nullptr;
     NAPI_CALL(env, napi_create_string_utf8(env, resourceName, NAPI_AUTO_LENGTH, &resource));
     NAPI_CALL(env, napi_create_async_work(env, nullptr, resource, context->execute,
