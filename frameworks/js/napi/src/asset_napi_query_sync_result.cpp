@@ -35,7 +35,7 @@ const std::vector<uint32_t> OPTIONAL_TAGS = {
 
 napi_value CheckQuerySyncResultArgs(napi_env env, BaseContext *baseContext)
 {
-    QuerySyncResultContext *context = reinterpret_cast<QuerySyncResultContext>(baseContext);
+    QuerySyncResultContext *context = static_cast<QuerySyncResultContext>(baseContext);
     napi_value error = CheckAssetTagValidity(env, context->attrs, OPTIONAL_TAGS, SEC_ASSET_PARAM_VERIFICATION_FAILED);
     if (error != nullptr) {
         return error;
