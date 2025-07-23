@@ -362,8 +362,8 @@ impl IAssetPluginCtx for AssetContext {
     fn remove_cloud_adapt_data(
         &mut self,
         db_info: &ExtDbMap,
-        attributes: &ExtDbMap,
-        adapt_attributes: &ExtDbMap,
+        attributes: Option<&ExtDbMap>,
+        adapt_attributes: Option<&ExtDbMap>,
         is_ce: bool,
     ) -> std::result::Result<i32, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;

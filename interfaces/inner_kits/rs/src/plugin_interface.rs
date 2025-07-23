@@ -204,8 +204,8 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     fn remove_cloud_adapt_data(
         &mut self,
         db_info: &ExtDbMap,
-        attributes: &ExtDbMap,
-        adapt_attributes: &ExtDbMap,
+        attributes: Option<&ExtDbMap>,
+        adapt_attributes: Option<&ExtDbMap>,
         is_ce: bool,
     ) -> Result<i32, u32>;
 
