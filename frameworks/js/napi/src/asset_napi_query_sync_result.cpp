@@ -33,14 +33,14 @@ const std::vector<uint32_t> OPTIONAL_TAGS = {
     SEC_ASSET_TAG_REQUIRE_ATTR_ENCRYPTED,
 };
 
-napi_value CheckQuerySyncResultArgs(napi_env env, const std::vector<AssetAttr> &attrs)
+napi_value CheckQuerySyncResultArgs(napi_env env, BaseContext *baseContext)
 {
-    napi_value error = CheckAssetTagValidity(env, attrs, OPTIONAL_TAGS, SEC_ASSET_PARAM_VERIFICATION_FAILED);
+    QuerySyncResultContext *context = static_cast<QuerySyncResultContext *>(baseContext);
+    napi_value error = CheckAssetTagValidity(env, context->attrs, OPTIONAL_TAGS, SEC_ASSET_PARAM_VERIFICATION_FAILED);
     if (error != nullptr) {
         return error;
     }
-
-    return CheckAssetValueValidity(env, attrs, SEC_ASSET_PARAM_VERIFICATION_FAILED);
+    return CheckAssetValueValidity(env, context->attrs, SEC_ASSET_PARAM_VERIFICATION_FAILED);
 }
 } // anonymous namespace
 
@@ -57,12 +57,10 @@ napi_value NapiQuerySyncResult(const napi_env env, napi_callback_info info)
         return napi_ok;
     };
 
+    context->check = CheckQuerySyncResultArgs;
+
     context->execute = [](napi_env env, void *data) {
         QuerySyncResultContext *context = static_cast<QuerySyncResultContext *>(data);
-        context->error = CheckQuerySyncResultArgs(env, context->attrs);
-        if (context->error != nullptr) {
-            return;
-        }
         context->result = AssetQuerySyncResult(&context->attrs[0], context->attrs.size(), &context->syncResult);
     };
 
