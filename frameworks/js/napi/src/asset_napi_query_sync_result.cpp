@@ -50,7 +50,7 @@ napi_value NapiQuerySyncResult(const napi_env env, napi_callback_info info)
     NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for Context.");
 
     context->parse = [](napi_env env, napi_callback_info info, BaseContext *baseContext) -> napi_status {
-        QuerySyncResultContext *context = static_cast<QuerySyncResultContext *>(baseContext);
+        QuerySyncResultContext *context = reinterpret_cast<QuerySyncResultContext *>(baseContext);
         napi_value argv[MAX_ARGS_NUM] = { 0 };
         IF_ERR_RETURN(ParseJsArgs(env, info, argv, ARG_COUNT));
         IF_ERR_RETURN(ParseJsMap(env, argv[0], context->attrs));
