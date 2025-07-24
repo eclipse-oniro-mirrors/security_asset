@@ -33,9 +33,8 @@ const std::vector<uint32_t> OPTIONAL_TAGS = {
     SEC_ASSET_TAG_REQUIRE_ATTR_ENCRYPTED,
 };
 
-napi_value CheckQuerySyncResultArgs(napi_env env, BaseContext *baseContext)
+napi_value CheckQuerySyncResultArgs(napi_env env, BaseContext *context)
 {
-    QuerySyncResultContext *context = static_cast<QuerySyncResultContext *>(baseContext);
     napi_value error = CheckAssetTagValidity(env, context->attrs, OPTIONAL_TAGS, SEC_ASSET_PARAM_VERIFICATION_FAILED);
     if (error != nullptr) {
         return error;
