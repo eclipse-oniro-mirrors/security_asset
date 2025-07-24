@@ -432,13 +432,17 @@ impl<'a> Table<'a> {
     }
 
     // delete adapt data
-    pub(crate) fn delete_adapt_data_row(&self, datas: &DbMap, adapt_attributes: &DbMap) -> Result<i32> {
+    pub(crate) fn delete_adapt_data_row(
+        &self,
+        datas: Option<&DbMap>,
+        adapt_attributes: Option<&DbMap>
+    ) -> Result<i32> {
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
         // if datas is empty do not delete data in it.
         let mut delete_num = 0;
-        if !datas.is_empty() {
-            delete_num = match self.delete_row(datas, None, false) {
+        if let Some(data) = datas {
+            delete_num = match self.delete_row(data, None, false) {
                 Ok(num) => num,
                 Err(_e) => {
                     trans.rollback()?;
@@ -446,9 +450,10 @@ impl<'a> Table<'a> {
                 }
             }
         }
+
         // if adapt_attributes is empty do not delete data in adapt table.
-        if !adapt_attributes.is_empty() {
-            delete_num = match self.delete_row_with_table_name(adapt_attributes, None, false, ADAPT_CLOUD_TABLE) {
+        if let Some(adapt_attribute) = adapt_attributes {
+            delete_num = match self.delete_row_with_table_name(adapt_attribute, None, false, ADAPT_CLOUD_TABLE) {
                 Ok(num) => num,
                 Err(_e) => {
                     trans.rollback()?;

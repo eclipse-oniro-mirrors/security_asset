@@ -562,8 +562,8 @@ impl Database {
     /// Delete datas from database with specific condition.
     pub fn delete_adapt_data(
         &mut self,
-        condition: &DbMap,
-        adapt_attributes: &DbMap,
+        condition: Option<&DbMap>,
+        adapt_attributes: Option<&DbMap>,
     ) -> Result<i32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.delete_adapt_data_row(condition, adapt_attributes);
