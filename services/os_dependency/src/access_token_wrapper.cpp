@@ -49,7 +49,6 @@ bool CheckPermission(const char *permission)
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     int result = AccessTokenKit::VerifyAccessToken(tokenId, permission);
     if (result == PERMISSION_GRANTED) {
-        LOGI("[INFO]Check permission success!");
         return true;
     } else {
         LOGE("[FATAL]Check permission failed, ret=%{public}d", result);

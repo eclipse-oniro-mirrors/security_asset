@@ -103,7 +103,6 @@ pub(crate) fn unload_sa() {
                 continue;
             }
 
-            logi!("[INFO]Start unload asset service");
             SystemAbilityManager::unload_system_ability(SA_ID);
             break;
         }
