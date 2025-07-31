@@ -403,7 +403,6 @@ impl IAssetPluginCtx for AssetContext {
     }
 }
 
-#[allow(dead_code)]
 impl IAssetPluginTaskCtx for AssetTaskContext {
     /// Increase count
     fn increase_count(&mut self) {
