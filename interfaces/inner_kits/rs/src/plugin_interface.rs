@@ -220,7 +220,7 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 }
 
 /// Defines an interface for an asset plugin task context.
-pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
+pub trait IAssetPluginTaskCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     /// Increase count
     fn increase_count(&mut self);
 
