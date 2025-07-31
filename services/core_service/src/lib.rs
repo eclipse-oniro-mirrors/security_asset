@@ -33,7 +33,7 @@ use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncResult};
 use asset_file_operator::{common::DE_ROOT_PATH, de_operator::create_user_de_dir};
 use asset_ipc::SA_ID;
 use asset_log::{loge, logi};
-use asset_plugin::asset_plugin::{AssetContext, AssetPlugin};
+use asset_plugin::asset_plugin::{AssetContext, AssetPlugin, AssetTaskContext};
 
 mod data_size_mod;
 mod common_event;
@@ -198,7 +198,8 @@ fn start_service(handler: Handler) -> Result<()> {
     let asset_plugin = AssetPlugin::get_instance();
     match asset_plugin.load_plugin() {
         Ok(loader) => {
-            let _tr = loader.init(Box::new(AssetContext { user_id: 0 }));
+            let _tr = loader.init(
+                Box::new(AssetContext { user_id: 0 }), Box::new(AssetTaskContext {}));
             logi!("load plugin success.");
         },
         Err(_) => loge!("load plugin failed."),

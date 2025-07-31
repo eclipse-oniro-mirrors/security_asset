@@ -110,6 +110,10 @@ pub struct AssetContext {
     pub user_id: i32,
 }
 
+/// The asset_ext plugin task context.
+#[repr(C)]
+pub struct AssetTaskContext {}
+
 fn convert_db_map(attributes: &ExtDbMap) -> Result<DbMap> {
     let owner_info = attributes.get_bytes_attr(&column::OWNER)?;
     let owner_type = attributes.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?;
@@ -397,7 +401,10 @@ impl IAssetPluginCtx for AssetContext {
     fn get_storage_path(&self) -> String {
         get_path()
     }
+}
 
+#[allow(dead_code)]
+impl IAssetPluginTaskCtx for AssetTaskContext {
     /// Increase count
     fn increase_count(&mut self) {
         let counter = Counter::get_instance();
