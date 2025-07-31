@@ -23,7 +23,7 @@ use asset_file_operator::de_operator::create_user_de_dir;
 use asset_log::{loge, logi};
 use asset_sdk::{
     log_throw_error,
-    plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, RETURN_LIMIT, RETURN_OFFSET},
+    plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, IAssetPluginTaskCtx, RETURN_LIMIT, RETURN_OFFSET},
     AssetError, ErrCode, Extension, Result, SyncStatus, Value,
 };
 use asset_utils::time;
