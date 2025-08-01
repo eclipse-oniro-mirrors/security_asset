@@ -198,8 +198,7 @@ fn start_service(handler: Handler) -> Result<()> {
     let asset_plugin = AssetPlugin::get_instance();
     match asset_plugin.load_plugin() {
         Ok(loader) => {
-            let _tr = loader.init(
-                Box::new(AssetContext { user_id: 0 }));
+            let _tr = loader.init(Box::new(AssetContext { user_id: 0 }));
             logi!("load plugin success.");
         },
         Err(_) => loge!("load plugin failed."),
