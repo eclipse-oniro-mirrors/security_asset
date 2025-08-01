@@ -117,40 +117,40 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Create adapt cloud table for certain asset db.
     fn create_adapt_cloud_table_for_specific_db(
-        &mut self,
+        &self,
         db_info: &ExtDbMap,
         is_ce: bool,
     ) -> Result<(), u32>;
 
     /// Adds an asset to de db.
-    fn add(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
+    fn add(&self, attributes: &ExtDbMap) -> Result<i32, u32>;
 
     /// Adds an asset to ce cb.
-    fn ce_add(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
+    fn ce_add(&self, attributes: &ExtDbMap) -> Result<i32, u32>;
 
     /// Adds an asset to db in asset and adapt table.
     fn add_cloud_adapt_data(
-        &mut self,
+        &self,
         attributes: &ExtDbMap,
         adapt_attributes: &ExtDbMap,
         is_ce: bool,
     ) -> Result<i32, u32>;
 
     /// Adds an asset with replace to de db.
-    fn replace(&mut self, condition: &ExtDbMap, attributes: &ExtDbMap) -> std::result::Result<(), u32>;
+    fn replace(&self, condition: &ExtDbMap, attributes: &ExtDbMap) -> std::result::Result<(), u32>;
 
     /// Adds an asset with replace to ce db.
-    fn ce_replace(&mut self, condition: &ExtDbMap, attributes: &ExtDbMap) -> std::result::Result<(), u32>;
+    fn ce_replace(&self, condition: &ExtDbMap, attributes: &ExtDbMap) -> std::result::Result<(), u32>;
 
     /// Queries de db.
-    fn query(&mut self, attributes: &ExtDbMap) -> Result<Vec<ExtDbMap>, u32>;
+    fn query(&self, attributes: &ExtDbMap) -> Result<Vec<ExtDbMap>, u32>;
 
     /// Queries ce db.
-    fn ce_query(&mut self, attributes: &ExtDbMap) -> Result<Vec<ExtDbMap>, u32>;
+    fn ce_query(&self, attributes: &ExtDbMap) -> Result<Vec<ExtDbMap>, u32>;
 
     /// Query target data.
     fn query_target_data(
-        &mut self,
+        &self,
         db_name: &str,
         columns: &[&'static str],
         sql_where: &str,
@@ -161,7 +161,7 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Query db with attributes to a certain db. Normal, Group, CE.
     fn query_certain_db(
-        &mut self,
+        &self,
         db_info: &ExtDbMap,
         attributes: &ExtDbMap,
         query_options: &ExtDbMap,
@@ -171,30 +171,30 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Query db with attributes to a certain db. Normal, CE.
     fn query_certain_db_with_connect_table(
-        &mut self,
+        &self,
         db_info: &ExtDbMap,
         attributes: &ExtDbMap,
         is_ce: bool,
     ) -> Result<Vec<ExtDbMap>, u32>;
 
     /// Removes an asset from de db.
-    fn remove(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
+    fn remove(&self, attributes: &ExtDbMap) -> Result<i32, u32>;
 
     /// Removes an asset from ce db.
-    fn ce_remove(&mut self, attributes: &ExtDbMap) -> Result<i32, u32>;
+    fn ce_remove(&self, attributes: &ExtDbMap) -> Result<i32, u32>;
 
     /// Removes an asset from a certain db. Normal, Group, CE.
-    fn remove_certain_db(&mut self, db_info: &ExtDbMap, attributes: &ExtDbMap, is_ce: bool) -> Result<i32, u32>;
+    fn remove_certain_db(&self, db_info: &ExtDbMap, attributes: &ExtDbMap, is_ce: bool) -> Result<i32, u32>;
 
     /// Removes assets from de db with specific condition.
-    fn remove_with_specific_cond(&mut self, specific_cond: &str, condition_value: &[Value]) -> Result<i32, u32>;
+    fn remove_with_specific_cond(&self, specific_cond: &str, condition_value: &[Value]) -> Result<i32, u32>;
 
     /// Removes assets from ce db with specific condition.
-    fn ce_remove_with_specific_cond(&mut self, specific_cond: &str, condition_value: &[Value]) -> Result<i32, u32>;
+    fn ce_remove_with_specific_cond(&self, specific_cond: &str, condition_value: &[Value]) -> Result<i32, u32>;
 
     /// Removes assets from de db with aliases
     fn batch_remove(
-        &mut self,
+        &self,
         attributes: &ExtDbMap,
         aliases: &[Vec<u8>],
         require_attr_encrypted: bool,
@@ -202,7 +202,7 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Remove an asset to db in asset and adapt table.
     fn remove_cloud_adapt_data(
-        &mut self,
+        &self,
         db_info: &ExtDbMap,
         attributes: Option<&ExtDbMap>,
         adapt_attributes: Option<&ExtDbMap>,
@@ -210,22 +210,22 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     ) -> Result<i32, u32>;
 
     /// Updates the attributes of an asset in de db.
-    fn update(&mut self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> Result<i32, u32>;
+    fn update(&self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> Result<i32, u32>;
 
     /// Updates the attributes of an asset in ce db.
-    fn ce_update(&mut self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> Result<i32, u32>;
+    fn ce_update(&self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> Result<i32, u32>;
 
     /// Returns the storage path for de db.
     fn get_storage_path(&self) -> String;
 
     /// Increase count
-    fn increase_count(&mut self);
+    fn increase_count(&self);
 
     /// Decrease count
-    fn decrease_count(&mut self);
+    fn decrease_count(&self);
 
     /// Add task
-    fn add_task(&mut self, handle: JoinHandle<()>);
+    fn add_task(&self, handle: JoinHandle<()>);
 }
 
 /// Defines a trait `IAssetPlugin` that specifies the required functionality for an asset plugin implementation.
