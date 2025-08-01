@@ -23,7 +23,7 @@ use asset_file_operator::de_operator::create_user_de_dir;
 use asset_log::{loge, logi};
 use asset_sdk::{
     log_throw_error,
-    plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, IAssetPluginTaskCtx, RETURN_LIMIT, RETURN_OFFSET},
+    plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, RETURN_LIMIT, RETURN_OFFSET},
     AssetError, ErrCode, Extension, Result, SyncStatus, Value,
 };
 use asset_utils::time;
@@ -110,9 +110,6 @@ pub struct AssetContext {
     pub user_id: i32,
 }
 
-/// The asset_ext plugin task context.
-#[repr(C)]
-pub struct AssetTaskContext {}
 
 fn convert_db_map(attributes: &ExtDbMap) -> Result<DbMap> {
     let owner_info = attributes.get_bytes_attr(&column::OWNER)?;
@@ -401,9 +398,7 @@ impl IAssetPluginCtx for AssetContext {
     fn get_storage_path(&self) -> String {
         get_path()
     }
-}
 
-impl IAssetPluginTaskCtx for AssetTaskContext {
     /// Increase count
     fn increase_count(&self) {
         let counter = Counter::get_instance();
