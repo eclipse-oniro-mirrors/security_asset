@@ -416,7 +416,7 @@ impl IAssetPluginCtx for AssetContext {
         is_ce: bool,
     ) -> std::result::Result<Arc<Mutex<i32>>, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
-        let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+        let db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
         let lock = db.get_db_lock().map_err(|e| e.code as u32)?;
         Ok(lock)
     }
