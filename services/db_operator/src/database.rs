@@ -194,7 +194,7 @@ pub(crate) fn get_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Databas
         (db_path, None)
     };
 
-    get_db_by_type(user_id, db_name, db_path, db_key.as_ref(), need_lock)
+    get_db_by_type(user_id, db_name, db_path, db_key.as_ref())
 }
 
 pub(crate) fn get_db_without_lock(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
