@@ -139,6 +139,22 @@ fn check_validity_of_db_key(path: &str, user_id: i32) -> Result<()> {
     Ok(())
 }
 
+pub(crate) fn get_db_by_type_without_lock(
+    user_id: i32,
+    db_name: &str,
+    db_path: String,
+    db_key: Option<&DbKey>,
+) -> Result<Database> {
+    let backup_path = fmt_backup_path(&db_path);
+    let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
+    let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string() };
+    db.open_and_restore(db_key)?;
+    // when create db table always use newest version.
+    db.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, DB_UPGRADE_VERSION))?;
+    db.upgrade(user_id, DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
+    Ok(db)
+}
+
 pub(crate) fn get_db_by_type(
     user_id: i32,
     db_name: &str,
@@ -178,7 +194,32 @@ pub(crate) fn get_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Databas
         (db_path, None)
     };
 
-    get_db_by_type(user_id, db_name, db_path, db_key.as_ref())
+    get_db_by_type(user_id, db_name, db_path, db_key.as_ref(), need_lock)
+}
+
+pub(crate) fn get_db_without_lock(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
+    let (db_path, db_key) = if is_ce {
+        let db_path = fmt_ce_db_path_with_name(user_id, db_name);
+        check_validity_of_db_key(&db_path, user_id)?;
+        let db_key = match DbKey::get_db_key(user_id) {
+            Ok(db_key) => Some(db_key),
+            Err(e) if e.code == ErrCode::NotFound || e.code == ErrCode::DataCorrupted => {
+                loge!(
+                    "[FATAL]The key is corrupted. Now all data should be cleared and restart over, err is {}.",
+                    e.code
+                );
+                remove_ce_files(user_id)?;
+                return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
+            },
+            Err(e) => return Err(e),
+        };
+        (db_path, db_key)
+    } else {
+        let db_path = fmt_de_db_path_with_name(user_id, db_name);
+        (db_path, None)
+    };
+
+    get_db_by_type_without_lock(user_id, db_name, db_path, db_key.as_ref())
 }
 
 /// Create ce db instance if the value of tag "RequireAttrEncrypted" is set to true.
@@ -204,6 +245,12 @@ impl Database {
     pub fn build_with_file_name(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
         check_and_split_db(user_id)?;
         get_db(user_id, db_name, is_ce)
+    }
+
+    /// Create a database from a file name without lock in full process.
+    pub fn build_with_file_name_without_lock(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
+        // run here db must has been splited.
+        get_db_without_lock(user_id, db_name, is_ce)
     }
 
     /// Check whether db is ok

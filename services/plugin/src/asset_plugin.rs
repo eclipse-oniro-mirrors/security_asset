@@ -190,10 +190,11 @@ impl IAssetPluginCtx for AssetContext {
         &self, attributes: &ExtDbMap, adapt_attributes: &ExtDbMap, is_ce: bool, need_lock: bool,
     ) -> std::result::Result<i32, u32> {
         let db_name = get_db_name(self.user_id, attributes, is_ce).map_err(|e| e.code as u32)?;
-        let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
         if need_lock {
+            let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
             db.insert_cloud_adapt_data(attributes, adapt_attributes).map_err(|e| e.code as u32)
         } else {
+            let mut db = DataBase::build_with_file_name_without_lock(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
             db.insert_cloud_adapt_data_without_lock(attributes, adapt_attributes).map_err(|e| e.code as u32)
         }
         
@@ -281,10 +282,12 @@ impl IAssetPluginCtx for AssetContext {
         need_lock: bool,
     ) -> std::result::Result<Vec<ExtDbMap>, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
-        let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+        
         if need_lock {
+            let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
             db.query_datas_with_connect_table(&vec![], attributes, None, false).map_err(|e| e.code as u32)
         } else {
+            let mut db = Database::build_with_file_name_without_lock(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
             db.query_datas_with_connect_table_without_lock(&vec![], attributes, None, false).map_err(|e| e.code as u32)
         }
         
@@ -380,10 +383,11 @@ impl IAssetPluginCtx for AssetContext {
         need_lock: bool,
     ) -> std::result::Result<i32, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
-        let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
         if need_lock {
+            let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
             db.delete_adapt_data(attributes, adapt_attributes).map_err(|e| e.code as u32)
         } else {
+            let mut db = Database::build_with_file_name_without_lock(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
             db.delete_adapt_data_without_lock(attributes, adapt_attributes).map_err(|e| e.code as u32)
         }
     }

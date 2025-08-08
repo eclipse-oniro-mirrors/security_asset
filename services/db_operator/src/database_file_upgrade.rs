@@ -92,7 +92,7 @@ pub fn construct_splited_db_name(calling_info: &CallingInfo, is_ce: bool) -> Res
 
 fn get_db_before_split(user_id: i32) -> Result<Database> {
     let db_path = fmt_de_db_path_with_name(user_id, OLD_DB_NAME);
-    get_db_by_type(user_id, OLD_DB_NAME, db_path, None)
+    get_db_by_type(user_id, OLD_DB_NAME, db_path, None, true)
 }
 
 fn get_value_from_db_map(db_map: &DbMap, key: &str) -> Result<Value> {
@@ -121,7 +121,7 @@ fn get_new_db(user_id: i32, info_map: &DbMap) -> Result<Database> {
     let new_db_name = construct_splited_db_name(&calling_info, false)?;
     // 1.2 construct new db
     let db_path = fmt_de_db_path_with_name(user_id, &new_db_name);
-    get_db_by_type(user_id, &new_db_name, db_path, None)
+    get_db_by_type(user_id, &new_db_name, db_path, None, true)
 }
 
 /// Trigger upgrade of database version and renaming secret key alias.
@@ -135,7 +135,7 @@ pub fn trigger_db_upgrade(user_id: i32, is_ce: bool) -> Result<()> {
         let entry = entry?;
         if entry.file_name().to_string_lossy().ends_with(DB_SUFFIX) {
             if let Some(file_name_stem) = entry.file_name().to_string_lossy().strip_suffix(DB_SUFFIX) {
-                let _ = get_db(user_id, file_name_stem, is_ce)?;
+                let _ = get_db(user_id, file_name_stem, is_ce, true)?;
             }
         }
     }
