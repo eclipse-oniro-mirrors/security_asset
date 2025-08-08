@@ -731,7 +731,7 @@ impl Database {
 
     /// Get db lock.
     pub fn get_db_lock(&self) -> Result<Arc<Mutex<i32>>> {
-        Arc::clone(&self.db_lock.mtx)
+        Ok(Arc::clone(&self.db_lock.mtx))
     }
 }
 
