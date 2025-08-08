@@ -194,7 +194,7 @@ impl IAssetPluginCtx for AssetContext {
             let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
             db.insert_cloud_adapt_data(attributes, adapt_attributes).map_err(|e| e.code as u32)
         } else {
-            let mut db = DataBase::build_with_file_name_without_lock(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+            let mut db = Database::build_with_file_name_without_lock(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
             db.insert_cloud_adapt_data_without_lock(attributes, adapt_attributes).map_err(|e| e.code as u32)
         }
         
