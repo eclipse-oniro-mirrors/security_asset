@@ -134,6 +134,7 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
         attributes: &ExtDbMap,
         adapt_attributes: &ExtDbMap,
         is_ce: bool,
+        need_lock: bool,
     ) -> Result<i32, u32>;
 
     /// Adds an asset with replace to de db.
@@ -175,6 +176,7 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
         db_info: &ExtDbMap,
         attributes: &ExtDbMap,
         is_ce: bool,
+        need_lock: bool,
     ) -> Result<Vec<ExtDbMap>, u32>;
 
     /// Removes an asset from de db.
@@ -207,6 +209,7 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
         attributes: Option<&ExtDbMap>,
         adapt_attributes: Option<&ExtDbMap>,
         is_ce: bool,
+        need_lock: bool,
     ) -> Result<i32, u32>;
 
     /// Updates the attributes of an asset in de db.
@@ -214,6 +217,13 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Updates the attributes of an asset in ce db.
     fn ce_update(&self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> Result<i32, u32>;
+
+    /// Get certain db lock.
+    fn get_certain_db_lock(
+        &self,
+        db_info: &ExtDbMap,
+        is_ce: bool,
+    ) -> Result<Arc<Mutex<i32>>, u32>;
 
     /// Returns the storage path for de db.
     fn get_storage_path(&self) -> String;
