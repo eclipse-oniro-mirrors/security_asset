@@ -17,7 +17,7 @@
 //! Databases are isolated based on users and protected by locks.
 
 use core::ffi::c_void;
-use std::{collections::HashMap, ffi::CStr, fs, ptr::null_mut, sync::Mutex};
+use std::{collections::HashMap, ffi::CStr, fs, ptr::null_mut, sync::{Arc, Mutex}};
 
 use asset_common::{CallingInfo, OwnerType};
 use asset_crypto_manager::secret_key::rename_key_alias;
@@ -47,7 +47,7 @@ extern "C" {
 
 /// each user have a Database file
 pub(crate) struct UserDbLock {
-    pub(crate) mtx: Mutex<i32>,
+    pub(crate) mtx: Arc<Mutex<i32>>,
 }
 
 pub(crate) static OLD_DB_NAME: &str = "asset";
@@ -63,7 +63,7 @@ pub(crate) fn get_split_db_lock_by_user_id(user_id: i32) -> &'static UserDbLock 
         return lock;
     }
 
-    let nf = Box::new(UserDbLock { mtx: Mutex::new(user_id) });
+    let nf = Box::new(UserDbLock { mtx: Arc::new(Mutex::new(user_id)) });
     // SAFETY: We just push item into SPLIT_DB_LOCK_MAP, never remove item or modify item,
     // so return a reference of leak item is safe.
     let nf: &'static UserDbLock = Box::leak(nf);
@@ -80,7 +80,7 @@ pub(crate) fn get_file_lock_by_user_id_db_file_name(user_id: i32, db_file_name: 
         return lock;
     }
 
-    let nf = Box::new(UserDbLock { mtx: Mutex::new(user_id) });
+    let nf = Box::new(UserDbLock { mtx: Arc::new(Mutex::new(user_id)) });
     // SAFETY: We just push item into USER_DB_LOCK_MAP, never remove item or modify item,
     // so return a reference of leak item is safe.
     let nf: &'static UserDbLock = Box::leak(nf);
@@ -492,8 +492,7 @@ impl Database {
     }
 
     /// Insert data in asset and adapt table.
-    pub fn insert_cloud_adapt_data(&mut self, datas: &DbMap, adapt_attributes: &DbMap) -> Result<i32> {
-        let _lock: std::sync::MutexGuard<'_, i32> = self.db_lock.mtx.lock().unwrap();
+    pub fn insert_cloud_adapt_data_without_lock(&mut self, datas: &DbMap, adapt_attributes: &DbMap) -> Result<i32> {
         let closure = |e: &Table| {
             let mut query = DbMap::new();
             query.insert_attr(column::ALIAS, datas.get_bytes_attr(&column::ALIAS)?.clone());
@@ -506,6 +505,12 @@ impl Database {
             }
         };
         self.restore_if_exec_fail(closure)
+    }
+
+    /// Insert data in asset and adapt table.
+    pub fn insert_cloud_adapt_data(&mut self, datas: &DbMap, adapt_attributes: &DbMap) -> Result<i32> {
+        let _lock: std::sync::MutexGuard<'_, i32> = self.db_lock.mtx.lock().unwrap();
+        self.insert_cloud_adapt_data_without_lock(datas, adapt_attributes)
     }
 
     /// Delete datas from database.
@@ -560,14 +565,23 @@ impl Database {
     }
 
     /// Delete datas from database with specific condition.
+    pub fn delete_adapt_data_without_lock(
+        &mut self,
+        condition: Option<&DbMap>,
+        adapt_attributes: Option<&DbMap>,
+    ) -> Result<i32> {
+        let closure = |e: &Table| e.delete_adapt_data_row(condition, adapt_attributes);
+        self.restore_if_exec_fail(closure)
+    }
+
+    /// Delete datas from database with specific condition.
     pub fn delete_adapt_data(
         &mut self,
         condition: Option<&DbMap>,
         adapt_attributes: Option<&DbMap>,
     ) -> Result<i32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
-        let closure = |e: &Table| e.delete_adapt_data_row(condition, adapt_attributes);
-        self.restore_if_exec_fail(closure)
+        self.delete_adapt_data_without_lock(condition, adapt_attributes)
     }
 
     /// Update datas in database.
@@ -651,6 +665,18 @@ impl Database {
 
     /// Query datas from database with connect table.
     #[inline(always)]
+    pub fn query_datas_with_connect_table_without_lock(&mut self,
+        columns: &Vec<&'static str>,
+        condition: &DbMap,
+        query_options: Option<&QueryOptions>,
+        is_filter_sync: bool
+    ) -> Result<Vec<DbMap>> {
+        let closure = |e: &Table| e.query_connect_table_row(columns, condition, query_options, is_filter_sync, COMBINE_COLUMN_INFO);
+        self.restore_if_exec_fail(closure)
+    }
+
+    /// Query datas from database with connect table.
+    #[inline(always)]
     pub fn query_datas_with_connect_table(&mut self,
         columns: &Vec<&'static str>,
         condition: &DbMap,
@@ -658,8 +684,7 @@ impl Database {
         is_filter_sync: bool
     ) -> Result<Vec<DbMap>> {
         let _lock = self.db_lock.mtx.lock().unwrap();
-        let closure = |e: &Table| e.query_connect_table_row(columns, condition, query_options, is_filter_sync, COMBINE_COLUMN_INFO);
-        self.restore_if_exec_fail(closure)
+        self.query_datas_with_connect_table_without_lock(columns, condition, query_options, is_filter_sync)
     }
 
     /// Query data that meets specified conditions(can be empty) from the database.
@@ -702,6 +727,11 @@ impl Database {
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.replace_row(condition, is_filter_sync, datas);
         self.restore_if_exec_fail(closure)
+    }
+
+    /// Get db lock.
+    pub fn get_db_lock(&self) -> Result<Arc<Mutex<i32>>> {
+        Ok(Arc::clone(&self.db_lock.mtx))
     }
 }
 

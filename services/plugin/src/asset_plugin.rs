@@ -187,11 +187,16 @@ impl IAssetPluginCtx for AssetContext {
 
     /// Adds an asset to db in asset and adapt table.
     fn add_cloud_adapt_data(
-        &self, attributes: &ExtDbMap, adapt_attributes: &ExtDbMap, is_ce: bool,
+        &self, attributes: &ExtDbMap, adapt_attributes: &ExtDbMap, is_ce: bool, need_lock: bool,
     ) -> std::result::Result<i32, u32> {
         let db_name = get_db_name(self.user_id, attributes, is_ce).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
-        db.insert_cloud_adapt_data(attributes, adapt_attributes).map_err(|e| e.code as u32)
+        if need_lock {
+            db.insert_cloud_adapt_data(attributes, adapt_attributes).map_err(|e| e.code as u32)
+        } else {
+            db.insert_cloud_adapt_data_without_lock(attributes, adapt_attributes).map_err(|e| e.code as u32)
+        }
+        
     }
 
     /// Adds an asset with replace to de db.
@@ -273,10 +278,16 @@ impl IAssetPluginCtx for AssetContext {
         db_info: &ExtDbMap,
         attributes: &ExtDbMap,
         is_ce: bool,
+        need_lock: bool,
     ) -> std::result::Result<Vec<ExtDbMap>, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
-        db.query_datas_with_connect_table(&vec![], attributes, None, false).map_err(|e| e.code as u32)
+        if need_lock {
+            db.query_datas_with_connect_table(&vec![], attributes, None, false).map_err(|e| e.code as u32)
+        } else {
+            db.query_datas_with_connect_table_without_lock(&vec![], attributes, None, false).map_err(|e| e.code as u32)
+        }
+        
     }
 
     /// Removes an asset from de db.
@@ -366,10 +377,15 @@ impl IAssetPluginCtx for AssetContext {
         attributes: Option<&ExtDbMap>,
         adapt_attributes: Option<&ExtDbMap>,
         is_ce: bool,
+        need_lock: bool,
     ) -> std::result::Result<i32, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
-        db.delete_adapt_data(attributes, adapt_attributes).map_err(|e| e.code as u32)
+        if need_lock {
+            db.delete_adapt_data(attributes, adapt_attributes).map_err(|e| e.code as u32)
+        } else {
+            db.delete_adapt_data_without_lock(attributes, adapt_attributes).map_err(|e| e.code as u32)
+        }
     }
 
     /// Updates the attributes of an asset in de db.
@@ -392,6 +408,17 @@ impl IAssetPluginCtx for AssetContext {
             total_update_count += db.update_datas(attributes, false, attrs_to_update).map_err(|e| e.code as u32)?;
         }
         Ok(total_update_count)
+    }
+
+    fn get_certain_db_lock(
+        &self,
+        db_info: &ExtDbMap,
+        is_ce: bool,
+    ) -> std::result::Result<Arc<Mutex<i32>>, u32> {
+        let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
+        let db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+        let lock = db.get_db_lock().map_err(|e| e.code as u32)?;
+        Ok(lock)
     }
 
     /// Returns the storage path for de db.
