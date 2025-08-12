@@ -96,6 +96,7 @@ pub struct Database {
     pub(crate) handle: usize, // Pointer to the database connection.
     pub(crate) db_lock: &'static UserDbLock,
     pub(crate) db_name: String,
+    pub(crate) use_lock: bool,
 }
 
 /// Callback for database upgrade.
@@ -139,6 +140,22 @@ fn check_validity_of_db_key(path: &str, user_id: i32) -> Result<()> {
     Ok(())
 }
 
+pub(crate) fn get_db_by_type_without_lock(
+    user_id: i32,
+    db_name: &str,
+    db_path: String,
+    db_key: Option<&DbKey>,
+) -> Result<Database> {
+    let backup_path = fmt_backup_path(&db_path);
+    let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
+    let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: false };
+    db.open_and_restore(db_key)?;
+    // when create db table always use newest version.
+    db.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, DB_UPGRADE_VERSION))?;
+    db.upgrade(user_id, DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
+    Ok(db)
+}
+
 pub(crate) fn get_db_by_type(
     user_id: i32,
     db_name: &str,
@@ -147,7 +164,7 @@ pub(crate) fn get_db_by_type(
 ) -> Result<Database> {
     let backup_path = fmt_backup_path(&db_path);
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
-    let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string() };
+    let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: true };
     let _lock = db.db_lock.mtx.lock().unwrap();
     db.open_and_restore(db_key)?;
     // when create db table always use newest version.
@@ -181,6 +198,31 @@ pub(crate) fn get_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Databas
     get_db_by_type(user_id, db_name, db_path, db_key.as_ref())
 }
 
+pub(crate) fn get_db_without_lock(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
+    let (db_path, db_key) = if is_ce {
+        let db_path = fmt_ce_db_path_with_name(user_id, db_name);
+        check_validity_of_db_key(&db_path, user_id)?;
+        let db_key = match DbKey::get_db_key(user_id) {
+            Ok(db_key) => Some(db_key),
+            Err(e) if e.code == ErrCode::NotFound || e.code == ErrCode::DataCorrupted => {
+                loge!(
+                    "[FATAL]The key is corrupted. Now all data should be cleared and restart over, err is {}.",
+                    e.code
+                );
+                remove_ce_files(user_id)?;
+                return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
+            },
+            Err(e) => return Err(e),
+        };
+        (db_path, db_key)
+    } else {
+        let db_path = fmt_de_db_path_with_name(user_id, db_name);
+        (db_path, None)
+    };
+
+    get_db_by_type_without_lock(user_id, db_name, db_path, db_key.as_ref())
+}
+
 /// Create ce db instance if the value of tag "RequireAttrEncrypted" is set to true.
 /// Create de db instance if the value of tag "RequireAttrEncrypted" is not specified or set to false.
 pub fn build_db(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<Database> {
@@ -206,10 +248,16 @@ impl Database {
         get_db(user_id, db_name, is_ce)
     }
 
+    /// Create a database from a file name without lock in full process.
+    pub fn build_with_file_name_without_lock(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
+        // run here db must has been splited.
+        get_db_without_lock(user_id, db_name, is_ce)
+    }
+
     /// Check whether db is ok
     pub fn check_db_accessible(path: String, user_id: i32, db_name: String, db_key: Option<&DbKey>) -> Result<()> {
         let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.clone());
-        let mut db = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock, db_name };
+        let mut db = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock, db_name, use_lock: true };
         if db_key.is_some() {
             db.open_and_restore(db_key)?
         } else {
@@ -261,8 +309,12 @@ impl Database {
 
     /// Close database connection.
     pub(crate) fn close_db(&mut self) {
-        let _lock = self.db_lock.mtx.lock().unwrap();
-        self.close()
+        if self.use_lock {
+            let _lock = self.db_lock.mtx.lock().unwrap();
+            self.close()
+        } else {
+            self.close()
+        }
     }
 
     /// Encrypt/Decrypt CE database.
