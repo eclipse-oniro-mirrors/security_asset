@@ -96,6 +96,7 @@ pub struct Database {
     pub(crate) handle: usize, // Pointer to the database connection.
     pub(crate) db_lock: &'static UserDbLock,
     pub(crate) db_name: String,
+    pub(crate) use_lock: bool,
 }
 
 /// Callback for database upgrade.
@@ -147,7 +148,7 @@ pub(crate) fn get_db_by_type_without_lock(
 ) -> Result<Database> {
     let backup_path = fmt_backup_path(&db_path);
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
-    let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string() };
+    let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: false };
     db.open_and_restore(db_key)?;
     // when create db table always use newest version.
     db.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, DB_UPGRADE_VERSION))?;
@@ -163,7 +164,7 @@ pub(crate) fn get_db_by_type(
 ) -> Result<Database> {
     let backup_path = fmt_backup_path(&db_path);
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
-    let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string() };
+    let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: true };
     let _lock = db.db_lock.mtx.lock().unwrap();
     db.open_and_restore(db_key)?;
     // when create db table always use newest version.
@@ -256,7 +257,7 @@ impl Database {
     /// Check whether db is ok
     pub fn check_db_accessible(path: String, user_id: i32, db_name: String, db_key: Option<&DbKey>) -> Result<()> {
         let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.clone());
-        let mut db = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock, db_name };
+        let mut db = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock, db_name, use_lock: true };
         if db_key.is_some() {
             db.open_and_restore(db_key)?
         } else {
@@ -308,8 +309,12 @@ impl Database {
 
     /// Close database connection.
     pub(crate) fn close_db(&mut self) {
-        let _lock = self.db_lock.mtx.lock().unwrap();
-        self.close()
+        if self.use_lock {
+            let _lock = self.db_lock.mtx.lock().unwrap();
+            self.close()
+        } else {
+            self.close()
+        }
     }
 
     /// Encrypt/Decrypt CE database.
