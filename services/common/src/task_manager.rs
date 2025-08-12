@@ -22,7 +22,7 @@ use ylong_runtime::task::JoinHandle;
 
 /// Manager asset tasks execute state.
 pub struct TaskManager {
-    task_pool: Vec<JoinHandle<()>>
+    task_pool: Vec<JoinHandle<()>>,
 }
 
 impl TaskManager {

@@ -63,7 +63,7 @@ fn get_folders_size(paths: &[String]) -> Result<Vec<u64>> {
     Ok(folders_size)
 }
 
-/// read record unix time 
+/// read record unix time
 fn read_record_time(path_str: &str) -> Result<u64> {
     let path: &Path = Path::new(&path_str);
     let time_str = fs::read_to_string(path)?;
@@ -124,13 +124,13 @@ fn should_upload_data_size(path_str: &str, unix_time: u64) -> bool {
                 return false;
             }
             true
-        }
-        _ => true
+        },
+        _ => true,
     }
 }
 
 /// handle data upload
-pub (crate) fn handle_data_size_upload() -> Result<()> {
+pub(crate) fn handle_data_size_upload() -> Result<()> {
     let unix_time = system_time_in_seconds()?;
     let path_str = format!("{}/record_unix_time.txt", DE_ROOT_PATH);
     let _lock = RECORD_UNIX_FILE_MUTEX.lock().unwrap();
