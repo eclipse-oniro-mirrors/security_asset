@@ -16,25 +16,55 @@
 //! This module provides interfaces for database management.
 //! Databases are isolated based on users and protected by locks.
 
-use std::{fs, path::Path};
+use std::fs::File;
+use std::fs::OpenOptions;
+use std::{fs, path::Path, sync::Mutex};
 
 use asset_common::{CallingInfo, OwnerType, OWNER_INFO_SEPARATOR};
-use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
+use asset_definition::{log_throw_error, AssetError, ErrCode, Extension, Result, Value};
 use asset_file_operator::common::DB_SUFFIX;
 use asset_log::logi;
 use asset_utils::hasher;
+use lazy_static::lazy_static;
+use serde::{Deserialize, Serialize};
+use ylong_json::{to_writer, from_reader};
 
+use crate::database::get_specific_db_version;
 use crate::{
     database::{
         fmt_backup_path, fmt_de_db_path_with_name, get_db, get_db_by_type, get_split_db_lock_by_user_id, Database,
         CE_ROOT_PATH, DE_ROOT_PATH, OLD_DB_NAME,
     },
-    types::{column, DbMap, QueryOptions},
+    types::{column, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V4, DbMap, QueryOptions},
 };
 
 const MINIM_OWNER_INFO_LEN: usize = 3;
 const REMOVE_INDEX: usize = 2;
 static MAX_BATCH_NUM: u32 = 100;
+
+/// Code used to identify the origin version.
+#[derive(Clone, Debug, PartialEq)]
+pub enum OriginVersion {
+    /// Code for version 5.0.1.
+    V1 = 1,
+    /// Code for version 5.0.2.
+    V2 = 2,
+    /// Code for other versions.
+    V3 = 3,
+}
+
+/// Struct used to identify the original version and the list of haps to be upgraded.
+#[derive(Debug, Serialize, Deserialize, PartialEq, Default)]
+pub struct UpgradeData {
+    /// The original version.
+    pub version: u32,
+    /// The list of haps to be upgraded.
+    pub upgrade_list: Vec<String>,
+}
+
+lazy_static! {
+    static ref GLOBAL_FILE_LOCK: Mutex<()> = Mutex::new(());
+}
 
 #[inline(always)]
 pub(crate) fn fmt_old_de_db_path(user_id: i32) -> String {
@@ -206,12 +236,188 @@ fn split_db(user_id: i32) -> Result<()> {
 
 /// check db need split or not. If needed, split it by owner.
 pub fn check_and_split_db(user_id: i32) -> Result<()> {
+    let mut ret: bool = false;
     if check_old_db_exist(user_id) {
         let _lock = get_split_db_lock_by_user_id(user_id).mtx.lock().unwrap();
         if check_old_db_exist(user_id) {
+            ret = create_upgrade_file(user_id, OriginVersion::V1).is_err();
             logi!("[INFO]Start splitting db.");
             split_db(user_id)?;
         }
     }
+    let folder_name = fmt_file_dir(user_id);
+    let folder = Path::new(&folder_name);
+    let entries = match fs::read_dir(folder) {
+        Ok(entries) => entries,
+        Err(_) => return log_throw_error!(ErrCode::FileOperationError, "No such directory."),
+    };
+    let mut entry = String::new();
+    for path in entries {
+        entry = match path {
+            Ok(e) => e.path().to_string_lossy().into_owned(),
+            Err(_) => continue,
+        };
+        if entry.contains(".db") {
+            break;
+        }
+    }
+    let mut db_version = DB_UPGRADE_VERSION;
+    if !entry.is_empty() && entry.contains(".db") {
+        let index = entry.rfind('/').unwrap();
+        let index_last = entry.rfind('/').unwrap();
+        let db_name = &entry[index + 1..index_last];
+        db_version = get_specific_db_version(user_id, db_name, fmt_de_db_path_with_name(user_id, db_name))?;
+    }
+    
+
+    
+    if db_version == DB_UPGRADE_VERSION_V4 {
+        if ret && !(is_upgrade_file_exist(user_id) || is_tmp_file_exist(user_id)) {
+            let _ = create_upgrade_file(user_id, OriginVersion::V2);
+        }
+        if ret && is_tmp_file_exist(user_id) && !is_upgrade_file_exist(user_id) {
+            let _ = create_upgrade_file(user_id, OriginVersion::V1);
+        }
+    }
+    if !is_upgrade_file_exist(user_id) {
+        let _ = create_upgrade_file(user_id, OriginVersion::V3);
+    }
+
     Ok(())
+}
+
+#[inline(always)]
+fn fmt_file_path(user_id: i32) -> String {
+    format!("{}/{}/upgrade.cache", DE_ROOT_PATH, user_id)
+}
+
+#[inline(always)]
+fn fmt_file_tmp_path(user_id: i32) -> String {
+    format!("{}/{}/tmp", DE_ROOT_PATH, user_id)
+}
+
+#[inline(always)]
+fn fmt_file_dir(user_id: i32) -> String {
+    format!("{}/{}", DE_ROOT_PATH, user_id)
+}
+
+/// Function to create an upgrade file.
+pub fn create_upgrade_file(user_id: i32, origin_version: OriginVersion) -> Result<()> {
+    let _lock = GLOBAL_FILE_LOCK.lock().unwrap();
+    let path_str = fmt_file_path(user_id);
+    let file_path = Path::new(&path_str);
+    let mut file = match OpenOptions::new().write(true).create(true).open(file_path) {
+        Ok(file) => file,
+        Err(_) => {
+            return log_throw_error!(ErrCode::FileOperationError, "Create file failed.");
+        },
+    };
+    let upgrade_list = create_upgrade_list_inner(user_id, &origin_version);
+    let content = UpgradeData { version: origin_version as u32, upgrade_list };
+    to_writer(&content, &mut file)
+        .map_err(|_| AssetError { code: ErrCode::FileOperationError, msg: "Write file failed.".to_owned() })
+}
+
+/// Check if upgrade file exists.
+pub fn is_upgrade_file_exist(user_id: i32) -> bool {
+    let _lock = GLOBAL_FILE_LOCK.lock().unwrap();
+    let file_name = fmt_file_path(user_id);
+    let file_path = Path::new(&file_name);
+    file_path.exists()
+}
+
+/// Check if tmp file exists.
+pub fn is_tmp_file_exist(user_id: i32) -> bool {
+    let file_name = fmt_file_tmp_path(user_id);
+    let file_path = Path::new(&file_name);
+    file_path.exists()
+}
+
+/// To get original version and the list of haps to be upgraded.
+pub fn get_file_content(user_id: i32) -> Result<UpgradeData> {
+    let _lock = GLOBAL_FILE_LOCK.lock().unwrap();
+    let path = fmt_file_path(user_id);
+    let file = File::open(path)?;
+    let content = from_reader(file).unwrap();
+    Ok(content)
+}
+
+/// To get original version.
+pub fn get_upgrade_version(user_id: i32) -> Result<OriginVersion> {
+    match get_file_content(user_id)?.version {
+        version if version == OriginVersion::V1 as u32 => Ok(OriginVersion::V1),
+        version if version == OriginVersion::V2 as u32 => Ok(OriginVersion::V2),
+        version if version == OriginVersion::V3 as u32 => Ok(OriginVersion::V3),
+        _ => Err(AssetError { code: ErrCode::FileOperationError, msg: "Get upgrade version failed.".to_owned() }),
+    }
+}
+
+/// To get the list of haps to be upgraded.
+pub fn get_upgrade_list(user_id: i32) -> Result<Vec<String>> {
+    Ok(get_file_content(user_id).unwrap().upgrade_list)
+}
+
+fn is_file_hap(path: &Path) -> bool {
+    path.file_name()
+        .and_then(|os_str| os_str.to_str()) 
+        .map_or(false, |name| name.starts_with("Hap_") && name.ends_with("_0.db"))
+}
+
+fn create_upgrade_list_inner(user_id: i32, version: &OriginVersion) -> Vec<String> {
+    if user_id == 0 || version == &OriginVersion::V2 {
+        return Vec::new();
+    }
+    let folder_name = fmt_file_dir(user_id);
+    let folder = Path::new(&folder_name);
+
+    let entries = match fs::read_dir(folder) {
+        Ok(entries) => entries,
+        Err(_) => return Vec::new(),
+    };
+
+    let mut upgrade_list = Vec::new();
+    for entry in entries {
+        let path = match entry {
+            Ok(e) => e.path(),
+            Err(_) => continue,
+        };
+        if !is_file_hap(&path) {
+            continue;
+        }
+        let file_name = path.to_string_lossy().into_owned();
+        let index_first = match file_name.find("Hap_") {
+            Some(index) => index,
+            None => continue,
+        };
+
+        let index_last = match file_name.rfind('_') {
+            Some(index) => index,
+            None => continue,
+        };
+        if index_first >= index_last {
+            continue;
+        }
+        let owner = file_name[(index_first + 4)..index_last].to_owned();
+        upgrade_list.push(owner);
+    }
+    upgrade_list
+}
+
+/// Update the list of haps to be upgraded.
+pub fn update_upgrade_list(user_id: i32, remove_file: &String) -> Result<()> {
+    let content = get_file_content(user_id)?;
+    let mut upgrade_list = content.upgrade_list;
+    let _lock = GLOBAL_FILE_LOCK.lock().unwrap();
+    upgrade_list.retain(|x| x != remove_file);
+    let path_str = fmt_file_path(user_id);
+    let file_path = Path::new(&path_str);
+    let mut file = match OpenOptions::new().write(true).create(true).truncate(true).open(file_path) {
+        Ok(file) => file,
+        Err(_) => {
+            return log_throw_error!(ErrCode::FileOperationError, "Create file failed.");
+        },
+    };
+    let content = UpgradeData { version: content.version as u32, upgrade_list };
+    to_writer(&content, &mut file)
+        .map_err(|_| AssetError { code: ErrCode::FileOperationError, msg: "Write file failed.".to_owned() })
 }

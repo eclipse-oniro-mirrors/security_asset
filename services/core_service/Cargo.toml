@@ -25,6 +25,7 @@ system_ability_fwk = { git = "https://gitee.com/openharmony/systemabilitymgr_saf
 hisysevent = { git = "https://gitee.com/openharmony/hiviewdfx_hisysevent.git" }
 ipc = { git = "https://gitee.com/openharmony/communication_ipc" }
 ylong_runtime = { git = "https://gitee.com/openharmony/commonlibrary_rust_ylong_runtime.git", features = ["full"] }
+ylong_json = { git = "https://gitee.com/openharmony-sig/commonlibrary_rust_ylong_json.git" }
 
 asset_common = { path = "../common" }
 asset_crypto_manager = { path = "../crypto_manager" }
@@ -38,3 +39,4 @@ asset_log = { path = "../../frameworks/os_dependency/log" }
 asset_plugin = { path = "../plugin" }
 asset_sdk = { path = "../../interfaces/inner_kits/rs" }
 lazy_static = "1.0.0"
+serde = { version = "1.0", features = ["derive"] }

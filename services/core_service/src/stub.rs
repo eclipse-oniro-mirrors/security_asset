@@ -16,6 +16,9 @@
 //! This module implements the stub of the Asset service.
 
 use asset_common::{AutoCounter, CallingInfo, Counter, OwnerType, ProcessInfo, ProcessInfoDetail};
+use asset_db_operator::{
+    database_file_upgrade::construct_splited_db_name,
+};
 use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 
 use asset_ipc::{deserialize_map, serialize_maps, serialize_sync_result, IpcCode, IPC_SUCCESS, SA_NAME};
@@ -29,7 +32,7 @@ use asset_sdk::{
     AssetError, ErrCode, Result, Tag, Value,
 };
 
-use crate::AssetService;
+use crate::{AssetService, upgrade_operator::upgrade_single_clone_app_data};
 
 const REDIRECT_START_CODE: u32 = 200;
 
@@ -119,6 +122,9 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
     let process_info = ProcessInfo::build(map.get(&Tag::GroupId)).map_err(asset_err_handle)?;
     let calling_info = CallingInfo::build(map.get(&Tag::UserId).cloned(), &process_info);
     on_app_request(ipc_code, &process_info, &calling_info).map_err(asset_err_handle)?;
+
+    let hap_info = construct_splited_db_name(&calling_info, false).map_err(asset_err_handle)?;
+    upgrade_single_clone_app_data(calling_info.user_id(), hap_info.clone()).map_err(asset_err_handle)?;
 
     match ipc_code {
         IpcCode::Add => reply_handle(stub.add(&calling_info, &map), reply),

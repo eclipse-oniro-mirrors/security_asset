@@ -30,6 +30,7 @@ ohos_rust_shared_library("asset_service") {
     "../os_dependency:asset_os_dependency",
     "../plugin:asset_plugin",
     "//third_party/rust/crates/lazy-static.rs:lib",
+    "//third_party/rust/crates/serde/serde:lib",
   ]
 
   external_deps = [
@@ -41,6 +42,7 @@ ohos_rust_shared_library("asset_service") {
     "safwk:system_ability_fwk_rust",
     "samgr:samgr_rust",
     "ylong_runtime:ylong_runtime",
+    "ylong_json:lib",
   ]
 
   crate_name = "asset_service"
