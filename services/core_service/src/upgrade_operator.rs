@@ -32,7 +32,7 @@ use asset_db_operator::{
     database::Database, database_file_upgrade::{
         get_file_content, get_upgrade_list, get_upgrade_version, update_upgrade_list, OriginVersion, UpgradeData,
     },
-    types::{column, DbMap};
+    types::{column, DbMap},
 };
 use asset_db_key_operator::generate_secret_key_if_needed;
 
