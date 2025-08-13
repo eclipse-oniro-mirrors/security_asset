@@ -32,7 +32,7 @@ use asset_sdk::{
     AssetError, ErrCode, Result, Tag, Value,
 };
 
-use crate::{AssetService, upgrade_operator::upgrade_clone_app_data};
+use crate::{AssetService, upgrade_operator::upgrade_single_clone_app_data};
 
 const REDIRECT_START_CODE: u32 = 200;
 
@@ -124,7 +124,7 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
     on_app_request(ipc_code, &process_info, &calling_info).map_err(asset_err_handle)?;
 
     let hap_info = construct_splited_db_name(&calling_info, false).map_err(asset_err_handle)?;
-    upgrade_clone_app_data(calling_info.user_id(), hap_info.clone()).map_err(asset_err_handle)?;
+    upgrade_single_clone_app_data(calling_info.user_id(), hap_info.clone()).map_err(asset_err_handle)?;
 
     match ipc_code {
         IpcCode::Add => reply_handle(stub.add(&calling_info, &map), reply),

@@ -31,7 +31,7 @@ use asset_db_key_operator::DbKey;
 use asset_db_operator::{
     database::Database,
     database_file_upgrade::{
-        construct_splited_db_name, trigger_db_upgrade
+        construct_splited_db_name, trigger_db_upgrade,
     },
     types::{
         column::{self},

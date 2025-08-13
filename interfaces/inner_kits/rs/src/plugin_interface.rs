@@ -88,7 +88,7 @@ pub const PARAM_NAME_GROUP_ID: &str = "GroupId";
 /// param name for attribute encryption type
 pub const PARAM_NAME_REQUIRE_ATTR_ENCRYPTED: &str = "RequireAttrEncrypted";
 
-/// param name for accessibility.
+/// param name for accessibility
 pub const PARAM_NAME_ACCESSIBILITY: &str = "Accessibility";
 
 /// param name for result code
@@ -103,10 +103,10 @@ pub const PARAM_NAME_FAILED_COUNT: &str = "FailedCount";
 /// param name for hap type
 pub const PARAM_NAME_IS_HAP: &str = "IsHap";
 
-/// param name for decrypty key alia
+/// param name for decrypt key alia
 pub const PARAM_NAME_DECRYPT_KEY_ALIAS: &str = "DecryptKeyAlias";
 
-/// param name for encrypty key alia
+/// param name for encrypt key alia
 pub const PARAM_NAME_ENCRYPT_KEY_ALIAS: &str = "EncryptKeyAlias";
 
 /// param name for cipher
@@ -136,7 +136,7 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     fn init(&mut self, user_id: i32) -> Result<(), u32>;
 
     /// Create adapt cloud table for certain asset db.
-    fn create_adapt_cloud_table_for_specific_db(&self, db_info: &ExtDbMap, is_ce: bool,) -> Result<(), u32>;
+    fn create_adapt_cloud_table_for_specific_db(&self, db_info: &ExtDbMap, is_ce: bool) -> Result<(), u32>;
 
     /// Adds an asset to de db.
     fn add(&self, attributes: &ExtDbMap) -> Result<i32, u32>;

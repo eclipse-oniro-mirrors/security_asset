@@ -233,7 +233,7 @@ int32_t GetCloneAppIndexes(int32_t userId, int32_t *appIndexes, uint32_t *indexS
         LOGE("Get clone app indexes failed.");
         return ret;
     }
-    if (*indexSize <= indexes.size()) {
+    if (*indexSize < indexes.size()) {
         LOGE("Too short index size.");
         return ASSET_INVALID_ARGUMENT;
     }
@@ -245,11 +245,11 @@ int32_t GetCloneAppIndexes(int32_t userId, int32_t *appIndexes, uint32_t *indexS
     return ASSET_SUCCESS;
 }
 
-int32_t isHapInAllowList(int32_t userId, const char *appName, bool *is_in_list)
+int32_t IsHapInAllowList(int32_t userId, const char *appName, bool *is_in_list)
 {
-    AppExeFwk::BundleInfo bundleInfo;
-    AppExeFwk::BundleClient bmsClient;
-    if (!bmsClient.GetBundleInfo(bundleName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE, bundleInfo, userId)) {
+    AppExecFwk::BundleInfo bundleInfo;
+    AppExecFwk::BundleMgrClient bmsClient;
+    if (!bmsClient.GetBundleInfo(appName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE, bundleInfo, userId)) {
         LOGE("[FATAL]Get bundle info failed!");
         return ASSET_BMS_ERROR;
     }
@@ -260,7 +260,7 @@ int32_t isHapInAllowList(int32_t userId, const char *appName, bool *is_in_list)
             bundleInfo.appId.size())) {
             *is_in_list = true;
             return ASSET_SUCCESS;
-            }
+        }
     }
     *is_in_list = false;
     return ASSET_SUCCESS;
