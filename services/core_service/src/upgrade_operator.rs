@@ -19,7 +19,7 @@
 use std::ffi::CString;
 use std::os::raw::c_char;
 
-use asset_common::{Calling_info, OwnerType, SUCCESS};
+use asset_common::{CallingInfo, OwnerType, SUCCESS};
 use asset_crypto_manager::secret_key::SecretKey;
 use asset_definition::{log_throw_error, Accessibility, AssetError, AuthType, ErrCode, Extension, Result, Value};
 use asset_log::loge;
@@ -54,6 +54,9 @@ pub fn upgrade_clone_app_data(user_id: i32) -> Result<()> {
 
 /// To upgrade a clone app.
 pub fn upgrade_single_clone_app_data(user_id: i32, hap_info: String) -> Result<()> {
+    if user_id == 0 {
+        return Ok(());
+    }
     let version = get_upgrade_version(user_id)?;
     if version == OriginVersion::V2 {
         return Ok(());
@@ -84,23 +87,23 @@ fn upgrade(user_id: i32, upgrade_data: UpgradeData) -> Result<()> {
     Ok(())
 }
 
-fn is_hap_in_upgrade_list(user_id: i32, info: &str) -> Result<()> {
+fn is_hap_in_upgrade_list(user_id: i32, info: &str) -> bool {
     let list = get_upgrade_list(user_id).unwrap();
     list.contains(&info.to_owned())
 }
 
-fn upgrade_single(user_id: i32, version: OriginVersion, info: String) -> Result<()> {
-    if !is_hap_in_allow_list(user_id, &info.clone()) {
+fn upgrade_single(user_id: i32, version: OriginVersion, info: String){
+    if !is_hap_in_upgrade_list(user_id, &info.clone()) {
         return;
     }
-    let _ = upgrade_execute(user_id, version.clone(), info.to_owned());
+    let _ = upgrade_execute(user_id, version.clone(), &info.clone());
 }
 
 fn upgrade_execute(user_id: i32, version: OriginVersion, info: &str) -> Result<()> {
-    if is_hap_alipay(info) || (version == OriginVersion::V3 && !(is_hap_in_allow_list(user_id, info)?)) {
+    if is_hap_alipay(info) || (version == OriginVersion::V3 && !(is_hap_in_allowlist(user_id, info)?)) {
         return update_upgrade_list(user_id, &info.to_owned());
     }
-    let indexes = get_clone_app_indexes(user_id, &info.to_owned());
+    let indexes = get_clone_app_indexes(user_id, info)?;
     if indexes.is_empty() {
         return update_upgrade_list(user_id, &info.to_owned());
     }
@@ -140,7 +143,7 @@ pub fn clone_data_from_app_to_clone_app(user_id: i32, app_name: &str, app_indexe
     Ok(())
 }
 
-fn is_hap_in_allow_list(user_id: i32, info: &str) -> Result<bool> {
+fn is_hap_in_allowlist(user_id: i32, info: &str) -> Result<bool> {
     let app_name = CString::new(info).unwrap();
     let mut is_in_list: bool = false;
     let ret = unsafe { IsHapInAllowList(user_id, app_name.as_ptr(), &mut is_in_list) };
@@ -152,7 +155,7 @@ fn is_hap_in_allow_list(user_id: i32, info: &str) -> Result<bool> {
 
 fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Vec<DbMap>) -> Result<()> {
     let clone_name = fmt_de_db_name(app_name, app_index);
-    let mut db_clone = Database::build_with_file_name(user_id, &main_name, false)?;
+    let mut db_clone = Database::build_with_file_name(user_id, &clone_name, false)?;
     let count = db_clone.query_data_count(&DbMap::new())?;
     if count > 0 {
         return Ok(());
@@ -160,13 +163,13 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
 
     let load = AssetPlugin::get_instance().load_plugin()?;
     for data in datas {
-        let owner_type = data.get_enum_attr::<OwnerType>(&column::OwnerType)?;
+        let owner_type = data.get_enum_attr::<OwnerType>(&column::Owner_Type)?;
         let owner_info = data.get_bytes_attr(&column::OWNER)?;
         let calling_info = CallingInfo::new(user_id, owner_type, owner_info.clone(), None);
         let auth_type = data.get_enum_attr::<AuthType>(&column::AUTH_TYPE)?;
         let accessibility = data.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
-        let require_password_set = data.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
-        let secret_key = SecretKey::new_without_alias(&calling_info, auth_type, accessibility, require_password_set)?;
+        let required_password_set = data.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
+        let secret_key = SecretKey::new_without_alias(&calling_info, auth_type, accessibility, required_password_set)?;
         let index = match owner_info.iter().rev().position(|&x| x == b'_') {
             Some(index) => index,
             _ => continue,
@@ -181,7 +184,7 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
         new_owner.extend_from_slice(suffix.clone());
         let calling_info = CallingInfo::new(user_id, owner_type, new_owner.clone(), None);
         let new_secret_key =
-            SecretKey::new_without_alias(&calling_info, auth_type, accessibility, require_password_set)?;
+            SecretKey::new_without_alias(&calling_info, auth_type, accessibility, required_password_set)?;
         let _ = generate_secret_key_if_needed(&new_secret_key);
         let _ = generate_secret_key_if_needed(&secret_key);
         let secret = data.get_bytes_attr(&column::SECRET)?;
@@ -193,7 +196,7 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
         params.insert(PARAM_NAME_AAD, Value::Bytes(common::build_aad(data)?));
         params.insert(PARAM_NAME_APP_INDEX, Value::Bytes(suffix.to_vec()));
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
-        match load.process_event(EventType::WrapDatam &mut params) {
+        match load.process_event(EventType::WrapData, &mut params) {
             Ok(()) => {
                 let cipher = params.get_bytes_attr(&PARAM_NAME_CIPHER)?;
                 data.insert(column::SECRET, Value::Bytes(cipher.to_vec()));
@@ -202,7 +205,7 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
             },
             Err(code) => {
                 match ErrCode::try_from(code) {
-                    Ok(code) => AssetError { code, msg: "Upgrade clone app data failed.". =to_string() },
+                    Ok(code) => AssetError { code, msg: "Upgrade clone app data failed.". to_string() },
                     Err(err) => err,
                 };
             },
