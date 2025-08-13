@@ -164,7 +164,7 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
         let owner_info = data.get_bytes_attr(&column::OWNER)?;
         let calling_info = CallingInfo::new(user_id, owner_type, owner_info.clone(), None);
         let auth_type = data.get_enum_attr::<AuthType>(&column::AUTH_TYPE)?;
-        let accessibility = data.get_enum_attr<Accessibility>(&column::ACCESSIBILITY)?;
+        let accessibility = data.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
         let require_password_set = data.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
         let secret_key = SecretKey::new_without_alias(&calling_info, auth_type, accessibility, require_password_set)?;
         let index = match owner_info.iter().rev().position(|&x| x == b'_') {
