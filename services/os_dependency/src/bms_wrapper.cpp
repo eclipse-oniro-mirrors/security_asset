@@ -14,8 +14,6 @@
  */
 
 #include "bms_wrapper.h"
-#include "bundle_mgr_interface.h"
-#include "iservice_registry.h"
 
 #include <cstring>
 #include "securec.h"
@@ -30,6 +28,7 @@
 
 #include "asset_type.h"
 #include "asset_log.h"
+#include "system_event_wrapper.h"
 
 using namespace OHOS;
 using namespace AppExecFwk;
@@ -234,4 +233,35 @@ int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *proces
             res = ASSET_INVALID_ARGUMENT;
     }
     return res;
+}
+
+int32_t GetUninstallGroups(int32_t userId, ConstAssetBlob *developerId, MutAssetBlobArray *groupIds)
+{
+    auto bundleMgr = GetBundleMgr();
+    if (bundleMgr == nullptr) {
+        LOGE("[FATAL]bundleMgr is nullptr, please check.");
+        return ASSET_BMS_ERROR;
+    }
+
+    std::string useDeveloperId(reinterpret_cast<const char*>(developerId->data), developerId->size);
+    std::vector<AppExecFwk::BundleInfo> bundleInfos;
+    int32_t ret = bundleMgr->GetAllBundleInfoByDeveloperId(useDeveloperId, bundleInfos, userId);
+    if (ret != RET_SUCCESS && ret != ERR_BUNDLE_MANAGER_INVALID_DEVELOPERID) {
+        LOGE("[FATAL]GetAllBundleInfoByDeveloperId failed. ret:%{public}d", ret);
+        return ASSET_BMS_ERROR;
+    }
+
+    // use bundleInfos to cmp groupId
+    for (const AppExecFwk::BundleInfo &bundleInfo : bundleInfos) {
+        for (const std::string &groupId : bundleInfo.applicationInfo.assetAccessGroups) {
+            for (uint32_t i = 0; i < groupIds->size; i++) {
+                if (strcmp(groupId.c_str(), groupIds->blob[i].blob) == 0) {
+                    LOGI("[INFO]Found matching group id. Do not remove data in this group");
+                    groupIds->blob[i].modify = true;
+                }
+            }
+            
+        }
+    }
+    return ASSET_SUCCESS;
 }
