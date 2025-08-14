@@ -28,11 +28,6 @@ ohos_rust_static_library("asset_db_operator") {
     "../crypto_manager:asset_crypto_manager",
     "../db_key_operator:asset_db_key_operator",
     "//third_party/rust/crates/lazy-static.rs:lib",
-    "//third_party/rust/crates/serde/serde:lib",
-  ]
-
-  external_deps = [
-    "ylong_json:lib",
   ]
 
   crate_name = "asset_db_operator"
@@ -54,13 +49,9 @@ ohos_rust_unittest("rust_asset_db_operator_test") {
     "../crypto_manager:asset_crypto_manager",
     "../db_key_operator:asset_db_key_operator",
     "//third_party/rust/crates/lazy-static.rs:lib",
-    "//third_party/rust/crates/serde/serde:lib",
   ]
 
-  external_deps = [
-    "hilog:libhilog",
-    "ylong_json:lib",
-  ]
+  external_deps = [ "hilog:libhilog" ]
   subsystem_name = "security"
   part_name = "asset"
 }

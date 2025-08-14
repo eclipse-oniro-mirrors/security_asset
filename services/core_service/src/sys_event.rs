@@ -19,7 +19,7 @@ use std::cmp::min;
 use std::time::Instant;
 
 use hisysevent::{
-    build_array_params, build_number_param, build_str_param, build_string_array_params, write, EventType,
+    build_array_params, build_number_param, build_str_param, build_string_array_params, write, EventType, 
     HiSysEventParam,
 };
 use ipc::Skeleton;

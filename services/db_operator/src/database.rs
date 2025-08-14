@@ -173,15 +173,6 @@ pub(crate) fn get_db_by_type(
     Ok(db)
 }
 
-pub(crate) fn get_specific_db_version(user_id: i32, db_name: &str, db_path: String) -> Result<u32> {
-    let backup_path = fmt_backup_path(&db_path);
-    let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
-    let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: true };
-    let _lock = db.db_lock.mtx.lock().unwrap();
-    db.open()?;
-    db.get_db_version()
-}
-
 pub(crate) fn get_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
     let (db_path, db_key) = if is_ce {
         let db_path = fmt_ce_db_path_with_name(user_id, db_name);
