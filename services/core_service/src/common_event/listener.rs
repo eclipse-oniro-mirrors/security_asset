@@ -61,6 +61,10 @@ enum DataExist {
     GroupData(bool),
 }
 
+extern "C" {
+    fn GetUninstallGroups(userId: u32, developer_id: *const ConstAssetBlob, group_ids: *mut MutAssetBlobArray) -> i32;
+}
+
 fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result<()> {
     let db_name = construct_splited_db_name(calling_info, is_ce)?;
     for db_path in fs::read_dir(file_path)? {
@@ -86,7 +90,7 @@ fn delete_in_de_db_on_package_removed(calling_info: &CallingInfo, reverse_condit
     let check_condition = DbMap::new();
     match calling_info.group() {
         Some(_) => {
-            delete_condition.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
+            // delete_condition.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
             let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
             let data_exists = db.is_data_exists(&check_condition, false)?;
             if !data_exists {
@@ -112,7 +116,7 @@ fn delete_in_ce_db_on_package_removed(calling_info: &CallingInfo, reverse_condit
     let check_condition = DbMap::new();
     match calling_info.group() {
         Some(_) => {
-            delete_condition.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
+            // delete_condition.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
             let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
             let data_exists = db.is_data_exists(&check_condition, false)?;
             if !data_exists {
@@ -164,12 +168,35 @@ fn construct_calling_infos(
     developer_id: ConstAssetBlob,
     group_ids: ConstAssetBlobArray,
 ) -> Vec<CallingInfo> {
+    // todo 这里的developerId是截取过的 可能需要用实际的 即截取之前的
     let mut calling_infos = vec![CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), None)];
     if !group_ids.blobs.is_null() && group_ids.size != 0 && !developer_id.data.is_null() && developer_id.size != 0 {
-        let developer_id = unsafe { slice::from_raw_parts(developer_id.data, developer_id.size as usize) };
         let group_ids_slice = unsafe { slice::from_raw_parts(group_ids.blobs, group_ids.size as usize) };
+
+        let mut group_id_blobs: Vec<MutAssetBlob> = Vec::new();
         for group_id_slice in group_ids_slice {
+            group_id_blobs.push(MutAssetBlobArray { size: group_id_slice.len() as u32, data: group_id_slice.as_ptr() });
             let group_id = unsafe { slice::from_raw_parts(group_id_slice.data, group_id_slice.size as usize) };
+        }
+        let mut the_group_ids = MutAssetBlobArray { size: group_id_blobs.len() as u32, blobs: group_id_blobs.as_ptr() };
+
+        match unsafe { GetUninstallGroups(user_id, &developer_id, &mut the_group_ids) } {
+            SUCCESS => (),
+            error => {
+                let error = ErrCode::try_from(error as u32)?;
+                return log_throw_error!(error, "[FATAL]Get GetUninstallGroups failed, res is {}.", error);
+            },
+        }
+
+        let the_group_ids_slice = unsafe { slice::from_raw_parts(the_group_ids.blobs, the_group_ids.size as usize) };
+
+        let developer_id = unsafe { slice::from_raw_parts(developer_id.data, developer_id.size as usize) };
+        for group_id_slice in the_group_ids_slice {
+            if group_id_slice.size == 0 {
+                continue;
+            }
+            let group_id = unsafe { slice::from_raw_parts(group_id_slice.data, group_id_slice.size as usize) };
+
             calling_infos.push(CallingInfo::new(
                 user_id,
                 OwnerType::HapGroup,

@@ -29,6 +29,16 @@ typedef struct {
 } ConstAssetBlobArray;
 
 typedef struct {
+    uint32_t size;
+    uint8_t *data;
+} MutAssetBlob;
+
+typedef struct {
+    uint32_t size;
+    MutAssetBlob *blob;
+} MutAssetBlobArray;
+
+typedef struct {
     int32_t userId;
     int32_t appIndex;
     ConstAssetBlob owner;

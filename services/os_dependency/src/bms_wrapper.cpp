@@ -235,3 +235,37 @@ int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *proces
     }
     return res;
 }
+
+int32_t GetUninstallGroups(uint32_t userId, ConstAssetBlob *developerId, MutAssetBlobArray *groupIds)
+{
+    auto bundleMgr = GetBundleMgr();
+    if (bundleMgr == nullptr) {
+        LOGE("[FATAL]bundleMgr is nullptr, please check.");
+        return ASSET_BMS_ERROR;
+    }
+    AppExecFwk::BundleMgrClient bmsClient;
+
+    std::string useDeveloperId(reinterpret_cast<const char*>(developerId.data), developerId.size);
+    std::vector bundleInfos;
+    int32_t ret = bmsClient.GetAllBundleInfoByDeveloperId(useDeveloperId, bundleInfos, userId)
+    if (ret != RET_SUCCESS) {
+        LOGE("[FATAL]GetAllBundleInfoByDeveloperId failed. ret:%{public}d", ret);
+        return ASSET_BMS_ERROR;
+    }
+
+    // use bundleInfos to cmp groupId
+    for (const AppExecFwk::BundleInfo &bundleInfo : bundleInfos) {
+        for (const std::string &groupId : bundleInfo.applicationInfo.assetAccessGroups) {
+            for (int32_t i = 0; i < groupIds->size; i++) {
+                if (groupId.size() <= groupIds[i].size &&
+                    memcmp(groupIds[i].data, groupId.data(), groupIds[i].size) == 0) {
+                    LOGI("[INFO]Found matching group id. Do not remove data in this group");
+                    (void)memset_s(groupIds[i].data, groupIds[i].size, 0, groupIds[i].size);
+                    groupIds[i].size = 0;
+                }
+            }
+            
+        }
+    }
+    return ASSET_SUCCESS;
+}
