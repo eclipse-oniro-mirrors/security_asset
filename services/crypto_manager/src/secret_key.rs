@@ -291,7 +291,7 @@ impl SecretKey {
     }
 
     /// Get the key alias.
-    pub fn alias(&self) -> &Vec<u8> {
+    pub(crate) fn alias(&self) -> &Vec<u8> {
         &self.alias
     }
 

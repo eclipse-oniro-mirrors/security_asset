@@ -49,7 +49,11 @@ pub fn is_file_exist(path_str: &str) -> Result<bool> {
         Ok(true) => Ok(true),
         Ok(false) => Ok(false),
         Err(e) => {
-            log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA] Failed to check existence of file! error: {}", e)
+            log_throw_error!(
+                ErrCode::FileOperationError,
+                "[FATAL][SA] Failed to check existence of file! error: {}",
+                e
+            )
         },
     }
 }

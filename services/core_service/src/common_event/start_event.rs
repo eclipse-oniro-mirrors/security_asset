@@ -23,7 +23,9 @@ use asset_file_operator::de_operator::delete_user_de_dir;
 use asset_log::{loge, logi, logw};
 use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
 
-use crate::{common_event::listener, unload_sa, PackageInfo, PackageInfoFfi, WantParser};
+use crate::{
+    common_event::listener, unload_sa, PackageInfo, PackageInfoFfi, WantParser
+};
 
 const USER_ID: &str = "userId";
 const SANDBOX_APP_INDEX: &str = "sandbox_app_index";

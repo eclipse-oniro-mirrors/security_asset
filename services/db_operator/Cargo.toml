@@ -27,5 +27,3 @@ asset_db_key_operator = { path = "../db_key_operator" }
 asset_file_operator = { path = "../../frameworks/os_dependency/file" }
 asset_utils = { path = "../../frameworks/utils" }
 lazy_static = "1.0.0"
-serde = { version = "1.0", features = ["derive"] }
-ylong_json = { git = "https://gitee.com/openharmony-sig/commonlibrary_rust_ylong_json.git" }
