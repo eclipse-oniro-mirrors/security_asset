@@ -18,7 +18,8 @@
 use ipc::parcel::MsgParcel;
 use samgr::manage::SystemAbilityManager;
 use std::{
-    fs, time::{Duration, Instant}
+    fs,
+    time::{Duration, Instant},
 };
 use system_ability_fwk::{
     ability::{Ability, Handler},
@@ -35,12 +36,13 @@ use asset_ipc::SA_ID;
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::{AssetContext, AssetPlugin};
 
-mod data_size_mod;
 mod common_event;
+mod data_size_mod;
 mod operations;
 mod stub;
 mod sys_event;
 mod trace_scope;
+mod upgrade_operator;
 
 use sys_event::upload_system_event;
 use trace_scope::TraceScope;
@@ -178,7 +180,7 @@ impl Ability for AssetAbility {
 async fn execute_upgrade_process() {
     match upgrade_process() {
         Ok(()) => (),
-        Err(e) => loge!("upgrade failed, error is:[{}]", e.code)
+        Err(e) => loge!("upgrade failed, error is:[{}]", e.code),
     }
 }
 
