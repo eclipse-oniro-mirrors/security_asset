@@ -53,13 +53,22 @@ pub struct ConstAssetBlobArray {
     pub blobs: *const ConstAssetBlob,
 }
 
+/// Mutable asset blob
+#[repr(C)]
+pub struct MutAssetBlob {
+    /// Data size
+    pub size: u32,
+    /// Mutable data
+    pub data: *mut u8,
+}
+
 /// Modify asset c char
 #[repr(C)]
 pub struct ModifyAssetBlob {
     /// Modify
     pub modify: bool,
     /// Immutable
-    pub data: *const c_char,
+    pub blob: *const c_char,
 }
 
 /// Mutable asset blob array
@@ -71,14 +80,6 @@ pub struct MutAssetBlobArray {
     pub blobs: *mut ModifyAssetBlob,
 }
 
-/// Mutable asset blob array
-#[repr(C)]
-pub struct MutAssetBlobArray {
-    /// blobs size
-    pub size: u32,
-    /// Mutable blobs
-    pub blobs: *mut MutAssetBlob,
-}
 
 impl_enum_trait! {
     /// The type of the calling.

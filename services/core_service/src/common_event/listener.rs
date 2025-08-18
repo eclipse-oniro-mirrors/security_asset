@@ -168,7 +168,6 @@ fn construct_calling_infos(
     developer_id: ConstAssetBlob,
     group_ids: ConstAssetBlobArray,
 ) -> Vec<CallingInfo> {
-    // todo 这里的developerId是截取过的 可能需要用实际的 即截取之前的
     let mut calling_infos = vec![CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), None)];
     if !group_ids.blobs.is_null() && group_ids.size != 0 && !developer_id.data.is_null() && developer_id.size != 0 {
         let group_ids_slice = unsafe { slice::from_raw_parts(group_ids.blobs, group_ids.size as usize) };
