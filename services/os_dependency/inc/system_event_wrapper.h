@@ -29,7 +29,6 @@ typedef struct {
 } ConstAssetBlobArray;
 
 typedef struct {
-<<<<<<< HEAD
     bool modify;
     const char *blob;
 } ModifyAssetBlob;
@@ -37,15 +36,6 @@ typedef struct {
 typedef struct {
     uint32_t size;
     ModifyAssetBlob *blob;
-=======
-    uint32_t size;
-    uint8_t *data;
-} MutAssetBlob;
-
-typedef struct {
-    uint32_t size;
-    MutAssetBlob *blob;
->>>>>>> d1755dc15d2878578f9e0f4b65201ac4561753a6
 } MutAssetBlobArray;
 
 typedef struct {
