@@ -217,7 +217,7 @@ void MarkGroupAsModified(const std::string &groupId, MutAssetBlobArray *groupIds
     }
 }
 
-void ProcessBundleInfos(const std::vector<AppExecFwk::BundleInfo> &bundleInfos, 
+void ProcessBundleInfos(const std::vector<AppExecFwk::BundleInfo> &bundleInfos,
     int32_t userId, MutAssetBlobArray *groupIds)
 {
     std::unordered_set<std::string> targetGroupIds;
