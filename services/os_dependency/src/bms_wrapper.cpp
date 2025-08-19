@@ -206,6 +206,34 @@ int32_t GetNativeProcessInfo(uint32_t tokenId, uint64_t uid, ProcessInfo *proces
 
     return ASSET_SUCCESS;
 }
+
+void MarkGroupAsModified(const std::string &groupId, MutAssetBlobArray *groupIds)
+{
+    for (uint32_t i = 0; i < groupIds->size; i++) {
+        if (strcmp(groupId.c_str(), groupIds->blob[i].blob) == 0) {
+            groupIds->blob[i].modify = true;
+            break;
+        }
+    }
+}
+
+void ProcessBundleInfos(const std::vector<AppExecFwk::BundleInfo> &bundleInfos, 
+    int32_t userId, MutAssetBlobArray *groupIds)
+{
+    std::unordered_set<std::string> targetGroupIds;
+    for (uint32_t i = 0; i < groupIds->size; i++) {
+        targetGroupIds.insert(groupIds->blob[i].blob);
+    }
+
+    for (const AppExecFwk::BundleInfo &bundleInfo : bundleInfos) {
+        for (const std::string &groupId : bundleInfo.applicationInfo.assetAccessGroups) {
+            if (targetGroupIds.find(groupId) != targetGroupIds.end()) {
+                LOGI("[INFO]Found matching group id. Do not remove data in this group");
+                MarkGroupAsModified(groupId, groupIds);
+            }
+        }
+    }
+}
 } // namespace
 
 int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInfo)
@@ -251,17 +279,6 @@ int32_t GetUninstallGroups(int32_t userId, ConstAssetBlob *developerId, MutAsset
         return ASSET_BMS_ERROR;
     }
 
-    // use bundleInfos to cmp groupId
-    for (const AppExecFwk::BundleInfo &bundleInfo : bundleInfos) {
-        for (const std::string &groupId : bundleInfo.applicationInfo.assetAccessGroups) {
-            for (uint32_t i = 0; i < groupIds->size; i++) {
-                if (strcmp(groupId.c_str(), groupIds->blob[i].blob) == 0) {
-                    LOGI("[INFO]Found matching group id. Do not remove data in this group");
-                    groupIds->blob[i].modify = true;
-                }
-            }
-            
-        }
-    }
+    ProcessBundleInfos(bundleInfos, userId, groupIds);
     return ASSET_SUCCESS;
 }

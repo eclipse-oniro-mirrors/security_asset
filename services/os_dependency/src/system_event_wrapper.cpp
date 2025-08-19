@@ -79,7 +79,9 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
         .data = reinterpret_cast<const uint8_t *>(bundleName.c_str()) };
 
     std::string developerId = want.GetStringParam(DEVELOPER_ID);
-    ConstAssetBlob developerIdBlob = { .size = developerId.size(), .data = reinterpret_cast<const uint8_t *>(developerId.c_str()) };
+    ConstAssetBlob developerIdBlob = { 
+        .size = developerId.size(), .data = reinterpret_cast<const uint8_t *>(developerId.c_str()) 
+    };
     std::string groupIds = want.GetStringParam(GROUP_IDS);
     std::vector<ConstAssetBlob> groupIdBlobs;
     std::vector<std::string> groupIdStrs;
