@@ -19,11 +19,6 @@
 namespace UnitTest::AssetBmsWrapperTest {
 int AssetBmsWrapperTest001(void);
 int AssetBmsWrapperTest002(void);
-int AssetBmsWrapperTest003(void);
-int AssetBmsWrapperTest004(void);
-int AssetBmsWrapperTest005(void);
-int AssetBmsWrapperTest006(void);
-int AssetBmsWrapperTest007(void);
 }
 
 #endif // BMS_WRAPPER_TEST_H

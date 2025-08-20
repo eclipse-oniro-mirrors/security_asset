@@ -18,6 +18,7 @@
 
 #include <stdint.h>
 #include "asset_type.h"
+#include "system_event_wrapper.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +53,8 @@ typedef struct {
 } ProcessInfo;
 
 int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInfo);
+
+int32_t GetUninstallGroups(int32_t userId, ConstAssetBlob *developerId, MutAssetBlobArray *groupIds);
 
 #ifdef __cplusplus
 }
