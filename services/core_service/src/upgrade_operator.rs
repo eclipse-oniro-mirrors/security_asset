@@ -110,8 +110,7 @@ fn upgrade_execute(user_id: i32, version: OriginVersion, info: &str) -> Result<(
     if clone_data_from_app_to_clone_app(user_id, info, &indexes).is_ok() {
         return update_upgrade_list(user_id, &info.to_owned());
     }
-    let _ = clone_data_from_app_to_clone_app(user_id, info, &indexes);
-    Ok()
+    Ok(())
 }
 
 fn get_clone_app_indexes(user_id: i32, app_name: &str) -> Result<Vec<i32>> {
@@ -211,7 +210,7 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
                 need_rollback = true;
                 break;
             },
-        }
+        };
     }
     if need_rollback {
         db_clone.exec("rollback")?;
