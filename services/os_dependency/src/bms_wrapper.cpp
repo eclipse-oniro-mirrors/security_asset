@@ -238,7 +238,7 @@ int32_t GetCloneAppIndexes(int32_t userId, int32_t *appIndexes, uint32_t *indexS
         return ASSET_INVALID_ARGUMENT;
     }
     
-    for (int i = 0; i < indexes.size(); i++) {
+    for (size_t i = 0; i < indexes.size(); i++) {
         *(appIndexes + i) = indexes[i];
     }
     *indexSize = indexes.size();

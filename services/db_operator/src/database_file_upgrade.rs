@@ -240,43 +240,46 @@ pub fn check_and_split_db(user_id: i32) -> Result<()> {
     if check_old_db_exist(user_id) {
         let _lock = get_split_db_lock_by_user_id(user_id).mtx.lock().unwrap();
         if check_old_db_exist(user_id) {
-            ret = create_upgrade_file(user_id, OriginVersion::V1).is_err();
             logi!("[INFO]Start splitting db.");
             split_db(user_id)?;
+            ret = create_upgrade_file(user_id, OriginVersion::V1).is_ok();
         }
     }
     let folder_name = fmt_file_dir(user_id);
     let folder = Path::new(&folder_name);
     let mut db_version = DB_UPGRADE_VERSION;
+    let mut is_clone_app_exist: bool = false;
     if let Ok(entries) = fs::read_dir(folder) {
-        let mut entry = String::new();
+        let mut entry_version = String::new();
         for path in entries {
-            entry = match path {
+            let entry = match path {
                 Ok(e) => e.path().to_string_lossy().into_owned(),
                 Err(_) => continue,
             };
-            if entry.contains(".db") {
-                break;
+            if entry.contains("_1.db") && !entry.contains("com.alipay.mobile.client") {
+                is_clone_app_exist = true;
+            }
+            if entry.contains("_0.db") {
+                entry_version = entry.clone();
             }
         }
         
-        if !entry.is_empty() && entry.contains(".db") {
-            let index = entry.rfind('/').unwrap();
-            let index_last = entry.rfind(".db").unwrap();
-            let db_name = &entry[index + 1..index_last];
+        if !entry_version.is_empty() && entry_version.contains(".db") {
+            let index = entry_version.rfind('/').unwrap();
+            let index_last = entry_version.rfind(".db").unwrap();
+            let db_name = &entry_version[index + 1..index_last];
             db_version = get_specific_db_version(user_id, db_name, fmt_de_db_path_with_name(user_id, db_name))?;
         }
     }
 
-    if db_version == DB_UPGRADE_VERSION_V4 {
-        if ret && !(is_upgrade_file_exist(user_id) || is_tmp_file_exist(user_id)) {
-            let _ = create_upgrade_file(user_id, OriginVersion::V2);
-        }
-        if ret && is_tmp_file_exist(user_id) && !is_upgrade_file_exist(user_id) {
-            let _ = create_upgrade_file(user_id, OriginVersion::V1);
+    if !ret && !is_upgrade_file_exist(user_id) && db_version == DB_UPGRADE_VERSION_V4 {
+        if !is_clone_app_exist {
+            ret = create_upgrade_file(user_id, OriginVersion::V1).is_ok();
+        } else {
+            ret = create_upgrade_file(user_id, OriginVersion::V2).is_ok();
         }
     }
-    if !is_upgrade_file_exist(user_id) {
+    if !ret && !is_upgrade_file_exist(user_id) {
         let _ = create_upgrade_file(user_id, OriginVersion::V3);
     }
 
@@ -286,11 +289,6 @@ pub fn check_and_split_db(user_id: i32) -> Result<()> {
 #[inline(always)]
 fn fmt_file_path(user_id: i32) -> String {
     format!("{}/{}/upgrade.cache", DE_ROOT_PATH, user_id)
-}
-
-#[inline(always)]
-fn fmt_file_tmp_path(user_id: i32) -> String {
-    format!("{}/{}/tmp", DE_ROOT_PATH, user_id)
 }
 
 #[inline(always)]
@@ -319,13 +317,6 @@ pub fn create_upgrade_file(user_id: i32, origin_version: OriginVersion) -> Resul
 pub fn is_upgrade_file_exist(user_id: i32) -> bool {
     let _lock = GLOBAL_FILE_LOCK.lock().unwrap();
     let file_name = fmt_file_path(user_id);
-    let file_path = Path::new(&file_name);
-    file_path.exists()
-}
-
-/// Check if tmp file exists.
-pub fn is_tmp_file_exist(user_id: i32) -> bool {
-    let file_name = fmt_file_tmp_path(user_id);
     let file_path = Path::new(&file_name);
     file_path.exists()
 }

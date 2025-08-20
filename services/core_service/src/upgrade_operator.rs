@@ -21,7 +21,7 @@ use std::os::raw::c_char;
 
 use asset_common::{CallingInfo, OwnerType, SUCCESS};
 use asset_crypto_manager::secret_key::SecretKey;
-use asset_definition::{log_throw_error, Accessibility, AssetError, AuthType, ErrCode, Extension, Result, Value};
+use asset_definition::{log_throw_error, Accessibility, AuthType, ErrCode, Extension, Result, Value};
 use asset_log::loge;
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::plugin_interface::{
@@ -92,7 +92,7 @@ fn is_hap_in_upgrade_list(user_id: i32, info: &str) -> bool {
     list.contains(&info.to_owned())
 }
 
-fn upgrade_single(user_id: i32, version: OriginVersion, info: String){
+fn upgrade_single(user_id: i32, version: OriginVersion, info: String) {
     if !is_hap_in_upgrade_list(user_id, &info.clone()) {
         return;
     }
@@ -107,8 +107,11 @@ fn upgrade_execute(user_id: i32, version: OriginVersion, info: &str) -> Result<(
     if indexes.is_empty() {
         return update_upgrade_list(user_id, &info.to_owned());
     }
+    if clone_data_from_app_to_clone_app(user_id, info, &indexes).is_ok() {
+        return update_upgrade_list(user_id, &info.to_owned());
+    }
     let _ = clone_data_from_app_to_clone_app(user_id, info, &indexes);
-    update_upgrade_list(user_id, &info.to_owned())
+    Ok()
 }
 
 fn get_clone_app_indexes(user_id: i32, app_name: &str) -> Result<Vec<i32>> {
@@ -131,8 +134,7 @@ fn fmt_de_db_name(app_name: &str, app_index: i32) -> String {
     format!("Hap_{}_{}", app_name, app_index)
 }
 
-/// To clone data from main app to other clone app.
-pub fn clone_data_from_app_to_clone_app(user_id: i32, app_name: &str, app_indexes: &[i32]) -> Result<()> {
+fn clone_data_from_app_to_clone_app(user_id: i32, app_name: &str, app_indexes: &[i32]) -> Result<()> {
     let main_name = fmt_de_db_name(app_name, 0);
     let mut db_main = Database::build_with_file_name(user_id, &main_name, false)?;
     let mut datas: Vec<DbMap> = db_main.query_datas(&vec![], &DbMap::new(), None, false)?;
@@ -162,6 +164,8 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
     }
 
     let load = AssetPlugin::get_instance().load_plugin()?;
+    let mut need_rollback = false;
+    db_clone.exec("begin transaction")?;
     for data in datas {
         let owner_type = data.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?;
         let owner_info = data.get_bytes_attr(&column::OWNER)?;
@@ -203,13 +207,15 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
                 data.insert(column::OWNER, Value::Bytes(new_owner));
                 let _ = db_clone.insert_datas(data);
             },
-            Err(code) => {
-                match ErrCode::try_from(code) {
-                    Ok(code) => AssetError { code, msg: "Upgrade clone app data failed.". to_string() },
-                    Err(err) => err,
-                };
+            Err(_) => {
+                need_rollback = true;
+                break;
             },
         }
     }
-    Ok(())
+    if need_rollback {
+        db_clone.exec("rollback")?;
+        return log_throw_error!(ErrCode::DatabaseError, "Upgrade clone app data failed.");
+    }
+    db_clone.exec("commit")
 }
