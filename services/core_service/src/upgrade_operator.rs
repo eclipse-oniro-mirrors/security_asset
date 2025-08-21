@@ -204,7 +204,10 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
                 let cipher = params.get_bytes_attr(&PARAM_NAME_CIPHER)?;
                 data.insert(column::SECRET, Value::Bytes(cipher.to_vec()));
                 data.insert(column::OWNER, Value::Bytes(new_owner));
-                let _ = db_clone.insert_datas(data);
+                if db_clone.insert_datas(data).is_err() {
+                    need_rollback = true;
+                    break;
+                }
             },
             Err(_) => {
                 need_rollback = true;
