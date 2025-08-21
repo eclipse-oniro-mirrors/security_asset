@@ -15,6 +15,8 @@
 
 //! This crate defines the common constants.
 
+use std::os::raw::c_char;
+
 use asset_definition::{impl_enum_trait, log_throw_error, AssetError, ErrCode, Result};
 mod calling_info;
 mod counter;
@@ -59,6 +61,25 @@ pub struct MutAssetBlob {
     /// Mutable data
     pub data: *mut u8,
 }
+
+/// Modify asset c char
+#[repr(C)]
+pub struct ModifyAssetBlob {
+    /// Modify
+    pub modify: bool,
+    /// Immutable
+    pub blob: *const c_char,
+}
+
+/// Mutable asset blob array
+#[repr(C)]
+pub struct MutAssetBlobArray {
+    /// blobs size
+    pub size: u32,
+    /// Mutable blobs
+    pub blobs: *mut ModifyAssetBlob,
+}
+
 
 impl_enum_trait! {
     /// The type of the calling.

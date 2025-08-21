@@ -39,20 +39,6 @@ const char * const GROUP_IDS = "assetAccessGroups";
 const char * const OWNER_INFO_SEPARATOR = "_";
 const char * const GROUP_SEPARATOR = ",";
 
-void ParseDeveloperId(std::string developerId, ConstAssetBlob &developerIdBlob)
-{
-    if (!developerId.empty()) {
-        size_t pos = developerId.find('.');
-        if (pos != std::string::npos) {
-            developerId = developerId.substr(pos + 1);
-        }
-        developerIdBlob = { .size = developerId.size(),
-            .data = reinterpret_cast<const uint8_t *>(developerId.c_str()) };
-    } else {
-        developerIdBlob = { .size = 0, .data = nullptr };
-    }
-}
-
 void ParseGroupIds(const std::string &groupIds, std::vector<std::string> &groupIdStrs,
     std::vector<ConstAssetBlob> &groupIdBlobs, ConstAssetBlobArray &groupIdBlobArray)
 {
@@ -93,8 +79,9 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
         .data = reinterpret_cast<const uint8_t *>(bundleName.c_str()) };
 
     std::string developerId = want.GetStringParam(DEVELOPER_ID);
-    ConstAssetBlob developerIdBlob;
-    ParseDeveloperId(developerId, developerIdBlob);
+    ConstAssetBlob developerIdBlob = {
+        .size = developerId.size(), .data = reinterpret_cast<const uint8_t *>(developerId.c_str())
+    };
     std::string groupIds = want.GetStringParam(GROUP_IDS);
     std::vector<ConstAssetBlob> groupIdBlobs;
     std::vector<std::string> groupIdStrs;

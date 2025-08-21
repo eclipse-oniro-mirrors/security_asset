@@ -20,6 +20,7 @@
 #include <vector>
 #include <string>
 #include "asset_type.h"
+#include "system_event_wrapper.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,6 +59,8 @@ int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *proces
 int32_t GetCloneAppIndexes(int32_t userId, int32_t *appIndexes, uint32_t *indexSize, const char *appName);
 
 int32_t IsHapInAllowList(int32_t userId, const char *appName, bool *is_in_list);
+
+int32_t GetUninstallGroups(int32_t userId, ConstAssetBlob *developerId, MutAssetBlobArray *groupIds);
 
 #ifdef __cplusplus
 }

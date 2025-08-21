@@ -107,37 +107,6 @@ HWTEST_F(AssetSystemEventWrapperTest, AssetSystemEventWrapperTest002, TestSize.L
 }
 
 /**
- * @tc.name: AssetSystemEventWrapperTest.AssetSystemEventWrapperTest003
- * @tc.desc: Test asset func ParseDeveloperId, expect true
- * @tc.type: FUNC
- * @tc.result:0
- */
-HWTEST_F(AssetSystemEventWrapperTest, AssetSystemEventWrapperTest003, TestSize.Level0)
-{
-    ConstAssetBlob blob;
-    std::string developerId = "test_developer";
-
-    ParseDeveloperId(developerId, blob);
-    ASSERT_EQ(blob.size, developerId.size());
-}
-
-/**
- * @tc.name: AssetSystemEventWrapperTest.AssetSystemEventWrapperTest004
- * @tc.desc: Test asset func ParseDeveloperId, expect true
- * @tc.type: FUNC
- * @tc.result:0
- */
-HWTEST_F(AssetSystemEventWrapperTest, AssetSystemEventWrapperTest004, TestSize.Level0)
-{
-    ConstAssetBlob blob;
-    std::string developerId = "";
-
-    ParseDeveloperId(developerId, blob);
-    ASSERT_EQ(blob.size, 0);
-    ASSERT_EQ(blob.data, nullptr);
-}
-
-/**
  * @tc.name: AssetSystemEventWrapperTest.AssetSystemEventWrapperTest005
  * @tc.desc: Test asset func ParseGroupIds, expect true
  * @tc.type: FUNC
