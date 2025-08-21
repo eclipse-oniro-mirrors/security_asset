@@ -274,6 +274,10 @@ int32_t GetCloneAppIndexes(int32_t userId, int32_t *appIndexes, uint32_t *indexS
 
 int32_t IsHapInAllowList(int32_t userId, const char *appName, bool *is_in_list)
 {
+    if (appName == nullptr) {
+        LOGE("[FATAL]App name is null.");
+        return ASSET_INVALID_ARGUMENT;
+    }
     AppExecFwk::BundleInfo bundleInfo;
     AppExecFwk::BundleMgrClient bmsClient;
     if (!bmsClient.GetBundleInfo(appName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE, bundleInfo, userId)) {
