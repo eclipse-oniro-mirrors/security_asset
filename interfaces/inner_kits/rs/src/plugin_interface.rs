@@ -103,10 +103,10 @@ pub const PARAM_NAME_FAILED_COUNT: &str = "FailedCount";
 /// param name for hap type
 pub const PARAM_NAME_IS_HAP: &str = "IsHap";
 
-/// param name for decrypt key alia
+/// param name for decrypt key alias
 pub const PARAM_NAME_DECRYPT_KEY_ALIAS: &str = "DecryptKeyAlias";
 
-/// param name for encrypt key alia
+/// param name for encrypt key alias
 pub const PARAM_NAME_ENCRYPT_KEY_ALIAS: &str = "EncryptKeyAlias";
 
 /// param name for cipher
