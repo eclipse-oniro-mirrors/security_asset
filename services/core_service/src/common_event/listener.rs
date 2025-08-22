@@ -32,7 +32,9 @@ use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey}
 use asset_db_key_operator::DbKey;
 use asset_db_operator::{
     database::Database,
-    database_file_upgrade::{construct_splited_db_name, trigger_db_upgrade},
+    database_file_upgrade::{
+        construct_splited_db_name, trigger_db_upgrade,
+    },
     types::{
         column::{self},
         DbMap,
@@ -51,7 +53,7 @@ use asset_sdk::plugin_interface::{
 };
 
 use crate::data_size_mod::handle_data_size_upload;
-use crate::{sys_event::upload_fault_system_event, PackageInfoFfi};
+use crate::{sys_event::upload_fault_system_event, PackageInfoFfi, upgrade_operator::upgrade_clone_app_data};
 
 /// success code.
 const SUCCESS: i32 = 0;
@@ -375,6 +377,7 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
             Err(code) => loge!("process user unlocked event failed, code: {}", code),
         }
     }
+    let _ = upgrade_clone_app_data(user_id);
 }
 
 pub(crate) fn notify_on_user_removed(user_id: i32) {

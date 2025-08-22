@@ -148,20 +148,6 @@ int32_t GetAppProvisionInfo(sptr<IBundleMgr> bundleMgr, uint32_t userId, Process
     return ASSET_SUCCESS;
 }
 
-void ModifyAppindex(ProcessInfo *processInfo)
-{
-    for (uint32_t i = 0; i < ARRAY_SIZE(UPGRADE_HAP_LIST); ++i) {
-        if (AssetMemCmp(UPGRADE_HAP_LIST[i],
-            processInfo->hapInfo.appId.data,
-            strlen(UPGRADE_HAP_LIST[i]),
-            processInfo->hapInfo.appId.size)) {
-            LOGI("[INFO]app: %{public}s appIndex changed to 0", UPGRADE_HAP_LIST[i]);
-            processInfo->hapInfo.appIndex = 0;
-            return;
-        }
-    }
-}
-
 int32_t GetHapProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInfo)
 {
     auto bundleMgr = GetBundleMgr();
@@ -180,8 +166,6 @@ int32_t GetHapProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInf
     if (ret != ASSET_SUCCESS) {
         return ret;
     }
-
-    ModifyAppindex(processInfo);
 
     return GetAppProvisionInfo(bundleMgr, userId, processInfo);
 }
@@ -263,6 +247,56 @@ int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *proces
     return res;
 }
 
+int32_t GetCloneAppIndexes(int32_t userId, int32_t *appIndexes, uint32_t *indexSize, const char *appName)
+{
+    auto bundleMgr = GetBundleMgr();
+    if (bundleMgr == nullptr) {
+        LOGE("[FATAL]bundleMgr is nullptr, please check.");
+        return ASSET_BMS_ERROR;
+    }
+    std::vector<int32_t> indexes;
+    int32_t ret = bundleMgr->GetCloneAppIndexes(appName, indexes, userId);
+    if (ret != ASSET_SUCCESS) {
+        LOGE("Get clone app indexes failed.");
+        return ret;
+    }
+    if (*indexSize < indexes.size()) {
+        LOGE("Too short index size.");
+        return ASSET_INVALID_ARGUMENT;
+    }
+    
+    for (size_t i = 0; i < indexes.size(); i++) {
+        *(appIndexes + i) = indexes[i];
+    }
+    *indexSize = indexes.size();
+    return ASSET_SUCCESS;
+}
+
+int32_t IsHapInAllowList(int32_t userId, const char *appName, bool *is_in_list)
+{
+    if (appName == nullptr) {
+        LOGE("[FATAL]App name is null.");
+        return ASSET_INVALID_ARGUMENT;
+    }
+    AppExecFwk::BundleInfo bundleInfo;
+    AppExecFwk::BundleMgrClient bmsClient;
+    if (!bmsClient.GetBundleInfo(appName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE, bundleInfo, userId)) {
+        LOGE("[FATAL]Get bundle info failed!");
+        return ASSET_BMS_ERROR;
+    }
+    for (uint32_t i = 0; i < ARRAY_SIZE(UPGRADE_HAP_LIST); ++i) {
+        if (AssetMemCmp(UPGRADE_HAP_LIST[i],
+            bundleInfo.appId.c_str(),
+            strlen(UPGRADE_HAP_LIST[i]),
+            bundleInfo.appId.size())) {
+            *is_in_list = true;
+            return ASSET_SUCCESS;
+        }
+    }
+    *is_in_list = false;
+    return ASSET_SUCCESS;
+}
+
 int32_t GetUninstallGroups(int32_t userId, ConstAssetBlob *developerId, MutAssetBlobArray *groupIds)
 {
     auto bundleMgr = GetBundleMgr();
@@ -270,7 +304,6 @@ int32_t GetUninstallGroups(int32_t userId, ConstAssetBlob *developerId, MutAsset
         LOGE("[FATAL]bundleMgr is nullptr, please check.");
         return ASSET_BMS_ERROR;
     }
-
     std::string useDeveloperId(reinterpret_cast<const char*>(developerId->data), developerId->size);
     std::vector<AppExecFwk::BundleInfo> bundleInfos;
     int32_t ret = bundleMgr->GetAllBundleInfoByDeveloperId(useDeveloperId, bundleInfos, userId);

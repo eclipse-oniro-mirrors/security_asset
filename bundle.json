@@ -48,6 +48,7 @@
                 "samgr",
                 "sqlite",
                 "os_account",
+                "ylong_json",
                 "ylong_runtime",
                 "openssl"
             ],
