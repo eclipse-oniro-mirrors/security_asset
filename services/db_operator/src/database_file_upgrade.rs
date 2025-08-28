@@ -40,6 +40,7 @@ use crate::{
 
 const MINIM_OWNER_INFO_LEN: usize = 3;
 const REMOVE_INDEX: usize = 2;
+const TRUNCATE_LEN: usize = 4;
 static MAX_BATCH_NUM: u32 = 100;
 
 /// Code used to identify the origin version.
@@ -249,26 +250,30 @@ pub fn check_and_split_db(user_id: i32) -> Result<()> {
     let folder = Path::new(&folder_name);
     let mut db_version = DB_UPGRADE_VERSION;
     let mut is_clone_app_exist: bool = false;
-    if let Ok(entries) = fs::read_dir(folder) {
-        let mut entry_version = String::new();
-        for path in entries {
-            let entry = match path {
-                Ok(e) => e.path().to_string_lossy().into_owned(),
-                Err(_) => continue,
-            };
-            if entry.contains("_1.db") && !entry.contains("com.alipay.mobile.client") {
-                is_clone_app_exist = true;
+    if !is_upgrade_file_exist(user_id) {
+        if let Ok(entries) = fs::read_dir(folder) {
+            let mut entry_version = String::new();
+            for path in entries {
+                let entry = match path {
+                    Ok(e) => e.path().to_string_lossy().into_owned(),
+                    Err(_) => continue,
+                };
+                if entry.contains("_1.db") && !is_hap_special(&entry) {
+                    is_clone_app_exist = true;
+                }
+                if entry.contains("_0.db") {
+                    entry_version = entry.clone();
+                }
             }
-            if entry.contains("_0.db") {
-                entry_version = entry.clone();
+            
+            if !entry_version.is_empty() && entry_version.contains(DB_SUFFIX) {
+                let index = entry_version.rfind('/').unwrap();
+                let index_last = entry_version.rfind(DB_SUFFIX).unwrap();
+                if index_last > index + 1 {
+                    let db_name = &entry_version[index + 1..index_last];
+                    db_version = get_specific_db_version(user_id, db_name, fmt_de_db_path_with_name(user_id, db_name))?;
+                }
             }
-        }
-        
-        if !entry_version.is_empty() && entry_version.contains(".db") {
-            let index = entry_version.rfind('/').unwrap();
-            let index_last = entry_version.rfind(".db").unwrap();
-            let db_name = &entry_version[index + 1..index_last];
-            db_version = get_specific_db_version(user_id, db_name, fmt_de_db_path_with_name(user_id, db_name))?;
         }
     }
 
@@ -294,6 +299,11 @@ fn fmt_file_path(user_id: i32) -> String {
 #[inline(always)]
 fn fmt_file_dir(user_id: i32) -> String {
     format!("{}/{}", DE_ROOT_PATH, user_id)
+}
+
+/// Check if hap is a special hap.
+pub fn is_hap_special(info: &str) -> bool {
+    info.contains("com.alipay.mobile.client")
 }
 
 /// Function to create an upgrade file.
@@ -326,8 +336,10 @@ pub fn get_file_content(user_id: i32) -> Result<UpgradeData> {
     let _lock = GLOBAL_FILE_LOCK.lock().unwrap();
     let path = fmt_file_path(user_id);
     let file = File::open(path)?;
-    let content = from_reader(file).unwrap();
-    Ok(content)
+    match from_reader(file) {
+        Ok(content) => Ok(content),
+        Err(_) => log_throw_error!(ErrCode::FileOperationError, "Get content from upgrade file failed."),
+    }
 }
 
 /// To get original version.
@@ -342,7 +354,7 @@ pub fn get_upgrade_version(user_id: i32) -> Result<OriginVersion> {
 
 /// To get the list of haps to be upgraded.
 pub fn get_upgrade_list(user_id: i32) -> Result<Vec<String>> {
-    Ok(get_file_content(user_id).unwrap().upgrade_list)
+    Ok(get_file_content(user_id)?.upgrade_list)
 }
 
 fn is_file_hap(path: &Path) -> bool {
@@ -385,7 +397,7 @@ fn create_upgrade_list_inner(user_id: i32, version: &OriginVersion) -> Vec<Strin
         if index_first >= index_last {
             continue;
         }
-        let owner = file_name[(index_first + 4)..index_last].to_owned();
+        let owner = file_name[(index_first + TRUNCATE_LEN)..index_last].to_owned();
         upgrade_list.push(owner);
     }
     upgrade_list

@@ -33,7 +33,7 @@ use asset_db_key_operator::DbKey;
 use asset_db_operator::{
     database::Database,
     database_file_upgrade::{
-        construct_splited_db_name, trigger_db_upgrade,
+        construct_splited_db_name, trigger_db_upgrade, update_upgrade_list,
     },
     types::{
         column::{self},
@@ -273,6 +273,10 @@ pub(crate) extern "C" fn on_package_removed(package_info: PackageInfoFfi) {
         String::from_utf8_lossy(&bundle_name),
         package_info.app_index
     );
+
+    if package_info.app_index == 0 {
+        let _ = update_upgrade_list(package_info.user_id, &String::from_utf8_lossy(&bundle_name).to_string());
+    }
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();

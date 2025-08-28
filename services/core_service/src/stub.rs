@@ -16,9 +16,7 @@
 //! This module implements the stub of the Asset service.
 
 use asset_common::{AutoCounter, CallingInfo, Counter, OwnerType, ProcessInfo, ProcessInfoDetail};
-use asset_db_operator::{
-    database_file_upgrade::construct_splited_db_name,
-};
+use asset_db_operator::database_file_upgrade::construct_splited_db_name;
 use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 
 use asset_ipc::{deserialize_map, serialize_maps, serialize_sync_result, IpcCode, IPC_SUCCESS, SA_NAME};
@@ -124,7 +122,7 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
     on_app_request(ipc_code, &process_info, &calling_info).map_err(asset_err_handle)?;
 
     let hap_info = construct_splited_db_name(&calling_info, false).map_err(asset_err_handle)?;
-    let _ = upgrade_single_clone_app_data(calling_info.user_id(), hap_info.clone()).map_err(asset_err_handle);
+    let _ = upgrade_single_clone_app_data(calling_info.user_id(), hap_info).map_err(asset_err_handle);
 
     match ipc_code {
         IpcCode::Add => reply_handle(stub.add(&calling_info, &map), reply),
