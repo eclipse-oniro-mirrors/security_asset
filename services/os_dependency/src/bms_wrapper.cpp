@@ -258,7 +258,7 @@ int32_t GetCloneAppIndexes(int32_t userId, int32_t *appIndexes, uint32_t *indexS
     int32_t ret = bundleMgr->GetCloneAppIndexes(appName, indexes, userId);
     if (ret != ASSET_SUCCESS) {
         LOGE("Get clone app indexes failed.");
-        return ret;
+        return ASSET_BMS_ERROR;
     }
     if (*indexSize < indexes.size()) {
         LOGE("Too short index size.");
