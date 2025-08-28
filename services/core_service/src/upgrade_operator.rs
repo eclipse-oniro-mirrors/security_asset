@@ -16,7 +16,7 @@
 //! This module provides interfaces for upgrade clone apps.
 //! Databases are isolated based on users and protected by locks.
 
-use std::ffi::{CString, collections::HashSet};
+use std::{ffi::CString, collections::HashSet};
 use std::os::raw::c_char;
 
 use asset_common::{CallingInfo, OwnerType, SUCCESS};
@@ -182,7 +182,7 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
     let calling_info = CallingInfo::new(user_id, owner_type, owner_info.clone(), None);
     let index = match owner_info.iter().rev().position(|&x| x == b'_') {
         Some(index) => index,
-        _ => return log_throw_error!(ErrCode::InvalidArgument, "Owner info is too short."),
+        _ => return log_throw_error!(ErrCode::InvalidArgument, "Owner info is incorrect."),
     };
     if index >= owner_info.len() - 1 {
         return log_throw_error!(ErrCode::InvalidArgument, "Owner info is too short.");
@@ -213,36 +213,36 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
 }
 
 fn unwrap_and_insert(user_id: i32, unwrap_info: UnwrapInfo, db_clone: &mut Database) -> Result<()> {
-    let auth_type = data.get_enum_attr::<AuthType>(&column::AUTH_TYPE)?;
-    let accessibility = data.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
-    let required_password_set = data.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
-    let secret_key = SecretKey::new_without_alias(&calling_info, auth_type, accessibility, required_password_set)?;
+    let auth_type = unwrap_info.data.get_enum_attr::<AuthType>(&column::AUTH_TYPE)?;
+    let accessibility = unwrap_info.data.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
+    let required_password_set = unwrap_info.data.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
+    let secret_key = SecretKey::new_without_alias(unwrap_info.calling_info, auth_type, accessibility, required_password_set)?;
     let new_secret_key =
-        SecretKey::new_without_alias(&calling_info, auth_type, accessibility, required_password_set)?;
+        SecretKey::new_without_alias(unwrap_info.calling_info_new, auth_type, accessibility, required_password_set)?;
     let _ = generate_secret_key_if_needed(&new_secret_key);
     let _ = generate_secret_key_if_needed(&secret_key);
-    let secret = data.get_bytes_attr(&column::SECRET)?;
+    let secret = unwrap_info.data.get_bytes_attr(&column::SECRET)?;
     let mut params = ExtDbMap::new();
     params.insert(PARAM_NAME_DECRYPT_KEY_ALIAS, Value::Bytes(secret_key.alias().to_vec()));
     params.insert(PARAM_NAME_ENCRYPT_KEY_ALIAS, Value::Bytes(new_secret_key.alias().to_vec()));
     params.insert(PARAM_NAME_ACCESSIBILITY, Value::Number(accessibility as u32));
     params.insert(PARAM_NAME_CIPHER, Value::Bytes(secret.clone()));
-    params.insert(PARAM_NAME_AAD, Value::Bytes(common::build_aad(data)?));
-    params.insert(PARAM_NAME_APP_INDEX, Value::Bytes(suffix.to_vec()));
+    params.insert(PARAM_NAME_AAD, Value::Bytes(common::build_aad(unwrap_info.data)?));
+    params.insert(PARAM_NAME_APP_INDEX, Value::Bytes(unwrap_info.suffix.to_vec()));
     params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
     
     let load = AssetPlugin::get_instance().load_plugin()?;
     match load.process_event(EventType::WrapData, &mut params) {
         Ok(()) => {
             let cipher = params.get_bytes_attr(&PARAM_NAME_CIPHER)?;
-            data.insert(column::SECRET, Value::Bytes(cipher.to_vec()));
-            data.insert(column::OWNER, Value::Bytes(new_owner));
-            if db_clone.insert_datas(data).is_err() {
-                return log_throw_error!(ErrCode::CryptoError, "Unwrap the clone data app failed.");
+            unwrap_info.data.insert(column::SECRET, Value::Bytes(cipher.to_vec()));
+            unwrap_info.data.insert(column::OWNER, Value::Bytes(unwrap_info.new_owner.to_vec()));
+            if db_clone.insert_datas(unwrap_info.data).is_err() {
+                return log_throw_error!(ErrCode::CryptoError, "Unwrap the clone app data failed.");
             }
         },
         Err(_) => {
-            return log_throw_error!(ErrCode::CryptoError, "Unwrap the clone data app failed.");
+            return log_throw_error!(ErrCode::CryptoError, "Unwrap the clone app data failed.");
         },
     };
     Ok(())
