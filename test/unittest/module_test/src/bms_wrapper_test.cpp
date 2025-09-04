@@ -71,4 +71,20 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest001, TestSize.Level0)
     int32_t ret = GetCallingProcessInfo(userId, uid, &processInfo);
     ASSERT_EQ(ret, 0);
 }
+
+/**
+ * @tc.name: AssetBmsWrapperTest.AssetBmsWrapperTest002
+ * @tc.desc: Test asset func GetCallingProcessInfo, expect SEC_ASSET_ACCESS_TOKEN_ERROR
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest002, TestSize.Level0)
+{
+    ConstAssetBlob developerId = { sizeof("dev123"), (const uint8_t*)"dev123" };
+    MutAssetBlobArray groupIds = { 0, NULL };
+
+    uint32_t userId = 0;
+    int32_t ret = GetUninstallGroups(userId, &developerId, &groupIds);
+    ASSERT_EQ(ret, ASSET_BMS_ERROR);
+}
 }

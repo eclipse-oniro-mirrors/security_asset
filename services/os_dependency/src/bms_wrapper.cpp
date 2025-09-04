@@ -14,8 +14,6 @@
  */
 
 #include "bms_wrapper.h"
-#include "bundle_mgr_interface.h"
-#include "iservice_registry.h"
 
 #include <cstring>
 #include "securec.h"
@@ -30,6 +28,7 @@
 
 #include "asset_type.h"
 #include "asset_log.h"
+#include "system_event_wrapper.h"
 
 using namespace OHOS;
 using namespace AppExecFwk;
@@ -149,20 +148,6 @@ int32_t GetAppProvisionInfo(sptr<IBundleMgr> bundleMgr, uint32_t userId, Process
     return ASSET_SUCCESS;
 }
 
-void ModifyAppindex(ProcessInfo *processInfo)
-{
-    for (uint32_t i = 0; i < ARRAY_SIZE(UPGRADE_HAP_LIST); ++i) {
-        if (AssetMemCmp(UPGRADE_HAP_LIST[i],
-            processInfo->hapInfo.appId.data,
-            strlen(UPGRADE_HAP_LIST[i]),
-            processInfo->hapInfo.appId.size)) {
-            LOGI("[INFO]app: %{public}s appIndex changed to 0", UPGRADE_HAP_LIST[i]);
-            processInfo->hapInfo.appIndex = 0;
-            return;
-        }
-    }
-}
-
 int32_t GetHapProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInfo)
 {
     auto bundleMgr = GetBundleMgr();
@@ -181,8 +166,6 @@ int32_t GetHapProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInf
     if (ret != ASSET_SUCCESS) {
         return ret;
     }
-
-    ModifyAppindex(processInfo);
 
     return GetAppProvisionInfo(bundleMgr, userId, processInfo);
 }
@@ -206,6 +189,34 @@ int32_t GetNativeProcessInfo(uint32_t tokenId, uint64_t uid, ProcessInfo *proces
     processInfo->nativeInfo.uid = uid;
 
     return ASSET_SUCCESS;
+}
+
+void MarkGroupAsModified(const std::string &groupId, MutAssetBlobArray *groupIds)
+{
+    for (uint32_t i = 0; i < groupIds->size; i++) {
+        if (strcmp(groupId.c_str(), groupIds->blob[i].blob) == 0) {
+            groupIds->blob[i].modify = true;
+            break;
+        }
+    }
+}
+
+void ProcessBundleInfos(const std::vector<AppExecFwk::BundleInfo> &bundleInfos,
+    int32_t userId, MutAssetBlobArray *groupIds)
+{
+    std::unordered_set<std::string> targetGroupIds;
+    for (uint32_t i = 0; i < groupIds->size; i++) {
+        targetGroupIds.insert(groupIds->blob[i].blob);
+    }
+
+    for (const AppExecFwk::BundleInfo &bundleInfo : bundleInfos) {
+        for (const std::string &groupId : bundleInfo.applicationInfo.assetAccessGroups) {
+            if (targetGroupIds.find(groupId) != targetGroupIds.end()) {
+                LOGI("[INFO]Found matching group id. Do not remove data in this group");
+                MarkGroupAsModified(groupId, groupIds);
+            }
+        }
+    }
 }
 } // namespace
 
@@ -234,4 +245,73 @@ int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *proces
             res = ASSET_INVALID_ARGUMENT;
     }
     return res;
+}
+
+int32_t GetCloneAppIndexes(int32_t userId, int32_t *appIndexes, uint32_t *indexSize, const char *appName)
+{
+    auto bundleMgr = GetBundleMgr();
+    if (bundleMgr == nullptr) {
+        LOGE("[FATAL]bundleMgr is nullptr, please check.");
+        return ASSET_BMS_ERROR;
+    }
+    std::vector<int32_t> indexes;
+    int32_t ret = bundleMgr->GetCloneAppIndexes(appName, indexes, userId);
+    if (ret != ASSET_SUCCESS) {
+        LOGE("Get clone app indexes failed.");
+        return ASSET_BMS_ERROR;
+    }
+    if (*indexSize < indexes.size()) {
+        LOGE("Too short index size.");
+        return ASSET_INVALID_ARGUMENT;
+    }
+    
+    for (size_t i = 0; i < indexes.size(); i++) {
+        *(appIndexes + i) = indexes[i];
+    }
+    *indexSize = indexes.size();
+    return ASSET_SUCCESS;
+}
+
+int32_t IsHapInAllowList(int32_t userId, const char *appName, bool *is_in_list)
+{
+    if (appName == nullptr) {
+        LOGE("[FATAL]App name is null.");
+        return ASSET_INVALID_ARGUMENT;
+    }
+    AppExecFwk::BundleInfo bundleInfo;
+    AppExecFwk::BundleMgrClient bmsClient;
+    if (!bmsClient.GetBundleInfo(appName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE, bundleInfo, userId)) {
+        LOGE("[FATAL]Get bundle info failed!");
+        return ASSET_BMS_ERROR;
+    }
+    for (uint32_t i = 0; i < ARRAY_SIZE(UPGRADE_HAP_LIST); ++i) {
+        if (AssetMemCmp(UPGRADE_HAP_LIST[i],
+            bundleInfo.appId.c_str(),
+            strlen(UPGRADE_HAP_LIST[i]),
+            bundleInfo.appId.size())) {
+            *is_in_list = true;
+            return ASSET_SUCCESS;
+        }
+    }
+    *is_in_list = false;
+    return ASSET_SUCCESS;
+}
+
+int32_t GetUninstallGroups(int32_t userId, ConstAssetBlob *developerId, MutAssetBlobArray *groupIds)
+{
+    auto bundleMgr = GetBundleMgr();
+    if (bundleMgr == nullptr) {
+        LOGE("[FATAL]bundleMgr is nullptr, please check.");
+        return ASSET_BMS_ERROR;
+    }
+    std::string useDeveloperId(reinterpret_cast<const char*>(developerId->data), developerId->size);
+    std::vector<AppExecFwk::BundleInfo> bundleInfos;
+    int32_t ret = bundleMgr->GetAllBundleInfoByDeveloperId(useDeveloperId, bundleInfos, userId);
+    if (ret != RET_SUCCESS && ret != ERR_BUNDLE_MANAGER_INVALID_DEVELOPERID) {
+        LOGE("[FATAL]GetAllBundleInfoByDeveloperId failed. ret:%{public}d", ret);
+        return ASSET_BMS_ERROR;
+    }
+
+    ProcessBundleInfos(bundleInfos, userId, groupIds);
+    return ASSET_SUCCESS;
 }

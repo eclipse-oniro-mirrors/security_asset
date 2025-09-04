@@ -16,7 +16,7 @@
 //! This module is used to subscribe common event and system ability.
 
 use std::{
-    ffi::CStr,
+    ffi::{CStr, CString},
     fs::{self, DirEntry},
     slice,
     sync::Mutex,
@@ -25,12 +25,16 @@ use std::{
 
 use lazy_static::lazy_static;
 
-use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Group, OwnerType};
+use asset_common::{
+    AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Group, ModifyAssetBlob, MutAssetBlobArray, OwnerType
+};
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
 use asset_db_key_operator::DbKey;
 use asset_db_operator::{
     database::Database,
-    database_file_upgrade::{construct_splited_db_name, trigger_db_upgrade},
+    database_file_upgrade::{
+        construct_splited_db_name, trigger_db_upgrade, update_upgrade_list,
+    },
     types::{
         column::{self},
         DbMap,
@@ -49,7 +53,7 @@ use asset_sdk::plugin_interface::{
 };
 
 use crate::data_size_mod::handle_data_size_upload;
-use crate::{sys_event::upload_fault_system_event, PackageInfoFfi};
+use crate::{sys_event::upload_fault_system_event, PackageInfoFfi, upgrade_operator::upgrade_clone_app_data};
 
 /// success code.
 const SUCCESS: i32 = 0;
@@ -59,6 +63,10 @@ const MINIMUM_MAIN_USER_ID: i32 = 100;
 enum DataExist {
     OwnerData(bool),
     GroupData(bool),
+}
+
+extern "C" {
+    fn GetUninstallGroups(userId: i32, developer_id: *const ConstAssetBlob, group_ids: *mut MutAssetBlobArray) -> i32;
 }
 
 fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result<()> {
@@ -86,7 +94,6 @@ fn delete_in_de_db_on_package_removed(calling_info: &CallingInfo, reverse_condit
     let check_condition = DbMap::new();
     match calling_info.group() {
         Some(_) => {
-            delete_condition.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
             let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
             let data_exists = db.is_data_exists(&check_condition, false)?;
             if !data_exists {
@@ -112,7 +119,6 @@ fn delete_in_ce_db_on_package_removed(calling_info: &CallingInfo, reverse_condit
     let check_condition = DbMap::new();
     match calling_info.group() {
         Some(_) => {
-            delete_condition.insert(column::OWNER, Value::Bytes(calling_info.owner_info().clone()));
             let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
             let data_exists = db.is_data_exists(&check_condition, false)?;
             if !data_exists {
@@ -166,15 +172,46 @@ fn construct_calling_infos(
 ) -> Vec<CallingInfo> {
     let mut calling_infos = vec![CallingInfo::new(user_id, OwnerType::Hap, owner.clone(), None)];
     if !group_ids.blobs.is_null() && group_ids.size != 0 && !developer_id.data.is_null() && developer_id.size != 0 {
-        let developer_id = unsafe { slice::from_raw_parts(developer_id.data, developer_id.size as usize) };
         let group_ids_slice = unsafe { slice::from_raw_parts(group_ids.blobs, group_ids.size as usize) };
+
+        let mut blobs = Vec::new();
+        let mut group_id_blobs = Vec::new();
         for group_id_slice in group_ids_slice {
-            let group_id = unsafe { slice::from_raw_parts(group_id_slice.data, group_id_slice.size as usize) };
+            let data = unsafe { slice::from_raw_parts(group_id_slice.data, group_id_slice.size as usize) };
+            let data_str = CString::new(String::from_utf8_lossy(data).to_string()).unwrap();
+            group_id_blobs.push(ModifyAssetBlob { modify: false, blob: data_str.as_ptr() });
+            blobs.push(data_str);
+        }
+
+        let mut the_group_ids = MutAssetBlobArray { size: group_id_blobs.len() as u32, blobs: group_id_blobs.as_mut_ptr() };
+
+        match unsafe { GetUninstallGroups(user_id, &developer_id, &mut the_group_ids) } {
+            SUCCESS => (),
+            error => {
+                loge!("[FATAL]Get GetUninstallGroups failed, res is {}.", error);
+                return calling_infos;
+            },
+        }
+
+        let the_group_ids_slice = unsafe { slice::from_raw_parts(the_group_ids.blobs, the_group_ids.size as usize) };
+
+        let developer_id = unsafe { slice::from_raw_parts(developer_id.data, developer_id.size as usize) };
+        let developer_id_string = String::from_utf8_lossy(developer_id);
+        let mut main_developer_id = developer_id.to_vec().clone();
+        if let Some(pos) = developer_id_string.find('.') {
+            main_developer_id.drain(..=pos);
+        }
+        for group_id_slice in the_group_ids_slice {
+            if group_id_slice.modify {
+                continue;
+            }
+            let group_id = unsafe { CStr::from_ptr(group_id_slice.blob) };
+
             calling_infos.push(CallingInfo::new(
                 user_id,
                 OwnerType::HapGroup,
                 owner.clone(),
-                Some(Group { developer_id: developer_id.to_vec(), group_id: group_id.to_vec() }),
+                Some(Group { developer_id: main_developer_id.clone(), group_id: group_id.to_bytes().to_vec() }),
             ));
         }
     }
@@ -236,6 +273,10 @@ pub(crate) extern "C" fn on_package_removed(package_info: PackageInfoFfi) {
         String::from_utf8_lossy(&bundle_name),
         package_info.app_index
     );
+
+    if package_info.app_index == 0 {
+        let _ = update_upgrade_list(package_info.user_id, &String::from_utf8_lossy(&bundle_name).to_string());
+    }
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
@@ -340,6 +381,7 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
             Err(code) => loge!("process user unlocked event failed, code: {}", code),
         }
     }
+    let _ = upgrade_clone_app_data(user_id);
 }
 
 pub(crate) fn notify_on_user_removed(user_id: i32) {

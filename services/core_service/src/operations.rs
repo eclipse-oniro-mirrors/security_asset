@@ -15,7 +15,7 @@
 
 //! This module is used to implement the Asset lifecycle management.
 
-mod common;
+pub(crate) mod common;
 mod operation_add;
 mod operation_post_query;
 mod operation_pre_query;

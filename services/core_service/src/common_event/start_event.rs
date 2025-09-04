@@ -23,9 +23,7 @@ use asset_file_operator::de_operator::delete_user_de_dir;
 use asset_log::{loge, logi, logw};
 use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
 
-use crate::{
-    common_event::listener, unload_sa, PackageInfo, PackageInfoFfi, WantParser
-};
+use crate::{common_event::listener, unload_sa, PackageInfo, PackageInfoFfi, WantParser};
 
 const USER_ID: &str = "userId";
 const SANDBOX_APP_INDEX: &str = "sandbox_app_index";
@@ -77,20 +75,16 @@ impl WantParser<PackageInfo> for PackageRemovedWant<'_> {
         };
 
         // parse groups from want
-        let (main_developer_id, group_ids) = match (self.0.get(DEVELOPER_ID), self.0.get(GROUP_IDS)) {
+        let (developer_id, group_ids) = match (self.0.get(DEVELOPER_ID), self.0.get(GROUP_IDS)) {
             (Some(developer_id), Some(group_ids)) => {
-                let mut main_developer_id = developer_id.to_string();
-                if let Some(pos) = developer_id.find('.') {
-                    main_developer_id.drain(..=pos);
-                }
                 let group_ids: Vec<String> =
                     group_ids.split(GROUP_SEPARATOR).map(|group_id| group_id.to_string()).collect();
-                (Some(main_developer_id), Some(group_ids))
+                (Some(developer_id.to_string()), Some(group_ids))
             },
             _ => (None, None),
         };
 
-        Ok(PackageInfo { user_id, app_index, app_id, developer_id: main_developer_id, group_ids, bundle_name })
+        Ok(PackageInfo { user_id, app_index, app_id, developer_id, group_ids, bundle_name })
     }
 }
 

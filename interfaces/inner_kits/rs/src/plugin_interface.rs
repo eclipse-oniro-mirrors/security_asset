@@ -17,9 +17,9 @@
 
 pub use asset_definition::{AssetError, Value};
 use ipc::parcel::MsgParcel;
-use ylong_runtime::task::JoinHandle;
 use std::any::Any;
 use std::collections::HashMap;
+use ylong_runtime::task::JoinHandle;
 
 use std::sync::{Arc, Mutex};
 
@@ -59,6 +59,9 @@ pub enum EventType {
 
     /// Query the result of synchronization.
     QuerySyncResult,
+
+    /// Wrap data.
+    WrapData,
 }
 
 /// param name for bundle name
@@ -85,6 +88,9 @@ pub const PARAM_NAME_GROUP_ID: &str = "GroupId";
 /// param name for attribute encryption type
 pub const PARAM_NAME_REQUIRE_ATTR_ENCRYPTED: &str = "RequireAttrEncrypted";
 
+/// param name for accessibility
+pub const PARAM_NAME_ACCESSIBILITY: &str = "Accessibility";
+
 /// param name for result code
 pub const PARAM_NAME_RESULT_CODE: &str = "ResultCode";
 
@@ -96,6 +102,18 @@ pub const PARAM_NAME_FAILED_COUNT: &str = "FailedCount";
 
 /// param name for hap type
 pub const PARAM_NAME_IS_HAP: &str = "IsHap";
+
+/// param name for decrypt key alias
+pub const PARAM_NAME_DECRYPT_KEY_ALIAS: &str = "DecryptKeyAlias";
+
+/// param name for encrypt key alias
+pub const PARAM_NAME_ENCRYPT_KEY_ALIAS: &str = "EncryptKeyAlias";
+
+/// param name for cipher
+pub const PARAM_NAME_CIPHER: &str = "Cipher";
+
+/// param name for aad
+pub const PARAM_NAME_AAD: &str = "AAD";
 
 /// param name for return offset
 pub const RETURN_OFFSET: &str = "ReturnOffset";
@@ -118,11 +136,7 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     fn init(&mut self, user_id: i32) -> Result<(), u32>;
 
     /// Create adapt cloud table for certain asset db.
-    fn create_adapt_cloud_table_for_specific_db(
-        &self,
-        db_info: &ExtDbMap,
-        is_ce: bool,
-    ) -> Result<(), u32>;
+    fn create_adapt_cloud_table_for_specific_db(&self, db_info: &ExtDbMap, is_ce: bool) -> Result<(), u32>;
 
     /// Adds an asset to de db.
     fn add(&self, attributes: &ExtDbMap) -> Result<i32, u32>;
