@@ -414,7 +414,6 @@ extern "C" {
 }
 
 fn trigger_sync() {
-    let mut user_ids = vec![];
     let mut user_ids_size: u32 = USER_ID_VEC_BUFFER;
     let mut user_ids: Vec<i32> = vec![0i32; user_ids_size as usize];
     let user_ids_size_ptr = &mut user_ids_size;

@@ -112,11 +112,10 @@ void HandleAppRestore(const OHOS::AAFwk::Want &want, OnAppRestore onAppRestore)
     }
 }
 
-void HandleConnectivityChange(const OHOS::AAFwk::Want &want, OnConnectivityChange onConnectivityChange)
+void HandleConnectivityChange(int code, OnConnectivityChange onConnectivityChange)
 {
     if (onConnectivityChange != nullptr) {
-        int code = want.GetCode;
-        if (code != static_cast<int32_t>(OHOS::NetManagerStandard::NetConnState::NET_CONN_STATE_CONNECTED)) {
+        if (code != static_cast<int>(OHOS::NetManagerStandard::NetConnState::NET_CONN_STATE_CONNECTED)) {
             LOGW("connect is not NET_CONN_STATE_CONNECTED.");
             return;
         }
@@ -171,7 +170,7 @@ public:
             }
             LOGI("[INFO]Receive event: USER_PIN_CREATED_EVENT, start_time: %{public}ld", startTime);
         } else if (action == CommonEventSupport::COMMON_EVENT_CONNECTIVITY_CHANGE) {
-            HandleConnectivityChange(want, this->eventCallBack.onConnectivityChange());
+            HandleConnectivityChange(data.GetCode(), this->eventCallBack.onConnectivityChange);
         } else {
             LOGW("[WARNING]Receive unknown event: %{public}s", action.c_str());
         }

@@ -44,13 +44,10 @@ bool IsUserIdExist(int32_t userId, bool *exist)
     return true;
 }
 
-int32_t GetUserIdsWithQueryFunc(
-    int32_t *userIdsPtr, 
-    uint32_t *userIdsSize,
-    std::function<int32_t(std::vector<OHOS::AccountSA::OsAccountInfo> &)> queryFunction)
+int32_t GetUserIds(int32_t *userIdsPtr, uint32_t *userIdsSize)
 {
     std::vector<OHOS::AccountSA::OsAccountInfo> accountInfos = {};
-    int32_t ret = queryFunction(accountInfos);
+    int32_t ret = OHOS::AccountSA::OsAccountManager::QueryAllCreatedOsAccounts(accountInfos);
     if (ret != OHOS::ERR_OK) {
         LOGE("[FATAL]Query account id failed! res is %{public}d", ret);
         return ASSET_ACCOUNT_ERROR;
@@ -74,20 +71,24 @@ int32_t GetUserIdsWithQueryFunc(
     return ASSET_SUCCESS;
 }
 
-int32_t GetUserIds(int32_t *userIdsPtr, uint32_t *userIdsSize)
-{
-    auto queryFunction = [](std::vector<OHOS::AccountSA::OsAccountInfo> &accountInfos) {
-        return OHOS::AccountSA::OsAccountManager::QueryAllCreatedOsAccounts(accountInfos);
-    };
-    return GetUserIdsWithQueryFunc(userIdsPtr, userIdsSize, queryFunction);
-}
-
 int32_t GetFirstUnlockUserIds(int32_t *userIdsPtr, uint32_t *userIdsSize)
 {
-    auto queryFunction = [](std::vector<OHOS::AccountSA::OsAccountInfo> &accountInfos) {
-        return OHOS::AccountSA::OsAccountManager::GetUnlockedOsAccountLocalIds(accountInfos);
-    };
-    return GetUserIdsWithQueryFunc(userIdsPtr, userIdsSize, queryFunction);
+    std::vector<int32_t> userIdsVec = {};
+    int32_t ret = OHOS::AccountSA::OsAccountManager::GetUnlockedOsAccountLocalIds(userIdsVec);
+    if (ret != OHOS::ERR_OK) {
+        LOGE("[FATAL]Query unlocked account id failed! res is %{public}d", ret);
+        return ASSET_ACCOUNT_ERROR;
+    }
+    if (userIdsVec.size() > *userIdsSize) {
+        LOGE("[FATAL]Users size increased after getting users size.");
+        return ASSET_ACCOUNT_ERROR;
+    }
+    for (uint32_t i = 0; i < userIdsVec.size(); i++) {
+        userIdsPtr[i] = userIdsVec[i];
+    }
+    *userIdsSize = static_cast<uint32_t>(userIdsVec.size());
+
+    return ASSET_SUCCESS;
 }
 
 int32_t GetUsersSize(uint32_t *userIdsSize)
