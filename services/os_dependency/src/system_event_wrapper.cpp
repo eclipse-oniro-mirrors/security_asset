@@ -21,6 +21,7 @@
 #include "common_event_manager.h"
 #include "common_event_subscriber.h"
 #include "common_event_support.h"
+#include "net_supplier_info.h"
 
 #include "asset_log.h"
 
@@ -30,7 +31,6 @@ using namespace OHOS::EventFwk;
 
 const char * const APP_ID = "appId";
 const char * const APP_INDEX = "appIndex";
-const char * const COMMON_EVENT_RESTORE_START = "usual.event.RESTORE_START";
 const char * const COMMON_EVENT_USER_PIN_CREATED = "USER_PIN_CREATED_EVENT";
 const char * const BUNDLE_NAME = "bundleName";
 const char * const PERMISSION_MANAGE_USER_IDM = "ohos.permission.MANAGE_USER_IDM";
@@ -112,6 +112,20 @@ void HandleAppRestore(const OHOS::AAFwk::Want &want, OnAppRestore onAppRestore)
     }
 }
 
+void HandleConnectivityChange(const OHOS::AAFwk::Want &want, OnConnectivityChange onConnectivityChange)
+{
+    if (onConnectivityChange != nullptr) {
+        int code = want.GetCode;
+        if (code != static_cast<int32_t>(OHOS::NetManagerStandard::NetConnState::NET_CONN_STATE_CONNECTED)) {
+            LOGW("connect is not NET_CONN_STATE_CONNECTED.");
+            return;
+        }
+        long startTime = std::clock();
+        onConnectivityChange();
+        LOGI("[INFO]Receive event: CONNECTIVITY_CHANGE, start_time: %{public}ld", startTime);
+    }
+}
+
 class SystemEventHandler : public CommonEventSubscriber {
 public:
     explicit SystemEventHandler(const CommonEventSubscribeInfo &subscribeInfo, const EventCallBack eventCallBack)
@@ -142,7 +156,7 @@ public:
                 this->eventCallBack.onCharging();
             }
             LOGI("[INFO]Receive event: CHARGING, start_time: %{public}ld", startTime);
-        } else if (action == COMMON_EVENT_RESTORE_START) {
+        } else if (action == CommonEventSupport::COMMON_EVENT_RESTORE_START) {
             HandleAppRestore(want, this->eventCallBack.onAppRestore);
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_UNLOCKED) {
             if (this->eventCallBack.onUserUnlocked != nullptr) {
@@ -156,6 +170,8 @@ public:
                 this->eventCallBack.onUserUnlocked(userId);
             }
             LOGI("[INFO]Receive event: USER_PIN_CREATED_EVENT, start_time: %{public}ld", startTime);
+        } else if (action == CommonEventSupport::COMMON_EVENT_CONNECTIVITY_CHANGE) {
+            HandleConnectivityChange(want, this->eventCallBack.onConnectivityChange());
         } else {
             LOGW("[WARNING]Receive unknown event: %{public}s", action.c_str());
         }
@@ -210,7 +226,7 @@ bool SubscribeSystemEvent(const EventCallBack eventCallBack)
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_OFF);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_CHARGING);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_UNLOCKED);
-    matchingSkills.AddEvent(COMMON_EVENT_RESTORE_START);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_RESTORE_START);
     CommonEventSubscribeInfo info(matchingSkills);
     if (g_eventHandler == nullptr) {
         g_eventHandler = std::shared_ptr<SystemEventHandler>(
