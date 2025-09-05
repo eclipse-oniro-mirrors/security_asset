@@ -174,8 +174,9 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
         logi!("[INFO]On user -{}- pin created.", reason.extra_data.code);
         listener::on_user_unlocked(reason.extra_data.code);
     } else if reason_name == "usual.event.CONNECTIVITY_CHANGE" {
-        // todo 这里判断是否状态码等于三 是三才往下走
-        listener::on_connectivity_change();
+        if reason.value == "3" {
+            listener::on_connectivity_change();
+        }
     }
     logi!("[INFO]Finish handle common event. [{}]", reason_name);
 }
