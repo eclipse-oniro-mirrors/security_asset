@@ -173,10 +173,8 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
     } else if reason_name == "USER_PIN_CREATED_EVENT" {
         logi!("[INFO]On user -{}- pin created.", reason.extra_data.code);
         listener::on_user_unlocked(reason.extra_data.code);
-    } else if reason_name == "usual.event.CONNECTIVITY_CHANGE" {
-        if reason.value == "3" {
-            listener::on_connectivity_change();
-        }
+    } else if reason_name == "usual.event.CONNECTIVITY_CHANGE" && reason.value == "3" {
+        listener::on_connectivity_change();
     }
     logi!("[INFO]Finish handle common event. [{}]", reason_name);
 }
