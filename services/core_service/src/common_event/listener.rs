@@ -399,15 +399,41 @@ pub(crate) fn notify_on_user_removed(user_id: i32) {
 
 pub(crate) extern "C" fn on_schedule_wakeup() {
     logi!("[INFO]On SA wakes up at a scheduled time(36H).");
-    let self_bundle_name = "asset_service";
+    trigger_sync();
+}
 
-    if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
-        let mut params = ExtDbMap::new();
-        params.insert(PARAM_NAME_USER_ID, Value::Number(MINIMUM_MAIN_USER_ID as u32));
-        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(self_bundle_name.as_bytes().to_vec()));
-        match load.process_event(EventType::Sync, &mut params) {
-            Ok(()) => logi!("process sync ext event success."),
-            Err(code) => loge!("process sync ext event failed, code: {}", code),
+pub(crate) extern "C" fn on_connectivity_change() {
+    logi!("[INFO]On SA connectivity change.");
+    trigger_sync();
+}
+
+extern "C" {
+    fn GetUserIds(userIdsPtr: *mut i32, userIdsSize: *mut u32) -> i32;
+    fn GetFirstUnlockUserIds(userIdsPtr: *mut i32, userIdsSize: *mut u32) -> i32;
+    fn GetUsersSize(userIdsSize: *mut u32) -> i32;
+}
+
+fn trigger_sync() {
+    let mut user_ids_size: u32 = USER_ID_VEC_BUFFER;
+    let mut user_ids: Vec<i32> = vec![0i32; user_ids_size as usize];
+    let user_ids_size_ptr = &mut user_ids_size;
+    let user_ids_ptr = user_ids.as_mut_ptr();
+    let ret: i32 = unsafe { GetFirstUnlockUserIds(user_ids_ptr, user_ids_size_ptr) };
+    if ret != SUCCESS {
+        return loge!("[FATAL] Get users IDs failed. Do not sync data.");
+    }
+
+    user_ids.truncate(user_ids_size as usize);
+    let self_bundle_name = "asset_service";
+    for user_id in &user_ids {
+        if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
+            let mut params = ExtDbMap::new();
+            params.insert(PARAM_NAME_USER_ID, Value::Number(*user_id as u32));
+            params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(self_bundle_name.as_bytes().to_vec()));
+            match load.process_event(EventType::Sync, &mut params) {
+                Ok(()) => logi!("process sync ext event {} success.", *user_id),
+                Err(code) => loge!("process sync ext event failed, code: {}, user_id: {}", code, *user_id),
+            }
         }
     }
 }
@@ -444,11 +470,6 @@ fn backup_ce_db_if_accessible(user_id: i32) -> Result<()> {
     }
 
     Ok(())
-}
-
-extern "C" {
-    fn GetUserIds(userIdsPtr: *mut i32, userIdsSize: *mut u32) -> i32;
-    fn GetUsersSize(userIdsSize: *mut u32) -> i32;
 }
 
 fn backup_all_db(start_time: &Instant) -> Result<()> {
@@ -499,6 +520,7 @@ struct EventCallBack {
     on_charging: extern "C" fn(),
     on_app_restore: extern "C" fn(i32, *const u8, i32),
     on_user_unlocked: extern "C" fn(i32),
+    on_connectivity_change: extern "C" fn(),
 }
 
 extern "C" {
@@ -518,6 +540,7 @@ pub(crate) fn subscribe() {
             on_charging: backup_db,
             on_app_restore,
             on_user_unlocked,
+            on_connectivity_change,
         };
         if SubscribeSystemEvent(call_back.clone()) {
             logi!("Subscribe system event success.");
