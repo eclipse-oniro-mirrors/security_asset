@@ -33,6 +33,7 @@ const APP_ID: &str = "appId";
 const BUNDLE_NAME: &str = "bundleName";
 const DEVELOPER_ID: &str = "developerId";
 const GROUP_IDS: &str = "assetAccessGroups";
+const NET_CONN_STATE_CONNECTED: &str = "3";
 
 struct PackageRemovedWant<'a>(&'a HashMap<String, String>);
 impl WantParser<PackageInfo> for PackageRemovedWant<'_> {
@@ -173,7 +174,7 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
     } else if reason_name == "USER_PIN_CREATED_EVENT" {
         logi!("[INFO]On user -{}- pin created.", reason.extra_data.code);
         listener::on_user_unlocked(reason.extra_data.code);
-    } else if reason_name == "usual.event.CONNECTIVITY_CHANGE" && reason.value == "3" {
+    } else if reason_name == "usual.event.CONNECTIVITY_CHANGE" && reason.value == NET_CONN_STATE_CONNECTED {
         listener::on_connectivity_change();
     }
     logi!("[INFO]Finish handle common event. [{}]", reason_name);
