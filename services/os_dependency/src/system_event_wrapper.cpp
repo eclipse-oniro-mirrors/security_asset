@@ -226,6 +226,7 @@ bool SubscribeSystemEvent(const EventCallBack eventCallBack)
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_CHARGING);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_UNLOCKED);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_RESTORE_START);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_CONNECTIVITY_CHANGE);
     CommonEventSubscribeInfo info(matchingSkills);
     if (g_eventHandler == nullptr) {
         g_eventHandler = std::shared_ptr<SystemEventHandler>(
