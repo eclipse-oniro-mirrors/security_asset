@@ -37,11 +37,11 @@ pub fn create_user_de_dir(user_id: i32) -> Result<()> {
     match fs::create_dir(path) {
         Ok(_) => {
             logi!("[INFO]User DE directory does not exist, create it...");
-            let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o700)); 
+            let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o700));
             Ok(())
         },
         Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
-            let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o700)); 
+            let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o700));
             Ok(())
         },
         Err(e) => {
