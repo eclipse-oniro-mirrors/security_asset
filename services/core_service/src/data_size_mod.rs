@@ -21,7 +21,7 @@ use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_file_operator::common::{is_file_exist, CE_ROOT_PATH, DE_ROOT_PATH};
 use asset_utils::time::system_time_in_seconds;
 use lazy_static::lazy_static;
-use std::{ffi::CString, fs, os::{raw::c_char, os::unix::preclude::PermissionsExt}, path::Path, sync::Mutex};
+use std::{ffi::CString, fs, os::{raw::c_char, os::unix::prelude::PermissionsExt}, path::Path, sync::Mutex};
 
 /// The buffer for userId vec.
 pub const USER_ID_VEC_BUFFER: u32 = 5;

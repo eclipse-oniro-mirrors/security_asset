@@ -18,7 +18,7 @@
 
 use std::fs::File;
 use std::fs::OpenOptions;
-use std::{fs, path::Path, sync::Mutex, os::unix::preclude::{OpenOptionsExt, PermissionsExt}};
+use std::{fs, path::Path, sync::Mutex, os::unix::fs::{OpenOptionsExt, PermissionsExt}};
 
 use asset_common::{CallingInfo, OwnerType, OWNER_INFO_SEPARATOR};
 use asset_definition::{log_throw_error, AssetError, ErrCode, Extension, Result, Value};
@@ -317,7 +317,7 @@ pub fn create_upgrade_file(user_id: i32, origin_version: OriginVersion) -> Resul
             return log_throw_error!(ErrCode::FileOperationError, "Create file failed.");
         },
     };
-    let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o640));
+    let _ = fs::set_permissions(file_path, fs::Permissions::from_mode(0o640));
     let upgrade_list = create_upgrade_list_inner(user_id, &origin_version);
     let content = UpgradeData { version: origin_version as u32, upgrade_list };
     to_writer(&content, &mut file)

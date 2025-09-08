@@ -17,7 +17,7 @@
 
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_log::logi;
-use std::{fs, path::Path, os::unix::preclude::PermissionsExt};
+use std::{fs, path::Path, os::unix::prelude::PermissionsExt};
 
 use crate::common::{get_user_dbs, is_file_exist};
 
