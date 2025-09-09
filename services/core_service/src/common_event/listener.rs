@@ -423,7 +423,9 @@ fn trigger_sync() {
         return loge!("[FATAL] Get users IDs failed. Do not sync data.");
     }
 
-    user_ids.truncate(user_ids_size as usize);
+    if user_ids_size < USER_ID_VEC_BUFFER {
+        user_ids.truncate(user_ids_size as usize);
+    }
     let self_bundle_name = "asset_service";
     for user_id in &user_ids {
         if let Ok(load) = AssetPlugin::get_instance().load_plugin() {

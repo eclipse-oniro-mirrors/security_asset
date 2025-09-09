@@ -104,7 +104,9 @@ fn get_db_dirs() -> Result<Vec<String>> {
         return log_throw_error!(ErrCode::AccountError, "[FATAL] Get users IDs failed.");
     }
 
-    user_ids.truncate(user_ids_size as usize);
+    if user_ids_size < USER_ID_VEC_BUFFER {
+        user_ids.truncate(user_ids_size as usize);
+    }
     for user_id in &user_ids {
         let ce_path = format!("{}/{}/asset_service", CE_ROOT_PATH, user_id);
         if is_file_exist(&ce_path)? {
