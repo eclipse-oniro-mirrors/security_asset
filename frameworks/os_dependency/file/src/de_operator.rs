@@ -17,7 +17,7 @@
 
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_log::logi;
-use std::{fs, path::Path};
+use std::{fs, path::Path, os::unix::prelude::PermissionsExt};
 
 use crate::common::{get_user_dbs, is_file_exist};
 
@@ -32,16 +32,18 @@ fn is_user_de_dir_exist(user_id: i32) -> Result<bool> {
 
 /// Create user de directory.
 pub fn create_user_de_dir(user_id: i32) -> Result<()> {
-    if is_user_de_dir_exist(user_id)? {
-        return Ok(());
-    }
-
-    logi!("[INFO]User DE directory does not exist, create it...");
     let path_str = construct_user_de_path(user_id);
     let path: &Path = Path::new(&path_str);
     match fs::create_dir(path) {
-        Ok(_) => Ok(()),
-        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => Ok(()),
+        Ok(_) => {
+            logi!("[INFO]User DE directory does not exist, create it...");
+            let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o700));
+            Ok(())
+        },
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+            let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o700));
+            Ok(())
+        },
         Err(e) => {
             log_throw_error!(
                 ErrCode::FileOperationError,

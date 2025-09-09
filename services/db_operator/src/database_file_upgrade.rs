@@ -18,7 +18,7 @@
 
 use std::fs::File;
 use std::fs::OpenOptions;
-use std::{fs, path::Path, sync::Mutex};
+use std::{fs, path::Path, sync::Mutex, os::unix::fs::{OpenOptionsExt, PermissionsExt}};
 
 use asset_common::{CallingInfo, OwnerType, OWNER_INFO_SEPARATOR};
 use asset_definition::{log_throw_error, AssetError, ErrCode, Extension, Result, Value};
@@ -317,6 +317,7 @@ pub fn create_upgrade_file(user_id: i32, origin_version: OriginVersion) -> Resul
             return log_throw_error!(ErrCode::FileOperationError, "Create file failed.");
         },
     };
+    let _ = fs::set_permissions(file_path, fs::Permissions::from_mode(0o640));
     let upgrade_list = create_upgrade_list_inner(user_id, &origin_version);
     let content = UpgradeData { version: origin_version as u32, upgrade_list };
     to_writer(&content, &mut file)
@@ -335,6 +336,8 @@ pub fn is_upgrade_file_exist(user_id: i32) -> bool {
 pub fn get_file_content(user_id: i32) -> Result<UpgradeData> {
     let _lock = GLOBAL_FILE_LOCK.lock().unwrap();
     let path = fmt_file_path(user_id);
+    let file_path = Path::new(&path);
+    let _ = fs::set_permissions(file_path, fs::Permissions::from_mode(0o640));
     let file = File::open(path)?;
     match from_reader(file) {
         Ok(content) => Ok(content),
@@ -411,7 +414,8 @@ pub fn update_upgrade_list(user_id: i32, remove_file: &String) -> Result<()> {
     upgrade_list.retain(|x| x != remove_file);
     let path_str = fmt_file_path(user_id);
     let file_path = Path::new(&path_str);
-    let mut file = match OpenOptions::new().write(true).create(true).truncate(true).open(file_path) {
+    let _ = fs::set_permissions(file_path, fs::Permissions::from_mode(0o640));
+    let mut file = match OpenOptions::new().write(true).create(true).truncate(true).mode(0o640).open(file_path) {
         Ok(file) => file,
         Err(_) => {
             return log_throw_error!(ErrCode::FileOperationError, "Create file failed.");

@@ -21,7 +21,7 @@ use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_file_operator::common::{is_file_exist, CE_ROOT_PATH, DE_ROOT_PATH};
 use asset_utils::time::system_time_in_seconds;
 use lazy_static::lazy_static;
-use std::{ffi::CString, fs, os::raw::c_char, path::Path, sync::Mutex};
+use std::{ffi::CString, fs, os::{raw::c_char, unix::fs::PermissionsExt}, path::Path, sync::Mutex};
 
 /// The buffer for userId vec.
 pub const USER_ID_VEC_BUFFER: u32 = 5;
@@ -66,6 +66,7 @@ fn get_folders_size(paths: &[String]) -> Result<Vec<u64>> {
 /// read record unix time
 fn read_record_time(path_str: &str) -> Result<u64> {
     let path: &Path = Path::new(&path_str);
+    let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o640));
     let time_str = fs::read_to_string(path)?;
     let trim_time = time_str.trim();
     match trim_time.parse::<u64>() {
@@ -81,6 +82,7 @@ fn read_record_time(path_str: &str) -> Result<u64> {
 fn write_record_time(path_str: &str, unix_time: u64) -> Result<()> {
     let path: &Path = Path::new(&path_str);
     let time_str = unix_time.to_string();
+    let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o640));
     fs::write(path, time_str)?;
     Ok(())
 }

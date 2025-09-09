@@ -304,6 +304,7 @@ int32_t GetUninstallGroups(int32_t userId, ConstAssetBlob *developerId, MutAsset
         LOGE("[FATAL]bundleMgr is nullptr, please check.");
         return ASSET_BMS_ERROR;
     }
+
     std::string useDeveloperId(reinterpret_cast<const char*>(developerId->data), developerId->size);
     std::vector<AppExecFwk::BundleInfo> bundleInfos;
     int32_t ret = bundleMgr->GetAllBundleInfoByDeveloperId(useDeveloperId, bundleInfos, userId);

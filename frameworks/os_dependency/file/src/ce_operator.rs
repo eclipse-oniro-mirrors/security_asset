@@ -16,7 +16,7 @@
 //! This file implements ce file operations.
 
 use asset_definition::{log_throw_error, ErrCode, Result};
-use std::{fs, path::Path};
+use std::{fs, path::Path, os::unix::prelude::PermissionsExt};
 
 use crate::common::{get_user_dbs, is_file_exist, DB_KEY};
 
@@ -38,6 +38,7 @@ pub fn is_db_key_cipher_file_exist(user_id: i32) -> Result<bool> {
 pub fn read_db_key_cipher(user_id: i32) -> Result<Vec<u8>> {
     let path_str = construct_db_key_cipher_path(user_id);
     let path: &Path = Path::new(&path_str);
+    let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o640));
     match fs::read(path) {
         Ok(db_key_cipher) => Ok(db_key_cipher),
         Err(e) => {
@@ -51,9 +52,10 @@ pub fn read_db_key_cipher(user_id: i32) -> Result<Vec<u8>> {
 }
 
 /// Write db key cipher. If path does not exist, create it automatically.
-pub fn write_db_key_cipher(user_id: i32, db_key_cipher: &Vec<u8>) -> Result<()> {
+pub fn write_db_key_cipher(user_id: i32, db_key_cipher: &[u8]) -> Result<()> {
     let path_str = construct_db_key_cipher_path(user_id);
     let path: &Path = Path::new(&path_str);
+    let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o640));
     match fs::write(path, db_key_cipher) {
         Ok(_) => Ok(()),
         Err(e) => {
