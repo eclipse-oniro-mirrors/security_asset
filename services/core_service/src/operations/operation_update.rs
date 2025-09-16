@@ -15,7 +15,7 @@
 
 //! This module is used to update the specified alias of Asset.
 
-std::collections::HashSet;
+use std::collections::HashSet;
 
 use asset_common::CallingInfo;
 use asset_crypto_manager::crypto::Crypto;

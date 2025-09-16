@@ -15,7 +15,7 @@
 
 //! This module is used to query the Asset, including single and batch query.
 
-use std{::cmp::Ordering, collections::HashSet};
+use std::{cmp::Ordering, collections::HashSet};
 
 use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager};
@@ -160,7 +160,7 @@ const AUTH_QUERY_ATTRS: [Tag; 2] = [Tag::AuthChallenge, Tag::AuthToken];
 
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     let mut valid_tags = HashSet::new();
-    (common::CRITICAL_LABEL_ATTRS.iter());
+    valid_tags.extend(common::CRITICAL_LABEL_ATTRS.iter());
     valid_tags.extend(common::NORMAL_LABEL_ATTRS.iter());
     valid_tags.extend(common::NORMAL_LOCAL_LABEL_ATTRS.iter());
     valid_tags.extend(common::ACCESS_CONTROL_ATTRS.iter());
