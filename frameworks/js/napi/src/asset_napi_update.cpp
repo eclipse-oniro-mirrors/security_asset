@@ -51,20 +51,20 @@ napi_status CheckUpdateArgs(const napi_env env, const std::vector<AssetAttr> &at
     const std::vector<AssetAttr> &updateAttrs)
 {
     IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, QUERY_REQUIRED_TAGS, SEC_ASSET_INVALID_ARGUMENT));
-    std::vector<uint32_t> queryValidTags;
-    queryValidTags.insert(queryValidTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
-    queryValidTags.insert(queryValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
-    queryValidTags.insert(queryValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
-    queryValidTags.insert(queryValidTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
+    std::unordered_set<uint32_t> queryValidTags;
+    queryValidTags.insert(CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
+    queryValidTags.insert(NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
+    queryValidTags.insert(NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
+    queryValidTags.insert(ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, queryValidTags, SEC_ASSET_INVALID_ARGUMENT));
     IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
 
     IF_ERROR_THROW_RETURN(env, CheckAssetPresence(env, updateAttrs));
-    std::vector<uint32_t> updateValidTags;
-    updateValidTags.insert(updateValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
-    updateValidTags.insert(updateValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
-    updateValidTags.insert(updateValidTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
-    updateValidTags.insert(updateValidTags.end(), UPDATE_OPTIONAL_TAGS.begin(), UPDATE_OPTIONAL_TAGS.end());
+    std::unordered_set<uint32_t> updateValidTags;
+    updateValidTags.insert(NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
+    updateValidTags.insert(NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
+    updateValidTags.insert(ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
+    updateValidTags.insert(UPDATE_OPTIONAL_TAGS.begin(), UPDATE_OPTIONAL_TAGS.end());
     IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, updateAttrs, updateValidTags, SEC_ASSET_INVALID_ARGUMENT));
     IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, updateAttrs, SEC_ASSET_INVALID_ARGUMENT));
 
