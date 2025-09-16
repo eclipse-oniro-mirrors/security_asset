@@ -15,7 +15,7 @@
 
 //! This module is used to insert an Asset with a specified alias.
 
-use std::{ffi::CString, os::raw::c_char};
+use std::{ffi::CString, os::raw::c_char, collections::HashSet};
 
 use asset_common::{CallingInfo, OwnerType};
 use asset_crypto_manager::crypto::Crypto;
@@ -183,12 +183,14 @@ fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> R
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     common::check_required_tags(attributes, &REQUIRED_ATTRS)?;
 
-    let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
-    valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
-    valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
-    valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
-    valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
-    valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
+    let mut valid_tags = HashSet::new();
+    valid_tags.extend(common::CRITICAL_LABEL_ATTRS.iter());
+    valid_tags.extend(common::NORMAL_LABEL_ATTRS.iter());
+    valid_tags.extend(common::NORMAL_LOCAL_LABEL_ATTRS.iter());
+    valid_tags.extend(common::ACCESS_CONTROL_ATTRS.iter());
+    valid_tags.extend(common::ASSET_SYNC_ATTRS.iter());
+    valid_tags.extend(OPTIONAL_ATTRS.iter());
+
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_group_validity(attributes, calling_info)?;
     common::check_value_validity(attributes)?;

@@ -31,11 +31,11 @@ const uint32_t REMOVE_ARG_COUNT_AS_USER = 2;
 
 napi_status CheckRemoveArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
-    std::vector<uint32_t> validTags;
-    validTags.insert(validTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
-    validTags.insert(validTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
-    validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
-    validTags.insert(validTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
+    std::unordered_set<uint32_t> validTags;
+    validTags.insert(NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
+    validTags.insert(NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
+    validTags.insert(ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
+    validTags.insert(ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
     IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, validTags, SEC_ASSET_INVALID_ARGUMENT));
     IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
     return napi_ok;

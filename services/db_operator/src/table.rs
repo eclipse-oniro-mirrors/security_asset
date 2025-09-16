@@ -221,7 +221,7 @@ fn build_sql_reverse_condition(condition: &DbMap, reverse_condition: Option<&DbM
             }
             for (i, column_name) in conditions.keys().enumerate() {
                 if *column_name == "SyncType" {
-                    sql.push_str("(SyncType & ?) == 0");
+                    sql.push_str("(SyncType & ?) = 0");
                 } else {
                     sql.push_str(column_name);
                     sql.push_str("<>?");

@@ -15,7 +15,7 @@
 
 //! This module is used to query the Asset, including single and batch query.
 
-use std::cmp::Ordering;
+use std::{cmp::Ordering, collections::HashSet};
 
 use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager};
@@ -159,12 +159,14 @@ const OPTIONAL_ATTRS: [Tag; 6] =
 const AUTH_QUERY_ATTRS: [Tag; 2] = [Tag::AuthChallenge, Tag::AuthToken];
 
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
-    valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
-    valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
-    valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
-    valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
-    valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
+    let mut valid_tags = HashSet::new();
+    valid_tags.extend(common::CRITICAL_LABEL_ATTRS.iter());
+    valid_tags.extend(common::NORMAL_LABEL_ATTRS.iter());
+    valid_tags.extend(common::NORMAL_LOCAL_LABEL_ATTRS.iter());
+    valid_tags.extend(common::ACCESS_CONTROL_ATTRS.iter());
+    valid_tags.extend(common::ASSET_SYNC_ATTRS.iter());
+    valid_tags.extend(OPTIONAL_ATTRS.iter());
+
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_group_validity(attributes, calling_info)?;
     common::check_value_validity(attributes)?;

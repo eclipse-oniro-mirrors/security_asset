@@ -15,6 +15,8 @@
 
 //! This module is used to update the specified alias of Asset.
 
+use std::collections::HashSet;
+
 use asset_common::CallingInfo;
 use asset_crypto_manager::crypto::Crypto;
 use asset_db_operator::{
@@ -68,10 +70,11 @@ const UPDATE_OPTIONAL_ATTRS: [Tag; 1] = [Tag::Secret];
 fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // Check attributes used to query.
     common::check_required_tags(query, &QUERY_REQUIRED_ATTRS)?;
-    let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
-    valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
-    valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
-    valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
+    let mut valid_tags = HashSet::new();
+    valid_tags.extend(common::CRITICAL_LABEL_ATTRS.iter());
+    valid_tags.extend(common::NORMAL_LABEL_ATTRS.iter());
+    valid_tags.extend(common::NORMAL_LOCAL_LABEL_ATTRS.iter());
+    valid_tags.extend(common::ACCESS_CONTROL_ATTRS.iter());
     common::check_tag_validity(query, &valid_tags)?;
     common::check_group_validity(query, calling_info)?;
     common::check_value_validity(query)?;
@@ -81,10 +84,11 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &
         return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The attributes to update is empty.");
     }
     // Check attributes to update.
-    valid_tags = common::NORMAL_LABEL_ATTRS.to_vec();
-    valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
-    valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
-    valid_tags.extend_from_slice(&UPDATE_OPTIONAL_ATTRS);
+    valid_tags.clear();
+    valid_tags.extend(common::NORMAL_LABEL_ATTRS.iter());
+    valid_tags.extend(common::NORMAL_LOCAL_LABEL_ATTRS.iter());
+    valid_tags.extend(common::ASSET_SYNC_ATTRS.iter());
+    valid_tags.extend(UPDATE_OPTIONAL_ATTRS.iter());
     common::check_tag_validity(attrs_to_update, &valid_tags)?;
     common::check_value_validity(attrs_to_update)
 }

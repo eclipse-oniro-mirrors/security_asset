@@ -15,6 +15,8 @@
 
 //! This module prepares for querying Asset that required secondary identity authentication.
 
+use std::collections::HashSet;
+
 use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager, secret_key::SecretKey};
 use asset_db_operator::{
@@ -29,11 +31,12 @@ const OPTIONAL_ATTRS: [Tag; 1] = [Tag::AuthValidityPeriod];
 const DEFAULT_AUTH_VALIDITY_IN_SECS: u32 = 60;
 
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
-    valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
-    valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
-    valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
-    valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
+    let mut valid_tags = HashSet::new();
+    valid_tags.extend(common::CRITICAL_LABEL_ATTRS.iter());
+    valid_tags.extend(common::NORMAL_LABEL_ATTRS.iter());
+    valid_tags.extend(common::NORMAL_LOCAL_LABEL_ATTRS.iter());
+    valid_tags.extend(common::ACCESS_CONTROL_ATTRS.iter());
+    valid_tags.extend(OPTIONAL_ATTRS.iter());
 
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_group_validity(attributes, calling_info)?;
