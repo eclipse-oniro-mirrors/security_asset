@@ -59,13 +59,13 @@
 ## 说明
 ### 接口说明
 
-[接口文档](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-asset-store-kit/Readme-CN.md)
+[接口文档](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/reference/apis-asset-store-kit/Readme-CN.md)
 
 ### 使用说明
 
-[开发指导](https://gitee.com/openharmony/docs/blob/master/zh-cn/application-dev/security/AssetStoreKit/Readme-CN.md)
+[开发指导](https://gitcode.com/openharmony/docs/blob/master/zh-cn/application-dev/security/AssetStoreKit/Readme-CN.md)
 
 ## 相关仓
-**[通用密钥库系统（HUKS）](https://gitee.com/openharmony/security_huks)**
+**[通用密钥库系统（HUKS）](https://gitcode.com/openharmony/security_huks)**
 
-**[统一用户认证（UserIAM）](https://gitee.com/openharmony/useriam_user_auth_framework)**
+**[统一用户认证（UserIAM）](https://gitcode.com/openharmony/useriam_user_auth_framework)**

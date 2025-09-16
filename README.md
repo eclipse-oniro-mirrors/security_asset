@@ -59,13 +59,13 @@ The following uses rk3568 as an example.
 ## Usage
 ### Available APIs
 
-[API reference](https://gitee.com/openharmony/docs/blob/master/en/application-dev/reference/apis-asset-store-kit/Readme-EN.md)
+[API reference](https://gitcode.com/openharmony/docs/blob/master/en/application-dev/reference/apis-asset-store-kit/Readme-EN.md)
 
 ### Development Guide
 
-[Development guide](https://gitee.com/openharmony/docs/blob/master/en/application-dev/security/AssetStoreKit/Readme-EN.md)
+[Development guide](https://gitcode.com/openharmony/docs/blob/master/en/application-dev/security/AssetStoreKit/Readme-EN.md)
 
 ## Repositories Involved
-**[HUKS](https://gitee.com/openharmony/security_huks)**
+**[HUKS](https://gitcode.com/openharmony/security_huks)**
 
-**[UserIAM](https://gitee.com/openharmony/useriam_user_auth_framework)**
+**[UserIAM](https://gitcode.com/openharmony/useriam_user_auth_framework)**

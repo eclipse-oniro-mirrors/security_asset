@@ -19,9 +19,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-samgr = { git = "https://gitee.com/openharmony/systemabilitymgr_samgr.git" }
-ipc = { git = "https://gitee.com/openharmony/communication_ipc.git" }
-ylong_runtime = { git = "https://gitee.com/openharmony/commonlibrary_rust_ylong_runtime.git", features = ["full"] }
+samgr = { git = "https://gitcode.com/openharmony/systemabilitymgr_samgr.git" }
+ipc = { git = "https://gitcode.com/openharmony/communication_ipc.git" }
+ylong_runtime = { git = "https://gitcode.com/openharmony/commonlibrary_rust_ylong_runtime.git", features = ["full"] }
 
 asset_definition = { path = "../../../frameworks/definition" }
 asset_log = { path = "../../../frameworks/os_dependency/log" }
