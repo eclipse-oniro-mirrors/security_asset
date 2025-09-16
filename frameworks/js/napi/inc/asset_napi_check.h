@@ -17,7 +17,6 @@
 #define ASSET_NAPI_CHECK_H
 
 #include <vector>
-#include <unordered_set>
 
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
@@ -158,7 +157,7 @@ napi_value CheckAssetRequiredTag(const napi_env env, const std::vector<AssetAttr
     const std::vector<uint32_t> &requiredTags, uint32_t errorCode);
 
 napi_value CheckAssetTagValidity(const napi_env env, const std::vector<AssetAttr> &attrs,
-    const std::unordered_set<uint32_t> &validTags, uint32_t errorCode);
+    const std::vector<uint32_t> &validTags, uint32_t errorCode);
 
 napi_value CheckAssetValueValidity(const napi_env env, const std::vector<AssetAttr> &attrs, uint32_t errorCode);
 

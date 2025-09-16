@@ -15,8 +15,6 @@
 
 //! This module is used to verify the validity of asset attributes.
 
-use std::collections::HashSet;
-
 use asset_common::{is_user_id_exist, CallingInfo, OwnerType, ROOT_USER_UPPERBOUND};
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, OperationType, Result,
@@ -200,7 +198,7 @@ pub(crate) fn check_required_tags(attrs: &AssetMap, required_tags: &[Tag]) -> Re
     Ok(())
 }
 
-pub(crate) fn check_tag_validity(attrs: &AssetMap, valid_tags: &HashSet<Tag>) -> Result<()> {
+pub(crate) fn check_tag_validity(attrs: &AssetMap, valid_tags: &[Tag]) -> Result<()> {
     for tag in attrs.keys() {
         if !valid_tags.contains(tag) {
             return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);

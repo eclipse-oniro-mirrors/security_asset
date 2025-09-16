@@ -15,8 +15,6 @@
 
 //! This module is used to query the result of synchronization.
 
-use std::collections::HashSet;
-
 use asset_common::CallingInfo;
 use asset_definition::{AssetError, AssetMap, ErrCode, Extension, Result, SyncResult, Tag, Value};
 use asset_plugin::asset_plugin::AssetPlugin;
@@ -30,9 +28,7 @@ use crate::operations::common;
 const OPTIONAL_ATTRS: [Tag; 2] = [Tag::GroupId, Tag::RequireAttrEncrypted];
 
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    let mut valid_tags = HashSet::new();
-    valid_tags.extend(OPTIONAL_ATTRS.iter());
-    common::check_tag_validity(attributes, &valid_tags)?;
+    common::check_tag_validity(attributes, &OPTIONAL_ATTRS)?;
     common::check_group_validity(attributes, calling_info)?;
     common::check_value_validity(attributes)?;
     Ok(())

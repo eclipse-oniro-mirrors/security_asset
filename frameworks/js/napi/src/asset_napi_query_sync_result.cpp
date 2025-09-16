@@ -28,7 +28,7 @@ namespace Asset {
 namespace {
 const uint32_t ARG_COUNT = 1;
 
-const std::unordered_set<uint32_t> OPTIONAL_TAGS = {
+const std::vector<uint32_t> OPTIONAL_TAGS = {
     SEC_ASSET_TAG_GROUP_ID,
     SEC_ASSET_TAG_REQUIRE_ATTR_ENCRYPTED,
 };

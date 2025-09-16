@@ -15,8 +15,6 @@
 
 //! This module is used to clear resources after query the Asset that required secondary identity authentication.
 
-use std::collections::HashSet;
-
 use asset_common::CallingInfo;
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{AssetMap, Extension, Result, Tag};
@@ -29,10 +27,8 @@ const OPTIONAL_ATTRS: [Tag; 2] = [Tag::GroupId, Tag::UserId];
 fn check_arguments(query: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     common::check_required_tags(query, &REQUIRED_ATTRS)?;
 
-    let mut valid_tags = HashSet::new();
-    valid_tags.extend(REQUIRED_ATTRS.iter());
-    valid_tags.extend(OPTIONAL_ATTRS.iter());
-
+    let mut valid_tags = REQUIRED_ATTRS.to_vec();
+    valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
     common::check_tag_validity(query, &valid_tags)?;
     common::check_group_validity(query, calling_info)?;
     common::check_system_permission(query)?;

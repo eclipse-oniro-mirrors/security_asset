@@ -164,10 +164,10 @@ napi_value CheckAssetRequiredTag(const napi_env env, const std::vector<AssetAttr
 }
 
 napi_value CheckAssetTagValidity(const napi_env env, const std::vector<AssetAttr> &attrs,
-    const std::unordered_set<uint32_t> &validTags, uint32_t errorCode)
+    const std::vector<uint32_t> &validTags, uint32_t errorCode)
 {
     for (AssetAttr attr : attrs) {
-        if (validTags.count(attr.tag) == 0) {
+        if (std::count(validTags.begin(), validTags.end(), attr.tag) == 0) {
             RETURN_JS_ERROR(env, errorCode, "Unsupported tag[asset.Tag.%s] for the function.", TAG_MAP.at(attr.tag));
         }
     }
