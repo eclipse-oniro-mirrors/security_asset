@@ -19,13 +19,13 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-hilog_rust = { git = "https://gitee.com/openharmony/hiviewdfx_hilog.git" }
-samgr = { git = "https://gitee.com/openharmony/systemabilitymgr_samgr.git" }
-system_ability_fwk = { git = "https://gitee.com/openharmony/systemabilitymgr_safwk" }
-hisysevent = { git = "https://gitee.com/openharmony/hiviewdfx_hisysevent.git" }
-ipc = { git = "https://gitee.com/openharmony/communication_ipc" }
-ylong_runtime = { git = "https://gitee.com/openharmony/commonlibrary_rust_ylong_runtime.git", features = ["full"] }
-ylong_json = { git = "https://gitee.com/openharmony-sig/commonlibrary_rust_ylong_json.git" }
+hilog_rust = { git = "https://gitcode.com/openharmony/hiviewdfx_hilog.git" }
+samgr = { git = "https://gitcode.com/openharmony/systemabilitymgr_samgr.git" }
+system_ability_fwk = { git = "https://gitcode.com/openharmony/systemabilitymgr_safwk" }
+hisysevent = { git = "https://gitcode.com/openharmony/hiviewdfx_hisysevent.git" }
+ipc = { git = "https://gitcode.com/openharmony/communication_ipc" }
+ylong_runtime = { git = "https://gitcode.com/openharmony/commonlibrary_rust_ylong_runtime.git", features = ["full"] }
+ylong_json = { git = "https://gitcode.com/openharmony-sig/commonlibrary_rust_ylong_json.git" }
 
 asset_common = { path = "../common" }
 asset_crypto_manager = { path = "../crypto_manager" }
