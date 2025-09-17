@@ -16,7 +16,9 @@
 //! This module is used to Asset service counter.
 
 /// Manages the count.
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
+
+use asset_log::logw;
 
 /// Count asset service use times
 pub struct Counter {
@@ -31,8 +33,11 @@ impl Counter {
 
     /// Get the single instance of Counter.
     pub fn get_instance() -> Arc<Mutex<Counter>> {
-        static mut INSTANCE: Option<Arc<Mutex<Counter>>> = None;
-        unsafe { INSTANCE.get_or_insert_with(|| Arc::new(Mutex::new(Counter::new()))).clone() }
+        static INSTANCE: OnceLock<Arc<Mutex<Counter>>> = OnceLock::new();
+        INSTANCE.get_or_init(|| {
+            logw!("create instance for Counter.");
+            Arc::new(Mutex::new(Counter::new()))
+        }).clone()
     }
 
     /// Increase count

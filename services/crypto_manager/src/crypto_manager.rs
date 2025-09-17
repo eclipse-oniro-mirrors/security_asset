@@ -17,11 +17,12 @@
 
 use std::{
     cmp::max,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, OnceLock},
 };
 
 use asset_common::CallingInfo;
 use asset_definition::{log_throw_error, ErrCode, Result};
+use asset_log::logw;
 
 use crate::crypto::Crypto;
 
@@ -39,8 +40,11 @@ impl CryptoManager {
 
     /// Get the single instance of CryptoManager.
     pub fn get_instance() -> Arc<Mutex<CryptoManager>> {
-        static mut INSTANCE: Option<Arc<Mutex<CryptoManager>>> = None;
-        unsafe { INSTANCE.get_or_insert_with(|| Arc::new(Mutex::new(CryptoManager::new()))).clone() }
+        static INSTANCE: OnceLock<Arc<Mutex<CryptoManager>>> = OnceLock::new();
+        INSTANCE.get_or_init(|| {
+            logw!("create instance for CryptoManager.");
+            Arc::new(Mutex::new(CryptoManager::new()))
+        }).clone()
     }
 
     /// Add the crypto to manager.
