@@ -28,4 +28,4 @@ asset_file_operator = { path = "../../frameworks/os_dependency/file" }
 asset_utils = { path = "../../frameworks/utils" }
 lazy_static = "1.0.0"
 serde = { version = "1.0", features = ["derive"] }
-ylong_json = { git = "https://gitcode.com/openharmony-sig/commonlibrary_rust_ylong_json.git" }
+ylong_json = { git = "https://gitcode.com/openharmony/commonlibrary_rust_ylong_json.git" }
