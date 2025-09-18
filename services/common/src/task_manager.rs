@@ -16,8 +16,9 @@
 //! This module is used to Asset service task manager.
 
 /// Manages the count.
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 
+use asset_log::logw;
 use ylong_runtime::task::JoinHandle;
 
 /// Manager asset tasks execute state.
@@ -32,8 +33,11 @@ impl TaskManager {
 
     /// Get the single instance of TaskManager.
     pub fn get_instance() -> Arc<Mutex<TaskManager>> {
-        static mut INSTANCE: Option<Arc<Mutex<TaskManager>>> = None;
-        unsafe { INSTANCE.get_or_insert_with(|| Arc::new(Mutex::new(TaskManager::new()))).clone() }
+        static INSTANCE: OnceLock<Arc<Mutex<TaskManager>>> = OnceLock::new();
+        INSTANCE.get_or_init(|| {
+            logw!("Create instance for TaskManager.");
+            Arc::new(Mutex::new(TaskManager::new()))
+        }).clone()
     }
 
     /// Push task.

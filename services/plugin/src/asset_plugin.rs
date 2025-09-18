@@ -20,7 +20,7 @@ use asset_db_operator::{
     types::{column, DbMap, QueryOptions},
 };
 use asset_file_operator::de_operator::create_user_de_dir;
-use asset_log::{loge, logi};
+use asset_log::{loge, logi, logw};
 use asset_sdk::{
     log_throw_error,
     plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, RETURN_LIMIT, RETURN_OFFSET},
@@ -30,7 +30,7 @@ use asset_utils::time;
 use ylong_runtime::task::JoinHandle;
 use std::{
     cell::RefCell,
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, OnceLock},
 };
 
 /// The asset_ext plugin.
@@ -50,9 +50,11 @@ impl AssetPlugin {
 
     /// Get the instance of AssetPlugin.
     pub fn get_instance() -> Arc<AssetPlugin> {
-        static mut INSTANCE: Option<Arc<AssetPlugin>> = None;
-        let _guard = ASSET_PLUGIN_LOCK.lock().unwrap();
-        unsafe { INSTANCE.get_or_insert_with(|| Arc::new(AssetPlugin::new())).clone() }
+        static INSTANCE: OnceLock<Arc<AssetPlugin>> = OnceLock::new();
+        INSTANCE.get_or_init(|| {
+            logw!("Create instance for AssetPlugin.");
+            Arc::new(AssetPlugin::new())
+        }).clone()
     }
 
     /// Load the plugin.
