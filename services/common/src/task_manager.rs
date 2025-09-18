@@ -19,7 +19,6 @@
 use std::sync::{Arc, Mutex, OnceLock};
 
 use asset_log::logw;
-
 use ylong_runtime::task::JoinHandle;
 
 /// Manager asset tasks execute state.
@@ -36,7 +35,7 @@ impl TaskManager {
     pub fn get_instance() -> Arc<Mutex<TaskManager>> {
         static INSTANCE: OnceLock<Arc<Mutex<TaskManager>>> = OnceLock::new();
         INSTANCE.get_or_init(|| {
-            logw!("create instance for TaskManager.");
+            logw!("Create instance for TaskManager.");
             Arc::new(Mutex::new(TaskManager::new()))
         }).clone()
     }

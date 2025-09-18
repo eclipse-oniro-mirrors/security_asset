@@ -52,7 +52,7 @@ impl AssetPlugin {
     pub fn get_instance() -> Arc<AssetPlugin> {
         static INSTANCE: OnceLock<Arc<AssetPlugin>> = OnceLock::new();
         INSTANCE.get_or_init(|| {
-            logw!("create instance for AssetPlugin.");
+            logw!("Create instance for AssetPlugin.");
             Arc::new(AssetPlugin::new())
         }).clone()
     }

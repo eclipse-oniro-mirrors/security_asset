@@ -35,7 +35,7 @@ impl Counter {
     pub fn get_instance() -> Arc<Mutex<Counter>> {
         static INSTANCE: OnceLock<Arc<Mutex<Counter>>> = OnceLock::new();
         INSTANCE.get_or_init(|| {
-            logw!("create instance for Counter.");
+            logw!("Create instance for Counter.");
             Arc::new(Mutex::new(Counter::new()))
         }).clone()
     }

@@ -42,7 +42,7 @@ impl CryptoManager {
     pub fn get_instance() -> Arc<Mutex<CryptoManager>> {
         static INSTANCE: OnceLock<Arc<Mutex<CryptoManager>>> = OnceLock::new();
         INSTANCE.get_or_init(|| {
-            logw!("create instance for CryptoManager.");
+            logw!("Create instance for CryptoManager.");
             Arc::new(Mutex::new(CryptoManager::new()))
         }).clone()
     }
