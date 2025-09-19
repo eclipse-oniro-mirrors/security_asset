@@ -15,12 +15,14 @@
 
 //! This module implements functions related to Asset database key.
 
-use asset_common::SUCCESS;
-use asset_crypto_manager::{crypto::Crypto, secret_key::SecretKey};
-use asset_definition::{log_throw_error, Accessibility, AuthType, ErrCode, Result};
-use asset_file_operator::ce_operator::{is_db_key_cipher_file_exist, read_db_key_cipher, write_db_key_cipher};
-use asset_log::logi;
 use std::sync::Mutex;
+
+use asset_common::SUCCESS;
+use asset_definition::{log_throw_error, Accessibility, AuthType, ErrCode, Result};
+use asset_file_operator::{ce_operator::*, common::is_file_exist};
+use asset_log::{logi, loge};
+
+use crate::{crypto::Crypto, secret_key::SecretKey};
 
 const TRIVIAL_AAD_FOR_DB_KEY: &str = "trivial_aad_for_db_key";
 static GEN_KEY_MUTEX: Mutex<()> = Mutex::new(());
@@ -33,6 +35,16 @@ fn build_db_key_secret_key(user_id: i32) -> Result<SecretKey> {
     let alias = "db_key_secret_key".as_bytes().to_vec();
 
     SecretKey::new_with_alias(user_id, auth_type, access_type, require_password_set, alias)
+}
+
+/// check_validity_of_db_key
+pub fn check_validity_of_db_key(path: &str, user_id: i32) -> Result<()> {
+    if is_file_exist(path)? && !DbKey::check_existance(user_id)? {
+        loge!("[FATAL]There is database bot no database key. Now all data should be cleared and restart over.");
+        remove_ce_files(user_id)?;
+        return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
+    }
+    Ok(())
 }
 
 /// Generate secret key if it does not exist.

@@ -18,6 +18,7 @@
 pub mod crypto;
 pub mod crypto_manager;
 pub mod secret_key;
+pub mod db_key_operator;
 
 use asset_definition::Accessibility;
 

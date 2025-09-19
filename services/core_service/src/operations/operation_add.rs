@@ -19,7 +19,7 @@ use std::{ffi::CString, os::raw::c_char};
 
 use asset_common::{CallingInfo, OwnerType};
 use asset_crypto_manager::crypto::Crypto;
-use asset_db_key_operator::generate_secret_key_if_needed;
+use asset_crypto_manager::db_key_operator::generate_secret_key_if_needed;
 use asset_db_operator::{
     database::{build_db, Database},
     types::{column, DbMap, DB_DATA_VERSION},

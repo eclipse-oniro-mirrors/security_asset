@@ -34,7 +34,7 @@ use asset_db_operator::{
     },
     types::{column, DbMap},
 };
-use asset_db_key_operator::generate_secret_key_if_needed;
+use asset_crypto_manager::db_key_operator::generate_secret_key_if_needed;
 
 use crate::operations::common;
 

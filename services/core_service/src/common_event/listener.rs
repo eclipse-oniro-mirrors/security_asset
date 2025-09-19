@@ -29,7 +29,7 @@ use asset_common::{
     AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Group, ModifyAssetBlob, MutAssetBlobArray, OwnerType
 };
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
-use asset_db_key_operator::DbKey;
+use asset_crypto_manager::db_key_operator::DbKey;
 use asset_db_operator::{
     database::Database,
     database_file_upgrade::{

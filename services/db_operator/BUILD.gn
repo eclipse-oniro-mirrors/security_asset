@@ -26,7 +26,6 @@ ohos_rust_static_library("asset_db_operator") {
     "../../frameworks/utils:asset_utils",
     "../common:asset_common",
     "../crypto_manager:asset_crypto_manager",
-    "../db_key_operator:asset_db_key_operator",
     "//third_party/rust/crates/lazy-static.rs:lib",
     "//third_party/rust/crates/serde/serde:lib",
   ]
@@ -52,7 +51,6 @@ ohos_rust_unittest("rust_asset_db_operator_test") {
     "../../frameworks/utils:asset_utils",
     "../common:asset_common",
     "../crypto_manager:asset_crypto_manager",
-    "../db_key_operator:asset_db_key_operator",
     "//third_party/rust/crates/lazy-static.rs:lib",
     "//third_party/rust/crates/serde/serde:lib",
   ]

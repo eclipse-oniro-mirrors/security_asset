@@ -22,7 +22,6 @@ members = [
     "services/core_service",
     "services/crypto_manager",
     "services/db_operator",
-    "services/db_key_operator",
     "test/unittest/inner_kits_rust",
     "test/unittest/module_test"
 ]

@@ -25,7 +25,6 @@ ohos_rust_shared_library("asset_service") {
     "../../interfaces/inner_kits/rs:asset_sdk_rust",
     "../common:asset_common",
     "../crypto_manager:asset_crypto_manager",
-    "../db_key_operator:asset_db_key_operator",
     "../db_operator:asset_db_operator",
     "../os_dependency:asset_os_dependency",
     "../plugin:asset_plugin",
