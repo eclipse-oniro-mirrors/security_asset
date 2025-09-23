@@ -83,16 +83,14 @@ pub extern "C" fn add_asset(attributes: *const AssetAttr, attr_cnt: u32) -> i32 
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let mut manager = match Manager::build() {
-        Ok(manager) => manager,
-        Err(e) => return e.code as i32,
-    };
+    let manager = Manager::build();
 
-    if let Err(e) = manager.add(&map) {
+    let ret = if let Err(e) = manager.lock().unwrap().add(&map) {
         e.code as i32
     } else {
         RESULT_CODE_SUCCESS
-    }
+    };
+    ret
 }
 
 /// Function called from C programming language to Rust programming language for removing Asset.
@@ -103,16 +101,14 @@ pub extern "C" fn remove_asset(query: *const AssetAttr, query_cnt: u32) -> i32 {
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let mut manager = match Manager::build() {
-        Ok(manager) => manager,
-        Err(e) => return e.code as i32,
-    };
+    let manager = Manager::build();
 
-    if let Err(e) = manager.remove(&map) {
+    let ret = if let Err(e) = manager.lock().unwrap().remove(&map) {
         e.code as i32
     } else {
         RESULT_CODE_SUCCESS
-    }
+    };
+    ret
 }
 
 /// Function called from C programming language to Rust programming language for updating Asset.
@@ -133,16 +129,14 @@ pub extern "C" fn update_asset(
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let mut manager = match Manager::build() {
-        Ok(manager) => manager,
-        Err(e) => return e.code as i32,
-    };
+    let manager = Manager::build();
 
-    if let Err(e) = manager.update(&query_map, &update_map) {
+    let ret = if let Err(e) = manager.lock().unwrap().update(&query_map, &update_map) {
         e.code as i32
     } else {
         RESULT_CODE_SUCCESS
-    }
+    };
+    ret
 }
 
 /// Function called from C programming language to Rust programming language for pre querying Asset.
@@ -162,12 +156,9 @@ pub unsafe extern "C" fn pre_query_asset(query: *const AssetAttr, query_cnt: u32
         return ErrCode::InvalidArgument as i32;
     }
 
-    let mut manager = match Manager::build() {
-        Ok(manager) => manager,
-        Err(e) => return e.code as i32,
-    };
+    let manager = Manager::build();
 
-    let res = match manager.pre_query(&map) {
+    let res = match manager.lock().unwrap().pre_query(&map) {
         Err(e) => return e.code as i32,
         Ok(res) => res,
     };
@@ -198,12 +189,9 @@ pub unsafe extern "C" fn query_asset(query: *const AssetAttr, query_cnt: u32, re
         return ErrCode::InvalidArgument as i32;
     }
 
-    let mut manager = match Manager::build() {
-        Ok(manager) => manager,
-        Err(e) => return e.code as i32,
-    };
+    let manager = Manager::build();
 
-    let res = match manager.query(&map) {
+    let res = match manager.lock().unwrap().query(&map) {
         Err(e) => return e.code as i32,
         Ok(res) => res,
     };
@@ -225,16 +213,14 @@ pub extern "C" fn post_query_asset(handle: *const AssetAttr, handle_cnt: u32) ->
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let mut manager = match Manager::build() {
-        Ok(manager) => manager,
-        Err(e) => return e.code as i32,
-    };
+    let manager = Manager::build();
 
-    if let Err(e) = manager.post_query(&map) {
+    let ret = if let Err(e) = manager.lock().unwrap().post_query(&map) {
         e.code as i32
     } else {
         RESULT_CODE_SUCCESS
-    }
+    };
+    ret
 }
 
 /// Function called from C programming language to Rust programming language for querying sync result.
@@ -258,18 +244,16 @@ pub unsafe extern "C" fn query_sync_result(
         return ErrCode::ParamVerificationFailed as i32;
     }
 
-    let mut manager = match Manager::build() {
-        Ok(manager) => manager,
-        Err(e) => return e.code as i32,
-    };
+    let manager = Manager::build();
 
-    match manager.query_sync_result(&map) {
+    let ret = match manager.lock().unwrap().query_sync_result(&map) {
         Err(e) => map_err(e.code),
         Ok(res) => {
             *sync_result = res;
             RESULT_CODE_SUCCESS
         },
-    }
+    };
+    ret
 }
 
 fn map_err(err_code: ErrCode) -> i32 {
