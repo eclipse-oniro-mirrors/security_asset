@@ -39,4 +39,4 @@ asset_log = { path = "../../frameworks/os_dependency/log" }
 asset_plugin = { path = "../plugin" }
 asset_sdk = { path = "../../interfaces/inner_kits/rs" }
 lazy_static = "1.0.0"
-serde = { version = "1.0.136", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
