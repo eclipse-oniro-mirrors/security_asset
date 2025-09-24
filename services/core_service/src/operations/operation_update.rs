@@ -16,7 +16,7 @@
 //! This module is used to update the specified alias of Asset.
 
 use asset_common::CallingInfo;
-use asset_crypto_manager::{crypto::Crypto, db_key_operator::get_db_key};
+use asset_crypto_manager::{crypto::Crypto, db_key_operator::get_db_key_by_asset_map};
 use asset_db_operator::{
     database::Database,
     types::{column, DbMap, DB_DATA_VERSION},
@@ -107,10 +107,7 @@ pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &Asse
 
     add_attrs(update, &mut update_db_data)?;
 
-    let db_key = match query.get(&Tag::RequireAttrEncrypted) {
-        Some(Value::Bool(true)) => get_db_key(calling_info.user_id(), true)?,
-        _ => get_db_key(calling_info.user_id(), false)?,
-    };
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), query)?;
     let mut db = Database::build(calling_info, db_key)?;
     let results = db.query_datas(&vec![], &query_db_data, None, true)?;
     if results.is_empty() {

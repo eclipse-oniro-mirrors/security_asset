@@ -16,12 +16,15 @@
 //! This module prepares for querying Asset that required secondary identity authentication.
 
 use asset_common::CallingInfo;
-use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager, secret_key::SecretKey, db_key_operator::get_db_key};
+use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
+use asset_crypto_manager::{
+    crypto::Crypto, crypto_manager::CryptoManager, secret_key::SecretKey,
+    db_key_operator::get_db_key_by_asset_map,
+};
 use asset_db_operator::{
     database::Database,
     types::{column, DbMap},
 };
-use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
 
 use crate::operations::common;
 
@@ -49,10 +52,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
 }
 
 fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<(Accessibility, bool)> {
-    let db_key = match attrs.get(&Tag::RequireAttrEncrypted) {
-        Some(Value::Bool(true)) => get_db_key(calling_info.user_id(), true)?,
-        _ => get_db_key(calling_info.user_id(), false)?,
-    };
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attrs)?;
     let mut db = Database::build(calling_info, db_key)?;
     
     let results = db.query_datas(&vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET], db_data, None, true)?;

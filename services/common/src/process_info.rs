@@ -155,7 +155,8 @@ impl ProcessInfo {
             },
         }
 
-        let process_info_detail = match OwnerType::try_from(process_info_ffi.owner_type)? {
+        let owner_type = OwnerType::try_from(process_info_ffi.owner_type)?;
+        let process_info_detail = match owner_type {
             OwnerType::Hap | OwnerType::HapGroup => ProcessInfoDetail::Hap(HapInfo {
                 app_id,
                 app_index: process_info_ffi.hap_info.app_index,
@@ -167,7 +168,7 @@ impl ProcessInfo {
 
         Ok(Self {
             user_id: process_info_ffi.user_id,
-            owner_type: OwnerType::try_from(process_info_ffi.owner_type)?,
+            owner_type,
             process_name,
             process_info_detail,
         })

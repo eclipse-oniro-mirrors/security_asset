@@ -136,10 +136,10 @@ impl Crypto {
         }
     }
 
-    /// Encrypt data at one-time.
+    /// Decrypt data at one-time.
     pub fn decrypt(key: &SecretKey, cipher: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>> {
         if cipher.len() <= (TAG_SIZE + NONCE_SIZE) {
-            return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The cipher length is too short.");
+            return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]The cipher length is too short.");
         }
 
         let mut plain: Vec<u8> = vec![0; cipher.len() - TAG_SIZE - NONCE_SIZE];

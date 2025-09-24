@@ -21,7 +21,7 @@ use std::fs::OpenOptions;
 use std::{fs, path::Path, sync::Mutex, os::unix::fs::{OpenOptionsExt, PermissionsExt}};
 
 use asset_common::{CallingInfo, OwnerType, OWNER_INFO_SEPARATOR};
-use asset_definition::{log_throw_error, AssetError, ErrCode, Extension, Result, Value};
+use asset_definition::{log_throw_error, log_and_into_asset_error, AssetError, ErrCode, Extension, Result, Value};
 use asset_file_operator::common::DB_SUFFIX;
 use asset_log::logi;
 use asset_utils::hasher;
@@ -35,7 +35,7 @@ use crate::{
         fmt_backup_path, fmt_de_db_path_with_name, get_db, get_db_by_type, get_split_db_lock_by_user_id, Database,
         CE_ROOT_PATH, DE_ROOT_PATH, OLD_DB_NAME,
     },
-    types::{column, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V4, DbMap, QueryOptions},
+    types::{column, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V3, DbMap, QueryOptions},
 };
 
 const MINIM_OWNER_INFO_LEN: usize = 3;
@@ -97,13 +97,13 @@ pub fn construct_splited_db_name(calling_info: &CallingInfo, is_ce: bool) -> Res
                 String::from_utf8_lossy(developer_id).trim_end_matches('\0'),
                 String::from_utf8_lossy(&to_hex(&hasher::sha256(true, group_id)))
             ),
-            _ => return log_throw_error!(ErrCode::DatabaseError, "[FATAL]Wrong queried owner group info."),
+            _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Wrong queried owner group info."),
         },
         OwnerType::Hap => {
             let owner_info_string = String::from_utf8_lossy(calling_info.owner_info()).to_string();
             let split_owner_info: Vec<&str> = owner_info_string.split(OWNER_INFO_SEPARATOR).collect();
             if split_owner_info.len() < MINIM_OWNER_INFO_LEN || split_owner_info.last().is_none() {
-                return log_throw_error!(ErrCode::DatabaseError, "[FATAL]Wrong queried owner info!");
+                return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Wrong queried owner info!");
             }
             let app_index = split_owner_info.last().unwrap();
             let mut split_owner_info_mut = split_owner_info.clone();
@@ -277,7 +277,7 @@ pub fn check_and_split_db(user_id: i32) -> Result<()> {
         }
     }
 
-    if !ret && !is_upgrade_file_exist(user_id) && db_version == DB_UPGRADE_VERSION_V4 {
+    if !ret && db_version == DB_UPGRADE_VERSION_V3 && !is_upgrade_file_exist(user_id) {
         if !is_clone_app_exist {
             ret = create_upgrade_file(user_id, OriginVersion::V1).is_ok();
         } else {
@@ -314,14 +314,14 @@ pub fn create_upgrade_file(user_id: i32, origin_version: OriginVersion) -> Resul
     let mut file = match OpenOptions::new().write(true).create(true).open(file_path) {
         Ok(file) => file,
         Err(_) => {
-            return log_throw_error!(ErrCode::FileOperationError, "Create file failed.");
+            return log_throw_error!(ErrCode::FileOperationError, "Create file failed in create_upgrade_file.");
         },
     };
     let _ = fs::set_permissions(file_path, fs::Permissions::from_mode(0o640));
     let upgrade_list = create_upgrade_list_inner(user_id, &origin_version);
     let content = UpgradeData { version: origin_version as u32, upgrade_list };
-    to_writer(&content, &mut file)
-        .map_err(|_| AssetError { code: ErrCode::FileOperationError, msg: "Write file failed.".to_owned() })
+    to_writer(&content, &mut file).map_err(|e| log_and_into_asset_error!(
+        ErrCode::FileOperationError, "Write file failed in create_upgrade_file. error: {}", e))
 }
 
 /// Check if upgrade file exists.
@@ -422,6 +422,6 @@ pub fn update_upgrade_list(user_id: i32, remove_file: &String) -> Result<()> {
         },
     };
     let content = UpgradeData { version: content.version as u32, upgrade_list };
-    to_writer(&content, &mut file)
-        .map_err(|_| AssetError { code: ErrCode::FileOperationError, msg: "Write file failed.".to_owned() })
+    to_writer(&content, &mut file).map_err(|e| log_and_into_asset_error!(
+        ErrCode::FileOperationError, "Write file failed in update_upgrade_list. error: {}", e))
 }
