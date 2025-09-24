@@ -55,7 +55,7 @@ impl Manager {
     pub fn build() -> Arc<Mutex<Manager>> {
         static INSTANCE: OnceLock<Arc<Mutex<Manager>>> = OnceLock::new();
         INSTANCE.get_or_init(|| {
-            logw!("Create instance for Manager");
+            logw!("Create instance for Manager.");
             let remote = get_remote().expect("Get remote failed.");
             Arc::new(Mutex::new(Manager { remote, last_rebuild_time: 0.into() }))
         }).clone()
