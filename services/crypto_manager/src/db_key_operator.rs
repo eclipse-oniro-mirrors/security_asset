@@ -19,7 +19,7 @@ use std::sync::Mutex;
 
 use asset_common::SUCCESS;
 use asset_definition::{log_throw_error, Accessibility, AuthType, ErrCode, Result};
-use asset_file_operator::{ce_operator::*, common::is_file_exist};
+use asset_file_operator::{ce_operator::*, common::is_ce_db_exist};
 use asset_log::{logi, loge};
 
 use crate::{crypto::Crypto, secret_key::SecretKey};
@@ -37,14 +37,33 @@ fn build_db_key_secret_key(user_id: i32) -> Result<SecretKey> {
     SecretKey::new_with_alias(user_id, auth_type, access_type, require_password_set, alias)
 }
 
-/// check_validity_of_db_key
-pub fn check_validity_of_db_key(path: &str, user_id: i32) -> Result<()> {
-    if is_file_exist(path)? && !DbKey::check_existance(user_id)? {
-        loge!("[FATAL]There is database bot no database key. Now all data should be cleared and restart over.");
+fn check_validity_of_db_key(user_id: i32) -> Result<()> {
+    if is_ce_db_exist(user_id)? && !DbKey::check_existance(user_id)? {
+        loge!("[FATAL]There is database but no database key. Now all data should be cleared and restart over.");
         remove_ce_files(user_id)?;
         return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
     }
     Ok(())
+}
+
+/// try to get db_key
+pub fn get_db_key(user_id: i32, is_ce: bool) -> Result<Option<Vec<u8>>> {
+    if !is_ce {
+        return Ok(None);
+    }
+    check_validity_of_db_key(user_id)?;
+    match DbKey::get_db_key(user_id) {
+        Ok(key) => Ok(Some(key.db_key.clone())),
+        Err(e) if e.code == ErrCode::NotFound || e.code == ErrCode::DataCorrupted => {
+            loge!(
+                "[FATAL]The key is corrupted. Now all data should be cleared and restart over, err is {}.",
+                e.code
+            );
+            remove_ce_files(user_id)?;
+            log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id)
+        },
+        Err(e) => Err(e),
+    }
 }
 
 /// Generate secret key if it does not exist.

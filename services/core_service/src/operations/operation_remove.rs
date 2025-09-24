@@ -16,8 +16,9 @@
 //! This module is used to delete the Asset, including single and batch deletion.
 
 use asset_common::CallingInfo;
+use asset_crypto_manager::db_key_operator::get_db_key;
 use asset_db_operator::{
-    database::build_db,
+    database::Database,
     types::{column, DbMap},
 };
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncStatus, SyncType, Tag, Value};
@@ -62,7 +63,11 @@ pub(crate) fn remove(calling_info: &CallingInfo, query: &AssetMap) -> Result<()>
     add_system_attrs(&mut update_db_data)?;
     add_normal_attrs(&mut update_db_data);
 
-    let mut db = build_db(query, calling_info)?;
+    let db_key = match query.get(&Tag::RequireAttrEncrypted) {
+        Some(Value::Bool(true)) => get_db_key(calling_info.user_id(), true)?,
+        _ => get_db_key(calling_info.user_id(), false)?,
+    };
+    let mut db = Database::build(calling_info, db_key)?;
     let results = db.query_datas(&vec![], &db_data, None, true)?;
     if results.is_empty() {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");

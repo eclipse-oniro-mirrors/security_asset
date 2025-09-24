@@ -19,9 +19,9 @@ use std::{ffi::CString, os::raw::c_char};
 
 use asset_common::{CallingInfo, OwnerType};
 use asset_crypto_manager::crypto::Crypto;
-use asset_crypto_manager::db_key_operator::generate_secret_key_if_needed;
+use asset_crypto_manager::db_key_operator::{generate_secret_key_if_needed, get_db_key};
 use asset_db_operator::{
-    database::{build_db, Database},
+    database::Database,
     types::{column, DbMap, DB_DATA_VERSION},
 };
 use asset_definition::{
@@ -226,7 +226,11 @@ fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     add_default_attrs(&mut db_data);
     let query = get_query_condition(attributes, calling_info)?;
 
-    let mut db = build_db(attributes, calling_info)?;
+    let db_key = match attributes.get(&Tag::RequireAttrEncrypted) {
+        Some(Value::Bool(true)) => get_db_key(calling_info.user_id(), true)?,
+        _ => get_db_key(calling_info.user_id(), false)?,
+    };
+    let mut db = Database::build(calling_info, db_key)?;
 
     if db.is_data_exists(&query, false)? {
         resolve_conflict(calling_info, &mut db, attributes, &query, &mut db_data)?;

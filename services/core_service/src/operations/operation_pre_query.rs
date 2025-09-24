@@ -16,9 +16,9 @@
 //! This module prepares for querying Asset that required secondary identity authentication.
 
 use asset_common::CallingInfo;
-use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager, secret_key::SecretKey};
+use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager, secret_key::SecretKey, db_key_operator::get_db_key};
 use asset_db_operator::{
-    database::build_db,
+    database::Database,
     types::{column, DbMap},
 };
 use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
@@ -49,7 +49,12 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
 }
 
 fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<(Accessibility, bool)> {
-    let mut db = build_db(attrs, calling_info)?;
+    let db_key = match attrs.get(&Tag::RequireAttrEncrypted) {
+        Some(Value::Bool(true)) => get_db_key(calling_info.user_id(), true)?,
+        _ => get_db_key(calling_info.user_id(), false)?,
+    };
+    let mut db = Database::build(calling_info, db_key)?;
+    
     let results = db.query_datas(&vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET], db_data, None, true)?;
     match results.len() {
         0 => log_throw_error!(ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found."),

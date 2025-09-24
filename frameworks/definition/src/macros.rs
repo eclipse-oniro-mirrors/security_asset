@@ -140,6 +140,25 @@ macro_rules! log_throw_error {
     }};
 }
 
+/// Print log and return AssetError.
+///
+/// # Examples
+///
+/// ```
+/// log_return_error!(ErrCode::InvalidArgument, "hello, {}", "world");
+/// ```
+#[macro_export]
+macro_rules! log_return_error {
+    ($code:expr, $($arg:tt)*) => {{
+        let str = format!($($arg)*);
+        asset_log::loge!("{}", str);
+        $crate::AssetError {
+            code: $code,
+            msg: str
+        }
+    }};
+}
+
 /// Throw AssetError.
 ///
 /// # Examples

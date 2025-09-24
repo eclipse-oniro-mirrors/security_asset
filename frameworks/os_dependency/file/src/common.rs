@@ -15,7 +15,7 @@
 
 //! This file implements ce file operations.
 
-use asset_definition::{log_throw_error, ErrCode, Result};
+use asset_definition::{log_return_error, log_throw_error, ErrCode, Result};
 use std::{fs, path::Path};
 
 /// Suffix for backup database files.
@@ -52,4 +52,32 @@ pub fn is_file_exist(path_str: &str) -> Result<bool> {
             log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA] Failed to check existence of file! error: {}", e)
         },
     }
+}
+
+/// Check whether db file exists in the ce directory.
+pub fn is_ce_db_exist(user_id: i32) -> Result<bool> {
+    let ce_dir = fmt_ce_dir_path(user_id);
+    let dir_path: &Path = Path::new(&ce_dir);
+    let entries = fs::read_dir(dir_path).map_err(|e| log_return_error!(
+            ErrCode::FileOperationError, "[FATAL][SA] Failed to read_dir in has_db_files! error: {}", e))?;
+
+    for entry in entries {
+        let entry = entry.map_err(|e| log_return_error!(
+            ErrCode::FileOperationError, "[FATAL][SA] Failed to get entry in has_db_files! error: {}", e))?;
+        let path = entry.path();
+        if path.is_file() {
+            if let Some(extension) = path.extension() {
+                if extension == "db" {
+                    return Ok(true);
+                }
+            }
+        }
+    }
+
+    Ok(false)
+}
+
+#[inline(always)]
+fn fmt_ce_dir_path(user_id: i32) -> String {
+    format!("data/service/el2/{}/asset_service", user_id)
 }

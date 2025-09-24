@@ -28,8 +28,8 @@ use lazy_static::lazy_static;
 use asset_common::{
     AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Group, ModifyAssetBlob, MutAssetBlobArray, OwnerType
 };
-use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey};
-use asset_crypto_manager::db_key_operator::DbKey;
+use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey, 
+    db_key_operator::{DbKey, get_db_key}};
 use asset_db_operator::{
     database::Database,
     database_file_upgrade::{
@@ -89,7 +89,7 @@ fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result
 }
 
 fn delete_in_de_db_on_package_removed(calling_info: &CallingInfo, reverse_condition: &DbMap) -> Result<DataExist> {
-    let mut db = Database::build(calling_info, false)?;
+    let mut db = Database::build(calling_info, None)?;
     let mut delete_condition = DbMap::new();
     let check_condition = DbMap::new();
     match calling_info.group() {
@@ -114,7 +114,8 @@ fn delete_in_de_db_on_package_removed(calling_info: &CallingInfo, reverse_condit
 }
 
 fn delete_in_ce_db_on_package_removed(calling_info: &CallingInfo, reverse_condition: &DbMap) -> Result<DataExist> {
-    let mut db = Database::build(calling_info, true)?;
+    let db_key = get_db_key(calling_info.user_id(), true)?;
+    let mut db = Database::build(calling_info, db_key)?;
     let mut delete_condition = DbMap::new();
     let check_condition = DbMap::new();
     match calling_info.group() {
@@ -358,15 +359,20 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
     logi!("[INFO]On user -{}- unlocked.", user_id);
 
     // Trigger upgrading de db version and key alias
-    match trigger_db_upgrade(user_id, false) {
+    match trigger_db_upgrade(user_id, None) {
         Ok(()) => logi!("upgrade de db version and key alias on user-unlocked success."),
         Err(e) => loge!("upgrade de db version and key alias on user-unlocked failed, err is: {}", e),
     }
 
     // Trigger upgrading ce db version and key alias
-    match trigger_db_upgrade(user_id, true) {
-        Ok(()) => logi!("upgrade ce db version and key alias on user-unlocked success."),
-        Err(e) => loge!("upgrade ce db version and key alias on user-unlocked failed, err is: {}", e),
+    match get_db_key(user_id, true) {
+        Ok(db_key) => {
+            match trigger_db_upgrade(user_id, db_key) {
+                Ok(()) => logi!("upgrade ce db version and key alias on user-unlocked success."),
+                Err(e) => loge!("upgrade ce db version and key alias on user-unlocked failed, err is: {}", e),
+            }
+        },
+        Err(e) => loge!("get db key on user-unlocked failed, err is: {}", e),
     }
 
     if let Err(e) = handle_data_size_upload() {
@@ -465,7 +471,7 @@ fn backup_ce_db_if_accessible(user_id: i32) -> Result<()> {
         if db_name.ends_with(DB_SUFFIX) {
             let from_path = db_path.path().to_string_lossy().to_string();
             let db_key = DbKey::get_db_key(user_id)?;
-            Database::check_db_accessible(from_path.clone(), user_id, db_name.clone(), Some(&db_key))?;
+            Database::check_db_accessible(from_path.clone(), user_id, db_name.clone(), Some(&db_key.db_key))?;
             let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
             fs::copy(from_path, backup_path)?;
         }

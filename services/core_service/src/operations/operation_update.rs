@@ -16,9 +16,9 @@
 //! This module is used to update the specified alias of Asset.
 
 use asset_common::CallingInfo;
-use asset_crypto_manager::crypto::Crypto;
+use asset_crypto_manager::{crypto::Crypto, db_key_operator::get_db_key};
 use asset_db_operator::{
-    database::build_db,
+    database::Database,
     types::{column, DbMap, DB_DATA_VERSION},
 };
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, LocalStatus, Result, SyncStatus, Tag, Value};
@@ -107,7 +107,11 @@ pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &Asse
 
     add_attrs(update, &mut update_db_data)?;
 
-    let mut db = build_db(query, calling_info)?;
+    let db_key = match query.get(&Tag::RequireAttrEncrypted) {
+        Some(Value::Bool(true)) => get_db_key(calling_info.user_id(), true)?,
+        _ => get_db_key(calling_info.user_id(), false)?,
+    };
+    let mut db = Database::build(calling_info, db_key)?;
     let results = db.query_datas(&vec![], &query_db_data, None, true)?;
     if results.is_empty() {
         return log_throw_error!(ErrCode::NotFound, "[FATAL]The asset to update is not found.");
