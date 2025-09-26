@@ -14,6 +14,7 @@
  */
 
 use asset_common::{CallingInfo, Counter, Group, OwnerType, TaskManager, GROUP_SEPARATOR};
+use asset_crypto_manager::db_key_operator::get_db_key;
 use asset_db_operator::{
     database::{get_path, Database},
     database_file_upgrade::construct_splited_db_name,
@@ -112,7 +113,6 @@ pub struct AssetContext {
     pub user_id: i32,
 }
 
-
 fn convert_db_map(attributes: &ExtDbMap) -> Result<DbMap> {
     let owner_info = attributes.get_bytes_attr(&column::OWNER)?;
     let owner_type = attributes.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?;
@@ -153,6 +153,11 @@ fn get_query_options(attrs: &ExtDbMap) -> QueryOptions {
     }
 }
 
+fn get_db_key_and_build_db(user_id: i32, is_ce: bool, db_name: &str) -> std::result::Result<Database, u32> {
+    let db_key = get_db_key(user_id, is_ce).map_err(|e| e.code as u32)?;
+    Database::build_with_file_name(user_id, db_name, &db_key).map_err(|e| e.code as u32)
+}
+
 #[allow(dead_code)]
 impl IAssetPluginCtx for AssetContext {
     /// Initializes the plugin before usage.
@@ -169,21 +174,22 @@ impl IAssetPluginCtx for AssetContext {
         is_ce: bool,
     ) -> std::result::Result<(), u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
-        let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+        let mut db = get_db_key_and_build_db(self.user_id, is_ce, &db_name)?;
         db.create_adapt_cloud_table().map_err(|e| e.code as u32)
     }
 
     /// Adds an asset to de db.
     fn add(&self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
         let db_name = get_db_name(self.user_id, attributes, false).map_err(|e| e.code as u32)?;
-        let mut db = Database::build_with_file_name(self.user_id, &db_name, false).map_err(|e| e.code as u32)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, &None).map_err(|e| e.code as u32)?;
         db.insert_datas(attributes).map_err(|e| e.code as u32)
     }
 
     /// Adds an asset to ce db.
     fn ce_add(&self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
         let db_name = get_db_name(self.user_id, attributes, true).map_err(|e| e.code as u32)?;
-        let mut db = Database::build_with_file_name(self.user_id, &db_name, true).map_err(|e| e.code as u32)?;
+        let db_key = get_db_key(self.user_id, true).map_err(|e| e.code as u32)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key).map_err(|e| e.code as u32)?;
         db.insert_datas(attributes).map_err(|e| e.code as u32)
     }
 
@@ -192,11 +198,12 @@ impl IAssetPluginCtx for AssetContext {
         &self, attributes: &ExtDbMap, adapt_attributes: &ExtDbMap, is_ce: bool, need_lock: bool,
     ) -> std::result::Result<i32, u32> {
         let db_name = get_db_name(self.user_id, attributes, is_ce).map_err(|e| e.code as u32)?;
+        let db_key = get_db_key(self.user_id, is_ce).map_err(|e| e.code as u32)?;
         if need_lock {
-            let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+            let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key).map_err(|e| e.code as u32)?;
             db.insert_cloud_adapt_data(attributes, adapt_attributes).map_err(|e| e.code as u32)
         } else {
-            let mut db = Database::build_with_file_name_without_lock(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+            let mut db = Database::build_with_file_name_without_lock(self.user_id, &db_name, &db_key).map_err(|e| e.code as u32)?;
             db.insert_cloud_adapt_data_without_lock(attributes, adapt_attributes).map_err(|e| e.code as u32)
         }
     }
@@ -204,14 +211,15 @@ impl IAssetPluginCtx for AssetContext {
     /// Adds an asset with replace to de db.
     fn replace(&self, condition: &ExtDbMap, attributes: &ExtDbMap) -> std::result::Result<(), u32> {
         let db_name = get_db_name(self.user_id, attributes, false).map_err(|e| e.code as u32)?;
-        let mut db = Database::build_with_file_name(self.user_id, &db_name, false).map_err(|e| e.code as u32)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, &None).map_err(|e| e.code as u32)?;
         db.replace_datas(condition, false, attributes).map_err(|e| e.code as u32)
     }
 
     /// Adds an asset with replace to ce db.
     fn ce_replace(&self, condition: &ExtDbMap, attributes: &ExtDbMap) -> std::result::Result<(), u32> {
         let db_name = get_db_name(self.user_id, attributes, true).map_err(|e| e.code as u32)?;
-        let mut db = Database::build_with_file_name(self.user_id, &db_name, true).map_err(|e| e.code as u32)?;
+        let db_key = get_db_key(self.user_id, true).map_err(|e| e.code as u32)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key).map_err(|e| e.code as u32)?;
         db.replace_datas(condition, false, attributes).map_err(|e| e.code as u32)
     }
 
@@ -220,7 +228,7 @@ impl IAssetPluginCtx for AssetContext {
         let de_dbs = asset_file_operator::de_operator::get_de_user_dbs(self.user_id).map_err(|e| e.code as u32)?;
         let mut query_data = vec![];
         for db_name in de_dbs {
-            let mut db = Database::build_with_file_name(self.user_id, &db_name, false).map_err(|e| e.code as u32)?;
+            let mut db = Database::build_with_file_name(self.user_id, &db_name, &None).map_err(|e| e.code as u32)?;
             query_data.extend(db.query_datas(&vec![], attributes, None, false).map_err(|e| e.code as u32)?);
         }
         Ok(query_data)
@@ -230,8 +238,9 @@ impl IAssetPluginCtx for AssetContext {
     fn ce_query(&self, attributes: &ExtDbMap) -> std::result::Result<Vec<ExtDbMap>, u32> {
         let ce_dbs = asset_file_operator::ce_operator::get_ce_user_dbs(self.user_id).map_err(|e| e.code as u32)?;
         let mut query_data = vec![];
+        let db_key = get_db_key(self.user_id, true).map_err(|e| e.code as u32)?;
         for db_name in ce_dbs {
-            let mut db = Database::build_with_file_name(self.user_id, &db_name, true).map_err(|e| e.code as u32)?;
+            let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key).map_err(|e| e.code as u32)?;
             query_data.extend(db.query_datas(&vec![], attributes, None, false).map_err(|e| e.code as u32)?);
         }
         Ok(query_data)
@@ -246,7 +255,7 @@ impl IAssetPluginCtx for AssetContext {
         offset: u32,
         is_ce: bool,
     ) -> std::result::Result<Vec<ExtDbMap>, u32> {
-        let mut db = Database::build_with_file_name(self.user_id, db_name, is_ce).map_err(|e| e.code as u32)?;
+        let mut db = get_db_key_and_build_db(self.user_id, is_ce, db_name)?;
         let condition = ExtDbMap::new();
         let query_options = QueryOptions {
             offset: Some(offset),
@@ -270,7 +279,7 @@ impl IAssetPluginCtx for AssetContext {
         is_filter_sync: bool,
     ) -> std::result::Result<Vec<ExtDbMap>, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
-        let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+        let mut db = get_db_key_and_build_db(self.user_id, is_ce, &db_name)?;
         db.query_datas(&vec![], attributes, Some(&get_query_options(query_options)), is_filter_sync).map_err(|e| e.code as u32)
     }
 
@@ -283,12 +292,12 @@ impl IAssetPluginCtx for AssetContext {
         need_lock: bool,
     ) -> std::result::Result<Vec<ExtDbMap>, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
-
+        let db_key = get_db_key(self.user_id, is_ce).map_err(|e| e.code as u32)?;
         if need_lock {
-            let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+            let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key).map_err(|e| e.code as u32)?;
             db.query_datas_with_connect_table(&vec![], attributes, None, false).map_err(|e| e.code as u32)
         } else {
-            let mut db = Database::build_with_file_name_without_lock(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+            let mut db = Database::build_with_file_name_without_lock(self.user_id, &db_name, &db_key).map_err(|e| e.code as u32)?;
             db.query_datas_with_connect_table_without_lock(&vec![], attributes, None, false).map_err(|e| e.code as u32)
         }
     }
@@ -298,7 +307,7 @@ impl IAssetPluginCtx for AssetContext {
         let de_dbs = asset_file_operator::de_operator::get_de_user_dbs(self.user_id).map_err(|e| e.code as u32)?;
         let mut total_remove_count = 0;
         for db_name in de_dbs {
-            let mut db = Database::build_with_file_name(self.user_id, &db_name, false).map_err(|e| e.code as u32)?;
+            let mut db = Database::build_with_file_name(self.user_id, &db_name, &None).map_err(|e| e.code as u32)?;
             total_remove_count += db.delete_datas(attributes, None, false).map_err(|e| e.code as u32)?;
         }
         Ok(total_remove_count)
@@ -308,8 +317,9 @@ impl IAssetPluginCtx for AssetContext {
     fn ce_remove(&self, attributes: &ExtDbMap) -> std::result::Result<i32, u32> {
         let ce_dbs = asset_file_operator::ce_operator::get_ce_user_dbs(self.user_id).map_err(|e| e.code as u32)?;
         let mut total_remove_count = 0;
+        let db_key = get_db_key(self.user_id, true).map_err(|e| e.code as u32)?;
         for db_name in ce_dbs {
-            let mut db = Database::build_with_file_name(self.user_id, &db_name, true).map_err(|e| e.code as u32)?;
+            let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key).map_err(|e| e.code as u32)?;
             total_remove_count += db.delete_datas(attributes, None, false).map_err(|e| e.code as u32)?;
         }
         Ok(total_remove_count)
@@ -318,7 +328,8 @@ impl IAssetPluginCtx for AssetContext {
     /// Removes assets with aliases.
     fn batch_remove(&self, attributes: &ExtDbMap, aliases: &[Vec<u8>], require_attr_encrypted: bool) -> Result<()> {
         let db_name = get_db_name(self.user_id, attributes, require_attr_encrypted)?;
-        let mut db = Database::build_with_file_name(self.user_id, &db_name, require_attr_encrypted)?;
+        let db_key = get_db_key(self.user_id, require_attr_encrypted)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key)?;
         let condition = convert_db_map(attributes)?;
         let mut update_datas = DbMap::new();
         let time = time::system_time_in_millis()?;
@@ -337,7 +348,7 @@ impl IAssetPluginCtx for AssetContext {
         is_ce: bool,
     ) -> std::result::Result<i32, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
-        let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+        let mut db = get_db_key_and_build_db(self.user_id, is_ce, &db_name)?;
         db.delete_datas(attributes, None, false).map_err(|e| e.code as u32)
     }
 
@@ -350,7 +361,7 @@ impl IAssetPluginCtx for AssetContext {
         let de_dbs = asset_file_operator::de_operator::get_de_user_dbs(self.user_id).map_err(|e| e.code as u32)?;
         let mut total_remove_count = 0;
         for db_name in de_dbs {
-            let mut db = Database::build_with_file_name(self.user_id, &db_name, false).map_err(|e| e.code as u32)?;
+            let mut db = Database::build_with_file_name(self.user_id, &db_name, &None).map_err(|e| e.code as u32)?;
             total_remove_count +=
                 db.delete_specific_condition_datas(specific_cond, condition_value).map_err(|e| e.code as u32)?;
         }
@@ -365,8 +376,9 @@ impl IAssetPluginCtx for AssetContext {
     ) -> std::result::Result<i32, u32> {
         let ce_dbs = asset_file_operator::ce_operator::get_ce_user_dbs(self.user_id).map_err(|e| e.code as u32)?;
         let mut total_remove_count = 0;
+        let db_key = get_db_key(self.user_id, true).map_err(|e| e.code as u32)?;
         for db_name in ce_dbs {
-            let mut db = Database::build_with_file_name(self.user_id, &db_name, true).map_err(|e| e.code as u32)?;
+            let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key).map_err(|e| e.code as u32)?;
             total_remove_count +=
                 db.delete_specific_condition_datas(specific_cond, condition_value).map_err(|e| e.code as u32)?;
         }
@@ -383,11 +395,12 @@ impl IAssetPluginCtx for AssetContext {
         need_lock: bool,
     ) -> std::result::Result<i32, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
+        let db_key = get_db_key(self.user_id, is_ce).map_err(|e| e.code as u32)?;
         if need_lock {
-            let mut db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+            let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key).map_err(|e| e.code as u32)?;
             db.delete_adapt_data(attributes, adapt_attributes).map_err(|e| e.code as u32)
         } else {
-            let mut db = Database::build_with_file_name_without_lock(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+            let mut db = Database::build_with_file_name_without_lock(self.user_id, &db_name, &db_key).map_err(|e| e.code as u32)?;
             db.delete_adapt_data_without_lock(attributes, adapt_attributes).map_err(|e| e.code as u32)
         }
     }
@@ -397,7 +410,7 @@ impl IAssetPluginCtx for AssetContext {
         let de_dbs = asset_file_operator::de_operator::get_de_user_dbs(self.user_id).map_err(|e| e.code as u32)?;
         let mut total_update_count = 0;
         for db_name in de_dbs {
-            let mut db = Database::build_with_file_name(self.user_id, &db_name, false).map_err(|e| e.code as u32)?;
+            let mut db = Database::build_with_file_name(self.user_id, &db_name, &None).map_err(|e| e.code as u32)?;
             total_update_count += db.update_datas(attributes, false, attrs_to_update).map_err(|e| e.code as u32)?;
         }
         Ok(total_update_count)
@@ -407,8 +420,9 @@ impl IAssetPluginCtx for AssetContext {
     fn ce_update(&self, attributes: &ExtDbMap, attrs_to_update: &ExtDbMap) -> std::result::Result<i32, u32> {
         let ce_dbs = asset_file_operator::ce_operator::get_ce_user_dbs(self.user_id).map_err(|e| e.code as u32)?;
         let mut total_update_count = 0;
+        let db_key = get_db_key(self.user_id, true).map_err(|e| e.code as u32)?;
         for db_name in ce_dbs {
-            let mut db = Database::build_with_file_name(self.user_id, &db_name, true).map_err(|e| e.code as u32)?;
+            let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key).map_err(|e| e.code as u32)?;
             total_update_count += db.update_datas(attributes, false, attrs_to_update).map_err(|e| e.code as u32)?;
         }
         Ok(total_update_count)
@@ -420,7 +434,7 @@ impl IAssetPluginCtx for AssetContext {
         is_ce: bool,
     ) -> std::result::Result<Arc<Mutex<i32>>, u32> {
         let db_name = get_db_name(self.user_id, db_info, is_ce).map_err(|e| e.code as u32)?;
-        let db = Database::build_with_file_name(self.user_id, &db_name, is_ce).map_err(|e| e.code as u32)?;
+        let db = get_db_key_and_build_db(self.user_id, is_ce, &db_name)?;
         let lock = db.get_db_lock().map_err(|e| e.code as u32)?;
         Ok(lock)
     }

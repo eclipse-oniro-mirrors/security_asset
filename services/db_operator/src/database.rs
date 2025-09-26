@@ -21,9 +21,7 @@ use std::{collections::HashMap, ffi::CStr, fs, ptr::null_mut, sync::{Arc, Mutex}
 
 use asset_common::{CallingInfo, OwnerType};
 use asset_crypto_manager::secret_key::rename_key_alias;
-use asset_db_key_operator::DbKey;
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, Result, Tag, Value};
-use asset_file_operator::{ce_operator::remove_ce_files, common::is_file_exist};
+use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
 use asset_log::{loge, logi};
 use lazy_static::lazy_static;
 
@@ -32,7 +30,10 @@ use crate::{
     statement::Statement,
     table::Table,
     types::{
-        column, sqlite_err_handle, DbMap, QueryOptions, ADAPT_CLOUD_COLUMN_INFO, ADAPT_CLOUD_TABLE, COLUMN_INFO, COMBINE_COLUMN_INFO, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V1, DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3, DB_UPGRADE_VERSION_V4, SQLITE_OK, TABLE_NAME, UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2, UPGRADE_COLUMN_INFO_V3, UPGRADE_COLUMN_INFO_V4
+        column, sqlite_err_handle, DbMap, QueryOptions, SQLITE_OK, TABLE_NAME,
+        ADAPT_CLOUD_COLUMN_INFO, ADAPT_CLOUD_TABLE, COLUMN_INFO, COMBINE_COLUMN_INFO,
+        DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V0, DB_UPGRADE_VERSION_V1, DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3,
+        UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2, UPGRADE_COLUMN_INFO_V3, UPGRADE_COLUMN_INFO_V4
     },
 };
 
@@ -131,20 +132,18 @@ pub(crate) fn fmt_de_db_path_with_name(user_id: i32, db_name: &str) -> String {
     format!("{}/{}/{}.db", DE_ROOT_PATH, user_id, db_name)
 }
 
-fn check_validity_of_db_key(path: &str, user_id: i32) -> Result<()> {
-    if is_file_exist(path)? && !DbKey::check_existance(user_id)? {
-        loge!("[FATAL]There is database bot no database key. Now all data should be cleared and restart over.");
-        remove_ce_files(user_id)?;
-        return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
+fn fmt_db_path(user_id: i32, db_name: &str, db_key: &Option<Vec<u8>>) -> String {
+    match db_key {
+        Some(_db_key) => fmt_ce_db_path_with_name(user_id, db_name),
+        _ => fmt_de_db_path_with_name(user_id, db_name),
     }
-    Ok(())
 }
 
 pub(crate) fn get_db_by_type_without_lock(
     user_id: i32,
     db_name: &str,
     db_path: String,
-    db_key: Option<&DbKey>,
+    db_key: Option<&Vec<u8>>,
 ) -> Result<Database> {
     let backup_path = fmt_backup_path(&db_path);
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
@@ -160,7 +159,7 @@ pub(crate) fn get_db_by_type(
     user_id: i32,
     db_name: &str,
     db_path: String,
-    db_key: Option<&DbKey>,
+    db_key: Option<&Vec<u8>>,
 ) -> Result<Database> {
     let backup_path = fmt_backup_path(&db_path);
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
@@ -182,89 +181,41 @@ pub(crate) fn get_specific_db_version(user_id: i32, db_name: &str, db_path: Stri
     db.get_db_version()
 }
 
-pub(crate) fn get_db(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
-    let (db_path, db_key) = if is_ce {
-        let db_path = fmt_ce_db_path_with_name(user_id, db_name);
-        check_validity_of_db_key(&db_path, user_id)?;
-        let db_key = match DbKey::get_db_key(user_id) {
-            Ok(db_key) => Some(db_key),
-            Err(e) if e.code == ErrCode::NotFound || e.code == ErrCode::DataCorrupted => {
-                loge!(
-                    "[FATAL]The key is corrupted. Now all data should be cleared and restart over, err is {}.",
-                    e.code
-                );
-                remove_ce_files(user_id)?;
-                return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
-            },
-            Err(e) => return Err(e),
-        };
-        (db_path, db_key)
-    } else {
-        let db_path = fmt_de_db_path_with_name(user_id, db_name);
-        (db_path, None)
-    };
-
+pub(crate) fn get_db(user_id: i32, db_name: &str, db_key: &Option<Vec<u8>>) -> Result<Database> {
+    let db_path = fmt_db_path(user_id, db_name, db_key);
     get_db_by_type(user_id, db_name, db_path, db_key.as_ref())
 }
 
-pub(crate) fn get_db_without_lock(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
-    let (db_path, db_key) = if is_ce {
-        let db_path = fmt_ce_db_path_with_name(user_id, db_name);
-        check_validity_of_db_key(&db_path, user_id)?;
-        let db_key = match DbKey::get_db_key(user_id) {
-            Ok(db_key) => Some(db_key),
-            Err(e) if e.code == ErrCode::NotFound || e.code == ErrCode::DataCorrupted => {
-                loge!(
-                    "[FATAL]The key is corrupted. Now all data should be cleared and restart over, err is {}.",
-                    e.code
-                );
-                remove_ce_files(user_id)?;
-                return log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
-            },
-            Err(e) => return Err(e),
-        };
-        (db_path, db_key)
-    } else {
-        let db_path = fmt_de_db_path_with_name(user_id, db_name);
-        (db_path, None)
-    };
-
+pub(crate) fn get_db_without_lock(user_id: i32, db_name: &str, db_key: &Option<Vec<u8>>) -> Result<Database> {
+    let db_path = fmt_db_path(user_id, db_name, db_key);
     get_db_by_type_without_lock(user_id, db_name, db_path, db_key.as_ref())
-}
-
-/// Create ce db instance if the value of tag "RequireAttrEncrypted" is set to true.
-/// Create de db instance if the value of tag "RequireAttrEncrypted" is not specified or set to false.
-pub fn build_db(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<Database> {
-    match attributes.get(&Tag::RequireAttrEncrypted) {
-        Some(Value::Bool(true)) => Ok(Database::build(calling_info, true)?),
-        _ => Ok(Database::build(calling_info, false)?),
-    }
 }
 
 impl Database {
     /// Create a database without a given file name.
-    pub fn build(calling_info: &CallingInfo, is_ce: bool) -> Result<Database> {
+    pub fn build(calling_info: &CallingInfo, db_key: Option<Vec<u8>>) -> Result<Database> {
+        let is_ce: bool = db_key.is_some();
         if !is_ce {
             // DE database needs trigger the upgrade action.
             check_and_split_db(calling_info.user_id())?;
         }
-        get_db(calling_info.user_id(), &construct_splited_db_name(calling_info, is_ce)?, is_ce)
+        get_db(calling_info.user_id(), &construct_splited_db_name(calling_info, is_ce)?, &db_key)
     }
 
     /// Create a database from a file name.
-    pub fn build_with_file_name(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
+    pub fn build_with_file_name(user_id: i32, db_name: &str, db_key: &Option<Vec<u8>>) -> Result<Database> {
         check_and_split_db(user_id)?;
-        get_db(user_id, db_name, is_ce)
+        get_db(user_id, db_name, db_key)
     }
 
     /// Create a database from a file name without lock in full process.
-    pub fn build_with_file_name_without_lock(user_id: i32, db_name: &str, is_ce: bool) -> Result<Database> {
+    pub fn build_with_file_name_without_lock(user_id: i32, db_name: &str, db_key: &Option<Vec<u8>>) -> Result<Database> {
         // run here db must has been splited.
-        get_db_without_lock(user_id, db_name, is_ce)
+        get_db_without_lock(user_id, db_name, db_key)
     }
 
     /// Check whether db is ok
-    pub fn check_db_accessible(path: String, user_id: i32, db_name: String, db_key: Option<&DbKey>) -> Result<()> {
+    pub fn check_db_accessible(path: String, user_id: i32, db_name: String, db_key: Option<&Vec<u8>>) -> Result<()> {
         let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.clone());
         let mut db = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock, db_name, use_lock: true };
         if db_key.is_some() {
@@ -291,7 +242,7 @@ impl Database {
     }
 
     /// Open the database connection and restore the database if the connection fails.
-    pub(crate) fn open_and_restore(&mut self, db_key: Option<&DbKey>) -> Result<()> {
+    pub(crate) fn open_and_restore(&mut self, db_key: Option<&Vec<u8>>) -> Result<()> {
         let result = self.open();
         if let Some(db_key) = db_key {
             self.set_db_key(db_key)?;
@@ -327,9 +278,9 @@ impl Database {
     }
 
     /// Encrypt/Decrypt CE database.
-    pub fn set_db_key(&mut self, p_key: &DbKey) -> Result<()> {
+    pub fn set_db_key(&mut self, p_key: &Vec<u8>) -> Result<()> {
         let ret =
-            unsafe { SqliteKey(self.handle as _, p_key.db_key.as_ptr() as *const c_void, p_key.db_key.len() as i32) };
+            unsafe { SqliteKey(self.handle as _, p_key.as_ptr() as *const c_void, p_key.len() as i32) };
         if ret == SQLITE_OK {
             Ok(())
         } else {
@@ -379,25 +330,25 @@ impl Database {
         logi!("current database version: {}, target version: {}", current_ver, target_ver);
         while current_ver < target_ver {
             match current_ver {
+                DB_UPGRADE_VERSION_V0 => {
+                    self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION_V1, UPGRADE_COLUMN_INFO_V2))?;
+                    current_ver += 1;
+                },
                 DB_UPGRADE_VERSION_V1 => {
-                    self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION_V2, UPGRADE_COLUMN_INFO_V2))?;
+                    self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION_V2, UPGRADE_COLUMN_INFO_V3))?;
                     current_ver += 1;
                 },
                 DB_UPGRADE_VERSION_V2 => {
-                    self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION_V3, UPGRADE_COLUMN_INFO_V3))?;
-                    current_ver += 1;
-                },
-                DB_UPGRADE_VERSION_V3 => {
                     if self.upgrade_key_alias(user_id)? {
                         self.restore_if_exec_fail(|e: &Table| {
-                            e.upgrade(DB_UPGRADE_VERSION_V4, UPGRADE_COLUMN_INFO_V4)
+                            e.upgrade(DB_UPGRADE_VERSION_V3, UPGRADE_COLUMN_INFO_V4)
                         })?;
                         current_ver += 1;
                     } else {
                         break;
                     }
                 },
-                DB_UPGRADE_VERSION_V4 => {
+                DB_UPGRADE_VERSION_V3 => {
                     self.restore_if_exec_fail(|e: &Table| e.upgrade(DB_UPGRADE_VERSION, UPGRADE_COLUMN_INFO))?;
                     current_ver += 1;
                 },

@@ -17,20 +17,22 @@
 
 use std::{ffi::CString, os::raw::c_char};
 
+use asset_log::logw;
+use asset_utils::time;
+use asset_sdk::WrapType;
 use asset_common::{CallingInfo, OwnerType};
-use asset_crypto_manager::crypto::Crypto;
-use asset_db_key_operator::generate_secret_key_if_needed;
+use asset_definition::{
+    log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode,
+    Extension, LocalStatus, Result, SyncStatus, SyncType, Tag, Value,
+};
+use asset_crypto_manager::{
+    crypto::Crypto,
+    db_key_operator::{generate_secret_key_if_needed, get_db_key_by_asset_map},
+};
 use asset_db_operator::{
-    database::{build_db, Database},
+    database::Database,
     types::{column, DbMap, DB_DATA_VERSION},
 };
-use asset_definition::{
-    log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, LocalStatus, Result,
-    SyncStatus, SyncType, Tag, Value,
-};
-use asset_log::logw;
-use asset_sdk::WrapType;
-use asset_utils::time;
 
 use crate::operations::common;
 
@@ -226,7 +228,8 @@ fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     add_default_attrs(&mut db_data);
     let query = get_query_condition(attributes, calling_info)?;
 
-    let mut db = build_db(attributes, calling_info)?;
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes)?;
+    let mut db = Database::build(calling_info, db_key)?;
 
     if db.is_data_exists(&query, false)? {
         resolve_conflict(calling_info, &mut db, attributes, &query, &mut db_data)?;

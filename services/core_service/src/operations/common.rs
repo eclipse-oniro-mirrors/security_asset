@@ -18,24 +18,20 @@
 mod argument_check;
 mod permission_check;
 
-use std::time::Instant;
-
 pub(crate) use argument_check::{
     check_group_validity, check_required_tags, check_tag_validity, check_value_validity, MAX_LABEL_SIZE,
 };
 pub(crate) use permission_check::check_system_permission;
 
-use asset_common::{CallingInfo, OwnerType, OWNER_INFO_SEPARATOR};
+use asset_common::{CallingInfo, OWNER_INFO_SEPARATOR};
 use asset_crypto_manager::secret_key::SecretKey;
-use asset_db_operator::types::{column, DbMap, DB_DATA_VERSION, DB_DATA_VERSION_V1};
+use asset_db_operator::types::{column, DbMap, DB_DATA_VERSION};
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, OperationType, Result, Tag, Value, WrapType,
 };
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID};
-
-use crate::sys_event::upload_statistic_system_event;
 
 const TAG_COLUMN_TABLE: [(Tag, &str); 21] = [
     (Tag::Secret, column::SECRET),
@@ -171,22 +167,6 @@ fn check_if_need_addition_aad(attr: &str, map: &DbMap) -> bool {
     }
 }
 
-fn build_aad_v1(attrs: &DbMap) -> Vec<u8> {
-    let mut aad = Vec::new();
-    for column in &AAD_ATTR {
-        if !check_if_need_addition_aad(column, attrs) {
-            continue;
-        }
-        match attrs.get(column) {
-            Some(Value::Bytes(bytes)) => aad.extend(bytes),
-            Some(Value::Number(num)) => aad.extend(num.to_le_bytes()),
-            Some(Value::Bool(num)) => aad.push(*num as u8),
-            None => continue,
-        }
-    }
-    aad
-}
-
 fn to_hex(bytes: &Vec<u8>) -> Result<Vec<u8>> {
     let bytes_len = bytes.len();
     if bytes_len > MAX_LABEL_SIZE {
@@ -201,7 +181,7 @@ fn to_hex(bytes: &Vec<u8>) -> Result<Vec<u8>> {
     Ok(hex_vec)
 }
 
-fn build_aad_v2(attrs: &DbMap) -> Result<Vec<u8>> {
+pub(crate) fn build_aad(attrs: &DbMap) -> Result<Vec<u8>> {
     let mut aad = Vec::new();
     for column in &AAD_ATTR {
         if !check_if_need_addition_aad(column, attrs) {
@@ -219,22 +199,8 @@ fn build_aad_v2(attrs: &DbMap) -> Result<Vec<u8>> {
     Ok(aad)
 }
 
-pub(crate) fn build_aad(attrs: &DbMap) -> Result<Vec<u8>> {
-    let version = attrs.get_num_attr(&column::VERSION)?;
-    if version == DB_DATA_VERSION_V1 {
-        let tmp_calling_info = CallingInfo::new_part_info(
-            attrs.get_bytes_attr(&column::OWNER)?.clone(),
-            attrs.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?,
-        );
-        upload_statistic_system_event(&tmp_calling_info, Instant::now(), "V1_AAD_DATA", "V1_AAD_DATA");
-        Ok(build_aad_v1(attrs))
-    } else {
-        build_aad_v2(attrs)
-    }
-}
-
-pub(crate) fn need_upgrade(db_date: &DbMap) -> Result<bool> {
-    let version = db_date.get_num_attr(&column::VERSION)?;
+pub(crate) fn need_upgrade(db_data: &DbMap) -> Result<bool> {
+    let version = db_data.get_num_attr(&column::VERSION)?;
     Ok(version != DB_DATA_VERSION)
 }
 

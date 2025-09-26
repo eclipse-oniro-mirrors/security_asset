@@ -28,14 +28,14 @@ pub const TABLE_NAME: &str = "asset_table";
 /// Table name for cloud adapt.
 pub(crate) const ADAPT_CLOUD_TABLE: &str = "adapt_cloud_table";
 
+/// Version V0 number for upgrade database
+pub const DB_UPGRADE_VERSION_V0: u32 = 0;
 /// Version V1 number for upgrade database
-pub const DB_UPGRADE_VERSION_V1: u32 = 0;
+pub const DB_UPGRADE_VERSION_V1: u32 = 1;
 /// Version V2 number for upgrade database
-pub const DB_UPGRADE_VERSION_V2: u32 = 1;
+pub const DB_UPGRADE_VERSION_V2: u32 = 2;
 /// Version V3 number for upgrade database
-pub const DB_UPGRADE_VERSION_V3: u32 = 2;
-/// Version V4 number for upgrade database
-pub const DB_UPGRADE_VERSION_V4: u32 = 3;
+pub const DB_UPGRADE_VERSION_V3: u32 = 3;
 /// Latest version number for upgrade database
 pub const DB_UPGRADE_VERSION: u32 = 4;
 

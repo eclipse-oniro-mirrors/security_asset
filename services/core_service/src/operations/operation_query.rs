@@ -18,13 +18,13 @@
 use std::cmp::Ordering;
 
 use asset_common::CallingInfo;
-use asset_crypto_manager::{crypto::Crypto, crypto_manager::CryptoManager};
-use asset_db_operator::{
-    database::{build_db, Database},
-    types::{column, DbMap, QueryOptions, DB_DATA_VERSION},
-};
 use asset_definition::{
     log_throw_error, throw_error, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value,
+};
+use asset_db_operator::{database::Database, types::{column, DbMap, QueryOptions, DB_DATA_VERSION}};
+use asset_crypto_manager::{
+    crypto::Crypto, crypto_manager::CryptoManager,
+    db_key_operator::get_db_key_by_asset_map,
 };
 
 use crate::operations::common;
@@ -39,7 +39,7 @@ fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
     Ok(map_set)
 }
 
-fn upgrade_version(db: &mut Database, calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
+fn upgrade_aad(db: &mut Database, calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     db_data.insert_attr(column::VERSION, DB_DATA_VERSION);
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
     let secret_key = common::build_secret_key(calling_info, db_data)?;
@@ -86,7 +86,8 @@ fn exec_crypto(calling_info: &CallingInfo, query: &AssetMap, db_data: &mut DbMap
 }
 
 fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) -> Result<Vec<AssetMap>> {
-    let mut db = build_db(query, calling_info)?;
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), query)?;
+    let mut db = Database::build(calling_info, db_key)?;
     let mut results = db.query_datas(&vec![], db_data, None, true)?;
     match results.len() {
         0 => throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist."),
@@ -98,7 +99,7 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
                 _ => decrypt_secret(calling_info, &mut results[0])?,
             };
             if common::need_upgrade(&results[0])? {
-                upgrade_version(&mut db, calling_info, &mut results[0])?;
+                upgrade_aad(&mut db, calling_info, &mut results[0])?;
             }
             into_asset_maps(&results)
         },
@@ -141,7 +142,8 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
 }
 
 pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
-    let mut db = build_db(attrs, calling_info)?;
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attrs)?;
+    let mut db = Database::build(calling_info, db_key)?;
     let mut results = db.query_datas(&vec![], db_data, Some(&get_query_options(attrs)), true)?;
     if results.is_empty() {
         return throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");

@@ -34,7 +34,7 @@ use asset_db_operator::{
     },
     types::{column, DbMap},
 };
-use asset_db_key_operator::generate_secret_key_if_needed;
+use asset_crypto_manager::db_key_operator::generate_secret_key_if_needed;
 
 use crate::operations::common;
 
@@ -147,7 +147,7 @@ fn fmt_de_db_name(app_name: &str, app_index: i32) -> String {
 
 fn clone_data_from_app_to_clone_app(user_id: i32, app_name: &str, app_indexes: &[i32]) -> Result<()> {
     let main_name = fmt_de_db_name(app_name, 0);
-    let mut db_main = Database::build_with_file_name(user_id, &main_name, false)?;
+    let mut db_main = Database::build_with_file_name(user_id, &main_name, &None)?;
     let mut datas: Vec<DbMap> = db_main.query_datas(&vec![], &DbMap::new(), None, false)?;
     if datas.is_empty() {
         return Ok(());
@@ -170,7 +170,7 @@ fn is_hap_in_allowlist(user_id: i32, info: &str) -> Result<bool> {
 
 fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Vec<DbMap>) -> Result<()> {
     let clone_name = fmt_de_db_name(app_name, app_index);
-    let mut db_clone = Database::build_with_file_name(user_id, &clone_name, false)?;
+    let mut db_clone = Database::build_with_file_name(user_id, &clone_name, &None)?;
     let db_map = db_clone.query_data_without_lock(&vec![], &DbMap::new(), None, true)?;
     let mut alias_set = HashSet::new();
     for data in db_map {

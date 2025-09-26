@@ -64,9 +64,9 @@ impl CallingInfo {
         let mut owner_info = Vec::new();
         match &process_info.process_info_detail {
             ProcessInfoDetail::Hap(hap_info) => {
-                owner_info.append(&mut hap_info.app_id.clone());
-                owner_info.append(&mut "_".to_string().as_bytes().to_vec());
-                owner_info.append(&mut hap_info.app_index.to_string().as_bytes().to_vec());
+                owner_info.extend_from_slice(&hap_info.app_id);
+                owner_info.extend_from_slice("_".as_bytes());
+                owner_info.extend_from_slice(hap_info.app_index.to_string().as_bytes());
                 let group = match (&hap_info.developer_id, &hap_info.group_id) {
                     (Some(developer_id), Some(group_id)) => {
                         Some(Group { developer_id: developer_id.to_vec(), group_id: group_id.to_vec() })
