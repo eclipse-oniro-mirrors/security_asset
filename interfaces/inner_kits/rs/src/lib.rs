@@ -15,9 +15,12 @@
 
 //! This module defines the interface of the Asset Rust SDK.
 
+use std::{sync::{OnceLock, Mutex, Arc, atomic::{AtomicU64, Ordering}}, time::{SystemTime, UNIX_EPOCH}};
+
 pub use asset_definition::*;
 pub mod plugin_interface;
 
+use asset_log::logw;
 use ipc::{parcel::MsgParcel, remote::RemoteObj};
 use samgr::manage::SystemAbilityManager;
 
@@ -36,28 +39,22 @@ fn load_asset_service() -> Result<RemoteObj> {
     }
 }
 
-fn get_remote(need_check: bool) -> Result<RemoteObj> {
-    if need_check {
-        match SystemAbilityManager::check_system_ability(SA_ID) {
-            Some(remote) => Ok(remote),
-            None => load_asset_service(),
-        }
-    } else {
-        load_asset_service()
-    }
-}
-
 /// This manager provides the capabilities for life cycle management of sensitive user data (Asset) such as passwords
 /// and tokens, including adding, removing, updating, and querying.
 pub struct Manager {
     remote: RemoteObj,
+    last_rebuild_time: AtomicU64,
 }
 
 impl Manager {
     /// Build and initialize the Manager.
-    pub fn build() -> Result<Self> {
-        let remote = get_remote(true)?;
-        Ok(Self { remote })
+    pub fn build() -> Arc<Mutex<Manager>> {
+        static INSTANCE: OnceLock<Arc<Mutex<Manager>>> = OnceLock::new();
+        INSTANCE.get_or_init(|| {
+            logw!("Create instance for Manager.");
+            let remote = load_asset_service().expect("Get remote failed.");
+            Arc::new(Mutex::new(Manager { remote, last_rebuild_time: 0.into() }))
+        }).clone()
     }
 
     /// Add an Asset.
@@ -115,7 +112,15 @@ impl Manager {
     }
 
     fn rebuild(&mut self) -> Result<()> {
-        self.remote = get_remote(false)?;
+        let now = match SystemTime::now().duration_since(UNIX_EPOCH) {
+            Ok(d) => Ok(d.as_secs()),
+            Err(e) => log_throw_error!(ErrCode::GetSystemTimeError, "[FATAL]Get system time failed, err: {}", e),
+        }?;
+        let last_time = self.last_rebuild_time.load(Ordering::Relaxed);
+        if last_time - now > (LOAD_TIMEOUT_IN_SECONDS as u64) {
+            self.remote = load_asset_service()?;
+            self.last_rebuild_time.store(now, Ordering::Relaxed);
+        }
         Ok(())
     }
 
