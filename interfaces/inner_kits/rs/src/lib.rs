@@ -39,10 +39,6 @@ fn load_asset_service() -> Result<RemoteObj> {
     }
 }
 
-fn get_remote() -> Result<RemoteObj> {
-    load_asset_service()
-}
-
 /// This manager provides the capabilities for life cycle management of sensitive user data (Asset) such as passwords
 /// and tokens, including adding, removing, updating, and querying.
 pub struct Manager {
@@ -56,7 +52,7 @@ impl Manager {
         static INSTANCE: OnceLock<Arc<Mutex<Manager>>> = OnceLock::new();
         INSTANCE.get_or_init(|| {
             logw!("Create instance for Manager.");
-            let remote = get_remote().expect("Get remote failed.");
+            let remote = load_asset_service().expect("Get remote failed.");
             Arc::new(Mutex::new(Manager { remote, last_rebuild_time: 0.into() }))
         }).clone()
     }
@@ -122,7 +118,7 @@ impl Manager {
         }?;
         let last_time = self.last_rebuild_time.load(Ordering::Relaxed);
         if last_time - now > (LOAD_TIMEOUT_IN_SECONDS as u64) {
-            self.remote = get_remote()?;
+            self.remote = load_asset_service()?;
             self.last_rebuild_time.store(now, Ordering::Relaxed);
         }
         Ok(())
