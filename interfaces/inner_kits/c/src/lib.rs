@@ -83,7 +83,10 @@ pub extern "C" fn add_asset(attributes: *const AssetAttr, attr_cnt: u32) -> i32 
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let manager = Manager::build();
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return map_err(e.code),
+    };
 
     let ret = if let Err(e) = manager.lock().unwrap().add(&map) {
         e.code as i32
@@ -101,7 +104,10 @@ pub extern "C" fn remove_asset(query: *const AssetAttr, query_cnt: u32) -> i32 {
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let manager = Manager::build();
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return map_err(e.code),
+    };
 
     let ret = if let Err(e) = manager.lock().unwrap().remove(&map) {
         e.code as i32
@@ -129,7 +135,10 @@ pub extern "C" fn update_asset(
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let manager = Manager::build();
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return map_err(e.code),
+    };
 
     let ret = if let Err(e) = manager.lock().unwrap().update(&query_map, &update_map) {
         e.code as i32
@@ -156,7 +165,10 @@ pub unsafe extern "C" fn pre_query_asset(query: *const AssetAttr, query_cnt: u32
         return ErrCode::InvalidArgument as i32;
     }
 
-    let manager = Manager::build();
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return map_err(e.code),
+    };
 
     let res = match manager.lock().unwrap().pre_query(&map) {
         Err(e) => return e.code as i32,
@@ -189,7 +201,10 @@ pub unsafe extern "C" fn query_asset(query: *const AssetAttr, query_cnt: u32, re
         return ErrCode::InvalidArgument as i32;
     }
 
-    let manager = Manager::build();
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return map_err(e.code),
+    };
 
     let res = match manager.lock().unwrap().query(&map) {
         Err(e) => return e.code as i32,
@@ -213,7 +228,10 @@ pub extern "C" fn post_query_asset(handle: *const AssetAttr, handle_cnt: u32) ->
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let manager = Manager::build();
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return map_err(e.code),
+    };
 
     let ret = if let Err(e) = manager.lock().unwrap().post_query(&map) {
         e.code as i32
@@ -244,7 +262,10 @@ pub unsafe extern "C" fn query_sync_result(
         return ErrCode::ParamVerificationFailed as i32;
     }
 
-    let manager = Manager::build();
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return map_err(e.code),
+    };
 
     let ret = match manager.lock().unwrap().query_sync_result(&map) {
         Err(e) => map_err(e.code),

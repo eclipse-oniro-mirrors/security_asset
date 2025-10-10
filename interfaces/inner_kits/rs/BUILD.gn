@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("../../../config.gni")
 
 ohos_rust_shared_library("asset_sdk_rust") {
   sources = [ "src/lib.rs" ]
@@ -19,6 +20,7 @@ ohos_rust_shared_library("asset_sdk_rust") {
     "../../../frameworks/definition:asset_definition",
     "../../../frameworks/ipc:asset_ipc",
     "../../../frameworks/os_dependency/log:asset_log",
+    ":asset_timeout_feature"
   ]
 
   external_deps = [
@@ -27,8 +29,31 @@ ohos_rust_shared_library("asset_sdk_rust") {
     "ylong_runtime:ylong_runtime",
   ]
 
+  defines = []
+  if (asset_extend_timeout) {
+    defines += [ "ASSET_ENABLE_EXTEND_LOAD_TIMEOUT" ]
+  }
+
   crate_name = "asset_sdk"
   crate_type = "dylib"
+  subsystem_name = "security"
+  part_name = "asset"
+}
+
+ohos_static_library("asset_timeout_feature") {
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+  include_dirs = [
+    "../../kits/c/inc",
+  ]
+  sources = ["src/timeout_feature.c" ]
+  external_deps = []
   subsystem_name = "security"
   part_name = "asset"
 }

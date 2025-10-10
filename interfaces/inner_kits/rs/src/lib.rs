@@ -15,7 +15,7 @@
 
 //! This module defines the interface of the Asset Rust SDK.
 
-use std::{sync::{OnceLock, Mutex, Arc, atomic::{AtomicU64, Ordering}}, time::{SystemTime, UNIX_EPOCH}};
+use std::{sync::{Mutex, Arc, atomic::{AtomicU64, Ordering}}, time::{SystemTime, UNIX_EPOCH}};
 
 pub use asset_definition::*;
 pub mod plugin_interface;
@@ -28,10 +28,21 @@ use asset_ipc::{
     deserialize_maps, deserialize_sync_result, ipc_err_handle, serialize_map, IpcCode, IPC_SUCCESS, SA_ID, SA_NAME,
 };
 
+extern "C" {
+    fn GetTimeOut(timeout: *mut i32) -> i32;
+}
+
 const LOAD_TIMEOUT_IN_SECONDS: i32 = 4;
+const SUCCESS: i32 = 0;
+static ASSET_PLUGIN_LOCK: Mutex<()> = Mutex::new(());
 
 fn load_asset_service() -> Result<RemoteObj> {
-    match SystemAbilityManager::load_system_ability(SA_ID, LOAD_TIMEOUT_IN_SECONDS) {
+    let mut timeout:i32 = 0;
+    let ret = unsafe { GetTimeOut(&mut timeout as *mut i32) };
+    if ret != SUCCESS {
+        timeout = LOAD_TIMEOUT_IN_SECONDS;
+    }
+    match SystemAbilityManager::load_system_ability(SA_ID, timeout) {
         Some(remote) => Ok(remote),
         None => {
             log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
@@ -48,13 +59,14 @@ pub struct Manager {
 
 impl Manager {
     /// Build and initialize the Manager.
-    pub fn build() -> Arc<Mutex<Manager>> {
-        static INSTANCE: OnceLock<Arc<Mutex<Manager>>> = OnceLock::new();
-        INSTANCE.get_or_init(|| {
+    pub fn build() -> Result<Arc<Mutex<Manager>>> {
+        static mut INSTANCE: Option<Arc<Mutex<Manager>>> = None;
+        let _guard = ASSET_PLUGIN_LOCK.lock().unwrap();
+        let remote = load_asset_service()?;
+        unsafe { Ok(INSTANCE.get_or_insert_with(|| {
             logw!("Create instance for Manager.");
-            let remote = load_asset_service().expect("Get remote failed.");
-            Arc::new(Mutex::new(Manager { remote, last_rebuild_time: 0.into() }))
-        }).clone()
+            Arc::new(Mutex::new(Manager { remote, last_rebuild_time: 0.into() })).clone()
+        }).clone())}
     }
 
     /// Add an Asset.
@@ -117,7 +129,7 @@ impl Manager {
             Err(e) => log_throw_error!(ErrCode::GetSystemTimeError, "[FATAL]Get system time failed, err: {}", e),
         }?;
         let last_time = self.last_rebuild_time.load(Ordering::Relaxed);
-        if last_time - now > (LOAD_TIMEOUT_IN_SECONDS as u64) {
+        if now - last_time > (LOAD_TIMEOUT_IN_SECONDS as u64) {
             self.remote = load_asset_service()?;
             self.last_rebuild_time.store(now, Ordering::Relaxed);
         }
