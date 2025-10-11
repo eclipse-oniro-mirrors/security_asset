@@ -15,7 +15,7 @@
 
 //! This module defines the interface of the Asset Rust SDK.
 
-use std::{sync::{Mutex, Arc}};
+use std::sync::{Mutex, Arc};
 
 pub use asset_definition::*;
 pub mod plugin_interface;
