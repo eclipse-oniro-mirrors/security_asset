@@ -68,6 +68,7 @@ impl Manager {
                 return Ok(instance.clone());
             }
 
+            logw!("Create instance for Manager.");
             let remote = load_asset_service()?;
             let manager = Arc::new(Mutex::new(Manager {
                 remote,
