@@ -15,7 +15,6 @@
 
 //! This module defines the interface of the Asset Rust SDK.
 
-use core::{convert::Into, option::Option::Some};
 use std::{sync::{Mutex, Arc, atomic::{AtomicU64, Ordering}}, time::{SystemTime, UNIX_EPOCH}};
 
 pub use asset_definition::*;
@@ -38,7 +37,7 @@ const SUCCESS: i32 = 0;
 static ASSET_PLUGIN_LOCK: Mutex<()> = Mutex::new(());
 
 fn load_asset_service() -> Result<RemoteObj> {
-    let mut timeout:i32 = 0;
+    let mut timeout: i32 = 0;
     let ret = unsafe { GetTimeOut(&mut timeout as *mut i32) };
     if ret != SUCCESS {
         timeout = LOAD_TIMEOUT_IN_SECONDS;
@@ -76,7 +75,7 @@ impl Manager {
             }));
             INSTANCE = Some(manager.clone());
 
-            Ok(manager.clone());
+            Ok(manager.clone())
         }
     }
 

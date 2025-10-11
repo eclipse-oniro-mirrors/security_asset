@@ -47,7 +47,7 @@ ohos_static_library("asset_timeout_feature") {
   include_dirs = [
     "../../kits/c/inc",
   ]
-  sources = ["src/timeout_feature.c" ]
+  sources = [ "src/timeout_feature.c" ]
   defines = []
   if (asset_extend_timeout) {
     defines += [ "ASSET_ENABLE_EXTEND_LOAD_TIMEOUT" ]
