@@ -21,7 +21,8 @@
         ],
         "features": [
             "asset_access_control_enabled",
-            "asset_split_hap_list"
+            "asset_split_hap_list",
+            "asset_extend_timeout"
         ],
         "adapted_system_type": [
             "standard"
