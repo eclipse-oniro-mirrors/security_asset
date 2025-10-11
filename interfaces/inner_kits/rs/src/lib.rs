@@ -15,7 +15,7 @@
 
 //! This module defines the interface of the Asset Rust SDK.
 
-use std::{sync::{Mutex, Arc, atomic::{AtomicU64, Ordering}}, time::{SystemTime, UNIX_EPOCH}};
+use std::{sync::{Mutex, Arc}};
 
 pub use asset_definition::*;
 pub mod plugin_interface;
@@ -54,7 +54,6 @@ fn load_asset_service() -> Result<RemoteObj> {
 /// and tokens, including adding, removing, updating, and querying.
 pub struct Manager {
     remote: RemoteObj,
-    last_rebuild_time: AtomicU64,
 }
 
 impl Manager {
@@ -72,7 +71,6 @@ impl Manager {
             let remote = load_asset_service()?;
             let manager = Arc::new(Mutex::new(Manager {
                 remote,
-                last_rebuild_time: 0.into(),
             }));
             INSTANCE = Some(manager.clone());
 
@@ -135,15 +133,7 @@ impl Manager {
     }
 
     fn rebuild(&mut self) -> Result<()> {
-        let now = match SystemTime::now().duration_since(UNIX_EPOCH) {
-            Ok(d) => Ok(d.as_secs()),
-            Err(e) => log_throw_error!(ErrCode::GetSystemTimeError, "[FATAL]Get system time failed, err: {}", e),
-        }?;
-        let last_time = self.last_rebuild_time.load(Ordering::Relaxed);
-        if now - last_time > (LOAD_TIMEOUT_IN_SECONDS as u64) {
-            self.remote = load_asset_service()?;
-            self.last_rebuild_time.store(now, Ordering::Relaxed);
-        }
+        self.remote = load_asset_service()?;
         Ok(())
     }
 

@@ -22,9 +22,10 @@ const int32_t SA_MANAGER_TIMEOUT = 12;
 const int32_t SA_MANAGER_TIMEOUT = 4;
 #endif
 
-int32_t GetTimeOut(int32_t *timeout) {
+int32_t GetTimeOut(int32_t *timeout)
+{
     if (timeout == NULL) {
-       return ASSET_INVALID_ARGUMENT;
+        return ASSET_INVALID_ARGUMENT;
     }
     *timeout = SA_MANAGER_TIMEOUT;
     return ASSET_SUCCESS;
