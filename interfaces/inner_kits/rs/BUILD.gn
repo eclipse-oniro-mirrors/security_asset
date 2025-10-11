@@ -29,11 +29,6 @@ ohos_rust_shared_library("asset_sdk_rust") {
     "ylong_runtime:ylong_runtime",
   ]
 
-  defines = []
-  if (asset_extend_timeout) {
-    defines += [ "ASSET_ENABLE_EXTEND_LOAD_TIMEOUT" ]
-  }
-
   crate_name = "asset_sdk"
   crate_type = "dylib"
   subsystem_name = "security"
@@ -53,6 +48,10 @@ ohos_static_library("asset_timeout_feature") {
     "../../kits/c/inc",
   ]
   sources = ["src/timeout_feature.c" ]
+  defines = []
+  if (asset_extend_timeout) {
+    defines += [ "ASSET_ENABLE_EXTEND_LOAD_TIMEOUT" ]
+  }
   external_deps = []
   subsystem_name = "security"
   part_name = "asset"

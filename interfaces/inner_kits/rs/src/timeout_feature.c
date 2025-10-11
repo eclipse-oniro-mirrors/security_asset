@@ -13,18 +13,16 @@
  * limitations under the License.
  */
 
- #include "asset_type.h"
-
- #ifdef ASSET_ENABLE_EXTEND_LOAD_TIMEOUT
- const int32_t SA_MANAGER_TIMEOUT = 12;
- #else
- const int32_t SA_MANAGER_TIMEOUT = 4;
- #endif
-
- int32_t GetTimeOut(int32_t *timeout) {
+#include "asset_type.h"
+#ifdef ASSET_ENABLE_EXTEND_LOAD_TIMEOUT
+const int32_t SA_MANAGER_TIMEOUT = 12;
+#else
+const int32_t SA_MANAGER_TIMEOUT = 4;
+#endif
+int32_t GetTimeOut(int32_t *timeout) {
     if (timeout == NULL) {
-        return ASSET_INVALID_ARGUMENT;
+       return ASSET_INVALID_ARGUMENT;
     }
     *timeout = SA_MANAGER_TIMEOUT;
     return ASSET_SUCCESS;
- }
+}

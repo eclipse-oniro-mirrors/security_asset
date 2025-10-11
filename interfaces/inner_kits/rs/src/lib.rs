@@ -15,6 +15,7 @@
 
 //! This module defines the interface of the Asset Rust SDK.
 
+use core::{convert::Into, option::Option::Some};
 use std::{sync::{Mutex, Arc, atomic::{AtomicU64, Ordering}}, time::{SystemTime, UNIX_EPOCH}};
 
 pub use asset_definition::*;
@@ -62,11 +63,21 @@ impl Manager {
     pub fn build() -> Result<Arc<Mutex<Manager>>> {
         static mut INSTANCE: Option<Arc<Mutex<Manager>>> = None;
         let _guard = ASSET_PLUGIN_LOCK.lock().unwrap();
-        let remote = load_asset_service()?;
-        unsafe { Ok(INSTANCE.get_or_insert_with(|| {
-            logw!("Create instance for Manager.");
-            Arc::new(Mutex::new(Manager { remote, last_rebuild_time: 0.into() })).clone()
-        }).clone())}
+        
+        unsafe {
+            if let Some(instance) = &INSTANCE {
+                return Ok(instance.clone());
+            }
+
+            let remote = load_asset_service()?;
+            let manager = Arc::new(Mutex::new(Manager {
+                remote,
+                last_rebuild_time: 0.into(),
+            }));
+            INSTANCE = Some(manager.clone());
+
+            Ok(manager.clone());
+        }
     }
 
     /// Add an Asset.
