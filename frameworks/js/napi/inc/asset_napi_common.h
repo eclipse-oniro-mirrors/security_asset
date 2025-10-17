@@ -61,6 +61,11 @@ if ((result) != napi_ok) {                      \
     return (result);                            \
 }
 
+#define IF_ERR_RETURN_FAILURE(result)           \
+if ((result) != SEC_ASSET_SUCCESS) {            \
+    return (napi_generic_failure);              \
+}
+
 napi_value CreateJsError(const napi_env env, int32_t errCode);
 
 napi_value CreateJsError(const napi_env env, int32_t errCode, const char *errorMsg);
@@ -70,6 +75,8 @@ napi_value CreateJsUint8Array(const napi_env env, const AssetBlob &blob);
 napi_value CreateJsMapArray(const napi_env env, const AssetResultSet &resultSet);
 
 napi_value CreateJsUndefined(const napi_env env);
+
+std::function<void(char *)> NapiThrowError(const napi_env env);
 
 napi_status ParseJsArgs(const napi_env env, napi_callback_info info, napi_value *value, size_t valueSize);
 

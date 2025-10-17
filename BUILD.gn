@@ -25,6 +25,7 @@ group("asset_component") {
 
   if (support_jsapi) {
     deps += [ "frameworks/js/napi:asset_napi" ]
+    deps += [ "frameworks/js/ani:asset_ani_package" ]
   }
 }
 

@@ -19,7 +19,7 @@
 #include "asset_system_api.h"
 #include "asset_system_type.h"
 
-#include "asset_napi_check.h"
+#include "asset_api_check.h"
 #include "asset_napi_common.h"
 
 namespace OHOS {
@@ -29,35 +29,12 @@ namespace {
 const uint32_t QUERY_ARG_COUNT = 1;
 const uint32_t QUERY_ARG_COUNT_AS_USER = 2;
 
-const std::vector<uint32_t> OPTIONAL_TAGS = {
-    SEC_ASSET_TAG_RETURN_LIMIT,
-    SEC_ASSET_TAG_RETURN_OFFSET,
-    SEC_ASSET_TAG_RETURN_ORDERED_BY,
-    SEC_ASSET_TAG_RETURN_TYPE,
-    SEC_ASSET_TAG_AUTH_TOKEN,
-    SEC_ASSET_TAG_AUTH_CHALLENGE,
-};
-
-napi_status CheckQueryArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
-{
-    std::vector<uint32_t> validTags;
-    validTags.insert(validTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
-    validTags.insert(validTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
-    validTags.insert(validTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
-    validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
-    validTags.insert(validTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
-    validTags.insert(validTags.end(), OPTIONAL_TAGS.begin(), OPTIONAL_TAGS.end());
-    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, validTags, SEC_ASSET_INVALID_ARGUMENT));
-    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
-    return napi_ok;
-}
-
 napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *context)
 {
     napi_value argv[MAX_ARGS_NUM] = { 0 };
     IF_ERR_RETURN(ParseJsArgs(env, info, argv, QUERY_ARG_COUNT));
     IF_ERR_RETURN(ParseJsMap(env, argv[0], context->attrs));
-    IF_ERR_RETURN(CheckQueryArgs(env, context->attrs));
+    IF_ERR_RETURN_FAILURE(CheckQueryArgs(context->attrs, NapiThrowError(env)));
     return napi_ok;
 }
 
@@ -68,7 +45,7 @@ napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContex
     uint32_t index = 0;
     IF_ERR_RETURN(ParseJsUserId(env, argv[index++], context->attrs));
     IF_ERR_RETURN(ParseJsMap(env, argv[index++], context->attrs));
-    IF_ERR_RETURN(CheckQueryArgs(env, context->attrs));
+    IF_ERR_RETURN_FAILURE(CheckQueryArgs(context->attrs, NapiThrowError(env)));
     return napi_ok;
 }
 } // anonymous namespace

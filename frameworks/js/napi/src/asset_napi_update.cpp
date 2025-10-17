@@ -21,7 +21,7 @@
 #include "asset_system_api.h"
 #include "asset_system_type.h"
 
-#include "asset_napi_check.h"
+#include "asset_api_check.h"
 #include "asset_napi_common.h"
 
 namespace OHOS {
@@ -31,46 +31,6 @@ namespace {
 const uint32_t UPDATE_ARG_COUNT = 2;
 const uint32_t UPDATE_ARG_COUNT_AS_USER = 3;
 
-const std::vector<uint32_t> QUERY_REQUIRED_TAGS = {
-    SEC_ASSET_TAG_ALIAS
-};
-
-const std::vector<uint32_t> UPDATE_OPTIONAL_TAGS = {
-    SEC_ASSET_TAG_SECRET
-};
-
-napi_value CheckAssetPresence(const napi_env env, const std::vector<AssetAttr> &attrs)
-{
-    if (attrs.empty()) {
-        RETURN_JS_ERROR(env, SEC_ASSET_INVALID_ARGUMENT, "Argument[attributesToUpdate] is empty.");
-    }
-    return nullptr;
-}
-
-napi_status CheckUpdateArgs(const napi_env env, const std::vector<AssetAttr> &attrs,
-    const std::vector<AssetAttr> &updateAttrs)
-{
-    IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, QUERY_REQUIRED_TAGS, SEC_ASSET_INVALID_ARGUMENT));
-    std::vector<uint32_t> queryValidTags;
-    queryValidTags.insert(queryValidTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
-    queryValidTags.insert(queryValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
-    queryValidTags.insert(queryValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
-    queryValidTags.insert(queryValidTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
-    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, queryValidTags, SEC_ASSET_INVALID_ARGUMENT));
-    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
-
-    IF_ERROR_THROW_RETURN(env, CheckAssetPresence(env, updateAttrs));
-    std::vector<uint32_t> updateValidTags;
-    updateValidTags.insert(updateValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
-    updateValidTags.insert(updateValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
-    updateValidTags.insert(updateValidTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
-    updateValidTags.insert(updateValidTags.end(), UPDATE_OPTIONAL_TAGS.begin(), UPDATE_OPTIONAL_TAGS.end());
-    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, updateAttrs, updateValidTags, SEC_ASSET_INVALID_ARGUMENT));
-    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, updateAttrs, SEC_ASSET_INVALID_ARGUMENT));
-
-    return napi_ok;
-}
-
 napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *baseContext)
 {
     UpdateContext *context = reinterpret_cast<UpdateContext *>(baseContext);
@@ -79,7 +39,7 @@ napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *bas
     uint32_t index = 0;
     IF_ERR_RETURN(ParseJsMap(env, argv[index++], context->attrs));
     IF_ERR_RETURN(ParseJsMap(env, argv[index++], context->updateAttrs));
-    IF_ERR_RETURN(CheckUpdateArgs(env, context->attrs, context->updateAttrs));
+    IF_ERR_RETURN_FAILURE(CheckUpdateArgs(context->attrs, context->updateAttrs, NapiThrowError(env)));
     return napi_ok;
 }
 
@@ -92,7 +52,7 @@ napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContex
     IF_ERR_RETURN(ParseJsUserId(env, argv[index++], context->attrs));
     IF_ERR_RETURN(ParseJsMap(env, argv[index++], context->attrs));
     IF_ERR_RETURN(ParseJsMap(env, argv[index++], context->updateAttrs));
-    IF_ERR_RETURN(CheckUpdateArgs(env, context->attrs, context->updateAttrs));
+    IF_ERR_RETURN_FAILURE(CheckUpdateArgs(context->attrs, context->updateAttrs, NapiThrowError(env)));
     return napi_ok;
 }
 } // anonymous namespace

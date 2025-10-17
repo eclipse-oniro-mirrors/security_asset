@@ -19,7 +19,7 @@
 #include "asset_system_api.h"
 #include "asset_system_type.h"
 
-#include "asset_napi_check.h"
+#include "asset_api_check.h"
 #include "asset_napi_common.h"
 
 namespace OHOS {
@@ -27,21 +27,6 @@ namespace Security {
 namespace Asset {
 namespace {
 const uint32_t ARG_COUNT = 1;
-
-const std::vector<uint32_t> OPTIONAL_TAGS = {
-    SEC_ASSET_TAG_GROUP_ID,
-    SEC_ASSET_TAG_REQUIRE_ATTR_ENCRYPTED,
-};
-
-napi_value CheckQuerySyncResultArgs(napi_env env, const std::vector<AssetAttr> &attrs)
-{
-    napi_value error = CheckAssetTagValidity(env, attrs, OPTIONAL_TAGS, SEC_ASSET_PARAM_VERIFICATION_FAILED);
-    if (error != nullptr) {
-        return error;
-    }
-
-    return CheckAssetValueValidity(env, attrs, SEC_ASSET_PARAM_VERIFICATION_FAILED);
-}
 } // anonymous namespace
 
 napi_value NapiQuerySyncResult(const napi_env env, napi_callback_info info)
@@ -59,8 +44,7 @@ napi_value NapiQuerySyncResult(const napi_env env, napi_callback_info info)
 
     context->execute = [](napi_env env, void *data) {
         QuerySyncResultContext *context = static_cast<QuerySyncResultContext *>(data);
-        context->error = CheckQuerySyncResultArgs(env, context->attrs);
-        if (context->error != nullptr) {
+        if (CheckQuerySyncResultArgs(context->attrs, NapiThrowError(env)) != SEC_ASSET_SUCCESS) {
             return;
         }
         context->result = AssetQuerySyncResult(&context->attrs[0], context->attrs.size(), &context->syncResult);
