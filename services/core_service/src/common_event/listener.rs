@@ -18,9 +18,11 @@
 use std::{
     ffi::{CStr, CString},
     fs::{self, DirEntry},
+    os::unix::fs::PermissionsExt,
+    path::Path,
     slice,
     sync::Mutex,
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use lazy_static::lazy_static;
@@ -59,6 +61,7 @@ use crate::{sys_event::upload_fault_system_event, PackageInfoFfi, upgrade_operat
 const SUCCESS: i32 = 0;
 const USER_ID_VEC_BUFFER: u32 = 5;
 const MINIMUM_MAIN_USER_ID: i32 = 100;
+const FIVE_HOURS_AS_SECS: u64 = 18000;
 
 enum DataExist {
     OwnerData(bool),
@@ -67,6 +70,10 @@ enum DataExist {
 
 extern "C" {
     fn GetUninstallGroups(userId: i32, developer_id: *const ConstAssetBlob, group_ids: *mut MutAssetBlobArray) -> i32;
+}
+
+lazy_static! {
+    static ref LAST_TRIGGER_TIME_FILE_MUTEX: Mutex<()> = Mutex::new(());
 }
 
 fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result<()> {
@@ -409,14 +416,51 @@ pub(crate) extern "C" fn on_schedule_wakeup() {
 }
 
 pub(crate) extern "C" fn on_connectivity_change() {
-    logi!("[INFO]On SA connectivity change.");
-    trigger_sync();
+    let _lock = LAST_TRIGGER_TIME_FILE_MUTEX.lock().unwrap();
+    let path = format!("{}/last_trigger_time.txt", DE_ROOT_PATH);
+    let last_time = read_last_trigger_time(&path).unwrap_or(0);
+    let current = SystemTime::now();
+    if let Ok(duration) = current.duration_since(UNIX_EPOCH) {
+        let current = duration.as_secs();
+        if current - last_time >= FIVE_HOURS_AS_SECS {
+            logi!("[INFO]On SA connectivity change.");
+            trigger_sync();
+            if write_last_trigger_time(&path, current).is_err() {
+                loge!("Write last trigger time failed.");
+            }
+        }
+    }
 }
 
 extern "C" {
     fn GetUserIds(userIdsPtr: *mut i32, userIdsSize: *mut u32) -> i32;
     fn GetFirstUnlockUserIds(userIdsPtr: *mut i32, userIdsSize: *mut u32) -> i32;
     fn GetUsersSize(userIdsSize: *mut u32) -> i32;
+}
+
+fn read_last_trigger_time(path_str: &str) -> Result<u64> {
+    let path: &Path = Path::new(&path_str);
+    let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o640));
+    let time_str = match fs::read_to_string(path) {
+        Ok(time_str) => time_str,
+        Err(_) => "0".to_owned(),
+    };
+    let trim_time = time_str.trim();
+    match trim_time.parse::<u64>() {
+        Ok(unix_time) => Ok(unix_time),
+        Err(_) => {
+            eprintln!("[WARNING] Failed to parse time from file. Return 0 as a default");
+            Ok(0)
+        },
+    }
+}
+
+fn write_last_trigger_time(path_str: &str, unix_time: u64) -> Result<()> {
+    let path: &Path = Path::new(&path_str);
+    let time_str = unix_time.to_string();
+    fs::write(path, time_str)?;
+    let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o640));
+    Ok(())
 }
 
 fn trigger_sync() {
