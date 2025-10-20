@@ -61,6 +61,7 @@ use crate::{sys_event::upload_fault_system_event, PackageInfoFfi, upgrade_operat
 const SUCCESS: i32 = 0;
 const USER_ID_VEC_BUFFER: u32 = 5;
 const MINIMUM_MAIN_USER_ID: i32 = 100;
+const FIVE_HOURS_AS_SECS: u64 = 18000;
 
 enum DataExist {
     OwnerData(bool),
@@ -419,9 +420,9 @@ pub(crate) extern "C" fn on_connectivity_change() {
     let path = format!("{}/last_trigger_time.txt", DE_ROOT_PATH);
     let last_time = read_last_trigger_time(&path).unwrap_or(0);
     let current = SystemTime::now();
-    if let  Ok(duration) = current. duration_since(UNIX_EPOCH) {
+    if let Ok(duration) = current.duration_since(UNIX_EPOCH) {
         let current = duration.as_secs();
-        if current - last_time >= 1800 {
+        if current - last_time >= FIVE_HOURS_AS_SECS {
             logi!("[INFO]On SA connectivity change.");
             trigger_sync();
             if write_last_trigger_time(&path, current).is_err() {
@@ -429,7 +430,6 @@ pub(crate) extern "C" fn on_connectivity_change() {
             }
         }
     }
-    
 }
 
 extern "C" {
