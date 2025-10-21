@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef ASSET_NAPI_ERROR_CODE_H
-#define ASSET_NAPI_ERROR_CODE_H
+#ifndef ASSET_API_ERROR_CODE_H
+#define ASSET_API_ERROR_CODE_H
 
 #include <cstdint>
 #include <unordered_map>
@@ -63,4 +63,4 @@ inline const char *GetErrorMessage(int32_t errCode)
 } // Security
 } // OHOS
 
-#endif // ASSET_NAPI_ERROR_CODE_H
+#endif // ASSET_API_ERROR_CODE_H

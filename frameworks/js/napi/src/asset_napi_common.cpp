@@ -24,7 +24,8 @@
 #include "asset_system_type.h"
 
 #include "asset_napi_context.h"
-#include "asset_napi_error_code.h"
+#include "asset_napi_common.h"
+#include "asset_api_error_code.h"
 
 namespace OHOS {
 namespace Security {
@@ -277,6 +278,13 @@ napi_value CreateJsMapArray(const napi_env env, const AssetResultSet &resultSet)
         NAPI_CALL(env, napi_set_element(env, array, i, map));
     }
     return array;
+}
+
+std::function<void(char *)> NapiThrowError(const napi_env env)
+{
+    return [env](char *errorMsg) {
+        napi_throw((env), CreateJsError((env), SEC_ASSET_INVALID_ARGUMENT, (errorMsg)));
+    };
 }
 
 napi_value CreateJsUndefined(const napi_env env)
