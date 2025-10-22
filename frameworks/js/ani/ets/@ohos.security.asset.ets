@@ -537,42 +537,6 @@ export namespace asset {
    * @atomicservice
    * @since 14
    */
-  export enum ReturnType {
-    /**
-     * Specify that the return data should contain both secret value and attributes.
-     *
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    /**
-     * The query result contains the asset plaintext and its attributes.
-     * <p><strong>NOTE</strong>:
-     * Use this option when you need to query the plaintext of a single asset.
-     * </p>
-     *
-     * @syscap SystemCapability.Security.Asset
-     * @atomicservice
-     * @since 14
-     */
-    ALL = 0,
-    /**
-     * Specify that the return data contains only attributes.
-     *
-     * @syscap SystemCapability.Security.Asset
-     * @since 11
-     */
-    /**
-     * The query result contains only the asset attributes.
-     * <p><strong>NOTE</strong>:
-     * Use this option when you need to query attributes of multiple assets.
-     * </p>
-     *
-     * @syscap SystemCapability.Security.Asset
-     * @atomicservice
-     * @since 14
-     */
-    ATTRIBUTES = 1,
-  }
 
   /**
    * Enumerates the types of additional operation to perform.
