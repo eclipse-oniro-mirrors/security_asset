@@ -61,7 +61,7 @@ use crate::{sys_event::upload_fault_system_event, PackageInfoFfi, upgrade_operat
 const SUCCESS: i32 = 0;
 const USER_ID_VEC_BUFFER: u32 = 5;
 const MINIMUM_MAIN_USER_ID: i32 = 100;
-const FIVE_HOURS_AS_SECS: u64 = 18000;
+const TWELVE_HOURS_AS_SECS: u64 = 3600 * 12;
 
 enum DataExist {
     OwnerData(bool),
@@ -422,7 +422,7 @@ pub(crate) extern "C" fn on_connectivity_change() {
     let current = SystemTime::now();
     if let Ok(duration) = current.duration_since(UNIX_EPOCH) {
         let current = duration.as_secs();
-        if current - last_time >= FIVE_HOURS_AS_SECS {
+        if current > last_time && current - last_time >= TWELVE_HOURS_AS_SECS {
             logi!("[INFO]On SA connectivity change.");
             trigger_sync();
             if write_last_trigger_time(&path, current).is_err() {
