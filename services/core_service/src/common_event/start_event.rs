@@ -176,8 +176,6 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
         listener::on_user_unlocked(reason.extra_data.code);
     } else if reason_name == "usual.event.CONNECTIVITY_CHANGE" && reason.value == NET_CONN_STATE_CONNECTED {
         listener::on_connectivity_change();
-    } else if reason_name == "usual.event.USER_SWITCHED" {
-        listener::on_user_switched();
     }
     logi!("[INFO]Finish handle common event. [{}]", reason_name);
 }
