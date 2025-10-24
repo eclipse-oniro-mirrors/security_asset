@@ -171,7 +171,7 @@ public:
             LOGI("[INFO]Receive event: USER_PIN_CREATED_EVENT, start_time: %{public}ld", startTime);
         } else if (action == CommonEventSupport::COMMON_EVENT_CONNECTIVITY_CHANGE) {
             HandleConnectivityChange(data.GetCode(), this->eventCallBack.onConnectivityChange);
-        } else if (CommonEventSupport::COMMON_EVENT_USER_SWITCHED) {
+        } else if (action == CommonEventSupport::COMMON_EVENT_USER_SWITCHED) {
             if (this->eventCallBack.OnUserSwitched != nullptr) {
                 int userId = data.GetCode();
                 this->eventCallBack.OnUserSwitched(userId);
