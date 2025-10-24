@@ -598,6 +598,7 @@ pub(crate) fn subscribe() {
             on_app_restore,
             on_user_unlocked,
             on_connectivity_change,
+            on_user_switched,
         };
         if SubscribeSystemEvent(call_back.clone()) {
             logi!("Subscribe system event success.");
