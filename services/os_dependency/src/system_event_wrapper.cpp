@@ -173,8 +173,7 @@ public:
             HandleConnectivityChange(data.GetCode(), this->eventCallBack.onConnectivityChange);
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_SWITCHED) {
             if (this->eventCallBack.onUserSwitched != nullptr) {
-                int userId = data.GetCode();
-                this->eventCallBack.onUserSwitched(userId);
+                this->eventCallBack.onUserSwitched();
             }
             LOGI("[INFO]Receive event: COMMON_EVENT_USER_SWITCHED, start_time: %{public}ld", startTime);
         } else {
