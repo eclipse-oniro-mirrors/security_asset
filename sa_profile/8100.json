@@ -18,7 +18,8 @@
                     { "name": "usual.event.RESTORE_START" },
                     { "name": "USER_PIN_CREATED_EVENT" },
                     { "name": "usual.event.BOOT_COMPLETED" },
-                    { "name": "usual.event.CONNECTIVITY_CHANGE" }
+                    { "name": "usual.event.CONNECTIVITY_CHANGE" },
+                    { "name": "usual.event.USER_SWITCHED" }
                 ],
                 "timedevent": [
                     {
