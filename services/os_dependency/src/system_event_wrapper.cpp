@@ -172,9 +172,9 @@ public:
         } else if (action == CommonEventSupport::COMMON_EVENT_CONNECTIVITY_CHANGE) {
             HandleConnectivityChange(data.GetCode(), this->eventCallBack.onConnectivityChange);
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_SWITCHED) {
-            if (this->eventCallBack.OnUserSwitched != nullptr) {
+            if (this->eventCallBack.onUserSwitched != nullptr) {
                 int userId = data.GetCode();
-                this->eventCallBack.OnUserSwitched(userId);
+                this->eventCallBack.onUserSwitched(userId);
             }
             LOGI("[INFO]Receive event: COMMON_EVENT_USER_SWITCHED, start_time: %{public}ld", startTime);
         } else {
