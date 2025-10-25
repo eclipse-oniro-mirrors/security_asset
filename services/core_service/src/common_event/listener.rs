@@ -432,10 +432,6 @@ pub(crate) extern "C" fn on_connectivity_change() {
     }
 }
 
-pub(crate) extern "C" fn on_user_switched() {
-    trigger_sync();
-}
-
 extern "C" {
     fn GetUserIds(userIdsPtr: *mut i32, userIdsSize: *mut u32) -> i32;
     fn GetFirstUnlockUserIds(userIdsPtr: *mut i32, userIdsSize: *mut u32) -> i32;
@@ -577,7 +573,6 @@ struct EventCallBack {
     on_app_restore: extern "C" fn(i32, *const u8, i32),
     on_user_unlocked: extern "C" fn(i32),
     on_connectivity_change: extern "C" fn(),
-    on_user_switched: extern "C" fn(),
 }
 
 extern "C" {
@@ -598,7 +593,6 @@ pub(crate) fn subscribe() {
             on_app_restore,
             on_user_unlocked,
             on_connectivity_change,
-            on_user_switched,
         };
         if SubscribeSystemEvent(call_back.clone()) {
             logi!("Subscribe system event success.");
