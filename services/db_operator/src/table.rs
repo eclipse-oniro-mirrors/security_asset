@@ -19,7 +19,7 @@
 use core::ffi::c_void;
 use std::cmp::Ordering;
 
-use asset_definition::{log_throw_error, Conversion, DataType, ErrCode, Result, SyncType, Value};
+use asset_definition::{log_throw_error, Conversion, DataType, ErrCode, Extension, Result, SyncType, Value};
 use asset_log::logi;
 
 use crate::{
@@ -773,15 +773,33 @@ impl<'a> Table<'a> {
     pub(crate) fn replace_row(&self, condition: &DbMap, is_filter_sync: bool, datas: &DbMap) -> Result<()> {
         let mut trans = Transaction::new(self.db);
         trans.begin()?;
-        if let Err(e) = self.delete_row(condition, None, is_filter_sync) {
-            trans.rollback()?;
-            return Err(e);
-        }
-        if let Err(e) = self.insert_row(datas) {
-            trans.rollback()?;
-            Err(e)
-        } else {
-            trans.commit()
+    
+        let result = (|| -> Result<()> {
+            let mut new_row = datas.clone();
+            let cols = vec![column::SYNC_TYPE, column::CLOUD_VERSION, column::GLOBAL_ID];
+            if let Ok(rows) = self.query_row(&cols, condition, None, false, COLUMN_INFO) {
+                if !rows.is_empty() {
+                    let old_row = rows.first().unwrap();
+                    let trusted_acc = SyncType::TrustedAccount as u32;
+                    if (old_row.get_num_attr(&column::SYNC_TYPE)? & trusted_acc) == trusted_acc
+                        && (datas.get_num_attr(&column::SYNC_TYPE)? & trusted_acc) == trusted_acc
+                    {
+                        new_row.insert(column::CLOUD_VERSION, old_row[column::CLOUD_VERSION].clone());
+                        new_row.insert(column::GLOBAL_ID, old_row[column::GLOBAL_ID].clone());
+                    }
+                }
+            }
+            self.delete_row(condition, None, is_filter_sync)?;
+            self.insert_row(&new_row)?;
+            Ok(())
+        })();
+
+        match result {
+            Ok(()) => trans.commit(),
+            Err(e) => {
+                trans.rollback()?;
+                Err(e)
+            }
         }
     }
 }
