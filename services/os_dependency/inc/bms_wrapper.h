@@ -62,6 +62,8 @@ int32_t IsHapInAllowList(int32_t userId, const char *appName, bool *is_in_list);
 
 int32_t GetUninstallGroups(int32_t userId, ConstAssetBlob *developerId, MutAssetBlobArray *groupIds);
 
+const char *GetCeUpgradeInfo();
+
 #ifdef __cplusplus
 }
 #endif

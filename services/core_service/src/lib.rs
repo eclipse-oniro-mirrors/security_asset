@@ -43,6 +43,7 @@ mod stub;
 mod sys_event;
 mod trace_scope;
 mod upgrade_operator;
+mod upgrade_ce;
 
 use sys_event::upload_system_event;
 use trace_scope::TraceScope;

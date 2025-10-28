@@ -316,3 +316,8 @@ int32_t GetUninstallGroups(int32_t userId, ConstAssetBlob *developerId, MutAsset
     ProcessBundleInfos(bundleInfos, userId, groupIds);
     return ASSET_SUCCESS;
 }
+
+const char *GetCeUpgradeInfo()
+{
+    return ASSET_CE_UPGRADE_CONFIG;
+}

@@ -395,6 +395,7 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
         }
     }
     let _ = upgrade_clone_app_data(user_id);
+    let _ = upgrade_ce_data(user_id);
 }
 
 pub(crate) fn notify_on_user_removed(user_id: i32) {
