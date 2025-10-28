@@ -51,11 +51,6 @@ if ((result) != nullptr) {                                 \
     return napi_invalid_arg;                               \
 }
 
-#define IF_FALSE_RETURN(result, returnValue)    \
-if (!(result)) {                                \
-    return (returnValue);                       \
-}
-
 #define IF_ERR_RETURN(result)                   \
 if ((result) != napi_ok) {                      \
     return (result);                            \
@@ -76,7 +71,7 @@ napi_value CreateJsMapArray(const napi_env env, const AssetResultSet &resultSet)
 
 napi_value CreateJsUndefined(const napi_env env);
 
-std::function<void(char *)> NapiThrowError(const napi_env env);
+std::function<void(char *, uint32_t)> NapiThrowError(const napi_env env);
 
 napi_status ParseJsArgs(const napi_env env, napi_callback_info info, napi_value *value, size_t valueSize);
 

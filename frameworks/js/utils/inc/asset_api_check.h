@@ -29,12 +29,12 @@ namespace Asset {
 
 #define MAX_MESSAGE_LEN 256
 
-#define IF_FALSE_RETURN(result, returnValue)    \
-if (!(result)) {                                \
-    return (returnValue);                       \
+#define IF_FALSE_RETURN(result)         \
+if (!(result)) {                        \
+    return SEC_ASSET_INVALID_ARGUMENT;  \
 }
 
-#define API_THROW_INVALID_ARGUMENT(throwPtr, format, arg...)                                        \
+#define API_THROW_INVALID_ARGUMENT(throwPtr, errorCode, format, arg...)                             \
 do {                                                                                                \
     char msg[MAX_MESSAGE_LEN] = { 0 };                                                              \
     if ((sprintf_s(msg, MAX_MESSAGE_LEN, format, ##arg)) == -1) {                                   \
@@ -43,7 +43,7 @@ do {                                                                            
     }                                                                                               \
     LOGE("[FATAL][API]%{public}s", (msg));                                                          \
     if (throwPtr != nullptr) {                                                                      \
-        throwPtr(msg);                                                                              \
+        throwPtr(msg, errorCode);                                                                   \
     }                                                                                               \
 } while (0)
 
@@ -84,29 +84,30 @@ const std::unordered_map<uint32_t, const char *> TAG_MAP = {
 };
 
 bool CheckAssetRequiredTag(const std::vector<AssetAttr> &attrs,
-    const std::vector<uint32_t> &requiredTags, std::function<void(char *)> throwPtr);
+    const std::vector<uint32_t> &requiredTags, uint32_t errorCode, std::function<void(char *, uint32_t)> throwPtr);
 
 bool CheckAssetTagValidity(const std::vector<AssetAttr> &attrs,
-    const std::vector<uint32_t> &validTags, std::function<void(char *)> throwPtr);
+    const std::vector<uint32_t> &validTags, uint32_t errorCode, std::function<void(char *, uint32_t)> throwPtr);
 
-bool CheckAssetValueValidity(const std::vector<AssetAttr> &attrs, std::function<void(char *)> throwPtr);
+bool CheckAssetValueValidity(const std::vector<AssetAttr> &attrs, uint32_t errorCode,
+    std::function<void(char *, uint32_t)> throwPtr);
 
-bool CheckAssetPresence(const std::vector<AssetAttr> &attrs, std::function<void(char *)> throwPtr);
+bool CheckAssetPresence(const std::vector<AssetAttr> &attrs, std::function<void(char *, uint32_t)> throwPtr);
 
-int32_t CheckAddArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *)> throwPtr);
+int32_t CheckAddArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *, uint32_t)> throwPtr);
 
-int32_t CheckPostQueryArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *)> throwPtr);
+int32_t CheckPostQueryArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *, uint32_t)> throwPtr);
 
-int32_t CheckPreQueryArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *)> throwPtr);
+int32_t CheckPreQueryArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *, uint32_t)> throwPtr);
 
-int32_t CheckQueryArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *)> throwPtr);
+int32_t CheckQueryArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *, uint32_t)> throwPtr);
 
-int32_t CheckRemoveArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *)> throwPtr);
+int32_t CheckRemoveArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *, uint32_t)> throwPtr);
 
 int32_t CheckUpdateArgs(const std::vector<AssetAttr> &attrs, const std::vector<AssetAttr> &updateAttrs,
-    std::function<void(char *)> throwPtr);
+    std::function<void(char *, uint32_t)> throwPtr);
 
-int32_t CheckQuerySyncResultArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *)> throwPtr);
+int32_t CheckQuerySyncResultArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *, uint32_t)> throwPtr);
 
 } // Asset
 } // Security
