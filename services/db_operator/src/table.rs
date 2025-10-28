@@ -782,7 +782,7 @@ impl<'a> Table<'a> {
                     let old_row = rows.first().unwrap();
                     let trusted_acc = SyncType::TrustedAccount as u32;
                     if (old_row.get_num_attr(&column::SYNC_TYPE)? & trusted_acc) == trusted_acc
-                        && (datas.get_num_attr(&column::SYNC_TYPE)? & trusted_acc) == trusted_acc
+                        && (new_row.get_num_attr(&column::SYNC_TYPE)? & trusted_acc) == trusted_acc
                     {
                         new_row.insert(column::CLOUD_VERSION, old_row[column::CLOUD_VERSION].clone());
                         new_row.insert(column::GLOBAL_ID, old_row[column::GLOBAL_ID].clone());
