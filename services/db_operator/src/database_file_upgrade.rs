@@ -90,6 +90,7 @@ fn to_hex(bytes: &Vec<u8>) -> Vec<u8> {
     hex_vec
 }
 
+/// use owner info to construct db name
 pub fn construct_hap_owner_info(owner_info: &[u8]) -> Result<String> {
     let owner_info_string = String::from_utf8_lossy(owner_info).to_string();
     let split_owner_info: Vec<&str> = owner_info_string.split(OWNER_INFO_SEPARATOR).collect();
@@ -325,7 +326,7 @@ pub fn create_upgrade_file(user_id: i32, origin_version: OriginVersion) -> Resul
     };
     let _ = fs::set_permissions(file_path, fs::Permissions::from_mode(0o640));
     let upgrade_list = create_upgrade_list_inner(user_id, &origin_version);
-    let content = UpgradeData { version: origin_version as u32, upgrade_list, ce_upgrade: vec![] };
+    let content = UpgradeData { version: origin_version as u32, upgrade_list, ce_upgrade: "".to_string() };
     to_writer(&content, &mut file).map_err(|e| log_and_into_asset_error!(
         ErrCode::FileOperationError, "Write file failed in create_upgrade_file. error: {}", e))
 }
@@ -412,6 +413,7 @@ fn create_upgrade_list_inner(user_id: i32, version: &OriginVersion) -> Vec<Strin
     upgrade_list
 }
 
+/// save UpgradeData to file
 pub fn save_to_writer(user_id: i32, content: &UpgradeData) -> Result<()> {
     let _lock = GLOBAL_FILE_LOCK.lock().unwrap();
     let path_str = fmt_file_path(user_id);
@@ -431,7 +433,6 @@ pub fn save_to_writer(user_id: i32, content: &UpgradeData) -> Result<()> {
 pub fn update_upgrade_list(user_id: i32, remove_file: &String) -> Result<()> {
     let content = get_file_content(user_id)?;
     let mut upgrade_list = content.upgrade_list;
-    
     upgrade_list.retain(|x| x != remove_file);
     
     let content = UpgradeData { version: content.version as u32, upgrade_list, ce_upgrade: content.ce_upgrade };

@@ -55,7 +55,7 @@ use asset_sdk::plugin_interface::{
 };
 
 use crate::data_size_mod::handle_data_size_upload;
-use crate::{sys_event::upload_fault_system_event, PackageInfoFfi, upgrade_operator::upgrade_clone_app_data};
+use crate::{sys_event::upload_fault_system_event, PackageInfoFfi, upgrade_operator};
 
 /// success code.
 const SUCCESS: i32 = 0;
@@ -394,8 +394,8 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
             Err(code) => loge!("process user unlocked event failed, code: {}", code),
         }
     }
-    let _ = upgrade_clone_app_data(user_id);
-    let _ = upgrade_ce_data(user_id);
+    let _ = upgrade_operator::upgrade_clone_app_data(user_id);
+    let _ = upgrade_operator::upgrade_ce_data(user_id);
 }
 
 pub(crate) fn notify_on_user_removed(user_id: i32) {

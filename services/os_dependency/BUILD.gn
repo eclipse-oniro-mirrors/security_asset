@@ -43,7 +43,10 @@ ohos_static_library("asset_os_dependency") {
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
   ]
-  cflags = [ "-DASSET_UPGRADE_HAP_CONFIG=${asset_split_hap_list}", "-DASSET_CE_UPGRADE_CONFIG=${asset_ce_upgrade_list}" ]
+  cflags = [ 
+    "-DASSET_UPGRADE_HAP_CONFIG=${asset_split_hap_list}", 
+    "-DASSET_CE_UPGRADE_CONFIG=\"${asset_ce_upgrade_list}\"" 
+  ]
   subsystem_name = "security"
   part_name = "asset"
 }

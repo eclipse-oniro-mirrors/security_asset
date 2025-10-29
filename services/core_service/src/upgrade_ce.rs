@@ -16,7 +16,7 @@
 //! This module provides interfaces for upgrade clone apps.
 //! Databases are isolated based on users and protected by locks.
 
-use std::{ffi::CString, collections::HashSet};
+use std::{fs, ffi::CStr, collections::HashSet};
 use std::os::raw::c_char;
 
 use asset_common::{CallingInfo, OwnerType, OWNER_INFO_SEPARATOR, SUCCESS};
@@ -31,6 +31,8 @@ use asset_db_operator::{
     types::{column, DbMap},
 };
 use asset_crypto_manager::db_key_operator;
+use asset_log::{logw, logi};
+use asset_file_operator::common::BACKUP_SUFFIX;
 
 use crate::operations::common;
 
@@ -40,11 +42,11 @@ extern "C" {
 
 /// Upgrade data to ce apps.
 pub fn upgrade_ce_data(user_id: i32) -> Result<()> {
-    let mut upgrade_data = get_file_content(user_id)?;
-    upgrade_ce(user_id, mut upgrade_data)
+    let mut upgrade_data = database_file_upgrade::get_file_content(user_id)?;
+    upgrade_ce(user_id, &mut upgrade_data)
 }
 
-fn get_ce_upgrade_info() -> &[u8] {
+fn get_ce_upgrade_info() -> &'static [u8] {
     let info = unsafe { GetCeUpgradeInfo() };
     if !info.is_null() {
         let c_str = unsafe { CStr::from_ptr(info as _) };
@@ -108,7 +110,7 @@ fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()>
     remove_db(&path_str)?;
 }
 
-fn upgrade_ce(user_id: i32, upgrade_data: mut UpgradeData) -> Result<()> {
+fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData) -> Result<()> {
     if !upgrade_data.ce_upgrade.is_empty() {
         return Ok(());
     }
@@ -121,5 +123,5 @@ fn upgrade_ce(user_id: i32, upgrade_data: mut UpgradeData) -> Result<()> {
     let ce_upgrade_db_name = construct_hap_owner_info(upgrade_info)?;
     upgrade_ce_data_process(user_id, &ce_upgrade_db_name)?;
     upgrade_data.ce_upgrade = ce_upgrade_db_name;
-    database_file_upgrade.save_to_writer(user_id, &upgrade_data)
+    database_file_upgrade::save_to_writer(user_id, upgrade_data)
 }
