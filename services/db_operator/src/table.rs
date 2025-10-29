@@ -784,8 +784,12 @@ impl<'a> Table<'a> {
                     if (old_row.get_num_attr(&column::SYNC_TYPE)? & trusted_acc) == trusted_acc
                         && (new_row.get_num_attr(&column::SYNC_TYPE)? & trusted_acc) == trusted_acc
                     {
-                        new_row.insert(column::CLOUD_VERSION, old_row[column::CLOUD_VERSION].clone());
-                        new_row.insert(column::GLOBAL_ID, old_row[column::GLOBAL_ID].clone());
+                        if let Some(cloud_ver) = old_row.get(column::CLOUD_VERSION) {
+                            new_row.insert(column::CLOUD_VERSION, cloud_ver.clone());
+                        }
+                        if let Some(global_id) = old_row.get(column::GLOBAL_ID) {
+                            new_row.insert(column::GLOBAL_ID, global_id.clone());
+                        }
                     }
                 }
             }
