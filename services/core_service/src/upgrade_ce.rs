@@ -16,25 +16,16 @@
 //! This module provides interfaces for upgrade clone apps.
 //! Databases are isolated based on users and protected by locks.
 
-use std::{fs, ffi::CStr, collections::HashSet};
-use std::os::raw::c_char;
+use std::{fs, ffi::CStr, path::Path};
 
-use asset_common::{CallingInfo, OwnerType, OWNER_INFO_SEPARATOR, SUCCESS};
-use asset_definition::{log_throw_error, Accessibility, AuthType, ErrCode, Extension, Result, Value};
-use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::plugin_interface::{
-    EventType, ExtDbMap, PARAM_NAME_AAD, PARAM_NAME_ACCESSIBILITY, PARAM_NAME_APP_INDEX, PARAM_NAME_CIPHER,
-    PARAM_NAME_DECRYPT_KEY_ALIAS, PARAM_NAME_ENCRYPT_KEY_ALIAS, PARAM_NAME_USER_ID,
-};
+use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_db_operator::{
-    database::Database, database_file_upgrade,
+    database::{self, Database}, database_file_upgrade::{self, UpgradeData},
     types::{column, DbMap},
 };
 use asset_crypto_manager::db_key_operator;
 use asset_log::{logw, logi};
 use asset_file_operator::common::BACKUP_SUFFIX;
-
-use crate::operations::common;
 
 extern "C" {
     fn GetCeUpgradeInfo() -> *const u8;
@@ -51,24 +42,24 @@ fn get_ce_upgrade_info() -> &'static [u8] {
     if !info.is_null() {
         let c_str = unsafe { CStr::from_ptr(info as _) };
         if let Ok(result) = c_str.to_str() {
-            return result.as_tytes()
+            return result.as_bytes()
         }
     }
-    return &[];
+    &[]
 }
 
 fn remove_db(path: &str) -> Result<()> {
     let backup_db_path = format!("{}{}", path, BACKUP_SUFFIX);
-    let _ = match fs::remove_file(&path) {
+    match fs::remove_file(path) {
         Ok(_) => (),
         Err(e) => {
-            logw!("[WARNING]Remove db:[{}] failed, error code:[{}]", db_file_name, e);
+            logw!("[WARNING]Remove db:[{}] failed, error code:[{}]", path, e);
         },
     };
-    let _ = match fs::remove_file(&backup_db_path) {
+    match fs::remove_file(&backup_db_path) {
         Ok(_) => (),
         Err(e) => {
-            logw!("[WARNING]Remove db:[{}] failed, error code:[{}]", db_file_name, e);
+            logw!("[WARNING]Remove db:[{}] failed, error code:[{}]", &backup_db_path, e);
         },
     };
     Ok(())
@@ -91,12 +82,12 @@ fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()>
     // store data in ce
     let ce_db_name = format!("enc_{}", ce_upgrade_db_name);
     let db_key = db_key_operator::get_db_key(user_id, true)?;
-    let mut ce_db = Database::build_with_file_name(user_id, ce_db_name, &db_key)?;
+    let mut ce_db = Database::build_with_file_name(user_id, &ce_db_name, &db_key)?;
     ce_db.exec("begin transaction")?;
     let mut need_rollback = false;
-    for data in &datas {
+    for data in datas.iter_mut() {
         data.remove(column::ID);
-        if ce_db.insert_datas(&data).is_err() {
+        if ce_db.insert_datas(data).is_err() {
             need_rollback = true;
             break;
         }
@@ -106,8 +97,8 @@ fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()>
         ce_db.exec("rollback")?;
         return log_throw_error!(ErrCode::DatabaseError, "Upgrade clone app data failed.");
     }
-    ce_db.exec("commit");
-    remove_db(&path_str)?;
+    ce_db.exec("commit")?;
+    remove_db(&path_str)
 }
 
 fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData) -> Result<()> {
@@ -120,7 +111,7 @@ fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData) -> Result<()> {
         return Ok(());
     }
 
-    let ce_upgrade_db_name = construct_hap_owner_info(upgrade_info)?;
+    let ce_upgrade_db_name = database_file_upgrade::construct_hap_owner_info(upgrade_info)?;
     upgrade_ce_data_process(user_id, &ce_upgrade_db_name)?;
     upgrade_data.ce_upgrade = ce_upgrade_db_name;
     database_file_upgrade::save_to_writer(user_id, upgrade_data)
