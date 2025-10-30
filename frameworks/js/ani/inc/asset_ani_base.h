@@ -41,7 +41,7 @@ protected:
 
     char errMsg_[MAX_MESSAGE_LEN];
 
-    std::function<void(char *)> AniGetError();
+    std::function<void(char *, uint32_t)> AniGetError();
 
 private:
     int32_t Parse(ani_env *env, const ani_object &attributes);

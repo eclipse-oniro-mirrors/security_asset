@@ -161,11 +161,6 @@ napi_value CreateJsMap(const napi_env env, const AssetResult &result)
 
 void ResolvePromise(const napi_env env, BaseContext *context)
 {
-    if (context->error != nullptr) {
-        NAPI_CALL_RETURN_VOID(env, napi_reject_deferred(env, context->deferred, context->error));
-        return;
-    }
-
     if (context->result == SEC_ASSET_SUCCESS) {
         napi_value result = context->resolve(env, context);
         NAPI_CALL_RETURN_VOID(env, napi_resolve_deferred(env, context->deferred, result));
@@ -280,10 +275,10 @@ napi_value CreateJsMapArray(const napi_env env, const AssetResultSet &resultSet)
     return array;
 }
 
-std::function<void(char *)> NapiThrowError(const napi_env env)
+std::function<void(char *, uint32_t)> NapiThrowError(const napi_env env)
 {
-    return [env](char *errorMsg) {
-        napi_throw((env), CreateJsError((env), SEC_ASSET_INVALID_ARGUMENT, (errorMsg)));
+    return [env](char *errorMsg, uint32_t errorCode) {
+        napi_throw((env), CreateJsError((env), static_cast<int32_t>(errorCode), (errorMsg)));
     };
 }
 
@@ -311,6 +306,13 @@ napi_value CreateAsyncWork(const napi_env env, napi_callback_info info, std::uni
 
     napi_value promise;
     NAPI_CALL(env, napi_create_promise(env, &context->deferred, &promise));
+    if (context->check != nullptr) {
+        int32_t errorCode = context->check(context->attrs, NapiThrowError(env));
+        if (errorCode != SEC_ASSET_SUCCESS) {
+            NAPI_CALL(env, napi_reject_deferred(env, context->deferred, CreateJsError(env, errorCode)));
+            return promise;
+        }
+    }
     napi_value resource = nullptr;
     NAPI_CALL(env, napi_create_string_utf8(env, resourceName, NAPI_AUTO_LENGTH, &resource));
     NAPI_CALL(env, napi_create_async_work(env, nullptr, resource, context->execute,

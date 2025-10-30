@@ -42,11 +42,10 @@ napi_value NapiQuerySyncResult(const napi_env env, napi_callback_info info)
         return napi_ok;
     };
 
+    context->check = CheckQuerySyncResultArgs;
+
     context->execute = [](napi_env env, void *data) {
         QuerySyncResultContext *context = static_cast<QuerySyncResultContext *>(data);
-        if (CheckQuerySyncResultArgs(context->attrs, NapiThrowError(env)) != SEC_ASSET_SUCCESS) {
-            return;
-        }
         context->result = AssetQuerySyncResult(&context->attrs[0], context->attrs.size(), &context->syncResult);
     };
 

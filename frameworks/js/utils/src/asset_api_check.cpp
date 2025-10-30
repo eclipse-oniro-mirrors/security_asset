@@ -39,7 +39,7 @@ namespace {
 #define MIN_NUMBER_VALUE 0
 #define MAX_AUTH_VALID_PERIOD 600
 #define CHALLENGE_SIZE 32
-#define AUTH_TOKEN_SIZE 280
+#define MAX_AUTH_TOKEN_SIZE 1024
 #define MAX_LABEL_SIZE 2048
 #define MAX_RETURN_LIMIT 0x10000
 #define SYNC_TYPE_MIN_BITS 0
@@ -175,52 +175,60 @@ const std::vector<uint32_t> ASSET_WRAP_TYPE_VEC = {
     SEC_ASSET_WRAP_TYPE_TRUSTED_ACCOUNT
 };
 
-bool CheckArraySize(const AssetAttr &attr, uint32_t min, uint32_t max, std::function<void(char *)> throwPtr)
+bool CheckArraySize(const AssetAttr &attr, uint32_t min, uint32_t max, uint32_t errorCode,
+    std::function<void(char *, uint32_t)> throwPtr)
 {
     if (attr.value.blob.size > max || attr.value.blob.size <= min) {
-        API_THROW_INVALID_ARGUMENT(throwPtr, "Value byte length[%u] of tag[asset.Tag.%s] is out of range[%u, %u].",
+        API_THROW_INVALID_ARGUMENT(throwPtr, errorCode,
+            "Value byte length[%u] of tag[asset.Tag.%s] is out of range[%u, %u].",
             attr.value.blob.size, TAG_MAP.at(attr.tag),  min + 1, max);
         return false;
     }
     return true;
 }
 
-bool CheckEnumVariant(const AssetAttr &attr, const std::vector<uint32_t> &enumVec, std::function<void(char *)> throwPtr)
+bool CheckEnumVariant(const AssetAttr &attr, const std::vector<uint32_t> &enumVec, uint32_t errorCode,
+    std::function<void(char *, uint32_t)> throwPtr)
 {
     auto it = std::find(enumVec.begin(), enumVec.end(), attr.value.u32);
     if (it == enumVec.end()) {
-        API_THROW_INVALID_ARGUMENT(throwPtr, "Value[%u] of tag[asset.Tag.%s] is an illegal enumeration variant.",
-            attr.value.u32, TAG_MAP.at(attr.tag));
+        API_THROW_INVALID_ARGUMENT(throwPtr, errorCode,
+            "Value[%u] of tag[asset.Tag.%s] is an illegal enumeration variant.", attr.value.u32, TAG_MAP.at(attr.tag));
         return false;
     }
     return true;
 }
 
-bool CheckNumberRange(const AssetAttr &attr, uint32_t min, uint32_t max, std::function<void(char *)> throwPtr)
+bool CheckNumberRange(const AssetAttr &attr, uint32_t min, uint32_t max, uint32_t errorCode,
+    std::function<void(char *, uint32_t)> throwPtr)
 {
     if (attr.value.u32 > max || attr.value.u32 <= min) {
-        API_THROW_INVALID_ARGUMENT(throwPtr, "Value[%u] of tag[asset.Tag.%s] is out of range[%u, %u].",
+        API_THROW_INVALID_ARGUMENT(throwPtr, errorCode, "Value[%u] of tag[asset.Tag.%s] is out of range[%u, %u].",
             attr.value.u32, TAG_MAP.at(attr.tag), min, max);
         return false;
     }
     return true;
 }
 
-bool CheckValidBits(const AssetAttr &attr, uint32_t minBits, uint32_t maxBits, std::function<void(char *)> throwPtr)
+bool CheckValidBits(const AssetAttr &attr, uint32_t minBits, uint32_t maxBits, uint32_t errorCode,
+    std::function<void(char *, uint32_t)> throwPtr)
 {
     if (attr.value.u32 >= pow(BINARY_BASE, maxBits) || attr.value.u32 < pow(BINARY_BASE, minBits) - 1) {
-        API_THROW_INVALID_ARGUMENT(throwPtr, "Value[%u] of tag[asset.Tag.%s] has bit count out of range[%u, %u].",
+        API_THROW_INVALID_ARGUMENT(throwPtr, errorCode,
+            "Value[%u] of tag[asset.Tag.%s] has bit count out of range[%u, %u].",
             attr.value.u32, TAG_MAP.at(attr.tag), minBits + 1, maxBits);
         return false;
     }
     return true;
 }
 
-bool CheckTagRange(const AssetAttr &attr, const std::vector<uint32_t> &tags, std::function<void(char *)> throwPtr)
+bool CheckTagRange(const AssetAttr &attr, const std::vector<uint32_t> &tags, uint32_t errorCode,
+    std::function<void(char *, uint32_t)> throwPtr)
 {
     auto it = std::find(tags.begin(), tags.end(), attr.value.u32);
     if (it == tags.end()) {
-        API_THROW_INVALID_ARGUMENT(throwPtr, "Value[0x%X] of tag[asset.Tag.(%s)] is not tags allowed for sorting, "
+        API_THROW_INVALID_ARGUMENT(throwPtr, errorCode,
+            "Value[0x%X] of tag[asset.Tag.(%s)] is not tags allowed for sorting, "
             "which should start with \"DATA_LABEL\".", attr.value.u32, TAG_MAP.at(attr.tag));
         return false;
     }
@@ -228,7 +236,7 @@ bool CheckTagRange(const AssetAttr &attr, const std::vector<uint32_t> &tags, std
 }
 
 struct CheckContinuousRange {
-    std::function<bool(const AssetAttr &, uint32_t, uint32_t, std::function<void(char *)>)> funcPtr;
+    std::function<bool(const AssetAttr &, uint32_t, uint32_t, uint32_t, std::function<void(char *, uint32_t)>)> funcPtr;
     uint32_t min;
     uint32_t max;
 };
@@ -238,7 +246,7 @@ const std::unordered_map<uint32_t, CheckContinuousRange> CHECK_CONTINOUS_RANGE_F
     { SEC_ASSET_TAG_ALIAS, { &CheckArraySize, MIN_ARRAY_SIZE, MAX_ALIAS_SIZE } },
     { SEC_ASSET_TAG_AUTH_VALIDITY_PERIOD, { &CheckNumberRange, MIN_NUMBER_VALUE, MAX_AUTH_VALID_PERIOD } },
     { SEC_ASSET_TAG_AUTH_CHALLENGE, { &CheckArraySize, CHALLENGE_SIZE - 1, CHALLENGE_SIZE } },
-    { SEC_ASSET_TAG_AUTH_TOKEN, { &CheckArraySize, AUTH_TOKEN_SIZE, AUTH_TOKEN_SIZE } },
+    { SEC_ASSET_TAG_AUTH_TOKEN, { &CheckArraySize, MIN_ARRAY_SIZE, MAX_AUTH_TOKEN_SIZE } },
     { SEC_ASSET_TAG_SYNC_TYPE, { &CheckValidBits, SYNC_TYPE_MIN_BITS, SYNC_TYPE_MAX_BITS } },
     { SEC_ASSET_TAG_DATA_LABEL_CRITICAL_1, { &CheckArraySize, MIN_ARRAY_SIZE, MAX_LABEL_SIZE } },
     { SEC_ASSET_TAG_DATA_LABEL_CRITICAL_2, { &CheckArraySize, MIN_ARRAY_SIZE, MAX_LABEL_SIZE } },
@@ -259,7 +267,8 @@ const std::unordered_map<uint32_t, CheckContinuousRange> CHECK_CONTINOUS_RANGE_F
 };
 
 struct CheckDiscreteRange {
-    std::function<bool(const AssetAttr &, const std::vector<uint32_t> &, std::function<void(char *)>)> funcPtr;
+    std::function<bool(const AssetAttr &, const std::vector<uint32_t> &, uint32_t,
+        std::function<void(char *, uint32_t)>)> funcPtr;
     const std::vector<uint32_t> validRange;
 };
 
@@ -275,14 +284,15 @@ const std::unordered_map<uint32_t, CheckDiscreteRange> CHECK_DISCRETE_RANGE_FUNC
 } // anonymous namespace
 
 bool CheckAssetRequiredTag(const std::vector<AssetAttr> &attrs,
-    const std::vector<uint32_t> &requiredTags, std::function<void(char *)> throwPtr)
+    const std::vector<uint32_t> &requiredTags, uint32_t errorCode, std::function<void(char *, uint32_t)> throwPtr)
 {
     for (uint32_t requiredTag : requiredTags) {
         auto it = std::find_if(attrs.begin(), attrs.end(), [requiredTag](const AssetAttr &attr) {
             return attr.tag == requiredTag;
         });
         if (it == attrs.end()) {
-            API_THROW_INVALID_ARGUMENT(throwPtr, "Missing required tag[asset.Tag.%s].", TAG_MAP.at(requiredTag));
+            API_THROW_INVALID_ARGUMENT(throwPtr, errorCode, "Missing required tag[asset.Tag.%s].",
+                TAG_MAP.at(requiredTag));
             return false;
         }
     }
@@ -290,11 +300,11 @@ bool CheckAssetRequiredTag(const std::vector<AssetAttr> &attrs,
 }
 
 bool CheckAssetTagValidity(const std::vector<AssetAttr> &attrs,
-    const std::vector<uint32_t> &validTags, std::function<void(char *)> throwPtr)
+    const std::vector<uint32_t> &validTags, uint32_t errorCode, std::function<void(char *, uint32_t)> throwPtr)
 {
     for (AssetAttr attr : attrs) {
         if (std::count(validTags.begin(), validTags.end(), attr.tag) == 0) {
-            API_THROW_INVALID_ARGUMENT(throwPtr, "Unsupported tag[asset.Tag.%s] for the function.",
+            API_THROW_INVALID_ARGUMENT(throwPtr, errorCode, "Unsupported tag[asset.Tag.%s] for the function.",
                 TAG_MAP.at(attr.tag));
             return false;
         }
@@ -302,36 +312,37 @@ bool CheckAssetTagValidity(const std::vector<AssetAttr> &attrs,
     return true;
 }
 
-bool CheckAssetValueValidity(const std::vector<AssetAttr> &attrs, std::function<void(char *)> throwPtr)
+bool CheckAssetValueValidity(const std::vector<AssetAttr> &attrs, uint32_t errorCode,
+    std::function<void(char *, uint32_t)> throwPtr)
 {
-    return std::all_of(attrs.begin(), attrs.end(), [throwPtr](const AssetAttr &attr) {
+    return std::all_of(attrs.begin(), attrs.end(), [throwPtr, errorCode](const AssetAttr &attr) {
         if (CHECK_CONTINOUS_RANGE_FUNC_MAP.find(attr.tag) != CHECK_CONTINOUS_RANGE_FUNC_MAP.end()) {
             auto funcPtr = CHECK_CONTINOUS_RANGE_FUNC_MAP.at(attr.tag).funcPtr;
             uint32_t min = CHECK_CONTINOUS_RANGE_FUNC_MAP.at(attr.tag).min;
             uint32_t max = CHECK_CONTINOUS_RANGE_FUNC_MAP.at(attr.tag).max;
-            return funcPtr(attr, min, max, throwPtr);
+            return funcPtr(attr, min, max, errorCode, throwPtr);
         }
         if (CHECK_DISCRETE_RANGE_FUNC_MAP.find(attr.tag) != CHECK_DISCRETE_RANGE_FUNC_MAP.end()) {
             auto funcPtr = CHECK_DISCRETE_RANGE_FUNC_MAP.at(attr.tag).funcPtr;
             auto validRangePtr = CHECK_DISCRETE_RANGE_FUNC_MAP.at(attr.tag).validRange;
-            return funcPtr(attr, validRangePtr, throwPtr);
+            return funcPtr(attr, validRangePtr, errorCode, throwPtr);
         }
         return true;
         });
 }
 
-bool CheckAssetPresence(const std::vector<AssetAttr> &attrs, std::function<void(char *)> throwPtr)
+bool CheckAssetPresence(const std::vector<AssetAttr> &attrs, std::function<void(char *, uint32_t)> throwPtr)
 {
     if (attrs.empty()) {
-        API_THROW_INVALID_ARGUMENT(throwPtr, "Argument[attributesToUpdate] is empty.");
+        API_THROW_INVALID_ARGUMENT(throwPtr, SEC_ASSET_INVALID_ARGUMENT, "Argument[attributesToUpdate] is empty.");
         return false;
     }
     return true;
 }
 
-int32_t CheckAddArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *)> throwPtr)
+int32_t CheckAddArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *, uint32_t)> throwPtr)
 {
-    IF_FALSE_RETURN(CheckAssetRequiredTag(attrs, ADD_REQUIRED_TAGS, throwPtr), SEC_ASSET_INVALID_ARGUMENT);
+    IF_FALSE_RETURN(CheckAssetRequiredTag(attrs, ADD_REQUIRED_TAGS, SEC_ASSET_INVALID_ARGUMENT, throwPtr));
     std::vector<uint32_t> validTags;
     validTags.insert(validTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
@@ -339,22 +350,22 @@ int32_t CheckAddArgs(const std::vector<AssetAttr> &attrs, std::function<void(cha
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
     validTags.insert(validTags.end(), ADD_OPTIONAL_TAGS.begin(), ADD_OPTIONAL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(attrs, validTags, throwPtr), SEC_ASSET_INVALID_ARGUMENT);
-    IF_FALSE_RETURN(CheckAssetValueValidity(attrs, throwPtr), SEC_ASSET_INVALID_ARGUMENT);
+    IF_FALSE_RETURN(CheckAssetTagValidity(attrs, validTags, SEC_ASSET_INVALID_ARGUMENT, throwPtr));
+    IF_FALSE_RETURN(CheckAssetValueValidity(attrs, SEC_ASSET_INVALID_ARGUMENT, throwPtr));
     return SEC_ASSET_SUCCESS;
 }
 
-int32_t CheckPostQueryArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *)> throwPtr)
+int32_t CheckPostQueryArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *, uint32_t)> throwPtr)
 {
-    IF_FALSE_RETURN(CheckAssetRequiredTag(attrs, POST_QUERY_REQUIRED_TAGS, throwPtr), SEC_ASSET_INVALID_ARGUMENT);
+    IF_FALSE_RETURN(CheckAssetRequiredTag(attrs, POST_QUERY_REQUIRED_TAGS, SEC_ASSET_INVALID_ARGUMENT, throwPtr));
     std::vector<uint32_t> validTags;
     validTags.insert(validTags.end(), POST_QUERY_REQUIRED_TAGS.begin(), POST_QUERY_REQUIRED_TAGS.end());
     validTags.insert(validTags.end(), POST_QUERY_OPTIONAL_TAGS.begin(), POST_QUERY_OPTIONAL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetValueValidity(attrs, throwPtr), SEC_ASSET_INVALID_ARGUMENT);
+    IF_FALSE_RETURN(CheckAssetValueValidity(attrs, SEC_ASSET_INVALID_ARGUMENT, throwPtr));
     return SEC_ASSET_SUCCESS;
 }
 
-int32_t CheckPreQueryArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *)> throwPtr)
+int32_t CheckPreQueryArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *, uint32_t)> throwPtr)
 {
     std::vector<uint32_t> validTags;
     validTags.insert(validTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
@@ -362,12 +373,12 @@ int32_t CheckPreQueryArgs(const std::vector<AssetAttr> &attrs, std::function<voi
     validTags.insert(validTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), PRE_QUERY_OPTIONAL_TAGS.begin(), PRE_QUERY_OPTIONAL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(attrs, validTags, throwPtr), SEC_ASSET_INVALID_ARGUMENT);
-    IF_FALSE_RETURN(CheckAssetValueValidity(attrs, throwPtr), SEC_ASSET_INVALID_ARGUMENT);
+    IF_FALSE_RETURN(CheckAssetTagValidity(attrs, validTags, SEC_ASSET_INVALID_ARGUMENT, throwPtr));
+    IF_FALSE_RETURN(CheckAssetValueValidity(attrs, SEC_ASSET_INVALID_ARGUMENT, throwPtr));
     return SEC_ASSET_SUCCESS;
 }
 
-int32_t CheckQueryArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *)> throwPtr)
+int32_t CheckQueryArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *, uint32_t)> throwPtr)
 {
     std::vector<uint32_t> validTags;
     validTags.insert(validTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
@@ -376,53 +387,52 @@ int32_t CheckQueryArgs(const std::vector<AssetAttr> &attrs, std::function<void(c
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
     validTags.insert(validTags.end(), QUERY_OPTIONAL_TAGS.begin(), QUERY_OPTIONAL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(attrs, validTags, throwPtr), SEC_ASSET_INVALID_ARGUMENT);
-    IF_FALSE_RETURN(CheckAssetValueValidity(attrs, throwPtr), SEC_ASSET_INVALID_ARGUMENT);
+    IF_FALSE_RETURN(CheckAssetTagValidity(attrs, validTags, SEC_ASSET_INVALID_ARGUMENT, throwPtr));
+    IF_FALSE_RETURN(CheckAssetValueValidity(attrs, SEC_ASSET_INVALID_ARGUMENT, throwPtr));
     return SEC_ASSET_SUCCESS;
 }
 
-int32_t CheckRemoveArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *)> throwPtr)
+int32_t CheckRemoveArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *, uint32_t)> throwPtr)
 {
     std::vector<uint32_t> validTags;
     validTags.insert(validTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(attrs, validTags, throwPtr), SEC_ASSET_INVALID_ARGUMENT);
-    IF_FALSE_RETURN(CheckAssetValueValidity(attrs, throwPtr), SEC_ASSET_INVALID_ARGUMENT);
+    IF_FALSE_RETURN(CheckAssetTagValidity(attrs, validTags, SEC_ASSET_INVALID_ARGUMENT, throwPtr));
+    IF_FALSE_RETURN(CheckAssetValueValidity(attrs, SEC_ASSET_INVALID_ARGUMENT, throwPtr));
     return SEC_ASSET_SUCCESS;
 }
 
 int32_t CheckUpdateArgs(const std::vector<AssetAttr> &attrs, const std::vector<AssetAttr> &updateAttrs,
-    std::function<void(char *)> throwPtr)
+    std::function<void(char *, uint32_t)> throwPtr)
 {
-    IF_FALSE_RETURN(CheckAssetRequiredTag(attrs, QUERY_REQUIRED_TAGS, throwPtr), SEC_ASSET_INVALID_ARGUMENT);
+    IF_FALSE_RETURN(CheckAssetRequiredTag(attrs, QUERY_REQUIRED_TAGS, SEC_ASSET_INVALID_ARGUMENT, throwPtr));
     std::vector<uint32_t> queryValidTags;
     queryValidTags.insert(queryValidTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(attrs, queryValidTags, throwPtr), SEC_ASSET_INVALID_ARGUMENT);
-    IF_FALSE_RETURN(CheckAssetValueValidity(attrs, throwPtr), SEC_ASSET_INVALID_ARGUMENT);
+    IF_FALSE_RETURN(CheckAssetTagValidity(attrs, queryValidTags, SEC_ASSET_INVALID_ARGUMENT, throwPtr));
+    IF_FALSE_RETURN(CheckAssetValueValidity(attrs, SEC_ASSET_INVALID_ARGUMENT, throwPtr));
 
-    IF_FALSE_RETURN(CheckAssetPresence(updateAttrs, throwPtr), SEC_ASSET_INVALID_ARGUMENT);
+    IF_FALSE_RETURN(CheckAssetPresence(updateAttrs, throwPtr));
     std::vector<uint32_t> updateValidTags;
     updateValidTags.insert(updateValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), UPDATE_OPTIONAL_TAGS.begin(), UPDATE_OPTIONAL_TAGS.end());
-    IF_FALSE_RETURN(CheckAssetTagValidity(updateAttrs, updateValidTags, throwPtr),
-        SEC_ASSET_INVALID_ARGUMENT);
-    IF_FALSE_RETURN(CheckAssetValueValidity(updateAttrs, throwPtr), SEC_ASSET_INVALID_ARGUMENT);
-
+    IF_FALSE_RETURN(CheckAssetTagValidity(updateAttrs, updateValidTags,
+        SEC_ASSET_INVALID_ARGUMENT, throwPtr));
+    IF_FALSE_RETURN(CheckAssetValueValidity(updateAttrs, SEC_ASSET_INVALID_ARGUMENT, throwPtr));
     return SEC_ASSET_SUCCESS;
 }
 
-int32_t CheckQuerySyncResultArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *)> throwPtr)
+int32_t CheckQuerySyncResultArgs(const std::vector<AssetAttr> &attrs, std::function<void(char *, uint32_t)> throwPtr)
 {
-    IF_FALSE_RETURN(CheckAssetTagValidity(attrs, QUERY_SYNC_RESULT_OPTIONAL_TAGS, throwPtr),
-        SEC_ASSET_INVALID_ARGUMENT);
-    IF_FALSE_RETURN(CheckAssetValueValidity(attrs, throwPtr), SEC_ASSET_PARAM_VERIFICATION_FAILED);
+    IF_FALSE_RETURN(CheckAssetTagValidity(attrs, QUERY_SYNC_RESULT_OPTIONAL_TAGS,
+        SEC_ASSET_PARAM_VERIFICATION_FAILED, throwPtr));
+    IF_FALSE_RETURN(CheckAssetValueValidity(attrs, SEC_ASSET_PARAM_VERIFICATION_FAILED, throwPtr));
 
     return SEC_ASSET_SUCCESS;
 }

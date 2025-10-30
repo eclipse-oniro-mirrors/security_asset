@@ -53,9 +53,9 @@ ani_object AniBaseContext::ProcessAsUser(ani_env *env, const ani_object &attribu
     return Process(env, attributes);
 }
 
-std::function<void(char *)> AniBaseContext::AniGetError()
+std::function<void(char *, uint32_t)> AniBaseContext::AniGetError()
 {
-    return [this](char *errMsg) {
+    return [this](char *errMsg, uint32_t errorCode) {
         (void)strcpy_s(errMsg_, MAX_MESSAGE_LEN, errMsg);
     };
 }
