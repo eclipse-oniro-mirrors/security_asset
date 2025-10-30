@@ -443,7 +443,7 @@ int32_t ParseAssetAttributeFromAni(ani_env *env, const ani_object &paramObj, std
 int32_t CreateAniMapArray(ani_env *env, const AssetResultSet &resultSet, ani_object &mapArrayOut)
 {
     ani_class arrayCls;
-    std::string arrDesc = arkts::ani_signature::Builder::BuildClass({"escompat", "Array"}).Descriptor();
+    std::string arrDesc = arkts::ani_signature::Builder::BuildClass({"std", "core", "Array"}).Descriptor();
     if (env->FindClass(arrDesc.c_str(), &arrayCls) != ANI_OK) {
         LOGE("FindClass array failed.");
         return SEC_ASSET_INVALID_ARGUMENT;
