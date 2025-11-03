@@ -16,7 +16,7 @@
 //! This module provides interfaces for upgrade clone apps.
 //! Databases are isolated based on users and protected by locks.
 
-use std::{fs, ffi::CStr, path::Path};
+use std::{fs, path::Path};
 
 use asset_definition::{log_throw_error, ErrCode, Result};
 use asset_db_operator::{
@@ -27,8 +27,9 @@ use asset_crypto_manager::db_key_operator;
 use asset_log::{logw, logi};
 use asset_file_operator::common::BACKUP_SUFFIX;
 
+use crate::{get_ce_upgrade_info, UPGRADE_CE_MUTEX};
+
 extern "C" {
-    fn GetCeUpgradeInfo() -> *const u8;
     fn StoreUpgradeInSetting(user_id: i32) -> bool;
 }
 
@@ -36,17 +37,6 @@ extern "C" {
 pub fn upgrade_ce_data(user_id: i32) -> Result<()> {
     let mut upgrade_data = database_file_upgrade::get_file_content(user_id)?;
     upgrade_ce(user_id, &mut upgrade_data)
-}
-
-fn get_ce_upgrade_info() -> &'static [u8] {
-    let info = unsafe { GetCeUpgradeInfo() };
-    if !info.is_null() {
-        let c_str = unsafe { CStr::from_ptr(info as _) };
-        if let Ok(result) = c_str.to_str() {
-            return result.as_bytes()
-        }
-    }
-    &[]
 }
 
 fn remove_db(path: &str) -> Result<()> {
@@ -110,6 +100,7 @@ fn store_upgrade_info_in_settings(user_id: i32) -> Result<()> {
 }
 
 fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData) -> Result<()> {
+    let _rwlock = UPGRADE_CE_MUTEX.write().unwrap();
     if !upgrade_data.ce_upgrade.is_empty() {
         return Ok(());
     }
