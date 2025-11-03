@@ -23,6 +23,7 @@ ohos_static_library("asset_os_dependency") {
   sources = [
     "src/access_token_wrapper.cpp",
     "src/bms_wrapper.cpp",
+    "src/data_share_wrapper.cpp",
     "src/os_account_wrapper.cpp",
     "src/system_ability_wrapper.cpp",
     "src/system_event_wrapper.cpp",
@@ -37,6 +38,8 @@ ohos_static_library("asset_os_dependency") {
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
     "hilog:libhilog",
     "netmanager_base:net_conn_manager_if",
     "ipc:ipc_single",

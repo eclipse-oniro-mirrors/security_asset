@@ -29,6 +29,7 @@ use asset_file_operator::common::BACKUP_SUFFIX;
 
 extern "C" {
     fn GetCeUpgradeInfo() -> *const u8;
+    fn StoreUpgradeInSetting(user_id: i32) -> bool;
 }
 
 /// Upgrade data to ce apps.
@@ -101,6 +102,13 @@ fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()>
     remove_db(&path_str)
 }
 
+fn store_upgrade_info_in_settings(user_id: i32) -> Result<()> {
+    match unsafe{ StoreUpgradeInSetting(user_id) } {
+        true => Ok(()),
+        false => log_throw_error!(ErrCode::DatabaseError, "store data in setting failed."),
+    }
+}
+
 fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData) -> Result<()> {
     if !upgrade_data.ce_upgrade.is_empty() {
         return Ok(());
@@ -114,5 +122,6 @@ fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData) -> Result<()> {
     let ce_upgrade_db_name = database_file_upgrade::construct_hap_owner_info(upgrade_info)?;
     upgrade_ce_data_process(user_id, &ce_upgrade_db_name)?;
     upgrade_data.ce_upgrade = ce_upgrade_db_name;
+    store_upgrade_info_in_settings(user_id)?;
     database_file_upgrade::save_to_writer(user_id, upgrade_data)
 }
