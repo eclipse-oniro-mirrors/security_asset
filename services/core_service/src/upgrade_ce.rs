@@ -16,9 +16,9 @@
 //! This module provides interfaces for upgrade clone apps.
 //! Databases are isolated based on users and protected by locks.
 
-use std::{fs, path::Path};
+use std::{fs, io::ErrorKind, path::Path};
 
-use asset_definition::{log_throw_error, ErrCode, Result};
+use asset_definition::{log_throw_error, AssetError, ErrCode, Result};
 use asset_db_operator::{
     database::{self, Database}, database_file_upgrade::{self, UpgradeData},
     types::{column, DbMap},
@@ -41,19 +41,18 @@ pub fn upgrade_ce_data(user_id: i32) -> Result<()> {
 
 fn remove_db(path: &str) -> Result<()> {
     let backup_db_path = format!("{}{}", path, BACKUP_SUFFIX);
-    match fs::remove_file(path) {
-        Ok(_) => (),
-        Err(e) => {
-            logw!("[WARNING]Remove db:[{}] failed, error code:[{}]", path, e);
-        },
-    };
-    match fs::remove_file(&backup_db_path) {
-        Ok(_) => (),
-        Err(e) => {
-            logw!("[WARNING]Remove db:[{}] failed, error code:[{}]", &backup_db_path, e);
-        },
-    };
-    Ok(())
+    let mut res = Ok(());
+    for path in [path, &backup_db_path] {
+        match fs::remove_file(path) {
+            Ok(_) => (),
+            Err(e) if e.kind() == ErrorKind::NotFound => (),
+            Err(e) => {
+                logw!("[WARNING]Remove db:[{}] failed, error code:[{}]", path, e);
+                res = Err(AssetError { code: ErrCode::DatabaseError, msg: "rmove file failed".to_string() })
+            },
+        };
+    }
+    res
 }
 
 fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()> {
