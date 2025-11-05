@@ -62,7 +62,7 @@ pub struct UpgradeData {
     /// The list of haps to be upgraded.
     pub upgrade_list: Vec<String>,
     /// ce to be upgraded.
-    pub ce_upgrade: String,
+    pub ce_upgrade: Option<String>,
 }
 
 lazy_static! {
@@ -326,7 +326,7 @@ pub fn create_upgrade_file(user_id: i32, origin_version: OriginVersion) -> Resul
     };
     let _ = fs::set_permissions(file_path, fs::Permissions::from_mode(0o640));
     let upgrade_list = create_upgrade_list_inner(user_id, &origin_version);
-    let content = UpgradeData { version: origin_version as u32, upgrade_list, ce_upgrade: "".to_string() };
+    let content = UpgradeData { version: origin_version as u32, upgrade_list, ce_upgrade: None };
     to_writer(&content, &mut file).map_err(|e| log_and_into_asset_error!(
         ErrCode::FileOperationError, "Write file failed in create_upgrade_file. error: {}", e))
 }

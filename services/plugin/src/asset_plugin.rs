@@ -465,7 +465,7 @@ impl IAssetPluginCtx for AssetContext {
     /// is ce upgrade
     fn is_ce_upgrade(&self, user_id: i32) -> bool {
         match get_file_content(user_id) {
-            Ok(res) => !res.ce_upgrade.is_empty(),
+            Ok(res) => res.ce_upgrade.is_some(),
             Err(_e) => false
         }
     }

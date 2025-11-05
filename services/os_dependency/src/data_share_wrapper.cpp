@@ -70,7 +70,7 @@ bool StoreUpgradeInSetting(int32_t userId)
     auto uri = Uri(std::string(SETTING_URI_PROXY_PREFIX) + std::to_string(userId) 
         + std::string(SETTING_URI_PROXY_SUFFIX));
     int32_t result = helper->Insert(uri, valuesBucket);
-    if (result != 0) {
+    if (result < 0) {
         LOGE("[FATAL]Datashare insert failed, ret=%{public}d", result);
         helper->Release();
         return false;

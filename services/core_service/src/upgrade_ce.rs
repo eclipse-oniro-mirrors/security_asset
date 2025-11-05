@@ -101,7 +101,7 @@ fn store_upgrade_info_in_settings(user_id: i32) -> Result<()> {
 
 fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData) -> Result<()> {
     let _rwlock = UPGRADE_CE_MUTEX.write().unwrap();
-    if !upgrade_data.ce_upgrade.is_empty() {
+    if upgrade_data.ce_upgrade.is_some() {
         return Ok(());
     }
     logi!("[INFO]start ce upgrade [{}].", user_id);
@@ -112,7 +112,7 @@ fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData) -> Result<()> {
 
     let ce_upgrade_db_name = database_file_upgrade::construct_hap_owner_info(upgrade_info)?;
     upgrade_ce_data_process(user_id, &ce_upgrade_db_name)?;
-    upgrade_data.ce_upgrade = ce_upgrade_db_name;
+    upgrade_data.ce_upgrade = Some(ce_upgrade_db_name);
     store_upgrade_info_in_settings(user_id)?;
     database_file_upgrade::save_to_writer(user_id, upgrade_data)
 }
