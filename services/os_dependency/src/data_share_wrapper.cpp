@@ -36,7 +36,7 @@ constexpr const int32_t ASSET_SA_ID = 8100;
 
 std::shared_ptr<OHOS::DataShare::DataShareHelper> CreateDataShareHelper(int32_t userId)
 {
-    auto SETTING_URI_PROXY = std::string(SETTING_URI_PROXY_PREFIX) + std::to_string(userId) 
+    auto SETTING_URI_PROXY = std::string(SETTING_URI_PROXY_PREFIX) + std::to_string(userId)
         + std::string(SETTING_URI_PROXY_SUFFIX);
     auto systemAbilityManager = OHOS::SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (systemAbilityManager == nullptr) {
@@ -67,7 +67,7 @@ bool StoreUpgradeInSetting(int32_t userId)
     OHOS::DataShare::DataShareValuesBucket valuesBucket;
     valuesBucket.Put(SETTING_COLUMN_KEYWORD, ce_upgrade);
     valuesBucket.Put(SETTING_COLUMN_VALUE, true);
-    auto uri = Uri(std::string(SETTING_URI_PROXY_PREFIX) + std::to_string(userId) 
+    auto uri = Uri(std::string(SETTING_URI_PROXY_PREFIX) + std::to_string(userId)
         + std::string(SETTING_URI_PROXY_SUFFIX));
     int32_t result = helper->Insert(uri, valuesBucket);
     if (result < 0) {
