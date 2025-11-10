@@ -16,9 +16,9 @@
 //! This module provides interfaces for upgrade clone apps.
 //! Databases are isolated based on users and protected by locks.
 
-use std::{fs, io::ErrorKind, path::Path};
+use std::{fs, io::ErrorKind, path::Path, time::Instant};
 
-use asset_definition::{log_throw_error, AssetError, ErrCode, Result};
+use asset_definition::{log_throw_error, AssetError, AssetMap, ErrCode, Result};
 use asset_db_operator::{
     database::{self, Database}, database_file_upgrade::{self, UpgradeData},
     types::{column, DbMap},
@@ -26,8 +26,9 @@ use asset_db_operator::{
 use asset_crypto_manager::db_key_operator;
 use asset_log::{logw, logi};
 use asset_file_operator::common::BACKUP_SUFFIX;
+use asset_common::CallingInfo;
 
-use crate::{get_ce_upgrade_info, UPGRADE_CE_MUTEX};
+use crate::{get_ce_upgrade_info, sys_event::upload_system_event, UPGRADE_CE_MUTEX};
 
 extern "C" {
     fn StoreUpgradeInSetting(user_id: i32) -> bool;
@@ -113,5 +114,9 @@ fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData) -> Result<()> {
     upgrade_ce_data_process(user_id, &ce_upgrade_db_name)?;
     upgrade_data.ce_upgrade = Some(ce_upgrade_db_name);
     store_upgrade_info_in_settings(user_id)?;
-    database_file_upgrade::save_to_writer(user_id, upgrade_data)
+    database_file_upgrade::save_to_writer(user_id, upgrade_data)?;
+    let calling_info = CallingInfo::new_self();
+    let start = Instant::now();
+    let _ = upload_system_event(Ok(()), &calling_info, start, "", &AssetMap::new());
+    Ok(())
 }
