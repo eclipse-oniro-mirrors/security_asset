@@ -253,7 +253,7 @@ impl_enum_trait! {
 }
 
 /// A struct containing the Asset result code and error message.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct AssetError {
     /// Error code for error occurred.
     pub code: ErrCode,

@@ -78,7 +78,10 @@ fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()>
     let mut need_rollback = false;
     for data in datas.iter_mut() {
         data.remove(column::ID);
-        if ce_db.insert_datas(data).is_err() {
+        if let Err(e) = ce_db.insert_datas(data) {
+            if e.code == ErrCode::Duplicated {
+                continue;
+            }
             need_rollback = true;
             break;
         }
@@ -86,7 +89,7 @@ fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()>
     // remove de and de backup
     if need_rollback {
         ce_db.exec("rollback")?;
-        return log_throw_error!(ErrCode::DatabaseError, "Upgrade clone app data failed.");
+        return log_throw_error!(ErrCode::DatabaseError, "Upgrade ce data failed.");
     }
     ce_db.exec("commit")?;
     remove_db(&path_str)
@@ -99,24 +102,30 @@ fn store_upgrade_info_in_settings(user_id: i32) -> Result<()> {
     }
 }
 
+fn upgrade_ce_process(user_id: i32, upgrade_data: &mut UpgradeData, upgrade_info: &'static [u8]) -> Result<()> {
+    let ce_upgrade_db_name = database_file_upgrade::construct_hap_owner_info(upgrade_info)?;
+    upgrade_ce_data_process(user_id, &ce_upgrade_db_name)?;
+    upgrade_data.ce_upgrade = Some(ce_upgrade_db_name);
+    store_upgrade_info_in_settings(user_id)?;
+    database_file_upgrade::save_to_writer(user_id, upgrade_data)
+}
+
 fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData) -> Result<()> {
     let _rwlock = UPGRADE_CE_MUTEX.write().unwrap();
     if upgrade_data.ce_upgrade.is_some() {
         return Ok(());
     }
-    logi!("[INFO]start ce upgrade [{}].", user_id);
     let upgrade_info = get_ce_upgrade_info();
     if upgrade_info.is_empty() {
         return Ok(());
     }
 
-    let ce_upgrade_db_name = database_file_upgrade::construct_hap_owner_info(upgrade_info)?;
-    upgrade_ce_data_process(user_id, &ce_upgrade_db_name)?;
-    upgrade_data.ce_upgrade = Some(ce_upgrade_db_name);
-    store_upgrade_info_in_settings(user_id)?;
-    database_file_upgrade::save_to_writer(user_id, upgrade_data)?;
+    logi!("[INFO]start ce upgrade [{}].", user_id);
     let calling_info = CallingInfo::new_self();
     let start = Instant::now();
-    let _ = upload_system_event(Ok(()), &calling_info, start, "", &AssetMap::new());
-    Ok(())
+    let upgrade_res = upgrade_ce_process(user_id, upgrade_data, upgrade_info);
+    // todo 这里根据结果 写一下给密码保险箱的状态
+    logi!("[INFO]end ce upgrade [{}].", user_id);
+    let _ = upload_system_event(upgrade_res.clone(), &calling_info, start, "", &AssetMap::new());
+    upgrade_res
 }

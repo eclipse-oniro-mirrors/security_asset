@@ -72,10 +72,7 @@ bool StoreUpgradeInSetting(int32_t userId)
     int32_t result = helper->Insert(uri, valuesBucket);
     if (result < 0) {
         LOGE("[FATAL]Datashare insert failed, ret=%{public}d", result);
-        helper->Release();
-        return false;
     }
-
     helper->Release();
-    return true;
+    return result >= 0;
 }
