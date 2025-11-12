@@ -131,7 +131,6 @@ fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData) -> Result<()> {
     let calling_info = CallingInfo::new_self();
     let start = Instant::now();
     let upgrade_res = upgrade_ce_process(user_id, upgrade_data, upgrade_info);
-    // todo 这里根据结果 写一下给密码保险箱的状态
     if upgrade_res.is_err() {
         let _ = store_upgrade_info_in_settings(user_id, CeUpgradeStatus::Fail);
     }
