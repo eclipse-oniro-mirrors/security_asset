@@ -61,6 +61,8 @@ pub struct UpgradeData {
     pub version: u32,
     /// The list of haps to be upgraded.
     pub upgrade_list: Vec<String>,
+    /// ce to be upgraded.
+    pub ce_upgrade: Option<String>,
 }
 
 lazy_static! {
@@ -88,6 +90,22 @@ fn to_hex(bytes: &Vec<u8>) -> Vec<u8> {
     hex_vec
 }
 
+/// use owner info to construct db name
+pub fn construct_hap_owner_info(owner_info: &[u8]) -> Result<String> {
+    let owner_info_string = String::from_utf8_lossy(owner_info).to_string();
+    let split_owner_info: Vec<&str> = owner_info_string.split(OWNER_INFO_SEPARATOR).collect();
+    if split_owner_info.len() < MINIM_OWNER_INFO_LEN || split_owner_info.last().is_none() {
+        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Wrong queried owner info!");
+    }
+    let app_index = split_owner_info.last().unwrap();
+    let mut split_owner_info_mut = split_owner_info.clone();
+    for _ in 0..REMOVE_INDEX {
+        split_owner_info_mut.pop();
+    }
+    let owner_info = split_owner_info_mut.join("_").clone();
+    Ok(format!("Hap_{}_{}", owner_info, app_index))
+}
+
 /// Use owner_type and owner_info construct db name.
 pub fn construct_splited_db_name(calling_info: &CallingInfo, is_ce: bool) -> Result<String> {
     let mut res: String = match calling_info.owner_type_enum() {
@@ -100,18 +118,7 @@ pub fn construct_splited_db_name(calling_info: &CallingInfo, is_ce: bool) -> Res
             _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Wrong queried owner group info."),
         },
         OwnerType::Hap => {
-            let owner_info_string = String::from_utf8_lossy(calling_info.owner_info()).to_string();
-            let split_owner_info: Vec<&str> = owner_info_string.split(OWNER_INFO_SEPARATOR).collect();
-            if split_owner_info.len() < MINIM_OWNER_INFO_LEN || split_owner_info.last().is_none() {
-                return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Wrong queried owner info!");
-            }
-            let app_index = split_owner_info.last().unwrap();
-            let mut split_owner_info_mut = split_owner_info.clone();
-            for _ in 0..REMOVE_INDEX {
-                split_owner_info_mut.pop();
-            }
-            let owner_info = split_owner_info_mut.join("_").clone();
-            format!("Hap_{}_{}", owner_info, app_index)
+            construct_hap_owner_info(calling_info.owner_info())?
         },
         OwnerType::Native => format!("Native_{}", String::from_utf8_lossy(calling_info.owner_info())),
     };
@@ -319,7 +326,7 @@ pub fn create_upgrade_file(user_id: i32, origin_version: OriginVersion) -> Resul
     };
     let _ = fs::set_permissions(file_path, fs::Permissions::from_mode(0o640));
     let upgrade_list = create_upgrade_list_inner(user_id, &origin_version);
-    let content = UpgradeData { version: origin_version as u32, upgrade_list };
+    let content = UpgradeData { version: origin_version as u32, upgrade_list, ce_upgrade: None };
     to_writer(&content, &mut file).map_err(|e| log_and_into_asset_error!(
         ErrCode::FileOperationError, "Write file failed in create_upgrade_file. error: {}", e))
 }
@@ -406,12 +413,9 @@ fn create_upgrade_list_inner(user_id: i32, version: &OriginVersion) -> Vec<Strin
     upgrade_list
 }
 
-/// Update the list of haps to be upgraded.
-pub fn update_upgrade_list(user_id: i32, remove_file: &String) -> Result<()> {
-    let content = get_file_content(user_id)?;
-    let mut upgrade_list = content.upgrade_list;
+/// save UpgradeData to file
+pub fn save_to_writer(user_id: i32, content: &UpgradeData) -> Result<()> {
     let _lock = GLOBAL_FILE_LOCK.lock().unwrap();
-    upgrade_list.retain(|x| x != remove_file);
     let path_str = fmt_file_path(user_id);
     let file_path = Path::new(&path_str);
     let _ = fs::set_permissions(file_path, fs::Permissions::from_mode(0o640));
@@ -421,7 +425,16 @@ pub fn update_upgrade_list(user_id: i32, remove_file: &String) -> Result<()> {
             return log_throw_error!(ErrCode::FileOperationError, "Create file failed.");
         },
     };
-    let content = UpgradeData { version: content.version as u32, upgrade_list };
     to_writer(&content, &mut file).map_err(|e| log_and_into_asset_error!(
         ErrCode::FileOperationError, "Write file failed in update_upgrade_list. error: {}", e))
+}
+
+/// Update the list of haps to be upgraded.
+pub fn update_upgrade_list(user_id: i32, remove_file: &String) -> Result<()> {
+    let content = get_file_content(user_id)?;
+    let mut upgrade_list = content.upgrade_list;
+    upgrade_list.retain(|x| x != remove_file);
+    
+    let content = UpgradeData { version: content.version as u32, upgrade_list, ce_upgrade: content.ce_upgrade };
+    save_to_writer(user_id, &content)
 }

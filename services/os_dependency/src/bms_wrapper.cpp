@@ -38,6 +38,7 @@ namespace {
 constexpr int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
 
 const char * const UPGRADE_HAP_LIST[] = ASSET_UPGRADE_HAP_CONFIG;
+const char * const CE_UPGRADE_CONFIG = ASSET_CE_UPGRADE_CONFIG;
 
 bool AssetMemCmp(const void *ptr1, const void *ptr2, uint32_t size1, uint32_t size2)
 {
@@ -315,4 +316,9 @@ int32_t GetUninstallGroups(int32_t userId, ConstAssetBlob *developerId, MutAsset
 
     ProcessBundleInfos(bundleInfos, userId, groupIds);
     return ASSET_SUCCESS;
+}
+
+const char *GetCeUpgradeInfo()
+{
+    return CE_UPGRADE_CONFIG;
 }

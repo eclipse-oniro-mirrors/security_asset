@@ -252,6 +252,9 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Add task
     fn add_task(&self, handle: JoinHandle<()>);
+
+    /// check ce upgrade
+    fn is_ce_upgrade(&self, user_id: i32) -> bool;
 }
 
 /// Defines a trait `IAssetPlugin` that specifies the required functionality for an asset plugin implementation.

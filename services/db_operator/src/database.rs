@@ -127,8 +127,8 @@ pub(crate) fn fmt_ce_db_path_with_name(user_id: i32, db_name: &str) -> String {
     format!("data/service/el2/{}/asset_service/{}.db", user_id, db_name)
 }
 
-#[inline(always)]
-pub(crate) fn fmt_de_db_path_with_name(user_id: i32, db_name: &str) -> String {
+/// Fmt de path.
+pub fn fmt_de_db_path_with_name(user_id: i32, db_name: &str) -> String {
     format!("{}/{}/{}.db", DE_ROOT_PATH, user_id, db_name)
 }
 

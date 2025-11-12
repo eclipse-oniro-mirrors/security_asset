@@ -22,7 +22,8 @@
         "features": [
             "asset_access_control_enabled",
             "asset_split_hap_list",
-            "asset_extend_timeout"
+            "asset_extend_timeout",
+            "asset_ce_upgrade_list"
         ],
         "adapted_system_type": [
             "standard"
@@ -39,6 +40,7 @@
                 "bundle_framework",
                 "common_event_service",
                 "c_utils",
+                "data_share",
                 "hilog",
                 "hitrace",
                 "hisysevent",

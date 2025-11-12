@@ -16,4 +16,5 @@ declare_args() {
   asset_access_control_enabled = false
   asset_split_hap_list = "{}"
   asset_extend_timeout = false
+  asset_ce_upgrade_list = ""
 }

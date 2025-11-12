@@ -17,7 +17,7 @@ use asset_common::{CallingInfo, Counter, Group, OwnerType, TaskManager, GROUP_SE
 use asset_crypto_manager::db_key_operator::get_db_key;
 use asset_db_operator::{
     database::{get_path, Database},
-    database_file_upgrade::construct_splited_db_name,
+    database_file_upgrade::{construct_splited_db_name, get_file_content},
     types::{column, DbMap, QueryOptions},
 };
 use asset_file_operator::de_operator::create_user_de_dir;
@@ -461,4 +461,13 @@ impl IAssetPluginCtx for AssetContext {
         let task_manager = TaskManager::get_instance();
         task_manager.lock().unwrap().push_task(handle);
     }
+
+    /// is ce upgrade
+    fn is_ce_upgrade(&self, user_id: i32) -> bool {
+        match get_file_content(user_id) {
+            Ok(res) => res.ce_upgrade.is_some(),
+            Err(_e) => false
+        }
+    }
+    
 }

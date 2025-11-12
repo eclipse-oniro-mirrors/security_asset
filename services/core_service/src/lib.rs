@@ -19,13 +19,16 @@ use ipc::parcel::MsgParcel;
 use samgr::manage::SystemAbilityManager;
 use std::{
     fs,
+    ffi::CStr,
     time::{Duration, Instant},
+    sync::RwLock,
 };
 use system_ability_fwk::{
     ability::{Ability, Handler},
     cxx_share::SystemAbilityOnDemandReason,
 };
 use ylong_runtime::builder::RuntimeBuilder;
+use lazy_static::lazy_static;
 
 use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Counter, TaskManager};
 use asset_crypto_manager::crypto_manager::CryptoManager;
@@ -43,6 +46,7 @@ mod stub;
 mod sys_event;
 mod trace_scope;
 mod upgrade_operator;
+mod upgrade_ce;
 
 use sys_event::upload_system_event;
 use trace_scope::TraceScope;
@@ -50,6 +54,10 @@ use trace_scope::TraceScope;
 use crate::data_size_mod::handle_data_size_upload;
 
 struct AssetAbility;
+
+lazy_static! {
+    static ref UPGRADE_CE_MUTEX: RwLock<()> = RwLock::new(());
+}
 
 trait WantParser<T> {
     fn parse(&self) -> Result<T>;
@@ -230,6 +238,21 @@ static A: extern "C" fn() = {
     init
 };
 
+extern "C" {
+    fn GetCeUpgradeInfo() -> *const u8;
+}
+
+pub(crate) fn get_ce_upgrade_info() -> &'static [u8] {
+    let info = unsafe { GetCeUpgradeInfo() };
+    if !info.is_null() {
+        let c_str = unsafe { CStr::from_ptr(info as _) };
+        if let Ok(result) = c_str.to_str() {
+            return result.as_bytes()
+        }
+    }
+    &[]
+}
+
 struct AssetService {
     system_ability: system_ability_fwk::ability::Handler,
 }
@@ -241,7 +264,14 @@ macro_rules! execute {
         let _trace = TraceScope::trace(func_name);
         // Create de database directory if not exists.
         create_user_de_dir($calling_info.user_id())?;
-        upload_system_event($func($calling_info, $first_arg), $calling_info, start, func_name, $first_arg)
+        let ce_upgrade_info = get_ce_upgrade_info();
+        if ce_upgrade_info == $calling_info.owner_info() {
+            let _rwlock = UPGRADE_CE_MUTEX.read().unwrap();
+            upload_system_event($func($calling_info, $first_arg), $calling_info, start, func_name, $first_arg)
+        } else {
+            upload_system_event($func($calling_info, $first_arg), $calling_info, start, func_name, $first_arg)
+        }
+        
     }};
     ($func:path, $calling_info:expr, $first_arg:expr, $second_arg:expr) => {{
         let func_name = hisysevent::function!();
@@ -249,7 +279,15 @@ macro_rules! execute {
         let _trace = TraceScope::trace(func_name);
         // Create de database directory if not exists.
         create_user_de_dir($calling_info.user_id())?;
-        upload_system_event($func($calling_info, $first_arg, $second_arg), $calling_info, start, func_name, $first_arg)
+        let ce_upgrade_info = get_ce_upgrade_info();
+        if ce_upgrade_info == $calling_info.owner_info() {
+            let _rwlock = UPGRADE_CE_MUTEX.read().unwrap();
+            upload_system_event(
+                $func($calling_info, $first_arg, $second_arg), $calling_info, start, func_name, $first_arg)
+        } else {
+            upload_system_event(
+                $func($calling_info, $first_arg, $second_arg), $calling_info, start, func_name, $first_arg)
+        }
     }};
 }
 
