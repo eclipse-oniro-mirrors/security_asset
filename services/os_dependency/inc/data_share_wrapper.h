@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-bool StoreUpgradeInSetting(int32_t userId);
+bool StoreUpgradeInSetting(int32_t userId, int32_t status);
 
 #ifdef __cplusplus
 }

@@ -31,7 +31,13 @@ use asset_common::CallingInfo;
 use crate::{get_ce_upgrade_info, sys_event::upload_system_event, UPGRADE_CE_MUTEX};
 
 extern "C" {
-    fn StoreUpgradeInSetting(user_id: i32) -> bool;
+    fn StoreUpgradeInSetting(user_id: i32, status: i32) -> bool;
+}
+
+pub(crate) enum CeUpgradeStatus {
+    Start = 0,
+    Fail = -1,
+    End = 1,
 }
 
 /// Upgrade data to ce apps.
@@ -95,18 +101,19 @@ fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()>
     remove_db(&path_str)
 }
 
-fn store_upgrade_info_in_settings(user_id: i32) -> Result<()> {
-    match unsafe{ StoreUpgradeInSetting(user_id) } {
+fn store_upgrade_info_in_settings(user_id: i32, status: CeUpgradeStatus) -> Result<()> {
+    match unsafe{ StoreUpgradeInSetting(user_id, status as i32) } {
         true => Ok(()),
         false => log_throw_error!(ErrCode::DatabaseError, "store data in setting failed."),
     }
 }
 
 fn upgrade_ce_process(user_id: i32, upgrade_data: &mut UpgradeData, upgrade_info: &'static [u8]) -> Result<()> {
+    store_upgrade_info_in_settings(user_id, CeUpgradeStatus::Start)?;
     let ce_upgrade_db_name = database_file_upgrade::construct_hap_owner_info(upgrade_info)?;
     upgrade_ce_data_process(user_id, &ce_upgrade_db_name)?;
     upgrade_data.ce_upgrade = Some(ce_upgrade_db_name);
-    store_upgrade_info_in_settings(user_id)?;
+    store_upgrade_info_in_settings(user_id, CeUpgradeStatus::End)?;
     database_file_upgrade::save_to_writer(user_id, upgrade_data)
 }
 
@@ -125,6 +132,9 @@ fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData) -> Result<()> {
     let start = Instant::now();
     let upgrade_res = upgrade_ce_process(user_id, upgrade_data, upgrade_info);
     // todo 这里根据结果 写一下给密码保险箱的状态
+    if upgrade_res.is_err() {
+        let _ = store_upgrade_info_in_settings(user_id, CeUpgradeStatus::Fail);
+    }
     logi!("[INFO]end ce upgrade [{}].", user_id);
     let _ = upload_system_event(upgrade_res.clone(), &calling_info, start, "", &AssetMap::new());
     upgrade_res

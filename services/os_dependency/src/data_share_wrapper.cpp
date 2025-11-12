@@ -56,7 +56,7 @@ std::shared_ptr<OHOS::DataShare::DataShareHelper> CreateDataShareHelper(int32_t 
 
 } // namespace
 
-bool StoreUpgradeInSetting(int32_t userId)
+bool StoreUpgradeInSetting(int32_t userId, int32_t status)
 {
     auto helper = CreateDataShareHelper(userId);
     if (helper == nullptr) {
@@ -65,14 +65,41 @@ bool StoreUpgradeInSetting(int32_t userId)
     }
     std::string ce_upgrade = std::string(ASSET_CE_UPGRADE);
     OHOS::DataShare::DataShareValuesBucket valuesBucket;
-    valuesBucket.Put(SETTING_COLUMN_KEYWORD, ce_upgrade);
-    valuesBucket.Put(SETTING_COLUMN_VALUE, true);
+    valuesBucket.Put(SETTING_COLUMN_VALUE, status);
     auto uri = Uri(std::string(SETTING_URI_PROXY_PREFIX) + std::to_string(userId)
         + std::string(SETTING_URI_PROXY_SUFFIX));
-    int32_t result = helper->Insert(uri, valuesBucket);
-    if (result < 0) {
-        LOGE("[FATAL]Datashare insert failed, ret=%{public}d", result);
+    // query if exist use update not exist use insert
+    OHOS::DataShare::DataSharePredicates predicates;
+    predicates.EqualTo(SETTING_COLUMN_KEYWORD, ce_upgrade);
+    std::vector<std::string> columns;
+    auto resultSet = helper->Query(uri, predicates, columns);
+    if (resultSet == nullptr) {
+        LOGE("[FATAL]Datashare query failed.");
+        helper->Release();
+        return false;
     }
+
+    int32_t result;
+    int32_t query_count;
+    resultSet->GetRowCount(query_count);
+    switch (query_count) {
+        case 0:
+            valuesBucket.Put(SETTING_COLUMN_KEYWORD, ce_upgrade);
+            result = helper->Insert(uri, valuesBucket);
+            break;
+        case 1:
+            result = helper->Update(uri, predicates, valuesBucket);
+            break;
+        default:
+            LOGE("[FATAL]Datashare query over expected.");
+            result = -1;
+            break;
+    }
+
+    if (result < 0) {
+        LOGE("[FATAL]Datashare insert/update failed, ret=%{public}d", result);
+    }
+    resultSet->Close();
     helper->Release();
     return result >= 0;
 }
