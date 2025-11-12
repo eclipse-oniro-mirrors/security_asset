@@ -135,6 +135,6 @@ fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData) -> Result<()> {
         let _ = store_upgrade_info_in_settings(user_id, CeUpgradeStatus::Fail);
     }
     logi!("[INFO]end ce upgrade [{}].", user_id);
-    let _ = upload_system_event(upgrade_res.clone(), &calling_info, start, "", &AssetMap::new());
+    let _ = upload_system_event(upgrade_res.clone(), &calling_info, start, "upgrade_ce", &AssetMap::new());
     upgrade_res
 }
