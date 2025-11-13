@@ -235,7 +235,7 @@ bool SetAssetAttribute(ani_env *env, const AssetAttr &attr, const ani_enum_item 
             return false;
     }
     std::string setSignature = arkts::ani_signature::SignatureBuilder()
-        .AddClass({"std", "core", "Object"}).AddClass({"std", "core", "Object"})
+        .AddAny().AddAny()
         .SetReturnClass({"escompat", "Map"}).BuildSignatureDescriptor();
     if (env->Object_CallMethodByName_Ref(mapOut, "set", setSignature.c_str(),
         &setRef, enumTag, bufferObj) != ANI_OK) {
@@ -265,7 +265,7 @@ bool ParseAssetValueFromAni(ani_env *env, const ani_object &paramObj, const ani_
     bool ret = false;
     ani_ref valueRef;
     std::string getSignature = arkts::ani_signature::SignatureBuilder()
-        .AddClass({"std", "core", "Object"}).SetReturnClass({"std", "core", "Object"}).BuildSignatureDescriptor();
+        .AddAny().SetReturnAny().BuildSignatureDescriptor();
     if (env->Object_CallMethodByName_Ref(paramObj, "get", getSignature.c_str(), &valueRef,
         tagEnumItem) != ANI_OK) {
         LOGE("Failed to get value for key");
@@ -469,7 +469,7 @@ int32_t CreateAniMapArray(ani_env *env, const AssetResultSet &resultSet, ani_obj
             return SEC_ASSET_INVALID_ARGUMENT;
         }
         std::string setSignature = arkts::ani_signature::SignatureBuilder()
-            .AddInt().AddClass({"std", "core", "Object"}).BuildSignatureDescriptor();
+            .AddInt().AddAny().BuildSignatureDescriptor();
         if (env->Object_CallMethodByName_Void(mapArrayOut, "$_set", setSignature.c_str(), i, mapOut) != ANI_OK) {
             LOGE("Object_CallMethodByName_Void Array failed.");
             return SEC_ASSET_INVALID_ARGUMENT;
