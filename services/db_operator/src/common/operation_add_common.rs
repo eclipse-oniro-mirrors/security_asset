@@ -66,7 +66,7 @@ pub fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
 }
 
 /// Check the permission for sync.
-fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+pub fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     if attributes.get(&Tag::SyncType).is_none()
         || (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0
     {
@@ -87,7 +87,7 @@ fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> R
 }
 
 /// Check the permission for wrap.
-fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+pub fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     if attributes.get(&Tag::WrapType).is_none()
         || attributes.get_enum_attr::<WrapType>(&Tag::WrapType)? == WrapType::Never
     {
@@ -116,9 +116,9 @@ pub fn get_query_condition(attrs: &AssetMap, calling_info: &CallingInfo) -> Resu
     let alias = attrs.get_bytes_attr(&Tag::Alias)?;
     let mut query = DbMap::new();
     if calling_info.group().is_some() {
-        common::add_group(calling_info, &mut query);
+        add_group(calling_info, &mut query);
     } else {
-        common::add_owner_info(calling_info, &mut query);
+        add_owner_info(calling_info, &mut query);
     }
     query.insert(column::ALIAS, Value::Bytes(alias.clone()));
     Ok(query)
