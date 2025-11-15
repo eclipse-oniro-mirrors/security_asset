@@ -21,7 +21,7 @@ use std::{collections::{HashMap, HashSet}, ffi::CStr, fs, ptr::null_mut, sync::{
 
 use asset_common::{CallingInfo, OwnerType, ProcessInfo};
 use asset_crypto_manager::{
-    crypto::Crypto, db_key_operator::generate_secret_key_if_needed, secret_key::{self, SecretKey, rename_key_alias}
+    crypto::Crypto, db_key_operator::generate_secret_key_if_needed, secret_key::{SecretKey, rename_key_alias}
 };
 use asset_definition::{
     log_throw_error, ErrCode, Extension, Result, Value, AssetMap,
@@ -554,11 +554,12 @@ impl Database {
 
     fn parse_attr_array(&mut self,
         db_datas: &mut Vec<DbMap>,
-        err_info: &mut Vec<String>,
+        err_info: &mut Vec<(u32, u32)>,
         aliases: &mut Vec<Vec<u8>>,
         info: &AdditionalInfo
     ) -> Result<HashSet<String>> {
         let mut column_names = HashSet::new();
+        add_not_null_column(&mut column_names);
         for (index, attr) in info.attributes_array.iter().enumerate() {
             let mut db_data = match parse_attr_in_array(attr, info.calling_info, &mut column_names) {
                 Ok(db_data) => db_data,
@@ -573,7 +574,7 @@ impl Database {
             condition.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
             if self.is_data_exists_without_lock(&query, false)? {
                 match attr.get(&Tag::ConflictResolution) {
-                    Some(Value::Number(num)) if *num == ConflictResolution::OverWrite as u32 => {},
+                    Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {},
                     _ => {
 		    	if !self.is_data_exists_without_lock(&condition, false)? {
 	                    err_info.push((ErrCode::Duplicated as u32, index as u32));
@@ -596,7 +597,7 @@ impl Database {
 
     fn encrypt_single_data(
         &mut self,
-        db_data: &DbMap,
+        db_data: &mut DbMap,
         secret_key: &SecretKey,
         aliases: &mut Vec<Vec<u8>>
     ) -> Result<()> {

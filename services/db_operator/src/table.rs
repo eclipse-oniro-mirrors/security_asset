@@ -56,8 +56,7 @@ fn bind_datas(datas: &DbMap, stmt: &Statement, index: &mut i32) -> Result<()> {
 #[inline(always)]
 fn bind_datas_array(datas: &DbMap, stmt: &Statement, index: &mut i32, column_names: &Vec<String>) -> Result<()> {
     for column_name in column_names {
-        let value = datas.get(column_name.as_str());
-        stmt.bind_data_or_none(*index, value)?;
+        stmt.bind_data_or_none(*index, datas.get(column_name.as_str()))?;
         *index += 1;
     }
     Ok(())
@@ -579,7 +578,7 @@ impl<'a> Table<'a> {
     }
 
     fn insert_batch_datas_inner(&self, datas_array: &[DbMap], column_names: &Vec<String>) -> Result<()> {
-        if datas_array.is_empty() {
+        if datas_array.is_empty() || column_names.is_empty() {
             return log_throw_error!(ErrCode::InvalidArgument, "Data array is empty.");
         }
         let mut sql = format!("insert into {} (", self.table_name);
@@ -590,7 +589,7 @@ impl<'a> Table<'a> {
         sql.pop();
         sql.push_str(") values ");
 
-        for (i, _datas) in datas_array.iter().enumerate() {
+        for _ in 0..datas_array.len() {
             sql.push('(');
             build_sql_values(column_names.len(), &mut sql);
             sql.push(')');

@@ -347,10 +347,10 @@ impl IAssetPluginCtx for AssetContext {
         attributes: &mut AssetMap,
         db_map: &ExtDbMap,
         attributes_array: &[AssetMap]
-    ) -> Result<Vec<(u32, u32)>, AssetError> {
+    ) -> Result<Vec<(u32, u32)>> {
         attributes.entry(Tag::RequireAttrEncrypted).or_insert(Value::Bool(bool::default()));
         let require_attr_encrypted = attributes.get_bool_attr(&Tag::RequireAttrEncrypted)?;
-        let db_name = get_db_name(self.user_id, attributes, require_attr_encrypted)?;
+        let db_name = get_db_name(self.user_id, db_map, require_attr_encrypted)?;
         let db_key = get_db_key(self.user_id, require_attr_encrypted)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key)?;
         db.insert_batch_datas(attributes, db_map, attributes_array)

@@ -86,7 +86,7 @@ fn add_default_batch_attrs(db_data: &mut DbMap) {
     db_data.entry(column::WRAP_TYPE).or_insert(Value::Number(WrapType::default() as u32));
 }
 
-fn add_not_null_column(column_names: &mut HashSet<String>) {
+pub(crate) fn add_not_null_column(column_names: &mut HashSet<String>) {
     column_names.insert(column::ID.to_string());
     column_names.insert(column::SECRET.to_string());
     column_names.insert(column::ALIAS.to_string());
@@ -111,7 +111,7 @@ pub(crate) fn parse_attr_in_array(
     column_names: &mut HashSet<String>
 ) -> Result<DbMap> {
     check_array_arguments(attributes, calling_info)?;
-    let mut db_data = into_db_map(attributes, column_names);
+    let mut db_data = into_db_map_with_column_names(attributes, column_names);
     if let Some(group) = calling_info.group() {
         db_data.insert(column::GROUP_ID, Value::Bytes(group));
     };
