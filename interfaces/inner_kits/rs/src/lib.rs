@@ -24,8 +24,9 @@ use asset_log::logw;
 use ipc::{parcel::MsgParcel, remote::RemoteObj};
 use samgr::manage::SystemAbilityManager;
 
-use asset_ipc::{
-    deserialize_maps, deserialize_sync_result, ipc_err_handle, serialize_map, IpcCode, IPC_SUCCESS, SA_ID, SA_NAME,
+pub use asset_ipc::{
+    deserialize_map, deserialize_maps, deserialize_sync_result,
+    ipc_err_handle, serialize_map, IpcCode, IPC_SUCCESS, SA_ID, SA_NAME,
 };
 
 extern "C" {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -22,7 +22,7 @@ use asset_definition::{
 };
 use asset_sdk::WrapType;
 
-use crate::operations::common::{CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS, NORMAL_LOCAL_LABEL_ATTRS};
+use crate::common::{CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS, NORMAL_LOCAL_LABEL_ATTRS};
 
 const MIN_NUMBER_VALUE: u32 = 0;
 const MAX_RETURN_LIMIT: u32 = 0x10000; // 65536
@@ -33,6 +33,7 @@ const MAX_SECRET_SIZE: usize = 1024;
 const MAX_TIME_SIZE: usize = 1024;
 
 const MAX_ALIAS_SIZE: usize = 256;
+/// The maximum size for a label is 2048.
 pub const MAX_LABEL_SIZE: usize = 2048;
 
 const MAX_GROUP_ID_LEN: usize = 127;
@@ -181,7 +182,8 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
     }
 }
 
-pub(crate) fn check_value_validity(attrs: &AssetMap) -> Result<()> {
+/// Check if the value if valid.
+pub fn check_value_validity(attrs: &AssetMap) -> Result<()> {
     for (tag, value) in attrs {
         check_data_type(tag, value)?;
         check_data_value(tag, value)?;
@@ -189,7 +191,8 @@ pub(crate) fn check_value_validity(attrs: &AssetMap) -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn check_required_tags(attrs: &AssetMap, required_tags: &[Tag]) -> Result<()> {
+/// Check if the attributes contains the required tags.
+pub fn check_required_tags(attrs: &AssetMap, required_tags: &[Tag]) -> Result<()> {
     for tag in required_tags {
         if !attrs.contains_key(tag) {
             return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The required tag [{}] is missing.", tag);
@@ -198,7 +201,8 @@ pub(crate) fn check_required_tags(attrs: &AssetMap, required_tags: &[Tag]) -> Re
     Ok(())
 }
 
-pub(crate) fn check_tag_validity(attrs: &AssetMap, valid_tags: &[Tag]) -> Result<()> {
+/// Check if the tag is valid.
+pub fn check_tag_validity(attrs: &AssetMap, valid_tags: &[Tag]) -> Result<()> {
     for tag in attrs.keys() {
         if !valid_tags.contains(tag) {
             return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);
@@ -207,7 +211,8 @@ pub(crate) fn check_tag_validity(attrs: &AssetMap, valid_tags: &[Tag]) -> Result
     Ok(())
 }
 
-pub(crate) fn check_group_validity(attrs: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+/// Check if the group info is valid.
+pub fn check_group_validity(attrs: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     if attrs.get(&Tag::GroupId).is_some() {
         if let Some(Value::Bool(true)) = attrs.get(&Tag::IsPersistent) {
             return log_throw_error!(

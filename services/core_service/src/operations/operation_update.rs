@@ -18,13 +18,14 @@
 use asset_common::CallingInfo;
 use asset_crypto_manager::{crypto::Crypto, db_key_operator::get_db_key_by_asset_map};
 use asset_db_operator::{
+    common,
     database::Database,
     types::{column, DbMap, DB_DATA_VERSION},
 };
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, LocalStatus, Result, SyncStatus, Tag, Value};
 use asset_utils::time;
 
-use crate::operations::common;
+use crate::operations::common::inform_asset_ext;
 
 fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
     let secret_key = common::build_secret_key(calling_info, db_data)?;
@@ -140,7 +141,7 @@ pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &Asse
         return log_throw_error!(ErrCode::NotFound, "[FATAL]Update asset failed, update 0 asset.");
     }
 
-    common::inform_asset_ext(calling_info, update);
+    inform_asset_ext(calling_info, update);
 
     Ok(())
 }

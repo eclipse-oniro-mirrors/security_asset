@@ -15,7 +15,7 @@
 
 //! This module defines the interface of the Asset Rust SDK.
 
-pub use asset_definition::{AssetError, Value};
+pub use asset_definition::{AssetError, Value, AssetMap};
 use ipc::parcel::MsgParcel;
 use std::any::Any;
 use std::collections::HashMap;
@@ -210,13 +210,21 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     /// Removes assets from ce db with specific condition.
     fn ce_remove_with_specific_cond(&self, specific_cond: &str, condition_value: &[Value]) -> Result<i32, u32>;
 
-    /// Removes assets from de db with aliases
+    /// Removes assets from db with aliases.
     fn batch_remove(
         &self,
         attributes: &ExtDbMap,
         aliases: &[Vec<u8>],
         require_attr_encrypted: bool,
     ) -> Result<(), AssetError>;
+
+    /// Add assets into db with attributes array.
+    fn batch_add(
+        &self,
+        attributes: &mut AssetMap,
+        db_map: &ExtDbMap,
+        attributes_array: &[AssetMap]
+    ) -> Result<Vec<(u32, u32)>, AssetError>;
 
     /// Remove an asset to db in asset and adapt table.
     fn remove_cloud_adapt_data(

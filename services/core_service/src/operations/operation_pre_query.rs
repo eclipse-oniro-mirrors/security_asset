@@ -22,11 +22,10 @@ use asset_crypto_manager::{
     db_key_operator::get_db_key_by_asset_map,
 };
 use asset_db_operator::{
+    common,
     database::Database,
     types::{column, DbMap},
 };
-
-use crate::operations::common;
 
 const OPTIONAL_ATTRS: [Tag; 1] = [Tag::AuthValidityPeriod];
 const DEFAULT_AUTH_VALIDITY_IN_SECS: u32 = 60;

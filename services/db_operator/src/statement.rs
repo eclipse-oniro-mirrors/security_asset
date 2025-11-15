@@ -32,6 +32,7 @@ extern "C" {
     fn SqlitePrepareV2(db: *mut c_void, z_sql: *const u8, pp_stmt: *mut *mut c_void, pz_tail: *mut *mut u8) -> i32;
     fn SqliteBindBlob(stmt: *mut c_void, index: i32, blob: *const u8, n: i32, callback: Option<BindCallback>) -> i32;
     fn SqliteBindInt64(stmt: *mut c_void, index: i32, value: i64) -> i32;
+    fn SqliteBindNull(stmt: *mut c_void, index: i32) -> i32;
     fn SqliteStep(stmt: *mut c_void) -> i32;
     fn SqliteColumnName(stmt: *mut c_void, n: i32) -> *const u8;
     fn SqliteDataCount(stmt: *mut c_void) -> i32;
@@ -106,6 +107,22 @@ impl<'b> Statement<'b> {
             Value::Bytes(b) => unsafe { SqliteBindBlob(self.handle as _, index, b.as_ptr(), b.len() as _, None) },
             Value::Number(i) => unsafe { SqliteBindInt64(self.handle as _, index, *i as _) },
             Value::Bool(b) => unsafe { SqliteBindInt64(self.handle as _, index, *b as _) },
+        };
+        if ret != SQLITE_OK {
+            self.db.print_db_msg();
+            log_throw_error!(sqlite_err_handle(ret), "Bind data failed, index={}, err={}", index, ret)
+        } else {
+            Ok(())
+        }
+    }
+
+    /// Bind data to prepared statement. The index is start from 1.
+    pub(crate) fn bind_data_or_none(&self, index: i32, data: Option<&Value>) -> Result<()> {
+        let ret = match data {
+            Some(Value::Bytes(b)) => unsafe { SqliteBindBlob(self.handle as _, index, b.as_ptr(), b.len() as _, None) },
+            Some(Value::Number(i)) => unsafe { SqliteBindInt64(self.handle as _, index, *i as _) },
+            Some(Value::Bool(b)) => unsafe { SqliteBindInt64(self.handle as _, index, *b as _) },
+            None => unsafe { SqliteBindNull(self.handle as _, index) },
         };
         if ret != SQLITE_OK {
             self.db.print_db_msg();

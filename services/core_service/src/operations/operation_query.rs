@@ -21,13 +21,13 @@ use asset_common::CallingInfo;
 use asset_definition::{
     log_throw_error, throw_error, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value,
 };
-use asset_db_operator::{database::Database, types::{column, DbMap, QueryOptions, DB_DATA_VERSION}};
+use asset_db_operator::{common, database::Database, types::{column, DbMap, QueryOptions, DB_DATA_VERSION}};
 use asset_crypto_manager::{
     crypto::Crypto, crypto_manager::CryptoManager,
     db_key_operator::get_db_key_by_asset_map,
 };
 
-use crate::operations::common;
+use crate::operations::common::inform_asset_ext;
 
 fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
     let mut map_set = Vec::new();
@@ -176,7 +176,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
 pub(crate) fn query(calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<AssetMap>> {
     check_arguments(query, calling_info)?;
 
-    common::inform_asset_ext(calling_info, query);
+    inform_asset_ext(calling_info, query);
 
     let mut db_data = common::into_db_map(query);
     if query.get(&Tag::GroupId).is_some() {

@@ -20,12 +20,13 @@ use asset_db_operator::{
     database_file_upgrade::{construct_splited_db_name, get_file_content},
     types::{column, DbMap, QueryOptions},
 };
+use asset_definition::Tag;
 use asset_file_operator::de_operator::create_user_de_dir;
 use asset_log::{loge, logi, logw};
 use asset_sdk::{
     log_throw_error,
     plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, RETURN_LIMIT, RETURN_OFFSET},
-    AssetError, ErrCode, Extension, Result, SyncStatus, Value,
+    AssetError, ErrCode, Extension, Result, SyncStatus, Value, AssetMap
 };
 use asset_utils::time;
 use ylong_runtime::task::JoinHandle;
@@ -338,6 +339,21 @@ impl IAssetPluginCtx for AssetContext {
         let total_removed_count = db.delete_batch_datas(&condition, &update_datas, aliases)?;
         logi!("total removed count = {}", total_removed_count);
         Ok(())
+    }
+
+    /// Add assets into db with attributes array.
+    fn batch_add(
+        &self,
+        attributes: &mut AssetMap,
+        db_map: &ExtDbMap,
+        attributes_array: &[AssetMap]
+    ) -> Result<Vec<(u32, u32)>, AssetError> {
+        attributes.entry(Tag::RequireAttrEncrypted).or_insert(Value::Bool(bool::default()));
+        let require_attr_encrypted = attributes.get_bool_attr(&Tag::RequireAttrEncrypted)?;
+        let db_name = get_db_name(self.user_id, attributes, require_attr_encrypted)?;
+        let db_key = get_db_key(self.user_id, require_attr_encrypted)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key)?;
+        db.insert_batch_datas(attributes, db_map, attributes_array)
     }
 
     /// Removes an asset from a certain db. Normal, Group, CE.

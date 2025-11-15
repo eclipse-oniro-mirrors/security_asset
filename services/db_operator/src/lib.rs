@@ -15,8 +15,10 @@
 
 //! This module encapsulates the database operation function based on sqlite.
 
+pub mod common;
 pub mod database;
 pub mod database_file_upgrade;
+mod process_batch_data;
 mod statement;
 mod table;
 mod transaction;
