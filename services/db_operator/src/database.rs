@@ -522,13 +522,11 @@ impl Database {
     #[inline(always)]
     pub fn insert_batch_datas(
         &mut self,
-        attributes: &AssetMap,
         db_map: &DbMap,
-        attributes_array: &[AssetMap]
+        attributes_array: &[AssetMap],
+        calling_info: &CallingInfo
     ) -> Result<Vec<(u32, u32)>> {
-        let process_info = ProcessInfo::build(attributes.get(&Tag::GroupId))?;
-        let calling_info = CallingInfo::build(attributes.get(&Tag::UserId).cloned(), &process_info);
-        let secret_key = build_secret_key(&calling_info, db_map)?;
+        let secret_key = build_secret_key(calling_info, db_map)?;
         generate_secret_key_if_needed(&secret_key)?;
 
         let mut db_datas = Vec::new();
@@ -537,10 +535,10 @@ impl Database {
         let info = AdditionalInfo {
             attributes_array,
             db_map,
-            calling_info: &calling_info,
+            calling_info,
             secret_key: &secret_key
         };
-	let _lock = self.db_lock.mtx.lock().unwrap();
+	    let _lock = self.db_lock.mtx.lock().unwrap();
         let column_names = self.parse_attr_array(&mut db_datas, &mut err_info, &mut aliases, &info)?;
         if db_datas.is_empty() {
             return Ok(err_info);

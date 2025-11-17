@@ -31,7 +31,7 @@ use crate::{
     }
 };
 
-const INVALID_TAGS: [Tag; 3] = [Tag::AuthType, Tag::Accessibility, Tag::RequireAttrEncrypted];
+const INVALID_TAGS: [Tag; 4] = [Tag::AuthType, Tag::Accessibility, Tag::RequireAttrEncrypted, Tag::GroupId];
 
 fn check_tag_validity_with_invalid_tags(attrs: &AssetMap, valid_tags: &[Tag], invalid_tags: &[Tag]) -> Result<()> {
     for tag in attrs.keys() {

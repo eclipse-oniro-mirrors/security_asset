@@ -222,7 +222,7 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     fn batch_add(
         &self,
         attributes: &mut AssetMap,
-        db_map: &ExtDbMap,
+        db_map: &mut ExtDbMap,
         attributes_array: &[AssetMap]
     ) -> Result<Vec<(u32, u32)>, AssetError>;
 
