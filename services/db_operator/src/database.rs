@@ -574,10 +574,10 @@ impl Database {
                 match attr.get(&Tag::ConflictResolution) {
                     Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {},
                     _ => {
-		    	if !self.is_data_exists_without_lock(&condition, false)? {
-	                    err_info.push((ErrCode::Duplicated as u32, index as u32));
-	                    continue;
-			}
+                        if !self.is_data_exists_without_lock(&condition, false)? {
+                            err_info.push((ErrCode::Duplicated as u32, index as u32));
+                            continue;
+                        }
                     }
                 }
             }

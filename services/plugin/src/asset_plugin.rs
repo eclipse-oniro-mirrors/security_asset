@@ -350,10 +350,12 @@ impl IAssetPluginCtx for AssetContext {
         let process_info = ProcessInfo::build(attributes.get(&Tag::GroupId))?;
         let calling_info = CallingInfo::build(attributes.get(&Tag::UserId).cloned(), &process_info);
         attributes.entry(Tag::RequireAttrEncrypted).or_insert(Value::Bool(bool::default()));
-        attributes.entry(Tag::UserId).or_insert(Value::Number(self.user_id as u32));
         common::add_group(&calling_info, db_map);
         common::check_system_permission(attributes)?;
-        let user_id = attributes.get_num_attr(&Tag::UserId)? as i32;
+        let user_id = match attributes.get_num_attr(&Tag::UserId) {
+            Ok(user_id) => user_id as i32,
+            Err(_) => self.user_id,
+        };
         let require_attr_encrypted = attributes.get_bool_attr(&Tag::RequireAttrEncrypted)?;
         let db_name = get_db_name(user_id, db_map, require_attr_encrypted)?;
         let db_key = get_db_key(user_id, require_attr_encrypted)?;
