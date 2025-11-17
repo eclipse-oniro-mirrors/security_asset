@@ -26,12 +26,12 @@ use crate::{
     common::{
         TAG_COLUMN_TABLE, REQUIRED_ATTRS, CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS, NORMAL_LOCAL_LABEL_ATTRS,
         ACCESS_CONTROL_ATTRS, ASSET_SYNC_ATTRS, OPTIONAL_ATTRS, check_accessibility_validity, check_value_validity,
-        check_sync_permission, check_wrap_permission, check_system_permission, check_persistent_permission,
+        check_sync_permission, check_wrap_permission, check_persistent_permission,
         check_required_tags, check_group_validity,
     }
 };
 
-const INVALID_TAGS: [Tag; 4] = [Tag::AuthType, Tag::Accessibility, Tag::RequireAttrEncrypted, Tag::GroupId];
+const INVALID_TAGS: [Tag; 5] = [Tag::AuthType, Tag::Accessibility, Tag::RequireAttrEncrypted, Tag::GroupId, Tag::UserId];
 
 fn check_tag_validity_with_invalid_tags(attrs: &AssetMap, valid_tags: &[Tag], invalid_tags: &[Tag]) -> Result<()> {
     for tag in attrs.keys() {
@@ -59,7 +59,6 @@ fn check_array_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> R
     check_accessibility_validity(attributes, calling_info)?;
     check_sync_permission(attributes, calling_info)?;
     check_wrap_permission(attributes, calling_info)?;
-    check_system_permission(attributes)?;
     check_persistent_permission(attributes)
 }
 
