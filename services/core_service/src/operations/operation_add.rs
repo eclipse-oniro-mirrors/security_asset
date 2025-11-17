@@ -107,7 +107,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_group_validity(attributes, calling_info)?;
     common::check_value_validity(attributes)?;
-    common::check_accessibity_validity(attributes, calling_info)?;
+    common::check_accessibility_validity(attributes, calling_info)?;
     common::check_sync_permission(attributes, calling_info)?;
     common::check_wrap_permission(attributes, calling_info)?;
     common::check_system_permission(attributes)?;

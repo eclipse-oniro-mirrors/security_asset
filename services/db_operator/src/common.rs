@@ -105,7 +105,7 @@ pub const ACCESS_CONTROL_ATTRS: [Tag; 10] = [
 pub const ASSET_SYNC_ATTRS: [Tag; 1] = [Tag::OperationType];
 
 /// Get column name.
-pub fn get_cloumn_name(tag: Tag) -> Option<&'static str> {
+pub fn get_column_name(tag: Tag) -> Option<&'static str> {
     for (table_tag, table_column) in TAG_COLUMN_TABLE {
         if table_tag == tag {
             return Some(table_column);

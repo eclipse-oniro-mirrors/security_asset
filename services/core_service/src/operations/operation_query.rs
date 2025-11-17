@@ -126,7 +126,7 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
         order_by: match attrs.get(&Tag::ReturnOrderedBy) {
             Some(Value::Number(order_by)) => {
                 let tag = Tag::try_from(*order_by).expect("Tag::ReturnOrderBy has been verified");
-                common::get_cloumn_name(tag).map(|order_by| vec![order_by])
+                common::get_column_name(tag).map(|order_by| vec![order_by])
             },
             _ => None,
         },

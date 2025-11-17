@@ -25,13 +25,13 @@ use crate::{
     types::{DbMap, column},
     common::{
         TAG_COLUMN_TABLE, REQUIRED_ATTRS, CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS, NORMAL_LOCAL_LABEL_ATTRS,
-        ACCESS_CONTROL_ATTRS, ASSET_SYNC_ATTRS, OPTIONAL_ATTRS, check_accessibity_validity, check_value_validity,
+        ACCESS_CONTROL_ATTRS, ASSET_SYNC_ATTRS, OPTIONAL_ATTRS, check_accessibility_validity, check_value_validity,
         check_sync_permission, check_wrap_permission, check_system_permission, check_persistent_permission,
         check_required_tags, check_group_validity,
     }
 };
 
-const INVALIED_TAGS: [Tag; 3] = [Tag::AuthType, Tag::Accessibility, Tag::RequireAttrEncrypted];
+const INVALID_TAGS: [Tag; 3] = [Tag::AuthType, Tag::Accessibility, Tag::RequireAttrEncrypted];
 
 fn check_tag_validity_with_invalid_tags(attrs: &AssetMap, valid_tags: &[Tag], invalid_tags: &[Tag]) -> Result<()> {
     for tag in attrs.keys() {
@@ -53,10 +53,10 @@ fn check_array_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> R
     valid_tags.extend_from_slice(&ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
-    check_tag_validity_with_invalid_tags(attributes, &valid_tags, &INVALIED_TAGS)?;
+    check_tag_validity_with_invalid_tags(attributes, &valid_tags, &INVALID_TAGS)?;
     check_group_validity(attributes, calling_info)?;
     check_value_validity(attributes)?;
-    check_accessibity_validity(attributes, calling_info)?;
+    check_accessibility_validity(attributes, calling_info)?;
     check_sync_permission(attributes, calling_info)?;
     check_wrap_permission(attributes, calling_info)?;
     check_system_permission(attributes)?;

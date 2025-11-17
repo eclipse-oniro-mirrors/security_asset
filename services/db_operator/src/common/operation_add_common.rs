@@ -39,7 +39,7 @@ pub const REQUIRED_ATTRS: [Tag; 2] = [Tag::Secret, Tag::Alias];
 pub const OPTIONAL_ATTRS: [Tag; 3] = [Tag::Secret, Tag::ConflictResolution, Tag::WrapType];
 
 /// Check the validity of accessibility.
-pub fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+pub fn check_accessibility_validity(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     if calling_info.user_id() > SYSTEM_USER_ID_MAX {
         return Ok(());
     }
