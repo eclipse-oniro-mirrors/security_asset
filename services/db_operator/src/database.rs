@@ -19,7 +19,7 @@
 use core::ffi::c_void;
 use std::{collections::{HashMap, HashSet}, ffi::CStr, fs, ptr::null_mut, sync::{Arc, Mutex}};
 
-use asset_common::{CallingInfo, OwnerType, ProcessInfo};
+use asset_common::{CallingInfo, OwnerType};
 use asset_crypto_manager::{
     crypto::Crypto, db_key_operator::generate_secret_key_if_needed, secret_key::{SecretKey, rename_key_alias}
 };
@@ -524,7 +524,7 @@ impl Database {
         &mut self,
         db_map: &DbMap,
         attributes_array: &[AssetMap],
-        calling_info: &CallingInfo
+        calling_info: &CallingInfo,
     ) -> Result<Vec<(u32, u32)>> {
         let secret_key = build_secret_key(calling_info, db_map)?;
         generate_secret_key_if_needed(&secret_key)?;
