@@ -559,13 +559,7 @@ impl Database {
         let mut column_names = HashSet::new();
         add_not_null_column(&mut column_names);
         for (index, attr) in info.attributes_array.iter().enumerate() {
-            let mut db_data = match parse_attr_in_array(attr, info.calling_info, &mut column_names) {
-                Ok(db_data) => db_data,
-                Err(e) => {
-                    err_info.push((e.code as u32, index as u32));
-                    continue;
-                }
-            };
+            let mut db_data = parse_attr_in_array(attr, info.calling_info, &mut column_names)?;
             let query = get_query_condition(attr, info.calling_info)?;
             let mut condition = query.clone();
             condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));

@@ -352,14 +352,10 @@ impl IAssetPluginCtx for AssetContext {
         attributes.entry(Tag::RequireAttrEncrypted).or_insert(Value::Bool(bool::default()));
         common::add_group(&calling_info, db_map);
         common::check_system_permission(attributes)?;
-        let user_id = match attributes.get_num_attr(&Tag::UserId) {
-            Ok(user_id) => user_id as i32,
-            Err(_) => self.user_id,
-        };
         let require_attr_encrypted = attributes.get_bool_attr(&Tag::RequireAttrEncrypted)?;
-        let db_name = get_db_name(user_id, db_map, require_attr_encrypted)?;
-        let db_key = get_db_key(user_id, require_attr_encrypted)?;
-        let mut db = Database::build_with_file_name(user_id, &db_name, &db_key)?;
+        let db_name = get_db_name(self.user_id, db_map, require_attr_encrypted)?;
+        let db_key = get_db_key(self.user_id, require_attr_encrypted)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key)?;
         db.insert_batch_datas(db_map, attributes_array, &calling_info)
     }
 
