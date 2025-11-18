@@ -29,7 +29,8 @@ use asset_sdk::plugin_interface::{
 };
 use asset_db_operator::{
     common,
-    database::Database, database_file_upgrade::{
+    database::Database,
+    database_file_upgrade::{
         get_file_content, get_upgrade_list, get_upgrade_version, update_upgrade_list,
         OriginVersion, UpgradeData, is_hap_special
     },

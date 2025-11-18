@@ -579,9 +579,7 @@ impl Database {
                 err_info.push((ErrCode::CryptoError as u32, index as u32));
                 continue;
             }
-            for (key, value) in info.db_map.iter() {
-                db_data.insert((*key).clone(), value.clone());
-            }
+            db_data.extend(info.db_map.clone());
             db_datas.push(db_data);
         }
         Ok(column_names)
