@@ -19,14 +19,19 @@
 use core::ffi::c_void;
 use std::cmp::Ordering;
 
-use asset_definition::{log_throw_error, Conversion, DataType, ErrCode, Extension, Result, SyncType, Value};
+use asset_definition::{log_throw_error, Conversion, DataType, ErrCode, Extension, Result, SyncType, Value, SyncStatus};
 use asset_log::logi;
+use asset_utils::time;
+use asset_common::OwnerType;
 
 use crate::{
     database::Database,
     statement::Statement,
     transaction::Transaction,
-    types::{adapt_column, column, ColumnInfo, DbMap, QueryOptions, UpgradeColumnInfo, ADAPT_CLOUD_TABLE, COLUMN_INFO, DB_UPGRADE_VERSION, SQLITE_ROW},
+    types::{
+        adapt_column, column, ColumnInfo, DbMap, QueryOptions, UpgradeColumnInfo,
+        ADAPT_CLOUD_TABLE, COLUMN_INFO, DB_UPGRADE_VERSION, SQLITE_ROW
+    },
 };
 
 extern "C" {
@@ -43,6 +48,15 @@ pub(crate) struct Table<'a> {
 fn bind_datas(datas: &DbMap, stmt: &Statement, index: &mut i32) -> Result<()> {
     for (_, value) in datas.iter() {
         stmt.bind_data(*index, value)?;
+        *index += 1;
+    }
+    Ok(())
+}
+
+#[inline(always)]
+fn bind_datas_array(datas: &DbMap, stmt: &Statement, index: &mut i32, column_names: &Vec<String>) -> Result<()> {
+    for column_name in column_names {
+        stmt.bind_data_or_none(*index, datas.get(column_name.as_str()))?;
         *index += 1;
     }
     Ok(())
@@ -532,13 +546,16 @@ impl<'a> Table<'a> {
         condition: &DbMap,
         datas: &DbMap,
         aliases: &[Vec<u8>],
+        need_trans: bool
     ) -> Result<i32> {
         let mut alias_values = Vec::with_capacity(aliases.len());
         for alias in aliases {
             alias_values.push(Value::Bytes(alias.to_vec()));
         }
         let mut trans = Transaction::new(self.db);
-        trans.begin()?;
+        if need_trans {
+            trans.begin()?;
+        }
         let mut count = match self.update_sync_datas_by_aliases(condition, datas, &alias_values) {
             Ok(count) => count,
             Err(e) => return Err(e),
@@ -547,13 +564,76 @@ impl<'a> Table<'a> {
         count += match self.delete_local_datas_by_aliases(condition, &alias_values) {
             Ok(count) => count,
             Err(e) => {
-                trans.rollback()?;
+                if need_trans {
+                    trans.rollback()?;
+                }
                 return Err(e);
             },
         };
 
-        trans.commit()?;
+        if need_trans {
+            trans.commit()?;
+        }
         Ok(count)
+    }
+
+    fn insert_batch_datas_inner(&self, datas_array: &[DbMap], column_names: &Vec<String>) -> Result<()> {
+        if datas_array.is_empty() || column_names.is_empty() {
+            return log_throw_error!(ErrCode::InvalidArgument, "Data array is empty.");
+        }
+        let mut sql = format!("insert into {} (", self.table_name);
+        for column_name in column_names {
+            sql.push_str(column_name.as_str());
+            sql.push(',');
+        }
+        sql.pop();
+        sql.push_str(") values ");
+
+        for _ in 0..datas_array.len() {
+            sql.push('(');
+            build_sql_values(column_names.len(), &mut sql);
+            sql.push(')');
+            sql.push(',');
+        }
+        sql.pop();
+        sql.push(';');
+        let mut index = 1;
+        let stmt = Statement::prepare(&sql, self.db)?;
+        for datas in datas_array {
+            bind_datas_array(datas, &stmt, &mut index, column_names)?;
+        }
+        stmt.step()?;
+        let _count = unsafe { SqliteChanges(self.db.handle as _) };
+        Ok(())
+    }
+
+    pub(crate) fn local_insert_batch_datas(
+        &self,
+        db_data_array: &[DbMap],
+        db_map: &DbMap,
+        aliases: &[Vec<u8>],
+        column_names: &Vec<String>
+    ) -> Result<()> {
+        let mut trans = Transaction::new(self.db);
+        trans.begin()?;
+        let mut condition = DbMap::new();
+        let owner_info = db_map.get_bytes_attr(&column::OWNER)?;
+        let owner_type = db_map.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?;
+        condition.insert_attr(column::OWNER, owner_info.clone());
+        condition.insert_attr(column::OWNER_TYPE, owner_type);
+        let mut update_datas = DbMap::new();
+        let time = time::system_time_in_millis()?;
+        update_datas.insert(column::UPDATE_TIME, Value::Bytes(time));
+        update_datas.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
+        if let Err(e) = self.local_delete_batch_datas(&condition, &update_datas, aliases, false) {
+            trans.rollback()?;
+            return Err(e);
+        }
+        if let Err(e) = self.insert_batch_datas_inner(db_data_array, column_names) {
+            trans.rollback()?;
+            return Err(e);
+        }
+        trans.commit()
     }
 
     /// Update a row in table.

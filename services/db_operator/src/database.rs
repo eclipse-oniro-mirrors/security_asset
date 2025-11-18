@@ -17,15 +17,21 @@
 //! Databases are isolated based on users and protected by locks.
 
 use core::ffi::c_void;
-use std::{collections::HashMap, ffi::CStr, fs, ptr::null_mut, sync::{Arc, Mutex}};
+use std::{collections::{HashMap, HashSet}, ffi::CStr, fs, ptr::null_mut, sync::{Arc, Mutex}};
 
 use asset_common::{CallingInfo, OwnerType};
-use asset_crypto_manager::secret_key::rename_key_alias;
-use asset_definition::{log_throw_error, ErrCode, Extension, Result, Value};
+use asset_crypto_manager::{
+    crypto::Crypto, db_key_operator::generate_secret_key_if_needed, secret_key::{SecretKey, rename_key_alias}
+};
+use asset_definition::{
+    log_throw_error, ErrCode, Extension, Result, Value, AssetMap,
+    Tag, SyncType, SyncStatus, ConflictResolution
+};
 use asset_log::{loge, logi};
 use lazy_static::lazy_static;
 
 use crate::{
+    common::{build_secret_key, build_aad, get_query_condition},
     database_file_upgrade::{check_and_split_db, construct_splited_db_name},
     statement::Statement,
     table::Table,
@@ -35,6 +41,7 @@ use crate::{
         DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V0, DB_UPGRADE_VERSION_V1, DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3,
         UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2, UPGRADE_COLUMN_INFO_V3, UPGRADE_COLUMN_INFO_V4
     },
+    process_batch_data::{parse_attr_in_array, add_not_null_column}
 };
 
 extern "C" {
@@ -49,6 +56,13 @@ extern "C" {
 /// each user have a Database file
 pub(crate) struct UserDbLock {
     pub(crate) mtx: Arc<Mutex<i32>>,
+}
+
+struct AdditionalInfo<'a> {
+    attributes_array: &'a [AssetMap],
+    db_map: &'a DbMap,
+    calling_info: &'a CallingInfo,
+    secret_key: &'a SecretKey,
 }
 
 pub(crate) static OLD_DB_NAME: &str = "asset";
@@ -503,6 +517,87 @@ impl Database {
         self.restore_if_exec_fail(closure)
     }
 
+    /// Insert datas in database with specific condition.
+    /// If the operation is successful, the array of indexes failed to insert and corresponding reason is returned.
+    #[inline(always)]
+    pub fn insert_batch_datas(
+        &mut self,
+        db_map: &DbMap,
+        attributes_array: &[AssetMap],
+        calling_info: &CallingInfo,
+    ) -> Result<Vec<(u32, u32)>> {
+        let secret_key = build_secret_key(calling_info, db_map)?;
+        generate_secret_key_if_needed(&secret_key)?;
+
+        let mut db_datas = Vec::new();
+        let mut err_info = Vec::new();
+        let mut aliases = Vec::new();
+        let info = AdditionalInfo {
+            attributes_array,
+            db_map,
+            calling_info,
+            secret_key: &secret_key
+        };
+	    let _lock = self.db_lock.mtx.lock().unwrap();
+        let column_names = self.parse_attr_array(&mut db_datas, &mut err_info, &mut aliases, &info)?;
+        if db_datas.is_empty() {
+            return Ok(err_info);
+        }
+
+        let column_names = Vec::from_iter(column_names);
+        let closure = |e: &Table| e.local_insert_batch_datas(&db_datas, db_map, &aliases, &column_names);
+        self.restore_if_exec_fail(closure)?;
+        Ok(err_info)
+    }
+
+    fn parse_attr_array(&mut self,
+        db_datas: &mut Vec<DbMap>,
+        err_info: &mut Vec<(u32, u32)>,
+        aliases: &mut Vec<Vec<u8>>,
+        info: &AdditionalInfo
+    ) -> Result<HashSet<String>> {
+        let mut column_names = HashSet::new();
+        add_not_null_column(&mut column_names);
+        for (index, attr) in info.attributes_array.iter().enumerate() {
+            let mut db_data = parse_attr_in_array(attr, info.calling_info, &mut column_names)?;
+            let query = get_query_condition(attr, info.calling_info)?;
+            let mut condition = query.clone();
+            condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
+            condition.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
+            if self.is_data_exists_without_lock(&query, false)? {
+                match attr.get(&Tag::ConflictResolution) {
+                    Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {},
+                    _ => {
+                        if !self.is_data_exists_without_lock(&condition, false)? {
+                            err_info.push((ErrCode::Duplicated as u32, index as u32));
+                            continue;
+                        }
+                    }
+                }
+            }
+            if self.encrypt_single_data(&mut db_data, info.secret_key, aliases).is_err() {
+                err_info.push((ErrCode::CryptoError as u32, index as u32));
+                continue;
+            }
+            db_data.extend(info.db_map.clone());
+            db_datas.push(db_data);
+        }
+        Ok(column_names)
+    }
+
+    fn encrypt_single_data(
+        &mut self,
+        db_data: &mut DbMap,
+        secret_key: &SecretKey,
+        aliases: &mut Vec<Vec<u8>>
+    ) -> Result<()> {
+        let secret = db_data.get_bytes_attr(&column::SECRET)?;
+        let cipher = Crypto::encrypt(secret_key, secret, &build_aad(db_data)?)?;
+        db_data.insert(column::SECRET, Value::Bytes(cipher));
+        aliases.push(db_data.get_bytes_attr(&column::ALIAS)?.to_vec());
+        Ok(())
+    }
+
     /// Insert data in asset and adapt table.
     pub fn insert_cloud_adapt_data_without_lock(&mut self, datas: &DbMap, adapt_attributes: &DbMap) -> Result<i32> {
         let closure = |e: &Table| {
@@ -572,7 +667,7 @@ impl Database {
     #[inline(always)]
     pub fn delete_batch_datas(&mut self, condition: &DbMap, update_datas: &DbMap, aliases: &[Vec<u8>]) -> Result<i32> {
         let _lock = self.db_lock.mtx.lock().unwrap();
-        let closure = |e: &Table| e.local_delete_batch_datas(condition, update_datas, aliases);
+        let closure = |e: &Table| e.local_delete_batch_datas(condition, update_datas, aliases, true);
         self.restore_if_exec_fail(closure)
     }
 
@@ -641,6 +736,13 @@ impl Database {
     #[inline(always)]
     pub fn is_data_exists(&mut self, condition: &DbMap, is_filter_sync: bool) -> Result<bool> {
         let _lock = self.db_lock.mtx.lock().unwrap();
+        let closure = |e: &Table| e.is_data_exists(condition, is_filter_sync);
+        self.restore_if_exec_fail(closure)
+    }
+
+    /// Check whether data exists in the database without lock. 
+    #[inline(always)]
+    pub fn is_data_exists_without_lock(&mut self, condition: &DbMap, is_filter_sync: bool) -> Result<bool> {
         let closure = |e: &Table| e.is_data_exists(condition, is_filter_sync);
         self.restore_if_exec_fail(closure)
     }

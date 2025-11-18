@@ -15,12 +15,10 @@
 
 //! This module is used to insert an Asset with a specified alias.
 
-use std::{ffi::CString, os::raw::c_char};
-
 use asset_log::logw;
 use asset_utils::time;
 use asset_sdk::WrapType;
-use asset_common::{CallingInfo, OwnerType};
+use asset_common::CallingInfo;
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode,
     Extension, LocalStatus, Result, SyncStatus, SyncType, Tag, Value,
@@ -30,11 +28,16 @@ use asset_crypto_manager::{
     db_key_operator::{generate_secret_key_if_needed, get_db_key_by_asset_map},
 };
 use asset_db_operator::{
+    common,
     database::Database,
     types::{column, DbMap, DB_DATA_VERSION},
 };
 
-use crate::operations::common;
+use crate::operations::common::inform_asset_ext;
+
+extern "C" {
+    fn CheckSystemHapPermission() -> bool;
+}
 
 fn encrypt_secret(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     let secret_key = common::build_secret_key(calling_info, db_data)?;
@@ -72,18 +75,6 @@ fn resolve_conflict(
     }
 }
 
-fn get_query_condition(attrs: &AssetMap, calling_info: &CallingInfo) -> Result<DbMap> {
-    let alias = attrs.get_bytes_attr(&Tag::Alias)?;
-    let mut query = DbMap::new();
-    if calling_info.group().is_some() {
-        common::add_group(calling_info, &mut query);
-    } else {
-        common::add_owner_info(calling_info, &mut query);
-    }
-    query.insert(column::ALIAS, Value::Bytes(alias.clone()));
-    Ok(query)
-}
-
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     db_data.insert(column::VERSION, Value::Number(DB_DATA_VERSION));
 
@@ -104,101 +95,23 @@ fn add_default_attrs(db_data: &mut DbMap) {
     db_data.entry(column::WRAP_TYPE).or_insert(Value::Number(WrapType::default() as u32));
 }
 
-const REQUIRED_ATTRS: [Tag; 2] = [Tag::Secret, Tag::Alias];
-const OPTIONAL_ATTRS: [Tag; 3] = [Tag::Secret, Tag::ConflictResolution, Tag::WrapType];
-const SYSTEM_USER_ID_MAX: i32 = 99;
-
-fn check_accessibity_validity(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    if calling_info.user_id() > SYSTEM_USER_ID_MAX {
-        return Ok(());
-    }
-    let accessibility =
-        attributes.get_enum_attr::<Accessibility>(&Tag::Accessibility).unwrap_or(Accessibility::DeviceFirstUnlocked);
-    if accessibility == Accessibility::DevicePowerOn {
-        return Ok(());
-    }
-    log_throw_error!(
-        ErrCode::InvalidArgument,
-        "[FATAL][SA]System user data cannot be protected by the lock screen password."
-    )
-}
-
-extern "C" {
-    fn CheckPermission(permission: *const c_char) -> bool;
-    fn CheckSystemHapPermission() -> bool;
-}
-
-fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
-    if attributes.get(&Tag::IsPersistent).is_some() {
-        let permission = CString::new("ohos.permission.STORE_PERSISTENT_DATA").unwrap();
-        if unsafe { !CheckPermission(permission.as_ptr()) } {
-            return log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
-        }
-    }
-    Ok(())
-}
-
-fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    if attributes.get(&Tag::SyncType).is_none()
-        || (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0
-    {
-        return Ok(());
-    }
-    match calling_info.owner_type_enum() {
-        OwnerType::Hap => {
-            if calling_info.app_index() > 0 {
-                return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
-            }
-        },
-        OwnerType::HapGroup => {
-            return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
-        },
-        OwnerType::Native => (),
-    }
-    Ok(())
-}
-
-fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    if attributes.get(&Tag::WrapType).is_none()
-        || attributes.get_enum_attr::<WrapType>(&Tag::WrapType)? == WrapType::Never
-    {
-        return Ok(());
-    }
-    match calling_info.owner_type_enum() {
-        OwnerType::Hap | OwnerType::HapGroup => {
-            if calling_info.app_index() > 0 {
-                return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing wrap data.");
-            }
-        },
-        OwnerType::Native => (),
-    }
-
-    if attributes.get(&Tag::SyncType).is_none()
-        || (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0
-    {
-        Ok(())
-    } else {
-        log_throw_error!(ErrCode::Unsupported, "[FATAL]trusted account data can not be set need wrap data.")
-    }
-}
-
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    common::check_required_tags(attributes, &REQUIRED_ATTRS)?;
+    common::check_required_tags(attributes, &common::REQUIRED_ATTRS)?;
 
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
-    valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
+    valid_tags.extend_from_slice(&common::OPTIONAL_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
     common::check_group_validity(attributes, calling_info)?;
     common::check_value_validity(attributes)?;
-    check_accessibity_validity(attributes, calling_info)?;
-    check_sync_permission(attributes, calling_info)?;
-    check_wrap_permission(attributes, calling_info)?;
+    common::check_accessibility_validity(attributes, calling_info)?;
+    common::check_sync_permission(attributes, calling_info)?;
+    common::check_wrap_permission(attributes, calling_info)?;
     common::check_system_permission(attributes)?;
-    check_persistent_permission(attributes)
+    common::check_persistent_permission(attributes)
 }
 
 fn modify_sync_type(db: &mut DbMap) -> Result<()> {
@@ -226,7 +139,7 @@ fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     common::add_calling_info(calling_info, &mut db_data);
     add_system_attrs(&mut db_data)?;
     add_default_attrs(&mut db_data);
-    let query = get_query_condition(attributes, calling_info)?;
+    let query = common::get_query_condition(attributes, calling_info)?;
 
     let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes)?;
     let mut db = Database::build(calling_info, db_key)?;
@@ -244,7 +157,7 @@ fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 pub(crate) fn add(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<()> {
     let local_res = local_add(attributes, calling_info);
 
-    common::inform_asset_ext(calling_info, attributes);
+    inform_asset_ext(calling_info, attributes);
 
     local_res
 }

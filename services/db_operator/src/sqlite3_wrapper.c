@@ -63,6 +63,11 @@ int SqliteBindInt64(void *pStmt, int index, int64_t iValue)
     return sqlite3_bind_int64((sqlite3_stmt *)pStmt, index, iValue);
 }
 
+int SqliteBindNull(void *pStmt, int index)
+{
+    return sqlite3_bind_null((sqlite3_stmt *)pStmt, index);
+}
+
 const char *SqliteErrMsg(void *db)
 {
     return sqlite3_errmsg((sqlite3 *)db);

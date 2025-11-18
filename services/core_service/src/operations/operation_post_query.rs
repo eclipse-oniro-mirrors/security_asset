@@ -18,8 +18,7 @@
 use asset_common::CallingInfo;
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{AssetMap, Extension, Result, Tag};
-
-use crate::operations::common;
+use asset_db_operator::common;
 
 const REQUIRED_ATTRS: [Tag; 1] = [Tag::AuthChallenge];
 const OPTIONAL_ATTRS: [Tag; 2] = [Tag::GroupId, Tag::UserId];

@@ -28,15 +28,15 @@ use asset_sdk::plugin_interface::{
     PARAM_NAME_DECRYPT_KEY_ALIAS, PARAM_NAME_ENCRYPT_KEY_ALIAS, PARAM_NAME_USER_ID,
 };
 use asset_db_operator::{
-    database::Database, database_file_upgrade::{
+    common,
+    database::Database,
+    database_file_upgrade::{
         get_file_content, get_upgrade_list, get_upgrade_version, update_upgrade_list,
         OriginVersion, UpgradeData, is_hap_special
     },
     types::{column, DbMap},
 };
 use asset_crypto_manager::db_key_operator::generate_secret_key_if_needed;
-
-use crate::operations::common;
 
 extern "C" {
     fn GetCloneAppIndexes(userId: i32, appIndexes: *mut i32, indexSize: *mut u32, appName: *const c_char) -> i32;

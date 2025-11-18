@@ -18,6 +18,7 @@
 use asset_common::CallingInfo;
 use asset_crypto_manager::db_key_operator::get_db_key_by_asset_map;
 use asset_db_operator::{
+    common,
     database::Database,
     types::{column, DbMap},
 };
@@ -25,7 +26,7 @@ use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncStatus, S
 use asset_log::logi;
 use asset_utils::time;
 
-use crate::operations::common;
+use crate::operations::common::inform_asset_ext;
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     let time = time::system_time_in_millis()?;
@@ -80,7 +81,7 @@ pub(crate) fn remove(calling_info: &CallingInfo, query: &AssetMap) -> Result<()>
     let remove_num = db.delete_datas(&db_data, Some(&reverse_condition), false)?;
     logi!("Delete num: {}", remove_num);
 
-    common::inform_asset_ext(calling_info, query);
+    inform_asset_ext(calling_info, query);
 
     Ok(())
 }
