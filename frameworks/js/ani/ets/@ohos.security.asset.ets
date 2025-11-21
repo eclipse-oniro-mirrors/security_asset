@@ -72,7 +72,7 @@ export namespace asset {
   export function add(attributes: AssetMap): Promise<void> {
     return new Promise<void> ((resolve, reject): void => {
       let task = taskpool.execute(AniAdd, attributes);
-      task.then((ret: NullishType) => {
+      task.then((ret: Any) => {
         HandleAssetAsyncResult<void>(ret as BusinessError<void>, resolve, reject);
       });
     });
@@ -81,7 +81,7 @@ export namespace asset {
   export function addAsUser(userId: int, attributes: AssetMap): Promise<void> {
     return new Promise<void> ((resolve, reject): void => {
       let task = taskpool.execute(AniAddAsUser, userId, attributes);
-      task.then((ret: NullishType) => {
+      task.then((ret: Any) => {
         HandleAssetAsyncResult<void>(ret as BusinessError<void>, resolve, reject);
       });
     });
@@ -95,7 +95,7 @@ export namespace asset {
   export function remove(query: AssetMap): Promise<void> {
     return new Promise<void> ((resolve, reject): void => {
       let task = taskpool.execute(AniRemove, query);
-      task.then((ret: NullishType) => {
+      task.then((ret: Any) => {
         HandleAssetAsyncResult<void>(ret as BusinessError<void>, resolve, reject);
       });
     });
@@ -104,7 +104,7 @@ export namespace asset {
   export function removeAsUser(userId: int, query: AssetMap): Promise<void> {
     return new Promise<void> ((resolve, reject): void => {
       let task = taskpool.execute(AniRemoveAsUser, userId, query);
-      task.then((ret: NullishType) => {
+      task.then((ret: Any) => {
         HandleAssetAsyncResult<void>(ret as BusinessError<void>, resolve, reject);
       });
     });
@@ -118,7 +118,7 @@ export namespace asset {
   export function update(query: AssetMap, attributesToUpdate: AssetMap): Promise<void> {
     return new Promise<void> ((resolve, reject): void => {
       let task = taskpool.execute(AniUpdate, query, attributesToUpdate);
-      task.then((ret: NullishType) => {
+      task.then((ret: Any) => {
         HandleAssetAsyncResult<void>(ret as BusinessError<void>, resolve, reject);
       });
     });
@@ -127,7 +127,7 @@ export namespace asset {
   export function updateAsUser(userId: int, query: AssetMap, attributesToUpdate: AssetMap): Promise<void> {
     return new Promise<void> ((resolve, reject): void => {
       taskpool.execute(AniUpdateAsUser, userId, query, attributesToUpdate)
-        .then((ret: NullishType) => {
+        .then((ret: Any) => {
           HandleAssetAsyncResult<void>(ret as BusinessError<void>, resolve, reject);
         });
     });
@@ -141,7 +141,7 @@ export namespace asset {
   export function preQuery(query: AssetMap): Promise<Uint8Array> {
     return new Promise<Uint8Array> ((resolve, reject): void => {
       let task = taskpool.execute(AniPreQuery, query);
-      task.then((ret: NullishType) => {
+      task.then((ret: Any) => {
         HandleAssetAsyncResult<Uint8Array>(ret as BusinessError<Uint8Array>, resolve, reject);
       });
     });
@@ -150,7 +150,7 @@ export namespace asset {
   export function preQueryAsUser(userId: int, query: AssetMap): Promise<Uint8Array> {
     return new Promise<Uint8Array> ((resolve, reject): void => {
       let task = taskpool.execute(AniPreQueryAsUser, userId, query);
-      task.then((ret: NullishType) => {
+      task.then((ret: Any) => {
         HandleAssetAsyncResult<Uint8Array>(ret as BusinessError<Uint8Array>, resolve, reject);
       });
     });
@@ -164,7 +164,7 @@ export namespace asset {
   export function query(query: AssetMap): Promise<Array<AssetMap>> {
     return new Promise<Array<AssetMap>> ((resolve, reject): void => {
       let task = taskpool.execute(AniQuery, query);
-      task.then((ret: NullishType) => {
+      task.then((ret: Any) => {
         HandleAssetAsyncResult<Array<AssetMap>>(ret as BusinessError<Array<AssetMap>>, resolve, reject);
       });
     });
@@ -173,7 +173,7 @@ export namespace asset {
   export function queryAsUser(userId: int, query: AssetMap): Promise<Array<AssetMap>> {
     return new Promise<Array<AssetMap>> ((resolve, reject): void => {
       let task = taskpool.execute(AniQueryAsUser, userId, query);
-      task.then((ret: NullishType) => {
+      task.then((ret: Any) => {
         HandleAssetAsyncResult<Array<AssetMap>>(ret as BusinessError<Array<AssetMap>>, resolve, reject);
       });
     });
@@ -187,7 +187,7 @@ export namespace asset {
   export function postQuery(handle: AssetMap): Promise<void> {
     return new Promise<void> ((resolve, reject): void => {
       let task = taskpool.execute(AniPostQuery, handle);
-      task.then((ret: NullishType) => {
+      task.then((ret: Any) => {
         HandleAssetAsyncResult<void>(ret as BusinessError<void>, resolve, reject);
       });
     });
@@ -196,7 +196,7 @@ export namespace asset {
   export function postQueryAsUser(userId: int, handle: AssetMap): Promise<void> {
     return new Promise<void> ((resolve, reject): void => {
       let task = taskpool.execute(AniPostQueryAsUser, userId, handle);
-      task.then((ret: NullishType) => {
+      task.then((ret: Any) => {
         HandleAssetAsyncResult<void>(ret as BusinessError<void>, resolve, reject);
       });
     });
@@ -210,7 +210,7 @@ export namespace asset {
   export function querySyncResult(query: AssetMap): Promise<SyncResult> {
     return new Promise<SyncResult> ((resolve, reject): void => {
       let task = taskpool.execute(AniQuerySyncResult, query);
-      task.then((ret: NullishType) => {
+      task.then((ret: Any) => {
         let result = ret as BusinessError<SyncResultInner>;
         if (result.code === 0) {
           let syncResultInner: SyncResultInner = result.data as SyncResultInner;
