@@ -50,7 +50,7 @@ ohos_static_library("asset_os_dependency") {
   defines = []
   if (asset_cloud_auth_enabled) {
     external_deps += [ "cloud_interface_auth:cloud_auth_client" ]
-    defines += [ "ASSET_ENABLE_CLOUD_AUTH_SERVICE" ]
+    defines += [ "ASSET_ENABLED_CLOUD_AUTH_SERVICE" ]
   }
 
   cflags = [ 

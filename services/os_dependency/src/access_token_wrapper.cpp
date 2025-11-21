@@ -26,7 +26,7 @@
 
 #include "asset_type.h"
 #include "asset_log.h"
-#ifdef ASSET_ENABLE_CLOUD_AUTH_SERVICE
+#ifdef ASSET_ENABLED_CLOUD_AUTH_SERVICE
 #include "cloud_auth_service_client.h"
 #include "common_define.h"
 #endif
@@ -69,9 +69,9 @@ bool CheckSystemHapPermission(void)
     return (tokenType == ATokenTypeEnum::TOKEN_HAP) ? CheckSystemApp() : true;
 }
 
-bool IsPerimissionEnabled(void)
+bool IsPermissionEnabled(void)
 {
-#ifdef ASSET_ENABLE_CLOUD_AUTH_SERVICE
+#ifdef ASSET_ENABLED_CLOUD_AUTH_SERVICE
     auto callerUid = OHOS::IPCSkeleton::GetCallingUid();
     std::string bundleNameStr = "com.huawei.service.asset.group_capability";
     const std::vector<std::string> permission = {bundleNameStr};
