@@ -79,8 +79,7 @@ bool IsPermissionEnabled(void)
     auto result = CloudAuth::CloudAuthServiceClient::GetInstance().VerifyCloudCapability(
         static_cast<int32_t>(callerUid),
         permission,
-        permissionResult
-    );
+        permissionResult);
     if (result != ERR_OK) {
         LOGE("Verify capability failed. Result = %{public}d", result);
         return false;

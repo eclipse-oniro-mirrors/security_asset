@@ -70,7 +70,6 @@ enum DataExist {
 
 extern "C" {
     fn GetUninstallGroups(userId: i32, developer_id: *const ConstAssetBlob, group_ids: *mut MutAssetBlobArray) -> i32;
-    fn IsPermissionEnabled() -> bool;
 }
 
 lazy_static! {
@@ -100,25 +99,17 @@ fn delete_in_de_db_on_package_removed(calling_info: &CallingInfo, reverse_condit
     let mut db = Database::build(calling_info, None)?;
     let mut delete_condition = DbMap::new();
     let check_condition = DbMap::new();
+    delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
+    let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
+    let data_exists = db.is_data_exists(&check_condition, false)?;
+    if !data_exists {
+        remove_db(&format!("{}/{}", DE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
+    }
     match calling_info.group() {
         Some(_) => {
-            if unsafe { IsPermissionEnabled() } {
-                delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
-            }
-            let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
-            let data_exists = db.is_data_exists(&check_condition, false)?;
-            if !data_exists {
-                remove_db(&format!("{}/{}", DE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
-            }
             Ok(DataExist::GroupData(data_exists))
         },
         None => {
-            delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
-            let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
-            let data_exists = db.is_data_exists(&check_condition, false)?;
-            if !data_exists {
-                remove_db(&format!("{}/{}", DE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
-            }
             Ok(DataExist::OwnerData(data_exists))
         },
     }
@@ -129,25 +120,17 @@ fn delete_in_ce_db_on_package_removed(calling_info: &CallingInfo, reverse_condit
     let mut db = Database::build(calling_info, db_key)?;
     let mut delete_condition = DbMap::new();
     let check_condition = DbMap::new();
+    delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
+    let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
+    let data_exists = db.is_data_exists(&check_condition, false)?;
+    if !data_exists {
+        remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, true)?;
+    }
     match calling_info.group() {
         Some(_) => {
-            if unsafe { IsPermissionEnabled() } {
-                delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
-            }
-            let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
-            let data_exists = db.is_data_exists(&check_condition, false)?;
-            if !data_exists {
-                remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, true)?;
-            }
             Ok(DataExist::GroupData(data_exists))
         },
         None => {
-            delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
-            let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
-            let data_exists = db.is_data_exists(&check_condition, false)?;
-            if !data_exists {
-                remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, true)?;
-            }
             Ok(DataExist::OwnerData(data_exists))
         },
     }
