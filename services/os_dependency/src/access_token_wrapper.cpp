@@ -28,7 +28,7 @@
 #include "asset_log.h"
 #ifdef ASSET_ENABLED_CLOUD_AUTH_SERVICE
 #include "cloud_auth_service_client.h"
-#include "common_define.h"
+#include "common_defined.h"
 #endif
 
 using namespace OHOS;
