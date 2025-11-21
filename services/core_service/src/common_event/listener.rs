@@ -70,6 +70,7 @@ enum DataExist {
 
 extern "C" {
     fn GetUninstallGroups(userId: i32, developer_id: *const ConstAssetBlob, group_ids: *mut MutAssetBlobArray) -> i32;
+    fn IsPermissionEnabled() -> bool;
 }
 
 lazy_static! {
@@ -101,6 +102,9 @@ fn delete_in_de_db_on_package_removed(calling_info: &CallingInfo, reverse_condit
     let check_condition = DbMap::new();
     match calling_info.group() {
         Some(_) => {
+            if unsafe { IsPermissionEnabled() } {
+                delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
+            }
             let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
             let data_exists = db.is_data_exists(&check_condition, false)?;
             if !data_exists {
@@ -127,6 +131,9 @@ fn delete_in_ce_db_on_package_removed(calling_info: &CallingInfo, reverse_condit
     let check_condition = DbMap::new();
     match calling_info.group() {
         Some(_) => {
+            if unsafe { IsPermissionEnabled() } {
+                delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
+            }
             let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
             let data_exists = db.is_data_exists(&check_condition, false)?;
             if !data_exists {

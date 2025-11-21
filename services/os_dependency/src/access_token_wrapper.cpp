@@ -17,6 +17,8 @@
 
 #include <cstring>
 #include "securec.h"
+#include <string>
+#include <vector>
 
 #include "accesstoken_kit.h"
 #include "tokenid_kit.h"
@@ -24,6 +26,10 @@
 
 #include "asset_type.h"
 #include "asset_log.h"
+#ifdef ASSET_ENABLE_CLOUD_AUTH_SERVICE
+#include "cloud_auth_service_client.h"
+#include "common_define.h"
+#endif
 
 using namespace OHOS;
 using namespace Security::AccessToken;
@@ -61,4 +67,30 @@ bool CheckSystemHapPermission(void)
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
     return (tokenType == ATokenTypeEnum::TOKEN_HAP) ? CheckSystemApp() : true;
+}
+
+bool IsPerimissionEnabled(void)
+{
+#ifdef ASSET_ENABLE_CLOUD_AUTH_SERVICE
+    auto callerUid = OHOS::IPCSkeleton::GetCallingUid();
+    std::string bundleNameStr = "com.huawei.service.asset.group_capability";
+    const std::vector<std::string> permission = {bundleNameStr};
+    std::vector<int32_t> permissionResult = {CloudAuth::UNGRANTED};
+    auto result = CloudAuth::CloudAuthServiceClient::GetInstance().VerifyCloudCapability(
+        static_cast<int32_t>(callerUid),
+        permission,
+        permissionResult
+    );
+    if (result != ERR_OK) {
+        LOGE("Verify capability failed. Result = %{public}d", result);
+        return false;
+    }
+    if (permissionResult.size() != permission.size()) {
+        LOGE("Invalid permission result! Result size is %{public}lu", permissionResult.size());
+        return false;
+    }
+    return permissionResult.front() == CloudAuth::GRANTED;
+#else
+    return false;
+#endif
 }

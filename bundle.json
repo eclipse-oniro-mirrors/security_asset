@@ -54,7 +54,8 @@
                 "os_account",
                 "ylong_json",
                 "ylong_runtime",
-                "openssl"
+                "openssl",
+                "cloud_interface_auth"
             ],
             "third_party": []
         },
