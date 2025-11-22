@@ -18,7 +18,7 @@
 use asset_common::{is_user_id_exist, CallingInfo, OwnerType, ROOT_USER_UPPERBOUND};
 use asset_definition::{
     log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, Conversion, ErrCode, OperationType, Result,
-    ReturnType, Tag, Value,
+    ReturnType, Tag, Value, SyncType, Extension
 };
 use asset_sdk::WrapType;
 
@@ -225,6 +225,16 @@ pub fn check_group_validity(attrs: &AssetMap, calling_info: &CallingInfo) -> Res
                     "[FATAL]The value of the tag [{}] cannot be set to true when the tag [{}] is specified.",
                     &Tag::IsPersistent,
                     &Tag::GroupId
+                );
+            }
+            if attrs.get(&Tag::SyncType).is_some()
+                && (attrs.get_num_attr(&Tag::SyncType)? & SyncType::TrustedDevice as u32) != 0 {
+                return log_throw_error!(
+                    ErrCode::InvalidArgument,
+                    "[FATAL]The tag [{}], the tag [{}] and the tag [{}] with TrustedDevice cannot be set together.",
+                    &Tag::IsPersistent,
+                    &Tag::GroupId,
+                    &Tag::SyncType
                 );
             }
         }
