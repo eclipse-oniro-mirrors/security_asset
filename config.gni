@@ -18,4 +18,5 @@ declare_args() {
   asset_split_hap_list = "{}"
   asset_extend_timeout = false
   asset_ce_upgrade_list = ""
+  asset_cloud_auth_service_name = ""
 }
