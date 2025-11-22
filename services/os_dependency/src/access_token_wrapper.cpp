@@ -29,6 +29,8 @@
 #ifdef ASSET_ENABLED_CLOUD_AUTH_SERVICE
 #include "cloud_auth_service_client.h"
 #include "common_defined.h"
+
+const char * const CLOUD_AUTH_SERVICE_NAME = ASSET_CLOUD_AUTH_SERVICE_NAME;
 #endif
 
 using namespace OHOS;
@@ -73,7 +75,7 @@ bool IsPermissionEnabled(void)
 {
 #ifdef ASSET_ENABLED_CLOUD_AUTH_SERVICE
     auto callerUid = OHOS::IPCSkeleton::GetCallingUid();
-    std::string bundleNameStr = "com.huawei.service.asset.group_capability";
+    std::string bundleNameStr(CLOUD_AUTH_SERVICE_NAME);
     const std::vector<std::string> permission = {bundleNameStr};
     std::vector<int32_t> permissionResult = {CloudAuth::UNGRANTED};
     auto result = CloudAuth::CloudAuthServiceClient::GetInstance().VerifyCloudCapability(

@@ -219,7 +219,7 @@ pub fn check_tag_validity(attrs: &AssetMap, valid_tags: &[Tag]) -> Result<()> {
 pub fn check_group_validity(attrs: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     if attrs.get(&Tag::GroupId).is_some() {
         if let Some(Value::Bool(true)) = attrs.get(&Tag::IsPersistent) {
-           if unsafe { !IsPermissionEnabled() } {
+            if unsafe { !IsPermissionEnabled() } {
                 return log_throw_error!(
                     ErrCode::InvalidArgument,
                     "[FATAL]The value of the tag [{}] cannot be set to true when the tag [{}] is specified.",
