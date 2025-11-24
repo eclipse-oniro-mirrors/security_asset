@@ -14,7 +14,9 @@
 declare_args() {
   enable_local_test = false
   asset_access_control_enabled = false
+  asset_cloud_auth_enabled = false
   asset_split_hap_list = "{}"
   asset_extend_timeout = false
   asset_ce_upgrade_list = ""
+  asset_cloud_auth_service_name = ""
 }
