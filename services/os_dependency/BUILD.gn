@@ -47,16 +47,9 @@ ohos_static_library("asset_os_dependency") {
     "samgr:samgr_proxy",
   ]
 
-  defines = []
-  if (asset_cloud_auth_enabled) {
-    external_deps += [ "cloud_interface_auth:cloud_auth_client" ]
-    defines += [ "ASSET_ENABLED_CLOUD_AUTH_SERVICE" ]
-  }
-
   cflags = [ 
     "-DASSET_UPGRADE_HAP_CONFIG=${asset_split_hap_list}", 
     "-DASSET_CE_UPGRADE_CONFIG=\"${asset_ce_upgrade_list}\"",
-    "-DASSET_CLOUD_AUTH_SERVICE_NAME=\"${asset_cloud_auth_service_name}\"" 
   ]
   subsystem_name = "security"
   part_name = "asset"

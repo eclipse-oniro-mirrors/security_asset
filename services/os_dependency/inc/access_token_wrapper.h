@@ -24,7 +24,6 @@ extern "C" {
 
 bool CheckPermission(const char *permission);
 bool CheckSystemHapPermission(void);
-bool IsPermissionEnabled(void);
 
 #ifdef __cplusplus
 }

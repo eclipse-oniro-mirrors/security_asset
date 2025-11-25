@@ -24,11 +24,13 @@ use asset_sdk::plugin_interface::{
 };
 use asset_db_operator::common;
 
+use crate::operations::common::check_group_validity;
+
 const OPTIONAL_ATTRS: [Tag; 2] = [Tag::GroupId, Tag::RequireAttrEncrypted];
 
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     common::check_tag_validity(attributes, &OPTIONAL_ATTRS)?;
-    common::check_group_validity(attributes, calling_info)?;
+    check_group_validity(attributes, calling_info)?;
     common::check_value_validity(attributes)?;
     Ok(())
 }

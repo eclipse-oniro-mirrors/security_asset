@@ -23,9 +23,7 @@
             "asset_access_control_enabled",
             "asset_split_hap_list",
             "asset_extend_timeout",
-            "asset_ce_upgrade_list",
-            "asset_cloud_auth_enabled",
-            "asset_cloud_auth_service_name"
+            "asset_ce_upgrade_list"
         ],
         "adapted_system_type": [
             "standard"
@@ -56,8 +54,7 @@
                 "os_account",
                 "ylong_json",
                 "ylong_runtime",
-                "openssl",
-                "cloud_interface_auth"
+                "openssl"
             ],
             "third_party": []
         },

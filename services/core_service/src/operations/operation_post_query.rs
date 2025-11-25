@@ -20,6 +20,8 @@ use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_definition::{AssetMap, Extension, Result, Tag};
 use asset_db_operator::common;
 
+use crate::operations::common::check_group_validity;
+
 const REQUIRED_ATTRS: [Tag; 1] = [Tag::AuthChallenge];
 const OPTIONAL_ATTRS: [Tag; 2] = [Tag::GroupId, Tag::UserId];
 
@@ -29,7 +31,7 @@ fn check_arguments(query: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     let mut valid_tags = REQUIRED_ATTRS.to_vec();
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
     common::check_tag_validity(query, &valid_tags)?;
-    common::check_group_validity(query, calling_info)?;
+    check_group_validity(query, calling_info)?;
     common::check_system_permission(query)?;
     common::check_value_validity(query)
 }
