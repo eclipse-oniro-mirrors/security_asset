@@ -21,7 +21,7 @@ use std::{
 };
 
 use asset_common::CallingInfo;
-use asset_definition::{log_throw_error, ErrCode, Result};
+use asset_definition::{macros_lib, ErrCode, Result};
 use asset_log::logw;
 
 use crate::crypto::Crypto;
@@ -51,7 +51,7 @@ impl CryptoManager {
     pub fn add(&mut self, crypto: Crypto) -> Result<()> {
         self.remove_expired_crypto()?;
         if self.cryptos.len() >= CRYPTO_CAPACITY {
-            log_throw_error!(ErrCode::LimitExceeded, "The number of cryptos exceeds the upper limit.")
+            macros_lib::log_throw_error!(ErrCode::LimitExceeded, "The number of cryptos exceeds the upper limit.")
         } else {
             self.cryptos.push(crypto);
             Ok(())
@@ -66,7 +66,7 @@ impl CryptoManager {
                 return Ok(crypto);
             }
         }
-        log_throw_error!(ErrCode::NotFound, "The crypto expires or does not exist. Call the preQuery first.")
+        macros_lib::log_throw_error!(ErrCode::NotFound, "The crypto expires or does not exist. Call the preQuery first.")
     }
 
     /// Remove the crypto from manager.

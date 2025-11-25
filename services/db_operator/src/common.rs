@@ -28,7 +28,7 @@ pub use operation_add_common::*;
 use asset_common::CallingInfo;
 use asset_crypto_manager::secret_key::SecretKey;
 use asset_definition::{
-    log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value, WrapType,
+    macros_lib, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value, WrapType,
 };
 
 use crate::types::{column, DbMap, DB_DATA_VERSION};
@@ -182,7 +182,7 @@ fn check_if_need_addition_aad(attr: &str, map: &DbMap) -> bool {
 fn to_hex(bytes: &Vec<u8>) -> Result<Vec<u8>> {
     let bytes_len = bytes.len();
     if bytes_len > MAX_LABEL_SIZE {
-        return log_throw_error!(ErrCode::DataCorrupted, "The data in DB has been tampered with.");
+        return macros_lib::log_throw_error!(ErrCode::DataCorrupted, "The data in DB has been tampered with.");
     }
 
     let scale_capacity = 2;

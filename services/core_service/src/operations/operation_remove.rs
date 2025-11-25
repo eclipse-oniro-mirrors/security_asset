@@ -22,7 +22,7 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap},
 };
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncStatus, SyncType, Tag, Value};
+use asset_definition::{macros_lib, AssetMap, ErrCode, Result, SyncStatus, SyncType, Tag, Value};
 use asset_log::logi;
 use asset_utils::time;
 
@@ -68,12 +68,12 @@ pub(crate) fn remove(calling_info: &CallingInfo, query: &AssetMap) -> Result<()>
     let mut db = Database::build(calling_info, db_key)?;
     let results = db.query_datas(&vec![], &db_data, None, true)?;
     if results.is_empty() {
-        return log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");
+        return macros_lib::log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");
     }
 
     let update_num = db.update_datas(&db_data, true, &update_db_data)?;
     if update_num == 0 {
-        return log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");
+        return macros_lib::log_throw_error!(ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");
     }
 
     let mut reverse_condition = DbMap::new();

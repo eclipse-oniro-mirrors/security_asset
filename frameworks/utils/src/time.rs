@@ -17,13 +17,13 @@
 
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use asset_definition::{log_throw_error, ErrCode, Result};
+use asset_definition::{macros_lib, ErrCode, Result};
 
 /// Get the current time from the system, in milliseconds.
 pub fn system_time_in_millis() -> Result<Vec<u8>> {
     match SystemTime::now().duration_since(UNIX_EPOCH) {
         Ok(d) => Ok(d.as_millis().to_string().as_bytes().to_vec()),
-        Err(e) => log_throw_error!(ErrCode::GetSystemTimeError, "[FATAL]Get system time failed, err: {}", e),
+        Err(e) => macros_lib::log_throw_error!(ErrCode::GetSystemTimeError, "[FATAL]Get system time failed, err: {}", e),
     }
 }
 
@@ -31,6 +31,6 @@ pub fn system_time_in_millis() -> Result<Vec<u8>> {
 pub fn system_time_in_seconds() -> Result<u64> {
     match SystemTime::now().duration_since(UNIX_EPOCH) {
         Ok(d) => Ok(d.as_secs()),
-        Err(e) => log_throw_error!(ErrCode::GetSystemTimeError, "[FATAL]Get system time failed, err: {}", e),
+        Err(e) => macros_lib::log_throw_error!(ErrCode::GetSystemTimeError, "[FATAL]Get system time failed, err: {}", e),
     }
 }

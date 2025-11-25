@@ -21,7 +21,7 @@ use std::fs::OpenOptions;
 use std::{fs, path::Path, sync::Mutex, os::unix::fs::{OpenOptionsExt, PermissionsExt}};
 
 use asset_common::{CallingInfo, OwnerType, OWNER_INFO_SEPARATOR};
-use asset_definition::{log_throw_error, log_and_into_asset_error, AssetError, ErrCode, Extension, Result, Value};
+use asset_definition::{macros_lib, AssetError, ErrCode, Extension, Result, Value};
 use asset_file_operator::common::DB_SUFFIX;
 use asset_log::logi;
 use asset_utils::hasher;
@@ -95,7 +95,7 @@ pub fn construct_hap_owner_info(owner_info: &[u8]) -> Result<String> {
     let owner_info_string = String::from_utf8_lossy(owner_info).to_string();
     let split_owner_info: Vec<&str> = owner_info_string.split(OWNER_INFO_SEPARATOR).collect();
     if split_owner_info.len() < MINIM_OWNER_INFO_LEN || split_owner_info.last().is_none() {
-        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Wrong queried owner info!");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Wrong queried owner info!");
     }
     let app_index = split_owner_info.last().unwrap();
     let mut split_owner_info_mut = split_owner_info.clone();
@@ -115,7 +115,8 @@ pub fn construct_splited_db_name(calling_info: &CallingInfo, is_ce: bool) -> Res
                 String::from_utf8_lossy(developer_id).trim_end_matches('\0'),
                 String::from_utf8_lossy(&to_hex(&hasher::sha256(true, group_id)))
             ),
-            _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Wrong queried owner group info."),
+            _ => return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
+                "[FATAL]Wrong queried owner group info."),
         },
         OwnerType::Hap => {
             construct_hap_owner_info(calling_info.owner_info())?
@@ -136,7 +137,7 @@ fn get_db_before_split(user_id: i32) -> Result<Database> {
 fn get_value_from_db_map(db_map: &DbMap, key: &str) -> Result<Value> {
     match db_map.get(key) {
         Some(value) => Ok(value.clone()),
-        _ => log_throw_error!(ErrCode::DatabaseError, "[FATAL]Get value from {} failed.", key),
+        _ => macros_lib::log_throw_error!(ErrCode::DatabaseError, "[FATAL]Get value from {} failed.", key),
     }
 }
 
@@ -272,7 +273,7 @@ pub fn check_and_split_db(user_id: i32) -> Result<()> {
                     entry_version = entry.clone();
                 }
             }
-            
+
             if !entry_version.is_empty() && entry_version.contains(DB_SUFFIX) {
                 let index = entry_version.rfind('/').unwrap();
                 let index_last = entry_version.rfind(DB_SUFFIX).unwrap();
@@ -321,13 +322,14 @@ pub fn create_upgrade_file(user_id: i32, origin_version: OriginVersion) -> Resul
     let mut file = match OpenOptions::new().write(true).create(true).open(file_path) {
         Ok(file) => file,
         Err(_) => {
-            return log_throw_error!(ErrCode::FileOperationError, "Create file failed in create_upgrade_file.");
+            return macros_lib::log_throw_error!(ErrCode::FileOperationError,
+                "Create file failed in create_upgrade_file.");
         },
     };
     let _ = fs::set_permissions(file_path, fs::Permissions::from_mode(0o640));
     let upgrade_list = create_upgrade_list_inner(user_id, &origin_version);
     let content = UpgradeData { version: origin_version as u32, upgrade_list, ce_upgrade: None };
-    to_writer(&content, &mut file).map_err(|e| log_and_into_asset_error!(
+    to_writer(&content, &mut file).map_err(|e| macros_lib::log_and_into_asset_error!(
         ErrCode::FileOperationError, "Write file failed in create_upgrade_file. error: {}", e))
 }
 
@@ -348,7 +350,7 @@ pub fn get_file_content(user_id: i32) -> Result<UpgradeData> {
     let file = File::open(path)?;
     match from_reader(file) {
         Ok(content) => Ok(content),
-        Err(_) => log_throw_error!(ErrCode::FileOperationError, "Get content from upgrade file failed."),
+        Err(_) => macros_lib::log_throw_error!(ErrCode::FileOperationError, "Get content from upgrade file failed."),
     }
 }
 
@@ -369,7 +371,7 @@ pub fn get_upgrade_list(user_id: i32) -> Result<Vec<String>> {
 
 fn is_file_hap(path: &Path) -> bool {
     path.file_name()
-        .and_then(|os_str| os_str.to_str()) 
+        .and_then(|os_str| os_str.to_str())
         .map_or(false, |name| name.starts_with("Hap_") && name.ends_with("_0.db"))
 }
 
@@ -422,10 +424,10 @@ pub fn save_to_writer(user_id: i32, content: &UpgradeData) -> Result<()> {
     let mut file = match OpenOptions::new().write(true).create(true).truncate(true).mode(0o640).open(file_path) {
         Ok(file) => file,
         Err(_) => {
-            return log_throw_error!(ErrCode::FileOperationError, "Create file failed.");
+            return macros_lib::log_throw_error!(ErrCode::FileOperationError, "Create file failed.");
         },
     };
-    to_writer(&content, &mut file).map_err(|e| log_and_into_asset_error!(
+    to_writer(&content, &mut file).map_err(|e| macros_lib::log_and_into_asset_error!(
         ErrCode::FileOperationError, "Write file failed in update_upgrade_list. error: {}", e))
 }
 

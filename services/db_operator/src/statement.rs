@@ -18,7 +18,7 @@
 use core::ffi::c_void;
 use std::ffi::CStr;
 
-use asset_definition::{log_throw_error, ErrCode, Result, Value};
+use asset_definition::{macros_lib, ErrCode, Result, Value};
 use asset_log::loge;
 
 use crate::{
@@ -73,7 +73,7 @@ impl<'b> Statement<'b> {
             Ok(stmt)
         } else {
             db.print_db_msg();
-            log_throw_error!(sqlite_err_handle(ret), "Prepare statement failed, err={}", ret)
+            macros_lib::log_throw_error!(sqlite_err_handle(ret), "Prepare statement failed, err={}", ret)
         }
     }
 
@@ -83,7 +83,7 @@ impl<'b> Statement<'b> {
         let ret = unsafe { SqliteStep(self.handle as _) };
         if ret != SQLITE_ROW && ret != SQLITE_DONE {
             self.db.print_db_msg();
-            log_throw_error!(sqlite_err_handle(ret), "Step statement failed, err={}", ret)
+            macros_lib::log_throw_error!(sqlite_err_handle(ret), "Step statement failed, err={}", ret)
         } else {
             Ok(ret)
         }
@@ -95,7 +95,7 @@ impl<'b> Statement<'b> {
         let ret = unsafe { SqliteReset(self.handle as _) };
         if ret != SQLITE_OK {
             self.db.print_db_msg();
-            log_throw_error!(sqlite_err_handle(ret), "Reset statement failed, err={}", ret)
+            macros_lib::log_throw_error!(sqlite_err_handle(ret), "Reset statement failed, err={}", ret)
         } else {
             Ok(())
         }
@@ -110,7 +110,7 @@ impl<'b> Statement<'b> {
         };
         if ret != SQLITE_OK {
             self.db.print_db_msg();
-            log_throw_error!(sqlite_err_handle(ret), "Bind data failed, index={}, err={}", index, ret)
+            macros_lib::log_throw_error!(sqlite_err_handle(ret), "Bind data failed, index={}, err={}", index, ret)
         } else {
             Ok(())
         }
@@ -126,7 +126,7 @@ impl<'b> Statement<'b> {
         };
         if ret != SQLITE_OK {
             self.db.print_db_msg();
-            log_throw_error!(sqlite_err_handle(ret), "Bind data failed, index={}, err={}", index, ret)
+            macros_lib::log_throw_error!(sqlite_err_handle(ret), "Bind data failed, index={}, err={}", index, ret)
         } else {
             Ok(())
         }
@@ -141,7 +141,7 @@ impl<'b> Statement<'b> {
                 return Ok(rn);
             }
         }
-        log_throw_error!(ErrCode::DatabaseError, "[FATAL][DB]Get asset column name failed.")
+        macros_lib::log_throw_error!(ErrCode::DatabaseError, "[FATAL][DB]Get asset column name failed.")
     }
 
     /// Get the count of columns in the query result.
@@ -163,7 +163,7 @@ impl<'b> Statement<'b> {
                 }
             },
             SQLITE_NULL => None,
-            t => return log_throw_error!(ErrCode::DatabaseError, "Unexpect column type: {}.", t),
+            t => return macros_lib::log_throw_error!(ErrCode::DatabaseError, "Unexpect column type: {}.", t),
         };
         Ok(data)
     }

@@ -17,7 +17,7 @@
 
 use crate::sys_event::{upload_data_size, PARTITION};
 use asset_common::SUCCESS;
-use asset_definition::{log_throw_error, ErrCode, Result};
+use asset_definition::{macros_lib, ErrCode, Result};
 use asset_file_operator::common::{is_file_exist, CE_ROOT_PATH, DE_ROOT_PATH};
 use asset_utils::time::system_time_in_seconds;
 use lazy_static::lazy_static;
@@ -46,7 +46,7 @@ fn get_remain_partition_size(partition: &str) -> Result<f64> {
     let mut remain_size: f64 = 0.0;
     let ret_code: i32 = unsafe { GetRemainPartitionSize(partition_cstr.as_ptr(), &mut remain_size) };
     if ret_code != 0 {
-        return log_throw_error!(ErrCode::try_from(ret_code as u32)?, "Get remain partition size failed");
+        return macros_lib::log_throw_error!(ErrCode::try_from(ret_code as u32)?, "Get remain partition size failed");
     }
     Ok(remain_size)
 }
@@ -101,7 +101,7 @@ fn get_db_dirs() -> Result<Vec<String>> {
     let user_ids_ptr = user_ids.as_mut_ptr();
     let ret: i32 = unsafe { GetUserIds(user_ids_ptr, user_ids_size_ptr) };
     if ret != SUCCESS {
-        return log_throw_error!(ErrCode::AccountError, "[FATAL] Get users IDs failed.");
+        return macros_lib::log_throw_error!(ErrCode::AccountError, "[FATAL] Get users IDs failed.");
     }
 
     if user_ids_size < USER_ID_VEC_BUFFER {

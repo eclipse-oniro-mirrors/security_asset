@@ -18,9 +18,7 @@
 use std::cmp::Ordering;
 
 use asset_common::CallingInfo;
-use asset_definition::{
-    log_throw_error, throw_error, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value,
-};
+use asset_definition::{macros_lib, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value};
 use asset_db_operator::{common, database::Database, types::{column, DbMap, QueryOptions, DB_DATA_VERSION}};
 use asset_crypto_manager::{
     crypto::Crypto, crypto_manager::CryptoManager,
@@ -54,7 +52,7 @@ fn upgrade_aad(db: &mut Database, calling_info: &CallingInfo, db_data: &mut DbMa
 
     let update_num = db.update_datas(&query_data, true, &update_data)?;
     if update_num == 0 {
-        return log_throw_error!(ErrCode::NotFound, "[FATAL]Upgrade asset failed.");
+        return macros_lib::log_throw_error!(ErrCode::NotFound, "[FATAL]Upgrade asset failed.");
     }
     Ok(())
 }
@@ -90,7 +88,7 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
     let mut db = Database::build(calling_info, db_key)?;
     let mut results = db.query_datas(&vec![], db_data, None, true)?;
     match results.len() {
-        0 => throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist."),
+        0 => macros_lib::throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist."),
         1 => {
             match results[0].get(column::AUTH_TYPE) {
                 Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
@@ -104,7 +102,7 @@ fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) 
             into_asset_maps(&results)
         },
         n => {
-            log_throw_error!(
+            macros_lib::log_throw_error!(
                 ErrCode::DatabaseError,
                 "[FATAL]The database contains {} records with the specified alias.",
                 n
@@ -146,7 +144,7 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
     let mut db = Database::build(calling_info, db_key)?;
     let mut results = db.query_datas(&vec![], db_data, Some(&get_query_options(attrs)), true)?;
     if results.is_empty() {
-        return throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
+        return macros_lib::throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
     }
 
     for data in &mut results {
@@ -188,7 +186,7 @@ pub(crate) fn query(calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<
     match query.get(&Tag::ReturnType) {
         Some(Value::Number(return_type)) if *return_type == (ReturnType::All as u32) => {
             if !query.contains_key(&Tag::Alias) {
-                log_throw_error!(ErrCode::Unsupported, "[FATAL]Batch secret query is not supported.")
+                macros_lib::log_throw_error!(ErrCode::Unsupported, "[FATAL]Batch secret query is not supported.")
             } else {
                 query_all(calling_info, &mut db_data, query)
             }

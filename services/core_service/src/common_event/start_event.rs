@@ -18,7 +18,7 @@
 use std::{collections::HashMap, ptr::null};
 
 use asset_common::{AutoCounter, ConstAssetBlob, ConstAssetBlobArray, TaskManager, GROUP_SEPARATOR};
-use asset_definition::{log_throw_error, ErrCode, Result};
+use asset_definition::{macros_lib, ErrCode, Result};
 use asset_file_operator::de_operator::delete_user_de_dir;
 use asset_log::{loge, logi, logw};
 use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
@@ -40,22 +40,22 @@ impl WantParser<PackageInfo> for PackageRemovedWant<'_> {
     fn parse(&self) -> Result<PackageInfo> {
         // parse user id from want
         let Some(user_id) = self.0.get(USER_ID) else {
-            return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed userId fail!");
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed userId fail!");
         };
         let user_id = match user_id.parse::<i32>() {
             Ok(user_id) => user_id,
-            _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Parse removed userId fail!"),
+            _ => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Parse removed userId fail!"),
         };
 
         // parse app id from want
         let Some(app_id) = self.0.get(APP_ID) else {
-            return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed ownerInfo fail, get appId fail!");
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed ownerInfo fail, get appId fail!");
         };
         let app_id = app_id.to_string();
 
         // parse bundle name from want
         let Some(bundle_name) = self.0.get(BUNDLE_NAME) else {
-            return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get restore appInfo fail, get bundleName fail!");
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get restore appInfo fail, get bundleName fail!");
         };
         let bundle_name = bundle_name.to_string();
 
@@ -66,13 +66,13 @@ impl WantParser<PackageInfo> for PackageRemovedWant<'_> {
                 logw!("[WARNING]Not sandbox app, getting non-sandbox(main or clone) appIndex!");
                 match self.0.get(APP_INDEX) {
                     Some(app_index) => app_index,
-                    _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed appIndex fail!"),
+                    _ => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed appIndex fail!"),
                 }
             },
         };
         let app_index = match app_index.parse::<i32>() {
             Ok(app_index) => app_index,
-            _ => return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Parse removed appIndex fail!"),
+            _ => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Parse removed appIndex fail!"),
         };
 
         // parse groups from want

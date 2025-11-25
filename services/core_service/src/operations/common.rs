@@ -19,7 +19,7 @@ use asset_common::{CallingInfo, OWNER_INFO_SEPARATOR};
 use asset_definition::{AssetMap, OperationType, Tag, Value};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID};
+use asset_plugin_interface::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID};
 
 pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
     if let Some(Value::Number(operation_type)) = input.get(&Tag::OperationType) {

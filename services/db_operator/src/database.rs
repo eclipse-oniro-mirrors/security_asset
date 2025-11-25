@@ -24,7 +24,7 @@ use asset_crypto_manager::{
     crypto::Crypto, db_key_operator::generate_secret_key_if_needed, secret_key::{SecretKey, rename_key_alias}
 };
 use asset_definition::{
-    log_throw_error, ErrCode, Extension, Result, Value, AssetMap,
+    macros_lib, ErrCode, Extension, Result, Value, AssetMap,
     Tag, SyncType, SyncStatus, ConflictResolution
 };
 use asset_log::{loge, logi};
@@ -251,7 +251,7 @@ impl Database {
             Ok(())
         } else {
             self.close();
-            log_throw_error!(sqlite_err_handle(ret), "[FATAL][DB]Open database failed, err={}", ret)
+            macros_lib::log_throw_error!(sqlite_err_handle(ret), "[FATAL][DB]Open database failed, err={}", ret)
         }
     }
 
@@ -298,7 +298,7 @@ impl Database {
         if ret == SQLITE_OK {
             Ok(())
         } else {
-            log_throw_error!(sqlite_err_handle(ret), "[FATAL][DB]Set database key failed, err={}", ret)
+            macros_lib::log_throw_error!(sqlite_err_handle(ret), "[FATAL][DB]Set database key failed, err={}", ret)
         }
     }
 
@@ -307,7 +307,7 @@ impl Database {
         loge!("[WARNING]Database is corrupt, start to restore");
         self.close();
         if let Err(e) = fs::copy(&self.backup_path, &self.path) {
-            return log_throw_error!(ErrCode::FileOperationError, "[FATAL][DB]Recovery database failed, err={}", e);
+            return macros_lib::log_throw_error!(ErrCode::FileOperationError, "[FATAL][DB]Recovery database failed, err={}", e);
         }
         self.open()
     }
@@ -408,11 +408,11 @@ impl Database {
         let path = fmt_de_db_path_with_name(user_id, db_name);
         let backup_path = fmt_backup_path(&path);
         if let Err(e) = fs::remove_file(path) {
-            return log_throw_error!(ErrCode::FileOperationError, "[FATAL][DB]Delete database failed, err={}", e);
+            return macros_lib::log_throw_error!(ErrCode::FileOperationError, "[FATAL][DB]Delete database failed, err={}", e);
         }
 
         if let Err(e) = fs::remove_file(backup_path) {
-            return log_throw_error!(
+            return macros_lib::log_throw_error!(
                 ErrCode::FileOperationError,
                 "[FATAL][DB]Delete backup database failed, err={}",
                 e
@@ -441,7 +441,7 @@ impl Database {
         if !msg.is_null() {
             let s = unsafe { CStr::from_ptr(msg as _) };
             if let Ok(rs) = s.to_str() {
-                return log_throw_error!(
+                return macros_lib::log_throw_error!(
                     sqlite_err_handle(ret),
                     "[FATAL]Database execute sql failed. error code={}, error msg={}",
                     ret,
@@ -453,7 +453,7 @@ impl Database {
         if ret == SQLITE_OK {
             Ok(())
         } else {
-            log_throw_error!(sqlite_err_handle(ret), "[FATAL]Database execute sql failed. error code={}", ret)
+            macros_lib::log_throw_error!(sqlite_err_handle(ret), "[FATAL]Database execute sql failed. error code={}", ret)
         }
     }
 
@@ -509,7 +509,7 @@ impl Database {
             query.insert_attr(column::OWNER, datas.get_bytes_attr(&column::OWNER)?.clone());
             query.insert_attr(column::OWNER_TYPE, datas.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?);
             if e.is_data_exists(&query, false)? {
-                log_throw_error!(ErrCode::Duplicated, "[FATAL]The data with the specified alias already exists.")
+                macros_lib::log_throw_error!(ErrCode::Duplicated, "[FATAL]The data with the specified alias already exists.")
             } else {
                 e.insert_row(datas)
             }
@@ -606,7 +606,7 @@ impl Database {
             query.insert_attr(column::OWNER, datas.get_bytes_attr(&column::OWNER)?.clone());
             query.insert_attr(column::OWNER_TYPE, datas.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?);
             if e.is_data_exists(&query, false)? {
-                log_throw_error!(ErrCode::Duplicated, "[FATAL]The data with the specified alias already exists.")
+                macros_lib::log_throw_error!(ErrCode::Duplicated, "[FATAL]The data with the specified alias already exists.")
             } else {
                 e.insert_adapt_data_row(datas, adapt_attributes)
             }

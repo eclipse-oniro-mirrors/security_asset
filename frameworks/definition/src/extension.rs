@@ -20,7 +20,7 @@ use std::{collections::HashMap, fmt::Display, hash::Hash, io};
 use asset_log::loge;
 
 use super::{
-    impl_from_for_u32, log_throw_error, Accessibility, AssetError, AuthType, Conversion, DataType, ErrCode, Extension,
+    macros_lib, Accessibility, AssetError, AuthType, Conversion, DataType, ErrCode, Extension,
     Result, Tag, Value,
 };
 
@@ -101,7 +101,7 @@ where
         if let Some(Value::Bool(b)) = self.get(key) {
             Ok(*b)
         } else {
-            log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of bool type failed, key: {}", key)
+            macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of bool type failed, key: {}", key)
         }
     }
 
@@ -109,7 +109,7 @@ where
         if let Some(Value::Number(num)) = self.get(key) {
             T::try_from(*num)
         } else {
-            log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of enum type failed, key: {}", key)
+            macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of enum type failed, key: {}", key)
         }
     }
 
@@ -117,7 +117,7 @@ where
         if let Some(Value::Number(num)) = self.get(key) {
             Ok(*num)
         } else {
-            log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of number type failed, key: {}", key)
+            macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of number type failed, key: {}", key)
         }
     }
 
@@ -125,7 +125,7 @@ where
         if let Some(Value::Bytes(bytes)) = self.get(key) {
             Ok(bytes)
         } else {
-            log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of bytes type failed, key: {}", key)
+            macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of bytes type failed, key: {}", key)
         }
     }
 }
@@ -153,5 +153,5 @@ impl From<io::Error> for AssetError {
     }
 }
 
-impl_from_for_u32!(AuthType);
-impl_from_for_u32!(Accessibility);
+macros_lib::impl_from_for_u32!(AuthType);
+macros_lib::impl_from_for_u32!(Accessibility);

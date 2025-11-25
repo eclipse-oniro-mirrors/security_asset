@@ -17,7 +17,7 @@
 
 use std::os::raw::c_char;
 
-use asset_definition::{impl_enum_trait, log_throw_error, AssetError, ErrCode, Result};
+use asset_definition::{macros_lib, AssetError, ErrCode, Result};
 mod calling_info;
 mod counter;
 mod process_info;
@@ -80,8 +80,7 @@ pub struct MutAssetBlobArray {
     pub blobs: *mut ModifyAssetBlob,
 }
 
-
-impl_enum_trait! {
+macros_lib::impl_enum_trait! {
     /// The type of the calling.
     #[repr(C)]
     #[derive(PartialEq, Eq)]
@@ -127,7 +126,7 @@ pub fn get_user_id(uid: u64) -> Result<u32> {
         if GetUserIdByUid(uid, &mut user_id) {
             Ok(user_id)
         } else {
-            log_throw_error!(ErrCode::AccountError, "[FATAL]Get user id failed.")
+            macros_lib::log_throw_error!(ErrCode::AccountError, "[FATAL]Get user id failed.")
         }
     }
 }
@@ -139,7 +138,7 @@ pub fn is_user_id_exist(user_id: i32) -> Result<bool> {
         if IsUserIdExist(user_id, &mut exist) {
             Ok(exist)
         } else {
-            log_throw_error!(ErrCode::AccountError, "[FATAL]Check user id failed.")
+            macros_lib::log_throw_error!(ErrCode::AccountError, "[FATAL]Check user id failed.")
         }
     }
 }

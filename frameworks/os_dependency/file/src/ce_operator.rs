@@ -15,7 +15,7 @@
 
 //! This file implements ce file operations.
 
-use asset_definition::{log_throw_error, ErrCode, Result};
+use asset_definition::{macros_lib, ErrCode, Result};
 use std::{fs, path::Path, os::unix::prelude::PermissionsExt};
 
 use crate::common::{get_user_dbs, is_file_exist, DB_KEY};
@@ -42,7 +42,7 @@ pub fn read_db_key_cipher(user_id: i32) -> Result<Vec<u8>> {
     match fs::read(path) {
         Ok(db_key_cipher) => Ok(db_key_cipher),
         Err(e) => {
-            log_throw_error!(
+            macros_lib::log_throw_error!(
                 ErrCode::FileOperationError,
                 "[FATAL][SA]Read database key ciphertext failed! error is [{}]",
                 e
@@ -59,7 +59,7 @@ pub fn write_db_key_cipher(user_id: i32, db_key_cipher: &[u8]) -> Result<()> {
     match fs::write(path, db_key_cipher) {
         Ok(_) => Ok(()),
         Err(e) => {
-            log_throw_error!(
+            macros_lib::log_throw_error!(
                 ErrCode::FileOperationError,
                 "[FATAL][SA]Write database key ciphertext failed! error is [{}]",
                 e
@@ -76,7 +76,7 @@ pub fn remove_ce_files(user_id: i32) -> Result<()> {
         match fs::remove_file(file.path().to_string_lossy().to_string()) {
             Ok(_) => (),
             Err(e) => {
-                return log_throw_error!(
+                return macros_lib::log_throw_error!(
                     ErrCode::FileOperationError,
                     "[FATAL]Remove [{}] failed, error code:[{}]",
                     file.path().to_string_lossy().to_string(),

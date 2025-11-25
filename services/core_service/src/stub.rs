@@ -23,11 +23,11 @@ use asset_ipc::{deserialize_map, serialize_maps, serialize_sync_result, IpcCode,
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_sdk::{
-    log_throw_error,
-    plugin_interface::{
-        EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID,
-    },
+    macros_lib,
     AssetError, ErrCode, Result, Tag, Value,
+};
+use asset_plugin_interface::plugin_interface::{
+    EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID,
 };
 
 use crate::{AssetService, upgrade_operator::upgrade_single_clone_app_data};
@@ -99,7 +99,7 @@ fn on_app_request(code: IpcCode, process_info: &ProcessInfo, calling_info: &Call
         match load.process_event(EventType::OnAppCall, &mut params) {
             Ok(()) => return Ok(()),
             Err(code) => {
-                return log_throw_error!(ErrCode::BmsError, "[FATAL]process on app call event failed, code: {}", code)
+                return macros_lib::log_throw_error!(ErrCode::BmsError, "[FATAL]process on app call event failed, code: {}", code)
             },
         }
     }

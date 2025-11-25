@@ -19,7 +19,7 @@ use std::ffi::{c_char, CString};
 
 use asset_common::{CallingInfo, OwnerType};
 use asset_definition::{
-    log_throw_error, Accessibility, AssetMap, ErrCode, SyncType, Tag, Value, WrapType, Extension, Result
+    macros_lib, Accessibility, AssetMap, ErrCode, SyncType, Tag, Value, WrapType, Extension, Result
 };
 
 use crate::{
@@ -48,7 +48,7 @@ pub fn check_accessibility_validity(attributes: &AssetMap, calling_info: &Callin
     if accessibility == Accessibility::DevicePowerOn {
         return Ok(());
     }
-    log_throw_error!(
+    macros_lib::log_throw_error!(
         ErrCode::InvalidArgument,
         "[FATAL][SA]System user data cannot be protected by the lock screen password."
     )
@@ -59,7 +59,7 @@ pub fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
     if attributes.get(&Tag::IsPersistent).is_some() {
         let permission = CString::new("ohos.permission.STORE_PERSISTENT_DATA").unwrap();
         if unsafe { !CheckPermission(permission.as_ptr()) } {
-            return log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
+            return macros_lib::log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
         }
     }
     Ok(())
@@ -75,11 +75,11 @@ pub fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) 
     match calling_info.owner_type_enum() {
         OwnerType::Hap => {
             if calling_info.app_index() > 0 {
-                return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
+                return macros_lib::log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
             }
         },
         OwnerType::HapGroup => {
-            return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
+            return macros_lib::log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
         },
         OwnerType::Native => (),
     }
@@ -96,7 +96,7 @@ pub fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) 
     match calling_info.owner_type_enum() {
         OwnerType::Hap | OwnerType::HapGroup => {
             if calling_info.app_index() > 0 {
-                return log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing wrap data.");
+                return macros_lib::log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing wrap data.");
             }
         },
         OwnerType::Native => (),
@@ -107,7 +107,7 @@ pub fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) 
     {
         Ok(())
     } else {
-        log_throw_error!(ErrCode::Unsupported, "[FATAL]trusted account data can not be set need wrap data.")
+        macros_lib::log_throw_error!(ErrCode::Unsupported, "[FATAL]trusted account data can not be set need wrap data.")
     }
 }
 

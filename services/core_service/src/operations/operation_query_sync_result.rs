@@ -18,7 +18,7 @@
 use asset_common::CallingInfo;
 use asset_definition::{AssetError, AssetMap, ErrCode, Extension, Result, SyncResult, Tag, Value};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::plugin_interface::{
+use asset_plugin_interface::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_FAILED_COUNT, PARAM_NAME_GROUP_ID, PARAM_NAME_OWNER_INFO, PARAM_NAME_OWNER_TYPE,
     PARAM_NAME_REQUIRE_ATTR_ENCRYPTED, PARAM_NAME_RESULT_CODE, PARAM_NAME_TOTAL_COUNT, PARAM_NAME_USER_ID,
 };

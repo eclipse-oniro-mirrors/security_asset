@@ -23,10 +23,10 @@ use asset_definition::Tag;
 use asset_file_operator::de_operator::create_user_de_dir;
 use asset_log::{loge, logi, logw};
 use asset_sdk::{
-    log_throw_error,
-    plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, RETURN_LIMIT, RETURN_OFFSET},
+    macros_lib,
     AssetError, ErrCode, Extension, Result, SyncStatus, Value, AssetMap
 };
+use asset_plugin_interface::plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, RETURN_LIMIT, RETURN_OFFSET};
 use asset_utils::time;
 use ylong_runtime::task::JoinHandle;
 use std::{
@@ -68,13 +68,13 @@ impl AssetPlugin {
                     Ok(lib) => *self.lib.borrow_mut() = Some(lib),
                     Err(err) => {
                         loge!("dlopen libasset_ext_ffi.z.so failed, err: {}", err);
-                        return log_throw_error!(ErrCode::InvalidArgument, "dlopen failed {}", err);
+                        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "dlopen failed {}", err);
                     },
                 };
             }
 
             let Some(ref lib) = *self.lib.borrow() else {
-                return log_throw_error!(ErrCode::InvalidArgument, "unexpect error");
+                return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "unexpected error");
             };
 
             let func = match lib
@@ -83,14 +83,14 @@ impl AssetPlugin {
                 Ok(func) => func,
                 Err(err) => {
                     loge!("dlsym _create_plugin failed, err: {}", err);
-                    return log_throw_error!(ErrCode::InvalidArgument, "dlsym failed {}", err);
+                    return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "dlsym failed {}", err);
                 },
             };
 
             let plugin_ptr = func();
             if plugin_ptr.is_null() {
                 loge!("_create_plugin return null.");
-                return log_throw_error!(ErrCode::InvalidArgument, "_create_plugin return null.");
+                return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "_create_plugin return null.");
             }
 
             Ok(Box::from_raw(plugin_ptr))

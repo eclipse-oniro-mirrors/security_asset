@@ -18,6 +18,7 @@ members = [
     "frameworks/os_dependency/log",
     "frameworks/utils",
     "interfaces/inner_kits/c",
+    "interfaces/inner_kits/plugin_interface",
     "services/common",
     "services/core_service",
     "services/crypto_manager",

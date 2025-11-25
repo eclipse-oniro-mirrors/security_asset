@@ -20,7 +20,7 @@ use asset_utils::time;
 use asset_sdk::WrapType;
 use asset_common::CallingInfo;
 use asset_definition::{
-    log_throw_error, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode,
+    macros_lib, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode,
     Extension, LocalStatus, Result, SyncStatus, SyncType, Tag, Value,
 };
 use asset_crypto_manager::{
@@ -69,7 +69,7 @@ fn resolve_conflict(
                 encrypt_secret(calling, db_data)?;
                 db.replace_datas(&condition, false, db_data)
             } else {
-                log_throw_error!(ErrCode::Duplicated, "[FATAL][SA]The specified alias already exists.")
+                macros_lib::log_throw_error!(ErrCode::Duplicated, "[FATAL][SA]The specified alias already exists.")
             }
         },
     }

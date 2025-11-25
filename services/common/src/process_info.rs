@@ -19,7 +19,7 @@ use std::ptr::{null, null_mut};
 
 use ipc::Skeleton;
 
-use asset_definition::{log_throw_error, ErrCode, Result, Value};
+use asset_definition::{macros_lib, ErrCode, Result, Value};
 
 use crate::{get_user_id, ConstAssetBlob, MutAssetBlob, OwnerType, SUCCESS};
 
@@ -151,7 +151,7 @@ impl ProcessInfo {
             },
             error => {
                 let error = ErrCode::try_from(error as u32)?;
-                return log_throw_error!(error, "[FATAL]Get calling package name failed, res is {}.", error);
+                return macros_lib::log_throw_error!(error, "[FATAL]Get calling package name failed, res is {}.", error);
             },
         }
 

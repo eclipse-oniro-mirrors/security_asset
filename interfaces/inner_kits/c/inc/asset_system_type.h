@@ -288,6 +288,42 @@ typedef enum {
      * Parameter verification failed.
      */
     SEC_ASSET_PARAM_VERIFICATION_FAILED = 24000018,
+    /**
+     * The HW Account error.
+     */
+    SEC_ASSET_HW_ACCOUNT_ERROR = 24001001,
+    /**
+     * The trust ring error.
+     */
+    SEC_ASSET_TRUST_RING_ERROR = 24001002,
+    /**
+     * The device manager error.
+     */
+    SEC_ASSET_DEVICE_MANAGER_ERROR = 24001003,
+    /**
+     * The cloud switch is not open.
+     */
+    SEC_ASSET_CLOUD_SWITCH_ERROR = 24001004,
+    /**
+     * The ASSET service internel Error.
+     */
+    SEC_ASSET_SYSTEM_ERROR = 24001005,
+    /**
+     * The drive kit error.
+     */
+    SEC_ASSET_DRIVE_KIT_ERROR = 24001006,
+    /**
+     * The lock error.
+     */
+    SEC_ASSET_LOCK_ERROR = 24001007,
+    /**
+     * The migrate service error.
+     */
+    SEC_ASSET_MIGRATE_SERVICE_ERROR = 24001008,
+    /**
+     * The data is empty.
+     */
+    SEC_ASSET_EMPTY_DATA = 24001009,
 } AssetResultCode;
 
 /**
