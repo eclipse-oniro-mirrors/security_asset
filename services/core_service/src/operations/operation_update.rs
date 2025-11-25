@@ -25,7 +25,7 @@ use asset_db_operator::{
 use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, LocalStatus, Result, SyncStatus, Tag, Value};
 use asset_utils::time;
 
-use crate::operations::common::inform_asset_ext;
+use crate::operations::common::{check_group_validity, inform_asset_ext};
 
 fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
     let secret_key = common::build_secret_key(calling_info, db_data)?;
@@ -74,7 +74,7 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     common::check_tag_validity(query, &valid_tags)?;
-    common::check_group_validity(query, calling_info)?;
+    check_group_validity(query, calling_info)?;
     common::check_value_validity(query)?;
     common::check_system_permission(query)?;
 

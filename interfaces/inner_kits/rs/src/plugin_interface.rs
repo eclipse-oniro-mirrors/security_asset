@@ -62,6 +62,9 @@ pub enum EventType {
 
     /// Wrap data.
     WrapData,
+
+    /// Check permission.
+    IsPermissionEnabled
 }
 
 /// param name for bundle name

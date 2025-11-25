@@ -27,6 +27,8 @@ use asset_db_operator::{
     types::{column, DbMap},
 };
 
+use crate::operations::common::check_group_validity;
+
 const OPTIONAL_ATTRS: [Tag; 1] = [Tag::AuthValidityPeriod];
 const DEFAULT_AUTH_VALIDITY_IN_SECS: u32 = 60;
 
@@ -38,7 +40,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
 
     common::check_tag_validity(attributes, &valid_tags)?;
-    common::check_group_validity(attributes, calling_info)?;
+    check_group_validity(attributes, calling_info)?;
     common::check_value_validity(attributes)?;
     common::check_system_permission(attributes)?;
 
