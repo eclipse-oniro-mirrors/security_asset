@@ -33,7 +33,7 @@ use asset_db_operator::{
     types::{column, DbMap, DB_DATA_VERSION},
 };
 
-use crate::operations::common::inform_asset_ext;
+use crate::operations::common::{check_group_validity, inform_asset_ext};
 
 extern "C" {
     fn CheckSystemHapPermission() -> bool;
@@ -105,7 +105,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&common::OPTIONAL_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
-    common::check_group_validity(attributes, calling_info)?;
+    check_group_validity(attributes, calling_info)?;
     common::check_value_validity(attributes)?;
     common::check_accessibility_validity(attributes, calling_info)?;
     common::check_sync_permission(attributes, calling_info)?;

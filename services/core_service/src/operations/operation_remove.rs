@@ -26,7 +26,7 @@ use asset_definition::{macros_lib, AssetMap, ErrCode, Result, SyncStatus, SyncTy
 use asset_log::logi;
 use asset_utils::time;
 
-use crate::operations::common::inform_asset_ext;
+use crate::operations::common::{check_group_validity, inform_asset_ext};
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     let time = time::system_time_in_millis()?;
@@ -45,7 +45,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
-    common::check_group_validity(attributes, calling_info)?;
+    check_group_validity(attributes, calling_info)?;
     common::check_value_validity(attributes)?;
     common::check_system_permission(attributes)
 }

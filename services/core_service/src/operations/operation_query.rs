@@ -25,7 +25,7 @@ use asset_crypto_manager::{
     db_key_operator::get_db_key_by_asset_map,
 };
 
-use crate::operations::common::inform_asset_ext;
+use crate::operations::common::{check_group_validity, inform_asset_ext};
 
 fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
     let mut map_set = Vec::new();
@@ -166,7 +166,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
     common::check_tag_validity(attributes, &valid_tags)?;
-    common::check_group_validity(attributes, calling_info)?;
+    check_group_validity(attributes, calling_info)?;
     common::check_value_validity(attributes)?;
     common::check_system_permission(attributes)
 }

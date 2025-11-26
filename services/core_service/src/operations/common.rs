@@ -15,8 +15,8 @@
 
 //! This module is used to provide common capabilities for the Asset operations.
 
-use asset_common::{CallingInfo, OWNER_INFO_SEPARATOR};
-use asset_definition::{AssetMap, OperationType, Tag, Value};
+use asset_common::{CallingInfo, OWNER_INFO_SEPARATOR, OwnerType};
+use asset_definition::{AssetMap, OperationType, Tag, Value, log_throw_error, ErrCode, Result};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_plugin_interface::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID};
@@ -66,4 +66,38 @@ pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
             _ => {},
         }
     }
+}
+
+pub(crate) fn check_group_validity(attrs: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+    if attrs.get(&Tag::GroupId).is_some() {
+        if let Some(Value::Bool(true)) = attrs.get(&Tag::IsPersistent) {
+            let load = AssetPlugin::get_instance().load_plugin()?;
+            let mut params = ExtDbMap::new();
+            params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
+            if load.process_event(EventType::IsPermissionEnabled, &mut params).is_err() {
+                return log_throw_error!(
+                    ErrCode::InvalidArgument,
+                    "[FATAL]The value of the tag [{}] cannot be set to true when the tag [{}] is specified.",
+                    &Tag::IsPersistent,
+                    &Tag::GroupId
+                );
+            }
+        }
+        if calling_info.owner_type_enum() == OwnerType::Native {
+            return log_throw_error!(
+                ErrCode::Unsupported,
+                "[FATAL]The tag [{}] is not yet supported for [{}] owner.",
+                &Tag::GroupId,
+                OwnerType::Native
+            );
+        }
+        if calling_info.app_index() > 0 {
+            return log_throw_error!(
+                ErrCode::Unsupported,
+                "[FATAL]The tag [{}] is not yet supported for clone or sandbox app.",
+                &Tag::GroupId
+            );
+        }
+    }
+    Ok(())
 }
