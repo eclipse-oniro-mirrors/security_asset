@@ -22,7 +22,7 @@ use asset_db_operator::{
     database::Database,
     types::{column, DbMap, DB_DATA_VERSION},
 };
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Extension, LocalStatus, Result, SyncStatus, Tag, Value};
+use asset_definition::{macros_lib, AssetMap, ErrCode, Extension, LocalStatus, Result, SyncStatus, Tag, Value};
 use asset_utils::time;
 
 use crate::operations::common::{check_group_validity, inform_asset_ext};
@@ -79,7 +79,7 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &
     common::check_system_permission(query)?;
 
     if attrs_to_update.is_empty() {
-        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The attributes to update is empty.");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The attributes to update is empty.");
     }
     // Check attributes to update.
     valid_tags = common::NORMAL_LABEL_ATTRS.to_vec();
@@ -112,13 +112,13 @@ pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &Asse
     let mut db = Database::build(calling_info, db_key)?;
     let results = db.query_datas(&vec![], &query_db_data, None, true)?;
     if results.is_empty() {
-        return log_throw_error!(ErrCode::NotFound, "[FATAL]The asset to update is not found.");
+        return macros_lib::log_throw_error!(ErrCode::NotFound, "[FATAL]The asset to update is not found.");
     }
 
     if update.contains_key(&Tag::Secret) {
         let mut results = db.query_datas(&vec![], &query_db_data, None, true)?;
         if results.len() != 1 {
-            return log_throw_error!(
+            return macros_lib::log_throw_error!(
                 ErrCode::NotFound,
                 "query to-be-updated asset failed, found [{}] assets",
                 results.len()
@@ -138,7 +138,7 @@ pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &Asse
     // call sql to update
     let update_num = db.update_datas(&query_db_data, true, &update_db_data)?;
     if update_num == 0 {
-        return log_throw_error!(ErrCode::NotFound, "[FATAL]Update asset failed, update 0 asset.");
+        return macros_lib::log_throw_error!(ErrCode::NotFound, "[FATAL]Update asset failed, update 0 asset.");
     }
 
     inform_asset_ext(calling_info, update);

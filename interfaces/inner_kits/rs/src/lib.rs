@@ -18,7 +18,6 @@
 use std::sync::{Mutex, Arc};
 
 pub use asset_definition::*;
-pub mod plugin_interface;
 
 use asset_log::logw;
 use ipc::{parcel::MsgParcel, remote::RemoteObj};
@@ -46,7 +45,7 @@ fn load_asset_service() -> Result<RemoteObj> {
     match SystemAbilityManager::load_system_ability(SA_ID, timeout) {
         Some(remote) => Ok(remote),
         None => {
-            log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
+            macros_lib::log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
         },
     }
 }
@@ -189,7 +188,7 @@ impl Manager {
             IPC_SUCCESS => Ok(reply),
             e => {
                 let msg = reply.read::<String>().map_err(ipc_err_handle)?;
-                throw_error!(ErrCode::try_from(e)?, "{}", msg)
+                macros_lib::throw_error!(ErrCode::try_from(e)?, "{}", msg)
             },
         }
     }

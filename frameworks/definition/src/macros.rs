@@ -38,13 +38,13 @@ macro_rules! impl_tag_trait {
         }
 
         impl std::convert::TryFrom<u32> for $name {
-            type Error = $crate::AssetError;
+            type Error = macros_lib::AssetError;
 
             fn try_from(v: u32) -> std::result::Result<Self, Self::Error> {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
                     _ => {
-                        $crate::log_throw_error!($crate::ErrCode::InvalidArgument,
+                        macros_lib::log_throw_error!(macros_lib::ErrCode::InvalidArgument,
                             "[FATAL]Type[{}] try from u32[{}] failed.", stringify!($name), v)
                     }
                 }
@@ -86,13 +86,13 @@ macro_rules! impl_enum_trait {
         }
 
         impl std::convert::TryFrom<u32> for $name {
-            type Error = $crate::AssetError;
+            type Error = macros_lib::AssetError;
 
             fn try_from(v: u32) -> std::result::Result<Self, Self::Error> {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
                     _ => {
-                        $crate::log_throw_error!($crate::ErrCode::InvalidArgument,
+                        macros_lib::log_throw_error!(macros_lib::ErrCode::InvalidArgument,
                             "[FATAL]Type[{}] try from u32[{}] failed.", stringify!($name), v)
                     }
                 }
@@ -109,13 +109,13 @@ macro_rules! impl_enum_trait {
             }
         }
 
-        impl $crate::Conversion for $name {
-            fn data_type(&self) -> $crate::DataType {
-                $crate::DataType::Number
+        impl macros_lib::Conversion for $name {
+            fn data_type(&self) -> macros_lib::DataType {
+                macros_lib::DataType::Number
             }
 
-            fn into_value(self) -> $crate::Value {
-                $crate::Value::Number(self as u32)
+            fn into_value(self) -> macros_lib::Value {
+                macros_lib::Value::Number(self as u32)
             }
         }
     }
@@ -132,8 +132,8 @@ macro_rules! impl_enum_trait {
 macro_rules! log_throw_error {
     ($code:expr, $($arg:tt)*) => {{
         let str = format!($($arg)*);
-        asset_log::loge!("{}", str);
-        Err($crate::AssetError {
+        macros_lib::loge!("{}", str);
+        Err(macros_lib::AssetError {
             code: $code,
             msg: str
         })
@@ -151,8 +151,8 @@ macro_rules! log_throw_error {
 macro_rules! log_and_into_asset_error {
     ($code:expr, $($arg:tt)*) => {{
         let str = format!($($arg)*);
-        asset_log::loge!("{}", str);
-        $crate::AssetError {
+        macros_lib::loge!("{}", str);
+        macros_lib::AssetError {
             code: $code,
             msg: str
         }
@@ -170,7 +170,7 @@ macro_rules! log_and_into_asset_error {
 macro_rules! throw_error {
     ($code:expr, $($arg:tt)*) => {{
         let str = format!($($arg)*);
-        Err($crate::AssetError {
+        Err(macros_lib::AssetError {
             code: $code,
             msg: str
         })

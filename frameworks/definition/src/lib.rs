@@ -20,6 +20,7 @@ use std::collections::HashMap;
 mod extension;
 #[macro_use]
 pub mod macros;
+pub mod macros_lib;
 
 impl_enum_trait! {
     /// An enum type containing the data type definitions for Asset attribute value.
@@ -249,6 +250,33 @@ impl_enum_trait! {
 
         /// The error code indicates that verifying the parameter failed.
         ParamVerificationFailed = 24000018,
+
+        /// The HW Account error.
+        HwAccountError = 24001001,
+
+        /// The trust ring error.
+        TrustRingError = 24001002,
+
+        /// The device manager error.
+        DeviceManagerError = 24001003,
+
+        /// The cloud switch is not open.
+        CloudSwitchError = 24001004,
+
+        /// The ASSET service internel Error.
+        SystemError = 24001005,
+
+        /// The drive kit error.
+        DriveKitError = 24001006,
+        
+        /// The lock error.
+        LockError = 24001007,
+
+        /// The migrate service error.
+        MigrateServiceError = 24001008,
+
+        /// The data is empty.
+        EmptyData = 24001009,
     }
 }
 

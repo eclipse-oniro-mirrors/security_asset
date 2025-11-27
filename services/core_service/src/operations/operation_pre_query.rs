@@ -16,7 +16,7 @@
 //! This module prepares for querying Asset that required secondary identity authentication.
 
 use asset_common::CallingInfo;
-use asset_definition::{log_throw_error, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
+use asset_definition::{macros_lib, Accessibility, AssetMap, AuthType, ErrCode, Extension, Result, Tag, Value};
 use asset_crypto_manager::{
     crypto::Crypto, crypto_manager::CryptoManager, secret_key::SecretKey,
     db_key_operator::get_db_key_by_asset_map,
@@ -46,7 +46,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
 
     match attributes.get(&Tag::AuthType) {
         Some(Value::Number(val)) if *val == (AuthType::None as u32) => {
-            log_throw_error!(ErrCode::InvalidArgument, "[FATAL][SA]Pre Query AuthType invalid.")
+            macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL][SA]Pre Query AuthType invalid.")
         },
         _ => Ok(()),
     }
@@ -55,16 +55,16 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
 fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<(Accessibility, bool)> {
     let db_key = get_db_key_by_asset_map(calling_info.user_id(), attrs)?;
     let mut db = Database::build(calling_info, db_key)?;
-    
+
     let results = db.query_datas(&vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET], db_data, None, true)?;
     match results.len() {
-        0 => log_throw_error!(ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found."),
+        0 => macros_lib::log_throw_error!(ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found."),
         1 => {
             let access_type = results[0].get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
             let require_password_set = results[0].get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
             Ok((access_type, require_password_set))
         },
-        _ => log_throw_error!(
+        _ => macros_lib::log_throw_error!(
             ErrCode::Unsupported,
             "[FATAL][SA]Data of multiple access control types cannot be accessed at the same time."
         ),

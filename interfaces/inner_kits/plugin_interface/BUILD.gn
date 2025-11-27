@@ -1,4 +1,4 @@
-# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Copyright (c) 2023 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -13,27 +13,23 @@
 
 import("//build/ohos.gni")
 
-ohos_rust_static_library("asset_plugin") {
+ohos_rust_shared_library("asset_plugin_interface_rust") {
   sources = [ "src/lib.rs" ]
   deps = [
-    "../../frameworks/definition:asset_definition",
-    "../../frameworks/os_dependency/file:asset_file_operator",
-    "../../frameworks/os_dependency/log:asset_log",
-    "../../frameworks/utils:asset_utils",
-    "../../interfaces/inner_kits/rs:asset_sdk_rust",
-    "../../interfaces/inner_kits/plugin_interface:asset_plugin_interface_rust",
-    "../common:asset_common",
-    "../db_operator:asset_db_operator",
-    "../crypto_manager:asset_crypto_manager",
-    "//third_party/rust/crates/libloading:lib",
+    "../../../frameworks/definition:asset_definition",
+    "../../../frameworks/ipc:asset_ipc",
+    "../../../frameworks/os_dependency/log:asset_log",
+    "../rs:asset_sdk_rust",
   ]
 
   external_deps = [
+    "ipc:ipc_rust",
+    "samgr:samgr_rust",
     "ylong_runtime:ylong_runtime",
   ]
 
-  crate_name = "asset_plugin"
-  crate_type = "rlib"
+  crate_name = "asset_plugin_interface"
+  crate_type = "dylib"
   subsystem_name = "security"
   part_name = "asset"
 }

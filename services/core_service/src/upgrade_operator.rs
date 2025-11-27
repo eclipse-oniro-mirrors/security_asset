@@ -21,9 +21,9 @@ use std::os::raw::c_char;
 
 use asset_common::{CallingInfo, OwnerType, SUCCESS};
 use asset_crypto_manager::secret_key::SecretKey;
-use asset_definition::{log_throw_error, Accessibility, AuthType, ErrCode, Extension, Result, Value};
+use asset_definition::{macros_lib, Accessibility, AuthType, ErrCode, Extension, Result, Value};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::plugin_interface::{
+use asset_plugin_interface::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_AAD, PARAM_NAME_ACCESSIBILITY, PARAM_NAME_APP_INDEX, PARAM_NAME_CIPHER,
     PARAM_NAME_DECRYPT_KEY_ALIAS, PARAM_NAME_ENCRYPT_KEY_ALIAS, PARAM_NAME_USER_ID,
 };
@@ -68,7 +68,7 @@ pub fn upgrade_single_clone_app_data(user_id: i32, hap_info: String) -> Result<(
     }
     let parts: Vec<_> = hap_info.split('_').collect();
     if parts.len() < INIT_INDEX + 1 {
-        return log_throw_error!(ErrCode::InvalidArgument, "Hap info too short.");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "Hap info too short.");
     }
     match parts.last().unwrap().parse::<i32>() {
         Ok(num) => {
@@ -76,7 +76,7 @@ pub fn upgrade_single_clone_app_data(user_id: i32, hap_info: String) -> Result<(
                 return Ok(());
             }
         },
-        Err(_) => return log_throw_error!(ErrCode::InvalidArgument, "Upgrade clone app failed."),
+        Err(_) => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "Upgrade clone app failed."),
     }
     let version = get_upgrade_version(user_id)?;
     if version == OriginVersion::V2 {
@@ -130,12 +130,12 @@ fn get_clone_app_indexes(user_id: i32, app_name: &str) -> Result<Vec<i32>> {
     let mut indexes: Vec<i32> = vec![DEFAULT_VALUE; DEFAULT_SIZE];
     let app_name_cstr = match CString::new(app_name) {
         Ok(app_name_cstr) => app_name_cstr,
-        Err(_) => return log_throw_error!(ErrCode::OutOfMemory, "Create CString failed."),
+        Err(_) => return macros_lib::log_throw_error!(ErrCode::OutOfMemory, "Create CString failed."),
     };
     let mut index_size = DEFAULT_SIZE as u32;
     let ret = unsafe { GetCloneAppIndexes(user_id, indexes.as_mut_ptr(), &mut index_size, app_name_cstr.as_ptr())};
     if ret != SUCCESS {
-        return log_throw_error!(ErrCode::try_from(ret as u32)?, "Get clone app indexes failed.");
+        return macros_lib::log_throw_error!(ErrCode::try_from(ret as u32)?, "Get clone app indexes failed.");
     }
     indexes.truncate(index_size as usize);
     Ok(indexes)
@@ -163,7 +163,7 @@ fn is_hap_in_allowlist(user_id: i32, info: &str) -> Result<bool> {
     let mut is_in_list: bool = false;
     let ret = unsafe { IsHapInAllowList(user_id, app_name.as_ptr(), &mut is_in_list) };
     if ret != SUCCESS {
-        return log_throw_error!(ErrCode::try_from(ret as u32)?, "Check hap in allowlist failed.");
+        return macros_lib::log_throw_error!(ErrCode::try_from(ret as u32)?, "Check hap in allowlist failed.");
     }
     Ok(is_in_list)
 }
@@ -178,14 +178,14 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
     }
     let mut need_rollback = false;
     let owner_info = datas.first().unwrap().get_bytes_attr(&column::OWNER)?;
-    let owner_type = datas.first().unwrap().get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?; 
+    let owner_type = datas.first().unwrap().get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?;
     let calling_info = CallingInfo::new(user_id, owner_type, owner_info.clone(), None);
     let index = match owner_info.iter().rev().position(|&x| x == b'_') {
         Some(index) => index,
-        _ => return log_throw_error!(ErrCode::InvalidArgument, "Owner info is incorrect."),
+        _ => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "Owner info is incorrect."),
     };
     if index >= owner_info.len() - 1 {
-        return log_throw_error!(ErrCode::InvalidArgument, "Owner info is too short.");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "Owner info is too short.");
     }
     let mut new_owner = owner_info[..(owner_info.len() - index)].to_vec();
     let app_index_str = app_index.to_string();
@@ -207,7 +207,7 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
     }
     if need_rollback {
         db_clone.exec("rollback")?;
-        return log_throw_error!(ErrCode::DatabaseError, "Upgrade clone app data failed.");
+        return macros_lib::log_throw_error!(ErrCode::DatabaseError, "Upgrade clone app data failed.");
     }
     db_clone.exec("commit")
 }
@@ -230,7 +230,7 @@ fn unwrap_and_insert(user_id: i32, unwrap_info: UnwrapInfo, db_clone: &mut Datab
     params.insert(PARAM_NAME_AAD, Value::Bytes(common::build_aad(unwrap_info.data)?));
     params.insert(PARAM_NAME_APP_INDEX, Value::Bytes(unwrap_info.suffix.to_vec()));
     params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
-    
+
     let load = AssetPlugin::get_instance().load_plugin()?;
     match load.process_event(EventType::WrapData, &mut params) {
         Ok(()) => {
@@ -238,11 +238,11 @@ fn unwrap_and_insert(user_id: i32, unwrap_info: UnwrapInfo, db_clone: &mut Datab
             unwrap_info.data.insert(column::SECRET, Value::Bytes(cipher.to_vec()));
             unwrap_info.data.insert(column::OWNER, Value::Bytes(unwrap_info.new_owner.to_vec()));
             if db_clone.insert_datas(unwrap_info.data).is_err() {
-                return log_throw_error!(ErrCode::CryptoError, "Unwrap the clone app data failed.");
+                return macros_lib::log_throw_error!(ErrCode::CryptoError, "Unwrap the clone app data failed.");
             }
         },
         Err(_) => {
-            return log_throw_error!(ErrCode::CryptoError, "Unwrap the clone app data failed.");
+            return macros_lib::log_throw_error!(ErrCode::CryptoError, "Unwrap the clone app data failed.");
         },
     };
     Ok(())

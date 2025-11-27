@@ -33,7 +33,7 @@ use lazy_static::lazy_static;
 use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Counter, TaskManager};
 use asset_crypto_manager::crypto_manager::CryptoManager;
 use asset_db_operator::database_file_upgrade::check_and_split_db;
-use asset_definition::{log_throw_error, AssetMap, ErrCode, Result, SyncResult};
+use asset_definition::{macros_lib, AssetMap, ErrCode, Result, SyncResult};
 use asset_file_operator::{common::DE_ROOT_PATH, de_operator::create_user_de_dir};
 use asset_ipc::SA_ID;
 use asset_log::{loge, logi};
@@ -215,7 +215,7 @@ fn start_service(handler: Handler) -> Result<()> {
     }
 
     if !handler.publish(AssetService::new(handler.clone())) {
-        return log_throw_error!(ErrCode::IpcError, "Asset publish stub object failed");
+        return macros_lib::log_throw_error!(ErrCode::IpcError, "Asset publish stub object failed");
     };
     common_event::subscribe();
     let handle = ylong_runtime::spawn(execute_upgrade_process());

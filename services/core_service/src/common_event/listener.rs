@@ -42,7 +42,7 @@ use asset_db_operator::{
         DbMap,
     },
 };
-use asset_definition::{log_throw_error, ErrCode, Result, SyncType, Value};
+use asset_definition::{macros_lib, ErrCode, Result, SyncType, Value};
 use asset_file_operator::{
     ce_operator::is_db_key_cipher_file_exist,
     common::{BACKUP_SUFFIX, CE_ROOT_PATH, DB_SUFFIX, DE_ROOT_PATH},
@@ -50,7 +50,7 @@ use asset_file_operator::{
 };
 use asset_log::{loge, logi, logw};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::plugin_interface::{
+use asset_plugin_interface::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID,
 };
 
@@ -150,7 +150,7 @@ fn delete_on_package_removed(calling_info: &CallingInfo) -> Result<DataExist> {
             (DataExist::GroupData(de_db_data_exists), DataExist::GroupData(ce_db_data_exists)) => {
                 Ok(DataExist::GroupData(de_db_data_exists || ce_db_data_exists))
             },
-            _ => log_throw_error!(ErrCode::AccessDenied, "[FATAL][SA]Cannot delete owner and group data at same time"),
+            _ => macros_lib::log_throw_error!(ErrCode::AccessDenied, "[FATAL][SA]Cannot delete owner and group data at same time"),
         }
     } else {
         Ok(de_db_data_exists)
@@ -533,14 +533,14 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
     let mut ret: i32;
     ret = unsafe { GetUsersSize(user_ids_size_ptr) };
     if ret != SUCCESS {
-        return log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get users size failed.");
+        return macros_lib::log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get users size failed.");
     }
 
     let mut user_ids: Vec<i32> = vec![0i32; (*user_ids_size_ptr + USER_ID_VEC_BUFFER).try_into().unwrap()];
     let user_ids_ptr = user_ids.as_mut_ptr();
     ret = unsafe { GetUserIds(user_ids_ptr, user_ids_size_ptr) };
     if ret != SUCCESS {
-        return log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get user IDs failed.");
+        return macros_lib::log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get user IDs failed.");
     }
 
     let user_ids_slice = unsafe { slice::from_raw_parts_mut(user_ids_ptr, (*user_ids_size_ptr).try_into().unwrap()) };

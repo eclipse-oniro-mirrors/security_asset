@@ -16,10 +16,10 @@
 //! This module is used to provide common capabilities for the Asset operations.
 
 use asset_common::{CallingInfo, OWNER_INFO_SEPARATOR, OwnerType};
-use asset_definition::{AssetMap, OperationType, Tag, Value, log_throw_error, ErrCode, Result};
+use asset_definition::{macros_lib, AssetMap, OperationType, Tag, Value, ErrCode, Result};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID};
+use asset_plugin_interface::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID};
 
 pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
     if let Some(Value::Number(operation_type)) = input.get(&Tag::OperationType) {
@@ -75,7 +75,7 @@ pub(crate) fn check_group_validity(attrs: &AssetMap, calling_info: &CallingInfo)
             let mut params = ExtDbMap::new();
             params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
             if load.process_event(EventType::IsPermissionEnabled, &mut params).is_err() {
-                return log_throw_error!(
+                return macros_lib::log_throw_error!(
                     ErrCode::InvalidArgument,
                     "[FATAL]The value of the tag [{}] cannot be set to true when the tag [{}] is specified.",
                     &Tag::IsPersistent,
@@ -84,7 +84,7 @@ pub(crate) fn check_group_validity(attrs: &AssetMap, calling_info: &CallingInfo)
             }
         }
         if calling_info.owner_type_enum() == OwnerType::Native {
-            return log_throw_error!(
+            return macros_lib::log_throw_error!(
                 ErrCode::Unsupported,
                 "[FATAL]The tag [{}] is not yet supported for [{}] owner.",
                 &Tag::GroupId,
@@ -92,7 +92,7 @@ pub(crate) fn check_group_validity(attrs: &AssetMap, calling_info: &CallingInfo)
             );
         }
         if calling_info.app_index() > 0 {
-            return log_throw_error!(
+            return macros_lib::log_throw_error!(
                 ErrCode::Unsupported,
                 "[FATAL]The tag [{}] is not yet supported for clone or sandbox app.",
                 &Tag::GroupId

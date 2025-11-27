@@ -18,7 +18,7 @@
 
 use std::{fs, io::ErrorKind, path::Path, time::Instant};
 
-use asset_definition::{log_throw_error, AssetError, AssetMap, ErrCode, Result};
+use asset_definition::{macros_lib, AssetError, AssetMap, ErrCode, Result};
 use asset_db_operator::{
     database::{self, Database}, database_file_upgrade::{self, UpgradeData},
     types::{column, DbMap},
@@ -95,7 +95,7 @@ fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()>
     // remove de and de backup
     if need_rollback {
         ce_db.exec("rollback")?;
-        return log_throw_error!(ErrCode::DatabaseError, "Upgrade ce data failed.");
+        return macros_lib::log_throw_error!(ErrCode::DatabaseError, "Upgrade ce data failed.");
     }
     ce_db.exec("commit")?;
     remove_db(&path_str)
@@ -104,7 +104,7 @@ fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()>
 fn store_upgrade_info_in_settings(user_id: i32, status: CeUpgradeStatus) -> Result<()> {
     match unsafe{ StoreUpgradeInSetting(user_id, status as i32) } {
         true => Ok(()),
-        false => log_throw_error!(ErrCode::DatabaseError, "store data in setting failed."),
+        false => macros_lib::log_throw_error!(ErrCode::DatabaseError, "store data in setting failed."),
     }
 }
 

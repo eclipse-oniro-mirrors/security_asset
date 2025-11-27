@@ -17,7 +17,7 @@ use std::collections::HashSet;
 
 use asset_common::CallingInfo;
 use asset_definition::{
-    AssetMap, Tag, Value, Result, log_throw_error, ErrCode, WrapType, LocalStatus,
+    AssetMap, Tag, Value, Result, macros_lib, ErrCode, WrapType, LocalStatus,
     SyncType, SyncStatus,
 };
 
@@ -36,10 +36,10 @@ const INVALID_TAGS: [Tag; 5] = [Tag::AuthType, Tag::Accessibility, Tag::RequireA
 fn check_tag_validity_with_invalid_tags(attrs: &AssetMap, valid_tags: &[Tag], invalid_tags: &[Tag]) -> Result<()> {
     for tag in attrs.keys() {
         if !valid_tags.contains(tag) {
-            return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);
         }
         if invalid_tags.contains(tag) {
-            return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);
         }
     }
     Ok(())
