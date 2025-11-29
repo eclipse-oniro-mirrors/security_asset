@@ -65,7 +65,10 @@ pub enum EventType {
     WrapData,
 
     /// Check permission.
-    IsPermissionEnabled
+    IsPermissionEnabled,
+
+    /// Update cloud sync status.
+    UpdateCloudSyncStatus,
 }
 
 /// param name for bundle name
@@ -220,7 +223,7 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
         attributes: &ExtDbMap,
         aliases: &[Vec<u8>],
         require_attr_encrypted: bool,
-    ) -> Result<(), AssetError>;
+    ) -> Result<i32, AssetError>;
 
     /// Add assets into db with attributes array.
     fn batch_add(
@@ -267,6 +270,12 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// check ce upgrade
     fn is_ce_upgrade(&self, user_id: i32) -> bool;
+
+    /// store key-value into DataShare
+    fn store_key_value(&self, user_id: i32, column_key: &str, column_value: i32) -> bool;
+    
+    /// query value in DataShare
+    fn query_value(&self, user_id: i32, column_key: &str) -> i32;
 }
 
 /// Defines a trait `IAssetPlugin` that specifies the required functionality for an asset plugin implementation.

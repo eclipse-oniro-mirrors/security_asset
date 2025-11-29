@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef DATA_SGHARE_WRAPPER
-#define DATA_SGHARE_WRAPPER
+#ifndef DATA_SHARE_WRAPPER
+#define DATA_SHARE_WRAPPER
 
 #include <stdint.h>
 #include "datashare_helper.h"
@@ -23,7 +23,9 @@
 extern "C" {
 #endif
 
-bool StoreUpgradeInSetting(int32_t userId, int32_t status);
+bool StoreKeyValue(int32_t userId, char const *inKey, int32_t inValue);
+
+int32_t QueryValue(int32_t userId, char const *inKey, int32_t *outValue);
 
 #ifdef __cplusplus
 }

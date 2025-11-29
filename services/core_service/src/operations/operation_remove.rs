@@ -26,7 +26,7 @@ use asset_definition::{macros_lib, AssetMap, ErrCode, Result, SyncStatus, SyncTy
 use asset_log::logi;
 use asset_utils::time;
 
-use crate::operations::common::{check_group_validity, inform_asset_ext};
+use crate::operations::common::{check_group_validity, inform_asset_ext, update_cloud_sync_status};
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     let time = time::system_time_in_millis()?;
@@ -81,6 +81,9 @@ pub(crate) fn remove(calling_info: &CallingInfo, query: &AssetMap) -> Result<()>
     let remove_num = db.delete_datas(&db_data, Some(&reverse_condition), false)?;
     logi!("Delete num: {}", remove_num);
 
+    if update_num > 0 {
+        update_cloud_sync_status(calling_info, &results);
+    }
     inform_asset_ext(calling_info, query);
 
     Ok(())

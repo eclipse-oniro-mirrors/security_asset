@@ -251,6 +251,9 @@ impl_enum_trait! {
         /// The error code indicates that verifying the parameter failed.
         ParamVerificationFailed = 24000018,
 
+        /// The error code indicates that getting the IAssetPluginCtx failed.
+        GetPluginCtxFailed = 24000019,
+
         /// The HW Account error.
         HwAccountError = 24001001,
 

@@ -16,7 +16,7 @@
 //! This module provides interfaces for upgrade clone apps.
 //! Databases are isolated based on users and protected by locks.
 
-use std::{fs, io::ErrorKind, path::Path, time::Instant};
+use std::{fs, io::ErrorKind, path::Path, time::Instant, os::raw::c_char, ffi::CString};
 
 use asset_definition::{macros_lib, AssetError, AssetMap, ErrCode, Result};
 use asset_db_operator::{
@@ -31,8 +31,10 @@ use asset_common::CallingInfo;
 use crate::{get_ce_upgrade_info, sys_event::upload_system_event, UPGRADE_CE_MUTEX};
 
 extern "C" {
-    fn StoreUpgradeInSetting(user_id: i32, status: i32) -> bool;
+    fn StoreKeyValue(user_id: i32, column_key: *const c_char, column_value: i32) -> bool;
 }
+
+const ASSET_CE_UPGRADE: &str = "ASSET_CE_UPGRADE";
 
 pub(crate) enum CeUpgradeStatus {
     Start = 0,
@@ -102,7 +104,8 @@ fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()>
 }
 
 fn store_upgrade_info_in_settings(user_id: i32, status: CeUpgradeStatus) -> Result<()> {
-    match unsafe{ StoreUpgradeInSetting(user_id, status as i32) } {
+    let key = CString::new(ASSET_CE_UPGRADE).unwrap();
+    match unsafe{ StoreKeyValue(user_id, key.as_ptr(), status as i32) } {
         true => Ok(()),
         false => macros_lib::log_throw_error!(ErrCode::DatabaseError, "store data in setting failed."),
     }
