@@ -25,7 +25,7 @@ use asset_db_operator::{
 use asset_definition::{macros_lib, AssetMap, ErrCode, Extension, LocalStatus, Result, SyncStatus, Tag, Value};
 use asset_utils::time;
 
-use crate::operations::common::{check_group_validity, inform_asset_ext};
+use crate::operations::common::{check_group_validity, inform_asset_ext, update_cloud_sync_status};
 
 fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
     let secret_key = common::build_secret_key(calling_info, db_data)?;
@@ -139,6 +139,8 @@ pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &Asse
     let update_num = db.update_datas(&query_db_data, true, &update_db_data)?;
     if update_num == 0 {
         return macros_lib::log_throw_error!(ErrCode::NotFound, "[FATAL]Update asset failed, update 0 asset.");
+    } else {
+        update_cloud_sync_status(calling_info, &results);
     }
 
     inform_asset_ext(calling_info, update);

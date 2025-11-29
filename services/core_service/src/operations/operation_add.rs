@@ -33,7 +33,7 @@ use asset_db_operator::{
     types::{column, DbMap, DB_DATA_VERSION},
 };
 
-use crate::operations::common::{check_group_validity, inform_asset_ext};
+use crate::operations::common::{check_group_validity, inform_asset_ext, update_cloud_sync_status};
 
 extern "C" {
     fn CheckSystemHapPermission() -> bool;
@@ -157,6 +157,9 @@ fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 pub(crate) fn add(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<()> {
     let local_res = local_add(attributes, calling_info);
 
+    if local_res.is_ok() {
+        update_cloud_sync_status(calling_info, &vec![common::into_db_map(attributes)]);
+    }
     inform_asset_ext(calling_info, attributes);
 
     local_res

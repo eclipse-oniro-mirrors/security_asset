@@ -15,11 +15,14 @@
 
 //! This module is used to provide common capabilities for the Asset operations.
 
-use asset_common::{CallingInfo, OWNER_INFO_SEPARATOR, OwnerType};
-use asset_definition::{macros_lib, AssetMap, OperationType, Tag, Value, ErrCode, Result};
+use asset_common::{CallingInfo, OWNER_INFO_SEPARATOR, OwnerType, TaskManager};
+use asset_definition::{macros_lib, AssetMap, OperationType, Tag, Value, ErrCode, Result, SyncType};
 use asset_log::{loge, logi};
+use asset_db_operator::types::{DbMap, column};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_plugin_interface::plugin_interface::{EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID};
+use asset_plugin_interface::plugin_interface::{
+    EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID, PARAM_NAME_OWNER_INFO,
+};
 
 pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
     if let Some(Value::Number(operation_type)) = input.get(&Tag::OperationType) {
@@ -100,4 +103,38 @@ pub(crate) fn check_group_validity(attrs: &AssetMap, calling_info: &CallingInfo)
         }
     }
     Ok(())
+}
+
+pub(crate) fn update_cloud_sync_status(calling_info: &CallingInfo, db_map_vec: &Vec<DbMap>) {
+    let mut need_update: bool = false;
+    let trusted_account = SyncType::TrustedAccount as u32;
+    for db_map in db_map_vec {
+        let sync_type = match db_map.get(column::SYNC_TYPE) {
+            Some(Value::Number(value)) => *value,
+            _ => 0,
+        };
+        if sync_type & trusted_account == trusted_account {
+            need_update = true;
+            break;
+        }
+    }
+    if !need_update {
+        return;
+    }
+
+    let user_id = calling_info.user_id();
+    let owner_info = calling_info.owner_info().clone();
+    let handle = ylong_runtime::spawn_blocking(move || {
+        if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
+            let mut params = ExtDbMap::new();
+            params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
+            params.insert(PARAM_NAME_OWNER_INFO, Value::Bytes(owner_info));
+            match load.process_event(EventType::UpdateCloudSyncStatus, &mut params) {
+                Ok(()) => logi!("process update_cloud_sync_status ext event success."),
+                Err(code) => loge!("process update_cloud_sync_status ext event failed, code: {}", code),
+            }
+        }
+    });
+    let task_manager = TaskManager::get_instance();
+    task_manager.lock().unwrap().push_task(handle);
 }

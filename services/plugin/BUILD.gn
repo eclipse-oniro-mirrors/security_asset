@@ -22,6 +22,7 @@ ohos_rust_static_library("asset_plugin") {
     "../../frameworks/utils:asset_utils",
     "../../interfaces/inner_kits/rs:asset_sdk_rust",
     "../../interfaces/inner_kits/plugin_interface:asset_plugin_interface_rust",
+    "../../services/os_dependency:asset_os_dependency",
     "../common:asset_common",
     "../db_operator:asset_db_operator",
     "../crypto_manager:asset_crypto_manager",

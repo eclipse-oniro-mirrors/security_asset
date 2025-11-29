@@ -13,6 +13,13 @@
  * limitations under the License.
  */
 
+use std::{
+    cell::RefCell,
+    sync::{Arc, Mutex, OnceLock},
+    os::raw::c_char, ffi::CString,
+};
+use ylong_runtime::task::JoinHandle;
+
 use asset_common::{CallingInfo, Counter, Group, OwnerType, TaskManager, GROUP_SEPARATOR, ProcessInfo};
 use asset_crypto_manager::db_key_operator::get_db_key;
 use asset_db_operator::{
@@ -24,15 +31,18 @@ use asset_file_operator::de_operator::create_user_de_dir;
 use asset_log::{loge, logi, logw};
 use asset_sdk::{
     macros_lib,
-    AssetError, ErrCode, Extension, Result, SyncStatus, Value, AssetMap
+    AssetError, ErrCode, Extension, Result, SyncStatus, Value, AssetMap,
 };
 use asset_plugin_interface::plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, RETURN_LIMIT, RETURN_OFFSET};
 use asset_utils::time;
-use ylong_runtime::task::JoinHandle;
-use std::{
-    cell::RefCell,
-    sync::{Arc, Mutex, OnceLock},
-};
+
+extern "C" {
+    fn StoreKeyValue(user_id: i32, in_key: *const c_char, in_value: i32) -> bool;
+    fn QueryValue(user_id: i32, in_key: *const c_char, out_value: *mut i32) -> i32;
+}
+
+const DATASHARE_SUCCESS: i32 = 0;
+const DATASHARE_FAIL: i32 = -1;
 
 /// The asset_ext plugin.
 #[derive(Default)]
@@ -326,7 +336,7 @@ impl IAssetPluginCtx for AssetContext {
     }
 
     /// Removes assets with aliases.
-    fn batch_remove(&self, attributes: &ExtDbMap, aliases: &[Vec<u8>], require_attr_encrypted: bool) -> Result<()> {
+    fn batch_remove(&self, attributes: &ExtDbMap, aliases: &[Vec<u8>], require_attr_encrypted: bool) -> Result<i32> {
         let db_name = get_db_name(self.user_id, attributes, require_attr_encrypted)?;
         let db_key = get_db_key(self.user_id, require_attr_encrypted)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key)?;
@@ -335,9 +345,9 @@ impl IAssetPluginCtx for AssetContext {
         let time = time::system_time_in_millis()?;
         update_datas.insert(column::UPDATE_TIME, Value::Bytes(time));
         update_datas.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
-        let total_removed_count = db.delete_batch_datas(&condition, &update_datas, aliases)?;
+        let total_removed_count: i32 = db.delete_batch_datas(&condition, &update_datas, aliases)?;
         logi!("total removed count = {}", total_removed_count);
-        Ok(())
+        Ok(total_removed_count)
     }
 
     /// Add assets into db with attributes array.
@@ -486,6 +496,33 @@ impl IAssetPluginCtx for AssetContext {
         match get_file_content(user_id) {
             Ok(res) => res.ce_upgrade.is_some(),
             Err(_e) => false
+        }
+    }
+
+    /// store key-value into DataShare
+    fn store_key_value(&self, user_id: i32, column_key: &str, column_value: i32) -> bool {
+        match CString::new(column_key) {
+            Ok(key) => unsafe { StoreKeyValue(user_id, key.as_ptr(), column_value) },
+            Err(e) => {
+                loge!("[store_key_value] create CString from {} failed, error:{:?}", column_key, e);
+                false
+            }
+        }
+    }
+    
+    /// query value in DataShare
+    fn query_value(&self, user_id: i32, column_key: &str) -> i32 {
+        match CString::new(column_key) {
+            Ok(key) => {
+                let mut column_value: i32 = DATASHARE_FAIL;
+                let result = unsafe { QueryValue(user_id, key.as_ptr(), &mut column_value) };
+                logi!("[query_value] result:{}, key:{}, value:{}", result, column_key, column_value);
+                if result == DATASHARE_SUCCESS { column_value } else { result }
+            },
+            Err(e) => {
+                loge!("[store_key_value] create CString from {} failed, error:{:?}", column_key, e);
+                DATASHARE_FAIL
+            }
         }
     }
     

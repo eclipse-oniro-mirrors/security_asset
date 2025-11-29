@@ -25,7 +25,6 @@
 #include "asset_log.h"
 
 namespace {
-const constexpr char *ASSET_CE_UPGRADE = "ASSET_CE_UPGRADE";
 const constexpr char *SETTING_COLUMN_KEYWORD = "KEYWORD";
 const constexpr char *SETTING_COLUMN_VALUE = "VALUE";
 const constexpr char *SETTING_URI_PROXY_PREFIX = "datashare:///com.ohos.settingsdata/entry/settingsdata/"
@@ -33,11 +32,19 @@ const constexpr char *SETTING_URI_PROXY_PREFIX = "datashare:///com.ohos.settings
 const constexpr char *SETTING_URI_PROXY_SUFFIX = "?Proxy=true";
 constexpr const char *SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
 constexpr const int32_t ASSET_SA_ID = 8100;
+constexpr const int32_t ZERO = 0;
+constexpr const int32_t ONE = 1;
+constexpr const int32_t DATASHARE_SUCCESS = 0;
+constexpr const int32_t DATASHARE_FAIL = -1;
+
+std::string getUriStr(int32_t userId)
+{
+    return std::string(SETTING_URI_PROXY_PREFIX) + std::to_string(userId) + std::string(SETTING_URI_PROXY_SUFFIX);
+}
 
 std::shared_ptr<OHOS::DataShare::DataShareHelper> CreateDataShareHelper(int32_t userId)
 {
-    auto SETTING_URI_PROXY = std::string(SETTING_URI_PROXY_PREFIX) + std::to_string(userId)
-        + std::string(SETTING_URI_PROXY_SUFFIX);
+    auto SETTING_URI_PROXY = getUriStr(userId);
     auto systemAbilityManager = OHOS::SystemAbilityManagerClient::GetInstance().GetSystemAbilityManager();
     if (systemAbilityManager == nullptr) {
         LOGE("[FATAL]systemAbilityManager is nullptr, please check.");
@@ -54,23 +61,25 @@ std::shared_ptr<OHOS::DataShare::DataShareHelper> CreateDataShareHelper(int32_t 
     return helper;
 }
 
+OHOS::DataShare::DataSharePredicates getPredicates(std::string keyword)
+{
+    OHOS::DataShare::DataSharePredicates predicates;
+    predicates.EqualTo(SETTING_COLUMN_KEYWORD, keyword);
+    return predicates;
+}
 } // namespace
 
-bool StoreUpgradeInSetting(int32_t userId, int32_t status)
+bool StoreKeyValue(int32_t userId, char const *inKey, int32_t inValue)
 {
     auto helper = CreateDataShareHelper(userId);
     if (helper == nullptr) {
         LOGE("helper is nullptr");
         return false;
     }
-    std::string ce_upgrade = std::string(ASSET_CE_UPGRADE);
-    OHOS::DataShare::DataShareValuesBucket valuesBucket;
-    valuesBucket.Put(SETTING_COLUMN_VALUE, status);
-    auto uri = Uri(std::string(SETTING_URI_PROXY_PREFIX) + std::to_string(userId)
-        + std::string(SETTING_URI_PROXY_SUFFIX));
-    // query if exist use update not exist use insert
-    OHOS::DataShare::DataSharePredicates predicates;
-    predicates.EqualTo(SETTING_COLUMN_KEYWORD, ce_upgrade);
+
+    auto uri = Uri(getUriStr(userId));
+    std::string keyword = std::string(inKey);
+    auto predicates = getPredicates(keyword);
     std::vector<std::string> columns;
     auto resultSet = helper->Query(uri, predicates, columns);
     if (resultSet == nullptr) {
@@ -79,27 +88,69 @@ bool StoreUpgradeInSetting(int32_t userId, int32_t status)
         return false;
     }
 
-    int32_t result;
-    int32_t query_count;
+    int32_t result = DATASHARE_FAIL;
+    int32_t query_count = ZERO;
     resultSet->GetRowCount(query_count);
+    OHOS::DataShare::DataShareValuesBucket valuesBucket;
+    valuesBucket.Put(SETTING_COLUMN_VALUE, inValue);
     switch (query_count) {
-        case 0:
-            valuesBucket.Put(SETTING_COLUMN_KEYWORD, ce_upgrade);
+        case ZERO:
+            valuesBucket.Put(SETTING_COLUMN_KEYWORD, keyword);
             result = helper->Insert(uri, valuesBucket);
             break;
-        case 1:
+        case ONE:
             result = helper->Update(uri, predicates, valuesBucket);
             break;
         default:
             LOGE("[FATAL]Datashare query over expected.");
-            result = -1;
             break;
     }
 
-    if (result < 0) {
+    if (result < ZERO) {
         LOGE("[FATAL]Datashare insert/update failed, ret=%{public}d", result);
     }
     resultSet->Close();
     helper->Release();
-    return result >= 0;
+    return result >= ZERO;
+}
+
+int32_t QueryValue(int32_t userId, const char *inKey, int32_t *outValue)
+{
+    auto helper = CreateDataShareHelper(userId);
+    if (helper == nullptr) {
+        LOGE("helper is nullptr");
+        return DATASHARE_FAIL;
+    }
+
+    auto uri = Uri(getUriStr(userId));
+    auto predicates = getPredicates(std::string(inKey));
+    std::vector<std::string> columns;
+    auto resultSet = helper->Query(uri, predicates, columns);
+    if (resultSet == nullptr) {
+        LOGE("[FATAL]Datashare query failed.");
+        helper->Release();
+        return DATASHARE_FAIL;
+    }
+
+    int32_t result = DATASHARE_FAIL;
+    int32_t query_count = ZERO;
+    int value = ZERO;
+    resultSet->GetRowCount(query_count);
+    switch (query_count) {
+        case ZERO:
+            LOGE("[FATAL]Datashare query not exist.");
+            break;
+        case ONE:
+            resultSet->GetInt(ZERO, value);
+            *outValue = value;
+            result = DATASHARE_SUCCESS;
+            break;
+        default:
+            LOGE("[FATAL]Datashare query over expected.");
+            break;
+    }
+
+    resultSet->Close();
+    helper->Release();
+    return result;
 }
