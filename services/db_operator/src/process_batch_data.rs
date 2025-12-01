@@ -117,7 +117,7 @@ pub(crate) fn parse_attr_in_array(
         db_data.insert(column::GROUP_ID, Value::Bytes(group.clone()));
         let mut attr = attributes.clone();
         attr.insert(Tag::GroupId, Value::Bytes(group));
-        check_group_validity(attr, calling_info)?;
+        check_group_validity(&attr, calling_info)?;
     };
     add_default_batch_attrs(&mut db_data);
     Ok(db_data)

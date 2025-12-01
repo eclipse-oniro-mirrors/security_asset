@@ -580,7 +580,7 @@ impl Database {
                         }
                     }
                 }
-                self
+                self.check_cloud_and_insert(&mut db_data, &condition)?;
             }
             self.encrypt_single_data(&mut db_data, info.secret_key, aliases)?;
             db_data.extend(info.db_map.clone());
@@ -608,6 +608,7 @@ impl Database {
                 }
             }
         }
+        Ok(())
     }
 
     fn encrypt_single_data(
