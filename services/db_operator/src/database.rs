@@ -560,6 +560,12 @@ impl Database {
         add_not_null_column(&mut column_names);
         for (index, attr) in info.attributes_array.iter().enumerate() {
             let mut db_data = parse_attr_in_array(attr, info.calling_info, &mut column_names)?;
+            if aliases.contains(&db_data.get_bytes_attr(&column::ALIAS)?.to_vec()) {
+                return macros_lib::log_throw_error!(
+                    ErrCode::InvalidArgument,
+                    "[FATAL]The array contains duplicated alias"
+                );
+            }
             let query = get_query_condition(attr, info.calling_info)?;
             let mut condition = query.clone();
             condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
@@ -574,15 +580,34 @@ impl Database {
                         }
                     }
                 }
+                self
             }
-            if self.encrypt_single_data(&mut db_data, info.secret_key, aliases).is_err() {
-                err_info.push((ErrCode::CryptoError as u32, index as u32));
-                continue;
-            }
+            self.encrypt_single_data(&mut db_data, info.secret_key, aliases)?;
             db_data.extend(info.db_map.clone());
             db_datas.push(db_data);
         }
         Ok(column_names)
+    }
+
+    fn check_cloud_and_insert(&mut self, datas: &mut DbMap, condition: &DbMap) -> Result<()> {
+        let cols = vec![column::SYNC_TYPE, column::CLOUD_VERSION, column::GLOBAL_ID];
+        let closure = |e: &Table| e.query_row(&cols, condition, None, false, COLUMN_INFO);
+        if let Ok(rows) = self.restore_if_exec_fail(closure) {
+            if !rows.is_empty() {
+                let old_row = rows.first().unwrap();
+                let trusted_acc = SyncType::TrustedAccount as u32;
+                if (old_row.get_num_attr(&column::SYNC_TYPE)? & trusted_acc) == trusted_acc
+                    && (datas.get_num_attr(&column::SYNC_TYPE)? & trusted_acc) == trusted_acc
+                {
+                    if let Some(cloud_ver) = old_row.get(column::CLOUD_VERSION) {
+                        datas.insert(column::CLOUD_VERSION, cloud_ver.clone());
+                    }
+                    if let Some(global_id) = old_row.get(column::GLOBAL_ID) {
+                        datas.insert(column::GLOBAL_ID, global_id.clone());
+                    }
+                }
+            }
+        }
     }
 
     fn encrypt_single_data(
