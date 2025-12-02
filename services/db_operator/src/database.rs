@@ -560,29 +560,64 @@ impl Database {
         add_not_null_column(&mut column_names);
         for (index, attr) in info.attributes_array.iter().enumerate() {
             let mut db_data = parse_attr_in_array(attr, info.calling_info, &mut column_names)?;
+            if aliases.contains(&db_data.get_bytes_attr(&column::ALIAS)?.to_vec()) {
+                return macros_lib::log_throw_error!(
+                    ErrCode::InvalidArgument,
+                    "[FATAL]The array contains duplicated alias"
+                );
+            }
             let query = get_query_condition(attr, info.calling_info)?;
             let mut condition = query.clone();
             condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
             condition.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
             if self.is_data_exists_without_lock(&query, false)? {
                 match attr.get(&Tag::ConflictResolution) {
-                    Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {},
+                    Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {
+                        self.check_cloud_and_insert(&mut db_data, &query, &mut column_names)?;
+                    },
                     _ => {
                         if !self.is_data_exists_without_lock(&condition, false)? {
                             err_info.push((ErrCode::Duplicated as u32, index as u32));
                             continue;
                         }
+                        self.check_cloud_and_insert(&mut db_data, &condition, &mut column_names)?;
                     }
                 }
             }
-            if self.encrypt_single_data(&mut db_data, info.secret_key, aliases).is_err() {
-                err_info.push((ErrCode::CryptoError as u32, index as u32));
-                continue;
-            }
             db_data.extend(info.db_map.clone());
+            self.encrypt_single_data(&mut db_data, info.secret_key, aliases)?;
             db_datas.push(db_data);
         }
         Ok(column_names)
+    }
+
+    fn check_cloud_and_insert(
+        &mut self,
+        datas: &mut DbMap,
+        condition: &DbMap,
+        column_names: &mut HashSet<String>
+    ) -> Result<()> {
+        let cols = vec![column::SYNC_TYPE, column::CLOUD_VERSION, column::GLOBAL_ID];
+        let closure = |e: &Table| e.query_row(&cols, condition, None, false, COLUMN_INFO);
+        if let Ok(rows) = self.restore_if_exec_fail(closure) {
+            if !rows.is_empty() {
+                let old_row = rows.first().unwrap();
+                let trusted_acc = SyncType::TrustedAccount as u32;
+                if (old_row.get_num_attr(&column::SYNC_TYPE)? & trusted_acc) == trusted_acc
+                    && (datas.get_num_attr(&column::SYNC_TYPE)? & trusted_acc) == trusted_acc
+                {
+                    if let Some(cloud_ver) = old_row.get(column::CLOUD_VERSION) {
+                        column_names.insert((&column::CLOUD_VERSION).to_string());
+                        datas.insert(column::CLOUD_VERSION, cloud_ver.clone());
+                    }
+                    if let Some(global_id) = old_row.get(column::GLOBAL_ID) {
+                        column_names.insert((&column::GLOBAL_ID).to_string());
+                        datas.insert(column::GLOBAL_ID, global_id.clone());
+                    }
+                }
+            }
+        }
+        Ok(())
     }
 
     fn encrypt_single_data(

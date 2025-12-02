@@ -524,17 +524,21 @@ impl<'a> Table<'a> {
         Ok(count)
     }
 
-    fn delete_local_datas_by_aliases(&self, condition: &DbMap, aliases: &[Value]) -> Result<i32> {
+    fn delete_local_datas_by_aliases(&self, condition: &DbMap, aliases: &[Value], need_sync: bool) -> Result<i32> {
         let mut sql = format!("delete from {}", self.table_name);
-        build_sql_where(condition, true, &mut sql);
+        build_sql_where(condition, need_sync, &mut sql);
         build_sql_alias_list(aliases.len(), &mut sql);
-        build_sql_not_sync(&mut sql);
+        if need_sync {
+            build_sql_not_sync(&mut sql);
+        }
         let mut index = 1;
         let stmt = Statement::prepare(&sql, self.db)?;
         bind_datas(condition, &stmt, &mut index)?;
         bind_alias_list(aliases, &stmt, &mut index)?;
-        let sync_type = Value::Number(SyncType::TrustedAccount as u32);
-        bind_not_sync(&stmt, &sync_type, &mut index)?;
+        if need_sync {
+            let sync_type = Value::Number(SyncType::TrustedAccount as u32);
+            bind_not_sync(&stmt, &sync_type, &mut index)?;
+        }
         stmt.step()?;
         let count = unsafe { SqliteChanges(self.db.handle as _) };
         logi!("delete local data count = {}", count);
@@ -561,7 +565,7 @@ impl<'a> Table<'a> {
             Err(e) => return Err(e),
         };
 
-        count += match self.delete_local_datas_by_aliases(condition, &alias_values) {
+        count += match self.delete_local_datas_by_aliases(condition, &alias_values, need_trans) {
             Ok(count) => count,
             Err(e) => {
                 if need_trans {

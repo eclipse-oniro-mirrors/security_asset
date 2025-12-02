@@ -31,7 +31,9 @@ use crate::{
     }
 };
 
-const INVALID_TAGS: [Tag; 5] = [Tag::AuthType, Tag::Accessibility, Tag::RequireAttrEncrypted, Tag::GroupId, Tag::UserId];
+const INVALID_TAGS: [Tag; 6] = [
+    Tag::AuthType, Tag::Accessibility, Tag::RequireAttrEncrypted, Tag::GroupId, Tag::UserId, Tag::RequirePasswordSet
+];
 
 fn check_tag_validity_with_invalid_tags(attrs: &AssetMap, valid_tags: &[Tag], invalid_tags: &[Tag]) -> Result<()> {
     for tag in attrs.keys() {
@@ -54,7 +56,6 @@ fn check_array_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> R
     valid_tags.extend_from_slice(&ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
     check_tag_validity_with_invalid_tags(attributes, &valid_tags, &INVALID_TAGS)?;
-    check_group_validity(attributes, calling_info)?;
     check_value_validity(attributes)?;
     check_accessibility_validity(attributes, calling_info)?;
     check_sync_permission(attributes, calling_info)?;
@@ -112,7 +113,11 @@ pub(crate) fn parse_attr_in_array(
     check_array_arguments(attributes, calling_info)?;
     let mut db_data = into_db_map_with_column_names(attributes, column_names);
     if let Some(group) = calling_info.group() {
-        db_data.insert(column::GROUP_ID, Value::Bytes(group));
+        column_names.insert((&column::GROUP_ID).to_string());
+        db_data.insert(column::GROUP_ID, Value::Bytes(group.clone()));
+        let mut attr = attributes.clone();
+        attr.insert(Tag::GroupId, Value::Bytes(group));
+        check_group_validity(&attr, calling_info)?;
     };
     add_default_batch_attrs(&mut db_data);
     Ok(db_data)
