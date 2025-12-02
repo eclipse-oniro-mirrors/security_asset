@@ -584,8 +584,8 @@ impl Database {
                     }
                 }
             }
-            self.encrypt_single_data(&mut db_data, info.secret_key, aliases)?;
             db_data.extend(info.db_map.clone());
+            self.encrypt_single_data(&mut db_data, info.secret_key, aliases)?;
             db_datas.push(db_data);
         }
         Ok(column_names)
