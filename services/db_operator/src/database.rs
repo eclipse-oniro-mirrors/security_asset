@@ -572,15 +572,17 @@ impl Database {
             condition.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
             if self.is_data_exists_without_lock(&query, false)? {
                 match attr.get(&Tag::ConflictResolution) {
-                    Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {},
+                    Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {
+                        self.check_cloud_and_insert(&mut db_data, &query, &mut column_names)?;
+                    },
                     _ => {
                         if !self.is_data_exists_without_lock(&condition, false)? {
                             err_info.push((ErrCode::Duplicated as u32, index as u32));
                             continue;
                         }
+                        self.check_cloud_and_insert(&mut db_data, &condition, &mut column_names)?;
                     }
                 }
-                self.check_cloud_and_insert(&mut db_data, &condition)?;
             }
             self.encrypt_single_data(&mut db_data, info.secret_key, aliases)?;
             db_data.extend(info.db_map.clone());
@@ -589,7 +591,12 @@ impl Database {
         Ok(column_names)
     }
 
-    fn check_cloud_and_insert(&mut self, datas: &mut DbMap, condition: &DbMap) -> Result<()> {
+    fn check_cloud_and_insert(
+        &mut self,
+        datas: &mut DbMap,
+        condition: &DbMap,
+        column_names: &mut HashSet<String>
+    ) -> Result<()> {
         let cols = vec![column::SYNC_TYPE, column::CLOUD_VERSION, column::GLOBAL_ID];
         let closure = |e: &Table| e.query_row(&cols, condition, None, false, COLUMN_INFO);
         if let Ok(rows) = self.restore_if_exec_fail(closure) {
@@ -600,9 +607,11 @@ impl Database {
                     && (datas.get_num_attr(&column::SYNC_TYPE)? & trusted_acc) == trusted_acc
                 {
                     if let Some(cloud_ver) = old_row.get(column::CLOUD_VERSION) {
+                        column_names.insert((&column::CLOUD_VERSION).to_string());
                         datas.insert(column::CLOUD_VERSION, cloud_ver.clone());
                     }
                     if let Some(global_id) = old_row.get(column::GLOBAL_ID) {
+                        column_names.insert((&column::GLOBAL_ID).to_string());
                         datas.insert(column::GLOBAL_ID, global_id.clone());
                     }
                 }
