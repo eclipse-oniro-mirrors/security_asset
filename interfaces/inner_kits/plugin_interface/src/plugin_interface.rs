@@ -275,7 +275,7 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     fn store_key_value(&self, user_id: i32, column_key: &str, column_value: i32) -> bool;
     
     /// query value in DataShare
-    fn query_value(&self, user_id: i32, column_key: &str) -> i32;
+    fn query_value(&self, user_id: i32, column_key: &str) -> Result<i32, AssetError>;
 }
 
 /// Defines a trait `IAssetPlugin` that specifies the required functionality for an asset plugin implementation.
