@@ -511,17 +511,20 @@ impl IAssetPluginCtx for AssetContext {
     }
     
     /// query value in DataShare
-    fn query_value(&self, user_id: i32, column_key: &str) -> i32 {
+    fn query_value(&self, user_id: i32, column_key: &str) -> Result<i32> {
         match CString::new(column_key) {
             Ok(key) => {
                 let mut column_value: i32 = DATASHARE_FAIL;
                 let result = unsafe { QueryValue(user_id, key.as_ptr(), &mut column_value) };
                 logi!("[query_value] result:{}, key:{}, value:{}", result, column_key, column_value);
-                if result == DATASHARE_SUCCESS { column_value } else { result }
+                if result == DATASHARE_SUCCESS {
+                    Ok(column_value)
+                } else {
+                    macros_lib::log_throw_error!(ErrCode::DatabaseError, "[query_value] query settingsdata.db failed")
+                }
             },
-            Err(e) => {
-                loge!("[store_key_value] create CString from {} failed, error:{:?}", column_key, e);
-                DATASHARE_FAIL
+            Err(_) => {
+                macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[query_value] create CString failed")
             }
         }
     }
