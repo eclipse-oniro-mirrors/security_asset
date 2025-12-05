@@ -20,6 +20,7 @@ module_output_path = "asset/asset"
 ohos_rust_unittest("rust_asset_module_test") {
   sources = [ "src/lib.rs" ]
   deps = [
+    "../rust_test_ffi:asset_test_ffi",
     "../../../frameworks/definition:asset_definition",
     "../../../services/common:asset_common",
     "../../../services/crypto_manager:asset_crypto_manager",
@@ -55,6 +56,7 @@ ohos_unittest("asset_dependency_test") {
     sources += [ "src/system_ability_wrapper_test.cpp" ]
     sources += [ "src/system_event_wrapper_test.cpp" ]
     sources += [ "src/os_account_wrapper_test.cpp" ]
+    sources += [ "src/asset_permission_change.cpp" ]
   }
   sources += [
     "src/asset_mem_wrapper_test.cpp",
@@ -78,6 +80,7 @@ ohos_unittest("asset_dependency_test") {
     "c_utils:utils",
     "common_event_service:cesfwk_innerkits",
     "hilog:libhilog",
+    "netmanager_base:net_conn_manager_if",
     "huks:libhukssdk",
     "ipc:ipc_single",
     "os_account:os_account_innerkits",

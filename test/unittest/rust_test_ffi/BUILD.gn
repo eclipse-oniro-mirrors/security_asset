@@ -12,29 +12,14 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("../../../config.gni")
+import("//build/test.gni")
 
-ohos_rust_shared_library("asset_sdk_rust") {
-  sources = [ "src/lib.rs" ]
-  deps = [
-    "../../../frameworks/definition:asset_definition",
-    "../../../frameworks/ipc:asset_ipc",
-    "../../../frameworks/os_dependency/log:asset_log",
-    ":asset_timeout_feature"
+ohos_static_library("asset_test_ffi") {
+  sources = [ "src/asset_permission_change.cpp" ]
+  include_dirs = [
+    "inc",
   ]
-
-  external_deps = [
-    "ipc:ipc_rust",
-    "samgr:samgr_rust",
-  ]
-
-  crate_name = "asset_sdk"
-  crate_type = "dylib"
-  subsystem_name = "security"
-  part_name = "asset"
-}
-
-ohos_static_library("asset_timeout_feature") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     integer_overflow = true
     cfi = true
@@ -43,15 +28,18 @@ ohos_static_library("asset_timeout_feature") {
     boundary_sanitize = true
     ubsan = true
   }
-  include_dirs = [
-    "../../kits/c/inc",
+  cflags = [
+    "-Wall",
+    "-Werror",
+    "-fPIC",
   ]
-  sources = [ "src/timeout_feature.c" ]
-  defines = []
-  if (asset_extend_timeout) {
-    defines += [ "ASSET_ENABLE_EXTEND_LOAD_TIMEOUT" ]
-  }
-  external_deps = []
   subsystem_name = "security"
   part_name = "asset"
+  deps = [ ]
+  external_deps = [
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken",
+    "access_token:libtoken_setproc",
+  ]
 }

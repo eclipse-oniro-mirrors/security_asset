@@ -14,113 +14,124 @@
  */
 
 use crate::common::*;
+use crate::TEST_CASE_MUTEX;
 use asset_sdk::*;
 
 #[test]
 fn pre_query_invalid_alias() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let mut query = AssetMap::new();
     query.insert_attr(Tag::Alias, vec![]);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
 
     query.insert_attr(Tag::Alias, vec![0; MAX_ALIAS_SIZE + 1]);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
 }
 
 #[test]
 fn pre_query_invalid_accessibility() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let mut query = AssetMap::new();
     query.insert_attr(Tag::Accessibility, (Accessibility::DeviceUnlocked as u32) + 1);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
 }
 
 #[test]
 fn pre_query_invalid_auth_type() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let mut query = AssetMap::new();
     query.insert_attr(Tag::AuthType, (AuthType::None as u32) + 1);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
 
     query.insert_attr(Tag::AuthType, (AuthType::Any as u32) + 1);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
 }
 
 #[test]
 fn pre_query_invalid_sync_type() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let mut query = AssetMap::new();
     let sync_type = SyncType::ThisDevice as u32 | SyncType::TrustedDevice as u32 | SyncType::TrustedAccount as u32;
     query.insert_attr(Tag::SyncType, sync_type + 1);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
 }
 
 #[test]
 fn pre_query_invalid_auth_validity_period() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let mut query = AssetMap::new();
     query.insert_attr(Tag::AuthValidityPeriod, MIN_NUMBER_VALUE);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
 
     query.insert_attr(Tag::AuthValidityPeriod, MAX_AUTH_VALID_PERIOD + 1);
-    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+    expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
 }
 
 #[test]
 fn pre_query_invalid_label() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let labels = &[CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat();
     for &label in labels {
         let mut query = AssetMap::new();
         query.insert_attr(label, vec![]);
-        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
 
         query.insert_attr(label, vec![0; MAX_LABEL_SIZE + 1]);
-        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
     }
 }
 
 #[test]
 fn pre_query_bool_tag_with_unmatched_type() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let tags = [Tag::RequirePasswordSet, Tag::IsPersistent];
     for tag in tags {
         let mut query = AssetMap::new();
         query.insert_attr(tag, vec![]);
-        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
 
         query.insert_attr(tag, 0);
-        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
     }
 }
 
 #[test]
 fn pre_query_bytes_tag_with_unmatched_type() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let mut tags_bytes = [CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat();
     tags_bytes.extend(&[Tag::Alias]);
     for tag in tags_bytes {
         let mut query = AssetMap::new();
         query.insert_attr(tag, 0);
-        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
 
         query.insert_attr(tag, true);
-        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
     }
 }
 
 #[test]
 fn pre_query_number_tag_with_unmatched_type() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let tags_num = [Tag::Accessibility, Tag::AuthType, Tag::SyncType, Tag::AuthValidityPeriod];
     for tag in tags_num {
         let mut query = AssetMap::new();
         query.insert_attr(tag, vec![]);
-        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
 
         query.insert_attr(tag, true);
-        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
     }
 }
 
 #[test]
 fn pre_query_unsupported_tags() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let tags_bytes = [Tag::Secret, Tag::AuthChallenge, Tag::AuthToken];
     for tag in tags_bytes {
         let mut query = AssetMap::new();
         query.insert_attr(tag, vec![0; MIN_ARRAY_SIZE + 1]);
-        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
     }
 
     let tags_num =
@@ -128,6 +139,6 @@ fn pre_query_unsupported_tags() {
     for tag in tags_num {
         let mut query = AssetMap::new();
         query.insert_attr(tag, 1);
-        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().pre_query(&query).unwrap_err());
+        expect_error_eq(ErrCode::InvalidArgument, asset_sdk::Manager::build().unwrap().lock().unwrap().pre_query(&query).unwrap_err());
     }
 }

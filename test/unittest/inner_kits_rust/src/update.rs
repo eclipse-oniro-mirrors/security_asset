@@ -14,10 +14,12 @@
  */
 
 use crate::common::*;
+use crate::TEST_CASE_MUTEX;
 use asset_sdk::*;
 
 #[test]
 fn update_same_secret() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let alias = function!().as_bytes();
     let secret = function!().as_bytes();
     add_default_asset(alias, secret).unwrap();
@@ -28,13 +30,14 @@ fn update_same_secret() {
     let mut update = AssetMap::new();
     update.insert_attr(Tag::Secret, secret.to_owned());
 
-    asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap();
+    asset_sdk::Manager::build().unwrap().lock().unwrap().update(&query, &update).unwrap();
 
     remove_by_alias(alias).unwrap();
 }
 
 #[test]
 fn update_different_secret() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let alias = function!().as_bytes();
     let secret = function!().as_bytes();
     add_default_asset(alias, secret).unwrap();
@@ -47,7 +50,7 @@ fn update_different_secret() {
     let mut update = AssetMap::new();
     update.insert_attr(Tag::Secret, secret_new.to_owned());
 
-    asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap();
+    asset_sdk::Manager::build().unwrap().lock().unwrap().update(&query, &update).unwrap();
 
     let res = query_all_by_alias(alias).unwrap();
     assert_eq!(1, res.len());
@@ -58,6 +61,7 @@ fn update_different_secret() {
 
 #[test]
 fn update_attr_normal() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let alias = function!().as_bytes();
     let secret = function!().as_bytes();
     add_default_asset(alias, secret).unwrap();
@@ -69,7 +73,7 @@ fn update_attr_normal() {
     let mut update = AssetMap::new();
     update.insert_attr(Tag::DataLabelNormal1, label_normal.to_owned());
 
-    asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap();
+    asset_sdk::Manager::build().unwrap().lock().unwrap().update(&query, &update).unwrap();
     let query_res = &query_attr_by_alias(alias).unwrap()[0];
     let label_normal_query = query_res.get_bytes_attr(&Tag::DataLabelNormal1).unwrap();
     assert_eq!(label_normal, label_normal_query);
@@ -79,6 +83,7 @@ fn update_attr_normal() {
 
 #[test]
 fn update_non_exist() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let alias = function!().as_bytes();
     let label_normal = function!().as_bytes();
 
@@ -88,5 +93,5 @@ fn update_non_exist() {
     let mut update = AssetMap::new();
     update.insert_attr(Tag::DataLabelNormal1, label_normal.to_owned());
 
-    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().update(&query, &update).unwrap_err());
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().lock().unwrap().update(&query, &update).unwrap_err());
 }

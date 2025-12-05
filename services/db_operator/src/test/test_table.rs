@@ -25,8 +25,11 @@ use crate::{
     types::{ColumnInfo, DbMap, SQLITE_DONE, SQLITE_ROW},
 };
 
+use crate::test::TEST_CASE_MUTEX;
+
 #[test]
 fn create_delete_table() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let columns = &[
         ColumnInfo { name: "id", is_primary_key: true, not_null: true, data_type: DataType::Number },
@@ -45,6 +48,7 @@ fn create_delete_table() {
 
 #[test]
 fn table_restore() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let mut db = Database::build(&calling_info, None).unwrap();
@@ -109,6 +113,7 @@ fn insert_test_data() -> Database {
 
 #[test]
 fn execute_sql() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let db = insert_test_data();
     let sql = "select Owner,Alias from table_name where Id>?";
@@ -125,6 +130,7 @@ fn execute_sql() {
 
 #[test]
 fn data_life_circle() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let db = insert_test_data();
     let mut datas = DbMap::new();
@@ -146,6 +152,7 @@ fn data_life_circle() {
 
 #[test]
 fn single_data() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let db = Database::build(&calling_info, None).unwrap();
@@ -178,6 +185,7 @@ fn single_data() {
 
 #[test]
 fn multiple_data() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let db = Database::build(&calling_info, None).unwrap();
@@ -219,6 +227,7 @@ fn multiple_data() {
 
 #[test]
 fn insert_query_row() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let db = Database::build(&calling_info, None).unwrap();
@@ -248,6 +257,7 @@ fn insert_query_row() {
 
 #[test]
 fn update_delete_row() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let db = Database::build(&calling_info, None).unwrap();
@@ -275,6 +285,7 @@ fn update_delete_row() {
 
 #[test]
 fn upgrade_table() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let db = Database::build(&calling_info, None).unwrap();
@@ -314,6 +325,7 @@ fn upgrade_table() {
 
 #[test]
 fn replace_datas() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let db = Database::build(&calling_info, None).unwrap();

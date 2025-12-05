@@ -14,22 +14,26 @@
  */
 
 use crate::common::*;
+use crate::TEST_CASE_MUTEX;
 use asset_sdk::*;
 
 #[test]
 fn remove_alias_non_exist() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     expect_error_eq(ErrCode::NotFound, remove_by_alias("remove_alias_non_exist".as_bytes()).unwrap_err());
 }
 
 #[test]
 fn remove_condition_non_exist() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let delete_condition =
         AssetMap::from([(Tag::DataLabelCritical1, Value::Bytes("remove_condition_non_exist".as_bytes().to_vec()))]);
-    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().remove(&delete_condition).unwrap_err());
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().lock().unwrap().remove(&delete_condition).unwrap_err());
 }
 
 #[test]
 fn remove_condition_exist_and_query() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let function_name = function!().as_bytes();
     let critical_label = "remove_condition_exist_and_query".as_bytes();
     let mut condition = AssetMap::from([
@@ -38,9 +42,9 @@ fn remove_condition_exist_and_query() {
         (Tag::DataLabelCritical2, Value::Bytes(critical_label.to_owned())),
     ]);
     condition.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
-    asset_sdk::Manager::build().unwrap().add(&condition).unwrap();
+    asset_sdk::Manager::build().unwrap().lock().unwrap().add(&condition).unwrap();
     condition.remove(&Tag::Alias);
     condition.remove(&Tag::Secret);
-    asset_sdk::Manager::build().unwrap().remove(&condition).unwrap();
-    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().query(&condition).unwrap_err());
+    asset_sdk::Manager::build().unwrap().lock().unwrap().remove(&condition).unwrap();
+    expect_error_eq(ErrCode::NotFound, asset_sdk::Manager::build().unwrap().lock().unwrap().query(&condition).unwrap_err());
 }

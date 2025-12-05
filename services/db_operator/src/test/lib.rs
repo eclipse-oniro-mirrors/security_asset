@@ -15,5 +15,9 @@
 
 //! the module test for database operator
 
+use std::sync::Mutex;
+
 mod test_database;
 mod test_table;
+
+pub static TEST_CASE_MUTEX: Mutex<()> = Mutex::new(());

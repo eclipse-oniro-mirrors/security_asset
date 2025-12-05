@@ -51,6 +51,7 @@ ohos_rust_unittest("rust_asset_db_operator_test") {
     "../../frameworks/os_dependency/file:asset_file_operator",
     "../../frameworks/os_dependency/log:asset_log",
     "../../frameworks/utils:asset_utils",
+    "../../interfaces/inner_kits/rs:asset_sdk_rust",
     "../common:asset_common",
     "../crypto_manager:asset_crypto_manager",
     "//third_party/rust/crates/lazy-static.rs:lib",
@@ -59,6 +60,7 @@ ohos_rust_unittest("rust_asset_db_operator_test") {
 
   external_deps = [
     "hilog:libhilog",
+    "ipc:ipc_rust",
     "ylong_json:lib",
   ]
   subsystem_name = "security"

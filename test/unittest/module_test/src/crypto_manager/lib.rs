@@ -13,16 +13,28 @@
  * limitations under the License.
  */
 
+/// this is for crypto manager test
+use std::sync::Mutex;
 use std::{
     ffi::{c_char, CString},
     ptr::null,
+    process::Command,
+    thread,
+    time::Duration
 };
 
 use asset_common::{CallingInfo, OwnerType};
 use asset_crypto_manager::{crypto::*, crypto_manager::*, secret_key::*};
 use asset_definition::{Accessibility, AuthType, ErrCode};
 
+const WAIT_FOR_ACCESS_TOKEN_START: u32 = 500;
+const AC_TKN_SVC: &str = "accesstoken_service";
+const SVC_CTRL: &str = "service_control";
+const PID_OF_ACCESS_TOKEN_SERVICE: &str = "pidof accesstoken_service";
+
 pub const AAD_SIZE: u32 = 8;
+
+pub static TEST_CASE_MUTEX: Mutex<()> = Mutex::new(());
 
 #[repr(C)]
 struct TokenInfoParams {
@@ -36,13 +48,13 @@ struct TokenInfoParams {
     apl_str: *const c_char,
 }
 
-extern "C" {
-    fn GetAccessTokenId(token_info: *mut TokenInfoParams) -> u64;
+extern "C" {	
+    fn GetAccessTokenId(token_info: *mut TokenInfoParams) -> u64;	
     fn SetSelfTokenID(token_id: u64) -> i32;
 }
 
 /// Init access token ID for current process
-fn grant_self_permission() -> i32 {
+fn grant_self_permission_inner() -> i32 {
     let perms_str = CString::new("ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS").unwrap();
     let name = CString::new("asset_bin_test").unwrap();
     let apl = CString::new("system_basic").unwrap();
@@ -57,14 +69,59 @@ fn grant_self_permission() -> i32 {
         apl_str: apl.as_ptr(),
     };
 
-    unsafe {
-        let token_id = GetAccessTokenId(&mut param as *mut TokenInfoParams);
+    unsafe {	
+        let token_id = GetAccessTokenId(&mut param as *mut TokenInfoParams);	
         SetSelfTokenID(token_id)
-    }
+    }	
+}
+
+fn restart_access_token_service() {
+    println!("{}", PID_OF_ACCESS_TOKEN_SERVICE);
+    Command::new("sh")
+        .arg("-c")
+        .arg(PID_OF_ACCESS_TOKEN_SERVICE)
+        .spawn()
+        .expect("failed to execute process");
+
+    Command::new("sh")
+        .arg("-c")
+        .arg(format!("{} stop {}", SVC_CTRL, AC_TKN_SVC))
+        .spawn()
+        .expect("failed to execute process");
+
+    println!("{}", PID_OF_ACCESS_TOKEN_SERVICE);
+
+    Command::new("sh")
+        .arg("-c")
+        .arg(PID_OF_ACCESS_TOKEN_SERVICE)
+        .spawn()
+        .expect("failed to execute process");
+
+    Command::new("sh")
+        .arg("-c")
+        .arg(format!("{} start {}", SVC_CTRL, AC_TKN_SVC))
+        .spawn()
+        .expect("failed to execute process");
+
+    thread::sleep(Duration::from_millis(WAIT_FOR_ACCESS_TOKEN_START.into()));
+
+    println!("{}", PID_OF_ACCESS_TOKEN_SERVICE);
+    Command::new("sh")
+        .arg("-c")
+        .arg(PID_OF_ACCESS_TOKEN_SERVICE)
+        .spawn()
+        .expect("failed to execute process");
+}
+
+fn grant_self_permission() -> i32 {
+    let _ = grant_self_permission_inner();
+    restart_access_token_service();
+    grant_self_permission_inner()
 }
 
 #[test]
 fn generate_and_delete() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     assert_eq!(0, grant_self_permission());
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2'], None);
     let secret_key =
@@ -77,6 +134,7 @@ fn generate_and_delete() {
 
 #[test]
 fn encrypt_and_decrypt() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     assert_eq!(0, grant_self_permission());
     // generate key
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2'], None);
@@ -100,6 +158,7 @@ fn encrypt_and_decrypt() {
 
 #[test]
 fn crypto_init() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     assert_eq!(0, grant_self_permission());
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2'], None);
     let secret_key =
@@ -113,6 +172,7 @@ fn crypto_init() {
 
 #[test]
 fn crypto_exec() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     assert_eq!(0, grant_self_permission());
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2'], None);
     let secret_key =
@@ -135,6 +195,7 @@ fn crypto_exec() {
 
 #[test]
 fn crypto_manager() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     assert_eq!(0, grant_self_permission());
     let calling_info = CallingInfo::new(0, OwnerType::Native, vec![b'2'], None);
     let secret_key1 =

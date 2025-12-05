@@ -14,10 +14,12 @@
  */
 
 use crate::common::*;
+use crate::TEST_CASE_MUTEX;
 use asset_sdk::*;
 
 #[test]
 fn add_all_tags() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let alias = function!().as_bytes();
     add_all_tags_asset(alias).unwrap();
 
@@ -48,12 +50,13 @@ fn add_all_tags() {
 
 #[test]
 fn add_required_tags() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let func_name = function!().as_bytes();
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, func_name.to_owned());
     attrs.insert_attr(Tag::Secret, func_name.to_owned());
     attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
-    asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
+    asset_sdk::Manager::build().unwrap().lock().unwrap().add(&attrs).unwrap();
 
     let res = query_all_by_alias(func_name).unwrap();
     assert_eq!(1, res.len());
@@ -70,12 +73,13 @@ fn add_required_tags() {
 
 #[test]
 fn add_english_secret() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let func_name = function!();
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, func_name.as_bytes().to_owned());
     attrs.insert_attr(Tag::Secret, func_name.as_bytes().to_owned());
     attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
-    asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
+    asset_sdk::Manager::build().unwrap().lock().unwrap().add(&attrs).unwrap();
 
     let res = query_all_by_alias(func_name.as_bytes()).unwrap();
     assert_eq!(1, res.len());
@@ -86,13 +90,14 @@ fn add_english_secret() {
 
 #[test]
 fn add_chinese_secret() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let alias = "Здравствуйте";
     let secret = "中文";
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, alias.as_bytes().to_owned());
     attrs.insert_attr(Tag::Secret, secret.as_bytes().to_owned());
     attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
-    asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
+    asset_sdk::Manager::build().unwrap().lock().unwrap().add(&attrs).unwrap();
 
     let res = query_all_by_alias(alias.as_bytes()).unwrap();
     assert_eq!(1, res.len());
@@ -105,6 +110,7 @@ fn add_chinese_secret() {
 
 #[test]
 fn add_same_alias_throw_error() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let function_name = function!().as_bytes();
 
     // step1. insert data
@@ -112,20 +118,21 @@ fn add_same_alias_throw_error() {
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
     attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
-    asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
+    asset_sdk::Manager::build().unwrap().lock().unwrap().add(&attrs).unwrap();
 
     // step2. insert data with the same alias, default resolution: throw error
-    expect_error_eq(ErrCode::Duplicated, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
+    expect_error_eq(ErrCode::Duplicated, asset_sdk::Manager::build().unwrap().lock().unwrap().add(&attrs).unwrap_err());
 
     // step3. insert data with the same alias, specified resolution: throw error
     attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::ThrowError);
-    expect_error_eq(ErrCode::Duplicated, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
+    expect_error_eq(ErrCode::Duplicated, asset_sdk::Manager::build().unwrap().lock().unwrap().add(&attrs).unwrap_err());
 
     remove_by_alias(function_name).unwrap();
 }
 
 #[test]
 fn add_same_alias_overwrite() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let function_name = function!().as_bytes();
 
     // step1. insert data
@@ -133,7 +140,7 @@ fn add_same_alias_overwrite() {
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
     attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
-    asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
+    asset_sdk::Manager::build().unwrap().lock().unwrap().add(&attrs).unwrap();
 
     // step2. query data with no label
     let res = query_attr_by_alias(function_name).unwrap();
@@ -145,7 +152,7 @@ fn add_same_alias_overwrite() {
     attrs.insert_attr(Tag::DataLabelCritical1, critical_label.to_owned());
     attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::Overwrite);
     attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
-    asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
+    asset_sdk::Manager::build().unwrap().lock().unwrap().add(&attrs).unwrap();
 
     // step4. query new data with critical label
     let res = query_attr_by_alias(function_name).unwrap();
@@ -157,6 +164,7 @@ fn add_same_alias_overwrite() {
 
 #[test]
 fn add_multiple_sync_types() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let function_name = function!().as_bytes();
     let sync_type = (SyncType::ThisDevice as u32) | (SyncType::TrustedDevice as u32);
     let mut attrs = AssetMap::new();
@@ -164,7 +172,7 @@ fn add_multiple_sync_types() {
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
     attrs.insert_attr(Tag::SyncType, sync_type);
     attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
-    asset_sdk::Manager::build().unwrap().add(&attrs).unwrap();
+    asset_sdk::Manager::build().unwrap().lock().unwrap().add(&attrs).unwrap();
 
     let res = query_attr_by_alias(function_name).unwrap();
     assert_eq!(1, res.len());
@@ -174,14 +182,15 @@ fn add_multiple_sync_types() {
 
 #[test]
 fn add_is_persistent_auth_wrong() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let function_name = function!().as_bytes();
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, function_name.to_owned());
     attrs.insert_attr(Tag::Secret, function_name.to_owned());
     attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
     attrs.insert_attr(Tag::IsPersistent, true);
-    expect_error_eq(ErrCode::PermissionDenied, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
+    expect_error_eq(ErrCode::PermissionDenied, asset_sdk::Manager::build().unwrap().lock().unwrap().add(&attrs).unwrap_err());
 
     attrs.insert_attr(Tag::IsPersistent, false);
-    expect_error_eq(ErrCode::PermissionDenied, asset_sdk::Manager::build().unwrap().add(&attrs).unwrap_err());
+    expect_error_eq(ErrCode::PermissionDenied, asset_sdk::Manager::build().unwrap().lock().unwrap().add(&attrs).unwrap_err());
 }
