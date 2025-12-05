@@ -20,7 +20,6 @@ module_output_path = "asset/asset"
 ohos_rust_unittest("rust_asset_module_test") {
   sources = [ "src/lib.rs" ]
   deps = [
-    "../rust_test_ffi:asset_test_ffi",
     "../../../frameworks/definition:asset_definition",
     "../../../services/common:asset_common",
     "../../../services/crypto_manager:asset_crypto_manager",
