@@ -324,3 +324,8 @@ impl AssetService {
         execute!(operations::query_sync_result, calling_info, query)
     }
 }
+
+#[cfg(feature = "AssetTest")]
+mod ut_core_service_lib_stub {
+    include!("../../../test/unittest/ut_test/services/core_service/test_stub/ut_core_service_lib_stub.rs")
+}

@@ -15,7 +15,13 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 
 ohos_rust_static_library("asset_common") {
-  sources = [ "src/lib.rs" ]
+  sources = [ 
+    "src/lib.rs",
+    "src/calling_info.rs",
+    "src/counter.rs",
+    "src/process_info.rs",
+    "src/task_manager.rs",
+  ]
   deps = [
     "../../frameworks/definition:asset_definition",
     "../../frameworks/os_dependency/log:asset_log",
