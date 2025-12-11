@@ -34,7 +34,7 @@ ohos_rust_shared_library("asset_service") {
     "//third_party/rust/crates/serde/serde:lib",
   ]
 
-  rustflage = []
+  rustflags = []
   if (enable_local_test) {
     rustflags += [ "--cfg", "feature=\"AssetTest\"", ]
   }
