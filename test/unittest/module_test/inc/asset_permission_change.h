@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
+ * Copyright (c) 2024 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,24 +13,18 @@
  * limitations under the License.
  */
 
-//! the module test for inner kits
-use std::sync::Mutex;
-#[macro_use]
-mod common;
+#ifndef ASSET_PERMISSION_CHANGE_H
+#define ASSET_PERMISSION_CHANGE_H
 
-mod add;
-mod add_abnormal;
-mod post_query;
-mod post_query_abnormal;
-mod pre_query;
-mod pre_query_abnormal;
-mod query;
-mod query_abnormal;
-mod query_sync_result;
-mod query_sync_result_abnormal;
-mod remove;
-mod remove_abnormal;
-mod update;
-mod update_abnormal;
 
-pub static TEST_CASE_MUTEX: Mutex<()> = Mutex::new(());
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void RestartAccessTokenService();
+int GrantSelfPermission();
+
+#ifdef __cplusplus
+}
+#endif
+#endif // ASSET_PERMISSION_CHANGE_H

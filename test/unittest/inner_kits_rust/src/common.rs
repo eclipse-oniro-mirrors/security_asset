@@ -54,7 +54,7 @@ pub(crate) const NORMAL_LABEL_ATTRS: [Tag; 4] =
     [Tag::DataLabelNormal1, Tag::DataLabelNormal2, Tag::DataLabelNormal3, Tag::DataLabelNormal4];
 
 pub(crate) fn remove_by_alias(alias: &[u8]) -> Result<()> {
-    asset_sdk::Manager::build()?.remove(&AssetMap::from([(Tag::Alias, Value::Bytes(alias.to_vec()))]))
+    asset_sdk::Manager::build()?.lock().unwrap().remove(&AssetMap::from([(Tag::Alias, Value::Bytes(alias.to_vec()))]))
 }
 
 pub(crate) const SECRET: &[u8] = "all_tags_secret".as_bytes();
@@ -72,25 +72,25 @@ pub(crate) const CRITICAL_LABEL3: &[u8] = "all_tags_critical_label3".as_bytes();
 pub(crate) const CRITICAL_LABEL4: &[u8] = "all_tags_critical_label4".as_bytes();
 
 pub(crate) fn remove_all() -> Result<()> {
-    asset_sdk::Manager::build()?.remove(&AssetMap::new())
+    asset_sdk::Manager::build()?.lock().unwrap().remove(&AssetMap::new())
 }
 
 pub(crate) fn query_all_by_alias(alias: &[u8]) -> Result<Vec<AssetMap>> {
-    asset_sdk::Manager::build()?.query(&AssetMap::from([
+    asset_sdk::Manager::build()?.lock().unwrap().query(&AssetMap::from([
         (Tag::Alias, Value::Bytes(alias.to_vec())),
         (Tag::ReturnType, Value::Number(ReturnType::All as u32)),
     ]))
 }
 
 pub(crate) fn query_attr_by_alias(alias: &[u8]) -> Result<Vec<AssetMap>> {
-    asset_sdk::Manager::build()?.query(&AssetMap::from([
+    asset_sdk::Manager::build()?.lock().unwrap().query(&AssetMap::from([
         (Tag::Alias, Value::Bytes(alias.to_vec())),
         (Tag::ReturnType, Value::Number(ReturnType::Attributes as u32)),
     ]))
 }
 
 pub(crate) fn add_default_asset(alias: &[u8], secret: &[u8]) -> Result<()> {
-    asset_sdk::Manager::build()?.add(&AssetMap::from([
+    asset_sdk::Manager::build()?.lock().unwrap().add(&AssetMap::from([
         (Tag::Alias, Value::Bytes(alias.to_vec())),
         (Tag::Secret, Value::Bytes(secret.to_vec())),
         (Tag::Accessibility, Value::Number(Accessibility::DevicePowerOn as u32)),
@@ -98,7 +98,7 @@ pub(crate) fn add_default_asset(alias: &[u8], secret: &[u8]) -> Result<()> {
 }
 
 pub(crate) fn add_default_auth_asset(alias: &[u8], secret: &[u8]) -> Result<()> {
-    asset_sdk::Manager::build()?.add(&AssetMap::from([
+    asset_sdk::Manager::build()?.lock().unwrap().add(&AssetMap::from([
         (Tag::Alias, Value::Bytes(alias.to_vec())),
         (Tag::Secret, Value::Bytes(secret.to_vec())),
         (Tag::Accessibility, Value::Number(Accessibility::DevicePowerOn as u32)),
@@ -127,7 +127,7 @@ pub(crate) fn add_all_tags_asset(alias: &[u8]) -> Result<()> {
     attrs.insert_attr(Tag::SyncType, SyncType::ThisDevice);
     attrs.insert_attr(Tag::RequirePasswordSet, false);
     attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::Overwrite);
-    asset_sdk::Manager::build().unwrap().add(&attrs)
+    asset_sdk::Manager::build().unwrap().lock().unwrap().add(&attrs)
 }
 
 pub(crate) fn expect_error_eq(expect_err: ErrCode, real_err: AssetError) {

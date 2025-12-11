@@ -29,7 +29,9 @@ use crate::{
     types::{column, DbMap, QueryOptions, TABLE_NAME},
 };
 
-const DB_DATA: [(&str, Value); 9] = [
+use crate::test::TEST_CASE_MUTEX;
+
+const DB_DATA: [(&str, Value); 10] = [
     (column::OWNER_TYPE, Value::Number(1)),
     (column::SYNC_TYPE, Value::Number(1)),
     (column::ACCESSIBILITY, Value::Number(1)),
@@ -39,6 +41,7 @@ const DB_DATA: [(&str, Value); 9] = [
     (column::REQUIRE_PASSWORD_SET, Value::Bool(false)),
     (column::LOCAL_STATUS, Value::Number(0)),
     (column::SYNC_STATUS, Value::Number(0)),
+    (column::WRAP_TYPE, Value::Number(0)),
 ];
 
 const TEST_FILE: &str = "/data/asset_test/0";
@@ -82,6 +85,7 @@ fn backup_db(db: &Database) {
 
 #[test]
 fn create_and_drop_database() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let mut db = Database::build(&calling_info, None).unwrap();
@@ -92,10 +96,11 @@ fn create_and_drop_database() {
 
 #[test]
 fn database_version() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let db = Database::build(&calling_info, None).unwrap();
-    assert_eq!(3, db.get_version().unwrap());
+    assert_eq!(4, db.get_version().unwrap());
     assert!(db.set_version(2).is_ok());
     assert_eq!(2, db.get_version().unwrap());
     let _ = Database::delete(0, &db.db_name);
@@ -103,6 +108,7 @@ fn database_version() {
 
 #[test]
 fn error_sql() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let db = Database::build(&calling_info, None).unwrap();
@@ -113,6 +119,7 @@ fn error_sql() {
 
 #[test]
 fn create_delete_asset_table() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     fs::create_dir_all("/data/asset_test/0").unwrap();
     let calling_info = CallingInfo::new_self();
     let mut db = Database::build(&calling_info, None).unwrap();
@@ -126,6 +133,7 @@ fn create_delete_asset_table() {
 
 #[test]
 fn insert_data_with_different_alias() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     create_dir();
     let mut def = DbMap::from(DB_DATA);
     add_bytes_column(&mut def);
@@ -153,6 +161,7 @@ fn insert_data_with_different_alias() {
 
 #[test]
 fn delete_data() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let mut db = open_db_and_insert_data();
 
     let mut datas = DbMap::new();
@@ -173,6 +182,7 @@ fn delete_data() {
 
 #[test]
 fn update_data() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let mut db = open_db_and_insert_data();
 
     let mut datas = DbMap::new();
@@ -197,6 +207,7 @@ fn update_data() {
 
 #[test]
 fn query_ordered_data() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     // insert two data
     create_dir();
     let mut def = DbMap::from(DB_DATA);
@@ -235,6 +246,7 @@ fn query_ordered_data() {
 
 #[test]
 fn insert_error_data() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     create_dir();
     let mut datas = DbMap::new();
     datas.insert(column::OWNER, Value::Bytes(column::OWNER.as_bytes().to_vec()));
@@ -246,6 +258,7 @@ fn insert_error_data() {
 
 #[test]
 fn backup_and_restore() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let db = open_db_and_insert_data();
     backup_db(&db);
     drop(db);
@@ -268,6 +281,7 @@ fn backup_and_restore() {
 
 #[test]
 fn insert_duplicated_data() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let mut db = open_db_and_insert_data();
 
     let mut def = DbMap::from(DB_DATA);
@@ -280,6 +294,7 @@ fn insert_duplicated_data() {
 
 #[test]
 fn query_mismatch_type_data() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     create_dir();
     let mut data = DbMap::from(DB_DATA);
     add_bytes_column(&mut data);

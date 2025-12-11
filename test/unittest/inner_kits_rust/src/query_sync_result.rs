@@ -14,25 +14,29 @@
  */
 
 use crate::common::*;
+use crate::TEST_CASE_MUTEX;
 use asset_sdk::*;
 
 #[test]
 fn query_sync_result_without_attr() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let attrs = AssetMap::new();
-    asset_sdk::Manager::build().unwrap().query_sync_result(&attrs).unwrap();
+    asset_sdk::Manager::build().unwrap().lock().unwrap().query_sync_result(&attrs).unwrap();
 }
 
 #[test]
 fn query_sync_result_with_attr() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::RequireAttrEncrypted, true);
-    asset_sdk::Manager::build().unwrap().query_sync_result(&attrs).unwrap();
+    asset_sdk::Manager::build().unwrap().lock().unwrap().query_sync_result(&attrs).unwrap();
 }
 
 #[test]
 fn query_sync_result_with_group() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let func_name = function!();
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::GroupId, func_name.as_bytes().to_owned());
-    expect_error_eq(ErrCode::Unsupported, asset_sdk::Manager::build().unwrap().query_sync_result(&attrs).unwrap_err());
+    expect_error_eq(ErrCode::Unsupported, asset_sdk::Manager::build().unwrap().lock().unwrap().query_sync_result(&attrs).unwrap_err());
 }

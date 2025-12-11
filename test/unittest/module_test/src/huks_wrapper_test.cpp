@@ -23,28 +23,10 @@
 
 #include "asset_system_type.h"
 #include "huks_wrapper.h"
+#include "asset_permission_change.h"
 
 using namespace testing::ext;
 namespace UnitTest::HuksWrapperTest {
-int GrantSelfPermission()
-{
-    const char *permissions[] = {
-        "ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS"
-    };
-    NativeTokenInfoParams info = {
-        .dcapsNum = 0,
-        .permsNum = 1,
-        .aclsNum = 0,
-        .dcaps = nullptr,
-        .perms = permissions,
-        .acls = nullptr,
-        .processName = "asset_bin_test",
-        .aplStr = "system_basic",
-    };
-    uint64_t tokenId = GetAccessTokenId(&info);
-    return SetSelfTokenID(tokenId);
-}
-
 class HuksWrapperTest : public testing::Test {
 public:
     static void SetUpTestCase(void);

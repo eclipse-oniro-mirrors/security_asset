@@ -14,23 +14,28 @@
  */
 
 use crate::common::*;
+use crate::TEST_CASE_MUTEX;
 use asset_sdk::*;
 
 #[test]
 fn query_sync_result_invalid_group() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let mut query = AssetMap::new();
     query.insert_attr(Tag::GroupId, vec![]);
-    let mut manager = asset_sdk::Manager::build().unwrap();
-    expect_error_eq(ErrCode::ParamVerificationFailed, manager.query_sync_result(&query).unwrap_err());
+    let binding = asset_sdk::Manager::build().unwrap();
+    let mut manager = binding.lock().unwrap();
+    expect_error_eq(ErrCode::Unsupported, manager.query_sync_result(&query).unwrap_err());
 
     query.insert_attr(Tag::GroupId, vec![0; MAX_GROUP_ID_SIZE + 1]);
-    expect_error_eq(ErrCode::ParamVerificationFailed, manager.query_sync_result(&query).unwrap_err());
+    expect_error_eq(ErrCode::Unsupported, manager.query_sync_result(&query).unwrap_err());
 }
 
 #[test]
 fn query_sync_result_bool_tag_with_unmatched_type() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let tags = [Tag::RequireAttrEncrypted];
-    let mut manager = asset_sdk::Manager::build().unwrap();
+    let binding = asset_sdk::Manager::build().unwrap();
+    let mut manager = binding.lock().unwrap();
     for tag in tags {
         let mut query = AssetMap::new();
         query.insert_attr(tag, vec![]);
@@ -43,8 +48,10 @@ fn query_sync_result_bool_tag_with_unmatched_type() {
 
 #[test]
 fn query_sync_result_bytes_tag_with_unmatched_type() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let tags_bytes = [Tag::GroupId];
-    let mut manager = asset_sdk::Manager::build().unwrap();
+    let binding = asset_sdk::Manager::build().unwrap();
+    let mut manager = binding.lock().unwrap();
     for tag in tags_bytes {
         let mut query = AssetMap::new();
         query.insert_attr(tag, 0);
@@ -57,10 +64,12 @@ fn query_sync_result_bytes_tag_with_unmatched_type() {
 
 #[test]
 fn query_sync_result_unsupported_tags() {
+    let _lock = TEST_CASE_MUTEX.lock().unwrap();
     let mut tags_bytes = vec![Tag::Secret, Tag::Alias, Tag::AuthToken, Tag::AuthChallenge];
     let labels_bytes = [CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS].concat();
     tags_bytes.extend(labels_bytes);
-    let mut manager = asset_sdk::Manager::build().unwrap();
+    let binding = asset_sdk::Manager::build().unwrap();
+    let mut manager = binding.lock().unwrap();
     for tag in tags_bytes {
         let mut query = AssetMap::new();
         query.insert_attr(tag, vec![0; MIN_GROUP_ID_SIZE + 1]);
