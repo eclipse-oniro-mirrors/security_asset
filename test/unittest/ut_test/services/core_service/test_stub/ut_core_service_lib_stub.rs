@@ -15,7 +15,7 @@
 
 /// the module test for core_service
 use asset_common::CallingInfo;
-use asset_definition::{AssetMap, Result};
+use asset_definition::{AssetMap, Result, SyncResult};
 use crate::operations;
 
 #[allow(dead_code)]
@@ -23,3 +23,40 @@ use crate::operations;
 pub fn add_stub(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<()> {
     operations::add(calling_info, attributes)
 }
+
+#[allow(dead_code)]
+/// pre_query_stub
+pub fn pre_query_stub(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<Vec<u8>> {
+    operations::pre_query(calling_info, attributes)
+}
+
+#[allow(dead_code)]
+/// post_query_stub
+pub fn post_query_stub(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<()> {
+    operations::post_query(calling_info, attributes)
+}
+
+#[allow(dead_code)]
+/// query_stub
+pub fn query_stub(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<Vec<AssetMap>> {
+    operations::query(calling_info, attributes)
+}
+
+#[allow(dead_code)]
+/// query_sync_stub
+pub fn query_sync_result_stub(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<SyncResult> {
+    operations::query_sync_result(calling_info, attributes)
+}
+
+#[allow(dead_code)]
+/// remove_stub
+pub fn remove_stub(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<()> {
+    operations::remove(calling_info, attributes)
+}
+
+#[allow(dead_code)]
+/// update_stub
+pub fn update_stub(calling_info: &CallingInfo, attributes: &AssetMap, attributes_to_update: &AssetMap) -> Result<()> {
+    operations::update(calling_info, attributes, attributes_to_update)
+}
+

@@ -30,12 +30,17 @@ macro_rules! function {
 }
 
 #[test]
-fn test_new_self() {
+fn test_add() {
     let func_name = function!().as_bytes();
     let calling_info = CallingInfo::new_self();
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, func_name.to_owned());
     attrs.insert_attr(Tag::Secret, func_name.to_owned());
     attrs.insert_attr(Tag::Accessibility, Accessibility::DevicePowerOn);
-    add_stub(attrs, calling_info)?;
+    assert!(add_stub(&calling_info, &attrs).is_ok());
+    attrs.insert_attr(Tag::ConflictResolution, ConflictResolution::Overwrite);
+    assert!(add_stub(&calling_info, &attrs).is_ok());
+    let mut attrs_to_remove = AssetMap::new();
+    attrs_to_remove.insert_attr(Tag::Alias, func_name.to_owned());
+    assert!(remove_stub(&calling_info, &attrs_to_remove).is_ok());
 }
