@@ -17,14 +17,8 @@
 use asset_common::CallingInfo;
 use asset_definition::{AssetMap, Result};
 use asset_db_operator::types::DbMap;
-use crate::operations::*;
 use crate::operations::operation_add::*;
 
-#[allow(dead_code)]
-/// add stub
-pub fn add_stub(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<()> {
-    add(calling_info, attributes)
-}
 
 #[allow(dead_code)]
 /// encrypt_secret_stub

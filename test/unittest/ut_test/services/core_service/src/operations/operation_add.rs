@@ -13,9 +13,11 @@
  * limitations under the License.
  */
 
-//! the module test for core_service
+/// the module test for core_service
+
 use asset_common::*;
 use asset_definition::*;
+use asset_db_operator::types::DbMap;
 use asset_service::ut_core_service_lib_stub::*;
 use crate::function;
 use crate::operations::*;
@@ -70,3 +72,8 @@ fn test_add_3() {
     assert!(remove_stub(&calling_info, &attrs_to_remove).is_ok());
 }
 
+#[test]
+fn test_add_default_attrs() {
+    let mut db_data = DbMap::new();
+    add_default_attrs_stub(&mut db_data);
+}

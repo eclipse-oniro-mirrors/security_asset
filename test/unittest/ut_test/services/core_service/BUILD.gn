@@ -24,6 +24,7 @@ ohos_rust_unittest("rust_asset_core_service_ut_test") {
     "../../../../../frameworks/definition:asset_definition",
     "../../../../../services/core_service:asset_service",
     "../../../../../services/common:asset_common",
+    "../../../../../services/db_operator:asset_db_operator",
   ]
   rustflags = []
   if (enable_local_test) {

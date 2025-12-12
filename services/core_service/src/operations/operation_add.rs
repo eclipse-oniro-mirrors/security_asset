@@ -167,7 +167,7 @@ pub(crate) fn add(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<(
 
 #[cfg(feature = "AssetTest")]
 /// stub for test
-mod ut_operation_add_stub {
+pub mod ut_operation_add_stub {
     include!{"../../../../test/unittest/ut_test/services/core_service/test_stub/operations/ut_operation_add_stub.rs"}
 }
 
