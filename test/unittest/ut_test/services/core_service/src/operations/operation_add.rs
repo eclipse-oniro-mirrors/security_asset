@@ -64,5 +64,9 @@ fn test_add_3() {
     // cover sync type is trusted account to logic delete.
     assert!(add_stub(&calling_info, &attrs).is_ok());
     assert!(remove_stub(&calling_info, &attrs_to_remove).is_ok());
+    // delete logic remove data. add no trusted account data first then delete.
+    attrs.remove(&Tag::SyncType);
+    assert!(add_stub(&calling_info, &attrs).is_ok());
+    assert!(remove_stub(&calling_info, &attrs_to_remove).is_ok());
 }
 
