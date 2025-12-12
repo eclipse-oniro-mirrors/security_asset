@@ -16,6 +16,10 @@
 //! the module test for core_service
 use asset_definition::*;
 mod operation_add;
+<<<<<<< Updated upstream
+=======
+mod operation_remove;
+>>>>>>> Stashed changes
 
 pub(crate) const SECRET: &[u8] = "all_tags_secret".as_bytes();
 pub(crate) const NORMAL_LABEL1: &[u8] = "all_tags_normal_label1".as_bytes();
