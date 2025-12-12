@@ -14,12 +14,24 @@
  */
 
 //! the module test for core_service
-use asset_service::*;
 use asset_common::*;
 use asset_definition::*;
+use asset_service::ut_core_service_lib_stub::*;
+
+#[macro_export]
+macro_rules! function {
+    () => {{
+        fn f() {}
+        fn type_name_of<T>(_: T) -> &'static str {
+            std::any::type_name::<T>()
+        }
+        type_name_of(f).rsplit("::").find(|&part| part != "f" && part != "{{closure}}").expect("Short function name")
+    }};
+}
 
 #[test]
 fn test_new_self() {
+    let func_name = function!().as_bytes();
     let calling_info = CallingInfo::new_self();
     let mut attrs = AssetMap::new();
     attrs.insert_attr(Tag::Alias, func_name.to_owned());

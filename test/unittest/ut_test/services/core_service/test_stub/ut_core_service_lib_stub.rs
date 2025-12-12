@@ -13,9 +13,13 @@
  * limitations under the License.
  */
 
-//! the module test for core_service
-use asset_service::*;
+/// the module test for core_service
+use asset_common::CallingInfo;
+use asset_definition::{AssetMap, Result};
+use crate::operations;
 
+#[allow(dead_code)]
+/// add stub
 pub fn add_stub(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<()> {
     operations::add(calling_info, attributes)
 }
