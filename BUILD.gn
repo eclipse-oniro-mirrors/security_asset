@@ -40,5 +40,6 @@ group("asset_bin_test") {
     deps += [ "test/unittest/module_test:rust_asset_module_test" ]
     deps += [ "services/common:rust_asset_calling_info_test" ]
     deps += [ "services/db_operator:rust_asset_db_operator_test" ]
+    deps += [ "test/unittest/ut_test/services/core_service:rust_asset_core_service_ut_test" ]
   }
 }

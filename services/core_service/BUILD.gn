@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//base/security/asset/config.gni")
 import("//build/ohos.gni")
 
 ohos_rust_shared_library("asset_service") {
@@ -32,6 +33,11 @@ ohos_rust_shared_library("asset_service") {
     "//third_party/rust/crates/lazy-static.rs:lib",
     "//third_party/rust/crates/serde/serde:lib",
   ]
+
+  rustflags = []
+  if (enable_local_test) {
+    rustflags += [ "--cfg", "feature=\"AssetTest\"", ]
+  }
 
   external_deps = [
     "hilog:hilog_rust",

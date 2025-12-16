@@ -16,7 +16,12 @@
 //! This module is used to implement the Asset lifecycle management.
 
 pub(crate) mod common;
+#[cfg(not(feature = "AssetTest"))]
 mod operation_add;
+
+#[cfg(feature = "AssetTest")]
+pub mod operation_add;
+
 mod operation_post_query;
 mod operation_pre_query;
 mod operation_query;
@@ -31,3 +36,6 @@ pub(crate) use operation_query::query;
 pub(crate) use operation_query_sync_result::query_sync_result;
 pub(crate) use operation_remove::remove;
 pub(crate) use operation_update::update;
+
+#[cfg(feature = "AssetTest")]
+pub use operation_add::ut_operation_add_stub;
