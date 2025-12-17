@@ -233,6 +233,15 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
         attributes_array: &[AssetMap]
     ) -> Result<Vec<(u32, u32)>, AssetError>;
 
+    /// Update assets into db with attributes array.
+    fn batch_update(
+        &self,
+        attributes: &mut AssetMap,
+        db_map: &mut ExtDbMap,
+        attributes_array: &[AssetMap],
+        attributes_to_update_array: &[AssetMap]
+    ) -> Result<Vec<(u32, u32)>, AssetError>;
+
     /// Remove an asset to db in asset and adapt table.
     fn remove_cloud_adapt_data(
         &self,

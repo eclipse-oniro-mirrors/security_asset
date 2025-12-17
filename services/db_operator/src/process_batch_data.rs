@@ -63,7 +63,7 @@ fn check_array_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> R
     check_persistent_permission(attributes)
 }
 
-fn into_db_map_with_column_names(attrs: &AssetMap, column_names: &mut HashSet<String>) -> DbMap {
+pub(crate) fn into_db_map_with_column_names(attrs: &AssetMap, column_names: &mut HashSet<String>) -> DbMap {
     let mut db_data = DbMap::new();
     for (attr_tag, attr_value) in attrs.iter() {
         for (table_tag, table_column) in TAG_COLUMN_TABLE {
@@ -84,6 +84,11 @@ fn add_default_batch_attrs(db_data: &mut DbMap) {
     db_data.entry(column::LOCAL_STATUS).or_insert(Value::Number(LocalStatus::Local as u32));
     db_data.entry(column::SYNC_STATUS).or_insert(Value::Number(SyncStatus::SyncAdd as u32));
     db_data.entry(column::WRAP_TYPE).or_insert(Value::Number(WrapType::default() as u32));
+}
+
+pub(crate) fn add_default_batch_update_attrs(db_data: &mut DbMap) {
+    db_data.entry(column::LOCAL_STATUS).or_insert(Value::Number(LocalStatus::Local as u32));
+    db_data.entry(column::SYNC_STATUS).or_insert(Value::Number(SyncStatus::SyncUpdate as u32));
 }
 
 pub(crate) fn add_not_null_column(column_names: &mut HashSet<String>) {

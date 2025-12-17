@@ -550,6 +550,51 @@ impl Database {
         Ok(err_info)
     }
 
+    /// Update datas in database with specific condition.
+    /// If the operation is successful, the array of indexes failed to insert and corresponding reason is returned.
+    #[inline(always)]
+    pub fn update_batch_datas(
+        &mut self,
+        db_map: &DbMap,
+        attributes_array: &[AssetMap],
+        attributes_to_update_array: &[AssetMap],
+        calling_info: &CallingInfo,
+    ) -> Result<Vec<(u32, u32)>> {
+        let mut aliases = Vec::new();
+	    let _lock = self.db_lock.mtx.lock().unwrap();
+        // check data to be queried is exist
+        let invalid_query_idx_set = HashSet::new();
+        for (index, attr) in attributes_array.iter().enumerate() {
+            let query = get_query_condition(attr, info.calling_info)?;
+            if !self.is_data_exists_without_lock(&query, true)? {
+                invalid_query_idx_set.insert(index);
+                err_info.push((ErrCode::NotFound as u32, index as u32));
+            } else {
+                aliases.push(attr.get_bytes_attr(&Tag::Alias)?.to_vec());
+            }
+        }
+
+        if attributes_to_update_array.len() == 0 {
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The data to update is empty.")
+        }
+
+        let mut column_names: HashSet<String> = HashSet::new();
+        let mut db_datas = Vec::new();
+        for (index, attr) in attributes_to_update_array.iter().enumerate() {
+            // filter invalid data
+            if index in invalid_query_idx_set {
+                continue;
+            }
+            let mut db_data = into_db_map_with_column_names(attributes_to_update_array[0], &mut column_names);
+            add_default_batch_update_attrs(&mut db_data);
+            db_datas.push(db_data);
+        }
+        let closure = |e: &Table| e.local_update_batch_datas(&db_datas, db_map, &aliases);
+
+        self.restore_if_exec_fail(closure)?;
+        Ok(err_info)
+    }
+
     fn parse_attr_array(&mut self,
         db_datas: &mut Vec<DbMap>,
         err_info: &mut Vec<(u32, u32)>,
