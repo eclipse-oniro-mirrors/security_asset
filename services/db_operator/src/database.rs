@@ -41,7 +41,9 @@ use crate::{
         DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V0, DB_UPGRADE_VERSION_V1, DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3,
         UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2, UPGRADE_COLUMN_INFO_V3, UPGRADE_COLUMN_INFO_V4
     },
-    process_batch_data::{parse_attr_in_array, add_not_null_column}
+    process_batch_data::{parse_attr_in_array, add_not_null_column, into_db_map_with_column_names, 
+        add_default_batch_update_attrs
+    }
 };
 
 extern "C" {
@@ -561,11 +563,12 @@ impl Database {
         calling_info: &CallingInfo,
     ) -> Result<Vec<(u32, u32)>> {
         let mut aliases = Vec::new();
+        let mut err_info = Vec::new();
 	    let _lock = self.db_lock.mtx.lock().unwrap();
         // check data to be queried is exist
-        let invalid_query_idx_set = HashSet::new();
+        let mut invalid_query_idx_set = HashSet::new();
         for (index, attr) in attributes_array.iter().enumerate() {
-            let query = get_query_condition(attr, info.calling_info)?;
+            let query = get_query_condition(attr, calling_info)?;
             if !self.is_data_exists_without_lock(&query, true)? {
                 invalid_query_idx_set.insert(index);
                 err_info.push((ErrCode::NotFound as u32, index as u32));
@@ -574,7 +577,7 @@ impl Database {
             }
         }
 
-        if attributes_to_update_array.len() == 0 {
+        if attributes_to_update_array.is_empty() {
             return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The data to update is empty.")
         }
 
@@ -582,10 +585,10 @@ impl Database {
         let mut db_datas = Vec::new();
         for (index, attr) in attributes_to_update_array.iter().enumerate() {
             // filter invalid data
-            if index in invalid_query_idx_set {
+            if invalid_query_idx_set.contains(&index) {
                 continue;
             }
-            let mut db_data = into_db_map_with_column_names(attributes_to_update_array[0], &mut column_names);
+            let mut db_data = into_db_map_with_column_names(attr, &mut column_names);
             add_default_batch_update_attrs(&mut db_data);
             db_datas.push(db_data);
         }

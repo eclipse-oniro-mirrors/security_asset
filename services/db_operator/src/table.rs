@@ -656,7 +656,7 @@ impl<'a> Table<'a> {
 
         for (alias, db_data) in aliases.iter().zip(db_data_array.iter()) {
             condition.insert_attr(column::ALIAS, alias.clone());
-            if let Err(e) = self.update_row(condition, true, db_data) {
+            if let Err(e) = self.update_row(&condition, true, db_data) {
                 trans.rollback()?;
                 return Err(e);
             }
