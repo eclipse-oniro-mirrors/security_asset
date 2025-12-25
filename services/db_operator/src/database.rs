@@ -41,7 +41,9 @@ use crate::{
         DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V0, DB_UPGRADE_VERSION_V1, DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3,
         UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2, UPGRADE_COLUMN_INFO_V3, UPGRADE_COLUMN_INFO_V4
     },
-    process_batch_data::{parse_attr_in_array, add_not_null_column}
+    process_batch_data::{parse_attr_in_array, add_not_null_column, into_db_map_with_column_names, 
+        add_default_batch_update_attrs
+    }
 };
 
 extern "C" {
@@ -546,6 +548,55 @@ impl Database {
 
         let column_names = Vec::from_iter(column_names);
         let closure = |e: &Table| e.local_insert_batch_datas(&db_datas, db_map, &aliases, &column_names);
+        self.restore_if_exec_fail(closure)?;
+        Ok(err_info)
+    }
+
+    /// Update datas in database with specific condition.
+    /// If the operation is successful, the array of indexes failed to insert and corresponding reason is returned.
+    #[inline(always)]
+    pub fn update_batch_datas(
+        &mut self,
+        db_map: &DbMap,
+        attributes_array: &[AssetMap],
+        attributes_to_update_array: &[AssetMap],
+        calling_info: &CallingInfo,
+    ) -> Result<Vec<(u32, u32)>> {
+        let mut aliases = Vec::new();
+        let mut err_info = Vec::new();
+	    let _lock = self.db_lock.mtx.lock().unwrap();
+        // check data to be queried is exist
+        let mut invalid_query_idx_set = HashSet::new();
+        if attributes_array.is_empty() || attributes_to_update_array.is_empty() {
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The data to update is empty.");
+        }
+        for (index, attr) in attributes_array.iter().enumerate() {
+            let query = get_query_condition(attr, calling_info)?;
+            if !self.is_data_exists_without_lock(&query, true)? {
+                invalid_query_idx_set.insert(index);
+                err_info.push((ErrCode::NotFound as u32, index as u32));
+            } else {
+                aliases.push(attr.get_bytes_attr(&Tag::Alias)?.to_vec());
+            }
+        }
+
+        let mut column_names: HashSet<String> = HashSet::new();
+        let mut db_datas = Vec::new();
+        for (index, attr) in attributes_to_update_array.iter().enumerate() {
+            // filter invalid data
+            if invalid_query_idx_set.contains(&index) {
+                continue;
+            }
+            let mut db_data = into_db_map_with_column_names(attr, &mut column_names);
+            add_default_batch_update_attrs(&mut db_data);
+            db_datas.push(db_data);
+        }
+
+        if db_datas.len() != aliases.len() {
+            return macros_lib::log_throw_error!(ErrCode::SystemError, "[FATAL]The system internal error.");
+        }
+        let closure = |e: &Table| e.local_update_batch_datas(&db_datas, db_map, &aliases);
+
         self.restore_if_exec_fail(closure)?;
         Ok(err_info)
     }

@@ -369,6 +369,25 @@ impl IAssetPluginCtx for AssetContext {
         db.insert_batch_datas(db_map, attributes_array, &calling_info)
     }
 
+    /// Update assets into db with attributes array.
+    fn batch_update(
+        &self,
+        attributes: &mut AssetMap,
+        db_map: &mut ExtDbMap,
+        attributes_array: &[AssetMap],
+        attributes_to_update_array: &[AssetMap]
+    ) -> Result<Vec<(u32, u32)>> {
+        let process_info = ProcessInfo::build(attributes.get(&Tag::GroupId))?;
+        let calling_info = CallingInfo::build(attributes.get(&Tag::UserId).cloned(), &process_info);
+        attributes.entry(Tag::RequireAttrEncrypted).or_insert(Value::Bool(bool::default()));
+        common::add_group(&calling_info, db_map);
+        let require_attr_encrypted = attributes.get_bool_attr(&Tag::RequireAttrEncrypted)?;
+        let db_name = get_db_name(self.user_id, db_map, require_attr_encrypted)?;
+        let db_key = get_db_key(self.user_id, require_attr_encrypted)?;
+        let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key)?;
+        db.update_batch_datas(db_map, attributes_array, attributes_to_update_array, &calling_info)
+    }
+
     /// Removes an asset from a certain db. Normal, Group, CE.
     fn remove_certain_db(
         &self,

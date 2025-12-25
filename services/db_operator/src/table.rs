@@ -640,6 +640,31 @@ impl<'a> Table<'a> {
         trans.commit()
     }
 
+    pub(crate) fn local_update_batch_datas(
+        &self,
+        db_data_array: &[DbMap],
+        db_map: &DbMap,
+        aliases: &[Vec<u8>]
+    ) -> Result<()> {
+        let mut trans = Transaction::new(self.db);
+        trans.begin()?;
+        let mut condition = DbMap::new();
+        let owner_info = db_map.get_bytes_attr(&column::OWNER)?;
+        let owner_type = db_map.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?;
+        condition.insert_attr(column::OWNER, owner_info.clone());
+        condition.insert_attr(column::OWNER_TYPE, owner_type);
+
+        for (alias, db_data) in aliases.iter().zip(db_data_array.iter()) {
+            condition.insert_attr(column::ALIAS, alias.clone());
+            if let Err(e) = self.update_row(&condition, true, db_data) {
+                trans.rollback()?;
+                return Err(e);
+            }
+        }
+
+        trans.commit()
+    }
+
     /// Update a row in table.
     ///
     /// # Examples
