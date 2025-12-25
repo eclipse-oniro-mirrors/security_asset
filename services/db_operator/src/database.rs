@@ -567,6 +567,9 @@ impl Database {
 	    let _lock = self.db_lock.mtx.lock().unwrap();
         // check data to be queried is exist
         let mut invalid_query_idx_set = HashSet::new();
+        if attributes_array.is_empty() || attributes_to_update_array.is_empty() {
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The data to update is empty.");
+        }
         for (index, attr) in attributes_array.iter().enumerate() {
             let query = get_query_condition(attr, calling_info)?;
             if !self.is_data_exists_without_lock(&query, true)? {
@@ -575,10 +578,6 @@ impl Database {
             } else {
                 aliases.push(attr.get_bytes_attr(&Tag::Alias)?.to_vec());
             }
-        }
-
-        if attributes_to_update_array.is_empty() {
-            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The data to update is empty.")
         }
 
         let mut column_names: HashSet<String> = HashSet::new();
@@ -591,6 +590,10 @@ impl Database {
             let mut db_data = into_db_map_with_column_names(attr, &mut column_names);
             add_default_batch_update_attrs(&mut db_data);
             db_datas.push(db_data);
+        }
+
+        if db_datas.len() != aliases.len() {
+            return macros_lib::log_throw_error!(ErrCode::SystemError, "[FATAL]The system internal error.");
         }
         let closure = |e: &Table| e.local_update_batch_datas(&db_datas, db_map, &aliases);
 
