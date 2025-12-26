@@ -68,13 +68,13 @@ HWTEST_F(AssetBmsWrapperTest, AssetBmsWrapperTest001, TestSize.Level0)
     processInfo.ownerType = NATIVE;
     processInfo.processName = { .size = processNameLen, .data = processName };
     processInfo.nativeInfo = { .uid = 0 };
-    int32_t ret = GetCallingProcessInfo(userId, uid, &processInfo);
+    int32_t ret = GetCallingProcessInfo(userId, uid, &processInfo, false);
     ASSERT_EQ(ret, 0);
 }
 
 /**
  * @tc.name: AssetBmsWrapperTest.AssetBmsWrapperTest002
- * @tc.desc: Test asset func GetCallingProcessInfo, expect SEC_ASSET_ACCESS_TOKEN_ERROR
+ * @tc.desc: Test asset func GetUninstallGroups, expect ASSET_BMS_ERROR
  * @tc.type: FUNC
  * @tc.result:0
  */

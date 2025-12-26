@@ -17,6 +17,7 @@
 //! Databases are isolated based on users and protected by locks.
 
 use core::ffi::c_void;
+use std::path::Path;
 use std::{collections::{HashMap, HashSet}, ffi::CStr, fs, ptr::null_mut, sync::{Arc, Mutex}};
 
 use asset_common::{CallingInfo, OwnerType};
@@ -72,6 +73,45 @@ pub(crate) static OLD_DB_NAME: &str = "asset";
 lazy_static! {
     static ref SPLIT_DB_LOCK_MAP: Mutex<HashMap<i32, &'static UserDbLock>> = Mutex::new(HashMap::new());
     static ref USER_DB_LOCK_MAP: Mutex<HashMap<(i32, String), &'static UserDbLock>> = Mutex::new(HashMap::new());
+    static ref DB_MAP: Mutex<HashMap<(i32, String), &'static mut Database>> = Mutex::new(HashMap::new());
+}
+
+/// Get Database from DB_MAP by user_id and db_name
+pub fn get_db_by_user_id_db_name(user_id: i32, db_name: String) -> Option<&'static mut Database> {
+    let mut map = DB_MAP.lock().unwrap();
+    if let Some(db_ref) = map.get_mut(&(user_id, db_name.clone())) {
+        logi!("{} exists in DB_MAP", db_name);
+        unsafe {
+            let ptr = *db_ref as *mut Database;
+            return Some(&mut *ptr);
+        }
+    }
+    None
+}
+
+fn insert_db_to_db_map(user_id: i32, db_name: &str, db: Database) {
+    let mut map = DB_MAP.lock().unwrap();
+    if let Some(_db) = map.get(&(user_id, db_name.to_string())) {
+        logi!("{} already exist in DB_MAP", db_name);
+        return;
+    }
+    let db_box = Box::new(db);
+    let db_static: &'static mut Database = Box::leak(db_box);
+    map.insert((user_id, db_name.to_string()), db_static);
+    logi!("insert {} to DB_MAP success!", db_name);
+}
+
+/// Preload Database to DB_MAP
+pub fn preload_db(calling_info: &CallingInfo, db_key: Option<Vec<u8>>) -> Result<()> {
+    let db_name = construct_splited_db_name(calling_info, db_key.is_some())?;
+    let db_path = fmt_db_path(calling_info.user_id(), &db_name, &db_key);
+    if !is_db_exist(db_path) {
+        logi!("{} not exist, skip preload_db", &db_name);
+        return Ok(());
+    }
+    let db = Database::build(calling_info, db_key)?;
+    insert_db_to_db_map(calling_info.user_id(), &db_name, db);
+    Ok(())
 }
 
 pub(crate) fn get_split_db_lock_by_user_id(user_id: i32) -> &'static UserDbLock {
@@ -153,6 +193,11 @@ fn fmt_db_path(user_id: i32, db_name: &str, db_key: &Option<Vec<u8>>) -> String 
         Some(_db_key) => fmt_ce_db_path_with_name(user_id, db_name),
         _ => fmt_de_db_path_with_name(user_id, db_name),
     }
+}
+
+fn is_db_exist(db_path: String) -> bool {
+    let file_path = Path::new(&db_path);
+    file_path.exists()
 }
 
 pub(crate) fn get_db_by_type_without_lock(

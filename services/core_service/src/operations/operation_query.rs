@@ -18,8 +18,13 @@
 use std::cmp::Ordering;
 
 use asset_common::CallingInfo;
-use asset_definition::{macros_lib, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value};
-use asset_db_operator::{common, database::Database, types::{column, DbMap, QueryOptions, DB_DATA_VERSION}};
+use asset_definition::{macros_lib, AssetMap, AuthType, ErrCode, Extension, Result, ReturnType, Tag, Value, AssetError};
+use asset_db_operator::{
+    common,
+    database_file_upgrade::construct_splited_db_name,
+    database::{Database, get_db_by_user_id_db_name},
+    types::{column, DbMap, QueryOptions, DB_DATA_VERSION}
+};
 use asset_crypto_manager::{
     crypto::Crypto, crypto_manager::CryptoManager,
     db_key_operator::get_db_key_by_asset_map,
@@ -83,25 +88,67 @@ fn exec_crypto(calling_info: &CallingInfo, query: &AssetMap, db_data: &mut DbMap
     }
 }
 
-fn query_all(calling_info: &CallingInfo, db_data: &mut DbMap, query: &AssetMap) -> Result<Vec<AssetMap>> {
+fn get_db<'a>(calling_info: &'a CallingInfo, query: &'a AssetMap) -> Result<(&'a mut Database, bool)> {
     let db_key = get_db_key_by_asset_map(calling_info.user_id(), query)?;
-    let mut db = Database::build(calling_info, db_key)?;
-    let mut results = db.query_datas(&vec![], db_data, None, true)?;
+    let db_name = construct_splited_db_name(calling_info, db_key.is_some())?;
+    match get_db_by_user_id_db_name(calling_info.user_id(), db_name) {
+        Some(db) => {
+            Ok((db, true))
+        },
+        None => {
+            let db = Database::build(calling_info, db_key)?;
+            let db_box = Box::new(db);
+            Ok((Box::leak(db_box), false))
+        },
+    }
+}
+
+fn free_db_if_not_preload(db: &mut Database, preload: bool) {
+    if !preload {
+        let _ = unsafe { Box::from_raw(db as *mut Database) };
+    }
+}
+
+fn free_and_return_err(db: &mut Database, preload: bool, e: AssetError) -> Result<Vec<AssetMap>> {
+    free_db_if_not_preload(db, preload);
+    Err(e)
+}
+
+fn query_all(calling_info: &CallingInfo, db_data: &DbMap, query: &AssetMap) -> Result<Vec<AssetMap>> {
+    let (db, preload) = get_db(calling_info, query)?;
+    let mut results = match db.query_datas(&vec![], db_data, None, true) {
+        Ok(res) => res,
+        Err(e) => return free_and_return_err(db, preload, e),
+    };
     match results.len() {
         0 => macros_lib::throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist."),
         1 => {
             match results[0].get(column::AUTH_TYPE) {
                 Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
-                    exec_crypto(calling_info, query, &mut results[0])?;
+                    if let Err(e) = exec_crypto(calling_info, query, &mut results[0]) {
+                        return free_and_return_err(db, preload, e);
+                    }
                 },
-                _ => decrypt_secret(calling_info, &mut results[0])?,
+                _ => {
+                    if let Err(e) = decrypt_secret(calling_info, &mut results[0]) {
+                        return free_and_return_err(db, preload, e);
+                    }
+                }
             };
-            if common::need_upgrade(&results[0])? {
-                upgrade_aad(&mut db, calling_info, &mut results[0])?;
+            match common::need_upgrade(&results[0]) {
+                Ok(true) => {
+                    if let Err(e) = upgrade_aad(db, calling_info, &mut results[0]) {
+                        return free_and_return_err(db, preload, e);
+                    }
+                },
+                Ok(false) => (),
+                Err(e) => return free_and_return_err(db, preload, e),
             }
+            free_db_if_not_preload(db, preload);
             into_asset_maps(&results)
         },
         n => {
+            free_db_if_not_preload(db, preload);
             macros_lib::log_throw_error!(
                 ErrCode::DatabaseError,
                 "[FATAL]The database contains {} records with the specified alias.",
@@ -140,17 +187,20 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
 }
 
 pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
-    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attrs)?;
-    let mut db = Database::build(calling_info, db_key)?;
-    let mut results = db.query_datas(&vec![], db_data, Some(&get_query_options(attrs)), true)?;
+    let (db, preload) = get_db(calling_info, attrs)?;
+    let mut results = match db.query_datas(&vec![], db_data, Some(&get_query_options(attrs)), true) {
+        Ok(res) => res,
+        Err(e) => return free_and_return_err(db, preload, e),
+    };
     if results.is_empty() {
+        free_db_if_not_preload(db, preload);
         return macros_lib::throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
     }
 
     for data in &mut results {
         data.remove(&column::SECRET);
     }
-
+    free_db_if_not_preload(db, preload);
     into_asset_maps(&results)
 }
 
@@ -188,7 +238,7 @@ pub(crate) fn query(calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<
             if !query.contains_key(&Tag::Alias) {
                 macros_lib::log_throw_error!(ErrCode::Unsupported, "[FATAL]Batch secret query is not supported.")
             } else {
-                query_all(calling_info, &mut db_data, query)
+                query_all(calling_info, &db_data, query)
             }
         },
         _ => query_attrs(calling_info, &db_data, query),

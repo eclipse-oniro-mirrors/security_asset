@@ -63,50 +63,35 @@ sptr<IBundleMgr> GetBundleMgr()
     return iface_cast<IBundleMgr>(bundleMgrRemoteObj);
 }
 
-int32_t GetBundleNameAndAppIndex(sptr<IBundleMgr> bundleMgr, uint64_t uid, ProcessInfo *processInfo)
+int32_t GetBundleNameAndAppIndex(AssetGroupInfo &assetGroupInfo, ProcessInfo *processInfo)
 {
-    int32_t appIndex = 0;
-    std::string bundleName;
-    int32_t ret = bundleMgr->GetNameAndIndexForUid(uid, bundleName, appIndex);
-    if (ret != RET_SUCCESS) {
-        LOGE("[FATAL]GetNameAndIndexForUid get bundleName and appIndex failed. ret:%{public}d", ret);
-        return ASSET_BMS_ERROR;
-    }
-
-    processInfo->hapInfo.appIndex = appIndex;
-    if (memcpy_s(processInfo->processName.data, processInfo->processName.size, bundleName.c_str(), bundleName.size())
-        != EOK) {
+    processInfo->hapInfo.appIndex = assetGroupInfo.appIndex;
+    if (memcpy_s(processInfo->processName.data, processInfo->processName.size,
+        assetGroupInfo.bundleName.c_str(), assetGroupInfo.bundleName.size()) != EOK) {
         LOGE("[FATAL]The processName buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
-            bundleName.size(), processInfo->processName.size);
+            assetGroupInfo.bundleName.size(), processInfo->processName.size);
         return ASSET_OUT_OF_MEMORY;
     }
-    processInfo->processName.size = bundleName.size();
+    processInfo->processName.size = assetGroupInfo.bundleName.size();
 
     return ASSET_SUCCESS;
 }
 
-int32_t GetBundleInfo(AppExecFwk::BundleMgrClient &bmsClient, uint32_t userId, ProcessInfo *processInfo)
+int32_t GetBundleInfo(AssetGroupInfo &assetGroupInfo, ProcessInfo *processInfo)
 {
-    AppExecFwk::BundleInfo bundleInfo;
-    std::string bundleName(reinterpret_cast<const char*>(processInfo->processName.data), processInfo->processName.size);
-    if (!bmsClient.GetBundleInfo(bundleName, BundleFlag::GET_BUNDLE_WITH_HASH_VALUE, bundleInfo, userId)) {
-        LOGE("[FATAL]Get bundle info failed!");
-        return ASSET_BMS_ERROR;
-    }
-
-    if (memcpy_s(processInfo->hapInfo.appId.data, processInfo->hapInfo.appId.size, bundleInfo.appId.c_str(),
-        bundleInfo.appId.size()) != EOK) {
+    if (memcpy_s(processInfo->hapInfo.appId.data, processInfo->hapInfo.appId.size, assetGroupInfo.appId.c_str(),
+        assetGroupInfo.appId.size()) != EOK) {
         LOGE("[FATAL]The app id buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
-            bundleInfo.appId.size(), processInfo->hapInfo.appId.size);
+            assetGroupInfo.appId.size(), processInfo->hapInfo.appId.size);
         return ASSET_OUT_OF_MEMORY;
     }
-    processInfo->hapInfo.appId.size = bundleInfo.appId.size();
+    processInfo->hapInfo.appId.size = assetGroupInfo.appId.size();
 
     if (processInfo->hapInfo.groupId.data == nullptr || processInfo->hapInfo.groupId.size == 0) {
         return ASSET_SUCCESS;
     }
 
-    for (const std::string &groupId : bundleInfo.applicationInfo.assetAccessGroups) {
+    for (const std::string &groupId : assetGroupInfo.assetAccessGroups) {
         if (groupId.size() <= processInfo->hapInfo.groupId.size &&
             memcmp(processInfo->hapInfo.groupId.data, groupId.data(), processInfo->hapInfo.groupId.size) == 0) {
             LOGI("[INFO]Found matching group id.");
@@ -117,26 +102,18 @@ int32_t GetBundleInfo(AppExecFwk::BundleMgrClient &bmsClient, uint32_t userId, P
     return ASSET_INVALID_ARGUMENT;
 }
 
-int32_t GetAppProvisionInfo(sptr<IBundleMgr> bundleMgr, uint32_t userId, ProcessInfo *processInfo)
+int32_t GetAppProvisionInfo(AssetGroupInfo &assetGroupInfo, ProcessInfo *processInfo)
 {
     if (processInfo->hapInfo.developerId.data == nullptr || processInfo->hapInfo.developerId.size == 0) {
         return ASSET_SUCCESS;
     }
 
-    AppExecFwk::AppProvisionInfo appProvisionInfo;
-    std::string bundleName(reinterpret_cast<const char*>(processInfo->processName.data), processInfo->processName.size);
-    int32_t ret = bundleMgr->GetAppProvisionInfo(bundleName, userId, appProvisionInfo);
-    if (ret != RET_SUCCESS) {
-        LOGE("[FATAL]Get app provision info failed!");
-        return ASSET_BMS_ERROR;
-    }
-
     std::string mainDeveloperId;
-    size_t pos = appProvisionInfo.developerId.find('.');
+    size_t pos = assetGroupInfo.developerId.find('.');
     if (pos != std::string::npos) {
-        mainDeveloperId = appProvisionInfo.developerId.substr(pos + 1);
+        mainDeveloperId = assetGroupInfo.developerId.substr(pos + 1);
     } else {
-        mainDeveloperId = appProvisionInfo.developerId;
+        mainDeveloperId = assetGroupInfo.developerId;
     }
     if (memcpy_s(processInfo->hapInfo.developerId.data, processInfo->hapInfo.developerId.size, mainDeveloperId.c_str(),
         mainDeveloperId.size()) != EOK) {
@@ -158,17 +135,24 @@ int32_t GetHapProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInf
     }
     AppExecFwk::BundleMgrClient bmsClient;
 
-    int32_t ret = GetBundleNameAndAppIndex(bundleMgr, uid, processInfo);
+    AssetGroupInfo assetGroupInfo;
+    int32_t ret = bundleMgr->GetAssetGroupsInfo(uid, assetGroupInfo);
+    if (ret != ASSET_SUCCESS) {
+        LOGE("[FATAL]GetAssetGroupsInfo failed.");
+        return ret;
+    }
+
+    ret = GetBundleNameAndAppIndex(assetGroupInfo, processInfo);
     if (ret != ASSET_SUCCESS) {
         return ret;
     }
 
-    ret = GetBundleInfo(bmsClient, userId, processInfo);
+    ret = GetBundleInfo(assetGroupInfo, processInfo);
     if (ret != ASSET_SUCCESS) {
         return ret;
     }
 
-    return GetAppProvisionInfo(bundleMgr, userId, processInfo);
+    return GetAppProvisionInfo(assetGroupInfo, processInfo);
 }
 
 int32_t GetNativeProcessInfo(uint32_t tokenId, uint64_t uid, ProcessInfo *processInfo)
@@ -221,11 +205,14 @@ void ProcessBundleInfos(const std::vector<AppExecFwk::BundleInfo> &bundleInfos,
 }
 } // namespace
 
-int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInfo)
+int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInfo, bool preload)
 {
     processInfo->userId = userId;
     auto tokenId = IPCSkeleton::GetCallingTokenID();
-    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
+    ATokenTypeEnum tokenType = ATokenTypeEnum::TOKEN_HAP;
+    if (!preload) {
+        tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
+    }
     int32_t res = ASSET_SUCCESS;
     switch (tokenType) {
         case ATokenTypeEnum::TOKEN_HAP:

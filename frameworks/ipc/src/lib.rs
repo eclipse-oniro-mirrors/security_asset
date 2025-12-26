@@ -15,7 +15,7 @@
 
 //! This module defines IPC interfaces and constants.
 
-use ipc::{parcel::MsgParcel, IpcStatusCode};
+use ipc::{parcel::{MsgParcel, Deserialize}, IpcStatusCode};
 
 use asset_definition::{
     macros_lib, AssetError, AssetMap, Conversion, DataType, ErrCode, Result, SyncResult, Tag, Value
@@ -51,6 +51,15 @@ macros_lib::impl_enum_trait! {
         /// Code for QuerySyncResult.
         QuerySyncResult,
     }
+}
+
+/// deserialize T from parcel
+pub fn deserialize<T: Deserialize>(parcel: &mut MsgParcel) -> Result<T> {
+    let value = parcel.read::<T>().map_err(|_| macros_lib::log_and_into_asset_error!(
+        ErrCode::InvalidArgument,
+        "[FATAL]deserialize T from parcel failed!"
+    ))?;
+    Ok(value)
 }
 
 /// serialize the map to parcel

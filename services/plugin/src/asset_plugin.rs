@@ -357,7 +357,7 @@ impl IAssetPluginCtx for AssetContext {
         db_map: &mut ExtDbMap,
         attributes_array: &[AssetMap]
     ) -> Result<Vec<(u32, u32)>> {
-        let process_info = ProcessInfo::build(attributes.get(&Tag::GroupId))?;
+        let process_info = ProcessInfo::build(attributes.get(&Tag::GroupId), None, false)?;
         let calling_info = CallingInfo::build(attributes.get(&Tag::UserId).cloned(), &process_info);
         attributes.entry(Tag::RequireAttrEncrypted).or_insert(Value::Bool(bool::default()));
         common::add_group(&calling_info, db_map);
@@ -377,7 +377,7 @@ impl IAssetPluginCtx for AssetContext {
         attributes_array: &[AssetMap],
         attributes_to_update_array: &[AssetMap]
     ) -> Result<Vec<(u32, u32)>> {
-        let process_info = ProcessInfo::build(attributes.get(&Tag::GroupId))?;
+        let process_info = ProcessInfo::build(attributes.get(&Tag::GroupId), None, false)?;
         let calling_info = CallingInfo::build(attributes.get(&Tag::UserId).cloned(), &process_info);
         attributes.entry(Tag::RequireAttrEncrypted).or_insert(Value::Bool(bool::default()));
         common::add_group(&calling_info, db_map);

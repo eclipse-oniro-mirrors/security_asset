@@ -28,14 +28,15 @@ use system_ability_fwk::{
     cxx_share::SystemAbilityOnDemandReason,
 };
 use ylong_runtime::builder::RuntimeBuilder;
+use ylong_json::JsonValue;
 use lazy_static::lazy_static;
 
-use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Counter, TaskManager};
-use asset_crypto_manager::crypto_manager::CryptoManager;
-use asset_db_operator::database_file_upgrade::check_and_split_db;
+use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Counter, TaskManager, ProcessInfo};
+use asset_crypto_manager::{crypto_manager::CryptoManager, db_key_operator::get_db_key};
+use asset_db_operator::{database_file_upgrade::check_and_split_db, database::preload_db};
 use asset_definition::{macros_lib, AssetMap, ErrCode, Result, SyncResult};
 use asset_file_operator::{common::DE_ROOT_PATH, de_operator::create_user_de_dir};
-use asset_ipc::SA_ID;
+use asset_ipc::{SA_ID, deserialize};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::{AssetContext, AssetPlugin};
 
@@ -84,6 +85,8 @@ struct PackageInfoFfi {
 
 static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 20;
 static SEC_TO_MILLISEC: i32 = 1000;
+const RSS_SA_EXTENSION: &str = "RssSaExtension";
+const PREPARE_FOR_BUNDLE: u32 = 27;
 
 impl PackageInfo {
     fn developer_id(&self) -> &Option<String> {
@@ -174,7 +177,12 @@ impl Ability for AssetAbility {
 
     fn on_extension(&self, extension: String, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
         logi!("[INFO]Asset on_extension, extension is {}", extension);
-        if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
+        if extension == RSS_SA_EXTENSION {
+            match on_preload_extension(data) {
+                Ok(()) => logi!("process preload extension event success."),
+                Err(_) => loge!("process preload extension event failed."),
+            }
+        } else if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
             match load.on_sa_extension(extension, data, reply) {
                 Ok(()) => logi!("process sa extension event success."),
                 Err(code) => loge!("process sa extension event failed, code: {}", code),
@@ -183,6 +191,51 @@ impl Ability for AssetAbility {
         logi!("[INFO]Asset on_extension end");
         0
     }
+}
+
+fn get_db_key_and_preload_db(calling_info: &CallingInfo, is_ce: bool) -> Result<()> {
+    let db_key = get_db_key(calling_info.user_id(), is_ce)?;
+    preload_db(calling_info, db_key)
+}
+
+fn get_value_from_json(json_str: String, key: &str) -> String {
+    let json = match JsonValue::from_text(json_str) {
+        Ok(json) => json,
+        Err(_) => {
+            loge!("parse json from String failed.");
+            JsonValue::from_text("{}").unwrap()
+        }
+    };
+    if json.try_as_object().unwrap().is_empty() {
+        loge!("");
+        return "".to_string();
+    }
+    let value: &JsonValue = &json[key];
+    if value == &JsonValue::Null {
+        return "".to_string();
+    }
+    value.to_compact_string().unwrap().replace('\"', "")
+}
+
+fn on_preload_extension(data: &mut MsgParcel) -> Result<()> {
+    let res_type = deserialize::<u32>(data)?;
+    if res_type != PREPARE_FOR_BUNDLE {
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "res_type is not PREPARE_FOR_BUNDLE");
+    }
+    let _value = deserialize::<i64>(data)?;
+
+    let json_str = deserialize::<String>(data)?;
+    let value = get_value_from_json(json_str, "uid");
+    let uid = match value.parse::<u64>() {
+        Ok(num) => num,
+        Err(_) => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "parse uid from json value failed!"),
+    };
+
+    let process_info = ProcessInfo::build(None, Some(uid), true)?;
+    let calling_info = CallingInfo::build(None, &process_info);
+    let _ = get_db_key_and_preload_db(&calling_info, false);
+    let _ = get_db_key_and_preload_db(&calling_info, true);
+    Ok(())
 }
 
 async fn execute_upgrade_process() {

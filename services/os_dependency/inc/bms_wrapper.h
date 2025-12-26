@@ -54,7 +54,7 @@ typedef struct {
     NativeInfo nativeInfo;
 } ProcessInfo;
 
-int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInfo);
+int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInfo, bool preload);
 
 int32_t GetCloneAppIndexes(int32_t userId, int32_t *appIndexes, uint32_t *indexSize, const char *appName);
 

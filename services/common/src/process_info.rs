@@ -51,7 +51,7 @@ impl ProcessInfoFfi {
         process_name: &mut Vec<u8>,
         app_id: &mut Vec<u8>,
         developer_id: &mut Option<Vec<u8>>,
-    ) -> Result<Self> {
+    ) -> Self {
         let process_name = MutAssetBlob { size: process_name.len() as u32, data: process_name.as_mut_ptr() };
         let app_id = MutAssetBlob { size: app_id.len() as u32, data: app_id.as_mut_ptr() };
         let group_id = match group_id {
@@ -62,18 +62,18 @@ impl ProcessInfoFfi {
             Some(developer_id) => MutAssetBlob { size: developer_id.len() as u32, data: developer_id.as_mut_ptr() },
             None => MutAssetBlob { size: 0, data: null_mut() },
         };
-        Ok(ProcessInfoFfi {
+        ProcessInfoFfi {
             user_id: 0,
             owner_type: OwnerType::Hap as u32,
             process_name,
             hap_info: HapInfoFfi { app_index: 0, app_id, group_id, developer_id },
             native_info: NativeInfoFfi { uid: 0 },
-        })
+        }
     }
 }
 
 extern "C" {
-    fn GetCallingProcessInfo(userId: u32, uid: u64, ownerInfo: *mut ProcessInfoFfi) -> i32;
+    fn GetCallingProcessInfo(userId: u32, uid: u64, ownerInfo: *mut ProcessInfoFfi, preload: bool) -> i32;
 }
 
 /// hap-relative information
@@ -131,8 +131,8 @@ pub struct ProcessInfo {
 
 impl ProcessInfo {
     /// Build process info.
-    pub fn build(group_attr: Option<&Value>) -> Result<Self> {
-        let uid = Skeleton::calling_uid();
+    pub fn build(group_attr: Option<&Value>, uid: Option<u64>, preload: bool) -> Result<Self> {
+        let uid = uid.unwrap_or(Skeleton::calling_uid());
         let user_id = get_user_id(uid)?;
         let mut process_name = vec![0u8; 256];
         let mut app_id = vec![0u8; 256];
@@ -140,8 +140,8 @@ impl ProcessInfo {
             Some(Value::Bytes(group_attr)) => (Some(group_attr.clone()), Some(vec![0u8; 128])),
             _ => (None, None),
         };
-        let mut process_info_ffi = ProcessInfoFfi::build(&group_id, &mut process_name, &mut app_id, &mut developer_id)?;
-        match unsafe { GetCallingProcessInfo(user_id, uid, &mut process_info_ffi) } {
+        let mut process_info_ffi = ProcessInfoFfi::build(&group_id, &mut process_name, &mut app_id, &mut developer_id);
+        match unsafe { GetCallingProcessInfo(user_id, uid, &mut process_info_ffi, preload) } {
             SUCCESS => {
                 process_name.truncate(process_info_ffi.process_name.size as usize);
                 app_id.truncate(process_info_ffi.hap_info.app_id.size as usize);
