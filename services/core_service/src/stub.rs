@@ -117,7 +117,7 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
     let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
 
     let map = deserialize_map(data).map_err(asset_err_handle)?;
-    let process_info = ProcessInfo::build(map.get(&Tag::GroupId)).map_err(asset_err_handle)?;
+    let process_info = ProcessInfo::build(map.get(&Tag::GroupId), None, false).map_err(asset_err_handle)?;
     let calling_info = CallingInfo::build(map.get(&Tag::UserId).cloned(), &process_info);
     on_app_request(ipc_code, &process_info, &calling_info).map_err(asset_err_handle)?;
 

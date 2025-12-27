@@ -29,7 +29,7 @@
                     }
                 ]
             },
-            "extension": ["backup", "restore"]
+            "extension": ["backup", "restore", "RssSaExtension"]
         }
     ]
 }

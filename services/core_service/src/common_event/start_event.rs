@@ -138,17 +138,17 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
             Some(v) => match v.parse::<i32>() {
                 Ok(parsed_value) => parsed_value,
                 Err(_) => {
-                    loge!("[FATIL]Get restore app info failed, failed to parse user_id");
+                    loge!("[FATAL]Get restore app info failed, failed to parse user_id");
                     return;
                 },
             },
             None => {
-                loge!("[FATIL]Get restore app info failed, get userId fail");
+                loge!("[FATAL]Get restore app info failed, get userId fail");
                 return;
             },
         };
         let Some(bundle_name) = want.get(BUNDLE_NAME) else {
-            loge!("[FATIL]Get restore app info failed, get bundle name failed.");
+            loge!("[FATAL]Get restore app info failed, get bundle name failed.");
             return;
         };
         let mut bundle_name = bundle_name.clone();
@@ -162,7 +162,7 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
                 },
             },
             None => {
-                loge!("[FATIL]Get restore app info failed, failed to get appIndex");
+                loge!("[FATAL]Get restore app info failed, failed to get appIndex");
                 return;
             },
         };
