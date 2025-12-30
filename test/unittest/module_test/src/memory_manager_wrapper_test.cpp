@@ -49,30 +49,6 @@ void AssetMemoryManagerWrapperTest::TearDown(void)
 {
 }
 
-void PackageRemovedCallback(PackageInfo)
-{
-}
-
-void OnUserRemovedCallback(int32_t userId)
-{
-}
-
-void OnScreenOffCallback(void)
-{
-}
-
-void OnChargingCallback(void)
-{
-}
-
-void OnAppRestore(int32_t packageId, const uint8_t *owner, int32_t appIndex)
-{
-}
-
-void OnUserUnlocked(int32_t userId)
-{
-}
-
 /**
  * @tc.name: AssetMemoryManagerWrapperTest.AssetMemoryManagerWrapperTest001
  * @tc.desc: Test asset func SubscribeSystemEvent, expect true
