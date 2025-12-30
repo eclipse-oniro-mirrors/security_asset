@@ -56,6 +56,7 @@ ohos_unittest("asset_dependency_test") {
     sources += [ "src/system_event_wrapper_test.cpp" ]
     sources += [ "src/os_account_wrapper_test.cpp" ]
     sources += [ "src/asset_permission_change.cpp" ]
+    sources += [ "src/memory_manager_wrapper_test.cpp" ]
   }
   sources += [
     "src/asset_mem_wrapper_test.cpp",
