@@ -21,7 +21,7 @@ use std::{
     fs,
     ffi::CStr,
     time::{Duration, Instant},
-    sync::RwLock,
+    sync::{Mutex, MutexGuard, RwLock},
 };
 use system_ability_fwk::{
     ability::{Ability, Handler},
@@ -87,6 +87,101 @@ static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 20;
 static SEC_TO_MILLISEC: i32 = 1000;
 const RSS_SA_EXTENSION: &str = "RssSaExtension";
 const PREPARE_FOR_BUNDLE: u32 = 27;
+const START_STATUS: i32 = 1;
+const DEAD_STATUS: i32 = 0;
+const MEMORY_MANAGER_SA_ID: i32 = 1909;
+
+#[derive(PartialEq)]
+enum SaStatus {
+    Active,
+    Idle
+}
+
+#[derive(PartialEq)]
+enum CriticalStatus {
+    NotInit = -1,
+    SetTrue = 1,
+    SetFalse = 0,
+}
+
+struct MemoryMgrInfo {
+    sa_status: SaStatus,
+    notify_status: bool,
+    critical_status: CriticalStatus,
+}
+
+impl MemoryMgrInfo {
+    pub(crate) fn build() -> Self {
+        Self { sa_status: SaStatus::Active, notify_status: false, critical_status: CriticalStatus::NotInit }
+    }
+
+    pub(crate) fn set_notify_status(&mut self, status: bool) {
+        self.notify_status = status
+    }
+
+    pub(crate) fn set_sa_status(&mut self, sa_status: SaStatus) {
+        self.sa_status = sa_status
+    }
+
+    pub(crate) fn set_critical_status(&mut self, critical_status: CriticalStatus) {
+        self.critical_status = critical_status
+    }
+
+    pub(crate) fn get_notify_status(&self) -> bool {
+        self.notify_status
+    }
+
+    pub(crate) fn get_sa_status(&self) -> &SaStatus {
+        &self.sa_status
+    }
+
+    pub(crate) fn get_critical_status(&self) -> &CriticalStatus {
+        &self.critical_status
+    }
+}
+
+lazy_static::lazy_static! {
+    static ref HAS_NOTIFY_MEMORY_MGR_MUTEX: Mutex<MemoryMgrInfo> = Mutex::new(MemoryMgrInfo::build());
+}
+
+extern "C" {
+    fn CheckMemoryMgr() -> bool;
+    fn NotifyStatus(size: i32) -> i32;
+    fn SetCritical(critical: bool) -> i32;
+}
+
+fn set_notify_info(lock: &mut MutexGuard<MemoryMgrInfo>, notify_info: i32) {
+    if lock.get_notify_status() { return; }
+    unsafe { NotifyStatus(notify_info); }
+    lock.set_notify_status(true);
+}
+
+fn set_critical_info(lock: &mut MutexGuard<MemoryMgrInfo>, critical: bool) {
+    match lock.get_critical_status() {
+        CriticalStatus::NotInit => {
+            if !critical {
+                loge!("[FATAL]func use error");
+                return;
+            }
+            unsafe { SetCritical(critical); }
+            lock.set_critical_status(CriticalStatus::SetTrue);
+        },
+        CriticalStatus::SetTrue => {
+            if critical {
+                return;
+            }
+            unsafe { SetCritical(critical); }
+            lock.set_critical_status(CriticalStatus::SetFalse);
+        },
+        CriticalStatus::SetFalse => {
+            if !critical {
+                return;
+            }
+            unsafe { SetCritical(critical); }
+            lock.set_critical_status(CriticalStatus::SetTrue);
+        },
+    }
+}
 
 impl PackageInfo {
     fn developer_id(&self) -> &Option<String> {
@@ -139,12 +234,39 @@ impl Ability for AssetAbility {
         common_event::handle_common_event(reason);
     }
 
+    fn on_system_ability_load_event(&self, said: i32, device_id: String) {
+        logi!("[INFO]Receive service load event, said:{}, device_id:{}", said, &device_id);
+        if said != MEMORY_MANAGER_SA_ID { return; }
+        let mut lock = HAS_NOTIFY_MEMORY_MGR_MUTEX.lock().unwrap();
+        set_notify_info(&mut lock, START_STATUS);
+        if (*lock).get_sa_status() == &SaStatus::Active {
+            set_critical_info(&mut lock, true);
+        }
+    }
+
+    fn on_system_ability_remove_event(&self, said: i32, device_id: String) {
+        loge!("[ERROR]Receive service unload event, said:{}, device_id:{}", said, &device_id);
+        // if memory manager died, we need to reset status.
+        if said == MEMORY_MANAGER_SA_ID {
+            let mut lock = HAS_NOTIFY_MEMORY_MGR_MUTEX.lock().unwrap();
+            (*lock).set_notify_status(false);
+            (*lock).set_critical_status(CriticalStatus::NotInit);
+        }
+    }
+
     fn on_active(&self, reason: SystemAbilityOnDemandReason) {
+        let mut lock = HAS_NOTIFY_MEMORY_MGR_MUTEX.lock().unwrap();
+        (*lock).set_sa_status(SaStatus::Active);
         logi!("[INFO]Asset service on_active.");
         if let Err(e) = handle_data_size_upload() {
             loge!("Failed to handle data upload: {}", e);
         }
         common_event::handle_common_event(reason);
+        unsafe { 
+            if !CheckMemoryMgr() { return; }
+            set_notify_info(&mut lock, START_STATUS);
+            set_critical_info(&mut lock, true);
+        }
     }
 
     fn on_idle(&self, _reason: SystemAbilityOnDemandReason) -> i32 {
@@ -164,7 +286,16 @@ impl Ability for AssetAbility {
             );
             return DELAYED_UNLOAD_TIME_IN_SEC * SEC_TO_MILLISEC;
         }
+        let mut lock = HAS_NOTIFY_MEMORY_MGR_MUTEX.lock().unwrap();
+        (*lock).set_sa_status(SaStatus::Idle);
         logi!("[INFO]Asset service on_idle.");
+        unsafe {
+            if !CheckMemoryMgr() { return 0; }
+            set_notify_info(&mut lock, START_STATUS);
+            set_critical_info(&mut lock, true);
+            set_critical_info(&mut lock, false);
+        }
+
         0
     }
 
@@ -173,6 +304,9 @@ impl Ability for AssetAbility {
         let counter = Counter::get_instance();
         counter.lock().unwrap().stop();
         common_event::unsubscribe();
+        let lock = HAS_NOTIFY_MEMORY_MGR_MUTEX.lock().unwrap();
+        if !(*lock).get_notify_status() { return; }
+        unsafe { NotifyStatus(DEAD_STATUS); }
     }
 
     fn on_extension(&self, extension: String, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
@@ -271,6 +405,7 @@ fn start_service(handler: Handler) -> Result<()> {
         return macros_lib::log_throw_error!(ErrCode::IpcError, "Asset publish stub object failed");
     };
     common_event::subscribe();
+    handler.add_system_ability_listen(MEMORY_MANAGER_SA_ID);
     let handle = ylong_runtime::spawn(execute_upgrade_process());
     let task_manager = TaskManager::get_instance();
     task_manager.lock().unwrap().push_task(handle);
