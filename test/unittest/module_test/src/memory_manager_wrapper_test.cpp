@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -51,16 +51,38 @@ void AssetMemoryManagerWrapperTest::TearDown(void)
 
 /**
  * @tc.name: AssetMemoryManagerWrapperTest.AssetMemoryManagerWrapperTest001
- * @tc.desc: Test asset func SubscribeSystemEvent, expect true
+ * @tc.desc: Test asset func CheckMemoryMgr, expect true
  * @tc.type: FUNC
  * @tc.result:0
  */
 HWTEST_F(AssetMemoryManagerWrapperTest, AssetMemoryManagerWrapperTest001, TestSize.Level0)
 {
     ASSERT_EQ(true, CheckMemoryMgr());
-    NotifyStatus(1);
-    SetCritical(true);
-    SetCritical(false);
-    NotifyStatus(0);
+}
+
+/**
+ * @tc.name: AssetMemoryManagerWrapperTest.AssetMemoryManagerWrapperTest002
+ * @tc.desc: Test asset func NotifyStatus
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetMemoryManagerWrapperTest, AssetMemoryManagerWrapperTest002, TestSize.Level0)
+{
+    ASSERT_EQ(0, NotifyStatus(1));
+    ASSERT_EQ(0, NotifyStatus(0));
+}
+
+/**
+ * @tc.name: AssetMemoryManagerWrapperTest.AssetMemoryManagerWrapperTest003
+ * @tc.desc: Test asset func SetCritical
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetMemoryManagerWrapperTest, AssetMemoryManagerWrapperTest003, TestSize.Level0)
+{
+    ASSERT_EQ(0, NotifyStatus(1));
+    ASSERT_EQ(0, SetCritical(true));
+    ASSERT_EQ(0, SetCritical(false));
+    ASSERT_EQ(0, NotifyStatus(0));
 }
 }

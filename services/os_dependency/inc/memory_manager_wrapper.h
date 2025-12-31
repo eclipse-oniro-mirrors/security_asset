@@ -25,8 +25,8 @@ extern "C" {
 #endif
 
 bool CheckMemoryMgr();
-void NotifyStatus(int32_t status);
-void SetCritical(bool critical);
+int32_t NotifyStatus(int32_t status);
+int32_t SetCritical(bool critical);
 
 #ifdef __cplusplus
 }
