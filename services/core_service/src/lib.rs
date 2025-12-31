@@ -250,6 +250,7 @@ impl Ability for AssetAbility {
         if said == MEMORY_MANAGER_SA_ID {
             let mut lock = HAS_NOTIFY_MEMORY_MGR_MUTEX.lock().unwrap();
             (*lock).set_notify_status(false);
+            (*lock).set_critical_status(CriticalStatus::NotInit);
         }
     }
 
