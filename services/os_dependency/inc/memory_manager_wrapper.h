@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef MEMORY_MANAGER_WRAPPER
-#define MEMORY_MANAGER_WRAPPER
+#ifndef MEMORY_MANAGER_WRAPPER_H
+#define MEMORY_MANAGER_WRAPPER_H
 
 #include <cstdint>
 

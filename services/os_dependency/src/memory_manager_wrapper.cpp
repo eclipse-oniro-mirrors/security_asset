@@ -50,7 +50,7 @@ int32_t NotifyStatus(int32_t status)
 {
     int32_t res = OHOS::Memory::MemMgrClient::GetInstance().NotifyProcessStatus(getpid(), SA_TYPE, status, ASSET_SA_ID);
     if (res != OHOS::ERR_OK) {
-        LOGE("[FATAL]set NotifyStatus failed. ret: [%{public}d] statud: [%{public}d]", res, status);
+        LOGE("[FATAL]set NotifyStatus failed. ret: [%{public}d] status: [%{public}d]", res, status);
     }
     return res;
 }
