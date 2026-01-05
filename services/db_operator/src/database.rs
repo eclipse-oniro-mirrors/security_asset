@@ -29,6 +29,7 @@ use asset_definition::{
     Tag, SyncType, SyncStatus, ConflictResolution
 };
 use asset_log::{loge, logi};
+use asset_utils::time;
 use lazy_static::lazy_static;
 
 use crate::{
@@ -627,13 +628,14 @@ impl Database {
 
         let mut column_names: HashSet<String> = HashSet::new();
         let mut db_datas = Vec::new();
+        let time = time::system_time_in_millis()?;
         for (index, attr) in attributes_to_update_array.iter().enumerate() {
             // filter invalid data
             if invalid_query_idx_set.contains(&index) {
                 continue;
             }
             let mut db_data = into_db_map_with_column_names(attr, &mut column_names);
-            add_default_batch_update_attrs(&mut db_data);
+            add_default_batch_update_attrs(&mut db_data, time.clone());
             db_datas.push(db_data);
         }
 

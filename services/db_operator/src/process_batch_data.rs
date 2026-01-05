@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+//! This module provides interfaces to process batch data.
 use std::collections::HashSet;
 
 use asset_common::CallingInfo;
@@ -86,9 +87,10 @@ fn add_default_batch_attrs(db_data: &mut DbMap) {
     db_data.entry(column::WRAP_TYPE).or_insert(Value::Number(WrapType::default() as u32));
 }
 
-pub(crate) fn add_default_batch_update_attrs(db_data: &mut DbMap) {
+pub(crate) fn add_default_batch_update_attrs(db_data: &mut DbMap, time: Vec<u8>) {
     db_data.entry(column::LOCAL_STATUS).or_insert(Value::Number(LocalStatus::Local as u32));
     db_data.entry(column::SYNC_STATUS).or_insert(Value::Number(SyncStatus::SyncUpdate as u32));
+    db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
 }
 
 pub(crate) fn add_not_null_column(column_names: &mut HashSet<String>) {
