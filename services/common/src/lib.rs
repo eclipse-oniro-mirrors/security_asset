@@ -80,6 +80,15 @@ pub struct MutAssetBlobArray {
     pub blobs: *mut ModifyAssetBlob,
 }
 
+/// Mutable asset blob array
+#[repr(C)]
+pub struct MutAssetBlobArrayChangeable {
+    /// blobs size
+    pub size: u32,
+    /// Mutable blobs
+    pub blobs: *mut MutAssetBlob,
+}
+
 macros_lib::impl_enum_trait! {
     /// The type of the calling.
     #[repr(C)]

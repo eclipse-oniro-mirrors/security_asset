@@ -42,6 +42,11 @@ typedef struct {
 } HapInfo;
 
 typedef struct {
+    uint32_t size;
+    Asset_Blob *blob;
+} MutAssetBlobArrayChangeable;
+
+typedef struct {
     uint32_t uid;
 } NativeInfo;
 
@@ -61,6 +66,8 @@ int32_t GetCloneAppIndexes(int32_t userId, int32_t *appIndexes, uint32_t *indexS
 int32_t IsHapInAllowList(int32_t userId, const char *appName, bool *is_in_list);
 
 int32_t GetUninstallGroups(int32_t userId, ConstAssetBlob *developerId, MutAssetBlobArray *groupIds);
+
+int32_t GetCallingHapGroups(uint64_t uid, MutAssetBlobArrayChangeable *groupIds, Asset_Blob *developerId);
 
 const char *GetCeUpgradeInfo();
 
