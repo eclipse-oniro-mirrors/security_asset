@@ -224,7 +224,7 @@ int32_t ProcessGroupIds(AssetGroupInfo &assetGroupInfo, MutAssetBlobArrayChangea
 int32_t ProcessDeveloperId(AssetGroupInfo &assetGroupInfo, Asset_Blob *developerId)
 {
     if (developerId->data == nullptr || developerId->size == 0) {
-        return ASSET_SUCCESS;
+        return ASSET_BMS_ERROR;
     }
 
     std::string mainDeveloperId;
