@@ -31,7 +31,9 @@ use ylong_runtime::builder::RuntimeBuilder;
 use ylong_json::JsonValue;
 use lazy_static::lazy_static;
 
-use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Counter, TaskManager, ProcessInfo};
+use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Counter, TaskManager,
+    OwnerType, Group, MutAssetBlob, MutAssetBlobArrayChangeable, ProcessInfo
+};
 use asset_crypto_manager::{crypto_manager::CryptoManager, db_key_operator::get_db_key};
 use asset_db_operator::{database_file_upgrade::check_and_split_db, database::preload_db};
 use asset_definition::{macros_lib, AssetMap, ErrCode, Result, SyncResult};
@@ -351,6 +353,53 @@ fn get_value_from_json(json_str: String, key: &str) -> String {
     value.to_compact_string().unwrap().replace('\"', "")
 }
 
+extern "C" {
+    fn GetCallingHapGroups(uid: u64, group_ids: *mut MutAssetBlobArrayChangeable, developer_id: *mut MutAssetBlob) -> i32;
+}
+
+fn construct_group_calling_infos(user_id: i32, owner: Vec<u8>,uid: u64) -> Vec<CallingInfo> {
+    let mut group_id_blobs: Vec<Vec<u8>> = Vec::new();
+    let mut group_id_blobs_ptr_record = Vec::new();
+    for _i in 0..512 {
+        let mut data_blob = vec![0u8; 128];
+        let data_blob_ptr = MutAssetBlob { size: data_blob.len() as u32, data: data_blob.as_mut_ptr() };
+        group_id_blobs_ptr_record.push(data_blob_ptr);
+        group_id_blobs.push(data_blob);
+    }
+    let mut developer_id = vec![0; 128];
+    let mut the_group_ids = MutAssetBlobArrayChangeable { 
+        size: group_id_blobs_ptr_record.len() as u32, blobs: group_id_blobs_ptr_record.as_mut_ptr() 
+    };
+    let mut the_developer_id = MutAssetBlob { size: developer_id.len() as u32, data: developer_id.as_mut_ptr() };
+    let use_group_ids = match unsafe { GetCallingHapGroups(uid, &mut the_group_ids, &mut the_developer_id) } {
+        0 => {
+            let mut group_id_list = Vec::with_capacity(the_group_ids.size as usize);
+            developer_id.truncate(the_developer_id.size as usize);
+            group_id_blobs.truncate(the_group_ids.size as usize);
+            for (idx, group_id) in group_id_blobs.iter().enumerate() {
+                let mut use_group_id = group_id.clone();
+                unsafe { use_group_id.truncate((*the_group_ids.blobs.add(idx as usize)).size as usize); }
+                group_id_list.push(use_group_id);
+            }
+            group_id_list
+        },
+        error => {
+            loge!("[FATAL]Get GetUninstallGroups failed, res is {}.", error);
+            return vec![];
+        },
+    };
+    let mut calling_infos = Vec::with_capacity(use_group_ids.len());
+    for group_id in use_group_ids {
+        calling_infos.push(CallingInfo::new(
+            user_id,
+            OwnerType::HapGroup,
+            owner.clone(),
+            Some(Group { developer_id: developer_id.clone(), group_id: group_id.clone() }),
+        ));
+    }
+    calling_infos
+}
+
 fn on_preload_extension(data: &mut MsgParcel) -> Result<()> {
     let res_type = deserialize::<u32>(data)?;
     if res_type != PREPARE_FOR_BUNDLE {
@@ -369,6 +418,14 @@ fn on_preload_extension(data: &mut MsgParcel) -> Result<()> {
     let calling_info = CallingInfo::build(None, &process_info);
     let _ = get_db_key_and_preload_db(&calling_info, false);
     let _ = get_db_key_and_preload_db(&calling_info, true);
+    let group_calling_infos = construct_group_calling_infos(
+        calling_info.user_id(), calling_info.owner_info().clone(), uid
+    );
+    for group_calling_info in &group_calling_infos {
+        let _ = get_db_key_and_preload_db(group_calling_info, false);
+        let _ = get_db_key_and_preload_db(group_calling_info, true);
+    }
+    
     Ok(())
 }
 

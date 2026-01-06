@@ -203,6 +203,47 @@ void ProcessBundleInfos(const std::vector<AppExecFwk::BundleInfo> &bundleInfos,
         }
     }
 }
+
+int32_t ProcessGroupIds(AssetGroupInfo &assetGroupInfo, MutAssetBlobArrayChangeable *groupIds)
+{
+    size_t i = 0;
+    for (const std::string &groupId : assetGroupInfo.assetAccessGroups) {
+        if (memcpy_s(groupIds->blob[i].data, groupIds->blob[i].size,
+            groupId.c_str(), groupId.size()) != EOK) {
+            LOGE("[FATAL]The grooupId buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
+                groupId.size(), groupIds->blob[i].size);
+            return ASSET_OUT_OF_MEMORY;
+        }
+        groupIds->blob[i].size = groupId.size();
+        i++;
+    }
+    groupIds->size = i;
+    return ASSET_SUCCESS;
+}
+
+int32_t ProcessDeveloperId(AssetGroupInfo &assetGroupInfo, Asset_Blob *developerId)
+{
+    if (developerId->data == nullptr || developerId->size == 0) {
+        return ASSET_SUCCESS;
+    }
+
+    std::string mainDeveloperId;
+    size_t pos = assetGroupInfo.developerId.find('.');
+    if (pos != std::string::npos) {
+        mainDeveloperId = assetGroupInfo.developerId.substr(pos + 1);
+    } else {
+        mainDeveloperId = assetGroupInfo.developerId;
+    }
+    if (memcpy_s(developerId->data, developerId->size, mainDeveloperId.c_str(),
+        mainDeveloperId.size()) != EOK) {
+        LOGE("[FATAL]The developer id buffer is too small. Expect size: %{public}zu, actual size: %{public}u",
+            mainDeveloperId.size(), developerId->size);
+        return ASSET_OUT_OF_MEMORY;
+    }
+    developerId->size = mainDeveloperId.size();
+
+    return ASSET_SUCCESS;
+}
 } // namespace
 
 int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInfo, bool preload)
@@ -309,3 +350,28 @@ const char *GetCeUpgradeInfo()
 {
     return CE_UPGRADE_CONFIG;
 }
+
+int32_t GetCallingHapGroups(uint64_t uid, MutAssetBlobArrayChangeable *groupIds, Asset_Blob *developerId)
+{
+    auto bundleMgr = GetBundleMgr();
+    if (bundleMgr == nullptr) {
+        LOGE("[FATAL]bundleMgr is nullptr, please check.");
+        return ASSET_BMS_ERROR;
+    }
+    AppExecFwk::BundleMgrClient bmsClient;
+
+    AssetGroupInfo assetGroupInfo;
+    int32_t ret = bundleMgr->GetAssetGroupsInfo(uid, assetGroupInfo);
+    if (ret != ASSET_SUCCESS) {
+        LOGE("[FATAL]GetAssetGroupsInfo failed. ret: %{public}d", ret);
+        return ASSET_BMS_ERROR;
+    }
+    ret = ProcessGroupIds(assetGroupInfo, groupIds);
+    if (ret != ASSET_SUCCESS) {
+        LOGE("[FATAL]GetAssetGroupsInfo failed. ret: %{public}d", ret);
+        return ret;
+    }
+
+    return ProcessDeveloperId(assetGroupInfo, developerId);
+}
+
