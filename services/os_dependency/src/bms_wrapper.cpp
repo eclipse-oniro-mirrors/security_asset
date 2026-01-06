@@ -368,7 +368,7 @@ int32_t GetCallingHapGroups(uint64_t uid, MutAssetBlobArrayChangeable *groupIds,
     }
     ret = ProcessGroupIds(assetGroupInfo, groupIds);
     if (ret != ASSET_SUCCESS) {
-        LOGE("[FATAL]GetAssetGroupsInfo failed. ret: %{public}d", ret);
+        LOGE("[FATAL]ProcessGroupIds failed. ret: %{public}d", ret);
         return ret;
     }
 
