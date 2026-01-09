@@ -264,6 +264,15 @@ impl Database {
         get_db(calling_info.user_id(), &construct_splited_db_name(calling_info, is_ce)?, &db_key)
     }
 
+    /// Create a database do nothing in build process.
+    pub fn build_only(calling_info: &CallingInfo, db_key: Option<Vec<u8>>) -> Result<Database> {
+        let db_name = construct_splited_db_name(calling_info, db_key.is_some())?;
+        let db_path = fmt_db_path(calling_info.user_id(), &db_name, &db_key);
+        let backup_path = fmt_backup_path(&db_path);
+        let lock = get_file_lock_by_user_id_db_file_name(calling_info.user_id(), db_name.clone());
+        Ok(Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name, use_lock: true })
+    }
+
     /// Create a database from a file name.
     pub fn build_with_file_name(user_id: i32, db_name: &str, db_key: &Option<Vec<u8>>) -> Result<Database> {
         check_and_split_db(user_id)?;
@@ -319,6 +328,12 @@ impl Database {
     /// Get db name.
     pub(crate) fn get_db_name(&mut self) -> &str {
         &self.db_name
+    }
+
+    /// Check table exist.
+    pub fn check_table_exist(&self) -> Result<bool> {
+        let table = Table::new(TABLE_NAME, self);
+        table.exist()
     }
 
     /// Close database connection.
