@@ -115,6 +115,23 @@ pub fn preload_db(calling_info: &CallingInfo, db_key: Option<Vec<u8>>) -> Result
     Ok(())
 }
 
+/// Clear DB_MAP
+pub fn clear_db_map() {
+    let mut map = DB_MAP.lock().unwrap();
+    let ptrs: Vec<*mut Database> = map
+        .drain()
+        .map(|(_, db_ref)| db_ref as *mut Database)
+        .collect();
+
+    for ptr in ptrs {
+        unsafe {
+            let _ = Box::from_raw(ptr);
+        }
+    }
+
+    logi!("Cleared all Database instances in DB_MAP");
+}
+
 pub(crate) fn get_split_db_lock_by_user_id(user_id: i32) -> &'static UserDbLock {
     let mut map = SPLIT_DB_LOCK_MAP.lock().unwrap();
     if let Some(&lock) = map.get(&user_id) {

@@ -35,7 +35,7 @@ use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray
     OwnerType, Group, MutAssetBlob, MutAssetBlobArrayChangeable, ProcessInfo
 };
 use asset_crypto_manager::{crypto_manager::CryptoManager, db_key_operator::get_db_key};
-use asset_db_operator::{database_file_upgrade::check_and_split_db, database::preload_db};
+use asset_db_operator::{database_file_upgrade::check_and_split_db, database::{preload_db, clear_db_map}};
 use asset_definition::{macros_lib, AssetMap, ErrCode, Result, SyncResult};
 use asset_file_operator::{common::DE_ROOT_PATH, de_operator::create_user_de_dir};
 use asset_ipc::{SA_ID, deserialize};
@@ -272,6 +272,7 @@ impl Ability for AssetAbility {
     }
 
     fn on_idle(&self, _reason: SystemAbilityOnDemandReason) -> i32 {
+        clear_db_map();
         let crypto_manager = CryptoManager::get_instance();
         let max_crypto_expire_duration = crypto_manager.lock().unwrap().max_crypto_expire_duration();
         if max_crypto_expire_duration > 0 {
