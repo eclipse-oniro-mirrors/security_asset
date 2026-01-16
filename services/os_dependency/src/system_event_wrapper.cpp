@@ -171,6 +171,11 @@ public:
             LOGI("[INFO]Receive event: USER_PIN_CREATED_EVENT, start_time: %{public}ld", startTime);
         } else if (action == CommonEventSupport::COMMON_EVENT_CONNECTIVITY_CHANGE) {
             HandleConnectivityChange(data.GetCode(), this->eventCallBack.onConnectivityChange);
+        } else if (action == CommonEventSupport::COMMON_EVENT_DATA_SHARE_READY) {
+            if (this->eventCallBack.onDataShareReady != nullptr) {
+                this->eventCallBack.onDataShareReady();
+            }
+            LOGI("[INFO]Receive event: COMMON_EVENT_DATA_SHARE_READY, start_time: %{public}ld", startTime);
         } else {
             LOGW("[WARNING]Receive unknown event: %{public}s", action.c_str());
         }
@@ -227,6 +232,7 @@ bool SubscribeSystemEvent(const EventCallBack eventCallBack)
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_UNLOCKED);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_RESTORE_START);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_CONNECTIVITY_CHANGE);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_DATA_SHARE_READY);
     CommonEventSubscribeInfo info(matchingSkills);
     if (g_eventHandler == nullptr) {
         g_eventHandler = std::shared_ptr<SystemEventHandler>(

@@ -47,9 +47,9 @@ pub(crate) enum CeUpgradeStatus {
 }
 
 /// Upgrade data to ce apps.
-pub fn upgrade_ce_data(user_id: i32) -> Result<()> {
+pub fn upgrade_ce_data(user_id: i32, trigger_info: &str) -> Result<()> {
     let mut upgrade_data = database_file_upgrade::get_file_content(user_id)?;
-    upgrade_ce(user_id, &mut upgrade_data)
+    upgrade_ce(user_id, &mut upgrade_data, trigger_info)
 }
 
 fn remove_db(path: &str) -> Result<()> {
@@ -124,7 +124,7 @@ fn upgrade_ce_process(user_id: i32, upgrade_data: &mut UpgradeData, upgrade_info
     database_file_upgrade::save_to_writer(user_id, upgrade_data)
 }
 
-fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData) -> Result<()> {
+fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData, trigger_info: &str) -> Result<()> {
     let _rwlock = UPGRADE_CE_MUTEX.write().unwrap();
     if upgrade_data.ce_upgrade.is_some() {
         return Ok(());
@@ -142,7 +142,9 @@ fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData) -> Result<()> {
         let _ = store_upgrade_info_in_settings(user_id, CeUpgradeStatus::Fail);
     }
     logi!("[INFO]end ce upgrade [{}].", user_id);
-    let _ = upload_system_event(upgrade_res.clone(), &calling_info, start, "upgrade_ce", &AssetMap::new());
+    let _ = upload_system_event(
+        upgrade_res.clone(), &calling_info, start, &format!("{}_upgrade_ce", trigger_info), &AssetMap::new()
+    );
     upgrade_res
 }
 
