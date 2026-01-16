@@ -442,6 +442,33 @@ extern "C" {
     fn GetUsersSize(userIdsSize: *mut u32) -> i32;
 }
 
+fn get_first_unlock_userids() -> Vec<i32> {
+    let mut user_ids_size: u32 = USER_ID_VEC_BUFFER;
+    let mut user_ids: Vec<i32> = vec![0i32; user_ids_size as usize];
+    let user_ids_size_ptr = &mut user_ids_size;
+    let user_ids_ptr = user_ids.as_mut_ptr();
+    let ret: i32 = unsafe { GetFirstUnlockUserIds(user_ids_ptr, user_ids_size_ptr) };
+    if ret != SUCCESS {
+        loge!("[FATAL] Get users IDs failed. Do not sync data.");
+        return vec![];
+    }
+
+    if user_ids_size < USER_ID_VEC_BUFFER {
+        user_ids.truncate(user_ids_size as usize);
+    }
+    user_ids
+}
+
+pub(crate) extern "C" fn on_data_share_ready() {
+    // 1. get first unlock dbs.
+    let user_ids = get_first_unlock_userids();
+
+    // 2. check and upgrade ce.
+    for user_id in &user_ids {
+        let _ = upgrade_ce::upgrade_ce_data(*user_id, "data_share");
+    }
+}
+
 fn read_last_trigger_time(path_str: &str) -> Result<u64> {
     let path: &Path = Path::new(&path_str);
     let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o640));
@@ -468,18 +495,7 @@ fn write_last_trigger_time(path_str: &str, unix_time: u64) -> Result<()> {
 }
 
 fn trigger_sync() {
-    let mut user_ids_size: u32 = USER_ID_VEC_BUFFER;
-    let mut user_ids: Vec<i32> = vec![0i32; user_ids_size as usize];
-    let user_ids_size_ptr = &mut user_ids_size;
-    let user_ids_ptr = user_ids.as_mut_ptr();
-    let ret: i32 = unsafe { GetFirstUnlockUserIds(user_ids_ptr, user_ids_size_ptr) };
-    if ret != SUCCESS {
-        return loge!("[FATAL] Get users IDs failed. Do not sync data.");
-    }
-
-    if user_ids_size < USER_ID_VEC_BUFFER {
-        user_ids.truncate(user_ids_size as usize);
-    }
+    let user_ids = get_first_unlock_userids();
     let self_bundle_name = "asset_service";
     for user_id in &user_ids {
         if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
@@ -577,6 +593,7 @@ struct EventCallBack {
     on_app_restore: extern "C" fn(i32, *const u8, i32),
     on_user_unlocked: extern "C" fn(i32),
     on_connectivity_change: extern "C" fn(),
+    on_data_share_ready: extern "C" fn(),
 }
 
 extern "C" {
@@ -597,6 +614,7 @@ pub(crate) fn subscribe() {
             on_app_restore,
             on_user_unlocked,
             on_connectivity_change,
+            on_data_share_ready,
         };
         if SubscribeSystemEvent(call_back.clone()) {
             logi!("Subscribe system event success.");
