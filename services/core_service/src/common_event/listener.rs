@@ -95,13 +95,24 @@ fn remove_db(file_path: &str, calling_info: &CallingInfo, is_ce: bool) -> Result
     Ok(())
 }
 
-fn delete_in_de_db_on_package_removed(calling_info: &CallingInfo, reverse_condition: &DbMap) -> Result<DataExist> {
-    let mut db = Database::build(calling_info, None)?;
+fn process_delete_in_single_db(calling_info: &CallingInfo, reverse_condition: &DbMap, db_key: Option<Vec<u8>>) -> Result<bool> {
+    let mut db = Database::build(calling_info, db_key)?;
     let mut delete_condition = DbMap::new();
     let check_condition = DbMap::new();
     delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
     let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
-    let data_exists = db.is_data_exists(&check_condition, false)?;
+    db.is_data_exists(&check_condition, false)
+}
+
+fn delete_in_de_db_on_package_removed(calling_info: &CallingInfo, reverse_condition: &DbMap) -> Result<DataExist> {
+    let db_key = get_db_key(calling_info.user_id(), false)?;
+    let data_exists = match process_delete_in_single_db(calling_info, reverse_condition, db_key.clone()) {
+        Ok(res) => res,
+        Err(_) => {
+            let db = Database::build_only(calling_info, db_key)?;
+            db.check_table_exist().unwrap_or(false)
+        },
+    };
     if !data_exists {
         remove_db(&format!("{}/{}", DE_ROOT_PATH, calling_info.user_id()), calling_info, false)?;
     }
@@ -117,12 +128,13 @@ fn delete_in_de_db_on_package_removed(calling_info: &CallingInfo, reverse_condit
 
 fn delete_in_ce_db_on_package_removed(calling_info: &CallingInfo, reverse_condition: &DbMap) -> Result<DataExist> {
     let db_key = get_db_key(calling_info.user_id(), true)?;
-    let mut db = Database::build(calling_info, db_key)?;
-    let mut delete_condition = DbMap::new();
-    let check_condition = DbMap::new();
-    delete_condition.insert(column::IS_PERSISTENT, Value::Bool(false));
-    let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
-    let data_exists = db.is_data_exists(&check_condition, false)?;
+    let data_exists = match process_delete_in_single_db(calling_info, reverse_condition, db_key.clone()) {
+        Ok(res) => res,
+        Err(_) => {
+            let db = Database::build_only(calling_info, db_key)?;
+            db.check_table_exist().unwrap_or(false)
+        },
+    };
     if !data_exists {
         remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, true)?;
     }
