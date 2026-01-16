@@ -196,8 +196,8 @@ pub fn get_path() -> String {
     DE_ROOT_PATH.to_string()
 }
 
-#[inline(always)]
-pub(crate) fn fmt_ce_db_path_with_name(user_id: i32, db_name: &str) -> String {
+/// Fmt ce path.
+pub fn fmt_ce_db_path_with_name(user_id: i32, db_name: &str) -> String {
     format!("data/service/el2/{}/asset_service/{}.db", user_id, db_name)
 }
 
