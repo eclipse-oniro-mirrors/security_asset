@@ -143,7 +143,7 @@ fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData, trigger_info: &str) 
     }
     logi!("[INFO]end ce upgrade [{}].", user_id);
     let _ = upload_system_event(
-        upgrade_res.clone(), &calling_info, start, format("{}_upgrade_ce", trigger_info), &AssetMap::new()
+        upgrade_res.clone(), &calling_info, start, &format!("{}_upgrade_ce", trigger_info), &AssetMap::new()
     );
     upgrade_res
 }
