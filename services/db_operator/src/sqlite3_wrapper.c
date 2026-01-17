@@ -130,5 +130,5 @@ int SqliteReKeyToEmpty(const char *dbPath, const void *pKey, int nKey)
         { "aes-256-gcm", "SHA1", "KDF_SHA1", pKey, nKey, 10000, 1024 },
         { NULL, NULL, NULL, NULL, 0, 0, 1024 }
     };
-    return sqlite3_rekey_v3(&rekeyCfg)
+    return sqlite3_rekey_v3(&rekeyCfg);
 }

@@ -16,7 +16,12 @@
 //! This module provides interfaces for database util.
 //! Databases are isolated based on users and protected by locks.
 
+use std::ffi::CStr;
+
 use asset_common::OWNER_INFO_SEPARATOR;
+use asset_definition::{
+    macros_lib, ErrCode, Result,
+};
 
 extern "C" {
     fn GetCeUpgradeInfo() -> *const u8;
@@ -58,7 +63,7 @@ pub(crate) fn is_db_need_ce_unlock(db_name: &str) -> bool {
         return false;
     }
     match construct_hap_owner_info(upgrade_info) {
-        Ok(de_db_name) => db_name == &format!("enc_{}", de_db_name),
+        Ok(de_db_name) => db_name == format!("enc_{}", de_db_name),
         Err(_e) => false,
     }
 }

@@ -35,6 +35,7 @@ use crate::{
         fmt_backup_path, fmt_de_db_path_with_name, get_db, get_db_by_type, get_split_db_lock_by_user_id, Database,
         CE_ROOT_PATH, DE_ROOT_PATH, OLD_DB_NAME,
     },
+    database_util::construct_hap_owner_info,
     types::{column, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V3, DbMap, QueryOptions},
 };
 

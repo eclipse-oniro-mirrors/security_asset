@@ -18,6 +18,8 @@
 
 use core::ffi::c_void;
 use std::ffi::c_char;
+use std::fs::OpenOptions;
+use std::io::{Read, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::{collections::{HashMap, HashSet}, ffi::CStr, fs, ptr::null_mut, sync::{Arc, Mutex}};
@@ -37,6 +39,7 @@ use lazy_static::lazy_static;
 use crate::{
     common::{build_secret_key, build_aad, get_query_condition},
     database_file_upgrade::{check_and_split_db, construct_splited_db_name},
+    database_util::is_db_need_ce_unlock,
     statement::Statement,
     table::Table,
     types::{
@@ -216,13 +219,13 @@ fn fmt_db_path(user_id: i32, db_name: &str, db_key: &Option<Vec<u8>>) -> String 
     }
 }
 
-fn format_ce_clear_key_file_path(user_id) -> Path {
-    let file_path = format!("data/service/el2/{}/asset_service/ce_clear_key.cache", user_id)
-    Path::new(&file_path)
+fn format_ce_clear_key_file_path(user_id: i32) -> String {
+    format!("data/service/el2/{}/asset_service/ce_clear_key.cache", user_id)
 }
 
 fn is_ce_clear_key_file_exist(user_id: i32) -> bool {
-    let file_path = format_ce_clear_key_file_path(user_id);
+    let file_path_str = format_ce_clear_key_file_path(user_id);
+    let file_path = Path::new(&file_path_str);
     file_path.exists()
 }
 
@@ -230,13 +233,14 @@ fn is_ce_clear_key_file_not_empty(user_id: i32) -> bool {
     if !is_ce_clear_key_file_exist(user_id) {
         return false;
     }
-    let file_path = format_ce_clear_key_file_path(user_id);
+    let file_path_str = format_ce_clear_key_file_path(user_id);
+    let file_path = Path::new(&file_path_str);
     match OpenOptions::new().write(true).create(true).open(file_path) {
-        Ok(file) => {
+        Ok(mut file) => {
             let mut contents =  String::new();
             match file.read_to_string(&mut contents) {
-                Ok(_a) => !contents.is_empty(),
-                Err(e) => false,
+                Ok(_) => !contents.is_empty(),
+                Err(_) => false,
             }
         },
         Err(e) => {
@@ -247,10 +251,11 @@ fn is_ce_clear_key_file_not_empty(user_id: i32) -> bool {
 }
 
 fn can_not_create_ce_clear_key_file(user_id: i32) -> bool {
-    let file_path = format_ce_clear_key_file_path(user_id);
+    let file_path_str = format_ce_clear_key_file_path(user_id);
+    let file_path = Path::new(&file_path_str);
     match OpenOptions::new().write(true).create(true).open(file_path) {
         Ok(file) => {
-            let permissions = PermissionsExt::from_mod(0o640);
+            let permissions = PermissionsExt::from_mode(0o640);
             let _ = file.set_permissions(permissions);
             true
         },
@@ -261,13 +266,13 @@ fn can_not_create_ce_clear_key_file(user_id: i32) -> bool {
     }
 }
 
-fn modify_ce_clear_key_file(user_id: i32) {
+fn modify_ce_clear_key_file(user_id: i32, db_name: &str) {
     let file_path = format_ce_clear_key_file_path(user_id);
     match OpenOptions::new().write(true).create(true).open(file_path) {
-        Ok(file) => {
-            match file.write_all("1".as_bytes()) {
+        Ok(mut file) => {
+            match file.write_all(db_name.to_string().as_bytes()) {
                 Ok(_) => (),
-                Err(_e) => {
+                Err(e) => {
                     loge!("[FATAL]write ce_clear_key file failed, error:{}", e);
                 }
             }
@@ -388,7 +393,7 @@ impl Database {
 
     /// Open the database connection and restore the database if the connection fails.
     pub(crate) fn open_and_restore(&mut self, user_id: i32, db_key: Option<&Vec<u8>>) -> Result<()> {
-        let is_need_set_db_key = is_need_set_db_key(user_id);
+        let is_need_set_db_key = self.is_need_set_db_key(user_id);
         let result = self.open();
         if let Some(db_key) = db_key {
             if is_need_set_db_key {
@@ -436,13 +441,13 @@ impl Database {
         }
     }
 
-    fn clear_db_key_if_need(&mut self, p_key: &Option<&Vec<u8>>) -> Result<()> {
+    fn clear_db_key_if_need(&mut self, user_id: i32, p_key: &Option<&Vec<u8>>) -> Result<()> {
         match p_key {
             Some(use_p_key) => {
                 if !is_db_need_ce_unlock(&self.db_name) {
                     return Ok(());
                 }
-                if can_not_create_ce_clear_key_file() {
+                if can_not_create_ce_clear_key_file(user_id) {
                     return Ok(())
                 }
                 let ret =
@@ -450,7 +455,7 @@ impl Database {
                         self.path.as_ptr() as *const c_char, use_p_key.as_ptr() as *const c_void, use_p_key.len() as i32
                     ) };
                 if ret == SQLITE_OK {
-                    modify_ce_clear_key_file();
+                    modify_ce_clear_key_file(user_id, &self.db_name);
                     Ok(())
                 } else {
                     macros_lib::log_throw_error!(sqlite_err_handle(ret), "[FATAL][DB]SqliteReKeyToEmpty failed, err={}", ret)
@@ -462,7 +467,7 @@ impl Database {
     }
 
     pub(crate) fn process_db(&mut self, user_id: i32, db_key: Option<&Vec<u8>>) -> Result<()> {
-        self.clear_db_key_if_need(&db_key)?;
+        self.clear_db_key_if_need(user_id, &db_key)?;
         self.open_and_restore(user_id, db_key)?;
         // when create db table always use newest version.
         self.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, DB_UPGRADE_VERSION))?;
