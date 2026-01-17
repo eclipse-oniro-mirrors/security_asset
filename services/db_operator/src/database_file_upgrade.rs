@@ -20,7 +20,7 @@ use std::fs::File;
 use std::fs::OpenOptions;
 use std::{fs, path::Path, sync::Mutex, os::unix::fs::{OpenOptionsExt, PermissionsExt}};
 
-use asset_common::{CallingInfo, OwnerType, OWNER_INFO_SEPARATOR};
+use asset_common::{CallingInfo, OwnerType};
 use asset_definition::{macros_lib, AssetError, ErrCode, Extension, Result, Value};
 use asset_file_operator::common::DB_SUFFIX;
 use asset_log::logi;
@@ -38,8 +38,6 @@ use crate::{
     types::{column, DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V3, DbMap, QueryOptions},
 };
 
-const MINIM_OWNER_INFO_LEN: usize = 3;
-const REMOVE_INDEX: usize = 2;
 const TRUNCATE_LEN: usize = 4;
 static MAX_BATCH_NUM: u32 = 100;
 
@@ -88,22 +86,6 @@ fn to_hex(bytes: &Vec<u8>) -> Vec<u8> {
         hex_vec.extend(format!("{:02x}", byte).as_bytes());
     }
     hex_vec
-}
-
-/// use owner info to construct db name
-pub fn construct_hap_owner_info(owner_info: &[u8]) -> Result<String> {
-    let owner_info_string = String::from_utf8_lossy(owner_info).to_string();
-    let split_owner_info: Vec<&str> = owner_info_string.split(OWNER_INFO_SEPARATOR).collect();
-    if split_owner_info.len() < MINIM_OWNER_INFO_LEN || split_owner_info.last().is_none() {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Wrong queried owner info!");
-    }
-    let app_index = split_owner_info.last().unwrap();
-    let mut split_owner_info_mut = split_owner_info.clone();
-    for _ in 0..REMOVE_INDEX {
-        split_owner_info_mut.pop();
-    }
-    let owner_info = split_owner_info_mut.join("_").clone();
-    Ok(format!("Hap_{}_{}", owner_info, app_index))
 }
 
 /// Use owner_type and owner_info construct db name.

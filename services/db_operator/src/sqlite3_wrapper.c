@@ -122,3 +122,13 @@ int SqliteKey(void *db, const void *pKey, int nKey)
 {
     return sqlite3_key((sqlite3 *)db, pKey, nKey);
 }
+
+int SqliteReKeyToEmpty(const char *dbPath, const void *pKey, int nKey)
+{
+    CodecRekeyConfig rekeyCfg = {
+        dbPath,
+        { "aes-256-gcm", "SHA1", "KDF_SHA1", pKey, nKey, 10000, 1024 },
+        { NULL, NULL, NULL, NULL, 0, 0, 1024 }
+    };
+    return sqlite3_rekey_v3(&rekeyCfg)
+}

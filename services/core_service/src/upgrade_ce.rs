@@ -21,6 +21,7 @@ use std::{fs, io::ErrorKind, path::Path, time::Instant, os::raw::c_char, ffi::CS
 use asset_definition::{macros_lib, AssetError, AssetMap, ErrCode, Result};
 use asset_db_operator::{
     database::{self, Database}, database_file_upgrade::{self, UpgradeData},
+    database_util,
     types::{column, DbMap},
 };
 use asset_crypto_manager::db_key_operator;
@@ -117,7 +118,7 @@ fn store_upgrade_info_in_settings(user_id: i32, status: CeUpgradeStatus) -> Resu
 
 fn upgrade_ce_process(user_id: i32, upgrade_data: &mut UpgradeData, upgrade_info: &'static [u8]) -> Result<()> {
     store_upgrade_info_in_settings(user_id, CeUpgradeStatus::Start)?;
-    let ce_upgrade_db_name = database_file_upgrade::construct_hap_owner_info(upgrade_info)?;
+    let ce_upgrade_db_name = database_util::construct_hap_owner_info(upgrade_info)?;
     upgrade_ce_data_process(user_id, &ce_upgrade_db_name)?;
     upgrade_data.ce_upgrade = Some(ce_upgrade_db_name);
     store_upgrade_info_in_settings(user_id, CeUpgradeStatus::End)?;
@@ -158,7 +159,7 @@ fn get_db_data_count(user_id: i32, db_name: &str, path_str: &str, db_key: Option
 }
 
 fn process_upgrade_count(user_id: i32, upgrade_info: &'static [u8]) -> Result<String> {
-    let de_db_name = database_file_upgrade::construct_hap_owner_info(upgrade_info)?;
+    let de_db_name = database_util::construct_hap_owner_info(upgrade_info)?;
     let path_str = database::fmt_de_db_path_with_name(user_id, &de_db_name);
     let de_count = get_db_data_count(user_id, &de_db_name, &path_str, None)?;
     let ce_db_name = format!("enc_{}", &de_db_name);

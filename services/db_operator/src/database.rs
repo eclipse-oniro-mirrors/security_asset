@@ -17,6 +17,8 @@
 //! Databases are isolated based on users and protected by locks.
 
 use core::ffi::c_void;
+use std::ffi::c_char;
+use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::{collections::{HashMap, HashSet}, ffi::CStr, fs, ptr::null_mut, sync::{Arc, Mutex}};
 
@@ -55,6 +57,7 @@ extern "C" {
     fn SqliteFree(data: *mut c_void);
     fn SqliteErrMsg(db: *mut c_void) -> *const u8;
     fn SqliteKey(db: *mut c_void, pKey: *const c_void, nKey: i32) -> i32;
+    fn SqliteReKeyToEmpty(db_path: *const c_char, pKey: *const c_void, nKey: i32) -> i32;
 }
 
 /// each user have a Database file
@@ -213,6 +216,68 @@ fn fmt_db_path(user_id: i32, db_name: &str, db_key: &Option<Vec<u8>>) -> String 
     }
 }
 
+fn format_ce_clear_key_file_path(user_id) -> Path {
+    let file_path = format!("data/service/el2/{}/asset_service/ce_clear_key.cache", user_id)
+    Path::new(&file_path)
+}
+
+fn is_ce_clear_key_file_exist(user_id: i32) -> bool {
+    let file_path = format_ce_clear_key_file_path(user_id);
+    file_path.exists()
+}
+
+fn is_ce_clear_key_file_not_empty(user_id: i32) -> bool {
+    if !is_ce_clear_key_file_exist(user_id) {
+        return false;
+    }
+    let file_path = format_ce_clear_key_file_path(user_id);
+    match OpenOptions::new().write(true).create(true).open(file_path) {
+        Ok(file) => {
+            let mut contents =  String::new();
+            match file.read_to_string(&mut contents) {
+                Ok(_a) => !contents.is_empty(),
+                Err(e) => false,
+            }
+        },
+        Err(e) => {
+            loge!("[FATAL]create ce_clear_key file failed, error:{}", e);
+            false
+        }
+    }
+}
+
+fn can_not_create_ce_clear_key_file(user_id: i32) -> bool {
+    let file_path = format_ce_clear_key_file_path(user_id);
+    match OpenOptions::new().write(true).create(true).open(file_path) {
+        Ok(file) => {
+            let permissions = PermissionsExt::from_mod(0o640);
+            let _ = file.set_permissions(permissions);
+            true
+        },
+        Err(e) => {
+            loge!("[FATAL]create ce_clear_key file failed, error:{}", e);
+            false
+        }
+    }
+}
+
+fn modify_ce_clear_key_file(user_id: i32) {
+    let file_path = format_ce_clear_key_file_path(user_id);
+    match OpenOptions::new().write(true).create(true).open(file_path) {
+        Ok(file) => {
+            match file.write_all("1".as_bytes()) {
+                Ok(_) => (),
+                Err(_e) => {
+                    loge!("[FATAL]write ce_clear_key file failed, error:{}", e);
+                }
+            }
+        },
+        Err(e) => {
+            loge!("[FATAL]create/open ce_clear_key file failed, error:{}", e);
+        }
+    }
+}
+
 fn is_db_exist(db_path: String) -> bool {
     let file_path = Path::new(&db_path);
     file_path.exists()
@@ -227,10 +292,7 @@ pub(crate) fn get_db_by_type_without_lock(
     let backup_path = fmt_backup_path(&db_path);
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
     let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: false };
-    db.open_and_restore(db_key)?;
-    // when create db table always use newest version.
-    db.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, DB_UPGRADE_VERSION))?;
-    db.upgrade(user_id, DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
+    db.process_db(user_id, db_key)?;
     Ok(db)
 }
 
@@ -244,10 +306,7 @@ pub(crate) fn get_db_by_type(
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
     let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: true };
     let _lock = db.db_lock.mtx.lock().unwrap();
-    db.open_and_restore(db_key)?;
-    // when create db table always use newest version.
-    db.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, DB_UPGRADE_VERSION))?;
-    db.upgrade(user_id, DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
+    db.process_db(user_id, db_key)?;
     Ok(db)
 }
 
@@ -298,7 +357,7 @@ impl Database {
         let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.clone());
         let mut db = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock, db_name, use_lock: true };
         if db_key.is_some() {
-            db.open_and_restore(db_key)?
+            db.open_and_restore(user_id, db_key)?
         } else {
             db.open()?;
         }
@@ -320,11 +379,21 @@ impl Database {
         }
     }
 
+    fn is_need_set_db_key(&self, user_id: i32) -> bool {
+        if !is_db_need_ce_unlock(&self.db_name) {
+            return false;
+        }
+        !is_ce_clear_key_file_not_empty(user_id)
+    }
+
     /// Open the database connection and restore the database if the connection fails.
-    pub(crate) fn open_and_restore(&mut self, db_key: Option<&Vec<u8>>) -> Result<()> {
+    pub(crate) fn open_and_restore(&mut self, user_id: i32, db_key: Option<&Vec<u8>>) -> Result<()> {
+        let is_need_set_db_key = is_need_set_db_key(user_id);
         let result = self.open();
         if let Some(db_key) = db_key {
-            self.set_db_key(db_key)?;
+            if is_need_set_db_key {
+                self.set_db_key(db_key)?;
+            }
         }
         let result = match result {
             Err(ret) if ret.code == ErrCode::DataCorrupted => self.restore(),
@@ -367,12 +436,47 @@ impl Database {
         }
     }
 
+    fn clear_db_key_if_need(&mut self, p_key: &Option<&Vec<u8>>) -> Result<()> {
+        match p_key {
+            Some(use_p_key) => {
+                if !is_db_need_ce_unlock(&self.db_name) {
+                    return Ok(());
+                }
+                if can_not_create_ce_clear_key_file() {
+                    return Ok(())
+                }
+                let ret =
+                    unsafe { SqliteReKeyToEmpty(
+                        self.path.as_ptr() as *const c_char, use_p_key.as_ptr() as *const c_void, use_p_key.len() as i32
+                    ) };
+                if ret == SQLITE_OK {
+                    modify_ce_clear_key_file();
+                    Ok(())
+                } else {
+                    macros_lib::log_throw_error!(sqlite_err_handle(ret), "[FATAL][DB]SqliteReKeyToEmpty failed, err={}", ret)
+                }
+
+            },
+            None => Ok(())
+        }
+    }
+
+    pub(crate) fn process_db(&mut self, user_id: i32, db_key: Option<&Vec<u8>>) -> Result<()> {
+        self.clear_db_key_if_need(&db_key)?;
+        self.open_and_restore(user_id, db_key)?;
+        // when create db table always use newest version.
+        self.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, DB_UPGRADE_VERSION))?;
+        self.upgrade(user_id, DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
+        Ok(())
+    }
+
     // Recovery the corrupt database and reopen it.
     pub(crate) fn restore(&mut self) -> Result<()> {
         loge!("[WARNING]Database is corrupt, start to restore");
         self.close();
         if let Err(e) = fs::copy(&self.backup_path, &self.path) {
-            return macros_lib::log_throw_error!(ErrCode::FileOperationError, "[FATAL][DB]Recovery database failed, err={}", e);
+            return macros_lib::log_throw_error!(ErrCode::FileOperationError, 
+                "[FATAL][DB]Recovery database failed, err={}", e);
         }
         self.open()
     }
