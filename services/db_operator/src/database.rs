@@ -218,16 +218,6 @@ fn is_db_exist(db_path: String) -> bool {
     file_path.exists()
 }
 
-fn remove_file_if_table_not_exist(db: &Database, db_path: &str, db_name: &str) {
-    if db.check_table_exist().unwrap_or(false) {
-        return;
-    }
-    match fs::remove_file(db_path) {
-        Ok(_) => logi!("remove file success:[{}]", db_name),
-        Err(e) => loge!("[WARNING]Remove db:[{}] failed, error code:[{}]", db_name, e),
-    }
-}
-
 pub(crate) fn get_db_by_type_without_lock(
     user_id: i32,
     db_name: &str,
@@ -236,12 +226,11 @@ pub(crate) fn get_db_by_type_without_lock(
 ) -> Result<Database> {
     let backup_path = fmt_backup_path(&db_path);
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
-    let mut db = Database { path: db_path.clone(), backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: false };
-    let res = db.process_db(user_id, db_key);
-    if res.is_err() {
-        remove_file_if_table_not_exist(&db, &db_path, db_name);
-        res?;
-    }
+    let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: false };
+    db.open_and_restore(db_key)?;
+    // when create db table always use newest version.
+    db.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, DB_UPGRADE_VERSION))?;
+    db.upgrade(user_id, DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
     Ok(db)
 }
 
@@ -253,13 +242,12 @@ pub(crate) fn get_db_by_type(
 ) -> Result<Database> {
     let backup_path = fmt_backup_path(&db_path);
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
-    let mut db = Database { path: db_path.clone(), backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: true };
+    let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: true };
     let _lock = db.db_lock.mtx.lock().unwrap();
-    let res = db.process_db(user_id, db_key);
-    if res.is_err() {
-        remove_file_if_table_not_exist(&db, &db_path, db_name);
-        res?;
-    }
+    db.open_and_restore(db_key)?;
+    // when create db table always use newest version.
+    db.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, DB_UPGRADE_VERSION))?;
+    db.upgrade(user_id, DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
     Ok(db)
 }
 
@@ -291,15 +279,6 @@ impl Database {
             check_and_split_db(calling_info.user_id())?;
         }
         get_db(calling_info.user_id(), &construct_splited_db_name(calling_info, is_ce)?, &db_key)
-    }
-
-    /// Create a database do nothing in build process.
-    pub fn build_only(calling_info: &CallingInfo, db_key: Option<Vec<u8>>) -> Result<Database> {
-        let db_name = construct_splited_db_name(calling_info, db_key.is_some())?;
-        let db_path = fmt_db_path(calling_info.user_id(), &db_name, &db_key);
-        let backup_path = fmt_backup_path(&db_path);
-        let lock = get_file_lock_by_user_id_db_file_name(calling_info.user_id(), db_name.clone());
-        Ok(Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name, use_lock: true })
     }
 
     /// Create a database from a file name.
@@ -357,20 +336,6 @@ impl Database {
     /// Get db name.
     pub(crate) fn get_db_name(&mut self) -> &str {
         &self.db_name
-    }
-
-    /// Check table exist.
-    pub fn check_table_exist(&self) -> Result<bool> {
-        let table = Table::new(TABLE_NAME, self);
-        table.exist()
-    }
-
-    pub(crate) fn process_db(&mut self, user_id: i32, db_key: Option<&Vec<u8>>) -> Result<()> {
-        self.open_and_restore(db_key)?;
-        // when create db table always use newest version.
-        self.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, DB_UPGRADE_VERSION))?;
-        self.upgrade(user_id, DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
-        Ok(())
     }
 
     /// Close database connection.
