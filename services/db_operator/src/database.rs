@@ -253,6 +253,9 @@ fn is_ce_clear_key_file_not_empty(user_id: i32) -> bool {
 fn can_not_create_ce_clear_key_file(user_id: i32) -> bool {
     let file_path_str = format_ce_clear_key_file_path(user_id);
     let file_path = Path::new(&file_path_str);
+    if file_path.exists() {
+        return false;
+    }
     match OpenOptions::new().write(true).create(true).open(file_path) {
         Ok(file) => {
             let permissions = PermissionsExt::from_mode(0o640);
@@ -270,7 +273,7 @@ fn modify_ce_clear_key_file(user_id: i32, db_name: &str) {
     let file_path = format_ce_clear_key_file_path(user_id);
     match OpenOptions::new().write(true).create(true).open(file_path) {
         Ok(mut file) => {
-            match file.write_all(db_name.to_string().as_bytes()) {
+            match file.write_all(db_name.as_bytes()) {
                 Ok(_) => (),
                 Err(e) => {
                     loge!("[FATAL]write ce_clear_key file failed, error:{}", e);
@@ -444,14 +447,13 @@ impl Database {
     fn clear_db_key_if_need(&mut self, user_id: i32, p_key: &Option<&Vec<u8>>) -> Result<()> {
         match p_key {
             Some(use_p_key) => {
-                if !is_db_need_ce_unlock(&self.db_name) {
+                if !is_db_need_ce_unlock(&self.db_name) || can_not_create_ce_clear_key_file(user_id) 
+                    || is_ce_clear_key_file_not_empty(user_id) {
                     return Ok(());
                 }
-                if can_not_create_ce_clear_key_file(user_id) {
-                    return Ok(())
-                }
-                if is_ce_clear_key_file_not_empty(user_id) {
-                    return Ok(())
+                if !is_db_exist(self.path.clone()) {
+                    modify_ce_clear_key_file(user_id, &self.db_name);
+                    return Ok(());
                 }
                 let ret =
                     unsafe { SqliteReKeyToEmpty(
