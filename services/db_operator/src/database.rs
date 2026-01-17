@@ -235,7 +235,7 @@ fn is_ce_clear_key_file_not_empty(user_id: i32) -> bool {
     }
     let file_path_str = format_ce_clear_key_file_path(user_id);
     let file_path = Path::new(&file_path_str);
-    match OpenOptions::new().write(true).create(true).open(file_path) {
+    match OpenOptions::new().read(true).open(file_path) {
         Ok(mut file) => {
             let mut contents =  String::new();
             match file.read_to_string(&mut contents) {
@@ -257,11 +257,11 @@ fn can_not_create_ce_clear_key_file(user_id: i32) -> bool {
         Ok(file) => {
             let permissions = PermissionsExt::from_mode(0o640);
             let _ = file.set_permissions(permissions);
-            true
+            false
         },
         Err(e) => {
             loge!("[FATAL]create ce_clear_key file failed, error:{}", e);
-            false
+            true
         }
     }
 }
@@ -386,7 +386,7 @@ impl Database {
 
     fn is_need_set_db_key(&self, user_id: i32) -> bool {
         if !is_db_need_ce_unlock(&self.db_name) {
-            return false;
+            return true;
         }
         !is_ce_clear_key_file_not_empty(user_id)
     }
@@ -448,6 +448,9 @@ impl Database {
                     return Ok(());
                 }
                 if can_not_create_ce_clear_key_file(user_id) {
+                    return Ok(())
+                }
+                if is_ce_clear_key_file_not_empty(user_id) {
                     return Ok(())
                 }
                 let ret =
