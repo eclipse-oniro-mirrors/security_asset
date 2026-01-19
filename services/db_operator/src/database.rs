@@ -463,6 +463,12 @@ impl Database {
                     modify_ce_clear_key_file(user_id, &self.db_name);
                     Ok(())
                 } else {
+                    if self.open().is_ok() && 
+                        self.query_data_without_lock(&vec![column::OWNER_TYPE], &DbMap::new(), None, true).is_ok() {
+                        modify_ce_clear_key_file(user_id, &self.db_name);
+                        self.close();
+                        return Ok(());
+                    }
                     macros_lib::log_throw_error!(sqlite_err_handle(ret), "[FATAL][DB]SqliteReKeyToEmpty failed, err={}", ret)
                 }
 
