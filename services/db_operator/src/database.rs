@@ -18,9 +18,6 @@
 
 use core::ffi::c_void;
 use std::ffi::c_char;
-use std::fs::OpenOptions;
-use std::io::{Read, Write};
-use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::{collections::{HashMap, HashSet}, ffi::CStr, fs, ptr::null_mut, sync::{Arc, Mutex}};
 
@@ -219,73 +216,6 @@ fn fmt_db_path(user_id: i32, db_name: &str, db_key: &Option<Vec<u8>>) -> String 
     }
 }
 
-fn format_ce_clear_key_file_path(user_id: i32) -> String {
-    format!("data/service/el2/{}/asset_service/ce_clear_key.cache", user_id)
-}
-
-fn is_ce_clear_key_file_exist(user_id: i32) -> bool {
-    let file_path_str = format_ce_clear_key_file_path(user_id);
-    let file_path = Path::new(&file_path_str);
-    file_path.exists()
-}
-
-fn is_ce_clear_key_file_not_empty(user_id: i32) -> bool {
-    if !is_ce_clear_key_file_exist(user_id) {
-        return false;
-    }
-    let file_path_str = format_ce_clear_key_file_path(user_id);
-    let file_path = Path::new(&file_path_str);
-    match OpenOptions::new().read(true).open(file_path) {
-        Ok(mut file) => {
-            let mut contents =  String::new();
-            match file.read_to_string(&mut contents) {
-                Ok(_) => !contents.is_empty(),
-                Err(_) => false,
-            }
-        },
-        Err(e) => {
-            loge!("[FATAL]create ce_clear_key file failed, error:{}", e);
-            false
-        }
-    }
-}
-
-fn can_not_create_ce_clear_key_file(user_id: i32) -> bool {
-    let file_path_str = format_ce_clear_key_file_path(user_id);
-    let file_path = Path::new(&file_path_str);
-    if file_path.exists() {
-        return false;
-    }
-    match OpenOptions::new().write(true).create(true).open(file_path) {
-        Ok(file) => {
-            let permissions = PermissionsExt::from_mode(0o640);
-            let _ = file.set_permissions(permissions);
-            false
-        },
-        Err(e) => {
-            loge!("[FATAL]create ce_clear_key file failed, error:{}", e);
-            true
-        }
-    }
-}
-
-fn modify_ce_clear_key_file(user_id: i32, db_name: &str) {
-    let file_path = format_ce_clear_key_file_path(user_id);
-    match OpenOptions::new().write(true).create(true).open(file_path) {
-        Ok(mut file) => {
-            match file.write_all(db_name.as_bytes()) {
-                Ok(_) => (),
-                Err(e) => {
-                    loge!("[FATAL]write ce_clear_key file failed, error:{}", e);
-                }
-            }
-        },
-        Err(e) => {
-            loge!("[FATAL]create/open ce_clear_key file failed, error:{}", e);
-        }
-    }
-}
-
 fn is_db_exist(db_path: String) -> bool {
     let file_path = Path::new(&db_path);
     file_path.exists()
@@ -365,7 +295,7 @@ impl Database {
         let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.clone());
         let mut db = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock, db_name, use_lock: true };
         if db_key.is_some() {
-            db.open_and_restore(user_id, db_key)?
+            db.open_and_restore(db_key)?
         } else {
             db.open()?;
         }
@@ -387,20 +317,31 @@ impl Database {
         }
     }
 
-    fn is_need_set_db_key(&self, user_id: i32) -> bool {
-        if !is_db_need_ce_unlock(&self.db_name) {
-            return true;
+    fn is_need_set_db_key(&self) -> bool {
+        !is_db_need_ce_unlock(&self.db_name)
+    }
+
+    fn check_db_is_encrypt(&mut self) -> Result<bool> {
+        let stmt = Statement::prepare("pragma user_version", self)?;
+        match stmt.step_db_encrypt()? {
+            true => Ok(true),
+            false => {
+                let _ = stmt.query_column_int(0);
+                Ok(false)
+            }
         }
-        !is_ce_clear_key_file_not_empty(user_id)
     }
 
     /// Open the database connection and restore the database if the connection fails.
-    pub(crate) fn open_and_restore(&mut self, user_id: i32, db_key: Option<&Vec<u8>>) -> Result<()> {
-        let is_need_set_db_key = self.is_need_set_db_key(user_id);
-        let result = self.open();
+    pub(crate) fn open_and_restore(&mut self, db_key: Option<&Vec<u8>>) -> Result<()> {
+        let mut result = self.open();
         if let Some(db_key) = db_key {
-            if is_need_set_db_key {
+            if self.is_need_set_db_key() {
                 self.set_db_key(db_key)?;
+            } else if self.check_db_is_encrypt()? {
+                self.close();
+                self.clear_db_key(db_key)?;
+                result = self.open();
             }
         }
         let result = match result {
@@ -444,45 +385,20 @@ impl Database {
         }
     }
 
-    fn clear_db_key_if_need(&mut self, user_id: i32, p_key: &Option<&Vec<u8>>) -> Result<()> {
-        match p_key {
-            Some(use_p_key) => {
-                if !is_db_need_ce_unlock(&self.db_name) || can_not_create_ce_clear_key_file(user_id) 
-                    || is_ce_clear_key_file_not_empty(user_id) {
-                    return Ok(());
-                }
-                if !is_db_exist(self.path.clone()) {
-                    modify_ce_clear_key_file(user_id, &self.db_name);
-                    return Ok(());
-                }
-                let ret =
-                    unsafe { SqliteReKeyToEmpty(
-                        self.path.as_ptr() as *const c_char, use_p_key.as_ptr() as *const c_void, use_p_key.len() as i32
-                    ) };
-                if ret == SQLITE_OK {
-                    modify_ce_clear_key_file(user_id, &self.db_name);
-                    Ok(())
-                } else {
-                    if self.open().is_ok() {
-                        if self.query_data_without_lock(&vec![column::OWNER_TYPE], &DbMap::new(), None, true).is_ok() {
-                            modify_ce_clear_key_file(user_id, &self.db_name);
-                            self.close();
-                            return Ok(());
-                        }
-                        self.close();
-                    }
-                    macros_lib::log_throw_error!(sqlite_err_handle(ret),
-                        "[FATAL][DB]SqliteReKeyToEmpty failed, err={}", ret)
-                }
-
-            },
-            None => Ok(())
+    fn clear_db_key(&mut self, p_key: &Vec<u8>) -> Result<()> {
+        let ret =
+        unsafe { SqliteReKeyToEmpty(
+            self.path.as_ptr() as *const c_char, p_key.as_ptr() as *const c_void, p_key.len() as i32
+        ) };
+        if ret == SQLITE_OK {
+            Ok(())
+        } else {
+            macros_lib::log_throw_error!(sqlite_err_handle(ret), "[FATAL][DB]SqliteReKeyToEmpty failed, err={}", ret)
         }
     }
 
     pub(crate) fn process_db(&mut self, user_id: i32, db_key: Option<&Vec<u8>>) -> Result<()> {
-        self.clear_db_key_if_need(user_id, &db_key)?;
-        self.open_and_restore(user_id, db_key)?;
+        self.open_and_restore(db_key)?;
         // when create db table always use newest version.
         self.restore_if_exec_fail(|e: &Table| e.create_with_version(COLUMN_INFO, DB_UPGRADE_VERSION))?;
         self.upgrade(user_id, DB_UPGRADE_VERSION, |_, _, _| Ok(()))?;
