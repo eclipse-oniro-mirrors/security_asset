@@ -17,7 +17,7 @@
 use asset_common::CallingInfo;
 use asset_definition::{AssetMap, Result, SyncResult};
 use crate::operations;
-pub use operations::ut_operation_add_stub::*;
+pub use operation_add::ut_operation_add_stub::*;
 
 #[allow(dead_code)]
 /// add stub
