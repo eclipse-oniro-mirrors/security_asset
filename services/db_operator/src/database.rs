@@ -326,6 +326,7 @@ impl Database {
         match stmt.step_db_encrypt()? {
             true => Ok(true),
             false => {
+                // read prepare success info.
                 let _ = stmt.query_column_int(0);
                 Ok(false)
             }

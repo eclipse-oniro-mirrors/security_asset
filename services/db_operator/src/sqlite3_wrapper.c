@@ -18,11 +18,11 @@
 
 #include "sqlite3sym.h"
 
-const char *const DEFAULT_CIPHER = "aes-256-gcm";
-const char *const DEFAULT_H_MAC_ALGO = "SHA1";
-const char *const DEFAULT_KDF_ALOG = "KDF_SHA1";
-const int DEFAULT_ITER = 10000;
-const int DEFAULT_PAGE_SIZE = 1024;
+const constexpr char * DEFAULT_CIPHER = "aes-256-gcm";
+const constexpr char * DEFAULT_H_MAC_ALGO = "SHA1";
+const constexpr char * DEFAULT_KDF_ALGO = "KDF_SHA1";
+const int32_t DEFAULT_ITER = 10000;
+const int32_t DEFAULT_PAGE_SIZE = 1024;
 
 int SqliteOpen(const char *fileName, void **ppDb)
 {
@@ -133,7 +133,7 @@ int SqliteReKeyToEmpty(const char *dbPath, const void *pKey, int nKey)
 {
     CodecRekeyConfig rekeyCfg = {
         dbPath,
-        { DEFAULT_CIPHER, DEFAULT_H_MAC_ALGO, DEFAULT_KDF_ALOG, pKey, nKey, DEFAULT_ITER, DEFAULT_PAGE_SIZE },
+        { DEFAULT_CIPHER, DEFAULT_H_MAC_ALGO, DEFAULT_KDF_ALGO, pKey, nKey, DEFAULT_ITER, DEFAULT_PAGE_SIZE },
         { NULL, NULL, NULL, NULL, 0, 0, DEFAULT_PAGE_SIZE }
     };
     return sqlite3_rekey_v3(&rekeyCfg);
