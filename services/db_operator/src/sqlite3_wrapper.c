@@ -18,9 +18,9 @@
 
 #include "sqlite3sym.h"
 
-const char * DEFAULT_CIPHER = "aes-256-gcm";
-const char * DEFAULT_H_MAC_ALGO = "SHA1";
-const char * DEFAULT_KDF_ALGO = "KDF_SHA1";
+const char *DEFAULT_CIPHER = "aes-256-gcm";
+const char *DEFAULT_H_MAC_ALGO = "SHA1";
+const char *DEFAULT_KDF_ALGO = "KDF_SHA1";
 const int32_t DEFAULT_ITER = 10000;
 const int32_t DEFAULT_PAGE_SIZE = 1024;
 
