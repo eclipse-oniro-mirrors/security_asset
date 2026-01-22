@@ -24,7 +24,6 @@ ohos_static_library("asset_os_dependency") {
     "src/access_token_wrapper.cpp",
     "src/bms_wrapper.cpp",
     "src/data_share_wrapper.cpp",
-    "src/memory_manager_wrapper.cpp",
     "src/os_account_wrapper.cpp",
     "src/system_ability_wrapper.cpp",
     "src/system_event_wrapper.cpp",
@@ -41,7 +40,6 @@ ohos_static_library("asset_os_dependency") {
     "common_event_service:cesfwk_innerkits",
     "data_share:datashare_common",
     "data_share:datashare_consumer",
-    "memmgr:memmgrclient",
     "hilog:libhilog",
     "netmanager_base:net_conn_manager_if",
     "ipc:ipc_single",
@@ -49,8 +47,8 @@ ohos_static_library("asset_os_dependency") {
     "samgr:samgr_proxy",
   ]
 
-  cflags = [
-    "-DASSET_UPGRADE_HAP_CONFIG=${asset_split_hap_list}",
+  cflags = [ 
+    "-DASSET_UPGRADE_HAP_CONFIG=${asset_split_hap_list}", 
     "-DASSET_CE_UPGRADE_CONFIG=\"${asset_ce_upgrade_list}\"",
   ]
   subsystem_name = "security"
