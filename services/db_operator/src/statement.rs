@@ -23,7 +23,7 @@ use asset_log::loge;
 
 use crate::{
     database::Database,
-    types::{sqlite_err_handle, SQLITE_DONE, SQLITE_OK, SQLITE_ROW},
+    types::{sqlite_err_handle, SQLITE_DONE, SQLITE_NOTADB, SQLITE_OK, SQLITE_ROW},
 };
 
 type BindCallback = extern "C" fn(p: *mut c_void);
@@ -86,6 +86,20 @@ impl<'b> Statement<'b> {
             macros_lib::log_throw_error!(sqlite_err_handle(ret), "Step statement failed, err={}", ret)
         } else {
             Ok(ret)
+        }
+    }
+
+    /// Executing the precompiled sql.
+    pub(crate) fn step_db_encrypt(&self) -> Result<bool> {
+        let ret = unsafe { SqliteStep(self.handle as _) };
+        if ret == SQLITE_NOTADB {
+            return Ok(true)
+        }
+        if ret != SQLITE_ROW && ret != SQLITE_DONE {
+            self.db.print_db_msg();
+            macros_lib::log_throw_error!(sqlite_err_handle(ret), "Step statement failed, err={}", ret)
+        } else {
+            Ok(false)
         }
     }
 
