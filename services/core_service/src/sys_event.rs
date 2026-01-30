@@ -26,8 +26,8 @@ use ipc::Skeleton;
 
 use asset_common::CallingInfo;
 use asset_definition::{
-    Accessibility, AssetError, AssetMap, AuthType, ConflictResolution, Extension, OperationType, Result, ReturnType,
-    SyncType, Tag, WrapType,
+    Accessibility, AssetError, AssetMap, AuthType, ConflictResolution, IsArray, Extension, OperationType, Result,
+    ReturnType, SyncType, Tag, WrapType,
 };
 use asset_log::{loge, logi};
 
@@ -206,16 +206,21 @@ pub(crate) fn upload_fault_system_event(
     );
 }
 
-pub(crate) fn upload_system_event<T>(
+pub(crate) fn upload_system_event<T: IsArray>(
     result: Result<T>,
     calling_info: &CallingInfo,
     start_time: Instant,
     func_name: &str,
     attributes: &AssetMap,
 ) -> Result<T> {
-    let ext_info = construct_ext_info(attributes)?;
+    let mut ext_info = construct_ext_info(attributes)?;
     match &result {
-        Ok(_) => upload_statistic_system_event(calling_info, start_time, func_name, &ext_info),
+        Ok(val) => {
+            if val.is_array() {
+                ext_info += &format!("res count:{};", val.array_len());
+            }
+            upload_statistic_system_event(calling_info, start_time, func_name, &ext_info)
+        },
         Err(e) => upload_fault_system_event(calling_info, start_time, func_name, &ext_info, e),
     }
     result
