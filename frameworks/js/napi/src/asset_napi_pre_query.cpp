@@ -79,6 +79,10 @@ napi_value NapiPreQuery(const napi_env env, napi_callback_info info, bool asUser
 
     context->parse = asUser ? ParseAttrMapAsUser : ParseAttrMap;
     context->execute = [](napi_env env, void *data) {
+        if (data == nullptr) {
+            LOGE("data is nullptr.");
+            return;
+        }
         PreQueryContext *context = static_cast<PreQueryContext *>(data);
         context->result = AssetPreQuery(&context->attrs[0], context->attrs.size(), &context->challenge);
     };

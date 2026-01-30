@@ -83,6 +83,10 @@ napi_value NapiAdd(const napi_env env, napi_callback_info info, bool asUser, boo
 
     context->parse = asUser ? ParseAttrMapAsUser : ParseAttrMap;
     context->execute = [](napi_env env, void *data) {
+        if (data == nullptr) {
+            LOGE("data is nullptr.");
+            return;
+        }
         BaseContext *context = static_cast<BaseContext *>(data);
         context->result = AssetAdd(&context->attrs[0], context->attrs.size());
     };
