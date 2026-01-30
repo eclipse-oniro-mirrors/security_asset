@@ -130,7 +130,7 @@ fn transfer_tag_to_string(tags: &[Tag], attributes: &AssetMap) -> Result<String>
             }
             _ => String::new(),
         };
-        ext_info += &format!("{}:{};", tag, tag_value);
+        ext_info.push_str(&format!("{}:{};", tag, tag_value));
     }
     Ok(ext_info)
 }
@@ -190,7 +190,7 @@ pub(crate) fn upload_fault_system_event(
         .set_param(build_str_param!(SysEvent::EXTRA, format!(
             "error code={} error msg={} ext_info={}",
             e.code,
-            e.msg.clone(),
+            &e.msg,
             ext_info
         )))
         .write();
@@ -201,7 +201,7 @@ pub(crate) fn upload_fault_system_event(
         owner_info,
         start_time,
         e.code,
-        e.msg.clone(),
+        &e.msg,
         ext_info
     );
 }
@@ -217,7 +217,7 @@ pub(crate) fn upload_system_event<T: IsArray>(
     match &result {
         Ok(val) => {
             if val.is_array() {
-                ext_info += &format!("res count:{};", val.array_len());
+                ext_info.push_str(&format!("res count:{};", val.array_len()));
             }
             upload_statistic_system_event(calling_info, start_time, func_name, &ext_info)
         },
