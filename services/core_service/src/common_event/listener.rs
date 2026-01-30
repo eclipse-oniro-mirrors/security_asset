@@ -247,14 +247,14 @@ fn delete_data_by_owner(
             },
             Err(e) => {
                 // Report the database operation fault event.
-                upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e);
+                upload_fault_system_event(&calling_info, start_time, "on_package_removed", "", &e);
                 Ok(())
             },
         };
         if let Err(e) = res {
             // Report the key operation fault event.
             let calling_info = CallingInfo::new_self();
-            upload_fault_system_event(&calling_info, start_time, "on_package_removed", &e);
+            upload_fault_system_event(&calling_info, start_time, "on_package_removed", "", &e);
         }
     }
 }
@@ -323,7 +323,7 @@ pub(crate) extern "C" fn backup_db() {
         *record_time = Some(cur_time);
         if let Err(e) = backup_all_db(&cur_time) {
             let calling_info = CallingInfo::new_self();
-            upload_fault_system_event(&calling_info, cur_time, "backup_db", &e);
+            upload_fault_system_event(&calling_info, cur_time, "backup_db", "", &e);
         }
     }
     logi!("[INFO]Finish backup db.");
@@ -539,7 +539,7 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
         if let Ok(user_id) = entry.file_name().to_string_lossy().to_string().parse::<i32>() {
             if let Err(e) = backup_de_db_if_accessible(&entry, user_id) {
                 let calling_info = CallingInfo::new_self();
-                upload_fault_system_event(&calling_info, *start_time, &format!("backup_de_db_{}", user_id), &e);
+                upload_fault_system_event(&calling_info, *start_time, &format!("backup_de_db_{}", user_id), "", &e);
             }
         }
     }
@@ -564,7 +564,7 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
     for user_id in user_ids_slice.iter() {
         if let Err(e) = backup_ce_db_if_accessible(*user_id) {
             let calling_info = CallingInfo::new_self();
-            upload_fault_system_event(&calling_info, *start_time, &format!("backup_ce_db_{}", *user_id), &e);
+            upload_fault_system_event(&calling_info, *start_time, &format!("backup_ce_db_{}", *user_id), "", &e);
         }
     }
 

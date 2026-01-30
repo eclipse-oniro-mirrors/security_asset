@@ -26,7 +26,8 @@ use ipc::Skeleton;
 
 use asset_common::CallingInfo;
 use asset_definition::{
-    Accessibility, AssetError, AssetMap, AuthType, Extension, OperationType, Result, ReturnType, SyncType, Tag,
+    Accessibility, AssetError, AssetMap, AuthType, ConflictResolution, Extension, OperationType, Result, ReturnType,
+    SyncType, Tag, WrapType,
 };
 use asset_log::{loge, logi};
 
@@ -78,7 +79,8 @@ impl<'a> SysEvent<'a> {
     }
 }
 
-const EXTRA_ATTRS: [Tag; 7] = [
+const EXTRA_ATTRS: [Tag; 12] = [
+    Tag::Alias,
     Tag::SyncType,
     Tag::Accessibility,
     Tag::RequirePasswordSet,
@@ -86,7 +88,22 @@ const EXTRA_ATTRS: [Tag; 7] = [
     Tag::OperationType,
     Tag::ReturnType,
     Tag::RequireAttrEncrypted,
+    Tag::GroupId,
+    Tag::WrapType,
+    Tag::IsPersistent,
+    Tag::ConflictResolution,
 ];
+
+const ANONYMOUS_SPLIT_PART: usize = 4;
+
+fn anonymous_vec(val: &[u8]) -> String {
+    let mut bytes: String = val.iter().map(|&b| format!("{:02x}", b)).collect();
+    let start_pos = bytes.len() / ANONYMOUS_SPLIT_PART;
+    let end_pos = bytes.len() - start_pos;
+    let rep_str = "*".repeat(end_pos - start_pos);
+    bytes.replace_range(start_pos..end_pos, &rep_str);
+    bytes
+}
 
 fn transfer_tag_to_string(tags: &[Tag], attributes: &AssetMap) -> Result<String> {
     let mut ext_info = "".to_string();
@@ -95,6 +112,7 @@ fn transfer_tag_to_string(tags: &[Tag], attributes: &AssetMap) -> Result<String>
             continue;
         }
         let tag_value = match tag {
+            Tag::Alias => anonymous_vec(attributes.get_bytes_attr(tag).unwrap_or(&vec![])).to_string(),
             Tag::SyncType => format!("{}", attributes.get_num_attr(tag).unwrap_or(SyncType::default() as u32)),
             Tag::Accessibility => format!("{}", attributes.get_enum_attr(tag).unwrap_or(Accessibility::default())),
             Tag::RequirePasswordSet => format!("{}", attributes.get_bool_attr(tag).unwrap_or(false)),
@@ -104,6 +122,12 @@ fn transfer_tag_to_string(tags: &[Tag], attributes: &AssetMap) -> Result<String>
             Tag::OperationType => {
                 format!("{}", attributes.get_num_attr(tag).unwrap_or(OperationType::default() as u32))
             },
+            Tag::GroupId => anonymous_vec(attributes.get_bytes_attr(tag).unwrap_or(&vec![])).to_string(),
+            Tag::WrapType => format!("{}", attributes.get_enum_attr(tag).unwrap_or(WrapType::default())),
+            Tag::IsPersistent => format!("{}", attributes.get_bool_attr(tag).unwrap_or(false)),
+            Tag::ConflictResolution => {
+                format!("{}", attributes.get_enum_attr(tag).unwrap_or(ConflictResolution::default()))
+            }
             _ => String::new(),
         };
         ext_info += &format!("{}:{};", tag, tag_value);
@@ -154,6 +178,7 @@ pub(crate) fn upload_fault_system_event(
     calling_info: &CallingInfo,
     start_time: Instant,
     func_name: &str,
+    ext_info: &str,
     e: &AssetError,
 ) {
     let owner_info = String::from_utf8_lossy(calling_info.owner_info()).to_string();
@@ -162,16 +187,22 @@ pub(crate) fn upload_fault_system_event(
         .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
         .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
         .set_param(build_number_param!(SysEvent::ERROR_CODE, e.code as i32))
-        .set_param(build_str_param!(SysEvent::EXTRA, e.msg.clone()))
+        .set_param(build_str_param!(SysEvent::EXTRA, format!(
+            "error code={} error msg={} ext_info={}",
+            e.code,
+            e.msg.clone(),
+            ext_info
+        )))
         .write();
     loge!(
-        "[ERROR]Calling fun:[{}], user_id:[{}], caller:[{}], start_time:[{:?}], error_code:[{}], error_msg:[{}]",
+        "[ERROR]Calling fun:[{}], user_id:[{}], caller:[{}], start_time:[{:?}], code:[{}], msg:[{}], ext_info:[{}]",
         func_name,
         calling_info.user_id(),
         owner_info,
         start_time,
         e.code,
-        e.msg.clone()
+        e.msg.clone(),
+        ext_info
     );
 }
 
@@ -185,7 +216,7 @@ pub(crate) fn upload_system_event<T>(
     let ext_info = construct_ext_info(attributes)?;
     match &result {
         Ok(_) => upload_statistic_system_event(calling_info, start_time, func_name, &ext_info),
-        Err(e) => upload_fault_system_event(calling_info, start_time, func_name, e),
+        Err(e) => upload_fault_system_event(calling_info, start_time, func_name, &ext_info, e),
     }
     result
 }

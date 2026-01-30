@@ -179,6 +179,6 @@ pub fn summary_upgrade_data_count(user_id: i32) {
     let start = Instant::now();
     match process_upgrade_count(user_id, upgrade_info) {
         Ok(ext_info) => upload_statistic_system_event(&calling_info, start, "upgrade_ce_result", &ext_info),
-        Err(e) => upload_fault_system_event(&calling_info, start, "upgrade_ce_result", &e)
+        Err(e) => upload_fault_system_event(&calling_info, start, "upgrade_ce_result", "", &e)
     }
 }
