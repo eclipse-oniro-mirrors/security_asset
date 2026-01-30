@@ -30,6 +30,7 @@ use asset_definition::{
     ReturnType, SyncType, Tag, WrapType,
 };
 use asset_log::{loge, logi};
+use asset_utils::hasher;
 
 /// Component name.
 const COMPONENT: &str = "asset";
@@ -94,14 +95,14 @@ const EXTRA_ATTRS: [Tag; 12] = [
     Tag::ConflictResolution,
 ];
 
-const ANONYMOUS_SPLIT_PART: usize = 4;
+const ANONYMOUS_KEEP_PART_LEN: usize = 2;
 
 fn anonymous_vec(val: &[u8]) -> String {
-    let mut bytes: String = val.iter().map(|&b| format!("{:02x}", b)).collect();
-    let start_pos = bytes.len() / ANONYMOUS_SPLIT_PART;
-    let end_pos = bytes.len() - start_pos;
-    let rep_str = "*".repeat(end_pos - start_pos);
-    bytes.replace_range(start_pos..end_pos, &rep_str);
+    let val_s = hasher::sha256(true, val);
+    let len = val_s.len();
+    let start = if len >= ANONYMOUS_KEEP_PART_LEN { len - ANONYMOUS_KEEP_PART_LEN } else { 0 };
+    let res = val_s[start..].to_vec();
+    let bytes: String = res.iter().map(|&b| format!("{:02x}", b)).collect();
     bytes
 }
 
