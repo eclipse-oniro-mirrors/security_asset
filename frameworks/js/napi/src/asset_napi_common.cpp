@@ -309,6 +309,10 @@ napi_value CreateAsyncWork(const napi_env env, napi_callback_info info, std::uni
     NAPI_CALL(env, napi_create_string_utf8(env, resourceName, NAPI_AUTO_LENGTH, &resource));
     NAPI_CALL(env, napi_create_async_work(env, nullptr, resource, context->execute,
         [](napi_env env, napi_status status, void *data) {
+            if (data == nullptr) {
+                LOGE("data is nullptr.");
+                return;
+            }
             BaseContext *context = static_cast<BaseContext *>(data);
             ResolvePromise(env, context);
             delete context;

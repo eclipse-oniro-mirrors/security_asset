@@ -69,6 +69,10 @@ napi_value NapiRemove(const napi_env env, napi_callback_info info, bool asUser, 
 
     context->parse = asUser ? ParseAttrMapAsUser : ParseAttrMap;
     context->execute = [](napi_env env, void *data) {
+        if (data == nullptr) {
+            LOGE("data is nullptr.");
+            return;
+        }
         BaseContext *context = static_cast<BaseContext *>(data);
         context->result = AssetRemove(&context->attrs[0], context->attrs.size());
     };

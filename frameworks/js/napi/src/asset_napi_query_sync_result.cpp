@@ -59,6 +59,10 @@ napi_value NapiQuerySyncResult(const napi_env env, napi_callback_info info)
     context->check = CheckQuerySyncResultArgs;
 
     context->execute = [](napi_env env, void *data) {
+        if (data == nullptr) {
+            LOGE("data is nullptr.");
+            return;
+        }
         QuerySyncResultContext *context = static_cast<QuerySyncResultContext *>(data);
         context->result = AssetQuerySyncResult(&context->attrs[0], context->attrs.size(), &context->syncResult);
     };

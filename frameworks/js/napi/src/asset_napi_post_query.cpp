@@ -76,6 +76,10 @@ napi_value NapiPostQuery(const napi_env env, napi_callback_info info, bool asUse
 
     context->parse = asUser ? ParseAttrMapAsUser : ParseAttrMap;
     context->execute = [](napi_env env, void *data) {
+        if (data == nullptr) {
+            LOGE("data is nullptr.");
+            return;
+        }
         BaseContext *context = static_cast<BaseContext *>(data);
         context->result = AssetPostQuery(&context->attrs[0], context->attrs.size());
     };
