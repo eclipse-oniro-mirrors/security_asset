@@ -26,9 +26,11 @@ use ipc::Skeleton;
 
 use asset_common::CallingInfo;
 use asset_definition::{
-    Accessibility, AssetError, AssetMap, AuthType, Extension, OperationType, Result, ReturnType, SyncType, Tag,
+    Accessibility, AssetError, AssetMap, AuthType, ConflictResolution, IsArray, Extension, OperationType, Result,
+    ReturnType, SyncType, Tag, WrapType,
 };
 use asset_log::{loge, logi};
+use asset_utils::hasher;
 
 /// Component name.
 const COMPONENT: &str = "asset";
@@ -78,7 +80,8 @@ impl<'a> SysEvent<'a> {
     }
 }
 
-const EXTRA_ATTRS: [Tag; 7] = [
+const EXTRA_ATTRS: [Tag; 12] = [
+    Tag::Alias,
     Tag::SyncType,
     Tag::Accessibility,
     Tag::RequirePasswordSet,
@@ -86,7 +89,22 @@ const EXTRA_ATTRS: [Tag; 7] = [
     Tag::OperationType,
     Tag::ReturnType,
     Tag::RequireAttrEncrypted,
+    Tag::GroupId,
+    Tag::WrapType,
+    Tag::IsPersistent,
+    Tag::ConflictResolution,
 ];
+
+const ANONYMOUS_KEEP_PART_LEN: usize = 2;
+
+fn anonymous_vec(val: &[u8]) -> String {
+    let val_s = hasher::sha256(true, val);
+    let len = val_s.len();
+    let start = if len >= ANONYMOUS_KEEP_PART_LEN { len - ANONYMOUS_KEEP_PART_LEN } else { 0 };
+    let res = val_s[start..].to_vec();
+    let bytes: String = res.iter().map(|&b| format!("{:02x}", b)).collect();
+    bytes
+}
 
 fn transfer_tag_to_string(tags: &[Tag], attributes: &AssetMap) -> Result<String> {
     let mut ext_info = "".to_string();
@@ -95,6 +113,7 @@ fn transfer_tag_to_string(tags: &[Tag], attributes: &AssetMap) -> Result<String>
             continue;
         }
         let tag_value = match tag {
+            Tag::Alias => anonymous_vec(attributes.get_bytes_attr(tag).unwrap_or(&vec![])).to_string(),
             Tag::SyncType => format!("{}", attributes.get_num_attr(tag).unwrap_or(SyncType::default() as u32)),
             Tag::Accessibility => format!("{}", attributes.get_enum_attr(tag).unwrap_or(Accessibility::default())),
             Tag::RequirePasswordSet => format!("{}", attributes.get_bool_attr(tag).unwrap_or(false)),
@@ -104,9 +123,15 @@ fn transfer_tag_to_string(tags: &[Tag], attributes: &AssetMap) -> Result<String>
             Tag::OperationType => {
                 format!("{}", attributes.get_num_attr(tag).unwrap_or(OperationType::default() as u32))
             },
+            Tag::GroupId => anonymous_vec(attributes.get_bytes_attr(tag).unwrap_or(&vec![])).to_string(),
+            Tag::WrapType => format!("{}", attributes.get_enum_attr(tag).unwrap_or(WrapType::default())),
+            Tag::IsPersistent => format!("{}", attributes.get_bool_attr(tag).unwrap_or(false)),
+            Tag::ConflictResolution => {
+                format!("{}", attributes.get_enum_attr(tag).unwrap_or(ConflictResolution::default()))
+            }
             _ => String::new(),
         };
-        ext_info += &format!("{}:{};", tag, tag_value);
+        ext_info.push_str(&format!("{}:{};", tag, tag_value));
     }
     Ok(ext_info)
 }
@@ -154,6 +179,7 @@ pub(crate) fn upload_fault_system_event(
     calling_info: &CallingInfo,
     start_time: Instant,
     func_name: &str,
+    ext_info: &str,
     e: &AssetError,
 ) {
     let owner_info = String::from_utf8_lossy(calling_info.owner_info()).to_string();
@@ -162,30 +188,41 @@ pub(crate) fn upload_fault_system_event(
         .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
         .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
         .set_param(build_number_param!(SysEvent::ERROR_CODE, e.code as i32))
-        .set_param(build_str_param!(SysEvent::EXTRA, e.msg.clone()))
+        .set_param(build_str_param!(SysEvent::EXTRA, format!(
+            "error code={} error msg={} ext_info={}",
+            e.code,
+            &e.msg,
+            ext_info
+        )))
         .write();
     loge!(
-        "[ERROR]Calling fun:[{}], user_id:[{}], caller:[{}], start_time:[{:?}], error_code:[{}], error_msg:[{}]",
+        "[ERROR]Calling fun:[{}], user_id:[{}], caller:[{}], start_time:[{:?}], code:[{}], msg:[{}], ext_info:[{}]",
         func_name,
         calling_info.user_id(),
         owner_info,
         start_time,
         e.code,
-        e.msg.clone()
+        &e.msg,
+        ext_info
     );
 }
 
-pub(crate) fn upload_system_event<T>(
+pub(crate) fn upload_system_event<T: IsArray>(
     result: Result<T>,
     calling_info: &CallingInfo,
     start_time: Instant,
     func_name: &str,
     attributes: &AssetMap,
 ) -> Result<T> {
-    let ext_info = construct_ext_info(attributes)?;
+    let mut ext_info = construct_ext_info(attributes)?;
     match &result {
-        Ok(_) => upload_statistic_system_event(calling_info, start_time, func_name, &ext_info),
-        Err(e) => upload_fault_system_event(calling_info, start_time, func_name, e),
+        Ok(val) => {
+            if val.is_array() {
+                ext_info.push_str(&format!("res count:{};", val.array_len()));
+            }
+            upload_statistic_system_event(calling_info, start_time, func_name, &ext_info)
+        },
+        Err(e) => upload_fault_system_event(calling_info, start_time, func_name, &ext_info, e),
     }
     result
 }

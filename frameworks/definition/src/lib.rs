@@ -489,3 +489,18 @@ pub struct SyncResult {
     /// The count of Assets that fail to synchronize.
     pub failed_count: u32,
 }
+
+/// The T is array and get array_len
+pub trait IsArray {
+    /// the data type is array or not.
+    fn is_array(&self) -> bool { false }
+    /// the data type is array size.
+    fn array_len(&self) -> usize { 0 }
+}
+
+impl<T> IsArray for Vec<T> {
+    fn is_array(&self) -> bool { true }
+    fn array_len(&self) -> usize { self.len() }
+}
+impl IsArray for SyncResult {}
+impl IsArray for () {}
