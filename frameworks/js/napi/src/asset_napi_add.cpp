@@ -88,11 +88,6 @@ napi_value NapiAdd(const napi_env env, napi_callback_info info, bool asUser, boo
             return;
         }
         BaseContext *context = static_cast<BaseContext *>(data);
-        if (context->attrs.empty()) {
-            LOGE("attrs is empty.");
-            context->result = SEC_ASSET_INVALID_ARGUMENT;
-            return;
-        }
         context->result = AssetAdd(&context->attrs[0], context->attrs.size());
     };
 

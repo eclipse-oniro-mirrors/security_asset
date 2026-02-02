@@ -81,11 +81,6 @@ napi_value NapiPostQuery(const napi_env env, napi_callback_info info, bool asUse
             return;
         }
         BaseContext *context = static_cast<BaseContext *>(data);
-        if (context->attrs.empty()) {
-            LOGE("attrs is empty.");
-            context->result = SEC_ASSET_INVALID_ARGUMENT;
-            return;
-        }
         context->result = AssetPostQuery(&context->attrs[0], context->attrs.size());
     };
 
