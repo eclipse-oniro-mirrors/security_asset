@@ -84,6 +84,11 @@ napi_value NapiPreQuery(const napi_env env, napi_callback_info info, bool asUser
             return;
         }
         PreQueryContext *context = static_cast<PreQueryContext *>(data);
+        if (context->attrs.empty()) {
+            LOGE("attrs is empty.");
+            context->result = SEC_ASSET_INVALID_ARGUMENT;
+            return;
+        }
         context->result = AssetPreQuery(&context->attrs[0], context->attrs.size(), &context->challenge);
     };
 

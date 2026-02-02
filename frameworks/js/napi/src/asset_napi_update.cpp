@@ -109,6 +109,11 @@ napi_value NapiUpdate(const napi_env env, napi_callback_info info, bool asUser, 
             return;
         }
         UpdateContext *context = static_cast<UpdateContext *>(data);
+        if (context->attrs.empty()) {
+            LOGE("attrs is empty.");
+            context->result = SEC_ASSET_INVALID_ARGUMENT;
+            return;
+        }
         context->result = AssetUpdate(&context->attrs[0], context->attrs.size(),
             &context->updateAttrs[0], context->updateAttrs.size());
     };

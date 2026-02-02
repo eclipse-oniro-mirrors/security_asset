@@ -64,6 +64,11 @@ napi_value NapiQuerySyncResult(const napi_env env, napi_callback_info info)
             return;
         }
         QuerySyncResultContext *context = static_cast<QuerySyncResultContext *>(data);
+        if (context->attrs.empty()) {
+            LOGE("attrs is empty.");
+            context->result = SEC_ASSET_INVALID_ARGUMENT;
+            return;
+        }
         context->result = AssetQuerySyncResult(&context->attrs[0], context->attrs.size(), &context->syncResult);
     };
 
