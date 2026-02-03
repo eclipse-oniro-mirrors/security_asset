@@ -88,7 +88,7 @@ napi_value NapiAdd(const napi_env env, napi_callback_info info, bool asUser, boo
             return;
         }
         BaseContext *context = static_cast<BaseContext *>(data);
-        if (context->attrs[0].empty()) {
+        if (context->attrs.empty()) {
             context->result = AssetAdd(nullptr, context->attrs.size());
             return;
         }

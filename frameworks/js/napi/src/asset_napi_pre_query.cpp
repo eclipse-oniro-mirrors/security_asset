@@ -84,7 +84,7 @@ napi_value NapiPreQuery(const napi_env env, napi_callback_info info, bool asUser
             return;
         }
         PreQueryContext *context = static_cast<PreQueryContext *>(data);
-        if (context->attrs[0].empty()) {
+        if (context->attrs.empty()) {
             context->result = AssetPreQuery(nullptr, context->attrs.size(), &context->challenge);
             return;
         }
