@@ -75,7 +75,7 @@ napi_value NapiRemove(const napi_env env, napi_callback_info info, bool asUser, 
         }
         BaseContext *context = static_cast<BaseContext *>(data);
         if (context->attrs.empty()) {
-            context->result = AssetRemove(nullptr context->attrs.size());
+            context->result = AssetRemove(nullptr, context->attrs.size());
             return;
         }
         context->result = AssetRemove(&context->attrs[0], context->attrs.size());
