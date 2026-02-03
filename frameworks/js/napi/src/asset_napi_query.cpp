@@ -85,6 +85,10 @@ napi_value NapiQuery(const napi_env env, napi_callback_info info, bool asUser, b
             return;
         }
         QueryContext *context = static_cast<QueryContext *>(data);
+        if (context->attrs[0].empty()) {
+            context->result = AssetQuery(nullptr, context->attrs.size(), &context->resultSet);
+            return;
+        }
         context->result = AssetQuery(&context->attrs[0], context->attrs.size(), &context->resultSet);
     };
 

@@ -109,8 +109,8 @@ napi_value NapiUpdate(const napi_env env, napi_callback_info info, bool asUser, 
             return;
         }
         UpdateContext *context = static_cast<UpdateContext *>(data);
-        context->result = AssetUpdate(&context->attrs[0], context->attrs.size(),
-            &context->updateAttrs[0], context->updateAttrs.size());
+        context->result = AssetUpdate(context->attrs.empty() ? nullptr : &context->attrs[0], context->attrs.size(),
+            context->updateAttrs.empty() ? nullptr : &context->updateAttrs[0], context->updateAttrs.size());
     };
 
     context->resolve = [](napi_env env, BaseContext *context) -> napi_value {
