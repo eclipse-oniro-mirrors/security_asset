@@ -48,6 +48,10 @@ bool CheckSystemApp(void)
 
 bool CheckPermission(const char *permission)
 {
+    if (permission == nullptr) {
+        LOGE("[FATAL]Check permission failed, permission is nullptr");
+        return false;
+    }
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     int result = AccessTokenKit::VerifyAccessToken(tokenId, permission);
     if (result == PERMISSION_GRANTED) {

@@ -49,7 +49,8 @@ pub fn is_file_exist(path_str: &str) -> Result<bool> {
         Ok(true) => Ok(true),
         Ok(false) => Ok(false),
         Err(e) => {
-            macros_lib::log_throw_error!(ErrCode::FileOperationError, "[FATAL][SA] Failed to check existence of file! error: {}", e)
+            macros_lib::log_throw_error!(ErrCode::FileOperationError,
+                "[FATAL][SA] Failed to check existence of file! error: {}", e)
         },
     }
 }
@@ -58,6 +59,14 @@ pub fn is_file_exist(path_str: &str) -> Result<bool> {
 pub fn is_ce_db_exist(user_id: i32) -> Result<bool> {
     let ce_dir = fmt_ce_dir_path(user_id);
     let dir_path: &Path = Path::new(&ce_dir);
+    match dir_path.try_exists() {
+        Ok(true) => (),
+        Ok(false) => return Ok(false),
+        Err(e) => {
+            return macros_lib::log_throw_error!(ErrCode::FileOperationError,
+                "[FATAL][SA] Failed to check existence of dir_path! error: {}", e);
+        },
+    }
     let entries = fs::read_dir(dir_path).map_err(|e| macros_lib::log_and_into_asset_error!(
             ErrCode::FileOperationError, "[FATAL][SA] Failed to read_dir in is_ce_db_exist! error: {}", e))?;
 
