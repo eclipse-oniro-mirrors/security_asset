@@ -60,18 +60,4 @@ HWTEST_F(AssetMemWrapperTest, AssetMemWrapperTest001, TestSize.Level0)
     AssetFree(nullptr);
     ASSERT_EQ(nullptr, AssetMalloc(0));
 }
-
-/**
- * @tc.name: AssetMemWrapperTest.AssetMemWrapperTest002
- * @tc.desc: Test asset func AssetMemCmp, expect 0
- * @tc.type: FUNC
- * @tc.result:0
- */
-HWTEST_F(AssetMemWrapperTest, AssetMemWrapperTest002, TestSize.Level0)
-{
-    const uint32_t size = 5;
-    uint8_t array1[size] = {1, 2, 3, 4, 5};
-    uint8_t array2[size] = {1, 2, 3, 4, 5};
-    ASSERT_EQ(0, AssetMemCmp(array1, array2, size));
-}
 }

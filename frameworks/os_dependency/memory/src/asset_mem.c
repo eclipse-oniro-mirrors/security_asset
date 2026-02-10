@@ -41,9 +41,3 @@ void AssetFree(void *addr)
     }
     free(addr);
 }
-
-int32_t AssetMemCmp(const void *ptr1, const void *ptr2, uint32_t size)
-{
-    return memcmp(ptr1, ptr2, size);
-}
-
