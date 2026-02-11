@@ -26,8 +26,6 @@ void *AssetMalloc(uint32_t size);
 
 void AssetFree(void *addr);
 
-int32_t AssetMemCmp(const void *ptr1, const void *ptr2, uint32_t size);
-
 #ifdef __cplusplus
 }
 #endif

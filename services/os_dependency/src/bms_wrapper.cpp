@@ -92,7 +92,7 @@ int32_t GetBundleInfo(AssetGroupInfo &assetGroupInfo, ProcessInfo *processInfo)
     }
 
     for (const std::string &groupId : assetGroupInfo.assetAccessGroups) {
-        if (groupId.size() <= processInfo->hapInfo.groupId.size &&
+        if (groupId.size() == processInfo->hapInfo.groupId.size &&
             memcmp(processInfo->hapInfo.groupId.data, groupId.data(), processInfo->hapInfo.groupId.size) == 0) {
             LOGI("[INFO]Found matching group id.");
             return ASSET_SUCCESS;
