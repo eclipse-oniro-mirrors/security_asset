@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("../../../config.gni")
 
 ohos_rust_shared_library("asset_plugin_interface_rust") {
   sources = [ "src/lib.rs" ]
@@ -20,11 +19,8 @@ ohos_rust_shared_library("asset_plugin_interface_rust") {
     "../../../frameworks/definition:asset_definition",
     "../../../frameworks/ipc:asset_ipc",
     "../../../frameworks/os_dependency/log:asset_log",
+    "../rs:asset_sdk_rust",
   ]
-
-  if (asset_build_mode != "empty") {
-    deps += [ "../rs:asset_sdk_rust" ]
-  }
 
   external_deps = [
     "ipc:ipc_rust",
