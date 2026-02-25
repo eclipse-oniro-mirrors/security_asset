@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("../../../config.gni")
 
 config("asset_config") {
   include_dirs = [ "../../../interfaces/inner_kits/c/inc" ]

@@ -63,12 +63,3 @@ ohos_shared_library("asset_napi") {
   subsystem_name = "security"
   part_name = "asset"
 }
-  cflags_cc = [
-    "-Wall",
-    "-Werror",
-    "-fPIC",
-  ]
-  relative_install_dir = "module/security"
-  subsystem_name = "security"
-  part_name = "asset"
-}
