@@ -18,39 +18,67 @@
 #include "asset_system_api.h"
 #include "asset_system_type.h"
 
+#ifdef ASSET_EMPTY_MODE
+static int32_t CheckEmptyMode(void)
+{
+    return SEC_ASSET_UNSUPPORTED;
+}
+#endif
+
 int32_t OH_Asset_Add(const Asset_Attr *attributes, uint32_t attrCnt)
 {
+#ifdef ASSET_EMPTY_MODE
+    return CheckEmptyMode();
+#endif
     return AssetAdd((const AssetAttr *)attributes, attrCnt);
 }
 
 int32_t OH_Asset_Remove(const Asset_Attr *query, uint32_t queryCnt)
 {
+#ifdef ASSET_EMPTY_MODE
+    return CheckEmptyMode();
+#endif
     return AssetRemove((const AssetAttr *)query, queryCnt);
 }
 
 int32_t OH_Asset_Update(const Asset_Attr *query, uint32_t queryCnt,
     const Asset_Attr *attributesToUpdate, uint32_t updateCnt)
 {
+#ifdef ASSET_EMPTY_MODE
+    return CheckEmptyMode();
+#endif
     return AssetUpdate((const AssetAttr *)query, queryCnt, (const AssetAttr *)attributesToUpdate, updateCnt);
 }
 
 int32_t OH_Asset_PreQuery(const Asset_Attr *query, uint32_t queryCnt, Asset_Blob *challenge)
 {
+#ifdef ASSET_EMPTY_MODE
+    return CheckEmptyMode();
+#endif
     return AssetPreQuery((const AssetAttr *)query, queryCnt, (AssetBlob *)challenge);
 }
 
 int32_t OH_Asset_Query(const Asset_Attr *query, uint32_t queryCnt, Asset_ResultSet *resultSet)
 {
+#ifdef ASSET_EMPTY_MODE
+    return CheckEmptyMode();
+#endif
     return AssetQuery((const AssetAttr *)query, queryCnt, (AssetResultSet *)resultSet);
 }
 
 int32_t OH_Asset_PostQuery(const Asset_Attr *handle, uint32_t handleCnt)
 {
+#ifdef ASSET_EMPTY_MODE
+    return CheckEmptyMode();
+#endif
     return AssetPostQuery((const AssetAttr *)handle, handleCnt);
 }
 
 int32_t OH_Asset_QuerySyncResult(const Asset_Attr *query, uint32_t queryCnt, Asset_SyncResult *syncResult)
 {
+#ifdef ASSET_EMPTY_MODE
+    return CheckEmptyMode();
+#endif
     return AssetQuerySyncResult((const AssetAttr *)query, queryCnt, (AssetSyncResult *)syncResult);
 }
 

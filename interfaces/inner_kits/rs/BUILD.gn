@@ -32,6 +32,10 @@ ohos_rust_shared_library("asset_sdk_rust") {
   crate_type = "dylib"
   subsystem_name = "security"
   part_name = "asset"
+
+  if (asset_build_mode == "empty") {
+    rustflags = [ "--cfg", "feature=\"asset_empty_mode\"" ]
+  }
 }
 
 ohos_static_library("asset_timeout_feature") {

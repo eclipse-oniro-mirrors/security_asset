@@ -59,9 +59,17 @@ pub struct Manager {
 impl Manager {
     /// Build and initialize the Manager.
     pub fn build() -> Result<Arc<Mutex<Manager>>> {
+        #[cfg(asset_empty_mode)]
+        {
+            return macros_lib::log_throw_error!(
+                ErrCode::Unsupported,
+                "[FATAL][RUST SDK]Asset service is not supported in empty mode"
+            );
+        }
+
         static mut INSTANCE: Option<Arc<Mutex<Manager>>> = None;
         let _guard = ASSET_PLUGIN_LOCK.lock().unwrap();
-        
+
         unsafe {
             if let Some(instance) = &INSTANCE {
                 return Ok(instance.clone());

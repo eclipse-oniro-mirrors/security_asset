@@ -18,13 +18,23 @@ group("asset_component") {
   deps = [
     "interfaces/inner_kits/rs:asset_sdk_rust",
     "interfaces/kits/c:asset_ndk",
-    "sa_profile:asset_sa_profiles",
-    "services/core_service:asset_service",
-    "services/plugin:asset_plugin",
   ]
 
   if (support_jsapi) {
     deps += [ "frameworks/js/napi:asset_napi" ]
+  }
+
+  if (asset_build_mode == "empty") {
+    deps += [
+      "interfaces/inner_kits/c:asset_sdk_ffi",
+      "frameworks/c/system_api:asset_sdk",
+    ]
+  } else {
+    deps += [
+      "sa_profile:asset_sa_profiles",
+      "services/core_service:asset_service",
+      "services/plugin:asset_plugin",
+    ]
   }
 }
 

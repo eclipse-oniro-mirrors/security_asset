@@ -12,6 +12,7 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("../../../config.gni")
 
 ohos_rust_shared_ffi("asset_sdk_ffi") {
   sources = [ "src/lib.rs" ]
@@ -23,4 +24,8 @@ ohos_rust_shared_ffi("asset_sdk_ffi") {
   crate_name = "asset_sdk_ffi"
   subsystem_name = "security"
   part_name = "asset"
+
+  if (asset_build_mode == "empty") {
+    rustflags = [ "--cfg", "feature=\"asset_empty_mode\"" ]
+  }
 }

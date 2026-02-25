@@ -29,39 +29,68 @@ int32_t query_asset(const AssetAttr *query, uint32_t query_cnt, AssetResultSet *
 int32_t post_query_asset(const AssetAttr *handle, uint32_t handle_cnt);
 int32_t query_sync_result(const AssetAttr *query, uint32_t query_cnt, AssetSyncResult *sync_result);
 
+#ifdef ASSET_EMPTY_MODE
+static int32_t CheckEmptyMode(void)
+{
+    LOGE("[FATAL][SDK]Asset service is not supported in empty mode.");
+    return SEC_ASSET_UNSUPPORTED;
+}
+#endif
+
 int32_t AssetAdd(const AssetAttr *attributes, uint32_t attrCnt)
 {
+#ifdef ASSET_EMPTY_MODE
+    return CheckEmptyMode();
+#endif
     return add_asset(attributes, attrCnt);
 }
 
 int32_t AssetRemove(const AssetAttr *query, uint32_t queryCnt)
 {
+#ifdef ASSET_EMPTY_MODE
+    return CheckEmptyMode();
+#endif
     return remove_asset(query, queryCnt);
 }
 
 int32_t AssetUpdate(const AssetAttr *query, uint32_t queryCnt,
     const AssetAttr *attributesToUpdate, uint32_t updateCnt)
 {
+#ifdef ASSET_EMPTY_MODE
+    return CheckEmptyMode();
+#endif
     return update_asset(query, queryCnt, attributesToUpdate, updateCnt);
 }
 
 int32_t AssetPreQuery(const AssetAttr *query, uint32_t queryCnt, AssetBlob *challenge)
 {
+#ifdef ASSET_EMPTY_MODE
+    return CheckEmptyMode();
+#endif
     return pre_query_asset(query, queryCnt, challenge);
 }
 
 int32_t AssetQuery(const AssetAttr *query, uint32_t queryCnt, AssetResultSet *resultSet)
 {
+#ifdef ASSET_EMPTY_MODE
+    return CheckEmptyMode();
+#endif
     return query_asset(query, queryCnt, resultSet);
 }
 
 int32_t AssetPostQuery(const AssetAttr *handle, uint32_t handleCnt)
 {
+#ifdef ASSET_EMPTY_MODE
+    return CheckEmptyMode();
+#endif
     return post_query_asset(handle, handleCnt);
 }
 
 int32_t AssetQuerySyncResult(const AssetAttr *query, uint32_t queryCnt, AssetSyncResult *syncResult)
 {
+#ifdef ASSET_EMPTY_MODE
+    return CheckEmptyMode();
+#endif
     return query_sync_result(query, queryCnt, syncResult);
 }
 

@@ -46,6 +46,10 @@ ohos_shared_library("asset_sdk") {
     "-fPIC",
   ]
 
+  if (asset_build_mode == "empty") {
+    defines = [ "ASSET_EMPTY_MODE" ]
+  }
+
   subsystem_name = "security"
   part_name = "asset"
 }
