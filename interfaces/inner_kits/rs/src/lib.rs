@@ -37,26 +37,16 @@ const SUCCESS: i32 = 0;
 static ASSET_PLUGIN_LOCK: Mutex<()> = Mutex::new(());
 
 fn load_asset_service() -> Result<RemoteObj> {
-    #[cfg(feature = "AssetEmptyMode")]
-    {
-        return macros_lib::log_throw_error!(
-            ErrCode::Unsupported,
-            "[FATAL][RUST SDK]Asset service is not supported in empty mode"
-        );
+    let mut timeout: i32 = 0;
+    let ret = unsafe { GetTimeOut(&mut timeout as *mut i32) };
+    if ret != SUCCESS {
+        timeout = LOAD_TIMEOUT_IN_SECONDS;
     }
-    #[cfg(not(feature = "AssetEmptyMode"))]
-    {
-        let mut timeout: i32 = 0;
-        let ret = unsafe { GetTimeOut(&mut timeout as *mut i32) };
-        if ret != SUCCESS {
-            timeout = LOAD_TIMEOUT_IN_SECONDS;
-        }
-        match SystemAbilityManager::load_system_ability(SA_ID, timeout) {
-            Some(remote) => Ok(remote),
-            None => {
-                macros_lib::log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
-            },
-        }
+    match SystemAbilityManager::load_system_ability(SA_ID, timeout) {
+        Some(remote) => Ok(remote),
+        None => {
+            macros_lib::log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
+        },
     }
 }
 
@@ -69,6 +59,13 @@ pub struct Manager {
 impl Manager {
     /// Build and initialize the Manager.
     pub fn build() -> Result<Arc<Mutex<Manager>>> {
+        #[cfg(feature = "AssetEmptyMode")]
+        {
+            return macros_lib::log_throw_error!(
+                ErrCode::Unsupported,
+                "[FATAL][RUST SDK]Asset service is not supported in empty mode"
+            );
+        }
         static mut INSTANCE: Option<Arc<Mutex<Manager>>> = None;
         let _guard = ASSET_PLUGIN_LOCK.lock().unwrap();
 
@@ -143,6 +140,13 @@ impl Manager {
     }
 
     fn rebuild(&mut self) -> Result<()> {
+        #[cfg(feature = "AssetEmptyMode")]
+        {
+            return macros_lib::log_throw_error!(
+                ErrCode::Unsupported,
+                "[FATAL][RUST SDK]Asset service is not supported in empty mode"
+            );
+        }
         self.remote = load_asset_service()?;
         Ok(())
     }
