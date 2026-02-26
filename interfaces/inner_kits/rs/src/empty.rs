@@ -21,6 +21,13 @@ pub use asset_definition::*;
 
 use ipc::{remote::RemoteObj};
 
+/// This manager provides the capabilities for life cycle management of sensitive user data (Asset) such as passwords
+/// and tokens, including adding, removing, updating, and querying.
+#[allow(dead_code)]
+pub struct Manager {
+    remote: RemoteObj,
+}
+
 impl Manager {
     /// Build and initialize the Manager.
     pub fn build() -> Result<Arc<Mutex<Manager>>> {

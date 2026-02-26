@@ -26,8 +26,10 @@ use std::{
 
 use asset_log::loge;
 use asset_sdk::{
-    macros_lib, AssetError, AssetMap, Conversion, DataType, ErrCode, Manager, SyncResult, Tag, Value,
+    macros_lib, AssetError, AssetMap, Conversion, DataType, ErrCode, SyncResult, Tag, Value,
 };
+use asset_sdk::full::Manager;
+use crate::*;
 
 const MAX_MAP_CAPACITY: u32 = 64;
 const RESULT_CODE_SUCCESS: i32 = 0;
@@ -382,13 +384,6 @@ impl TryFrom<&AssetMap> for AssetResult {
         }
         Ok(result)
     }
-}
-
-/// ResultSet of Asset with a c representation.
-#[repr(C)]
-pub struct AssetResultSet {
-    count: u32,
-    results: *mut AssetResult,
 }
 
 impl TryFrom<&Vec<AssetMap>> for AssetResultSet {

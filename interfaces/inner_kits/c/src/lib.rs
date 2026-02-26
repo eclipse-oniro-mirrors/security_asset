@@ -48,3 +48,10 @@ pub(crate) union AssetValue {
     uint32: u32,
     blob: AssetBlob,
 }
+
+/// ResultSet of Asset with a c representation.
+#[repr(C)]
+pub struct AssetResultSet {
+    count: u32,
+    results: *mut AssetResult,
+}
