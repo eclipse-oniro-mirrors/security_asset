@@ -19,7 +19,7 @@ use asset_log::loge;
 use asset_sdk::{ErrCode, SyncResult};
 use crate::*;
 
-fn check_empty_mode() -> i32 {
+fn empty_mode() -> i32 {
     loge!("[FATAL][RUST SDK]Asset service is not supported in empty mode");
     ErrCode::Unsupported as i32
 }
@@ -27,13 +27,13 @@ fn check_empty_mode() -> i32 {
 /// Function called from C programming language to Rust programming language for adding Asset.
 #[no_mangle]
 pub extern "C" fn add_asset(_attributes: *const AssetAttr, _attr_cnt: u32) -> i32 {
-    check_empty_mode()
+    empty_mode()
 }
 
 /// Function called from C programming language to Rust programming language for removing Asset.
 #[no_mangle]
 pub extern "C" fn remove_asset(_query: *const AssetAttr, _query_cnt: u32) -> i32 {
-    check_empty_mode()
+    empty_mode()
 }
 
 /// Function called from C programming language to Rust programming language for updating Asset.
@@ -44,7 +44,7 @@ pub extern "C" fn update_asset(
     _attrs_to_update: *const AssetAttr,
     _update_cnt: u32,
 ) -> i32 {
-    check_empty_mode()
+    empty_mode()
 }
 
 /// Function called from C programming language to Rust programming language for pre querying Asset.
@@ -54,7 +54,7 @@ pub extern "C" fn update_asset(
 /// The caller must ensure that the challenge pointer is valid.
 #[no_mangle]
 pub unsafe extern "C" fn pre_query_asset(_query: *const AssetAttr, _query_cnt: u32, _challenge: *mut AssetBlob) -> i32 {
-    check_empty_mode()
+    empty_mode()
 }
 
 /// Function called from C programming language to Rust programming language for querying Asset.
@@ -64,13 +64,13 @@ pub unsafe extern "C" fn pre_query_asset(_query: *const AssetAttr, _query_cnt: u
 /// The caller must ensure that the result_set pointer is valid.
 #[no_mangle]
 pub unsafe extern "C" fn query_asset(_query: *const AssetAttr, _query_cnt: u32, _result_set: *mut AssetResultSet) -> i32 {
-    check_empty_mode()
+    empty_mode()
 }
 
 /// Function called from C programming language to Rust programming language for post quering Asset.
 #[no_mangle]
 pub extern "C" fn post_query_asset(_handle: *const AssetAttr, _handle_cnt: u32) -> i32 {
-    check_empty_mode()
+    empty_mode()
 }
 
 /// Function called from C programming language to Rust programming language for querying sync result.
@@ -84,5 +84,5 @@ pub unsafe extern "C" fn query_sync_result(
     _query_cnt: u32,
     _sync_result: *mut SyncResult,
 ) -> i32 {
-    check_empty_mode()
+    empty_mode()
 }
