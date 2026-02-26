@@ -26,6 +26,6 @@ ohos_rust_shared_ffi("asset_sdk_ffi") {
   part_name = "asset"
 
   if (asset_build_mode == "empty") {
-    rustflags = [ "--cfg", "feature=\"asset_empty_mode\"" ]
+    rustflags = [ "--cfg", "feature=\"AssetEmptyMode\"" ]
   }
 }

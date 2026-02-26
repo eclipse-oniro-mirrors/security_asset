@@ -35,7 +35,7 @@ extern "C" {
     fn AssetMalloc(size: u32) -> *mut c_void;
 }
 
-#[cfg(feature = "asset_empty_mode")]
+#[cfg(feature = "AssetEmptyMode")]
 fn check_empty_mode() -> i32 {
     loge!("[FATAL][RUST SDK]Asset service is not supported in empty mode");
     ErrCode::Unsupported as i32
@@ -84,7 +84,7 @@ fn into_map(attributes: *const AssetAttr, attr_cnt: u32) -> Option<AssetMap> {
 /// Function called from C programming language to Rust programming language for adding Asset.
 #[no_mangle]
 pub extern "C" fn add_asset(attributes: *const AssetAttr, attr_cnt: u32) -> i32 {
-    #[cfg(feature = "asset_empty_mode")]
+    #[cfg(feature = "AssetEmptyMode")]
     {
         return check_empty_mode();
     }
@@ -110,7 +110,7 @@ pub extern "C" fn add_asset(attributes: *const AssetAttr, attr_cnt: u32) -> i32 
 /// Function called from C programming language to Rust programming language for removing Asset.
 #[no_mangle]
 pub extern "C" fn remove_asset(query: *const AssetAttr, query_cnt: u32) -> i32 {
-    #[cfg(feature = "asset_empty_mode")]
+    #[cfg(feature = "AssetEmptyMode")]
     {
         return check_empty_mode();
     }
@@ -141,7 +141,7 @@ pub extern "C" fn update_asset(
     attrs_to_update: *const AssetAttr,
     update_cnt: u32,
 ) -> i32 {
-    #[cfg(feature = "asset_empty_mode")]
+    #[cfg(feature = "AssetEmptyMode")]
     {
         return check_empty_mode();
     }
@@ -176,7 +176,7 @@ pub extern "C" fn update_asset(
 /// The caller must ensure that the challenge pointer is valid.
 #[no_mangle]
 pub unsafe extern "C" fn pre_query_asset(query: *const AssetAttr, query_cnt: u32, challenge: *mut AssetBlob) -> i32 {
-    #[cfg(feature = "asset_empty_mode")]
+    #[cfg(feature = "AssetEmptyMode")]
     {
         return check_empty_mode();
     }
@@ -217,7 +217,7 @@ pub unsafe extern "C" fn pre_query_asset(query: *const AssetAttr, query_cnt: u32
 /// The caller must ensure that the result_set pointer is valid.
 #[no_mangle]
 pub unsafe extern "C" fn query_asset(query: *const AssetAttr, query_cnt: u32, result_set: *mut AssetResultSet) -> i32 {
-    #[cfg(feature = "asset_empty_mode")]
+    #[cfg(feature = "AssetEmptyMode")]
     {
         return check_empty_mode();
     }
@@ -254,7 +254,7 @@ pub unsafe extern "C" fn query_asset(query: *const AssetAttr, query_cnt: u32, re
 /// Function called from C programming language to Rust programming language for post quering Asset.
 #[no_mangle]
 pub extern "C" fn post_query_asset(handle: *const AssetAttr, handle_cnt: u32) -> i32 {
-    #[cfg(feature = "asset_empty_mode")]
+    #[cfg(feature = "AssetEmptyMode")]
     {
         return check_empty_mode();
     }
@@ -288,7 +288,7 @@ pub unsafe extern "C" fn query_sync_result(
     query_cnt: u32,
     sync_result: *mut SyncResult,
 ) -> i32 {
-    #[cfg(feature = "asset_empty_mode")]
+    #[cfg(feature = "AssetEmptyMode")]
     {
         return check_empty_mode();
     }

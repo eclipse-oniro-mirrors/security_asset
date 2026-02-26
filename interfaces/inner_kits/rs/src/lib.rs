@@ -37,7 +37,7 @@ const SUCCESS: i32 = 0;
 static ASSET_PLUGIN_LOCK: Mutex<()> = Mutex::new(());
 
 fn load_asset_service() -> Result<RemoteObj> {
-    #[cfg(feature = "asset_empty_mode")]
+    #[cfg(feature = "AssetEmptyMode")]
     {
         return macros_lib::log_throw_error!(
             ErrCode::Unsupported,

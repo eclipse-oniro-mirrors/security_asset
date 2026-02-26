@@ -34,7 +34,7 @@ ohos_rust_shared_library("asset_sdk_rust") {
   part_name = "asset"
 
   if (asset_build_mode == "empty") {
-    rustflags = [ "--cfg", "feature=\"asset_empty_mode\"" ]
+    rustflags = [ "--cfg", "feature=\"AssetEmptyMode\"" ]
   }
 }
 
