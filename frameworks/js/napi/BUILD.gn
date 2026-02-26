@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("../../../config.gni")
 
 ohos_shared_library("asset_napi") {
   include_dirs = [ "inc" ]
@@ -54,10 +53,6 @@ ohos_shared_library("asset_napi") {
     "-Werror",
     "-fPIC",
   ]
-
-  if (asset_build_mode == "empty") {
-    defines = [ "ASSET_EMPTY_MODE" ]
-  }
 
   relative_install_dir = "module/security"
   subsystem_name = "security"

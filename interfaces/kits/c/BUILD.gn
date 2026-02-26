@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("../../../config.gni")
 
 config("asset_config") {
   include_dirs = [ "inc" ]
@@ -40,10 +39,6 @@ ohos_shared_library("asset_ndk") {
     "-Werror",
     "-fPIC",
   ]
-
-  if (asset_build_mode == "empty") {
-    defines = [ "ASSET_EMPTY_MODE" ]
-  }
 
   subsystem_name = "security"
   part_name = "asset"
