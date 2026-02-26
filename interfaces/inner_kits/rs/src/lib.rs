@@ -37,6 +37,13 @@ const SUCCESS: i32 = 0;
 static ASSET_PLUGIN_LOCK: Mutex<()> = Mutex::new(());
 
 fn load_asset_service() -> Result<RemoteObj> {
+    #[cfg(feature = "asset_empty_mode")]
+    {
+        return macros_lib::log_throw_error!(
+            ErrCode::Unsupported,
+            "[FATAL][RUST SDK]Asset service is not supported in empty mode"
+        );
+    }
     let mut timeout: i32 = 0;
     let ret = unsafe { GetTimeOut(&mut timeout as *mut i32) };
     if ret != SUCCESS {
@@ -59,14 +66,6 @@ pub struct Manager {
 impl Manager {
     /// Build and initialize the Manager.
     pub fn build() -> Result<Arc<Mutex<Manager>>> {
-        #[cfg(asset_empty_mode)]
-        {
-            return macros_lib::log_throw_error!(
-                ErrCode::Unsupported,
-                "[FATAL][RUST SDK]Asset service is not supported in empty mode"
-            );
-        }
-
         static mut INSTANCE: Option<Arc<Mutex<Manager>>> = None;
         let _guard = ASSET_PLUGIN_LOCK.lock().unwrap();
 
