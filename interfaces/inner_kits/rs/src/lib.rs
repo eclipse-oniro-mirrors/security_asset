@@ -44,16 +44,19 @@ fn load_asset_service() -> Result<RemoteObj> {
             "[FATAL][RUST SDK]Asset service is not supported in empty mode"
         );
     }
-    let mut timeout: i32 = 0;
-    let ret = unsafe { GetTimeOut(&mut timeout as *mut i32) };
-    if ret != SUCCESS {
-        timeout = LOAD_TIMEOUT_IN_SECONDS;
-    }
-    match SystemAbilityManager::load_system_ability(SA_ID, timeout) {
-        Some(remote) => Ok(remote),
-        None => {
-            macros_lib::log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
-        },
+    #[cfg(not(feature = "AssetEmptyMode"))]
+    {
+        let mut timeout: i32 = 0;
+        let ret = unsafe { GetTimeOut(&mut timeout as *mut i32) };
+        if ret != SUCCESS {
+            timeout = LOAD_TIMEOUT_IN_SECONDS;
+        }
+        match SystemAbilityManager::load_system_ability(SA_ID, timeout) {
+            Some(remote) => Ok(remote),
+            None => {
+                macros_lib::log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
+            },
+        }
     }
 }
 
