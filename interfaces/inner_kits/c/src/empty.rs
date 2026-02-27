@@ -67,7 +67,7 @@ pub unsafe extern "C" fn query_asset(_query: *const AssetAttr, _query_cnt: u32, 
     empty_mode()
 }
 
-/// Function called from C programming language to Rust programming language for post quering Asset.
+/// Function called from C programming language to Rust programming language for post querying Asset.
 #[no_mangle]
 pub extern "C" fn post_query_asset(_handle: *const AssetAttr, _handle_cnt: u32) -> i32 {
     empty_mode()
