@@ -22,3 +22,5 @@ pub mod full;
 pub mod empty;
 
 pub use asset_definition::*;
+
+pub use asset_ipc::{deserialize_map, deserialize_maps};
