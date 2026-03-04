@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Copyright (c) 2023-2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -32,6 +32,10 @@ ohos_rust_shared_library("asset_sdk_rust") {
   crate_type = "dylib"
   subsystem_name = "security"
   part_name = "asset"
+
+  if (asset_build_mode == "empty") {
+    rustflags = [ "--cfg", "feature=\"AssetEmptyMode\"" ]
+  }
 }
 
 ohos_static_library("asset_timeout_feature") {

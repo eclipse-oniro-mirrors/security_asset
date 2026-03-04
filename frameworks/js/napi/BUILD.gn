@@ -53,6 +53,7 @@ ohos_shared_library("asset_napi") {
     "-Werror",
     "-fPIC",
   ]
+
   relative_install_dir = "module/security"
   subsystem_name = "security"
   part_name = "asset"

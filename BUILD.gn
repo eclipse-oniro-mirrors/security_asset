@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Copyright (c) 2023-2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -18,13 +18,18 @@ group("asset_component") {
   deps = [
     "interfaces/inner_kits/rs:asset_sdk_rust",
     "interfaces/kits/c:asset_ndk",
-    "sa_profile:asset_sa_profiles",
-    "services/core_service:asset_service",
-    "services/plugin:asset_plugin",
   ]
 
   if (support_jsapi) {
     deps += [ "frameworks/js/napi:asset_napi" ]
+  }
+
+  if (asset_build_mode == "full") {
+    deps += [
+      "sa_profile:asset_sa_profiles",
+      "services/core_service:asset_service",
+      "services/plugin:asset_plugin",
+    ]
   }
 }
 
