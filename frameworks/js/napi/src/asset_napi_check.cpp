@@ -49,7 +49,7 @@ namespace {
 #define MAX_TIME_SIZE 1024
 #define SYSTEM_USER_ID_MAX 99
 #define BINARY_BASE 2
-#define MIN_GROUP_ID_SIZE 7
+#define MIN_GROUP_ID_SIZE 6
 #define MAX_GROUP_ID_SIZE 127
 
 napi_value CheckArraySize(const napi_env env, const AssetAttr &attr, uint32_t min, uint32_t max, uint32_t errorCode)

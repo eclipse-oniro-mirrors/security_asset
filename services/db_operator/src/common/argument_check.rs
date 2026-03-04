@@ -36,7 +36,7 @@ const MAX_ALIAS_SIZE: usize = 256;
 pub const MAX_LABEL_SIZE: usize = 2048;
 
 const MAX_GROUP_ID_LEN: usize = 127;
-const MIN_GROUP_ID_LEN: usize = 7;
+const MIN_GROUP_ID_LEN: usize = 6;
 
 const MAX_AUTH_TOKEN_SIZE: usize = 1024;
 const CHALLENGE_SIZE: usize = 32;

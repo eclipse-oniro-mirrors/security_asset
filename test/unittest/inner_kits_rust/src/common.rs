@@ -44,7 +44,7 @@ pub(crate) const CHALLENGE_SIZE: usize = 32;
 pub(crate) const SYNC_TYPE_MIN_BITS: u32 = 0;
 pub(crate) const SYNC_TYPE_MAX_BITS: u32 = 3;
 
-pub(crate) const MIN_GROUP_ID_SIZE: usize = 7;
+pub(crate) const MIN_GROUP_ID_SIZE: usize = 6;
 pub(crate) const MAX_GROUP_ID_SIZE: usize = 127;
 
 pub(crate) const CRITICAL_LABEL_ATTRS: [Tag; 4] =
