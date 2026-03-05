@@ -515,12 +515,12 @@ fn trigger_sync_with_user_id(user_id: i32) {
     let self_bundle_name = "asset_service";
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
-        params.insert(PARAM_NAME_USER_ID, Value::Number(*user_id as u32));
+        params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
         params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(self_bundle_name.clone().as_bytes().to_vec()));
         params.insert(PARAM_NAME_OWNER_INFO, Value::Bytes(self_bundle_name.as_bytes().to_vec()));
         match load.process_event(EventType::Sync, &mut params) {
-            Ok(()) => logi!("process sync ext event {} success.", *user_id),
-            Err(code) => loge!("process sync ext event failed, code: {}, user_id: {}", code, *user_id),
+            Ok(()) => logi!("process sync ext event {} success.", user_id),
+            Err(code) => loge!("process sync ext event failed, code: {}, user_id: {}", code, user_id),
         }
     }
 }

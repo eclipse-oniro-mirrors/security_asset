@@ -172,10 +172,10 @@ public:
         } else if (action == CommonEventSupport::COMMON_EVENT_CONNECTIVITY_CHANGE) {
             HandleConnectivityChange(data.GetCode(), this->eventCallBack.onConnectivityChange);
         } else if (action == CommonEventSupport::COMMON_EVENT_DATA_SHARE_READY) {
-            HandleCallback(this->eventCallBack.onDataShareReady, userId);
+            HandleCallback(this->eventCallBack.onDataShareReady);
             LOGI("[INFO]Receive event: COMMON_EVENT_DATA_SHARE_READY, start_time: %{public}ld", startTime);
-        } else if (action == CommonEventSupport::OnUserSwitched) {
-            HandleCallback(this->eventCallBack.onUserSwitched, userId);
+        } else if (action == CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED) {
+            HandleCallback(this->eventCallBack.onUserSwitched);
             LOGI("[INFO]Receive event: onUserSwitched, start_time: %{public}ld", startTime);
         } else {
             LOGW("[WARNING]Receive unknown event: %{public}s", action.c_str());
