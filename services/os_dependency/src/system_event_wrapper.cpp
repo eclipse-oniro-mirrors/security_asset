@@ -128,7 +128,8 @@ void HandleConnectivityChange(int code, OnConnectivityChange onConnectivityChang
 }
 
 template<typename CallbackType, typename... Args>
-void HandleCallback(CallbackType callback, Args&&... args) {
+void HandleCallback(CallbackType callback, Args&&... args)
+{
     if (callback != nullptr) {
         callback(std::forward<Args>(args)...);
     }
