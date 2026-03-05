@@ -63,6 +63,7 @@ const SUCCESS: i32 = 0;
 const USER_ID_VEC_BUFFER: u32 = 5;
 const MINIMUM_MAIN_USER_ID: i32 = 100;
 const TWELVE_HOURS_AS_SECS: u64 = 3600 * 12;
+const ASSET_SERVICE: &str = "asset_service";
 
 enum DataExist {
     OwnerData(bool),
@@ -126,7 +127,7 @@ fn delete_in_ce_db_on_package_removed(calling_info: &CallingInfo, reverse_condit
     let _ = db.delete_datas(&delete_condition, Some(reverse_condition), false)?;
     let data_exists = db.is_data_exists(&check_condition, false)?;
     if !data_exists {
-        remove_db(&format!("{}/{}/asset_service", CE_ROOT_PATH, calling_info.user_id()), calling_info, true)?;
+        remove_db(&format!("{}/{}/{}", CE_ROOT_PATH, calling_info.user_id(), ASSET_SERVICE), calling_info, true)?;
     }
     match calling_info.group() {
         Some(_) => {
@@ -152,7 +153,8 @@ fn delete_on_package_removed(calling_info: &CallingInfo) -> Result<DataExist> {
             (DataExist::GroupData(de_db_data_exists), DataExist::GroupData(ce_db_data_exists)) => {
                 Ok(DataExist::GroupData(de_db_data_exists || ce_db_data_exists))
             },
-            _ => macros_lib::log_throw_error!(ErrCode::AccessDenied, "[FATAL][SA]Cannot delete owner and group data at same time"),
+            _ => macros_lib::log_throw_error!(ErrCode::AccessDenied,
+                "[FATAL][SA]Cannot delete owner and group data at same time"),
         }
     } else {
         Ok(de_db_data_exists)
@@ -412,7 +414,7 @@ pub(crate) extern "C" fn on_user_switched() {
             return;
         }
     }
-    trigger_sync_with_user_id(user_id);
+    trigger_sync_with_user_id(user_id, true);
 }
 
 pub(crate) extern "C" fn on_schedule_wakeup() {
@@ -497,27 +499,19 @@ fn write_last_trigger_time(path_str: &str, unix_time: u64) -> Result<()> {
 
 fn trigger_sync() {
     let user_ids = get_first_unlock_userids();
-    let self_bundle_name = "asset_service";
     for user_id in &user_ids {
-        if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
-            let mut params = ExtDbMap::new();
-            params.insert(PARAM_NAME_USER_ID, Value::Number(*user_id as u32));
-            params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(self_bundle_name.as_bytes().to_vec()));
-            match load.process_event(EventType::Sync, &mut params) {
-                Ok(()) => logi!("process sync ext event {} success.", *user_id),
-                Err(code) => loge!("process sync ext event failed, code: {}, user_id: {}", code, *user_id),
-            }
-        }
+        trigger_sync_with_user_id(*user_id, false);
     }
 }
 
-fn trigger_sync_with_user_id(user_id: i32) {
-    let self_bundle_name = "asset_service";
+fn trigger_sync_with_user_id(user_id: i32, is_user_switch: bool) {
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
-        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(self_bundle_name.clone().as_bytes().to_vec()));
-        params.insert(PARAM_NAME_OWNER_INFO, Value::Bytes(self_bundle_name.as_bytes().to_vec()));
+        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(ASSET_SERVICE.as_bytes().to_vec()));
+        if is_user_switch {
+            params.insert(PARAM_NAME_OWNER_INFO, Value::Bytes(ASSET_SERVICE.as_bytes().to_vec()));
+        }
         match load.process_event(EventType::Sync, &mut params) {
             Ok(()) => logi!("process sync ext event {} success.", user_id),
             Err(code) => loge!("process sync ext event failed, code: {}, user_id: {}", code, user_id),
@@ -543,7 +537,7 @@ fn backup_ce_db_if_accessible(user_id: i32) -> Result<()> {
     if user_id < MINIMUM_MAIN_USER_ID {
         return Ok(());
     }
-    let ce_path = format!("{}/{}/asset_service", CE_ROOT_PATH, user_id);
+    let ce_path = format!("{}/{}/{}", CE_ROOT_PATH, user_id, ASSET_SERVICE);
     for db_path in fs::read_dir(ce_path)? {
         let db_path = db_path?;
         let db_name = db_path.file_name().to_string_lossy().to_string();

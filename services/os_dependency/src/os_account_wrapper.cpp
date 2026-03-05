@@ -22,6 +22,10 @@
 
 bool GetUserIdByUid(uint64_t uid, uint32_t *userId)
 {
+    if (userId == nullptr) {
+        LOGE("[FATAL]Invalid parameter.");
+        return false;
+    }
     int userIdTmp;
     int res = OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userIdTmp);
     if (res != 0 || userIdTmp < 0) {
@@ -34,6 +38,10 @@ bool GetUserIdByUid(uint64_t uid, uint32_t *userId)
 
 bool IsUserIdExist(int32_t userId, bool *exist)
 {
+    if (exist == nullptr) {
+        LOGE("[FATAL]Invalid parameter.");
+        return false;
+    }
     bool isUserIdExist;
     int ret = OHOS::AccountSA::OsAccountManager::IsOsAccountExists(userId, isUserIdExist);
     if (ret != 0) {
@@ -46,6 +54,10 @@ bool IsUserIdExist(int32_t userId, bool *exist)
 
 int32_t GetUserIds(int32_t *userIdsPtr, uint32_t *userIdsSize)
 {
+    if (userIdsPtr == nullptr || userIdsSize == nullptr) {
+        LOGE("[FATAL]Invalid parameter.");
+        return ASSET_INVALID_ARGUMENT;
+    }
     std::vector<OHOS::AccountSA::OsAccountInfo> accountInfos = {};
     int32_t ret = OHOS::AccountSA::OsAccountManager::QueryAllCreatedOsAccounts(accountInfos);
     if (ret != OHOS::ERR_OK) {
@@ -73,6 +85,10 @@ int32_t GetUserIds(int32_t *userIdsPtr, uint32_t *userIdsSize)
 
 int32_t GetFirstUnlockUserIds(int32_t *userIdsPtr, uint32_t *userIdsSize)
 {
+    if (userIdsPtr == nullptr || userIdsSize == nullptr) {
+        LOGE("[FATAL]Invalid parameter.");
+        return ASSET_INVALID_ARGUMENT;
+    }
     std::vector<int32_t> userIdsVec = {};
     int32_t ret = OHOS::AccountSA::OsAccountManager::GetUnlockedOsAccountLocalIds(userIdsVec);
     if (ret != OHOS::ERR_OK) {
@@ -93,6 +109,10 @@ int32_t GetFirstUnlockUserIds(int32_t *userIdsPtr, uint32_t *userIdsSize)
 
 int32_t GetUsersSize(uint32_t *userIdsSize)
 {
+    if (userIdsSize == nullptr) {
+        LOGE("[FATAL]Invalid parameter.");
+        return ASSET_INVALID_ARGUMENT;
+    }
     std::vector<OHOS::AccountSA::OsAccountInfo> accountInfos = {};
     int32_t ret = OHOS::AccountSA::OsAccountManager::QueryAllCreatedOsAccounts(accountInfos);
     if (ret != OHOS::ERR_OK) {
@@ -113,6 +133,10 @@ int32_t GetUsersSize(uint32_t *userIdsSize)
 
 bool GetForegroundOsAccountId(int32_t *userId)
 {
+    if (userId == nullptr) {
+        LOGE("[FATAL]Invalid parameter.");
+        return false;
+    }
     int32_t userIdTmp = 0;
     int32_t res = OHOS::AccountSA::OsAccountManager::GetForegroundOsAccountLocalId(userIdTmp);
     if (res != OHOS::ERR_OK) {
