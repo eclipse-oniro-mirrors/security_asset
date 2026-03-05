@@ -110,3 +110,15 @@ int32_t GetUsersSize(uint32_t *userIdsSize)
 
     return ASSET_SUCCESS;
 }
+
+bool GetForegroundOsAccountId(int32_t *userId)
+{
+    int32_t userIdTmp = 0;
+    int32_t res = OHOS::AccountSA::OsAccountManager::GetForegroundOsAccountLocalId(userIdTmp);
+    if (res != OHOS::ERR_OK) {
+        LOGE("[FATAL]Get foreground user id failed! res is %{public}d", res);
+        return false;
+    }
+    *userId = userIdTmp;
+    return true;
+}

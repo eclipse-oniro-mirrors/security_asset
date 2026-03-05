@@ -176,6 +176,11 @@ public:
                 this->eventCallBack.onDataShareReady();
             }
             LOGI("[INFO]Receive event: COMMON_EVENT_DATA_SHARE_READY, start_time: %{public}ld", startTime);
+        } else if (action == CommonEventSupport::OnUserSwitched) {
+            if (this->eventCallBack.onUserSwitched != nullptr) {
+                this->eventCallBack.onUserSwitched();
+            }
+            LOGI("[INFO]Receive event: onUserSwitched, start_time: %{public}ld", startTime);
         } else {
             LOGW("[WARNING]Receive unknown event: %{public}s", action.c_str());
         }
@@ -233,6 +238,7 @@ bool SubscribeSystemEvent(const EventCallBack eventCallBack)
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_RESTORE_START);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_CONNECTIVITY_CHANGE);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_DATA_SHARE_READY);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED);
     CommonEventSubscribeInfo info(matchingSkills);
     if (g_eventHandler == nullptr) {
         g_eventHandler = std::shared_ptr<SystemEventHandler>(

@@ -51,7 +51,8 @@ use asset_file_operator::{
 use asset_log::{loge, logi, logw};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_plugin_interface::plugin_interface::{
-    EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID,
+    EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME,
+    PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID, PARAM_NAME_OWNER_INFO
 };
 
 use crate::data_size_mod::handle_data_size_upload;
@@ -70,6 +71,7 @@ enum DataExist {
 
 extern "C" {
     fn GetUninstallGroups(userId: i32, developer_id: *const ConstAssetBlob, group_ids: *mut MutAssetBlobArray) -> i32;
+    fn GetForegroundOsAccountId(user_id: *mut std::os::raw::c_int) -> bool;
 }
 
 lazy_static! {
@@ -402,6 +404,17 @@ pub(crate) fn notify_on_user_removed(user_id: i32) {
     }
 }
 
+pub(crate) extern "C" fn on_user_switched() {
+    let mut user_id: std::os::raw::c_int = 0;
+    unsafe {
+        if !GetForegroundOsAccountId(&mut user_id) {
+            logw!("[WARNING]On user switch, get foreground Id failed.");
+            return;
+        }
+    }
+    trigger_sync_with_user_id(user_id);
+}
+
 pub(crate) extern "C" fn on_schedule_wakeup() {
     logi!("[INFO]On SA wakes up at a scheduled time(36H).");
     trigger_sync();
@@ -498,6 +511,20 @@ fn trigger_sync() {
     }
 }
 
+fn trigger_sync_with_user_id(user_id: i32) {
+    let self_bundle_name = "asset_service";
+    if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
+        let mut params = ExtDbMap::new();
+        params.insert(PARAM_NAME_USER_ID, Value::Number(*user_id as u32));
+        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(self_bundle_name.clone().as_bytes().to_vec()));
+        params.insert(PARAM_NAME_OWNER_INFO, Value::Bytes(self_bundle_name.as_bytes().to_vec()));
+        match load.process_event(EventType::Sync, &mut params) {
+            Ok(()) => logi!("process sync ext event {} success.", *user_id),
+            Err(code) => loge!("process sync ext event failed, code: {}, user_id: {}", code, *user_id),
+        }
+    }
+}
+
 fn backup_de_db_if_accessible(entry: &DirEntry, user_id: i32) -> Result<()> {
     for db_path in fs::read_dir(format!("{}", entry.path().to_string_lossy()))? {
         let db_path = db_path?;
@@ -582,6 +609,7 @@ struct EventCallBack {
     on_user_unlocked: extern "C" fn(i32),
     on_connectivity_change: extern "C" fn(),
     on_data_share_ready: extern "C" fn(),
+    on_user_switched: extern "C" fn(),
 }
 
 extern "C" {
@@ -603,6 +631,7 @@ pub(crate) fn subscribe() {
             on_user_unlocked,
             on_connectivity_change,
             on_data_share_ready,
+            on_user_switched,
         };
         if SubscribeSystemEvent(call_back.clone()) {
             logi!("Subscribe system event success.");
