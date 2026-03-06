@@ -55,6 +55,7 @@ typedef void (*OnAppRestore)(int32_t, const uint8_t *, int32_t);
 typedef void (*OnUserUnlocked)(int32_t);
 typedef void (*OnConnectivityChange)(void);
 typedef void (*OnDataShareReady)(void);
+typedef void (*OnUserSwitched)(void);
 
 typedef struct {
     OnPackageRemoved onPackageRemoved;
@@ -65,6 +66,7 @@ typedef struct {
     OnUserUnlocked onUserUnlocked;
     OnConnectivityChange onConnectivityChange;
     OnDataShareReady onDataShareReady;
+    OnUserSwitched onUserSwitched;
 } EventCallBack;
 
 #ifdef __cplusplus

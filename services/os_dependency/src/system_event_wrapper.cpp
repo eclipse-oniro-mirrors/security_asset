@@ -14,6 +14,8 @@
  */
 
 #include <ctime>
+#include <utility>
+#include <type_traits>
 
 #include "system_event_wrapper.h"
 
@@ -125,6 +127,14 @@ void HandleConnectivityChange(int code, OnConnectivityChange onConnectivityChang
     }
 }
 
+template<typename CallbackType, typename... Args>
+void HandleCallback(CallbackType callback, Args&&... args)
+{
+    if (callback != nullptr) {
+        callback(std::forward<Args>(args)...);
+    }
+}
+
 class SystemEventHandler : public CommonEventSubscriber {
 public:
     explicit SystemEventHandler(const CommonEventSubscribeInfo &subscribeInfo, const EventCallBack eventCallBack)
@@ -141,41 +151,32 @@ public:
             HandlePackageRemoved(want, true, this->eventCallBack.onPackageRemoved);
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
             int userId = data.GetCode();
-            if (this->eventCallBack.onUserRemoved != nullptr) {
-                this->eventCallBack.onUserRemoved(userId);
-            }
+            HandleCallback(this->eventCallBack.onUserRemoved, userId);
             LOGI("[INFO] Receive event: USER_REMOVED, userId=%{public}d", userId);
         } else if (action == CommonEventSupport::COMMON_EVENT_SCREEN_OFF) {
-            if (this->eventCallBack.onScreenOff != nullptr) {
-                this->eventCallBack.onScreenOff();
-            }
+            HandleCallback(this->eventCallBack.onScreenOff);
             LOGI("[INFO]Receive event: SCREEN_OFF, start_time: %{public}ld", startTime);
         } else if (action == CommonEventSupport::COMMON_EVENT_CHARGING) {
-            if (this->eventCallBack.onCharging != nullptr) {
-                this->eventCallBack.onCharging();
-            }
+            HandleCallback(this->eventCallBack.onCharging);
             LOGI("[INFO]Receive event: CHARGING, start_time: %{public}ld", startTime);
         } else if (action == CommonEventSupport::COMMON_EVENT_RESTORE_START) {
             HandleAppRestore(want, this->eventCallBack.onAppRestore);
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_UNLOCKED) {
-            if (this->eventCallBack.onUserUnlocked != nullptr) {
-                int userId = data.GetCode();
-                this->eventCallBack.onUserUnlocked(userId);
-            }
+            int userId = data.GetCode();
+            HandleCallback(this->eventCallBack.onUserUnlocked, userId);
             LOGI("[INFO]Receive event: USER_UNLOCKED, start_time: %{public}ld", startTime);
         } else if (action == COMMON_EVENT_USER_PIN_CREATED) {
-            if (this->eventCallBack.onUserUnlocked != nullptr) {
-                int userId = data.GetCode();
-                this->eventCallBack.onUserUnlocked(userId);
-            }
+            int userId = data.GetCode();
+            HandleCallback(this->eventCallBack.onUserUnlocked, userId);
             LOGI("[INFO]Receive event: USER_PIN_CREATED_EVENT, start_time: %{public}ld", startTime);
         } else if (action == CommonEventSupport::COMMON_EVENT_CONNECTIVITY_CHANGE) {
             HandleConnectivityChange(data.GetCode(), this->eventCallBack.onConnectivityChange);
         } else if (action == CommonEventSupport::COMMON_EVENT_DATA_SHARE_READY) {
-            if (this->eventCallBack.onDataShareReady != nullptr) {
-                this->eventCallBack.onDataShareReady();
-            }
+            HandleCallback(this->eventCallBack.onDataShareReady);
             LOGI("[INFO]Receive event: COMMON_EVENT_DATA_SHARE_READY, start_time: %{public}ld", startTime);
+        } else if (action == CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED) {
+            HandleCallback(this->eventCallBack.onUserSwitched);
+            LOGI("[INFO]Receive event: onUserSwitched, start_time: %{public}ld", startTime);
         } else {
             LOGW("[WARNING]Receive unknown event: %{public}s", action.c_str());
         }
@@ -233,6 +234,7 @@ bool SubscribeSystemEvent(const EventCallBack eventCallBack)
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_RESTORE_START);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_CONNECTIVITY_CHANGE);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_DATA_SHARE_READY);
+    matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_UNLOCKED);
     CommonEventSubscribeInfo info(matchingSkills);
     if (g_eventHandler == nullptr) {
         g_eventHandler = std::shared_ptr<SystemEventHandler>(

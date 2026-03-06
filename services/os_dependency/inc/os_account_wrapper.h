@@ -27,6 +27,7 @@ bool IsUserIdExist(int32_t userId, bool *exist);
 int32_t GetUserIds(int32_t *userIdsPtr, uint32_t *userIdsSize);
 int32_t GetUsersSize(uint32_t *userIdsSize);
 int32_t GetFirstUnlockUserIds(int32_t *userIdsPtr, uint32_t *userIdsSize);
+bool GetForegroundOsAccountId(int32_t *userId);
 
 #ifdef __cplusplus
 }
