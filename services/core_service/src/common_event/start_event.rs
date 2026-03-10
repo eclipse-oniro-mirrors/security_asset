@@ -178,8 +178,8 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
         listener::on_connectivity_change();
     } else if reason_name == "usual.event.DATA_SHARE_READY" {
         listener::on_data_share_ready();
-    } else if reason_name == "usual.event.SCREEN_UNLOCKED" {
-        listener::on_user_switched();
+    } else if reason_name == "usual.event.USER_SWITCHED" {
+        listener::on_user_switched(reason.extra_data.code);
     }
     logi!("[INFO]Finish handle common event. [{}]", reason_name);
 }

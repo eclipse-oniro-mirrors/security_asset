@@ -72,7 +72,6 @@ enum DataExist {
 
 extern "C" {
     fn GetUninstallGroups(userId: i32, developer_id: *const ConstAssetBlob, group_ids: *mut MutAssetBlobArray) -> i32;
-    fn GetForegroundOsAccountId(user_id: *mut std::os::raw::c_int) -> bool;
 }
 
 lazy_static! {
@@ -406,14 +405,8 @@ pub(crate) fn notify_on_user_removed(user_id: i32) {
     }
 }
 
-pub(crate) extern "C" fn on_user_switched() {
-    let mut user_id: std::os::raw::c_int = 0;
-    unsafe {
-        if !GetForegroundOsAccountId(&mut user_id) {
-            logw!("[WARNING]On user switch, get foreground Id failed.");
-            return;
-        }
-    }
+pub(crate) extern "C" fn on_user_switched(user_id: i32) {
+    logi!("[INFO]On user switched [{}].", user_id);
     trigger_sync_with_user_id(user_id, true);
 }
 
@@ -603,7 +596,7 @@ struct EventCallBack {
     on_user_unlocked: extern "C" fn(i32),
     on_connectivity_change: extern "C" fn(),
     on_data_share_ready: extern "C" fn(),
-    on_user_switched: extern "C" fn(),
+    on_user_switched: extern "C" fn(i32),
 }
 
 extern "C" {
