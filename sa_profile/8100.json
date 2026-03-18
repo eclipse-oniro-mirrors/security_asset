@@ -21,7 +21,7 @@
                     { "name": "usual.event.BOOT_COMPLETED" },
                     { "name": "usual.event.CONNECTIVITY_CHANGE" },
                     { "name": "usual.event.DATA_SHARE_READY" },
-                    { "name": "usual.event.SCREEN_UNLOCKED" }
+                    { "name": "usual.event.USER_SWITCHED" }
                 ],
                 "timedevent": [
                     {

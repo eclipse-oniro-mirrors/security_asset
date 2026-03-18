@@ -55,7 +55,7 @@ typedef void (*OnAppRestore)(int32_t, const uint8_t *, int32_t);
 typedef void (*OnUserUnlocked)(int32_t);
 typedef void (*OnConnectivityChange)(void);
 typedef void (*OnDataShareReady)(void);
-typedef void (*OnUserSwitched)(void);
+typedef void (*OnUserSwitched)(int32_t);
 
 typedef struct {
     OnPackageRemoved onPackageRemoved;
