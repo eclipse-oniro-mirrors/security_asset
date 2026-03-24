@@ -15,7 +15,7 @@
 
 //! This module defines the interface of the Asset Rust SDK.
 
-use std::sync::{Mutex, Arc};
+use std::{sync::{Mutex, Arc}, time::Instant};
 
 pub use asset_definition::*;
 
@@ -42,9 +42,11 @@ fn load_asset_service() -> Result<RemoteObj> {
     if ret != SUCCESS {
         timeout = LOAD_TIMEOUT_IN_SECONDS;
     }
+    let start_time = Instant::now();
     match SystemAbilityManager::load_system_ability(SA_ID, timeout) {
         Some(remote) => Ok(remote),
         None => {
+            logw!("load_asset_service time:{}s", start_time.elapsed().as_secs_f64());
             macros_lib::log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
         },
     }
@@ -133,6 +135,7 @@ impl Manager {
     }
 
     fn rebuild(&mut self) -> Result<()> {
+        logw!("ServiceUnavailable, rebuild Manager");
         self.remote = load_asset_service()?;
         Ok(())
     }
