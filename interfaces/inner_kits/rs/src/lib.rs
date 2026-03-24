@@ -15,7 +15,10 @@
 
 //! This module defines the interface of the Asset Rust SDK.
 
+use std::time::Instant;
+
 pub use asset_definition::*;
+use asset_log::logw;
 pub mod plugin_interface;
 
 use ipc::{parcel::MsgParcel, remote::RemoteObj};
@@ -28,9 +31,11 @@ use asset_ipc::{
 const LOAD_TIMEOUT_IN_SECONDS: i32 = 4;
 
 fn load_asset_service() -> Result<RemoteObj> {
+    let start_time = Instant::now();
     match SystemAbilityManager::load_system_ability(SA_ID, LOAD_TIMEOUT_IN_SECONDS) {
         Some(remote) => Ok(remote),
         None => {
+            logw!("load_asset_service time:{}s", start_time.elapsed().as_secs_f64());
             log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
         },
     }
@@ -115,6 +120,7 @@ impl Manager {
     }
 
     fn rebuild(&mut self) -> Result<()> {
+        logw!("ServiceUnavailable, rebuild Manager");
         self.remote = get_remote(false)?;
         Ok(())
     }
