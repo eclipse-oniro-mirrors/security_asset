@@ -569,6 +569,22 @@ impl AssetService {
     fn query_sync_result(&self, calling_info: &CallingInfo, query: &AssetMap) -> Result<SyncResult> {
         execute!(operations::query_sync_result, calling_info, query)
     }
+
+    fn batch_add(&self, calling_info: &CallingInfo, attributes_array: &Vec<AssetMap>) -> Result<Vec<(u32, u32)>> {
+        execute!(operations::batch_add, calling_info, attributes_array)
+    }
+
+    fn batch_remove(&self, calling_info: &CallingInfo, attributes_array: &Vec<AssetMap>) -> Result<()> {
+        execute!(operations::batch_remove, calling_info, attributes_array)
+    }
+
+    fn batch_update(
+        &self, calling_info: &CallingInfo,
+        attributes_array: &Vec<AssetMap>,
+        attributes_to_update_array: &Vec<AssetMap>
+    ) -> Result<Vec<(u32, u32)>> {
+        execute!(operations::batch_update, calling_info, attributes_array, attributes_to_update_array)
+    }
 }
 
 #[cfg(feature = "AssetTest")]

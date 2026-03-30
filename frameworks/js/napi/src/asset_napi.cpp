@@ -207,6 +207,9 @@ napi_value Register(const napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("postQuerySync", NapiPostQuerySync),
         DECLARE_NAPI_FUNCTION("postQueryAsUser", NapiPostQueryAsUser),
         DECLARE_NAPI_FUNCTION("querySyncResult", NapiQuerySyncResult),
+        DECLARE_NAPI_FUNCTION("batchRemove", NapiBatchRemove),
+        DECLARE_NAPI_FUNCTION("batchAdd", NapiBatchAdd),
+        DECLARE_NAPI_FUNCTION("batchUpdate", NapiBatchUpdate),
 
         // register enumerate
         DECLARE_NAPI_PROPERTY("Tag", DeclareTag(env)),

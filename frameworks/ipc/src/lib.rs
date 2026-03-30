@@ -50,6 +50,12 @@ macros_lib::impl_enum_trait! {
         PostQuery,
         /// Code for QuerySyncResult.
         QuerySyncResult,
+        /// Code for BatchAdd.
+        BatchAdd,
+        /// Code for BatchRemove.
+        BatchRemove,
+        /// Code for BatchUpdate.
+        BatchUpdate,
     }
 }
 
@@ -154,6 +160,40 @@ pub fn deserialize_sync_result(parcel: &mut MsgParcel) -> Result<SyncResult> {
         total_count: parcel.read::<u32>().map_err(ipc_err_handle)?,
         failed_count: parcel.read::<u32>().map_err(ipc_err_handle)?,
     })
+}
+
+/// Serialize the batch result (Vec<(u32, i32)>) to parcel.
+pub fn serialize_batch_result(result: &Vec<(u32, u32)>, parcel: &mut MsgParcel) -> Result<()> {
+    if result.len() as u32 > MAX_ATTR_ARRAY_CAPACITY {
+        return macros_lib::log_throw_error!(
+            ErrCode::InvalidArgument,
+            "[FATAL][IPC]The result size exceeds the limit."
+        );
+    }
+    parcel.write::<u32>(&(result.len() as u32)).map_err(ipc_err_handle)?;
+    for (index, error_code) in result.iter() {
+        parcel.write::<u32>(index).map_err(ipc_err_handle)?;
+        parcel.write::<u32>(error_code).map_err(ipc_err_handle)?;
+    }
+    Ok(())
+}
+
+/// Deserialize the batch result (Vec<(u32, i32)>) from parcel.
+pub fn deserialize_batch_result(parcel: &mut MsgParcel) -> Result<Vec<(u32, u32)>> {
+    let len = parcel.read::<u32>().map_err(ipc_err_handle)?;
+    if len > MAX_ATTR_ARRAY_CAPACITY {
+        return macros_lib::log_throw_error!(
+            ErrCode::InvalidArgument,
+            "[FATAL][IPC]The result size exceeds the limit."
+        );
+    }
+    let mut res_vec = Vec::with_capacity(len as usize);
+    for _i in 0..len {
+        let index = parcel.read::<u32>().map_err(ipc_err_handle)?;
+        let error_code = parcel.read::<u32>().map_err(ipc_err_handle)?;
+        res_vec.push((index, error_code));
+    }
+    Ok(res_vec)
 }
 
 /// Convert ipc error into Asset error.

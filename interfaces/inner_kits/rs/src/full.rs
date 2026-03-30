@@ -15,7 +15,10 @@
 
 //! This module defines the interface of the Asset Rust SDK.
 
-use std::{sync::{Mutex, Arc}, time::Instant};
+use std::{
+    sync::{Arc, Mutex},
+    time::Instant,
+};
 
 pub use asset_definition::*;
 
@@ -24,8 +27,8 @@ use ipc::{parcel::MsgParcel, remote::RemoteObj};
 use samgr::manage::SystemAbilityManager;
 
 pub use asset_ipc::{
-    deserialize_map, deserialize_maps, deserialize_sync_result,
-    ipc_err_handle, serialize_map, IpcCode, IPC_SUCCESS, SA_ID, SA_NAME,
+    deserialize_batch_result, deserialize_map, deserialize_maps, deserialize_sync_result, ipc_err_handle,
+    serialize_map, serialize_maps, IpcCode, IPC_SUCCESS, SA_ID, SA_NAME,
 };
 
 extern "C" {
@@ -71,9 +74,7 @@ impl Manager {
 
             logw!("Create instance for Manager.");
             let remote = load_asset_service()?;
-            let manager = Arc::new(Mutex::new(Manager {
-                remote,
-            }));
+            let manager = Arc::new(Mutex::new(Manager { remote }));
             INSTANCE = Some(manager.clone());
 
             Ok(manager.clone())
@@ -86,10 +87,34 @@ impl Manager {
         Ok(())
     }
 
+    /// Add batch assets.
+    pub fn batch_add(&mut self, attributes_array: &Vec<AssetMap>) -> Result<Vec<(u32, u32)>> {
+        let ret = self.process_one_array_request_with_ret(attributes_array, IpcCode::BatchAdd)?;
+        Ok(ret)
+    }
+
     /// Remove one or more Assets that match a search query.
     pub fn remove(&mut self, query: &AssetMap) -> Result<()> {
         self.process_one_agr_request(query, IpcCode::Remove)?;
         Ok(())
+    }
+
+    /// Remove batch assets.
+    pub fn batch_remove(&mut self, attributes_array: &Vec<AssetMap>) -> Result<()> {
+        self.process_one_array_request(attributes_array, IpcCode::BatchRemove)?;
+        Ok(())
+    }
+
+    /// Update batch assets.
+    pub fn batch_update(
+        &mut self,
+        attributes_array: &Vec<AssetMap>,
+        attributes_to_update_array: &Vec<AssetMap>
+    ) -> Result<Vec<(u32, u32)>> {
+        let ret = self.process_two_array_request_with_ret(
+            attributes_array, attributes_to_update_array, IpcCode::BatchUpdate
+        )?;
+        Ok(ret)
     }
 
     /// Update an Asset that matches a search query.
@@ -178,6 +203,112 @@ impl Manager {
                     parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
                     serialize_map(query, &mut parcel)?;
                     serialize_map(attributes_to_update, &mut parcel)?;
+                    self.send_request(parcel, ipc_code)
+                },
+                _ => Err(e),
+            },
+        }
+    }
+
+    fn process_one_array_request_with_ret(
+        &mut self,
+        attributes_array: &Vec<AssetMap>,
+        ipc_code: IpcCode,
+    ) -> Result<Vec<(u32, u32)>> {
+        let mut parcel = MsgParcel::new();
+        parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
+        if attributes_array.len() > MAX_ARRAY_CAPACITY {
+            return macros_lib::throw_error!(
+                ErrCode::InvalidArgument,
+                "[FATAL][IPC]The array size {} exceeds the limit",
+                attributes_array.len()
+            );
+        }
+        serialize_maps(attributes_array, &mut parcel)?;
+        match self.send_request(parcel, ipc_code) {
+            Ok(mut reply) => {
+                let res = deserialize_batch_result(&mut reply)?;
+                Ok(res)
+            },
+            Err(e) => match e.code {
+                ErrCode::ServiceUnavailable => {
+                    logw!("ServiceUnavailable, rebuild Manager");
+                    self.rebuild()?;
+                    let mut parcel = MsgParcel::new();
+                    parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
+                    serialize_maps(attributes_array, &mut parcel)?;
+                    let mut reply = self.send_request(parcel, ipc_code)?;
+                    let res = deserialize_batch_result(&mut reply)?;
+                    Ok(res)
+                },
+                _ => Err(e),
+            },
+        }
+    }
+
+    fn process_two_array_request_with_ret(
+        &mut self,
+        attributes_array: &Vec<AssetMap>,
+        attributes_to_update_array: &Vec<AssetMap>,
+        ipc_code: IpcCode,
+    ) -> Result<Vec<(u32, u32)>> {
+        let mut parcel = MsgParcel::new();
+        parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
+        if attributes_array.len() > MAX_ARRAY_CAPACITY {
+            return macros_lib::throw_error!(
+                ErrCode::InvalidArgument,
+                "[FATAL][IPC]The array size {} exceeds the limit",
+                attributes_array.len()
+            );
+        }
+        serialize_maps(attributes_array, &mut parcel)?;
+        serialize_maps(attributes_to_update_array, &mut parcel)?;
+        match self.send_request(parcel, ipc_code) {
+            Ok(mut reply) => {
+                let res = deserialize_batch_result(&mut reply)?;
+                Ok(res)
+            },
+            Err(e) => match e.code {
+                ErrCode::ServiceUnavailable => {
+                    logw!("ServiceUnavailable, rebuild Manager");
+                    self.rebuild()?;
+                    let mut parcel = MsgParcel::new();
+                    parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
+                    serialize_maps(attributes_array, &mut parcel)?;
+                    serialize_maps(attributes_to_update_array, &mut parcel)?;
+                    let mut reply = self.send_request(parcel, ipc_code)?;
+                    let res = deserialize_batch_result(&mut reply)?;
+                    Ok(res)
+                },
+                _ => Err(e),
+            },
+        }
+    }
+
+    fn process_one_array_request(
+        &mut self,
+        attributes_array: &Vec<AssetMap>,
+        ipc_code: IpcCode,
+    ) -> Result<MsgParcel> {
+        let mut parcel = MsgParcel::new();
+        parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
+        if attributes_array.len() > MAX_ARRAY_CAPACITY {
+            return macros_lib::throw_error!(
+                ErrCode::InvalidArgument,
+                "[FATAL][IPC]The array size {} exceeds the limit",
+                attributes_array.len()
+            );
+        }
+        serialize_maps(attributes_array, &mut parcel)?;
+        match self.send_request(parcel, ipc_code) {
+            Ok(msg) => Ok(msg),
+            Err(e) => match e.code {
+                ErrCode::ServiceUnavailable => {
+                    logw!("ServiceUnavailable, rebuild Manager");
+                    self.rebuild()?;
+                    let mut parcel = MsgParcel::new();
+                    parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
+                    serialize_maps(attributes_array, &mut parcel)?;
                     self.send_request(parcel, ipc_code)
                 },
                 _ => Err(e),

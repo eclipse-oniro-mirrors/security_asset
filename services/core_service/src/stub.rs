@@ -19,18 +19,17 @@ use asset_common::{AutoCounter, CallingInfo, Counter, OwnerType, ProcessInfo, Pr
 use asset_db_operator::database_file_upgrade::construct_splited_db_name;
 use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 
-use asset_ipc::{deserialize_map, serialize_maps, serialize_sync_result, IpcCode, IPC_SUCCESS, SA_NAME};
+use asset_ipc::{
+    deserialize_batch_result, deserialize_map, deserialize_maps, serialize_batch_result, serialize_maps,
+    serialize_sync_result, IpcCode, IPC_SUCCESS, SA_NAME,
+};
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
-use asset_sdk::{
-    macros_lib,
-    AssetError, ErrCode, Result, Tag, Value,
-};
 use asset_plugin_interface::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_APP_INDEX, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_IS_HAP, PARAM_NAME_USER_ID,
 };
 
-use crate::{AssetService, upgrade_operator::upgrade_single_clone_app_data};
+use crate::{upgrade_operator::upgrade_single_clone_app_data, AssetService};
 
 const REDIRECT_START_CODE: u32 = 200;
 
@@ -99,7 +98,11 @@ fn on_app_request(code: IpcCode, process_info: &ProcessInfo, calling_info: &Call
         match load.process_event(EventType::OnAppCall, &mut params) {
             Ok(()) => return Ok(()),
             Err(code) => {
-                return macros_lib::log_throw_error!(ErrCode::BmsError, "[FATAL]process on app call event failed, code: {}", code)
+                return macros_lib::log_throw_error!(
+                    ErrCode::BmsError,
+                    "[FATAL]process on app call event failed, code: {}",
+                    code
+                )
             },
         }
     }
@@ -115,6 +118,46 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
         },
     }
     let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
+    if ipc_code >= IpcCode::BatchAdd && ipc_code <= IpcCode::BatchUpdate {
+        let attributes_array = deserialize_maps(data).map_err(asset_err_handle)?;
+        if attributes_array.is_empty() {
+            match ipc_code {
+                IpcCode::BatchUpdate => return reply_handle(macros_lib::log_throw_error!(
+                    ErrCode::InvalidArgument,
+                    "[FATAL]The array is empty.",
+                ), reply),
+                _ => return reply_handle(Ok(()), reply),
+            }
+        }
+        let map = attributes_array[0];
+        let process_info = ProcessInfo::build(map.get(&Tag::GroupId), None, false).map_err(asset_err_handle)?;
+        let calling_info = CallingInfo::build(map.get(&Tag::UserId).cloned(), &process_info);
+        match ipc_code {
+            IpcCode::BatchAdd => {
+                match stub.batch_add(&calling_info, &attributes_array) {
+                    Ok(res) => {
+                        reply_handle(Ok(()), reply)?;
+                        return serialize_batch_result(&res, reply).map_err(asset_err_handle);
+                    },
+                    Err(e) => return reply_handle(Err(e), reply),
+                }
+            },
+            IpcCode::BatchRemove => {
+                return reply_handle(stub.batch_remove(&calling_info, &attributes_array), reply);
+            },
+            IpcCode::BatchUpdate => {
+                let attributes_to_update_array = deserialize_maps(data).map_err(asset_err_handle)?;
+                match stub.batch_update(&calling_info, &attributes_array, &attributes_to_update_array) {
+                    Ok(res) => {
+                        reply_handle(Ok(()), reply)?;
+                        return serialize_batch_result(&res, reply).map_err(asset_err_handle);
+                    },
+                    Err(e) => return reply_handle(Err(e), reply),
+                }
+            },
+
+        }
+    }
 
     let map = deserialize_map(data).map_err(asset_err_handle)?;
     let process_info = ProcessInfo::build(map.get(&Tag::GroupId), None, false).map_err(asset_err_handle)?;

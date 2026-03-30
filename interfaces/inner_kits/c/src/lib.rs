@@ -55,3 +55,11 @@ pub struct AssetResultSet {
     count: u32,
     results: *mut AssetResult,
 }
+
+/// Batch result of Asset with a c representation.
+#[repr(C)]
+pub struct AssetBatchResult {
+    count: u32,
+    indices: *mut u32,
+    error_codes: *mut i32,
+}

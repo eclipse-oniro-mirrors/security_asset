@@ -75,6 +75,10 @@ napi_status ParseJsArgs(const napi_env env, napi_callback_info info, napi_value 
 
 napi_status ParseJsMap(const napi_env env, napi_value arg, std::vector<AssetAttr> &attrs);
 
+napi_value CreateJsBatchResult(const napi_env env, const std::vector<std::pair<uint32_t, uint32_t>> &blobs);
+
+napi_status ParseJsMapArray(const napi_env env, napi_value arg, std::vector<std::vector<AssetAttr>> &attrsArray);
+
 napi_status ParseJsUserId(const napi_env env, napi_value arg, std::vector<AssetAttr> &attrs);
 
 napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName, uint32_t propertyValue);

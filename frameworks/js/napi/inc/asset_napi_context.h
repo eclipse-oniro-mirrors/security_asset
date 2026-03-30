@@ -65,6 +65,16 @@ public:
     AssetSyncResult syncResult;
 };
 
+class BatchOperationContext : public BaseContext {
+public:
+    // input
+    std::vector<std::vector<AssetAttr>> attrsArray;
+    std::vector<std::vector<AssetAttr>> attrToUpdateArray;
+
+    // output
+    std::vector<std::pair<uint32_t, uint32_t>> errInfoArray;
+};
+
 } // Asset
 } // Security
 } // OHOS

@@ -50,6 +50,14 @@ napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *con
     return napi_ok;
 }
 
+napi_status ParseAttrMapArray(napi_env env, napi_callback_info info, BaseContext *context)
+{
+    napi_value argv[NORMAL_ARGS_NUM] = { 0 };
+    IF_ERR_RETURN(ParseJsArgs(env, info, argv, REMOVE_ARG_COUNT));
+    IF_ERR_RETURN(ParseJsMapArray(env, argv[0], context->attrsArray));
+    return napi_ok;
+}
+
 napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContext *context)
 {
     napi_value argv[MAX_ARGS_NUM] = { 0 };
@@ -105,6 +113,32 @@ napi_value NapiRemoveAsUser(const napi_env env, napi_callback_info info)
 napi_value NapiRemoveSync(const napi_env env, napi_callback_info info)
 {
     return NapiRemove(env, info, false, false);
+}
+
+napi_value NapiBatchRemove(const napi_env env, napi_callback_info info)
+{
+    auto context = std::unique_ptr<BatchOperationContext>(new (std::nothrow)BatchOperationContext());
+    NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for Context.");
+
+    context->parse = ParseAttrMapArray;
+    context->execute = [](napi_env env, void *data) {
+        if (data == nullptr) {
+            LOGE("data is nullptr.");
+            return;
+        }
+        BatchOperationContext *context = static_cast<BatchOperationContext *>(data);
+        if (context->attrs.empty()) {
+            context->result = AssetBatchRemove(nullptr);
+            return;
+        }
+        context->result = AssetBatchRemove(&context->attrsArray[0]);
+    };
+
+    context->resolve = [](napi_env env, BaseContext *context) -> napi_value {
+        return CreateJsUndefined(env);
+    };
+
+    return CreateAsyncWork(env, info, std::move(context), __func__);
 }
 
 } // Asset

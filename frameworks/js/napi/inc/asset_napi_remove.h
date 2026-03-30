@@ -29,6 +29,8 @@ napi_value NapiRemoveSync(const napi_env env, napi_callback_info info);
 
 napi_value NapiRemoveAsUser(const napi_env env, napi_callback_info info);
 
+napi_value NapiBatchRemove(const napi_env env, napi_callback_info info);
+
 } // Asset
 } // Security
 } // OHOS

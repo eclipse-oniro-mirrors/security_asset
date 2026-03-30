@@ -77,6 +77,26 @@ fn into_map(attributes: *const AssetAttr, attr_cnt: u32) -> Option<AssetMap> {
     Some(map)
 }
 
+fn into_batch_map(
+    attributes_array: &Vec<Vec<AssetAttr>>,
+) -> Option<Vec<AssetMap>> {
+    if attributes_array.is_empty() {
+        return None;
+    }
+
+    let mut result = Vec::with_capacity(attributes_array.len());
+    
+    for attrs in attributes_array {
+        if attrs.is_empty() {
+            return None;
+        }
+        let map = into_map(attrs.as_ptr(), attrs.len() as u32)?;
+        result.push(map);
+    }
+    
+    Some(result)
+}
+
 /// Function called from C programming language to Rust programming language for adding Asset.
 #[no_mangle]
 pub extern "C" fn add_asset(attributes: *const AssetAttr, attr_cnt: u32) -> i32 {
@@ -90,12 +110,71 @@ pub extern "C" fn add_asset(attributes: *const AssetAttr, attr_cnt: u32) -> i32 
         Err(e) => return map_err(e.code),
     };
 
-    let ret = if let Err(e) = manager.lock().unwrap().add(&map) {
-        e.code as i32
-    } else {
-        RESULT_CODE_SUCCESS
-    };
+    let ret = if let Err(e) = manager.lock().unwrap().add(&map) { e.code as i32 } else { RESULT_CODE_SUCCESS };
     ret
+}
+
+/// Function called from C programming language to Rust programming language for batch inserting Assets.
+#[no_mangle]
+pub extern "C" fn asset_batch_add(
+    attributes_ptrs: &Vec<Vec<AssetAttr>>,
+    err_info: &mut Vec<(u32, i32)>,
+) -> i32 {
+    if attributes_ptrs.is_null() || err_info.is_null() {
+        return ErrCode::InvalidArgument as i32;
+    }
+
+    let attributes_array = match into_batch_map(attributes_ptrs) {
+        Some(array) => array,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return map_err(e.code),
+    };
+
+    let err_info = match manager.lock().unwrap().batch_add(&attributes_array) {
+        Ok(info) => info,
+        Err(e) => return e.code as i32,
+    };
+
+    RESULT_CODE_SUCCESS
+}
+
+
+/// Function called from C programming language to Rust programming language for batch inserting Assets.
+#[no_mangle]
+pub extern "C" fn asset_batch_update(
+    attributes_ptrs: &Vec<Vec<AssetAttr>>,
+    attributes_to_update_ptrs: &Vec<Vec<AssetAttr>>,
+    err_info: &mut Vec<(u32, i32)>,
+) -> i32 {
+    if attributes_ptrs.is_null() || attributes_to_update_ptrs.is_null() || err_info.is_null() {
+        return ErrCode::InvalidArgument as i32;
+    }
+
+    let attributes_array = match into_batch_map(attributes_ptrs) {
+        Some(array) => array,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    let attributes_to_update_array = match into_batch_map(attributes_to_update_ptrs) {
+        Some(array) => array,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return map_err(e.code),
+    };
+
+    let err_info = match manager.lock().unwrap().batch_update(&attributes_array, &attributes_to_update_array) {
+        Ok(info) => info,
+        Err(e) => return e.code as i32,
+    };
+
+    RESULT_CODE_SUCCESS
 }
 
 /// Function called from C programming language to Rust programming language for removing Asset.
@@ -111,7 +190,24 @@ pub extern "C" fn remove_asset(query: *const AssetAttr, query_cnt: u32) -> i32 {
         Err(e) => return map_err(e.code),
     };
 
-    let ret = if let Err(e) = manager.lock().unwrap().remove(&map) {
+    let ret = if let Err(e) = manager.lock().unwrap().remove(&map) { e.code as i32 } else { RESULT_CODE_SUCCESS };
+    ret
+}
+
+/// Function called from C programming language to Rust programming language for batch removing Assets.
+#[no_mangle]
+pub extern "C" fn asset_batch_remove(attributes_ptrs: &Vec<Vec<AssetAttr>>) -> i32 {
+    let attributes_array = match into_batch_map(attributes_ptrs) {
+        Some(array) => array,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return map_err(e.code),
+    };
+
+    let ret = if let Err(e) = manager.lock().unwrap().batch_remove(&attributes_array) {
         e.code as i32
     } else {
         RESULT_CODE_SUCCESS
