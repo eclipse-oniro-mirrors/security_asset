@@ -20,23 +20,21 @@ use asset_crypto_manager::{
     db_key_operator::get_db_key_by_asset_map,
 };
 use asset_db_operator::{
-    common::{ACCESS_CONTROL_ATTRS, ASSET_SYNC_ATTRS, CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS, NORMAL_LOCAL_LABEL_ATTRS, check_required_tags, check_tag_validity, check_value_validity, into_db_map},
+    common::{
+        ACCESS_CONTROL_ATTRS, ASSET_SYNC_ATTRS, CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS, NORMAL_LOCAL_LABEL_ATTRS,
+        check_required_tags, check_tag_validity, check_value_validity, into_db_map
+    },
     database::Database,
-    types::{DB_DATA_VERSION, DbMap, column},
 };
 use asset_definition::{
-    macros_lib, Accessibility, AssetMap, AuthType, ErrCode, Result,
-    Tag, Value,
+    macros_lib, AssetMap, ErrCode, Result, Tag,
 };
-use asset_sdk::log_throw_error;
 use asset_utils::time;
-
-use crate::operations::common::{check_group_validity, inform_asset_ext, update_cloud_sync_status};
 
 const QUERY_VALID_ATTRS: [Tag; 1] = [Tag::Alias];
 const UPDATE_OPTIONAL_ATTRS: [Tag; 1] = [Tag::Secret];
 
-fn check_update_array(attributes_array: &[AssetMap]) -> Result<()> {
+fn check_attrs_array(attributes_array: &[AssetMap]) -> Result<()> {
     for attrs in attributes_array {
         check_required_tags(attrs, &QUERY_VALID_ATTRS)?;
         let mut valid_tags = CRITICAL_LABEL_ATTRS.to_vec();
@@ -51,7 +49,7 @@ fn check_update_array(attributes_array: &[AssetMap]) -> Result<()> {
 
 fn check_update_array(attributes_array: &[AssetMap]) -> Result<()> {
     for attrs in attributes_array {
-        if attr.empty() {
+        if attrs.empty() {
             return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The data to update contains empty attributes.");
         }
         let mut valid_tags = NORMAL_LABEL_ATTRS.to_vec();
@@ -85,7 +83,7 @@ pub(crate) fn batch_update(
 ) -> Result<Vec<(u32, u32)>> {
     if attributes_array.is_empty() || attributes_to_update_array.is_empty()
     || attributes_array.len() != attributes_to_update_array.len(){
-        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Batch Update argument empty.");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Batch Update argument empty.");
     }
     local_batch_update(calling_info, attributes_array, attributes_to_update_array)
 }

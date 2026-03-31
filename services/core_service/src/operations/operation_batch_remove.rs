@@ -17,29 +17,30 @@
 
 use asset_common::CallingInfo;
 use asset_crypto_manager::{
-    crypto::Crypto,
-    db_key_operator::{generate_secret_key_if_needed, get_db_key_by_asset_map},
+    db_key_operator::get_db_key_by_asset_map,
 };
 use asset_db_operator::{
-    common::{OPTIONAL_ATTRS, add_calling_info, check_tag_validity, check_value_validity, into_db_map},
+    common::{check_tag_validity, check_value_validity, into_db_map},
     database::Database,
-    types::{DB_DATA_VERSION, DbMap, column},
+    types::{DbMap, column},
 };
 use asset_definition::{
-    macros_lib, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, LocalStatus, Result,
-    SyncStatus, SyncType, Tag, Value,
+    macros_lib, AssetMap, ErrCode, Result,
+    SyncStatus, Tag, Value,
 };
 use asset_log::logi;
-use asset_sdk::{WrapType, log_throw_error};
 use asset_utils::time;
 
-use crate::operations::common::{check_group_validity, check_tags_consistency, inform_asset_ext, update_cloud_sync_status};
+use crate::operations::common::check_tags_consistency;
 
 const OPTIONAL_ATTRS: [Tag; 3] = [Tag::RequireAttrEncrypted, Tag::GroupId, Tag::Alias];
 
+const MAX_ALIAS_SIZE: usize = 256;
+const MIN_ALIAS_SIZE: usize = 0;
+
 fn check_alias(alias: &Vec<u8>) -> Result<() >{
     if alias.len() > MAX_ALIAS_SIZE || alias.len() == MIN_ALIAS_SIZE {
-        return log_throw_error!(
+        return macros_lib::log_throw_error!(
             ErrCode::InvalidArgument, "[FATAL]The array length [{}] of alias exceeds the valid range.", alias.len()
         );
     }
@@ -65,7 +66,7 @@ fn loacl_batch_remove(attributes_array: &Vec<AssetMap>, calling_info: &CallingIn
 
     let db_key = get_db_key_by_asset_map(calling_info.user_id(), &attributes)?;
     let mut db = Database::build(calling_info, db_key)?;
-    let condition = into_db_map(&mut attributes)?;
+    let condition = into_db_map(&mut attributes);
     let mut update_datas = DbMap::new();
     let time = time::system_time_in_millis()?;
     update_datas.insert(column::UPDATE_TIME, Value::Bytes(time));

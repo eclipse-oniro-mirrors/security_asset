@@ -51,7 +51,7 @@ mod trace_scope;
 mod upgrade_operator;
 mod upgrade_ce;
 
-use sys_event::upload_system_event;
+use sys_event::{upload_system_event, upload_batch_system_event};
 use trace_scope::TraceScope;
 
 use crate::data_size_mod::handle_data_size_upload;

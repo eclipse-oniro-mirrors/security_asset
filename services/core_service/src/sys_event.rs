@@ -234,7 +234,7 @@ pub(crate) fn upload_batch_system_event<T: IsArray>(
     func_name: &str,
     attributes: &[AssetMap],
 ) -> Result<T> {
-   let mut ext_info = format!("count: {}," attributes.len());
+    let mut ext_info = format!("batch count: {}", attributes.len());
     match &result {
         Ok(val) => {
             if val.is_array() {

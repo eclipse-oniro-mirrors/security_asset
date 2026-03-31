@@ -25,16 +25,15 @@ use asset_db_operator::{
     types::{DB_DATA_VERSION, DbMap, column},
 };
 use asset_definition::{
-    Accessibility, AssetMap, AuthType, ErrCode, Result, Value,
+    Accessibility, AssetMap, AuthType, ErrCode, Result, Value, macros_lib
 };
-use asset_sdk::log_throw_error;
 use asset_utils::time;
 
-use crate::operations::common::{check_group_validity, inform_asset_ext, update_cloud_sync_status};
+use crate::operations::common::check_tags_consistency;
 
-extern "C" {
-    fn CheckSystemHapPermission() -> bool;
-}
+const OPTIONAL_ATTRS: [Tag; 6] = [
+    Tag::AuthType, Tag::Accessibility, Tag::RequireAttrEncrypted, Tag::GroupId, Tag::UserId, Tag::RequirePasswordSet
+];
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     db_data.insert(column::VERSION, Value::Number(DB_DATA_VERSION));
@@ -58,7 +57,7 @@ fn local_batch_add(
     let attributes = attributes_array[0];
     common::check_value_validity(&attributes)?;
     let mut db_map = into_db_map(&attributes);
-    // TODO:写一个add检验参数一致性函数
+    check_tags_consistency(&OPTIONAL_ATTRS, attributes_array)?;
     add_default_attrs(&mut db_map);
     add_system_attrs(&mut db_map)?;
     common::add_calling_info(calling_info, &mut db_map);
@@ -70,7 +69,7 @@ fn local_batch_add(
 
 pub(crate) fn batch_add(calling_info: &CallingInfo, attributes_array: &Vec<AssetMap>) -> Result<Vec<(u32, u32)>> {
     if attributes_array.is_empty() {
-        return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Batch Add argument empty.");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Batch Add argument empty.");
     }
     local_batch_add(calling_info, attributes_array)
 }

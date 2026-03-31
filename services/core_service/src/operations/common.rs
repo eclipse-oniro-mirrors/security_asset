@@ -23,6 +23,7 @@ use asset_plugin::asset_plugin::AssetPlugin;
 use asset_plugin_interface::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID, PARAM_NAME_OWNER_INFO,
 };
+use asset_sdk::DataType;
 
 pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
     if let Some(Value::Number(operation_type)) = input.get(&Tag::OperationType) {
@@ -152,10 +153,10 @@ pub(crate) fn check_tags_consistency(tags: &[Tag], attributes_array: &[AssetMap]
     let first = &attributes_array[0];
 
     for tag in tags {
-        let ref_value = first.get(tag).cloned().unwrap_or_else(get_default_value(tag));
+        let ref_value = first.get(tag).cloned().unwrap_or_else(|_| get_default_value(tag));
 
         for (idx, attrs) in attributes_array.iter().enumerate() {
-            let value = attrs.get(tag).cloned().unwrap_or_else(get_default_value(tag));
+            let value = attrs.get(tag).cloned().unwrap_or_else(|_| get_default_value(tag));
 
             if ref_value != value {
                 return macros_lib::log_throw_error!(

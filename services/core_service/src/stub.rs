@@ -113,7 +113,13 @@ fn on_app_request(code: IpcCode, process_info: &ProcessInfo, calling_info: &Call
     Ok(())
 }
 
-fn process_batch_data(stub: &AssetService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+fn process_batch_data(
+    stub: &AssetService,
+    code: u32,
+    data: &mut MsgParcel,
+    reply: &mut MsgParcel,
+    ipc_code: &IpcCode
+) -> IpcResult<()> {
     let attributes_array = deserialize_maps(data).map_err(asset_err_handle)?;
     if attributes_array.is_empty() {
         match ipc_code {
@@ -121,7 +127,6 @@ fn process_batch_data(stub: &AssetService, code: u32, data: &mut MsgParcel, repl
                 ErrCode::InvalidArgument,
                 "[FATAL]The array is empty.",
             ), reply),
-            _ => return reply_handle(Ok(()), reply),
         }
     }
     let map = attributes_array[0];
@@ -164,8 +169,9 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
     let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
     match ipc_code {
         IpcCode::BatchAdd | IpcCode::BatchInsert | IpcCode::BatchRemove | IpcCode::BatchUpdate => {
-            return process_batch_data(stub, code, data, reply);
-        }
+            return process_batch_data(stub, code, data, reply, &ipc_code);
+        },
+        _ => {}
     }
 
     let map = deserialize_map(data).map_err(asset_err_handle)?;

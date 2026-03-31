@@ -264,7 +264,7 @@ napi_value CreateJsBatchResult(const napi_env env, const std::vector<std::pair<u
         NAPI_CALL(env, napi_create_object(env, &napiErrInfo));
 
         napi_value napiIndex = nullptr;
-        NAAI_CALL(env, napi_create_uint32(env, blobs[i].second, &napiIndex));
+        NAPI_CALL(env, napi_create_uint32(env, blobs[i].second, &napiIndex));
         NAPI_CALL(env, napi_set_named_property(env, napiErrInfo, "index", napiIndex));
 
         napi_value napiErrCode = nullptr;
