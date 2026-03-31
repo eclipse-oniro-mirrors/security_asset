@@ -99,7 +99,7 @@ napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContex
 napi_status ParseAttrMapArray(napi_env env, napi_callback_info info, BaseContext *baseContext)
 {
     BatchOperationContext *context = static_cast<BatchOperationContext *>(baseContext);
-    napi_value argv[NORMAL_ARGS_NUM] = { 0 };
+    napi_value argv[MAX_ARGS_NUM] = { 0 };
     IF_ERR_RETURN(ParseJsArgs(env, info, argv, UPDATE_ARG_COUNT));
     size_t index = 0;
     IF_ERR_RETURN(ParseJsMapArray(env, argv[index++], context->attrsArray));
