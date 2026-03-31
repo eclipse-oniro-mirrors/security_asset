@@ -129,7 +129,7 @@ fn process_batch_data(
             _ => {return reply_handle(Ok(()), reply);}
         }
     }
-    let map = attributes_array[0];
+    let map = &attributes_array[0];
     let process_info = ProcessInfo::build(map.get(&Tag::GroupId), None, false).map_err(asset_err_handle)?;
     let calling_info = CallingInfo::build(map.get(&Tag::UserId).cloned(), &process_info);
     match ipc_code {
