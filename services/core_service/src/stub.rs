@@ -20,9 +20,13 @@ use asset_db_operator::database_file_upgrade::construct_splited_db_name;
 use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 
 use asset_ipc::{
-    deserialize_batch_result, deserialize_map, deserialize_maps, serialize_batch_result, serialize_maps,
+    deserialize_map, deserialize_maps, serialize_batch_result, serialize_maps,
     serialize_sync_result, IpcCode, IPC_SUCCESS, SA_NAME,
 };
+ use asset_sdk::{ 
+    macros_lib,
+    AssetError, ErrCode, Result, Tag, Value, 
+ };
 use asset_log::{loge, logi};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_plugin_interface::plugin_interface::{
@@ -109,6 +113,46 @@ fn on_app_request(code: IpcCode, process_info: &ProcessInfo, calling_info: &Call
     Ok(())
 }
 
+fn process_batch_data(stub: &AssetService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+    let attributes_array = deserialize_maps(data).map_err(asset_err_handle)?;
+    if attributes_array.is_empty() {
+        match ipc_code {
+            IpcCode::BatchUpdate => return reply_handle(macros_lib::log_throw_error!(
+                ErrCode::InvalidArgument,
+                "[FATAL]The array is empty.",
+            ), reply),
+            _ => return reply_handle(Ok(()), reply),
+        }
+    }
+    let map = attributes_array[0];
+    let process_info = ProcessInfo::build(map.get(&Tag::GroupId), None, false).map_err(asset_err_handle)?;
+    let calling_info = CallingInfo::build(map.get(&Tag::UserId).cloned(), &process_info);
+    match ipc_code {
+        IpcCode::BatchAdd => {
+            match stub.batch_add(&calling_info, &attributes_array) {
+                Ok(res) => {
+                    reply_handle(Ok(()), reply)?;
+                    return serialize_batch_result(&res, reply).map_err(asset_err_handle);
+                },
+                Err(e) => return reply_handle(Err(e), reply),
+            }
+        },
+        IpcCode::BatchRemove => {
+            return reply_handle(stub.batch_remove(&calling_info, &attributes_array), reply);
+        },
+        IpcCode::BatchUpdate => {
+            let attributes_to_update_array = deserialize_maps(data).map_err(asset_err_handle)?;
+            match stub.batch_update(&calling_info, &attributes_array, &attributes_to_update_array) {
+                Ok(res) => {
+                    reply_handle(Ok(()), reply)?;
+                    return serialize_batch_result(&res, reply).map_err(asset_err_handle);
+                },
+                Err(e) => return reply_handle(Err(e), reply),
+            }
+        }
+    }
+}
+
 fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
     match data.read_interface_token() {
         Ok(interface_token) if interface_token == stub.descriptor() => {},
@@ -118,44 +162,9 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
         },
     }
     let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
-    if ipc_code >= IpcCode::BatchAdd && ipc_code <= IpcCode::BatchUpdate {
-        let attributes_array = deserialize_maps(data).map_err(asset_err_handle)?;
-        if attributes_array.is_empty() {
-            match ipc_code {
-                IpcCode::BatchUpdate => return reply_handle(macros_lib::log_throw_error!(
-                    ErrCode::InvalidArgument,
-                    "[FATAL]The array is empty.",
-                ), reply),
-                _ => return reply_handle(Ok(()), reply),
-            }
-        }
-        let map = attributes_array[0];
-        let process_info = ProcessInfo::build(map.get(&Tag::GroupId), None, false).map_err(asset_err_handle)?;
-        let calling_info = CallingInfo::build(map.get(&Tag::UserId).cloned(), &process_info);
-        match ipc_code {
-            IpcCode::BatchAdd => {
-                match stub.batch_add(&calling_info, &attributes_array) {
-                    Ok(res) => {
-                        reply_handle(Ok(()), reply)?;
-                        return serialize_batch_result(&res, reply).map_err(asset_err_handle);
-                    },
-                    Err(e) => return reply_handle(Err(e), reply),
-                }
-            },
-            IpcCode::BatchRemove => {
-                return reply_handle(stub.batch_remove(&calling_info, &attributes_array), reply);
-            },
-            IpcCode::BatchUpdate => {
-                let attributes_to_update_array = deserialize_maps(data).map_err(asset_err_handle)?;
-                match stub.batch_update(&calling_info, &attributes_array, &attributes_to_update_array) {
-                    Ok(res) => {
-                        reply_handle(Ok(()), reply)?;
-                        return serialize_batch_result(&res, reply).map_err(asset_err_handle);
-                    },
-                    Err(e) => return reply_handle(Err(e), reply),
-                }
-            },
-
+    match ipc_code {
+        IpcCode::BatchAdd | IpcCode::BatchInsert | IpcCode::BatchRemove | IpcCode::BatchUpdate => {
+            return process_batch_data(stub, code, data, reply);
         }
     }
 

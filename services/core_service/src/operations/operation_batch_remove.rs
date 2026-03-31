@@ -21,7 +21,7 @@ use asset_crypto_manager::{
     db_key_operator::{generate_secret_key_if_needed, get_db_key_by_asset_map},
 };
 use asset_db_operator::{
-    common::{self, add_calling_info},
+    common::{OPTIONAL_ATTRS, add_calling_info, check_tag_validity, check_value_validity, into_db_map},
     database::Database,
     types::{DB_DATA_VERSION, DbMap, column},
 };
@@ -29,31 +29,56 @@ use asset_definition::{
     macros_lib, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, LocalStatus, Result,
     SyncStatus, SyncType, Tag, Value,
 };
-use asset_log::logw;
+use asset_log::logi;
 use asset_sdk::{WrapType, log_throw_error};
 use asset_utils::time;
 
-use crate::operations::common::{check_group_validity, inform_asset_ext, update_cloud_sync_status};
+use crate::operations::common::{check_group_validity, check_tags_consistency, inform_asset_ext, update_cloud_sync_status};
 
-fn batch_remove_inner(&self, attributes_array: &Vec<AssetMap>, calling_info: &CallingInfo) -> Result<i32> {
-    let attributes = attributes_array[0];
-    check // 把不要的都剔除了
+const OPTIONAL_ATTRS: [Tag; 3] = [Tag::RequireAttrEncrypted, Tag::GroupId, Tag::Alias];
+
+fn check_alias(alias: &Vec<u8>) -> Result<() >{
+    if alias.len() > MAX_ALIAS_SIZE || alias.len() == MIN_ALIAS_SIZE {
+        return log_throw_error!(
+            ErrCode::InvalidArgument, "[FATAL]The array length [{}] of alias exceeds the valid range.", alias.len()
+        );
+    }
+    Ok(())
+}
+
+fn check_and_get_aliases(attributes_array: &Vec<AssetMap>) -> Result<Vec<Vec<u8>>> {
+    check_tags_consistency(&OPTIONAL_ATTRS, attributes_array)?;
+    let mut aliases = Vec::new();
+    for attrs in attributes_array {
+        check_tag_validity(attrs, &OPTIONAL_ATTRS)?;
+        check_value_validity(attrs)?;
+        let alias = attrs.get_bytes_attr(&Tag::Alias)?;
+        check_alias(alias)?;
+        aliases.push(alias.clone());
+    }
+    Ok(aliases)
+}
+
+fn loacl_batch_remove(attributes_array: &Vec<AssetMap>, calling_info: &CallingInfo) -> Result<()> {
+    let mut attributes = attributes_array[0];
+    let aliases = check_and_get_aliases(attributes_array)?; 
 
     let db_key = get_db_key_by_asset_map(calling_info.user_id(), &attributes)?;
     let mut db = Database::build(calling_info, db_key)?;
-    let condition = convert_db_map(attributes)?;
+    let condition = into_db_map(&mut attributes)?;
     let mut update_datas = DbMap::new();
     let time = time::system_time_in_millis()?;
     update_datas.insert(column::UPDATE_TIME, Value::Bytes(time));
     update_datas.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
-    let total_removed_count: i32 = db.delete_batch_datas(&condition, &update_datas, aliases)?;
+
+    let total_removed_count: i32 = db.delete_batch_datas(&condition, &update_datas, &aliases)?;
     logi!("total removed count = {}", total_removed_count);
-    Ok(total_removed_count)
+    Ok(())
 }
 
 pub(crate) fn batch_remove(calling_info: &CallingInfo, attributes_array: &Vec<AssetMap>) -> Result<()> {
     if attributes_array.is_empty() {
         return Ok(());
     }
-    Ok(())
+    loacl_batch_remove(attributes_array, calling_info)
 }

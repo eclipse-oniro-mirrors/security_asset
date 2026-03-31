@@ -30,6 +30,7 @@ pub const IPC_SUCCESS: u32 = 0;
 
 const MAX_MAP_CAPACITY: u32 = 64;
 const MAX_VEC_CAPACITY: u32 = 0x10000;
+const MAX_ATTR_ARRAY_CAPACITY: u32 = 100;
 
 macros_lib::impl_enum_trait! {
     /// Code used to identify the function to be called.

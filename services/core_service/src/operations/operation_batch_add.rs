@@ -17,8 +17,7 @@
 
 use asset_common::CallingInfo;
 use asset_crypto_manager::{
-    crypto::Crypto,
-    db_key_operator::{generate_secret_key_if_needed, get_db_key_by_asset_map},
+    db_key_operator::get_db_key_by_asset_map,
 };
 use asset_db_operator::{
     common::{self, into_db_map},
@@ -26,11 +25,9 @@ use asset_db_operator::{
     types::{DB_DATA_VERSION, DbMap, column},
 };
 use asset_definition::{
-    macros_lib, Accessibility, AssetMap, AuthType, ConflictResolution, ErrCode, Extension, LocalStatus, Result,
-    SyncStatus, SyncType, Tag, Value,
+    Accessibility, AssetMap, AuthType, ErrCode, Result, Value,
 };
-use asset_log::logw;
-use asset_sdk::{WrapType, log_throw_error};
+use asset_sdk::log_throw_error;
 use asset_utils::time;
 
 use crate::operations::common::{check_group_validity, inform_asset_ext, update_cloud_sync_status};
@@ -60,14 +57,15 @@ fn local_batch_add(
 ) -> Result<Vec<(u32, u32)>> {
     let attributes = attributes_array[0];
     common::check_value_validity(&attributes)?;
-    let db_map = into_db_map(&attributes)?;
-    add_default_attrs(db_map);
-    add_system_attrs(db_map)?;
-    common::add_calling_info(calling_info, db_map);
+    let mut db_map = into_db_map(&attributes);
+    // TODO:写一个add检验参数一致性函数
+    add_default_attrs(&mut db_map);
+    add_system_attrs(&mut db_map)?;
+    common::add_calling_info(calling_info, &mut db_map);
     common::check_system_permission(&attributes)?;
     let db_key = get_db_key_by_asset_map(calling_info.user_id(), &attributes)?;
     let mut db = Database::build(calling_info, db_key)?;
-    db.insert_batch_datas(db_map, attributes_array, &calling_info)
+    db.insert_batch_datas(&mut db_map, attributes_array, &calling_info, true)
 }
 
 pub(crate) fn batch_add(calling_info: &CallingInfo, attributes_array: &Vec<AssetMap>) -> Result<Vec<(u32, u32)>> {

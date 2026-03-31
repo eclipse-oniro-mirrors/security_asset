@@ -50,8 +50,9 @@ napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *con
     return napi_ok;
 }
 
-napi_status ParseAttrMapArray(napi_env env, napi_callback_info info, BaseContext *context)
+napi_status ParseAttrMapArray(napi_env env, napi_callback_info info, BaseContext *baseContext)
 {
+    BatchOperationContext *context = static_cast<BatchOperationContext *>(baseContext);
     napi_value argv[NORMAL_ARGS_NUM] = { 0 };
     IF_ERR_RETURN(ParseJsArgs(env, info, argv, REMOVE_ARG_COUNT));
     IF_ERR_RETURN(ParseJsMapArray(env, argv[0], context->attrsArray));
@@ -128,10 +129,10 @@ napi_value NapiBatchRemove(const napi_env env, napi_callback_info info)
         }
         BatchOperationContext *context = static_cast<BatchOperationContext *>(data);
         if (context->attrs.empty()) {
-            context->result = AssetBatchRemove(nullptr);
+            context->result = SEC_ASSET_SUCCESS;
             return;
         }
-        context->result = AssetBatchRemove(&context->attrsArray[0]);
+        context->result = AssetBatchRemove(context->attrsArray);
     };
 
     context->resolve = [](napi_env env, BaseContext *context) -> napi_value {

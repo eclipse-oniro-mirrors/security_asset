@@ -28,7 +28,7 @@ int32_t asset_batch_remove(std::vector<std::vector<AssetAttr>> *attributes_array
 
 int32_t asset_batch_update(std::vector<std::vector<AssetAttr>> *attributes_array,
     std::vector<std::vector<AssetAttr>> *attributes_to_update_array,
-    std::vector<std::pair<uint32_t, uint32_t>> *err_info)
+    std::vector<std::pair<uint32_t, uint32_t>> *err_info);
 };
 
 int32_t AssetBatchAdd(std::vector<std::vector<AssetAttr>> &attrsArray,

@@ -48,7 +48,7 @@ fn check_tag_validity_with_invalid_tags(attrs: &AssetMap, valid_tags: &[Tag], in
     Ok(())
 }
 
-fn check_array_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
+fn check_array_arguments(attributes: &AssetMap, calling_info: &CallingInfo, is_merged: bool) -> Result<()> {
     check_required_tags(attributes, &REQUIRED_ATTRS)?;
     let mut valid_tags = CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&NORMAL_LABEL_ATTRS);
@@ -56,7 +56,9 @@ fn check_array_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> R
     valid_tags.extend_from_slice(&ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
-    check_tag_validity_with_invalid_tags(attributes, &valid_tags, &INVALID_TAGS)?;
+    if !is_merged {
+        check_tag_validity_with_invalid_tags(attributes, &valid_tags, &INVALID_TAGS)?;
+    }
     check_value_validity(attributes)?;
     check_accessibility_validity(attributes, calling_info)?;
     check_sync_permission(attributes, calling_info)?;
@@ -115,9 +117,10 @@ pub(crate) fn add_not_null_column(column_names: &mut HashSet<String>) {
 pub(crate) fn parse_attr_in_array(
     attributes: &AssetMap,
     calling_info: &CallingInfo,
-    column_names: &mut HashSet<String>
+    column_names: &mut HashSet<String>,
+    is_merged: bool
 ) -> Result<DbMap> {
-    check_array_arguments(attributes, calling_info)?;
+    check_array_arguments(attributes, calling_info, is_merged)?;
     let mut db_data = into_db_map_with_column_names(attributes, column_names);
     if let Some(group) = calling_info.group() {
         column_names.insert((&column::GROUP_ID).to_string());

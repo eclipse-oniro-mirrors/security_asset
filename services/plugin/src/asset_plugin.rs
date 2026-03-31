@@ -367,7 +367,7 @@ impl IAssetPluginCtx for AssetContext {
         let db_name = get_db_name(self.user_id, db_map, require_attr_encrypted)?;
         let db_key = get_db_key(self.user_id, require_attr_encrypted)?;
         let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key)?;
-        db.insert_batch_datas(db_map, attributes_array, &calling_info)
+        db.insert_batch_datas(db_map, attributes_array, &calling_info, false)
     }
 
     /// Update assets into db with attributes array.

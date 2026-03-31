@@ -253,8 +253,8 @@ napi_value CreateJsBatchResult(const napi_env env, const std::vector<std::pair<u
 
     // Create failedCount.
     napi_value napiFailedCount = nullptr;
-    NPAI_CALL(env, napi_creat_uint32(env, blobs.size(), &napiFailedCount));
-    NPAI_CALL(env, napi_set_named_property(env, napiObj, "failedCount", napiFailedCount));
+    NAPI_CALL(env, napi_create_uint32(env, blobs.size(), &napiFailedCount));
+    NAPI_CALL(env, napi_set_named_property(env, napiObj, "failedCount", napiFailedCount));
 
     // Create array of BatchErrorInfo.
     napi_value array = nullptr;
@@ -264,21 +264,22 @@ napi_value CreateJsBatchResult(const napi_env env, const std::vector<std::pair<u
         NAPI_CALL(env, napi_create_object(env, &napiErrInfo));
 
         napi_value napiIndex = nullptr;
-        NPAI_CALL(env, napi_creat_uint32(env, blobs[i].second, &napiIndex));
-        NPAI_CALL(env, napi_set_named_property(env, napiErrInfo, "index", napiIndex));
+        NAAI_CALL(env, napi_create_uint32(env, blobs[i].second, &napiIndex));
+        NAPI_CALL(env, napi_set_named_property(env, napiErrInfo, "index", napiIndex));
 
         napi_value napiErrCode = nullptr;
-        NPAI_CALL(env, napi_creat_uint32(env, blobs[i].first, &napiErrCode));
-        NPAI_CALL(env, napi_set_named_property(env, napiErrInfo, "errCode", napiErrCode));
+        NAPI_CALL(env, napi_create_uint32(env, blobs[i].first, &napiErrCode));
+        NAPI_CALL(env, napi_set_named_property(env, napiErrInfo, "errCode", napiErrCode));
 
         auto it = ERR_MSGS.find(blobs[i].first);
         auto str = (it != ERR_MSGS.end()) ? it->second : "Batch Operation Failed.";
         napi_value napiMessage = NapiCreateString(env, strlen(str), str);
-        NPAI_CALL(env, napi_set_named_property(env, napiErrInfo, "message", napiMessage));
+        NAPI_CALL(env, napi_set_named_property(env, napiErrInfo, "message", napiMessage));
 
         NAPI_CALL(env, napi_set_element(env, array, i, napiErrInfo));
     }
-    NPAI_CALL(env, napi_set_named_property(env, napiObj, "failedErrorInfos", array));
+    NAPI_CALL(env, napi_set_named_property(env, napiObj, "failedErrorInfos", array));
+    return napiObj;
 }
 
 napi_status ParseJsUserId(const napi_env env, napi_value arg, std::vector<AssetAttr> &attrs)

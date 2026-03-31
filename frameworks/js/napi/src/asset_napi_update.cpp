@@ -96,13 +96,14 @@ napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContex
     return napi_ok;
 }
 
-napi_status ParseAttrMapArray(napi_env env, napi_callback_info info, BaseContext *context)
+napi_status ParseAttrMapArray(napi_env env, napi_callback_info info, BaseContext *baseContext)
 {
+    BatchOperationContext *context = static_cast<BatchOperationContext *>(baseContext);
     napi_value argv[NORMAL_ARGS_NUM] = { 0 };
     IF_ERR_RETURN(ParseJsArgs(env, info, argv, UPDATE_ARG_COUNT));
     size_t index = 0;
     IF_ERR_RETURN(ParseJsMapArray(env, argv[index++], context->attrsArray));
-    IF_ERR_RETURN(ParseJsMapArray(env, argv[index], context->attrsArray));
+    IF_ERR_RETURN(ParseJsMapArray(env, argv[index], context->attrToUpdateArray));
     return napi_ok;
 }
 } // anonymous namespace
@@ -161,16 +162,16 @@ napi_value NapiBatchUpdate(const napi_env env, napi_callback_info info)
             return;
         }
         BatchOperationContext *context = static_cast<BatchOperationContext *>(data);
-        if (context->attrsArray.empty()) {
-            context->result = AssetBatchUpdate(nullptr, context->attrsArray.size(), context->errInfoArray);
+        if (context->attrsArray.empty() || context->attrToUpdateArray.empty()) {
+            context->result = SEC_ASSET_INVALID_ARGUMENT;
             return;
         }
 
-        context->result = AssetBatchUpdate(&context->attrsArray[0], context->attrsArray.size(), context->errInfoArray);
+        context->result = AssetBatchUpdate(context->attrsArray, context->attrToUpdateArray, context->errInfoArray);
     };
 
-    context->resolve = [](napi_env env, BaseContext *context) -> napi_value {
-        BatchOperationContext *context = static_cast<BatchOperationContext *>(data);
+    context->resolve = [](napi_env env, BaseContext *baseContext) -> napi_value {
+        BatchOperationContext *context = static_cast<BatchOperationContext *>(baseContext);
         return CreateJsBatchResult(env, context->errInfoArray);
     };
 

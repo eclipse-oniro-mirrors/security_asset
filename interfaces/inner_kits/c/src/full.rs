@@ -118,12 +118,8 @@ pub extern "C" fn add_asset(attributes: *const AssetAttr, attr_cnt: u32) -> i32 
 #[no_mangle]
 pub extern "C" fn asset_batch_add(
     attributes_ptrs: &Vec<Vec<AssetAttr>>,
-    err_info: &mut Vec<(u32, i32)>,
+    err_info: &mut Vec<(u32, u32)>,
 ) -> i32 {
-    if attributes_ptrs.is_null() || err_info.is_null() {
-        return ErrCode::InvalidArgument as i32;
-    }
-
     let attributes_array = match into_batch_map(attributes_ptrs) {
         Some(array) => array,
         None => return ErrCode::InvalidArgument as i32,
@@ -134,8 +130,8 @@ pub extern "C" fn asset_batch_add(
         Err(e) => return map_err(e.code),
     };
 
-    let err_info = match manager.lock().unwrap().batch_add(&attributes_array) {
-        Ok(info) => info,
+    match manager.lock().unwrap().batch_add(&attributes_array) {
+        Ok(info) => *err_info = info,
         Err(e) => return e.code as i32,
     };
 
@@ -148,12 +144,8 @@ pub extern "C" fn asset_batch_add(
 pub extern "C" fn asset_batch_update(
     attributes_ptrs: &Vec<Vec<AssetAttr>>,
     attributes_to_update_ptrs: &Vec<Vec<AssetAttr>>,
-    err_info: &mut Vec<(u32, i32)>,
+    err_info: &mut Vec<(u32, u32)>,
 ) -> i32 {
-    if attributes_ptrs.is_null() || attributes_to_update_ptrs.is_null() || err_info.is_null() {
-        return ErrCode::InvalidArgument as i32;
-    }
-
     let attributes_array = match into_batch_map(attributes_ptrs) {
         Some(array) => array,
         None => return ErrCode::InvalidArgument as i32,
@@ -169,8 +161,8 @@ pub extern "C" fn asset_batch_update(
         Err(e) => return map_err(e.code),
     };
 
-    let err_info = match manager.lock().unwrap().batch_update(&attributes_array, &attributes_to_update_array) {
-        Ok(info) => info,
+    match manager.lock().unwrap().batch_update(&attributes_array, &attributes_to_update_array) {
+        Ok(info) => *err_info = info,
         Err(e) => return e.code as i32,
     };
 

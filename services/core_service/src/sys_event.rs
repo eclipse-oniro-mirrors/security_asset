@@ -227,6 +227,26 @@ pub(crate) fn upload_system_event<T: IsArray>(
     result
 }
 
+pub(crate) fn upload_batch_system_event<T: IsArray>(
+    result: Result<T>,
+    calling_info: &CallingInfo,
+    start_time: Instant,
+    func_name: &str,
+    attributes: &[AssetMap],
+) -> Result<T> {
+   let mut ext_info = format!("count: {}," attributes.len());
+    match &result {
+        Ok(val) => {
+            if val.is_array() {
+                ext_info.push_str(&format!("res count:{};", val.array_len()));
+            }
+            upload_statistic_system_event(calling_info, start_time, func_name, &ext_info)
+        },
+        Err(e) => upload_fault_system_event(calling_info, start_time, func_name, &ext_info, e),
+    }
+    result
+}
+
 /// upload data size
 pub(crate) fn upload_data_size(
     remain_partition_size: f64,

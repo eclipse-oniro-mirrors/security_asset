@@ -37,6 +37,7 @@ extern "C" {
 
 const LOAD_TIMEOUT_IN_SECONDS: i32 = 4;
 const SUCCESS: i32 = 0;
+const MAX_ARRAY_CAPACITY: usize = 100;
 static ASSET_PLUGIN_LOCK: Mutex<()> = Mutex::new(());
 
 fn load_asset_service() -> Result<RemoteObj> {

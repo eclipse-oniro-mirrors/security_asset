@@ -64,8 +64,9 @@ napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *con
     return napi_ok;
 }
 
-napi_status ParseAttrMapArray(napi_env env, napi_callback_info info, BaseContext *context)
+napi_status ParseAttrMapArray(napi_env env, napi_callback_info info, BaseContext *baseContext)
 {
+    BatchOperationContext *context = static_cast<BatchOperationContext *>(baseContext);
     napi_value argv[NORMAL_ARGS_NUM] = { 0 };
     IF_ERR_RETURN(ParseJsArgs(env, info, argv, ADD_ARG_COUNT));
     IF_ERR_RETURN(ParseJsMapArray(env, argv[0], context->attrsArray));
@@ -149,8 +150,8 @@ napi_value NapiBatchAdd(const napi_env env, napi_callback_info info)
         context->result = AssetBatchAdd(context->attrsArray, context->errInfoArray);
     };
 
-    context->resolve = [](napi_env env, BaseContext *context) -> napi_value {
-        BatchOperationContext *context = static_cast<BatchOperationContext *>(data);
+    context->resolve = [](napi_env env, BaseContext *baseContext) -> napi_value {
+        BatchOperationContext *context = static_cast<BatchOperationContext *>(baseContext);
         return CreateJsBatchResult(env, context->errInfoArray);
     };
 
