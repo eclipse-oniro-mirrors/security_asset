@@ -115,7 +115,6 @@ fn on_app_request(code: IpcCode, process_info: &ProcessInfo, calling_info: &Call
 
 fn process_batch_data(
     stub: &AssetService,
-    code: u32,
     data: &mut MsgParcel,
     reply: &mut MsgParcel,
     ipc_code: &IpcCode
@@ -123,10 +122,11 @@ fn process_batch_data(
     let attributes_array = deserialize_maps(data).map_err(asset_err_handle)?;
     if attributes_array.is_empty() {
         match ipc_code {
-            IpcCode::BatchUpdate => return reply_handle(macros_lib::log_throw_error!(
+            IpcCode::BatchUpdate | IpcCode::BatchAdd => return reply_handle(macros_lib::log_throw_error!(
                 ErrCode::InvalidArgument,
                 "[FATAL]The array is empty.",
             ), reply),
+            _ => {return reply_handle(Ok(()), reply);}
         }
     }
     let map = attributes_array[0];
@@ -137,24 +137,25 @@ fn process_batch_data(
             match stub.batch_add(&calling_info, &attributes_array) {
                 Ok(res) => {
                     reply_handle(Ok(()), reply)?;
-                    return serialize_batch_result(&res, reply).map_err(asset_err_handle);
+                    serialize_batch_result(&res, reply).map_err(asset_err_handle)
                 },
-                Err(e) => return reply_handle(Err(e), reply),
+                Err(e) => reply_handle(Err(e), reply),
             }
         },
         IpcCode::BatchRemove => {
-            return reply_handle(stub.batch_remove(&calling_info, &attributes_array), reply);
+            reply_handle(stub.batch_remove(&calling_info, &attributes_array), reply)
         },
         IpcCode::BatchUpdate => {
             let attributes_to_update_array = deserialize_maps(data).map_err(asset_err_handle)?;
             match stub.batch_update(&calling_info, &attributes_array, &attributes_to_update_array) {
                 Ok(res) => {
                     reply_handle(Ok(()), reply)?;
-                    return serialize_batch_result(&res, reply).map_err(asset_err_handle);
+                    serialize_batch_result(&res, reply).map_err(asset_err_handle)
                 },
-                Err(e) => return reply_handle(Err(e), reply),
+                Err(e) => reply_handle(Err(e), reply),
             }
-        }
+        },
+        _ => {reply_handle(Ok(()), reply)}
     }
 }
 
@@ -168,8 +169,8 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
     }
     let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
     match ipc_code {
-        IpcCode::BatchAdd | IpcCode::BatchInsert | IpcCode::BatchRemove | IpcCode::BatchUpdate => {
-            return process_batch_data(stub, code, data, reply, &ipc_code);
+        IpcCode::BatchAdd | IpcCode::BatchRemove | IpcCode::BatchUpdate => {
+            return process_batch_data(stub, data, reply, &ipc_code);
         },
         _ => {}
     }
@@ -211,6 +212,7 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
             },
             Err(e) => reply_handle(Err(e), reply),
         },
+        _ => {reply_handle(Ok(()), reply)}
     }
 }
 

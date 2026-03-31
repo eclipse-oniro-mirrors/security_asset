@@ -16,23 +16,24 @@
 //! This module is used to insert batch Asset with a series of specified aliases.
 
 use asset_common::CallingInfo;
-use asset_crypto_manager::{
-    db_key_operator::get_db_key_by_asset_map,
-};
+use asset_crypto_manager::db_key_operator::get_db_key_by_asset_map;
 use asset_db_operator::{
     common::{
         ACCESS_CONTROL_ATTRS, ASSET_SYNC_ATTRS, CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS, NORMAL_LOCAL_LABEL_ATTRS,
         check_required_tags, check_tag_validity, check_value_validity, into_db_map
     },
-    database::Database,
+    database::Database, types::{DbMap, column},
 };
 use asset_definition::{
     macros_lib, AssetMap, ErrCode, Result, Tag,
 };
-use asset_utils::time;
+use asset_sdk::Value;
+
+use crate::operations::common::check_tags_consistency;
 
 const QUERY_VALID_ATTRS: [Tag; 1] = [Tag::Alias];
 const UPDATE_OPTIONAL_ATTRS: [Tag; 1] = [Tag::Secret];
+const CONSISTENCY_ATTRS: [Tag; 3] = [Tag::RequireAttrEncrypted, Tag::GroupId, Tag::UserId];
 
 fn check_attrs_array(attributes_array: &[AssetMap]) -> Result<()> {
     for attrs in attributes_array {
@@ -49,8 +50,10 @@ fn check_attrs_array(attributes_array: &[AssetMap]) -> Result<()> {
 
 fn check_update_array(attributes_array: &[AssetMap]) -> Result<()> {
     for attrs in attributes_array {
-        if attrs.empty() {
-            return log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The data to update contains empty attributes.");
+        if attrs.is_empty() {
+            return macros_lib::log_throw_error!(
+                ErrCode::InvalidArgument, "[FATAL]The data to update contains empty attributes."
+            );
         }
         let mut valid_tags = NORMAL_LABEL_ATTRS.to_vec();
         valid_tags.extend_from_slice(&NORMAL_LOCAL_LABEL_ATTRS);
@@ -62,18 +65,26 @@ fn check_update_array(attributes_array: &[AssetMap]) -> Result<()> {
     Ok(())
 }
 
+fn add_default_attrs(db_data: &mut DbMap, calling_info: &CallingInfo) {
+    db_data.entry(column::OWNER).or_insert(Value::Bytes(calling_info.owner_info().clone()));
+    db_data.entry(column::OWNER_TYPE).or_insert(Value::Number(calling_info.owner_type()));
+}
+
+
 fn local_batch_update(
     calling_info: &CallingInfo,
     attributes_array: &[AssetMap],
     attributes_to_update_array: &[AssetMap]
 ) -> Result<Vec<(u32, u32)>> {
-    let attributes = attributes_array[0];
-    let mut db_map = into_db_map(&attributes);
+    let attributes = &attributes_array[0];
+    let mut db_map = into_db_map(attributes);
     check_attrs_array(attributes_array)?;
     check_update_array(attributes_to_update_array)?;
-    let db_key = get_db_key_by_asset_map(calling_info.user_id(), &attributes)?;
+    add_default_attrs(&mut db_map, calling_info);
+    check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array)?;
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes)?;
     let mut db = Database::build(calling_info, db_key)?;
-    db.update_batch_datas(&mut db_map, attributes_array, attributes_to_update_array, &calling_info)
+    db.update_batch_datas(&db_map, attributes_array, attributes_to_update_array, calling_info)
 }
 
 pub(crate) fn batch_update(

@@ -139,7 +139,7 @@ pub extern "C" fn asset_batch_add(
 }
 
 
-/// Function called from C programming language to Rust programming language for batch inserting Assets.
+/// Function called from C programming language to Rust programming language for batch updating Assets.
 #[no_mangle]
 pub extern "C" fn asset_batch_update(
     attributes_ptrs: &Vec<Vec<AssetAttr>>,

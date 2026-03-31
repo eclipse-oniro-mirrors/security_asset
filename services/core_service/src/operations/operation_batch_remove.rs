@@ -16,9 +16,7 @@
 //! This module is used to insert batch Asset with a series of specified aliases.
 
 use asset_common::CallingInfo;
-use asset_crypto_manager::{
-    db_key_operator::get_db_key_by_asset_map,
-};
+use asset_crypto_manager::db_key_operator::get_db_key_by_asset_map;
 use asset_db_operator::{
     common::{check_tag_validity, check_value_validity, into_db_map},
     database::Database,
@@ -29,11 +27,15 @@ use asset_definition::{
     SyncStatus, Tag, Value,
 };
 use asset_log::logi;
+use asset_sdk::Extension;
 use asset_utils::time;
 
 use crate::operations::common::check_tags_consistency;
 
 const OPTIONAL_ATTRS: [Tag; 3] = [Tag::RequireAttrEncrypted, Tag::GroupId, Tag::Alias];
+const CONSISTENCY_ATTRS: [Tag; 3] = [
+    Tag::RequireAttrEncrypted, Tag::GroupId, Tag::UserId
+];
 
 const MAX_ALIAS_SIZE: usize = 256;
 const MIN_ALIAS_SIZE: usize = 0;
@@ -48,7 +50,7 @@ fn check_alias(alias: &Vec<u8>) -> Result<() >{
 }
 
 fn check_and_get_aliases(attributes_array: &Vec<AssetMap>) -> Result<Vec<Vec<u8>>> {
-    check_tags_consistency(&OPTIONAL_ATTRS, attributes_array)?;
+    check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array)?;
     let mut aliases = Vec::new();
     for attrs in attributes_array {
         check_tag_validity(attrs, &OPTIONAL_ATTRS)?;
@@ -61,12 +63,12 @@ fn check_and_get_aliases(attributes_array: &Vec<AssetMap>) -> Result<Vec<Vec<u8>
 }
 
 fn loacl_batch_remove(attributes_array: &Vec<AssetMap>, calling_info: &CallingInfo) -> Result<()> {
-    let mut attributes = attributes_array[0];
+    let attributes = &attributes_array[0];
     let aliases = check_and_get_aliases(attributes_array)?; 
 
-    let db_key = get_db_key_by_asset_map(calling_info.user_id(), &attributes)?;
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes)?;
     let mut db = Database::build(calling_info, db_key)?;
-    let condition = into_db_map(&mut attributes);
+    let condition = into_db_map(attributes);
     let mut update_datas = DbMap::new();
     let time = time::system_time_in_millis()?;
     update_datas.insert(column::UPDATE_TIME, Value::Bytes(time));
