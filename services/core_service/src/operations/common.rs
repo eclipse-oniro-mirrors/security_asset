@@ -160,7 +160,7 @@ pub(crate) fn check_tags_consistency(tags: &[Tag], attributes_array: &[AssetMap]
 
             if ref_value != value {
                 return macros_lib::log_throw_error!(
-                    ErrCode::InvalidArgument,
+                    ErrCode::ArrayInconsistent,
                     "[FATAL][OPERATIONS]Tag {:?} at index {} has inconsistent value",
                     tag, idx
                 );
