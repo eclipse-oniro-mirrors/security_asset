@@ -61,6 +61,34 @@ impl Manager {
         )
     }
 
+    /// Add batch assets.
+    pub fn batch_add(&mut self, _attributes_array: &Vec<AssetMap>) -> Result<Vec<(u32, u32)>> {
+        macros_lib::log_throw_error!(
+            ErrCode::Unsupported,
+            "[FATAL][RUST SDK]Asset service is not supported in empty mode"
+        )
+    }
+
+    /// Remove batch assets.
+    pub fn batch_remove(&mut self, _attributes_array: &Vec<AssetMap>) -> Result<()> {
+        macros_lib::log_throw_error!(
+            ErrCode::Unsupported,
+            "[FATAL][RUST SDK]Asset service is not supported in empty mode"
+        )
+    }
+
+    /// Update batch assets.
+    pub fn batch_update(
+        &mut self,
+        _attributes_array: &Vec<AssetMap>,
+        _attributes_to_update_array: &Vec<AssetMap>
+    ) -> Result<Vec<(u32, u32)>> {
+        macros_lib::log_throw_error!(
+            ErrCode::Unsupported,
+            "[FATAL][RUST SDK]Asset service is not supported in empty mode"
+        )
+    }
+
     /// Preprocessing for querying one or more Assets that require user authentication.
     pub fn pre_query(&mut self, _query: &AssetMap) -> Result<Vec<u8>> {
         macros_lib::log_throw_error!(
