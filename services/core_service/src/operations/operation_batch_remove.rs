@@ -18,7 +18,7 @@
 use asset_common::CallingInfo;
 use asset_crypto_manager::db_key_operator::get_db_key_by_asset_map;
 use asset_db_operator::{
-    common::{check_tag_validity, check_value_validity, into_db_map},
+    common::{check_tag_validity, check_value_validity, add_calling_info},
     database::Database,
     types::{DbMap, column},
 };
@@ -64,11 +64,12 @@ fn check_and_get_aliases(attributes_array: &Vec<AssetMap>) -> Result<Vec<Vec<u8>
 
 fn loacl_batch_remove(attributes_array: &Vec<AssetMap>, calling_info: &CallingInfo) -> Result<()> {
     let attributes = &attributes_array[0];
-    let aliases = check_and_get_aliases(attributes_array)?; 
+    let aliases = check_and_get_aliases(attributes_array)?;
 
     let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes)?;
     let mut db = Database::build(calling_info, db_key)?;
-    let condition = into_db_map(attributes);
+    let mut condition = DbMap::new();
+    add_calling_info(calling_info, &mut condition);
     let mut update_datas = DbMap::new();
     let time = time::system_time_in_millis()?;
     update_datas.insert(column::UPDATE_TIME, Value::Bytes(time));

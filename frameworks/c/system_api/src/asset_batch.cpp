@@ -20,26 +20,63 @@
 
 #include <vector>
 
+struct CArray {
+    const AssetAttr *data;
+    size_t len;
+};
+
+struct C2DArray {
+    const CArray *data;
+    size_t len;
+};
+
+struct MutPairVec {
+    std::pair<uint32_t, uint32_t> *data;
+    size_t len;
+};
+
 extern "C" {
-int32_t asset_batch_add(std::vector<std::vector<AssetAttr>> &attributes_array,
-    std::vector<std::pair<uint32_t, uint32_t>> &err_info);
+int32_t asset_batch_add(C2DArray &arr, MutPairVec &err_info);
 
-int32_t asset_batch_remove(std::vector<std::vector<AssetAttr>> &attributes_array);
+int32_t asset_batch_remove(C2DArray &arr);
 
-int32_t asset_batch_update(std::vector<std::vector<AssetAttr>> &attributes_array,
-    std::vector<std::vector<AssetAttr>> &attributes_to_update_array,
-    std::vector<std::pair<uint32_t, uint32_t>> &err_info);
+int32_t asset_batch_update(C2DArray &arr, C2DArray &arr_to_update, MutPairVec &err_info);
 };
 
 int32_t AssetBatchAdd(std::vector<std::vector<AssetAttr>> &attrsArray,
     std::vector<std::pair<uint32_t, uint32_t>> &errInfoArray)
 {
-    return asset_batch_add(attrsArray, errInfoArray);
+    std::vector<CArray> cArrys;
+    for (const auto &inner : attrsArray) {
+        cArrys.push_back({
+            inner.data(),
+            inner.size()
+        });
+    }
+    C2DArray arr {
+        cArrys.data(),
+        cArrys.size()
+    };
+    MutPairVec outVec;
+    int32_t ret = asset_batch_add(arr, outVec);
+    errInfoArray = std::vector<std::pair<uint32_t, uint32_t>>(outVec.data, outVec.data + outVec.len);
+    return ret;
 }
 
 int32_t AssetBatchRemove(std::vector<std::vector<AssetAttr>> &attrsArray)
 {
-    return asset_batch_remove(attrsArray);
+    std::vector<CArray> cArrys;
+    for (const auto &inner : attrsArray) {
+        cArrys.push_back({
+            inner.data(),
+            inner.size()
+        });
+    }
+    C2DArray arr {
+        cArrys.data(),
+        cArrys.size()
+    };
+    return asset_batch_remove(arr);
 }
 
 int32_t AssetBatchUpdate(std::vector<std::vector<AssetAttr>> &attrsArray,
@@ -49,5 +86,31 @@ int32_t AssetBatchUpdate(std::vector<std::vector<AssetAttr>> &attrsArray,
     if (attrsArray.empty() || attrsToUpdateArray.empty()) {
         return SEC_ASSET_INVALID_ARGUMENT;
     }
-    return asset_batch_update(attrsArray, attrsToUpdateArray, errInfoArray);
+    std::vector<CArray> cArrys;
+    for (const auto &inner : attrsArray) {
+        cArrys.push_back({
+            inner.data(),
+            inner.size()
+        });
+    }
+    C2DArray arr {
+        cArrys.data(),
+        cArrys.size()
+    };
+
+    std::vector<CArray> cArrysUpdate;
+    for (const auto &inner : attrsArray) {
+        cArrysUpdate.push_back({
+            inner.data(),
+            inner.size()
+        });
+    }
+    C2DArray arrToUpdate {
+        cArrysUpdate.data(),
+        cArrysUpdate.size()
+    };
+    MutPairVec outVec;
+    int32_t ret = asset_batch_update(arr, arrToUpdate, outVec);
+    errInfoArray = std::vector<std::pair<uint32_t, uint32_t>>(outVec.data, outVec.data + outVec.len);
+    return ret;
 }

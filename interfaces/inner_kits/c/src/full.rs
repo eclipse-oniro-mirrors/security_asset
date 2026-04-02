@@ -19,7 +19,7 @@ use core::ffi::c_void;
 use std::{
     convert::TryFrom,
     mem::size_of,
-    ptr::{copy_nonoverlapping, null_mut},
+    ptr::{copy_nonoverlapping, null_mut, slice_from_raw_parts},
     result::Result,
     slice,
 };
@@ -117,10 +117,19 @@ pub extern "C" fn add_asset(attributes: *const AssetAttr, attr_cnt: u32) -> i32 
 /// Function called from C programming language to Rust programming language for batch inserting Assets.
 #[no_mangle]
 pub extern "C" fn asset_batch_add(
-    attributes_ptrs: &Vec<Vec<AssetAttr>>,
-    err_info: &mut Vec<(u32, u32)>,
+    c_array: &C2DArray,
+    err_info: &mut MutPairVec,
 ) -> i32 {
-    let attributes_array = match into_batch_map(attributes_ptrs) {
+    let array = unsafe {
+        let outer = slice_from_raw_parts(c_array.items, c_array.len);
+        let mut vec2d = Vec::with_capacity(c_array.len);
+        for ca in outer {
+            let inner = slice_from_raw_parts(ca.data, ca.len);
+            vec2d.push(inner.to_vec());
+        }
+        vec2d
+    };
+    let attributes_array = match into_batch_map(&array) {
         Some(array) => array,
         None => return ErrCode::InvalidArgument as i32,
     };
@@ -130,10 +139,13 @@ pub extern "C" fn asset_batch_add(
         Err(e) => return map_err(e.code),
     };
 
-    match manager.lock().unwrap().batch_add(&attributes_array) {
-        Ok(info) => *err_info = info,
+    let mut vec = match manager.lock().unwrap().batch_add(&attributes_array) {
+        Ok(info) => info,
         Err(e) => return e.code as i32,
     };
+    err_info.data = vec.as_mut_ptr();
+    err_info.len = vec.len();
+    std::mem::forget(vec);
 
     RESULT_CODE_SUCCESS
 }
@@ -142,16 +154,35 @@ pub extern "C" fn asset_batch_add(
 /// Function called from C programming language to Rust programming language for batch updating Assets.
 #[no_mangle]
 pub extern "C" fn asset_batch_update(
-    attributes_ptrs: &Vec<Vec<AssetAttr>>,
-    attributes_to_update_ptrs: &Vec<Vec<AssetAttr>>,
-    err_info: &mut Vec<(u32, u32)>,
+    c_array: &C2DArray,
+    c_array_to_update: &C2DArray,
+    err_info: &mut MutPairVec,
 ) -> i32 {
-    let attributes_array = match into_batch_map(attributes_ptrs) {
+    let array = unsafe {
+        let outer = slice_from_raw_parts(c_array.items, c_array.len);
+        let mut vec2d = Vec::with_capacity(c_array.len);
+        for ca in outer {
+            let inner = slice_from_raw_parts(ca.data, ca.len);
+            vec2d.push(inner.to_vec());
+        }
+        vec2d
+    };
+    let attributes_array = match into_batch_map(&array) {
         Some(array) => array,
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let attributes_to_update_array = match into_batch_map(attributes_to_update_ptrs) {
+    let array_to_update = unsafe {
+        let outer = slice_from_raw_parts(c_array_to_update.items, c_array_to_update.len);
+        let mut vec2d = Vec::with_capacity(c_array_to_update.len);
+        for ca in outer {
+            let inner = slice_from_raw_parts(ca.data, ca.len);
+            vec2d.push(inner.to_vec());
+        }
+        vec2d
+    };
+
+    let attributes_to_update_array = match into_batch_map(&array_to_update) {
         Some(array) => array,
         None => return ErrCode::InvalidArgument as i32,
     };
@@ -161,10 +192,14 @@ pub extern "C" fn asset_batch_update(
         Err(e) => return map_err(e.code),
     };
 
-    match manager.lock().unwrap().batch_update(&attributes_array, &attributes_to_update_array) {
-        Ok(info) => *err_info = info,
+    let mut vec = match manager.lock().unwrap().batch_update(&attributes_array, &attributes_to_update_array) {
+        Ok(info) => info,
         Err(e) => return e.code as i32,
     };
+
+    err_info.data = vec.as_mut_ptr();
+    err_info.len = vec.len();
+    std::mem::forget(vec);
 
     RESULT_CODE_SUCCESS
 }
@@ -188,8 +223,17 @@ pub extern "C" fn remove_asset(query: *const AssetAttr, query_cnt: u32) -> i32 {
 
 /// Function called from C programming language to Rust programming language for batch removing Assets.
 #[no_mangle]
-pub extern "C" fn asset_batch_remove(attributes_ptrs: &Vec<Vec<AssetAttr>>) -> i32 {
-    let attributes_array = match into_batch_map(attributes_ptrs) {
+pub extern "C" fn asset_batch_remove(c_array: &C2DArray) -> i32 {
+    let array = unsafe {
+        let outer = slice_from_raw_parts(c_array.items, c_array.len);
+        let mut vec2d = Vec::with_capacity(c_array.len);
+        for ca in outer {
+            let inner = slice_from_raw_parts(ca.data, ca.len);
+            vec2d.push(inner.to_vec());
+        }
+        vec2d
+    };
+    let attributes_array = match into_batch_map(&array) {
         Some(array) => array,
         None => return ErrCode::InvalidArgument as i32,
     };

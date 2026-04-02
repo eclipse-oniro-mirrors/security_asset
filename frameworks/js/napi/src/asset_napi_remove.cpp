@@ -128,7 +128,7 @@ napi_value NapiBatchRemove(const napi_env env, napi_callback_info info)
             return;
         }
         BatchOperationContext *context = static_cast<BatchOperationContext *>(data);
-        if (context->attrs.empty()) {
+        if (context->attrsArray.empty()) {
             context->result = SEC_ASSET_SUCCESS;
             return;
         }
