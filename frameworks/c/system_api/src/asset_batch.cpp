@@ -21,25 +21,25 @@
 #include <vector>
 
 extern "C" {
-int32_t asset_batch_add(std::vector<std::vector<AssetAttr>> *attributes_array,
-    std::vector<std::pair<uint32_t, uint32_t>> *err_info);
+int32_t asset_batch_add(std::vector<std::vector<AssetAttr>> &attributes_array,
+    std::vector<std::pair<uint32_t, uint32_t>> &err_info);
 
-int32_t asset_batch_remove(std::vector<std::vector<AssetAttr>> *attributes_array);
+int32_t asset_batch_remove(std::vector<std::vector<AssetAttr>> &attributes_array);
 
-int32_t asset_batch_update(std::vector<std::vector<AssetAttr>> *attributes_array,
-    std::vector<std::vector<AssetAttr>> *attributes_to_update_array,
-    std::vector<std::pair<uint32_t, uint32_t>> *err_info);
+int32_t asset_batch_update(std::vector<std::vector<AssetAttr>> &attributes_array,
+    std::vector<std::vector<AssetAttr>> &attributes_to_update_array,
+    std::vector<std::pair<uint32_t, uint32_t>> &err_info);
 };
 
 int32_t AssetBatchAdd(std::vector<std::vector<AssetAttr>> &attrsArray,
     std::vector<std::pair<uint32_t, uint32_t>> &errInfoArray)
 {
-    return asset_batch_add(&attrsArray, &errInfoArray);
+    return asset_batch_add(attrsArray, errInfoArray);
 }
 
 int32_t AssetBatchRemove(std::vector<std::vector<AssetAttr>> &attrsArray)
 {
-    return asset_batch_remove(&attrsArray);
+    return asset_batch_remove(attrsArray);
 }
 
 int32_t AssetBatchUpdate(std::vector<std::vector<AssetAttr>> &attrsArray,
@@ -49,5 +49,5 @@ int32_t AssetBatchUpdate(std::vector<std::vector<AssetAttr>> &attrsArray,
     if (attrsArray.empty() || attrsToUpdateArray.empty()) {
         return SEC_ASSET_INVALID_ARGUMENT;
     }
-    return asset_batch_update(&attrsArray, &attrsToUpdateArray, &errInfoArray);
+    return asset_batch_update(attrsArray, attrsToUpdateArray, errInfoArray);
 }
