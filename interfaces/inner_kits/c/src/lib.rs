@@ -49,7 +49,7 @@ pub struct CArray {
 #[repr(C)]
 #[derive(Debug)]
 pub struct C2DArray {
-    /// Array of assets.
+    /// Arrays of assets.
     pub items: *const CArray,
     /// Size of arrays.
     pub len: usize,
@@ -59,9 +59,9 @@ pub struct C2DArray {
 #[repr(C)]
 #[derive(Debug)]
 pub struct MutPairVec {
-    /// Array of assets.
+    /// Data of MutPairVec.
     pub data: *mut (u32, u32),
-    /// Size of arrays.
+    /// Size of vector.
     pub len: usize,
 }
 

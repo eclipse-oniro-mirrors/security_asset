@@ -26,7 +26,7 @@ struct CArray {
 };
 
 struct C2DArray {
-    const CArray *data;
+    const CArray *items;
     size_t len;
 };
 
@@ -46,16 +46,16 @@ int32_t asset_batch_update(C2DArray &arr, C2DArray &arr_to_update, MutPairVec &e
 int32_t AssetBatchAdd(std::vector<std::vector<AssetAttr>> &attrsArray,
     std::vector<std::pair<uint32_t, uint32_t>> &errInfoArray)
 {
-    std::vector<CArray> cArrys;
+    std::vector<CArray> cArrays;
     for (const auto &inner : attrsArray) {
-        cArrys.push_back({
+        cArrays.push_back({
             inner.data(),
             inner.size()
         });
     }
     C2DArray arr {
-        cArrys.data(),
-        cArrys.size()
+        cArrays.data(),
+        cArrays.size()
     };
     MutPairVec outVec;
     int32_t ret = asset_batch_add(arr, outVec);
@@ -65,16 +65,16 @@ int32_t AssetBatchAdd(std::vector<std::vector<AssetAttr>> &attrsArray,
 
 int32_t AssetBatchRemove(std::vector<std::vector<AssetAttr>> &attrsArray)
 {
-    std::vector<CArray> cArrys;
+    std::vector<CArray> cArrays;
     for (const auto &inner : attrsArray) {
-        cArrys.push_back({
+        cArrays.push_back({
             inner.data(),
             inner.size()
         });
     }
     C2DArray arr {
-        cArrys.data(),
-        cArrys.size()
+        cArrays.data(),
+        cArrays.size()
     };
     return asset_batch_remove(arr);
 }
@@ -86,28 +86,28 @@ int32_t AssetBatchUpdate(std::vector<std::vector<AssetAttr>> &attrsArray,
     if (attrsArray.empty() || attrsToUpdateArray.empty()) {
         return SEC_ASSET_INVALID_ARGUMENT;
     }
-    std::vector<CArray> cArrys;
+    std::vector<CArray> cArrays;
     for (const auto &inner : attrsArray) {
-        cArrys.push_back({
+        cArrays.push_back({
             inner.data(),
             inner.size()
         });
     }
     C2DArray arr {
-        cArrys.data(),
-        cArrys.size()
+        cArrays.data(),
+        cArrays.size()
     };
 
-    std::vector<CArray> cArrysUpdate;
+    std::vector<CArray> cArraysUpdate;
     for (const auto &inner : attrsArray) {
-        cArrysUpdate.push_back({
+        cArraysUpdate.push_back({
             inner.data(),
             inner.size()
         });
     }
     C2DArray arrToUpdate {
-        cArrysUpdate.data(),
-        cArrysUpdate.size()
+        cArraysUpdate.data(),
+        cArraysUpdate.size()
     };
     MutPairVec outVec;
     int32_t ret = asset_batch_update(arr, arrToUpdate, outVec);

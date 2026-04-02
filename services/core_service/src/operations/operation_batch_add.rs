@@ -47,9 +47,9 @@ fn add_default_attrs(db_data: &mut DbMap) {
     db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::default() as u32));
     db_data.entry(column::REQUIRE_PASSWORD_SET).or_insert(Value::Bool(bool::default()));
     db_data.retain(|key, _| {
-        key == column::ACCESSIBILITY ||
-        key == column::AUTH_TYPE ||
-        key == column::REQUIRE_PASSWORD_SET
+        key == &column::ACCESSIBILITY ||
+        key == &column::AUTH_TYPE ||
+        key == &column::REQUIRE_PASSWORD_SET
     });
 }
 

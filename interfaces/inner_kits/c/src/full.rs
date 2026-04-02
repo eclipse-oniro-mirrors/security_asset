@@ -19,7 +19,7 @@ use core::ffi::c_void;
 use std::{
     convert::TryFrom,
     mem::size_of,
-    ptr::{copy_nonoverlapping, null_mut, slice_from_raw_parts},
+    ptr::{copy_nonoverlapping, null_mut},
     result::Result,
     slice,
 };
@@ -121,10 +121,10 @@ pub extern "C" fn asset_batch_add(
     err_info: &mut MutPairVec,
 ) -> i32 {
     let array = unsafe {
-        let outer = slice_from_raw_parts(c_array.items, c_array.len);
+        let outer = slice::from_raw_parts(c_array.items, c_array.len);
         let mut vec2d = Vec::with_capacity(c_array.len);
         for ca in outer {
-            let inner = slice_from_raw_parts(ca.data, ca.len);
+            let inner = slice::from_raw_parts(ca.data, ca.len);
             vec2d.push(inner.to_vec());
         }
         vec2d
@@ -159,10 +159,10 @@ pub extern "C" fn asset_batch_update(
     err_info: &mut MutPairVec,
 ) -> i32 {
     let array = unsafe {
-        let outer = slice_from_raw_parts(c_array.items, c_array.len);
+        let outer = slice::from_raw_parts(c_array.items, c_array.len);
         let mut vec2d = Vec::with_capacity(c_array.len);
         for ca in outer {
-            let inner = slice_from_raw_parts(ca.data, ca.len);
+            let inner = slice::from_raw_parts(ca.data, ca.len);
             vec2d.push(inner.to_vec());
         }
         vec2d
@@ -173,10 +173,10 @@ pub extern "C" fn asset_batch_update(
     };
 
     let array_to_update = unsafe {
-        let outer = slice_from_raw_parts(c_array_to_update.items, c_array_to_update.len);
+        let outer = slice::from_raw_parts(c_array_to_update.items, c_array_to_update.len);
         let mut vec2d = Vec::with_capacity(c_array_to_update.len);
         for ca in outer {
-            let inner = slice_from_raw_parts(ca.data, ca.len);
+            let inner = slice::from_raw_parts(ca.data, ca.len);
             vec2d.push(inner.to_vec());
         }
         vec2d
@@ -225,10 +225,10 @@ pub extern "C" fn remove_asset(query: *const AssetAttr, query_cnt: u32) -> i32 {
 #[no_mangle]
 pub extern "C" fn asset_batch_remove(c_array: &C2DArray) -> i32 {
     let array = unsafe {
-        let outer = slice_from_raw_parts(c_array.items, c_array.len);
+        let outer = slice::from_raw_parts(c_array.items, c_array.len);
         let mut vec2d = Vec::with_capacity(c_array.len);
         for ca in outer {
-            let inner = slice_from_raw_parts(ca.data, ca.len);
+            let inner = slice::from_raw_parts(ca.data, ca.len);
             vec2d.push(inner.to_vec());
         }
         vec2d
