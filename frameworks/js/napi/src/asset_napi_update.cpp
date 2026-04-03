@@ -95,6 +95,17 @@ napi_status ParseAttrMapAsUser(napi_env env, napi_callback_info info, BaseContex
     IF_ERR_RETURN(CheckUpdateArgs(env, context->attrs, context->updateAttrs));
     return napi_ok;
 }
+
+napi_status ParseAttrMapArray(napi_env env, napi_callback_info info, BaseContext *baseContext)
+{
+    BatchOperationContext *context = static_cast<BatchOperationContext *>(baseContext);
+    napi_value argv[MAX_ARGS_NUM] = { 0 };
+    IF_ERR_RETURN(ParseJsArgs(env, info, argv, UPDATE_ARG_COUNT));
+    size_t index = 0;
+    IF_ERR_RETURN(ParseJsMapArray(env, argv[index++], context->attrsArray));
+    IF_ERR_RETURN(ParseJsMapArray(env, argv[index], context->attrToUpdateArray));
+    return napi_ok;
+}
 } // anonymous namespace
 
 napi_value NapiUpdate(const napi_env env, napi_callback_info info, bool asUser, bool async)
@@ -137,6 +148,34 @@ napi_value NapiUpdateAsUser(const napi_env env, napi_callback_info info)
 napi_value NapiUpdateSync(const napi_env env, napi_callback_info info)
 {
     return NapiUpdate(env, info, false, false);
+}
+
+napi_value NapiBatchUpdate(const napi_env env, napi_callback_info info)
+{
+    auto context = std::unique_ptr<BatchOperationContext>(new (std::nothrow)BatchOperationContext());
+    NAPI_THROW(env, context == nullptr, SEC_ASSET_OUT_OF_MEMORY, "Unable to allocate memory for Context.");
+
+    context->parse = ParseAttrMapArray;
+    context->execute = [](napi_env env, void *data) {
+        if (data == nullptr) {
+            LOGE("data is nullptr.");
+            return;
+        }
+        BatchOperationContext *context = static_cast<BatchOperationContext *>(data);
+        if (context->attrsArray.empty() || context->attrToUpdateArray.empty()) {
+            context->result = SEC_ASSET_INVALID_ARGUMENT;
+            return;
+        }
+
+        context->result = AssetBatchUpdate(context->attrsArray, context->attrToUpdateArray, context->errInfoArray);
+    };
+
+    context->resolve = [](napi_env env, BaseContext *baseContext) -> napi_value {
+        BatchOperationContext *context = static_cast<BatchOperationContext *>(baseContext);
+        return CreateJsBatchResult(env, context->errInfoArray);
+    };
+
+    return CreateAsyncWork(env, info, std::move(context), __func__);
 }
 
 } // Asset

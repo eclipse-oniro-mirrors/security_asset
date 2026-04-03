@@ -77,6 +77,26 @@ fn into_map(attributes: *const AssetAttr, attr_cnt: u32) -> Option<AssetMap> {
     Some(map)
 }
 
+fn into_batch_map(
+    attributes_array: &Vec<Vec<AssetAttr>>,
+) -> Option<Vec<AssetMap>> {
+    if attributes_array.is_empty() {
+        return None;
+    }
+
+    let mut result = Vec::with_capacity(attributes_array.len());
+    
+    for attrs in attributes_array {
+        if attrs.is_empty() {
+            return None;
+        }
+        let map = into_map(attrs.as_ptr(), attrs.len() as u32)?;
+        result.push(map);
+    }
+    
+    Some(result)
+}
+
 /// Function called from C programming language to Rust programming language for adding Asset.
 #[no_mangle]
 pub extern "C" fn add_asset(attributes: *const AssetAttr, attr_cnt: u32) -> i32 {
@@ -90,12 +110,98 @@ pub extern "C" fn add_asset(attributes: *const AssetAttr, attr_cnt: u32) -> i32 
         Err(e) => return map_err(e.code),
     };
 
-    let ret = if let Err(e) = manager.lock().unwrap().add(&map) {
-        e.code as i32
-    } else {
-        RESULT_CODE_SUCCESS
-    };
+    let ret = if let Err(e) = manager.lock().unwrap().add(&map) { e.code as i32 } else { RESULT_CODE_SUCCESS };
     ret
+}
+
+/// Function called from C programming language to Rust programming language for batch inserting Assets.
+#[no_mangle]
+pub extern "C" fn asset_batch_add(
+    c_array: &C2DArray,
+    err_info: &mut MutPairVec,
+) -> i32 {
+    let array = unsafe {
+        let outer = slice::from_raw_parts(c_array.items, c_array.len);
+        let mut vec2d = Vec::with_capacity(c_array.len);
+        for ca in outer {
+            let inner = slice::from_raw_parts(ca.data, ca.len);
+            vec2d.push(inner.to_vec());
+        }
+        vec2d
+    };
+    let attributes_array = match into_batch_map(&array) {
+        Some(array) => array,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return map_err(e.code),
+    };
+
+    let mut vec = match manager.lock().unwrap().batch_add(&attributes_array) {
+        Ok(info) => info,
+        Err(e) => return e.code as i32,
+    };
+    err_info.data = vec.as_mut_ptr();
+    err_info.len = vec.len();
+    std::mem::forget(vec);
+
+    RESULT_CODE_SUCCESS
+}
+
+
+/// Function called from C programming language to Rust programming language for batch updating Assets.
+#[no_mangle]
+pub extern "C" fn asset_batch_update(
+    c_array: &C2DArray,
+    c_array_to_update: &C2DArray,
+    err_info: &mut MutPairVec,
+) -> i32 {
+    let array = unsafe {
+        let outer = slice::from_raw_parts(c_array.items, c_array.len);
+        let mut vec2d = Vec::with_capacity(c_array.len);
+        for ca in outer {
+            let inner = slice::from_raw_parts(ca.data, ca.len);
+            vec2d.push(inner.to_vec());
+        }
+        vec2d
+    };
+    let attributes_array = match into_batch_map(&array) {
+        Some(array) => array,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    let array_to_update = unsafe {
+        let outer = slice::from_raw_parts(c_array_to_update.items, c_array_to_update.len);
+        let mut vec2d = Vec::with_capacity(c_array_to_update.len);
+        for ca in outer {
+            let inner = slice::from_raw_parts(ca.data, ca.len);
+            vec2d.push(inner.to_vec());
+        }
+        vec2d
+    };
+
+    let attributes_to_update_array = match into_batch_map(&array_to_update) {
+        Some(array) => array,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return map_err(e.code),
+    };
+
+    let mut vec = match manager.lock().unwrap().batch_update(&attributes_array, &attributes_to_update_array) {
+        Ok(info) => info,
+        Err(e) => return e.code as i32,
+    };
+
+    err_info.data = vec.as_mut_ptr();
+    err_info.len = vec.len();
+    std::mem::forget(vec);
+
+    RESULT_CODE_SUCCESS
 }
 
 /// Function called from C programming language to Rust programming language for removing Asset.
@@ -111,7 +217,33 @@ pub extern "C" fn remove_asset(query: *const AssetAttr, query_cnt: u32) -> i32 {
         Err(e) => return map_err(e.code),
     };
 
-    let ret = if let Err(e) = manager.lock().unwrap().remove(&map) {
+    let ret = if let Err(e) = manager.lock().unwrap().remove(&map) { e.code as i32 } else { RESULT_CODE_SUCCESS };
+    ret
+}
+
+/// Function called from C programming language to Rust programming language for batch removing Assets.
+#[no_mangle]
+pub extern "C" fn asset_batch_remove(c_array: &C2DArray) -> i32 {
+    let array = unsafe {
+        let outer = slice::from_raw_parts(c_array.items, c_array.len);
+        let mut vec2d = Vec::with_capacity(c_array.len);
+        for ca in outer {
+            let inner = slice::from_raw_parts(ca.data, ca.len);
+            vec2d.push(inner.to_vec());
+        }
+        vec2d
+    };
+    let attributes_array = match into_batch_map(&array) {
+        Some(array) => array,
+        None => return ErrCode::InvalidArgument as i32,
+    };
+
+    let manager = match Manager::build() {
+        Ok(manager) => manager,
+        Err(e) => return map_err(e.code),
+    };
+
+    let ret = if let Err(e) = manager.lock().unwrap().batch_remove(&attributes_array) {
         e.code as i32
     } else {
         RESULT_CODE_SUCCESS

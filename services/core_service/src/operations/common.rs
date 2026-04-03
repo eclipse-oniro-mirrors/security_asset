@@ -23,6 +23,7 @@ use asset_plugin::asset_plugin::AssetPlugin;
 use asset_plugin_interface::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID, PARAM_NAME_OWNER_INFO,
 };
+use asset_sdk::{Conversion, DataType};
 
 pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
     if let Some(Value::Number(operation_type)) = input.get(&Tag::OperationType) {
@@ -137,4 +138,35 @@ pub(crate) fn update_cloud_sync_status(calling_info: &CallingInfo, db_map_vec: &
     });
     let task_manager = TaskManager::get_instance();
     task_manager.lock().unwrap().push_task(handle);
+}
+
+
+fn get_default_value(tag: &Tag) -> Value {
+    match tag.data_type() {
+        DataType::Bool => Value::Bool(false),
+        DataType::Number => Value::Number(0),
+        DataType::Bytes => Value::Bytes(vec![]),
+    }
+}
+
+pub(crate) fn check_tags_consistency(tags: &[Tag], attributes_array: &[AssetMap]) -> Result<()> {
+    let first = &attributes_array[0];
+
+    for tag in tags {
+        let ref_value = first.get(tag).cloned().unwrap_or_else(|| get_default_value(tag));
+
+        for (idx, attrs) in attributes_array.iter().enumerate() {
+            let value = attrs.get(tag).cloned().unwrap_or_else(|| get_default_value(tag));
+
+            if ref_value != value {
+                return macros_lib::log_throw_error!(
+                    ErrCode::ArrayInconsistent,
+                    "[FATAL][OPERATIONS]Tag {:?} at index {} has inconsistent value",
+                    tag, idx
+                );
+            }
+        }
+    }
+
+    Ok(())
 }

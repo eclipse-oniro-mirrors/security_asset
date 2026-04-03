@@ -48,6 +48,7 @@ const std::unordered_map<int32_t, const char *> ERR_MSGS = {
     { SEC_ASSET_LIMIT_EXCEEDED, "The cache exceeds the limit." },
     { SEC_ASSET_UNSUPPORTED, "The capability is not supported." },
     { SEC_ASSET_PARAM_VERIFICATION_FAILED, "Parameter verification failed." },
+    { SEC_ASSET_ARRAY_INCONSISTENT, "The array has inconsistent group id or REQUIRE_ATTR_ENCRYPTED." },
 };
 
 inline const char *GetErrorMessage(int32_t errCode)

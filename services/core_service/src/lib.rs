@@ -51,7 +51,7 @@ mod trace_scope;
 mod upgrade_operator;
 mod upgrade_ce;
 
-use sys_event::upload_system_event;
+use sys_event::{upload_system_event, upload_batch_system_event};
 use trace_scope::TraceScope;
 
 use crate::data_size_mod::handle_data_size_upload;
@@ -537,6 +537,40 @@ macro_rules! execute {
     }};
 }
 
+macro_rules! execute_batch {
+    ($func:path, $calling_info:expr, $first_arg:expr) => {{
+        let func_name = hisysevent::function!();
+        let start = Instant::now();
+        let _trace = TraceScope::trace(func_name);
+        // Create de database directory if not exists.
+        create_user_de_dir($calling_info.user_id())?;
+        let ce_upgrade_info = get_ce_upgrade_info();
+        if ce_upgrade_info == $calling_info.owner_info() {
+            let _rwlock = UPGRADE_CE_MUTEX.read().unwrap();
+            upload_batch_system_event($func($calling_info, $first_arg), $calling_info, start, func_name, $first_arg)
+        } else {
+            upload_batch_system_event($func($calling_info, $first_arg), $calling_info, start, func_name, $first_arg)
+        }
+        
+    }};
+    ($func:path, $calling_info:expr, $first_arg:expr, $second_arg:expr) => {{
+        let func_name = hisysevent::function!();
+        let start = Instant::now();
+        let _trace = TraceScope::trace(func_name);
+        // Create de database directory if not exists.
+        create_user_de_dir($calling_info.user_id())?;
+        let ce_upgrade_info = get_ce_upgrade_info();
+        if ce_upgrade_info == $calling_info.owner_info() {
+            let _rwlock = UPGRADE_CE_MUTEX.read().unwrap();
+            upload_batch_system_event(
+                $func($calling_info, $first_arg, $second_arg), $calling_info, start, func_name, $first_arg)
+        } else {
+            upload_batch_system_event(
+                $func($calling_info, $first_arg, $second_arg), $calling_info, start, func_name, $first_arg)
+        }
+    }};
+}
+
 impl AssetService {
     pub(crate) fn new(handler: system_ability_fwk::ability::Handler) -> Self {
         Self { system_ability: handler }
@@ -568,6 +602,22 @@ impl AssetService {
 
     fn query_sync_result(&self, calling_info: &CallingInfo, query: &AssetMap) -> Result<SyncResult> {
         execute!(operations::query_sync_result, calling_info, query)
+    }
+
+    fn batch_add(&self, calling_info: &CallingInfo, attributes_array: &Vec<AssetMap>) -> Result<Vec<(u32, u32)>> {
+        execute_batch!(operations::batch_add, calling_info, attributes_array)
+    }
+
+    fn batch_remove(&self, calling_info: &CallingInfo, attributes_array: &Vec<AssetMap>) -> Result<()> {
+        execute_batch!(operations::batch_remove, calling_info, attributes_array)
+    }
+
+    fn batch_update(
+        &self, calling_info: &CallingInfo,
+        attributes_array: &Vec<AssetMap>,
+        attributes_to_update_array: &Vec<AssetMap>
+    ) -> Result<Vec<(u32, u32)>> {
+        execute_batch!(operations::batch_update, calling_info, attributes_array, attributes_to_update_array)
     }
 }
 

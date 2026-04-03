@@ -168,6 +168,13 @@ void ResolvePromise(const napi_env env, BaseContext *context)
         NAPI_CALL_RETURN_VOID(env, napi_reject_deferred(env, context->deferred, result));
     }
 }
+
+napi_value NapiCreateString(const napi_env env, size_t size, const char * str)
+{
+    napi_value result = nullptr;
+    NAPI_CALL(env, napi_create_string_utf8(env, reinterpret_cast<const char *>(str), size, &result));
+    return result;
+}
 } // anonymous namespace
 
 napi_status ParseJsArgs(const napi_env env, napi_callback_info info, napi_value *value, size_t valueSize)
@@ -211,6 +218,68 @@ napi_status ParseJsMap(const napi_env env, napi_value arg, std::vector<AssetAttr
 
     NAPI_THROW_RETURN_ERR(env, !done, SEC_ASSET_INVALID_ARGUMENT, "Parse entry of map failed.");
     return napi_ok;
+}
+
+napi_status ParseJsMapArray(const napi_env env, napi_value arg, std::vector<std::vector<AssetAttr>> &attrsArray)
+{
+    // Check array type.
+    bool isArray = false;
+    NAPI_CALL_RETURN_ERR(env, napi_is_array(env, arg, &isArray));
+    NAPI_THROW_RETURN_ERR(env, !isArray, SEC_ASSET_INVALID_ARGUMENT, "Expect Array type.");
+
+    // Get Array length.
+    uint32_t arrLen = 0;
+    NAPI_CALL_RETURN_ERR(env, napi_get_array_length(env, arg, &arrLen));
+
+    // Parse array.
+    for (uint32_t attrIdx = 0; attrIdx < arrLen; attrIdx++) {
+        // Get attrs object.
+        napi_value attrObj = nullptr;
+        NAPI_CALL_RETURN_ERR(env, napi_get_element(env, arg, attrIdx, &attrObj));
+
+        // Parse attrs object.
+        std::vector<AssetAttr> attrs;
+        attrsArray.push_back(attrs);
+        NAPI_CALL_RETURN_ERR(env, ParseJsMap(env, attrObj, attrsArray.back()));
+    }
+    return napi_ok;
+}
+
+napi_value CreateJsBatchResult(const napi_env env, const std::vector<std::pair<uint32_t, uint32_t>> &blobs)
+{
+    // Create object for BatchResult.
+    napi_value napiObj = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &napiObj));
+
+    // Create failedCount.
+    napi_value napiFailedCount = nullptr;
+    NAPI_CALL(env, napi_create_uint32(env, blobs.size(), &napiFailedCount));
+    NAPI_CALL(env, napi_set_named_property(env, napiObj, "failedCount", napiFailedCount));
+
+    // Create array of BatchErrorInfo.
+    napi_value array = nullptr;
+    NAPI_CALL(env, napi_create_array(env, &array));
+    for (uint32_t i = 0; i < blobs.size(); i++) {
+        napi_value napiErrInfo = nullptr;
+        NAPI_CALL(env, napi_create_object(env, &napiErrInfo));
+
+        napi_value napiIndex = nullptr;
+        NAPI_CALL(env, napi_create_uint32(env, blobs[i].second, &napiIndex));
+        NAPI_CALL(env, napi_set_named_property(env, napiErrInfo, "index", napiIndex));
+
+        napi_value napiErrCode = nullptr;
+        NAPI_CALL(env, napi_create_uint32(env, blobs[i].first, &napiErrCode));
+        NAPI_CALL(env, napi_set_named_property(env, napiErrInfo, "errCode", napiErrCode));
+
+        auto it = ERR_MSGS.find(blobs[i].first);
+        auto str = (it != ERR_MSGS.end()) ? it->second : "Batch Operation Failed.";
+        napi_value napiMessage = NapiCreateString(env, strlen(str), str);
+        NAPI_CALL(env, napi_set_named_property(env, napiErrInfo, "message", napiMessage));
+
+        NAPI_CALL(env, napi_set_element(env, array, i, napiErrInfo));
+    }
+    NAPI_CALL(env, napi_set_named_property(env, napiObj, "failedErrorInfos", array));
+    return napiObj;
 }
 
 napi_status ParseJsUserId(const napi_env env, napi_value arg, std::vector<AssetAttr> &attrs)

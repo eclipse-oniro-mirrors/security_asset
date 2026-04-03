@@ -28,6 +28,9 @@ mod operation_query;
 mod operation_query_sync_result;
 mod operation_remove;
 mod operation_update;
+mod operation_batch_add;
+mod operation_batch_remove;
+mod operation_batch_update;
 
 pub(crate) use operation_add::add;
 pub(crate) use operation_post_query::post_query;
@@ -36,6 +39,9 @@ pub(crate) use operation_query::query;
 pub(crate) use operation_query_sync_result::query_sync_result;
 pub(crate) use operation_remove::remove;
 pub(crate) use operation_update::update;
+pub(crate) use operation_batch_add::batch_add;
+pub(crate) use operation_batch_remove::batch_remove;
+pub(crate) use operation_batch_update::batch_update;
 
 #[cfg(feature = "AssetTest")]
 pub use operation_add::ut_operation_add_stub;

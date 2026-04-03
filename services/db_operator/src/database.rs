@@ -630,6 +630,7 @@ impl Database {
         db_map: &DbMap,
         attributes_array: &[AssetMap],
         calling_info: &CallingInfo,
+        is_merged: bool
     ) -> Result<Vec<(u32, u32)>> {
         let secret_key = build_secret_key(calling_info, db_map)?;
         generate_secret_key_if_needed(&secret_key)?;
@@ -644,7 +645,7 @@ impl Database {
             secret_key: &secret_key
         };
 	    let _lock = self.db_lock.mtx.lock().unwrap();
-        let column_names = self.parse_attr_array(&mut db_datas, &mut err_info, &mut aliases, &info)?;
+        let column_names = self.parse_attr_array(&mut db_datas, &mut err_info, &mut aliases, &info, is_merged)?;
         if db_datas.is_empty() {
             return Ok(err_info);
         }
@@ -709,12 +710,13 @@ impl Database {
         db_datas: &mut Vec<DbMap>,
         err_info: &mut Vec<(u32, u32)>,
         aliases: &mut Vec<Vec<u8>>,
-        info: &AdditionalInfo
+        info: &AdditionalInfo,
+        is_merged: bool
     ) -> Result<HashSet<String>> {
         let mut column_names = HashSet::new();
         add_not_null_column(&mut column_names);
         for (index, attr) in info.attributes_array.iter().enumerate() {
-            let mut db_data = parse_attr_in_array(attr, info.calling_info, &mut column_names)?;
+            let mut db_data = parse_attr_in_array(attr, info.calling_info, &mut column_names, is_merged)?;
             if aliases.contains(&db_data.get_bytes_attr(&column::ALIAS)?.to_vec()) {
                 return macros_lib::log_throw_error!(
                     ErrCode::InvalidArgument,

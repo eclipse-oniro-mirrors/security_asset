@@ -30,6 +30,7 @@
 #include "asset_system_type.h"
 
 #ifdef __cplusplus
+#include <vector>
 extern "C" {
 #endif
 
@@ -138,6 +139,38 @@ void AssetFreeBlob(AssetBlob *blob);
 void AssetFreeResultSet(AssetResultSet *resultSet);
 
 #ifdef __cplusplus
+/**
+ * @brief Adds a batch of assets.
+ *
+ * @param attrsArray Array of the attributes of the asset to add.
+ * @param errInfoArray Array of the error info.
+ * @return Returns <b>SEC_ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
+ * @since 26
+ */
+int32_t AssetBatchAdd(std::vector<std::vector<AssetAttr>> &attrsArray,
+    std::vector<std::pair<uint32_t, uint32_t>> &errInfoArray);
+
+/**
+ * @brief Removes a batch of assets.
+ *
+ * @param attrsArray Array of the attributes of the asset to remove.
+ * @return Returns <b>SEC_ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
+ * @since 26
+ */
+int32_t AssetBatchRemove(std::vector<std::vector<AssetAttr>> &attrsArray);
+
+/**
+ * @brief Updates a batch of assets.
+ *
+ * @param attrsArray Array of the the conditions for updating the assets.
+ * @param attrsToUpdateArray Array of the attributes of the asset to update.
+ * @param errInfoArray Array of the error info.
+ * @return Returns <b>SEC_ASSET_SUCCESS</b> if the operation is successful; returns an error code otherwise.
+ * @since 26
+ */
+int32_t AssetBatchUpdate(std::vector<std::vector<AssetAttr>> &attrsArray,
+    std::vector<std::vector<AssetAttr>> &attrsToUpdateArray,
+    std::vector<std::pair<uint32_t, uint32_t>> &errInfoArray);
 }
 #endif
 

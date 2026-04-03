@@ -29,6 +29,8 @@ napi_value NapiAddSync(const napi_env env, napi_callback_info info);
 
 napi_value NapiAddAsUser(const napi_env env, napi_callback_info info);
 
+napi_value NapiBatchAdd(const napi_env env, napi_callback_info info);
+
 } // Asset
 } // Security
 } // OHOS

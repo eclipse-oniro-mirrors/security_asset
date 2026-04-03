@@ -86,3 +86,29 @@ pub unsafe extern "C" fn query_sync_result(
 ) -> i32 {
     empty_mode()
 }
+
+/// Function called from C programming language to Rust programming language for batch inserting Assets.
+#[no_mangle]
+pub extern "C" fn asset_batch_add(
+    _c_array: &C2DArray,
+    _err_info: &mut MutPairVec,
+) -> i32 {
+    empty_mode()
+}
+
+/// Function called from C programming language to Rust programming language for batch updating Assets.
+#[no_mangle]
+pub extern "C" fn asset_batch_update(
+    _c_array: &C2DArray,
+    _c_array_to_update: &C2DArray,
+    _err_info: &mut MutPairVec,
+) -> i32 {
+    empty_mode()
+}
+
+
+/// Function called from C programming language to Rust programming language for batch removing Assets.
+#[no_mangle]
+pub extern "C" fn asset_batch_remove(_c_array: &C2DArray) -> i32 {
+    empty_mode()
+}

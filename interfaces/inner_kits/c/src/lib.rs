@@ -29,9 +29,40 @@ pub(crate) struct AssetResult {
 
 /// Attribute of Asset with a c representation.
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub struct AssetAttr {
     tag: u32,
     value: AssetValue,
+}
+
+/// Array of Assets.
+#[repr(C)]
+#[derive(Debug)]
+pub struct CArray {
+    /// Array of assets.
+    pub data: *const AssetAttr,
+    /// Size of Array of assets.
+    pub len: usize,
+}
+
+/// Array of Arrays of Assets.
+#[repr(C)]
+#[derive(Debug)]
+pub struct C2DArray {
+    /// Arrays of assets.
+    pub items: *const CArray,
+    /// Size of arrays.
+    pub len: usize,
+}
+
+/// Vec of (u32, u32).
+#[repr(C)]
+#[derive(Debug)]
+pub struct MutPairVec {
+    /// Data of MutPairVec.
+    pub data: *mut (u32, u32),
+    /// Size of vector.
+    pub len: usize,
 }
 
 /// Blob of Asset with a c representation.
@@ -43,6 +74,7 @@ pub struct AssetBlob {
 }
 
 #[repr(C)]
+#[derive(Clone, Copy)]
 pub(crate) union AssetValue {
     boolean: bool,
     uint32: u32,
@@ -54,4 +86,12 @@ pub(crate) union AssetValue {
 pub struct AssetResultSet {
     count: u32,
     results: *mut AssetResult,
+}
+
+/// Batch result of Asset with a c representation.
+#[repr(C)]
+pub struct AssetBatchResult {
+    count: u32,
+    indices: *mut u32,
+    error_codes: *mut i32,
 }
