@@ -99,7 +99,7 @@ int32_t AssetBatchUpdate(std::vector<std::vector<AssetAttr>> &attrsArray,
     };
 
     std::vector<CArray> cArraysUpdate;
-    for (const auto &inner : attrsArray) {
+    for (const auto &inner : attrsToUpdateArray) {
         cArraysUpdate.push_back({
             inner.data(),
             inner.size()
