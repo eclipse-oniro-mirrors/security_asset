@@ -11,15 +11,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//build/ohos.gni")
-import("//build/ohos/sa_profile/sa_profile.gni")
+[package]
+name = "asset_crypto_manager"
+version = "0.1.0"
+edition = "2021"
 
-ohos_sa_profile("asset_sa_profiles") {
-  sources = [ "8100.json" ]
-  part_name = "asset"
-}
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
-ohos_sa_profile("saf_service_profile") {
-  sources = [ "66532.json" ]
-  part_name = "asset"
-}
+[dependencies]
+openssl = { git = "https://gitcode.com/openharmony/third_party_rust_rust-openssl.git" }
+
+asset_common = { path = "../common" }
+asset_definition = { path = "../../../frameworks/asset/definition" }
+asset_file_operator = { path = "../../../frameworks/asset/os_dependency/file" }
+asset_log = { path = "../../../frameworks/asset/os_dependency/log" }
+asset_utils = { path = "../../../frameworks/asset/utils" }

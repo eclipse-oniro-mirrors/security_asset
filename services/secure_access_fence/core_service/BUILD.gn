@@ -1,0 +1,52 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//base/security/asset/config.gni")
+import("//build/ohos.gni")
+
+ohos_rust_shared_library("secure_access_fence_service") {
+  sources = [ "src/lib.rs" ]
+  deps = [
+    "../../../etc/init:secure_access_fence.rc",
+    "../../../frameworks/secure_access_fence/ipc:saf_ipc",
+    "../../../frameworks/secure_access_fence/definition:saf_definition",
+    "../../../frameworks/secure_access_fence/os_dependency/log:saf_log",
+    "../../../interfaces/inner_kits/plugin_interface/secure_access_fence:saf_plugin_interface_rust",
+    "../../../interfaces/inner_kits/rs/secure_access_fence:saf_sdk_rust",
+    "../common:saf_common",
+    "../os_dependency:saf_os_dependency",
+    "../plugin:saf_plugin",
+  ]
+
+  rustflags = []
+  if (enable_local_test) {
+    rustflags += [ "--cfg", "feature=\"SecureAccessFenceTest\"", ]
+  }
+
+  external_deps = [
+    "hilog:hilog_rust",
+    "hilog:libhilog",
+    "hisysevent:hisysevent_rust",
+    "hitrace:hitrace_meter_rust",
+    "ipc:ipc_rust",
+    "safwk:system_ability_fwk_rust",
+    "samgr:samgr_rust",
+    "ylong_runtime:ylong_runtime",
+    "ylong_json:lib",
+  ]
+
+  crate_name = "secure_access_fence_service"
+  crate_type = "dylib"
+  subsystem_name = "security"
+  part_name = "asset"
+}

@@ -16,19 +16,29 @@ import("//build/ohos.gni")
 
 group("asset_component") {
   deps = [
-    "interfaces/inner_kits/rs:asset_sdk_rust",
-    "interfaces/kits/c:asset_ndk",
+    "interfaces/inner_kits/rs/asset:asset_sdk_rust",
+    "interfaces/kits/c/asset:asset_ndk",
   ]
 
   if (support_jsapi) {
-    deps += [ "frameworks/js/napi:asset_napi" ]
+    deps += [ "frameworks/asset/js/napi:asset_napi" ]
   }
 
   if (asset_build_mode == "full") {
     deps += [
       "sa_profile:asset_sa_profiles",
-      "services/core_service:asset_service",
-      "services/plugin:asset_plugin",
+      "services/asset/core_service:asset_service",
+      "services/asset/plugin:asset_plugin",
+    ]
+  }
+}
+
+group("saf_component") {
+  if (os_level == "standard") {
+    deps = [
+      "sa_profile:saf_service_profile",
+      "services/secure_access_fence/core_service:secure_access_fence_service",
+      "services/secure_access_fence/plugin:saf_plugin",
     ]
   }
 }
@@ -37,14 +47,14 @@ group("asset_component") {
 group("asset_bin_test") {
   testonly = true
   deps = [
-    "test/unittest/kits_ndk:asset_ndk_test",
-    "test/unittest/module_test:asset_dependency_test",
+    "test/asset/unittest/kits_ndk:asset_ndk_test",
+    "test/asset/unittest/module_test:asset_dependency_test",
   ]
   if (enable_local_test) {
-    deps += [ "test/unittest/inner_kits_rust:rust_asset_inner_test" ]
-    deps += [ "test/unittest/module_test:rust_asset_module_test" ]
+    deps += [ "test/asset/unittest/inner_kits_rust:rust_asset_inner_test" ]
+    deps += [ "test/asset/unittest/module_test:rust_asset_module_test" ]
     deps += [ "services/common:rust_asset_calling_info_test" ]
     deps += [ "services/db_operator:rust_asset_db_operator_test" ]
-    deps += [ "test/unittest/ut_test/services/core_service:rust_asset_core_service_ut_test" ]
+    deps += [ "test/asset/unittest/ut_test/services/core_service:rust_asset_core_service_ut_test" ]
   }
 }

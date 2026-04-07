@@ -1,0 +1,36 @@
+# Copyright (c) 2024 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//base/security/asset/config.gni")
+import("//build/ohos.gni")
+
+ohos_rust_static_library("saf_plugin") {
+  sources = [ "src/lib.rs" ]
+  deps = [
+    "../../../frameworks/secure_access_fence/definition:saf_definition",
+    "../../../frameworks/secure_access_fence/os_dependency/log:saf_log",
+    "../../../interfaces/inner_kits/rs/secure_access_fence:saf_sdk_rust",
+    "../../../interfaces/inner_kits/plugin_interface/secure_access_fence:saf_plugin_interface_rust",
+    "../common:saf_common",
+    "//third_party/rust/crates/libloading:lib",
+  ]
+
+  external_deps = [
+    "ylong_runtime:ylong_runtime",
+  ]
+
+  crate_name = "saf_plugin"
+  crate_type = "rlib"
+  subsystem_name = "security"
+  part_name = "asset"
+}

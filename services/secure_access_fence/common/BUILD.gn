@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2026 Huawei Device Co., Ltd.
+# Copyright (c) 2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -12,17 +12,22 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//build/test.gni")
 
-ohos_prebuilt_etc("asset_service.rc") {
-  source = "asset_service.cfg"
-  relative_install_dir = "init"
+ohos_rust_static_library("saf_common") {
+  sources = [ "src/lib.rs" ]
+  deps = [
+    "../../../frameworks/secure_access_fence/os_dependency/log:saf_log",
+    "../../../frameworks/secure_access_fence/definition:saf_definition",
+    "../os_dependency:saf_os_dependency",
+  ]
+  external_deps = [
+    "ipc:ipc_rust",
+    "ylong_runtime:ylong_runtime",
+  ]
+  crate_name = "saf_common"
+  crate_type = "rlib"
   subsystem_name = "security"
   part_name = "asset"
 }
 
-ohos_prebuilt_etc("secure_access_fence.rc") {
-  source = "secure_access_fence.cfg"
-  relative_install_dir = "init"
-  subsystem_name = "security"
-  part_name = "asset"
-}
