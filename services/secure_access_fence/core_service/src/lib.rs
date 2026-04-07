@@ -32,7 +32,6 @@ use saf_plugin::saf_plugin::{SAFContext, SAFPlugin};
 use saf_common::CommonEventType;
 
 mod common_event;
-mod operations;
 mod stub;
 
 struct SAFAbility;
@@ -209,10 +208,6 @@ macro_rules! execute {
 impl SAFService {
     pub(crate) fn new(handler: system_ability_fwk::ability::Handler) -> Self {
         Self { system_ability: handler }
-    }
-
-    fn check_access(&self, calling_info: &CallingInfo, attributes: &SAFMap) -> Result<bool> {
-        execute!(operations::check_access, calling_info, attributes)
     }
 }
 

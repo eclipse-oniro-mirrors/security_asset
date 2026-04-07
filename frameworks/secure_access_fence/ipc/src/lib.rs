@@ -31,16 +31,6 @@ pub const IPC_SUCCESS: u32 = 0;
 const MAX_MAP_CAPACITY: u32 = 64;
 const MAX_VEC_CAPACITY: u32 = 0x10000;
 
-macros_lib::impl_enum_trait! {
-    /// Code used to identify the function to be called.
-    #[derive(Clone, Copy)]
-    #[derive(Eq, PartialEq)]
-    pub enum IpcCode {
-        /// Code for Check access.
-        CheckAccess = ipc::FIRST_CALL_TRANSACTION,
-    }
-}
-
 /// deserialize T from parcel
 pub fn deserialize<T: Deserialize>(parcel: &mut MsgParcel) -> Result<T> {
     let value = parcel.read::<T>().map_err(|_| macros_lib::log_and_into_saf_error!(

@@ -40,7 +40,6 @@
                 "access_token",
                 "bundle_framework",
                 "common_event_service",
-                "companion_device_auth",
                 "c_utils",
                 "data_share",
                 "memmgr",

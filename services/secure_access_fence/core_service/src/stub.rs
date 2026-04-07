@@ -70,26 +70,8 @@ impl RemoteStub for SAFService {
     }
 }
 
-fn on_remote_request(stub: &SAFService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
-    match data.read_interface_token() {
-        Ok(interface_token) if interface_token == stub.descriptor() => {},
-        _ => {
-            loge!("[FATAL][SA]Invalid interface token.");
-            return Err(IpcStatusCode::Failed);
-        },
-    }
-    let ipc_code = IpcCode::try_from(code).map_err(saf_err_handle)?;
-    let map = deserialize_map(data).map_err(saf_err_handle)?;
-    let calling_info = CallingInfo::new();
-    match ipc_code {
-        IpcCode::CheckAccess => match stub.check_access(&calling_info, &map) {
-            Ok(res) => {
-                reply_handle(Ok(()), reply)?;
-                reply.write::<bool>(&res)
-            },
-            Err(e) => reply_handle(Err(e), reply),
-        },
-    }
+fn on_remote_request(_stub: &SAFService, _code: u32, _data: &mut MsgParcel, _reply: &mut MsgParcel) -> IpcResult<()> {
+    Err(IpcStatusCode::Failed)
 }
 
 fn on_extension_request(_stub: &SAFService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {

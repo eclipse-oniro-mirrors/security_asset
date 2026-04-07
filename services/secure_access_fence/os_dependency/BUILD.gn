@@ -23,7 +23,6 @@ ohos_static_library("saf_os_dependency") {
     "src/os_account_wrapper.cpp",
     "src/system_ability_wrapper.cpp",
     "src/system_event_wrapper.cpp",
-    "src/saf_useriam_wrapper.cpp",
   ]
   deps = []
   external_deps = [
@@ -38,7 +37,6 @@ ohos_static_library("saf_os_dependency") {
     "ipc:ipc_single",
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
-    "companion_device_auth:companion_device_auth_client",
   ]
 
   branch_protector_ret = "pac_ret"
