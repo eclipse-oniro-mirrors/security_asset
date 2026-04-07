@@ -17,15 +17,15 @@
 
 use ipc::parcel::MsgParcel;
 use samgr::manage::SystemAbilityManager;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 use system_ability_fwk::{
     ability::{Ability, Handler},
     cxx_share::SystemAbilityOnDemandReason,
 };
 use ylong_runtime::builder::RuntimeBuilder;
 
-use saf_common::{CallingInfo, ConstSAFBlob, Counter, TaskManager};
-use saf_definition::{macros_lib, SAFMap, ErrCode, Result};
+use saf_common::{ConstSAFBlob, Counter, TaskManager};
+use saf_definition::{macros_lib, ErrCode, Result};
 use saf_ipc::SA_ID;
 use saf_log::{logd, loge, logi};
 use saf_plugin::saf_plugin::{SAFContext, SAFPlugin};
@@ -195,14 +195,6 @@ static A: extern "C" fn() = {
 
 struct SAFService {
     system_ability: system_ability_fwk::ability::Handler,
-}
-
-macro_rules! execute {
-    ($func:path, $calling_info:expr, $first_arg:expr) => {{
-        // todo 打点
-        let _start = Instant::now();
-        $func($calling_info, $first_arg)
-    }};
 }
 
 impl SAFService {

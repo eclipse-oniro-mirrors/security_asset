@@ -15,10 +15,10 @@
 
 //! This module implements the stub of the SAF service.
 
-use saf_common::{AutoCounter, CallingInfo, Counter};
+use saf_common::{AutoCounter, Counter};
 use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 
-use saf_ipc::{deserialize_map, IpcCode, IPC_SUCCESS, SA_NAME};
+use saf_ipc::{IPC_SUCCESS, SA_NAME};
 use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
 use saf_sdk::{
@@ -88,11 +88,6 @@ fn on_extension_request(_stub: &SAFService, code: u32, data: &mut MsgParcel, rep
         }
     }
     IpcStatusCode::Failed as i32
-}
-
-fn saf_err_handle(e: SAFError) -> IpcStatusCode {
-    loge!("[IPC]SAF error code = {}, msg is {}", e.code, e.msg);
-    IpcStatusCode::InvalidValue
 }
 
 fn reply_handle(ret: Result<()>, reply: &mut MsgParcel) -> IpcResult<()> {

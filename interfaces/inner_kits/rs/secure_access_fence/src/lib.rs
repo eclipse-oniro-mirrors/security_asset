@@ -68,6 +68,12 @@ impl Manager {
         }
     }
 
+    /// Check access for certain application.
+    pub fn check_access(&mut self, attributes: &SAFMap) -> Result<()> {
+        self.process_one_agr_request(attributes, IpcCode::CheckAccess)?;
+        Ok(())
+    }
+
     fn rebuild(&mut self) -> Result<()> {
         self.remote = load_saf_service()?;
         Ok(())
