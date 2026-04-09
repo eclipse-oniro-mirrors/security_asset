@@ -49,11 +49,19 @@ public:
 
         rust::vec<rust::string> rustWant;
         const WantParams &wantParams = want.GetParams();
-        
 
-        for (auto i = want.begin(); i != want.end(); ++i) {
-            rustWant.push_back(rust::string(i->first.data()));
-            rustWant.push_back(rust::string(i->second.GetString().data()));
+        const std::map<std::string, sptr<IInterface>> &params = wantParams.GetParams();
+
+        for (const auto &param : params) {
+            const std::string &key = param.first;
+            sptr<IInterface> value = param.second;
+
+            int typeId = WantParams::GetDataType(value);
+            std::string stringValue = WantParams::GetStringByType(value, typeId);
+
+            stringParams[key] = stringValue;
+            rustWant.push_back(rust::string(key));
+            rustWant.push_back(rust::string(stringValue));
         }
 
         if (this->eventCallBack.onCommonEvent != nullptr) {
