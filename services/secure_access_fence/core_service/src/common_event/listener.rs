@@ -16,18 +16,29 @@
 //! This module is used to subscribe common event and system ability.
 
 use std::{slice, collections::HashMap};
+use std::ffi::CStr;
 
 use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
 
-use crate::CommonEventInfoFfi;
+use crate::{CommonEventInfoFfi, StringArray};
 
 pub(crate) extern "C" fn on_common_event(common_event_info: CommonEventInfoFfi) {
     if let Ok(plugin) = SAFPlugin::get_instance().load_plugin() {
-        let want_vec: Vec<String> = unsafe {
-            slice::from_raw_parts(common_event_info.want.data,
-                common_event_info.want.size as usize).to_vec()
-        };
+        let array = CommonEventInfoFfi.want;
+        let want_vec = unsafe {
+            let slice = slice::from_raw_parts(array.data, array.size as usize);
+            let mut result = Vec::with_capacity(array.size as usize);
+            for &ptr in slice {
+                if ptr.is_null() {
+                    result.push(String::new()); // 空字符串
+                } else {
+                    let c_str = CStr::from_ptr(ptr);
+                    result.push(c_str.to_string_lossy());
+                }
+            }
+            result
+        }
 
         let want_map: HashMap<String, String> = {
             let mut res = HashMap::new();

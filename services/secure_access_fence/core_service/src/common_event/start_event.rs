@@ -14,12 +14,25 @@
  */
 
 //! This module is used to handle start event.
+use std::ffi::c_char;
 
 use saf_common::{AutoCounter, TaskManager};
 use saf_log::logi;
 use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
 
 use crate::{common_event::listener, unload_sa, CommonEventInfoFfi, StringArray};
+
+unsafe fn vec_to_c_unsafe(strings: &Vec<String>) -> StringArray {
+    let ptrs: Vec<*const c_char> = strings
+        .iter()
+        .map(|s| s.as_ptr())
+        .collect();
+
+    StringArray {
+        size: strings.len() as u32,
+        data: ptrs.as_ptr()
+    }
+}
 
 fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
     let _counter_user = AutoCounter::new();
@@ -32,10 +45,7 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
 
     listener::on_common_event(CommonEventInfoFfi {
         event_type: reason_name.clone(),
-        want: StringArray {
-            size: want_vec.len() as u32,
-            data: want_vec.as_ptr()
-        }
+        want: vec_to_c_unsafe(&want_vec)
     });
     logi!("[INFO]Finish handle common event. [{}]", reason_name);
 }
