@@ -15,23 +15,15 @@
 
 //! This module is used to subscribe common event and system ability.
 
-use std::slice;
+use std::{slice, collections::HashMap};
 
-use saf_definition::Value;
 use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
-use saf_plugin_interface::plugin_interface::{
-    ExtMap, PARAM_NAME_COMMON_EVENT_TYPE, PARAM_NAME_COMMON_EVENT_UID, PARAM_NAME_COMMON_EVENT_APP_INDEX,
-    PARAM_NAME_COMMON_EVENT_BUNDLE_NAME, PARAM_NAME_COMMON_EVENT_USER_ID
-};
 
 use crate::CommonEventInfoFfi;
 
 pub(crate) extern "C" fn on_common_event(common_event_info: CommonEventInfoFfi) {
     if let Ok(plugin) = SAFPlugin::get_instance().load_plugin() {
-        let mut params = ExtMap::new();
-        params.insert(PARAM_NAME_COMMON_EVENT_TYPE, Value::String(common_event_info.event_type));
-
         let want_vec: Vec<String> = unsafe {
             slice::from_raw_parts(common_event_info.want.data,
                 common_event_info.want.size as usize).to_vec()
@@ -48,7 +40,7 @@ pub(crate) extern "C" fn on_common_event(common_event_info: CommonEventInfoFfi) 
             res
         };
 
-        match plugin.on_common_event(&mut params, &want_map) {
+        match plugin.on_common_event(&common_event_info.event_type, &want_map) {
             Ok(_) => logi!("process common event success."),
             Err(code) => loge!("process common event failed, code: {}", code),
         }

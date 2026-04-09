@@ -15,6 +15,7 @@
 
 //! This module implements secure access fence service.
 
+use std::ffi::c_char;
 use ipc::parcel::MsgParcel;
 use samgr::manage::SystemAbilityManager;
 use std::time::Duration;
@@ -36,16 +37,16 @@ mod stub;
 struct SAFAbility;
 
 #[repr(C)]
-struct RustStringArray {
+struct StringArray {
     size: u32,
-    data: *const String,
+    data: *const *const c_char,
 }
 
 
 #[repr(C)]
 struct CommonEventInfoFfi {
     event_type: String,
-    want: RustStringArray,
+    want: StringArray,
 }
 
 static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 60;  // 60s

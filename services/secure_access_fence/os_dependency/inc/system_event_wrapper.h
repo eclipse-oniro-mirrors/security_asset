@@ -21,12 +21,12 @@
 
 typedef struct {
     uint32_t size;
-    const rust::string *data;
-} RustStringArray;
+    const char** data;
+} StringArray;
 
 typedef struct {
-    rust::string event_type;
-    RustStringArray want;
+    const char *event_type;
+    StringArray want;
 } CommonEventInfo;
 
 typedef void (*OnCommonEvent)(CommonEventInfo);

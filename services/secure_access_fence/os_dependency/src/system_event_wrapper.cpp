@@ -29,6 +29,7 @@
 namespace {
 using namespace OHOS::AppExecFwk::Constants;
 using namespace OHOS::EventFwk;
+using namespace OHOS::AAFwk;
 
 const std::vector<std::string> SYSTEM_EVENT_LIST = {
     CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED,
@@ -36,6 +37,16 @@ const std::vector<std::string> SYSTEM_EVENT_LIST = {
     CommonEventSupport::COMMON_EVENT_PACKAGE_CHANGED,
     CommonEventSupport::COMMON_EVENT_RESTORE_START,
 };
+
+const char** ToConstCharArray(const std::vector<std::string>& vec)
+{
+    std::vector<const char*> result;
+    for (const auto& str : vec) {
+        result.push_back(str.c_str());
+    }
+    static std::vector<const char*> static_result = result;
+    return static_result.data();
+}
 
 class SystemEventHandler : public CommonEventSubscriber {
 public:
@@ -47,30 +58,29 @@ public:
         auto want = data.GetWant();
         std::string eventName = want.GetAction();
 
-        rust::vec<rust::string> rustWant;
+        std::vector<std::string> rustWant;
         const WantParams &wantParams = want.GetParams();
 
-        const std::map<std::string, sptr<IInterface>> &params = wantParams.GetParams();
+        const std::map<std::string, OHOS::sptr<IInterface>> &params = wantParams.GetParams();
 
         for (const auto &param : params) {
             const std::string &key = param.first;
-            sptr<IInterface> value = param.second;
+            OHOS::sptr<IInterface> value = param.second;
 
             int typeId = WantParams::GetDataType(value);
             std::string stringValue = WantParams::GetStringByType(value, typeId);
-
-            stringParams[key] = stringValue;
-            rustWant.push_back(rust::string(key));
-            rustWant.push_back(rust::string(stringValue));
+            rustWant.push_back(key);
+            rustWant.push_back(stringValue);
         }
 
         if (this->eventCallBack.onCommonEvent != nullptr) {
-            RustStringArray wantArray =  {
+            auto cArray = ToConstCharArray(rustWant);
+            StringArray wantArray =  {
                 .size = static_cast<uint32_t>(rustWant.size()),
-                .data = rustWant.data()
-            }
+                .data = cArray
+            };
             this->eventCallBack.onCommonEvent({
-                rust::string(eventName.c_str()),
+                eventName.c_str(),
                 wantArray
             });
         }
