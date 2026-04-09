@@ -27,7 +27,7 @@ use saf_sdk::{
 
 use crate::SAFService;
 
-const REDIRECT_START_CODE: u32 = 100;
+const REDIRECT_START_CODE: u32 = 1000;
 
 impl RemoteStub for SAFService {
     fn on_remote_request(
