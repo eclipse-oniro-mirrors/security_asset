@@ -19,7 +19,7 @@ use saf_common::{AutoCounter, TaskManager};
 use saf_log::logi;
 use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
 
-use crate::{common_event::listener, unload_sa, CommonEventInfoFfi};
+use crate::{common_event::listener, unload_sa, CommonEventInfoFfi, RustStringArray};
 
 fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
     let _counter_user = AutoCounter::new();
@@ -32,7 +32,10 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
 
     listener::on_common_event(CommonEventInfoFfi {
         event_type: reason_name,
-        want: want_vec
+        want: RustStringArray {
+            size: want_vec.len() as u32,
+            data: want_vec.as_ptr()
+        }
     });
     logi!("[INFO]Finish handle common event. [{}]", reason_name);
 }

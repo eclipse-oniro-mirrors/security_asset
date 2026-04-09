@@ -36,9 +36,16 @@ mod stub;
 struct SAFAbility;
 
 #[repr(C)]
+struct RustStringArray {
+    size: u32,
+    data: *const String,
+}
+
+
+#[repr(C)]
 struct CommonEventInfoFfi {
     event_type: String,
-    want: Vec<String>,
+    want: RustStringArray,
 }
 
 static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 60;  // 60s

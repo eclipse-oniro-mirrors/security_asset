@@ -32,9 +32,14 @@ pub(crate) extern "C" fn on_common_event(common_event_info: CommonEventInfoFfi) 
         let mut params = ExtMap::new();
         params.insert(PARAM_NAME_COMMON_EVENT_TYPE, Value::String(common_event_info.event_type));
 
+        let want_vec: Vec<String> = unsafe {
+            slice::from_raw_parts(common_event_info.want.data,
+                common_event_info.want.size as usize).to_vec()
+        };
+
         let want_map: HashMap<String, String> = {
             let mut res = HashMap::new();
-            let mut want_iter = common_event_info.want.into_iter();
+            let mut want_iter = want_vec.into_iter();
             while let Some(k) = want_iter.next() {
                 if let Some(v) = want_iter.next() {
                     res.insert(k, v);

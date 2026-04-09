@@ -30,11 +30,11 @@ namespace {
 using namespace OHOS::AppExecFwk::Constants;
 using namespace OHOS::EventFwk;
 
-const std::unordered_map<std::string, CommonEventType> EVENT_NAME_2_TYPE_MAPPING = {
-    { CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED, CommonEventType::PACKAGE_REMOVED },
-    { CommonEventSupport::COMMON_EVENT_PACKAGE_ADDED, CommonEventType::PACKAGE_ADDED },
-    { CommonEventSupport::COMMON_EVENT_PACKAGE_CHANGED, CommonEventType::PACKAGE_CHANGED },
-    { CommonEventSupport::COMMON_EVENT_RESTORE_START, CommonEventType::RESTORE_START },
+const std::vector<std::string> SYSTEM_EVENT_LIST = {
+    CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED,
+    CommonEventSupport::COMMON_EVENT_PACKAGE_ADDED,
+    CommonEventSupport::COMMON_EVENT_PACKAGE_CHANGED,
+    CommonEventSupport::COMMON_EVENT_RESTORE_START,
 };
 
 class SystemEventHandler : public CommonEventSubscriber {
@@ -48,16 +48,22 @@ public:
         std::string eventName = want.GetAction();
 
         rust::vec<rust::string> rustWant;
-        auto wantParams = want.GetParams();
-        for (auto i = wantParams.begin(); i != wantParams.end(); ++i) {
+        const WantParams &wantParams = want.GetParams();
+        
+
+        for (auto i = want.begin(); i != want.end(); ++i) {
             rustWant.push_back(rust::string(i->first.data()));
             rustWant.push_back(rust::string(i->second.GetString().data()));
         }
 
         if (this->eventCallBack.onCommonEvent != nullptr) {
+            RustStringArray wantArray =  {
+                .size = static_cast<uint32_t>(rustWant.size()),
+                .data = rustWant.data()
+            }
             this->eventCallBack.onCommonEvent({
                 rust::string(eventName.c_str()),
-                rustWant
+                wantArray
             });
         }
         LOGI("[INFO]Receive event: %{public}s", eventName.c_str());
@@ -72,8 +78,8 @@ std::shared_ptr<SystemEventHandler> g_eventHandler = nullptr;
 bool SubscribeSystemEvent(const EventCallBack eventCallBack)
 {
     MatchingSkills matchingSkills;
-    for (const auto& pair : EVENT_NAME_2_TYPE_MAPPING) {
-        matchingSkills.AddEvent(pair.first);
+    for (const auto& eventName : SYSTEM_EVENT_LIST) {
+        matchingSkills.AddEvent(eventName);
     }
 
     CommonEventSubscribeInfo info(matchingSkills);
