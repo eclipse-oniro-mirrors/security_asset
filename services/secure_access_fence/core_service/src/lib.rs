@@ -45,7 +45,7 @@ struct StringArray {
 
 #[repr(C)]
 struct CommonEventInfoFfi {
-    event_type: String,
+    event_type: *const c_char,
     want: StringArray,
 }
 

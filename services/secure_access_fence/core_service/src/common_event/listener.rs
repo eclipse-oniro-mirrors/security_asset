@@ -21,24 +21,22 @@ use std::ffi::CStr;
 use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
 
-use crate::{CommonEventInfoFfi, StringArray};
+use crate::CommonEventInfoFfi;
 
 pub(crate) extern "C" fn on_common_event(common_event_info: CommonEventInfoFfi) {
     if let Ok(plugin) = SAFPlugin::get_instance().load_plugin() {
-        let array = CommonEventInfoFfi.want;
+        let array = common_event_info.want;
         let want_vec = unsafe {
             let slice = slice::from_raw_parts(array.data, array.size as usize);
             let mut result = Vec::with_capacity(array.size as usize);
             for &ptr in slice {
-                if ptr.is_null() {
-                    result.push(String::new()); // 空字符串
-                } else {
+                if !ptr.is_null() {
                     let c_str = CStr::from_ptr(ptr);
-                    result.push(c_str.to_string_lossy());
+                    result.push(c_str.to_string_lossy().to_string());
                 }
             }
             result
-        }
+        };
 
         let want_map: HashMap<String, String> = {
             let mut res = HashMap::new();
@@ -50,8 +48,9 @@ pub(crate) extern "C" fn on_common_event(common_event_info: CommonEventInfoFfi) 
             }
             res
         };
+        let event = unsafe { CStr::from_ptr(common_event_info.event_type).to_string_lossy().to_string() };
 
-        match plugin.on_common_event(&common_event_info.event_type, &want_map) {
+        match plugin.on_common_event(&event, &want_map) {
             Ok(_) => logi!("process common event success."),
             Err(code) => loge!("process common event failed, code: {}", code),
         }
