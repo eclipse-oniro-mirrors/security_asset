@@ -33,6 +33,6 @@ members = [
     "services/secure_access_fence/common",
     "services/secure_access_fence/core_service",
     "services/secure_access_fence/plugin",
-    "test/unittest/inner_kits_rust",
-    "test/unittest/module_test"
+    "test/asset/unittest/inner_kits_rust",
+    "test/asset/unittest/module_test"
 ]

@@ -83,7 +83,7 @@ pub trait ISAFPlugin: Any + Sync + Send + std::panic::RefUnwindSafe {
     fn on_idle(&self);
 
     /// Process common event.
-    fn on_common_event(&self, params: &mut ExtMap) -> Result<(), i32>;
+    fn on_common_event(&self, params: &mut ExtMap, want: &HashMap<String, String>) -> Result<(), i32>;
 
     /// Process the event.
     fn process_event(&self, event_type: EventType, params: &mut ExtMap) -> Result<ExtMap, u32>;

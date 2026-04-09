@@ -36,6 +36,8 @@ pub struct SAFPlugin {
 
 static SAF_PLUGIN_LOCK: Mutex<()> = Mutex::new(());
 
+const EXT_SO_NAME: &str = "libsecure_access_fence_ext_ffi.z.so";
+
 unsafe impl Sync for SAFPlugin {}
 
 impl SAFPlugin {
@@ -58,11 +60,10 @@ impl SAFPlugin {
             let _guard = SAF_PLUGIN_LOCK.lock().unwrap();
             if self.lib.borrow().is_none() {
                 logi!("start to load saf_ext plugin.");
-                match libloading::Library::new("libsecure_access_fence_ext_ffi.z.so") {
+                match libloading::Library::new(EXT_SO_NAME) {
                     Ok(lib) => *self.lib.borrow_mut() = Some(lib),
                     Err(err) => {
-                        loge!("dlopen libsecure_access_fence_ext_ffi.z.so failed, err: {}", err);
-                        return macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "dlopen failed {}", err);
+                        return macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "dlopen {} failed {}", EXT_SO_NAME, err);
                     },
                 };
             }

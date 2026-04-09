@@ -24,59 +24,21 @@ use system_ability_fwk::{
 };
 use ylong_runtime::builder::RuntimeBuilder;
 
-use saf_common::{ConstSAFBlob, Counter, TaskManager};
+use saf_common::{Counter, TaskManager};
 use saf_definition::{macros_lib, ErrCode, Result};
 use saf_ipc::SA_ID;
 use saf_log::{logd, loge, logi};
 use saf_plugin::saf_plugin::{SAFContext, SAFPlugin};
-use saf_common::CommonEventType;
 
 mod common_event;
 mod stub;
 
 struct SAFAbility;
 
-trait WantParser<T> {
-    fn parse(&self) -> Result<T>;
-}
-
-struct CommonEventInfo {
-    event_type: CommonEventType,
-    uid: String,
-    app_index: String,
-    bundle_name: String,
-    user_id: String,
-}
-
 #[repr(C)]
 struct CommonEventInfoFfi {
-    event_type: CommonEventType,
-    uid: ConstSAFBlob,
-    app_index: ConstSAFBlob,
-    bundle_name: ConstSAFBlob,
-    user_id: ConstSAFBlob,
-}
-
-impl CommonEventInfo {
-    fn event_type(&self) -> CommonEventType {
-        self.event_type
-    }
-
-    fn uid(&self) -> &String {
-        &self.uid
-    }
-
-    fn app_index(&self) -> &String {
-        &self.app_index
-    }
-
-    fn bundle_name(&self) -> &String {
-        &self.bundle_name
-    }
-
-    fn user_id(&self) -> &String {
-        &self.user_id
-    }
+    event_type: String,
+    want: Vec<String>,
 }
 
 static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 60;  // 60s

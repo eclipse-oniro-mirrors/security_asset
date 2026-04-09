@@ -16,27 +16,17 @@
 #ifndef SYSTEM_EVENT_WRAPPER
 #define SYSTEM_EVENT_WRAPPER
 
-#include <stdint.h>
+#include <cstdint>
+#include "cxx.h"
 
 typedef struct {
     uint32_t size;
-    const uint8_t *data;
-} ConstSAFBlob;
-
-typedef enum {
-    UNKNOWN = 0,
-    PACKAGE_REMOVED = 1,
-    PACKAGE_ADDED = 2,
-    PACKAGE_CHANGED = 3,
-    RESTORE_START = 4,
-} CommonEventType;
+    const rust::string *data;
+} RustStringArray;
 
 typedef struct {
-    CommonEventType eventType;
-    ConstSAFBlob uid;
-    ConstSAFBlob appIndex;
-    ConstSAFBlob bundleName;
-    ConstSAFBlob userId;
+    rust::string event_type;
+    RustStringArray want;
 } CommonEventInfo;
 
 typedef void (*OnCommonEvent)(CommonEventInfo);

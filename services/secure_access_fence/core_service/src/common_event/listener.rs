@@ -28,31 +28,22 @@ use saf_plugin_interface::plugin_interface::{
 use crate::CommonEventInfoFfi;
 
 pub(crate) extern "C" fn on_common_event(common_event_info: CommonEventInfoFfi) {
-    if let Ok(load) = SAFPlugin::get_instance().load_plugin() {
+    if let Ok(plugin) = SAFPlugin::get_instance().load_plugin() {
         let mut params = ExtMap::new();
-        params.insert(PARAM_NAME_COMMON_EVENT_TYPE, Value::Number(common_event_info.event_type as u32));
+        params.insert(PARAM_NAME_COMMON_EVENT_TYPE, Value::String(common_event_info.event_type));
 
-        let uid: Vec<u8> = unsafe {
-            slice::from_raw_parts(common_event_info.uid.data, common_event_info.uid.size as usize).to_vec()
+        let want_map: HashMap<String, String> = {
+            let mut res = HashMap::new();
+            let mut want_iter = common_event_info.want.into_iter();
+            while let Some(k) = want_iter.next() {
+                if let Some(v) = want_iter.next() {
+                    res.insert(k, v);
+                }
+            }
+            res
         };
-        params.insert(PARAM_NAME_COMMON_EVENT_UID, Value::Bytes(uid));
 
-        let app_index: Vec<u8> = unsafe {
-            slice::from_raw_parts(common_event_info.app_index.data, common_event_info.app_index.size as usize).to_vec()
-        };
-        params.insert(PARAM_NAME_COMMON_EVENT_APP_INDEX, Value::Bytes(app_index));
-
-        let bundle_name: Vec<u8> = unsafe {
-            slice::from_raw_parts(common_event_info.bundle_name.data, common_event_info.bundle_name.size as usize).to_vec()
-        };
-        params.insert(PARAM_NAME_COMMON_EVENT_BUNDLE_NAME, Value::Bytes(bundle_name));
-
-        let user_id: Vec<u8> = unsafe {
-            slice::from_raw_parts(common_event_info.user_id.data, common_event_info.user_id.size as usize).to_vec()
-        };
-        params.insert(PARAM_NAME_COMMON_EVENT_USER_ID, Value::Bytes(user_id));
-
-        match load.on_common_event(&mut params) {
+        match plugin.on_common_event(&mut params, &want_map) {
             Ok(_) => logi!("process common event success."),
             Err(code) => loge!("process common event failed, code: {}", code),
         }
