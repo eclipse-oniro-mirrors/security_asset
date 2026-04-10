@@ -534,4 +534,239 @@ HWTEST_F(AssetSystemApiTest, AssetSystemApiTest018, TestSize.Level0)
     ASSERT_EQ(SEC_ASSET_INVALID_ARGUMENT,
         AssetUpdate(queryAttr, ARRAY_SIZE(queryAttr), updateAttr, ARRAY_SIZE(updateAttr)));
 }
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest019
+ * @tc.desc: Test asset func AssetPreQuery, AssetPostQuery expect SUCCESS
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest019, TestSize.Level0)
+{
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    std::vector<AssetAttr> attr = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_SECRET, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_ACCESSIBILITY, .value.u32 = SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED },
+        { .tag = SEC_ASSET_TAG_AUTH_TYPE, .value.u32 = SEC_ASSET_AUTH_TYPE_ANY }
+    };
+    std::vector<std::vector<AssetAttr>> param;
+    param.push_back(attr);
+    std::vector<std::pair<uint32_t, uint32_t>> errInfoArray;
+    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetBatchAdd(param, errInfoArray));
+}
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest020
+ * @tc.desc: Test asset func AssetPreQuery, AssetPostQuery expect SUCCESS
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest020, TestSize.Level0)
+{
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    std::vector<AssetAttr> attr = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+    };
+    std::vector<std::vector<AssetAttr>> param;
+    param.push_back(attr);
+    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetBatchRemove(param));
+}
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest021
+ * @tc.desc: Test asset func AssetPreQuery, AssetPostQuery expect SUCCESS
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest021, TestSize.Level0)
+{
+    std::vector<std::vector<AssetAttr>> param;
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, AssetBatchRemove(param));
+}
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest022
+ * @tc.desc: Test asset func AssetPreQuery, AssetPostQuery expect SUCCESS
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest022, TestSize.Level0)
+{
+    std::vector<std::vector<AssetAttr>> param;
+    std::vector<std::pair<uint32_t, uint32_t>> errInfoArray;
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, AssetBatchAdd(param, errInfoArray));
+}
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest023
+ * @tc.desc: Test asset func AssetPreQuery, AssetPostQuery expect SUCCESS
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest023, TestSize.Level0)
+{
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    std::vector<AssetAttr> attr = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_SECRET, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_ACCESSIBILITY, .value.u32 = SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED },
+        { .tag = SEC_ASSET_TAG_AUTH_TYPE, .value.u32 = SEC_ASSET_AUTH_TYPE_ANY }
+    };
+    std::vector<std::vector<AssetAttr>> param;
+    param.push_back(attr);
+    std::vector<std::pair<uint32_t, uint32_t>> errInfoArray;
+    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetBatchAdd(param, errInfoArray));
+
+    std::vector<AssetAttr> attrToRemove = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+    };
+    std::vector<std::vector<AssetAttr>> paramToRemove;
+    paramToRemove.push_back(attrToRemove);
+    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetBatchRemove(paramToRemove));
+}
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest024
+ * @tc.desc: Test asset func AssetUpdate expect SUCCESS
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest024, TestSize.Level0)
+{
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    AssetAttr attr[] = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_SECRET, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID },
+        { .tag = SEC_ASSET_TAG_ACCESSIBILITY, .value.u32 = SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED },
+        { .tag = SEC_ASSET_TAG_AUTH_TYPE, .value.u32 = SEC_ASSET_AUTH_TYPE_ANY }
+    };
+    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetAdd(attr, ARRAY_SIZE(attr)));
+
+    std::vector<AssetAttr> queryAttr = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID },
+    };
+    const char *secretNew = "secret_new";
+    std::vector<AssetAttr> updateAttr = {
+        { .tag = SEC_ASSET_TAG_SECRET, .value.blob =
+            { .size = strlen(secretNew), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(secretNew)) } }
+    };
+    std::vector<std::vector<AssetAttr>> paramQuery;
+    paramQuery.push_back(queryAttr);
+
+    std::vector<std::vector<AssetAttr>> paramUpdate;
+    paramUpdate.push_back(updateAttr);
+
+    std::vector<std::pair<uint32_t, uint32_t>> errInfoArray;
+    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetBatchUpdate(paramQuery, paramUpdate, errInfoArray));
+}
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest025
+ * @tc.desc: Test asset func AssetUpdate expect SUCCESS
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest025, TestSize.Level0)
+{
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    AssetAttr attr[] = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_SECRET, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID },
+        { .tag = SEC_ASSET_TAG_ACCESSIBILITY, .value.u32 = SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED },
+        { .tag = SEC_ASSET_TAG_AUTH_TYPE, .value.u32 = SEC_ASSET_AUTH_TYPE_ANY }
+    };
+    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetAdd(attr, ARRAY_SIZE(attr)));
+
+    std::vector<AssetAttr> queryAttr = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID },
+    };
+    const char *secretNew = "secret_new";
+    std::vector<AssetAttr> updateAttr = {
+        { .tag = SEC_ASSET_TAG_SECRET, .value.blob =
+            { .size = strlen(secretNew), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(secretNew)) } }
+    };
+    std::vector<std::vector<AssetAttr>> paramQuery;
+
+    std::vector<std::vector<AssetAttr>> paramUpdate;
+    paramUpdate.push_back(updateAttr);
+
+    std::vector<std::pair<uint32_t, uint32_t>> errInfoArray;
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, AssetBatchUpdate(paramQuery, paramUpdate, errInfoArray));
+}
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest026
+ * @tc.desc: Test asset func AssetUpdate expect SUCCESS
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest026, TestSize.Level0)
+{
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    AssetAttr attr[] = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_SECRET, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID },
+        { .tag = SEC_ASSET_TAG_ACCESSIBILITY, .value.u32 = SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED },
+        { .tag = SEC_ASSET_TAG_AUTH_TYPE, .value.u32 = SEC_ASSET_AUTH_TYPE_ANY }
+    };
+    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetAdd(attr, ARRAY_SIZE(attr)));
+
+    std::vector<AssetAttr> queryAttr = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID },
+    };
+    const char *secretNew = "secret_new";
+    std::vector<AssetAttr> updateAttr = {
+        { .tag = SEC_ASSET_TAG_SECRET, .value.blob =
+            { .size = strlen(secretNew), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(secretNew)) } }
+    };
+    std::vector<std::vector<AssetAttr>> paramQuery;
+    paramQuery.push_back(queryAttr);
+
+    std::vector<std::vector<AssetAttr>> paramUpdate;
+
+    std::vector<std::pair<uint32_t, uint32_t>> errInfoArray;
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, AssetBatchUpdate(paramQuery, paramUpdate, errInfoArray));
+}
+
+/**
+ * @tc.name: AssetSystemApiTest.AssetSystemApiTest027
+ * @tc.desc: Test asset func AssetUpdate expect SUCCESS
+ * @tc.type: FUNC
+ * @tc.result:0
+ */
+HWTEST_F(AssetSystemApiTest, AssetSystemApiTest027, TestSize.Level0)
+{
+    AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
+    AssetAttr attr[] = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_SECRET, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID },
+        { .tag = SEC_ASSET_TAG_ACCESSIBILITY, .value.u32 = SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED },
+        { .tag = SEC_ASSET_TAG_AUTH_TYPE, .value.u32 = SEC_ASSET_AUTH_TYPE_ANY }
+    };
+    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetAdd(attr, ARRAY_SIZE(attr)));
+
+    std::vector<AssetAttr> queryAttr = {
+        { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID },
+    };
+    const char *secretNew = "secret_new";
+    std::vector<AssetAttr> updateAttr = {
+        { .tag = SEC_ASSET_TAG_SECRET, .value.blob =
+            { .size = strlen(secretNew), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(secretNew)) } }
+    };
+    std::vector<std::vector<AssetAttr>> paramQuery;
+
+    std::vector<std::vector<AssetAttr>> paramUpdate;
+
+    std::vector<std::pair<uint32_t, uint32_t>> errInfoArray;
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, AssetBatchUpdate(paramQuery, paramUpdate, errInfoArray));
+}
 }
