@@ -79,6 +79,7 @@ bool StoreKeyValue(int32_t userId, char const *inKey, int32_t inValue)
 
     auto uri = Uri(getUriStr(userId));
     std::string keyword = std::string(inKey);
+    auto keywordUri = Uri(getUriStr(userId) + "&key=" + keyword);
     auto predicates = getPredicates(keyword);
     std::vector<std::string> columns;
     auto resultSet = helper->Query(uri, predicates, columns);
@@ -96,10 +97,10 @@ bool StoreKeyValue(int32_t userId, char const *inKey, int32_t inValue)
     switch (query_count) {
         case ZERO:
             valuesBucket.Put(SETTING_COLUMN_KEYWORD, keyword);
-            result = helper->Insert(uri, valuesBucket);
+            result = helper->Insert(keywordUri, valuesBucket);
             break;
         case ONE:
-            result = helper->Update(uri, predicates, valuesBucket);
+            result = helper->Update(keywordUri, predicates, valuesBucket);
             break;
         default:
             LOGE("[FATAL]Datashare query over expected.");
