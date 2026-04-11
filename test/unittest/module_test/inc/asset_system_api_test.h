@@ -37,15 +37,6 @@ int AssetSystemApiTest015(void);
 int AssetSystemApiTest016(void);
 int AssetSystemApiTest017(void);
 int AssetSystemApiTest018(void);
-int AssetSystemApiTest019(void);
-int AssetSystemApiTest020(void);
-int AssetSystemApiTest021(void);
-int AssetSystemApiTest022(void);
-int AssetSystemApiTest023(void);
-int AssetSystemApiTest024(void);
-int AssetSystemApiTest025(void);
-int AssetSystemApiTest026(void);
-int AssetSystemApiTest027(void);
 }
 
 #endif // ASSET_SYSTEM_API_TEST_H

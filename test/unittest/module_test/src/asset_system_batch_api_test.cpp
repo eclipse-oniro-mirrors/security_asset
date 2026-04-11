@@ -69,7 +69,7 @@ HWTEST_F(AssetSystemBatchApiTest, AssetSystemBatchApiTest001, TestSize.Level0)
     std::vector<AssetAttr> attr = {
         { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_SECRET, .value.blob = funcName },
-        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = NOT_FOUND_USER_ID },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID },
         { .tag = SEC_ASSET_TAG_ACCESSIBILITY, .value.u32 = SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED },
         { .tag = SEC_ASSET_TAG_AUTH_TYPE, .value.u32 = SEC_ASSET_AUTH_TYPE_ANY }
     };
@@ -133,7 +133,7 @@ HWTEST_F(AssetSystemBatchApiTest, AssetSystemBatchApiTest005, TestSize.Level0)
     std::vector<AssetAttr> attr = {
         { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_SECRET, .value.blob = funcName },
-        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = NOT_FOUND_USER_ID },
+        { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID },
         { .tag = SEC_ASSET_TAG_ACCESSIBILITY, .value.u32 = SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED },
         { .tag = SEC_ASSET_TAG_AUTH_TYPE, .value.u32 = SEC_ASSET_AUTH_TYPE_ANY }
     };
