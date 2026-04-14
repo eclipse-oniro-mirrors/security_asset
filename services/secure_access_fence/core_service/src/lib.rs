@@ -60,6 +60,13 @@ pub(crate) fn unload_sa() {
             if counter.lock().unwrap().count() > 0 {
                 continue;
             }
+
+            if let Ok(load) = SAFPlugin::get_instance().load_plugin() {
+                if load.get_working_request_num() > 0 {
+                    continue;
+                }
+            }
+
             let task_manager = TaskManager::get_instance();
             if !task_manager.lock().unwrap().is_empty() {
                 continue;
@@ -97,12 +104,17 @@ impl Ability for SAFAbility {
         }
         match SAFPlugin::get_instance().load_plugin() {
             Ok(loader) => {
-                loader.on_idle();
+                let delay_time = loader.on_idle();
+                if delay_time == 0 {
+                    logd!("Saf service idle, reason: {}", reason.name);
+                }
+                delay_time
             },
-            Err(_) => loge!("load plugin failed."),
+            Err(_) => {
+                loge!("load plugin failed.");
+                0
+            },
         }
-        logd!("Saf service idle, reason: {}", reason.name);
-        0
     }
 
     fn on_stop(&self) {

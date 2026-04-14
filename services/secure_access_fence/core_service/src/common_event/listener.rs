@@ -50,10 +50,7 @@ pub(crate) extern "C" fn on_common_event(common_event_info: CommonEventInfoFfi) 
         };
         let event = unsafe { CStr::from_ptr(common_event_info.event_type).to_string_lossy().to_string() };
 
-        match plugin.on_common_event(&event, &want_map) {
-            Ok(_) => logi!("process common event success."),
-            Err(code) => loge!("process common event failed, code: {}", code),
-        }
+        plugin.on_common_event(&event, &want_map);
     }
 }
 

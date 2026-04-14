@@ -80,10 +80,13 @@ pub trait ISAFPlugin: Any + Sync + Send + std::panic::RefUnwindSafe {
     fn on_stop(&self);
 
     /// Process on idle event.
-    fn on_idle(&self);
+    fn on_idle(&self) -> i32;
+
+    /// Get wroking request num count.
+    fn get_working_request_num(&self) -> u32;
 
     /// Process common event.
-    fn on_common_event(&self, params: &str, want: &HashMap<String, String>) -> Result<(), i32>;
+    fn on_common_event(&self, params: &str, want: &HashMap<String, String>);
 
     /// Process the event.
     fn process_event(&self, event_type: EventType, params: &mut ExtMap) -> Result<ExtMap, u32>;
