@@ -671,7 +671,6 @@ impl Database {
         let mut db_datas = Vec::new();
         let mut err_info = Vec::new();
         let time = time::system_time_in_millis()?;
-        let _lock = self.db_lock.mtx.lock().unwrap();
         if attributes_array.is_empty() || attributes_to_update_array.is_empty() { 
             return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The data to update is empty."); 
         }
@@ -702,6 +701,7 @@ impl Database {
         if db_datas.len() != aliases.len() {
             return macros_lib::log_throw_error!(ErrCode::SystemError, "[FATAL]The system internal error.");
         }
+        let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.local_update_batch_datas(&db_datas, db_map, &aliases);
 
         self.restore_if_exec_fail(closure)?;
