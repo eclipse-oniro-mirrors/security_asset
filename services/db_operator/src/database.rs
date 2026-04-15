@@ -667,35 +667,30 @@ impl Database {
         calling_info: &CallingInfo,
     ) -> Result<Vec<(u32, u32)>> {
         let mut aliases = Vec::new();
-        let mut err_info = Vec::new();
-	    let _lock = self.db_lock.mtx.lock().unwrap();
-        // check data to be queried is exist
-        let mut invalid_query_idx_set = HashSet::new();
-        if attributes_array.is_empty() || attributes_to_update_array.is_empty() {
-            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The data to update is empty.");
-        }
-        for (index, attr) in attributes_array.iter().enumerate() {
-            let query = get_query_condition(attr, calling_info)?;
-            if !self.is_data_exists_without_lock(&query, true)? {
-                invalid_query_idx_set.insert(index);
-                err_info.push((ErrCode::NotFound as u32, index as u32));
-            } else {
-                aliases.push(attr.get_bytes_attr(&Tag::Alias)?.to_vec());
-            }
-        }
-
         let mut column_names: HashSet<String> = HashSet::new();
         let mut db_datas = Vec::new();
+        let mut err_info = Vec::new();
         let time = time::system_time_in_millis()?;
-        for (index, attr) in attributes_to_update_array.iter().enumerate() {
-            // filter invalid data
-            if invalid_query_idx_set.contains(&index) {
+
+        for (index, (attr, attr_to_update)) in attributes_array.iter()
+            .zip(attributes_to_update_array.iter())
+            .enumerate() 
+        {
+            let query = get_query_condition(attr, calling_info)?;
+            let mut results = self.query_datas(&vec![], &query, None, true)?;
+            if results.len() != 1 {
+                err_info.push((ErrCode::NotFound as u32, index as u32));
                 continue;
             }
-            let mut db_data = into_db_map_with_column_names(attr, &mut column_names);
-            add_default_batch_update_attrs(&mut db_data, time.clone(), attr);
-            if attr.contains_key(&Tag::Secret) {
-                self.encrypt(calling_info, &mut db_data)?;
+            aliases.push(attr.get_bytes_attr(&Tag::Alias)?.to_vec());
+            let result = results.get_mut(0).unwrap();
+            result.insert(column::SECRET, attr_to_update[&Tag::Secret].clone());
+
+            let mut db_data = into_db_map_with_column_names(attr_to_update, &mut column_names);
+            add_default_batch_update_attrs(&mut db_data, time.clone(), attr_to_update);
+            if attr_to_update.contains_key(&Tag::Secret) {
+                let cipher = self.encrypt(calling_info, result)?;
+                db_data.insert(column::SECRET, Value::Bytes(cipher));
             }
             db_datas.push(db_data);
         }
@@ -709,12 +704,11 @@ impl Database {
         Ok(err_info)
     }
 
-    fn encrypt(&mut self, calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
+    fn encrypt(&mut self, calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
         let secret_key = build_secret_key(calling_info, db_data)?;
         let secret = db_data.get_bytes_attr(&column::SECRET)?;
         let cipher = Crypto::encrypt(&secret_key, secret, &build_aad(db_data)?)?;
-        db_data.insert(column::SECRET, Value::Bytes(cipher));
-        Ok(())
+        Ok(cipher)
     }
 
     fn parse_attr_array(&mut self,
