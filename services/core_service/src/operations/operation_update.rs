@@ -131,6 +131,7 @@ pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &Asse
         if common::need_upgrade(result)? {
             upgrade_to_latest_version(result, &mut update_db_data);
         }
+        // Using result with AAD to encrypt secret, otherwise encryption failed.
         let cipher = encrypt(calling_info, result)?;
         update_db_data.insert(column::SECRET, Value::Bytes(cipher));
     }

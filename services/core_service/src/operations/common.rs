@@ -140,11 +140,16 @@ pub(crate) fn update_cloud_sync_status(calling_info: &CallingInfo, db_map_vec: &
 }
 
 
-fn get_default_value(tag: &Tag) -> Value {
+fn get_default_value(tag: &Tag) -> Result<Value> {
     match tag {
-        Tag::RequireAttrEncrypted => Value::Bool(false),
-        Tag::GroupId => Value::Bytes(vec![]),
-        _ => Value::Bool(false),
+        Tag::RequireAttrEncrypted => Ok(Value::Bool(false)),
+        Tag::GroupId => Ok(Value::Bytes(vec![])),
+        // Add other Tags if needed.
+        _ => macros_lib::log_throw_error!(
+            ErrCode::InvalidArgument,
+            "[FATAL][OPERATIONS]Tag {:?} does not have default value",
+            tag
+        ),
     }
 }
 
@@ -152,10 +157,16 @@ pub(crate) fn check_tags_consistency(tags: &[Tag], attributes_array: &[AssetMap]
     let first = &attributes_array[0];
 
     for tag in tags {
-        let ref_value = first.get(tag).cloned().unwrap_or_else(|| get_default_value(tag));
+        let ref_value = match first.get(tag) {
+            Some(value) => value.clone(),
+            None => get_default_value(tag)?,
+        };
 
         for (idx, attrs) in attributes_array.iter().enumerate() {
-            let value = attrs.get(tag).cloned().unwrap_or_else(|| get_default_value(tag));
+            let value = match attrs.get(tag) {
+                Some(value) => value.clone(),
+                None => get_default_value(tag)?,
+            };
 
             if ref_value != value {
                 return macros_lib::log_throw_error!(
