@@ -38,7 +38,7 @@ pub struct AssetAttr {
 /// Array of Assets.
 #[repr(C)]
 #[derive(Debug)]
-pub struct CArray {
+pub(crate) struct CArray {
     /// Array of assets.
     pub data: *const AssetAttr,
     /// Size of Array of assets.
@@ -48,7 +48,7 @@ pub struct CArray {
 /// Array of Arrays of Assets.
 #[repr(C)]
 #[derive(Debug)]
-pub struct C2DArray {
+pub(crate) struct C2DArray {
     /// Arrays of assets.
     pub items: *const CArray,
     /// Size of arrays.
@@ -58,7 +58,7 @@ pub struct C2DArray {
 /// Vec of (u32, u32).
 #[repr(C)]
 #[derive(Debug)]
-pub struct MutPairVec {
+pub(crate) struct MutPairVec {
     /// Data of MutPairVec.
     pub data: *mut (u32, u32),
     /// Size of vector.
@@ -86,12 +86,4 @@ pub(crate) union AssetValue {
 pub struct AssetResultSet {
     count: u32,
     results: *mut AssetResult,
-}
-
-/// Batch result of Asset with a c representation.
-#[repr(C)]
-pub struct AssetBatchResult {
-    count: u32,
-    indices: *mut u32,
-    error_codes: *mut i32,
 }

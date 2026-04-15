@@ -291,7 +291,7 @@ typedef enum {
     /**
      * Each value of Tag.GROUP_ID and Tag.REQUIRE_ATTR_ENCRYPTED in the array is not consistent.
      */
-    SEC_ASSET_ARRAY_INCONSISTENT = 24000019,
+    SEC_ASSET_INCONSISTENT_ATTRIBUTE = 24000019,
     /**
      * The HW Account error.
      */

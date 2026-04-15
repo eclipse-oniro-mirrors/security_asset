@@ -604,18 +604,18 @@ impl AssetService {
         execute!(operations::query_sync_result, calling_info, query)
     }
 
-    fn batch_add(&self, calling_info: &CallingInfo, attributes_array: &Vec<AssetMap>) -> Result<Vec<(u32, u32)>> {
+    fn batch_add(&self, calling_info: &CallingInfo, attributes_array: &[AssetMap]) -> Result<Vec<(u32, u32)>> {
         execute_batch!(operations::batch_add, calling_info, attributes_array)
     }
 
-    fn batch_remove(&self, calling_info: &CallingInfo, attributes_array: &Vec<AssetMap>) -> Result<()> {
+    fn batch_remove(&self, calling_info: &CallingInfo, attributes_array: &[AssetMap]) -> Result<()> {
         execute_batch!(operations::batch_remove, calling_info, attributes_array)
     }
 
     fn batch_update(
         &self, calling_info: &CallingInfo,
-        attributes_array: &Vec<AssetMap>,
-        attributes_to_update_array: &Vec<AssetMap>
+        attributes_array: &[AssetMap],
+        attributes_to_update_array: &[AssetMap]
     ) -> Result<Vec<(u32, u32)>> {
         execute_batch!(operations::batch_update, calling_info, attributes_array, attributes_to_update_array)
     }

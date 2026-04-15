@@ -77,6 +77,25 @@ fn into_map(attributes: *const AssetAttr, attr_cnt: u32) -> Option<AssetMap> {
     Some(map)
 }
 
+fn into_vec2d(c_array: &C2DArray) -> Option<Vec<Vec<AssetAttr>>> {
+    if c_array.items.is_null() && c_array.len != 0 {
+        return None;
+    }
+    
+    unsafe {
+        let outer = slice::from_raw_parts(c_array.items, c_array.len);
+        let mut vec2d = Vec::with_capacity(c_array.len);
+        for ca in outer {
+            if ca.data.is_null() && ca.len != 0 {
+                return None;
+            }
+            let inner = slice::from_raw_parts(ca.data, ca.len);
+            vec2d.push(inner.to_vec());
+        }
+        Some(vec2d)
+    }
+}
+
 fn into_batch_map(
     attributes_array: &Vec<Vec<AssetAttr>>,
 ) -> Option<Vec<AssetMap>> {
@@ -120,14 +139,9 @@ pub extern "C" fn asset_batch_add(
     c_array: &C2DArray,
     err_info: &mut MutPairVec,
 ) -> i32 {
-    let array = unsafe {
-        let outer = slice::from_raw_parts(c_array.items, c_array.len);
-        let mut vec2d = Vec::with_capacity(c_array.len);
-        for ca in outer {
-            let inner = slice::from_raw_parts(ca.data, ca.len);
-            vec2d.push(inner.to_vec());
-        }
-        vec2d
+    let array = match into_vec2d(c_array) {
+        Some(array) => array,
+        None => return ErrCode::InvalidArgument as i32,
     };
     let attributes_array = match into_batch_map(&array) {
         Some(array) => array,
@@ -158,28 +172,18 @@ pub extern "C" fn asset_batch_update(
     c_array_to_update: &C2DArray,
     err_info: &mut MutPairVec,
 ) -> i32 {
-    let array = unsafe {
-        let outer = slice::from_raw_parts(c_array.items, c_array.len);
-        let mut vec2d = Vec::with_capacity(c_array.len);
-        for ca in outer {
-            let inner = slice::from_raw_parts(ca.data, ca.len);
-            vec2d.push(inner.to_vec());
-        }
-        vec2d
+    let array = match into_vec2d(c_array) {
+        Some(array) => array,
+        None => return ErrCode::InvalidArgument as i32,
     };
     let attributes_array = match into_batch_map(&array) {
         Some(array) => array,
         None => return ErrCode::InvalidArgument as i32,
     };
 
-    let array_to_update = unsafe {
-        let outer = slice::from_raw_parts(c_array_to_update.items, c_array_to_update.len);
-        let mut vec2d = Vec::with_capacity(c_array_to_update.len);
-        for ca in outer {
-            let inner = slice::from_raw_parts(ca.data, ca.len);
-            vec2d.push(inner.to_vec());
-        }
-        vec2d
+    let array_to_update = match into_vec2d(c_array_to_update) {
+        Some(array) => array,
+        None => return ErrCode::InvalidArgument as i32,
     };
 
     let attributes_to_update_array = match into_batch_map(&array_to_update) {
@@ -204,6 +208,17 @@ pub extern "C" fn asset_batch_update(
     RESULT_CODE_SUCCESS
 }
 
+/// Function used to free memory allocated from Rust side.
+#[no_mangle]
+pub extern "C" fn asset_free_mut_pair_vec(vec: &MutPairVec) -> i32 {
+    if !vec.data.is_null() && vec.len > 0 {
+        unsafe {
+            let _ = Vec::from_raw_parts(vec.data, vec.len, vec.len);
+        }
+    }
+    RESULT_CODE_SUCCESS
+}
+
 /// Function called from C programming language to Rust programming language for removing Asset.
 #[no_mangle]
 pub extern "C" fn remove_asset(query: *const AssetAttr, query_cnt: u32) -> i32 {
@@ -224,14 +239,9 @@ pub extern "C" fn remove_asset(query: *const AssetAttr, query_cnt: u32) -> i32 {
 /// Function called from C programming language to Rust programming language for batch removing Assets.
 #[no_mangle]
 pub extern "C" fn asset_batch_remove(c_array: &C2DArray) -> i32 {
-    let array = unsafe {
-        let outer = slice::from_raw_parts(c_array.items, c_array.len);
-        let mut vec2d = Vec::with_capacity(c_array.len);
-        for ca in outer {
-            let inner = slice::from_raw_parts(ca.data, ca.len);
-            vec2d.push(inner.to_vec());
-        }
-        vec2d
+    let array = match into_vec2d(c_array) {
+        Some(array) => array,
+        None => return ErrCode::InvalidArgument as i32,
     };
     let attributes_array = match into_batch_map(&array) {
         Some(array) => array,

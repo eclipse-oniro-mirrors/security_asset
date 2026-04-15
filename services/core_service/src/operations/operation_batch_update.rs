@@ -22,7 +22,7 @@ use asset_db_operator::{
         ACCESS_CONTROL_ATTRS, ASSET_SYNC_ATTRS, CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS, NORMAL_LOCAL_LABEL_ATTRS,
         check_required_tags, check_tag_validity, check_value_validity, into_db_map
     },
-    database::Database, types::{DbMap, column},
+    database::Database, types::{DB_DATA_VERSION, DbMap, column},
 };
 use asset_definition::{
     macros_lib, AssetMap, ErrCode, Result, Tag,
@@ -33,7 +33,7 @@ use crate::operations::common::check_tags_consistency;
 
 const QUERY_VALID_ATTRS: [Tag; 1] = [Tag::Alias];
 const UPDATE_OPTIONAL_ATTRS: [Tag; 1] = [Tag::Secret];
-const CONSISTENCY_ATTRS: [Tag; 3] = [Tag::RequireAttrEncrypted, Tag::GroupId, Tag::UserId];
+const CONSISTENCY_ATTRS: [Tag; 2] = [Tag::RequireAttrEncrypted, Tag::GroupId];
 
 fn check_attrs_array(attributes_array: &[AssetMap]) -> Result<()> {
     for attrs in attributes_array {
@@ -68,6 +68,7 @@ fn check_update_array(attributes_array: &[AssetMap]) -> Result<()> {
 fn add_default_attrs(db_data: &mut DbMap, calling_info: &CallingInfo) {
     db_data.entry(column::OWNER).or_insert(Value::Bytes(calling_info.owner_info().clone()));
     db_data.entry(column::OWNER_TYPE).or_insert(Value::Number(calling_info.owner_type()));
+    db_data.entry(column::VERSION).or_insert(Value::Number(DB_DATA_VERSION));
 }
 
 
@@ -76,7 +77,10 @@ fn local_batch_update(
     attributes_array: &[AssetMap],
     attributes_to_update_array: &[AssetMap]
 ) -> Result<Vec<(u32, u32)>> {
-    let attributes = &attributes_array[0];
+    let attributes = match attributes_array.first() {
+        Some(attr) => attr,
+        None => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Batch Add argument empty."),
+    };
     let mut db_map = into_db_map(attributes);
     check_attrs_array(attributes_array)?;
     check_update_array(attributes_to_update_array)?;
@@ -89,8 +93,8 @@ fn local_batch_update(
 
 pub(crate) fn batch_update(
     calling_info: &CallingInfo,
-    attributes_array: &Vec<AssetMap>,
-    attributes_to_update_array: &Vec<AssetMap>
+    attributes_array: &[AssetMap],
+    attributes_to_update_array: &[AssetMap]
 ) -> Result<Vec<(u32, u32)>> {
     if attributes_array.is_empty() || attributes_to_update_array.is_empty()
     || attributes_array.len() != attributes_to_update_array.len(){

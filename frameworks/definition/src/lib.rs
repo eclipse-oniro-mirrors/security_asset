@@ -252,7 +252,7 @@ impl_enum_trait! {
         ParamVerificationFailed = 24000018,
 
         /// Each value of Tag.GROUP_ID and Tag.REQUIRE_ATTR_ENCRYPTED in the array is not consistent.
-        ArrayInconsistent = 24000019,
+        InconsistentAttribute = 24000019,
 
         /// The HW Account error.
         HwAccountError = 24001001,

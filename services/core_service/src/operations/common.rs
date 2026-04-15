@@ -142,10 +142,10 @@ pub(crate) fn update_cloud_sync_status(calling_info: &CallingInfo, db_map_vec: &
 
 
 fn get_default_value(tag: &Tag) -> Value {
-    match tag.data_type() {
-        DataType::Bool => Value::Bool(false),
-        DataType::Number => Value::Number(0),
-        DataType::Bytes => Value::Bytes(vec![]),
+    match tag {
+        Tag::RequireAttrEncrypted => Value::Bool(false),
+        Tag::GroupId => Value::Bytes(vec![]),
+        _ => Value::Bool(false),
     }
 }
 
@@ -160,7 +160,7 @@ pub(crate) fn check_tags_consistency(tags: &[Tag], attributes_array: &[AssetMap]
 
             if ref_value != value {
                 return macros_lib::log_throw_error!(
-                    ErrCode::ArrayInconsistent,
+                    ErrCode::InconsistentAttribute,
                     "[FATAL][OPERATIONS]Tag {:?} at index {} has inconsistent value",
                     tag, idx
                 );

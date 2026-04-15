@@ -693,7 +693,10 @@ impl Database {
                 continue;
             }
             let mut db_data = into_db_map_with_column_names(attr, &mut column_names);
-            add_default_batch_update_attrs(&mut db_data, time.clone());
+            add_default_batch_update_attrs(&mut db_data, time.clone(), attr);
+            if attr.contains_key(&Tag::Secret) {
+                self.encrypt(calling_info, &mut db_data)?;
+            }
             db_datas.push(db_data);
         }
 
@@ -704,6 +707,14 @@ impl Database {
 
         self.restore_if_exec_fail(closure)?;
         Ok(err_info)
+    }
+
+    fn encrypt(&mut self, calling_info: &CallingInfo, db_data: &DbMap) -> Result<()> {
+        let secret_key = build_secret_key(calling_info, db_data)?;
+        let secret = db_data.get_bytes_attr(&column::SECRET)?;
+        let cipher = Crypto::encrypt(&secret_key, secret, &build_aad(db_data)?)?;
+        db_data.insert(column::SECRET, Value::Bytes(cipher));
+        Ok(())
     }
 
     fn parse_attr_array(&mut self,
@@ -742,7 +753,13 @@ impl Database {
                 }
             }
             db_data.extend(info.db_map.clone());
-            self.encrypt_single_data(&mut db_data, info.secret_key, aliases)?;
+            if is_merged {
+                self.encrypt_single_data(&mut db_data, info.secret_key, aliases)?;
+            } else {
+                let secret_key = build_secret_key(info.calling_info, &db_data)?;
+                generate_secret_key_if_needed(&secret_key)?;
+                self.encrypt_single_data(&mut db_data, &secret_key, aliases)?;
+            }
             db_datas.push(db_data);
         }
         Ok(column_names)
