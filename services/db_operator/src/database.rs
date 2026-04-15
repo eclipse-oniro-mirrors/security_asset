@@ -671,6 +671,10 @@ impl Database {
         let mut db_datas = Vec::new();
         let mut err_info = Vec::new();
         let time = time::system_time_in_millis()?;
+        let _lock = self.db_lock.mtx.lock().unwrap();
+        if attributes_array.is_empty() || attributes_to_update_array.is_empty() { 
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The data to update is empty."); 
+        }
 
         for (index, (attr, attr_to_update)) in attributes_array.iter()
             .zip(attributes_to_update_array.iter())
@@ -684,11 +688,11 @@ impl Database {
             }
             aliases.push(attr.get_bytes_attr(&Tag::Alias)?.to_vec());
             let result = results.get_mut(0).unwrap();
-            result.insert(column::SECRET, attr_to_update[&Tag::Secret].clone());
 
             let mut db_data = into_db_map_with_column_names(attr_to_update, &mut column_names);
             add_default_batch_update_attrs(&mut db_data, time.clone(), attr_to_update);
             if attr_to_update.contains_key(&Tag::Secret) {
+                result.insert(column::SECRET, attr_to_update[&Tag::Secret].clone());
                 let cipher = self.encrypt(calling_info, result)?;
                 db_data.insert(column::SECRET, Value::Bytes(cipher));
             }
