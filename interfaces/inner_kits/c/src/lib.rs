@@ -38,7 +38,7 @@ pub struct AssetAttr {
 /// Array of Assets.
 #[repr(C)]
 #[derive(Debug)]
-pub(crate) struct CArray {
+pub struct CArray {
     /// Array of assets.
     pub data: *const AssetAttr,
     /// Size of Array of assets.
@@ -48,7 +48,7 @@ pub(crate) struct CArray {
 /// Array of Arrays of Assets.
 #[repr(C)]
 #[derive(Debug)]
-pub(crate) struct C2DArray {
+pub struct C2DArray {
     /// Arrays of assets.
     pub items: *const CArray,
     /// Size of arrays.
@@ -58,7 +58,7 @@ pub(crate) struct C2DArray {
 /// Vec of (u32, u32).
 #[repr(C)]
 #[derive(Debug)]
-pub(crate) struct MutPairVec {
+pub struct MutPairVec {
     /// Data of MutPairVec.
     pub data: *mut (u32, u32),
     /// Size of vector.

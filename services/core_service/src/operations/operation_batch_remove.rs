@@ -23,8 +23,7 @@ use asset_db_operator::{
     types::{DbMap, column},
 };
 use asset_definition::{
-    macros_lib, AssetMap, ErrCode, Result,
-    SyncStatus, Tag, Value,
+    AssetMap, Result, SyncStatus, Tag, Value,
 };
 use asset_log::logi;
 use asset_sdk::Extension;
@@ -36,9 +35,6 @@ const OPTIONAL_ATTRS: [Tag; 3] = [Tag::RequireAttrEncrypted, Tag::GroupId, Tag::
 const CONSISTENCY_ATTRS: [Tag; 2] = [
     Tag::RequireAttrEncrypted, Tag::GroupId
 ];
-
-const MAX_ALIAS_SIZE: usize = 256;
-const MIN_ALIAS_SIZE: usize = 0;
 
 fn check_and_get_aliases(attributes_array: &[AssetMap]) -> Result<Vec<Vec<u8>>> {
     check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array)?;

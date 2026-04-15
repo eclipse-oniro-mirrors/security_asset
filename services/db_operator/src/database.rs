@@ -709,7 +709,7 @@ impl Database {
         Ok(err_info)
     }
 
-    fn encrypt(&mut self, calling_info: &CallingInfo, db_data: &DbMap) -> Result<()> {
+    fn encrypt(&mut self, calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
         let secret_key = build_secret_key(calling_info, db_data)?;
         let secret = db_data.get_bytes_attr(&column::SECRET)?;
         let cipher = Crypto::encrypt(&secret_key, secret, &build_aad(db_data)?)?;

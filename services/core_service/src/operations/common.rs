@@ -23,7 +23,6 @@ use asset_plugin::asset_plugin::AssetPlugin;
 use asset_plugin_interface::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID, PARAM_NAME_OWNER_INFO,
 };
-use asset_sdk::{Conversion, DataType};
 
 pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
     if let Some(Value::Number(operation_type)) = input.get(&Tag::OperationType) {
