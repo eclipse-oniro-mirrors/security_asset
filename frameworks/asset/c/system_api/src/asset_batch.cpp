@@ -41,6 +41,8 @@ int32_t asset_batch_add(C2DArray &arr, MutPairVec &err_info);
 int32_t asset_batch_remove(C2DArray &arr);
 
 int32_t asset_batch_update(C2DArray &arr, C2DArray &arr_to_update, MutPairVec &err_info);
+
+int32_t asset_free_mut_pair_vec(MutPairVec &vec);
 };
 
 int32_t AssetBatchAdd(std::vector<std::vector<AssetAttr>> &attrsArray,
@@ -59,7 +61,11 @@ int32_t AssetBatchAdd(std::vector<std::vector<AssetAttr>> &attrsArray,
     };
     MutPairVec outVec;
     int32_t ret = asset_batch_add(arr, outVec);
+    if (ret != SEC_ASSET_SUCCESS) {
+        return ret;
+    }
     errInfoArray = std::vector<std::pair<uint32_t, uint32_t>>(outVec.data, outVec.data + outVec.len);
+    asset_free_mut_pair_vec(outVec);
     return ret;
 }
 
@@ -111,6 +117,10 @@ int32_t AssetBatchUpdate(std::vector<std::vector<AssetAttr>> &attrsArray,
     };
     MutPairVec outVec;
     int32_t ret = asset_batch_update(arr, arrToUpdate, outVec);
+    if (ret != SEC_ASSET_SUCCESS) {
+        return ret;
+    }
     errInfoArray = std::vector<std::pair<uint32_t, uint32_t>>(outVec.data, outVec.data + outVec.len);
+    asset_free_mut_pair_vec(outVec);
     return ret;
 }

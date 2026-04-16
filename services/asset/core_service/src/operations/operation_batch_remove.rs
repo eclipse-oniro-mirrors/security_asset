@@ -23,8 +23,7 @@ use asset_db_operator::{
     types::{DbMap, column},
 };
 use asset_definition::{
-    macros_lib, AssetMap, ErrCode, Result,
-    SyncStatus, Tag, Value,
+    AssetMap, Result, SyncStatus, Tag, Value,
 };
 use asset_log::logi;
 use asset_sdk::Extension;
@@ -33,37 +32,27 @@ use asset_utils::time;
 use crate::operations::common::check_tags_consistency;
 
 const OPTIONAL_ATTRS: [Tag; 3] = [Tag::RequireAttrEncrypted, Tag::GroupId, Tag::Alias];
-const CONSISTENCY_ATTRS: [Tag; 3] = [
-    Tag::RequireAttrEncrypted, Tag::GroupId, Tag::UserId
+const CONSISTENCY_ATTRS: [Tag; 2] = [
+    Tag::RequireAttrEncrypted, Tag::GroupId
 ];
 
-const MAX_ALIAS_SIZE: usize = 256;
-const MIN_ALIAS_SIZE: usize = 0;
-
-fn check_alias(alias: &Vec<u8>) -> Result<() >{
-    if alias.len() > MAX_ALIAS_SIZE || alias.len() == MIN_ALIAS_SIZE {
-        return macros_lib::log_throw_error!(
-            ErrCode::InvalidArgument, "[FATAL]The array length [{}] of alias exceeds the valid range.", alias.len()
-        );
-    }
-    Ok(())
-}
-
-fn check_and_get_aliases(attributes_array: &Vec<AssetMap>) -> Result<Vec<Vec<u8>>> {
+fn check_and_get_aliases(attributes_array: &[AssetMap]) -> Result<Vec<Vec<u8>>> {
     check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array)?;
     let mut aliases = Vec::new();
     for attrs in attributes_array {
         check_tag_validity(attrs, &OPTIONAL_ATTRS)?;
         check_value_validity(attrs)?;
         let alias = attrs.get_bytes_attr(&Tag::Alias)?;
-        check_alias(alias)?;
         aliases.push(alias.clone());
     }
     Ok(aliases)
 }
 
-fn loacl_batch_remove(attributes_array: &Vec<AssetMap>, calling_info: &CallingInfo) -> Result<()> {
-    let attributes = &attributes_array[0];
+fn loacl_batch_remove(attributes_array: &[AssetMap], calling_info: &CallingInfo) -> Result<()> {
+    let attributes = match attributes_array.first() {
+        Some(attr) => attr,
+        None => return Ok(()),
+    };
     let aliases = check_and_get_aliases(attributes_array)?;
 
     let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes)?;
@@ -80,9 +69,6 @@ fn loacl_batch_remove(attributes_array: &Vec<AssetMap>, calling_info: &CallingIn
     Ok(())
 }
 
-pub(crate) fn batch_remove(calling_info: &CallingInfo, attributes_array: &Vec<AssetMap>) -> Result<()> {
-    if attributes_array.is_empty() {
-        return Ok(());
-    }
+pub(crate) fn batch_remove(calling_info: &CallingInfo, attributes_array: &[AssetMap]) -> Result<()> {
     loacl_batch_remove(attributes_array, calling_info)
 }

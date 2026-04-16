@@ -112,3 +112,9 @@ pub extern "C" fn asset_batch_update(
 pub extern "C" fn asset_batch_remove(_c_array: &C2DArray) -> i32 {
     empty_mode()
 }
+
+/// Function used to free memory allocated from Rust side.
+#[no_mangle]
+pub extern "C" fn asset_free_mut_pair_vec(_vec: &MutPairVec) -> i32 {
+    empty_mode()
+}

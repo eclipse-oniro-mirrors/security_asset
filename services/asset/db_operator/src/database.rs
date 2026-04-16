@@ -667,43 +667,52 @@ impl Database {
         calling_info: &CallingInfo,
     ) -> Result<Vec<(u32, u32)>> {
         let mut aliases = Vec::new();
-        let mut err_info = Vec::new();
-	    let _lock = self.db_lock.mtx.lock().unwrap();
-        // check data to be queried is exist
-        let mut invalid_query_idx_set = HashSet::new();
-        if attributes_array.is_empty() || attributes_to_update_array.is_empty() {
-            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The data to update is empty.");
-        }
-        for (index, attr) in attributes_array.iter().enumerate() {
-            let query = get_query_condition(attr, calling_info)?;
-            if !self.is_data_exists_without_lock(&query, true)? {
-                invalid_query_idx_set.insert(index);
-                err_info.push((ErrCode::NotFound as u32, index as u32));
-            } else {
-                aliases.push(attr.get_bytes_attr(&Tag::Alias)?.to_vec());
-            }
-        }
-
         let mut column_names: HashSet<String> = HashSet::new();
         let mut db_datas = Vec::new();
+        let mut err_info = Vec::new();
         let time = time::system_time_in_millis()?;
-        for (index, attr) in attributes_to_update_array.iter().enumerate() {
-            // filter invalid data
-            if invalid_query_idx_set.contains(&index) {
+        if attributes_array.is_empty() || attributes_to_update_array.is_empty() { 
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The data to update is empty."); 
+        }
+
+        for (index, (attr, attr_to_update)) in attributes_array.iter()
+            .zip(attributes_to_update_array.iter())
+            .enumerate() 
+        {
+            let query = get_query_condition(attr, calling_info)?;
+            let mut results = self.query_datas(&vec![], &query, None, true)?;
+            if results.len() != 1 {
+                err_info.push((ErrCode::NotFound as u32, index as u32));
                 continue;
             }
-            let mut db_data = into_db_map_with_column_names(attr, &mut column_names);
-            add_default_batch_update_attrs(&mut db_data, time.clone());
+            aliases.push(attr.get_bytes_attr(&Tag::Alias)?.to_vec());
+            let result = results.get_mut(0).unwrap();
+
+            let mut db_data = into_db_map_with_column_names(attr_to_update, &mut column_names);
+            add_default_batch_update_attrs(&mut db_data, time.clone(), attr_to_update);
+            if attr_to_update.contains_key(&Tag::Secret) {
+                result.insert(column::SECRET, attr_to_update[&Tag::Secret].clone());
+                let cipher = self.encrypt(calling_info, result)?;
+                db_data.insert(column::SECRET, Value::Bytes(cipher));
+            }
             db_datas.push(db_data);
         }
 
         if db_datas.len() != aliases.len() {
             return macros_lib::log_throw_error!(ErrCode::SystemError, "[FATAL]The system internal error.");
         }
+        let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.local_update_batch_datas(&db_datas, db_map, &aliases);
 
         self.restore_if_exec_fail(closure)?;
         Ok(err_info)
+    }
+
+    fn encrypt(&mut self, calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
+        let secret_key = build_secret_key(calling_info, db_data)?;
+        let secret = db_data.get_bytes_attr(&column::SECRET)?;
+        let cipher = Crypto::encrypt(&secret_key, secret, &build_aad(db_data)?)?;
+        Ok(cipher)
     }
 
     fn parse_attr_array(&mut self,
@@ -742,7 +751,13 @@ impl Database {
                 }
             }
             db_data.extend(info.db_map.clone());
-            self.encrypt_single_data(&mut db_data, info.secret_key, aliases)?;
+            if is_merged {
+                self.encrypt_single_data(&mut db_data, info.secret_key, aliases)?;
+            } else {
+                let secret_key = build_secret_key(info.calling_info, &db_data)?;
+                generate_secret_key_if_needed(&secret_key)?;
+                self.encrypt_single_data(&mut db_data, &secret_key, aliases)?;
+            }
             db_datas.push(db_data);
         }
         Ok(column_names)
