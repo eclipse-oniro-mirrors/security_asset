@@ -29,8 +29,8 @@ use asset_utils::time;
 
 use crate::operations::common::check_tags_consistency;
 
-const CONSISTENCY_ATTRS: [Tag; 6] = [
-    Tag::AuthType, Tag::Accessibility, Tag::RequireAttrEncrypted, Tag::GroupId, Tag::UserId, Tag::RequirePasswordSet
+const CONSISTENCY_ATTRS: [Tag; 2] = [
+    Tag::RequireAttrEncrypted, Tag::GroupId
 ];
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
@@ -57,7 +57,10 @@ fn local_batch_add(
     calling_info: &CallingInfo,
     attributes_array: &[AssetMap]
 ) -> Result<Vec<(u32, u32)>> {
-    let attributes = &attributes_array[0];
+    let attributes = match attributes_array.first() {
+        Some(attr) => attr,
+        None => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Batch Add argument empty."),
+    };
     common::check_value_validity(attributes)?;
     let mut db_map = into_db_map(attributes);
     check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array)?;
@@ -70,9 +73,6 @@ fn local_batch_add(
     db.insert_batch_datas(&db_map, attributes_array, calling_info, true)
 }
 
-pub(crate) fn batch_add(calling_info: &CallingInfo, attributes_array: &Vec<AssetMap>) -> Result<Vec<(u32, u32)>> {
-    if attributes_array.is_empty() {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Batch Add argument empty.");
-    }
+pub(crate) fn batch_add(calling_info: &CallingInfo, attributes_array: &[AssetMap]) -> Result<Vec<(u32, u32)>> {
     local_batch_add(calling_info, attributes_array)
 }
