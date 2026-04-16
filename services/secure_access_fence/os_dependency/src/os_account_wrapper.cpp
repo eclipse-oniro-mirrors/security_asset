@@ -21,6 +21,10 @@
 
 bool GetForegroundOsAccountId(int32_t *userId)
 {
+    if (userId == nullptr) {
+        LOGE("[FATAL]userId is nullptr.");
+        return false;
+    }
     int32_t userIdTmp;
     int32_t res = OHOS::AccountSA::OsAccountManager::GetForegroundOsAccountLocalId(userIdTmp);
     if (res != 0) {

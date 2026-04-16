@@ -28,7 +28,7 @@ pub type ExtMap = HashMap<&'static str, Value>;
 /// An enumeration representing different event types related to specific operations.
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
 pub enum EventType {
-    /// is in black list operate, not impliment.
+    /// is in black list operate, not implimented.
     #[default]
     BlackList = 0,
 }

@@ -91,14 +91,6 @@ impl SAFPlugin {
             Ok(Box::from_raw(plugin_ptr))
         }
     }
-
-    /// Unload the plugin.
-    pub fn unload_plugin(&self) {
-        let _guard = SAF_PLUGIN_LOCK.lock().unwrap();
-        if self.lib.borrow().is_some() {
-            *self.lib.borrow_mut() = None;
-        }
-    }
 }
 
 /// The saf_ext plugin context.

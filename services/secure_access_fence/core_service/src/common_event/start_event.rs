@@ -14,25 +14,13 @@
  */
 
 //! This module is used to handle start event.
-use std::ffi::{CString, c_char};
+use std::ffi::CString;
 
 use saf_common::{AutoCounter, TaskManager};
 use saf_log::logi;
 use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
 
 use crate::{common_event::listener, unload_sa, CommonEventInfoFfi, StringArray};
-
-fn vec_to_c_unsafe(strings: &Vec<String>) -> StringArray {
-    let ptrs: Vec<*const c_char> = strings
-        .iter()
-        .map(|s| s.as_ptr())
-        .collect();
-
-    StringArray {
-        size: strings.len() as u32,
-        data: ptrs.as_ptr()
-    }
-}
 
 fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
     let _counter_user = AutoCounter::new();
@@ -45,9 +33,24 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
 
     let reason_c_str = CString::new(reason_name.clone()).unwrap();
 
+    let mut c_strings = Vec::new();
+    for s in want_vec {
+        let c_str = CString::new(s).unwrap();
+        c_strings.push(c_str);
+    }
+
+    let size = c_strings.len() as u32;
+    let mut data = Vec::with_capacity(size as usize);
+    for c_str in &c_strings {
+        data.push(c_str.as_ptr());
+    }
+
     listener::on_common_event(CommonEventInfoFfi {
         event_type: reason_c_str.into_raw(),
-        want: vec_to_c_unsafe(&want_vec)
+        want: StringArray {
+            size,
+            data: data.as_ptr(),
+        }
     });
     logi!("[INFO]Finish handle common event. [{}]", reason_name);
 }

@@ -19,28 +19,28 @@ use std::ffi::{c_char, CString};
 
 use hilog_rust::hilog;
 
-/// the function to print log, and may be should not be used instead of logi
+const LOG_LABEL: hilog_rust::HiLogLabel = hilog_rust::HiLogLabel { 
+    log_type: hilog_rust::LogType::LogCore, domain: 0xD002F21, tag: "SAF" 
+};
+
+/// the function to print log, and may not be used instead of logi
 pub fn log_func_i(log: &str) {
-    let log_label = hilog_rust::HiLogLabel { log_type: hilog_rust::LogType::LogCore, domain: 0xD002F21, tag: "SAF" };
-    hilog_rust::info!(log_label, "{}", @public(log));
+    hilog_rust::info!(LOG_LABEL, "{}", @public(log));
 }
 
-/// the function to print log, and may be should not be used instead of logw
+/// the function to print log, and may not be used instead of logw
 pub fn log_func_w(log: &str) {
-    let log_label = hilog_rust::HiLogLabel { log_type: hilog_rust::LogType::LogCore, domain: 0xD002F21, tag: "SAF" };
-    hilog_rust::warn!(log_label, "{}", @public(log));
+    hilog_rust::warn!(LOG_LABEL, "{}", @public(log));
 }
 
-/// the function to print log, and may be should not be used instead of loge
+/// the function to print log, and may not be used instead of loge
 pub fn log_func_e(log: &str) {
-    let log_label = hilog_rust::HiLogLabel { log_type: hilog_rust::LogType::LogCore, domain: 0xD002F21, tag: "SAF" };
-    hilog_rust::error!(log_label, "{}", @public(log));
+    hilog_rust::error!(LOG_LABEL, "{}", @public(log));
 }
 
-/// the function to print log, and may be should not be used instead of loge
+/// the function to print log, and may not be used instead of loge
 pub fn log_func_d(log: &str) {
-    let log_label = hilog_rust::HiLogLabel { log_type: hilog_rust::LogType::LogCore, domain: 0xD002F21, tag: "SAF" };
-    hilog_rust::debug!(log_label, "{}", @public(log));
+    hilog_rust::debug!(LOG_LABEL, "{}", @public(log));
 }
 
 /// Print logs at the info level.

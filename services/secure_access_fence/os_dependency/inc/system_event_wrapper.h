@@ -13,11 +13,10 @@
  * limitations under the License.
  */
 
-#ifndef SYSTEM_EVENT_WRAPPER
-#define SYSTEM_EVENT_WRAPPER
+#ifndef SYSTEM_EVENT_WRAPPER_H
+#define SYSTEM_EVENT_WRAPPER_H
 
 #include <cstdint>
-#include "cxx.h"
 
 typedef struct {
     uint32_t size;

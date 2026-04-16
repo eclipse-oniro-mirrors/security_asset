@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef SYSTEM_ABILITY_WRAPPER
-#define SYSTEM_ABILITY_WRAPPER
+#ifndef SYSTEM_ABILITY_WRAPPER_H
+#define SYSTEM_ABILITY_WRAPPER_H
 
 #include "system_event_wrapper.h"
 

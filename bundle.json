@@ -50,7 +50,6 @@
                 "ipc",
                 "napi",
                 "netmanager_base",
-                "rust_cxx",
                 "safwk",
                 "samgr",
                 "sqlite",
