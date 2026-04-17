@@ -1,4 +1,4 @@
-# Copyright (c) 2023-2026 Huawei Device Co., Ltd.
+# Copyright (c) 2023 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -12,17 +12,14 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//build/test.gni")
 
-ohos_prebuilt_etc("asset_service.rc") {
-  source = "asset_service.cfg"
-  relative_install_dir = "init"
-  subsystem_name = "security"
-  part_name = "asset"
-}
+module_output_path = "asset/asset"
 
-ohos_prebuilt_etc("secure_access_fence.rc") {
-  source = "secure_access_fence.cfg"
-  relative_install_dir = "init"
+ohos_rust_unittest("rust_asset_inner_test") {
+  module_out_path = module_output_path
+  sources = [ "src/main.rs" ]
+  deps = [ "../../../../interfaces/inner_kits/rs/asset:asset_sdk_rust" ]
   subsystem_name = "security"
   part_name = "asset"
 }

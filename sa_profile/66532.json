@@ -1,0 +1,23 @@
+{
+    "process": "secure_access_fence",
+    "systemability": [
+        {
+            "name": 66532,
+            "libpath": "libsecure_access_fence_service.dylib.so",
+            "run-on-create": false,
+            "distributed": false,
+            "dump_level": 1,
+            "extension": ["backup", "restore"],
+            "min_hdi_proxy_version": [],
+            "start-on-demand": {
+                "allow-update":true,
+                "commonevent": [
+                    { "name": "usual.event.PACKAGE_ADDED" },
+                    { "name": "usual.event.PACKAGE_REMOVED" },
+                    { "name": "usual.event.PACKAGE_CHANGED" },
+                    { "name": "usual.event.RESTORE_START" }
+                ]
+            }
+        }
+    ]
+}

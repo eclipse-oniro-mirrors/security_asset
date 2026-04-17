@@ -13,16 +13,26 @@
 
 [workspace]
 members = [
-    "frameworks/definition",
-    "frameworks/ipc",
-    "frameworks/os_dependency/log",
-    "frameworks/utils",
-    "interfaces/inner_kits/c",
-    "interfaces/inner_kits/plugin_interface",
-    "services/common",
-    "services/core_service",
-    "services/crypto_manager",
-    "services/db_operator",
-    "test/unittest/inner_kits_rust",
-    "test/unittest/module_test"
+    "frameworks/asset/definition",
+    "frameworks/asset/ipc",
+    "frameworks/asset/os_dependency/log",
+    "frameworks/asset/utils",
+    "frameworks/secure_access_fence/definition",
+    "frameworks/secure_access_fence/ipc",
+    "frameworks/secure_access_fence/os_dependency/log",
+    "interfaces/inner_kits/c/asset",
+    "interfaces/inner_kits/plugin_interface/asset",
+    "interfaces/inner_kits/rs/asset",
+    "interfaces/inner_kits/plugin_interface/secure_access_fence",
+    "interfaces/inner_kits/rs/secure_access_fence",
+    "services/asset/common",
+    "services/asset/core_service",
+    "services/asset/crypto_manager",
+    "services/asset/db_operator",
+    "services/asset/plugin",
+    "services/secure_access_fence/common",
+    "services/secure_access_fence/core_service",
+    "services/secure_access_fence/plugin",
+    "test/asset/unittest/inner_kits_rust",
+    "test/asset/unittest/module_test"
 ]

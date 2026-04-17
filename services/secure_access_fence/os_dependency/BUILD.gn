@@ -1,0 +1,59 @@
+# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//base/security/asset/config.gni")
+import("//build/ohos.gni")
+
+ohos_static_library("saf_os_dependency") {
+  include_dirs = [
+    "inc",
+    "../../../frameworks/secure_access_fence/os_dependency/log/inc",
+  ]
+  sources = [
+    "src/os_account_wrapper.cpp",
+    "src/system_ability_wrapper.cpp",
+    "src/system_event_wrapper.cpp",
+  ]
+  deps = []
+  external_deps = [
+    "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtokenid_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "os_account:os_account_innerkits",
+    "samgr:samgr_proxy",
+  ]
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+  cflags_cc = [
+    "-Wall",
+    "-Werror",
+    "-fPIC",
+  ]
+
+  subsystem_name = "security"
+  part_name = "asset"
+}

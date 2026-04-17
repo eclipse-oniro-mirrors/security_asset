@@ -12,17 +12,20 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
+import("//base/security/asset/config.gni")
 
-ohos_prebuilt_etc("asset_service.rc") {
-  source = "asset_service.cfg"
-  relative_install_dir = "init"
+ohos_rust_shared_ffi("asset_sdk_ffi") {
+  sources = [ "src/lib.rs" ]
+  deps = [
+    "../../../../frameworks/asset/os_dependency/log:asset_log",
+    "../../../../frameworks/asset/os_dependency/memory:asset_mem",
+    "../../rs/asset:asset_sdk_rust",
+  ]
+  crate_name = "asset_sdk_ffi"
   subsystem_name = "security"
   part_name = "asset"
-}
 
-ohos_prebuilt_etc("secure_access_fence.rc") {
-  source = "secure_access_fence.cfg"
-  relative_install_dir = "init"
-  subsystem_name = "security"
-  part_name = "asset"
+  if (asset_build_mode == "empty") {
+    rustflags = [ "--cfg", "feature=\"AssetEmptyMode\"" ]
+  }
 }
