@@ -31,6 +31,12 @@ using namespace OHOS::AppExecFwk::Constants;
 using namespace OHOS::EventFwk;
 using namespace OHOS::AAFwk;
 
+const std::string COMMON_EVENT_PARAM_UID = "uid";
+const std::string COMMON_EVENT_PARAM_APPINDEX = "appIndex";
+const std::string COMMON_EVENT_PARAM_BUNDLENAME = "bundleName";
+const std::string COMMON_EVENT_USER_ID = "userId";
+const int32_t DEFAULT_INT_VAL = -1;
+
 const std::vector<std::string> SYSTEM_EVENT_LIST = {
     CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED,
     CommonEventSupport::COMMON_EVENT_PACKAGE_ADDED,
@@ -48,6 +54,25 @@ const char** ToConstCharArray(const std::vector<std::string>& vec)
     return static_result.data();
 }
 
+void ConstructWantVec(std::vector<std::string> &rustWant, OHOS::AAFwk::Want &want)
+{
+    int32_t intUid = want.GetIntParam(COMMON_EVENT_PARAM_UID, DEFAULT_INT_VAL);
+    rustWant.push_back(COMMON_EVENT_PARAM_UID);
+    rustWant.push_back(std::to_string(intUid));
+    
+    int32_t intAppindex = want.GetIntParam(COMMON_EVENT_PARAM_APPINDEX, DEFAULT_INT_VAL);
+    rustWant.push_back(COMMON_EVENT_PARAM_APPINDEX);
+    rustWant.push_back(std::to_string(intAppindex));
+
+    std::string bundleName = want.GetStringParam(COMMON_EVENT_PARAM_BUNDLENAME);
+    rustWant.push_back(COMMON_EVENT_PARAM_BUNDLENAME);
+    rustWant.push_back(bundleName);
+
+    int32_t intUserId = want.GetIntParam(COMMON_EVENT_USER_ID, DEFAULT_INT_VAL);
+    rustWant.push_back(COMMON_EVENT_USER_ID);
+    rustWant.push_back(std::to_string(intUserId));
+}
+
 class SystemEventHandler : public CommonEventSubscriber {
 public:
     explicit SystemEventHandler(const CommonEventSubscribeInfo &subscribeInfo, const EventCallBack eventCallBack)
@@ -59,19 +84,7 @@ public:
         std::string eventName = want.GetAction();
 
         std::vector<std::string> rustWant;
-        const WantParams &wantParams = want.GetParams();
-
-        const std::map<std::string, OHOS::sptr<IInterface>> &params = wantParams.GetParams();
-
-        for (const auto &param : params) {
-            const std::string &key = param.first;
-            OHOS::sptr<IInterface> value = param.second;
-
-            int typeId = WantParams::GetDataType(value);
-            std::string stringValue = WantParams::GetStringByType(value, typeId);
-            rustWant.push_back(key);
-            rustWant.push_back(stringValue);
-        }
+        ConstructWantVec(rustWant, want);
 
         if (this->eventCallBack.onCommonEvent != nullptr) {
             auto cArray = ToConstCharArray(rustWant);
