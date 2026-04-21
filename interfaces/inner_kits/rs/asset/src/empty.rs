@@ -62,7 +62,7 @@ impl Manager {
     }
 
     /// Add batch assets.
-    pub fn batch_add(&mut self, _attributes_array: &Vec<AssetMap>) -> Result<Vec<(u32, u32)>> {
+    pub fn batch_add(&mut self, _attributes_array: &[AssetMap]) -> Result<Vec<(u32, u32)>> {
         macros_lib::log_throw_error!(
             ErrCode::Unsupported,
             "[FATAL][RUST SDK]Asset service is not supported in empty mode"
@@ -70,7 +70,7 @@ impl Manager {
     }
 
     /// Remove batch assets.
-    pub fn batch_remove(&mut self, _attributes_array: &Vec<AssetMap>) -> Result<()> {
+    pub fn batch_remove(&mut self, _attributes_array: &[AssetMap]) -> Result<()> {
         macros_lib::log_throw_error!(
             ErrCode::Unsupported,
             "[FATAL][RUST SDK]Asset service is not supported in empty mode"
@@ -80,8 +80,8 @@ impl Manager {
     /// Update batch assets.
     pub fn batch_update(
         &mut self,
-        _attributes_array: &Vec<AssetMap>,
-        _attributes_to_update_array: &Vec<AssetMap>
+        _attributes_array: &[AssetMap],
+        _attributes_to_update_array: &[AssetMap]
     ) -> Result<Vec<(u32, u32)>> {
         macros_lib::log_throw_error!(
             ErrCode::Unsupported,
