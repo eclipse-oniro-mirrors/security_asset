@@ -24,7 +24,7 @@ typedef struct {
 } StringArray;
 
 typedef struct {
-    const char *event_type;
+    const char *eventType;
     StringArray want;
 } CommonEventInfo;
 

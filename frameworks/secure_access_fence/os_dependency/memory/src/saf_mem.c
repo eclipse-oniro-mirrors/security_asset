@@ -22,9 +22,11 @@
 
 #include "saf_log.h"
 
+const MAX_SIZE: uint32_t = 1024 * 500;
+
 void *SAFMalloc(uint32_t size)
 {
-    if (size == 0) {
+    if (size == 0 || size > MAX_SIZE) {
         return NULL;
     }
     void *addr = malloc(size);
