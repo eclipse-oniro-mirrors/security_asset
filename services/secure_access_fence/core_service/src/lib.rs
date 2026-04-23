@@ -185,12 +185,12 @@ impl SAFService {
         Self { system_ability: handler }
     }
 
-    fn generate_ticket_batch(&self, _os_account_id: i32, _caller_id: &str, _messages: &[String]) -> Result<()> {
-
+    fn generate_ticket_batch(&self, _os_account_id: i32, _caller_id: &str, _messages: &[String]) -> Result<(Vec<String>, String)> {
+        macros_lib::log_throw_error!(ErrCode::IpcError, "[FATAL]unsupport interface!")
     }
 
-    fn verify_ticket_batch(&self, ) -> Result<()> {
-
+    fn verify_ticket_batch(&self, _os_account_id: i32, _caller_id: &str, _messages: &[TicketVerifyInfo], _challenge: &str) -> Result<(Vec<i32>)> {
+        macros_lib::log_throw_error!(ErrCode::IpcError, "[FATAL]unsupport interface!")
     }
 }
 

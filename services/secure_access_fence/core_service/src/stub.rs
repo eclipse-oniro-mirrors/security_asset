@@ -111,7 +111,7 @@ fn handle_generate_ticket_batch(stub: &SAFService, data: &mut MsgParcel, reply: 
         messages.len()
     );
 
-    let (tickets, challenge) = generate_ticket_impl(stub, os_account_id, &caller_id, &messages).map_err(|e| {
+    let (tickets, challenge) = stub.generate_ticket_batch(os_account_id, &caller_id, &messages).map_err(|e| {
         loge!("[FATAL]Generate ticket failed: {}", e.msg);
         IpcStatusCode::Failed
     })?;
@@ -122,7 +122,7 @@ fn handle_generate_ticket_batch(stub: &SAFService, data: &mut MsgParcel, reply: 
         IpcStatusCode::Failed
     })?;
     reply.write::<String>(&challenge).map_err(|e| {
-        loge!("[FATAL]Serialize challenge failed: {}", e.msg);
+        loge!("[FATAL]Serialize challenge failed: {}", e);
         IpcStatusCode::Failed
     })?;
     reply.write::<i32>(&0)?;
@@ -145,7 +145,7 @@ fn handle_verify_ticket_batch(stub: &SAFService, data: &mut MsgParcel, reply: &m
         challenge
     );
 
-    let verify_res = verify_ticket_impl(stub, os_account_id, &caller_id, &verify_infos, &challenge).map_err(|e| {
+    let verify_res = stub.verify_ticket_batch(os_account_id, &caller_id, &verify_infos, &challenge).map_err(|e| {
         loge!("[FATAL]Verify ticket failed: {}", e.msg);
         IpcStatusCode::Failed
     })?;
@@ -159,33 +159,6 @@ fn handle_verify_ticket_batch(stub: &SAFService, data: &mut MsgParcel, reply: &m
 
     logi!("[INFO]VerifyTicketBatch success, resultCount: {}", verify_res.len());
     Ok(())
-}
-
-fn generate_ticket_impl(
-    _stub: &SAFService,
-    os_account_id: u32,
-    caller_id: &str,
-    messages: &Vec<String>,
-) -> Result<(Vec<String>, String)> {
-    if let Ok(loader) = SAFPlugin::get_instance().load_plugin() {
-        loader.generate_ticket_batch(os_account_id, caller_id, messages)
-    } else {
-        macros_lib::log_throw_error!(ErrCode::IpcError, "[FATAL]Load plugin failed for generate_ticket")
-    }
-}
-
-fn verify_ticket_impl(
-    _stub: &SAFService,
-    os_account_id: u32,
-    caller_id: &str,
-    verify_infos: &Vec<TicketVerifyInfo>,
-    challenge: &str,
-) -> Result<Vec<i32>> {
-    if let Ok(loader) = SAFPlugin::get_instance().load_plugin() {
-        loader.verify_ticket_batch(os_account_id, caller_id, verify_infos, challenge)
-    } else {
-        macros_lib::log_throw_error!(ErrCode::IpcError, "[FATAL]Load plugin failed for verify_ticket")
-    }
 }
 
 fn on_extension_request(_stub: &SAFService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
