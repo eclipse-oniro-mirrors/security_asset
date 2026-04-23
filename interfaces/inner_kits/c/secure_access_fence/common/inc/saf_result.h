@@ -4,7 +4,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,28 +13,25 @@
  * limitations under the License.
  */
 
-#ifndef SECURE_ACCESS_FENCE_SERVICE_H
-#define SECURE_ACCESS_FENCE_SERVICE_H
+#ifndef SAF_RESULT_H
+#define SAF_RESULT_H
+#define SAF_ASSIGN_ENUM_VALUE(x, y) (x) = (y),
 
-#include "cxx.h"
-#include "refbase.h"
-#include <cstdint>
-#include <memory>
-
-#include "message_parcel.h"
-
-namespace OHOS {
-namespace Security {
-namespace SAF {
+#define SAF_ASSIGN_MODULE_TYPE_ENUM \
+    // external dependencies
+    SAF_ASSIGN_ENUM_VALUE(IPC, 0x10 << 12) // 0x10000 \
 
 typedef enum {
-    BATCH_QUERY_COMMAND_PERMISSION = 500,
-} SecureAccessFenceCode;
+    SAF_ASSIGN_MODULE_TYPE_ENUM
+} SafModuleType;
 
-int32_t OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply);
+#define SAF_ASSIGN_RESULT_CODE_ENUM \
+    SAF_ASSIGN_ENUM_VALUE(SAF_SUCCESS, 0) \
+    SAF_ASSIGN_ENUM_VALUE(SAF_EVALUATE_DENY, 1) \
+    SAF_ASSIGN_ENUM_VALUE(SAF_ERROR, 2) \
 
-} // namespace SAF
-} // namespace Security
-} // namespace OHOS
+typedef enum {
+    SAF_ASSIGN_RESULT_CODE_ENUM
+} SafResultCode;
 
-#endif
+#endif // SAF_RESULT_H

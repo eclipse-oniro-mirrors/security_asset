@@ -22,7 +22,7 @@ ohos_rust_unittest("rust_asset_core_service_ut_test") {
   sources = [ "src/lib.rs" ]
   deps = [
     "../../../../../../frameworks/asset/definition:asset_definition",
-    "../../../../../../services/core_service/asset:asset_service",
+    "../../../../../../services/asset/core_service/asset:asset_service",
     "../../../../../../services/asset/common:asset_common",
     "../../../../../../services/asset/db_operator:asset_db_operator",
   ]

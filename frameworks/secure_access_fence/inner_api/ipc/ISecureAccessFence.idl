@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 
-import SecureAccessFenceTypes;
+import SecureAccessFenceType;
 
-interface OHOS.Security.SecureAccessFence.ISecureAccessFence {
+interface OHOS.Security.SAF.ISecureAccessFence {
     /**
      * @brief Batch generate tickets.
      * @param osAccountId OS account ID.
@@ -49,14 +49,14 @@ interface OHOS.Security.SecureAccessFence.ISecureAccessFence {
     );
 
     /**
-     * @brief Batch query permissions by sub-commands.
+     * @brief Batch query command permissions.
      * @param cmds List of commands to query (input parameter).
      * @param cmdPermissions List of permission results (output parameter).
      * @param resultCode Error code output (0 for success).
      */
-    [ipccode 500] void QueryPermissionBySubCommandBatch(
-        [in] List<Command> cmds,
-        [out] List<CommandPermission> cmdPermissions,
+    [ipccode 500] void BatchQueryCommandPermission(
+        [in] List<CommandInfo> cmds,
+        [out] List<CommandPermissionInfo> cmdPermissions,
         [out] int resultCode
     );
 };

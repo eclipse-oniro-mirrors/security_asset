@@ -98,12 +98,12 @@
                     }
                 },
                 {
-                    "name": "//base/security/asset/interfaces/inner_kits/native/secure_access_fence:secure_access_fence_client",
+                    "name": "//base/security/asset/interfaces/inner_kits/c/secure_access_fence/agent_fence:saf_agent_fence",
                     "header": {
                         "header_files": [
-                            "secure_access_fence_client.h"
+                            "saf_agent_fence.h"
                         ],
-                        "header_base": "//base/security/asset/interfaces/inner_kits/native/secure_access_fence/inc"
+                        "header_base": "//base/security/asset/interfaces/inner_kits/c/secure_access_fence/agent_fence/inc"
                     }
                 },
                 {

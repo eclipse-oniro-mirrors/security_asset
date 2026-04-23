@@ -17,7 +17,7 @@
 
 use ipc::parcel::MsgParcel;
 
-#[cxx::bridge(namespace = "OHOS::Security::SecureAccessFence")]
+#[cxx::bridge(namespace = "OHOS::Security::SAF")]
 pub mod ffi {
     unsafe extern "C++" {
         include!("secure_access_fence_service.h");

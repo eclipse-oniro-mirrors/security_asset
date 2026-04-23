@@ -13,24 +13,24 @@
  * limitations under the License.
  */
 
-package OHOS.Security.SecureAccessFence;
+package OHOS.Security.SAF;
 
 /**
- * @brief Command structure for permission query.
+ * @brief CommandInfo structure for permission query.
  */
-struct Command {
-    /** Tool name identifier. */
-    String toolName;
+struct CommandInfo {
+    /** Command name identifier. */
+    String cmdName;
     /** Sub-command identifier. */
-    String subCommand;
+    String subCmd;
 };
 
 /**
  * @brief Command permission result structure.
  */
-struct CommandPermission {
+struct CommandPermissionInfo {
     /** Command that was queried. */
-    Command cmd;
+    CommandInfo cmd;
     /** List of permissions associated with the command. */
     List<String> permissions;
     /** Result of get permission of command. */

@@ -20,7 +20,7 @@ config("saf_idl_config") {
 
 idl_gen_interface("secure_access_fence_interface") {
   sources = [ "ISecureAccessFence.idl" ]
-  sources_common = [ "SecureAccessFenceTypes.idl" ]
+  sources_common = [ "SecureAccessFenceType.idl" ]
 
   log_domainid = "0xD002F21"
   log_tag = "SAF_IPC"
@@ -33,7 +33,7 @@ ohos_static_library("secure_access_fence_proxy") {
 
   output_values = get_target_outputs(":secure_access_fence_interface")
   sources = filter_include(output_values, [ "*secure_access_fence_proxy.cpp" ])
-  sources += filter_include(output_values, [ "*secure_access_fence_types.cpp" ])
+  sources += filter_include(output_values, [ "*secure_access_fence_type.cpp" ])
 
   deps = [ ":secure_access_fence_interface" ]
 
@@ -60,7 +60,7 @@ ohos_static_library("secure_access_fence_stub") {
 
   output_values = get_target_outputs(":secure_access_fence_interface")
   sources = filter_include(output_values, [ "*secure_access_fence_stub.cpp" ])
-  sources += filter_include(output_values, [ "*secure_access_fence_types.cpp" ])
+  sources += filter_include(output_values, [ "*secure_access_fence_type.cpp" ])
 
   deps = [ ":secure_access_fence_interface" ]
 
@@ -85,8 +85,8 @@ ohos_static_library("secure_access_fence_stub") {
 ohos_rust_static_library("saf_ipc") {
   sources = [ "src/lib.rs" ]
   deps = [
-    "../definition:saf_definition",
-    "../os_dependency/log:saf_log",
+    "../../definition:saf_definition",
+    "../../os_dependency/log:saf_log",
   ]
   external_deps = [ "ipc:ipc_rust" ]
 

@@ -56,6 +56,9 @@ typedef enum {
 
     /// The error code indicates that file operation failed.
     SEC_SAF_FILE_OPERATION_ERROR = 1023900007,
+
+    /// The error code indicates that file operation failed.
+    SEC_SAF_SERVICE_IS_STOPPING = 1023901000,
 } SecureAccessFenceResultCode;
 
 
