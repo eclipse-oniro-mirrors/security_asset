@@ -14,11 +14,63 @@
 import("//base/security/asset/config.gni")
 import("//build/ohos.gni")
 
+rust_cxx("secure_access_fence_wrapper_cxx") {
+  sources = [ "src/wrapper.rs" ]
+}
+
+ohos_static_library("secure_access_fence_wrapper_static") {
+
+  public_configs = [ "../../../frameworks/secure_access_fence/ipc:saf_idl_config" ]
+
+  include_dirs = [
+    "include",
+    "${target_gen_dir}",
+    "${target_gen_dir}/src",
+    "../os_dependency/inc"
+    "../../../frameworks/secure_access_fence/ipc:saf_idl_config",
+    "../../../frameworks/secure_access_fence/os_dependency/log/inc",
+    "../../../interfaces/inner_kits/native/secure_access_fence/inc",
+  ]
+  sources = [ "src/cxx/secure_access_fence_service.cpp" ]
+  sources += get_target_outputs(":secure_access_fence_wrapper_cxx")
+
+  deps = [
+    ":secure_access_fence_wrapper_cxx",
+    "../os_dependency:saf_os_dependency",
+    "../../../frameworks/secure_access_fence/ipc:secure_access_fence_stub",
+    "../../../frameworks/secure_access_fence/ipc:secure_access_fence_interface",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "samgr:samgr_proxy",
+    "rust_cxx:cxx_cppdeps",
+  ]
+
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+
+  subsystem_name = "security"
+  part_name = "asset"
+
+}
+
 ohos_rust_shared_library("secure_access_fence_service") {
   sources = [ "src/lib.rs" ]
   deps = [
+    ":secure_access_fence_wrapper_static",
     "../../../etc/init:secure_access_fence.rc",
     "../../../frameworks/secure_access_fence/ipc:saf_ipc",
+    "../../../frameworks/secure_access_fence/ipc:secure_access_fence_stub",
+    "../../../frameworks/secure_access_fence/ipc:secure_access_fence_interface",
     "../../../frameworks/secure_access_fence/definition:saf_definition",
     "../../../frameworks/secure_access_fence/os_dependency/log:saf_log",
     "../../../interfaces/inner_kits/plugin_interface/secure_access_fence:saf_plugin_interface_rust",
@@ -43,6 +95,7 @@ ohos_rust_shared_library("secure_access_fence_service") {
     "samgr:samgr_rust",
     "ylong_runtime:ylong_runtime",
     "ylong_json:lib",
+    "rust_cxx:lib",
   ]
 
   crate_name = "secure_access_fence_service"

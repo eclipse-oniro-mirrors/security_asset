@@ -1,4 +1,4 @@
-# Copyright (c) 2023 Huawei Device Co., Ltd.
+# Copyright (c) 2023-2026 Huawei Device Co., Ltd.
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
@@ -11,7 +11,76 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//build/config/components/idl_tool/idl.gni")
 import("//build/ohos.gni")
+
+config("saf_idl_config") {
+  include_dirs = [ "${target_gen_dir}" ]
+}
+
+idl_gen_interface("secure_access_fence_interface") {
+  sources = [ "ISecureAccessFence.idl" ]
+  sources_common = [ "SecureAccessFenceTypes.idl" ]
+
+  log_domainid = "0xD002F21"
+  log_tag = "SAF_IPC"
+  subsystem_name = "security"
+  part_name = "asset"
+}
+
+ohos_static_library("secure_access_fence_proxy") {
+  public_configs = [ ":saf_idl_config" ]
+
+  output_values = get_target_outputs(":secure_access_fence_interface")
+  sources = filter_include(output_values, [ "*secure_access_fence_proxy.cpp" ])
+  sources += filter_include(output_values, [ "*secure_access_fence_types.cpp" ])
+
+  deps = [ ":secure_access_fence_interface" ]
+
+  external_deps = [
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
+
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+
+  subsystem_name = "security"
+  part_name = "asset"
+}
+
+ohos_static_library("secure_access_fence_stub") {
+  public_configs = [ ":saf_idl_config" ]
+
+  output_values = get_target_outputs(":secure_access_fence_interface")
+  sources = filter_include(output_values, [ "*secure_access_fence_stub.cpp" ])
+  sources += filter_include(output_values, [ "*secure_access_fence_types.cpp" ])
+
+  deps = [ ":secure_access_fence_interface" ]
+
+  external_deps = [
+    "hilog:libhilog",
+    "ipc:ipc_single",
+  ]
+
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+
+  subsystem_name = "security"
+  part_name = "asset"
+}
 
 ohos_rust_static_library("saf_ipc") {
   sources = [ "src/lib.rs" ]

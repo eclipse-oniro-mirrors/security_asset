@@ -26,8 +26,10 @@ use saf_sdk::{
 };
 
 use crate::SAFService;
+use crate::wrapper;
 
 const REDIRECT_START_CODE: u32 = 1000;
+const C_REDIRECT_START_CODE: u32 = 500;
 
 impl RemoteStub for SAFService {
     fn on_remote_request(
@@ -70,8 +72,17 @@ impl RemoteStub for SAFService {
     }
 }
 
-fn on_remote_request(_stub: &SAFService, _code: u32, _data: &mut MsgParcel, _reply: &mut MsgParcel) -> IpcResult<()> {
-    Err(IpcStatusCode::Failed)
+fn on_remote_request(_stub: &SAFService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+    if code >= C_REDIRECT_START_CODE {
+        let res = wrapper::on_remote_request(code, data, reply);
+        if res != 0 {
+            Err(IpcStatusCode::Failed)
+        } else {
+            Ok(())
+        }
+    } else {
+        Err(IpcStatusCode::Failed)
+    }
 }
 
 fn on_extension_request(_stub: &SAFService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {

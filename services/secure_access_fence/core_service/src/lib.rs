@@ -33,6 +33,7 @@ use saf_plugin::saf_plugin::{SAFContext, SAFPlugin};
 
 mod common_event;
 mod stub;
+mod wrapper;
 
 struct SAFAbility;
 
