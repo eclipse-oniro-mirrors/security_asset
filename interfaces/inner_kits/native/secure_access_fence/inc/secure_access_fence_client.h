@@ -52,6 +52,18 @@ public:
         const std::vector<Command> &cmds,
         std::vector<CommandPermission> &cmdPermissions);
 
+    int32_t GenerateTicketBatch(
+        uint32_t osAccountId,
+        const std::string &callerId,
+        const std::vector<std::string> &messages,
+        std::vector<TicketInfo> &ticketInfos);
+
+    int32_t VerifyTicketBatch(
+        uint32_t osAccountId,
+        const std::string &callerId,
+        const std::vector<VerifyTicketInfo> &verifyInfos,
+        std::vector<int32_t> &verifyRes);
+
     void ClearProxy();
 
 private:

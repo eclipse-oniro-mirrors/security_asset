@@ -26,7 +26,7 @@ ohos_static_library("secure_access_fence_wrapper_static") {
     "include",
     "${target_gen_dir}",
     "${target_gen_dir}/src",
-    "../os_dependency/inc"
+    "../os_dependency/inc",
     "../../../frameworks/secure_access_fence/ipc:saf_idl_config",
     "../../../frameworks/secure_access_fence/os_dependency/log/inc",
     "../../../interfaces/inner_kits/native/secure_access_fence/inc",

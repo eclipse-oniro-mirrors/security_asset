@@ -125,6 +125,74 @@ int32_t SecureAccessFenceClient::QueryPermissionBySubCommandBatch(
     return resultCode;
 }
 
+int32_t SecureAccessFenceClient::GenerateTicketBatch(
+    uint32_t osAccountId,
+    const std::string &callerId,
+    const std::vector<std::string> &messages,
+    std::vector<TicketInfo> &ticketInfos)
+{
+    auto proxy = GetProxy();
+    if (proxy == nullptr) {
+        if (!ConnectService()) {
+            return E_SERVICE_UNAVAILABLE;
+        }
+        proxy = GetProxy();
+        if (proxy == nullptr) {
+            return E_SERVICE_UNAVAILABLE;
+        }
+    }
+
+    if (callerId.empty() || messages.empty()) {
+        LOGE("callerId or messages is empty");
+        return E_PARAM_INVALID;
+    }
+
+    int resultCode = E_SUCCESS;
+    int ret = proxy->GenerateTicketBatch(osAccountId, callerId, messages, ticketInfos, resultCode);
+
+    if (ret != 0) {
+        LOGE("IPC call failed, ret=%{public}d", ret);
+        return E_IPC_ERROR;
+    }
+
+    LOGI("GenerateTicketBatch success, ticketCount=%{public}zu", ticketInfos.size());
+    return resultCode;
+}
+
+int32_t SecureAccessFenceClient::VerifyTicketBatch(
+    uint32_t osAccountId,
+    const std::string &callerId,
+    const std::vector<VerifyTicketInfo> &verifyInfos,
+    std::vector<int32_t> &verifyRes)
+{
+    auto proxy = GetProxy();
+    if (proxy == nullptr) {
+        if (!ConnectService()) {
+            return E_SERVICE_UNAVAILABLE;
+        }
+        proxy = GetProxy();
+        if (proxy == nullptr) {
+            return E_SERVICE_UNAVAILABLE;
+        }
+    }
+
+    if (callerId.empty() || verifyInfos.empty()) {
+        LOGE("callerId or verifyInfos is empty");
+        return E_PARAM_INVALID;
+    }
+
+    int resultCode = E_SUCCESS;
+    int ret = proxy->VerifyTicketBatch(osAccountId, callerId, verifyInfos, verifyRes, resultCode);
+
+    if (ret != 0) {
+        LOGE("IPC call failed, ret=%{public}d", ret);
+        return E_IPC_ERROR;
+    }
+
+    LOGI("VerifyTicketBatch success, resultCount=%{public}zu", verifyRes.size());
+    return resultCode;
+}
+
 void SecureAccessFenceClient::ClearProxy()
 {
     LOGI("ClearProxy called");
