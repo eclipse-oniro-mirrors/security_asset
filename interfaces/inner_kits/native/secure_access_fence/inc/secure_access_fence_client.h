@@ -56,12 +56,14 @@ public:
         uint32_t osAccountId,
         const std::string &callerId,
         const std::vector<std::string> &messages,
-        std::vector<TicketInfo> &ticketInfos);
+        std::vector<std::string> &tickets,
+        std::string &challenge);
 
     int32_t VerifyTicketBatch(
         uint32_t osAccountId,
         const std::string &callerId,
-        const std::vector<VerifyTicketInfo> &verifyInfos,
+        const std::vector<TicketVerifyInfo> &verifyInfos,
+        const std::string &challenge,
         std::vector<int32_t> &verifyRes);
 
     void ClearProxy();

@@ -129,7 +129,8 @@ int32_t SecureAccessFenceClient::GenerateTicketBatch(
     uint32_t osAccountId,
     const std::string &callerId,
     const std::vector<std::string> &messages,
-    std::vector<TicketInfo> &ticketInfos)
+    std::vector<std::string> &tickets,
+    std::string &challenge)
 {
     auto proxy = GetProxy();
     if (proxy == nullptr) {
@@ -148,21 +149,23 @@ int32_t SecureAccessFenceClient::GenerateTicketBatch(
     }
 
     int resultCode = E_SUCCESS;
-    int ret = proxy->GenerateTicketBatch(osAccountId, callerId, messages, ticketInfos, resultCode);
+    int ret = proxy->GenerateTicketBatch(osAccountId, callerId, messages, tickets, challenge, resultCode);
 
     if (ret != 0) {
         LOGE("IPC call failed, ret=%{public}d", ret);
         return E_IPC_ERROR;
     }
 
-    LOGI("GenerateTicketBatch success, ticketCount=%{public}zu", ticketInfos.size());
+    LOGI("GenerateTicketBatch success, ticketCount=%{public}zu, challenge=%{public}s",
+          tickets.size(), challenge.c_str());
     return resultCode;
 }
 
 int32_t SecureAccessFenceClient::VerifyTicketBatch(
     uint32_t osAccountId,
     const std::string &callerId,
-    const std::vector<VerifyTicketInfo> &verifyInfos,
+    const std::vector<TicketVerifyInfo> &verifyInfos,
+    const std::string &challenge,
     std::vector<int32_t> &verifyRes)
 {
     auto proxy = GetProxy();
@@ -182,7 +185,7 @@ int32_t SecureAccessFenceClient::VerifyTicketBatch(
     }
 
     int resultCode = E_SUCCESS;
-    int ret = proxy->VerifyTicketBatch(osAccountId, callerId, verifyInfos, verifyRes, resultCode);
+    int ret = proxy->VerifyTicketBatch(osAccountId, callerId, verifyInfos, challenge, verifyRes, resultCode);
 
     if (ret != 0) {
         LOGE("IPC call failed, ret=%{public}d", ret);

@@ -19,8 +19,8 @@ use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 use saf_common::{AutoCounter, Counter};
 
 use saf_ipc::{
-    deserialize_generate_ticket_request, deserialize_verify_ticket_request, serialize_i32_vec, serialize_ticket_infos,
-    TicketInfo, VerifyTicketInfo, CMD_GENERATE_TICKET_BATCH, CMD_VERIFY_TICKET_BATCH, IPC_SUCCESS, SA_NAME,
+    deserialize_generate_ticket_request, deserialize_verify_ticket_request, serialize_i32_vec, serialize_string_vec,
+    TicketVerifyInfo, CMD_GENERATE_TICKET_BATCH, CMD_VERIFY_TICKET_BATCH, IPC_SUCCESS, SA_NAME,
 };
 use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
@@ -111,36 +111,41 @@ fn handle_generate_ticket_batch(stub: &SAFService, data: &mut MsgParcel, reply: 
         messages.len()
     );
 
-    let ticket_infos = generate_ticket_impl(stub, os_account_id, &caller_id, &messages).map_err(|e| {
+    let (tickets, challenge) = generate_ticket_impl(stub, os_account_id, &caller_id, &messages).map_err(|e| {
         loge!("[FATAL]Generate ticket failed: {}", e.msg);
         IpcStatusCode::Failed
     })?;
 
     reply.write::<i32>(&(IPC_SUCCESS as i32))?;
-    serialize_ticket_infos(&ticket_infos, reply).map_err(|e| {
-        loge!("[FATAL]Serialize ticket infos failed: {}", e.msg);
+    serialize_string_vec(&tickets, reply).map_err(|e| {
+        loge!("[FATAL]Serialize tickets failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })?;
+    reply.write::<String>(&challenge).map_err(|e| {
+        loge!("[FATAL]Serialize challenge failed: {}", e.msg);
         IpcStatusCode::Failed
     })?;
     reply.write::<i32>(&0)?;
 
-    logi!("[INFO]GenerateTicketBatch success, ticketCount: {}", ticket_infos.len());
+    logi!("[INFO]GenerateTicketBatch success, ticketCount: {}", tickets.len());
     Ok(())
 }
 
 fn handle_verify_ticket_batch(stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
-    let (os_account_id, caller_id, verify_infos) = deserialize_verify_ticket_request(data).map_err(|e| {
+    let (os_account_id, caller_id, verify_infos, challenge) = deserialize_verify_ticket_request(data).map_err(|e| {
         loge!("[FATAL]Deserialize verify ticket request failed: {}", e.msg);
         IpcStatusCode::Failed
     })?;
 
     logi!(
-        "[INFO]VerifyTicketBatch received, osAccountId: {}, callerId: {}, verifyInfoCount: {}",
+        "[INFO]VerifyTicketBatch received, osAccountId: {}, callerId: {}, verifyInfoCount: {}, challenge: {}",
         os_account_id,
         caller_id,
-        verify_infos.len()
+        verify_infos.len(),
+        challenge
     );
 
-    let verify_res = verify_ticket_impl(stub, os_account_id, &caller_id, &verify_infos).map_err(|e| {
+    let verify_res = verify_ticket_impl(stub, os_account_id, &caller_id, &verify_infos, &challenge).map_err(|e| {
         loge!("[FATAL]Verify ticket failed: {}", e.msg);
         IpcStatusCode::Failed
     })?;
@@ -161,19 +166,26 @@ fn generate_ticket_impl(
     os_account_id: u32,
     caller_id: &str,
     messages: &Vec<String>,
-) -> Result<Vec<TicketInfo>> {
-    // todo
-    macros_lib::log_throw_error!(ErrCode::IpcError, "[FATAL]generate_ticket error")
+) -> Result<(Vec<String>, String)> {
+    if let Ok(loader) = SAFPlugin::get_instance().load_plugin() {
+        loader.generate_ticket_batch(os_account_id, caller_id, messages)
+    } else {
+        macros_lib::log_throw_error!(ErrCode::IpcError, "[FATAL]Load plugin failed for generate_ticket")
+    }
 }
 
 fn verify_ticket_impl(
     _stub: &SAFService,
     os_account_id: u32,
     caller_id: &str,
-    verify_infos: &Vec<VerifyTicketInfo>,
+    verify_infos: &Vec<TicketVerifyInfo>,
+    challenge: &str,
 ) -> Result<Vec<i32>> {
-    // todo
-    macros_lib::log_throw_error!(ErrCode::IpcError, "[FATAL]verify_ticket error")
+    if let Ok(loader) = SAFPlugin::get_instance().load_plugin() {
+        loader.verify_ticket_batch(os_account_id, caller_id, verify_infos, challenge)
+    } else {
+        macros_lib::log_throw_error!(ErrCode::IpcError, "[FATAL]Load plugin failed for verify_ticket")
+    }
 }
 
 fn on_extension_request(_stub: &SAFService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
