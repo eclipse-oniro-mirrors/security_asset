@@ -29,10 +29,10 @@ pub const SA_NAME: &str = "secure_access_fence";
 /// IPC result code.
 pub const IPC_SUCCESS: u32 = 0;
 
-/// IPC code for GenerateTicketBatch.
-pub const CMD_GENERATE_TICKET_BATCH: u32 = 1;
-/// IPC code for VerifyTicketBatch.
-pub const CMD_VERIFY_TICKET_BATCH: u32 = 2;
+/// IPC code for BatchGenerateTicket.
+pub const CMD_BATCH_GENERATE_TICKET: u32 = 1;
+/// IPC code for BatchVerifyTicket.
+pub const CMD_BATCH_VERIFY_TICKET: u32 = 2;
 /// IPC code for QueryPermissionBySubCommandBatch.
 pub const CMD_QUERY_PERMISSION_BATCH: u32 = 500;
 
@@ -50,12 +50,14 @@ macros_lib::impl_enum_trait! {
     }
 }
 
-/// Ticket verify info structure (matching IDL definition).
+/// Verify ticket info structure (matching IDL definition).
 #[derive(Debug, Clone)]
-pub struct TicketVerifyInfo {
-    /// Message to verify.
+pub struct VerifyTicketInfo {
+    /// Message for ticket.
     pub message: String,
-    /// Ticket to verify.
+    /// Challenge string.
+    pub challenge: String,
+    /// Ticket string.
     pub ticket: String,
 }
 
@@ -170,23 +172,20 @@ pub fn ipc_err_handle(e: IpcStatusCode) -> SAFError {
     }
 }
 
-/// Deserialize GenerateTicketBatch request parameters from MsgParcel.
-pub fn deserialize_generate_ticket_request(parcel: &mut MsgParcel) -> Result<(u32, String, Vec<String>)> {
+/// Deserialize BatchGenerateTicket request parameters from MsgParcel.
+pub fn deserialize_batch_generate_ticket_request(parcel: &mut MsgParcel) -> Result<(u32, String, Vec<String>)> {
     let os_account_id = parcel.read::<u32>().map_err(ipc_err_handle)?;
     let caller_id = parcel.read::<String>().map_err(ipc_err_handle)?;
     let messages = deserialize_string_vec(parcel)?;
     Ok((os_account_id, caller_id, messages))
 }
 
-/// Deserialize VerifyTicketBatch request parameters from MsgParcel.
-pub fn deserialize_verify_ticket_request(
-    parcel: &mut MsgParcel,
-) -> Result<(u32, String, Vec<TicketVerifyInfo>, String)> {
+/// Deserialize BatchVerifyTicket request parameters from MsgParcel.
+pub fn deserialize_batch_verify_ticket_request(parcel: &mut MsgParcel) -> Result<(u32, String, Vec<VerifyTicketInfo>)> {
     let os_account_id = parcel.read::<u32>().map_err(ipc_err_handle)?;
     let caller_id = parcel.read::<String>().map_err(ipc_err_handle)?;
-    let verify_infos = deserialize_ticket_verify_infos(parcel)?;
-    let challenge = parcel.read::<String>().map_err(ipc_err_handle)?;
-    Ok((os_account_id, caller_id, verify_infos, challenge))
+    let verify_infos = deserialize_verify_ticket_infos(parcel)?;
+    Ok((os_account_id, caller_id, verify_infos))
 }
 
 /// Deserialize vector of strings from MsgParcel.
@@ -206,42 +205,51 @@ pub fn deserialize_string_vec(parcel: &mut MsgParcel) -> Result<Vec<String>> {
     Ok(vec)
 }
 
-/// Deserialize TicketVerifyInfo from MsgParcel.
-pub fn deserialize_ticket_verify_info(parcel: &mut MsgParcel) -> Result<TicketVerifyInfo> {
+/// Deserialize VerifyTicketInfo from MsgParcel.
+pub fn deserialize_verify_ticket_info(parcel: &mut MsgParcel) -> Result<VerifyTicketInfo> {
     let message = parcel.read::<String>().map_err(ipc_err_handle)?;
+    let challenge = parcel.read::<String>().map_err(ipc_err_handle)?;
     let ticket = parcel.read::<String>().map_err(ipc_err_handle)?;
-    Ok(TicketVerifyInfo { message, ticket })
+    Ok(VerifyTicketInfo { message, challenge, ticket })
 }
 
-/// Deserialize vector of TicketVerifyInfo from MsgParcel.
-pub fn deserialize_ticket_verify_infos(parcel: &mut MsgParcel) -> Result<Vec<TicketVerifyInfo>> {
+/// Deserialize vector of VerifyTicketInfo from MsgParcel.
+pub fn deserialize_verify_ticket_infos(parcel: &mut MsgParcel) -> Result<Vec<VerifyTicketInfo>> {
     let len = parcel.read::<i32>().map_err(ipc_err_handle)?;
     if len < 0 || len as u32 > MAX_TICKET_CAPACITY {
         return macros_lib::log_throw_error!(
             ErrCode::ParamVerificationFailed,
-            "[FATAL][IPC]TicketVerifyInfo vector size invalid: {}",
+            "[FATAL][IPC]VerifyTicketInfo vector size invalid: {}",
             len
         );
     }
     let mut vec = Vec::with_capacity(len as usize);
     for _ in 0..len {
-        vec.push(deserialize_ticket_verify_info(parcel)?);
+        vec.push(deserialize_verify_ticket_info(parcel)?);
     }
     Ok(vec)
 }
 
-/// Serialize vector of strings to MsgParcel (for reply).
-pub fn serialize_string_vec(vec: &Vec<String>, parcel: &mut MsgParcel) -> Result<()> {
-    if vec.len() as u32 > MAX_VEC_CAPACITY {
+/// Serialize VerifyTicketInfo to MsgParcel (for reply).
+pub fn serialize_verify_ticket_info(info: &VerifyTicketInfo, parcel: &mut MsgParcel) -> Result<()> {
+    parcel.write::<String>(&info.message).map_err(ipc_err_handle)?;
+    parcel.write::<String>(&info.challenge).map_err(ipc_err_handle)?;
+    parcel.write::<String>(&info.ticket).map_err(ipc_err_handle)?;
+    Ok(())
+}
+
+/// Serialize vector of VerifyTicketInfo to MsgParcel (for reply).
+pub fn serialize_verify_ticket_infos(infos: &Vec<VerifyTicketInfo>, parcel: &mut MsgParcel) -> Result<()> {
+    if infos.len() as u32 > MAX_TICKET_CAPACITY {
         return macros_lib::log_throw_error!(
             ErrCode::ParamVerificationFailed,
-            "[FATAL][IPC]String vector size exceeds limit: {}",
-            vec.len()
+            "[FATAL][IPC]VerifyTicketInfo vector size exceeds limit: {}",
+            infos.len()
         );
     }
-    parcel.write::<i32>(&(vec.len() as i32)).map_err(ipc_err_handle)?;
-    for s in vec {
-        parcel.write::<String>(s).map_err(ipc_err_handle)?;
+    parcel.write::<i32>(&(infos.len() as i32)).map_err(ipc_err_handle)?;
+    for info in infos {
+        serialize_verify_ticket_info(info, parcel)?;
     }
     Ok(())
 }

@@ -125,12 +125,11 @@ int32_t SecureAccessFenceClient::QueryPermissionBySubCommandBatch(
     return resultCode;
 }
 
-int32_t SecureAccessFenceClient::GenerateTicketBatch(
+int32_t SecureAccessFenceClient::BatchGenerateTicket(
     uint32_t osAccountId,
     const std::string &callerId,
     const std::vector<std::string> &messages,
-    std::vector<std::string> &tickets,
-    std::string &challenge)
+    std::vector<VerifyTicketInfo> &ticketInfos)
 {
     auto proxy = GetProxy();
     if (proxy == nullptr) {
@@ -149,23 +148,21 @@ int32_t SecureAccessFenceClient::GenerateTicketBatch(
     }
 
     int resultCode = E_SUCCESS;
-    int ret = proxy->GenerateTicketBatch(osAccountId, callerId, messages, tickets, challenge, resultCode);
+    int ret = proxy->BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos, resultCode);
 
     if (ret != 0) {
         LOGE("IPC call failed, ret=%{public}d", ret);
         return E_IPC_ERROR;
     }
 
-    LOGI("GenerateTicketBatch success, ticketCount=%{public}zu, challenge=%{public}s",
-          tickets.size(), challenge.c_str());
+    LOGI("BatchGenerateTicket success, ticketCount=%{public}zu", ticketInfos.size());
     return resultCode;
 }
 
-int32_t SecureAccessFenceClient::VerifyTicketBatch(
+int32_t SecureAccessFenceClient::BatchVerifyTicket(
     uint32_t osAccountId,
     const std::string &callerId,
-    const std::vector<TicketVerifyInfo> &verifyInfos,
-    const std::string &challenge,
+    const std::vector<VerifyTicketInfo> &verifyInfos,
     std::vector<int32_t> &verifyRes)
 {
     auto proxy = GetProxy();
@@ -185,14 +182,14 @@ int32_t SecureAccessFenceClient::VerifyTicketBatch(
     }
 
     int resultCode = E_SUCCESS;
-    int ret = proxy->VerifyTicketBatch(osAccountId, callerId, verifyInfos, challenge, verifyRes, resultCode);
+    int ret = proxy->BatchVerifyTicket(osAccountId, callerId, verifyInfos, verifyRes, resultCode);
 
     if (ret != 0) {
         LOGE("IPC call failed, ret=%{public}d", ret);
         return E_IPC_ERROR;
     }
 
-    LOGI("VerifyTicketBatch success, resultCount=%{public}zu", verifyRes.size());
+    LOGI("BatchVerifyTicket success, resultCount=%{public}zu", verifyRes.size());
     return resultCode;
 }
 

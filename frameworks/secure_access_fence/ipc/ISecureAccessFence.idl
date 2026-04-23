@@ -21,16 +21,14 @@ interface OHOS.Security.SecureAccessFence.ISecureAccessFence {
      * @param osAccountId OS account ID.
      * @param callerId Caller identifier (appIdentifyId).
      * @param messages List of messages to generate tickets for.
-     * @param tickets List of generated tickets (output parameter).
-     * @param challenge Challenge string for tickets (output parameter).
+     * @param ticketInfos List of generated ticket info (output parameter).
      * @param resultCode Error code output (0 for success).
      */
-    [ipccode 1] void GenerateTicketBatch(
+    [ipccode 1] void BatchGenerateTicket(
         [in] unsigned int osAccountId,
         [in] String callerId,
         [in] List<String> messages,
-        [out] List<String> tickets,
-        [out] String challenge,
+        [out] List<VerifyTicketInfo> ticketInfos,
         [out] int resultCode
     );
 
@@ -38,16 +36,14 @@ interface OHOS.Security.SecureAccessFence.ISecureAccessFence {
      * @brief Batch verify tickets.
      * @param osAccountId OS account ID.
      * @param callerId Caller identifier (appIdentifyId).
-     * @param verifyInfos List of ticket verify info to verify.
-     * @param challenge Challenge string for verification.
+     * @param verifyInfos List of verify ticket info to verify.
      * @param verifyRes List of verify results (output parameter).
      * @param resultCode Error code output (0 for success).
      */
-    [ipccode 2] void VerifyTicketBatch(
+    [ipccode 2] void BatchVerifyTicket(
         [in] unsigned int osAccountId,
         [in] String callerId,
-        [in] List<TicketVerifyInfo> verifyInfos,
-        [in] String challenge,
+        [in] List<VerifyTicketInfo> verifyInfos,
         [out] List<int> verifyRes,
         [out] int resultCode
     );

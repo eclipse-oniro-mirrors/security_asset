@@ -38,11 +38,13 @@ struct CommandPermission {
 };
 
 /**
- * @brief Ticket verify info structure for verify request.
+ * @brief Verify ticket info structure for ticket generation and verification.
  */
-struct TicketVerifyInfo {
-    /** Message to verify. */
+struct VerifyTicketInfo {
+    /** Message for ticket. */
     String message;
-    /** Ticket to verify. */
+    /** Challenge string. */
+    String challenge;
+    /** Ticket string. */
     String ticket;
 };

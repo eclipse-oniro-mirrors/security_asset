@@ -19,8 +19,9 @@ use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 use saf_common::{AutoCounter, Counter};
 
 use saf_ipc::{
-    deserialize_generate_ticket_request, deserialize_verify_ticket_request, serialize_i32_vec, serialize_string_vec,
-    TicketVerifyInfo, CMD_GENERATE_TICKET_BATCH, CMD_VERIFY_TICKET_BATCH, IPC_SUCCESS, SA_NAME,
+    deserialize_batch_generate_ticket_request, deserialize_batch_verify_ticket_request, serialize_i32_vec,
+    serialize_verify_ticket_infos, VerifyTicketInfo, CMD_BATCH_GENERATE_TICKET, CMD_BATCH_VERIFY_TICKET, IPC_SUCCESS,
+    SA_NAME,
 };
 use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
@@ -75,12 +76,12 @@ impl RemoteStub for SAFService {
 
 fn on_remote_request(stub: &SAFService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
     match code {
-        CMD_GENERATE_TICKET_BATCH => {
-            handle_generate_ticket_batch(stub, data, reply)?;
+        CMD_BATCH_GENERATE_TICKET => {
+            handle_batch_generate_ticket(stub, data, reply)?;
             Ok(())
         },
-        CMD_VERIFY_TICKET_BATCH => {
-            handle_verify_ticket_batch(stub, data, reply)?;
+        CMD_BATCH_VERIFY_TICKET => {
+            handle_batch_verify_ticket(stub, data, reply)?;
             Ok(())
         },
         _ => {
@@ -98,55 +99,50 @@ fn on_remote_request(stub: &SAFService, code: u32, data: &mut MsgParcel, reply: 
     }
 }
 
-fn handle_generate_ticket_batch(stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
-    let (os_account_id, caller_id, messages) = deserialize_generate_ticket_request(data).map_err(|e| {
-        loge!("[FATAL]Deserialize generate ticket request failed: {}", e.msg);
+fn handle_batch_generate_ticket(stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+    let (os_account_id, caller_id, messages) = deserialize_batch_generate_ticket_request(data).map_err(|e| {
+        loge!("[FATAL]Deserialize batch generate ticket request failed: {}", e.msg);
         IpcStatusCode::Failed
     })?;
 
     logi!(
-        "[INFO]GenerateTicketBatch received, osAccountId: {}, callerId: {}, messageCount: {}",
+        "[INFO]BatchGenerateTicket received, osAccountId: {}, callerId: {}, messageCount: {}",
         os_account_id,
         caller_id,
         messages.len()
     );
 
-    let (tickets, challenge) = stub.generate_ticket_batch(os_account_id, &caller_id, &messages).map_err(|e| {
-        loge!("[FATAL]Generate ticket failed: {}", e.msg);
+    let ticket_infos = stub.generate_ticket_batch(os_account_id as i32, &caller_id, &messages).map_err(|e| {
+        loge!("[FATAL]Batch generate ticket failed: {}", e.msg);
         IpcStatusCode::Failed
     })?;
 
     reply.write::<i32>(&(IPC_SUCCESS as i32))?;
-    serialize_string_vec(&tickets, reply).map_err(|e| {
-        loge!("[FATAL]Serialize tickets failed: {}", e.msg);
-        IpcStatusCode::Failed
-    })?;
-    reply.write::<String>(&challenge).map_err(|e| {
-        loge!("[FATAL]Serialize challenge failed: {}", e);
+    serialize_verify_ticket_infos(&ticket_infos, reply).map_err(|e| {
+        loge!("[FATAL]Serialize ticket infos failed: {}", e.msg);
         IpcStatusCode::Failed
     })?;
     reply.write::<i32>(&0)?;
 
-    logi!("[INFO]GenerateTicketBatch success, ticketCount: {}", tickets.len());
+    logi!("[INFO]BatchGenerateTicket success, ticketCount: {}", ticket_infos.len());
     Ok(())
 }
 
-fn handle_verify_ticket_batch(stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
-    let (os_account_id, caller_id, verify_infos, challenge) = deserialize_verify_ticket_request(data).map_err(|e| {
-        loge!("[FATAL]Deserialize verify ticket request failed: {}", e.msg);
+fn handle_batch_verify_ticket(stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+    let (os_account_id, caller_id, verify_infos) = deserialize_batch_verify_ticket_request(data).map_err(|e| {
+        loge!("[FATAL]Deserialize batch verify ticket request failed: {}", e.msg);
         IpcStatusCode::Failed
     })?;
 
     logi!(
-        "[INFO]VerifyTicketBatch received, osAccountId: {}, callerId: {}, verifyInfoCount: {}, challenge: {}",
+        "[INFO]BatchVerifyTicket received, osAccountId: {}, callerId: {}, verifyInfoCount: {}",
         os_account_id,
         caller_id,
-        verify_infos.len(),
-        challenge
+        verify_infos.len()
     );
 
-    let verify_res = stub.verify_ticket_batch(os_account_id, &caller_id, &verify_infos, &challenge).map_err(|e| {
-        loge!("[FATAL]Verify ticket failed: {}", e.msg);
+    let verify_res = stub.verify_ticket_batch(os_account_id as i32, &caller_id, &verify_infos).map_err(|e| {
+        loge!("[FATAL]Batch verify ticket failed: {}", e.msg);
         IpcStatusCode::Failed
     })?;
 
@@ -157,7 +153,7 @@ fn handle_verify_ticket_batch(stub: &SAFService, data: &mut MsgParcel, reply: &m
     })?;
     reply.write::<i32>(&0)?;
 
-    logi!("[INFO]VerifyTicketBatch success, resultCount: {}", verify_res.len());
+    logi!("[INFO]BatchVerifyTicket success, resultCount: {}", verify_res.len());
     Ok(())
 }
 
