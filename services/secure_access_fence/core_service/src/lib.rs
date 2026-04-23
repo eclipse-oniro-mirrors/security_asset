@@ -184,6 +184,14 @@ impl SAFService {
     pub(crate) fn new(handler: system_ability_fwk::ability::Handler) -> Self {
         Self { system_ability: handler }
     }
+
+    fn generate_ticket_batch(&self, _os_account_id: i32, _caller_id: &str, _messages: &[String]) -> Result<()> {
+
+    }
+
+    fn verify_ticket_batch(&self, ) -> Result<()> {
+
+    }
 }
 
 #[cfg(feature = "SAFTest")]
