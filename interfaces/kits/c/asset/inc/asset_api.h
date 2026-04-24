@@ -51,7 +51,7 @@ extern "C" {
  * @brief Adds an asset.
  *
  * @param attributes Pointer to the attributes of the asset to add.
- * @param attributes Number of the attributes of the asset to add.
+ * @param attrCnt Number of the attributes of the asset to add.
  * @return {@link ASSET_SUCCESS} 0 - The operation is successful.
  *     {@link ASSET_PERMISSION_DENIED} 201 - The caller doesn't have the permission.
  *     {@link ASSET_INVALID_ARGUMENT} 401 - Parameter error. Possible causes:
@@ -103,8 +103,8 @@ int32_t OH_Asset_Remove(const Asset_Attr *query, uint32_t queryCnt);
  *
  * @param query Pointer to the conditions for updating the asset.
  * @param queryCnt Number of conditions for updating the asset.
- * @param attributes Pointer to the attributes of the asset to update.
- * @param attributes Number of the attributes of the asset to update.
+ * @param attributesToUpdate Pointer to the attributes of the asset to update.
+ * @param updateCnt Number of the attributes of the asset to update.
  * @return {@link ASSET_SUCCESS} 0 - The operation is successful.
  *     {@link ASSET_INVALID_ARGUMENT} 401 - Parameter error. Possible causes:
  *         1. Mandatory parameters are left unspecified.
