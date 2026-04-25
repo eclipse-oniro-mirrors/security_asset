@@ -48,7 +48,6 @@ pub const PARAM_NAME_COMMON_EVENT_BUNDLE_NAME: &str = "CommonEventBundleName";
 /// param name for common event user id
 pub const PARAM_NAME_COMMON_EVENT_USER_ID: &str = "CommonEventUserId";
 
-
 /// Defines an interface for an saf plugin context, which outlines the basic methods for
 /// an saf plugin to operate.
 pub trait ISAFPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {

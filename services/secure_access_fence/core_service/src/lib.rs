@@ -27,12 +27,13 @@ use ylong_runtime::builder::RuntimeBuilder;
 
 use saf_common::{Counter, TaskManager};
 use saf_definition::{macros_lib, ErrCode, Result};
-use saf_ipc::SA_ID;
+use saf_ipc::{SA_ID, VerifyTicketInfo};
 use saf_log::{logd, loge, logi};
 use saf_plugin::saf_plugin::{SAFContext, SAFPlugin};
 
 mod common_event;
 mod stub;
+mod wrapper;
 
 struct SAFAbility;
 
@@ -182,6 +183,14 @@ struct SAFService {
 impl SAFService {
     pub(crate) fn new(handler: system_ability_fwk::ability::Handler) -> Self {
         Self { system_ability: handler }
+    }
+
+    fn generate_ticket_batch(&self, _os_account_id: i32, _caller_id: &str, _messages: &[String]) -> Result<Vec<VerifyTicketInfo>> {
+        macros_lib::log_throw_error!(ErrCode::IpcError, "[FATAL]unsupport interface!")
+    }
+
+    fn verify_ticket_batch(&self, _os_account_id: i32, _caller_id: &str, _messages: &[VerifyTicketInfo]) -> Result<Vec<i32>> {
+        macros_lib::log_throw_error!(ErrCode::IpcError, "[FATAL]unsupport interface!")
     }
 }
 

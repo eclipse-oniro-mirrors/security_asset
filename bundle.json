@@ -54,6 +54,7 @@
                 "samgr",
                 "sqlite",
                 "os_account",
+                "rust_cxx",
                 "ylong_json",
                 "ylong_runtime",
                 "openssl"
@@ -94,6 +95,15 @@
                     "header": {
                         "header_files": [],
                         "header_base": []
+                    }
+                },
+                {
+                    "name": "//base/security/asset/interfaces/inner_kits/c/secure_access_fence/agent_fence:saf_agent_fence",
+                    "header": {
+                        "header_files": [
+                            "saf_agent_fence.h"
+                        ],
+                        "header_base": "//base/security/asset/interfaces/inner_kits/c/secure_access_fence/agent_fence/inc"
                     }
                 },
                 {

@@ -18,7 +18,7 @@ members = [
     "frameworks/asset/os_dependency/log",
     "frameworks/asset/utils",
     "frameworks/secure_access_fence/definition",
-    "frameworks/secure_access_fence/ipc",
+    "frameworks/secure_access_fence/inner_api/ipc",
     "frameworks/secure_access_fence/os_dependency/log",
     "interfaces/inner_kits/c/asset",
     "interfaces/inner_kits/plugin_interface/asset",

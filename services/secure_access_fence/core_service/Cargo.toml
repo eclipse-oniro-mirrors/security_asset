@@ -29,7 +29,7 @@ ylong_json = { git = "https://gitcode.com/openharmony/commonlibrary_rust_ylong_j
 
 saf_common = { path = "../common" }
 saf_definition = { path = "../../../frameworks/secure_access_fence/definition" }
-saf_ipc = { path = "../../../frameworks/secure_access_fence/ipc" }
+saf_ipc = { path = "../../../frameworks/secure_access_fence/inner_api/ipc" }
 saf_log = { path = "../../../frameworks/secure_access_fence/os_dependency/log" }
 saf_plugin = { path = "../plugin" }
 saf_plugin_interface = { path = "../../../interfaces/inner_kits/plugin_interface/secure_access_fence" }
