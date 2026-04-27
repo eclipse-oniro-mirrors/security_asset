@@ -44,22 +44,12 @@ const std::vector<std::string> SYSTEM_EVENT_LIST = {
     CommonEventSupport::COMMON_EVENT_RESTORE_START,
 };
 
-const char** ToConstCharArray(const std::vector<std::string>& vec)
-{
-    std::vector<const char*> result;
-    for (const auto& str : vec) {
-        result.push_back(str.c_str());
-    }
-    static std::vector<const char*> static_result = result;
-    return static_result.data();
-}
-
 void ConstructWantVec(std::vector<std::string> &rustWant, OHOS::AAFwk::Want &want)
 {
     int32_t intUid = want.GetIntParam(COMMON_EVENT_PARAM_UID, DEFAULT_INT_VAL);
     rustWant.push_back(COMMON_EVENT_PARAM_UID);
     rustWant.push_back(std::to_string(intUid));
-    
+
     int32_t intAppindex = want.GetIntParam(COMMON_EVENT_PARAM_APPINDEX, DEFAULT_INT_VAL);
     rustWant.push_back(COMMON_EVENT_PARAM_APPINDEX);
     rustWant.push_back(std::to_string(intAppindex));
@@ -87,10 +77,13 @@ public:
         ConstructWantVec(rustWant, want);
 
         if (this->eventCallBack.onCommonEvent != nullptr) {
-            auto cArray = ToConstCharArray(rustWant);
+            std::vector<const char*> wantPtr;
+            for (const auto& str : rustWant) {
+                wantPtr.push_back(str.c_str());
+            }
             StringArray wantArray =  {
                 .size = static_cast<uint32_t>(rustWant.size()),
-                .data = cArray
+                .data = wantPtr.data()
             };
             this->eventCallBack.onCommonEvent({
                 eventName.c_str(),
