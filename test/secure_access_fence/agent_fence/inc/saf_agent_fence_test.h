@@ -27,6 +27,8 @@ int SafAgentFenceBatchVerifyTicketTest004(void);
 int SafAgentFenceQueryPermissionTest001(void);
 int SafAgentFenceQueryPermissionTest002(void);
 int SafAgentFenceQueryPermissionTest003(void);
+int SafAgentFenceQueryPermissionTest004(void);
+int SafAgentFenceQueryPermissionTest005(void);
 int SafAgentFenceGenerateAndVerifyTest001(void);
 }
 
