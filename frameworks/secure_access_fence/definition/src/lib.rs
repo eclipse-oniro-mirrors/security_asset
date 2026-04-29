@@ -123,6 +123,9 @@ impl_enum_trait! {
 
         /// The error code indicates that file operation failed.
         FileOperationError = 1023900007,
+
+        /// The error code indicates that the operation of calling Tool Service is failed.
+        ToolError = 1023900008,
     }
 }
 

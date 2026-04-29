@@ -16,6 +16,7 @@ import("//build/ohos.gni")
 config("saf_client_config") {
   include_dirs = [
     "inc",
+    "../../../../../interfaces/inner_kits/c/secure_access_fence/common/inc",
   ]
 }
 

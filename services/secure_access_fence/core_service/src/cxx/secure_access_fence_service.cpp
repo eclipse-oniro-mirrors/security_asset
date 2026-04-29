@@ -19,6 +19,7 @@
 #include "iservice_registry.h"
 
 #include "secure_access_fence_type.h"
+#include "cli_tool_mgr_client.h"
 
 #include "saf_log.h"
 #include "secure_access_fence_system_type.h"
@@ -28,9 +29,10 @@ namespace OHOS {
 namespace Security {
 namespace SAF {
 using namespace OHOS::Security::SAF;
+using namespace CliTool;
 
 const int32_t VECTOR_MAX_SIZE = 100;
-constexpr const char* CLI_TOOL_PERMISSION = "ohos.permission.QUERY_AND_EXEC_CLI_TOOL";
+constexpr const char* CLI_TOOL_PERMISSION = "ohos.permission.QUERY_CLI_TOOL";
 
 namespace {
 ErrCode BatchQueryCommandPermission(
@@ -38,12 +40,37 @@ ErrCode BatchQueryCommandPermission(
     std::vector<CommandPermissionInfo> &cmdPermissions,
     int32_t &resultCode)
 {
-    // check permission
     if (!CheckPermission(CLI_TOOL_PERMISSION)) {
         LOGE("Permission denied! Need %{public}s", CLI_TOOL_PERMISSION);
         return SEC_SAF_PERMISSION_DENIED;
     }
-    // todo调用三方接口
+
+    std::vector<Command> cliCmds;
+    for (const auto &cmd : cmds) {
+        Command cliCmd;
+        cliCmd.toolName = cmd.cmdName;
+        cliCmd.subCommand = cmd.subCmd;
+        cliCmds.push_back(cliCmd);
+    }
+
+    std::vector<CommandPermission> cliCmdPermissions;
+    int32_t ret = CliToolMGRClient::GetInstance().BatchQueryPermissionBySubCommand(cliCmds, cliCmdPermissions);
+    if (ret != 0) {
+        LOGE("BatchQueryPermissionBySubCommand failed, ret=%{public}d", ret);
+        resultCode = ret;
+        return SEC_SAF_TOOL_ERROR;
+    }
+
+    for (const auto &cliPerm : cliCmdPermissions) {
+        CommandPermissionInfo permInfo;
+        permInfo.cmd.cmdName = cliPerm.cmd.toolName;
+        permInfo.cmd.subCmd = cliPerm.cmd.subCommand;
+        permInfo.permissions = cliPerm.permissions;
+        permInfo.queryRet = cliPerm.queryRet;
+        cmdPermissions.push_back(permInfo);
+    }
+
+    resultCode = 0;
     return SEC_SAF_SUCCESS;
 }
 
@@ -84,7 +111,7 @@ int32_t OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply
     }
     reply.WriteInt32(cmdPermissions.size());
     for (auto it2 = cmdPermissions.begin(); it2 != cmdPermissions.end(); ++it2) {
-        if (CommandPermissionInfoBlockUnmarshalling(reply, (*it2)) != ERR_NONE) {
+        if (CommandPermissionInfoBlockMarshalling(reply, (*it2)) != ERR_NONE) {
             LOGE("Write *it2 failed!");
             return SEC_SAF_PARAM_VERICATION_FAILED;
         }

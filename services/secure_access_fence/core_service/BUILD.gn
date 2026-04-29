@@ -31,6 +31,7 @@ ohos_static_library("secure_access_fence_wrapper_static") {
     "../../../frameworks/secure_access_fence/inner_api/ipc",
     "../../../frameworks/secure_access_fence/os_dependency/log/inc",
     "../../../interfaces/inner_kits/c/secure_access_fence/agent_fence/inc",
+    "../../../interfaces/inner_kits/c/secure_access_fence/common/inc",
   ]
   sources = [ "src/cxx/secure_access_fence_service.cpp" ]
   sources += get_target_outputs(":secure_access_fence_wrapper_cxx")
@@ -43,6 +44,8 @@ ohos_static_library("secure_access_fence_wrapper_static") {
   ]
 
   external_deps = [
+    "ability_runtime:cli_tool_client",
+    "ability_base:want",
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",

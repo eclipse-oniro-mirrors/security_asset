@@ -18,7 +18,9 @@
 #include <gtest/gtest.h>
 
 #include "saf_agent_fence.h"
+#include "saf_result.h"
 #include "secure_access_fence_system_type.h"
+#include "saf_permission_change.h"
 
 using namespace testing::ext;
 namespace UnitTest::SafAgentFenceTest {
@@ -32,6 +34,7 @@ public:
 
 void SafAgentFenceTest::SetUpTestCase(void)
 {
+    ASSERT_EQ(0, GrantSelfPermission());
 }
 
 void SafAgentFenceTest::TearDownTestCase(void)
@@ -204,7 +207,7 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceBatchVerifyTicketTest004, TestSize.Leve
 
 /**
  * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest001
- * @tc.desc: Batch query permission by sub command with valid parameters.
+ * @tc.desc: Batch query command permission with "ohos-battery-manager capacity".
  * @tc.type: FUNC
  * @tc.result: 0
  */
@@ -213,23 +216,78 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest001, TestSize.Level0
     OHOS::Security::SAF::SafAgentFence agentFence;
 
     std::vector<OHOS::Security::SAF::CommandInfo> cmds;
-    cmds.push_back({"cmd1", "sub1"});
-    cmds.push_back({"cmd2", "sub2"});
+    cmds.push_back({"ohos-battery-manager", "capacity"});
 
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
     EXPECT_EQ(result, SEC_SAF_SUCCESS);
-    EXPECT_EQ(cmdPermissions.size(), cmds.size());
+    EXPECT_EQ(cmdPermissions.size(), 1);
+    EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-battery-manager");
+    EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "capacity");
+    EXPECT_TRUE(cmdPermissions[0].permissions.empty());
+    EXPECT_EQ(cmdPermissions[0].queryRet, 0);
 }
 
 /**
  * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest002
- * @tc.desc: Batch query command permission with empty commands.
+ * @tc.desc: Batch query command permission with "ohos-power-manager wakeup".
  * @tc.type: FUNC
  * @tc.result: 0
  */
 HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest002, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    std::vector<OHOS::Security::SAF::CommandInfo> cmds;
+    cmds.push_back({"ohos-power-manager", "wakeup"});
+
+    std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
+
+    int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
+    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(cmdPermissions.size(), 1);
+    EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-power-manager");
+    EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "wakeup");
+    EXPECT_EQ(cmdPermissions[0].permissions.size(), 2);
+    EXPECT_EQ(cmdPermissions[0].permissions[0], "system_grant");
+    EXPECT_EQ(cmdPermissions[0].permissions[1], "ohos.permission.POWER_MANAGER");
+    EXPECT_EQ(cmdPermissions[0].queryRet, 0);
+}
+
+/**
+ * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest003
+ * @tc.desc: Batch query command permission with "ohos-location-cli get-current-location".
+ * @tc.type: FUNC
+ * @tc.result: 0
+ */
+HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest003, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    std::vector<OHOS::Security::SAF::CommandInfo> cmds;
+    cmds.push_back({"ohos-location-cli", "get-current-location"});
+
+    std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
+
+    int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
+    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(cmdPermissions.size(), 1);
+    EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-location-cli");
+    EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "get-current-location");
+    EXPECT_EQ(cmdPermissions[0].permissions.size(), 2);
+    EXPECT_EQ(cmdPermissions[0].permissions[0], "user_grant");
+    EXPECT_EQ(cmdPermissions[0].permissions[1], "ohos.permission.APPROXIMATELY_LOCATION");
+    EXPECT_EQ(cmdPermissions[0].queryRet, 0);
+}
+
+/**
+ * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest004
+ * @tc.desc: Batch query command permission with empty commands.
+ * @tc.type: FUNC
+ * @tc.result: 0
+ */
+HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest004, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
     std::vector<OHOS::Security::SAF::CommandInfo> cmds;
@@ -241,12 +299,12 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest002, TestSize.Level0
 }
 
 /**
- * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest003
+ * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest005
  * @tc.desc: Batch query command permission with large batch.
  * @tc.type: FUNC
  * @tc.result: 0
  */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest003, TestSize.Level0)
+HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest005, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
 
