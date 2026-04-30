@@ -1,0 +1,233 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at the following address:
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+//! This module implements ticket operation functionality.
+
+mod ticket_key_manager;
+mod local_based_ticket_key_manager;
+mod account_based_ticket_key_manager;
+
+pub use ticket_key_manager::TicketKeyManager;
+pub use local_based_ticket_key_manager::LocalBasedTicketKeyManager;
+pub use account_based_ticket_key_manager::AccountBasedTicketKeyManager;
+
+use saf_definition::{ErrCode, Result, macros_lib};
+use saf_ipc::VerifyTicketInfo;
+
+const CHALLENGE_SIZE: usize = 32;
+const HMAC_SHA256_SIZE: usize = 32;
+const SAF_SUCCESS: i32 = 0;
+
+#[repr(C)]
+struct Uint8Buff {
+    buf: *mut u8,
+    size: u32,
+}
+
+#[repr(C)]
+struct Uint8BuffConst {
+    buf: *const u8,
+    size: u32,
+}
+
+extern "C" {
+    fn GenerateRandomBytes(buf: *mut Uint8Buff) -> i32;
+    fn ComputeHmacSha256(key: *const Uint8BuffConst, data: *const Uint8BuffConst, hmac: *mut Uint8Buff) -> i32;
+    fn VerifyHmacSha256(key: *const Uint8BuffConst, data: *const Uint8BuffConst, expectedHmac: *const Uint8BuffConst) -> i32;
+    fn Base64Encode(input: *const Uint8BuffConst, output: *mut Uint8Buff) -> i32;
+    fn Base64Decode(input: *const Uint8BuffConst, output: *mut Uint8Buff) -> i32;
+}
+
+fn generate_challenge() -> Result<Vec<u8>> {
+    let mut buf = vec![0u8; CHALLENGE_SIZE];
+    let mut buff = Uint8Buff {
+        buf: buf.as_mut_ptr(),
+        size: CHALLENGE_SIZE as u32,
+    };
+    let ret = unsafe { GenerateRandomBytes(&mut buff) };
+    if ret != SAF_SUCCESS {
+        macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "generate challenge failed")
+    } else {
+        Ok(buf)
+    }
+}
+
+fn compute_hmac_sha256(key: &[u8], data: &[u8]) -> Result<Vec<u8>> {
+    let mut hmac = vec![0u8; HMAC_SHA256_SIZE];
+    let key_buff = Uint8BuffConst {
+        buf: key.as_ptr(),
+        size: key.len() as u32,
+    };
+    let data_buff = Uint8BuffConst {
+        buf: data.as_ptr(),
+        size: data.len() as u32,
+    };
+    let mut hmac_buff = Uint8Buff {
+        buf: hmac.as_mut_ptr(),
+        size: HMAC_SHA256_SIZE as u32,
+    };
+    let ret = unsafe { ComputeHmacSha256(&key_buff, &data_buff, &mut hmac_buff) };
+    if ret != SAF_SUCCESS {
+        macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "compute hmac failed")
+    } else {
+        Ok(hmac)
+    }
+}
+
+fn verify_hmac_sha256(key: &[u8], data: &[u8], expected_hmac: &[u8]) -> Result<bool> {
+    if expected_hmac.len() != HMAC_SHA256_SIZE {
+        return macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "invalid hmac size");
+    }
+    let key_buff = Uint8BuffConst {
+        buf: key.as_ptr(),
+        size: key.len() as u32,
+    };
+    let data_buff = Uint8BuffConst {
+        buf: data.as_ptr(),
+        size: data.len() as u32,
+    };
+    let expected_hmac_buff = Uint8BuffConst {
+        buf: expected_hmac.as_ptr(),
+        size: HMAC_SHA256_SIZE as u32,
+    };
+    let ret = unsafe { VerifyHmacSha256(&key_buff, &data_buff, &expected_hmac_buff) };
+    Ok(ret == SAF_SUCCESS)
+}
+
+fn base64_encode(input: &[u8]) -> Result<Vec<u8>> {
+    let expected_len = 4 * ((input.len() + 2) / 3) + 1;
+    let mut output = vec![0u8; expected_len];
+    let input_buff = Uint8BuffConst {
+        buf: input.as_ptr(),
+        size: input.len() as u32,
+    };
+    let mut output_buff = Uint8Buff {
+        buf: output.as_mut_ptr(),
+        size: expected_len as u32,
+    };
+    let ret = unsafe { Base64Encode(&input_buff, &mut output_buff) };
+    if ret != SAF_SUCCESS {
+        macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "base64 encode failed")
+    } else {
+        unsafe { output.set_len(output_buff.size as usize) };
+        Ok(output)
+    }
+}
+
+fn base64_decode(input: &[u8]) -> Result<Vec<u8>> {
+    let expected_len = 3 * input.len() / 4;
+    let mut output = vec![0u8; expected_len];
+    let input_buff = Uint8BuffConst {
+        buf: input.as_ptr(),
+        size: input.len() as u32,
+    };
+    let mut output_buff = Uint8Buff {
+        buf: output.as_mut_ptr(),
+        size: expected_len as u32,
+    };
+    let ret = unsafe { Base64Decode(&input_buff, &mut output_buff) };
+    if ret != SAF_SUCCESS {
+        macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "base64 decode failed")
+    } else {
+        unsafe { output.set_len(output_buff.size as usize) };
+        Ok(output)
+    }
+}
+
+pub fn create_ticket_key_manager(caller_id: &str) -> Box<dyn TicketKeyManager> {
+    if !caller_id.is_empty() {
+        Box::new(AccountBasedTicketKeyManager::new())
+    } else {
+        Box::new(LocalBasedTicketKeyManager::new())
+    }
+}
+
+pub fn batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: &[String],) ->
+    Result<Vec<VerifyTicketInfo>> {
+    let challenge1 = generate_challenge()?;
+    
+    let key_manager = create_ticket_key_manager(caller_id);
+    let session_key = key_manager.derive_ticket_session_key(os_account_id as u32, &challenge1)?;
+    
+    let mut results = Vec::with_capacity(messages.len());
+    
+    for message in messages {
+        let challenge2 = generate_challenge()?;
+        
+        let mut data = message.as_bytes().to_vec();
+        data.extend_from_slice(&challenge2);
+        
+        let hmac_result = compute_hmac_sha256(&session_key, &data)?;
+        
+        let combined_challenge = [challenge1.as_slice(), challenge2.as_slice()].concat();
+        
+        let ticket_info = VerifyTicketInfo {
+            message: message.clone(),
+            challenge: String::from_utf8_lossy(&base64_encode(&combined_challenge)?).to_string(),
+            ticket: String::from_utf8_lossy(&base64_encode(&hmac_result)?).to_string(),
+        };
+        
+        results.push(ticket_info);
+    }
+    
+    Ok(results)
+}
+
+pub fn batch_verify_ticket(
+    os_account_id: i32,
+    caller_id: &str,
+    verify_infos: &[VerifyTicketInfo],
+) -> Result<Vec<i32>> {
+    let key_manager = create_ticket_key_manager(caller_id);
+    
+    let mut results = Vec::with_capacity(verify_infos.len());
+    
+    for verify_info in verify_infos {
+        let combined_challenge = match base64_decode(verify_info.challenge.as_bytes()) {
+            Ok(v) => v,
+            Err(_) => {
+                results.push(-1);
+                continue;
+            }
+        };
+        if combined_challenge.len() < 64 {
+            results.push(-1);
+            continue;
+        }
+        
+        let challenge1 = &combined_challenge[..32];
+        let challenge2 = &combined_challenge[32..];
+        
+        let session_key = key_manager.derive_ticket_session_key(os_account_id as u32, challenge1)?;
+        
+        let mut data = verify_info.message.as_bytes().to_vec();
+        data.extend_from_slice(challenge2);
+        
+        let expected_hmac = match base64_decode(verify_info.ticket.as_bytes()) {
+            Ok(v) => v,
+            Err(_) => {
+                results.push(-1);
+                continue;
+            }
+        };
+        if verify_hmac_sha256(&session_key, &data, &expected_hmac)? {
+            results.push(0);
+        } else {
+            results.push(-1);
+        }
+    }
+    
+    Ok(results)
+}
