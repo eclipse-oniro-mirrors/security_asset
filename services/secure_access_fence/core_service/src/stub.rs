@@ -185,9 +185,9 @@ fn handle_batch_verify_ticket(stub: &SAFService, data: &mut MsgParcel, reply: &m
 fn on_extension_request(_stub: &SAFService, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
     if let Ok(load) = SAFPlugin::get_instance().load_plugin() {
         match load.on_remote_request(code, data, reply) {
-            Ok(()) => {
+            Ok(res) => {
                 logi!("process redirect request success.");
-                return IPC_SUCCESS as i32;
+                return res;
             },
             Err(code) => {
                 loge!("process redirect request failed, code: {}", code);
