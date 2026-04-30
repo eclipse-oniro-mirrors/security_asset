@@ -31,6 +31,8 @@ pub enum EventType {
     /// is in black list operate, not implimented.
     #[default]
     BlackList = 0,
+    /// Derive ticket session key for ticket generation.
+    DeriveTicketSessionKey = 1,
 }
 
 /// param name for common event type.

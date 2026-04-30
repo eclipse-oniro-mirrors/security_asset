@@ -18,7 +18,7 @@
 #include <gtest/gtest.h>
 
 #include "saf_agent_fence.h"
-#include "saf_result.h"
+#include "saf_result_defs.h"
 #include "secure_access_fence_system_type.h"
 #include "saf_permission_change.h"
 
@@ -347,4 +347,33 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceGenerateAndVerifyTest001, TestSize.Leve
         EXPECT_EQ(verifyRes[i], SEC_SAF_SUCCESS);
     }
 }
+
+/**
+ * @tc.name: SafAgentFenceTest.SafAgentFenceGenerateAndVerifyTest002
+ * @tc.desc: Generate tickets then verify them.
+ * @tc.type: FUNC
+ * @tc.result: 0
+ */
+HWTEST_F(SafAgentFenceTest, SafAgentFenceGenerateAndVerifyTest002, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+    uint32_t osAccountId = 101;
+    std::string callerId = "test_caller";
+
+    std::vector<std::string> messages = {"message1", "message2"};
+    std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
+
+    int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
+    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(ticketInfos.size(), messages.size());
+
+    std::vector<int32_t> verifyRes;
+    int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
+    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyRes.size(), ticketInfos.size());
+    for (size_t i = 0; i < verifyRes.size(); i++) {
+        EXPECT_EQ(verifyRes[i], SEC_SAF_SUCCESS);
+    }
+}
+
 }

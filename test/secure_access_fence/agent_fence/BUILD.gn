@@ -25,8 +25,10 @@ ohos_unittest("saf_agent_fence_test") {
     "inc",
     "../../../frameworks/secure_access_fence/inner_api/agent_fence/inc",
     "../../../interfaces/inner_kits/c/secure_access_fence/agent_fence/inc",
+    "../../../interfaces/inner_kits/c/secure_access_fence/common/inc",
     "../../../frameworks/secure_access_fence/inner_api/ipc",
     "../../../frameworks/secure_access_fence/os_dependency/log/inc",
+    "../../../frameworks/secure_access_fence/inner_api/agent_fence/inc",
   ]
 
   sources = [

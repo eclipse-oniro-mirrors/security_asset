@@ -23,6 +23,7 @@
 
 #include "saf_log.h"
 #include "secure_access_fence_system_type.h"
+#include "saf_result_defs.h"
 #include "access_token_wrapper.h"
 
 namespace OHOS {

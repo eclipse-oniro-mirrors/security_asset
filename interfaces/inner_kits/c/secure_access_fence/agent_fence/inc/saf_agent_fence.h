@@ -18,14 +18,11 @@
 
 #include <vector>
 #include <string>
-#include <mutex>
 
 #include "isecure_access_fence.h"
 #include "secure_access_fence_type.h"
 
-namespace OHOS {
-namespace Security {
-namespace SAF {
+namespace OHOS::Security::SAF {
 
 class SafAgentFence {
 public:
@@ -47,7 +44,7 @@ public:
      * @brief Batch generate tickets for multiple messages.
      *
      * @param osAccountId The OS account ID, >= 100.
-     * @param callerId The app identify ID.
+     * @param callerId The token id.
      * @param message The vector of messages for which tickets will be generated.
      * @param ticketInfos Output vector of generated VerifyTicketInfo structures.
      * @return Returns 0 on success, or error code on failure.
@@ -62,7 +59,7 @@ public:
      * @brief Batch verify tickets for access control.
      *
      * @param osAccountId The OS account ID, >= 100.
-     * @param callerId The app identify ID.
+     * @param callerId The token id.
      * @param ticketInfos The vector of VerifyTicketInfo structures to verify.
      * @param verifyRes Output vector of verification results.
      * @return Returns 0 on success, or error code on failure.
@@ -74,8 +71,6 @@ public:
         std::vector<int32_t> &verifyRes);
 };
 
-} // namespace SAF
-} // namespace Security
-} // namespace OHOS
+}
 
 #endif // SAF_AGENT_FENCE_H
