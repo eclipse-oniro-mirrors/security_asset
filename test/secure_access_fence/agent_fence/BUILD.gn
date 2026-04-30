@@ -32,7 +32,7 @@ ohos_unittest("saf_agent_fence_test") {
   ]
 
   sources = [
-    "src/saf_agent_fence_test.cpp",
+    "src/saf_agent_fence_query_cmd_permission_test.cpp",
     "src/saf_agent_fence_gen_and_ver_ticket_test.cpp",
     "src/saf_permission_change.cpp",
   ]
