@@ -23,6 +23,8 @@ pub use ticket_key_manager::TicketKeyManager;
 pub use local_based_ticket_key_manager::LocalBasedTicketKeyManager;
 pub use account_based_ticket_key_manager::AccountBasedTicketKeyManager;
 
+use std::ffi::CString;
+use std::os::raw::c_char;
 use saf_definition::{ErrCode, Result, macros_lib};
 use saf_ipc::VerifyTicketInfo;
 
@@ -48,6 +50,8 @@ extern "C" {
     fn VerifyHmacSha256(key: *const Uint8BuffConst, data: *const Uint8BuffConst, expectedHmac: *const Uint8BuffConst) -> i32;
     fn Base64Encode(input: *const Uint8BuffConst, output: *mut Uint8Buff) -> i32;
     fn Base64Decode(input: *const Uint8BuffConst, output: *mut Uint8Buff) -> i32;
+    fn CheckBatchGenerateTicketParamsC(osAccountId: u32, callerId: *const c_char, messagesCount: usize) -> i32;
+    fn CheckBatchVerifyTicketParamsC(osAccountId: u32, callerId: *const c_char, verifyInfosCount: usize) -> i32;
 }
 
 fn generate_challenge() -> Result<Vec<u8>> {
@@ -156,6 +160,15 @@ pub fn create_ticket_key_manager(caller_id: &str) -> Box<dyn TicketKeyManager> {
 
 pub fn batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: &[String],) ->
     Result<Vec<VerifyTicketInfo>> {
+    let caller_id_cstr = CString::new(caller_id).unwrap_or_default();
+    let check_result = unsafe {
+        CheckBatchGenerateTicketParamsC(os_account_id as u32, caller_id_cstr.as_ptr(), messages.len())
+    };
+    if check_result != SAF_SUCCESS {
+        return macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, 
+            "batch_generate_ticket params check failed");
+    }
+    
     let challenge1 = generate_challenge()?;
     
     let key_manager = create_ticket_key_manager(caller_id);
@@ -190,6 +203,15 @@ pub fn batch_verify_ticket(
     caller_id: &str,
     verify_infos: &[VerifyTicketInfo],
 ) -> Result<Vec<i32>> {
+    let caller_id_cstr = CString::new(caller_id).unwrap_or_default();
+    let check_result = unsafe {
+        CheckBatchVerifyTicketParamsC(os_account_id as u32, caller_id_cstr.as_ptr(), verify_infos.len())
+    };
+    if check_result != SAF_SUCCESS {
+        return macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, 
+            "batch_verify_ticket params check failed");
+    }
+    
     let key_manager = create_ticket_key_manager(caller_id);
     
     let mut results = Vec::with_capacity(verify_infos.len());
