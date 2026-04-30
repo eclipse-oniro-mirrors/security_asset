@@ -91,7 +91,7 @@ pub trait ISAFPlugin: Any + Sync + Send + std::panic::RefUnwindSafe {
     fn process_event(&self, event_type: EventType, params: &mut ExtMap) -> Result<ExtMap, u32>;
 
     /// on remote request.
-    fn on_remote_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> Result<(), i32>;
+    fn on_remote_request(&self, code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> Result<i32, i32>;
 
     /// On SA Extension.
     fn on_sa_extension(&self, extension: String, data: &mut MsgParcel, reply: &mut MsgParcel) -> Result<(), i32>;
