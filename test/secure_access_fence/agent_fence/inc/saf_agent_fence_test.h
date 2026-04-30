@@ -17,19 +17,22 @@
 #define SAF_AGENT_FENCE_TEST_H
 
 namespace UnitTest::SafAgentFenceTest {
-int SafAgentFenceBatchGenerateTicketTest001(void);
-int SafAgentFenceBatchGenerateTicketTest002(void);
-int SafAgentFenceBatchGenerateTicketTest003(void);
-int SafAgentFenceBatchVerifyTicketTest001(void);
-int SafAgentFenceBatchVerifyTicketTest002(void);
-int SafAgentFenceBatchVerifyTicketTest003(void);
-int SafAgentFenceBatchVerifyTicketTest004(void);
 int SafAgentFenceQueryPermissionTest001(void);
 int SafAgentFenceQueryPermissionTest002(void);
 int SafAgentFenceQueryPermissionTest003(void);
 int SafAgentFenceQueryPermissionTest004(void);
 int SafAgentFenceQueryPermissionTest005(void);
+int SafAgentFenceQueryPermissionTest006(void);
+int SafAgentFenceQueryPermissionTest007(void);
+int SafAgentFenceQueryPermissionTest008(void);
+int SafAgentFenceQueryPermissionTest009(void);
+int SafAgentFenceQueryPermissionTest010(void);
+int SafAgentFenceQueryPermissionTest011(void);
+int SafAgentFenceQueryPermissionTest012(void);
+int SafAgentFenceQueryPermissionTest013(void);
+int SafAgentFenceQueryPermissionTest014(void);
 int SafAgentFenceGenerateAndVerifyTest001(void);
+int SafAgentFenceGenerateAndVerifyTest002(void);
 }
 
 #endif // SAF_AGENT_FENCE_TEST_H

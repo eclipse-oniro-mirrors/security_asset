@@ -32,7 +32,7 @@ namespace SAF {
 using namespace OHOS::Security::SAF;
 using namespace CliTool;
 
-const int32_t VECTOR_MAX_SIZE = 100;
+const int32_t VECTOR_MAX_SIZE = 99;
 constexpr const char* CLI_TOOL_PERMISSION = "ohos.permission.QUERY_CLI_TOOL";
 
 namespace {
