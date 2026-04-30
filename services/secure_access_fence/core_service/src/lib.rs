@@ -34,6 +34,7 @@ use saf_plugin::saf_plugin::{SAFContext, SAFPlugin};
 mod common_event;
 mod stub;
 mod wrapper;
+mod ticket_operation;
 
 struct SAFAbility;
 
@@ -185,12 +186,14 @@ impl SAFService {
         Self { system_ability: handler }
     }
 
-    fn generate_ticket_batch(&self, _os_account_id: i32, _caller_id: &str, _messages: &[String]) -> Result<Vec<VerifyTicketInfo>> {
-        macros_lib::log_throw_error!(ErrCode::IpcError, "[FATAL]unsupport interface!")
+    fn batch_generate_ticket(&self, os_account_id: i32, caller_id: &str, messages: &[String]) ->
+        Result<Vec<VerifyTicketInfo>> {
+        ticket_operation::batch_generate_ticket(os_account_id, caller_id, messages)
     }
-
-    fn verify_ticket_batch(&self, _os_account_id: i32, _caller_id: &str, _messages: &[VerifyTicketInfo]) -> Result<Vec<i32>> {
-        macros_lib::log_throw_error!(ErrCode::IpcError, "[FATAL]unsupport interface!")
+    
+    fn batch_verify_ticket(&self, os_account_id: i32, caller_id: &str, verify_infos: &[VerifyTicketInfo]) ->
+        Result<Vec<i32>> {
+        ticket_operation::batch_verify_ticket(os_account_id, caller_id, verify_infos)
     }
 }
 
