@@ -79,6 +79,7 @@ ohos_rust_shared_library("secure_access_fence_service") {
     "../../../frameworks/secure_access_fence/os_dependency/log:saf_log",
     "../../../interfaces/inner_kits/plugin_interface/secure_access_fence:saf_plugin_interface_rust",
     "../../../interfaces/inner_kits/rs/secure_access_fence:saf_sdk_rust",
+    "../../../interfaces/inner_kits/c/secure_access_fence/agent_fence:saf_agent_fence",
     "../common:saf_common",
     "../os_dependency:saf_os_dependency",
     "../plugin:saf_plugin",
