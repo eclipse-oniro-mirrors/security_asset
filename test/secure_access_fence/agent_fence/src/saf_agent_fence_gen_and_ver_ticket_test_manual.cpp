@@ -238,4 +238,85 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCase002_VerifyTicket, TestS
     std::cout << "TestCase 2 completed." << std::endl;
 }
 
+/**
+ * @tc.name: SafAgentFenceGenAndVerTicketTestManual.TestCase003_GenerateTicket
+ * @tc.desc: Generate ticket with osAccountId:101, callerId:"test_caller", message count:5, message length:5-100
+ * @tc.type: FUNC
+ * @tc.result: Generate success, write to file success
+ */
+HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCase003_GenerateTicket, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+    uint32_t osAccountId = 101;
+    std::string callerId = "test_caller";
+
+    std::vector<std::string> messages = GenerateMessages(MESSAGE_COUNT, MIN_MESSAGE_LEN, MAX_MESSAGE_LEN);
+    std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
+
+    int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
+    std::cout << "GenerateTicket return code: " << genResult << std::endl;
+    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(ticketInfos.size(), MESSAGE_COUNT);
+
+    std::cout << "Generated ticket infos:" << std::endl;
+    for (size_t i = 0; i < ticketInfos.size(); i++) {
+        std::cout << "  [" << i << "] message length: " << ticketInfos[i].message.length()
+                  << ", challenge length: " << ticketInfos[i].challenge.length()
+                  << ", ticket length: " << ticketInfos[i].ticket.length() << std::endl;
+    }
+
+    RemoveDir(DATA_DIR);
+    ASSERT_TRUE(CreateDir(DATA_DIR));
+
+    for (size_t i = 0; i < ticketInfos.size(); i++) {
+        std::string filePath = std::string(DATA_DIR) + "/ticket_" + std::to_string(i) + ".dat";
+        ASSERT_TRUE(WriteTicketInfoToFile(filePath, ticketInfos[i]));
+        std::cout << "Written: " << filePath << std::endl;
+    }
+
+    savedTicketInfos = ticketInfos;
+    std::cout << "TestCase 3 completed successfully." << std::endl;
+}
+
+/**
+ * @tc.name: SafAgentFenceGenAndVerTicketTestManual.TestCase004_VerifyTicket
+ * @tc.desc: Read ticket info from file and verify ticket with osAccountId:101
+ * @tc.type: FUNC
+ * @tc.result: Verify success
+ */
+HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCase004_VerifyTicket, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+    uint32_t osAccountId = 101;
+    std::string callerId = "test_caller";
+
+    std::vector<OHOS::Security::SAF::VerifyTicketInfo> verifyInfos;
+    for (size_t i = 0; i < MESSAGE_COUNT; i++) {
+        std::string filePath = std::string(DATA_DIR) + "/ticket_" + std::to_string(i) + ".dat";
+        OHOS::Security::SAF::VerifyTicketInfo info;
+        ASSERT_TRUE(ReadTicketInfoFromFile(filePath, info));
+        verifyInfos.push_back(info);
+        std::cout << "Read: " << filePath << std::endl;
+    }
+
+    std::cout << "VerifyTicket parameters:" << std::endl;
+    std::cout << "  osAccountId: " << osAccountId << std::endl;
+    std::cout << "  callerId: " << callerId << std::endl;
+    std::cout << "  verifyInfos count: " << verifyInfos.size() << std::endl;
+
+    std::vector<int32_t> verifyRes;
+    int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, verifyInfos, verifyRes);
+    std::cout << "VerifyTicket return code: " << verifyResult << std::endl;
+    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyRes.size(), MESSAGE_COUNT);
+
+    std::cout << "Verification results:" << std::endl;
+    for (size_t i = 0; i < verifyRes.size(); i++) {
+        std::cout << "  [" << i << "] result: " << verifyRes[i] << std::endl;
+        EXPECT_EQ(verifyRes[i], SEC_SAF_SUCCESS);
+    }
+
+    std::cout << "TestCase 4 completed." << std::endl;
+}
+
 }
