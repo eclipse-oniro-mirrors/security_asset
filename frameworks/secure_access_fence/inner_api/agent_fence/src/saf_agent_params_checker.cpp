@@ -96,7 +96,7 @@ int32_t CheckBatchVerifyTicketParamsC(uint32_t osAccountId, const char* callerId
         LOGE("callerId is null or empty");
         return SEC_SAF_PARAM_VERICATION_FAILED;
     }
-    
+
     if (osAccountId < OHOS::Security::SAF::MIN_OS_ACCOUNT_ID) {
         LOGE("invalid osAccountId: %{public}u", osAccountId);
         return SEC_SAF_PARAM_VERICATION_FAILED;
@@ -106,8 +106,7 @@ int32_t CheckBatchVerifyTicketParamsC(uint32_t osAccountId, const char* callerId
         LOGE("invalid verifyInfosCount: %{public}zu", verifyInfosCount);
         return SEC_SAF_PARAM_VERICATION_FAILED;
     }
-    
+
     return SEC_SAF_SUCCESS;
 }
-
 }
