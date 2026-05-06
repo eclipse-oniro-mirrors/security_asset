@@ -21,7 +21,10 @@ config("saf_client_config") {
 }
 
 ohos_shared_library("saf_agent_fence") {
-  sources = [ "../../../../../frameworks/secure_access_fence/inner_api/agent_fence/src/saf_agent_fence.cpp" ]
+  sources = [
+    "../../../../../frameworks/secure_access_fence/inner_api/agent_fence/src/saf_agent_fence.cpp",
+    "../../../../../frameworks/secure_access_fence/inner_api/agent_fence/src/saf_agent_params_checker.cpp",
+  ]
 
   public_configs = [
     ":saf_client_config",

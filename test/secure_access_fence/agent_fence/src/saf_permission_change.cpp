@@ -48,7 +48,8 @@ void RestartAccessTokenService()
 static int GrantSelfPermissionInner()
 {
     const char *permissions[] = {
-        "ohos.permission.QUERY_CLI_TOOL"
+        "ohos.permission.QUERY_CLI_TOOL",
+        "ohos.permission.GET_TICKET_INFO"
     };
     NativeTokenInfoParams info = {
         .dcapsNum = 0,

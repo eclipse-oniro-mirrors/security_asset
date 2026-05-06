@@ -24,7 +24,7 @@
 
 using namespace testing::ext;
 namespace UnitTest::SafAgentFenceTest {
-class SafAgentFenceTest : public testing::Test {
+class SafAgentFenceQueryCmdPermissionTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
     static void TearDownTestCase(void);
@@ -32,30 +32,30 @@ public:
     void TearDown(void);
 };
 
-void SafAgentFenceTest::SetUpTestCase(void)
+void SafAgentFenceQueryCmdPermissionTest::SetUpTestCase(void)
 {
     ASSERT_EQ(0, GrantSelfPermission());
 }
 
-void SafAgentFenceTest::TearDownTestCase(void)
+void SafAgentFenceQueryCmdPermissionTest::TearDownTestCase(void)
 {
 }
 
-void SafAgentFenceTest::SetUp(void)
+void SafAgentFenceQueryCmdPermissionTest::SetUp(void)
 {
 }
 
-void SafAgentFenceTest::TearDown(void)
+void SafAgentFenceQueryCmdPermissionTest::TearDown(void)
 {
 }
 
 /**
- * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest001
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest001
  * @tc.desc: Batch query command permission with "ohos-cliTimer" and empty subcommand.
  * @tc.type: FUNC
  * @tc.result: 0
  */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest001, TestSize.Level0)
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest001, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
 
@@ -75,12 +75,12 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest001, TestSize.Level0
 }
 
 /**
- * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest002
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest002
  * @tc.desc: Batch query command permission with "ohos-cliTimer run".
  * @tc.type: FUNC
  * @tc.result: 0
  */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest002, TestSize.Level0)
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest002, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
 
@@ -100,12 +100,12 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest002, TestSize.Level0
 }
 
 /**
- * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest003
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest003
  * @tc.desc: Batch query command permission with "ohos-cliTimer-2" and empty subcommand.
  * @tc.type: FUNC
  * @tc.result: 0
  */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest003, TestSize.Level0)
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest003, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
 
@@ -127,12 +127,12 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest003, TestSize.Level0
 }
 
 /**
- * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest004
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest004
  * @tc.desc: Batch query command permission with "ohos-cliTimer-2 run".
  * @tc.type: FUNC
  * @tc.result: 0
  */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest004, TestSize.Level0)
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest004, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
 
@@ -152,12 +152,12 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest004, TestSize.Level0
 }
 
 /**
- * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest005
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest005
  * @tc.desc: Batch query command permission with "ohos-cliTimer-2 stop".
  * @tc.type: FUNC
  * @tc.result: 0
  */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest005, TestSize.Level0)
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest005, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
 
@@ -178,12 +178,12 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest005, TestSize.Level0
 }
 
 /**
- * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest006
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest006
  * @tc.desc: Batch query command permission with "ohos-cliTimer-2 notexist".
  * @tc.type: FUNC
  * @tc.result: 0
  */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest006, TestSize.Level0)
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest006, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
 
@@ -202,12 +202,12 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest006, TestSize.Level0
 }
 
 /**
- * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest007
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest007
  * @tc.desc: Batch query command permission with empty cmdName and "run" subcommand.
  * @tc.type: FUNC
  * @tc.result: 0
  */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest007, TestSize.Level0)
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest007, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
 
@@ -221,12 +221,12 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest007, TestSize.Level0
 }
 
 /**
- * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest008
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest008
  * @tc.desc: Batch query two commands with "ohos-cliTimer-2" empty subcmd and "run" subcmd.
  * @tc.type: FUNC
  * @tc.result: 0
  */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest008, TestSize.Level0)
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest008, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
 
@@ -256,12 +256,12 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest008, TestSize.Level0
 }
 
 /**
- * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest009
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest009
  * @tc.desc: Batch query three commands with "ohos-cliTimer-2" empty, run and notexist subcmd.
  * @tc.type: FUNC
  * @tc.result: 0
  */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest009, TestSize.Level0)
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest009, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
 
@@ -297,12 +297,12 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest009, TestSize.Level0
 }
 
 /**
- * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest010
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest010
  * @tc.desc: Batch query four commands with ohos-cliTimer-2 and ohos-cliTimer.
  * @tc.type: FUNC
  * @tc.result: 0
  */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest010, TestSize.Level0)
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest010, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
 
@@ -346,12 +346,12 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest010, TestSize.Level0
 }
 
 /**
- * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest011
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest011
  * @tc.desc: Batch query five commands with ohos-cliTimer-2, ohos-cliTimer and notexist.
  * @tc.type: FUNC
  * @tc.result: 0
  */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest011, TestSize.Level0)
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest011, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
 
@@ -401,12 +401,12 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest011, TestSize.Level0
 }
 
 /**
- * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest012
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest012
  * @tc.desc: Batch query with zero commands, expect non-zero error return.
  * @tc.type: FUNC
  * @tc.result: non-zero
  */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest012, TestSize.Level0)
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest012, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
 
@@ -419,12 +419,12 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest012, TestSize.Level0
 }
 
 /**
- * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest013
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest013
  * @tc.desc: Batch query 99 commands with "ohos-cliTimer-2" empty subcmd.
  * @tc.type: FUNC
  * @tc.result: 0
  */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest013, TestSize.Level0)
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest013, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
 
@@ -451,12 +451,12 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest013, TestSize.Level0
 }
 
 /**
- * @tc.name: SafAgentFenceTest.SafAgentFenceQueryPermissionTest014
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest014
  * @tc.desc: Batch query 100 commands, expect non-zero error return.
  * @tc.type: FUNC
  * @tc.result: non-zero
  */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest014, TestSize.Level0)
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest014, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
 
@@ -469,62 +469,6 @@ HWTEST_F(SafAgentFenceTest, SafAgentFenceQueryPermissionTest014, TestSize.Level0
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
     EXPECT_NE(result, 0);
-}
-
-/**
- * @tc.name: SafAgentFenceTest.SafAgentFenceGenerateAndVerifyTest001
- * @tc.desc: Generate tickets then verify them.
- * @tc.type: FUNC
- * @tc.result: 0
- */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceGenerateAndVerifyTest001, TestSize.Level0)
-{
-    OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
-    std::string callerId = "test_caller";
-
-    std::vector<std::string> messages = {"message1", "message2"};
-    std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
-
-    int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
-    EXPECT_EQ(ticketInfos.size(), messages.size());
-
-    std::vector<int32_t> verifyRes;
-    int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
-    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes.size(), ticketInfos.size());
-    for (size_t i = 0; i < verifyRes.size(); i++) {
-        EXPECT_EQ(verifyRes[i], SEC_SAF_SUCCESS);
-    }
-}
-
-/**
- * @tc.name: SafAgentFenceTest.SafAgentFenceGenerateAndVerifyTest002
- * @tc.desc: Generate tickets then verify them.
- * @tc.type: FUNC
- * @tc.result: 0
- */
-HWTEST_F(SafAgentFenceTest, SafAgentFenceGenerateAndVerifyTest002, TestSize.Level0)
-{
-    OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 101;
-    std::string callerId = "test_caller";
-
-    std::vector<std::string> messages = {"message1", "message2"};
-    std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
-
-    int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
-    EXPECT_EQ(ticketInfos.size(), messages.size());
-
-    std::vector<int32_t> verifyRes;
-    int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
-    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes.size(), ticketInfos.size());
-    for (size_t i = 0; i < verifyRes.size(); i++) {
-        EXPECT_EQ(verifyRes[i], SEC_SAF_SUCCESS);
-    }
 }
 
 }

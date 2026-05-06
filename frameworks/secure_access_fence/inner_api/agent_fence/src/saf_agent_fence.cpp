@@ -18,6 +18,7 @@
 #include "saf_result_defs.h"
 #include "secure_access_fence_system_type.h"
 #include "isecure_access_fence.h"
+#include "saf_agent_params_checker.h"
 
 #include "iservice_registry.h"
 #include "saf_log.h"
@@ -105,6 +106,13 @@ int32_t SafAgentFence::BatchGenerateTicket(
     std::vector<VerifyTicketInfo> &ticketInfos)
 {
     LOGI("SafAgentFence::BatchGenerateTicket enter");
+    
+    int32_t checkResult = CheckBatchGenerateTicketParams(osAccountId, callerId, messages);
+    if (checkResult != SEC_SAF_SUCCESS) {
+        LOGE("BatchGenerateTicket params check failed, ret=%{public}d", checkResult);
+        return checkResult;
+    }
+    
     int32_t ret = SEC_SAF_IPC_ERROR;
     int resultCode = E_SUCCESS;
 
@@ -143,6 +151,13 @@ int32_t SafAgentFence::BatchVerifyTicket(
     std::vector<int32_t> &verifyRes)
 {
     LOGI("SafAgentFence::BatchVerifyTicket enter");
+    
+    int32_t checkResult = CheckBatchVerifyTicketParams(osAccountId, callerId, verifyInfos);
+    if (checkResult != SEC_SAF_SUCCESS) {
+        LOGE("BatchVerifyTicket params check failed, ret=%{public}d", checkResult);
+        return checkResult;
+    }
+    
     int32_t ret = SEC_SAF_IPC_ERROR;
     int resultCode = E_SUCCESS;
 

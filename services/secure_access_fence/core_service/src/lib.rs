@@ -15,7 +15,8 @@
 
 //! This module implements secure access fence service.
 
-use std::ffi::c_char;
+use std::ffi::{c_char, CString};
+use std::os::raw::c_char as raw_c_char;
 use ipc::parcel::MsgParcel;
 use samgr::manage::SystemAbilityManager;
 use std::time::Duration;
@@ -35,6 +36,12 @@ mod common_event;
 mod stub;
 mod wrapper;
 mod ticket_operation;
+
+const GET_TICKET_INFO_PERMISSION: &str = "ohos.permission.GET_TICKET_INFO";
+
+extern "C" {
+    fn CheckPermission(permission: *const raw_c_char) -> bool;
+}
 
 struct SAFAbility;
 
@@ -188,6 +195,11 @@ impl SAFService {
 
     fn batch_generate_ticket(&self, os_account_id: i32, caller_id: &str, messages: &[String]) ->
         Result<Vec<VerifyTicketInfo>> {
+        let permission = CString::new(GET_TICKET_INFO_PERMISSION).unwrap();
+        if unsafe { !CheckPermission(permission.as_ptr()) } {
+            return macros_lib::log_throw_error!(ErrCode::PermissionDenied, 
+                "Permission denied! Need {}", GET_TICKET_INFO_PERMISSION);
+        }
         ticket_operation::batch_generate_ticket(os_account_id, caller_id, messages)
     }
     
