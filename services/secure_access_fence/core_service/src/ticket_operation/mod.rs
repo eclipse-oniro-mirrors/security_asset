@@ -177,20 +177,29 @@ pub fn batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: &[St
     let mut results = Vec::with_capacity(messages.len());
     
     for message in messages {
-        let challenge2 = generate_challenge()?;
-        
-        let mut data = message.as_bytes().to_vec();
-        data.extend_from_slice(&challenge2);
-        
-        let hmac_result = compute_hmac_sha256(&session_key, &data)?;
-        
-        let combined_challenge = [challenge1.as_slice(), challenge2.as_slice()].concat();
-        
-        let ticket_info = VerifyTicketInfo {
+        let ticket_info = (|| {
+            if message.is_empty() {
+                return macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "message is empty");
+            }
+            let challenge2 = generate_challenge()?;
+            
+            let mut data = message.as_bytes().to_vec();
+            data.extend_from_slice(&challenge2);
+            
+            let hmac_result = compute_hmac_sha256(&session_key, &data)?;
+            
+            let combined_challenge = [challenge1.as_slice(), challenge2.as_slice()].concat();
+            
+            Ok(VerifyTicketInfo {
+                message: message.clone(),
+                challenge: String::from_utf8_lossy(&base64_encode(&combined_challenge)?).to_string(),
+                ticket: String::from_utf8_lossy(&base64_encode(&hmac_result)?).to_string(),
+            })
+        })().unwrap_or_else(|_| VerifyTicketInfo {
             message: message.clone(),
-            challenge: String::from_utf8_lossy(&base64_encode(&combined_challenge)?).to_string(),
-            ticket: String::from_utf8_lossy(&base64_encode(&hmac_result)?).to_string(),
-        };
+            challenge: String::new(),
+            ticket: String::new(),
+        });
         
         results.push(ticket_info);
     }
@@ -213,6 +222,9 @@ pub fn batch_verify_ticket(
     }
     
     let key_manager = create_ticket_key_manager(caller_id);
+    
+    let challenge = generate_challenge()?;
+    let _session_key = key_manager.derive_ticket_session_key(os_account_id as u32, &challenge)?;
     
     let mut results = Vec::with_capacity(verify_infos.len());
     
