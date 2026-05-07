@@ -29,17 +29,17 @@ int32_t CheckBatchGenerateTicketParams(
         LOGE("callerId is empty");
         return SEC_SAF_PARAM_VERICATION_FAILED;
     }
-    
+
     if (osAccountId < MIN_OS_ACCOUNT_ID) {
         LOGE("invalid osAccountId: %{public}u", osAccountId);
         return SEC_SAF_PARAM_VERICATION_FAILED;
     }
-    
+
     if (messages.empty() || messages.size() > MAX_VECTOR_SIZE) {
         LOGE("invalid messages size: %{public}zu", messages.size());
         return SEC_SAF_PARAM_VERICATION_FAILED;
     }
-    
+
     return SEC_SAF_SUCCESS;
 }
 
@@ -52,17 +52,17 @@ int32_t CheckBatchVerifyTicketParams(
         LOGE("callerId is empty");
         return SEC_SAF_PARAM_VERICATION_FAILED;
     }
-    
+
     if (osAccountId < MIN_OS_ACCOUNT_ID) {
         LOGE("invalid osAccountId: %{public}u", osAccountId);
         return SEC_SAF_PARAM_VERICATION_FAILED;
     }
-    
+
     if (verifyInfos.empty() || verifyInfos.size() > MAX_VECTOR_SIZE) {
         LOGE("invalid verifyInfos size: %{public}zu", verifyInfos.size());
         return SEC_SAF_PARAM_VERICATION_FAILED;
     }
-    
+
     return SEC_SAF_SUCCESS;
 }
 
@@ -76,17 +76,17 @@ int32_t CheckBatchGenerateTicketParamsC(uint32_t osAccountId, const char* caller
         LOGE("callerId is null or empty");
         return SEC_SAF_PARAM_VERICATION_FAILED;
     }
-    
+
     if (osAccountId < OHOS::Security::SAF::MIN_OS_ACCOUNT_ID) {
         LOGE("invalid osAccountId: %{public}u", osAccountId);
         return SEC_SAF_PARAM_VERICATION_FAILED;
     }
-    
+
     if (messagesCount == 0 || messagesCount > OHOS::Security::SAF::MAX_VECTOR_SIZE) {
         LOGE("invalid messagesCount: %{public}zu", messagesCount);
         return SEC_SAF_PARAM_VERICATION_FAILED;
     }
-    
+
     return SEC_SAF_SUCCESS;
 }
 
@@ -101,7 +101,7 @@ int32_t CheckBatchVerifyTicketParamsC(uint32_t osAccountId, const char* callerId
         LOGE("invalid osAccountId: %{public}u", osAccountId);
         return SEC_SAF_PARAM_VERICATION_FAILED;
     }
-    
+
     if (verifyInfosCount == 0 || verifyInfosCount > OHOS::Security::SAF::MAX_VECTOR_SIZE) {
         LOGE("invalid verifyInfosCount: %{public}zu", verifyInfosCount);
         return SEC_SAF_PARAM_VERICATION_FAILED;

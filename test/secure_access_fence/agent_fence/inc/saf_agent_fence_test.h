@@ -50,8 +50,6 @@ int SafAgentFenceGenAndVerTicketTest015(void);
 int SafAgentFenceGenAndVerTicketTest016(void);
 int SafAgentFenceGenAndVerTicketTest017(void);
 int SafAgentFenceGenAndVerTicketTest018(void);
-int SafAgentFenceGenAndVerTicketTest019(void);
-int SafAgentFenceGenAndVerTicketTest020(void);
 }
 
 #endif // SAF_AGENT_FENCE_TEST_H
