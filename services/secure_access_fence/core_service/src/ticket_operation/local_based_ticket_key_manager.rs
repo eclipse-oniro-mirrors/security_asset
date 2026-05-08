@@ -27,7 +27,7 @@ impl LocalBasedTicketKeyManager {
 }
 
 impl TicketKeyManager for LocalBasedTicketKeyManager {
-    fn derive_ticket_session_key(&self, _os_account_id: u32, _derive_factor: &[u8]) -> Result<Vec<u8>> {
+    fn derive_ticket_session_key(&self, _os_account_id: i32, _derive_factor: &[u8]) -> Result<Vec<u8>> {
         macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "LocalBasedTicketKeyManager not implemented")
     }
 }
