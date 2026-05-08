@@ -100,7 +100,7 @@ int32_t SafAgentFence::BatchQueryCommandPermission(
 }
 
 int32_t SafAgentFence::BatchGenerateTicket(
-    uint32_t osAccountId,
+    int32_t osAccountId,
     const std::string &callerId,
     const std::vector<std::string> &messages,
     std::vector<VerifyTicketInfo> &ticketInfos)
@@ -145,7 +145,7 @@ int32_t SafAgentFence::BatchGenerateTicket(
 }
 
 int32_t SafAgentFence::BatchVerifyTicket(
-    uint32_t osAccountId,
+    int32_t osAccountId,
     const std::string &callerId,
     const std::vector<VerifyTicketInfo> &verifyInfos,
     std::vector<int32_t> &verifyRes)
