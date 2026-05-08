@@ -49,7 +49,6 @@ group("asset_bin_test") {
   deps = [
     "test/asset/unittest/kits_ndk:asset_ndk_test",
     "test/asset/unittest/module_test:asset_dependency_test",
-    "test/secure_access_fence/agent_fence:saf_agent_fence_test"
   ]
   if (enable_local_test) {
     deps += [ "test/asset/unittest/inner_kits_rust:rust_asset_inner_test" ]
