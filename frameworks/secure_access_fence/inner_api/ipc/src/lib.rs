@@ -173,16 +173,16 @@ pub fn ipc_err_handle(e: IpcStatusCode) -> SAFError {
 }
 
 /// Deserialize BatchGenerateTicket request parameters from MsgParcel.
-pub fn deserialize_batch_generate_ticket_request(parcel: &mut MsgParcel) -> Result<(u32, String, Vec<String>)> {
-    let os_account_id = parcel.read::<u32>().map_err(ipc_err_handle)?;
+pub fn deserialize_batch_generate_ticket_request(parcel: &mut MsgParcel) -> Result<(i32, String, Vec<String>)> {
+    let os_account_id = parcel.read::<i32>().map_err(ipc_err_handle)?;
     let caller_id = parcel.read_string16().map_err(ipc_err_handle)?;
     let messages = parcel.read_string16_vec().map_err(ipc_err_handle)?;
     Ok((os_account_id, caller_id, messages))
 }
 
 /// Deserialize BatchVerifyTicket request parameters from MsgParcel.
-pub fn deserialize_batch_verify_ticket_request(parcel: &mut MsgParcel) -> Result<(u32, String, Vec<VerifyTicketInfo>)> {
-    let os_account_id = parcel.read::<u32>().map_err(ipc_err_handle)?;
+pub fn deserialize_batch_verify_ticket_request(parcel: &mut MsgParcel) -> Result<(i32, String, Vec<VerifyTicketInfo>)> {
+    let os_account_id = parcel.read::<i32>().map_err(ipc_err_handle)?;
     let caller_id = parcel.read_string16().map_err(ipc_err_handle)?;
     let verify_infos = deserialize_verify_ticket_infos(parcel)?;
     Ok((os_account_id, caller_id, verify_infos))

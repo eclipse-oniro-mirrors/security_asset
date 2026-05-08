@@ -18,5 +18,5 @@
 use saf_definition::Result;
 
 pub trait TicketKeyManager {
-    fn derive_ticket_session_key(&self, os_account_id: u32, derive_factor: &[u8]) -> Result<Vec<u8>>;
+    fn derive_ticket_session_key(&self, os_account_id: i32, derive_factor: &[u8]) -> Result<Vec<u8>>;
 }
