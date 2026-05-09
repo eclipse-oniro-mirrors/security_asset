@@ -140,6 +140,9 @@ impl_enum_trait! {
         /// The error code indicates that invalid array length.
         InvalidArrayLen = 0x30003,
 
+        /// The error code indicates that null pointer.
+        NullPtr = 0x30004,
+
         /// The error code indicates that argument is empty.
         ArgEmpty = 0x30019,
 
@@ -157,6 +160,12 @@ impl_enum_trait! {
         /// The error code indicates that hash map key not found.
         HashMapKeyNotFound = 0x33002,
 
+        /// The error code indicates that base64 invalid length.
+        Base64InvalidLen = 0x33003,
+
+        /// The error code indicates that base64 invalid character.
+        Base64InvalidChar = 0x33004,
+
         // ==================== CLI_TOOL (0x20000) ====================
         /// The error code indicates that the operation of calling Tool Service is failed.
         ToolError = 0x20001,
@@ -171,6 +180,12 @@ impl_enum_trait! {
         // ==================== PLUGIN (0x70000) ====================
         /// The error code indicates that create plugin manager failed.
         CreatePluginMgrFail = 0x70001,
+
+        /// The error code indicates that plugin invalid event type.
+        PluginInvalidEventType = 0x70002,
+
+        /// The error code indicates that plugin not support.
+        PluginNotSupport = 0x70003,
 
         // ==================== TICKET_OPERATION (0x71000) ====================
         /// The error code indicates that ticket key manager not support.
