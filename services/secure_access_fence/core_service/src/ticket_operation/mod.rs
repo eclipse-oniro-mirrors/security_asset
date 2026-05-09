@@ -245,7 +245,7 @@ pub fn batch_verify_ticket(
                 continue;
             }
         };
-        if combined_challenge.len() < 64 {
+        if combined_challenge.len() < CHALLENGE_SIZE * 2 {
             results.push(ErrCode::InvalidArrayLen as i32);
             continue;
         }
