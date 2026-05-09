@@ -95,7 +95,7 @@ int32_t Base64Encode(const Uint8Buff *input, Uint8Buff *output)
         LOGE("[FATAL]EVP_EncodeBlock failed.");
         return SAF_ERROR;
     }
-    output->size = len;
+    output->size = static_cast<uint32_t>(len);
     return SAF_SUCCESS;
 }
 
@@ -119,6 +119,6 @@ int32_t Base64Decode(const Uint8Buff *input, Uint8Buff *output)
     while (len > 0 && output->buf[len - 1] == '\0') {
         len--;
     }
-    output->size = len;
+    output->size = static_cast<uint32_t>(len);
     return SAF_SUCCESS;
 }

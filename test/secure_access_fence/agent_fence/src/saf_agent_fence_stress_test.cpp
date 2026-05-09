@@ -84,7 +84,7 @@ void SafAgentFenceStressTest::TearDown(void)
 HWTEST_F(SafAgentFenceStressTest, SafAgentFenceStressTest001, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     for (int loop = 0; loop < 100; loop++) {
@@ -114,7 +114,7 @@ HWTEST_F(SafAgentFenceStressTest, SafAgentFenceStressTest001, TestSize.Level0)
 HWTEST_F(SafAgentFenceStressTest, SafAgentFenceStressTest002, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages = GenerateMessages(99, 5, 100);

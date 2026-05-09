@@ -85,7 +85,7 @@ int32_t OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply
     }
     std::vector<CommandInfo> cmds;
     int32_t cmdSize = data.ReadInt32();
-    if (cmdSize > static_cast<int32_t>(VECTOR_MAX_SIZE)) {
+    if (cmdSize > static_cast<int32_t>(VECTOR_MAX_SIZE) || cmdSize < 0) {
         LOGE("The vector size exceeds the limit!");
         return SEC_SAF_PARAM_VERICATION_FAILED;
     }
