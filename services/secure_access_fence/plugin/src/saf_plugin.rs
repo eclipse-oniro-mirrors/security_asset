@@ -63,13 +63,13 @@ impl SAFPlugin {
                 match libloading::Library::new(EXT_SO_NAME) {
                     Ok(lib) => *self.lib.borrow_mut() = Some(lib),
                     Err(err) => {
-                        return macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "dlopen {} failed {}", EXT_SO_NAME, err);
+                        return macros_lib::log_throw_error!(ErrCode::DlopenFail, "dlopen {} failed {}", EXT_SO_NAME, err);
                     },
                 };
             }
 
             let Some(ref lib) = *self.lib.borrow() else {
-                return macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "unexpected error");
+                return macros_lib::log_throw_error!(ErrCode::DlopenFail, "unexpected error");
             };
 
             let func = match lib
@@ -78,14 +78,14 @@ impl SAFPlugin {
                 Ok(func) => func,
                 Err(err) => {
                     loge!("dlsym create_plugin_manager failed, err: {}", err);
-                    return macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "dlsym failed {}", err);
+                    return macros_lib::log_throw_error!(ErrCode::DlsymFail, "dlsym failed {}", err);
                 },
             };
 
             let plugin_ptr = func();
             if plugin_ptr.is_null() {
                 loge!("create_plugin_manager return null.");
-                return macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "create_plugin_manager return null.");
+                return macros_lib::log_throw_error!(ErrCode::CreatePluginMgrFail, "create_plugin_manager return null.");
             }
 
             Ok(Box::from_raw(plugin_ptr))

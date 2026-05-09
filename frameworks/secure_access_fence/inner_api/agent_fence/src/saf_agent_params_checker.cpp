@@ -15,8 +15,7 @@
 
 #include "saf_agent_params_checker.h"
 #include "saf_log.h"
-#include "saf_result_defs.h"
-#include "secure_access_fence_system_type.h"
+#include "saf_result_code.h"
 
 namespace OHOS::Security::SAF {
 
@@ -27,20 +26,20 @@ int32_t CheckBatchGenerateTicketParams(
 {
     if (callerId.empty()) {
         LOGE("callerId is empty");
-        return SEC_SAF_PARAM_VERICATION_FAILED;
+        return SAF_ERR_ARG_EMPTY;
     }
 
     if (osAccountId < MIN_OS_ACCOUNT_ID) {
         LOGE("invalid osAccountId: %{public}u", osAccountId);
-        return SEC_SAF_PARAM_VERICATION_FAILED;
+        return SAF_ERR_INVALID_OS_ACCOUNT_ID;
     }
 
     if (messages.empty() || messages.size() > MAX_VECTOR_SIZE) {
         LOGE("invalid messages size: %{public}zu", messages.size());
-        return SEC_SAF_PARAM_VERICATION_FAILED;
+        return SAF_ERR_INVALID_ARRAY_LEN;
     }
 
-    return SEC_SAF_SUCCESS;
+    return SAF_SUCCESS;
 }
 
 int32_t CheckBatchVerifyTicketParams(
@@ -50,20 +49,20 @@ int32_t CheckBatchVerifyTicketParams(
 {
     if (callerId.empty()) {
         LOGE("callerId is empty");
-        return SEC_SAF_PARAM_VERICATION_FAILED;
+        return SAF_ERR_ARG_EMPTY;
     }
 
     if (osAccountId < MIN_OS_ACCOUNT_ID) {
         LOGE("invalid osAccountId: %{public}u", osAccountId);
-        return SEC_SAF_PARAM_VERICATION_FAILED;
+        return SAF_ERR_INVALID_OS_ACCOUNT_ID;
     }
 
     if (verifyInfos.empty() || verifyInfos.size() > MAX_VECTOR_SIZE) {
         LOGE("invalid verifyInfos size: %{public}zu", verifyInfos.size());
-        return SEC_SAF_PARAM_VERICATION_FAILED;
+        return SAF_ERR_INVALID_ARRAY_LEN;
     }
 
-    return SEC_SAF_SUCCESS;
+    return SAF_SUCCESS;
 }
 
 } // namespace OHOS::Security::SAF
@@ -74,39 +73,39 @@ int32_t CheckBatchGenerateTicketParamsC(int32_t osAccountId, const char* callerI
 {
     if (callerId == nullptr || callerId[0] == '\0') {
         LOGE("callerId is null or empty");
-        return SEC_SAF_PARAM_VERICATION_FAILED;
+        return SAF_ERR_ARG_EMPTY;
     }
 
     if (osAccountId < OHOS::Security::SAF::MIN_OS_ACCOUNT_ID) {
         LOGE("invalid osAccountId: %{public}u", osAccountId);
-        return SEC_SAF_PARAM_VERICATION_FAILED;
+        return SAF_ERR_INVALID_OS_ACCOUNT_ID;
     }
 
     if (messagesCount == 0 || messagesCount > OHOS::Security::SAF::MAX_VECTOR_SIZE) {
         LOGE("invalid messagesCount: %{public}zu", messagesCount);
-        return SEC_SAF_PARAM_VERICATION_FAILED;
+        return SAF_ERR_INVALID_ARRAY_LEN;
     }
 
-    return SEC_SAF_SUCCESS;
+    return SAF_SUCCESS;
 }
 
 int32_t CheckBatchVerifyTicketParamsC(int32_t osAccountId, const char* callerId, size_t verifyInfosCount)
 {
     if (callerId == nullptr || callerId[0] == '\0') {
         LOGE("callerId is null or empty");
-        return SEC_SAF_PARAM_VERICATION_FAILED;
+        return SAF_ERR_ARG_EMPTY;
     }
 
     if (osAccountId < OHOS::Security::SAF::MIN_OS_ACCOUNT_ID) {
         LOGE("invalid osAccountId: %{public}u", osAccountId);
-        return SEC_SAF_PARAM_VERICATION_FAILED;
+        return SAF_ERR_INVALID_OS_ACCOUNT_ID;
     }
 
     if (verifyInfosCount == 0 || verifyInfosCount > OHOS::Security::SAF::MAX_VECTOR_SIZE) {
         LOGE("invalid verifyInfosCount: %{public}zu", verifyInfosCount);
-        return SEC_SAF_PARAM_VERICATION_FAILED;
+        return SAF_ERR_INVALID_ARRAY_LEN;
     }
 
-    return SEC_SAF_SUCCESS;
+    return SAF_SUCCESS;
 }
 }

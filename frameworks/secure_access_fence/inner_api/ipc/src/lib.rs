@@ -38,7 +38,7 @@ pub const CMD_BATCH_QUERY_COMMAND_PERMISSION: u32 = 500;
 
 const MAX_MAP_CAPACITY: u32 = 64;
 const MAX_VEC_CAPACITY: u32 = 0x10000;
-const MAX_TICKET_CAPACITY: u32 = 100;
+const MAX_TICKET_CAPACITY: u32 = 99;
 
 macros_lib::impl_enum_trait! {
     /// Code used to identify the function to be called.
@@ -65,7 +65,7 @@ pub struct VerifyTicketInfo {
 pub fn deserialize<T: Deserialize>(parcel: &mut MsgParcel) -> Result<T> {
     let value = parcel.read::<T>().map_err(|_| {
         macros_lib::log_and_into_saf_error!(
-            ErrCode::ParamVerificationFailed,
+            ErrCode::IpcReadDataFail,
             "[FATAL]deserialize T from parcel failed!"
         )
     })?;
@@ -76,7 +76,7 @@ pub fn deserialize<T: Deserialize>(parcel: &mut MsgParcel) -> Result<T> {
 pub fn serialize_map(map: &SAFMap, parcel: &mut MsgParcel) -> Result<()> {
     if map.len() as u32 > MAX_MAP_CAPACITY {
         return macros_lib::log_throw_error!(
-            ErrCode::ParamVerificationFailed,
+            ErrCode::IpcWriteDataFail,
             "[FATAL][IPC]The map size exceeds the limit."
         );
     }
@@ -84,7 +84,7 @@ pub fn serialize_map(map: &SAFMap, parcel: &mut MsgParcel) -> Result<()> {
     for (&tag, value) in map.iter() {
         if tag.data_type() != value.data_type() {
             return macros_lib::log_throw_error!(
-                ErrCode::ParamVerificationFailed,
+                ErrCode::IpcWriteDataFail,
                 "[FATAL][IPC]Data type mismatch, key type: {}, value type: {}",
                 tag.data_type(),
                 value.data_type()
@@ -105,7 +105,7 @@ pub fn deserialize_map(parcel: &mut MsgParcel) -> Result<SAFMap> {
     let len = parcel.read::<u32>().map_err(ipc_err_handle)?;
     if len > MAX_MAP_CAPACITY {
         return macros_lib::log_throw_error!(
-            ErrCode::ParamVerificationFailed,
+            ErrCode::IpcReadDataFail,
             "[FATAL][IPC]The map size exceeds the limit."
         );
     }
@@ -135,7 +135,7 @@ pub fn deserialize_map(parcel: &mut MsgParcel) -> Result<SAFMap> {
 pub fn serialize_maps(vec: &Vec<SAFMap>, parcel: &mut MsgParcel) -> Result<()> {
     if vec.len() as u32 > MAX_VEC_CAPACITY {
         return macros_lib::log_throw_error!(
-            ErrCode::ParamVerificationFailed,
+            ErrCode::IpcWriteDataFail,
             "[FATAL][IPC]The vector size exceeds the limit."
         );
     }
@@ -151,7 +151,7 @@ pub fn deserialize_maps(parcel: &mut MsgParcel) -> Result<Vec<SAFMap>> {
     let len = parcel.read::<u32>().map_err(ipc_err_handle)?;
     if len > MAX_VEC_CAPACITY {
         return macros_lib::log_throw_error!(
-            ErrCode::ParamVerificationFailed,
+            ErrCode::InvalidArrayLen,
             "[FATAL][IPC]The vector size exceeds the limit."
         );
     }
@@ -168,7 +168,7 @@ pub fn ipc_err_handle(e: IpcStatusCode) -> SAFError {
         IpcStatusCode::ServiceDied => {
             SAFError::new(ErrCode::ServiceUnavailable, format!("[FATAL][IPC]Ipc status code = {}", e as i32))
         },
-        _ => SAFError::new(ErrCode::IpcError, format!("[FATAL][IPC]Ipc status code = {}", e)),
+        _ => SAFError::new(ErrCode::IpcProxyFail, format!("[FATAL][IPC]Ipc status code = {}", e)),
     }
 }
 
@@ -201,7 +201,7 @@ pub fn deserialize_verify_ticket_infos(parcel: &mut MsgParcel) -> Result<Vec<Ver
     let len = parcel.read::<i32>().map_err(ipc_err_handle)?;
     if len < 0 || len as u32 > MAX_TICKET_CAPACITY {
         return macros_lib::log_throw_error!(
-            ErrCode::ParamVerificationFailed,
+            ErrCode::InvalidArrayLen,
             "[FATAL][IPC]VerifyTicketInfo vector size invalid: {}",
             len
         );
@@ -225,7 +225,7 @@ pub fn serialize_verify_ticket_info(info: &VerifyTicketInfo, parcel: &mut MsgPar
 pub fn serialize_verify_ticket_infos(infos: &Vec<VerifyTicketInfo>, parcel: &mut MsgParcel) -> Result<()> {
     if infos.len() as u32 > MAX_TICKET_CAPACITY {
         return macros_lib::log_throw_error!(
-            ErrCode::ParamVerificationFailed,
+            ErrCode::InvalidArrayLen,
             "[FATAL][IPC]VerifyTicketInfo vector size exceeds limit: {}",
             infos.len()
         );
@@ -241,7 +241,7 @@ pub fn serialize_verify_ticket_infos(infos: &Vec<VerifyTicketInfo>, parcel: &mut
 pub fn serialize_i32_vec(vec: &Vec<i32>, parcel: &mut MsgParcel) -> Result<()> {
     if vec.len() as u32 > MAX_TICKET_CAPACITY {
         return macros_lib::log_throw_error!(
-            ErrCode::ParamVerificationFailed,
+            ErrCode::InvalidArrayLen,
             "[FATAL][IPC]i32 vector size exceeds limit: {}",
             vec.len()
         );

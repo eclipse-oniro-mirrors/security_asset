@@ -44,7 +44,7 @@ macro_rules! impl_tag_trait {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
                     _ => {
-                        macros_lib::log_throw_error!(macros_lib::ErrCode::ParamVerificationFailed,
+                        macros_lib::log_throw_error!(macros_lib::ErrCode::DataTypeMismatch,
                             "[FATAL]Type[{}] try from u32[{}] failed.", stringify!($name), v)
                     }
                 }
@@ -92,7 +92,7 @@ macro_rules! impl_enum_trait {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
                     _ => {
-                        macros_lib::log_throw_error!(macros_lib::ErrCode::ParamVerificationFailed,
+                        macros_lib::log_throw_error!(macros_lib::ErrCode::DataTypeMismatch,
                             "[FATAL]Type[{}] try from u32[{}] failed.", stringify!($name), v)
                     }
                 }
@@ -126,7 +126,7 @@ macro_rules! impl_enum_trait {
 /// # Examples
 ///
 /// ```
-/// log_throw_error!(ErrCode::ParamVerificationFailed, "hello, {}", "world");
+/// log_throw_error!(ErrCode::PermissionDenied, "hello, {}", "world");
 /// ```
 #[macro_export]
 macro_rules! log_throw_error {
@@ -146,7 +146,7 @@ macro_rules! log_throw_error {
 /// # Examples
 ///
 /// ```
-/// log_and_into_saf_error!(ErrCode::ParamVerificationFailed, "hello, {}", "world");
+/// log_and_into_saf_error!(ErrCode::PermissionDenied, "hello, {}", "world");
 /// ```
 #[macro_export]
 macro_rules! log_and_into_saf_error {
@@ -165,7 +165,7 @@ macro_rules! log_and_into_saf_error {
 /// # Examples
 ///
 /// ```
-/// throw_error!(ErrCode::ParamVerificationFailed, "hello, {}", "world");
+/// throw_error!(ErrCode::PermissionDenied, "hello, {}", "world");
 /// ```
 #[macro_export]
 macro_rules! throw_error {

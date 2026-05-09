@@ -154,7 +154,7 @@ impl Ability for SAFAbility {
 
 fn start_service(handler: Handler) -> Result<()> {
     if !handler.publish(SAFService::new(handler.clone())) {
-        return macros_lib::log_throw_error!(ErrCode::IpcError, "SAF publish stub object failed");
+        return macros_lib::log_throw_error!(ErrCode::IpcProxyFail, "SAF publish stub object failed");
     };
     // 加载plugin插件
     match SAFPlugin::get_instance().load_plugin() {
@@ -202,7 +202,7 @@ impl SAFService {
         }
         ticket_operation::batch_generate_ticket(os_account_id, caller_id, messages)
     }
-    
+
     fn batch_verify_ticket(&self, os_account_id: i32, caller_id: &str, verify_infos: &[VerifyTicketInfo]) ->
         Result<Vec<i32>> {
         ticket_operation::batch_verify_ticket(os_account_id, caller_id, verify_infos)

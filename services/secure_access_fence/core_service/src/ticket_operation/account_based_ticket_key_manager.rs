@@ -38,18 +38,18 @@ impl TicketKeyManager for AccountBasedTicketKeyManager {
     fn derive_ticket_session_key(&self, os_account_id: i32, derive_factor: &[u8]) -> Result<Vec<u8>> {
         let plugin = SAFPlugin::get_instance();
         let loader = plugin.load_plugin()?;
-        
+
         let mut params: ExtMap = HashMap::new();
         params.insert(PARAM_OS_ACCOUNT_ID, Value::Number(os_account_id as u32));
         params.insert(PARAM_DERIVE_FACTOR, Value::Bytes(derive_factor.to_vec()));
 
         let result = loader.process_event(EventType::DeriveTicketSessionKey, &mut params)
-            .map_err(|e| saf_definition::SAFError::new(ErrCode::ParamVerificationFailed,
+            .map_err(|e| saf_definition::SAFError::new(ErrCode::try_from(result.code)?,
             format!("derive key failed: {}", e)))?;
 
         match result.get(PARAM_DERIVED_KEY) {
             Some(Value::Bytes(key)) => Ok(key.clone()),
-            _ => macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "derived key not found"),
+            _ => macros_lib::log_throw_error!(ErrCode::HashMapKeyNotFound, "derived key not found"),
         }
     }
 }

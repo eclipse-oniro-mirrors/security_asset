@@ -53,7 +53,7 @@ static int GrantSelfPermissionInner()
     };
     NativeTokenInfoParams info = {
         .dcapsNum = 0,
-        .permsNum = 1,
+        .permsNum = 2,
         .aclsNum = 0,
         .dcaps = nullptr,
         .perms = permissions,

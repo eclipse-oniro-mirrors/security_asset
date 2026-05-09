@@ -19,8 +19,7 @@
 #include <ctime>
 
 #include "saf_agent_fence.h"
-#include "saf_result_defs.h"
-#include "secure_access_fence_system_type.h"
+#include "saf_result_code.h"
 #include "saf_permission_change.h"
 
 using namespace testing::ext;
@@ -174,7 +173,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCase001_GenerateTicket, Tes
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
     std::cout << "GenerateTicket return code: " << genResult << std::endl;
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
     EXPECT_EQ(ticketInfos.size(), MESSAGE_COUNT);
 
     std::cout << "Generated ticket infos:" << std::endl;
@@ -226,13 +225,13 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCase002_VerifyTicket, TestS
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, verifyInfos, verifyRes);
     std::cout << "VerifyTicket return code: " << verifyResult << std::endl;
-    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyResult, SAF_SUCCESS);
     EXPECT_EQ(verifyRes.size(), MESSAGE_COUNT);
 
     std::cout << "Verification results:" << std::endl;
     for (size_t i = 0; i < verifyRes.size(); i++) {
         std::cout << "  [" << i << "] result: " << verifyRes[i] << std::endl;
-        EXPECT_EQ(verifyRes[i], SEC_SAF_SUCCESS);
+        EXPECT_EQ(verifyRes[i], SAF_SUCCESS);
     }
 
     std::cout << "TestCase 2 completed." << std::endl;
@@ -255,7 +254,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCase003_GenerateTicket, Tes
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
     std::cout << "GenerateTicket return code: " << genResult << std::endl;
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
     EXPECT_EQ(ticketInfos.size(), MESSAGE_COUNT);
 
     std::cout << "Generated ticket infos:" << std::endl;
@@ -307,13 +306,13 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCase004_VerifyTicket, TestS
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, verifyInfos, verifyRes);
     std::cout << "VerifyTicket return code: " << verifyResult << std::endl;
-    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyResult, SAF_SUCCESS);
     EXPECT_EQ(verifyRes.size(), MESSAGE_COUNT);
 
     std::cout << "Verification results:" << std::endl;
     for (size_t i = 0; i < verifyRes.size(); i++) {
         std::cout << "  [" << i << "] result: " << verifyRes[i] << std::endl;
-        EXPECT_EQ(verifyRes[i], SEC_SAF_SUCCESS);
+        EXPECT_EQ(verifyRes[i], SAF_SUCCESS);
     }
 
     std::cout << "TestCase 4 completed." << std::endl;
