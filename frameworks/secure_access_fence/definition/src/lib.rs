@@ -120,7 +120,7 @@ impl_enum_trait! {
         IpcProxyFail = 0x10004,
 
         /// The error code indicates that ipc error.
-        IpcInvalidIpcCode = 0x10005,
+        IpcError = 0x10005,
 
         /// The error code indicates that invalid ipc code.
         IpcInvalidIpcCode = 0x10006,
