@@ -151,7 +151,7 @@ pub fn deserialize_maps(parcel: &mut MsgParcel) -> Result<Vec<SAFMap>> {
     let len = parcel.read::<u32>().map_err(ipc_err_handle)?;
     if len > MAX_VEC_CAPACITY {
         return macros_lib::log_throw_error!(
-            ErrCode::InvalidArrayLen,
+            ErrCode::IpcReadDataFail,
             "[FATAL][IPC]The vector size exceeds the limit."
         );
     }
@@ -239,9 +239,9 @@ pub fn serialize_verify_ticket_infos(infos: &Vec<VerifyTicketInfo>, parcel: &mut
 
 /// Serialize vector of i32 to MsgParcel (for reply).
 pub fn serialize_i32_vec(vec: &Vec<i32>, parcel: &mut MsgParcel) -> Result<()> {
-    if vec.len() as u32 > MAX_TICKET_CAPACITY {
+    if vec.len() as u32 > MAX_VEC_CAPACITY {
         return macros_lib::log_throw_error!(
-            ErrCode::InvalidArrayLen,
+            ErrCode::IpcWriteDataFail,
             "[FATAL][IPC]i32 vector size exceeds limit: {}",
             vec.len()
         );
