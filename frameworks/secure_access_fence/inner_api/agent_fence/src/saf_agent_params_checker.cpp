@@ -21,7 +21,7 @@
 namespace OHOS::Security::SAF {
 
 int32_t CheckBatchGenerateTicketParams(
-    uint32_t osAccountId,
+    int32_t osAccountId,
     const std::string &callerId,
     const std::vector<std::string> &messages)
 {
@@ -44,7 +44,7 @@ int32_t CheckBatchGenerateTicketParams(
 }
 
 int32_t CheckBatchVerifyTicketParams(
-    uint32_t osAccountId,
+    int32_t osAccountId,
     const std::string &callerId,
     const std::vector<VerifyTicketInfo> &verifyInfos)
 {
@@ -70,7 +70,7 @@ int32_t CheckBatchVerifyTicketParams(
 
 extern "C" {
 
-int32_t CheckBatchGenerateTicketParamsC(uint32_t osAccountId, const char* callerId, size_t messagesCount)
+int32_t CheckBatchGenerateTicketParamsC(int32_t osAccountId, const char* callerId, size_t messagesCount)
 {
     if (callerId == nullptr || callerId[0] == '\0') {
         LOGE("callerId is null or empty");
@@ -90,7 +90,7 @@ int32_t CheckBatchGenerateTicketParamsC(uint32_t osAccountId, const char* caller
     return SEC_SAF_SUCCESS;
 }
 
-int32_t CheckBatchVerifyTicketParamsC(uint32_t osAccountId, const char* callerId, size_t verifyInfosCount)
+int32_t CheckBatchVerifyTicketParamsC(int32_t osAccountId, const char* callerId, size_t verifyInfosCount)
 {
     if (callerId == nullptr || callerId[0] == '\0') {
         LOGE("callerId is null or empty");

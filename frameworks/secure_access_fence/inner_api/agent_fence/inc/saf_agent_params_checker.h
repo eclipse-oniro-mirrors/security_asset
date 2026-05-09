@@ -27,12 +27,12 @@ constexpr uint32_t MIN_OS_ACCOUNT_ID = 100;
 constexpr size_t MAX_VECTOR_SIZE = 99;
 
 int32_t CheckBatchGenerateTicketParams(
-    uint32_t osAccountId,
+    int32_t osAccountId,
     const std::string &callerId,
     const std::vector<std::string> &messages);
 
 int32_t CheckBatchVerifyTicketParams(
-    uint32_t osAccountId,
+    int32_t osAccountId,
     const std::string &callerId,
     const std::vector<VerifyTicketInfo> &verifyInfos);
 
@@ -42,8 +42,8 @@ int32_t CheckBatchVerifyTicketParams(
 extern "C" {
 #endif
 
-int32_t CheckBatchGenerateTicketParamsC(uint32_t osAccountId, const char* callerId, size_t messagesCount);
-int32_t CheckBatchVerifyTicketParamsC(uint32_t osAccountId, const char* callerId, size_t verifyInfosCount);
+int32_t CheckBatchGenerateTicketParamsC(int32_t osAccountId, const char* callerId, size_t messagesCount);
+int32_t CheckBatchVerifyTicketParamsC(int32_t osAccountId, const char* callerId, size_t verifyInfosCount);
 
 #ifdef __cplusplus
 }

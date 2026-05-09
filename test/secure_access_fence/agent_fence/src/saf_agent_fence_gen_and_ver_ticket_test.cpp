@@ -86,7 +86,7 @@ void SafAgentFenceGenAndVerTicketTest::TearDown(void)
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest001, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages = GenerateMessages(5, 5, 100);
@@ -114,7 +114,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest001, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest002, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 101;
+    int32_t osAccountId = 101;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages = GenerateMessages(5, 5, 100);
@@ -139,7 +139,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest002, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest003, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 0;
+    int32_t osAccountId = 0;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages = GenerateMessages(5, 5, 100);
@@ -164,7 +164,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest003, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest004, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 99;
+    int32_t osAccountId = 99;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages = GenerateMessages(5, 5, 100);
@@ -189,7 +189,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest004, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest005, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages;
@@ -208,7 +208,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest005, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest006, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages = GenerateMessages(100, 5, 100);
@@ -227,7 +227,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest006, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest007, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages = GenerateMessages(5, 5, 100);
@@ -265,7 +265,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest007, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest008, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages(5, "");
@@ -296,7 +296,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest008, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest009, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> verifyInfos;
@@ -315,7 +315,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest009, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest010, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages = GenerateMessages(5, 5, 100);
@@ -349,7 +349,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest010, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest011, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages = GenerateMessages(5, 5, 100);
@@ -382,7 +382,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest011, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest012, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages = GenerateMessages(5, 5, 100);
@@ -415,7 +415,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest012, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest013, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages = GenerateMessages(5, 5, 100);
@@ -446,7 +446,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest013, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest014, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages = GenerateMessages(5, 5, 100);
@@ -477,7 +477,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest014, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest015, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages = GenerateMessages(5, 5, 100);
@@ -512,7 +512,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest015, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest016, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages = GenerateMessages(5, 5, 100);
@@ -543,7 +543,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest016, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest017, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages = GenerateMessages(5, 5, 100);
@@ -578,7 +578,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest017, 
 HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest018, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
 
     std::vector<std::string> messages = GenerateMessages(5, 5, 100);

@@ -50,7 +50,7 @@ public:
      * @return Returns 0 on success, or error code on failure.
      */
     int32_t BatchGenerateTicket(
-        uint32_t osAccountId,
+        int32_t osAccountId,
         const std::string &callerId,
         const std::vector<std::string> &messages,
         std::vector<VerifyTicketInfo> &ticketInfos);
@@ -65,7 +65,7 @@ public:
      * @return Returns 0 on success, or error code on failure.
      */
     int32_t BatchVerifyTicket(
-        uint32_t osAccountId,
+        int32_t osAccountId,
         const std::string &callerId,
         const std::vector<VerifyTicketInfo> &verifyInfos,
         std::vector<int32_t> &verifyRes);

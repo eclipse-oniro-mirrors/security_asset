@@ -50,8 +50,8 @@ extern "C" {
     fn VerifyHmacSha256(key: *const Uint8BuffConst, data: *const Uint8BuffConst, expectedHmac: *const Uint8BuffConst) -> i32;
     fn Base64Encode(input: *const Uint8BuffConst, output: *mut Uint8Buff) -> i32;
     fn Base64Decode(input: *const Uint8BuffConst, output: *mut Uint8Buff) -> i32;
-    fn CheckBatchGenerateTicketParamsC(osAccountId: u32, callerId: *const c_char, messagesCount: usize) -> i32;
-    fn CheckBatchVerifyTicketParamsC(osAccountId: u32, callerId: *const c_char, verifyInfosCount: usize) -> i32;
+    fn CheckBatchGenerateTicketParamsC(osAccountId: i32, callerId: *const c_char, messagesCount: usize) -> i32;
+    fn CheckBatchVerifyTicketParamsC(osAccountId: i32, callerId: *const c_char, verifyInfosCount: usize) -> i32;
 }
 
 fn generate_challenge() -> Result<Vec<u8>> {
@@ -162,7 +162,7 @@ pub fn batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: &[St
     Result<Vec<VerifyTicketInfo>> {
     let caller_id_cstr = CString::new(caller_id).unwrap_or_default();
     let check_result = unsafe {
-        CheckBatchGenerateTicketParamsC(os_account_id as u32, caller_id_cstr.as_ptr(), messages.len())
+        CheckBatchGenerateTicketParamsC(os_account_id as i32, caller_id_cstr.as_ptr(), messages.len())
     };
     if check_result != SAF_SUCCESS {
         return macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, 
@@ -172,7 +172,7 @@ pub fn batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: &[St
     let challenge1 = generate_challenge()?;
     
     let key_manager = create_ticket_key_manager(caller_id);
-    let session_key = key_manager.derive_ticket_session_key(os_account_id as u32, &challenge1)?;
+    let session_key = key_manager.derive_ticket_session_key(os_account_id as i32, &challenge1)?;
     
     let mut results = Vec::with_capacity(messages.len());
     
@@ -214,7 +214,7 @@ pub fn batch_verify_ticket(
 ) -> Result<Vec<i32>> {
     let caller_id_cstr = CString::new(caller_id).unwrap_or_default();
     let check_result = unsafe {
-        CheckBatchVerifyTicketParamsC(os_account_id as u32, caller_id_cstr.as_ptr(), verify_infos.len())
+        CheckBatchVerifyTicketParamsC(os_account_id as i32, caller_id_cstr.as_ptr(), verify_infos.len())
     };
     if check_result != SAF_SUCCESS {
         return macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, 
@@ -224,7 +224,7 @@ pub fn batch_verify_ticket(
     let key_manager = create_ticket_key_manager(caller_id);
     
     let challenge = generate_challenge()?;
-    let _session_key = key_manager.derive_ticket_session_key(os_account_id as u32, &challenge)?;
+    let _session_key = key_manager.derive_ticket_session_key(os_account_id as i32, &challenge)?;
     
     let mut results = Vec::with_capacity(verify_infos.len());
     
@@ -244,7 +244,7 @@ pub fn batch_verify_ticket(
         let challenge1 = &combined_challenge[..32];
         let challenge2 = &combined_challenge[32..];
         
-        let session_key = key_manager.derive_ticket_session_key(os_account_id as u32, challenge1)?;
+        let session_key = key_manager.derive_ticket_session_key(os_account_id as i32, challenge1)?;
         
         let mut data = verify_info.message.as_bytes().to_vec();
         data.extend_from_slice(challenge2);
