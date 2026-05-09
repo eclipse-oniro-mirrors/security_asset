@@ -154,7 +154,7 @@ impl Ability for SAFAbility {
 
 fn start_service(handler: Handler) -> Result<()> {
     if !handler.publish(SAFService::new(handler.clone())) {
-        return macros_lib::log_throw_error!(ErrCode::IpcProxyFail, "SAF publish stub object failed");
+        return macros_lib::log_throw_error!(ErrCode::IpcError, "SAF publish stub object failed");
     };
     // 加载plugin插件
     match SAFPlugin::get_instance().load_plugin() {

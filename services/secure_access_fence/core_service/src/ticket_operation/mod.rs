@@ -62,7 +62,7 @@ fn generate_challenge() -> Result<Vec<u8>> {
     };
     let ret = unsafe { GenerateRandomBytes(&mut buff) };
     if ret != SAF_SUCCESS {
-        let code = ErrCode::try_from(ret as u32).unwrap_or(ErrCode::Error);
+        let code = ErrCode::try_from(ret as u32).unwrap_or(ErrCode::GeneralError);
         macros_lib::log_throw_error!(code, "generate challenge failed")
     } else {
         Ok(buf)
@@ -85,7 +85,7 @@ fn compute_hmac_sha256(key: &[u8], data: &[u8]) -> Result<Vec<u8>> {
     };
     let ret = unsafe { ComputeHmacSha256(&key_buff, &data_buff, &mut hmac_buff) };
     if ret != SAF_SUCCESS {
-        let code = ErrCode::try_from(ret as u32).unwrap_or(ErrCode::Error);
+        let code = ErrCode::try_from(ret as u32).unwrap_or(ErrCode::GeneralError);
         macros_lib::log_throw_error!(code, "compute hmac failed")
     } else {
         Ok(hmac)
@@ -112,7 +112,7 @@ fn verify_hmac_sha256(key: &[u8], data: &[u8], expected_hmac: &[u8]) -> Result<b
     if ret == SAF_SUCCESS {
         Ok(true)
     } else {
-        let code = ErrCode::try_from(ret as u32).unwrap_or(ErrCode::Error);
+        let code = ErrCode::try_from(ret as u32).unwrap_or(ErrCode::GeneralError);
         macros_lib::log_throw_error!(code, "verify hmac failed")
     }
 }
@@ -130,7 +130,7 @@ fn base64_encode(input: &[u8]) -> Result<Vec<u8>> {
     };
     let ret = unsafe { Base64Encode(&input_buff, &mut output_buff) };
     if ret != SAF_SUCCESS {
-        let code = ErrCode::try_from(ret as u32).unwrap_or(ErrCode::Error);
+        let code = ErrCode::try_from(ret as u32).unwrap_or(ErrCode::GeneralError);
         macros_lib::log_throw_error!(code, "base64 encode failed")
     } else {
         unsafe { output.set_len(output_buff.size as usize) };
@@ -151,7 +151,7 @@ fn base64_decode(input: &[u8]) -> Result<Vec<u8>> {
     };
     let ret = unsafe { Base64Decode(&input_buff, &mut output_buff) };
     if ret != SAF_SUCCESS {
-        let code = ErrCode::try_from(ret as u32).unwrap_or(ErrCode::Error);
+        let code = ErrCode::try_from(ret as u32).unwrap_or(ErrCode::GeneralError);
         macros_lib::log_throw_error!(code, "base64 decode failed")
     } else {
         unsafe { output.set_len(output_buff.size as usize) };
@@ -174,7 +174,7 @@ pub fn batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: &[St
         CheckBatchGenerateTicketParamsC(os_account_id as i32, caller_id_cstr.as_ptr(), messages.len())
     };
     if check_result != SAF_SUCCESS {
-        let code = ErrCode::try_from(check_result as u32).unwrap_or(ErrCode::Error);
+        let code = ErrCode::try_from(check_result as u32).unwrap_or(ErrCode::GeneralError);
         return macros_lib::log_throw_error!(code, "batch_generate_ticket params check failed");
     }
 
@@ -226,7 +226,7 @@ pub fn batch_verify_ticket(
         CheckBatchVerifyTicketParamsC(os_account_id as i32, caller_id_cstr.as_ptr(), verify_infos.len())
     };
     if check_result != SAF_SUCCESS {
-        let code = ErrCode::try_from(check_result as u32).unwrap_or(ErrCode::Error);
+        let code = ErrCode::try_from(check_result as u32).unwrap_or(ErrCode::GeneralError);
         return macros_lib::log_throw_error!(code, "batch_verify_ticket params check failed");
     }
 

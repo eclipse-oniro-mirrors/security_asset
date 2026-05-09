@@ -22,6 +22,7 @@
 #include <openssl/evp.h>
 
 #include "saf_log.h"
+#include "saf_result_code.h"
 
 int32_t GenerateRandomBytes(Uint8Buff *buf)
 {

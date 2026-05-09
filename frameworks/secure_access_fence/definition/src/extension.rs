@@ -15,7 +15,7 @@
 
 //! This module extends the function of SAF data structure.
 
-use std::{collections::HashMap, fmt::Display, hash::Hash, io};
+use std::{collections::HashMap, fmt::Display, hash::Hash};
 
 use saf_log::loge;
 
@@ -145,13 +145,3 @@ impl SAFError {
         SAFError { code, msg }
     }
 }
-
-impl From<io::Error> for SAFError {
-    fn from(error: io::Error) -> Self {
-        SAFError {
-            code: (ErrCode::FileOperationError),
-            msg: (format!("[FATAL]Backup db failed! error is [{error}]")),
-        }
-    }
-}
-

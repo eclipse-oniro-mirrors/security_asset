@@ -44,7 +44,7 @@ impl TicketKeyManager for AccountBasedTicketKeyManager {
         params.insert(PARAM_DERIVE_FACTOR, Value::Bytes(derive_factor.to_vec()));
 
         let result = loader.process_event(EventType::DeriveTicketSessionKey, &mut params)
-            .map_err(|e| saf_definition::SAFError::new(ErrCode::try_from(result.code)?,
+            .map_err(|e| saf_definition::SAFError::new(ErrCode::try_from(e).unwrap_or(ErrCode::GeneralError),
             format!("derive key failed: {}", e)))?;
 
         match result.get(PARAM_DERIVED_KEY) {

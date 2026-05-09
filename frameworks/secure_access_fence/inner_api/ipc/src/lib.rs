@@ -168,7 +168,7 @@ pub fn ipc_err_handle(e: IpcStatusCode) -> SAFError {
         IpcStatusCode::ServiceDied => {
             SAFError::new(ErrCode::ServiceUnavailable, format!("[FATAL][IPC]Ipc status code = {}", e as i32))
         },
-        _ => SAFError::new(ErrCode::IpcProxyFail, format!("[FATAL][IPC]Ipc status code = {}", e)),
+        _ => SAFError::new(ErrCode::IpcError, format!("[FATAL][IPC]Ipc status code = {}", e)),
     }
 }
 

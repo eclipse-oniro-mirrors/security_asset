@@ -104,7 +104,7 @@ impl_enum_trait! {
         EvaluateDeny = 1,
 
         /// General error.
-        Error = 2,
+        GeneralError = 2,
 
         // ==================== IPC (0x10000) ====================
         /// The error code indicates that ipc write data failed.
@@ -119,8 +119,11 @@ impl_enum_trait! {
         /// The error code indicates that ipc proxy failed.
         IpcProxyFail = 0x10004,
 
-        /// The error code indicates that invalid ipc code.
+        /// The error code indicates that ipc error.
         IpcInvalidIpcCode = 0x10005,
+
+        /// The error code indicates that invalid ipc code.
+        IpcInvalidIpcCode = 0x10006,
 
         // ==================== SAMGR (0x12000) ====================
         /// The error code indicates that the SAF service is unavailable.
