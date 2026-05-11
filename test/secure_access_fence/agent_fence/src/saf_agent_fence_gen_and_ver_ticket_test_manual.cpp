@@ -157,12 +157,12 @@ void SafAgentFenceGenAndVerTicketTestManual::TearDown(void)
 }
 
 /**
- * @tc.name: SafAgentFenceGenAndVerTicketTestManual.TestCase001_GenerateTicket
+ * @tc.name: SafAgentFenceGenAndVerTicketTestManual.TestCaseGenerateTicket100
  * @tc.desc: Generate ticket with osAccountId:100, callerId:"test_caller", message count:5, message length:5-100
  * @tc.type: FUNC
  * @tc.result: Generate success, write to file success
  */
-HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCase001_GenerateTicket, TestSize.Level0)
+HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCaseGenerateTicket100, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
     int32_t osAccountId = 100;
@@ -197,12 +197,12 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCase001_GenerateTicket, Tes
 }
 
 /**
- * @tc.name: SafAgentFenceGenAndVerTicketTestManual.TestCase002_VerifyTicket
+ * @tc.name: SafAgentFenceGenAndVerTicketTestManual.TestCaseVerifyTicket100
  * @tc.desc: Read ticket info from file and verify ticket
  * @tc.type: FUNC
  * @tc.result: Verify success
  */
-HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCase002_VerifyTicket, TestSize.Level0)
+HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCaseVerifyTicket100, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
     int32_t osAccountId = 100;
@@ -238,12 +238,12 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCase002_VerifyTicket, TestS
 }
 
 /**
- * @tc.name: SafAgentFenceGenAndVerTicketTestManual.TestCase003_GenerateTicket
+ * @tc.name: SafAgentFenceGenAndVerTicketTestManual.TestCaseGenerateTicket101
  * @tc.desc: Generate ticket with osAccountId:101, callerId:"test_caller", message count:5, message length:5-100
  * @tc.type: FUNC
  * @tc.result: Generate success, write to file success
  */
-HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCase003_GenerateTicket, TestSize.Level0)
+HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCaseGenerateTicket101, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
     int32_t osAccountId = 101;
@@ -278,12 +278,12 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCase003_GenerateTicket, Tes
 }
 
 /**
- * @tc.name: SafAgentFenceGenAndVerTicketTestManual.TestCase004_VerifyTicket
+ * @tc.name: SafAgentFenceGenAndVerTicketTestManual.TestCaseVerifyTicket101
  * @tc.desc: Read ticket info from file and verify ticket with osAccountId:101
  * @tc.type: FUNC
  * @tc.result: Verify success
  */
-HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCase004_VerifyTicket, TestSize.Level0)
+HWTEST_F(SafAgentFenceGenAndVerTicketTestManual, TestCaseVerifyTicket101, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
     int32_t osAccountId = 101;
