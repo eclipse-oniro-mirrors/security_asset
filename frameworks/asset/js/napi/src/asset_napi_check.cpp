@@ -167,9 +167,7 @@ napi_value CheckAssetRequiredTag(const napi_env env, const std::vector<AssetAttr
             return attr.tag == requiredTag;
         });
         if (it == attrs.end()) {
-            auto tagIt = TAG_MAP.find(attr.tag);
-            const char* tagName = (tagIt != TAG_MAP.end()) ? tagIt->second : "INVALID_TAG";
-            RETURN_JS_ERROR(env, errorCode, "Missing required tag[asset.Tag.%s].", tagName);
+            RETURN_JS_ERROR(env, errorCode, "Missing required tag[asset.Tag.%s].", TAG_MAP.at(requiredTag));
         }
     }
     return nullptr;
