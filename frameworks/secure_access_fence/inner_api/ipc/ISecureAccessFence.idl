@@ -25,7 +25,7 @@ interface OHOS.Security.SAF.ISecureAccessFence {
      * @param resultCode Error code output (0 for success).
      */
     [ipccode 1] void BatchGenerateTicket(
-        [in] unsigned int osAccountId,
+        [in] int osAccountId,
         [in] String callerId,
         [in] List<String> messages,
         [out] List<VerifyTicketInfo> ticketInfos,
@@ -41,7 +41,7 @@ interface OHOS.Security.SAF.ISecureAccessFence {
      * @param resultCode Error code output (0 for success).
      */
     [ipccode 2] void BatchVerifyTicket(
-        [in] unsigned int osAccountId,
+        [in] int osAccountId,
         [in] String callerId,
         [in] List<VerifyTicketInfo> verifyInfos,
         [out] List<int> verifyRes,

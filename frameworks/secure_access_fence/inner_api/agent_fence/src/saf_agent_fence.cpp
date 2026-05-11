@@ -15,8 +15,7 @@
 
 #include "saf_agent_fence.h"
 
-#include "saf_result_defs.h"
-#include "secure_access_fence_system_type.h"
+#include "saf_result_code.h"
 #include "isecure_access_fence.h"
 #include "saf_agent_params_checker.h"
 
@@ -32,7 +31,6 @@ namespace {
 constexpr int32_t WAIT_TIMEOUT_IN_SEC = 5;
 constexpr int32_t SAF_SERVICE_ID = 66532;
 constexpr int32_t EERR_REMOTE_DEAD = 29189;
-constexpr int32_t E_SUCCESS = 0;
 
 std::recursive_mutex g_mutex;
 
@@ -68,25 +66,25 @@ int32_t SafAgentFence::BatchQueryCommandPermission(
     std::vector<CommandPermissionInfo> &cmdPermissions)
 {
     LOGI("SafAgentFence::BatchQueryCommandPermission enter");
-    int32_t ret = E_SUCCESS;
-    int resultCode = E_SUCCESS;
+    int32_t ret = SAF_SUCCESS;
+    int resultCode = SAF_SUCCESS;
 
     auto proxy = GetProxy(g_mutex);
     if (proxy == nullptr) {
         LOGE("load sa fail.");
-        return SEC_SAF_SERVICE_UNAVAILABLE;
+        return SAF_ERR_SERVICE_UNAVAILABLE;
     }
 
     ret = proxy->BatchQueryCommandPermission(cmds, cmdPermissions, resultCode);
     if (ret == ERR_DEAD_OBJECT || ret == EERR_REMOTE_DEAD) {
-        return SEC_SAF_SERVICE_UNAVAILABLE;
+        return SAF_ERR_SERVICE_UNAVAILABLE;
     }
-    if (ret == SEC_SAF_SERVICE_IS_STOPPING) {
+    if (ret == SAF_ERR_SERVICE_IS_STOPPING) {
         LOGW("service is stopping, try to load sa");
         proxy = GetProxy(g_mutex, false);
         if (proxy == nullptr) {
             LOGE("try load sa fail.");
-            return SEC_SAF_SERVICE_UNAVAILABLE;
+            return SAF_ERR_SERVICE_UNAVAILABLE;
         }
         ret = proxy->BatchQueryCommandPermission(cmds, cmdPermissions, resultCode);
     }
@@ -94,7 +92,7 @@ int32_t SafAgentFence::BatchQueryCommandPermission(
     LOGI("SafAgentFence::BatchQueryCommandPermission finished");
     if (ret != 0) {
         LOGE("IPC call failed, ret=%{public}d", ret);
-        return SEC_SAF_IPC_ERROR;
+        return SAF_ERR_IPC_PROXY_FAIL;
     }
     return resultCode;
 }
@@ -106,32 +104,32 @@ int32_t SafAgentFence::BatchGenerateTicket(
     std::vector<VerifyTicketInfo> &ticketInfos)
 {
     LOGI("SafAgentFence::BatchGenerateTicket enter");
-    
+
     int32_t checkResult = CheckBatchGenerateTicketParams(osAccountId, callerId, messages);
-    if (checkResult != SEC_SAF_SUCCESS) {
+    if (checkResult != SAF_SUCCESS) {
         LOGE("BatchGenerateTicket params check failed, ret=%{public}d", checkResult);
         return checkResult;
     }
-    
-    int32_t ret = SEC_SAF_IPC_ERROR;
-    int resultCode = E_SUCCESS;
+
+    int32_t ret = SAF_ERR_IPC_PROXY_FAIL;
+    int resultCode = SAF_SUCCESS;
 
     auto proxy = GetProxy(g_mutex);
     if (proxy == nullptr) {
         LOGE("load sa fail.");
-        return SEC_SAF_SERVICE_UNAVAILABLE;
+        return SAF_ERR_SERVICE_UNAVAILABLE;
     }
 
     ret = proxy->BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos, resultCode);
     if (ret == ERR_DEAD_OBJECT || ret == EERR_REMOTE_DEAD) {
-        return SEC_SAF_SERVICE_UNAVAILABLE;
+        return SAF_ERR_SERVICE_UNAVAILABLE;
     }
-    if (ret == SEC_SAF_SERVICE_IS_STOPPING) {
+    if (ret == SAF_ERR_SERVICE_IS_STOPPING) {
         LOGW("service is stopping, try to load sa");
         proxy = GetProxy(g_mutex, false);
         if (proxy == nullptr) {
             LOGE("try load sa fail.");
-            return SEC_SAF_SERVICE_UNAVAILABLE;
+            return SAF_ERR_SERVICE_UNAVAILABLE;
         }
         ret = proxy->BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos, resultCode);
     }
@@ -139,7 +137,7 @@ int32_t SafAgentFence::BatchGenerateTicket(
     LOGI("SafAgentFence::BatchGenerateTicket finished");
     if (ret != 0) {
         LOGE("IPC call failed, ret=%{public}d", ret);
-        return SEC_SAF_IPC_ERROR;
+        return SAF_ERR_IPC_PROXY_FAIL;
     }
     return resultCode;
 }
@@ -151,32 +149,32 @@ int32_t SafAgentFence::BatchVerifyTicket(
     std::vector<int32_t> &verifyRes)
 {
     LOGI("SafAgentFence::BatchVerifyTicket enter");
-    
+
     int32_t checkResult = CheckBatchVerifyTicketParams(osAccountId, callerId, verifyInfos);
-    if (checkResult != SEC_SAF_SUCCESS) {
+    if (checkResult != SAF_SUCCESS) {
         LOGE("BatchVerifyTicket params check failed, ret=%{public}d", checkResult);
         return checkResult;
     }
-    
-    int32_t ret = SEC_SAF_IPC_ERROR;
-    int resultCode = E_SUCCESS;
+
+    int32_t ret = SAF_ERR_IPC_PROXY_FAIL;
+    int resultCode = SAF_SUCCESS;
 
     auto proxy = GetProxy(g_mutex);
     if (proxy == nullptr) {
         LOGE("load sa fail.");
-        return SEC_SAF_SERVICE_UNAVAILABLE;
+        return SAF_ERR_SERVICE_UNAVAILABLE;
     }
 
     ret = proxy->BatchVerifyTicket(osAccountId, callerId, verifyInfos, verifyRes, resultCode);
     if (ret == ERR_DEAD_OBJECT || ret == EERR_REMOTE_DEAD) {
-        return SEC_SAF_SERVICE_UNAVAILABLE;
+        return SAF_ERR_SERVICE_UNAVAILABLE;
     }
-    if (ret == SEC_SAF_SERVICE_IS_STOPPING) {
+    if (ret == SAF_ERR_SERVICE_IS_STOPPING) {
         LOGW("service is stopping, try to load sa");
         proxy = GetProxy(g_mutex, false);
         if (proxy == nullptr) {
             LOGE("try load sa fail.");
-            return SEC_SAF_SERVICE_UNAVAILABLE;
+            return SAF_ERR_SERVICE_UNAVAILABLE;
         }
         ret = proxy->BatchVerifyTicket(osAccountId, callerId, verifyInfos, verifyRes, resultCode);
     }
@@ -184,7 +182,7 @@ int32_t SafAgentFence::BatchVerifyTicket(
     LOGI("SafAgentFence::BatchVerifyTicket finished");
     if (ret != 0) {
         LOGE("IPC call failed, ret=%{public}d", ret);
-        return SEC_SAF_IPC_ERROR;
+        return SAF_ERR_IPC_PROXY_FAIL;
     }
     return resultCode;
 }

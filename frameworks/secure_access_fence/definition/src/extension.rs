@@ -15,7 +15,7 @@
 
 //! This module extends the function of SAF data structure.
 
-use std::{collections::HashMap, fmt::Display, hash::Hash, io};
+use std::{collections::HashMap, fmt::Display, hash::Hash};
 
 use saf_log::loge;
 
@@ -103,7 +103,7 @@ where
         if let Some(Value::Bool(b)) = self.get(key) {
             Ok(*b)
         } else {
-            macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "[FATAL]Get attribute of bool type failed, key: {}", key)
+            macros_lib::log_throw_error!(ErrCode::DataTypeMismatch, "[FATAL]Get attribute of bool type failed, key: {}", key)
         }
     }
 
@@ -111,7 +111,7 @@ where
         if let Some(Value::Number(num)) = self.get(key) {
             T::try_from(*num)
         } else {
-            macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "[FATAL]Get attribute of enum type failed, key: {}", key)
+            macros_lib::log_throw_error!(ErrCode::DataTypeMismatch, "[FATAL]Get attribute of enum type failed, key: {}", key)
         }
     }
 
@@ -119,7 +119,7 @@ where
         if let Some(Value::Number(num)) = self.get(key) {
             Ok(*num)
         } else {
-            macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "[FATAL]Get attribute of number type failed, key: {}", key)
+            macros_lib::log_throw_error!(ErrCode::DataTypeMismatch, "[FATAL]Get attribute of number type failed, key: {}", key)
         }
     }
 
@@ -127,7 +127,7 @@ where
         if let Some(Value::Bytes(bytes)) = self.get(key) {
             Ok(bytes)
         } else {
-            macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "[FATAL]Get attribute of bytes type failed, key: {}", key)
+            macros_lib::log_throw_error!(ErrCode::DataTypeMismatch, "[FATAL]Get attribute of bytes type failed, key: {}", key)
         }
     }
 }
@@ -145,13 +145,3 @@ impl SAFError {
         SAFError { code, msg }
     }
 }
-
-impl From<io::Error> for SAFError {
-    fn from(error: io::Error) -> Self {
-        SAFError {
-            code: (ErrCode::FileOperationError),
-            msg: (format!("[FATAL]Backup db failed! error is [{error}]")),
-        }
-    }
-}
-

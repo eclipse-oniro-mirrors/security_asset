@@ -20,8 +20,7 @@
 #include <ctime>
 
 #include "saf_agent_fence.h"
-#include "saf_result_defs.h"
-#include "secure_access_fence_system_type.h"
+#include "saf_result_code.h"
 #include "saf_permission_change.h"
 
 using namespace testing::ext;
@@ -93,15 +92,15 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest001, 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
     EXPECT_EQ(ticketInfos.size(), messages.size());
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
-    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyResult, SAF_SUCCESS);
     EXPECT_EQ(verifyRes.size(), ticketInfos.size());
     for (size_t i = 0; i < verifyRes.size(); i++) {
-        EXPECT_EQ(verifyRes[i], SEC_SAF_SUCCESS);
+        EXPECT_EQ(verifyRes[i], SAF_SUCCESS);
     }
 }
 
@@ -121,13 +120,13 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest002, 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_NE(genResult, SEC_SAF_SUCCESS);
+    EXPECT_NE(genResult, SAF_SUCCESS);
 
     std::vector<int32_t> verifyRes;
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> verifyInfos;
     verifyInfos.push_back({"test_message", "challenge", "ticket"});
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, verifyInfos, verifyRes);
-    EXPECT_NE(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_NE(verifyResult, SAF_SUCCESS);
 }
 
 /**
@@ -146,13 +145,13 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest003, 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_NE(genResult, SEC_SAF_SUCCESS);
+    EXPECT_NE(genResult, SAF_SUCCESS);
 
     std::vector<int32_t> verifyRes;
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> verifyInfos;
     verifyInfos.push_back({"test_message", "challenge", "ticket"});
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, verifyInfos, verifyRes);
-    EXPECT_NE(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_NE(verifyResult, SAF_SUCCESS);
 }
 
 /**
@@ -171,13 +170,13 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest004, 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_NE(genResult, SEC_SAF_SUCCESS);
+    EXPECT_NE(genResult, SAF_SUCCESS);
 
     std::vector<int32_t> verifyRes;
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> verifyInfos;
     verifyInfos.push_back({"test_message", "challenge", "ticket"});
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, verifyInfos, verifyRes);
-    EXPECT_NE(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_NE(verifyResult, SAF_SUCCESS);
 }
 
 /**
@@ -196,7 +195,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest005, 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_NE(genResult, SEC_SAF_SUCCESS);
+    EXPECT_NE(genResult, SAF_SUCCESS);
 }
 
 /**
@@ -215,7 +214,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest006, 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_NE(genResult, SEC_SAF_SUCCESS);
+    EXPECT_NE(genResult, SAF_SUCCESS);
 }
 
 /**
@@ -237,7 +236,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest007, 
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
     EXPECT_EQ(ticketInfos.size(), messages.size());
     EXPECT_TRUE(ticketInfos[0].ticket.empty());
     EXPECT_EQ(ticketInfos[1].ticket.size(), 44);
@@ -247,13 +246,13 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest007, 
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
-    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyResult, SAF_SUCCESS);
     EXPECT_EQ(verifyRes.size(), ticketInfos.size());
-    EXPECT_NE(verifyRes[0], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[1], SEC_SAF_SUCCESS);
-    EXPECT_NE(verifyRes[2], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[3], SEC_SAF_SUCCESS);
-    EXPECT_NE(verifyRes[4], SEC_SAF_SUCCESS);
+    EXPECT_NE(verifyRes[0], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[1], SAF_SUCCESS);
+    EXPECT_NE(verifyRes[2], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[3], SAF_SUCCESS);
+    EXPECT_NE(verifyRes[4], SAF_SUCCESS);
 }
 
 /**
@@ -272,7 +271,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest008, 
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
     EXPECT_EQ(ticketInfos.size(), messages.size());
     for (size_t i = 0; i < ticketInfos.size(); i++) {
         EXPECT_TRUE(ticketInfos[i].ticket.empty());
@@ -280,10 +279,10 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest008, 
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
-    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyResult, SAF_SUCCESS);
     EXPECT_EQ(verifyRes.size(), ticketInfos.size());
     for (size_t i = 0; i < verifyRes.size(); i++) {
-        EXPECT_NE(verifyRes[i], SEC_SAF_SUCCESS);
+        EXPECT_NE(verifyRes[i], SAF_SUCCESS);
     }
 }
 
@@ -303,7 +302,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest009, 
     std::vector<int32_t> verifyRes;
 
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, verifyInfos, verifyRes);
-    EXPECT_NE(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_NE(verifyResult, SAF_SUCCESS);
 }
 
 /**
@@ -322,7 +321,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest010, 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
 
     std::string temp = ticketInfos[0].message;
     ticketInfos[0].message = ticketInfos[2].message;
@@ -331,13 +330,13 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest010, 
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
-    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyResult, SAF_SUCCESS);
     EXPECT_EQ(verifyRes.size(), ticketInfos.size());
-    EXPECT_NE(verifyRes[0], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[1], SEC_SAF_SUCCESS);
-    EXPECT_NE(verifyRes[2], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[3], SEC_SAF_SUCCESS);
-    EXPECT_NE(verifyRes[4], SEC_SAF_SUCCESS);
+    EXPECT_NE(verifyRes[0], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[1], SAF_SUCCESS);
+    EXPECT_NE(verifyRes[2], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[3], SAF_SUCCESS);
+    EXPECT_NE(verifyRes[4], SAF_SUCCESS);
 }
 
 /**
@@ -356,7 +355,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest011, 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
 
     std::string temp = ticketInfos[1].challenge;
     ticketInfos[1].challenge = ticketInfos[3].challenge;
@@ -364,13 +363,13 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest011, 
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
-    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyResult, SAF_SUCCESS);
     EXPECT_EQ(verifyRes.size(), ticketInfos.size());
-    EXPECT_EQ(verifyRes[0], SEC_SAF_SUCCESS);
-    EXPECT_NE(verifyRes[1], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[2], SEC_SAF_SUCCESS);
-    EXPECT_NE(verifyRes[3], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[4], SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[0], SAF_SUCCESS);
+    EXPECT_NE(verifyRes[1], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[2], SAF_SUCCESS);
+    EXPECT_NE(verifyRes[3], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[4], SAF_SUCCESS);
 }
 
 /**
@@ -389,7 +388,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest012, 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
 
     std::string temp = ticketInfos[1].ticket;
     ticketInfos[1].ticket = ticketInfos[3].ticket;
@@ -397,13 +396,13 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest012, 
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
-    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyResult, SAF_SUCCESS);
     EXPECT_EQ(verifyRes.size(), ticketInfos.size());
-    EXPECT_EQ(verifyRes[0], SEC_SAF_SUCCESS);
-    EXPECT_NE(verifyRes[1], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[2], SEC_SAF_SUCCESS);
-    EXPECT_NE(verifyRes[3], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[4], SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[0], SAF_SUCCESS);
+    EXPECT_NE(verifyRes[1], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[2], SAF_SUCCESS);
+    EXPECT_NE(verifyRes[3], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[4], SAF_SUCCESS);
 }
 
 /**
@@ -422,19 +421,19 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest013, 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
 
     ticketInfos[2].message = "tampered_message";
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
-    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyResult, SAF_SUCCESS);
     EXPECT_EQ(verifyRes.size(), ticketInfos.size());
-    EXPECT_EQ(verifyRes[0], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[1], SEC_SAF_SUCCESS);
-    EXPECT_NE(verifyRes[2], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[3], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[4], SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[0], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[1], SAF_SUCCESS);
+    EXPECT_NE(verifyRes[2], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[3], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[4], SAF_SUCCESS);
 }
 
 /**
@@ -453,19 +452,19 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest014, 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
 
     ticketInfos[2].challenge += "extra_data_to_make_it_longer";
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
-    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyResult, SAF_SUCCESS);
     EXPECT_EQ(verifyRes.size(), ticketInfos.size());
-    EXPECT_EQ(verifyRes[0], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[1], SEC_SAF_SUCCESS);
-    EXPECT_NE(verifyRes[2], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[3], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[4], SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[0], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[1], SAF_SUCCESS);
+    EXPECT_NE(verifyRes[2], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[3], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[4], SAF_SUCCESS);
 }
 
 /**
@@ -484,7 +483,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest015, 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
 
     if (ticketInfos[2].challenge.length() > 5) {
         ticketInfos[2].challenge = ticketInfos[2].challenge.substr(0, ticketInfos[2].challenge.length() - 5);
@@ -494,13 +493,13 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest015, 
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
-    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyResult, SAF_SUCCESS);
     EXPECT_EQ(verifyRes.size(), ticketInfos.size());
-    EXPECT_EQ(verifyRes[0], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[1], SEC_SAF_SUCCESS);
-    EXPECT_NE(verifyRes[2], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[3], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[4], SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[0], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[1], SAF_SUCCESS);
+    EXPECT_NE(verifyRes[2], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[3], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[4], SAF_SUCCESS);
 }
 
 /**
@@ -519,19 +518,19 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest016, 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
 
     ticketInfos[2].ticket += "extra_data_to_make_it_longer";
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
-    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyResult, SAF_SUCCESS);
     EXPECT_EQ(verifyRes.size(), ticketInfos.size());
-    EXPECT_EQ(verifyRes[0], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[1], SEC_SAF_SUCCESS);
-    EXPECT_NE(verifyRes[2], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[3], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[4], SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[0], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[1], SAF_SUCCESS);
+    EXPECT_NE(verifyRes[2], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[3], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[4], SAF_SUCCESS);
 }
 
 /**
@@ -550,7 +549,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest017, 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
 
     if (ticketInfos[2].ticket.length() > 5) {
         ticketInfos[2].ticket = ticketInfos[2].ticket.substr(0, ticketInfos[2].ticket.length() - 5);
@@ -560,13 +559,13 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest017, 
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
-    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyResult, SAF_SUCCESS);
     EXPECT_EQ(verifyRes.size(), ticketInfos.size());
-    EXPECT_EQ(verifyRes[0], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[1], SEC_SAF_SUCCESS);
-    EXPECT_NE(verifyRes[2], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[3], SEC_SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[4], SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[0], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[1], SAF_SUCCESS);
+    EXPECT_NE(verifyRes[2], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[3], SAF_SUCCESS);
+    EXPECT_EQ(verifyRes[4], SAF_SUCCESS);
 }
 
 /**
@@ -585,7 +584,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest018, 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
 
     ticketInfos[0].message = "tampered_message_0";
     ticketInfos[1].challenge = "tampered_challenge_1";
@@ -595,10 +594,10 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest018, 
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
-    EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(verifyResult, SAF_SUCCESS);
     EXPECT_EQ(verifyRes.size(), ticketInfos.size());
     for (size_t i = 0; i < verifyRes.size(); i++) {
-        EXPECT_NE(verifyRes[i], SEC_SAF_SUCCESS);
+        EXPECT_NE(verifyRes[i], SAF_SUCCESS);
     }
 }
 

@@ -18,8 +18,7 @@
 #include <gtest/gtest.h>
 
 #include "saf_agent_fence.h"
-#include "saf_result_defs.h"
-#include "secure_access_fence_system_type.h"
+#include "saf_result_code.h"
 #include "saf_permission_change.h"
 
 using namespace testing::ext;
@@ -65,7 +64,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 1);
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer");
     EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "");
@@ -90,7 +89,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 1);
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer");
     EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "run");
@@ -115,7 +114,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 1);
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer-2");
     EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "");
@@ -142,7 +141,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 1);
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer-2");
     EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "run");
@@ -167,7 +166,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 1);
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer-2");
     EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "stop");
@@ -193,7 +192,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 1);
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer-2");
     EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "notexist");
@@ -237,7 +236,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 2);
 
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer-2");
@@ -273,7 +272,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 3);
 
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer-2");
@@ -315,7 +314,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest01
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 4);
 
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer-2");
@@ -365,7 +364,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest01
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 5);
 
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer-2");
@@ -436,7 +435,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest01
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 99);
 
     for (int i = 0; i < 99; i++) {

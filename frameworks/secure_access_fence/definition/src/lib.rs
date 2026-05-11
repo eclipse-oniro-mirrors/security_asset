@@ -97,35 +97,102 @@ impl_enum_trait! {
     #[derive(Debug)]
     #[derive(Eq, Hash, PartialEq)]
     pub enum ErrCode {
-        /// The error code indicates that the caller doesn't have the permission.
-        PermissionDenied = 201,
+        /// Success.
+        Success = 0,
 
-        /// The error code indicates that the caller is not system application.
-        NotSystemApplication = 202,
+        /// Evaluate deny.
+        EvaluateDeny = 1,
 
+        /// General error.
+        GeneralError = 2,
+
+        // ==================== IPC (0x10000) ====================
+        /// The error code indicates that ipc write data failed.
+        IpcWriteDataFail = 0x10001,
+
+        /// The error code indicates that ipc read data failed.
+        IpcReadDataFail = 0x10002,
+
+        /// The error code indicates that ipc send request failed.
+        IpcSendRequestFail = 0x10003,
+
+        /// The error code indicates that ipc proxy failed.
+        IpcProxyFail = 0x10004,
+
+        /// The error code indicates that ipc error.
+        IpcError = 0x10005,
+
+        /// The error code indicates that invalid ipc code.
+        IpcInvalidIpcCode = 0x10006,
+
+        // ==================== SAMGR (0x12000) ====================
         /// The error code indicates that the SAF service is unavailable.
-        ServiceUnavailable = 1023900001,
+        ServiceUnavailable = 0x12001,
 
-        /// The error code indicates that the ipc communication is abnormal.
-        IpcError = 1023900002,
+        /// The error code indicates that the service is stopping.
+        ServiceIsStopping = 0x12002,
 
-        /// The error code indicates that the operation of calling Bundle Manager Service is failed.
-        BmsError = 1023900003,
+        // ==================== LIBDL (0x21000) ====================
+        /// The error code indicates that dlopen failed.
+        DlopenFail = 0x21001,
 
-        /// The error code indicates that the operation of calling OS Account Service is failed.
-        AccountError = 1023900004,
+        /// The error code indicates that dlsym failed.
+        DlsymFail = 0x21002,
 
-        /// The error code indicates that the operation of calling userIAM Service is failed.
-        UserIAMError = 1023900005,
+        // ==================== ARGUMENT (0x30000) ====================
+        /// The error code indicates that invalid array length.
+        InvalidArrayLen = 0x30003,
 
-        /// The error code indicates that verifying the parameter failed.
-        ParamVerificationFailed = 1023900006,
+        /// The error code indicates that null pointer.
+        NullPtr = 0x30004,
 
-        /// The error code indicates that file operation failed.
-        FileOperationError = 1023900007,
+        /// The error code indicates that argument is empty.
+        ArgEmpty = 0x30019,
 
+        /// The error code indicates that invalid os account id.
+        InvalidOsAccountId = 0x3001A,
+
+        // ==================== PERMISSION (0x32000) ====================
+        /// The error code indicates that the caller doesn't have the permission.
+        PermissionDenied = 0x32001,
+
+        // ==================== COMMON (0x33000) ====================
+        /// The error code indicates that data type mismatch.
+        DataTypeMismatch = 0x33001,
+
+        /// The error code indicates that hash map key not found.
+        HashMapKeyNotFound = 0x33002,
+
+        /// The error code indicates that base64 invalid length.
+        Base64InvalidLen = 0x33003,
+
+        /// The error code indicates that base64 invalid character.
+        Base64InvalidChar = 0x33004,
+
+        // ==================== CLI_TOOL (0x20000) ====================
         /// The error code indicates that the operation of calling Tool Service is failed.
-        ToolError = 1023900008,
+        ToolError = 0x20001,
+
+        // ==================== CRYPTO (0x18000) ====================
+        /// The error code indicates that crypto operation failed.
+        CryptoOperation = 0x18001,
+
+        /// The error code indicates that invalid HMAC size.
+        InvalidHmacSize = 0x18002,
+
+        // ==================== PLUGIN (0x70000) ====================
+        /// The error code indicates that create plugin manager failed.
+        CreatePluginMgrFail = 0x70001,
+
+        /// The error code indicates that plugin invalid event type.
+        PluginInvalidEventType = 0x70002,
+
+        /// The error code indicates that plugin not support.
+        PluginNotSupport = 0x70003,
+
+        // ==================== TICKET_OPERATION (0x71000) ====================
+        /// The error code indicates that ticket key manager not support.
+        TicketKeyMgrNotSupport = 0x71001,
     }
 }
 

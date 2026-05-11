@@ -202,7 +202,7 @@ impl SAFService {
         }
         ticket_operation::batch_generate_ticket(os_account_id, caller_id, messages)
     }
-    
+
     fn batch_verify_ticket(&self, os_account_id: i32, caller_id: &str, verify_infos: &[VerifyTicketInfo]) ->
         Result<Vec<i32>> {
         ticket_operation::batch_verify_ticket(os_account_id, caller_id, verify_infos)

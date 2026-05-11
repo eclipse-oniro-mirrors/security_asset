@@ -18,8 +18,7 @@
 #include <ctime>
 
 #include "saf_agent_fence.h"
-#include "saf_result_defs.h"
-#include "secure_access_fence_system_type.h"
+#include "saf_result_code.h"
 #include "saf_permission_change.h"
 
 using namespace testing::ext;
@@ -92,15 +91,15 @@ HWTEST_F(SafAgentFenceStressTest, SafAgentFenceStressTest001, TestSize.Level0)
         std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
         int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-        EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+        EXPECT_EQ(genResult, SAF_SUCCESS);
         EXPECT_EQ(ticketInfos.size(), messages.size());
 
         std::vector<int32_t> verifyRes;
         int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
-        EXPECT_EQ(verifyResult, SEC_SAF_SUCCESS);
+        EXPECT_EQ(verifyResult, SAF_SUCCESS);
         EXPECT_EQ(verifyRes.size(), ticketInfos.size());
         for (size_t i = 0; i < verifyRes.size(); i++) {
-            EXPECT_EQ(verifyRes[i], SEC_SAF_SUCCESS);
+            EXPECT_EQ(verifyRes[i], SAF_SUCCESS);
         }
     }
 }
@@ -121,13 +120,13 @@ HWTEST_F(SafAgentFenceStressTest, SafAgentFenceStressTest002, TestSize.Level0)
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
 
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
-    EXPECT_EQ(genResult, SEC_SAF_SUCCESS);
+    EXPECT_EQ(genResult, SAF_SUCCESS);
 
     ticketInfos.push_back({"extra_message", "challenge", "ticket"});
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
-    EXPECT_NE(verifyResult, SEC_SAF_SUCCESS);
+    EXPECT_NE(verifyResult, SAF_SUCCESS);
 }
 
 }
