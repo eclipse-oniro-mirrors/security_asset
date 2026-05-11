@@ -101,7 +101,7 @@ fn is_only_change_local_labels(update: &AssetMap) -> bool {
 
 pub(crate) fn add_default_batch_update_attrs(db_data: &mut DbMap, time: Vec<u8>, update: &AssetMap) {
     db_data.entry(column::LOCAL_STATUS).or_insert(Value::Number(LocalStatus::Local as u32));
-    if is_only_change_local_labels(update) {
+    if !is_only_change_local_labels(update) {
         db_data.entry(column::SYNC_STATUS).or_insert(Value::Number(SyncStatus::SyncUpdate as u32));
         db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     }
