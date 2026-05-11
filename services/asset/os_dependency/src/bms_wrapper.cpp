@@ -178,6 +178,9 @@ int32_t GetNativeProcessInfo(uint32_t tokenId, uint64_t uid, ProcessInfo *proces
 
 void MarkGroupAsModified(const std::string &groupId, MutAssetBlobArray *groupIds)
 {
+    if (groupIds == nullptr || groupIds->blob == nullptr || groupIds->size == 0) {
+        return;
+    }
     for (uint32_t i = 0; i < groupIds->size; i++) {
         if (strcmp(groupId.c_str(), groupIds->blob[i].blob) == 0) {
             groupIds->blob[i].modify = true;
@@ -248,6 +251,9 @@ int32_t ProcessDeveloperId(AssetGroupInfo &assetGroupInfo, Asset_Blob *developer
 
 int32_t GetCallingProcessInfo(uint32_t userId, uint64_t uid, ProcessInfo *processInfo, bool preload)
 {
+    if (processInfo == nullptr) {
+        return ASSET_INVALID_ARGUMENT;
+    }
     processInfo->userId = userId;
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     ATokenTypeEnum tokenType = ATokenTypeEnum::TOKEN_HAP;
@@ -328,6 +334,9 @@ int32_t IsHapInAllowList(int32_t userId, const char *appName, bool *is_in_list)
 
 int32_t GetUninstallGroups(int32_t userId, ConstAssetBlob *developerId, MutAssetBlobArray *groupIds)
 {
+    if (developerId == nullptr || groupIds == nullptr) {
+        return ASSET_BMS_ERROR;
+    }
     auto bundleMgr = GetBundleMgr();
     if (bundleMgr == nullptr) {
         LOGE("[FATAL]bundleMgr is nullptr, please check.");

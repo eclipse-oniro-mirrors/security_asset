@@ -117,6 +117,9 @@ bool StoreKeyValue(int32_t userId, char const *inKey, int32_t inValue)
 
 int32_t QueryValue(int32_t userId, const char *inKey, int32_t *outValue)
 {
+    if (outValue == nullptr) {
+        return DATASHARE_FAIL;
+    }
     auto helper = CreateDataShareHelper(userId);
     if (helper == nullptr) {
         LOGE("helper is nullptr");
