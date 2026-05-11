@@ -71,6 +71,9 @@ OHOS::DataShare::DataSharePredicates getPredicates(std::string keyword)
 
 bool StoreKeyValue(int32_t userId, char const *inKey, int32_t inValue)
 {
+    if (inKey == nullptr) {
+        return DATASHARE_FAIL;
+    }
     auto helper = CreateDataShareHelper(userId);
     if (helper == nullptr) {
         LOGE("helper is nullptr");
@@ -117,6 +120,9 @@ bool StoreKeyValue(int32_t userId, char const *inKey, int32_t inValue)
 
 int32_t QueryValue(int32_t userId, const char *inKey, int32_t *outValue)
 {
+    if (outValue == nullptr || inKey == nullptr) {
+        return DATASHARE_FAIL;
+    }
     auto helper = CreateDataShareHelper(userId);
     if (helper == nullptr) {
         LOGE("helper is nullptr");

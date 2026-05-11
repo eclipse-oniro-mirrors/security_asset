@@ -37,6 +37,10 @@ void Sha256(const uint8_t *input, uint32_t intputLen, uint8_t *output)
 
 int32_t GenerateRandom(uint8_t *random, uint32_t randomLen)
 {
+    if (random == NULL) {
+        LOGE("invalid input for sha256");
+        return -1;
+    }
     if (RAND_priv_bytes(random, randomLen) < 0) {
         LOGE("Generate random failed!");
         return -1;

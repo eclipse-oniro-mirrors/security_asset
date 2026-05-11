@@ -55,8 +55,10 @@ namespace {
 napi_value CheckArraySize(const napi_env env, const AssetAttr &attr, uint32_t min, uint32_t max, uint32_t errorCode)
 {
     if (attr.value.blob.size > max || attr.value.blob.size <= min) {
+        auto tagIt = TAG_MAP.find(attr.tag);
+        const char* tagName = (tagIt != TAG_MAP.end()) ? tagIt->second : "INVALID_TAG";
         RETURN_JS_ERROR(env, errorCode, "Value byte length[%u] of tag[asset.Tag.%s] is out of range[%u, %u].",
-            attr.value.blob.size, TAG_MAP.at(attr.tag),  min + 1, max);
+            attr.value.blob.size, tagName,  min + 1, max);
     }
     return nullptr;
 }
@@ -66,8 +68,10 @@ napi_value CheckEnumVariant(const napi_env env, const AssetAttr &attr, const std
 {
     auto it = std::find(enumVec.begin(), enumVec.end(), attr.value.u32);
     if (it == enumVec.end()) {
+        auto tagIt = TAG_MAP.find(attr.tag);
+        const char* tagName = (tagIt != TAG_MAP.end()) ? tagIt->second : "INVALID_TAG";
         RETURN_JS_ERROR(env, errorCode, "Value[%u] of tag[asset.Tag.%s] is an illegal enumeration variant.",
-            attr.value.u32, TAG_MAP.at(attr.tag));
+            attr.value.u32, tagName);
     }
     return nullptr;
 }
@@ -75,8 +79,10 @@ napi_value CheckEnumVariant(const napi_env env, const AssetAttr &attr, const std
 napi_value CheckNumberRange(const napi_env env, const AssetAttr &attr, uint32_t min, uint32_t max, uint32_t errorCode)
 {
     if (attr.value.u32 > max || attr.value.u32 <= min) {
+        auto tagIt = TAG_MAP.find(attr.tag);
+        const char* tagName = (tagIt != TAG_MAP.end()) ? tagIt->second : "INVALID_TAG";
         RETURN_JS_ERROR(env, errorCode, "Value[%u] of tag[asset.Tag.%s] is out of range[%u, %u].",
-            attr.value.u32, TAG_MAP.at(attr.tag), min, max);
+            attr.value.u32, tagName, min, max);
     }
     return nullptr;
 }
@@ -85,8 +91,10 @@ napi_value CheckValidBits(const napi_env env, const AssetAttr &attr, uint32_t mi
     uint32_t errorCode)
 {
     if (attr.value.u32 >= pow(BINARY_BASE, maxBits) || attr.value.u32 < pow(BINARY_BASE, minBits) - 1) {
+        auto tagIt = TAG_MAP.find(attr.tag);
+        const char* tagName = (tagIt != TAG_MAP.end()) ? tagIt->second : "INVALID_TAG";
         RETURN_JS_ERROR(env, errorCode, "Value[%u] of tag[asset.Tag.%s] has bit count out of range[%u, %u].",
-            attr.value.u32, TAG_MAP.at(attr.tag), minBits + 1, maxBits);
+            attr.value.u32, tagName, minBits + 1, maxBits);
     }
     return nullptr;
 }
@@ -96,8 +104,10 @@ napi_value CheckTagRange(const napi_env env, const AssetAttr &attr, const std::v
 {
     auto it = std::find(tags.begin(), tags.end(), attr.value.u32);
     if (it == tags.end()) {
+        auto tagIt = TAG_MAP.find(attr.tag);
+        const char* tagName = (tagIt != TAG_MAP.end()) ? tagIt->second : "INVALID_TAG";
         RETURN_JS_ERROR(env, errorCode, "Value[0x%X] of tag[asset.Tag.(%s)] is not tags allowed for sorting, "
-            "which should start with \"DATA_LABEL\".", attr.value.u32, TAG_MAP.at(attr.tag));
+            "which should start with \"DATA_LABEL\".", attr.value.u32, tagName);
     }
     return nullptr;
 }
@@ -168,7 +178,9 @@ napi_value CheckAssetTagValidity(const napi_env env, const std::vector<AssetAttr
 {
     for (AssetAttr attr : attrs) {
         if (std::count(validTags.begin(), validTags.end(), attr.tag) == 0) {
-            RETURN_JS_ERROR(env, errorCode, "Unsupported tag[asset.Tag.%s] for the function.", TAG_MAP.at(attr.tag));
+            auto tagIt = TAG_MAP.find(attr.tag);
+            const char* tagName = (tagIt != TAG_MAP.end()) ? tagIt->second : "INVALID_TAG";
+            RETURN_JS_ERROR(env, errorCode, "Unsupported tag[asset.Tag.%s] for the function.", tagName);
         }
     }
     return nullptr;

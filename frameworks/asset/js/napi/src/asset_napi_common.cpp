@@ -56,6 +56,8 @@ if ((condition)) {                                                              
     return napi_invalid_arg;                                                            \
 }
 
+constexpr uint32_t MAX_ATTR_ARRAY_CAPACITY = 100;
+
 bool IsBlobValid(const AssetBlob &blob)
 {
     return blob.data != nullptr && blob.size != 0;
@@ -230,6 +232,7 @@ napi_status ParseJsMapArray(const napi_env env, napi_value arg, std::vector<std:
     // Get Array length.
     uint32_t arrLen = 0;
     NAPI_CALL_RETURN_ERR(env, napi_get_array_length(env, arg, &arrLen));
+    NAPI_THROW_RETURN_ERR(env, arrLen > MAX_ATTR_ARRAY_CAPACITY, SEC_ASSET_INVALID_ARGUMENT, "Array length exceeds.");
 
     // Parse array.
     for (uint32_t attrIdx = 0; attrIdx < arrLen; attrIdx++) {

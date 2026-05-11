@@ -751,7 +751,7 @@ impl Database {
                 }
             }
             db_data.extend(info.db_map.clone());
-            if is_merged {
+            if !is_merged {
                 self.encrypt_single_data(&mut db_data, info.secret_key, aliases)?;
             } else {
                 let secret_key = build_secret_key(info.calling_info, &db_data)?;
