@@ -63,5 +63,6 @@ group("asset_bin_test") {
     deps += [ "test/secure_access_fence/agent_fence:saf_agent_fence_test" ]
     deps += [ "test/secure_access_fence/agent_fence:saf_agent_fence_manual_test" ]
     deps += [ "test/secure_access_fence/agent_fence:saf_agent_fence_stress_test" ]
+    deps += [ "test/secure_access_fence/agent_fence:saf_agent_fence_no_permission_test" ]
   }
 }

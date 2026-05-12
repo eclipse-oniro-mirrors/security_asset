@@ -18,8 +18,7 @@
 #include <gtest/gtest.h>
 
 #include "saf_agent_fence.h"
-#include "saf_result_defs.h"
-#include "secure_access_fence_system_type.h"
+#include "saf_result_code.h"
 
 using namespace testing::ext;
 namespace UnitTest::SafAgentFenceBatchQueryCmdTest {
@@ -58,7 +57,7 @@ HWTEST_F(SafAgentFenceBatchQueryCmdTest, BatchQueryCommandPermissionTest001, Tes
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_NE(result, 0);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentFenceBatchQueryCmdTest, BatchQueryCommandPermissionTest002, TestSize.Level0)
@@ -73,7 +72,7 @@ HWTEST_F(SafAgentFenceBatchQueryCmdTest, BatchQueryCommandPermissionTest002, Tes
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_NE(result, 0);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentFenceBatchQueryCmdTest, BatchQueryCommandPermissionTest003, TestSize.Level0)
@@ -85,7 +84,7 @@ HWTEST_F(SafAgentFenceBatchQueryCmdTest, BatchQueryCommandPermissionTest003, Tes
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_NE(result, 0);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentFenceBatchQueryCmdTest, BatchQueryCommandPermissionTest004, TestSize.Level0)
@@ -98,7 +97,7 @@ HWTEST_F(SafAgentFenceBatchQueryCmdTest, BatchQueryCommandPermissionTest004, Tes
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_NE(result, SEC_SAF_SUCCESS);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 }

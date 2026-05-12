@@ -129,4 +129,25 @@ HWTEST_F(SafAgentFenceStressTest, SafAgentFenceStressTest002, TestSize.Level0)
     EXPECT_NE(verifyResult, SAF_SUCCESS);
 }
 
+/**
+ * @tc.name: SafAgentFenceStressTest.SafAgentFenceStressTest003
+ * @tc.desc: Batch query command permission with "ohos-cliTimer" and empty subcommand.
+ * @tc.type: FUNC
+ * @tc.result: 0
+ */
+HWTEST_F(SafAgentFenceStressTest, SafAgentFenceStressTest003, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    std::vector<OHOS::Security::SAF::CommandInfo> cmds;
+    cmds.push_back({"ohos-cliTimer", ""});
+
+    for (int loop = 0; loop < 100; loop++) {
+        std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
+
+        int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
+        EXPECT_EQ(result, SAF_SUCCESS);
+    }
+}
+
 }

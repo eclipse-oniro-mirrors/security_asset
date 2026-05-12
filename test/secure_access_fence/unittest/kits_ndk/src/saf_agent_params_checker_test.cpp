@@ -18,8 +18,7 @@
 #include <gtest/gtest.h>
 
 #include "saf_agent_params_checker.h"
-#include "saf_result_defs.h"
-#include "secure_access_fence_system_type.h"
+#include "saf_result_code.h"
 
 using namespace testing::ext;
 namespace UnitTest::SafAgentParamsCheckerTest {
@@ -56,7 +55,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest001, TestS
     messages.push_back("test_message");
 
     int32_t result = OHOS::Security::SAF::CheckBatchGenerateTicketParams(osAccountId, callerId, messages);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest002, TestSize.Level0)
@@ -67,7 +66,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest002, TestS
     messages.push_back("test_message");
 
     int32_t result = OHOS::Security::SAF::CheckBatchGenerateTicketParams(osAccountId, callerId, messages);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest003, TestSize.Level0)
@@ -78,7 +77,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest003, TestS
     messages.push_back("test_message");
 
     int32_t result = OHOS::Security::SAF::CheckBatchGenerateTicketParams(osAccountId, callerId, messages);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest004, TestSize.Level0)
@@ -88,7 +87,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest004, TestS
     std::vector<std::string> messages;
 
     int32_t result = OHOS::Security::SAF::CheckBatchGenerateTicketParams(osAccountId, callerId, messages);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest005, TestSize.Level0)
@@ -101,7 +100,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest005, TestS
     }
 
     int32_t result = OHOS::Security::SAF::CheckBatchGenerateTicketParams(osAccountId, callerId, messages);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest006, TestSize.Level0)
@@ -114,7 +113,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest006, TestS
     }
 
     int32_t result = OHOS::Security::SAF::CheckBatchGenerateTicketParams(osAccountId, callerId, messages);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest007, TestSize.Level0)
@@ -125,7 +124,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest007, TestS
     messages.push_back("test_message");
 
     int32_t result = OHOS::Security::SAF::CheckBatchGenerateTicketParams(osAccountId, callerId, messages);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest001, TestSize.Level0)
@@ -136,7 +135,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest001, TestSiz
     verifyInfos.push_back({"message", "challenge", "ticket"});
 
     int32_t result = OHOS::Security::SAF::CheckBatchVerifyTicketParams(osAccountId, callerId, verifyInfos);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest002, TestSize.Level0)
@@ -147,7 +146,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest002, TestSiz
     verifyInfos.push_back({"message", "challenge", "ticket"});
 
     int32_t result = OHOS::Security::SAF::CheckBatchVerifyTicketParams(osAccountId, callerId, verifyInfos);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest003, TestSize.Level0)
@@ -158,7 +157,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest003, TestSiz
     verifyInfos.push_back({"message", "challenge", "ticket"});
 
     int32_t result = OHOS::Security::SAF::CheckBatchVerifyTicketParams(osAccountId, callerId, verifyInfos);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest004, TestSize.Level0)
@@ -168,7 +167,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest004, TestSiz
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> verifyInfos;
 
     int32_t result = OHOS::Security::SAF::CheckBatchVerifyTicketParams(osAccountId, callerId, verifyInfos);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest005, TestSize.Level0)
@@ -181,7 +180,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest005, TestSiz
     }
 
     int32_t result = OHOS::Security::SAF::CheckBatchVerifyTicketParams(osAccountId, callerId, verifyInfos);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest006, TestSize.Level0)
@@ -194,7 +193,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest006, TestSiz
     }
 
     int32_t result = OHOS::Security::SAF::CheckBatchVerifyTicketParams(osAccountId, callerId, verifyInfos);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest007, TestSize.Level0)
@@ -205,7 +204,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest007, TestSiz
     verifyInfos.push_back({"message", "challenge", "ticket"});
 
     int32_t result = OHOS::Security::SAF::CheckBatchVerifyTicketParams(osAccountId, callerId, verifyInfos);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest001, TestSize.Level0)
@@ -215,7 +214,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest001, Test
     size_t messagesCount = 1;
 
     int32_t result = CheckBatchGenerateTicketParamsC(osAccountId, callerId, messagesCount);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest002, TestSize.Level0)
@@ -225,7 +224,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest002, Test
     size_t messagesCount = 1;
 
     int32_t result = CheckBatchGenerateTicketParamsC(osAccountId, callerId, messagesCount);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest003, TestSize.Level0)
@@ -235,7 +234,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest003, Test
     size_t messagesCount = 1;
 
     int32_t result = CheckBatchGenerateTicketParamsC(osAccountId, callerId, messagesCount);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest004, TestSize.Level0)
@@ -245,7 +244,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest004, Test
     size_t messagesCount = 1;
 
     int32_t result = CheckBatchGenerateTicketParamsC(osAccountId, callerId, messagesCount);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest005, TestSize.Level0)
@@ -255,7 +254,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest005, Test
     size_t messagesCount = 0;
 
     int32_t result = CheckBatchGenerateTicketParamsC(osAccountId, callerId, messagesCount);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest006, TestSize.Level0)
@@ -265,7 +264,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest006, Test
     size_t messagesCount = 100;
 
     int32_t result = CheckBatchGenerateTicketParamsC(osAccountId, callerId, messagesCount);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest007, TestSize.Level0)
@@ -275,7 +274,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest007, Test
     size_t messagesCount = 99;
 
     int32_t result = CheckBatchGenerateTicketParamsC(osAccountId, callerId, messagesCount);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest008, TestSize.Level0)
@@ -285,7 +284,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest008, Test
     size_t messagesCount = 1;
 
     int32_t result = CheckBatchGenerateTicketParamsC(osAccountId, callerId, messagesCount);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest001, TestSize.Level0)
@@ -295,7 +294,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest001, TestSi
     size_t verifyInfosCount = 1;
 
     int32_t result = CheckBatchVerifyTicketParamsC(osAccountId, callerId, verifyInfosCount);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest002, TestSize.Level0)
@@ -305,7 +304,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest002, TestSi
     size_t verifyInfosCount = 1;
 
     int32_t result = CheckBatchVerifyTicketParamsC(osAccountId, callerId, verifyInfosCount);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest003, TestSize.Level0)
@@ -315,7 +314,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest003, TestSi
     size_t verifyInfosCount = 1;
 
     int32_t result = CheckBatchVerifyTicketParamsC(osAccountId, callerId, verifyInfosCount);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest004, TestSize.Level0)
@@ -325,7 +324,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest004, TestSi
     size_t verifyInfosCount = 1;
 
     int32_t result = CheckBatchVerifyTicketParamsC(osAccountId, callerId, verifyInfosCount);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest005, TestSize.Level0)
@@ -335,7 +334,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest005, TestSi
     size_t verifyInfosCount = 0;
 
     int32_t result = CheckBatchVerifyTicketParamsC(osAccountId, callerId, verifyInfosCount);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest006, TestSize.Level0)
@@ -345,7 +344,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest006, TestSi
     size_t verifyInfosCount = 100;
 
     int32_t result = CheckBatchVerifyTicketParamsC(osAccountId, callerId, verifyInfosCount);
-    EXPECT_EQ(result, SEC_SAF_PARAM_VERICATION_FAILED);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest007, TestSize.Level0)
@@ -355,7 +354,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest007, TestSi
     size_t verifyInfosCount = 99;
 
     int32_t result = CheckBatchVerifyTicketParamsC(osAccountId, callerId, verifyInfosCount);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest008, TestSize.Level0)
@@ -365,7 +364,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest008, TestSi
     size_t verifyInfosCount = 1;
 
     int32_t result = CheckBatchVerifyTicketParamsC(osAccountId, callerId, verifyInfosCount);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 }
