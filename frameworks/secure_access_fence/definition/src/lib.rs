@@ -193,6 +193,13 @@ impl_enum_trait! {
         // ==================== TICKET_OPERATION (0x71000) ====================
         /// The error code indicates that ticket key manager not support.
         TicketKeyMgrNotSupport = 0x71001,
+
+        // ==================== ACCOUNT_BASED_DFK (0x19000) ====================
+        /// The error code indicates that network disconnected.
+        NetworkDisconnected = 0x19003,
+
+        /// The error code indicates that account not logged in.
+        NotLoggedIn = 0x19004,
     }
 }
 
