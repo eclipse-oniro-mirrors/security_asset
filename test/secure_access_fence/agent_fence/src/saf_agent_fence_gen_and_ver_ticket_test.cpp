@@ -424,6 +424,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest013, 
     EXPECT_EQ(genResult, SAF_SUCCESS);
 
     ticketInfos[2].message = "tampered_message";
+    ticketInfos[3].message = "";
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
@@ -432,7 +433,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest013, 
     EXPECT_EQ(verifyRes[0], SAF_SUCCESS);
     EXPECT_EQ(verifyRes[1], SAF_SUCCESS);
     EXPECT_NE(verifyRes[2], SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[3], SAF_SUCCESS);
+    EXPECT_NE(verifyRes[3], SAF_SUCCESS);
     EXPECT_EQ(verifyRes[4], SAF_SUCCESS);
 }
 
@@ -490,6 +491,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest015, 
     } else {
         ticketInfos[2].challenge = "";
     }
+    ticketInfos[3].challenge = "";
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
@@ -498,7 +500,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest015, 
     EXPECT_EQ(verifyRes[0], SAF_SUCCESS);
     EXPECT_EQ(verifyRes[1], SAF_SUCCESS);
     EXPECT_NE(verifyRes[2], SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[3], SAF_SUCCESS);
+    EXPECT_NE(verifyRes[3], SAF_SUCCESS);
     EXPECT_EQ(verifyRes[4], SAF_SUCCESS);
 }
 
@@ -556,6 +558,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest017, 
     } else {
         ticketInfos[2].ticket = "";
     }
+    ticketInfos[3].ticket = "";
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
@@ -564,7 +567,7 @@ HWTEST_F(SafAgentFenceGenAndVerTicketTest, SafAgentFenceGenAndVerTicketTest017, 
     EXPECT_EQ(verifyRes[0], SAF_SUCCESS);
     EXPECT_EQ(verifyRes[1], SAF_SUCCESS);
     EXPECT_NE(verifyRes[2], SAF_SUCCESS);
-    EXPECT_EQ(verifyRes[3], SAF_SUCCESS);
+    EXPECT_NE(verifyRes[3], SAF_SUCCESS);
     EXPECT_EQ(verifyRes[4], SAF_SUCCESS);
 }
 

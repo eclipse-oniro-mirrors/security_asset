@@ -81,7 +81,7 @@ ohos_unittest("saf_agent_fence_no_permission_test") {
   ]
 
   sources = [
-    "src/saf_agent_fence_query_cmd_no_permission_test.cpp",
+    "src/saf_agent_fence_no_permission_test.cpp",
   ]
 
   deps = [

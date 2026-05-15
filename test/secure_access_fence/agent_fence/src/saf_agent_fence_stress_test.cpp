@@ -122,7 +122,7 @@ HWTEST_F(SafAgentFenceStressTest, SafAgentFenceStressTest002, TestSize.Level0)
     int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
     EXPECT_EQ(genResult, SAF_SUCCESS);
 
-    ticketInfos.push_back({"extra_message", "challenge", "ticket"});
+    ticketInfos.push_back({ticketInfos[0].message, ticketInfos[0].challenge, ticketInfos[0].ticket});
 
     std::vector<int32_t> verifyRes;
     int32_t verifyResult = agentFence.BatchVerifyTicket(osAccountId, callerId, ticketInfos, verifyRes);
