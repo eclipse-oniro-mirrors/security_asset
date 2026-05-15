@@ -31,6 +31,16 @@ int SafAgentFenceQueryPermissionTest011(void);
 int SafAgentFenceQueryPermissionTest012(void);
 int SafAgentFenceQueryPermissionTest013(void);
 int SafAgentFenceQueryPermissionTest014(void);
+int SafAgentFenceQueryPermissionTest015(void);
+int SafAgentFenceQueryPermissionTest016(void);
+int SafAgentFenceQueryPermissionTest017(void);
+int SafAgentFenceQueryPermissionTest018(void);
+int SafAgentFenceQueryPermissionTest019(void);
+int SafAgentFenceQueryPermissionTest020(void);
+int SafAgentFenceQueryPermissionTest021(void);
+int SafAgentFenceQueryPermissionTest022(void);
+int SafAgentFenceQueryPermissionTest023(void);
+int SafAgentFenceQueryPermissionTest024(void);
 
 int SafAgentFenceGenAndVerTicketTest001(void);
 int SafAgentFenceGenAndVerTicketTest002(void);

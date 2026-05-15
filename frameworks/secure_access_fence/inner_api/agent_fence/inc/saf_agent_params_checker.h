@@ -23,7 +23,7 @@
 
 namespace OHOS::Security::SAF {
 
-constexpr uint32_t MIN_OS_ACCOUNT_ID = 100;
+constexpr int32_t MIN_OS_ACCOUNT_ID = 100;
 constexpr size_t MAX_VECTOR_SIZE = 99;
 
 int32_t CheckBatchGenerateTicketParams(
