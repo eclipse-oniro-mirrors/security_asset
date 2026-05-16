@@ -252,7 +252,7 @@ pub fn batch_verify_ticket(
         if combined_challenge.len() < CHALLENGE_SIZE * 2 {
             macros_lib::loge!("VerifyTicket idx[{}]: combined_challenge len invalid, len={}",
                 index, combined_challenge.len());
-            results.push(ErrCode::InvalidArrayLen as i32);
+            results.push(ErrCode::InvalidChallengeSize as i32);
             continue;
         }
 
@@ -279,6 +279,7 @@ pub fn batch_verify_ticket(
                 continue;
             }
         };
+
         match verify_hmac_sha256(&session_key, &data, &expected_hmac) {
             Ok(_) => results.push(ErrCode::Success as i32),
             Err(e) => {

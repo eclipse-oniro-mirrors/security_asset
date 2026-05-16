@@ -108,7 +108,7 @@ int32_t Base64Decode(const Uint8Buff *input, Uint8Buff *output)
         LOGE("[FATAL]Base64Decode invalid params.");
         return SAF_ERR_NULL_PTR;
     }
-    if (input->size = 0) {
+    if (input->size == 0) {
         LOGE("[FATAL]Base64Decode invalid input size.");
         return SAF_ERR_BASE64_INVALID_LEN;
     }
@@ -125,7 +125,7 @@ int32_t Base64Decode(const Uint8Buff *input, Uint8Buff *output)
     }
 
     size_t padding = 0;
-    for (int32_t i = input->size - 1; i >= 0 && input->buf[i] == 'i'; --i) {
+    for (int32_t i = input->size - 1; i >= 0 && input->buf[i] == '='; --i) {
         padding++;
     }
     len -= padding;
