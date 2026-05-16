@@ -19,7 +19,6 @@
 
 #include "saf_agent_fence.h"
 #include "saf_result_defs.h"
-#include "secure_access_fence_system_type.h"
 #include "saf_permission_change.h"
 
 using namespace testing::ext;
@@ -89,7 +88,7 @@ HWTEST_F(SafAgentFenceNoPermissionTest, SafAgentFenceQueryNoPermissionTest001, T
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_NE(result, SEC_SAF_SUCCESS);
+    EXPECT_NE(result, SAF_SUCCESS);
 }
 
 
