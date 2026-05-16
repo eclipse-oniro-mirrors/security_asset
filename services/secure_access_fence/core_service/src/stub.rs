@@ -131,7 +131,7 @@ fn handle_batch_generate_ticket(stub: &SAFService, data: &mut MsgParcel, reply: 
             logi!("[INFO]BatchGenerateTicket success, ticketCount: {}", ticket_infos.len());
         },
         Err(e) => {
-            loge!("[FATAL]Batch generate ticket failed: {}", e.msg);
+            loge!("[FATAL]BatchGenerateTicket failed: {}", e.msg);
             reply.write::<i32>(&(IPC_SUCCESS as i32))?;
             let empty_infos: Vec<saf_ipc::VerifyTicketInfo> = vec![];
             serialize_verify_ticket_infos(&empty_infos, reply).map_err(|e| {
@@ -169,7 +169,7 @@ fn handle_batch_verify_ticket(stub: &SAFService, data: &mut MsgParcel, reply: &m
             logi!("[INFO]BatchVerifyTicket success, resultCount: {}", verify_res.len());
         },
         Err(e) => {
-            loge!("[FATAL]Batch verify ticket failed: {}", e.msg);
+            loge!("[FATAL]BatchVerifyTicket failed: {}", e.msg);
             reply.write::<i32>(&(IPC_SUCCESS as i32))?;
             let empty_res: Vec<i32> = vec![];
             serialize_i32_vec(&empty_res, reply).map_err(|e| {

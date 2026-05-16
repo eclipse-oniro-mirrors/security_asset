@@ -91,7 +91,7 @@ int32_t SafAgentFence::BatchQueryCommandPermission(
         return errResult;
     }
 
-    LOGI("SafAgentFence::BatchQueryCommandPermission finished");
+    LOGI("SafAgentFence::BatchQueryCommandPermission finished, ret = 0x%{public}x", resultCode);
     IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
     return resultCode;
 }
@@ -123,7 +123,7 @@ int32_t SafAgentFence::BatchGenerateTicket(
         return errResult;
     }
 
-    LOGI("SafAgentFence::BatchGenerateTicket finished");
+    LOGI("SafAgentFence::BatchGenerateTicket finished, ret = 0x%{public}x", resultCode);
     IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
     return resultCode;
 }
@@ -155,7 +155,7 @@ int32_t SafAgentFence::BatchVerifyTicket(
         return errResult;
     }
 
-    LOGI("SafAgentFence::BatchVerifyTicket finished");
+    LOGI("SafAgentFence::BatchVerifyTicket finished, ret = 0x%{public}x", resultCode);
     IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
     return resultCode;
 }
