@@ -17,8 +17,11 @@
 
 #include <gtest/gtest.h>
 
+#include <random>
+#include <ctime>
+
 #include "saf_agent_fence.h"
-#include "saf_result_defs.h"
+#include "saf_result_code.h"
 #include "saf_permission_change.h"
 
 using namespace testing::ext;
