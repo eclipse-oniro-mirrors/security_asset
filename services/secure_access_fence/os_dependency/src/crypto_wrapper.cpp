@@ -120,13 +120,17 @@ int32_t Base64Decode(const Uint8Buff *input, Uint8Buff *output)
 
     int len = EVP_DecodeBlock(output->buf, input->buf, input->size);
     if (len < 0) {
-        LOGE("[FATAL]EVP_DecodeBlock failed.");
+        LOGE("[FATAL]EVP_DecodeBlock failed, len = %{public}d.", len);
         return SAF_ERR_CRYPTO_OPERATION;
     }
 
     size_t padding = 0;
     for (int32_t i = input->size - 1; i >= 0 && input->buf[i] == '='; --i) {
         padding++;
+    }
+    if (padding > len) {
+        LOGE("[FATAL]padding is greater than len, len = %{public}d.", len);
+        return SAF_ERR_CRYPTO_OPERATION;
     }
     len -= padding;
 
