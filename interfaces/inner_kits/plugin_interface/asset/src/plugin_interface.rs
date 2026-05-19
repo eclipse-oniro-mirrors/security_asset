@@ -22,7 +22,7 @@ use ylong_runtime::task::JoinHandle;
 
 use std::sync::{Arc, Mutex};
 
-use asset_sdk::{AssetError, Value, AssetMap};
+use asset_sdk::{AssetError, Value};
 
 /// Defines a type alias `ExtDbMap` as a `HashMap` with keys of type `&'static str` and values of type `Value`.
 pub type ExtDbMap = HashMap<&'static str, Value>;
@@ -216,31 +216,6 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
 
     /// Removes assets from ce db with specific condition.
     fn ce_remove_with_specific_cond(&self, specific_cond: &str, condition_value: &[Value]) -> Result<i32, u32>;
-
-    /// Removes assets from db with aliases.
-    fn batch_remove(
-        &self,
-        attributes: &ExtDbMap,
-        aliases: &[Vec<u8>],
-        require_attr_encrypted: bool,
-    ) -> Result<i32, AssetError>;
-
-    /// Add assets into db with attributes array.
-    fn batch_add(
-        &self,
-        attributes: &mut AssetMap,
-        db_map: &mut ExtDbMap,
-        attributes_array: &[AssetMap]
-    ) -> Result<Vec<(u32, u32)>, AssetError>;
-
-    /// Update assets into db with attributes array.
-    fn batch_update(
-        &self,
-        attributes: &mut AssetMap,
-        db_map: &mut ExtDbMap,
-        attributes_array: &[AssetMap],
-        attributes_to_update_array: &[AssetMap]
-    ) -> Result<Vec<(u32, u32)>, AssetError>;
 
     /// Remove an asset to db in asset and adapt table.
     fn remove_cloud_adapt_data(

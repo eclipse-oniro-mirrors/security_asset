@@ -46,7 +46,7 @@ use crate::{
         UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2, UPGRADE_COLUMN_INFO_V3, UPGRADE_COLUMN_INFO_V4
     },
     process_batch_data::{parse_attr_in_array, add_not_null_column, into_db_map_with_column_names, 
-        add_default_batch_update_attrs
+        add_default_batch_update_attrs, check_invalid_tags
     }
 };
 
@@ -69,7 +69,6 @@ struct AdditionalInfo<'a> {
     attributes_array: &'a [AssetMap],
     db_map: &'a DbMap,
     calling_info: &'a CallingInfo,
-    secret_key: &'a SecretKey,
 }
 
 pub(crate) static OLD_DB_NAME: &str = "asset";
@@ -630,11 +629,7 @@ impl Database {
         db_map: &DbMap,
         attributes_array: &[AssetMap],
         calling_info: &CallingInfo,
-        is_merged: bool
     ) -> Result<Vec<(u32, u32)>> {
-        let secret_key = build_secret_key(calling_info, db_map)?;
-        generate_secret_key_if_needed(&secret_key)?;
-
         let mut db_datas = Vec::new();
         let mut err_info = Vec::new();
         let mut aliases = Vec::new();
@@ -642,10 +637,9 @@ impl Database {
             attributes_array,
             db_map,
             calling_info,
-            secret_key: &secret_key
         };
 	    let _lock = self.db_lock.mtx.lock().unwrap();
-        let column_names = self.parse_attr_array(&mut db_datas, &mut err_info, &mut aliases, &info, is_merged)?;
+        let column_names = self.parse_attr_array(&mut db_datas, &mut err_info, &mut aliases, &info)?;
         if db_datas.is_empty() {
             return Ok(err_info);
         }
@@ -679,6 +673,7 @@ impl Database {
             .zip(attributes_to_update_array.iter())
             .enumerate() 
         {
+            check_invalid_tags(attr)?;
             let query = get_query_condition(attr, calling_info)?;
             let mut results = self.query_datas(&vec![], &query, None, true)?;
             if results.len() != 1 {
@@ -720,12 +715,11 @@ impl Database {
         err_info: &mut Vec<(u32, u32)>,
         aliases: &mut Vec<Vec<u8>>,
         info: &AdditionalInfo,
-        is_merged: bool
     ) -> Result<HashSet<String>> {
         let mut column_names = HashSet::new();
         add_not_null_column(&mut column_names);
         for (index, attr) in info.attributes_array.iter().enumerate() {
-            let mut db_data = parse_attr_in_array(attr, info.calling_info, &mut column_names, is_merged)?;
+            let mut db_data = parse_attr_in_array(attr, info.calling_info, &mut column_names)?;
             if aliases.contains(&db_data.get_bytes_attr(&column::ALIAS)?.to_vec()) {
                 return macros_lib::log_throw_error!(
                     ErrCode::InvalidArgument,
@@ -751,13 +745,9 @@ impl Database {
                 }
             }
             db_data.extend(info.db_map.clone());
-            if !is_merged {
-                self.encrypt_single_data(&mut db_data, info.secret_key, aliases)?;
-            } else {
-                let secret_key = build_secret_key(info.calling_info, &db_data)?;
-                generate_secret_key_if_needed(&secret_key)?;
-                self.encrypt_single_data(&mut db_data, &secret_key, aliases)?;
-            }
+            let secret_key = build_secret_key(info.calling_info, &db_data)?;
+            generate_secret_key_if_needed(&secret_key)?;
+            self.encrypt_single_data(&mut db_data, &secret_key, aliases)?;
             db_datas.push(db_data);
         }
         Ok(column_names)

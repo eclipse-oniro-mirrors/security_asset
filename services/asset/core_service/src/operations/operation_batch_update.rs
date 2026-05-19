@@ -20,7 +20,7 @@ use asset_crypto_manager::db_key_operator::get_db_key_by_asset_map;
 use asset_db_operator::{
     common::{
         ACCESS_CONTROL_ATTRS, ASSET_SYNC_ATTRS, CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS, NORMAL_LOCAL_LABEL_ATTRS,
-        check_required_tags, check_tag_validity, check_value_validity, into_db_map
+        check_required_tags, check_tag_validity, check_value_validity, into_db_map, check_system_permission
     },
     database::Database, types::{DB_DATA_VERSION, DbMap, column},
 };
@@ -44,6 +44,7 @@ fn check_attrs_array(attributes_array: &[AssetMap]) -> Result<()> {
         valid_tags.extend_from_slice(&ACCESS_CONTROL_ATTRS);
         check_tag_validity(attrs, &valid_tags)?;
         check_value_validity(attrs)?;
+        check_system_permission(attrs)?;
     }
     Ok(())
 }

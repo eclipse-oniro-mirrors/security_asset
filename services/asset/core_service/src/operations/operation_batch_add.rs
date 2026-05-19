@@ -70,7 +70,7 @@ fn local_batch_add(
     common::check_system_permission(attributes)?;
     let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes)?;
     let mut db = Database::build(calling_info, db_key)?;
-    db.insert_batch_datas(&db_map, attributes_array, calling_info, true)
+    db.insert_batch_datas(&db_map, attributes_array, calling_info)
 }
 
 pub(crate) fn batch_add(calling_info: &CallingInfo, attributes_array: &[AssetMap]) -> Result<Vec<(u32, u32)>> {
