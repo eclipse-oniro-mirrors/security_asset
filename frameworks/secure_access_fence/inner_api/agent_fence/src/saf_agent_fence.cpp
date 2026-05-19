@@ -56,8 +56,12 @@ sptr<ISecureAccessFence> GetProxy(std::recursive_mutex &mutex, bool needCheck = 
     return iface_cast<ISecureAccessFence>(service);
 }
 
-int32_t HandleIpcError(int32_t &ret, sptr<ISecureAccessFence> &proxy, std::function<int32_t()> retryCall)
+int32_t HandleIpcError(sptr<ISecureAccessFence> &proxy, std::function<int32_t()> call)
 {
+    if (call == nullptr) {
+        return SAF_ERR_SERVICE_UNAVAILABLE;
+    }
+    int32_t ret = call();
     if (ret == ERR_DEAD_OBJECT || ret == EERR_REMOTE_DEAD) {
         LOGW("service unavailable and not retry.");
         return SAF_ERR_SERVICE_UNAVAILABLE;
@@ -66,9 +70,9 @@ int32_t HandleIpcError(int32_t &ret, sptr<ISecureAccessFence> &proxy, std::funct
         LOGW("service is stopping, try to load sa");
         proxy = GetProxy(g_mutex, false);
         IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "try load sa fail.");
-        ret = retryCall();
+        ret = call();
     }
-    return SAF_SUCCESS;
+    return ret;
 }
 
 } // namespace
@@ -84,8 +88,7 @@ int32_t SafAgentFence::BatchQueryCommandPermission(
     auto proxy = GetProxy(g_mutex);
     IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
 
-    ret = proxy->BatchQueryCommandPermission(cmds, cmdPermissions, resultCode);
-    int32_t errResult = HandleIpcError(ret, proxy,
+    int32_t errResult = HandleIpcError(proxy,
         [&]() { return proxy->BatchQueryCommandPermission(cmds, cmdPermissions, resultCode); });
     if (errResult != SAF_SUCCESS) {
         return errResult;
@@ -116,8 +119,7 @@ int32_t SafAgentFence::BatchGenerateTicket(
     auto proxy = GetProxy(g_mutex);
     IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
 
-    ret = proxy->BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos, resultCode);
-    int32_t errResult = HandleIpcError(ret, proxy,
+    int32_t errResult = HandleIpcError(proxy,
         [&]() { return proxy->BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos, resultCode); });
     if (errResult != SAF_SUCCESS) {
         return errResult;
@@ -148,8 +150,7 @@ int32_t SafAgentFence::BatchVerifyTicket(
     auto proxy = GetProxy(g_mutex);
     IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
 
-    ret = proxy->BatchVerifyTicket(osAccountId, callerId, verifyInfos, verifyRes, resultCode);
-    int32_t errResult = HandleIpcError(ret, proxy,
+    int32_t errResult = HandleIpcError(proxy,
         [&]() { return proxy->BatchVerifyTicket(osAccountId, callerId, verifyInfos, verifyRes, resultCode); });
     if (errResult != SAF_SUCCESS) {
         return errResult;
