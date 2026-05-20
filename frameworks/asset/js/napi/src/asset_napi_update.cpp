@@ -87,7 +87,8 @@ napi_status CheckBatchUpdateArgs(const napi_env env, const std::vector<AssetAttr
     queryValidTags.insert(queryValidTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
-    queryValidTags.insert(queryValidTags.end(), ACCESS_CONTROL_TAGS_FOR_BATCH.begin(), ACCESS_CONTROL_TAGS_FOR_BATCH.end());
+    queryValidTags.insert(queryValidTags.end(),
+        ACCESS_CONTROL_TAGS_FOR_BATCH.begin(), ACCESS_CONTROL_TAGS_FOR_BATCH.end());
 
     std::vector<uint32_t> updateValidTags;
     updateValidTags.insert(updateValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());

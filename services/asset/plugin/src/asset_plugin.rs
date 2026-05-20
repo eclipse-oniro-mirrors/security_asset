@@ -25,14 +25,11 @@ use asset_crypto_manager::db_key_operator::get_db_key;
 use asset_db_operator::{
     database::{Database, get_path},
     database_file_upgrade::{construct_splited_db_name, get_file_content},
-    types::{column, DbMap, QueryOptions},
+    types::{column, QueryOptions},
 };
 use asset_file_operator::de_operator::create_user_de_dir;
 use asset_log::{loge, logi, logw};
-use asset_sdk::{
-    macros_lib,
-    AssetError, ErrCode, Extension, Result, Value, AssetMap,
-};
+use asset_sdk::{macros_lib, AssetError, ErrCode, Extension, Result, Value,};
 use asset_plugin_interface::plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, RETURN_LIMIT, RETURN_OFFSET};
 
 extern "C" {
