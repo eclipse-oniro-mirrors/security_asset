@@ -20,22 +20,20 @@ use std::{
 };
 use ylong_runtime::task::JoinHandle;
 
-use asset_common::{CallingInfo, Counter, Group, OwnerType, TaskManager, GROUP_SEPARATOR, ProcessInfo};
+use asset_common::{CallingInfo, Counter, Group, OwnerType, TaskManager, GROUP_SEPARATOR};
 use asset_crypto_manager::db_key_operator::get_db_key;
 use asset_db_operator::{
-    common, database::{Database, get_path},
+    database::{Database, get_path},
     database_file_upgrade::{construct_splited_db_name, get_file_content},
     types::{column, DbMap, QueryOptions},
 };
-use asset_definition::Tag;
 use asset_file_operator::de_operator::create_user_de_dir;
 use asset_log::{loge, logi, logw};
 use asset_sdk::{
     macros_lib,
-    AssetError, ErrCode, Extension, Result, SyncStatus, Value, AssetMap,
+    AssetError, ErrCode, Extension, Result, Value, AssetMap,
 };
 use asset_plugin_interface::plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, RETURN_LIMIT, RETURN_OFFSET};
-use asset_utils::time;
 
 extern "C" {
     fn StoreKeyValue(user_id: i32, in_key: *const c_char, in_value: i32) -> bool;
@@ -122,15 +120,6 @@ impl AssetPlugin {
 pub struct AssetContext {
     /// The asset database's user id.
     pub user_id: i32,
-}
-
-fn convert_db_map(attributes: &ExtDbMap) -> Result<DbMap> {
-    let owner_info = attributes.get_bytes_attr(&column::OWNER)?;
-    let owner_type = attributes.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?;
-    let mut db_map = DbMap::new();
-    db_map.insert_attr(column::OWNER, owner_info.clone());
-    db_map.insert_attr(column::OWNER_TYPE, owner_type);
-    Ok(db_map)
 }
 
 fn get_db_name(user_id: i32, attributes: &ExtDbMap, is_ce: bool) -> std::result::Result<String, AssetError> {
