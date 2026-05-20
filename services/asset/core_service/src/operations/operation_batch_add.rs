@@ -18,7 +18,7 @@
 use asset_common::CallingInfo;
 use asset_crypto_manager::db_key_operator::get_db_key_by_asset_map;
 use asset_db_operator::{
-    common::{self, into_db_map},
+    common::{self},
     database::Database,
     types::{DB_DATA_VERSION, DbMap, column},
 };
@@ -42,17 +42,6 @@ fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     Ok(())
 }
 
-fn add_default_attrs(db_data: &mut DbMap) {
-    db_data.entry(column::ACCESSIBILITY).or_insert(Value::Number(Accessibility::default() as u32));
-    db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::default() as u32));
-    db_data.entry(column::REQUIRE_PASSWORD_SET).or_insert(Value::Bool(bool::default()));
-    db_data.retain(|key, _| {
-        key == &column::ACCESSIBILITY ||
-        key == &column::AUTH_TYPE ||
-        key == &column::REQUIRE_PASSWORD_SET
-    });
-}
-
 fn local_batch_add(
     calling_info: &CallingInfo,
     attributes_array: &[AssetMap]
@@ -62,9 +51,8 @@ fn local_batch_add(
         None => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Batch Add argument empty."),
     };
     common::check_value_validity(attributes)?;
-    let mut db_map = into_db_map(attributes);
+    let mut db_map = DbMap::new();
     check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array)?;
-    add_default_attrs(&mut db_map);
     add_system_attrs(&mut db_map)?;
     common::add_calling_info(calling_info, &mut db_map);
     common::check_system_permission(attributes)?;

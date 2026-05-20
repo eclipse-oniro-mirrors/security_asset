@@ -21,6 +21,7 @@ use asset_definition::{
     AssetMap, Tag, Value, Result, macros_lib, ErrCode, WrapType, LocalStatus,
     SyncType, SyncStatus,
 };
+use asset_sdk::{Accessibility, AuthType};
 
 use crate::{
     types::{DbMap, column},
@@ -74,6 +75,8 @@ pub(crate) fn into_db_map_with_column_names(attrs: &AssetMap, column_names: &mut
 }
 
 fn add_default_batch_attrs(db_data: &mut DbMap) {
+    db_data.entry(column::ACCESSIBILITY).or_insert(Value::Number(Accessibility::default() as u32));
+    db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::default() as u32));
     db_data.entry(column::SYNC_TYPE).or_insert(Value::Number(SyncType::default() as u32));
     db_data.entry(column::REQUIRE_PASSWORD_SET).or_insert(Value::Bool(bool::default()));
     db_data.entry(column::IS_PERSISTENT).or_insert(Value::Bool(bool::default()));

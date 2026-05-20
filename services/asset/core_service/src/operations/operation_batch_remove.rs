@@ -48,7 +48,7 @@ fn check_and_get_aliases(attributes_array: &[AssetMap]) -> Result<Vec<Vec<u8>>> 
     Ok(aliases)
 }
 
-fn loacl_batch_remove(attributes_array: &[AssetMap], calling_info: &CallingInfo) -> Result<()> {
+fn local_batch_remove(attributes_array: &[AssetMap], calling_info: &CallingInfo) -> Result<()> {
     let attributes = match attributes_array.first() {
         Some(attr) => attr,
         None => return Ok(()),
@@ -71,5 +71,5 @@ fn loacl_batch_remove(attributes_array: &[AssetMap], calling_info: &CallingInfo)
 }
 
 pub(crate) fn batch_remove(calling_info: &CallingInfo, attributes_array: &[AssetMap]) -> Result<()> {
-    loacl_batch_remove(attributes_array, calling_info)
+    local_batch_remove(attributes_array, calling_info)
 }

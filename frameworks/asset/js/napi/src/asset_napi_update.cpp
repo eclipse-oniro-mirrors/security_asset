@@ -47,28 +47,55 @@ napi_value CheckAssetPresence(const napi_env env, const std::vector<AssetAttr> &
     return nullptr;
 }
 
+napi_status CheckUpdateArgsCommon(const napi_env env, const std::vector<AssetAttr> &attrs,
+    const std::vector<uint32_t> &queryValidTags, const std::vector<AssetAttr> &updateAttrs,
+    const std::vector<uint32_t> &updateValidTags)
+{
+    IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, QUERY_REQUIRED_TAGS, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, queryValidTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
+
+    IF_ERROR_THROW_RETURN(env, CheckAssetPresence(env, updateAttrs));
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, updateAttrs, updateValidTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, updateAttrs, SEC_ASSET_INVALID_ARGUMENT));
+
+    return napi_ok;
+}
+
 napi_status CheckUpdateArgs(const napi_env env, const std::vector<AssetAttr> &attrs,
     const std::vector<AssetAttr> &updateAttrs)
 {
-    IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, QUERY_REQUIRED_TAGS, SEC_ASSET_INVALID_ARGUMENT));
     std::vector<uint32_t> queryValidTags;
     queryValidTags.insert(queryValidTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     queryValidTags.insert(queryValidTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
-    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, queryValidTags, SEC_ASSET_INVALID_ARGUMENT));
-    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
 
-    IF_ERROR_THROW_RETURN(env, CheckAssetPresence(env, updateAttrs));
     std::vector<uint32_t> updateValidTags;
     updateValidTags.insert(updateValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
     updateValidTags.insert(updateValidTags.end(), UPDATE_OPTIONAL_TAGS.begin(), UPDATE_OPTIONAL_TAGS.end());
-    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, updateAttrs, updateValidTags, SEC_ASSET_INVALID_ARGUMENT));
-    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, updateAttrs, SEC_ASSET_INVALID_ARGUMENT));
 
-    return napi_ok;
+    return CheckUpdateArgsCommon(env, attrs, queryValidTags, updateAttrs, updateValidTags);
+}
+
+napi_status CheckBatchUpdateArgs(const napi_env env, const std::vector<AssetAttr> &attrs,
+    const std::vector<AssetAttr> &updateAttrs)
+{
+    std::vector<uint32_t> queryValidTags;
+    queryValidTags.insert(queryValidTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
+    queryValidTags.insert(queryValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
+    queryValidTags.insert(queryValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
+    queryValidTags.insert(queryValidTags.end(), ACCESS_CONTROL_TAGS_FOR_BATCH.begin(), ACCESS_CONTROL_TAGS_FOR_BATCH.end());
+
+    std::vector<uint32_t> updateValidTags;
+    updateValidTags.insert(updateValidTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
+    updateValidTags.insert(updateValidTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
+    updateValidTags.insert(updateValidTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
+    updateValidTags.insert(updateValidTags.end(), UPDATE_OPTIONAL_TAGS.begin(), UPDATE_OPTIONAL_TAGS.end());
+
+    return CheckUpdateArgsCommon(env, attrs, queryValidTags, updateAttrs, updateValidTags);
 }
 
 napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *baseContext)
@@ -104,6 +131,17 @@ napi_status ParseAttrMapArray(napi_env env, napi_callback_info info, BaseContext
     size_t index = 0;
     IF_ERR_RETURN(ParseJsMapArray(env, argv[index++], context->attrsArray));
     IF_ERR_RETURN(ParseJsMapArray(env, argv[index], context->attrToUpdateArray));
+    if (context->attrsArray.empty() || context->attrToUpdateArray.empty()) {
+        LOGE("[FATAL]Batch Update argument empty.");
+        return napi_invalid_arg;
+    }
+    if (context->attrsArray.size() != context->attrToUpdateArray.size()) {
+        LOGE("[FATAL]Batch Update array size mismatch.");
+        return napi_invalid_arg;
+    }
+    for (size_t i = 0; i < context->attrsArray.size(); i++) {
+        IF_ERR_RETURN(CheckBatchUpdateArgs(env, context->attrsArray[i], context->attrToUpdateArray[i]));
+    }
     return napi_ok;
 }
 } // anonymous namespace

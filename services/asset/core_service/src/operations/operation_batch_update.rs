@@ -80,7 +80,7 @@ fn local_batch_update(
 ) -> Result<Vec<(u32, u32)>> {
     let attributes = match attributes_array.first() {
         Some(attr) => attr,
-        None => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Batch Add argument empty."),
+        None => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Batch Update argument empty."),
     };
     let mut db_map = into_db_map(attributes);
     check_attrs_array(attributes_array)?;
