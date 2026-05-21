@@ -364,12 +364,18 @@ napi_status NapiSetProperty(const napi_env env, napi_value object, const char *p
 napi_value CreateAsyncWork(const napi_env env, napi_callback_info info, std::unique_ptr<BaseContext> context,
     const char *resourceName)
 {
-    if (context->parse != nullptr) {
-        NAPI_CALL(env, context->parse(env, info, context.get()));
-    }
-
     napi_value promise;
     NAPI_CALL(env, napi_create_promise(env, &context->deferred, &promise));
+
+    if (context->parse != nullptr) {
+        napi_status status = context->parse(env, info, context.get());
+        if (status != napi_ok) {
+            napi_value error = CreateJsError(env, context->result);
+            NAPI_CALL(env, napi_reject_deferred(env, context->deferred, error));
+            return promise;
+        }
+    }
+
     if (context->check != nullptr) {
         napi_value error = context->check(env, context.get());
         if (error != nullptr) {
