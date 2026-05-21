@@ -23,7 +23,7 @@ use asset_db_operator::{
     types::{DB_DATA_VERSION, DbMap, column},
 };
 use asset_definition::{
-    Accessibility, AssetMap, AuthType, ErrCode, Result, Tag, Value, macros_lib
+    AssetMap, ErrCode, Result, Tag, Value, macros_lib
 };
 use asset_utils::time;
 
