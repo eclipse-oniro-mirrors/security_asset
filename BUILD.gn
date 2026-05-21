@@ -53,6 +53,7 @@ group("asset_bin_test") {
     #"test/secure_access_fence/agent_fence:saf_agent_fence_test",
     #"test/secure_access_fence/agent_fence:saf_agent_fence_manual_test",
     #"test/secure_access_fence/agent_fence:saf_agent_fence_stress_test",
+    #"test/secure_access_fence/agent_fence:saf_agent_fence_no_permission_test",
   ]
   if (enable_local_test) {
     deps += [ "test/asset/unittest/inner_kits_rust:rust_asset_inner_test" ]

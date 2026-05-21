@@ -17,13 +17,40 @@
 
 #include <gtest/gtest.h>
 
+#include <random>
+#include <ctime>
+
 #include "saf_agent_fence.h"
-#include "saf_result_defs.h"
-#include "secure_access_fence_system_type.h"
+#include "saf_result_code.h"
 #include "saf_permission_change.h"
 
 using namespace testing::ext;
 namespace UnitTest::SafAgentFenceTest {
+static std::string GenerateRandomMessage(int minLen, int maxLen)
+{
+    static const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    static std::mt19937 rng(static_cast<unsigned int>(time(nullptr)));
+    static std::uniform_int_distribution<int> lenDist(minLen, maxLen);
+    static std::uniform_int_distribution<int> charDist(0, sizeof(charset) - 2);
+
+    int len = lenDist(rng);
+    std::string result;
+    result.reserve(len);
+    for (int i = 0; i < len; i++) {
+        result += charset[charDist(rng)];
+    }
+    return result;
+}
+
+static std::vector<std::string> GenerateMessages(int count, int minLen, int maxLen)
+{
+    std::vector<std::string> messages;
+    for (int i = 0; i < count; i++) {
+        messages.push_back(GenerateRandomMessage(minLen, maxLen));
+    }
+    return messages;
+}
+
 class SafAgentFenceNoPermissionTest : public testing::Test {
 public:
     static void SetUpTestCase(void);
@@ -64,7 +91,27 @@ HWTEST_F(SafAgentFenceNoPermissionTest, SafAgentFenceQueryNoPermissionTest001, T
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_NE(result, SEC_SAF_SUCCESS);
+    EXPECT_NE(result, SAF_SUCCESS);
+}
+
+
+/**
+ * @tc.name: SafAgentFenceNoPermissionTest.SafAgentFenceGenAndVerTicketTest002
+ * @tc.desc: osAccountId:100; callerId:"test_caller"; message列表长度:5; message长度:5-100随机选; 无权限
+ * @tc.type: FUNC
+ * @tc.result: 生成失败
+ */
+HWTEST_F(SafAgentFenceNoPermissionTest, SafAgentFenceGenAndVerTicketTest002, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+    int32_t osAccountId = 100;
+    std::string callerId = "test_caller";
+
+    std::vector<std::string> messages = GenerateMessages(5, 5, 100);
+    std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
+
+    int32_t genResult = agentFence.BatchGenerateTicket(osAccountId, callerId, messages, ticketInfos);
+    EXPECT_NE(genResult, SAF_SUCCESS);
 }
 
 }

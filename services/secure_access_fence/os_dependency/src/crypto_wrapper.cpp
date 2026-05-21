@@ -108,6 +108,10 @@ int32_t Base64Decode(const Uint8Buff *input, Uint8Buff *output)
         LOGE("[FATAL]Base64Decode invalid params.");
         return SAF_ERR_NULL_PTR;
     }
+    if (input->size == 0) {
+        LOGE("[FATAL]Base64Decode invalid input size.");
+        return SAF_ERR_BASE64_INVALID_LEN;
+    }
     size_t expectedLen = 3 * input->size / 4;
     if (output->size < expectedLen) {
         LOGE("[FATAL]Base64Decode output buffer too small.");
@@ -116,12 +120,20 @@ int32_t Base64Decode(const Uint8Buff *input, Uint8Buff *output)
 
     int len = EVP_DecodeBlock(output->buf, input->buf, input->size);
     if (len < 0) {
-        LOGE("[FATAL]EVP_DecodeBlock failed.");
+        LOGE("[FATAL]EVP_DecodeBlock failed, len = %{public}d.", len);
         return SAF_ERR_CRYPTO_OPERATION;
     }
-    while (len > 0 && output->buf[len - 1] == '\0') {
-        len--;
+
+    size_t padding = 0;
+    for (int32_t i = input->size - 1; i >= 0 && input->buf[i] == '='; --i) {
+        padding++;
     }
+    if (padding > len) {
+        LOGE("[FATAL]padding is greater than len, len = %{public}d.", len);
+        return SAF_ERR_CRYPTO_OPERATION;
+    }
+    len -= padding;
+
     output->size = static_cast<uint32_t>(len);
     return SAF_SUCCESS;
 }

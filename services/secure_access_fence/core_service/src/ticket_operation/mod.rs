@@ -185,7 +185,7 @@ pub fn batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: &[St
 
     let mut results = Vec::with_capacity(messages.len());
 
-    for message in messages {
+    for (index, message) in messages.iter().enumerate() {
         let ticket_info = (|| {
             if message.is_empty() {
                 return macros_lib::log_throw_error!(ErrCode::ArgEmpty, "message is empty");
@@ -204,10 +204,13 @@ pub fn batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: &[St
                 challenge: String::from_utf8_lossy(&base64_encode(&combined_challenge)?).to_string(),
                 ticket: String::from_utf8_lossy(&base64_encode(&hmac_result)?).to_string(),
             })
-        })().unwrap_or_else(|_| VerifyTicketInfo {
-            message: message.clone(),
-            challenge: String::new(),
-            ticket: String::new(),
+        })().unwrap_or_else(|e| {
+            macros_lib::loge!("Ticket idx[{}]: generate failed, message len={}, err={}", index, message.len(), e.code);
+            VerifyTicketInfo {
+                message: message.clone(),
+                challenge: String::new(),
+                ticket: String::new(),
+            }
         });
 
         results.push(ticket_info);
@@ -237,16 +240,19 @@ pub fn batch_verify_ticket(
 
     let mut results = Vec::with_capacity(verify_infos.len());
 
-    for verify_info in verify_infos {
+    for (index, verify_info) in verify_infos.iter().enumerate() {
         let combined_challenge = match base64_decode(verify_info.challenge.as_bytes()) {
             Ok(v) => v,
             Err(e) => {
+                macros_lib::loge!("VerifyTicket idx[{}]: base64_decode challenge failed, err={}", index, e.code);
                 results.push(e.code as i32);
                 continue;
             }
         };
         if combined_challenge.len() < CHALLENGE_SIZE * 2 {
-            results.push(ErrCode::InvalidArrayLen as i32);
+            macros_lib::loge!("VerifyTicket idx[{}]: combined_challenge len invalid, len={}",
+                index, combined_challenge.len());
+            results.push(ErrCode::InvalidChallengeSize as i32);
             continue;
         }
 
@@ -256,6 +262,7 @@ pub fn batch_verify_ticket(
         let session_key = match key_manager.derive_ticket_session_key(os_account_id as i32, challenge1) {
             Ok(key) => key,
             Err(e) => {
+                macros_lib::loge!("VerifyTicket idx[{}]: derive_ticket_session_key failed, err={}", index, e.code);
                 results.push(e.code as i32);
                 continue;
             }
@@ -267,13 +274,18 @@ pub fn batch_verify_ticket(
         let expected_hmac = match base64_decode(verify_info.ticket.as_bytes()) {
             Ok(v) => v,
             Err(e) => {
+                macros_lib::loge!("VerifyTicket idx[{}]: base64_decode ticket failed, err={}", index, e.code);
                 results.push(e.code as i32);
                 continue;
             }
         };
+
         match verify_hmac_sha256(&session_key, &data, &expected_hmac) {
             Ok(_) => results.push(ErrCode::Success as i32),
-            Err(e) => results.push(e.code as i32),
+            Err(e) => {
+                macros_lib::loge!("VerifyTicket idx[{}]: verify_hmac_sha256 failed, err={}", index, e.code);
+                results.push(e.code as i32);
+            }
         }
     }
 

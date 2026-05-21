@@ -180,6 +180,9 @@ impl_enum_trait! {
         /// The error code indicates that invalid HMAC size.
         InvalidHmacSize = 0x18002,
 
+        /// The error code indicates that invalid challenge size.
+        InvalidChallengeSize = 0x18003,
+
         // ==================== PLUGIN (0x70000) ====================
         /// The error code indicates that create plugin manager failed.
         CreatePluginMgrFail = 0x70001,
