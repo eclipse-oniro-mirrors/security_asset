@@ -53,6 +53,7 @@ fn local_batch_add(
     common::check_value_validity(attributes)?;
     let mut db_map = DbMap::new();
     check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array)?;
+    // Only add system attrs, add other default ones in parse_attr_in_array.
     add_system_attrs(&mut db_map)?;
     common::add_calling_info(calling_info, &mut db_map);
     common::check_system_permission(attributes)?;

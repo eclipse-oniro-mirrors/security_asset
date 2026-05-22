@@ -370,7 +370,9 @@ napi_value CreateAsyncWork(const napi_env env, napi_callback_info info, std::uni
     if (context->parse != nullptr) {
         napi_status status = context->parse(env, info, context.get());
         if (status != napi_ok) {
-            napi_value error = CreateJsError(env, context->result);
+            napi_value exception = nullptr;
+            napi_get_and_clear_last_exception(env, &exception);
+            napi_value error = (exception != nullptr) ? exception : CreateJsError(env, context->result);
             NAPI_CALL(env, napi_reject_deferred(env, context->deferred, error));
             return promise;
         }
