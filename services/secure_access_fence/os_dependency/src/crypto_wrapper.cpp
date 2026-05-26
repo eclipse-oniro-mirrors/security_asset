@@ -128,7 +128,7 @@ int32_t Base64Decode(const Uint8Buff *input, Uint8Buff *output)
     for (int32_t i = input->size - 1; i >= 0 && input->buf[i] == '='; --i) {
         padding++;
     }
-    if (padding > len) {
+    if (padding > static_cast<size_t>(len)) {
         LOGE("[FATAL]padding is greater than len, len = %{public}d.", len);
         return SAF_ERR_CRYPTO_OPERATION;
     }
