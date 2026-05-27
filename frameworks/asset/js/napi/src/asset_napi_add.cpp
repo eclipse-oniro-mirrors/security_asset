@@ -40,9 +40,17 @@ const std::vector<uint32_t> OPTIONAL_TAGS = {
     SEC_ASSET_TAG_CONFLICT_RESOLUTION
 };
 
-napi_status CheckAddArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
+napi_status CheckAddArgsCommon(const napi_env env, const std::vector<AssetAttr> &attrs,
+    const std::vector<uint32_t> &validTags)
 {
     IF_ERROR_THROW_RETURN(env, CheckAssetRequiredTag(env, attrs, REQUIRED_TAGS, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, validTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
+    return napi_ok;
+}
+
+napi_status CheckAddArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
+{
     std::vector<uint32_t> validTags;
     validTags.insert(validTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
@@ -50,9 +58,19 @@ napi_status CheckAddArgs(const napi_env env, const std::vector<AssetAttr> &attrs
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
     validTags.insert(validTags.end(), OPTIONAL_TAGS.begin(), OPTIONAL_TAGS.end());
-    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, validTags, SEC_ASSET_INVALID_ARGUMENT));
-    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
-    return napi_ok;
+    return CheckAddArgsCommon(env, attrs, validTags);
+}
+
+napi_status CheckBatchAddArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
+{
+    std::vector<uint32_t> validTags;
+    validTags.insert(validTags.end(), CRITICAL_LABEL_TAGS.begin(), CRITICAL_LABEL_TAGS.end());
+    validTags.insert(validTags.end(), NORMAL_LABEL_TAGS.begin(), NORMAL_LABEL_TAGS.end());
+    validTags.insert(validTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
+    validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS_FOR_BATCH.begin(), ACCESS_CONTROL_TAGS_FOR_BATCH.end());
+    validTags.insert(validTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
+    validTags.insert(validTags.end(), OPTIONAL_TAGS.begin(), OPTIONAL_TAGS.end());
+    return CheckAddArgsCommon(env, attrs, validTags);
 }
 
 napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *context)
@@ -70,6 +88,13 @@ napi_status ParseAttrMapArray(napi_env env, napi_callback_info info, BaseContext
     napi_value argv[NORMAL_ARGS_NUM] = { 0 };
     IF_ERR_RETURN(ParseJsArgs(env, info, argv, ADD_ARG_COUNT));
     IF_ERR_RETURN(ParseJsMapArray(env, argv[0], context->attrsArray));
+    if (context->attrsArray.empty()) {
+        LOGE("[FATAL]Batch Add argument empty.");
+        return napi_invalid_arg;
+    }
+    for (const auto &attrs : context->attrsArray) {
+        IF_ERR_RETURN(CheckBatchAddArgs(env, attrs));
+    }
     return napi_ok;
 }
 

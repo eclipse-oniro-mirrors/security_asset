@@ -19,6 +19,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-saf_definition = { path = "../definition" }
-saf_log = { path = "../os_dependency/log" }
+saf_definition = { path = "../../definition" }
+saf_log = { path = "../../os_dependency/log" }
 ipc = { git = "https://gitcode.com/openharmony/communication_ipc.git" }

@@ -29,6 +29,14 @@ namespace {
 const uint32_t REMOVE_ARG_COUNT = 1;
 const uint32_t REMOVE_ARG_COUNT_AS_USER = 2;
 
+napi_status CheckRemoveArgsCommon(const napi_env env, const std::vector<AssetAttr> &attrs,
+    const std::vector<uint32_t> &validTags)
+{
+    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, validTags, SEC_ASSET_INVALID_ARGUMENT));
+    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
+    return napi_ok;
+}
+
 napi_status CheckRemoveArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
 {
     std::vector<uint32_t> validTags;
@@ -36,9 +44,17 @@ napi_status CheckRemoveArgs(const napi_env env, const std::vector<AssetAttr> &at
     validTags.insert(validTags.end(), NORMAL_LOCAL_LABEL_TAGS.begin(), NORMAL_LOCAL_LABEL_TAGS.end());
     validTags.insert(validTags.end(), ACCESS_CONTROL_TAGS.begin(), ACCESS_CONTROL_TAGS.end());
     validTags.insert(validTags.end(), ASSET_SYNC_TAGS.begin(), ASSET_SYNC_TAGS.end());
-    IF_ERROR_THROW_RETURN(env, CheckAssetTagValidity(env, attrs, validTags, SEC_ASSET_INVALID_ARGUMENT));
-    IF_ERROR_THROW_RETURN(env, CheckAssetValueValidity(env, attrs, SEC_ASSET_INVALID_ARGUMENT));
-    return napi_ok;
+    return CheckRemoveArgsCommon(env, attrs, validTags);
+}
+
+napi_status CheckBatchRemoveArgs(const napi_env env, const std::vector<AssetAttr> &attrs)
+{
+    const std::vector<uint32_t> validTags = {
+        SEC_ASSET_TAG_ALIAS,
+        SEC_ASSET_TAG_GROUP_ID,
+        SEC_ASSET_TAG_REQUIRE_ATTR_ENCRYPTED
+    };
+    return CheckRemoveArgsCommon(env, attrs, validTags);
 }
 
 napi_status ParseAttrMap(napi_env env, napi_callback_info info, BaseContext *context)
@@ -56,6 +72,9 @@ napi_status ParseAttrMapArray(napi_env env, napi_callback_info info, BaseContext
     napi_value argv[NORMAL_ARGS_NUM] = { 0 };
     IF_ERR_RETURN(ParseJsArgs(env, info, argv, REMOVE_ARG_COUNT));
     IF_ERR_RETURN(ParseJsMapArray(env, argv[0], context->attrsArray));
+    for (const auto &attrs : context->attrsArray) {
+        IF_ERR_RETURN(CheckBatchRemoveArgs(env, attrs));
+    }
     return napi_ok;
 }
 

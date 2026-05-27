@@ -76,7 +76,7 @@ HWTEST_F(AssetSystemBatchApiTest, AssetSystemBatchApiTest001, TestSize.Level0)
     std::vector<std::vector<AssetAttr>> param;
     param.push_back(attr);
     std::vector<std::pair<uint32_t, uint32_t>> errInfoArray;
-    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetBatchAdd(param, errInfoArray));
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, AssetBatchAdd(param, errInfoArray));
 }
 
 /**
@@ -130,17 +130,15 @@ HWTEST_F(AssetSystemBatchApiTest, AssetSystemBatchApiTest004, TestSize.Level0)
 HWTEST_F(AssetSystemBatchApiTest, AssetSystemBatchApiTest005, TestSize.Level0)
 {
     AssetBlob funcName = { .size = strlen(__func__), .data = reinterpret_cast<uint8_t*>(const_cast<char*>(__func__)) };
-    std::vector<AssetAttr> attr = {
+    AssetAttr attr[] = {
         { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_SECRET, .value.blob = funcName },
         { .tag = SEC_ASSET_TAG_USER_ID, .value.u32 = SPECIFIC_USER_ID },
         { .tag = SEC_ASSET_TAG_ACCESSIBILITY, .value.u32 = SEC_ASSET_ACCESSIBILITY_DEVICE_UNLOCKED },
-        { .tag = SEC_ASSET_TAG_AUTH_TYPE, .value.u32 = SEC_ASSET_AUTH_TYPE_ANY }
+        { .tag = SEC_ASSET_TAG_AUTH_TYPE, .value.u32 = SEC_ASSET_AUTH_TYPE_ANY },
+        { .tag = SEC_ASSET_TAG_CONFLICT_RESOLUTION, .value.u32 = SEC_ASSET_CONFLICT_OVERWRITE },
     };
-    std::vector<std::vector<AssetAttr>> param;
-    param.push_back(attr);
-    std::vector<std::pair<uint32_t, uint32_t>> errInfoArray;
-    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetBatchAdd(param, errInfoArray));
+    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetAdd(attr, ARRAY_SIZE(attr)));
 
     std::vector<AssetAttr> attrToRemove = {
         { .tag = SEC_ASSET_TAG_ALIAS, .value.blob = funcName },
@@ -185,7 +183,7 @@ HWTEST_F(AssetSystemBatchApiTest, AssetSystemBatchApiTest006, TestSize.Level0)
     paramUpdate.push_back(updateAttr);
 
     std::vector<std::pair<uint32_t, uint32_t>> errInfoArray;
-    ASSERT_EQ(SEC_ASSET_SUCCESS, AssetBatchUpdate(paramQuery, paramUpdate, errInfoArray));
+    ASSERT_EQ(ASSET_INVALID_ARGUMENT, AssetBatchUpdate(paramQuery, paramUpdate, errInfoArray));
 }
 
 /**

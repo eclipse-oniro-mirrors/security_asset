@@ -20,22 +20,17 @@ use std::{
 };
 use ylong_runtime::task::JoinHandle;
 
-use asset_common::{CallingInfo, Counter, Group, OwnerType, TaskManager, GROUP_SEPARATOR, ProcessInfo};
+use asset_common::{CallingInfo, Counter, Group, OwnerType, TaskManager, GROUP_SEPARATOR};
 use asset_crypto_manager::db_key_operator::get_db_key;
 use asset_db_operator::{
-    common, database::{Database, get_path},
+    database::{Database, get_path},
     database_file_upgrade::{construct_splited_db_name, get_file_content},
-    types::{column, DbMap, QueryOptions},
+    types::{column, QueryOptions},
 };
-use asset_definition::Tag;
 use asset_file_operator::de_operator::create_user_de_dir;
 use asset_log::{loge, logi, logw};
-use asset_sdk::{
-    macros_lib,
-    AssetError, ErrCode, Extension, Result, SyncStatus, Value, AssetMap,
-};
+use asset_sdk::{macros_lib, AssetError, ErrCode, Extension, Result, Value,};
 use asset_plugin_interface::plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPluginCtx, RETURN_LIMIT, RETURN_OFFSET};
-use asset_utils::time;
 
 extern "C" {
     fn StoreKeyValue(user_id: i32, in_key: *const c_char, in_value: i32) -> bool;
@@ -122,15 +117,6 @@ impl AssetPlugin {
 pub struct AssetContext {
     /// The asset database's user id.
     pub user_id: i32,
-}
-
-fn convert_db_map(attributes: &ExtDbMap) -> Result<DbMap> {
-    let owner_info = attributes.get_bytes_attr(&column::OWNER)?;
-    let owner_type = attributes.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?;
-    let mut db_map = DbMap::new();
-    db_map.insert_attr(column::OWNER, owner_info.clone());
-    db_map.insert_attr(column::OWNER_TYPE, owner_type);
-    Ok(db_map)
 }
 
 fn get_db_name(user_id: i32, attributes: &ExtDbMap, is_ce: bool) -> std::result::Result<String, AssetError> {
@@ -334,59 +320,6 @@ impl IAssetPluginCtx for AssetContext {
             total_remove_count += db.delete_datas(attributes, None, false).map_err(|e| e.code as u32)?;
         }
         Ok(total_remove_count)
-    }
-
-    /// Removes assets with aliases.
-    fn batch_remove(&self, attributes: &ExtDbMap, aliases: &[Vec<u8>], require_attr_encrypted: bool) -> Result<i32> {
-        let db_name = get_db_name(self.user_id, attributes, require_attr_encrypted)?;
-        let db_key = get_db_key(self.user_id, require_attr_encrypted)?;
-        let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key)?;
-        let condition = convert_db_map(attributes)?;
-        let mut update_datas = DbMap::new();
-        let time = time::system_time_in_millis()?;
-        update_datas.insert(column::UPDATE_TIME, Value::Bytes(time));
-        update_datas.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
-        let total_removed_count: i32 = db.delete_batch_datas(&condition, &update_datas, aliases)?;
-        logi!("total removed count = {}", total_removed_count);
-        Ok(total_removed_count)
-    }
-
-    /// Add assets into db with attributes array.
-    fn batch_add(
-        &self,
-        attributes: &mut AssetMap,
-        db_map: &mut ExtDbMap,
-        attributes_array: &[AssetMap]
-    ) -> Result<Vec<(u32, u32)>> {
-        let process_info = ProcessInfo::build(attributes.get(&Tag::GroupId), None, false)?;
-        let calling_info = CallingInfo::build(attributes.get(&Tag::UserId).cloned(), &process_info);
-        attributes.entry(Tag::RequireAttrEncrypted).or_insert(Value::Bool(bool::default()));
-        common::add_group(&calling_info, db_map);
-        common::check_system_permission(attributes)?;
-        let require_attr_encrypted = attributes.get_bool_attr(&Tag::RequireAttrEncrypted)?;
-        let db_name = get_db_name(self.user_id, db_map, require_attr_encrypted)?;
-        let db_key = get_db_key(self.user_id, require_attr_encrypted)?;
-        let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key)?;
-        db.insert_batch_datas(db_map, attributes_array, &calling_info, false)
-    }
-
-    /// Update assets into db with attributes array.
-    fn batch_update(
-        &self,
-        attributes: &mut AssetMap,
-        db_map: &mut ExtDbMap,
-        attributes_array: &[AssetMap],
-        attributes_to_update_array: &[AssetMap]
-    ) -> Result<Vec<(u32, u32)>> {
-        let process_info = ProcessInfo::build(attributes.get(&Tag::GroupId), None, false)?;
-        let calling_info = CallingInfo::build(attributes.get(&Tag::UserId).cloned(), &process_info);
-        attributes.entry(Tag::RequireAttrEncrypted).or_insert(Value::Bool(bool::default()));
-        common::add_group(&calling_info, db_map);
-        let require_attr_encrypted = attributes.get_bool_attr(&Tag::RequireAttrEncrypted)?;
-        let db_name = get_db_name(self.user_id, db_map, require_attr_encrypted)?;
-        let db_key = get_db_key(self.user_id, require_attr_encrypted)?;
-        let mut db = Database::build_with_file_name(self.user_id, &db_name, &db_key)?;
-        db.update_batch_datas(db_map, attributes_array, attributes_to_update_array, &calling_info)
     }
 
     /// Removes an asset from a certain db. Normal, Group, CE.
