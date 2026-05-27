@@ -27,7 +27,7 @@ pub struct CallingInfo {
     foreground_user_id: i32,
 }
 
-const DEFAULT_FOREGROUND_USER_ID: i32 = 0;
+const INVALID_FOREGROUND_USER_ID: i32 = 0;
 
 extern "C" {
     fn GetForegroundOsAccountId(foreground_user_id: *mut i32) -> bool;
@@ -36,10 +36,10 @@ extern "C" {
 impl CallingInfo {
     /// Build identity of the specified owner.
     pub fn new() -> Self {
-        let mut foreground_user_id = DEFAULT_FOREGROUND_USER_ID;
+        let mut foreground_user_id = INVALID_FOREGROUND_USER_ID;
         let ret = unsafe { GetForegroundOsAccountId(&mut foreground_user_id) };
         if !ret {
-            loge!("[FATAL]Get foreground userId failed! use default:[{}]", DEFAULT_FOREGROUND_USER_ID);
+            loge!("[FATAL]Get foreground userId failed! use default:[{}]", INVALID_FOREGROUND_USER_ID);
         }
         Self { calling_uid: Skeleton::calling_uid(), access_token_id: Skeleton::calling_token_id(), foreground_user_id }
     }

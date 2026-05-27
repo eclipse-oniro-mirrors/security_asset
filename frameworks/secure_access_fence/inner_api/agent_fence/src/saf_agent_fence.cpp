@@ -82,7 +82,7 @@ int32_t SafAgentFence::BatchQueryCommandPermission(
     std::vector<CommandPermissionInfo> &cmdPermissions)
 {
     LOGI("SafAgentFence::BatchQueryCommandPermission enter");
-    int resultCode = SAF_SUCCESS;
+    int32_t resultCode = SAF_SUCCESS;
 
     auto proxy = GetProxy(g_mutex);
     IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
@@ -109,7 +109,7 @@ int32_t SafAgentFence::BatchGenerateTicket(
         return checkResult;
     }
 
-    int resultCode = SAF_SUCCESS;
+    int32_t resultCode = SAF_SUCCESS;
 
     auto proxy = GetProxy(g_mutex);
     IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
@@ -136,7 +136,7 @@ int32_t SafAgentFence::BatchVerifyTicket(
         return checkResult;
     }
 
-    int resultCode = SAF_SUCCESS;
+    int32_t resultCode = SAF_SUCCESS;
 
     auto proxy = GetProxy(g_mutex);
     IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");

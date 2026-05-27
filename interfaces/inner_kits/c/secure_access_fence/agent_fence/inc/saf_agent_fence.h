@@ -45,7 +45,7 @@ public:
      *
      * @param osAccountId The OS account ID, >= 100.
      * @param callerId The token id.
-     * @param message The vector of messages for which tickets will be generated.
+     * @param messages The vector of messages for which tickets will be generated.
      * @param ticketInfos Output vector of generated VerifyTicketInfo structures.
      * @return Returns 0 on success, or error code on failure.
      */
@@ -60,7 +60,7 @@ public:
      *
      * @param osAccountId The OS account ID, >= 100.
      * @param callerId The token id.
-     * @param ticketInfos The vector of VerifyTicketInfo structures to verify.
+     * @param verifyInfos The vector of VerifyTicketInfo structures to verify.
      * @param verifyRes Output vector of verification results.
      * @return Returns 0 on success, or error code on failure.
      */

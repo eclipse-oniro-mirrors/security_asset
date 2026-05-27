@@ -73,11 +73,13 @@ OHOS::sptr<OHOS::ISystemAbilityManager> GetSystemAbility(void)
     return samgrProxy;
 }
 
+std::mutex g_mutex;
 OHOS::sptr<SystemAbilityHandler> abilityHandler;
 } // namespace
 
 bool SubscribeSystemAbility(const EventCallBack eventCallBack)
 {
+    std::lock_guard<std::mutex> lock(g_mutex);
     OHOS::sptr<OHOS::ISystemAbilityManager> samgrProxy = GetSystemAbility();
     if (samgrProxy == nullptr) {
         LOGE("Get system ability failed");
@@ -100,6 +102,7 @@ bool SubscribeSystemAbility(const EventCallBack eventCallBack)
 
 bool UnSubscribeSystemAbility()
 {
+    std::lock_guard<std::mutex> lock(g_mutex);
     OHOS::sptr<OHOS::ISystemAbilityManager> samgrProxy = GetSystemAbility();
     if (samgrProxy == nullptr || abilityHandler == nullptr) {
         return false;

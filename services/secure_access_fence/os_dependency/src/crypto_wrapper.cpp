@@ -51,7 +51,7 @@ int32_t ComputeHmacSha256(const Uint8Buff *key, const Uint8Buff *data, Uint8Buff
     }
 
     unsigned int len = HMAC_SHA256_SIZE;
-    uint8_t *result = 
+    uint8_t *result =
         HMAC(EVP_sha256(), key->buf, key->size, data->buf, static_cast<size_t>(data->size), hmac->buf, &len);
     if (result == nullptr) {
         LOGE("[FATAL]HMAC computation failed.");

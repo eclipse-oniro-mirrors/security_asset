@@ -127,7 +127,7 @@ fn handle_batch_generate_ticket(stub: &SAFService, data: &mut MsgParcel, reply: 
                 loge!("[FATAL]Serialize ticket infos failed: {}", e.msg);
                 IpcStatusCode::Failed
             })?;
-            reply.write::<i32>(&0)?;
+            reply.write::<i32>(&(IPC_SUCCESS as i32))?;
             logi!("[INFO]BatchGenerateTicket success, ticketCount: {}", ticket_infos.len());
         },
         Err(e) => {
@@ -165,7 +165,7 @@ fn handle_batch_verify_ticket(stub: &SAFService, data: &mut MsgParcel, reply: &m
                 loge!("[FATAL]Serialize verify results failed: {}", e.msg);
                 IpcStatusCode::Failed
             })?;
-            reply.write::<i32>(&0)?;
+            reply.write::<i32>(&(IPC_SUCCESS as i32))?;
             logi!("[INFO]BatchVerifyTicket success, resultCount: {}", verify_res.len());
         },
         Err(e) => {

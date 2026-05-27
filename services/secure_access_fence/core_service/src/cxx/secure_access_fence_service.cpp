@@ -28,7 +28,6 @@
 namespace OHOS {
 namespace Security {
 namespace SAF {
-using namespace OHOS::Security::SAF;
 using namespace CliTool;
 
 const int32_t VECTOR_MAX_SIZE = 99;
@@ -88,6 +87,7 @@ int32_t OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply
         LOGE("The vector size exceeds the limit!");
         return SAF_ERR_INVALID_ARRAY_LEN;
     }
+    cmds.reserve(static_cast<size_t>(cmdSize));
     for (int32_t i1 = 0; i1 < cmdSize; ++i1) {
         CommandInfo value1;
         if (CommandInfoBlockUnmarshalling(data, value1) != ERR_NONE) {
@@ -97,7 +97,7 @@ int32_t OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply
         cmds.push_back(value1);
     }
     std::vector<CommandPermissionInfo> cmdPermissions;
-    int32_t resultCode;
+    int32_t resultCode = SAF_SUCCESS;
     ErrCode errCode = BatchQueryCommandPermission(cmds, cmdPermissions, resultCode);
     if (!reply.WriteInt32(errCode)) {
         LOGE("Write Int32 failed!");

@@ -49,7 +49,7 @@ void SafAgentParamsCheckerTest::TearDown(void)
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest001, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "";
     std::vector<std::string> messages;
     messages.push_back("test_message");
@@ -60,7 +60,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest001, TestS
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest002, TestSize.Level0)
 {
-    uint32_t osAccountId = 99;
+    int32_t osAccountId = 99;
     std::string callerId = "test_caller";
     std::vector<std::string> messages;
     messages.push_back("test_message");
@@ -71,7 +71,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest002, TestS
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest003, TestSize.Level0)
 {
-    uint32_t osAccountId = 0;
+    int32_t osAccountId = 0;
     std::string callerId = "test_caller";
     std::vector<std::string> messages;
     messages.push_back("test_message");
@@ -82,7 +82,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest003, TestS
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest004, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
     std::vector<std::string> messages;
 
@@ -92,7 +92,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest004, TestS
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest005, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
     std::vector<std::string> messages;
     for (size_t i = 0; i < 100; i++) {
@@ -105,7 +105,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest005, TestS
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest006, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
     std::vector<std::string> messages;
     for (size_t i = 0; i < 99; i++) {
@@ -118,7 +118,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest006, TestS
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest007, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
     std::vector<std::string> messages;
     messages.push_back("test_message");
@@ -129,7 +129,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsTest007, TestS
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest001, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "";
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> verifyInfos;
     verifyInfos.push_back({"message", "challenge", "ticket"});
@@ -140,7 +140,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest001, TestSiz
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest002, TestSize.Level0)
 {
-    uint32_t osAccountId = 99;
+    int32_t osAccountId = 99;
     std::string callerId = "test_caller";
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> verifyInfos;
     verifyInfos.push_back({"message", "challenge", "ticket"});
@@ -151,7 +151,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest002, TestSiz
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest003, TestSize.Level0)
 {
-    uint32_t osAccountId = 0;
+    int32_t osAccountId = 0;
     std::string callerId = "test_caller";
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> verifyInfos;
     verifyInfos.push_back({"message", "challenge", "ticket"});
@@ -162,7 +162,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest003, TestSiz
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest004, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> verifyInfos;
 
@@ -172,7 +172,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest004, TestSiz
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest005, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> verifyInfos;
     for (size_t i = 0; i < 100; i++) {
@@ -185,7 +185,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest005, TestSiz
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest006, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> verifyInfos;
     for (size_t i = 0; i < 99; i++) {
@@ -198,7 +198,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest006, TestSiz
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest007, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     std::string callerId = "test_caller";
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> verifyInfos;
     verifyInfos.push_back({"message", "challenge", "ticket"});
@@ -209,7 +209,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest007, TestSiz
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest001, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     const char* callerId = nullptr;
     size_t messagesCount = 1;
 
@@ -219,7 +219,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest001, Test
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest002, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     const char* callerId = "";
     size_t messagesCount = 1;
 
@@ -229,7 +229,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest002, Test
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest003, TestSize.Level0)
 {
-    uint32_t osAccountId = 99;
+    int32_t osAccountId = 99;
     const char* callerId = "test_caller";
     size_t messagesCount = 1;
 
@@ -239,7 +239,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest003, Test
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest004, TestSize.Level0)
 {
-    uint32_t osAccountId = 0;
+    int32_t osAccountId = 0;
     const char* callerId = "test_caller";
     size_t messagesCount = 1;
 
@@ -249,7 +249,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest004, Test
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest005, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     const char* callerId = "test_caller";
     size_t messagesCount = 0;
 
@@ -259,7 +259,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest005, Test
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest006, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     const char* callerId = "test_caller";
     size_t messagesCount = 100;
 
@@ -269,7 +269,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest006, Test
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest007, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     const char* callerId = "test_caller";
     size_t messagesCount = 99;
 
@@ -279,7 +279,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest007, Test
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest008, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     const char* callerId = "test_caller";
     size_t messagesCount = 1;
 
@@ -289,7 +289,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest008, Test
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest001, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     const char* callerId = nullptr;
     size_t verifyInfosCount = 1;
 
@@ -299,7 +299,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest001, TestSi
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest002, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     const char* callerId = "";
     size_t verifyInfosCount = 1;
 
@@ -309,7 +309,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest002, TestSi
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest003, TestSize.Level0)
 {
-    uint32_t osAccountId = 99;
+    int32_t osAccountId = 99;
     const char* callerId = "test_caller";
     size_t verifyInfosCount = 1;
 
@@ -319,7 +319,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest003, TestSi
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest004, TestSize.Level0)
 {
-    uint32_t osAccountId = 0;
+    int32_t osAccountId = 0;
     const char* callerId = "test_caller";
     size_t verifyInfosCount = 1;
 
@@ -329,7 +329,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest004, TestSi
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest005, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     const char* callerId = "test_caller";
     size_t verifyInfosCount = 0;
 
@@ -339,7 +339,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest005, TestSi
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest006, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     const char* callerId = "test_caller";
     size_t verifyInfosCount = 100;
 
@@ -349,7 +349,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest006, TestSi
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest007, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     const char* callerId = "test_caller";
     size_t verifyInfosCount = 99;
 
@@ -359,7 +359,7 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest007, TestSi
 
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsCTest008, TestSize.Level0)
 {
-    uint32_t osAccountId = 100;
+    int32_t osAccountId = 100;
     const char* callerId = "test_caller";
     size_t verifyInfosCount = 1;
 
