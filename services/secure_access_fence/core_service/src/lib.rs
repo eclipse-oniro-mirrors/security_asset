@@ -58,8 +58,8 @@ struct CommonEventInfoFfi {
     want: StringArray,
 }
 
-static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 60;  // 60s
-static SEC_TO_MILLISEC: i32 = 1000;
+const DELAYED_UNLOAD_TIME_IN_SEC: i32 = 60;  // 60s
+const SEC_TO_MILLISEC: i32 = 1000;
 
 pub(crate) fn unload_sa() {
     ylong_runtime::spawn(async move {

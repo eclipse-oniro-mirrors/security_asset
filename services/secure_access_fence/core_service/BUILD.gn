@@ -85,11 +85,6 @@ ohos_rust_shared_library("secure_access_fence_service") {
     "../plugin:saf_plugin",
   ]
 
-  rustflags = []
-  if (enable_local_test) {
-    rustflags += [ "--cfg", "feature=\"SecureAccessFenceTest\"", ]
-  }
-
   external_deps = [
     "hilog:hilog_rust",
     "hilog:libhilog",

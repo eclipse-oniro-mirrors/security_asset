@@ -30,7 +30,7 @@ int32_t CheckBatchGenerateTicketParams(
     }
 
     if (osAccountId < MIN_OS_ACCOUNT_ID) {
-        LOGE("invalid osAccountId: %{public}u", osAccountId);
+        LOGE("invalid osAccountId: %{public}d", osAccountId);
         return SAF_ERR_INVALID_OS_ACCOUNT_ID;
     }
 
@@ -53,7 +53,7 @@ int32_t CheckBatchVerifyTicketParams(
     }
 
     if (osAccountId < MIN_OS_ACCOUNT_ID) {
-        LOGE("invalid osAccountId: %{public}u", osAccountId);
+        LOGE("invalid osAccountId: %{public}d", osAccountId);
         return SAF_ERR_INVALID_OS_ACCOUNT_ID;
     }
 
@@ -77,7 +77,7 @@ int32_t CheckBatchGenerateTicketParamsC(int32_t osAccountId, const char* callerI
     }
 
     if (osAccountId < OHOS::Security::SAF::MIN_OS_ACCOUNT_ID) {
-        LOGE("invalid osAccountId: %{public}u", osAccountId);
+        LOGE("invalid osAccountId: %{public}d", osAccountId);
         return SAF_ERR_INVALID_OS_ACCOUNT_ID;
     }
 
@@ -97,7 +97,7 @@ int32_t CheckBatchVerifyTicketParamsC(int32_t osAccountId, const char* callerId,
     }
 
     if (osAccountId < OHOS::Security::SAF::MIN_OS_ACCOUNT_ID) {
-        LOGE("invalid osAccountId: %{public}u", osAccountId);
+        LOGE("invalid osAccountId: %{public}d", osAccountId);
         return SAF_ERR_INVALID_OS_ACCOUNT_ID;
     }
 
