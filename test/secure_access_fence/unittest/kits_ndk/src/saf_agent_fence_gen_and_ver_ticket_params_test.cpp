@@ -207,4 +207,17 @@ HWTEST_F(SafAgentFenceGenAndVerTicketParamsTest, BatchVerifyTicketParamsTest005,
     EXPECT_NE(result, SAF_SUCCESS);
 }
 
+HWTEST_F(SafAgentFenceGenAndVerTicketParamsTest, BatchVerifyTicketParamsTest006, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+    int32_t osAccountId = 100;
+    std::string callerId = "test_caller";
+    std::vector<OHOS::Security::SAF::VerifyTicketInfo> verifyInfos;
+    verifyInfos.push_back({"message", "challenge", "ticket"});
+
+    std::vector<int32_t> verifyRes;
+    int32_t result = agentFence.BatchVerifyTicket(osAccountId, callerId, verifyInfos, verifyRes);
+    EXPECT_NE(result, SAF_ERR_SERVICE_UNAVAILABLE);
+}
+
 }
