@@ -35,6 +35,7 @@ ohos_unittest("saf_agent_fence_ndk_test") {
     "src/saf_agent_fence_batch_query_cmd_test.cpp",
     "src/saf_agent_fence_gen_and_ver_ticket_params_test.cpp",
     "src/saf_agent_params_checker_test.cpp",
+    "src/saf_agent_fence_ipc_test.cpp",
   ]
 
   deps = [
