@@ -118,6 +118,25 @@ macro_rules! impl_enum_trait {
                 macros_lib::Value::Number(self as u32)
             }
         }
+
+        impl macros_lib::Verify for $name {
+            fn try_from_ipc_code(v: u32) -> std::result::Result<(), macros_lib::SAFError> {
+                match v {
+                    $(x if x == $name::$vname as u32 => Ok(()),)*
+                    _ => {
+                        macros_lib::log_throw_error!(macros_lib::ErrCode::InvalidPlugin,
+                            "[FATAL]Verify Type[{}] try from u32[{}] failed.", stringify!($name), v)
+                    }
+                }
+            }
+
+            fn is_correct_enum(v: u32) -> bool {
+                match v {
+                    $(x if x == $name::$vname as u32 => true,)*
+                    _ => false
+                }
+            }
+        }
     }
 }
 
@@ -131,11 +150,11 @@ macro_rules! impl_enum_trait {
 #[macro_export]
 macro_rules! log_throw_error {
     ($code:expr, $($arg:tt)*) => {{
-        let str = format!($($arg)*);
-        macros_lib::loge!("{}", str);
+        let msg_str = format!($($arg)*);
+        macros_lib::loge!("{}", msg_str);
         Err(macros_lib::SAFError {
             code: $code,
-            msg: str
+            msg: msg_str
         })
     }};
 }
@@ -151,11 +170,11 @@ macro_rules! log_throw_error {
 #[macro_export]
 macro_rules! log_and_into_saf_error {
     ($code:expr, $($arg:tt)*) => {{
-        let str = format!($($arg)*);
-        macros_lib::loge!("{}", str);
+        let msg_str = format!($($arg)*);
+        macros_lib::loge!("{}", msg_str);
         macros_lib::SAFError {
             code: $code,
-            msg: str
+            msg: msg_str
         }
     }};
 }
@@ -170,10 +189,10 @@ macro_rules! log_and_into_saf_error {
 #[macro_export]
 macro_rules! throw_error {
     ($code:expr, $($arg:tt)*) => {{
-        let str = format!($($arg)*);
+        let msg_str = format!($($arg)*);
         Err(macros_lib::SAFError {
             code: $code,
-            msg: str
+            msg: msg_str
         })
     }};
 }

@@ -20,4 +20,4 @@ pub use crate::{SAFError, ErrCode};
 pub use crate::{
     impl_tag_trait, impl_enum_trait, log_throw_error, log_and_into_saf_error, throw_error, impl_from_for_u32
 };
-pub use crate::{Conversion, DataType, Value};
+pub use crate::{Conversion, DataType, Value, Verify};

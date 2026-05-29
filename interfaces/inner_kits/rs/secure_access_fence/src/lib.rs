@@ -14,10 +14,10 @@
  */
 
 //! This module defines the interface of the SAF Rust SDK.
-
+#![feature(once_cell_try)]
 pub use saf_definition::*;
 
-use std::sync::{Mutex, Arc};
+use std::sync::{Arc, Mutex, OnceLock};
 
 use saf_log::logw;
 use ipc::{parcel::MsgParcel, remote::RemoteObj};
@@ -29,7 +29,6 @@ pub use saf_ipc::{
 };
 
 const LOAD_TIMEOUT_IN_SECONDS: i32 = 5;
-static SAF_PLUGIN_LOCK: Mutex<()> = Mutex::new(());
 
 fn load_saf_service() -> Result<RemoteObj> {
     let timeout: i32 = LOAD_TIMEOUT_IN_SECONDS;
@@ -49,23 +48,12 @@ pub struct Manager {
 impl Manager {
     /// Build and initialize the Manager.
     pub fn build() -> Result<Arc<Mutex<Manager>>> {
-        static mut INSTANCE: Option<Arc<Mutex<Manager>>> = None;
-        let _guard = SAF_PLUGIN_LOCK.lock().unwrap();
-
-        unsafe {
-            if let Some(instance) = &INSTANCE {
-                return Ok(instance.clone());
-            }
-
+        static INSTANCE: OnceLock<Arc<Mutex<Manager>>> = OnceLock::new();
+        INSTANCE.get_or_try_init(|| {
             logw!("Create instance for Manager.");
             let remote = load_saf_service()?;
-            let manager = Arc::new(Mutex::new(Manager {
-                remote,
-            }));
-            INSTANCE = Some(manager.clone());
-
-            Ok(manager.clone())
-        }
+            Ok(Arc::new(Mutex::new(Manager { remote })))
+        }).cloned()
     }
 
     /// Check access for certain application.

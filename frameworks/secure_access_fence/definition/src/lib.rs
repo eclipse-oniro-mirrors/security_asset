@@ -152,6 +152,9 @@ impl_enum_trait! {
         /// The error code indicates that invalid os account id.
         InvalidOsAccountId = 0x3001A,
 
+        /// The error code indicates that invalid plugin.
+        InvalidPlugin = 0x3001B,
+
         // ==================== PERMISSION (0x32000) ====================
         /// The error code indicates that the caller doesn't have the permission.
         PermissionDenied = 0x32001,
@@ -244,4 +247,12 @@ pub trait Conversion {
 
     /// Convert the SAF Enum type to the Value variant.
     fn into_value(self) -> Value;
+}
+
+/// Verify emum type.
+pub trait Verify {
+    /// Transfer ipc code to enum.
+    fn try_from_ipc_code(val: u32) -> Result<()>;
+    /// Verify is correct enum.
+    fn is_correct_enum(val: u32) -> bool;
 }
