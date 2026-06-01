@@ -16,6 +16,7 @@
 //! This module implements secure access fence service.
 
 use std::ffi::{c_char, CString};
+use std::time::Instant;
 use std::os::raw::c_char as raw_c_char;
 use ipc::parcel::MsgParcel;
 use samgr::manage::SystemAbilityManager;
@@ -208,6 +209,7 @@ impl SAFService {
             notify_error(
                 "Permission denied".to_string(),
                 ErrCode::PermissionDenied as i32,
+                os_account_id,
                 "batch_generate_ticket".to_string()
             );
             

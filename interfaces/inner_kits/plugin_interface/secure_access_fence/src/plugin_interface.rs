@@ -48,6 +48,8 @@ pub struct PerformanceMetricsKeys {
     pub item_count: &'static str,
     /// The elapsed time in milliseconds for the operation
     pub elapsed_time: &'static str,
+    /// The name of the os account id
+    pub os_account_id: &'static str,
     /// The name of the function being monitored
     pub function_name: &'static str,
 }
@@ -59,6 +61,8 @@ pub struct ErrorMetricsKeys {
     pub error_message: &'static str,
     /// The error code indicating the type of error
     pub error_code: &'static str,
+    /// The name of the os account id
+    pub os_account_id: &'static str,
     /// The name of the function where the error occurred
     pub error_function: &'static str,
 }
@@ -66,12 +70,16 @@ pub struct ErrorMetricsKeys {
 /// Global constant instance for performance metrics parameter keys.
 /// Use this to access standardized parameter names for StatisticsMetrics events.
 pub const PERFORMANCE_METRICS_KEYS: PerformanceMetricsKeys =
-    PerformanceMetricsKeys { item_count: "ItemCount", elapsed_time: "ElapsedTime", function_name: "FunctionName" };
+    PerformanceMetricsKeys { item_count: "ItemCount", elapsed_time: "ElapsedTime", function_name: "FunctionName",
+    os_account_id: "osAccountId"
+};
 
 /// Global constant instance for error metrics parameter keys.
 /// Use this to access standardized parameter names for StatisticsError events.
 pub const ERROR_METRICS_KEYS: ErrorMetricsKeys =
-    ErrorMetricsKeys { error_message: "ErrorMessage", error_code: "ErrorCode", error_function: "ErrorFunction" };
+    ErrorMetricsKeys { error_message: "ErrorMessage", error_code: "ErrorCode", error_function: "ErrorFunction",
+    os_account_id: "osAccountId"
+};
 
 /// param name for common event type.
 pub const PARAM_NAME_COMMON_EVENT_TYPE: &str = "CommonEventType";

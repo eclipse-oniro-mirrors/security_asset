@@ -17,6 +17,8 @@
 
 #include "wrapper.rs.h"
 #include <chrono>
+#include <vector>
+#include <string>
 
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
@@ -35,27 +37,23 @@ using namespace CliTool;
 
 const int32_t VECTOR_MAX_SIZE = 99;
 constexpr const char* CLI_TOOL_PERMISSION = "ohos.permission.QUERY_CLI_TOOL";
+const int32_t INVALID_OS_ACCOUNT_ID = 99999;
 
 namespace {
 ErrCode BatchQueryCommandPermission(
-    const std::vector<CommandInfo> &cmds,
-    std::vector<CommandPermissionInfo> &cmdPermissions,
-    int32_t &resultCode)
+    const std::vector<CommandInfo> &cmds, std::vector<CommandPermissionInfo> &cmdPermissions, int32_t &resultCode)
 {
-    auto start_time = std::chrono::steady_clock::now();
-    
+    auto startTime = std::chrono::steady_clock::now();
     if (!CheckPermission(CLI_TOOL_PERMISSION)) {
         LOGE("Permission denied! Need %{public}s", CLI_TOOL_PERMISSION);
         
         notify_error(
-            rust::String("Permission denied"),
-            SAF_ERR_PERMISSION_DENIED,
-            rust::String("BatchQueryCommandPermission")
+            rust::String("Permission denied"), SAF_ERR_PERMISSION_DENIED,
+            INVALID_OS_ACCOUNT_ID, rust::String("BatchQueryCommandPermission")
         );
         
         return SAF_ERR_PERMISSION_DENIED;
     }
-
     std::vector<Command> cliCmds;
     for (const auto &cmd : cmds) {
         Command cliCmd;
@@ -69,13 +67,10 @@ ErrCode BatchQueryCommandPermission(
     if (ret != 0) {
         LOGE("BatchQueryPermissionBySubCommand failed, ret=%{public}d", ret);
         resultCode = ret;
-        
         notify_error(
-            rust::String("BatchQueryPermissionBySubCommand failed"),
-            SAF_ERR_TOOL_ERROR,
-            rust::String("BatchQueryCommandPermission")
+            rust::String("BatchQueryPermissionBySubCommand failed"), SAF_ERR_TOOL_ERROR,
+            INVALID_OS_ACCOUNT_ID, rust::String("BatchQueryCommandPermission")
         );
-        
         return SAF_ERR_TOOL_ERROR;
     }
 
@@ -87,17 +82,12 @@ ErrCode BatchQueryCommandPermission(
         permInfo.queryRet = cliPerm.queryRet;
         cmdPermissions.push_back(permInfo);
     }
-
-    auto end_time = std::chrono::steady_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
-    int32_t elapsed_time = static_cast<int32_t>(duration.count());
-    
-    notify_performance_metrics(
-        static_cast<int32_t>(cmds.size()),
-        elapsed_time,
-        rust::String("BatchQueryCommandPermission")
+    auto endTime = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+    int32_t elapsedTime = static_cast<int32_t>(duration.count());
+    notify_performance_metrics(static_cast<int32_t>(cmds.size()), elapsedTime,
+        INVALID_OS_ACCOUNT_ID, rust::String("BatchQueryCommandPermission")
     );
-    
     resultCode = 0;
     return SAF_SUCCESS;
 }

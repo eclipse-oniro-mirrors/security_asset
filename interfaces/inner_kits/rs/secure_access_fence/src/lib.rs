@@ -24,7 +24,6 @@ use ipc::{parcel::MsgParcel, remote::RemoteObj};
 use samgr::manage::SystemAbilityManager;
 
 pub use saf_ipc::{
-    deserialize_map, deserialize_maps,
     ipc_err_handle, serialize_map, IpcCode, IPC_SUCCESS, SA_ID, SA_NAME,
 };
 

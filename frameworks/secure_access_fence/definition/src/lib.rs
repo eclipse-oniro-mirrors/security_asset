@@ -35,6 +35,9 @@ impl_enum_trait! {
 
         /// The data type of SAF attribute value is byte array.
         Bytes = 3 << 28,
+
+        /// The data type of SAF attribute value is byte string.
+        String = 4 << 28,
     }
 }
 
@@ -70,14 +73,17 @@ impl_tag_trait! {
 #[derive(Eq, Hash, PartialEq)]
 #[repr(C)]
 pub enum Value {
-    /// Asset attribute value, whose data type is bool.
+    /// SAF attribute value, whose data type is bool.
     Bool(bool),
 
-    /// Asset attribute value, whose data type is number.
+    /// SAF attribute value, whose data type is number.
     Number(u32),
 
-    /// Asset attribute value, whose data type is byte array.
+    /// SAF attribute value, whose data type is byte array.
     Bytes(Vec<u8>),
+
+    /// SAF attribute value, whose data type is string.
+    String(String),
 }
 
 impl Drop for Value {

@@ -20,15 +20,13 @@ use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
 use saf_plugin_interface::plugin_interface::{EventType, ExtMap, ERROR_METRICS_KEYS, PERFORMANCE_METRICS_KEYS};
 use saf_sdk::Value;
-use std::collections::HashMap as StdHashMap;
-use std::pin::Pin;
 
 #[cxx::bridge(namespace = "OHOS::Security::SAF")]
 pub mod ffi {
     // C++ callable Rust functions
     extern "Rust" {
-        fn notify_performance_metrics(item_count: i32, elapsed_time: i32, function_name: String);
-        fn notify_error(error_message: String, error_code: i32, function_name: String);
+        fn notify_performance_metrics(item_count: i32, elapsed_time: i32, os_account_id: i32, function_name: String);
+        fn notify_error(error_message: String, error_code: i32, os_account_id: i32, function_name: String);
     }
 
     // Rust callable C++ functions
@@ -49,7 +47,7 @@ pub fn on_remote_request(code: u32, data: &mut MsgParcel, reply: &mut MsgParcel)
 }
 
 // Performance metrics notification function
-pub fn notify_performance_metrics(item_count: i32, elapsed_time: i32, function_name: String) {
+pub fn notify_performance_metrics(item_count: i32, elapsed_time: i32, os_account_id: i32, function_name: String) {
     logi!(
         "[INFO] Performance metrics from C++/Rust: function={}, item_count={}, elapsed_time={}ms",
         function_name,
@@ -57,59 +55,58 @@ pub fn notify_performance_metrics(item_count: i32, elapsed_time: i32, function_n
         elapsed_time
     );
 
-    if let Err(e) = call_plugin_performance_event(item_count, elapsed_time, function_name) {
+    if let Err(e) = call_plugin_performance_event(item_count, elapsed_time, os_account_id, function_name) {
         loge!("[ERROR] Failed to call plugin process_event for performance metrics: {}", e);
     }
 }
 
 // Error notification function
-pub fn notify_error(error_message: String, error_code: i32, function_name: String) {
+pub fn notify_error(error_message: String, error_code: i32, os_account_id: i32, function_name: String) {
     logi!(
-        "[INFO] Error metrics from C++: function={}, error_code={}, error_message={}",
+        "[INFO] Error metrics from C++: function={}, error_code={}, os_account_id={}, error_message={}",
         function_name,
         error_code,
+        os_account_id,
         error_message
     );
 
-    if let Err(e) = call_plugin_error_event(error_message, error_code, function_name) {
+    if let Err(e) = call_plugin_error_event(error_message, error_code, os_account_id, function_name) {
         loge!("[ERROR] Failed to call plugin process_event for error metrics: {}", e);
     }
 }
 
 // Plugin performance event helper
-fn call_plugin_performance_event(item_count: i32, elapsed_time: i32, function_name: String) -> Result<(), String> {
+fn call_plugin_performance_event(
+    item_count: i32, elapsed_time: i32, os_account_id: i32, function_name: String
+) -> Result<(), String> {
     let plugin = SAFPlugin::get_instance();
 
     let loader = plugin.load_plugin().map_err(|e| format!("load_plugin failed: {}", e))?;
 
-    let mut params: ExtMap = StdHashMap::new();
+    let mut params = ExtMap::new();
     params.insert(PERFORMANCE_METRICS_KEYS.item_count, Value::Number(item_count as u32));
     params.insert(PERFORMANCE_METRICS_KEYS.elapsed_time, Value::Number(elapsed_time as u32));
+    params.insert(PERFORMANCE_METRICS_KEYS.os_account_id, Value::Number(os_account_id as u32));
     params.insert(PERFORMANCE_METRICS_KEYS.function_name, Value::String(function_name));
 
-    let result = loader
-        .process_event(EventType::StatisticsMetrics, &mut params)
-        .map_err(|e| format!("process_event failed: {}", e))?;
-
-    logi!("[INFO] Plugin performance event returned: {:?}", result);
+    let _ = loader.process_event(EventType::StatisticsMetrics, &mut params);
     Ok(())
 }
 
 // Plugin error event helper
-fn call_plugin_error_event(error_message: String, error_code: i32, function_name: String) -> Result<(), String> {
+fn call_plugin_error_event(
+    error_message: String, error_code: i32, os_account_id: i32, function_name: String
+) -> Result<(), String> {
     let plugin = SAFPlugin::get_instance();
 
     let loader = plugin.load_plugin().map_err(|e| format!("load_plugin failed: {}", e))?;
 
-    let mut params: ExtMap = StdHashMap::new();
+    let mut params = ExtMap::new();
     params.insert(ERROR_METRICS_KEYS.error_message, Value::String(error_message));
     params.insert(ERROR_METRICS_KEYS.error_code, Value::Number(error_code as u32));
+    params.insert(ERROR_METRICS_KEYS.os_account_id, Value::Number(os_account_id as u32));
     params.insert(ERROR_METRICS_KEYS.error_function, Value::String(function_name));
 
-    let result = loader
-        .process_event(EventType::StatisticsError, &mut params)
-        .map_err(|e| format!("process_event failed: {}", e))?;
-
-    logi!("[INFO] Plugin error event returned: {:?}", result);
+    let _ = loader.process_event(EventType::StatisticsError, &mut params);
     Ok(())
 }

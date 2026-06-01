@@ -27,6 +27,7 @@ use std::ffi::CString;
 use std::os::raw::c_char;
 use saf_definition::{ErrCode, Result, macros_lib};
 use saf_ipc::VerifyTicketInfo;
+use crate::notify_error;
 
 const CHALLENGE_SIZE: usize = 32;
 const HMAC_SHA256_SIZE: usize = 32;
@@ -200,7 +201,15 @@ pub fn batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: &[St
                 ticket: String::from_utf8_lossy(&base64_encode(&hmac_result)?).to_string(),
             })
         })().unwrap_or_else(|e| {
-            macros_lib::loge!("Ticket idx[{}]: generate failed, message len={}, err={}", index, message.len(), e.code);
+            let error_msg = format!("Ticket idx[{}]: generate failed, message len={}, err={}",
+                index, message.len(), e.code);
+            macros_lib::loge!("{}", error_msg);
+            notify_error(
+                error_msg.to_string(),
+                e.code as i32,
+                os_account_id,
+                "batch_generate_ticket_sub".to_string()
+            );
             VerifyTicketInfo {
                 message: message.clone(),
                 challenge: String::new(),
@@ -278,7 +287,21 @@ pub fn batch_verify_ticket(
         match verify_hmac_sha256(&session_key, &data, &expected_hmac) {
             Ok(_) => results.push(ErrCode::Success as i32),
             Err(e) => {
-                macros_lib::loge!("VerifyTicket idx[{}]: verify_hmac_sha256 failed, err={}", index, e.code);
+                let error_msg = format!(
+                    "VerifyTicket idx:[{}] message_len:[{}] challenge_len:[{}] ticket_len:[{}] failed, err={}",
+                    index, 
+                    verify_info.message.len(),
+                    verify_info.challenge.len(),
+                    verify_info.ticket.len(),
+                    e.code
+                );
+                macros_lib::loge!("{}", error_msg);
+                notify_error(
+                    error_msg.to_string(),
+                    e.code as i32,
+                    os_account_id,
+                    "batch_verify_ticket_sub".to_string()
+                );
                 results.push(e.code as i32);
             }
         }

@@ -95,6 +95,7 @@ pub fn serialize_map(map: &SAFMap, parcel: &mut MsgParcel) -> Result<()> {
             Value::Bool(b) => parcel.write::<bool>(b).map_err(ipc_err_handle)?,
             Value::Number(n) => parcel.write::<u32>(n).map_err(ipc_err_handle)?,
             Value::Bytes(a) => parcel.write::<Vec<u8>>(a).map_err(ipc_err_handle)?,
+            Value::String(s) => parcel.write::<String>(s).map_err(ipc_err_handle)?,
         }
     }
     Ok(())
@@ -125,6 +126,10 @@ pub fn deserialize_map(parcel: &mut MsgParcel) -> Result<SAFMap> {
             DataType::Bytes => {
                 let v = parcel.read::<Vec<u8>>().map_err(ipc_err_handle)?;
                 map.insert(tag, Value::Bytes(v));
+            },
+            DataType::String => {
+                let v = parcel.read::<String>().map_err(ipc_err_handle)?;
+                map.insert(tag, Value::String(v));
             },
         }
     }
