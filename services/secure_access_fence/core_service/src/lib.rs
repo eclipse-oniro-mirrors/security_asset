@@ -32,10 +32,15 @@ use saf_ipc::{SA_ID, VerifyTicketInfo};
 use saf_log::{logd, loge, logi};
 use saf_plugin::saf_plugin::{SAFContext, SAFPlugin};
 
+use crate::wrapper::{notify_performance_metrics, notify_error};
+
 mod common_event;
 mod stub;
 mod wrapper;
 mod ticket_operation;
+
+#[macro_use]
+mod metrics_macro;
 
 const GET_TICKET_INFO_PERMISSION: &str = "ohos.permission.GET_TICKET_INFO";
 
@@ -198,15 +203,38 @@ impl SAFService {
         Result<Vec<VerifyTicketInfo>> {
         let permission = CString::new(GET_TICKET_INFO_PERMISSION).unwrap();
         if unsafe { !CheckPermission(permission.as_ptr()) } {
+            loge!("Permission denied! Need {}", GET_TICKET_INFO_PERMISSION);
+            
+            notify_error(
+                "Permission denied".to_string(),
+                ErrCode::PermissionDenied as i32,
+                "batch_generate_ticket".to_string()
+            );
+            
             return macros_lib::log_throw_error!(ErrCode::PermissionDenied, 
                 "Permission denied! Need {}", GET_TICKET_INFO_PERMISSION);
         }
-        ticket_operation::batch_generate_ticket(os_account_id, caller_id, messages)
+        
+        execute_with_metrics!(
+            "batch_generate_ticket",
+            ticket_operation::batch_generate_ticket,
+            messages.len() as i32,
+            os_account_id,
+            caller_id,
+            messages
+        )
     }
 
     fn batch_verify_ticket(&self, os_account_id: i32, caller_id: &str, verify_infos: &[VerifyTicketInfo]) ->
         Result<Vec<i32>> {
-        ticket_operation::batch_verify_ticket(os_account_id, caller_id, verify_infos)
+        execute_with_metrics!(
+            "batch_verify_ticket",
+            ticket_operation::batch_verify_ticket,
+            verify_infos.len() as i32,
+            os_account_id,
+            caller_id,
+            verify_infos
+        )
     }
 }
 

@@ -15,6 +15,9 @@
 
 #include "secure_access_fence_service.h"
 
+#include "wrapper.rs.h"
+#include <chrono>
+
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 
@@ -39,8 +42,17 @@ ErrCode BatchQueryCommandPermission(
     std::vector<CommandPermissionInfo> &cmdPermissions,
     int32_t &resultCode)
 {
+    auto start_time = std::chrono::steady_clock::now();
+    
     if (!CheckPermission(CLI_TOOL_PERMISSION)) {
         LOGE("Permission denied! Need %{public}s", CLI_TOOL_PERMISSION);
+        
+        notify_error(
+            rust::String("Permission denied"),
+            SAF_ERR_PERMISSION_DENIED,
+            rust::String("BatchQueryCommandPermission")
+        );
+        
         return SAF_ERR_PERMISSION_DENIED;
     }
 
@@ -57,6 +69,13 @@ ErrCode BatchQueryCommandPermission(
     if (ret != 0) {
         LOGE("BatchQueryPermissionBySubCommand failed, ret=%{public}d", ret);
         resultCode = ret;
+        
+        notify_error(
+            rust::String("BatchQueryPermissionBySubCommand failed"),
+            SAF_ERR_TOOL_ERROR,
+            rust::String("BatchQueryCommandPermission")
+        );
+        
         return SAF_ERR_TOOL_ERROR;
     }
 
@@ -69,6 +88,16 @@ ErrCode BatchQueryCommandPermission(
         cmdPermissions.push_back(permInfo);
     }
 
+    auto end_time = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+    int32_t elapsed_time = static_cast<int32_t>(duration.count());
+    
+    notify_performance_metrics(
+        static_cast<int32_t>(cmds.size()),
+        elapsed_time,
+        rust::String("BatchQueryCommandPermission")
+    );
+    
     resultCode = 0;
     return SAF_SUCCESS;
 }
