@@ -225,7 +225,7 @@ impl Ability for AssetAbility {
         if let Err(e) = RuntimeBuilder::new_multi_thread().worker_num(1).max_blocking_pool_size(1).build_global() {
             loge!("[WARNING]Ylong new global thread failed! {}", e);
         };
-        let func_name = hisysevent::function!();
+        let func_name = macros_lib::hisysevent::function!();
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
         let calling_info = CallingInfo::new_self();
@@ -404,7 +404,7 @@ fn construct_group_calling_infos(user_id: i32, owner: Vec<u8>,uid: u64) -> Vec<C
 fn on_preload_extension(data: &mut MsgParcel) -> Result<()> {
     let res_type = deserialize::<u32>(data)?;
     if res_type != PREPARE_FOR_BUNDLE {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "res_type is not PREPARE_FOR_BUNDLE");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "res_type is not PREPARE_FOR_BUNDLE");
     }
     let _value = deserialize::<i64>(data)?;
 
@@ -412,7 +412,7 @@ fn on_preload_extension(data: &mut MsgParcel) -> Result<()> {
     let value = get_value_from_json(json_str, "uid");
     let uid = match value.parse::<u64>() {
         Ok(num) => num,
-        Err(_) => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "parse uid from json value failed!"),
+        Err(_) => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "parse uid from json value failed!"),
     };
 
     let process_info = ProcessInfo::build(None, Some(uid), true)?;
@@ -460,7 +460,7 @@ fn start_service(handler: Handler) -> Result<()> {
     }
 
     if !handler.publish(AssetService::new(handler.clone())) {
-        return macros_lib::log_throw_error!(ErrCode::IpcError, "Asset publish stub object failed");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::IpcError, "Asset publish stub object failed");
     };
     common_event::subscribe();
     handler.add_system_ability_listen(MEMORY_MANAGER_SA_ID);
@@ -505,7 +505,7 @@ struct AssetService {
 
 macro_rules! execute {
     ($func:path, $calling_info:expr, $first_arg:expr) => {{
-        let func_name = hisysevent::function!();
+        let func_name = macros_lib::hisysevent::function!();
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
         // Create de database directory if not exists.
@@ -520,7 +520,7 @@ macro_rules! execute {
         
     }};
     ($func:path, $calling_info:expr, $first_arg:expr, $second_arg:expr) => {{
-        let func_name = hisysevent::function!();
+        let func_name = macros_lib::hisysevent::function!();
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
         // Create de database directory if not exists.
@@ -539,7 +539,7 @@ macro_rules! execute {
 
 macro_rules! execute_batch {
     ($func:path, $calling_info:expr, $first_arg:expr) => {{
-        let func_name = hisysevent::function!();
+        let func_name = macros_lib::hisysevent::function!();
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
         // Create de database directory if not exists.
@@ -554,7 +554,7 @@ macro_rules! execute_batch {
         
     }};
     ($func:path, $calling_info:expr, $first_arg:expr, $second_arg:expr) => {{
-        let func_name = hisysevent::function!();
+        let func_name = macros_lib::hisysevent::function!();
         let start = Instant::now();
         let _trace = TraceScope::trace(func_name);
         // Create de database directory if not exists.

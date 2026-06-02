@@ -109,17 +109,17 @@ macros_lib::impl_enum_trait! {
 pub fn transfer_error_code(err_code: ErrCode) -> AssetError {
     match err_code {
         ErrCode::AccessDenied => {
-            AssetError::new(ErrCode::AccessDenied, "[FATAL]HUKS verify auth token failed".to_string())
+            AssetError::new(ErrCode::AccessDenied, "[FATAL]HUKS verify auth token failed".to_string(), macros_lib::hisysevent::function!())
         },
         ErrCode::StatusMismatch => {
-            AssetError::new(ErrCode::StatusMismatch, "[FATAL]Screen status does not match".to_string())
+            AssetError::new(ErrCode::StatusMismatch, "[FATAL]Screen status does not match".to_string(), macros_lib::hisysevent::function!())
         },
-        ErrCode::InvalidArgument => AssetError::new(ErrCode::InvalidArgument, "[FATAL]Invalid argument.".to_string()),
-        ErrCode::BmsError => AssetError::new(ErrCode::BmsError, "[FATAL]Get owner info from bms failed.".to_string()),
+        ErrCode::InvalidArgument => AssetError::new(ErrCode::InvalidArgument, "[FATAL]Invalid argument.".to_string(), macros_lib::hisysevent::function!()),
+        ErrCode::BmsError => AssetError::new(ErrCode::BmsError, "[FATAL]Get owner info from bms failed.".to_string(), macros_lib::hisysevent::function!()),
         ErrCode::AccessTokenError => {
-            AssetError::new(ErrCode::AccessTokenError, "[FATAL]Get process info failed.".to_string())
+            AssetError::new(ErrCode::AccessTokenError, "[FATAL]Get process info failed.".to_string(), macros_lib::hisysevent::function!())
         },
-        _ => AssetError::new(ErrCode::CryptoError, "[FATAL]HUKS execute crypt failed".to_string()),
+        _ => AssetError::new(ErrCode::CryptoError, "[FATAL]HUKS execute crypt failed".to_string(), macros_lib::hisysevent::function!()),
     }
 }
 
@@ -135,7 +135,7 @@ pub fn get_user_id(uid: u64) -> Result<u32> {
         if GetUserIdByUid(uid, &mut user_id) {
             Ok(user_id)
         } else {
-            macros_lib::log_throw_error!(ErrCode::AccountError, "[FATAL]Get user id failed.")
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::AccountError, "[FATAL]Get user id failed.")
         }
     }
 }
@@ -147,7 +147,7 @@ pub fn is_user_id_exist(user_id: i32) -> Result<bool> {
         if IsUserIdExist(user_id, &mut exist) {
             Ok(exist)
         } else {
-            macros_lib::log_throw_error!(ErrCode::AccountError, "[FATAL]Check user id failed.")
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::AccountError, "[FATAL]Check user id failed.")
         }
     }
 }

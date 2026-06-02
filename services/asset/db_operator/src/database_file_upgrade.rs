@@ -98,7 +98,7 @@ pub fn construct_splited_db_name(calling_info: &CallingInfo, is_ce: bool) -> Res
                 String::from_utf8_lossy(developer_id).trim_end_matches('\0'),
                 String::from_utf8_lossy(&to_hex(&hasher::sha256(true, group_id)))
             ),
-            _ => return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
+            _ => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument,
                 "[FATAL]Wrong queried owner group info."),
         },
         OwnerType::Hap => {
@@ -120,7 +120,7 @@ fn get_db_before_split(user_id: i32) -> Result<Database> {
 fn get_value_from_db_map(db_map: &DbMap, key: &str) -> Result<Value> {
     match db_map.get(key) {
         Some(value) => Ok(value.clone()),
-        _ => macros_lib::log_throw_error!(ErrCode::DatabaseError, "[FATAL]Get value from {} failed.", key),
+        _ => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::DatabaseError, "[FATAL]Get value from {} failed.", key),
     }
 }
 
@@ -305,14 +305,14 @@ pub fn create_upgrade_file(user_id: i32, origin_version: OriginVersion) -> Resul
     let mut file = match OpenOptions::new().write(true).create(true).open(file_path) {
         Ok(file) => file,
         Err(_) => {
-            return macros_lib::log_throw_error!(ErrCode::FileOperationError,
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::FileOperationError,
                 "Create file failed in create_upgrade_file.");
         },
     };
     let _ = fs::set_permissions(file_path, fs::Permissions::from_mode(0o640));
     let upgrade_list = create_upgrade_list_inner(user_id, &origin_version);
     let content = UpgradeData { version: origin_version as u32, upgrade_list, ce_upgrade: None };
-    to_writer(&content, &mut file).map_err(|e| macros_lib::log_and_into_asset_error!(
+    to_writer(&content, &mut file).map_err(|e| macros_lib::log_and_into_asset_error!(macros_lib::hisysevent::function!(), 
         ErrCode::FileOperationError, "Write file failed in create_upgrade_file. error: {}", e))
 }
 
@@ -333,7 +333,7 @@ pub fn get_file_content(user_id: i32) -> Result<UpgradeData> {
     let file = File::open(path)?;
     match from_reader(file) {
         Ok(content) => Ok(content),
-        Err(_) => macros_lib::log_throw_error!(ErrCode::FileOperationError, "Get content from upgrade file failed."),
+        Err(_) => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::FileOperationError, "Get content from upgrade file failed."),
     }
 }
 
@@ -343,7 +343,11 @@ pub fn get_upgrade_version(user_id: i32) -> Result<OriginVersion> {
         version if version == OriginVersion::V1 as u32 => Ok(OriginVersion::V1),
         version if version == OriginVersion::V2 as u32 => Ok(OriginVersion::V2),
         version if version == OriginVersion::V3 as u32 => Ok(OriginVersion::V3),
-        _ => Err(AssetError { code: ErrCode::FileOperationError, msg: "Get upgrade version failed.".to_owned() }),
+        _ => Err(AssetError { 
+            code: ErrCode::FileOperationError, 
+            msg: "Get upgrade version failed.".to_owned(),
+            call_chain: format!("{}:{}", std::panic::Location::caller().file(), std::panic::Location::caller().line()),
+        }),
     }
 }
 
@@ -407,10 +411,10 @@ pub fn save_to_writer(user_id: i32, content: &UpgradeData) -> Result<()> {
     let mut file = match OpenOptions::new().write(true).create(true).truncate(true).mode(0o640).open(file_path) {
         Ok(file) => file,
         Err(_) => {
-            return macros_lib::log_throw_error!(ErrCode::FileOperationError, "Create file failed.");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::FileOperationError, "Create file failed.");
         },
     };
-    to_writer(&content, &mut file).map_err(|e| macros_lib::log_and_into_asset_error!(
+    to_writer(&content, &mut file).map_err(|e| macros_lib::log_and_into_asset_error!(macros_lib::hisysevent::function!(), 
         ErrCode::FileOperationError, "Write file failed in update_upgrade_list. error: {}", e))
 }
 

@@ -294,6 +294,9 @@ pub struct AssetError {
 
     /// Error message for error occurred.
     pub msg: String,
+
+    /// Call chain for error occurred. Format: "file:line <-- caller:line <-- upper:line"
+    pub call_chain: String,
 }
 
 /// Alias of the Asset result type.

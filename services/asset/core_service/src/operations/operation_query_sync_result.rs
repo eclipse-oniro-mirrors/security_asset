@@ -16,7 +16,7 @@
 //! This module is used to query the result of synchronization.
 
 use asset_common::CallingInfo;
-use asset_definition::{AssetError, AssetMap, ErrCode, Extension, Result, SyncResult, Tag, Value};
+use asset_definition::{AssetError, AssetMap, ErrCode, Extension, Result, SyncResult, Tag, Value, macros_lib};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_plugin_interface::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_FAILED_COUNT, PARAM_NAME_GROUP_ID, PARAM_NAME_OWNER_INFO, PARAM_NAME_OWNER_TYPE,
@@ -29,21 +29,28 @@ use crate::operations::common::check_group_validity;
 const OPTIONAL_ATTRS: [Tag; 2] = [Tag::GroupId, Tag::RequireAttrEncrypted];
 
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    common::check_tag_validity(attributes, &OPTIONAL_ATTRS)?;
-    check_group_validity(attributes, calling_info)?;
-    common::check_value_validity(attributes)?;
+    common::check_tag_validity(attributes, &OPTIONAL_ATTRS).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    check_group_validity(attributes, calling_info).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    common::check_value_validity(attributes).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     Ok(())
 }
 
 fn map_err(code: u32) -> AssetError {
     match ErrCode::try_from(code) {
-        Ok(code) => AssetError { code, msg: "get sync result failed".to_string() },
+        Ok(code) => {
+            let location = std::panic::Location::caller();
+            AssetError { 
+                code, 
+                msg: "get sync result failed".to_string(),
+                call_chain: format!("{}", location.line()),
+            }
+        },
         Err(err) => err,
     }
 }
 
 pub(crate) fn query_sync_result(calling_info: &CallingInfo, query: &AssetMap) -> Result<SyncResult> {
-    check_arguments(query, calling_info)?;
+    check_arguments(query, calling_info).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
@@ -59,12 +66,12 @@ pub(crate) fn query_sync_result(calling_info: &CallingInfo, query: &AssetMap) ->
         match load.process_event(EventType::QuerySyncResult, &mut params) {
             Ok(()) => {
                 return Ok(SyncResult {
-                    result_code: params.get_num_attr(&PARAM_NAME_RESULT_CODE)? as i32,
-                    total_count: params.get_num_attr(&PARAM_NAME_TOTAL_COUNT)?,
-                    failed_count: params.get_num_attr(&PARAM_NAME_FAILED_COUNT)?,
+                    result_code: params.get_num_attr(&PARAM_NAME_RESULT_CODE).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))? as i32,
+                    total_count: params.get_num_attr(&PARAM_NAME_TOTAL_COUNT).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?,
+                    failed_count: params.get_num_attr(&PARAM_NAME_FAILED_COUNT).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?,
                 })
             },
-            Err(code) => return Err(map_err(code)),
+            Err(code) => return Err(macros_lib::track_error!(map_err(code), macros_lib::hisysevent::function!())),
         }
     }
     Ok(SyncResult::default())

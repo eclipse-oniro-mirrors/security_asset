@@ -34,7 +34,7 @@
         ],
         "rom": "5120KByte",
         "ram": "4828KByte",
-        "deps": {
+            "deps": {
             "components": [
                 "ability_base",
                 "ability_runtime",

@@ -182,7 +182,7 @@ fn check_if_need_addition_aad(attr: &str, map: &DbMap) -> bool {
 fn to_hex(bytes: &Vec<u8>) -> Result<Vec<u8>> {
     let bytes_len = bytes.len();
     if bytes_len > MAX_LABEL_SIZE {
-        return macros_lib::log_throw_error!(ErrCode::DataCorrupted, "The data in DB has been tampered with.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::DataCorrupted, "The data in DB has been tampered with.");
     }
 
     let scale_capacity = 2;

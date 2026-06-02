@@ -51,7 +51,7 @@ impl CryptoManager {
     pub fn add(&mut self, crypto: Crypto) -> Result<()> {
         self.remove_expired_crypto()?;
         if self.cryptos.len() >= CRYPTO_CAPACITY {
-            macros_lib::log_throw_error!(ErrCode::LimitExceeded, "The number of cryptos exceeds the upper limit.")
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::LimitExceeded, "The number of cryptos exceeds the upper limit.")
         } else {
             self.cryptos.push(crypto);
             Ok(())
@@ -66,7 +66,7 @@ impl CryptoManager {
                 return Ok(crypto);
             }
         }
-        macros_lib::log_throw_error!(ErrCode::NotFound, "The crypto expires or does not exist. Call the preQuery first.")
+        macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::NotFound, "The crypto expires or does not exist. Call the preQuery first.")
     }
 
     /// Remove the crypto from manager.

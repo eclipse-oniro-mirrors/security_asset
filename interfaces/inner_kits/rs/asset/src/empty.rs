@@ -32,6 +32,7 @@ impl Manager {
     /// Build and initialize the Manager.
     pub fn build() -> Result<Arc<Mutex<Manager>>> {
         macros_lib::log_throw_error!(
+            macros_lib::hisysevent::function!(),
             ErrCode::Unsupported,
             "[FATAL][RUST SDK]Asset service is not supported in empty mode"
         )
@@ -40,6 +41,7 @@ impl Manager {
     /// Add an Asset.
     pub fn add(&mut self, _attributes: &AssetMap) -> Result<()> {
         macros_lib::log_throw_error!(
+            macros_lib::hisysevent::function!(),
             ErrCode::Unsupported,
             "[FATAL][RUST SDK]Asset service is not supported in empty mode"
         )
@@ -48,6 +50,7 @@ impl Manager {
     /// Remove one or more Assets that match a search query.
     pub fn remove(&mut self, _query: &AssetMap) -> Result<()> {
         macros_lib::log_throw_error!(
+            macros_lib::hisysevent::function!(),
             ErrCode::Unsupported,
             "[FATAL][RUST SDK]Asset service is not supported in empty mode"
         )
@@ -56,6 +59,7 @@ impl Manager {
     /// Update an Asset that matches a search query.
     pub fn update(&mut self, _query: &AssetMap, _attributes_to_update: &AssetMap) -> Result<()> {
         macros_lib::log_throw_error!(
+            macros_lib::hisysevent::function!(),
             ErrCode::Unsupported,
             "[FATAL][RUST SDK]Asset service is not supported in empty mode"
         )
@@ -64,6 +68,7 @@ impl Manager {
     /// Add batch assets.
     pub fn batch_add(&mut self, _attributes_array: &[AssetMap]) -> Result<Vec<(u32, u32)>> {
         macros_lib::log_throw_error!(
+            macros_lib::hisysevent::function!(),
             ErrCode::Unsupported,
             "[FATAL][RUST SDK]Asset service is not supported in empty mode"
         )
@@ -72,6 +77,7 @@ impl Manager {
     /// Remove batch assets.
     pub fn batch_remove(&mut self, _attributes_array: &[AssetMap]) -> Result<()> {
         macros_lib::log_throw_error!(
+            macros_lib::hisysevent::function!(),
             ErrCode::Unsupported,
             "[FATAL][RUST SDK]Asset service is not supported in empty mode"
         )
@@ -84,6 +90,7 @@ impl Manager {
         _attributes_to_update_array: &[AssetMap]
     ) -> Result<Vec<(u32, u32)>> {
         macros_lib::log_throw_error!(
+            macros_lib::hisysevent::function!(),
             ErrCode::Unsupported,
             "[FATAL][RUST SDK]Asset service is not supported in empty mode"
         )
@@ -92,6 +99,7 @@ impl Manager {
     /// Preprocessing for querying one or more Assets that require user authentication.
     pub fn pre_query(&mut self, _query: &AssetMap) -> Result<Vec<u8>> {
         macros_lib::log_throw_error!(
+            macros_lib::hisysevent::function!(),
             ErrCode::Unsupported,
             "[FATAL][RUST SDK]Asset service is not supported in empty mode"
         )
@@ -100,6 +108,7 @@ impl Manager {
     /// Query one or more Assets that match a search query.
     pub fn query(&mut self, _query: &AssetMap) -> Result<Vec<AssetMap>> {
         macros_lib::log_throw_error!(
+            macros_lib::hisysevent::function!(),
             ErrCode::Unsupported,
             "[FATAL][RUST SDK]Asset service is not supported in empty mode"
         )
@@ -108,6 +117,7 @@ impl Manager {
     /// Post-processing for querying multiple Assets that require user authentication.
     pub fn post_query(&mut self, _query: &AssetMap) -> Result<()> {
         macros_lib::log_throw_error!(
+            macros_lib::hisysevent::function!(),
             ErrCode::Unsupported,
             "[FATAL][RUST SDK]Asset service is not supported in empty mode"
         )
@@ -116,6 +126,7 @@ impl Manager {
     /// Query the result of synchronization.
     pub fn query_sync_result(&mut self, _query: &AssetMap) -> Result<SyncResult> {
         macros_lib::log_throw_error!(
+            macros_lib::hisysevent::function!(),
             ErrCode::Unsupported,
             "[FATAL][RUST SDK]Asset service is not supported in empty mode"
         )

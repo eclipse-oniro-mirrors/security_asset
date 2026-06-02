@@ -44,7 +44,7 @@ fn check_validity_of_db_key(user_id: i32) -> Result<()> {
     if is_ce_db_exist(user_id)? && !DbKey::check_existance(user_id)? {
         loge!("[FATAL]There is database but no database key. Now all data should be cleared and restart over.");
         remove_ce_files(user_id)?;
-        return macros_lib::log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
     }
     Ok(())
 }
@@ -63,7 +63,7 @@ pub fn get_db_key(user_id: i32, is_ce: bool) -> Result<Option<Vec<u8>>> {
                 e.code
             );
             remove_ce_files(user_id)?;
-            macros_lib::log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id)
         },
         Err(e) => Err(e),
     }
@@ -119,7 +119,7 @@ impl DbKey {
         let mut db_key = [0; KEY_LEN_IN_BYTES];
 
         if unsafe { GenerateRandom(db_key.as_mut_ptr(), db_key.len() as u32) } != SUCCESS {
-            return macros_lib::log_throw_error!(ErrCode::CryptoError, "[FATAL]Generate random failed!");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::CryptoError, "[FATAL]Generate random failed!");
         }
         Ok(Self { db_key: db_key.to_vec() })
     }

@@ -62,7 +62,11 @@ fn remove_db(path: &str) -> Result<()> {
             Err(e) if e.kind() == ErrorKind::NotFound => (),
             Err(e) => {
                 logw!("[WARNING]Remove db:[{}] failed, error code:[{}]", path, e);
-                res = Err(AssetError { code: ErrCode::DatabaseError, msg: "rmove file failed".to_string() })
+                res = Err(AssetError { 
+                    code: ErrCode::DatabaseError, 
+                    msg: "rmove file failed".to_string(),
+                    call_chain: format!("{}:{}", std::panic::Location::caller().file(), std::panic::Location::caller().line()),
+                })
             },
         };
     }
@@ -102,7 +106,7 @@ fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()>
     // remove de and de backup
     if need_rollback {
         ce_db.exec("rollback")?;
-        return macros_lib::log_throw_error!(ErrCode::DatabaseError, "Upgrade ce data failed.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::DatabaseError, "Upgrade ce data failed.");
     }
     ce_db.exec("commit")?;
     remove_db(&path_str)
@@ -112,7 +116,7 @@ fn store_upgrade_info_in_settings(user_id: i32, status: CeUpgradeStatus) -> Resu
     let key = CString::new(ASSET_CE_UPGRADE).unwrap();
     match unsafe{ StoreKeyValue(user_id, key.as_ptr(), status as i32) } {
         true => Ok(()),
-        false => macros_lib::log_throw_error!(ErrCode::DatabaseError, "store data in setting failed."),
+        false => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::DatabaseError, "store data in setting failed."),
     }
 }
 

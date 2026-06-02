@@ -40,11 +40,11 @@ extern "C" {
 }
 
 fn encrypt_secret(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
-    let secret_key = common::build_secret_key(calling_info, db_data)?;
-    generate_secret_key_if_needed(&secret_key)?;
+    let secret_key = common::build_secret_key(calling_info, db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    generate_secret_key_if_needed(&secret_key).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
 
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
-    let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data)?)?;
+    let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     db_data.insert(column::SECRET, Value::Bytes(cipher));
     Ok(())
 }
@@ -58,18 +58,18 @@ fn resolve_conflict(
 ) -> Result<()> {
     match attrs.get(&Tag::ConflictResolution) {
         Some(Value::Number(num)) if *num == ConflictResolution::Overwrite as u32 => {
-            encrypt_secret(calling, db_data)?;
-            db.replace_datas(query, false, db_data)
+            encrypt_secret(calling, db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+            db.replace_datas(query, false, db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
         },
         _ => {
             let mut condition = query.clone();
             condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
             condition.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
-            if db.is_data_exists(&condition, false)? {
-                encrypt_secret(calling, db_data)?;
-                db.replace_datas(&condition, false, db_data)
+            if db.is_data_exists(&condition, false).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))? {
+                encrypt_secret(calling, db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+                db.replace_datas(&condition, false, db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
             } else {
-                macros_lib::log_throw_error!(ErrCode::Duplicated, "[FATAL][SA]The specified alias already exists.")
+                macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::Duplicated, "[FATAL][SA]The specified alias already exists.")
             }
         },
     }
@@ -78,7 +78,7 @@ fn resolve_conflict(
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     db_data.insert(column::VERSION, Value::Number(DB_DATA_VERSION));
 
-    let time = time::system_time_in_millis()?;
+    let time = time::system_time_in_millis().map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     db_data.insert(column::CREATE_TIME, Value::Bytes(time.clone()));
     db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     Ok(())
@@ -96,7 +96,7 @@ fn add_default_attrs(db_data: &mut DbMap) {
 }
 
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    common::check_required_tags(attributes, &common::REQUIRED_ATTRS)?;
+    common::check_required_tags(attributes, &common::REQUIRED_ATTRS).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
 
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
@@ -104,51 +104,51 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&common::OPTIONAL_ATTRS);
-    common::check_tag_validity(attributes, &valid_tags)?;
-    check_group_validity(attributes, calling_info)?;
-    common::check_value_validity(attributes)?;
-    common::check_accessibility_validity(attributes, calling_info)?;
-    common::check_sync_permission(attributes, calling_info)?;
-    common::check_wrap_permission(attributes, calling_info)?;
-    common::check_system_permission(attributes)?;
-    common::check_persistent_permission(attributes)
+    common::check_tag_validity(attributes, &valid_tags).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    check_group_validity(attributes, calling_info).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    common::check_value_validity(attributes).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    common::check_accessibility_validity(attributes, calling_info).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    common::check_sync_permission(attributes, calling_info).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    common::check_wrap_permission(attributes, calling_info).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    common::check_system_permission(attributes).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    common::check_persistent_permission(attributes).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
 }
 
 fn modify_sync_type(db: &mut DbMap) -> Result<()> {
     if db.get(&column::SYNC_TYPE).is_none()
-        || (db.get_num_attr(&column::SYNC_TYPE)? & SyncType::TrustedAccount as u32) == 0
+        || (db.get_num_attr(&column::SYNC_TYPE).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))? & SyncType::TrustedAccount as u32) == 0
     {
-        return Ok(());
+        return Ok(())
     }
     if unsafe { !CheckSystemHapPermission() } {
         logw!("[FATAL]The caller is not system application. Modify store sync type!");
         db.insert(
             column::SYNC_TYPE,
-            Value::Number(db.get_num_attr(&column::SYNC_TYPE)? - SyncType::TrustedAccount as u32),
+            Value::Number(db.get_num_attr(&column::SYNC_TYPE).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))? - SyncType::TrustedAccount as u32),
         );
     }
     Ok(())
 }
 
 fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    check_arguments(attributes, calling_info)?;
+    check_arguments(attributes, calling_info).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
 
     // Fill all attributes to DbMap.
     let mut db_data = common::into_db_map(attributes);
-    modify_sync_type(&mut db_data)?;
+    modify_sync_type(&mut db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     common::add_calling_info(calling_info, &mut db_data);
-    add_system_attrs(&mut db_data)?;
+    add_system_attrs(&mut db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     add_default_attrs(&mut db_data);
-    let query = common::get_query_condition(attributes, calling_info)?;
+    let query = common::get_query_condition(attributes, calling_info).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
 
-    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes)?;
-    let mut db = Database::build(calling_info, db_key)?;
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let mut db = Database::build(calling_info, db_key).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
 
-    if db.is_data_exists(&query, false)? {
-        resolve_conflict(calling_info, &mut db, attributes, &query, &mut db_data)?;
+    if db.is_data_exists(&query, false).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))? {
+        resolve_conflict(calling_info, &mut db, attributes, &query, &mut db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     } else {
-        encrypt_secret(calling_info, &mut db_data)?;
-        let _ = db.insert_datas(&db_data)?;
+        encrypt_secret(calling_info, &mut db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        let _ = db.insert_datas(&db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     }
 
     Ok(())
@@ -162,7 +162,7 @@ pub(crate) fn add(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<(
     }
     inform_asset_ext(calling_info, attributes);
 
-    local_res
+    local_res.map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
 }
 
 #[cfg(feature = "AssetTest")]
@@ -170,4 +170,3 @@ pub(crate) fn add(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<(
 pub mod ut_operation_add_stub {
     include!{"../../../../test/unittest/ut_test/services/core_service/test_stub/operations/ut_operation_add_stub.rs"}
 }
-

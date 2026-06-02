@@ -88,7 +88,7 @@ impl Crypto {
     /// Decrypt data that requires user authentication.
     pub fn exec_crypt(&self, cipher: &Vec<u8>, aad: &Vec<u8>, auth_token: &Vec<u8>) -> Result<Vec<u8>> {
         if cipher.len() <= (TAG_SIZE + NONCE_SIZE) {
-            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The cipher length is too short.");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "[FATAL]The cipher length is too short.");
         }
 
         let aad = HksBlob { size: aad.len() as u32, data: aad.as_ptr() };
@@ -139,7 +139,7 @@ impl Crypto {
     /// Decrypt data at one-time.
     pub fn decrypt(key: &SecretKey, cipher: &Vec<u8>, aad: &Vec<u8>) -> Result<Vec<u8>> {
         if cipher.len() <= (TAG_SIZE + NONCE_SIZE) {
-            return macros_lib::log_throw_error!(ErrCode::DataCorrupted, "[FATAL]The cipher length is too short.");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::DataCorrupted, "[FATAL]The cipher length is too short.");
         }
 
         let mut plain: Vec<u8> = vec![0; cipher.len() - TAG_SIZE - NONCE_SIZE];

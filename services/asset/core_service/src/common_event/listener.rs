@@ -152,7 +152,7 @@ fn delete_on_package_removed(calling_info: &CallingInfo) -> Result<DataExist> {
             (DataExist::GroupData(de_db_data_exists), DataExist::GroupData(ce_db_data_exists)) => {
                 Ok(DataExist::GroupData(de_db_data_exists || ce_db_data_exists))
             },
-            _ => macros_lib::log_throw_error!(ErrCode::AccessDenied,
+            _ => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::AccessDenied,
                 "[FATAL][SA]Cannot delete owner and group data at same time"),
         }
     } else {
@@ -564,14 +564,14 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
     let mut ret: i32;
     ret = unsafe { GetUsersSize(user_ids_size_ptr) };
     if ret != SUCCESS {
-        return macros_lib::log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get users size failed.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::AccountError, "[FATAL][SA]Get users size failed.");
     }
 
     let mut user_ids: Vec<i32> = vec![0i32; (*user_ids_size_ptr + USER_ID_VEC_BUFFER).try_into().unwrap()];
     let user_ids_ptr = user_ids.as_mut_ptr();
     ret = unsafe { GetUserIds(user_ids_ptr, user_ids_size_ptr) };
     if ret != SUCCESS {
-        return macros_lib::log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get user IDs failed.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::AccountError, "[FATAL][SA]Get user IDs failed.");
     }
 
     let user_ids_slice = unsafe { slice::from_raw_parts_mut(user_ids_ptr, (*user_ids_size_ptr).try_into().unwrap()) };

@@ -45,7 +45,7 @@ pub fn create_user_de_dir(user_id: i32) -> Result<()> {
             Ok(())
         },
         Err(e) => {
-            macros_lib::log_throw_error!(
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), 
                 ErrCode::FileOperationError,
                 "[FATAL][SA]Create user DE directory failed! error is [{}]",
                 e
@@ -66,7 +66,7 @@ pub fn delete_user_de_dir(user_id: i32) -> Result<()> {
         Ok(_) => Ok(()),
         Err(e) if e.kind() != std::io::ErrorKind::NotFound => Ok(()),
         Err(e) => {
-            macros_lib::log_throw_error!(
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), 
                 ErrCode::FileOperationError,
                 "[FATAL][SA]Delete user DE directory failed! error is [{}]",
                 e

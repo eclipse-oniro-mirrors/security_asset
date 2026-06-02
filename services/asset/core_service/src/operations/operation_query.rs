@@ -36,7 +36,7 @@ fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
     let mut map_set = Vec::new();
     for db_result in db_results {
         let map = common::into_asset_map(db_result);
-        common::check_value_validity(&map)?;
+        common::check_value_validity(&map).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
         map_set.push(map);
     }
     Ok(map_set)
@@ -45,33 +45,33 @@ fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
 fn upgrade_aad(db: &mut Database, calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     db_data.insert_attr(column::VERSION, DB_DATA_VERSION);
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
-    let secret_key = common::build_secret_key(calling_info, db_data)?;
-    let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data)?)?;
+    let secret_key = common::build_secret_key(calling_info, db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
 
     let mut update_data = DbMap::new();
     update_data.insert(column::SECRET, Value::Bytes(cipher));
     update_data.insert_attr(column::VERSION, DB_DATA_VERSION);
 
     let mut query_data = DbMap::new();
-    query_data.insert_attr(column::ID, db_data.get_num_attr(&column::ID)?);
+    query_data.insert_attr(column::ID, db_data.get_num_attr(&column::ID).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?);
 
-    let update_num = db.update_datas(&query_data, true, &update_data)?;
+    let update_num = db.update_datas(&query_data, true, &update_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     if update_num == 0 {
-        return macros_lib::log_throw_error!(ErrCode::NotFound, "[FATAL]Upgrade asset failed.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::NotFound, "[FATAL]Upgrade asset failed.");
     }
     Ok(())
 }
 
 fn decrypt_secret(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     let secret = db_data.get_bytes_attr(&column::SECRET)?;
-    let secret_key = common::build_secret_key(calling_info, db_data)?;
-    let secret = Crypto::decrypt(&secret_key, secret, &common::build_aad(db_data)?)?;
+    let secret_key = common::build_secret_key(calling_info, db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let secret = Crypto::decrypt(&secret_key, secret, &common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     db_data.insert(column::SECRET, Value::Bytes(secret));
     Ok(())
 }
 
 fn exec_crypto(calling_info: &CallingInfo, query: &AssetMap, db_data: &mut DbMap) -> Result<()> {
-    common::check_required_tags(query, &AUTH_QUERY_ATTRS)?;
+    common::check_required_tags(query, &AUTH_QUERY_ATTRS).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let challenge = query.get_bytes_attr(&Tag::AuthChallenge)?;
     let auth_token = query.get_bytes_attr(&Tag::AuthToken)?;
 
@@ -80,11 +80,11 @@ fn exec_crypto(calling_info: &CallingInfo, query: &AssetMap, db_data: &mut DbMap
     let mut manager = arc_crypto_manager.lock().unwrap();
     match manager.find(calling_info, challenge) {
         Ok(crypto) => {
-            let secret = crypto.exec_crypt(secret, &common::build_aad(db_data)?, auth_token)?;
+            let secret = crypto.exec_crypt(secret, &common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?, auth_token).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
             db_data.insert(column::SECRET, Value::Bytes(secret));
             Ok(())
         },
-        Err(e) => Err(e),
+        Err(e) => Err(macros_lib::track_error!(e, macros_lib::hisysevent::function!())),
     }
 }
 
@@ -95,41 +95,40 @@ fn query_all_inner(
     query: &AssetMap
 ) -> Result<Vec<AssetMap>> {
     match results.len() {
-        0 => macros_lib::throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist."),
+        0 => macros_lib::throw_error!(macros_lib::hisysevent::function!(), ErrCode::NotFound, "[FATAL]The data to be queried does not exist."),
         1 => {
             match results[0].get(column::AUTH_TYPE) {
                 Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
-                    exec_crypto(calling_info, query, &mut results[0])?;
+                    exec_crypto(calling_info, query, &mut results[0]).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
                 },
-                _ => decrypt_secret(calling_info, &mut results[0])?,
+                _ => decrypt_secret(calling_info, &mut results[0]).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?,
             };
-            if common::need_upgrade(&results[0])? {
-                upgrade_aad(db, calling_info, &mut results[0])?;
+            if common::need_upgrade(&results[0]).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))? {
+                upgrade_aad(db, calling_info, &mut results[0]).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
             }
             into_asset_maps(&results)
         },
         n => {
-            macros_lib::log_throw_error!(
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), 
                 ErrCode::DatabaseError,
                 "[FATAL]The database contains {} records with the specified alias.",
-                n
-            )
+                n)
         },
     }
 }
 
 fn query_all(calling_info: &CallingInfo, db_data: &DbMap, query: &AssetMap) -> Result<Vec<AssetMap>> {
-    let db_key = get_db_key_by_asset_map(calling_info.user_id(), query)?;
-    let db_name = construct_splited_db_name(calling_info, db_key.is_some())?;
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), query).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let db_name = construct_splited_db_name(calling_info, db_key.is_some()).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     match get_db_by_user_id_db_name(calling_info.user_id(), db_name) {
         Some(db) => {
-            let results = db.query_datas(&vec![], db_data, None, true)?;
-            query_all_inner(results, db, calling_info, query)
+            let results = db.query_datas(&vec![], db_data, None, true).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+            query_all_inner(results, db, calling_info, query).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
         },
         None => {
-            let mut db = Database::build(calling_info, db_key)?;
-            let results = db.query_datas(&vec![], db_data, None, true)?;
-            query_all_inner(results, &mut db, calling_info, query)
+            let mut db = Database::build(calling_info, db_key).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+            let results = db.query_datas(&vec![], db_data, None, true).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+            query_all_inner(results, &mut db, calling_info, query).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
         },
     }
 }
@@ -163,25 +162,25 @@ fn get_query_options(attrs: &AssetMap) -> QueryOptions {
 }
 
 pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<Vec<AssetMap>> {
-    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attrs)?;
-    let db_name = construct_splited_db_name(calling_info, db_key.is_some())?;
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attrs).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let db_name = construct_splited_db_name(calling_info, db_key.is_some()).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let mut results = match get_db_by_user_id_db_name(calling_info.user_id(), db_name) {
         Some(db) => {
-            db.query_datas(&vec![], db_data, Some(&get_query_options(attrs)), true)?
+            db.query_datas(&vec![], db_data, Some(&get_query_options(attrs)), true).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?
         },
         None => {
-            let mut db = Database::build(calling_info, db_key)?;
-            db.query_datas(&vec![], db_data, Some(&get_query_options(attrs)), true)?
+            let mut db = Database::build(calling_info, db_key).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+            db.query_datas(&vec![], db_data, Some(&get_query_options(attrs)), true).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?
         },
     };
     if results.is_empty() {
-        return macros_lib::throw_error!(ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
+        return macros_lib::throw_error!(macros_lib::hisysevent::function!(), ErrCode::NotFound, "[FATAL]The data to be queried does not exist.");
     }
 
     for data in &mut results {
         data.remove(&column::SECRET);
     }
-    into_asset_maps(&results)
+    into_asset_maps(&results).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
 }
 
 const OPTIONAL_ATTRS: [Tag; 6] =
@@ -195,14 +194,14 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
-    common::check_tag_validity(attributes, &valid_tags)?;
-    check_group_validity(attributes, calling_info)?;
-    common::check_value_validity(attributes)?;
-    common::check_system_permission(attributes)
+    common::check_tag_validity(attributes, &valid_tags).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    check_group_validity(attributes, calling_info).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    common::check_value_validity(attributes).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    common::check_system_permission(attributes).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
 }
 
 pub(crate) fn query(calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<AssetMap>> {
-    check_arguments(query, calling_info)?;
+    check_arguments(query, calling_info).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
 
     inform_asset_ext(calling_info, query);
 
@@ -216,11 +215,11 @@ pub(crate) fn query(calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<
     match query.get(&Tag::ReturnType) {
         Some(Value::Number(return_type)) if *return_type == (ReturnType::All as u32) => {
             if !query.contains_key(&Tag::Alias) {
-                macros_lib::log_throw_error!(ErrCode::Unsupported, "[FATAL]Batch secret query is not supported.")
+                macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::Unsupported, "[FATAL]Batch secret query is not supported.")
             } else {
-                query_all(calling_info, &db_data, query)
+                query_all(calling_info, &db_data, query).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
             }
         },
-        _ => query_attrs(calling_info, &db_data, query),
+        _ => query_attrs(calling_info, &db_data, query).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!())),
     }
 }
