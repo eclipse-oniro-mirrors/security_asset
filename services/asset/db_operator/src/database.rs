@@ -130,8 +130,6 @@ pub fn clear_db_map() {
             let _ = Box::from_raw(ptr);
         }
     }
-
-    logi!("Cleared all Database instances in DB_MAP");
 }
 
 pub(crate) fn get_split_db_lock_by_user_id(user_id: i32) -> &'static UserDbLock {
