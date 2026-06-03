@@ -23,7 +23,8 @@ use asset_definition::{macros_lib, ErrCode, Result};
 pub fn system_time_in_millis() -> Result<Vec<u8>> {
     match SystemTime::now().duration_since(UNIX_EPOCH) {
         Ok(d) => Ok(d.as_millis().to_string().as_bytes().to_vec()),
-        Err(e) => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::GetSystemTimeError, "[FATAL]Get system time failed, err: {}", e),
+        Err(e) => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::GetSystemTimeError, "[FATAL]Get system time failed, err: {}", e),
     }
 }
 
@@ -31,6 +32,7 @@ pub fn system_time_in_millis() -> Result<Vec<u8>> {
 pub fn system_time_in_seconds() -> Result<u64> {
     match SystemTime::now().duration_since(UNIX_EPOCH) {
         Ok(d) => Ok(d.as_secs()),
-        Err(e) => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::GetSystemTimeError, "[FATAL]Get system time failed, err: {}", e),
+        Err(e) => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::GetSystemTimeError, "[FATAL]Get system time failed, err: {}", e),
     }
 }

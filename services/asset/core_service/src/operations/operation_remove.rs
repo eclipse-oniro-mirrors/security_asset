@@ -29,7 +29,8 @@ use asset_utils::time;
 use crate::operations::common::{check_group_validity, inform_asset_ext, update_cloud_sync_status};
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
-    let time = time::system_time_in_millis().map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let time = time::system_time_in_millis().map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     Ok(())
 }
@@ -44,10 +45,14 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
-    common::check_tag_validity(attributes, &valid_tags).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    check_group_validity(attributes, calling_info).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    common::check_value_validity(attributes).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    common::check_system_permission(attributes).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
+    common::check_tag_validity(attributes, &valid_tags).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    check_group_validity(attributes, calling_info).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    common::check_value_validity(attributes).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    common::check_system_permission(attributes).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))
 }
 
 pub(crate) fn remove(calling_info: &CallingInfo, query: &AssetMap) -> Result<()> {
@@ -61,24 +66,32 @@ pub(crate) fn remove(calling_info: &CallingInfo, query: &AssetMap) -> Result<()>
     }
 
     let mut update_db_data = DbMap::new();
-    add_system_attrs(&mut update_db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    add_system_attrs(&mut update_db_data).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     add_normal_attrs(&mut update_db_data);
 
-    let db_key = get_db_key_by_asset_map(calling_info.user_id(), query).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    let mut db = Database::build(calling_info, db_key).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    let results = db.query_datas(&vec![], &db_data, None, true).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), query).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    let mut db = Database::build(calling_info, db_key).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    let results = db.query_datas(&vec![], &db_data, None, true).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     if results.is_empty() {
-        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");
     }
 
-    let update_num = db.update_datas(&db_data, true, &update_db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let update_num = db.update_datas(&db_data, true, &update_db_data).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     if update_num == 0 {
-        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::NotFound, "[FATAL]The data to be deleted does not exist.");
     }
 
     let mut reverse_condition = DbMap::new();
     reverse_condition.insert(column::SYNC_TYPE, Value::Number(SyncType::TrustedAccount as u32));
-    let remove_num = db.delete_datas(&db_data, Some(&reverse_condition), false).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let remove_num = db.delete_datas(&db_data, Some(&reverse_condition), false).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     logi!("Delete num: {}", remove_num);
 
     if update_num > 0 {

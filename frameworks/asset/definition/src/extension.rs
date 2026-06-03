@@ -99,7 +99,8 @@ where
         if let Some(Value::Bool(b)) = self.get(key) {
             Ok(*b)
         } else {
-            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "[FATAL]Get attribute of bool type failed, key: {}", key)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]Get attribute of bool type failed, key: {}", key)
         }
     }
 
@@ -107,7 +108,8 @@ where
         if let Some(Value::Number(num)) = self.get(key) {
             T::try_from(*num)
         } else {
-            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "[FATAL]Get attribute of enum type failed, key: {}", key)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]Get attribute of enum type failed, key: {}", key)
         }
     }
 
@@ -115,7 +117,8 @@ where
         if let Some(Value::Number(num)) = self.get(key) {
             Ok(*num)
         } else {
-            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "[FATAL]Get attribute of number type failed, key: {}", key)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]Get attribute of number type failed, key: {}", key)
         }
     }
 
@@ -123,7 +126,8 @@ where
         if let Some(Value::Bytes(bytes)) = self.get(key) {
             Ok(bytes)
         } else {
-            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "[FATAL]Get attribute of bytes type failed, key: {}", key)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]Get attribute of bytes type failed, key: {}", key)
         }
     }
 }

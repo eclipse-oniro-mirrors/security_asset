@@ -49,8 +49,8 @@ pub fn is_file_exist(path_str: &str) -> Result<bool> {
         Ok(true) => Ok(true),
         Ok(false) => Ok(false),
         Err(e) => {
-            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::FileOperationError,
-                "[FATAL][SA] Failed to check existence of file! error: {}", e)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::FileOperationError, "[FATAL][SA] Failed to check existence of file! error: {}", e)
         },
     }
 }
@@ -63,15 +63,16 @@ pub fn is_ce_db_exist(user_id: i32) -> Result<bool> {
         Ok(true) => (),
         Ok(false) => return Ok(false),
         Err(e) => {
-            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::FileOperationError,
-                "[FATAL][SA] Failed to check existence of dir_path! error: {}", e);
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::FileOperationError, "[FATAL][SA] Failed to check existence of dir_path! error: {}", e);
         },
     }
-    let entries = fs::read_dir(dir_path).map_err(|e| macros_lib::log_and_into_asset_error!(macros_lib::hisysevent::function!(), 
+    let entries = fs::read_dir(dir_path)
+        .map_err(|e| macros_lib::log_and_into_asset_error!(macros_lib::hisysevent::function!(),
             ErrCode::FileOperationError, "[FATAL][SA] Failed to read_dir in is_ce_db_exist! error: {}", e))?;
 
     for entry in entries {
-        let entry = entry.map_err(|e| macros_lib::log_and_into_asset_error!(macros_lib::hisysevent::function!(), 
+        let entry = entry.map_err(|e| macros_lib::log_and_into_asset_error!(macros_lib::hisysevent::function!(),
             ErrCode::FileOperationError, "[FATAL][SA] Failed to get entry in is_ce_db_exist! error: {}", e))?;
         let path = entry.path();
         if path.is_file() {

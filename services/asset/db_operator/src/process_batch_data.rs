@@ -38,7 +38,8 @@ const INVALID_TAGS: [Tag; 1] = [Tag::UserId];
 pub(crate) fn check_invalid_tags(attrs: &AssetMap) -> Result<()> {
     for tag in attrs.keys() {
         if INVALID_TAGS.contains(tag) {
-            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);
         }
     }
     Ok(())

@@ -106,7 +106,8 @@ fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()>
     // remove de and de backup
     if need_rollback {
         ce_db.exec("rollback")?;
-        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::DatabaseError, "Upgrade ce data failed.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::DatabaseError, "Upgrade ce data failed.");
     }
     ce_db.exec("commit")?;
     remove_db(&path_str)
@@ -116,7 +117,8 @@ fn store_upgrade_info_in_settings(user_id: i32, status: CeUpgradeStatus) -> Resu
     let key = CString::new(ASSET_CE_UPGRADE).unwrap();
     match unsafe{ StoreKeyValue(user_id, key.as_ptr(), status as i32) } {
         true => Ok(()),
-        false => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::DatabaseError, "store data in setting failed."),
+        false => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::DatabaseError, "store data in setting failed."),
     }
 }
 

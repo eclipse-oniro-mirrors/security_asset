@@ -312,7 +312,8 @@ impl Database {
             Ok(())
         } else {
             self.close();
-            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), sqlite_err_handle(ret), "[FATAL][DB]Open database failed, err={}", ret)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                sqlite_err_handle(ret), "[FATAL][DB]Open database failed, err={}", ret)
         }
     }
 
@@ -381,7 +382,8 @@ impl Database {
         if ret == SQLITE_OK {
             Ok(())
         } else {
-            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), sqlite_err_handle(ret), "[FATAL][DB]Set database key failed, err={}", ret)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                sqlite_err_handle(ret), "[FATAL][DB]Set database key failed, err={}", ret)
         }
     }
 
@@ -393,7 +395,8 @@ impl Database {
         if ret == SQLITE_OK {
             Ok(())
         } else {
-            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), sqlite_err_handle(ret), "[FATAL][DB]SqliteReKeyToEmpty failed, err={}", ret)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                sqlite_err_handle(ret), "[FATAL][DB]SqliteReKeyToEmpty failed, err={}", ret)
         }
     }
 
@@ -410,8 +413,8 @@ impl Database {
         loge!("[WARNING]Database is corrupt, start to restore");
         self.close();
         if let Err(e) = fs::copy(&self.backup_path, &self.path) {
-            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::FileOperationError, 
-                "[FATAL][DB]Recovery database failed, err={}", e);
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::FileOperationError,  "[FATAL][DB]Recovery database failed, err={}", e);
         }
         self.open()
     }
@@ -512,14 +515,13 @@ impl Database {
         let path = fmt_de_db_path_with_name(user_id, db_name);
         let backup_path = fmt_backup_path(&path);
         if let Err(e) = fs::remove_file(path) {
-            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::FileOperationError, "[FATAL][DB]Delete database failed, err={}", e);
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::FileOperationError, "[FATAL][DB]Delete database failed, err={}", e);
         }
 
         if let Err(e) = fs::remove_file(backup_path) {
-            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), 
-                ErrCode::FileOperationError,
-                "[FATAL][DB]Delete backup database failed, err={}",
-                e);
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::FileOperationError, "[FATAL][DB]Delete backup database failed, err={}", e);
         }
         Ok(())
     }
@@ -544,18 +546,16 @@ impl Database {
         if !msg.is_null() {
             let s = unsafe { CStr::from_ptr(msg as _) };
             if let Ok(rs) = s.to_str() {
-                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), 
-                    sqlite_err_handle(ret),
-                    "[FATAL]Database execute sql failed. error code={}, error msg={}",
-                    ret,
-                    rs);
+                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                    sqlite_err_handle(ret), "[FATAL]Database execute sql failed. error code={}, error msg={}", ret, rs);
             }
             unsafe { SqliteFree(msg as _) };
         }
         if ret == SQLITE_OK {
             Ok(())
         } else {
-            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), sqlite_err_handle(ret), "[FATAL]Database execute sql failed. error code={}", ret)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                sqlite_err_handle(ret), "[FATAL]Database execute sql failed. error code={}", ret)
         }
     }
 
@@ -611,7 +611,8 @@ impl Database {
             query.insert_attr(column::OWNER, datas.get_bytes_attr(&column::OWNER)?.clone());
             query.insert_attr(column::OWNER_TYPE, datas.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?);
             if e.is_data_exists(&query, false)? {
-                macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::Duplicated, "[FATAL]The data with the specified alias already exists.")
+                macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                    ErrCode::Duplicated, "[FATAL]The data with the specified alias already exists.")
             } else {
                 e.insert_row(datas)
             }
@@ -664,7 +665,8 @@ impl Database {
         let mut err_info = Vec::new();
         let time = time::system_time_in_millis()?;
         if attributes_array.is_empty() || attributes_to_update_array.is_empty() { 
-            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "[FATAL]The data to update is empty."); 
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]The data to update is empty."); 
         }
 
         for (index, (attr, attr_to_update)) in attributes_array.iter()
@@ -692,7 +694,8 @@ impl Database {
         }
 
         if db_datas.len() != aliases.len() {
-            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::SystemError, "[FATAL]The system internal error.");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::SystemError, "[FATAL]The system internal error.");
         }
         let _lock = self.db_lock.mtx.lock().unwrap();
         let closure = |e: &Table| e.local_update_batch_datas(&db_datas, db_map, &aliases);
@@ -719,9 +722,8 @@ impl Database {
         for (index, attr) in info.attributes_array.iter().enumerate() {
             let mut db_data = parse_attr_in_array(attr, info.calling_info, &mut column_names)?;
             if aliases.contains(&db_data.get_bytes_attr(&column::ALIAS)?.to_vec()) {
-                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), 
-                    ErrCode::InvalidArgument,
-                    "[FATAL]The array contains duplicated alias");
+                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                    ErrCode::InvalidArgument, "[FATAL]The array contains duplicated alias");
             }
             let query = get_query_condition(attr, info.calling_info)?;
             let mut condition = query.clone();
@@ -800,7 +802,8 @@ impl Database {
             query.insert_attr(column::OWNER, datas.get_bytes_attr(&column::OWNER)?.clone());
             query.insert_attr(column::OWNER_TYPE, datas.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?);
             if e.is_data_exists(&query, false)? {
-                macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::Duplicated, "[FATAL]The data with the specified alias already exists.")
+                macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                    ErrCode::Duplicated, "[FATAL]The data with the specified alias already exists.")
             } else {
                 e.insert_adapt_data_row(datas, adapt_attributes)
             }

@@ -402,7 +402,8 @@ impl<'a> Table<'a> {
             }
         }
         trans.rollback()?;
-        macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::DatabaseError, "insert adapt data failed!")
+        macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::DatabaseError, "insert adapt data failed!")
     }
 
     /// Delete row from table.
@@ -460,7 +461,8 @@ impl<'a> Table<'a> {
                 Ok(num) => num,
                 Err(_e) => {
                     trans.rollback()?;
-                    return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::DatabaseError, "delete adapt data failed!")
+                    return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                        ErrCode::DatabaseError, "delete adapt data failed!")
                 }
             }
         }
@@ -471,7 +473,8 @@ impl<'a> Table<'a> {
                 Ok(num) => num,
                 Err(_e) => {
                     trans.rollback()?;
-                    return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::DatabaseError, "delete adapt data failed!")
+                    return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                        ErrCode::DatabaseError, "delete adapt data failed!")
                 }
             }
         }
@@ -583,7 +586,8 @@ impl<'a> Table<'a> {
 
     fn insert_batch_datas_inner(&self, datas_array: &[DbMap], column_names: &Vec<String>) -> Result<()> {
         if datas_array.is_empty() || column_names.is_empty() {
-            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "Data array is empty.");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "Data array is empty.");
         }
         let mut sql = format!("insert into {} (", self.table_name);
         for column_name in column_names {
@@ -737,7 +741,8 @@ impl<'a> Table<'a> {
                     },
                     Some(n) if n.data_type() == column_info.data_type => record.insert(column_info.name, n),
                     Some(_) => {
-                        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::DataCorrupted, "The data in DB has been tampered with.")
+                        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                            ErrCode::DataCorrupted, "The data in DB has been tampered with.")
                     },
                     None => continue,
                 };
@@ -795,7 +800,8 @@ impl<'a> Table<'a> {
                     },
                     Some(n) if n.data_type() == column_info.data_type => record.insert(column_info.name, n),
                     Some(_) => {
-                        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::DataCorrupted, "The data in DB has been tampered with.")
+                        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                            ErrCode::DataCorrupted, "The data in DB has been tampered with.")
                     },
                     None => continue,
                 };
@@ -862,10 +868,12 @@ impl<'a> Table<'a> {
     /// ```
     pub(crate) fn add_column(&self, column: &ColumnInfo, default_value: &Option<Value>) -> Result<()> {
         if column.is_primary_key {
-            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "The primary key already exists in the table.");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "The primary key already exists in the table.");
         }
         if column.not_null && default_value.is_none() {
-            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "A default value is required for a non-null column.");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "A default value is required for a non-null column.");
         }
         let data_type = from_data_type_to_str(&column.data_type);
         let mut sql = format!("ALTER TABLE {} ADD COLUMN {} {}", self.table_name, column.name, data_type);

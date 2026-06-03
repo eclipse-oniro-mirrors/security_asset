@@ -437,11 +437,8 @@ impl TryFrom<&Vec<u8>> for AssetBlob {
 
         blob.data = unsafe { AssetMalloc(blob.size) as *mut u8 };
         if blob.data.is_null() {
-            return macros_lib::log_throw_error!(
-                macros_lib::hisysevent::function!(),
-                ErrCode::OutOfMemory,
-                "[FATAL][RUST SDK]Unable to allocate memory for Asset_Blob."
-            );
+            return macros_lib::log_throw_error!( macros_lib::hisysevent::function!(),
+                ErrCode::OutOfMemory, "[FATAL][RUST SDK]Unable to allocate memory for Asset_Blob." );
         }
         unsafe { copy_nonoverlapping(vec.as_ptr(), blob.data, blob.size as usize) };
         Ok(blob)
@@ -471,11 +468,8 @@ impl TryFrom<&AssetMap> for AssetResult {
         result.attrs =
             unsafe { AssetMalloc(result.count.wrapping_mul(size_of::<AssetAttr>() as u32)) as *mut AssetAttr };
         if result.attrs.is_null() {
-            return macros_lib::log_throw_error!(
-                macros_lib::hisysevent::function!(),
-                ErrCode::OutOfMemory,
-                "[FATAL][RUST SDK]Unable to allocate memory for Asset_Result."
-            );
+            return macros_lib::log_throw_error!( macros_lib::hisysevent::function!(),
+                ErrCode::OutOfMemory, "[FATAL][RUST SDK]Unable to allocate memory for Asset_Result." );
         }
 
         for (i, (tag, value)) in map.iter().enumerate() {
@@ -497,11 +491,8 @@ impl TryFrom<&Vec<AssetMap>> for AssetResultSet {
         result_set.results =
             unsafe { AssetMalloc(result_set.count.wrapping_mul(size_of::<AssetResult>() as u32)) as *mut AssetResult };
         if result_set.results.is_null() {
-            return macros_lib::log_throw_error!(
-                macros_lib::hisysevent::function!(),
-                ErrCode::OutOfMemory,
-                "[FATAL][RUST SDK]Unable to allocate memory for Asset_ResultSet."
-            );
+            return macros_lib::log_throw_error!( macros_lib::hisysevent::function!(),
+                ErrCode::OutOfMemory, "[FATAL][RUST SDK]Unable to allocate memory for Asset_ResultSet." );
         }
         for (i, map) in maps.iter().enumerate() {
             unsafe {

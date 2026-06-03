@@ -44,7 +44,8 @@ macro_rules! impl_tag_trait {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
                     _ => {
-                        macros_lib::log_throw_error!("", macros_lib::ErrCode::InvalidArgument,
+                        macros_lib::log_throw_error!("",
+                            macros_lib::ErrCode::InvalidArgument,
                             "[FATAL]Type[{}] try from u32[{}] failed.", stringify!($name), v)
                     }
                 }
@@ -92,7 +93,8 @@ macro_rules! impl_enum_trait {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
                     _ => {
-                        macros_lib::log_throw_error!("", macros_lib::ErrCode::InvalidArgument,
+                        macros_lib::log_throw_error!("",
+                            macros_lib::ErrCode::InvalidArgument,
                             "[FATAL]Type[{}] try from u32[{}] failed.", stringify!($name), v)
                     }
                 }

@@ -404,7 +404,8 @@ fn construct_group_calling_infos(user_id: i32, owner: Vec<u8>,uid: u64) -> Vec<C
 fn on_preload_extension(data: &mut MsgParcel) -> Result<()> {
     let res_type = deserialize::<u32>(data)?;
     if res_type != PREPARE_FOR_BUNDLE {
-        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "res_type is not PREPARE_FOR_BUNDLE");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "res_type is not PREPARE_FOR_BUNDLE");
     }
     let _value = deserialize::<i64>(data)?;
 
@@ -412,7 +413,8 @@ fn on_preload_extension(data: &mut MsgParcel) -> Result<()> {
     let value = get_value_from_json(json_str, "uid");
     let uid = match value.parse::<u64>() {
         Ok(num) => num,
-        Err(_) => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "parse uid from json value failed!"),
+        Err(_) => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "parse uid from json value failed!"),
     };
 
     let process_info = ProcessInfo::build(None, Some(uid), true)?;
@@ -460,7 +462,8 @@ fn start_service(handler: Handler) -> Result<()> {
     }
 
     if !handler.publish(AssetService::new(handler.clone())) {
-        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::IpcError, "Asset publish stub object failed");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::IpcError, "Asset publish stub object failed");
     };
     common_event::subscribe();
     handler.add_system_ability_listen(MEMORY_MANAGER_SA_ID);

@@ -135,7 +135,8 @@ pub fn get_user_id(uid: u64) -> Result<u32> {
         if GetUserIdByUid(uid, &mut user_id) {
             Ok(user_id)
         } else {
-            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::AccountError, "[FATAL]Get user id failed.")
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::AccountError, "[FATAL]Get user id failed.")
         }
     }
 }
@@ -147,7 +148,8 @@ pub fn is_user_id_exist(user_id: i32) -> Result<bool> {
         if IsUserIdExist(user_id, &mut exist) {
             Ok(exist)
         } else {
-            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::AccountError, "[FATAL]Check user id failed.")
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::AccountError, "[FATAL]Check user id failed.")
         }
     }
 }

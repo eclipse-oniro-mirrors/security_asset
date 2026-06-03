@@ -29,9 +29,12 @@ use crate::operations::common::check_group_validity;
 const OPTIONAL_ATTRS: [Tag; 2] = [Tag::GroupId, Tag::RequireAttrEncrypted];
 
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    common::check_tag_validity(attributes, &OPTIONAL_ATTRS).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    check_group_validity(attributes, calling_info).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    common::check_value_validity(attributes).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    common::check_tag_validity(attributes, &OPTIONAL_ATTRS).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    check_group_validity(attributes, calling_info).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    common::check_value_validity(attributes).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     Ok(())
 }
 
@@ -66,9 +69,12 @@ pub(crate) fn query_sync_result(calling_info: &CallingInfo, query: &AssetMap) ->
         match load.process_event(EventType::QuerySyncResult, &mut params) {
             Ok(()) => {
                 return Ok(SyncResult {
-                    result_code: params.get_num_attr(&PARAM_NAME_RESULT_CODE).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))? as i32,
-                    total_count: params.get_num_attr(&PARAM_NAME_TOTAL_COUNT).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?,
-                    failed_count: params.get_num_attr(&PARAM_NAME_FAILED_COUNT).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?,
+                    result_code: params.get_num_attr(&PARAM_NAME_RESULT_CODE).map_err(|e| macros_lib::track_error!(e,
+                        macros_lib::hisysevent::function!()))? as i32,
+                    total_count: params.get_num_attr(&PARAM_NAME_TOTAL_COUNT).map_err(|e| macros_lib::track_error!(e,
+                        macros_lib::hisysevent::function!()))?,
+                    failed_count: params.get_num_attr(&PARAM_NAME_FAILED_COUNT).map_err(|e| macros_lib::track_error!(e,
+                        macros_lib::hisysevent::function!()))?,
                 })
             },
             Err(code) => return Err(macros_lib::track_error!(map_err(code), macros_lib::hisysevent::function!())),

@@ -151,7 +151,8 @@ impl ProcessInfo {
             },
             error => {
                 let error = ErrCode::try_from(error as u32)?;
-                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), error, "[FATAL]Get calling package name failed, res is {}.", error);
+                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                    error, "[FATAL]Get calling package name failed, res is {}.", error);
             },
         }
 

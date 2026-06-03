@@ -48,9 +48,8 @@ pub fn check_accessibility_validity(attributes: &AssetMap, calling_info: &Callin
     if accessibility == Accessibility::DevicePowerOn {
         return Ok(());
     }
-    macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), 
-        ErrCode::InvalidArgument,
-        "[FATAL][SA]System user data cannot be protected by the lock screen password.")
+    macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+        ErrCode::InvalidArgument, "[FATAL][SA]System user data cannot be protected by the lock screen password.")
 }
 
 /// Check the permission of the persistent.
@@ -58,7 +57,8 @@ pub fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
     if attributes.get(&Tag::IsPersistent).is_some() {
         let permission = CString::new("ohos.permission.STORE_PERSISTENT_DATA").unwrap();
         if unsafe { !CheckPermission(permission.as_ptr()) } {
-            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
         }
     }
     Ok(())
@@ -74,11 +74,13 @@ pub fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) 
     match calling_info.owner_type_enum() {
         OwnerType::Hap => {
             if calling_info.app_index() > 0 {
-                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
+                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                    ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
             }
         },
         OwnerType::HapGroup => {
-            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
         },
         OwnerType::Native => (),
     }
@@ -95,7 +97,8 @@ pub fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) 
     match calling_info.owner_type_enum() {
         OwnerType::Hap | OwnerType::HapGroup => {
             if calling_info.app_index() > 0 {
-                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::Unsupported, "[FATAL]The caller does not support storing wrap data.");
+                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                    ErrCode::Unsupported, "[FATAL]The caller does not support storing wrap data.");
             }
         },
         OwnerType::Native => (),
@@ -106,7 +109,8 @@ pub fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) 
     {
         Ok(())
     } else {
-        macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::Unsupported, "[FATAL]trusted account data can not be set need wrap data.")
+        macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::Unsupported, "[FATAL]trusted account data can not be set need wrap data.")
     }
 }
 

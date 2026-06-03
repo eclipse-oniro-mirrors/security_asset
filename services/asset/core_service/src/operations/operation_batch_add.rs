@@ -36,7 +36,8 @@ const CONSISTENCY_ATTRS: [Tag; 2] = [
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     db_data.insert(column::VERSION, Value::Number(DB_DATA_VERSION));
 
-    let time = time::system_time_in_millis().map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let time = time::system_time_in_millis().map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     db_data.insert(column::CREATE_TIME, Value::Bytes(time.clone()));
     db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     Ok(())
@@ -48,7 +49,8 @@ fn local_batch_add(
 ) -> Result<Vec<(u32, u32)>> {
     let attributes = match attributes_array.first() {
         Some(attr) => attr,
-        None => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "[FATAL]Batch Add argument empty."),
+        None => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL]Batch Add argument empty."),
     };
     common::check_value_validity(attributes)?;
     let mut db_map = DbMap::new();
@@ -63,5 +65,6 @@ fn local_batch_add(
 }
 
 pub(crate) fn batch_add(calling_info: &CallingInfo, attributes_array: &[AssetMap]) -> Result<Vec<(u32, u32)>> {
-    local_batch_add(calling_info, attributes_array).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
+    local_batch_add(calling_info, attributes_array).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))
 }

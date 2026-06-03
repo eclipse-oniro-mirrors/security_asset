@@ -110,10 +110,8 @@ fn on_app_request(code: IpcCode, process_info: &ProcessInfo, calling_info: &Call
         match load.process_event(EventType::OnAppCall, &mut params) {
             Ok(()) => return Ok(()),
             Err(code) => {
-                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), 
-                    ErrCode::BmsError,
-                    "[FATAL]process on app call event failed, code: {}",
-                    code)
+                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                    ErrCode::BmsError, "[FATAL]process on app call event failed, code: {}", code)
             },
         }
     }
@@ -129,9 +127,9 @@ fn process_batch_data(
     let attributes_array = deserialize_maps(data).map_err(asset_err_handle)?;
     if attributes_array.is_empty() {
         match ipc_code {
-            IpcCode::BatchUpdate | IpcCode::BatchAdd => return reply_handle(macros_lib::log_throw_error!(macros_lib::hisysevent::function!(), 
-                ErrCode::InvalidArgument,
-                "[FATAL]The array is empty."), reply),
+            IpcCode::BatchUpdate | IpcCode::BatchAdd => return reply_handle(
+                macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                    ErrCode::InvalidArgument, "[FATAL]The array is empty."), reply),
             _ => {return reply_handle(Ok(()), reply);}
         }
     }
