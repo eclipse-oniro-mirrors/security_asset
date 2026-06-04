@@ -118,7 +118,6 @@ void HandleConnectivityChange(int code, OnConnectivityChange onConnectivityChang
 {
     if (onConnectivityChange != nullptr) {
         if (code != static_cast<int>(OHOS::NetManagerStandard::NetConnState::NET_CONN_STATE_CONNECTED)) {
-            LOGW("connect is not NET_CONN_STATE_CONNECTED.");
             return;
         }
         long startTime = std::clock();
