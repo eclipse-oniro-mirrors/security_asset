@@ -113,7 +113,7 @@ fn handle_batch_generate_ticket(stub: &SAFService, data: &mut MsgParcel, reply: 
     })?;
 
     logi!(
-        "[INFO]BatchGenerateTicket received, osAccountId: {}, callerId: {}, messageCount: {}",
+        "BatchGenerateTicket received, osAccountId: {}, callerId: {}, messageCount: {}",
         os_account_id,
         caller_id,
         messages.len()
@@ -128,7 +128,7 @@ fn handle_batch_generate_ticket(stub: &SAFService, data: &mut MsgParcel, reply: 
                 IpcStatusCode::Failed
             })?;
             reply.write::<i32>(&(IPC_SUCCESS as i32))?;
-            logi!("[INFO]BatchGenerateTicket success, ticketCount: {}", ticket_infos.len());
+            logi!("BatchGenerateTicket success, ticketCount: {}", ticket_infos.len());
         },
         Err(e) => {
             loge!("[FATAL]BatchGenerateTicket failed: {}", e.msg);
@@ -151,7 +151,7 @@ fn handle_batch_verify_ticket(stub: &SAFService, data: &mut MsgParcel, reply: &m
     })?;
 
     logi!(
-        "[INFO]BatchVerifyTicket received, osAccountId: {}, callerId: {}, verifyInfoCount: {}",
+        "BatchVerifyTicket received, osAccountId: {}, callerId: {}, verifyInfoCount: {}",
         os_account_id,
         caller_id,
         verify_infos.len()
@@ -166,7 +166,7 @@ fn handle_batch_verify_ticket(stub: &SAFService, data: &mut MsgParcel, reply: &m
                 IpcStatusCode::Failed
             })?;
             reply.write::<i32>(&(IPC_SUCCESS as i32))?;
-            logi!("[INFO]BatchVerifyTicket success, resultCount: {}", verify_res.len());
+            logi!("BatchVerifyTicket success, resultCount: {}", verify_res.len());
         },
         Err(e) => {
             loge!("[FATAL]BatchVerifyTicket failed: {}", e.msg);

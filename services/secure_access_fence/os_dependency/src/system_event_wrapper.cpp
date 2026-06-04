@@ -90,7 +90,7 @@ public:
                 wantArray
             });
         }
-        LOGI("[INFO]Receive event: %{public}s", eventName.c_str());
+        LOGI("Receive event: %{public}s", eventName.c_str());
     }
 private:
     const EventCallBack eventCallBack;

@@ -52,7 +52,7 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
             data: data.as_ptr(),
         }
     });
-    logi!("[INFO]Finish handle common event. [{}]", reason_name);
+    logi!("Finish handle common event. [{}]", reason_name);
 }
 
 pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {

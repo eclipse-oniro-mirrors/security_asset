@@ -199,7 +199,7 @@ fn migrate_data(
         // 3.3 remove data in old db
         old_db.delete_datas(&condition, None, false)?;
     }
-    logi!("[INFO]Upgrade [{}] [{}]times", new_db.get_db_name(), split_time);
+    logi!("Upgrade [{}] [{}]times", new_db.get_db_name(), split_time);
     Ok(())
 }
 
@@ -219,9 +219,9 @@ fn split_db(user_id: i32) -> Result<()> {
         for split_time in 0..calculate_batch_split_times(&old_data_query_condition, &mut old_db)? {
             migrate_data(&mut old_db, &mut new_db, split_time, &old_data_query_condition)?;
         }
-        logi!("[INFO]Upgrade [{}] success!", new_db.get_db_name());
+        logi!("Upgrade [{}] success!", new_db.get_db_name());
     }
-    logi!("[INFO]Upgrade all db success!");
+    logi!("Upgrade all db success!");
     remove_old_db(user_id)?;
     Ok(())
 }
@@ -232,7 +232,7 @@ pub fn check_and_split_db(user_id: i32) -> Result<()> {
     if check_old_db_exist(user_id) {
         let _lock = get_split_db_lock_by_user_id(user_id).mtx.lock().unwrap();
         if check_old_db_exist(user_id) {
-            logi!("[INFO]Start splitting db.");
+            logi!("Start splitting db.");
             split_db(user_id)?;
             ret = create_upgrade_file(user_id, OriginVersion::V1).is_ok();
         }

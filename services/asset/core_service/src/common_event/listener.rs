@@ -269,7 +269,7 @@ pub(crate) extern "C" fn on_package_removed(package_info: PackageInfoFfi) {
         slice::from_raw_parts(package_info.bundle_name.data, package_info.bundle_name.size as usize).to_vec()
     };
     logi!(
-        "[INFO]On app -{}-{}-{}- removed.",
+        "On app -{}-{}-{}- removed.",
         package_info.user_id,
         String::from_utf8_lossy(&bundle_name),
         package_info.app_index
@@ -313,7 +313,7 @@ lazy_static! {
 pub(crate) extern "C" fn backup_db() {
     let _counter_user = AutoCounter::new();
     let cur_time = Instant::now();
-    logi!("[INFO]Start backup db.");
+    logi!("Start backup db.");
 
     let mut record_time = RECORD_TIME.lock().expect("Failed to lock RECORD_TIME");
 
@@ -329,7 +329,7 @@ pub(crate) extern "C" fn backup_db() {
             upload_fault_system_event(&calling_info, cur_time, "backup_db", "", &e);
         }
     }
-    logi!("[INFO]Finish backup db.");
+    logi!("Finish backup db.");
 }
 
 pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, app_index: i32) {
@@ -341,7 +341,7 @@ pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, ap
             return;
         },
     };
-    logi!("[INFO]On app -{}-{}- restore.", user_id, bundle_name);
+    logi!("On app -{}-{}- restore.", user_id, bundle_name);
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
@@ -356,7 +356,7 @@ pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, ap
 }
 
 pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
-    logi!("[INFO]On user -{}- unlocked.", user_id);
+    logi!("On user -{}- unlocked.", user_id);
 
     // Trigger upgrading de db version and key alias
     match trigger_db_upgrade(user_id, None) {
@@ -393,7 +393,7 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
 }
 
 pub(crate) fn notify_on_user_removed(user_id: i32) {
-    logi!("[INFO]On user remove [{}].", user_id);
+    logi!("On user remove [{}].", user_id);
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
@@ -406,12 +406,12 @@ pub(crate) fn notify_on_user_removed(user_id: i32) {
 }
 
 pub(crate) extern "C" fn on_user_switched(user_id: i32) {
-    logi!("[INFO]On user switched [{}].", user_id);
+    logi!("On user switched [{}].", user_id);
     trigger_sync_with_user_id(user_id, true);
 }
 
 pub(crate) extern "C" fn on_schedule_wakeup() {
-    logi!("[INFO]On SA wakes up at a scheduled time(36H).");
+    logi!("On SA wakes up at a scheduled time(36H).");
     trigger_sync();
 }
 
@@ -423,7 +423,7 @@ pub(crate) extern "C" fn on_connectivity_change() {
     if let Ok(duration) = current.duration_since(UNIX_EPOCH) {
         let current = duration.as_secs();
         if current > last_time && current - last_time >= TWELVE_HOURS_AS_SECS {
-            logi!("[INFO]On SA connectivity change.");
+            logi!("On SA connectivity change.");
             trigger_sync();
             if write_last_trigger_time(&path, current).is_err() {
                 loge!("Write last trigger time failed.");
