@@ -31,7 +31,7 @@ pub mod ffi {
 
     // Rust callable C++ functions
     unsafe extern "C++" {
-        include!("secure_access_fence_service.h");
+        include!("secure_access_fence_ipc.h");
         include!("message_option.h");
         #[namespace = "OHOS"]
         type MessageParcel = ipc::parcel::MessageParcel;

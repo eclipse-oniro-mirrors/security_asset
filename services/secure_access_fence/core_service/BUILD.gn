@@ -24,6 +24,7 @@ ohos_static_library("secure_access_fence_wrapper_static") {
 
   include_dirs = [
     "include",
+    "src/cxx/inc",
     "${target_gen_dir}",
     "${target_gen_dir}/src",
     "../os_dependency/inc",
@@ -33,7 +34,10 @@ ohos_static_library("secure_access_fence_wrapper_static") {
     "../../../interfaces/inner_kits/c/secure_access_fence/agent_fence/inc",
     "../../../interfaces/inner_kits/c/secure_access_fence/common/inc",
   ]
-  sources = [ "src/cxx/secure_access_fence_service.cpp" ]
+  sources = [
+    "src/cxx/secure_access_fence_ipc.cpp",
+    "src/cxx/src/secure_access_fence_service.cpp",
+  ]
   sources += get_target_outputs(":secure_access_fence_wrapper_cxx")
 
   deps = [

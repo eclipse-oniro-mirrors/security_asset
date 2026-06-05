@@ -2,7 +2,7 @@
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * You may obtain a copy of the License at the following address:
  *
  *     http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef SECURE_ACCESS_FENCE_SERVICE_H
-#define SECURE_ACCESS_FENCE_SERVICE_H
+#ifndef SECURE_ACCESS_FENCE_IPC_H
+#define SECURE_ACCESS_FENCE_IPC_H
 
 #include "cxx.h"
 #include "refbase.h"
