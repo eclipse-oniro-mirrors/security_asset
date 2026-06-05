@@ -36,7 +36,7 @@ pub fn create_user_de_dir(user_id: i32) -> Result<()> {
     let path: &Path = Path::new(&path_str);
     match fs::create_dir(path) {
         Ok(_) => {
-            logi!("[INFO]User DE directory does not exist, create it...");
+            logi!("User DE directory does not exist, create it...");
             let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o700));
             Ok(())
         },

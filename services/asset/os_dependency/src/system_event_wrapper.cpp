@@ -93,7 +93,7 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
     if (onPackageRemoved != nullptr) {
         onPackageRemoved({ userId, appIndex, ownerBlob, developerIdBlob, groupIdBlobArray, bundleNameBlob });
     }
-    LOGI("[INFO]Receive event: PACKAGE_REMOVED, userId=%{public}d, appId=%{public}s, appIndex=%{public}d", userId,
+    LOGI("Receive event: PACKAGE_REMOVED, userId=%{public}d, appId=%{public}s, appIndex=%{public}d", userId,
         appId.c_str(), appIndex);
 }
 
@@ -105,12 +105,12 @@ void HandleAppRestore(const OHOS::AAFwk::Want &want, OnAppRestore onAppRestore)
 
         int appIndex = want.GetIntParam(SANDBOX_APP_INDEX, -1);
         if (appIndex == -1) {
-            LOGI("[INFO]Get app restore info failed, default as index 0.");
+            LOGI("Get app restore info failed, default as index 0.");
             appIndex = 0;
         }
 
         onAppRestore(userId, reinterpret_cast<const uint8_t *>(bundleName.c_str()), appIndex);
-        LOGI("[INFO]Receive event: RESTORE_START.");
+        LOGI("Receive event: RESTORE_START.");
     }
 }
 
@@ -122,7 +122,7 @@ void HandleConnectivityChange(int code, OnConnectivityChange onConnectivityChang
         }
         long startTime = std::clock();
         onConnectivityChange();
-        LOGI("[INFO]Receive event: CONNECTIVITY_CHANGE, start_time: %{public}ld", startTime);
+        LOGI("Receive event: CONNECTIVITY_CHANGE, start_time: %{public}ld", startTime);
     }
 }
 
@@ -151,32 +151,32 @@ public:
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
             int userId = data.GetCode();
             HandleCallback(this->eventCallBack.onUserRemoved, userId);
-            LOGI("[INFO] Receive event: USER_REMOVED, userId=%{public}d", userId);
+            LOGI(" Receive event: USER_REMOVED, userId=%{public}d", userId);
         } else if (action == CommonEventSupport::COMMON_EVENT_SCREEN_OFF) {
             HandleCallback(this->eventCallBack.onScreenOff);
-            LOGI("[INFO]Receive event: SCREEN_OFF, start_time: %{public}ld", startTime);
+            LOGI("Receive event: SCREEN_OFF, start_time: %{public}ld", startTime);
         } else if (action == CommonEventSupport::COMMON_EVENT_CHARGING) {
             HandleCallback(this->eventCallBack.onCharging);
-            LOGI("[INFO]Receive event: CHARGING, start_time: %{public}ld", startTime);
+            LOGI("Receive event: CHARGING, start_time: %{public}ld", startTime);
         } else if (action == CommonEventSupport::COMMON_EVENT_RESTORE_START) {
             HandleAppRestore(want, this->eventCallBack.onAppRestore);
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_UNLOCKED) {
             int userId = data.GetCode();
             HandleCallback(this->eventCallBack.onUserUnlocked, userId);
-            LOGI("[INFO]Receive event: USER_UNLOCKED, start_time: %{public}ld", startTime);
+            LOGI("Receive event: USER_UNLOCKED, start_time: %{public}ld", startTime);
         } else if (action == COMMON_EVENT_USER_PIN_CREATED) {
             int userId = data.GetCode();
             HandleCallback(this->eventCallBack.onUserUnlocked, userId);
-            LOGI("[INFO]Receive event: USER_PIN_CREATED_EVENT, start_time: %{public}ld", startTime);
+            LOGI("Receive event: USER_PIN_CREATED_EVENT, start_time: %{public}ld", startTime);
         } else if (action == CommonEventSupport::COMMON_EVENT_CONNECTIVITY_CHANGE) {
             HandleConnectivityChange(data.GetCode(), this->eventCallBack.onConnectivityChange);
         } else if (action == CommonEventSupport::COMMON_EVENT_DATA_SHARE_READY) {
             HandleCallback(this->eventCallBack.onDataShareReady);
-            LOGI("[INFO]Receive event: COMMON_EVENT_DATA_SHARE_READY, start_time: %{public}ld", startTime);
+            LOGI("Receive event: COMMON_EVENT_DATA_SHARE_READY, start_time: %{public}ld", startTime);
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_SWITCHED) {
             int userId = data.GetCode();
             HandleCallback(this->eventCallBack.onUserSwitched, userId);
-            LOGI("[INFO]Receive event: COMMON_EVENT_USER_SWITCHED, start_time: %{public}ld", startTime);
+            LOGI("Receive event: COMMON_EVENT_USER_SWITCHED, start_time: %{public}ld", startTime);
         } else {
             LOGW("[WARNING]Receive unknown event: %{public}s", action.c_str());
         }
@@ -222,7 +222,7 @@ bool UnSubscribePinEvent(void)
 bool SubscribeSystemEvent(const EventCallBack eventCallBack)
 {
     bool ret = SubscribePinEvent(eventCallBack);
-    LOGI("Subscribe pin event result: %d", ret);
+    LOGI("Subscribe pin event res: %{public}d", ret);
 
     MatchingSkills matchingSkills;
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
@@ -251,7 +251,7 @@ bool SubscribeSystemEvent(const EventCallBack eventCallBack)
 bool UnSubscribeSystemEvent(void)
 {
     bool ret = UnSubscribePinEvent();
-    LOGI("UnSubscribe pin event result: %d", ret);
+    LOGI("UnSubscribe pin event res: %{public}d", ret);
 
     if (g_eventHandler == nullptr) {
         LOGW("Asset system event handler is nullptr, no need to unsubscribe.");

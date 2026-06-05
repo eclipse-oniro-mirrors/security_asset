@@ -86,7 +86,7 @@ pub fn generate_secret_key_if_needed(secret_key: &SecretKey) -> Result<()> {
             match secret_key.exists() {
                 Ok(true) => Ok(()),
                 Ok(false) => {
-                    logi!("[INFO]The key does not exist, generate it.");
+                    logi!("The key does not exist, generate it.");
                     secret_key.generate()
                 },
                 Err(ret) => Err(ret),

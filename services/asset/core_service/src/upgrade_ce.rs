@@ -135,14 +135,14 @@ fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData, trigger_info: &str) 
         return Ok(());
     }
 
-    logi!("[INFO]start ce upgrade [{}].", user_id);
+    logi!("start ce upgrade [{}].", user_id);
     let calling_info = CallingInfo::new_self();
     let start = Instant::now();
     let upgrade_res = upgrade_ce_process(user_id, upgrade_data, upgrade_info);
     if upgrade_res.is_err() {
         let _ = store_upgrade_info_in_settings(user_id, CeUpgradeStatus::Fail);
     }
-    logi!("[INFO]end ce upgrade [{}].", user_id);
+    logi!("end ce upgrade [{}].", user_id);
     let _ = upload_system_event(
         upgrade_res.clone(), &calling_info, start, &format!("{}_upgrade_ce", trigger_info), &AssetMap::new()
     );
