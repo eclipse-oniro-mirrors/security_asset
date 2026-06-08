@@ -58,6 +58,16 @@ UpdateContext::~UpdateContext()
     FreeAssetAttrs(updateAttrs);
 }
 
+BatchOperationContext::~BatchOperationContext()
+{
+    for (auto &attrs : attrsArray) {
+        FreeAssetAttrs(attrs);
+    }
+    for (auto &attrs : attrToUpdateArray) {
+        FreeAssetAttrs(attrs);
+    }
+}
+
 } // Asset
 } // Security
 } // OHOS

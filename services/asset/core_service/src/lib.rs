@@ -221,7 +221,7 @@ pub(crate) fn unload_sa() {
 
 impl Ability for AssetAbility {
     fn on_start_with_reason(&self, reason: SystemAbilityOnDemandReason, handler: Handler) {
-        logi!("[INFO]Start asset service, reason_id: {:?}", reason.reason_id);
+        logi!("Start asset, reason_id: {:?}", reason.reason_id);
         if let Err(e) = RuntimeBuilder::new_multi_thread().worker_num(1).max_blocking_pool_size(1).build_global() {
             loge!("[WARNING]Ylong new global thread failed! {}", e);
         };
@@ -237,7 +237,7 @@ impl Ability for AssetAbility {
     }
 
     fn on_system_ability_load_event(&self, said: i32, device_id: String) {
-        logi!("[INFO]Receive service load event, said:{}, device_id:{}", said, &device_id);
+        logi!("Receive service load event, said:{}, device_id:{}", said, &device_id);
         if said != MEMORY_MANAGER_SA_ID { return; }
         let mut lock = HAS_NOTIFY_MEMORY_MGR_MUTEX.lock().unwrap();
         set_notify_info(&mut lock, START_STATUS);
@@ -259,7 +259,7 @@ impl Ability for AssetAbility {
     fn on_active(&self, reason: SystemAbilityOnDemandReason) {
         let mut lock = HAS_NOTIFY_MEMORY_MGR_MUTEX.lock().unwrap();
         (*lock).set_sa_status(SaStatus::Active);
-        logi!("[INFO]Asset service on_active.");
+        logi!("Asset on_active.");
         if let Err(e) = handle_data_size_upload() {
             loge!("Failed to handle data upload: {}", e);
         }
@@ -276,14 +276,14 @@ impl Ability for AssetAbility {
         let crypto_manager = CryptoManager::get_instance();
         let max_crypto_expire_duration = crypto_manager.lock().unwrap().max_crypto_expire_duration();
         if max_crypto_expire_duration > 0 {
-            logi!("[INFO]Asset service on idle not success, delay time: {}s", max_crypto_expire_duration);
+            logi!("Asset on idle not success, delay time: {}s", max_crypto_expire_duration);
             return max_crypto_expire_duration as i32 * SEC_TO_MILLISEC;
         }
 
         let counter = Counter::get_instance();
         if counter.lock().unwrap().count() > 0 {
             logi!(
-                "[INFO]Asset service on idle not success for use_account: {}, delay time: {}s",
+                "Asset on idle not success for use_account: {}, delay time: {}s",
                 counter.lock().unwrap().count(),
                 DELAYED_UNLOAD_TIME_IN_SEC
             );
@@ -291,7 +291,7 @@ impl Ability for AssetAbility {
         }
         let mut lock = HAS_NOTIFY_MEMORY_MGR_MUTEX.lock().unwrap();
         (*lock).set_sa_status(SaStatus::Idle);
-        logi!("[INFO]Asset service on_idle.");
+        logi!("Asset on_idle.");
         unsafe {
             if !CheckMemoryMgr() { return 0; }
             set_notify_info(&mut lock, START_STATUS);
@@ -303,7 +303,7 @@ impl Ability for AssetAbility {
     }
 
     fn on_stop(&self) {
-        logi!("[INFO]Asset service on_stop");
+        logi!("Asset on_stop");
         let counter = Counter::get_instance();
         counter.lock().unwrap().stop();
         common_event::unsubscribe();
@@ -313,7 +313,7 @@ impl Ability for AssetAbility {
     }
 
     fn on_extension(&self, extension: String, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
-        logi!("[INFO]Asset on_extension, extension is {}", extension);
+        logi!("Asset on_extension, extension is {}", extension);
         if extension == RSS_SA_EXTENSION {
             match on_preload_extension(data) {
                 Ok(()) => logi!("process preload extension event success."),
@@ -325,7 +325,7 @@ impl Ability for AssetAbility {
                 Err(code) => loge!("process sa extension event failed, code: {}", code),
             };
         }
-        logi!("[INFO]Asset on_extension end");
+        logi!("Asset on_extension end");
         0
     }
 }
@@ -428,14 +428,14 @@ fn on_preload_extension(data: &mut MsgParcel) -> Result<()> {
         let _ = get_db_key_and_preload_db(group_calling_info, false);
         let _ = get_db_key_and_preload_db(group_calling_info, true);
     }
-    
+
     Ok(())
 }
 
 async fn execute_upgrade_process() {
     match upgrade_process() {
         Ok(()) => (),
-        Err(e) => loge!("upgrade failed, error is:[{}]", e.code),
+        Err(e) => loge!("upgrade failed, err:[{}]", e.code),
     }
 }
 
@@ -444,7 +444,6 @@ fn upgrade_process() -> Result<()> {
     for entry in fs::read_dir(DE_ROOT_PATH)? {
         let entry = entry?;
         if let Ok(user_id) = entry.file_name().to_string_lossy().parse::<i32>() {
-            logi!("[INFO]start to check and split db in upgrade process.");
             check_and_split_db(user_id)?;
         }
     }
@@ -456,7 +455,6 @@ fn start_service(handler: Handler) -> Result<()> {
     match asset_plugin.load_plugin() {
         Ok(loader) => {
             let _tr = loader.init(Box::new(AssetContext { user_id: 0 }));
-            logi!("load plugin success.");
         },
         Err(_) => loge!("load plugin failed."),
     }

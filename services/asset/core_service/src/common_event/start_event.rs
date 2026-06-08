@@ -129,6 +129,9 @@ fn handle_package_removed(want: &HashMap<String, String>) {
 fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
     let _counter_user = AutoCounter::new();
     let reason_name: String = reason.name;
+    if reason_name == "load" {
+        return;
+    }
     if reason_name == "usual.event.PACKAGE_REMOVED" || reason_name == "usual.event.SANDBOX_PACKAGE_REMOVED" {
         let want = reason.extra_data.want();
         handle_package_removed(&want);
@@ -178,7 +181,7 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
     } else if reason_name == "loopevent" {
         listener::on_schedule_wakeup();
     } else if reason_name == "USER_PIN_CREATED_EVENT" {
-        logi!("[INFO]On user -{}- pin created.", reason.extra_data.code);
+        logi!("On user -{}- pin created.", reason.extra_data.code);
         listener::on_user_unlocked(reason.extra_data.code);
     } else if reason_name == "usual.event.CONNECTIVITY_CHANGE" && reason.value == NET_CONN_STATE_CONNECTED {
         listener::on_connectivity_change();
@@ -187,7 +190,7 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
     } else if reason_name == "usual.event.USER_SWITCHED" {
         listener::on_user_switched(reason.extra_data.code);
     }
-    logi!("[INFO]Finish handle common event. [{}]", reason_name);
+    logi!("Finish handle common event. [{}]", reason_name);
 }
 
 pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {

@@ -89,7 +89,7 @@ pub(crate) fn unload_sa() {
 
 impl Ability for SAFAbility {
     fn on_start_with_reason(&self, reason: SystemAbilityOnDemandReason, handler: Handler) {
-        logi!("[INFO]Start SAF SA service, reason_id: {:?}", reason.reason_id);
+        logi!("Start SAF SA service, reason_id: {:?}", reason.reason_id);
         if let Err(e) = RuntimeBuilder::new_multi_thread().worker_num(1).max_blocking_pool_size(1).build_global() {
             loge!("[WARNING]Ylong new global thread failed! {}", e);
         };
@@ -105,7 +105,7 @@ impl Ability for SAFAbility {
         let counter = Counter::get_instance();
         if counter.lock().unwrap().count() > 0 {
             logi!(
-                "[INFO]SAF service on idle not success for use_account: {}, delay time: {}s",
+                "SAF service on idle not success for use_account: {}, delay time: {}s",
                 counter.lock().unwrap().count(),
                 DELAYED_UNLOAD_TIME_IN_SEC
             );
@@ -127,7 +127,7 @@ impl Ability for SAFAbility {
     }
 
     fn on_stop(&self) {
-        logi!("[INFO]SAF service on_stop");
+        logi!("SAF service on_stop");
         let counter = Counter::get_instance();
         match SAFPlugin::get_instance().load_plugin() {
             Ok(loader) => {
@@ -140,14 +140,14 @@ impl Ability for SAFAbility {
     }
 
     fn on_extension(&self, extension: String, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
-        logi!("[INFO]SAF on_extension, extension is {}", extension);
+        logi!("SAF on_extension, extension is {}", extension);
         if let Ok(load) = SAFPlugin::get_instance().load_plugin() {
             match load.on_sa_extension(extension, data, reply) {
                 Ok(()) => logi!("process sa extension event success."),
                 Err(code) => loge!("process sa extension event failed, code: {}", code),
             };
         }
-        logi!("[INFO]SAF on_extension end");
+        logi!("SAF on_extension end");
         0
     }
 }

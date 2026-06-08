@@ -94,7 +94,7 @@ int32_t GetBundleInfo(AssetGroupInfo &assetGroupInfo, ProcessInfo *processInfo)
     for (const std::string &groupId : assetGroupInfo.assetAccessGroups) {
         if (groupId.size() == processInfo->hapInfo.groupId.size &&
             memcmp(processInfo->hapInfo.groupId.data, groupId.data(), processInfo->hapInfo.groupId.size) == 0) {
-            LOGI("[INFO]Found matching group id.");
+            LOGI("Found matching group id.");
             return ASSET_SUCCESS;
         }
     }
@@ -200,7 +200,7 @@ void ProcessBundleInfos(const std::vector<AppExecFwk::BundleInfo> &bundleInfos,
     for (const AppExecFwk::BundleInfo &bundleInfo : bundleInfos) {
         for (const std::string &groupId : bundleInfo.applicationInfo.assetAccessGroups) {
             if (targetGroupIds.find(groupId) != targetGroupIds.end()) {
-                LOGI("[INFO]Found matching group id. Do not remove data in this group");
+                LOGI("Found matching group id. Do not remove data in this group");
                 MarkGroupAsModified(groupId, groupIds);
             }
         }

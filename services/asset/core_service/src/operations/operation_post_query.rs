@@ -43,7 +43,8 @@ fn check_arguments(query: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 pub(crate) fn post_query(calling_info: &CallingInfo, handle: &AssetMap) -> Result<()> {
     check_arguments(handle, calling_info).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
-    let challenge = handle.get_bytes_attr(&Tag::AuthChallenge)?;
+    let challenge = handle.get_bytes_attr(&Tag::AuthChallenge)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
 
     let crypto_manager = CryptoManager::get_instance();
     crypto_manager.lock().unwrap().remove(calling_info, challenge);

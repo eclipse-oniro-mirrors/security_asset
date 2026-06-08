@@ -44,7 +44,8 @@ fn check_and_get_aliases(attributes_array: &[AssetMap]) -> Result<Vec<Vec<u8>>> 
         check_tag_validity(attrs, &OPTIONAL_ATTRS).map_err(|e| macros_lib::track_error!(e,
             macros_lib::hisysevent::function!()))?;
         check_value_validity(attrs).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-        let alias = attrs.get_bytes_attr(&Tag::Alias)?;
+        let alias = attrs.get_bytes_attr(&Tag::Alias)
+            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
         aliases.push(alias.clone());
     }
     Ok(aliases)
@@ -64,7 +65,7 @@ fn local_batch_remove(attributes_array: &[AssetMap], calling_info: &CallingInfo)
         macros_lib::hisysevent::function!()))?;
     let mut condition = DbMap::new();
     add_calling_info(calling_info, &mut condition);
-    check_system_permission(attributes)?;
+    check_system_permission(attributes).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let mut update_datas = DbMap::new();
     let time = time::system_time_in_millis().map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
@@ -72,8 +73,7 @@ fn local_batch_remove(attributes_array: &[AssetMap], calling_info: &CallingInfo)
     update_datas.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
 
     let total_removed_count: i32 = db.delete_batch_datas(&condition, &update_datas, &aliases)
-        .map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))?;
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     logi!("total removed count = {}", total_removed_count);
     Ok(())
 }

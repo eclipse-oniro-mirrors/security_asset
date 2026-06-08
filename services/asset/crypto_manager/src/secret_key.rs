@@ -101,8 +101,8 @@ fn get_existing_key_alias(
         require_password_set,
         alias: prefixed_new_alias.clone(),
     };
-    if key.exists()? {
-        logi!("[INFO][{access_type}]-typed secret key with v3 alias exists.");
+    if key.exists().map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))? {
+        logi!("[{access_type}]-typed secret key with v3 alias exists.");
         return Ok(KeyAliasVersion::V3);
     }
 
@@ -113,8 +113,8 @@ fn get_existing_key_alias(
         require_password_set,
         alias: new_alias.clone(),
     };
-    if key.exists()? {
-        logi!("[INFO][{access_type}]-typed secret key with v2 alias exists.");
+    if key.exists().map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))? {
+        logi!("[{access_type}]-typed secret key with v2 alias exists.");
         return Ok(KeyAliasVersion::V2(new_alias));
     }
 
@@ -126,8 +126,8 @@ fn get_existing_key_alias(
         require_password_set,
         alias: old_alias.clone(),
     };
-    if key.exists()? {
-        logi!("[INFO][{access_type}]-typed secret key with v1 alias exists.");
+    if key.exists().map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))? {
+        logi!("[{access_type}]-typed secret key with v1 alias exists.");
         return Ok(KeyAliasVersion::V1(old_alias));
     }
 
@@ -165,13 +165,13 @@ pub fn rename_key_alias(
 ) -> bool {
     match get_existing_key_alias(calling_info, auth_type, access_type, require_password_set) {
         Ok(KeyAliasVersion::V3) => {
-            logi!("[INFO]Alias of [{access_type}]-typed secret key has already been renamed successfully.");
+            logi!("Alias of [{access_type}]-typed secret key has already been renamed successfully.");
             true
         },
         Ok(KeyAliasVersion::V2(alias)) | Ok(KeyAliasVersion::V1(alias)) => {
             let ret = huks_rename_key_alias(calling_info, auth_type, access_type, require_password_set, alias);
             if let SUCCESS = ret {
-                logi!("[INFO]Rename alias of [{access_type}]-typed secret key success.");
+                logi!("Rename alias of [{access_type}]-typed secret key success.");
                 true
             } else {
                 loge!("[FATAL]Rename alias of [{access_type}]-typed secret key failed, err is {}.", ret);
@@ -260,19 +260,23 @@ impl SecretKey {
         let accessibilitys =
             [Accessibility::DevicePowerOn, Accessibility::DeviceFirstUnlocked, Accessibility::DeviceUnlocked];
         for accessibility in accessibilitys.into_iter() {
-            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::None, accessibility, true)?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::None, accessibility, true)
+                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, accessibility, true)?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, accessibility, true)
+                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::None, accessibility, false)?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::None, accessibility, false)
+                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, accessibility, false)?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, accessibility, false)
+                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
         }

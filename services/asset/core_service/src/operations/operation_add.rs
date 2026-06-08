@@ -45,7 +45,8 @@ fn encrypt_secret(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()>
     generate_secret_key_if_needed(&secret_key).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
 
-    let secret = db_data.get_bytes_attr(&column::SECRET)?;
+    let secret = db_data.get_bytes_attr(&column::SECRET).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     let cipher = Crypto::encrypt(&secret_key, secret,
         &common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e,
             macros_lib::hisysevent::function!()))?).map_err(|e| macros_lib::track_error!(e,
@@ -173,8 +174,7 @@ fn local_add(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 
     if db.is_data_exists(&query, false).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))? {
         resolve_conflict(calling_info, &mut db, attributes, &query, &mut db_data)
-        .map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))?;
+            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     } else {
         encrypt_secret(calling_info, &mut db_data).map_err(|e| macros_lib::track_error!(e,
             macros_lib::hisysevent::function!()))?;

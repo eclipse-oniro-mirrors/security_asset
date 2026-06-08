@@ -43,9 +43,10 @@ fn check_attrs_array(attributes_array: &[AssetMap]) -> Result<()> {
         valid_tags.extend_from_slice(&NORMAL_LABEL_ATTRS);
         valid_tags.extend_from_slice(&NORMAL_LOCAL_LABEL_ATTRS);
         valid_tags.extend_from_slice(&ACCESS_CONTROL_ATTRS);
-        check_tag_validity(attrs, &valid_tags)?;
-        check_value_validity(attrs)?;
-        check_system_permission(attrs)?;
+        check_tag_validity(attrs, &valid_tags)
+            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        check_value_validity(attrs).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        check_system_permission(attrs).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     }
     Ok(())
 }
@@ -96,8 +97,7 @@ fn local_batch_update(
     let mut db = Database::build(calling_info, db_key).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
     db.update_batch_datas(&db_map, attributes_array, attributes_to_update_array, calling_info)
-        .map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
 }
 
 pub(crate) fn batch_update(
@@ -111,6 +111,5 @@ pub(crate) fn batch_update(
             ErrCode::InvalidArgument, "[FATAL]Batch Update argument empty.");
     }
     local_batch_update(calling_info, attributes_array, attributes_to_update_array)
-        .map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
 }

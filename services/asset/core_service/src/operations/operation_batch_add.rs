@@ -52,15 +52,20 @@ fn local_batch_add(
         None => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
             ErrCode::InvalidArgument, "[FATAL]Batch Add argument empty."),
     };
-    common::check_value_validity(attributes)?;
+    common::check_value_validity(attributes)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let mut db_map = DbMap::new();
-    check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array)?;
+    check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     // Only add system attrs, add other default ones in parse_attr_in_array.
-    add_system_attrs(&mut db_map)?;
+    add_system_attrs(&mut db_map).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     common::add_calling_info(calling_info, &mut db_map);
-    common::check_system_permission(attributes)?;
-    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes)?;
-    let mut db = Database::build(calling_info, db_key)?;
+    common::check_system_permission(attributes)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let mut db = Database::build(calling_info, db_key)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     db.insert_batch_datas(&db_map, attributes_array, calling_info)
 }
 

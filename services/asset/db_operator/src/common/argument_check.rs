@@ -116,7 +116,8 @@ fn check_tag_range(tag: &Tag, value: &Value, tags: &[Tag]) -> Result<()> {
 }
 
 fn check_user_id(tag: &Tag, value: &Value) -> Result<()> {
-    check_number_range(tag, value, ROOT_USER_UPPERBOUND, i32::MAX as u32)?;
+    check_number_range(tag, value, ROOT_USER_UPPERBOUND, i32::MAX as u32)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let Value::Number(n) = value else {
         return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
             ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
@@ -168,8 +169,8 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
 /// Check if the value if valid.
 pub fn check_value_validity(attrs: &AssetMap) -> Result<()> {
     for (tag, value) in attrs {
-        check_data_type(tag, value)?;
-        check_data_value(tag, value)?;
+        check_data_type(tag, value).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        check_data_value(tag, value).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     }
     Ok(())
 }

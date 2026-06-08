@@ -36,7 +36,7 @@ bool CheckSystemApp(void)
     auto accessTokenId = IPCSkeleton::GetCallingFullTokenID();
     bool isSystemApp = TokenIdKit::IsSystemAppByFullTokenID(accessTokenId);
     if (isSystemApp) {
-        LOGI("[INFO]Check system app success!");
+        LOGI("Check system app success!");
         return true;
     } else {
         LOGE("[FATAL]Check system app failed");

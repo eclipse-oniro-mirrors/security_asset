@@ -64,16 +64,15 @@ fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap
         macros_lib::hisysevent::function!()))?;
 
     let results = db.query_datas(&vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET], db_data, None, true)
-        .map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))?;
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     match results.len() {
         0 => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
             ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found."),
         1 => {
             let access_type = results[0].get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)
-                .map_err(|e| macros_lib::track_error!(e,
-                    macros_lib::hisysevent::function!()))?;
-            let require_password_set = results[0].get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
+                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+            let require_password_set = results[0].get_bool_attr(&column::REQUIRE_PASSWORD_SET)
+                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
             Ok((access_type, require_password_set))
         },
         _ => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
@@ -94,15 +93,13 @@ pub(crate) fn pre_query(calling_info: &CallingInfo, query: &AssetMap) -> Result<
     db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::Any as u32));
 
     let (access_type, require_password_set) = query_key_attrs(calling_info, &db_data, query)
-        .map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))?;
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let valid_time = match query.get(&Tag::AuthValidityPeriod) {
         Some(Value::Number(num)) => *num,
         _ => DEFAULT_AUTH_VALIDITY_IN_SECS,
     };
     let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, access_type, require_password_set)
-        .map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))?;
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let mut crypto = Crypto::build(secret_key, calling_info.clone(), valid_time).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
     let challenge = crypto.init_key().map_err(|e| macros_lib::track_error!(e,

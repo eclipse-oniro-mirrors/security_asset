@@ -30,7 +30,8 @@ use crate::operations::common::{check_group_validity, inform_asset_ext, update_c
 fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
     let secret_key = common::build_secret_key(calling_info, db_data).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
-    let secret = db_data.get_bytes_attr(&column::SECRET)?;
+    let secret = db_data.get_bytes_attr(&column::SECRET).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     let cipher = Crypto::encrypt(&secret_key, secret,
         &common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e,
             macros_lib::hisysevent::function!()))?).map_err(|e| macros_lib::track_error!(e,

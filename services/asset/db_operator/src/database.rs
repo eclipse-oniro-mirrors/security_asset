@@ -130,8 +130,6 @@ pub fn clear_db_map() {
             let _ = Box::from_raw(ptr);
         }
     }
-
-    logi!("Cleared all Database instances in DB_MAP");
 }
 
 pub(crate) fn get_split_db_lock_by_user_id(user_id: i32) -> &'static UserDbLock {
@@ -666,7 +664,7 @@ impl Database {
         let time = time::system_time_in_millis()?;
         if attributes_array.is_empty() || attributes_to_update_array.is_empty() { 
             return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                ErrCode::InvalidArgument, "[FATAL]The data to update is empty."); 
+                ErrCode::InvalidArgument, "[FATAL]The data to update is empty.");
         }
 
         for (index, (attr, attr_to_update)) in attributes_array.iter()

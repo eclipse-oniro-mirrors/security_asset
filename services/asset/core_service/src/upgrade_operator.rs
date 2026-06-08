@@ -57,7 +57,8 @@ struct UnwrapInfo<'a> {
 
 /// Upgrade the data of clone apps.
 pub fn upgrade_clone_app_data(user_id: i32) -> Result<()> {
-    let upgrade_data = get_file_content(user_id)?;
+    let upgrade_data = get_file_content(user_id)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     upgrade(user_id, upgrade_data)
 }
 
@@ -80,7 +81,8 @@ pub fn upgrade_single_clone_app_data(user_id: i32, hap_info: String) -> Result<(
         Err(_) => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
             ErrCode::InvalidArgument, "Upgrade clone app failed."),
     }
-    let version = get_upgrade_version(user_id)?;
+    let version = get_upgrade_version(user_id)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     if version == OriginVersion::V2 {
         return Ok(());
     }
@@ -117,14 +119,18 @@ fn upgrade_single(user_id: i32, version: OriginVersion, info: String) {
 }
 
 fn upgrade_execute(user_id: i32, version: OriginVersion, info: &str) -> Result<()> {
-    if is_hap_special(info) || (version == OriginVersion::V3 && !(is_hap_in_allowlist(user_id, info)?)) {
+    if is_hap_special(info) || (version == OriginVersion::V3
+        && !(is_hap_in_allowlist(user_id, info).map_err(|e| macros_lib::track_error!(e,
+            macros_lib::hisysevent::function!()))?)) {
         return update_upgrade_list(user_id, &info.to_owned());
     }
-    let indexes = get_clone_app_indexes(user_id, info)?;
+    let indexes = get_clone_app_indexes(user_id, info)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     if indexes.is_empty() {
         return update_upgrade_list(user_id, &info.to_owned());
     }
-    clone_data_from_app_to_clone_app(user_id, info, &indexes)?;
+    clone_data_from_app_to_clone_app(user_id, info, &indexes)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     update_upgrade_list(user_id, &info.to_owned())
 }
 
@@ -151,13 +157,16 @@ fn fmt_de_db_name(app_name: &str, app_index: i32) -> String {
 
 fn clone_data_from_app_to_clone_app(user_id: i32, app_name: &str, app_indexes: &[i32]) -> Result<()> {
     let main_name = fmt_de_db_name(app_name, 0);
-    let mut db_main = Database::build_with_file_name(user_id, &main_name, &None)?;
-    let mut datas: Vec<DbMap> = db_main.query_datas(&vec![], &DbMap::new(), None, false)?;
+    let mut db_main = Database::build_with_file_name(user_id, &main_name, &None)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let mut datas: Vec<DbMap> = db_main.query_datas(&vec![], &DbMap::new(), None, false)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     if datas.is_empty() {
         return Ok(());
     }
     for index in app_indexes {
-        clone_single_app(user_id, app_name, *index, &mut datas)?;
+        clone_single_app(user_id, app_name, *index, &mut datas)
+            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     }
     Ok(())
 }
@@ -175,15 +184,19 @@ fn is_hap_in_allowlist(user_id: i32, info: &str) -> Result<bool> {
 
 fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Vec<DbMap>) -> Result<()> {
     let clone_name = fmt_de_db_name(app_name, app_index);
-    let mut db_clone = Database::build_with_file_name(user_id, &clone_name, &None)?;
-    let db_map = db_clone.query_data_without_lock(&vec![], &DbMap::new(), None, true)?;
+    let mut db_clone = Database::build_with_file_name(user_id, &clone_name, &None)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let db_map = db_clone.query_data_without_lock(&vec![], &DbMap::new(), None, true)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let mut alias_set = HashSet::new();
     for data in db_map {
         alias_set.insert(data.get_bytes_attr(&column::ALIAS)?.clone());
     }
     let mut need_rollback = false;
-    let owner_info = datas.first().unwrap().get_bytes_attr(&column::OWNER)?;
-    let owner_type = datas.first().unwrap().get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?;
+    let owner_info = datas.first().unwrap().get_bytes_attr(&column::OWNER)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let owner_type = datas.first().unwrap().get_enum_attr::<OwnerType>(&column::OWNER_TYPE)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let calling_info = CallingInfo::new(user_id, owner_type, owner_info.clone(), None);
     let index = match owner_info.iter().rev().position(|&x| x == b'_') {
         Some(index) => index,
@@ -199,7 +212,7 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
     let suffix = app_index_str.as_bytes();
     new_owner.extend_from_slice(suffix.clone());
     let calling_info_new = CallingInfo::new(user_id, owner_type, new_owner.clone(), None);
-    db_clone.exec("begin transaction")?;
+    db_clone.exec("begin transaction").map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     for data in datas {
         if alias_set.contains(data.get_bytes_attr(&column::ALIAS)?) {
             continue;
@@ -213,7 +226,7 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
         }
     }
     if need_rollback {
-        db_clone.exec("rollback")?;
+        db_clone.exec("rollback").map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
         return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
             ErrCode::DatabaseError, "Upgrade clone app data failed.");
     }
@@ -221,28 +234,38 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
 }
 
 fn unwrap_and_insert(user_id: i32, unwrap_info: UnwrapInfo, db_clone: &mut Database) -> Result<()> {
-    let auth_type = unwrap_info.data.get_enum_attr::<AuthType>(&column::AUTH_TYPE)?;
-    let accessibility = unwrap_info.data.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
-    let required_password_set = unwrap_info.data.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
-    let secret_key = SecretKey::new_without_alias(unwrap_info.calling_info, auth_type, accessibility, required_password_set)?;
+    let auth_type = unwrap_info.data.get_enum_attr::<AuthType>(&column::AUTH_TYPE)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let accessibility = unwrap_info.data.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let required_password_set = unwrap_info.data.get_bool_attr(&column::REQUIRE_PASSWORD_SET)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let secret_key = SecretKey::new_without_alias(unwrap_info.calling_info, auth_type, accessibility, required_password_set)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let new_secret_key =
-        SecretKey::new_without_alias(unwrap_info.calling_info_new, auth_type, accessibility, required_password_set)?;
+        SecretKey::new_without_alias(unwrap_info.calling_info_new, auth_type, accessibility, required_password_set)
+            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let _ = generate_secret_key_if_needed(&new_secret_key);
     let _ = generate_secret_key_if_needed(&secret_key);
-    let secret = unwrap_info.data.get_bytes_attr(&column::SECRET)?;
+    let secret = unwrap_info.data.get_bytes_attr(&column::SECRET)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let mut params = ExtDbMap::new();
     params.insert(PARAM_NAME_DECRYPT_KEY_ALIAS, Value::Bytes(secret_key.alias().to_vec()));
     params.insert(PARAM_NAME_ENCRYPT_KEY_ALIAS, Value::Bytes(new_secret_key.alias().to_vec()));
     params.insert(PARAM_NAME_ACCESSIBILITY, Value::Number(accessibility as u32));
     params.insert(PARAM_NAME_CIPHER, Value::Bytes(secret.clone()));
-    params.insert(PARAM_NAME_AAD, Value::Bytes(common::build_aad(unwrap_info.data)?));
+    params.insert(PARAM_NAME_AAD,
+        Value::Bytes(common::build_aad(unwrap_info.data).map_err(|e| macros_lib::track_error!(e,
+            macros_lib::hisysevent::function!()))?));
     params.insert(PARAM_NAME_APP_INDEX, Value::Bytes(unwrap_info.suffix.to_vec()));
     params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
 
-    let load = AssetPlugin::get_instance().load_plugin()?;
+    let load = AssetPlugin::get_instance().load_plugin()
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     match load.process_event(EventType::WrapData, &mut params) {
         Ok(()) => {
-            let cipher = params.get_bytes_attr(&PARAM_NAME_CIPHER)?;
+            let cipher = params.get_bytes_attr(&PARAM_NAME_CIPHER)
+                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
             unwrap_info.data.insert(column::SECRET, Value::Bytes(cipher.to_vec()));
             unwrap_info.data.insert(column::OWNER, Value::Bytes(unwrap_info.new_owner.to_vec()));
             if db_clone.insert_datas(unwrap_info.data).is_err() {

@@ -45,7 +45,8 @@ fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
 
 fn upgrade_aad(db: &mut Database, calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
     db_data.insert_attr(column::VERSION, DB_DATA_VERSION);
-    let secret = db_data.get_bytes_attr(&column::SECRET)?;
+    let secret = db_data.get_bytes_attr(&column::SECRET).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     let secret_key = common::build_secret_key(calling_info, db_data).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
     let cipher = Crypto::encrypt(&secret_key, secret,
@@ -71,7 +72,8 @@ fn upgrade_aad(db: &mut Database, calling_info: &CallingInfo, db_data: &mut DbMa
 }
 
 fn decrypt_secret(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
-    let secret = db_data.get_bytes_attr(&column::SECRET)?;
+    let secret = db_data.get_bytes_attr(&column::SECRET).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     let secret_key = common::build_secret_key(calling_info, db_data).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
     let secret = Crypto::decrypt(&secret_key, secret,
@@ -85,10 +87,13 @@ fn decrypt_secret(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()>
 fn exec_crypto(calling_info: &CallingInfo, query: &AssetMap, db_data: &mut DbMap) -> Result<()> {
     common::check_required_tags(query, &AUTH_QUERY_ATTRS).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
-    let challenge = query.get_bytes_attr(&Tag::AuthChallenge)?;
-    let auth_token = query.get_bytes_attr(&Tag::AuthToken)?;
+    let challenge = query.get_bytes_attr(&Tag::AuthChallenge)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let auth_token = query.get_bytes_attr(&Tag::AuthToken)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
 
-    let secret = db_data.get_bytes_attr(&column::SECRET)?;
+    let secret = db_data.get_bytes_attr(&column::SECRET)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let arc_crypto_manager = CryptoManager::get_instance();
     let mut manager = arc_crypto_manager.lock().unwrap();
     match manager.find(calling_info, challenge) {
@@ -195,15 +200,13 @@ pub(crate) fn query_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &A
     let mut results = match get_db_by_user_id_db_name(calling_info.user_id(), db_name) {
         Some(db) => {
             db.query_datas(&vec![], db_data, Some(&get_query_options(attrs)), true)
-                .map_err(|e| macros_lib::track_error!(e,
-                    macros_lib::hisysevent::function!()))?
+                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?
         },
         None => {
             let mut db = Database::build(calling_info, db_key).map_err(|e| macros_lib::track_error!(e,
                 macros_lib::hisysevent::function!()))?;
             db.query_datas(&vec![], db_data, Some(&get_query_options(attrs)), true)
-                .map_err(|e| macros_lib::track_error!(e,
-                    macros_lib::hisysevent::function!()))?
+                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?
         },
     };
     if results.is_empty() {
