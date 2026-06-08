@@ -16,7 +16,7 @@
 //! This module is used to implement cryptographic algorithm operations, including key generation.
 
 use asset_common::{transfer_error_code, CallingInfo, SUCCESS};
-use asset_definition::{Accessibility, AuthType, ErrCode, Result};
+use asset_definition::{macros_lib, Accessibility, AuthType, ErrCode, Result};
 use asset_log::{loge, logi};
 use asset_utils::hasher;
 
