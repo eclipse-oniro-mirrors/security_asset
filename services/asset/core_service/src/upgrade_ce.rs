@@ -65,7 +65,7 @@ fn remove_db(path: &str) -> Result<()> {
                 res = Err(AssetError { 
                     code: ErrCode::DatabaseError, 
                     msg: "rmove file failed".to_string(),
-                    call_chain: format!("{}:{}", std::panic::Location::caller().file(), std::panic::Location::caller().line()),
+                    call_chain: macros_lib::hisysevent::function!().to_string(),
                 })
             },
         };

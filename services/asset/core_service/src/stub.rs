@@ -53,7 +53,7 @@ impl RemoteStub for AssetService {
                 Err(AssetError { 
                     code: ErrCode::ServiceUnavailable, 
                     msg: "service stop".to_string(),
-                    call_chain: format!("{}:{}", std::panic::Location::caller().file(), std::panic::Location::caller().line()),
+                    call_chain: macros_lib::hisysevent::function!().to_string(),
                 }),
                 reply,
             );
@@ -66,7 +66,7 @@ impl RemoteStub for AssetService {
                 Err(AssetError { 
                     code: ErrCode::ServiceUnavailable, 
                     msg: "service stop".to_string(),
-                    call_chain: format!("{}:{}", std::panic::Location::caller().file(), std::panic::Location::caller().line()),
+                    call_chain: macros_lib::hisysevent::function!().to_string(),
                 }),
                 reply,
             );

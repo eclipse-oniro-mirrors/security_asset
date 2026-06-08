@@ -349,7 +349,7 @@ pub fn get_upgrade_version(user_id: i32) -> Result<OriginVersion> {
         _ => Err(AssetError { 
             code: ErrCode::FileOperationError, 
             msg: "Get upgrade version failed.".to_owned(),
-            call_chain: format!("{}:{}", std::panic::Location::caller().file(), std::panic::Location::caller().line()),
+            call_chain: macros_lib::hisysevent::function!().to_string(),
         }),
     }
 }
