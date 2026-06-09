@@ -36,6 +36,7 @@ impl Conversion for Tag {
             _ if DataType::Bool as u32 == mask => DataType::Bool,
             _ if DataType::Number as u32 == mask => DataType::Number,
             _ if DataType::Bytes as u32 == mask => DataType::Bytes,
+            _ if DataType::String as u32 == mask => DataType::String,
             _ => {
                 panic!("Unexpected data type, it should be bool, uint32 or bytes.");
             },
@@ -53,6 +54,7 @@ impl Conversion for Value {
             Value::Bool(_) => DataType::Bool,
             Value::Number(_) => DataType::Number,
             Value::Bytes(_) => DataType::Bytes,
+            Value::String(_) => DataType::String,
         }
     }
 
