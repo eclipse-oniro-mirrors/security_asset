@@ -66,7 +66,7 @@ fn remove_db(path: &str) -> Result<()> {
                 res = Err(AssetError { 
                     code: ErrCode::DatabaseError, 
                     msg: "rmove file failed".to_string(),
-                    call_chain: macros_lib::hisysevent::function!().to_string(),
+                    call_chain: vec![AssetError::shorten_func_name(macros_lib::hisysevent::function!())],
                 })
             },
         };

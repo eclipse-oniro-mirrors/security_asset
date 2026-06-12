@@ -140,7 +140,7 @@ impl Display for AssetError {
 
 impl AssetError {
     /// Create an AssetError instance.
-    fn shorten_func_name(full_name: &str) -> &str {
+    pub fn shorten_func_name(full_name: &'static str) -> &'static str {
         let name = if let Some(idx) = full_name.find("::{") {
             &full_name[..idx]
         } else {
@@ -159,13 +159,13 @@ impl AssetError {
         AssetError {
             code,
             msg,
-            call_chain: Self::shorten_func_name(func_name).to_string(),
+            call_chain: vec![Self::shorten_func_name(func_name)],
         }
     }
 
     /// Track caller location when propagating error.
     pub fn track_internal(mut self, func_name: &'static str) -> Self {
-        self.call_chain = format!("{} <-- {}", self.call_chain, Self::shorten_func_name(func_name));
+        self.call_chain.push(Self::shorten_func_name(func_name));
         self
     }
 }
@@ -175,7 +175,7 @@ impl From<io::Error> for AssetError {
         AssetError {
             code: ErrCode::FileOperationError,
             msg: format!("[FATAL]Backup db failed! error is [{error}]"),
-            call_chain: String::new(),
+            call_chain: vec![],
         }
     }
 }
