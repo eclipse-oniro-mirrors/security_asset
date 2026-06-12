@@ -16,7 +16,7 @@
 //! This module is used to implement cryptographic algorithm operations, including key generation.
 
 use asset_common::{transfer_error_code, CallingInfo, SUCCESS};
-use asset_definition::{Accessibility, AuthType, ErrCode, Result};
+use asset_definition::{macros_lib, Accessibility, AuthType, ErrCode, Result};
 use asset_log::{loge, logi};
 use asset_utils::hasher;
 
@@ -101,7 +101,7 @@ fn get_existing_key_alias(
         require_password_set,
         alias: prefixed_new_alias.clone(),
     };
-    if key.exists()? {
+    if key.exists().map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))? {
         logi!("[{access_type}]-typed secret key with v3 alias exists.");
         return Ok(KeyAliasVersion::V3);
     }
@@ -113,7 +113,7 @@ fn get_existing_key_alias(
         require_password_set,
         alias: new_alias.clone(),
     };
-    if key.exists()? {
+    if key.exists().map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))? {
         logi!("[{access_type}]-typed secret key with v2 alias exists.");
         return Ok(KeyAliasVersion::V2(new_alias));
     }
@@ -126,7 +126,7 @@ fn get_existing_key_alias(
         require_password_set,
         alias: old_alias.clone(),
     };
-    if key.exists()? {
+    if key.exists().map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))? {
         logi!("[{access_type}]-typed secret key with v1 alias exists.");
         return Ok(KeyAliasVersion::V1(old_alias));
     }
@@ -260,19 +260,23 @@ impl SecretKey {
         let accessibilitys =
             [Accessibility::DevicePowerOn, Accessibility::DeviceFirstUnlocked, Accessibility::DeviceUnlocked];
         for accessibility in accessibilitys.into_iter() {
-            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::None, accessibility, true)?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::None, accessibility, true)
+                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, accessibility, true)?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, accessibility, true)
+                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::None, accessibility, false)?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::None, accessibility, false)
+                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, accessibility, false)?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, accessibility, false)
+                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
         }

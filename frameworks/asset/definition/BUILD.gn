@@ -17,6 +17,8 @@ ohos_rust_static_library("asset_definition") {
   sources = [ "src/lib.rs" ]
   deps = [ "../os_dependency/log:asset_log" ]
 
+  external_deps = [ "hisysevent:hisysevent_rust" ]
+
   crate_name = "asset_definition"
   crate_type = "rlib"
   subsystem_name = "security"

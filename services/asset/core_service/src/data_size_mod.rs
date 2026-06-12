@@ -46,7 +46,8 @@ fn get_remain_partition_size(partition: &str) -> Result<f64> {
     let mut remain_size: f64 = 0.0;
     let ret_code: i32 = unsafe { GetRemainPartitionSize(partition_cstr.as_ptr(), &mut remain_size) };
     if ret_code != 0 {
-        return macros_lib::log_throw_error!(ErrCode::try_from(ret_code as u32)?, "Get remain partition size failed");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::try_from(ret_code as u32)?, "Get remain partition size failed");
     }
     Ok(remain_size)
 }
@@ -101,7 +102,8 @@ fn get_db_dirs() -> Result<Vec<String>> {
     let user_ids_ptr = user_ids.as_mut_ptr();
     let ret: i32 = unsafe { GetUserIds(user_ids_ptr, user_ids_size_ptr) };
     if ret != SUCCESS {
-        return macros_lib::log_throw_error!(ErrCode::AccountError, "[FATAL] Get users IDs failed.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::AccountError, "[FATAL] Get users IDs failed.");
     }
 
     if user_ids_size < USER_ID_VEC_BUFFER {

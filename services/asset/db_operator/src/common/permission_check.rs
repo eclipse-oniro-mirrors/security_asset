@@ -31,22 +31,21 @@ extern "C" {
 pub fn check_system_permission(attrs: &AssetMap) -> Result<()> {
     if attrs.get(&Tag::UserId).is_some() {
         if unsafe { !CheckSystemHapPermission() } {
-            return macros_lib::log_throw_error!(ErrCode::NotSystemApplication, "[FATAL]The caller is not system application.");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::NotSystemApplication, "[FATAL]The caller is not system application.");
         }
 
         let permission = CString::new("ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS").unwrap();
         if unsafe { !CheckPermission(permission.as_ptr()) } {
-            return macros_lib::log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
         }
 
         let uid = Skeleton::calling_uid();
-        let user_id = get_user_id(uid)?;
+        let user_id = get_user_id(uid).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
         if user_id > ROOT_USER_UPPERBOUND {
-            return macros_lib::log_throw_error!(
-                ErrCode::AccessDenied,
-                "[FATAL]The caller user_id is: {}. Not in range[0, 99]",
-                user_id
-            );
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::AccessDenied, "[FATAL]The caller user_id is: {}. Not in range[0, 99]", user_id);
         }
     }
     Ok(())

@@ -17,8 +17,6 @@
 
 use std::{collections::HashMap, fmt::Display, hash::Hash, io};
 
-use asset_log::loge;
-
 use super::{
     macros_lib, Accessibility, AssetError, AuthType, Conversion, DataType, ErrCode, Extension,
     Result, Tag, Value,
@@ -101,7 +99,8 @@ where
         if let Some(Value::Bool(b)) = self.get(key) {
             Ok(*b)
         } else {
-            macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of bool type failed, key: {}", key)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]Get attribute of bool type failed, key: {}", key)
         }
     }
 
@@ -109,7 +108,8 @@ where
         if let Some(Value::Number(num)) = self.get(key) {
             T::try_from(*num)
         } else {
-            macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of enum type failed, key: {}", key)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]Get attribute of enum type failed, key: {}", key)
         }
     }
 
@@ -117,7 +117,8 @@ where
         if let Some(Value::Number(num)) = self.get(key) {
             Ok(*num)
         } else {
-            macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of number type failed, key: {}", key)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]Get attribute of number type failed, key: {}", key)
         }
     }
 
@@ -125,7 +126,8 @@ where
         if let Some(Value::Bytes(bytes)) = self.get(key) {
             Ok(bytes)
         } else {
-            macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get attribute of bytes type failed, key: {}", key)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]Get attribute of bytes type failed, key: {}", key)
         }
     }
 }
@@ -138,17 +140,42 @@ impl Display for AssetError {
 
 impl AssetError {
     /// Create an AssetError instance.
-    pub fn new(code: ErrCode, msg: String) -> AssetError {
-        loge!("{}", msg);
-        AssetError { code, msg }
+    fn shorten_func_name(full_name: &str) -> &str {
+        let name = if let Some(idx) = full_name.find("::{") {
+            &full_name[..idx]
+        } else {
+            full_name
+        };
+        let name = if let Some(idx) = name.rfind("::") {
+            &name[idx + 2..]
+        } else {
+            name
+        };
+        name
+    }
+
+    /// Create a new AssetError.
+    pub fn new(code: ErrCode, msg: String, func_name: &'static str) -> AssetError {
+        AssetError {
+            code,
+            msg,
+            call_chain: Self::shorten_func_name(func_name).to_string(),
+        }
+    }
+
+    /// Track caller location when propagating error.
+    pub fn track_internal(mut self, func_name: &'static str) -> Self {
+        self.call_chain = format!("{} <-- {}", self.call_chain, Self::shorten_func_name(func_name));
+        self
     }
 }
 
 impl From<io::Error> for AssetError {
     fn from(error: io::Error) -> Self {
         AssetError {
-            code: (ErrCode::FileOperationError),
-            msg: (format!("[FATAL]Backup db failed! error is [{error}]")),
+            code: ErrCode::FileOperationError,
+            msg: format!("[FATAL]Backup db failed! error is [{error}]"),
+            call_chain: String::new(),
         }
     }
 }

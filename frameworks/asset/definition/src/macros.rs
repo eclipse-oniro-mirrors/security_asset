@@ -44,7 +44,8 @@ macro_rules! impl_tag_trait {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
                     _ => {
-                        macros_lib::log_throw_error!(macros_lib::ErrCode::InvalidArgument,
+                        macros_lib::log_throw_error!("",
+                            macros_lib::ErrCode::InvalidArgument,
                             "[FATAL]Type[{}] try from u32[{}] failed.", stringify!($name), v)
                     }
                 }
@@ -92,7 +93,8 @@ macro_rules! impl_enum_trait {
                 match v {
                     $(x if x == $name::$vname as u32 => Ok($name::$vname),)*
                     _ => {
-                        macros_lib::log_throw_error!(macros_lib::ErrCode::InvalidArgument,
+                        macros_lib::log_throw_error!("",
+                            macros_lib::ErrCode::InvalidArgument,
                             "[FATAL]Type[{}] try from u32[{}] failed.", stringify!($name), v)
                     }
                 }
@@ -126,17 +128,14 @@ macro_rules! impl_enum_trait {
 /// # Examples
 ///
 /// ```
-/// log_throw_error!(ErrCode::InvalidArgument, "hello, {}", "world");
+/// log_throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "hello, {}", "world");
 /// ```
 #[macro_export]
 macro_rules! log_throw_error {
-    ($code:expr, $($arg:tt)*) => {{
+    ($func:expr, $code:expr, $($arg:tt)*) => {{
         let str = format!($($arg)*);
         macros_lib::loge!("{}", str);
-        Err(macros_lib::AssetError {
-            code: $code,
-            msg: str
-        })
+        Err(macros_lib::AssetError::new($code, str, $func))
     }};
 }
 
@@ -145,17 +144,14 @@ macro_rules! log_throw_error {
 /// # Examples
 ///
 /// ```
-/// log_and_into_asset_error!(ErrCode::InvalidArgument, "hello, {}", "world");
+/// log_and_into_asset_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "hello, {}", "world");
 /// ```
 #[macro_export]
 macro_rules! log_and_into_asset_error {
-    ($code:expr, $($arg:tt)*) => {{
+    ($func:expr, $code:expr, $($arg:tt)*) => {{
         let str = format!($($arg)*);
         macros_lib::loge!("{}", str);
-        macros_lib::AssetError {
-            code: $code,
-            msg: str
-        }
+        macros_lib::AssetError::new($code, str, $func)
     }};
 }
 
@@ -164,17 +160,23 @@ macro_rules! log_and_into_asset_error {
 /// # Examples
 ///
 /// ```
-/// throw_error!(ErrCode::InvalidArgument, "hello, {}", "world");
+/// throw_error!(macros_lib::hisysevent::function!(), ErrCode::InvalidArgument, "hello, {}", "world");
 /// ```
 #[macro_export]
 macro_rules! throw_error {
-    ($code:expr, $($arg:tt)*) => {{
+    ($func:expr, $code:expr, $($arg:tt)*) => {{
         let str = format!($($arg)*);
-        Err(macros_lib::AssetError {
-            code: $code,
-            msg: str
-        })
+        Err(macros_lib::AssetError::new($code, str, $func))
     }};
+}
+
+/// Track error propagation with function name and line number.
+/// Usage: .map_err(|e| track_error!(e))
+#[macro_export]
+macro_rules! track_error {
+    ($err:expr, $func:expr) => {
+        $err.track_internal($func)
+    };
 }
 
 /// Impl from trait for u32.

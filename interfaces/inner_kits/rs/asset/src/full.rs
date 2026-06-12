@@ -51,7 +51,8 @@ fn load_asset_service() -> Result<RemoteObj> {
         Some(remote) => Ok(remote),
         None => {
             logw!("load_asset_service time:{}s", start_time.elapsed().as_secs_f64());
-            macros_lib::log_throw_error!(ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
         },
     }
 }
@@ -219,11 +220,8 @@ impl Manager {
         let mut parcel = MsgParcel::new();
         parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
         if attributes_array.len() > MAX_ARRAY_CAPACITY {
-            return macros_lib::throw_error!(
-                ErrCode::InvalidArgument,
-                "[FATAL][IPC]The array size {} exceeds the limit",
-                attributes_array.len()
-            );
+            return macros_lib::throw_error!( macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL][IPC]The array size {} exceeds the limit", attributes_array.len() );
         }
         serialize_maps(attributes_array, &mut parcel)?;
         match self.send_request(parcel, ipc_code) {
@@ -256,11 +254,8 @@ impl Manager {
         let mut parcel = MsgParcel::new();
         parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
         if attributes_array.len() > MAX_ARRAY_CAPACITY {
-            return macros_lib::throw_error!(
-                ErrCode::InvalidArgument,
-                "[FATAL][IPC]The array size {} exceeds the limit",
-                attributes_array.len()
-            );
+            return macros_lib::throw_error!( macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL][IPC]The array size {} exceeds the limit", attributes_array.len() );
         }
         serialize_maps(attributes_array, &mut parcel)?;
         serialize_maps(attributes_to_update_array, &mut parcel)?;
@@ -294,11 +289,8 @@ impl Manager {
         let mut parcel = MsgParcel::new();
         parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
         if attributes_array.len() > MAX_ARRAY_CAPACITY {
-            return macros_lib::throw_error!(
-                ErrCode::InvalidArgument,
-                "[FATAL][IPC]The array size {} exceeds the limit",
-                attributes_array.len()
-            );
+            return macros_lib::throw_error!( macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL][IPC]The array size {} exceeds the limit", attributes_array.len() );
         }
         serialize_maps(attributes_array, &mut parcel)?;
         match self.send_request(parcel, ipc_code) {
@@ -323,7 +315,7 @@ impl Manager {
             IPC_SUCCESS => Ok(reply),
             e => {
                 let msg = reply.read::<String>().map_err(ipc_err_handle)?;
-                macros_lib::throw_error!(ErrCode::try_from(e)?, "{}", msg)
+                macros_lib::throw_error!(macros_lib::hisysevent::function!(), ErrCode::try_from(e)?, "{}", msg)
             },
         }
     }

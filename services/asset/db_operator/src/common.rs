@@ -163,9 +163,12 @@ pub fn add_calling_info(calling_info: &CallingInfo, db_data: &mut DbMap) {
 
 /// Build a secret key.
 pub fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<SecretKey> {
-    let auth_type = attrs.get_enum_attr::<AuthType>(&column::AUTH_TYPE)?;
-    let access_type = attrs.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
-    let require_password_set = attrs.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
+    let auth_type = attrs.get_enum_attr::<AuthType>(&column::AUTH_TYPE)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let access_type = attrs.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let require_password_set = attrs.get_bool_attr(&column::REQUIRE_PASSWORD_SET)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     SecretKey::new_without_alias(calling, auth_type, access_type, require_password_set)
 }
 
@@ -182,7 +185,8 @@ fn check_if_need_addition_aad(attr: &str, map: &DbMap) -> bool {
 fn to_hex(bytes: &Vec<u8>) -> Result<Vec<u8>> {
     let bytes_len = bytes.len();
     if bytes_len > MAX_LABEL_SIZE {
-        return macros_lib::log_throw_error!(ErrCode::DataCorrupted, "The data in DB has been tampered with.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::DataCorrupted, "The data in DB has been tampered with.");
     }
 
     let scale_capacity = 2;
@@ -202,7 +206,8 @@ pub fn build_aad(attrs: &DbMap) -> Result<Vec<u8>> {
         }
         aad.extend(format!("{}:", column).as_bytes());
         match attrs.get(column) {
-            Some(Value::Bytes(bytes)) => aad.extend(to_hex(bytes)?),
+            Some(Value::Bytes(bytes)) => aad.extend(to_hex(bytes).map_err(|e| macros_lib::track_error!(e,
+                macros_lib::hisysevent::function!()))?),
             Some(Value::Number(num)) => aad.extend(num.to_le_bytes()),
             Some(Value::Bool(num)) => aad.push(*num as u8),
             None => (),
@@ -214,7 +219,8 @@ pub fn build_aad(attrs: &DbMap) -> Result<Vec<u8>> {
 
 /// Check if needs upgration.
 pub fn need_upgrade(db_data: &DbMap) -> Result<bool> {
-    let version = db_data.get_num_attr(&column::VERSION)?;
+    let version = db_data.get_num_attr(&column::VERSION)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     Ok(version != DB_DATA_VERSION)
 }
 

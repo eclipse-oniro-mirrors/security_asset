@@ -74,32 +74,25 @@ pub(crate) fn inform_asset_ext(calling_info: &CallingInfo, input: &AssetMap) {
 pub(crate) fn check_group_validity(attrs: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     if attrs.get(&Tag::GroupId).is_some() {
         if let Some(Value::Bool(true)) = attrs.get(&Tag::IsPersistent) {
-            let load = AssetPlugin::get_instance().load_plugin()?;
+            let load = AssetPlugin::get_instance().load_plugin().map_err(|e| macros_lib::track_error!(e,
+                macros_lib::hisysevent::function!()))?;
             let mut params = ExtDbMap::new();
             params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
             if load.process_event(EventType::IsPermissionEnabled, &mut params).is_err() {
-                return macros_lib::log_throw_error!(
+                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                     ErrCode::InvalidArgument,
-                    "[FATAL]The value of the tag [{}] cannot be set to true when the tag [{}] is specified.",
-                    &Tag::IsPersistent,
-                    &Tag::GroupId
-                );
+                    "[FATAL]The value of the tag [{}] cannot be set to true when the tag [{}] is specified.", &Tag::IsPersistent, &Tag::GroupId);
             }
         }
         if calling_info.owner_type_enum() == OwnerType::Native {
-            return macros_lib::log_throw_error!(
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                 ErrCode::Unsupported,
-                "[FATAL]The tag [{}] is not yet supported for [{}] owner.",
-                &Tag::GroupId,
-                OwnerType::Native
-            );
+                "[FATAL]The tag [{}] is not yet supported for [{}] owner.", &Tag::GroupId, OwnerType::Native);
         }
         if calling_info.app_index() > 0 {
-            return macros_lib::log_throw_error!(
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                 ErrCode::Unsupported,
-                "[FATAL]The tag [{}] is not yet supported for clone or sandbox app.",
-                &Tag::GroupId
-            );
+                "[FATAL]The tag [{}] is not yet supported for clone or sandbox app.", &Tag::GroupId);
         }
     }
     Ok(())
@@ -145,11 +138,8 @@ fn get_default_value(tag: &Tag) -> Result<Value> {
         Tag::RequireAttrEncrypted => Ok(Value::Bool(false)),
         Tag::GroupId => Ok(Value::Bytes(vec![])),
         // Add other Tags if needed.
-        _ => macros_lib::log_throw_error!(
-            ErrCode::InvalidArgument,
-            "[FATAL][OPERATIONS]Tag {:?} does not have default value",
-            tag
-        ),
+        _ => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL][OPERATIONS]Tag {:?} does not have default value", tag),
     }
 }
 
@@ -159,21 +149,21 @@ pub(crate) fn check_tags_consistency(tags: &[Tag], attributes_array: &[AssetMap]
     for tag in tags {
         let ref_value = match first.get(tag) {
             Some(value) => value.clone(),
-            None => get_default_value(tag)?,
+            None => get_default_value(tag).map_err(|e| macros_lib::track_error!(e,
+                macros_lib::hisysevent::function!()))?,
         };
 
         for (idx, attrs) in attributes_array.iter().enumerate() {
             let value = match attrs.get(tag) {
                 Some(value) => value.clone(),
-                None => get_default_value(tag)?,
+                None => get_default_value(tag).map_err(|e| macros_lib::track_error!(e,
+                    macros_lib::hisysevent::function!()))?,
             };
 
             if ref_value != value {
-                return macros_lib::log_throw_error!(
+                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                     ErrCode::InconsistentAttribute,
-                    "[FATAL][OPERATIONS]Tag {:?} at index {} has inconsistent value",
-                    tag, idx
-                );
+                    "[FATAL][OPERATIONS]Tag {:?} at index {} has inconsistent value", tag, idx);
             }
         }
     }

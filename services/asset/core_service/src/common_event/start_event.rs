@@ -40,22 +40,26 @@ impl WantParser<PackageInfo> for PackageRemovedWant<'_> {
     fn parse(&self) -> Result<PackageInfo> {
         // parse user id from want
         let Some(user_id) = self.0.get(USER_ID) else {
-            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed userId fail!");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]Get removed userId fail!");
         };
         let user_id = match user_id.parse::<i32>() {
             Ok(user_id) => user_id,
-            _ => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Parse removed userId fail!"),
+            _ => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]Parse removed userId fail!"),
         };
 
         // parse app id from want
         let Some(app_id) = self.0.get(APP_ID) else {
-            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed ownerInfo fail, get appId fail!");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]Get removed ownerInfo fail, get appId fail!");
         };
         let app_id = app_id.to_string();
 
         // parse bundle name from want
         let Some(bundle_name) = self.0.get(BUNDLE_NAME) else {
-            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get restore appInfo fail, get bundleName fail!");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]Get restore appInfo fail, get bundleName fail!");
         };
         let bundle_name = bundle_name.to_string();
 
@@ -66,13 +70,15 @@ impl WantParser<PackageInfo> for PackageRemovedWant<'_> {
                 logw!("[WARNING]Not sandbox app, getting non-sandbox(main or clone) appIndex!");
                 match self.0.get(APP_INDEX) {
                     Some(app_index) => app_index,
-                    _ => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Get removed appIndex fail!"),
+                    _ => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                        ErrCode::InvalidArgument, "[FATAL]Get removed appIndex fail!"),
                 }
             },
         };
         let app_index = match app_index.parse::<i32>() {
             Ok(app_index) => app_index,
-            _ => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Parse removed appIndex fail!"),
+            _ => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]Parse removed appIndex fail!"),
         };
 
         // parse groups from want

@@ -36,23 +36,25 @@ extern "C" {
 fn get_timespec() -> Result<Timespec> {
     let mut ts = Timespec { tv_sec: 0, tv_nsec: 0 };
     if unsafe { clock_gettime(CLOCK_REALTIME, &mut ts) } != 0 {
-        return macros_lib::log_throw_error!(ErrCode::GetSystemTimeError, "[FATAL]clock_gettime failed");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::GetSystemTimeError, "[FATAL]clock_gettime failed");
     }
     if ts.tv_sec < 0 {
-        return macros_lib::log_throw_error!(ErrCode::GetSystemTimeError, "[FATAL]32-bit time_t overflow (Y2038)");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::GetSystemTimeError, "[FATAL]32-bit time_t overflow (Y2038)");
     }
     Ok(ts)
 }
 
 /// Get the current time from the system, in milliseconds.
 pub fn system_time_in_millis() -> Result<Vec<u8>> {
-    let ts = get_timespec()?;
+    let ts = get_timespec().map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let millis = ts.tv_sec as i64 * SECS_TO_MILLIS + ts.tv_nsec as i64 / NANOS_TO_MILLIS;
     Ok(millis.to_string().as_bytes().to_vec())
 }
 
 /// Get the current time from the system, in seconds.
 pub fn system_time_in_seconds() -> Result<u64> {
-    let ts = get_timespec()?;
+    let ts = get_timespec().map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     Ok(ts.tv_sec as u64)
 }

@@ -49,9 +49,10 @@ impl CryptoManager {
 
     /// Add the crypto to manager.
     pub fn add(&mut self, crypto: Crypto) -> Result<()> {
-        self.remove_expired_crypto()?;
+        self.remove_expired_crypto().map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
         if self.cryptos.len() >= CRYPTO_CAPACITY {
-            macros_lib::log_throw_error!(ErrCode::LimitExceeded, "The number of cryptos exceeds the upper limit.")
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::LimitExceeded, "The number of cryptos exceeds the upper limit.")
         } else {
             self.cryptos.push(crypto);
             Ok(())
@@ -60,13 +61,14 @@ impl CryptoManager {
 
     /// Find the crypto with the specified alias and challenge slice from manager.
     pub fn find(&mut self, calling_info: &CallingInfo, challenge: &Vec<u8>) -> Result<&Crypto> {
-        self.remove_expired_crypto()?;
+        self.remove_expired_crypto().map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
         for crypto in self.cryptos.iter() {
             if crypto.challenge().eq(challenge) && crypto.calling_info().eq(calling_info) {
                 return Ok(crypto);
             }
         }
-        macros_lib::log_throw_error!(ErrCode::NotFound, "The crypto expires or does not exist. Call the preQuery first.")
+        macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::NotFound, "The crypto expires or does not exist. Call the preQuery first.")
     }
 
     /// Remove the crypto from manager.

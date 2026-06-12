@@ -48,10 +48,8 @@ pub fn check_accessibility_validity(attributes: &AssetMap, calling_info: &Callin
     if accessibility == Accessibility::DevicePowerOn {
         return Ok(());
     }
-    macros_lib::log_throw_error!(
-        ErrCode::InvalidArgument,
-        "[FATAL][SA]System user data cannot be protected by the lock screen password."
-    )
+    macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+        ErrCode::InvalidArgument, "[FATAL][SA]System user data cannot be protected by the lock screen password.")
 }
 
 /// Check the permission of the persistent.
@@ -59,7 +57,8 @@ pub fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
     if attributes.get(&Tag::IsPersistent).is_some() {
         let permission = CString::new("ohos.permission.STORE_PERSISTENT_DATA").unwrap();
         if unsafe { !CheckPermission(permission.as_ptr()) } {
-            return macros_lib::log_throw_error!(ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::PermissionDenied, "[FATAL][SA]Permission check failed.");
         }
     }
     Ok(())
@@ -68,18 +67,21 @@ pub fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
 /// Check the permission for sync.
 pub fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     if attributes.get(&Tag::SyncType).is_none()
-        || (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0
+        || (attributes.get_num_attr(&Tag::SyncType).map_err(|e| macros_lib::track_error!(e,
+            macros_lib::hisysevent::function!()))? & SyncType::TrustedAccount as u32) == 0
     {
         return Ok(());
     }
     match calling_info.owner_type_enum() {
         OwnerType::Hap => {
             if calling_info.app_index() > 0 {
-                return macros_lib::log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
+                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                    ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
             }
         },
         OwnerType::HapGroup => {
-            return macros_lib::log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::Unsupported, "[FATAL]The caller does not support storing sync data.");
         },
         OwnerType::Native => (),
     }
@@ -89,31 +91,36 @@ pub fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) 
 /// Check the permission for wrap.
 pub fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     if attributes.get(&Tag::WrapType).is_none()
-        || attributes.get_enum_attr::<WrapType>(&Tag::WrapType)? == WrapType::Never
+        || attributes.get_enum_attr::<WrapType>(&Tag::WrapType).map_err(|e| macros_lib::track_error!(e,
+            macros_lib::hisysevent::function!()))? == WrapType::Never
     {
         return Ok(());
     }
     match calling_info.owner_type_enum() {
         OwnerType::Hap | OwnerType::HapGroup => {
             if calling_info.app_index() > 0 {
-                return macros_lib::log_throw_error!(ErrCode::Unsupported, "[FATAL]The caller does not support storing wrap data.");
+                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                    ErrCode::Unsupported, "[FATAL]The caller does not support storing wrap data.");
             }
         },
         OwnerType::Native => (),
     }
 
     if attributes.get(&Tag::SyncType).is_none()
-        || (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0
+        || (attributes.get_num_attr(&Tag::SyncType).map_err(|e| macros_lib::track_error!(e,
+            macros_lib::hisysevent::function!()))? & SyncType::TrustedAccount as u32) == 0
     {
         Ok(())
     } else {
-        macros_lib::log_throw_error!(ErrCode::Unsupported, "[FATAL]trusted account data can not be set need wrap data.")
+        macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::Unsupported, "[FATAL]trusted account data can not be set need wrap data.")
     }
 }
 
 /// Get query condition.
 pub fn get_query_condition(attrs: &AssetMap, calling_info: &CallingInfo) -> Result<DbMap> {
-    let alias = attrs.get_bytes_attr(&Tag::Alias)?;
+    let alias = attrs.get_bytes_attr(&Tag::Alias)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let mut query = DbMap::new();
     if calling_info.group().is_some() {
         add_group(calling_info, &mut query);

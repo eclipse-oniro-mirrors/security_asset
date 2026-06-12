@@ -20,3 +20,4 @@ edition = "2021"
 
 [dependencies]
 asset_log = { path = "../os_dependency/log" }
+hisysevent = { git = "https://gitcode.com/openharmony/hiviewdfx_hisysevent.git" }

@@ -28,9 +28,14 @@ use asset_utils::time;
 use crate::operations::common::{check_group_validity, inform_asset_ext, update_cloud_sync_status};
 
 fn encrypt(calling_info: &CallingInfo, db_data: &DbMap) -> Result<Vec<u8>> {
-    let secret_key = common::build_secret_key(calling_info, db_data)?;
-    let secret = db_data.get_bytes_attr(&column::SECRET)?;
-    let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data)?)?;
+    let secret_key = common::build_secret_key(calling_info, db_data).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    let secret = db_data.get_bytes_attr(&column::SECRET).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    let cipher = Crypto::encrypt(&secret_key, secret,
+        &common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e,
+            macros_lib::hisysevent::function!()))?).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     Ok(cipher)
 }
 
@@ -46,7 +51,7 @@ fn is_only_change_local_labels(update: &AssetMap) -> bool {
 
 fn add_attrs(update: &AssetMap, db_data: &mut DbMap) -> Result<()> {
     if !is_only_change_local_labels(update) {
-        add_system_attrs(db_data)?;
+        add_system_attrs(db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
         add_normal_attrs(db_data);
     }
     db_data.insert(column::LOCAL_STATUS, Value::Number(LocalStatus::Local as u32));
@@ -54,7 +59,8 @@ fn add_attrs(update: &AssetMap, db_data: &mut DbMap) -> Result<()> {
 }
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
-    let time = time::system_time_in_millis()?;
+    let time = time::system_time_in_millis().map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     Ok(())
 }
@@ -68,26 +74,33 @@ const UPDATE_OPTIONAL_ATTRS: [Tag; 1] = [Tag::Secret];
 
 fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // Check attributes used to query.
-    common::check_required_tags(query, &QUERY_REQUIRED_ATTRS)?;
+    common::check_required_tags(query, &QUERY_REQUIRED_ATTRS).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
-    common::check_tag_validity(query, &valid_tags)?;
-    check_group_validity(query, calling_info)?;
-    common::check_value_validity(query)?;
-    common::check_system_permission(query)?;
+    common::check_tag_validity(query, &valid_tags).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    check_group_validity(query, calling_info).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    common::check_value_validity(query).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    common::check_system_permission(query).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
 
     if attrs_to_update.is_empty() {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The attributes to update is empty.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL]The attributes to update is empty.");
     }
     // Check attributes to update.
     valid_tags = common::NORMAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&UPDATE_OPTIONAL_ATTRS);
-    common::check_tag_validity(attrs_to_update, &valid_tags)?;
-    common::check_value_validity(attrs_to_update)
+    common::check_tag_validity(attrs_to_update, &valid_tags).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    common::check_value_validity(attrs_to_update).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))
 }
 
 fn upgrade_to_latest_version(origin_db_data: &mut DbMap, update_db_data: &mut DbMap) {
@@ -96,7 +109,8 @@ fn upgrade_to_latest_version(origin_db_data: &mut DbMap, update_db_data: &mut Db
 }
 
 pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &AssetMap) -> Result<()> {
-    check_arguments(query, update, calling_info)?;
+    check_arguments(query, update, calling_info).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
 
     let mut query_db_data = common::into_db_map(query);
     if query.get(&Tag::GroupId).is_some() {
@@ -106,40 +120,46 @@ pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &Asse
     }
     let mut update_db_data = common::into_db_map(update);
 
-    add_attrs(update, &mut update_db_data)?;
+    add_attrs(update, &mut update_db_data).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
 
-    let db_key = get_db_key_by_asset_map(calling_info.user_id(), query)?;
-    let mut db = Database::build(calling_info, db_key)?;
-    let results = db.query_datas(&vec![], &query_db_data, None, true)?;
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), query).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    let mut db = Database::build(calling_info, db_key).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    let results = db.query_datas(&vec![], &query_db_data, None, true).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     if results.is_empty() {
-        return macros_lib::log_throw_error!(ErrCode::NotFound, "[FATAL]The asset to update is not found.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::NotFound, "[FATAL]The asset to update is not found.");
     }
 
     if update.contains_key(&Tag::Secret) {
-        let mut results = db.query_datas(&vec![], &query_db_data, None, true)?;
+        let mut results = db.query_datas(&vec![], &query_db_data, None, true).map_err(|e| macros_lib::track_error!(e,
+            macros_lib::hisysevent::function!()))?;
         if results.len() != 1 {
-            return macros_lib::log_throw_error!(
-                ErrCode::NotFound,
-                "query to-be-updated asset failed, found [{}] assets",
-                results.len()
-            );
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::NotFound, "query to-be-updated asset failed, found [{}] assets", results.len());
         }
 
         let result = results.get_mut(0).unwrap();
         result.insert(column::SECRET, update[&Tag::Secret].clone());
 
-        if common::need_upgrade(result)? {
+        if common::need_upgrade(result).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))? {
             upgrade_to_latest_version(result, &mut update_db_data);
         }
         // Using result with AAD to encrypt secret, otherwise encryption failed.
-        let cipher = encrypt(calling_info, result)?;
+        let cipher = encrypt(calling_info, result).map_err(|e| macros_lib::track_error!(e,
+            macros_lib::hisysevent::function!()))?;
         update_db_data.insert(column::SECRET, Value::Bytes(cipher));
     }
 
     // call sql to update
-    let update_num = db.update_datas(&query_db_data, true, &update_db_data)?;
+    let update_num = db.update_datas(&query_db_data, true, &update_db_data).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     if update_num == 0 {
-        return macros_lib::log_throw_error!(ErrCode::NotFound, "[FATAL]Update asset failed, update 0 asset.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::NotFound, "[FATAL]Update asset failed, update 0 asset.");
     } else {
         update_cloud_sync_status(calling_info, &results);
     }

@@ -23,7 +23,7 @@ use asset_db_operator::{
     types::{DbMap, column},
 };
 use asset_definition::{
-    AssetMap, Result, SyncStatus, Tag, Value,
+    AssetMap, Result, SyncStatus, Tag, Value, macros_lib,
 };
 use asset_log::logi;
 use asset_sdk::Extension;
@@ -37,12 +37,15 @@ const CONSISTENCY_ATTRS: [Tag; 2] = [
 ];
 
 fn check_and_get_aliases(attributes_array: &[AssetMap]) -> Result<Vec<Vec<u8>>> {
-    check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array)?;
+    check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     let mut aliases = Vec::new();
     for attrs in attributes_array {
-        check_tag_validity(attrs, &OPTIONAL_ATTRS)?;
-        check_value_validity(attrs)?;
-        let alias = attrs.get_bytes_attr(&Tag::Alias)?;
+        check_tag_validity(attrs, &OPTIONAL_ATTRS).map_err(|e| macros_lib::track_error!(e,
+            macros_lib::hisysevent::function!()))?;
+        check_value_validity(attrs).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        let alias = attrs.get_bytes_attr(&Tag::Alias)
+            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
         aliases.push(alias.clone());
     }
     Ok(aliases)
@@ -53,19 +56,24 @@ fn local_batch_remove(attributes_array: &[AssetMap], calling_info: &CallingInfo)
         Some(attr) => attr,
         None => return Ok(()),
     };
-    let aliases = check_and_get_aliases(attributes_array)?;
+    let aliases = check_and_get_aliases(attributes_array).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
 
-    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes)?;
-    let mut db = Database::build(calling_info, db_key)?;
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    let mut db = Database::build(calling_info, db_key).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     let mut condition = DbMap::new();
     add_calling_info(calling_info, &mut condition);
-    check_system_permission(attributes)?;
+    check_system_permission(attributes).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let mut update_datas = DbMap::new();
-    let time = time::system_time_in_millis()?;
+    let time = time::system_time_in_millis().map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     update_datas.insert(column::UPDATE_TIME, Value::Bytes(time));
     update_datas.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
 
-    let total_removed_count: i32 = db.delete_batch_datas(&condition, &update_datas, &aliases)?;
+    let total_removed_count: i32 = db.delete_batch_datas(&condition, &update_datas, &aliases)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     logi!("total removed count = {}", total_removed_count);
     Ok(())
 }

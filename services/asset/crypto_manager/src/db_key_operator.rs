@@ -41,10 +41,13 @@ fn build_db_key_secret_key(user_id: i32) -> Result<SecretKey> {
 }
 
 fn check_validity_of_db_key(user_id: i32) -> Result<()> {
-    if is_ce_db_exist(user_id)? && !DbKey::check_existance(user_id)? {
+    if is_ce_db_exist(user_id).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?
+        && !DbKey::check_existance(user_id).map_err(|e| macros_lib::track_error!(e,
+            macros_lib::hisysevent::function!()))? {
         loge!("[FATAL]There is database but no database key. Now all data should be cleared and restart over.");
-        remove_ce_files(user_id)?;
-        return macros_lib::log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
+        remove_ce_files(user_id).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
     }
     Ok(())
 }
@@ -54,7 +57,7 @@ pub fn get_db_key(user_id: i32, is_ce: bool) -> Result<Option<Vec<u8>>> {
     if !is_ce {
         return Ok(None);
     }
-    check_validity_of_db_key(user_id)?;
+    check_validity_of_db_key(user_id).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     match DbKey::get_db_key(user_id) {
         Ok(key) => Ok(Some(key.db_key.clone())),
         Err(e) if e.code == ErrCode::NotFound || e.code == ErrCode::DataCorrupted => {
@@ -62,8 +65,9 @@ pub fn get_db_key(user_id: i32, is_ce: bool) -> Result<Option<Vec<u8>>> {
                 "[FATAL]The key is corrupted. Now all data should be cleared and restart over, err is {}.",
                 e.code
             );
-            remove_ce_files(user_id)?;
-            macros_lib::log_throw_error!(ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id)
+            remove_ce_files(user_id).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id)
         },
         Err(e) => Err(e),
     }
@@ -108,9 +112,11 @@ pub struct DbKey {
 
 impl DbKey {
     fn decrypt_db_key_cipher(user_id: i32, db_key_cipher: &Vec<u8>) -> Result<DbKey> {
-        let secret_key = build_db_key_secret_key(user_id)?;
+        let secret_key = build_db_key_secret_key(user_id)
+            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
         let aad: Vec<u8> = TRIVIAL_AAD_FOR_DB_KEY.as_bytes().to_vec();
-        let db_key = Crypto::decrypt(&secret_key, db_key_cipher, &aad)?;
+        let db_key = Crypto::decrypt(&secret_key, db_key_cipher, &aad)
+            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
         Ok(Self { db_key })
     }
 
@@ -119,16 +125,20 @@ impl DbKey {
         let mut db_key = [0; KEY_LEN_IN_BYTES];
 
         if unsafe { GenerateRandom(db_key.as_mut_ptr(), db_key.len() as u32) } != SUCCESS {
-            return macros_lib::log_throw_error!(ErrCode::CryptoError, "[FATAL]Generate random failed!");
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::CryptoError, "[FATAL]Generate random failed!");
         }
         Ok(Self { db_key: db_key.to_vec() })
     }
 
     fn encrypt_db_key(&self, user_id: i32) -> Result<Vec<u8>> {
-        let secret_key = build_db_key_secret_key(user_id)?;
-        generate_secret_key_if_needed(&secret_key)?;
+        let secret_key = build_db_key_secret_key(user_id)
+            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        generate_secret_key_if_needed(&secret_key)
+            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
         let aad: Vec<u8> = TRIVIAL_AAD_FOR_DB_KEY.as_bytes().to_vec();
-        let db_key_cipher = Crypto::encrypt(&secret_key, &self.db_key, &aad)?;
+        let db_key_cipher = Crypto::encrypt(&secret_key, &self.db_key, &aad)
+            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
 
         Ok(db_key_cipher)
     }
@@ -142,20 +152,25 @@ impl DbKey {
     pub fn get_db_key(user_id: i32) -> Result<DbKey> {
         match is_db_key_cipher_file_exist(user_id) {
             Ok(true) => {
-                let db_key_cipher = read_db_key_cipher(user_id)?;
+                let db_key_cipher = read_db_key_cipher(user_id)
+                    .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
                 Self::decrypt_db_key_cipher(user_id, &db_key_cipher)
             },
             Ok(false) => {
                 let _lock = GET_DB_KEY_MUTEX.lock().unwrap();
                 match is_db_key_cipher_file_exist(user_id) {
                     Ok(true) => {
-                        let db_key_cipher = read_db_key_cipher(user_id)?;
+                        let db_key_cipher = read_db_key_cipher(user_id)
+                            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
                         Self::decrypt_db_key_cipher(user_id, &db_key_cipher)
                     },
                     Ok(false) => {
-                        let db_key = Self::generate_db_key()?;
-                        let db_key_cipher = db_key.encrypt_db_key(user_id)?;
-                        write_db_key_cipher(user_id, &db_key_cipher)?;
+                        let db_key = Self::generate_db_key()
+                            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+                        let db_key_cipher = db_key.encrypt_db_key(user_id)
+                            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+                        write_db_key_cipher(user_id, &db_key_cipher)
+                            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
                         Ok(db_key)
                     },
                     Err(e) => Err(e),
