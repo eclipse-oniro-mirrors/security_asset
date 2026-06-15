@@ -159,13 +159,14 @@ impl AssetError {
         AssetError {
             code,
             msg,
-            call_chain: vec![Self::shorten_func_name(func_name)],
+            call_chain: Self::shorten_func_name(func_name).to_string(),
         }
     }
 
     /// Track caller location when propagating error.
     pub fn track_internal(mut self, func_name: &'static str) -> Self {
-        self.call_chain.push(Self::shorten_func_name(func_name));
+        self.call_chain.push_str(" <-- ");
+        self.call_chain.push_str(Self::shorten_func_name(func_name));
         self
     }
 }
@@ -175,7 +176,7 @@ impl From<io::Error> for AssetError {
         AssetError {
             code: ErrCode::FileOperationError,
             msg: format!("[FATAL]Backup db failed! error is [{error}]"),
-            call_chain: vec![],
+            call_chain: String::new(),
         }
     }
 }

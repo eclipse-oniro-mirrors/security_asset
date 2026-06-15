@@ -41,10 +41,10 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
 fn map_err(code: u32) -> AssetError {
     match ErrCode::try_from(code) {
         Ok(code) => {
-            AssetError { 
-                code, 
+            AssetError {
+                code,
                 msg: "get sync result failed".to_string(),
-                call_chain: vec![AssetError::shorten_func_name(macros_lib::hisysevent::function!())],
+                call_chain: AssetError::shorten_func_name(macros_lib::hisysevent::function!()).to_string(),
             }
         },
         Err(err) => err,

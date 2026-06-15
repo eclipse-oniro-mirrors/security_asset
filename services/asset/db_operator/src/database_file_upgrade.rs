@@ -349,7 +349,7 @@ pub fn get_upgrade_version(user_id: i32) -> Result<OriginVersion> {
         _ => Err(AssetError { 
             code: ErrCode::FileOperationError, 
             msg: "Get upgrade version failed.".to_owned(),
-            call_chain: vec![AssetError::shorten_func_name(macros_lib::hisysevent::function!())],
+            call_chain: AssetError::shorten_func_name(macros_lib::hisysevent::function!()).to_string(),
         }),
     }
 }
