@@ -33,14 +33,13 @@ fn check_arguments(query: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     common::check_tag_validity(query, &valid_tags)?;
     check_group_validity(query, calling_info)?;
     common::check_system_permission(query)?;
-    common::check_value_validity(query).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
+    common::check_value_validity(query)
 }
 
 pub(crate) fn post_query(calling_info: &CallingInfo, handle: &AssetMap) -> Result<()> {
     check_arguments(handle, calling_info).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
-    let challenge = handle.get_bytes_attr(&Tag::AuthChallenge)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let challenge = handle.get_bytes_attr(&Tag::AuthChallenge)?;
 
     let crypto_manager = CryptoManager::get_instance();
     crypto_manager.lock().unwrap().remove(calling_info, challenge);

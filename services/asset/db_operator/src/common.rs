@@ -163,12 +163,9 @@ pub fn add_calling_info(calling_info: &CallingInfo, db_data: &mut DbMap) {
 
 /// Build a secret key.
 pub fn build_secret_key(calling: &CallingInfo, attrs: &DbMap) -> Result<SecretKey> {
-    let auth_type = attrs.get_enum_attr::<AuthType>(&column::AUTH_TYPE)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    let access_type = attrs.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    let require_password_set = attrs.get_bool_attr(&column::REQUIRE_PASSWORD_SET)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let auth_type = attrs.get_enum_attr::<AuthType>(&column::AUTH_TYPE)?;
+    let access_type = attrs.get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
+    let require_password_set = attrs.get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
     SecretKey::new_without_alias(calling, auth_type, access_type, require_password_set)
 }
 
@@ -219,8 +216,7 @@ pub fn build_aad(attrs: &DbMap) -> Result<Vec<u8>> {
 
 /// Check if needs upgration.
 pub fn need_upgrade(db_data: &DbMap) -> Result<bool> {
-    let version = db_data.get_num_attr(&column::VERSION)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let version = db_data.get_num_attr(&column::VERSION)?;
     Ok(version != DB_DATA_VERSION)
 }
 

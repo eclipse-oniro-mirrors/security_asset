@@ -92,11 +92,9 @@ fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()>
     }
     // store data in ce
     let ce_db_name = format!("enc_{}", ce_upgrade_db_name);
-    let db_key = db_key_operator::get_db_key(user_id, true)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    let mut ce_db = Database::build_with_file_name(user_id, &ce_db_name, &db_key)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    ce_db.exec("begin transaction").map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let db_key = db_key_operator::get_db_key(user_id, true)?;
+    let mut ce_db = Database::build_with_file_name(user_id, &ce_db_name, &db_key)?;
+    ce_db.exec("begin transaction")?;
     let mut need_rollback = false;
     for data in datas.iter_mut() {
         data.remove(column::ID);
@@ -110,11 +108,11 @@ fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()>
     }
     // remove de and de backup
     if need_rollback {
-        ce_db.exec("rollback").map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        ce_db.exec("rollback")?;
         return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
             ErrCode::DatabaseError, "Upgrade ce data failed.");
     }
-    ce_db.exec("commit").map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    ce_db.exec("commit")?;
     remove_db(&path_str)
 }
 
@@ -130,12 +128,10 @@ fn store_upgrade_info_in_settings(user_id: i32, status: CeUpgradeStatus) -> Resu
 fn upgrade_ce_process(user_id: i32, upgrade_data: &mut UpgradeData, upgrade_info: &'static [u8]) -> Result<()> {
     store_upgrade_info_in_settings(user_id, CeUpgradeStatus::Start)
         .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    let ce_upgrade_db_name = database_util::construct_hap_owner_info(upgrade_info)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let ce_upgrade_db_name = database_util::construct_hap_owner_info(upgrade_info)?;
     upgrade_ce_data_process(user_id, &ce_upgrade_db_name)?;
     upgrade_data.ce_upgrade = Some(ce_upgrade_db_name);
-    store_upgrade_info_in_settings(user_id, CeUpgradeStatus::End)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    store_upgrade_info_in_settings(user_id, CeUpgradeStatus::End)?;
     database_file_upgrade::save_to_writer(user_id, upgrade_data)
 }
 
@@ -166,26 +162,20 @@ fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData, trigger_info: &str) 
 fn get_db_data_count(user_id: i32, db_name: &str, path_str: &str, db_key: Option<Vec<u8>>) -> Result<u32> {
     let path = Path::new(path_str);
     let db_data_count = if !path.exists() { 0 } else {
-        let mut db_main = Database::build_with_file_name(user_id, db_name, &db_key)
-            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-        db_main.query_data_count(&DbMap::new())
-            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?
+        let mut db_main = Database::build_with_file_name(user_id, db_name, &db_key)?;
+        db_main.query_data_count(&DbMap::new())?
     };
     Ok(db_data_count)
 }
 
 fn process_upgrade_count(user_id: i32, upgrade_info: &'static [u8]) -> Result<String> {
-    let de_db_name = database_util::construct_hap_owner_info(upgrade_info)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let de_db_name = database_util::construct_hap_owner_info(upgrade_info)?;
     let path_str = database::fmt_de_db_path_with_name(user_id, &de_db_name);
-    let de_count = get_db_data_count(user_id, &de_db_name, &path_str, None)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let de_count = get_db_data_count(user_id, &de_db_name, &path_str, None)?;
     let ce_db_name = format!("enc_{}", &de_db_name);
     let ce_path_str = database::fmt_ce_db_path_with_name(user_id, &ce_db_name);
-    let db_key = db_key_operator::get_db_key(user_id, true)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    let ce_count = get_db_data_count(user_id, &ce_db_name, &ce_path_str, db_key)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let db_key = db_key_operator::get_db_key(user_id, true)?;
+    let ce_count = get_db_data_count(user_id, &ce_db_name, &ce_path_str, db_key)?;
     Ok(format!("db_name:{} de count: {}, ce count: {}", &de_db_name, de_count, ce_count))
 }
 

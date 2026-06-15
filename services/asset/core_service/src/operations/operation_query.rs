@@ -75,9 +75,9 @@ fn decrypt_secret(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()>
         macros_lib::hisysevent::function!()))?;
     let secret_key = common::build_secret_key(calling_info, db_data).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
-    let secret = Crypto::decrypt(&secret_key, secret,
-        &common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))?).map_err(|e| macros_lib::track_error!(e,
+    let aad = common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    let secret = Crypto::decrypt(&secret_key, secret, &aad).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
     db_data.insert(column::SECRET, Value::Bytes(secret));
     Ok(())
@@ -96,9 +96,9 @@ fn exec_crypto(calling_info: &CallingInfo, query: &AssetMap, db_data: &mut DbMap
     let mut manager = arc_crypto_manager.lock().unwrap();
     match manager.find(calling_info, challenge) {
         Ok(crypto) => {
-            let secret = crypto.exec_crypt(secret,
-                &common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e,
-                    macros_lib::hisysevent::function!()))?, auth_token).map_err(|e| macros_lib::track_error!(e,
+            let aad = common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e,
+                macros_lib::hisysevent::function!()))?;
+            let secret = crypto.exec_crypt(secret, &aad, auth_token).map_err(|e| macros_lib::track_error!(e,
                 macros_lib::hisysevent::function!()))?;
             db_data.insert(column::SECRET, Value::Bytes(secret));
             Ok(())

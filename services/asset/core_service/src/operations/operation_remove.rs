@@ -47,8 +47,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     common::check_tag_validity(attributes, &valid_tags)?;
     check_group_validity(attributes, calling_info)?;
     common::check_value_validity(attributes)?;
-    common::check_system_permission(attributes).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))
+    common::check_system_permission(attributes)
 }
 
 pub(crate) fn remove(calling_info: &CallingInfo, query: &AssetMap) -> Result<()> {

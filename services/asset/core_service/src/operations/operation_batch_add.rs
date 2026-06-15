@@ -69,5 +69,5 @@ fn local_batch_add(
 }
 
 pub(crate) fn batch_add(calling_info: &CallingInfo, attributes_array: &[AssetMap]) -> Result<Vec<(u32, u32)>> {
-    local_batch_add(calling_info, attributes_array)?
+    local_batch_add(calling_info, attributes_array)
 }

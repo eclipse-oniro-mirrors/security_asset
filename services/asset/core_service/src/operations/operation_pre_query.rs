@@ -65,10 +65,8 @@ fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap
         0 => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
             ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found."),
         1 => {
-            let access_type = results[0].get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)
-                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-            let require_password_set = results[0].get_bool_attr(&column::REQUIRE_PASSWORD_SET)
-                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+            let access_type = results[0].get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
+            let require_password_set = results[0].get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
             Ok((access_type, require_password_set))
         },
         _ => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),

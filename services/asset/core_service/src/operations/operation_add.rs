@@ -40,17 +40,14 @@ extern "C" {
 }
 
 fn encrypt_secret(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
-    let secret_key = common::build_secret_key(calling_info, db_data).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    let secret_key = common::build_secret_key(calling_info, db_data)?;
     generate_secret_key_if_needed(&secret_key).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
 
     let secret = db_data.get_bytes_attr(&column::SECRET).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
-    let cipher = Crypto::encrypt(&secret_key, secret,
-        &common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))?).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data)?)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     db_data.insert(column::SECRET, Value::Bytes(cipher));
     Ok(())
 }
@@ -123,8 +120,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     common::check_sync_permission(attributes, calling_info)?;
     common::check_wrap_permission(attributes, calling_info)?;
     common::check_system_permission(attributes)?;
-    common::check_persistent_permission(attributes).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))
+    common::check_persistent_permission(attributes)
 }
 
 fn modify_sync_type(db: &mut DbMap) -> Result<()> {
@@ -182,7 +178,7 @@ pub(crate) fn add(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<(
     }
     inform_asset_ext(calling_info, attributes);
 
-    local_res?
+    local_res
 }
 
 #[cfg(feature = "AssetTest")]

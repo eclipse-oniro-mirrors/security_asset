@@ -93,8 +93,7 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&UPDATE_OPTIONAL_ATTRS);
     common::check_tag_validity(attrs_to_update, &valid_tags)?;
-    common::check_value_validity(attrs_to_update).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))
+    common::check_value_validity(attrs_to_update)
 }
 
 fn upgrade_to_latest_version(origin_db_data: &mut DbMap, update_db_data: &mut DbMap) {

@@ -116,8 +116,7 @@ pub fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) 
 
 /// Get query condition.
 pub fn get_query_condition(attrs: &AssetMap, calling_info: &CallingInfo) -> Result<DbMap> {
-    let alias = attrs.get_bytes_attr(&Tag::Alias)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let alias = attrs.get_bytes_attr(&Tag::Alias)?;
     let mut query = DbMap::new();
     if calling_info.group().is_some() {
         add_group(calling_info, &mut query);

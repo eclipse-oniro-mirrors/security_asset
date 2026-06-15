@@ -65,12 +65,9 @@ pub(crate) fn query_sync_result(calling_info: &CallingInfo, query: &AssetMap) ->
         match load.process_event(EventType::QuerySyncResult, &mut params) {
             Ok(()) => {
                 return Ok(SyncResult {
-                    result_code: params.get_num_attr(&PARAM_NAME_RESULT_CODE).map_err(|e| macros_lib::track_error!(e,
-                        macros_lib::hisysevent::function!()))? as i32,
-                    total_count: params.get_num_attr(&PARAM_NAME_TOTAL_COUNT).map_err(|e| macros_lib::track_error!(e,
-                        macros_lib::hisysevent::function!()))?,
-                    failed_count: params.get_num_attr(&PARAM_NAME_FAILED_COUNT).map_err(|e| macros_lib::track_error!(e,
-                        macros_lib::hisysevent::function!()))?,
+                    result_code: params.get_num_attr(&PARAM_NAME_RESULT_CODE)? as i32,
+                    total_count: params.get_num_attr(&PARAM_NAME_TOTAL_COUNT)?,
+                    failed_count: params.get_num_attr(&PARAM_NAME_FAILED_COUNT)?,
                 })
             },
             Err(code) => return Err(macros_lib::track_error!(map_err(code), macros_lib::hisysevent::function!())),

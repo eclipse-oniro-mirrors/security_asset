@@ -65,8 +65,7 @@ fn local_batch_remove(attributes_array: &[AssetMap], calling_info: &CallingInfo)
     add_calling_info(calling_info, &mut condition);
     check_system_permission(attributes)?;
     let mut update_datas = DbMap::new();
-    let time = time::system_time_in_millis().map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    let time = time::system_time_in_millis()?;
     update_datas.insert(column::UPDATE_TIME, Value::Bytes(time));
     update_datas.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
 
