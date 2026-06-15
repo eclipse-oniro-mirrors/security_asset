@@ -107,6 +107,5 @@ pub(crate) fn batch_update(
         return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
             ErrCode::InvalidArgument, "[FATAL]Batch Update argument empty.");
     }
-    local_batch_update(calling_info, attributes_array, attributes_to_update_array)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
+    local_batch_update(calling_info, attributes_array, attributes_to_update_array)?
 }

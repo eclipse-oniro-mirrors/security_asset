@@ -51,7 +51,7 @@ fn is_only_change_local_labels(update: &AssetMap) -> bool {
 
 fn add_attrs(update: &AssetMap, db_data: &mut DbMap) -> Result<()> {
     if !is_only_change_local_labels(update) {
-        add_system_attrs(db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        add_system_attrs(db_data)?;
         add_normal_attrs(db_data);
     }
     db_data.insert(column::LOCAL_STATUS, Value::Number(LocalStatus::Local as u32));
@@ -59,8 +59,7 @@ fn add_attrs(update: &AssetMap, db_data: &mut DbMap) -> Result<()> {
 }
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
-    let time = time::system_time_in_millis().map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    let time = time::system_time_in_millis()?;
     db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     Ok(())
 }
@@ -144,8 +143,7 @@ pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &Asse
             upgrade_to_latest_version(result, &mut update_db_data);
         }
         // Using result with AAD to encrypt secret, otherwise encryption failed.
-        let cipher = encrypt(calling_info, result).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))?;
+        let cipher = encrypt(calling_info, result)?;
         update_db_data.insert(column::SECRET, Value::Bytes(cipher));
     }
 

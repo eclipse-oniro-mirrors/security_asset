@@ -119,11 +119,9 @@ fn query_all_inner(
         1 => {
             match results[0].get(column::AUTH_TYPE) {
                 Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
-                    exec_crypto(calling_info, query, &mut results[0]).map_err(|e| macros_lib::track_error!(e,
-                        macros_lib::hisysevent::function!()))?;
+                    exec_crypto(calling_info, query, &mut results[0])?;
                 },
-                _ => decrypt_secret(calling_info, &mut results[0]).map_err(|e| macros_lib::track_error!(e,
-                    macros_lib::hisysevent::function!()))?,
+                _ => decrypt_secret(calling_info, &mut results[0])?,
             };
             if common::need_upgrade(&results[0]).map_err(|e| macros_lib::track_error!(e,
                 macros_lib::hisysevent::function!()))? {
@@ -254,11 +252,9 @@ pub(crate) fn query(calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<
                 macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                     ErrCode::Unsupported, "[FATAL]Batch secret query is not supported.")
             } else {
-                query_all(calling_info, &db_data, query).map_err(|e| macros_lib::track_error!(e,
-                    macros_lib::hisysevent::function!()))
+                query_all(calling_info, &db_data, query)
             }
         },
-        _ => query_attrs(calling_info, &db_data, query).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!())),
+        _ => query_attrs(calling_info, &db_data, query),
     }
 }

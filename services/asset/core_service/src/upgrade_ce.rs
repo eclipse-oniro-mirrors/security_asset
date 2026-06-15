@@ -132,8 +132,7 @@ fn upgrade_ce_process(user_id: i32, upgrade_data: &mut UpgradeData, upgrade_info
         .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let ce_upgrade_db_name = database_util::construct_hap_owner_info(upgrade_info)
         .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    upgrade_ce_data_process(user_id, &ce_upgrade_db_name)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    upgrade_ce_data_process(user_id, &ce_upgrade_db_name)?;
     upgrade_data.ce_upgrade = Some(ce_upgrade_db_name);
     store_upgrade_info_in_settings(user_id, CeUpgradeStatus::End)
         .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;

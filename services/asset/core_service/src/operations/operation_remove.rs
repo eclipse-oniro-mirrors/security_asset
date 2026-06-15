@@ -29,8 +29,7 @@ use asset_utils::time;
 use crate::operations::common::{check_group_validity, inform_asset_ext, update_cloud_sync_status};
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
-    let time = time::system_time_in_millis().map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    let time = time::system_time_in_millis()?;
     db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     Ok(())
 }

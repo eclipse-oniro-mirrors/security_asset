@@ -90,8 +90,7 @@ fn resolve_conflict(
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     db_data.insert(column::VERSION, Value::Number(DB_DATA_VERSION));
 
-    let time = time::system_time_in_millis().map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    let time = time::system_time_in_millis()?;
     db_data.insert(column::CREATE_TIME, Value::Bytes(time.clone()));
     db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     Ok(())
@@ -130,8 +129,7 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
 
 fn modify_sync_type(db: &mut DbMap) -> Result<()> {
     if db.get(&column::SYNC_TYPE).is_none()
-        || (db.get_num_attr(&column::SYNC_TYPE).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))? & SyncType::TrustedAccount as u32) == 0
+        || (db.get_num_attr(&column::SYNC_TYPE)? & SyncType::TrustedAccount as u32) == 0
     {
         return Ok(())
     }
@@ -139,8 +137,7 @@ fn modify_sync_type(db: &mut DbMap) -> Result<()> {
         logw!("[FATAL]The caller is not system application. Modify store sync type!");
         db.insert(
             column::SYNC_TYPE,
-            Value::Number(db.get_num_attr(&column::SYNC_TYPE).map_err(|e| macros_lib::track_error!(e,
-                macros_lib::hisysevent::function!()))? - SyncType::TrustedAccount as u32),
+            Value::Number(db.get_num_attr(&column::SYNC_TYPE)? - SyncType::TrustedAccount as u32),
         );
     }
     Ok(())
@@ -185,7 +182,7 @@ pub(crate) fn add(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<(
     }
     inform_asset_ext(calling_info, attributes);
 
-    local_res.map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
+    local_res?
 }
 
 #[cfg(feature = "AssetTest")]
