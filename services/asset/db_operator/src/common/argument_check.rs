@@ -169,8 +169,8 @@ fn check_data_value(tag: &Tag, value: &Value) -> Result<()> {
 /// Check if the value if valid.
 pub fn check_value_validity(attrs: &AssetMap) -> Result<()> {
     for (tag, value) in attrs {
-        check_data_type(tag, value).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-        check_data_value(tag, value).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        check_data_type(tag, value)?;
+        check_data_value(tag, value)?;
     }
     Ok(())
 }

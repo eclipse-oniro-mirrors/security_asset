@@ -74,19 +74,15 @@ const UPDATE_OPTIONAL_ATTRS: [Tag; 1] = [Tag::Secret];
 
 fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // Check attributes used to query.
-    common::check_required_tags(query, &QUERY_REQUIRED_ATTRS).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    common::check_required_tags(query, &QUERY_REQUIRED_ATTRS)?;
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
-    common::check_tag_validity(query, &valid_tags).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    check_group_validity(query, calling_info).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_value_validity(query).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    common::check_system_permission(query).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    common::check_tag_validity(query, &valid_tags)?;
+    check_group_validity(query, calling_info)?;
+    common::check_value_validity(query)?;
+    common::check_system_permission(query)?;
 
     if attrs_to_update.is_empty() {
         return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
@@ -97,8 +93,7 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&UPDATE_OPTIONAL_ATTRS);
-    common::check_tag_validity(attrs_to_update, &valid_tags).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    common::check_tag_validity(attrs_to_update, &valid_tags)?;
     common::check_value_validity(attrs_to_update).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))
 }

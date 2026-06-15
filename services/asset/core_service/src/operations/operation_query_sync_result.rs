@@ -29,12 +29,9 @@ use crate::operations::common::check_group_validity;
 const OPTIONAL_ATTRS: [Tag; 2] = [Tag::GroupId, Tag::RequireAttrEncrypted];
 
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    common::check_tag_validity(attributes, &OPTIONAL_ATTRS).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    check_group_validity(attributes, calling_info).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_value_validity(attributes).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    common::check_tag_validity(attributes, &OPTIONAL_ATTRS)?;
+    check_group_validity(attributes, calling_info)?;
+    common::check_value_validity(attributes)?;
     Ok(())
 }
 

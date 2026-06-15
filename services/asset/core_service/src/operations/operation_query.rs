@@ -36,8 +36,7 @@ fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
     let mut map_set = Vec::new();
     for db_result in db_results {
         let map = common::into_asset_map(db_result);
-        common::check_value_validity(&map).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))?;
+        common::check_value_validity(&map)?;
         map_set.push(map);
     }
     Ok(map_set)
@@ -85,8 +84,7 @@ fn decrypt_secret(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()>
 }
 
 fn exec_crypto(calling_info: &CallingInfo, query: &AssetMap, db_data: &mut DbMap) -> Result<()> {
-    common::check_required_tags(query, &AUTH_QUERY_ATTRS).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    common::check_required_tags(query, &AUTH_QUERY_ATTRS)?;
     let challenge = query.get_bytes_attr(&Tag::AuthChallenge)
         .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let auth_token = query.get_bytes_attr(&Tag::AuthToken)
@@ -231,12 +229,9 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
-    common::check_tag_validity(attributes, &valid_tags).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    check_group_validity(attributes, calling_info).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_value_validity(attributes).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    common::check_tag_validity(attributes, &valid_tags)?;
+    check_group_validity(attributes, calling_info)?;
+    common::check_value_validity(attributes)?;
     common::check_system_permission(attributes).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))
 }

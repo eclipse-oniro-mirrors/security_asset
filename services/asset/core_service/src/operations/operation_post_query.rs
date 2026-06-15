@@ -26,17 +26,13 @@ const REQUIRED_ATTRS: [Tag; 1] = [Tag::AuthChallenge];
 const OPTIONAL_ATTRS: [Tag; 2] = [Tag::GroupId, Tag::UserId];
 
 fn check_arguments(query: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    common::check_required_tags(query, &REQUIRED_ATTRS).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    common::check_required_tags(query, &REQUIRED_ATTRS)?;
 
     let mut valid_tags = REQUIRED_ATTRS.to_vec();
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
-    common::check_tag_validity(query, &valid_tags).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    check_group_validity(query, calling_info).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_system_permission(query).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    common::check_tag_validity(query, &valid_tags)?;
+    check_group_validity(query, calling_info)?;
+    common::check_system_permission(query)?;
     common::check_value_validity(query).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
 }
 

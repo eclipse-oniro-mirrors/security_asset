@@ -37,13 +37,11 @@ const CONSISTENCY_ATTRS: [Tag; 2] = [
 ];
 
 fn check_and_get_aliases(attributes_array: &[AssetMap]) -> Result<Vec<Vec<u8>>> {
-    check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array)?;
     let mut aliases = Vec::new();
     for attrs in attributes_array {
-        check_tag_validity(attrs, &OPTIONAL_ATTRS).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))?;
-        check_value_validity(attrs).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        check_tag_validity(attrs, &OPTIONAL_ATTRS)?;
+        check_value_validity(attrs)?;
         let alias = attrs.get_bytes_attr(&Tag::Alias)
             .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
         aliases.push(alias.clone());
@@ -65,7 +63,7 @@ fn local_batch_remove(attributes_array: &[AssetMap], calling_info: &CallingInfo)
         macros_lib::hisysevent::function!()))?;
     let mut condition = DbMap::new();
     add_calling_info(calling_info, &mut condition);
-    check_system_permission(attributes).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    check_system_permission(attributes)?;
     let mut update_datas = DbMap::new();
     let time = time::system_time_in_millis().map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;

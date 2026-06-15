@@ -67,8 +67,7 @@ pub fn check_persistent_permission(attributes: &AssetMap) -> Result<()> {
 /// Check the permission for sync.
 pub fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     if attributes.get(&Tag::SyncType).is_none()
-        || (attributes.get_num_attr(&Tag::SyncType).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))? & SyncType::TrustedAccount as u32) == 0
+        || (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0
     {
         return Ok(());
     }
@@ -91,8 +90,7 @@ pub fn check_sync_permission(attributes: &AssetMap, calling_info: &CallingInfo) 
 /// Check the permission for wrap.
 pub fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     if attributes.get(&Tag::WrapType).is_none()
-        || attributes.get_enum_attr::<WrapType>(&Tag::WrapType).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))? == WrapType::Never
+        || attributes.get_enum_attr::<WrapType>(&Tag::WrapType)? == WrapType::Never
     {
         return Ok(());
     }
@@ -107,8 +105,7 @@ pub fn check_wrap_permission(attributes: &AssetMap, calling_info: &CallingInfo) 
     }
 
     if attributes.get(&Tag::SyncType).is_none()
-        || (attributes.get_num_attr(&Tag::SyncType).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))? & SyncType::TrustedAccount as u32) == 0
+        || (attributes.get_num_attr(&Tag::SyncType)? & SyncType::TrustedAccount as u32) == 0
     {
         Ok(())
     } else {

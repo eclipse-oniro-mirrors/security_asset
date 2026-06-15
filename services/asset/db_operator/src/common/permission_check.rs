@@ -42,7 +42,7 @@ pub fn check_system_permission(attrs: &AssetMap) -> Result<()> {
         }
 
         let uid = Skeleton::calling_uid();
-        let user_id = get_user_id(uid).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        let user_id = get_user_id(uid)?;
         if user_id > ROOT_USER_UPPERBOUND {
             return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                 ErrCode::AccessDenied, "[FATAL]The caller user_id is: {}. Not in range[0, 99]", user_id);
