@@ -49,6 +49,7 @@
                 "hisysevent",
                 "huks",
                 "ipc",
+                "kv_store",
                 "napi",
                 "netmanager_base",
                 "safwk",
