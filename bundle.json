@@ -53,6 +53,7 @@
                 "kv_store",
                 "napi",
                 "netmanager_base",
+                "node",
                 "safwk",
                 "samgr",
                 "sqlite",
