@@ -54,6 +54,7 @@
                 "napi",
                 "netmanager_base",
                 "node",
+                "resource_schedule_service",
                 "safwk",
                 "samgr",
                 "sqlite",

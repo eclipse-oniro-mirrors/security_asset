@@ -20,7 +20,8 @@ ohos_rust_shared_library("asset_sdk_rust") {
     "../../../../frameworks/asset/definition:asset_definition",
     "../../../../frameworks/asset/ipc:asset_ipc",
     "../../../../frameworks/asset/os_dependency/log:asset_log",
-    ":asset_timeout_feature"
+    ":asset_timeout_feature",
+    "client_dependency:asset_client_dependency",
   ]
 
   external_deps = [
