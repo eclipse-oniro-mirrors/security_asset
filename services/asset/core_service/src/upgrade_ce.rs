@@ -18,7 +18,7 @@
 
 use std::{fs, io::ErrorKind, path::Path, time::Instant, os::raw::c_char, ffi::CString};
 
-use asset_definition::{macros_lib, AssetError, AssetMap, ErrCode, Result};
+use asset_definition::{macros_lib, AssetError, ErrCode, Result};
 use asset_db_operator::{
     database::{self, Database}, database_file_upgrade::{self, UpgradeData},
     database_util,
@@ -28,10 +28,11 @@ use asset_crypto_manager::db_key_operator;
 use asset_log::{logw, logi};
 use asset_file_operator::common::BACKUP_SUFFIX;
 use asset_common::CallingInfo;
+use asset_plugin_interface::plugin_interface::ExtDbMap;
 
 use crate::{
-    get_ce_upgrade_info, 
-    sys_event::{upload_fault_system_event, upload_statistic_system_event, upload_system_event}, 
+    get_ce_upgrade_info,
+    sys_event::{upload_fault_system_event, upload_statistic_system_event},
     UPGRADE_CE_MUTEX
 };
 
@@ -154,13 +155,16 @@ fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData, trigger_info: &str) 
     let calling_info = CallingInfo::new_self();
     let start = Instant::now();
     let upgrade_res = upgrade_ce_process(user_id, upgrade_data, upgrade_info);
-    if upgrade_res.is_err() {
-        let _ = store_upgrade_info_in_settings(user_id, CeUpgradeStatus::Fail);
+    match upgrade_res {
+        Ok(_) => upload_statistic_system_event(&calling_info, start, &format!("{}_upgrade_ce", trigger_info), "",
+            &mut ExtDbMap::new()),
+        Err(ref e) => {
+            let _ = store_upgrade_info_in_settings(user_id, CeUpgradeStatus::Fail);
+            upload_fault_system_event(&calling_info, start, &format!("{}_upgrade_ce", trigger_info), "", e,
+                &mut ExtDbMap::new());
+        }
     }
     logi!("end ce upgrade [{}].", user_id);
-    let _ = upload_system_event(
-        upgrade_res.clone(), &calling_info, start, &format!("{}_upgrade_ce", trigger_info), &AssetMap::new()
-    );
     upgrade_res
 }
 
@@ -199,7 +203,9 @@ pub fn summary_upgrade_data_count(user_id: i32) {
     let calling_info = CallingInfo::new_self();
     let start = Instant::now();
     match process_upgrade_count(user_id, upgrade_info) {
-        Ok(ext_info) => upload_statistic_system_event(&calling_info, start, "upgrade_ce_result", &ext_info),
-        Err(e) => upload_fault_system_event(&calling_info, start, "upgrade_ce_result", "", &e)
+        Ok(ext_info) => upload_statistic_system_event(&calling_info, start, "upgrade_ce_result", &ext_info,
+            &mut ExtDbMap::new()),
+        Err(e) => upload_fault_system_event(&calling_info, start, "upgrade_ce_result", "", &e,
+            &mut ExtDbMap::new())
     }
 }
