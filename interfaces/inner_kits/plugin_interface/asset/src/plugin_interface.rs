@@ -69,13 +69,16 @@ pub enum EventType {
 
     /// Update cloud sync status.
     UpdateCloudSyncStatus,
+
+    /// Report HA event.
+    ReportHAEvent,
 }
 
 /// param name for bundle name
 pub const PARAM_NAME_BUNDLE_NAME: &str = "BundleName";
 
 /// param name for user id
-pub const PARAM_NAME_USER_ID: &str = "UserId";
+pub const PARAM_NAME_USER_ID: &str = "osAccount";
 
 /// param name for app index
 pub const PARAM_NAME_APP_INDEX: &str = "AppIndex";
@@ -86,17 +89,23 @@ pub const PARAM_NAME_OWNER_TYPE: &str = "OwnerType";
 /// param name for owner info
 pub const PARAM_NAME_OWNER_INFO: &str = "OwnerInfo";
 
+/// param name for caller
+pub const PARAM_NAME_CALLER: &str = "caller";
+
 /// param name for developer id
 pub const PARAM_NAME_DEVELOPER_ID: &str = "DeveloperId";
 
 /// param name for group id
-pub const PARAM_NAME_GROUP_ID: &str = "GroupId";
+pub const PARAM_NAME_GROUP_ID: &str = "asset_group_id";
 
 /// param name for attribute encryption type
-pub const PARAM_NAME_REQUIRE_ATTR_ENCRYPTED: &str = "RequireAttrEncrypted";
+pub const PARAM_NAME_REQUIRE_ATTR_ENCRYPTED: &str = "asset_require_attr_encrypted";
 
 /// param name for accessibility
-pub const PARAM_NAME_ACCESSIBILITY: &str = "Accessibility";
+pub const PARAM_NAME_ACCESSIBILITY: &str = "asset_accessibility";
+
+/// param name for error code
+pub const PARAM_NAME_ERROR_CODE: &str = "error_code";
 
 /// param name for result code
 pub const PARAM_NAME_RESULT_CODE: &str = "ResultCode";
@@ -127,6 +136,51 @@ pub const RETURN_OFFSET: &str = "ReturnOffset";
 
 /// param name for return limit
 pub const RETURN_LIMIT: &str = "ReturnLimit";
+
+/// param name for event id
+pub const PARAM_NAME_EVENT_ID: &str = "event_id";
+
+/// param name for function name
+pub const PARAM_NAME_FUNCTION_NAME: &str = "function_name";
+
+/// param name for begin time
+pub const PARAM_NAME_BEGIN_TIME: &str = "begin_time";
+
+/// param name for diff time
+pub const PARAM_NAME_DIFF_TIME: &str = "diff_time";
+
+/// param name for extra info
+pub const PARAM_NAME_EXTRA_INFO: &str = "extra_info";
+
+/// param name for call stack
+pub const PARAM_NAME_CALL_STACK: &str = "asset_call_stack";
+
+/// param name for alias
+pub const PARAM_NAME_ALIAS: &str = "asset_alias";
+
+/// param name for sync type
+pub const PARAM_NAME_SYNC_TYPE: &str = "asset_sync_type";
+
+/// param name for require password set
+pub const PARAM_NAME_REQUIRE_PASSWORD_SET: &str = "asset_require_password_set";
+
+/// param name for auth type
+pub const PARAM_NAME_AUTH_TYPE: &str = "asset_auth_type";
+
+/// param name for operation type
+pub const PARAM_NAME_OP_TYPE: &str = "asset_operation_type";
+
+/// param name for return type
+pub const PARAM_NAME_RETURN_TYPE: &str = "asset_return_type";
+
+/// param name for wrap type
+pub const PARAM_NAME_WRAP_TYPE: &str = "asset_wrap_type";
+
+/// param name for is persistent
+pub const PARAM_NAME_IS_PERSISTENT: &str = "asset_is_persistent";
+
+/// param name for is conflict resolution
+pub const PARAM_NAME_CONFLICT_RESOLUTION: &str = "asset_conflict_resolution";
 
 /// An enumeration representing different plugin types.
 #[derive(Default, Hash, PartialEq, Eq, Clone)]
