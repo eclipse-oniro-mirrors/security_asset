@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 
+#ifndef PERMISSION_MANAGER_H
+#define PERMISSION_MANAGER_H
+
 #pragma once
 
 #include <vector>
@@ -48,7 +51,8 @@ public:
     PermissionManager() = default;
     ~PermissionManager() = default;
 
-    int32_t RequestToolPermissions(const PermissionQuery &permissionQuery, PermissionQueryResult &permissionQueryResult);
+    int32_t RequestToolPermissions(const PermissionQuery &permissionQuery,
+        PermissionQueryResult &permissionQueryResult);
 
     int32_t GrantToolPermissionsByUser(const std::vector<UserAuthResult> &userAuthResults,
         std::vector<VerifyTicketInfo> &ticketInfos);
@@ -63,21 +67,26 @@ private:
     int32_t MergePermissionLists(const std::vector<CommandPermissionInfo> &cmdPermissionInfos,
         const std::vector<std::string> &apiPermissions, std::vector<std::string> &allPermissions);
 
-    int32_t BatchVerifyPermissions(const std::vector<std::string> &allPermissions, uint32_t callerTokenId, 
+    int32_t BatchVerifyPermissions(const std::vector<std::string> &allPermissions, uint32_t callerTokenId,
         std::vector<PermissionInfo> &authResults);
 
-    int32_t MergePermissionResults(const std::vector<PermissionInfo> &authResults, PermissionQueryResult &permissionQueryResult);
+    int32_t MergePermissionResults(const std::vector<PermissionInfo> &authResults,
+        PermissionQueryResult &permissionQueryResult);
 
     int32_t VerifyPermissionListStatus(const std::vector<PermissionInfo> &permissionInfos);
 
     int32_t SerializeTicketMessageInfo(const TicketMessageInfo &ticketMessageInfo, std::string &message);
 
-    int32_t GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ticketMessageInfo, uint32_t callerTokenId, VerifyTicketInfo &ticketInfo);
+    int32_t GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ticketMessageInfo, uint32_t callerTokenId,
+        VerifyTicketInfo &ticketInfo);
 
     int32_t GetPolicyAuthStatus(const std::vector<std::string> &permissions, std::vector<int32_t> &policyStatuses);
 
-    int32_t ProcessTicketInfo(const PermissionQuery &permissionQuery, const std::vector<CommandPermissionInfo> &cmdPermissionInfos,
-        const std::vector<std::string> &apiPermissions, PermissionQueryResult &permissionQueryResult);
+    int32_t ProcessTicketInfo(const PermissionQuery &permissionQuery,
+        const std::vector<CommandPermissionInfo> &cmdPermissionInfos, const std::vector<std::string> &apiPermissions,
+        PermissionQueryResult &permissionQueryResult);
 };
 
 } // namespace OHOS::Security::SAF
+
+#endif

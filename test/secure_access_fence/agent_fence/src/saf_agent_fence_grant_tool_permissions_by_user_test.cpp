@@ -104,7 +104,8 @@ HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUser
  * @tc.type: FUNC
  * @tc.result: non-zero
  */
-HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUserNotDeterminedPermission001, TestSize.Level0)
+HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUserNotDeterminedPermission001,
+    TestSize.Level0)
 {
     auto &manager = *OHOS::Security::SAF::PermissionManager::GetInstance();
     std::vector<OHOS::Security::SAF::UserAuthResult> userAuthResults;
@@ -130,7 +131,8 @@ HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUser
  * @tc.type: FUNC
  * @tc.result: non-zero
  */
-HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUserRestrictedPermission001, TestSize.Level0)
+HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUserRestrictedPermission001,
+    TestSize.Level0)
 {
     auto &manager = *OHOS::Security::SAF::PermissionManager::GetInstance();
     std::vector<OHOS::Security::SAF::UserAuthResult> userAuthResults;

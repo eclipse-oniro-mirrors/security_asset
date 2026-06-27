@@ -61,6 +61,10 @@ constexpr int32_t ERROR_CODE_NO_NETWORK = 0x19003;
 
 constexpr int32_t ERROR_CODE_ACCOUNT_NOT_LOGGED_IN = 0x19004;
 
+constexpr uint64_t UNSET_TICKET_EXPIRE_TIME_MS = 0;
+
+constexpr int32_t JSON_ESCAPE_RESERVE_PADDING = 16;
+
 constexpr char JSON_KEY_CALLER_TOKEN_ID[] = "callerTokenId";
 constexpr char JSON_KEY_CLI_CMD_NAME[] = "cliCmdName";
 constexpr char JSON_KEY_SUB_CLI_CMD_NAME[] = "subCliCmdName";
@@ -112,8 +116,8 @@ int32_t PermissionManager::VerifyPermissionListStatus(const std::vector<Permissi
     return SAF_SUCCESS;
 }
 
-int32_t PermissionManager::BatchQueryCommandPermission(const std::vector<CommandInfo> &cmds, 
-    std::vector<CommandPermissionInfo> &cmdPermissionInfos) 
+int32_t PermissionManager::BatchQueryCommandPermission(const std::vector<CommandInfo> &cmds,
+    std::vector<CommandPermissionInfo> &cmdPermissionInfos)
 {
     std::vector<Command> cliCmds;
     for (const auto &cmd : cmds) {
@@ -124,7 +128,7 @@ int32_t PermissionManager::BatchQueryCommandPermission(const std::vector<Command
     }
     std::vector<CommandPermission> cliCmdPermissions;
     int32_t ret = CliToolMGRClient::GetInstance().BatchQueryPermissionBySubCommand(cliCmds, cliCmdPermissions);
-    if (ret != 0) {
+    if (ret != SAF_SUCCESS) {
         LOGE("BatchQueryPermissionBySubCommand failed, ret=%{public}d", ret);
         return SAF_ERR_TOOL_ERROR;
     }
@@ -181,8 +185,8 @@ int32_t PermissionManager::MergePermissionLists(const std::vector<CommandPermiss
     return SAF_SUCCESS;
 }
 
-int32_t PermissionManager::BatchVerifyPermissions(const std::vector<std::string> &allPermissions, uint32_t callerTokenId, 
-    std::vector<PermissionInfo> &permissionInfos)
+int32_t PermissionManager::BatchVerifyPermissions(const std::vector<std::string> &allPermissions,
+    uint32_t callerTokenId, std::vector<PermissionInfo> &permissionInfos)
 {
     uint32_t tokenId = GetValidCallingTokenId(callerTokenId);
     std::vector<AccessToken::PermissionStatusDetail> resultList;
@@ -203,11 +207,16 @@ int32_t PermissionManager::BatchVerifyPermissions(const std::vector<std::string>
         PermissionInfo info = {};
         info.permission = permission.permissionName;
         switch (permission.grantStatus) {
-            case -1: info.permissionStatus = static_cast<PermissionStatus>(permission.grantStatus); break;
-            case 0: info.permissionStatus = static_cast<PermissionStatus>(permission.grantStatus); break;
-            case 1: info.permissionStatus = static_cast<PermissionStatus>(permission.grantStatus); break;
-            case 2: info.permissionStatus = static_cast<PermissionStatus>(permission.grantStatus); break;
-            case 3: info.permissionStatus = static_cast<PermissionStatus>(permission.grantStatus); break;
+            case static_cast<int32_t>(PermissionStatus::DENIED):
+                info.permissionStatus = static_cast<PermissionStatus>(permission.grantStatus); break;
+            case static_cast<int32_t>(PermissionStatus::GRANTED):
+                info.permissionStatus = static_cast<PermissionStatus>(permission.grantStatus); break;
+            case static_cast<int32_t>(PermissionStatus::NOT_DETERMINED):
+                info.permissionStatus = static_cast<PermissionStatus>(permission.grantStatus); break;
+            case static_cast<int32_t>(PermissionStatus::INVALID):
+                info.permissionStatus = static_cast<PermissionStatus>(permission.grantStatus); break;
+            case static_cast<int32_t>(PermissionStatus::RESTRICTED):
+                info.permissionStatus = static_cast<PermissionStatus>(permission.grantStatus); break;
             default: {
                 LOGE("Unknown grantStatus: %{public}d", permission.grantStatus);
                 return SAF_ERROR;
@@ -260,19 +269,20 @@ int32_t PermissionManager::MergePermissionResults(const std::vector<PermissionIn
         info.permissionStatus = permissionInfos[i].permissionStatus;
         info.authStatusInfo.flag = permissionInfos[i].authStatusInfo.flag;
         AuthStatus outStatus = AuthStatus::FORBIDDEN;
-        if (policyStatuses[i] < static_cast<int32_t>(PolicyStatus::NOT_EXIST) || 
+        if (policyStatuses[i] < static_cast<int32_t>(PolicyStatus::NOT_EXIST) ||
             policyStatuses[i] > static_cast<int32_t>(PolicyStatus::REMOTE_RESTRICTED)) {
             LOGE("Invalid policyStatus[%{public}zu]: %{public}d", i, policyStatuses[i]);
         }
         // 聚合ATM的PermissionStatus和策略文件的PolicyStatus，得到AuthStatus
         bool result = getAuthStatus(info.permissionStatus, static_cast<PolicyStatus>(policyStatuses[i]), outStatus);
         if (!result) {
-            LOGE("getAuthStatus failed, the combination of PermissionStatus and PolicyStatus is undefined, AuthStatus is not exist");
+            LOGE("getAuthStatus failed, the combination is undefined, AuthStatus is not exist");
             return SAF_ERROR;
         }
         info.authStatusInfo.authStatus = outStatus;
         if (outStatus != AuthStatus::AUTHORIZED) {
-            LOGE("MergePermissionResults :: Need Dialog! permission[%{public}zu] authStatus is %{public}u", i, outStatus);
+            LOGE("MergePermissionResults :: Need Dialog! permission[%{public}zu] authStatus is %{public}u", i,
+                outStatus);
             needDialog = true;
         }
         permissionQueryResult.permissionResults.push_back(info);
@@ -319,7 +329,8 @@ int32_t PermissionManager::SerializeTicketMessageInfo(const TicketMessageInfo &t
     cJSON_AddItemToObject(root, JSON_KEY_API_PERMISSIONS, apiPermArray);
 
     cJSON_AddNumberToObject(root, JSON_KEY_START_TIME, static_cast<double>(ticketMessageInfo.startTime));
-    cJSON_AddNumberToObject(root, JSON_KEY_TICKET_EXPIRE_TIME_MS, static_cast<double>(ticketMessageInfo.ticketExpireTimeMs));
+    cJSON_AddNumberToObject(root, JSON_KEY_TICKET_EXPIRE_TIME_MS,
+        static_cast<double>(ticketMessageInfo.ticketExpireTimeMs));
     cJSON_AddStringToObject(root, JSON_KEY_REMOTE_INFO, JSON_EMPTY_STRING);
 
     char *jsonStr = cJSON_PrintUnformatted(root);
@@ -336,7 +347,7 @@ int32_t PermissionManager::SerializeTicketMessageInfo(const TicketMessageInfo &t
 static std::string EscapeJsonString(const std::string &input)
 {
     std::string result;
-    result.reserve(input.size() + 16);
+    result.reserve(input.size() + JSON_ESCAPE_RESERVE_PADDING);
     for (char c : input) {
         if (c == '"') {
             result += JSON_ESCAPED_QUOTE;
@@ -361,12 +372,12 @@ static std::string BuildTicketWrapper(const VerifyTicketInfo &ticketInfo)
     return ticketJson;
 }
 
-int32_t PermissionManager::GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ticketMessageInfo, 
+int32_t PermissionManager::GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ticketMessageInfo,
     uint32_t callerTokenId, VerifyTicketInfo &ticketInfo)
 {
     // Serialize ticketMessageInfo to a single message string
     std::string message;
-    if (ticketMessageInfo.ticketExpireTimeMs == 0) {
+    if (ticketMessageInfo.ticketExpireTimeMs == UNSET_TICKET_EXPIRE_TIME_MS) {
         ticketMessageInfo.ticketExpireTimeMs = DEFAULT_TICKET_EXPIRE_TIME_MS;
     }
     SerializeTicketMessageInfo(ticketMessageInfo, message);
@@ -377,7 +388,8 @@ int32_t PermissionManager::GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ti
     int32_t osAccountId;
     bool ret = GetForegroundOsAccountId(&osAccountId);
     IF_FALSE_LOGE_RETURN_ERR(ret, SAF_ERROR, "GenerateTicketInfoWithTimeStamp :: GetForegroundOsAccountId failed");
-    IF_TRUE_LOGE_RETURN_ERR(osAccountId < MIN_OS_ACCOUNT_ID, SAF_ERR_INVALID_OS_ACCOUNT_ID, "GenerateTicketInfoWithTimeStamp :: Invalid osAccountId");
+    IF_TRUE_LOGE_RETURN_ERR(osAccountId < MIN_OS_ACCOUNT_ID, SAF_ERR_INVALID_OS_ACCOUNT_ID,
+        "GenerateTicketInfoWithTimeStamp :: Invalid osAccountId");
 
     // Call Rust bridge to generate ticket
     rust::String callerId = rust::String(std::to_string(callerTokenId));
@@ -403,14 +415,14 @@ int32_t PermissionManager::GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ti
     return SAF_SUCCESS;
 }
 
-int32_t PermissionManager::ProcessTicketInfo(const PermissionQuery &permissionQuery, const std::vector<CommandPermissionInfo> &cmdPermissionInfos,
-    const std::vector<std::string> &apiPermissions, PermissionQueryResult &permissionQueryResult)
+int32_t PermissionManager::ProcessTicketInfo(const PermissionQuery &permissionQuery,
+    const std::vector<CommandPermissionInfo> &cmdPermissionInfos, const std::vector<std::string> &apiPermissions,
+    PermissionQueryResult &permissionQueryResult)
 {
     permissionQueryResult.hasTicket = false;
     if (permissionQueryResult.needDialog || !permissionQuery.needTicket) {
         LOGE("ProcessTicketInfo :: Don't Generate TicketInfo, needDialog = %{public}s, needTicket = %{public}s",
-        permissionQueryResult.needDialog ? "true" : "false",
-        permissionQuery.needTicket ? "true" : "false");
+        permissionQueryResult.needDialog ? "true" : "false", permissionQuery.needTicket ? "true" : "false");
         return SAF_SUCCESS;
     }
     IF_TRUE_LOGE_RETURN_ERR(ExceedsMaxExpireTimeLimit(permissionQuery.ticketExpireTimeMs),
@@ -426,7 +438,8 @@ int32_t PermissionManager::ProcessTicketInfo(const PermissionQuery &permissionQu
     ticketMessageInfo.ticketExpireTimeMs = permissionQuery.ticketExpireTimeMs;
     ticketMessageInfo.apiPermissions = apiPermissions;
     ticketMessageInfo.callerTokenId = GetValidCallingTokenId(permissionQuery.callerTokenId);
-    int32_t ret = GenerateTicketInfoWithTimeStamp(ticketMessageInfo, ticketMessageInfo.callerTokenId, permissionQueryResult.ticket);
+    int32_t ret = GenerateTicketInfoWithTimeStamp(ticketMessageInfo, ticketMessageInfo.callerTokenId,
+        permissionQueryResult.ticket);
     IF_ERROR_LOGE_RETURN(ret, "ProcessTicketInfo :: GenerateTicketInfoWithTimeStamp failed, ret=%{public}d", ret);
     
     permissionQueryResult.hasTicket = true;
@@ -481,7 +494,8 @@ int32_t PermissionManager::GrantToolPermissionsByUser(const std::vector<UserAuth
     for (size_t i = 0; i < userAuthResults.size(); ++i) {
         IF_TRUE_LOGE_RETURN_ERR(userAuthResults[i].permissionQuery.callerTokenId < 0,
             SAF_ERR_ARG_INVALID, "callerTokenId is invalid");
-        IF_TRUE_LOGE_RETURN_ERR(userAuthResults[i].permissionInfo.empty(), SAF_ERR_ARG_EMPTY, "permissionInfo is empty");
+        IF_TRUE_LOGE_RETURN_ERR(userAuthResults[i].permissionInfo.empty(), SAF_ERR_ARG_EMPTY,
+            "permissionInfo is empty");
         ret = VerifyPermissionListStatus(userAuthResults[i].permissionInfo);
         IF_ERROR_LOGW_CONTINUE(ret, "Not all permissions are granted");
 
@@ -495,7 +509,8 @@ int32_t PermissionManager::GrantToolPermissionsByUser(const std::vector<UserAuth
             LOGI("GrantToolPermissionsByUser :: CLI Infos is empty");
         } else {
             ret = BatchQueryCommandPermission(cliInfos, cmdPermissionInfos);
-            IF_ERROR_LOGW_CONTINUE(ret, "GrantToolPermissionsByUser :: BatchQueryCommandPermission failed, ret=%{public}d", ret);
+            IF_ERROR_LOGW_CONTINUE(ret,
+                "GrantToolPermissionsByUser :: BatchQueryCommandPermission failed, ret=%{public}d", ret);
         }
         IF_TRUE_LOGW_CONTINUE(ExceedsMaxExpireTimeLimit(userAuthResults[i].permissionQuery.ticketExpireTimeMs),
             "ticketExpireTimeMs is invalid");
@@ -511,7 +526,8 @@ int32_t PermissionManager::GrantToolPermissionsByUser(const std::vector<UserAuth
         ticketMessageInfo.apiPermissions = apiPermissions;
         ticketMessageInfo.callerTokenId = GetValidCallingTokenId(userAuthResults[i].permissionQuery.callerTokenId);
         ret = GenerateTicketInfoWithTimeStamp(ticketMessageInfo, ticketMessageInfo.callerTokenId, ticketInfo);
-        IF_ERROR_LOGW_CONTINUE(ret, "GrantToolPermissionsByUser :: GenerateTicketInfoWithTimeStamp failed, ret=%{public}d", ret);
+        IF_ERROR_LOGW_CONTINUE(ret,
+            "GrantToolPermissionsByUser :: GenerateTicketInfoWithTimeStamp failed, ret=%{public}d", ret);
         hasValidTicket = true;
         ticketInfos[i] = ticketInfo;
     }

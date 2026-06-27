@@ -126,7 +126,7 @@ ErrCode RequestToolPermissions(
 }
 
 ErrCode GrantToolPermissionsByUser(
-    const std::vector<UserAuthResult> &userAuthResults, 
+    const std::vector<UserAuthResult> &userAuthResults,
     std::vector<VerifyTicketInfo> &ticketInfos,
     int32_t &resultCode)
 {
