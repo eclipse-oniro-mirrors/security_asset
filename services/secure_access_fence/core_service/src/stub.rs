@@ -19,8 +19,11 @@ use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 use saf_common::{AutoCounter, Counter};
 
 use saf_ipc::{
-    deserialize_batch_generate_ticket_request, deserialize_batch_verify_ticket_request, serialize_i32_vec,
-    serialize_verify_ticket_infos, CMD_BATCH_GENERATE_TICKET, CMD_BATCH_VERIFY_TICKET, IPC_SUCCESS, SA_NAME,
+    deserialize_batch_generate_ticket_request, deserialize_batch_verify_ticket_request,
+    deserialize_verify_ticket_request,
+    serialize_cli_infos, serialize_i32_vec, serialize_verify_ticket_infos,
+    CMD_BATCH_GENERATE_TICKET, CMD_BATCH_VERIFY_TICKET, CMD_VERIFY_TICKET,
+    IPC_SUCCESS, SA_NAME,
 };
 use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
@@ -84,12 +87,13 @@ fn on_remote_request(stub: &SAFService, code: u32, data: &mut MsgParcel, reply: 
 
     match code {
         CMD_BATCH_GENERATE_TICKET => {
-            handle_batch_generate_ticket(stub, data, reply)?;
-            Ok(())
+            handle_batch_generate_ticket(stub, data, reply)
         },
         CMD_BATCH_VERIFY_TICKET => {
-            handle_batch_verify_ticket(stub, data, reply)?;
-            Ok(())
+            handle_batch_verify_ticket(stub, data, reply)
+        },
+        CMD_VERIFY_TICKET => {
+            handle_verify_ticket(stub, data, reply)
         },
         _ => {
             if code >= C_REDIRECT_START_CODE {
@@ -174,6 +178,46 @@ fn handle_batch_verify_ticket(stub: &SAFService, data: &mut MsgParcel, reply: &m
             let empty_res: Vec<i32> = vec![];
             serialize_i32_vec(&empty_res, reply).map_err(|e| {
                 loge!("[FATAL]Serialize empty verify results failed: {}", e.msg);
+                IpcStatusCode::Failed
+            })?;
+            reply.write::<i32>(&(e.code as i32))?;
+        },
+    }
+    Ok(())
+}
+
+fn handle_verify_ticket(
+    stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel
+) -> IpcResult<()> {
+    let (os_account_id, caller_id, verify_info_str) =
+        deserialize_verify_ticket_request(data).map_err(|e| {
+            loge!("[FATAL]Deserialize verify ticket request failed: {}", e.msg);
+            IpcStatusCode::Failed
+        })?;
+
+    logi!(
+        "VerifyTicket received, osAccountId: {}, callerId: {}",
+        os_account_id,
+        caller_id
+    );
+
+    let result = stub.verify_ticket(os_account_id as i32, &caller_id, &verify_info_str);
+    match result {
+        Ok(cli_infos) => {
+            reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+            serialize_cli_infos(&cli_infos, reply).map_err(|e| {
+                loge!("[FATAL]Serialize cli infos failed: {}", e.msg);
+                IpcStatusCode::Failed
+            })?;
+            reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+            logi!("VerifyTicket success, cliInfoCount: {}", cli_infos.len());
+        },
+        Err(e) => {
+            loge!("[FATAL]VerifyTicket failed: {}", e.msg);
+            reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+            let empty_infos: Vec<saf_ipc::CliInfo> = vec![];
+            serialize_cli_infos(&empty_infos, reply).map_err(|e| {
+                loge!("[FATAL]Serialize empty cli infos failed: {}", e.msg);
                 IpcStatusCode::Failed
             })?;
             reply.write::<i32>(&(e.code as i32))?;

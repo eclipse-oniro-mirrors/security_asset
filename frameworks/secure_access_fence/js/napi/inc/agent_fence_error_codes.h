@@ -13,14 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef SAF_AGENT_FENCE_BATCH_QUERY_CMD_TEST_H
-#define SAF_AGENT_FENCE_BATCH_QUERY_CMD_TEST_H
+#ifndef AGENT_FENCE_ERROR_CODES_H
+#define AGENT_FENCE_ERROR_CODES_H
 
-namespace UnitTest::SafAgentFenceBatchQueryCmdTest {
-int BatchQueryCommandPermissionTest001(void);
-int BatchQueryCommandPermissionTest002(void);
-int BatchQueryCommandPermissionTest003(void);
-int BatchQueryCommandPermissionTest004(void);
-}
+typedef enum {
+    PERMISSION_DENAIL = 201,
+    NOT_SYSTEM_APP = 202,
+    GENERAL_PARAMETER_ERROR = 401,
+    INVALID_PARAMETER = 24010000,
+    SERVICE_ABNORMAL = 24010001,
+    COMMON_INTERNAL_ERROR = 24010002,
+    ENVIRONMENT_ERROR = 24010003,
+    INVALID_PERMISSION = 24010004,
+    GRANT_PERMISSION_FAILED = 24010005,
+} AgentFenceErrorCode;
 
-#endif // SAF_AGENT_FENCE_BATCH_QUERY_CMD_TEST_H
+#endif // AGENT_FENCE_ERROR_CODES_H

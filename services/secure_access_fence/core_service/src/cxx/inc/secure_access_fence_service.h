@@ -19,6 +19,7 @@
 #include <vector>
 #include <string>
 #include "secure_access_fence_type.h"
+#include "permission_manager.h"
 #include "saf_result_code.h"
 
 namespace OHOS {
@@ -28,6 +29,16 @@ namespace SAF {
 ErrCode BatchQueryCommandPermission(
     const std::vector<CommandInfo> &cmds,
     std::vector<CommandPermissionInfo> &cmdPermissions,
+    int32_t &resultCode);
+
+ErrCode RequestToolPermissions(
+    const PermissionQuery &permissionQuery,
+    PermissionQueryResult &permissionQueryResult,
+    int32_t &resultCode);
+
+ErrCode GrantToolPermissionsByUser(
+    const std::vector<UserAuthResult> &userAuthResults, 
+    std::vector<VerifyTicketInfo> &ticketInfos,
     int32_t &resultCode);
 
 } // namespace SAF

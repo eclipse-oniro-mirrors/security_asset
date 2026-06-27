@@ -18,15 +18,25 @@
 use ipc::parcel::MsgParcel;
 use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
-use saf_plugin_interface::plugin_interface::{EventType, ExtMap, ERROR_METRICS_KEYS, PERFORMANCE_METRICS_KEYS};
+use saf_plugin_interface::plugin_interface::{EventType, ExtMap, ERROR_METRICS_KEYS, PERFORMANCE_METRICS_KEYS, POLICY_AUTH_STATUS_KEYS};
 use saf_sdk::Value;
+use crate::ticket_operation;
 
 #[cxx::bridge(namespace = "OHOS::Security::SAF")]
 pub mod ffi {
+    // C++ compatible VerifyTicketInfo for bridge
+    pub struct CxxVerifyTicketInfo {
+        pub message: String,
+        pub challenge: String,
+        pub ticket: String,
+    }
+
     // C++ callable Rust functions
     extern "Rust" {
         fn notify_performance_metrics(item_count: i32, elapsed_time: i32, os_account_id: i32, function_name: String);
         fn notify_error(error_message: String, error_code: i32, os_account_id: i32, function_name: String);
+        fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: &[String], result_code: &mut i32) -> Vec<CxxVerifyTicketInfo>;
+        fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec<i32>) -> i32;
     }
 
     // Rust callable C++ functions
@@ -72,6 +82,72 @@ pub fn notify_error(error_message: String, error_code: i32, os_account_id: i32, 
 
     if let Err(e) = call_plugin_error_event(error_message, error_code, os_account_id, function_name) {
         loge!("[ERROR] Failed to call plugin process_event for error metrics: {}", e);
+    }
+}
+
+#[allow(dead_code)]
+pub fn get_policy_auth_status(
+    permissions: &Vec<String>,
+    auth_statuses: &mut Vec<i32>
+) -> i32
+{
+    logi!("[get_policy_auth_status] permissions_len={}", permissions.len());
+
+    let plugin = SAFPlugin::get_instance();
+    let loader = match plugin.load_plugin() {
+        Ok(loader) => loader,
+        Err(_e) => {
+            return saf_definition::ErrCode::PluginNotSupport as i32;
+        }
+    };
+
+    let mut params = ExtMap::new();
+    params.insert(POLICY_AUTH_STATUS_KEYS.permissions, Value::StringList(permissions.clone()));
+
+    logi!("[get_policy_auth_status] calling plugin process_event");
+
+    let result = match loader.process_event(EventType::GetPolicyAuthStatus, &mut params) {
+        Ok(r) => r,
+        Err(e) => {
+            loge!("[get_policy_auth_status] process_event failed, e={}", e);
+            return e as i32;
+        }
+    };
+
+    logi!("[get_policy_auth_status] plugin returned, parsing results");
+
+    let Some(Value::NumberList(statuses)) = result.get(POLICY_AUTH_STATUS_KEYS.auth_statuses) else {
+        loge!("[get_policy_auth_status] auth_statuses not found in result params");
+        return saf_definition::ErrCode::HashMapKeyNotFound as i32;
+    };
+
+    *auth_statuses = statuses.clone();
+
+    logi!("[get_policy_auth_status] success, auth statuses_len={}", auth_statuses.len());
+
+    0
+}
+
+// C++ -> Rust bridge for batch_generate_ticket. Returns empty vector on error and reports via notify_error.
+pub fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: &[String], result_code: &mut i32) -> Vec<ffi::CxxVerifyTicketInfo> {
+    logi!("[Wrapper cxx_batch_generate_ticket] os_account_id = {}, caller_id = {}, messages_count = {}",
+        os_account_id, caller_id, messages.len());
+    match ticket_operation::batch_generate_ticket(os_account_id, caller_id, messages) {
+        Ok(v) => v.into_iter().map(|r| ffi::CxxVerifyTicketInfo {
+            message: r.message,
+            challenge: r.challenge,
+            ticket: r.ticket,
+        }).collect(),
+        Err(e) => {
+            notify_error(
+                format!("batch_generate_ticket failed: {}", e.code),
+                e.code as i32,
+                os_account_id,
+                "cxx_batch_generate_ticket".to_string(),
+            );
+            *result_code = e.code as i32;
+            Vec::new()
+        }
     }
 }
 

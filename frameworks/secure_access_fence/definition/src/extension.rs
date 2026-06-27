@@ -37,8 +37,10 @@ impl Conversion for Tag {
             _ if DataType::Number as u32 == mask => DataType::Number,
             _ if DataType::Bytes as u32 == mask => DataType::Bytes,
             _ if DataType::String as u32 == mask => DataType::String,
+            _ if DataType::StringList as u32 == mask => DataType::StringList,
+            _ if DataType::NumberList as u32 == mask => DataType::NumberList,
             _ => {
-                panic!("Unexpected data type, it should be bool, uint32 or bytes.");
+                panic!("Unexpected data type, it should be bool, uint32, bytes, string, StringList or NumberList.");
             },
         }
     }
@@ -55,6 +57,8 @@ impl Conversion for Value {
             Value::Number(_) => DataType::Number,
             Value::Bytes(_) => DataType::Bytes,
             Value::String(_) => DataType::String,
+            Value::StringList(_) => DataType::StringList,
+            Value::NumberList(_) => DataType::NumberList,
         }
     }
 
@@ -90,6 +94,26 @@ impl Conversion for u32 {
 
     fn into_value(self) -> Value {
         Value::Number(self)
+    }
+}
+
+impl Conversion for Vec<String> {
+    fn data_type(&self) -> DataType {
+        DataType::StringList
+    }
+
+    fn into_value(self) -> Value {
+        Value::StringList(self)
+    }
+}
+
+impl Conversion for Vec<i32> {
+    fn data_type(&self) -> DataType {
+        DataType::NumberList
+    }
+
+    fn into_value(self) -> Value {
+        Value::NumberList(self)
     }
 }
 

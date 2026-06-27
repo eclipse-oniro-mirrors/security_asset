@@ -29,6 +29,8 @@ namespace SAF {
 
 typedef enum {
     BATCH_QUERY_COMMAND_PERMISSION = 500,
+    REQUEST_TOOL_PERMISSION = 501,
+    GRANT_TOOL_PERMISSION = 502,
 } SecureAccessFenceCode;
 
 int32_t OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply);

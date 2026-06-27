@@ -65,6 +65,24 @@ int32_t CheckBatchVerifyTicketParams(
     return SAF_SUCCESS;
 }
 
+int32_t CheckVerifyTicketParams(
+    int32_t osAccountId,
+    const std::string &callerId,
+    const std::string &verifyInfo)
+{
+    if (callerId.empty() || verifyInfo.empty()) {
+        LOGE("callerId or verifyInfo is empty");
+        return SAF_ERR_ARG_EMPTY;
+    }
+
+    if (osAccountId < MIN_OS_ACCOUNT_ID) {
+        LOGE("invalid osAccountId: %{public}d", osAccountId);
+        return SAF_ERR_INVALID_OS_ACCOUNT_ID;
+    }
+
+    return SAF_SUCCESS;
+}
+
 } // namespace OHOS::Security::SAF
 
 extern "C" {
@@ -108,4 +126,5 @@ int32_t CheckBatchVerifyTicketParamsC(int32_t osAccountId, const char* callerId,
 
     return SAF_SUCCESS;
 }
+
 }

@@ -33,6 +33,8 @@ pub const IPC_SUCCESS: u32 = 0;
 pub const CMD_BATCH_GENERATE_TICKET: u32 = 1;
 /// IPC code for BatchVerifyTicket.
 pub const CMD_BATCH_VERIFY_TICKET: u32 = 2;
+/// IPC code for VerifyTicket.
+pub const CMD_VERIFY_TICKET: u32 = 3;
 /// IPC code for BatchQueryCommandPermission.
 pub const CMD_BATCH_QUERY_COMMAND_PERMISSION: u32 = 500;
 
@@ -59,6 +61,19 @@ pub struct VerifyTicketInfo {
     pub challenge: String,
     /// Ticket string.
     pub ticket: String,
+}
+
+/// CLI info structure (matching IDL definition).
+#[derive(Debug, Clone)]
+pub struct CliInfo {
+    /// Caller token ID.
+    pub caller_token_id: String,
+    /// CLI command name.
+    pub cli_cmd_name: String,
+    /// Sub CLI command name.
+    pub sub_cli_cmd_name: String,
+    /// Permission list for the CLI command.
+    pub permission_list: Vec<String>,
 }
 
 /// deserialize T from parcel
@@ -96,6 +111,8 @@ pub fn serialize_map(map: &SAFMap, parcel: &mut MsgParcel) -> Result<()> {
             Value::Number(n) => parcel.write::<u32>(n).map_err(ipc_err_handle)?,
             Value::Bytes(a) => parcel.write::<Vec<u8>>(a).map_err(ipc_err_handle)?,
             Value::String(s) => parcel.write::<String>(s).map_err(ipc_err_handle)?,
+            Value::StringList(v) => parcel.write::<Vec<String>>(v).map_err(ipc_err_handle)?,
+            Value::NumberList(v) => parcel.write::<Vec<i32>>(v).map_err(ipc_err_handle)?,
         }
     }
     Ok(())
@@ -130,6 +147,14 @@ pub fn deserialize_map(parcel: &mut MsgParcel) -> Result<SAFMap> {
             DataType::String => {
                 let v = parcel.read::<String>().map_err(ipc_err_handle)?;
                 map.insert(tag, Value::String(v));
+            },
+            DataType::StringList => {
+                let v = parcel.read::<Vec<String>>().map_err(ipc_err_handle)?;
+                map.insert(tag, Value::StringList(v));
+            },
+            DataType::NumberList => {
+                let v = parcel.read::<Vec<i32>>().map_err(ipc_err_handle)?;
+                map.insert(tag, Value::NumberList(v));
             },
         }
     }
@@ -254,6 +279,60 @@ pub fn serialize_i32_vec(vec: &Vec<i32>, parcel: &mut MsgParcel) -> Result<()> {
     parcel.write::<i32>(&(vec.len() as i32)).map_err(ipc_err_handle)?;
     for val in vec {
         parcel.write::<i32>(val).map_err(ipc_err_handle)?;
+    }
+    Ok(())
+}
+
+/// Deserialize VerifyTicket request parameters from MsgParcel.
+pub fn deserialize_verify_ticket_request(
+    parcel: &mut MsgParcel,
+) -> Result<(i32, String, String)> {
+    let os_account_id = parcel.read::<i32>().map_err(ipc_err_handle)?;
+    let caller_id = parcel.read_string16().map_err(ipc_err_handle)?;
+    let verify_info = parcel.read_string16().map_err(ipc_err_handle)?;
+    Ok((os_account_id, caller_id, verify_info))
+}
+
+/// Serialize CliInfo to MsgParcel (for reply).
+pub fn serialize_cli_info(info: &CliInfo, parcel: &mut MsgParcel) -> Result<()> {
+    parcel.write_string16(&info.caller_token_id).map_err(ipc_err_handle)?;
+    parcel.write_string16(&info.cli_cmd_name).map_err(ipc_err_handle)?;
+    parcel.write_string16(&info.sub_cli_cmd_name).map_err(ipc_err_handle)?;
+    serialize_string_vec(&info.permission_list, parcel)?;
+    Ok(())
+}
+
+/// Write vector length to parcel with capacity check.
+pub fn write_vec_len(vec_len: usize, max_capacity: i32, err_code: ErrCode, label: &str,
+    parcel: &mut MsgParcel) -> Result<()> {
+    if vec_len as i32 > max_capacity {
+        return macros_lib::log_throw_error!(
+            err_code,
+            "[FATAL][IPC]{} vector size exceeds limit: {}",
+            label,
+            vec_len
+        );
+    }
+    parcel.write::<i32>(&(vec_len as i32)).map_err(ipc_err_handle)?;
+    Ok(())
+}
+
+/// Serialize vector of CliInfo to MsgParcel (for reply).
+pub fn serialize_cli_infos(infos: &Vec<CliInfo>, parcel: &mut MsgParcel) -> Result<()> {
+    write_vec_len(infos.len(), MAX_TICKET_CAPACITY as i32, ErrCode::InvalidArrayLen,
+        "CliInfo", parcel)?;
+    for info in infos {
+        serialize_cli_info(info, parcel)?;
+    }
+    Ok(())
+}
+
+/// Serialize string vector to MsgParcel (for reply).
+pub fn serialize_string_vec(vec: &Vec<String>, parcel: &mut MsgParcel) -> Result<()> {
+    write_vec_len(vec.len(), MAX_TICKET_CAPACITY as i32, ErrCode::InvalidArrayLen,
+        "string", parcel)?;
+    for s in vec {
+        parcel.write_string16(s).map_err(ipc_err_handle)?;
     }
     Ok(())
 }

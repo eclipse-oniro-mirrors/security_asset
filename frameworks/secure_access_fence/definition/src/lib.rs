@@ -38,6 +38,12 @@ impl_enum_trait! {
 
         /// The data type of SAF attribute value is byte string.
         String = 4 << 28,
+
+        /// The data type of SAF attribute value is string list.
+        StringList = 5 << 28,
+
+        /// The data type of SAF attribute value is number list.
+        NumberList = 6 << 28,
     }
 }
 
@@ -84,6 +90,12 @@ pub enum Value {
 
     /// SAF attribute value, whose data type is string.
     String(String),
+
+    /// SAF attribute value, whose data type is string list.
+    StringList(Vec<String>),
+
+    /// SAF attribute value, whose data type is number list.
+    NumberList(Vec<i32>),
 }
 
 impl Drop for Value {
@@ -205,6 +217,9 @@ impl_enum_trait! {
         // ==================== TICKET_OPERATION (0x71000) ====================
         /// The error code indicates that ticket key manager not support.
         TicketKeyMgrNotSupport = 0x71001,
+
+        /// The error code indicates that ticket time is invalid.
+        TicketTimeInvalid = 0x71002,
 
         // ==================== ACCOUNT_BASED_DFK (0x19000) ====================
         /// The error code indicates that network disconnected.
