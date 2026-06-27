@@ -178,7 +178,7 @@ int32_t PermissionManager::MergePermissionLists(const std::vector<CommandPermiss
 {
     std::unordered_set<std::string> permissionSet;
     for (const auto &cmdPerm : cmdPermissionInfos) {
-       permissionSet.insert(cmdPerm.permissions.begin(), cmdPerm.permissions.end());
+        permissionSet.insert(cmdPerm.permissions.begin(), cmdPerm.permissions.end());
     }
     permissionSet.insert(apiPermissions.begin(), apiPermissions.end());
     allPermissions = std::vector<std::string>(permissionSet.begin(), permissionSet.end());
@@ -422,7 +422,7 @@ int32_t PermissionManager::ProcessTicketInfo(const PermissionQuery &permissionQu
     permissionQueryResult.hasTicket = false;
     if (permissionQueryResult.needDialog || !permissionQuery.needTicket) {
         LOGE("ProcessTicketInfo :: Don't Generate TicketInfo, needDialog = %{public}s, needTicket = %{public}s",
-        permissionQueryResult.needDialog ? "true" : "false", permissionQuery.needTicket ? "true" : "false");
+            permissionQueryResult.needDialog ? "true" : "false", permissionQuery.needTicket ? "true" : "false");
         return SAF_SUCCESS;
     }
     IF_TRUE_LOGE_RETURN_ERR(ExceedsMaxExpireTimeLimit(permissionQuery.ticketExpireTimeMs),

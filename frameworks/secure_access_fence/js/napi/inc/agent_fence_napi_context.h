@@ -12,11 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "napi/native_node_api.h"
-#include "secure_access_fence_type.h"
 
 #ifndef AGENT_FENCE_NAPI_CONTEXT_H
 #define AGENT_FENCE_NAPI_CONTEXT_H
+
+#include "napi/native_node_api.h"
+#include "secure_access_fence_type.h"
 
 namespace OHOS {
 namespace Security {
