@@ -77,7 +77,6 @@ int32_t CheckVerifyTicketParams(
         LOGE("invalid osAccountId: %{public}d", osAccountId);
         return SAF_ERR_INVALID_OS_ACCOUNT_ID;
     }
-
     return SAF_SUCCESS;
 }
 

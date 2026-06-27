@@ -147,7 +147,7 @@ napi_module g_module = {
     .nm_filename = nullptr,
     .nm_register_func = Register,
     .nm_modname = "abilityToolAccessCtrl",
-    .nm_priv = static_cast<void *>(0),
+    .nm_priv = nullptr,
     .reserved = { 0 },
 };
 
