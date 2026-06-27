@@ -260,23 +260,19 @@ impl SecretKey {
         let accessibilitys =
             [Accessibility::DevicePowerOn, Accessibility::DeviceFirstUnlocked, Accessibility::DeviceUnlocked];
         for accessibility in accessibilitys.into_iter() {
-            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::None, accessibility, true)
-                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::None, accessibility, true)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, accessibility, true)
-                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, accessibility, true)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::None, accessibility, false)
-                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::None, accessibility, false)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
 
-            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, accessibility, false)
-                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+            let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, accessibility, false)?;
             let tmp = secret_key.delete();
             res = if tmp.is_err() { tmp } else { res };
         }

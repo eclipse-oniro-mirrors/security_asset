@@ -140,7 +140,7 @@ impl Display for AssetError {
 
 impl AssetError {
     /// Create an AssetError instance.
-    fn shorten_func_name(full_name: &str) -> &str {
+    pub fn shorten_func_name(full_name: &'static str) -> &'static str {
         let name = if let Some(idx) = full_name.find("::{") {
             &full_name[..idx]
         } else {
@@ -165,7 +165,8 @@ impl AssetError {
 
     /// Track caller location when propagating error.
     pub fn track_internal(mut self, func_name: &'static str) -> Self {
-        self.call_chain = format!("{} <-- {}", self.call_chain, Self::shorten_func_name(func_name));
+        self.call_chain.push_str(" <-- ");
+        self.call_chain.push_str(Self::shorten_func_name(func_name));
         self
     }
 }

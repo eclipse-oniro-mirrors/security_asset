@@ -29,8 +29,7 @@ use asset_utils::time;
 use crate::operations::common::{check_group_validity, inform_asset_ext, update_cloud_sync_status};
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
-    let time = time::system_time_in_millis().map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    let time = time::system_time_in_millis()?;
     db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     Ok(())
 }
@@ -45,14 +44,10 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
-    common::check_tag_validity(attributes, &valid_tags).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    check_group_validity(attributes, calling_info).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_value_validity(attributes).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_system_permission(attributes).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))
+    common::check_tag_validity(attributes, &valid_tags)?;
+    check_group_validity(attributes, calling_info)?;
+    common::check_value_validity(attributes)?;
+    common::check_system_permission(attributes)
 }
 
 pub(crate) fn remove(calling_info: &CallingInfo, query: &AssetMap) -> Result<()> {

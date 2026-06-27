@@ -27,7 +27,6 @@ ohos_rust_static_library("asset_crypto_manager") {
   ]
   external_deps = [
     "huks:libhukssdk",
-    "ipc:ipc_rust",
   ]
 
   crate_name = "asset_crypto_manager"

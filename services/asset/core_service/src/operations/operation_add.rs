@@ -40,17 +40,14 @@ extern "C" {
 }
 
 fn encrypt_secret(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()> {
-    let secret_key = common::build_secret_key(calling_info, db_data).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    let secret_key = common::build_secret_key(calling_info, db_data)?;
     generate_secret_key_if_needed(&secret_key).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
 
     let secret = db_data.get_bytes_attr(&column::SECRET).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
-    let cipher = Crypto::encrypt(&secret_key, secret,
-        &common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))?).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    let cipher = Crypto::encrypt(&secret_key, secret, &common::build_aad(db_data)?)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     db_data.insert(column::SECRET, Value::Bytes(cipher));
     Ok(())
 }
@@ -90,8 +87,7 @@ fn resolve_conflict(
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     db_data.insert(column::VERSION, Value::Number(DB_DATA_VERSION));
 
-    let time = time::system_time_in_millis().map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    let time = time::system_time_in_millis()?;
     db_data.insert(column::CREATE_TIME, Value::Bytes(time.clone()));
     db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     Ok(())
@@ -109,8 +105,7 @@ fn add_default_attrs(db_data: &mut DbMap) {
 }
 
 fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
-    common::check_required_tags(attributes, &common::REQUIRED_ATTRS).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    common::check_required_tags(attributes, &common::REQUIRED_ATTRS)?;
 
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
@@ -118,28 +113,19 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&common::OPTIONAL_ATTRS);
-    common::check_tag_validity(attributes, &valid_tags).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    check_group_validity(attributes, calling_info).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_value_validity(attributes).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_accessibility_validity(attributes, calling_info).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_sync_permission(attributes, calling_info).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_wrap_permission(attributes, calling_info).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_system_permission(attributes).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_persistent_permission(attributes).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))
+    common::check_tag_validity(attributes, &valid_tags)?;
+    check_group_validity(attributes, calling_info)?;
+    common::check_value_validity(attributes)?;
+    common::check_accessibility_validity(attributes, calling_info)?;
+    common::check_sync_permission(attributes, calling_info)?;
+    common::check_wrap_permission(attributes, calling_info)?;
+    common::check_system_permission(attributes)?;
+    common::check_persistent_permission(attributes)
 }
 
 fn modify_sync_type(db: &mut DbMap) -> Result<()> {
     if db.get(&column::SYNC_TYPE).is_none()
-        || (db.get_num_attr(&column::SYNC_TYPE).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))? & SyncType::TrustedAccount as u32) == 0
+        || (db.get_num_attr(&column::SYNC_TYPE)? & SyncType::TrustedAccount as u32) == 0
     {
         return Ok(())
     }
@@ -147,8 +133,7 @@ fn modify_sync_type(db: &mut DbMap) -> Result<()> {
         logw!("[FATAL]The caller is not system application. Modify store sync type!");
         db.insert(
             column::SYNC_TYPE,
-            Value::Number(db.get_num_attr(&column::SYNC_TYPE).map_err(|e| macros_lib::track_error!(e,
-                macros_lib::hisysevent::function!()))? - SyncType::TrustedAccount as u32),
+            Value::Number(db.get_num_attr(&column::SYNC_TYPE)? - SyncType::TrustedAccount as u32),
         );
     }
     Ok(())
@@ -193,7 +178,7 @@ pub(crate) fn add(calling_info: &CallingInfo, attributes: &AssetMap) -> Result<(
     }
     inform_asset_ext(calling_info, attributes);
 
-    local_res.map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
+    local_res
 }
 
 #[cfg(feature = "AssetTest")]

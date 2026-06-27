@@ -41,11 +41,9 @@ fn build_db_key_secret_key(user_id: i32) -> Result<SecretKey> {
 }
 
 fn check_validity_of_db_key(user_id: i32) -> Result<()> {
-    if is_ce_db_exist(user_id).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?
-        && !DbKey::check_existance(user_id).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))? {
+    if is_ce_db_exist(user_id)? && !DbKey::check_existance(user_id)? {
         loge!("[FATAL]There is database but no database key. Now all data should be cleared and restart over.");
-        remove_ce_files(user_id).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        remove_ce_files(user_id)?;
         return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
             ErrCode::DataCorrupted, "[FATAL]All data is cleared in {}.", user_id);
     }
@@ -112,8 +110,7 @@ pub struct DbKey {
 
 impl DbKey {
     fn decrypt_db_key_cipher(user_id: i32, db_key_cipher: &Vec<u8>) -> Result<DbKey> {
-        let secret_key = build_db_key_secret_key(user_id)
-            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        let secret_key = build_db_key_secret_key(user_id)?;
         let aad: Vec<u8> = TRIVIAL_AAD_FOR_DB_KEY.as_bytes().to_vec();
         let db_key = Crypto::decrypt(&secret_key, db_key_cipher, &aad)
             .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
@@ -132,8 +129,7 @@ impl DbKey {
     }
 
     fn encrypt_db_key(&self, user_id: i32) -> Result<Vec<u8>> {
-        let secret_key = build_db_key_secret_key(user_id)
-            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        let secret_key = build_db_key_secret_key(user_id)?;
         generate_secret_key_if_needed(&secret_key)
             .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
         let aad: Vec<u8> = TRIVIAL_AAD_FOR_DB_KEY.as_bytes().to_vec();

@@ -51,7 +51,7 @@ fn is_only_change_local_labels(update: &AssetMap) -> bool {
 
 fn add_attrs(update: &AssetMap, db_data: &mut DbMap) -> Result<()> {
     if !is_only_change_local_labels(update) {
-        add_system_attrs(db_data).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        add_system_attrs(db_data)?;
         add_normal_attrs(db_data);
     }
     db_data.insert(column::LOCAL_STATUS, Value::Number(LocalStatus::Local as u32));
@@ -59,8 +59,7 @@ fn add_attrs(update: &AssetMap, db_data: &mut DbMap) -> Result<()> {
 }
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
-    let time = time::system_time_in_millis().map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    let time = time::system_time_in_millis()?;
     db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     Ok(())
 }
@@ -74,19 +73,15 @@ const UPDATE_OPTIONAL_ATTRS: [Tag; 1] = [Tag::Secret];
 
 fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     // Check attributes used to query.
-    common::check_required_tags(query, &QUERY_REQUIRED_ATTRS).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    common::check_required_tags(query, &QUERY_REQUIRED_ATTRS)?;
     let mut valid_tags = common::CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&common::NORMAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
-    common::check_tag_validity(query, &valid_tags).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    check_group_validity(query, calling_info).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_value_validity(query).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    common::check_system_permission(query).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    common::check_tag_validity(query, &valid_tags)?;
+    check_group_validity(query, calling_info)?;
+    common::check_value_validity(query)?;
+    common::check_system_permission(query)?;
 
     if attrs_to_update.is_empty() {
         return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
@@ -97,10 +92,8 @@ fn check_arguments(query: &AssetMap, attrs_to_update: &AssetMap, calling_info: &
     valid_tags.extend_from_slice(&common::NORMAL_LOCAL_LABEL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&UPDATE_OPTIONAL_ATTRS);
-    common::check_tag_validity(attrs_to_update, &valid_tags).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_value_validity(attrs_to_update).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))
+    common::check_tag_validity(attrs_to_update, &valid_tags)?;
+    common::check_value_validity(attrs_to_update)
 }
 
 fn upgrade_to_latest_version(origin_db_data: &mut DbMap, update_db_data: &mut DbMap) {
@@ -149,8 +142,7 @@ pub(crate) fn update(calling_info: &CallingInfo, query: &AssetMap, update: &Asse
             upgrade_to_latest_version(result, &mut update_db_data);
         }
         // Using result with AAD to encrypt secret, otherwise encryption failed.
-        let cipher = encrypt(calling_info, result).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))?;
+        let cipher = encrypt(calling_info, result)?;
         update_db_data.insert(column::SECRET, Value::Bytes(cipher));
     }
 

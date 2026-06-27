@@ -37,16 +37,15 @@ const CONSISTENCY_ATTRS: [Tag; 2] = [Tag::RequireAttrEncrypted, Tag::GroupId];
 
 fn check_attrs_array(attributes_array: &[AssetMap]) -> Result<()> {
     for attrs in attributes_array {
-        check_required_tags(attrs, &QUERY_VALID_ATTRS).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))?;
+        check_required_tags(attrs, &QUERY_VALID_ATTRS)?;
         let mut valid_tags = CRITICAL_LABEL_ATTRS.to_vec();
         valid_tags.extend_from_slice(&NORMAL_LABEL_ATTRS);
         valid_tags.extend_from_slice(&NORMAL_LOCAL_LABEL_ATTRS);
         valid_tags.extend_from_slice(&ACCESS_CONTROL_ATTRS);
         check_tag_validity(attrs, &valid_tags)
             .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-        check_value_validity(attrs).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-        check_system_permission(attrs).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        check_value_validity(attrs)?;
+        check_system_permission(attrs)?;
     }
     Ok(())
 }
@@ -61,9 +60,8 @@ fn check_update_array(attributes_array: &[AssetMap]) -> Result<()> {
         valid_tags.extend_from_slice(&NORMAL_LOCAL_LABEL_ATTRS);
         valid_tags.extend_from_slice(&ASSET_SYNC_ATTRS);
         valid_tags.extend_from_slice(&UPDATE_OPTIONAL_ATTRS);
-        check_tag_validity(attrs, &valid_tags).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))?;
-        check_value_validity(attrs).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        check_tag_validity(attrs, &valid_tags)?;
+        check_value_validity(attrs)?;
     }
     Ok(())
 }
@@ -90,8 +88,7 @@ fn local_batch_update(
     check_update_array(attributes_to_update_array).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
     add_default_attrs(&mut db_map, calling_info);
-    check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array)?;
     let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
     let mut db = Database::build(calling_info, db_key).map_err(|e| macros_lib::track_error!(e,
@@ -111,5 +108,4 @@ pub(crate) fn batch_update(
             ErrCode::InvalidArgument, "[FATAL]Batch Update argument empty.");
     }
     local_batch_update(calling_info, attributes_array, attributes_to_update_array)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
 }

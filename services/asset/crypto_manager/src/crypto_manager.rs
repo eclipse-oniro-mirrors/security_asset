@@ -49,7 +49,7 @@ impl CryptoManager {
 
     /// Add the crypto to manager.
     pub fn add(&mut self, crypto: Crypto) -> Result<()> {
-        self.remove_expired_crypto().map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        self.remove_expired_crypto()?;
         if self.cryptos.len() >= CRYPTO_CAPACITY {
             macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                 ErrCode::LimitExceeded, "The number of cryptos exceeds the upper limit.")
@@ -61,7 +61,7 @@ impl CryptoManager {
 
     /// Find the crypto with the specified alias and challenge slice from manager.
     pub fn find(&mut self, calling_info: &CallingInfo, challenge: &Vec<u8>) -> Result<&Crypto> {
-        self.remove_expired_crypto().map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+        self.remove_expired_crypto()?;
         for crypto in self.cryptos.iter() {
             if crypto.challenge().eq(challenge) && crypto.calling_info().eq(calling_info) {
                 return Ok(crypto);

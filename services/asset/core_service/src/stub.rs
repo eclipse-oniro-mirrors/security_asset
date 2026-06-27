@@ -53,7 +53,7 @@ impl RemoteStub for AssetService {
                 Err(AssetError { 
                     code: ErrCode::ServiceUnavailable, 
                     msg: "service stop".to_string(),
-                    call_chain: macros_lib::hisysevent::function!().to_string(),
+                    call_chain: AssetError::shorten_func_name(macros_lib::hisysevent::function!()).to_string(),
                 }),
                 reply,
             );
@@ -66,7 +66,7 @@ impl RemoteStub for AssetService {
                 Err(AssetError { 
                     code: ErrCode::ServiceUnavailable, 
                     msg: "service stop".to_string(),
-                    call_chain: macros_lib::hisysevent::function!().to_string(),
+                    call_chain: AssetError::shorten_func_name(macros_lib::hisysevent::function!()).to_string(),
                 }),
                 reply,
             );

@@ -39,14 +39,10 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
 
-    common::check_tag_validity(attributes, &valid_tags).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    check_group_validity(attributes, calling_info).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_value_validity(attributes).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_system_permission(attributes).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    common::check_tag_validity(attributes, &valid_tags)?;
+    check_group_validity(attributes, calling_info)?;
+    common::check_value_validity(attributes)?;
+    common::check_system_permission(attributes)?;
 
     match attributes.get(&Tag::AuthType) {
         Some(Value::Number(val)) if *val == (AuthType::None as u32) => {
@@ -69,10 +65,8 @@ fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap
         0 => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
             ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found."),
         1 => {
-            let access_type = results[0].get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)
-                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-            let require_password_set = results[0].get_bool_attr(&column::REQUIRE_PASSWORD_SET)
-                .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+            let access_type = results[0].get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
+            let require_password_set = results[0].get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
             Ok((access_type, require_password_set))
         },
         _ => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
@@ -98,10 +92,8 @@ pub(crate) fn pre_query(calling_info: &CallingInfo, query: &AssetMap) -> Result<
         Some(Value::Number(num)) => *num,
         _ => DEFAULT_AUTH_VALIDITY_IN_SECS,
     };
-    let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, access_type, require_password_set)
-        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
-    let mut crypto = Crypto::build(secret_key, calling_info.clone(), valid_time).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, access_type, require_password_set)?;
+    let mut crypto = Crypto::build(secret_key, calling_info.clone(), valid_time)?;
     let challenge = crypto.init_key().map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?.to_vec();
     let crypto_manager = CryptoManager::get_instance();

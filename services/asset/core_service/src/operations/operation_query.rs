@@ -36,8 +36,7 @@ fn into_asset_maps(db_results: &Vec<DbMap>) -> Result<Vec<AssetMap>> {
     let mut map_set = Vec::new();
     for db_result in db_results {
         let map = common::into_asset_map(db_result);
-        common::check_value_validity(&map).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))?;
+        common::check_value_validity(&map)?;
         map_set.push(map);
     }
     Ok(map_set)
@@ -76,17 +75,16 @@ fn decrypt_secret(calling_info: &CallingInfo, db_data: &mut DbMap) -> Result<()>
         macros_lib::hisysevent::function!()))?;
     let secret_key = common::build_secret_key(calling_info, db_data).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
-    let secret = Crypto::decrypt(&secret_key, secret,
-        &common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!()))?).map_err(|e| macros_lib::track_error!(e,
+    let aad = common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    let secret = Crypto::decrypt(&secret_key, secret, &aad).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))?;
     db_data.insert(column::SECRET, Value::Bytes(secret));
     Ok(())
 }
 
 fn exec_crypto(calling_info: &CallingInfo, query: &AssetMap, db_data: &mut DbMap) -> Result<()> {
-    common::check_required_tags(query, &AUTH_QUERY_ATTRS).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    common::check_required_tags(query, &AUTH_QUERY_ATTRS)?;
     let challenge = query.get_bytes_attr(&Tag::AuthChallenge)
         .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let auth_token = query.get_bytes_attr(&Tag::AuthToken)
@@ -98,9 +96,9 @@ fn exec_crypto(calling_info: &CallingInfo, query: &AssetMap, db_data: &mut DbMap
     let mut manager = arc_crypto_manager.lock().unwrap();
     match manager.find(calling_info, challenge) {
         Ok(crypto) => {
-            let secret = crypto.exec_crypt(secret,
-                &common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e,
-                    macros_lib::hisysevent::function!()))?, auth_token).map_err(|e| macros_lib::track_error!(e,
+            let aad = common::build_aad(db_data).map_err(|e| macros_lib::track_error!(e,
+                macros_lib::hisysevent::function!()))?;
+            let secret = crypto.exec_crypt(secret, &aad, auth_token).map_err(|e| macros_lib::track_error!(e,
                 macros_lib::hisysevent::function!()))?;
             db_data.insert(column::SECRET, Value::Bytes(secret));
             Ok(())
@@ -121,11 +119,9 @@ fn query_all_inner(
         1 => {
             match results[0].get(column::AUTH_TYPE) {
                 Some(Value::Number(auth_type)) if *auth_type == AuthType::Any as u32 => {
-                    exec_crypto(calling_info, query, &mut results[0]).map_err(|e| macros_lib::track_error!(e,
-                        macros_lib::hisysevent::function!()))?;
+                    exec_crypto(calling_info, query, &mut results[0])?;
                 },
-                _ => decrypt_secret(calling_info, &mut results[0]).map_err(|e| macros_lib::track_error!(e,
-                    macros_lib::hisysevent::function!()))?,
+                _ => decrypt_secret(calling_info, &mut results[0])?,
             };
             if common::need_upgrade(&results[0]).map_err(|e| macros_lib::track_error!(e,
                 macros_lib::hisysevent::function!()))? {
@@ -231,12 +227,9 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
     valid_tags.extend_from_slice(&common::ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&common::ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
-    common::check_tag_validity(attributes, &valid_tags).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    check_group_validity(attributes, calling_info).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
-    common::check_value_validity(attributes).map_err(|e| macros_lib::track_error!(e,
-        macros_lib::hisysevent::function!()))?;
+    common::check_tag_validity(attributes, &valid_tags)?;
+    check_group_validity(attributes, calling_info)?;
+    common::check_value_validity(attributes)?;
     common::check_system_permission(attributes).map_err(|e| macros_lib::track_error!(e,
         macros_lib::hisysevent::function!()))
 }
@@ -259,11 +252,9 @@ pub(crate) fn query(calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<
                 macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                     ErrCode::Unsupported, "[FATAL]Batch secret query is not supported.")
             } else {
-                query_all(calling_info, &db_data, query).map_err(|e| macros_lib::track_error!(e,
-                    macros_lib::hisysevent::function!()))
+                query_all(calling_info, &db_data, query)
             }
         },
-        _ => query_attrs(calling_info, &db_data, query).map_err(|e| macros_lib::track_error!(e,
-            macros_lib::hisysevent::function!())),
+        _ => query_attrs(calling_info, &db_data, query),
     }
 }
