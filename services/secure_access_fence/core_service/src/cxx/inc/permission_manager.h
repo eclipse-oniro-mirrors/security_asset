@@ -54,7 +54,8 @@ public:
         std::vector<VerifyTicketInfo> &ticketInfos);
 
 private:
-    int32_t BatchQueryCommandPermission(const std::vector<CommandInfo> &cmds, std::vector<CommandPermissionInfo> &cmdPermissionInfos);
+    int32_t BatchQueryCommandPermission(const std::vector<CommandInfo> &cmds,
+        std::vector<CommandPermissionInfo> &cmdPermissionInfos);
 
     int32_t ProcessOperations(const std::vector<OperationInfo> &operationInfos,
         std::vector<CommandInfo> &cliInfos, std::vector<std::string> &apiPermissions);
