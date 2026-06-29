@@ -19,8 +19,6 @@ ohos_rust_static_library("asset_definition") {
 
   external_deps = [ "hisysevent:hisysevent_rust" ]
 
-  branch_protector_ret = "pac_ret"
-
   crate_name = "asset_definition"
   crate_type = "rlib"
   subsystem_name = "security"

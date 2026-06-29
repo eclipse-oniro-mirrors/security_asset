@@ -50,7 +50,6 @@ ohos_rust_shared_library("asset_service") {
     "ylong_json:lib",
   ]
 
-  branch_protector_ret = "pac_ret"
   sanitize = {
     integer_overflow = true
     cfi = true

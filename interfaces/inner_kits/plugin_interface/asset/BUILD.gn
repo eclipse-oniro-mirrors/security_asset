@@ -28,7 +28,6 @@ ohos_rust_shared_library("asset_plugin_interface_rust") {
     "ylong_runtime:ylong_runtime",
   ]
 
-  branch_protector_ret = "pac_ret"
   sanitize = {
     integer_overflow = true
     cfi = true

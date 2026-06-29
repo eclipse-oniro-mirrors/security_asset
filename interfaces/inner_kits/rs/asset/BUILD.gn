@@ -29,7 +29,6 @@ ohos_rust_shared_library("asset_sdk_rust") {
     "samgr:samgr_rust",
   ]
 
-  branch_protector_ret = "pac_ret"
   sanitize = {
     integer_overflow = true
     cfi = true
