@@ -14,18 +14,18 @@
  */
 
 #include "secure_access_fence_service.h"
-
+#include "permission_manager.h"
 #include "wrapper.rs.h"
 #include <chrono>
 #include <vector>
 #include <string>
-
 #include "ipc_skeleton.h"
 #include "iservice_registry.h"
 #include "secure_access_fence_type.h"
 #include "cli_tool_mgr_client.h"
 #include "saf_log.h"
 #include "saf_result_code.h"
+#include "saf_defines.h"
 #include "access_token_wrapper.h"
 
 namespace OHOS {
@@ -34,6 +34,8 @@ namespace SAF {
 using namespace CliTool;
 
 constexpr const char* CLI_TOOL_PERMISSION = "ohos.permission.QUERY_CLI_TOOL";
+constexpr const char* VERIFY_TOOL_PERMISSION = "ohos.permission.QUERY_TOOL_PERMISSIONS";
+constexpr const char* MANAGE_TOOL_PERMISSION = "ohos.permission.MANAGE_TOOL_RUNTIME_PERMISSIONS";
 const int32_t INVALID_OS_ACCOUNT_ID = 99999;
 
 ErrCode BatchQueryCommandPermission(
@@ -83,6 +85,74 @@ ErrCode BatchQueryCommandPermission(
         INVALID_OS_ACCOUNT_ID, rust::String("BatchQueryCommandPermission")
     );
     resultCode = 0;
+    return SAF_SUCCESS;
+}
+
+ErrCode RequestToolPermissions(
+    const PermissionQuery &permissionQuery,
+    PermissionQueryResult &permissionQueryResult,
+    int32_t &resultCode)
+{
+    auto startTime = std::chrono::steady_clock::now();
+    if (!CheckPermission(VERIFY_TOOL_PERMISSION)) {
+        LOGE("Permission denied! Need %{public}s", VERIFY_TOOL_PERMISSION);
+        resultCode = SAF_ERR_PERMISSION_DENIED;
+        return SAF_SUCCESS;
+    }
+    
+    if (permissionQuery.callerTokenId < 0) {
+        LOGE("RequestToolPermissions failed, callerTokenId is invalid = %{public}d", permissionQuery.callerTokenId);
+        resultCode = SAF_ERR_ARG_INVALID;
+        return SAF_SUCCESS;
+    }
+
+    auto manager = PermissionManager::GetInstance();
+    IF_TRUE_LOGE_RETURN_ERR(manager == nullptr, SAF_ERR_NULL_PTR, "get permissionManager instance failed");
+    int32_t ret = manager->RequestToolPermissions(permissionQuery, permissionQueryResult);
+    if (ret != SAF_SUCCESS) {
+        LOGE("RequestToolPermissions failed, ret=%{public}d", ret);
+        resultCode = ret;
+        return SAF_SUCCESS;
+    }
+
+    resultCode = SAF_SUCCESS;
+    auto endTime = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+    int32_t elapsedTime = static_cast<int32_t>(duration.count());
+    notify_performance_metrics(static_cast<int32_t>(permissionQuery.operationInfo.size()), elapsedTime,
+        INVALID_OS_ACCOUNT_ID, rust::String("RequestToolPermissions")
+    );
+    return SAF_SUCCESS;
+}
+
+ErrCode GrantToolPermissionsByUser(
+    const std::vector<UserAuthResult> &userAuthResults,
+    std::vector<VerifyTicketInfo> &ticketInfos,
+    int32_t &resultCode)
+{
+    auto startTime = std::chrono::steady_clock::now();
+    if (!CheckPermission(MANAGE_TOOL_PERMISSION)) {
+        LOGE("Permission denied! Need %{public}s", MANAGE_TOOL_PERMISSION);
+        resultCode = SAF_ERR_PERMISSION_DENIED;
+        return SAF_SUCCESS;
+    }
+
+    auto manager = PermissionManager::GetInstance();
+    IF_TRUE_LOGE_RETURN_ERR(manager == nullptr, SAF_ERR_NULL_PTR, "get permissionManager instance failed");
+    int32_t ret = manager->GrantToolPermissionsByUser(userAuthResults, ticketInfos);
+    if (ret != SAF_SUCCESS) {
+        LOGE("GrantToolPermissionsByUser failed, ret=%{public}d", ret);
+        resultCode = ret;
+        return SAF_SUCCESS;
+    }
+
+    resultCode = SAF_SUCCESS;
+    auto endTime = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+    int32_t elapsedTime = static_cast<int32_t>(duration.count());
+    notify_performance_metrics(static_cast<int32_t>(userAuthResults.size()), elapsedTime,
+        INVALID_OS_ACCOUNT_ID, rust::String("GrantToolPermissionsByUser")
+    );
     return SAF_SUCCESS;
 }
 

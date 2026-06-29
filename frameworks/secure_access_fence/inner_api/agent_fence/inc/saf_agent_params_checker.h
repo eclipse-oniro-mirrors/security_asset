@@ -36,6 +36,11 @@ int32_t CheckBatchVerifyTicketParams(
     const std::string &callerId,
     const std::vector<VerifyTicketInfo> &verifyInfos);
 
+int32_t CheckVerifyTicketParams(
+    int32_t osAccountId,
+    const std::string &callerId,
+    const std::string &verifyInfo);
+
 } // namespace OHOS::Security::SAF
 
 #ifdef __cplusplus

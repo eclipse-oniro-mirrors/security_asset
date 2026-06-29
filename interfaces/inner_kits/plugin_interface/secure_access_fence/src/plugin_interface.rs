@@ -39,6 +39,9 @@ pub enum EventType {
     /// Statistics for error/failure operations.
     /// Used for recording error information like error message, error code, function name, etc.
     StatisticsError = 3,
+
+    /// Get policy authorization status for permissions
+    GetPolicyAuthStatus = 4,
 }
 
 /// Performance metrics parameter keys for StatisticsMetrics EventType.
@@ -73,6 +76,18 @@ pub const PERFORMANCE_METRICS_KEYS: PerformanceMetricsKeys =
     PerformanceMetricsKeys { item_count: "ItemCount", elapsed_time: "ElapsedTime", function_name: "FunctionName",
     os_account_id: "osAccountId"
 };
+
+/// Policy authorization status parameter keys for GetPolicyAuthStatus EventType.
+pub struct PolicyAuthStatusKeys {
+    /// The key for output auth statuses list.
+    pub permissions: &'static str,
+    /// The key for output auth statuses list.
+    pub auth_statuses: &'static str,
+}
+
+/// PolicyAuthStatusKeys constant for GetPolicyAuthStatus EventType.
+pub const POLICY_AUTH_STATUS_KEYS: PolicyAuthStatusKeys =
+    PolicyAuthStatusKeys { permissions: "Permissions", auth_statuses: "AuthStatuses"};
 
 /// Global constant instance for error metrics parameter keys.
 /// Use this to access standardized parameter names for StatisticsError events.

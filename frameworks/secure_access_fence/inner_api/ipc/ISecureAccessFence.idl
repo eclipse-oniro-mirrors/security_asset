@@ -48,6 +48,14 @@ interface OHOS.Security.SAF.ISecureAccessFence {
         [out] int resultCode
     );
 
+    [ipccode 3] void VerifyTicket(
+        [in] int osAccountId,
+        [in] String callerId,
+        [in] String verifyInfo,
+        [out] List<CliInfo> cliInfos,
+        [out] int resultCode
+    );
+
     /**
      * @brief Batch query command permissions.
      * @param cmds List of commands to query (input parameter).
@@ -58,5 +66,15 @@ interface OHOS.Security.SAF.ISecureAccessFence {
         [in] List<CommandInfo> cmds,
         [out] List<CommandPermissionInfo> cmdPermissions,
         [out] int resultCode
+    );
+
+    [ipccode 501] int RequestToolPermissions(
+        [in] PermissionQuery permissionQuery,
+        [out] PermissionQueryResult permissionQueryResult
+    );
+
+    [ipccode 502] int GrantToolPermissionsByUser(
+        [in] List<UserAuthResult> userAuthResult,
+        [out] List<VerifyTicketInfo> ticketInfo
     );
 };

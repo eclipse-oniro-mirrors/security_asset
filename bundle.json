@@ -41,6 +41,7 @@
                 "access_token",
                 "bounds_checking_function",
                 "bundle_framework",
+                "cJSON",
                 "common_event_service",
                 "c_utils",
                 "data_share",

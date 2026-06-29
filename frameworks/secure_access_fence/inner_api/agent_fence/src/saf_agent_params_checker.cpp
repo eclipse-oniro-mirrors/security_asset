@@ -38,7 +38,6 @@ int32_t CheckBatchGenerateTicketParams(
         LOGE("invalid messages size: %{public}zu", messages.size());
         return SAF_ERR_INVALID_ARRAY_LEN;
     }
-
     return SAF_SUCCESS;
 }
 
@@ -61,7 +60,23 @@ int32_t CheckBatchVerifyTicketParams(
         LOGE("invalid verifyInfos size: %{public}zu", verifyInfos.size());
         return SAF_ERR_INVALID_ARRAY_LEN;
     }
+    return SAF_SUCCESS;
+}
 
+int32_t CheckVerifyTicketParams(
+    int32_t osAccountId,
+    const std::string &callerId,
+    const std::string &verifyInfo)
+{
+    if (callerId.empty() || verifyInfo.empty()) {
+        LOGE("callerId or verifyInfo is empty");
+        return SAF_ERR_ARG_EMPTY;
+    }
+
+    if (osAccountId < MIN_OS_ACCOUNT_ID) {
+        LOGE("invalid osAccountId: %{public}d", osAccountId);
+        return SAF_ERR_INVALID_OS_ACCOUNT_ID;
+    }
     return SAF_SUCCESS;
 }
 
@@ -85,7 +100,6 @@ int32_t CheckBatchGenerateTicketParamsC(int32_t osAccountId, const char* callerI
         LOGE("invalid messagesCount: %{public}zu", messagesCount);
         return SAF_ERR_INVALID_ARRAY_LEN;
     }
-
     return SAF_SUCCESS;
 }
 
@@ -105,7 +119,7 @@ int32_t CheckBatchVerifyTicketParamsC(int32_t osAccountId, const char* callerId,
         LOGE("invalid verifyInfosCount: %{public}zu", verifyInfosCount);
         return SAF_ERR_INVALID_ARRAY_LEN;
     }
-
     return SAF_SUCCESS;
 }
+
 }

@@ -21,7 +21,10 @@ group("asset_component") {
   ]
 
   if (support_jsapi) {
-    deps += [ "frameworks/asset/js/napi:asset_napi" ]
+    deps += [
+      "frameworks/asset/js/napi:asset_napi",
+      "frameworks/secure_access_fence/js/napi:abilitytoolaccessctrl_napi"
+    ]
   }
 
   if (asset_build_mode == "full") {

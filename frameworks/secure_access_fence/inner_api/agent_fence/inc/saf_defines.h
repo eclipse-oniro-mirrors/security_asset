@@ -49,5 +49,35 @@ do {                                                        \
     }                                                       \
 } while (0)
 
+#define IF_ERROR_LOGW_CONTINUE(ret, errMsg, ...)            \
+if (ret != SAF_SUCCESS) {                                   \
+    LOGW(errMsg, ##__VA_ARGS__);                            \
+    continue;                                               \
+}
+
+#define IF_ERROR_LOGE_RETURN(ret, errMsg, ...)              \
+do {                                                        \
+    decltype(ret) _expr_result = (ret);                     \
+    if ((_expr_result) != SAF_SUCCESS) {                    \
+        LOGW(errMsg, ##__VA_ARGS__);                        \
+        return _expr_result;                                \
+    }                                                       \
+} while (0)
+
+#define IF_FALSE_LOGE_RETURN_ERR(ret, errCode, errMsg, ...) \
+do {                                                        \
+    decltype(ret) _expr_result = (ret);                     \
+    if ((!_expr_result)) {                                  \
+        LOGE(errMsg, ##__VA_ARGS__);                        \
+        return errCode;                                     \
+    }                                                       \
+} while (0)
+
+#define IF_TRUE_LOGW_CONTINUE(ret, errMsg, ...)             \
+if (ret) {                                                  \
+    LOGW(errMsg, ##__VA_ARGS__);                            \
+    continue;                                               \
+}
+
 } // namespace OHOS::Security::SAF
 #endif // SAF_DEFINES_H

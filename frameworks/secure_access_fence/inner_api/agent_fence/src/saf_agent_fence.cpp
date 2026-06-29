@@ -152,6 +152,62 @@ int32_t SafAgentFence::BatchVerifyTicket(
     return resultCode;
 }
 
+int32_t SafAgentFence::RequestToolPermissions(
+    const PermissionQuery& permissionQuery,
+    PermissionQueryResult& permissionQueryResult)
+{
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+    int32_t resultCode = SAF_SUCCESS;
+    int32_t ret = HandleIpcError(proxy,
+        [&]() { return proxy->RequestToolPermissions(permissionQuery, permissionQueryResult, resultCode); });
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+    return resultCode;
+}
+
+int32_t SafAgentFence::GrantToolPermissionsByUser(
+    const std::vector<UserAuthResult>& userAuthResult,
+    std::vector<VerifyTicketInfo>& ticketInfo)
+{
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+    int32_t resultCode = SAF_SUCCESS;
+    int32_t ret = HandleIpcError(proxy,
+        [&]() { return proxy->GrantToolPermissionsByUser(userAuthResult, ticketInfo, resultCode); });
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+    return resultCode;
+}
+
+int32_t SafAgentFence::VerifyTicket(
+    int32_t osAccountId,
+    const std::string &callerId,
+    const std::string &verifyInfo,
+    std::vector<CliInfo> &cliInfos)
+{
+    LOGI("SafAgentFence::VerifyTicket enter");
+
+    int32_t checkResult = CheckVerifyTicketParams(osAccountId, callerId, verifyInfo);
+    if (checkResult != SAF_SUCCESS) {
+        LOGE("VerifyTicket params check failed, ret=%{public}d", checkResult);
+        return checkResult;
+    }
+
+    int32_t resultCode = SAF_SUCCESS;
+
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+
+    int32_t ret = HandleIpcError(proxy, [&]() {
+        return proxy->VerifyTicket(osAccountId, callerId, verifyInfo, cliInfos, resultCode);
+    });
+    if (ret != SAF_SUCCESS) {
+        return ret;
+    }
+
+    LOGI("SafAgentFence::VerifyTicket finished, resultCode = 0x%{public}x", resultCode);
+    return resultCode;
+}
+
 } // namespace SAF
 } // namespace Security
 } // namespace OHOS

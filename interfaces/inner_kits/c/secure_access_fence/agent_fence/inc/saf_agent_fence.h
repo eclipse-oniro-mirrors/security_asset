@@ -69,6 +69,43 @@ public:
         const std::string &callerId,
         const std::vector<VerifyTicketInfo> &verifyInfos,
         std::vector<int32_t> &verifyRes);
+
+    /**
+     * @brief Verify ticket for access control.
+     *
+     * @param osAccountId The OS account ID, >= 100.
+     * @param callerId The token id.
+     * @param verifyInfos The VerifyTicketInfo structures to verify.
+     * @param verifyRes Output of verification results.
+     * @return Returns 0 on success, or error code on failure.
+     */
+    int32_t VerifyTicket(
+        int32_t osAccountId,
+        const std::string &callerId,
+        const std::string &verifyInfo,
+        std::vector<CliInfo> &cliInfos);
+
+    /**
+     * @brief Request permissions for certain CLI or API tools.
+     *
+     * @param PermissionQuery The query for requesting permissions.
+     * @param PermissionQueryResult The result for query.
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t RequestToolPermissions(
+        const PermissionQuery& permissionQuery,
+        PermissionQueryResult& permissionQueryResult);
+
+    /**
+     * @brief Grant permissions for certain CLI or API tools.
+     *
+     * @param userAuthResult The vector of the results of user authorization.
+     * @param ticketInfo The vector of the tickets corresponding to each userAuthResult.
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t GrantToolPermissionsByUser(
+        const std::vector<UserAuthResult>& userAuthResult,
+        std::vector<VerifyTicketInfo>& ticketInfo);
 };
 
 }

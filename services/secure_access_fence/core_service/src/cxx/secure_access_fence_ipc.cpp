@@ -15,7 +15,6 @@
 
 #include "secure_access_fence_ipc.h"
 #include "secure_access_fence_service.h"
-
 #include "wrapper.rs.h"
 #include <unordered_map>
 #include <chrono>
@@ -52,13 +51,14 @@ int32_t HandleBatchQueryCommandPermission(MessageParcel& data, MessageParcel& re
     }
     std::vector<CommandPermissionInfo> cmdPermissions;
     int32_t resultCode;
+    // errCode恒为success.业务结果用resultCode
     ErrCode errCode = BatchQueryCommandPermission(cmds, cmdPermissions, resultCode);
     if (!reply.WriteInt32(errCode)) {
         LOGE("Write Int32 failed!");
         return SAF_ERR_IPC_WRITE_DATA_FAIL;
     }
     if (!SUCCEEDED(errCode)) {
-        return SAF_SUCCESS;
+        return SAF_SUCCESS; // 接口返回成功；调用方需要从reply中读取int32，判断IPC是否成功。
     }
     if (cmdPermissions.size() > static_cast<size_t>(VECTOR_MAX_SIZE)) {
         LOGE("The list size exceeds the limit!");
@@ -81,10 +81,84 @@ int32_t HandleBatchQueryCommandPermission(MessageParcel& data, MessageParcel& re
     return SAF_SUCCESS;
 }
 
+int32_t HandleRequestToolPermission(MessageParcel& data, MessageParcel& reply)
+{
+    PermissionQuery permissionQuery;
+    if (PermissionQueryBlockUnmarshalling(data, permissionQuery) != ERR_NONE) {
+        LOGE("Read permissionQuery failed!");
+        return SAF_ERR_IPC_READ_DATA_FAIL;
+    }
+    PermissionQueryResult permissionQueryResult;
+    int32_t resultCode;
+    ErrCode errCode = RequestToolPermissions(permissionQuery, permissionQueryResult, resultCode);
+    if (!reply.WriteInt32(errCode)) {
+        LOGE("Write Int32 failed!");
+        return SAF_ERR_IPC_WRITE_DATA_FAIL;
+    }
+    if (!SUCCEEDED(errCode)) {
+        return SAF_SUCCESS; // 接口返回成功；调用方需要从reply中读取int32，判断IPC是否成功。
+    }
+    if (PermissionQueryResultBlockMarshalling(reply, permissionQueryResult) != ERR_NONE) {
+        LOGE("Write permissionQueryResult failed!");
+        return SAF_ERR_IPC_WRITE_DATA_FAIL;
+    }
+    if (!reply.WriteInt32(resultCode)) {
+        LOGE("Write resultCode failed!");
+        return SAF_ERR_IPC_WRITE_DATA_FAIL;
+    }
+    return SAF_SUCCESS;
+}
+
+int32_t HandleGrantToolPermission(MessageParcel& data, MessageParcel& reply)
+{
+    std::vector<UserAuthResult> userAuthResult;
+    int32_t userAuthResultSize = data.ReadInt32();
+    if (userAuthResultSize > static_cast<int32_t>(VECTOR_MAX_SIZE)) {
+        LOGE("The vecotr/array size exceeds the security limit!");
+        return SAF_ERR_IPC_READ_DATA_FAIL;
+    }
+    for (int32_t i7 = 0; i7 < userAuthResultSize; ++i7) {
+        UserAuthResult value7;
+        if (UserAuthResultBlockUnmarshalling(data, value7) != ERR_NONE) {
+            LOGE("Read [value7] failed!");
+            return SAF_ERR_IPC_READ_DATA_FAIL;
+        }
+        userAuthResult.push_back(value7);
+    }
+    std::vector<VerifyTicketInfo> ticketInfo;
+    int32_t result;
+    ErrCode errCode = GrantToolPermissionsByUser(userAuthResult, ticketInfo, result);
+    if (!reply.WriteInt32(errCode)) {
+        LOGE("Write Int32 failed");
+        return SAF_ERR_IPC_WRITE_DATA_FAIL;
+    }
+    if (!SUCCEEDED(errCode)) {
+        return SAF_SUCCESS;  // 接口返回成功；调用方需要从reply中读取int32，判断IPC是否成功。
+    }
+    if (ticketInfo.size() > static_cast<size_t>(VECTOR_MAX_SIZE)) {
+        LOGE("The list size exceeds the security limit!");
+        return SAF_ERR_IPC_WRITE_DATA_FAIL;
+    }
+    reply.WriteInt32(ticketInfo.size());
+    for (auto it8 = ticketInfo.begin(); it8 != ticketInfo.end(); ++it8) {
+        if (VerifyTicketInfoBlockMarshalling(reply, (*it8)) != ERR_NONE) {
+            LOGE("Write [(*it8)] failed!");
+            return SAF_ERR_IPC_WRITE_DATA_FAIL;
+        }
+    }
+    if (!reply.WriteInt32(result)) {
+        LOGE("Write [result] failed!");
+        return SAF_ERR_IPC_WRITE_DATA_FAIL;
+    }
+    return SAF_SUCCESS;
+}
+
 using IpcHandler = int32_t (*)(MessageParcel& data, MessageParcel& reply);
 
 const std::unordered_map<uint32_t, IpcHandler> IPC_HANDLERS = {
     {SecureAccessFenceCode::BATCH_QUERY_COMMAND_PERMISSION, HandleBatchQueryCommandPermission},
+    {SecureAccessFenceCode::REQUEST_TOOL_PERMISSION, HandleRequestToolPermission},
+    {SecureAccessFenceCode::GRANT_TOOL_PERMISSION, HandleGrantToolPermission},
 };
 
 }
