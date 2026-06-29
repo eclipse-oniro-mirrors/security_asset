@@ -37,6 +37,8 @@ ohos_rust_shared_library("asset_plugin_interface_rust") {
     ubsan = true
   }
 
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
+
   crate_name = "asset_plugin_interface"
   crate_type = "dylib"
   subsystem_name = "security"

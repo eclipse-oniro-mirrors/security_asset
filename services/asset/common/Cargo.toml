@@ -20,7 +20,7 @@ edition = "2021"
 
 [dependencies]
 ipc = { git = "https://gitcode.com/openharmony/communication_ipc" }
-ylong_runtime = { git = "https://gitcode.com/openharmony/commonlibrary_rust_ylong_runtime.git", features = ["full"] }
+ylong_runtime = { git = "https://gitcode.com/openharmony/commonlibrary_rust_ylong_runtime.git", features = ["multi_instance_runtime", "time"] }
 
 asset_definition = { path = "../../../frameworks/asset/definition" }
 asset_log = { path = "../../../frameworks/asset/os_dependency/log" }

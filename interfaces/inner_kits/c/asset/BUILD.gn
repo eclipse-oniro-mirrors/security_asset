@@ -36,6 +36,8 @@ ohos_rust_shared_ffi("asset_sdk_ffi") {
   part_name = "asset"
 
   if (asset_build_mode == "empty") {
-    rustflags = [ "--cfg", "feature=\"AssetEmptyMode\"" ]
+    rustflags = [ "--cfg", "feature=\"AssetEmptyMode\"", "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
+  } else {
+    rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
   }
 }

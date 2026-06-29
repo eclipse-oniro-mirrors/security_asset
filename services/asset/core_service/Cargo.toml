@@ -24,7 +24,7 @@ samgr = { git = "https://gitcode.com/openharmony/systemabilitymgr_samgr.git" }
 system_ability_fwk = { git = "https://gitcode.com/openharmony/systemabilitymgr_safwk" }
 hisysevent = { git = "https://gitcode.com/openharmony/hiviewdfx_hisysevent.git" }
 ipc = { git = "https://gitcode.com/openharmony/communication_ipc" }
-ylong_runtime = { git = "https://gitcode.com/openharmony/commonlibrary_rust_ylong_runtime.git", features = ["full"] }
+ylong_runtime = { git = "https://gitcode.com/openharmony/commonlibrary_rust_ylong_runtime.git", features = ["multi_instance_runtime", "time"] }
 ylong_json = { git = "https://gitcode.com/openharmony/commonlibrary_rust_ylong_json.git" }
 
 asset_common = { path = "../common" }
