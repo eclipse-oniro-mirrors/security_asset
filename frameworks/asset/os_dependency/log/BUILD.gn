@@ -17,6 +17,8 @@ ohos_rust_static_library("asset_log") {
   sources = [ "src/lib.rs" ]
   external_deps = [ "hilog:hilog_rust" ]
 
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
+
   crate_name = "asset_log"
   crate_type = "rlib"
   subsystem_name = "security"

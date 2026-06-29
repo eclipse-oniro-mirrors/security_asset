@@ -29,6 +29,8 @@ ohos_rust_static_library("asset_crypto_manager") {
     "huks:libhukssdk",
   ]
 
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
+
   crate_name = "asset_crypto_manager"
   crate_type = "rlib"
   subsystem_name = "security"

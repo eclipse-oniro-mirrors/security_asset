@@ -17,7 +17,7 @@ import("//build/ohos.gni")
 ohos_static_library("asset_os_dependency") {
   include_dirs = [
     "inc",
-    "../../../frameworks/os_dependency/log/inc",
+    "../../../frameworks/asset/os_dependency/log/inc",
     "../../../interfaces/kits/c/asset/inc",
   ]
   sources = [

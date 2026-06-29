@@ -36,6 +36,8 @@ ohos_rust_static_library("asset_db_operator") {
     "ylong_json:lib",
   ]
 
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
+
   crate_name = "asset_db_operator"
   crate_type = "rlib"
   subsystem_name = "security"

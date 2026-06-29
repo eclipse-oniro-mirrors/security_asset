@@ -32,6 +32,8 @@ ohos_rust_static_library("asset_plugin") {
     "ylong_runtime:ylong_runtime",
   ]
 
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
+
   crate_name = "asset_plugin"
   crate_type = "rlib"
   subsystem_name = "security"

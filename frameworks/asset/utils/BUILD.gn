@@ -20,6 +20,7 @@ ohos_rust_static_library("asset_utils") {
     "../os_dependency/log:asset_log",
     "../os_dependency/openssl:asset_openssl_wrapper",
   ]
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
   crate_name = "asset_utils"
   crate_type = "rlib"
   subsystem_name = "security"
