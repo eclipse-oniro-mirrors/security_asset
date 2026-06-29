@@ -30,7 +30,6 @@ ohos_static_library("asset_os_dependency") {
     "src/system_event_wrapper.cpp",
     "src/file_operator_wrapper.cpp",
   ]
-  deps = [ "../../../frameworks/asset/os_dependency/memory:asset_mem" ]
   external_deps = [
     "ability_base:want",
     "ability_runtime:dataobs_manager",
