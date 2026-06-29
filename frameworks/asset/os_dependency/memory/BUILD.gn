@@ -28,6 +28,15 @@ ohos_static_library("asset_mem") {
     "c_utils:utils",
     "hilog:libhilog",
   ]
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
   subsystem_name = "security"
   part_name = "asset"
 }

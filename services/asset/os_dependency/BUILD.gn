@@ -56,6 +56,15 @@ ohos_static_library("asset_os_dependency") {
     "-DASSET_UPGRADE_HAP_CONFIG=${asset_split_hap_list}",
     "-DASSET_CE_UPGRADE_CONFIG=\"${asset_ce_upgrade_list}\"",
   ]
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
   subsystem_name = "security"
   part_name = "asset"
 }

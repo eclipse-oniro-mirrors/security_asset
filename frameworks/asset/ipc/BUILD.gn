@@ -21,6 +21,8 @@ ohos_rust_static_library("asset_ipc") {
   ]
   external_deps = [ "ipc:ipc_rust" ]
 
+  branch_protector_ret = "pac_ret"
+
   crate_name = "asset_ipc"
   crate_type = "rlib"
   subsystem_name = "security"

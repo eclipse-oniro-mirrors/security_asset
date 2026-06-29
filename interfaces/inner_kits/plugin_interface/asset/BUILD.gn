@@ -28,6 +28,16 @@ ohos_rust_shared_library("asset_plugin_interface_rust") {
     "ylong_runtime:ylong_runtime",
   ]
 
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+
   crate_name = "asset_plugin_interface"
   crate_type = "dylib"
   subsystem_name = "security"
