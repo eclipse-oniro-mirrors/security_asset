@@ -133,11 +133,14 @@ pub fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: 
     logi!("[Wrapper cxx_batch_generate_ticket] os_account_id = {}, caller_id = {}, messages_count = {}",
         os_account_id, caller_id, messages.len());
     match ticket_operation::batch_generate_ticket(os_account_id, caller_id, messages) {
-        Ok(v) => v.into_iter().map(|r| ffi::CxxVerifyTicketInfo {
-            message: r.message,
-            challenge: r.challenge,
-            ticket: r.ticket,
-        }).collect(),
+        Ok(v) => {
+            *result_code = 0;
+            v.into_iter().map(|r| ffi::CxxVerifyTicketInfo {
+                message: r.message,
+                challenge: r.challenge,
+                ticket: r.ticket,
+            }).collect()
+        }
         Err(e) => {
             notify_error(
                 format!("batch_generate_ticket failed: {}", e.code),

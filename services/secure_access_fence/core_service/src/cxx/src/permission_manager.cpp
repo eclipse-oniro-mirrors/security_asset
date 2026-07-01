@@ -78,6 +78,8 @@ constexpr char JSON_EMPTY_STRING[] = "";
 
 constexpr char JSON_ESCAPED_QUOTE[] = "\\\"";
 constexpr char JSON_ESCAPED_BACKSLASH[] = "\\\\";
+constexpr char JSON_CHAR_QUOTE = '"';
+constexpr char JSON_CHAR_BACKSLASH = '\\';
 
 constexpr char JSON_WRAPPER_MESSAGE_PREFIX[] = "{\"message\":\"";
 constexpr char JSON_WRAPPER_CHALLENGE_PREFIX[] = "\",\"challenge\":\"";
@@ -138,6 +140,9 @@ int32_t PermissionManager::BatchQueryCommandPermission(const std::vector<Command
         permInfo.cmd.subCmd = cliPerm.cmd.subCommand;
         permInfo.permissions = cliPerm.permissions;
         permInfo.queryRet = cliPerm.queryRet;
+        IF_ERROR_LOGE_RETURN(cliPerm.queryRet,
+            "BatchQueryPermissionBySubCommand failed, cmdName=%{public}s, subCmd=%{public}s, queryRet=%{public}d",
+                cliPerm.cmd.toolName.c_str(), cliPerm.cmd.subCommand.c_str(), cliPerm.queryRet);
         cmdPermissionInfos.push_back(permInfo);
     }
     return SAF_SUCCESS;
@@ -149,7 +154,7 @@ int32_t PermissionManager::ProcessOperations(const std::vector<OperationInfo> &o
     for (const auto &opInfo : operationInfos) {
         switch (opInfo.operationType) {
             case OperationType::CLI: {
-                if (opInfo.cliCmdInfo.cmdName.empty() || opInfo.cliCmdInfo.subCmd.empty()) {
+                if (opInfo.cliCmdInfo.cmdName.empty()) {
                     LOGE("ProcessOperations failed, cliCmdInfo is invalid");
                     return SAF_ERR_ARG_INVALID;
                 }
@@ -243,9 +248,9 @@ int32_t PermissionManager::GetPolicyAuthStatus(const std::vector<std::string> &p
     IF_ERROR_LOGE_RETURN(ret, "get_policy_auth_status failed, ret = %{public}d", ret);
     
     LOGI("get_policy_auth_status success, rustPolicyStatuses size = %{public}zu", rustPolicyStatuses.size());
-    for (size_t i = 0; i < rustPolicyStatuses.size(); ++i) {
-        LOGI("GetPolicyAuthStatus : rustPolicyStatuses[%{public}zu] = %{public}d", i, rustPolicyStatuses[i]);
-        policyStatuses.push_back(rustPolicyStatuses[i]);
+    for (const auto &rustPolicyStatus : rustPolicyStatuses) {
+        LOGI("GetPolicyAuthStatus : rustPolicyStatus = %{public}d", rustPolicyStatus);
+        policyStatuses.push_back(rustPolicyStatus);
     }
     return SAF_SUCCESS;
 }
@@ -272,6 +277,7 @@ int32_t PermissionManager::MergePermissionResults(const std::vector<PermissionIn
         if (policyStatuses[i] < static_cast<int32_t>(PolicyStatus::NOT_EXIST) ||
             policyStatuses[i] > static_cast<int32_t>(PolicyStatus::REMOTE_RESTRICTED)) {
             LOGE("Invalid policyStatus[%{public}zu]: %{public}d", i, policyStatuses[i]);
+            return SAF_ERROR;
         }
         // 聚合ATM的PermissionStatus和策略文件的PolicyStatus，得到AuthStatus
         bool result = getAuthStatus(info.permissionStatus, static_cast<PolicyStatus>(policyStatuses[i]), outStatus);
@@ -291,56 +297,197 @@ int32_t PermissionManager::MergePermissionResults(const std::vector<PermissionIn
     return SAF_SUCCESS;
 }
 
-int32_t PermissionManager::SerializeTicketMessageInfo(const TicketMessageInfo &ticketMessageInfo, std::string &message)
+static int32_t AddPermissionsToArray(const std::vector<std::string> &permissions, cJSON *permArray)
+{
+    for (const auto &permission : permissions) {
+        cJSON *permItem = cJSON_CreateString(permission.c_str());
+        if (permItem == nullptr) {
+            LOGE("Create permItem string failed");
+            return SAF_ERR_NULL_PTR;
+        }
+        if (!cJSON_AddItemToArray(permArray, permItem)) {
+            LOGE("Add permItem to array failed");
+            cJSON_Delete(permItem);
+            return SAF_ERR_NULL_PTR;
+        }
+    }
+    return SAF_SUCCESS;
+}
+
+static int32_t BuildCliInfoObject(const CommandPermissionInfo &cliInfo, cJSON **cliInfoObjOut)
+{
+    cJSON *cliInfoObj = cJSON_CreateObject();
+    if (cliInfoObj == nullptr) {
+        LOGE("Create cliInfoObj failed");
+        return SAF_ERR_NULL_PTR;
+    }
+
+    if (!cJSON_AddStringToObject(cliInfoObj, JSON_KEY_CLI_CMD_NAME, cliInfo.cmd.cmdName.c_str())) {
+        LOGE("Add cli cmdName failed");
+        cJSON_Delete(cliInfoObj);
+        return SAF_ERR_NULL_PTR;
+    }
+
+    if (!cJSON_AddStringToObject(cliInfoObj, JSON_KEY_SUB_CLI_CMD_NAME, cliInfo.cmd.subCmd.c_str())) {
+        LOGE("Add sub cmdName failed");
+        cJSON_Delete(cliInfoObj);
+        return SAF_ERR_NULL_PTR;
+    }
+
+    cJSON *permArray = cJSON_CreateArray();
+    if (permArray == nullptr) {
+        LOGE("Create permArray failed");
+        cJSON_Delete(cliInfoObj);
+        return SAF_ERR_NULL_PTR;
+    }
+
+    int32_t ret = AddPermissionsToArray(cliInfo.permissions, permArray);
+    if (ret != SAF_SUCCESS) {
+        cJSON_Delete(permArray);
+        cJSON_Delete(cliInfoObj);
+        return ret;
+    }
+
+    if (!cJSON_AddItemToObject(cliInfoObj, JSON_KEY_PERMISSION_LIST, permArray)) {
+        LOGE("Add permission list to cliInfoObj failed");
+        cJSON_Delete(permArray);
+        cJSON_Delete(cliInfoObj);
+        return SAF_ERR_NULL_PTR;
+    }
+
+    *cliInfoObjOut = cliInfoObj;
+    return SAF_SUCCESS;
+}
+
+static int32_t AddCliInfosToArray(const std::vector<CommandPermissionInfo> &cliInfos, cJSON *cliInfosArray)
+{
+    cJSON *cliInfoObj = nullptr;
+    int32_t ret = SAF_SUCCESS;
+
+    for (const auto &cliInfo : cliInfos) {
+        ret = BuildCliInfoObject(cliInfo, &cliInfoObj);
+        if (ret != SAF_SUCCESS) {
+            break;
+        }
+
+        if (!cJSON_AddItemToArray(cliInfosArray, cliInfoObj)) {
+            LOGE("Add cliInfoObj to array failed");
+            ret = SAF_ERR_NULL_PTR;
+            break;
+        }
+        cliInfoObj = nullptr;
+    }
+
+    if (cliInfoObj != nullptr) {
+        cJSON_Delete(cliInfoObj);
+    }
+    return ret;
+}
+
+static int32_t BuildCliInfosArray(const TicketMessageInfo &ticketMessageInfo, cJSON *root)
+{
+    cJSON *cliInfosArray = cJSON_CreateArray();
+    if (cliInfosArray == nullptr) {
+        LOGE("Create cliInfosArray failed");
+        return SAF_ERR_NULL_PTR;
+    }
+
+    int32_t ret = AddCliInfosToArray(ticketMessageInfo.cliInfos, cliInfosArray);
+    if (ret != SAF_SUCCESS) {
+        cJSON_Delete(cliInfosArray);
+        return ret;
+    }
+
+    if (!cJSON_AddItemToObject(root, JSON_KEY_CLI_INFOS, cliInfosArray)) {
+        LOGE("Add cliInfosArray to root failed");
+        cJSON_Delete(cliInfosArray);
+        return SAF_ERR_NULL_PTR;
+    }
+    return SAF_SUCCESS;
+}
+
+static int32_t BuildApiPermArray(const TicketMessageInfo &ticketMessageInfo, cJSON *root)
+{
+    cJSON *apiPermArray = cJSON_CreateArray();
+    if (apiPermArray == nullptr) {
+        LOGE("Create apiPermArray failed");
+        return SAF_ERR_NULL_PTR;
+    }
+
+    int32_t ret = AddPermissionsToArray(ticketMessageInfo.apiPermissions, apiPermArray);
+    if (ret != SAF_SUCCESS) {
+        cJSON_Delete(apiPermArray);
+        return ret;
+    }
+
+    if (!cJSON_AddItemToObject(root, JSON_KEY_API_PERMISSIONS, apiPermArray)) {
+        LOGE("Add apiPermArray to root failed");
+        cJSON_Delete(apiPermArray);
+        return SAF_ERR_NULL_PTR;
+    }
+    return SAF_SUCCESS;
+}
+
+static int32_t AddBasicFieldsToRoot(cJSON *root, const TicketMessageInfo &ticketMessageInfo)
+{
+    if (!cJSON_AddNumberToObject(root, JSON_KEY_CALLER_TOKEN_ID, ticketMessageInfo.callerTokenId) ||
+        !cJSON_AddNumberToObject(root, JSON_KEY_START_TIME, static_cast<double>(ticketMessageInfo.startTime)) ||
+        !cJSON_AddNumberToObject(root, JSON_KEY_TICKET_EXPIRE_TIME_MS,
+            static_cast<double>(ticketMessageInfo.ticketExpireTimeMs)) ||
+        !cJSON_AddStringToObject(root, JSON_KEY_REMOTE_INFO, JSON_EMPTY_STRING)) {
+        LOGE("Add basic fields to root failed");
+        return SAF_ERR_NULL_PTR;
+    }
+    return SAF_SUCCESS;
+}
+
+static int32_t BuildJsonRoot(const TicketMessageInfo &ticketMessageInfo, cJSON **rootOut)
 {
     cJSON *root = cJSON_CreateObject();
-    IF_TRUE_LOGE_RETURN_ERR(root == nullptr, SAF_ERR_NULL_PTR, "Create cJSON object failed");
-
-    if (!cJSON_AddNumberToObject(root, JSON_KEY_CALLER_TOKEN_ID, ticketMessageInfo.callerTokenId)) {
-        cJSON_Delete(root);
+    if (root == nullptr) {
+        LOGE("Create cJSON root object failed");
         return SAF_ERR_NULL_PTR;
     }
 
-    cJSON *cliInfosArray = cJSON_CreateArray();
-    IF_TRUE_LOGE_RETURN_ERR(cliInfosArray == nullptr, SAF_ERR_NULL_PTR, "Create cJSON array failed");
-    for (size_t i = 0; i < ticketMessageInfo.cliInfos.size(); ++i) {
-        cJSON *cliInfoObj = cJSON_CreateObject();
-        IF_TRUE_LOGE_RETURN_ERR(cliInfoObj == nullptr, SAF_ERR_NULL_PTR, "Create cJSON object failed");
-
-        const CommandPermissionInfo &cliInfo = ticketMessageInfo.cliInfos[i];
-        cJSON_AddStringToObject(cliInfoObj, JSON_KEY_CLI_CMD_NAME, cliInfo.cmd.cmdName.c_str());
-        cJSON_AddStringToObject(cliInfoObj, JSON_KEY_SUB_CLI_CMD_NAME, cliInfo.cmd.subCmd.c_str());
-
-        cJSON *permArray = cJSON_CreateArray();
-        IF_TRUE_LOGE_RETURN_ERR(permArray == nullptr, SAF_ERR_NULL_PTR, "Create cJSON array failed");
-        for (size_t j = 0; j < cliInfo.permissions.size(); ++j) {
-            cJSON_AddItemToArray(permArray, cJSON_CreateString(cliInfo.permissions[j].c_str()));
-        }
-        cJSON_AddItemToObject(cliInfoObj, JSON_KEY_PERMISSION_LIST, permArray);
-        cJSON_AddItemToArray(cliInfosArray, cliInfoObj);
+    int32_t ret = BuildCliInfosArray(ticketMessageInfo, root);
+    if (ret != SAF_SUCCESS) {
+        cJSON_Delete(root);
+        return ret;
     }
-    cJSON_AddItemToObject(root, JSON_KEY_CLI_INFOS, cliInfosArray);
 
-    cJSON *apiPermArray = cJSON_CreateArray();
-    IF_TRUE_LOGE_RETURN_ERR(apiPermArray == nullptr, SAF_ERR_NULL_PTR, "Create cJSON array failed");
-    for (size_t i = 0; i < ticketMessageInfo.apiPermissions.size(); ++i) {
-        cJSON_AddItemToArray(apiPermArray, cJSON_CreateString(ticketMessageInfo.apiPermissions[i].c_str()));
+    ret = BuildApiPermArray(ticketMessageInfo, root);
+    if (ret != SAF_SUCCESS) {
+        cJSON_Delete(root);
+        return ret;
     }
-    cJSON_AddItemToObject(root, JSON_KEY_API_PERMISSIONS, apiPermArray);
 
-    cJSON_AddNumberToObject(root, JSON_KEY_START_TIME, static_cast<double>(ticketMessageInfo.startTime));
-    cJSON_AddNumberToObject(root, JSON_KEY_TICKET_EXPIRE_TIME_MS,
-        static_cast<double>(ticketMessageInfo.ticketExpireTimeMs));
-    cJSON_AddStringToObject(root, JSON_KEY_REMOTE_INFO, JSON_EMPTY_STRING);
+    ret = AddBasicFieldsToRoot(root, ticketMessageInfo);
+    if (ret != SAF_SUCCESS) {
+        cJSON_Delete(root);
+        return ret;
+    }
+
+    *rootOut = root;
+    return SAF_SUCCESS;
+}
+
+int32_t PermissionManager::SerializeTicketMessageInfo(const TicketMessageInfo &ticketMessageInfo, std::string &message)
+{
+    cJSON *root = nullptr;
+    int32_t ret = BuildJsonRoot(ticketMessageInfo, &root);
+    if (ret != SAF_SUCCESS) {
+        return ret;
+    }
 
     char *jsonStr = cJSON_PrintUnformatted(root);
+    cJSON_Delete(root);
     if (jsonStr == nullptr) {
-        cJSON_Delete(root);
+        LOGE("cJSON_PrintUnformatted failed");
         return SAF_ERR_NULL_PTR;
     }
+    
     message = jsonStr;
     cJSON_free(jsonStr);
-    cJSON_Delete(root);
     return SAF_SUCCESS;
 }
 
@@ -349,9 +496,9 @@ static std::string EscapeJsonString(const std::string &input)
     std::string result;
     result.reserve(input.size() + JSON_ESCAPE_RESERVE_PADDING);
     for (char c : input) {
-        if (c == '"') {
+        if (c == JSON_CHAR_QUOTE) {
             result += JSON_ESCAPED_QUOTE;
-        } else if (c == '\\') {
+        } else if (c == JSON_CHAR_BACKSLASH) {
             result += JSON_ESCAPED_BACKSLASH;
         } else {
             result += c;
@@ -380,14 +527,15 @@ int32_t PermissionManager::GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ti
     if (ticketMessageInfo.ticketExpireTimeMs == UNSET_TICKET_EXPIRE_TIME_MS) {
         ticketMessageInfo.ticketExpireTimeMs = DEFAULT_TICKET_EXPIRE_TIME_MS;
     }
-    SerializeTicketMessageInfo(ticketMessageInfo, message);
+    int32_t ret = SerializeTicketMessageInfo(ticketMessageInfo, message);
+    IF_ERROR_LOGE_RETURN(ret, "SerializeTicketMessageInfo failed, ret=%{public}d", ret);
     // Prepare Rust vector of strings
     rust::Vec<rust::String> rustMessages;
     rustMessages.push_back(rust::String(message));
 
     int32_t osAccountId;
-    bool ret = GetForegroundOsAccountId(&osAccountId);
-    IF_FALSE_LOGE_RETURN_ERR(ret, SAF_ERROR, "GenerateTicketInfoWithTimeStamp :: GetForegroundOsAccountId failed");
+    bool retFlag = GetForegroundOsAccountId(&osAccountId);
+    IF_FALSE_LOGE_RETURN_ERR(retFlag, SAF_ERROR, "GenerateTicketInfoWithTimeStamp :: GetForegroundOsAccountId failed");
     IF_TRUE_LOGE_RETURN_ERR(osAccountId < MIN_OS_ACCOUNT_ID, SAF_ERR_INVALID_OS_ACCOUNT_ID,
         "GenerateTicketInfoWithTimeStamp :: Invalid osAccountId");
 
@@ -490,12 +638,9 @@ int32_t PermissionManager::GrantToolPermissionsByUser(const std::vector<UserAuth
         ticketInfos.push_back(ticketInfo);
     }
     int32_t ret = SAF_SUCCESS;
-    bool hasValidTicket = false;   // 生成ticket成功时，置为true
     for (size_t i = 0; i < userAuthResults.size(); ++i) {
-        IF_TRUE_LOGE_RETURN_ERR(userAuthResults[i].permissionQuery.callerTokenId < 0,
-            SAF_ERR_ARG_INVALID, "callerTokenId is invalid");
-        IF_TRUE_LOGE_RETURN_ERR(userAuthResults[i].permissionInfo.empty(), SAF_ERR_ARG_EMPTY,
-            "permissionInfo is empty");
+        IF_TRUE_LOGW_CONTINUE(userAuthResults[i].permissionQuery.callerTokenId < 0, "callerTokenId is invalid");
+        IF_TRUE_LOGW_CONTINUE(userAuthResults[i].permissionInfo.empty(), "permissionInfo is empty");
         ret = VerifyPermissionListStatus(userAuthResults[i].permissionInfo);
         IF_ERROR_LOGW_CONTINUE(ret, "Not all permissions are granted");
 
@@ -528,10 +673,8 @@ int32_t PermissionManager::GrantToolPermissionsByUser(const std::vector<UserAuth
         ret = GenerateTicketInfoWithTimeStamp(ticketMessageInfo, ticketMessageInfo.callerTokenId, ticketInfo);
         IF_ERROR_LOGW_CONTINUE(ret,
             "GrantToolPermissionsByUser :: GenerateTicketInfoWithTimeStamp failed, ret=%{public}d", ret);
-        hasValidTicket = true;
         ticketInfos[i] = ticketInfo;
     }
-    IF_FALSE_LOGE_RETURN_ERR(hasValidTicket, SAF_ERROR, "don't generate valid ticket");
     return SAF_SUCCESS;
 }
 }
