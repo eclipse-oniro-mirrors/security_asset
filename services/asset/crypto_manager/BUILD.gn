@@ -29,6 +29,8 @@ ohos_rust_static_library("asset_crypto_manager") {
     "huks:libhukssdk",
   ]
 
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
+
   crate_name = "asset_crypto_manager"
   crate_type = "rlib"
   subsystem_name = "security"
@@ -46,6 +48,15 @@ ohos_static_library("asset_huks_wrapper") {
     "hilog:libhilog",
     "huks:libhukssdk",
   ]
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
   subsystem_name = "security"
   part_name = "asset"
 }

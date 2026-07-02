@@ -17,7 +17,7 @@ import("//build/ohos.gni")
 ohos_static_library("asset_os_dependency") {
   include_dirs = [
     "inc",
-    "../../../frameworks/os_dependency/log/inc",
+    "../../../frameworks/asset/os_dependency/log/inc",
     "../../../interfaces/kits/c/asset/inc",
   ]
   sources = [
@@ -30,7 +30,6 @@ ohos_static_library("asset_os_dependency") {
     "src/system_event_wrapper.cpp",
     "src/file_operator_wrapper.cpp",
   ]
-  deps = [ "../../../frameworks/asset/os_dependency/memory:asset_mem" ]
   external_deps = [
     "ability_base:want",
     "ability_runtime:dataobs_manager",
@@ -56,6 +55,15 @@ ohos_static_library("asset_os_dependency") {
     "-DASSET_UPGRADE_HAP_CONFIG=${asset_split_hap_list}",
     "-DASSET_CE_UPGRADE_CONFIG=\"${asset_ce_upgrade_list}\"",
   ]
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
   subsystem_name = "security"
   part_name = "asset"
 }

@@ -29,17 +29,29 @@ ohos_rust_shared_library("asset_sdk_rust") {
     "samgr:samgr_rust",
   ]
 
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+
   crate_name = "asset_sdk"
   crate_type = "dylib"
   subsystem_name = "security"
   part_name = "asset"
 
   if (asset_build_mode == "empty") {
-    rustflags = [ "--cfg", "feature=\"AssetEmptyMode\"" ]
+    rustflags = [ "--cfg", "feature=\"AssetEmptyMode\"", "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
+  } else {
+    rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
   }
 }
 
 ohos_static_library("asset_timeout_feature") {
+  branch_protector_ret = "pac_ret"
   sanitize = {
     integer_overflow = true
     cfi = true

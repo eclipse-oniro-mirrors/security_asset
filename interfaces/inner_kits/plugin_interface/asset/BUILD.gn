@@ -16,17 +16,25 @@ import("//build/ohos.gni")
 ohos_rust_shared_library("asset_plugin_interface_rust") {
   sources = [ "src/lib.rs" ]
   deps = [
-    "../../../../frameworks/asset/definition:asset_definition",
     "../../../../frameworks/asset/ipc:asset_ipc",
-    "../../../../frameworks/asset/os_dependency/log:asset_log",
     "../../rs/asset:asset_sdk_rust",
   ]
 
   external_deps = [
     "ipc:ipc_rust",
-    "samgr:samgr_rust",
     "ylong_runtime:ylong_runtime",
   ]
+
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
 
   crate_name = "asset_plugin_interface"
   crate_type = "dylib"

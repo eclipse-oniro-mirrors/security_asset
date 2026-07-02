@@ -20,6 +20,8 @@ ohos_rust_static_library("asset_file_operator") {
     "../log:asset_log",
   ]
 
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
+
   crate_name = "asset_file_operator"
   crate_type = "rlib"
   subsystem_name = "security"
