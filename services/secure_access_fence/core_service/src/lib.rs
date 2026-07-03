@@ -56,6 +56,7 @@ const JSON_KEY_PERMISSION_LIST: &str = "permissionList";
 const JSON_KEY_START_TIME: &str = "startTime";
 const JSON_KEY_TICKET_EXPIRE_TIME_MS: &str = "ticketExpireTimeMs";
 const METRIC_ITEM_COUNT_TICKET_VERIFY: i32 = 1;
+const DEFAULT_DOMAIN_ID: &str = "";
 const STRING_QUOTE: char = '"';
 extern "C" {
     fn CheckPermission(permission: *const raw_c_char) -> bool;
@@ -276,7 +277,7 @@ fn verify_ticket_impl(os_account_id: i32, caller_id: &str, verify_info_str: &str
 
 fn verify_single_ticket(os_account_id: i32, caller_id: &str, ticket_info: VerifyTicketInfo) -> Result<()> {
     let verify_res = ticket_operation::batch_verify_ticket(
-        os_account_id, caller_id, "", &[ticket_info]
+        os_account_id, caller_id, DEFAULT_DOMAIN_ID, &[ticket_info]
     )?;
 
     if verify_res.is_empty() {
