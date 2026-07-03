@@ -123,7 +123,7 @@ fn handle_batch_generate_ticket(stub: &SAFService, data: &mut MsgParcel, reply: 
         messages.len()
     );
 
-    let result = stub.batch_generate_ticket(os_account_id as i32, &caller_id, &messages);
+    let result = stub.batch_generate_ticket(os_account_id as i32, &caller_id, "", &messages);
     match result {
         Ok(ticket_infos) => {
             reply.write::<i32>(&(IPC_SUCCESS as i32))?;
@@ -161,7 +161,7 @@ fn handle_batch_verify_ticket(stub: &SAFService, data: &mut MsgParcel, reply: &m
         verify_infos.len()
     );
 
-    let result = stub.batch_verify_ticket(os_account_id as i32, &caller_id, &verify_infos);
+    let result = stub.batch_verify_ticket(os_account_id as i32, &caller_id, "", &verify_infos);
     match result {
         Ok(verify_res) => {
             reply.write::<i32>(&(IPC_SUCCESS as i32))?;

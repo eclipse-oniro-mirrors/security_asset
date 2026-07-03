@@ -163,7 +163,7 @@ pub fn create_ticket_key_manager(caller_id: &str) -> Box<dyn TicketKeyManager> {
     }
 }
 
-pub fn batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: &[String],) ->
+pub fn batch_generate_ticket(os_account_id: i32, caller_id: &str, domain_id: &str, messages: &[String],) ->
     Result<Vec<VerifyTicketInfo>> {
     let caller_id_cstr = CString::new(caller_id).unwrap_or_default();
     let check_result = unsafe {
@@ -177,7 +177,7 @@ pub fn batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: &[St
     let challenge1 = generate_challenge()?;
 
     let key_manager = create_ticket_key_manager(caller_id);
-    let session_key = key_manager.derive_ticket_session_key(os_account_id , &challenge1)?;
+    let session_key = key_manager.derive_ticket_session_key(os_account_id , domain_id, &challenge1)?;
 
     let mut results = Vec::with_capacity(messages.len());
 
@@ -226,6 +226,7 @@ pub fn batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: &[St
 pub fn batch_verify_ticket(
     os_account_id: i32,
     caller_id: &str,
+    domain_id: &str,
     verify_infos: &[VerifyTicketInfo],
 ) -> Result<Vec<i32>> {
     let caller_id_cstr = CString::new(caller_id).unwrap_or_default();
@@ -233,14 +234,14 @@ pub fn batch_verify_ticket(
         CheckBatchVerifyTicketParamsC(os_account_id , caller_id_cstr.as_ptr(), verify_infos.len())
     };
     if check_result != SAF_SUCCESS {
-        return macros_lib::log_throw_error!(ErrCode::try_from(check_result as u32)?, 
+        return macros_lib::log_throw_error!(ErrCode::try_from(check_result as u32)?,
             "batch_verify_ticket params check failed");
     }
 
     let key_manager = create_ticket_key_manager(caller_id);
 
     let challenge = generate_challenge()?;
-    let _session_key = key_manager.derive_ticket_session_key(os_account_id , &challenge)?;
+    let _session_key = key_manager.derive_ticket_session_key(os_account_id , domain_id, &challenge)?;
 
     let mut results = Vec::with_capacity(verify_infos.len());
 
@@ -263,7 +264,7 @@ pub fn batch_verify_ticket(
         let challenge1 = &combined_challenge[..CHALLENGE_SIZE as usize];
         let challenge2 = &combined_challenge[CHALLENGE_SIZE as usize..];
 
-        let session_key = match key_manager.derive_ticket_session_key(os_account_id , challenge1) {
+        let session_key = match key_manager.derive_ticket_session_key(os_account_id , domain_id, challenge1) {
             Ok(key) => key,
             Err(e) => {
                 macros_lib::loge!("VerifyTicket idx[{}]: derive_ticket_session_key failed, err={}", index, e.code);

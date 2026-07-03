@@ -541,10 +541,11 @@ int32_t PermissionManager::GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ti
 
     // Call Rust bridge to generate ticket
     rust::String callerId = rust::String(std::to_string(callerTokenId));
+    rust::String domainId = rust::String(ticketMessageInfo.domainId);
     rust::Slice<const rust::String> rustMessagesSlice(rustMessages.data(), rustMessages.size());
     int32_t resultCode = SAF_SUCCESS;
     rust::Vec<OHOS::Security::SAF::CxxVerifyTicketInfo> rustResults =
-        OHOS::Security::SAF::cxx_batch_generate_ticket(osAccountId, callerId, rustMessagesSlice, resultCode);
+        OHOS::Security::SAF::cxx_batch_generate_ticket(osAccountId, callerId, domainId, rustMessagesSlice, resultCode);
 
     if (resultCode != SAF_SUCCESS) {
         LOGE("GenerateTicketInfoWithTimeStamp failed, cxx_batch_generate_ticket returned no tickets");
@@ -586,6 +587,7 @@ int32_t PermissionManager::ProcessTicketInfo(const PermissionQuery &permissionQu
     ticketMessageInfo.ticketExpireTimeMs = permissionQuery.ticketExpireTimeMs;
     ticketMessageInfo.apiPermissions = apiPermissions;
     ticketMessageInfo.callerTokenId = GetValidCallingTokenId(permissionQuery.callerTokenId);
+    ticketMessageInfo.domainId = permissionQuery.domainId;
     int32_t ret = GenerateTicketInfoWithTimeStamp(ticketMessageInfo, ticketMessageInfo.callerTokenId,
         permissionQueryResult.ticket);
     IF_ERROR_LOGE_RETURN(ret, "ProcessTicketInfo :: GenerateTicketInfoWithTimeStamp failed, ret=%{public}d", ret);
@@ -670,6 +672,7 @@ int32_t PermissionManager::GrantToolPermissionsByUser(const std::vector<UserAuth
         ticketMessageInfo.ticketExpireTimeMs = userAuthResults[i].permissionQuery.ticketExpireTimeMs;
         ticketMessageInfo.apiPermissions = apiPermissions;
         ticketMessageInfo.callerTokenId = GetValidCallingTokenId(userAuthResults[i].permissionQuery.callerTokenId);
+        ticketMessageInfo.domainId = userAuthResults[i].permissionQuery.domainId;
         ret = GenerateTicketInfoWithTimeStamp(ticketMessageInfo, ticketMessageInfo.callerTokenId, ticketInfo);
         IF_ERROR_LOGW_CONTINUE(ret,
             "GrantToolPermissionsByUser :: GenerateTicketInfoWithTimeStamp failed, ret=%{public}d", ret);
