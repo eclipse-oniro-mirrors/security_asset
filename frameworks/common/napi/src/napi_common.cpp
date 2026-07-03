@@ -200,7 +200,7 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::RemoteIn
     NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
     napi_value propValue;
     int32_t role = 0;
-    if (napi_get_named_property(env, object, "role", &propValue) == napi_ok) {
+    if (napi_get_named_property(env, object, "role", &propValue) != napi_ok) {
         return napi_ok;
     }
     NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, role));
