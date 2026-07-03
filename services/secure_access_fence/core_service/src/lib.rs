@@ -250,6 +250,7 @@ impl SAFService {
             verify_infos.len() as i32,
             os_account_id,
             caller_id,
+            domain_id,
             verify_infos
         )
     }
