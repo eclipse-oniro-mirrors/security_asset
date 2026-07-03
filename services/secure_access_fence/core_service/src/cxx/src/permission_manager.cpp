@@ -550,7 +550,7 @@ int32_t PermissionManager::GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ti
         LOGE("GenerateTicketInfoWithTimeStamp failed, cxx_batch_generate_ticket returned no tickets");
         IF_TRUE_LOGE_RETURN_ERR(resultCode == ERROR_CODE_NO_NETWORK, SAF_ERR_NO_NETWORK, "No network");
         IF_TRUE_LOGE_RETURN_ERR(resultCode == ERROR_CODE_ACCOUNT_NOT_LOGGED_IN,
-            SAF_ERR_ACCOUNT_NOT_LOGEED_IN, "Account not logged in");
+            ERROR_CODE_ACCOUNT_NOT_LOGGED_IN, "Account not logged in");
         return SAF_ERROR;
     }
 
@@ -671,6 +671,10 @@ int32_t PermissionManager::GrantToolPermissionsByUser(const std::vector<UserAuth
         ticketMessageInfo.apiPermissions = apiPermissions;
         ticketMessageInfo.callerTokenId = GetValidCallingTokenId(userAuthResults[i].permissionQuery.callerTokenId);
         ret = GenerateTicketInfoWithTimeStamp(ticketMessageInfo, ticketMessageInfo.callerTokenId, ticketInfo);
+        if (ret == SAF_ERR_ACCOUNT_NOT_LOGGED_IN) {
+            LOGE("Account is not logged in. Stop generating ticket");
+            return ret;
+        }
         IF_ERROR_LOGW_CONTINUE(ret,
             "GrantToolPermissionsByUser :: GenerateTicketInfoWithTimeStamp failed, ret=%{public}d", ret);
         ticketInfos[i] = ticketInfo;
