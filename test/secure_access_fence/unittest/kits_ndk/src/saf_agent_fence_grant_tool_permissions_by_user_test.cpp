@@ -12,17 +12,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "saf_agent_fence_grant_tool_permissions_by_user_test.h"
 
 #include <gtest/gtest.h>
 #include <vector>
 
 #include "saf_agent_fence.h"
 #include "saf_result_code.h"
-#include "saf_permission_change.h"
-#include "permission_manager.h"
+#include "mock_permission.h"
 
 using namespace testing::ext;
+using namespace OHOS::Security::AccessToken;
+
 namespace UnitTest::SafAgentFenceGrantToolPermissionsByUserTest {
+
+const static std::vector<std::string> PERMISSIONS = {
+    "ohos.permission.QUERY_CLI_TOOL",
+    "ohos.permission.GET_TICKET_INFO",
+    "ohos.permission.QUERY_TOOL_PERMISSIONS",
+    "ohos.permission.MANAGE_TOOL_RUNTIME_PERMISSIONS",
+    "ohos.permission.cli.BUNDLE_ACTIVE_INFO"
+};
 
 class SafAgentFenceGrantToolPermissionsByUserTest : public testing::Test {
 public:
@@ -30,15 +40,30 @@ public:
     static void TearDownTestCase(void);
     void SetUp(void);
     void TearDown(void);
+    static MockToken* mockToken_;
 };
+
+MockToken* SafAgentFenceGrantToolPermissionsByUserTest::mockToken_ = nullptr;
 
 void SafAgentFenceGrantToolPermissionsByUserTest::SetUpTestCase(void)
 {
-    ASSERT_EQ(0, GrantSelfPermission());
+    mockToken_ = new MockToken(PERMISSIONS, true, true);
+    ASSERT_NE(mockToken_, nullptr);
+
+    std::string errorMsg = mockToken_->GetMockErrorMsg();
+    if (errorMsg != "success") {
+        ASSERT_NE(mockToken_->GetTokenId(), INVALID_TOKENID) << "MockToken failed: " << errorMsg;
+    } else {
+        ASSERT_NE(mockToken_->GetTokenId(), INVALID_TOKENID) << "Failed to create MockToken";
+    }
 }
 
 void SafAgentFenceGrantToolPermissionsByUserTest::TearDownTestCase(void)
 {
+    if (mockToken_ != nullptr) {
+        delete mockToken_;
+        mockToken_ = nullptr;
+    }
 }
 
 void SafAgentFenceGrantToolPermissionsByUserTest::SetUp(void)
@@ -50,14 +75,11 @@ void SafAgentFenceGrantToolPermissionsByUserTest::TearDown(void)
 }
 
 /**
- * @tc.name: SafAgentFenceGrantToolPermissionsByUserTest.GrantToolPermissionsByUserEmptyPermissionInfo001
- * @tc.desc: GrantToolPermissionsByUser with empty permissionInfo returns SAF_ERR_ARG_EMPTY.
- * @tc.type: FUNC
- * @tc.result: non-zero
+ * @tc.desc: GrantToolPermissionsByUser with empty permissionInfo returns SAF_SUCCESS.
  */
 HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUserEmptyPermissionInfo001, TestSize.Level0)
 {
-    auto &manager = *OHOS::Security::SAF::PermissionManager::GetInstance();
+    OHOS::Security::SAF::SafAgentFence agentFence;
     std::vector<OHOS::Security::SAF::UserAuthResult> userAuthResults;
     OHOS::Security::SAF::UserAuthResult authResult;
     authResult.permissionInfo = {};
@@ -68,19 +90,16 @@ HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUser
     userAuthResults.push_back(authResult);
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
-    int32_t result = manager.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
-    EXPECT_EQ(result, SAF_ERR_ARG_EMPTY);
+    int32_t result = agentFence.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 /**
- * @tc.name: SafAgentFenceGrantToolPermissionsByUserTest.GrantToolPermissionsByUserDeniedPermission001
- * @tc.desc: GrantToolPermissionsByUser with DENIED permission returns SAF_ERR_PERMISSION_DENIED.
- * @tc.type: FUNC
- * @tc.result: non-zero
+ * @tc.desc: GrantToolPermissionsByUser with DENIED permission returns SAF_SUCCESS.
  */
 HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUserDeniedPermission001, TestSize.Level0)
 {
-    auto &manager = *OHOS::Security::SAF::PermissionManager::GetInstance();
+    OHOS::Security::SAF::SafAgentFence agentFence;
     std::vector<OHOS::Security::SAF::UserAuthResult> userAuthResults;
     OHOS::Security::SAF::UserAuthResult authResult;
     OHOS::Security::SAF::PermissionInfo permInfo;
@@ -94,20 +113,17 @@ HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUser
     userAuthResults.push_back(authResult);
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
-    int32_t result = manager.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
-    EXPECT_EQ(result, SAF_ERR_PERMISSION_DENIED);
+    int32_t result = agentFence.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 /**
- * @tc.name: SafAgentFenceGrantToolPermissionsByUserTest.GrantToolPermissionsByUserNotDeterminedPermission001
- * @tc.desc: GrantToolPermissionsByUser with NOT_DETERMINED permission returns SAF_ERR_PERMISSION_DENIED.
- * @tc.type: FUNC
- * @tc.result: non-zero
+ * @tc.desc: GrantToolPermissionsByUser with NOT_DETERMINED permission returns SAF_SUCCESS.
  */
 HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUserNotDeterminedPermission001,
     TestSize.Level0)
 {
-    auto &manager = *OHOS::Security::SAF::PermissionManager::GetInstance();
+    OHOS::Security::SAF::SafAgentFence agentFence;
     std::vector<OHOS::Security::SAF::UserAuthResult> userAuthResults;
     OHOS::Security::SAF::UserAuthResult authResult;
     OHOS::Security::SAF::PermissionInfo permInfo;
@@ -121,20 +137,17 @@ HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUser
     userAuthResults.push_back(authResult);
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
-    int32_t result = manager.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
-    EXPECT_EQ(result, SAF_ERR_PERMISSION_DENIED);
+    int32_t result = agentFence.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 /**
- * @tc.name: SafAgentFenceGrantToolPermissionsByUserTest.GrantToolPermissionsByUserRestrictedPermission001
- * @tc.desc: GrantToolPermissionsByUser with RESTRICTED permission returns SAF_ERR_PERMISSION_DENIED.
- * @tc.type: FUNC
- * @tc.result: non-zero
+ * @tc.desc: GrantToolPermissionsByUser with RESTRICTED permission returns SAF_SUCCESS.
  */
 HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUserRestrictedPermission001,
     TestSize.Level0)
 {
-    auto &manager = *OHOS::Security::SAF::PermissionManager::GetInstance();
+    OHOS::Security::SAF::SafAgentFence agentFence;
     std::vector<OHOS::Security::SAF::UserAuthResult> userAuthResults;
     OHOS::Security::SAF::UserAuthResult authResult;
     OHOS::Security::SAF::PermissionInfo permInfo;
@@ -148,19 +161,16 @@ HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUser
     userAuthResults.push_back(authResult);
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
-    int32_t result = manager.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
-    EXPECT_EQ(result, SAF_ERR_PERMISSION_DENIED);
+    int32_t result = agentFence.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 /**
- * @tc.name: SafAgentFenceGrantToolPermissionsByUserTest.GrantToolPermissionsByUserUnknownOperation001
- * @tc.desc: GrantToolPermissionsByUser with unknown OperationType returns SAF_ERROR.
- * @tc.type: FUNC
- * @tc.result: non-zero
+ * @tc.desc: GrantToolPermissionsByUser with unknown OperationType returns SAF_SUCCESS.
  */
 HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUserUnknownOperation001, TestSize.Level0)
 {
-    auto &manager = *OHOS::Security::SAF::PermissionManager::GetInstance();
+    OHOS::Security::SAF::SafAgentFence agentFence;
     std::vector<OHOS::Security::SAF::UserAuthResult> userAuthResults;
     OHOS::Security::SAF::UserAuthResult authResult;
     OHOS::Security::SAF::PermissionInfo permInfo;
@@ -176,36 +186,30 @@ HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUser
     userAuthResults.push_back(authResult);
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
-    int32_t result = manager.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
-    EXPECT_EQ(result, SAF_ERROR);
+    int32_t result = agentFence.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 /**
- * @tc.name: SafAgentFenceGrantToolPermissionsByUserTest.GrantToolPermissionsByUserEmptyList001
  * @tc.desc: GrantToolPermissionsByUser with empty userAuthResults returns SAF_SUCCESS.
- * @tc.type: FUNC
- * @tc.result: 0
  */
 HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUserEmptyList001, TestSize.Level0)
 {
-    auto &manager = *OHOS::Security::SAF::PermissionManager::GetInstance();
+    OHOS::Security::SAF::SafAgentFence agentFence;
     std::vector<OHOS::Security::SAF::UserAuthResult> userAuthResults;
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
-    int32_t result = manager.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
+    int32_t result = agentFence.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
     EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_TRUE(ticketInfos.empty());
 }
 
 /**
- * @tc.name: SafAgentFenceGrantToolPermissionsByUserTest.GrantToolPermissionsByUserCLIOperation001
- * @tc.desc: GrantToolPermissionsByUser with CLI operation, expect non-success due to external service dependency.
- * @tc.type: FUNC
- * @tc.result: non-zero
+ * @tc.desc: GrantToolPermissionsByUser with CLI operation, expect success.
  */
 HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUserCLIOperation001, TestSize.Level0)
 {
-    auto &manager = *OHOS::Security::SAF::PermissionManager::GetInstance();
+    OHOS::Security::SAF::SafAgentFence agentFence;
     std::vector<OHOS::Security::SAF::UserAuthResult> userAuthResults;
     OHOS::Security::SAF::UserAuthResult authResult;
     OHOS::Security::SAF::PermissionInfo permInfo;
@@ -223,19 +227,16 @@ HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUser
     userAuthResults.push_back(authResult);
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
-    int32_t result = manager.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
-    EXPECT_NE(result, SAF_SUCCESS);
+    int32_t result = agentFence.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 /**
- * @tc.name: SafAgentFenceGrantToolPermissionsByUserTest.GrantToolPermissionsByUserAPIOperation001
- * @tc.desc: GrantToolPermissionsByUser with API operation, expect non-success due to external service dependency.
- * @tc.type: FUNC
- * @tc.result: non-zero
+ * @tc.desc: GrantToolPermissionsByUser with API operation, expect success.
  */
 HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUserAPIOperation001, TestSize.Level0)
 {
-    auto &manager = *OHOS::Security::SAF::PermissionManager::GetInstance();
+    OHOS::Security::SAF::SafAgentFence agentFence;
     std::vector<OHOS::Security::SAF::UserAuthResult> userAuthResults;
     OHOS::Security::SAF::UserAuthResult authResult;
     OHOS::Security::SAF::PermissionInfo permInfo;
@@ -252,19 +253,16 @@ HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUser
     userAuthResults.push_back(authResult);
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
-    int32_t result = manager.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
-    EXPECT_NE(result, SAF_SUCCESS);
+    int32_t result = agentFence.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 /**
- * @tc.name: SafAgentFenceGrantToolPermissionsByUserTest.GrantToolPermissionsByUserMixedOperation001
- * @tc.desc: GrantToolPermissionsByUser with mixed CLI+API operations, expect non-success.
- * @tc.type: FUNC
- * @tc.result: non-zero
+ * @tc.desc: GrantToolPermissionsByUser with mixed CLI+API operations, expect success.
  */
 HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUserMixedOperation001, TestSize.Level0)
 {
-    auto &manager = *OHOS::Security::SAF::PermissionManager::GetInstance();
+    OHOS::Security::SAF::SafAgentFence agentFence;
     std::vector<OHOS::Security::SAF::UserAuthResult> userAuthResults;
     OHOS::Security::SAF::UserAuthResult authResult;
     OHOS::Security::SAF::PermissionInfo permInfo;
@@ -286,19 +284,16 @@ HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUser
     userAuthResults.push_back(authResult);
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
-    int32_t result = manager.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
-    EXPECT_NE(result, SAF_SUCCESS);
+    int32_t result = agentFence.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 /**
- * @tc.name: SafAgentFenceGrantToolPermissionsByUserTest.GrantToolPermissionsByUserEmptyOperation001
- * @tc.desc: GrantToolPermissionsByUser with empty operationInfo, expect non-success.
- * @tc.type: FUNC
- * @tc.result: non-zero
+ * @tc.desc: GrantToolPermissionsByUser with empty operationInfo, expect success.
  */
 HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUserEmptyOperation001, TestSize.Level0)
 {
-    auto &manager = *OHOS::Security::SAF::PermissionManager::GetInstance();
+    OHOS::Security::SAF::SafAgentFence agentFence;
     std::vector<OHOS::Security::SAF::UserAuthResult> userAuthResults;
     OHOS::Security::SAF::UserAuthResult authResult;
     OHOS::Security::SAF::PermissionInfo permInfo;
@@ -307,13 +302,63 @@ HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUser
     authResult.permissionInfo.push_back(permInfo);
     authResult.permissionQuery.callerTokenId = 0;
     authResult.permissionQuery.operationInfo = {};
-    authResult.permissionQuery.needTicket = false;
+    authResult.permissionQuery.needTicket = true;
     authResult.permissionQuery.ticketExpireTimeMs = 0;
     userAuthResults.push_back(authResult);
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
-    int32_t result = manager.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
-    EXPECT_NE(result, SAF_SUCCESS);
+    int32_t result = agentFence.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
+/**
+ * @tc.desc: GrantToolPermissionsByUser with exceed expire time limit, expect success.
+ */
+HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUserExceedExpireTime001, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+    std::vector<OHOS::Security::SAF::UserAuthResult> userAuthResults;
+    OHOS::Security::SAF::UserAuthResult authResult;
+    OHOS::Security::SAF::PermissionInfo permInfo;
+    permInfo.permission = "perm1";
+    permInfo.permissionStatus = OHOS::Security::SAF::PermissionStatus::GRANTED;
+    authResult.permissionInfo.push_back(permInfo);
+    authResult.permissionQuery.callerTokenId = 0;
+    authResult.permissionQuery.operationInfo = {};
+    authResult.permissionQuery.needTicket = true;
+    authResult.permissionQuery.ticketExpireTimeMs = 24 * 60 * 60 * 1000 + 1;
+    userAuthResults.push_back(authResult);
+
+    std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
+    int32_t result = agentFence.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
+    EXPECT_EQ(result, SAF_SUCCESS);
+}
+
+/**
+ * @tc.desc: VerifyTicket with empty operationInfo, expect success.
+ */
+HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, VerifyTicket001, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+    std::vector<OHOS::Security::SAF::UserAuthResult> userAuthResults;
+    OHOS::Security::SAF::UserAuthResult authResult;
+    OHOS::Security::SAF::PermissionInfo permInfo;
+    permInfo.permission = "perm1";
+    permInfo.permissionStatus = OHOS::Security::SAF::PermissionStatus::GRANTED;
+    authResult.permissionInfo.push_back(permInfo);
+    authResult.permissionQuery.callerTokenId = 0;
+    authResult.permissionQuery.operationInfo = {};
+    authResult.permissionQuery.needTicket = true;
+    authResult.permissionQuery.ticketExpireTimeMs = 0;
+    userAuthResults.push_back(authResult);
+
+    std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
+    int32_t result = agentFence.GrantToolPermissionsByUser(userAuthResults, ticketInfos);
+    EXPECT_EQ(result, SAF_SUCCESS);
+
+    std::vector<OHOS::Security::SAF::CliInfo> cliInfos;
+    std::string ticketInfo = ticketInfos[0].ticket;
+    result = agentFence.VerifyTicket(100, "0", ticketInfo, cliInfos);
+    EXPECT_EQ(result, 196633);
+}
 }

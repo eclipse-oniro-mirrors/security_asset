@@ -36,6 +36,8 @@ ohos_unittest("saf_agent_fence_ndk_test") {
     "src/saf_agent_fence_gen_and_ver_ticket_params_test.cpp",
     "src/saf_agent_params_checker_test.cpp",
     "src/saf_agent_fence_ipc_test.cpp",
+    "src/saf_agent_fence_grant_tool_permissions_by_user_test.cpp",
+    "src/saf_agent_fence_request_tool_permissions_test.cpp"
   ]
 
   deps = [
@@ -54,6 +56,7 @@ ohos_unittest("saf_agent_fence_ndk_test") {
     "access_token:libnativetoken_shared",
     "access_token:libtokensetproc_shared",
     "access_token:libtokenid_sdk",
+    "access_token:libpermsetproc_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
