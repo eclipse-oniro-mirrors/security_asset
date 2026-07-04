@@ -221,12 +221,31 @@ impl_enum_trait! {
         /// The error code indicates that ticket time is invalid.
         TicketTimeInvalid = 0x71002,
 
-        // ==================== ACCOUNT_BASED_DFK (0x19000) ====================
+        // ==================== TRUSTED_RING (0x19000) ====================
         /// The error code indicates that network disconnected.
         NetworkDisconnected = 0x19003,
 
         /// The error code indicates that account not logged in.
         NotLoggedIn = 0x19004,
+
+        /// The error code indicates that remote token expired.
+        RemoteTokenExpired = 0x19007,
+
+        /// The error code indicates that remote device untrusted.
+        RemoteDeviceUntrusted = 0x19008,
+
+        /// The error code indicates that lack auth token.
+        LackAuthToken = 0x19009,
+
+        /// The error code indicates that auth token is expired.
+        AuthTokenIsExpired = 0x19010,
+
+        // ==================== SCREEN_SERVICE (0x22000) ====================
+        /// The error code indicates that screen service is unavailable.
+        ScreenServiceIsUnavailable = 0x22001,
+
+        /// The error code indicates that screen is locked.
+        ScreenIsLocked = 0x22002,
     }
 }
 

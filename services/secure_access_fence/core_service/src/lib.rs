@@ -15,12 +15,12 @@
 
 //! This module implements secure access fence service.
 
-use std::ffi::{c_char, CString};
-use std::time::Instant;
-use std::os::raw::c_char as raw_c_char;
 use ipc::parcel::MsgParcel;
 use samgr::manage::SystemAbilityManager;
+use std::ffi::{c_char, CString};
+use std::os::raw::c_char as raw_c_char;
 use std::time::Duration;
+use std::time::Instant;
 use system_ability_fwk::{
     ability::{Ability, Handler},
     cxx_share::SystemAbilityOnDemandReason,
@@ -29,16 +29,16 @@ use ylong_runtime::builder::RuntimeBuilder;
 
 use saf_common::{Counter, TaskManager};
 use saf_definition::{macros_lib, ErrCode, Result};
-use saf_ipc::{SA_ID, CliInfo, VerifyTicketInfo};
+use saf_ipc::{CliInfo, VerifyTicketInfo, SA_ID};
 use saf_log::{logd, loge, logi};
 use saf_plugin::saf_plugin::{SAFContext, SAFPlugin};
 
-use crate::wrapper::{notify_performance_metrics, notify_error};
+use crate::wrapper::{cxx_is_screen_locked, notify_error, notify_performance_metrics};
 
 mod common_event;
 mod stub;
-mod wrapper;
 mod ticket_operation;
+mod wrapper;
 
 #[macro_use]
 mod metrics_macro;
@@ -55,6 +55,7 @@ const JSON_KEY_SUB_CLI_CMD_NAME: &str = "subCliCmdName";
 const JSON_KEY_PERMISSION_LIST: &str = "permissionList";
 const JSON_KEY_START_TIME: &str = "startTime";
 const JSON_KEY_TICKET_EXPIRE_TIME_MS: &str = "ticketExpireTimeMs";
+const JSON_KEY_NEED_UNLOCK_SCREEN: &str = "needUnlockScreen";
 const METRIC_ITEM_COUNT_TICKET_VERIFY: i32 = 1;
 const DEFAULT_DOMAIN_ID: &str = "";
 const STRING_QUOTE: char = '"';
@@ -70,14 +71,13 @@ struct StringArray {
     data: *const *const c_char,
 }
 
-
 #[repr(C)]
 struct CommonEventInfoFfi {
     event_type: *const c_char,
     want: StringArray,
 }
 
-const DELAYED_UNLOAD_TIME_IN_SEC: i32 = 60;  // 60s
+const DELAYED_UNLOAD_TIME_IN_SEC: i32 = 60; // 60s
 const SEC_TO_MILLISEC: i32 = 1000;
 
 pub(crate) fn unload_sa() {
@@ -218,12 +218,12 @@ impl SAFService {
         let permission = CString::new(GET_TICKET_INFO_PERMISSION).unwrap();
         if unsafe { !CheckPermission(permission.as_ptr()) } {
             loge!("Permission denied! Need {}", GET_TICKET_INFO_PERMISSION);
-            
+
             notify_error(
                 "Permission denied".to_string(),
                 ErrCode::PermissionDenied as i32,
                 os_account_id,
-                "batch_generate_ticket".to_string()
+                "batch_generate_ticket".to_string(),
             );
 
             return macros_lib::log_throw_error!(ErrCode::PermissionDenied,
@@ -255,9 +255,7 @@ impl SAFService {
         )
     }
 
-    fn verify_ticket(
-        &self, os_account_id: i32, caller_id: &str, verify_info_str: &str
-    ) -> Result<Vec<CliInfo>> {
+    fn verify_ticket(&self, os_account_id: i32, caller_id: &str, verify_info_str: &str) -> Result<Vec<CliInfo>> {
         execute_with_metrics!(
             "verify_ticket",
             verify_ticket_impl,
@@ -269,10 +267,38 @@ impl SAFService {
     }
 }
 
+fn check_screen_lock_status(message_json: &ylong_json::JsonValue) -> Result<()> {
+    let need_unlock_value = &message_json[JSON_KEY_NEED_UNLOCK_SCREEN];
+    if need_unlock_value == &ylong_json::JsonValue::Null {
+        logi!("needUnlockScreen field not found, assuming not required");
+        return Ok(());
+    }
+
+    let need_unlock_str = need_unlock_value.to_compact_string().map_err(|e| {
+        loge!("check_screen_lock_status: needUnlockScreen extract failed: {}", e);
+        macros_lib::SAFError::new(ErrCode::GeneralError, "needUnlockScreen extract failed".to_string())
+    })?;
+
+    let need_unlock = need_unlock_str.parse::<bool>().unwrap_or(true);
+    if !need_unlock {
+        return Ok(());
+    }
+
+    let mut is_locked: bool = false;
+    let ret = cxx_is_screen_locked(&mut is_locked);
+    if ret != 0 || is_locked {
+        loge!("check_screen_lock_status: screen locked, ret={}, is_locked={}", ret, is_locked);
+        return macros_lib::log_throw_error!(ErrCode::ScreenIsLocked, "Screen is locked");
+    }
+
+    Ok(())
+}
+
 fn verify_ticket_impl(os_account_id: i32, caller_id: &str, verify_info_str: &str) -> Result<Vec<CliInfo>> {
     let (ticket_info, message_json) = parse_verify_info_json_full(verify_info_str)?;
     verify_single_ticket(os_account_id, caller_id, ticket_info)?;
     check_ticket_time_validity_with_json(&message_json)?;
+    check_screen_lock_status(&message_json)?;
     extract_cli_infos_with_json(&message_json)
 }
 
@@ -284,8 +310,7 @@ fn verify_single_ticket(os_account_id: i32, caller_id: &str, ticket_info: Verify
     if verify_res.is_empty() {
         macros_lib::log_throw_error!(ErrCode::GeneralError, "VerifyTicket: verify result is empty")
     } else if verify_res[0] != 0 {
-        let err_code = ErrCode::try_from(verify_res[0] as u32)
-            .unwrap_or(ErrCode::GeneralError);
+        let err_code = ErrCode::try_from(verify_res[0] as u32).unwrap_or(ErrCode::GeneralError);
         macros_lib::log_throw_error!(err_code, "ticket verify failed, code={}", verify_res[0])
     } else {
         Ok(())
@@ -303,13 +328,16 @@ fn check_ticket_time_validity_with_json(message_json: &ylong_json::JsonValue) ->
         loge!("VerifyTicket: expire_time overflow");
         macros_lib::SAFError::new(ErrCode::DataTypeMismatch, "expire_time overflow".to_string())
     })?;
-    let now_ms = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis() as u64;
+    let now_ms =
+        std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as u64;
     if now_ms < start_time || now_ms > expire_time {
-        macros_lib::log_throw_error!(ErrCode::TicketTimeInvalid,
-            "VerifyTicket: ticket time invalid, now={}, start={}, expire={}", now_ms, start_time, expire_time)
+        macros_lib::log_throw_error!(
+            ErrCode::TicketTimeInvalid,
+            "VerifyTicket: ticket time invalid, now={}, start={}, expire={}",
+            now_ms,
+            start_time,
+            expire_time
+        )
     } else {
         Ok(())
     }
@@ -335,7 +363,7 @@ fn parse_verify_info_json_full(info_str: &str) -> Result<(VerifyTicketInfo, ylon
         macros_lib::log_and_into_saf_error!(ErrCode::ArgEmpty, "VerifyTicket: json parse failed: {}", e)
     })?;
     if json.try_as_object().map_or(true, |o| o.is_empty()) {
-        return Err(macros_lib::log_and_into_saf_error!(ErrCode::ArgEmpty, "VerifyTicket: json object is empty"))
+        return Err(macros_lib::log_and_into_saf_error!(ErrCode::ArgEmpty, "VerifyTicket: json object is empty"));
     }
 
     let raw_message = extract_json_string(&json, JSON_KEY_MESSAGE)?;
@@ -347,11 +375,7 @@ fn parse_verify_info_json_full(info_str: &str) -> Result<(VerifyTicketInfo, ylon
         macros_lib::SAFError::new(ErrCode::ArgEmpty, format!("message json parse failed: {}", e))
     })?;
 
-    Ok((VerifyTicketInfo {
-        message: raw_message,
-        challenge: raw_challenge,
-        ticket: raw_ticket,
-    }, message_json))
+    Ok((VerifyTicketInfo { message: raw_message, challenge: raw_challenge, ticket: raw_ticket }, message_json))
 }
 
 fn extract_json_string(json: &ylong_json::JsonValue, key: &str) -> Result<String> {
@@ -363,14 +387,16 @@ fn extract_json_string(json: &ylong_json::JsonValue, key: &str) -> Result<String
         ylong_json::JsonValue::String(s) => Ok(s.clone()),
         _ => value.to_compact_string().map_err(|e| {
             macros_lib::SAFError::new(ErrCode::ArgEmpty, format!("VerifyTicket: {} extract failed: {}", key, e))
-        })
+        }),
     }
 }
 
 fn extract_cli_infos_with_json(message_json: &ylong_json::JsonValue) -> Result<Vec<CliInfo>> {
     if message_json == &ylong_json::JsonValue::Null {
-        return macros_lib::log_throw_error!(ErrCode::ArgEmpty,
-            "VerifyTicket: message field missing for cliInfos extraction");
+        return macros_lib::log_throw_error!(
+            ErrCode::ArgEmpty,
+            "VerifyTicket: message field missing for cliInfos extraction"
+        );
     }
 
     let caller_token_id = extract_json_string(message_json, JSON_KEY_CALLER_TOKEN_ID)?;
@@ -424,5 +450,5 @@ fn extract_permission_list(json: &ylong_json::JsonValue) -> Result<Vec<String>> 
 #[cfg(feature = "SAFTest")]
 /// stub for test
 pub mod ut_core_service_lib_stub {
-    include!{"../../../test/unittest/ut_test/services/core_service/test_stub/ut_core_service_lib_stub.rs"}
+    include! {"../../../test/unittest/ut_test/services/core_service/test_stub/ut_core_service_lib_stub.rs"}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,29 +13,19 @@
  * limitations under the License.
  */
 
-#ifndef SAF_PERMISSION_CHANGE_H
-#define SAF_PERMISSION_CHANGE_H
+#ifndef SCREEN_LOCK_WRAPPER_H
+#define SCREEN_LOCK_WRAPPER_H
 
-#include <vector>
-#include <string>
-#include "access_token.h"
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void RestartAccessTokenService();
-int GrantSelfPermission();
+int32_t IsScreenLocked(bool *isLocked);
 
 #ifdef __cplusplus
 }
-
-using AccessTokenID = OHOS::Security::AccessToken::AccessTokenID;
-
-AccessTokenID GrantDefaultHapPermission();
-AccessTokenID GrantSelfHapPermission(const std::vector<std::string>& permissions);
-void RevokeSelfHapPermission(AccessTokenID tokenId);
-
 #endif
 
-#endif // SAF_PERMISSION_CHANGE_H
+#endif

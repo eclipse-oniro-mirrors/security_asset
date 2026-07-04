@@ -63,7 +63,8 @@
                 "rust_cxx",
                 "ylong_json",
                 "ylong_runtime",
-                "openssl"
+                "openssl",
+                "screenlock_mgr"
             ],
             "third_party": []
         },

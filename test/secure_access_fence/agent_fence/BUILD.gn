@@ -13,6 +13,7 @@
 
 import("//build/ohos.gni")
 import("//build/test.gni")
+import("//base/security/asset/config.gni")
 
 module_output_path = "asset/asset"
 
@@ -206,4 +207,238 @@ ohos_unittest("saf_agent_fence_stress_test") {
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
   ]
+}
+
+ohos_unittest("saf_agent_fence_request_tool_permissions_test") {
+  module_out_path = module_output_path
+  subsystem_name = "security"
+  part_name = "asset"
+
+  include_dirs = [
+    "inc",
+    "../../../frameworks/secure_access_fence/inner_api/agent_fence/inc",
+    "../../../interfaces/inner_kits/c/secure_access_fence/agent_fence/inc",
+    "../../../interfaces/inner_kits/c/secure_access_fence/common/inc",
+    "../../../frameworks/secure_access_fence/inner_api/ipc",
+    "../../../frameworks/secure_access_fence/os_dependency/log/inc",
+    "../../../frameworks/secure_access_fence/inner_api/agent_fence/inc",
+    "../../../services/secure_access_fence/core_service/src/cxx/inc",
+  ]
+
+  sources = [
+    "src/saf_agent_fence_request_tool_permissions_test.cpp",
+    "src/saf_permission_change.cpp",
+  ]
+
+  deps = [
+    "../../../interfaces/inner_kits/c/secure_access_fence/agent_fence:saf_agent_fence",
+    "../../../frameworks/secure_access_fence/inner_api/ipc:secure_access_fence_proxy",
+    "../../../services/secure_access_fence/core_service:secure_access_fence_wrapper_static",
+  ]
+
+  external_deps = [
+    "cJSON:cjson",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "samgr:samgr_proxy",
+    "ability_base:want",
+    "ability_runtime:cli_tool_client",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libtokensetproc_shared",
+    "access_token:libtokenid_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
+    "hilog:libhilog",
+    "netmanager_base:net_conn_manager_if",
+    "huks:libhukssdk",
+    "ipc:ipc_single",
+    "os_account:os_account_innerkits",
+    "samgr:samgr_proxy",
+  ]
+}
+
+ohos_unittest("saf_agent_fence_grant_tool_permissions_by_user_test") {
+  module_out_path = module_output_path
+  subsystem_name = "security"
+  part_name = "asset"
+
+  include_dirs = [
+    "inc",
+    "../../../frameworks/secure_access_fence/inner_api/agent_fence/inc",
+    "../../../interfaces/inner_kits/c/secure_access_fence/agent_fence/inc",
+    "../../../interfaces/inner_kits/c/secure_access_fence/common/inc",
+    "../../../frameworks/secure_access_fence/inner_api/ipc",
+    "../../../frameworks/secure_access_fence/os_dependency/log/inc",
+    "../../../frameworks/secure_access_fence/inner_api/agent_fence/inc",
+    "../../../services/secure_access_fence/core_service/src/cxx/inc",
+    "../../../services/secure_access_fence/os_dependency/inc",
+  ]
+
+  sources = [
+    "src/saf_agent_fence_grant_tool_permissions_by_user_test.cpp",
+    "src/saf_permission_change.cpp",
+  ]
+
+  deps = [
+    "../../../interfaces/inner_kits/c/secure_access_fence/agent_fence:saf_agent_fence",
+    "../../../frameworks/secure_access_fence/inner_api/ipc:secure_access_fence_proxy",
+    "../../../services/secure_access_fence/core_service:secure_access_fence_wrapper_static",
+    "../../../services/secure_access_fence/os_dependency:saf_os_dependency",
+  ]
+
+  external_deps = [
+    "cJSON:cjson",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "samgr:samgr_proxy",
+    "ability_base:want",
+    "ability_runtime:cli_tool_client",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libtokensetproc_shared",
+    "access_token:libtokenid_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
+    "hilog:libhilog",
+    "netmanager_base:net_conn_manager_if",
+    "huks:libhukssdk",
+    "ipc:ipc_single",
+    "os_account:os_account_innerkits",
+    "samgr:samgr_proxy",
+  ]
+
+  cflags_cc = []
+
+  if (theme_screenlock_mgr_emf_enable) {
+    cflags_cc += [ "-DTHEME_SCREENLOCK_MGR_ENABLE" ]
+    external_deps += [ "screenlock_mgr:screenlock_client" ]
+  }
+}
+
+ohos_unittest("saf_agent_fence_screen_lock_test") {
+  module_out_path = module_output_path
+  subsystem_name = "security"
+  part_name = "asset"
+
+  include_dirs = [
+    "inc",
+    "../../../frameworks/secure_access_fence/inner_api/agent_fence/inc",
+    "../../../interfaces/inner_kits/c/secure_access_fence/agent_fence/inc",
+    "../../../interfaces/inner_kits/c/secure_access_fence/common/inc",
+    "../../../frameworks/secure_access_fence/inner_api/ipc",
+    "../../../frameworks/secure_access_fence/os_dependency/log/inc",
+    "../../../frameworks/secure_access_fence/inner_api/agent_fence/inc",
+    "../../../services/secure_access_fence/core_service/src/cxx/inc",
+    "../../../services/secure_access_fence/os_dependency/inc",
+  ]
+
+  sources = [
+    "src/saf_agent_fence_screen_lock_test.cpp",
+    "src/saf_permission_change.cpp",
+  ]
+
+  deps = [
+    "../../../interfaces/inner_kits/c/secure_access_fence/agent_fence:saf_agent_fence",
+    "../../../frameworks/secure_access_fence/inner_api/ipc:secure_access_fence_proxy",
+    "../../../services/secure_access_fence/core_service:secure_access_fence_wrapper_static",
+    "../../../services/secure_access_fence/os_dependency:saf_os_dependency",
+  ]
+
+  external_deps = [
+    "cJSON:cjson",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "samgr:samgr_proxy",
+    "ability_base:want",
+    "ability_runtime:cli_tool_client",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libtokensetproc_shared",
+    "access_token:libtokenid_sdk",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
+    "hilog:libhilog",
+    "netmanager_base:net_conn_manager_if",
+    "huks:libhukssdk",
+    "ipc:ipc_single",
+    "os_account:os_account_innerkits",
+    "samgr:samgr_proxy",
+  ]
+
+  cflags_cc = []
+
+  if (theme_screenlock_mgr_emf_enable) {
+    cflags_cc += [ "-DTHEME_SCREENLOCK_MGR_ENABLE" ]
+    external_deps += [ "screenlock_mgr:screenlock_client" ]
+  }
+}
+
+ohos_unittest("saf_agent_fence_screen_lock_hap_identity_test") {
+  module_out_path = module_output_path
+  subsystem_name = "security"
+  part_name = "asset"
+
+  include_dirs = [
+    "inc",
+    "../../../frameworks/secure_access_fence/inner_api/agent_fence/inc",
+    "../../../interfaces/inner_kits/c/secure_access_fence/agent_fence/inc",
+    "../../../interfaces/inner_kits/c/secure_access_fence/common/inc",
+    "../../../frameworks/secure_access_fence/inner_api/ipc",
+    "../../../frameworks/secure_access_fence/os_dependency/log/inc",
+    "../../../frameworks/secure_access_fence/inner_api/agent_fence/inc",
+    "../../../services/secure_access_fence/core_service/src/cxx/inc",
+    "../../../services/secure_access_fence/os_dependency/inc",
+  ]
+
+  sources = [
+    "src/saf_agent_fence_screen_lock_hap_identity_test.cpp",
+  ]
+
+  deps = [
+    "../../../interfaces/inner_kits/c/secure_access_fence/agent_fence:saf_agent_fence",
+    "../../../frameworks/secure_access_fence/inner_api/ipc:secure_access_fence_proxy",
+    "../../../services/secure_access_fence/core_service:secure_access_fence_wrapper_static",
+    "../../../services/secure_access_fence/os_dependency:saf_os_dependency",
+  ]
+
+  external_deps = [
+    "cJSON:cjson",
+    "c_utils:utils",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "samgr:samgr_proxy",
+    "ability_base:want",
+    "ability_runtime:cli_tool_client",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libnativetoken_shared",
+    "access_token:libtokensetproc_shared",
+    "access_token:libtokenid_sdk",
+    "access_token:libpermsetproc_shared",
+    "bundle_framework:appexecfwk_base",
+    "bundle_framework:appexecfwk_core",
+    "c_utils:utils",
+    "common_event_service:cesfwk_innerkits",
+    "hilog:libhilog",
+    "netmanager_base:net_conn_manager_if",
+    "huks:libhukssdk",
+    "ipc:ipc_single",
+    "os_account:os_account_innerkits",
+    "samgr:samgr_proxy",
+  ]
+
+  cflags_cc = []
+  if (theme_screenlock_mgr_emf_enable) {
+    cflags_cc += [ "-DTHEME_SCREENLOCK_MGR_ENABLE" ]
+    external_deps += [ "screenlock_mgr:screenlock_client" ]
+  }
 }

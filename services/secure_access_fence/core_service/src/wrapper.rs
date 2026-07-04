@@ -15,12 +15,14 @@
 
 //! This module implements the Wrapper of the SAF service.
 
+use crate::ticket_operation;
 use ipc::parcel::MsgParcel;
 use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
-use saf_plugin_interface::plugin_interface::{EventType, ExtMap, ERROR_METRICS_KEYS, PERFORMANCE_METRICS_KEYS, POLICY_AUTH_STATUS_KEYS};
+use saf_plugin_interface::plugin_interface::{
+    EventType, ExtMap, ERROR_METRICS_KEYS, PERFORMANCE_METRICS_KEYS, POLICY_AUTH_STATUS_KEYS, VERIFY_REMOTE_TICKET_KEYS,
+};
 use saf_sdk::Value;
-use crate::ticket_operation;
 
 #[cxx::bridge(namespace = "OHOS::Security::SAF")]
 pub mod ffi {
@@ -37,6 +39,7 @@ pub mod ffi {
         fn notify_error(error_message: String, error_code: i32, os_account_id: i32, function_name: String);
         fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, domain_id: &str, messages: &[String], result_code: &mut i32) -> Vec<CxxVerifyTicketInfo>;
         fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec<i32>) -> i32;
+        fn verify_remote_ticket(domain_id: String, remote_control_ticket: String) -> i32;
     }
 
     // Rust callable C++ functions
@@ -86,11 +89,7 @@ pub fn notify_error(error_message: String, error_code: i32, os_account_id: i32, 
 }
 
 #[allow(dead_code)]
-pub fn get_policy_auth_status(
-    permissions: &Vec<String>,
-    auth_statuses: &mut Vec<i32>
-) -> i32
-{
+pub fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec<i32>) -> i32 {
     logi!("[get_policy_auth_status] permissions_len={}", permissions.len());
 
     let plugin = SAFPlugin::get_instance();
@@ -98,7 +97,7 @@ pub fn get_policy_auth_status(
         Ok(loader) => loader,
         Err(_e) => {
             return saf_definition::ErrCode::PluginNotSupport as i32;
-        }
+        },
     };
 
     let mut params = ExtMap::new();
@@ -111,7 +110,7 @@ pub fn get_policy_auth_status(
         Err(e) => {
             loge!("[get_policy_auth_status] process_event failed, e={}", e);
             return e as i32;
-        }
+        },
     };
 
     logi!("[get_policy_auth_status] plugin returned, parsing results");
@@ -128,6 +127,29 @@ pub fn get_policy_auth_status(
     0
 }
 
+pub fn verify_remote_ticket(domain_id: String, remote_control_ticket: String) -> i32 {
+    let plugin = SAFPlugin::get_instance();
+    let loader = match plugin.load_plugin() {
+        Ok(loader) => loader,
+        Err(_e) => {
+            return saf_definition::ErrCode::PluginNotSupport as i32;
+        },
+    };
+    let mut params = ExtMap::new();
+    params.insert(VERIFY_REMOTE_TICKET_KEYS.domain_id, Value::String(domain_id));
+    params.insert(VERIFY_REMOTE_TICKET_KEYS.remote_control_ticket, Value::String(remote_control_ticket));
+
+    logi!("[verify_remote_ticket] calling plugin process_event");
+
+    match loader.process_event(EventType::VerifyRemoteTicket, &mut params) {
+        Ok(_r) => 0,
+        Err(e) => {
+            loge!("[verify_remote_ticket] process_event failed, e={}", e);
+            e as i32
+        },
+    }
+}
+
 // C++ -> Rust bridge for batch_generate_ticket. Returns empty vector on error and reports via notify_error.
 pub fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, domain_id: &str, messages: &[String], result_code: &mut i32) -> Vec<ffi::CxxVerifyTicketInfo> {
     logi!("[Wrapper cxx_batch_generate_ticket] os_account_id = {}, caller_id = {}, messages_count = {}",
@@ -135,12 +157,10 @@ pub fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, domain_id:
     match ticket_operation::batch_generate_ticket(os_account_id, caller_id, domain_id, messages) {
         Ok(v) => {
             *result_code = 0;
-            v.into_iter().map(|r| ffi::CxxVerifyTicketInfo {
-                message: r.message,
-                challenge: r.challenge,
-                ticket: r.ticket,
-            }).collect()
-        }
+            v.into_iter()
+                .map(|r| ffi::CxxVerifyTicketInfo { message: r.message, challenge: r.challenge, ticket: r.ticket })
+                .collect()
+        },
         Err(e) => {
             notify_error(
                 format!("batch_generate_ticket failed: {}", e.code),
@@ -150,13 +170,16 @@ pub fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, domain_id:
             );
             *result_code = e.code as i32;
             Vec::new()
-        }
+        },
     }
 }
 
 // Plugin performance event helper
 fn call_plugin_performance_event(
-    item_count: i32, elapsed_time: i32, os_account_id: i32, function_name: String
+    item_count: i32,
+    elapsed_time: i32,
+    os_account_id: i32,
+    function_name: String,
 ) -> Result<(), String> {
     let plugin = SAFPlugin::get_instance();
 
@@ -174,7 +197,10 @@ fn call_plugin_performance_event(
 
 // Plugin error event helper
 fn call_plugin_error_event(
-    error_message: String, error_code: i32, os_account_id: i32, function_name: String
+    error_message: String,
+    error_code: i32,
+    os_account_id: i32,
+    function_name: String,
 ) -> Result<(), String> {
     let plugin = SAFPlugin::get_instance();
 
@@ -188,4 +214,12 @@ fn call_plugin_error_event(
 
     let _ = loader.process_event(EventType::StatisticsError, &mut params);
     Ok(())
+}
+
+extern "C" {
+    fn IsScreenLocked(isLocked: *mut bool) -> i32;
+}
+
+pub fn cxx_is_screen_locked(is_locked: &mut bool) -> i32 {
+    unsafe { IsScreenLocked(is_locked) }
 }
