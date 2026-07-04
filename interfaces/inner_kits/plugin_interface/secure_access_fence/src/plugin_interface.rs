@@ -42,6 +42,9 @@ pub enum EventType {
 
     /// Get policy authorization status for permissions
     GetPolicyAuthStatus = 4,
+
+    /// VerifyRemoteTicket
+    VerifyRemoteTicket = 5,
 }
 
 /// Performance metrics parameter keys for StatisticsMetrics EventType.
@@ -85,9 +88,21 @@ pub struct PolicyAuthStatusKeys {
     pub auth_statuses: &'static str,
 }
 
+/// Verify remote ticket parameter keys for VerifyRemoteTicket EventType.
+pub struct VerifyRemoteTicketKeys {
+    /// The key for domain id.
+    pub domain_id: &'static str,
+    /// The key for remote control ticket.
+    pub remote_control_ticket: &'static str,
+}
+
 /// PolicyAuthStatusKeys constant for GetPolicyAuthStatus EventType.
 pub const POLICY_AUTH_STATUS_KEYS: PolicyAuthStatusKeys =
     PolicyAuthStatusKeys { permissions: "Permissions", auth_statuses: "AuthStatuses"};
+
+/// VerifyRemoteTicketKeys constant for VerifyRemoteTicket EventType.
+pub const VERIFY_REMOTE_TICKET_KEYS: VerifyRemoteTicketKeys =
+VerifyRemoteTicketKeys { domain_id: "DomainId", remote_control_ticket: "RemoteControlTicket"};
 
 /// Global constant instance for error metrics parameter keys.
 /// Use this to access standardized parameter names for StatisticsError events.

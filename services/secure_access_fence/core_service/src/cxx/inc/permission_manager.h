@@ -25,13 +25,21 @@
 #include "secure_access_fence_type.h"
 
 namespace OHOS::Security::SAF {
+
+struct TicketCliInfo {
+    std::string cmdName;
+    std::string subCmd;
+    std::vector<std::string> permissions;
+    bool isLockScreenExecutionAllowed{true};
+};
 // Message structure used to generate tickets from C++ side.
 struct TicketMessageInfo {
     uint32_t callerTokenId;
-    std::vector<CommandPermissionInfo> cliInfos;
+    std::vector<TicketCliInfo> cliInfos;
     std::vector<std::string> apiPermissions;
     uint64_t startTime{0};
     uint64_t ticketExpireTimeMs{0};
+    bool needUnlockScreen{false};
     std::string domainId;
 };
 
@@ -46,7 +54,7 @@ const std::map<std::pair<PermissionStatus, PolicyStatus>, AuthStatus> statusMapp
     // (0, 0): REQUIRE_AUTH
     {std::make_pair(PermissionStatus::GRANTED, PolicyStatus::REQUIRE_AUTH), AuthStatus::REQUIRE_AUTH},
 };
-    
+
 class PermissionManager : public OHOS::DelayedSingleton<PermissionManager> {
 public:
     PermissionManager() = default;
@@ -60,12 +68,18 @@ public:
 
 private:
     int32_t BatchQueryCommandPermission(const std::vector<CommandInfo> &cmds,
-        std::vector<CommandPermissionInfo> &cmdPermissionInfos);
+        std::vector<TicketCliInfo> &ticketCliInfos);
+
+    int32_t CheckNeedUnlockScreen(const std::vector<TicketCliInfo> &ticketCliInfos,
+        bool &needUnlock, bool &isScreenLocked);
+
+    bool IsProcessLockScreenSuccess(const std::vector<TicketCliInfo> &ticketCliInfos,
+        bool &needUnlock);
 
     int32_t ProcessOperations(const std::vector<OperationInfo> &operationInfos,
         std::vector<CommandInfo> &cliInfos, std::vector<std::string> &apiPermissions);
 
-    int32_t MergePermissionLists(const std::vector<CommandPermissionInfo> &cmdPermissionInfos,
+    int32_t MergePermissionLists(const std::vector<TicketCliInfo> &ticketCliInfos,
         const std::vector<std::string> &apiPermissions, std::vector<std::string> &allPermissions);
 
     int32_t BatchVerifyPermissions(const std::vector<std::string> &allPermissions, uint32_t callerTokenId,
@@ -84,8 +98,11 @@ private:
     int32_t GetPolicyAuthStatus(const std::vector<std::string> &permissions, std::vector<int32_t> &policyStatuses);
 
     int32_t ProcessTicketInfo(const PermissionQuery &permissionQuery,
-        const std::vector<CommandPermissionInfo> &cmdPermissionInfos, const std::vector<std::string> &apiPermissions,
-        PermissionQueryResult &permissionQueryResult);
+        const std::vector<TicketCliInfo> &ticketCliInfos, const std::vector<std::string> &apiPermissions,
+        bool ticketMsgNeedLock, PermissionQueryResult &permissionQueryResult);
+    
+    void InitTicketInfos(const std::vector<UserAuthResult> &userAuthResults,
+        std::vector<VerifyTicketInfo> &ticketInfos);
 };
 
 } // namespace OHOS::Security::SAF

@@ -18,4 +18,11 @@ declare_args() {
   asset_extend_timeout = false
   asset_ce_upgrade_list = ""
   asset_build_mode = "full"
+
+  if (!defined(global_parts_info) ||
+    defined(global_parts_info.theme_screenlock_mgr)) {
+    theme_screenlock_mgr_emf_enable = true
+  } else {
+    theme_screenlock_mgr_emf_enable = false
+  }
 }

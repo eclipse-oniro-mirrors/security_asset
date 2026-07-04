@@ -33,6 +33,16 @@ namespace {
                 return NOT_SYSTEM_APP;
             case SAF_ERR_ARG_INVALID:
                 return INVALID_PARAMETER;
+            case SAF_ERR_SCREENLOCK_IS_LOCKED:
+                return OPERATION_FAILED_UNDER_SCREEN_LOCK;
+            case SAF_ERR_TRUSTED_RING_REMOTE_TOKEN_EXPIRED:
+                return REMOTE_TOKEN_EXPIRED;
+            case SAF_ERR_TRUSTED_RING_REMOTE_DEVICE_UNTRUSTED:
+                return REMOTE_DEVICE_UNTRUSTED;
+            case SAF_ERR_TRUSTED_RING_LACK_OF_AUTH_TOKEN:
+                return LACK_AUTH_TOKEN;
+            case SAF_ERR_TRUSTED_RING_AUTH_TOKEN_IS_EXPIRED:
+                return AUTH_TOKEN_EXPIRED;
             case SAF_ERR_NO_NETWORK:
                 return ENVIRONMENT_ERROR;
             case SAF_ERR_ACCOUNT_NOT_LOGGED_IN:

@@ -49,11 +49,13 @@ static int GrantSelfPermissionInner()
 {
     const char *permissions[] = {
         "ohos.permission.QUERY_CLI_TOOL",
-        "ohos.permission.GET_TICKET_INFO"
+        "ohos.permission.GET_TICKET_INFO",
+        "ohos.permission.QUERY_TOOL_PERMISSIONS",
+        "ohos.permission.MANAGE_TOOL_RUNTIME_PERMISSIONS",
     };
     NativeTokenInfoParams info = {
         .dcapsNum = 0,
-        .permsNum = 2,
+        .permsNum = 4,
         .aclsNum = 0,
         .dcaps = nullptr,
         .perms = permissions,
