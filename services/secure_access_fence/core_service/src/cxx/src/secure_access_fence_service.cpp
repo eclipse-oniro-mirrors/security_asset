@@ -99,7 +99,11 @@ ErrCode RequestToolPermissions(
         resultCode = SAF_ERR_PERMISSION_DENIED;
         return SAF_SUCCESS;
     }
-    
+    if (!CheckIsSystemHap()) {
+        LOGE("Caller is not system hap");
+        resultCode = SAF_ERR_NOT_SYSTEM_APP;
+        return SAF_SUCCESS;
+    }
     if (permissionQuery.callerTokenId < 0) {
         LOGE("RequestToolPermissions failed, callerTokenId is invalid = %{public}d", permissionQuery.callerTokenId);
         resultCode = SAF_ERR_ARG_INVALID;
@@ -134,6 +138,11 @@ ErrCode GrantToolPermissionsByUser(
     if (!CheckPermission(MANAGE_TOOL_PERMISSION)) {
         LOGE("Permission denied! Need %{public}s", MANAGE_TOOL_PERMISSION);
         resultCode = SAF_ERR_PERMISSION_DENIED;
+        return SAF_SUCCESS;
+    }
+    if (!CheckIsSystemHap()) {
+        LOGE("Caller is not system hap");
+        resultCode = SAF_ERR_NOT_SYSTEM_APP;
         return SAF_SUCCESS;
     }
 

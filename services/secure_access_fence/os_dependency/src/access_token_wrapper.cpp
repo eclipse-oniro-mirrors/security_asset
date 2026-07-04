@@ -28,6 +28,20 @@
 
 using namespace OHOS;
 using namespace Security::AccessToken;
+namespace {
+bool CheckSystemApp()
+{
+    auto accessTokenId = IPCSkeleton::GetCallingFullTokenID();
+    bool isSystemApp = TokenIdKit::IsSystemAppByFullTokenID(accessTokenId);
+    if (isSystemApp) {
+        LOGI("[INFO]Check system app success!");
+        return true;
+    } else {
+        LOGE("[ERROR]Check system app failed!");
+        return false;
+    }
+}
+} // namespace
 
 bool CheckPermission(const char *permission)
 {
@@ -43,4 +57,11 @@ bool CheckPermission(const char *permission)
         LOGE("[FATAL]Check permission failed, ret=%{public}d", result);
         return false;
     }
+}
+
+bool CheckIsSystemHap()
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
+    return (tokenType == ATokenTypeEnum::TOKEN_HAP) ? CheckSystemApp() : true;
 }

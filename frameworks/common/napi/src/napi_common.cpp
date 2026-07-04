@@ -23,13 +23,22 @@ namespace Security {
 namespace SAF_ASSET_COMMON {
 namespace {
     #define MAX_BUFF_SIZE 4096 // 4KB
+    constexpr uint32_t MAX_PERMISSION_NAME_SIZE = 256;
     AgentFenceErrorCode MapErrorCode(const int32_t safResult)
     {
         switch (safResult) {
             case SAF_ERR_PERMISSION_DENIED:
                 return PERMISSION_DENAIL;
+            case SAF_ERR_NOT_SYSTEM_APP:
+                return NOT_SYSTEM_APP;
             case SAF_ERR_ARG_INVALID:
                 return INVALID_PARAMETER;
+            case SAF_ERR_NO_NETWORK:
+                return ENVIRONMENT_ERROR;
+            case SAF_ERR_ACCOUNT_NOT_LOGGED_IN:
+                return ENVIRONMENT_ERROR;
+            case SAF_ERR_QUERIED_PERMISSION_NOT_EXIST:
+                return INVALID_PERMISSION;
         }
         return COMMON_INTERNAL_ERROR;
     }
@@ -140,7 +149,7 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, int32_t &valu
 napi_status NapiGetProperty(const napi_env env, napi_value object, std::string &value)
 {
     NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
-    NAPI_THROW_RETURN_ERR(env, type != napi_string, GENERAL_PARAMETER_ERROR, "Invalid type. Expect string");
+    NAPI_THROW_RETURN_ERR(env, type != napi_string, INVALID_PARAMETER, "Invalid type. Expect string");
     char buffer[MAX_BUFF_SIZE] = { 0 };
     size_t length = 0;
     NAPI_CALL_RETURN_ERR(env, napi_get_value_string_utf8(env, object, buffer, MAX_BUFF_SIZE, &length));
@@ -326,7 +335,12 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::Permissi
     NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
     napi_value propValue = nullptr;
     if (napi_get_named_property(env, object, "permission", &propValue) == napi_ok) {
-        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, permissionInfo.permission));
+        std::string permission = "";
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, permission));
+        if (permission.size() > MAX_PERMISSION_NAME_SIZE) {
+            NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "Permission name exceeds 256");
+        }
+        permissionInfo.permission = permission;
     }
     int32_t permissionStatus = 0;
     if (napi_get_named_property(env, object, "permissionStatus", &propValue) == napi_ok) {
@@ -386,7 +400,7 @@ napi_status NapiSetProperty(const napi_env env, napi_value object, const char *p
     const SAF::AuthStatusInfo authStatusInfo)
 {
     napi_value jsResult = nullptr;
-    NAPI_CALL_RETURN_ERR(env, napi_create_array(env, &jsResult));
+    NAPI_CALL_RETURN_ERR(env, napi_create_object(env, &jsResult));
     NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "authStatus",
         static_cast<int32_t>(authStatusInfo.authStatus)));
     NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "flag",
