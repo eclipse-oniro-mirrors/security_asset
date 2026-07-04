@@ -58,6 +58,16 @@ namespace {
                 return "Grant permission failed. The application specified by the tokenID is"
                     "not allowed to be branted with the specified permission,"
                     "the specified permission cannot be granted by user, etc.";
+            case OPERATION_FAILED_UNDER_SCREEN_LOCK:
+                return "The requested operation is not allowed to be execute while the device is locked";
+            case REMOTE_TOKEN_EXPIRED:
+                return "remote token is expired.";
+            case REMOTE_DEVICE_UNTRUSTED:
+                return "The remote device is untrusted.";
+            case LACK_AUTH_TOKEN:
+                return "Lack auth token.";
+            case AUTH_TOKEN_EXPIRED:
+                return "The auth token is expired.";
             default:
                 return "Unknown error";
         }
@@ -156,6 +166,56 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::Permissi
     }
     if (napi_get_named_property(env, object, "operationInfo", &propValue) == napi_ok) {
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, permissionQuery.operationInfo));
+    }
+    if (napi_get_named_property(env, object, "remoteInfo", &propValue) == napi_ok) {
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, permissionQuery.remoteInfo));
+    }
+    return napi_ok;
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::RemoteControlParams &remoteControlParams)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    napi_value propValue;
+    if (napi_get_named_property(env, object, "challenge", &propValue) == napi_ok) {
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, remoteControlParams.challenge));
+    }
+    if (napi_get_named_property(env, object, "remoteControlTicket", &propValue) == napi_ok) {
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, remoteControlParams.remoteControlTicket));
+    }
+    if (napi_get_named_property(env, object, "controlledDeviceName", &propValue) == napi_ok) {
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, remoteControlParams.controlledDeviceName));
+    }
+    if (napi_get_named_property(env, object, "controllerDeviceName", &propValue) == napi_ok) {
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, remoteControlParams.controllerDeviceName));
+    }
+    if (napi_get_named_property(env, object, "signVerifyMsg", &propValue) == napi_ok) {
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, remoteControlParams.signVerifyMsg));
+    }
+    return napi_ok;
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::RemoteInfo &remoteInfo)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    napi_value propValue;
+    int32_t role = 0;
+    if (napi_get_named_property(env, object, "role", &propValue) != napi_ok) {
+        return napi_ok;
+    }
+    NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, role));
+    if (role < static_cast<int32_t>(SAF::Role::CONTROLLER) || role > static_cast<int32_t>(SAF::Role::CONTROLLED)) {
+        NAPI_THROW_RETURN_ERR(env, true, GENERAL_PARAMETER_ERROR, "Invalid role");
+    }
+    remoteInfo.role = static_cast<SAF::Role>(role);
+    if (napi_get_named_property(env, object, "remoteId", &propValue) == napi_ok) {
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, remoteInfo.remoteId));
+    }
+    if (napi_get_named_property(env, object, "domainId", &propValue) == napi_ok) {
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, remoteInfo.domainId));
+    }
+    if (napi_get_named_property(env, object, "remoteControlParams", &propValue) == napi_ok) {
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, remoteInfo.remoteControlParams));
     }
     return napi_ok;
 }

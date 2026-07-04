@@ -125,6 +125,15 @@ napi_value DeclareAuthStatus(const napi_env env)
     return status;
 }
 
+napi_value DeclareRole(const napi_env env)
+{
+    napi_value role = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &role));
+    AddUint32Property(env, role, "CONTROLLER", static_cast<uint32_t>(Role::CONTROLLER));
+    AddUint32Property(env, role, "CONTROLLED", static_cast<uint32_t>(Role::CONTROLLED));
+    return role;
+}
+
 napi_value Register(const napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
@@ -135,6 +144,7 @@ napi_value Register(const napi_env env, napi_value exports)
         // register enum
         DECLARE_NAPI_PROPERTY("OperationType", DeclareOperationType(env)),
         DECLARE_NAPI_PROPERTY("AuthStatus", DeclareAuthStatus(env)),
+        DECLARE_NAPI_PROPERTY("Role", DeclareRole(env)),
     };
 
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));

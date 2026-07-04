@@ -21,6 +21,7 @@ config("saf_idl_config") {
 idl_gen_interface("secure_access_fence_interface") {
   sources = [ "ISecureAccessFence.idl" ]
   sources_common = [ "SecureAccessFenceType.idl" ]
+  inputs = [ "SecureAccessFenceType.idl" ]
 
   log_domainid = "0xD002F21"
   log_tag = "SAF_IPC"

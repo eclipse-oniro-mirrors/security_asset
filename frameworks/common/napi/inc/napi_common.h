@@ -100,6 +100,10 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, std::vector<S
 
 napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::PermissionInfo &permissionInfo);
 
+napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::RemoteControlParams &remoteControlParams);
+
+napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::RemoteInfo &remoteInfo);
+
 napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName, const bool value);
 
 napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName, const int32_t value);

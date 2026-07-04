@@ -99,6 +99,11 @@ enum AuthStatus {
     REMOTE_RESTRICTED = 4
 };
 
+enum Role {
+    CONTROLLER = 1,
+    CONTROLLED = 2
+};
+
 struct AuthStatusInfo {
     AuthStatus authStatus;
     int flag;
@@ -117,12 +122,28 @@ struct PermissionQueryResult {
     VerifyTicketInfo ticket;
 };
 
+struct RemoteControlParams {
+    String challenge;
+    String remoteControlTicket;
+    String controlledDeviceName;
+    String controllerDeviceName;
+    String signVerifyMsg;
+};
+
+struct RemoteInfo {
+    Role role;
+    String remoteId;
+    String domainId;
+    RemoteControlParams remoteControlParams;
+};
+
 struct PermissionQuery {
     List<OperationInfo> operationInfo;
     boolean needTicket;
     int ticketExpireTimeMs;
     int callerTokenId;
     String domainId;
+    RemoteInfo remoteInfo;
 };
 
 struct UserAuthResult {
