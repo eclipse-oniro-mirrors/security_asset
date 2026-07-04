@@ -56,6 +56,7 @@ const JSON_KEY_PERMISSION_LIST: &str = "permissionList";
 const JSON_KEY_START_TIME: &str = "startTime";
 const JSON_KEY_TICKET_EXPIRE_TIME_MS: &str = "ticketExpireTimeMs";
 const METRIC_ITEM_COUNT_TICKET_VERIFY: i32 = 1;
+const DEFAULT_DOMAIN_ID: &str = "";
 const STRING_QUOTE: char = '"';
 extern "C" {
     fn CheckPermission(permission: *const raw_c_char) -> bool;
@@ -212,7 +213,7 @@ impl SAFService {
         Self { system_ability: handler }
     }
 
-    fn batch_generate_ticket(&self, os_account_id: i32, caller_id: &str, messages: &[String]) ->
+    fn batch_generate_ticket(&self, os_account_id: i32, caller_id: &str, domain_id: &str, messages: &[String]) ->
         Result<Vec<VerifyTicketInfo>> {
         let permission = CString::new(GET_TICKET_INFO_PERMISSION).unwrap();
         if unsafe { !CheckPermission(permission.as_ptr()) } {
@@ -224,22 +225,24 @@ impl SAFService {
                 os_account_id,
                 "batch_generate_ticket".to_string()
             );
-            
-            return macros_lib::log_throw_error!(ErrCode::PermissionDenied, 
+
+            return macros_lib::log_throw_error!(ErrCode::PermissionDenied,
                 "Permission denied! Need {}", GET_TICKET_INFO_PERMISSION);
         }
-        
+
         execute_with_metrics!(
             "batch_generate_ticket",
             ticket_operation::batch_generate_ticket,
             messages.len() as i32,
             os_account_id,
             caller_id,
+            domain_id,
             messages
         )
     }
 
-    fn batch_verify_ticket(&self, os_account_id: i32, caller_id: &str, verify_infos: &[VerifyTicketInfo]) ->
+    fn batch_verify_ticket(
+        &self, os_account_id: i32, caller_id: &str, domain_id: &str, verify_infos: &[VerifyTicketInfo]) ->
         Result<Vec<i32>> {
         execute_with_metrics!(
             "batch_verify_ticket",
@@ -247,6 +250,7 @@ impl SAFService {
             verify_infos.len() as i32,
             os_account_id,
             caller_id,
+            domain_id,
             verify_infos
         )
     }
@@ -274,7 +278,7 @@ fn verify_ticket_impl(os_account_id: i32, caller_id: &str, verify_info_str: &str
 
 fn verify_single_ticket(os_account_id: i32, caller_id: &str, ticket_info: VerifyTicketInfo) -> Result<()> {
     let verify_res = ticket_operation::batch_verify_ticket(
-        os_account_id, caller_id, &[ticket_info]
+        os_account_id, caller_id, DEFAULT_DOMAIN_ID, &[ticket_info]
     )?;
 
     if verify_res.is_empty() {

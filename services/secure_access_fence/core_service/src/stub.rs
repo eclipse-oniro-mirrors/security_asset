@@ -15,6 +15,8 @@
 
 //! This module implements the stub of the SAF service.
 
+const DEFAULT_DOMAIN_ID: &str = "";
+
 use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
 use saf_common::{AutoCounter, Counter};
 
@@ -123,7 +125,7 @@ fn handle_batch_generate_ticket(stub: &SAFService, data: &mut MsgParcel, reply: 
         messages.len()
     );
 
-    let result = stub.batch_generate_ticket(os_account_id as i32, &caller_id, &messages);
+    let result = stub.batch_generate_ticket(os_account_id as i32, &caller_id, DEFAULT_DOMAIN_ID, &messages);
     match result {
         Ok(ticket_infos) => {
             reply.write::<i32>(&(IPC_SUCCESS as i32))?;
@@ -161,7 +163,7 @@ fn handle_batch_verify_ticket(stub: &SAFService, data: &mut MsgParcel, reply: &m
         verify_infos.len()
     );
 
-    let result = stub.batch_verify_ticket(os_account_id as i32, &caller_id, &verify_infos);
+    let result = stub.batch_verify_ticket(os_account_id as i32, &caller_id, DEFAULT_DOMAIN_ID, &verify_infos);
     match result {
         Ok(verify_res) => {
             reply.write::<i32>(&(IPC_SUCCESS as i32))?;

@@ -32,6 +32,7 @@ struct TicketMessageInfo {
     std::vector<std::string> apiPermissions;
     uint64_t startTime{0};
     uint64_t ticketExpireTimeMs{0};
+    std::string domainId;
 };
 
 const std::map<std::pair<PermissionStatus, PolicyStatus>, AuthStatus> statusMapping = {

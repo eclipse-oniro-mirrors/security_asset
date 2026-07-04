@@ -35,7 +35,7 @@ pub mod ffi {
     extern "Rust" {
         fn notify_performance_metrics(item_count: i32, elapsed_time: i32, os_account_id: i32, function_name: String);
         fn notify_error(error_message: String, error_code: i32, os_account_id: i32, function_name: String);
-        fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: &[String], result_code: &mut i32) -> Vec<CxxVerifyTicketInfo>;
+        fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, domain_id: &str, messages: &[String], result_code: &mut i32) -> Vec<CxxVerifyTicketInfo>;
         fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec<i32>) -> i32;
     }
 
@@ -129,10 +129,10 @@ pub fn get_policy_auth_status(
 }
 
 // C++ -> Rust bridge for batch_generate_ticket. Returns empty vector on error and reports via notify_error.
-pub fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, messages: &[String], result_code: &mut i32) -> Vec<ffi::CxxVerifyTicketInfo> {
+pub fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, domain_id: &str, messages: &[String], result_code: &mut i32) -> Vec<ffi::CxxVerifyTicketInfo> {
     logi!("[Wrapper cxx_batch_generate_ticket] os_account_id = {}, caller_id = {}, messages_count = {}",
         os_account_id, caller_id, messages.len());
-    match ticket_operation::batch_generate_ticket(os_account_id, caller_id, messages) {
+    match ticket_operation::batch_generate_ticket(os_account_id, caller_id, domain_id, messages) {
         Ok(v) => {
             *result_code = 0;
             v.into_iter().map(|r| ffi::CxxVerifyTicketInfo {
