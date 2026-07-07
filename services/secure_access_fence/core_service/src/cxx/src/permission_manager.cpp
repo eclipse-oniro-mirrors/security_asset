@@ -136,11 +136,11 @@ int32_t PermissionManager::VerifyPermissionListStatus(const std::vector<Permissi
 {
     LOGI("VerifyPermissionListStatus, permissionList length = %{public}zu", permissionInfos.size());
     for (const auto &permInfo : permissionInfos) {
-        if (permInfo.permissionStatus != PermissionStatus::GRANTED) {
-            LOGE("VerifyPermissionListStatus :: permissionStatus is %{public}d",
-                static_cast<int32_t>(permInfo.permissionStatus));
-            return SAF_ERR_ARG_INVALID;
-        }
+        IF_TRUE_LOGE_RETURN_ERR(permInfo.permission.empty() || ExceedsPermissionLengthLimit(permInfo.permission),
+            SAF_ERR_ARG_INVALID, "VerifyPermissionListStatus failed, permission is invalid");
+        IF_TRUE_LOGE_RETURN_ERR(permInfo.permissionStatus != PermissionStatus::GRANTED,
+            SAF_ERR_ARG_INVALID, "VerifyPermissionListStatus failed, permissionStatus is %{public}d",
+            static_cast<int32_t>(permInfo.permissionStatus));
     }
     return SAF_SUCCESS;
 }
@@ -157,10 +157,7 @@ int32_t PermissionManager::BatchQueryCommandPermission(const std::vector<Command
     }
     std::vector<CommandPermission> cliCmdPermissions;
     int32_t ret = CliToolMGRClient::GetInstance().BatchQueryPermissionBySubCommand(cliCmds, cliCmdPermissions);
-    if (ret != SAF_SUCCESS) {
-        LOGE("BatchQueryPermissionBySubCommand failed, ret=%{public}d", ret);
-        return SAF_ERR_TOOL_ERROR;
-    }
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_TOOL_ERROR, "BatchQueryPermissionBySubCommand failed, ret=%{public}d", ret);
     for (const auto &cliPerm : cliCmdPermissions) {
         TicketCliInfo cliInfo;
         cliInfo.cmdName = cliPerm.cmd.toolName;
@@ -214,18 +211,14 @@ int32_t PermissionManager::ProcessOperations(const std::vector<OperationInfo> &o
     for (const auto &opInfo : operationInfos) {
         switch (opInfo.operationType) {
             case OperationType::CLI: {
-                if (opInfo.cliCmdInfo.cmdName.empty()) {
-                    LOGE("ProcessOperations failed, cliCmdInfo is invalid");
-                    return SAF_ERR_ARG_INVALID;
-                }
+                IF_TRUE_LOGE_RETURN_ERR(opInfo.cliCmdInfo.cmdName.empty(), SAF_ERR_ARG_INVALID,
+                    "ProcessOperations failed, cliCmdInfo is invalid");
                 cliInfos.push_back(opInfo.cliCmdInfo);
                 break;
             }
             case OperationType::API: {
-                if (opInfo.permission.empty() || ExceedsPermissionLengthLimit(opInfo.permission)) {
-                    LOGE("ProcessOperations failed, api permission is empty");
-                    return SAF_ERR_ARG_INVALID;
-                }
+                IF_TRUE_LOGE_RETURN_ERR(opInfo.permission.empty() || ExceedsPermissionLengthLimit(opInfo.permission),
+                    SAF_ERR_ARG_INVALID, "ProcessOperations failed, api permission is invalid");
                 apiPermissions.push_back(opInfo.permission);
                 break;
             }
@@ -264,11 +257,10 @@ int32_t PermissionManager::BatchVerifyPermissions(const std::vector<std::string>
         LOGI("ATM grantStatus is %{public}d, ATM resultType is %{public}d, ATM grantFlag is %{public}d",
             permission.grantStatus, static_cast<int32_t>(permission.resultType), permission.grantFlag);
         // 不存在的权限/未声明的权限
-        if (permission.resultType == AccessToken::PermissionResultType::PERMISSION_NOT_EXIST ||
-            permission.resultType == AccessToken::PermissionResultType::PERMISSION_NOT_DECLARED) {
-            LOGE("BatchVerifyPermissions failed, permission resultType is %{public}d", permission.resultType);
-            return SAF_ERROR;
-        }
+        IF_TRUE_LOGE_RETURN_ERR(permission.resultType == AccessToken::PermissionResultType::PERMISSION_NOT_EXIST ||
+            permission.resultType == AccessToken::PermissionResultType::PERMISSION_NOT_DECLARED, SAF_ERROR,
+            "BatchVerifyPermissions failed, permission resultType is %{public}d", permission.resultType);
+
         PermissionInfo info = {};
         info.permission = permission.permissionName;
         switch (permission.grantStatus) {
@@ -334,17 +326,15 @@ int32_t PermissionManager::MergePermissionResults(const std::vector<PermissionIn
         info.permissionStatus = permissionInfos[i].permissionStatus;
         info.authStatusInfo.flag = permissionInfos[i].authStatusInfo.flag;
         AuthStatus outStatus = AuthStatus::FORBIDDEN;
-        if (policyStatuses[i] < static_cast<int32_t>(PolicyStatus::NOT_EXIST) ||
-            policyStatuses[i] > static_cast<int32_t>(PolicyStatus::REMOTE_RESTRICTED)) {
-            LOGE("Invalid policyStatus[%{public}zu]: %{public}d", i, policyStatuses[i]);
-            return SAF_ERROR;
-        }
+        IF_TRUE_LOGE_RETURN_ERR(policyStatuses[i] < static_cast<int32_t>(PolicyStatus::NOT_EXIST) ||
+            policyStatuses[i] > static_cast<int32_t>(PolicyStatus::REMOTE_RESTRICTED), SAF_ERROR,
+            "Invalid policyStatus[%{public}zu]: %{public}d", i, policyStatuses[i]);
+        
         // 聚合ATM的PermissionStatus和策略文件的PolicyStatus，得到AuthStatus
         bool result = getAuthStatus(info.permissionStatus, static_cast<PolicyStatus>(policyStatuses[i]), outStatus);
-        if (!result) {
-            LOGE("getAuthStatus failed, the combination is undefined, AuthStatus is not exist");
-            return SAF_ERROR;
-        }
+        IF_FALSE_LOGE_RETURN_ERR(result, SAF_ERROR,
+            "getAuthStatus failed, the combination is undefined, AuthStatus is not exist");
+        
         info.authStatusInfo.authStatus = outStatus;
         if (outStatus != AuthStatus::AUTHORIZED) {
             LOGE("MergePermissionResults :: Need Dialog! permission[%{public}zu] authStatus is %{public}u", i,
@@ -602,8 +592,9 @@ int32_t PermissionManager::GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ti
     rustMessages.push_back(rust::String(message));
 
     int32_t osAccountId;
-    bool retFlag = GetForegroundOsAccountId(&osAccountId);
-    IF_FALSE_LOGE_RETURN_ERR(retFlag, SAF_ERROR, "GenerateTicketInfoWithTimeStamp :: GetForegroundOsAccountId failed");
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    bool retFlag = GetOsAccountIdFromUid(callerUid, &osAccountId);
+    IF_FALSE_LOGE_RETURN_ERR(retFlag, SAF_ERROR, "GenerateTicketInfoWithTimeStamp :: GetOsAccountIdFromUid failed");
     IF_TRUE_LOGE_RETURN_ERR(osAccountId < MIN_OS_ACCOUNT_ID, SAF_ERR_INVALID_OS_ACCOUNT_ID,
         "GenerateTicketInfoWithTimeStamp :: Invalid osAccountId");
 
