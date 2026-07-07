@@ -23,6 +23,7 @@ extern "C" {
 #endif
 
 bool GetForegroundOsAccountId(int32_t *userId);
+bool GetOsAccountIdFromUid(int32_t uid, int32_t *userId);
 
 #ifdef __cplusplus
 }
