@@ -61,6 +61,7 @@ ohos_static_library("secure_access_fence_wrapper_static") {
     "rust_cxx:cxx_cppdeps"
   ]
 
+  branch_protector_ret = "pac_ret"
   sanitize = {
     integer_overflow = true
     cfi = true
@@ -105,6 +106,17 @@ ohos_rust_shared_library("secure_access_fence_service") {
     "ylong_json:lib",
     "rust_cxx:lib",
   ]
+
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
+
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
 
   crate_name = "secure_access_fence_service"
   crate_type = "dylib"
