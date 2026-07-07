@@ -17,6 +17,8 @@ ohos_rust_static_library("saf_definition") {
   sources = [ "src/lib.rs" ]
   deps = [ "../os_dependency/log:saf_log" ]
 
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
+
   crate_name = "saf_definition"
   crate_type = "rlib"
   subsystem_name = "security"

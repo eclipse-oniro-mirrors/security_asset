@@ -64,6 +64,16 @@ ohos_unittest("saf_agent_fence_test") {
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
   ]
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
 }
 
 ohos_unittest("saf_agent_fence_no_permission_test") {
@@ -111,6 +121,16 @@ ohos_unittest("saf_agent_fence_no_permission_test") {
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
   ]
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
 }
 
 ohos_unittest("saf_agent_fence_manual_test") {
@@ -159,6 +179,16 @@ ohos_unittest("saf_agent_fence_manual_test") {
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
   ]
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
 }
 
 ohos_unittest("saf_agent_fence_stress_test") {
@@ -207,6 +237,16 @@ ohos_unittest("saf_agent_fence_stress_test") {
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
   ]
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
 }
 
 ohos_unittest("saf_agent_fence_request_tool_permissions_test") {
@@ -259,6 +299,16 @@ ohos_unittest("saf_agent_fence_request_tool_permissions_test") {
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
   ]
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
 }
 
 ohos_unittest("saf_agent_fence_grant_tool_permissions_by_user_test") {
@@ -319,6 +369,16 @@ ohos_unittest("saf_agent_fence_grant_tool_permissions_by_user_test") {
   if (theme_screenlock_mgr_emf_enable) {
     cflags_cc += [ "-DTHEME_SCREENLOCK_MGR_ENABLE" ]
     external_deps += [ "screenlock_mgr:screenlock_client" ]
+  }
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
   }
 }
 
@@ -381,6 +441,16 @@ ohos_unittest("saf_agent_fence_screen_lock_test") {
     cflags_cc += [ "-DTHEME_SCREENLOCK_MGR_ENABLE" ]
     external_deps += [ "screenlock_mgr:screenlock_client" ]
   }
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
 }
 
 ohos_unittest("saf_agent_fence_screen_lock_hap_identity_test") {
@@ -440,5 +510,15 @@ ohos_unittest("saf_agent_fence_screen_lock_hap_identity_test") {
   if (theme_screenlock_mgr_emf_enable) {
     cflags_cc += [ "-DTHEME_SCREENLOCK_MGR_ENABLE" ]
     external_deps += [ "screenlock_mgr:screenlock_client" ]
+  }
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
   }
 }
