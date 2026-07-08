@@ -28,7 +28,8 @@ int GrantToolPermissionsByUserAPIOperation001(void);
 int GrantToolPermissionsByUserMixedOperation001(void);
 int GrantToolPermissionsByUserEmptyOperation001(void);
 int GrantToolPermissionsByUserExceedExpireTime001(void);
-int VerifyTicket001(void);
+int VerifyTicketWithEmptyTicketInfo001(void);
+int VerifyTicketWithInvalidTicketInfo001(void);
 }
 
 #endif // SAF_AGENT_FENCE_GRANT_TOOL_PERMISSIONS_BY_USER_TEST_H

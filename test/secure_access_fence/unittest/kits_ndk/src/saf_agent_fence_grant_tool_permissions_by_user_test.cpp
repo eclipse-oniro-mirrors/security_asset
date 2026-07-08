@@ -335,9 +335,9 @@ HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, GrantToolPermissionsByUser
 }
 
 /**
- * @tc.desc: VerifyTicket with empty operationInfo, expect success.
+ * @tc.desc: VerifyTicket with empty ticketInfo, expect non-success.
  */
-HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, VerifyTicket001, TestSize.Level0)
+HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, VerifyTicketWithEmptyTicketInfo001, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;
     std::vector<OHOS::Security::SAF::UserAuthResult> userAuthResults;
@@ -359,6 +359,18 @@ HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, VerifyTicket001, TestSize.
     std::vector<OHOS::Security::SAF::CliInfo> cliInfos;
     std::string ticketInfo = ticketInfos[0].ticket;
     result = agentFence.VerifyTicket(100, "0", ticketInfo, cliInfos);
+    EXPECT_EQ(result, 196633);
+}
+
+/**
+ * @tc.desc: VerifyTicket with invalid ticketInfo, expect non-success.
+ */
+HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, VerifyTicketWithInvalidTicketInfo001, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+    std::vector<OHOS::Security::SAF::CliInfo> cliInfos;
+    std::string ticketInfo = "12345";
+    int32_t result = agentFence.VerifyTicket(100, "0", ticketInfo, cliInfos);
     EXPECT_EQ(result, 196633);
 }
 }
