@@ -102,12 +102,10 @@ constexpr char JSON_KEY_TICKET_EXPIRE_TIME_MS[] = "ticketExpireTimeMs";
 constexpr char JSON_KEY_REMOTE_INFO[] = "remoteInfo";
 constexpr char JSON_KEY_NEED_UNLOCK_SCREEN[] = "needUnlockScreen";
 constexpr char JSON_EMPTY_STRING[] = "";
-
 constexpr char JSON_ESCAPED_QUOTE[] = "\\\"";
 constexpr char JSON_ESCAPED_BACKSLASH[] = "\\\\";
 constexpr char JSON_CHAR_QUOTE = '"';
 constexpr char JSON_CHAR_BACKSLASH = '\\';
-
 constexpr char JSON_WRAPPER_MESSAGE_PREFIX[] = "{\"message\":\"";
 constexpr char JSON_WRAPPER_CHALLENGE_PREFIX[] = "\",\"challenge\":\"";
 constexpr char JSON_WRAPPER_TICKET_PREFIX[] = "\",\"ticket\":\"";
