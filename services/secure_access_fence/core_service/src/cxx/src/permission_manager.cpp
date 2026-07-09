@@ -693,18 +693,6 @@ int32_t PermissionManager::RequestToolPermissions(const PermissionQuery &permiss
         IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: BatchQueryCommandPermission failed, ret=%{public}d", ret);
     }
 
-    std::vector<std::string> allPermissions;
-    ret = MergePermissionLists(ticketCliInfos, apiPermissions, allPermissions);
-    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: MergePermissionLists failed, ret=%{public}d", ret);
-
-    uint32_t tokenId = permissionQuery.callerTokenId;
-    std::vector<PermissionInfo> permissionInfos;
-    ret = BatchVerifyPermissions(allPermissions, tokenId, permissionInfos);
-    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: BatchVerifyPermissions failed, ret=%{public}d", ret);
-
-    ret = MergePermissionResults(permissionInfos, permissionQueryResult);
-    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: MergePermissionResults failed, ret=%{public}d", ret);
-
     // remote ticket如果判断过，则后续不需要判断锁屏
     if (needSetScreenLock) {
         bool needUnlock = false;
@@ -715,6 +703,20 @@ int32_t PermissionManager::RequestToolPermissions(const PermissionQuery &permiss
             LOGE("RequestToolPermissions :: Screen locked and commands require unlock");
             return SAF_ERR_SCREENLOCK_IS_LOCKED;
         }
+    }
+
+    std::vector<std::string> allPermissions;
+    ret = MergePermissionLists(ticketCliInfos, apiPermissions, allPermissions);
+    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: MergePermissionLists failed, ret=%{public}d", ret);
+
+    uint32_t tokenId = permissionQuery.callerTokenId;
+    std::vector<PermissionInfo> permissionInfos;
+    if (allPermissions.size() > 0) {
+        ret = BatchVerifyPermissions(allPermissions, tokenId, permissionInfos);
+        IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: BatchVerifyPermissions failed, ret=%{public}d", ret);
+
+        ret = MergePermissionResults(permissionInfos, permissionQueryResult);
+        IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: MergePermissionResults failed, ret=%{public}d", ret);
     }
 
     ret = ProcessTicketInfo(permissionQuery, ticketCliInfos, apiPermissions, needSetScreenLock, permissionQueryResult);
