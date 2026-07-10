@@ -88,7 +88,7 @@ private:
     int32_t MergePermissionResults(const std::vector<PermissionInfo> &authResults,
         PermissionQueryResult &permissionQueryResult);
 
-    int32_t VerifyPermissionListStatus(const std::vector<PermissionInfo> &permissionInfos);
+    int32_t VerifyPermissionInfo(const std::vector<PermissionInfo> &permissionInfos);
 
     int32_t SerializeTicketMessageInfo(const TicketMessageInfo &ticketMessageInfo, std::string &message);
 

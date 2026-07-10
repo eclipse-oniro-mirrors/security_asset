@@ -132,15 +132,12 @@ static bool ExceedsPermissionLengthLimit(const std::string permissionName)
     return permissionName.size() > MAX_PERMISSION_NAME_LENGTH;
 }
 
-int32_t PermissionManager::VerifyPermissionListStatus(const std::vector<PermissionInfo> &permissionInfos)
+int32_t PermissionManager::VerifyPermissionInfo(const std::vector<PermissionInfo> &permissionInfos)
 {
-    LOGI("VerifyPermissionListStatus, permissionList length = %{public}zu", permissionInfos.size());
+    LOGI("VerifyPermissionInfo, permissionList length = %{public}zu", permissionInfos.size());
     for (const auto &permInfo : permissionInfos) {
         IF_TRUE_LOGE_RETURN_ERR(permInfo.permission.empty() || ExceedsPermissionLengthLimit(permInfo.permission),
-            SAF_ERR_ARG_INVALID, "VerifyPermissionListStatus failed, permission is invalid");
-        IF_TRUE_LOGE_RETURN_ERR(permInfo.permissionStatus != PermissionStatus::GRANTED,
-            SAF_ERR_ARG_INVALID, "VerifyPermissionListStatus failed, permissionStatus is %{public}d",
-            static_cast<int32_t>(permInfo.permissionStatus));
+            SAF_ERR_ARG_INVALID, "VerifyPermissionInfo failed, permission is invalid");
     }
     return SAF_SUCCESS;
 }
@@ -692,7 +689,6 @@ int32_t PermissionManager::RequestToolPermissions(const PermissionQuery &permiss
         ret = BatchQueryCommandPermission(cliInfos, ticketCliInfos);
         IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: BatchQueryCommandPermission failed, ret=%{public}d", ret);
     }
-
     // remote ticket如果判断过，则后续不需要判断锁屏
     if (needSetScreenLock) {
         bool needUnlock = false;
@@ -714,14 +710,11 @@ int32_t PermissionManager::RequestToolPermissions(const PermissionQuery &permiss
     if (allPermissions.size() > 0) {
         ret = BatchVerifyPermissions(allPermissions, tokenId, permissionInfos);
         IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: BatchVerifyPermissions failed, ret=%{public}d", ret);
-
         ret = MergePermissionResults(permissionInfos, permissionQueryResult);
         IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: MergePermissionResults failed, ret=%{public}d", ret);
     }
-
     ret = ProcessTicketInfo(permissionQuery, ticketCliInfos, apiPermissions, needSetScreenLock, permissionQueryResult);
     IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: ProcessTicketInfo failed, ret=%{public}d", ret);
-
     return SAF_SUCCESS;
 }
 
@@ -733,8 +726,8 @@ int32_t PermissionManager::GrantToolPermissionsByUser(const std::vector<UserAuth
     for (size_t i = 0; i < userAuthResults.size(); ++i) {
         IF_TRUE_LOGW_CONTINUE(userAuthResults[i].permissionQuery.callerTokenId < 0, "callerTokenId is invalid");
         IF_TRUE_LOGW_CONTINUE(userAuthResults[i].permissionInfo.empty(), "permissionInfo is empty");
-        ret = VerifyPermissionListStatus(userAuthResults[i].permissionInfo);
-        IF_ERROR_LOGW_CONTINUE(ret, "Not all permissions are granted");
+        ret = VerifyPermissionInfo(userAuthResults[i].permissionInfo);
+        IF_ERROR_LOGW_CONTINUE(ret, "Invalid userAuthResults[%{public}zu]: permission is invalid", i);
         std::vector<CommandInfo> cliInfos;
         std::vector<std::string> apiPermissions;
         ret = ProcessOperations(userAuthResults[i].permissionQuery.operationInfo, cliInfos, apiPermissions);
