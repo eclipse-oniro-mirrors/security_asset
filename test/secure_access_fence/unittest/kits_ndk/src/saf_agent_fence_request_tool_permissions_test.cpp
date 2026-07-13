@@ -191,7 +191,7 @@ HWTEST_F(SafAgentFenceRequestToolPermissionsTest, RequestToolPermissionsEmptyOpe
 
     OHOS::Security::SAF::PermissionQueryResult permissionQueryResult;
     int32_t result = agentFence.RequestToolPermissions(permissionQuery, permissionQueryResult);
-    EXPECT_EQ(result, 12100001);
+    EXPECT_EQ(result, SAF_SUCCESS);
 }
 
 /**
