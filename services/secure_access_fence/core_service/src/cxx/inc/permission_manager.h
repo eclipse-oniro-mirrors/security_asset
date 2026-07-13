@@ -103,6 +103,10 @@ private:
     
     void InitTicketInfos(const std::vector<UserAuthResult> &userAuthResults,
         std::vector<VerifyTicketInfo> &ticketInfos);
+
+    void GetValidPermissions(std::vector<std::string> &permissions, const std::vector<PermissionInfo> &permissionInfos);
+
+    int32_t GetVerifyTicketInfo(const UserAuthResult &userAuthResult, VerifyTicketInfo &ticketInfo);
 };
 
 } // namespace OHOS::Security::SAF

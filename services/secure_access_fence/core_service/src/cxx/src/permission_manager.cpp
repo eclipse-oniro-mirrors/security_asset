@@ -666,6 +666,30 @@ void PermissionManager::InitTicketInfos(const std::vector<UserAuthResult> &userA
     }
 }
 
+void PermissionManager::GetValidPermissions(std::vector<std::string> &permissions,
+    const std::vector<PermissionInfo> &permissionInfos)
+{
+    std::unordered_set<std::string> validPermissions;
+    std::unordered_set<std::string> allPermissions;
+    for (const auto &permInfo : permissionInfos) {
+        allPermissions.insert(permInfo.permission);
+        if (permInfo.permissionStatus == PermissionStatus::GRANTED) {
+            validPermissions.insert(permInfo.permission);
+        }
+    }
+    std::vector<std::string> filteredPermissions;
+    for (const auto &perm : permissions) {
+        if (validPermissions.find(perm) != validPermissions.end()) {
+            filteredPermissions.push_back(perm);
+        } else if (allPermissions.find(perm) == allPermissions.end()) {
+            LOGW("GetValidPermissions :: Permission is not in the permissionInfos list");
+        } else {
+            LOGW("GetValidPermissions :: Permission is not granted");
+        }
+    }
+    permissions = filteredPermissions;
+}
+
 int32_t PermissionManager::RequestToolPermissions(const PermissionQuery &permissionQuery,
     PermissionQueryResult &permissionQueryResult)
 {
@@ -726,48 +750,58 @@ int32_t PermissionManager::GrantToolPermissionsByUser(const std::vector<UserAuth
     for (size_t i = 0; i < userAuthResults.size(); ++i) {
         IF_TRUE_LOGW_CONTINUE(userAuthResults[i].permissionQuery.callerTokenId < 0, "callerTokenId is invalid");
         IF_TRUE_LOGW_CONTINUE(userAuthResults[i].permissionInfo.empty(), "permissionInfo is empty");
-        ret = VerifyPermissionInfo(userAuthResults[i].permissionInfo);
-        IF_ERROR_LOGW_CONTINUE(ret, "Invalid userAuthResults[%{public}zu]: permission is invalid", i);
-        std::vector<CommandInfo> cliInfos;
-        std::vector<std::string> apiPermissions;
-        ret = ProcessOperations(userAuthResults[i].permissionQuery.operationInfo, cliInfos, apiPermissions);
-        IF_ERROR_LOGW_CONTINUE(ret, "GrantToolPermissionsByUser :: ProcessOperations failed, ret=%{public}d", ret);
-        std::vector<TicketCliInfo> ticketCliInfos;
-        if (cliInfos.empty()) {
-            LOGI("GrantToolPermissionsByUser :: CLI Infos is empty");
-        } else {
-            ret = BatchQueryCommandPermission(cliInfos, ticketCliInfos);
-            IF_ERROR_LOGW_CONTINUE(ret,
-                "GrantToolPermissionsByUser :: BatchQueryCommandPermission failed, ret=%{public}d", ret);
-        }
-        bool needUnlock = false;
-        if (!IsProcessLockScreenSuccess(ticketCliInfos, needUnlock)) {
-            IF_ERROR_LOGW_CONTINUE(SAF_ERROR, "GrantToolPermissionsByUser Screen failed, ret=%{public}d", SAF_ERROR);
-        }
         IF_TRUE_LOGW_CONTINUE(ExceedsMaxExpireTimeLimit(userAuthResults[i].permissionQuery.ticketExpireTimeMs),
             "ticketExpireTimeMs is invalid");
         VerifyTicketInfo ticketInfo;
-        TicketMessageInfo ticketMessageInfo;
-        for (const auto &cliInfo : ticketCliInfos) {
-            ticketMessageInfo.cliInfos.push_back(cliInfo);
-        }
-        ticketMessageInfo.needUnlockScreen = needUnlock;
-        auto now = std::chrono::system_clock::now();
-        ticketMessageInfo.startTime = static_cast<uint64_t>(
-            std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
-        ticketMessageInfo.ticketExpireTimeMs = userAuthResults[i].permissionQuery.ticketExpireTimeMs;
-        ticketMessageInfo.apiPermissions = apiPermissions;
-        ticketMessageInfo.callerTokenId = GetValidCallingTokenId(userAuthResults[i].permissionQuery.callerTokenId);
-        ticketMessageInfo.domainId = userAuthResults[i].permissionQuery.domainId;
-        ret = GenerateTicketInfoWithTimeStamp(ticketMessageInfo, ticketMessageInfo.callerTokenId, ticketInfo);
-        if (ret == SAF_ERR_ACCOUNT_NOT_LOGGED_IN) {
-            LOGE("Account is not logged in. Stop generating ticket");
-            return ret;
-        }
-        IF_ERROR_LOGW_CONTINUE(ret,
-            "GrantToolPermissionsByUser :: GenerateTicketInfoWithTimeStamp failed, ret=%{public}d", ret);
+        ret = GetVerifyTicketInfo(userAuthResults[i], ticketInfo);
+        IF_ERROR_LOGW_CONTINUE(ret, "GrantToolPermissionsByUser :: GetVerifyTicketInfo failed, ret=%{public}d", ret);
         ticketInfos[i] = ticketInfo;
     }
+    return SAF_SUCCESS;
+}
+
+int32_t PermissionManager::GetVerifyTicketInfo(const UserAuthResult &userAuthResult, VerifyTicketInfo &ticketInfo)
+{
+    int32_t ret = VerifyPermissionInfo(userAuthResult.permissionInfo);
+    IF_ERROR_LOGE_RETURN(ret, "Invalid userAuthResult: permission is invalid");
+    std::vector<CommandInfo> cliInfos;
+    std::vector<std::string> apiPermissions;
+    ret = ProcessOperations(userAuthResult.permissionQuery.operationInfo, cliInfos, apiPermissions);
+    IF_ERROR_LOGE_RETURN(ret, "GetVerifyTicketInfo :: ProcessOperations failed, ret=%{public}d", ret);
+    GetValidPermissions(apiPermissions, userAuthResult.permissionInfo);
+    std::vector<TicketCliInfo> ticketCliInfos;
+    if (cliInfos.empty()) {
+        LOGI("GetVerifyTicketInfo :: CLI Infos is empty");
+    } else {
+        ret = BatchQueryCommandPermission(cliInfos, ticketCliInfos);
+        IF_ERROR_LOGE_RETURN(ret,
+            "GetVerifyTicketInfo :: BatchQueryCommandPermission failed, ret=%{public}d", ret);
+    }
+    bool needUnlock = false;
+    if (!IsProcessLockScreenSuccess(ticketCliInfos, needUnlock)) {
+        IF_ERROR_LOGE_RETURN(SAF_ERROR, "GetVerifyTicketInfo :: Screen failed, ret=%{public}d", SAF_ERROR);
+    }
+    
+    TicketMessageInfo ticketMessageInfo;
+    for (auto &cliInfo : ticketCliInfos) {
+        GetValidPermissions(cliInfo.permissions, userAuthResult.permissionInfo);
+        ticketMessageInfo.cliInfos.push_back(cliInfo);
+    }
+    ticketMessageInfo.needUnlockScreen = needUnlock;
+    auto now = std::chrono::system_clock::now();
+    ticketMessageInfo.startTime = static_cast<uint64_t>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
+    ticketMessageInfo.ticketExpireTimeMs = userAuthResult.permissionQuery.ticketExpireTimeMs;
+    ticketMessageInfo.apiPermissions = apiPermissions;
+    ticketMessageInfo.callerTokenId = GetValidCallingTokenId(userAuthResult.permissionQuery.callerTokenId);
+    ticketMessageInfo.domainId = userAuthResult.permissionQuery.domainId;
+    ret = GenerateTicketInfoWithTimeStamp(ticketMessageInfo, ticketMessageInfo.callerTokenId, ticketInfo);
+    if (ret == SAF_ERR_ACCOUNT_NOT_LOGGED_IN) {
+        LOGE("Account is not logged in. Stop generating ticket");
+        return ret;
+    }
+    IF_ERROR_LOGE_RETURN(ret,
+        "GetVerifyTicketInfo :: GenerateTicketInfoWithTimeStamp failed, ret=%{public}d", ret);
     return SAF_SUCCESS;
 }
 }
