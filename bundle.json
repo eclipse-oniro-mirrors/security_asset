@@ -51,6 +51,7 @@
                 "hisysevent",
                 "huks",
                 "ipc",
+                "json",
                 "kv_store",
                 "napi",
                 "netmanager_base",

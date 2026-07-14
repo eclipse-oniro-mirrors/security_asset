@@ -81,6 +81,7 @@ HWTEST_F(SafAgentFenceScreenLockTest, GrantToolPermissionsByUserCliTimerScreenLo
     userAuthResults.push_back(authResult);
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
+    setuid(20020101);
     int32_t result = OHOS::Security::SAF::SafAgentFence::GrantToolPermissionsByUser(userAuthResults, ticketInfos);
     // Result depends on external cli_tool_mgr service and screen lock status
     EXPECT_TRUE(result == SAF_SUCCESS);
@@ -88,6 +89,7 @@ HWTEST_F(SafAgentFenceScreenLockTest, GrantToolPermissionsByUserCliTimerScreenLo
     EXPECT_TRUE(!ticketInfos[0].message.empty());
     EXPECT_TRUE(!ticketInfos[0].challenge.empty());
     EXPECT_TRUE(!ticketInfos[0].ticket.empty());
+    setuid(0);
 }
 
 /**
@@ -116,9 +118,11 @@ HWTEST_F(SafAgentFenceScreenLockTest, GrantToolPermissionsByUserCliTimerScreenLo
     userAuthResults.push_back(authResult);
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
+    setuid(20020101);
     int32_t result = OHOS::Security::SAF::SafAgentFence::GrantToolPermissionsByUser(userAuthResults, ticketInfos);
     // Result depends on external cli_tool_mgr service and screen lock status
     EXPECT_TRUE(result == SAF_SUCCESS);
+    setuid(0);
 }
 
 /**
@@ -136,7 +140,7 @@ HWTEST_F(SafAgentFenceScreenLockTest, VerifyTicketScreenLock001, TestSize.Level0
     permInfo.permission = "perm1";
     permInfo.permissionStatus = OHOS::Security::SAF::PermissionStatus::GRANTED;
     authResult.permissionInfo.push_back(permInfo);
-    authResult.permissionQuery.callerTokenId = 0;
+    authResult.permissionQuery.callerTokenId = 100;
     OHOS::Security::SAF::OperationInfo opInfo;
     opInfo.operationType = OHOS::Security::SAF::OperationType::CLI;
     opInfo.cliCmdInfo.cmdName = "ohos-cliTimer";
@@ -147,14 +151,16 @@ HWTEST_F(SafAgentFenceScreenLockTest, VerifyTicketScreenLock001, TestSize.Level0
     userAuthResults.push_back(authResult);
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
+    setuid(20020101);
     int32_t result = OHOS::Security::SAF::SafAgentFence::GrantToolPermissionsByUser(userAuthResults, ticketInfos);
     EXPECT_EQ(result, SAF_SUCCESS);
 
     std::vector<OHOS::Security::SAF::CliInfo> cliInfos;
     OHOS::Security::SAF::SafAgentFence agentFence;
     std::string ticketInfo = ticketInfos[0].ticket;
-    result = agentFence.VerifyTicket(100, "0", ticketInfo, cliInfos);
+    result = agentFence.VerifyTicket(100, "100", ticketInfo, cliInfos);
     EXPECT_EQ(result, SAF_SUCCESS);
+    setuid(0);
 }
 
 /**
@@ -172,7 +178,7 @@ HWTEST_F(SafAgentFenceScreenLockTest, VerifyTicketScreenLock002, TestSize.Level0
     permInfo.permission = "perm1";
     permInfo.permissionStatus = OHOS::Security::SAF::PermissionStatus::GRANTED;
     authResult.permissionInfo.push_back(permInfo);
-    authResult.permissionQuery.callerTokenId = 0;
+    authResult.permissionQuery.callerTokenId = 100;
     OHOS::Security::SAF::OperationInfo opInfo;
     opInfo.operationType = OHOS::Security::SAF::OperationType::CLI;
     opInfo.cliCmdInfo.cmdName = "ohos-cliTimer-2";
@@ -183,14 +189,16 @@ HWTEST_F(SafAgentFenceScreenLockTest, VerifyTicketScreenLock002, TestSize.Level0
     userAuthResults.push_back(authResult);
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
+    setuid(20020101);
     int32_t result = OHOS::Security::SAF::SafAgentFence::GrantToolPermissionsByUser(userAuthResults, ticketInfos);
     EXPECT_EQ(result, SAF_SUCCESS);
 
     std::vector<OHOS::Security::SAF::CliInfo> cliInfos;
     OHOS::Security::SAF::SafAgentFence agentFence;
     std::string ticketInfo = ticketInfos[0].ticket;
-    result = agentFence.VerifyTicket(100, "0", ticketInfo, cliInfos);
+    result = agentFence.VerifyTicket(100, "100", ticketInfo, cliInfos);
     EXPECT_EQ(result, SAF_SUCCESS);
+    setuid(0);
 }
 
 /**
@@ -208,7 +216,7 @@ HWTEST_F(SafAgentFenceScreenLockTest, VerifyTicketScreenLock003, TestSize.Level0
     permInfo.permission = "perm1";
     permInfo.permissionStatus = OHOS::Security::SAF::PermissionStatus::GRANTED;
     authResult.permissionInfo.push_back(permInfo);
-    authResult.permissionQuery.callerTokenId = 0;
+    authResult.permissionQuery.callerTokenId = 100;
     OHOS::Security::SAF::OperationInfo opInfo;
     opInfo.operationType = OHOS::Security::SAF::OperationType::CLI;
     opInfo.cliCmdInfo.cmdName = "ohos-cliTimer";
@@ -219,6 +227,7 @@ HWTEST_F(SafAgentFenceScreenLockTest, VerifyTicketScreenLock003, TestSize.Level0
     userAuthResults.push_back(authResult);
 
     std::vector<OHOS::Security::SAF::VerifyTicketInfo> ticketInfos;
+    setuid(20020101);
     int32_t result = OHOS::Security::SAF::SafAgentFence::GrantToolPermissionsByUser(userAuthResults, ticketInfos);
     EXPECT_EQ(result, SAF_SUCCESS);
 
@@ -227,8 +236,9 @@ HWTEST_F(SafAgentFenceScreenLockTest, VerifyTicketScreenLock003, TestSize.Level0
     std::vector<OHOS::Security::SAF::CliInfo> cliInfos;
     OHOS::Security::SAF::SafAgentFence agentFence;
     std::string ticketInfo = ticketInfos[0].ticket;
-    result = agentFence.VerifyTicket(100, "0", ticketInfo, cliInfos);
+    result = agentFence.VerifyTicket(100, "100", ticketInfo, cliInfos);
     EXPECT_EQ(result, SAF_ERR_SCREENLOCK_IS_LOCKED);
+    setuid(0);
 }
 
 }
