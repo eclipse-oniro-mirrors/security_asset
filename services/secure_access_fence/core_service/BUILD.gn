@@ -58,7 +58,8 @@ ohos_static_library("secure_access_fence_wrapper_static") {
     "hilog:libhilog",
     "ipc:ipc_single",
     "samgr:samgr_proxy",
-    "rust_cxx:cxx_cppdeps"
+    "rust_cxx:cxx_cppdeps",
+    "bounds_checking_function:libsec_shared"
   ]
 
   branch_protector_ret = "pac_ret"
