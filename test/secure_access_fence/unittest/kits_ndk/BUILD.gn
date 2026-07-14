@@ -68,4 +68,14 @@ ohos_unittest("saf_agent_fence_ndk_test") {
     "os_account:os_account_innerkits",
     "samgr:samgr_proxy",
   ]
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
 }

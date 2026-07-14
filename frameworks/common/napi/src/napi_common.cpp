@@ -392,7 +392,7 @@ napi_status NapiSetProperty(const napi_env env, napi_value object, const char *p
     napi_value jsResult = nullptr;
     NAPI_CALL_RETURN_ERR(env, napi_create_object(env, &jsResult));
     NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "message", ticket.message));
-    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "challenge", ticket.message));
+    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "challenge", ticket.challenge));
     NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "ticket", ticket.ticket));
     NAPI_CALL_RETURN_ERR(env, napi_set_named_property(env, object, propertyName, jsResult));
     return napi_ok;
