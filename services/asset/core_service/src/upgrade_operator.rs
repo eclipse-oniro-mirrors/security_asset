@@ -183,12 +183,8 @@ fn clone_single_app(user_id: i32, app_name: &str, app_index: i32, datas: &mut Ve
         alias_set.insert(data.get_bytes_attr(&column::ALIAS)?.clone());
     }
     let mut need_rollback = false;
-    let first_data = datas.first().ok_or_else(|| {
-        macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-            ErrCode::DataCorrupted, "datas is empty when cloning single app")
-    })?;
-    let owner_info = first_data.get_bytes_attr(&column::OWNER)?;
-    let owner_type = first_data.get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?;
+    let owner_info = datas.first().unwrap().get_bytes_attr(&column::OWNER)?;
+    let owner_type = datas.first().unwrap().get_enum_attr::<OwnerType>(&column::OWNER_TYPE)?;
     let calling_info = CallingInfo::new(user_id, owner_type, owner_info.clone(), None);
     let index = match owner_info.iter().rev().position(|&x| x == b'_') {
         Some(index) => index,
