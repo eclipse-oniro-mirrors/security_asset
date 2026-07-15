@@ -23,7 +23,7 @@ use asset_file_operator::de_operator::delete_user_de_dir;
 use asset_log::{loge, logi, logw};
 use system_ability_fwk::cxx_share::SystemAbilityOnDemandReason;
 
-use crate::{common_event::listener, unload_sa, PackageInfo, PackageInfoFfi, WantParser};
+use crate::{common_event::listener, unload_sa, unload_sa_with_delay, DELAYED_UNLOAD_TIME_FOR_COMMON_EVENT_IN_SEC, PackageInfo, PackageInfoFfi, WantParser};
 
 const USER_ID: &str = "userId";
 const SANDBOX_APP_INDEX: &str = "sandbox_app_index";
@@ -194,8 +194,13 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
 }
 
 pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {
+    let is_common_event = reason.name != "load";
     let handle = ylong_runtime::spawn_blocking(move || process_common_event_async(reason));
     let task_manager = TaskManager::get_instance();
     task_manager.lock().unwrap().push_task(handle);
-    unload_sa();
+    if is_common_event {
+        unload_sa_with_delay(DELAYED_UNLOAD_TIME_FOR_COMMON_EVENT_IN_SEC);
+    } else {
+        unload_sa();
+    }
 }

@@ -86,6 +86,7 @@ struct PackageInfoFfi {
 }
 
 static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 20;
+static DELAYED_UNLOAD_TIME_FOR_COMMON_EVENT_IN_SEC: i32 = 5;
 static SEC_TO_MILLISEC: i32 = 1000;
 const RSS_SA_EXTENSION: &str = "RssSaExtension";
 const PREPARE_FOR_BUNDLE: u32 = 27;
@@ -196,9 +197,13 @@ impl PackageInfo {
 }
 
 pub(crate) fn unload_sa() {
+    unload_sa_with_delay(DELAYED_UNLOAD_TIME_IN_SEC);
+}
+
+pub(crate) fn unload_sa_with_delay(delay_sec: i32) {
     ylong_runtime::spawn(async move {
         loop {
-            ylong_runtime::time::sleep(Duration::from_secs(DELAYED_UNLOAD_TIME_IN_SEC as u64)).await;
+            ylong_runtime::time::sleep(Duration::from_secs(delay_sec as u64)).await;
             let crypto_manager = CryptoManager::get_instance();
             let max_crypto_expire_duration = crypto_manager.lock().unwrap().max_crypto_expire_duration();
             if max_crypto_expire_duration > 0 {
