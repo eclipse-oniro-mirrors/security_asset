@@ -25,6 +25,9 @@ use crate::{common_event::listener, unload_sa, CommonEventInfoFfi, StringArray};
 fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
     let _counter_user = AutoCounter::new();
     let reason_name: String = reason.name;
+    if reason_name == "load" {
+        return;
+    }
     let want = reason.extra_data.want();
 
     let want_vec: Vec<String> = want.into_iter()
