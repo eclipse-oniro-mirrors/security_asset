@@ -46,33 +46,37 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
 
     match attributes.get(&Tag::AuthType) {
         Some(Value::Number(val)) if *val == (AuthType::None as u32) => {
-            macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL][SA]Pre Query AuthType invalid.")
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL][SA]Pre Query AuthType invalid.")
         },
         _ => Ok(()),
     }
 }
 
 fn query_key_attrs(calling_info: &CallingInfo, db_data: &DbMap, attrs: &AssetMap) -> Result<(Accessibility, bool)> {
-    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attrs)?;
-    let mut db = Database::build(calling_info, db_key)?;
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attrs).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    let mut db = Database::build(calling_info, db_key).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
 
-    let results = db.query_datas(&vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET], db_data, None, true)?;
+    let results = db.query_datas(&vec![column::ACCESSIBILITY, column::REQUIRE_PASSWORD_SET], db_data, None, true)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     match results.len() {
-        0 => macros_lib::log_throw_error!(ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found."),
+        0 => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::NotFound, "[FATAL][SA]No data that meets the query conditions is found."),
         1 => {
             let access_type = results[0].get_enum_attr::<Accessibility>(&column::ACCESSIBILITY)?;
             let require_password_set = results[0].get_bool_attr(&column::REQUIRE_PASSWORD_SET)?;
             Ok((access_type, require_password_set))
         },
-        _ => macros_lib::log_throw_error!(
+        _ => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
             ErrCode::Unsupported,
-            "[FATAL][SA]Data of multiple access control types cannot be accessed at the same time."
-        ),
+            "[FATAL][SA]Data of multiple access control types cannot be accessed at the same time."),
     }
 }
 
 pub(crate) fn pre_query(calling_info: &CallingInfo, query: &AssetMap) -> Result<Vec<u8>> {
-    check_arguments(query, calling_info)?;
+    check_arguments(query, calling_info).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
 
     let mut db_data = common::into_db_map(query);
     if query.get(&Tag::GroupId).is_some() {
@@ -82,15 +86,18 @@ pub(crate) fn pre_query(calling_info: &CallingInfo, query: &AssetMap) -> Result<
     }
     db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::Any as u32));
 
-    let (access_type, require_password_set) = query_key_attrs(calling_info, &db_data, query)?;
+    let (access_type, require_password_set) = query_key_attrs(calling_info, &db_data, query)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let valid_time = match query.get(&Tag::AuthValidityPeriod) {
         Some(Value::Number(num)) => *num,
         _ => DEFAULT_AUTH_VALIDITY_IN_SECS,
     };
     let secret_key = SecretKey::new_without_alias(calling_info, AuthType::Any, access_type, require_password_set)?;
     let mut crypto = Crypto::build(secret_key, calling_info.clone(), valid_time)?;
-    let challenge = crypto.init_key()?.to_vec();
+    let challenge = crypto.init_key().map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?.to_vec();
     let crypto_manager = CryptoManager::get_instance();
-    crypto_manager.lock().unwrap().add(crypto)?;
+    crypto_manager.lock().unwrap().add(crypto).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     Ok(challenge)
 }

@@ -47,6 +47,7 @@ ohos_shared_library("saf_agent_fence") {
     "hilog:libhilog",
     "ipc:ipc_single",
     "samgr:samgr_proxy",
+    "bounds_checking_function:libsec_shared"
   ]
 
   sanitize = {

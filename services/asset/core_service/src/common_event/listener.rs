@@ -152,8 +152,8 @@ fn delete_on_package_removed(calling_info: &CallingInfo) -> Result<DataExist> {
             (DataExist::GroupData(de_db_data_exists), DataExist::GroupData(ce_db_data_exists)) => {
                 Ok(DataExist::GroupData(de_db_data_exists || ce_db_data_exists))
             },
-            _ => macros_lib::log_throw_error!(ErrCode::AccessDenied,
-                "[FATAL][SA]Cannot delete owner and group data at same time"),
+            _ => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::AccessDenied, "[FATAL][SA]Cannot delete owner and group data at same time"),
         }
     } else {
         Ok(de_db_data_exists)
@@ -250,14 +250,15 @@ fn delete_data_by_owner(
             },
             Err(e) => {
                 // Report the database operation fault event.
-                upload_fault_system_event(&calling_info, start_time, "on_package_removed", "", &e);
+                upload_fault_system_event(&calling_info, start_time, "on_package_removed", "", &e,
+                    &mut ExtDbMap::new());
                 Ok(())
             },
         };
         if let Err(e) = res {
             // Report the key operation fault event.
             let calling_info = CallingInfo::new_self();
-            upload_fault_system_event(&calling_info, start_time, "on_package_removed", "", &e);
+            upload_fault_system_event(&calling_info, start_time, "on_package_removed", "", &e, &mut ExtDbMap::new());
         }
     }
 }
@@ -269,7 +270,7 @@ pub(crate) extern "C" fn on_package_removed(package_info: PackageInfoFfi) {
         slice::from_raw_parts(package_info.bundle_name.data, package_info.bundle_name.size as usize).to_vec()
     };
     logi!(
-        "[INFO]On app -{}-{}-{}- removed.",
+        "On app -{}-{}-{}- removed.",
         package_info.user_id,
         String::from_utf8_lossy(&bundle_name),
         package_info.app_index
@@ -313,7 +314,7 @@ lazy_static! {
 pub(crate) extern "C" fn backup_db() {
     let _counter_user = AutoCounter::new();
     let cur_time = Instant::now();
-    logi!("[INFO]Start backup db.");
+    logi!("Start backup db.");
 
     let mut record_time = RECORD_TIME.lock().expect("Failed to lock RECORD_TIME");
 
@@ -326,10 +327,10 @@ pub(crate) extern "C" fn backup_db() {
         *record_time = Some(cur_time);
         if let Err(e) = backup_all_db(&cur_time) {
             let calling_info = CallingInfo::new_self();
-            upload_fault_system_event(&calling_info, cur_time, "backup_db", "", &e);
+            upload_fault_system_event(&calling_info, cur_time, "backup_db", "", &e, &mut ExtDbMap::new());
         }
     }
-    logi!("[INFO]Finish backup db.");
+    logi!("Finish backup db.");
 }
 
 pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, app_index: i32) {
@@ -341,7 +342,7 @@ pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, ap
             return;
         },
     };
-    logi!("[INFO]On app -{}-{}- restore.", user_id, bundle_name);
+    logi!("On app -{}-{}- restore.", user_id, bundle_name);
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
@@ -356,7 +357,7 @@ pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, ap
 }
 
 pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
-    logi!("[INFO]On user -{}- unlocked.", user_id);
+    logi!("On user -{}- unlocked.", user_id);
 
     // Trigger upgrading de db version and key alias
     match trigger_db_upgrade(user_id, None) {
@@ -393,7 +394,7 @@ pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
 }
 
 pub(crate) fn notify_on_user_removed(user_id: i32) {
-    logi!("[INFO]On user remove [{}].", user_id);
+    logi!("On user remove [{}].", user_id);
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
@@ -406,12 +407,12 @@ pub(crate) fn notify_on_user_removed(user_id: i32) {
 }
 
 pub(crate) extern "C" fn on_user_switched(user_id: i32) {
-    logi!("[INFO]On user switched [{}].", user_id);
+    logi!("On user switched [{}].", user_id);
     trigger_sync_with_user_id(user_id, true);
 }
 
 pub(crate) extern "C" fn on_schedule_wakeup() {
-    logi!("[INFO]On SA wakes up at a scheduled time(36H).");
+    logi!("On SA wakes up at a scheduled time(36H).");
     trigger_sync();
 }
 
@@ -423,7 +424,7 @@ pub(crate) extern "C" fn on_connectivity_change() {
     if let Ok(duration) = current.duration_since(UNIX_EPOCH) {
         let current = duration.as_secs();
         if current > last_time && current - last_time >= TWELVE_HOURS_AS_SECS {
-            logi!("[INFO]On SA connectivity change.");
+            logi!("On SA connectivity change.");
             trigger_sync();
             if write_last_trigger_time(&path, current).is_err() {
                 loge!("Write last trigger time failed.");
@@ -553,7 +554,8 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
         if let Ok(user_id) = entry.file_name().to_string_lossy().to_string().parse::<i32>() {
             if let Err(e) = backup_de_db_if_accessible(&entry, user_id) {
                 let calling_info = CallingInfo::new_self();
-                upload_fault_system_event(&calling_info, *start_time, &format!("backup_de_db_{}", user_id), "", &e);
+                upload_fault_system_event(&calling_info, *start_time, &format!("backup_de_db_{}", user_id), "", &e,
+                    &mut ExtDbMap::new());
             }
         }
     }
@@ -564,21 +566,24 @@ fn backup_all_db(start_time: &Instant) -> Result<()> {
     let mut ret: i32;
     ret = unsafe { GetUsersSize(user_ids_size_ptr) };
     if ret != SUCCESS {
-        return macros_lib::log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get users size failed.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::AccountError, "[FATAL][SA]Get users size failed.");
     }
 
     let mut user_ids: Vec<i32> = vec![0i32; (*user_ids_size_ptr + USER_ID_VEC_BUFFER).try_into().unwrap()];
     let user_ids_ptr = user_ids.as_mut_ptr();
     ret = unsafe { GetUserIds(user_ids_ptr, user_ids_size_ptr) };
     if ret != SUCCESS {
-        return macros_lib::log_throw_error!(ErrCode::AccountError, "[FATAL][SA]Get user IDs failed.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::AccountError, "[FATAL][SA]Get user IDs failed.");
     }
 
     let user_ids_slice = unsafe { slice::from_raw_parts_mut(user_ids_ptr, (*user_ids_size_ptr).try_into().unwrap()) };
     for user_id in user_ids_slice.iter() {
         if let Err(e) = backup_ce_db_if_accessible(*user_id) {
             let calling_info = CallingInfo::new_self();
-            upload_fault_system_event(&calling_info, *start_time, &format!("backup_ce_db_{}", *user_id), "", &e);
+            upload_fault_system_event(&calling_info, *start_time, &format!("backup_ce_db_{}", *user_id), "", &e,
+                &mut ExtDbMap::new());
         }
     }
 

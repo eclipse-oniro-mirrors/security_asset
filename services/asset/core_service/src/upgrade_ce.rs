@@ -18,7 +18,7 @@
 
 use std::{fs, io::ErrorKind, path::Path, time::Instant, os::raw::c_char, ffi::CString};
 
-use asset_definition::{macros_lib, AssetError, AssetMap, ErrCode, Result};
+use asset_definition::{macros_lib, AssetError, ErrCode, Result};
 use asset_db_operator::{
     database::{self, Database}, database_file_upgrade::{self, UpgradeData},
     database_util,
@@ -28,10 +28,11 @@ use asset_crypto_manager::db_key_operator;
 use asset_log::{logw, logi};
 use asset_file_operator::common::BACKUP_SUFFIX;
 use asset_common::CallingInfo;
+use asset_plugin_interface::plugin_interface::ExtDbMap;
 
 use crate::{
-    get_ce_upgrade_info, 
-    sys_event::{upload_fault_system_event, upload_statistic_system_event, upload_system_event}, 
+    get_ce_upgrade_info,
+    sys_event::{upload_fault_system_event, upload_statistic_system_event},
     UPGRADE_CE_MUTEX
 };
 
@@ -49,7 +50,8 @@ pub(crate) enum CeUpgradeStatus {
 
 /// Upgrade data to ce apps.
 pub fn upgrade_ce_data(user_id: i32, trigger_info: &str) -> Result<()> {
-    let mut upgrade_data = database_file_upgrade::get_file_content(user_id)?;
+    let mut upgrade_data = database_file_upgrade::get_file_content(user_id)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     upgrade_ce(user_id, &mut upgrade_data, trigger_info)
 }
 
@@ -62,7 +64,11 @@ fn remove_db(path: &str) -> Result<()> {
             Err(e) if e.kind() == ErrorKind::NotFound => (),
             Err(e) => {
                 logw!("[WARNING]Remove db:[{}] failed, error code:[{}]", path, e);
-                res = Err(AssetError { code: ErrCode::DatabaseError, msg: "rmove file failed".to_string() })
+                res = Err(AssetError { 
+                    code: ErrCode::DatabaseError, 
+                    msg: "rmove file failed".to_string(),
+                    call_chain: AssetError::shorten_func_name(macros_lib::hisysevent::function!()).to_string(),
+                })
             },
         };
     }
@@ -77,10 +83,12 @@ fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()>
         return Ok(());
     }
     // get data from de
-    let mut db_main = Database::build_with_file_name(user_id, ce_upgrade_db_name, &None)?;
-    let mut datas: Vec<DbMap> = db_main.query_datas(&vec![], &DbMap::new(), None, false)?;
+    let mut db_main = Database::build_with_file_name(user_id, ce_upgrade_db_name, &None)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let mut datas: Vec<DbMap> = db_main.query_datas(&vec![], &DbMap::new(), None, false)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     if datas.is_empty() {
-        remove_db(&path_str)?;
+        remove_db(&path_str).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
         return Ok(());
     }
     // store data in ce
@@ -102,7 +110,8 @@ fn upgrade_ce_data_process(user_id: i32, ce_upgrade_db_name: &str) -> Result<()>
     // remove de and de backup
     if need_rollback {
         ce_db.exec("rollback")?;
-        return macros_lib::log_throw_error!(ErrCode::DatabaseError, "Upgrade ce data failed.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::DatabaseError, "Upgrade ce data failed.");
     }
     ce_db.exec("commit")?;
     remove_db(&path_str)
@@ -112,12 +121,14 @@ fn store_upgrade_info_in_settings(user_id: i32, status: CeUpgradeStatus) -> Resu
     let key = CString::new(ASSET_CE_UPGRADE).unwrap();
     match unsafe{ StoreKeyValue(user_id, key.as_ptr(), status as i32) } {
         true => Ok(()),
-        false => macros_lib::log_throw_error!(ErrCode::DatabaseError, "store data in setting failed."),
+        false => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::DatabaseError, "store data in setting failed."),
     }
 }
 
 fn upgrade_ce_process(user_id: i32, upgrade_data: &mut UpgradeData, upgrade_info: &'static [u8]) -> Result<()> {
-    store_upgrade_info_in_settings(user_id, CeUpgradeStatus::Start)?;
+    store_upgrade_info_in_settings(user_id, CeUpgradeStatus::Start)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let ce_upgrade_db_name = database_util::construct_hap_owner_info(upgrade_info)?;
     upgrade_ce_data_process(user_id, &ce_upgrade_db_name)?;
     upgrade_data.ce_upgrade = Some(ce_upgrade_db_name);
@@ -135,17 +146,20 @@ fn upgrade_ce(user_id: i32, upgrade_data: &mut UpgradeData, trigger_info: &str) 
         return Ok(());
     }
 
-    logi!("[INFO]start ce upgrade [{}].", user_id);
+    logi!("start ce upgrade [{}].", user_id);
     let calling_info = CallingInfo::new_self();
     let start = Instant::now();
     let upgrade_res = upgrade_ce_process(user_id, upgrade_data, upgrade_info);
-    if upgrade_res.is_err() {
-        let _ = store_upgrade_info_in_settings(user_id, CeUpgradeStatus::Fail);
+    match upgrade_res {
+        Ok(_) => upload_statistic_system_event(&calling_info, start, &format!("{}_upgrade_ce", trigger_info), "",
+            &mut ExtDbMap::new()),
+        Err(ref e) => {
+            let _ = store_upgrade_info_in_settings(user_id, CeUpgradeStatus::Fail);
+            upload_fault_system_event(&calling_info, start, &format!("{}_upgrade_ce", trigger_info), "", e,
+                &mut ExtDbMap::new());
+        }
     }
-    logi!("[INFO]end ce upgrade [{}].", user_id);
-    let _ = upload_system_event(
-        upgrade_res.clone(), &calling_info, start, &format!("{}_upgrade_ce", trigger_info), &AssetMap::new()
-    );
+    logi!("end ce upgrade [{}].", user_id);
     upgrade_res
 }
 
@@ -178,7 +192,9 @@ pub fn summary_upgrade_data_count(user_id: i32) {
     let calling_info = CallingInfo::new_self();
     let start = Instant::now();
     match process_upgrade_count(user_id, upgrade_info) {
-        Ok(ext_info) => upload_statistic_system_event(&calling_info, start, "upgrade_ce_result", &ext_info),
-        Err(e) => upload_fault_system_event(&calling_info, start, "upgrade_ce_result", "", &e)
+        Ok(ext_info) => upload_statistic_system_event(&calling_info, start, "upgrade_ce_result", &ext_info,
+            &mut ExtDbMap::new()),
+        Err(e) => upload_fault_system_event(&calling_info, start, "upgrade_ce_result", "", &e,
+            &mut ExtDbMap::new())
     }
 }

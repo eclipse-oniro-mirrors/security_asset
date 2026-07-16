@@ -17,7 +17,7 @@
 
 use asset_common::CallingInfo;
 use asset_crypto_manager::crypto_manager::CryptoManager;
-use asset_definition::{AssetMap, Extension, Result, Tag};
+use asset_definition::{AssetMap, Extension, Result, Tag, macros_lib};
 use asset_db_operator::common;
 
 use crate::operations::common::check_group_validity;
@@ -37,7 +37,8 @@ fn check_arguments(query: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
 }
 
 pub(crate) fn post_query(calling_info: &CallingInfo, handle: &AssetMap) -> Result<()> {
-    check_arguments(handle, calling_info)?;
+    check_arguments(handle, calling_info).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     let challenge = handle.get_bytes_attr(&Tag::AuthChallenge)?;
 
     let crypto_manager = CryptoManager::get_instance();

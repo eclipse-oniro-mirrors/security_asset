@@ -182,7 +182,8 @@ fn check_if_need_addition_aad(attr: &str, map: &DbMap) -> bool {
 fn to_hex(bytes: &Vec<u8>) -> Result<Vec<u8>> {
     let bytes_len = bytes.len();
     if bytes_len > MAX_LABEL_SIZE {
-        return macros_lib::log_throw_error!(ErrCode::DataCorrupted, "The data in DB has been tampered with.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::DataCorrupted, "The data in DB has been tampered with.");
     }
 
     let scale_capacity = 2;
@@ -202,7 +203,8 @@ pub fn build_aad(attrs: &DbMap) -> Result<Vec<u8>> {
         }
         aad.extend(format!("{}:", column).as_bytes());
         match attrs.get(column) {
-            Some(Value::Bytes(bytes)) => aad.extend(to_hex(bytes)?),
+            Some(Value::Bytes(bytes)) => aad.extend(to_hex(bytes).map_err(|e| macros_lib::track_error!(e,
+                macros_lib::hisysevent::function!()))?),
             Some(Value::Number(num)) => aad.extend(num.to_le_bytes()),
             Some(Value::Bool(num)) => aad.push(*num as u8),
             None => (),

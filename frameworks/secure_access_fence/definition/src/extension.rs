@@ -15,7 +15,7 @@
 
 //! This module extends the function of SAF data structure.
 
-use std::{collections::HashMap, fmt::Display, hash::Hash, io};
+use std::{collections::HashMap, fmt::Display, hash::Hash};
 
 use saf_log::loge;
 
@@ -36,8 +36,11 @@ impl Conversion for Tag {
             _ if DataType::Bool as u32 == mask => DataType::Bool,
             _ if DataType::Number as u32 == mask => DataType::Number,
             _ if DataType::Bytes as u32 == mask => DataType::Bytes,
+            _ if DataType::String as u32 == mask => DataType::String,
+            _ if DataType::StringList as u32 == mask => DataType::StringList,
+            _ if DataType::NumberList as u32 == mask => DataType::NumberList,
             _ => {
-                panic!("Unexpected data type, it should be bool, uint32 or bytes.");
+                panic!("Unexpected data type, it should be bool, uint32, bytes, string, StringList or NumberList.");
             },
         }
     }
@@ -53,6 +56,9 @@ impl Conversion for Value {
             Value::Bool(_) => DataType::Bool,
             Value::Number(_) => DataType::Number,
             Value::Bytes(_) => DataType::Bytes,
+            Value::String(_) => DataType::String,
+            Value::StringList(_) => DataType::StringList,
+            Value::NumberList(_) => DataType::NumberList,
         }
     }
 
@@ -91,6 +97,26 @@ impl Conversion for u32 {
     }
 }
 
+impl Conversion for Vec<String> {
+    fn data_type(&self) -> DataType {
+        DataType::StringList
+    }
+
+    fn into_value(self) -> Value {
+        Value::StringList(self)
+    }
+}
+
+impl Conversion for Vec<i32> {
+    fn data_type(&self) -> DataType {
+        DataType::NumberList
+    }
+
+    fn into_value(self) -> Value {
+        Value::NumberList(self)
+    }
+}
+
 impl<K> Extension<K> for HashMap<K, Value>
 where
     K: Eq + PartialEq + Hash + std::fmt::Display,
@@ -103,7 +129,7 @@ where
         if let Some(Value::Bool(b)) = self.get(key) {
             Ok(*b)
         } else {
-            macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "[FATAL]Get attribute of bool type failed, key: {}", key)
+            macros_lib::log_throw_error!(ErrCode::DataTypeMismatch, "[FATAL]Get attribute of bool type failed, key: {}", key)
         }
     }
 
@@ -111,7 +137,7 @@ where
         if let Some(Value::Number(num)) = self.get(key) {
             T::try_from(*num)
         } else {
-            macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "[FATAL]Get attribute of enum type failed, key: {}", key)
+            macros_lib::log_throw_error!(ErrCode::DataTypeMismatch, "[FATAL]Get attribute of enum type failed, key: {}", key)
         }
     }
 
@@ -119,7 +145,7 @@ where
         if let Some(Value::Number(num)) = self.get(key) {
             Ok(*num)
         } else {
-            macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "[FATAL]Get attribute of number type failed, key: {}", key)
+            macros_lib::log_throw_error!(ErrCode::DataTypeMismatch, "[FATAL]Get attribute of number type failed, key: {}", key)
         }
     }
 
@@ -127,7 +153,7 @@ where
         if let Some(Value::Bytes(bytes)) = self.get(key) {
             Ok(bytes)
         } else {
-            macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "[FATAL]Get attribute of bytes type failed, key: {}", key)
+            macros_lib::log_throw_error!(ErrCode::DataTypeMismatch, "[FATAL]Get attribute of bytes type failed, key: {}", key)
         }
     }
 }
@@ -145,13 +171,3 @@ impl SAFError {
         SAFError { code, msg }
     }
 }
-
-impl From<io::Error> for SAFError {
-    fn from(error: io::Error) -> Self {
-        SAFError {
-            code: (ErrCode::FileOperationError),
-            msg: (format!("[FATAL]Backup db failed! error is [{error}]")),
-        }
-    }
-}
-

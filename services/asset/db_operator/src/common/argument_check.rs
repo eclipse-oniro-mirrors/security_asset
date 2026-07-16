@@ -45,90 +45,72 @@ const SYNC_TYPE_MAX_BITS: u32 = 3;
 
 fn check_data_type(tag: &Tag, value: &Value) -> Result<()> {
     if tag.data_type() != value.data_type() {
-        return macros_lib::log_throw_error!(
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
             ErrCode::InvalidArgument,
-            "[FATAL]The data type[{}] of the tag[{}] does not match that of the value.",
-            value.data_type(),
-            tag
-        );
+            "[FATAL]The data type[{}] of the tag[{}] does not match that of the value.", value.data_type(), tag);
     }
     Ok(())
 }
 
 fn check_array_size(tag: &Tag, value: &Value, min: usize, max: usize) -> Result<()> {
     let Value::Bytes(v) = value else {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL][{}] is not a bytes.", tag);
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL][{}] is not a bytes.", tag);
     };
     if v.len() > max || v.len() <= min {
-        return macros_lib::log_throw_error!(
-            ErrCode::InvalidArgument,
-            "[FATAL]The array length[{}] of Tag[{}], exceeds the valid range.",
-            v.len(),
-            tag
-        );
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL]The array length[{}] of Tag[{}], exceeds the valid range.", v.len(), tag);
     }
     Ok(())
 }
 
 fn check_enum_variant<T: TryFrom<u32>>(tag: &Tag, value: &Value) -> Result<()> {
     let Value::Number(n) = value else {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
     };
     if T::try_from(*n).is_err() {
-        return macros_lib::log_throw_error!(
-            ErrCode::InvalidArgument,
-            "[FATAL]The value[{}] of Tag[{}] is not a legal enumeration variant",
-            *n,
-            tag
-        );
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL]The value[{}] of Tag[{}] is not a legal enumeration variant", *n, tag);
     }
     Ok(())
 }
 
 fn check_valid_bits(tag: &Tag, value: &Value, min_bits: u32, max_bits: u32) -> Result<()> {
     let Value::Number(n) = value else {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
     };
     if *n >= 2_u32.pow(max_bits) || *n < (2_u32.pow(min_bits) - 1) {
         // 2: binary system
-        return macros_lib::log_throw_error!(
-            ErrCode::InvalidArgument,
-            "[FATAL]The value[{}] of Tag[{}] is not in the valid bit number.",
-            *n,
-            tag
-        );
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL]The value[{}] of Tag[{}] is not in the valid bit number.", *n, tag);
     }
     Ok(())
 }
 
 fn check_number_range(tag: &Tag, value: &Value, min: u32, max: u32) -> Result<()> {
     let Value::Number(n) = value else {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
     };
     if *n <= min || *n > max {
-        return macros_lib::log_throw_error!(
-            ErrCode::InvalidArgument,
-            "[FATAL]The value[{}] of Tag[{}] is not in the valid number range.",
-            *n,
-            tag
-        );
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL]The value[{}] of Tag[{}] is not in the valid number range.", *n, tag);
     }
     Ok(())
 }
 
 fn check_tag_range(tag: &Tag, value: &Value, tags: &[Tag]) -> Result<()> {
     let Value::Number(n) = value else {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
     };
     match Tag::try_from(*n) {
         Ok(value) if tags.contains(&value) => Ok(()),
         _ => {
-            macros_lib::log_throw_error!(
-                ErrCode::InvalidArgument,
-                "[FATAL]The value[{}] of Tag[{}] is not in the valid tag range.",
-                *n,
-                tag
-            )
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]The value[{}] of Tag[{}] is not in the valid tag range.", *n, tag)
         },
     }
 }
@@ -136,11 +118,13 @@ fn check_tag_range(tag: &Tag, value: &Value, tags: &[Tag]) -> Result<()> {
 fn check_user_id(tag: &Tag, value: &Value) -> Result<()> {
     check_number_range(tag, value, ROOT_USER_UPPERBOUND, i32::MAX as u32)?;
     let Value::Number(n) = value else {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL][{}] is not a number.", tag);
     };
     match is_user_id_exist(*n as i32) {
         Ok(res) if res => Ok(()),
-        Ok(_) => macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The user id [{}] is not exist.", *n),
+        Ok(_) => macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL]The user id [{}] is not exist.", *n),
         Err(e) => Err(e),
     }
 }
@@ -194,7 +178,8 @@ pub fn check_value_validity(attrs: &AssetMap) -> Result<()> {
 pub fn check_required_tags(attrs: &AssetMap, required_tags: &[Tag]) -> Result<()> {
     for tag in required_tags {
         if !attrs.contains_key(tag) {
-            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The required tag [{}] is missing.", tag);
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]The required tag [{}] is missing.", tag);
         }
     }
     Ok(())
@@ -204,7 +189,8 @@ pub fn check_required_tags(attrs: &AssetMap, required_tags: &[Tag]) -> Result<()
 pub fn check_tag_validity(attrs: &AssetMap, valid_tags: &[Tag]) -> Result<()> {
     for tag in attrs.keys() {
         if !valid_tags.contains(tag) {
-            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);
         }
     }
     Ok(())
@@ -214,27 +200,19 @@ pub fn check_tag_validity(attrs: &AssetMap, valid_tags: &[Tag]) -> Result<()> {
 pub fn check_group_validity(attrs: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     if attrs.get(&Tag::GroupId).is_some() {
         if let Some(Value::Bool(true)) = attrs.get(&Tag::IsPersistent) {
-            return macros_lib::log_throw_error!(
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                 ErrCode::InvalidArgument,
-                "[FATAL]The value of the tag [{}] cannot be set to true when the tag [{}] is specified.",
-                &Tag::IsPersistent,
-                &Tag::GroupId
-            );
+                "[FATAL]The value of the tag [{}] cannot be set to true when the tag [{}] is specified.", &Tag::IsPersistent, &Tag::GroupId);
         }
         if calling_info.owner_type_enum() == OwnerType::Native {
-            return macros_lib::log_throw_error!(
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                 ErrCode::Unsupported,
-                "[FATAL]The tag [{}] is not yet supported for [{}] owner.",
-                &Tag::GroupId,
-                OwnerType::Native
-            );
+                "[FATAL]The tag [{}] is not yet supported for [{}] owner.", &Tag::GroupId, OwnerType::Native);
         }
         if calling_info.app_index() > 0 {
-            return macros_lib::log_throw_error!(
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                 ErrCode::Unsupported,
-                "[FATAL]The tag [{}] is not yet supported for clone or sandbox app.",
-                &Tag::GroupId
-            );
+                "[FATAL]The tag [{}] is not yet supported for clone or sandbox app.", &Tag::GroupId);
         }
     }
     Ok(())

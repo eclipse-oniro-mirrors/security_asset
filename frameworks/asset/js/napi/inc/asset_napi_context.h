@@ -67,6 +67,7 @@ public:
 
 class BatchOperationContext : public BaseContext {
 public:
+    ~BatchOperationContext();
     // input
     std::vector<std::vector<AssetAttr>> attrsArray;
     std::vector<std::vector<AssetAttr>> attrToUpdateArray;

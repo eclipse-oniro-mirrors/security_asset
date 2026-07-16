@@ -27,12 +27,23 @@ ohos_rust_shared_library("saf_sdk_rust") {
     "samgr:samgr_rust",
   ]
 
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+
   crate_name = "saf_sdk"
   crate_type = "dylib"
   subsystem_name = "security"
   part_name = "asset"
 
   if (asset_build_mode == "empty") {
-    rustflags = [ "--cfg", "feature=\"AssetEmptyMode\"" ]
+    rustflags = [ "--cfg", "feature=\"AssetEmptyMode\"", "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
+  } else {
+    rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
   }
 }

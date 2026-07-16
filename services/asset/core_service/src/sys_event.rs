@@ -31,6 +31,16 @@ use asset_definition::{
 };
 use asset_log::{loge, logi};
 use asset_utils::hasher;
+use asset_sdk::Value;
+use asset_plugin::asset_plugin::AssetPlugin;
+use asset_plugin_interface::plugin_interface::{
+    EventType as AssetEventType, ExtDbMap, PARAM_NAME_USER_ID, PARAM_NAME_CALLER, PARAM_NAME_GROUP_ID,
+    PARAM_NAME_REQUIRE_ATTR_ENCRYPTED, PARAM_NAME_ACCESSIBILITY, PARAM_NAME_ERROR_CODE, PARAM_NAME_EVENT_ID,
+    PARAM_NAME_FUNCTION_NAME, PARAM_NAME_BEGIN_TIME, PARAM_NAME_DIFF_TIME, PARAM_NAME_EXTRA_INFO,
+    PARAM_NAME_CALL_STACK, PARAM_NAME_ALIAS, PARAM_NAME_SYNC_TYPE, PARAM_NAME_REQUIRE_PASSWORD_SET,
+    PARAM_NAME_AUTH_TYPE, PARAM_NAME_OP_TYPE, PARAM_NAME_RETURN_TYPE, PARAM_NAME_WRAP_TYPE, PARAM_NAME_IS_PERSISTENT,
+    PARAM_NAME_CONFLICT_RESOLUTION
+};
 
 /// Component name.
 const COMPONENT: &str = "asset";
@@ -38,6 +48,10 @@ const COMPONENT: &str = "asset";
 pub const PARTITION: &str = "/data";
 /// Max asset file dir number.
 const MAX_DIR_NUMBER: usize = 7;
+const ASSET_BASIC_FAULT: u32 = 1;
+const ASSET_OTHER_FAULT: u32 = 2;
+const ASSET_BASIC_STATISTIC: u32 = 3;
+const ASSET_OTHER_STATISTIC: u32 = 4;
 
 /// System events structure which base on `Hisysevent`.
 struct SysEvent<'a> {
@@ -106,39 +120,60 @@ fn anonymous_vec(val: &[u8]) -> String {
     bytes
 }
 
-fn transfer_tag_to_string(tags: &[Tag], attributes: &AssetMap) -> Result<String> {
+fn transfer_tag_to_string(tags: &[Tag], attributes: &AssetMap, params: &mut ExtDbMap) -> Result<String> {
     let mut ext_info = "".to_string();
     for tag in tags {
         if attributes.get(tag).is_none() {
             continue;
         }
-        let tag_value = match tag {
-            Tag::Alias => anonymous_vec(attributes.get_bytes_attr(tag).unwrap_or(&vec![])).to_string(),
-            Tag::SyncType => format!("{}", attributes.get_num_attr(tag).unwrap_or(SyncType::default() as u32)),
-            Tag::Accessibility => format!("{}", attributes.get_enum_attr(tag).unwrap_or(Accessibility::default())),
-            Tag::RequirePasswordSet => format!("{}", attributes.get_bool_attr(tag).unwrap_or(false)),
-            Tag::AuthType => format!("{}", attributes.get_enum_attr(tag).unwrap_or(AuthType::default())),
-            Tag::ReturnType => format!("{}", attributes.get_enum_attr(tag).unwrap_or(ReturnType::default())),
-            Tag::RequireAttrEncrypted => format!("{}", attributes.get_bool_attr(tag).unwrap_or(false)),
-            Tag::OperationType => {
-                format!("{}", attributes.get_num_attr(tag).unwrap_or(OperationType::default() as u32))
-            },
-            Tag::GroupId => anonymous_vec(attributes.get_bytes_attr(tag).unwrap_or(&vec![])).to_string(),
-            Tag::WrapType => format!("{}", attributes.get_enum_attr(tag).unwrap_or(WrapType::default())),
-            Tag::IsPersistent => format!("{}", attributes.get_bool_attr(tag).unwrap_or(false)),
-            Tag::ConflictResolution => {
-                format!("{}", attributes.get_enum_attr(tag).unwrap_or(ConflictResolution::default()))
-            }
-            _ => String::new(),
+        let (param_name, tag_value) = match tag {
+            Tag::Alias => (PARAM_NAME_ALIAS,
+                anonymous_vec(attributes.get_bytes_attr(tag).unwrap_or(&vec![])).to_string()),
+            Tag::SyncType => (PARAM_NAME_SYNC_TYPE,
+                format!("{}", attributes.get_num_attr(tag).unwrap_or(SyncType::default() as u32))),
+            Tag::Accessibility => (PARAM_NAME_ACCESSIBILITY,
+                format!("{}", attributes.get_enum_attr(tag).unwrap_or(Accessibility::default()))),
+            Tag::RequirePasswordSet => (PARAM_NAME_REQUIRE_PASSWORD_SET,
+                format!("{}", attributes.get_bool_attr(tag).unwrap_or(false))),
+            Tag::AuthType => (PARAM_NAME_AUTH_TYPE,
+                format!("{}", attributes.get_enum_attr(tag).unwrap_or(AuthType::default()))),
+            Tag::ReturnType => (PARAM_NAME_RETURN_TYPE,
+                format!("{}", attributes.get_enum_attr(tag).unwrap_or(ReturnType::default()))),
+            Tag::RequireAttrEncrypted => (PARAM_NAME_REQUIRE_ATTR_ENCRYPTED,
+                format!("{}", attributes.get_bool_attr(tag).unwrap_or(false))),
+            Tag::OperationType => (PARAM_NAME_OP_TYPE,
+                format!("{}", attributes.get_num_attr(tag).unwrap_or(OperationType::default() as u32))),
+            Tag::GroupId => (PARAM_NAME_GROUP_ID,
+                anonymous_vec(attributes.get_bytes_attr(tag).unwrap_or(&vec![])).to_string()),
+            Tag::WrapType => (PARAM_NAME_WRAP_TYPE,
+                format!("{}", attributes.get_enum_attr(tag).unwrap_or(WrapType::default()))),
+            Tag::IsPersistent => (PARAM_NAME_IS_PERSISTENT,
+                format!("{}", attributes.get_bool_attr(tag).unwrap_or(false))),
+            Tag::ConflictResolution => (PARAM_NAME_CONFLICT_RESOLUTION,
+                format!("{}", attributes.get_enum_attr(tag).unwrap_or(ConflictResolution::default()))),
+            _ => ("", String::new()),
         };
+        if !param_name.is_empty() {
+            params.insert(param_name, Value::Bytes(tag_value.as_bytes().to_vec()));
+        }
         ext_info.push_str(&format!("{}:{};", tag, tag_value));
     }
     Ok(ext_info)
 }
 
-fn construct_ext_info(attributes: &AssetMap) -> Result<String> {
+fn construct_ext_info(attributes: &AssetMap, params: &mut ExtDbMap) -> Result<String> {
     let tags = EXTRA_ATTRS.to_vec();
-    transfer_tag_to_string(&tags, attributes)
+    transfer_tag_to_string(&tags, attributes, params)
+}
+
+fn report_ha_event(params: &mut ExtDbMap) {
+    if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
+        if let Err(code) = load.process_event(AssetEventType::ReportHAEvent, params) {
+            loge!("process ReportHAEvent failed, code: {}", code);
+        }
+    } else {
+        loge!("load_plugin failed, fail to ReportHAEvent");
+    }
 }
 
 pub(crate) fn upload_statistic_system_event(
@@ -146,14 +181,15 @@ pub(crate) fn upload_statistic_system_event(
     start_time: Instant,
     func_name: &str,
     ext_info: &str,
+    params: &mut ExtDbMap,
 ) {
-    let duration = start_time.elapsed();
+    let duration = start_time.elapsed().as_millis();
     let owner_info = String::from_utf8_lossy(calling_info.owner_info()).to_string();
     SysEvent::new(EventType::Statistic, SysEvent::ASSET_DOMAIN, SysEvent::ASSET_STATISTIC)
         .set_param(build_str_param!(SysEvent::FUNCTION, func_name))
         .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
         .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
-        .set_param(build_number_param!(SysEvent::RUN_TIME, duration.as_millis() as u32))
+        .set_param(build_number_param!(SysEvent::RUN_TIME, duration as u32))
         .set_param(build_str_param!(
             SysEvent::EXTRA,
             format!(
@@ -164,13 +200,27 @@ pub(crate) fn upload_statistic_system_event(
             )
         ))
         .write();
+
+    if !params.contains_key(PARAM_NAME_EVENT_ID) {
+        params.insert(PARAM_NAME_EVENT_ID, Value::Number(ASSET_OTHER_STATISTIC));
+    }
+    if !params.contains_key(PARAM_NAME_EXTRA_INFO) {
+        params.insert(PARAM_NAME_EXTRA_INFO, Value::Bytes(ext_info.as_bytes().to_vec()));
+    }
+    params.insert(PARAM_NAME_FUNCTION_NAME, Value::Bytes(func_name.as_bytes().to_vec()));
+    params.insert(PARAM_NAME_BEGIN_TIME, Value::Bytes("".as_bytes().to_vec()));
+    params.insert(PARAM_NAME_DIFF_TIME, Value::Bytes(duration.to_string().as_bytes().to_vec()));
+    params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
+    params.insert(PARAM_NAME_CALLER, Value::Bytes(owner_info.as_bytes().to_vec()));
+    report_ha_event(params);
+
     logi!(
-        "[INFO]Calling fun:[{}], user_id:[{}], caller:[{}], start_time:[{:?}], run_time:[{}], ext_info=[{}]",
+        "Calling fun:[{}], user_id:[{}], caller:[{}], start_time:[{:?}], run_time:[{}], ext_info=[{}]",
         func_name,
         calling_info.user_id(),
         owner_info,
         start_time,
-        duration.as_millis(),
+        duration,
         ext_info
     )
 }
@@ -181,6 +231,7 @@ pub(crate) fn upload_fault_system_event(
     func_name: &str,
     ext_info: &str,
     e: &AssetError,
+    params: &mut ExtDbMap,
 ) {
     let owner_info = String::from_utf8_lossy(calling_info.owner_info()).to_string();
     SysEvent::new(EventType::Fault, SysEvent::ASSET_DOMAIN, SysEvent::ASSET_FAULT)
@@ -195,6 +246,22 @@ pub(crate) fn upload_fault_system_event(
             ext_info
         )))
         .write();
+
+    if !params.contains_key(PARAM_NAME_EVENT_ID) {
+        params.insert(PARAM_NAME_EVENT_ID, Value::Number(ASSET_OTHER_FAULT));
+    }
+    if !params.contains_key(PARAM_NAME_EXTRA_INFO) {
+        params.insert(PARAM_NAME_EXTRA_INFO, Value::Bytes(ext_info.as_bytes().to_vec()));
+    }
+    params.insert(PARAM_NAME_FUNCTION_NAME, Value::Bytes(func_name.as_bytes().to_vec()));
+    params.insert(PARAM_NAME_BEGIN_TIME, Value::Bytes("".as_bytes().to_vec()));
+    params.insert(PARAM_NAME_DIFF_TIME, Value::Bytes("".as_bytes().to_vec()));
+    params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
+    params.insert(PARAM_NAME_CALLER, Value::Bytes(owner_info.as_bytes().to_vec()));
+    params.insert(PARAM_NAME_ERROR_CODE, Value::Bytes(e.code.to_string().as_bytes().to_vec()));
+    params.insert(PARAM_NAME_CALL_STACK, Value::Bytes(e.call_chain.as_bytes().to_vec()));
+    report_ha_event(params);
+
     loge!(
         "[ERROR]Calling fun:[{}], user_id:[{}], caller:[{}], start_time:[{:?}], code:[{}], msg:[{}], ext_info:[{}]",
         func_name,
@@ -214,15 +281,20 @@ pub(crate) fn upload_system_event<T: IsArray>(
     func_name: &str,
     attributes: &AssetMap,
 ) -> Result<T> {
-    let mut ext_info = construct_ext_info(attributes)?;
+    let mut params = ExtDbMap::new();
+    let mut ext_info = construct_ext_info(attributes, &mut params)?;
     match &result {
         Ok(val) => {
             if val.is_array() {
                 ext_info.push_str(&format!("res count:{};", val.array_len()));
             }
-            upload_statistic_system_event(calling_info, start_time, func_name, &ext_info)
+            params.insert(PARAM_NAME_EVENT_ID, Value::Number(ASSET_BASIC_STATISTIC));
+            upload_statistic_system_event(calling_info, start_time, func_name, &ext_info, &mut params);
         },
-        Err(e) => upload_fault_system_event(calling_info, start_time, func_name, &ext_info, e),
+        Err(e) => {
+            params.insert(PARAM_NAME_EVENT_ID, Value::Number(ASSET_BASIC_FAULT));
+            upload_fault_system_event(calling_info, start_time, func_name, &ext_info, e, &mut params);
+        }
     }
     result
 }
@@ -240,9 +312,9 @@ pub(crate) fn upload_batch_system_event<T: IsArray>(
             if val.is_array() {
                 ext_info.push_str(&format!("res count:{};", val.array_len()));
             }
-            upload_statistic_system_event(calling_info, start_time, func_name, &ext_info)
+            upload_statistic_system_event(calling_info, start_time, func_name, &ext_info, &mut ExtDbMap::new())
         },
-        Err(e) => upload_fault_system_event(calling_info, start_time, func_name, &ext_info, e),
+        Err(e) => upload_fault_system_event(calling_info, start_time, func_name, &ext_info, e, &mut ExtDbMap::new()),
     }
     result
 }

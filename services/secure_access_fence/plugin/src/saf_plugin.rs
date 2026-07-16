@@ -14,8 +14,7 @@
  */
 
 use std::{
-    cell::RefCell,
-    sync::{Arc, Mutex, OnceLock},
+    sync::{Arc, RwLock, OnceLock},
 };
 use ylong_runtime::task::JoinHandle;
 
@@ -31,18 +30,14 @@ use saf_plugin_interface::plugin_interface::{ISAFPlugin, ISAFPluginCtx};
 /// The saf_ext plugin.
 #[derive(Default)]
 pub struct SAFPlugin {
-    lib: RefCell<Option<libloading::Library>>,
+    lib: RwLock<Option<libloading::Library>>,
 }
-
-static SAF_PLUGIN_LOCK: Mutex<()> = Mutex::new(());
 
 const EXT_SO_NAME: &str = "libsecure_access_fence_ext_ffi.z.so";
 
-unsafe impl Sync for SAFPlugin {}
-
 impl SAFPlugin {
     fn new() -> Self {
-        Self { lib: RefCell::new(None) }
+        Self { lib: RwLock::new(None) }
     }
 
     /// Get the instance of SAFPlugin.
@@ -57,35 +52,33 @@ impl SAFPlugin {
     /// Load the plugin.
     pub fn load_plugin(&self) -> Result<Box<dyn ISAFPlugin>> {
         unsafe {
-            let _guard = SAF_PLUGIN_LOCK.lock().unwrap();
-            if self.lib.borrow().is_none() {
+            let mut lib_guard = self.lib.write().unwrap();
+            if lib_guard.is_none() {
                 logi!("start to load saf_ext plugin.");
                 match libloading::Library::new(EXT_SO_NAME) {
-                    Ok(lib) => *self.lib.borrow_mut() = Some(lib),
+                    Ok(lib) => *lib_guard = Some(lib),
                     Err(err) => {
-                        return macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "dlopen {} failed {}", EXT_SO_NAME, err);
+                        return macros_lib::log_throw_error!(ErrCode::DlopenFail, "dlopen {} failed {}", EXT_SO_NAME, err);
                     },
                 };
             }
-
-            let Some(ref lib) = *self.lib.borrow() else {
-                return macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "unexpected error");
+            let Some(ref lib) = *lib_guard else {
+                return macros_lib::log_throw_error!(ErrCode::DlopenFail, "unexpected error");
             };
-
             let func = match lib
                 .get::<libloading::Symbol<unsafe extern "C" fn() -> *mut dyn ISAFPlugin>>(b"create_plugin_manager")
             {
                 Ok(func) => func,
                 Err(err) => {
                     loge!("dlsym create_plugin_manager failed, err: {}", err);
-                    return macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "dlsym failed {}", err);
+                    return macros_lib::log_throw_error!(ErrCode::DlsymFail, "dlsym failed {}", err);
                 },
             };
 
             let plugin_ptr = func();
             if plugin_ptr.is_null() {
                 loge!("create_plugin_manager return null.");
-                return macros_lib::log_throw_error!(ErrCode::ParamVerificationFailed, "create_plugin_manager return null.");
+                return macros_lib::log_throw_error!(ErrCode::CreatePluginMgrFail, "create_plugin_manager return null.");
             }
 
             Ok(Box::from_raw(plugin_ptr))

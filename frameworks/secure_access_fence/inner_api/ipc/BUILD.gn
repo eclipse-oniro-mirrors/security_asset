@@ -21,6 +21,7 @@ config("saf_idl_config") {
 idl_gen_interface("secure_access_fence_interface") {
   sources = [ "ISecureAccessFence.idl" ]
   sources_common = [ "SecureAccessFenceType.idl" ]
+  inputs = [ "SecureAccessFenceType.idl" ]
 
   log_domainid = "0xD002F21"
   log_tag = "SAF_IPC"
@@ -38,10 +39,12 @@ ohos_static_library("secure_access_fence_proxy") {
   deps = [ ":secure_access_fence_interface" ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "hilog:libhilog",
     "ipc:ipc_single",
   ]
 
+  branch_protector_ret = "pac_ret"
   sanitize = {
     integer_overflow = true
     cfi = true
@@ -65,10 +68,12 @@ ohos_static_library("secure_access_fence_stub") {
   deps = [ ":secure_access_fence_interface" ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "hilog:libhilog",
     "ipc:ipc_single",
   ]
 
+  branch_protector_ret = "pac_ret"
   sanitize = {
     integer_overflow = true
     cfi = true
@@ -89,6 +94,8 @@ ohos_rust_static_library("saf_ipc") {
     "../../os_dependency/log:saf_log",
   ]
   external_deps = [ "ipc:ipc_rust" ]
+
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
 
   crate_name = "saf_ipc"
   crate_type = "rlib"

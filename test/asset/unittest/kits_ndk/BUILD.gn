@@ -39,4 +39,13 @@ ohos_unittest("asset_ndk_test") {
     "../../../../interfaces/kits/c/asset:asset_ndk",
     "../common:asset_test_common",
   ]
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
 }

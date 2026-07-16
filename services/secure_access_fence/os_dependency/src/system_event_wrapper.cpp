@@ -90,17 +90,19 @@ public:
                 wantArray
             });
         }
-        LOGI("[INFO]Receive event: %{public}s", eventName.c_str());
+        LOGI("Receive event: %{public}s", eventName.c_str());
     }
 private:
     const EventCallBack eventCallBack;
 };
 
+std::mutex g_mutex;
 std::shared_ptr<SystemEventHandler> g_eventHandler = nullptr;
 }
 
 bool SubscribeSystemEvent(const EventCallBack eventCallBack)
 {
+    std::lock_guard<std::mutex> lock(g_mutex);
     MatchingSkills matchingSkills;
     for (const auto& eventName : SYSTEM_EVENT_LIST) {
         matchingSkills.AddEvent(eventName);
@@ -121,6 +123,7 @@ bool SubscribeSystemEvent(const EventCallBack eventCallBack)
 
 bool UnSubscribeSystemEvent(void)
 {
+    std::lock_guard<std::mutex> lock(g_mutex);
     if (g_eventHandler == nullptr) {
         LOGW("SAF system event handler is nullptr, no need to unsubscribe.");
         return false;

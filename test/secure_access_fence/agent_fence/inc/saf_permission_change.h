@@ -16,6 +16,9 @@
 #ifndef SAF_PERMISSION_CHANGE_H
 #define SAF_PERMISSION_CHANGE_H
 
+#include <vector>
+#include <string>
+#include "access_token.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,5 +29,13 @@ int GrantSelfPermission();
 
 #ifdef __cplusplus
 }
+
+using AccessTokenID = OHOS::Security::AccessToken::AccessTokenID;
+
+AccessTokenID GrantDefaultHapPermission();
+AccessTokenID GrantSelfHapPermission(const std::vector<std::string>& permissions);
+void RevokeSelfHapPermission(AccessTokenID tokenId);
+
 #endif
+
 #endif // SAF_PERMISSION_CHANGE_H

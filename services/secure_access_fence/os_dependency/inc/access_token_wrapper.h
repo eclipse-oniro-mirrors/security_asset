@@ -23,6 +23,7 @@ extern "C" {
 #endif
 
 bool CheckPermission(const char *permission);
+bool CheckIsSystemHap();
 
 #ifdef __cplusplus
 }

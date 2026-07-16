@@ -46,7 +46,8 @@ pub fn construct_hap_owner_info(owner_info: &[u8]) -> Result<String> {
     let owner_info_string = String::from_utf8_lossy(owner_info).to_string();
     let split_owner_info: Vec<&str> = owner_info_string.split(OWNER_INFO_SEPARATOR).collect();
     if split_owner_info.len() < MINIM_OWNER_INFO_LEN || split_owner_info.last().is_none() {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Wrong queried owner info!");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL]Wrong queried owner info!");
     }
     let app_index = split_owner_info.last().unwrap();
     let mut split_owner_info_mut = split_owner_info.clone();

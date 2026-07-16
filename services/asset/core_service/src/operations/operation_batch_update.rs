@@ -20,7 +20,7 @@ use asset_crypto_manager::db_key_operator::get_db_key_by_asset_map;
 use asset_db_operator::{
     common::{
         ACCESS_CONTROL_ATTRS, ASSET_SYNC_ATTRS, CRITICAL_LABEL_ATTRS, NORMAL_LABEL_ATTRS, NORMAL_LOCAL_LABEL_ATTRS,
-        check_required_tags, check_tag_validity, check_value_validity, into_db_map
+        check_required_tags, check_tag_validity, check_value_validity, into_db_map, check_system_permission
     },
     database::Database, types::{DB_DATA_VERSION, DbMap, column},
 };
@@ -42,8 +42,10 @@ fn check_attrs_array(attributes_array: &[AssetMap]) -> Result<()> {
         valid_tags.extend_from_slice(&NORMAL_LABEL_ATTRS);
         valid_tags.extend_from_slice(&NORMAL_LOCAL_LABEL_ATTRS);
         valid_tags.extend_from_slice(&ACCESS_CONTROL_ATTRS);
-        check_tag_validity(attrs, &valid_tags)?;
+        check_tag_validity(attrs, &valid_tags)
+            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
         check_value_validity(attrs)?;
+        check_system_permission(attrs)?;
     }
     Ok(())
 }
@@ -51,9 +53,8 @@ fn check_attrs_array(attributes_array: &[AssetMap]) -> Result<()> {
 fn check_update_array(attributes_array: &[AssetMap]) -> Result<()> {
     for attrs in attributes_array {
         if attrs.is_empty() {
-            return macros_lib::log_throw_error!(
-                ErrCode::InvalidArgument, "[FATAL]The data to update contains empty attributes."
-            );
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]The data to update contains empty attributes.");
         }
         let mut valid_tags = NORMAL_LABEL_ATTRS.to_vec();
         valid_tags.extend_from_slice(&NORMAL_LOCAL_LABEL_ATTRS);
@@ -79,16 +80,21 @@ fn local_batch_update(
 ) -> Result<Vec<(u32, u32)>> {
     let attributes = match attributes_array.first() {
         Some(attr) => attr,
-        None => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Batch Add argument empty."),
+        None => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL]Batch Update argument empty."),
     };
     let mut db_map = into_db_map(attributes);
-    check_attrs_array(attributes_array)?;
-    check_update_array(attributes_to_update_array)?;
+    check_attrs_array(attributes_array).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    check_update_array(attributes_to_update_array).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     add_default_attrs(&mut db_map, calling_info);
     check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array)?;
-    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes)?;
-    let mut db = Database::build(calling_info, db_key)?;
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    let mut db = Database::build(calling_info, db_key).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     db.update_batch_datas(&db_map, attributes_array, attributes_to_update_array, calling_info)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))
 }
 
 pub(crate) fn batch_update(
@@ -98,7 +104,8 @@ pub(crate) fn batch_update(
 ) -> Result<Vec<(u32, u32)>> {
     if attributes_array.is_empty() || attributes_to_update_array.is_empty()
     || attributes_array.len() != attributes_to_update_array.len(){
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Batch Update argument empty.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL]Batch Update argument empty.");
     }
     local_batch_update(calling_info, attributes_array, attributes_to_update_array)
 }

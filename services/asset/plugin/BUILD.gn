@@ -17,10 +17,8 @@ import("//build/ohos.gni")
 ohos_rust_static_library("asset_plugin") {
   sources = [ "src/lib.rs" ]
   deps = [
-    "../../../frameworks/asset/definition:asset_definition",
     "../../../frameworks/asset/os_dependency/file:asset_file_operator",
     "../../../frameworks/asset/os_dependency/log:asset_log",
-    "../../../frameworks/asset/utils:asset_utils",
     "../../../interfaces/inner_kits/rs/asset:asset_sdk_rust",
     "../../../interfaces/inner_kits/plugin_interface/asset:asset_plugin_interface_rust",
     "../os_dependency:asset_os_dependency",
@@ -33,6 +31,8 @@ ohos_rust_static_library("asset_plugin") {
   external_deps = [
     "ylong_runtime:ylong_runtime",
   ]
+
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
 
   crate_name = "asset_plugin"
   crate_type = "rlib"

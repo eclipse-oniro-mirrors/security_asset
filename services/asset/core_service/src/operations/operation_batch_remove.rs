@@ -18,12 +18,12 @@
 use asset_common::CallingInfo;
 use asset_crypto_manager::db_key_operator::get_db_key_by_asset_map;
 use asset_db_operator::{
-    common::{check_tag_validity, check_value_validity, add_calling_info},
+    common::{check_tag_validity, check_value_validity, add_calling_info, check_system_permission},
     database::Database,
     types::{DbMap, column},
 };
 use asset_definition::{
-    AssetMap, Result, SyncStatus, Tag, Value,
+    AssetMap, Result, SyncStatus, Tag, Value, macros_lib,
 };
 use asset_log::logi;
 use asset_sdk::Extension;
@@ -42,33 +42,39 @@ fn check_and_get_aliases(attributes_array: &[AssetMap]) -> Result<Vec<Vec<u8>>> 
     for attrs in attributes_array {
         check_tag_validity(attrs, &OPTIONAL_ATTRS)?;
         check_value_validity(attrs)?;
-        let alias = attrs.get_bytes_attr(&Tag::Alias)?;
+        let alias = attrs.get_bytes_attr(&Tag::Alias)
+            .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
         aliases.push(alias.clone());
     }
     Ok(aliases)
 }
 
-fn loacl_batch_remove(attributes_array: &[AssetMap], calling_info: &CallingInfo) -> Result<()> {
+fn local_batch_remove(attributes_array: &[AssetMap], calling_info: &CallingInfo) -> Result<()> {
     let attributes = match attributes_array.first() {
         Some(attr) => attr,
         None => return Ok(()),
     };
-    let aliases = check_and_get_aliases(attributes_array)?;
+    let aliases = check_and_get_aliases(attributes_array).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
 
-    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes)?;
-    let mut db = Database::build(calling_info, db_key)?;
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
+    let mut db = Database::build(calling_info, db_key).map_err(|e| macros_lib::track_error!(e,
+        macros_lib::hisysevent::function!()))?;
     let mut condition = DbMap::new();
     add_calling_info(calling_info, &mut condition);
+    check_system_permission(attributes)?;
     let mut update_datas = DbMap::new();
     let time = time::system_time_in_millis()?;
     update_datas.insert(column::UPDATE_TIME, Value::Bytes(time));
     update_datas.insert(column::SYNC_STATUS, Value::Number(SyncStatus::SyncDel as u32));
 
-    let total_removed_count: i32 = db.delete_batch_datas(&condition, &update_datas, &aliases)?;
+    let total_removed_count: i32 = db.delete_batch_datas(&condition, &update_datas, &aliases)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     logi!("total removed count = {}", total_removed_count);
     Ok(())
 }
 
 pub(crate) fn batch_remove(calling_info: &CallingInfo, attributes_array: &[AssetMap]) -> Result<()> {
-    loacl_batch_remove(attributes_array, calling_info)
+    local_batch_remove(attributes_array, calling_info)
 }

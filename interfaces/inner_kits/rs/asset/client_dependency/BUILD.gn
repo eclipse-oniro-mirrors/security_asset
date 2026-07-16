@@ -10,23 +10,38 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+ 
 import("//build/ohos.gni")
 
-config("saf_mem_config") {
+ohos_static_library("asset_client_dependency") {
   include_dirs = [
     "inc",
-    "../log/inc",
+    "../../../../../frameworks/asset/os_dependency/log/inc",
   ]
-}
-
-ohos_static_library("saf_mem") {
-  public_configs = [ ":saf_mem_config" ]
-  sources = [ "src/saf_mem.c" ]
+  sources = [
+    "src/img_dependency_wrapper.cpp",
+  ]
   external_deps = [
     "c_utils:utils",
     "hilog:libhilog",
+    "ability_runtime:application_image_observer_manager",
+    "resource_schedule_service:ressched_client",
+    "samgr:samgr_proxy",
+    "json:nlohmann_json_static",
+    "ipc:ipc_core",
+    "ipc:ipc_single",
   ]
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+
   subsystem_name = "security"
   part_name = "asset"
 }

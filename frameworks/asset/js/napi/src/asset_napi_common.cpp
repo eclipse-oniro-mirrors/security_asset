@@ -56,6 +56,8 @@ if ((condition)) {                                                              
     return napi_invalid_arg;                                                            \
 }
 
+constexpr uint32_t MAX_ATTR_ARRAY_CAPACITY = 100;
+
 bool IsBlobValid(const AssetBlob &blob)
 {
     return blob.data != nullptr && blob.size != 0;
@@ -230,6 +232,7 @@ napi_status ParseJsMapArray(const napi_env env, napi_value arg, std::vector<std:
     // Get Array length.
     uint32_t arrLen = 0;
     NAPI_CALL_RETURN_ERR(env, napi_get_array_length(env, arg, &arrLen));
+    NAPI_THROW_RETURN_ERR(env, arrLen > MAX_ATTR_ARRAY_CAPACITY, SEC_ASSET_INVALID_ARGUMENT, "Array length exceeds.");
 
     // Parse array.
     for (uint32_t attrIdx = 0; attrIdx < arrLen; attrIdx++) {
@@ -361,12 +364,20 @@ napi_status NapiSetProperty(const napi_env env, napi_value object, const char *p
 napi_value CreateAsyncWork(const napi_env env, napi_callback_info info, std::unique_ptr<BaseContext> context,
     const char *resourceName)
 {
-    if (context->parse != nullptr) {
-        NAPI_CALL(env, context->parse(env, info, context.get()));
-    }
-
     napi_value promise;
     NAPI_CALL(env, napi_create_promise(env, &context->deferred, &promise));
+
+    if (context->parse != nullptr) {
+        napi_status status = context->parse(env, info, context.get());
+        if (status != napi_ok) {
+            napi_value exception = nullptr;
+            napi_get_and_clear_last_exception(env, &exception);
+            napi_value error = (exception != nullptr) ? exception : CreateJsError(env, context->result);
+            NAPI_CALL(env, napi_reject_deferred(env, context->deferred, error));
+            return promise;
+        }
+    }
+
     if (context->check != nullptr) {
         napi_value error = context->check(env, context.get());
         if (error != nullptr) {

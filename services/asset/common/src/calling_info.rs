@@ -44,11 +44,6 @@ impl CallingInfo {
         Self::new(0, OwnerType::Native, "asset_service_8100".as_bytes().to_vec(), None)
     }
 
-    /// Build identity of part process info.
-    pub fn new_part_info(owner_info: Vec<u8>, owner_type: OwnerType) -> Self {
-        Self::new(0, owner_type, owner_info, None)
-    }
-
     /// Build identity of the specified owner.
     pub fn new(user_id: i32, owner_type: OwnerType, owner_info: Vec<u8>, group: Option<Group>) -> Self {
         Self { user_id, owner_type, owner_info, group }

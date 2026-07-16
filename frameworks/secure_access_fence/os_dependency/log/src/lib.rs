@@ -38,7 +38,7 @@ pub fn log_func_e(log: &str) {
     hilog_rust::error!(LOG_LABEL, "{}", @public(log));
 }
 
-/// the function to print log, and may not be used instead of loge
+/// the function to print log, and may not be used instead of logd
 pub fn log_func_d(log: &str) {
     hilog_rust::debug!(LOG_LABEL, "{}", @public(log));
 }

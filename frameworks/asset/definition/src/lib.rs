@@ -294,6 +294,9 @@ pub struct AssetError {
 
     /// Error message for error occurred.
     pub msg: String,
+
+    /// Call chain for error propagation. Format: "func1 <-- func2"
+    pub call_chain: String,
 }
 
 /// Alias of the Asset result type.

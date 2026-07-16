@@ -59,12 +59,3 @@ impl TryFrom<&str> for CommonEventType {
         Ok(CommonEventType::Unknown)
     }
 }
-
-/// Immutable SAF blob
-#[repr(C)]
-pub struct ConstSAFBlob {
-    /// Data size
-    pub size: u32,
-    /// Immutable data
-    pub data: *const u8,
-}

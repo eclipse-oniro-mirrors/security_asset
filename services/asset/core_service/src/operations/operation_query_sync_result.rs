@@ -16,7 +16,7 @@
 //! This module is used to query the result of synchronization.
 
 use asset_common::CallingInfo;
-use asset_definition::{AssetError, AssetMap, ErrCode, Extension, Result, SyncResult, Tag, Value};
+use asset_definition::{AssetError, AssetMap, ErrCode, Extension, Result, SyncResult, Tag, Value, macros_lib};
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_plugin_interface::plugin_interface::{
     EventType, ExtDbMap, PARAM_NAME_FAILED_COUNT, PARAM_NAME_GROUP_ID, PARAM_NAME_OWNER_INFO, PARAM_NAME_OWNER_TYPE,
@@ -37,13 +37,19 @@ fn check_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<
 
 fn map_err(code: u32) -> AssetError {
     match ErrCode::try_from(code) {
-        Ok(code) => AssetError { code, msg: "get sync result failed".to_string() },
+        Ok(code) => {
+            AssetError {
+                code,
+                msg: "get sync result failed".to_string(),
+                call_chain: AssetError::shorten_func_name(macros_lib::hisysevent::function!()).to_string(),
+            }
+        },
         Err(err) => err,
     }
 }
 
 pub(crate) fn query_sync_result(calling_info: &CallingInfo, query: &AssetMap) -> Result<SyncResult> {
-    check_arguments(query, calling_info)?;
+    check_arguments(query, calling_info).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
@@ -64,7 +70,7 @@ pub(crate) fn query_sync_result(calling_info: &CallingInfo, query: &AssetMap) ->
                     failed_count: params.get_num_attr(&PARAM_NAME_FAILED_COUNT)?,
                 })
             },
-            Err(code) => return Err(map_err(code)),
+            Err(code) => return Err(macros_lib::track_error!(map_err(code), macros_lib::hisysevent::function!())),
         }
     }
     Ok(SyncResult::default())

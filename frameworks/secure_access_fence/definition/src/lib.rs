@@ -35,6 +35,15 @@ impl_enum_trait! {
 
         /// The data type of SAF attribute value is byte array.
         Bytes = 3 << 28,
+
+        /// The data type of SAF attribute value is byte string.
+        String = 4 << 28,
+
+        /// The data type of SAF attribute value is string list.
+        StringList = 5 << 28,
+
+        /// The data type of SAF attribute value is number list.
+        NumberList = 6 << 28,
     }
 }
 
@@ -70,14 +79,23 @@ impl_tag_trait! {
 #[derive(Eq, Hash, PartialEq)]
 #[repr(C)]
 pub enum Value {
-    /// Asset attribute value, whose data type is bool.
+    /// SAF attribute value, whose data type is bool.
     Bool(bool),
 
-    /// Asset attribute value, whose data type is number.
+    /// SAF attribute value, whose data type is number.
     Number(u32),
 
-    /// Asset attribute value, whose data type is byte array.
+    /// SAF attribute value, whose data type is byte array.
     Bytes(Vec<u8>),
+
+    /// SAF attribute value, whose data type is string.
+    String(String),
+
+    /// SAF attribute value, whose data type is string list.
+    StringList(Vec<String>),
+
+    /// SAF attribute value, whose data type is number list.
+    NumberList(Vec<i32>),
 }
 
 impl Drop for Value {
@@ -97,35 +115,137 @@ impl_enum_trait! {
     #[derive(Debug)]
     #[derive(Eq, Hash, PartialEq)]
     pub enum ErrCode {
-        /// The error code indicates that the caller doesn't have the permission.
-        PermissionDenied = 201,
+        /// Success.
+        Success = 0,
 
-        /// The error code indicates that the caller is not system application.
-        NotSystemApplication = 202,
+        /// Evaluate deny.
+        EvaluateDeny = 1,
 
+        /// General error.
+        GeneralError = 2,
+
+        // ==================== IPC (0x10000) ====================
+        /// The error code indicates that ipc write data failed.
+        IpcWriteDataFail = 0x10001,
+
+        /// The error code indicates that ipc read data failed.
+        IpcReadDataFail = 0x10002,
+
+        /// The error code indicates that ipc send request failed.
+        IpcSendRequestFail = 0x10003,
+
+        /// The error code indicates that ipc proxy failed.
+        IpcProxyFail = 0x10004,
+
+        /// The error code indicates that ipc error.
+        IpcError = 0x10005,
+
+        /// The error code indicates that invalid ipc code.
+        IpcInvalidIpcCode = 0x10006,
+
+        // ==================== SAMGR (0x12000) ====================
         /// The error code indicates that the SAF service is unavailable.
-        ServiceUnavailable = 1023900001,
+        ServiceUnavailable = 0x12001,
 
-        /// The error code indicates that the ipc communication is abnormal.
-        IpcError = 1023900002,
+        /// The error code indicates that the service is stopping.
+        ServiceIsStopping = 0x12002,
 
-        /// The error code indicates that the operation of calling Bundle Manager Service is failed.
-        BmsError = 1023900003,
+        // ==================== LIBDL (0x21000) ====================
+        /// The error code indicates that dlopen failed.
+        DlopenFail = 0x21001,
 
-        /// The error code indicates that the operation of calling OS Account Service is failed.
-        AccountError = 1023900004,
+        /// The error code indicates that dlsym failed.
+        DlsymFail = 0x21002,
 
-        /// The error code indicates that the operation of calling userIAM Service is failed.
-        UserIAMError = 1023900005,
+        // ==================== ARGUMENT (0x30000) ====================
+        /// The error code indicates that invalid array length.
+        InvalidArrayLen = 0x30003,
 
-        /// The error code indicates that verifying the parameter failed.
-        ParamVerificationFailed = 1023900006,
+        /// The error code indicates that null pointer.
+        NullPtr = 0x30004,
 
-        /// The error code indicates that file operation failed.
-        FileOperationError = 1023900007,
+        /// The error code indicates that argument is empty.
+        ArgEmpty = 0x30019,
 
+        /// The error code indicates that invalid os account id.
+        InvalidOsAccountId = 0x3001A,
+
+        /// The error code indicates that invalid plugin.
+        InvalidPlugin = 0x3001B,
+
+        // ==================== PERMISSION (0x32000) ====================
+        /// The error code indicates that the caller doesn't have the permission.
+        PermissionDenied = 0x32001,
+
+        // ==================== COMMON (0x33000) ====================
+        /// The error code indicates that data type mismatch.
+        DataTypeMismatch = 0x33001,
+
+        /// The error code indicates that hash map key not found.
+        HashMapKeyNotFound = 0x33002,
+
+        /// The error code indicates that base64 invalid length.
+        Base64InvalidLen = 0x33003,
+
+        /// The error code indicates that base64 invalid character.
+        Base64InvalidChar = 0x33004,
+
+        // ==================== CLI_TOOL (0x20000) ====================
         /// The error code indicates that the operation of calling Tool Service is failed.
-        ToolError = 1023900008,
+        ToolError = 0x20001,
+
+        // ==================== CRYPTO (0x18000) ====================
+        /// The error code indicates that crypto operation failed.
+        CryptoOperation = 0x18001,
+
+        /// The error code indicates that invalid HMAC size.
+        InvalidHmacSize = 0x18002,
+
+        /// The error code indicates that invalid challenge size.
+        InvalidChallengeSize = 0x18003,
+
+        // ==================== PLUGIN (0x70000) ====================
+        /// The error code indicates that create plugin manager failed.
+        CreatePluginMgrFail = 0x70001,
+
+        /// The error code indicates that plugin invalid event type.
+        PluginInvalidEventType = 0x70002,
+
+        /// The error code indicates that plugin not support.
+        PluginNotSupport = 0x70003,
+
+        // ==================== TICKET_OPERATION (0x71000) ====================
+        /// The error code indicates that ticket key manager not support.
+        TicketKeyMgrNotSupport = 0x71001,
+
+        /// The error code indicates that ticket time is invalid.
+        TicketTimeInvalid = 0x71002,
+
+        // ==================== TRUSTED_RING (0x19000) ====================
+        /// The error code indicates that network disconnected.
+        NetworkDisconnected = 0x19003,
+
+        /// The error code indicates that account not logged in.
+        NotLoggedIn = 0x19004,
+
+        /// The error code indicates that remote token expired.
+        RemoteTokenExpired = 0x19007,
+
+        /// The error code indicates that remote device untrusted.
+        RemoteDeviceUntrusted = 0x19008,
+
+        /// The error code indicates that lack auth token.
+        LackAuthToken = 0x19009,
+
+        /// The error code indicates that auth token is expired.
+        AuthTokenIsExpired = 0x19010,
+
+        // ==================== SCREEN_SERVICE (0x22000) ====================
+        /// The error code indicates that screen service is unavailable.
+        ScreenServiceIsUnavailable = 0x22001,
+
+        /// The error code indicates that screen is locked.
+        ScreenIsLocked = 0x22002,
     }
 }
 
@@ -167,4 +287,12 @@ pub trait Conversion {
 
     /// Convert the SAF Enum type to the Value variant.
     fn into_value(self) -> Value;
+}
+
+/// Verify emum type.
+pub trait Verify {
+    /// Transfer ipc code to enum.
+    fn try_from_ipc_code(val: u32) -> Result<()>;
+    /// Verify is correct enum.
+    fn is_correct_enum(val: u32) -> bool;
 }

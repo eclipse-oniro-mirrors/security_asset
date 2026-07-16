@@ -36,7 +36,7 @@ pub fn create_user_de_dir(user_id: i32) -> Result<()> {
     let path: &Path = Path::new(&path_str);
     match fs::create_dir(path) {
         Ok(_) => {
-            logi!("[INFO]User DE directory does not exist, create it...");
+            logi!("User DE directory does not exist, create it...");
             let _ = fs::set_permissions(path, fs::Permissions::from_mode(0o700));
             Ok(())
         },
@@ -45,11 +45,8 @@ pub fn create_user_de_dir(user_id: i32) -> Result<()> {
             Ok(())
         },
         Err(e) => {
-            macros_lib::log_throw_error!(
-                ErrCode::FileOperationError,
-                "[FATAL][SA]Create user DE directory failed! error is [{}]",
-                e
-            )
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::FileOperationError, "[FATAL][SA]Create user DE directory failed! error is [{}]", e )
         },
     }
 }
@@ -66,11 +63,8 @@ pub fn delete_user_de_dir(user_id: i32) -> Result<()> {
         Ok(_) => Ok(()),
         Err(e) if e.kind() != std::io::ErrorKind::NotFound => Ok(()),
         Err(e) => {
-            macros_lib::log_throw_error!(
-                ErrCode::FileOperationError,
-                "[FATAL][SA]Delete user DE directory failed! error is [{}]",
-                e
-            )
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::FileOperationError, "[FATAL][SA]Delete user DE directory failed! error is [{}]", e )
         },
     }
 }

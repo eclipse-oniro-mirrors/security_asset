@@ -31,10 +31,9 @@ ohos_rust_shared_library("asset_service") {
     "../os_dependency:asset_os_dependency",
     "../plugin:asset_plugin",
     "//third_party/rust/crates/lazy-static.rs:lib",
-    "//third_party/rust/crates/serde/serde:lib",
   ]
 
-  rustflags = []
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
   if (enable_local_test) {
     rustflags += [ "--cfg", "feature=\"AssetTest\"", ]
   }
@@ -50,6 +49,15 @@ ohos_rust_shared_library("asset_service") {
     "ylong_runtime:ylong_runtime",
     "ylong_json:lib",
   ]
+
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
 
   crate_name = "asset_service"
   crate_type = "dylib"

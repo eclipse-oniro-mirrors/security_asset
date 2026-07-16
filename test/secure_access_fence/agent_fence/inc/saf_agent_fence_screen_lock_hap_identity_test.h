@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,33 +13,11 @@
  * limitations under the License.
  */
 
-#include "saf_mem.h"
+#ifndef SAF_AGENT_FENCE_SCREEN_LOCK_HAP_IDENTITY_TEST_H
+#define SAF_AGENT_FENCE_SCREEN_LOCK_HAP_IDENTITY_TEST_H
 
-#include <stdlib.h>
-#include <string.h>
-
-#include "securec.h"
-
-#include "saf_log.h"
-
-const MAX_SIZE: uint32_t = 1024 * 500;
-
-void *SAFMalloc(uint32_t size)
-{
-    if (size == 0 || size > MAX_SIZE) {
-        return NULL;
-    }
-    void *addr = malloc(size);
-    if (addr != NULL) {
-        (void)memset_s(addr, size, 0, size);
-    }
-    return addr;
+namespace UnitTest::SafAgentFenceScreenLockHapIdentityTest {
+int RequestToolPermissionsCliTimerScreenLock001(void);
 }
 
-void SAFFree(void *addr)
-{
-    if (addr == NULL) {
-        return;
-    }
-    free(addr);
-}
+#endif // SAF_AGENT_FENCE_SCREEN_LOCK_HAP_IDENTITY_TEST_H

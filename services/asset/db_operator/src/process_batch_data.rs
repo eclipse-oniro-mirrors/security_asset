@@ -21,6 +21,7 @@ use asset_definition::{
     AssetMap, Tag, Value, Result, macros_lib, ErrCode, WrapType, LocalStatus,
     SyncType, SyncStatus,
 };
+use asset_sdk::{Accessibility, AuthType};
 
 use crate::{
     types::{DbMap, column},
@@ -32,23 +33,19 @@ use crate::{
     }
 };
 
-const INVALID_TAGS: [Tag; 6] = [
-    Tag::AuthType, Tag::Accessibility, Tag::RequireAttrEncrypted, Tag::GroupId, Tag::UserId, Tag::RequirePasswordSet
-];
+const INVALID_TAGS: [Tag; 1] = [Tag::UserId];
 
-fn check_tag_validity_with_invalid_tags(attrs: &AssetMap, valid_tags: &[Tag], invalid_tags: &[Tag]) -> Result<()> {
+pub(crate) fn check_invalid_tags(attrs: &AssetMap) -> Result<()> {
     for tag in attrs.keys() {
-        if !valid_tags.contains(tag) {
-            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);
-        }
-        if invalid_tags.contains(tag) {
-            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);
+        if INVALID_TAGS.contains(tag) {
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "[FATAL]The tag [{}] is illegal.", tag);
         }
     }
     Ok(())
 }
 
-fn check_array_arguments(attributes: &AssetMap, calling_info: &CallingInfo, is_merged: bool) -> Result<()> {
+fn check_array_arguments(attributes: &AssetMap, calling_info: &CallingInfo) -> Result<()> {
     check_required_tags(attributes, &REQUIRED_ATTRS)?;
     let mut valid_tags = CRITICAL_LABEL_ATTRS.to_vec();
     valid_tags.extend_from_slice(&NORMAL_LABEL_ATTRS);
@@ -56,9 +53,7 @@ fn check_array_arguments(attributes: &AssetMap, calling_info: &CallingInfo, is_m
     valid_tags.extend_from_slice(&ACCESS_CONTROL_ATTRS);
     valid_tags.extend_from_slice(&ASSET_SYNC_ATTRS);
     valid_tags.extend_from_slice(&OPTIONAL_ATTRS);
-    if !is_merged {
-        check_tag_validity_with_invalid_tags(attributes, &valid_tags, &INVALID_TAGS)?;
-    }
+    check_invalid_tags(attributes)?;
     check_value_validity(attributes)?;
     check_accessibility_validity(attributes, calling_info)?;
     check_sync_permission(attributes, calling_info)?;
@@ -81,6 +76,8 @@ pub(crate) fn into_db_map_with_column_names(attrs: &AssetMap, column_names: &mut
 }
 
 fn add_default_batch_attrs(db_data: &mut DbMap) {
+    db_data.entry(column::ACCESSIBILITY).or_insert(Value::Number(Accessibility::default() as u32));
+    db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::default() as u32));
     db_data.entry(column::SYNC_TYPE).or_insert(Value::Number(SyncType::default() as u32));
     db_data.entry(column::REQUIRE_PASSWORD_SET).or_insert(Value::Bool(bool::default()));
     db_data.entry(column::IS_PERSISTENT).or_insert(Value::Bool(bool::default()));
@@ -101,7 +98,7 @@ fn is_only_change_local_labels(update: &AssetMap) -> bool {
 
 pub(crate) fn add_default_batch_update_attrs(db_data: &mut DbMap, time: Vec<u8>, update: &AssetMap) {
     db_data.entry(column::LOCAL_STATUS).or_insert(Value::Number(LocalStatus::Local as u32));
-    if is_only_change_local_labels(update) {
+    if !is_only_change_local_labels(update) {
         db_data.entry(column::SYNC_STATUS).or_insert(Value::Number(SyncStatus::SyncUpdate as u32));
         db_data.insert(column::UPDATE_TIME, Value::Bytes(time));
     }
@@ -130,9 +127,8 @@ pub(crate) fn parse_attr_in_array(
     attributes: &AssetMap,
     calling_info: &CallingInfo,
     column_names: &mut HashSet<String>,
-    is_merged: bool
 ) -> Result<DbMap> {
-    check_array_arguments(attributes, calling_info, is_merged)?;
+    check_array_arguments(attributes, calling_info)?;
     let mut db_data = into_db_map_with_column_names(attributes, column_names);
     if let Some(group) = calling_info.group() {
         column_names.insert((&column::GROUP_ID).to_string());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -13,21 +13,17 @@
  * limitations under the License.
  */
 
-#ifndef SAF_MEM_H
-#define SAF_MEM_H
+#ifndef SAF_AGENT_FENCE_SCREEN_LOCK_TEST_H
+#define SAF_AGENT_FENCE_SCREEN_LOCK_TEST_H
 
-#include <stdint.h>
+namespace UnitTest::SafAgentFenceScreenLockTest {
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void *SAFMalloc(uint32_t size);
-
-void SAFFree(void *addr);
-
-#ifdef __cplusplus
+int RequestToolPermissionsCliTimerScreenLock001(void);
+int GrantToolPermissionsByUserCliTimerScreenLock001(void);
+int GrantToolPermissionsByUserCliTimerScreenLock002(void);
+int VerifyTicketScreenLock001(void);
+int VerifyTicketScreenLock002(void);
+int VerifyTicketScreenLock003(void);
 }
-#endif
 
-#endif // SAF_MEM_H
+#endif // SAF_AGENT_FENCE_SCREEN_LOCK_TEST_H

@@ -46,13 +46,13 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
     }
 
     listener::on_common_event(CommonEventInfoFfi {
-        event_type: reason_c_str.into_raw(),
+        event_type: reason_c_str.as_ptr(),
         want: StringArray {
             size,
             data: data.as_ptr(),
         }
     });
-    logi!("[INFO]Finish handle common event. [{}]", reason_name);
+    logi!("Finish handle common event. [{}]", reason_name);
 }
 
 pub(crate) fn handle_common_event(reason: SystemAbilityOnDemandReason) {

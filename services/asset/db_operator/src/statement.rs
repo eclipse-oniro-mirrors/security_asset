@@ -73,7 +73,8 @@ impl<'b> Statement<'b> {
             Ok(stmt)
         } else {
             db.print_db_msg();
-            macros_lib::log_throw_error!(sqlite_err_handle(ret), "Prepare statement failed, err={}", ret)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                sqlite_err_handle(ret), "Prepare statement failed, err={}", ret)
         }
     }
 
@@ -83,7 +84,8 @@ impl<'b> Statement<'b> {
         let ret = unsafe { SqliteStep(self.handle as _) };
         if ret != SQLITE_ROW && ret != SQLITE_DONE {
             self.db.print_db_msg();
-            macros_lib::log_throw_error!(sqlite_err_handle(ret), "Step statement failed, err={}", ret)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                sqlite_err_handle(ret), "Step statement failed, err={}", ret)
         } else {
             Ok(ret)
         }
@@ -97,7 +99,8 @@ impl<'b> Statement<'b> {
         }
         if ret != SQLITE_ROW && ret != SQLITE_DONE {
             self.db.print_db_msg();
-            macros_lib::log_throw_error!(sqlite_err_handle(ret), "Step statement failed, err={}", ret)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                sqlite_err_handle(ret), "Step statement failed, err={}", ret)
         } else {
             Ok(false)
         }
@@ -109,7 +112,8 @@ impl<'b> Statement<'b> {
         let ret = unsafe { SqliteReset(self.handle as _) };
         if ret != SQLITE_OK {
             self.db.print_db_msg();
-            macros_lib::log_throw_error!(sqlite_err_handle(ret), "Reset statement failed, err={}", ret)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                sqlite_err_handle(ret), "Reset statement failed, err={}", ret)
         } else {
             Ok(())
         }
@@ -124,7 +128,8 @@ impl<'b> Statement<'b> {
         };
         if ret != SQLITE_OK {
             self.db.print_db_msg();
-            macros_lib::log_throw_error!(sqlite_err_handle(ret), "Bind data failed, index={}, err={}", index, ret)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                sqlite_err_handle(ret), "Bind data failed, index={}, err={}", index, ret)
         } else {
             Ok(())
         }
@@ -140,7 +145,8 @@ impl<'b> Statement<'b> {
         };
         if ret != SQLITE_OK {
             self.db.print_db_msg();
-            macros_lib::log_throw_error!(sqlite_err_handle(ret), "Bind data failed, index={}, err={}", index, ret)
+            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                sqlite_err_handle(ret), "Bind data failed, index={}, err={}", index, ret)
         } else {
             Ok(())
         }
@@ -155,7 +161,8 @@ impl<'b> Statement<'b> {
                 return Ok(rn);
             }
         }
-        macros_lib::log_throw_error!(ErrCode::DatabaseError, "[FATAL][DB]Get asset column name failed.")
+        macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::DatabaseError, "[FATAL][DB]Get asset column name failed.")
     }
 
     /// Get the count of columns in the query result.
@@ -177,7 +184,8 @@ impl<'b> Statement<'b> {
                 }
             },
             SQLITE_NULL => None,
-            t => return macros_lib::log_throw_error!(ErrCode::DatabaseError, "Unexpect column type: {}.", t),
+            t => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::DatabaseError, "Unexpect column type: {}.", t),
         };
         Ok(data)
     }

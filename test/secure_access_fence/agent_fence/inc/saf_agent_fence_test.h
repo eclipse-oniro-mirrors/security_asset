@@ -31,6 +31,16 @@ int SafAgentFenceQueryPermissionTest011(void);
 int SafAgentFenceQueryPermissionTest012(void);
 int SafAgentFenceQueryPermissionTest013(void);
 int SafAgentFenceQueryPermissionTest014(void);
+int SafAgentFenceQueryPermissionTest015(void);
+int SafAgentFenceQueryPermissionTest016(void);
+int SafAgentFenceQueryPermissionTest017(void);
+int SafAgentFenceQueryPermissionTest018(void);
+int SafAgentFenceQueryPermissionTest019(void);
+int SafAgentFenceQueryPermissionTest020(void);
+int SafAgentFenceQueryPermissionTest021(void);
+int SafAgentFenceQueryPermissionTest022(void);
+int SafAgentFenceQueryPermissionTest023(void);
+int SafAgentFenceQueryPermissionTest024(void);
 
 int SafAgentFenceGenAndVerTicketTest001(void);
 int SafAgentFenceGenAndVerTicketTest002(void);
@@ -50,8 +60,6 @@ int SafAgentFenceGenAndVerTicketTest015(void);
 int SafAgentFenceGenAndVerTicketTest016(void);
 int SafAgentFenceGenAndVerTicketTest017(void);
 int SafAgentFenceGenAndVerTicketTest018(void);
-int SafAgentFenceGenAndVerTicketTest019(void);
-int SafAgentFenceGenAndVerTicketTest020(void);
 }
 
 #endif // SAF_AGENT_FENCE_TEST_H

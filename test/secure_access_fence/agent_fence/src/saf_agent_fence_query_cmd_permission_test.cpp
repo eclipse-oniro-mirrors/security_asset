@@ -18,8 +18,7 @@
 #include <gtest/gtest.h>
 
 #include "saf_agent_fence.h"
-#include "saf_result_defs.h"
-#include "secure_access_fence_system_type.h"
+#include "saf_result_code.h"
 #include "saf_permission_change.h"
 
 using namespace testing::ext;
@@ -65,7 +64,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 1);
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer");
     EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "");
@@ -90,7 +89,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 1);
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer");
     EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "run");
@@ -115,7 +114,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 1);
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer-2");
     EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "");
@@ -142,7 +141,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 1);
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer-2");
     EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "run");
@@ -167,7 +166,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 1);
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer-2");
     EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "stop");
@@ -193,7 +192,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 1);
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer-2");
     EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "notexist");
@@ -217,7 +216,12 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_NE(result, 0);
+    EXPECT_EQ(result, SAF_SUCCESS);
+    EXPECT_EQ(cmdPermissions.size(), 1);
+    EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "");
+    EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "run");
+    EXPECT_TRUE(cmdPermissions[0].permissions.empty());
+    EXPECT_NE(cmdPermissions[0].queryRet, 0);
 }
 
 /**
@@ -237,7 +241,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 2);
 
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer-2");
@@ -273,7 +277,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest00
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 3);
 
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer-2");
@@ -315,7 +319,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest01
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 4);
 
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer-2");
@@ -365,7 +369,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest01
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 5);
 
     EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer-2");
@@ -436,7 +440,7 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest01
     std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
 
     int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
-    EXPECT_EQ(result, SEC_SAF_SUCCESS);
+    EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(cmdPermissions.size(), 99);
 
     for (int i = 0; i < 99; i++) {
@@ -471,4 +475,322 @@ HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest01
     EXPECT_NE(result, 0);
 }
 
+/**
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest015
+ * @tc.desc: Batch query 100 commands, expect non-zero error return.
+ * @tc.type: FUNC
+ * @tc.result: non-zero
+ */
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest015, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    std::vector<OHOS::Security::SAF::CommandInfo> cmds;
+    cmds.push_back({"ohos-cliTimer", "run2"});
+
+    std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
+
+    int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
+    EXPECT_EQ(result, SAF_SUCCESS);
+    EXPECT_EQ(cmdPermissions.size(), 1);
+    EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer");
+    EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "run2");
+    EXPECT_EQ(cmdPermissions[0].permissions.size(), 2);
+    EXPECT_EQ(cmdPermissions[0].permissions[0], "test");
+    EXPECT_EQ(cmdPermissions[0].queryRet, 0);
+    EXPECT_EQ(cmdPermissions[0].permissions[1], "test2");
+    EXPECT_EQ(cmdPermissions[0].queryRet, 0);
+}
+
+/**
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest016
+ * @tc.desc: Batch query 100 commands, expect non-zero error return.
+ * @tc.type: FUNC
+ * @tc.result: non-zero
+ */
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest016, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    std::vector<OHOS::Security::SAF::CommandInfo> cmds;
+    cmds.push_back({"ohos-cliTimer", ""});
+    cmds.push_back({"ohos-cliTimer-2", ""});
+
+    std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
+
+    int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
+    EXPECT_EQ(result, SAF_SUCCESS);
+    EXPECT_EQ(cmdPermissions.size(), 2);
+    EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer");
+    EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "");
+    EXPECT_EQ(cmdPermissions[0].permissions.size(), 1);
+    EXPECT_EQ(cmdPermissions[0].permissions[0], "test");
+    EXPECT_EQ(cmdPermissions[0].queryRet, 0);
+
+    EXPECT_EQ(cmdPermissions[1].cmd.cmdName, "ohos-cliTimer-2");
+    EXPECT_EQ(cmdPermissions[1].cmd.subCmd, "");
+    EXPECT_EQ(cmdPermissions[1].permissions.size(), 3);
+    EXPECT_EQ(cmdPermissions[1].permissions[0], "test1");
+    EXPECT_EQ(cmdPermissions[1].permissions[1], "test2");
+    EXPECT_EQ(cmdPermissions[1].permissions[2], "test3");
+    EXPECT_EQ(cmdPermissions[1].queryRet, 0);
+}
+
+/**
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest017
+ * @tc.desc: Batch query 100 commands, expect non-zero error return.
+ * @tc.type: FUNC
+ * @tc.result: non-zero
+ */
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest017, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    std::vector<OHOS::Security::SAF::CommandInfo> cmds;
+    cmds.push_back({"ohos-cliTimer", "run"});
+    cmds.push_back({"ohos-cliTimer-2", "run"});
+
+    std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
+
+    int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
+    EXPECT_EQ(result, SAF_SUCCESS);
+    EXPECT_EQ(cmdPermissions.size(), 2);
+
+    EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "ohos-cliTimer");
+    EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "run");
+    EXPECT_EQ(cmdPermissions[0].permissions.size(), 1);
+    EXPECT_EQ(cmdPermissions[0].permissions[0], "test");
+    EXPECT_EQ(cmdPermissions[0].queryRet, 0);
+
+    EXPECT_EQ(cmdPermissions[1].cmd.cmdName, "ohos-cliTimer-2");
+    EXPECT_EQ(cmdPermissions[1].cmd.subCmd, "run");
+    EXPECT_EQ(cmdPermissions[1].permissions.size(), 1);
+    EXPECT_EQ(cmdPermissions[1].permissions[0], "testsub1");
+    EXPECT_EQ(cmdPermissions[1].queryRet, 0);
+}
+
+/**
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest018
+ * @tc.desc: Batch query 100 commands, expect non-zero error return.
+ * @tc.type: FUNC
+ * @tc.result: non-zero
+ */
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest018, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    std::vector<OHOS::Security::SAF::CommandInfo> cmds;
+    cmds.push_back({"", ""});
+
+    std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
+
+    int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
+    EXPECT_EQ(result, SAF_SUCCESS);
+    EXPECT_EQ(cmdPermissions.size(), 1);
+    EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "");
+    EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "");
+    EXPECT_TRUE(cmdPermissions[0].permissions.empty());
+    EXPECT_NE(cmdPermissions[0].queryRet, 0);
+}
+
+/**
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest019
+ * @tc.desc: Batch query 100 commands, expect non-zero error return.
+ * @tc.type: FUNC
+ * @tc.result: non-zero
+ */
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest019, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    std::vector<OHOS::Security::SAF::CommandInfo> cmds;
+    cmds.push_back({"", "run"});
+    cmds.push_back({"", ""});
+
+    std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
+
+    int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
+    EXPECT_EQ(result, SAF_SUCCESS);
+    EXPECT_EQ(cmdPermissions.size(), 2);
+    EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "");
+    EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "run");
+    EXPECT_TRUE(cmdPermissions[0].permissions.empty());
+    EXPECT_NE(cmdPermissions[0].queryRet, 0);
+
+    EXPECT_EQ(cmdPermissions[1].cmd.cmdName, "");
+    EXPECT_EQ(cmdPermissions[1].cmd.subCmd, "");
+    EXPECT_TRUE(cmdPermissions[1].permissions.empty());
+    EXPECT_NE(cmdPermissions[1].queryRet, 0);
+}
+
+/**
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest020
+ * @tc.desc: Batch query 100 commands, expect non-zero error return.
+ * @tc.type: FUNC
+ * @tc.result: non-zero
+ */
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest020, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    std::vector<OHOS::Security::SAF::CommandInfo> cmds;
+    cmds.push_back({"", ""});
+    cmds.push_back({"", ""});
+
+    std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
+
+    int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
+    EXPECT_EQ(result, SAF_SUCCESS);
+    EXPECT_EQ(cmdPermissions.size(), 2);
+    EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "");
+    EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "");
+    EXPECT_TRUE(cmdPermissions[0].permissions.empty());
+    EXPECT_NE(cmdPermissions[0].queryRet, 0);
+
+    EXPECT_EQ(cmdPermissions[1].cmd.cmdName, "");
+    EXPECT_EQ(cmdPermissions[1].cmd.subCmd, "");
+    EXPECT_TRUE(cmdPermissions[1].permissions.empty());
+    EXPECT_NE(cmdPermissions[1].queryRet, 0);
+}
+
+/**
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest021
+ * @tc.desc: Batch query 100 commands, expect non-zero error return.
+ * @tc.type: FUNC
+ * @tc.result: non-zero
+ */
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest021, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    std::vector<OHOS::Security::SAF::CommandInfo> cmds;
+    cmds.push_back({"", "run"});
+    cmds.push_back({"", ""});
+    cmds.push_back({"ohos-cliTimer", ""});
+
+    std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
+
+    int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
+    EXPECT_EQ(result, SAF_SUCCESS);
+    EXPECT_EQ(cmdPermissions.size(), 3);
+    EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "");
+    EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "run");
+    EXPECT_TRUE(cmdPermissions[0].permissions.empty());
+    EXPECT_NE(cmdPermissions[0].queryRet, 0);
+
+    EXPECT_EQ(cmdPermissions[1].cmd.cmdName, "");
+    EXPECT_EQ(cmdPermissions[1].cmd.subCmd, "");
+    EXPECT_TRUE(cmdPermissions[1].permissions.empty());
+    EXPECT_NE(cmdPermissions[1].queryRet, 0);
+
+    EXPECT_EQ(cmdPermissions[2].cmd.cmdName, "ohos-cliTimer");
+    EXPECT_EQ(cmdPermissions[2].cmd.subCmd, "");
+    EXPECT_EQ(cmdPermissions[2].permissions.size(), 1);
+    EXPECT_EQ(cmdPermissions[2].permissions[0], "test");
+    EXPECT_EQ(cmdPermissions[2].queryRet, 0);
+}
+
+/**
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest022
+ * @tc.desc: Batch query 100 commands, expect non-zero error return.
+ * @tc.type: FUNC
+ * @tc.result: non-zero
+ */
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest022, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    std::vector<OHOS::Security::SAF::CommandInfo> cmds;
+    cmds.push_back({"", ""});
+    cmds.push_back({"", ""});
+    cmds.push_back({"ohos-cliTimer", ""});
+
+    std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
+
+    int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
+    EXPECT_EQ(result, SAF_SUCCESS);
+    EXPECT_EQ(cmdPermissions.size(), 3);
+    EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "");
+    EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "");
+    EXPECT_TRUE(cmdPermissions[0].permissions.empty());
+    EXPECT_NE(cmdPermissions[0].queryRet, 0);
+
+    EXPECT_EQ(cmdPermissions[1].cmd.cmdName, "");
+    EXPECT_EQ(cmdPermissions[1].cmd.subCmd, "");
+    EXPECT_TRUE(cmdPermissions[1].permissions.empty());
+    EXPECT_NE(cmdPermissions[1].queryRet, 0);
+
+    EXPECT_EQ(cmdPermissions[2].cmd.cmdName, "ohos-cliTimer");
+    EXPECT_EQ(cmdPermissions[2].cmd.subCmd, "");
+    EXPECT_EQ(cmdPermissions[2].permissions.size(), 1);
+    EXPECT_EQ(cmdPermissions[2].permissions[0], "test");
+    EXPECT_EQ(cmdPermissions[2].queryRet, 0);
+}
+
+/**
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest023
+ * @tc.desc: Batch query 100 commands, expect non-zero error return.
+ * @tc.type: FUNC
+ * @tc.result: non-zero
+ */
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest023, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    std::vector<OHOS::Security::SAF::CommandInfo> cmds;
+    cmds.push_back({"", "run"});
+    cmds.push_back({"", ""});
+
+    std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
+
+    int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
+    EXPECT_EQ(result, SAF_SUCCESS);
+    EXPECT_EQ(cmdPermissions.size(), 2);
+    EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "");
+    EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "run");
+    EXPECT_TRUE(cmdPermissions[0].permissions.empty());
+    EXPECT_NE(cmdPermissions[0].queryRet, 0);
+
+    EXPECT_EQ(cmdPermissions[1].cmd.cmdName, "");
+    EXPECT_EQ(cmdPermissions[1].cmd.subCmd, "");
+    EXPECT_TRUE(cmdPermissions[1].permissions.empty());
+    EXPECT_NE(cmdPermissions[1].queryRet, 0);
+}
+
+/**
+ * @tc.name: SafAgentFenceQueryCmdPermissionTest.SafAgentFenceQueryPermissionTest024
+ * @tc.desc: Batch query 100 commands, expect non-zero error return.
+ * @tc.type: FUNC
+ * @tc.result: non-zero
+ */
+HWTEST_F(SafAgentFenceQueryCmdPermissionTest, SafAgentFenceQueryPermissionTest024, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    std::vector<OHOS::Security::SAF::CommandInfo> cmds;
+    cmds.push_back({"", "run"});
+    cmds.push_back({"", ""});
+    cmds.push_back({"ohos-cliTimer", ""});
+
+    std::vector<OHOS::Security::SAF::CommandPermissionInfo> cmdPermissions;
+
+    int32_t result = agentFence.BatchQueryCommandPermission(cmds, cmdPermissions);
+    EXPECT_EQ(result, SAF_SUCCESS);
+    EXPECT_EQ(cmdPermissions.size(), 3);
+    EXPECT_EQ(cmdPermissions[0].cmd.cmdName, "");
+    EXPECT_EQ(cmdPermissions[0].cmd.subCmd, "run");
+    EXPECT_TRUE(cmdPermissions[0].permissions.empty());
+    EXPECT_NE(cmdPermissions[0].queryRet, 0);
+
+    EXPECT_EQ(cmdPermissions[1].cmd.cmdName, "");
+    EXPECT_EQ(cmdPermissions[1].cmd.subCmd, "");
+    EXPECT_TRUE(cmdPermissions[1].permissions.empty());
+    EXPECT_NE(cmdPermissions[1].queryRet, 0);
+
+    EXPECT_EQ(cmdPermissions[2].cmd.cmdName, "ohos-cliTimer");
+    EXPECT_EQ(cmdPermissions[2].cmd.subCmd, "");
+    EXPECT_EQ(cmdPermissions[2].permissions.size(), 1);
+    EXPECT_EQ(cmdPermissions[2].permissions[0], "test");
+    EXPECT_EQ(cmdPermissions[2].queryRet, 0);
+}
 }

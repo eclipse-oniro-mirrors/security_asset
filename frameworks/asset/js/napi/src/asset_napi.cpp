@@ -114,6 +114,7 @@ napi_value DeclareErrorCode(const napi_env env)
     AddUint32Property(env, errorCode, "LIMIT_EXCEEDED", SEC_ASSET_LIMIT_EXCEEDED);
     AddUint32Property(env, errorCode, "UNSUPPORTED", SEC_ASSET_UNSUPPORTED);
     AddUint32Property(env, errorCode, "PARAM_VERIFICATION_FAILED", SEC_ASSET_PARAM_VERIFICATION_FAILED);
+    AddUint32Property(env, errorCode, "INCONSISTENT_ATTRIBUTE", SEC_ASSET_INCONSISTENT_ATTRIBUTE);
     return errorCode;
 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -49,11 +49,13 @@ static int GrantSelfPermissionInner()
 {
     const char *permissions[] = {
         "ohos.permission.QUERY_CLI_TOOL",
-        "ohos.permission.GET_TICKET_INFO"
+        "ohos.permission.GET_TICKET_INFO",
+        "ohos.permission.QUERY_TOOL_PERMISSIONS",
+        "ohos.permission.MANAGE_TOOL_RUNTIME_PERMISSIONS",
     };
     NativeTokenInfoParams info = {
         .dcapsNum = 0,
-        .permsNum = 1,
+        .permsNum = 4,
         .aclsNum = 0,
         .dcaps = nullptr,
         .perms = permissions,

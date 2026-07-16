@@ -24,6 +24,7 @@ ohos_static_library("secure_access_fence_wrapper_static") {
 
   include_dirs = [
     "include",
+    "src/cxx/inc",
     "${target_gen_dir}",
     "${target_gen_dir}/src",
     "../os_dependency/inc",
@@ -33,7 +34,11 @@ ohos_static_library("secure_access_fence_wrapper_static") {
     "../../../interfaces/inner_kits/c/secure_access_fence/agent_fence/inc",
     "../../../interfaces/inner_kits/c/secure_access_fence/common/inc",
   ]
-  sources = [ "src/cxx/secure_access_fence_service.cpp" ]
+  sources = [
+    "src/cxx/secure_access_fence_ipc.cpp",
+    "src/cxx/src/secure_access_fence_service.cpp",
+    "src/cxx/src/permission_manager.cpp"
+  ]
   sources += get_target_outputs(":secure_access_fence_wrapper_cxx")
 
   deps = [
@@ -46,13 +51,18 @@ ohos_static_library("secure_access_fence_wrapper_static") {
   external_deps = [
     "ability_runtime:cli_tool_client",
     "ability_base:want",
+    "access_token:libaccesstoken_sdk",
+    "access_token:libtokenid_sdk",
+    "cJSON:cjson",
     "c_utils:utils",
     "hilog:libhilog",
     "ipc:ipc_single",
     "samgr:samgr_proxy",
     "rust_cxx:cxx_cppdeps",
+    "bounds_checking_function:libsec_shared"
   ]
 
+  branch_protector_ret = "pac_ret"
   sanitize = {
     integer_overflow = true
     cfi = true
@@ -85,11 +95,6 @@ ohos_rust_shared_library("secure_access_fence_service") {
     "../plugin:saf_plugin",
   ]
 
-  rustflags = []
-  if (enable_local_test) {
-    rustflags += [ "--cfg", "feature=\"SecureAccessFenceTest\"", ]
-  }
-
   external_deps = [
     "hilog:hilog_rust",
     "hilog:libhilog",
@@ -102,6 +107,17 @@ ohos_rust_shared_library("secure_access_fence_service") {
     "ylong_json:lib",
     "rust_cxx:lib",
   ]
+
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
+
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
 
   crate_name = "secure_access_fence_service"
   crate_type = "dylib"

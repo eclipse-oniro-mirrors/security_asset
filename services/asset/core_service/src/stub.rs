@@ -50,7 +50,11 @@ impl RemoteStub for AssetService {
         if counter.lock().unwrap().is_stop() {
             loge!("[FATAL]Service is stop.");
             let _ = reply_handle(
-                Err(AssetError { code: ErrCode::ServiceUnavailable, msg: "service stop".to_string() }),
+                Err(AssetError { 
+                    code: ErrCode::ServiceUnavailable, 
+                    msg: "service stop".to_string(),
+                    call_chain: AssetError::shorten_func_name(macros_lib::hisysevent::function!()).to_string(),
+                }),
                 reply,
             );
             return IPC_SUCCESS as i32;
@@ -59,7 +63,11 @@ impl RemoteStub for AssetService {
         if !self.system_ability.cancel_idle() {
             loge!("[FATAL]Cancel idle failed. Service is stop.");
             let _ = reply_handle(
-                Err(AssetError { code: ErrCode::ServiceUnavailable, msg: "service stop".to_string() }),
+                Err(AssetError { 
+                    code: ErrCode::ServiceUnavailable, 
+                    msg: "service stop".to_string(),
+                    call_chain: AssetError::shorten_func_name(macros_lib::hisysevent::function!()).to_string(),
+                }),
                 reply,
             );
             return IPC_SUCCESS as i32;
@@ -102,11 +110,8 @@ fn on_app_request(code: IpcCode, process_info: &ProcessInfo, calling_info: &Call
         match load.process_event(EventType::OnAppCall, &mut params) {
             Ok(()) => return Ok(()),
             Err(code) => {
-                return macros_lib::log_throw_error!(
-                    ErrCode::BmsError,
-                    "[FATAL]process on app call event failed, code: {}",
-                    code
-                )
+                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                    ErrCode::BmsError, "[FATAL]process on app call event failed, code: {}", code)
             },
         }
     }
@@ -122,10 +127,9 @@ fn process_batch_data(
     let attributes_array = deserialize_maps(data).map_err(asset_err_handle)?;
     if attributes_array.is_empty() {
         match ipc_code {
-            IpcCode::BatchUpdate | IpcCode::BatchAdd => return reply_handle(macros_lib::log_throw_error!(
-                ErrCode::InvalidArgument,
-                "[FATAL]The array is empty.",
-            ), reply),
+            IpcCode::BatchUpdate | IpcCode::BatchAdd => return reply_handle(
+                macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                    ErrCode::InvalidArgument, "[FATAL]The array is empty."), reply),
             _ => {return reply_handle(Ok(()), reply);}
         }
     }

@@ -48,3 +48,105 @@ struct VerifyTicketInfo {
     /** Ticket string. */
     String ticket;
 };
+
+/**
+ * @brief CLI info structure for ticket verification output.
+ */
+struct CliInfo {
+    /** Caller token ID. */
+    String callerTokenId;
+    /** CLI command name. */
+    String cliCmdName;
+    /** Sub CLI command name. */
+    String subCliCmdName;
+    /** Permission list for the CLI command. */
+    List<String> permissionList;
+};
+
+enum OperationType {
+    CLI = 1,
+    API = 2
+};
+
+struct OperationInfo {
+    OperationType operationType;
+    CommandInfo cliCmdInfo;
+    String permission;
+};
+
+enum PermissionStatus {
+    DENIED = -1,
+    GRANTED = 0,
+    NOT_DETERMINED = 1,
+    INVALID = 2,
+    RESTRICTED = 3
+};
+
+enum PolicyStatus {
+    NOT_EXIST = -1,
+    REQUIRE_AUTH = 0,
+    FORBIDDEN = 1,
+    AUTHORIZED = 2,
+    RESTRICTED = 3,
+    REMOTE_RESTRICTED = 4
+};
+
+enum AuthStatus {
+    REQUIRE_AUTH = 0,
+    FORBIDDEN = 1,
+    AUTHORIZED = 2,
+    RESTRICTED = 3,
+    REMOTE_RESTRICTED = 4
+};
+
+enum Role {
+    CONTROLLER = 1,
+    CONTROLLED = 2
+};
+
+struct AuthStatusInfo {
+    AuthStatus authStatus;
+    int flag;
+};
+
+struct PermissionInfo {
+    String permission;
+    PermissionStatus permissionStatus;
+    AuthStatusInfo authStatusInfo;
+};
+
+struct PermissionQueryResult {
+    boolean needDialog;
+    List<PermissionInfo> permissionResults;
+    boolean hasTicket;
+    VerifyTicketInfo ticket;
+};
+
+struct RemoteControlParams {
+    String challenge;
+    String remoteControlTicket;
+    String controlledDeviceName;
+    String controllerDeviceName;
+    String signVerifyMsg;
+};
+
+struct RemoteInfo {
+    Role role;
+    String remoteId;
+    String domainId;
+    RemoteControlParams remoteControlParams;
+};
+
+struct PermissionQuery {
+    List<OperationInfo> operationInfo;
+    boolean needTicket;
+    int ticketExpireTimeMs;
+    int callerTokenId;
+    String domainId;
+    RemoteInfo remoteInfo;
+};
+
+struct UserAuthResult {
+    List<PermissionInfo> permissionInfo;
+    PermissionQuery permissionQuery;
+};

@@ -4,7 +4,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,28 +13,17 @@
  * limitations under the License.
  */
 
-#ifndef SECURE_ACCESS_FENCE_SERVICE_H
-#define SECURE_ACCESS_FENCE_SERVICE_H
+#ifndef SAF_RESULT_CODE_H
+#define SAF_RESULT_CODE_H
 
-#include "cxx.h"
-#include "refbase.h"
-#include <cstdint>
-#include <memory>
-
-#include "message_parcel.h"
-
-namespace OHOS {
-namespace Security {
-namespace SAF {
+#include "saf_result_defs.h"
 
 typedef enum {
-    BATCH_QUERY_COMMAND_PERMISSION = 500,
-} SecureAccessFenceCode;
+    SAF_ASSIGN_MODULE_TYPE_ENUM
+} SafModuleType;
 
-int32_t OnRemoteRequest(uint32_t code, MessageParcel& data, MessageParcel& reply);
+typedef enum {
+    SAF_ASSIGN_RESULT_CODE_ENUM
+} SafResultCode;
 
-} // namespace SAF
-} // namespace Security
-} // namespace OHOS
-
-#endif
+#endif // SAF_RESULT_CODE_H

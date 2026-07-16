@@ -18,12 +18,12 @@
 use asset_common::CallingInfo;
 use asset_crypto_manager::db_key_operator::get_db_key_by_asset_map;
 use asset_db_operator::{
-    common::{self, into_db_map},
+    common::{self},
     database::Database,
     types::{DB_DATA_VERSION, DbMap, column},
 };
 use asset_definition::{
-    Accessibility, AssetMap, AuthType, ErrCode, Result, Tag, Value, macros_lib
+    AssetMap, ErrCode, Result, Tag, Value, macros_lib
 };
 use asset_utils::time;
 
@@ -42,35 +42,30 @@ fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     Ok(())
 }
 
-fn add_default_attrs(db_data: &mut DbMap) {
-    db_data.entry(column::ACCESSIBILITY).or_insert(Value::Number(Accessibility::default() as u32));
-    db_data.entry(column::AUTH_TYPE).or_insert(Value::Number(AuthType::default() as u32));
-    db_data.entry(column::REQUIRE_PASSWORD_SET).or_insert(Value::Bool(bool::default()));
-    db_data.retain(|key, _| {
-        key == &column::ACCESSIBILITY ||
-        key == &column::AUTH_TYPE ||
-        key == &column::REQUIRE_PASSWORD_SET
-    });
-}
-
 fn local_batch_add(
     calling_info: &CallingInfo,
     attributes_array: &[AssetMap]
 ) -> Result<Vec<(u32, u32)>> {
     let attributes = match attributes_array.first() {
         Some(attr) => attr,
-        None => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL]Batch Add argument empty."),
+        None => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL]Batch Add argument empty."),
     };
-    common::check_value_validity(attributes)?;
-    let mut db_map = into_db_map(attributes);
-    check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array)?;
-    add_default_attrs(&mut db_map);
-    add_system_attrs(&mut db_map)?;
+    common::check_value_validity(attributes)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let mut db_map = DbMap::new();
+    check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    // Only add system attrs, add other default ones in parse_attr_in_array.
+    add_system_attrs(&mut db_map).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     common::add_calling_info(calling_info, &mut db_map);
-    common::check_system_permission(attributes)?;
-    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes)?;
-    let mut db = Database::build(calling_info, db_key)?;
-    db.insert_batch_datas(&db_map, attributes_array, calling_info, true)
+    common::check_system_permission(attributes)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let db_key = get_db_key_by_asset_map(calling_info.user_id(), attributes)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    let mut db = Database::build(calling_info, db_key)
+        .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    db.insert_batch_datas(&db_map, attributes_array, calling_info)
 }
 
 pub(crate) fn batch_add(calling_info: &CallingInfo, attributes_array: &[AssetMap]) -> Result<Vec<(u32, u32)>> {

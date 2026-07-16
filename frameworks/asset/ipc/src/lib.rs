@@ -62,27 +62,24 @@ macros_lib::impl_enum_trait! {
 
 /// deserialize T from parcel
 pub fn deserialize<T: Deserialize>(parcel: &mut MsgParcel) -> Result<T> {
-    let value = parcel.read::<T>().map_err(|_| macros_lib::log_and_into_asset_error!(
-        ErrCode::InvalidArgument,
-        "[FATAL]deserialize T from parcel failed!"
-    ))?;
+    let value = parcel.read::<T>()
+        .map_err(|_| macros_lib::log_and_into_asset_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL]deserialize T from parcel failed!" ))?;
     Ok(value)
 }
 
 /// serialize the map to parcel
 pub fn serialize_map(map: &AssetMap, parcel: &mut MsgParcel) -> Result<()> {
     if map.len() as u32 > MAX_MAP_CAPACITY {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL][IPC]The map size exceeds the limit.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL][IPC]The map size exceeds the limit.");
     }
     parcel.write(&(map.len() as u32)).map_err(ipc_err_handle)?;
     for (&tag, value) in map.iter() {
         if tag.data_type() != value.data_type() {
-            return macros_lib::log_throw_error!(
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                 ErrCode::InvalidArgument,
-                "[FATAL][IPC]Data type mismatch, key type: {}, value type: {}",
-                tag.data_type(),
-                value.data_type()
-            );
+                "[FATAL][IPC]Data type mismatch, key type: {}, value type: {}", tag.data_type(), value.data_type() );
         }
         parcel.write(&(tag as u32)).map_err(ipc_err_handle)?;
         match value {
@@ -98,7 +95,8 @@ pub fn serialize_map(map: &AssetMap, parcel: &mut MsgParcel) -> Result<()> {
 pub fn deserialize_map(parcel: &mut MsgParcel) -> Result<AssetMap> {
     let len = parcel.read::<u32>().map_err(ipc_err_handle)?;
     if len > MAX_MAP_CAPACITY {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL][IPC]The map size exceeds the limit.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL][IPC]The map size exceeds the limit.");
     }
     let mut map = AssetMap::with_capacity(len as usize);
     for _ in 0..len {
@@ -125,7 +123,8 @@ pub fn deserialize_map(parcel: &mut MsgParcel) -> Result<AssetMap> {
 /// Serialize the collection of map to parcel.
 pub fn serialize_maps(vec: &Vec<AssetMap>, parcel: &mut MsgParcel) -> Result<()> {
     if vec.len() as u32 > MAX_VEC_CAPACITY {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL][IPC]The vector size exceeds the limit.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL][IPC]The vector size exceeds the limit.");
     }
     parcel.write::<u32>(&(vec.len() as u32)).map_err(ipc_err_handle)?;
     for map in vec.iter() {
@@ -138,7 +137,8 @@ pub fn serialize_maps(vec: &Vec<AssetMap>, parcel: &mut MsgParcel) -> Result<()>
 pub fn deserialize_maps(parcel: &mut MsgParcel) -> Result<Vec<AssetMap>> {
     let len = parcel.read::<u32>().map_err(ipc_err_handle)?;
     if len > MAX_VEC_CAPACITY {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL][IPC]The vector size exceeds the limit.");
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL][IPC]The vector size exceeds the limit.");
     }
     let mut res_vec = Vec::with_capacity(len as usize);
     for _i in 0..len {
@@ -166,10 +166,8 @@ pub fn deserialize_sync_result(parcel: &mut MsgParcel) -> Result<SyncResult> {
 /// Serialize the batch result (Vec<(u32, i32)>) to parcel.
 pub fn serialize_batch_result(result: &Vec<(u32, u32)>, parcel: &mut MsgParcel) -> Result<()> {
     if result.len() as u32 > MAX_ATTR_ARRAY_CAPACITY {
-        return macros_lib::log_throw_error!(
-            ErrCode::InvalidArgument,
-            "[FATAL][IPC]The result size exceeds the limit."
-        );
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL][IPC]The result size exceeds the limit." );
     }
     parcel.write::<u32>(&(result.len() as u32)).map_err(ipc_err_handle)?;
     for (index, error_code) in result.iter() {
@@ -183,10 +181,8 @@ pub fn serialize_batch_result(result: &Vec<(u32, u32)>, parcel: &mut MsgParcel) 
 pub fn deserialize_batch_result(parcel: &mut MsgParcel) -> Result<Vec<(u32, u32)>> {
     let len = parcel.read::<u32>().map_err(ipc_err_handle)?;
     if len > MAX_ATTR_ARRAY_CAPACITY {
-        return macros_lib::log_throw_error!(
-            ErrCode::InvalidArgument,
-            "[FATAL][IPC]The result size exceeds the limit."
-        );
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "[FATAL][IPC]The result size exceeds the limit." );
     }
     let mut res_vec = Vec::with_capacity(len as usize);
     for _i in 0..len {
@@ -201,8 +197,8 @@ pub fn deserialize_batch_result(parcel: &mut MsgParcel) -> Result<Vec<(u32, u32)
 pub fn ipc_err_handle(e: IpcStatusCode) -> AssetError {
     match e {
         IpcStatusCode::ServiceDied => {
-            AssetError::new(ErrCode::ServiceUnavailable, format!("[FATAL][IPC]Ipc status code = {}", e as i32))
+            AssetError::new(ErrCode::ServiceUnavailable, format!("[FATAL][IPC]Ipc status code = {}", e as i32), macros_lib::hisysevent::function!())
         },
-        _ => AssetError::new(ErrCode::IpcError, format!("[FATAL][IPC]Ipc status code = {}", e)),
+        _ => AssetError::new(ErrCode::IpcError, format!("[FATAL][IPC]Ipc status code = {}", e), macros_lib::hisysevent::function!()),
     }
 }
