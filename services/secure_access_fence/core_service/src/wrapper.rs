@@ -39,7 +39,7 @@ pub mod ffi {
         fn notify_error(error_message: String, error_code: i32, os_account_id: i32, function_name: String);
         fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, domain_id: &str, messages: &[String], result_code: &mut i32) -> Vec<CxxVerifyTicketInfo>;
         fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec<i32>) -> i32;
-        fn verify_remote_ticket(domain_id: String, remote_control_ticket: String) -> i32;
+        fn verify_remote_ticket(domain_id: String, remote_control_ticket: String, os_account_id: i32) -> i32;
     }
 
     // Rust callable C++ functions
@@ -127,7 +127,7 @@ pub fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec
     0
 }
 
-pub fn verify_remote_ticket(domain_id: String, remote_control_ticket: String) -> i32 {
+pub fn verify_remote_ticket(domain_id: String, remote_control_ticket: String, os_account_id: i32) -> i32 {
     let plugin = SAFPlugin::get_instance();
     let loader = match plugin.load_plugin() {
         Ok(loader) => loader,
@@ -138,6 +138,7 @@ pub fn verify_remote_ticket(domain_id: String, remote_control_ticket: String) ->
     let mut params = ExtMap::new();
     params.insert(VERIFY_REMOTE_TICKET_KEYS.domain_id, Value::String(domain_id));
     params.insert(VERIFY_REMOTE_TICKET_KEYS.remote_control_ticket, Value::String(remote_control_ticket));
+    params.insert(VERIFY_REMOTE_TICKET_KEYS.os_account_id, Value::Number(os_account_id as u32));
 
     logi!("[verify_remote_ticket] calling plugin process_event");
 

@@ -65,9 +65,14 @@ namespace {
             LOGE("permissionQuery domainId or remoteControlTicket is empty");
             return SAF_ERR_ARG_INVALID;
         }
+        int32_t osAccountId;
+        int32_t callerUid = IPCSkeleton::GetCallingUid();
+        bool retFlag = GetOsAccountIdFromUid(callerUid, &osAccountId);
+        IF_FALSE_LOGE_RETURN_ERR(retFlag, SAF_ERROR, "VerifyRemoteTicket :: GetOsAccountIdFromUid failed");
+
         rust::String domainId = permissionQuery.domainId;
         rust::String remoteControlTicket = permissionQuery.remoteInfo.remoteControlParams.remoteControlTicket;
-        return verify_remote_ticket(domainId, remoteControlTicket);
+        return verify_remote_ticket(domainId, remoteControlTicket, osAccountId);
     }
 }
 
