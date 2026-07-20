@@ -249,7 +249,7 @@ ohos_unittest("saf_agent_fence_stress_test") {
   }
 }
 
-ohos_unittest("saf_agent_fence_request_tool_permissions_test") {
+ohos_unittest("saf_agent_fence_request_tool_permissions_local_test") {
   module_out_path = module_output_path
   subsystem_name = "security"
   part_name = "asset"
@@ -266,7 +266,7 @@ ohos_unittest("saf_agent_fence_request_tool_permissions_test") {
   ]
 
   sources = [
-    "src/saf_agent_fence_request_tool_permissions_test.cpp",
+    "src/saf_agent_fence_request_tool_permissions_local_test.cpp",
     "src/saf_permission_change.cpp",
   ]
 
@@ -288,6 +288,7 @@ ohos_unittest("saf_agent_fence_request_tool_permissions_test") {
     "access_token:libnativetoken_shared",
     "access_token:libtokensetproc_shared",
     "access_token:libtokenid_sdk",
+    "access_token:libpermsetproc_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
@@ -311,7 +312,7 @@ ohos_unittest("saf_agent_fence_request_tool_permissions_test") {
   }
 }
 
-ohos_unittest("saf_agent_fence_grant_tool_permissions_by_user_test") {
+ohos_unittest("saf_agent_fence_grant_tool_permissions_by_user_local_test") {
   module_out_path = module_output_path
   subsystem_name = "security"
   part_name = "asset"
@@ -329,7 +330,7 @@ ohos_unittest("saf_agent_fence_grant_tool_permissions_by_user_test") {
   ]
 
   sources = [
-    "src/saf_agent_fence_grant_tool_permissions_by_user_test.cpp",
+    "src/saf_agent_fence_grant_tool_permissions_by_user_local_test.cpp",
     "src/saf_permission_change.cpp",
   ]
 
@@ -352,6 +353,7 @@ ohos_unittest("saf_agent_fence_grant_tool_permissions_by_user_test") {
     "access_token:libnativetoken_shared",
     "access_token:libtokensetproc_shared",
     "access_token:libtokenid_sdk",
+    "access_token:libpermsetproc_shared",
     "bundle_framework:appexecfwk_base",
     "bundle_framework:appexecfwk_core",
     "c_utils:utils",
