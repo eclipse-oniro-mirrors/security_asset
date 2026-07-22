@@ -51,6 +51,17 @@ impl ChallengeStore {
         Self { inner: Mutex::new(HashMap::new()) }
     }
 
+    /// Returns current boot time in milliseconds bia C++ TimeWrapper.
+    /// Returns None if GetBootTimeMs fails.
+    fn now_ms() -> Option<u64> {
+        let boot_ms = crate::wrapper::ffi::GetBootTimeMs();
+        if boot_ms < 0 {
+            loge!("[ChallengeStore] GetBootTimeMs failed, ret = {}", boot_ms);
+            return None;
+        }
+        Some(boot_ms as u64)
+    }
+
     /// Stores a challenge for a specific caller with its expiration time.
     pub fn insert(&self, caller_token_id: &str, challenge: &str, expire_time_ms: u64) -> saf_definition::Result<()> {
         let mut map = self.inner.lock().unwrap();
@@ -107,12 +118,9 @@ impl ChallengeStore {
     pub fn check_and_remove(&self, caller_token_id: &str, challenge: &str) -> bool {
         let mut map = self.inner.lock().unwrap();
         if let Some(bucket) = map.get_mut(caller_token_id) {
-            let now_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
-                Ok(d) => d.as_millis() as u64,
-                Err(_) => {
-                    loge!("[ChallengeStore] clock error, deny all challenge checks");
-                    return false;
-                }
+            let Some(now_ms) = Self::now_ms() else {
+                loge!("[ChallengeStore] clock error, deny challenge check for caller = {}", caller_token_id);
+                return false;
             };
             match bucket.remove_entry(challenge) {
                 Some((_, entry)) if entry.expire_time_ms >= now_ms => {
@@ -146,14 +154,10 @@ impl ChallengeStore {
     /// Cleans up expired entries and returns the remaining time, return 0 if no valid challenge remain.
     pub fn max_remaining_time_ms(&self) -> u64 {
         let mut map = self.inner.lock().unwrap();
-        let now_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
-            Ok(d) => d.as_millis() as u64,
-            Err(e) => {
-                loge!("[ChallengeStore] system time error, duartion = {:?}, fallback to MAX_CHALLENGE_VALIDITY_MS",
-                e.duration());
-                return MAX_CHALLENGE_VALIDITY_MS;
-            }
-        };
+        let Some(now_ms) = Self::now_ms() else {
+            loge!("[ChallengeStore] system time error, fallback to MAX_CHALLENGE_VALIDITY_MS");
+            return MAX_CHALLENGE_VALIDITY_MS;
+        }
 
         // Clean up expired entries first
         for bucket in map.values_mut() {
@@ -171,11 +175,7 @@ impl ChallengeStore {
 
     /// Removes expired entries from a single caller's bucket.
     fn clean_caller_expired(bucket: &mut CallerChallenges, caller_token_id: &str) {
-        let now_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
-            Ok(d) => d.as_millis() as u64,
-            // clock error, skip cleanup this time.
-            Err(_) => { return }
-        };
+        let Some(now_ms) = Self::now_ms() else { return };
         
         let before = bucket.len();
         bucket.retain(|_, entry| entry.expire_time_ms >= now_ms);
@@ -187,11 +187,7 @@ impl ChallengeStore {
 
     /// Removes expired entries across all callers' buckets
     fn cleanup_all_expired_locked(map: &mut HashMap<String, CallerChallenges>) {
-        let now_ms = match SystemTime::now().duration_since(UNIX_EPOCH) {
-            Ok(d) => d.as_millis() as u64,
-            // clock error, skip cleanup this time.
-            Err(_) => { return }
-        };
+        let Some(now_ms) = Self::now_ms() else { return };
 
         let mut total_removed = 0usize;
         for (_caller_id, bucket) in map.iter_mut() {

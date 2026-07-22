@@ -15,6 +15,7 @@
 
 #include "secure_access_fence_service.h"
 #include "permission_manager.h"
+#include "time_wrapper.h"
 #include "wrapper.rs.h"
 #include <chrono>
 #include <vector>
@@ -163,6 +164,12 @@ ErrCode GrantToolPermissionsByUser(
         INVALID_OS_ACCOUNT_ID, rust::String("GrantToolPermissionsByUser")
     );
     return SAF_SUCCESS;
+}
+
+// Rust callable: returns boot time in milliseconds, or -1 on failure.
+int64_t GetBootTimeMs()
+{
+    return BootTimeWrapper::GetBootTimeMs();
 }
 
 }

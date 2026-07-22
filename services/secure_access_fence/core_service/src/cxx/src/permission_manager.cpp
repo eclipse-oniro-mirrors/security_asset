@@ -24,6 +24,7 @@
 #include "permission_manager.h"
 #include "os_account_wrapper.h"
 #include "screen_lock_wrapper.h"
+#include "boot_time_wrapper.h"
 
 #include "saf_log.h"
 #include "saf_defines.h"
@@ -578,16 +579,22 @@ static std::string BuildTicketWrapper(const VerifyTicketInfo &ticketInfo)
 }
 
 static int32_t StoreChallengeToAntiReplayStore(
-    uint64_t startTime, uint64_t ticketExpireTimeMs, const rust::String &callerId, const std::string &challenge)
+    uint64_t ticketExpireTimeMs, const rust::String &callerId, const std::string &challenge)
 {
-    if (startTime > UINT64_MAX - ticketExpireTimeMs) {
+    int64_t bootTimeMs = TimeWrapper::GetBootTimeMs();
+    if (bootTimeMs < 0) {
+        LOGE("StoreChallengeToAntiReplayStore: GetBootTimeMs failed");
+        return SAF_ERROR;
+    }
+    uint64_t nowBootMs = static_cast<uint64_t>(bootTimeMs);
+    if (nowBootMs > UINT64_MAX - ticketExpireTimeMs) {
         LOGE("StoreChallengeToAntiReplayStore: expireTimeMs overflow, "
-            "startTime=%{public}llu, duration=%{public}llu",
-            static_cast<unsigned long long>(startTime),
+            "nowBootMs=%{public}llu, duration=%{public}llu",
+            static_cast<unsigned long long>(nowBootMs),
             static_cast<unsigned long long>(ticketExpireTimeMs));
         return SAF_ERROR;
     }
-    uint64_t expireTimeMs = startTime + ticketExpireTimeMs;
+    uint64_t expireTimeMs = nowBootMs + ticketExpireTimeMs;
     int32_t storeRet = OHOS::Security::SAF::cxx_store_challenge(callerId, challenge, expireTimeMs);
     IF_TRUE_LOGE_RETURN_ERR(storeRet != SAF_SUCCESS, storeRet,
         "StoreChallengeToAntiReplayStore: cxx_store_challenge failed");
@@ -638,7 +645,7 @@ int32_t PermissionManager::GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ti
     ticketInfo.ticket = std::string(cxxVerifyTicketInfo.ticket);
     ticketInfo.ticket = BuildTicketWrapper(ticketInfo);
     ret = StoreChallengeToAntiReplayStore(
-        ticketMessageInfo.startTime, ticketMessageInfo.ticketExpireTimeMs, callerId, ticketInfo.challenge);
+        ticketMessageInfo.ticketExpireTimeMs, callerId, ticketInfo.challenge);
     IF_ERROR_LOGE_RETURN(ret, "StoreChallengeToAntiReplayStore failed, ret=%{public}d", ret);
     return SAF_SUCCESS;
 }
