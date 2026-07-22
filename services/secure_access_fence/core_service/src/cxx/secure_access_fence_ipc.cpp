@@ -139,7 +139,10 @@ int32_t HandleGrantToolPermission(MessageParcel& data, MessageParcel& reply)
         LOGE("The list size exceeds the security limit!");
         return SAF_ERR_IPC_WRITE_DATA_FAIL;
     }
-    reply.WriteInt32(ticketInfo.size());
+    if (!reply.WriteInt32(ticketInfo.size())) {
+        LOGE("Write [ticketInfo.size()] failed!");
+        return SAF_ERR_IPC_WRITE_DATA_FAIL;
+    }
     for (auto it8 = ticketInfo.begin(); it8 != ticketInfo.end(); ++it8) {
         if (VerifyTicketInfoBlockMarshalling(reply, (*it8)) != ERR_NONE) {
             LOGE("Write [(*it8)] failed!");

@@ -66,5 +66,8 @@ bool CheckSystemHapPermission(void)
 {
     auto tokenId = IPCSkeleton::GetCallingTokenID();
     ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
+    if (tokenType == ATokenTypeEnum::TOKEN_INVALID) {
+        return false;
+    }
     return (tokenType == ATokenTypeEnum::TOKEN_HAP) ? CheckSystemApp() : true;
 }
