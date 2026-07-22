@@ -18,6 +18,7 @@
 mod ticket_key_manager;
 mod local_based_ticket_key_manager;
 mod account_based_ticket_key_manager;
+pub(crate) mod challenge_store;
 
 pub use ticket_key_manager::TicketKeyManager;
 pub use local_based_ticket_key_manager::LocalBasedTicketKeyManager;

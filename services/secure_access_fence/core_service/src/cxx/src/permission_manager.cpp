@@ -24,6 +24,7 @@
 #include "permission_manager.h"
 #include "os_account_wrapper.h"
 #include "screen_lock_wrapper.h"
+#include "time_wrapper.h"
 
 #include "saf_log.h"
 #include "saf_defines.h"
@@ -84,7 +85,7 @@ constexpr uint32_t DEFAULT_CALLER_TOKEN_ID = 0;
 
 constexpr uint64_t DEFAULT_TICKET_EXPIRE_TIME_MS = 10000;  // 默认ticket过期时间
 
-constexpr uint64_t MAX_TICKET_EXPIRE_TIME_MS = 24 * 60 * 60 * 1000;   // 最大ticket过期时间：24小时
+constexpr uint64_t MAX_TICKET_EXPIRE_TIME_MS = 60 * 1000;   // 最大ticket过期时间：60s
 
 constexpr int32_t MAX_PERMISSION_NAME_LENGTH = 256;
 
@@ -577,6 +578,29 @@ static std::string BuildTicketWrapper(const VerifyTicketInfo &ticketInfo)
     return ticketJson;
 }
 
+static int32_t StoreChallengeToAntiReplayStore(
+    uint64_t ticketExpireTimeMs, const rust::String &callerId, const std::string &challenge)
+{
+    int64_t bootTimeMs = TimeWrapper::GetBootTimeMs();
+    if (bootTimeMs < 0) {
+        LOGE("StoreChallengeToAntiReplayStore: GetBootTimeMs failed");
+        return SAF_ERROR;
+    }
+    uint64_t nowBootMs = static_cast<uint64_t>(bootTimeMs);
+    if (nowBootMs > UINT64_MAX - ticketExpireTimeMs) {
+        LOGE("StoreChallengeToAntiReplayStore: expireTimeMs overflow, "
+            "nowBootMs=%{public}llu, duration=%{public}llu",
+            static_cast<unsigned long long>(nowBootMs),
+            static_cast<unsigned long long>(ticketExpireTimeMs));
+        return SAF_ERROR;
+    }
+    uint64_t expireTimeMs = nowBootMs + ticketExpireTimeMs;
+    int32_t storeRet = OHOS::Security::SAF::cxx_store_challenge(callerId, challenge, expireTimeMs);
+    IF_TRUE_LOGE_RETURN_ERR(storeRet != SAF_SUCCESS, storeRet,
+        "StoreChallengeToAntiReplayStore: cxx_store_challenge failed");
+    return SAF_SUCCESS;
+}
+
 int32_t PermissionManager::GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ticketMessageInfo,
     uint32_t callerTokenId, VerifyTicketInfo &ticketInfo)
 {
@@ -620,6 +644,9 @@ int32_t PermissionManager::GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ti
     ticketInfo.challenge = std::string(cxxVerifyTicketInfo.challenge);
     ticketInfo.ticket = std::string(cxxVerifyTicketInfo.ticket);
     ticketInfo.ticket = BuildTicketWrapper(ticketInfo);
+    ret = StoreChallengeToAntiReplayStore(
+        ticketMessageInfo.ticketExpireTimeMs, callerId, ticketInfo.challenge);
+    IF_ERROR_LOGE_RETURN(ret, "StoreChallengeToAntiReplayStore failed, ret=%{public}d", ret);
     return SAF_SUCCESS;
 }
 
@@ -708,7 +735,6 @@ int32_t PermissionManager::RequestToolPermissions(const PermissionQuery &permiss
     }
     ret = ProcessOperations(permissionQuery.operationInfo, cliInfos, apiPermissions);
     IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: ProcessOperations failed, ret=%{public}d", ret);
-
     std::vector<TicketCliInfo> ticketCliInfos;
     if (cliInfos.empty()) {
         LOGI("RequestToolPermissions :: CLI Infos is empty");

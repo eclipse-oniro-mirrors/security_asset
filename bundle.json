@@ -65,7 +65,8 @@
                 "ylong_json",
                 "ylong_runtime",
                 "openssl",
-                "screenlock_mgr"
+                "screenlock_mgr",
+                "time_service"
             ],
             "third_party": []
         },
