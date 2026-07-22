@@ -17,7 +17,6 @@
 
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
-use std::time::{SystemTime, UNIX_EPOCH};
 
 use saf_log::{loge, logi};
 use saf_definition::ErrCode;
@@ -157,7 +156,7 @@ impl ChallengeStore {
         let Some(now_ms) = Self::now_ms() else {
             loge!("[ChallengeStore] system time error, fallback to MAX_CHALLENGE_VALIDITY_MS");
             return MAX_CHALLENGE_VALIDITY_MS;
-        }
+        };
 
         // Clean up expired entries first
         for bucket in map.values_mut() {

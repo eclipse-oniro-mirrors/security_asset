@@ -37,7 +37,8 @@ ohos_static_library("secure_access_fence_wrapper_static") {
   sources = [
     "src/cxx/secure_access_fence_ipc.cpp",
     "src/cxx/src/secure_access_fence_service.cpp",
-    "src/cxx/src/permission_manager.cpp"
+    "src/cxx/src/permission_manager.cpp",
+    "src/cxx/src/time_wrapper.cpp"
   ]
   sources += get_target_outputs(":secure_access_fence_wrapper_cxx")
 
@@ -59,7 +60,9 @@ ohos_static_library("secure_access_fence_wrapper_static") {
     "ipc:ipc_single",
     "samgr:samgr_proxy",
     "rust_cxx:cxx_cppdeps",
-    "bounds_checking_function:libsec_shared"
+    "bounds_checking_function:libsec_shared",
+    "ability_runtime:wantagent_innerkits",
+    "time_service:time_client"
   ]
 
   branch_protector_ret = "pac_ret"

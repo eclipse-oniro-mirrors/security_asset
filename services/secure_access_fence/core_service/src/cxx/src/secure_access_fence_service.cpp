@@ -169,7 +169,7 @@ ErrCode GrantToolPermissionsByUser(
 // Rust callable: returns boot time in milliseconds, or -1 on failure.
 int64_t GetBootTimeMs()
 {
-    return BootTimeWrapper::GetBootTimeMs();
+    return TimeWrapper::GetBootTimeMs();
 }
 
 }

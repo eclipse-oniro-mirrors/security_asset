@@ -23,7 +23,7 @@ namespace SAF {
 
 int64_t TimeWrapper::GetBootTimeMs()
 {
-    int64_t bootTimeMs = OHOS::MiscSercices::TimeServiceClient::GetInstance()->GetBootTimeMs();
+    int64_t bootTimeMs = OHOS::MiscServices::TimeServiceClient::GetInstance()->GetBootTimeMs();
     if (bootTimeMs < 0) {
         LOGE("TimeWrapper::GetBootTimeMs failed, ret = %{public}lld",
             static_cast<long long>(bootTimeMs));

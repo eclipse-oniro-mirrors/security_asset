@@ -24,7 +24,7 @@
 #include "permission_manager.h"
 #include "os_account_wrapper.h"
 #include "screen_lock_wrapper.h"
-#include "boot_time_wrapper.h"
+#include "time_wrapper.h"
 
 #include "saf_log.h"
 #include "saf_defines.h"

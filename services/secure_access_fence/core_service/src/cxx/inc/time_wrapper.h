@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#ifdef TIME_WRAPPER_H
+#ifndef TIME_WRAPPER_H
 #define TIME_WRAPPER_H
 
 #include <cstdint>
@@ -25,10 +25,10 @@ namespace SAF {
 class TimeWrapper {
 public:
     static int64_t GetBootTimeMs();
-}
+};
 
 } // namespace SAF
 } // namespace Security
 } // namespace OHOS
 
-#endif // BOOT_TIME_WRAPPER_H
+#endif // TIME_WRAPPER_H

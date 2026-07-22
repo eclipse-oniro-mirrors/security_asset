@@ -47,9 +47,11 @@ pub mod ffi {
     unsafe extern "C++" {
         include!("secure_access_fence_ipc.h");
         include!("message_option.h");
+        include!("secure_access_fence.h");
         #[namespace = "OHOS"]
         type MessageParcel = ipc::parcel::MessageParcel;
         fn OnRemoteRequest(code: u32, data: Pin<&mut MessageParcel>, reply: Pin<&mut MessageParcel>) -> i32;
+        fn GetBootTimeMs() -> i64;
     }
 }
 
@@ -199,7 +201,7 @@ fn call_plugin_performance_event(
 
     let loader = plugin.load_plugin().map_err(|e| format!("load_plugin failed: {}", e))?;
 
-    let mut params = ExtMap::new();
+    let mut `arams = ExtMap::new();
     params.insert(PERFORMANCE_METRICS_KEYS.item_count, Value::Number(item_count as u32));
     params.insert(PERFORMANCE_METRICS_KEYS.elapsed_time, Value::Number(elapsed_time as u32));
     params.insert(PERFORMANCE_METRICS_KEYS.os_account_id, Value::Number(os_account_id as u32));
