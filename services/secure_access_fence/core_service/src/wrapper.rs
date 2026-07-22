@@ -39,16 +39,19 @@ pub mod ffi {
         fn notify_error(error_message: String, error_code: i32, os_account_id: i32, function_name: String);
         fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, domain_id: &str, messages: &[String], result_code: &mut i32) -> Vec<CxxVerifyTicketInfo>;
         fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec<i32>) -> i32;
-        fn verify_remote_ticket(domain_id: String, remote_control_ticket: String) -> i32;
+        fn verify_remote_ticket(domain_id: String, remote_control_ticket: String, os_account_id: i32) -> i32;
+        fn cxx_store_challenge(caller_token_id: &str, challenge: &str, expire_time_ms: u64) -> i32;
     }
 
     // Rust callable C++ functions
     unsafe extern "C++" {
         include!("secure_access_fence_ipc.h");
         include!("message_option.h");
+        include!("secure_access_fence_service.h");
         #[namespace = "OHOS"]
         type MessageParcel = ipc::parcel::MessageParcel;
         fn OnRemoteRequest(code: u32, data: Pin<&mut MessageParcel>, reply: Pin<&mut MessageParcel>) -> i32;
+        fn GetBootTimeMs() -> i64;
     }
 }
 
@@ -88,7 +91,6 @@ pub fn notify_error(error_message: String, error_code: i32, os_account_id: i32, 
     }
 }
 
-#[allow(dead_code)]
 pub fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec<i32>) -> i32 {
     logi!("[get_policy_auth_status] permissions_len={}", permissions.len());
 
@@ -127,7 +129,7 @@ pub fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec
     0
 }
 
-pub fn verify_remote_ticket(domain_id: String, remote_control_ticket: String) -> i32 {
+pub fn verify_remote_ticket(domain_id: String, remote_control_ticket: String, os_account_id: i32) -> i32 {
     let plugin = SAFPlugin::get_instance();
     let loader = match plugin.load_plugin() {
         Ok(loader) => loader,
@@ -138,6 +140,7 @@ pub fn verify_remote_ticket(domain_id: String, remote_control_ticket: String) ->
     let mut params = ExtMap::new();
     params.insert(VERIFY_REMOTE_TICKET_KEYS.domain_id, Value::String(domain_id));
     params.insert(VERIFY_REMOTE_TICKET_KEYS.remote_control_ticket, Value::String(remote_control_ticket));
+    params.insert(VERIFY_REMOTE_TICKET_KEYS.os_account_id, Value::Number(os_account_id as u32));
 
     logi!("[verify_remote_ticket] calling plugin process_event");
 
@@ -171,6 +174,19 @@ pub fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, domain_id:
             *result_code = e.code as i32;
             Vec::new()
         },
+    }
+}
+
+// C++ -> Rust bridge for store challenge.
+pub fn cxx_store_challenge(caller_token_id: &str, challenge: &str, expire_time_ms: u64) -> i32 {
+    logi!("[Wrapper cxx_store_challenge] caller = {}, challenge_len = {}, expire_time_ms = {}",
+        caller_token_id, challenge.len(), expire_time_ms);
+    match ticket_operation::challenge_store::global_challenge_store().insert(caller_token_id, challenge, expire_time_ms) {
+        Ok(()) => 0,
+        Err(e) => {
+            loge!("[Wrapper cxx_store_challenge] insert failed, err = {}", e.code);
+            e.code as i32
+        }
     }
 }
 

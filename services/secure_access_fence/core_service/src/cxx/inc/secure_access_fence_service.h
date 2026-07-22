@@ -41,6 +41,9 @@ ErrCode GrantToolPermissionsByUser(
     std::vector<VerifyTicketInfo> &ticketInfos,
     int32_t &resultCode);
 
+// Rust callable: returns boot time in milliseconds, or -1 on failure.
+int64_t GetBootTimeMs();
+
 } // namespace SAF
 } // namespace Security
 } // namespace OHOS

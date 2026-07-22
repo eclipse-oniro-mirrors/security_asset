@@ -16,17 +16,25 @@ import("//build/ohos.gni")
 ohos_rust_shared_library("saf_plugin_interface_rust") {
   sources = [ "src/lib.rs" ]
   deps = [
-    "../../../../frameworks/secure_access_fence/definition:saf_definition",
     "../../../../frameworks/secure_access_fence/inner_api/ipc:saf_ipc",
-    "../../../../frameworks/secure_access_fence/os_dependency/log:saf_log",
     "../../rs/secure_access_fence:saf_sdk_rust",
   ]
 
   external_deps = [
     "ipc:ipc_rust",
-    "samgr:samgr_rust",
     "ylong_runtime:ylong_runtime",
   ]
+
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
 
   crate_name = "saf_plugin_interface"
   crate_type = "dylib"

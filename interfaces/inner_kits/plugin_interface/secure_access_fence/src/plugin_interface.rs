@@ -94,6 +94,8 @@ pub struct VerifyRemoteTicketKeys {
     pub domain_id: &'static str,
     /// The key for remote control ticket.
     pub remote_control_ticket: &'static str,
+    /// The key for os account id.
+    pub os_account_id: &'static str,
 }
 
 /// PolicyAuthStatusKeys constant for GetPolicyAuthStatus EventType.
@@ -102,7 +104,9 @@ pub const POLICY_AUTH_STATUS_KEYS: PolicyAuthStatusKeys =
 
 /// VerifyRemoteTicketKeys constant for VerifyRemoteTicket EventType.
 pub const VERIFY_REMOTE_TICKET_KEYS: VerifyRemoteTicketKeys =
-VerifyRemoteTicketKeys { domain_id: "DomainId", remote_control_ticket: "RemoteControlTicket"};
+    VerifyRemoteTicketKeys { domain_id: "DomainId", remote_control_ticket: "RemoteControlTicket", 
+    os_account_id: "osAccountId"
+};
 
 /// Global constant instance for error metrics parameter keys.
 /// Use this to access standardized parameter names for StatisticsError events.

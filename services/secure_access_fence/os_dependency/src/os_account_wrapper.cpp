@@ -34,3 +34,19 @@ bool GetForegroundOsAccountId(int32_t *userId)
     *userId = userIdTmp;
     return true;
 }
+
+bool GetOsAccountIdFromUid(int32_t uid, int32_t *userId)
+{
+    if (userId == nullptr) {
+        LOGE("[FATAL]userId is nullptr.");
+        return false;
+    }
+    int32_t userIdTmp;
+    int32_t res = OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userIdTmp);
+    if (res != 0 || userIdTmp < 0) {
+        LOGE("[FATAL]Get os account id from uid failed! res is %{public}d, userId is %{public}d.", res, userIdTmp);
+        return false;
+    }
+    *userId = userIdTmp;
+    return true;
+}

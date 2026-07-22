@@ -4,7 +4,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,13 +13,24 @@
  * limitations under the License.
  */
 
-#ifndef SAF_AGENT_FENCE_REQUEST_TOOL_PERMISSIONS_TEST_H
-#define SAF_AGENT_FENCE_REQUEST_TOOL_PERMISSIONS_TEST_H
+#include "time_wrapper.h"
+#include "time_service_client.h"
+#include "saf_log.h"
 
-namespace UnitTest::SafAgentFenceRequestToolPermissionsTest {
-int RequestToolPermissionsUnknownOperation001(void);
-int RequestToolPermissionsEmptyCLICmdNameOperation001(void);
-int RequestToolPermissionsEmptyAPIPermission001(void);
+namespace OHOS {
+namespace Security {
+namespace SAF {
+
+int64_t TimeWrapper::GetBootTimeMs()
+{
+    int64_t bootTimeMs = OHOS::MiscServices::TimeServiceClient::GetInstance()->GetBootTimeMs();
+    if (bootTimeMs < 0) {
+        LOGE("TimeWrapper::GetBootTimeMs failed, ret = %{public}lld",
+            static_cast<long long>(bootTimeMs));
+    }
+    return bootTimeMs;
 }
 
-#endif // SAF_AGENT_FENCE_REQUEST_TOOL_PERMISSIONS_TEST_H
+} // namespace SAF
+} // namespace Security
+} // namespace OHOS

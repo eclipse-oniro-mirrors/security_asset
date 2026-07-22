@@ -13,13 +13,20 @@
  * limitations under the License.
  */
 
-#ifndef SAF_AGENT_FENCE_REQUEST_TOOL_PERMISSIONS_TEST_H
-#define SAF_AGENT_FENCE_REQUEST_TOOL_PERMISSIONS_TEST_H
+#ifndef SAF_AGENT_FENCE_REQUEST_TOOL_PERMISSIONS_LOCAL_TEST_H
+#define SAF_AGENT_FENCE_REQUEST_TOOL_PERMISSIONS_LOCAL_TEST_H
 
-namespace UnitTest::SafAgentFenceRequestToolPermissionsTest {
+namespace UnitTest::SafAgentFenceRequestToolPermissionsLocalTest {
 int RequestToolPermissionsUnknownOperation001(void);
 int RequestToolPermissionsEmptyCLICmdNameOperation001(void);
+int RequestToolPermissionsCLIOperation001(void);
 int RequestToolPermissionsEmptyAPIPermission001(void);
+int RequestToolPermissionsAPIOperation001(void);
+int RequestToolPermissionsEmptyOperation001(void);
+int RequestToolPermissionsMixedOperation001(void);
+int RequestToolPermissionsExceedsMaxExpireTimeLimit001(void);
+int RequestToolPermissionsWithTokenId001(void);
+int RequestToolPermissionsNoTicket001(void);
 }
 
-#endif // SAF_AGENT_FENCE_REQUEST_TOOL_PERMISSIONS_TEST_H
+#endif // SAF_AGENT_FENCE_REQUEST_TOOL_PERMISSIONS_LOCAL_TEST_H

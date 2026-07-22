@@ -221,6 +221,12 @@ impl_enum_trait! {
         /// The error code indicates that ticket time is invalid.
         TicketTimeInvalid = 0x71002,
 
+        /// The error code indicates that replay attack detected.
+        ReplayAttackDetected = 0x71003,
+
+        /// The error code indicates that challenge exceed.
+        ChallengeLimitExceeded = 0x71004,
+
         // ==================== TRUSTED_RING (0x19000) ====================
         /// The error code indicates that network disconnected.
         NetworkDisconnected = 0x19003,

@@ -27,6 +27,9 @@ ohos_static_library("asset_client_dependency") {
     "ability_runtime:application_image_observer_manager",
     "resource_schedule_service:ressched_client",
     "samgr:samgr_proxy",
+    "json:nlohmann_json_static",
+    "ipc:ipc_core",
+    "ipc:ipc_single",
   ]
 
   branch_protector_ret = "pac_ret"

@@ -113,7 +113,7 @@ int32_t HandleGrantToolPermission(MessageParcel& data, MessageParcel& reply)
 {
     std::vector<UserAuthResult> userAuthResult;
     int32_t userAuthResultSize = data.ReadInt32();
-    if (userAuthResultSize > static_cast<int32_t>(VECTOR_MAX_SIZE)) {
+    if (userAuthResultSize > static_cast<int32_t>(VECTOR_MAX_SIZE) || userAuthResultSize < 0) {
         LOGE("The vecotr/array size exceeds the security limit!");
         return SAF_ERR_IPC_READ_DATA_FAIL;
     }

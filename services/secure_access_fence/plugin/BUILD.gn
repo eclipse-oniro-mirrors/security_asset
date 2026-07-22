@@ -17,7 +17,6 @@ import("//build/ohos.gni")
 ohos_rust_static_library("saf_plugin") {
   sources = [ "src/lib.rs" ]
   deps = [
-    "../../../frameworks/secure_access_fence/definition:saf_definition",
     "../../../frameworks/secure_access_fence/os_dependency/log:saf_log",
     "../../../interfaces/inner_kits/rs/secure_access_fence:saf_sdk_rust",
     "../../../interfaces/inner_kits/plugin_interface/secure_access_fence:saf_plugin_interface_rust",
@@ -28,6 +27,8 @@ ohos_rust_static_library("saf_plugin") {
   external_deps = [
     "ylong_runtime:ylong_runtime",
   ]
+
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
 
   crate_name = "saf_plugin"
   crate_type = "rlib"

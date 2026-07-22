@@ -100,6 +100,10 @@ pub(crate) fn unload_sa() {
                 continue;
             }
 
+            if ticket_operation::challenge_store::global_challenge_store().max_remaining_time_ms() > 0 {
+                continue;
+            }
+
             SystemAbilityManager::unload_system_ability(SA_ID);
             break;
         }
@@ -130,6 +134,16 @@ impl Ability for SAFAbility {
             );
             return DELAYED_UNLOAD_TIME_IN_SEC * SEC_TO_MILLISEC;
         }
+
+        let remaining_ms = ticket_operation::challenge_store::global_challenge_store().max_remaining_time_ms();
+        if remaining_ms > 0 {
+            logi!(
+                "SAF service on idle not success for pending challenges, delay time: {}ms",
+                remaining_ms
+            );
+            return remaining_ms.min(ticket_operation::challenge_store::MAX_CHALLENGE_VALIDITY_MS) as i32;
+        }
+
         match SAFPlugin::get_instance().load_plugin() {
             Ok(loader) => {
                 let delay_time = loader.on_idle();
@@ -296,10 +310,27 @@ fn check_screen_lock_status(message_json: &ylong_json::JsonValue) -> Result<()> 
 
 fn verify_ticket_impl(os_account_id: i32, caller_id: &str, verify_info_str: &str) -> Result<Vec<CliInfo>> {
     let (ticket_info, message_json) = parse_verify_info_json_full(verify_info_str)?;
+    // clone challenge before verify_single_ticket consumes ticket_info by value.
+    let challenge = ticket_info.challenge.clone();
     verify_single_ticket(os_account_id, caller_id, ticket_info)?;
+    check_and_consume_replay_challenge(caller_id, &challenge)?;
     check_ticket_time_validity_with_json(&message_json)?;
     check_screen_lock_status(&message_json)?;
     extract_cli_infos_with_json(&message_json)
+}
+
+fn check_and_consume_replay_challenge(caller_id: &str, challenge: &str) -> Result<()> {
+    if challenge.is_empty() {
+        return macros_lib::log_throw_error!(ErrCode::ArgEmpty,
+            "VerifyTicket: challenge is empty, caller={}", caller_id);
+    }
+    if !ticket_operation::challenge_store::global_challenge_store()
+        .check_and_remove(caller_id, challenge) {
+        return macros_lib::log_throw_error!(ErrCode::ReplayAttackDetected,
+            "VerifyTicket: replay attack detected, challenge not found, caller={}", caller_id);
+    }
+    logi!("VerifyTicket: challenge consumed successfully, caller={}", caller_id);
+    Ok(())
 }
 
 fn verify_single_ticket(os_account_id: i32, caller_id: &str, ticket_info: VerifyTicketInfo) -> Result<()> {
