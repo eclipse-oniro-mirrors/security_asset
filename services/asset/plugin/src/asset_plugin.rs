@@ -35,10 +35,12 @@ use asset_plugin_interface::plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPlu
 extern "C" {
     fn StoreKeyValue(user_id: i32, in_key: *const c_char, in_value: i32) -> bool;
     fn QueryValue(user_id: i32, in_key: *const c_char, out_value: *mut i32) -> i32;
+    fn IsScreenLocked(is_locked: *mut bool) -> i32;
 }
 
 const DATASHARE_SUCCESS: i32 = 0;
 const DATASHARE_FAIL: i32 = -1;
+const SCREEN_LOCK_SUCCESS: i32 = 0;
 
 /// The asset_ext plugin.
 #[derive(Default)]
@@ -487,5 +489,17 @@ impl IAssetPluginCtx for AssetContext {
             }
         }
     }
-    
+
+    /// Check whether the screen is locked.
+    fn is_screen_locked(&self) -> std::result::Result<bool, u32> {
+        let mut is_locked: bool = false;
+        let result = unsafe { IsScreenLocked(&mut is_locked) };
+        logi!("[is_screen_locked] result:{}, is_locked:{}", result, is_locked);
+        if result == SCREEN_LOCK_SUCCESS {
+            Ok(is_locked)
+        } else {
+            Err(result as u32)
+        }
+    }
+
 }
