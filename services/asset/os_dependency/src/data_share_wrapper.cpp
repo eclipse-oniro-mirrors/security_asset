@@ -58,6 +58,10 @@ std::shared_ptr<OHOS::DataShare::DataShareHelper> CreateDataShareHelper(int32_t 
 
     auto [ret, helper] = OHOS::DataShare::DataShareHelper::Create(remoteObj, SETTING_URI_PROXY, SETTINGS_DATA_EXT_URI);
     remoteObj = nullptr;
+    if (helper == nullptr || ret != ERR_OK) {
+        LOGE("[FATAL]Create DataShareHelper failed, ret=%{public}d", ret);
+        return nullptr;
+    }
     return helper;
 }
 
