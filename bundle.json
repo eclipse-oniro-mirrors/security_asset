@@ -51,6 +51,7 @@
                 "hisysevent",
                 "huks",
                 "ipc",
+                "json",
                 "kv_store",
                 "napi",
                 "netmanager_base",
@@ -64,7 +65,8 @@
                 "ylong_json",
                 "ylong_runtime",
                 "openssl",
-                "screenlock_mgr"
+                "screenlock_mgr",
+                "time_service"
             ],
             "third_party": []
         },

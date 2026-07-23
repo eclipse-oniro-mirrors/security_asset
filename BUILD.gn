@@ -59,6 +59,8 @@ group("asset_bin_test") {
     #"test/secure_access_fence/agent_fence:saf_agent_fence_no_permission_test",
     #"test/secure_access_fence/agent_fence:saf_agent_fence_screen_lock_test",
     #"test/secure_access_fence/agent_fence:saf_agent_fence_screen_lock_hap_identity_test",
+    #"test/secure_access_fence/agent_fence:saf_agent_fence_request_tool_permissions_local_test",
+    #"test/secure_access_fence/agent_fence:saf_agent_fence_grant_tool_permissions_by_user_local_test"
   ]
   if (enable_local_test) {
     deps += [ "test/asset/unittest/inner_kits_rust:rust_asset_inner_test" ]
@@ -72,5 +74,7 @@ group("asset_bin_test") {
     deps += [ "test/secure_access_fence/agent_fence:saf_agent_fence_no_permission_test" ]
     deps += [ "test/secure_access_fence/agent_fence:saf_agent_fence_screen_lock_test" ]
     deps += [ "test/secure_access_fence/agent_fence:saf_agent_fence_screen_lock_hap_identity_test" ]
+    deps += [ "test/secure_access_fence/agent_fence:saf_agent_fence_request_tool_permissions_local_test" ]
+    deps += [ "test/secure_access_fence/agent_fence:saf_agent_fence_grant_tool_permissions_by_user_local_test" ]
   }
 }

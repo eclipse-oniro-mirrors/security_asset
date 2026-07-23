@@ -25,6 +25,7 @@ ohos_rust_static_library("saf_common") {
     "ipc:ipc_rust",
     "ylong_runtime:ylong_runtime",
   ]
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
   crate_name = "saf_common"
   crate_type = "rlib"
   subsystem_name = "security"

@@ -36,6 +36,7 @@ ohos_shared_library("abilitytoolaccessctrl_napi") {
     "c_utils:utils",
     "hilog:libhilog",
     "napi:ace_napi",
+    "node:node_header_notice"
   ]
 
   branch_protector_ret = "pac_ret"

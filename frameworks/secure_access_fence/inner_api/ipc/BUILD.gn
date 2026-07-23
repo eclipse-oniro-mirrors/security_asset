@@ -44,6 +44,7 @@ ohos_static_library("secure_access_fence_proxy") {
     "ipc:ipc_single",
   ]
 
+  branch_protector_ret = "pac_ret"
   sanitize = {
     integer_overflow = true
     cfi = true
@@ -72,6 +73,7 @@ ohos_static_library("secure_access_fence_stub") {
     "ipc:ipc_single",
   ]
 
+  branch_protector_ret = "pac_ret"
   sanitize = {
     integer_overflow = true
     cfi = true
@@ -92,6 +94,8 @@ ohos_rust_static_library("saf_ipc") {
     "../../os_dependency/log:saf_log",
   ]
   external_deps = [ "ipc:ipc_rust" ]
+
+  rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
 
   crate_name = "saf_ipc"
   crate_type = "rlib"

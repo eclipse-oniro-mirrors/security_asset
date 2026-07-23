@@ -13,15 +13,23 @@
  * limitations under the License.
  */
 
-#ifndef SAF_AGENT_FENCE_GRANT_TOOL_PERMISSIONS_BY_USER_TEST_H
-#define SAF_AGENT_FENCE_GRANT_TOOL_PERMISSIONS_BY_USER_TEST_H
+#ifndef SAF_AGENT_FENCE_GRANT_TOOL_PERMISSIONS_BY_USER_LOCAL_TEST_H
+#define SAF_AGENT_FENCE_GRANT_TOOL_PERMISSIONS_BY_USER_LOCAL_TEST_H
 
-namespace UnitTest::SafAgentFenceGrantToolPermissionsByUserTest {
+namespace UnitTest::SafAgentFenceGrantToolPermissionsByUserLocalTest {
 int GrantToolPermissionsByUserEmptyPermissionInfo001(void);
 int GrantToolPermissionsByUserDeniedPermission001(void);
 int GrantToolPermissionsByUserNotDeterminedPermission001(void);
+int GrantToolPermissionsByUserRestrictedPermission001(void);
+int GrantToolPermissionsByUserUnknownOperation001(void);
+int GrantToolPermissionsByUserEmptyList001(void);
+int GrantToolPermissionsByUserCLIOperation001(void);
+int GrantToolPermissionsByUserAPIOperation001(void);
+int GrantToolPermissionsByUserMixedOperation001(void);
+int GrantToolPermissionsByUserEmptyOperation001(void);
+int GrantToolPermissionsByUserExceedExpireTime001(void);
 int VerifyTicketWithEmptyTicketInfo001(void);
 int VerifyTicketWithInvalidTicketInfo001(void);
 }
 
-#endif // SAF_AGENT_FENCE_GRANT_TOOL_PERMISSIONS_BY_USER_TEST_H
+#endif // SAF_AGENT_FENCE_GRANT_TOOL_PERMISSIONS_BY_USER_LOCAL_TEST_H
