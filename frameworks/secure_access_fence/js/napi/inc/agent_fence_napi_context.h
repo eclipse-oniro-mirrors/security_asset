@@ -33,7 +33,7 @@ public:
             env = nullptr;
         }
     }
-    napi_env env;
+    napi_env env = nullptr;
     napi_async_work work = nullptr;
     napi_deferred deferred = nullptr;
     int32_t result;
