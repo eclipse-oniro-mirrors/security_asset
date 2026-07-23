@@ -112,7 +112,8 @@ ErrCode RequestToolPermissions(
     }
 
     auto manager = PermissionManager::GetInstance();
-    IF_TRUE_LOGE_RETURN_ERR(manager == nullptr, SAF_ERR_NULL_PTR, "get permissionManager instance failed");
+    resultCode = SAF_ERR_NULL_PTR;
+    IF_TRUE_LOGE_RETURN_ERR(manager == nullptr, SAF_SUCCESS, "get permissionManager instance failed");
     int32_t ret = manager->RequestToolPermissions(permissionQuery, permissionQueryResult);
     if (ret != SAF_SUCCESS) {
         LOGE("RequestToolPermissions failed, ret=%{public}d", ret);
@@ -148,7 +149,8 @@ ErrCode GrantToolPermissionsByUser(
     }
 
     auto manager = PermissionManager::GetInstance();
-    IF_TRUE_LOGE_RETURN_ERR(manager == nullptr, SAF_ERR_NULL_PTR, "get permissionManager instance failed");
+    resultCode = SAF_ERR_NULL_PTR;
+    IF_TRUE_LOGE_RETURN_ERR(manager == nullptr, SAF_SUCCESS, "get permissionManager instance failed");
     int32_t ret = manager->GrantToolPermissionsByUser(userAuthResults, ticketInfos);
     if (ret != SAF_SUCCESS) {
         LOGE("GrantToolPermissionsByUser failed, ret=%{public}d", ret);
