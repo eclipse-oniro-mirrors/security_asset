@@ -75,6 +75,7 @@ napi_status ParseByteArray(const napi_env env, napi_value value, uint32_t tag, A
     NAPI_CALL_RETURN_ERR(env, napi_get_typedarray_info(env, value, &arrayType, &length, &rawData, nullptr, nullptr));
     CHECK_ASSET_TAG(env, arrayType != napi_uint8_array, tag, "Expect type napi_uint8_array.");
     CHECK_ASSET_TAG(env, length == 0 || length > MAX_BUFFER_LEN, tag, "Invalid array length.");
+    CHECK_ASSET_TAG(env, rawData == nullptr, tag, "ArrayBuffer is detached or invalid.");
 
     blob.data = static_cast<uint8_t *>(AssetMalloc(length));
     NAPI_THROW_RETURN_ERR(

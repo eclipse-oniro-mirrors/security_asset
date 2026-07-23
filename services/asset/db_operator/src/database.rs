@@ -544,8 +544,10 @@ impl Database {
         if !msg.is_null() {
             let s = unsafe { CStr::from_ptr(msg as _) };
             if let Ok(rs) = s.to_str() {
-                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                let err = macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                     sqlite_err_handle(ret), "[FATAL]Database execute sql failed. error code={}, error msg={}", ret, rs);
+                unsafe { SqliteFree(msg as _) };
+                return err;
             }
             unsafe { SqliteFree(msg as _) };
         }
