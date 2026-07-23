@@ -29,11 +29,12 @@ int32_t IsScreenLocked(bool *isLocked)
         return ASSET_INVALID_ARGUMENT;
     }
 
+    *isLocked = true;
+
 #ifdef THEME_SCREENLOCK_MGR_ENABLE
     auto screenLockMgr = OHOS::ScreenLock::ScreenLockManager::GetInstance();
     if (screenLockMgr == nullptr) {
         LOGE("ScreenLockManager::GetInstance failed");
-        *isLocked = false;
         return ASSET_SERVICE_UNAVAILABLE;
     }
 
@@ -41,12 +42,10 @@ int32_t IsScreenLocked(bool *isLocked)
     int32_t ret = screenLockMgr->IsLocked(locked);
     if (ret != OHOS::ScreenLock::E_SCREENLOCK_OK) {
         LOGE("IsLocked failed, error code: %{public}d", ret);
-        *isLocked = false;
         return ASSET_SERVICE_UNAVAILABLE;
     }
 
     *isLocked = locked;
-    LOGI("IsScreenLocked result: %{public}d", locked);
 #endif
     return ASSET_SUCCESS;
 }

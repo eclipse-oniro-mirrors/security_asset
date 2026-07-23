@@ -20,7 +20,7 @@ use std::{
 };
 use ylong_runtime::task::JoinHandle;
 
-use asset_common::{CallingInfo, Counter, Group, OwnerType, TaskManager, GROUP_SEPARATOR};
+use asset_common::{CallingInfo, Counter, Group, OwnerType, TaskManager, GROUP_SEPARATOR, SUCCESS};
 use asset_crypto_manager::db_key_operator::get_db_key;
 use asset_db_operator::{
     database::{Database, get_path},
@@ -40,7 +40,6 @@ extern "C" {
 
 const DATASHARE_SUCCESS: i32 = 0;
 const DATASHARE_FAIL: i32 = -1;
-const SCREEN_LOCK_SUCCESS: i32 = 0;
 
 /// The asset_ext plugin.
 #[derive(Default)]
@@ -492,10 +491,9 @@ impl IAssetPluginCtx for AssetContext {
 
     /// Check whether the screen is locked.
     fn is_screen_locked(&self) -> std::result::Result<bool, u32> {
-        let mut is_locked: bool = false;
+        let mut is_locked: bool = true;
         let result = unsafe { IsScreenLocked(&mut is_locked) };
-        logi!("[is_screen_locked] result:{}, is_locked:{}", result, is_locked);
-        if result == SCREEN_LOCK_SUCCESS {
+        if result == SUCCESS {
             Ok(is_locked)
         } else {
             Err(result as u32)
