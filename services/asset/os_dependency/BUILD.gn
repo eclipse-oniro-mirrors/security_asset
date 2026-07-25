@@ -57,8 +57,14 @@ ohos_static_library("asset_os_dependency") {
     "-DASSET_CE_UPGRADE_CONFIG=\"${asset_ce_upgrade_list}\"",
   ]
 
+  cflags_cc = [
+    "-Wall",
+    "-Werror",
+    "-fPIC",
+  ]
+
   if (theme_screenlock_mgr_emf_enable) {
-    cflags_cc = [ "-DTHEME_SCREENLOCK_MGR_ENABLE" ]
+    cflags_cc += [ "-DTHEME_SCREENLOCK_MGR_ENABLE" ]
     external_deps += [ "screenlock_mgr:screenlock_client" ]
   }
 
