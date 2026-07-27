@@ -22,7 +22,7 @@
 extern "C" {
 #endif
 
-int32_t IsScreenLocked(bool *isLocked);
+int32_t IsDeviceLocked(int32_t userId, bool *isDeviceLocked);
 
 #ifdef __cplusplus
 }

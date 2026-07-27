@@ -315,8 +315,8 @@ pub trait IAssetPluginCtx: Any + Sync + Send + std::panic::RefUnwindSafe {
     /// query value in DataShare
     fn query_value(&self, user_id: i32, column_key: &str) -> Result<i32, AssetError>;
 
-    /// Check whether the screen is locked.
-    fn is_screen_locked(&self) -> Result<bool, u32>;
+    /// Check whether the device is locked.
+    fn is_device_locked(&self) -> Result<bool, u32>;
 }
 
 /// Defines a trait `IAssetPlugin` that specifies the required functionality for an asset plugin implementation.

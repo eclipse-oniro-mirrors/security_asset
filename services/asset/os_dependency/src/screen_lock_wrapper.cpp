@@ -22,14 +22,14 @@
 #include "asset_type.h"
 #include <cstdint>
 
-int32_t IsScreenLocked(bool *isLocked)
+int32_t IsDeviceLocked(int32_t userId, bool *isDeviceLocked)
 {
-    if (isLocked == nullptr) {
-        LOGE("IsScreenLocked: isLocked is nullptr");
+    if (isDeviceLocked == nullptr) {
+        LOGE("IsDeviceLocked: isDeviceLocked is nullptr");
         return ASSET_INVALID_ARGUMENT;
     }
 
-    *isLocked = true;
+    *isDeviceLocked = true;
 
 #ifdef THEME_SCREENLOCK_MGR_ENABLE
     auto screenLockMgr = OHOS::ScreenLock::ScreenLockManager::GetInstance();
@@ -39,13 +39,13 @@ int32_t IsScreenLocked(bool *isLocked)
     }
 
     bool locked = false;
-    int32_t ret = screenLockMgr->IsLocked(locked);
+    int32_t ret = screenLockMgr->IsDeviceLocked(userId, locked);
     if (ret != OHOS::ScreenLock::E_SCREENLOCK_OK) {
-        LOGE("IsLocked failed, error code: %{public}d", ret);
+        LOGE("IsDeviceLocked failed, error code: %{public}d", ret);
         return ASSET_SERVICE_UNAVAILABLE;
     }
 
-    *isLocked = locked;
+    *isDeviceLocked = locked;
 #endif
     return ASSET_SUCCESS;
 }
