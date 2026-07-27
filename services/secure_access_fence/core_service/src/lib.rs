@@ -281,7 +281,7 @@ impl SAFService {
     }
 }
 
-fn check_screen_lock_status(message_json: &ylong_json::JsonValue) -> Result<()> {
+fn check_screen_lock_status(os_account_id: i32, message_json: &ylong_json::JsonValue) -> Result<()> {
     let need_unlock_value = &message_json[JSON_KEY_NEED_UNLOCK_SCREEN];
     if need_unlock_value == &ylong_json::JsonValue::Null {
         logi!("needUnlockScreen field not found, assuming not required");
@@ -299,7 +299,7 @@ fn check_screen_lock_status(message_json: &ylong_json::JsonValue) -> Result<()> 
     }
 
     let mut is_locked: bool = false;
-    let ret = cxx_is_screen_locked(&mut is_locked);
+    let ret = cxx_is_screen_locked(os_account_id, &mut is_locked);
     if ret != 0 || is_locked {
         loge!("check_screen_lock_status: screen locked, ret={}, is_locked={}", ret, is_locked);
         return macros_lib::log_throw_error!(ErrCode::ScreenIsLocked, "Screen is locked");
@@ -315,7 +315,7 @@ fn verify_ticket_impl(os_account_id: i32, caller_id: &str, verify_info_str: &str
     verify_single_ticket(os_account_id, caller_id, ticket_info)?;
     check_and_consume_replay_challenge(caller_id, &challenge)?;
     check_ticket_time_validity_with_json(&message_json)?;
-    check_screen_lock_status(&message_json)?;
+    check_screen_lock_status(os_account_id, &message_json)?;
     extract_cli_infos_with_json(&message_json)
 }
 

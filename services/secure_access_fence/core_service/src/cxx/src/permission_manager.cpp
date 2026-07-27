@@ -191,7 +191,12 @@ int32_t PermissionManager::CheckNeedUnlockScreen(
         return SAF_SUCCESS;
     }
 
-    return IsScreenLocked(&isScreenLocked);
+    int32_t osAccountId;
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    bool retFlag = GetOsAccountIdFromUid(callerUid, &osAccountId);
+    IF_FALSE_LOGE_RETURN_ERR(retFlag, SAF_ERROR, "PermissionManager :: CheckNeedUnlockScreen failed");
+
+    return IsScreenLocked(osAccountId, &isScreenLocked);
 }
 
 bool PermissionManager::IsProcessLockScreenSuccess(
@@ -330,12 +335,12 @@ int32_t PermissionManager::MergePermissionResults(const std::vector<PermissionIn
         IF_TRUE_LOGE_RETURN_ERR(policyStatuses[i] < static_cast<int32_t>(PolicyStatus::NOT_EXIST) ||
             policyStatuses[i] > static_cast<int32_t>(PolicyStatus::REMOTE_RESTRICTED), SAF_ERROR,
             "Invalid policyStatus[%{public}zu]: %{public}d", i, policyStatuses[i]);
-        
+
         // 聚合ATM的PermissionStatus和策略文件的PolicyStatus，得到AuthStatus
         bool result = getAuthStatus(info.permissionStatus, static_cast<PolicyStatus>(policyStatuses[i]), outStatus);
         IF_FALSE_LOGE_RETURN_ERR(result, SAF_ERROR,
             "getAuthStatus failed, the combination is undefined, AuthStatus is not exist");
-        
+
         info.authStatusInfo.authStatus = outStatus;
         if (outStatus != AuthStatus::AUTHORIZED) {
             LOGE("MergePermissionResults :: Need Dialog! permission[%{public}zu] authStatus is %{public}u", i,
@@ -814,7 +819,7 @@ int32_t PermissionManager::GetVerifyTicketInfo(const UserAuthResult &userAuthRes
     if (!IsProcessLockScreenSuccess(ticketCliInfos, needUnlock)) {
         IF_ERROR_LOGE_RETURN(SAF_ERROR, "GetVerifyTicketInfo :: Screen failed, ret=%{public}d", SAF_ERROR);
     }
-    
+
     TicketMessageInfo ticketMessageInfo;
     for (auto &cliInfo : ticketCliInfos) {
         GetValidPermissions(cliInfo.permissions, userAuthResult.permissionInfo);

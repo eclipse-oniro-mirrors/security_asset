@@ -233,9 +233,9 @@ fn call_plugin_error_event(
 }
 
 extern "C" {
-    fn IsScreenLocked(isLocked: *mut bool) -> i32;
+    fn IsScreenLocked(os_account_id: i32, isLocked: *mut bool) -> i32;
 }
 
-pub fn cxx_is_screen_locked(is_locked: &mut bool) -> i32 {
-    unsafe { IsScreenLocked(is_locked) }
+pub fn cxx_is_screen_locked(os_account_id: i32, is_locked: &mut bool) -> i32 {
+    unsafe { IsScreenLocked(os_account_id, is_locked) }
 }
