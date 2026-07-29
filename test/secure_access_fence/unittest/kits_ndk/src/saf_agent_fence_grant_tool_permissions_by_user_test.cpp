@@ -236,7 +236,7 @@ HWTEST_F(SafAgentFenceGrantToolPermissionsByUserNoPermTest, VerifyTicketWithInva
     std::vector<OHOS::Security::SAF::CliInfo> cliInfos;
     std::string ticketInfo = "12345";
     int32_t result = agentFence.VerifyTicket(100, "0", ticketInfo, cliInfos);
-    EXPECT_EQ(result, SAF_ERR_PERMISSION_DENIED);
+    EXPECT_EQ(result, 204801);
 }
 
 } // namespace UnitTest::SafAgentFenceGrantToolPermissionsByUserNoPermTest
