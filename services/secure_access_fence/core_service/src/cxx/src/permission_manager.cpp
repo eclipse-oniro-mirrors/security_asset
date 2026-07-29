@@ -168,7 +168,7 @@ int32_t PermissionManager::BatchQueryCommandPermission(const std::vector<Command
             LOGE("BatchQueryPermissionBySubCommand failed, ret=%{public}d", cliPerm.queryRet);
             return SAF_ERR_TOOL_ERROR;
         }
-        cliInfo.isLockScreenExecutionAllowed = true;
+        cliInfo.isLockScreenExecutionAllowed = cliPerm.isLockScreenExecutionAllowed;
         ticketCliInfos.push_back(cliInfo);
     }
     return SAF_SUCCESS;
