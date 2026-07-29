@@ -29,6 +29,7 @@ ohos_static_library("asset_os_dependency") {
     "src/system_ability_wrapper.cpp",
     "src/system_event_wrapper.cpp",
     "src/file_operator_wrapper.cpp",
+    "src/screen_lock_wrapper.cpp",
   ]
   external_deps = [
     "ability_base:want",
@@ -55,6 +56,18 @@ ohos_static_library("asset_os_dependency") {
     "-DASSET_UPGRADE_HAP_CONFIG=${asset_split_hap_list}",
     "-DASSET_CE_UPGRADE_CONFIG=\"${asset_ce_upgrade_list}\"",
   ]
+
+  cflags_cc = [
+    "-Wall",
+    "-Werror",
+    "-fPIC",
+  ]
+
+  if (theme_screenlock_mgr_emf_enable) {
+    cflags_cc += [ "-DTHEME_SCREENLOCK_MGR_ENABLE" ]
+    external_deps += [ "screenlock_mgr:screenlock_client" ]
+  }
+
   branch_protector_ret = "pac_ret"
   sanitize = {
     integer_overflow = true
