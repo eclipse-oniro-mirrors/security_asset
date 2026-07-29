@@ -22,10 +22,12 @@
 #include "saf_result_code.h"
 #include <cstdint>
 
-int32_t IsScreenLocked(bool *isLocked)
+constexpr int32_t MIN_OS_ACCOUNT_ID = 100;
+
+int32_t IsScreenLocked(int32_t osAccountId, bool *isLocked)
 {
-    if (isLocked == nullptr) {
-        LOGE("IsScreenLocked: isLocked is nullptr");
+    if (isLocked == nullptr || osAccountId < MIN_OS_ACCOUNT_ID) {
+        LOGE("IsScreenLocked: isLocked is nullptr, or invalid osAccountId %{public}d", osAccountId);
         return SAF_ERR_NULL_PTR;
     }
 
@@ -38,7 +40,7 @@ int32_t IsScreenLocked(bool *isLocked)
     }
 
     bool locked = false;
-    int32_t ret = screenLockMgr->IsLocked(locked);
+    int32_t ret = screenLockMgr->IsDeviceLocked(osAccountId, locked);
     if (ret != OHOS::ScreenLock::E_SCREENLOCK_OK) {
         LOGE("IsLocked failed, error code: %{public}d", ret);
         *isLocked = false;
