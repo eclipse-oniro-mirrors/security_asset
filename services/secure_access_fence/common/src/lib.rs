@@ -37,10 +37,8 @@ pub enum CommonEventType {
     PackageRemoved = 1,
     /// Package added event.
     PackageAdded = 2,
-    /// Package changed event.
-    PackageChanged = 3,
     /// Restore start event.
-    RestoreStart = 4,
+    RestoreStart = 3,
 }
 
 impl TryFrom<&str> for CommonEventType {
@@ -51,8 +49,6 @@ impl TryFrom<&str> for CommonEventType {
             return Ok(CommonEventType::PackageRemoved);
         } else if s == "usual.event.PACKAGE_ADDED" {
             return Ok(CommonEventType::PackageAdded);
-        } else if s == "usual.event.PACKAGE_CHANGED" {
-            return Ok(CommonEventType::PackageChanged);
         } else if s == "usual.event.RESTORE_START" {
             return Ok(CommonEventType::RestoreStart);
         }
