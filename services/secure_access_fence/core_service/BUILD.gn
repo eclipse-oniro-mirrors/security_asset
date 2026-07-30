@@ -50,6 +50,7 @@ ohos_static_library("secure_access_fence_wrapper_static") {
   ]
 
   external_deps = [
+    "ability_base:configuration",
     "ability_runtime:cli_tool_client",
     "ability_base:want",
     "access_token:libaccesstoken_sdk",
