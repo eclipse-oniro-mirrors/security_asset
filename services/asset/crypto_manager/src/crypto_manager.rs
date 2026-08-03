@@ -83,13 +83,11 @@ impl CryptoManager {
 
     /// Remove the crypto from manager.
     pub fn remove(&mut self, calling_info: &CallingInfo, challenge: &Vec<u8>) {
-        let mut empty = false;
         if let Some(bucket) = self.cryptos.get_mut(calling_info) {
             bucket.retain(|crypto| !crypto.challenge().eq(challenge));
-            empty = bucket.is_empty();
-        }
-        if empty {
-            self.cryptos.remove(calling_info);
+            if bucket.is_empty() {
+                self.cryptos.remove(calling_info);
+            }
         }
     }
 
