@@ -34,8 +34,10 @@ const CRYPTO_CAPACITY: usize = 16;
 const CRYPTO_TOTAL_CAPACITY: usize = 32;
 
 /// Manages the crypto that required user authentication.
+/// Bucketed by `owner_info` (stable per app), so a single app cannot multiply its
+/// quota by cycling target `user_id` or `group`.
 pub struct CryptoManager {
-    cryptos: HashMap<CallingInfo, Vec<Crypto>>,
+    cryptos: HashMap<Vec<u8>, Vec<Crypto>>,
 }
 
 impl CryptoManager {
@@ -60,13 +62,13 @@ impl CryptoManager {
             macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                 ErrCode::LimitExceeded, "The total number of cryptos exceeds the upper limit.")
         } else {
-            let calling_info = crypto.calling_info().clone();
-            let bucket_len = self.cryptos.get(&calling_info).map_or(0, Vec::len);
+            let owner_info = crypto.calling_info().owner_info().clone();
+            let bucket_len = self.cryptos.get(&owner_info).map_or(0, Vec::len);
             if bucket_len >= CRYPTO_CAPACITY {
                 macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                     ErrCode::LimitExceeded, "The number of cryptos per application exceeds the upper limit.")
             } else {
-                self.cryptos.entry(calling_info).or_default().push(crypto);
+                self.cryptos.entry(owner_info).or_default().push(crypto);
                 Ok(())
             }
         }
@@ -75,10 +77,10 @@ impl CryptoManager {
     /// Find the crypto with the specified alias and challenge slice from manager.
     pub fn find(&mut self, calling_info: &CallingInfo, challenge: &Vec<u8>) -> Result<&Crypto> {
         self.remove_expired_crypto()?;
-        match self.cryptos.get(calling_info) {
+        match self.cryptos.get(calling_info.owner_info()) {
             Some(bucket) => {
                 for crypto in bucket.iter() {
-                    if crypto.challenge().eq(challenge) {
+                    if crypto.calling_info().eq(calling_info) && crypto.challenge().eq(challenge) {
                         return Ok(crypto);
                     }
                 }
@@ -93,18 +95,25 @@ impl CryptoManager {
     /// Remove the crypto from manager.
     pub fn remove(&mut self, calling_info: &CallingInfo, challenge: &Vec<u8>) {
         let mut empty = false;
-        if let Some(bucket) = self.cryptos.get_mut(calling_info) {
-            bucket.retain(|crypto| !crypto.challenge().eq(challenge));
+        if let Some(bucket) = self.cryptos.get_mut(calling_info.owner_info()) {
+            bucket.retain(|crypto| !(crypto.calling_info().eq(calling_info) && crypto.challenge().eq(challenge)));
             empty = bucket.is_empty();
         }
         if empty {
-            self.cryptos.remove(calling_info);
+            self.cryptos.remove(calling_info.owner_info());
         }
     }
 
     /// Remove the crypto by calling info.
     pub fn remove_by_calling_info(&mut self, calling_info: &CallingInfo) {
-        self.cryptos.remove(calling_info);
+        let mut empty = false;
+        if let Some(bucket) = self.cryptos.get_mut(calling_info.owner_info()) {
+            bucket.retain(|crypto| crypto.calling_info() != calling_info);
+            empty = bucket.is_empty();
+        }
+        if empty {
+            self.cryptos.remove(calling_info.owner_info());
+        }
     }
 
     /// Remove cryptos that required device to be unlocked.
