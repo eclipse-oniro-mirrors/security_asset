@@ -30,6 +30,9 @@ use crate::crypto::Crypto;
 /// Per-application capacity of cryptos that require user authentication.
 const CRYPTO_CAPACITY: usize = 16;
 
+/// Total capacity of cryptos across all applications.
+const CRYPTO_TOTAL_CAPACITY: usize = 32;
+
 /// Manages the crypto that required user authentication.
 pub struct CryptoManager {
     cryptos: HashMap<CallingInfo, Vec<Crypto>>,
@@ -52,14 +55,20 @@ impl CryptoManager {
     /// Add the crypto to manager.
     pub fn add(&mut self, crypto: Crypto) -> Result<()> {
         self.remove_expired_crypto()?;
-        let calling_info = crypto.calling_info().clone();
-        let bucket_len = self.cryptos.get(&calling_info).map_or(0, Vec::len);
-        if bucket_len >= CRYPTO_CAPACITY {
+        let total: usize = self.cryptos.values().map(Vec::len).sum();
+        if total >= CRYPTO_TOTAL_CAPACITY {
             macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                ErrCode::LimitExceeded, "The number of cryptos exceeds the upper limit.")
+                ErrCode::LimitExceeded, "The total number of cryptos exceeds the upper limit.")
         } else {
-            self.cryptos.entry(calling_info).or_default().push(crypto);
-            Ok(())
+            let calling_info = crypto.calling_info().clone();
+            let bucket_len = self.cryptos.get(&calling_info).map_or(0, Vec::len);
+            if bucket_len >= CRYPTO_CAPACITY {
+                macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                    ErrCode::LimitExceeded, "The number of cryptos per application exceeds the upper limit.")
+            } else {
+                self.cryptos.entry(calling_info).or_default().push(crypto);
+                Ok(())
+            }
         }
     }
 
@@ -83,11 +92,13 @@ impl CryptoManager {
 
     /// Remove the crypto from manager.
     pub fn remove(&mut self, calling_info: &CallingInfo, challenge: &Vec<u8>) {
+        let mut empty = false;
         if let Some(bucket) = self.cryptos.get_mut(calling_info) {
             bucket.retain(|crypto| !crypto.challenge().eq(challenge));
-            if bucket.is_empty() {
-                self.cryptos.remove(calling_info);
-            }
+            empty = bucket.is_empty();
+        }
+        if empty {
+            self.cryptos.remove(calling_info);
         }
     }
 
@@ -110,7 +121,9 @@ impl CryptoManager {
         let mut max_time = 0;
         for bucket in self.cryptos.values() {
             for crypto in bucket {
-                max_time = max(crypto.valid_time() as u64 - crypto.start_time().elapsed().as_secs(), max_time)
+                let remaining = (crypto.valid_time() as u64)
+                    .saturating_sub(crypto.start_time().elapsed().as_secs());
+                max_time = max(remaining, max_time)
             }
         }
         max_time
