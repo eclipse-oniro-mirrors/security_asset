@@ -143,12 +143,8 @@ int32_t SafAgentFence::BatchVerifyTicket(
 
     int32_t ret = HandleIpcError(proxy,
         [&]() { return proxy->BatchVerifyTicket(osAccountId, callerId, verifyInfos, verifyRes, resultCode); });
-    if (ret != SAF_SUCCESS) {
-        return ret;
-    }
-
-    LOGI("SafAgentFence::BatchVerifyTicket finished, ret = 0x%{public}x", resultCode);
     IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+    LOGI("SafAgentFence::BatchVerifyTicket finished, ret = 0x%{public}x", resultCode);
     return resultCode;
 }
 

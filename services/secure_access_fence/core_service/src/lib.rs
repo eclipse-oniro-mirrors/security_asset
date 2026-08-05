@@ -270,6 +270,21 @@ impl SAFService {
     }
 
     fn verify_ticket(&self, os_account_id: i32, caller_id: &str, verify_info_str: &str) -> Result<Vec<CliInfo>> {
+        let permission = CString::new(GET_TICKET_INFO_PERMISSION).unwrap();
+        if unsafe { !CheckPermission(permission.as_ptr()) } {
+            loge!("Permission denied! Need {}", GET_TICKET_INFO_PERMISSION);
+
+            notify_error(
+                "Permission denied".to_string(),
+                ErrCode::PermissionDenied as i32,
+                os_account_id,
+                "verify_ticket".to_string(),
+            );
+
+            return macros_lib::log_throw_error!(ErrCode::PermissionDenied,
+                "Permission denied! Need {}", GET_TICKET_INFO_PERMISSION);
+        }
+
         execute_with_metrics!(
             "verify_ticket",
             verify_ticket_impl,

@@ -20,9 +20,12 @@
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
 #include <openssl/evp.h>
+#include <openssl/crypto.h>
 
 #include "saf_log.h"
 #include "saf_result_code.h"
+
+const int32_t MAX_INPUT_SIZE = 1024 * 1024;
 
 int32_t GenerateRandomBytes(Uint8Buff *buf)
 {
@@ -75,7 +78,7 @@ int32_t VerifyHmacSha256(const Uint8Buff *key, const Uint8Buff *data, const Uint
         return ret;
     }
 
-    if (memcmp(computedHmac, expectedHmac->buf, HMAC_SHA256_SIZE) != 0) {
+    if (CRYPTO_memcmp(computedHmac, expectedHmac->buf, HMAC_SHA256_SIZE) != 0) {
         LOGE("[FATAL]VerifyHmacSha256 hmac mismatch.");
         return SAF_EVALUATE_DENY;
     }
@@ -87,6 +90,10 @@ int32_t Base64Encode(const Uint8Buff *input, Uint8Buff *output)
     if (input == nullptr || input->buf == nullptr || output == nullptr || output->buf == nullptr) {
         LOGE("[FATAL]Base64Encode invalid params.");
         return SAF_ERR_NULL_PTR;
+    }
+    if (input->size > MAX_INPUT_SIZE) {
+        LOGE("[FATAL]Base64Encode input size too large.");
+        return SAF_ERR_BASE64_INVALID_LEN;
     }
     size_t expectedLen = 4 * ((input->size + 2) / 3) + 1;
     if (output->size < expectedLen) {
