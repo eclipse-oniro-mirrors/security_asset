@@ -643,6 +643,9 @@ int32_t PermissionManager::GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ti
         return SAF_ERROR;
     }
 
+    IF_TRUE_LOGE_RETURN_ERR(rustResults.size() == 0, SAF_ERROR,
+        "GenerateTicketInfoWithTimeStamp :: cxx_batch_generate_ticket returned empty result");
+
     // Convert first Rust VerifyTicketInfo to C++ VerifyTicketInfo
     const OHOS::Security::SAF::CxxVerifyTicketInfo &cxxVerifyTicketInfo = rustResults[0];
     ticketInfo.message = std::string(cxxVerifyTicketInfo.message);
