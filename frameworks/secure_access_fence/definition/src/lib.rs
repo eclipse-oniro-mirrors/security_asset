@@ -234,6 +234,9 @@ impl_enum_trait! {
         /// The error code indicates that account not logged in.
         NotLoggedIn = 0x19004,
 
+        /// The error code indicates that timeout.
+        Timeout = 0x19006,
+
         /// The error code indicates that remote token expired.
         RemoteTokenExpired = 0x19007,
 

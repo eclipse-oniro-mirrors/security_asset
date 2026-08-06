@@ -89,10 +89,6 @@ constexpr uint64_t MAX_TICKET_EXPIRE_TIME_MS = 60 * 1000;   // 最大ticket过�
 
 constexpr int32_t MAX_PERMISSION_NAME_LENGTH = 256;
 
-constexpr int32_t ERROR_CODE_NO_NETWORK = 0x19003;
-
-constexpr int32_t ERROR_CODE_ACCOUNT_NOT_LOGGED_IN = 0x19004;
-
 constexpr uint64_t UNSET_TICKET_EXPIRE_TIME_MS = 0;
 
 constexpr int32_t JSON_ESCAPE_RESERVE_PADDING = 16;
@@ -637,10 +633,7 @@ int32_t PermissionManager::GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ti
 
     if (resultCode != SAF_SUCCESS) {
         LOGE("GenerateTicketInfoWithTimeStamp failed, cxx_batch_generate_ticket returned no tickets");
-        IF_TRUE_LOGE_RETURN_ERR(resultCode == ERROR_CODE_NO_NETWORK, SAF_ERR_NO_NETWORK, "No network");
-        IF_TRUE_LOGE_RETURN_ERR(resultCode == ERROR_CODE_ACCOUNT_NOT_LOGGED_IN,
-            SAF_ERR_ACCOUNT_NOT_LOGGED_IN, "Account not logged in");
-        return SAF_ERROR;
+        return resultCode;
     }
 
     IF_TRUE_LOGE_RETURN_ERR(rustResults.size() == 0, SAF_ERROR,
@@ -791,7 +784,7 @@ int32_t PermissionManager::GrantToolPermissionsByUser(const std::vector<UserAuth
             "ticketExpireTimeMs is invalid");
         VerifyTicketInfo ticketInfo;
         ret = GetVerifyTicketInfo(userAuthResults[i], ticketInfo);
-        if (ret == SAF_ERR_ACCOUNT_NOT_LOGGED_IN) {
+        if (ret == SAF_ERR_TRUSTED_RING_NOT_LOGGED_IN) {
             LOGE("Account is not logged in. GrantToolPermissions failed");
             return ret;
         }
@@ -837,7 +830,7 @@ int32_t PermissionManager::GetVerifyTicketInfo(const UserAuthResult &userAuthRes
     ticketMessageInfo.callerTokenId = GetValidCallingTokenId(userAuthResult.permissionQuery.callerTokenId);
     ticketMessageInfo.domainId = userAuthResult.permissionQuery.domainId;
     ret = GenerateTicketInfoWithTimeStamp(ticketMessageInfo, ticketMessageInfo.callerTokenId, ticketInfo);
-    if (ret == SAF_ERR_ACCOUNT_NOT_LOGGED_IN) {
+    if (ret == SAF_ERR_TRUSTED_RING_NOT_LOGGED_IN) {
         LOGE("Account is not logged in. Stop generating ticket");
         return ret;
     }

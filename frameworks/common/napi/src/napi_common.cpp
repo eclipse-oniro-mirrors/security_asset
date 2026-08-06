@@ -43,9 +43,9 @@ namespace {
                 return LACK_AUTH_TOKEN;
             case SAF_ERR_TRUSTED_RING_AUTH_TOKEN_IS_EXPIRED:
                 return AUTH_TOKEN_EXPIRED;
-            case SAF_ERR_NO_NETWORK:
-                return ENVIRONMENT_ERROR;
-            case SAF_ERR_ACCOUNT_NOT_LOGGED_IN:
+            case SAF_ERR_TRUSTED_RING_TIMEOUT:
+            case SAF_ERR_TRUSTED_RING_NETWORK_DISCONNECTED:
+            case SAF_ERR_TRUSTED_RING_NOT_LOGGED_IN:
                 return ENVIRONMENT_ERROR;
             case SAF_ERR_QUERIED_PERMISSION_NOT_EXIST:
                 return INVALID_PERMISSION;
