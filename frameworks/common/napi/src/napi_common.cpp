@@ -442,11 +442,19 @@ napi_status NapiSetProperty(const napi_env env, napi_value object, const char *p
 napi_value CreateAsyncWork(napi_env env, napi_callback_info info, std::unique_ptr<SAF::AgentFenceAsyncContext> context,
     const char *resourceName)
 {
-    if (context->parse != nullptr) {
-        NAPI_CALL(env, context->parse(env, info, context.get()));
-    }
     napi_value promise;
     NAPI_CALL(env, napi_create_promise(env, &context->deferred, &promise));
+    if (context->parse != nullptr) {
+        napi_status status = context->parse(env, info, context.get());
+        if (status != napi_ok) {
+            napi_value exception = nullptr;
+            napi_get_and_clear_last_exception(env, &exception);
+            napi_value error = (exception != nullptr) ? exception :
+                NapiCreateError(env, context->result, GetErrorMessage(INVALID_PARAMETER).c_str());
+            NAPI_CALL(env, napi_reject_deferred(env, context->deferred, error));
+            return promise;
+        }
+    }
     napi_value resource = nullptr;
     NAPI_CALL(env, napi_create_string_utf8(env, resourceName, NAPI_AUTO_LENGTH, &resource));
     NAPI_CALL(env, napi_create_async_work(

@@ -24,4 +24,8 @@ int VerifyTicketWithEmptyTicketInfo001(void);
 int VerifyTicketWithInvalidTicketInfo001(void);
 }
 
+namespace UnitTest::SafAgentFenceGrantToolPermissionsByUserNoPermTest {
+int VerifyTicketWithInvalidTicketInfoNoPerm001(void);
+}
+
 #endif // SAF_AGENT_FENCE_GRANT_TOOL_PERMISSIONS_BY_USER_TEST_H

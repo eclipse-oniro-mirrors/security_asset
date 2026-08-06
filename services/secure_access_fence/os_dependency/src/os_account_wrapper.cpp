@@ -44,7 +44,7 @@ bool GetOsAccountIdFromUid(int32_t uid, int32_t *userId)
     int32_t userIdTmp;
     int32_t res = OHOS::AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userIdTmp);
     if (res != 0 || userIdTmp < 0) {
-        LOGE("[FATAL]Get os account id from uid failed! res is %{public}d, userId is %{public}d.", res, userIdTmp);
+        LOGE("[FATAL]Get os account id from uid failed! res is %{public}d.", res);
         return false;
     }
     *userId = userIdTmp;
