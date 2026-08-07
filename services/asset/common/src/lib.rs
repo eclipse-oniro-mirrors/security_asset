@@ -95,6 +95,7 @@ macros_lib::impl_enum_trait! {
     #[derive(PartialEq, Eq)]
     #[derive(Copy, Clone)]
     #[derive(Debug)]
+    #[derive(Hash)]
     pub enum OwnerType {
         /// The calling is an application.
         Hap = 0,
