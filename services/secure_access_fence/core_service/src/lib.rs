@@ -265,21 +265,6 @@ impl SAFService {
     fn batch_verify_ticket(
         &self, os_account_id: i32, caller_id: &str, domain_id: &str, verify_infos: &[VerifyTicketInfo]) ->
         Result<Vec<i32>> {
-        let permission = CString::new(GET_TICKET_INFO_PERMISSION).unwrap();
-        if unsafe { !CheckPermission(permission.as_ptr()) } {
-            loge!("Permission denied! Need {}", GET_TICKET_INFO_PERMISSION);
-
-            notify_error(
-                "Permission denied".to_string(),
-                ErrCode::PermissionDenied as i32,
-                os_account_id,
-                "batch_verify_ticket".to_string(),
-            );
-
-            return macros_lib::log_throw_error!(ErrCode::PermissionDenied,
-                "Permission denied! Need {}", GET_TICKET_INFO_PERMISSION);
-        }
-
         let mut is_locked: bool = true;
         let ret = cxx_is_screen_locked(os_account_id, &mut is_locked);
         if ret != 0 || is_locked {
