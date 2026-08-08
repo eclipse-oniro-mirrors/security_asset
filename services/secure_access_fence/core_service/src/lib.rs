@@ -244,6 +244,13 @@ impl SAFService {
                 "Permission denied! Need {}", GET_TICKET_INFO_PERMISSION);
         }
 
+        let mut is_locked: bool = true;
+        let ret = cxx_is_screen_locked(os_account_id, &mut is_locked);
+        if ret != 0 || is_locked {
+            loge!("check_screen_lock_status: screen locked, ret={}, is_locked={}", ret, is_locked);
+            return macros_lib::log_throw_error!(ErrCode::ScreenIsLocked, "Screen is locked");
+        }
+
         execute_with_metrics!(
             "batch_generate_ticket",
             ticket_operation::batch_generate_ticket,
@@ -258,6 +265,13 @@ impl SAFService {
     fn batch_verify_ticket(
         &self, os_account_id: i32, caller_id: &str, domain_id: &str, verify_infos: &[VerifyTicketInfo]) ->
         Result<Vec<i32>> {
+        let mut is_locked: bool = true;
+        let ret = cxx_is_screen_locked(os_account_id, &mut is_locked);
+        if ret != 0 || is_locked {
+            loge!("check_screen_lock_status: screen locked, ret={}, is_locked={}", ret, is_locked);
+            return macros_lib::log_throw_error!(ErrCode::ScreenIsLocked, "Screen is locked");
+        }
+
         execute_with_metrics!(
             "batch_verify_ticket",
             ticket_operation::batch_verify_ticket,
