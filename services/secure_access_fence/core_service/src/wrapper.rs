@@ -20,24 +20,32 @@ use ipc::parcel::MsgParcel;
 use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
 use saf_plugin_interface::plugin_interface::{
-    EventType, ExtMap, ERROR_METRICS_KEYS, PERFORMANCE_METRICS_KEYS, POLICY_AUTH_STATUS_KEYS, VERIFY_REMOTE_TICKET_KEYS,
+    EventType, ExtMap, ERROR_METRICS_KEYS, PERFORMANCE_METRICS_KEYS, POLICY_AUTH_STATUS_KEYS,
+    VERIFY_REMOTE_TICKET_KEYS
 };
 use saf_sdk::Value;
 
 #[cxx::bridge(namespace = "OHOS::Security::SAF")]
 pub mod ffi {
-    // C++ compatible VerifyTicketInfo for bridge
+    /// C++ compatible VerifyTicketInfo for bridge.
     pub struct CxxVerifyTicketInfo {
+        /// Message string.
         pub message: String,
+        /// Challenge string.
         pub challenge: String,
+        /// Ticket string.
         pub ticket: String,
     }
 
     // C++ callable Rust functions
     extern "Rust" {
+        /// Notify performance metrics.
         fn notify_performance_metrics(item_count: i32, elapsed_time: i32, os_account_id: i32, function_name: String);
+        /// Notify error.
         fn notify_error(error_message: String, error_code: i32, os_account_id: i32, function_name: String);
+        /// CXX bridge for batch_generate_ticket.
         fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, domain_id: &str, messages: &[String], result_code: &mut i32) -> Vec<CxxVerifyTicketInfo>;
+        /// Get policy auth status.
         fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec<i32>) -> i32;
         fn verify_remote_ticket(domain_id: String, remote_control_ticket: String, os_account_id: i32) -> i32;
         fn cxx_store_challenge(caller_token_id: &str, challenge: &str, expire_time_ms: u64) -> i32;
@@ -50,19 +58,20 @@ pub mod ffi {
         include!("secure_access_fence_service.h");
         #[namespace = "OHOS"]
         type MessageParcel = ipc::parcel::MessageParcel;
+        /// On remote request.
         fn OnRemoteRequest(code: u32, data: Pin<&mut MessageParcel>, reply: Pin<&mut MessageParcel>) -> i32;
         fn GetBootTimeMs() -> i64;
     }
 }
 
-// Original function: IPC request handler
+/// IPC request handler for C++ redirect.
 pub fn on_remote_request(code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {
     let data_pin = data.as_msg_parcel_mut();
     let reply_pin = reply.as_msg_parcel_mut();
     ffi::OnRemoteRequest(code, data_pin, reply_pin)
 }
 
-// Performance metrics notification function
+/// Performance metrics notification function.
 pub fn notify_performance_metrics(item_count: i32, elapsed_time: i32, os_account_id: i32, function_name: String) {
     logi!(
         "[INFO] Performance metrics from C++/Rust: function={}, item_count={}, elapsed_time={}ms",
@@ -76,7 +85,7 @@ pub fn notify_performance_metrics(item_count: i32, elapsed_time: i32, os_account
     }
 }
 
-// Error notification function
+/// Error notification function.
 pub fn notify_error(error_message: String, error_code: i32, os_account_id: i32, function_name: String) {
     logi!(
         "[INFO] Error metrics from C++: function={}, error_code={}, os_account_id={}, error_message={}",
@@ -153,7 +162,7 @@ pub fn verify_remote_ticket(domain_id: String, remote_control_ticket: String, os
     }
 }
 
-// C++ -> Rust bridge for batch_generate_ticket. Returns empty vector on error and reports via notify_error.
+/// C++ -> Rust bridge for batch_generate_ticket.
 pub fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, domain_id: &str, messages: &[String], result_code: &mut i32) -> Vec<ffi::CxxVerifyTicketInfo> {
     logi!("[Wrapper cxx_batch_generate_ticket] os_account_id = {}, caller_id = {}, messages_count = {}",
         os_account_id, caller_id, messages.len());
@@ -211,7 +220,6 @@ fn call_plugin_performance_event(
     Ok(())
 }
 
-// Plugin error event helper
 fn call_plugin_error_event(
     error_message: String,
     error_code: i32,

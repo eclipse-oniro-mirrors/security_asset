@@ -17,6 +17,7 @@
 #define ACCESS_TOKEN_WRAPPER
 
 #include <stdint.h>
+#include "saf_result_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,6 +25,7 @@ extern "C" {
 
 bool CheckPermission(const char *permission);
 bool CheckIsSystemHap();
+int32_t GetBundleNameFromTokenId(int32_t tokenId, char *bundleName, int32_t *len);
 
 #ifdef __cplusplus
 }

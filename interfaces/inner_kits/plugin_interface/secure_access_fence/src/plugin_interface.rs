@@ -45,6 +45,12 @@ pub enum EventType {
 
     /// VerifyRemoteTicket
     VerifyRemoteTicket = 5,
+    /// Sign remote auth package for remote control scenario
+    SignRemoteAuthPackage = 6,
+    /// Verify remote auth package for remote control scenario
+    VerifyRemoteAuthPackage = 7,
+    /// Store grant record for remote control scenario
+    StoreGrantRecord = 8,
 }
 
 /// Performance metrics parameter keys for StatisticsMetrics EventType.
@@ -107,6 +113,99 @@ pub const VERIFY_REMOTE_TICKET_KEYS: VerifyRemoteTicketKeys =
     VerifyRemoteTicketKeys { domain_id: "DomainId", remote_control_ticket: "RemoteControlTicket", 
     os_account_id: "osAccountId"
 };
+
+/// Sign remote auth package parameter keys for SignRemoteAuthPackage EventType.
+pub struct SignRemoteAuthPackageKeys {
+    /// The OS account ID
+    pub os_account_id: &'static str,
+    /// The user ID (domainId)
+    pub uid: &'static str,
+    /// The remote auth package message
+    pub remote_auth_package: &'static str,
+    /// The remote control token
+    pub remote_control_token: &'static str,
+    /// The device ID header (output)
+    pub device_id_header: &'static str,
+    /// The result remote auth package (output)
+    pub result_remote_auth_package: &'static str,
+    /// The sign info (output)
+    pub sign_info: &'static str,
+}
+
+/// SignRemoteAuthPackageKeys constant for SignRemoteAuthPackage EventType.
+pub const SIGN_REMOTE_AUTH_PACKAGE_KEYS: SignRemoteAuthPackageKeys =
+    SignRemoteAuthPackageKeys {
+        os_account_id: "OsAccountId",
+        uid: "Uid",
+        remote_auth_package: "RemoteAuthPackage",
+        remote_control_token: "RemoteControlToken",
+        device_id_header: "DeviceIdHeader",
+        result_remote_auth_package: "ResultRemoteAuthPackage",
+        sign_info: "SignInfo",
+    };
+
+/// Verify remote auth package parameter keys for VerifyRemoteAuthPackage EventType.
+pub struct VerifyRemoteAuthPackageKeys {
+    /// The OS account ID
+    pub os_account_id: &'static str,
+    /// The UID string (domainId)
+    pub uid: &'static str,
+    /// The device ID header
+    pub device_id_header: &'static str,
+    /// The remote auth message
+    pub remote_auth_message: &'static str,
+    /// The sign info
+    pub sign_info: &'static str,
+    /// The verify result (output)
+    pub verify_result: &'static str,
+}
+
+/// VerifyRemoteAuthPackageKeys constant for VerifyRemoteAuthPackage EventType.
+pub const VERIFY_REMOTE_AUTH_PACKAGE_KEYS: VerifyRemoteAuthPackageKeys =
+    VerifyRemoteAuthPackageKeys {
+        os_account_id: "OsAccountId",
+        uid: "Uid",
+        device_id_header: "DeviceIdHeader",
+        remote_auth_message: "RemoteAuthMessage",
+        sign_info: "SignInfo",
+        verify_result: "VerifyResult",
+    };
+
+/// Store grant record parameter keys for StoreGrantRecord EventType.
+pub struct StoreGrantRecordKeys {
+    /// The OS account ID
+    pub os_account_id: &'static str,
+    /// The controlled device name
+    pub controlled_device_name: &'static str,
+    /// The controller device name
+    pub controller_device_name: &'static str,
+    /// The is self grant flag
+    pub is_self_grant: &'static str,
+    /// The permission names
+    pub permission_names: &'static str,
+    /// The device role
+    pub device_role: &'static str,
+    /// The calling bundle name
+    pub calling_bundle_name: &'static str,
+    /// The grant type
+    pub grant_type: &'static str,
+    /// The timestamp
+    pub timestamp: &'static str,
+}
+
+/// StoreGrantRecordKeys constant for StoreGrantRecord EventType.
+pub const STORE_GRANT_RECORD_KEYS: StoreGrantRecordKeys =
+    StoreGrantRecordKeys {
+        os_account_id: "OsAccountId",
+        controlled_device_name: "ControlledDeviceName",
+        controller_device_name: "ControllerDeviceName",
+        is_self_grant: "IsSelfGrant",
+        permission_names: "PermissionNames",
+        device_role: "DeviceRole",
+        calling_bundle_name: "CallingBundleName",
+        grant_type: "GrantType",
+        timestamp: "Timestamp",
+    };
 
 /// Global constant instance for error metrics parameter keys.
 /// Use this to access standardized parameter names for StatisticsError events.

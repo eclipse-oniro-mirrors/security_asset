@@ -173,6 +173,12 @@ impl_enum_trait! {
         /// The error code indicates that invalid plugin.
         InvalidPlugin = 0x3001B,
 
+        /// The error code indicates that invalid argument.
+        InvalidArgument = 0x3001C,
+
+        /// The error code indicates that invalid argument size.
+        InvalidArgSize = 0x3001D,
+
         // ==================== PERMISSION (0x32000) ====================
         /// The error code indicates that the caller doesn't have the permission.
         PermissionDenied = 0x32001,
@@ -189,6 +195,9 @@ impl_enum_trait! {
 
         /// The error code indicates that base64 invalid character.
         Base64InvalidChar = 0x33004,
+
+        /// The error code indicates that json parse failed.
+        JsonParseError = 0x33005,
 
         // ==================== CLI_TOOL (0x20000) ====================
         /// The error code indicates that the operation of calling Tool Service is failed.
@@ -252,6 +261,14 @@ impl_enum_trait! {
 
         /// The error code indicates that screen is locked.
         ScreenIsLocked = 0x22002,
+
+        // ==================== DEVICE_MANAGER (0x23000) ====================
+        /// The error code indicates that get udid failed
+        GetUdidFailed = 0x23001,
+
+        // ==================== FILE_OPERATION (0x24000) ====================
+        /// The error code indicates that file operation failed.
+        FileOperationError = 0x24001,
     }
 }
 
@@ -301,4 +318,184 @@ pub trait Verify {
     fn try_from_ipc_code(val: u32) -> Result<()>;
     /// Verify is correct enum.
     fn is_correct_enum(val: u32) -> bool;
+}
+
+// ============================================================================
+// Enums
+// ============================================================================
+
+/// Operation type enum.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum OperationType {
+    /// CLI operation type.
+    Cli = 1,
+    /// API operation type.
+    Api = 2,
+}
+
+/// Role enum.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Role {
+    /// Controller role.
+    Controller = 1,
+    /// Controlled role.
+    Controlled = 2,
+}
+
+/// Grant type enum.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum GrantType {
+    /// Local grant.
+    LocalGrant = 0x01,
+    /// Remote grant.
+    RemoteGrant = 0x02,
+}
+// ============================================================================
+// Basic Structures
+// ============================================================================
+
+/// Command info structure.
+#[derive(Debug, Clone)]
+pub struct CommandInfo {
+    /// Command name.
+    pub cmd_name: String,
+    /// Sub command.
+    pub sub_cmd: String,
+}
+
+/// Operation info structure.
+#[derive(Debug, Clone)]
+pub struct OperationInfo {
+    /// Operation type.
+    pub operation_type: OperationType,
+    /// CLI command info.
+    pub cli_cmd_info: CommandInfo,
+    /// Permission string.
+    pub permission: String,
+}
+
+/// Verify ticket info structure (matching IDL definition).
+#[derive(Debug, Clone)]
+pub struct VerifyTicketInfo {
+    /// Message for ticket.
+    pub message: String,
+    /// Challenge string.
+    pub challenge: String,
+    /// Ticket string.
+    pub ticket: String,
+}
+
+/// CLI info structure (matching IDL definition).
+#[derive(Debug, Clone)]
+pub struct CliInfo {
+    /// Caller token ID.
+    pub caller_token_id: String,
+    /// CLI command name.
+    pub cli_cmd_name: String,
+    /// Sub CLI command name.
+    pub sub_cli_cmd_name: String,
+    /// Permission list for the CLI command.
+    pub permission_list: Vec<String>,
+}
+
+/// Remote control params structure.
+#[derive(Debug, Clone)]
+pub struct RemoteControlParams {
+    /// Challenge string.
+    pub challenge: String,
+    /// Remote control ticket.
+    pub remote_control_ticket: String,
+    /// Controlled device name.
+    pub controlled_device_name: String,
+    /// Controller device name.
+    pub controller_device_name: String,
+    /// Sign verify message.
+    pub sign_verify_msg: String,
+}
+
+/// Remote info structure.
+#[derive(Debug, Clone)]
+pub struct RemoteInfo {
+    /// Role.
+    pub role: Role,
+    /// Remote ID.
+    pub remote_id: String,
+    /// Domain ID.
+    pub domain_id: String,
+    /// Remote control params.
+    pub remote_control_params: RemoteControlParams,
+}
+
+/// Permission query structure.
+#[derive(Debug, Clone)]
+pub struct PermissionQuery {
+    /// Operation info list.
+    pub operation_info: Vec<OperationInfo>,
+    /// Need ticket flag.
+    pub need_ticket: bool,
+    /// Ticket expire time in milliseconds.
+    pub ticket_expire_time_ms: i32,
+    /// Caller token ID.
+    pub caller_token_id: i32,
+    /// Domain ID.
+    pub domain_id: String,
+    /// Remote info.
+    pub remote_info: RemoteInfo,
+}
+
+// ============================================================================
+// Remote Message Structures
+// ============================================================================
+
+/// Device ID header structure.
+#[derive(Debug, Clone)]
+pub struct DeviceIdHeader {
+    /// Controller device ID.
+    pub controller_device_id: String,
+    /// Controlled device ID.
+    pub controlled_device_id: String,
+}
+
+/// Remote message structure.
+#[derive(Debug, Clone)]
+pub struct RemoteMessage {
+    /// Device info header.
+    pub device_info: DeviceIdHeader,
+    /// Remote auth message.
+    pub remote_auth_message: String,
+    /// Caller bundle name resolved from caller_token_id
+    pub caller_bundle_name: String,
+}
+
+/// Remote auth package structure.
+#[derive(Debug, Clone)]
+pub struct RemoteAuthPackage {
+    /// Remote message (JSON string in IDL, struct in Rust for convenience).
+    pub remote_message: RemoteMessage,
+    /// Challenge string.
+    pub challenge: String,
+    /// Ticket string.
+    pub ticket: String,
+}
+
+// ============================================================================
+// Controller Device Structures
+// ============================================================================
+
+/// Remote user auth item structure.
+#[derive(Debug, Clone)]
+pub struct RemoteUserAuthItem {
+    /// Permission string.
+    pub permission: String,
+    /// Authentication result string.
+    pub auth_result: String,
+}
+
+/// Remote user auth results structure.
+#[derive(Debug, Clone)]
+pub struct RemoteUserAuthResults {
+    /// List of authentication result items.
+    pub results: Vec<RemoteUserAuthItem>,
+    /// Permission query associated with the authentication.
+    pub permission_query: PermissionQuery,
 }

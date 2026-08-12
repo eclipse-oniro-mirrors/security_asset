@@ -28,14 +28,17 @@ use system_ability_fwk::{
 use ylong_runtime::builder::RuntimeBuilder;
 
 use saf_common::{Counter, TaskManager};
-use saf_definition::{macros_lib, ErrCode, Result};
-use saf_ipc::{CliInfo, VerifyTicketInfo, SA_ID};
+use saf_definition::{macros_lib, ErrCode, Result, CliInfo, VerifyTicketInfo};
+use saf_ipc::SA_ID;
 use saf_log::{logd, loge, logi};
 use saf_plugin::saf_plugin::{SAFContext, SAFPlugin};
+
+use saf_utils::get_compact_json_value;
 
 use crate::wrapper::{cxx_is_screen_locked, notify_error, notify_performance_metrics};
 
 mod common_event;
+mod remote_control;
 mod stub;
 mod ticket_operation;
 mod wrapper;
@@ -397,9 +400,9 @@ fn parse_verify_info_json_full(info_str: &str) -> Result<(VerifyTicketInfo, ylon
         return Err(macros_lib::log_and_into_saf_error!(ErrCode::ArgEmpty, "VerifyTicket: json object is empty"));
     }
 
-    let raw_message = extract_json_string(&json, JSON_KEY_MESSAGE)?;
-    let raw_challenge = extract_json_string(&json, JSON_KEY_CHALLENGE)?;
-    let raw_ticket = extract_json_string(&json, JSON_KEY_TICKET)?;
+    let raw_message = get_compact_json_value(&json, JSON_KEY_MESSAGE)?;
+    let raw_challenge = get_compact_json_value(&json, JSON_KEY_CHALLENGE)?;
+    let raw_ticket = get_compact_json_value(&json, JSON_KEY_TICKET)?;
 
     let message_json = ylong_json::JsonValue::from_text(&raw_message).map_err(|e| {
         loge!("VerifyTicket: message json parse failed: {}", e);
@@ -407,19 +410,6 @@ fn parse_verify_info_json_full(info_str: &str) -> Result<(VerifyTicketInfo, ylon
     })?;
 
     Ok((VerifyTicketInfo { message: raw_message, challenge: raw_challenge, ticket: raw_ticket }, message_json))
-}
-
-fn extract_json_string(json: &ylong_json::JsonValue, key: &str) -> Result<String> {
-    let value = &json[key];
-    if value == &ylong_json::JsonValue::Null {
-        return macros_lib::log_throw_error!(ErrCode::ArgEmpty, "{} field missing", key);
-    }
-    match value {
-        ylong_json::JsonValue::String(s) => Ok(s.clone()),
-        _ => value.to_compact_string().map_err(|e| {
-            macros_lib::SAFError::new(ErrCode::ArgEmpty, format!("VerifyTicket: {} extract failed: {}", key, e))
-        }),
-    }
 }
 
 fn extract_cli_infos_with_json(message_json: &ylong_json::JsonValue) -> Result<Vec<CliInfo>> {
@@ -430,7 +420,7 @@ fn extract_cli_infos_with_json(message_json: &ylong_json::JsonValue) -> Result<V
         );
     }
 
-    let caller_token_id = extract_json_string(message_json, JSON_KEY_CALLER_TOKEN_ID)?;
+    let caller_token_id = get_compact_json_value(message_json, JSON_KEY_CALLER_TOKEN_ID)?;
 
     let cli_infos_array = &message_json[JSON_KEY_CLI_INFOS];
     if cli_infos_array == &ylong_json::JsonValue::Null {
@@ -444,9 +434,9 @@ fn extract_cli_infos_with_json(message_json: &ylong_json::JsonValue) -> Result<V
     let mut result = Vec::with_capacity(arr.len());
     for item in arr.iter() {
         // ATM不解析这个json， 且ATM需要不带双引号的字符串，在此处帮助ATM删除双引号
-        let cli_cmd_name = extract_json_string(item, JSON_KEY_CLI_CMD_NAME)?.trim_matches(STRING_QUOTE).to_string();
+        let cli_cmd_name = get_compact_json_value(item, JSON_KEY_CLI_CMD_NAME)?.trim_matches(STRING_QUOTE).to_string();
         let sub_cli_cmd_name =
-            extract_json_string(item, JSON_KEY_SUB_CLI_CMD_NAME)?.trim_matches(STRING_QUOTE).to_string();
+            get_compact_json_value(item, JSON_KEY_SUB_CLI_CMD_NAME)?.trim_matches(STRING_QUOTE).to_string();
         let permission_list = extract_permission_list(item)?;
         result.push(CliInfo {
             caller_token_id: caller_token_id.clone(),
@@ -481,5 +471,5 @@ fn extract_permission_list(json: &ylong_json::JsonValue) -> Result<Vec<String>> 
 #[cfg(feature = "SAFTest")]
 /// stub for test
 pub mod ut_core_service_lib_stub {
-    include! {"../../../test/unittest/ut_test/services/core_service/test_stub/ut_core_service_lib_stub.rs"}
+    include! {"../../../../test/secure_access_fence/unittest/ut_test/services/core_service/test_stub/ut_core_service_lib_stub.rs"}
 }

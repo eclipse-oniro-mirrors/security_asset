@@ -17,20 +17,26 @@
 
 const DEFAULT_DOMAIN_ID: &str = "";
 
-use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode};
-use saf_common::{AutoCounter, Counter};
+use ipc::{parcel::MsgParcel, remote::RemoteStub, IpcResult, IpcStatusCode, Skeleton};
+use saf_common::{AutoCounter, Counter, get_user_id};
 
 use saf_ipc::{
     deserialize_batch_generate_ticket_request, deserialize_batch_verify_ticket_request,
+    deserialize_permission_queries, deserialize_remote_auth_packages,
+    deserialize_remote_user_auth_results_vec, deserialize_remote_info,
     deserialize_verify_ticket_request,
-    serialize_cli_infos, serialize_i32_vec, serialize_verify_ticket_infos,
+    serialize_bool_vec, serialize_cli_infos, serialize_i32_vec,
+    serialize_remote_auth_packages, serialize_verify_ticket_infos,
     CMD_BATCH_GENERATE_TICKET, CMD_BATCH_VERIFY_TICKET, CMD_VERIFY_TICKET,
+    CMD_GENERATE_CONTROLLED_DEVICE_PACKAGE, CMD_VERIFY_CONTROLLED_DEVICE_PACKAGE,
+    CMD_GENERATE_CONTROLLER_DEVICE_PACKAGE, CMD_VERIFY_CONTROLLER_DEVICE_PACKAGE,
     IPC_SUCCESS, SA_NAME,
 };
 use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
 use saf_sdk::{ErrCode, Result, SAFError};
 
+use crate::remote_control;
 use crate::wrapper;
 use crate::SAFService;
 
@@ -87,16 +93,28 @@ fn on_remote_request(stub: &SAFService, code: u32, data: &mut MsgParcel, reply: 
         },
     }
 
-    match code {
-        CMD_BATCH_GENERATE_TICKET => {
-            handle_batch_generate_ticket(stub, data, reply)
-        },
-        CMD_BATCH_VERIFY_TICKET => {
-            handle_batch_verify_ticket(stub, data, reply)
-        },
-        CMD_VERIFY_TICKET => {
-            handle_verify_ticket(stub, data, reply)
-        },
+     match code {	 
+        CMD_BATCH_GENERATE_TICKET => {	 
+            handle_batch_generate_ticket(stub, data, reply)	 
+        },	 
+        CMD_BATCH_VERIFY_TICKET => {	 
+            handle_batch_verify_ticket(stub, data, reply)	 
+        },	 
+        CMD_VERIFY_TICKET => {	 
+            handle_verify_ticket(stub, data, reply)	 
+        },	 
+        CMD_GENERATE_CONTROLLED_DEVICE_PACKAGE => {	 
+            handle_generate_controlled_device_package(data, reply)	 
+        },	 
+        CMD_VERIFY_CONTROLLED_DEVICE_PACKAGE => {	 
+            handle_verify_controlled_device_package(data, reply)	 
+        },	 
+        CMD_GENERATE_CONTROLLER_DEVICE_PACKAGE => {	 
+            handle_generate_controller_device_package(data, reply)	 
+        },	 
+        CMD_VERIFY_CONTROLLER_DEVICE_PACKAGE => {	 
+            handle_verify_controller_device_package(data, reply)	 
+        },	 
         _ => {
             if code >= C_REDIRECT_START_CODE {
                 let res = wrapper::on_remote_request(code, data, reply);
@@ -139,7 +157,7 @@ fn handle_batch_generate_ticket(stub: &SAFService, data: &mut MsgParcel, reply: 
         Err(e) => {
             loge!("[FATAL]BatchGenerateTicket failed: {}", e.msg);
             reply.write::<i32>(&(IPC_SUCCESS as i32))?;
-            let empty_infos: Vec<saf_ipc::VerifyTicketInfo> = vec![];
+            let empty_infos: Vec<saf_definition::VerifyTicketInfo> = vec![];
             serialize_verify_ticket_infos(&empty_infos, reply).map_err(|e| {
                 loge!("[FATAL]Serialize empty ticket infos failed: {}", e.msg);
                 IpcStatusCode::Failed
@@ -217,7 +235,7 @@ fn handle_verify_ticket(
         Err(e) => {
             loge!("[FATAL]VerifyTicket failed: {}", e.msg);
             reply.write::<i32>(&(IPC_SUCCESS as i32))?;
-            let empty_infos: Vec<saf_ipc::CliInfo> = vec![];
+            let empty_infos: Vec<saf_definition::CliInfo> = vec![];
             serialize_cli_infos(&empty_infos, reply).map_err(|e| {
                 loge!("[FATAL]Serialize empty cli infos failed: {}", e.msg);
                 IpcStatusCode::Failed
@@ -225,6 +243,138 @@ fn handle_verify_ticket(
             reply.write::<i32>(&(e.code as i32))?;
         },
     }
+    Ok(())
+}
+
+fn handle_generate_controlled_device_package(
+    data: &mut MsgParcel, reply: &mut MsgParcel
+) -> IpcResult<()> {
+    let queries = deserialize_permission_queries(data).map_err(|e| {
+        loge!("[FATAL]Deserialize GenerateControlledDevicePackage request failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })?;
+
+    logi!("GenerateControlledDevicePackage received, queryCount: {}", queries.len());
+
+    let result = remote_control::generate_controlled_device_package(queries);
+
+    reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+    serialize_remote_auth_packages(&result.packages, reply).map_err(|e| {
+        loge!("[FATAL]Serialize packages failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })?;
+    reply.write::<i32>(&result.error_code)?;
+    
+    if result.error_code != 0 {
+        loge!("GenerateControlledDevicePackage partial failure, error_code={}", result.error_code);
+    } else {
+        logi!("GenerateControlledDevicePackage success, packageCount={}", result.packages.len());
+    }
+    
+    Ok(())
+}
+
+fn handle_verify_controlled_device_package(
+    data: &mut MsgParcel, reply: &mut MsgParcel
+) -> IpcResult<()> {
+    let packages = deserialize_remote_auth_packages(data).map_err(|e| {
+        loge!("[FATAL]Deserialize VerifyControlledDevicePackage request failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })?;
+
+    let uid = Skeleton::calling_uid();
+    let os_account_id = get_user_id(uid).map_err(|e| {
+        loge!("[FATAL]Get user id failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })?;
+
+    logi!("VerifyControlledDevicePackage received, os_account_id: {}, packageCount: {}", os_account_id, packages.len());
+
+    let result = remote_control::verify_controlled_device_package(os_account_id, packages);
+
+    reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+    serialize_bool_vec(&result.results, reply).map_err(|e| {
+        loge!("[FATAL]Serialize verify results failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })?;
+    reply.write::<i32>(&result.error_code)?;
+    
+    if result.error_code != 0 {
+        loge!("VerifyControlledDevicePackage system error, error_code={}", result.error_code);
+    } else {
+        logi!("VerifyControlledDevicePackage success, resultCount: {}", result.results.len());
+    }
+    
+    Ok(())
+}
+
+fn handle_generate_controller_device_package(
+    data: &mut MsgParcel, reply: &mut MsgParcel
+) -> IpcResult<()> {
+    let remote_user_auth_results = deserialize_remote_user_auth_results_vec(data).map_err(|e| {
+        loge!("[FATAL]Deserialize GenerateControllerDevicePackage request failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })?;
+
+    logi!("GenerateControllerDevicePackage received, resultCount: {}", 
+        remote_user_auth_results.len());
+
+    let result = remote_control::generate_controller_device_package(remote_user_auth_results);
+
+    reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+    serialize_remote_auth_packages(&result.packages, reply).map_err(|e| {
+        loge!("[FATAL]Serialize packages failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })?;
+    reply.write::<i32>(&result.error_code)?;
+    
+    if result.error_code != 0 {
+        loge!("GenerateControllerDevicePackage partial failure, error_code={}", 
+            result.error_code);
+    } else {
+        logi!("GenerateControllerDevicePackage success, packageCount={}", 
+            result.packages.len());
+    }
+    
+    Ok(())
+}
+
+fn handle_verify_controller_device_package(
+    data: &mut MsgParcel, reply: &mut MsgParcel
+) -> IpcResult<()> {
+    let packages = deserialize_remote_auth_packages(data).map_err(|e| {
+        loge!("[FATAL]Deserialize VerifyControllerDevicePackage packages failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })?;
+    
+    let remote_info = deserialize_remote_info(data).map_err(|e| {
+        loge!("[FATAL]Deserialize VerifyControllerDevicePackage remote_info failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })?;
+
+    let uid = Skeleton::calling_uid();
+    let os_account_id = get_user_id(uid).map_err(|e| {
+        loge!("[FATAL]Get user id failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })?;
+
+    logi!("VerifyControllerDevicePackage received, os_account_id: {}, packageCount: {}", os_account_id, packages.len());
+
+    let result = remote_control::verify_controller_device_package(os_account_id, packages, &remote_info);
+
+    reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+    serialize_bool_vec(&result.results, reply).map_err(|e| {
+        loge!("[FATAL]Serialize verify results failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })?;
+    reply.write::<i32>(&result.error_code)?;
+    
+    if result.error_code != 0 {
+        loge!("VerifyControllerDevicePackage system error, error_code={}", result.error_code);
+    } else {
+        logi!("VerifyControllerDevicePackage success, resultCount: {}", result.results.len());
+    }
+    
     Ok(())
 }
 

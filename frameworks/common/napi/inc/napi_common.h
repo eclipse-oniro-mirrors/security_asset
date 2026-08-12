@@ -84,6 +84,8 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, bool &value);
 
 napi_status NapiGetProperty(const napi_env env, napi_value object, int32_t &value);
 
+napi_status NapiGetProperty(const napi_env env, napi_value object, int64_t &value);
+
 napi_status NapiGetProperty(const napi_env env, napi_value object, std::string &value);
 
 napi_status NapiGetProperty(const napi_env env, napi_value object, std::vector<SAF::OperationInfo> &operationInfo);
@@ -103,6 +105,30 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::Permissi
 napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::RemoteControlParams &remoteControlParams);
 
 napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::RemoteInfo &remoteInfo);
+
+napi_status NapiGetProperty(const napi_env env, napi_value object, 
+    std::vector<SAF::PermissionQuery> &permissionQueryVector);
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    std::vector<SAF::RemoteAuthPackage> &remoteAuthPackageVector);
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    SAF::RemoteAuthPackage &remoteAuthPackage);
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    SAF::RemoteUserAuthItem &remoteUserAuthItem);
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    std::vector<SAF::RemoteUserAuthItem> &remoteUserAuthItemVector);
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    SAF::RemoteUserAuthResults &remoteUserAuthResults);
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    std::vector<SAF::RemoteUserAuthResults> &remoteUserAuthResultsVector);
+
+napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName,
+    const SAF::RemoteAuthPackage &remoteAuthPackage);
 
 napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName, const bool value);
 

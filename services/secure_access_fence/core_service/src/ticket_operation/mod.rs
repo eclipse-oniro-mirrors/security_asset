@@ -26,8 +26,7 @@ pub use account_based_ticket_key_manager::AccountBasedTicketKeyManager;
 
 use std::ffi::CString;
 use std::os::raw::c_char;
-use saf_definition::{ErrCode, Result, macros_lib};
-use saf_ipc::VerifyTicketInfo;
+use saf_definition::{ErrCode, Result, macros_lib, VerifyTicketInfo};
 use crate::notify_error;
 
 const CHALLENGE_SIZE: usize = 32;
@@ -35,15 +34,15 @@ const HMAC_SHA256_SIZE: usize = 32;
 const SAF_SUCCESS: i32 = 0;
 
 #[repr(C)]
-struct Uint8Buff {
-    buf: *mut u8,
-    size: u32,
+pub(crate) struct Uint8Buff {
+    pub buf: *mut u8,
+    pub size: u32,
 }
 
 #[repr(C)]
-struct Uint8BuffConst {
-    buf: *const u8,
-    size: u32,
+pub(crate) struct Uint8BuffConst {
+    pub buf: *const u8,
+    pub size: u32,
 }
 
 extern "C" {
@@ -58,15 +57,20 @@ extern "C" {
 
 fn generate_challenge() -> Result<Vec<u8>> {
     let mut buf = vec![0u8; CHALLENGE_SIZE];
+    generate_random_bytes(&mut buf, CHALLENGE_SIZE as u32)?;
+    Ok(buf)
+}
+
+pub(crate) fn generate_random_bytes(buf: &mut [u8], size: u32) -> Result<()> {
     let mut buff = Uint8Buff {
         buf: buf.as_mut_ptr(),
-        size: CHALLENGE_SIZE as u32,
+        size,
     };
     let ret = unsafe { GenerateRandomBytes(&mut buff) };
     if ret != SAF_SUCCESS {
-        macros_lib::log_throw_error!(ErrCode::try_from(ret as u32)?, "generate challenge failed")
+        macros_lib::log_throw_error!(ErrCode::try_from(ret as u32)?, "generate random bytes failed")
     } else {
-        Ok(buf)
+        Ok(())
     }
 }
 
@@ -116,6 +120,7 @@ fn verify_hmac_sha256(key: &[u8], data: &[u8], expected_hmac: &[u8]) -> Result<b
     }
 }
 
+pub(crate) 
 fn base64_encode(input: &[u8]) -> Result<Vec<u8>> {
     let expected_len = 4 * ((input.len() + 2) / 3) + 1;
     let mut output = vec![0u8; expected_len];

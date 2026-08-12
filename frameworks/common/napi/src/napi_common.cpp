@@ -24,6 +24,7 @@ namespace SAF_ASSET_COMMON {
 namespace {
     #define MAX_BUFF_SIZE 4096 // 4KB
     constexpr uint32_t MAX_PERMISSION_NAME_SIZE = 256;
+    constexpr uint32_t MAX_REMOTE_QUERY_ARRAY_SIZE = 10;
     AgentFenceErrorCode MapErrorCode(const int32_t safResult)
     {
         switch (safResult) {
@@ -153,6 +154,13 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, int32_t &valu
 {
     NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
     NAPI_CALL_RETURN_ERR(env, napi_get_value_int32(env, object, &value));
+    return napi_ok;
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object, int64_t &value)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    NAPI_CALL_RETURN_ERR(env, napi_get_value_int64(env, object, &value));
     return napi_ok;
 }
 
@@ -435,6 +443,145 @@ napi_status NapiSetProperty(const napi_env env, napi_value object, const char *p
             permissionResults[i].authStatusInfo));
         NAPI_CALL_RETURN_ERR(env, napi_set_element(env, jsResult, i, jsResultItem));
     }
+    NAPI_CALL_RETURN_ERR(env, napi_set_named_property(env, object, propertyName, jsResult));
+    return napi_ok;
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object, 
+    std::vector<SAF::PermissionQuery> &permissionQueryVector)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    uint32_t count = 0;
+    NAPI_CALL_RETURN_ERR(env, napi_get_array_length(env, object, &count));
+    NAPI_THROW_RETURN_ERR(env, count == 0, GENERAL_PARAMETER_ERROR, "PermissionQuery cannot be empty");
+    NAPI_THROW_RETURN_ERR(env, count > MAX_REMOTE_QUERY_ARRAY_SIZE, GENERAL_PARAMETER_ERROR,
+        "PermissionQuery count exceeds limit");
+    for (uint32_t i = 0; i < count; ++i) {
+        napi_value item = nullptr;
+        NAPI_CALL_RETURN_ERR(env, napi_get_element(env, object, i, &item));
+        SAF::PermissionQuery query;
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, item, query));
+        permissionQueryVector.emplace_back(query);
+    }
+    return napi_ok;
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    std::vector<SAF::RemoteAuthPackage> &remoteAuthPackageVector)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    uint32_t count = 0;
+    NAPI_CALL_RETURN_ERR(env, napi_get_array_length(env, object, &count));
+    NAPI_THROW_RETURN_ERR(env, count == 0, GENERAL_PARAMETER_ERROR, "RemoteAuthPackage cannot be empty");
+    for (uint32_t i = 0; i < count; ++i) {
+        napi_value item = nullptr;
+        NAPI_CALL_RETURN_ERR(env, napi_get_element(env, object, i, &item));
+        SAF::RemoteAuthPackage pkg;
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, item, pkg));
+        remoteAuthPackageVector.emplace_back(pkg);
+    }
+    return napi_ok;
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    SAF::RemoteAuthPackage &remoteAuthPackage)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    napi_value propValue;
+    
+    napi_status status = napi_get_named_property(env, object, "remoteMessage", &propValue);
+    NAPI_THROW_RETURN_ERR(env, status != napi_ok, INVALID_PARAMETER, "remoteMessage is required");
+    NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, remoteAuthPackage.remoteMessage));
+    
+    status = napi_get_named_property(env, object, "challenge", &propValue);
+    NAPI_THROW_RETURN_ERR(env, status != napi_ok, INVALID_PARAMETER, "challenge is required");
+    NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, remoteAuthPackage.challenge));
+    
+    status = napi_get_named_property(env, object, "ticket", &propValue);
+    NAPI_THROW_RETURN_ERR(env, status != napi_ok, INVALID_PARAMETER, "ticket is required");
+    NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, remoteAuthPackage.ticket));
+    
+    return napi_ok;
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    SAF::RemoteUserAuthItem &remoteUserAuthItem)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    napi_value propValue;
+    
+    napi_status status = napi_get_named_property(env, object, "permission", &propValue);
+    NAPI_THROW_RETURN_ERR(env, status != napi_ok, INVALID_PARAMETER, "permission is required");
+    NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, remoteUserAuthItem.permission));
+    
+    status = napi_get_named_property(env, object, "authResult", &propValue);
+    NAPI_THROW_RETURN_ERR(env, status != napi_ok, INVALID_PARAMETER, "authResult is required");
+    NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, remoteUserAuthItem.authResult));
+    
+    return napi_ok;
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    std::vector<SAF::RemoteUserAuthItem> &remoteUserAuthItemVector)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    uint32_t count = 0;
+    NAPI_CALL_RETURN_ERR(env, napi_get_array_length(env, object, &count));
+    NAPI_THROW_RETURN_ERR(env, count == 0, GENERAL_PARAMETER_ERROR, "RemoteUserAuthItem cannot be empty");
+    for (uint32_t i = 0; i < count; ++i) {
+        napi_value item = nullptr;
+        NAPI_CALL_RETURN_ERR(env, napi_get_element(env, object, i, &item));
+        SAF::RemoteUserAuthItem remoteUserAuthItem;
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, item, remoteUserAuthItem));
+        remoteUserAuthItemVector.emplace_back(remoteUserAuthItem);
+    }
+    return napi_ok;
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    SAF::RemoteUserAuthResults &remoteUserAuthResults)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    napi_value propValue;
+    
+    napi_status status = napi_get_named_property(env, object, "results", &propValue);
+    NAPI_THROW_RETURN_ERR(env, status != napi_ok, INVALID_PARAMETER, "results is required");
+    NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, remoteUserAuthResults.results));
+
+    status = napi_get_named_property(env, object, "permissionQuery", &propValue);
+    NAPI_THROW_RETURN_ERR(env, status != napi_ok, INVALID_PARAMETER, "permissionQuery is required");
+    NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, remoteUserAuthResults.permissionQuery));
+    
+    return napi_ok;
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    std::vector<SAF::RemoteUserAuthResults> &remoteUserAuthResultsVector)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    uint32_t count = 0;
+    NAPI_CALL_RETURN_ERR(env, napi_get_array_length(env, object, &count));
+    NAPI_THROW_RETURN_ERR(env, count == 0, GENERAL_PARAMETER_ERROR, "RemoteUserAuthResults cannot be empty");
+    NAPI_THROW_RETURN_ERR(env, count > MAX_REMOTE_QUERY_ARRAY_SIZE, GENERAL_PARAMETER_ERROR,
+        "RemoteUserAuthResults count exceeds limit 10");
+    for (uint32_t i = 0; i < count; ++i) {
+        napi_value item = nullptr;
+        NAPI_CALL_RETURN_ERR(env, napi_get_element(env, object, i, &item));
+        SAF::RemoteUserAuthResults remoteUserAuthResults;
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, item, remoteUserAuthResults));
+        remoteUserAuthResultsVector.emplace_back(remoteUserAuthResults);
+    }
+    return napi_ok;
+}
+
+napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName,
+    const SAF::RemoteAuthPackage &remoteAuthPackage)
+{
+    napi_value jsResult = nullptr;
+    NAPI_CALL_RETURN_ERR(env, napi_create_object(env, &jsResult));
+    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "remoteMessage", remoteAuthPackage.remoteMessage));
+    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "challenge", remoteAuthPackage.challenge));
+    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "ticket", remoteAuthPackage.ticket));
     NAPI_CALL_RETURN_ERR(env, napi_set_named_property(env, object, propertyName, jsResult));
     return napi_ok;
 }

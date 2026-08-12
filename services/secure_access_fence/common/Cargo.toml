@@ -18,9 +18,15 @@ edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+SAFTest = ["lazy_static"]
+
 [dependencies]
 ipc = { git = "https://gitcode.com/openharmony/communication_ipc" }
 ylong_runtime = { git = "https://gitcode.com/openharmony/commonlibrary_rust_ylong_runtime.git", features = ["full"] }
+ylong_json = { git = "https://gitcode.com/openharmony/commonlibrary_rust_ylong_json.git" }
+lazy_static = { version = "1.0.0", optional = true }
 
 saf_log = { path = "../../../frameworks/secure_access_fence/os_dependency/log" }
 saf_definition = { path = "../../../frameworks/secure_access_fence/definition" }
+saf_utils = { path = "../../../frameworks/secure_access_fence/utils" }

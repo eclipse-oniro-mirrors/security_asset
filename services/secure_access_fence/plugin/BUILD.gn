@@ -28,6 +28,7 @@ ohos_rust_static_library("saf_plugin") {
     "ylong_runtime:ylong_runtime",
   ]
 
+
   rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
 
   crate_name = "saf_plugin"

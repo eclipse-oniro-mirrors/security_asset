@@ -15,6 +15,7 @@
 
 //! This module defines the interface of the SAF Rust SDK.
 #![feature(once_cell_try)]
+
 pub use saf_definition::*;
 
 use std::sync::{Arc, Mutex, OnceLock};
@@ -54,11 +55,11 @@ impl Manager {
             Ok(Arc::new(Mutex::new(Manager { remote })))
         }).cloned()
     }
-
+    
     /// Check access for certain application.
-    pub fn check_access(&mut self, attributes: &SAFMap) -> Result<()> {
-        self.process_one_agr_request(attributes, IpcCode::CheckAccess)?;
-        Ok(())
+    pub fn check_access(&mut self, attributes: &SAFMap) -> Result<()> { 
+        self.process_one_agr_request(attributes, IpcCode::CheckAccess)?; 
+        Ok(()) 
     }
 
     fn rebuild(&mut self) -> Result<()> {

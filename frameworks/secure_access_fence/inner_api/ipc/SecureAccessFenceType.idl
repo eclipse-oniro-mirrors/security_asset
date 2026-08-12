@@ -150,3 +150,29 @@ struct UserAuthResult {
     List<PermissionInfo> permissionInfo;
     PermissionQuery permissionQuery;
 };
+
+struct RemoteAuthPackage {
+    String remoteMessage;
+    String challenge;
+    String ticket;
+};
+
+/**
+ * @brief Remote user authentication item for controller device.
+ */
+struct RemoteUserAuthItem {
+    /** Permission string. */
+    String permission;
+    /** Authentication result string. */
+    String authResult;
+};
+
+/**
+ * @brief Remote user authentication results for controller device.
+ */
+struct RemoteUserAuthResults {
+    /** List of authentication result items. */
+    List<RemoteUserAuthItem> results;
+    /** Permission query associated with the authentication. */
+    PermissionQuery permissionQuery;
+};

@@ -174,6 +174,83 @@ int32_t SafAgentFence::GrantToolPermissionsByUser(
     return resultCode;
 }
 
+int32_t SafAgentFence::GenerateControlledDevicePackage(
+    const std::vector<PermissionQuery> &permissionQuery,
+    std::vector<RemoteAuthPackage> &remoteAuthPackage)
+{
+    LOGI("SafAgentFence::GenerateControlledDevicePackage enter");
+
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+
+    int32_t resultCode = SAF_SUCCESS;
+    int32_t ret = HandleIpcError(proxy, [&]() {
+        return proxy->GenerateControlledDevicePackage(permissionQuery, remoteAuthPackage, resultCode);
+    });
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+
+    LOGI("SafAgentFence::GenerateControlledDevicePackage finished, resultCode = 0x%{public}x", resultCode);
+    return resultCode;
+}
+
+int32_t SafAgentFence::VerifyControlledDevicePackage(
+    const std::vector<RemoteAuthPackage> &ticketInfo,
+    std::vector<bool> &verifyRes)
+{
+    LOGI("SafAgentFence::VerifyControlledDevicePackage enter");
+
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+
+    int32_t resultCode = SAF_SUCCESS;
+    int32_t ret = HandleIpcError(proxy, [&]() {
+        return proxy->VerifyControlledDevicePackage(ticketInfo, verifyRes, resultCode);
+    });
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+
+    LOGI("SafAgentFence::VerifyControlledDevicePackage finished, resultCode = 0x%{public}x", resultCode);
+    return resultCode;
+}
+
+int32_t SafAgentFence::GenerateControllerDevicePackage(
+    const std::vector<RemoteUserAuthResults> &remoteUserAuthResults,
+    std::vector<RemoteAuthPackage> &remoteAuthPackage)
+{
+    LOGI("SafAgentFence::GenerateControllerDevicePackage enter");
+
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+
+    int32_t resultCode = SAF_SUCCESS;
+    int32_t ret = HandleIpcError(proxy, [&]() {
+        return proxy->GenerateControllerDevicePackage(remoteUserAuthResults, remoteAuthPackage, resultCode);
+    });
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+
+    LOGI("SafAgentFence::GenerateControllerDevicePackage finished, resultCode = 0x%{public}x", resultCode);
+    return resultCode;
+}
+
+int32_t SafAgentFence::VerifyControllerDevicePackage(
+    const std::vector<RemoteAuthPackage> &ticketInfo,
+    const RemoteInfo &remoteInfo,
+    std::vector<bool> &verifyRes)
+{
+    LOGI("SafAgentFence::VerifyControllerDevicePackage enter");
+
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+
+    int32_t resultCode = SAF_SUCCESS;
+    int32_t ret = HandleIpcError(proxy, [&]() {
+        return proxy->VerifyControllerDevicePackage(ticketInfo, remoteInfo, verifyRes, resultCode);
+    });
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+
+    LOGI("SafAgentFence::VerifyControllerDevicePackage finished, resultCode = 0x%{public}x", resultCode);
+    return resultCode;
+}
+
 int32_t SafAgentFence::VerifyTicket(
     int32_t osAccountId,
     const std::string &callerId,

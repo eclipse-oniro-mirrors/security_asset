@@ -22,8 +22,54 @@ pub use counter::{AutoCounter, Counter};
 pub use task_manager::TaskManager;
 pub use calling_info::CallingInfo;
 
-use saf_definition::macros_lib;
+// Re-export JsonBuilder from saf_utils
+pub use saf_utils::{JsonBuilder, new_object, object_add_string, object_add_number};
+
+#[cfg(not(feature = "SAFTest"))]
+use saf_definition::{macros_lib, ErrCode, Result};
 use std::convert::TryFrom;
+
+#[cfg(not(feature = "SAFTest"))]
+extern "C" {
+    fn GetOsAccountIdFromUid(uid: i32, userId: &mut i32) -> bool;
+    fn GetLocalDeviceId(udid: *mut u8, len: i32) -> i32;
+}
+
+#[cfg(not(feature = "SAFTest"))]
+const UDID_LEN: usize = 65;
+#[cfg(not(feature = "SAFTest"))]
+const SAF_SUCCESS: i32 = 0;
+
+/// Calculate user id from uid.
+#[cfg(not(feature = "SAFTest"))]
+pub fn get_user_id(uid: u64) -> Result<i32> {
+    let uid_i32 = i32::try_from(uid)
+        .map_err(|_| macros_lib::log_and_into_saf_error!(ErrCode::InvalidOsAccountId,
+            "[FATAL]Uid overflow i32 range"))?;
+    unsafe {
+        let mut user_id: i32 = 0;
+        if GetOsAccountIdFromUid(uid_i32, &mut user_id) {
+            Ok(user_id)
+        } else {
+            macros_lib::log_throw_error!(ErrCode::InvalidOsAccountId, "[FATAL]Get user id failed.")
+        }
+    }
+}
+
+/// Get local device UDID.
+#[cfg(not(feature = "SAFTest"))]
+pub fn get_local_udid() -> Result<String> {
+    let mut buf = [0u8; UDID_LEN];
+    let res = unsafe { GetLocalDeviceId(buf.as_mut_ptr(), UDID_LEN as i32) };
+    if res != SAF_SUCCESS {
+        return macros_lib::log_throw_error!(ErrCode::GetUdidFailed,
+            "[FATAL]GetDevUdid failed. [Res]: {}", res);
+    }
+    let length = buf.iter().position(|&b| b == 0).unwrap_or(UDID_LEN);
+    String::from_utf8(buf[..length].to_vec()).map_err(|e| {
+        macros_lib::log_and_into_saf_error!(ErrCode::GetUdidFailed, "Invalid UTF-8 in UDID: {}", e)
+    })
+}
 
 /// The type of the common event.
 #[repr(C)]
@@ -58,4 +104,45 @@ impl TryFrom<&str> for CommonEventType {
         }
         Ok(CommonEventType::Unknown)
     }
+}
+
+// ======================== SAFTest mock implementations ========================
+
+#[cfg(feature = "SAFTest")]
+use saf_definition::{macros_lib, Result};
+#[cfg(feature = "SAFTest")]
+use lazy_static::lazy_static;
+#[cfg(feature = "SAFTest")]
+use std::sync::RwLock;
+
+#[cfg(feature = "SAFTest")]
+lazy_static! {
+    static ref MOCK_LOCAL_UDID: RwLock<String> = RwLock::new(String::from("mock_local_udid"));
+    static ref MOCK_USER_ID: RwLock<i32> = RwLock::new(100);
+}
+
+#[cfg(feature = "SAFTest")]
+pub fn get_user_id(_uid: u64) -> Result<i32> {
+    Ok(*MOCK_USER_ID.read().unwrap())
+}
+
+#[cfg(feature = "SAFTest")]
+pub fn set_mock_user_id(user_id: i32) {
+    *MOCK_USER_ID.write().unwrap() = user_id;
+}
+
+#[cfg(feature = "SAFTest")]
+pub fn get_local_udid() -> Result<String> {
+    Ok(MOCK_LOCAL_UDID.read().unwrap().clone())
+}
+
+#[cfg(feature = "SAFTest")]
+pub fn set_mock_local_udid(udid: &str) {
+    *MOCK_LOCAL_UDID.write().unwrap() = udid.to_string();
+}
+
+#[cfg(feature = "SAFTest")]
+pub fn reset_mock_local_udid() {
+    *MOCK_LOCAL_UDID.write().unwrap() = "mock_local_udid".to_string();
+    *MOCK_USER_ID.write().unwrap() = 100;
 }
