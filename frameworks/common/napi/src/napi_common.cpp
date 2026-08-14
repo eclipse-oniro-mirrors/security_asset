@@ -12,6 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include <vector>
 #include "napi_common.h"
 #include "secure_access_fence_type.h"
 #include "saf_log.h"
@@ -172,9 +174,9 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, std::string &
     NAPI_CALL_RETURN_ERR(env, napi_get_value_string_utf8(env, object, nullptr, 0, &length));
     NAPI_THROW_RETURN_ERR(env, length >= MAX_BUFF_SIZE, INVALID_PARAMETER,
         "String length exceeds MAX_BUFF_SIZE");
-    char buffer[length + 1] = { 0 };
-    NAPI_CALL_RETURN_ERR(env, napi_get_value_string_utf8(env, object, buffer, length + 1, &length));
-    value = buffer;
+    std::vector<char> buffer(length + 1, 0);
+    NAPI_CALL_RETURN_ERR(env, napi_get_value_string_utf8(env, object, buffer.data(), length + 1, &length));
+    value = buffer.data();
     return napi_ok;
 }
 
