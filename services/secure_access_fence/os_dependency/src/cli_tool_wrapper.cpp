@@ -14,6 +14,7 @@
  */
 
 #include "cli_tool_wrapper.h"
+#include "securec.h"
 
 #include <cstring>
 #include <set>
