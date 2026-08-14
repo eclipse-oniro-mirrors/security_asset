@@ -114,7 +114,7 @@ napi_value NapiGenerateControlledDevicePackage(const napi_env env, napi_callback
 
     asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
         -> napi_status {
-        GenerateControlledDevicePackageContext *asyncContext = 
+        GenerateControlledDevicePackageContext *asyncContext =
             static_cast<GenerateControlledDevicePackageContext *>(context);
         size_t argc = 1;
         napi_value argv[1] = { nullptr };
@@ -125,7 +125,7 @@ napi_value NapiGenerateControlledDevicePackage(const napi_env env, napi_callback
     };
 
     asyncContext->execute = [](napi_env env, void* data) {
-        GenerateControlledDevicePackageContext *asyncContext = 
+        GenerateControlledDevicePackageContext *asyncContext =
             static_cast<GenerateControlledDevicePackageContext *>(data);
         asyncContext->result = SafAgentFence::GenerateControlledDevicePackage(
             asyncContext->permissionQuery, asyncContext->remoteAuthPackage);
