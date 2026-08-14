@@ -132,7 +132,7 @@ napi_value NapiGenerateControlledDevicePackage(const napi_env env, napi_callback
     };
 
     asyncContext->resolve = [](napi_env env, AgentFenceAsyncContext *context) -> napi_value {
-        GenerateControlledDevicePackageContext *asyncContext = 
+        GenerateControlledDevicePackageContext *asyncContext =
             static_cast<GenerateControlledDevicePackageContext *>(context);
         napi_value jsResult = nullptr;
         NAPI_CALL(env, napi_create_array(env, &jsResult));
