@@ -44,25 +44,25 @@ extern "C" {
 
 #[cfg(not(feature = "SAFTest"))]
 pub fn get_bundle_name_from_token(caller_token_id: i32) -> Result<String> {
-    let mut bundle_name_buf = vec![0i8; MAX_BUNDLE_NAME_LEN];
+    let mut bundle_name_buf = vec![0u8; MAX_BUNDLE_NAME_LEN];
     let mut len = MAX_BUNDLE_NAME_LEN as i32;
-    
+
     let ret = unsafe {
         GetBundleNameFromTokenId(
             caller_token_id,
-            bundle_name_buf.as_mut_ptr(),
+            bundle_name_buf.as_mut_ptr() as *mut std::ffi::c_char,
             &mut len,
         )
     };
-    
+
     if ret != 0 {
         loge!("GetBundleNameFromTokenId failed, ret={}", ret);
         return Err(macros_lib::log_and_into_saf_error!(ErrCode::GeneralError,
             "GetBundleNameFromTokenId failed"));
     }
-    
+
     unsafe {
-        Ok(std::ffi::CStr::from_ptr(bundle_name_buf.as_ptr())
+        Ok(std::ffi::CStr::from_ptr(bundle_name_buf.as_ptr() as *const std::ffi::c_char)
             .to_str()
             .map_err(|e| {
                 loge!("Invalid UTF-8 in bundle name: {}", e);
