@@ -44,7 +44,7 @@ extern "C" {
 
 #[cfg(not(feature = "SAFTest"))]
 pub fn get_bundle_name_from_token(caller_token_id: i32) -> Result<String> {
-    let mut bundle_name_buf = vec![0u8; MAX_BUNDLE_NAME_LEN];
+    let mut bundle_name_buf = vec![0i8; MAX_BUNDLE_NAME_LEN];
     let mut len = MAX_BUNDLE_NAME_LEN as i32;
     
     let ret = unsafe {
