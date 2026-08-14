@@ -204,7 +204,7 @@ napi_value NapiGenerateControllerDevicePackage(const napi_env env, napi_callback
 
     asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
         -> napi_status {
-        GenerateControllerDevicePackageContext *asyncContext = 
+        GenerateControllerDevicePackageContext *asyncContext =
             static_cast<GenerateControllerDevicePackageContext *>(context);
         size_t argc = 1;
         napi_value argv[1] = { nullptr };
@@ -215,14 +215,14 @@ napi_value NapiGenerateControllerDevicePackage(const napi_env env, napi_callback
     };
 
     asyncContext->execute = [](napi_env env, void* data) {
-        GenerateControllerDevicePackageContext *asyncContext = 
+        GenerateControllerDevicePackageContext *asyncContext =
             static_cast<GenerateControllerDevicePackageContext *>(data);
         asyncContext->result = SafAgentFence::GenerateControllerDevicePackage(
             asyncContext->remoteUserAuthResults, asyncContext->remoteAuthPackage);
     };
 
     asyncContext->resolve = [](napi_env env, AgentFenceAsyncContext *context) -> napi_value {
-        GenerateControllerDevicePackageContext *asyncContext = 
+        GenerateControllerDevicePackageContext *asyncContext =
             static_cast<GenerateControllerDevicePackageContext *>(context);
         napi_value jsResult = nullptr;
         NAPI_CALL(env, napi_create_array(env, &jsResult));
@@ -252,7 +252,7 @@ napi_value NapiVerifyControllerDevicePackage(const napi_env env, napi_callback_i
 
     asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
         -> napi_status {
-        VerifyControllerDevicePackageContext *asyncContext = 
+        VerifyControllerDevicePackageContext *asyncContext =
             static_cast<VerifyControllerDevicePackageContext *>(context);
         size_t argc = VERIFY_CONTROLLER_PACKAGE_ARG_COUNT;
         napi_value argv[VERIFY_CONTROLLER_PACKAGE_ARG_COUNT] = { nullptr, nullptr };
@@ -265,14 +265,14 @@ napi_value NapiVerifyControllerDevicePackage(const napi_env env, napi_callback_i
     };
 
     asyncContext->execute = [](napi_env env, void* data) {
-        VerifyControllerDevicePackageContext *asyncContext = 
+        VerifyControllerDevicePackageContext *asyncContext =
             static_cast<VerifyControllerDevicePackageContext *>(data);
         asyncContext->result = SafAgentFence::VerifyControllerDevicePackage(
             asyncContext->ticketInfo, asyncContext->remoteInfo, asyncContext->verifyRes);
     };
 
     asyncContext->resolve = [](napi_env env, AgentFenceAsyncContext *context) -> napi_value {
-        VerifyControllerDevicePackageContext *asyncContext = 
+        VerifyControllerDevicePackageContext *asyncContext =
             static_cast<VerifyControllerDevicePackageContext *>(context);
         napi_value jsResult = nullptr;
         NAPI_CALL(env, napi_create_array(env, &jsResult));
