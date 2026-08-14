@@ -17,11 +17,12 @@
 
 use crate::ticket_operation;
 use ipc::parcel::MsgParcel;
+use saf_definition::{ErrCode, macros_lib};
 use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
 use saf_plugin_interface::plugin_interface::{
     EventType, ExtMap, ERROR_METRICS_KEYS, PERFORMANCE_METRICS_KEYS, POLICY_AUTH_STATUS_KEYS,
-    VERIFY_REMOTE_TICKET_KEYS
+    VERIFY_REMOTE_TICKET_KEYS, GET_DEVICE_UDID_KEYS
 };
 use saf_sdk::Value;
 
@@ -197,6 +198,44 @@ pub fn cxx_store_challenge(caller_token_id: &str, challenge: &str, expire_time_m
             e.code as i32
         }
     }
+}
+
+/// Get Device UDID via plugin process_event
+pub fn get_device_udid(os_account_id: i32) -> saf_definition::Result<String> {
+    if os_account_id < 0 {
+        loge!("[Wrapper get_device_udid] os_account_id is negative: {}", os_account_id);
+        return macros_lib::log_throw_error!(ErrCode::InvalidOsAccountId,
+            "os_account_id is negative: {}", os_account_id);
+    }
+
+    let plugin = SAFPlugin::get_instance();
+    let loader = match plugin.load_plugin() {
+        Ok(loader) => loader,
+        Err(_e) => {
+            loge!("[Wrapper get_device_udid] load_plugin failed");
+            return macros_lib::log_throw_error!(ErrCode::PluginNotSupport, "load plugin failed");
+        },
+    };
+
+    let mut params = ExtMap::new();
+    params.insert(GET_DEVICE_UDID_KEYS.os_account_id, Value::Number(os_account_id as u32));
+
+    let result = match loader.process_event(EventType::GetDeviceUdid, &mut params) {
+        Ok(r) => r,
+        Err(e) => {
+            loge!("[Wrapper get_device_udid] process_event failed, e={}", e);
+            return macros_lib::log_throw_error!(ErrorCode::GetUdidFailed, "process_event failed, e={}", e);
+        },
+    };
+
+    let Some(Value::String(udid)) = result.get(GET_DEVICE_UDID_KEYS.udid) else {
+        loge!("[Wrapper get_device_udid] udid not found in result params");
+        return macros_lib::log_throw_error!(ErrCode::HashMapKeyNotFound,
+            "udid not found in result params");
+    };
+
+    logi!("[Wrapper get_device_udid] success, udid_len={}", udid.len());
+    Ok(udid.clone())
 }
 
 // Plugin performance event helper

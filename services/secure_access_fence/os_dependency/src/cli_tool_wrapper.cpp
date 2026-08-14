@@ -33,8 +33,8 @@ static bool ValidateCmdInfo(const CxxCmdInfo& cmd)
         LOGE("Invalid cmd_name: ptr is nullptr or len <= 0");
         return false;
     }
-    if (cmd.sub_cmd.ptr == nullptr || cmd.sub_cmd.len <= 0) {
-        LOGE("Invalid sub_cmd: ptr is nullptr or len <= 0");
+    if (cmd.sub_cmd.ptr == nullptr || cmd.sub_cmd.len < 0) {
+        LOGE("Invalid sub_cmd: ptr is nullptr or len < 0");
         return false;
     }
     return true;

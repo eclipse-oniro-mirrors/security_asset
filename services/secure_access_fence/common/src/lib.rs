@@ -32,13 +32,7 @@ use std::convert::TryFrom;
 #[cfg(not(feature = "SAFTest"))]
 extern "C" {
     fn GetOsAccountIdFromUid(uid: i32, userId: &mut i32) -> bool;
-    fn GetLocalDeviceId(udid: *mut u8, len: i32) -> i32;
 }
-
-#[cfg(not(feature = "SAFTest"))]
-const UDID_LEN: usize = 65;
-#[cfg(not(feature = "SAFTest"))]
-const SAF_SUCCESS: i32 = 0;
 
 /// Calculate user id from uid.
 #[cfg(not(feature = "SAFTest"))]
@@ -54,21 +48,6 @@ pub fn get_user_id(uid: u64) -> Result<i32> {
             macros_lib::log_throw_error!(ErrCode::InvalidOsAccountId, "[FATAL]Get user id failed.")
         }
     }
-}
-
-/// Get local device UDID.
-#[cfg(not(feature = "SAFTest"))]
-pub fn get_local_udid() -> Result<String> {
-    let mut buf = [0u8; UDID_LEN];
-    let res = unsafe { GetLocalDeviceId(buf.as_mut_ptr(), UDID_LEN as i32) };
-    if res != SAF_SUCCESS {
-        return macros_lib::log_throw_error!(ErrCode::GetUdidFailed,
-            "[FATAL]GetDevUdid failed. [Res]: {}", res);
-    }
-    let length = buf.iter().position(|&b| b == 0).unwrap_or(UDID_LEN);
-    String::from_utf8(buf[..length].to_vec()).map_err(|e| {
-        macros_lib::log_and_into_saf_error!(ErrCode::GetUdidFailed, "Invalid UTF-8 in UDID: {}", e)
-    })
 }
 
 /// The type of the common event.

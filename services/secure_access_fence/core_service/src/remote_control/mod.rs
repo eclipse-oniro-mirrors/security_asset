@@ -48,29 +48,19 @@ pub struct BatchVerifyResult {
 }
 
 const MAX_REMOTE_BATCH_COUNT: usize = 10;
-const MAX_REMOTE_PERMISSION_COUNT: usize = 10;
+const MAX_REMOTE_PERMISSION_COUNT: usize = 40;
 
 fn log_remote_auth_package(prefix: &str, package: &RemoteAuthPackage) {
-    let log_prefix = format!("----testing {}", prefix);
     let remote_message = &package.remote_message;
     let device_info = &remote_message.device_info;
     logi!(
-        "[{}] RemoteAuthPackage: ticket_len={}, \
+        "RemoteAuthPackage: ticket_len={}, \
          controller_device_id_len={}, controlled_device_id_len={}, \
-         remote_auth_message_len={}, caller_bundle_name_len={}",
-        log_prefix,
+         remote_auth_message_len={}",
         package.ticket.len(),
         device_info.controller_device_id.len(),
         device_info.controlled_device_id.len(),
-        remote_message.remote_auth_message.len(),
-        remote_message.caller_bundle_name.len(),
-    );
-    logi!(
-        "[{}]controller_device_id={}, controlled_device_id={}, caller_bundle_name={}",
-        log_prefix,
-        device_info.controller_device_id,
-        device_info.controlled_device_id,
-        remote_message.caller_bundle_name
+        remote_message.remote_auth_message.len()
     );
 }
 
@@ -144,6 +134,19 @@ fn parse_caller_bundle_name_from_remote_auth_message(remote_auth_message: &str) 
     Ok(bundle_name)
 }
 
+fn parse_local_device_id_from_remote_auth_message(remote_auth_message: &str) -> Result<String> {
+        let json = JsonValue::from_text(remote_auth_message).map_err(|e| {
+        macros_lib::log_and_into_saf_error!(ErrCode::JsonParseError,
+            "parse remote_auth_message failed: {}", e)
+    })?;
+
+    let bundle_name = get_compact_json_value(&json, "localDeviceId")
+        .map(|s| s.trim_matches('"').to_string())
+        .unwrap_or_default();
+
+    Ok(local_device_id)
+}
+
 const ALLOWED_REMOTE_AUTH_MESSAGE_FIELDS: &[&str] = &[
     "operationInfo",
     "role",
@@ -158,7 +161,8 @@ const ALLOWED_REMOTE_AUTH_MESSAGE_FIELDS: &[&str] = &[
     "permissions",
     "authResults",
     "localDeviceId",
-    "callerBundleName"
+    "callerBundleName",
+    "version"
 ];
 
 fn validate_remote_auth_message_fields(remote_auth_message: &str) -> Result<()> {

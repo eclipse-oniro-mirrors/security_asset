@@ -28,7 +28,6 @@ ohos_static_library("saf_os_dependency") {
     "src/system_ability_wrapper.cpp",
     "src/system_event_wrapper.cpp",
     "src/crypto_wrapper.cpp",
-    "src/device_info_wrapper.cpp"
   ]
   deps = []
   external_deps = [

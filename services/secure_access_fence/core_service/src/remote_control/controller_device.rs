@@ -16,7 +16,7 @@
 //! This module implements controller device package generation and verification.
 
 use ipc::Skeleton;
-use saf_common::{get_user_id, get_local_udid, JsonBuilder, new_object, object_add_string};
+use saf_common::{get_user_id, JsonBuilder, new_object, object_add_string};
 use saf_utils::system_time_in_millis;
 use saf_definition::{macros_lib, ErrCode, Result,
     PermissionQuery, RemoteAuthPackage, Role, DeviceIdHeader, RemoteUserAuthItem,
@@ -77,7 +77,7 @@ pub fn generate_controller_device_package(
     let mut has_error = false;
     
     for (idx, auth_result) in remote_user_auth_results.iter().enumerate() {
-        match generate_single_controller_package(auth_result) {
+        match generate_single_controller_package(user_id, auth_result) {
             Ok(pkg) => {
                 store_grant_record_if_success(user_id, &pkg, Role::Controller);
                 packages.push(pkg);
@@ -97,7 +97,6 @@ pub fn generate_controller_device_package(
 }
 
 fn store_grant_record_if_success(user_id: i32, pkg: &RemoteAuthPackage, role: Role) {
-    // Read callerBundleName from inner (signed) remoteAuthMessage
     let caller_bundle_name = super::parse_caller_bundle_name_from_remote_auth_message(
         &pkg.remote_message.remote_auth_message
     ).unwrap_or_default();
@@ -109,6 +108,10 @@ fn store_grant_record_if_success(user_id: i32, pkg: &RemoteAuthPackage, role: Ro
         GrantType::RemoteGrant,
         caller_bundle_name
     ) {
+        if params.permission_names.is_empty() {
+            logi!("No GRANTED permissions found, skip storing grant record");
+            return;
+        }
         if let Err(e) = store_grant_record(params) {
             loge!("Failed to store grant record: {:?}", e);
         }
@@ -137,7 +140,7 @@ pub fn verify_controller_device_package(
     logi!("[verify_controller_device_package] os_account_id={}, package_count={}, domain_id={}", 
         os_account_id, packages.len(), remote_info.domain_id);
     
-    if !(1..=super::MAX_REMOTE_BATCH_COUNT).contains(&packages.len()) {
+    if packages.len() < 1 || packages.len() > super::MAX_REMOTE_BATCH_COUNT {
         loge!("Invalid packages count: {}, max allowed: {}", packages.len(), super::MAX_REMOTE_BATCH_COUNT);
         return BatchVerifyResult {
             results: Vec::new(),
@@ -157,7 +160,7 @@ pub fn verify_controller_device_package(
         };
     }
     
-    let local_udid = match get_local_udid() {
+    let local_udid = match crate::wrapper::get_device_udid(os_account_id) {
         Ok(udid) => udid,
         Err(e) => {
             loge!("Failed to get local udid: {:?}", e);
@@ -232,10 +235,11 @@ fn validate_and_verify_single_controller_package(
 }
 
 fn generate_single_controller_package(
+    os_account_id: i32,
     auth_result: &RemoteUserAuthResults
 ) -> Result<RemoteAuthPackage> {
-    let (local_udid, api_permissions, challenge, timestamp) = 
-        prepare_controller_package_data(auth_result)?;
+    let (local_udid, api_permissions, challenge, timestamp) =
+        prepare_controller_package_data(os_account_id, auth_result)?;
 
     let uid = Skeleton::calling_uid();
     let user_id = get_user_id(uid)?;
@@ -258,12 +262,13 @@ fn generate_single_controller_package(
 }
 
 fn prepare_controller_package_data(
+    os_account_id: i32,
     auth_result: &RemoteUserAuthResults
 ) -> Result<(String, Vec<String>, String, u64)> {
     validate_controller_permission_query(&auth_result.permission_query)?;
     validate_auth_results_permissions(&auth_result.results)?;
 
-    let local_udid = get_local_udid()?;
+    let local_udid = crate::wrapper::get_device_udid(os_account_id)?;
 
     let (cli_infos, mut api_permissions) =
         super::parse_cli_and_permission(&auth_result.permission_query.operation_info)?;
@@ -309,14 +314,9 @@ fn build_and_sign_controller_package(
 
     let sign_result = sign_remote_auth_package(sign_params)?;
 
-    let device_id_header = DeviceIdHeader {
-        controlled_device_id: String::new(),
-        controller_device_id: local_udid.to_string(),
-    };
-
     Ok(RemoteAuthPackage {
         remote_message: RemoteMessage {
-            device_info: device_id_header,
+            device_info: sign_result.device_id_header,
             remote_auth_message: sign_result.remote_auth_package,
             caller_bundle_name,
         },
@@ -370,10 +370,20 @@ fn verify_single_controller_package(
     if !verify_result {
         return Ok(false);
     }
+
+    let controller_device_id = match super::parse_local_device_id_from_remote_auth_messahe(
+        &package.remote_message.remote_auth_message
+    ) {
+        Ok(id) => id,
+        Err(e) => {
+            loge!("Failed to parse localDeviceId from remote_auth_message: {:?}", e);
+            return Ok(false);
+        }
+    };
     
     let device_id_header = DeviceIdHeader {
         controlled_device_id: local_udid.to_string(),
-        controller_device_id: package.remote_message.device_info.controller_device_id.clone(),
+        controller_device_id: controller_device_id,
     };
     
     verify_and_remove_challenge(os_account_id, &package.challenge, &device_id_header)?;
@@ -472,12 +482,13 @@ fn build_controller_remote_auth_message(
     builder.add_string_array("permissions", permissions.to_vec());
     builder.add_string("localDeviceId", local_device_id);
     builder.add_string("callerBundleName", caller_bundle_name);
+    builder.add_u32("version", 1);
 
     builder.build()
 }
 
 fn validate_controller_batch_params(auth_results: &[RemoteUserAuthResults]) -> Result<()> {
-    if !(1..=super::MAX_REMOTE_BATCH_COUNT).contains(&auth_results.len()) {
+    if auth_results.len() < 1 || auth_results.len() > super::MAX_REMOTE_BATCH_COUNT {
         return macros_lib::log_throw_error!(ErrCode::InvalidArrayLen,
             "Invalid auth_results count: {}, max allowed: {}", 
             auth_results.len(), super::MAX_REMOTE_BATCH_COUNT);

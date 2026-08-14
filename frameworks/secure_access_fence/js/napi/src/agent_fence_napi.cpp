@@ -28,6 +28,7 @@ using namespace OHOS::Security::SAF;
 using namespace OHOS::Security::SAF_ASSET_COMMON;
 
 namespace {
+constexpr size_t VERIFY_CONTROLLER_PACKAGE_ARG_COUNT = 2;
 napi_value NapiRequestToolPermissions(const napi_env env, napi_callback_info info)
 {
     auto asyncContext = std::unique_ptr<RequestToolPermissionContext>(new (std::nothrow)RequestToolPermissionContext());
@@ -108,7 +109,7 @@ napi_value NapiGenerateControlledDevicePackage(const napi_env env, napi_callback
 {
     auto asyncContext = std::unique_ptr<GenerateControlledDevicePackageContext>(
         new (std::nothrow) GenerateControlledDevicePackageContext());
-    NAPI_THROW(env, asyncContext == nullptr, COMMON_INTERNAL_ERROR, 
+    NAPI_THROW(env, asyncContext == nullptr, COMMON_INTERNAL_ERROR,
         "Failed to create GenerateControlledDevicePackageContext");
 
     asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
@@ -138,11 +139,11 @@ napi_value NapiGenerateControlledDevicePackage(const napi_env env, napi_callback
         for (uint32_t i = 0; i < asyncContext->remoteAuthPackage.size(); ++i) {
             napi_value jsResultItem = nullptr;
             NAPI_CALL(env, napi_create_object(env, &jsResultItem));
-            NAPI_CALL(env, NapiSetProperty(env, jsResultItem, "remoteMessage", 
+            NAPI_CALL(env, NapiSetProperty(env, jsResultItem, "remoteMessage",
                 asyncContext->remoteAuthPackage[i].remoteMessage));
-            NAPI_CALL(env, NapiSetProperty(env, jsResultItem, "challenge", 
+            NAPI_CALL(env, NapiSetProperty(env, jsResultItem, "challenge",
                 asyncContext->remoteAuthPackage[i].challenge));
-            NAPI_CALL(env, NapiSetProperty(env, jsResultItem, "ticket", 
+            NAPI_CALL(env, NapiSetProperty(env, jsResultItem, "ticket",
                 asyncContext->remoteAuthPackage[i].ticket));
             NAPI_CALL(env, napi_set_element(env, jsResult, i, jsResultItem));
         }
@@ -156,12 +157,12 @@ napi_value NapiVerifyControlledDevicePackage(const napi_env env, napi_callback_i
 {
     auto asyncContext = std::unique_ptr<VerifyControlledDevicePackageContext>(
         new (std::nothrow) VerifyControlledDevicePackageContext());
-    NAPI_THROW(env, asyncContext == nullptr, COMMON_INTERNAL_ERROR, 
+    NAPI_THROW(env, asyncContext == nullptr, COMMON_INTERNAL_ERROR,
         "Failed to create VerifyControlledDevicePackageContext");
 
     asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
         -> napi_status {
-        VerifyControlledDevicePackageContext *asyncContext = 
+        VerifyControlledDevicePackageContext *asyncContext =
             static_cast<VerifyControlledDevicePackageContext *>(context);
         size_t argc = 1;
         napi_value argv[1] = { nullptr };
@@ -172,14 +173,14 @@ napi_value NapiVerifyControlledDevicePackage(const napi_env env, napi_callback_i
     };
 
     asyncContext->execute = [](napi_env env, void* data) {
-        VerifyControlledDevicePackageContext *asyncContext = 
+        VerifyControlledDevicePackageContext *asyncContext =
             static_cast<VerifyControlledDevicePackageContext *>(data);
         asyncContext->result = SafAgentFence::VerifyControlledDevicePackage(
             asyncContext->ticketInfo, asyncContext->verifyRes);
     };
 
     asyncContext->resolve = [](napi_env env, AgentFenceAsyncContext *context) -> napi_value {
-        VerifyControlledDevicePackageContext *asyncContext = 
+        VerifyControlledDevicePackageContext *asyncContext =
             static_cast<VerifyControlledDevicePackageContext *>(context);
         napi_value jsResult = nullptr;
         NAPI_CALL(env, napi_create_array(env, &jsResult));
@@ -198,7 +199,7 @@ napi_value NapiGenerateControllerDevicePackage(const napi_env env, napi_callback
 {
     auto asyncContext = std::unique_ptr<GenerateControllerDevicePackageContext>(
         new (std::nothrow) GenerateControllerDevicePackageContext());
-    NAPI_THROW(env, asyncContext == nullptr, COMMON_INTERNAL_ERROR, 
+    NAPI_THROW(env, asyncContext == nullptr, COMMON_INTERNAL_ERROR,
         "Failed to create GenerateControllerDevicePackageContext");
 
     asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
@@ -228,11 +229,11 @@ napi_value NapiGenerateControllerDevicePackage(const napi_env env, napi_callback
         for (uint32_t i = 0; i < asyncContext->remoteAuthPackage.size(); ++i) {
             napi_value jsResultItem = nullptr;
             NAPI_CALL(env, napi_create_object(env, &jsResultItem));
-            NAPI_CALL(env, NapiSetProperty(env, jsResultItem, "remoteMessage", 
+            NAPI_CALL(env, NapiSetProperty(env, jsResultItem, "remoteMessage",
                 asyncContext->remoteAuthPackage[i].remoteMessage));
-            NAPI_CALL(env, NapiSetProperty(env, jsResultItem, "challenge", 
+            NAPI_CALL(env, NapiSetProperty(env, jsResultItem, "challenge",
                 asyncContext->remoteAuthPackage[i].challenge));
-            NAPI_CALL(env, NapiSetProperty(env, jsResultItem, "ticket", 
+            NAPI_CALL(env, NapiSetProperty(env, jsResultItem, "ticket",
                 asyncContext->remoteAuthPackage[i].ticket));
             NAPI_CALL(env, napi_set_element(env, jsResult, i, jsResultItem));
         }
@@ -246,17 +247,17 @@ napi_value NapiVerifyControllerDevicePackage(const napi_env env, napi_callback_i
 {
     auto asyncContext = std::unique_ptr<VerifyControllerDevicePackageContext>(
         new (std::nothrow) VerifyControllerDevicePackageContext());
-    NAPI_THROW(env, asyncContext == nullptr, COMMON_INTERNAL_ERROR, 
+    NAPI_THROW(env, asyncContext == nullptr, COMMON_INTERNAL_ERROR,
         "Failed to create VerifyControllerDevicePackageContext");
 
     asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
         -> napi_status {
         VerifyControllerDevicePackageContext *asyncContext = 
             static_cast<VerifyControllerDevicePackageContext *>(context);
-        size_t argc = 2;
-        napi_value argv[2] = { nullptr, nullptr };
+        size_t argc = VERIFY_CONTROLLER_PACKAGE_ARG_COUNT;
+        napi_value argv[VERIFY_CONTROLLER_PACKAGE_ARG_COUNT] = { nullptr, nullptr };
         NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-        NAPI_THROW_RETURN_ERR(env, argc < 2, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
+        NAPI_THROW_RETURN_ERR(env, argc < VERIFY_CONTROLLER_PACKAGE_ARG_COUNT, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, argv[0], asyncContext->ticketInfo));
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, argv[1], asyncContext->remoteInfo));
         return napi_ok;

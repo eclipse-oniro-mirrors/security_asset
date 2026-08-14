@@ -51,6 +51,8 @@ pub enum EventType {
     VerifyRemoteAuthPackage = 7,
     /// Store grant record for remote control scenario
     StoreGrantRecord = 8,
+    /// Get device udid for device identification
+    GetDeviceUdid = 9,
 }
 
 /// Performance metrics parameter keys for StatisticsMetrics EventType.
@@ -206,6 +208,20 @@ pub const STORE_GRANT_RECORD_KEYS: StoreGrantRecordKeys =
         grant_type: "GrantType",
         timestamp: "Timestamp",
     };
+
+/// GetDeviceUdid parameter keys for GetDeviceUdid EventType.
+pub struct GetDeviceUdidKeys {
+    /// The os account ID (input)
+    pub os_account_id: &'static str,
+    /// The device UDID (output)
+    pub udid: &'static str,
+}
+
+/// GetDeviceUdidKeys constant for GetDeviceUdid EventType
+pub const GET_DEVICE_UDID_KEYS: GetDeviceUdidKeys = GetDeviceUdidKeys {
+    os_account_id: "osAccountId",
+    udid: "Udid",
+};
 
 /// Global constant instance for error metrics parameter keys.
 /// Use this to access standardized parameter names for StatisticsError events.

@@ -164,9 +164,9 @@ pub fn verify_and_remove_challenge(
     let path = Path::new(&file_path);
 
     if !path.exists() {
-        loge!("[challenge_cache] Cache file not found: {}", file_path);
+        loge!("[challenge_cache] Cache file not found");
         return macros_lib::log_throw_error!(ErrCode::ReplayAttackDetected,
-            "Cache file not found: {}", file_path);
+            "Cache file not found");
     }
 
     let (found, remaining_lines) = find_and_remove_challenge_in_file(

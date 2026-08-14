@@ -100,7 +100,7 @@ pub fn verify_controlled_device_package(
 
     logi!("[verify_controlled_device_package] os_account_id={}, package_count={}", os_account_id, packages.len());
     
-    if !(1..=super::MAX_REMOTE_BATCH_COUNT).contains(&packages.len()) {
+    if packages.len() < 1 || packages.len() > super::MAX_REMOTE_BATCH_COUNT {
         loge!("Invalid packages count: {}, max allowed: {}", packages.len(), super::MAX_REMOTE_BATCH_COUNT);
         return BatchVerifyResult {
             results: Vec::new(),
@@ -112,7 +112,7 @@ pub fn verify_controlled_device_package(
         log_remote_auth_package(&format!("verify_controlled_device_package[{}]", idx), package);
     }
     
-    let local_udid = match saf_common::get_local_udid() {
+    let local_udid = match crate::wrapper::get_device_udid(os_account_id) {
         Ok(udid) => udid,
         Err(e) => {
             loge!("Failed to get local udid: {:?}", e);
@@ -286,12 +286,13 @@ fn build_remote_auth_message(
     builder.add_string("challenge", challenge);
     builder.add_u64("timestamp", timestamp);
     builder.add_string_array("permissions", api_permissions);
+    builder.add_u32("version", 1);
 
     builder.build()
 }
 
 fn validate_controlled_batch_params(queries: &[PermissionQuery]) -> Result<()> {
-    if !(1..=super::MAX_REMOTE_BATCH_COUNT).contains(&queries.len()) {
+    if queries.len() < 1 || queries.len() > super::MAX_REMOTE_BATCH_COUNT {
         return macros_lib::log_throw_error!(ErrCode::InvalidArrayLen,
             "Invalid queries count: {}, max allowed: {}", 
             queries.len(), super::MAX_REMOTE_BATCH_COUNT);

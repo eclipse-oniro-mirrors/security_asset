@@ -146,12 +146,36 @@ impl StoreGrantRecordParams {
     }
     
     fn parse_permission_names(remote_auth_message: &str) -> Result<Vec<String>> {
-        get_string_array_from_json(remote_auth_message, "permissions")
-            .map_err(|e| {
-                loge!("Failed to parse permissions: {:?}", e);
-                macros_lib::log_and_into_saf_error!(ErrCode::ArgEmpty,
-                    "permissions not found in remote_auth_message")
-            })
+        let json = JsonValue::from_text(remote_auth_message).map_err(|e| {
+            loge!("Failed to parse JSON: {:?}", e);
+            macros_lib::log_and_into_saf_error!(ErrCode::JsonParseError,
+                "parse remote_auth_message failed: {}", e)
+        })?;
+        
+        match &json["authResults"] {
+            JsonValue::Null => {
+                loge!("authResults not found or is null");
+                macros_lib::log_throw_error!(ErrCode::ArgEmpty,
+                    "authResults not found in remote_auth_message")
+            }
+            JsonValue::Array(arr) => {
+                let permissions: Vec<String> = arr.iter()
+                    .filter_map(|item| {
+                        match (&item["permission"], &item["authResult"]) {
+                            (JsonValue::String(perm), JsonValue::String(result)) 
+                                if result.to_uppercase() == "GRANTED" => Some(perm.clone()),
+                            _ => None,
+                        }
+                    })
+                    .collect();
+                Ok(permissions)
+            }
+            _ => {
+                loge!("authResults is not an array");
+                macros_lib::log_throw_error!(ErrCode::DataTypeMismatch,
+                    "authResults is not an array")
+            }
+        }
     }
 }
 

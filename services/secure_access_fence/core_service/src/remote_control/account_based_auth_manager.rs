@@ -38,10 +38,8 @@ use saf_utils::{JsonValue, json_into_object, get_compact_json_value};
 
 #[cfg(not(feature = "SAFTest"))]
 fn log_sign_params(prefix: &str, params: &SignParams) {
-    let log_prefix = format!("----testing {}", prefix);
     logi!(
-        "[{}] SignParams: os_account_id={}, uid_len={}, remote_auth_package_len={}, remote_control_token_len={}",
-        log_prefix,
+        "SignParams: os_account_id={}, uid_len={}, remote_auth_package_len={}, remote_control_token_len={}",
         params.os_account_id,
         params.uid.len(),
         params.remote_auth_package.len(),
@@ -51,11 +49,9 @@ fn log_sign_params(prefix: &str, params: &SignParams) {
 
 #[cfg(not(feature = "SAFTest"))]
 fn log_sign_result(prefix: &str, result: &SignResult) {
-    let log_prefix = format!("----testing {}", prefix);
     logi!(
-        "[{}] SignResult: controller_device_id_len={}, controlled_device_id_len={}, \
+        "SignResult: controller_device_id_len={}, controlled_device_id_len={}, \
          remote_auth_package_len={}, sign_info_len={}",
-        log_prefix,
         result.device_id_header.controller_device_id.len(),
         result.device_id_header.controlled_device_id.len(),
         result.remote_auth_package.len(),
@@ -65,14 +61,12 @@ fn log_sign_result(prefix: &str, result: &SignResult) {
 
 #[cfg(not(feature = "SAFTest"))]
 fn log_verify_package(prefix: &str, package: &RemoteAuthPackage) {
-    let log_prefix = format!("----testing {}", prefix);
     let remote_message = &package.remote_message;
     let device_info = &remote_message.device_info;
     logi!(
-        "[{}] RemoteAuthPackage: ticket_len={}, \
+        "RemoteAuthPackage: ticket_len={}, \
          controller_device_id_len={}, controlled_device_id_len={}, \
          remote_auth_message_len={}",
-        log_prefix,
         package.ticket.len(),
         device_info.controller_device_id.len(),
         device_info.controlled_device_id.len(),
@@ -176,7 +170,6 @@ pub fn sign_remote_auth_package(params: SignParams) -> Result<SignResult> {
 /// Verifies remote auth package through trusted ring plugin.
 #[cfg(not(feature = "SAFTest"))]
 pub fn verify_remote_auth_package(os_account_id: i32, package: &RemoteAuthPackage) -> Result<bool> {
-    logi!("[----testing verify_remote_auth_package] os_account_id={}", os_account_id);
     log_verify_package("verify_remote_auth_package", package);
 
     let loader = SAFPlugin::get_instance().load_plugin().map_err(|e| {
@@ -188,10 +181,6 @@ pub fn verify_remote_auth_package(os_account_id: i32, package: &RemoteAuthPackag
     )?;
     
     let uid = parse_uid_from_remote_auth_message(&package.remote_message.remote_auth_message)?;
-    
-    logi!("[----testing verify_remote_auth_package] device_id_header_json_len={}", device_id_header_str.len());
-    logi!("[----testing verify_remote_auth_package] device_id_header_json={}", device_id_header_str);
-    logi!("[----testing verify_remote_auth_package] uid={}", uid);
     
     let mut ext_map: ExtMap = HashMap::new();
     let os_account_id_u32 = u32::try_from(os_account_id).map_err(|_| {
@@ -218,7 +207,7 @@ pub fn verify_remote_auth_package(os_account_id: i32, package: &RemoteAuthPackag
 
     match ret.get(VERIFY_REMOTE_AUTH_PACKAGE_KEYS.verify_result) {
         Some(Value::Bool(b)) => {
-            logi!("[----testing verify_remote_auth_package] verify_result={}", b);
+            logi!("[verify_remote_auth_package] verify_result={}", b);
             Ok(*b)
         },
         _ => macros_lib::log_throw_error!(ErrCode::HashMapKeyNotFound, "verify_result not found"),

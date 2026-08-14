@@ -106,7 +106,7 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::RemoteCo
 
 napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::RemoteInfo &remoteInfo);
 
-napi_status NapiGetProperty(const napi_env env, napi_value object, 
+napi_status NapiGetProperty(const napi_env env, napi_value object,
     std::vector<SAF::PermissionQuery> &permissionQueryVector);
 
 napi_status NapiGetProperty(const napi_env env, napi_value object,

@@ -22,7 +22,7 @@ namespace OHOS {
 namespace Security {
 namespace SAF_ASSET_COMMON {
 namespace {
-    #define MAX_BUFF_SIZE 4096 // 4KB
+    #define MAX_BUFF_SIZE 4096 * 4 // 16KB
     constexpr uint32_t MAX_PERMISSION_NAME_SIZE = 256;
     constexpr uint32_t MAX_REMOTE_QUERY_ARRAY_SIZE = 10;
     AgentFenceErrorCode MapErrorCode(const int32_t safResult)
@@ -168,8 +168,11 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, std::string &
 {
     NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
     NAPI_THROW_RETURN_ERR(env, type != napi_string, INVALID_PARAMETER, "Invalid type. Expect string");
-    char buffer[MAX_BUFF_SIZE] = { 0 };
     size_t length = 0;
+    NAPI_CALL_RETURN_ERR(env, napi_get_value_string_utf8(env, object, nullptr, 0, &length));
+    NAPI_THROW_RETURN_ERR(env, length >= MAX_BUFF_SIZE, INVALID_PARAMETER,
+        "String length exceeds MAX_BUFF_SIZE");
+    char buffer[MAX_BUFF_SIZE] = { 0 };
     NAPI_CALL_RETURN_ERR(env, napi_get_value_string_utf8(env, object, buffer, MAX_BUFF_SIZE, &length));
     value = buffer;
     return napi_ok;
@@ -447,7 +450,7 @@ napi_status NapiSetProperty(const napi_env env, napi_value object, const char *p
     return napi_ok;
 }
 
-napi_status NapiGetProperty(const napi_env env, napi_value object, 
+napi_status NapiGetProperty(const napi_env env, napi_value object,
     std::vector<SAF::PermissionQuery> &permissionQueryVector)
 {
     NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);

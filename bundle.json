@@ -66,8 +66,7 @@
                 "ylong_runtime",
                 "openssl",
                 "screenlock_mgr",
-                "time_service",
-                "init"
+                "time_service"
             ],
             "third_party": []
         },
