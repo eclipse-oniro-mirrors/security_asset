@@ -100,7 +100,7 @@ pub fn verify_controlled_device_package(
 
     logi!("[verify_controlled_device_package] os_account_id={}, package_count={}", os_account_id, packages.len());
     
-    if packages.len() < 1 || packages.len() > super::MAX_REMOTE_BATCH_COUNT {
+    if packages.is_empty() || packages.len() > super::MAX_REMOTE_BATCH_COUNT {
         loge!("Invalid packages count: {}, max allowed: {}", packages.len(), super::MAX_REMOTE_BATCH_COUNT);
         return BatchVerifyResult {
             results: Vec::new(),
@@ -108,8 +108,8 @@ pub fn verify_controlled_device_package(
         };
     }
     
-    for (idx, package) in packages.iter().enumerate() {
-        log_remote_auth_package(&format!("verify_controlled_device_package[{}]", idx), package);
+    for (_idx, package) in packages.iter().enumerate() {
+        log_remote_auth_package(package);
     }
     
     let local_udid = match crate::wrapper::get_device_udid(os_account_id) {
@@ -253,7 +253,7 @@ fn generate_single_controlled_package(query: PermissionQuery) -> Result<RemoteAu
         ticket: sign_result.sign_info,
     };
     
-    log_remote_auth_package("generate_single_controlled_package", &package);
+    log_remote_auth_package(&package);
     
     Ok(package)
 }
@@ -286,13 +286,13 @@ fn build_remote_auth_message(
     builder.add_string("challenge", challenge);
     builder.add_u64("timestamp", timestamp);
     builder.add_string_array("permissions", api_permissions);
-    builder.add_u32("version", 1);
+    builder.add_number("version", 1 as i64);
 
     builder.build()
 }
 
 fn validate_controlled_batch_params(queries: &[PermissionQuery]) -> Result<()> {
-    if queries.len() < 1 || queries.len() > super::MAX_REMOTE_BATCH_COUNT {
+    if queries.is_empty() || queries.len() > super::MAX_REMOTE_BATCH_COUNT {
         return macros_lib::log_throw_error!(ErrCode::InvalidArrayLen,
             "Invalid queries count: {}, max allowed: {}", 
             queries.len(), super::MAX_REMOTE_BATCH_COUNT);

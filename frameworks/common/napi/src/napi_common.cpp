@@ -22,7 +22,7 @@ namespace OHOS {
 namespace Security {
 namespace SAF_ASSET_COMMON {
 namespace {
-    #define MAX_BUFF_SIZE 4096 * 4 // 16KB
+    constexpr uint32_t MAX_BUFF_SIZE = 1024 * 25;   // 25KB
     constexpr uint32_t MAX_PERMISSION_NAME_SIZE = 256;
     constexpr uint32_t MAX_REMOTE_QUERY_ARRAY_SIZE = 10;
     AgentFenceErrorCode MapErrorCode(const int32_t safResult)
@@ -172,8 +172,8 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, std::string &
     NAPI_CALL_RETURN_ERR(env, napi_get_value_string_utf8(env, object, nullptr, 0, &length));
     NAPI_THROW_RETURN_ERR(env, length >= MAX_BUFF_SIZE, INVALID_PARAMETER,
         "String length exceeds MAX_BUFF_SIZE");
-    char buffer[MAX_BUFF_SIZE] = { 0 };
-    NAPI_CALL_RETURN_ERR(env, napi_get_value_string_utf8(env, object, buffer, MAX_BUFF_SIZE, &length));
+    char buffer[length + 1] = { 0 };
+    NAPI_CALL_RETURN_ERR(env, napi_get_value_string_utf8(env, object, buffer, length + 1, &length));
     value = buffer;
     return napi_ok;
 }

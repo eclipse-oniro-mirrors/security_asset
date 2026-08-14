@@ -37,7 +37,7 @@ use saf_ipc::remote_message_wrapper;
 use saf_utils::{JsonValue, json_into_object, get_compact_json_value};
 
 #[cfg(not(feature = "SAFTest"))]
-fn log_sign_params(prefix: &str, params: &SignParams) {
+fn log_sign_params(params: &SignParams) {
     logi!(
         "SignParams: os_account_id={}, uid_len={}, remote_auth_package_len={}, remote_control_token_len={}",
         params.os_account_id,
@@ -48,7 +48,7 @@ fn log_sign_params(prefix: &str, params: &SignParams) {
 }
 
 #[cfg(not(feature = "SAFTest"))]
-fn log_sign_result(prefix: &str, result: &SignResult) {
+fn log_sign_result(result: &SignResult) {
     logi!(
         "SignResult: controller_device_id_len={}, controlled_device_id_len={}, \
          remote_auth_package_len={}, sign_info_len={}",
@@ -60,7 +60,7 @@ fn log_sign_result(prefix: &str, result: &SignResult) {
 }
 
 #[cfg(not(feature = "SAFTest"))]
-fn log_verify_package(prefix: &str, package: &RemoteAuthPackage) {
+fn log_verify_package(package: &RemoteAuthPackage) {
     let remote_message = &package.remote_message;
     let device_info = &remote_message.device_info;
     logi!(
@@ -135,7 +135,7 @@ fn parse_sign_result(mut ret: ExtMap) -> Result<SignResult> {
 /// Signs remote auth package through trusted ring plugin.
 #[cfg(not(feature = "SAFTest"))]
 pub fn sign_remote_auth_package(params: SignParams) -> Result<SignResult> {
-    log_sign_params("sign_remote_auth_package", &params);
+    log_sign_params(&params);
 
     let loader = SAFPlugin::get_instance().load_plugin().map_err(|e| {
         macros_lib::log_and_into_saf_error!(ErrCode::PluginNotSupport, "load plugin failed: {}", e)
@@ -163,14 +163,14 @@ pub fn sign_remote_auth_package(params: SignParams) -> Result<SignResult> {
         })?;
 
     let result = parse_sign_result(ret)?;
-    log_sign_result("sign_remote_auth_package_result", &result);
+    log_sign_result(&result);
     Ok(result)
 }
 
 /// Verifies remote auth package through trusted ring plugin.
 #[cfg(not(feature = "SAFTest"))]
 pub fn verify_remote_auth_package(os_account_id: i32, package: &RemoteAuthPackage) -> Result<bool> {
-    log_verify_package("verify_remote_auth_package", package);
+    log_verify_package(package);
 
     let loader = SAFPlugin::get_instance().load_plugin().map_err(|e| {
         macros_lib::log_and_into_saf_error!(ErrCode::PluginNotSupport, "load plugin failed: {}", e)

@@ -224,7 +224,7 @@ pub fn get_device_udid(os_account_id: i32) -> saf_definition::Result<String> {
         Ok(r) => r,
         Err(e) => {
             loge!("[Wrapper get_device_udid] process_event failed, e={}", e);
-            return macros_lib::log_throw_error!(ErrorCode::GetUdidFailed, "process_event failed, e={}", e);
+            return macros_lib::log_throw_error!(ErrCode::GetUdidFailed, "process_event failed, e={}", e);
         },
     };
 

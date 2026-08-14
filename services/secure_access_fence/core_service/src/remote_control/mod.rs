@@ -50,7 +50,7 @@ pub struct BatchVerifyResult {
 const MAX_REMOTE_BATCH_COUNT: usize = 10;
 const MAX_REMOTE_PERMISSION_COUNT: usize = 40;
 
-fn log_remote_auth_package(prefix: &str, package: &RemoteAuthPackage) {
+fn log_remote_auth_package(package: &RemoteAuthPackage) {
     let remote_message = &package.remote_message;
     let device_info = &remote_message.device_info;
     logi!(
@@ -140,7 +140,7 @@ fn parse_local_device_id_from_remote_auth_message(remote_auth_message: &str) -> 
             "parse remote_auth_message failed: {}", e)
     })?;
 
-    let bundle_name = get_compact_json_value(&json, "localDeviceId")
+    let local_device_id = get_compact_json_value(&json, "localDeviceId")
         .map(|s| s.trim_matches('"').to_string())
         .unwrap_or_default();
 

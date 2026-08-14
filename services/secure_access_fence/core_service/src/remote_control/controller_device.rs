@@ -140,7 +140,7 @@ pub fn verify_controller_device_package(
     logi!("[verify_controller_device_package] os_account_id={}, package_count={}, domain_id={}", 
         os_account_id, packages.len(), remote_info.domain_id);
     
-    if packages.len() < 1 || packages.len() > super::MAX_REMOTE_BATCH_COUNT {
+    if packages.is_empty() || packages.len() > super::MAX_REMOTE_BATCH_COUNT {
         loge!("Invalid packages count: {}, max allowed: {}", packages.len(), super::MAX_REMOTE_BATCH_COUNT);
         return BatchVerifyResult {
             results: Vec::new(),
@@ -148,8 +148,8 @@ pub fn verify_controller_device_package(
         };
     }
     
-    for (idx, package) in packages.iter().enumerate() {
-        log_remote_auth_package(&format!("verify_controller_device_package[{}]", idx), package);
+    for (_idx, package) in packages.iter().enumerate() {
+        log_remote_auth_package(package);
     }
     
     if !check_role_is_controller(remote_info.role) {
@@ -256,7 +256,7 @@ fn generate_single_controller_package(
         timestamp,
     )?;
 
-    log_remote_auth_package("generate_single_controller_package", &package);
+    log_remote_auth_package(&package);
 
     Ok(package)
 }
@@ -371,7 +371,7 @@ fn verify_single_controller_package(
         return Ok(false);
     }
 
-    let controller_device_id = match super::parse_local_device_id_from_remote_auth_messahe(
+    let controller_device_id = match super::parse_local_device_id_from_remote_auth_message(
         &package.remote_message.remote_auth_message
     ) {
         Ok(id) => id,
@@ -383,7 +383,7 @@ fn verify_single_controller_package(
     
     let device_id_header = DeviceIdHeader {
         controlled_device_id: local_udid.to_string(),
-        controller_device_id: controller_device_id,
+        controller_device_id,
     };
     
     verify_and_remove_challenge(os_account_id, &package.challenge, &device_id_header)?;
@@ -482,13 +482,13 @@ fn build_controller_remote_auth_message(
     builder.add_string_array("permissions", permissions.to_vec());
     builder.add_string("localDeviceId", local_device_id);
     builder.add_string("callerBundleName", caller_bundle_name);
-    builder.add_u32("version", 1);
+    builder.add_number("version", 1 as i64);
 
     builder.build()
 }
 
 fn validate_controller_batch_params(auth_results: &[RemoteUserAuthResults]) -> Result<()> {
-    if auth_results.len() < 1 || auth_results.len() > super::MAX_REMOTE_BATCH_COUNT {
+    if auth_results.is_empty() || auth_results.len() > super::MAX_REMOTE_BATCH_COUNT {
         return macros_lib::log_throw_error!(ErrCode::InvalidArrayLen,
             "Invalid auth_results count: {}, max allowed: {}", 
             auth_results.len(), super::MAX_REMOTE_BATCH_COUNT);

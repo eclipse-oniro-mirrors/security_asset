@@ -18,7 +18,7 @@
 use ylong_json::JsonValue;
 use saf_definition::{macros_lib, ErrCode, GrantType, Result, Role};
 use saf_log::{loge, logi};
-use saf_utils::{get_compact_json_value, get_string_array_from_json, system_time_in_millis};
+use saf_utils::{get_compact_json_value, system_time_in_millis};
 
 #[cfg(not(feature = "SAFTest"))]
 use std::collections::HashMap;

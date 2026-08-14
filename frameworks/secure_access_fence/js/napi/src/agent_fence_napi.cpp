@@ -257,7 +257,8 @@ napi_value NapiVerifyControllerDevicePackage(const napi_env env, napi_callback_i
         size_t argc = VERIFY_CONTROLLER_PACKAGE_ARG_COUNT;
         napi_value argv[VERIFY_CONTROLLER_PACKAGE_ARG_COUNT] = { nullptr, nullptr };
         NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-        NAPI_THROW_RETURN_ERR(env, argc < VERIFY_CONTROLLER_PACKAGE_ARG_COUNT, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
+        NAPI_THROW_RETURN_ERR(env, argc < VERIFY_CONTROLLER_PACKAGE_ARG_COUNT, GENERAL_PARAMETER_ERROR,
+            "Invalid number of arguments");
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, argv[0], asyncContext->ticketInfo));
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, argv[1], asyncContext->remoteInfo));
         return napi_ok;
