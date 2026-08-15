@@ -106,8 +106,53 @@ public:
     static int32_t GrantToolPermissionsByUser(
         const std::vector<UserAuthResult>& userAuthResult,
         std::vector<VerifyTicketInfo>& ticketInfo);
+
+    /**
+     * @brief Generate controlled device packages for remote control scenario.
+     *
+     * @param permissionQuery The vector of permission queries.
+     * @param remoteAuthPackage Output vector of generated remote auth packages.
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t GenerateControlledDevicePackage(
+        const std::vector<PermissionQuery> &permissionQuery,
+        std::vector<RemoteAuthPackage> &remoteAuthPackage);
+
+    /**
+     * @brief Verify controlled device packages for remote control scenario.
+     *
+     * @param ticketInfo The vector of remote auth packages to verify.
+     * @param verifyRes Output vector of verification results (boolean).
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t VerifyControlledDevicePackage(
+        const std::vector<RemoteAuthPackage> &ticketInfo,
+        std::vector<bool> &verifyRes);
+
+    /**
+     * @brief Generate controller device packages for remote control scenario.
+     *
+     * @param remoteUserAuthResults The vector of remote user authentication results.
+     * @param remoteAuthPackage Output vector of generated remote auth packages.
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t GenerateControllerDevicePackage(
+        const std::vector<RemoteUserAuthResults> &remoteUserAuthResults,
+        std::vector<RemoteAuthPackage> &remoteAuthPackage);
+
+    /**
+     * @brief Verify controller device packages for remote control scenario.
+     *
+     * @param ticketInfo The vector of remote auth packages to verify.
+     * @param remoteInfo Remote information for verification.
+     * @param verifyRes Output vector of verification results (boolean).
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t VerifyControllerDevicePackage(
+        const std::vector<RemoteAuthPackage> &ticketInfo,
+        const RemoteInfo &remoteInfo,
+        std::vector<bool> &verifyRes);
 };
 
 }
-
 #endif // SAF_AGENT_FENCE_H

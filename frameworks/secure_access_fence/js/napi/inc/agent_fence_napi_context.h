@@ -54,6 +54,31 @@ class GrantPermissionsContext : public AgentFenceAsyncContext {
         std::vector<UserAuthResult> userAuthResult {};
         std::vector<VerifyTicketInfo> ticketInfo {};
 };
+
+class GenerateControlledDevicePackageContext : public AgentFenceAsyncContext {
+public:
+    std::vector<PermissionQuery> permissionQuery {};
+    std::vector<RemoteAuthPackage> remoteAuthPackage {};
+};
+
+class VerifyControlledDevicePackageContext : public AgentFenceAsyncContext {
+public:
+    std::vector<RemoteAuthPackage> ticketInfo {};
+    std::vector<bool> verifyRes {};
+};
+
+class GenerateControllerDevicePackageContext : public AgentFenceAsyncContext {
+public:
+    std::vector<RemoteUserAuthResults> remoteUserAuthResults {};
+    std::vector<RemoteAuthPackage> remoteAuthPackage {};
+};
+
+class VerifyControllerDevicePackageContext : public AgentFenceAsyncContext {
+public:
+    std::vector<RemoteAuthPackage> ticketInfo {};
+    RemoteInfo remoteInfo {};
+    std::vector<bool> verifyRes {};
+};
 } // namespace SAF
 } // namespace Security
 } // namespace OHOS

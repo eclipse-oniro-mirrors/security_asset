@@ -21,4 +21,5 @@ edition = "2021"
 [dependencies]
 saf_definition = { path = "../../definition" }
 saf_log = { path = "../../os_dependency/log" }
+saf_utils = { path = "../../utils" }
 ipc = { git = "https://gitcode.com/openharmony/communication_ipc.git" }

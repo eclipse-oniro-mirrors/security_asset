@@ -28,6 +28,7 @@ ohos_static_library("secure_access_fence_wrapper_static") {
     "${target_gen_dir}",
     "${target_gen_dir}/src",
     "../os_dependency/inc",
+    "../../../frameworks/secure_access_fence/base/inc",
     "../../../frameworks/secure_access_fence/inner_api/agent_fence/inc",
     "../../../frameworks/secure_access_fence/inner_api/ipc",
     "../../../frameworks/secure_access_fence/os_dependency/log/inc",
@@ -91,6 +92,7 @@ ohos_rust_shared_library("secure_access_fence_service") {
     "../../../frameworks/secure_access_fence/inner_api/ipc:secure_access_fence_interface",
     "../../../frameworks/secure_access_fence/definition:saf_definition",
     "../../../frameworks/secure_access_fence/os_dependency/log:saf_log",
+    "../../../frameworks/secure_access_fence/utils:saf_utils",
     "../../../interfaces/inner_kits/plugin_interface/secure_access_fence:saf_plugin_interface_rust",
     "../../../interfaces/inner_kits/rs/secure_access_fence:saf_sdk_rust",
     "../../../interfaces/inner_kits/c/secure_access_fence/agent_fence:saf_agent_fence",
@@ -113,6 +115,10 @@ ohos_rust_shared_library("secure_access_fence_service") {
   ]
 
   rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
+  if (enable_local_test) {
+    rustflags += [ "--cfg", "feature=\"SAFTest\"", ]
+    deps += [ "//third_party/rust/crates/lazy-static.rs:lib" ]
+  }
 
   sanitize = {
     integer_overflow = true

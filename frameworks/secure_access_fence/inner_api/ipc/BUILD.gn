@@ -92,6 +92,7 @@ ohos_rust_static_library("saf_ipc") {
   deps = [
     "../../definition:saf_definition",
     "../../os_dependency/log:saf_log",
+    "../../utils:saf_utils",
   ]
   external_deps = [ "ipc:ipc_rust" ]
 

@@ -57,6 +57,55 @@ interface OHOS.Security.SAF.ISecureAccessFence {
     );
 
     /**
+     * @brief Generate controlled device packages for remote control scenario.
+     * @param permissionQuery List of permission queries.
+     * @param remoteAuthPackage List of generated remote auth packages (output parameter).
+     */
+    [ipccode 4] void GenerateControlledDevicePackage(
+        [in] List<PermissionQuery> permissionQuery,
+        [out] List<RemoteAuthPackage> remoteAuthPackage,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Verify controlled device packages for remote control scenario.
+     * @param ticketInfo List of remote auth packages to verify.
+     * @param verifyRes List of verification results (output parameter).
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 5] void VerifyControlledDevicePackage(
+        [in] List<RemoteAuthPackage> ticketInfo,
+        [out] List<boolean> verifyRes,
+        [out] int resultCode
+    );
+    
+    /**
+     * @brief Generate controller device packages for remote control scenario.
+     * @param remoteUserAuthResults List of remote user authentication results.
+     * @param remoteAuthPackage List of generated remote auth packages (output parameter).
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 6] void GenerateControllerDevicePackage(
+        [in] List<RemoteUserAuthResults> remoteUserAuthResults,
+        [out] List<RemoteAuthPackage> remoteAuthPackage,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Verify controller device packages for remote control scenario.
+     * @param ticketInfo List of remote auth packages to verify.
+     * @param remoteInfo Remote information for verification.
+     * @param verifyRes List of verification results (output parameter).
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 7] void VerifyControllerDevicePackage(
+        [in] List<RemoteAuthPackage> ticketInfo,
+        [in] RemoteInfo remoteInfo,
+        [out] List<boolean> verifyRes,
+        [out] int resultCode
+    );
+
+    /**
      * @brief Batch query command permissions.
      * @param cmds List of commands to query (input parameter).
      * @param cmdPermissions List of permission results (output parameter).

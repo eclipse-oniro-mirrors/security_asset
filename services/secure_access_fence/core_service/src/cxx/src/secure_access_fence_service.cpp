@@ -174,6 +174,6 @@ int64_t GetBootTimeMs()
     return TimeWrapper::GetBootTimeMs();
 }
 
-}
-}
-}
+} // namespace SAF
+} // namespace Security
+} // namespace OHOS
