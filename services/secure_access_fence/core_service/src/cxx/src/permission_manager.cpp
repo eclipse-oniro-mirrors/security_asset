@@ -880,7 +880,7 @@ void PermissionManager::StoreGrantRecordIfValid(const UserAuthResult &userAuthRe
     for (const auto &perm : grantedPermissions) {
         rustPermissions.push_back(rust::String(perm));
     }
-    int32_t storeRet = OHOS::Security::SAF::cxx_store_grant_record(
+    int32_t storeRet = OHOS::Security::SAF::cxx_store_controlled_grant_record(
         osAccountId,
         rust::String(controlledDeviceName),
         rust::String(controllerDeviceName),
@@ -888,7 +888,7 @@ void PermissionManager::StoreGrantRecordIfValid(const UserAuthResult &userAuthRe
         static_cast<int32_t>(ticketMessageInfo.callerTokenId)
     );
     if (storeRet != SAF_SUCCESS) {
-        LOGE("StoreGrantRecordIfValid :: cxx_store_grant_record failed, ret=%{public}d", storeRet);
+        LOGE("StoreGrantRecordIfValid :: cxx_store_controlled_grant_record failed, ret=%{public}d", storeRet);
     }
 }
 }
