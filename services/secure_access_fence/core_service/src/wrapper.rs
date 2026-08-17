@@ -50,6 +50,13 @@ pub mod ffi {
         fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec<i32>) -> i32;
         fn verify_remote_ticket(domain_id: String, remote_control_ticket: String, os_account_id: i32) -> i32;
         fn cxx_store_challenge(caller_token_id: &str, challenge: &str, expire_time_ms: u64) -> i32;
+        fn cxx_store_grant_record(
+            os_account_id: i32,
+            controlled_device_name: String,
+            controller_device_name: String,
+            permission_names: Vec<String>,
+            caller_token_id: i32,
+        ) -> i32;
     }
 
     // Rust callable C++ functions
@@ -195,6 +202,55 @@ pub fn cxx_store_challenge(caller_token_id: &str, challenge: &str, expire_time_m
         Ok(()) => 0,
         Err(e) => {
             loge!("[Wrapper cxx_store_challenge] insert failed, err = {}", e.code);
+            e.code as i32
+        }
+    }
+}
+
+/// C++ -> Rust bridge for store_grant_record.
+pub fn cxx_store_grant_record(
+    os_account_id: i32,
+    controlled_device_name: String,
+    controller_device_name: String,
+    permission_names: Vec<String>,
+    caller_token_id: i32,
+) -> i32 {
+    logi!("[Wrapper cxx_store_grant_record] os_account_id={}, caller_token_id={}, permission_count={}", 
+        os_account_id, caller_token_id, permission_names.len());
+    
+    let calling_bundle_name = match crate::remote_control::get_bundle_name_from_token(caller_token_id) {
+        Ok(name) => name,
+        Err(e) => {
+            loge!("[cxx_store_grant_record] Failed to get bundle name: {:?}", e);
+            return e.code as i32;
+        }
+    };
+    
+    let params = crate::remote_control::StoreGrantRecordParams {
+        os_account_id,
+        controlled_device_name,
+        controller_device_name,
+        is_self_grant: false,
+        permission_names,
+        device_role: saf_definition::Role::Controller,
+        calling_bundle_name,
+        grant_type: saf_definition::GrantType::RemoteGrant,
+        timestamp: match saf_utils::system_time_in_millis() {
+            Ok(t) => t,
+            Err(e) => {
+                loge!("[cxx_store_grant_record] Failed to get timestamp: {:?}", e);
+                return e.code as i32;
+            }
+        },
+    };
+    
+    match crate::remote_control::store_grant_record(params) {
+        Ok(()) => {
+            logi!("[cxx_store_grant_record] success");
+            0
+        },
+        Err(e) => {
+            loge!("[cxx_store_grant_record] Failed to store grant record: {:?}", e);
             e.code as i32
         }
     }

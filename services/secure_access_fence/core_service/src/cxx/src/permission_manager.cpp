@@ -840,6 +840,55 @@ int32_t PermissionManager::GetVerifyTicketInfo(const UserAuthResult &userAuthRes
     }
     IF_ERROR_LOGE_RETURN(ret,
         "GetVerifyTicketInfo :: GenerateTicketInfoWithTimeStamp failed, ret=%{public}d", ret);
+    
+    StoreGrantRecordIfValid(userAuthResult, ticketMessageInfo);
+    
     return SAF_SUCCESS;
+}
+
+void PermissionManager::StoreGrantRecordIfValid(const UserAuthResult &userAuthResult,
+    const TicketMessageInfo &ticketMessageInfo)
+{
+    if (IsRemoteInfoEmpty(userAuthResult.permissionQuery.remoteInfo)) {
+        return;
+    }
+    
+    std::vector<std::string> grantedPermissions;
+    for (const auto &permInfo : userAuthResult.permissionInfo) {
+        if (permInfo.permissionStatus == PermissionStatus::GRANTED) {
+            grantedPermissions.push_back(permInfo.permission);
+        }
+    }
+    
+    if (grantedPermissions.empty()) {
+        return;
+    }
+    
+    std::string controlledDeviceName =
+        userAuthResult.permissionQuery.remoteInfo.remoteControlParams.controlledDeviceName;
+    std::string controllerDeviceName =
+        userAuthResult.permissionQuery.remoteInfo.remoteControlParams.controllerDeviceName;
+    
+    int32_t osAccountId;
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    bool retFlag = GetOsAccountIdFromUid(callerUid, &osAccountId);
+    if (!retFlag || osAccountId < MIN_OS_ACCOUNT_ID) {
+        return;
+    }
+    
+    rust::Vec<rust::String> rustPermissions;
+    for (const auto &perm : grantedPermissions) {
+        rustPermissions.push_back(rust::String(perm));
+    }
+    int32_t storeRet = OHOS::Security::SAF::cxx_store_grant_record(
+        osAccountId,
+        rust::String(controlledDeviceName),
+        rust::String(controllerDeviceName),
+        rustPermissions,
+        static_cast<int32_t>(ticketMessageInfo.callerTokenId)
+    );
+    if (storeRet != SAF_SUCCESS) {
+        LOGE("StoreGrantRecordIfValid :: cxx_store_grant_record failed, ret=%{public}d", storeRet);
+    }
 }
 }

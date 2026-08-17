@@ -107,6 +107,8 @@ private:
     void GetValidPermissions(std::vector<std::string> &permissions, const std::vector<PermissionInfo> &permissionInfos);
 
     int32_t GetVerifyTicketInfo(const UserAuthResult &userAuthResult, VerifyTicketInfo &ticketInfo);
+    
+    void StoreGrantRecordIfValid(const UserAuthResult &userAuthResult, const TicketMessageInfo &ticketMessageInfo);
 };
 
 } // namespace OHOS::Security::SAF

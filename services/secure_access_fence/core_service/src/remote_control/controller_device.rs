@@ -227,10 +227,6 @@ fn validate_and_verify_single_controller_package(
         }
     };
 
-    if verify_result {
-        store_grant_record_if_success(os_account_id, package, Role::Controlled);
-    }
-
     Ok(verify_result)
 }
 
