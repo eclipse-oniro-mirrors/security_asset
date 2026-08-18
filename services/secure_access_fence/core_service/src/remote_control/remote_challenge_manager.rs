@@ -105,12 +105,12 @@ fn ensure_cache_dir_exists(os_account_id: i32) -> Result<()> {
     if !path.exists() {
         fs::create_dir_all(path).map_err(|e| {
             macros_lib::log_and_into_saf_error!(ErrCode::FileOperationError,
-                "Failed to create cache dir {}: {}", dir_path, e)
+                "Failed to create cache dir: {}", e)
         })?;
         
         fs::set_permissions(path, fs::Permissions::from_mode(0o750)).map_err(|e| {
             macros_lib::log_and_into_saf_error!(ErrCode::FileOperationError,
-                "Failed to set dir permissions {}: {}", dir_path, e)
+                "Failed to set dir permissions: {}", e)
         })?;
     }
     Ok(())
@@ -142,12 +142,12 @@ pub fn cache_challenge(os_account_id: i32, challenge: &str, timestamp: u64, devi
         .open(path)
         .map_err(|e| {
             macros_lib::log_and_into_saf_error!(ErrCode::FileOperationError,
-                "Failed to open cache file {}: {}", file_path, e)
+                "Failed to open cache file: {}", e)
         })?;
 
     file.write_all(line.as_bytes()).map_err(|e| {
         macros_lib::log_and_into_saf_error!(ErrCode::FileOperationError,
-            "Failed to write cache file {}: {}", file_path, e)
+            "Failed to write cache file: {}", e)
     })?;
 
     logi!("[challenge_cache] Cached challenge for os_account_id={}", os_account_id);
@@ -181,9 +181,9 @@ pub fn verify_and_remove_challenge(
         rewrite_cache_file(&file_path, &remaining_lines)?;
         logi!("[challenge_cache] Verified and removed challenge for os_account_id={}", os_account_id);
     } else {
-        loge!("[challenge_cache] Challenge not found: {}", challenge);
+        loge!("[challenge_cache] Challenge not found");
         return macros_lib::log_throw_error!(ErrCode::ReplayAttackDetected,
-            "Challenge not found: {}", challenge);
+            "Challenge not found");
     }
     
     Ok(found)
@@ -204,7 +204,7 @@ fn find_and_remove_challenge_in_file(
 
     let file = File::open(file_path).map_err(|e| {
         macros_lib::log_and_into_saf_error!(ErrCode::FileOperationError,
-            "Failed to open cache file {}: {}", file_path, e)
+            "Failed to open cache file: {}", e)
     })?;
 
     let reader = BufReader::new(file);
@@ -248,12 +248,12 @@ fn process_line(
     current_time_millis: u64,
 ) -> Result<ProcessResult> {
     let Some((cached_challenge, cached_entry_json)) = line.split_once('|') else {
-        loge!("[challenge_cache] Invalid line format, skipping: {}", line);
+        loge!("[challenge_cache] Invalid line format, skipping...");
         return Ok(ProcessResult::Skip);
     };
 
     let Ok(entry) = deserialize_cache_entry(cached_entry_json) else {
-        loge!("[challenge_cache] Failed to parse entry, skipping: {}", cached_entry_json);
+        loge!("[challenge_cache] Failed to parse entry, skipping...");
         return Ok(ProcessResult::Skip);
     };
 
@@ -262,9 +262,9 @@ fn process_line(
 
     if cached_challenge == challenge {
         if is_expired {
-            loge!("[challenge_cache] Challenge expired: {}", challenge);
+            loge!("[challenge_cache] Challenge expired");
             return macros_lib::log_throw_error!(ErrCode::ReplayAttackDetected,
-                "Challenge expired: {}", challenge);
+                "Challenge expired");
         }
         if entry.controller_device_id == expected_controller_id
             && entry.controlled_device_id == expected_controlled_id {
@@ -295,7 +295,7 @@ fn rewrite_cache_file(file_path: &str, lines: &[String]) -> Result<()> {
         .open(tmp_path_ref)
         .map_err(|e| {
             macros_lib::log_and_into_saf_error!(ErrCode::FileOperationError,
-                "Failed to open tmp cache file for writing {}: {}", file_path, e)
+                "Failed to open tmp cache file for writing: {}", e)
         })?;
     
     for line in lines {

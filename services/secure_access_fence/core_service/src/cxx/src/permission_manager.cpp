@@ -873,6 +873,7 @@ void PermissionManager::StoreGrantRecordIfValid(const UserAuthResult &userAuthRe
     int32_t callerUid = IPCSkeleton::GetCallingUid();
     bool retFlag = GetOsAccountIdFromUid(callerUid, &osAccountId);
     if (!retFlag || osAccountId < MIN_OS_ACCOUNT_ID) {
+        LOGE("invalid uid or osAccountId");
         return;
     }
     
