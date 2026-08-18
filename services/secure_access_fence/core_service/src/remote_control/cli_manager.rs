@@ -69,6 +69,8 @@ pub fn batch_query_cli_permission(
     call_cxx_batch_query(&cxx_cmds, &mut out_buf, &mut result)?;
     parse_permissions_from_buffer(&out_buf, result.perm_count, permissions)?;
 
+    deduplicate_permissions(permissions);
+
     Ok(())
 }
 
@@ -109,6 +111,12 @@ fn call_cxx_batch_query(
     }
 
     Ok(())
+}
+
+/// Deduplicate permissions while preserving insertion order
+fn deduplicate_permissions(permission: &mut Vec<String>) {
+    let mut seen = std::collection::HashSet::new();
+    permissions.retain(|p| seen.insert(p.clone()));
 }
 
 fn parse_permissions_from_buffer(
