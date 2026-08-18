@@ -63,7 +63,11 @@ pub const CMD_VERIFY_CONTROLLED_DEVICE_PACKAGE: u32 = 5;
 pub const CMD_GENERATE_CONTROLLER_DEVICE_PACKAGE: u32 = 6; 
 /// IPC code for VerifyControllerDevicePackage. 
 pub const CMD_VERIFY_CONTROLLER_DEVICE_PACKAGE: u32 = 7;
-
+/// IPC code for GetRemoteGrantStatus.
+pub const CMD_GET_REMOTE_GRANT_STATUS: u32 = 8;
+/// IPC code for UpdateRemoteGrantStatus.
+pub const CMD_UPDATE_REMOTE_GRANT_STATUS: u32 = 9;
+ 
 const MAX_MAP_CAPACITY: u32 = 64;
 pub(crate) const MAX_VEC_CAPACITY: u32 = 0x10000;
 pub(crate) const MAX_TICKET_CAPACITY: u32 = 99;

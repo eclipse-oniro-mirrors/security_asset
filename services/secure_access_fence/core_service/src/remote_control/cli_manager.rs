@@ -17,6 +17,7 @@
 
 use saf_definition::{macros_lib, CommandInfo, ErrCode, Result};
 use saf_log::loge;
+use std::collection::HashSet;
 
 const MAX_PERMISSION_BUF_SIZE: usize = 4096;
 
@@ -114,8 +115,8 @@ fn call_cxx_batch_query(
 }
 
 /// Deduplicate permissions while preserving insertion order
-fn deduplicate_permissions(permission: &mut Vec<String>) {
-    let mut seen = std::collection::HashSet::new();
+fn deduplicate_permissions(permissions: &mut Vec<String>) {
+    let mut seen = HashSet::new();
     permissions.retain(|p| seen.insert(p.clone()));
 }
 

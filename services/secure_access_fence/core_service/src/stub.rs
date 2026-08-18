@@ -30,6 +30,7 @@ use saf_ipc::{
     CMD_BATCH_GENERATE_TICKET, CMD_BATCH_VERIFY_TICKET, CMD_VERIFY_TICKET,
     CMD_GENERATE_CONTROLLED_DEVICE_PACKAGE, CMD_VERIFY_CONTROLLED_DEVICE_PACKAGE,
     CMD_GENERATE_CONTROLLER_DEVICE_PACKAGE, CMD_VERIFY_CONTROLLER_DEVICE_PACKAGE,
+    CMD_GET_REMOTE_GRANT_STATUS, CMD_UPDATE_REMOTE_GRANT_STATUS,
     IPC_SUCCESS, SA_NAME,
 };
 use saf_log::{loge, logi};
@@ -114,7 +115,13 @@ fn on_remote_request(stub: &SAFService, code: u32, data: &mut MsgParcel, reply: 
         },	 
         CMD_VERIFY_CONTROLLER_DEVICE_PACKAGE => {	 
             handle_verify_controller_device_package(data, reply)	 
-        },	 
+        },
+        CMD_GET_REMOTE_GRANT_STATUS => {
+            handle_get_remote_grant_status(data, reply)
+        }
+        CMD_UPDATE_REMOTE_GRANT_STATUS => {
+            handle_update_remote_grant_status(data, reply)
+        }
         _ => {
             if code >= C_REDIRECT_START_CODE {
                 let res = wrapper::on_remote_request(code, data, reply);
@@ -373,6 +380,55 @@ fn handle_verify_controller_device_package(
         loge!("VerifyControllerDevicePackage system error, error_code={}", result.error_code);
     } else {
         logi!("VerifyControllerDevicePackage success, resultCount: {}", result.results.len());
+    }
+    
+    Ok(())
+}
+
+fn handle_get_remote_grant_status(data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+    logi!("GetRemoteGrantStatus received");
+    
+    let result = remote_grant_status::get_remote_grant_status();
+    
+    reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+    
+    match result {
+        Ok(status) => {
+            reply.write::<i32>(&status)?;
+            reply.write::<i32>(&0)?;
+            logi!("GetRemoteGrantStatus success, status={}", status);
+        },
+        Err(e) => {
+            reply.write::<i32>(&0)?;
+            reply.write::<i32>(&(e.code as i32))?;
+            loge!("GetRemoteGrantStatus failed: {}", e.msg);
+        },
+    }
+    
+    Ok(())
+}
+
+fn handle_update_remote_grant_status(data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+    let status = data.read::<i32>().map_err(|e| {
+        loge!("[FATAL]Read status failed: {:?}", e);
+        IpcStatusCode::Failed
+    })?;
+    
+    logi!("UpdateRemoteGrantStatus received, status={}", status);
+    
+    let result = remote_grant_status::update_remote_grant_status(status);
+    
+    reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+    
+    match result {
+        Ok(()) => {
+            reply.write::<i32>(&0)?;
+            logi!("UpdateRemoteGrantStatus success");
+        },
+        Err(e) => {
+            reply.write::<i32>(&(e.code as i32))?;
+            loge!("UpdateRemoteGrantStatus failed: {}", e.msg);
+        },
     }
     
     Ok(())

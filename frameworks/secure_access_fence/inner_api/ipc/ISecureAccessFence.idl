@@ -106,6 +106,26 @@ interface OHOS.Security.SAF.ISecureAccessFence {
     );
 
     /**
+     * @brief Get remote grant status.
+     * @param remoteGrantStatus Output remote grant status.
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 8] void GetRemoteGrantStatus(
+        [out] int remoteGrantStatus,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Update remote grant status.
+     * @param remoteGrantStatus Remote grant status to set.
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 9] void UpdateRemoteGrantStatus(
+        [in] int remoteGrantStatus,
+        [out] int resultCode
+    );
+
+    /**
      * @brief Batch query command permissions.
      * @param cmds List of commands to query (input parameter).
      * @param cmdPermissions List of permission results (output parameter).

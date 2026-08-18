@@ -251,6 +251,40 @@ int32_t SafAgentFence::VerifyControllerDevicePackage(
     return resultCode;
 }
 
+int32_t SafAgentFence::GetRemoteGrantStatus(int32_t& remoteGrantStatus)
+{
+    LOGI("SafAgentFence::GetRemoteGrantStatus enter");
+
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+
+    int32_t resultCode = SAF_SUCCESS;
+    int32_t ret = HandleIpcError(proxy, [&]() {
+        return proxy->GetRemoteGrantStatus(remoteGrantStatus, resultCode);
+    });
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+
+    LOGI("SafAgentFence::GetRemoteGrantStatus finished, resultCode = 0x%{public}x", resultCode);
+    return resultCode;
+}
+
+int32_t SafAgentFence::UpdateRemoteGrantStatus(int32_t remoteGrantStatus)
+{
+    LOGI("SafAgentFence::UpdateRemoteGrantStatus enter, remoteGrantStatus=%{public}d", remoteGrantStatus);
+
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+
+    int32_t resultCode = SAF_SUCCESS;
+    int32_t ret = HandleIpcError(proxy, [&]() {
+        return proxy->UpdateRemoteGrantStatus(remoteGrantStatus, resultCode);
+    });
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+
+    LOGI("SafAgentFence::UpdateRemoteGrantStatus finished, resultCode = 0x%{public}x", resultCode);
+    return resultCode;
+}
+
 int32_t SafAgentFence::VerifyTicket(
     int32_t osAccountId,
     const std::string &callerId,

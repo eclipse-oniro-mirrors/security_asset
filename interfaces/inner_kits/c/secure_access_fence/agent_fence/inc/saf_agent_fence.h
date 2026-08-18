@@ -152,6 +152,22 @@ public:
         const std::vector<RemoteAuthPackage> &ticketInfo,
         const RemoteInfo &remoteInfo,
         std::vector<bool> &verifyRes);
+
+    /**
+     * @brief Get remote grant status.
+     *
+     * @param remoteGrantStatus Output remote grant status.
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t GetRemoteGrantStatus(int32_t& remoteGrantStatus);
+
+    /**
+     * @brief Update remote grant status.
+     *
+     * @param remoteGrantStatus Remote grant status to set.
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t UpdateRemoteGrantStatus(int32_t remoteGrantStatus);
 };
 
 }
