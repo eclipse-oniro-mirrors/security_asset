@@ -176,3 +176,13 @@ struct RemoteUserAuthResults {
     /** Permission query associated with the authentication. */
     PermissionQuery permissionQuery;
 };
+
+/**
+ * @brief Remote grant status enum.
+ */
+enum RemoteGrantStatus {
+    /** Enable remote grant. */
+    ENABLE = 1,
+    /** Disable remote grant. */
+    DISABLE = 2
+};

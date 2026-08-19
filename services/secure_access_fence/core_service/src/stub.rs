@@ -38,6 +38,7 @@ use saf_plugin::saf_plugin::SAFPlugin;
 use saf_sdk::{ErrCode, Result, SAFError};
 
 use crate::remote_control;
+use crate::remote_grant_status;
 use crate::wrapper;
 use crate::SAFService;
 
@@ -385,7 +386,7 @@ fn handle_verify_controller_device_package(
     Ok(())
 }
 
-fn handle_get_remote_grant_status(data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+fn handle_get_remote_grant_status(_data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
     logi!("GetRemoteGrantStatus received");
     
     let result = remote_grant_status::get_remote_grant_status();

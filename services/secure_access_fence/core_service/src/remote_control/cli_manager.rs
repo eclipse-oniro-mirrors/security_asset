@@ -17,7 +17,7 @@
 
 use saf_definition::{macros_lib, CommandInfo, ErrCode, Result};
 use saf_log::loge;
-use std::collection::HashSet;
+use std::collections::HashSet;
 
 const MAX_PERMISSION_BUF_SIZE: usize = 4096;
 
