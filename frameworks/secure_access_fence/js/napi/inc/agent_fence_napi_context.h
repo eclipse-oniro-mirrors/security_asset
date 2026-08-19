@@ -79,6 +79,16 @@ public:
     RemoteInfo remoteInfo {};
     std::vector<bool> verifyRes {};
 };
+
+class GetRemoteGrantStatusContext : public AgentFenceAsyncContext {
+public:
+    int32_t remoteGrantStatus {};
+};
+
+class UpdateRemoteGrantStatusContext : public AgentFenceAsyncContext {
+public:
+    int32_t remoteGrantStatus {};
+};
 } // namespace SAF
 } // namespace Security
 } // namespace OHOS

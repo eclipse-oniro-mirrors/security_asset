@@ -353,6 +353,15 @@ pub enum GrantType {
     /// Remote grant.
     RemoteGrant = 0x02,
 }
+
+/// Remote grant status enum.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum RemoteGrantStatus {
+    /// Enable remote grant.
+    Enable = 1,
+    /// Disable remote grant.
+    Disable = 2,
+}
 // ============================================================================
 // Basic Structures
 // ============================================================================

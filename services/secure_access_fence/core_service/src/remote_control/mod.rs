@@ -286,7 +286,8 @@ pub use controller_device::{
     verify_controller_device_package,
 };
 
-pub use grant_record::{store_grant_record, StoreGrantRecordParams};
+pub use grant_record::{get_bundle_name_from_token, 
+    store_grant_record, StoreGrantRecordParams};
 
 pub use cli_manager::batch_query_cli_permission;
 

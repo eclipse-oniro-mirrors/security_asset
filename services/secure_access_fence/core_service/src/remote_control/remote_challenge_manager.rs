@@ -30,7 +30,7 @@ use saf_definition::{macros_lib, ErrCode, Result, DeviceIdHeader};
 #[cfg(not(feature = "SAFTest"))]
 use saf_log::{loge, logi};
 #[cfg(not(feature = "SAFTest"))]
-use saf_utils::{JsonValue, get_compact_json_value};
+use saf_utils::{JsonValue, get_compact_json_value, system_time_in_millis};
 #[cfg(not(feature = "SAFTest"))]
 use saf_common::JsonBuilder;
 
@@ -45,6 +45,8 @@ const CACHE_DIR_SUFFIX: &str = "secure_access_fence/agent_plugin";
 const CACHE_FILE_NAME: &str = "challenge_cache_list.txt";
 #[cfg(not(feature = "SAFTest"))]
 const FILE_MODE: u32 = 0o640;
+#[cfg(not(feature = "SAFTest"))]
+const CHALLENGE_EXPIRATION_MILLIS: u64 = 86_400_000;
 
 #[cfg(not(feature = "SAFTest"))]
 #[derive(Debug, Clone)]
@@ -103,12 +105,12 @@ fn ensure_cache_dir_exists(os_account_id: i32) -> Result<()> {
     if !path.exists() {
         fs::create_dir_all(path).map_err(|e| {
             macros_lib::log_and_into_saf_error!(ErrCode::FileOperationError,
-                "Failed to create cache dir {}: {}", dir_path, e)
+                "Failed to create cache dir: {}", e)
         })?;
         
         fs::set_permissions(path, fs::Permissions::from_mode(0o750)).map_err(|e| {
             macros_lib::log_and_into_saf_error!(ErrCode::FileOperationError,
-                "Failed to set dir permissions {}: {}", dir_path, e)
+                "Failed to set dir permissions: {}", e)
         })?;
     }
     Ok(())
@@ -140,12 +142,12 @@ pub fn cache_challenge(os_account_id: i32, challenge: &str, timestamp: u64, devi
         .open(path)
         .map_err(|e| {
             macros_lib::log_and_into_saf_error!(ErrCode::FileOperationError,
-                "Failed to open cache file {}: {}", file_path, e)
+                "Failed to open cache file: {}", e)
         })?;
 
     file.write_all(line.as_bytes()).map_err(|e| {
         macros_lib::log_and_into_saf_error!(ErrCode::FileOperationError,
-            "Failed to write cache file {}: {}", file_path, e)
+            "Failed to write cache file: {}", e)
     })?;
 
     logi!("[challenge_cache] Cached challenge for os_account_id={}", os_account_id);
@@ -159,7 +161,7 @@ pub fn verify_and_remove_challenge(
     device_id_header: &DeviceIdHeader
 ) -> Result<bool> {
     let _lock = CHALLENGE_CACHE_LOCK.lock().unwrap_or_else(|e| e.into_inner());
-    
+
     let file_path = get_cache_file_full_path(os_account_id);
     let path = Path::new(&file_path);
 
@@ -179,9 +181,9 @@ pub fn verify_and_remove_challenge(
         rewrite_cache_file(&file_path, &remaining_lines)?;
         logi!("[challenge_cache] Verified and removed challenge for os_account_id={}", os_account_id);
     } else {
-        loge!("[challenge_cache] Challenge not found: {}", challenge);
+        loge!("[challenge_cache] Challenge not found");
         return macros_lib::log_throw_error!(ErrCode::ReplayAttackDetected,
-            "Challenge not found: {}", challenge);
+            "Challenge not found");
     }
     
     Ok(found)
@@ -194,9 +196,15 @@ fn find_and_remove_challenge_in_file(
     expected_controller_id: &str,
     expected_controlled_id: &str,
 ) -> Result<(bool, Vec<String>)> {
+    let current_time_millis = system_time_in_millis().map_err(|e| {
+        loge!("[challenge_cache] Failed to get system time: {:?}", e);
+        macros_lib::log_and_into_saf_error!(ErrCode::GeneralError,
+            "Failed to get system time: {:?}", e)
+    })?;
+
     let file = File::open(file_path).map_err(|e| {
         macros_lib::log_and_into_saf_error!(ErrCode::FileOperationError,
-            "Failed to open cache file {}: {}", file_path, e)
+            "Failed to open cache file: {}", e)
     })?;
 
     let reader = BufReader::new(file);
@@ -213,29 +221,65 @@ fn find_and_remove_challenge_in_file(
             continue;
         }
 
-        if let Some((cached_challenge, cached_entry_json)) = line.split_once('|') {
-            if cached_challenge == challenge {
-                if let Ok(entry) = deserialize_cache_entry(cached_entry_json) {
-                    if entry.controller_device_id == expected_controller_id
-                        && entry.controlled_device_id == expected_controlled_id {
-                            found = true;
-                            continue;
-                    } else {
-                        loge!("[challenge_cache] DeviceIdHeader mismatch for challenge");
-                        return macros_lib::log_throw_error!(ErrCode::ReplayAttackDetected,
-                            "DeviceIdHeader mismatch for challenge");
-                    }
-                } else {
-                    loge!("[challenge_cache] DeviceIdHeader mismatch for challenge");
-                    return macros_lib::log_throw_error!(ErrCode::ReplayAttackDetected,
-                        "DeviceIdHeader mismatch for challenge");
-                }
-            }
+        match process_line(&line, challenge, expected_controller_id, expected_controlled_id, current_time_millis) {
+            Ok(ProcessResult::Matched) => found = true,
+            Ok(ProcessResult::Keep) => remaining_lines.push(line),
+            Ok(ProcessResult::Skip) => {}
+            Err(e) => return Err(e),
         }
-        remaining_lines.push(line);
     }
 
     Ok((found, remaining_lines))
+}
+
+#[cfg(not(feature = "SAFTest"))]
+enum ProcessResult {
+    Matched,
+    Keep,
+    Skip,
+}
+
+#[cfg(not(feature = "SAFTest"))]
+fn process_line(
+    line: &str,
+    challenge: &str,
+    expected_controller_id: &str,
+    expected_controlled_id: &str,
+    current_time_millis: u64,
+) -> Result<ProcessResult> {
+    let Some((cached_challenge, cached_entry_json)) = line.split_once('|') else {
+        loge!("[challenge_cache] Invalid line format, skipping...");
+        return Ok(ProcessResult::Skip);
+    };
+
+    let Ok(entry) = deserialize_cache_entry(cached_entry_json) else {
+        loge!("[challenge_cache] Failed to parse entry, skipping...");
+        return Ok(ProcessResult::Skip);
+    };
+
+    let is_expired = current_time_millis > entry.timestamp
+        && current_time_millis - entry.timestamp > CHALLENGE_EXPIRATION_MILLIS;
+
+    if cached_challenge == challenge {
+        if is_expired {
+            loge!("[challenge_cache] Challenge expired");
+            return macros_lib::log_throw_error!(ErrCode::ReplayAttackDetected,
+                "Challenge expired");
+        }
+        if entry.controller_device_id == expected_controller_id
+            && entry.controlled_device_id == expected_controlled_id {
+            return Ok(ProcessResult::Matched);
+        }
+        loge!("[challenge_cache] DeviceIdHeader mismatch for challenge");
+        return macros_lib::log_throw_error!(ErrCode::ReplayAttackDetected,
+            "DeviceIdHeader mismatch for challenge");
+    }
+
+    if is_expired {
+        Ok(ProcessResult::Skip)
+    } else {
+        Ok(ProcessResult::Keep)
+    }
 }
 
 #[cfg(not(feature = "SAFTest"))]
@@ -251,7 +295,7 @@ fn rewrite_cache_file(file_path: &str, lines: &[String]) -> Result<()> {
         .open(tmp_path_ref)
         .map_err(|e| {
             macros_lib::log_and_into_saf_error!(ErrCode::FileOperationError,
-                "Failed to open tmp cache file for writing {}: {}", file_path, e)
+                "Failed to open tmp cache file for writing: {}", e)
         })?;
     
     for line in lines {
@@ -285,6 +329,11 @@ use lazy_static::lazy_static;
 use std::collections::HashMap;
 #[cfg(feature = "SAFTest")]
 use std::sync::Mutex;
+#[cfg(feature = "SAFTest")]
+use saf_utils::system_time_in_millis;
+
+#[cfg(feature = "SAFTest")]
+const CHALLENGE_EXPIRATION_MILLIS: u64 = 86_400_000;
 
 #[cfg(feature = "SAFTest")]
 lazy_static! {
@@ -307,10 +356,24 @@ pub fn verify_and_remove_challenge(
     challenge: &str,
     device_id_header: &DeviceIdHeader,
 ) -> Result<bool> {
+    let current_time_millis = system_time_in_millis().unwrap_or(0);
     let key = format!("{}:{}", os_account_id, challenge);
     let mut cache = MOCK_CHALLENGE_CACHE.lock().unwrap();
+
+    cache.retain(|_, (timestamp, _, _)| {
+        current_time_millis <= *timestamp || current_time_millis.saturating_sub(*timestamp) <= CHALLENGE_EXPIRATION_MILLIS
+    });
+
     match cache.remove(&key) {
-        Some((_, cached_controller, cached_controlled)) => {
+        Some((timestamp, cached_controller, cached_controlled)) => {
+            let is_expired = current_time_millis > timestamp
+                && current_time_millis - timestamp > CHALLENGE_EXPIRATION_MILLIS;
+
+            if is_expired {
+                return macros_lib::log_throw_error!(ErrCode::ReplayAttackDetected,
+                    "Challenge expired: {}", challenge);
+            }
+
             if cached_controller == device_id_header.controller_device_id
                 && cached_controlled == device_id_header.controlled_device_id {
                     Ok(true)

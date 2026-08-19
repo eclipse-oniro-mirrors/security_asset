@@ -287,6 +287,71 @@ napi_value NapiVerifyControllerDevicePackage(const napi_env env, napi_callback_i
     return CreateAsyncWork(env, info, std::move(asyncContext), __func__);
 }
 
+napi_value NapiGetRemoteGrantStatus(const napi_env env, napi_callback_info info)
+{
+    auto asyncContext = std::unique_ptr<GetRemoteGrantStatusContext>(
+        new (std::nothrow) GetRemoteGrantStatusContext());
+    NAPI_THROW(env, asyncContext == nullptr, COMMON_INTERNAL_ERROR,
+        "Failed to create GetRemoteGrantStatusContext");
+
+    asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
+        -> napi_status {
+        return napi_ok;
+    };
+
+    asyncContext->execute = [](napi_env env, void* data) {
+        GetRemoteGrantStatusContext *asyncContext =
+            static_cast<GetRemoteGrantStatusContext *>(data);
+        asyncContext->result = SafAgentFence::GetRemoteGrantStatus(asyncContext->remoteGrantStatus);
+    };
+
+    asyncContext->resolve = [](napi_env env, AgentFenceAsyncContext *context) -> napi_value {
+        GetRemoteGrantStatusContext *asyncContext =
+            static_cast<GetRemoteGrantStatusContext *>(context);
+        napi_value jsResult = nullptr;
+        NAPI_CALL(env, napi_create_uint32(env, static_cast<uint32_t>(asyncContext->remoteGrantStatus),
+            &jsResult));
+        return jsResult;
+    };
+
+    return CreateAsyncWork(env, info, std::move(asyncContext), __func__);
+}
+
+napi_value NapiUpdateRemoteGrantStatus(const napi_env env, napi_callback_info info)
+{
+    auto asyncContext = std::unique_ptr<UpdateRemoteGrantStatusContext>(
+        new (std::nothrow) UpdateRemoteGrantStatusContext());
+    NAPI_THROW(env, asyncContext == nullptr, COMMON_INTERNAL_ERROR,
+        "Failed to create UpdateRemoteGrantStatusContext");
+
+    asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
+        -> napi_status {
+        UpdateRemoteGrantStatusContext *asyncContext =
+            static_cast<UpdateRemoteGrantStatusContext *>(context);
+        size_t argc = 1;
+        napi_value argv[1] = { nullptr };
+        NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+        NAPI_THROW_RETURN_ERR(env, argc < 1, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
+        NAPI_CALL_RETURN_ERR(env, napi_get_value_uint32(env, argv[0],
+            reinterpret_cast<uint32_t*>(&asyncContext->remoteGrantStatus)));
+        return napi_ok;
+    };
+
+    asyncContext->execute = [](napi_env env, void* data) {
+        UpdateRemoteGrantStatusContext *asyncContext =
+            static_cast<UpdateRemoteGrantStatusContext *>(data);
+        asyncContext->result = SafAgentFence::UpdateRemoteGrantStatus(asyncContext->remoteGrantStatus);
+    };
+
+    asyncContext->resolve = [](napi_env env, AgentFenceAsyncContext *context) -> napi_value {
+        napi_value jsResult = nullptr;
+        NAPI_CALL(env, napi_get_undefined(env, &jsResult));
+        return jsResult;
+    };
+
+    return CreateAsyncWork(env, info, std::move(asyncContext), __func__);
+}
+
 napi_value DeclareOperationType(const napi_env env)
 {
     napi_value status = nullptr;
@@ -317,6 +382,15 @@ napi_value DeclareRole(const napi_env env)
     return role;
 }
 
+napi_value DeclareRemoteGrantStatus(const napi_env env)
+{
+    napi_value status = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &status));
+    AddUint32Property(env, status, "ENABLE", static_cast<uint32_t>(RemoteGrantStatus::ENABLE));
+    AddUint32Property(env, status, "DISABLE", static_cast<uint32_t>(RemoteGrantStatus::DISABLE));
+    return status;
+}
+
 napi_value Register(const napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
@@ -326,10 +400,13 @@ napi_value Register(const napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("verifyControlledDevicePackage", NapiVerifyControlledDevicePackage),
         DECLARE_NAPI_FUNCTION("generateControllerDevicePackage", NapiGenerateControllerDevicePackage),
         DECLARE_NAPI_FUNCTION("verifyControllerDevicePackage", NapiVerifyControllerDevicePackage),
+        DECLARE_NAPI_FUNCTION("getRemoteGrantStatus", NapiGetRemoteGrantStatus),
+        DECLARE_NAPI_FUNCTION("updateRemoteGrantStatus", NapiUpdateRemoteGrantStatus),
 
         DECLARE_NAPI_PROPERTY("OperationType", DeclareOperationType(env)),
         DECLARE_NAPI_PROPERTY("AuthStatus", DeclareAuthStatus(env)),
         DECLARE_NAPI_PROPERTY("Role", DeclareRole(env)),
+        DECLARE_NAPI_PROPERTY("RemoteGrantStatus", DeclareRemoteGrantStatus(env)),
     };
 
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));

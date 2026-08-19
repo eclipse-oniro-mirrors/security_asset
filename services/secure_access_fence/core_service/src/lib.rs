@@ -39,6 +39,7 @@ use crate::wrapper::{cxx_is_screen_locked, notify_error, notify_performance_metr
 
 mod common_event;
 mod remote_control;
+mod remote_grant_status;
 mod stub;
 mod ticket_operation;
 mod wrapper;
