@@ -47,7 +47,7 @@ pub mod ffi {
         /// CXX bridge for batch_generate_ticket.
         fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, domain_id: &str, messages: &[String], result_code: &mut i32) -> Vec<CxxVerifyTicketInfo>;
         /// Get policy auth status.
-        fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec<i32>) -> i32;
+        fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec<i32>, is_remote: bool) -> i32;
         fn verify_remote_ticket(domain_id: String, remote_control_ticket: String, os_account_id: i32) -> i32;
         fn cxx_store_challenge(caller_token_id: &str, challenge: &str, expire_time_ms: u64) -> i32;
         fn cxx_store_controlled_grant_record(
@@ -108,8 +108,8 @@ pub fn notify_error(error_message: String, error_code: i32, os_account_id: i32, 
     }
 }
 
-pub fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec<i32>) -> i32 {
-    logi!("[get_policy_auth_status] permissions_len={}", permissions.len());
+pub fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec<i32>, is_remote: bool) -> i32 {
+    logi!("[get_policy_auth_status] permissions_len={}, is_remote={}", permissions.len(), is_remote);
 
     let plugin = SAFPlugin::get_instance();
     let loader = match plugin.load_plugin() {

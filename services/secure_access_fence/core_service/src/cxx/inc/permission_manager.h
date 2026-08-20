@@ -86,7 +86,7 @@ private:
         std::vector<PermissionInfo> &authResults);
 
     int32_t MergePermissionResults(const std::vector<PermissionInfo> &authResults,
-        PermissionQueryResult &permissionQueryResult);
+        PermissionQueryResult &permissionQueryResult, bool isRemote = false);
 
     int32_t VerifyPermissionInfo(const std::vector<PermissionInfo> &permissionInfos);
 
@@ -95,7 +95,8 @@ private:
     int32_t GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ticketMessageInfo, uint32_t callerTokenId,
         VerifyTicketInfo &ticketInfo);
 
-    int32_t GetPolicyAuthStatus(const std::vector<std::string> &permissions, std::vector<int32_t> &policyStatuses);
+    int32_t GetPolicyAuthStatus(const std::vector<std::string> &permissions, std::vector<int32_t> &policyStatuses,
+        bool isRemote = false);
 
     int32_t ProcessTicketInfo(const PermissionQuery &permissionQuery,
         const std::vector<TicketCliInfo> &ticketCliInfos, const std::vector<std::string> &apiPermissions,

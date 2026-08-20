@@ -94,6 +94,8 @@ pub struct PolicyAuthStatusKeys {
     pub permissions: &'static str,
     /// The key for output auth statuses list.
     pub auth_statuses: &'static str,
+    /// The key for indicating whether to query remote policy
+    pub is_remote: &'static str,
 }
 
 /// Verify remote ticket parameter keys for VerifyRemoteTicket EventType.
@@ -108,7 +110,7 @@ pub struct VerifyRemoteTicketKeys {
 
 /// PolicyAuthStatusKeys constant for GetPolicyAuthStatus EventType.
 pub const POLICY_AUTH_STATUS_KEYS: PolicyAuthStatusKeys =
-    PolicyAuthStatusKeys { permissions: "Permissions", auth_statuses: "AuthStatuses"};
+    PolicyAuthStatusKeys { permissions: "Permissions", auth_statuses: "AuthStatuses", is_remote: "IsRemote" };
 
 /// VerifyRemoteTicketKeys constant for VerifyRemoteTicket EventType.
 pub const VERIFY_REMOTE_TICKET_KEYS: VerifyRemoteTicketKeys =
