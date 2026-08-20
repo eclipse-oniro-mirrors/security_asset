@@ -42,6 +42,8 @@ use asset_plugin_interface::plugin_interface::{
     PARAM_NAME_CONFLICT_RESOLUTION
 };
 
+use crate::usage_statistics::{DbType, UsageStatistics};
+
 /// Component name.
 const COMPONENT: &str = "asset";
 /// Partition name.
@@ -337,4 +339,56 @@ pub(crate) fn upload_data_size(
         .set_param(build_string_array_params!(SysEvent::FILE_OR_FOLDER_PATH, &folder_path))
         .set_param(build_array_params!(SysEvent::FILE_OR_FOLDER_SIZE, &folder_size))
         .write();
+}
+
+fn build_ext_info(stats: &UsageStatistics) -> String {
+    let mut ext_info = String::new();
+
+    ext_info.push_str(&format!("  DB_TYPE:{};", if stats.db_type == DbType::De { "DE" } else { "CE" }));
+    ext_info.push_str(&format!("  USER_ID:{};", stats.user_id));
+    ext_info.push_str(&format!("  DB_SIZE:{}K;", stats.db_size_kb));
+    ext_info.push_str(&format!("  TOTAL_OWNER_COUNT:{};", stats.total_owner_count));
+    ext_info.push_str(&format!("  EMPTY_DB_COUNT:{};", stats.empty_db_count));
+
+    ext_info.push_str(&format!("  TOTAL_DATA_COUNT:{};", stats.total_data_stats.total_count));
+    ext_info.push_str(&format!("  TOTAL_DATA_MAX:{};", stats.total_data_stats.max_count));
+    ext_info.push_str(&format!("  TOTAL_DATA_MAX_OWNER:{};", &stats.total_data_stats.max_owner));
+    ext_info.push_str(&format!("  TOTAL_DATA_AVG:{};", stats.total_data_stats.avg_count));
+
+    ext_info.push_str(&format!("  PERSISTENT_OWNER_COUNT:{};", stats.persistent_stats.owner_count));
+    ext_info.push_str(&format!("  PERSISTENT_TOTAL_COUNT:{};", stats.persistent_stats.total_count));
+    ext_info.push_str(&format!("  PERSISTENT_MAX_COUNT:{};", stats.persistent_stats.max_count));
+    ext_info.push_str(&format!("  PERSISTENT_MAX_OWNER:{};", &stats.persistent_stats.max_owner));
+    ext_info.push_str(&format!("  PERSISTENT_AVG_COUNT:{};", stats.persistent_stats.avg_count));
+
+    if !stats.large_owners.is_empty() {
+        let large_owners_count = stats.large_owners.len();
+        let mut names: Vec<&str> = Vec::with_capacity(large_owners_count);
+        let mut counts: Vec<String> = Vec::with_capacity(large_owners_count);
+        let mut persist_counts: Vec<String> = Vec::with_capacity(large_owners_count);
+        let mut db_sizes: Vec<String> = Vec::with_capacity(large_owners_count);
+
+        for s in &stats.large_owners {
+            names.push(s.db_name.as_str());
+            counts.push(s.total_count.to_string());
+            persist_counts.push(s.persistent_count.to_string());
+            db_sizes.push(s.db_size_kb.to_string());
+        }
+
+        ext_info.push_str(&format!("  LARGE_OWNER_NAMES:{};", names.join(", ")));
+        ext_info.push_str(&format!("  LARGE_OWNER_COUNTS:{};", counts.join(", ")));
+        ext_info.push_str(&format!("  LARGE_OWNER_PERSISTENT_COUNTS:{};", persist_counts.join(", ")));
+        ext_info.push_str(&format!("  LARGE_OWNER_DB_SIZE:{};", db_sizes.join(", ")));
+    }
+
+    ext_info
+}
+
+pub(crate) fn upload_usage_statistics(stats: &UsageStatistics, fun_name: &str) -> Result<()> {
+    let calling_info = CallingInfo::new_self();
+    let start = Instant::now();
+    let ext_info = build_ext_info(stats);
+
+    upload_statistic_system_event(&calling_info, start, fun_name, &ext_info, &mut ExtDbMap::new());
+    Ok(())
 }

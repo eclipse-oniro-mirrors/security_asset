@@ -20,4 +20,5 @@ mod start_event;
 
 pub(crate) use listener::subscribe;
 pub(crate) use listener::unsubscribe;
+pub(crate) use listener::get_first_unlock_userids;
 pub(crate) use start_event::handle_common_event;
