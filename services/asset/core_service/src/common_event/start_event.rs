@@ -140,7 +140,7 @@ fn process_common_event_async(reason: SystemAbilityOnDemandReason) {
         let _ = delete_user_de_dir(reason.extra_data.code);
         listener::notify_on_user_removed(reason.extra_data.code);
     } else if reason_name == "usual.event.CHARGING" {
-        listener::backup_db();
+        listener::on_charging();
     } else if reason_name == "usual.event.RESTORE_START" {
         let want = reason.extra_data.want();
         let user_id = match want.get(USER_ID) {
