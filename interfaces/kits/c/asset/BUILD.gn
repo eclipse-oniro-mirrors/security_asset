@@ -23,6 +23,9 @@ ohos_shared_library("asset_ndk") {
   deps = [ "../../../../frameworks/asset/c/system_api:asset_sdk" ]
   innerapi_tags = [ "ndk" ]
 
+  shlib_type = "sa"
+  version_script = "libasset_ndk.map"
+
   external_deps = [ "hilog:libhilog" ]
 
   branch_protector_ret = "pac_ret"
