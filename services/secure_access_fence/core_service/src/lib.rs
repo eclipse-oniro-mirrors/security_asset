@@ -65,7 +65,6 @@ const DEFAULT_DOMAIN_ID: &str = "";
 const STRING_QUOTE: char = '"';
 extern "C" {
     fn CheckPermission(permission: *const raw_c_char) -> bool;
-    fn CheckIsSystemHap() -> bool;
 }
 
 struct SAFAbility;
