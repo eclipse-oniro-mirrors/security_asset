@@ -235,13 +235,13 @@ fn parse_cli_and_permission(
         match op.operation_type {
             saf_definition::OperationType::Cli => {
                 if op.cli_cmd_info.cmd_name.is_empty() {
-                    return macros_lib::log_throw_error!(ErrCode::ArgEmpty, "CLI command name is empty");
+                    return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "CLI command name is empty");
                 }
                 cli_infos.push(op.cli_cmd_info.clone());
             },
             saf_definition::OperationType::Api => {
                 if op.permission.is_empty() {
-                    return macros_lib::log_throw_error!(ErrCode::ArgEmpty, "API permission is empty");
+                    return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "API permission is empty");
                 }
                 api_permissions.push(op.permission.clone());
             },

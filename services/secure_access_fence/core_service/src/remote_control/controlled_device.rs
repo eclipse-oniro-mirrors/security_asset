@@ -28,6 +28,7 @@ use std::os::raw::c_char as raw_c_char;
 
 extern "C" {
     fn CheckPermission(permission: *const raw_c_char) -> bool;
+    fn CheckIsSystemHap() -> bool;
 }
 
 const QUERY_TOOL_PERMISSIONS: &str = "ohos.permission.QUERY_TOOL_PERMISSIONS";
@@ -52,6 +53,14 @@ pub fn generate_controlled_device_package(
         };
     }
     
+    if unsafe { !CheckIsSystemHap() } {
+        loge!("Caller is not system hap");
+        return BatchGenerateResult {
+            packages: vec![create_empty_package(); queries.len()],
+            error_code: ErrCode::NotSystemApp as i32,
+        };
+    }
+    
     if let Err(e) = validate_controlled_batch_params(&queries) {
         loge!("Invalid batch params: {:?}", e);
         return BatchGenerateResult {
@@ -61,7 +70,7 @@ pub fn generate_controlled_device_package(
     }
     
     let mut packages = Vec::with_capacity(queries.len());
-    let mut has_error = false;
+    let mut system_error_code = ErrCode::Success as i32;
     
     for (idx, query) in queries.into_iter().enumerate() {
         match generate_single_controlled_package(query) {
@@ -69,14 +78,16 @@ pub fn generate_controlled_device_package(
             Err(e) => {
                 loge!("Generate package failed at idx[{}], err={:?}",idx, e);
                 packages.push(create_empty_package());
-                has_error = true;
+                if system_error_code == ErrCode::Success as i32 {
+                    system_error_code = e.code as i32;
+                }
             }
         }
     }
     
     BatchGenerateResult {
         packages,
-        error_code: if has_error { ErrCode::GeneralError as i32 } else { ErrCode::Success as i32 },
+        error_code: system_error_code,
     }
 }
 
@@ -95,6 +106,14 @@ pub fn verify_controlled_device_package(
         return BatchVerifyResult {
             results: Vec::new(),
             error_code: ErrCode::PermissionDenied as i32,
+        };
+    }
+
+    if unsafe { !CheckIsSystemHap() } {
+        loge!("Caller is not system hap");
+        return BatchVerifyResult {
+            results: Vec::new(),
+            error_code: ErrCode::NotSystemApp as i32,
         };
     }
 
@@ -263,10 +282,10 @@ fn validate_controlled_permission_query(query: &PermissionQuery) -> Result<()> {
         return macros_lib::log_throw_error!(ErrCode::DataTypeMismatch, "Invalid role: expected CONTROLLED");
     }
     if query.domain_id.is_empty() {
-        return macros_lib::log_throw_error!(ErrCode::ArgEmpty, "domain_id is empty");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "domain_id is empty");
     }
     if query.remote_info.remote_control_params.remote_control_ticket.is_empty() {
-        return macros_lib::log_throw_error!(ErrCode::ArgEmpty, "remote_control_ticket is empty");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "remote_control_ticket is empty");
     }
     if query.ticket_expire_time_ms <= 0 || query.ticket_expire_time_ms > super::MAX_REMOTE_TICKET_EXPIRE_TIME_MS {
         return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "ticket_expire_time_ms out of range {}",
