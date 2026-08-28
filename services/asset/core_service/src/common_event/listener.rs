@@ -419,9 +419,6 @@ pub(crate) extern "C" fn on_schedule_wakeup() {
 }
 
 pub(crate) extern "C" fn on_connectivity_change() {
-    let cur_time = Instant::now();
-    let _ = backup_all_db(&cur_time);
-
     let _lock = LAST_TRIGGER_TIME_FILE_MUTEX.lock().unwrap();
     let path = format!("{}/last_trigger_time.txt", DE_ROOT_PATH);
     let last_time = read_last_trigger_time(&path).unwrap_or(0);
@@ -518,7 +515,6 @@ fn trigger_sync_with_user_id(user_id: i32, is_user_switch: bool) {
     }
 }
 
-/// Copy a db file to its backup path; report and skip on failure.
 fn copy_db_to_backup(
     from_path: &str, calling_info: &CallingInfo, start_time: &Instant, func_name: &str,
 ) {
