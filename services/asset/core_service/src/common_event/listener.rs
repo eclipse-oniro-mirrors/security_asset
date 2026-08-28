@@ -18,7 +18,6 @@
 use std::{
     ffi::{CStr, CString},
     fs::{self, DirEntry},
-    io,
     os::unix::fs::PermissionsExt,
     path::Path,
     slice,
@@ -43,7 +42,7 @@ use asset_db_operator::{
         DbMap,
     },
 };
-use asset_definition::{macros_lib, AssetError, ErrCode, Result, SyncType, Value};
+use asset_definition::{macros_lib, ErrCode, Result, SyncType, Value};
 use asset_file_operator::{
     ce_operator::is_db_key_cipher_file_exist,
     common::{BACKUP_SUFFIX, CE_ROOT_PATH, DB_SUFFIX, DE_ROOT_PATH},
@@ -420,6 +419,9 @@ pub(crate) extern "C" fn on_schedule_wakeup() {
 }
 
 pub(crate) extern "C" fn on_connectivity_change() {
+    let cur_time = Instant::now();
+    let _ = backup_all_db(&cur_time);
+
     let _lock = LAST_TRIGGER_TIME_FILE_MUTEX.lock().unwrap();
     let path = format!("{}/last_trigger_time.txt", DE_ROOT_PATH);
     let last_time = read_last_trigger_time(&path).unwrap_or(0);
@@ -516,36 +518,24 @@ fn trigger_sync_with_user_id(user_id: i32, is_user_switch: bool) {
     }
 }
 
-/// Report a failure when a single db directory entry cannot be read.
-fn report_read_entry_failure(
-    calling_info: &CallingInfo, start_time: &Instant, user_id: i32, kind: &str, e: io::Error,
-) {
-    logw!("[WARNING]Read {} db entry failed, error code:[{}]", kind, e);
-    let err: AssetError = e.into();
-    upload_fault_system_event(calling_info, *start_time, &format!("backup_{}_db_{}", kind, user_id), "", &err,
-        &mut ExtDbMap::new());
-}
-
 /// Copy a db file to its backup path; report and skip on failure.
 fn copy_db_to_backup(
     from_path: &str, calling_info: &CallingInfo, start_time: &Instant, func_name: &str,
 ) {
     let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
     if let Err(e) = fs::copy(from_path, backup_path) {
-        let err: AssetError = e.into();
-        upload_fault_system_event(calling_info, *start_time, func_name, "", &err, &mut ExtDbMap::new());
+        upload_fault_system_event(calling_info, *start_time, func_name, "copy_db_to_backup", &e.into(), &mut ExtDbMap::new());
     }
 }
 
 fn backup_de_db_if_accessible(entry: &DirEntry, user_id: i32, start_time: &Instant) -> Result<()> {
     let calling_info = CallingInfo::new(user_id, OwnerType::Native, ASSET_SERVICE.as_bytes().to_vec(), None);
-    let dir = entry.path().to_string_lossy().to_string();
-    for db_path in fs::read_dir(dir)? {
-        // Skip directory entries that fail to be read.
+    for db_path in fs::read_dir(entry.path().to_string_lossy().to_string())? {
         let db_path = match db_path {
-            Ok(p) => p,
+            Ok(path) => path,
             Err(e) => {
-                report_read_entry_failure(&calling_info, start_time, user_id, "de", e);
+                upload_fault_system_event(&calling_info, *start_time, &format!("backup_de_db_inner_{}", user_id),
+                    "db_path?", &e.into(), &mut ExtDbMap::new());
                 continue;
             },
         };
@@ -557,15 +547,14 @@ fn backup_de_db_if_accessible(entry: &DirEntry, user_id: i32, start_time: &Insta
         }
 
         let from_path = db_path.path().to_string_lossy().to_string();
-        let func_name = format!("backup_de_db_{}_{}", user_id, db_name);
+        let func_name = format!("backup_de_db_inner_{}_{}", user_id, db_name);
 
         // Make sure the db is accessible before copying.
         if let Err(e) = Database::check_db_accessible(from_path.clone(), user_id, db_name.clone(), None) {
-            upload_fault_system_event(&calling_info, *start_time, &func_name, "", &e, &mut ExtDbMap::new());
+            upload_fault_system_event(&calling_info, *start_time, &func_name, "check_db_accessible", &e,
+                &mut ExtDbMap::new());
             continue;
         }
-
-        // Copy the db file to its backup path.
         copy_db_to_backup(&from_path, &calling_info, start_time, &func_name);
     }
     Ok(())
@@ -575,14 +564,15 @@ fn backup_ce_db_if_accessible(user_id: i32, start_time: &Instant) -> Result<()> 
     if user_id < MINIMUM_MAIN_USER_ID {
         return Ok(());
     }
+
+    let db_key = DbKey::get_db_key(user_id)?;
     let calling_info = CallingInfo::new(user_id, OwnerType::Native, ASSET_SERVICE.as_bytes().to_vec(), None);
-    let dir = format!("{}/{}/{}", CE_ROOT_PATH, user_id, ASSET_SERVICE);
-    for db_path in fs::read_dir(dir)? {
-        // Skip directory entries that fail to be read.
+    for db_path in fs::read_dir(format!("{}/{}/{}", CE_ROOT_PATH, user_id, ASSET_SERVICE))? {
         let db_path = match db_path {
             Ok(p) => p,
             Err(e) => {
-                report_read_entry_failure(&calling_info, start_time, user_id, "ce", e);
+                upload_fault_system_event(&calling_info, *start_time, &format!("backup_ce_db_inner_{}", user_id),
+                    "db_path?", &e.into(), &mut ExtDbMap::new());
                 continue;
             },
         };
@@ -594,22 +584,13 @@ fn backup_ce_db_if_accessible(user_id: i32, start_time: &Instant) -> Result<()> 
         }
 
         let from_path = db_path.path().to_string_lossy().to_string();
-        let func_name = format!("backup_ce_db_{}_{}", user_id, db_name);
-
-        // Fetch the ce db key from HUKS.
-        let db_key = match DbKey::get_db_key(user_id) {
-            Ok(key) => Some(key.db_key),
-            Err(e) => {
-                upload_fault_system_event(&calling_info, *start_time, &func_name, "", &e, &mut ExtDbMap::new());
-                continue;
-            },
-        };
+        let func_name = format!("backup_ce_db_inner_{}_{}", user_id, db_name);
 
         // Make sure the db is accessible before copying.
-        if let Err(e) = Database::check_db_accessible(
-            from_path.clone(), user_id, db_name.clone(), db_key.as_ref())
-        {
-            upload_fault_system_event(&calling_info, *start_time, &func_name, "", &e, &mut ExtDbMap::new());
+        if let Err(e) = Database::check_db_accessible(from_path.clone(), user_id, db_name.clone(),
+            Some(&db_key.db_key)) {
+            upload_fault_system_event(&calling_info, *start_time, &func_name, "check_db_accessible", &e,
+                &mut ExtDbMap::new());
             continue;
         }
 
@@ -628,14 +609,14 @@ fn get_all_user_ids() -> Result<Vec<i32>> {
             ErrCode::AccountError, "[FATAL][SA]Get users size failed.");
     }
 
-    let mut user_ids: Vec<i32> = vec![0i32; (size + USER_ID_VEC_BUFFER).try_into().unwrap()];
-    let ptr = user_ids.as_mut_ptr();
-    let ret = unsafe { GetUserIds(ptr, size_ptr) };
+    let mut user_ids: Vec<i32> = vec![0i32; (*size_ptr + USER_ID_VEC_BUFFER).try_into().unwrap()];
+    let user_ids_ptr = user_ids.as_mut_ptr();
+    let ret = unsafe { GetUserIds(user_ids_ptr, size_ptr) };
     if ret != SUCCESS {
         return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
             ErrCode::AccountError, "[FATAL][SA]Get user IDs failed.");
     }
-    // The actual count is written back to size; drop the spare buffer.
+
     user_ids.truncate(size as usize);
     Ok(user_ids)
 }
