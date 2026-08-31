@@ -30,7 +30,7 @@ use lazy_static::lazy_static;
 use asset_common::{
     AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Group, ModifyAssetBlob, MutAssetBlobArray, OwnerType
 };
-use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey, 
+use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey,
     db_key_operator::{DbKey, get_db_key}};
 use asset_db_operator::{
     database::Database,
@@ -56,7 +56,9 @@ use asset_plugin_interface::plugin_interface::{
 };
 
 use crate::data_size_mod::handle_data_size_upload;
-use crate::{sys_event::upload_fault_system_event, PackageInfoFfi, upgrade_operator, upgrade_ce};
+use crate::sys_event::upload_fault_system_event;
+use crate::{PackageInfoFfi, upgrade_operator, upgrade_ce};
+use crate::usage_statistics;
 
 /// success code.
 const SUCCESS: i32 = 0;
@@ -311,26 +313,28 @@ lazy_static! {
     static ref RECORD_TIME: Mutex<Option<Instant>> = Mutex::new(None);
 }
 
-pub(crate) extern "C" fn backup_db() {
+pub(crate) extern "C" fn on_charging() {
     let _counter_user = AutoCounter::new();
     let cur_time = Instant::now();
     logi!("Start backup db.");
 
     let mut record_time = RECORD_TIME.lock().expect("Failed to lock RECORD_TIME");
 
-    let should_backup = match *record_time {
+    let should_record = match *record_time {
         Some(ref last_time) => cur_time.duration_since(*last_time) > Duration::new(3600, 0),
         None => true,
     };
 
-    if should_backup {
+    if should_record {
         *record_time = Some(cur_time);
         if let Err(e) = backup_all_db(&cur_time) {
             let calling_info = CallingInfo::new_self();
             upload_fault_system_event(&calling_info, cur_time, "backup_db", "", &e, &mut ExtDbMap::new());
         }
+
+        usage_statistics::collect_all_usage_stats();
     }
-    logi!("Finish backup db.");
+    logi!("Finish backup db & usage statistics.");
 }
 
 pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, app_index: i32) {
@@ -439,7 +443,7 @@ extern "C" {
     fn GetUsersSize(userIdsSize: *mut u32) -> i32;
 }
 
-fn get_first_unlock_userids() -> Vec<i32> {
+pub(crate) fn get_first_unlock_userids() -> Vec<i32> {
     let mut user_ids_size: u32 = USER_ID_VEC_BUFFER;
     let mut user_ids: Vec<i32> = vec![0i32; user_ids_size as usize];
     let user_ids_size_ptr = &mut user_ids_size;
@@ -618,7 +622,7 @@ pub(crate) fn subscribe() {
             on_package_removed,
             on_user_removed,
             on_screen_off: delete_crypto_need_unlock,
-            on_charging: backup_db,
+            on_charging,
             on_app_restore,
             on_user_unlocked,
             on_connectivity_change,

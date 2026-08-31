@@ -40,7 +40,6 @@ const int32_t DEFAULT_INT_VAL = -1;
 const std::vector<std::string> SYSTEM_EVENT_LIST = {
     CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED,
     CommonEventSupport::COMMON_EVENT_PACKAGE_ADDED,
-    CommonEventSupport::COMMON_EVENT_PACKAGE_CHANGED,
     CommonEventSupport::COMMON_EVENT_RESTORE_START,
 };
 

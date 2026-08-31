@@ -21,6 +21,7 @@ use asset_definition::Value;
 /// The identity of calling process.
 #[derive(Clone)]
 #[derive(PartialEq, Eq)]
+#[derive(Hash)]
 pub struct Group {
     /// The developer id.
     pub developer_id: Vec<u8>,
@@ -31,6 +32,7 @@ pub struct Group {
 /// The identity of calling process.
 #[derive(Clone)]
 #[derive(PartialEq, Eq)]
+#[derive(Hash)]
 pub struct CallingInfo {
     user_id: i32,
     owner_type: OwnerType,

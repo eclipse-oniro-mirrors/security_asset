@@ -20,7 +20,7 @@ use std::{
 };
 use ylong_runtime::task::JoinHandle;
 
-use asset_common::{CallingInfo, Counter, Group, OwnerType, TaskManager, GROUP_SEPARATOR};
+use asset_common::{CallingInfo, Counter, Group, OwnerType, TaskManager, GROUP_SEPARATOR, SUCCESS};
 use asset_crypto_manager::db_key_operator::get_db_key;
 use asset_db_operator::{
     database::{Database, get_path},
@@ -35,6 +35,7 @@ use asset_plugin_interface::plugin_interface::{ExtDbMap, IAssetPlugin, IAssetPlu
 extern "C" {
     fn StoreKeyValue(user_id: i32, in_key: *const c_char, in_value: i32) -> bool;
     fn QueryValue(user_id: i32, in_key: *const c_char, out_value: *mut i32) -> i32;
+    fn IsDeviceLocked(user_id: i32, is_device_locked: *mut bool) -> i32;
 }
 
 const DATASHARE_SUCCESS: i32 = 0;
@@ -487,5 +488,16 @@ impl IAssetPluginCtx for AssetContext {
             }
         }
     }
-    
+
+    /// Check whether the device is locked.
+    fn is_device_locked(&self) -> std::result::Result<bool, u32> {
+        let mut is_device_locked: bool = true;
+        let result = unsafe { IsDeviceLocked(self.user_id, &mut is_device_locked) };
+        if result == SUCCESS {
+            Ok(is_device_locked)
+        } else {
+            Err(result as u32)
+        }
+    }
+
 }

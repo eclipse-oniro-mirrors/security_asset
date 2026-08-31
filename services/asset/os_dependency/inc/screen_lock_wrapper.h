@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2023 Huawei Device Co., Ltd.
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,12 +13,19 @@
  * limitations under the License.
  */
 
-//! This module is used to handle Asset common event.
+#ifndef SCREEN_LOCK_WRAPPER_H
+#define SCREEN_LOCK_WRAPPER_H
 
-mod listener;
-mod start_event;
+#include <stdint.h>
 
-pub(crate) use listener::subscribe;
-pub(crate) use listener::unsubscribe;
-pub(crate) use listener::get_first_unlock_userids;
-pub(crate) use start_event::handle_common_event;
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+int32_t IsDeviceLocked(int32_t userId, bool *isDeviceLocked);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif // SCREEN_LOCK_WRAPPER_H

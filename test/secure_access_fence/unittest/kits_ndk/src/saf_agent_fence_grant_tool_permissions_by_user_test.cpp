@@ -180,4 +180,63 @@ HWTEST_F(SafAgentFenceGrantToolPermissionsByUserTest, VerifyTicketWithInvalidTic
     int32_t result = agentFence.VerifyTicket(100, "0", ticketInfo, cliInfos);
     EXPECT_EQ(result, 196633);
 }
+
+} // namespace UnitTest::SafAgentFenceGrantToolPermissionsByUserTest
+
+namespace UnitTest::SafAgentFenceGrantToolPermissionsByUserNoPermTest {
+
+const static std::vector<std::string> NO_PERMISSIONS = {};
+
+class SafAgentFenceGrantToolPermissionsByUserNoPermTest : public testing::Test {
+public:
+    static void SetUpTestCase(void);
+    static void TearDownTestCase(void);
+    void SetUp(void);
+    void TearDown(void);
+    static MockToken* mockToken_;
+};
+
+MockToken* SafAgentFenceGrantToolPermissionsByUserNoPermTest::mockToken_ = nullptr;
+
+void SafAgentFenceGrantToolPermissionsByUserNoPermTest::SetUpTestCase(void)
+{
+    mockToken_ = new MockToken(NO_PERMISSIONS, true, true);
+    ASSERT_NE(mockToken_, nullptr);
+
+    std::string errorMsg = mockToken_->GetMockErrorMsg();
+    if (errorMsg != "success") {
+        ASSERT_NE(mockToken_->GetTokenId(), INVALID_TOKENID) << "MockToken failed: " << errorMsg;
+    } else {
+        ASSERT_NE(mockToken_->GetTokenId(), INVALID_TOKENID) << "Failed to create MockToken";
+    }
 }
+
+void SafAgentFenceGrantToolPermissionsByUserNoPermTest::TearDownTestCase(void)
+{
+    if (mockToken_ != nullptr) {
+        delete mockToken_;
+        mockToken_ = nullptr;
+    }
+}
+
+void SafAgentFenceGrantToolPermissionsByUserNoPermTest::SetUp(void)
+{
+}
+
+void SafAgentFenceGrantToolPermissionsByUserNoPermTest::TearDown(void)
+{
+}
+
+/**
+ * @tc.desc: VerifyTicket with invalid ticketInfo and no permission, expect permission denied.
+ */
+HWTEST_F(SafAgentFenceGrantToolPermissionsByUserNoPermTest, VerifyTicketWithInvalidTicketInfoNoPerm001, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+    std::vector<OHOS::Security::SAF::CliInfo> cliInfos;
+    std::string ticketInfo = "12345";
+    int32_t result = agentFence.VerifyTicket(100, "0", ticketInfo, cliInfos);
+    EXPECT_EQ(result, 204801);
+}
+
+} // namespace UnitTest::SafAgentFenceGrantToolPermissionsByUserNoPermTest

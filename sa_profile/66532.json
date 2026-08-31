@@ -14,7 +14,6 @@
                 "commonevent": [
                     { "name": "usual.event.PACKAGE_ADDED" },
                     { "name": "usual.event.PACKAGE_REMOVED" },
-                    { "name": "usual.event.PACKAGE_CHANGED" },
                     { "name": "usual.event.RESTORE_START" }
                 ]
             }
