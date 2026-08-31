@@ -15,8 +15,7 @@
 
 //! This module implements controller device package generation and verification.
 
-use ipc::Skeleton;
-use saf_common::{get_user_id, JsonBuilder, new_object, object_add_string};
+use saf_common::{JsonBuilder, new_object, object_add_string};
 use saf_utils::system_time_in_millis;
 use saf_definition::{macros_lib, ErrCode, Result,
     PermissionQuery, RemoteAuthPackage, Role, DeviceIdHeader, RemoteUserAuthItem,
@@ -29,39 +28,14 @@ use crate::remote_control::remote_challenge_manager::verify_and_remove_challenge
 use crate::remote_control::account_based_auth_manager::{sign_remote_auth_package, verify_remote_auth_package, SignParams};
 use crate::remote_control::grant_record::get_bundle_name_from_token;
 use saf_log::{loge, logi};
-use std::ffi::CString;
-use std::os::raw::c_char as raw_c_char;
-
-extern "C" {
-    fn CheckPermission(permission: *const raw_c_char) -> bool;
-    fn CheckIsSystemHap() -> bool;
-}
-
-const QUERY_TOOL_PERMISSIONS: &str = "ohos.permission.QUERY_TOOL_PERMISSIONS";
 
 const MAX_PERMISSION_LEN: usize = 128;
 
 /// Generates controller device packages for remote user auth results.
 pub fn generate_controller_device_package(
+    os_account_id: i32,
     remote_user_auth_results: Vec<RemoteUserAuthResults>
 ) -> BatchGenerateResult {
-    let permission = CString::new(QUERY_TOOL_PERMISSIONS).unwrap();
-    if unsafe { !CheckPermission(permission.as_ptr()) } {
-        loge!("Permission denied! Need {}", QUERY_TOOL_PERMISSIONS);
-        return BatchGenerateResult {
-            packages: vec![create_empty_package(); remote_user_auth_results.len().max(1)],
-            error_code: ErrCode::PermissionDenied as i32,
-        };
-    }
-    
-    if unsafe { !CheckIsSystemHap() } {
-        loge!("Caller is not system hap");
-        return BatchGenerateResult {
-            packages: vec![create_empty_package(); remote_user_auth_results.len()],
-            error_code: ErrCode::NotSystemApp as i32,
-        };
-    }
-    
     if let Err(e) = validate_controller_batch_params(&remote_user_auth_results) {
         loge!("Invalid batch params: {:?}", e);
         return BatchGenerateResult {
@@ -69,26 +43,14 @@ pub fn generate_controller_device_package(
             error_code: e.code as i32,
         };
     }
-    
-    let uid = Skeleton::calling_uid();
-    let user_id = match get_user_id(uid) {
-        Ok(id) => id,
-        Err(e) => {
-            loge!("Failed to get user_id: {:?}", e);
-            return BatchGenerateResult {
-                packages: vec![create_empty_package(); remote_user_auth_results.len()],
-                error_code: ErrCode::InvalidOsAccountId as i32,
-            };
-        }
-    };
-    
+
     let mut packages = Vec::with_capacity(remote_user_auth_results.len());
     let mut system_error_code = ErrCode::Success as i32;
     
     for (idx, auth_result) in remote_user_auth_results.iter().enumerate() {
-        match generate_single_controller_package(user_id, auth_result) {
+        match generate_single_controller_package(os_account_id, auth_result) {
             Ok(pkg) => {
-                store_grant_record_if_success(user_id, &pkg, Role::Controller);
+                store_grant_record_if_success(os_account_id, &pkg, Role::Controller);
                 packages.push(pkg);
             },
             Err(e) => {
@@ -139,23 +101,6 @@ pub fn verify_controller_device_package(
     packages: Vec<RemoteAuthPackage>,
     remote_info: &RemoteInfo
 ) -> BatchVerifyResult {
-    let permission = CString::new(QUERY_TOOL_PERMISSIONS).unwrap();
-    if unsafe { !CheckPermission(permission.as_ptr()) } {
-        loge!("Permission denied! Need {}", QUERY_TOOL_PERMISSIONS);
-        return BatchVerifyResult {
-            results: Vec::new(),
-            error_code: ErrCode::PermissionDenied as i32,
-        };
-    }
-
-    if unsafe { !CheckIsSystemHap() } {
-        loge!("Caller is not system hap");
-        return BatchVerifyResult {
-            results: Vec::new(),
-            error_code: ErrCode::NotSystemApp as i32,
-        };
-    }
-
     logi!("[verify_controller_device_package] os_account_id={}, package_count={}, domain_id={}", 
         os_account_id, packages.len(), remote_info.domain_id);
     
@@ -256,10 +201,7 @@ fn generate_single_controller_package(
     let (local_udid, api_permissions, challenge, timestamp) =
         prepare_controller_package_data(os_account_id, auth_result)?;
 
-    let uid = Skeleton::calling_uid();
-    let user_id = get_user_id(uid)?;
-
-    logi!("Generate controller package: user_id={}", user_id);
+    logi!("Generate controller package: os_account_id={}", os_account_id);
 
     let package = build_and_sign_controller_package(
         &auth_result.permission_query,
@@ -267,7 +209,7 @@ fn generate_single_controller_package(
         challenge,
         &local_udid,
         &api_permissions,
-        user_id,
+        os_account_id,
         timestamp,
     )?;
 

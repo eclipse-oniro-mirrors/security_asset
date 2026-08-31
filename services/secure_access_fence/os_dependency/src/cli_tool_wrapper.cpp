@@ -93,15 +93,17 @@ static int32_t WritePermissionsToBuffer(
     
     for (const auto& perm : allPermissions) {
         int32_t needed = static_cast<int32_t>(perm.size()) + 1;
-        if (offset + needed > buf_size) {
-            break;
+        if (offset < 0 || offset > buf_size - needed) {
+            LOGE("invalid offset=%{public}d, buf_size=%{public}d, needed=%{public}d",
+                 offset, buf_size, needed);
+            return SAF_ERR_TOOL_ERROR;
         }
         if (memcpy_s(out_buf + offset, static_cast<size_t>(buf_size - offset),
                      perm.c_str(), perm.size()) != 0) {
             LOGE("memcpy_s failed");
             return SAF_ERR_TOOL_ERROR;
         }
-        out_buf[offset + perm.size()] = '\0';
+        out_buf[static_cast<size_t>(offset) + perm.size()] = '\0';
         offset += needed;
         permCount++;
     }

@@ -20,7 +20,7 @@ use secure_access_fence_service::ut_core_service_lib_stub::*;
 
 #[test]
 fn test_generate_controlled_device_package_empty() {
-    let result = generate_controlled_device_package(vec![]);
+    let result = generate_controlled_device_package(100, vec![]);
     assert!(result.packages.is_empty());
     assert_eq!(ErrCode::Success as i32, result.error_code);
 }
@@ -35,7 +35,7 @@ fn test_generate_controlled_device_package_single_valid_query() {
         "test_ticket",
         vec![create_api_operation("ohos.permission.TEST")],
     );
-    let result = generate_controlled_device_package(vec![query]);
+    let result = generate_controlled_device_package(100, vec![query]);
     assert_eq!(1, result.packages.len());
     assert_eq!(ErrCode::Success as i32, result.error_code);
 }
@@ -64,7 +64,7 @@ fn test_generate_controlled_device_package_multiple_valid_queries() {
             vec![create_api_operation("perm2"), create_cli_operation("cmd2", "sub2")],
         ),
     ];
-    let result = generate_controlled_device_package(queries);
+    let result = generate_controlled_device_package(100, queries);
     assert_eq!(3, result.packages.len());
     assert_eq!(ErrCode::Success as i32, result.error_code);
 }
@@ -77,7 +77,7 @@ fn test_generate_controlled_device_package_invalid_role() {
         "test_ticket",
         vec![create_api_operation("ohos.permission.TEST")],
     );
-    let result = generate_controlled_device_package(vec![query]);
+    let result = generate_controlled_device_package(100, vec![query]);
     assert_eq!(1, result.packages.len());
     assert_eq!(ErrCode::GeneralError as i32, result.error_code);
     assert!(result.packages[0].remote_message.device_info.controller_device_id.is_empty());
@@ -91,7 +91,7 @@ fn test_generate_controlled_device_package_empty_domain_id() {
         "test_ticket",
         vec![create_api_operation("ohos.permission.TEST")],
     );
-    let result = generate_controlled_device_package(vec![query]);
+    let result = generate_controlled_device_package(100, vec![query]);
     assert_eq!(1, result.packages.len());
     assert_eq!(ErrCode::GeneralError as i32, result.error_code);
     assert!(result.packages[0].remote_message.device_info.controller_device_id.is_empty());
@@ -105,7 +105,7 @@ fn test_generate_controlled_device_package_empty_ticket() {
         "",
         vec![create_api_operation("ohos.permission.TEST")],
     );
-    let result = generate_controlled_device_package(vec![query]);
+    let result = generate_controlled_device_package(100, vec![query]);
     assert_eq!(1, result.packages.len());
     assert_eq!(ErrCode::GeneralError as i32, result.error_code);
     assert!(result.packages[0].remote_message.device_info.controller_device_id.is_empty());
@@ -127,7 +127,7 @@ fn test_generate_controlled_device_package_partial_failure() {
             vec![],
         ),
     ];
-    let result = generate_controlled_device_package(queries);
+    let result = generate_controlled_device_package(100, queries);
     assert_eq!(2, result.packages.len());
     assert_eq!(ErrCode::GeneralError as i32, result.error_code);
 }
@@ -307,7 +307,7 @@ fn test_generate_controlled_device_package_sign_success() {
         "test_ticket",
         vec![create_api_operation("ohos.permission.TEST")],
     );
-    let result = generate_controlled_device_package(vec![query]);
+    let result = generate_controlled_device_package(100, vec![query]);
     
     assert_eq!(1, result.packages.len());
     assert_eq!(ErrCode::Success as i32, result.error_code);
@@ -327,7 +327,7 @@ fn test_generate_controlled_device_package_sign_failure() {
         "test_ticket",
         vec![create_api_operation("ohos.permission.TEST")],
     );
-    let result = generate_controlled_device_package(vec![query]);
+    let result = generate_controlled_device_package(100, vec![query]);
     
     assert_eq!(1, result.packages.len());
     assert_eq!(ErrCode::GeneralError as i32, result.error_code);
@@ -353,7 +353,7 @@ fn test_generate_controlled_device_package_partial_sign_failure() {
         vec![create_api_operation("perm")],
     );
     
-    let result = generate_controlled_device_package(vec![valid_query, invalid_query]);
+    let result = generate_controlled_device_package(100, vec![valid_query, invalid_query]);
     
     assert_eq!(2, result.packages.len());
     assert_eq!(ErrCode::GeneralError as i32, result.error_code);

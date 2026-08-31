@@ -28,7 +28,8 @@ use system_ability_fwk::{
 use ylong_runtime::builder::RuntimeBuilder;
 
 use saf_common::{Counter, TaskManager};
-use saf_definition::{macros_lib, ErrCode, Result, CliInfo, VerifyTicketInfo};
+use saf_definition::{macros_lib, ErrCode, Result, CliInfo, VerifyTicketInfo,
+    PermissionQuery, RemoteAuthPackage, RemoteUserAuthResults, RemoteInfo};
 use saf_ipc::SA_ID;
 use saf_log::{logd, loge, logi};
 use saf_plugin::saf_plugin::{SAFContext, SAFPlugin};
@@ -36,6 +37,7 @@ use saf_plugin::saf_plugin::{SAFContext, SAFPlugin};
 use saf_utils::get_compact_json_value;
 
 use crate::wrapper::{cxx_is_screen_locked, notify_error, notify_performance_metrics};
+use crate::remote_control::{BatchGenerateResult, BatchVerifyResult};
 
 mod common_event;
 mod remote_control;
@@ -48,6 +50,7 @@ mod wrapper;
 mod metrics_macro;
 
 const GET_TICKET_INFO_PERMISSION: &str = "ohos.permission.GET_TICKET_INFO";
+const QUERY_TOOL_PERMISSIONS: &str = "ohos.permission.QUERY_TOOL_PERMISSIONS";
 
 const JSON_KEY_MESSAGE: &str = "message";
 const JSON_KEY_CHALLENGE: &str = "challenge";
@@ -65,6 +68,7 @@ const DEFAULT_DOMAIN_ID: &str = "";
 const STRING_QUOTE: char = '"';
 extern "C" {
     fn CheckPermission(permission: *const raw_c_char) -> bool;
+    fn CheckIsSystemHap() -> bool;
 }
 
 struct SAFAbility;
@@ -327,6 +331,104 @@ impl SAFService {
             verify_info_str
         )
     }
+
+    fn generate_controlled_device_package(
+        &self, os_account_id: i32, queries: Vec<PermissionQuery>
+    ) -> BatchGenerateResult {
+        if let Err(code) = check_query_tool_permission(os_account_id, "generate_controlled_device_package") {
+            return BatchGenerateResult {
+                packages: vec![remote_control::create_empty_package(); queries.len()],
+                error_code: code as i32,
+            };
+        }
+        execute_with_metrics_batch!(
+            "generate_controlled_device_package",
+            remote_control::generate_controlled_device_package,
+            queries.len() as i32,
+            os_account_id,
+            queries
+        )
+    }
+
+    fn verify_controlled_device_package(
+        &self, os_account_id: i32, packages: Vec<RemoteAuthPackage>
+    ) -> BatchVerifyResult {
+        if let Err(code) = check_query_tool_permission(os_account_id, "verify_controlled_device_package") {
+            return BatchVerifyResult {
+                results: Vec::new(),
+                error_code: code as i32,
+            };
+        }
+        execute_with_metrics_batch!(
+            "verify_controlled_device_package",
+            remote_control::verify_controlled_device_package,
+            packages.len() as i32,
+            os_account_id,
+            packages
+        )
+    }
+
+    fn generate_controller_device_package(
+        &self, os_account_id: i32, remote_user_auth_results: Vec<RemoteUserAuthResults>
+    ) -> BatchGenerateResult {
+        if let Err(code) = check_query_tool_permission(os_account_id, "generate_controller_device_package") {
+            return BatchGenerateResult {
+                packages: vec![remote_control::create_empty_package(); remote_user_auth_results.len()],
+                error_code: code as i32,
+            };
+        }
+        execute_with_metrics_batch!(
+            "generate_controller_device_package",
+            remote_control::generate_controller_device_package,
+            remote_user_auth_results.len() as i32,
+            os_account_id,
+            remote_user_auth_results
+        )
+    }
+
+    fn verify_controller_device_package(
+        &self, os_account_id: i32, packages: Vec<RemoteAuthPackage>, remote_info: &RemoteInfo
+    ) -> BatchVerifyResult {
+        if let Err(code) = check_query_tool_permission(os_account_id, "verify_controller_device_package") {
+            return BatchVerifyResult {
+                results: Vec::new(),
+                error_code: code as i32,
+            };
+        }
+        execute_with_metrics_batch!(
+            "verify_controller_device_package",
+            remote_control::verify_controller_device_package,
+            packages.len() as i32,
+            os_account_id,
+            packages,
+            remote_info
+        )
+    }
+}
+
+fn check_query_tool_permission(os_account_id: i32, function_name: &str) -> std::result::Result<(), ErrCode> {
+    let permission = CString::new(QUERY_TOOL_PERMISSIONS).unwrap();
+    if unsafe { !CheckPermission(permission.as_ptr()) } {
+        loge!("Permission denied! Need {}", QUERY_TOOL_PERMISSIONS);
+        notify_error(
+            "Permission denied".to_string(),
+            ErrCode::PermissionDenied as i32,
+            os_account_id,
+            function_name.to_string(),
+        );
+        return Err(ErrCode::PermissionDenied);
+    }
+    if unsafe { !CheckIsSystemHap() } {
+        loge!("Caller is not system hap");
+        notify_error(
+            "Caller is not system hap".to_string(),
+            ErrCode::NotSystemApp as i32,
+            os_account_id,
+            function_name.to_string(),
+        );
+        return Err(ErrCode::NotSystemApp);
+    }
+    Ok(())
 }
 
 fn check_screen_lock_status(os_account_id: i32, message_json: &ylong_json::JsonValue) -> Result<()> {

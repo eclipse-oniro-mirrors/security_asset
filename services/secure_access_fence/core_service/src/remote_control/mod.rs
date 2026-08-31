@@ -64,7 +64,7 @@ fn log_remote_auth_package(package: &RemoteAuthPackage) {
     );
 }
 
-fn create_empty_package() -> RemoteAuthPackage {
+pub(crate) fn create_empty_package() -> RemoteAuthPackage {
     RemoteAuthPackage {
         remote_message: RemoteMessage {
             device_info: DeviceIdHeader {
