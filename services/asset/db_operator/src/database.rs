@@ -226,7 +226,9 @@ pub(crate) fn get_db_by_type_without_lock(
 ) -> Result<Database> {
     let backup_path = fmt_backup_path(&db_path);
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
-    let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: false };
+    let mut db = Database {
+        path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: false
+    };
     db.process_db(user_id, db_key)?;
     Ok(db)
 }
@@ -239,7 +241,9 @@ pub(crate) fn get_db_by_type(
 ) -> Result<Database> {
     let backup_path = fmt_backup_path(&db_path);
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
-    let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: true };
+    let mut db = Database {
+        path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: true
+    };
     let _lock = db.db_lock.mtx.lock().unwrap();
     db.process_db(user_id, db_key)?;
     Ok(db)
@@ -248,7 +252,9 @@ pub(crate) fn get_db_by_type(
 pub(crate) fn get_specific_db_version(user_id: i32, db_name: &str, db_path: String) -> Result<u32> {
     let backup_path = fmt_backup_path(&db_path);
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
-    let mut db = Database { path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: true };
+    let mut db = Database {
+        path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: true
+    };
     let _lock = db.db_lock.mtx.lock().unwrap();
     db.open()?;
     db.get_db_version()
@@ -282,7 +288,11 @@ impl Database {
     }
 
     /// Create a database from a file name without lock in full process.
-    pub fn build_with_file_name_without_lock(user_id: i32, db_name: &str, db_key: &Option<Vec<u8>>) -> Result<Database> {
+    pub fn build_with_file_name_without_lock(
+        user_id: i32,
+        db_name: &str,
+        db_key: &Option<Vec<u8>>
+    ) -> Result<Database> {
         // run here db must has been splited.
         get_db_without_lock(user_id, db_name, db_key)
     }
@@ -290,11 +300,14 @@ impl Database {
     /// Check whether db is ok
     pub fn check_db_accessible(path: String, user_id: i32, db_name: String, db_key: Option<&Vec<u8>>) -> Result<()> {
         let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.clone());
-        let mut db = Database { path: path.clone(), backup_path: path, handle: 0, db_lock: lock, db_name, use_lock: true };
-        if db_key.is_some() {
-            db.open_and_restore(db_key)?
-        } else {
-            db.open()?;
+        let mut db = Database {
+            path: path.clone(), backup_path: path, handle: 0, db_lock: lock, db_name, use_lock: true
+        };
+        db.open()?;
+        if let Some(db_key) = db_key {
+            if db.check_db_is_encrypt()? {
+                db.set_db_key(db_key)?;
+            }
         }
         let table = Table::new(TABLE_NAME, &db);
         table.create(COLUMN_INFO)
@@ -545,7 +558,7 @@ impl Database {
             let s = unsafe { CStr::from_ptr(msg as _) };
             if let Ok(rs) = s.to_str() {
                 let err = macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                    sqlite_err_handle(ret), "[FATAL]Database execute sql failed. error code={}, error msg={}", ret, rs);
+                    sqlite_err_handle(ret), "[FATAL]Database execute sql failed. error code={}, msg={}", ret, rs);
                 unsafe { SqliteFree(msg as _) };
                 return err;
             }
@@ -982,7 +995,8 @@ impl Database {
         query_options: Option<&QueryOptions>,
         is_filter_sync: bool
     ) -> Result<Vec<DbMap>> {
-        let closure = |e: &Table| e.query_connect_table_row(columns, condition, query_options, is_filter_sync, COMBINE_COLUMN_INFO);
+        let closure = |e: &Table| e.query_connect_table_row(columns, condition, query_options, is_filter_sync,
+            COMBINE_COLUMN_INFO);
         self.restore_if_exec_fail(closure)
     }
 
