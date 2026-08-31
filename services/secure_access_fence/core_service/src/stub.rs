@@ -37,7 +37,6 @@ use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
 use saf_sdk::{ErrCode, Result, SAFError};
 
-use crate::remote_control;
 use crate::remote_grant_status;
 use crate::wrapper;
 use crate::SAFService;
