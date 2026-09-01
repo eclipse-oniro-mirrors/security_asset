@@ -121,6 +121,7 @@ pub fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec
 
     let mut params = ExtMap::new();
     params.insert(POLICY_AUTH_STATUS_KEYS.permissions, Value::StringList(permissions.clone()));
+    params.insert(POLICY_AUTH_STATUS_KEYS.is_remote, Value::Bool(is_remote));
 
     logi!("[get_policy_auth_status] calling plugin process_event");
 
