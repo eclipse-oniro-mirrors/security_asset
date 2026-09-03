@@ -22,6 +22,9 @@ ohos_rust_shared_ffi("asset_sdk_ffi") {
     "../../rs/asset:asset_sdk_rust",
   ]
 
+  shlib_type = "sa"
+  version_script = "libasset_sdk_ffi.map"
+
   sanitize = {
     integer_overflow = true
     cfi = true

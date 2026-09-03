@@ -26,6 +26,9 @@ ohos_shared_library("asset_sdk") {
     "../../os_dependency/memory:asset_mem",
   ]
 
+  shlib_type = "sa"
+  version_script = "libasset_sdk.map"
+
   external_deps = [
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",
