@@ -37,7 +37,6 @@ use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
 use saf_sdk::{ErrCode, Result, SAFError};
 
-use crate::remote_control;
 use crate::remote_grant_status;
 use crate::wrapper;
 use crate::SAFService;
@@ -105,17 +104,17 @@ fn on_remote_request(stub: &SAFService, code: u32, data: &mut MsgParcel, reply: 
         CMD_VERIFY_TICKET => {	 
             handle_verify_ticket(stub, data, reply)	 
         },	 
-        CMD_GENERATE_CONTROLLED_DEVICE_PACKAGE => {	 
-            handle_generate_controlled_device_package(data, reply)	 
-        },	 
-        CMD_VERIFY_CONTROLLED_DEVICE_PACKAGE => {	 
-            handle_verify_controlled_device_package(data, reply)	 
-        },	 
-        CMD_GENERATE_CONTROLLER_DEVICE_PACKAGE => {	 
-            handle_generate_controller_device_package(data, reply)	 
-        },	 
-        CMD_VERIFY_CONTROLLER_DEVICE_PACKAGE => {	 
-            handle_verify_controller_device_package(data, reply)	 
+        CMD_GENERATE_CONTROLLED_DEVICE_PACKAGE => {
+            handle_generate_controlled_device_package(stub, data, reply)
+        },
+        CMD_VERIFY_CONTROLLED_DEVICE_PACKAGE => {
+            handle_verify_controlled_device_package(stub, data, reply)
+        },
+        CMD_GENERATE_CONTROLLER_DEVICE_PACKAGE => {
+            handle_generate_controller_device_package(stub, data, reply)
+        },
+        CMD_VERIFY_CONTROLLER_DEVICE_PACKAGE => {
+            handle_verify_controller_device_package(stub, data, reply)
         },
         CMD_GET_REMOTE_GRANT_STATUS => {
             handle_get_remote_grant_status(data, reply)
@@ -136,6 +135,14 @@ fn on_remote_request(stub: &SAFService, code: u32, data: &mut MsgParcel, reply: 
             }
         },
     }
+}
+
+fn get_calling_os_account_id() -> IpcResult<i32> {
+    let uid = Skeleton::calling_uid();
+    get_user_id(uid).map_err(|e| {
+        loge!("[FATAL]Get user id failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })
 }
 
 fn handle_batch_generate_ticket(stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
@@ -255,16 +262,18 @@ fn handle_verify_ticket(
 }
 
 fn handle_generate_controlled_device_package(
-    data: &mut MsgParcel, reply: &mut MsgParcel
+    stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel
 ) -> IpcResult<()> {
     let queries = deserialize_permission_queries(data).map_err(|e| {
         loge!("[FATAL]Deserialize GenerateControlledDevicePackage request failed: {}", e.msg);
         IpcStatusCode::Failed
     })?;
 
-    logi!("GenerateControlledDevicePackage received, queryCount: {}", queries.len());
+    let os_account_id = get_calling_os_account_id()?;
 
-    let result = remote_control::generate_controlled_device_package(queries);
+    logi!("GenerateControlledDevicePackage received, os_account_id: {}, queryCount: {}", os_account_id, queries.len());
+
+    let result = stub.generate_controlled_device_package(os_account_id, queries);
 
     reply.write::<i32>(&(IPC_SUCCESS as i32))?;
     serialize_remote_auth_packages(&result.packages, reply).map_err(|e| {
@@ -283,22 +292,18 @@ fn handle_generate_controlled_device_package(
 }
 
 fn handle_verify_controlled_device_package(
-    data: &mut MsgParcel, reply: &mut MsgParcel
+    stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel
 ) -> IpcResult<()> {
     let packages = deserialize_remote_auth_packages(data).map_err(|e| {
         loge!("[FATAL]Deserialize VerifyControlledDevicePackage request failed: {}", e.msg);
         IpcStatusCode::Failed
     })?;
 
-    let uid = Skeleton::calling_uid();
-    let os_account_id = get_user_id(uid).map_err(|e| {
-        loge!("[FATAL]Get user id failed: {}", e.msg);
-        IpcStatusCode::Failed
-    })?;
+    let os_account_id = get_calling_os_account_id()?;
 
     logi!("VerifyControlledDevicePackage received, os_account_id: {}, packageCount: {}", os_account_id, packages.len());
 
-    let result = remote_control::verify_controlled_device_package(os_account_id, packages);
+    let result = stub.verify_controlled_device_package(os_account_id, packages);
 
     reply.write::<i32>(&(IPC_SUCCESS as i32))?;
     serialize_bool_vec(&result.results, reply).map_err(|e| {
@@ -317,17 +322,19 @@ fn handle_verify_controlled_device_package(
 }
 
 fn handle_generate_controller_device_package(
-    data: &mut MsgParcel, reply: &mut MsgParcel
+    stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel
 ) -> IpcResult<()> {
     let remote_user_auth_results = deserialize_remote_user_auth_results_vec(data).map_err(|e| {
         loge!("[FATAL]Deserialize GenerateControllerDevicePackage request failed: {}", e.msg);
         IpcStatusCode::Failed
     })?;
 
-    logi!("GenerateControllerDevicePackage received, resultCount: {}", 
-        remote_user_auth_results.len());
+    let os_account_id = get_calling_os_account_id()?;
 
-    let result = remote_control::generate_controller_device_package(remote_user_auth_results);
+    logi!("GenerateControllerDevicePackage received, os_account_id: {}, resultCount: {}",
+        os_account_id, remote_user_auth_results.len());
+
+    let result = stub.generate_controller_device_package(os_account_id, remote_user_auth_results);
 
     reply.write::<i32>(&(IPC_SUCCESS as i32))?;
     serialize_remote_auth_packages(&result.packages, reply).map_err(|e| {
@@ -348,7 +355,7 @@ fn handle_generate_controller_device_package(
 }
 
 fn handle_verify_controller_device_package(
-    data: &mut MsgParcel, reply: &mut MsgParcel
+    stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel
 ) -> IpcResult<()> {
     let packages = deserialize_remote_auth_packages(data).map_err(|e| {
         loge!("[FATAL]Deserialize VerifyControllerDevicePackage packages failed: {}", e.msg);
@@ -360,15 +367,11 @@ fn handle_verify_controller_device_package(
         IpcStatusCode::Failed
     })?;
 
-    let uid = Skeleton::calling_uid();
-    let os_account_id = get_user_id(uid).map_err(|e| {
-        loge!("[FATAL]Get user id failed: {}", e.msg);
-        IpcStatusCode::Failed
-    })?;
+    let os_account_id = get_calling_os_account_id()?;
 
     logi!("VerifyControllerDevicePackage received, os_account_id: {}, packageCount: {}", os_account_id, packages.len());
 
-    let result = remote_control::verify_controller_device_package(os_account_id, packages, &remote_info);
+    let result = stub.verify_controller_device_package(os_account_id, packages, &remote_info);
 
     reply.write::<i32>(&(IPC_SUCCESS as i32))?;
     serialize_bool_vec(&result.results, reply).map_err(|e| {

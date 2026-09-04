@@ -15,8 +15,7 @@
 
 //! This module implements controller device package generation and verification.
 
-use ipc::Skeleton;
-use saf_common::{get_user_id, JsonBuilder, new_object, object_add_string};
+use saf_common::{JsonBuilder, new_object, object_add_string};
 use saf_utils::system_time_in_millis;
 use saf_definition::{macros_lib, ErrCode, Result,
     PermissionQuery, RemoteAuthPackage, Role, DeviceIdHeader, RemoteUserAuthItem,
@@ -29,30 +28,14 @@ use crate::remote_control::remote_challenge_manager::verify_and_remove_challenge
 use crate::remote_control::account_based_auth_manager::{sign_remote_auth_package, verify_remote_auth_package, SignParams};
 use crate::remote_control::grant_record::get_bundle_name_from_token;
 use saf_log::{loge, logi};
-use std::ffi::CString;
-use std::os::raw::c_char as raw_c_char;
-
-extern "C" {
-    fn CheckPermission(permission: *const raw_c_char) -> bool;
-}
-
-const QUERY_TOOL_PERMISSIONS: &str = "ohos.permission.QUERY_TOOL_PERMISSIONS";
 
 const MAX_PERMISSION_LEN: usize = 128;
 
 /// Generates controller device packages for remote user auth results.
 pub fn generate_controller_device_package(
+    os_account_id: i32,
     remote_user_auth_results: Vec<RemoteUserAuthResults>
 ) -> BatchGenerateResult {
-    let permission = CString::new(QUERY_TOOL_PERMISSIONS).unwrap();
-    if unsafe { !CheckPermission(permission.as_ptr()) } {
-        loge!("Permission denied! Need {}", QUERY_TOOL_PERMISSIONS);
-        return BatchGenerateResult {
-            packages: vec![create_empty_package(); remote_user_auth_results.len().max(1)],
-            error_code: ErrCode::PermissionDenied as i32,
-        };
-    }
-    
     if let Err(e) = validate_controller_batch_params(&remote_user_auth_results) {
         loge!("Invalid batch params: {:?}", e);
         return BatchGenerateResult {
@@ -60,39 +43,29 @@ pub fn generate_controller_device_package(
             error_code: e.code as i32,
         };
     }
-    
-    let uid = Skeleton::calling_uid();
-    let user_id = match get_user_id(uid) {
-        Ok(id) => id,
-        Err(e) => {
-            loge!("Failed to get user_id: {:?}", e);
-            return BatchGenerateResult {
-                packages: vec![create_empty_package(); remote_user_auth_results.len()],
-                error_code: ErrCode::InvalidOsAccountId as i32,
-            };
-        }
-    };
-    
+
     let mut packages = Vec::with_capacity(remote_user_auth_results.len());
-    let mut has_error = false;
+    let mut system_error_code = ErrCode::Success as i32;
     
     for (idx, auth_result) in remote_user_auth_results.iter().enumerate() {
-        match generate_single_controller_package(user_id, auth_result) {
+        match generate_single_controller_package(os_account_id, auth_result) {
             Ok(pkg) => {
-                store_grant_record_if_success(user_id, &pkg, Role::Controller);
+                store_grant_record_if_success(os_account_id, &pkg, Role::Controller);
                 packages.push(pkg);
             },
             Err(e) => {
                 loge!("Generate controller package failed at idx[{}], err={:?}", idx, e);
                 packages.push(create_empty_package());
-                has_error = true;
+                if system_error_code == ErrCode::Success as i32 {
+                    system_error_code = e.code as i32;
+                }
             }
         }
     }
     
     BatchGenerateResult {
         packages,
-        error_code: if has_error { ErrCode::GeneralError as i32 } else { ErrCode::Success as i32 },
+        error_code: system_error_code,
     }
 }
 
@@ -128,15 +101,6 @@ pub fn verify_controller_device_package(
     packages: Vec<RemoteAuthPackage>,
     remote_info: &RemoteInfo
 ) -> BatchVerifyResult {
-    let permission = CString::new(QUERY_TOOL_PERMISSIONS).unwrap();
-    if unsafe { !CheckPermission(permission.as_ptr()) } {
-        loge!("Permission denied! Need {}", QUERY_TOOL_PERMISSIONS);
-        return BatchVerifyResult {
-            results: Vec::new(),
-            error_code: ErrCode::PermissionDenied as i32,
-        };
-    }
-
     logi!("[verify_controller_device_package] os_account_id={}, package_count={}, domain_id={}", 
         os_account_id, packages.len(), remote_info.domain_id);
     
@@ -237,10 +201,7 @@ fn generate_single_controller_package(
     let (local_udid, api_permissions, challenge, timestamp) =
         prepare_controller_package_data(os_account_id, auth_result)?;
 
-    let uid = Skeleton::calling_uid();
-    let user_id = get_user_id(uid)?;
-
-    logi!("Generate controller package: user_id={}", user_id);
+    logi!("Generate controller package: os_account_id={}", os_account_id);
 
     let package = build_and_sign_controller_package(
         &auth_result.permission_query,
@@ -248,7 +209,7 @@ fn generate_single_controller_package(
         challenge,
         &local_udid,
         &api_permissions,
-        user_id,
+        os_account_id,
         timestamp,
     )?;
 
@@ -277,7 +238,7 @@ fn prepare_controller_package_data(
 
     let challenge = auth_result.permission_query.remote_info.remote_control_params.challenge.clone();
     if challenge.is_empty() {
-        return macros_lib::log_throw_error!(ErrCode::ArgEmpty, "challenge is empty");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "challenge is empty");
     }
     
     let timestamp = system_time_in_millis()?;
@@ -394,15 +355,15 @@ fn validate_controller_permission_query(query: &PermissionQuery) -> Result<()> {
     }
 
     if query.domain_id.is_empty() {
-        return macros_lib::log_throw_error!(ErrCode::ArgEmpty, "domain_id is empty");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "domain_id is empty");
     }
 
     if query.remote_info.remote_control_params.challenge.is_empty() {
-        return macros_lib::log_throw_error!(ErrCode::ArgEmpty, "challenge is empty");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "challenge is empty");
     }
 
     if query.operation_info.is_empty() {
-        return macros_lib::log_throw_error!(ErrCode::ArgEmpty, "operation_info is empty");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "operation_info is empty");
     }
     if query.ticket_expire_time_ms <= 0 || query.ticket_expire_time_ms > super::MAX_REMOTE_TICKET_EXPIRE_TIME_MS {
         return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "ticket_expire_time_ms out of range {}",
@@ -413,12 +374,12 @@ fn validate_controller_permission_query(query: &PermissionQuery) -> Result<()> {
 
 fn validate_auth_results_permissions(results: &[RemoteUserAuthItem]) -> Result<()> {
     if results.is_empty() {
-        return macros_lib::log_throw_error!(ErrCode::ArgEmpty, "authResults is empty");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "authResults is empty");
     }
     
     for (idx, item) in results.iter().enumerate() {
         if item.permission.is_empty() {
-            return macros_lib::log_throw_error!(ErrCode::ArgEmpty,
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
                 "Permission at idx[{}] is empty", idx);
         }
         if item.permission.len() >= MAX_PERMISSION_LEN {

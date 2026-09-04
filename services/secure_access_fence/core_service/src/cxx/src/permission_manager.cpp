@@ -289,7 +289,7 @@ int32_t PermissionManager::BatchVerifyPermissions(const std::vector<std::string>
 }
 
 int32_t PermissionManager::GetPolicyAuthStatus(const std::vector<std::string> &permissions,
-    std::vector<int32_t> &policyStatuses)
+    std::vector<int32_t> &policyStatuses, bool isRemote)
 {
     policyStatuses.clear();
     policyStatuses.reserve(permissions.size());
@@ -298,7 +298,7 @@ int32_t PermissionManager::GetPolicyAuthStatus(const std::vector<std::string> &p
     for (const auto &permission : permissions) {
         rustPermissions.push_back(rust::String(permission));
     }
-    int32_t ret = get_policy_auth_status(rustPermissions, rustPolicyStatuses);
+    int32_t ret = get_policy_auth_status(rustPermissions, rustPolicyStatuses, isRemote);
     IF_ERROR_LOGE_RETURN(ret, "get_policy_auth_status failed, ret = %{public}d", ret);
 
     LOGI("get_policy_auth_status success, rustPolicyStatuses size = %{public}zu", rustPolicyStatuses.size());
@@ -310,14 +310,14 @@ int32_t PermissionManager::GetPolicyAuthStatus(const std::vector<std::string> &p
 }
 
 int32_t PermissionManager::MergePermissionResults(const std::vector<PermissionInfo> &permissionInfos,
-    PermissionQueryResult &permissionQueryResult)
+    PermissionQueryResult &permissionQueryResult, bool isRemote)
 {
     std::vector<int32_t> policyStatuses;
     std::vector<std::string> permissionNames;
     for (auto &permissionInfo : permissionInfos) {
         permissionNames.push_back(permissionInfo.permission);
     }
-    int32_t ret = GetPolicyAuthStatus(permissionNames, policyStatuses);
+    int32_t ret = GetPolicyAuthStatus(permissionNames, policyStatuses, isRemote);
     IF_ERROR_LOGE_RETURN(ret, "GetPolicyAuthStatus failed, ret=%{public}d", ret);
 
     permissionQueryResult.permissionResults.clear();
@@ -729,7 +729,8 @@ int32_t PermissionManager::RequestToolPermissions(const PermissionQuery &permiss
     // 判断 PermissionQuery中是否有 RemoteInfo 有的话添加remote ticket的判断
     int32_t ret = SAF_SUCCESS;
     bool needSetScreenLock = true;
-    if (!IsRemoteInfoEmpty(permissionQuery.remoteInfo)) {
+    bool isRemote = !IsRemoteInfoEmpty(permissionQuery.remoteInfo);
+    if (isRemote) {
         ret = VerifyRemoteTicket(permissionQuery);
         IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: VerifyRemoteTicket failed, ret=%{public}d", ret);
         needSetScreenLock = false;
@@ -764,7 +765,7 @@ int32_t PermissionManager::RequestToolPermissions(const PermissionQuery &permiss
     if (allPermissions.size() > 0) {
         ret = BatchVerifyPermissions(allPermissions, tokenId, permissionInfos);
         IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: BatchVerifyPermissions failed, ret=%{public}d", ret);
-        ret = MergePermissionResults(permissionInfos, permissionQueryResult);
+        ret = MergePermissionResults(permissionInfos, permissionQueryResult, isRemote);
         IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: MergePermissionResults failed, ret=%{public}d", ret);
     }
     ret = ProcessTicketInfo(permissionQuery, ticketCliInfos, apiPermissions, needSetScreenLock, permissionQueryResult);

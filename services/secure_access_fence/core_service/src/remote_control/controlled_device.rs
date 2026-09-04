@@ -15,22 +15,13 @@
 
 //! This module implements controlled device package generation and verification.
 
-use ipc::Skeleton;
-use saf_common::{get_user_id, JsonBuilder};
+use saf_common::JsonBuilder;
 use saf_utils::system_time_in_millis;
 use saf_definition::{macros_lib, ErrCode, Result,
     PermissionQuery, RemoteAuthPackage,
     Role, RemoteMessage,
 };
 use saf_log::{loge, logi};
-use std::ffi::CString;
-use std::os::raw::c_char as raw_c_char;
-
-extern "C" {
-    fn CheckPermission(permission: *const raw_c_char) -> bool;
-}
-
-const QUERY_TOOL_PERMISSIONS: &str = "ohos.permission.QUERY_TOOL_PERMISSIONS";
 
 use crate::remote_control::{create_empty_package, log_remote_auth_package, parse_ticket_expire_time, parse_timestamp,
     validate_ticket_expiration, generate_crypto_random_challenge, serialize_permission_query_to_message,
@@ -40,18 +31,9 @@ use crate::remote_control::account_based_auth_manager::{sign_remote_auth_package
 
 /// Generates controlled device packages for permission queries.
 pub fn generate_controlled_device_package(
+    os_account_id: i32,
     queries: Vec<PermissionQuery>
 ) -> BatchGenerateResult {
-    let permission = CString::new(QUERY_TOOL_PERMISSIONS).unwrap();
-    if unsafe { !CheckPermission(permission.as_ptr()) } {
-        loge!("Permission denied! Need {}", QUERY_TOOL_PERMISSIONS);
-        return BatchGenerateResult {
-            packages: vec![create_empty_package(); queries.len()
-            ],
-            error_code: ErrCode::PermissionDenied as i32,
-        };
-    }
-    
     if let Err(e) = validate_controlled_batch_params(&queries) {
         loge!("Invalid batch params: {:?}", e);
         return BatchGenerateResult {
@@ -61,22 +43,24 @@ pub fn generate_controlled_device_package(
     }
     
     let mut packages = Vec::with_capacity(queries.len());
-    let mut has_error = false;
+    let mut system_error_code = ErrCode::Success as i32;
     
     for (idx, query) in queries.into_iter().enumerate() {
-        match generate_single_controlled_package(query) {
+        match generate_single_controlled_package(os_account_id, query) {
             Ok(pkg) => packages.push(pkg),
             Err(e) => {
                 loge!("Generate package failed at idx[{}], err={:?}",idx, e);
                 packages.push(create_empty_package());
-                has_error = true;
+                if system_error_code == ErrCode::Success as i32 {
+                    system_error_code = e.code as i32;
+                }
             }
         }
     }
     
     BatchGenerateResult {
         packages,
-        error_code: if has_error { ErrCode::GeneralError as i32 } else { ErrCode::Success as i32 },
+        error_code: system_error_code,
     }
 }
 
@@ -89,15 +73,6 @@ pub fn verify_controlled_device_package(
     os_account_id: i32,
     packages: Vec<RemoteAuthPackage>
 ) -> BatchVerifyResult {
-    let permission = CString::new(QUERY_TOOL_PERMISSIONS).unwrap();
-    if unsafe { !CheckPermission(permission.as_ptr()) } {
-        loge!("Permission denied! Need {}", QUERY_TOOL_PERMISSIONS);
-        return BatchVerifyResult {
-            results: Vec::new(),
-            error_code: ErrCode::PermissionDenied as i32,
-        };
-    }
-
     logi!("[verify_controlled_device_package] os_account_id={}, package_count={}", os_account_id, packages.len());
     
     if packages.is_empty() || packages.len() > super::MAX_REMOTE_BATCH_COUNT {
@@ -213,7 +188,10 @@ fn validate_single_controlled_package(
     }
 }
 
-fn generate_single_controlled_package(query: PermissionQuery) -> Result<RemoteAuthPackage> {
+fn generate_single_controlled_package(
+    os_account_id: i32,
+    query: PermissionQuery
+) -> Result<RemoteAuthPackage> {
     validate_controlled_permission_query(&query)?;
     
     let (cli_infos, mut api_permissions) = super::parse_cli_and_permission(&query.operation_info)?;
@@ -227,13 +205,10 @@ fn generate_single_controlled_package(query: PermissionQuery) -> Result<RemoteAu
     
     let remote_auth_message = build_remote_auth_message(&query, api_permissions, &challenge, timestamp)?;
     
-    let uid = Skeleton::calling_uid();
-    let user_id = get_user_id(uid)?;
-    
-    logi!("Generate package: user_id={}", user_id);
+    logi!("Generate package: os_account_id={}", os_account_id);
     
     let sign_params = SignParams {
-        os_account_id: user_id,
+        os_account_id,
         uid: query.remote_info.domain_id.clone(),
         remote_auth_package: remote_auth_message,
         remote_control_token: query.remote_info.remote_control_params.remote_control_ticket.clone(),
@@ -241,7 +216,7 @@ fn generate_single_controlled_package(query: PermissionQuery) -> Result<RemoteAu
     
     let sign_result = sign_remote_auth_package(sign_params)?;
     
-    cache_challenge(user_id, &challenge, timestamp, &sign_result.device_id_header)?;
+    cache_challenge(os_account_id, &challenge, timestamp, &sign_result.device_id_header)?;
 
     let package = RemoteAuthPackage {
         remote_message: RemoteMessage {
@@ -263,10 +238,10 @@ fn validate_controlled_permission_query(query: &PermissionQuery) -> Result<()> {
         return macros_lib::log_throw_error!(ErrCode::DataTypeMismatch, "Invalid role: expected CONTROLLED");
     }
     if query.domain_id.is_empty() {
-        return macros_lib::log_throw_error!(ErrCode::ArgEmpty, "domain_id is empty");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "domain_id is empty");
     }
     if query.remote_info.remote_control_params.remote_control_ticket.is_empty() {
-        return macros_lib::log_throw_error!(ErrCode::ArgEmpty, "remote_control_ticket is empty");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "remote_control_ticket is empty");
     }
     if query.ticket_expire_time_ms <= 0 || query.ticket_expire_time_ms > super::MAX_REMOTE_TICKET_EXPIRE_TIME_MS {
         return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "ticket_expire_time_ms out of range {}",

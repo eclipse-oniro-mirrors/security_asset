@@ -20,7 +20,7 @@ use secure_access_fence_service::ut_core_service_lib_stub::*;
 
 #[test]
 fn test_generate_controller_device_package_empty() {
-    let result = generate_controller_device_package(vec![]);
+    let result = generate_controller_device_package(100, vec![]);
     assert!(result.packages.is_empty());
     assert_eq!(ErrCode::Success as i32, result.error_code);
 }
@@ -28,7 +28,7 @@ fn test_generate_controller_device_package_empty() {
 #[test]
 fn test_generate_controller_device_package_single_valid() {
     let auth_result = create_test_remote_user_auth_results("ohos.permission.TEST", "granted");
-    let result = generate_controller_device_package(vec![auth_result]);
+    let result = generate_controller_device_package(100, vec![auth_result]);
     assert_eq!(1, result.packages.len());
     assert_eq!(ErrCode::Success as i32, result.error_code);
 }
@@ -40,7 +40,7 @@ fn test_generate_controller_device_package_multiple_valid() {
         create_test_remote_user_auth_results("perm2", "denied"),
         create_test_remote_user_auth_results("perm3", "granted"),
     ];
-    let result = generate_controller_device_package(auth_results);
+    let result = generate_controller_device_package(100, auth_results);
     assert_eq!(3, result.packages.len());
     assert_eq!(ErrCode::Success as i32, result.error_code);
 }
@@ -72,7 +72,7 @@ fn test_generate_controller_device_package_invalid_role() {
             },
         },
     };
-    let result = generate_controller_device_package(vec![auth_result]);
+    let result = generate_controller_device_package(100, vec![auth_result]);
     assert_eq!(1, result.packages.len());
     assert_eq!(ErrCode::GeneralError as i32, result.error_code);
 }
@@ -104,7 +104,7 @@ fn test_generate_controller_device_package_empty_challenge() {
             },
         },
     };
-    let result = generate_controller_device_package(vec![auth_result]);
+    let result = generate_controller_device_package(100, vec![auth_result]);
     assert_eq!(1, result.packages.len());
     assert_eq!(ErrCode::GeneralError as i32, result.error_code);
 }
@@ -136,7 +136,7 @@ fn test_generate_controller_device_package_invalid_challenge_format() {
             },
         },
     };
-    let result = generate_controller_device_package(vec![auth_result]);
+    let result = generate_controller_device_package(100, vec![auth_result]);
     assert_eq!(1, result.packages.len());
     assert_eq!(ErrCode::GeneralError as i32, result.error_code);
 }
@@ -169,7 +169,7 @@ fn test_generate_controller_device_package_partial_failure() {
             },
         },
     };
-    let result = generate_controller_device_package(vec![valid_auth, invalid_auth]);
+    let result = generate_controller_device_package(100, vec![valid_auth, invalid_auth]);
     assert_eq!(2, result.packages.len());
     assert_eq!(ErrCode::GeneralError as i32, result.error_code);
 }
@@ -273,7 +273,7 @@ fn test_generate_controller_device_package_sign_success() {
     set_mock_local_udid("test_udid");
     
     let auth_result = create_test_remote_user_auth_results("ohos.permission.TEST", "granted");
-    let result = generate_controller_device_package(vec![auth_result]);
+    let result = generate_controller_device_package(100, vec![auth_result]);
     
     assert_eq!(1, result.packages.len());
     assert_eq!(ErrCode::Success as i32, result.error_code);
@@ -287,7 +287,7 @@ fn test_generate_controller_device_package_sign_failure() {
     set_mock_local_udid("mock_local_udid");
     
     let auth_result = create_test_remote_user_auth_results("ohos.permission.TEST", "granted");
-    let result = generate_controller_device_package(vec![auth_result]);
+    let result = generate_controller_device_package(100, vec![auth_result]);
     
     assert_eq!(1, result.packages.len());
     assert_eq!(ErrCode::GeneralError as i32, result.error_code);
@@ -304,7 +304,7 @@ fn test_generate_controller_device_package_multiple_with_mock() {
         create_test_remote_user_auth_results("perm1", "granted"),
         create_test_remote_user_auth_results("perm2", "denied"),
     ];
-    let result = generate_controller_device_package(auth_results);
+    let result = generate_controller_device_package(100, auth_results);
     
     assert_eq!(2, result.packages.len());
     assert_eq!(ErrCode::Success as i32, result.error_code);

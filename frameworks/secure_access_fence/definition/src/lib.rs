@@ -183,6 +183,9 @@ impl_enum_trait! {
         /// The error code indicates that the caller doesn't have the permission.
         PermissionDenied = 0x32001,
 
+        /// The error code indicates that the caller is not system application.
+        NotSystemApp = 0x32002,
+
         // ==================== COMMON (0x33000) ====================
         /// The error code indicates that data type mismatch.
         DataTypeMismatch = 0x33001,
