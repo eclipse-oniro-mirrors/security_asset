@@ -59,10 +59,12 @@ ohos_unittest("asset_dependency_test") {
   }
   sources += [
     "src/asset_permission_change.cpp",
-    "src/asset_system_batch_api_test.cpp",
     "src/asset_mem_wrapper_test.cpp",
     "src/asset_system_api_without_permission_test.cpp",
   ]
+  if (not_emulator) {
+    sources += [ "src/asset_system_batch_api_test.cpp" ]
+  }
   deps = [
     "../../../../frameworks/asset/c/system_api:asset_sdk",
     "../../../../frameworks/asset/os_dependency/memory:asset_mem",
