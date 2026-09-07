@@ -101,8 +101,8 @@ pub fn verify_controller_device_package(
     packages: Vec<RemoteAuthPackage>,
     remote_info: &RemoteInfo
 ) -> BatchVerifyResult {
-    logi!("[verify_controller_device_package] os_account_id={}, package_count={}, domain_id={}", 
-        os_account_id, packages.len(), remote_info.domain_id);
+    logi!("[verify_controller_device_package] os_account_id={}, package_count={}", 
+        os_account_id, packages.len());
     
     if packages.is_empty() || packages.len() > super::MAX_REMOTE_BATCH_COUNT {
         loge!("Invalid packages count: {}, max allowed: {}", packages.len(), super::MAX_REMOTE_BATCH_COUNT);
