@@ -13,21 +13,6 @@
 
 {
   global:
-    AssetAdd;
-    AssetBatchAdd;
-    AssetBatchRemove;
-    AssetBatchUpdate;
-    AssetFree;
-    AssetFreeBlob;
-    AssetFreeResultSet;
-    AssetMalloc;
-    AssetParseAttr;
-    AssetPostQuery;
-    AssetPreQuery;
-    AssetQuery;
-    AssetQuerySyncResult;
-    AssetRemove;
-    AssetUpdate;
     __cfi_check;
   local:
     *;

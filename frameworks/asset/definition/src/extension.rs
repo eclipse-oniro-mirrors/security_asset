@@ -18,8 +18,7 @@
 use std::{collections::HashMap, fmt::Display, hash::Hash, io};
 
 use super::{
-    macros_lib, Accessibility, AssetError, AuthType, Conversion, DataType, ErrCode, Extension,
-    Result, Tag, Value,
+    macros_lib, Accessibility, AssetError, AuthType, Conversion, DataType, ErrCode, Extension, Result, Tag, Value,
 };
 
 /// The mask used to obtain the data type of Asset attribute value.
@@ -99,8 +98,12 @@ where
         if let Some(Value::Bool(b)) = self.get(key) {
             Ok(*b)
         } else {
-            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                ErrCode::InvalidArgument, "[FATAL]Get attribute of bool type failed, key: {}", key)
+            macros_lib::log_throw_error!(
+                macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument,
+                "[FATAL]Get attribute of bool type failed, key: {}",
+                key
+            )
         }
     }
 
@@ -108,8 +111,12 @@ where
         if let Some(Value::Number(num)) = self.get(key) {
             T::try_from(*num)
         } else {
-            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                ErrCode::InvalidArgument, "[FATAL]Get attribute of enum type failed, key: {}", key)
+            macros_lib::log_throw_error!(
+                macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument,
+                "[FATAL]Get attribute of enum type failed, key: {}",
+                key
+            )
         }
     }
 
@@ -117,8 +124,12 @@ where
         if let Some(Value::Number(num)) = self.get(key) {
             Ok(*num)
         } else {
-            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                ErrCode::InvalidArgument, "[FATAL]Get attribute of number type failed, key: {}", key)
+            macros_lib::log_throw_error!(
+                macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument,
+                "[FATAL]Get attribute of number type failed, key: {}",
+                key
+            )
         }
     }
 
@@ -126,8 +137,12 @@ where
         if let Some(Value::Bytes(bytes)) = self.get(key) {
             Ok(bytes)
         } else {
-            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                ErrCode::InvalidArgument, "[FATAL]Get attribute of bytes type failed, key: {}", key)
+            macros_lib::log_throw_error!(
+                macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument,
+                "[FATAL]Get attribute of bytes type failed, key: {}",
+                key
+            )
         }
     }
 }
@@ -141,26 +156,14 @@ impl Display for AssetError {
 impl AssetError {
     /// Create an AssetError instance.
     pub fn shorten_func_name(full_name: &'static str) -> &'static str {
-        let name = if let Some(idx) = full_name.find("::{") {
-            &full_name[..idx]
-        } else {
-            full_name
-        };
-        let name = if let Some(idx) = name.rfind("::") {
-            &name[idx + 2..]
-        } else {
-            name
-        };
+        let name = if let Some(idx) = full_name.find("::{") { &full_name[..idx] } else { full_name };
+        let name = if let Some(idx) = name.rfind("::") { &name[idx + 2..] } else { name };
         name
     }
 
     /// Create a new AssetError.
     pub fn new(code: ErrCode, msg: String, func_name: &'static str) -> AssetError {
-        AssetError {
-            code,
-            msg,
-            call_chain: Self::shorten_func_name(func_name).to_string(),
-        }
+        AssetError { code, msg, call_chain: Self::shorten_func_name(func_name).to_string() }
     }
 
     /// Track caller location when propagating error.
@@ -183,3 +186,21 @@ impl From<io::Error> for AssetError {
 
 macros_lib::impl_from_for_u32!(AuthType);
 macros_lib::impl_from_for_u32!(Accessibility);
+
+/// Shorten function name with stable export symbol.
+#[no_mangle]
+pub fn asset_error_shorten_func_name(full_name: &'static str) -> &'static str {
+    AssetError::shorten_func_name(full_name)
+}
+
+/// Create a new AssetError with stable export symbol.
+#[no_mangle]
+pub fn asset_error_new(code: ErrCode, msg: String, func_name: &'static str) -> AssetError {
+    AssetError::new(code, msg, func_name)
+}
+
+/// Track caller location with stable export symbol.
+#[no_mangle]
+pub fn asset_error_track_internal(error: AssetError, func_name: &'static str) -> AssetError {
+    error.track_internal(func_name)
+}

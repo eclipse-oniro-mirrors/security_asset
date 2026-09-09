@@ -25,6 +25,10 @@ ohos_rust_shared_library("asset_plugin_interface_rust") {
     "ylong_runtime:ylong_runtime",
   ]
 
+  if (is_ohos && target_cpu == "arm64") {
+    version_script = "libasset_plugin_interface.map"
+  }
+
   sanitize = {
     integer_overflow = true
     cfi = true
