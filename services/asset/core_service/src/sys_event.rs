@@ -308,7 +308,7 @@ pub(crate) fn upload_batch_system_event<T: IsArray>(
     func_name: &str,
     attributes: &[AssetMap],
 ) -> Result<T> {
-    let mut ext_info = format!("batch count: {}", attributes.len());
+    let mut ext_info = format!("batch count: {};", attributes.len());
     match &result {
         Ok(val) => {
             if val.is_array() {
@@ -391,4 +391,18 @@ pub(crate) fn upload_usage_statistics(stats: &UsageStatistics, fun_name: &str) -
 
     upload_statistic_system_event(&calling_info, start, fun_name, &ext_info, &mut ExtDbMap::new());
     Ok(())
+}
+
+/// Report a maintenance operation outcome: statistic on success, fault on failure.
+pub(crate) fn report_op_result(
+    calling_info: &CallingInfo,
+    start: Instant,
+    func_name: &str,
+    ext_info: &str,
+    result: &Result<()>,
+) {
+    match result {
+        Ok(_) => upload_statistic_system_event(calling_info, start, func_name, ext_info, &mut ExtDbMap::new()),
+        Err(e) => upload_fault_system_event(calling_info, start, func_name, ext_info, e, &mut ExtDbMap::new()),
+    }
 }
