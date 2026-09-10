@@ -42,7 +42,7 @@ use asset_db_operator::{
         DbMap,
     },
 };
-use asset_definition::{macros_lib, ErrCode, Result, SyncType, Value};
+use asset_definition::{macros_lib, ErrCode, Result, SyncType, Value, AssetError};
 use asset_file_operator::{
     ce_operator::is_db_key_cipher_file_exist,
     common::{BACKUP_SUFFIX, CE_ROOT_PATH, DB_SUFFIX, DE_ROOT_PATH},
@@ -56,8 +56,8 @@ use asset_plugin_interface::plugin_interface::{
 };
 
 use crate::data_size_mod::handle_data_size_upload;
-use crate::sys_event::upload_fault_system_event;
-use crate::{PackageInfoFfi, upgrade_operator, upgrade_ce};
+use crate::sys_event::{report_op_result, upload_fault_system_event, upload_statistic_system_event};
+use crate::{PackageInfoFfi, upgrade_operator, upgrade_ce, ASSET_SERVICE};
 use crate::usage_statistics;
 
 /// success code.
@@ -65,7 +65,6 @@ const SUCCESS: i32 = 0;
 const USER_ID_VEC_BUFFER: u32 = 5;
 const MINIMUM_MAIN_USER_ID: i32 = 100;
 const TWELVE_HOURS_AS_SECS: u64 = 3600 * 12;
-const ASSET_SERVICE: &str = "asset_service";
 
 enum DataExist {
     OwnerData(bool),
@@ -297,7 +296,12 @@ pub(crate) extern "C" fn on_package_removed(package_info: PackageInfoFfi) {
 
 extern "C" fn on_user_removed(user_id: i32) {
     let _counter_user = AutoCounter::new();
-    let _ = delete_user_de_dir(user_id);
+    let calling_info = CallingInfo::new(user_id, OwnerType::Native, ASSET_SERVICE.as_bytes().to_vec(), None);
+    let start = Instant::now();
+    if let Err(e) = delete_user_de_dir(user_id) {
+        upload_fault_system_event(&calling_info, start, "on_user_removed_delete_de", "", &e,
+            &mut ExtDbMap::new());
+    }
     notify_on_user_removed(user_id);
 }
 
@@ -325,22 +329,25 @@ pub(crate) extern "C" fn on_charging() {
 
     if should_record {
         *record_time = Some(cur_time);
-        if let Err(e) = backup_all_db(&cur_time) {
-            let calling_info = CallingInfo::new_self();
-            upload_fault_system_event(&calling_info, cur_time, "backup_db", "", &e, &mut ExtDbMap::new());
-        }
-
+        let backup_res = backup_all_db(&cur_time);
+        report_op_result(&CallingInfo::new_self(), cur_time, "backup_db", "", &backup_res);
         usage_statistics::collect_all_usage_stats();
     }
+
     logi!("Finish backup db & usage statistics.");
 }
 
 pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, app_index: i32) {
+    let _counter_user = AutoCounter::new();
+    let calling_info = CallingInfo::new(user_id, OwnerType::Native, ASSET_SERVICE.as_bytes().to_vec(), None);
+    let start = Instant::now();
     let c_str = unsafe { CStr::from_ptr(bundle_name as _) };
     let bundle_name = match c_str.to_str() {
         Ok(s) => s.to_string(),
         Err(e) => {
-            loge!("[FATAL]Parse sting from bundle name failed, error is {}.", e);
+            let err = AssetError::new(ErrCode::InvalidArgument, format!("parse bundle name failed: {}", e), "");
+            upload_fault_system_event(&calling_info, start, "on_app_restore", "parse bundle name", &err,
+                &mut ExtDbMap::new());
             return;
         },
     };
@@ -356,30 +363,39 @@ pub(crate) extern "C" fn on_app_restore(user_id: i32, bundle_name: *const u8, ap
             Err(code) => loge!("process app restore event failed, code: {}", code),
         }
     }
+    upload_statistic_system_event(&calling_info, start, "on_app_restore",
+        &format!("{}_{}_{}", user_id, bundle_name, app_index), &mut ExtDbMap::new());
 }
 
 pub(crate) extern "C" fn on_user_unlocked(user_id: i32) {
+    let _counter_user = AutoCounter::new();
+    let calling_info = CallingInfo::new(user_id, OwnerType::Native, ASSET_SERVICE.as_bytes().to_vec(), None);
     logi!("On user -{}- unlocked.", user_id);
 
-    // Trigger upgrading de db version and key alias
-    match trigger_db_upgrade(user_id, None) {
-        Ok(()) => logi!("upgrade de db version and key alias on user-unlocked success."),
-        Err(e) => loge!("upgrade de db version and key alias on user-unlocked failed, err is: {}", e),
-    }
+    // Trigger upgrading de db version and key alias.
+    let de_start = Instant::now();
+    let de_res = trigger_db_upgrade(user_id, None);
+    report_op_result(&calling_info, de_start, "on_user_unlocked_upgrade_de", "", &de_res);
 
-    // Trigger upgrading ce db version and key alias
+    // Trigger upgrading ce db version and key alias.
+    let get_key_start = Instant::now();
     match get_db_key(user_id, true) {
         Ok(db_key) => {
-            match trigger_db_upgrade(user_id, db_key) {
-                Ok(()) => logi!("upgrade ce db version and key alias on user-unlocked success."),
-                Err(e) => loge!("upgrade ce db version and key alias on user-unlocked failed, err is: {}", e),
-            }
+            let ce_start = Instant::now();
+            let ce_res = trigger_db_upgrade(user_id, db_key);
+            report_op_result(&calling_info, ce_start, "on_user_unlocked_upgrade_ce", "", &ce_res);
         },
-        Err(e) => loge!("get db key on user-unlocked failed, err is: {}", e),
+        Err(e) => {
+            upload_fault_system_event(&calling_info, get_key_start, "on_user_unlocked_get_db_key", "", &e,
+                &mut ExtDbMap::new());
+        },
     }
 
+    // Upload data size; success path reports internally, only report fault here.
+    let data_size_start = Instant::now();
     if let Err(e) = handle_data_size_upload() {
-        loge!("Failed to handle data upload: {}", e);
+        upload_fault_system_event(&calling_info, data_size_start, "on_user_unlocked_data_size", "", &e,
+            &mut ExtDbMap::new());
     }
 
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
@@ -409,16 +425,19 @@ pub(crate) fn notify_on_user_removed(user_id: i32) {
 }
 
 pub(crate) extern "C" fn on_user_switched(user_id: i32) {
+    let _counter_user = AutoCounter::new();
     logi!("On user switched [{}].", user_id);
     trigger_sync_with_user_id(user_id, true);
 }
 
 pub(crate) extern "C" fn on_schedule_wakeup() {
+    let _counter_user = AutoCounter::new();
     logi!("On SA wakes up at a scheduled time(36H).");
     trigger_sync();
 }
 
 pub(crate) extern "C" fn on_connectivity_change() {
+    let _counter_user = AutoCounter::new();
     let _lock = LAST_TRIGGER_TIME_FILE_MUTEX.lock().unwrap();
     let path = format!("{}/last_trigger_time.txt", DE_ROOT_PATH);
     let last_time = read_last_trigger_time(&path).unwrap_or(0);
@@ -459,6 +478,7 @@ pub(crate) fn get_first_unlock_userids() -> Vec<i32> {
 }
 
 pub(crate) extern "C" fn on_data_share_ready() {
+    let _counter_user = AutoCounter::new();
     // 1. get first unlock dbs.
     let user_ids = get_first_unlock_userids();
 
@@ -501,6 +521,8 @@ fn trigger_sync() {
 }
 
 fn trigger_sync_with_user_id(user_id: i32, is_user_switch: bool) {
+    let calling_info = CallingInfo::new(user_id, OwnerType::Native, ASSET_SERVICE.as_bytes().to_vec(), None);
+    let start = Instant::now();
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         let mut params = ExtDbMap::new();
         params.insert(PARAM_NAME_USER_ID, Value::Number(user_id as u32));
@@ -513,6 +535,7 @@ fn trigger_sync_with_user_id(user_id: i32, is_user_switch: bool) {
             Err(code) => loge!("process sync ext event failed, code: {}, user_id: {}", code, user_id),
         }
     }
+    upload_statistic_system_event(&calling_info, start, "sync", "", &mut ExtDbMap::new());
 }
 
 fn copy_db_to_backup(
@@ -520,7 +543,8 @@ fn copy_db_to_backup(
 ) {
     let backup_path = format!("{}{}", from_path, BACKUP_SUFFIX);
     if let Err(e) = fs::copy(from_path, backup_path) {
-        upload_fault_system_event(calling_info, *start_time, func_name, "copy_db_to_backup", &e.into(), &mut ExtDbMap::new());
+        upload_fault_system_event(calling_info, *start_time, func_name, "copy_db_to_backup", &e.into(),
+            &mut ExtDbMap::new());
     }
 }
 

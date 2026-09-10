@@ -94,6 +94,7 @@ const PREPARE_FOR_BUNDLE: u32 = 27;
 const START_STATUS: i32 = 1;
 const DEAD_STATUS: i32 = 0;
 const MEMORY_MANAGER_SA_ID: i32 = 1909;
+pub(crate) const ASSET_SERVICE: &str = "asset_service";
 
 #[derive(PartialEq)]
 enum SaStatus {

@@ -18,6 +18,7 @@
 
 use std::{ffi::CString, collections::HashSet};
 use std::os::raw::c_char;
+use std::time::Instant;
 
 use asset_common::{CallingInfo, OwnerType, SUCCESS};
 use asset_crypto_manager::secret_key::SecretKey;
@@ -38,14 +39,17 @@ use asset_db_operator::{
 };
 use asset_crypto_manager::db_key_operator::generate_secret_key_if_needed;
 
+use crate::sys_event::report_op_result;
+use crate::ASSET_SERVICE;
+
 extern "C" {
     fn GetCloneAppIndexes(userId: i32, appIndexes: *mut i32, indexSize: *mut u32, appName: *const c_char) -> i32;
     fn IsHapInAllowList(userId: i32, appName: *const c_char, isHapInList: &mut bool) -> i32;
 }
 
-const DEFAULT_VALUE: i32 = 0;
-const DEFAULT_SIZE: usize = 5;
-const INIT_INDEX: usize = 1;
+const DEFAULT_VALUE: i32 = 0;       // Default app index value.
+const DEFAULT_SIZE: usize = 5;      // Initial capacity for clone app indexes array.
+const INIT_INDEX: usize = 1;        // Start index of bundle name in hap_info parts (skips prefix).
 
 struct UnwrapInfo<'a> {
     data: &'a mut DbMap,
@@ -57,20 +61,29 @@ struct UnwrapInfo<'a> {
 
 /// Upgrade the data of clone apps.
 pub fn upgrade_clone_app_data(user_id: i32) -> Result<()> {
-    let upgrade_data = get_file_content(user_id)?;
-    upgrade(user_id, upgrade_data)
+    let calling_info = CallingInfo::new(user_id, OwnerType::Native, ASSET_SERVICE.as_bytes().to_vec(), None);
+    let start = Instant::now();
+    get_file_content(user_id).and_then(|upgrade_data| {
+        let res = upgrade(user_id, upgrade_data);
+        report_op_result(&calling_info, start, "upgrade_clone_app_data", "", &res);
+        res
+    })
 }
 
 /// To upgrade a clone app.
+/// `hap_info` format: `{prefix}_{bundleName}_{appIndex}`, where `prefix` is skipped (INIT_INDEX = 1),
 pub fn upgrade_single_clone_app_data(user_id: i32, hap_info: String) -> Result<()> {
+    // Skip system user.
     if user_id == 0 {
         return Ok(());
     }
+    // Parse hap_info: parts[0] is prefix, parts[1..n-1] is bundle name, parts[n-1] is app index.
     let parts: Vec<_> = hap_info.split('_').collect();
     if parts.len() < INIT_INDEX + 1 {
         return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
             ErrCode::InvalidArgument, "Hap info too short.");
     }
+    // Validate app index; index 0 means main app, no clone upgrade needed.
     match parts.last().unwrap().parse::<i32>() {
         Ok(num) => {
             if num == 0 {
@@ -80,25 +93,32 @@ pub fn upgrade_single_clone_app_data(user_id: i32, hap_info: String) -> Result<(
         Err(_) => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
             ErrCode::InvalidArgument, "Upgrade clone app failed."),
     }
+    // Skip if already at the latest version.
     let version = get_upgrade_version(user_id)?;
     if version == OriginVersion::V2 {
         return Ok(());
     }
-    upgrade_single(user_id, version, parts[INIT_INDEX..parts.len() - 1].join("_"));
-    Ok(())
+    let bundle_name = parts[INIT_INDEX..parts.len() - 1].join("_");
+    upgrade_single(user_id, version, bundle_name)
 }
 
+/// Upgrade all clone apps in the upgrade list.
+/// `upgrade_data.upgrade_list` contains the bundle names to upgrade; `upgrade_data.version` is the origin version.
 fn upgrade(user_id: i32, upgrade_data: UpgradeData) -> Result<()> {
+    let mut result = Ok(());
     for info in upgrade_data.upgrade_list {
+        // Map the raw version number to the corresponding OriginVersion enum.
         let version = match upgrade_data.version {
             version if version == OriginVersion::V1 as u32 => OriginVersion::V1,
             version if version == OriginVersion::V2 as u32 => OriginVersion::V2,
             version if version == OriginVersion::V3 as u32 => OriginVersion::V3,
             _ => OriginVersion::V2,
         };
-        upgrade_single(user_id, version, info.to_owned());
+        if let Err(e) = upgrade_single(user_id, version, info.to_owned()) {
+            result = Err(e);
+        }
     }
-    Ok(())
+    result
 }
 
 fn is_hap_in_upgrade_list(user_id: i32, info: &str) -> bool {
@@ -109,23 +129,31 @@ fn is_hap_in_upgrade_list(user_id: i32, info: &str) -> bool {
     list.contains(&info.to_owned())
 }
 
-fn upgrade_single(user_id: i32, version: OriginVersion, info: String) {
+/// Upgrade a single clone app by its bundle name.
+fn upgrade_single(user_id: i32, version: OriginVersion, info: String) -> Result<()> {
     if !is_hap_in_upgrade_list(user_id, &info) {
-        return;
+        return Ok(());
     }
-    let _ = upgrade_execute(user_id, version.clone(), &info);
+    upgrade_execute(user_id, version, &info)
 }
 
+/// Execute the upgrade for a single hap.
 fn upgrade_execute(user_id: i32, version: OriginVersion, info: &str) -> Result<()> {
+    // Special haps or non-allowlisted V3 haps: skip cloning, just remove from upgrade list.
     if is_hap_special(info) || (version == OriginVersion::V3
         && !(is_hap_in_allowlist(user_id, info)?)) {
         return update_upgrade_list(user_id, &info.to_owned());
     }
     let indexes = get_clone_app_indexes(user_id, info)?;
+    // No clone apps found: nothing to clone, just remove from upgrade list.
     if indexes.is_empty() {
         return update_upgrade_list(user_id, &info.to_owned());
     }
-    clone_data_from_app_to_clone_app(user_id, info, &indexes)?;
+    let calling_info = CallingInfo::new(user_id, OwnerType::Native, ASSET_SERVICE.as_bytes().to_vec(), None);
+    let start = Instant::now();
+    let clone_res = clone_data_from_app_to_clone_app(user_id, info, &indexes);
+    report_op_result(&calling_info, start, "upgrade_single_clone_app_data", info, &clone_res);
+    clone_res?;
     update_upgrade_list(user_id, &info.to_owned())
 }
 
