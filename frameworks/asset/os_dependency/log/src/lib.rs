@@ -20,18 +20,21 @@ use std::ffi::{c_char, CString};
 use hilog_rust::hilog;
 
 /// the function to print log, and may be should not be used instead of logi
+#[no_mangle]
 pub fn log_func_i(log: &str) {
     let log_label = hilog_rust::HiLogLabel { log_type: hilog_rust::LogType::LogCore, domain: 0xD002F20, tag: "Asset" };
     hilog_rust::info!(log_label, "{}", @public(log));
 }
 
 /// the function to print log, and may be should not be used instead of logw
+#[no_mangle]
 pub fn log_func_w(log: &str) {
     let log_label = hilog_rust::HiLogLabel { log_type: hilog_rust::LogType::LogCore, domain: 0xD002F20, tag: "Asset" };
     hilog_rust::warn!(log_label, "{}", @public(log));
 }
 
 /// the function to print log, and may be should not be used instead of loge
+#[no_mangle]
 pub fn log_func_e(log: &str) {
     let log_label = hilog_rust::HiLogLabel { log_type: hilog_rust::LogType::LogCore, domain: 0xD002F20, tag: "Asset" };
     hilog_rust::error!(log_label, "{}", @public(log));

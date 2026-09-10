@@ -20,11 +20,14 @@ use std::{
     time::Instant,
 };
 
-use std::{ffi::CString, os::raw::c_char, sync::OnceLock};
 pub use asset_definition::*;
+use std::{ffi::CString, os::raw::c_char, sync::OnceLock};
 
 use asset_log::logw;
-use ipc::{parcel::{MsgParcel, MsgOption}, remote::RemoteObj};
+use ipc::{
+    parcel::{MsgOption, MsgParcel},
+    remote::RemoteObj,
+};
 use samgr::manage::SystemAbilityManager;
 
 pub use asset_ipc::{
@@ -53,16 +56,13 @@ struct ImageInfo {
 
 impl ImageInfo {
     fn new() -> Self {
-        ImageInfo { use_before_flag: false, has_notify: false, calling_func: IpcCode::Add,
-            has_groupid: false}
+        ImageInfo { use_before_flag: false, has_notify: false, calling_func: IpcCode::Add, has_groupid: false }
     }
 
     /// Get the single instance of Counter.
     pub fn get_instance() -> Arc<Mutex<ImageInfo>> {
         static INSTANCE: OnceLock<Arc<Mutex<ImageInfo>>> = OnceLock::new();
-        INSTANCE.get_or_init(|| {
-            Arc::new(Mutex::new(ImageInfo::new()))
-        }).clone()
+        INSTANCE.get_or_init(|| Arc::new(Mutex::new(ImageInfo::new()))).clone()
     }
 
     pub(crate) fn set_flag(&mut self, calling_func: IpcCode) {
@@ -102,8 +102,11 @@ fn load_asset_service() -> Result<RemoteObj> {
         Some(remote) => Ok(remote),
         None => {
             logw!("load_asset_service time:{}s", start_time.elapsed().as_secs_f64());
-            macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                ErrCode::ServiceUnavailable, "[FATAL][RUST SDK]get remote service failed")
+            macros_lib::log_throw_error!(
+                macros_lib::hisysevent::function!(),
+                ErrCode::ServiceUnavailable,
+                "[FATAL][RUST SDK]get remote service failed"
+            )
         },
     }
 }
@@ -174,12 +177,14 @@ impl Manager {
     pub fn batch_update(
         &mut self,
         attributes_array: &Vec<AssetMap>,
-        attributes_to_update_array: &Vec<AssetMap>
+        attributes_to_update_array: &Vec<AssetMap>,
     ) -> Result<Vec<(u32, u32)>> {
         self.snapshot_check_batch_before_image(attributes_array, IpcCode::BatchUpdate);
         self.snapshot_check_groupid();
         let ret = self.process_two_array_request_with_ret(
-            attributes_array, attributes_to_update_array, IpcCode::BatchUpdate
+            attributes_array,
+            attributes_to_update_array,
+            IpcCode::BatchUpdate,
         )?;
         self.snapshot_check_after_image(IpcCode::BatchUpdate);
         Ok(ret)
@@ -293,8 +298,12 @@ impl Manager {
         let mut parcel = MsgParcel::new();
         parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
         if attributes_array.len() > MAX_ARRAY_CAPACITY {
-            return macros_lib::throw_error!( macros_lib::hisysevent::function!(),
-                ErrCode::InvalidArgument, "[FATAL][IPC]The array size {} exceeds the limit", attributes_array.len() );
+            return macros_lib::throw_error!(
+                macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument,
+                "[FATAL][IPC]The array size {} exceeds the limit",
+                attributes_array.len()
+            );
         }
         serialize_maps(attributes_array, &mut parcel)?;
         match self.send_request(parcel, ipc_code) {
@@ -327,8 +336,12 @@ impl Manager {
         let mut parcel = MsgParcel::new();
         parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
         if attributes_array.len() > MAX_ARRAY_CAPACITY {
-            return macros_lib::throw_error!( macros_lib::hisysevent::function!(),
-                ErrCode::InvalidArgument, "[FATAL][IPC]The array size {} exceeds the limit", attributes_array.len() );
+            return macros_lib::throw_error!(
+                macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument,
+                "[FATAL][IPC]The array size {} exceeds the limit",
+                attributes_array.len()
+            );
         }
         serialize_maps(attributes_array, &mut parcel)?;
         serialize_maps(attributes_to_update_array, &mut parcel)?;
@@ -354,16 +367,16 @@ impl Manager {
         }
     }
 
-    fn process_one_array_request(
-        &mut self,
-        attributes_array: &Vec<AssetMap>,
-        ipc_code: IpcCode,
-    ) -> Result<MsgParcel> {
+    fn process_one_array_request(&mut self, attributes_array: &Vec<AssetMap>, ipc_code: IpcCode) -> Result<MsgParcel> {
         let mut parcel = MsgParcel::new();
         parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
         if attributes_array.len() > MAX_ARRAY_CAPACITY {
-            return macros_lib::throw_error!( macros_lib::hisysevent::function!(),
-                ErrCode::InvalidArgument, "[FATAL][IPC]The array size {} exceeds the limit", attributes_array.len() );
+            return macros_lib::throw_error!(
+                macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument,
+                "[FATAL][IPC]The array size {} exceeds the limit",
+                attributes_array.len()
+            );
         }
         serialize_maps(attributes_array, &mut parcel)?;
         match self.send_request(parcel, ipc_code) {
@@ -406,7 +419,11 @@ impl Manager {
     }
 
     fn snapshot_check_before_image(&self, query: &AssetMap, ipc_code: IpcCode) {
-        unsafe { if !IsBeforeImageCreationPoint() { return; } }
+        unsafe {
+            if !IsBeforeImageCreationPoint() {
+                return;
+            }
+        }
         let image_info = ImageInfo::get_instance();
         let mut res = image_info.lock().unwrap();
         if !res.has_set_flag() {
@@ -420,7 +437,9 @@ impl Manager {
     fn snapshot_check_after_image(&self, ipc_code: IpcCode) {
         let image_info = ImageInfo::get_instance();
         let mut res = image_info.lock().unwrap();
-        if res.has_notify() || (!res.has_set_flag()) { return; }
+        if res.has_notify() || (!res.has_set_flag()) {
+            return;
+        }
 
         unsafe {
             if IsAbilityCreated() {
@@ -437,7 +456,9 @@ impl Manager {
     fn snapshot_check_groupid(&self) {
         let image_info = ImageInfo::get_instance();
         let mut res = image_info.lock().unwrap();
-        if res.has_notify() || (!res.has_groupid()) { return; }
+        if res.has_notify() || (!res.has_groupid()) {
+            return;
+        }
         unsafe {
             if IsAbilityCreated() {
                 let load_func = res.get_calling_func().to_string();
@@ -449,4 +470,78 @@ impl Manager {
             }
         }
     }
+}
+
+/// Build and initialize the Manager with stable export symbol.
+#[no_mangle]
+pub fn asset_sdk_manager_build() -> Result<Arc<Mutex<Manager>>> {
+    Manager::build()
+}
+
+/// Add an Asset with stable export symbol.
+#[no_mangle]
+pub fn asset_sdk_manager_add(manager: &mut Manager, attributes: &AssetMap) -> Result<()> {
+    manager.add(attributes)
+}
+
+/// Add batch assets with stable export symbol.
+#[no_mangle]
+pub fn asset_sdk_manager_batch_add(manager: &mut Manager, attributes_array: &Vec<AssetMap>) -> Result<Vec<(u32, u32)>> {
+    manager.batch_add(attributes_array)
+}
+
+/// Remove Assets with stable export symbol.
+#[no_mangle]
+pub fn asset_sdk_manager_remove(manager: &mut Manager, query: &AssetMap) -> Result<()> {
+    manager.remove(query)
+}
+
+/// Remove batch assets with stable export symbol.
+#[no_mangle]
+pub fn asset_sdk_manager_batch_remove(manager: &mut Manager, attributes_array: &Vec<AssetMap>) -> Result<()> {
+    manager.batch_remove(attributes_array)
+}
+
+/// Update batch assets with stable export symbol.
+#[no_mangle]
+pub fn asset_sdk_manager_batch_update(
+    manager: &mut Manager,
+    attributes_array: &Vec<AssetMap>,
+    attributes_to_update_array: &Vec<AssetMap>,
+) -> Result<Vec<(u32, u32)>> {
+    manager.batch_update(attributes_array, attributes_to_update_array)
+}
+
+/// Update an Asset with stable export symbol.
+#[no_mangle]
+pub fn asset_sdk_manager_update(
+    manager: &mut Manager,
+    query: &AssetMap,
+    attributes_to_update: &AssetMap,
+) -> Result<()> {
+    manager.update(query, attributes_to_update)
+}
+
+/// Pre-query Assets with stable export symbol.
+#[no_mangle]
+pub fn asset_sdk_manager_pre_query(manager: &mut Manager, query: &AssetMap) -> Result<Vec<u8>> {
+    manager.pre_query(query)
+}
+
+/// Query Assets with stable export symbol.
+#[no_mangle]
+pub fn asset_sdk_manager_query(manager: &mut Manager, query: &AssetMap) -> Result<Vec<AssetMap>> {
+    manager.query(query)
+}
+
+/// Post-query Assets with stable export symbol.
+#[no_mangle]
+pub fn asset_sdk_manager_post_query(manager: &mut Manager, query: &AssetMap) -> Result<()> {
+    manager.post_query(query)
+}
+
+/// Query sync result with stable export symbol.
+#[no_mangle]
+pub fn asset_sdk_manager_query_sync_result(manager: &mut Manager, query: &AssetMap) -> Result<SyncResult> {
+    manager.query_sync_result(query)
 }

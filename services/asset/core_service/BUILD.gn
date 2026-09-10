@@ -36,6 +36,10 @@ ohos_rust_shared_library("asset_service") {
     "//third_party/rust/crates/lazy-static.rs:lib",
   ]
 
+  if (is_ohos && target_cpu == "arm64") {
+    version_script = "libasset_service.map"
+  }
+
   rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
   if (enable_local_test) {
     rustflags += [ "--cfg", "feature=\"AssetTest\"", ]

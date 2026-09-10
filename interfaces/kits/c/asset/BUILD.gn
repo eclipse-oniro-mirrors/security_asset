@@ -23,8 +23,9 @@ ohos_shared_library("asset_ndk") {
   deps = [ "../../../../frameworks/asset/c/system_api:asset_sdk" ]
   innerapi_tags = [ "ndk" ]
 
-  shlib_type = "sa"
-  version_script = "libasset_ndk.map"
+  if (is_ohos && target_cpu == "arm64") {
+    version_script = "libasset_ndk.map"
+  }
 
   external_deps = [ "hilog:libhilog" ]
 

@@ -29,6 +29,10 @@ ohos_rust_shared_library("asset_sdk_rust") {
     "samgr:samgr_rust",
   ]
 
+  if (is_ohos && target_cpu == "arm64") {
+    version_script = "libasset_sdk.map"
+  }
+
   sanitize = {
     integer_overflow = true
     cfi = true
