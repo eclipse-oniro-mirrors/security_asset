@@ -103,3 +103,15 @@ impl Manager {
     }
 }
 
+/// Build and initialize the Manager with stable export symbol.
+#[no_mangle]
+pub fn saf_sdk_manager_build() -> Result<Arc<Mutex<Manager>>> {
+    Manager::build()
+}
+
+/// Check access for certain application with stable export symbol.
+#[no_mangle]
+pub fn saf_sdk_manager_check_access(manager: &mut Manager, attributes: &SAFMap) -> Result<()> {
+    manager.check_access(attributes)
+}
+

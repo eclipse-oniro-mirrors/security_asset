@@ -171,3 +171,9 @@ impl SAFError {
         SAFError { code, msg }
     }
 }
+
+/// Create an SAFError with stable export symbol.
+#[no_mangle]
+pub fn saf_error_new(code: ErrCode, msg: String) -> SAFError {
+    SAFError::new(code, msg)
+}

@@ -1,0 +1,35 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{
+  global:
+    OHOS$Security$SAF$cxxbridge1$cxx_batch_generate_ticket;
+    OHOS$Security$SAF$cxxbridge1$cxx_store_challenge;
+    OHOS$Security$SAF$cxxbridge1$cxx_store_controlled_grant_record;
+    OHOS$Security$SAF$cxxbridge1$get_policy_auth_status;
+    OHOS$Security$SAF$cxxbridge1$notify_error;
+    OHOS$Security$SAF$cxxbridge1$notify_performance_metrics;
+    OHOS$Security$SAF$cxxbridge1$verify_remote_ticket;
+    cxxbridge1$rust_vec$OHOS$Security$SAF$CxxVerifyTicketInfo$capacity;
+    cxxbridge1$rust_vec$OHOS$Security$SAF$CxxVerifyTicketInfo$data;
+    cxxbridge1$rust_vec$OHOS$Security$SAF$CxxVerifyTicketInfo$drop;
+    cxxbridge1$rust_vec$OHOS$Security$SAF$CxxVerifyTicketInfo$len;
+    cxxbridge1$rust_vec$OHOS$Security$SAF$CxxVerifyTicketInfo$new;
+    cxxbridge1$rust_vec$OHOS$Security$SAF$CxxVerifyTicketInfo$reserve_total;
+    cxxbridge1$rust_vec$OHOS$Security$SAF$CxxVerifyTicketInfo$set_len;
+    cxxbridge1$rust_vec$OHOS$Security$SAF$CxxVerifyTicketInfo$truncate;
+    A;
+    rust_metadata_secure_access_fence_service_*;
+  local:
+    *;
+};
