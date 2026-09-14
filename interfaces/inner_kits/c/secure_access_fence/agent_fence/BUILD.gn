@@ -59,6 +59,10 @@ ohos_shared_library("saf_agent_fence") {
     ubsan = true
   }
 
+  if (is_ohos && target_cpu == "arm64") {
+    version_script = "libsaf_agent_fence.map"
+  }
+
   innerapi_tags = [ "platformsdk" ]
 
   branch_protector_ret = "pac_ret"

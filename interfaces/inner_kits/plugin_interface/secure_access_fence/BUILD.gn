@@ -36,6 +36,10 @@ ohos_rust_shared_library("saf_plugin_interface_rust") {
 
   rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
 
+  if (is_ohos && target_cpu == "arm64") {
+    version_script = "libsaf_plugin_interface.map"
+  }
+
   crate_name = "saf_plugin_interface"
   crate_type = "dylib"
   subsystem_name = "security"
