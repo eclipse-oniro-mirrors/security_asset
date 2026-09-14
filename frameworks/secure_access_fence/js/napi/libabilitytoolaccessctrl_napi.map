@@ -1,0 +1,6 @@
+{
+    global:
+        __cfi_check;
+    local:
+        *;
+};

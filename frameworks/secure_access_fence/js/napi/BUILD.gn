@@ -54,6 +54,11 @@ ohos_shared_library("abilitytoolaccessctrl_napi") {
     "-fPIC",
   ]
 
+  if (is_ohos && target_cpu == "arm64") {
+    version_script = "libabilitytoolaccessctrl_napi.map"
+  }
+
+
   relative_install_dir = "module"
   subsystem_name = "security"
   part_name = "asset"
