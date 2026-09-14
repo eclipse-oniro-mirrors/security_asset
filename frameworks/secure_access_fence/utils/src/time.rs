@@ -45,6 +45,7 @@ fn get_timespec() -> Result<Timespec> {
 }
 
 /// Get the current time from the system, in milliseconds.
+#[no_mangle]
 pub fn system_time_in_millis() -> Result<u64> {
     let ts = get_timespec()?;
     let sec_millis = (ts.tv_sec as i64)
@@ -70,6 +71,7 @@ pub fn system_time_in_millis() -> Result<u64> {
 }
 
 /// Get the current time from the system, in seconds.
+#[no_mangle]
 pub fn system_time_in_seconds() -> Result<u64> {
     let ts = get_timespec()?;
     Ok(ts.tv_sec as u64)

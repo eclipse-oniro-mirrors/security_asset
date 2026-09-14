@@ -1,0 +1,37 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+{
+  global:
+    serialize_map;
+    deserialize_map;
+    serialize_maps;
+    deserialize_maps;
+    serialize_i32_vec;
+    deserialize_verify_ticket_request;
+    deserialize_batch_verify_ticket_request;
+    deserialize_batch_generate_ticket_request;
+    ipc_err_handle;
+    log_func_d;
+    log_func_e;
+    log_func_i;
+    log_func_w;
+    saf_error_new;
+    saf_sdk_manager_build;
+    saf_sdk_manager_check_access;
+    system_time_in_millis;
+    system_time_in_seconds;
+    rust_metadata_saf_sdk_*;
+  local:
+    *;
+};

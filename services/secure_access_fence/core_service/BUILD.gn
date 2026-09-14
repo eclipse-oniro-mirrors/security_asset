@@ -114,6 +114,10 @@ ohos_rust_shared_library("secure_access_fence_service") {
     "rust_cxx:lib",
   ]
 
+  if (is_ohos && target_cpu == "arm64") {
+    version_script = "libsecure_access_fence_service.map"
+  }
+
   rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
   if (enable_local_test) {
     rustflags += [ "--cfg", "feature=\"SAFTest\"", ]
