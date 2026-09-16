@@ -13,6 +13,7 @@
 
 {
   global:
+    _R*;
     serialize_map;
     deserialize_map;
     serialize_maps;

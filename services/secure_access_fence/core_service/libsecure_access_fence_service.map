@@ -13,6 +13,7 @@
 
 {
   global:
+    _R*;
     OHOS$Security$SAF$cxxbridge1$cxx_batch_generate_ticket;
     OHOS$Security$SAF$cxxbridge1$cxx_store_challenge;
     OHOS$Security$SAF$cxxbridge1$cxx_store_controlled_grant_record;

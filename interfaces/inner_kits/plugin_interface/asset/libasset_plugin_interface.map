@@ -13,6 +13,7 @@
 
 {
   global:
+    _R*;
     rust_metadata_asset_plugin_interface_*;
   local:
     *;
