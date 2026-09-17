@@ -13,25 +13,11 @@
 
 {
   global:
-    _R*;
-    serialize_map;
-    deserialize_map;
-    serialize_maps;
-    deserialize_maps;
-    serialize_i32_vec;
-    deserialize_verify_ticket_request;
-    deserialize_batch_verify_ticket_request;
-    deserialize_batch_generate_ticket_request;
-    ipc_err_handle;
-    log_func_d;
-    log_func_e;
-    log_func_i;
-    log_func_w;
+    _R*saf*;
+    _R*secure_access_fence*;
     saf_error_new;
     saf_sdk_manager_build;
     saf_sdk_manager_check_access;
-    system_time_in_millis;
-    system_time_in_seconds;
     rust_metadata_saf_sdk_*;
   local:
     *;

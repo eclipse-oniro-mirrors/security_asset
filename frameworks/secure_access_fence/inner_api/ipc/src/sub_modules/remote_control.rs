@@ -47,9 +47,9 @@ pub fn deserialize_operation_info(parcel: &mut MsgParcel) -> Result<OperationInf
         1 => OperationType::Cli,
         2 => OperationType::Api,
         _ => return macros_lib::log_throw_error!(
-            ErrCode::InvalidArgument,
-            "[FATAL][IPC]Invalid operation type: {}",
-            operation_type_val
+                ErrCode::InvalidArgument,
+                "[FATAL][IPC]Invalid operation type: {}",
+                operation_type_val
         ),
     };
     let cli_cmd_info = deserialize_command_info(parcel)?;
@@ -313,9 +313,9 @@ pub fn deserialize_remote_user_auth_results(
     for _ in 0..count {
         results.push(deserialize_remote_user_auth_item(parcel)?);
     }
-    
+
     let permission_query = deserialize_permission_query(parcel)?;
-    
+
     Ok(RemoteUserAuthResults {
         results,
         permission_query,

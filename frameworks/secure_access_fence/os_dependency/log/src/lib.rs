@@ -24,25 +24,21 @@ const LOG_LABEL: hilog_rust::HiLogLabel = hilog_rust::HiLogLabel {
 };
 
 /// the function to print log, and may not be used instead of logi
-#[no_mangle]
 pub fn log_func_i(log: &str) {
     hilog_rust::info!(LOG_LABEL, "{}", @public(log));
 }
 
 /// the function to print log, and may not be used instead of logw
-#[no_mangle]
 pub fn log_func_w(log: &str) {
     hilog_rust::warn!(LOG_LABEL, "{}", @public(log));
 }
 
 /// the function to print log, and may not be used instead of loge
-#[no_mangle]
 pub fn log_func_e(log: &str) {
     hilog_rust::error!(LOG_LABEL, "{}", @public(log));
 }
 
 /// the function to print log, and may not be used instead of logd
-#[no_mangle]
 pub fn log_func_d(log: &str) {
     hilog_rust::debug!(LOG_LABEL, "{}", @public(log));
 }

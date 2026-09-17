@@ -479,7 +479,6 @@ fn start_service(handler: Handler) -> Result<()> {
 }
 
 #[used]
-#[no_mangle]
 #[link_section = ".init_array"]
 static A: extern "C" fn() = {
     extern "C" fn init() {

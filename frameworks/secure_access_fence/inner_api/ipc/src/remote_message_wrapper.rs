@@ -68,7 +68,7 @@ pub fn serialize_remote_message_to_json(message: &RemoteMessage) -> Result<Strin
         &message.device_info.controller_device_id);
     object_add_string(&mut device_info_obj, REMOTE_MESSAGE_KEYS.controlled_device_id, 
         &message.device_info.controlled_device_id);
-    
+
     let mut builder = JsonBuilder::new();
     builder.add_object(REMOTE_MESSAGE_KEYS.device_info, device_info_obj);
     builder.add_string(REMOTE_MESSAGE_KEYS.remote_auth_message, &message.remote_auth_message);
@@ -89,7 +89,7 @@ pub fn deserialize_remote_message_from_json(json_str: &str) -> Result<RemoteMess
     let device_info = parse_device_id_header_from_json(&mut device_info_obj)?;
     let remote_auth_message = take_required_string(&mut obj, REMOTE_MESSAGE_KEYS.remote_auth_message)?;
     let caller_bundle_name = take_optional_string(&mut obj, REMOTE_MESSAGE_KEYS.caller_bundle_name)?;
-    
+
     Ok(RemoteMessage {
         device_info,
         remote_auth_message,

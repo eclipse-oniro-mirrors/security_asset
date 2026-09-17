@@ -69,7 +69,6 @@ pub fn deserialize<T: Deserialize>(parcel: &mut MsgParcel) -> Result<T> {
 }
 
 /// serialize the map to parcel
-#[no_mangle]
 pub fn serialize_map(map: &AssetMap, parcel: &mut MsgParcel) -> Result<()> {
     if map.len() as u32 > MAX_MAP_CAPACITY {
         return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
@@ -93,7 +92,6 @@ pub fn serialize_map(map: &AssetMap, parcel: &mut MsgParcel) -> Result<()> {
 }
 
 /// deserialize the map from parcel
-#[no_mangle]
 pub fn deserialize_map(parcel: &mut MsgParcel) -> Result<AssetMap> {
     let len = parcel.read::<u32>().map_err(ipc_err_handle)?;
     if len > MAX_MAP_CAPACITY {
@@ -123,7 +121,6 @@ pub fn deserialize_map(parcel: &mut MsgParcel) -> Result<AssetMap> {
 }
 
 /// Serialize the collection of map to parcel.
-#[no_mangle]
 pub fn serialize_maps(vec: &Vec<AssetMap>, parcel: &mut MsgParcel) -> Result<()> {
     if vec.len() as u32 > MAX_VEC_CAPACITY {
         return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
@@ -137,12 +134,14 @@ pub fn serialize_maps(vec: &Vec<AssetMap>, parcel: &mut MsgParcel) -> Result<()>
 }
 
 /// Deserialize the collection of map from parcel.
-#[no_mangle]
 pub fn deserialize_maps(parcel: &mut MsgParcel) -> Result<Vec<AssetMap>> {
     let len = parcel.read::<u32>().map_err(ipc_err_handle)?;
     if len > MAX_VEC_CAPACITY {
-        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-            ErrCode::InvalidArgument, "[FATAL][IPC]The vector size exceeds the limit.");
+        return macros_lib::log_throw_error!(
+            macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument,
+            "[FATAL][IPC]The vector size exceeds the limit."
+        );
     }
     let mut res_vec = Vec::with_capacity(len as usize);
     for _i in 0..len {
@@ -152,7 +151,6 @@ pub fn deserialize_maps(parcel: &mut MsgParcel) -> Result<Vec<AssetMap>> {
 }
 
 /// Serialize the sync result to parcel.
-#[no_mangle]
 pub fn serialize_sync_result(sync_result: &SyncResult, parcel: &mut MsgParcel) -> Result<()> {
     parcel.write::<i32>(&sync_result.result_code).map_err(ipc_err_handle)?;
     parcel.write::<u32>(&sync_result.total_count).map_err(ipc_err_handle)?;
@@ -160,7 +158,6 @@ pub fn serialize_sync_result(sync_result: &SyncResult, parcel: &mut MsgParcel) -
 }
 
 /// Deserialize the sync result from parcel.
-#[no_mangle]
 pub fn deserialize_sync_result(parcel: &mut MsgParcel) -> Result<SyncResult> {
     Ok(SyncResult {
         result_code: parcel.read::<i32>().map_err(ipc_err_handle)?,
@@ -170,7 +167,6 @@ pub fn deserialize_sync_result(parcel: &mut MsgParcel) -> Result<SyncResult> {
 }
 
 /// Serialize the batch result (Vec<(u32, i32)>) to parcel.
-#[no_mangle]
 pub fn serialize_batch_result(result: &Vec<(u32, u32)>, parcel: &mut MsgParcel) -> Result<()> {
     if result.len() as u32 > MAX_ATTR_ARRAY_CAPACITY {
         return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
@@ -185,7 +181,6 @@ pub fn serialize_batch_result(result: &Vec<(u32, u32)>, parcel: &mut MsgParcel) 
 }
 
 /// Deserialize the batch result (Vec<(u32, i32)>) from parcel.
-#[no_mangle]
 pub fn deserialize_batch_result(parcel: &mut MsgParcel) -> Result<Vec<(u32, u32)>> {
     let len = parcel.read::<u32>().map_err(ipc_err_handle)?;
     if len > MAX_ATTR_ARRAY_CAPACITY {
@@ -202,7 +197,6 @@ pub fn deserialize_batch_result(parcel: &mut MsgParcel) -> Result<Vec<(u32, u32)
 }
 
 /// Convert ipc error into Asset error.
-#[no_mangle]
 pub fn ipc_err_handle(e: IpcStatusCode) -> AssetError {
     match e {
         IpcStatusCode::ServiceDied => {

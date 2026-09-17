@@ -84,8 +84,7 @@ pub fn serialize_cli_info(info: &CliInfo, parcel: &mut MsgParcel) -> Result<()> 
 
 /// Serialize vector of CliInfo to MsgParcel (for reply).
 pub fn serialize_cli_infos(infos: &Vec<CliInfo>, parcel: &mut MsgParcel) -> Result<()> {
-    write_vec_len(infos.len(), MAX_TICKET_CAPACITY as i32, ErrCode::InvalidArrayLen,
-        "CliInfo", parcel)?;
+    write_vec_len(infos.len(), MAX_TICKET_CAPACITY as i32, ErrCode::InvalidArrayLen, "CliInfo", parcel)?;
     for info in infos {
         serialize_cli_info(info, parcel)?;
     }
@@ -94,8 +93,7 @@ pub fn serialize_cli_infos(infos: &Vec<CliInfo>, parcel: &mut MsgParcel) -> Resu
 
 /// Serialize string vector to MsgParcel (for reply).
 pub fn serialize_string_vec(vec: &Vec<String>, parcel: &mut MsgParcel) -> Result<()> {
-    write_vec_len(vec.len(), MAX_TICKET_CAPACITY as i32, ErrCode::InvalidArrayLen,
-        "string", parcel)?;
+    write_vec_len(vec.len(), MAX_TICKET_CAPACITY as i32, ErrCode::InvalidArrayLen, "string", parcel)?;
     for s in vec {
         parcel.write_string16(s).map_err(ipc_err_handle)?;
     }

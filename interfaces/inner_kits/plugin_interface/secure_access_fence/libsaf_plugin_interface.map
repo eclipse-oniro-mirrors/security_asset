@@ -13,7 +13,8 @@
 
 {
   global:
-    _R*;
+    _R*saf*;
+    _R*secure_access_fence*;
     rust_metadata_saf_plugin_interface_*;
   local:
     *;
