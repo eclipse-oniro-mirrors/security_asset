@@ -13,19 +13,7 @@
 
 {
   global:
-    _R*;
-    serialize_map;
-    deserialize_map;
-    serialize_maps;
-    deserialize_maps;
-    serialize_sync_result;
-    deserialize_sync_result;
-    serialize_batch_result;
-    deserialize_batch_result;
-    ipc_err_handle;
-    log_func_e;
-    log_func_i;
-    log_func_w;
+    _R*asset*;
     asset_error_shorten_func_name;
     asset_error_new;
     asset_error_track_internal;

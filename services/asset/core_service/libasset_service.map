@@ -13,8 +13,7 @@
 
 {
   global:
-    _R*;
-    A;
+    _R*asset*;
     rust_metadata_asset_service_*;
   local:
     *;

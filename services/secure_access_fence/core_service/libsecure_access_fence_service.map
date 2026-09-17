@@ -13,7 +13,8 @@
 
 {
   global:
-    _R*;
+    _R*saf*;
+    _R*secure_access_fence*;
     OHOS$Security$SAF$cxxbridge1$cxx_batch_generate_ticket;
     OHOS$Security$SAF$cxxbridge1$cxx_store_challenge;
     OHOS$Security$SAF$cxxbridge1$cxx_store_controlled_grant_record;
@@ -29,7 +30,6 @@
     cxxbridge1$rust_vec$OHOS$Security$SAF$CxxVerifyTicketInfo$reserve_total;
     cxxbridge1$rust_vec$OHOS$Security$SAF$CxxVerifyTicketInfo$set_len;
     cxxbridge1$rust_vec$OHOS$Security$SAF$CxxVerifyTicketInfo$truncate;
-    A;
     rust_metadata_secure_access_fence_service_*;
   local:
     *;
