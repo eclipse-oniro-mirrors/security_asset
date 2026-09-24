@@ -27,6 +27,8 @@ group("asset_component") {
     ]
   }
 
+ deps += [ "frameworks/hpic/js/napi:privacycomputation_napi" ]
+ 
   if (asset_build_mode == "full") {
     deps += [
       "sa_profile:asset_sa_profiles",
