@@ -51,6 +51,7 @@ use crate::{
 };
 
 extern "C" {
+    fn SqliteInitialize() -> i32;
     fn SqliteOpen(file_name: *const u8, pp_db: *mut *mut c_void) -> i32;
     fn SqliteCloseV2(db: *mut c_void) -> i32;
     fn SqliteExec(db: *mut c_void, sql: *const u8, msg: *mut *mut u8) -> i32;
@@ -268,6 +269,11 @@ pub(crate) fn get_db(user_id: i32, db_name: &str, db_key: &Option<Vec<u8>>) -> R
 pub(crate) fn get_db_without_lock(user_id: i32, db_name: &str, db_key: &Option<Vec<u8>>) -> Result<Database> {
     let db_path = fmt_db_path(user_id, db_name, db_key);
     get_db_by_type_without_lock(user_id, db_name, db_path, db_key.as_ref())
+}
+
+/// Initialize sqlite
+pub fn sqlite_initialize() -> i32 {
+    unsafe { SqliteInitialize() }
 }
 
 impl Database {

@@ -35,7 +35,10 @@ use asset_common::{AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray
     OwnerType, Group, MutAssetBlob, MutAssetBlobArrayChangeable, ProcessInfo
 };
 use asset_crypto_manager::{crypto_manager::CryptoManager, db_key_operator::get_db_key};
-use asset_db_operator::{database_file_upgrade::check_and_split_db, database::{preload_db, clear_db_map}};
+use asset_db_operator::{
+    database_file_upgrade::check_and_split_db,
+    database::{preload_db, clear_db_map, sqlite_initialize}
+};
 use asset_definition::{macros_lib, AssetMap, ErrCode, Result, SyncResult};
 use asset_file_operator::{common::DE_ROOT_PATH, de_operator::create_user_de_dir};
 use asset_ipc::{SA_ID, deserialize};
@@ -464,6 +467,14 @@ fn start_service(handler: Handler) -> Result<()> {
             let _tr = loader.init(Box::new(AssetContext { user_id: 0 }));
         },
         Err(_) => loge!("load plugin failed."),
+    }
+
+    // Explicitly initialize sqlite global state before SA publish.
+    // This ensures sqlite3MutexInit completes in a single-threaded context,
+    // avoiding the race condition when multiple IPC threads call sqlite3_open simultaneously for the first time.
+    let ret = sqlite_initialize();
+    if ret != 0 {
+        loge!("sqlite initialize failed, ret={}", ret);
     }
 
     if !handler.publish(AssetService::new(handler.clone())) {

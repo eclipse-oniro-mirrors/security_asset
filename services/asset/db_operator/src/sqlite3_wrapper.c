@@ -24,6 +24,11 @@ const char *DEFAULT_KDF_ALGO = "KDF_SHA1";
 const int32_t DEFAULT_ITER = 10000;
 const int32_t DEFAULT_PAGE_SIZE = 1024;
 
+int SqliteInitialize(void)
+{
+    return sqlite3_initialize();
+}
+
 int SqliteOpen(const char *fileName, void **ppDb)
 {
     return sqlite3_open(fileName, (sqlite3 **)ppDb);
