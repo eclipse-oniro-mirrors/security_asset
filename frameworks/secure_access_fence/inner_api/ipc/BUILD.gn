@@ -39,6 +39,7 @@ ohos_static_library("secure_access_fence_proxy") {
   deps = [ ":secure_access_fence_interface" ]
 
   external_deps = [
+    "c_utils:utils",
     "bounds_checking_function:libsec_shared",
     "hilog:libhilog",
     "ipc:ipc_single",
@@ -68,6 +69,7 @@ ohos_static_library("secure_access_fence_stub") {
   deps = [ ":secure_access_fence_interface" ]
 
   external_deps = [
+    "c_utils:utils",
     "bounds_checking_function:libsec_shared",
     "hilog:libhilog",
     "ipc:ipc_single",
