@@ -33,7 +33,7 @@ std::atomic<void*> g_computationHandle{nullptr};
 std::mutex g_computationMutex;
 void *GetComputationHandle()
 {
-    if (COMPUTATION_PATH == nullptr || COMPUTATION_PATH[0] == '\0') {
+    if (COMP_NAPI_PATH[0] == '\0') {
         LOGE("computation path is empty, skip dlopen");
         return nullptr;
     }
@@ -46,9 +46,9 @@ void *GetComputationHandle()
     if (handle != nullptr) {
         return handle;
     }
-    handle = dlopen(COMPUTATION_PATH, RTLD_NOW | RTLD_LOCAL);
+    handle = dlopen(COMP_NAPI_PATH, RTLD_NOW | RTLD_LOCAL);
     if (handle == nullptr) {
-        LOGE("dlopen computation so failed, %" LOG_PUBLIC "s!", dlerror());
+        LOGE("dlopen computation so failed, %{public}s!", dlerror());
         return nullptr;
     }
     g_computationHandle.store(handle, std::memory_order_release);
@@ -84,7 +84,6 @@ napi_value CallComputationNapiFunc(napi_env env, napi_callback_info info, const 
     auto ComputationFunc = (ComputationNapiFunc)dlsym(handle, funcName);
     if (ComputationFunc == nullptr) {
         LOGE("Failed to dlsym %{public}s, dlerror: %{public}s", funcName, dlerror());
-        dlclose(handle);
         return RejectPromise(env, COMP_NAPI_UNSUPPORTED, "computation napi symbol not found");
     }
     return ComputationFunc(env, info);
