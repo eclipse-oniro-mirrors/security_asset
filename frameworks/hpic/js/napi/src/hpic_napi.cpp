@@ -29,6 +29,32 @@ constexpr int32_t COMP_NAPI_UNSUPPORTED = 24000017;
 
 using ComputationNapiFunc = napi_value(*)(napi_env, napi_callback_info);
 
+std::atomic<void*> g_computationHandle{nullptr};
+std::mutex g_computationMutex;
+void *GetComputationHandle()
+{
+    if (COMP_NAPI_PATH[0] == '\0') {
+        LOGE("computation path is empty, skip dlopen");
+        return nullptr;
+    }
+    void *handle = g_computationHandle.load(std::memory_order_acquire);
+    if (handle != nullptr) {
+        return handle;
+    }
+    std::lock_guard<std::mutex> lock(g_computationMutex);
+    handle = g_computationHandle.load(std::memory_order_relaxed);
+    if (handle != nullptr) {
+        return handle;
+    }
+    handle = dlopen(COMP_NAPI_PATH, RTLD_NOW | RTLD_LOCAL);
+    if (handle == nullptr) {
+        LOGE("dlopen computation so failed, %{public}s!", dlerror());
+        return nullptr;
+    }
+    g_computationHandle.store(handle, std::memory_order_release);
+    return handle;
+}
+
 napi_value RejectPromise(napi_env env, int32_t errCode, const char *msg)
     {
     napi_deferred deferred;
@@ -50,11 +76,7 @@ napi_value RejectPromise(napi_env env, int32_t errCode, const char *msg)
 } // anonymous namespace
 napi_value CallComputationNapiFunc(napi_env env, napi_callback_info info, const char *funcName)
 {
-    if (COMP_NAPI_PATH[0] == '\0') {
-        LOGE("CallComputationNapiFunc %{public}s failed: computation napi path is empty", funcName);
-        return RejectPromise(env, COMP_NAPI_UNSUPPORTED, "computation napi so is unavailable");
-    }
-    void *handle = dlopen(COMP_NAPI_PATH, RTLD_NOW | RTLD_LOCAL);
+    void *handle = GetComputationHandle();
     if (handle == nullptr) {
         LOGE("Failed to dlopen computation napi so, dlerror: %{public}s", dlerror());
         return RejectPromise(env, COMP_NAPI_UNSUPPORTED, "computation napi so is unavailable");
@@ -62,12 +84,9 @@ napi_value CallComputationNapiFunc(napi_env env, napi_callback_info info, const 
     auto ComputationFunc = (ComputationNapiFunc)dlsym(handle, funcName);
     if (ComputationFunc == nullptr) {
         LOGE("Failed to dlsym %{public}s, dlerror: %{public}s", funcName, dlerror());
-        dlclose(handle);
         return RejectPromise(env, COMP_NAPI_UNSUPPORTED, "computation napi symbol not found");
     }
-    napi_value ret = ComputationFunc(env, info);
-    dlclose(handle);
-    return ret;
+    return ComputationFunc(env, info);
 }
 
 namespace OHOS::Security::PrivacyComputation {
