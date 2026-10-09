@@ -20,5 +20,5 @@ edition = "2021"
 
 [dependencies]
 ylong_json = { git = "https://gitcode.com/openharmony/commonlibrary_rust_ylong_json.git" }
-saf_definition = { path = "../../definition" }
-saf_log = { path = "../../os_dependency/log" }
+saf_definition = { path = "../definition" }
+saf_log = { path = "../os_dependency/log" }

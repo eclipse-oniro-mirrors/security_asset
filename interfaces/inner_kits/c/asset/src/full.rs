@@ -81,7 +81,7 @@ fn into_vec2d(c_array: &C2DArray) -> Option<Vec<Vec<AssetAttr>>> {
     if c_array.items.is_null() && c_array.len != 0 {
         return None;
     }
-    
+
     unsafe {
         let outer = slice::from_raw_parts(c_array.items, c_array.len);
         let mut vec2d = Vec::with_capacity(c_array.len);
@@ -104,7 +104,7 @@ fn into_batch_map(
     }
 
     let mut result = Vec::with_capacity(attributes_array.len());
-    
+
     for attrs in attributes_array {
         if attrs.is_empty() {
             return None;
@@ -112,7 +112,7 @@ fn into_batch_map(
         let map = into_map(attrs.as_ptr(), attrs.len() as u32)?;
         result.push(map);
     }
-    
+
     Some(result)
 }
 
@@ -129,7 +129,11 @@ pub extern "C" fn add_asset(attributes: *const AssetAttr, attr_cnt: u32) -> i32 
         Err(e) => return map_err(e.code),
     };
 
-    let ret = if let Err(e) = manager.lock().unwrap().add(&map) { e.code as i32 } else { RESULT_CODE_SUCCESS };
+    let mut guard = match manager.lock() {
+        Ok(guard) => guard,
+        Err(_) => return ErrCode::ServiceUnavailable as i32,
+    };
+    let ret = if let Err(e) = guard.add(&map) { e.code as i32 } else { RESULT_CODE_SUCCESS };
     ret
 }
 
@@ -153,7 +157,11 @@ pub extern "C" fn asset_batch_add(
         Err(e) => return map_err(e.code),
     };
 
-    let mut vec = match manager.lock().unwrap().batch_add(&attributes_array) {
+    let mut guard = match manager.lock() {
+        Ok(guard) => guard,
+        Err(_) => return ErrCode::ServiceUnavailable as i32,
+    };
+    let mut vec = match guard.batch_add(&attributes_array) {
         Ok(info) => info,
         Err(e) => return e.code as i32,
     };
@@ -163,7 +171,6 @@ pub extern "C" fn asset_batch_add(
 
     RESULT_CODE_SUCCESS
 }
-
 
 /// Function called from C programming language to Rust programming language for batch updating Assets.
 #[no_mangle]
@@ -196,7 +203,11 @@ pub extern "C" fn asset_batch_update(
         Err(e) => return map_err(e.code),
     };
 
-    let mut vec = match manager.lock().unwrap().batch_update(&attributes_array, &attributes_to_update_array) {
+    let mut guard = match manager.lock() {
+        Ok(guard) => guard,
+        Err(_) => return ErrCode::ServiceUnavailable as i32,
+    };
+    let mut vec = match guard.batch_update(&attributes_array, &attributes_to_update_array) {
         Ok(info) => info,
         Err(e) => return e.code as i32,
     };
@@ -232,7 +243,11 @@ pub extern "C" fn remove_asset(query: *const AssetAttr, query_cnt: u32) -> i32 {
         Err(e) => return map_err(e.code),
     };
 
-    let ret = if let Err(e) = manager.lock().unwrap().remove(&map) { e.code as i32 } else { RESULT_CODE_SUCCESS };
+    let mut guard = match manager.lock() {
+        Ok(guard) => guard,
+        Err(_) => return ErrCode::ServiceUnavailable as i32,
+    };
+    let ret = if let Err(e) = guard.remove(&map) { e.code as i32 } else { RESULT_CODE_SUCCESS };
     ret
 }
 
@@ -253,11 +268,11 @@ pub extern "C" fn asset_batch_remove(c_array: &C2DArray) -> i32 {
         Err(e) => return map_err(e.code),
     };
 
-    let ret = if let Err(e) = manager.lock().unwrap().batch_remove(&attributes_array) {
-        e.code as i32
-    } else {
-        RESULT_CODE_SUCCESS
+    let mut guard = match manager.lock() {
+        Ok(guard) => guard,
+        Err(_) => return ErrCode::ServiceUnavailable as i32,
     };
+    let ret = if let Err(e) = guard.batch_remove(&attributes_array) { e.code as i32 } else { RESULT_CODE_SUCCESS };
     ret
 }
 
@@ -284,11 +299,11 @@ pub extern "C" fn update_asset(
         Err(e) => return map_err(e.code),
     };
 
-    let ret = if let Err(e) = manager.lock().unwrap().update(&query_map, &update_map) {
-        e.code as i32
-    } else {
-        RESULT_CODE_SUCCESS
+    let mut guard = match manager.lock() {
+        Ok(guard) => guard,
+        Err(_) => return ErrCode::ServiceUnavailable as i32,
     };
+    let ret = if let Err(e) = guard.update(&query_map, &update_map) { e.code as i32 } else { RESULT_CODE_SUCCESS };
     ret
 }
 
@@ -314,7 +329,11 @@ pub unsafe extern "C" fn pre_query_asset(query: *const AssetAttr, query_cnt: u32
         Err(e) => return map_err(e.code),
     };
 
-    let res = match manager.lock().unwrap().pre_query(&map) {
+    let mut guard = match manager.lock() {
+        Ok(guard) => guard,
+        Err(_) => return ErrCode::ServiceUnavailable as i32,
+    };
+    let res = match guard.pre_query(&map) {
         Err(e) => return e.code as i32,
         Ok(res) => res,
     };
@@ -350,7 +369,11 @@ pub unsafe extern "C" fn query_asset(query: *const AssetAttr, query_cnt: u32, re
         Err(e) => return map_err(e.code),
     };
 
-    let res = match manager.lock().unwrap().query(&map) {
+    let mut guard = match manager.lock() {
+        Ok(guard) => guard,
+        Err(_) => return ErrCode::ServiceUnavailable as i32,
+    };
+    let res = match guard.query(&map) {
         Err(e) => return e.code as i32,
         Ok(res) => res,
     };
@@ -377,11 +400,11 @@ pub extern "C" fn post_query_asset(handle: *const AssetAttr, handle_cnt: u32) ->
         Err(e) => return map_err(e.code),
     };
 
-    let ret = if let Err(e) = manager.lock().unwrap().post_query(&map) {
-        e.code as i32
-    } else {
-        RESULT_CODE_SUCCESS
+    let mut guard = match manager.lock() {
+        Ok(guard) => guard,
+        Err(_) => return ErrCode::ServiceUnavailable as i32,
     };
+    let ret = if let Err(e) = guard.post_query(&map) { e.code as i32 } else { RESULT_CODE_SUCCESS };
     ret
 }
 
@@ -411,7 +434,11 @@ pub unsafe extern "C" fn query_sync_result(
         Err(e) => return map_err(e.code),
     };
 
-    let ret = match manager.lock().unwrap().query_sync_result(&map) {
+    let mut guard = match manager.lock() {
+        Ok(guard) => guard,
+        Err(_) => return ErrCode::ServiceUnavailable as i32,
+    };
+    let ret = match guard.query_sync_result(&map) {
         Err(e) => map_err(e.code),
         Ok(res) => {
             *sync_result = res;

@@ -19,8 +19,6 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-openssl = { git = "https://gitcode.com/openharmony/third_party_rust_rust-openssl.git" }
-
 asset_common = { path = "../common" }
 asset_definition = { path = "../../../frameworks/asset/definition" }
 asset_file_operator = { path = "../../../frameworks/asset/os_dependency/file" }
