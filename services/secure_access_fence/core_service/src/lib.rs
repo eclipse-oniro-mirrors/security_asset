@@ -38,8 +38,10 @@ use saf_utils::get_compact_json_value;
 
 use crate::wrapper::{cxx_is_screen_locked, notify_error, notify_performance_metrics};
 use crate::remote_control::{BatchGenerateResult, BatchVerifyResult};
+use crate::critical_manager::CriticalManager;
 
 mod common_event;
+mod critical_manager;
 mod remote_control;
 mod remote_grant_status;
 mod stub;
@@ -112,6 +114,7 @@ pub(crate) fn unload_sa() {
                 continue;
             }
 
+            CriticalManager::get_instance().set_critical(false);
             SystemAbilityManager::unload_system_ability(SA_ID);
             break;
         }
@@ -130,6 +133,14 @@ impl Ability for SAFAbility {
 
     fn on_active(&self, reason: SystemAbilityOnDemandReason) {
         common_event::handle_common_event(reason);
+    }
+
+    fn on_system_ability_load_event(&self, said: i32, _device_id: String) {
+        CriticalManager::get_instance().on_system_ability_load(said);
+    }
+
+    fn on_system_ability_remove_event(&self, said: i32, _device_id: String) {
+        CriticalManager::get_instance().on_system_ability_remove(said);
     }
 
     fn on_idle(&self, reason: SystemAbilityOnDemandReason) -> i32 {
@@ -209,6 +220,7 @@ fn start_service(handler: Handler) -> Result<()> {
     };
 
     common_event::subscribe();
+    CriticalManager::get_instance().subscribe(&handler);
     Ok(())
 }
 

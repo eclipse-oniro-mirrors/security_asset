@@ -37,6 +37,7 @@ use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
 use saf_sdk::{ErrCode, Result, SAFError};
 
+use crate::critical_manager::CriticalManager;
 use crate::remote_grant_status;
 use crate::wrapper;
 use crate::SAFService;
@@ -61,6 +62,7 @@ impl RemoteStub for SAFService {
             return IPC_SUCCESS as i32;
         }
         let _counter_user = AutoCounter::new();
+        CriticalManager::get_instance().set_critical(true);
         if !self.system_ability.cancel_idle() {
             loge!("[FATAL]Cancel idle failed. Service is stop.");
             let _ = reply_handle(
