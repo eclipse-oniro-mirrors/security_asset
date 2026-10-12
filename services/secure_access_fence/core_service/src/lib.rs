@@ -88,12 +88,14 @@ struct CommonEventInfoFfi {
 }
 
 const DELAYED_UNLOAD_TIME_IN_SEC: i32 = 60; // 60s
+const UNLOAD_CHECK_INTERVAL_IN_SEC: u64 = 3;
 const SEC_TO_MILLISEC: i32 = 1000;
 
 pub(crate) fn unload_sa() {
+    let start_time = Instant::now();
     ylong_runtime::spawn(async move {
         loop {
-            ylong_runtime::time::sleep(Duration::from_secs(DELAYED_UNLOAD_TIME_IN_SEC as u64)).await;
+            ylong_runtime::time::sleep(Duration::from_secs(UNLOAD_CHECK_INTERVAL_IN_SEC)).await;
             let counter = Counter::get_instance();
             if counter.lock().unwrap().count() > 0 {
                 continue;
@@ -115,8 +117,10 @@ pub(crate) fn unload_sa() {
             }
 
             CriticalManager::get_instance().set_critical(false);
-            SystemAbilityManager::unload_system_ability(SA_ID);
-            break;
+            if start_time.elapsed() >= Duration::from_secs(DELAYED_UNLOAD_TIME_IN_SEC as u64) {
+                SystemAbilityManager::unload_system_ability(SA_ID);
+                break;
+            }
         }
     });
 }
@@ -149,9 +153,9 @@ impl Ability for SAFAbility {
             logi!(
                 "SAF service on idle not success for use_account: {}, delay time: {}s",
                 counter.lock().unwrap().count(),
-                DELAYED_UNLOAD_TIME_IN_SEC
+                UNLOAD_CHECK_INTERVAL_IN_SEC
             );
-            return DELAYED_UNLOAD_TIME_IN_SEC * SEC_TO_MILLISEC;
+            return UNLOAD_CHECK_INTERVAL_IN_SEC as i32 * SEC_TO_MILLISEC;
         }
 
         let remaining_ms = ticket_operation::challenge_store::global_challenge_store().max_remaining_time_ms();
@@ -163,19 +167,23 @@ impl Ability for SAFAbility {
             return remaining_ms.min(ticket_operation::challenge_store::MAX_CHALLENGE_VALIDITY_MS) as i32;
         }
 
-        match SAFPlugin::get_instance().load_plugin() {
+        let delay_time = match SAFPlugin::get_instance().load_plugin() {
             Ok(loader) => {
                 let delay_time = loader.on_idle();
                 if delay_time == 0 {
                     logd!("Saf service idle, reason: {}", reason.name);
                 }
-                delay_time
+                UNLOAD_CHECK_INTERVAL_IN_SEC as i32
             },
             Err(_) => {
                 loge!("load plugin failed.");
                 0
             },
+        };
+        if delay_time == 0 {
+            CriticalManager::get_instance().set_critical(false);
         }
+        delay_time
     }
 
     fn on_stop(&self) {
