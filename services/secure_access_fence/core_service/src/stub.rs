@@ -62,7 +62,6 @@ impl RemoteStub for SAFService {
             return IPC_SUCCESS as i32;
         }
         let _counter_user = AutoCounter::new();
-        CriticalManager::get_instance().set_critical(true);
         if !self.system_ability.cancel_idle() {
             loge!("[FATAL]Cancel idle failed. Service is stop.");
             let _ = reply_handle(
@@ -71,6 +70,7 @@ impl RemoteStub for SAFService {
             );
             return IPC_SUCCESS as i32;
         }
+        CriticalManager::get_instance().set_critical(true);
 
         if code >= REDIRECT_START_CODE {
             return on_extension_request(self, code, data, reply);

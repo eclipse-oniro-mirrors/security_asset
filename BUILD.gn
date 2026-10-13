@@ -66,6 +66,7 @@ group("asset_bin_test") {
     #"services/asset/core_service:unittest",
   ]
   if (enable_local_test) {
+    deps += [ "test/secure_access_fence/unittest/module_test:saf_dependency_test" ]
     #deps += [ "test/asset/unittest/inner_kits_rust:rust_asset_inner_test" ]
     #deps += [ "test/asset/unittest/module_test:rust_asset_module_test" ]
     #deps += [ "services/asset/common:rust_asset_calling_info_test" ]

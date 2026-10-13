@@ -172,8 +172,10 @@ impl Ability for SAFAbility {
                 let delay_time = loader.on_idle();
                 if delay_time == 0 {
                     logd!("Saf service idle, reason: {}", reason.name);
+                    0
+                } else {
+                    UNLOAD_CHECK_INTERVAL_IN_SEC as i32 * SEC_TO_MILLISEC
                 }
-                UNLOAD_CHECK_INTERVAL_IN_SEC as i32
             },
             Err(_) => {
                 loge!("load plugin failed.");
