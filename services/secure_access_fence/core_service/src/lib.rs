@@ -66,6 +66,11 @@ const JSON_KEY_NEED_UNLOCK_SCREEN: &str = "needUnlockScreen";
 const METRIC_ITEM_COUNT_TICKET_VERIFY: i32 = 1;
 const DEFAULT_DOMAIN_ID: &str = "";
 const STRING_QUOTE: char = '"';
+const EXEC_PUBLIC_CLI_TOOL_PERMISSION: &str = "ohos.permission.EXEC_PUBLIC_CLI_TOOL";
+const AUTH_STATUS_AUTHORIZED: i32 = 2;
+const MAX_CLI_CMD_INFOS_COUNT: usize = 300;
+const MAX_CMD_NAME_LENGTH: usize = 512;
+const MAX_TICKET_EXPIRE_TIME_MS: u64 = 60_000;
 extern "C" {
     fn CheckPermission(permission: *const raw_c_char) -> bool;
     fn CheckIsSystemHap() -> bool;
@@ -404,6 +409,43 @@ impl SAFService {
             remote_info
         )
     }
+
+    fn request_tool_ticket(
+        &self,
+        os_account_id: i32,
+        cli_cmd_infos: Vec<wrapper::ffi::CxxCommandInfo>,
+        ticket_expire_time_ms: u64,
+    ) -> Result<wrapper::ffi::CxxTicketQueryResult> {
+        let start_time = Instant::now();
+        let function_name = "request_tool_ticket".to_string();
+        let item_count = cli_cmd_infos.len() as i32;
+
+        let result = do_request_tool_ticket(cli_cmd_infos, ticket_expire_time_ms);
+
+        match &result {
+            Ok(_) => {
+                let elapsed_time = start_time.elapsed().as_millis() as i32;
+                notify_performance_metrics(
+                    item_count,
+                    elapsed_time,
+                    os_account_id,
+                    function_name.clone(),
+                );
+                logi!("{} success: elapsed={}ms", function_name, elapsed_time);
+            },
+            Err(e) => {
+                let elapsed_time = start_time.elapsed().as_millis() as i32;
+                notify_error(
+                    format!("{} failed: {}", function_name, e.msg),
+                    e.code as i32,
+                    os_account_id,
+                    function_name.clone(),
+                );
+                loge!("{} failed: code={}, elapsed={}ms", function_name, e.code, elapsed_time);
+            },
+        }
+        result
+    }
 }
 
 fn check_query_tool_permission(os_account_id: i32, function_name: &str) -> std::result::Result<(), ErrCode> {
@@ -615,8 +657,141 @@ fn extract_permission_list(json: &ylong_json::JsonValue) -> Result<Vec<String>> 
     Ok(result)
 }
 
+pub(crate) fn validate_cli_cmd_infos(cli_cmd_infos: &[wrapper::ffi::CxxCommandInfo]) -> Result<()> {
+    if cli_cmd_infos.is_empty() {
+        return macros_lib::log_throw_error!(ErrCode::ArgEmpty, "cliCmdInfos is empty");
+    }
+    if cli_cmd_infos.len() > MAX_CLI_CMD_INFOS_COUNT {
+        return macros_lib::log_throw_error!(ErrCode::InvalidArrayLen,
+            "cliCmdInfos count {} exceeds max {}", cli_cmd_infos.len(), MAX_CLI_CMD_INFOS_COUNT);
+    }
+    for (i, cmd) in cli_cmd_infos.iter().enumerate() {
+        if cmd.cmd_name.is_empty() {
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
+                "cliCmdInfos[{}].cmdName is empty", i);
+        }
+        if cmd.cmd_name.len() > MAX_CMD_NAME_LENGTH {
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
+                "cliCmdInfos[{}].cmdName length {} exceeds max {}", i, cmd.cmd_name.len(), MAX_CMD_NAME_LENGTH);
+        }
+        if cmd.sub_cmd.len() > MAX_CMD_NAME_LENGTH {
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
+                "cliCmdInfos[{}].subCmd length {} exceeds max {}", i, cmd.sub_cmd.len(), MAX_CMD_NAME_LENGTH);
+        }
+    }
+    Ok(())
+}
+
+pub(crate) fn validate_ticket_expire_time_ms(ticket_expire_time_ms: u64) -> Result<()> {
+    if ticket_expire_time_ms > MAX_TICKET_EXPIRE_TIME_MS {
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
+            "ticketExpireTimeMs {} exceeds max {}", ticket_expire_time_ms, MAX_TICKET_EXPIRE_TIME_MS);
+    }
+    Ok(())
+}
+
+pub(crate) fn filter_permission_results(
+    results: &mut Vec<wrapper::ffi::CxxPermissionInfo>,
+    has_ticket: bool,
+) {
+    if has_ticket {
+        results.clear();
+    } else {
+        results.retain(|p| p.auth_status != AUTH_STATUS_AUTHORIZED);
+    }
+}
+
+#[cfg(feature = "SAFTest")]
+pub(crate) mod test_mocks {
+    use std::sync::Mutex;
+    use crate::wrapper::ffi::{CxxCommandInfo, CxxTicketQueryResult};
+
+    static MOCK_PERMISSION_RESULT: Mutex<bool> = Mutex::new(true);
+    static MOCK_CXX_RESULT: Mutex<Option<(i32, CxxTicketQueryResult)>> = Mutex::new(None);
+
+    pub fn set_mock_permission(has_permission: bool) {
+        *MOCK_PERMISSION_RESULT.lock().unwrap() = has_permission;
+    }
+
+    pub fn mock_check_permission() -> bool {
+        *MOCK_PERMISSION_RESULT.lock().unwrap()
+    }
+
+    pub fn set_mock_cxx_result(ret: i32, result: CxxTicketQueryResult) {
+        *MOCK_CXX_RESULT.lock().unwrap() = Some((ret, result));
+    }
+
+    pub fn mock_cxx_request_tool_ticket(
+        _cli_cmd_infos: &Vec<CxxCommandInfo>,
+        _ticket_expire_time_ms: u64,
+        result: &mut CxxTicketQueryResult,
+    ) -> i32 {
+        let mock = MOCK_CXX_RESULT.lock().unwrap();
+        if let Some((ret, mock_result)) = mock.as_ref() {
+            *result = mock_result.clone();
+            *ret
+        } else {
+            0
+        }
+    }
+
+    pub fn reset_mocks() {
+        *MOCK_PERMISSION_RESULT.lock().unwrap() = true;
+        *MOCK_CXX_RESULT.lock().unwrap() = None;
+    }
+}
+
+pub(crate) fn do_request_tool_ticket(
+    cli_cmd_infos: Vec<wrapper::ffi::CxxCommandInfo>,
+    ticket_expire_time_ms: u64,
+) -> Result<wrapper::ffi::CxxTicketQueryResult> {
+    #[cfg(feature = "SAFTest")]
+    let has_permission = test_mocks::mock_check_permission();
+    #[cfg(not(feature = "SAFTest"))]
+    let has_permission = {
+        let permission = CString::new(EXEC_PUBLIC_CLI_TOOL_PERMISSION).unwrap();
+        unsafe { CheckPermission(permission.as_ptr()) }
+    };
+
+    if !has_permission {
+        return macros_lib::log_throw_error!(ErrCode::PermissionDenied,
+            "Permission denied! Need {}", EXEC_PUBLIC_CLI_TOOL_PERMISSION);
+    }
+
+    validate_cli_cmd_infos(&cli_cmd_infos)?;
+    validate_ticket_expire_time_ms(ticket_expire_time_ms)?;
+
+    let mut result = wrapper::ffi::CxxTicketQueryResult {
+        permission_results: Vec::new(),
+        has_ticket: false,
+        ticket_message: String::new(),
+        ticket_challenge: String::new(),
+        ticket: String::new(),
+    };
+
+    #[cfg(feature = "SAFTest")]
+    let ret = test_mocks::mock_cxx_request_tool_ticket(&cli_cmd_infos, ticket_expire_time_ms, &mut result);
+    #[cfg(not(feature = "SAFTest"))]
+    let ret = wrapper::ffi::CxxRequestToolTicket(&cli_cmd_infos, ticket_expire_time_ms, &mut result);
+
+    if ret != 0 {
+        let err_code = ErrCode::try_from(ret as u32).unwrap_or(ErrCode::GeneralError);
+        return macros_lib::log_throw_error!(err_code, "CxxRequestToolTicket failed, ret={}", ret);
+    }
+
+    filter_permission_results(&mut result.permission_results, result.has_ticket);
+
+    Ok(result)
+}
+
 #[cfg(feature = "SAFTest")]
 /// stub for test
 pub mod ut_core_service_lib_stub {
     include! {"../../../../test/secure_access_fence/unittest/ut_test/services/core_service/test_stub/ut_core_service_lib_stub.rs"}
+}
+
+#[cfg(feature = "SAFTest")]
+/// stub for request_tool_ticket test
+pub mod ut_request_tool_ticket_stub {
+    include! {"../../../../test/secure_access_fence/unittest/ut_test/services/core_service/test_stub/ut_request_tool_ticket_stub.rs"}
 }

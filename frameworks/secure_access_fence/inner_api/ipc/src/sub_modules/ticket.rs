@@ -15,10 +15,10 @@
 
 //! Ticket related serialization functions.
 
+use crate::{ipc_err_handle, MAX_TICKET_CAPACITY};
 use ipc::parcel::MsgParcel;
 use saf_definition::{macros_lib, ErrCode, Result};
-use saf_definition::{VerifyTicketInfo, CliInfo};
-use crate::{ipc_err_handle, MAX_TICKET_CAPACITY};
+use saf_definition::{CliInfo, VerifyTicketInfo};
 
 /// Deserialize VerifyTicketInfo from MsgParcel.
 pub fn deserialize_verify_ticket_info(parcel: &mut MsgParcel) -> Result<VerifyTicketInfo> {
@@ -63,8 +63,10 @@ pub fn serialize_verify_ticket_infos(infos: &Vec<VerifyTicketInfo>, parcel: &mut
         );
     }
     let count = i32::try_from(infos.len()).map_err(|_| {
-        macros_lib::log_and_into_saf_error!(ErrCode::InvalidArrayLen,
-            "[FATAL][IPC]VerifyTicketInfo vector length overflows i32")
+        macros_lib::log_and_into_saf_error!(
+            ErrCode::InvalidArrayLen,
+            "[FATAL][IPC]VerifyTicketInfo vector length overflows i32"
+        )
     })?;
     parcel.write::<i32>(&count).map_err(ipc_err_handle)?;
     for info in infos {
@@ -101,15 +103,15 @@ pub fn serialize_string_vec(vec: &Vec<String>, parcel: &mut MsgParcel) -> Result
 }
 
 /// Write vector length to parcel with capacity check.
-pub fn write_vec_len(vec_len: usize, max_capacity: i32, err_code: ErrCode, label: &str,
-    parcel: &mut MsgParcel) -> Result<()> {
+pub fn write_vec_len(
+    vec_len: usize,
+    max_capacity: i32,
+    err_code: ErrCode,
+    label: &str,
+    parcel: &mut MsgParcel,
+) -> Result<()> {
     if vec_len > max_capacity as usize {
-        return macros_lib::log_throw_error!(
-            err_code,
-            "[FATAL][IPC]{} vector size exceeds limit: {}",
-            label,
-            vec_len
-        );
+        return macros_lib::log_throw_error!(err_code, "[FATAL][IPC]{} vector size exceeds limit: {}", label, vec_len);
     }
     let count = vec_len as i32;
     parcel.write::<i32>(&count).map_err(ipc_err_handle)?;

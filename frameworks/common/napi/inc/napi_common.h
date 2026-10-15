@@ -94,6 +94,10 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::Operatio
 
 napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::CommandInfo &commandInfo);
 
+napi_status NapiGetProperty(const napi_env env, napi_value object, std::vector<SAF::CommandInfo> &commandInfoVector);
+
+napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::TicketOptions &ticketOptions);
+
 napi_status NapiGetProperty(const napi_env env, napi_value object, std::vector<SAF::UserAuthResult> &userAuthResult);
 
 napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::UserAuthResult &userAuthResult);

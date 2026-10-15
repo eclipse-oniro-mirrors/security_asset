@@ -29,6 +29,9 @@ using namespace OHOS::Security::SAF_ASSET_COMMON;
 
 namespace {
 constexpr size_t VERIFY_CONTROLLER_PACKAGE_ARG_COUNT = 2;
+constexpr size_t REQUEST_TOOL_TICKET_ARG_COUNT = 2;
+constexpr size_t MIN_REQUEST_TOOL_TICKET_ARG_COUNT = 1;
+constexpr int32_t DEFAULT_TICKET_EXPIRE_TIME_MS = 10000;
 napi_value NapiRequestToolPermissions(const napi_env env, napi_callback_info info)
 {
     auto asyncContext = std::unique_ptr<RequestToolPermissionContext>(new (std::nothrow)RequestToolPermissionContext());
@@ -62,6 +65,45 @@ napi_value NapiRequestToolPermissions(const napi_env env, napi_callback_info inf
         } else {
             NAPI_CALL(env, NapiSetProperty(env, napiResult, "ticket", asyncContext->permissionQueryResult.ticket));
         }
+        return napiResult;
+    };
+    return CreateAsyncWork(env, info, std::move(asyncContext), __func__);
+}
+
+napi_value NapiRequestToolTicket(const napi_env env, napi_callback_info info)
+{
+    auto asyncContext = std::unique_ptr<RequestToolTicketContext>(new (std::nothrow)RequestToolTicketContext());
+    NAPI_THROW(env, asyncContext == nullptr, COMMON_INTERNAL_ERROR, "Failed to create RequestToolTicketContext");
+    asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
+        -> napi_status {
+        RequestToolTicketContext *asyncContext = static_cast<RequestToolTicketContext *>(context);
+        size_t argc = REQUEST_TOOL_TICKET_ARG_COUNT;
+        napi_value argv[REQUEST_TOOL_TICKET_ARG_COUNT] = { nullptr };
+        NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+        NAPI_THROW_RETURN_ERR(env, argc < MIN_REQUEST_TOOL_TICKET_ARG_COUNT,
+            INVALID_PARAMETER, "Invalid number of arguments");
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, argv[0], asyncContext->cliCmdInfos));
+        asyncContext->ticketOptions.ticketExpireTimeMs = DEFAULT_TICKET_EXPIRE_TIME_MS;
+        if (argc >= REQUEST_TOOL_TICKET_ARG_COUNT) {
+            NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, argv[1], asyncContext->ticketOptions));
+        }
+        return napi_ok;
+    };
+
+    asyncContext->execute = [](napi_env env, void* data) {
+        RequestToolTicketContext *asyncContext = static_cast<RequestToolTicketContext *>(data);
+        asyncContext->result = SafAgentFence::RequestToolTicket(asyncContext->cliCmdInfos,
+            asyncContext->ticketOptions, asyncContext->ticketQueryResult);
+    };
+
+    asyncContext->resolve = [](napi_env env, AgentFenceAsyncContext *context) -> napi_value {
+        RequestToolTicketContext *asyncContext = static_cast<RequestToolTicketContext *>(context);
+        napi_value napiResult = nullptr;
+        NAPI_CALL(env, napi_create_object(env, &napiResult));
+        NAPI_CALL(env, NapiSetProperty(env, napiResult, "permissionResults",
+            asyncContext->ticketQueryResult.permissionResults));
+        NAPI_CALL(env, NapiSetProperty(env, napiResult, "ticket",
+            asyncContext->ticketQueryResult.ticket));
         return napiResult;
     };
     return CreateAsyncWork(env, info, std::move(asyncContext), __func__);
@@ -395,6 +437,7 @@ napi_value Register(const napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
         DECLARE_NAPI_FUNCTION("requestToolPermissions", NapiRequestToolPermissions),
+        DECLARE_NAPI_FUNCTION("requestToolTicket", NapiRequestToolTicket),
         DECLARE_NAPI_FUNCTION("grantToolPermissionsByUser", NapiGrantToolPermissionsByUser),
         DECLARE_NAPI_FUNCTION("generateControlledDevicePackage", NapiGenerateControlledDevicePackage),
         DECLARE_NAPI_FUNCTION("verifyControlledDevicePackage", NapiVerifyControlledDevicePackage),

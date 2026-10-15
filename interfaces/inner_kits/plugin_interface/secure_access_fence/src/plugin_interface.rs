@@ -83,19 +83,23 @@ pub struct ErrorMetricsKeys {
 
 /// Global constant instance for performance metrics parameter keys.
 /// Use this to access standardized parameter names for StatisticsMetrics events.
-pub const PERFORMANCE_METRICS_KEYS: PerformanceMetricsKeys =
-    PerformanceMetricsKeys { item_count: "ItemCount", elapsed_time: "ElapsedTime", function_name: "FunctionName",
-    os_account_id: "osAccountId"
+pub const PERFORMANCE_METRICS_KEYS: PerformanceMetricsKeys = PerformanceMetricsKeys {
+    item_count: "ItemCount",
+    elapsed_time: "ElapsedTime",
+    function_name: "FunctionName",
+    os_account_id: "osAccountId",
 };
 
 /// Policy authorization status parameter keys for GetPolicyAuthStatus EventType.
 pub struct PolicyAuthStatusKeys {
-    /// The key for output auth statuses list.
+    /// The key for permissions list.
     pub permissions: &'static str,
     /// The key for output auth statuses list.
     pub auth_statuses: &'static str,
-    /// The key for indicating whether to query remote policy
+    /// The key for indicating whether to query remote policy.
     pub is_remote: &'static str,
+    /// The key for indicating whether the caller is a public CLI tool interface (third-party).
+    pub is_public_cli: &'static str,
 }
 
 /// Verify remote ticket parameter keys for VerifyRemoteTicket EventType.
@@ -109,13 +113,18 @@ pub struct VerifyRemoteTicketKeys {
 }
 
 /// PolicyAuthStatusKeys constant for GetPolicyAuthStatus EventType.
-pub const POLICY_AUTH_STATUS_KEYS: PolicyAuthStatusKeys =
-    PolicyAuthStatusKeys { permissions: "Permissions", auth_statuses: "AuthStatuses", is_remote: "IsRemote" };
+pub const POLICY_AUTH_STATUS_KEYS: PolicyAuthStatusKeys = PolicyAuthStatusKeys {
+    permissions: "Permissions",
+    auth_statuses: "AuthStatuses",
+    is_remote: "IsRemote",
+    is_public_cli: "IsPublicCli",
+};
 
 /// VerifyRemoteTicketKeys constant for VerifyRemoteTicket EventType.
-pub const VERIFY_REMOTE_TICKET_KEYS: VerifyRemoteTicketKeys =
-    VerifyRemoteTicketKeys { domain_id: "DomainId", remote_control_ticket: "RemoteControlTicket", 
-    os_account_id: "osAccountId"
+pub const VERIFY_REMOTE_TICKET_KEYS: VerifyRemoteTicketKeys = VerifyRemoteTicketKeys {
+    domain_id: "DomainId",
+    remote_control_ticket: "RemoteControlTicket",
+    os_account_id: "osAccountId",
 };
 
 /// Sign remote auth package parameter keys for SignRemoteAuthPackage EventType.
@@ -137,16 +146,15 @@ pub struct SignRemoteAuthPackageKeys {
 }
 
 /// SignRemoteAuthPackageKeys constant for SignRemoteAuthPackage EventType.
-pub const SIGN_REMOTE_AUTH_PACKAGE_KEYS: SignRemoteAuthPackageKeys =
-    SignRemoteAuthPackageKeys {
-        os_account_id: "OsAccountId",
-        uid: "Uid",
-        remote_auth_package: "RemoteAuthPackage",
-        remote_control_token: "RemoteControlToken",
-        device_id_header: "DeviceIdHeader",
-        result_remote_auth_package: "ResultRemoteAuthPackage",
-        sign_info: "SignInfo",
-    };
+pub const SIGN_REMOTE_AUTH_PACKAGE_KEYS: SignRemoteAuthPackageKeys = SignRemoteAuthPackageKeys {
+    os_account_id: "OsAccountId",
+    uid: "Uid",
+    remote_auth_package: "RemoteAuthPackage",
+    remote_control_token: "RemoteControlToken",
+    device_id_header: "DeviceIdHeader",
+    result_remote_auth_package: "ResultRemoteAuthPackage",
+    sign_info: "SignInfo",
+};
 
 /// Verify remote auth package parameter keys for VerifyRemoteAuthPackage EventType.
 pub struct VerifyRemoteAuthPackageKeys {
@@ -165,15 +173,14 @@ pub struct VerifyRemoteAuthPackageKeys {
 }
 
 /// VerifyRemoteAuthPackageKeys constant for VerifyRemoteAuthPackage EventType.
-pub const VERIFY_REMOTE_AUTH_PACKAGE_KEYS: VerifyRemoteAuthPackageKeys =
-    VerifyRemoteAuthPackageKeys {
-        os_account_id: "OsAccountId",
-        uid: "Uid",
-        device_id_header: "DeviceIdHeader",
-        remote_auth_message: "RemoteAuthMessage",
-        sign_info: "SignInfo",
-        verify_result: "VerifyResult",
-    };
+pub const VERIFY_REMOTE_AUTH_PACKAGE_KEYS: VerifyRemoteAuthPackageKeys = VerifyRemoteAuthPackageKeys {
+    os_account_id: "OsAccountId",
+    uid: "Uid",
+    device_id_header: "DeviceIdHeader",
+    remote_auth_message: "RemoteAuthMessage",
+    sign_info: "SignInfo",
+    verify_result: "VerifyResult",
+};
 
 /// Store grant record parameter keys for StoreGrantRecord EventType.
 pub struct StoreGrantRecordKeys {
@@ -198,18 +205,17 @@ pub struct StoreGrantRecordKeys {
 }
 
 /// StoreGrantRecordKeys constant for StoreGrantRecord EventType.
-pub const STORE_GRANT_RECORD_KEYS: StoreGrantRecordKeys =
-    StoreGrantRecordKeys {
-        os_account_id: "OsAccountId",
-        controlled_device_name: "ControlledDeviceName",
-        controller_device_name: "ControllerDeviceName",
-        is_self_grant: "IsSelfGrant",
-        permission_names: "PermissionNames",
-        device_role: "DeviceRole",
-        calling_bundle_name: "CallingBundleName",
-        grant_type: "GrantType",
-        timestamp: "Timestamp",
-    };
+pub const STORE_GRANT_RECORD_KEYS: StoreGrantRecordKeys = StoreGrantRecordKeys {
+    os_account_id: "OsAccountId",
+    controlled_device_name: "ControlledDeviceName",
+    controller_device_name: "ControllerDeviceName",
+    is_self_grant: "IsSelfGrant",
+    permission_names: "PermissionNames",
+    device_role: "DeviceRole",
+    calling_bundle_name: "CallingBundleName",
+    grant_type: "GrantType",
+    timestamp: "Timestamp",
+};
 
 /// GetDeviceUdid parameter keys for GetDeviceUdid EventType.
 pub struct GetDeviceUdidKeys {
@@ -220,16 +226,15 @@ pub struct GetDeviceUdidKeys {
 }
 
 /// GetDeviceUdidKeys constant for GetDeviceUdid EventType
-pub const GET_DEVICE_UDID_KEYS: GetDeviceUdidKeys = GetDeviceUdidKeys {
-    os_account_id: "osAccountId",
-    udid: "Udid",
-};
+pub const GET_DEVICE_UDID_KEYS: GetDeviceUdidKeys = GetDeviceUdidKeys { os_account_id: "osAccountId", udid: "Udid" };
 
 /// Global constant instance for error metrics parameter keys.
 /// Use this to access standardized parameter names for StatisticsError events.
-pub const ERROR_METRICS_KEYS: ErrorMetricsKeys =
-    ErrorMetricsKeys { error_message: "ErrorMessage", error_code: "ErrorCode", error_function: "ErrorFunction",
-    os_account_id: "osAccountId"
+pub const ERROR_METRICS_KEYS: ErrorMetricsKeys = ErrorMetricsKeys {
+    error_message: "ErrorMessage",
+    error_code: "ErrorCode",
+    error_function: "ErrorFunction",
+    os_account_id: "osAccountId",
 };
 
 /// param name for common event type.

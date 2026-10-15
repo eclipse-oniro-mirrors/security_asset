@@ -15,16 +15,13 @@
 
 //! Remote control related serialization functions.
 
+use crate::remote_message_wrapper;
+use crate::{ipc_err_handle, MAX_TICKET_CAPACITY, MAX_VEC_CAPACITY};
 use ipc::parcel::MsgParcel;
 use saf_definition::{
-    macros_lib, ErrCode, Result,
-    CommandInfo, OperationInfo, OperationType,
-    RemoteControlParams, RemoteInfo, Role,
-    PermissionQuery, RemoteAuthPackage,
-    RemoteUserAuthItem, RemoteUserAuthResults,
+    macros_lib, CommandInfo, ErrCode, OperationInfo, OperationType, PermissionQuery, RemoteAuthPackage,
+    RemoteControlParams, RemoteInfo, RemoteUserAuthItem, RemoteUserAuthResults, Result, Role,
 };
-use crate::{ipc_err_handle, MAX_TICKET_CAPACITY, MAX_VEC_CAPACITY};
-use crate::remote_message_wrapper;
 
 /// Deserialize CommandInfo from MsgParcel.
 pub fn deserialize_command_info(parcel: &mut MsgParcel) -> Result<CommandInfo> {
@@ -46,19 +43,17 @@ pub fn deserialize_operation_info(parcel: &mut MsgParcel) -> Result<OperationInf
     let operation_type = match operation_type_val {
         1 => OperationType::Cli,
         2 => OperationType::Api,
-        _ => return macros_lib::log_throw_error!(
+        _ => {
+            return macros_lib::log_throw_error!(
                 ErrCode::InvalidArgument,
                 "[FATAL][IPC]Invalid operation type: {}",
                 operation_type_val
-        ),
+            )
+        },
     };
     let cli_cmd_info = deserialize_command_info(parcel)?;
     let permission = parcel.read_string16().map_err(ipc_err_handle)?;
-    Ok(OperationInfo {
-        operation_type,
-        cli_cmd_info,
-        permission,
-    })
+    Ok(OperationInfo { operation_type, cli_cmd_info, permission })
 }
 
 /// Deserialize OperationInfo vector from MsgParcel.
@@ -96,8 +91,10 @@ pub fn serialize_operation_infos(infos: &Vec<OperationInfo>, parcel: &mut MsgPar
         );
     }
     let count = i32::try_from(infos.len()).map_err(|_| {
-        macros_lib::log_and_into_saf_error!(ErrCode::InvalidArrayLen,
-            "[FATAL][IPC]OperationInfo vector length overflows i32")
+        macros_lib::log_and_into_saf_error!(
+            ErrCode::InvalidArrayLen,
+            "[FATAL][IPC]OperationInfo vector length overflows i32"
+        )
     })?;
     parcel.write::<i32>(&count).map_err(ipc_err_handle)?;
     for info in infos {
@@ -123,10 +120,7 @@ pub fn deserialize_remote_control_params(parcel: &mut MsgParcel) -> Result<Remot
 }
 
 /// Serialize RemoteControlParams to MsgParcel.
-pub fn serialize_remote_control_params(
-    params: &RemoteControlParams,
-    parcel: &mut MsgParcel,
-) -> Result<()> {
+pub fn serialize_remote_control_params(params: &RemoteControlParams, parcel: &mut MsgParcel) -> Result<()> {
     parcel.write_string16(&params.challenge).map_err(ipc_err_handle)?;
     parcel.write_string16(&params.remote_control_ticket).map_err(ipc_err_handle)?;
     parcel.write_string16(&params.controlled_device_name).map_err(ipc_err_handle)?;
@@ -141,21 +135,12 @@ pub fn deserialize_remote_info(parcel: &mut MsgParcel) -> Result<RemoteInfo> {
     let role = match role_val {
         1 => Role::Controller,
         2 => Role::Controlled,
-        _ => return macros_lib::log_throw_error!(
-            ErrCode::InvalidArgument,
-            "[FATAL][IPC]Invalid role: {}",
-            role_val
-        ),
+        _ => return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "[FATAL][IPC]Invalid role: {}", role_val),
     };
     let remote_id = parcel.read_string16().map_err(ipc_err_handle)?;
     let domain_id = parcel.read_string16().map_err(ipc_err_handle)?;
     let remote_control_params = deserialize_remote_control_params(parcel)?;
-    Ok(RemoteInfo {
-        role,
-        remote_id,
-        domain_id,
-        remote_control_params,
-    })
+    Ok(RemoteInfo { role, remote_id, domain_id, remote_control_params })
 }
 
 /// Serialize RemoteInfo to MsgParcel.
@@ -175,14 +160,7 @@ pub fn deserialize_permission_query(parcel: &mut MsgParcel) -> Result<Permission
     let caller_token_id = parcel.read::<i32>().map_err(ipc_err_handle)?;
     let domain_id = parcel.read_string16().map_err(ipc_err_handle)?;
     let remote_info = deserialize_remote_info(parcel)?;
-    Ok(PermissionQuery {
-        operation_info,
-        need_ticket,
-        ticket_expire_time_ms,
-        caller_token_id,
-        domain_id,
-        remote_info,
-    })
+    Ok(PermissionQuery { operation_info, need_ticket, ticket_expire_time_ms, caller_token_id, domain_id, remote_info })
 }
 
 /// Deserialize PermissionQuery vector from MsgParcel.
@@ -247,8 +225,10 @@ pub fn serialize_remote_auth_packages(packages: &Vec<RemoteAuthPackage>, parcel:
         );
     }
     let count = i32::try_from(packages.len()).map_err(|_| {
-        macros_lib::log_and_into_saf_error!(ErrCode::InvalidArrayLen,
-            "[FATAL][IPC]RemoteAuthPackage vector length overflows i32")
+        macros_lib::log_and_into_saf_error!(
+            ErrCode::InvalidArrayLen,
+            "[FATAL][IPC]RemoteAuthPackage vector length overflows i32"
+        )
     })?;
     parcel.write::<i32>(&count).map_err(ipc_err_handle)?;
     for package in packages {
@@ -267,8 +247,7 @@ pub fn serialize_bool_vec(vec: &Vec<bool>, parcel: &mut MsgParcel) -> Result<()>
         );
     }
     let count = i32::try_from(vec.len()).map_err(|_| {
-        macros_lib::log_and_into_saf_error!(ErrCode::InvalidArrayLen,
-            "[FATAL][IPC]bool vector length overflows i32")
+        macros_lib::log_and_into_saf_error!(ErrCode::InvalidArrayLen, "[FATAL][IPC]bool vector length overflows i32")
     })?;
     parcel.write::<i32>(&count).map_err(ipc_err_handle)?;
     for val in vec {
@@ -281,26 +260,18 @@ pub fn serialize_bool_vec(vec: &Vec<bool>, parcel: &mut MsgParcel) -> Result<()>
 pub fn deserialize_remote_user_auth_item(parcel: &mut MsgParcel) -> Result<RemoteUserAuthItem> {
     let permission = parcel.read_string16().map_err(ipc_err_handle)?;
     let auth_result = parcel.read_string16().map_err(ipc_err_handle)?;
-    Ok(RemoteUserAuthItem {
-        permission,
-        auth_result,
-    })
+    Ok(RemoteUserAuthItem { permission, auth_result })
 }
 
 /// Serialize RemoteUserAuthItem to MsgParcel.
-pub fn serialize_remote_user_auth_item(
-    item: &RemoteUserAuthItem,
-    parcel: &mut MsgParcel,
-) -> Result<()> {
+pub fn serialize_remote_user_auth_item(item: &RemoteUserAuthItem, parcel: &mut MsgParcel) -> Result<()> {
     parcel.write_string16(&item.permission).map_err(ipc_err_handle)?;
     parcel.write_string16(&item.auth_result).map_err(ipc_err_handle)?;
     Ok(())
 }
 
 /// Deserialize RemoteUserAuthResults from MsgParcel.
-pub fn deserialize_remote_user_auth_results(
-    parcel: &mut MsgParcel,
-) -> Result<RemoteUserAuthResults> {
+pub fn deserialize_remote_user_auth_results(parcel: &mut MsgParcel) -> Result<RemoteUserAuthResults> {
     let count = parcel.read::<i32>().map_err(ipc_err_handle)?;
     if count < 0 || count as u32 > MAX_TICKET_CAPACITY {
         return macros_lib::log_throw_error!(
@@ -316,16 +287,11 @@ pub fn deserialize_remote_user_auth_results(
 
     let permission_query = deserialize_permission_query(parcel)?;
 
-    Ok(RemoteUserAuthResults {
-        results,
-        permission_query,
-    })
+    Ok(RemoteUserAuthResults { results, permission_query })
 }
 
 /// Deserialize RemoteUserAuthResults vector from MsgParcel.
-pub fn deserialize_remote_user_auth_results_vec(
-    parcel: &mut MsgParcel,
-) -> Result<Vec<RemoteUserAuthResults>> {
+pub fn deserialize_remote_user_auth_results_vec(parcel: &mut MsgParcel) -> Result<Vec<RemoteUserAuthResults>> {
     let count = parcel.read::<i32>().map_err(ipc_err_handle)?;
     if count < 0 || count as u32 > MAX_TICKET_CAPACITY {
         return macros_lib::log_throw_error!(

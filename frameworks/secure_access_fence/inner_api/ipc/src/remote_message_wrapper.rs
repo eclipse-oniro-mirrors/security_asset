@@ -15,9 +15,11 @@
 
 //! RemoteMessage JSON serialization and deserialization utilities.
 
-use saf_utils::{JsonBuilder, JsonValue, Object, new_object, object_add_string, take_optional_string,
-    take_required_string, take_required_value, json_into_object};
-use saf_definition::{macros_lib, ErrCode, Result, DeviceIdHeader, RemoteMessage};
+use saf_definition::{macros_lib, DeviceIdHeader, ErrCode, RemoteMessage, Result};
+use saf_utils::{
+    json_into_object, new_object, object_add_string, take_optional_string, take_required_string, take_required_value,
+    JsonBuilder, JsonValue, Object,
+};
 
 /// Remote message JSON field keys for serialization/deserialization.
 pub struct RemoteMessageKeys {
@@ -55,19 +57,22 @@ pub fn parse_device_id_header_from_json(device_info_obj: &mut Object) -> Result<
     let controller_device_id = take_optional_string(device_info_obj, REMOTE_MESSAGE_KEYS.controller_device_id)?;
     let controlled_device_id = take_optional_string(device_info_obj, REMOTE_MESSAGE_KEYS.controlled_device_id)?;
 
-    Ok(DeviceIdHeader {
-        controller_device_id,
-        controlled_device_id
-    })
+    Ok(DeviceIdHeader { controller_device_id, controlled_device_id })
 }
 
 /// Serialize RemoteMessage to JSON string.
 pub fn serialize_remote_message_to_json(message: &RemoteMessage) -> Result<String> {
     let mut device_info_obj = new_object();
-    object_add_string(&mut device_info_obj, REMOTE_MESSAGE_KEYS.controller_device_id, 
-        &message.device_info.controller_device_id);
-    object_add_string(&mut device_info_obj, REMOTE_MESSAGE_KEYS.controlled_device_id, 
-        &message.device_info.controlled_device_id);
+    object_add_string(
+        &mut device_info_obj,
+        REMOTE_MESSAGE_KEYS.controller_device_id,
+        &message.device_info.controller_device_id,
+    );
+    object_add_string(
+        &mut device_info_obj,
+        REMOTE_MESSAGE_KEYS.controlled_device_id,
+        &message.device_info.controlled_device_id,
+    );
 
     let mut builder = JsonBuilder::new();
     builder.add_object(REMOTE_MESSAGE_KEYS.device_info, device_info_obj);
@@ -81,7 +86,8 @@ pub fn deserialize_remote_message_from_json(json_str: &str) -> Result<RemoteMess
     let json = JsonValue::from_text(json_str).map_err(|e| {
         macros_lib::log_and_into_saf_error!(
             ErrCode::JsonParseError,
-            "[FATAL][IPC]Failed to parse remoteMessage JSON: {}", e
+            "[FATAL][IPC]Failed to parse remoteMessage JSON: {}",
+            e
         )
     })?;
     let mut obj = json_into_object(json)?;
@@ -90,9 +96,5 @@ pub fn deserialize_remote_message_from_json(json_str: &str) -> Result<RemoteMess
     let remote_auth_message = take_required_string(&mut obj, REMOTE_MESSAGE_KEYS.remote_auth_message)?;
     let caller_bundle_name = take_optional_string(&mut obj, REMOTE_MESSAGE_KEYS.caller_bundle_name)?;
 
-    Ok(RemoteMessage {
-        device_info,
-        remote_auth_message,
-        caller_bundle_name
-    })
+    Ok(RemoteMessage { device_info, remote_auth_message, caller_bundle_name })
 }

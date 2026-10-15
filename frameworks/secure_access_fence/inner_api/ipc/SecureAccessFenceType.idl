@@ -186,3 +186,21 @@ enum RemoteGrantStatus {
     /** Disable remote grant. */
     DISABLE = 2
 };
+
+/**
+ * @brief Ticket options for requestToolTicket.
+ */
+struct TicketOptions {
+    /** Ticket expire time in milliseconds. NAPI defaults to 10000 if not provided. Max 60000ms. */
+    int ticketExpireTimeMs;
+};
+
+/**
+ * @brief Result of requestToolTicket.
+ */
+struct TicketQueryResult {
+    /** Permission query results (filtered: only unauthorized on error). */
+    List<PermissionInfo> permissionResults;
+    /** Ticket string (JSON wrapped). Empty if not generated. */
+    String ticket;
+};

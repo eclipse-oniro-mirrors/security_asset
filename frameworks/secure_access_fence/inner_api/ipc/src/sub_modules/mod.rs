@@ -15,20 +15,12 @@
 
 //! Sub-modules for IPC serialization.
 
-pub mod ticket;
 pub mod remote_control;
+pub mod ticket;
 
-pub use ticket::{
-    deserialize_verify_ticket_infos,
-    serialize_verify_ticket_infos,
-    serialize_cli_infos,
-};
+pub use ticket::{deserialize_verify_ticket_infos, serialize_cli_infos, serialize_verify_ticket_infos};
 
 pub use remote_control::{
-    deserialize_permission_queries,
-    deserialize_remote_info,
-    deserialize_remote_auth_packages,
-    deserialize_remote_user_auth_results_vec,
-    serialize_bool_vec,
-    serialize_remote_auth_packages,
+    deserialize_permission_queries, deserialize_remote_auth_packages, deserialize_remote_info,
+    deserialize_remote_user_auth_results_vec, serialize_bool_vec, serialize_remote_auth_packages,
 };

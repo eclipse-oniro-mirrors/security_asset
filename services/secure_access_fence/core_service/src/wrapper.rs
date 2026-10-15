@@ -17,12 +17,12 @@
 
 use crate::ticket_operation;
 use ipc::parcel::MsgParcel;
-use saf_definition::{ErrCode, macros_lib};
+use saf_definition::{macros_lib, ErrCode};
 use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
 use saf_plugin_interface::plugin_interface::{
-    EventType, ExtMap, ERROR_METRICS_KEYS, PERFORMANCE_METRICS_KEYS, POLICY_AUTH_STATUS_KEYS,
-    VERIFY_REMOTE_TICKET_KEYS, GET_DEVICE_UDID_KEYS
+    EventType, ExtMap, ERROR_METRICS_KEYS, GET_DEVICE_UDID_KEYS, PERFORMANCE_METRICS_KEYS, POLICY_AUTH_STATUS_KEYS,
+    VERIFY_REMOTE_TICKET_KEYS,
 };
 use saf_sdk::Value;
 
@@ -38,6 +38,29 @@ pub mod ffi {
         pub ticket: String,
     }
 
+    /// CLI command info for cxx bridge (input).
+    pub struct CxxCommandInfo {
+        pub cmd_name: String,
+        pub sub_cmd: String,
+    }
+
+    /// Permission info for cxx bridge (output).
+    pub struct CxxPermissionInfo {
+        pub permission: String,
+        pub permission_status: i32,
+        pub auth_status: i32,
+        pub flag: i32,
+    }
+
+    /// Ticket query result for cxx bridge (output).
+    pub struct CxxTicketQueryResult {
+        pub permission_results: Vec<CxxPermissionInfo>,
+        pub has_ticket: bool,
+        pub ticket_message: String,
+        pub ticket_challenge: String,
+        pub ticket: String,
+    }
+
     // C++ callable Rust functions
     extern "Rust" {
         /// Notify performance metrics.
@@ -45,9 +68,20 @@ pub mod ffi {
         /// Notify error.
         fn notify_error(error_message: String, error_code: i32, os_account_id: i32, function_name: String);
         /// CXX bridge for batch_generate_ticket.
-        fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, domain_id: &str, messages: &[String], result_code: &mut i32) -> Vec<CxxVerifyTicketInfo>;
+        fn cxx_batch_generate_ticket(
+            os_account_id: i32,
+            caller_id: &str,
+            domain_id: &str,
+            messages: &[String],
+            result_code: &mut i32,
+        ) -> Vec<CxxVerifyTicketInfo>;
         /// Get policy auth status.
-        fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec<i32>, is_remote: bool) -> i32;
+        fn get_policy_auth_status(
+            permissions: &Vec<String>,
+            auth_statuses: &mut Vec<i32>,
+            is_remote: bool,
+            is_public_cli: bool,
+        ) -> i32;
         fn verify_remote_ticket(domain_id: String, remote_control_ticket: String, os_account_id: i32) -> i32;
         fn cxx_store_challenge(caller_token_id: &str, challenge: &str, expire_time_ms: u64) -> i32;
         fn cxx_store_controlled_grant_record(
@@ -64,11 +98,18 @@ pub mod ffi {
         include!("secure_access_fence_ipc.h");
         include!("message_option.h");
         include!("secure_access_fence_service.h");
+        include!("cxx_bridge_functions.h");
         #[namespace = "OHOS"]
         type MessageParcel = ipc::parcel::MessageParcel;
         /// On remote request.
         fn OnRemoteRequest(code: u32, data: Pin<&mut MessageParcel>, reply: Pin<&mut MessageParcel>) -> i32;
         fn GetBootTimeMs() -> i64;
+        /// Call C++ PermissionManager::RequestToolPermissions via bridge.
+        fn CxxRequestToolTicket(
+            cli_cmd_infos: &Vec<CxxCommandInfo>,
+            ticket_expire_time_ms: u64,
+            result: &mut CxxTicketQueryResult,
+        ) -> i32;
     }
 }
 
@@ -108,8 +149,18 @@ pub fn notify_error(error_message: String, error_code: i32, os_account_id: i32, 
     }
 }
 
-pub fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec<i32>, is_remote: bool) -> i32 {
-    logi!("[get_policy_auth_status] permissions_len={}, is_remote={}", permissions.len(), is_remote);
+pub fn get_policy_auth_status(
+    permissions: &Vec<String>,
+    auth_statuses: &mut Vec<i32>,
+    is_remote: bool,
+    is_public_cli: bool,
+) -> i32 {
+    logi!(
+        "[get_policy_auth_status] permissions_len={}, is_remote={}, is_public_cli={}",
+        permissions.len(),
+        is_remote,
+        is_public_cli
+    );
 
     let plugin = SAFPlugin::get_instance();
     let loader = match plugin.load_plugin() {
@@ -122,6 +173,7 @@ pub fn get_policy_auth_status(permissions: &Vec<String>, auth_statuses: &mut Vec
     let mut params = ExtMap::new();
     params.insert(POLICY_AUTH_STATUS_KEYS.permissions, Value::StringList(permissions.clone()));
     params.insert(POLICY_AUTH_STATUS_KEYS.is_remote, Value::Bool(is_remote));
+    params.insert(POLICY_AUTH_STATUS_KEYS.is_public_cli, Value::Bool(is_public_cli));
 
     logi!("[get_policy_auth_status] calling plugin process_event");
 
@@ -172,9 +224,19 @@ pub fn verify_remote_ticket(domain_id: String, remote_control_ticket: String, os
 }
 
 /// C++ -> Rust bridge for batch_generate_ticket.
-pub fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, domain_id: &str, messages: &[String], result_code: &mut i32) -> Vec<ffi::CxxVerifyTicketInfo> {
-    logi!("[Wrapper cxx_batch_generate_ticket] os_account_id = {}, caller_id = {}, messages_count = {}",
-        os_account_id, caller_id, messages.len());
+pub fn cxx_batch_generate_ticket(
+    os_account_id: i32,
+    caller_id: &str,
+    domain_id: &str,
+    messages: &[String],
+    result_code: &mut i32,
+) -> Vec<ffi::CxxVerifyTicketInfo> {
+    logi!(
+        "[Wrapper cxx_batch_generate_ticket] os_account_id = {}, caller_id = {}, messages_count = {}",
+        os_account_id,
+        caller_id,
+        messages.len()
+    );
     match ticket_operation::batch_generate_ticket(os_account_id, caller_id, domain_id, messages) {
         Ok(v) => {
             *result_code = 0;
@@ -197,14 +259,19 @@ pub fn cxx_batch_generate_ticket(os_account_id: i32, caller_id: &str, domain_id:
 
 // C++ -> Rust bridge for store challenge.
 pub fn cxx_store_challenge(caller_token_id: &str, challenge: &str, expire_time_ms: u64) -> i32 {
-    logi!("[Wrapper cxx_store_challenge] caller = {}, challenge_len = {}, expire_time_ms = {}",
-        caller_token_id, challenge.len(), expire_time_ms);
-    match ticket_operation::challenge_store::global_challenge_store().insert(caller_token_id, challenge, expire_time_ms) {
+    logi!(
+        "[Wrapper cxx_store_challenge] caller = {}, challenge_len = {}, expire_time_ms = {}",
+        caller_token_id,
+        challenge.len(),
+        expire_time_ms
+    );
+    match ticket_operation::challenge_store::global_challenge_store().insert(caller_token_id, challenge, expire_time_ms)
+    {
         Ok(()) => 0,
         Err(e) => {
             loge!("[Wrapper cxx_store_challenge] insert failed, err = {}", e.code);
             e.code as i32
-        }
+        },
     }
 }
 
@@ -216,17 +283,21 @@ pub fn cxx_store_controlled_grant_record(
     permission_names: Vec<String>,
     caller_token_id: i32,
 ) -> i32 {
-    logi!("[Wrapper cxx_store_controlled_grant_record] os_account_id={}, caller_token_id={}, permission_count={}", 
-        os_account_id, caller_token_id, permission_names.len());
-    
+    logi!(
+        "[Wrapper cxx_store_controlled_grant_record] os_account_id={}, caller_token_id={}, permission_count={}",
+        os_account_id,
+        caller_token_id,
+        permission_names.len()
+    );
+
     let calling_bundle_name = match crate::remote_control::get_bundle_name_from_token(caller_token_id) {
         Ok(name) => name,
         Err(e) => {
             loge!("[cxx_store_controlled_grant_record] Failed to get bundle name: {:?}", e);
             return e.code as i32;
-        }
+        },
     };
-    
+
     let params = crate::remote_control::StoreGrantRecordParams {
         os_account_id,
         controlled_device_name,
@@ -241,10 +312,10 @@ pub fn cxx_store_controlled_grant_record(
             Err(e) => {
                 loge!("[cxx_store_controlled_grant_record] Failed to get timestamp: {:?}", e);
                 return e.code as i32;
-            }
+            },
         },
     };
-    
+
     match crate::remote_control::store_grant_record(params) {
         Ok(()) => {
             logi!("[cxx_store_controlled_grant_record] success");
@@ -253,7 +324,7 @@ pub fn cxx_store_controlled_grant_record(
         Err(e) => {
             loge!("[cxx_store_controlled_grant_record] Failed to store grant record: {:?}", e);
             e.code as i32
-        }
+        },
     }
 }
 
@@ -261,8 +332,11 @@ pub fn cxx_store_controlled_grant_record(
 pub fn get_device_udid(os_account_id: i32) -> saf_definition::Result<String> {
     if os_account_id < 0 {
         loge!("[Wrapper get_device_udid] os_account_id is negative: {}", os_account_id);
-        return macros_lib::log_throw_error!(ErrCode::InvalidOsAccountId,
-            "os_account_id is negative: {}", os_account_id);
+        return macros_lib::log_throw_error!(
+            ErrCode::InvalidOsAccountId,
+            "os_account_id is negative: {}",
+            os_account_id
+        );
     }
 
     let plugin = SAFPlugin::get_instance();
@@ -287,8 +361,7 @@ pub fn get_device_udid(os_account_id: i32) -> saf_definition::Result<String> {
 
     let Some(Value::String(udid)) = result.get(GET_DEVICE_UDID_KEYS.udid) else {
         loge!("[Wrapper get_device_udid] udid not found in result params");
-        return macros_lib::log_throw_error!(ErrCode::HashMapKeyNotFound,
-            "udid not found in result params");
+        return macros_lib::log_throw_error!(ErrCode::HashMapKeyNotFound, "udid not found in result params");
     };
 
     logi!("[Wrapper get_device_udid] success, udid_len={}", udid.len());
