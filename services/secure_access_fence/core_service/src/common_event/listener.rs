@@ -21,6 +21,7 @@ use std::ffi::CStr;
 use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
 
+use crate::critical_manager::CriticalManager;
 use crate::CommonEventInfoFfi;
 
 pub(crate) extern "C" fn on_common_event(common_event_info: CommonEventInfoFfi) {
@@ -50,6 +51,7 @@ pub(crate) extern "C" fn on_common_event(common_event_info: CommonEventInfoFfi) 
         };
         let event = unsafe { CStr::from_ptr(common_event_info.event_type).to_string_lossy().to_string() };
 
+        CriticalManager::get_instance().set_critical(true);
         plugin.on_common_event(&event, &want_map);
     }
 }

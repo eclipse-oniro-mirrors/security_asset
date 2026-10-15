@@ -1,0 +1,45 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import("//build/test.gni")
+
+ohos_unittest("saf_dependency_test") {
+  module_out_path = "asset/asset"
+  subsystem_name = "security"
+  part_name = "asset"
+
+  include_dirs = [ "../../../../services/secure_access_fence/os_dependency/inc" ]
+  sources = [ "src/memory_manager_wrapper_test.cpp" ]
+
+  deps = [
+    "../../../../services/secure_access_fence/os_dependency:saf_os_dependency",
+    "//third_party/googletest:gtest_main",
+  ]
+
+  external_deps = [
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "memmgr:memmgrclient",
+    "samgr:samgr_proxy",
+  ]
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+}
