@@ -199,6 +199,7 @@ impl Ability for SAFAbility {
         }
         counter.lock().unwrap().stop();
         common_event::unsubscribe();
+        CriticalManager::get_instance().stop();
     }
 
     fn on_extension(&self, extension: String, data: &mut MsgParcel, reply: &mut MsgParcel) -> i32 {

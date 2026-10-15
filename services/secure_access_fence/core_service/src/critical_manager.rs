@@ -21,6 +21,7 @@ use system_ability_fwk::ability::Handler;
 
 const MEMORY_MANAGER_SA_ID: i32 = 1909;
 const START_STATUS: i32 = 1;
+const DEAD_STATUS: i32 = 0;
 
 extern "C" {
     fn CheckMemoryMgr() -> bool;
@@ -34,10 +35,14 @@ struct CriticalState {
     // None means the state has not been successfully reported yet.
     reported: Option<bool>,
     requested: bool,
+    stopped: bool,
 }
 
 impl CriticalState {
     fn sync(&mut self) {
+        if self.stopped {
+            return;
+        }
         if !self.notified {
             if unsafe { !CheckMemoryMgr() } || unsafe { NotifyStatus(START_STATUS) } != 0 {
                 return;
@@ -72,8 +77,23 @@ impl CriticalManager {
 
     pub(crate) fn set_critical(&self, critical: bool) {
         let mut state = self.state.lock().unwrap();
+        if state.stopped {
+            return;
+        }
         state.requested = critical;
         state.sync();
+    }
+
+    pub(crate) fn stop(&self) {
+        let mut state = self.state.lock().unwrap();
+        state.stopped = true;
+        state.requested = false;
+        if state.reported == Some(true) && unsafe { SetCritical(false) } == 0 {
+            state.reported = Some(false);
+        }
+        if state.notified && unsafe { NotifyStatus(DEAD_STATUS) } == 0 {
+            state.notified = false;
+        }
     }
 
     pub(crate) fn subscribe(&self, handler: &Handler) {
