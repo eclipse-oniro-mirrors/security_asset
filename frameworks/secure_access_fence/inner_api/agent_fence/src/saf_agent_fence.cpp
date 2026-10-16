@@ -161,6 +161,20 @@ int32_t SafAgentFence::RequestToolPermissions(
     return resultCode;
 }
 
+int32_t SafAgentFence::RequestToolTicket(
+    const std::vector<CommandInfo>& cliCmdInfos,
+    const TicketOptions& ticketOptions,
+    TicketQueryResult& ticketQueryResult)
+{
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+    int32_t resultCode = SAF_SUCCESS;
+    int32_t ret = HandleIpcError(proxy,
+        [&]() { return proxy->RequestToolTicket(cliCmdInfos, ticketOptions, ticketQueryResult, resultCode); });
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+    return resultCode;
+}
+
 int32_t SafAgentFence::GrantToolPermissionsByUser(
     const std::vector<UserAuthResult>& userAuthResult,
     std::vector<VerifyTicketInfo>& ticketInfo)

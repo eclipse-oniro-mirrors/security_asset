@@ -174,6 +174,55 @@ int64_t GetBootTimeMs()
     return TimeWrapper::GetBootTimeMs();
 }
 
+int32_t CxxRequestToolTicket(
+    const rust::Vec<CxxCommandInfo>& cliCmdInfos,
+    uint64_t ticketExpireTimeMs,
+    CxxTicketQueryResult& result)
+{
+    PermissionQuery permissionQuery;
+    permissionQuery.callerTokenId = 0;
+    permissionQuery.needTicket = true;
+    permissionQuery.ticketExpireTimeMs = ticketExpireTimeMs;
+
+    for (const auto& cmd : cliCmdInfos) {
+        OperationInfo opInfo;
+        opInfo.operationType = OperationType::CLI;
+        opInfo.cliCmdInfo.cmdName = std::string(cmd.cmd_name);
+        opInfo.cliCmdInfo.subCmd = std::string(cmd.sub_cmd);
+        permissionQuery.operationInfo.push_back(opInfo);
+    }
+
+    auto manager = PermissionManager::GetInstance();
+    if (manager == nullptr) {
+        LOGE("CxxRequestToolTicket: get permissionManager instance failed");
+        return SAF_ERR_NULL_PTR;
+    }
+
+    PermissionQueryResult queryResult;
+    int32_t ret = manager->RequestToolPermissions(permissionQuery, queryResult, true);
+    if (ret != SAF_SUCCESS) {
+        LOGE("CxxRequestToolTicket failed, ret=%{public}d", ret);
+        return ret;
+    }
+
+    for (const auto& permInfo : queryResult.permissionResults) {
+        CxxPermissionInfo cxxPerm;
+        cxxPerm.permission = rust::String(permInfo.permission);
+        cxxPerm.permission_status = static_cast<int32_t>(permInfo.permissionStatus);
+        cxxPerm.auth_status = static_cast<int32_t>(permInfo.authStatusInfo.authStatus);
+        cxxPerm.flag = permInfo.authStatusInfo.flag;
+        result.permission_results.push_back(cxxPerm);
+    }
+    result.has_ticket = queryResult.hasTicket;
+    if (queryResult.hasTicket) {
+        result.ticket_message = rust::String(queryResult.ticket.message);
+        result.ticket_challenge = rust::String(queryResult.ticket.challenge);
+        result.ticket = rust::String(queryResult.ticket.ticket);
+    }
+
+    return SAF_SUCCESS;
+}
+
 } // namespace SAF
 } // namespace Security
 } // namespace OHOS

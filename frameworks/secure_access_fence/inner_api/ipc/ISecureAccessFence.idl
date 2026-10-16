@@ -126,6 +126,20 @@ interface OHOS.Security.SAF.ISecureAccessFence {
     );
 
     /**
+     * @brief Request ticket for CLI tools.
+     * @param cliCmdInfos List of CLI command infos to query.
+     * @param ticketOptions Ticket options (expire time, etc).
+     * @param ticketQueryResult Result containing permission info and ticket (output parameter).
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 10] void RequestToolTicket(
+        [in] List<CommandInfo> cliCmdInfos,
+        [in] TicketOptions ticketOptions,
+        [out] TicketQueryResult ticketQueryResult,
+        [out] int resultCode
+    );
+
+    /**
      * @brief Batch query command permissions.
      * @param cmds List of commands to query (input parameter).
      * @param cmdPermissions List of permission results (output parameter).

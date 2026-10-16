@@ -27,6 +27,9 @@ namespace {
     constexpr uint32_t MAX_BUFF_SIZE = 1024 * 25;   // 25KB
     constexpr uint32_t MAX_PERMISSION_NAME_SIZE = 256;
     constexpr uint32_t MAX_REMOTE_QUERY_ARRAY_SIZE = 10;
+    constexpr uint32_t MAX_CLI_CMD_INFOS_COUNT = 300;
+    constexpr uint32_t MAX_CMD_NAME_LENGTH = 512;
+    constexpr int32_t MAX_TICKET_EXPIRE_TIME_MS = 60000;
     AgentFenceErrorCode MapErrorCode(const int32_t safResult)
     {
         switch (safResult) {
@@ -35,6 +38,8 @@ namespace {
             case SAF_ERR_NOT_SYSTEM_APP:
                 return NOT_SYSTEM_APP;
             case SAF_ERR_ARG_INVALID:
+            case SAF_ERR_ARG_EMPTY:
+            case SAF_ERR_INVALID_ARRAY_LEN:
                 return INVALID_PARAMETER;
             case SAF_ERR_SCREENLOCK_IS_LOCKED:
                 return OPERATION_FAILED_UNDER_SCREEN_LOCK;
@@ -299,9 +304,46 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::CommandI
     napi_value propValue = nullptr;
     if (napi_get_named_property(env, object, "cliCmdName", &propValue) == napi_ok) {
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, commandInfo.cmdName));
+        NAPI_THROW_RETURN_ERR(env, commandInfo.cmdName.empty(), INVALID_PARAMETER,
+            "cliCmdName cannot be empty");
+        NAPI_THROW_RETURN_ERR(env, commandInfo.cmdName.length() > MAX_CMD_NAME_LENGTH,
+            INVALID_PARAMETER, "cliCmdName length exceeds limit");
     }
     if (napi_get_named_property(env, object, "subCliCmdName", &propValue) == napi_ok) {
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, commandInfo.subCmd));
+        NAPI_THROW_RETURN_ERR(env, commandInfo.subCmd.length() > MAX_CMD_NAME_LENGTH,
+            INVALID_PARAMETER, "subCliCmdName length exceeds limit");
+    }
+    return napi_ok;
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    std::vector<SAF::CommandInfo> &commandInfoVector)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    uint32_t count = 0;
+    NAPI_CALL_RETURN_ERR(env, napi_get_array_length(env, object, &count));
+    NAPI_THROW_RETURN_ERR(env, count == 0, INVALID_PARAMETER, "CommandInfo cannot be empty");
+    NAPI_THROW_RETURN_ERR(env, count > MAX_CLI_CMD_INFOS_COUNT, INVALID_PARAMETER,
+        "CommandInfo count exceeds limit");
+    for (uint32_t i = 0; i < count; ++i) {
+        napi_value item = nullptr;
+        NAPI_CALL_RETURN_ERR(env, napi_get_element(env, object, i, &item));
+        SAF::CommandInfo commandInfo;
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, item, commandInfo));
+        commandInfoVector.emplace_back(commandInfo);
+    }
+    return napi_ok;
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::TicketOptions &ticketOptions)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    napi_value propValue = nullptr;
+    if (napi_get_named_property(env, object, "ticketExpireTimeMs", &propValue) == napi_ok) {
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, ticketOptions.ticketExpireTimeMs));
+        NAPI_THROW_RETURN_ERR(env, ticketOptions.ticketExpireTimeMs > MAX_TICKET_EXPIRE_TIME_MS,
+            INVALID_PARAMETER, "ticketExpireTimeMs exceeds limit");
     }
     return napi_ok;
 }

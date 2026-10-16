@@ -97,6 +97,19 @@ public:
         PermissionQueryResult& permissionQueryResult);
 
     /**
+     * @brief Request ticket for CLI tools.
+     *
+     * @param cliCmdInfos The CLI command infos to query.
+     * @param ticketOptions The ticket options (expire time, etc).
+     * @param ticketQueryResult The result containing permission info and ticket.
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t RequestToolTicket(
+        const std::vector<CommandInfo>& cliCmdInfos,
+        const TicketOptions& ticketOptions,
+        TicketQueryResult& ticketQueryResult);
+
+    /**
      * @brief Grant permissions for certain CLI or API tools.
      *
      * @param userAuthResult The vector of the results of user authorization.

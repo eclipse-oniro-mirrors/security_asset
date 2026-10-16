@@ -24,19 +24,13 @@ use ipc::{
 };
 
 use saf_definition::{
-    macros_lib, Conversion, DataType, ErrCode, Result, SAFError, SAFMap, Tag, Value, VerifyTicketInfo
+    macros_lib, Conversion, DataType, ErrCode, Result, SAFError, SAFMap, Tag, Value, VerifyTicketInfo,
 };
 
 pub use sub_modules::{
-    deserialize_permission_queries,
-    deserialize_remote_auth_packages,
-    deserialize_remote_info,
-    deserialize_remote_user_auth_results_vec,
-    deserialize_verify_ticket_infos,
-    serialize_bool_vec,
-    serialize_cli_infos,
-    serialize_remote_auth_packages,
-    serialize_verify_ticket_infos,
+    deserialize_permission_queries, deserialize_remote_auth_packages, deserialize_remote_info,
+    deserialize_remote_user_auth_results_vec, deserialize_verify_ticket_infos, serialize_bool_vec, serialize_cli_infos,
+    serialize_remote_auth_packages, serialize_verify_ticket_infos,
 };
 
 // ============================================================================
@@ -67,6 +61,8 @@ pub const CMD_VERIFY_CONTROLLER_DEVICE_PACKAGE: u32 = 7;
 pub const CMD_GET_REMOTE_GRANT_STATUS: u32 = 8;
 /// IPC code for UpdateRemoteGrantStatus.
 pub const CMD_UPDATE_REMOTE_GRANT_STATUS: u32 = 9;
+/// IPC code for RequestToolTicket.
+pub const CMD_REQUEST_TOOL_TICKET: u32 = 10;
 
 const MAX_MAP_CAPACITY: u32 = 64;
 pub(crate) const MAX_VEC_CAPACITY: u32 = 0x10000;

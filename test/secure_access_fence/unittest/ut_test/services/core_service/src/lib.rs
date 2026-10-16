@@ -15,6 +15,7 @@
 
 //! the module test for secure_access_fence core_service
 mod remote_control;
+mod request_tool_ticket;
 
 #[macro_export]
 macro_rules! function {

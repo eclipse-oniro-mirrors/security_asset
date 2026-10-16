@@ -49,6 +49,13 @@ class RequestToolPermissionContext : public AgentFenceAsyncContext {
         PermissionQueryResult permissionQueryResult {};
 };
 
+class RequestToolTicketContext : public AgentFenceAsyncContext {
+    public:
+        std::vector<CommandInfo> cliCmdInfos {};
+        TicketOptions ticketOptions {};
+        TicketQueryResult ticketQueryResult {};
+};
+
 class GrantPermissionsContext : public AgentFenceAsyncContext {
     public:
         std::vector<UserAuthResult> userAuthResult {};
