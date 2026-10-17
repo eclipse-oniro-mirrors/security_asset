@@ -110,6 +110,19 @@ public:
         TicketQueryResult& ticketQueryResult);
 
     /**
+     * @brief Query static CLI command permissions with ATM auth status.
+     *
+     * @param cmds The CLI commands to query.
+     * @param callerTokenId Caller token ID (0 = use IPC caller's token).
+     * @param cmdPermissions The permission results for each command.
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t QueryStaticCliCmdPermissions(
+        const std::vector<CommandInfo>& cmds,
+        int32_t callerTokenId,
+        std::vector<CommandPermissionInfo>& cmdPermissions);
+
+    /**
      * @brief Grant permissions for certain CLI or API tools.
      *
      * @param userAuthResult The vector of the results of user authorization.

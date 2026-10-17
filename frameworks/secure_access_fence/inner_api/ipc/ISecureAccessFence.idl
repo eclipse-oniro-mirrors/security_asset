@@ -160,4 +160,18 @@ interface OHOS.Security.SAF.ISecureAccessFence {
         [in] List<UserAuthResult> userAuthResult,
         [out] List<VerifyTicketInfo> ticketInfo
     );
+
+    /**
+     * @brief Query static CLI command permissions with ATM auth status.
+     * @param cmds List of CLI commands to query.
+     * @param callerTokenId Caller token ID (0 = use IPC caller's token).
+     * @param cmdPermissions List of permission results (output parameter).
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 11] void QueryStaticCliCmdPermissions(
+        [in] List<CommandInfo> cmds,
+        [in] int callerTokenId,
+        [out] List<CommandPermissionInfo> cmdPermissions,
+        [out] int resultCode
+    );
 };

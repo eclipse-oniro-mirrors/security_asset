@@ -246,7 +246,7 @@ int32_t PermissionManager::MergePermissionLists(const std::vector<TicketCliInfo>
 }
 
 int32_t PermissionManager::BatchVerifyPermissions(const std::vector<std::string> &allPermissions,
-    uint32_t callerTokenId, std::vector<PermissionInfo> &permissionInfos)
+    uint32_t callerTokenId, std::vector<PermissionInfo> &permissionInfos, bool skipInvalid)
 {
     uint32_t tokenId = GetValidCallingTokenId(callerTokenId);
     std::vector<AccessToken::PermissionStatusDetail> resultList;
@@ -259,9 +259,14 @@ int32_t PermissionManager::BatchVerifyPermissions(const std::vector<std::string>
         LOGI("ATM grantStatus is %{public}d, ATM resultType is %{public}d, ATM grantFlag is %{public}d",
             permission.grantStatus, static_cast<int32_t>(permission.resultType), permission.grantFlag);
         // 不存在的权限/未声明的权限
-        IF_TRUE_LOGE_RETURN_ERR(permission.resultType == AccessToken::PermissionResultType::PERMISSION_NOT_EXIST ||
-            permission.resultType == AccessToken::PermissionResultType::PERMISSION_NOT_DECLARED, SAF_ERROR,
-            "BatchVerifyPermissions failed, permission resultType is %{public}d", permission.resultType);
+        if (permission.resultType == AccessToken::PermissionResultType::PERMISSION_NOT_EXIST ||
+            permission.resultType == AccessToken::PermissionResultType::PERMISSION_NOT_DECLARED) {
+            LOGE("BatchVerifyPermissions failed, permission resultType is %{public}d", permission.resultType);
+            if (skipInvalid) {
+                continue;
+            }
+            return SAF_ERROR;
+        }
 
         PermissionInfo info = {};
         info.permission = permission.permissionName;
@@ -888,5 +893,55 @@ void PermissionManager::StoreGrantRecordIfValid(const UserAuthResult &userAuthRe
     if (storeRet != SAF_SUCCESS) {
         LOGE("StoreGrantRecordIfValid :: cxx_store_controlled_grant_record failed, ret=%{public}d", storeRet);
     }
+}
+
+int32_t PermissionManager::QueryStaticCliCmdPermissions(
+    const std::vector<CommandInfo> &cliCmds,
+    uint32_t callerTokenId, std::vector<CommandPermissionInfo> &cmdPermissions)
+{
+    // Step 1: BatchQueryCommandPermission
+    std::vector<TicketCliInfo> ticketCliInfos;
+    int32_t ret = BatchQueryCommandPermission(cliCmds, ticketCliInfos);
+    IF_ERROR_LOGE_RETURN_ERR(ret != SAF_SUCCESS, ret,
+        "QueryStaticCliCmdPermissions: BatchQueryCommandPermission failed");
+
+    // Step 2: merge command permissions
+    std::unordered_set<std::string> permissionSet;
+    for (const auto &cliInfo : ticketCliInfos) {
+        permissionSet.insert(cliInfo.permissions.begin(), cliInfo.permissions.end());
+    }
+    std::vector<std::string> allPermissions(permissionSet.begin(), permissionSet.end());
+
+    // Step 3: BatchVerifyPermissions (with callerTokenId)
+    uint32_t tokenId = GetValidCallingTokenId(callerTokenId);
+    std::vector<PermissionInfo> permissionInfos;
+    if (!allPermissions.empty()) {
+        ret = BatchVerifyPermissions(allPermissions, tokenId, permissionInfos, true);
+        IF_ERROR_LOGE_RETURN_ERR(ret != SAF_SUCCESS, ret,
+            "QueryStaticCliCmdPermissions: BatchVerifyPermissions failed");
+    }
+
+    // Step 4: collect granted permissions
+    std::unordered_set<std::string> grantedPermissions;
+    for (const auto &info : permissionInfos) {
+        if (info.permissionStatus == PermissionStatus::GRANTED) {
+            grantedPermissions.insert(info.permission);
+        }
+    }
+
+    // Step 5: convert TicketCliInfo -> CommandPermissionInfo (only granted permissions)
+    for (const auto &cliInfo : ticketCliInfos) {
+        CommandPermissionInfo permInfo;
+        permInfo.cmd.cmdName = cliInfo.cmdName;
+        permInfo.cmd.subCmd = cliInfo.subCmd;
+        permInfo.queryRet = SAF_SUCCESS;
+        for (const auto &perm : cliInfo.permissions) {
+            if (grantedPermissions.count(perm) > 0) {
+                permInfo.permissions.push_back(perm);
+            }
+        }
+        cmdPermissions.push_back(permInfo);
+    }
+    return SAF_SUCCESS;
 }
 }

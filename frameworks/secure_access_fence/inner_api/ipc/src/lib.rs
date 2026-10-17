@@ -63,6 +63,8 @@ pub const CMD_GET_REMOTE_GRANT_STATUS: u32 = 8;
 pub const CMD_UPDATE_REMOTE_GRANT_STATUS: u32 = 9;
 /// IPC code for RequestToolTicket.
 pub const CMD_REQUEST_TOOL_TICKET: u32 = 10;
+/// IPC code for QueryStaticCliCmdPermissions.
+pub const CMD_QUERY_STATIC_CLI_CMD_PERMISSIONS: u32 = 11;
 
 const MAX_MAP_CAPACITY: u32 = 64;
 pub(crate) const MAX_VEC_CAPACITY: u32 = 0x10000;
@@ -95,10 +97,7 @@ pub fn ipc_err_handle(e: IpcStatusCode) -> SAFError {
 /// deserialize T from parcel
 pub fn deserialize<T: Deserialize>(parcel: &mut MsgParcel) -> Result<T> {
     let value = parcel.read::<T>().map_err(|_| {
-        macros_lib::log_and_into_saf_error!(
-            ErrCode::IpcReadDataFail,
-            "[FATAL]deserialize T from parcel failed!"
-        )
+        macros_lib::log_and_into_saf_error!(ErrCode::IpcReadDataFail, "[FATAL]deserialize T from parcel failed!")
     })?;
     Ok(value)
 }
@@ -110,10 +109,7 @@ pub fn deserialize<T: Deserialize>(parcel: &mut MsgParcel) -> Result<T> {
 /// serialize the map to parcel
 pub fn serialize_map(map: &SAFMap, parcel: &mut MsgParcel) -> Result<()> {
     if map.len() > MAX_MAP_CAPACITY as usize {
-        return macros_lib::log_throw_error!(
-            ErrCode::IpcWriteDataFail,
-            "[FATAL][IPC]The map size exceeds the limit."
-        );
+        return macros_lib::log_throw_error!(ErrCode::IpcWriteDataFail, "[FATAL][IPC]The map size exceeds the limit.");
     }
     parcel.write(&(map.len() as u32)).map_err(ipc_err_handle)?;
     for (&tag, value) in map.iter() {
@@ -142,10 +138,7 @@ pub fn serialize_map(map: &SAFMap, parcel: &mut MsgParcel) -> Result<()> {
 pub fn deserialize_map(parcel: &mut MsgParcel) -> Result<SAFMap> {
     let count = parcel.read::<u32>().map_err(ipc_err_handle)?;
     if count > MAX_MAP_CAPACITY {
-        return macros_lib::log_throw_error!(
-            ErrCode::IpcReadDataFail,
-            "[FATAL][IPC]The map size exceeds the limit."
-        );
+        return macros_lib::log_throw_error!(ErrCode::IpcReadDataFail, "[FATAL][IPC]The map size exceeds the limit.");
     }
     let mut map = SAFMap::with_capacity(count as usize);
     for _ in 0..count {

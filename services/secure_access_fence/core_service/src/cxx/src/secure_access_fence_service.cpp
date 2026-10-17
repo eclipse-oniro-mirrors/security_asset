@@ -223,6 +223,47 @@ int32_t CxxRequestToolTicket(
     return SAF_SUCCESS;
 }
 
+int32_t CxxQueryStaticCliCmdPermissions(
+    const rust::Vec<CxxCommandInfo>& cmds,
+    uint32_t callerTokenId,
+    rust::Vec<CxxCommandPermissionInfo>& result)
+{
+    std::vector<CommandInfo> cliCmds;
+    for (const auto& cmd : cmds) {
+        CommandInfo cliCmd;
+        cliCmd.cmdName = std::string(cmd.cmd_name);
+        cliCmd.subCmd = std::string(cmd.sub_cmd);
+        cliCmds.push_back(cliCmd);
+    }
+
+    auto manager = PermissionManager::GetInstance();
+    if (manager == nullptr) {
+        LOGE("CxxQueryStaticCliCmdPermissions: get permissionManager instance failed");
+        return SAF_ERR_NULL_PTR;
+    }
+
+    std::vector<CommandPermissionInfo> cmdPermissions;
+    int32_t ret = manager->QueryStaticCliCmdPermissions(cliCmds, callerTokenId, cmdPermissions);
+    if (ret != SAF_SUCCESS) {
+        LOGE("CxxQueryStaticCliCmdPermissions failed, ret=%{public}d", ret);
+        return ret;
+    }
+
+    for (const auto& permInfo : cmdPermissions) {
+        CxxCommandPermissionInfo cxxPerm;
+        cxxPerm.cmd_name = rust::String(permInfo.cmd.cmdName);
+        cxxPerm.sub_cmd = rust::String(permInfo.cmd.subCmd);
+        cxxPerm.permissions.reserve(permInfo.permissions.size());
+        for (const auto& perm : permInfo.permissions) {
+            cxxPerm.permissions.push_back(rust::String(perm));
+        }
+        cxxPerm.query_ret = permInfo.queryRet;
+        result.push_back(cxxPerm);
+    }
+
+    return SAF_SUCCESS;
+}
+
 } // namespace SAF
 } // namespace Security
 } // namespace OHOS

@@ -469,6 +469,23 @@ impl SAFService {
         }
         result
     }
+
+    fn query_static_cli_cmd_permissions(
+        &self,
+        os_account_id: i32,
+        cmds: Vec<wrapper::ffi::CxxCommandInfo>,
+        caller_token_id: u32,
+    ) -> Result<Vec<wrapper::ffi::CxxCommandPermissionInfo>> {
+        let cmd_count = cmds.len() as i32;
+        execute_with_metrics!(
+            "query_static_cli_cmd_permissions",
+            do_query_static_cli_cmd_permissions,
+            cmd_count,
+            os_account_id,
+            cmds,
+            caller_token_id
+        )
+    }
 }
 
 fn check_query_tool_permission(os_account_id: i32, function_name: &str) -> std::result::Result<(), ErrCode> {
@@ -803,6 +820,37 @@ pub(crate) fn do_request_tool_ticket(
     }
 
     filter_permission_results(&mut result.permission_results, result.has_ticket);
+
+    Ok(result)
+}
+
+pub(crate) fn do_query_static_cli_cmd_permissions(
+    _os_account_id: i32,
+    cmds: Vec<wrapper::ffi::CxxCommandInfo>,
+    caller_token_id: u32,
+) -> Result<Vec<wrapper::ffi::CxxCommandPermissionInfo>> {
+    let permission = CString::new(QUERY_TOOL_PERMISSIONS).unwrap();
+    if unsafe { !CheckPermission(permission.as_ptr()) } {
+        return macros_lib::log_throw_error!(ErrCode::PermissionDenied,
+            "Permission denied! Need {}", QUERY_TOOL_PERMISSIONS);
+    }
+    if unsafe { !CheckIsSystemHap() } {
+        return macros_lib::log_throw_error!(ErrCode::NotSystemApp, "Caller is not system hap");
+    }
+
+    validate_cli_cmd_infos(&cmds)?;
+    if caller_token_id == 0 {
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "callerTokenId is invalid");
+    }
+
+    let mut result: Vec<wrapper::ffi::CxxCommandPermissionInfo> = Vec::new();
+    let ret = wrapper::ffi::CxxQueryStaticCliCmdPermissions(&cmds, caller_token_id, &mut result);
+
+    if ret != 0 {
+        let err_code = ErrCode::try_from(ret as u32).unwrap_or(ErrCode::GeneralError);
+        return macros_lib::log_throw_error!(err_code,
+            "CxxQueryStaticCliCmdPermissions failed, ret={}", ret);
+    }
 
     Ok(result)
 }

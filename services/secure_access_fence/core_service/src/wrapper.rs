@@ -61,6 +61,14 @@ pub mod ffi {
         pub ticket: String,
     }
 
+    /// CommandPermissionInfo for cxx bridge (output).
+    pub struct CxxCommandPermissionInfo {
+        pub cmd_name: String,
+        pub sub_cmd: String,
+        pub permissions: Vec<String>,
+        pub query_ret: i32,
+    }
+
     // C++ callable Rust functions
     extern "Rust" {
         /// Notify performance metrics.
@@ -109,6 +117,12 @@ pub mod ffi {
             cli_cmd_infos: &Vec<CxxCommandInfo>,
             ticket_expire_time_ms: u64,
             result: &mut CxxTicketQueryResult,
+        ) -> i32;
+        /// Call C++ PermissionManager::QueryStaticCliCmdPermissions via bridge.
+        fn CxxQueryStaticCliCmdPermissions(
+            cmds: &Vec<CxxCommandInfo>,
+            caller_token_id: u32,
+            result: &mut Vec<CxxCommandPermissionInfo>,
         ) -> i32;
     }
 }
