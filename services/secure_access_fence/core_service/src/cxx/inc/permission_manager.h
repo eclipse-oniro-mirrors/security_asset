@@ -63,6 +63,9 @@ public:
     int32_t RequestToolPermissions(const PermissionQuery &permissionQuery,
         PermissionQueryResult &permissionQueryResult, bool isPublicCli = false);
 
+    int32_t QueryStaticCliCmdPermissions(const std::vector<CommandInfo> &cliCmds,
+        uint32_t callerTokenId, std::vector<CommandPermissionInfo> &cmdPermissions);
+
     int32_t GrantToolPermissionsByUser(const std::vector<UserAuthResult> &userAuthResults,
         std::vector<VerifyTicketInfo> &ticketInfos);
 
@@ -83,7 +86,7 @@ private:
         const std::vector<std::string> &apiPermissions, std::vector<std::string> &allPermissions);
 
     int32_t BatchVerifyPermissions(const std::vector<std::string> &allPermissions, uint32_t callerTokenId,
-        std::vector<PermissionInfo> &authResults);
+        std::vector<PermissionInfo> &authResults, bool skipInvalid = false);
 
     int32_t MergePermissionResults(const std::vector<PermissionInfo> &authResults,
         PermissionQueryResult &permissionQueryResult, bool isRemote = false, bool isPublicCli = false);

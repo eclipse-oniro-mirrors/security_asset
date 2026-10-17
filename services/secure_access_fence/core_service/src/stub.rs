@@ -26,8 +26,9 @@ use saf_ipc::{
     deserialize_verify_ticket_request, serialize_bool_vec, serialize_cli_infos, serialize_i32_vec,
     serialize_remote_auth_packages, serialize_verify_ticket_infos, CMD_BATCH_GENERATE_TICKET, CMD_BATCH_VERIFY_TICKET,
     CMD_GENERATE_CONTROLLED_DEVICE_PACKAGE, CMD_GENERATE_CONTROLLER_DEVICE_PACKAGE, CMD_GET_REMOTE_GRANT_STATUS,
-    CMD_REQUEST_TOOL_TICKET, CMD_UPDATE_REMOTE_GRANT_STATUS, CMD_VERIFY_CONTROLLED_DEVICE_PACKAGE,
-    CMD_VERIFY_CONTROLLER_DEVICE_PACKAGE, CMD_VERIFY_TICKET, IPC_SUCCESS, SA_NAME,
+    CMD_QUERY_STATIC_CLI_CMD_PERMISSIONS, CMD_REQUEST_TOOL_TICKET, CMD_UPDATE_REMOTE_GRANT_STATUS,
+    CMD_VERIFY_CONTROLLED_DEVICE_PACKAGE, CMD_VERIFY_CONTROLLER_DEVICE_PACKAGE, CMD_VERIFY_TICKET, IPC_SUCCESS,
+    SA_NAME,
 };
 use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
@@ -103,6 +104,7 @@ fn on_remote_request(stub: &SAFService, code: u32, data: &mut MsgParcel, reply: 
         CMD_GET_REMOTE_GRANT_STATUS => handle_get_remote_grant_status(data, reply),
         CMD_UPDATE_REMOTE_GRANT_STATUS => handle_update_remote_grant_status(data, reply),
         CMD_REQUEST_TOOL_TICKET => handle_request_tool_ticket(stub, data, reply),
+        CMD_QUERY_STATIC_CLI_CMD_PERMISSIONS => handle_query_static_cli_cmd_permissions(stub, data, reply),
         _ => {
             if code >= C_REDIRECT_START_CODE {
                 let res = wrapper::on_remote_request(code, data, reply);
@@ -491,6 +493,84 @@ fn handle_request_tool_ticket(stub: &SAFService, data: &mut MsgParcel, reply: &m
             reply.write::<i32>(&(IPC_SUCCESS as i32))?;
             reply.write::<i32>(&0)?;
             reply.write_string16("")?;
+            reply.write::<i32>(&(e.code as i32))?;
+        },
+    }
+    Ok(())
+}
+
+fn deserialize_query_static_cli_cmd_permissions_request(
+    data: &mut MsgParcel,
+) -> IpcResult<(Vec<wrapper::ffi::CxxCommandInfo>, u32)> {
+    let count = data.read::<i32>().map_err(|e| {
+        loge!("[FATAL]QueryStaticCliCmdPermissions: read cmds count failed: {:?}", e);
+        IpcStatusCode::Failed
+    })?;
+    if count < 0 || count as usize > crate::MAX_CLI_CMD_INFOS_COUNT {
+        loge!("[FATAL]QueryStaticCliCmdPermissions: invalid cmds count: {}", count);
+        return Err(IpcStatusCode::Failed);
+    }
+
+    let mut cmds: Vec<wrapper::ffi::CxxCommandInfo> = Vec::with_capacity(count as usize);
+    for i in 0..count {
+        let cmd_name = data.read_string16().map_err(|e| {
+            loge!("[FATAL]QueryStaticCliCmdPermissions: read cmdName[{}] failed: {:?}", i, e);
+            IpcStatusCode::Failed
+        })?;
+        let sub_cmd = data.read_string16().map_err(|e| {
+            loge!("[FATAL]QueryStaticCliCmdPermissions: read subCmd[{}] failed: {:?}", i, e);
+            IpcStatusCode::Failed
+        })?;
+        cmds.push(wrapper::ffi::CxxCommandInfo { cmd_name, sub_cmd });
+    }
+
+    let caller_token_id_raw = data.read::<i32>().map_err(|e| {
+        loge!("[FATAL]QueryStaticCliCmdPermissions: read callerTokenId failed: {:?}", e);
+        IpcStatusCode::Failed
+    })?;
+    if caller_token_id_raw <= 0 {
+        loge!("[FATAL]QueryStaticCliCmdPermissions: callerTokenId is invalid: {}", caller_token_id_raw);
+        return Err(IpcStatusCode::Failed);
+    }
+    let caller_token_id = caller_token_id_raw as u32;
+
+    Ok((cmds, caller_token_id))
+}
+
+fn handle_query_static_cli_cmd_permissions(
+    stub: &SAFService,
+    data: &mut MsgParcel,
+    reply: &mut MsgParcel,
+) -> IpcResult<()> {
+    let (cmds, caller_token_id) = deserialize_query_static_cli_cmd_permissions_request(data)?;
+
+    logi!("QueryStaticCliCmdPermissions received, cmdCount: {}, callerTokenId: {}", cmds.len(), caller_token_id);
+
+    let os_account_id = get_calling_os_account_id()?;
+    let result = stub.query_static_cli_cmd_permissions(os_account_id, cmds, caller_token_id);
+
+    match result {
+        Ok(cmd_permissions) => {
+            reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+            let count = cmd_permissions.len() as i32;
+            reply.write::<i32>(&count)?;
+            for perm in &cmd_permissions {
+                reply.write_string16(&perm.cmd_name)?;
+                reply.write_string16(&perm.sub_cmd)?;
+                let perm_count = perm.permissions.len() as i32;
+                reply.write::<i32>(&perm_count)?;
+                for p in &perm.permissions {
+                    reply.write_string16(p)?;
+                }
+                reply.write::<i32>(&perm.query_ret)?;
+            }
+            reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+            logi!("QueryStaticCliCmdPermissions success, count: {}", count);
+        },
+        Err(e) => {
+            loge!("[FATAL]QueryStaticCliCmdPermissions failed: {}", e.msg);
+            reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+            reply.write::<i32>(&0)?;
             reply.write::<i32>(&(e.code as i32))?;
         },
     }

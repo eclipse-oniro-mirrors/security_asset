@@ -29,11 +29,17 @@ namespace SAF {
 
 struct CxxCommandInfo;
 struct CxxTicketQueryResult;
+struct CxxCommandPermissionInfo;
 
 int32_t CxxRequestToolTicket(
     const rust::Vec<CxxCommandInfo>& cliCmdInfos,
     uint64_t ticketExpireTimeMs,
     CxxTicketQueryResult& result);
+
+int32_t CxxQueryStaticCliCmdPermissions(
+    const rust::Vec<CxxCommandInfo>& cmds,
+    uint32_t callerTokenId,
+    rust::Vec<CxxCommandPermissionInfo>& result);
 
 } // namespace SAF
 } // namespace Security
