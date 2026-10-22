@@ -343,6 +343,81 @@ int32_t SafAgentFence::VerifyTicket(
     return resultCode;
 }
 
+int32_t SafAgentFence::GenerateTaskChallenge(
+    const TaskIdentityInfo &taskIdentityInfo,
+    std::vector<int32_t> &challenge)
+{
+    LOGI("SafAgentFence::GenerateTaskChallenge enter");
+
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+
+    int32_t resultCode = SAF_SUCCESS;
+    int32_t ret = HandleIpcError(proxy, [&]() {
+        return proxy->GenerateTaskChallenge(taskIdentityInfo, challenge, resultCode);
+    });
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+
+    LOGI("SafAgentFence::GenerateTaskChallenge finished, resultCode = 0x%{public}x", resultCode);
+    return resultCode;
+}
+
+int32_t SafAgentFence::GenerateTaskIdentity(
+    const TaskIdentityInfo &taskIdentityInfo,
+    TaskIdentity &taskIdentity)
+{
+    LOGI("SafAgentFence::GenerateTaskIdentity enter");
+
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+
+    int32_t resultCode = SAF_SUCCESS;
+    int32_t ret = HandleIpcError(proxy, [&]() {
+        return proxy->GenerateTaskIdentity(taskIdentityInfo, taskIdentity, resultCode);
+    });
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+
+    LOGI("SafAgentFence::GenerateTaskIdentity finished, resultCode = 0x%{public}x", resultCode);
+    return resultCode;
+}
+
+int32_t SafAgentFence::RevokeTaskIdentity(const std::vector<std::string> &taskIds)
+{
+    LOGI("SafAgentFence::RevokeTaskIdentity enter");
+
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+
+    int32_t resultCode = SAF_SUCCESS;
+    int32_t ret = HandleIpcError(proxy, [&]() {
+        return proxy->RevokeTaskIdentity(taskIds, resultCode);
+    });
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+
+    LOGI("SafAgentFence::RevokeTaskIdentity finished, resultCode = 0x%{public}x", resultCode);
+    return resultCode;
+}
+
+int32_t SafAgentFence::RetrieveAuthTokenByTaskId(
+    int32_t callerToken,
+    const std::string &taskId,
+    std::vector<int32_t> &authToken)
+{
+    LOGI("SafAgentFence::RetrieveAuthTokenByTaskId enter");
+
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+
+    int32_t resultCode = SAF_SUCCESS;
+    int32_t ret = HandleIpcError(proxy, [&]() {
+        return proxy->RetrieveAuthTokenByTaskId(callerToken, taskId, authToken, resultCode);
+    });
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+
+    LOGI("SafAgentFence::RetrieveAuthTokenByTaskId finished, resultCode = 0x%{public}x", resultCode);
+    return resultCode;
+}
+
 } // namespace SAF
 } // namespace Security
 } // namespace OHOS

@@ -67,6 +67,7 @@
                 "openssl",
                 "screenlock_mgr",
                 "time_service",
+                "user_auth_framework",
                 "init"
             ],
             "third_party": []

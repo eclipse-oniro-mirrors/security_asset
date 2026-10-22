@@ -31,6 +31,10 @@ pub use sub_modules::{
     deserialize_permission_queries, deserialize_remote_auth_packages, deserialize_remote_info,
     deserialize_remote_user_auth_results_vec, deserialize_verify_ticket_infos, serialize_bool_vec, serialize_cli_infos,
     serialize_remote_auth_packages, serialize_verify_ticket_infos,
+    deserialize_task_identity_info,
+    deserialize_i32_u8_list,
+    serialize_task_identity,
+    serialize_u8_to_i32_list,
 };
 
 // ============================================================================
@@ -65,6 +69,14 @@ pub const CMD_UPDATE_REMOTE_GRANT_STATUS: u32 = 9;
 pub const CMD_REQUEST_TOOL_TICKET: u32 = 10;
 /// IPC code for QueryStaticCliCmdPermissions.
 pub const CMD_QUERY_STATIC_CLI_CMD_PERMISSIONS: u32 = 11;
+/// IPC code for GenerateTaskChallenge.
+pub const CMD_GENERATE_TASK_CHALLENGE: u32 = 12;
+/// IPC code for GenerateTaskIdentity.
+pub const CMD_GENERATE_TASK_IDENTITY: u32 = 13;
+/// IPC code for RevokeTaskIdentity.
+pub const CMD_REVOKE_TASK_IDENTITY: u32 = 14;
+/// IPC code for RetrieveAuthTokenByTaskId.
+pub const CMD_RETRIEVE_AUTH_TOKEN_BY_TASK_ID: u32 = 15;
 
 const MAX_MAP_CAPACITY: u32 = 64;
 pub(crate) const MAX_VEC_CAPACITY: u32 = 0x10000;

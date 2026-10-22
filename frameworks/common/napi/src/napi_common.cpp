@@ -30,6 +30,13 @@ namespace {
     constexpr uint32_t MAX_CLI_CMD_INFOS_COUNT = 300;
     constexpr uint32_t MAX_CMD_NAME_LENGTH = 512;
     constexpr int32_t MAX_TICKET_EXPIRE_TIME_MS = 60000;
+
+    // IMPORTANT: Keep in sync with PATH_TRAVERSAL_PATTERNS in
+    //   services/secure_access_fence/core_service/src/task_identity/validator.rs
+    const std::vector<std::string> PATH_TRAVERSAL_PATTERNS = {
+        "../", "..//", "./", ".\\", "//", "\\", "/", "/..", "\\..", ".."
+    };
+
     AgentFenceErrorCode MapErrorCode(const int32_t safResult)
     {
         switch (safResult) {
@@ -135,6 +142,16 @@ namespace {
         }
         return SAF_SUCCESS;
     }
+} // namespace
+
+bool ContainsPathTraversalChars(const std::string &str)
+{
+    for (const auto &pattern : PATH_TRAVERSAL_PATTERNS) {
+        if (str.find(pattern) != std::string::npos) {
+            return true;
+        }
+    }
+    return false;
 }
 
 napi_value NapiCreateError(const napi_env env, int32_t errCode, const char *errMsg)
@@ -207,6 +224,165 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::Permissi
     if (napi_get_named_property(env, object, "remoteInfo", &propValue) == napi_ok) {
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, permissionQuery.remoteInfo));
     }
+    return napi_ok;
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::TaskIdentity &taskIdentity)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    napi_value propValue;
+    if (napi_get_named_property(env, object, "taskAttributes", &propValue) == napi_ok) {
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, taskIdentity.taskAttributes));
+    }
+    if (napi_get_named_property(env, object, "identity", &propValue) == napi_ok) {
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, taskIdentity.identity));
+    }
+    if (napi_get_named_property(env, object, "challenge", &propValue) == napi_ok) {
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, taskIdentity.challenge));
+    }
+    return napi_ok;
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::TaskIdentityInfo &taskIdentityInfo)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    napi_value propValue;
+    if (napi_get_named_property(env, object, "taskId", &propValue) == napi_ok) {
+        NAPI_CHECK_REQUIRED(env, propValue, "taskId");
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, taskIdentityInfo.taskId));
+    }
+    if (napi_get_named_property(env, object, "taskExpireTime", &propValue) == napi_ok) {
+        NAPI_CHECK_REQUIRED(env, propValue, "taskExpireTime");
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, taskIdentityInfo.taskExpireTime));
+    }
+    if (napi_get_named_property(env, object, "executeType", &propValue) == napi_ok) {
+        NAPI_CHECK_REQUIRED(env, propValue, "executeType");
+        int32_t executeType = 0;
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, executeType));
+        if (executeType < static_cast<int32_t>(SAF::ExecuteType::INSTANT) ||
+            executeType > static_cast<int32_t>(SAF::ExecuteType::DELAYED)) {
+            NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "Invalid executeType");
+        }
+        taskIdentityInfo.executeType = static_cast<SAF::ExecuteType>(executeType);
+    }
+    if (napi_get_named_property(env, object, "allowScreenLockExecution", &propValue) == napi_ok) {
+        NAPI_CHECK_REQUIRED(env, propValue, "allowScreenLockExecution");
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, taskIdentityInfo.allowScreenLockExecution));
+    }
+    if (napi_get_named_property(env, object, "allowableDuration", &propValue) == napi_ok) {
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, taskIdentityInfo.allowableDuration));
+    }
+    if (napi_get_named_property(env, object, "authToken", &propValue) == napi_ok) {
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, taskIdentityInfo.authToken));
+    }
+    return napi_ok;
+}
+
+napi_status ValidateTaskIdentityInfo(const napi_env env, const SAF::TaskIdentityInfo &taskIdentityInfo)
+{
+    if (taskIdentityInfo.taskId.empty()) {
+        NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "taskId is required");
+    }
+    if (taskIdentityInfo.taskId.length() > MAX_TASK_ID_LEN) {
+        NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "taskId exceeds max length");
+    }
+    if (ContainsPathTraversalChars(taskIdentityInfo.taskId)) {
+        NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "taskId contains path traversal characters");
+    }
+    if (taskIdentityInfo.authToken.size() > MAX_AUTH_TOKEN_SIZE) {
+        NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "authToken exceeds max size");
+    }
+    return napi_ok;
+}
+
+/// Parses a JS value as a byte array (Uint8Array or ArrayBuffer) into vector<int32_t>.
+/// Each byte (0~255) is stored as one int32_t element, matching the IDL List<int> type
+/// used for authToken transport. Values are always 0~255 (u8 range), validated in
+/// ValidateTaskIdentityInfo and Rust validator.
+napi_status NapiGetProperty(const napi_env env, napi_value object, std::vector<int32_t> &values)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    bool isTypedArray = false;
+    NAPI_CALL_RETURN_ERR(env, napi_is_typedarray(env, object, &isTypedArray));
+    if (isTypedArray) {
+        napi_typedarray_type type;
+        size_t length = 0;
+        void *data = nullptr;
+        napi_value arraybuffer = nullptr;
+        size_t byteOffset = 0;
+        NAPI_CALL_RETURN_ERR(env, napi_get_typedarray_info(env, object, &type, &length, &data,
+            &arraybuffer, &byteOffset));
+        if (type != napi_uint8_array) {
+            NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "authToken must be Uint8Array");
+        }
+        if (data == nullptr) {
+            NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "authToken data is null");
+        }
+        const uint8_t *bytes = static_cast<const uint8_t *>(data);
+        for (size_t i = 0; i < length; ++i) {
+            values.push_back(static_cast<int32_t>(bytes[i]));
+        }
+        return napi_ok;
+    }
+    bool isArrayBuffer = false;
+    NAPI_CALL_RETURN_ERR(env, napi_is_arraybuffer(env, object, &isArrayBuffer));
+    if (isArrayBuffer) {
+        void *data = nullptr;
+        size_t length = 0;
+        NAPI_CALL_RETURN_ERR(env, napi_get_arraybuffer_info(env, object, &data, &length));
+        if (data == nullptr) {
+            NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "authToken data is null");
+        }
+        const uint8_t *bytes = static_cast<const uint8_t *>(data);
+        for (size_t i = 0; i < length; ++i) {
+            values.push_back(static_cast<int32_t>(bytes[i]));
+        }
+        return napi_ok;
+    }
+    return napi_ok;
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object, std::vector<std::string> &values)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    uint32_t count = 0;
+    NAPI_CALL_RETURN_ERR(env, napi_get_array_length(env, object, &count));
+    values.reserve(count);
+    for (uint32_t i = 0; i < count; ++i) {
+        napi_value item = nullptr;
+        NAPI_CALL_RETURN_ERR(env, napi_get_element(env, object, i, &item));
+        std::string value;
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, item, value));
+        values.emplace_back(value);
+    }
+    return napi_ok;
+}
+
+napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName,
+    const SAF::TaskIdentity &taskIdentity)
+{
+    napi_value jsResult = nullptr;
+    NAPI_CALL_RETURN_ERR(env, napi_create_object(env, &jsResult));
+    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "taskAttributes", taskIdentity.taskAttributes));
+    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "identity", taskIdentity.identity));
+    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "challenge", taskIdentity.challenge));
+    NAPI_CALL_RETURN_ERR(env, napi_set_named_property(env, object, propertyName, jsResult));
+    return napi_ok;
+}
+
+napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName,
+    const std::vector<int32_t> &values)
+{
+    void *data = nullptr;
+    napi_value arrayBuffer = nullptr;
+    NAPI_CALL_RETURN_ERR(env, napi_create_arraybuffer(env, values.size(), &data, &arrayBuffer));
+    uint8_t *bytes = static_cast<uint8_t *>(data);
+    for (size_t i = 0; i < values.size(); ++i) {
+        bytes[i] = static_cast<uint8_t>(values[i]);
+    }
+    napi_value jsResult = nullptr;
+    NAPI_CALL_RETURN_ERR(env, napi_create_typedarray(env, napi_uint8_array, values.size(), arrayBuffer, 0, &jsResult));
+    NAPI_CALL_RETURN_ERR(env, napi_set_named_property(env, object, propertyName, jsResult));
     return napi_ok;
 }
 

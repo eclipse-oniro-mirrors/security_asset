@@ -55,6 +55,7 @@ group("asset_bin_test") {
     "test/asset/unittest/kits_ndk:asset_ndk_test",
     "test/asset/unittest/module_test:asset_dependency_test",
     "test/secure_access_fence/unittest/kits_ndk:saf_agent_fence_ndk_test",
+    #"test/secure_access_fence/agent_fence:saf_agent_fence_retrieve_auth_token_test",
     #"test/secure_access_fence/agent_fence:saf_agent_fence_test",
     #"test/secure_access_fence/agent_fence:saf_agent_fence_manual_test",
     #"test/secure_access_fence/agent_fence:saf_agent_fence_stress_test",

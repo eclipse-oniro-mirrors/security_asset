@@ -29,7 +29,7 @@ use ylong_runtime::builder::RuntimeBuilder;
 
 use saf_common::{Counter, TaskManager};
 use saf_definition::{macros_lib, ErrCode, Result, CliInfo, VerifyTicketInfo,
-    PermissionQuery, RemoteAuthPackage, RemoteUserAuthResults, RemoteInfo};
+    PermissionQuery, RemoteAuthPackage, RemoteUserAuthResults, RemoteInfo, TaskIdentity, TaskIdentityInfo};
 use saf_ipc::SA_ID;
 use saf_log::{logd, loge, logi};
 use saf_plugin::saf_plugin::{SAFContext, SAFPlugin};
@@ -45,6 +45,7 @@ mod critical_manager;
 mod remote_control;
 mod remote_grant_status;
 mod stub;
+mod task_identity;
 mod ticket_operation;
 mod wrapper;
 
@@ -53,6 +54,7 @@ mod metrics_macro;
 
 const GET_TICKET_INFO_PERMISSION: &str = "ohos.permission.GET_TICKET_INFO";
 const QUERY_TOOL_PERMISSIONS: &str = "ohos.permission.QUERY_TOOL_PERMISSIONS";
+const INTERACT_ACROSS_LOCAL_ACCOUNTS: &str = "ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS";
 
 const JSON_KEY_MESSAGE: &str = "message";
 const JSON_KEY_CHALLENGE: &str = "challenge";
@@ -76,6 +78,7 @@ const MAX_TICKET_EXPIRE_TIME_MS: u64 = 60_000;
 extern "C" {
     fn CheckPermission(permission: *const raw_c_char) -> bool;
     fn CheckIsSystemHap() -> bool;
+    fn CheckIsSystemSa() -> bool;
 }
 
 struct SAFAbility;
@@ -170,6 +173,12 @@ impl Ability for SAFAbility {
                 remaining_ms
             );
             return remaining_ms.min(ticket_operation::challenge_store::MAX_CHALLENGE_VALIDITY_MS) as i32;
+        }
+
+        // Cleanup task identity records expired more than 3 days (low-frequency, on idle only)
+        let store = task_identity::store::global_task_identity_store();
+        for os_account_id in store.enumerate_os_account_ids() {
+            store.clean_expired_instant_tasks(os_account_id);
         }
 
         let delay_time = match SAFPlugin::get_instance().load_plugin() {
@@ -486,6 +495,71 @@ impl SAFService {
             caller_token_id
         )
     }
+
+    fn generate_task_challenge(&self, os_account_id: i32, info: TaskIdentityInfo) -> Result<Vec<u8>> {
+        if let Err(code) = check_query_tool_permission(os_account_id, "generate_task_challenge") {
+            return macros_lib::log_throw_error!(code, "Permission denied");
+        }
+        let caller = crate::wrapper::get_calling_token_id();
+        execute_with_metrics_single!(
+            "generate_task_challenge",
+            task_identity::generate_task_challenge,
+            os_account_id,
+            &caller,
+            &info
+        )
+    }
+
+    fn generate_task_identity(&self, os_account_id: i32, info: TaskIdentityInfo) -> Result<TaskIdentity> {
+        if let Err(code) = check_query_tool_permission(os_account_id, "generate_task_identity") {
+            return macros_lib::log_throw_error!(code, "Permission denied");
+        }
+        let caller = crate::wrapper::get_calling_token_id();
+        let calling_uid = ipc::Skeleton::calling_uid();
+        execute_with_metrics_single!(
+            "generate_task_identity",
+            task_identity::generate_task_identity,
+            os_account_id,
+            &caller,
+            calling_uid,
+            &info
+        )
+    }
+
+    fn revoke_task_identity(&self, os_account_id: i32, task_ids: Vec<String>) -> Result<()> {
+        if let Err(code) = check_query_tool_permission(os_account_id, "revoke_task_identity") {
+            return macros_lib::log_throw_error!(code, "Permission denied");
+        }
+        let caller = crate::wrapper::get_calling_token_id();
+        execute_with_metrics_single!(
+            "revoke_task_identity",
+            task_identity::revoke_task_identities,
+            os_account_id,
+            &caller,
+            task_ids
+        )
+    }
+
+    fn retrieve_auth_token_by_task_id(
+        &self,
+        os_account_id: i32,
+        caller_token: i32,
+        task_id: String,
+    ) -> Result<Vec<u8>> {
+        if let Err(code) = check_retrieve_auth_token_permission(os_account_id) {
+            return macros_lib::log_throw_error!(code, "Permission denied");
+        }
+        let caller = caller_token.to_string();
+        let calling_uid = ipc::Skeleton::calling_uid();
+        execute_with_metrics_single!(
+            "retrieve_auth_token_by_task_id",
+            task_identity::retrieve_auth_token_by_task_id,
+            os_account_id,
+            &caller,
+            calling_uid,
+            &task_id
+        )
+    }
 }
 
 fn check_query_tool_permission(os_account_id: i32, function_name: &str) -> std::result::Result<(), ErrCode> {
@@ -509,6 +583,45 @@ fn check_query_tool_permission(os_account_id: i32, function_name: &str) -> std::
             function_name.to_string(),
         );
         return Err(ErrCode::NotSystemApp);
+    }
+    Ok(())
+}
+
+/// Permission check for RetrieveAuthTokenByTaskId.
+/// Requires: system SA caller, QUERY_TOOL_PERMISSIONS, INTERACT_ACROSS_LOCAL_ACCOUNTS.
+fn check_retrieve_auth_token_permission(os_account_id: i32) -> std::result::Result<(), ErrCode> {
+    let function_name = "retrieve_auth_token_by_task_id";
+    if unsafe { !CheckIsSystemSa() } {
+        loge!("Caller is not system SA");
+        notify_error(
+            "Caller is not system SA".to_string(),
+            ErrCode::NotSystemApp as i32,
+            os_account_id,
+            function_name.to_string(),
+        );
+        return Err(ErrCode::NotSystemApp);
+    }
+    let permission = CString::new(QUERY_TOOL_PERMISSIONS).unwrap();
+    if unsafe { !CheckPermission(permission.as_ptr()) } {
+        loge!("Permission denied! Need {}", QUERY_TOOL_PERMISSIONS);
+        notify_error(
+            "Permission denied".to_string(),
+            ErrCode::PermissionDenied as i32,
+            os_account_id,
+            function_name.to_string(),
+        );
+        return Err(ErrCode::PermissionDenied);
+    }
+    let cross_permission = CString::new(INTERACT_ACROSS_LOCAL_ACCOUNTS).unwrap();
+    if unsafe { !CheckPermission(cross_permission.as_ptr()) } {
+        loge!("Permission denied! Need {}", INTERACT_ACROSS_LOCAL_ACCOUNTS);
+        notify_error(
+            "Permission denied".to_string(),
+            ErrCode::PermissionDenied as i32,
+            os_account_id,
+            function_name.to_string(),
+        );
+        return Err(ErrCode::PermissionDenied);
     }
     Ok(())
 }

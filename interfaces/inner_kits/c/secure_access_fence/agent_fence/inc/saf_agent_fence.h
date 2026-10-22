@@ -194,6 +194,49 @@ public:
      * @return Returns 0 on success, or error code on failure.
      */
     static int32_t UpdateRemoteGrantStatus(int32_t remoteGrantStatus);
+
+    /**
+     * @brief Generate a random challenge for task-level authorization.
+     *
+     * @param taskIdentityInfo Task identity info.
+     * @param challenge Output challenge bytes (as i32 list over IPC).
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t GenerateTaskChallenge(
+        const TaskIdentityInfo &taskIdentityInfo,
+        std::vector<int32_t> &challenge);
+
+    /**
+     * @brief Generate a task identity for task-level authorization.
+     *
+     * @param taskIdentityInfo Task identity info (may carry an auth token).
+     * @param taskIdentity Output generated task identity.
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t GenerateTaskIdentity(
+        const TaskIdentityInfo &taskIdentityInfo,
+        TaskIdentity &taskIdentity);
+
+    /**
+     * @brief Revoke task identities.
+     *
+     * @param taskIds List of task IDs to revoke.
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t RevokeTaskIdentity(const std::vector<std::string> &taskIds);
+
+    /**
+     * @brief Retrieve auth token by task id.
+     *
+     * @param callerToken Caller token id.
+     * @param taskId Task id to retrieve auth token for.
+     * @param authToken Output auth token bytes (empty for low-risk tasks).
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t RetrieveAuthTokenByTaskId(
+        int32_t callerToken,
+        const std::string &taskId,
+        std::vector<int32_t> &authToken);
 };
 
 }

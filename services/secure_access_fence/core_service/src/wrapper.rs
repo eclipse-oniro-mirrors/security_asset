@@ -69,6 +69,13 @@ pub mod ffi {
         pub query_ret: i32,
     }
 
+    /// IAM auth token verification result.
+    pub struct IamVerifyResult {
+        pub result_code: i32,
+        pub challenge: Vec<u8>,
+        pub auth_trust_level: u32,
+    }
+
     // C++ callable Rust functions
     extern "Rust" {
         /// Notify performance metrics.
@@ -107,6 +114,7 @@ pub mod ffi {
         include!("message_option.h");
         include!("secure_access_fence_service.h");
         include!("cxx_bridge_functions.h");
+        include!("iam_verify_wrapper.h");
         #[namespace = "OHOS"]
         type MessageParcel = ipc::parcel::MessageParcel;
         /// On remote request.
@@ -124,6 +132,12 @@ pub mod ffi {
             caller_token_id: u32,
             result: &mut Vec<CxxCommandPermissionInfo>,
         ) -> i32;
+        /// Get the binder calling token id.
+        fn GetCallingTokenId() -> u32;
+        /// Resolve os_account_id from a token id (SA→0, HAP→osAccountID).
+        fn GetOsAccountIdFromTokenId(tokenId: u32) -> i32;
+        /// Verify auth token via IAM, returns challenge + authTrustLevel.
+        fn VerifyAuthToken(authToken: &Vec<u8>, allowableDurationMs: u64) -> IamVerifyResult;
     }
 }
 
@@ -201,14 +215,15 @@ pub fn get_policy_auth_status(
 
     logi!("[get_policy_auth_status] plugin returned, parsing results");
 
-    let Some(Value::NumberList(statuses)) = result.get(POLICY_AUTH_STATUS_KEYS.auth_statuses) else {
+    if let Some(Value::NumberList(statuses)) = result.get(POLICY_AUTH_STATUS_KEYS.auth_statuses) {
+        logi!("[get_policy_auth_status] auth_statuses_len={}", statuses.len());
+        auth_statuses.extend(statuses.iter().cloned());
+    } else {
         loge!("[get_policy_auth_status] auth_statuses not found in result params");
         return saf_definition::ErrCode::HashMapKeyNotFound as i32;
-    };
+    }
 
-    *auth_statuses = statuses.clone();
-
-    logi!("[get_policy_auth_status] success, auth statuses_len={}", auth_statuses.len());
+    logi!("[get_policy_auth_status] success, auth_statuses_len={}", auth_statuses.len());
 
     0
 }
@@ -340,6 +355,11 @@ pub fn cxx_store_controlled_grant_record(
             e.code as i32
         },
     }
+}
+
+/// Get the binder calling token id as a string.
+pub fn get_calling_token_id() -> String {
+    ffi::GetCallingTokenId().to_string()
 }
 
 /// Get Device UDID via plugin process_event

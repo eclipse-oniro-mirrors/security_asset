@@ -35,8 +35,10 @@ ohos_static_library("secure_access_fence_wrapper_static") {
     "../../../interfaces/inner_kits/c/secure_access_fence/agent_fence/inc",
     "../../../interfaces/inner_kits/c/secure_access_fence/common/inc",
   ]
+
   sources = [
     "src/cxx/secure_access_fence_ipc.cpp",
+    "src/cxx/src/iam_verify_wrapper.cpp",
     "src/cxx/src/secure_access_fence_service.cpp",
     "src/cxx/src/permission_manager.cpp",
     "src/cxx/src/time_wrapper.cpp"
@@ -64,7 +66,8 @@ ohos_static_library("secure_access_fence_wrapper_static") {
     "rust_cxx:cxx_cppdeps",
     "bounds_checking_function:libsec_shared",
     "ability_runtime:wantagent_innerkits",
-    "time_service:time_client"
+    "time_service:time_client",
+    "user_auth_framework:userauth_client",
   ]
 
   branch_protector_ret = "pac_ret"

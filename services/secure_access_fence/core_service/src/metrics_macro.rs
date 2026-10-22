@@ -54,6 +54,46 @@ macro_rules! execute_with_metrics {
     }};
 }
 
+// Sibling macro for single (non-batch) operations that have no item-count
+// semantics, e.g. Result<TaskIdentity>, Result<Vec<u8>> or Result<()>.
+// Same call signature as execute_with_metrics! but without the item_count
+// argument; reports a fixed count of 1 (single operation).
+// Usage: execute_with_metrics_single!("func_name", func_path, os_account_id, arg1, arg2, ...)
+macro_rules! execute_with_metrics_single {
+    ($func_name:expr, $func:path, $os_account_id:expr, $($arg:expr),+) => {{
+        let start_time = Instant::now();
+        let function_name = $func_name.to_string();
+
+        let result = $func($os_account_id, $($arg),+);
+
+        match &result {
+            Ok(_) => {
+                let elapsed_time = start_time.elapsed().as_millis() as i32;
+                notify_performance_metrics(
+                    1,
+                    elapsed_time,
+                    $os_account_id,
+                    function_name.clone()
+                );
+                logi!("{} success, elapsed={}ms", $func_name, elapsed_time);
+            },
+            Err(e) => {
+                let elapsed_time = start_time.elapsed().as_millis() as i32;
+                notify_error(
+                    format!("{} failed: {:?}", $func_name, e),
+                    e.code as i32,
+                    $os_account_id,
+                    function_name.clone()
+                );
+                loge!("{} failed: code={}, elapsed={}ms",
+                      $func_name, e.code, elapsed_time);
+            }
+        }
+
+        result
+    }};
+}
+
 // Sibling macro for batch operations returning a struct with an `error_code` field
 // (BatchGenerateResult / BatchVerifyResult). Same call signature as execute_with_metrics!,
 // but branches on `result.error_code == ErrCode::Success` instead of Ok/Err, because

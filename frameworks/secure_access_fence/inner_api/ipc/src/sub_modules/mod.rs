@@ -17,10 +17,18 @@
 
 pub mod remote_control;
 pub mod ticket;
+pub mod task_identity;
 
 pub use ticket::{deserialize_verify_ticket_infos, serialize_cli_infos, serialize_verify_ticket_infos};
 
 pub use remote_control::{
     deserialize_permission_queries, deserialize_remote_auth_packages, deserialize_remote_info,
     deserialize_remote_user_auth_results_vec, serialize_bool_vec, serialize_remote_auth_packages,
+};
+
+pub use task_identity::{
+    deserialize_task_identity_info,
+    deserialize_i32_u8_list,
+    serialize_task_identity,
+    serialize_u8_to_i32_list,
 };

@@ -96,6 +96,23 @@ class UpdateRemoteGrantStatusContext : public AgentFenceAsyncContext {
 public:
     int32_t remoteGrantStatus {};
 };
+
+class GenerateTaskChallengeContext : public AgentFenceAsyncContext {
+public:
+    TaskIdentityInfo taskIdentityInfo {};
+    std::vector<int32_t> challenge {};
+};
+
+class GenerateTaskIdentityContext : public AgentFenceAsyncContext {
+public:
+    TaskIdentityInfo taskIdentityInfo {};
+    TaskIdentity taskIdentity {};
+};
+
+class RevokeTaskIdentityContext : public AgentFenceAsyncContext {
+public:
+    std::vector<std::string> taskIds {};
+};
 } // namespace SAF
 } // namespace Security
 } // namespace OHOS

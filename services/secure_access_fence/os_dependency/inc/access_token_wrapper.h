@@ -25,6 +25,7 @@ extern "C" {
 
 bool CheckPermission(const char *permission);
 bool CheckIsSystemHap();
+bool CheckIsSystemSa();
 int32_t GetBundleNameFromTokenId(int32_t tokenId, char *bundleName, int32_t *len);
 
 #ifdef __cplusplus

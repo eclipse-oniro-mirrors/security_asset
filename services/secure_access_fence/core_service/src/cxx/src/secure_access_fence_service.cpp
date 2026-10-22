@@ -18,6 +18,7 @@
 #include "time_wrapper.h"
 #include "wrapper.rs.h"
 #include <chrono>
+#include <memory>
 #include <vector>
 #include <string>
 #include "ipc_skeleton.h"
@@ -28,6 +29,9 @@
 #include "saf_result_code.h"
 #include "saf_defines.h"
 #include "access_token_wrapper.h"
+#include "accesstoken_kit.h"
+
+using namespace OHOS::Security::AccessToken;
 
 namespace OHOS {
 namespace Security {
@@ -262,6 +266,31 @@ int32_t CxxQueryStaticCliCmdPermissions(
     }
 
     return SAF_SUCCESS;
+}
+
+// Rust callable: returns the binder calling token id.
+uint32_t GetCallingTokenId()
+{
+    return IPCSkeleton::GetCallingTokenID();
+}
+
+// Rust callable: resolves os_account_id from a token id.
+// TOKEN_HAP → GetHapTokenInfo → osAccountID; TOKEN_NATIVE/other → 0.
+int32_t GetOsAccountIdFromTokenId(uint32_t tokenId)
+{
+    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
+    if (tokenType != ATokenTypeEnum::TOKEN_HAP) {
+        LOGI("non-HAP token (type=%{public}d), os_account_id=0", static_cast<int32_t>(tokenType));
+        return 0;
+    }
+    HapTokenInfo hapInfo;
+    int32_t ret = AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo);
+    if (ret != RET_SUCCESS) {
+        LOGE("GetHapTokenInfo failed, ret=%{public}d, os_account_id=0", ret);
+        return 0;
+    }
+    LOGI("HAP token, os_account_id=%{public}d", hapInfo.userID);
+    return hapInfo.userID;
 }
 
 } // namespace SAF
