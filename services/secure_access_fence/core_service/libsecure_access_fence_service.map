@@ -30,6 +30,14 @@
     cxxbridge1$rust_vec$OHOS$Security$SAF$CxxVerifyTicketInfo$reserve_total;
     cxxbridge1$rust_vec$OHOS$Security$SAF$CxxVerifyTicketInfo$set_len;
     cxxbridge1$rust_vec$OHOS$Security$SAF$CxxVerifyTicketInfo$truncate;
+    cxxbridge1$rust_vec$OHOS$Security$SAF$IamVerifyResult$capacity;
+    cxxbridge1$rust_vec$OHOS$Security$SAF$IamVerifyResult$data;
+    cxxbridge1$rust_vec$OHOS$Security$SAF$IamVerifyResult$drop;
+    cxxbridge1$rust_vec$OHOS$Security$SAF$IamVerifyResult$len;
+    cxxbridge1$rust_vec$OHOS$Security$SAF$IamVerifyResult$new;
+    cxxbridge1$rust_vec$OHOS$Security$SAF$IamVerifyResult$reserve_total;
+    cxxbridge1$rust_vec$OHOS$Security$SAF$IamVerifyResult$set_len;
+    cxxbridge1$rust_vec$OHOS$Security$SAF$IamVerifyResult$truncate;
     rust_metadata_secure_access_fence_service_*;
   local:
     *;

@@ -239,6 +239,18 @@ impl_enum_trait! {
         /// The error code indicates that challenge exceed.
         ChallengeLimitExceeded = 0x71004,
 
+        /// The error code indicates that the task identity is not found.
+        TaskIdentityNotFound = 0x71005,
+
+        /// The error code indicates that the task identity is expired.
+        TaskIdentityExpired = 0x71006,
+
+        /// The error code indicates that the task identity is revoked.
+        TaskIdentityRevoked = 0x71007,
+
+        /// The error code indicates that the task identity is mismatched.
+        TaskIdentityMismatch = 0x71008,
+
         // ==================== TRUSTED_RING (0x19000) ====================
         /// The error code indicates that network disconnected.
         NetworkDisconnected = 0x19003,
@@ -456,6 +468,56 @@ pub struct PermissionQuery {
     pub domain_id: String,
     /// Remote info.
     pub remote_info: RemoteInfo,
+}
+
+/// Task execution type enum.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ExecuteType {
+    /// Instant execution.
+    Instant = 1,
+    /// Delayed execution.
+    Delayed = 2,
+}
+
+/// Task identity info structure.
+#[derive(Debug, Clone)]
+pub struct TaskIdentityInfo {
+    /// Task ID.
+    pub task_id: String,
+    /// Task expiration time in absolute epoch seconds.
+    pub task_expire_time: i32,
+    /// Task execution type.
+    pub execute_type: ExecuteType,
+    /// Whether screen-lock execution is allowed.
+    pub allow_screen_lock_execution: bool,
+    /// Allowable duration for delayed execution.
+    pub allowable_duration: i32,
+    /// IAM auth token bytes; empty when no authentication is required.
+    pub auth_token: Vec<u8>,
+}
+
+impl Default for TaskIdentityInfo {
+    fn default() -> Self {
+        Self {
+            task_id: String::new(),
+            task_expire_time: 0,
+            execute_type: ExecuteType::Instant,
+            allow_screen_lock_execution: false,
+            allowable_duration: 0,
+            auth_token: Vec::new(),
+        }
+    }
+}
+
+/// Task identity structure.
+#[derive(Debug, Clone, Default)]
+pub struct TaskIdentity {
+    /// Serialized task attributes JSON.
+    pub task_attributes: String,
+    /// Signed identity of the task.
+    pub identity: String,
+    /// Challenge bound to the task (empty for low-risk tasks).
+    pub challenge: String,
 }
 
 // ============================================================================

@@ -125,6 +125,55 @@ interface OHOS.Security.SAF.ISecureAccessFence {
         [out] int resultCode
     );
 
+    
+    /**
+     * @brief Generate a random challenge for task-level authorization.
+     * @param taskIdentityInfo Task identity info.
+     * @param challenge Output random challenge bytes.
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 12] void GenerateTaskChallenge(
+        [in] TaskIdentityInfo taskIdentityInfo,
+        [out] List<int> challenge,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Generate a task identity for task-level authorization.
+     * @param taskIdentityInfo Task identity info (may carry an auth token).
+     * @param taskIdentity Output generated task identity.
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 13] void GenerateTaskIdentity(
+        [in] TaskIdentityInfo taskIdentityInfo,
+        [out] TaskIdentity taskIdentity,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Revoke task identities.
+     * @param taskIds List of task IDs to revoke.
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 14] void RevokeTaskIdentity(
+        [in] List<String> taskIds,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Retrieve auth token by task id.
+     * @param callerToken Caller token id.
+     * @param taskId Task id to retrieve auth token for.
+     * @param authToken Output auth token bytes (empty for low-risk tasks).
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 15] void RetrieveAuthTokenByTaskId(
+        [in] int callerToken,
+        [in] String taskId,
+        [out] List<int> authToken,
+        [out] int resultCode
+    );
+
     /**
      * @brief Request ticket for CLI tools.
      * @param cliCmdInfos List of CLI command infos to query.

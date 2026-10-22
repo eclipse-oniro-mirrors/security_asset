@@ -52,10 +52,11 @@ static int GrantSelfPermissionInner()
         "ohos.permission.GET_TICKET_INFO",
         "ohos.permission.QUERY_TOOL_PERMISSIONS",
         "ohos.permission.MANAGE_TOOL_RUNTIME_PERMISSIONS",
+        "ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS",
     };
     NativeTokenInfoParams info = {
         .dcapsNum = 0,
-        .permsNum = 4,
+        .permsNum = 5,
         .aclsNum = 0,
         .dcaps = nullptr,
         .perms = permissions,

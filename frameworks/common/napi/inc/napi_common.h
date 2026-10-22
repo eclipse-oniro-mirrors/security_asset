@@ -33,6 +33,28 @@ namespace SAF_ASSET_COMMON {
 #define MAX_MESSAGE_LEN 256
 #define MAX_ARGS_NUM 5
 
+// ============================================================================
+// Task identity validation constants.
+// IMPORTANT: These values MUST be kept in sync with the Rust definitions in:
+//   services/secure_access_fence/core_service/src/task_identity/validator.rs
+// If you modify any value here, update the Rust file and vice versa.
+// ============================================================================
+
+constexpr size_t MAX_TASK_ID_LEN = 256;
+constexpr size_t MAX_AUTH_TOKEN_SIZE = 4096;
+constexpr size_t MAX_REVOKE_TASK_IDS = 100;
+
+// ============================================================================
+// Path traversal detection.
+// IMPORTANT: The path traversal patterns MUST be kept in sync with the Rust
+// PATH_TRAVERSAL_PATTERNS array in: services/secure_access_fence/core_service/src/task_identity/validator.rs
+// If you add/remove/modify patterns here, update the Rust file and vice versa.
+// ============================================================================
+
+bool ContainsPathTraversalChars(const std::string &str);
+
+napi_status ValidateTaskIdentityInfo(const napi_env env, const SAF::TaskIdentityInfo &taskIdentityInfo);
+
 #define NAPI_THROW_BASE(env, condition, ret, code, message)             \
 if ((condition)) {                                                      \
     LOGE("[FATAL][NAPI]%{public}s", (message));                         \
@@ -75,6 +97,14 @@ if ((ret) != napi_ok) {                      \
     if (type == napi_undefined || type == napi_null) { \
         return napi_ok; \
     }
+
+#define NAPI_CHECK_REQUIRED(env, propValue, fieldName) \
+    do { \
+        napi_valuetype _requiredType; \
+        NAPI_CALL_RETURN_ERR((env), napi_typeof((env), (propValue), &_requiredType)); \
+        NAPI_THROW_RETURN_ERR((env), _requiredType == napi_undefined || _requiredType == napi_null, \
+            INVALID_PARAMETER, fieldName " is required"); \
+    } while(0)
 
 napi_value NapiCreateError(const napi_env env, int32_t code, const char *message);
 
@@ -130,6 +160,24 @@ napi_status NapiGetProperty(const napi_env env, napi_value object,
 
 napi_status NapiGetProperty(const napi_env env, napi_value object,
     std::vector<SAF::RemoteUserAuthResults> &remoteUserAuthResultsVector);
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    SAF::TaskIdentityInfo &taskIdentityInfo);
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    SAF::TaskIdentity &taskIdentity);
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    std::vector<int32_t> &values);
+
+napi_status NapiGetProperty(const napi_env env, napi_value object,
+    std::vector<std::string> &values);
+
+napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName,
+    const SAF::TaskIdentity &taskIdentity);
+
+napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName,
+    const std::vector<int32_t> &values);
 
 napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName,
     const SAF::RemoteAuthPackage &remoteAuthPackage);

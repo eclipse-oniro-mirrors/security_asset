@@ -23,12 +23,14 @@ use saf_common::{get_user_id, AutoCounter, Counter};
 use saf_ipc::{
     deserialize_batch_generate_ticket_request, deserialize_batch_verify_ticket_request, deserialize_permission_queries,
     deserialize_remote_auth_packages, deserialize_remote_info, deserialize_remote_user_auth_results_vec,
-    deserialize_verify_ticket_request, serialize_bool_vec, serialize_cli_infos, serialize_i32_vec,
-    serialize_remote_auth_packages, serialize_verify_ticket_infos, CMD_BATCH_GENERATE_TICKET, CMD_BATCH_VERIFY_TICKET,
+    deserialize_task_identity_info, deserialize_verify_ticket_request, serialize_bool_vec, serialize_cli_infos,
+    serialize_i32_vec, serialize_remote_auth_packages, serialize_task_identity, serialize_u8_to_i32_list,
+    serialize_verify_ticket_infos, CMD_BATCH_GENERATE_TICKET, CMD_BATCH_VERIFY_TICKET,
     CMD_GENERATE_CONTROLLED_DEVICE_PACKAGE, CMD_GENERATE_CONTROLLER_DEVICE_PACKAGE, CMD_GET_REMOTE_GRANT_STATUS,
-    CMD_QUERY_STATIC_CLI_CMD_PERMISSIONS, CMD_REQUEST_TOOL_TICKET, CMD_UPDATE_REMOTE_GRANT_STATUS,
-    CMD_VERIFY_CONTROLLED_DEVICE_PACKAGE, CMD_VERIFY_CONTROLLER_DEVICE_PACKAGE, CMD_VERIFY_TICKET, IPC_SUCCESS,
-    SA_NAME,
+    CMD_GENERATE_TASK_CHALLENGE, CMD_GENERATE_TASK_IDENTITY, CMD_QUERY_STATIC_CLI_CMD_PERMISSIONS,
+    CMD_REQUEST_TOOL_TICKET, CMD_RETRIEVE_AUTH_TOKEN_BY_TASK_ID, CMD_REVOKE_TASK_IDENTITY,
+    CMD_UPDATE_REMOTE_GRANT_STATUS, CMD_VERIFY_CONTROLLED_DEVICE_PACKAGE, CMD_VERIFY_CONTROLLER_DEVICE_PACKAGE,
+    CMD_VERIFY_TICKET, IPC_SUCCESS, SA_NAME,
 };
 use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
@@ -38,6 +40,7 @@ use crate::critical_manager::CriticalManager;
 use crate::remote_grant_status;
 use crate::wrapper;
 use crate::SAFService;
+use crate::task_identity::validator;
 
 const REDIRECT_START_CODE: u32 = 1000;
 const C_REDIRECT_START_CODE: u32 = 500;
@@ -105,6 +108,18 @@ fn on_remote_request(stub: &SAFService, code: u32, data: &mut MsgParcel, reply: 
         CMD_UPDATE_REMOTE_GRANT_STATUS => handle_update_remote_grant_status(data, reply),
         CMD_REQUEST_TOOL_TICKET => handle_request_tool_ticket(stub, data, reply),
         CMD_QUERY_STATIC_CLI_CMD_PERMISSIONS => handle_query_static_cli_cmd_permissions(stub, data, reply),
+        CMD_GENERATE_TASK_CHALLENGE => {
+            handle_generate_task_challenge(stub, data, reply)
+        }
+        CMD_GENERATE_TASK_IDENTITY => {
+            handle_generate_task_identity(stub, data, reply)
+        }
+        CMD_REVOKE_TASK_IDENTITY => {
+            handle_revoke_task_identity(stub, data, reply)
+        }
+        CMD_RETRIEVE_AUTH_TOKEN_BY_TASK_ID => {
+            handle_retrieve_auth_token_by_task_id(stub, data, reply)
+        }
         _ => {
             if code >= C_REDIRECT_START_CODE {
                 let res = wrapper::on_remote_request(code, data, reply);
@@ -571,6 +586,200 @@ fn handle_query_static_cli_cmd_permissions(
             loge!("[FATAL]QueryStaticCliCmdPermissions failed: {}", e.msg);
             reply.write::<i32>(&(IPC_SUCCESS as i32))?;
             reply.write::<i32>(&0)?;
+            reply.write::<i32>(&(e.code as i32))?;
+        },
+    }
+    Ok(())
+}
+
+fn handle_generate_task_challenge(
+    stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel
+) -> IpcResult<()> {
+    let info = deserialize_task_identity_info(data).map_err(|e| {
+        loge!("[FATAL]Deserialize GenerateTaskChallenge request failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })?;
+
+    if let Err(e) = validator::validate_task_id_info(&info) {
+        loge!("[FATAL]GenerateTaskChallenge validation failed: {}", e.msg);
+        reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+        let empty: Vec<u8> = vec![];
+        serialize_u8_to_i32_list(&empty, reply).map_err(|_| IpcStatusCode::Failed)?;
+        reply.write::<i32>(&(e.code as i32))?;
+        return Ok(());
+    }
+
+    let caller_token = crate::wrapper::ffi::GetCallingTokenId();
+    let os_account_id = crate::wrapper::ffi::GetOsAccountIdFromTokenId(caller_token);
+
+    logi!("GenerateTaskChallenge received, os_account_id: {}, task_id_len: {}",
+        os_account_id, info.task_id.len());
+
+    let result = stub.generate_task_challenge(os_account_id, info);
+
+    reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+    match result {
+        Ok(challenge) => {
+            serialize_u8_to_i32_list(&challenge, reply).map_err(|e| {
+                loge!("[FATAL]Serialize challenge failed: {}", e.msg);
+                IpcStatusCode::Failed
+            })?;
+            reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+            logi!("GenerateTaskChallenge success, challenge_len: {}", challenge.len());
+        },
+        Err(e) => {
+            loge!("[FATAL]GenerateTaskChallenge failed: {}", e.msg);
+            let empty: Vec<u8> = vec![];
+            serialize_u8_to_i32_list(&empty, reply).map_err(|err| {
+                loge!("[FATAL]Serialize empty challenge failed: {}", err.msg);
+                IpcStatusCode::Failed
+            })?;
+            reply.write::<i32>(&(e.code as i32))?;
+        },
+    }
+    Ok(())
+}
+
+fn handle_generate_task_identity(
+    stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel
+) -> IpcResult<()> {
+    let info = deserialize_task_identity_info(data).map_err(|e| {
+        loge!("[FATAL]Deserialize GenerateTaskIdentity request failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })?;
+
+    if let Err(e) = validator::validate_task_id_info(&info) {
+        loge!("[FATAL]GenerateTaskIdentity validation failed: {}", e.msg);
+        reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+        let empty = saf_definition::TaskIdentity::default();
+        serialize_task_identity(&empty, reply).map_err(|_| IpcStatusCode::Failed)?;
+        reply.write::<i32>(&(e.code as i32))?;
+        return Ok(());
+    }
+
+    let caller_token = crate::wrapper::ffi::GetCallingTokenId();
+    let os_account_id = crate::wrapper::ffi::GetOsAccountIdFromTokenId(caller_token);
+
+    logi!("GenerateTaskIdentity received, os_account_id: {}, task_id_len: {}",
+        os_account_id, info.task_id.len());
+
+    let result = stub.generate_task_identity(os_account_id, info);
+
+    reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+    match result {
+        Ok(identity) => {
+            serialize_task_identity(&identity, reply).map_err(|e| {
+                loge!("[FATAL]Serialize task identity failed: {}", e.msg);
+                IpcStatusCode::Failed
+            })?;
+            reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+            logi!("GenerateTaskIdentity success");
+        },
+        Err(e) => {
+            loge!("[FATAL]GenerateTaskIdentity failed: {}", e.msg);
+            let empty = saf_definition::TaskIdentity::default();
+            serialize_task_identity(&empty, reply).map_err(|err| {
+                loge!("[FATAL]Serialize empty task identity failed: {}", err.msg);
+                IpcStatusCode::Failed
+            })?;
+            reply.write::<i32>(&(e.code as i32))?;
+        },
+    }
+    Ok(())
+}
+
+fn handle_revoke_task_identity(
+    stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel
+) -> IpcResult<()> {
+    let task_ids = data.read_string16_vec().map_err(|e| {
+        loge!("[FATAL]Deserialize RevokeTaskIdentity request failed: {:?}", e);
+        IpcStatusCode::Failed
+    })?;
+
+    if let Err(e) = validator::validate_revoke_params(&task_ids) {
+        loge!("[FATAL]RevokeTaskIdentity validation failed: {}", e.msg);
+        reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+        reply.write::<i32>(&(e.code as i32))?;
+        return Ok(());
+    }
+
+    let caller_token = crate::wrapper::ffi::GetCallingTokenId();
+    let os_account_id = crate::wrapper::ffi::GetOsAccountIdFromTokenId(caller_token);
+
+    logi!("RevokeTaskIdentity received, os_account_id: {}, task_count: {}",
+        os_account_id, task_ids.len());
+
+    let result = stub.revoke_task_identity(os_account_id, task_ids);
+
+    reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+    match result {
+        Ok(()) => {
+            reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+            logi!("RevokeTaskIdentity success");
+        },
+        Err(e) => {
+            loge!("[FATAL]RevokeTaskIdentity failed: {}", e.msg);
+            reply.write::<i32>(&(e.code as i32))?;
+        },
+    }
+    Ok(())
+}
+
+fn handle_retrieve_auth_token_by_task_id(
+    stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel
+) -> IpcResult<()> {
+    let caller_token = data.read::<i32>().map_err(|e| {
+        loge!("[FATAL]Deserialize RetrieveAuthTokenByTaskId callerToken failed: {:?}", e);
+        IpcStatusCode::Failed
+    })?;
+    let task_id = data.read_string16().map_err(|e| {
+        loge!("[FATAL]Deserialize RetrieveAuthTokenByTaskId taskId failed: {:?}", e);
+        IpcStatusCode::Failed
+    })?;
+
+    if caller_token <= 0 {
+        loge!("[FATAL]RetrieveAuthTokenByTaskId invalid caller_token: {}", caller_token);
+        reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+        let empty: Vec<u8> = vec![];
+        serialize_u8_to_i32_list(&empty, reply).map_err(|_| IpcStatusCode::Failed)?;
+        let code = saf_sdk::ErrCode::InvalidArgument as i32;
+        reply.write::<i32>(&code)?;
+        return Ok(());
+    }
+    if let Err(e) = validator::validate_path_segment(&task_id) {
+        loge!("[FATAL]RetrieveAuthTokenByTaskId validation failed: {}", e.msg);
+        reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+        let empty: Vec<u8> = vec![];
+        serialize_u8_to_i32_list(&empty, reply).map_err(|_| IpcStatusCode::Failed)?;
+        reply.write::<i32>(&(e.code as i32))?;
+        return Ok(());
+    }
+
+    // RetrieveAuthTokenByTaskId resolves os_account_id from callerToken parameter.
+    let os_account_id = crate::wrapper::ffi::GetOsAccountIdFromTokenId(caller_token as u32);
+
+    logi!("RetrieveAuthTokenByTaskId received, os_account_id: {}, caller_token: {}, task_id_len: {}",
+        os_account_id, caller_token, task_id.len());
+
+    let result = stub.retrieve_auth_token_by_task_id(os_account_id, caller_token, task_id);
+
+    reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+    match result {
+        Ok(auth_token) => {
+            serialize_u8_to_i32_list(&auth_token, reply).map_err(|e| {
+                loge!("[FATAL]Serialize authToken failed: {}", e.msg);
+                IpcStatusCode::Failed
+            })?;
+            reply.write::<i32>(&(IPC_SUCCESS as i32))?;
+            logi!("RetrieveAuthTokenByTaskId success, auth_token_len: {}", auth_token.len());
+        },
+        Err(e) => {
+            loge!("[FATAL]RetrieveAuthTokenByTaskId failed: {}", e.msg);
+            let empty: Vec<u8> = vec![];
+            serialize_u8_to_i32_list(&empty, reply).map_err(|err| {
+                loge!("[FATAL]Serialize empty authToken failed: {}", err.msg);
+                IpcStatusCode::Failed
+            })?;
             reply.write::<i32>(&(e.code as i32))?;
         },
     }

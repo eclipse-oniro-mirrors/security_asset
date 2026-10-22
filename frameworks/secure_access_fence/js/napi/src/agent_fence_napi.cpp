@@ -14,6 +14,7 @@
  */
 
 #include <cstdint>
+#include "securec.h"
 #include "saf_result_defs.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
@@ -394,6 +395,125 @@ napi_value NapiUpdateRemoteGrantStatus(const napi_env env, napi_callback_info in
     return CreateAsyncWork(env, info, std::move(asyncContext), __func__);
 }
 
+napi_value NapiGenerateTaskChallenge(const napi_env env, napi_callback_info info)
+{
+    auto asyncContext = std::unique_ptr<GenerateTaskChallengeContext>(
+        new (std::nothrow) GenerateTaskChallengeContext());
+    NAPI_THROW(env, asyncContext == nullptr, COMMON_INTERNAL_ERROR,
+        "Failed to create GenerateTaskChallengeContext");
+
+    asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
+        -> napi_status {
+        GenerateTaskChallengeContext *asyncContext = static_cast<GenerateTaskChallengeContext *>(context);
+        size_t argc = 1;
+        napi_value argv[1] = { nullptr };
+        NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+        NAPI_THROW_RETURN_ERR(env, argc < 1, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, argv[0], asyncContext->taskIdentityInfo));
+        NAPI_CALL_RETURN_ERR(env, ValidateTaskIdentityInfo(env, asyncContext->taskIdentityInfo));
+        return napi_ok;
+    };
+
+    asyncContext->execute = [](napi_env env, void* data) {
+        GenerateTaskChallengeContext *asyncContext = static_cast<GenerateTaskChallengeContext *>(data);
+        asyncContext->result = SafAgentFence::GenerateTaskChallenge(
+            asyncContext->taskIdentityInfo, asyncContext->challenge);
+    };
+
+    asyncContext->resolve = [](napi_env env, AgentFenceAsyncContext *context) -> napi_value {
+        GenerateTaskChallengeContext *asyncContext = static_cast<GenerateTaskChallengeContext *>(context);
+        void *data = nullptr;
+        napi_value arrayBuffer = nullptr;
+        size_t challengeSize = asyncContext->challenge.size();
+        NAPI_CALL(env, napi_create_arraybuffer(env, challengeSize, &data, &arrayBuffer));
+        uint8_t *bytes = static_cast<uint8_t *>(data);
+        for (size_t i = 0; i < challengeSize; ++i) {
+            bytes[i] = static_cast<uint8_t>(asyncContext->challenge[i]);
+        }
+        napi_value jsResult = nullptr;
+        NAPI_CALL(env, napi_create_typedarray(env, napi_uint8_array,
+            challengeSize, arrayBuffer, 0, &jsResult));
+        return jsResult;
+    };
+
+    return CreateAsyncWork(env, info, std::move(asyncContext), __func__);
+}
+
+napi_value NapiGenerateTaskIdentity(const napi_env env, napi_callback_info info)
+{
+    auto asyncContext = std::unique_ptr<GenerateTaskIdentityContext>(
+        new (std::nothrow) GenerateTaskIdentityContext());
+    NAPI_THROW(env, asyncContext == nullptr, COMMON_INTERNAL_ERROR,
+        "Failed to create GenerateTaskIdentityContext");
+
+    asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
+        -> napi_status {
+        GenerateTaskIdentityContext *asyncContext = static_cast<GenerateTaskIdentityContext *>(context);
+        size_t argc = 1;
+        napi_value argv[1] = { nullptr };
+        NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+        NAPI_THROW_RETURN_ERR(env, argc < 1, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, argv[0], asyncContext->taskIdentityInfo));
+        NAPI_CALL_RETURN_ERR(env, ValidateTaskIdentityInfo(env, asyncContext->taskIdentityInfo));
+        return napi_ok;
+    };
+
+    asyncContext->execute = [](napi_env env, void* data) {
+        GenerateTaskIdentityContext *asyncContext = static_cast<GenerateTaskIdentityContext *>(data);
+        asyncContext->result = SafAgentFence::GenerateTaskIdentity(
+            asyncContext->taskIdentityInfo, asyncContext->taskIdentity);
+    };
+
+    asyncContext->resolve = [](napi_env env, AgentFenceAsyncContext *context) -> napi_value {
+        GenerateTaskIdentityContext *asyncContext = static_cast<GenerateTaskIdentityContext *>(context);
+        napi_value jsResult = nullptr;
+        NAPI_CALL(env, napi_create_object(env, &jsResult));
+        NAPI_CALL(env, NapiSetProperty(env, jsResult, "taskAttributes",
+            asyncContext->taskIdentity.taskAttributes));
+        NAPI_CALL(env, NapiSetProperty(env, jsResult, "identity",
+            asyncContext->taskIdentity.identity));
+        NAPI_CALL(env, NapiSetProperty(env, jsResult, "challenge",
+            asyncContext->taskIdentity.challenge));
+        return jsResult;
+    };
+
+    return CreateAsyncWork(env, info, std::move(asyncContext), __func__);
+}
+
+napi_value NapiRevokeTaskIdentity(const napi_env env, napi_callback_info info)
+{
+    auto asyncContext = std::unique_ptr<RevokeTaskIdentityContext>(
+        new (std::nothrow) RevokeTaskIdentityContext());
+    NAPI_THROW(env, asyncContext == nullptr, COMMON_INTERNAL_ERROR,
+        "Failed to create RevokeTaskIdentityContext");
+
+    asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
+        -> napi_status {
+        RevokeTaskIdentityContext *asyncContext = static_cast<RevokeTaskIdentityContext *>(context);
+        size_t argc = 1;
+        napi_value argv[1] = { nullptr };
+        NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+        NAPI_THROW_RETURN_ERR(env, argc < 1, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, argv[0], asyncContext->taskIds));
+        NAPI_THROW_RETURN_ERR(env, asyncContext->taskIds.size() > MAX_REVOKE_TASK_IDS,
+            INVALID_PARAMETER, "taskIds exceeds max count");
+        return napi_ok;
+    };
+
+    asyncContext->execute = [](napi_env env, void* data) {
+        RevokeTaskIdentityContext *asyncContext = static_cast<RevokeTaskIdentityContext *>(data);
+        asyncContext->result = SafAgentFence::RevokeTaskIdentity(asyncContext->taskIds);
+    };
+
+    asyncContext->resolve = [](napi_env env, AgentFenceAsyncContext *context) -> napi_value {
+        napi_value jsResult = nullptr;
+        NAPI_CALL(env, napi_get_undefined(env, &jsResult));
+        return jsResult;
+    };
+
+    return CreateAsyncWork(env, info, std::move(asyncContext), __func__);
+}
+
 napi_value DeclareOperationType(const napi_env env)
 {
     napi_value status = nullptr;
@@ -433,6 +553,15 @@ napi_value DeclareRemoteGrantStatus(const napi_env env)
     return status;
 }
 
+napi_value DeclareExecuteType(const napi_env env)
+{
+    napi_value executeType = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &executeType));
+    AddUint32Property(env, executeType, "INSTANT", static_cast<uint32_t>(ExecuteType::INSTANT));
+    AddUint32Property(env, executeType, "DELAYED", static_cast<uint32_t>(ExecuteType::DELAYED));
+    return executeType;
+}
+
 napi_value Register(const napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
@@ -445,8 +574,12 @@ napi_value Register(const napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("verifyControllerDevicePackage", NapiVerifyControllerDevicePackage),
         DECLARE_NAPI_FUNCTION("getRemoteGrantStatus", NapiGetRemoteGrantStatus),
         DECLARE_NAPI_FUNCTION("updateRemoteGrantStatus", NapiUpdateRemoteGrantStatus),
+        DECLARE_NAPI_FUNCTION("generateTaskChallenge", NapiGenerateTaskChallenge),
+        DECLARE_NAPI_FUNCTION("generateTaskIdentity", NapiGenerateTaskIdentity),
+        DECLARE_NAPI_FUNCTION("revokeTaskIdentity", NapiRevokeTaskIdentity),
 
         DECLARE_NAPI_PROPERTY("OperationType", DeclareOperationType(env)),
+        DECLARE_NAPI_PROPERTY("ExecuteType", DeclareExecuteType(env)),
         DECLARE_NAPI_PROPERTY("AuthStatus", DeclareAuthStatus(env)),
         DECLARE_NAPI_PROPERTY("Role", DeclareRole(env)),
         DECLARE_NAPI_PROPERTY("RemoteGrantStatus", DeclareRemoteGrantStatus(env)),

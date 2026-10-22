@@ -137,6 +137,18 @@ struct RemoteInfo {
     RemoteControlParams remoteControlParams;
 };
 
+/**
+ * @brief Task identity generated for task-level authorization.
+ */
+struct TaskIdentity {
+    /** Serialized task attributes JSON. */
+    String taskAttributes;
+    /** Signed identity of the task. */
+    String identity;
+    /** Challenge bound to the task (empty for low-risk tasks). */
+    String challenge;
+};
+
 struct PermissionQuery {
     List<OperationInfo> operationInfo;
     boolean needTicket;
@@ -144,6 +156,34 @@ struct PermissionQuery {
     int callerTokenId;
     String domainId;
     RemoteInfo remoteInfo;
+};
+
+/**
+ * @brief Task execution type.
+ */
+enum ExecuteType {
+    /** Instant execution. */
+    INSTANT = 1,
+    /** Delayed execution. */
+    DELAYED = 2
+};
+
+/**
+ * @brief Task identity info for task-level authorization.
+ */
+struct TaskIdentityInfo {
+    /** Task ID. */
+    String taskId;
+    /** Task expiration time in absolute epoch seconds. */
+    int taskExpireTime;
+    /** Task execution type. */
+    ExecuteType executeType;
+    /** Whether the task is allowed to execute while the screen is locked. */
+    boolean allowScreenLockExecution;
+    /** Allowable duration for delayed execution. */
+    int allowableDuration;
+    /** IAM auth token bytes; empty when no authentication is required. */
+    List<int> authToken;
 };
 
 struct UserAuthResult {

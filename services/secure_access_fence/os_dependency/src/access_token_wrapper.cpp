@@ -70,6 +70,13 @@ bool CheckIsSystemHap()
     return (tokenType == ATokenTypeEnum::TOKEN_HAP) ? CheckSystemApp() : true;
 }
 
+bool CheckIsSystemSa()
+{
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
+    return tokenType == ATokenTypeEnum::TOKEN_NATIVE;
+}
+
 int32_t GetBundleNameFromTokenId(int32_t tokenId, char *bundleName, int32_t *len)
 {
     if (tokenId < 0) {

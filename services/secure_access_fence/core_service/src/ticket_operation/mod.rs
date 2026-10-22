@@ -74,7 +74,7 @@ pub(crate) fn generate_random_bytes(buf: &mut [u8], size: u32) -> Result<()> {
     }
 }
 
-fn compute_hmac_sha256(key: &[u8], data: &[u8]) -> Result<Vec<u8>> {
+pub(crate) fn compute_hmac_sha256(key: &[u8], data: &[u8]) -> Result<Vec<u8>> {
     let mut hmac = vec![0u8; HMAC_SHA256_SIZE];
     let key_buff = Uint8BuffConst {
         buf: key.as_ptr(),
@@ -96,7 +96,7 @@ fn compute_hmac_sha256(key: &[u8], data: &[u8]) -> Result<Vec<u8>> {
     }
 }
 
-fn verify_hmac_sha256(key: &[u8], data: &[u8], expected_hmac: &[u8]) -> Result<bool> {
+pub(crate) fn verify_hmac_sha256(key: &[u8], data: &[u8], expected_hmac: &[u8]) -> Result<bool> {
     if expected_hmac.len() != HMAC_SHA256_SIZE {
         return macros_lib::log_throw_error!(ErrCode::InvalidHmacSize, "invalid hmac size");
     }
@@ -141,7 +141,7 @@ fn base64_encode(input: &[u8]) -> Result<Vec<u8>> {
     }
 }
 
-fn base64_decode(input: &[u8]) -> Result<Vec<u8>> {
+pub(crate) fn base64_decode(input: &[u8]) -> Result<Vec<u8>> {
     let expected_len = 3 * input.len() / 4;
     let mut output = vec![0u8; expected_len];
     let input_buff = Uint8BuffConst {
