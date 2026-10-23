@@ -41,7 +41,7 @@ lazy_static! {
 }
 
 /// get remain partition size
-fn get_remain_partition_size(partition: &str) -> Result<f64> {
+pub(crate) fn get_remain_partition_size(partition: &str) -> Result<f64> {
     let partition_cstr = CString::new(partition).unwrap();
     let mut remain_size: f64 = 0.0;
     let ret_code: i32 = unsafe { GetRemainPartitionSize(partition_cstr.as_ptr(), &mut remain_size) };

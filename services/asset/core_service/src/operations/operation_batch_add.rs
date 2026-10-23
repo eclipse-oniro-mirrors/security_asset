@@ -20,18 +20,14 @@ use asset_crypto_manager::db_key_operator::get_db_key_by_asset_map;
 use asset_db_operator::{
     common::{self},
     database::Database,
-    types::{DB_DATA_VERSION, DbMap, column},
+    types::{column, DbMap, DB_DATA_VERSION},
 };
-use asset_definition::{
-    AssetMap, ErrCode, Result, Tag, Value, macros_lib
-};
+use asset_definition::{macros_lib, AssetMap, ErrCode, Result, Tag, Value};
 use asset_utils::time;
 
-use crate::operations::common::check_tags_consistency;
+use crate::operations::common::{check_storage_threshold, check_tags_consistency};
 
-const CONSISTENCY_ATTRS: [Tag; 2] = [
-    Tag::RequireAttrEncrypted, Tag::GroupId
-];
+const CONSISTENCY_ATTRS: [Tag; 2] = [Tag::RequireAttrEncrypted, Tag::GroupId];
 
 fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     db_data.insert(column::VERSION, Value::Number(DB_DATA_VERSION));
@@ -42,20 +38,23 @@ fn add_system_attrs(db_data: &mut DbMap) -> Result<()> {
     Ok(())
 }
 
-fn local_batch_add(
-    calling_info: &CallingInfo,
-    attributes_array: &[AssetMap]
-) -> Result<Vec<(u32, u32)>> {
+fn local_batch_add(calling_info: &CallingInfo, attributes_array: &[AssetMap]) -> Result<Vec<(u32, u32)>> {
     let attributes = match attributes_array.first() {
         Some(attr) => attr,
-        None => return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-            ErrCode::InvalidArgument, "[FATAL]Batch Add argument empty."),
+        None => {
+            return macros_lib::log_throw_error!(
+                macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument,
+                "[FATAL]Batch Add argument empty."
+            )
+        },
     };
     common::check_value_validity(attributes)
         .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     let mut db_map = DbMap::new();
     check_tags_consistency(&CONSISTENCY_ATTRS, attributes_array)
         .map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
+    check_storage_threshold(calling_info)?;
     // Only add system attrs, add other default ones in parse_attr_in_array.
     add_system_attrs(&mut db_map).map_err(|e| macros_lib::track_error!(e, macros_lib::hisysevent::function!()))?;
     common::add_calling_info(calling_info, &mut db_map);
