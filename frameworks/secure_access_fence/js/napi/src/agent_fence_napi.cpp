@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2023-2025 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,10 @@
 #include <cstdint>
 #include "securec.h"
 #include "saf_result_defs.h"
+#include "array_wrapper.h"
+#include "int_wrapper.h"
+#include "string_wrapper.h"
+#include "saf_result_code.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 #include "saf_log.h"
@@ -25,14 +29,38 @@
 #include "napi_common.h"
 #include "agent_fence_error_codes.h"
 
+#include "ability.h"
+#include "ui_content.h"
+#include "want.h"
+#include "event_handler.h"
+#include "napi_base_context.h"
+
 using namespace OHOS::Security::SAF;
 using namespace OHOS::Security::SAF_ASSET_COMMON;
 
 namespace {
-constexpr size_t VERIFY_CONTROLLER_PACKAGE_ARG_COUNT = 2;
-constexpr size_t REQUEST_TOOL_TICKET_ARG_COUNT = 2;
-constexpr size_t MIN_REQUEST_TOOL_TICKET_ARG_COUNT = 1;
+constexpr size_t SINGLE_ARG_COUNT = 1;
+constexpr size_t DOUBLE_ARG_COUNT = 2;
+constexpr size_t VERIFY_CONTROLLER_PACKAGE_ARG_COUNT = DOUBLE_ARG_COUNT;
+constexpr size_t REQUEST_TOOL_TICKET_ARG_COUNT = DOUBLE_ARG_COUNT;
+constexpr size_t MIN_REQUEST_TOOL_TICKET_ARG_COUNT = SINGLE_ARG_COUNT;
 constexpr int32_t DEFAULT_TICKET_EXPIRE_TIME_MS = 10000;
+constexpr int32_t INVALID_SESSION_ID = 0;
+constexpr uint32_t NAPI_REF_COUNT = 1;
+napi_value BuildControlAppStatusResultArray(const napi_env env,
+    const std::vector<ControlAppStatusResult> &resultList);
+
+// UIExtensionAbility ability for simulated click control dialog.
+// The bundle name is fetched from the closed-source side via IPC at runtime.
+const std::string CONTROL_DIALOG_ABILITY_NAME = "AccessibilityControlAuthAbility";
+const std::string EXTENSION_TYPE_KEY = "ability.want.params.uiExtensionType";
+const std::string UI_EXTENSION_TYPE = "sys/commonUI";
+// Want keys for caller �?UIExtensionAbility (input).
+
+const std::string APP_INFO_LIST_KEY = "controlAppInfoList";
+// Want keys for UIExtensionAbility �?caller (OnReceive output).
+const std::string DECISIONS_KEY = "controlDecisions";
+
 napi_value NapiRequestToolPermissions(const napi_env env, napi_callback_info info)
 {
     auto asyncContext = std::unique_ptr<RequestToolPermissionContext>(new (std::nothrow)RequestToolPermissionContext());
@@ -40,10 +68,10 @@ napi_value NapiRequestToolPermissions(const napi_env env, napi_callback_info inf
     asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
         -> napi_status {
         RequestToolPermissionContext *asyncContext = static_cast<RequestToolPermissionContext *>(context);
-        size_t argc = 1;
-        napi_value argv[1] = { nullptr };
+        size_t argc = SINGLE_ARG_COUNT;
+        napi_value argv[SINGLE_ARG_COUNT] = { nullptr };
         NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-        NAPI_THROW_RETURN_ERR(env, argc < 1, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
+        NAPI_THROW_RETURN_ERR(env, argc < SINGLE_ARG_COUNT, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, argv[0], asyncContext->permissionQuery));
         return napi_ok;
     };
@@ -117,10 +145,10 @@ napi_value NapiGrantToolPermissionsByUser(const napi_env env, napi_callback_info
     asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
         -> napi_status {
         GrantPermissionsContext *asyncContext = static_cast<GrantPermissionsContext *>(context);
-        size_t argc = 1;
-        napi_value argv[1] = { nullptr };
+        size_t argc = SINGLE_ARG_COUNT;
+        napi_value argv[SINGLE_ARG_COUNT] = { nullptr };
         NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-        NAPI_THROW_RETURN_ERR(env, argc < 1, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
+        NAPI_THROW_RETURN_ERR(env, argc < SINGLE_ARG_COUNT, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, argv[0], asyncContext->userAuthResult));
         return napi_ok;
     };
@@ -159,10 +187,10 @@ napi_value NapiGenerateControlledDevicePackage(const napi_env env, napi_callback
         -> napi_status {
         GenerateControlledDevicePackageContext *asyncContext =
             static_cast<GenerateControlledDevicePackageContext *>(context);
-        size_t argc = 1;
-        napi_value argv[1] = { nullptr };
+        size_t argc = SINGLE_ARG_COUNT;
+        napi_value argv[SINGLE_ARG_COUNT] = { nullptr };
         NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-        NAPI_THROW_RETURN_ERR(env, argc < 1, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
+        NAPI_THROW_RETURN_ERR(env, argc < SINGLE_ARG_COUNT, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, argv[0], asyncContext->permissionQuery));
         return napi_ok;
     };
@@ -207,10 +235,10 @@ napi_value NapiVerifyControlledDevicePackage(const napi_env env, napi_callback_i
         -> napi_status {
         VerifyControlledDevicePackageContext *asyncContext =
             static_cast<VerifyControlledDevicePackageContext *>(context);
-        size_t argc = 1;
-        napi_value argv[1] = { nullptr };
+        size_t argc = SINGLE_ARG_COUNT;
+        napi_value argv[SINGLE_ARG_COUNT] = { nullptr };
         NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-        NAPI_THROW_RETURN_ERR(env, argc < 1, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
+        NAPI_THROW_RETURN_ERR(env, argc < SINGLE_ARG_COUNT, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, argv[0], asyncContext->ticketInfo));
         return napi_ok;
     };
@@ -249,10 +277,10 @@ napi_value NapiGenerateControllerDevicePackage(const napi_env env, napi_callback
         -> napi_status {
         GenerateControllerDevicePackageContext *asyncContext =
             static_cast<GenerateControllerDevicePackageContext *>(context);
-        size_t argc = 1;
-        napi_value argv[1] = { nullptr };
+        size_t argc = SINGLE_ARG_COUNT;
+        napi_value argv[SINGLE_ARG_COUNT] = { nullptr };
         NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-        NAPI_THROW_RETURN_ERR(env, argc < 1, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
+        NAPI_THROW_RETURN_ERR(env, argc < SINGLE_ARG_COUNT, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, argv[0], asyncContext->remoteUserAuthResults));
         return napi_ok;
     };
@@ -371,10 +399,10 @@ napi_value NapiUpdateRemoteGrantStatus(const napi_env env, napi_callback_info in
         -> napi_status {
         UpdateRemoteGrantStatusContext *asyncContext =
             static_cast<UpdateRemoteGrantStatusContext *>(context);
-        size_t argc = 1;
-        napi_value argv[1] = { nullptr };
+        size_t argc = SINGLE_ARG_COUNT;
+        napi_value argv[SINGLE_ARG_COUNT] = { nullptr };
         NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
-        NAPI_THROW_RETURN_ERR(env, argc < 1, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
+        NAPI_THROW_RETURN_ERR(env, argc < SINGLE_ARG_COUNT, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
         NAPI_CALL_RETURN_ERR(env, napi_get_value_uint32(env, argv[0],
             reinterpret_cast<uint32_t*>(&asyncContext->remoteGrantStatus)));
         return napi_ok;
@@ -514,6 +542,474 @@ napi_value NapiRevokeTaskIdentity(const napi_env env, napi_callback_info info)
     return CreateAsyncWork(env, info, std::move(asyncContext), __func__);
 }
 
+// ModalUIExtension dialog implementation for requestControlAppPermissionFromUser.
+// ---------------------------------------------------------------------------
+
+// Extract a string array from WantParams into out.
+static void ExtractStringArray(const OHOS::AAFwk::WantParams &receive,
+    const std::string &key, std::vector<std::string> &out)
+{
+    out.clear();
+    auto value = receive.GetParam(key);
+    auto array = OHOS::AAFwk::IArray::Query(value);
+    if (array == nullptr || !OHOS::AAFwk::Array::IsStringArray(array)) {
+        return;
+    }
+    OHOS::AAFwk::Array::ForEach(array, [&](OHOS::AAFwk::IInterface *obj) {
+        if (obj == nullptr) {
+            return;
+        }
+        auto str = OHOS::AAFwk::IString::Query(obj);
+        if (str != nullptr) {
+            out.push_back(OHOS::AAFwk::String::Unbox(str));
+        }
+    });
+}
+
+// Extract an int32_t array from WantParams into out.
+static void ExtractIntArray(const OHOS::AAFwk::WantParams &receive,
+    const std::string &key, std::vector<int32_t> &out)
+{
+    out.clear();
+    auto value = receive.GetParam(key);
+    auto array = OHOS::AAFwk::IArray::Query(value);
+    if (array == nullptr || !OHOS::AAFwk::Array::IsIntegerArray(array)) {
+        return;
+    }
+    OHOS::AAFwk::Array::ForEach(array, [&](OHOS::AAFwk::IInterface *obj) {
+        if (obj == nullptr) {
+            return;
+        }
+        auto val = OHOS::AAFwk::IInteger::Query(obj);
+        if (val != nullptr) {
+            out.push_back(OHOS::AAFwk::Integer::Unbox(val));
+        }
+    });
+}
+
+class ControlAppUICallback {
+public:
+    explicit ControlAppUICallback(std::shared_ptr<RequestControlAppPermissionContext::DialogData> &data)
+        : data_(data)
+    {}
+    ~ControlAppUICallback() = default;
+    void SetSessionId(int32_t sessionId) { sessionId_ = sessionId; }
+
+    void OnRelease(int32_t releaseCode)
+    {
+        LOGI("[ControlAppUICallback] OnRelease code=%{public}d", releaseCode);
+        ReleaseHandler(SAF_ERR_SERVICE_UNAVAILABLE);
+    }
+
+    void OnReceive(const OHOS::AAFwk::WantParams &receive)
+    {
+        if (data_ == nullptr) {
+            LOGE("[ControlAppUICallback] OnReceive data is null");
+            return;
+        }
+        LOGI("[ControlAppUICallback] OnReceive called");
+        ExtractStringArray(receive, APP_INFO_LIST_KEY, data_->resultAppInfoList);
+        ExtractIntArray(receive, DECISIONS_KEY, data_->resultDecisions);
+        ReleaseHandler(SAF_SUCCESS);
+    }
+
+    void OnError(int32_t code, const std::string &name, const std::string &message)
+    {
+        LOGE("[ControlAppUICallback] OnError code=%{public}d name=%{public}s msg=%{public}s",
+            code, name.c_str(), message.c_str());
+        ReleaseHandler(SAF_ERR_SERVICE_UNAVAILABLE);
+    }
+
+    void OnRemoteReady(const std::shared_ptr<OHOS::Ace::ModalUIExtensionProxy> &uiProxy)
+    {
+        LOGI("[ControlAppUICallback] OnRemoteReady connected");
+    }
+
+    void OnDestroy()
+    {
+        LOGI("[ControlAppUICallback] OnDestroy");
+        if (data_ != nullptr && !data_->releaseFlag) {
+            LOGW("[ControlAppUICallback] OnDestroy without OnResult, treat as cancel");
+            ReleaseHandler(SAF_ERR_SERVICE_UNAVAILABLE);
+        }
+    }
+
+    void ReleaseHandler(int32_t code)
+    {
+        if (data_ == nullptr) {
+            LOGE("[ControlAppUICallback] ReleaseHandler data is null");
+            return;
+        }
+        {
+            std::lock_guard<std::mutex> lk(data_->mutex);
+            if (data_->releaseFlag) {
+                LOGW("[ControlAppUICallback] already released");
+                return;
+            }
+            data_->releaseFlag = true;
+            data_->resultCode = code;
+            data_->done = true;
+        }
+        data_->cv.notify_one();
+        // Note: CloseModalUIExtension + ExecCallbackByInstanceId are handled by the
+        // execute thread after waking up, to avoid re-entry into the main thread from
+        // a main-thread callback (CloseModalUIExtension must PostSyncTask to main).
+    }
+
+private:
+    int32_t sessionId_ = INVALID_SESSION_ID;
+    std::shared_ptr<RequestControlAppPermissionContext::DialogData> data_ = nullptr;
+};
+
+static OHOS::Ace::UIContent *GetUIContentFromContext(RequestControlAppPermissionContext *ctx)
+{
+    if (ctx == nullptr || ctx->contextRef == nullptr) {
+        LOGE("[GetUIContentFromContext] ctx or contextRef is null");
+        return nullptr;
+    }
+    napi_env env = ctx->env;
+    napi_value contextValue = nullptr;
+    napi_status status = napi_get_reference_value(env, ctx->contextRef, &contextValue);
+    if (status != napi_ok || contextValue == nullptr) {
+        LOGE("[GetUIContentFromContext] get reference value failed");
+        return nullptr;
+    }
+    auto stageContext = OHOS::AbilityRuntime::GetStageModeContext(env, contextValue);
+    if (stageContext == nullptr) {
+        LOGE("[GetUIContentFromContext] GetStageModeContext failed");
+        return nullptr;
+    }
+    auto abilityContext = OHOS::AbilityRuntime::Context::ConvertTo<OHOS::AbilityRuntime::AbilityContext>(stageContext);
+    if (abilityContext == nullptr) {
+        LOGE("[GetUIContentFromContext] ConvertTo AbilityContext failed");
+        return nullptr;
+    }
+    return abilityContext->GetUIContent();
+}
+
+static void CreateUIExtensionMainThread(RequestControlAppPermissionContext *ctx,
+    OHOS::AAFwk::Want &want,
+    const OHOS::Ace::ModalUIExtensionCallbacks &callbacks,
+    std::shared_ptr<ControlAppUICallback> &uiCallback)
+{
+    auto task = [ctx, want, callbacks, uiCallback]() {
+        auto uiContent = GetUIContentFromContext(ctx);
+        if (uiContent == nullptr) {
+            LOGE("[CreateUIExtensionMainThread] GetUIContent failed");
+            {
+                std::lock_guard<std::mutex> lk(ctx->dialogData->mutex);
+                ctx->dialogData->done = true;
+                ctx->dialogData->resultCode = SAF_ERR_SERVICE_UNAVAILABLE;
+            }
+            ctx->dialogData->cv.notify_one();
+            return;
+        }
+        OHOS::Ace::ModalUIExtensionConfig config;
+        config.isProhibitBack = true;
+        config.isModalRequestFocus = false;
+        int32_t sessionId = uiContent->CreateModalUIExtension(want, callbacks, config);
+        LOGI("[CreateUIExtensionMainThread] sessionId=%{public}d", sessionId);
+        if (sessionId == INVALID_SESSION_ID) {
+            LOGE("[CreateUIExtensionMainThread] CreateModalUIExtension failed");
+            {
+                std::lock_guard<std::mutex> lk(ctx->dialogData->mutex);
+                ctx->dialogData->done = true;
+                ctx->dialogData->resultCode = SAF_ERR_SERVICE_UNAVAILABLE;
+            }
+            ctx->dialogData->cv.notify_one();
+            return;
+        }
+        uiCallback->SetSessionId(sessionId);
+        ctx->dialogData->sessionId = sessionId;
+        ctx->sessionId = sessionId;
+    };
+    if (ctx->handler != nullptr) {
+        ctx->handler->PostSyncTask(task, "SAF:CreateUIExtensionMainThread");
+    } else {
+        task();
+    }
+}
+
+static void CloseModalUIExtensionMainThread(RequestControlAppPermissionContext *ctx, int32_t sessionId)
+{
+    if (ctx == nullptr || sessionId <= INVALID_SESSION_ID) {
+        return;
+    }
+    auto task = [ctx, sessionId]() {
+        auto uiContent = GetUIContentFromContext(ctx);
+        if (uiContent == nullptr) {
+            LOGE("[CloseModalUIExtensionMainThread] GetUIContent failed");
+            return;
+        }
+        uiContent->CloseModalUIExtension(sessionId);
+        LOGI("[CloseModalUIExtensionMainThread] sessionId=%{public}d closed", sessionId);
+    };
+    if (ctx->handler != nullptr) {
+        ctx->handler->PostSyncTask(task, "SAF:CloseModalUIExtensionMainThread");
+    } else {
+        task();
+    }
+}
+
+// Pop up the ModalUIExtension dialog. Returns SAF_SUCCESS on success.
+// ctx->dialogData must be initialized before calling this.
+static int32_t PopControlAppDialog(RequestControlAppPermissionContext *ctx,
+    const std::string &callerBundleName, int32_t callerIndex,
+    const std::vector<AppInfo> &unauthorizedAppList)
+{
+    LOGI("[PopControlAppDialog] caller=%{public}s:%{public}d, appCount=%{public}zu",
+        callerBundleName.c_str(), callerIndex, unauthorizedAppList.size());
+    
+    // Fetch bundle name from closed-source side via IPC
+    std::string bundleName;
+    int32_t ret = SafAgentFence::GetControlDialogBundleName(bundleName);
+    if (ret != SAF_SUCCESS) {
+        LOGE("[PopControlAppDialog] GetControlDialogBundleName failed, ret=%{public}d", ret);
+        return ret;
+    }
+    // Build Want params
+    OHOS::AAFwk::Want want;
+    want.SetElementName(bundleName, CONTROL_DIALOG_ABILITY_NAME);
+    want.SetParam(EXTENSION_TYPE_KEY, UI_EXTENSION_TYPE);
+    std::vector<std::string> appInfoStrList;
+    appInfoStrList.reserve(unauthorizedAppList.size());
+    for (const auto &appInfo : unauthorizedAppList) {
+        appInfoStrList.push_back(std::to_string(appInfo.index) + "_" + appInfo.bundleName);
+    }
+    want.SetParam(APP_INFO_LIST_KEY, appInfoStrList);
+
+    auto uiCallback = std::make_shared<ControlAppUICallback>(ctx->dialogData);
+    OHOS::Ace::ModalUIExtensionCallbacks callbacks = {
+        [uiCallback](int32_t releaseCode) { uiCallback->OnRelease(releaseCode); },
+        [](int32_t resultCode, const OHOS::AAFwk::Want &result) {
+            // no-op: OnResult is no longer used; results come through onReceive
+        },
+        [uiCallback](const OHOS::AAFwk::WantParams &receive) { uiCallback->OnReceive(receive); },
+        [uiCallback](int32_t code, const std::string &name, const std::string &message) {
+            uiCallback->OnError(code, name, message);
+        },
+        [uiCallback](const std::shared_ptr<OHOS::Ace::ModalUIExtensionProxy> &uiProxy) {
+            uiCallback->OnRemoteReady(uiProxy);
+        },
+        [uiCallback]() { uiCallback->OnDestroy(); },
+    };
+
+    CreateUIExtensionMainThread(ctx, want, callbacks, uiCallback);
+    return SAF_SUCCESS;
+}
+
+// Parse user decisions returned from UIExtensionAbility into userDecisions + resultList.
+static int32_t ParseDialogResult(RequestControlAppPermissionContext *ctx,
+    const std::vector<AppInfo> &unauthorizedAppList)
+{
+    auto &data = ctx->dialogData;
+    if (data->resultAppInfoList.size() != data->resultDecisions.size()) {
+        LOGE("[ParseDialogResult] size mismatch: appInfoList=%{public}zu decisions=%{public}zu",
+            data->resultAppInfoList.size(), data->resultDecisions.size());
+        return SAF_ERR_SERVICE_UNAVAILABLE;
+    }
+    ctx->userDecisions.clear();
+    ctx->resultList.clear();
+    // Build a lookup map: "index_bundleName" 锟?decision
+    std::map<std::string, int32_t> decisionMap;
+    for (size_t i = 0; i < data->resultAppInfoList.size(); ++i) {
+        decisionMap[data->resultAppInfoList[i]] = data->resultDecisions[i];
+    }
+    for (const auto &appInfo : unauthorizedAppList) {
+        std::string key = std::to_string(appInfo.index) + "_" + appInfo.bundleName;
+        auto it = decisionMap.find(key);
+        if (it == decisionMap.end()) {
+            // Not found in result 锟?user cancelled this one 锟?DENY
+            ctx->userDecisions.emplace_back(ControlAppStatus::DENY);
+        } else {
+            int32_t decision = it->second;
+            if (decision == static_cast<int32_t>(ControlAppStatus::ALLOW)) {
+                ctx->userDecisions.emplace_back(ControlAppStatus::ALLOW);
+            } else {
+                ctx->userDecisions.emplace_back(ControlAppStatus::DENY);
+            }
+        }
+        ControlAppStatusResult result;
+        result.appInfo = appInfo;
+        result.status = ctx->userDecisions.back();
+        ctx->resultList.emplace_back(result);
+    }
+    LOGI("[ParseDialogResult] parsed %{public}zu decisions", ctx->userDecisions.size());
+    return SAF_SUCCESS;
+}
+
+// Extract caller bundleName from Context for dialog display.
+static void ExtractCallerBundleName(napi_env env, napi_value contextValue,
+    RequestControlAppPermissionContext *asyncContext)
+{
+    auto stageContext = OHOS::AbilityRuntime::GetStageModeContext(env, contextValue);
+    if (stageContext == nullptr) {
+        return;
+    }
+    auto appInfo = stageContext->GetApplicationInfo();
+    if (appInfo != nullptr) {
+        asyncContext->callerBundleName = appInfo->bundleName;
+    }
+    LOGI("[RequestControlAppPermission] callerBundleName=%{public}s",
+        asyncContext->callerBundleName.c_str());
+}
+
+// Filter unauthorized apps (status == DENY) from queryResultList.
+static void FilterUnauthorizedApps(RequestControlAppPermissionContext *asyncContext)
+{
+    for (const auto &queryResult : asyncContext->queryResultList) {
+        if (queryResult.status == ControlAppStatus::DENY) {
+            asyncContext->unauthorizedAppList.emplace_back(queryResult.appInfo);
+        }
+    }
+}
+
+// Merge authorized apps (ALLOW from query) + unauthorized apps (user decisions) into resultList.
+static void MergeControlAppResults(RequestControlAppPermissionContext *asyncContext)
+{
+    asyncContext->resultList.clear();
+    for (const auto &queryResult : asyncContext->queryResultList) {
+        if (queryResult.status == ControlAppStatus::ALLOW) {
+            asyncContext->resultList.emplace_back(queryResult);
+        }
+    }
+    for (size_t i = 0; i < asyncContext->unauthorizedAppList.size(); ++i) {
+        ControlAppStatusResult result;
+        result.appInfo = asyncContext->unauthorizedAppList[i];
+        result.status = asyncContext->userDecisions[i];
+        asyncContext->resultList.emplace_back(result);
+    }
+}
+
+// Pop up dialog, wait for result, parse decisions. Returns SAF_SUCCESS on success.
+static int32_t PopDialogAndWaitResult(RequestControlAppPermissionContext *asyncContext)
+{
+    asyncContext->dialogData = std::make_shared<RequestControlAppPermissionContext::DialogData>();
+    asyncContext->handler = std::make_shared<OHOS::AppExecFwk::EventHandler>(
+        OHOS::AppExecFwk::EventRunner::GetMainEventRunner());
+
+    int32_t popRet = PopControlAppDialog(asyncContext,
+        asyncContext->callerBundleName, asyncContext->callerIndex,
+        asyncContext->unauthorizedAppList);
+    if (popRet != SAF_SUCCESS) {
+        return popRet;
+    }
+
+    {
+        std::unique_lock<std::mutex> lk(asyncContext->dialogData->mutex);
+        asyncContext->dialogData->cv.wait(lk,
+            [asyncContext]() { return asyncContext->dialogData->done; });
+    }
+    int32_t dialogResult = asyncContext->dialogData->resultCode;
+    if (dialogResult != SAF_SUCCESS) {
+        LOGE("[RequestControlAppPermission] dialog failed, ret=%{public}d", dialogResult);
+        CloseModalUIExtensionMainThread(asyncContext, asyncContext->sessionId);
+        return dialogResult;
+    }
+
+    int32_t parseRet = ParseDialogResult(asyncContext, asyncContext->unauthorizedAppList);
+    if (parseRet != SAF_SUCCESS) {
+        CloseModalUIExtensionMainThread(asyncContext, asyncContext->sessionId);
+        return parseRet;
+    }
+
+    CloseModalUIExtensionMainThread(asyncContext, asyncContext->sessionId);
+    return SAF_SUCCESS;
+}
+
+napi_value NapiQueryControlAppStatus(const napi_env env, napi_callback_info info)
+{
+    auto asyncContext = std::unique_ptr<QueryControlAppStatusContext>(
+        new (std::nothrow) QueryControlAppStatusContext());
+    NAPI_THROW(env, asyncContext == nullptr, COMMON_INTERNAL_ERROR,
+        "Failed to create QueryControlAppStatusContext");
+
+    asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
+        -> napi_status {
+        QueryControlAppStatusContext *asyncContext =
+            static_cast<QueryControlAppStatusContext *>(context);
+        size_t argc = SINGLE_ARG_COUNT;
+        napi_value argv[SINGLE_ARG_COUNT] = { nullptr };
+        NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+        NAPI_THROW_RETURN_ERR(env, argc < SINGLE_ARG_COUNT, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, argv[0], asyncContext->appInfoList));
+        return napi_ok;
+    };
+
+    asyncContext->execute = [](napi_env env, void* data) {
+        QueryControlAppStatusContext *asyncContext =
+            static_cast<QueryControlAppStatusContext *>(data);
+        asyncContext->result = SafAgentFence::QueryControlAppStatus(
+            asyncContext->appInfoList, asyncContext->resultList);
+    };
+
+    asyncContext->resolve = [](napi_env env, AgentFenceAsyncContext *context) -> napi_value {
+        QueryControlAppStatusContext *asyncContext =
+            static_cast<QueryControlAppStatusContext *>(context);
+        return BuildControlAppStatusResultArray(env, asyncContext->resultList);
+    };
+
+    return CreateAsyncWork(env, info, std::move(asyncContext), __func__);
+}
+
+static void ExecuteRequestControlAppPermission(RequestControlAppPermissionContext *asyncContext)
+{
+    asyncContext->result = SafAgentFence::QueryControlAppStatus(
+        asyncContext->appInfoList, asyncContext->queryResultList);
+    if (asyncContext->result != SAF_SUCCESS) {
+        return;
+    }
+
+    FilterUnauthorizedApps(asyncContext);
+
+    if (asyncContext->unauthorizedAppList.empty()) {
+        asyncContext->resultList = asyncContext->queryResultList;
+        return;
+    }
+
+    int32_t dialogRet = PopDialogAndWaitResult(asyncContext);
+    if (dialogRet != SAF_SUCCESS) {
+        asyncContext->result = dialogRet;
+        return;
+    }
+
+    MergeControlAppResults(asyncContext);
+}
+
+napi_value NapiRequestControlAppPermissionFromUser(const napi_env env, napi_callback_info info)
+{
+    auto asyncContext = std::unique_ptr<RequestControlAppPermissionContext>(
+        new (std::nothrow) RequestControlAppPermissionContext());
+    NAPI_THROW(env, asyncContext == nullptr, COMMON_INTERNAL_ERROR,
+        "Failed to create RequestControlAppPermissionContext");
+
+    asyncContext->parse = [](napi_env env, napi_callback_info info, AgentFenceAsyncContext *context)
+        -> napi_status {
+        RequestControlAppPermissionContext *asyncContext =
+            static_cast<RequestControlAppPermissionContext *>(context);
+        size_t argc = DOUBLE_ARG_COUNT;
+        napi_value argv[DOUBLE_ARG_COUNT] = { nullptr, nullptr };
+        NAPI_CALL_RETURN_ERR(env, napi_get_cb_info(env, info, &argc, argv, nullptr, nullptr));
+        NAPI_THROW_RETURN_ERR(env, argc < DOUBLE_ARG_COUNT, GENERAL_PARAMETER_ERROR, "Invalid number of arguments");
+        NAPI_CALL_RETURN_ERR(env, napi_create_reference(env, argv[0], NAPI_REF_COUNT, &asyncContext->contextRef));
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, argv[1], asyncContext->appInfoList));
+        ExtractCallerBundleName(env, argv[0], asyncContext);
+        return napi_ok;
+    };
+
+    asyncContext->execute = [](napi_env env, void* data) {
+        auto *asyncContext = static_cast<RequestControlAppPermissionContext *>(data);
+        ExecuteRequestControlAppPermission(asyncContext);
+    };
+
+    asyncContext->resolve = [](napi_env env, AgentFenceAsyncContext *context) -> napi_value {
+        auto *asyncContext = static_cast<RequestControlAppPermissionContext *>(context);
+        return BuildControlAppStatusResultArray(env, asyncContext->resultList);
+    };
+
+    return CreateAsyncWork(env, info, std::move(asyncContext), __func__);
+}
+
 napi_value DeclareOperationType(const napi_env env)
 {
     napi_value status = nullptr;
@@ -562,6 +1058,31 @@ napi_value DeclareExecuteType(const napi_env env)
     return executeType;
 }
 
+napi_value DeclareControlAppStatus(const napi_env env)
+{
+    napi_value status = nullptr;
+    NAPI_CALL(env, napi_create_object(env, &status));
+    AddUint32Property(env, status, "ALLOW", static_cast<uint32_t>(ControlAppStatus::ALLOW));
+    AddUint32Property(env, status, "DENY", static_cast<uint32_t>(ControlAppStatus::DENY));
+    return status;
+}
+
+napi_value BuildControlAppStatusResultArray(const napi_env env,
+    const std::vector<ControlAppStatusResult> &resultList)
+{
+    napi_value jsResult = nullptr;
+    NAPI_CALL(env, napi_create_array(env, &jsResult));
+    for (uint32_t i = 0; i < resultList.size(); ++i) {
+        napi_value jsResultItem = nullptr;
+        NAPI_CALL(env, napi_create_object(env, &jsResultItem));
+        NAPI_CALL(env, NapiSetProperty(env, jsResultItem, "appInfo", resultList[i].appInfo));
+        NAPI_CALL(env, NapiSetProperty(env, jsResultItem, "status",
+            static_cast<int32_t>(resultList[i].status)));
+        NAPI_CALL(env, napi_set_element(env, jsResult, i, jsResultItem));
+    }
+    return jsResult;
+}
+
 napi_value Register(const napi_env env, napi_value exports)
 {
     napi_property_descriptor desc[] = {
@@ -577,12 +1098,15 @@ napi_value Register(const napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("generateTaskChallenge", NapiGenerateTaskChallenge),
         DECLARE_NAPI_FUNCTION("generateTaskIdentity", NapiGenerateTaskIdentity),
         DECLARE_NAPI_FUNCTION("revokeTaskIdentity", NapiRevokeTaskIdentity),
+        DECLARE_NAPI_FUNCTION("queryControlAppStatus", NapiQueryControlAppStatus),
+        DECLARE_NAPI_FUNCTION("requestControlAppPermissionFromUser", NapiRequestControlAppPermissionFromUser),
 
         DECLARE_NAPI_PROPERTY("OperationType", DeclareOperationType(env)),
         DECLARE_NAPI_PROPERTY("ExecuteType", DeclareExecuteType(env)),
         DECLARE_NAPI_PROPERTY("AuthStatus", DeclareAuthStatus(env)),
         DECLARE_NAPI_PROPERTY("Role", DeclareRole(env)),
         DECLARE_NAPI_PROPERTY("RemoteGrantStatus", DeclareRemoteGrantStatus(env)),
+        DECLARE_NAPI_PROPERTY("ControlAppStatus", DeclareControlAppStatus(env)),
     };
 
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));

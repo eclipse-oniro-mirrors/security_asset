@@ -36,7 +36,14 @@ ohos_shared_library("abilitytoolaccessctrl_napi") {
     "c_utils:utils",
     "hilog:libhilog",
     "napi:ace_napi",
-    "node:node_header_notice"
+    "node:node_header_notice",
+    "ability_base:want",
+    "ability_base:configuration",
+    "ability_runtime:ability_context_native",
+    "ability_runtime:ability_manager",
+    "ability_runtime:napi_base_context",
+    "ace_engine:ace_uicontent",
+    "eventhandler:libeventhandler",
   ]
 
   branch_protector_ret = "pac_ret"

@@ -237,6 +237,25 @@ public:
         int32_t callerToken,
         const std::string &taskId,
         std::vector<int32_t> &authToken);
+
+    /**
+     * @brief Query the control status of simulated click operation.
+     *
+     * @param appInfoList List of target application info to query.
+     * @param resultList Output list of control status results.
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t QueryControlAppStatus(
+        const std::vector<AppInfo> &appInfoList,
+        std::vector<ControlAppStatusResult> &resultList);
+
+    /**
+     * @brief Get the control dialog bundle name from the closed-source side.
+     *
+     * @param bundleName Output bundle name of the control dialog UIExtensionAbility.
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t GetControlDialogBundleName(std::string& bundleName);
 };
 
 }

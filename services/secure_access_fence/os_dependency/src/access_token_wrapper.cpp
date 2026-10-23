@@ -113,3 +113,37 @@ int32_t GetBundleNameFromTokenId(int32_t tokenId, char *bundleName, int32_t *len
     LOGI("[INFO]GetBundleNameFromTokenId success, bundleName=%{public}s", bundleName);
     return SAF_SUCCESS;
 }
+
+int32_t GetCallerAppInfo(struct CallerAppInfo *callerAppInfo)
+{
+    if (callerAppInfo == nullptr) {
+        LOGE("[FATAL]GetCallerAppInfo failed, callerAppInfo is nullptr");
+        return SAF_ERR_GET_BUNDLE_NAME_BY_TOKEN_FAILED;
+    }
+
+    auto tokenId = IPCSkeleton::GetCallingTokenID();
+    AccessTokenID accessTokenId = static_cast<AccessTokenID>(tokenId);
+    HapTokenInfo hapTokenInfo;
+    int result = AccessTokenKit::GetHapTokenInfo(accessTokenId, hapTokenInfo);
+    if (result != RET_SUCCESS) {
+        LOGE("[FATAL]GetCallerAppInfo failed, GetHapTokenInfo ret=%{public}d", result);
+        return SAF_ERR_GET_BUNDLE_NAME_BY_TOKEN_FAILED;
+    }
+
+    const std::string &bundleNameStr = hapTokenInfo.bundleName;
+    if (bundleNameStr.size() >= sizeof(callerAppInfo->bundleName)) {
+        LOGE("[FATAL]GetCallerAppInfo failed, bundleName too long");
+        return SAF_ERR_GET_BUNDLE_NAME_BY_TOKEN_FAILED;
+    }
+    if (memcpy_s(callerAppInfo->bundleName, sizeof(callerAppInfo->bundleName),
+        bundleNameStr.c_str(), bundleNameStr.size()) != EOK) {
+        LOGE("[FATAL]GetCallerAppInfo failed, memcpy_s failed");
+        return SAF_ERR_GET_BUNDLE_NAME_BY_TOKEN_FAILED;
+    }
+    callerAppInfo->bundleName[bundleNameStr.size()] = '\0';
+    callerAppInfo->index = hapTokenInfo.instIndex;
+
+    LOGI("[INFO]GetCallerAppInfo success, bundleName=%{public}s, index=%{public}d",
+        callerAppInfo->bundleName, callerAppInfo->index);
+    return SAF_SUCCESS;
+}

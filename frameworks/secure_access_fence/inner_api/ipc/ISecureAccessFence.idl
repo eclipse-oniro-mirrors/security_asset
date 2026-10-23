@@ -15,6 +15,8 @@
 
 import SecureAccessFenceType;
 
+sequenceable OHOS.IRemoteObject;
+
 interface OHOS.Security.SAF.ISecureAccessFence {
     /**
      * @brief Batch generate tickets.
@@ -221,6 +223,98 @@ interface OHOS.Security.SAF.ISecureAccessFence {
         [in] List<CommandInfo> cmds,
         [in] int callerTokenId,
         [out] List<CommandPermissionInfo> cmdPermissions,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Query the control status of simulated click operation.
+     * @param appInfoList List of target application info to query (input parameter).
+     * @param resultList List of control status results (output parameter).
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 503] void QueryControlAppStatus(
+        [in] List<AppInfo> appInfoList,
+        [out] List<ControlAppStatusResult> resultList,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Check whether the caller app is allowed to control the target app.
+     *
+     * This IPC carries the first-time full-list fetch responsibility: the Service queries
+     * the closed-source module for the full list of user-explicitly-denied app-pairs and
+     * returns them. The inner SDK writes the list into the in-memory cache and then answers
+     * individual decision queries from the cache (2ms path). Subsequent queries do not go
+     * through this IPC.
+     *
+     * @param callerApp The caller app (A app) information.
+     * @param targetApp The target app (B app) information.
+     * @param deniedPairs Output full list of explicitly-denied app-pairs. Each entry is
+     *                    serialized as "callerBundleName:callerIndex:targetBundleName:targetIndex".
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 505] void CheckControlPermission(
+        [in] AppInfo callerApp,
+        [in] AppInfo targetApp,
+        [out] List<String> deniedPairs,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Register a callback for component click decision by session ID.
+     * @param sessionId The session ID used to identify the feedback channel.
+     * @param remoteCallback The remote callback to be invoked when ReportComponentClickDecision is called.
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 506] void RegisterComponentClickCallback(
+        [in] long sessionId,
+        [in] IRemoteObject remoteCallback,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Report component click decision.
+     * @param sessionId The session ID identifying the feedback channel.
+     * @param clickResult The component click decision result.
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 507] void ReportComponentClickDecision(
+        [in] long sessionId,
+        [in] ComponentClickResult clickResult,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Unregister the callback and destroy the session by session ID.
+     * @param sessionId The session ID.
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 508] void UnregisterComponentClickCallback(
+        [in] long sessionId,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Store operation record for simulated click control.
+     * @param callerApp The caller app (A app) information.
+     * @param targetApp The target app (B app) information.
+     * @param decision The control decision result.
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 509] void StoreOperationRecord(
+        [in] AppInfo callerApp,
+        [in] AppInfo targetApp,
+        [in] ControlDecision decision,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Get the control dialog bundle name from the closed-source plugin.
+     * @param bundleName Output bundle name of the control dialog UIExtensionAbility.
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 510] void GetControlDialogBundleName(
+        [out] String bundleName,
         [out] int resultCode
     );
 };
