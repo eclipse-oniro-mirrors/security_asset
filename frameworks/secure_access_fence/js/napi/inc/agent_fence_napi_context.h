@@ -16,8 +16,15 @@
 #ifndef AGENT_FENCE_NAPI_CONTEXT_H
 #define AGENT_FENCE_NAPI_CONTEXT_H
 
+#include <atomic>
+#include <condition_variable>
+#include <memory>
+#include <mutex>
 #include "napi/native_node_api.h"
 #include "secure_access_fence_type.h"
+#include "saf_result_code.h"
+#include "event_handler.h"
+#include "want.h"
 
 namespace OHOS {
 namespace Security {
@@ -112,6 +119,45 @@ public:
 class RevokeTaskIdentityContext : public AgentFenceAsyncContext {
 public:
     std::vector<std::string> taskIds {};
+};
+
+class QueryControlAppStatusContext : public AgentFenceAsyncContext {
+public:
+    std::vector<AppInfo> appInfoList {};
+    std::vector<ControlAppStatusResult> resultList {};
+};
+
+class RequestControlAppPermissionContext : public AgentFenceAsyncContext {
+public:
+    std::vector<AppInfo> appInfoList {};
+    std::vector<ControlAppStatusResult> resultList {};
+    std::vector<ControlAppStatusResult> queryResultList {};
+    std::vector<AppInfo> unauthorizedAppList {};
+    std::vector<ControlAppStatus> userDecisions {};
+    napi_ref contextRef = nullptr;
+    int32_t instanceId = -1;
+    int32_t sessionId = -1;
+    bool releaseFlag = false;
+    std::atomic<bool> isOnResult {false};
+    // Caller app info obtained via IPC context (populated in execute Step 1).
+    std::string callerBundleName;
+    int32_t callerIndex = -1;
+    std::shared_ptr<AppExecFwk::EventHandler> handler = nullptr;
+    // Independent shared data holder for async dialog callbacks.
+    // Lifetime: tied to RequestControlAppPermissionContext via shared_ptr.
+    // The dialog callbacks capture this shared_ptr, decoupled from context lifetime.
+    struct DialogData {
+        std::vector<std::string> resultAppInfoList;   // parsed from OnReceive Want
+        std::vector<int32_t> resultDecisions;         // parsed from OnReceive Want
+        std::mutex mutex;
+        std::condition_variable cv;
+        bool done = false;
+        int32_t resultCode = SAF_SUCCESS;
+        int32_t sessionId = 0;
+        int32_t instanceId = -1;
+        bool releaseFlag = false;
+    };
+    std::shared_ptr<DialogData> dialogData;
 };
 } // namespace SAF
 } // namespace Security

@@ -418,6 +418,42 @@ int32_t SafAgentFence::RetrieveAuthTokenByTaskId(
     return resultCode;
 }
 
+int32_t SafAgentFence::QueryControlAppStatus(
+    const std::vector<AppInfo> &appInfoList,
+    std::vector<ControlAppStatusResult> &resultList)
+{
+    LOGI("SafAgentFence::QueryControlAppStatus enter");
+
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+
+    int32_t resultCode = SAF_SUCCESS;
+    int32_t ret = HandleIpcError(proxy, [&]() {
+        return proxy->QueryControlAppStatus(appInfoList, resultList, resultCode);
+    });
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+
+    LOGI("SafAgentFence::QueryControlAppStatus finished, resultCode = 0x%{public}x", resultCode);
+    return resultCode;
+}
+
+int32_t SafAgentFence::GetControlDialogBundleName(std::string &bundleName)
+{
+    LOGI("SafAgentFence::GetControlDialogBundleName enter");
+
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+
+    int32_t resultCode = SAF_SUCCESS;
+    int32_t ret = HandleIpcError(proxy, [&]() {
+        return proxy->GetControlDialogBundleName(bundleName, resultCode);
+    });
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+
+    LOGI("SafAgentFence::GetControlDialogBundleName finished, resultCode = 0x%{public}x", resultCode);
+    return resultCode;
+}
+
 } // namespace SAF
 } // namespace Security
 } // namespace OHOS

@@ -23,10 +23,19 @@
 extern "C" {
 #endif
 
+/// Caller application info obtained from IPC context.
+struct CallerAppInfo {
+    /// Bundle name of the caller application.
+    char bundleName[256];
+    /// Application index of the caller application.
+    int32_t index;
+};
+
 bool CheckPermission(const char *permission);
 bool CheckIsSystemHap();
 bool CheckIsSystemSa();
 int32_t GetBundleNameFromTokenId(int32_t tokenId, char *bundleName, int32_t *len);
+int32_t GetCallerAppInfo(struct CallerAppInfo *callerAppInfo);
 
 #ifdef __cplusplus
 }

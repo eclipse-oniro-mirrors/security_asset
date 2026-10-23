@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright (c) 2026 Huawei Device Co., Ltd.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@
 #include "saf_defines.h"
 #include "access_token_wrapper.h"
 #include "accesstoken_kit.h"
+#include "os_account_wrapper.h"
 
 using namespace OHOS::Security::AccessToken;
 
@@ -223,7 +224,148 @@ int32_t CxxRequestToolTicket(
         result.ticket_challenge = rust::String(queryResult.ticket.challenge);
         result.ticket = rust::String(queryResult.ticket.ticket);
     }
+    return SAF_SUCCESS;
+}
 
+int32_t GetCallerAppInfo(AppInfo &callerAppInfo)
+{
+    struct CallerAppInfo rawCallerAppInfo;
+    int32_t ret = ::GetCallerAppInfo(&rawCallerAppInfo);
+    if (ret != SAF_SUCCESS) {
+        LOGE("GetCallerAppInfo failed, ret=%{public}d", ret);
+        return ret;
+    }
+    callerAppInfo.bundleName = rawCallerAppInfo.bundleName;
+    callerAppInfo.index = rawCallerAppInfo.index;
+    LOGI("GetCallerAppInfo success, bundleName=%{public}s, index=%{public}d",
+        callerAppInfo.bundleName.c_str(), callerAppInfo.index);
+    return SAF_SUCCESS;
+}
+
+int32_t ValidateAppInfoList(const std::vector<AppInfo> &appInfoList)
+{
+    LOGI("ValidateAppInfoList enter, appInfoList size=%{public}zu", appInfoList.size());
+    for (size_t i = 0; i < appInfoList.size(); ++i) {
+        const AppInfo &appInfo = appInfoList[i];
+        if (appInfo.bundleName.empty()) {
+            LOGE("ValidateAppInfoList failed, bundleName is empty at index=%{public}zu", i);
+            return SAF_ERR_ARG_INVALID;
+        }
+        if (appInfo.index < 0) {
+            LOGE("ValidateAppInfoList failed, index is negative at index=%{public}zu, index=%{public}d",
+                i, appInfo.index);
+            return SAF_ERR_ARG_INVALID;
+        }
+    }
+    LOGI("ValidateAppInfoList success");
+    return SAF_SUCCESS;
+}
+
+int32_t QueryControlAppStatusInternal(
+    const AppInfo &callerAppInfo,
+    const std::vector<AppInfo> &appInfoList,
+    std::vector<ControlAppStatusResult> &resultList)
+{
+    LOGI("QueryControlAppStatusInternal enter, callerBundleName=%{public}s, appCount=%{public}zu",
+        callerAppInfo.bundleName.c_str(), appInfoList.size());
+
+    // Get OS account ID from calling UID
+    int32_t osAccountId = INVALID_OS_ACCOUNT_ID;
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    int32_t userId = 0;
+    if (GetOsAccountIdFromUid(callingUid, &userId)) {
+        osAccountId = userId;
+    } else {
+        LOGE("QueryControlAppStatusInternal failed to get os account id from uid=%{public}d", callingUid);
+        return SAF_ERR_INVALID_OS_ACCOUNT_ID;
+    }
+
+    // Serialize appInfoList to "bundleName:index" string array
+    std::vector<std::string> appInfoStrList;
+    for (const auto &appInfo : appInfoList) {
+        appInfoStrList.push_back(appInfo.bundleName + ":" + std::to_string(appInfo.index));
+    }
+
+    std::vector<rust::String> appInfoRustList(appInfoStrList.begin(), appInfoStrList.end());
+    rust::Vec<int32_t> statusList;
+    int32_t ret = query_control_app_status(
+        callerAppInfo.bundleName,
+        callerAppInfo.index,
+        osAccountId,
+        rust::Slice<const rust::String>(appInfoRustList.data(), appInfoRustList.size()),
+        statusList);
+    if (ret != SAF_SUCCESS) {
+        LOGE("QueryControlAppStatusInternal query_control_app_status failed, ret=%{public}d", ret);
+        return ret;
+    }
+
+    if (statusList.size() != appInfoList.size()) {
+        LOGE("QueryControlAppStatusInternal size mismatch, appInfoList=%{public}zu, statusList=%{public}zu",
+            appInfoList.size(), statusList.size());
+        return SAF_ERR_MAP_KEY_NOT_FOUND;
+    }
+
+    // Convert statusList to ControlAppStatusResult
+    for (size_t i = 0; i < appInfoList.size(); ++i) {
+        ControlAppStatusResult result;
+        result.appInfo = appInfoList[i];
+        result.status = static_cast<ControlAppStatus>(statusList[i]);
+        resultList.push_back(result);
+    }
+
+    LOGI("QueryControlAppStatusInternal success, resultList size=%{public}zu", resultList.size());
+    return SAF_SUCCESS;
+}
+
+ErrCode QueryControlAppStatus(
+    const std::vector<AppInfo> &appInfoList,
+    std::vector<ControlAppStatusResult> &resultList,
+    int32_t &resultCode)
+{
+    auto startTime = std::chrono::steady_clock::now();
+    if (!CheckPermission(CONTROL_DEVICE_PERMISSION)) {
+        LOGE("Permission denied! Need %{public}s", CONTROL_DEVICE_PERMISSION);
+        resultCode = SAF_ERR_PERMISSION_DENIED;
+        return SAF_SUCCESS;
+    }
+    if (appInfoList.empty()) {
+        LOGE("QueryControlAppStatus failed, appInfoList is empty");
+        resultCode = SAF_ERR_ARG_EMPTY;
+        return SAF_SUCCESS;
+    }
+
+    // Validate AppInfo: bundleName non-empty and exists, index >= 0
+    int32_t validateResult = ValidateAppInfoList(appInfoList);
+    if (validateResult != SAF_SUCCESS) {
+        LOGE("QueryControlAppStatus ValidateAppInfoList failed, ret=%{public}d", validateResult);
+        resultCode = validateResult;
+        return SAF_SUCCESS;
+    }
+
+    // Get caller app info from IPC context
+    AppInfo callerAppInfo;
+    int32_t callerResult = GetCallerAppInfo(callerAppInfo);
+    if (callerResult != SAF_SUCCESS) {
+        LOGE("QueryControlAppStatus GetCallerAppInfo failed, ret=%{public}d", callerResult);
+        resultCode = callerResult;
+        return SAF_SUCCESS;
+    }
+
+    // Query control status via closed-source plugin
+    int32_t queryResult = QueryControlAppStatusInternal(callerAppInfo, appInfoList, resultList);
+    if (queryResult != SAF_SUCCESS) {
+        LOGE("QueryControlAppStatus QueryControlAppStatusInternal failed, ret=%{public}d", queryResult);
+        resultCode = queryResult;
+        return SAF_SUCCESS;
+    }
+
+    auto endTime = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+    int32_t elapsedTime = static_cast<int32_t>(duration.count());
+    notify_performance_metrics(static_cast<int32_t>(appInfoList.size()), elapsedTime,
+        INVALID_OS_ACCOUNT_ID, rust::String("QueryControlAppStatus"));
+
+    resultCode = SAF_SUCCESS;
     return SAF_SUCCESS;
 }
 
@@ -291,6 +433,213 @@ int32_t GetOsAccountIdFromTokenId(uint32_t tokenId)
     }
     LOGI("HAP token, os_account_id=%{public}d", hapInfo.userID);
     return hapInfo.userID;
+}
+
+// ---- IPC 505-509 Service functions (TDD stubs - to be implemented in T06-T08) ----
+
+ErrCode CheckControlPermission(
+    const AppInfo &callerApp,
+    const AppInfo &targetApp,
+    std::vector<std::string> &deniedPairs,
+    int32_t &resultCode)
+{
+    auto startTime = std::chrono::steady_clock::now();
+    if (callerApp.bundleName.empty()) {
+        LOGE("CheckControlPermission failed, callerApp.bundleName is empty");
+        resultCode = SAF_ERR_ARG_EMPTY;
+        return SAF_SUCCESS;
+    }
+    if (targetApp.bundleName.empty()) {
+        LOGE("CheckControlPermission failed, targetApp.bundleName is empty");
+        resultCode = SAF_ERR_ARG_EMPTY;
+        return SAF_SUCCESS;
+    }
+
+    std::vector<AppInfo> appInfoList = {callerApp, targetApp};
+    int32_t validateResult = ValidateAppInfoList(appInfoList);
+    if (validateResult != SAF_SUCCESS) {
+        LOGE("CheckControlPermission ValidateAppInfoList failed, ret=%{public}d", validateResult);
+        resultCode = validateResult;
+        return SAF_SUCCESS;
+    }
+
+    // Get OS account ID from calling UID
+    int32_t osAccountId = INVALID_OS_ACCOUNT_ID;
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    int32_t userId = 0;
+    if (GetOsAccountIdFromUid(callingUid, &userId)) {
+        osAccountId = userId;
+    } else {
+        LOGE("CheckControlPermission failed to get os account id from uid=%{public}d", callingUid);
+        resultCode = SAF_ERR_INVALID_OS_ACCOUNT_ID;
+        return SAF_SUCCESS;
+    }
+
+    rust::Vec<rust::String> deniedPairsRust;
+    int32_t queryRet = query_all_denied_pairs(osAccountId, deniedPairsRust);
+    if (queryRet != SAF_SUCCESS) {
+        LOGE("CheckControlPermission query_all_denied_pairs failed, ret=%{public}d", queryRet);
+        resultCode = queryRet;
+        return SAF_SUCCESS;
+    }
+
+    // Convert rust::Vec<rust::String> to std::vector<std::string>
+    for (const auto &pair : deniedPairsRust) {
+        deniedPairs.push_back(std::string(pair));
+    }
+
+    auto endTime = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+    int32_t elapsedTime = static_cast<int32_t>(duration.count());
+    notify_performance_metrics(static_cast<int32_t>(deniedPairs.size()), elapsedTime,
+        osAccountId, rust::String("CheckControlPermission"));
+
+    LOGI("CheckControlPermission success, deniedPairs size=%{public}zu", deniedPairs.size());
+    resultCode = SAF_SUCCESS;
+    return SAF_SUCCESS;
+}
+
+ErrCode RegisterComponentClickCallback(
+    uint64_t sessionId,
+    const GuiCallback &callback,
+    int32_t &resultCode)
+{
+    if (callback == nullptr) {
+        LOGE("RegisterComponentClickCallback failed, callback is null");
+        resultCode = SAF_ERR_NULL_PTR;
+        return SAF_SUCCESS;
+    }
+
+    int32_t ret = GuiCallbackRegistry::GetInstance().Register(sessionId, callback);
+    if (ret != SAF_SUCCESS) {
+        LOGE("RegisterComponentClickCallback GuiCallbackRegistry::Register failed, ret=%{public}d", ret);
+        resultCode = ret;
+        return SAF_SUCCESS;
+    }
+
+    LOGI("RegisterComponentClickCallback success, sessionId=%{public}llu",
+        static_cast<unsigned long long>(sessionId));
+    resultCode = SAF_SUCCESS;
+    return SAF_SUCCESS;
+}
+
+ErrCode ReportComponentClickDecision(
+    uint64_t sessionId,
+    const ComponentClickResult &result,
+    int32_t &resultCode)
+{
+    GuiCallback callback = GuiCallbackRegistry::GetInstance().Find(sessionId);
+    if (callback == nullptr) {
+        LOGE("ReportComponentClickDecision failed, sessionId not found, sessionId=%{public}llu",
+            static_cast<unsigned long long>(sessionId));
+        resultCode = SAF_ERR_GUI_SESSION_NOT_FOUND;
+        return SAF_SUCCESS;
+    }
+
+    if (result.compId.empty()) {
+        LOGE("ReportComponentClickDecision failed, compId is empty");
+        resultCode = SAF_ERR_ARG_EMPTY;
+        return SAF_SUCCESS;
+    }
+
+    callback->OnComponentClickDecision(result);
+    LOGI("ReportComponentClickDecision success, sessionId=%{public}llu, compId=%{public}s",
+        static_cast<unsigned long long>(sessionId), result.compId.c_str());
+    resultCode = SAF_SUCCESS;
+    return SAF_SUCCESS;
+}
+
+ErrCode UnregisterComponentClickCallback(
+    uint64_t sessionId,
+    int32_t &resultCode)
+{
+    int32_t ret = GuiCallbackRegistry::GetInstance().Unregister(sessionId);
+    if (ret != SAF_SUCCESS) {
+        LOGE("UnregisterComponentClickCallback failed, ret=%{public}d", ret);
+        resultCode = ret;
+        return SAF_SUCCESS;
+    }
+
+    LOGI("UnregisterComponentClickCallback success, sessionId=%{public}llu",
+        static_cast<unsigned long long>(sessionId));
+    resultCode = SAF_SUCCESS;
+    return SAF_SUCCESS;
+}
+
+ErrCode StoreOperationRecord(
+    const AppInfo &callerApp,
+    const AppInfo &targetApp,
+    ControlDecision decision,
+    int32_t &resultCode)
+{
+    auto startTime = std::chrono::steady_clock::now();
+
+    if (callerApp.bundleName.empty()) {
+        LOGE("StoreOperationRecord failed, callerApp.bundleName is empty");
+        resultCode = SAF_ERR_ARG_EMPTY;
+        return SAF_SUCCESS;
+    }
+    if (targetApp.bundleName.empty()) {
+        LOGE("StoreOperationRecord failed, targetApp.bundleName is empty");
+        resultCode = SAF_ERR_ARG_EMPTY;
+        return SAF_SUCCESS;
+    }
+
+    int32_t osAccountId = INVALID_OS_ACCOUNT_ID;
+    int32_t callingUid = IPCSkeleton::GetCallingUid();
+    int32_t userId = 0;
+    if (GetOsAccountIdFromUid(callingUid, &userId)) {
+        osAccountId = userId;
+    } else {
+        LOGE("StoreOperationRecord failed to get os account id from uid=%{public}d", callingUid);
+    }
+
+    int64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::system_clock::now().time_since_epoch()).count();
+
+    int32_t storeRet = store_operation_record(
+        callerApp.bundleName,
+        callerApp.index,
+        targetApp.bundleName,
+        targetApp.index,
+        static_cast<int32_t>(decision),
+        timestamp,
+        osAccountId);
+    if (storeRet != SAF_SUCCESS) {
+        LOGE("StoreOperationRecord store_operation_record failed, ret=%{public}d (logging only)", storeRet);
+        // Do not return error - logging failure does not affect the caller
+    }
+
+    auto endTime = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+    int32_t elapsedTime = static_cast<int32_t>(duration.count());
+    notify_performance_metrics(1, elapsedTime, osAccountId, rust::String("StoreOperationRecord"));
+
+    LOGI("StoreOperationRecord success, callerApp=%{public}s, targetApp=%{public}s, decision=%{public}d",
+        callerApp.bundleName.c_str(), targetApp.bundleName.c_str(), static_cast<int32_t>(decision));
+    resultCode = SAF_SUCCESS;
+    return SAF_SUCCESS;
+}
+
+ErrCode GetControlDialogBundleName(std::string &bundleName, int32_t &resultCode)
+{
+    LOGI("GetControlDialogBundleName enter");
+    rust::String rustBundleName;
+    int32_t ret = get_control_dialog_bundle_name(rustBundleName);
+    if (ret != SAF_SUCCESS) {
+        LOGE("GetControlDialogBundleName failed, ret=%{public}d", ret);
+        resultCode = ret;
+        return SAF_SUCCESS;
+    }
+    bundleName = std::string(rustBundleName);
+    LOGI("GetControlDialogBundleName success, bundleName=%{public}s", bundleName.c_str());
+    resultCode = SAF_SUCCESS;
+    return SAF_SUCCESS;
+}
+
+bool IsCallbackRegistryEmpty()
+{
+    return GuiCallbackRegistry::GetInstance().IsEmpty();
 }
 
 } // namespace SAF

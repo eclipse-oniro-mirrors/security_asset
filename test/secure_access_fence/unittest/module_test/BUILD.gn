@@ -23,7 +23,6 @@ ohos_unittest("saf_dependency_test") {
 
   deps = [
     "../../../../services/secure_access_fence/os_dependency:saf_os_dependency",
-    "//third_party/googletest:gtest_main",
   ]
 
   external_deps = [
@@ -31,6 +30,7 @@ ohos_unittest("saf_dependency_test") {
     "ipc:ipc_single",
     "memmgr:memmgrclient",
     "samgr:samgr_proxy",
+    "googletest:gtest_main"
   ]
 
   branch_protector_ret = "pac_ret"

@@ -23,6 +23,9 @@ use saf_plugin::saf_plugin::SAFPlugin;
 use saf_plugin_interface::plugin_interface::{
     EventType, ExtMap, ERROR_METRICS_KEYS, GET_DEVICE_UDID_KEYS, PERFORMANCE_METRICS_KEYS, POLICY_AUTH_STATUS_KEYS,
     VERIFY_REMOTE_TICKET_KEYS, ATL_PERMISSION_POLICY_KEYS,
+    QUERY_CONTROL_APP_STATUS_KEYS,
+    QUERY_ALL_DENIED_PAIRS_KEYS, STORE_OPERATION_RECORD_KEYS,
+    GET_CONTROL_DIALOG_BUNDLE_NAME_KEYS,
 };
 use saf_sdk::Value;
 
@@ -118,6 +121,31 @@ pub mod ffi {
             identity: &str,
             challenge: &str,
         ) -> i32;
+        /// Query control app status via closed-source plugin.
+        fn query_control_app_status(
+            caller_bundle_name: String,
+            caller_index: i32,
+            os_account_id: i32,
+            app_info_list: &[String],
+            status_list: &mut Vec<i32>,
+        ) -> i32;
+        /// Query all denied app-pairs via closed-source plugin (IPC 505 full-list fetch).
+        fn query_all_denied_pairs(
+            os_account_id: i32,
+            denied_pairs: &mut Vec<String>,
+        ) -> i32;
+        /// Store operation record via closed-source plugin (IPC 509 async logging).
+        fn store_operation_record(
+            caller_bundle_name: String,
+            caller_index: i32,
+            target_bundle_name: String,
+            target_index: i32,
+            decision: i32,
+            timestamp: i64,
+            os_account_id: i32,
+        ) -> i32;
+        /// Get control dialog bundle name via closed-source plugin. (IPC 510).
+        fn get_control_dialog_bundle_name(bundle_name: &mut String) -> i32;
     }
 
     // Rust callable C++ functions
@@ -540,4 +568,181 @@ extern "C" {
 
 pub fn cxx_is_screen_locked(os_account_id: i32, is_locked: &mut bool) -> i32 {
     unsafe { IsScreenLocked(os_account_id, is_locked) }
+}
+
+/// Query control app status via closed-source plugin.
+/// Called from C++ Service layer.
+pub fn query_control_app_status(
+    caller_bundle_name: String,
+    caller_index: i32,
+    os_account_id: i32,
+    app_info_list: &[String],
+    status_list: &mut Vec<i32>,
+) -> i32 {
+    logi!("[query_control_app_status] caller_bundle_name={}, caller_index={}, os_account_id={}, app_count={}",
+        caller_bundle_name, caller_index, os_account_id, app_info_list.len());
+
+    let plugin = SAFPlugin::get_instance();
+    let loader = match plugin.load_plugin() {
+        Ok(loader) => loader,
+        Err(_e) => {
+            loge!("[query_control_app_status] load_plugin failed");
+            return saf_definition::ErrCode::PluginNotSupport as i32;
+        },
+    };
+
+    let mut params = ExtMap::new();
+    params.insert(QUERY_CONTROL_APP_STATUS_KEYS.caller_bundle_name, Value::String(caller_bundle_name));
+    params.insert(QUERY_CONTROL_APP_STATUS_KEYS.caller_index, Value::Number(caller_index as u32));
+    params.insert(QUERY_CONTROL_APP_STATUS_KEYS.app_info_list, Value::StringList(app_info_list.to_vec()));
+    params.insert(QUERY_CONTROL_APP_STATUS_KEYS.os_account_id, Value::Number(os_account_id as u32));
+
+    logi!("[query_control_app_status] calling plugin process_event");
+
+    let result = match loader.process_event(EventType::QueryControlAppStatus, &mut params) {
+        Ok(r) => r,
+        Err(e) => {
+            loge!("[query_control_app_status] process_event failed, e={}", e);
+            return e as i32;
+        },
+    };
+
+    logi!("[query_control_app_status] plugin returned, parsing results");
+
+    let Some(Value::NumberList(statuses)) = result.get(QUERY_CONTROL_APP_STATUS_KEYS.status_list) else {
+        loge!("[query_control_app_status] statusList not found in result params");
+        return saf_definition::ErrCode::HashMapKeyNotFound as i32;
+    };
+
+    *status_list = statuses.clone();
+
+    logi!("[query_control_app_status] success, status_list_len={}", status_list.len());
+    0
+}
+
+/// Query all denied app-pairs via closed-source plugin.
+/// Called from C++ Service layer (IPC 505 full-list fetch).
+/// TDD stub: returns PluginNotSupport to make tests fail. Real implementation in T06.
+pub fn query_all_denied_pairs(
+    os_account_id: i32,
+    denied_pairs: &mut Vec<String>,
+) -> i32 {
+    logi!("[query_all_denied_pairs] os_account_id={}", os_account_id);
+
+    let plugin = SAFPlugin::get_instance();
+    let loader = match plugin.load_plugin() {
+        Ok(loader) => loader,
+        Err(_e) => {
+            loge!("[query_all_denied_pairs] load_plugin failed");
+            return saf_definition::ErrCode::PluginNotSupport as i32;
+        },
+    };
+
+    let mut params = ExtMap::new();
+    params.insert(QUERY_ALL_DENIED_PAIRS_KEYS.os_account_id, Value::Number(os_account_id as u32));
+
+    logi!("[query_all_denied_pairs] calling plugin process_event");
+
+    let result = match loader.process_event(EventType::QueryAllDeniedPairs, &mut params) {
+        Ok(r) => r,
+        Err(e) => {
+            loge!("[query_all_denied_pairs] process_event failed, e={}", e);
+            return e as i32;
+        },
+    };
+
+    logi!("[query_all_denied_pairs] plugin returned, parsing results");
+
+    let Some(Value::StringList(pairs)) = result.get(QUERY_ALL_DENIED_PAIRS_KEYS.denied_pairs) else {
+        loge!("[query_all_denied_pairs] denied_pairs not found in result params");
+        return saf_definition::ErrCode::HashMapKeyNotFound as i32;
+    };
+
+    *denied_pairs = pairs.clone();
+
+    logi!("[query_all_denied_pairs] success, denied_pairs_len={}", denied_pairs.len());
+    0
+}
+
+/// Store operation record via closed-source plugin.
+/// Called from C++ Service layer (IPC 509 async logging).
+/// TDD stub: returns PluginNotSupport to make tests fail. Real implementation in T08.
+pub fn store_operation_record(
+    caller_bundle_name: String,
+    caller_index: i32,
+    target_bundle_name: String,
+    target_index: i32,
+    decision: i32,
+    timestamp: i64,
+    os_account_id: i32,
+) -> i32 {
+    logi!("[store_operation_record] caller_bundle_name={}, caller_index={}, target_bundle_name={}, target_index={}, decision={}, timestamp={}, os_account_id={}",
+        caller_bundle_name, caller_index, target_bundle_name, target_index, decision, timestamp, os_account_id);
+
+    let plugin = SAFPlugin::get_instance();
+    let loader = match plugin.load_plugin() {
+        Ok(loader) => loader,
+        Err(_e) => {
+            loge!("[store_operation_record] load_plugin failed");
+            return saf_definition::ErrCode::PluginNotSupport as i32;
+        },
+    };
+
+    let mut params = ExtMap::new();
+    params.insert(STORE_OPERATION_RECORD_KEYS.caller_bundle_name, Value::String(caller_bundle_name));
+    params.insert(STORE_OPERATION_RECORD_KEYS.caller_index, Value::Number(caller_index as u32));
+    params.insert(STORE_OPERATION_RECORD_KEYS.target_bundle_name, Value::String(target_bundle_name));
+    params.insert(STORE_OPERATION_RECORD_KEYS.target_index, Value::Number(target_index as u32));
+    params.insert(STORE_OPERATION_RECORD_KEYS.decision, Value::Number(decision as u32));
+    params.insert(STORE_OPERATION_RECORD_KEYS.timestamp, Value::Number(timestamp as u32));
+    params.insert(STORE_OPERATION_RECORD_KEYS.os_account_id, Value::Number(os_account_id as u32));
+
+    logi!("[store_operation_record] calling plugin process_event");
+
+    match loader.process_event(EventType::StoreOperationRecord, &mut params) {
+        Ok(_r) => {
+            logi!("[store_operation_record] success");
+            0
+        },
+        Err(e) => {
+            loge!("[store_operation_record] process_event failed, e={}", e);
+            e as i32
+        },
+    }
+}
+
+/// Get control dialog bundle name via closed-source plugin.
+/// Called from C++ Service layer (IPC 510).
+pub fn get_control_dialog_bundle_name(bundle_name: &mut String) -> i32 {
+    logi!("[get_control_dialog_bundle_name] enter");
+
+    let plugin = SAFPlugin::get_instance();
+    let loader = match plugin.load_plugin() {
+        Ok(loader) => loader,
+        Err(_e) => {
+            loge!("[get_control_dialog_bundle_name] load_plugin failed");
+            return saf_definition::ErrCode::PluginNotSupport as i32;
+        },
+    };
+
+    let mut params = ExtMap::new();
+
+    logi!("[get_control_dialog_bundle_name] calling plugin process_event");
+
+    let result = match loader.process_event(EventType::GetControlDialogBundleName, &mut params) {
+        Ok(r) => r,
+        Err(e) => {
+            loge!("[get_control_dialog_bundle_name] process_event failed, e={}", e);
+            return e as i32
+        },
+    };
+
+    let Some(Value::String(name)) = result.get(GET_CONTROL_DIALOG_BUNDLE_NAME_KEYS.bundle_name) else {
+        loge!("[get_control_dialog_bundle_name] bundle_name not found in result params");
+        return saf_definition::ErrCode::HashMapKeyNotFound as i32;
+    };
+
+    *bundle_name = name.clone();
+    logi!("[get_control_dialog_bundle_name] success, bundle_name_len={}", bundle_name.len());
+    0
 }

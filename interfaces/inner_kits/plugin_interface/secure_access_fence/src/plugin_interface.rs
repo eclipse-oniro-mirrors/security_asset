@@ -54,7 +54,15 @@ pub enum EventType {
     /// Get device udid for device identification
     GetDeviceUdid = 9,
     /// Query the lock-screen permission policy for one exact auth trust level.
-    GetAtlPermissionPolicy = 10
+    GetAtlPermissionPolicy = 10,
+    /// Query control app status for simulated click control
+    QueryControlAppStatus = 11,
+    /// Query all denied app-pairs for simulated click control (full list query)
+    QueryAllDeniedPairs = 12,
+    /// Store operation record for simulated click control
+    StoreOperationRecord = 13,
+    /// Get control dialog bundle name from closed-source side
+    GetControlDialogBundleName = 14,
 }
 
 /// Performance metrics parameter keys for StatisticsMetrics EventType.
@@ -249,6 +257,82 @@ pub struct GetDeviceUdidKeys {
 
 /// GetDeviceUdidKeys constant for GetDeviceUdid EventType
 pub const GET_DEVICE_UDID_KEYS: GetDeviceUdidKeys = GetDeviceUdidKeys { os_account_id: "osAccountId", udid: "Udid" };
+
+/// Query control app status parameter keys for QueryControlAppStatus EventType.
+pub struct QueryControlAppStatusKeys {
+    /// The caller application bundle name (input, obtained from IPC context by Service layer)
+    pub caller_bundle_name: &'static str,
+    /// The caller application index (input, obtained from IPC context by Service layer)
+    pub caller_index: &'static str,
+    /// The target application info list (input, serialized as "bundleName:index" string array)
+    pub app_info_list: &'static str,
+    /// The OS account ID (input, obtained by Service layer)
+    pub os_account_id: &'static str,
+    /// The control status list (output, corresponding to ControlAppStatus enum values: 1=ALLOW, 2=DENY)
+    pub status_list: &'static str,
+}
+
+/// QueryControlAppStatusKeys constant for QueryControlAppStatus EventType.
+pub const QUERY_CONTROL_APP_STATUS_KEYS: QueryControlAppStatusKeys = QueryControlAppStatusKeys {
+    caller_bundle_name: "CallerBundleName",
+    caller_index: "CallerIndex",
+    app_info_list: "AppInfoList",
+    os_account_id: "osAccountId",
+    status_list: "StatusList",
+};
+
+/// Query all denied app-pairs parameter keys for QueryAllDeniedPairs EventType.
+pub struct QueryAllDeniedPairsKeys {
+    /// The OS account ID (input)
+    pub os_account_id: &'static str,
+    /// The denied app-pair list (output, serialized as "callerBundleName:callerIndex:targetBundleName:targetIndex" string array)
+    pub denied_pairs: &'static str,
+}
+
+/// QueryAllDeniedPairsKeys constant for QueryAllDeniedPairs EventType.
+pub const QUERY_ALL_DENIED_PAIRS_KEYS: QueryAllDeniedPairsKeys = QueryAllDeniedPairsKeys {
+    os_account_id: "osAccountId",
+    denied_pairs: "DeniedPairs",
+};
+
+/// Store operation record parameter keys for StoreOperationRecord EventType.
+pub struct StoreOperationRecordKeys {
+    /// The caller application bundle name (input)
+    pub caller_bundle_name: &'static str,
+    /// The caller application index (input)
+    pub caller_index: &'static str,
+    /// The target application bundle name (input)
+    pub target_bundle_name: &'static str,
+    /// The target application index (input)
+    pub target_index: &'static str,
+    /// The control decision (input, 0=ALLOW, 1=DENY)
+    pub decision: &'static str,
+    /// The timestamp in milliseconds (input)
+    pub timestamp: &'static str,
+    /// The OS account ID (input)
+    pub os_account_id: &'static str,
+}
+
+/// StoreOperationRecordKeys constant for StoreOperationRecord EventType.
+pub const STORE_OPERATION_RECORD_KEYS: StoreOperationRecordKeys = StoreOperationRecordKeys {
+    caller_bundle_name: "CallerBundleName",
+    caller_index: "CallerIndex",
+    target_bundle_name: "TargetBundleName",
+    target_index: "TargetIndex",
+    decision: "Decision",
+    timestamp: "Timestamp",
+    os_account_id: "osAccountId",
+};
+
+/// GetControlDialogBundleName parameter keys for GetControlDialogBundleName EventType.
+pub struct GetControlDialogBundleNameKeys {
+    /// The control dialog bundle name (output)
+    pub bundle_name: &'static str,
+}
+
+/// GetControlDialogBundleNameKeys constant for GetControlDialogBundleName EventType.
+pub const GET_CONTROL_DIALOG_BUNDLE_NAME_KEYS: GetControlDialogBundleNameKeys =
+    GetControlDialogBundleNameKeys { bundle_name: "BundleName" };
 
 /// Global constant instance for error metrics parameter keys.
 /// Use this to access standardized parameter names for StatisticsError events.

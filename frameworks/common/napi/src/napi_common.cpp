@@ -47,6 +47,7 @@ namespace {
             case SAF_ERR_ARG_INVALID:
             case SAF_ERR_ARG_EMPTY:
             case SAF_ERR_INVALID_ARRAY_LEN:
+            case SAF_ERR_NULL_PTR:
                 return INVALID_PARAMETER;
             case SAF_ERR_SCREENLOCK_IS_LOCKED:
                 return OPERATION_FAILED_UNDER_SCREEN_LOCK;
@@ -64,6 +65,26 @@ namespace {
                 return ENVIRONMENT_ERROR;
             case SAF_ERR_QUERIED_PERMISSION_NOT_EXIST:
                 return INVALID_PERMISSION;
+            case SAF_ERR_SERVICE_UNAVAILABLE:
+            case SAF_ERR_SERVICE_IS_STOPPING:
+            case SAF_ERR_IPC_WRITE_DATA_FAIL:
+            case SAF_ERR_IPC_READ_DATA_FAIL:
+            case SAF_ERR_IPC_SEND_REQUEST_FAIL:
+            case SAF_ERR_IPC_PROXY_FAIL:
+            case SAF_ERR_IPC_ERROR:
+            case SAF_ERR_IPC_INVALID_IPC_CODE:
+                return SERVICE_ABNORMAL;
+            case SAF_ERR_GET_BUNDLE_NAME_BY_TOKEN_FAILED:
+            case SAF_ERR_DLOPEN_FAIL:
+            case SAF_ERR_DLSYM_FAIL:
+            case SAF_ERR_DATA_TYPE_MISMATCH:
+            case SAF_ERR_MAP_KEY_NOT_FOUND:
+            case SAF_ERR_CREATE_PLUGIN_MGR_FAIL:
+            case SAF_ERR_PLUGIN_INVALID_EVENT_TYPE:
+            case SAF_ERR_PLUGIN_NOT_SUPPORT:
+            case SAF_ERR_INVALID_PLUGIN:
+            case SAF_ERR_INVALID_OS_ACCOUNT_ID:
+                return COMMON_INTERNAL_ERROR;
         }
         return COMMON_INTERNAL_ERROR;
     }
@@ -849,6 +870,81 @@ void AddUint32Property(const napi_env env, napi_value object, const char *name, 
     napi_value property = nullptr;
     NAPI_CALL_RETURN_VOID(env, napi_create_uint32(env, value, &property));
     NAPI_CALL_RETURN_VOID(env, napi_set_named_property(env, object, name, property));
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::AppInfo &appInfo)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    napi_value propValue = nullptr;
+    napi_status status = napi_get_named_property(env, object, "bundleName", &propValue);
+    NAPI_THROW_RETURN_ERR(env, status != napi_ok, GENERAL_PARAMETER_ERROR, "bundleName is required");
+    NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, appInfo.bundleName));
+    status = napi_get_named_property(env, object, "index", &propValue);
+    NAPI_THROW_RETURN_ERR(env, status != napi_ok, GENERAL_PARAMETER_ERROR, "index is required");
+    NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, appInfo.index));
+    return napi_ok;
+}
+
+napi_status NapiGetProperty(const napi_env env, napi_value object, std::vector<SAF::AppInfo> &appInfoList)
+{
+    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
+    uint32_t count = 0;
+    NAPI_CALL_RETURN_ERR(env, napi_get_array_length(env, object, &count));
+    NAPI_THROW_RETURN_ERR(env, count == 0, GENERAL_PARAMETER_ERROR, "AppInfo cannot be empty");
+    for (uint32_t i = 0; i < count; ++i) {
+        napi_value item = nullptr;
+        NAPI_CALL_RETURN_ERR(env, napi_get_element(env, object, i, &item));
+        SAF::AppInfo appInfo;
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, item, appInfo));
+        appInfoList.emplace_back(appInfo);
+    }
+    return napi_ok;
+}
+
+napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName,
+    const SAF::AppInfo &appInfo)
+{
+    napi_value jsResult = nullptr;
+    NAPI_CALL_RETURN_ERR(env, napi_create_object(env, &jsResult));
+    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "bundleName", appInfo.bundleName));
+    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "index", appInfo.index));
+    NAPI_CALL_RETURN_ERR(env, napi_set_named_property(env, object, propertyName, jsResult));
+    return napi_ok;
+}
+
+napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName,
+    const SAF::ControlAppStatusResult &result)
+{
+    napi_value jsResult = nullptr;
+    NAPI_CALL_RETURN_ERR(env, napi_create_object(env, &jsResult));
+    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "appInfo", result.appInfo));
+    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "status",
+        static_cast<int32_t>(result.status)));
+    NAPI_CALL_RETURN_ERR(env, napi_set_named_property(env, object, propertyName, jsResult));
+    return napi_ok;
+}
+
+napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName,
+    const std::vector<SAF::ControlAppStatusResult> &resultList)
+{
+    napi_value jsResult = nullptr;
+    NAPI_CALL_RETURN_ERR(env, napi_create_array(env, &jsResult));
+    for (uint32_t i = 0; i < resultList.size(); ++i) {
+        napi_value jsResultItem = nullptr;
+        NAPI_CALL_RETURN_ERR(env, napi_create_object(env, &jsResultItem));
+        NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResultItem, "appInfo", resultList[i].appInfo));
+        NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResultItem, "status",
+            static_cast<int32_t>(resultList[i].status)));
+        NAPI_CALL_RETURN_ERR(env, napi_set_element(env, jsResult, i, jsResultItem));
+    }
+    NAPI_CALL_RETURN_ERR(env, napi_set_named_property(env, object, propertyName, jsResult));
+    return napi_ok;
+}
+
+napi_value MapErrCodeToBusinessError(const napi_env env, int32_t resultCode)
+{
+    AgentFenceErrorCode errCode = MapErrorCode(resultCode);
+    return NapiCreateError(env, static_cast<int32_t>(errCode), GetErrorMessage(errCode).c_str());
 }
 } // SAF_ASSET_COMMON
 } // Security

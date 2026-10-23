@@ -201,6 +201,21 @@ napi_status NapiSetProperty(const napi_env env, napi_value object, const char *p
 napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName,
     const SAF::PermissionInfo permissionInfo);
 
+napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::AppInfo &appInfo);
+
+napi_status NapiGetProperty(const napi_env env, napi_value object, std::vector<SAF::AppInfo> &appInfoList);
+
+napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName,
+    const SAF::AppInfo &appInfo);
+
+napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName,
+    const SAF::ControlAppStatusResult &result);
+
+napi_status NapiSetProperty(const napi_env env, napi_value object, const char *propertyName,
+    const std::vector<SAF::ControlAppStatusResult> &resultList);
+
+napi_value MapErrCodeToBusinessError(const napi_env env, int32_t resultCode);
+
 napi_value CreateAsyncWork(napi_env env, napi_callback_info info, std::unique_ptr<SAF::AgentFenceAsyncContext> context,
     const char *resourceName);
 

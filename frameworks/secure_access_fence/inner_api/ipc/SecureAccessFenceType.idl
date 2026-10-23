@@ -245,3 +245,55 @@ struct TicketQueryResult {
     /** Ticket string (JSON wrapped). Empty if not generated. */
     String ticket;
 };
+
+/**
+ * @brief Application information for simulated click control.
+ */
+struct AppInfo {
+    /** Bundle name of the application. */
+    String bundleName;
+    /** Application index, used to distinguish cloned applications with the same bundle name. */
+    int index;
+};
+
+/**
+ * @brief Control status of simulated click operation.
+ */
+enum ControlAppStatus {
+    /** The caller application is allowed to control the target application. */
+    ALLOW = 1,
+    /** The caller application is denied to control the target application. */
+    DENY = 2
+};
+
+/**
+ * @brief Control status result of a target application.
+ */
+struct ControlAppStatusResult {
+    /** Target application information. */
+    AppInfo appInfo;
+    /** Control status of the caller application over the target application. */
+    ControlAppStatus status;
+};
+
+/**
+ * @brief Control decision enum for whether A app can control B app.
+ */
+enum ControlDecision {
+    /** Allow A app to control B app. */
+    ALLOW = 0,
+    /** Deny A app to control B app. */
+    DENY = 1
+};
+
+/**
+ * @brief Component click decision result.
+ */
+struct ComponentClickResult {
+    /** Component ID. */
+    String compId;
+    /** Whether the click is allowed. */
+    boolean allowed;
+    /** Reason for the decision. */
+    String reason;
+};

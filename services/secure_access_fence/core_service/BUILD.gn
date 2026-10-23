@@ -31,9 +31,11 @@ ohos_static_library("secure_access_fence_wrapper_static") {
     "../../../frameworks/secure_access_fence/base/inc",
     "../../../frameworks/secure_access_fence/inner_api/agent_fence/inc",
     "../../../frameworks/secure_access_fence/inner_api/ipc",
+    "../../../frameworks/secure_access_fence/inner_api/gui_fence/inc",
     "../../../frameworks/secure_access_fence/os_dependency/log/inc",
     "../../../interfaces/inner_kits/c/secure_access_fence/agent_fence/inc",
     "../../../interfaces/inner_kits/c/secure_access_fence/common/inc",
+    "../../../interfaces/inner_kits/c/secure_access_fence/gui_fence/inc",
   ]
 
   sources = [
@@ -41,7 +43,8 @@ ohos_static_library("secure_access_fence_wrapper_static") {
     "src/cxx/src/iam_verify_wrapper.cpp",
     "src/cxx/src/secure_access_fence_service.cpp",
     "src/cxx/src/permission_manager.cpp",
-    "src/cxx/src/time_wrapper.cpp"
+    "src/cxx/src/time_wrapper.cpp",
+    "src/cxx/src/gui_callback_registry.cpp",
   ]
   sources += get_target_outputs(":secure_access_fence_wrapper_cxx")
 
