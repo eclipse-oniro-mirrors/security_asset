@@ -38,6 +38,7 @@ pub struct CallingInfo {
     owner_type: OwnerType,
     owner_info: Vec<u8>,
     group: Option<Group>,
+    hap_developer_id: Option<Vec<u8>>,
 }
 
 impl CallingInfo {
@@ -48,7 +49,7 @@ impl CallingInfo {
 
     /// Build identity of the specified owner.
     pub fn new(user_id: i32, owner_type: OwnerType, owner_info: Vec<u8>, group: Option<Group>) -> Self {
-        Self { user_id, owner_type, owner_info, group }
+        Self { user_id, owner_type, owner_info, group, hap_developer_id: None }
     }
 
     /// Build a instance of CallingInfo.
@@ -64,19 +65,32 @@ impl CallingInfo {
                 owner_info.extend_from_slice(&hap_info.app_id);
                 owner_info.extend_from_slice("_".as_bytes());
                 owner_info.extend_from_slice(hap_info.app_index.to_string().as_bytes());
+                let hap_dev_id = hap_info.developer_id.clone();
                 let group = match (&hap_info.developer_id, &hap_info.group_id) {
                     (Some(developer_id), Some(group_id)) => {
                         Some(Group { developer_id: developer_id.to_vec(), group_id: group_id.to_vec() })
                     },
                     _ => None,
                 };
-                CallingInfo { user_id: user_id as i32, owner_type: process_info.owner_type, owner_info, group }
+                CallingInfo {
+                    user_id: user_id as i32,
+                    owner_type: process_info.owner_type,
+                    owner_info,
+                    group,
+                    hap_developer_id: hap_dev_id,
+                }
             },
             ProcessInfoDetail::Native(native_info) => {
                 owner_info.append(&mut process_info.process_name.clone());
                 owner_info.append(&mut "_".to_string().as_bytes().to_vec());
                 owner_info.append(&mut native_info.uid.to_string().as_bytes().to_vec());
-                CallingInfo { user_id: user_id as i32, owner_type: process_info.owner_type, owner_info, group: None }
+                CallingInfo {
+                    user_id: user_id as i32,
+                    owner_type: process_info.owner_type,
+                    owner_info,
+                    group: None,
+                    hap_developer_id: None,
+                }
             },
         }
     }
@@ -107,6 +121,14 @@ impl CallingInfo {
             Some(group) => Some(&group.developer_id),
             _ => None,
         }
+    }
+
+    /// Get hap developer id of calling.
+    /// From hap_info, returns Some for HAP and HapGroup, None for Native.
+    /// This method does NOT participate in determining whether the call is a group call.
+    /// Use `group().is_some()` or `owner_type_enum() == OwnerType::HapGroup` for that.
+    pub fn hap_developer_id(&self) -> Option<&Vec<u8>> {
+        self.hap_developer_id.as_ref()
     }
 
     /// Get group id of calling.

@@ -138,7 +138,7 @@ impl ProcessInfo {
         let mut app_id = vec![0u8; 256];
         let (group_id, mut developer_id) = match group_attr {
             Some(Value::Bytes(group_attr)) => (Some(group_attr.clone()), Some(vec![0u8; 128])),
-            _ => (None, None),
+            _ => (None, Some(vec![0u8; 128])),
         };
         let mut process_info_ffi = ProcessInfoFfi::build(&group_id, &mut process_name, &mut app_id, &mut developer_id);
         match unsafe { GetCallingProcessInfo(user_id, uid, &mut process_info_ffi, preload) } {
@@ -157,6 +157,7 @@ impl ProcessInfo {
         }
 
         let owner_type = OwnerType::try_from(process_info_ffi.owner_type)?;
+        let developer_id = developer_id.and_then(|v| if v.is_empty() { None } else { Some(v) });
         let process_info_detail = match owner_type {
             OwnerType::Hap | OwnerType::HapGroup => ProcessInfoDetail::Hap(HapInfo {
                 app_id,
@@ -167,11 +168,6 @@ impl ProcessInfo {
             OwnerType::Native => ProcessInfoDetail::Native(NativeInfo { uid: process_info_ffi.native_info.uid }),
         };
 
-        Ok(Self {
-            user_id: process_info_ffi.user_id,
-            owner_type,
-            process_name,
-            process_info_detail,
-        })
+        Ok(Self { user_id: process_info_ffi.user_id, owner_type, process_name, process_info_detail })
     }
 }
