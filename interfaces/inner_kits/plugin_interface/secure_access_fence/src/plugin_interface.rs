@@ -53,6 +53,8 @@ pub enum EventType {
     StoreGrantRecord = 8,
     /// Get device udid for device identification
     GetDeviceUdid = 9,
+    /// Query the lock-screen permission policy for one exact auth trust level.
+    GetAtlPermissionPolicy = 10
 }
 
 /// Performance metrics parameter keys for StatisticsMetrics EventType.
@@ -92,7 +94,7 @@ pub const PERFORMANCE_METRICS_KEYS: PerformanceMetricsKeys = PerformanceMetricsK
 
 /// Policy authorization status parameter keys for GetPolicyAuthStatus EventType.
 pub struct PolicyAuthStatusKeys {
-    /// The key for permissions list.
+    /// The input list of permission names.
     pub permissions: &'static str,
     /// The key for output auth statuses list.
     pub auth_statuses: &'static str,
@@ -100,6 +102,19 @@ pub struct PolicyAuthStatusKeys {
     pub is_remote: &'static str,
     /// The key for indicating whether the caller is a public CLI tool interface (third-party).
     pub is_public_cli: &'static str,
+}
+
+/// Contract for GetAtlPermissionPolicy. No nearest-level or threshold fallback.
+pub struct AtlPermissionPolicyKeys {
+    /// Input: a single positive ATL value.
+    pub atl: &'static str,
+    /// Output: Bool (true) if this ATL has a policy, Bool (false) otherwise.
+    /// A missing/wrongly typed flag is a protocol error, not an empty policy.
+    pub policy_found: &'static str,
+    /// Output: StringList of exact permission names; required when policy_found is 1.
+    /// An existing empty StringList allows all requested permissions under screen lock.
+    /// When policy_found is 0, omit this field or return an empty StringList.
+    pub permission_policy: &'static str,
 }
 
 /// Verify remote ticket parameter keys for VerifyRemoteTicket EventType.
@@ -118,6 +133,13 @@ pub const POLICY_AUTH_STATUS_KEYS: PolicyAuthStatusKeys = PolicyAuthStatusKeys {
     auth_statuses: "AuthStatuses",
     is_remote: "IsRemote",
     is_public_cli: "IsPublicCli",
+};
+
+/// Keys for the ATL-specific lock-screen policy query.
+pub const ATL_PERMISSION_POLICY_KEYS: AtlPermissionPolicyKeys = AtlPermissionPolicyKeys {
+    atl: "Atl",
+    policy_found: "PolicyFound",
+    permission_policy: "PermissionPolicy",
 };
 
 /// VerifyRemoteTicketKeys constant for VerifyRemoteTicket EventType.

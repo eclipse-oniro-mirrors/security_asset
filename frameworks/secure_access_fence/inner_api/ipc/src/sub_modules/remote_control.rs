@@ -160,7 +160,16 @@ pub fn deserialize_permission_query(parcel: &mut MsgParcel) -> Result<Permission
     let caller_token_id = parcel.read::<i32>().map_err(ipc_err_handle)?;
     let domain_id = parcel.read_string16().map_err(ipc_err_handle)?;
     let remote_info = deserialize_remote_info(parcel)?;
-    Ok(PermissionQuery { operation_info, need_ticket, ticket_expire_time_ms, caller_token_id, domain_id, remote_info })
+    let task_identity = super::task_identity::deserialize_task_identity(parcel)?;
+    Ok(PermissionQuery {
+        operation_info,
+        need_ticket,
+        ticket_expire_time_ms,
+        caller_token_id,
+        domain_id,
+        remote_info,
+        task_identity,
+    })
 }
 
 /// Deserialize PermissionQuery vector from MsgParcel.

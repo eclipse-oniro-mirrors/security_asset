@@ -22,7 +22,7 @@ use saf_log::{loge, logi};
 use saf_plugin::saf_plugin::SAFPlugin;
 use saf_plugin_interface::plugin_interface::{
     EventType, ExtMap, ERROR_METRICS_KEYS, GET_DEVICE_UDID_KEYS, PERFORMANCE_METRICS_KEYS, POLICY_AUTH_STATUS_KEYS,
-    VERIFY_REMOTE_TICKET_KEYS,
+    VERIFY_REMOTE_TICKET_KEYS, ATL_PERMISSION_POLICY_KEYS,
 };
 use saf_sdk::Value;
 
@@ -97,6 +97,10 @@ pub mod ffi {
             is_remote: bool,
             is_public_cli: bool,
         ) -> i32;
+        /// Query one ATL's lock-screen policy, distinguishing absent and empty lists.
+        fn get_atl_permission_policy(
+            atl: i32, policy_found: &mut bool, permission_policy: &mut Vec<String>,
+        ) -> i32;
         fn verify_remote_ticket(domain_id: String, remote_control_ticket: String, os_account_id: i32) -> i32;
         fn cxx_store_challenge(caller_token_id: &str, challenge: &str, expire_time_ms: u64) -> i32;
         fn cxx_store_controlled_grant_record(
@@ -105,6 +109,14 @@ pub mod ffi {
             controller_device_name: String,
             permission_names: Vec<String>,
             caller_token_id: i32,
+        ) -> i32;
+        /// CXX bridge for task identity verification (memory only, used by RequestToolPermissions).
+        fn cxx_verify_task_identity(
+            os_account_id: i32,
+            caller_token_id: &str,
+            task_attributes: &str,
+            identity: &str,
+            challenge: &str,
         ) -> i32;
     }
 
@@ -225,6 +237,57 @@ pub fn get_policy_auth_status(
 
     logi!("[get_policy_auth_status] success, auth_statuses_len={}", auth_statuses.len());
 
+    0
+}
+
+pub fn get_atl_permission_policy(
+    atl: i32,
+    policy_found: &mut bool,
+    permission_policy: &mut Vec<String>,
+) -> i32 {
+    // Clear out-parameters before any failure; never reuse stale policy data.
+    *policy_found = false;
+    permission_policy.clear();
+    if atl <= 0 {
+        return saf_definition::ErrCode::InvalidArgument as i32;
+    }
+    let plugin = SAFPlugin::get_instance();
+    let loader = match plugin.load_plugin() {
+        Ok(loader) => loader,
+        Err(_) => return saf_definition::ErrCode::PluginNotSupport as i32,
+    };
+    let mut params = ExtMap::new();
+    params.insert(ATL_PERMISSION_POLICY_KEYS.atl, Value::Number(atl as u32));
+    let result = match loader.process_event(EventType::GetAtlPermissionPolicy, &mut params) {
+        Ok(result) => result,
+        Err(e) => {
+            loge!("[get_atl_permission_policy] process_event failed, err={}", e);
+            return e as i32;
+        },
+    };
+    let found = match result.get(ATL_PERMISSION_POLICY_KEYS.policy_found) {
+        Some(Value::Bool(flag)) => *flag,
+        _ => {
+            loge!("[get_atl_permission_policy] invalid or missing PolicyFound");
+            return saf_definition::ErrCode::InvalidArgument as i32;
+        },
+    };
+    match result.get(ATL_PERMISSION_POLICY_KEYS.permission_policy) {
+        Some(Value::StringList(permissions)) if found => {
+            if permissions.iter().any(|permission| permission.is_empty()) {
+                return saf_definition::ErrCode::InvalidArgument as i32;
+            }
+            permission_policy.extend(permissions.iter().cloned());
+        },
+        Some(Value::StringList(permissions)) if permissions.is_empty() => {},
+        None if !found => {},
+        _ => {
+            loge!("[get_atl_permission_policy] invalid or missing PermissionPolicy");
+            return saf_definition::ErrCode::InvalidArgument as i32;
+        },
+    }
+    // Set only after validating the complete response.
+    *policy_found = found;
     0
 }
 
@@ -360,6 +423,34 @@ pub fn cxx_store_controlled_grant_record(
 /// Get the binder calling token id as a string.
 pub fn get_calling_token_id() -> String {
     ffi::GetCallingTokenId().to_string()
+}
+
+/// C++ -> Rust bridge for task identity verification (memory first,
+/// disk fallback for long-duration tasks after the SA restarts).
+pub fn cxx_verify_task_identity(
+    os_account_id: i32,
+    caller_token_id: &str,
+    task_attributes: &str,
+    identity: &str,
+    challenge: &str,
+) -> i32 {
+    logi!(
+        "[Wrapper cxx_verify_task_identity] os_account_id = {}, caller = {}, task_attributes_len = {}",
+        os_account_id, caller_token_id.len(), task_attributes.len()
+    );
+    match crate::task_identity::verify_task_identity(
+        os_account_id,
+        caller_token_id,
+        task_attributes,
+        identity,
+        challenge,
+    ) {
+        Ok(_) => 0,
+        Err(e) => {
+            loge!("[Wrapper cxx_verify_task_identity] verify failed, err = {}", e.code);
+            e.code as i32
+        }
+    }
 }
 
 /// Get Device UDID via plugin process_event

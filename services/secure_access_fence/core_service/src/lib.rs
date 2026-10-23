@@ -515,13 +515,11 @@ impl SAFService {
             return macros_lib::log_throw_error!(code, "Permission denied");
         }
         let caller = crate::wrapper::get_calling_token_id();
-        let calling_uid = ipc::Skeleton::calling_uid();
         execute_with_metrics_single!(
             "generate_task_identity",
             task_identity::generate_task_identity,
             os_account_id,
             &caller,
-            calling_uid,
             &info
         )
     }
@@ -550,13 +548,11 @@ impl SAFService {
             return macros_lib::log_throw_error!(code, "Permission denied");
         }
         let caller = caller_token.to_string();
-        let calling_uid = ipc::Skeleton::calling_uid();
         execute_with_metrics_single!(
             "retrieve_auth_token_by_task_id",
             task_identity::retrieve_auth_token_by_task_id,
             os_account_id,
             &caller,
-            calling_uid,
             &task_id
         )
     }
@@ -661,6 +657,7 @@ fn verify_ticket_impl(os_account_id: i32, caller_id: &str, verify_info_str: &str
     check_and_consume_replay_challenge(caller_id, &challenge)?;
     check_ticket_time_validity_with_json(&message_json)?;
     check_screen_lock_status(os_account_id, &message_json)?;
+    task_identity::verify_task_identity_and_consume(os_account_id, &message_json)?;
     extract_cli_infos_with_json(&message_json)
 }
 

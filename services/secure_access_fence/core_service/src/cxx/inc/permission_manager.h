@@ -41,6 +41,23 @@ struct TicketMessageInfo {
     uint64_t ticketExpireTimeMs{0};
     bool needUnlockScreen{false};
     std::string domainId;
+    // Task-level authorization (empty fields when absent).
+    bool hasTaskIdentity{false};
+    std::string taskAttributes;
+    std::string identity;
+    std::string taskChallenge;
+};
+
+// Intermediate outputs of permission aggregation and authorization checks.
+struct AggregatedPermissionInfo {
+    std::vector<std::string> permissions;
+    std::vector<PermissionInfo> authStatuses;
+};
+
+struct TaskAtlAttributes {
+    bool hasAuthToken = false;
+    int32_t atl = 0;
+    bool allowScreenLockExecution = false;
 };
 
 const std::map<std::pair<PermissionStatus, PolicyStatus>, AuthStatus> statusMapping = {
@@ -73,23 +90,31 @@ private:
     int32_t BatchQueryCommandPermission(const std::vector<CommandInfo> &cmds,
         std::vector<TicketCliInfo> &ticketCliInfos);
 
-    int32_t CheckNeedUnlockScreen(const std::vector<TicketCliInfo> &ticketCliInfos,
-        bool &needUnlock, bool &isScreenLocked);
+    int32_t VerifyRemoteTicketIfNeed(const PermissionQuery &permissionQuery, bool &isRemoteTicketVerified);
 
-    bool IsProcessLockScreenSuccess(const std::vector<TicketCliInfo> &ticketCliInfos,
-        bool &needUnlock);
+    int32_t QueryCommandPermissions(const std::vector<CommandInfo> &cmds,
+        std::vector<TicketCliInfo> &ticketCliInfos);
 
-    int32_t ProcessOperations(const std::vector<OperationInfo> &operationInfos,
+    int32_t ConvertOperationsToPermissions(const PermissionQuery &permissionQuery,
+        std::vector<std::string> &apiPermissions, std::vector<TicketCliInfo> &ticketCliInfos);
+
+    int32_t ParseOperationInfos(const std::vector<OperationInfo> &operationInfos,
         std::vector<CommandInfo> &cliInfos, std::vector<std::string> &apiPermissions);
 
-    int32_t MergePermissionLists(const std::vector<TicketCliInfo> &ticketCliInfos,
-        const std::vector<std::string> &apiPermissions, std::vector<std::string> &allPermissions);
+    void MergePermissionLists(const std::vector<TicketCliInfo> &ticketCliInfos,
+        const std::vector<std::string> &apiPermissions, std::vector<std::string> &permissions);
 
     int32_t BatchVerifyPermissions(const std::vector<std::string> &allPermissions, uint32_t callerTokenId,
         std::vector<PermissionInfo> &authResults, bool skipInvalid = false);
 
+    int32_t VerifyAggregatedPermissions(uint32_t callerTokenId, AggregatedPermissionInfo &aggregatedInfo);
+
+    int32_t QueryPolicyAndMergeResults(const PermissionQuery &permissionQuery,
+        AggregatedPermissionInfo &aggregatedInfo, PermissionQueryResult &permissionQueryResult,
+        bool isPublicCli);
+
     int32_t MergePermissionResults(const std::vector<PermissionInfo> &authResults,
-        PermissionQueryResult &permissionQueryResult, bool isRemote = false, bool isPublicCli = false);
+        PermissionQueryResult &permissionQueryResult, const std::vector<int32_t> &policyStatuses);
 
     int32_t VerifyPermissionInfo(const std::vector<PermissionInfo> &permissionInfos);
 
@@ -101,9 +126,16 @@ private:
     int32_t GetPolicyAuthStatus(const std::vector<std::string> &permissions, std::vector<int32_t> &policyStatuses,
         bool isRemote = false, bool isPublicCli = false);
 
+    int32_t GetAtlPermissionPolicy(int32_t atl, bool &policyFound,
+        std::vector<std::string> &permissionPolicy);
+
+    void BuildTicketMessageInfo(const PermissionQuery &permissionQuery,
+        const std::vector<TicketCliInfo> &ticketCliInfos, const std::vector<std::string> &apiPermissions,
+        bool needUnlock, TicketMessageInfo &ticketMessageInfo);
+
     int32_t ProcessTicketInfo(const PermissionQuery &permissionQuery,
         const std::vector<TicketCliInfo> &ticketCliInfos, const std::vector<std::string> &apiPermissions,
-        bool ticketMsgNeedLock, PermissionQueryResult &permissionQueryResult);
+        bool needUnlock, PermissionQueryResult &permissionQueryResult);
     
     void InitTicketInfos(const std::vector<UserAuthResult> &userAuthResults,
         std::vector<VerifyTicketInfo> &ticketInfos);
@@ -113,6 +145,10 @@ private:
     int32_t GetVerifyTicketInfo(const UserAuthResult &userAuthResult, VerifyTicketInfo &ticketInfo);
     
     void StoreGrantRecordIfValid(const UserAuthResult &userAuthResult, const TicketMessageInfo &ticketMessageInfo);
+
+    int32_t VerifyTaskIdentity(const PermissionQuery &permissionQuery);
+
+    int32_t VerifyAndParseTaskIdentity(const PermissionQuery &permissionQuery, TaskAtlAttributes &atlAttributes);
 };
 
 } // namespace OHOS::Security::SAF

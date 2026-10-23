@@ -70,6 +70,7 @@ fn test_generate_controller_device_package_invalid_role() {
                     sign_verify_msg: String::new(),
                 },
             },
+            task_identity: saf_definition::TaskIdentity::default(),
         },
     };
     let result = generate_controller_device_package(100, vec![auth_result]);
@@ -102,6 +103,7 @@ fn test_generate_controller_device_package_empty_challenge() {
                     sign_verify_msg: String::new(),
                 },
             },
+            task_identity: saf_definition::TaskIdentity::default(),
         },
     };
     let result = generate_controller_device_package(100, vec![auth_result]);
@@ -134,6 +136,7 @@ fn test_generate_controller_device_package_invalid_challenge_format() {
                     sign_verify_msg: String::new(),
                 },
             },
+            task_identity: saf_definition::TaskIdentity::default(),
         },
     };
     let result = generate_controller_device_package(100, vec![auth_result]);
@@ -167,6 +170,7 @@ fn test_generate_controller_device_package_partial_failure() {
                     sign_verify_msg: String::new(),
                 },
             },
+            task_identity: saf_definition::TaskIdentity::default(),
         },
     };
     let result = generate_controller_device_package(100, vec![valid_auth, invalid_auth]);
@@ -193,6 +197,7 @@ fn test_validate_controller_permission_query_valid() {
                 controller_device_name: "controller".to_string(),
                 sign_verify_msg: String::new(),
             },
+            task_identity: saf_definition::TaskIdentity::default(),
         },
     };
     let result = validate_controller_permission_query_stub(&query);
@@ -218,6 +223,7 @@ fn test_validate_controller_permission_query_invalid_role() {
                 controller_device_name: "controller".to_string(),
                 sign_verify_msg: String::new(),
             },
+            task_identity: saf_definition::TaskIdentity::default(),
         },
     };
     let result = validate_controller_permission_query_stub(&query);

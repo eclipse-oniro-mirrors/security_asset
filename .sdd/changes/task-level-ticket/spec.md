@@ -21,7 +21,7 @@
 - When 调用 `generateTaskIdentity`
 - Then 按是否携带 `authToken` 分两条路径：
 
-  1. **携带 authToken（高危路径）**：通过 CXX bridge 调用 IAM `VerifyAuthToken`（`iam_verify_wrapper.cpp` → `UserAccessCtrlClient::VerifyAuthToken`），获取 IAM 返回的 challenge 和 authTrustLevel；以 `(caller, task_id)` 查询 pending challenge 比对，不匹配返回 `TASK_IDENTITY_MISMATCH(0x71008)`；匹配后构建 `taskAttributes` JSON（含 `authToken`(base64) + `atl`），使用**双 challenge 模式**：challenge1 派生 session_key，challenge2 追加到 HMAC 数据，`identity = base64(HMAC_SHA256(taskAttributes + calling_uid + taskId + challenge2, session_key))`，`challenge = base64(challenge1 + challenge2)`
+  1. **携带 authToken（高危路径）**：通过 CXX bridge 调用 IAM `VerifyAuthToken`（`iam_verify_wrapper.cpp` → `UserAccessCtrlClient::VerifyAuthToken`），获取 IAM 返回的 challenge 和 authTrustLevel；以 `(caller, task_id)` 查询 pending challenge 比对，不匹配返回 `TASK_IDENTITY_MISMATCH(0x71008)`；匹配后构建 `taskAttributes` JSON（含 `callerTokenId` + `authToken`(base64) + `atl`），使用**双 challenge 模式**：challenge1 派生 session_key，challenge2 追加到 HMAC 数据，`identity = base64(HMAC_SHA256(taskAttributes + taskId + challenge2, session_key))`，`challenge = base64(challenge1 + challenge2)`（superseded 于 `task-identity-bind-caller-token`，移除动态 calling_uid）
   2. **未携带 authToken（低危路径）**：不要求 pending，直接构建 `taskAttributes`（不含 `authToken`/`atl`），生成 `TaskIdentity`
 
 - 磁盘始终先写，内存使用 LRU（32 条上限，满时淘汰最久未访问的条目）
@@ -39,7 +39,7 @@
 
 - Given 系统 SA 调用方（`TOKEN_NATIVE`，持有 `ohos.permission.QUERY_TOOL_PERMISSIONS` + `ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS`）传入 `callerToken` 和 `taskId`
 - When 调用 `RetrieveAuthTokenByTaskId`
-- Then 通过 `GetOsAccountIdFromTokenId(callerToken)` 解析 os_account_id（HAP→GetHapTokenInfo→userID，SA→0）；查内存/磁盘记录；检查过期；验证 HMAC（含 calling_uid 防篡改）；提取并返回 authToken 字节
+- Then 通过 `GetOsAccountIdFromTokenId(callerToken)` 解析 os_account_id（HAP→GetHapTokenInfo→userID，SA→0）；查内存/磁盘记录；检查过期；验证 HMAC（superseded：原含 calling_uid 防篡改，见 `task-identity-bind-caller-token`）；提取并返回 authToken 字节
 
 ### R5: 存储与生命周期
 
@@ -84,7 +84,7 @@
 - [ ] AC4: `generateTaskIdentity` 返回的 challenge 为 `base64(challenge1+challenge2)`（64 字节解码），identity 为 `base64(HMAC)`，taskAttributes 含 authToken(base64)+atl
 - [ ] AC5: `revokeTaskIdentity` 后再检索返回 `TASK_IDENTITY_NOT_FOUND`；重新生成相同 taskId 可正常检索
 - [ ] AC6: `RetrieveAuthTokenByTaskId` 从 callerToken 解析 os_account_id（SA→0, HAP→userID）
-- [ ] AC7: HMAC 验证含 calling_uid，跨 uid 检索返回 `TASK_IDENTITY_MISMATCH`
+- [ ] AC7: HMAC 验证态（superseded：原为"含 calling_uid，跨 uid 检索返回 `TASK_IDENTITY_MISMATCH`"，见 `task-identity-bind-caller-token`）；跨调用方验证在 callerToken 匹配时可通过对齐 RequestToolPermissions 的 HMAC 构造
 - [ ] AC8: LRU 内存上限 32，满时自动淘汰最久未访问的条目（不影响磁盘文件）
 - [ ] AC9: NAPI `generateTaskChallenge` resolve 正确逐元素转换 `int32_t→uint8_t`（非 memcpy）
 - [ ] AC10: NAPI 校验 typedarray type == `napi_uint8_array`，非 Uint8Array 返回 24010000
