@@ -99,3 +99,15 @@ pub fn serialize_u8_to_i32_list(bytes: &[u8], parcel: &mut MsgParcel) -> Result<
     }
     Ok(())
 }
+
+/// Deserialize TaskIdentity from MsgParcel (trailing field of PermissionQuery).
+pub fn deserialize_task_identity(parcel: &mut MsgParcel) -> Result<TaskIdentity> {
+    let task_attributes = parcel.read_string16().map_err(ipc_err_handle)?;
+    let identity = parcel.read_string16().map_err(ipc_err_handle)?;
+    let challenge = parcel.read_string16().map_err(ipc_err_handle)?;
+    Ok(TaskIdentity {
+        task_attributes,
+        identity,
+        challenge,
+    })
+}

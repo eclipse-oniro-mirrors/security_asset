@@ -18,7 +18,9 @@
     OHOS$Security$SAF$cxxbridge1$cxx_batch_generate_ticket;
     OHOS$Security$SAF$cxxbridge1$cxx_store_challenge;
     OHOS$Security$SAF$cxxbridge1$cxx_store_controlled_grant_record;
+    OHOS$Security$SAF$cxxbridge1$cxx_verify_task_identity;
     OHOS$Security$SAF$cxxbridge1$get_policy_auth_status;
+    OHOS$Security$SAF$cxxbridge1$get_atl_permission_policy;
     OHOS$Security$SAF$cxxbridge1$notify_error;
     OHOS$Security$SAF$cxxbridge1$notify_performance_metrics;
     OHOS$Security$SAF$cxxbridge1$verify_remote_ticket;

@@ -46,7 +46,7 @@ RetrieveAuthTokenByTaskId 仅 C++ Inner API（`saf_agent_fence.h`），不注册
 复用 `batch_generate_ticket` 的双 challenge 模式：
 - challenge1（32 字节随机）：派生 `session_key = TicketKeyManager.derive_ticket_session_key(os_account_id, "", challenge1)`
 - challenge2（32 字节随机）：追加到 HMAC 数据
-- HMAC data = `taskAttributes.bytes + calling_uid.to_be_bytes() + taskId.bytes + challenge2`
+- HMAC data = `taskAttributes.bytes + taskId.bytes + challenge2`，其中 `taskAttributes` 含 `callerTokenId` 字段（对齐 RequestToolPermissions ticket 的"callerTokenId 内嵌被 HMAC 覆盖"；已 superseded 于 `task-identity-bind-caller-token`，不再拼接动态 `calling_uid`）
 - `identity = base64(HMAC_SHA256(data, session_key))`
 - `challenge = base64(challenge1 + challenge2)`（64 字节）
 - verify 时从 challenge 拆分 challenge1/challenge2，重算 HMAC 比对 identity

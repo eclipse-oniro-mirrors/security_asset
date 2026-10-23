@@ -9,7 +9,7 @@
 | `saf_ipc` (Rust) | 新增 CMD 常量 12-15；`sub_modules/task_identity.rs` 序列化 + u8 范围校验（`U8_MAX`） |
 | `task_identity/storage_backend.rs` (新) | `StorageBackend` trait + `DiskStorage` + `MockStorage`；`#[cfg]` 仅在 `create_storage()`（2 行） |
 | `task_identity/store.rs` | LRU 内存缓存（`LruMap` HashMap+VecDeque, cap=32），零 `#[cfg]`；磁盘写入 → LRU put；移除 per-caller 限制和 revoked set |
-| `task_identity/mod.rs` | 双 challenge HMAC + IAM 真实调用 + calling_uid 防篡改；移除 is_task_revoked 调用 |
+| `task_identity/mod.rs` | 双 challenge HMAC + IAM 真实调用；移除 is_task_revoked 调用 |
 | `task_identity/validator.rs` | 参数校验（与 napi_common.cpp 同步 10 种路径穿越 pattern） |
 | `cxx/src/iam_verify_wrapper.cpp` (新) | `SyncVerifyCallback` + `VerifyAuthToken`（真实 IAM，从 service.cpp 抽离） |
 | `cxx/src/secure_access_fence_service.cpp` | `GetCallingTokenId()` + `GetOsAccountIdFromTokenId()`；移除 IAM 代码 |
@@ -49,7 +49,7 @@
 | Risk | Mitigation |
 | --- | --- |
 | IAM 调用超时 | `SyncVerifyCallback` 10 秒超时，返回 `IAM_VERIFY_RESULT_TIMEOUT` |
-| HMAC 篡改 | HMAC data 含 calling_uid + taskId + challenge2，磁盘篡改均导致 mismatch |
+| HMAC 篡改 | HMAC data 覆盖 taskAttributes（含 callerTokenId）+ taskId + challenge2，磁盘篡改均导致 mismatch |
 | 路径穿越 | 10 种 pattern 在 NAPI 和 Rust validator 同步校验 |
 | DoS | LRU 32 内存上限 + authToken ≤4096 字节 + taskAttributes JSON ≤8192 字节 |
 | NAPI typedarray 类型错误 | 校验 `type == napi_uint8_array` + `data != nullptr` |

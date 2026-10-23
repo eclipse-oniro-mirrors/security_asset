@@ -224,6 +224,9 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::Permissi
     if (napi_get_named_property(env, object, "remoteInfo", &propValue) == napi_ok) {
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, permissionQuery.remoteInfo));
     }
+    if (napi_get_named_property(env, object, "taskIdentity", &propValue) == napi_ok) {
+        NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, permissionQuery.taskIdentity));
+    }
     return napi_ok;
 }
 

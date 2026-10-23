@@ -15,6 +15,7 @@
 #include <vector>
 #include <string>
 #include <chrono>
+#include <algorithm>
 #include <unordered_set>
 #include <unordered_map>
 
@@ -35,8 +36,10 @@
 
 namespace OHOS::Security::SAF {
 
+using namespace CliTool;
+
 namespace {
-    bool getAuthStatus(PermissionStatus permissionStatus, PolicyStatus policyStatus, AuthStatus& authStatus)
+    bool GetAuthStatus(PermissionStatus permissionStatus, PolicyStatus policyStatus, AuthStatus& authStatus)
     {
         auto it = statusMapping.find(std::make_pair(permissionStatus, policyStatus));
         if (it == statusMapping.end()) {
@@ -59,6 +62,12 @@ namespace {
             && IsRemoteControlParamsEmpty(remoteInfo.remoteControlParams);
     }
 
+    bool IsTaskIdentityEmpty(const TaskIdentity &taskIdentity)
+    {
+        return taskIdentity.taskAttributes.empty() && taskIdentity.identity.empty()
+            && taskIdentity.challenge.empty();
+    }
+
     int32_t VerifyRemoteTicket(const PermissionQuery &permissionQuery)
     {
         if (permissionQuery.domainId.empty() ||
@@ -75,9 +84,87 @@ namespace {
         rust::String remoteControlTicket = permissionQuery.remoteInfo.remoteControlParams.remoteControlTicket;
         return verify_remote_ticket(domainId, remoteControlTicket, osAccountId);
     }
-}
 
-using namespace CliTool;
+    // Presence only: task identity must already have been verified by the caller.
+    // Keep token presence separate from ATL validity to preserve error ordering.
+    TaskAtlAttributes ParseTaskAtlAttributes(const TaskIdentity &taskIdentity)
+    {
+        TaskAtlAttributes attributes;
+        if (taskIdentity.taskAttributes.empty()) {
+            return attributes;
+        }
+        cJSON *root = cJSON_Parse(taskIdentity.taskAttributes.c_str());
+        if (root == nullptr) {
+            return attributes;
+        }
+        const cJSON *token = cJSON_GetObjectItemCaseSensitive(root, "authToken");
+        attributes.hasAuthToken = cJSON_IsString(token) && token->valuestring != nullptr &&
+            token->valuestring[0] != '\0';
+        const cJSON *atl = cJSON_GetObjectItemCaseSensitive(root, "atl");
+        if (cJSON_IsNumber(atl)) {
+            attributes.atl = atl->valueint;
+        }
+        const cJSON *allowScreenLockExecution =
+            cJSON_GetObjectItemCaseSensitive(root, "allowScreenLockExecution");
+        if (cJSON_IsBool(allowScreenLockExecution)) {
+            attributes.allowScreenLockExecution = cJSON_IsTrue(allowScreenLockExecution);
+        }
+        cJSON_Delete(root);
+        return attributes;
+    }
+
+    // Query device state only when the effective execution policy requires unlock.
+    int32_t CheckScreenLock(bool needUnlock)
+    {
+        if (!needUnlock) {
+            return SAF_SUCCESS;
+        }
+        int32_t osAccountId;
+        bool found = GetOsAccountIdFromUid(IPCSkeleton::GetCallingUid(), &osAccountId);
+        IF_FALSE_LOGE_RETURN_ERR(found, SAF_ERROR, "CheckScreenLock :: GetOsAccountIdFromUid failed");
+        bool isLocked = false;
+        int32_t ret = IsScreenLocked(osAccountId, &isLocked);
+        IF_ERROR_LOGE_RETURN(ret, "CheckScreenLock :: IsScreenLocked failed, ret=%{public}d", ret);
+        IF_TRUE_LOGE_RETURN_ERR(isLocked, SAF_ERR_SCREENLOCK_IS_LOCKED,
+            "CheckScreenLock :: requested permissions require unlock");
+        return SAF_SUCCESS;
+    }
+
+    bool IsDeniedUnderScreenLock(const std::vector<std::string> &permissions,
+        const std::vector<std::string> &permissionPolicy)
+    {
+        if (permissionPolicy.empty()) {
+            return false;
+        }
+        const std::unordered_set<std::string> policyPermissions(
+            permissionPolicy.begin(), permissionPolicy.end());
+        return std::any_of(permissions.begin(), permissions.end(),
+            [&policyPermissions](const std::string &permission) {
+                return policyPermissions.find(permission) != policyPermissions.end();
+            });
+    }
+
+    bool IsAtlLockScreenExecutionAllowed(bool policyFound,
+        const std::vector<std::string> &permissions, const std::vector<std::string> &permissionPolicy)
+    {
+        if (!policyFound) {
+            return false;
+        }
+        return !IsDeniedUnderScreenLock(permissions, permissionPolicy);
+    }
+
+    bool AnyCommandRequiresUnlock(const std::vector<TicketCliInfo> &cliInfos)
+    {
+        return std::any_of(cliInfos.begin(), cliInfos.end(),
+            [](const TicketCliInfo &info) { return !info.isLockScreenExecutionAllowed; });
+    }
+
+    bool IsRemoteQuery(const PermissionQuery &permissionQuery)
+    {
+        return !IsRemoteInfoEmpty(permissionQuery.remoteInfo);
+    }
+
+} // namespace
 
 constexpr int32_t MIN_OS_ACCOUNT_ID = 100;
 
@@ -103,6 +190,10 @@ constexpr char JSON_KEY_START_TIME[] = "startTime";
 constexpr char JSON_KEY_TICKET_EXPIRE_TIME_MS[] = "ticketExpireTimeMs";
 constexpr char JSON_KEY_REMOTE_INFO[] = "remoteInfo";
 constexpr char JSON_KEY_NEED_UNLOCK_SCREEN[] = "needUnlockScreen";
+constexpr char JSON_KEY_TASK_IDENTITY[] = "taskIdentity";
+constexpr char JSON_KEY_TASK_ATTRIBUTES[] = "taskAttributes";
+constexpr char JSON_KEY_TASK_IDENTITY_IDENTITY[] = "identity";
+constexpr char JSON_KEY_TASK_CHALLENGE[] = "challenge";
 constexpr char JSON_EMPTY_STRING[] = "";
 constexpr char JSON_ESCAPED_QUOTE[] = "\\\"";
 constexpr char JSON_ESCAPED_BACKSLASH[] = "\\\\";
@@ -170,62 +261,25 @@ int32_t PermissionManager::BatchQueryCommandPermission(const std::vector<Command
     return SAF_SUCCESS;
 }
 
-int32_t PermissionManager::CheckNeedUnlockScreen(
-    const std::vector<TicketCliInfo> &ticketCliInfos,
-    bool &needUnlock, bool &isScreenLocked)
-{
-    needUnlock = false;
-    for (const auto &cliInfo : ticketCliInfos) {
-        if (!cliInfo.isLockScreenExecutionAllowed) {
-            needUnlock = true;
-            break;
-        }
-    }
-
-    if (!needUnlock) {
-        isScreenLocked = false;
-        return SAF_SUCCESS;
-    }
-
-    int32_t osAccountId;
-    int32_t callerUid = IPCSkeleton::GetCallingUid();
-    bool retFlag = GetOsAccountIdFromUid(callerUid, &osAccountId);
-    IF_FALSE_LOGE_RETURN_ERR(retFlag, SAF_ERROR, "PermissionManager :: CheckNeedUnlockScreen failed");
-
-    return IsScreenLocked(osAccountId, &isScreenLocked);
-}
-
-bool PermissionManager::IsProcessLockScreenSuccess(
-    const std::vector<TicketCliInfo> &ticketCliInfos,
-    bool &needUnlock)
-{
-    bool isScreenLocked = false;
-    int32_t ret = CheckNeedUnlockScreen(ticketCliInfos, needUnlock, isScreenLocked);
-    if (ret != SAF_SUCCESS || (needUnlock && isScreenLocked)) {
-        return false;
-    }
-    return true;
-}
-
-int32_t PermissionManager::ProcessOperations(const std::vector<OperationInfo> &operationInfos,
+int32_t PermissionManager::ParseOperationInfos(const std::vector<OperationInfo> &operationInfos,
     std::vector<CommandInfo> &cliInfos, std::vector<std::string> &apiPermissions)
 {
     for (const auto &opInfo : operationInfos) {
         switch (opInfo.operationType) {
             case OperationType::CLI: {
                 IF_TRUE_LOGE_RETURN_ERR(opInfo.cliCmdInfo.cmdName.empty(), SAF_ERR_ARG_INVALID,
-                    "ProcessOperations failed, cliCmdInfo is invalid");
+                    "ParseOperationInfos failed, cliCmdInfo is invalid");
                 cliInfos.push_back(opInfo.cliCmdInfo);
                 break;
             }
             case OperationType::API: {
                 IF_TRUE_LOGE_RETURN_ERR(opInfo.permission.empty() || ExceedsPermissionLengthLimit(opInfo.permission),
-                    SAF_ERR_ARG_INVALID, "ProcessOperations failed, api permission is invalid");
+                    SAF_ERR_ARG_INVALID, "ParseOperationInfos failed, api permission is invalid");
                 apiPermissions.push_back(opInfo.permission);
                 break;
             }
             default: {
-                LOGE("ProcessOperations failed, Unknown operation type: %{public}d", opInfo.operationType);
+                LOGE("ParseOperationInfos failed, Unknown operation type: %{public}d", opInfo.operationType);
                 return SAF_ERR_ARG_INVALID;
             }
         }
@@ -233,16 +287,15 @@ int32_t PermissionManager::ProcessOperations(const std::vector<OperationInfo> &o
     return SAF_SUCCESS;
 }
 
-int32_t PermissionManager::MergePermissionLists(const std::vector<TicketCliInfo> &ticketCliInfos,
-    const std::vector<std::string> &apiPermissions, std::vector<std::string> &allPermissions)
+void PermissionManager::MergePermissionLists(const std::vector<TicketCliInfo> &ticketCliInfos,
+    const std::vector<std::string> &apiPermissions, std::vector<std::string> &permissions)
 {
     std::unordered_set<std::string> permissionSet;
     for (const auto &cliInfo : ticketCliInfos) {
         permissionSet.insert(cliInfo.permissions.begin(), cliInfo.permissions.end());
     }
     permissionSet.insert(apiPermissions.begin(), apiPermissions.end());
-    allPermissions = std::vector<std::string>(permissionSet.begin(), permissionSet.end());
-    return SAF_SUCCESS;
+    permissions = std::vector<std::string>(permissionSet.begin(), permissionSet.end());
 }
 
 int32_t PermissionManager::BatchVerifyPermissions(const std::vector<std::string> &allPermissions,
@@ -293,20 +346,69 @@ int32_t PermissionManager::BatchVerifyPermissions(const std::vector<std::string>
     return SAF_SUCCESS;
 }
 
+int32_t PermissionManager::VerifyAggregatedPermissions(uint32_t callerTokenId,
+    AggregatedPermissionInfo &aggregatedInfo)
+{
+    if (aggregatedInfo.permissions.empty()) {
+        return SAF_SUCCESS;
+    }
+
+    uint32_t tokenId = GetValidCallingTokenId(callerTokenId);
+    std::vector<AccessToken::PermissionStatusDetail> resultList;
+    // 调用ATM接口获取permissionStatus及authStatusInfo.flag
+    int32_t ret = AccessToken::AccessTokenKit::GetPermissionStatusDetails(tokenId, aggregatedInfo.permissions,
+        resultList);
+    IF_ERROR_LOGE_RETURN(ret, "GetPermissionStatusDetails failed, ret=%{public}d", ret);
+
+    aggregatedInfo.authStatuses.reserve(resultList.size());
+    for (const auto &permission : resultList) {
+        LOGI("ATM grantStatus is %{public}d, ATM resultType is %{public}d, ATM grantFlag is %{public}d",
+            permission.grantStatus, static_cast<int32_t>(permission.resultType), permission.grantFlag);
+        // 不存在的权限/未声明的权限
+        IF_TRUE_LOGE_RETURN_ERR(permission.resultType == AccessToken::PermissionResultType::PERMISSION_NOT_EXIST ||
+            permission.resultType == AccessToken::PermissionResultType::PERMISSION_NOT_DECLARED, SAF_ERROR,
+            "BatchVerifyPermissions failed, permission resultType is %{public}d", permission.resultType);
+
+        PermissionInfo info = {};
+        info.permission = permission.permissionName;
+        switch (permission.grantStatus) {
+            case static_cast<int32_t>(PermissionStatus::DENIED):
+                info.permissionStatus = static_cast<PermissionStatus>(permission.grantStatus); break;
+            case static_cast<int32_t>(PermissionStatus::GRANTED):
+                info.permissionStatus = static_cast<PermissionStatus>(permission.grantStatus); break;
+            case static_cast<int32_t>(PermissionStatus::NOT_DETERMINED):
+                info.permissionStatus = static_cast<PermissionStatus>(permission.grantStatus); break;
+            case static_cast<int32_t>(PermissionStatus::INVALID):
+                info.permissionStatus = static_cast<PermissionStatus>(permission.grantStatus); break;
+            case static_cast<int32_t>(PermissionStatus::RESTRICTED):
+                info.permissionStatus = static_cast<PermissionStatus>(permission.grantStatus); break;
+            default: {
+                LOGE("Unknown grantStatus: %{public}d", permission.grantStatus);
+                return SAF_ERROR;
+            }
+        }
+        info.authStatusInfo.flag = permission.grantFlag;
+        info.authStatusInfo.authStatus = AuthStatus::FORBIDDEN;  // 设置默认值，后续根据权限状态和策略状态映射表设置
+        aggregatedInfo.authStatuses.push_back(info);
+    }
+    return SAF_SUCCESS;
+}
+
 int32_t PermissionManager::GetPolicyAuthStatus(const std::vector<std::string> &permissions,
     std::vector<int32_t> &policyStatuses, bool isRemote, bool isPublicCli)
 {
     policyStatuses.clear();
     policyStatuses.reserve(permissions.size());
     rust::Vec<rust::String> rustPermissions;
-    rust::Vec<int32_t> rustPolicyStatuses;
     for (const auto &permission : permissions) {
         rustPermissions.push_back(rust::String(permission));
     }
+    rust::Vec<int32_t> rustPolicyStatuses;
     int32_t ret = get_policy_auth_status(rustPermissions, rustPolicyStatuses, isRemote, isPublicCli);
     IF_ERROR_LOGE_RETURN(ret, "get_policy_auth_status failed, ret = %{public}d", ret);
 
-    LOGI("get_policy_auth_status success, rustPolicyStatuses size = %{public}zu", rustPolicyStatuses.size());
+    LOGI("get_policy_auth_status success, rustPolicyStatuses size = %{public}zu",
+        rustPolicyStatuses.size());
     for (const auto &rustPolicyStatus : rustPolicyStatuses) {
         LOGI("GetPolicyAuthStatus : rustPolicyStatus = %{public}d", rustPolicyStatus);
         policyStatuses.push_back(rustPolicyStatus);
@@ -314,17 +416,28 @@ int32_t PermissionManager::GetPolicyAuthStatus(const std::vector<std::string> &p
     return SAF_SUCCESS;
 }
 
-int32_t PermissionManager::MergePermissionResults(const std::vector<PermissionInfo> &permissionInfos,
-    PermissionQueryResult &permissionQueryResult, bool isRemote, bool isPublicCli)
+int32_t PermissionManager::GetAtlPermissionPolicy(int32_t atl, bool &policyFound,
+    std::vector<std::string> &permissionPolicy)
 {
-    std::vector<int32_t> policyStatuses;
-    std::vector<std::string> permissionNames;
-    for (auto &permissionInfo : permissionInfos) {
-        permissionNames.push_back(permissionInfo.permission);
+    policyFound = false;
+    permissionPolicy.clear();
+    // Invalid/missing ATL never grants lock-screen execution, even with an authToken.
+    if (atl <= 0) {
+        return SAF_SUCCESS;
     }
-    int32_t ret = GetPolicyAuthStatus(permissionNames, policyStatuses, isRemote, isPublicCli);
-    IF_ERROR_LOGE_RETURN(ret, "GetPolicyAuthStatus failed, ret=%{public}d", ret);
+    rust::Vec<rust::String> rustPolicy;
+    int32_t ret = get_atl_permission_policy(atl, policyFound, rustPolicy);
+    IF_ERROR_LOGE_RETURN(ret, "get_atl_permission_policy failed, ret=%{public}d", ret);
+    permissionPolicy.reserve(rustPolicy.size());
+    for (const auto &permission : rustPolicy) {
+        permissionPolicy.emplace_back(permission.data(), permission.size());
+    }
+    return SAF_SUCCESS;
+}
 
+int32_t PermissionManager::MergePermissionResults(const std::vector<PermissionInfo> &permissionInfos,
+    PermissionQueryResult &permissionQueryResult, const std::vector<int32_t> &policyStatuses)
+{
     permissionQueryResult.permissionResults.clear();
     bool needDialog = false;
     for (size_t i = 0; i < permissionInfos.size(); ++i) {
@@ -338,9 +451,9 @@ int32_t PermissionManager::MergePermissionResults(const std::vector<PermissionIn
             "Invalid policyStatus[%{public}zu]: %{public}d", i, policyStatuses[i]);
 
         // 聚合ATM的PermissionStatus和策略文件的PolicyStatus，得到AuthStatus
-        bool result = getAuthStatus(info.permissionStatus, static_cast<PolicyStatus>(policyStatuses[i]), outStatus);
+        bool result = GetAuthStatus(info.permissionStatus, static_cast<PolicyStatus>(policyStatuses[i]), outStatus);
         IF_FALSE_LOGE_RETURN_ERR(result, SAF_ERROR,
-            "getAuthStatus failed, the combination is undefined, AuthStatus is not exist");
+            "GetAuthStatus failed, the combination is undefined, AuthStatus is not exist");
 
         info.authStatusInfo.authStatus = outStatus;
         if (outStatus != AuthStatus::AUTHORIZED) {
@@ -498,6 +611,34 @@ static int32_t AddBasicFieldsToRoot(cJSON *root, const TicketMessageInfo &ticket
     return SAF_SUCCESS;
 }
 
+static int32_t AddTaskIdentityToRoot(cJSON *root, const TicketMessageInfo &ticketMessageInfo)
+{
+    if (!ticketMessageInfo.hasTaskIdentity) {
+        return SAF_SUCCESS;
+    }
+    cJSON *taskIdentityObj = cJSON_CreateObject();
+    if (taskIdentityObj == nullptr) {
+        LOGE("Create taskIdentityObj failed");
+        return SAF_ERR_NULL_PTR;
+    }
+    if (!cJSON_AddStringToObject(taskIdentityObj, JSON_KEY_TASK_ATTRIBUTES,
+        ticketMessageInfo.taskAttributes.c_str()) ||
+        !cJSON_AddStringToObject(taskIdentityObj, JSON_KEY_TASK_IDENTITY_IDENTITY,
+        ticketMessageInfo.identity.c_str()) ||
+        !cJSON_AddStringToObject(taskIdentityObj, JSON_KEY_TASK_CHALLENGE,
+        ticketMessageInfo.taskChallenge.c_str())) {
+        LOGE("Add task fields to taskIdentityObj failed");
+        cJSON_Delete(taskIdentityObj);
+        return SAF_ERR_NULL_PTR;
+    }
+    if (!cJSON_AddItemToObject(root, JSON_KEY_TASK_IDENTITY, taskIdentityObj)) {
+        LOGE("Add taskIdentityObj to root failed");
+        cJSON_Delete(taskIdentityObj);
+        return SAF_ERR_NULL_PTR;
+    }
+    return SAF_SUCCESS;
+}
+
 static int32_t BuildJsonRoot(const TicketMessageInfo &ticketMessageInfo, cJSON **rootOut)
 {
     cJSON *root = cJSON_CreateObject();
@@ -530,6 +671,12 @@ static int32_t BuildJsonRoot(const TicketMessageInfo &ticketMessageInfo, cJSON *
             cJSON_Delete(root);
             return SAF_ERR_NULL_PTR;
         }
+    }
+
+    ret = AddTaskIdentityToRoot(root, ticketMessageInfo);
+    if (ret != SAF_SUCCESS) {
+        cJSON_Delete(root);
+        return ret;
     }
 
     *rootOut = root;
@@ -656,9 +803,30 @@ int32_t PermissionManager::GenerateTicketInfoWithTimeStamp(TicketMessageInfo &ti
     return SAF_SUCCESS;
 }
 
+void PermissionManager::BuildTicketMessageInfo(const PermissionQuery &permissionQuery,
+    const std::vector<TicketCliInfo> &ticketCliInfos, const std::vector<std::string> &apiPermissions,
+    bool needUnlock, TicketMessageInfo &ticketMessageInfo)
+{
+    ticketMessageInfo.cliInfos = ticketCliInfos;
+    ticketMessageInfo.needUnlockScreen = needUnlock;
+    auto now = std::chrono::system_clock::now();
+    ticketMessageInfo.startTime = static_cast<uint64_t>(
+        std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
+    ticketMessageInfo.ticketExpireTimeMs = permissionQuery.ticketExpireTimeMs;
+    ticketMessageInfo.apiPermissions = apiPermissions;
+    ticketMessageInfo.callerTokenId = GetValidCallingTokenId(permissionQuery.callerTokenId);
+    ticketMessageInfo.domainId = permissionQuery.domainId;
+    if (!IsTaskIdentityEmpty(permissionQuery.taskIdentity)) {
+        ticketMessageInfo.hasTaskIdentity = true;
+        ticketMessageInfo.taskAttributes = permissionQuery.taskIdentity.taskAttributes;
+        ticketMessageInfo.identity = permissionQuery.taskIdentity.identity;
+        ticketMessageInfo.taskChallenge = permissionQuery.taskIdentity.challenge;
+    }
+}
+
 int32_t PermissionManager::ProcessTicketInfo(const PermissionQuery &permissionQuery,
     const std::vector<TicketCliInfo> &ticketCliInfos, const std::vector<std::string> &apiPermissions,
-    bool ticketMsgNeedLock, PermissionQueryResult &permissionQueryResult)
+    bool needUnlock, PermissionQueryResult &permissionQueryResult)
 {
     permissionQueryResult.hasTicket = false;
     if (permissionQueryResult.needDialog || !permissionQuery.needTicket) {
@@ -669,20 +837,8 @@ int32_t PermissionManager::ProcessTicketInfo(const PermissionQuery &permissionQu
     IF_TRUE_LOGE_RETURN_ERR(ExceedsMaxExpireTimeLimit(permissionQuery.ticketExpireTimeMs),
         SAF_ERR_ARG_INVALID, "ticketExpireTimeMs is invalid");
 
-    TicketMessageInfo ticketMessageInfo;
-    for (const auto &cliInfo : ticketCliInfos) {
-        ticketMessageInfo.cliInfos.push_back(cliInfo);
-        if (ticketMsgNeedLock && !cliInfo.isLockScreenExecutionAllowed) {
-            ticketMessageInfo.needUnlockScreen = true;
-        }
-    }
-    auto now = std::chrono::system_clock::now();
-    ticketMessageInfo.startTime = static_cast<uint64_t>(
-        std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count());
-    ticketMessageInfo.ticketExpireTimeMs = permissionQuery.ticketExpireTimeMs;
-    ticketMessageInfo.apiPermissions = apiPermissions;
-    ticketMessageInfo.callerTokenId = GetValidCallingTokenId(permissionQuery.callerTokenId);
-    ticketMessageInfo.domainId = permissionQuery.domainId;
+    TicketMessageInfo ticketMessageInfo{};
+    BuildTicketMessageInfo(permissionQuery, ticketCliInfos, apiPermissions, needUnlock, ticketMessageInfo);
     int32_t ret = GenerateTicketInfoWithTimeStamp(ticketMessageInfo, ticketMessageInfo.callerTokenId,
         permissionQueryResult.ticket);
     IF_ERROR_LOGE_RETURN(ret, "ProcessTicketInfo :: GenerateTicketInfoWithTimeStamp failed, ret=%{public}d", ret);
@@ -726,56 +882,114 @@ void PermissionManager::GetValidPermissions(std::vector<std::string> &permission
     permissions = filteredPermissions;
 }
 
+int32_t PermissionManager::VerifyRemoteTicketIfNeed(const PermissionQuery &permissionQuery,
+    bool &isRemoteTicketVerified)
+{
+    isRemoteTicketVerified = false;
+    if (!IsRemoteQuery(permissionQuery)) {
+        return SAF_SUCCESS;
+    }
+    int32_t ret = VerifyRemoteTicket(permissionQuery);
+    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: VerifyRemoteTicket failed, ret=%{public}d", ret);
+    isRemoteTicketVerified = true;
+    return SAF_SUCCESS;
+}
+
+int32_t PermissionManager::QueryCommandPermissions(const std::vector<CommandInfo> &cmds,
+    std::vector<TicketCliInfo> &ticketCliInfos)
+{
+    if (cmds.empty()) {
+        LOGI("RequestToolPermissions :: CLI Infos is empty");
+        return SAF_SUCCESS;
+    }
+    int32_t ret = BatchQueryCommandPermission(cmds, ticketCliInfos);
+    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: BatchQueryCommandPermission failed, ret=%{public}d", ret);
+    return SAF_SUCCESS;
+}
+
+int32_t PermissionManager::ConvertOperationsToPermissions(const PermissionQuery &permissionQuery,
+    std::vector<std::string> &apiPermissions, std::vector<TicketCliInfo> &ticketCliInfos)
+{
+    std::vector<CommandInfo> cliInfos;
+    int32_t ret = ParseOperationInfos(permissionQuery.operationInfo, cliInfos, apiPermissions);
+    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: ParseOperationInfos failed, ret=%{public}d", ret);
+    ret = QueryCommandPermissions(cliInfos, ticketCliInfos);
+    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: QueryCommandPermissions failed, ret=%{public}d", ret);
+    return SAF_SUCCESS;
+}
+
+int32_t PermissionManager::QueryPolicyAndMergeResults(const PermissionQuery &permissionQuery,
+    AggregatedPermissionInfo &aggregatedInfo, PermissionQueryResult &permissionQueryResult, bool isPublicCli)
+{
+    if (aggregatedInfo.permissions.empty()) {
+        return SAF_SUCCESS;
+    }
+    std::vector<int32_t> policyStatuses;
+    int32_t ret = GetPolicyAuthStatus(aggregatedInfo.permissions, policyStatuses, IsRemoteQuery(permissionQuery),
+        isPublicCli);
+    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: GetPolicyAuthStatus failed, ret=%{public}d", ret);
+    ret = MergePermissionResults(aggregatedInfo.authStatuses, permissionQueryResult, policyStatuses);
+    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: MergePermissionResults failed, ret=%{public}d", ret);
+    return SAF_SUCCESS;
+}
+
+int32_t PermissionManager::VerifyAndParseTaskIdentity(const PermissionQuery &permissionQuery,
+    TaskAtlAttributes &atlAttributes)
+{
+    if (IsTaskIdentityEmpty(permissionQuery.taskIdentity)) {
+        return SAF_SUCCESS;
+    }
+    int32_t ret = VerifyTaskIdentity(permissionQuery);
+    IF_ERROR_LOGE_RETURN(ret, "VerifyAndParseTaskIdentity :: VerifyTaskIdentity failed, ret=%{public}d", ret);
+    atlAttributes = ParseTaskAtlAttributes(permissionQuery.taskIdentity);
+    return SAF_SUCCESS;
+}
+
 int32_t PermissionManager::RequestToolPermissions(const PermissionQuery &permissionQuery,
     PermissionQueryResult &permissionQueryResult, bool isPublicCli)
 {
-    std::vector<CommandInfo> cliInfos;
+    // Step 1: PreCheck permissionQuery validity
+    bool isRemoteTicketVerified = false;
+    int32_t ret = VerifyRemoteTicketIfNeed(permissionQuery, isRemoteTicketVerified);
+    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: VerifyRemoteTicketIfNeed failed, ret=%{public}d", ret);
+
+    // Step 2: Convert and merge API & CLI permissions
     std::vector<std::string> apiPermissions;
-    // 判断 PermissionQuery中是否有 RemoteInfo 有的话添加remote ticket的判断
-    int32_t ret = SAF_SUCCESS;
-    bool needSetScreenLock = true;
-    bool isRemote = !IsRemoteInfoEmpty(permissionQuery.remoteInfo);
-    if (isRemote) {
-        ret = VerifyRemoteTicket(permissionQuery);
-        IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: VerifyRemoteTicket failed, ret=%{public}d", ret);
-        needSetScreenLock = false;
-    }
-    ret = ProcessOperations(permissionQuery.operationInfo, cliInfos, apiPermissions);
-    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: ProcessOperations failed, ret=%{public}d", ret);
     std::vector<TicketCliInfo> ticketCliInfos;
-    if (cliInfos.empty()) {
-        LOGI("RequestToolPermissions :: CLI Infos is empty");
-    } else {
-        ret = BatchQueryCommandPermission(cliInfos, ticketCliInfos);
-        IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: BatchQueryCommandPermission failed, ret=%{public}d", ret);
-    }
-    // remote ticket如果判断过，则后续不需要判断锁屏
-    if (needSetScreenLock) {
-        bool needUnlock = false;
-        bool isScreenLocked = false;
-        ret = CheckNeedUnlockScreen(ticketCliInfos, needUnlock, isScreenLocked);
-        IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: CheckNeedUnlockScreen failed, ret=%{public}d", ret);
-        if (needUnlock && isScreenLocked) {
-            LOGE("RequestToolPermissions :: Screen locked and commands require unlock");
-            return SAF_ERR_SCREENLOCK_IS_LOCKED;
+    ret = ConvertOperationsToPermissions(permissionQuery, apiPermissions, ticketCliInfos);
+    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: ConvertOperationsToPermissions failed, ret=%{public}d", ret);
+    AggregatedPermissionInfo aggregatedInfo;
+    MergePermissionLists(ticketCliInfos, apiPermissions, aggregatedInfo.permissions);
+    bool needUnlock = !isRemoteTicketVerified && AnyCommandRequiresUnlock(ticketCliInfos);
+
+    // Step 3: Screen lock determination. If the task carries an authToken and the CLI
+    // metadata already requires unlock (needUnlock), the exact ATL lock-screen policy
+    // decides whether execution is allowed. Otherwise fall back to CLI metadata.
+    // Screen-lock execution is only exempted when the task attributes explicitly allow it.
+    TaskAtlAttributes taskAtl;
+    ret = VerifyAndParseTaskIdentity(permissionQuery, taskAtl);
+    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: VerifyAndParseTaskIdentity failed, ret=%{public}d", ret);
+    bool needsAtlExemption = needUnlock && taskAtl.hasAuthToken && taskAtl.allowScreenLockExecution;
+    if (needsAtlExemption) {
+        bool policyFound = false;
+        std::vector<std::string> permissionPolicy;
+        ret = GetAtlPermissionPolicy(taskAtl.atl, policyFound, permissionPolicy);
+        IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: GetAtlPermissionPolicy failed, ret=%{public}d", ret);
+        needUnlock = !IsAtlLockScreenExecutionAllowed(policyFound, aggregatedInfo.permissions, permissionPolicy);
+        // Keep effective CLI flags consistent with the task-wide ticket requirement.
+        for (auto &cliInfo : ticketCliInfos) {
+            cliInfo.isLockScreenExecutionAllowed = !needUnlock;
         }
     }
+    ret = CheckScreenLock(needUnlock);
+    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: CheckScreenLock failed, ret=%{public}d", ret);
 
-    std::vector<std::string> allPermissions;
-    ret = MergePermissionLists(ticketCliInfos, apiPermissions, allPermissions);
-    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: MergePermissionLists failed, ret=%{public}d", ret);
-
-    uint32_t tokenId = permissionQuery.callerTokenId;
-    std::vector<PermissionInfo> permissionInfos;
-    if (allPermissions.size() > 0) {
-        ret = BatchVerifyPermissions(allPermissions, tokenId, permissionInfos);
-        IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: BatchVerifyPermissions failed, ret=%{public}d", ret);
-        ret = MergePermissionResults(permissionInfos, permissionQueryResult, isRemote, isPublicCli);
-        IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: MergePermissionResults failed, ret=%{public}d", ret);
-    }
-    ret = ProcessTicketInfo(permissionQuery, ticketCliInfos, apiPermissions, needSetScreenLock, permissionQueryResult);
-    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: ProcessTicketInfo failed, ret=%{public}d", ret);
-    return SAF_SUCCESS;
+    // Step 4: Verify permissions existence and auth results. Generate ticket info.
+    ret = VerifyAggregatedPermissions(permissionQuery.callerTokenId, aggregatedInfo);
+    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: VerifyAggregatedPermissions failed, ret=%{public}d", ret);
+    ret = QueryPolicyAndMergeResults(permissionQuery, aggregatedInfo, permissionQueryResult, isPublicCli);
+    IF_ERROR_LOGE_RETURN(ret, "RequestToolPermissions :: QueryPolicyAndMergeResults failed, ret=%{public}d", ret);
+    return ProcessTicketInfo(permissionQuery, ticketCliInfos, apiPermissions, needUnlock, permissionQueryResult);
 }
 
 int32_t PermissionManager::GrantToolPermissionsByUser(const std::vector<UserAuthResult> &userAuthResults,
@@ -806,8 +1020,8 @@ int32_t PermissionManager::GetVerifyTicketInfo(const UserAuthResult &userAuthRes
     IF_ERROR_LOGE_RETURN(ret, "Invalid userAuthResult: permission is invalid");
     std::vector<CommandInfo> cliInfos;
     std::vector<std::string> apiPermissions;
-    ret = ProcessOperations(userAuthResult.permissionQuery.operationInfo, cliInfos, apiPermissions);
-    IF_ERROR_LOGE_RETURN(ret, "GetVerifyTicketInfo :: ProcessOperations failed, ret=%{public}d", ret);
+    ret = ParseOperationInfos(userAuthResult.permissionQuery.operationInfo, cliInfos, apiPermissions);
+    IF_ERROR_LOGE_RETURN(ret, "GetVerifyTicketInfo :: ParseOperationInfos failed, ret=%{public}d", ret);
     GetValidPermissions(apiPermissions, userAuthResult.permissionInfo);
     std::vector<TicketCliInfo> ticketCliInfos;
     if (cliInfos.empty()) {
@@ -817,10 +1031,9 @@ int32_t PermissionManager::GetVerifyTicketInfo(const UserAuthResult &userAuthRes
         IF_ERROR_LOGE_RETURN(ret,
             "GetVerifyTicketInfo :: BatchQueryCommandPermission failed, ret=%{public}d", ret);
     }
-    bool needUnlock = false;
-    if (!IsProcessLockScreenSuccess(ticketCliInfos, needUnlock)) {
-        IF_ERROR_LOGE_RETURN(SAF_ERROR, "GetVerifyTicketInfo :: Screen failed, ret=%{public}d", SAF_ERROR);
-    }
+    const bool needUnlock = AnyCommandRequiresUnlock(ticketCliInfos);
+    ret = CheckScreenLock(needUnlock);
+    IF_ERROR_LOGE_RETURN(ret, "GetVerifyTicketInfo :: CheckScreenLock failed, ret=%{public}d", ret);
 
     TicketMessageInfo ticketMessageInfo;
     for (auto &cliInfo : ticketCliInfos) {
@@ -845,6 +1058,24 @@ int32_t PermissionManager::GetVerifyTicketInfo(const UserAuthResult &userAuthRes
     
     StoreGrantRecordIfValid(userAuthResult, ticketMessageInfo);
     
+    return SAF_SUCCESS;
+}
+
+int32_t PermissionManager::VerifyTaskIdentity(const PermissionQuery &permissionQuery)
+{
+    int32_t osAccountId;
+    int32_t callerUid = IPCSkeleton::GetCallingUid();
+    bool retFlag = GetOsAccountIdFromUid(callerUid, &osAccountId);
+    IF_FALSE_LOGE_RETURN_ERR(retFlag, SAF_ERROR, "VerifyTaskIdentity :: GetOsAccountIdFromUid failed");
+
+    std::string callerTokenId = std::to_string(IPCSkeleton::GetCallingTokenID());
+    int32_t ret = OHOS::Security::SAF::cxx_verify_task_identity(
+        osAccountId,
+        rust::String(callerTokenId),
+        rust::String(permissionQuery.taskIdentity.taskAttributes),
+        rust::String(permissionQuery.taskIdentity.identity),
+        rust::String(permissionQuery.taskIdentity.challenge));
+    IF_ERROR_LOGE_RETURN(ret, "VerifyTaskIdentity :: cxx_verify_task_identity failed, ret=%{public}d", ret);
     return SAF_SUCCESS;
 }
 

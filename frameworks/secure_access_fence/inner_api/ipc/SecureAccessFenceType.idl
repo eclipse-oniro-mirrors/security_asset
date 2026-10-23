@@ -156,6 +156,7 @@ struct PermissionQuery {
     int callerTokenId;
     String domainId;
     RemoteInfo remoteInfo;
+    TaskIdentity taskIdentity;
 };
 
 /**

@@ -130,6 +130,7 @@ pub fn create_test_permission_query(
                 sign_verify_msg: "sign_verify_msg".to_string(),
             },
         },
+        task_identity: saf_definition::TaskIdentity::default(),
     }
 }
 

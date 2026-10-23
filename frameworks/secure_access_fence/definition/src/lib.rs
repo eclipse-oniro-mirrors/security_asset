@@ -468,6 +468,8 @@ pub struct PermissionQuery {
     pub domain_id: String,
     /// Remote info.
     pub remote_info: RemoteInfo,
+    /// Task identity (empty fields if absent).
+    pub task_identity: TaskIdentity,
 }
 
 /// Task execution type enum.
