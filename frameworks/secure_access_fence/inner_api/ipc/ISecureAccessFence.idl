@@ -317,4 +317,114 @@ interface OHOS.Security.SAF.ISecureAccessFence {
         [out] String bundleName,
         [out] int resultCode
     );
+
+    /**
+     * @brief Add a model credential.
+     * @param modelCredential The model credential to add.
+     * @param credentialHandle Handle of the added credential (output parameter).
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 1300] void AddModelCredential(
+        [in] ModelCredential modelCredential,
+        [out] String credentialHandle,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Batch delete model credentials.
+     * @param modelCredentials Model credentials to delete, identified by credentialHandle.
+     * @param batchResult Batch result (output parameter).
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 1301] void DeleteModelCredential(
+        [in] List<ModelCredential> modelCredentials,
+        [out] CredentialBatchResult batchResult,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Batch update model credentials.
+     * @param sourceModelCredentials Source credentials to update.
+     * @param destModelCredentials Destination credentials with new values.
+     * @param batchResult Batch result (output parameter).
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 1302] void UpdateModelCredential(
+        [in] List<ModelCredential> sourceModelCredentials,
+        [in] List<ModelCredential> destModelCredentials,
+        [out] CredentialBatchResult batchResult,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Query the active model credential info by handle.
+     * @param credentialHandle Handle of the credential to query.
+     * @param modelCredentialInfo Credential info (output parameter).
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 1303] void GetActiveModelCredential(
+        [in] String credentialHandle,
+        [out] ModelCredentialInfo modelCredentialInfo,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Query all model credentials.
+     * @param modelCredentials All stored model credentials (output parameter).
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 1304] void GetAllModelCredentials(
+        [out] List<ModelCredential> modelCredentials,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Batch add tool credentials.
+     * @param toolCredentials Tool credentials to add.
+     * @param batchResult Batch result (output parameter).
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 1305] void AddToolCredential(
+        [in] List<ToolCredential> toolCredentials,
+        [out] CredentialBatchResult batchResult,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Batch update tool credentials.
+     * @param sourceToolCredentials Source tool credentials to update.
+     * @param destToolCredentials Destination tool credentials with new values.
+     * @param batchResult Batch result (output parameter).
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 1306] void UpdateToolCredential(
+        [in] List<ToolCredential> sourceToolCredentials,
+        [in] List<ToolCredential> destToolCredentials,
+        [out] CredentialBatchResult batchResult,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Batch delete tool credentials.
+     * @param toolInfos Identity info of the tool credentials to delete.
+     * @param batchResult Batch result (output parameter).
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 1307] void DeleteToolCredential(
+        [in] List<ToolInfo> toolInfos,
+        [out] CredentialBatchResult batchResult,
+        [out] int resultCode
+    );
+
+    /**
+     * @brief Query tool credential info by agent identity.
+     * @param toolInfo Identity info of the tool to query.
+     * @param toolCredentialInfos Tool credential info list (output parameter).
+     * @param resultCode Error code output (0 for success).
+     */
+    [ipccode 1308] void GetToolCredential(
+        [in] ToolInfo toolInfo,
+        [out] List<ToolCredentialInfo> toolCredentialInfos,
+        [out] int resultCode
+    );
 };

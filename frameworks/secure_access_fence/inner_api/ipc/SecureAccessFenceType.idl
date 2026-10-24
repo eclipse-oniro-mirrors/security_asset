@@ -297,3 +297,89 @@ struct ComponentClickResult {
     /** Reason for the decision. */
     String reason;
 };
+
+/**
+ * @brief Error information for a single failed item in a batch operation.
+ */
+struct ErrInfo {
+    /** Index of the failed item in the input array. */
+    int index;
+    /** Error code indicating the failure reason. */
+    int errCode;
+    /** Error message describing the failure reason. */
+    String message;
+};
+
+/**
+ * @brief Result of a batch credential operation.
+ */
+struct CredentialBatchResult {
+    /** Number of items that failed in the batch operation. */
+    int failedCount;
+    /** Detailed error information for each failed item in the batch. */
+    List<ErrInfo> failedErrorInfos;
+};
+
+/**
+ * @brief Credential information for Model access (query result).
+ */
+struct ModelCredentialInfo {
+    /** Base URL of the model service endpoint. */
+    String baseUrl;
+    /** Credential value, such as the API KEY used to access the model service. */
+    String credentialValue;
+};
+
+/**
+ * @brief Credential configuration information of the agent (full model credential).
+ */
+struct ModelCredential {
+    /** Base URL of the model service endpoint. */
+    String baseUrl;
+    /** Credential value, such as the API KEY used to access the model service. */
+    String credentialValue;
+    /** Provider of the model service. */
+    String provider;
+    /** List of model names that this credential applies to. */
+    List<String> modelList;
+    /** Whether the credential is in active state. true: active; false: inactive. */
+    boolean state;
+    /** Handle of the credential returned by AddModelCredential. */
+    String credentialHandle;
+    /** Alias of the credential returned by AddModelCredential. */
+    String credentialAlias;
+};
+
+/**
+ * @brief Identity info of the agent used to manage tool credentials.
+ */
+struct ToolInfo {
+    /** Access token ID of the agent (d.ts bigint -> uint64). */
+    unsigned long agentTokenId;
+    /** Unique identifier of the tool, primary key for tool credential lookup. */
+    String subjectId;
+    /** Account ID of the agent owner. Empty when not set. */
+    String accountId;
+    /** Sub-agent ID, distinguishes sub-agents under the same agent. */
+    String subAgentId;
+};
+
+/**
+ * @brief Tool credential information (single environment variable entry).
+ */
+struct ToolCredentialInfo {
+    /** Environment variable name of the tool. */
+    String envName;
+    /** Credential value of the tool. */
+    String credentialValue;
+};
+
+/**
+ * @brief Tool credential entry, binds agent identity info to its credential values.
+ */
+struct ToolCredential {
+    /** Identity info of the tool. */
+    ToolInfo toolInfo;
+    /** List of tool credential infos (env var entries). */
+    List<ToolCredentialInfo> toolCredentialInfos;
+};
