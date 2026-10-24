@@ -463,14 +463,13 @@ ErrCode CheckControlPermission(
         return SAF_SUCCESS;
     }
 
-    // Get OS account ID from calling UID
+    // Get OS account ID from foreground user (calling UID may belong to system SA with osAccountId=0)
     int32_t osAccountId = INVALID_OS_ACCOUNT_ID;
-    int32_t callingUid = IPCSkeleton::GetCallingUid();
-    int32_t userId = 0;
-    if (GetOsAccountIdFromUid(callingUid, &userId)) {
-        osAccountId = userId;
+    int32_t foregroundOsAccountId = 0;
+    if (GetForegroundOsAccountId(&foregroundOsAccountId)) {
+        osAccountId = foregroundOsAccountId;
     } else {
-        LOGE("CheckControlPermission failed to get os account id from uid=%{public}d", callingUid);
+        LOGE("CheckControlPermission failed to get foreground os account id");
         resultCode = SAF_ERR_INVALID_OS_ACCOUNT_ID;
         return SAF_SUCCESS;
     }
