@@ -21,7 +21,7 @@
 namespace psi_pir::internal {
 // Fail-closed backend until the formal HIFHE ABI and library are supplied.
 class HifheAdapter final {
-  public:
+public:
     HifheAdapter() noexcept = default;
     ~HifheAdapter() = default;
     HifheAdapter(const HifheAdapter &) = delete;

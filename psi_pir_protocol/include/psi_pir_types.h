@@ -45,8 +45,8 @@ enum class ProtocolType : std::uint32_t {
 };
 
 struct PrivacyProtocol {
-    DataSetSize dataSetSize { DataSetSize::SIZE_512 };
-    ProtocolType protocolType { ProtocolType::PSI_PROTOCOL };
+    DataSetSize dataSetSize{DataSetSize::SIZE_512};
+    ProtocolType protocolType{ProtocolType::PSI_PROTOCOL};
 };
 
 struct OperationIdentity {
@@ -65,7 +65,7 @@ enum class DecryptionBackend { SOFT, CCZ };
 
 struct Element {
     Bytes elemKey;
-    HashAlg hashAlg { HashAlg::NONE };
+    HashAlg hashAlg{HashAlg::NONE};
     std::optional<Bytes> elemValue;
 };
 
@@ -77,7 +77,7 @@ struct PrivacySearchResult {
 };
 
 struct SearchResult {
-    bool matchedResult { false };
+    bool matchedResult{false};
     std::optional<std::vector<Bytes>> attachedValues;
 };
 

@@ -16,19 +16,19 @@
 #ifndef PSI_PIR_PROTOCOL_IMPL_H
 #define PSI_PIR_PROTOCOL_IMPL_H
 
-#include "psi_pir_protocol.h"
 #include "protocol_codec.h"
 #include "protocol_encoder.h"
 #include "protocol_params.h"
+#include "psi_pir_protocol.h"
 
 namespace psi_pir::internal {
 
 class PsiPirProtocolImpl final {
 public:
     int32_t privacySearch(const Bytes &privacyTarget, const std::vector<Element> &elements,
-        const ProtocolParams &params, PrivacySearchResult &result) const noexcept;
-    int32_t getSearchResult(const PrivacySearchResult &privacySearchResult,
-        const ProtocolParams &params, SearchResult &result) const noexcept;
+                          const ProtocolParams &params, PrivacySearchResult &result) const noexcept;
+    int32_t getSearchResult(const PrivacySearchResult &privacySearchResult, const ProtocolParams &params,
+                            SearchResult &result) const noexcept;
 
 private:
     ProtocolCodec codec_;

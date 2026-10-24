@@ -16,16 +16,16 @@
 #include "he_key_deriver.h"
 #include "psi_pir_error_code.h"
 #include <array>
+#include <mutex>
 #include <openssl/crypto.h>
 #include <openssl/evp.h>
-#include <mutex>
 #include <utility>
 
 namespace psi_pir::internal {
 namespace {
 std::mutex g_seedMutex;
 std::shared_ptr<const IHeSeedDeriver> g_seedDeriver;
-}
+} // namespace
 
 void SetHeSeedDeriver(std::shared_ptr<const IHeSeedDeriver> deriver) noexcept
 {

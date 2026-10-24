@@ -14,9 +14,9 @@
  */
 
 #include "hpic_napi_get_search_result.h"
-#include "privacy_wire.h"
 #include "hpic_napi_common.h"
 #include "hpic_napi_utils.h"
+#include "privacy_wire.h"
 #include <new>
 #include <utility>
 
@@ -47,8 +47,8 @@ napi_value NapiGetSearchResult(napi_env env, napi_callback_info info)
             return;
         }
         auto *context = static_cast<GetSearchResultContext *>(data);
-        context->result = MapProtocolError(GetSearchResultRemote(
-            context->searchResult, context->protocol, context->output));
+        context->result =
+            MapProtocolError(GetSearchResultRemote(context->searchResult, context->protocol, context->output));
         if (context->result != HPIC_SUCCESS) {
             LOGE("get_search_result failed, code=%{public}d", context->result);
         }

@@ -1,3 +1,18 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "protocol_mapper.h"
 
 #include "psi_pir_log.h"
@@ -33,24 +48,21 @@ struct ProtocolPreset {
     ProtocolParams params;
 };
 
-constexpr std::array<ProtocolPreset, 3> kProtocolPresets {{
+constexpr std::array<ProtocolPreset, 3> kProtocolPresets{{
     {
-        { DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL },
-        { ProtocolMode::PSI, kCompareBits64, kBitsPerSlot16, kSlotsPerData4,
-            kDataNumPerPlaintext512, kPlainModulus65537, kPolyModulusDegree2048,
-            FheAlgorithm::BGV2048_48, kDefaultSymKeySize, SymAlgorithm::NONE },
+        {DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL},
+        {ProtocolMode::PSI, kCompareBits64, kBitsPerSlot16, kSlotsPerData4, kDataNumPerPlaintext512, kPlainModulus65537,
+         kPolyModulusDegree2048, FheAlgorithm::BGV2048_48, kDefaultSymKeySize, SymAlgorithm::NONE},
     },
     {
-        { DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL },
-        { ProtocolMode::PIR, kCompareBits64, kBitsPerSlot16, kSlotsPerData4,
-            kDataNumPerPlaintext512, kPlainModulus65537, kPolyModulusDegree2048,
-            FheAlgorithm::BGV2048_48, kSymKeySize256, SymAlgorithm::AES_GCM },
+        {DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL},
+        {ProtocolMode::PIR, kCompareBits64, kBitsPerSlot16, kSlotsPerData4, kDataNumPerPlaintext512, kPlainModulus65537,
+         kPolyModulusDegree2048, FheAlgorithm::BGV2048_48, kSymKeySize256, SymAlgorithm::AES_GCM},
     },
     {
-        { DataSetSize::SIZE_128, ProtocolType::PIR_PROTOCOL },
-        { ProtocolMode::PIR, kCompareBits128, kBitsPerSlot16, kSlotsPerData8,
-            kDataNumPerPlaintext256, kPlainModulus65537, kPolyModulusDegree2048,
-            FheAlgorithm::BGV2048_48, kSymKeySize256, SymAlgorithm::AES_GCM },
+        {DataSetSize::SIZE_128, ProtocolType::PIR_PROTOCOL},
+        {ProtocolMode::PIR, kCompareBits128, kBitsPerSlot16, kSlotsPerData8, kDataNumPerPlaintext256,
+         kPlainModulus65537, kPolyModulusDegree2048, FheAlgorithm::BGV2048_48, kSymKeySize256, SymAlgorithm::AES_GCM},
     },
 }};
 
@@ -95,18 +107,19 @@ static_assert(HasValidPresetDimensions(), "invalid privacy protocol preset dimen
 
 int32_t MapPrivacyProtocol(const PrivacyProtocol &privacyProtocol, ProtocolParams &params) noexcept
 {
-    const ProtocolKey key { privacyProtocol.dataSetSize, privacyProtocol.protocolType };
+    const ProtocolKey key{privacyProtocol.dataSetSize, privacyProtocol.protocolType};
     const auto *preset = FindProtocolPreset(key);
     if (preset == nullptr) {
         PSI_PIR_LOGE("protocol preset not found: dataSetSize=%{public}u, protocolType=%{public}u",
-            static_cast<uint32_t>(privacyProtocol.dataSetSize), static_cast<uint32_t>(privacyProtocol.protocolType));
+                     static_cast<uint32_t>(privacyProtocol.dataSetSize),
+                     static_cast<uint32_t>(privacyProtocol.protocolType));
         return PSI_PIR_INVALID_ARGUMENT;
     }
     params = *preset;
     PSI_PIR_LOGI("protocol mapped: mode=%{public}u, compareBits=%{public}zu, "
-        "bitsPerSlot=%{public}zu, slotsPerData=%{public}zu, groups=%{public}zu",
-        static_cast<uint32_t>(params.mode), params.compareBits,
-        params.bitsPerSlot, params.slotsPerData, params.dataNumPerPlaintext);
+                 "bitsPerSlot=%{public}zu, slotsPerData=%{public}zu, groups=%{public}zu",
+                 static_cast<uint32_t>(params.mode), params.compareBits, params.bitsPerSlot, params.slotsPerData,
+                 params.dataNumPerPlaintext);
     return PSI_PIR_SUCCESS;
 }
 

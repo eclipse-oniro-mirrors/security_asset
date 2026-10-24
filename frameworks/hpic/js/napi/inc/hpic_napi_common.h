@@ -16,8 +16,8 @@
 #ifndef HPIC_NAPI_COMMON_H
 #define HPIC_NAPI_COMMON_H
 
-#include "hpic_napi_context.h"
 #include "hpic_log.h"
+#include "hpic_napi_context.h"
 #include <memory>
 
 namespace OHOS::Security::PrivacyComputation {

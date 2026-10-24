@@ -17,9 +17,9 @@
 #define PSI_PIR_PROTOCOL_PROTOCOL_ENCODER_H
 
 #include "internal_types.h"
+#include "protocol_params.h"
 #include "psi_pir_error_code.h"
 #include "psi_pir_types.h"
-#include "protocol_params.h"
 
 namespace psi_pir::internal {
 
@@ -27,13 +27,13 @@ class ProtocolEncoder final {
 public:
     int32_t ValidateHashAlgorithm(HashAlg algorithm) const noexcept;
     int32_t EncodeServerVector(const Element &element, const ProtocolParams &params,
-        Slots &serverVector) const noexcept;
+                               Slots &serverVector) const noexcept;
     // Repeat the comparison group across every HE slot, including both PIR groups.
     int32_t EncodeTargetVector(const Element &element, const ProtocolParams &params,
-        Slots &targetVector) const noexcept;
+                               Slots &targetVector) const noexcept;
     int32_t EncodeSeed(const Bytes &seed, const ProtocolParams &params, Slots &seedSlots) const noexcept;
-    int32_t ExtractSeed(const Slots &plain, std::size_t offset,
-        const ProtocolParams &params, Bytes &seed) const noexcept;
+    int32_t ExtractSeed(const Slots &plain, std::size_t offset, const ProtocolParams &params,
+                        Bytes &seed) const noexcept;
     int32_t GenerateSeed(const ProtocolParams &params, Bytes &seed) const noexcept;
     int32_t GenerateMaskVector(const ProtocolParams &params, Slots &maskVector) const noexcept;
     int32_t IsMatch(const Slots &plain, std::size_t offset, const ProtocolParams &params, bool &matched) const noexcept;

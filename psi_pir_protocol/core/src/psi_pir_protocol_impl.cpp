@@ -1,7 +1,22 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "psi_pir_protocol_impl.h"
 
-#include "psi_pir_log.h"
 #include "provider_registry.h"
+#include "psi_pir_log.h"
 
 #include <algorithm>
 #include <limits>
@@ -11,8 +26,8 @@ namespace psi_pir::internal {
 namespace {
 
 struct BatchLayout {
-    std::size_t capacity { 0 };
-    std::size_t batchCount { 0 };
+    std::size_t capacity{0};
+    std::size_t batchCount{0};
 };
 
 struct PirPayload {
@@ -65,16 +80,17 @@ int32_t ValidateElements(const std::vector<Element> &elements, const ProtocolEnc
         const auto ret = encoder.ValidateHashAlgorithm(element.hashAlg);
         if (ret != PSI_PIR_SUCCESS) {
             PSI_PIR_LOGE("element validation failed: index=%{private}zu, hashAlg=%{public}u, "
-                "ret=%{public}d", index, static_cast<uint32_t>(element.hashAlg), ret);
+                         "ret=%{public}d",
+                         index, static_cast<uint32_t>(element.hashAlg), ret);
             return ret;
         }
     }
     return PSI_PIR_SUCCESS;
 }
 
-int32_t ValidateEvaluateInput(const Bytes &privacyTarget,
-    const std::vector<Element> &elements, const ProtocolParams &params,
-    const ProtocolCodec &codec, const ProtocolEncoder &encoder) noexcept
+int32_t ValidateEvaluateInput(const Bytes &privacyTarget, const std::vector<Element> &elements,
+                              const ProtocolParams &params, const ProtocolCodec &codec,
+                              const ProtocolEncoder &encoder) noexcept
 {
     auto ret = codec.ValidateProtocol(params);
     if (ret != PSI_PIR_SUCCESS) {
@@ -108,17 +124,18 @@ int32_t GetCompatibleEngine(const ProtocolParams &params, std::shared_ptr<const 
     }
     if (!engine->IsCompatible(params)) {
         PSI_PIR_LOGE("HE engine incompatible: degree=%{public}zu, modulus=%{public}llu", params.polyModulusDegree,
-            static_cast<unsigned long long>(params.plainModulus));
+                     static_cast<unsigned long long>(params.plainModulus));
         return PSI_PIR_INCOMPATIBLE_HE_PARAMETERS;
     }
-    PSI_PIR_LOGI("HE engine compatible, algorithm=%{public}u, degree=%{public}zu, " "modulus=%{public}llu",
-        static_cast<uint32_t>(params.fheAlgorithm), params.polyModulusDegree,
-        static_cast<unsigned long long>(params.plainModulus));
+    PSI_PIR_LOGI("HE engine compatible, algorithm=%{public}u, degree=%{public}zu, "
+                 "modulus=%{public}llu",
+                 static_cast<uint32_t>(params.fheAlgorithm), params.polyModulusDegree,
+                 static_cast<unsigned long long>(params.plainModulus));
     return PSI_PIR_SUCCESS;
 }
 
-int32_t EncodeServerVectors(const std::vector<Element> &elements,
-    const ProtocolParams &params, const ProtocolEncoder &encoder, std::vector<Slots> &serverVectors) noexcept
+int32_t EncodeServerVectors(const std::vector<Element> &elements, const ProtocolParams &params,
+                            const ProtocolEncoder &encoder, std::vector<Slots> &serverVectors) noexcept
 {
     serverVectors.reserve(elements.size());
     for (std::size_t i = 0; i < elements.size(); ++i) {
@@ -134,8 +151,8 @@ int32_t EncodeServerVectors(const std::vector<Element> &elements,
     return PSI_PIR_SUCCESS;
 }
 
-int32_t EncryptElementValue(const Element &element,
-    const EncryptionContext &context, Bytes &seed, Bytes &ciphertext) noexcept
+int32_t EncryptElementValue(const Element &element, const EncryptionContext &context, Bytes &seed,
+                            Bytes &ciphertext) noexcept
 {
     auto ret = context.encoder.GenerateSeed(context.params, seed);
     if (ret != PSI_PIR_SUCCESS) {
@@ -154,15 +171,15 @@ int32_t EncryptElementValue(const Element &element,
     return PSI_PIR_SUCCESS;
 }
 
-int32_t PreparePirPayload(const std::vector<Element> &elements,
-    const ProtocolParams &params, const ProtocolEncoder &encoder, PirPayload &payload) noexcept
+int32_t PreparePirPayload(const std::vector<Element> &elements, const ProtocolParams &params,
+                          const ProtocolEncoder &encoder, PirPayload &payload) noexcept
 {
     const auto pirValueCrypto = GetPirValueCrypto();
     if (!pirValueCrypto) {
         PSI_PIR_LOGE("pir value crypto not registered");
         return PSI_PIR_CRYPTO_ERROR;
     }
-    const EncryptionContext context { params, encoder, *pirValueCrypto };
+    const EncryptionContext context{params, encoder, *pirValueCrypto};
     payload.seeds.reserve(elements.size());
     payload.ciphertexts.reserve(elements.size());
     for (std::size_t i = 0; i < elements.size(); ++i) {
@@ -176,13 +193,13 @@ int32_t PreparePirPayload(const std::vector<Element> &elements,
         payload.seeds.push_back(std::move(seed));
         payload.ciphertexts.push_back(std::move(ciphertext));
     }
-    PSI_PIR_LOGI("PIR payload prepared, elements=%{public}zu, symmetricCount=%{public}zu",
-        payload.seeds.size(), payload.ciphertexts.size());
+    PSI_PIR_LOGI("PIR payload prepared, elements=%{public}zu, symmetricCount=%{public}zu", payload.seeds.size(),
+                 payload.ciphertexts.size());
     return PSI_PIR_SUCCESS;
 }
 
-int32_t PreparePayload(const std::vector<Element> &elements,
-    const ProtocolParams &params, const ProtocolEncoder &encoder, PirPayload &payload) noexcept
+int32_t PreparePayload(const std::vector<Element> &elements, const ProtocolParams &params,
+                       const ProtocolEncoder &encoder, PirPayload &payload) noexcept
 {
     if (!IsPir(params)) {
         return PSI_PIR_SUCCESS;
@@ -194,8 +211,8 @@ int32_t CalculateBatchLayout(const ProtocolParams &params, std::size_t elementCo
 {
     layout.capacity = params.dataNumPerPlaintext / GetGroupsPerItem(params);
     if (layout.capacity == 0 || elementCount > std::numeric_limits<std::size_t>::max() - (layout.capacity - 1)) {
-        PSI_PIR_LOGE("invalid batch layout: capacity=%{public}zu, elementCount=%{public}zu",
-            layout.capacity, elementCount);
+        PSI_PIR_LOGE("invalid batch layout: capacity=%{public}zu, elementCount=%{public}zu", layout.capacity,
+                     elementCount);
         return PSI_PIR_INVALID_ARGUMENT;
     }
     layout.batchCount = (elementCount + layout.capacity - 1) / layout.capacity;
@@ -203,14 +220,14 @@ int32_t CalculateBatchLayout(const ProtocolParams &params, std::size_t elementCo
     return PSI_PIR_SUCCESS;
 }
 
-void CopyServerVector(const EvaluationContext &context,
-    const Slots &serverVector, std::size_t item, Slots &differencePlain)
+void CopyServerVector(const EvaluationContext &context, const Slots &serverVector, std::size_t item,
+                      Slots &differencePlain)
 {
     const auto groupsPerItem = GetGroupsPerItem(context.params);
     for (std::size_t group = 0; group < groupsPerItem; ++group) {
         const auto offset = (item * groupsPerItem + group) * context.params.slotsPerData;
         std::copy(serverVector.begin(), serverVector.end(),
-            differencePlain.begin() + static_cast<std::ptrdiff_t>(offset));
+                  differencePlain.begin() + static_cast<std::ptrdiff_t>(offset));
     }
 }
 
@@ -229,7 +246,8 @@ int32_t EvaluateDifference(const EvaluationContext &context, const Slots &differ
     auto ret = context.engine.addPlain(context.privacyTarget, differencePlain, differenceCiphertext);
     if (ret != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("HE addPlain difference failed: ciphertextBytes=%{public}zu, "
-            "plainSlots=%{public}zu, ret=%{public}d", context.privacyTarget.size(), differencePlain.size(), ret);
+                     "plainSlots=%{public}zu, ret=%{public}d",
+                     context.privacyTarget.size(), differencePlain.size(), ret);
         return ret;
     }
     if (differenceCiphertext.empty()) {
@@ -237,8 +255,8 @@ int32_t EvaluateDifference(const EvaluationContext &context, const Slots &differ
         return PSI_PIR_HE_ERROR;
     }
     PSI_PIR_LOGI("HE addPlain difference complete, inputBytes=%{public}zu, "
-        "plainSlots=%{public}zu, outputBytes=%{public}zu",
-        context.privacyTarget.size(), differencePlain.size(), differenceCiphertext.size());
+                 "plainSlots=%{public}zu, outputBytes=%{public}zu",
+                 context.privacyTarget.size(), differencePlain.size(), differenceCiphertext.size());
     Slots maskVector;
     ret = context.encoder.GenerateMaskVector(context.params, maskVector);
     if (ret != PSI_PIR_SUCCESS) {
@@ -247,8 +265,9 @@ int32_t EvaluateDifference(const EvaluationContext &context, const Slots &differ
     }
     ret = context.engine.multiplyPlain(differenceCiphertext, maskVector, evaluated);
     if (ret != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("HE multiplyPlain failed: ciphertextBytes=%{public}zu, " "plainSlots=%{public}zu, ret=%{public}d",
-            differenceCiphertext.size(), maskVector.size(), ret);
+        PSI_PIR_LOGE("HE multiplyPlain failed: ciphertextBytes=%{public}zu, "
+                     "plainSlots=%{public}zu, ret=%{public}d",
+                     differenceCiphertext.size(), maskVector.size(), ret);
         return ret;
     }
     if (evaluated.empty()) {
@@ -256,22 +275,22 @@ int32_t EvaluateDifference(const EvaluationContext &context, const Slots &differ
         return PSI_PIR_HE_ERROR;
     }
     PSI_PIR_LOGI("HE multiplyPlain mask complete, inputBytes=%{public}zu, "
-        "plainSlots=%{public}zu, outputBytes=%{public}zu",
-        differenceCiphertext.size(), maskVector.size(), evaluated.size());
+                 "plainSlots=%{public}zu, outputBytes=%{public}zu",
+                 differenceCiphertext.size(), maskVector.size(), evaluated.size());
     return PSI_PIR_SUCCESS;
 }
 
 int32_t BuildSeedPlain(const EvaluationContext &context, std::size_t batchStart, std::size_t batchElementCount,
-    std::size_t slotCount, Slots &seedPlain) noexcept
+                       std::size_t slotCount, Slots &seedPlain) noexcept
 {
     seedPlain.assign(slotCount, 0);
     for (std::size_t item = 0; item < batchElementCount; ++item) {
         Slots seedSlots;
-        const auto ret = context.encoder.EncodeSeed(
-            context.payload.seeds[batchStart + item], context.params, seedSlots);
+        const auto ret =
+            context.encoder.EncodeSeed(context.payload.seeds[batchStart + item], context.params, seedSlots);
         if (ret != PSI_PIR_SUCCESS) {
-            PSI_PIR_LOGE("EncodeSeed failed at batchStart=%{public}zu, item=%{private}zu, ret=%{public}d",
-                batchStart, item, ret);
+            PSI_PIR_LOGE("EncodeSeed failed at batchStart=%{public}zu, item=%{private}zu, ret=%{public}d", batchStart,
+                         item, ret);
             return ret;
         }
         const auto offset = (item * kPirGroupsPerItem + kPsiGroupsPerItem) * context.params.slotsPerData;
@@ -280,8 +299,8 @@ int32_t BuildSeedPlain(const EvaluationContext &context, std::size_t batchStart,
     return PSI_PIR_SUCCESS;
 }
 
-int32_t AddSeeds(const EvaluationContext &context, std::size_t batchStart,
-    std::size_t batchElementCount, std::size_t slotCount, Bytes &evaluated) noexcept
+int32_t AddSeeds(const EvaluationContext &context, std::size_t batchStart, std::size_t batchElementCount,
+                 std::size_t slotCount, Bytes &evaluated) noexcept
 {
     Slots seedPlain;
     auto ret = BuildSeedPlain(context, batchStart, batchElementCount, slotCount, seedPlain);
@@ -291,8 +310,9 @@ int32_t AddSeeds(const EvaluationContext &context, std::size_t batchStart,
     Bytes seededEvaluation;
     ret = context.engine.addPlain(evaluated, seedPlain, seededEvaluation);
     if (ret != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("HE addPlain seed failed: ciphertextBytes=%{public}zu, " "plainSlots=%{public}zu, ret=%{public}d",
-            evaluated.size(), seedPlain.size(), ret);
+        PSI_PIR_LOGE("HE addPlain seed failed: ciphertextBytes=%{public}zu, "
+                     "plainSlots=%{public}zu, ret=%{public}d",
+                     evaluated.size(), seedPlain.size(), ret);
         return ret;
     }
     evaluated = std::move(seededEvaluation);
@@ -300,8 +320,8 @@ int32_t AddSeeds(const EvaluationContext &context, std::size_t batchStart,
         PSI_PIR_LOGE("HE addPlain (seeds) returned empty ciphertext");
         return PSI_PIR_HE_ERROR;
     }
-    PSI_PIR_LOGI("HE addPlain seed complete, plainSlots=%{public}zu, outputBytes=%{public}zu",
-        seedPlain.size(), evaluated.size());
+    PSI_PIR_LOGI("HE addPlain seed complete, plainSlots=%{public}zu, outputBytes=%{public}zu", seedPlain.size(),
+                 evaluated.size());
     return PSI_PIR_SUCCESS;
 }
 
@@ -320,7 +340,7 @@ int32_t RerandResult(const EvaluationContext &context, Bytes &evaluated)
 }
 
 int32_t EvaluateBatch(const EvaluationContext &context, std::size_t batchStart, std::size_t batchElementCount,
-    Bytes &evaluated) noexcept
+                      Bytes &evaluated) noexcept
 {
     const auto differencePlain = BuildDifferencePlain(context, batchStart, batchElementCount);
     auto ret = EvaluateDifference(context, differencePlain, evaluated);
@@ -336,24 +356,27 @@ int32_t EvaluateBatch(const EvaluationContext &context, std::size_t batchStart, 
     return RerandResult(context, evaluated);
 }
 
-int32_t EvaluateBatches(const EvaluationContext &context,
-    const BatchLayout &layout, std::vector<Bytes> &batches) noexcept
+int32_t EvaluateBatches(const EvaluationContext &context, const BatchLayout &layout,
+                        std::vector<Bytes> &batches) noexcept
 {
     batches.reserve(layout.batchCount);
     for (std::size_t start = 0; start < context.serverVectors.size(); start += layout.capacity) {
         const auto batch = batches.size();
         const auto count = std::min(layout.capacity, context.serverVectors.size() - start);
         PSI_PIR_LOGI("Evaluate batch begin, batch=%{public}zu, start=%{public}zu, "
-            "count=%{public}zu, capacity=%{public}zu", batch, start, count, layout.capacity);
+                     "count=%{public}zu, capacity=%{public}zu",
+                     batch, start, count, layout.capacity);
         Bytes evaluated;
         const auto ret = EvaluateBatch(context, start, count, evaluated);
         if (ret != PSI_PIR_SUCCESS) {
             PSI_PIR_LOGE("Evaluate batch failed, batch=%{public}zu, start=%{public}zu, "
-                "count=%{public}zu, ret=%{public}d", batch, start, count, ret);
+                         "count=%{public}zu, ret=%{public}d",
+                         batch, start, count, ret);
             return ret;
         }
         PSI_PIR_LOGI("Evaluate batch complete, batch=%{public}zu, count=%{public}zu, "
-            "outputBytes=%{public}zu", batch, count, evaluated.size());
+                     "outputBytes=%{public}zu",
+                     batch, count, evaluated.size());
         batches.push_back(std::move(evaluated));
     }
     PSI_PIR_LOGI("all Evaluate batches complete, batchCount=%{public}zu", batches.size());
@@ -377,15 +400,15 @@ int32_t ValidateCiphertextIndex(const SearchResultContext &context, std::size_t 
         return PSI_PIR_CODEC_ERROR;
     }
     if (globalIndex >= context.searchResult.symCipherText->size()) {
-        PSI_PIR_LOGE("symmetric index out of range: index=%{private}zu, available=%{public}zu",
-            globalIndex, context.searchResult.symCipherText->size());
+        PSI_PIR_LOGE("symmetric index out of range: index=%{private}zu, available=%{public}zu", globalIndex,
+                     context.searchResult.symCipherText->size());
         return PSI_PIR_CODEC_ERROR;
     }
     return PSI_PIR_SUCCESS;
 }
 
-int32_t DecryptAttachedValue(const SearchResultContext &context, const Slots &plain,
-    std::size_t offset, std::size_t globalIndex, std::optional<std::vector<Bytes>> &attachedValues) noexcept
+int32_t DecryptAttachedValue(const SearchResultContext &context, const Slots &plain, std::size_t offset,
+                             std::size_t globalIndex, std::optional<std::vector<Bytes>> &attachedValues) noexcept
 {
     auto ret = ValidateCiphertextIndex(context, globalIndex);
     if (ret != PSI_PIR_SUCCESS) {
@@ -399,17 +422,16 @@ int32_t DecryptAttachedValue(const SearchResultContext &context, const Slots &pl
     Bytes seed;
     ret = context.encoder.ExtractSeed(plain, offset + context.params.slotsPerData, context.params, seed);
     if (ret != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("ExtractSeed failed at offset=%{private}zu, ret=%{public}d",
-            offset + context.params.slotsPerData, ret);
+        PSI_PIR_LOGE("ExtractSeed failed at offset=%{private}zu, ret=%{public}d", offset + context.params.slotsPerData,
+                     ret);
         return ret;
     }
     std::optional<Bytes> decrypted;
-    ret = pirValueCrypto->decrypt(seed, (*context.searchResult.symCipherText)[globalIndex],
-        context.params, decrypted);
+    ret = pirValueCrypto->decrypt(seed, (*context.searchResult.symCipherText)[globalIndex], context.params, decrypted);
     if (ret != PSI_PIR_SUCCESS) {
         const auto frameSize = (*context.searchResult.symCipherText)[globalIndex].size();
         PSI_PIR_LOGE("value crypto decrypt failed: index=%{private}zu, frameBytes=%{public}zu, ret=%{public}d",
-            globalIndex, frameSize, ret);
+                     globalIndex, frameSize, ret);
         return ret;
     }
     if (decrypted.has_value()) {
@@ -421,8 +443,8 @@ int32_t DecryptAttachedValue(const SearchResultContext &context, const Slots &pl
     return PSI_PIR_SUCCESS;
 }
 
-int32_t BuildMatchedResult(const SearchResultContext &context, const Slots &plain,
-    std::size_t batchIndex, std::size_t item, SearchResult &result) noexcept
+int32_t BuildMatchedResult(const SearchResultContext &context, const Slots &plain, std::size_t batchIndex,
+                           std::size_t item, SearchResult &result) noexcept
 {
     result.matchedResult = true;
     if (!IsPir(context.params)) {
@@ -434,7 +456,7 @@ int32_t BuildMatchedResult(const SearchResultContext &context, const Slots &plai
 }
 
 int32_t ProcessSearchResultPlaintexts(const SearchResultContext &context, const std::vector<Slots> &plaintexts,
-    SearchResult &resolvedResult) noexcept
+                                      SearchResult &resolvedResult) noexcept
 {
     resolvedResult = {};
     for (std::size_t batch = 0; batch < plaintexts.size(); ++batch) {
@@ -443,8 +465,8 @@ int32_t ProcessSearchResultPlaintexts(const SearchResultContext &context, const 
             bool matched = false;
             auto ret = context.encoder.IsMatch(plaintexts[batch], offset, context.params, matched);
             if (ret != PSI_PIR_SUCCESS) {
-                PSI_PIR_LOGE("IsMatch failed at batch=%{public}zu, item=%{private}zu, ret=%{public}d", batch,
-                    item ,ret);
+                PSI_PIR_LOGE("IsMatch failed at batch=%{public}zu, item=%{private}zu, ret=%{public}d", batch, item,
+                             ret);
                 return ret;
             }
             if (!matched) {
@@ -457,22 +479,23 @@ int32_t ProcessSearchResultPlaintexts(const SearchResultContext &context, const 
         }
     }
     if (IsPir(context.params)) {
-        const std::size_t matchedCount = resolvedResult.attachedValues.has_value() ?
-            resolvedResult.attachedValues->size() : 0;
+        const std::size_t matchedCount =
+            resolvedResult.attachedValues.has_value() ? resolvedResult.attachedValues->size() : 0;
         PSI_PIR_LOGI("GetSearchResult scan complete, PIR batchCount=%{public}zu, matched=%{public}d, matchedCount="
-            "%{public}zu", plaintexts.size(), resolvedResult.matchedResult, matchedCount);
+                     "%{public}zu",
+                     plaintexts.size(), resolvedResult.matchedResult, matchedCount);
     } else {
-        PSI_PIR_LOGI("GetSearchResult scan complete, PSI batchCount=%{public}zu, matched=%{public}d",
-            plaintexts.size(), resolvedResult.matchedResult);
+        PSI_PIR_LOGI("GetSearchResult scan complete, PSI batchCount=%{public}zu, matched=%{public}d", plaintexts.size(),
+                     resolvedResult.matchedResult);
     }
     return PSI_PIR_SUCCESS;
 }
 
 } // namespace
 
-int32_t PsiPirProtocolImpl::privacySearch(const Bytes &privacyTarget,
-    const std::vector<Element> &elements, const ProtocolParams &params,
-    PrivacySearchResult &searchResult) const noexcept
+int32_t PsiPirProtocolImpl::privacySearch(const Bytes &privacyTarget, const std::vector<Element> &elements,
+                                          const ProtocolParams &params,
+                                          PrivacySearchResult &searchResult) const noexcept
 {
     auto ret = ValidateEvaluateInput(privacyTarget, elements, params, codec_, encoder_);
     if (ret != PSI_PIR_SUCCESS) {
@@ -503,8 +526,7 @@ int32_t PsiPirProtocolImpl::privacySearch(const Bytes &privacyTarget,
         return ret;
     }
     std::vector<Bytes> batches;
-    const EvaluationContext context { privacyTarget, params, encoder_,
-        *engine, serverVectors, payload };
+    const EvaluationContext context{privacyTarget, params, encoder_, *engine, serverVectors, payload};
     ret = EvaluateBatches(context, layout, batches);
     if (ret != PSI_PIR_SUCCESS) {
         return ret;
@@ -514,7 +536,7 @@ int32_t PsiPirProtocolImpl::privacySearch(const Bytes &privacyTarget,
 }
 
 int32_t PsiPirProtocolImpl::getSearchResult(const PrivacySearchResult &privacySearchResult,
-    const ProtocolParams &params, SearchResult &resolvedResult) const noexcept
+                                            const ProtocolParams &params, SearchResult &resolvedResult) const noexcept
 {
     auto ret = codec_.ValidateProtocol(params);
     if (ret != PSI_PIR_SUCCESS) {
@@ -528,8 +550,8 @@ int32_t PsiPirProtocolImpl::getSearchResult(const PrivacySearchResult &privacySe
         return ret;
     }
     const auto groupsPerItem = GetGroupsPerItem(params);
-    const SearchResultContext context { privacySearchResult, params, encoder_,
-        groupsPerItem, params.dataNumPerPlaintext / groupsPerItem };
+    const SearchResultContext context{privacySearchResult, params, encoder_, groupsPerItem,
+                                      params.dataNumPerPlaintext / groupsPerItem};
     return ProcessSearchResultPlaintexts(context, plaintexts, resolvedResult);
 }
 

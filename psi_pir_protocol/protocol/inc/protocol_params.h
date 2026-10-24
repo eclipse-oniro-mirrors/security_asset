@@ -24,7 +24,8 @@
 namespace psi_pir::internal {
 
 enum class ProtocolMode : std::uint32_t {
-    PSI = 0, PIR = 1,
+    PSI = 0,
+    PIR = 1,
 };
 
 enum class FheAlgorithm : std::uint32_t {
@@ -45,16 +46,16 @@ constexpr std::size_t kDefaultPolyModulusDegree = 2048;
 constexpr std::size_t kDefaultSymKeySize = 0;
 
 struct ProtocolParams {
-    ProtocolMode mode { ProtocolMode::PSI };
-    std::size_t compareBits { kDefaultCompareBits };
-    std::size_t bitsPerSlot { kDefaultBitsPerSlot };
-    std::size_t slotsPerData { kDefaultSlotsPerData };
-    std::size_t dataNumPerPlaintext { kDefaultDataNumberPerPlaintext };
-    std::uint64_t plainModulus { kDefaultPlainModulus };
-    std::size_t polyModulusDegree { kDefaultPolyModulusDegree };
-    FheAlgorithm fheAlgorithm { FheAlgorithm::BGV2048_48 };
-    std::size_t symKeySize { kDefaultSymKeySize };
-    SymAlgorithm symAlgorithm { SymAlgorithm::NONE };
+    ProtocolMode mode{ProtocolMode::PSI};
+    std::size_t compareBits{kDefaultCompareBits};
+    std::size_t bitsPerSlot{kDefaultBitsPerSlot};
+    std::size_t slotsPerData{kDefaultSlotsPerData};
+    std::size_t dataNumPerPlaintext{kDefaultDataNumberPerPlaintext};
+    std::uint64_t plainModulus{kDefaultPlainModulus};
+    std::size_t polyModulusDegree{kDefaultPolyModulusDegree};
+    FheAlgorithm fheAlgorithm{FheAlgorithm::BGV2048_48};
+    std::size_t symKeySize{kDefaultSymKeySize};
+    SymAlgorithm symAlgorithm{SymAlgorithm::NONE};
 };
 
 } // namespace psi_pir::internal

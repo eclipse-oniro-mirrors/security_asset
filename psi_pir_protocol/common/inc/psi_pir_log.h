@@ -35,20 +35,16 @@
 #undef LOG_TAG
 #define LOG_TAG PSI_PIR_LOG_TAG
 
-#define PSI_PIR_LOGD(fmt, args...) \
-    HILOG_DEBUG(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", \
-        __func__, static_cast<unsigned int>(__LINE__), ##args)
+#define PSI_PIR_LOGD(fmt, args...)                                                                                     \
+    HILOG_DEBUG(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", __func__, static_cast<unsigned int>(__LINE__), ##args)
 
-#define PSI_PIR_LOGI(fmt, args...) \
-    HILOG_INFO(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", \
-        __func__, static_cast<unsigned int>(__LINE__), ##args)
+#define PSI_PIR_LOGI(fmt, args...)                                                                                     \
+    HILOG_INFO(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", __func__, static_cast<unsigned int>(__LINE__), ##args)
 
-#define PSI_PIR_LOGW(fmt, args...) \
-    HILOG_WARN(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", \
-        __func__, static_cast<unsigned int>(__LINE__), ##args)
+#define PSI_PIR_LOGW(fmt, args...)                                                                                     \
+    HILOG_WARN(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", __func__, static_cast<unsigned int>(__LINE__), ##args)
 
-#define PSI_PIR_LOGE(fmt, args...) \
-    HILOG_ERROR(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", \
-        __func__, static_cast<unsigned int>(__LINE__), ##args)
+#define PSI_PIR_LOGE(fmt, args...)                                                                                     \
+    HILOG_ERROR(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", __func__, static_cast<unsigned int>(__LINE__), ##args)
 
 #endif // PSI_PIR_PROTOCOL_LOG_H

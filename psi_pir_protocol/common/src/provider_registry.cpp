@@ -1,7 +1,22 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "provider_registry.h"
 
-#include "psi_pir_log.h"
 #include "openssl_crypto_provider.h"
+#include "psi_pir_log.h"
 
 #include <atomic>
 #include <utility>
@@ -12,7 +27,7 @@ namespace {
 std::shared_ptr<const IHashProvider> g_hashProvider;
 std::shared_ptr<IRandomSource> g_randomSource;
 std::shared_ptr<const IHEEngine> g_heEngine;
-std::atomic<HEEngineFactory> g_defaultHEFactory { nullptr };
+std::atomic<HEEngineFactory> g_defaultHEFactory{nullptr};
 std::shared_ptr<const IPirValueCrypto> g_pirValueCrypto;
 
 } // namespace
@@ -75,8 +90,9 @@ bool InstallDefaultHEEngineFactory(HEEngineFactory factory) noexcept
         return false;
     }
     HEEngineFactory expected = nullptr;
-    return g_defaultHEFactory.compare_exchange_strong(expected, factory,
-        std::memory_order_acq_rel, std::memory_order_acquire) || expected == factory;
+    return g_defaultHEFactory.compare_exchange_strong(expected, factory, std::memory_order_acq_rel,
+                                                      std::memory_order_acquire) ||
+           expected == factory;
 }
 
 std::shared_ptr<const IPirValueCrypto> GetPirValueCrypto() noexcept

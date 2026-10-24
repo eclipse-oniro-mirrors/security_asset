@@ -28,7 +28,6 @@ constexpr std::size_t kPirGroupsPerItem = 2;
 constexpr std::size_t kPsiGroupsPerItem = 1;
 constexpr std::size_t kMaxBitsPerSlot = sizeof(std::uint64_t) * kBitsPerByte;
 
-
 } // namespace psi_pir::internal
 
 #endif // PSI_PIR_PROTOCOL_INTERNAL_TYPES_H

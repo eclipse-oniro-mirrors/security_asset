@@ -16,9 +16,9 @@
 #ifndef PSI_PIR_HE_TYPES_H
 #define PSI_PIR_HE_TYPES_H
 
-#include "psi_pir_types.h"
 #include "internal_types.h"
 #include "protocol_params.h"
+#include "psi_pir_types.h"
 #include <array>
 
 namespace psi_pir::internal {
@@ -26,7 +26,7 @@ using psi_pir::internal::ProtocolParams;
 using psi_pir::internal::Slots;
 // Secret storage is cleared at scope exit; no copies may escape an operation.
 class HeSeed final {
-  public:
+public:
     HeSeed() noexcept = default;
     ~HeSeed();
     HeSeed(const HeSeed &) = delete;

@@ -16,9 +16,9 @@
 #ifndef PSI_PIR_PROTOCOL_PROTOCOL_MAPPER_H
 #define PSI_PIR_PROTOCOL_PROTOCOL_MAPPER_H
 
+#include "protocol_params.h"
 #include "psi_pir_error_code.h"
 #include "psi_pir_types.h"
-#include "protocol_params.h"
 
 namespace psi_pir::internal {
 

@@ -19,9 +19,23 @@ use asset_log::loge;
 use std::convert::TryFrom;
 
 const MAX_MESSAGE: usize = 256 * 1024;
+// Keep field order and integer widths identical to privacy_request.h.
+#[repr(C)]
+struct AssetPrivacyInput {
+    code: u32,
+    uid: u32,
+    data: *const u8,
+    size: u32,
+}
+
+#[repr(C)]
+struct AssetPrivacyOutput {
+    data: *mut u8,
+    size: u32,
+}
+
 extern "C" {
-    fn AssetPrivacyRequest(code: u32, uid: u32, input: *const u8, size: u32,
-        output: *mut u8, output_size: *mut u32) -> i32;
+    fn AssetPrivacyRequest(input: *const AssetPrivacyInput, output: *mut AssetPrivacyOutput) -> i32;
 }
 
 pub(crate) fn request(code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
@@ -39,10 +53,21 @@ pub(crate) fn request(code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) ->
         chunk.copy_from_slice(&word[..chunk.len()]);
     }
     let mut output = vec![0u8; MAX_MESSAGE];
-    let mut size = output.len() as u32;
-    let result = unsafe { AssetPrivacyRequest(code, uid, input.as_ptr(), input.len() as u32,
-        output.as_mut_ptr(), &mut size) };
-    if size as usize > output.len() { return Err(IpcStatusCode::Failed); }
+    let request = AssetPrivacyInput {
+        code,
+        uid,
+        data: input.as_ptr(),
+        size: input.len() as u32,
+    };
+    let mut response = AssetPrivacyOutput {
+        data: output.as_mut_ptr(),
+        size: output.len() as u32,
+    };
+    let result = unsafe { AssetPrivacyRequest(&request, &mut response) };
+    let size = response.size;
+    if size as usize > output.len() {
+        return Err(IpcStatusCode::Failed);
+    }
     reply.write(&result)?;
     if result == 0 {
         output.truncate(size as usize);

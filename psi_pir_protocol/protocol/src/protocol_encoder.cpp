@@ -1,7 +1,22 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "protocol_encoder.h"
 
-#include "psi_pir_log.h"
 #include "provider_registry.h"
+#include "psi_pir_log.h"
 
 #include <algorithm>
 #include <limits>
@@ -17,16 +32,16 @@ constexpr std::size_t kMaxRandomAttempts = 128;
 
 bool IsValidHashAlgorithm(HashAlg algorithm) noexcept
 {
-    return algorithm == HashAlg::NONE || algorithm == HashAlg::SHA256 ||
-        algorithm == HashAlg::SHA384 || algorithm == HashAlg::SHA512;
+    return algorithm == HashAlg::NONE || algorithm == HashAlg::SHA256 || algorithm == HashAlg::SHA384 ||
+           algorithm == HashAlg::SHA512;
 }
 
 bool HasValidPackingDimensions(const ProtocolParams &params) noexcept
 {
     return params.compareBits != 0 && params.compareBits % kBitsPerByte == 0 && params.bitsPerSlot != 0 &&
-        params.bitsPerSlot < kMaxBitsPerSlot && params.slotsPerData != 0 &&
-        params.slotsPerData <= std::numeric_limits<std::size_t>::max() / params.bitsPerSlot &&
-        params.compareBits == params.bitsPerSlot * params.slotsPerData;
+           params.bitsPerSlot < kMaxBitsPerSlot && params.slotsPerData != 0 &&
+           params.slotsPerData <= std::numeric_limits<std::size_t>::max() / params.bitsPerSlot &&
+           params.compareBits == params.bitsPerSlot * params.slotsPerData;
 }
 
 std::uint64_t ExtractBitsFromTail(const Bytes &input, std::size_t startBit, std::size_t bitCount) noexcept
@@ -39,8 +54,8 @@ std::uint64_t ExtractBitsFromTail(const Bytes &input, std::size_t startBit, std:
         const auto byteFromEnd = bitPosition / kBitsPerByte;
         const auto bitInByte = bitPosition % kBitsPerByte;
         const auto roundBits = std::min(bitCount - bitsCollected, kBitsPerByte - bitInByte);
-        const auto roundMask = static_cast<std::uint8_t>(roundBits == kBitsPerByte ? 0xffU :
-            (std::uint16_t { 1 } << roundBits) - 1U);
+        const auto roundMask =
+            static_cast<std::uint8_t>(roundBits == kBitsPerByte ? 0xffU : (std::uint16_t{1} << roundBits) - 1U);
         const auto source = input[input.size() - byteFromEnd - 1];
         const auto value = static_cast<std::uint64_t>((source >> bitInByte) & roundMask);
         result |= value << bitsCollected;
@@ -73,7 +88,7 @@ std::uint8_t CreateHighByteMask(std::size_t randomBits) noexcept
     if (highBits == 0) {
         return 0xff;
     }
-    return static_cast<std::uint8_t>((std::uint16_t { 1 } << highBits) - 1);
+    return static_cast<std::uint8_t>((std::uint16_t{1} << highBits) - 1);
 }
 
 MaskSamplingConfig CreateMaskSamplingConfig(std::uint64_t plainModulus) noexcept
@@ -81,11 +96,11 @@ MaskSamplingConfig CreateMaskSamplingConfig(std::uint64_t plainModulus) noexcept
     const auto candidateRange = plainModulus - 1;
     const auto randomBits = CountSignificantBits(candidateRange - 1);
     const auto bytesPerValue = std::max<std::size_t>(1, (randomBits + kBitsPerByte - 1) / kBitsPerByte);
-    return { candidateRange, bytesPerValue, CreateHighByteMask(randomBits) };
+    return {candidateRange, bytesPerValue, CreateHighByteMask(randomBits)};
 }
 
 std::uint64_t DecodeMaskCandidate(const Bytes &randomBytes, std::size_t offset,
-    const MaskSamplingConfig &config) noexcept
+                                  const MaskSamplingConfig &config) noexcept
 {
     std::uint64_t candidate = randomBytes[offset] & config.highByteMask;
     for (std::size_t byte = 1; byte < config.bytesPerValue; ++byte) {
@@ -94,9 +109,9 @@ std::uint64_t DecodeMaskCandidate(const Bytes &randomBytes, std::size_t offset,
     return candidate;
 }
 
-int32_t ApplyMaskCandidates(const Bytes &randomBytes,
-    const std::vector<std::size_t> &indices, const MaskSamplingConfig &config,
-    Slots &maskVector, std::vector<std::size_t> &rejected) noexcept
+int32_t ApplyMaskCandidates(const Bytes &randomBytes, const std::vector<std::size_t> &indices,
+                            const MaskSamplingConfig &config, Slots &maskVector,
+                            std::vector<std::size_t> &rejected) noexcept
 {
     rejected.clear();
     rejected.reserve(indices.size());
@@ -116,13 +131,13 @@ int32_t ApplyMaskCandidates(const Bytes &randomBytes,
     return PSI_PIR_SUCCESS;
 }
 
-int32_t SampleMaskCandidates(IRandomSource &randomSource,
-    const std::vector<std::size_t> &indices, const MaskSamplingConfig &config,
-    Slots &maskVector, std::vector<std::size_t> &rejected) noexcept
+int32_t SampleMaskCandidates(IRandomSource &randomSource, const std::vector<std::size_t> &indices,
+                             const MaskSamplingConfig &config, Slots &maskVector,
+                             std::vector<std::size_t> &rejected) noexcept
 {
     if (indices.size() > std::numeric_limits<std::size_t>::max() / config.bytesPerValue) {
-        PSI_PIR_LOGE("random byte count overflow: entries=%{public}zu, bytesPerEntry=%{public}zu",
-            indices.size(), config.bytesPerValue);
+        PSI_PIR_LOGE("random byte count overflow: entries=%{public}zu, bytesPerEntry=%{public}zu", indices.size(),
+                     config.bytesPerValue);
         return PSI_PIR_INVALID_ARGUMENT;
     }
     Bytes randomBytes(indices.size() * config.bytesPerValue);
@@ -134,12 +149,12 @@ int32_t SampleMaskCandidates(IRandomSource &randomSource,
     return ApplyMaskCandidates(randomBytes, indices, config, maskVector, rejected);
 }
 
-int32_t FillNonZeroMaskEntries(IRandomSource &randomSource,
-    const std::vector<std::size_t> &indices, std::uint64_t plainModulus, Slots &maskVector) noexcept
+int32_t FillNonZeroMaskEntries(IRandomSource &randomSource, const std::vector<std::size_t> &indices,
+                               std::uint64_t plainModulus, Slots &maskVector) noexcept
 {
     if (plainModulus <= 1) {
         PSI_PIR_LOGE("plain modulus cannot produce a non-zero mask, modulus=%{public}llu",
-            static_cast<unsigned long long>(plainModulus));
+                     static_cast<unsigned long long>(plainModulus));
         return PSI_PIR_INVALID_ARGUMENT;
     }
     // An accepted c in [0, p - 2] maps to c + 1 in F_p^*; out-of-range
@@ -234,7 +249,7 @@ int32_t ProtocolEncoder::Hash(HashAlg algorithm, const Bytes &input, Bytes &dige
     const auto digestRet = hashProvider->digest(algorithm, input, output);
     if (digestRet != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("hash provider digest failed, algorithm=%{public}u, ret=%{public}d",
-            static_cast<uint32_t>(algorithm), digestRet);
+                     static_cast<uint32_t>(algorithm), digestRet);
         return digestRet;
     }
     digest = std::move(output);
@@ -260,8 +275,8 @@ int32_t ProtocolEncoder::BytesToSlots(const Bytes &input, const ProtocolParams &
     return PSI_PIR_SUCCESS;
 }
 
-int32_t ProtocolEncoder::EncodeServerVector(const Element &element,
-    const ProtocolParams &params, Slots &serverVector) const noexcept
+int32_t ProtocolEncoder::EncodeServerVector(const Element &element, const ProtocolParams &params,
+                                            Slots &serverVector) const noexcept
 {
     Bytes digest;
     auto resultCode = Hash(element.hashAlg, element.elemKey, digest);
@@ -277,8 +292,8 @@ int32_t ProtocolEncoder::EncodeServerVector(const Element &element,
     return PSI_PIR_SUCCESS;
 }
 
-int32_t ProtocolEncoder::EncodeTargetVector(const Element &element,
-    const ProtocolParams &params, Slots &targetVector) const noexcept
+int32_t ProtocolEncoder::EncodeTargetVector(const Element &element, const ProtocolParams &params,
+                                            Slots &targetVector) const noexcept
 {
     if (!HasValidPackingDimensions(params) || params.polyModulusDegree == 0 ||
         params.polyModulusDegree % params.slotsPerData != 0 ||
@@ -297,7 +312,7 @@ int32_t ProtocolEncoder::EncodeTargetVector(const Element &element,
         return PSI_PIR_INVALID_ARGUMENT;
     }
     if (std::any_of(comparison.begin(), comparison.end(),
-        [&params](auto slot) { return slot >= params.plainModulus; })) {
+                    [&params](auto slot) { return slot >= params.plainModulus; })) {
         PSI_PIR_LOGE("target comparison slot exceeds plaintext modulus");
         return PSI_PIR_INVALID_ARGUMENT;
     }
@@ -314,8 +329,8 @@ int32_t ProtocolEncoder::EncodeSeed(const Bytes &seed, const ProtocolParams &par
     return BytesToSlots(seed, params, seedSlots);
 }
 
-int32_t ProtocolEncoder::ExtractSeed(const Slots &plain, std::size_t offset,
-    const ProtocolParams &params, Bytes &seed) const noexcept
+int32_t ProtocolEncoder::ExtractSeed(const Slots &plain, std::size_t offset, const ProtocolParams &params,
+                                     Bytes &seed) const noexcept
 {
     if (!HasValidPackingDimensions(params)) {
         PSI_PIR_LOGE("invalid packing dimensions");
@@ -323,10 +338,11 @@ int32_t ProtocolEncoder::ExtractSeed(const Slots &plain, std::size_t offset,
     }
     if (!ContainsSlotRange(plain, offset, params.slotsPerData)) {
         PSI_PIR_LOGE("slot range out of bounds: offset=%{private}zu, slotsPerData=%{public}zu, "
-            "plainSize=%{public}zu", offset, params.slotsPerData, plain.size());
+                     "plainSize=%{public}zu",
+                     offset, params.slotsPerData, plain.size());
         return PSI_PIR_CODEC_ERROR;
     }
-    const auto slotMask = (std::uint64_t { 1 } << params.bitsPerSlot) - 1;
+    const auto slotMask = (std::uint64_t{1} << params.bitsPerSlot) - 1;
     Bytes output(params.compareBits / kBitsPerByte, 0);
     for (std::size_t slot = 0; slot < params.slotsPerData; ++slot) {
         const auto value = (plain[offset + slot] % params.plainModulus) & slotMask;
@@ -357,8 +373,8 @@ int32_t ProtocolEncoder::GenerateMaskVector(const ProtocolParams &params, Slots 
 {
     const auto validationResult = ValidateMaskDimensions(params);
     if (validationResult != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("invalid mask dimensions: bitsPerSlot=%{public}zu, plainModulus=%{public}llu",
-            params.bitsPerSlot, static_cast<unsigned long long>(params.plainModulus));
+        PSI_PIR_LOGE("invalid mask dimensions: bitsPerSlot=%{public}zu, plainModulus=%{public}llu", params.bitsPerSlot,
+                     static_cast<unsigned long long>(params.plainModulus));
         return validationResult;
     }
     const auto randomSource = GetRandomSource();
@@ -367,8 +383,8 @@ int32_t ProtocolEncoder::GenerateMaskVector(const ProtocolParams &params, Slots 
         return PSI_PIR_RANDOM_ERROR;
     }
     const auto slotCount = params.dataNumPerPlaintext * params.slotsPerData;
-    PSI_PIR_LOGI("mask generation begin, slots=%{public}zu, modulus=%{public}llu, mode=%{public}u",
-        slotCount, static_cast<unsigned long long>(params.plainModulus), static_cast<uint32_t>(params.mode));
+    PSI_PIR_LOGI("mask generation begin, slots=%{public}zu, modulus=%{public}llu, mode=%{public}u", slotCount,
+                 static_cast<unsigned long long>(params.plainModulus), static_cast<uint32_t>(params.mode));
     Slots output(slotCount, 0);
     const auto indices = CreateSequentialIndices(slotCount);
     auto resultCode = FillNonZeroMaskEntries(*randomSource, indices, params.plainModulus, output);
@@ -382,17 +398,18 @@ int32_t ProtocolEncoder::GenerateMaskVector(const ProtocolParams &params, Slots 
     return PSI_PIR_SUCCESS;
 }
 
-int32_t ProtocolEncoder::IsMatch(const Slots &plain, std::size_t offset,
-    const ProtocolParams &params, bool &matched) const noexcept
+int32_t ProtocolEncoder::IsMatch(const Slots &plain, std::size_t offset, const ProtocolParams &params,
+                                 bool &matched) const noexcept
 {
     if (!ContainsSlotRange(plain, offset, params.slotsPerData)) {
         PSI_PIR_LOGE("match range out of bounds: offset=%{private}zu, slotsPerData=%{public}zu, "
-            "plainSize=%{public}zu", offset, params.slotsPerData, plain.size());
+                     "plainSize=%{public}zu",
+                     offset, params.slotsPerData, plain.size());
         return PSI_PIR_CODEC_ERROR;
     }
     matched = std::all_of(plain.begin() + static_cast<std::ptrdiff_t>(offset),
-        plain.begin() + static_cast<std::ptrdiff_t>(offset + params.slotsPerData),
-        [&params](std::uint64_t value) { return value % params.plainModulus == 0; });
+                          plain.begin() + static_cast<std::ptrdiff_t>(offset + params.slotsPerData),
+                          [&params](std::uint64_t value) { return value % params.plainModulus == 0; });
     return PSI_PIR_SUCCESS;
 }
 

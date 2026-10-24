@@ -1,12 +1,27 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 #include "psi_pir_protocol.h"
 #include "search_result_processor.h"
 
-#include "provider_registry.h"
 #include "openssl_crypto_provider.h"
 #include "protocol_codec.h"
 #include "protocol_encoder.h"
 #include "protocol_mapper.h"
 #include "protocol_params.h"
+#include "provider_registry.h"
 
 #include <gtest/gtest.h>
 
@@ -24,15 +39,9 @@ namespace {
 using namespace psi_pir;
 using namespace psi_pir::internal;
 
-constexpr PrivacyProtocol PSI_PROTOCOL {
-    DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL
-};
-constexpr PrivacyProtocol PIR_PROTOCOL {
-    DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL
-};
-constexpr PrivacyProtocol PIR_128_PROTOCOL {
-    DataSetSize::SIZE_128, ProtocolType::PIR_PROTOCOL
-};
+constexpr PrivacyProtocol PSI_PROTOCOL{DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL};
+constexpr PrivacyProtocol PIR_PROTOCOL{DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL};
+constexpr PrivacyProtocol PIR_128_PROTOCOL{DataSetSize::SIZE_128, ProtocolType::PIR_PROTOCOL};
 constexpr std::size_t SLOT_COUNT = 512U * 4U;
 constexpr std::uint64_t PLAIN_MODULUS = 65537;
 
@@ -131,15 +140,15 @@ int32_t BuiltInFillRandom(Bytes &output)
     return provider ? provider->fill(output) : PSI_PIR_RANDOM_ERROR;
 }
 
-int32_t BuiltInEncryptOrderValue(const Bytes &seed,
-    const std::optional<Bytes> &value, const ProtocolParams &params, Bytes &output)
+int32_t BuiltInEncryptOrderValue(const Bytes &seed, const std::optional<Bytes> &value, const ProtocolParams &params,
+                                 Bytes &output)
 {
     const auto provider = GetOpenSslPirValueCrypto();
     return provider ? provider->encrypt(seed, value, params, output) : PSI_PIR_CRYPTO_ERROR;
 }
 
-int32_t BuiltInDecryptOrderValue(const Bytes &seed, const Bytes &ciphertext,
-    const ProtocolParams &params, std::optional<Bytes> &output)
+int32_t BuiltInDecryptOrderValue(const Bytes &seed, const Bytes &ciphertext, const ProtocolParams &params,
+                                 std::optional<Bytes> &output)
 {
     const auto provider = GetOpenSslPirValueCrypto();
     return provider ? provider->decrypt(seed, ciphertext, params, output) : PSI_PIR_CRYPTO_ERROR;
@@ -152,8 +161,8 @@ Bytes MakePrivacyTargetForKey(const Bytes &key, std::size_t slotsPerData)
     if (digest.size() < slotsPerData * 2) {
         return {};
     }
-    return MakePrivacyTargetFromSuffix(Bytes(digest.end() -
-        static_cast<std::ptrdiff_t>(slotsPerData * 2), digest.end()), slotsPerData);
+    return MakePrivacyTargetFromSuffix(
+        Bytes(digest.end() - static_cast<std::ptrdiff_t>(slotsPerData * 2), digest.end()), slotsPerData);
 }
 
 Bytes MakePrivacyTarget(std::uint64_t compareValue)
@@ -204,7 +213,7 @@ public:
         Bytes digest(32, 0);
         const auto copySize = std::min(digest.size(), input.size());
         std::copy(input.end() - static_cast<std::ptrdiff_t>(copySize), input.end(),
-            digest.end() - static_cast<std::ptrdiff_t>(copySize));
+                  digest.end() - static_cast<std::ptrdiff_t>(copySize));
         output = std::move(digest);
         return PSI_PIR_SUCCESS;
     }
@@ -225,7 +234,7 @@ public:
     std::vector<std::size_t> requestedSizes;
 
 private:
-    std::uint8_t nextValue_ { 0x31 };
+    std::uint8_t nextValue_{0x31};
 };
 
 class BoundaryRandom final : public IRandomSource {
@@ -248,12 +257,12 @@ public:
 
 class RecordingPirValueCrypto final : public IPirValueCrypto {
 public:
-    int32_t encrypt(const Bytes &seed, const std::optional<Bytes> &value,
-        const ProtocolParams &params, Bytes &output) const noexcept override
+    int32_t encrypt(const Bytes &seed, const std::optional<Bytes> &value, const ProtocolParams &params,
+                    Bytes &output) const noexcept override
     {
         encryptParams.push_back(params);
         encryptSeeds.push_back(seed);
-        Bytes encrypted { static_cast<std::uint8_t>(seed.size()) };
+        Bytes encrypted{static_cast<std::uint8_t>(seed.size())};
         encrypted.insert(encrypted.end(), seed.begin(), seed.end());
         encrypted.push_back(value.has_value() ? 1 : 0);
         if (value.has_value()) {
@@ -264,8 +273,8 @@ public:
         return PSI_PIR_SUCCESS;
     }
 
-    int32_t decrypt(const Bytes &seed, const Bytes &ciphertext,
-        const ProtocolParams &params, std::optional<Bytes> &output) const noexcept override
+    int32_t decrypt(const Bytes &seed, const Bytes &ciphertext, const ProtocolParams &params,
+                    std::optional<Bytes> &output) const noexcept override
     {
         decryptParams.push_back(params);
         if (ciphertext.empty()) {
@@ -368,24 +377,27 @@ public:
         return PSI_PIR_SUCCESS;
     }
 
-    bool compatible { true };
+    bool compatible{true};
     mutable std::vector<ProtocolParams> compatibleParams;
 };
 
 struct RecordingProviders {
     std::shared_ptr<RecordingHash> hash;
-    std::shared_ptr<RecordingRandom> random;
+    std::shared_ptr<RecordingRandom> randomSource;
     std::shared_ptr<RecordingPirValueCrypto> pirValue;
     std::shared_ptr<CleartextHe> he;
 };
 
 RecordingProviders InstallRecordingProviders()
 {
-    RecordingProviders providers {
-        std::make_shared<RecordingHash>(), std::make_shared<RecordingRandom>(),
-        std::make_shared<RecordingPirValueCrypto>(), std::make_shared<CleartextHe>(), };
+    RecordingProviders providers{
+        std::make_shared<RecordingHash>(),
+        std::make_shared<RecordingRandom>(),
+        std::make_shared<RecordingPirValueCrypto>(),
+        std::make_shared<CleartextHe>(),
+    };
     SetHashProvider(providers.hash);
-    SetRandomSource(providers.random);
+    SetRandomSource(providers.randomSource);
     SetPirValueCrypto(providers.pirValue);
     SetHEEngine(providers.he);
     return providers;
@@ -432,8 +444,8 @@ Element Make128BitElement(std::uint64_t key, const std::optional<std::string> &v
     return element;
 }
 
-void ExpectCoreParams(const ProtocolParams &params, ProtocolMode mode,
-    std::size_t compareBits = 64, std::size_t slotsPerData = 4, std::size_t dataNumPerPlaintext = 512)
+void ExpectCoreParams(const ProtocolParams &params, ProtocolMode mode, std::size_t compareBits = 64,
+                      std::size_t slotsPerData = 4, std::size_t dataNumPerPlaintext = 512)
 {
     EXPECT_EQ(params.mode, mode);
     EXPECT_EQ(params.compareBits, compareBits);
@@ -447,8 +459,7 @@ void ExpectCoreParams(const ProtocolParams &params, ProtocolMode mode,
 
 TEST(PsiPirProtocolTargetTest, RepeatsComparisonGroupAcrossAllSlots)
 {
-    const Element element{Bytes{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-        HashAlg::NONE, std::nullopt};
+    const Element element{Bytes{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16}, HashAlg::NONE, std::nullopt};
     const Slots expected{0x0f10, 0x0d0e, 0x0b0c, 0x090a, 0x0708, 0x0506, 0x0304, 0x0102};
     for (const auto &protocol : {PSI_PROTOCOL, PIR_PROTOCOL, PIR_128_PROTOCOL}) {
         ProtocolParams params;
@@ -492,42 +503,43 @@ TEST(PsiPirProtocolTargetTest, InvalidTargetPackingPreservesOutput)
 TEST(PsiPirProtocolHeContractTest, AddPlainMeansPlaintextMinusCiphertext)
 {
     CleartextHe he;
-    const Slots ciphertextSlots { 1, 0, PLAIN_MODULUS - 1 };
-    const Slots plaintext { 2, 1, PLAIN_MODULUS - 1 };
+    const Slots ciphertextSlots{1, 0, PLAIN_MODULUS - 1};
+    const Slots plaintext{2, 1, PLAIN_MODULUS - 1};
     Bytes output;
     ASSERT_EQ(he.addPlain(SerializeSlots(ciphertextSlots), plaintext, output), PSI_PIR_SUCCESS);
 
     Slots result;
     ASSERT_EQ(DeserializeSlots(output, result), PSI_PIR_SUCCESS);
-    EXPECT_EQ(result, Slots({ 1, 1, 0 }));
+    EXPECT_EQ(result, Slots({1, 1, 0}));
 }
 
 TEST(PsiPirProtocolOpenSslTest, HashAlgorithmsMatchKnownAnswerVectors)
 {
-    const Bytes input { 'a', 'b', 'c' };
-    const std::array<std::pair<HashAlg, std::string>, 3> vectors {{
-        { HashAlg::SHA256, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad" },
-        { HashAlg::SHA512,
-            "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a"
-            "2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f" },
-        { HashAlg::SHA384,
-            "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7" }, }};
+    const Bytes input{'a', 'b', 'c'};
+    const std::array<std::pair<HashAlg, std::string>, 3> vectors{{
+        {HashAlg::SHA256, "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"},
+        {HashAlg::SHA512, "ddaf35a193617abacc417349ae20413112e6fa4e89a97ea20a9eeee64b55d39a"
+                          "2192992a274fc1a836ba3c23a3feebbd454d4423643ce80e2a9ac94fa54ca49f"},
+        {HashAlg::SHA384,
+         "cb00753f45a35e8bb5a03d699ac65007272c32ab0eded1631a8b605a43ff5bed8086072ba1e7cc2358baeca134c825a7"},
+    }};
     for (const auto &[algorithm, expectedHex] : vectors) {
-        Bytes digest { 0xff };
+        Bytes digest{0xff};
         ASSERT_EQ(BuiltInDigest(algorithm, input, digest), PSI_PIR_SUCCESS);
         EXPECT_EQ(digest, HexBytes(expectedHex));
     }
 
-    Bytes unchanged { 1, 2, 3 };
+    Bytes unchanged{1, 2, 3};
     EXPECT_NE(BuiltInDigest(static_cast<HashAlg>(99), input, unchanged), PSI_PIR_SUCCESS);
-    EXPECT_EQ(unchanged, Bytes({ 1, 2, 3 }));
+    EXPECT_EQ(unchanged, Bytes({1, 2, 3}));
 }
 
 TEST(PsiPirProtocolOpenSslTest, Sha256SupportsEmptyInput)
 {
     Bytes digest;
     ASSERT_EQ(BuiltInDigest(HashAlg::SHA256, {}, digest), PSI_PIR_SUCCESS);
-    EXPECT_EQ(digest, HexBytes("e3b0c44298fc1c149afbf4c8996fb924" "27ae41e4649b934ca495991b7852b855"));
+    EXPECT_EQ(digest, HexBytes("e3b0c44298fc1c149afbf4c8996fb924"
+                               "27ae41e4649b934ca495991b7852b855"));
 }
 
 TEST(PsiPirProtocolOpenSslTest, RandomGenerationFillsRequestedBuffer)
@@ -547,13 +559,15 @@ TEST(PsiPirProtocolOpenSslTest, RandomGenerationFillsRequestedBuffer)
 
 TEST(PsiPirProtocolOpenSslTest, AesGcmRoundTripsWithBothSupportedSeedSizes)
 {
-    const std::array<std::pair<PrivacyProtocol, Bytes>, 2> cases {{
-        { PIR_PROTOCOL, Bytes { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef } }, { PIR_128_PROTOCOL, Bytes {
-            0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff } }, }};
+    const std::array<std::pair<PrivacyProtocol, Bytes>, 2> cases{{
+        {PIR_PROTOCOL, Bytes{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef}},
+        {PIR_128_PROTOCOL,
+         Bytes{0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}},
+    }};
     for (const auto &[protocol, seed] : cases) {
         ProtocolParams params;
         ASSERT_EQ(MapPrivacyProtocol(protocol, params), PSI_PIR_SUCCESS);
-        const std::optional<Bytes> value { Bytes { 'v', 'a', 'l', 'u', 'e' } };
+        const std::optional<Bytes> value{Bytes{'v', 'a', 'l', 'u', 'e'}};
         Bytes ciphertext;
         ASSERT_EQ(BuiltInEncryptOrderValue(seed, value, params, ciphertext), PSI_PIR_SUCCESS);
         EXPECT_FALSE(ciphertext.empty());
@@ -568,16 +582,16 @@ TEST(PsiPirProtocolOpenSslTest, AesGcmPreservesAbsentAndPresentEmptyValues)
 {
     ProtocolParams params;
     ASSERT_EQ(MapPrivacyProtocol(PIR_PROTOCOL, params), PSI_PIR_SUCCESS);
-    const Bytes seed { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef };
+    const Bytes seed{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
 
     Bytes absentCiphertext;
     ASSERT_EQ(BuiltInEncryptOrderValue(seed, std::nullopt, params, absentCiphertext), PSI_PIR_SUCCESS);
-    std::optional<Bytes> absentOutput { Bytes { 9 } };
+    std::optional<Bytes> absentOutput{Bytes{9}};
     ASSERT_EQ(BuiltInDecryptOrderValue(seed, absentCiphertext, params, absentOutput), PSI_PIR_SUCCESS);
     EXPECT_FALSE(absentOutput.has_value());
 
     Bytes emptyCiphertext;
-    ASSERT_EQ(BuiltInEncryptOrderValue(seed, Bytes {}, params, emptyCiphertext), PSI_PIR_SUCCESS);
+    ASSERT_EQ(BuiltInEncryptOrderValue(seed, Bytes{}, params, emptyCiphertext), PSI_PIR_SUCCESS);
     std::optional<Bytes> emptyOutput;
     ASSERT_EQ(BuiltInDecryptOrderValue(seed, emptyCiphertext, params, emptyOutput), PSI_PIR_SUCCESS);
     ASSERT_TRUE(emptyOutput.has_value());
@@ -588,51 +602,48 @@ TEST(PsiPirProtocolOpenSslTest, AesGcmRejectsTamperingAndWrongSeedWithoutChangin
 {
     ProtocolParams params;
     ASSERT_EQ(MapPrivacyProtocol(PIR_PROTOCOL, params), PSI_PIR_SUCCESS);
-    const Bytes seed { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef };
+    const Bytes seed{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
     Bytes ciphertext;
-    ASSERT_EQ(BuiltInEncryptOrderValue(seed, Bytes { 's', 'e', 'c', 'r', 'e', 't' },
-        params, ciphertext), PSI_PIR_SUCCESS);
+    ASSERT_EQ(BuiltInEncryptOrderValue(seed, Bytes{'s', 'e', 'c', 'r', 'e', 't'}, params, ciphertext), PSI_PIR_SUCCESS);
 
-    const std::array<std::size_t, 4> tamperOffsets {
-        4, 16, 28, ciphertext.size() - 1
-    };
+    const std::array<std::size_t, 4> tamperOffsets{4, 16, 28, ciphertext.size() - 1};
     for (const auto offset : tamperOffsets) {
         auto tampered = ciphertext;
         tampered[offset] ^= 0x01;
-        std::optional<Bytes> output { Bytes { 7, 8, 9 } };
+        std::optional<Bytes> output{Bytes{7, 8, 9}};
         EXPECT_NE(BuiltInDecryptOrderValue(seed, tampered, params, output), PSI_PIR_SUCCESS);
-        EXPECT_EQ(output, std::optional<Bytes>(Bytes { 7, 8, 9 }));
+        EXPECT_EQ(output, std::optional<Bytes>(Bytes{7, 8, 9}));
     }
 
     auto wrongSeed = seed;
     wrongSeed.front() ^= 0x01;
-    std::optional<Bytes> output { Bytes { 7, 8, 9 } };
+    std::optional<Bytes> output{Bytes{7, 8, 9}};
     EXPECT_NE(BuiltInDecryptOrderValue(wrongSeed, ciphertext, params, output), PSI_PIR_SUCCESS);
-    EXPECT_EQ(output, std::optional<Bytes>(Bytes { 7, 8, 9 }));
+    EXPECT_EQ(output, std::optional<Bytes>(Bytes{7, 8, 9}));
 
     auto truncated = ciphertext;
     truncated.pop_back();
     EXPECT_NE(BuiltInDecryptOrderValue(seed, truncated, params, output), PSI_PIR_SUCCESS);
-    EXPECT_EQ(output, std::optional<Bytes>(Bytes { 7, 8, 9 }));
+    EXPECT_EQ(output, std::optional<Bytes>(Bytes{7, 8, 9}));
 
     auto extended = ciphertext;
     extended.push_back(0);
     EXPECT_NE(BuiltInDecryptOrderValue(seed, extended, params, output), PSI_PIR_SUCCESS);
-    EXPECT_EQ(output, std::optional<Bytes>(Bytes { 7, 8, 9 }));
+    EXPECT_EQ(output, std::optional<Bytes>(Bytes{7, 8, 9}));
 }
 
 TEST(PsiPirProtocolOpenSslTest, AesGcmUsesFreshNonceAndAuthenticatedFrameHeader)
 {
     ProtocolParams params;
     ASSERT_EQ(MapPrivacyProtocol(PIR_PROTOCOL, params), PSI_PIR_SUCCESS);
-    const Bytes seed { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef };
-    const std::optional<Bytes> value { Bytes { 'v' } };
+    const Bytes seed{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
+    const std::optional<Bytes> value{Bytes{'v'}};
     Bytes first;
     Bytes second;
     ASSERT_EQ(BuiltInEncryptOrderValue(seed, value, params, first), PSI_PIR_SUCCESS);
     ASSERT_EQ(BuiltInEncryptOrderValue(seed, value, params, second), PSI_PIR_SUCCESS);
     ASSERT_GE(first.size(), 16U);
-    EXPECT_EQ(Bytes(first.begin(), first.begin() + 4), Bytes({ 'P', 'I', 'R', '1' }));
+    EXPECT_EQ(Bytes(first.begin(), first.begin() + 4), Bytes({'P', 'I', 'R', '1'}));
     EXPECT_EQ(first[4], 1U);
     EXPECT_EQ(first[5], 1U);
     EXPECT_EQ(first[6], 12U);
@@ -649,12 +660,14 @@ TEST(PsiPirProtocolOpenSslTest, AesGcmDecryptsFixedInteroperabilityVector)
     ProtocolParams params;
     ASSERT_EQ(MapPrivacyProtocol(PIR_PROTOCOL, params), PSI_PIR_SUCCESS);
     const Bytes seed = HexBytes("0123456789abcdef");
-    const Bytes frame = HexBytes("5049523101010c100100004000000006" "000102030405060708090a0b" "66ebe4ec5a3c"
-        "9549d1d36f92a3c89ae969621786be62");
+    const Bytes frame = HexBytes("5049523101010c100100004000000006"
+                                 "000102030405060708090a0b"
+                                 "66ebe4ec5a3c"
+                                 "9549d1d36f92a3c89ae969621786be62");
     std::optional<Bytes> value;
     ASSERT_EQ(BuiltInDecryptOrderValue(seed, frame, params, value), PSI_PIR_SUCCESS);
     ASSERT_TRUE(value.has_value());
-    EXPECT_EQ(*value, Bytes({ 'v', 'a', 'l', 'u', 'e' }));
+    EXPECT_EQ(*value, Bytes({'v', 'a', 'l', 'u', 'e'}));
 }
 
 TEST(PsiPirProtocolOpenSslTest, AesGcmRejectsProtocolMismatchWithoutChangingOutput)
@@ -665,15 +678,15 @@ TEST(PsiPirProtocolOpenSslTest, AesGcmRejectsProtocolMismatchWithoutChangingOutp
     ASSERT_EQ(MapPrivacyProtocol(PIR_128_PROTOCOL, params128), PSI_PIR_SUCCESS);
     const Bytes seed64 = HexBytes("0123456789abcdef");
     Bytes frame;
-    ASSERT_EQ(BuiltInEncryptOrderValue(seed64, Bytes { 'v' }, params64, frame), PSI_PIR_SUCCESS);
+    ASSERT_EQ(BuiltInEncryptOrderValue(seed64, Bytes{'v'}, params64, frame), PSI_PIR_SUCCESS);
 
-    std::optional<Bytes> output { Bytes { 7 } };
+    std::optional<Bytes> output{Bytes{7}};
     EXPECT_EQ(BuiltInDecryptOrderValue(seed64, frame, params128, output), PSI_PIR_INVALID_ARGUMENT);
-    EXPECT_EQ(output, std::optional<Bytes>(Bytes { 7 }));
+    EXPECT_EQ(output, std::optional<Bytes>(Bytes{7}));
 
     const Bytes seed128(16, 1);
     EXPECT_EQ(BuiltInDecryptOrderValue(seed128, frame, params128, output), PSI_PIR_CRYPTO_ERROR);
-    EXPECT_EQ(output, std::optional<Bytes>(Bytes { 7 }));
+    EXPECT_EQ(output, std::optional<Bytes>(Bytes{7}));
 }
 
 TEST(PsiPirProtocolProviderTest, CustomProvidersAreSelected)
@@ -685,7 +698,7 @@ TEST(PsiPirProtocolProviderTest, CustomProvidersAreSelected)
     const auto selectedRandom = GetRandomSource();
     const auto selectedPirValue = GetPirValueCrypto();
     EXPECT_EQ(selectedHash.get(), providers.hash.get());
-    EXPECT_EQ(selectedRandom.get(), providers.random.get());
+    EXPECT_EQ(selectedRandom.get(), providers.randomSource.get());
     EXPECT_EQ(selectedPirValue.get(), providers.pirValue.get());
     EXPECT_EQ(GetHEEngine().get(), providers.he.get());
 }
@@ -697,8 +710,8 @@ TEST(PsiPirProtocolProviderTest, CustomProvidersDriveEvaluationAndResolution)
 
     const auto target = MakePrivacyTargetFromSuffix(CompareSuffix(2, 8), 4);
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(target, { MakeElement(1, "one"), MakeElement(2, "two") }, PIR_PROTOCOL,
-        response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(privacySearch(target, {MakeElement(1, "one"), MakeElement(2, "two")}, PIR_PROTOCOL, response),
+              PSI_PIR_SUCCESS);
 
     ASSERT_EQ(response.fheCipherText.size(), 1U);
     SearchResult result;
@@ -708,9 +721,9 @@ TEST(PsiPirProtocolProviderTest, CustomProvidersDriveEvaluationAndResolution)
     ASSERT_EQ(result.attachedValues->size(), 1U);
     EXPECT_EQ(std::string(result.attachedValues->front().begin(), result.attachedValues->front().end()), "two");
 
-    EXPECT_EQ(providers.hash->algorithms, std::vector<HashAlg>({ HashAlg::SHA256, HashAlg::SHA256 }));
-    EXPECT_EQ(providers.hash->inputs, std::vector<Bytes>({ EightByteKey(1), EightByteKey(2) }));
-    EXPECT_EQ(providers.random->requestedSizes, std::vector<std::size_t>({ 8U, 8U, SLOT_COUNT * 2U, SLOT_COUNT }));
+    EXPECT_EQ(providers.hash->algorithms, std::vector<HashAlg>({HashAlg::SHA256, HashAlg::SHA256}));
+    EXPECT_EQ(providers.hash->inputs, std::vector<Bytes>({EightByteKey(1), EightByteKey(2)}));
+    EXPECT_EQ(providers.randomSource->requestedSizes, std::vector<std::size_t>({8U, 8U, SLOT_COUNT * 2U, SLOT_COUNT}));
     ASSERT_EQ(providers.pirValue->encryptParams.size(), 2U);
     ASSERT_EQ(providers.pirValue->decryptParams.size(), 1U);
     ExpectCoreParams(providers.pirValue->encryptParams.back(), ProtocolMode::PIR);
@@ -726,13 +739,13 @@ TEST(PsiPirProtocolProviderTest, GetSearchResultReturnsAllPirMatchesAcrossBatche
     ASSERT_EQ(MapPrivacyProtocol(PIR_PROTOCOL, params), PSI_PIR_SUCCESS);
     ProtocolEncoder encoder;
 
-    const Bytes firstSeed { 1, 2, 3, 4, 5, 6, 7, 8 };
-    const Bytes lastSeed { 8, 7, 6, 5, 4, 3, 2, 1 };
+    const Bytes firstSeed{1, 2, 3, 4, 5, 6, 7, 8};
+    const Bytes lastSeed{8, 7, 6, 5, 4, 3, 2, 1};
     Bytes firstCiphertext;
     Bytes lastCiphertext;
-    ASSERT_EQ(pirValueCrypto->encrypt(firstSeed, Bytes { 'f', 'i', 'r', 's', 't' },
-        params, firstCiphertext), PSI_PIR_SUCCESS);
-    ASSERT_EQ(pirValueCrypto->encrypt(lastSeed, Bytes { 'l', 'a', 's', 't' }, params, lastCiphertext), PSI_PIR_SUCCESS);
+    ASSERT_EQ(pirValueCrypto->encrypt(firstSeed, Bytes{'f', 'i', 'r', 's', 't'}, params, firstCiphertext),
+              PSI_PIR_SUCCESS);
+    ASSERT_EQ(pirValueCrypto->encrypt(lastSeed, Bytes{'l', 'a', 's', 't'}, params, lastCiphertext), PSI_PIR_SUCCESS);
 
     Slots firstBatch(SLOT_COUNT, 1);
     Slots lastBatch(SLOT_COUNT, 1);
@@ -743,13 +756,13 @@ TEST(PsiPirProtocolProviderTest, GetSearchResultReturnsAllPirMatchesAcrossBatche
     ASSERT_EQ(encoder.EncodeSeed(firstSeed, params, firstSeedSlots), PSI_PIR_SUCCESS);
     ASSERT_EQ(encoder.EncodeSeed(lastSeed, params, lastSeedSlots), PSI_PIR_SUCCESS);
     std::copy(firstSeedSlots.begin(), firstSeedSlots.end(),
-        firstBatch.begin() + static_cast<std::ptrdiff_t>(params.slotsPerData));
+              firstBatch.begin() + static_cast<std::ptrdiff_t>(params.slotsPerData));
     std::copy(lastSeedSlots.begin(), lastSeedSlots.end(),
-        lastBatch.begin() + static_cast<std::ptrdiff_t>(params.slotsPerData));
+              lastBatch.begin() + static_cast<std::ptrdiff_t>(params.slotsPerData));
 
     PrivacySearchResult input;
-    input.fheCipherText = { SerializeSlots(firstBatch), SerializeSlots(lastBatch) };
-    input.symCipherText.emplace(257, Bytes { 1 });
+    input.fheCipherText = {SerializeSlots(firstBatch), SerializeSlots(lastBatch)};
+    input.symCipherText.emplace(257, Bytes{1});
     input.symCipherText->front() = firstCiphertext;
     input.symCipherText->back() = lastCiphertext;
     SearchResult result;
@@ -757,8 +770,8 @@ TEST(PsiPirProtocolProviderTest, GetSearchResultReturnsAllPirMatchesAcrossBatche
     ASSERT_TRUE(result.matchedResult);
     ASSERT_TRUE(result.attachedValues.has_value());
     ASSERT_EQ(result.attachedValues->size(), 2U);
-    EXPECT_EQ(result.attachedValues->at(0), Bytes({ 'f', 'i', 'r', 's', 't' }));
-    EXPECT_EQ(result.attachedValues->at(1), Bytes({ 'l', 'a', 's', 't' }));
+    EXPECT_EQ(result.attachedValues->at(0), Bytes({'f', 'i', 'r', 's', 't'}));
+    EXPECT_EQ(result.attachedValues->at(1), Bytes({'l', 'a', 's', 't'}));
     EXPECT_EQ(pirValueCrypto->decryptParams.size(), 2U);
 }
 
@@ -768,8 +781,8 @@ TEST(PsiPirProtocolProviderTest, IndependentPirMasksHideNonMatchingSeed)
     const auto providers = InstallRecordingProviders();
     const auto target = MakePrivacyTargetFromSuffix(CompareSuffix(2, 8), 4);
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(target, { MakeElement(1, "one"), MakeElement(2, "two") }, PIR_PROTOCOL,
-        response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(privacySearch(target, {MakeElement(1, "one"), MakeElement(2, "two")}, PIR_PROTOCOL, response),
+              PSI_PIR_SUCCESS);
 
     Slots evaluatedSlots;
     ASSERT_EQ(DeserializeSlots(response.fheCipherText.front(), evaluatedSlots), PSI_PIR_SUCCESS);
@@ -785,21 +798,22 @@ TEST(PsiPirProtocolProviderTest, IndependentPirMasksHideNonMatchingSeed)
     const auto &expectedSeedSlots = nonMatchSeedSlots;
     Slots exposedDifference(mapped.slotsPerData, 0);
     for (std::size_t slot = 0; slot < mapped.slotsPerData; ++slot) {
-        exposedDifference[slot] = (evaluatedSlots[mapped.slotsPerData + slot] +
-            mapped.plainModulus - evaluatedSlots[slot]) % mapped.plainModulus;
+        exposedDifference[slot] =
+            (evaluatedSlots[mapped.slotsPerData + slot] + mapped.plainModulus - evaluatedSlots[slot]) %
+            mapped.plainModulus;
     }
     EXPECT_NE(exposedDifference, expectedSeedSlots);
 
     const auto matchedFirstOffset = 2 * mapped.slotsPerData;
     const auto matchedSecondOffset = matchedFirstOffset + mapped.slotsPerData;
-    EXPECT_TRUE(std::all_of(evaluatedSlots.begin() +
-        static_cast<std::ptrdiff_t>(matchedFirstOffset), evaluatedSlots.begin() +
-        static_cast<std::ptrdiff_t>(matchedSecondOffset), [](std::uint64_t slot) { return slot == 0; }));
+    EXPECT_TRUE(std::all_of(evaluatedSlots.begin() + static_cast<std::ptrdiff_t>(matchedFirstOffset),
+                            evaluatedSlots.begin() + static_cast<std::ptrdiff_t>(matchedSecondOffset),
+                            [](std::uint64_t slot) { return slot == 0; }));
     Slots matchedSeedSlots;
     ASSERT_EQ(encoder.EncodeSeed(providers.pirValue->encryptSeeds[1], mapped, matchedSeedSlots), PSI_PIR_SUCCESS);
     const auto &expectedMatchedSecond = matchedSeedSlots;
     EXPECT_TRUE(std::equal(expectedMatchedSecond.begin(), expectedMatchedSecond.end(),
-        evaluatedSlots.begin() + static_cast<std::ptrdiff_t>(matchedSecondOffset)));
+                           evaluatedSlots.begin() + static_cast<std::ptrdiff_t>(matchedSecondOffset)));
 }
 
 TEST(PsiPirProtocolProviderTest, NullOverridesRestoreOpenSslDefaults)
@@ -817,15 +831,16 @@ TEST(PsiPirProtocolProviderTest, NullOverridesRestoreOpenSslDefaults)
     EXPECT_EQ(restoredPirValue.get(), GetOpenSslPirValueCrypto().get());
 
     Bytes digest;
-    ASSERT_EQ(restoredHash->digest(HashAlg::SHA256, Bytes { 'a', 'b', 'c' }, digest), PSI_PIR_SUCCESS);
-    EXPECT_EQ(digest, HexBytes("ba7816bf8f01cfea414140de5dae2223" "b00361a396177a9cb410ff61f20015ad"));
+    ASSERT_EQ(restoredHash->digest(HashAlg::SHA256, Bytes{'a', 'b', 'c'}, digest), PSI_PIR_SUCCESS);
+    EXPECT_EQ(digest, HexBytes("ba7816bf8f01cfea414140de5dae2223"
+                               "b00361a396177a9cb410ff61f20015ad"));
 }
 
 TEST(PsiPirProtocolProviderTest, PirMaskVectorCoversAllSlotsAndSeparatesPairedGroups)
 {
     ScopedProviderReset resetProviders;
-    auto random = std::make_shared<RecordingRandom>();
-    SetRandomSource(random);
+    auto randomSource = std::make_shared<RecordingRandom>();
+    SetRandomSource(randomSource);
 
     ProtocolParams mapped;
     ASSERT_EQ(MapPrivacyProtocol(PIR_PROTOCOL, mapped), PSI_PIR_SUCCESS);
@@ -834,7 +849,7 @@ TEST(PsiPirProtocolProviderTest, PirMaskVectorCoversAllSlotsAndSeparatesPairedGr
     ASSERT_EQ(encoder.GenerateMaskVector(mapped, maskVector), PSI_PIR_SUCCESS);
 
     ASSERT_EQ(maskVector.size(), SLOT_COUNT);
-    ASSERT_EQ(random->requestedSizes, std::vector<std::size_t>({ SLOT_COUNT * 2U, SLOT_COUNT }));
+    ASSERT_EQ(randomSource->requestedSizes, std::vector<std::size_t>({SLOT_COUNT * 2U, SLOT_COUNT}));
 
     // RecordingRandom fills the first request with 0x31 and the collision
     // retry with 0x32. The sampler maps each 16-bit candidate c to c + 1.
@@ -860,8 +875,8 @@ TEST(PsiPirProtocolProviderTest, PirMaskVectorCoversAllSlotsAndSeparatesPairedGr
 TEST(PsiPirProtocolProviderTest, MaskVectorMapsBoundaryCandidatesToNonZeroFieldElements)
 {
     ScopedProviderReset resetProviders;
-    auto random = std::make_shared<BoundaryRandom>();
-    SetRandomSource(random);
+    auto randomSource = std::make_shared<BoundaryRandom>();
+    SetRandomSource(randomSource);
 
     ProtocolParams mapped;
     ASSERT_EQ(MapPrivacyProtocol(PSI_PROTOCOL, mapped), PSI_PIR_SUCCESS);
@@ -870,19 +885,19 @@ TEST(PsiPirProtocolProviderTest, MaskVectorMapsBoundaryCandidatesToNonZeroFieldE
     ASSERT_EQ(encoder.GenerateMaskVector(mapped, maskVector), PSI_PIR_SUCCESS);
 
     ASSERT_EQ(maskVector.size(), SLOT_COUNT);
-    ASSERT_EQ(random->requestedSizes, std::vector<std::size_t>({ SLOT_COUNT * 2U }));
-    EXPECT_EQ(maskVector[0], 1U);       // 0x0000 + 1
-    EXPECT_EQ(maskVector[1], 65536U);   // 0xffff + 1
+    ASSERT_EQ(randomSource->requestedSizes, std::vector<std::size_t>({SLOT_COUNT * 2U}));
+    EXPECT_EQ(maskVector[0], 1U);     // 0x0000 + 1
+    EXPECT_EQ(maskVector[1], 65536U); // 0xffff + 1
     EXPECT_TRUE(std::all_of(maskVector.begin(), maskVector.end(), [&mapped](std::uint64_t value) {
-            return value >= 1 && value < mapped.plainModulus && value % mapped.plainModulus != 0;
-        }));
+        return value >= 1 && value < mapped.plainModulus && value % mapped.plainModulus != 0;
+    }));
 }
 
 TEST(PsiPirProtocolProviderTest, MaskVectorSupportsTheSmallestNonZeroField)
 {
     ScopedProviderReset resetProviders;
-    auto random = std::make_shared<RecordingRandom>();
-    SetRandomSource(random);
+    auto randomSource = std::make_shared<RecordingRandom>();
+    SetRandomSource(randomSource);
     ProtocolParams params;
     params.plainModulus = 2;
 
@@ -917,16 +932,16 @@ TEST(PsiPirProtocolTest, MapsTheThreeSupportedPrivacyProtocols)
     EXPECT_EQ(static_cast<std::uint32_t>(DataSetSize::SIZE_512), 2U);
 
     ProtocolParams unsupported;
-    EXPECT_EQ(MapPrivacyProtocol({ DataSetSize::SIZE_256,
-        ProtocolType::PSI_PROTOCOL }, unsupported), PSI_PIR_INVALID_ARGUMENT);
-    EXPECT_EQ(MapPrivacyProtocol({ DataSetSize::SIZE_512,
-        ProtocolType::PIR_PROTOCOL }, unsupported), PSI_PIR_INVALID_ARGUMENT);
-    EXPECT_EQ(MapPrivacyProtocol({ DataSetSize::SIZE_128,
-        ProtocolType::PSI_PROTOCOL }, unsupported), PSI_PIR_INVALID_ARGUMENT);
-    EXPECT_EQ(MapPrivacyProtocol({ static_cast<DataSetSize>(99),
-        ProtocolType::PSI_PROTOCOL }, unsupported), PSI_PIR_INVALID_ARGUMENT);
-    EXPECT_EQ(MapPrivacyProtocol({ DataSetSize::SIZE_512,
-        static_cast<ProtocolType>(99) }, unsupported), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(MapPrivacyProtocol({DataSetSize::SIZE_256, ProtocolType::PSI_PROTOCOL}, unsupported),
+              PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(MapPrivacyProtocol({DataSetSize::SIZE_512, ProtocolType::PIR_PROTOCOL}, unsupported),
+              PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(MapPrivacyProtocol({DataSetSize::SIZE_128, ProtocolType::PSI_PROTOCOL}, unsupported),
+              PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(MapPrivacyProtocol({static_cast<DataSetSize>(99), ProtocolType::PSI_PROTOCOL}, unsupported),
+              PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(MapPrivacyProtocol({DataSetSize::SIZE_512, static_cast<ProtocolType>(99)}, unsupported),
+              PSI_PIR_INVALID_ARGUMENT);
 }
 
 TEST(PsiPirProtocolTest, FailedProtocolMappingDoesNotModifyOutput)
@@ -935,8 +950,8 @@ TEST(PsiPirProtocolTest, FailedProtocolMappingDoesNotModifyOutput)
     ASSERT_EQ(MapPrivacyProtocol(PIR_128_PROTOCOL, params), PSI_PIR_SUCCESS);
     const auto original = params;
 
-    EXPECT_EQ(MapPrivacyProtocol({ DataSetSize::SIZE_128,
-        ProtocolType::PSI_PROTOCOL }, params), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(MapPrivacyProtocol({DataSetSize::SIZE_128, ProtocolType::PSI_PROTOCOL}, params),
+              PSI_PIR_INVALID_ARGUMENT);
     EXPECT_EQ(params.mode, original.mode);
     EXPECT_EQ(params.compareBits, original.compareBits);
     EXPECT_EQ(params.bitsPerSlot, original.bitsPerSlot);
@@ -978,15 +993,17 @@ TEST(PsiPirProtocolTest, ProtocolValidationRejectsMismatchedAlgorithmParameters)
 
 TEST(PsiPirProtocolTest, BothPublicApisRejectUnsupportedPrivacyProtocols)
 {
-    const std::vector<PrivacyProtocol> unsupportedProtocols {
-        { DataSetSize::SIZE_256, ProtocolType::PSI_PROTOCOL }, { DataSetSize::SIZE_512, ProtocolType::PIR_PROTOCOL },
-        { DataSetSize::SIZE_128, ProtocolType::PSI_PROTOCOL },
-        { static_cast<DataSetSize>(99), ProtocolType::PSI_PROTOCOL },
-        { DataSetSize::SIZE_512, static_cast<ProtocolType>(99) }, };
+    const std::vector<PrivacyProtocol> unsupportedProtocols{
+        {DataSetSize::SIZE_256, ProtocolType::PSI_PROTOCOL},
+        {DataSetSize::SIZE_512, ProtocolType::PIR_PROTOCOL},
+        {DataSetSize::SIZE_128, ProtocolType::PSI_PROTOCOL},
+        {static_cast<DataSetSize>(99), ProtocolType::PSI_PROTOCOL},
+        {DataSetSize::SIZE_512, static_cast<ProtocolType>(99)},
+    };
     for (const auto &unsupported : unsupportedProtocols) {
         PrivacySearchResult response;
         SearchResult result;
-        EXPECT_EQ(privacySearch({ 1 }, { MakeElement(1) }, unsupported, response), PSI_PIR_INVALID_ARGUMENT);
+        EXPECT_EQ(privacySearch({1}, {MakeElement(1)}, unsupported, response), PSI_PIR_INVALID_ARGUMENT);
         EXPECT_EQ(ProcessDecryptedSearchResult({}, unsupported, result), PSI_PIR_INVALID_ARGUMENT);
     }
 }
@@ -998,7 +1015,7 @@ TEST(PsiPirProtocolTest, InvalidElementHashIsRejectedBeforeHeEvaluation)
     Element element = MakeElement(1);
     element.hashAlg = static_cast<HashAlg>(99);
     PrivacySearchResult response;
-    EXPECT_EQ(privacySearch({ 1 }, { element }, PSI_PROTOCOL, response), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(privacySearch({1}, {element}, PSI_PROTOCOL, response), PSI_PIR_INVALID_ARGUMENT);
 }
 
 TEST(PsiPirProtocolTest, EmptyElementKeyKeepsTheExistingHashSemantics)
@@ -1010,7 +1027,7 @@ TEST(PsiPirProtocolTest, EmptyElementKeyKeepsTheExistingHashSemantics)
     element.elemKey = {};
     element.hashAlg = HashAlg::SHA256;
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTargetForKey({}, 4), { element }, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(privacySearch(MakePrivacyTargetForKey({}, 4), {element}, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
 
     SearchResult result;
     ASSERT_EQ(ProcessDecryptedSearchResult(DecryptOutsideProtocol(response), PSI_PROTOCOL, result), PSI_PIR_SUCCESS);
@@ -1022,7 +1039,7 @@ TEST(PsiPirProtocolTest, EmptyEvaluationAndResolutionDoNotRequireHeEngine)
     SetHEEngine(nullptr);
 
     PrivacySearchResult psiResponse;
-    EXPECT_EQ(privacySearch({ 1 }, {}, PSI_PROTOCOL, psiResponse), PSI_PIR_SUCCESS);
+    EXPECT_EQ(privacySearch({1}, {}, PSI_PROTOCOL, psiResponse), PSI_PIR_SUCCESS);
     EXPECT_TRUE(psiResponse.fheCipherText.empty());
     EXPECT_FALSE(psiResponse.symCipherText.has_value());
     SearchResult result;
@@ -1030,7 +1047,7 @@ TEST(PsiPirProtocolTest, EmptyEvaluationAndResolutionDoNotRequireHeEngine)
     EXPECT_FALSE(result.matchedResult);
 
     PrivacySearchResult pirResponse;
-    EXPECT_EQ(privacySearch({ 1 }, {}, PIR_PROTOCOL, pirResponse), PSI_PIR_SUCCESS);
+    EXPECT_EQ(privacySearch({1}, {}, PIR_PROTOCOL, pirResponse), PSI_PIR_SUCCESS);
     EXPECT_TRUE(pirResponse.fheCipherText.empty());
     ASSERT_TRUE(pirResponse.symCipherText.has_value());
     EXPECT_TRUE(pirResponse.symCipherText->empty());
@@ -1047,7 +1064,7 @@ TEST(PsiPirProtocolTest, SingleLayerElementUsesExplicitSha256)
     element.elemKey = EightByteKey(2);
     element.hashAlg = HashAlg::SHA256;
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(2), { element }, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(privacySearch(MakePrivacyTarget(2), {element}, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
     SearchResult result;
     ASSERT_EQ(ProcessDecryptedSearchResult(DecryptOutsideProtocol(response), PSI_PROTOCOL, result), PSI_PIR_SUCCESS);
     EXPECT_TRUE(result.matchedResult);
@@ -1059,13 +1076,11 @@ TEST(PsiPirProtocolTest, ServerVectorUsesTeeSuffixAndLeastSignificantSlotFirst)
     ProtocolParams mapped;
     ASSERT_EQ(MapPrivacyProtocol(PSI_PROTOCOL, mapped), PSI_PIR_SUCCESS);
     Element element;
-    element.elemKey = {
-        0xaa, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef
-    };
+    element.elemKey = {0xaa, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
     element.hashAlg = HashAlg::SHA256;
     Slots encoded;
     ASSERT_EQ(encoder.EncodeServerVector(element, mapped, encoded), PSI_PIR_SUCCESS);
-    EXPECT_EQ(encoded, Slots({ 49489, 33421, 53375, 60560 }));
+    EXPECT_EQ(encoded, Slots({49489, 33421, 53375, 60560}));
 }
 
 TEST(PsiPirProtocolTest, OneHundredTwentyEightBitServerVectorUsesTeeSuffixAndLsbSlots)
@@ -1074,23 +1089,18 @@ TEST(PsiPirProtocolTest, OneHundredTwentyEightBitServerVectorUsesTeeSuffixAndLsb
     ProtocolParams mapped;
     ASSERT_EQ(MapPrivacyProtocol(PIR_128_PROTOCOL, mapped), PSI_PIR_SUCCESS);
     Element element;
-    element.elemKey = {
-        0xaa, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff
-    };
+    element.elemKey = {0xaa, 0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
+                       0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
     element.hashAlg = HashAlg::SHA256;
     Slots encoded;
     ASSERT_EQ(encoder.EncodeServerVector(element, mapped, encoded), PSI_PIR_SUCCESS);
-    EXPECT_EQ(encoded, Slots({
-        9739, 63044, 39120, 38765, 38004, 26788, 25817, 29794
-    }));
+    EXPECT_EQ(encoded, Slots({9739, 63044, 39120, 38765, 38004, 26788, 25817, 29794}));
 }
 
 TEST(PsiPirProtocolTest, PsiMatchesAndMissesAfterExternalHeDecryption)
 {
     ConfigureProtocol();
-    const std::vector<Element> elements {
-        MakeElement(1, "ignored"), MakeElement(2, "also ignored"), MakeElement(3)
-    };
+    const std::vector<Element> elements{MakeElement(1, "ignored"), MakeElement(2, "also ignored"), MakeElement(3)};
 
     PrivacySearchResult response;
     ASSERT_EQ(privacySearch(MakePrivacyTarget(2), elements, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
@@ -1114,9 +1124,7 @@ TEST(PsiPirProtocolTest, PsiMatchesAndMissesAfterExternalHeDecryption)
 TEST(PsiPirProtocolTest, PirReturnsOneAttachedValue)
 {
     ConfigureProtocol();
-    const std::vector<Element> elements {
-        MakeElement(1, "one"), MakeElement(2, "two"), MakeElement(3, "three")
-    };
+    const std::vector<Element> elements{MakeElement(1, "one"), MakeElement(2, "two"), MakeElement(3, "three")};
     PrivacySearchResult response;
     ASSERT_EQ(privacySearch(MakePrivacyTarget(2), elements, PIR_PROTOCOL, response), PSI_PIR_SUCCESS);
     ASSERT_EQ(response.fheCipherText.size(), 1U);
@@ -1161,8 +1169,8 @@ TEST(PsiPirProtocolTest, PirMatchMayHaveNoAttachedValue)
 {
     ConfigureProtocol();
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(2), { MakeElement(1, "one"), MakeElement(2) }, PIR_PROTOCOL, response),
-        PSI_PIR_SUCCESS);
+    ASSERT_EQ(privacySearch(MakePrivacyTarget(2), {MakeElement(1, "one"), MakeElement(2)}, PIR_PROTOCOL, response),
+              PSI_PIR_SUCCESS);
 
     SearchResult result;
     ASSERT_EQ(ProcessDecryptedSearchResult(DecryptOutsideProtocol(response), PIR_PROTOCOL, result), PSI_PIR_SUCCESS);
@@ -1238,8 +1246,9 @@ TEST(PsiPirProtocolTest, GetSearchResultDoesNotDependOnHeProvider)
 {
     ConfigureProtocol();
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(2),
-        { MakeElement(1, "one"), MakeElement(2, "two") }, PIR_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(
+        privacySearch(MakePrivacyTarget(2), {MakeElement(1, "one"), MakeElement(2, "two")}, PIR_PROTOCOL, response),
+        PSI_PIR_SUCCESS);
     const auto decrypted = DecryptOutsideProtocol(response);
 
     SetHEEngine(nullptr);
@@ -1255,8 +1264,8 @@ TEST(PsiPirProtocolTest, PsiGetSearchResultNeedsNoHeEngine)
 {
     ConfigureProtocol();
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(2),
-        { MakeElement(1), MakeElement(2) }, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(privacySearch(MakePrivacyTarget(2), {MakeElement(1), MakeElement(2)}, PSI_PROTOCOL, response),
+              PSI_PIR_SUCCESS);
     const auto decrypted = DecryptOutsideProtocol(response);
 
     SetHEEngine(nullptr);
@@ -1295,19 +1304,19 @@ TEST(PsiPirProtocolTest, GetSearchResultRejectsMalformedDecryptedStructure)
 
     malformed = {};
     malformed.fheCipherText.push_back(SerializeSlots(Slots(SLOT_COUNT, 1)));
-    malformed.symCipherText = std::vector<Bytes> { Bytes {} };
+    malformed.symCipherText = std::vector<Bytes>{Bytes{}};
     expectCodecError(malformed, PIR_PROTOCOL);
 
     malformed = {};
     malformed.fheCipherText.push_back(SerializeSlots(Slots(SLOT_COUNT, 1)));
-    malformed.symCipherText = std::vector<Bytes>(257, Bytes { 1 });
+    malformed.symCipherText = std::vector<Bytes>(257, Bytes{1});
     expectCodecError(malformed, PIR_PROTOCOL);
 }
 
 TEST(PsiPirProtocolTest, PlaintextCodecDecodesLittleEndianUint64Slots)
 {
     Bytes plaintext(SLOT_COUNT * sizeof(std::uint64_t), 0);
-    const Bytes firstSlot { 0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01 };
+    const Bytes firstSlot{0x08, 0x07, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01};
     std::copy(firstSlot.begin(), firstSlot.end(), plaintext.begin());
 
     PrivacySearchResult input;
@@ -1319,7 +1328,7 @@ TEST(PsiPirProtocolTest, PlaintextCodecDecodesLittleEndianUint64Slots)
     ASSERT_EQ(codec.ParsePlaintexts(input, mapped, parsed), PSI_PIR_SUCCESS);
     ASSERT_EQ(parsed.size(), 1U);
     ASSERT_EQ(parsed.front().size(), SLOT_COUNT);
-    EXPECT_EQ(parsed.front().front(), std::uint64_t { 0x0102030405060708ULL });
+    EXPECT_EQ(parsed.front().front(), std::uint64_t{0x0102030405060708ULL});
 }
 
 TEST(PsiPirProtocolTest, FailedPlaintextParsingDoesNotModifyOutput)
@@ -1327,10 +1336,10 @@ TEST(PsiPirProtocolTest, FailedPlaintextParsingDoesNotModifyOutput)
     ProtocolParams mapped;
     ASSERT_EQ(MapPrivacyProtocol(PSI_PROTOCOL, mapped), PSI_PIR_SUCCESS);
     ProtocolCodec codec;
-    std::vector<Slots> parsed { Slots { 7, 8, 9 } };
+    std::vector<Slots> parsed{Slots{7, 8, 9}};
     const auto original = parsed;
     PrivacySearchResult malformed;
-    malformed.fheCipherText.push_back(Bytes { 1 });
+    malformed.fheCipherText.push_back(Bytes{1});
 
     EXPECT_EQ(codec.ParsePlaintexts(malformed, mapped, parsed), PSI_PIR_CODEC_ERROR);
     EXPECT_EQ(parsed, original);
@@ -1340,7 +1349,7 @@ TEST(PsiPirProtocolTest, NonZeroQueryDoesNotMatchZeroPaddedPsiCapacity)
 {
     ConfigureProtocol();
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(9), { MakeElement(1) }, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(privacySearch(MakePrivacyTarget(9), {MakeElement(1)}, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
     ASSERT_EQ(response.fheCipherText.size(), 1U);
 
     const auto decrypted = DecryptOutsideProtocol(response);
@@ -1354,7 +1363,7 @@ TEST(PsiPirProtocolTest, ZeroQueryShowsWhyPsiPaddingIsAnInvalidProtocolInput)
 {
     ConfigureProtocol();
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakeZeroPrivacyTarget(), { MakeElement(1) }, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(privacySearch(MakeZeroPrivacyTarget(), {MakeElement(1)}, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
 
     // With no item count in the northbound DTO, getSearchResult scans all 512 groups.
     // A zero query makes every zero-padded group decrypt to zero, so the wire
@@ -1369,7 +1378,7 @@ TEST(PsiPirProtocolTest, NonZeroQueryDoesNotMatchZeroPaddedPirCapacity)
 {
     ConfigureProtocol();
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(9), { MakeElement(1, "one") }, PIR_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(privacySearch(MakePrivacyTarget(9), {MakeElement(1, "one")}, PIR_PROTOCOL, response), PSI_PIR_SUCCESS);
 
     SearchResult result;
     ASSERT_EQ(ProcessDecryptedSearchResult(DecryptOutsideProtocol(response), PIR_PROTOCOL, result), PSI_PIR_SUCCESS);
@@ -1381,11 +1390,11 @@ TEST(PsiPirProtocolTest, ZeroQueryPirPaddingCannotIndexPastSymmetricCiphertexts)
 {
     ConfigureProtocol();
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakeZeroPrivacyTarget(),
-        { MakeElement(1, "one") }, PIR_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(privacySearch(MakeZeroPrivacyTarget(), {MakeElement(1, "one")}, PIR_PROTOCOL, response), PSI_PIR_SUCCESS);
 
     SearchResult result;
-    EXPECT_EQ(ProcessDecryptedSearchResult(DecryptOutsideProtocol(response), PIR_PROTOCOL, result), PSI_PIR_CODEC_ERROR);
+    EXPECT_EQ(ProcessDecryptedSearchResult(DecryptOutsideProtocol(response), PIR_PROTOCOL, result),
+              PSI_PIR_CODEC_ERROR);
 }
 
 TEST(PsiPirProtocolTest, SeedPackingRoundTripsWithFixedPirPreset)
@@ -1393,10 +1402,10 @@ TEST(PsiPirProtocolTest, SeedPackingRoundTripsWithFixedPirPreset)
     ProtocolEncoder encoder;
     ProtocolParams mapped;
     ASSERT_EQ(MapPrivacyProtocol(PIR_PROTOCOL, mapped), PSI_PIR_SUCCESS);
-    const Bytes seed { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef };
+    const Bytes seed{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef};
     Slots encoded;
     ASSERT_EQ(encoder.EncodeSeed(seed, mapped, encoded), PSI_PIR_SUCCESS);
-    EXPECT_EQ(encoded, Slots({ 0xcdef, 0x89ab, 0x4567, 0x0123 }));
+    EXPECT_EQ(encoded, Slots({0xcdef, 0x89ab, 0x4567, 0x0123}));
     Bytes decoded;
     ASSERT_EQ(encoder.ExtractSeed(encoded, 0, mapped, decoded), PSI_PIR_SUCCESS);
     EXPECT_EQ(decoded, seed);
@@ -1407,14 +1416,10 @@ TEST(PsiPirProtocolTest, SeedPackingRoundTripsAllSixteenBytesFor128BitPir)
     ProtocolEncoder encoder;
     ProtocolParams mapped;
     ASSERT_EQ(MapPrivacyProtocol(PIR_128_PROTOCOL, mapped), PSI_PIR_SUCCESS);
-    const Bytes seed {
-        0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff
-    };
+    const Bytes seed{0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff};
     Slots encoded;
     ASSERT_EQ(encoder.EncodeSeed(seed, mapped, encoded), PSI_PIR_SUCCESS);
-    EXPECT_EQ(encoded, Slots({
-        0xeeff, 0xccdd, 0xaabb, 0x8899, 0x6677, 0x4455, 0x2233, 0x0011
-    }));
+    EXPECT_EQ(encoded, Slots({0xeeff, 0xccdd, 0xaabb, 0x8899, 0x6677, 0x4455, 0x2233, 0x0011}));
     Bytes decoded;
     ASSERT_EQ(encoder.ExtractSeed(encoded, 0, mapped, decoded), PSI_PIR_SUCCESS);
     EXPECT_EQ(decoded, seed);
@@ -1429,10 +1434,10 @@ TEST(PsiPirProtocolTest, SeedPackingSupportsSlotsThatAreNotByteAligned)
     params.slotsPerData = 6;
     params.plainModulus = 4097;
 
-    const Bytes input { 0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12 };
+    const Bytes input{0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0, 0x12};
     Slots encoded;
     ASSERT_EQ(encoder.EncodeSeed(input, params, encoded), PSI_PIR_SUCCESS);
-    EXPECT_EQ(encoded, Slots({ 0x012, 0xdef, 0xabc, 0x789, 0x456, 0x123 }));
+    EXPECT_EQ(encoded, Slots({0x012, 0xdef, 0xabc, 0x789, 0x456, 0x123}));
 
     Bytes decoded;
     ASSERT_EQ(encoder.ExtractSeed(encoded, 0, params, decoded), PSI_PIR_SUCCESS);
@@ -1448,7 +1453,7 @@ TEST(PsiPirProtocolTest, SeedPackingSupportsTenBitSlotsAcrossByteBoundaries)
     params.slotsPerData = 8;
     params.plainModulus = 1025;
 
-    const Bytes input { 0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23 };
+    const Bytes input{0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23};
     Slots encoded;
     ASSERT_EQ(encoder.EncodeSeed(input, params, encoded), PSI_PIR_SUCCESS);
 

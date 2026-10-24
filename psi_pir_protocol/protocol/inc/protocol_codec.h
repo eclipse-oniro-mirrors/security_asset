@@ -17,9 +17,9 @@
 #define PSI_PIR_PROTOCOL_PROTOCOL_CODEC_H
 
 #include "internal_types.h"
+#include "protocol_params.h"
 #include "psi_pir_error_code.h"
 #include "psi_pir_types.h"
-#include "protocol_params.h"
 
 namespace psi_pir::internal {
 
@@ -28,8 +28,8 @@ public:
     int32_t ValidateProtocol(const ProtocolParams &params) const noexcept;
     int32_t ValidatePrivacyTarget(const Bytes &privacyTarget) const noexcept;
     int32_t ValidatePlainSearchResult(const PrivacySearchResult &result, const ProtocolParams &params) const noexcept;
-    int32_t ParsePlaintexts(const PrivacySearchResult &result,
-        const ProtocolParams &params, std::vector<Slots> &plaintexts) const noexcept;
+    int32_t ParsePlaintexts(const PrivacySearchResult &result, const ProtocolParams &params,
+                            std::vector<Slots> &plaintexts) const noexcept;
 };
 
 } // namespace psi_pir::internal

@@ -14,9 +14,9 @@
  */
 
 #include "hpic_napi_gen_privacy_target.h"
-#include "privacy_wire.h"
 #include "hpic_napi_common.h"
 #include "hpic_napi_utils.h"
+#include "privacy_wire.h"
 #include <new>
 #include <utility>
 

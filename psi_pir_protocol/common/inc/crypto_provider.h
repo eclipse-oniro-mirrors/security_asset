@@ -17,8 +17,8 @@
 #define PSI_PIR_PROTOCOL_INTERNAL_CRYPTO_PROVIDER_H
 
 #include "internal_types.h"
-#include "psi_pir_types.h"
 #include "protocol_params.h"
+#include "psi_pir_types.h"
 
 #include <stdint.h>
 
@@ -52,10 +52,10 @@ public:
 class IPirValueCrypto {
 public:
     virtual ~IPirValueCrypto() = default;
-    virtual int32_t encrypt(const Bytes &seed, const std::optional<Bytes> &value,
-        const ProtocolParams &params, Bytes &output) const noexcept = 0;
-    virtual int32_t decrypt(const Bytes &seed, const Bytes &ciphertext,
-        const ProtocolParams &params, std::optional<Bytes> &output) const noexcept = 0;
+    virtual int32_t encrypt(const Bytes &seed, const std::optional<Bytes> &value, const ProtocolParams &params,
+                            Bytes &output) const noexcept = 0;
+    virtual int32_t decrypt(const Bytes &seed, const Bytes &ciphertext, const ProtocolParams &params,
+                            std::optional<Bytes> &output) const noexcept = 0;
 };
 
 } // namespace psi_pir::internal

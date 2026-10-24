@@ -15,8 +15,8 @@
 
 #include "he_key_deriver.h"
 #include "hifhe_adapter.h"
-#include "psi_pir_protocol.h"
 #include "provider_registry.h"
+#include "psi_pir_protocol.h"
 #include "soft_he_engine.h"
 #include <atomic>
 #include <gtest/gtest.h>

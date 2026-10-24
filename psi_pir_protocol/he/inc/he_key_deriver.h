@@ -29,7 +29,7 @@ public:
 void SetHeSeedDeriver(std::shared_ptr<const IHeSeedDeriver> deriver) noexcept;
 
 class HeKeyDeriver final {
-  public:
+public:
     int32_t DeriveKey(const OperationIdentity &identity, HeSeed &seed) const noexcept;
 };
 

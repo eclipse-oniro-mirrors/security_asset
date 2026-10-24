@@ -29,28 +29,45 @@ public:
     bool valid = true;
     void Put(uint32_t value)
     {
-        if (!valid || bytes.size() > MAX_PRIVACY_MESSAGE - 4) { valid = false; return; }
-        for (size_t i = 0; i < 4; ++i) { bytes.push_back(static_cast<uint8_t>(value >> (i * 8))); }
+        if (!valid || bytes.size() > MAX_PRIVACY_MESSAGE - 4) {
+            valid = false;
+            return;
+        }
+        for (size_t i = 0; i < 4; ++i) {
+            bytes.push_back(static_cast<uint8_t>(value >> (i * 8)));
+        }
     }
     uint32_t Get()
     {
-        if (!valid || position > bytes.size() || bytes.size() - position < 4) { valid = false; return 0; }
+        if (!valid || position > bytes.size() || bytes.size() - position < 4) {
+            valid = false;
+            return 0;
+        }
         uint32_t value = 0;
-        for (size_t i = 0; i < 4; ++i) { value |= uint32_t(bytes[position++]) << (i * 8); }
+        for (size_t i = 0; i < 4; ++i) {
+            value |= uint32_t(bytes[position++]) << (i * 8);
+        }
         return value;
     }
     void PutBytes(const psi_pir::Bytes &value)
     {
-        if (value.size() > MAX_PRIVACY_MESSAGE) { valid = false; return; }
+        if (value.size() > MAX_PRIVACY_MESSAGE) {
+            valid = false;
+            return;
+        }
         Put(static_cast<uint32_t>(value.size()));
-        if (!valid || value.size() > MAX_PRIVACY_MESSAGE - bytes.size()) { valid = false; return; }
+        if (!valid || value.size() > MAX_PRIVACY_MESSAGE - bytes.size()) {
+            valid = false;
+            return;
+        }
         bytes.insert(bytes.end(), value.begin(), value.end());
     }
     psi_pir::Bytes GetBytes()
     {
         const size_t length = Get();
         if (!valid || length > MAX_PRIVACY_MESSAGE || length > bytes.size() - position) {
-            valid = false; return {};
+            valid = false;
+            return {};
         }
         psi_pir::Bytes value(bytes.begin() + position, bytes.begin() + position + length);
         position += length;
@@ -58,23 +75,36 @@ public:
     }
     void PutList(const std::vector<psi_pir::Bytes> &values)
     {
-        if (values.size() > MAX_PRIVACY_MESSAGE / 4) { valid = false; return; }
+        if (values.size() > MAX_PRIVACY_MESSAGE / 4) {
+            valid = false;
+            return;
+        }
         Put(static_cast<uint32_t>(values.size()));
-        for (const auto &value : values) { PutBytes(value); }
+        for (const auto &value : values) {
+            PutBytes(value);
+        }
     }
     std::vector<psi_pir::Bytes> GetList()
     {
         const auto count = Get();
-        if (!valid || count > (bytes.size() - position) / 4) { valid = false; return {}; }
+        if (!valid || count > (bytes.size() - position) / 4) {
+            valid = false;
+            return {};
+        }
         std::vector<psi_pir::Bytes> values;
         values.reserve(count);
-        for (uint32_t i = 0; i < count && valid; ++i) { values.push_back(GetBytes()); }
+        for (uint32_t i = 0; i < count && valid; ++i) {
+            values.push_back(GetBytes());
+        }
         return values;
     }
-    bool Done() const { return valid && position == bytes.size() && bytes.size() <= MAX_PRIVACY_MESSAGE; }
+    bool Done() const
+    {
+        return valid && position == bytes.size() && bytes.size() <= MAX_PRIVACY_MESSAGE;
+    }
 };
 int32_t GenPrivacyTargetRemote(const psi_pir::TargetInput &, const psi_pir::PrivacyProtocol &, psi_pir::Bytes &);
 int32_t GetSearchResultRemote(const psi_pir::PrivacySearchResult &, const psi_pir::PrivacyProtocol &,
-    psi_pir::SearchResult &);
-}
+                              psi_pir::SearchResult &);
+} // namespace OHOS::Security::PrivacyComputation
 #endif

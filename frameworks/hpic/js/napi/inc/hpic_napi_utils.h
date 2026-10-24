@@ -16,8 +16,8 @@
 #ifndef HPIC_NAPI_UTILS_H
 #define HPIC_NAPI_UTILS_H
 
-#include "psi_pir_types.h"
 #include "napi/native_api.h"
+#include "psi_pir_types.h"
 
 namespace OHOS::Security::PrivacyComputation {
 napi_status ParseJsArgs(napi_env env, napi_callback_info info, napi_value *args, size_t expectedCount);

@@ -20,7 +20,7 @@
 
 namespace psi_pir::internal {
 class BgvDecryptor final {
-  public:
+public:
     int32_t DecryptToSlots(const Bytes &ciphertext, const ProtocolParams &params, const OperationIdentity &identity,
                            Bytes &output) const noexcept;
 };

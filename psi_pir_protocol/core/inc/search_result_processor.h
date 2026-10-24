@@ -20,8 +20,8 @@
 
 namespace psi_pir::internal {
 // Input contains decrypted uint64_le slots, not HE ciphertexts.
-int32_t ProcessDecryptedSearchResult(const PrivacySearchResult &input,
-    const PrivacyProtocol &protocol, SearchResult &output) noexcept;
+int32_t ProcessDecryptedSearchResult(const PrivacySearchResult &input, const PrivacyProtocol &protocol,
+                                     SearchResult &output) noexcept;
 } // namespace psi_pir::internal
 
 #endif // PSI_PIR_SEARCH_RESULT_PROCESSOR_H

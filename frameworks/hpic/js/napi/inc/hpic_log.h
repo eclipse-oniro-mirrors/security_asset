@@ -27,17 +27,16 @@
 #undef LOG_DOMAIN
 #define LOG_DOMAIN 0xD002F0F
 
-#define LOGD(fmt, arg...) \
-HILOG_DEBUG(LOG_CORE, "%" LOG_PUBLIC "s[%" LOG_PUBLIC "u]: " fmt "\n", __func__, __LINE__, ##arg)
+#define LOGD(fmt, arg...)                                                                                              \
+    HILOG_DEBUG(LOG_CORE, "%" LOG_PUBLIC "s[%" LOG_PUBLIC "u]: " fmt "\n", __func__, __LINE__, ##arg)
 
-#define LOGI(fmt, arg...) \
-HILOG_INFO(LOG_CORE, "%" LOG_PUBLIC "s[%" LOG_PUBLIC "u]: " fmt "\n", __func__, __LINE__, ##arg)
+#define LOGI(fmt, arg...)                                                                                              \
+    HILOG_INFO(LOG_CORE, "%" LOG_PUBLIC "s[%" LOG_PUBLIC "u]: " fmt "\n", __func__, __LINE__, ##arg)
 
-#define LOGW(fmt, arg...) \
-HILOG_WARN(LOG_CORE, "%" LOG_PUBLIC "s[%" LOG_PUBLIC "u]: " fmt "\n", __func__, __LINE__, ##arg)
+#define LOGW(fmt, arg...)                                                                                              \
+    HILOG_WARN(LOG_CORE, "%" LOG_PUBLIC "s[%" LOG_PUBLIC "u]: " fmt "\n", __func__, __LINE__, ##arg)
 
-#define LOGE(fmt, arg...) \
-HILOG_ERROR(LOG_CORE, "%" LOG_PUBLIC "s[%" LOG_PUBLIC "u]: " fmt "\n", __func__, __LINE__, ##arg)
-
+#define LOGE(fmt, arg...)                                                                                              \
+    HILOG_ERROR(LOG_CORE, "%" LOG_PUBLIC "s[%" LOG_PUBLIC "u]: " fmt "\n", __func__, __LINE__, ##arg)
 
 #endif /* HPIC_LOG_H */

@@ -17,8 +17,8 @@
 #define HPIC_NAPI_CONTEXT_H
 
 #include "hpic_napi_error_code.h"
-#include "psi_pir_protocol.h"
 #include "napi/native_api.h"
+#include "psi_pir_protocol.h"
 
 namespace OHOS::Security::PrivacyComputation {
 // Common parse/execute/resolve lifecycle follows asset_napi_context.h.
