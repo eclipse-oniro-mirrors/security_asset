@@ -14,14 +14,28 @@ import("//base/security/asset/config.gni")
 import("//build/ohos.gni")
 
 ohos_shared_library("privacycomputation_napi") {
-  include_dirs = [ "inc",]
+  include_dirs = [ "inc" ]
 
-  sources = [ "src/hpic_napi.cpp"]
+  sources = [
+    "src/hpic_napi.cpp",
+    "src/hpic_napi_common.cpp",
+    "src/hpic_napi_context.cpp",
+    "src/hpic_napi_gen_privacy_target.cpp",
+    "src/hpic_napi_get_search_result.cpp",
+    "src/hpic_napi_privacy_search.cpp",
+    "src/hpic_napi_utils.cpp",
+  ]
+  deps = [
+    "../../../../psi_pir_protocol:psi_pir_protocol",
+    "../../ipc:privacy_client",
+  ]
 
   external_deps = [
     "hilog:libhilog",
     "napi:ace_napi",
     "node:node_header_notice",
+    "ipc:ipc_core",
+    "c_utils:utils",
   ]
 
   branch_protector_ret = "pac_ret"
@@ -33,10 +47,6 @@ ohos_shared_library("privacycomputation_napi") {
     boundary_sanitize = true
     ubsan = true
   }
- 
-  cflags = [
-    "-DASSET_ENABLE_PRIVACY_COMPUTATION_CONFIG=\"${asset_enable_privacy_computation_config}\"",
-  ]
 
   cflags_cc = [
     "-std=c++17",

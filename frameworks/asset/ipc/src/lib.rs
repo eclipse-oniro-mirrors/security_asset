@@ -57,6 +57,10 @@ macros_lib::impl_enum_trait! {
         BatchRemove,
         /// Code for BatchUpdate.
         BatchUpdate,
+        /// Generate a PSI/PIR target in the Asset service.
+        PrivacyGenTarget = 11,
+        /// Decrypt and process a PSI/PIR result in the Asset service.
+        PrivacyGetResult = 12,
     }
 }
 

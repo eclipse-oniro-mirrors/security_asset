@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0.
+import("//base/security/asset/config.gni")
+import("//build/ohos.gni")
+ohos_static_library("asset_privacy") {
+  sources = [ "src/privacy_service.cpp" ]
+  include_dirs = [
+    "../../../frameworks/hpic/ipc/inc",
+    "../../../psi_pir_protocol/he/inc",
+    "../../../psi_pir_protocol/common/inc",
+    "../../../psi_pir_protocol/protocol/inc",
+  ]
+  deps = [ "../../../psi_pir_protocol:psi_pir_protocol" ]
+  external_deps = [
+    "hilog:libhilog",
+    "openssl:libcrypto_shared",
+    "os_account:os_account_innerkits",
+  ]
+  cflags = [ "-DASSET_ENABLE_PRIVACY_COMPUTATION_CONFIG=\"${asset_enable_privacy_computation_config}\"" ]
+  cflags_cc = [
+    "-std=c++17",
+    "-Wall",
+    "-Werror",
+    "-fPIC",
+  ]
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
+  subsystem_name = "security"
+  part_name = "asset"
+}

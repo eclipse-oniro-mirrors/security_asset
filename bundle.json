@@ -147,6 +147,17 @@
                         ],
                         "header_base": "//base/security/asset/interfaces/inner_kits/c/asset/inc"
                     }
+                },
+                {
+                    "name": "//base/security/asset/psi_pir_protocol:psi_pir_protocol",
+                    "header": {
+                        "header_files": [
+                            "psi_pir_error_code.h",
+                            "psi_pir_protocol.h",
+                            "psi_pir_types.h"
+                        ],
+                        "header_base": "//base/security/asset/psi_pir_protocol/include"
+                    }
                 }
             ],
             "test": [
