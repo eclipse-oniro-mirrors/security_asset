@@ -11,6 +11,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import("//base/security/asset/config.gni")
 import("//build/ohos.gni")
 import("//build/test.gni")
 
@@ -39,9 +40,12 @@ ohos_unittest("saf_agent_fence_ndk_test") {
     "src/saf_agent_fence_grant_tool_permissions_by_user_test.cpp",
     "src/saf_agent_fence_request_tool_permissions_test.cpp",
     "src/saf_agent_fence_request_tool_ticket_test.cpp",
-    "src/saf_agent_fence_query_static_cli_cmd_permissions_test.cpp",
     "src/saf_agent_fence_remote_control_params_test.cpp"
   ]
+
+  if (not_emulator) {
+    sources += [ "src/saf_agent_fence_query_static_cli_cmd_permissions_test.cpp" ]
+  }
 
   deps = [
     "../../../../interfaces/inner_kits/c/secure_access_fence/agent_fence:saf_agent_fence",
