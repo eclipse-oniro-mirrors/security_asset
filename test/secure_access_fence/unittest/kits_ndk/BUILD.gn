@@ -24,6 +24,7 @@ ohos_unittest("saf_agent_fence_ndk_test") {
 
   include_dirs = [
     "inc",
+    "../../agent_fence/inc",
     "../../../../frameworks/secure_access_fence/inner_api/agent_fence/inc",
     "../../../../interfaces/inner_kits/c/secure_access_fence/agent_fence/inc",
     "../../../../interfaces/inner_kits/c/secure_access_fence/common/inc",
@@ -42,6 +43,7 @@ ohos_unittest("saf_agent_fence_ndk_test") {
     "src/saf_agent_fence_request_tool_ticket_test.cpp",
     "src/saf_agent_fence_remote_control_params_test.cpp",
     "src/saf_agent_fence_task_identity_ndk_test.cpp",
+    "../../agent_fence/src/saf_permission_change.cpp",
   ]
 
   if (not_emulator) {
