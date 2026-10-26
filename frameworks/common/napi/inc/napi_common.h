@@ -41,8 +41,32 @@ namespace SAF_ASSET_COMMON {
 // ============================================================================
 
 constexpr size_t MAX_TASK_ID_LEN = 256;
-constexpr size_t MAX_AUTH_TOKEN_SIZE = 4096;
+constexpr size_t MAX_AUTH_TOKEN_SIZE = 1024;
 constexpr size_t MAX_REVOKE_TASK_IDS = 100;
+constexpr int32_t MAX_ALLOWABLE_DURATION = 60;
+constexpr int32_t DEFAULT_ALLOWABLE_DURATION = 60;
+
+// ============================================================================
+// JSON key constants for task identity.
+// IMPORTANT: Keep in sync with TaskIdentityKeys in:
+//   services/secure_access_fence/core_service/src/task_identity/validator.rs
+// ============================================================================
+
+struct TaskIdentityKeys {
+    static constexpr const char* TASK_ID = "taskId";
+    static constexpr const char* TASK_EXPIRE_TIME = "taskExpireTime";
+    static constexpr const char* TASK_EXPIRE_SEC = "taskExpireSec";
+    static constexpr const char* EXECUTE_TYPE = "executeType";
+    static constexpr const char* ALLOW_SCREEN_LOCK_EXECUTION = "allowScreenLockExecution";
+    static constexpr const char* ALLOWABLE_DURATION = "allowableDuration";
+    static constexpr const char* AUTH_TOKEN = "authToken";
+    static constexpr const char* ATL = "atl";
+    static constexpr const char* TASK_ATTRIBUTES = "taskAttributes";
+    static constexpr const char* IDENTITY = "identity";
+    static constexpr const char* CHALLENGE = "challenge";
+    static constexpr const char* VERSION = "version";
+    static constexpr const char* CREATE_TIME = "createTime";
+};
 
 // ============================================================================
 // Path traversal detection.

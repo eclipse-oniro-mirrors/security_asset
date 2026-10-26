@@ -15,11 +15,13 @@
 
 //! Task-level authorization: challenge / identity generation, revocation and verification.
 
+pub(crate) mod constants;
 pub(crate) mod store;
 pub(crate) mod storage_backend;
 pub(crate) mod validator;
 
-pub(crate) use validator::{validate_path_segment, validate_task_id_info, validate_revoke_params};
+pub(crate) use constants::TaskIdentityKeys;
+pub(crate) use validator::validate_path_segment;
 
 use saf_common::JsonBuilder;
 use saf_definition::{macros_lib, ErrCode, ExecuteType, Result, TaskIdentity, TaskIdentityInfo};
@@ -31,27 +33,9 @@ use crate::ticket_operation::{
     base64_decode, base64_encode, compute_hmac_sha256, create_ticket_key_manager, generate_random_bytes,
     verify_hmac_sha256,
 };
+use constants::{CHALLENGE_SIZE, COMBINED_CHALLENGE_SIZE, MS_PER_SEC, MAX_TASK_ATTRIBUTES_SIZE};
 use store::{global_task_identity_store, TaskIdentityRecord};
-
-const CHALLENGE_SIZE: u32 = 32;
-/// Challenge size in bytes for splitting combined challenge.
-const COMBINED_CHALLENGE_SIZE: usize = 64;
-/// Milliseconds per second, for sec↔ms conversion.
-const MS_PER_SEC: u64 = 1000;
-/// JSON key for the auth token (base64) in task attributes.
-const TASK_ATTR_AUTH_TOKEN: &str = "authToken";
-/// JSON key for the ATL level in task attributes.
-const TASK_ATTR_ATL: &str = "atl";
-/// Max task attributes JSON size in bytes (DoS prevention).
-const MAX_TASK_ATTRIBUTES_SIZE: usize = 8192;
-/// JSON key for the task identity object embedded in a ticket message.
-const JSON_KEY_TASK_IDENTITY: &str = "taskIdentity";
-/// JSON key for task attributes inside the task identity object.
-const JSON_KEY_TASK_ATTRIBUTES: &str = "taskAttributes";
-/// JSON key for identity inside the task identity object.
-const JSON_KEY_TASK_IDENTITY_IDENTITY: &str = "identity";
-/// JSON key for challenge inside the task identity object.
-const JSON_KEY_TASK_CHALLENGE: &str = "challenge";
+use TaskIdentityKeys as K;
 
 /// Verifies auth token via IAM. Returns (challenge, authTrustLevel).
 /// challenge is compared with pending challenge from generateTaskChallenge.
@@ -75,23 +59,42 @@ fn iam_verify_auth_token(auth_token: &[u8], allowable_duration: i32) -> Result<(
     Ok((result.challenge, result.auth_trust_level))
 }
 
+/// Computes absolute expiration time (epoch seconds).
+/// -1 means never expires; positive duration is added to current time.
+fn compute_task_expire_sec(task_expire_time: i32) -> Result<i64> {
+    if task_expire_time == -1 {
+        return Ok(-1);
+    }
+    let now_sec = match saf_utils::system_time_in_millis() {
+        Ok(ms) => match i64::try_from(ms / MS_PER_SEC) {
+            Ok(v) => v,
+            Err(_) => return macros_lib::log_throw_error!(ErrCode::GeneralError, "system time overflow i64"),
+        },
+        Err(_) => {
+            return macros_lib::log_throw_error!(ErrCode::GeneralError, "get system time failed");
+        }
+    };
+    now_sec.checked_add(task_expire_time as i64).ok_or_else(|| {
+        macros_lib::SAFError::new(ErrCode::InvalidArgument,
+            format!("taskExpireTime overflow: now={} + expire={}", now_sec, task_expire_time))
+    })
+}
+
 /// Builds the task attributes JSON that is embedded into the task identity and covered by HMAC.
-/// `caller` is the callerTokenId of the generating caller; binding it here (same approach as the
-/// RequestToolPermissions ticket, where callerTokenId is part of the HMAC-covered message) lets the
-/// verification path recompute the HMAC from the stored attributes without splicing in a dynamic
-/// caller identity.
 fn build_task_attributes(info: &TaskIdentityInfo, caller: &str, atl: u32) -> Result<String> {
+    let task_expire_sec = compute_task_expire_sec(info.task_expire_time)?;
     let mut builder = JsonBuilder::new();
-    builder.add_string("taskId", &info.task_id);
+    builder.add_string(K::TASK_ID, &info.task_id);
     builder.add_string(JSON_KEY_CALLER_TOKEN_ID, caller);
-    builder.add_number("taskExpireTime", info.task_expire_time as i64);
-    builder.add_number("executeType", info.execute_type as i64);
-    builder.add_bool("allowScreenLockExecution", info.allow_screen_lock_execution);
-    builder.add_number("allowableDuration", info.allowable_duration as i64);
+    builder.add_number(K::TASK_EXPIRE_TIME, info.task_expire_time as i64);
+    builder.add_number(K::TASK_EXPIRE_SEC, task_expire_sec);
+    builder.add_number(K::EXECUTE_TYPE, info.execute_type as i64);
+    builder.add_bool(K::ALLOW_SCREEN_LOCK_EXECUTION, info.allow_screen_lock_execution);
+    builder.add_number(K::ALLOWABLE_DURATION, info.allowable_duration as i64);
     if !info.auth_token.is_empty() {
         let encoded = String::from_utf8_lossy(&base64_encode(&info.auth_token)?).to_string();
-        builder.add_string(TASK_ATTR_AUTH_TOKEN, &encoded);
-        builder.add_number(TASK_ATTR_ATL, atl as i64);
+        builder.add_string(K::AUTH_TOKEN, &encoded);
+        builder.add_number(K::ATL, atl as i64);
     }
     builder.build()
 }
@@ -101,10 +104,8 @@ fn build_task_attributes(info: &TaskIdentityInfo, caller: &str, atl: u32) -> Res
 pub fn generate_task_challenge(
     os_account_id: i32,
     caller: &str,
-    info: &TaskIdentityInfo,
+    info: &mut TaskIdentityInfo,
 ) -> Result<Vec<u8>> {
-    validate_task_id_info(info)?;
-
     let mut challenge = vec![0u8; CHALLENGE_SIZE as usize];
     generate_random_bytes(&mut challenge, CHALLENGE_SIZE)?;
 
@@ -175,10 +176,8 @@ fn compute_identity_and_challenge(
 pub fn generate_task_identity(
     os_account_id: i32,
     caller: &str,
-    info: &TaskIdentityInfo,
+    info: &mut TaskIdentityInfo,
 ) -> Result<TaskIdentity> {
-    validate_task_id_info(info)?;
-
     let mut atl = 0u32;
     if !info.auth_token.is_empty() {
         atl = verify_iam_and_get_challenge(
@@ -194,29 +193,7 @@ pub fn generate_task_identity(
     let (identity, challenge_b64) = compute_identity_and_challenge(
         os_account_id, caller, &task_attributes, &info.task_id)?;
 
-    // system_time_in_millis returns u64; convert to i64 with range check.
-    let now_sec = match saf_utils::system_time_in_millis() {
-        Ok(ms) => match i64::try_from(ms / MS_PER_SEC) {
-            Ok(v) => v,
-            Err(_) => return macros_lib::log_throw_error!(ErrCode::GeneralError, "system time overflow i64"),
-        },
-        Err(_) => {
-            return macros_lib::log_throw_error!(ErrCode::GeneralError, "get system time failed");
-        }
-    };
-    // taskExpireTime is a duration in seconds. -1 means never expires.
-    // For -1: stored as i64 -1; all readers use `as u64` which wraps to u64::MAX → never expires.
-    // For positive: compute absolute expiration = now + duration, with checked_add overflow check.
-    let task_expire_sec = if info.task_expire_time == -1 {
-        -1
-    } else {
-        match now_sec.checked_add(info.task_expire_time as i64) {
-            Some(v) => v,
-            None => return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
-                "taskExpireTime overflow: now={} + expire={}", now_sec, info.task_expire_time),
-        }
-    };
-
+    let task_expire_sec = compute_task_expire_sec(info.task_expire_time)?;
     let record = TaskIdentityRecord {
         task_attributes: task_attributes.clone(),
         identity: identity.clone(),
@@ -238,7 +215,6 @@ pub fn generate_task_identity(
 
 /// Revokes task identities by deleting local records (memory + disk).
 pub fn revoke_task_identities(os_account_id: i32, caller: &str, task_ids: Vec<String>) -> Result<()> {
-    validate_revoke_params(&task_ids)?;
     for task_id in task_ids {
         if task_id.is_empty() {
             continue;
@@ -288,7 +264,7 @@ pub(crate) fn parse_task_id(task_attributes: &str) -> Result<String> {
         macros_lib::log_and_into_saf_error!(ErrCode::TaskIdentityNotFound,
             "parse taskAttributes failed: {}", e)
     })?;
-    let task_id = get_compact_json_value(&json, "taskId")
+    let task_id = get_compact_json_value(&json, K::TASK_ID)
         .map(|s| s.trim_matches('"').to_string())
         .unwrap_or_default();
     if task_id.is_empty() {
@@ -325,6 +301,13 @@ pub(crate) fn fetch_record_and_verify(
     // task_expire_sec == -1 means never expires.
     // -1i64 as u64 = u64::MAX, so now_sec > u64::MAX is always false → never expires.
     if now_sec > record.task_expire_sec as u64 {
+        // Async delete: memory first, then disk file
+        let os_id = os_account_id;
+        let caller_owned = caller.to_string();
+        let task_id_owned = task_id.to_string();
+        ylong_runtime::spawn_blocking(move || {
+            global_task_identity_store().delete_expired_task(os_id, &caller_owned, &task_id_owned);
+        });
         return macros_lib::log_throw_error!(ErrCode::TaskIdentityExpired, "task identity expired");
     }
 
@@ -365,7 +348,7 @@ fn extract_auth_token(task_attributes: &str) -> Result<Vec<u8>> {
         macros_lib::log_and_into_saf_error!(ErrCode::TaskIdentityMismatch,
             "parse taskAttributes for authToken failed: {}", e)
     })?;
-    match get_compact_json_value(&json, TASK_ATTR_AUTH_TOKEN).ok() {
+    match get_compact_json_value(&json, K::AUTH_TOKEN).ok() {
         Some(b64) if !b64.is_empty() => {
             let token = base64_decode(b64.trim_matches('"').as_bytes())?;
             Ok(token)
@@ -389,13 +372,13 @@ pub fn retrieve_auth_token_by_task_id(
 /// Verifies the task identity embedded in a ticket message (if present).
 /// Consumes INSTANT tasks after successful verification.
 pub(crate) fn verify_task_identity_and_consume(os_account_id: i32, message_json: &ylong_json::JsonValue) -> Result<()> {
-    let task_identity_obj = &message_json[JSON_KEY_TASK_IDENTITY];
+    let task_identity_obj = &message_json[JSON_KEY_CALLER_TOKEN_ID];
     if task_identity_obj == &ylong_json::JsonValue::Null {
         return Ok(());
     }
-    let task_attributes = get_compact_json_value(task_identity_obj, JSON_KEY_TASK_ATTRIBUTES)?;
-    let identity = get_compact_json_value(task_identity_obj, JSON_KEY_TASK_IDENTITY_IDENTITY)?;
-    let challenge = get_compact_json_value(task_identity_obj, JSON_KEY_TASK_CHALLENGE).unwrap_or_default();
+    let task_attributes = get_compact_json_value(task_identity_obj, K::TASK_ATTRIBUTES)?;
+    let identity = get_compact_json_value(task_identity_obj, K::IDENTITY)?;
+    let challenge = get_compact_json_value(task_identity_obj, K::CHALLENGE).unwrap_or_default();
     let caller = get_compact_json_value(message_json, JSON_KEY_CALLER_TOKEN_ID)?;
     if caller.is_empty() || caller == "0" {
         return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "callerToken is invalid");

@@ -29,7 +29,7 @@ using namespace testing::ext;
 using namespace OHOS;
 using namespace OHOS::Security::SAF;
 
-// Fixed callerToken â€?guaranteed by the test environment to be a valid HAP token
+// callerToken guaranteed by the test environment to be a valid HAP token
 // with os_account_id=100. Used as both Generate's calling identity (via SetSelfTokenID)
 // and Retrieve's callerToken parameter.
 static constexpr int32_t TEST_CALLER_TOKEN = 100;

@@ -98,6 +98,11 @@ struct CommonEventInfoFfi {
 const DELAYED_UNLOAD_TIME_IN_SEC: i32 = 60; // 60s
 const UNLOAD_CHECK_INTERVAL_IN_SEC: u64 = 3;
 const SEC_TO_MILLISEC: i32 = 1000;
+// Estimated time for async task identity disk cleanup (ms).
+// on_idle returns at least this value when cleanup is scheduled,
+// so the SA is not unloaded before cleanup finishes.
+// TODO: adjust after real-device testing.
+const DISK_CLEANUP_DELAY_MS: i32 = 5000;
 
 pub(crate) fn unload_sa() {
     let start_time = Instant::now();
@@ -175,11 +180,8 @@ impl Ability for SAFAbility {
             return remaining_ms.min(ticket_operation::challenge_store::MAX_CHALLENGE_VALIDITY_MS) as i32;
         }
 
-        // Cleanup task identity records expired more than 3 days (low-frequency, on idle only)
         let store = task_identity::store::global_task_identity_store();
-        for os_account_id in store.enumerate_os_account_ids() {
-            store.clean_expired_instant_tasks(os_account_id);
-        }
+        let has_disk_cleanup = store.clean_memory_and_disk();
 
         let delay_time = match SAFPlugin::get_instance().load_plugin() {
             Ok(loader) => {
@@ -196,6 +198,13 @@ impl Ability for SAFAbility {
                 0
             },
         };
+
+        // If async disk cleanup was scheduled, ensure the SA stays alive
+        // until cleanup finishes before allowing unload.
+        if has_disk_cleanup && delay_time < DISK_CLEANUP_DELAY_MS {
+            logi!("Saf service on_idle: disk cleanup scheduled, delay unload by {}ms", DISK_CLEANUP_DELAY_MS);
+            return DISK_CLEANUP_DELAY_MS;
+        }
         if delay_time == 0 {
             CriticalManager::get_instance().set_critical(false);
         }
@@ -496,7 +505,7 @@ impl SAFService {
         )
     }
 
-    fn generate_task_challenge(&self, os_account_id: i32, info: TaskIdentityInfo) -> Result<Vec<u8>> {
+    fn generate_task_challenge(&self, os_account_id: i32, mut info: TaskIdentityInfo) -> Result<Vec<u8>> {
         if let Err(code) = check_query_tool_permission(os_account_id, "generate_task_challenge") {
             return macros_lib::log_throw_error!(code, "Permission denied");
         }
@@ -506,11 +515,11 @@ impl SAFService {
             task_identity::generate_task_challenge,
             os_account_id,
             &caller,
-            &info
+            &mut info
         )
     }
 
-    fn generate_task_identity(&self, os_account_id: i32, info: TaskIdentityInfo) -> Result<TaskIdentity> {
+    fn generate_task_identity(&self, os_account_id: i32, mut info: TaskIdentityInfo) -> Result<TaskIdentity> {
         if let Err(code) = check_query_tool_permission(os_account_id, "generate_task_identity") {
             return macros_lib::log_throw_error!(code, "Permission denied");
         }
@@ -520,7 +529,7 @@ impl SAFService {
             task_identity::generate_task_identity,
             os_account_id,
             &caller,
-            &info
+            &mut info
         )
     }
 

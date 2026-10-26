@@ -255,13 +255,13 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::TaskIden
 {
     NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
     napi_value propValue;
-    if (napi_get_named_property(env, object, "taskAttributes", &propValue) == napi_ok) {
+    if (napi_get_named_property(env, object, TaskIdentityKeys::TASK_ATTRIBUTES, &propValue) == napi_ok) {
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, taskIdentity.taskAttributes));
     }
-    if (napi_get_named_property(env, object, "identity", &propValue) == napi_ok) {
+    if (napi_get_named_property(env, object, TaskIdentityKeys::IDENTITY, &propValue) == napi_ok) {
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, taskIdentity.identity));
     }
-    if (napi_get_named_property(env, object, "challenge", &propValue) == napi_ok) {
+    if (napi_get_named_property(env, object, TaskIdentityKeys::CHALLENGE, &propValue) == napi_ok) {
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, taskIdentity.challenge));
     }
     return napi_ok;
@@ -271,15 +271,15 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::TaskIden
 {
     NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
     napi_value propValue;
-    if (napi_get_named_property(env, object, "taskId", &propValue) == napi_ok) {
+    if (napi_get_named_property(env, object, TaskIdentityKeys::TASK_ID, &propValue) == napi_ok) {
         NAPI_CHECK_REQUIRED(env, propValue, "taskId");
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, taskIdentityInfo.taskId));
     }
-    if (napi_get_named_property(env, object, "taskExpireTime", &propValue) == napi_ok) {
+    if (napi_get_named_property(env, object, TaskIdentityKeys::TASK_EXPIRE_TIME, &propValue) == napi_ok) {
         NAPI_CHECK_REQUIRED(env, propValue, "taskExpireTime");
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, taskIdentityInfo.taskExpireTime));
     }
-    if (napi_get_named_property(env, object, "executeType", &propValue) == napi_ok) {
+    if (napi_get_named_property(env, object, TaskIdentityKeys::EXECUTE_TYPE, &propValue) == napi_ok) {
         NAPI_CHECK_REQUIRED(env, propValue, "executeType");
         int32_t executeType = 0;
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, executeType));
@@ -289,14 +289,20 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::TaskIden
         }
         taskIdentityInfo.executeType = static_cast<SAF::ExecuteType>(executeType);
     }
-    if (napi_get_named_property(env, object, "allowScreenLockExecution", &propValue) == napi_ok) {
+    if (napi_get_named_property(env, object, TaskIdentityKeys::ALLOW_SCREEN_LOCK_EXECUTION, &propValue) == napi_ok) {
         NAPI_CHECK_REQUIRED(env, propValue, "allowScreenLockExecution");
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, taskIdentityInfo.allowScreenLockExecution));
     }
-    if (napi_get_named_property(env, object, "allowableDuration", &propValue) == napi_ok) {
+    if (napi_get_named_property(env, object, TaskIdentityKeys::ALLOWABLE_DURATION, &propValue) == napi_ok) {
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, taskIdentityInfo.allowableDuration));
+        if (taskIdentityInfo.allowableDuration == 0) {
+            taskIdentityInfo.allowableDuration = DEFAULT_ALLOWABLE_DURATION;
+        } else if (taskIdentityInfo.allowableDuration < 0 ||
+                   taskIdentityInfo.allowableDuration > MAX_ALLOWABLE_DURATION) {
+            NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "allowableDuration must be in (0, 60]");
+        }
     }
-    if (napi_get_named_property(env, object, "authToken", &propValue) == napi_ok) {
+    if (napi_get_named_property(env, object, TaskIdentityKeys::AUTH_TOKEN, &propValue) == napi_ok) {
         NAPI_CALL_RETURN_ERR(env, NapiGetProperty(env, propValue, taskIdentityInfo.authToken));
     }
     return napi_ok;
@@ -387,9 +393,10 @@ napi_status NapiSetProperty(const napi_env env, napi_value object, const char *p
 {
     napi_value jsResult = nullptr;
     NAPI_CALL_RETURN_ERR(env, napi_create_object(env, &jsResult));
-    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "taskAttributes", taskIdentity.taskAttributes));
-    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "identity", taskIdentity.identity));
-    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, "challenge", taskIdentity.challenge));
+    NAPI_CALL_RETURN_ERR(env,
+        NapiSetProperty(env, jsResult, TaskIdentityKeys::TASK_ATTRIBUTES, taskIdentity.taskAttributes));
+    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, TaskIdentityKeys::IDENTITY, taskIdentity.identity));
+    NAPI_CALL_RETURN_ERR(env, NapiSetProperty(env, jsResult, TaskIdentityKeys::CHALLENGE, taskIdentity.challenge));
     NAPI_CALL_RETURN_ERR(env, napi_set_named_property(env, object, propertyName, jsResult));
     return napi_ok;
 }
