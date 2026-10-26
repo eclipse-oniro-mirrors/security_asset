@@ -220,4 +220,64 @@ HWTEST_F(SafAgentFenceGenAndVerTicketParamsTest, BatchVerifyTicketParamsTest006,
     EXPECT_NE(result, SAF_ERR_SERVICE_UNAVAILABLE);
 }
 
+HWTEST_F(SafAgentFenceGenAndVerTicketParamsTest, VerifyTicketParamsTest001, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+    int32_t osAccountId = 100;
+    std::string callerId = "";
+    std::string verifyInfo = "test_info";
+
+    std::vector<OHOS::Security::SAF::CliInfo> cliInfos;
+    int32_t result = agentFence.VerifyTicket(osAccountId, callerId, verifyInfo, cliInfos);
+    EXPECT_NE(result, SAF_SUCCESS);
+}
+
+HWTEST_F(SafAgentFenceGenAndVerTicketParamsTest, VerifyTicketParamsTest002, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+    int32_t osAccountId = 100;
+    std::string callerId = "test_caller";
+    std::string verifyInfo = "";
+
+    std::vector<OHOS::Security::SAF::CliInfo> cliInfos;
+    int32_t result = agentFence.VerifyTicket(osAccountId, callerId, verifyInfo, cliInfos);
+    EXPECT_NE(result, SAF_SUCCESS);
+}
+
+HWTEST_F(SafAgentFenceGenAndVerTicketParamsTest, VerifyTicketParamsTest003, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+    int32_t osAccountId = 99;
+    std::string callerId = "test_caller";
+    std::string verifyInfo = "test_info";
+
+    std::vector<OHOS::Security::SAF::CliInfo> cliInfos;
+    int32_t result = agentFence.VerifyTicket(osAccountId, callerId, verifyInfo, cliInfos);
+    EXPECT_NE(result, SAF_SUCCESS);
+}
+
+HWTEST_F(SafAgentFenceGenAndVerTicketParamsTest, VerifyTicketParamsTest004, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+    int32_t osAccountId = 0;
+    std::string callerId = "test_caller";
+    std::string verifyInfo = "test_info";
+
+    std::vector<OHOS::Security::SAF::CliInfo> cliInfos;
+    int32_t result = agentFence.VerifyTicket(osAccountId, callerId, verifyInfo, cliInfos);
+    EXPECT_NE(result, SAF_SUCCESS);
+}
+
+HWTEST_F(SafAgentFenceGenAndVerTicketParamsTest, VerifyTicketParamsTest005, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+    int32_t osAccountId = 100;
+    std::string callerId = "test_caller";
+    std::string verifyInfo = "test_info";
+
+    std::vector<OHOS::Security::SAF::CliInfo> cliInfos;
+    int32_t result = agentFence.VerifyTicket(osAccountId, callerId, verifyInfo, cliInfos);
+    EXPECT_NE(result, SAF_ERR_SERVICE_UNAVAILABLE);
+}
+
 }
