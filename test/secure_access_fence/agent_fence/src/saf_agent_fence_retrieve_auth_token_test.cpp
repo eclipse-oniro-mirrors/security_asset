@@ -31,6 +31,7 @@
 #include "access_token_basic_type.h"
 #include "permission_state_full.h"
 #include "nativetoken_kit.h"
+#include "ipc_skeleton.h"
 
 using namespace testing::ext;
 using namespace OHOS;
@@ -42,6 +43,22 @@ using namespace OHOS::Security::AccessToken;
 // token is also set as the calling identity via SetSelfTokenID so that
 // GenerateTaskChallenge/GenerateTaskIdentity resolve os_account_id=100.
 static int32_t g_testHapTokenId = 0;
+// Full 64-bit HAP token ID for SetSelfTokenID (high bits carry token type info).
+static uint64_t g_testHapTokenIdFull = 0;
+// Native token (TOKEN_NATIVE) for RetrieveAuthTokenByTaskId calls, which requires
+// CheckIsSystemSa(). The HAP token fails that check, so we switch to this native
+// token before RetrieveAuthTokenByTaskId and switch back to HAP for Generate/Revoke.
+static uint64_t g_testNativeTokenIdFull = 0;
+
+static void SwitchToRetrieveCaller()
+{
+    SetSelfTokenID(g_testNativeTokenIdFull);
+}
+
+static void SwitchToGenerateCaller()
+{
+    SetSelfTokenID(g_testHapTokenIdFull);
+}
 
 class SafAgentFenceRetrieveAuthTokenTest : public testing::Test {
 public:
@@ -60,8 +77,11 @@ public:
 static void GrantTestPermission()
 {
     // Step 1: native token with SAF permissions (gives privilege to allocate HAP tokens
-    // and restarts the access_token service).
+    // and restarts the access_token service). Save this native token — it has
+    // QUERY_TOOL_PERMISSIONS + INTERACT_ACROSS_LOCAL_ACCOUNTS and is TOKEN_NATIVE,
+    // which RetrieveAuthTokenByTaskId's CheckIsSystemSa() requires.
     GrantSelfPermission();
+    g_testNativeTokenIdFull = OHOS::IPCSkeleton::GetCallingTokenID();
 
     // Step 2: native token with MANAGE_HAP_TOKENID (system_core APL required).
     // InitHapToken verifies VerifyAccessToken(caller, MANAGE_HAP_TOKENID) unless the
@@ -106,6 +126,7 @@ static void GrantTestPermission()
     ASSERT_EQ(RET_SUCCESS, AccessTokenKit::InitHapToken(info, policy, tokenIdEx));
     ASSERT_NE(INVALID_TOKENID, tokenIdEx.tokenIdExStruct.tokenID);
     g_testHapTokenId = static_cast<int32_t>(tokenIdEx.tokenIdExStruct.tokenID);
+    g_testHapTokenIdFull = tokenIdEx.tokenIDEx;
     SetSelfTokenID(tokenIdEx.tokenIDEx);
 }
 
@@ -147,8 +168,10 @@ static TaskIdentityInfo MakeDelayedInfo(const std::string &taskId, int32_t expir
 HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_001, TestSize.Level0)
 {
     std::vector<int32_t> authToken;
+    SwitchToRetrieveCaller();
     int32_t result = SafAgentFence::RetrieveAuthTokenByTaskId(g_testHapTokenId, "nonexistent_task", authToken);
     EXPECT_EQ(result, SAF_ERR_TASK_IDENTITY_NOT_FOUND);
+    SwitchToGenerateCaller();
 }
 
 /**
@@ -220,9 +243,11 @@ HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_006, Test
     EXPECT_EQ(genResult, SAF_SUCCESS);
 
     std::vector<int32_t> authToken;
+    SwitchToRetrieveCaller();
     int32_t result = SafAgentFence::RetrieveAuthTokenByTaskId(g_testHapTokenId, "retrieve_test_001", authToken);
     EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_TRUE(authToken.empty());
+    SwitchToGenerateCaller();
 
     // Cleanup
     std::vector<std::string> taskIds = {"retrieve_test_001"};
@@ -246,8 +271,10 @@ HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_007, Test
     EXPECT_EQ(genResult, SAF_SUCCESS);
 
     std::vector<int32_t> authToken;
+    SwitchToRetrieveCaller();
     int32_t result = SafAgentFence::RetrieveAuthTokenByTaskId(g_testHapTokenId, "delayed_never_expire", authToken);
     EXPECT_EQ(result, SAF_SUCCESS);
+    SwitchToGenerateCaller();
 
     // Cleanup
     std::vector<std::string> taskIds = {"delayed_never_expire"};
@@ -273,8 +300,10 @@ HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_008, Test
     EXPECT_EQ(SafAgentFence::RevokeTaskIdentity(taskIds), SAF_SUCCESS);
 
     std::vector<int32_t> authToken;
+    SwitchToRetrieveCaller();
     int32_t result = SafAgentFence::RetrieveAuthTokenByTaskId(g_testHapTokenId, "revoke_test_001", authToken);
     EXPECT_EQ(result, SAF_ERR_TASK_IDENTITY_NOT_FOUND);
+    SwitchToGenerateCaller();
 }
 
 // ==================== Revoked then regenerate ====================
@@ -296,13 +325,17 @@ HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_009, Test
     EXPECT_EQ(SafAgentFence::RevokeTaskIdentity(taskIds), SAF_SUCCESS);
 
     std::vector<int32_t> authToken;
+    SwitchToRetrieveCaller();
     int32_t result = SafAgentFence::RetrieveAuthTokenByTaskId(g_testHapTokenId, "regen_test_001", authToken);
     EXPECT_EQ(result, SAF_ERR_TASK_IDENTITY_NOT_FOUND);
+    SwitchToGenerateCaller();
 
     // Regenerate
     EXPECT_EQ(SafAgentFence::GenerateTaskIdentity(info, identity), SAF_SUCCESS);
+    SwitchToRetrieveCaller();
     result = SafAgentFence::RetrieveAuthTokenByTaskId(g_testHapTokenId, "regen_test_001", authToken);
     EXPECT_EQ(result, SAF_SUCCESS);
+    SwitchToGenerateCaller();
 
     // Cleanup
     SafAgentFence::RevokeTaskIdentity(taskIds);
@@ -327,8 +360,10 @@ HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_010, Test
     std::this_thread::sleep_for(std::chrono::seconds(2));
 
     std::vector<int32_t> authToken;
+    SwitchToRetrieveCaller();
     int32_t result = SafAgentFence::RetrieveAuthTokenByTaskId(g_testHapTokenId, "expire_test_001", authToken);
     EXPECT_EQ(result, SAF_ERR_TASK_IDENTITY_EXPIRED);
+    SwitchToGenerateCaller();
 
     // Cleanup
     std::vector<std::string> taskIds = {"expire_test_001"};
@@ -353,12 +388,14 @@ HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_011, Test
     // Use a different caller token for retrieve
     int32_t wrongCallerToken = g_testHapTokenId + 1;
     std::vector<int32_t> authToken;
+    SwitchToRetrieveCaller();
     int32_t result = SafAgentFence::RetrieveAuthTokenByTaskId(wrongCallerToken, "isolation_test_001", authToken);
     EXPECT_EQ(result, SAF_ERR_TASK_IDENTITY_NOT_FOUND);
 
     // Correct caller should succeed
     result = SafAgentFence::RetrieveAuthTokenByTaskId(g_testHapTokenId, "isolation_test_001", authToken);
     EXPECT_EQ(result, SAF_SUCCESS);
+    SwitchToGenerateCaller();
 
     // Cleanup
     std::vector<std::string> taskIds = {"isolation_test_001"};
@@ -385,12 +422,14 @@ HWTEST_F(SafAgentFenceRetrieveAuthTokenTest, RetrieveAuthTokenByTaskId_012, Test
     EXPECT_EQ(SafAgentFence::RevokeTaskIdentity(taskIds), SAF_SUCCESS);
 
     std::vector<int32_t> authToken;
+    SwitchToRetrieveCaller();
     EXPECT_EQ(SafAgentFence::RetrieveAuthTokenByTaskId(g_testHapTokenId, "batch_001", authToken),
         SAF_ERR_TASK_IDENTITY_NOT_FOUND);
     EXPECT_EQ(SafAgentFence::RetrieveAuthTokenByTaskId(g_testHapTokenId, "batch_002", authToken),
         SAF_ERR_TASK_IDENTITY_NOT_FOUND);
     EXPECT_EQ(SafAgentFence::RetrieveAuthTokenByTaskId(g_testHapTokenId, "batch_003", authToken),
         SAF_ERR_TASK_IDENTITY_NOT_FOUND);
+    SwitchToGenerateCaller();
 }
 
 // ==================== GenerateTaskChallenge success ====================
