@@ -255,7 +255,7 @@ int32_t HandleCheckControlPermission(MessageParcel& data, MessageParcel& reply)
         return SAF_ERR_IPC_WRITE_DATA_FAIL;
     }
     for (const auto &pair : deniedPairs) {
-        if (!reply.WriteString(pair)) {
+        if (!reply.WriteString16(Str8ToStr16(pair))) {
             LOGE("HandleCheckControlPermission write deniedPair failed");
             return SAF_ERR_IPC_WRITE_DATA_FAIL;
         }
