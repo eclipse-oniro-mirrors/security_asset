@@ -14,6 +14,8 @@
 { 
   global:
     add_asset;
+    asset_privacy_gen_target;
+    asset_privacy_get_result;
     asset_batch_add;
     asset_batch_remove;
     asset_batch_update;

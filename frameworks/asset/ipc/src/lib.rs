@@ -209,3 +209,67 @@ pub fn ipc_err_handle(e: IpcStatusCode) -> AssetError {
         _ => AssetError::new(ErrCode::IpcError, format!("[FATAL][IPC]Ipc status code = {}", e), macros_lib::hisysevent::function!()),
     }
 }
+
+/// Maximum payload accepted by the privacy protocol transport.
+pub const MAX_PRIVACY_PAYLOAD: usize = 256 * 1024;
+
+/// Serialize a bounded protocol payload using the same implementation on both IPC endpoints.
+pub fn serialize_privacy_payload(payload: &[u8], parcel: &mut MsgParcel) -> Result<()> {
+    if payload.len() > MAX_PRIVACY_PAYLOAD {
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "Privacy payload exceeds the byte limit");
+    }
+    parcel.write(&(payload.len() as u32)).map_err(ipc_err_handle)?;
+    for chunk in payload.chunks(4) {
+        let mut word = [0u8; 4];
+        word[..chunk.len()].copy_from_slice(chunk);
+        parcel.write(&u32::from_le_bytes(word)).map_err(ipc_err_handle)?;
+    }
+    Ok(())
+}
+
+/// Validate the length before allocating a protocol payload.
+pub fn deserialize_privacy_payload(parcel: &mut MsgParcel) -> Result<Vec<u8>> {
+    let length = parcel.read::<u32>().map_err(ipc_err_handle)? as usize;
+    if length > MAX_PRIVACY_PAYLOAD {
+        return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+            ErrCode::InvalidArgument, "Privacy payload exceeds the byte limit");
+    }
+    let mut payload = vec![0u8; length];
+    for chunk in payload.chunks_mut(4) {
+        let word = parcel.read::<u32>().map_err(ipc_err_handle)?.to_le_bytes();
+        let length = chunk.len();
+        chunk.copy_from_slice(&word[..length]);
+    }
+    Ok(payload)
+}
+
+#[cfg(test)]
+mod privacy_payload_tests {
+    use super::*;
+
+    #[test]
+    fn round_trip_preserves_word_boundaries() {
+        for input in [vec![], vec![0], vec![1, 2, 255], vec![1, 2, 3, 4], vec![1, 2, 3, 4, 5]] {
+            let mut parcel = MsgParcel::new();
+            serialize_privacy_payload(&input, &mut parcel).unwrap();
+            assert_eq!(deserialize_privacy_payload(&mut parcel).unwrap(), input);
+        }
+    }
+
+    #[test]
+    fn rejects_oversized_payload_before_allocation() {
+        let mut parcel = MsgParcel::new();
+        parcel.write(&((MAX_PRIVACY_PAYLOAD + 1) as u32)).unwrap();
+        assert!(deserialize_privacy_payload(&mut parcel).is_err());
+        assert!(serialize_privacy_payload(&vec![0; MAX_PRIVACY_PAYLOAD + 1], &mut MsgParcel::new()).is_err());
+    }
+
+    #[test]
+    fn rejects_truncated_payload() {
+        let mut parcel = MsgParcel::new();
+        parcel.write(&5u32).unwrap();
+        parcel.write(&0x04030201u32).unwrap();
+        assert!(deserialize_privacy_payload(&mut parcel).is_err());
+    }
+}

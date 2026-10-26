@@ -32,7 +32,8 @@ use samgr::manage::SystemAbilityManager;
 
 pub use asset_ipc::{
     deserialize_batch_result, deserialize_map, deserialize_maps, deserialize_sync_result, ipc_err_handle,
-    serialize_map, serialize_maps, IpcCode, IPC_SUCCESS, SA_ID, SA_NAME,
+    serialize_map, serialize_maps, deserialize_privacy_payload, serialize_privacy_payload,
+    IpcCode, IPC_SUCCESS, SA_ID, SA_NAME,
 };
 
 extern "C" {
@@ -393,6 +394,37 @@ impl Manager {
                 _ => Err(e),
             },
         }
+    }
+
+    /// Send a private protocol operation through the existing Asset connection.
+    pub fn privacy_request(&mut self, payload: &[u8], code: IpcCode) -> Result<(i32, Vec<u8>)> {
+        if !matches!(code, IpcCode::PrivacyGenTarget | IpcCode::PrivacyGetResult) {
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "Invalid privacy operation");
+        }
+        let mut parcel = MsgParcel::new();
+        parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
+        serialize_privacy_payload(payload, &mut parcel)?;
+        let first = self.send_request(parcel, code);
+        let mut reply = match first {
+            Ok(reply) => reply,
+            Err(error) if error.code == ErrCode::ServiceUnavailable => {
+                self.rebuild()?;
+                let mut parcel = MsgParcel::new();
+                parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
+                serialize_privacy_payload(payload, &mut parcel)?;
+                self.send_request(parcel, code)?
+            },
+            Err(error) => return Err(error),
+        };
+        // send_request has consumed the normal Asset transport status already.
+        let result = reply.read::<i32>().map_err(ipc_err_handle)?;
+        let output = if result == 0 {
+            deserialize_privacy_payload(&mut reply)?
+        } else {
+            Vec::new()
+        };
+        Ok((result, output))
     }
 
     fn send_request(&self, mut parcel: MsgParcel, ipc_code: IpcCode) -> Result<MsgParcel> {

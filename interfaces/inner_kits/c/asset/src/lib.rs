@@ -15,6 +15,8 @@
 
 //! This module implements the function of Asset SDK from C to RUST.
 
+mod privacy;
+
 #[cfg(not(feature = "AssetEmptyMode"))]
 pub mod full;
 

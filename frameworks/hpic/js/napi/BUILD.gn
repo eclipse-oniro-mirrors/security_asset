@@ -34,8 +34,6 @@ ohos_shared_library("privacycomputation_napi") {
     "hilog:libhilog",
     "napi:ace_napi",
     "node:node_header_notice",
-    "ipc:ipc_core",
-    "c_utils:utils",
   ]
 
   branch_protector_ret = "pac_ret"

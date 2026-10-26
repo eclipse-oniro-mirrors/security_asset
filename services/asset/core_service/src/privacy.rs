@@ -18,7 +18,7 @@ use ipc::{parcel::MsgParcel, IpcResult, IpcStatusCode, Skeleton};
 use asset_log::loge;
 use std::convert::TryFrom;
 
-const MAX_MESSAGE: usize = 256 * 1024;
+use asset_ipc::{deserialize_privacy_payload, serialize_privacy_payload, MAX_PRIVACY_PAYLOAD, IPC_SUCCESS};
 // Keep field order and integer widths identical to privacy_request.h.
 #[repr(C)]
 struct AssetPrivacyInput {
@@ -41,18 +41,8 @@ extern "C" {
 pub(crate) fn request(code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
     // Capture Binder identity before invoking any native code or asynchronous work.
     let uid = u32::try_from(Skeleton::calling_uid()).map_err(|_| IpcStatusCode::Failed)?;
-    let length = data.read::<u32>()? as usize;
-    if length > MAX_MESSAGE {
-        loge!("Privacy request exceeds the byte limit");
-        reply.write(&1i32)?;
-        return Ok(());
-    }
-    let mut input = vec![0u8; length];
-    for chunk in input.chunks_mut(4) {
-        let word = data.read::<u32>()?.to_le_bytes();
-        chunk.copy_from_slice(&word[..chunk.len()]);
-    }
-    let mut output = vec![0u8; MAX_MESSAGE];
+    let input = deserialize_privacy_payload(data).map_err(|_| IpcStatusCode::InvalidValue)?;
+    let mut output = vec![0u8; MAX_PRIVACY_PAYLOAD];
     let request = AssetPrivacyInput {
         code,
         uid,
@@ -68,15 +58,11 @@ pub(crate) fn request(code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) ->
     if size as usize > output.len() {
         return Err(IpcStatusCode::Failed);
     }
+    reply.write(&IPC_SUCCESS)?;
     reply.write(&result)?;
     if result == 0 {
         output.truncate(size as usize);
-        reply.write(&size)?;
-        for chunk in output.chunks(4) {
-            let mut word = [0u8; 4];
-            word[..chunk.len()].copy_from_slice(chunk);
-            reply.write(&u32::from_le_bytes(word))?;
-        }
+        serialize_privacy_payload(&output, reply).map_err(|_| IpcStatusCode::InvalidValue)?;
     } else {
         loge!("Privacy operation failed: {}", result);
     }
