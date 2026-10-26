@@ -15,6 +15,7 @@
 
 //! This module defines IPC interfaces and constants.
 
+/// Shared PSI/PIR Parcel fields, native data views and bounded serialization helpers.
 pub mod privacy;
 
 use ipc::{parcel::{MsgParcel, Deserialize}, IpcStatusCode};

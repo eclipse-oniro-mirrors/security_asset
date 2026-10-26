@@ -23,6 +23,10 @@
 namespace psi_pir::internal {
 class SoftHeEngine final : public psi_pir::internal::IHEEngine {
 public:
+    // Raw HE primitives: no caller identity lookup, target construction or search-result processing.
+    int32_t Encrypt(const Slots &slots, const ProtocolParams &params, const HeSeed &seed, Bytes &output) const noexcept;
+    int32_t Decrypt(const Bytes &ciphertext, const ProtocolParams &params, const HeSeed &seed,
+                    Slots &output) const noexcept;
     bool IsCompatible(const ProtocolParams &params) const noexcept override;
     int32_t addPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept override;
     int32_t multiplyPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept override;

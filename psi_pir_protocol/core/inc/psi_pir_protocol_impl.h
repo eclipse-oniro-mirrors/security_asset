@@ -19,16 +19,23 @@
 #include "protocol_codec.h"
 #include "protocol_encoder.h"
 #include "protocol_params.h"
-#include "psi_pir_protocol.h"
+#include "psi_pir_types.h"
 
 namespace psi_pir::internal {
 
 class PsiPirProtocolImpl final {
 public:
+    // Complete target generation: validate, encode, derive the caller seed, then encrypt.
+    int32_t genPrivacyTarget(const TargetInput &input, const ProtocolParams &params, const CallerIdentity &identity,
+                             Bytes &result) const noexcept;
     int32_t privacySearch(const Bytes &privacyTarget, const std::vector<Element> &elements,
                           const ProtocolParams &params, PrivacySearchResult &result) const noexcept;
+    // Complete result handling: decrypt all batches, decode slots, then resolve matches and values.
     int32_t getSearchResult(const PrivacySearchResult &privacySearchResult, const ProtocolParams &params,
-                            SearchResult &result) const noexcept;
+                            const CallerIdentity &identity, SearchResult &result) const noexcept;
+    // Internal plaintext stage, also used by tests that inject decrypted slot data.
+    int32_t ProcessDecryptedSearchResult(const PrivacySearchResult &privacySearchResult, const ProtocolParams &params,
+                                         SearchResult &result) const noexcept;
 
 private:
     ProtocolCodec codec_;

@@ -418,7 +418,8 @@ impl Manager {
         }
     }
 
-    /// Generate a protocol target through the existing Asset connection.
+    /// Generates a protocol target through Asset, returning the protocol status and ciphertext.
+    /// A non-success protocol status has an empty ciphertext; transport errors use the outer Result.
     pub fn gen_privacy_target(&mut self, input: &TargetRequest) -> Result<(i32, Vec<u8>)> {
         let mut reply = self.privacy_request(IpcCode::PrivacyGenTarget, |parcel| serialize_target(input, parcel))?;
         let result = reply.read::<i32>().map_err(ipc_err_handle)?;
@@ -434,7 +435,8 @@ impl Manager {
         Ok((result, output))
     }
 
-    /// Decrypt a protocol result through the existing Asset connection.
+    /// Decrypts and processes search batches through Asset, returning protocol status and optional results.
+    /// A non-success protocol status has no result; transport errors use the outer Result.
     pub fn get_privacy_result(&mut self, input: &SearchRequest) -> Result<(i32, Option<SearchResponse>)> {
         let mut reply = self.privacy_request(IpcCode::PrivacyGetResult, |parcel| serialize_search(input, parcel))?;
         let result = reply.read::<i32>().map_err(ipc_err_handle)?;

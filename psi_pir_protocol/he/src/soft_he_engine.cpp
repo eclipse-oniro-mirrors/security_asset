@@ -18,6 +18,7 @@
 #include "protocol_mapper.h"
 #include "provider_registry.h"
 #include "psi_pir_error_code.h"
+#include "psi_pir_log.h"
 #include <utility>
 
 namespace psi_pir::internal {
@@ -45,6 +46,63 @@ ProtocolParams EvaluationParams()
     return ProtocolParams{};
 }
 } // namespace
+
+int32_t SoftHeEngine::Encrypt(const Slots &slots, const ProtocolParams &params, const HeSeed &seed,
+                              Bytes &output) const noexcept
+{
+    HifheAdapter adapter;
+    auto ret = adapter.InitializeKeyed(params, seed);
+    if (ret != PSI_PIR_SUCCESS) {
+        PSI_PIR_LOGE("HE encryption context initialization failed, ret=%{public}d", ret);
+        return ret;
+    }
+    Bytes plaintext;
+    ret = adapter.Encode(slots, plaintext);
+    if (ret != PSI_PIR_SUCCESS) {
+        PSI_PIR_LOGE("HE encoding failed, ret=%{public}d", ret);
+        return ret;
+    }
+    Bytes ciphertext;
+    ret = adapter.Encrypt(plaintext, ciphertext);
+    if (ret != PSI_PIR_SUCCESS) {
+        PSI_PIR_LOGE("HE encryption failed, ret=%{public}d", ret);
+        return ret;
+    }
+    if (ciphertext.empty()) {
+        PSI_PIR_LOGE("HE encryption returned empty ciphertext");
+        return PSI_PIR_HE_ERROR;
+    }
+    output = std::move(ciphertext);
+    return PSI_PIR_SUCCESS;
+}
+
+int32_t SoftHeEngine::Decrypt(const Bytes &ciphertext, const ProtocolParams &params, const HeSeed &seed,
+                              Slots &output) const noexcept
+{
+    if (ciphertext.empty()) {
+        return PSI_PIR_INVALID_ARGUMENT;
+    }
+    HifheAdapter adapter;
+    auto ret = adapter.InitializeKeyed(params, seed);
+    if (ret != PSI_PIR_SUCCESS) {
+        PSI_PIR_LOGE("HE decryption context initialization failed, ret=%{public}d", ret);
+        return ret;
+    }
+    Bytes plaintext;
+    ret = adapter.Decrypt(ciphertext, plaintext);
+    if (ret != PSI_PIR_SUCCESS) {
+        PSI_PIR_LOGE("HE decryption failed, ret=%{public}d", ret);
+        return ret;
+    }
+    Slots slots;
+    ret = adapter.Decode(plaintext, slots);
+    if (ret != PSI_PIR_SUCCESS) {
+        PSI_PIR_LOGE("HE decoding failed, ret=%{public}d", ret);
+        return ret;
+    }
+    output = std::move(slots);
+    return PSI_PIR_SUCCESS;
+}
 
 int32_t SoftHeEngine::addPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept
 {

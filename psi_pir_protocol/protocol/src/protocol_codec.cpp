@@ -252,6 +252,27 @@ int32_t ProtocolCodec::ValidatePlainSearchResult(const PrivacySearchResult &resu
     return PSI_PIR_SUCCESS;
 }
 
+int32_t ProtocolCodec::SerializePlaintext(const Slots &slots, const ProtocolParams &params, Bytes &output) const noexcept
+{
+    if (slots.size() != params.polyModulusDegree) {
+        PSI_PIR_LOGE("decoded slot count does not match protocol dimension");
+        return PSI_PIR_CODEC_ERROR;
+    }
+    Bytes result;
+    result.reserve(slots.size() * sizeof(uint64_t));
+    for (const auto slot : slots) {
+        if (slot >= params.plainModulus) {
+            PSI_PIR_LOGE("decoded slot exceeds plaintext modulus");
+            return PSI_PIR_CODEC_ERROR;
+        }
+        for (size_t byte = 0; byte < sizeof(uint64_t); ++byte) {
+            result.push_back(static_cast<uint8_t>(slot >> (byte * kBitsPerByte)));
+        }
+    }
+    output = std::move(result);
+    return PSI_PIR_SUCCESS;
+}
+
 int32_t ProtocolCodec::ParsePlaintexts(const PrivacySearchResult &result, const ProtocolParams &params,
                                        std::vector<Slots> &plaintexts) const noexcept
 {

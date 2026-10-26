@@ -15,7 +15,11 @@
 
 #include "psi_pir_protocol_impl.h"
 
+#include "he_key_deriver.h"
+#include "protocol_mapper.h"
 #include "provider_registry.h"
+#include "search_result_processor.h"
+#include "soft_he_engine.h"
 #include "psi_pir_log.h"
 
 #include <algorithm>
@@ -493,11 +497,41 @@ int32_t ProcessSearchResultPlaintexts(const SearchResultContext &context, const 
 
 } // namespace
 
+int32_t PsiPirProtocolImpl::genPrivacyTarget(const TargetInput &input, const ProtocolParams &params,
+                                             const CallerIdentity &identity, Bytes &result) const noexcept
+{
+    auto ret = codec_.ValidateProtocol(params);
+    if (ret != PSI_PIR_SUCCESS) {
+        return ret;
+    }
+    if (input.elemData.empty() || encoder_.ValidateHashAlgorithm(input.hashAlg) != PSI_PIR_SUCCESS) {
+        PSI_PIR_LOGE("invalid plaintext target or hash algorithm");
+        return PSI_PIR_INVALID_ARGUMENT;
+    }
+    Slots target;
+    const Element element{input.elemData, input.hashAlg, std::nullopt};
+    ret = encoder_.EncodeTargetVector(element, params, target);
+    if (ret != PSI_PIR_SUCCESS) {
+        return ret;
+    }
+    HeSeed seed;
+    ret = HeKeyDeriver().DeriveKey(identity, seed);
+    if (ret != PSI_PIR_SUCCESS) {
+        PSI_PIR_LOGE("target seed derivation failed, ret=%{public}d", ret);
+        return ret;
+    }
+    return SoftHeEngine().Encrypt(target, params, seed, result);
+}
+
 int32_t PsiPirProtocolImpl::privacySearch(const Bytes &privacyTarget, const std::vector<Element> &elements,
                                           const ProtocolParams &params,
                                           PrivacySearchResult &searchResult) const noexcept
 {
-    auto ret = ValidateEvaluateInput(privacyTarget, elements, params, codec_, encoder_);
+    auto ret = EnsureDefaultHeEngineInstalled();
+    if (ret != PSI_PIR_SUCCESS) {
+        return ret;
+    }
+    ret = ValidateEvaluateInput(privacyTarget, elements, params, codec_, encoder_);
     if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
@@ -535,8 +569,47 @@ int32_t PsiPirProtocolImpl::privacySearch(const Bytes &privacyTarget, const std:
     return PSI_PIR_SUCCESS;
 }
 
-int32_t PsiPirProtocolImpl::getSearchResult(const PrivacySearchResult &privacySearchResult,
-                                            const ProtocolParams &params, SearchResult &resolvedResult) const noexcept
+int32_t PsiPirProtocolImpl::getSearchResult(const PrivacySearchResult &input, const ProtocolParams &params,
+                                            const CallerIdentity &identity, SearchResult &output) const noexcept
+{
+    auto ret = codec_.ValidateProtocol(params);
+    if (ret != PSI_PIR_SUCCESS) {
+        return ret;
+    }
+    auto decoded = input;
+    const SoftHeEngine engine;
+    for (size_t batch = 0; batch < input.fheCipherText.size(); ++batch) {
+        if (input.fheCipherText[batch].empty()) {
+            return PSI_PIR_INVALID_ARGUMENT;
+        }
+        HeSeed seed;
+        ret = HeKeyDeriver().DeriveKey(identity, seed);
+        if (ret != PSI_PIR_SUCCESS) {
+            PSI_PIR_LOGE("result seed derivation failed, ret=%{public}d", ret);
+            return ret;
+        }
+        Slots slots;
+        ret = engine.Decrypt(input.fheCipherText[batch], params, seed, slots);
+        if (ret != PSI_PIR_SUCCESS) {
+            return ret;
+        }
+        ret = codec_.SerializePlaintext(slots, params, decoded.fheCipherText[batch]);
+        if (ret != PSI_PIR_SUCCESS) {
+            return ret;
+        }
+    }
+    SearchResult result;
+    ret = ProcessDecryptedSearchResult(decoded, params, result);
+    if (ret != PSI_PIR_SUCCESS) {
+        return ret;
+    }
+    output = std::move(result);
+    return PSI_PIR_SUCCESS;
+}
+
+int32_t PsiPirProtocolImpl::ProcessDecryptedSearchResult(const PrivacySearchResult &privacySearchResult,
+                                                         const ProtocolParams &params,
+                                                         SearchResult &resolvedResult) const noexcept
 {
     auto ret = codec_.ValidateProtocol(params);
     if (ret != PSI_PIR_SUCCESS) {
@@ -553,6 +626,17 @@ int32_t PsiPirProtocolImpl::getSearchResult(const PrivacySearchResult &privacySe
     const SearchResultContext context{privacySearchResult, params, encoder_, groupsPerItem,
                                       params.dataNumPerPlaintext / groupsPerItem};
     return ProcessSearchResultPlaintexts(context, plaintexts, resolvedResult);
+}
+
+int32_t ProcessDecryptedSearchResult(const PrivacySearchResult &input, const PrivacyProtocol &protocol,
+                                     SearchResult &output) noexcept
+{
+    ProtocolParams params;
+    const auto ret = MapPrivacyProtocol(protocol, params);
+    if (ret != PSI_PIR_SUCCESS) {
+        return ret;
+    }
+    return PsiPirProtocolImpl().ProcessDecryptedSearchResult(input, params, output);
 }
 
 } // namespace psi_pir::internal

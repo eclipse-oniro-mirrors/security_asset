@@ -78,6 +78,7 @@ fn get_result(uid: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResul
     }
     Ok(())
 }
+/// Dispatches a privacy request on the Binder thread after capturing the actual calling UID.
 pub(crate) fn request(code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
     let uid = u32::try_from(Skeleton::calling_uid()).map_err(|_| IpcStatusCode::Failed)?;
     if code == IpcCode::PrivacyGenTarget as u32 {

@@ -17,83 +17,123 @@
 use crate::{ipc_err_handle, macros_lib, ErrCode, MsgParcel, Result};
 use std::ffi::c_void;
 
-// Logical field budget; Parcel alignment and the interface token are additional overhead.
+/// Maximum logical field budget in bytes, excluding the interface token and Parcel alignment.
 pub const MAX_BYTES: usize = 256 * 1024;
 const LENGTH_BYTES: usize = std::mem::size_of::<u32>();
 const FLAG_BYTES: usize = std::mem::size_of::<u32>();
 const PROTOCOL_BYTES: usize = std::mem::size_of::<u32>() + std::mem::size_of::<u32>();
-// Same logical field budget as privacy_limits.h; these are not native struct sizes.
+/// Logical size of the protocol and hash fields; this is not the native request struct size.
 pub const TARGET_FIXED_BYTES: usize = PROTOCOL_BYTES + std::mem::size_of::<u32>();
 const SEARCH_FIXED_BYTES: usize = PROTOCOL_BYTES + FLAG_BYTES;
 const RESULT_FIXED_BYTES: usize = FLAG_BYTES + FLAG_BYTES;
+/// Logical target request overhead, including the element length field.
 pub const TARGET_OVERHEAD_BYTES: usize = TARGET_FIXED_BYTES + LENGTH_BYTES;
+/// Maximum list item count permitted by the logical length-field budget.
 pub const MAX_ITEMS: usize = MAX_BYTES / LENGTH_BYTES;
+/// Protocol operation success code, separate from the outer Asset IPC status.
 pub const PROTOCOL_SUCCESS: i32 = 0;
 
+/// Borrowed byte range for same-process C/Rust calls; pointers are never serialized into Parcel.
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PrivacyBlob {
+    /// Readable byte storage; may be null only when size is zero.
     pub data: *const u8,
+    /// Number of initialized bytes available at data.
     pub size: u32,
 }
 
+/// Borrowed list of byte ranges for same-process C/Rust calls.
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PrivacyBlobList {
+    /// Aligned descriptor storage; may be null only when count is zero.
     pub data: *const PrivacyBlob,
+    /// Number of initialized descriptors available at data.
     pub count: u32,
 }
 
+/// C-compatible protocol selectors, using the values defined by the protocol library.
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub struct PrivacyProtocol {
+    /// Data set size enum value.
     pub data_set_size: u32,
+    /// PSI or PIR protocol enum value.
     pub protocol_type: u32,
 }
 
+/// Borrowed target generation request; its buffers remain owned by the caller.
 #[repr(C)]
 pub struct PrivacyTargetRequest {
+    /// Protocol selectors for target generation.
     pub protocol: PrivacyProtocol,
+    /// Hash algorithm enum value; zero selects NONE.
     pub hash_alg: u32,
+    /// Plaintext target bytes, borrowed until the synchronous call returns.
     pub element: PrivacyBlob,
 }
 
+/// Borrowed encrypted search result to be decrypted and processed.
 #[repr(C)]
 pub struct PrivacySearchRequest {
+    /// Protocol selectors used to generate the encrypted search result.
     pub protocol: PrivacyProtocol,
+    /// Encrypted HE batches in their original order.
     pub ciphertexts: PrivacyBlobList,
+    /// Presence flag: one includes symmetric, zero means it is absent.
     pub has_symmetric: u32,
+    /// Complete associated-value frames, used only when has_symmetric is one.
     pub symmetric: PrivacyBlobList,
 }
 
+/// Caller-owned output buffer for a synchronous native call.
 #[repr(C)]
 pub struct PrivacyBuffer {
+    /// Writable storage that remains valid until the call returns.
     pub data: *mut u8,
+    /// Writable capacity on entry; actual byte length after a successful call.
     pub size: u32,
 }
 
+/// Native result view backed by storage owned by the producing module.
 #[repr(C)]
 pub struct PrivacyResult {
+    /// Match flag encoded as zero or one.
     pub matched: u32,
+    /// Presence flag distinguishing an absent list from a present empty list.
     pub has_values: u32,
+    /// Borrowed result bytes, valid until the producing module releases storage.
     pub values: PrivacyBlobList,
+    /// Opaque allocation handle; release through the producing module, without copying ownership.
     pub storage: *mut c_void,
 }
 
+/// Owned target generation fields used by the Rust Parcel serializer.
 pub struct TargetRequest {
+    /// Protocol selectors for target generation.
     pub protocol: PrivacyProtocol,
+    /// Hash algorithm enum value; zero selects NONE.
     pub hash_alg: u32,
+    /// Plaintext target bytes.
     pub element: Vec<u8>,
 }
 
+/// Owned encrypted batches and optional associated-value frames for a search result request.
 pub struct SearchRequest {
+    /// Protocol selectors used by the encrypted search result.
     pub protocol: PrivacyProtocol,
+    /// Encrypted HE batches in their original order.
     pub ciphertexts: Vec<Vec<u8>>,
+    /// Optional complete associated-value frames; Some(empty) differs from None.
     pub symmetric: Option<Vec<Vec<u8>>>,
 }
 
+/// Owned result copied from native storage or deserialized from a service reply.
 pub struct SearchResponse {
+    /// Whether any item matched the target.
     pub matched: bool,
+    /// Optional decrypted associated values; Some(empty) differs from None.
     pub values: Option<Vec<Vec<u8>>>,
 }
 
@@ -110,10 +150,16 @@ fn charge(total: &mut usize, size: usize) -> Result<()> {
     Ok(())
 }
 
+/// Builds borrowed byte descriptors; the vectors and their allocations must outlive use of the descriptors.
+/// Values must already satisfy the IPC byte budget so their lengths fit in u32.
 pub fn blobs(values: &[Vec<u8>]) -> Vec<PrivacyBlob> {
     values.iter().map(|value| PrivacyBlob { data: value.as_ptr(), size: value.len() as u32 }).collect()
 }
 
+/// Copies one native range after checking its declared length against the logical byte budget.
+///
+/// # Safety
+/// A nonempty range must remain readable and unchanged for blob.size bytes until this call returns.
 unsafe fn copy_blob(blob: PrivacyBlob, total: &mut usize) -> Result<Vec<u8>> {
     charge(total, LENGTH_BYTES)?;
     charge(total, blob.size as usize)?;
@@ -126,6 +172,11 @@ unsafe fn copy_blob(blob: PrivacyBlob, total: &mut usize) -> Result<Vec<u8>> {
     Ok(std::slice::from_raw_parts(blob.data, blob.size as usize).to_vec())
 }
 
+/// Copies native descriptors and byte ranges while accumulating their combined logical size.
+///
+/// # Safety
+/// A nonempty list must contain count aligned, initialized PrivacyBlob descriptors. Every
+/// nonempty range must remain readable and unchanged for its declared size until this call returns.
 unsafe fn copy_list(list: PrivacyBlobList, total: &mut usize) -> Result<Vec<Vec<u8>>> {
     charge(total, LENGTH_BYTES)?;
     if list.count as usize > MAX_ITEMS {
@@ -145,6 +196,11 @@ unsafe fn copy_list(list: PrivacyBlobList, total: &mut usize) -> Result<Vec<Vec<
 }
 
 impl PrivacyTargetRequest {
+    /// Copies borrowed target bytes into an owned request after checking the byte budget.
+    ///
+    /// # Safety
+    /// Nonempty element storage must be readable and initialized for element.size bytes.
+    /// It must remain allocated and must not be mutated for the duration of this call.
     pub unsafe fn to_value(&self) -> Result<TargetRequest> {
         let mut total = TARGET_FIXED_BYTES;
         let element = copy_blob(self.element, &mut total)?;
@@ -157,6 +213,12 @@ impl PrivacyTargetRequest {
 }
 
 impl PrivacySearchRequest {
+    /// Copies encrypted batches and any present associated-value frames into an owned request.
+    ///
+    /// # Safety
+    /// Nonempty lists must point to aligned, initialized arrays of count PrivacyBlob descriptors.
+    /// Every nonempty byte range must be readable for its declared size. Lists and byte storage
+    /// must remain allocated and must not be mutated until this call returns.
     pub unsafe fn to_value(&self) -> Result<SearchRequest> {
         if self.has_symmetric > 1 {
             return invalid();
@@ -173,6 +235,12 @@ impl PrivacySearchRequest {
 }
 
 impl PrivacyResult {
+    /// Copies the native result while preserving the distinction between absent and empty values.
+    ///
+    /// # Safety
+    /// When values are present, a nonempty list must contain count aligned, initialized descriptors.
+    /// Every nonempty byte range must be readable for its declared size. The producing module must
+    /// not release or mutate any referenced storage until this call returns.
     pub unsafe fn to_value(&self) -> Result<SearchResponse> {
         if self.matched > 1 || self.has_values > 1 {
             return invalid();
@@ -188,6 +256,8 @@ impl PrivacyResult {
 }
 
 impl TargetRequest {
+    /// Borrows this request as a C-compatible view; keep element allocated and unchanged while it is used.
+    /// The element length must already satisfy the IPC byte budget before conversion to u32.
     pub fn as_native(&self) -> PrivacyTargetRequest {
         PrivacyTargetRequest {
             protocol: self.protocol,
@@ -198,6 +268,9 @@ impl TargetRequest {
 }
 
 impl SearchRequest {
+    /// Creates a C-compatible request borrowing the supplied descriptor arrays.
+    /// Descriptors must represent this request's batches and frames and satisfy the IPC size budget.
+    /// Keep both arrays and all referenced byte allocations alive and unchanged while the view is used.
     pub fn as_native(&self, ciphertexts: &[PrivacyBlob], symmetric: &[PrivacyBlob]) -> PrivacySearchRequest {
         PrivacySearchRequest {
             protocol: self.protocol,
@@ -258,6 +331,7 @@ fn read_list(total: &mut usize, parcel: &mut MsgParcel) -> Result<Vec<Vec<u8>>> 
     Ok(values)
 }
 
+/// Writes target fields in the shared Parcel order, rejecting requests over the byte budget.
 pub fn serialize_target(value: &TargetRequest, parcel: &mut MsgParcel) -> Result<()> {
     write_protocol(value.protocol, parcel)?;
     parcel.write(&value.hash_alg).map_err(ipc_err_handle)?;
@@ -265,6 +339,7 @@ pub fn serialize_target(value: &TargetRequest, parcel: &mut MsgParcel) -> Result
     write_bytes(&value.element, &mut total, parcel)
 }
 
+/// Reads target fields from Parcel and validates their combined logical byte budget.
 pub fn deserialize_target(parcel: &mut MsgParcel) -> Result<TargetRequest> {
     let mut total = TARGET_FIXED_BYTES;
     Ok(TargetRequest {
@@ -274,6 +349,7 @@ pub fn deserialize_target(parcel: &mut MsgParcel) -> Result<TargetRequest> {
     })
 }
 
+/// Writes encrypted batches and presence-tagged frames while enforcing a shared byte budget.
 pub fn serialize_search(value: &SearchRequest, parcel: &mut MsgParcel) -> Result<()> {
     let mut total = SEARCH_FIXED_BYTES;
     write_protocol(value.protocol, parcel)?;
@@ -285,6 +361,7 @@ pub fn serialize_search(value: &SearchRequest, parcel: &mut MsgParcel) -> Result
     Ok(())
 }
 
+/// Reads encrypted batches and optional frames, rejecting invalid counts or oversized fields.
 pub fn deserialize_search(parcel: &mut MsgParcel) -> Result<SearchRequest> {
     let mut total = SEARCH_FIXED_BYTES;
     let protocol = read_protocol(parcel)?;
@@ -297,6 +374,7 @@ pub fn deserialize_search(parcel: &mut MsgParcel) -> Result<SearchRequest> {
     Ok(SearchRequest { protocol, ciphertexts, symmetric })
 }
 
+/// Writes match status and optional values, preserving absent and present empty lists.
 pub fn serialize_result(value: &SearchResponse, parcel: &mut MsgParcel) -> Result<()> {
     let mut total = RESULT_FIXED_BYTES;
     parcel.write(&value.matched).map_err(ipc_err_handle)?;
@@ -307,6 +385,7 @@ pub fn serialize_result(value: &SearchResponse, parcel: &mut MsgParcel) -> Resul
     Ok(())
 }
 
+/// Reads match status and optional values while enforcing the result byte budget.
 pub fn deserialize_result(parcel: &mut MsgParcel) -> Result<SearchResponse> {
     let mut total = RESULT_FIXED_BYTES;
     let matched = parcel.read::<bool>().map_err(ipc_err_handle)?;

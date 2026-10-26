@@ -64,7 +64,13 @@ fn map_privacy_error(code: ErrCode) -> i32 {
     }
 }
 
-/// Inputs are borrowed for the synchronous call; output is committed only on success.
+/// Generates a target through Asset IPC, borrowing input and committing output only on success.
+///
+/// # Safety
+/// Non-null input and output must point to aligned, initialized request and buffer structs.
+/// All nonempty input ranges must remain readable and unchanged until this call returns.
+/// The output buffer must be exclusively writable for its declared capacity and must not
+/// overlap the input or either descriptor struct. The caller retains ownership of all buffers.
 #[cfg(not(feature = "AssetEmptyMode"))]
 #[no_mangle]
 pub unsafe extern "C" fn asset_privacy_gen_target(
@@ -109,7 +115,13 @@ pub unsafe extern "C" fn asset_privacy_gen_target(
     PROTOCOL_SUCCESS
 }
 
-/// Result memory must be released with asset_privacy_free_result, not by the C caller's allocator.
+/// Retrieves an owned result through Asset IPC; release it with asset_privacy_free_result.
+///
+/// # Safety
+/// Non-null input must point to an aligned, initialized request. Its descriptor arrays and
+/// nonempty byte ranges must be readable and unchanged until this call returns.
+/// Non-null output must be aligned, initialized, exclusively writable and disjoint from input.
+/// It must be zero-initialized or previously freed; do not overwrite an outstanding result.
 #[cfg(not(feature = "AssetEmptyMode"))]
 #[no_mangle]
 pub unsafe extern "C" fn asset_privacy_get_result(
@@ -154,6 +166,11 @@ pub unsafe extern "C" fn asset_privacy_get_result(
     }
 }
 
+/// Returns UNSUPPORTED without reading or writing the request or output in empty mode.
+///
+/// # Safety
+/// This build does not dereference either pointer, so null pointers are accepted and no
+/// pointee validity is required. No result allocation is created.
 #[cfg(feature = "AssetEmptyMode")]
 #[no_mangle]
 pub unsafe extern "C" fn asset_privacy_gen_target(
@@ -163,6 +180,11 @@ pub unsafe extern "C" fn asset_privacy_gen_target(
     UNSUPPORTED
 }
 
+/// Returns UNSUPPORTED without reading or writing the request or result in empty mode.
+///
+/// # Safety
+/// This build does not dereference either pointer, so null pointers are accepted and no
+/// pointee validity is required. Existing result storage is not released or replaced.
 #[cfg(feature = "AssetEmptyMode")]
 #[no_mangle]
 pub unsafe extern "C" fn asset_privacy_get_result(
@@ -172,7 +194,13 @@ pub unsafe extern "C" fn asset_privacy_get_result(
     UNSUPPORTED
 }
 
-/// Releases only an unchanged result obtained from this module; repeated calls after clearing are safe.
+/// Releases a result allocated by this module and clears it; null output is accepted.
+///
+/// # Safety
+/// Non-null output must point to an aligned, initialized, exclusively accessible result struct.
+/// It must be zero-initialized, previously cleared, or an unchanged, unreleased result returned
+/// by this module. Do not pass a copied ownership handle or storage from another allocator.
+/// No outstanding reader may access the result's descriptors or bytes during or after release.
 #[no_mangle]
 pub unsafe extern "C" fn asset_privacy_free_result(output: *mut PrivacyResult) {
     if output.is_null() {

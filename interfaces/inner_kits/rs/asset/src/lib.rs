@@ -25,5 +25,5 @@ pub use asset_definition::*;
 
 pub use asset_ipc::{deserialize_map, deserialize_maps};
 
-// Shared typed protocol DTOs for C FFI and the existing Rust client.
+/// Shared typed protocol DTOs for C FFI and the existing Rust client.
 pub use asset_ipc::privacy;
