@@ -68,7 +68,7 @@ HWTEST_F(PsiPirHeTest, SeedRequiresServiceProviderAndBindsIdentity, TestSize.Lev
 }
 
 /* @tc.name: UnavailableBackendsPreserveOutputs
- * @tc.desc: M1 fails closed for HE and CCZ and never commits a partially transformed result.
+ * @tc.desc: Unavailable HE operations never commit a partially transformed result.
  * @tc.type: FUNC
  */
 HWTEST_F(PsiPirHeTest, UnavailableBackendsPreserveOutputs, TestSize.Level1)
@@ -78,43 +78,39 @@ HWTEST_F(PsiPirHeTest, UnavailableBackendsPreserveOutputs, TestSize.Level1)
     EXPECT_EQ(adapter.InitializeEvaluation(ProtocolParams{}), PSI_PIR_HE_ERROR);
     EXPECT_EQ(adapter.AddPlaintext(Bytes{1}, Bytes{2}, output), PSI_PIR_HE_ERROR);
     EXPECT_EQ(output, Bytes({0x99}));
-    EXPECT_EQ(genPrivacyTarget(TargetInput{Bytes{'a'}, HashAlg::SHA256, false}, PSI, {1000, 100}, output),
+    EXPECT_EQ(genPrivacyTarget(TargetInput{Bytes{'a'}, HashAlg::SHA256}, PSI, {1000, 100}, output),
               PSI_PIR_HE_ERROR);
     EXPECT_EQ(output, Bytes({0x99}));
     PrivacySearchResult encrypted{{Bytes{1}}, std::nullopt};
     SearchResult result{true, std::vector<Bytes>{Bytes{0x99}}};
-    for (auto backend : {DecryptionBackend::SOFT, DecryptionBackend::CCZ}) {
-        EXPECT_EQ(getSearchResult(encrypted, PSI, {1000, 100}, backend, result), PSI_PIR_HE_ERROR);
-        EXPECT_TRUE(result.matchedResult);
-        ASSERT_TRUE(result.attachedValues.has_value());
-        EXPECT_EQ(*result.attachedValues, std::vector<Bytes>({Bytes{0x99}}));
-        EXPECT_EQ(encrypted.fheCipherText, std::vector<Bytes>({Bytes{1}}));
-    }
+    EXPECT_EQ(getSearchResult(encrypted, PSI, {1000, 100}, result), PSI_PIR_HE_ERROR);
+    EXPECT_TRUE(result.matchedResult);
+    ASSERT_TRUE(result.attachedValues.has_value());
+    EXPECT_EQ(*result.attachedValues, std::vector<Bytes>({Bytes{0x99}}));
+    EXPECT_EQ(encrypted.fheCipherText, std::vector<Bytes>({Bytes{1}}));
     PrivacySearchResult searchOutput{{Bytes{0x99}}, std::nullopt};
     EXPECT_EQ(privacySearch(Bytes{1}, {Element{Bytes{'a'}, HashAlg::SHA256, std::nullopt}}, PSI, searchOutput),
               PSI_PIR_HE_ERROR);
     EXPECT_EQ(searchOutput.fheCipherText, std::vector<Bytes>({Bytes{0x99}}));
 }
 
-/* @tc.name: CompleteResultEntryValidatesBackend
- * @tc.desc: Invalid backends preserve output; empty inputs share post-processing for both backends.
+/* @tc.name: CompleteResultEntryValidatesProtocol
+ * @tc.desc: Invalid protocols preserve output; empty inputs still execute result processing.
  * @tc.type: FUNC
  */
-HWTEST_F(PsiPirHeTest, CompleteResultEntryValidatesBackend, TestSize.Level1)
+HWTEST_F(PsiPirHeTest, CompleteResultEntryValidatesProtocol, TestSize.Level1)
 {
     SearchResult result{true, std::vector<Bytes>{Bytes{0x99}}};
-    EXPECT_EQ(getSearchResult({}, PSI, {1000, 100}, static_cast<DecryptionBackend>(-1), result),
-              PSI_PIR_INVALID_ARGUMENT);
+    const PrivacyProtocol invalid{static_cast<DataSetSize>(-1), ProtocolType::PSI_PROTOCOL};
+    EXPECT_EQ(getSearchResult({}, invalid, {1000, 100}, result), PSI_PIR_INVALID_ARGUMENT);
     EXPECT_TRUE(result.matchedResult);
     ASSERT_TRUE(result.attachedValues.has_value());
     EXPECT_EQ(*result.attachedValues, std::vector<Bytes>({Bytes{0x99}}));
 
-    // Empty input needs no HE operation, but still runs common result processing.
-    for (auto backend : {DecryptionBackend::SOFT, DecryptionBackend::CCZ}) {
-        EXPECT_EQ(getSearchResult({}, PSI, {1000, 100}, backend, result), PSI_PIR_SUCCESS);
-        EXPECT_FALSE(result.matchedResult);
-        EXPECT_FALSE(result.attachedValues.has_value());
-    }
+    // Empty input needs no HE operation, but still runs result processing.
+    EXPECT_EQ(getSearchResult({}, PSI, {1000, 100}, result), PSI_PIR_SUCCESS);
+    EXPECT_FALSE(result.matchedResult);
+    EXPECT_FALSE(result.attachedValues.has_value());
 }
 
 /* @tc.name: DefaultFactoryNeverOverwritesCustom

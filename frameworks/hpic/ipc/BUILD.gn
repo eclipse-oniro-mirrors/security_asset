@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//build/test.gni")
 config("privacy_ipc_config") {
   include_dirs = [ "inc" ]
 }
@@ -32,21 +31,6 @@ ohos_static_library("privacy_client") {
     cfi_cross_dso = true
     debug = false
   }
-  subsystem_name = "security"
-  part_name = "asset"
-}
-
-ohos_unittest("privacy_wire_test") {
-  module_out_path = "asset/hpic"
-  sources = [ "test/privacy_wire_test.cpp" ]
-  include_dirs = [ "inc" ]
-  deps = [ "../../../psi_pir_protocol:psi_pir_protocol" ]
-  external_deps = [ "googletest:gtest_main" ]
-  cflags_cc = [
-    "-std=c++17",
-    "-Wall",
-    "-Werror",
-  ]
   subsystem_name = "security"
   part_name = "asset"
 }

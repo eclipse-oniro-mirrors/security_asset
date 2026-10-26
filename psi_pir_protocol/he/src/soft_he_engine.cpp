@@ -21,15 +21,22 @@
 #include <utility>
 
 namespace psi_pir::internal {
+namespace {
+constexpr size_t PIR128_COMPARE_BITS = 128;
+constexpr size_t PIR128_SLOTS_PER_DATA = 8;
+constexpr size_t PIR128_DATA_PER_PLAINTEXT = 256;
+} // namespace
 bool SoftHeEngine::IsCompatible(const ProtocolParams &params) const noexcept
 {
     using namespace psi_pir::internal;
-    const bool layout = (params.compareBits == 64 && params.slotsPerData == 4 && params.dataNumPerPlaintext == 512 &&
-                         (params.mode == ProtocolMode::PSI || params.mode == ProtocolMode::PIR)) ||
-                        (params.mode == ProtocolMode::PIR && params.compareBits == 128 && params.slotsPerData == 8 &&
-                         params.dataNumPerPlaintext == 256);
-    return layout && params.fheAlgorithm == FheAlgorithm::BGV2048_48 && params.bitsPerSlot == 16 &&
-           params.plainModulus == 65537 && params.polyModulusDegree == 2048;
+    const bool layout =
+        (params.compareBits == kDefaultCompareBits && params.slotsPerData == kDefaultSlotsPerData &&
+         params.dataNumPerPlaintext == kDefaultDataNumberPerPlaintext &&
+         (params.mode == ProtocolMode::PSI || params.mode == ProtocolMode::PIR)) ||
+        (params.mode == ProtocolMode::PIR && params.compareBits == PIR128_COMPARE_BITS &&
+         params.slotsPerData == PIR128_SLOTS_PER_DATA && params.dataNumPerPlaintext == PIR128_DATA_PER_PLAINTEXT);
+    return layout && params.fheAlgorithm == FheAlgorithm::BGV2048_48 && params.bitsPerSlot == kDefaultBitsPerSlot &&
+           params.plainModulus == kDefaultPlainModulus && params.polyModulusDegree == kDefaultPolyModulusDegree;
 }
 
 namespace {

@@ -15,8 +15,9 @@
 
 #include "hpic_napi_get_search_result.h"
 #include "hpic_napi_common.h"
+#include "hpic_napi_loader.h"
 #include "hpic_napi_utils.h"
-#include "privacy_wire.h"
+#include "privacy_client.h"
 #include <new>
 #include <utility>
 
@@ -38,6 +39,9 @@ napi_status ParseGetSearchResultArgs(napi_env env, napi_callback_info info, Hpic
 
 napi_value NapiGetSearchResult(napi_env env, napi_callback_info info)
 {
+    if (IsCczConfigured()) {
+        return CallComputationNapiFunc(env, info, "GetSearchResult");
+    }
     auto context = std::unique_ptr<GetSearchResultContext>(new (std::nothrow) GetSearchResultContext());
     NAPI_THROW(env, context == nullptr, HPIC_OUT_OF_MEMORY, GetErrorMessage(HPIC_OUT_OF_MEMORY));
     context->parse = ParseGetSearchResultArgs;

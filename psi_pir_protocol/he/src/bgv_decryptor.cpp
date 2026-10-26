@@ -21,7 +21,7 @@
 
 namespace psi_pir::internal {
 int32_t BgvDecryptor::DecryptToSlots(const Bytes &ciphertext, const ProtocolParams &params,
-                                     const OperationIdentity &identity, Bytes &output) const noexcept
+                                     const CallerIdentity &identity, Bytes &output) const noexcept
 {
     if (ciphertext.empty()) {
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
@@ -46,17 +46,17 @@ int32_t BgvDecryptor::DecryptToSlots(const Bytes &ciphertext, const ProtocolPara
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
         return ret;
     }
-    if (slots.size() != 2048) {
+    if (slots.size() != kDefaultPolyModulusDegree) {
         return psi_pir::PSI_PIR_CODEC_ERROR;
     }
     Bytes result;
-    result.reserve(16384);
+    result.reserve(slots.size() * sizeof(uint64_t));
     for (const auto slot : slots) {
         if (slot >= params.plainModulus) {
             return psi_pir::PSI_PIR_CODEC_ERROR;
         }
-        for (size_t byte = 0; byte < 8; ++byte) {
-            result.push_back(static_cast<uint8_t>(slot >> (byte * 8)));
+        for (size_t byte = 0; byte < sizeof(uint64_t); ++byte) {
+            result.push_back(static_cast<uint8_t>(slot >> (byte * kBitsPerByte)));
         }
     }
     output = std::move(result);

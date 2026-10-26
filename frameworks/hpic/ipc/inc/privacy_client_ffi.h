@@ -15,21 +15,14 @@
 
 #ifndef HPIC_PRIVACY_CLIENT_FFI_H
 #define HPIC_PRIVACY_CLIENT_FFI_H
-#include <stdint.h>
+#include "privacy_types.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-struct PrivacyClientInput {
-    const uint8_t *data;
-    uint32_t size;
-};
-struct PrivacyClientOutput {
-    uint8_t *data;
-    uint32_t size;
-};
-// Buffers remain caller-owned; output size is committed only after success.
-int32_t asset_privacy_gen_target(const struct PrivacyClientInput *input, struct PrivacyClientOutput *output);
-int32_t asset_privacy_get_result(const struct PrivacyClientInput *input, struct PrivacyClientOutput *output);
+int32_t asset_privacy_gen_target(const struct PrivacyTargetRequest *input, struct PrivacyBuffer *output);
+int32_t asset_privacy_get_result(const struct PrivacySearchRequest *input, struct PrivacyResult *output);
+// Release only results returned by asset_privacy_get_result; pointers must not be copied and freed twice.
+void asset_privacy_free_result(struct PrivacyResult *output);
 #ifdef __cplusplus
 }
 #endif

@@ -24,6 +24,8 @@ pub use asset_definition::*;
 use std::{ffi::CString, os::raw::c_char, sync::OnceLock};
 
 use asset_log::logw;
+use asset_ipc::privacy::{TargetRequest, SearchRequest, SearchResponse,
+    serialize_target, serialize_search, deserialize_result, MAX_BYTES, PROTOCOL_SUCCESS};
 use ipc::{
     parcel::{MsgOption, MsgParcel},
     remote::RemoteObj,
@@ -32,7 +34,7 @@ use samgr::manage::SystemAbilityManager;
 
 pub use asset_ipc::{
     deserialize_batch_result, deserialize_map, deserialize_maps, deserialize_sync_result, ipc_err_handle,
-    serialize_map, serialize_maps, deserialize_privacy_payload, serialize_privacy_payload,
+    serialize_map, serialize_maps,
     IpcCode, IPC_SUCCESS, SA_ID, SA_NAME,
 };
 
@@ -396,33 +398,50 @@ impl Manager {
         }
     }
 
-    /// Send a private protocol operation through the existing Asset connection.
-    pub fn privacy_request(&mut self, payload: &[u8], code: IpcCode) -> Result<(i32, Vec<u8>)> {
-        if !matches!(code, IpcCode::PrivacyGenTarget | IpcCode::PrivacyGetResult) {
-            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                ErrCode::InvalidArgument, "Invalid privacy operation");
-        }
+    fn privacy_request<F>(&mut self, code: IpcCode, serialize: F) -> Result<MsgParcel>
+    where
+        F: Fn(&mut MsgParcel) -> Result<()>,
+    {
         let mut parcel = MsgParcel::new();
         parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
-        serialize_privacy_payload(payload, &mut parcel)?;
-        let first = self.send_request(parcel, code);
-        let mut reply = match first {
-            Ok(reply) => reply,
+        serialize(&mut parcel)?;
+        match self.send_request(parcel, code) {
+            Ok(reply) => Ok(reply),
             Err(error) if error.code == ErrCode::ServiceUnavailable => {
                 self.rebuild()?;
                 let mut parcel = MsgParcel::new();
                 parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
-                serialize_privacy_payload(payload, &mut parcel)?;
-                self.send_request(parcel, code)?
+                serialize(&mut parcel)?;
+                self.send_request(parcel, code)
             },
-            Err(error) => return Err(error),
-        };
-        // send_request has consumed the normal Asset transport status already.
+            Err(error) => Err(error),
+        }
+    }
+
+    /// Generate a protocol target through the existing Asset connection.
+    pub fn gen_privacy_target(&mut self, input: &TargetRequest) -> Result<(i32, Vec<u8>)> {
+        let mut reply = self.privacy_request(IpcCode::PrivacyGenTarget, |parcel| serialize_target(input, parcel))?;
         let result = reply.read::<i32>().map_err(ipc_err_handle)?;
-        let output = if result == 0 {
-            deserialize_privacy_payload(&mut reply)?
+        let output = if result == PROTOCOL_SUCCESS {
+            reply.read::<Vec<u8>>().map_err(ipc_err_handle)?
         } else {
             Vec::new()
+        };
+        if output.len() > MAX_BYTES {
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::InvalidArgument, "Privacy target exceeds the byte limit");
+        }
+        Ok((result, output))
+    }
+
+    /// Decrypt a protocol result through the existing Asset connection.
+    pub fn get_privacy_result(&mut self, input: &SearchRequest) -> Result<(i32, Option<SearchResponse>)> {
+        let mut reply = self.privacy_request(IpcCode::PrivacyGetResult, |parcel| serialize_search(input, parcel))?;
+        let result = reply.read::<i32>().map_err(ipc_err_handle)?;
+        let output = if result == PROTOCOL_SUCCESS {
+            Some(deserialize_result(&mut reply)?)
+        } else {
+            None
         };
         Ok((result, output))
     }

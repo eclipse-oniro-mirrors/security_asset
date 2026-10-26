@@ -83,19 +83,21 @@ napi_status ParseJsHashAlg(napi_env env, napi_value object, psi_pir::HashAlg &ha
     napi_value value = nullptr;
     bool present = false;
     IF_ERR_RETURN(GetOptionalProperty(env, object, "hashAlg", value, present));
-    uint32_t id = 0; // Northbound default SHA256=0 differs from internal NONE=0.
+    uint32_t id = HASH_ALG_NONE;
     if (present) {
         IF_ERR_RETURN(ParseJsUint32(env, value, id, "hashAlg must be a supported integer enum."));
     }
     switch (id) {
-    case 0:
-    case 1:
+    case HASH_ALG_NONE:
+        hash = psi_pir::HashAlg::NONE;
+        break;
+    case HASH_ALG_SHA256:
         hash = psi_pir::HashAlg::SHA256;
-        break; // Preserve existing nonzero parsing.
-    case 2:
+        break;
+    case HASH_ALG_SHA384:
         hash = psi_pir::HashAlg::SHA384;
         break;
-    case 3:
+    case HASH_ALG_SHA512:
         hash = psi_pir::HashAlg::SHA512;
         break;
     default:
@@ -184,7 +186,10 @@ napi_status ParseJsProtocol(napi_env env, napi_value value, psi_pir::PrivacyProt
     IF_ERR_RETURN(GetRequiredProperty(env, value, "protocolType", mode));
     IF_ERR_RETURN(ParseJsUint32(env, size, sizeId, "dataSetSize must be an integer enum."));
     IF_ERR_RETURN(ParseJsUint32(env, mode, modeId, "protocolType must be an integer enum."));
-    NAPI_THROW_RETURN_ERR(env, sizeId > 2 || modeId > 1, HPIC_INVALID_ARGUMENT, "Unsupported protocol enum value.");
+    NAPI_THROW_RETURN_ERR(env,
+                          sizeId > static_cast<uint32_t>(psi_pir::DataSetSize::SIZE_512) ||
+                              modeId > static_cast<uint32_t>(psi_pir::ProtocolType::PIR_PROTOCOL),
+                          HPIC_INVALID_ARGUMENT, "Unsupported protocol enum value.");
     protocol.dataSetSize = static_cast<psi_pir::DataSetSize>(sizeId);
     protocol.protocolType = static_cast<psi_pir::ProtocolType>(modeId);
     return napi_ok;
@@ -196,16 +201,6 @@ napi_status ParseJsTarget(napi_env env, napi_value value, psi_pir::TargetInput &
     IF_ERR_RETURN(GetRequiredProperty(env, value, "elemData", data));
     IF_ERR_RETURN(ParseJsUint8Array(env, data, target.elemData, "elemData must be a Uint8Array."));
     IF_ERR_RETURN(ParseJsHashAlg(env, value, target.hashAlg));
-    napi_value isCt = nullptr;
-    bool present = false;
-    IF_ERR_RETURN(GetOptionalProperty(env, value, "isCt", isCt, present));
-    if (present) {
-        napi_valuetype type = napi_undefined;
-        NAPI_CALL_RETURN_ERR(env, napi_typeof(env, isCt, &type));
-        NAPI_THROW_RETURN_ERR(env, type != napi_boolean, HPIC_INVALID_ARGUMENT,
-                              "isCt must be a boolean when provided.");
-        NAPI_CALL_RETURN_ERR(env, napi_get_value_bool(env, isCt, &target.isCt));
-    }
     return napi_ok;
 }
 

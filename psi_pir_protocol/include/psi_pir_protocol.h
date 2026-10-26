@@ -23,18 +23,16 @@ namespace psi_pir {
 
 // Generates an encrypted privacy target using the caller-provided identity.
 int32_t genPrivacyTarget(const TargetInput &input, const PrivacyProtocol &privacyProtocol,
-                         const OperationIdentity &identity, Bytes &privacyTarget) noexcept;
+                         const CallerIdentity &identity, Bytes &privacyTarget) noexcept;
 
 // B-side HE evaluation (the second step of the northbound flow).
 int32_t privacySearch(const Bytes &privacyTarget, const std::vector<Element> &elements,
                       const PrivacyProtocol &privacyProtocol, PrivacySearchResult &privacySearchResult) noexcept;
 
-// Decrypts HE ciphertext batches, then performs shared open-source match detection
-// and PIR attached-value processing. Failure leaves searchResult unchanged.
-// CCZ selects raw HE decryption only; an unavailable backend returns an error.
+// Decrypts HE ciphertext batches and performs match detection and PIR attached-value
+// processing. Failure leaves searchResult unchanged.
 int32_t getSearchResult(const PrivacySearchResult &privacySearchResult, const PrivacyProtocol &privacyProtocol,
-                        const OperationIdentity &identity, DecryptionBackend backend,
-                        SearchResult &searchResult) noexcept;
+                        const CallerIdentity &identity, SearchResult &searchResult) noexcept;
 
 } // namespace psi_pir
 

@@ -17,7 +17,6 @@
 
 #include "bgv_decryptor.h"
 #include "bgv_encryptor.h"
-#include "ccz_decrypt_bridge.h"
 #include "protocol_mapper.h"
 #include "psi_pir_log.h"
 #include "psi_pir_protocol_impl.h"
@@ -84,7 +83,7 @@ int32_t internal::ProcessDecryptedSearchResult(const PrivacySearchResult &privac
     return PSI_PIR_SUCCESS;
 }
 
-int32_t genPrivacyTarget(const TargetInput &input, const PrivacyProtocol &protocol, const OperationIdentity &identity,
+int32_t genPrivacyTarget(const TargetInput &input, const PrivacyProtocol &protocol, const CallerIdentity &identity,
                          Bytes &output) noexcept
 {
     internal::ProtocolParams params;
@@ -93,29 +92,24 @@ int32_t genPrivacyTarget(const TargetInput &input, const PrivacyProtocol &protoc
 }
 
 int32_t getSearchResult(const PrivacySearchResult &input, const PrivacyProtocol &protocol,
-                        const OperationIdentity &identity, DecryptionBackend backend, SearchResult &output) noexcept
+                        const CallerIdentity &identity, SearchResult &output) noexcept
 {
     internal::ProtocolParams params;
     auto ret = internal::MapPrivacyProtocol(protocol, params);
     if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
-    if (backend != DecryptionBackend::SOFT && backend != DecryptionBackend::CCZ) {
-        return PSI_PIR_INVALID_ARGUMENT;
-    }
     auto decoded = input;
-    // Only HE decryption varies by backend; preserve the attached-value frames and batch order.
+    // Preserve the attached-value frames and batch order while decrypting the working copy.
     for (size_t i = 0; i < input.fheCipherText.size(); ++i) {
-        ret = backend == DecryptionBackend::CCZ
-                  ? internal::CczDecryptToSlots(input.fheCipherText[i], params, identity, decoded.fheCipherText[i])
-                  : internal::BgvDecryptor().DecryptToSlots(input.fheCipherText[i], params, identity,
-                                                            decoded.fheCipherText[i]);
+        ret =
+            internal::BgvDecryptor().DecryptToSlots(input.fheCipherText[i], params, identity, decoded.fheCipherText[i]);
         if (ret != PSI_PIR_SUCCESS) {
             return ret;
         }
     }
     SearchResult result;
-    // Shared open-source post-processing for both SOFT and CCZ: never delegate it to CCZ.
+    // Commit only after every batch and attached-value frame has been processed successfully.
     ret = internal::ProcessDecryptedSearchResult(decoded, protocol, result);
     if (ret == PSI_PIR_SUCCESS) {
         output = std::move(result);

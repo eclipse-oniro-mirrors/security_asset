@@ -20,6 +20,10 @@
 #include "psi_pir_types.h"
 
 namespace OHOS::Security::PrivacyComputation {
+constexpr uint32_t HASH_ALG_NONE = static_cast<uint32_t>(psi_pir::HashAlg::NONE);
+constexpr uint32_t HASH_ALG_SHA256 = static_cast<uint32_t>(psi_pir::HashAlg::SHA256);
+constexpr uint32_t HASH_ALG_SHA384 = static_cast<uint32_t>(psi_pir::HashAlg::SHA384);
+constexpr uint32_t HASH_ALG_SHA512 = static_cast<uint32_t>(psi_pir::HashAlg::SHA512);
 napi_status ParseJsArgs(napi_env env, napi_callback_info info, napi_value *args, size_t expectedCount);
 napi_status ParseJsPrivacyTarget(napi_env env, napi_value value, psi_pir::Bytes &target);
 napi_status ParseJsProtocol(napi_env env, napi_value value, psi_pir::PrivacyProtocol &protocol);

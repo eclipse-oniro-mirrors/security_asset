@@ -24,13 +24,13 @@ namespace psi_pir::internal {
 class IHeSeedDeriver {
 public:
     virtual ~IHeSeedDeriver() = default;
-    virtual int32_t Derive(const std::array<uint8_t, 32> &materialHash, HeSeed &seed) const noexcept = 0;
+    virtual int32_t Derive(const std::array<uint8_t, kIdentityHashSize> &materialHash, HeSeed &seed) const noexcept = 0;
 };
 void SetHeSeedDeriver(std::shared_ptr<const IHeSeedDeriver> deriver) noexcept;
 
 class HeKeyDeriver final {
 public:
-    int32_t DeriveKey(const OperationIdentity &identity, HeSeed &seed) const noexcept;
+    int32_t DeriveKey(const CallerIdentity &identity, HeSeed &seed) const noexcept;
 };
 
 } // namespace psi_pir::internal

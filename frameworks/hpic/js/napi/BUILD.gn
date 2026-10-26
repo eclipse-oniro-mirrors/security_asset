@@ -22,6 +22,7 @@ ohos_shared_library("privacycomputation_napi") {
     "src/hpic_napi_context.cpp",
     "src/hpic_napi_gen_privacy_target.cpp",
     "src/hpic_napi_get_search_result.cpp",
+    "src/hpic_napi_loader.cpp",
     "src/hpic_napi_privacy_search.cpp",
     "src/hpic_napi_utils.cpp",
   ]
@@ -44,6 +45,10 @@ ohos_shared_library("privacycomputation_napi") {
     cfi_cross_dso = true
     boundary_sanitize = true
     ubsan = true
+  }
+
+  if (asset_enable_privacy_computation_config != "") {
+    cflags = [ "-DASSET_ENABLE_PRIVACY_COMPUTATION_CONFIG=\"${asset_enable_privacy_computation_config}\"" ]
   }
 
   cflags_cc = [

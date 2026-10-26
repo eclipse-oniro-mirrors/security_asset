@@ -15,30 +15,14 @@
 
 #ifndef ASSET_PRIVACY_REQUEST_H
 #define ASSET_PRIVACY_REQUEST_H
-
-#include <stdint.h>
-
+#include "privacy_types.h"
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-struct AssetPrivacyInput {
-    uint32_t code;
-    uint32_t uid;
-    const uint8_t *data;
-    uint32_t size;
-};
-
-struct AssetPrivacyOutput {
-    uint8_t *data;
-    uint32_t size;
-};
-
-// Borrowed buffers are valid for the synchronous call; output size is committed only on success.
-int32_t AssetPrivacyRequest(const struct AssetPrivacyInput *input, struct AssetPrivacyOutput *output);
-
+int32_t AssetGenPrivacyTarget(uint32_t uid, const struct PrivacyTargetRequest *input, struct PrivacyBuffer *output);
+int32_t AssetGetPrivacyResult(uint32_t uid, const struct PrivacySearchRequest *input, struct PrivacyResult *output);
+void AssetFreePrivacyResult(struct PrivacyResult *output);
 #ifdef __cplusplus
 }
 #endif
-
 #endif // ASSET_PRIVACY_REQUEST_H

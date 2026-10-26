@@ -16,6 +16,7 @@
 #include "hpic_napi_gen_privacy_target.h"
 #include "hpic_napi_get_search_result.h"
 #include "hpic_napi_privacy_search.h"
+#include "hpic_napi_utils.h"
 #include "napi/native_api.h"
 #include "napi/native_node_api.h"
 
@@ -25,9 +26,6 @@ constexpr uint32_t PRIVATE_INFORMATION_RETRIEVAL = 1;
 constexpr uint32_t DATA_SET_SIZE_128 = 0;
 constexpr uint32_t DATA_SET_SIZE_256 = 1;
 constexpr uint32_t DATA_SET_SIZE_512 = 2;
-constexpr uint32_t HASH_ALG_SHA256 = 0;
-constexpr uint32_t HASH_ALG_SHA384 = 2;
-constexpr uint32_t HASH_ALG_SHA512 = 3;
 constexpr const char *PRIVATE_SET_INTERSECTION_PROTOCOL = "PSI_PROTOCOL";
 constexpr const char *PRIVATE_INFORMATION_RETRIEVAL_PROTOCOL = "PIR_PROTOCOL";
 
@@ -70,6 +68,7 @@ napi_value DeclareHashAlg(const napi_env env)
 {
     napi_value obj;
     NAPI_CALL(env, napi_create_object(env, &obj));
+    NAPI_CALL(env, NapiSetProperty(env, obj, "NONE", HASH_ALG_NONE));
     NAPI_CALL(env, NapiSetProperty(env, obj, "SHA256", HASH_ALG_SHA256));
     NAPI_CALL(env, NapiSetProperty(env, obj, "SHA384", HASH_ALG_SHA384));
     NAPI_CALL(env, NapiSetProperty(env, obj, "SHA512", HASH_ALG_SHA512));

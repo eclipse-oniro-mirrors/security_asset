@@ -21,7 +21,7 @@
 namespace psi_pir::internal {
 class BgvEncryptor final {
 public:
-    int32_t GenerateTarget(const TargetInput &input, const ProtocolParams &params, const OperationIdentity &identity,
+    int32_t GenerateTarget(const TargetInput &input, const ProtocolParams &params, const CallerIdentity &identity,
                            Bytes &output) const noexcept;
 };
 

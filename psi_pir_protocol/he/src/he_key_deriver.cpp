@@ -23,6 +23,11 @@
 
 namespace psi_pir::internal {
 namespace {
+constexpr size_t IDENTITY_FIELD_BYTES = sizeof(uint32_t);
+constexpr size_t USER_ID_OFFSET = IDENTITY_FIELD_BYTES;
+constexpr size_t FIXED_SALT_BYTES = 32;
+constexpr size_t FIXED_SALT_OFFSET = USER_ID_OFFSET + IDENTITY_FIELD_BYTES;
+constexpr size_t IDENTITY_MATERIAL_BYTES = FIXED_SALT_OFFSET + FIXED_SALT_BYTES;
 std::mutex g_seedMutex;
 std::shared_ptr<const IHeSeedDeriver> g_seedDeriver;
 } // namespace
@@ -38,17 +43,18 @@ HeSeed::~HeSeed()
     OPENSSL_cleanse(bytes.data(), bytes.size());
 }
 
-int32_t HeKeyDeriver::DeriveKey(const OperationIdentity &identity, HeSeed &seed) const noexcept
+int32_t HeKeyDeriver::DeriveKey(const CallerIdentity &identity, HeSeed &seed) const noexcept
 {
-    std::array<uint8_t, 40> material{};
-    for (size_t i = 0; i < 4; ++i) {
-        material[i] = static_cast<uint8_t>(identity.uid >> ((3 - i) * 8));
-        material[4 + i] = static_cast<uint8_t>(identity.userId >> ((3 - i) * 8));
+    std::array<uint8_t, IDENTITY_MATERIAL_BYTES> material{};
+    for (size_t i = 0; i < IDENTITY_FIELD_BYTES; ++i) {
+        material[i] = static_cast<uint8_t>(identity.uid >> ((IDENTITY_FIELD_BYTES - 1 - i) * kBitsPerByte));
+        material[USER_ID_OFFSET + i] =
+            static_cast<uint8_t>(identity.userId >> ((IDENTITY_FIELD_BYTES - 1 - i) * kBitsPerByte));
     }
-    for (size_t i = 0; i < 32; ++i) {
-        material[8 + i] = static_cast<uint8_t>(i);
+    for (size_t i = 0; i < FIXED_SALT_BYTES; ++i) {
+        material[FIXED_SALT_OFFSET + i] = static_cast<uint8_t>(i);
     }
-    std::array<uint8_t, 32> digest{};
+    std::array<uint8_t, kIdentityHashSize> digest{};
     unsigned int digestSize = 0;
     const auto digestRet =
         EVP_Digest(material.data(), material.size(), digest.data(), &digestSize, EVP_sha256(), nullptr);

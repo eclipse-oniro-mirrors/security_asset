@@ -24,8 +24,7 @@ namespace psi_pir {
 
 using Bytes = std::vector<std::uint8_t>;
 
-// Protocol-internal values. NAPI maps northbound SHA256=0 explicitly to SHA256;
-// a direct cast of that value would incorrectly select NONE.
+// Shared hash values; omitted hashAlg means no hashing.
 enum class HashAlg : std::uint32_t {
     NONE = 0,
     SHA256 = 1,
@@ -49,19 +48,15 @@ struct PrivacyProtocol {
     ProtocolType protocolType{ProtocolType::PSI_PROTOCOL};
 };
 
-struct OperationIdentity {
+struct CallerIdentity {
     uint32_t uid{0};
     uint32_t userId{0};
 };
 
 struct TargetInput {
     Bytes elemData;
-    HashAlg hashAlg{HashAlg::SHA256};
-    bool isCt{false};
+    HashAlg hashAlg{HashAlg::NONE};
 };
-
-// Selects HE decryption only; result post-processing is always local.
-enum class DecryptionBackend { SOFT, CCZ };
 
 struct Element {
     Bytes elemKey;

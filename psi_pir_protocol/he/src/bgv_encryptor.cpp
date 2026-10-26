@@ -23,12 +23,9 @@
 
 namespace psi_pir::internal {
 int32_t BgvEncryptor::GenerateTarget(const TargetInput &input, const ProtocolParams &params,
-                                     const OperationIdentity &identity, Bytes &output) const noexcept
+                                     const CallerIdentity &identity, Bytes &output) const noexcept
 {
     psi_pir::internal::ProtocolEncoder encoder;
-    if (input.isCt) {
-        return psi_pir::PSI_PIR_UNSUPPORTED_PROTOCOL;
-    }
     if (input.elemData.empty() || encoder.ValidateHashAlgorithm(input.hashAlg) != psi_pir::PSI_PIR_SUCCESS) {
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }

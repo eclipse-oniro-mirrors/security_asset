@@ -13,12 +13,14 @@
  * limitations under the License.
  */
 
-#include "ccz_decrypt_bridge.h"
-#include "psi_pir_error_code.h"
-
-namespace psi_pir::internal {
-int32_t CczDecryptToSlots(const Bytes &, const ProtocolParams &, const OperationIdentity &, Bytes &) noexcept
-{
-    return psi_pir::PSI_PIR_HE_ERROR;
-}
-} // namespace psi_pir::internal
+#ifndef HPIC_PRIVACY_CLIENT_H
+#define HPIC_PRIVACY_CLIENT_H
+#include "privacy_limits.h"
+#include "psi_pir_protocol.h"
+namespace OHOS::Security::PrivacyComputation {
+int32_t GenPrivacyTargetRemote(const psi_pir::TargetInput &input, const psi_pir::PrivacyProtocol &protocol,
+                               psi_pir::Bytes &output);
+int32_t GetSearchResultRemote(const psi_pir::PrivacySearchResult &input, const psi_pir::PrivacyProtocol &protocol,
+                              psi_pir::SearchResult &output);
+} // namespace OHOS::Security::PrivacyComputation
+#endif // HPIC_PRIVACY_CLIENT_H

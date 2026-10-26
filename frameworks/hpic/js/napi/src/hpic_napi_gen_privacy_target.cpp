@@ -15,8 +15,9 @@
 
 #include "hpic_napi_gen_privacy_target.h"
 #include "hpic_napi_common.h"
+#include "hpic_napi_loader.h"
 #include "hpic_napi_utils.h"
-#include "privacy_wire.h"
+#include "privacy_client.h"
 #include <new>
 #include <utility>
 
@@ -38,6 +39,9 @@ napi_status ParseGenPrivacyTargetArgs(napi_env env, napi_callback_info info, Hpi
 
 napi_value NapiGenPrivacyTarget(napi_env env, napi_callback_info info)
 {
+    if (IsCczConfigured()) {
+        return CallComputationNapiFunc(env, info, "GenPrivacyTarget");
+    }
     auto context = std::unique_ptr<GenPrivacyTargetContext>(new (std::nothrow) GenPrivacyTargetContext());
     NAPI_THROW(env, context == nullptr, HPIC_OUT_OF_MEMORY, GetErrorMessage(HPIC_OUT_OF_MEMORY));
     context->parse = ParseGenPrivacyTargetArgs;

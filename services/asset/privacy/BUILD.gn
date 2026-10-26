@@ -11,7 +11,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import("//base/security/asset/config.gni")
 import("//build/ohos.gni")
 ohos_static_library("asset_privacy") {
   sources = [ "src/privacy_service.cpp" ]
@@ -28,7 +27,6 @@ ohos_static_library("asset_privacy") {
     "openssl:libcrypto_shared",
     "os_account:os_account_innerkits",
   ]
-  cflags = [ "-DASSET_ENABLE_PRIVACY_COMPUTATION_CONFIG=\"${asset_enable_privacy_computation_config}\"" ]
   cflags_cc = [
     "-std=c++17",
     "-Wall",

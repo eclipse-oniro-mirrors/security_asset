@@ -38,7 +38,6 @@ ohos_static_library("psi_pir_protocol") {
     "crypto/src/openssl_crypto_provider.cpp",
     "he/src/bgv_decryptor.cpp",
     "he/src/bgv_encryptor.cpp",
-    "he/src/ccz_decrypt_bridge.cpp",
     "he/src/he_key_deriver.cpp",
     "he/src/hifhe_adapter.cpp",
     "he/src/soft_he_engine.cpp",

@@ -24,6 +24,8 @@
 namespace psi_pir::internal {
 using psi_pir::internal::ProtocolParams;
 using psi_pir::internal::Slots;
+constexpr std::size_t kHeSeedSize = 32;
+constexpr std::size_t kIdentityHashSize = 32;
 // Secret storage is cleared at scope exit; no copies may escape an operation.
 class HeSeed final {
 public:
@@ -31,7 +33,7 @@ public:
     ~HeSeed();
     HeSeed(const HeSeed &) = delete;
     HeSeed &operator=(const HeSeed &) = delete;
-    std::array<uint8_t, 32> bytes{};
+    std::array<uint8_t, kHeSeedSize> bytes{};
 };
 
 } // namespace psi_pir::internal
