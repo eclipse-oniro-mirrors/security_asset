@@ -262,23 +262,33 @@ pub(crate) fn check_storage_threshold(calling_info: &CallingInfo) -> Result<()> 
 fn compute_owner_data_size(calling_info: &CallingInfo) -> Result<u64> {
     let user_id = calling_info.user_id();
 
-    // own_db_file 始终用 normal 的 db 文件名（含 .db 后缀）
-    // 群组 db 由 group_prefix（Group_{dev_id}_）匹配，不需要单独作为 own_db_file
-    let (de_db_file, ce_db_file) = match calling_info.owner_type_enum() {
-        OwnerType::Hap | OwnerType::HapGroup => get_hap_db_file_names(calling_info.owner_info())?,
+    // 群组管群组容量，应用管应用自身容量，互不交叉：
+    // - HAP：只统计自身 db（Hap_{owner}_{app_index}.db），不统计群组
+    // - HapGroup：只统计该 developer 名下群组 db（Group_{dev_id}_*.db），不统计自身 HAP db
+    // - Native：只统计自身 db（Native_{owner_info}.db）
+    let (own_db_file, developer_id) = match calling_info.owner_type_enum() {
+        OwnerType::Hap => {
+            let (de, ce) = get_hap_db_file_names(calling_info.owner_info())?;
+            (Some((de, ce)), None)
+        },
+        OwnerType::HapGroup => (None, calling_info.developer_id()),
         OwnerType::Native => {
             let name = construct_splited_db_name(calling_info, false)?;
-            (format!("{}{}", name, DB_SUFFIX), format!("enc_{}{}", name, DB_SUFFIX))
+            let de = format!("{}{}", name, DB_SUFFIX);
+            let ce = format!("enc_{}{}", name, DB_SUFFIX);
+            (Some((de, ce)), None)
         },
     };
 
     let mut total: u64 = 0;
 
     let de_dir = format!("/{}/{}", DE_ROOT_PATH, user_id);
-    total += sum_owner_dbs_in_dir(&de_dir, &de_db_file, calling_info.hap_developer_id(), false)?;
+    let de_own = own_db_file.as_ref().map(|(de, _)| de.as_str());
+    total += sum_owner_dbs_in_dir(&de_dir, de_own, developer_id, false)?;
 
     let ce_dir = format!("/{}/{}/asset_service", CE_ROOT_PATH, user_id);
-    total += sum_owner_dbs_in_dir(&ce_dir, &ce_db_file, calling_info.hap_developer_id(), true)?;
+    let ce_own = own_db_file.as_ref().map(|(_, ce)| ce.as_str());
+    total += sum_owner_dbs_in_dir(&ce_dir, ce_own, developer_id, true)?;
 
     Ok(total)
 }
@@ -290,7 +300,12 @@ fn get_hap_db_file_names(owner_info: &[u8]) -> Result<(String, String)> {
     Ok((format!("{}{}", hap_name, DB_SUFFIX), format!("enc_{}{}", hap_name, DB_SUFFIX)))
 }
 
-fn sum_owner_dbs_in_dir(dir: &str, own_db_file: &str, developer_id: Option<&Vec<u8>>, is_ce: bool) -> Result<u64> {
+fn sum_owner_dbs_in_dir(
+    dir: &str,
+    own_db_file: Option<&str>,
+    developer_id: Option<&Vec<u8>>,
+    is_ce: bool,
+) -> Result<u64> {
     let mut total: u64 = 0;
     let mut counted: HashSet<String> = HashSet::new();
 
@@ -325,7 +340,8 @@ fn sum_owner_dbs_in_dir(dir: &str, own_db_file: &str, developer_id: Option<&Vec<
             continue;
         }
 
-        let matched = file_name == own_db_file || group_prefix.as_ref().map_or(false, |p| file_name.starts_with(p));
+        let matched = own_db_file.map_or(false, |f| file_name == f)
+            || group_prefix.as_ref().map_or(false, |p| file_name.starts_with(p));
 
         if matched {
             let path_str = path.to_string_lossy().to_string();

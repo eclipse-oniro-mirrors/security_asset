@@ -138,7 +138,7 @@ impl ProcessInfo {
         let mut app_id = vec![0u8; 256];
         let (group_id, mut developer_id) = match group_attr {
             Some(Value::Bytes(group_attr)) => (Some(group_attr.clone()), Some(vec![0u8; 128])),
-            _ => (None, Some(vec![0u8; 128])),
+            _ => (None, None),
         };
         let mut process_info_ffi = ProcessInfoFfi::build(&group_id, &mut process_name, &mut app_id, &mut developer_id);
         match unsafe { GetCallingProcessInfo(user_id, uid, &mut process_info_ffi, preload) } {
@@ -151,13 +151,16 @@ impl ProcessInfo {
             },
             error => {
                 let error = ErrCode::try_from(error as u32)?;
-                return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                    error, "[FATAL]Get calling package name failed, res is {}.", error);
+                return macros_lib::log_throw_error!(
+                    macros_lib::hisysevent::function!(),
+                    error,
+                    "[FATAL]Get calling package name failed, res is {}.",
+                    error
+                );
             },
         }
 
         let owner_type = OwnerType::try_from(process_info_ffi.owner_type)?;
-        let developer_id = developer_id.and_then(|v| if v.is_empty() { None } else { Some(v) });
         let process_info_detail = match owner_type {
             OwnerType::Hap | OwnerType::HapGroup => ProcessInfoDetail::Hap(HapInfo {
                 app_id,
