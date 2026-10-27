@@ -30,6 +30,12 @@ int BatchVerifyTicketParamsTest003(void);
 int BatchVerifyTicketParamsTest004(void);
 int BatchVerifyTicketParamsTest005(void);
 int BatchVerifyTicketParamsTest006(void);
+
+int VerifyTicketParamsTest001(void);
+int VerifyTicketParamsTest002(void);
+int VerifyTicketParamsTest003(void);
+int VerifyTicketParamsTest004(void);
+int VerifyTicketParamsTest005(void);
 }
 
 #endif // SAF_AGENT_FENCE_GEN_AND_VER_TICKET_PARAMS_TEST_H

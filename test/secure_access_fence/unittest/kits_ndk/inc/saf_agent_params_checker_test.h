@@ -33,6 +33,14 @@ int CheckBatchVerifyTicketParamsTest005(void);
 int CheckBatchVerifyTicketParamsTest006(void);
 int CheckBatchVerifyTicketParamsTest007(void);
 
+int CheckVerifyTicketParamsTest001(void);
+int CheckVerifyTicketParamsTest002(void);
+int CheckVerifyTicketParamsTest003(void);
+int CheckVerifyTicketParamsTest004(void);
+int CheckVerifyTicketParamsTest005(void);
+int CheckVerifyTicketParamsTest006(void);
+int CheckVerifyTicketParamsTest007(void);
+
 int CheckBatchGenerateTicketParamsCTest001(void);
 int CheckBatchGenerateTicketParamsCTest002(void);
 int CheckBatchGenerateTicketParamsCTest003(void);
