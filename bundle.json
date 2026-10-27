@@ -129,6 +129,16 @@
                     }
                 },
                 {
+                    "name": "//base/security/asset/interfaces/inner_kits/c/secure_access_fence/credential:saf_credential",
+                    "header": {
+                        "header_files": [
+                            "saf_credential.h",
+                            "saf_credential_type.h"
+                        ],
+                        "header_base": "//base/security/asset/interfaces/inner_kits/c/secure_access_fence/credential/inc"
+                    }
+                },
+                {
                     "name": "//base/security/asset/frameworks/asset/c/system_api:asset_sdk",
                     "header": {
                         "header_files": [

@@ -207,6 +207,76 @@ HWTEST_F(SafAgentParamsCheckerTest, CheckBatchVerifyTicketParamsTest007, TestSiz
     EXPECT_EQ(result, SAF_SUCCESS);
 }
 
+HWTEST_F(SafAgentParamsCheckerTest, CheckVerifyTicketParamsTest001, TestSize.Level0)
+{
+    int32_t osAccountId = 100;
+    std::string callerId = "";
+    std::string verifyInfo = "test_info";
+
+    int32_t result = OHOS::Security::SAF::CheckVerifyTicketParams(osAccountId, callerId, verifyInfo);
+    EXPECT_NE(result, SAF_SUCCESS);
+}
+
+HWTEST_F(SafAgentParamsCheckerTest, CheckVerifyTicketParamsTest002, TestSize.Level0)
+{
+    int32_t osAccountId = 100;
+    std::string callerId = "test_caller";
+    std::string verifyInfo = "";
+
+    int32_t result = OHOS::Security::SAF::CheckVerifyTicketParams(osAccountId, callerId, verifyInfo);
+    EXPECT_NE(result, SAF_SUCCESS);
+}
+
+HWTEST_F(SafAgentParamsCheckerTest, CheckVerifyTicketParamsTest003, TestSize.Level0)
+{
+    int32_t osAccountId = 100;
+    std::string callerId = "";
+    std::string verifyInfo = "";
+
+    int32_t result = OHOS::Security::SAF::CheckVerifyTicketParams(osAccountId, callerId, verifyInfo);
+    EXPECT_NE(result, SAF_SUCCESS);
+}
+
+HWTEST_F(SafAgentParamsCheckerTest, CheckVerifyTicketParamsTest004, TestSize.Level0)
+{
+    int32_t osAccountId = 99;
+    std::string callerId = "test_caller";
+    std::string verifyInfo = "test_info";
+
+    int32_t result = OHOS::Security::SAF::CheckVerifyTicketParams(osAccountId, callerId, verifyInfo);
+    EXPECT_NE(result, SAF_SUCCESS);
+}
+
+HWTEST_F(SafAgentParamsCheckerTest, CheckVerifyTicketParamsTest005, TestSize.Level0)
+{
+    int32_t osAccountId = 0;
+    std::string callerId = "test_caller";
+    std::string verifyInfo = "test_info";
+
+    int32_t result = OHOS::Security::SAF::CheckVerifyTicketParams(osAccountId, callerId, verifyInfo);
+    EXPECT_NE(result, SAF_SUCCESS);
+}
+
+HWTEST_F(SafAgentParamsCheckerTest, CheckVerifyTicketParamsTest006, TestSize.Level0)
+{
+    int32_t osAccountId = -1;
+    std::string callerId = "test_caller";
+    std::string verifyInfo = "test_info";
+
+    int32_t result = OHOS::Security::SAF::CheckVerifyTicketParams(osAccountId, callerId, verifyInfo);
+    EXPECT_NE(result, SAF_SUCCESS);
+}
+
+HWTEST_F(SafAgentParamsCheckerTest, CheckVerifyTicketParamsTest007, TestSize.Level0)
+{
+    int32_t osAccountId = 100;
+    std::string callerId = "test_caller";
+    std::string verifyInfo = "test_info";
+
+    int32_t result = OHOS::Security::SAF::CheckVerifyTicketParams(osAccountId, callerId, verifyInfo);
+    EXPECT_EQ(result, SAF_SUCCESS);
+}
+
 HWTEST_F(SafAgentParamsCheckerTest, CheckBatchGenerateTicketParamsCTest001, TestSize.Level0)
 {
     int32_t osAccountId = 100;
