@@ -47,12 +47,38 @@ bool GuiCacheManager::IsInitialized()
     return initialized_;
 }
 
+void GuiCacheManager::BeginRefresh()
+{
+    refreshing_ = true;
+}
+
+void GuiCacheManager::EndRefresh()
+{
+    refreshing_ = false;
+    std::lock_guard<std::mutex> lock(refreshMutex_);
+    refreshCv_.notify_all();
+}
+
+void GuiCacheManager::WaitForRefresh()
+{
+    if (!refreshing_) {
+        return;
+    }
+    std::unique_lock<std::mutex> lock(refreshMutex_);
+    refreshCv_.wait(lock, [this]() {
+        return !refreshing_;
+    });
+}
+
 void GuiCacheManager::ResetForTesting()
 {
     auto &instance = GetInstance();
     std::unique_lock<std::shared_mutex> lock(instance.mutex_);
     instance.deniedSet_.clear();
     instance.initialized_ = false;
+    instance.refreshing_ = false;
+    std::lock_guard<std::mutex> refreshLock(instance.refreshMutex_);
+    instance.refreshCv_.notify_all();
 }
 
 } // namespace OHOS::Security::SAF

@@ -238,4 +238,166 @@ HWTEST_F(GuiCacheManagerTest, UpdateFromFullList_MemoryObservation_001, TestSize
            recordCount);
 }
 
+// ============ Refresh synchronization (BeginRefresh/EndRefresh/WaitForRefresh) ============
+
+/**
+ * @tc.name: WaitForRefresh_NotRefreshing_001
+ * @tc.desc: UT-C-09: WaitForRefresh returns immediately when no refresh is in progress (early-return branch).
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiCacheManagerTest, WaitForRefresh_NotRefreshing_001, TestSize.Level0)
+{
+    auto &cache = GuiCacheManager::GetInstance();
+    // After ResetForTesting, refreshing_ is false, so WaitForRefresh must return immediately.
+    auto start = std::chrono::steady_clock::now();
+    cache.WaitForRefresh();
+    auto end = std::chrono::steady_clock::now();
+    auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    EXPECT_LT(durationMs, 1000); // near-instant, covers the !refreshing_ early return
+}
+
+/**
+ * @tc.name: BeginEndRefresh_WaitUnblocks_001
+ * @tc.desc: UT-C-10: After BeginRefresh, WaitForRefresh blocks until EndRefresh is called.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiCacheManagerTest, BeginEndRefresh_WaitUnblocks_001, TestSize.Level0)
+{
+    auto &cache = GuiCacheManager::GetInstance();
+    cache.BeginRefresh();
+
+    std::atomic<bool> waitingStarted(false);
+    std::atomic<bool> waitingFinished(false);
+
+    std::thread waiter([&waitingStarted, &cache, &waitingFinished]() {
+        waitingStarted = true;
+        cache.WaitForRefresh(); // should block because refreshing_ == true
+        waitingFinished = true;
+    });
+
+    // Wait for the waiter thread to start, then give it time to enter the CV wait.
+    while (!waitingStarted.load()) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    // Confirm the waiter is still blocked.
+    EXPECT_FALSE(waitingFinished.load());
+
+    // EndRefresh clears refreshing_ and notifies the waiter -> unblocks.
+    cache.EndRefresh();
+    waiter.join();
+    EXPECT_TRUE(waitingFinished.load());
+}
+
+/**
+ * @tc.name: EndRefresh_NotifiesAllWaiters_001
+ * @tc.desc: UT-C-11: EndRefresh notifies all waiting threads (notify_all branch).
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiCacheManagerTest, EndRefresh_NotifiesAllWaiters_001, TestSize.Level0)
+{
+    auto &cache = GuiCacheManager::GetInstance();
+    cache.BeginRefresh();
+
+    int waiterCount = 4;
+    std::atomic<int> finishedCount(0);
+    std::vector<std::thread> waiters;
+    for (int i = 0; i < waiterCount; ++i) {
+        waiters.emplace_back([&cache, &finishedCount]() {
+            cache.WaitForRefresh();
+            finishedCount++;
+        });
+    }
+
+    // Confirm all waiters are blocked.
+    std::this_thread::sleep_for(std::chrono::milliseconds(150));
+    EXPECT_EQ(finishedCount.load(), 0);
+
+    cache.EndRefresh();
+    for (auto &t : waiters) {
+        t.join();
+    }
+    EXPECT_EQ(finishedCount.load(), waiterCount);
+}
+
+/**
+ * @tc.name: EndRefresh_NoWaiter_NotifiesNoop_001
+ * @tc.desc: UT-C-12: EndRefresh when no thread is waiting completes without error.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiCacheManagerTest, EndRefresh_NoWaiter_NotifiesNoop_001, TestSize.Level0)
+{
+    auto &cache = GuiCacheManager::GetInstance();
+    cache.BeginRefresh();
+    // EndRefresh with no waiter: notify_all on cv with no waiters is a no-op.
+    cache.EndRefresh();
+    // After EndRefresh, refreshing_ is false, WaitForRefresh returns immediately.
+    auto start = std::chrono::steady_clock::now();
+    cache.WaitForRefresh();
+    auto end = std::chrono::steady_clock::now();
+    auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    EXPECT_LT(durationMs, 1000);
+}
+
+/**
+ * @tc.name: ResetForTesting_ClearsRefreshing_001
+ * @tc.desc: UT-C-13: ResetForTesting clears the refreshing flag and notifies waiting threads.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiCacheManagerTest, ResetForTesting_ClearsRefreshing_001, TestSize.Level0)
+{
+    auto &cache = GuiCacheManager::GetInstance();
+    cache.BeginRefresh();
+
+    std::atomic<bool> waitingFinished(false);
+    std::thread waiter([&cache, &waitingFinished]() {
+        cache.WaitForRefresh();
+        waitingFinished = true;
+    });
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    EXPECT_FALSE(waitingFinished.load());
+
+    // ResetForTesting should clear refreshing_ and notify the waiter.
+    GuiCacheManager::ResetForTesting();
+    waiter.join();
+    EXPECT_TRUE(waitingFinished.load());
+
+    // After reset, refreshing_ is false, WaitForRefresh returns immediately.
+    auto start = std::chrono::steady_clock::now();
+    cache.WaitForRefresh();
+    auto end = std::chrono::steady_clock::now();
+    auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    EXPECT_LT(durationMs, 1000);
+}
+
+/**
+ * @tc.name: BeginRefresh_Twice_WaitUnblocks_001
+ * @tc.desc: UT-C-14: Repeated BeginRefresh/EndRefresh cycle works; WaitForRefresh blocks each refresh cycle.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiCacheManagerTest, BeginRefresh_Twice_WaitUnblocks_001, TestSize.Level0)
+{
+    auto &cache = GuiCacheManager::GetInstance();
+    for (int cycle = 0; cycle < 2; ++cycle) {
+        cache.BeginRefresh();
+        std::atomic<bool> waitingFinished(false);
+        std::thread waiter([&cache, &waitingFinished]() {
+            cache.WaitForRefresh();
+            waitingFinished = true;
+        });
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        EXPECT_FALSE(waitingFinished.load());
+        cache.EndRefresh();
+        waiter.join();
+        EXPECT_TRUE(waitingFinished.load());
+    }
+}
+
 } // namespace UnitTest::GuiCacheManagerTest

@@ -16,6 +16,8 @@
 #ifndef GUI_CACHE_MANAGER_H
 #define GUI_CACHE_MANAGER_H
 
+#include <atomic>
+#include <condition_variable>
 #include <cstdint>
 #include <memory>
 #include <mutex>
@@ -45,6 +47,10 @@ using AppPairKey = std::tuple<std::string, int32_t, std::string, int32_t>;
  * Thread safety: shared_mutex for read-heavy scenario.
  * - Query (IsDenied, IsInitialized) acquires shared lock.
  * - Cache update (UpdateFromFullList) acquires unique lock.
+ *
+ * Refresh synchronization: atomic flag + condition_variable ensure that
+ * CheckControlPermission waits for any in-progress observer-triggered refresh
+ * to complete before reading the cache.
  *
  * Lifecycle: process-level singleton, lives as long as the caller process.
  */
@@ -92,11 +98,28 @@ public:
     bool IsInitialized();
 
     /**
-     * @brief Reset the singleton state for unit test isolation.
+     * @brief Mark the start of a cache refresh.
      *
-     * Clears the denied set and resets the initialized flag to false.
-     * Intended for unit test SetUp/TearDown only; must not be called from production code.
+     * Sets the refreshing flag so that concurrent CheckControlPermission calls
+     * will wait until EndRefresh is called.
      */
+    void BeginRefresh();
+
+    /**
+     * @brief Mark the end of a cache refresh.
+     *
+     * Clears the refreshing flag and notifies all waiting threads.
+     */
+    void EndRefresh();
+
+    /**
+     * @brief Wait for any in-progress refresh to complete.
+     *
+     * If a refresh is in progress, blocks until EndRefresh is called.
+     * Returns immediately if no refresh is active.
+     */
+    void WaitForRefresh();
+
     static void ResetForTesting();
 
 private:
@@ -108,6 +131,9 @@ private:
     std::shared_mutex mutex_;
     std::set<AppPairKey> deniedSet_;
     bool initialized_ {false};
+    std::atomic<bool> refreshing_ {false};
+    std::mutex refreshMutex_;
+    std::condition_variable refreshCv_;
 };
 
 } // namespace OHOS::Security::SAF

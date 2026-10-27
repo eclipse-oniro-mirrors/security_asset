@@ -437,39 +437,19 @@ int32_t GetOsAccountIdFromTokenId(uint32_t tokenId)
 
 // ---- IPC 505-509 Service functions (TDD stubs - to be implemented in T06-T08) ----
 
-ErrCode CheckControlPermission(
-    const AppInfo &callerApp,
-    const AppInfo &targetApp,
+ErrCode QueryAllDeniedPairs(
     std::vector<std::string> &deniedPairs,
     int32_t &resultCode)
 {
     auto startTime = std::chrono::steady_clock::now();
-    if (callerApp.bundleName.empty()) {
-        LOGE("CheckControlPermission failed, callerApp.bundleName is empty");
-        resultCode = SAF_ERR_ARG_EMPTY;
-        return SAF_SUCCESS;
-    }
-    if (targetApp.bundleName.empty()) {
-        LOGE("CheckControlPermission failed, targetApp.bundleName is empty");
-        resultCode = SAF_ERR_ARG_EMPTY;
-        return SAF_SUCCESS;
-    }
-
-    std::vector<AppInfo> appInfoList = {callerApp, targetApp};
-    int32_t validateResult = ValidateAppInfoList(appInfoList);
-    if (validateResult != SAF_SUCCESS) {
-        LOGE("CheckControlPermission ValidateAppInfoList failed, ret=%{public}d", validateResult);
-        resultCode = validateResult;
-        return SAF_SUCCESS;
-    }
-
+    
     // Get OS account ID from foreground user (calling UID may belong to system SA with osAccountId=0)
     int32_t osAccountId = INVALID_OS_ACCOUNT_ID;
     int32_t foregroundOsAccountId = 0;
     if (GetForegroundOsAccountId(&foregroundOsAccountId)) {
         osAccountId = foregroundOsAccountId;
     } else {
-        LOGE("CheckControlPermission failed to get foreground os account id");
+        LOGE("QueryAllDeniedPairs failed to get foreground os account id");
         resultCode = SAF_ERR_INVALID_OS_ACCOUNT_ID;
         return SAF_SUCCESS;
     }
@@ -477,7 +457,7 @@ ErrCode CheckControlPermission(
     rust::Vec<rust::String> deniedPairsRust;
     int32_t queryRet = query_all_denied_pairs(osAccountId, deniedPairsRust);
     if (queryRet != SAF_SUCCESS) {
-        LOGE("CheckControlPermission query_all_denied_pairs failed, ret=%{public}d", queryRet);
+        LOGE("QueryAllDeniedPairs query_all_denied_pairs failed, ret=%{public}d", queryRet);
         resultCode = queryRet;
         return SAF_SUCCESS;
     }
@@ -491,9 +471,9 @@ ErrCode CheckControlPermission(
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
     int32_t elapsedTime = static_cast<int32_t>(duration.count());
     notify_performance_metrics(static_cast<int32_t>(deniedPairs.size()), elapsedTime,
-        osAccountId, rust::String("CheckControlPermission"));
+        osAccountId, rust::String("QueryAllDeniedPairs"));
 
-    LOGI("CheckControlPermission success, deniedPairs size=%{public}zu", deniedPairs.size());
+    LOGI("QueryAllDeniedPairs success, deniedPairs size=%{public}zu", deniedPairs.size());
     resultCode = SAF_SUCCESS;
     return SAF_SUCCESS;
 }

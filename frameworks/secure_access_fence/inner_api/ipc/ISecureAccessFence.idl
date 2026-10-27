@@ -239,23 +239,18 @@ interface OHOS.Security.SAF.ISecureAccessFence {
     );
 
     /**
-     * @brief Check whether the caller app is allowed to control the target app.
+     * @brief Query the full list of explicitly-denied app-pairs for GUI control.
      *
-     * This IPC carries the first-time full-list fetch responsibility: the Service queries
-     * the closed-source module for the full list of user-explicitly-denied app-pairs and
-     * returns them. The inner SDK writes the list into the in-memory cache and then answers
-     * individual decision queries from the cache (2ms path). Subsequent queries do not go
-     * through this IPC.
+     * The Service queries the closed-source module for the full list of
+     * user-explicitly-denied app-pairs and returns them. The caller (inner SDK)
+     * writes the list into the in-memory cache and answers individual decision
+     * queries from the cache.
      *
-     * @param callerApp The caller app (A app) information.
-     * @param targetApp The target app (B app) information.
      * @param deniedPairs Output full list of explicitly-denied app-pairs. Each entry is
      *                    serialized as "callerBundleName:callerIndex:targetBundleName:targetIndex".
      * @param resultCode Error code output (0 for success).
      */
-    [ipccode 505] void CheckControlPermission(
-        [in] AppInfo callerApp,
-        [in] AppInfo targetApp,
+    [ipccode 505] void QueryAllDeniedPairs(
         [out] List<String> deniedPairs,
         [out] int resultCode
     );

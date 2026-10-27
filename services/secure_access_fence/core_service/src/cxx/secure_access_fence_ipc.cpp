@@ -223,45 +223,34 @@ int32_t HandleQueryControlAppStatus(MessageParcel& data, MessageParcel& reply)
     return WriteControlAppResultList(reply, resultList, resultCode);
 }
 
-int32_t HandleCheckControlPermission(MessageParcel& data, MessageParcel& reply)
+int32_t HandleQueryAllDeniedPairs(MessageParcel& data, MessageParcel& reply)
 {
-    AppInfo callerApp;
-    if (AppInfoBlockUnmarshalling(data, callerApp) != ERR_NONE) {
-        LOGE("HandleCheckControlPermission read callerApp failed");
-        return SAF_ERR_IPC_READ_DATA_FAIL;
-    }
-    AppInfo targetApp;
-    if (AppInfoBlockUnmarshalling(data, targetApp) != ERR_NONE) {
-        LOGE("HandleCheckControlPermission read targetApp failed");
-        return SAF_ERR_IPC_READ_DATA_FAIL;
-    }
-
     std::vector<std::string> deniedPairs;
     int32_t resultCode = 0;
-    ErrCode errCode = CheckControlPermission(callerApp, targetApp, deniedPairs, resultCode);
+    ErrCode errCode = QueryAllDeniedPairs(deniedPairs, resultCode);
     if (!reply.WriteInt32(errCode)) {
-        LOGE("HandleCheckControlPermission write errCode failed");
+        LOGE("HandleQueryAllDeniedPairs write errCode failed");
         return SAF_ERR_IPC_WRITE_DATA_FAIL;
     }
     if (!SUCCEEDED(errCode)) {
         return SAF_SUCCESS;
     }
     if (deniedPairs.size() > static_cast<size_t>(VECTOR_MAX_SIZE)) {
-        LOGE("HandleCheckControlPermission deniedPairs size exceeds limit");
+        LOGE("HandleQueryAllDeniedPairs deniedPairs size exceeds limit");
         return SAF_ERR_IPC_WRITE_DATA_FAIL;
     }
     if (!reply.WriteInt32(static_cast<int32_t>(deniedPairs.size()))) {
-        LOGE("HandleCheckControlPermission write deniedPairs size failed");
+        LOGE("HandleQueryAllDeniedPairs write deniedPairs size failed");
         return SAF_ERR_IPC_WRITE_DATA_FAIL;
     }
     for (const auto &pair : deniedPairs) {
         if (!reply.WriteString16(Str8ToStr16(pair))) {
-            LOGE("HandleCheckControlPermission write deniedPair failed");
+            LOGE("HandleQueryAllDeniedPairs write deniedPair failed");
             return SAF_ERR_IPC_WRITE_DATA_FAIL;
         }
     }
     if (!reply.WriteInt32(resultCode)) {
-        LOGE("HandleCheckControlPermission write resultCode failed");
+        LOGE("HandleQueryAllDeniedPairs write resultCode failed");
         return SAF_ERR_IPC_WRITE_DATA_FAIL;
     }
     return SAF_SUCCESS;
@@ -393,7 +382,7 @@ const std::unordered_map<uint32_t, IpcHandler> IPC_HANDLERS = {
     {SecureAccessFenceCode::REQUEST_TOOL_PERMISSION, HandleRequestToolPermission},
     {SecureAccessFenceCode::GRANT_TOOL_PERMISSION, HandleGrantToolPermission},
     {SecureAccessFenceCode::QUERY_CONTROL_APP_STATUS, HandleQueryControlAppStatus},
-    {SecureAccessFenceCode::CHECK_CONTROL_PERMISSION, HandleCheckControlPermission},
+    {SecureAccessFenceCode::CHECK_CONTROL_PERMISSION, HandleQueryAllDeniedPairs},
     {SecureAccessFenceCode::REGISTER_COMPONENT_CLICK_CALLBACK, HandleRegisterComponentClickCallback},
     {SecureAccessFenceCode::REPORT_COMPONENT_CLICK_DECISION, HandleReportComponentClickDecision},
     {SecureAccessFenceCode::UNREGISTER_COMPONENT_CLICK_CALLBACK, HandleUnregisterComponentClickCallback},
