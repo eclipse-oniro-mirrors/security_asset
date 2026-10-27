@@ -28,6 +28,8 @@
 #include "ipc_skeleton.h"
 #include "saf_log.h"
 #include "saf_result_code.h"
+#include "settings_observer.h"
+#include "os_account_manager.h"
 
 namespace OHOS::Security::SAF {
 
@@ -36,8 +38,11 @@ namespace {
 constexpr int32_t WAIT_TIMEOUT_IN_SEC = 5;
 constexpr int32_t SAF_SERVICE_ID = 66532;
 constexpr int32_t ERR_REMOTE_DEAD = 29189;
+constexpr const char *SETTINGS_KEY_AGENT_APP_CONTROL_STATUS = "agent_app_control_status";
 
 std::recursive_mutex g_mutex;
+// Observer kept alive for the process lifetime.
+sptr<SettingsDataObserver> g_settingsObserver;
 
 sptr<ISecureAccessFence> GetProxy(std::recursive_mutex &mutex, bool needCheck = true)
 {
@@ -114,26 +119,31 @@ static bool ParseDeniedPair(const std::string &pair, AppPairKey &key)
     return true;
 }
 
-// First-time full-list fetch via IPC 505 to initialize the cache.
-// Returns SAF_SUCCESS on success.
-static int32_t InitCacheFromService(const AppInfo &callerApp, const AppInfo &targetApp)
+// Fetch full denied-pairs list from service via IPC 505 and update the cache.
+// Uses BeginRefresh/EndRefresh to synchromize with concurrent readers.
+static int32_t RefreshDeniedPairs()
 {
+    auto &cache = GuiCacheManager::GetInstance();
+    cache.BeginRefresh();
     auto proxy = GetProxy(g_mutex);
     if (proxy == nullptr) {
-        LOGE("CheckControlPermission failed, load sa fail");
+        LOGE("RefreshDeniedPairs: load sa fail");
+        cache.EndRefresh();
         return SAF_ERR_SERVICE_UNAVAILABLE;
     }
 
     std::vector<std::string> deniedPairs;
     int32_t resultCode = SAF_SUCCESS;
     int32_t ret = HandleIpcError(proxy,
-        [&]() { return proxy->CheckControlPermission(callerApp, targetApp, deniedPairs, resultCode); });
+        [&]() {return proxy->QueryAllDeniedPairs(deniedPairs, resultCode); });
     if (ret != SAF_SUCCESS) {
-        LOGE("CheckControlPermission IPC call failed, ret=%{public}d", ret);
+        LOGE("RefreshDeniedPairs: IPC call failed, ret=%{public}d", ret);
+        cache.EndRefresh();
         return SAF_ERR_IPC_PROXY_FAIL;
     }
     if (resultCode != SAF_SUCCESS) {
-        LOGE("CheckControlPermission service error, resultCode=%{public}d", resultCode);
+        LOGE("RefreshDeniedPairs: service error, resultCode=%{public}d", resultCode);
+        cache.EndRefresh();
         return resultCode;
     }
 
@@ -144,7 +154,50 @@ static int32_t InitCacheFromService(const AppInfo &callerApp, const AppInfo &tar
             deniedKeys.push_back(key);
         }
     }
-    GuiCacheManager::GetInstance().UpdateFromFullList(deniedKeys);
+    cache.UpdateFromFullList(deniedKeys);
+    cache.EndRefresh();
+    LOGI("RefreshedDeniedPairs: success, deniedPairs size = %{public}zu", deniedKeys.size());
+    return SAF_SUCCESS;
+}
+
+// Register a settings DataShare observer to refresh the cache when agent_app_control_status changes.
+static void RegisterCacheObserver()
+{
+    int32_t userId = 0;
+    int32_t ret = OHOS::AccountSA::OsAccountManager::GetForegroundOsAccountLocalId(userId);
+    if (ret != 0) {
+        LOGE("RegisterCacheObserver: GetForegroundOsAccountLocalId failed, ret=%{public}d", ret);
+        return;
+    }
+
+    g_settingsObserver = sptr<SettingsDataObserver>::MakeSptr([]() {
+        LOGI("Settings observer: agent_app_control_status changed, refreshing cache");
+        RefreshDeniedPairs();
+    });
+    if (g_settingsObserver == nullptr) {
+        LOGE("RegisterCacheObserver: failed to create observer");
+        return;
+    }
+
+    if (!RegisterSettingsObserver(SETTINGS_KEY_AGENT_APP_CONTROL_STATUS, userId, g_settingsObserver)) {
+        LOGE("RegisterCacheObserver: RegisterSettingsObserver failed");
+        g_settingsObserver = nullptr;
+        return;
+    }
+    LOGI("RegisterCacheObserver: success");
+}
+
+// First-time full-list fetch via IPC 505 to initialize the cache.
+// Returns SAF_SUCCESS on success.
+static int32_t InitCacheFromService()
+{
+    int32_t ret = RefreshDeniedPairs();
+    if (ret != SAF_SUCCESS) {
+        LOGE("InitCacheFromService: RefreshDeniedPairs failed, ret=%{public}d", ret);
+        return ret;
+    }
+    // Register observer for settings changes.
+    RegisterCacheObserver();
     return SAF_SUCCESS;
 }
 
@@ -188,12 +241,13 @@ int32_t SafGuiFence::CheckControlPermission(
 
     auto &cache = GuiCacheManager::GetInstance();
     if (!cache.IsInitialized()) {
-        ret = InitCacheFromService(callerApp, targetApp);
+        ret = InitCacheFromService();
         if (ret != SAF_SUCCESS) {
             return ret;
         }
     }
 
+    cache.WaitForRefresh();
     bool denied = cache.IsDenied(callerApp.bundleName, callerApp.index, targetApp.bundleName, targetApp.index);
     decision = denied ? ControlDecision::DENY : ControlDecision::ALLOW;
 

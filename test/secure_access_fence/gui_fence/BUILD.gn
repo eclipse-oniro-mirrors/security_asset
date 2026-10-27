@@ -48,6 +48,43 @@ ohos_unittest("saf_gui_cache_manager_test") {
   }
 }
 
+ohos_unittest("saf_settings_observer_test") {
+  module_out_path = module_output_path
+  subsystem_name = "security"
+  part_name = "asset"
+
+  include_dirs = [
+    "../../../frameworks/secure_access_fence/inner_api/gui_fence/inc",
+    "../../../frameworks/secure_access_fence/os_dependency/log/inc",
+  ]
+
+  sources = [
+    "src/settings_observer_test.cpp",
+    "../../../frameworks/secure_access_fence/inner_api/gui_fence/src/settings_observer.cpp",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "data_share:datashare_common",
+    "data_share:datashare_consumer",
+    "hilog:libhilog",
+    "ipc:ipc_single",
+    "samgr:samgr_proxy",
+    "ability_runtime:dataobs_manager",
+    "googletest:gtest_main",
+  ]
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+}
+
 ohos_unittest("saf_gui_service_test") {
   module_out_path = module_output_path
   subsystem_name = "security"

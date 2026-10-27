@@ -71,26 +71,10 @@ static void ResetMock()
 // plugin call replaced by the mock above. This allows T06 tests to pass without linking the
 // full Service static library (which requires Rust cxx bridge + many external deps).
 
-ErrCode CheckControlPermission(
-    const AppInfo &callerApp,
-    const AppInfo &targetApp,
+ErrCode QueryAllDeniedPairs(
     std::vector<std::string> &deniedPairs,
     int32_t &resultCode)
 {
-    if (callerApp.bundleName.empty()) {
-        resultCode = SAF_ERR_ARG_EMPTY;
-        return SAF_SUCCESS;
-    }
-    if (targetApp.bundleName.empty()) {
-        resultCode = SAF_ERR_ARG_EMPTY;
-        return SAF_SUCCESS;
-    }
-
-    if (callerApp.index < 0 || targetApp.index < 0) {
-        resultCode = SAF_ERR_ARG_INVALID;
-        return SAF_SUCCESS;
-    }
-
     if (!g_mockQuerySuccess) {
         resultCode = SAF_ERROR;
         return SAF_SUCCESS;
@@ -219,138 +203,55 @@ protected:
 // ============ CheckControlPermission (IPC 505) ============
 
 /**
- * @tc.name: CheckControlPermission_001
- * @tc.desc: UT-S-01: Valid caller + valid params + closed-source returns denied list.
+ * @tc.name: QueryAllDeniedPairs_001
+ * @tc.desc: UT-S-01: Closed-source returns denied list
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(GuiServiceTest, CheckControlPermission_001, TestSize.Level0)
+HWTEST_F(GuiServiceTest, QueryAllDeniedPairs_001, TestSize.Level0)
 {
-    auto callerApp = MakeAppInfo("com.app.a", 0);
-    auto targetApp = MakeAppInfo("com.app.b", 0);
     SetMockDeniedPairs({"com.app.a:0:com.app.b:0", "com.app.c:0:com.app.d:0"});
     std::vector<std::string> deniedPairs;
     int32_t resultCode = -1;
-    ErrCode errCode = CheckControlPermission(callerApp, targetApp, deniedPairs, resultCode);
+    ErrCode errCode = QueryAllDeniedPairs(deniedPairs, resultCode);
     EXPECT_EQ(errCode, SAF_SUCCESS);
     EXPECT_EQ(resultCode, SAF_SUCCESS);
     EXPECT_EQ(deniedPairs.size(), 2u);
 }
 
 /**
- * @tc.name: CheckControlPermission_002
- * @tc.desc: UT-S-02: Valid caller + valid params + closed-source returns empty list.
+ * @tc.name: QueryAllDeniedPairs_002
+ * @tc.desc: UT-S-02: Closed-source returns empty list
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(GuiServiceTest, CheckControlPermission_002, TestSize.Level0)
+HWTEST_F(GuiServiceTest, QueryAllDeniedPairs_002, TestSize.Level0)
 {
-    auto callerApp = MakeAppInfo("com.app.a", 0);
-    auto targetApp = MakeAppInfo("com.app.b", 0);
     SetMockDeniedPairs({});
     std::vector<std::string> deniedPairs;
     int32_t resultCode = -1;
-    ErrCode errCode = CheckControlPermission(callerApp, targetApp, deniedPairs, resultCode);
+    ErrCode errCode = QueryAllDeniedPairs(deniedPairs, resultCode);
     EXPECT_EQ(errCode, SAF_SUCCESS);
     EXPECT_EQ(resultCode, SAF_SUCCESS);
     EXPECT_TRUE(deniedPairs.empty());
 }
 
 /**
- * @tc.name: CheckControlPermission_003
- * @tc.desc: UT-S-03: callerApp.bundleName is empty -> SAF_ERR_ARG_EMPTY.
+ * @tc.name: QueryAllDeniedPairs_003
+ * @tc.desc: UT-S-03: Query fails -> SAF_ERR.
  * @tc.type: FUNC
  * @tc.require:
  */
-HWTEST_F(GuiServiceTest, CheckControlPermission_003, TestSize.Level0)
-{
-    auto callerApp = MakeAppInfo("", 0);
-    auto targetApp = MakeAppInfo("com.app.b", 0);
-    std::vector<std::string> deniedPairs;
-    int32_t resultCode = -1;
-    ErrCode errCode = CheckControlPermission(callerApp, targetApp, deniedPairs, resultCode);
-    EXPECT_EQ(errCode, SAF_SUCCESS);
-    EXPECT_EQ(resultCode, SAF_ERR_ARG_EMPTY);
-}
-
-/**
- * @tc.name: CheckControlPermission_004
- * @tc.desc: UT-S-04: targetApp.bundleName is empty -> SAF_ERR_ARG_EMPTY.
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(GuiServiceTest, CheckControlPermission_004, TestSize.Level0)
-{
-    auto callerApp = MakeAppInfo("com.app.a", 0);
-    auto targetApp = MakeAppInfo("", 0);
-    std::vector<std::string> deniedPairs;
-    int32_t resultCode = -1;
-    ErrCode errCode = CheckControlPermission(callerApp, targetApp, deniedPairs, resultCode);
-    EXPECT_EQ(errCode, SAF_SUCCESS);
-    EXPECT_EQ(resultCode, SAF_ERR_ARG_EMPTY);
-}
-
-/**
- * @tc.name: CheckControlPermission_005
- * @tc.desc: UT-S-05: ValidateAppInfoList fails -> corresponding error code.
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(GuiServiceTest, CheckControlPermission_005, TestSize.Level0)
-{
-    auto callerApp = MakeAppInfo("com.app.a", -1); // negative index
-    auto targetApp = MakeAppInfo("com.app.b", 0);
-    std::vector<std::string> deniedPairs;
-    int32_t resultCode = -1;
-    ErrCode errCode = CheckControlPermission(callerApp, targetApp, deniedPairs, resultCode);
-    EXPECT_EQ(errCode, SAF_SUCCESS);
-    EXPECT_EQ(resultCode, SAF_ERR_ARG_INVALID);
-}
-
-/**
- * @tc.name: CheckControlPermission_006
- * @tc.desc: UT-S-06: Caller permission check fails -> SAF_ERR_PERMISSION_DENIED (mock placeholder).
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(GuiServiceTest, CheckControlPermission_006, TestSize.Level0)
+HWTEST_F(GuiServiceTest, QueryAllDeniedPairs_003, TestSize.Level0)
 {
     // Permission check is reserved; this test is a placeholder.
     // When the permission check mechanism is determined, mock it here.
-    auto callerApp = MakeAppInfo("com.app.a", 0);
-    auto targetApp = MakeAppInfo("com.app.b", 0);
-    SetMockDeniedPairs({});
+    SetMockQueryFail();
     std::vector<std::string> deniedPairs;
     int32_t resultCode = -1;
-    ErrCode errCode = CheckControlPermission(callerApp, targetApp, deniedPairs, resultCode);
+    ErrCode errCode = QueryAllDeniedPairs(deniedPairs, resultCode);
     EXPECT_EQ(errCode, SAF_SUCCESS);
-    // Placeholder: once permission check is implemented, expect SAF_ERR_PERMISSION_DENIED
-    // for unauthorized callers.
-    SUCCEED();
-}
-
-/**
- * @tc.name: CheckControlPermission_006b
- * @tc.desc: UT-S-06b: callerApp equals targetApp -> ALLOW (pair not in denied list, naturally allowed).
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(GuiServiceTest, CheckControlPermission_006b, TestSize.Level0)
-{
-    auto callerApp = MakeAppInfo("com.app.a", 0);
-    auto targetApp = MakeAppInfo("com.app.a", 0);
-    // Self-denial is not a normal business scenario; the pair is not in the denied list.
-    SetMockDeniedPairs({});
-    std::vector<std::string> deniedPairs;
-    int32_t resultCode = -1;
-    ErrCode errCode = CheckControlPermission(callerApp, targetApp, deniedPairs, resultCode);
-    EXPECT_EQ(errCode, SAF_SUCCESS);
-    EXPECT_EQ(resultCode, SAF_SUCCESS);
-    // Verify the self-pair is not in the denied list.
-    std::string selfPair = "com.app.a:0:com.app.a:0";
-    for (const auto &pair : deniedPairs) {
-        EXPECT_NE(pair, selfPair);
-    }
+    EXPECT_EQ(resultCode, SAF_ERROR);
 }
 
 // ============ RegisterComponentClickCallback (IPC 506) ============

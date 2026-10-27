@@ -57,6 +57,7 @@ group("asset_bin_test") {
     "test/secure_access_fence/unittest/kits_ndk:saf_agent_fence_ndk_test",
     #"test/secure_access_fence/agent_fence:saf_agent_fence_retrieve_auth_token_test",
     "test/secure_access_fence/gui_fence:saf_gui_cache_manager_test",
+    "test/secure_access_fence/gui_fence:saf_settings_observer_test",
     "test/secure_access_fence/gui_fence:saf_gui_service_test",
     "test/secure_access_fence/gui_fence:saf_gui_inner_api_test",
     #"test/secure_access_fence/credential:saf_credential_test",

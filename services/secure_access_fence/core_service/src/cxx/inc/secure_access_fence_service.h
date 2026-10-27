@@ -96,20 +96,14 @@ int32_t GetOsAccountIdFromTokenId(uint32_t tokenId);
 /**
  * @brief Query the full list of explicitly-denied app-pairs for GUI control (IPC 505).
  *
- * This IPC carries the first-time full-list fetch responsibility: the Service queries the
- * closed-source module for the full list of user-explicitly-denied app-pairs and returns
- * them. The inner SDK writes the list into the in-memory cache and then answers individual
- * decision queries from the cache (2ms path).
+ * The Service queries the closed-source module for the full list of
+ * user-explicitly-denied app-pairs and returns them.
  *
- * @param callerApp The caller app (A app) information.
- * @param targetApp The target app (B app) information.
  * @param deniedPairs Output full list of denied app-pairs.
  * @param resultCode Output business result code.
  * @return Returns ErrCode (always success, business result in resultCode).
  */
-ErrCode CheckControlPermission(
-    const AppInfo &callerApp,
-    const AppInfo &targetApp,
+ErrCode QueryAllDeniedPairs(
     std::vector<std::string> &deniedPairs,
     int32_t &resultCode);
 
