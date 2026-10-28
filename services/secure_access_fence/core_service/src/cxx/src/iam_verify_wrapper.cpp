@@ -19,6 +19,7 @@
 #include <chrono>
 #include <future>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include "saf_log.h"
@@ -36,28 +37,39 @@ namespace SAF {
 
 constexpr int32_t IAM_VERIFY_RESULT_NOT_SET = -1;
 constexpr int32_t IAM_VERIFY_RESULT_TIMEOUT = -2;
-constexpr int32_t IAM_VERIFY_TIMEOUT_MS = 10000;
+constexpr int32_t IAM_VERIFY_TIMEOUT_MS = 5000;
 
-class SyncVerifyCallback final : public VerifyTokenCallback {
+struct IamVerifyAsyncResult {
+    int32_t resultCode {IAM_VERIFY_RESULT_NOT_SET};
+    std::vector<uint8_t> challenge;
+    uint32_t authTrustLevel {0};
+};
+
+class VerifyTokenCallbackWrapper final : public VerifyTokenCallback {
 public:
-    SyncVerifyCallback() : future_(promise_.get_future().share()) {}
-    virtual ~SyncVerifyCallback() = default;
+    explicit VerifyTokenCallbackWrapper(std::weak_ptr<std::promise<IamVerifyAsyncResult>> weakPromise)
+        : weakPromise_(weakPromise) {}
+
+    virtual ~VerifyTokenCallbackWrapper() = default;
+
     void OnResult(int32_t result, const Attributes &extraInfo) override
     {
-        if (!resultSet_) {
-            result_ = result;
-            extraInfo_ = extraInfo.Serialize();
-            promise_.set_value();
-            resultSet_ = true;
-        }
+        std::call_once(flag_, [this, result, &extraInfo]() {
+            IamVerifyAsyncResult verifyResult;
+            verifyResult.resultCode = result;
+            if (result == SUCCESS) {
+                extraInfo.GetUint8ArrayValue(Attributes::ATTR_CHALLENGE, verifyResult.challenge);
+                extraInfo.GetUint32Value(Attributes::ATTR_AUTH_TRUST_LEVEL, verifyResult.authTrustLevel);
+            }
+            if (auto sharedPromise = weakPromise_.lock()) {
+                sharedPromise->set_value(verifyResult);
+            }
+        });
     }
-    std::shared_future<void> GetFuture() { return future_; }
-    int32_t result_ = IAM_VERIFY_RESULT_NOT_SET;
-    std::vector<uint8_t> extraInfo_;
+
 private:
-    std::promise<void> promise_;
-    std::shared_future<void> future_;
-    bool resultSet_ = false;
+    std::once_flag flag_{};
+    std::weak_ptr<std::promise<IamVerifyAsyncResult>> weakPromise_;
 };
 
 IamVerifyResult VerifyAuthToken(const rust::Vec<uint8_t> &authToken, uint64_t allowableDurationMs)
@@ -67,25 +79,25 @@ IamVerifyResult VerifyAuthToken(const rust::Vec<uint8_t> &authToken, uint64_t al
         ret.result_code = IAM_VERIFY_RESULT_NOT_SET;
         return ret;
     }
+
     std::vector<uint8_t> token(authToken.begin(), authToken.end());
-    auto callback = std::make_shared<SyncVerifyCallback>();
+    auto sharedPromise = std::make_shared<std::promise<IamVerifyAsyncResult>>();
+    auto future = sharedPromise->get_future();
+    auto callback = std::make_shared<VerifyTokenCallbackWrapper>(sharedPromise);
     UserAccessCtrlClient::GetInstance().VerifyAuthToken(token, allowableDurationMs, callback);
-    auto status = callback->GetFuture().wait_for(std::chrono::milliseconds(IAM_VERIFY_TIMEOUT_MS));
-    if (status == std::future_status::timeout) {
+
+    if (future.wait_for(std::chrono::milliseconds(IAM_VERIFY_TIMEOUT_MS)) == std::future_status::timeout) {
         LOGE("VerifyAuthToken timeout");
         ret.result_code = IAM_VERIFY_RESULT_TIMEOUT;
         return ret;
     }
-    ret.result_code = callback->result_;
-    if (callback->result_ == SUCCESS && !callback->extraInfo_.empty()) {
-        Attributes attr(callback->extraInfo_);
-        std::vector<uint8_t> challenge;
-        attr.GetUint8ArrayValue(Attributes::ATTR_CHALLENGE, challenge);
-        for (auto b : challenge) {
-            ret.challenge.push_back(b);
-        }
-        attr.GetUint32Value(Attributes::ATTR_AUTH_TRUST_LEVEL, ret.auth_trust_level);
+
+    IamVerifyAsyncResult verifyResult = future.get();
+    ret.result_code = verifyResult.resultCode;
+    for (auto b : verifyResult.challenge) {
+        ret.challenge.push_back(b);
     }
+    ret.auth_trust_level = verifyResult.authTrustLevel;
     return ret;
 }
 

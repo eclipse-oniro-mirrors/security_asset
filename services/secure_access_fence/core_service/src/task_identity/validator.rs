@@ -19,28 +19,10 @@
 
 use saf_definition::{macros_lib, ErrCode, ExecuteType, Result, TaskIdentityInfo};
 
-// ============================================================================
-// IMPORTANT: The constants and path traversal patterns below MUST be kept in
-// sync with the C++ NAPI layer definitions in:
-//   frameworks/common/napi/inc/napi_common.h
-//   frameworks/common/napi/src/napi_common.cpp
-// If you modify any value here, update the C++ files and vice versa.
-// ============================================================================
-
-/// Max path segment length for taskId, caller_token, etc.
-const MAX_PATH_SEGMENT_LEN: usize = 256;
-/// Max auth token size in bytes (DoS prevention).
-const MAX_AUTH_TOKEN_SIZE: usize = 4096;
-/// Max allowable duration in seconds — 24 hours (passed to IAM as ms).
-const MAX_ALLOWABLE_DURATION: i32 = 86400;
-/// Max task IDs per revoke call.
-const MAX_REVOKE_TASK_IDS: usize = 100;
-
-/// Path traversal patterns to detect in file path segments.
-/// IMPORTANT: Keep in sync with PATH_TRAVERSAL_PATTERNS in napi_common.cpp.
-const PATH_TRAVERSAL_PATTERNS: &[&str] = &[
-    "../", "..//", "./", ".\\", "//", "\\", "/", "/..", "\\..", "..",
-];
+use super::constants::{
+    MAX_PATH_SEGMENT_LEN, MAX_AUTH_TOKEN_SIZE, MAX_ALLOWABLE_DURATION,
+    DEFAULT_ALLOWABLE_DURATION, MAX_REVOKE_TASK_IDS, PATH_TRAVERSAL_PATTERNS,
+};
 
 /// Checks if a string contains path traversal characters.
 fn contains_path_traversal(segment: &str) -> bool {
@@ -70,15 +52,12 @@ pub fn validate_path_segment(segment: &str) -> Result<()> {
 /// Validates TaskIdentityInfo:
 /// - taskId path safety
 /// - taskExpireTime: -1 (never) or positive; INSTANT cannot be -1
-/// - authToken size ≤4096; each value must be in u8 range (0~255)
-/// - allowableDuration: must be >0 when provided (non-zero)
-pub fn validate_task_id_info(info: &TaskIdentityInfo) -> Result<()> {
+/// - authToken size ≤1024
+/// - allowableDuration: 0 means not provided, defaults to 60; otherwise must be (0, 60]
+pub fn validate_task_id_info(info: &mut TaskIdentityInfo) -> Result<()> {
     validate_path_segment(&info.task_id)?;
-    if info.task_expire_time == 0 {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "taskExpireTime must not be 0; use -1 for never");
-    }
     if info.task_expire_time < -1 {
-        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "taskExpireTime must be -1 or positive");
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "taskExpireTime must be -1 or greater");
     }
     if info.execute_type == ExecuteType::Instant && info.task_expire_time == -1 {
         return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
@@ -88,15 +67,11 @@ pub fn validate_task_id_info(info: &TaskIdentityInfo) -> Result<()> {
         return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
             "authToken too large: {} > {}", info.auth_token.len(), MAX_AUTH_TOKEN_SIZE);
     }
-    if info.allowable_duration != 0 {
-        if info.allowable_duration <= 0 {
-            return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
-                "allowableDuration must be positive when provided");
-        }
-        if info.allowable_duration > MAX_ALLOWABLE_DURATION {
-            return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
-                "allowableDuration exceeds max: {} > {}", info.allowable_duration, MAX_ALLOWABLE_DURATION);
-        }
+    if info.allowable_duration == 0 {
+        info.allowable_duration = DEFAULT_ALLOWABLE_DURATION;
+    } else if info.allowable_duration < 0 || info.allowable_duration > MAX_ALLOWABLE_DURATION {
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
+            "allowableDuration must be in (0, 60], got {}", info.allowable_duration);
     }
     Ok(())
 }

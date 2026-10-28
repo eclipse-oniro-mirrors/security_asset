@@ -448,9 +448,9 @@ pub fn cxx_store_controlled_grant_record(
     }
 }
 
-/// Get the binder calling token id as a string.
-pub fn get_calling_token_id() -> String {
-    ffi::GetCallingTokenId().to_string()
+/// Get the binder calling token id.
+pub fn get_calling_token_id() -> u32 {
+    ffi::GetCallingTokenId()
 }
 
 /// C++ -> Rust bridge for task identity verification (memory first,
@@ -462,13 +462,14 @@ pub fn cxx_verify_task_identity(
     identity: &str,
     challenge: &str,
 ) -> i32 {
+    let caller: u32 = caller_token_id.parse().unwrap_or(0);
     logi!(
         "[Wrapper cxx_verify_task_identity] os_account_id = {}, caller = {}, task_attributes_len = {}",
-        os_account_id, caller_token_id.len(), task_attributes.len()
+        os_account_id, caller, task_attributes.len()
     );
     match crate::task_identity::verify_task_identity(
         os_account_id,
-        caller_token_id,
+        caller,
         task_attributes,
         identity,
         challenge,

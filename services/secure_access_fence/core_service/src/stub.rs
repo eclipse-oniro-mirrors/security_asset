@@ -595,12 +595,12 @@ fn handle_query_static_cli_cmd_permissions(
 fn handle_generate_task_challenge(
     stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel
 ) -> IpcResult<()> {
-    let info = deserialize_task_identity_info(data).map_err(|e| {
+    let mut info = deserialize_task_identity_info(data).map_err(|e| {
         loge!("[FATAL]Deserialize GenerateTaskChallenge request failed: {}", e.msg);
         IpcStatusCode::Failed
     })?;
 
-    if let Err(e) = validator::validate_task_id_info(&info) {
+    if let Err(e) = validator::validate_task_id_info(&mut info) {
         loge!("[FATAL]GenerateTaskChallenge validation failed: {}", e.msg);
         reply.write::<i32>(&(IPC_SUCCESS as i32))?;
         let empty: Vec<u8> = vec![];
@@ -643,12 +643,12 @@ fn handle_generate_task_challenge(
 fn handle_generate_task_identity(
     stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel
 ) -> IpcResult<()> {
-    let info = deserialize_task_identity_info(data).map_err(|e| {
+    let mut info = deserialize_task_identity_info(data).map_err(|e| {
         loge!("[FATAL]Deserialize GenerateTaskIdentity request failed: {}", e.msg);
         IpcStatusCode::Failed
     })?;
 
-    if let Err(e) = validator::validate_task_id_info(&info) {
+    if let Err(e) = validator::validate_task_id_info(&mut info) {
         loge!("[FATAL]GenerateTaskIdentity validation failed: {}", e.msg);
         reply.write::<i32>(&(IPC_SUCCESS as i32))?;
         let empty = saf_definition::TaskIdentity::default();

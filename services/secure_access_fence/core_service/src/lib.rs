@@ -98,6 +98,8 @@ struct CommonEventInfoFfi {
 const DELAYED_UNLOAD_TIME_IN_SEC: i32 = 60; // 60s
 const UNLOAD_CHECK_INTERVAL_IN_SEC: u64 = 3;
 const SEC_TO_MILLISEC: i32 = 1000;
+// Estimated time for async task identity disk cleanup for one os account.
+const DISK_CLEANUP_TIME_IN_MS: i32 = 1500;
 
 pub(crate) fn unload_sa() {
     let start_time = Instant::now();
@@ -175,12 +177,6 @@ impl Ability for SAFAbility {
             return remaining_ms.min(ticket_operation::challenge_store::MAX_CHALLENGE_VALIDITY_MS) as i32;
         }
 
-        // Cleanup task identity records expired more than 3 days (low-frequency, on idle only)
-        let store = task_identity::store::global_task_identity_store();
-        for os_account_id in store.enumerate_os_account_ids() {
-            store.clean_expired_instant_tasks(os_account_id);
-        }
-
         let delay_time = match SAFPlugin::get_instance().load_plugin() {
             Ok(loader) => {
                 let delay_time = loader.on_idle();
@@ -196,6 +192,16 @@ impl Ability for SAFAbility {
                 0
             },
         };
+
+        // If async disk cleanup was scheduled, ensure the SA stays alive until cleanup finishes.
+        let store = task_identity::store::global_task_identity_store();
+        let os_account_num = store.on_idle_cleanup();
+        let clean_time = os_account_num as i32 * DISK_CLEANUP_TIME_IN_MS;
+        if delay_time < clean_time {
+            logi!("disk cleanup scheduled, delay unload by {}ms", clean_time);
+            return clean_time;
+        }
+
         if delay_time == 0 {
             CriticalManager::get_instance().set_critical(false);
         }
@@ -496,7 +502,7 @@ impl SAFService {
         )
     }
 
-    fn generate_task_challenge(&self, os_account_id: i32, info: TaskIdentityInfo) -> Result<Vec<u8>> {
+    fn generate_task_challenge(&self, os_account_id: i32, mut info: TaskIdentityInfo) -> Result<Vec<u8>> {
         if let Err(code) = check_query_tool_permission(os_account_id, "generate_task_challenge") {
             return macros_lib::log_throw_error!(code, "Permission denied");
         }
@@ -505,12 +511,12 @@ impl SAFService {
             "generate_task_challenge",
             task_identity::generate_task_challenge,
             os_account_id,
-            &caller,
-            &info
+            caller,
+            &mut info
         )
     }
 
-    fn generate_task_identity(&self, os_account_id: i32, info: TaskIdentityInfo) -> Result<TaskIdentity> {
+    fn generate_task_identity(&self, os_account_id: i32, mut info: TaskIdentityInfo) -> Result<TaskIdentity> {
         if let Err(code) = check_query_tool_permission(os_account_id, "generate_task_identity") {
             return macros_lib::log_throw_error!(code, "Permission denied");
         }
@@ -519,8 +525,8 @@ impl SAFService {
             "generate_task_identity",
             task_identity::generate_task_identity,
             os_account_id,
-            &caller,
-            &info
+            caller,
+            &mut info
         )
     }
 
@@ -533,7 +539,7 @@ impl SAFService {
             "revoke_task_identity",
             task_identity::revoke_task_identities,
             os_account_id,
-            &caller,
+            caller,
             task_ids
         )
     }
@@ -547,39 +553,38 @@ impl SAFService {
         if let Err(code) = check_retrieve_auth_token_permission(os_account_id) {
             return macros_lib::log_throw_error!(code, "Permission denied");
         }
-        let caller = caller_token.to_string();
+        let caller = caller_token as u32;
         execute_with_metrics_single!(
             "retrieve_auth_token_by_task_id",
             task_identity::retrieve_auth_token_by_task_id,
             os_account_id,
-            &caller,
+            caller,
             &task_id
         )
     }
 }
 
+fn check_and_notify(
+    os_account_id: i32,
+    function_name: &str,
+    check_fn: impl Fn() -> bool,
+    error_msg: &str,
+    error_code: ErrCode,
+) -> std::result::Result<(), ErrCode> {
+    if !check_fn() {
+        loge!("{}", error_msg);
+        notify_error(error_msg.to_string(), error_code as i32, os_account_id, function_name.to_string());
+        return Err(error_code);
+    }
+    Ok(())
+}
+
 fn check_query_tool_permission(os_account_id: i32, function_name: &str) -> std::result::Result<(), ErrCode> {
     let permission = CString::new(QUERY_TOOL_PERMISSIONS).unwrap();
-    if unsafe { !CheckPermission(permission.as_ptr()) } {
-        loge!("Permission denied! Need {}", QUERY_TOOL_PERMISSIONS);
-        notify_error(
-            "Permission denied".to_string(),
-            ErrCode::PermissionDenied as i32,
-            os_account_id,
-            function_name.to_string(),
-        );
-        return Err(ErrCode::PermissionDenied);
-    }
-    if unsafe { !CheckIsSystemHap() } {
-        loge!("Caller is not system hap");
-        notify_error(
-            "Caller is not system hap".to_string(),
-            ErrCode::NotSystemApp as i32,
-            os_account_id,
-            function_name.to_string(),
-        );
-        return Err(ErrCode::NotSystemApp);
-    }
+    check_and_notify(os_account_id, function_name, || unsafe { CheckPermission(permission.as_ptr()) },
+        &format!("Permission denied! Need {}", QUERY_TOOL_PERMISSIONS), ErrCode::PermissionDenied)?;
+    check_and_notify(os_account_id, function_name, || unsafe { CheckIsSystemHap() },
+        "Caller is not system hap", ErrCode::NotSystemApp)?;
     Ok(())
 }
 
@@ -587,38 +592,14 @@ fn check_query_tool_permission(os_account_id: i32, function_name: &str) -> std::
 /// Requires: system SA caller, QUERY_TOOL_PERMISSIONS, INTERACT_ACROSS_LOCAL_ACCOUNTS.
 fn check_retrieve_auth_token_permission(os_account_id: i32) -> std::result::Result<(), ErrCode> {
     let function_name = "retrieve_auth_token_by_task_id";
-    if unsafe { !CheckIsSystemSa() } {
-        loge!("Caller is not system SA");
-        notify_error(
-            "Caller is not system SA".to_string(),
-            ErrCode::NotSystemApp as i32,
-            os_account_id,
-            function_name.to_string(),
-        );
-        return Err(ErrCode::NotSystemApp);
-    }
-    let permission = CString::new(QUERY_TOOL_PERMISSIONS).unwrap();
-    if unsafe { !CheckPermission(permission.as_ptr()) } {
-        loge!("Permission denied! Need {}", QUERY_TOOL_PERMISSIONS);
-        notify_error(
-            "Permission denied".to_string(),
-            ErrCode::PermissionDenied as i32,
-            os_account_id,
-            function_name.to_string(),
-        );
-        return Err(ErrCode::PermissionDenied);
-    }
-    let cross_permission = CString::new(INTERACT_ACROSS_LOCAL_ACCOUNTS).unwrap();
-    if unsafe { !CheckPermission(cross_permission.as_ptr()) } {
-        loge!("Permission denied! Need {}", INTERACT_ACROSS_LOCAL_ACCOUNTS);
-        notify_error(
-            "Permission denied".to_string(),
-            ErrCode::PermissionDenied as i32,
-            os_account_id,
-            function_name.to_string(),
-        );
-        return Err(ErrCode::PermissionDenied);
-    }
+    let query_perm = CString::new(QUERY_TOOL_PERMISSIONS).unwrap();
+    let cross_perm = CString::new(INTERACT_ACROSS_LOCAL_ACCOUNTS).unwrap();
+    check_and_notify(os_account_id, function_name, || unsafe { CheckIsSystemSa() },
+        "Caller is not system SA", ErrCode::NotSystemApp)?;
+    check_and_notify(os_account_id, function_name, || unsafe { CheckPermission(query_perm.as_ptr()) },
+        &format!("Permission denied! Need {}", QUERY_TOOL_PERMISSIONS), ErrCode::PermissionDenied)?;
+    check_and_notify(os_account_id, function_name, || unsafe { CheckPermission(cross_perm.as_ptr()) },
+        &format!("Permission denied! Need {}", INTERACT_ACROSS_LOCAL_ACCOUNTS), ErrCode::PermissionDenied)?;
     Ok(())
 }
 
