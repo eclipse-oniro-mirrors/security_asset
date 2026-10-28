@@ -57,6 +57,7 @@ group("asset_bin_test") {
     "psi_pir_protocol:psi_pir_protocol_test",
     "psi_pir_protocol:psi_pir_he_test",
     "test/asset/unittest/privacy_protocol:asset_privacy_protocol_test",
+    "test/asset/unittest/privacy_root:asset_privacy_root_test",
     "test/secure_access_fence/unittest/kits_ndk:saf_agent_fence_ndk_test",
     "test/secure_access_fence/gui_fence:saf_gui_cache_manager_test",
     "test/secure_access_fence/gui_fence:saf_settings_observer_test",

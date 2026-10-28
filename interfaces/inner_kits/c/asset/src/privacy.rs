@@ -14,14 +14,11 @@
  */
 
 //! Typed C bindings, following the existing full.rs Manager/guard convention.
-use asset_sdk::privacy::{PrivacyTargetRequest, PrivacySearchRequest, PrivacyBuffer,
-    PrivacyResult, PrivacyBlobList};
+use asset_sdk::privacy::{PrivacyTargetRequest, PrivacySearchRequest, PrivacyBuffer};
 #[cfg(not(feature = "AssetEmptyMode"))]
-use asset_sdk::privacy::{PrivacyBlob, SearchResponse, blobs, MAX_BYTES, PROTOCOL_SUCCESS};
+use asset_sdk::privacy::{encode_result_bytes, MAX_BYTES, PROTOCOL_SUCCESS};
 #[cfg(not(feature = "AssetEmptyMode"))]
 use asset_log::loge;
-use std::ptr::null;
-use std::ptr::null_mut;
 #[cfg(not(feature = "AssetEmptyMode"))]
 use asset_sdk::full::Manager;
 #[cfg(not(feature = "AssetEmptyMode"))]
@@ -32,28 +29,6 @@ const UNSUPPORTED: i32 = 2;
 const INVALID_ARGUMENT: i32 = 1;
 #[cfg(not(feature = "AssetEmptyMode"))]
 const INTERNAL_ERROR: i32 = 9;
-
-#[cfg(not(feature = "AssetEmptyMode"))]
-struct ResultStorage {
-    values: Vec<Vec<u8>>,
-    blobs: Vec<PrivacyBlob>,
-}
-
-#[cfg(not(feature = "AssetEmptyMode"))]
-fn into_result(response: SearchResponse) -> PrivacyResult {
-    let has_values = response.values.is_some();
-    let mut result_storage = Box::new(ResultStorage {
-        values: response.values.unwrap_or_default(),
-        blobs: Vec::new(),
-    });
-    result_storage.blobs = blobs(&result_storage.values);
-    PrivacyResult {
-        matched: response.matched as u32,
-        has_values: has_values as u32,
-        values: PrivacyBlobList { data: result_storage.blobs.as_ptr(), count: result_storage.blobs.len() as u32 },
-        storage: Box::into_raw(result_storage) as *mut std::ffi::c_void,
-    }
-}
 
 #[cfg(not(feature = "AssetEmptyMode"))]
 fn map_privacy_error(code: ErrCode) -> i32 {
@@ -115,21 +90,26 @@ pub unsafe extern "C" fn asset_privacy_gen_target(
     PROTOCOL_SUCCESS
 }
 
-/// Retrieves an owned result through Asset IPC; release it with asset_privacy_free_result.
+/// Retrieves an encoded result into caller-owned storage; no allocation ownership is transferred.
+/// Output bytes and size are committed only after successful IPC, encoding and capacity validation.
 ///
 /// # Safety
-/// Non-null input must point to an aligned, initialized request. Its descriptor arrays and
-/// nonempty byte ranges must be readable and unchanged until this call returns.
-/// Non-null output must be aligned, initialized, exclusively writable and disjoint from input.
-/// It must be zero-initialized or previously freed; do not overwrite an outstanding result.
+/// Non-null input and output must point to aligned, initialized request and buffer structs.
+/// Input descriptors and nonempty byte ranges must remain readable and unchanged during this call.
+/// Output storage must be exclusively writable for its declared capacity and must not overlap
+/// the input ranges or descriptor structs. The caller retains ownership of all buffers.
 #[cfg(not(feature = "AssetEmptyMode"))]
 #[no_mangle]
 pub unsafe extern "C" fn asset_privacy_get_result(
     input: *const PrivacySearchRequest,
-    output: *mut PrivacyResult,
+    output: *mut PrivacyBuffer,
 ) -> i32 {
     if input.is_null() || output.is_null() {
         loge!("Privacy FFI input or output is null");
+        return INVALID_ARGUMENT;
+    }
+    let output = &mut *output;
+    if output.data.is_null() || output.size as usize > MAX_BYTES {
         return INVALID_ARGUMENT;
     }
     let input = match (*input).to_value() {
@@ -154,16 +134,24 @@ pub unsafe extern "C" fn asset_privacy_get_result(
     if result != PROTOCOL_SUCCESS {
         return result;
     }
-    match response {
-        Some(res) => {
-            *output = into_result(res);
-            PROTOCOL_SUCCESS
-        },
+    let response = match response {
+        Some(response) => response,
         None => {
             loge!("Missing privacy response after successful IPC");
-            INTERNAL_ERROR
+            return INTERNAL_ERROR;
         },
+    };
+    let bytes = match encode_result_bytes(&response) {
+        Ok(bytes) => bytes,
+        Err(e) => return map_privacy_error(e.code),
+    };
+    if bytes.len() > output.size as usize {
+        loge!("Privacy result exceeds output capacity");
+        return INVALID_ARGUMENT;
     }
+    std::ptr::copy_nonoverlapping(bytes.as_ptr(), output.data, bytes.len());
+    output.size = bytes.len() as u32;
+    PROTOCOL_SUCCESS
 }
 
 /// Returns UNSUPPORTED without reading or writing the request or output in empty mode.
@@ -184,35 +172,12 @@ pub unsafe extern "C" fn asset_privacy_gen_target(
 ///
 /// # Safety
 /// This build does not dereference either pointer, so null pointers are accepted and no
-/// pointee validity is required. Existing result storage is not released or replaced.
+/// pointee validity is required. No output storage is accessed.
 #[cfg(feature = "AssetEmptyMode")]
 #[no_mangle]
 pub unsafe extern "C" fn asset_privacy_get_result(
     _input: *const PrivacySearchRequest,
-    _output: *mut PrivacyResult,
+    _output: *mut PrivacyBuffer,
 ) -> i32 {
     UNSUPPORTED
-}
-
-/// Releases a result allocated by this module and clears it; null output is accepted.
-///
-/// # Safety
-/// Non-null output must point to an aligned, initialized, exclusively accessible result struct.
-/// It must be zero-initialized, previously cleared, or an unchanged, unreleased result returned
-/// by this module. Do not pass a copied ownership handle or storage from another allocator.
-/// No outstanding reader may access the result's descriptors or bytes during or after release.
-#[no_mangle]
-pub unsafe extern "C" fn asset_privacy_free_result(output: *mut PrivacyResult) {
-    if output.is_null() {
-        return;
-    }
-    let output = &mut *output;
-    #[cfg(not(feature = "AssetEmptyMode"))]
-    if !output.storage.is_null() {
-        drop(Box::from_raw(output.storage as *mut ResultStorage));
-    }
-    output.storage = null_mut();
-    output.values = PrivacyBlobList { data: null(), count: 0 };
-    output.matched = 0;
-    output.has_values = 0;
 }

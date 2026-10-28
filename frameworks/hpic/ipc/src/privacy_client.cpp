@@ -15,6 +15,7 @@
 
 #include "privacy_client.h"
 #include "privacy_client_ffi.h"
+#include "privacy_result_codec.h"
 #include <utility>
 
 namespace OHOS::Security::PrivacyComputation {
@@ -74,39 +75,15 @@ int32_t GetSearchResultRemote(const psi_pir::PrivacySearchResult &input, const p
         {ciphertexts.data(), static_cast<uint32_t>(ciphertexts.size())},
         input.symCipherText ? 1U : 0U,
         {symmetric.data(), static_cast<uint32_t>(symmetric.size())}};
-    PrivacyResult result{};
+    psi_pir::Bytes bytes(MAX_PRIVACY_BYTES);
+    PrivacyBuffer result{bytes.data(), static_cast<uint32_t>(bytes.size())};
     const auto ret = asset_privacy_get_result(&request, &result);
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
-        asset_privacy_free_result(&result);
         return ret;
     }
-    psi_pir::SearchResult decoded;
-    decoded.matchedResult = result.matched == 1;
-    bool valid = result.matched <= 1 && result.hasValues <= 1 && result.values.count <= MAX_PRIVACY_ITEMS &&
-                 (result.values.count == 0 || result.values.data != nullptr) &&
-                 (result.hasValues == 1 || result.values.count == 0);
-    if (valid && result.hasValues == 1) {
-        decoded.attachedValues.emplace();
-        size_t bytes = RESULT_FIXED_BYTES + PRIVACY_LENGTH_BYTES;
-        for (uint32_t i = 0; i < result.values.count && valid; ++i) {
-            const auto &value = result.values.data[i];
-            valid = bytes <= MAX_PRIVACY_BYTES - PRIVACY_LENGTH_BYTES &&
-                    value.size <= MAX_PRIVACY_BYTES - bytes - PRIVACY_LENGTH_BYTES &&
-                    (value.size == 0 || value.data != nullptr);
-            if (valid) {
-                bytes += PRIVACY_LENGTH_BYTES + value.size;
-                decoded.attachedValues->emplace_back();
-                if (value.size != 0) {
-                    decoded.attachedValues->back().assign(value.data, value.data + value.size);
-                }
-            }
-        }
-    }
-    asset_privacy_free_result(&result);
-    if (!valid) {
+    if (result.size > bytes.size() || !DecodePrivacyResult(bytes.data(), result.size, output)) {
         return psi_pir::PSI_PIR_CODEC_ERROR;
     }
-    output = std::move(decoded);
     return psi_pir::PSI_PIR_SUCCESS;
 }
 } // namespace OHOS::Security::PrivacyComputation

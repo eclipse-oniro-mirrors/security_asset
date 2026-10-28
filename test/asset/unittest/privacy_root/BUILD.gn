@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import("//build/test.gni")
+import("//build/ohos.gni")
+
+ohos_unittest("asset_privacy_root_test") {
+  module_out_path = "asset/hpic"
+  sources = [
+    "src/huks_seed_deriver_test.cpp",
+    "../../../../services/asset/privacy/src/huks_seed_deriver.cpp",
+  ]
+  include_dirs = [
+    "../../../../services/asset/privacy/inc",
+    "../../../../psi_pir_protocol/common/inc",
+    "../../../../psi_pir_protocol/he/inc",
+    "../../../../psi_pir_protocol/protocol/inc",
+  ]
+  deps = [ "../../../../psi_pir_protocol:psi_pir_protocol" ]
+  external_deps = [
+    "huks:libhukssdk",
+    "hilog:libhilog",
+    "openssl:libcrypto_shared",
+    "googletest:gtest_main",
+  ]
+  cflags_cc = [
+    "-std=c++17",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+  ]
+  subsystem_name = "security"
+  part_name = "asset"
+}

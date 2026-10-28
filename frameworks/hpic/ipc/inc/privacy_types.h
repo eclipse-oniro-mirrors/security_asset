@@ -49,14 +49,6 @@ struct PrivacyBuffer {
     uint8_t *data;
     uint32_t size;
 };
-// Result storage is owned by the producing module; release it with that module's free function.
-// Zero-initialize before a call and free before reusing; do not duplicate storage.
-struct PrivacyResult {
-    uint32_t matched;
-    uint32_t hasValues;
-    struct PrivacyBlobList values;
-    void *storage;
-};
 #ifdef __cplusplus
 }
 #endif

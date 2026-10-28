@@ -15,7 +15,6 @@
 
 //! Typed PSI/PIR DTOs and the same field-by-field Parcel pattern as Asset maps.
 use crate::{ipc_err_handle, macros_lib, ErrCode, MsgParcel, Result};
-use std::ffi::c_void;
 
 /// Maximum logical field budget in bytes, excluding the interface token and Parcel alignment.
 pub const MAX_BYTES: usize = 256 * 1024;
@@ -96,19 +95,6 @@ pub struct PrivacyBuffer {
     pub size: u32,
 }
 
-/// Native result view backed by storage owned by the producing module.
-#[repr(C)]
-pub struct PrivacyResult {
-    /// Match flag encoded as zero or one.
-    pub matched: u32,
-    /// Presence flag distinguishing an absent list from a present empty list.
-    pub has_values: u32,
-    /// Borrowed result bytes, valid until the producing module releases storage.
-    pub values: PrivacyBlobList,
-    /// Opaque allocation handle; release through the producing module, without copying ownership.
-    pub storage: *mut c_void,
-}
-
 /// Owned target generation fields used by the Rust Parcel serializer.
 pub struct TargetRequest {
     /// Protocol selectors for target generation.
@@ -129,7 +115,7 @@ pub struct SearchRequest {
     pub symmetric: Option<Vec<Vec<u8>>>,
 }
 
-/// Owned result copied from native storage or deserialized from a service reply.
+/// Owned result decoded from a caller-owned native buffer or a service reply.
 pub struct SearchResponse {
     /// Whether any item matched the target.
     pub matched: bool,
@@ -234,25 +220,73 @@ impl PrivacySearchRequest {
     }
 }
 
-impl PrivacyResult {
-    /// Copies the native result while preserving the distinction between absent and empty values.
-    ///
-    /// # Safety
-    /// When values are present, a nonempty list must contain count aligned, initialized descriptors.
-    /// Every nonempty byte range must be readable for its declared size. The producing module must
-    /// not release or mutate any referenced storage until this call returns.
-    pub unsafe fn to_value(&self) -> Result<SearchResponse> {
-        if self.matched > 1 || self.has_values > 1 {
+/// Encodes a native result as little-endian u32 flags, followed (when values are present)
+/// by a u32 count and repeated u32 length + bytes. The complete buffer is limited to MAX_BYTES.
+pub fn encode_result_bytes(value: &SearchResponse) -> Result<Vec<u8>> {
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(&(value.matched as u32).to_le_bytes());
+    bytes.extend_from_slice(&(value.values.is_some() as u32).to_le_bytes());
+    let mut total = RESULT_FIXED_BYTES;
+    if let Some(values) = &value.values {
+        if values.len() > MAX_ITEMS {
             return invalid();
         }
-        let mut total = RESULT_FIXED_BYTES;
-        let values = if self.has_values == 1 {
-            Some(copy_list(self.values, &mut total)?)
-        } else {
-            None
-        };
-        Ok(SearchResponse { matched: self.matched == 1, values })
+        charge(&mut total, LENGTH_BYTES)?;
+        bytes.extend_from_slice(&(values.len() as u32).to_le_bytes());
+        for value in values {
+            charge(&mut total, LENGTH_BYTES)?;
+            charge(&mut total, value.len())?;
+            bytes.extend_from_slice(&(value.len() as u32).to_le_bytes());
+            bytes.extend_from_slice(value);
+        }
     }
+    Ok(bytes)
+}
+
+fn read_result_word(bytes: &[u8], offset: &mut usize) -> Result<u32> {
+    if bytes.len() - *offset < LENGTH_BYTES {
+        return invalid();
+    }
+    let mut word = [0u8; LENGTH_BYTES];
+    word.copy_from_slice(&bytes[*offset..*offset + LENGTH_BYTES]);
+    *offset += LENGTH_BYTES;
+    Ok(u32::from_le_bytes(word))
+}
+
+/// Decodes the same-process FFI result buffer, preserving None versus Some(empty).
+/// Rejects invalid flags, oversized counts, truncation and trailing bytes.
+pub fn decode_result_bytes(bytes: &[u8]) -> Result<SearchResponse> {
+    if bytes.len() > MAX_BYTES {
+        return invalid();
+    }
+    let mut offset = 0;
+    let matched = read_result_word(bytes, &mut offset)?;
+    let has_values = read_result_word(bytes, &mut offset)?;
+    if matched > 1 || has_values > 1 {
+        return invalid();
+    }
+    let values = if has_values == 1 {
+        let count = read_result_word(bytes, &mut offset)? as usize;
+        if count > MAX_ITEMS || count > (bytes.len() - offset) / LENGTH_BYTES {
+            return invalid();
+        }
+        let mut values = Vec::new();
+        for _ in 0..count {
+            let length = read_result_word(bytes, &mut offset)? as usize;
+            if length > bytes.len() - offset {
+                return invalid();
+            }
+            values.push(bytes[offset..offset + length].to_vec());
+            offset += length;
+        }
+        Some(values)
+    } else {
+        None
+    };
+    if offset != bytes.len() {
+        return invalid();
+    }
+    Ok(SearchResponse { matched: matched == 1, values })
 }
 
 impl TargetRequest {

@@ -20,8 +20,8 @@
 extern "C" {
 #endif
 int32_t AssetGenPrivacyTarget(uint32_t uid, const struct PrivacyTargetRequest *input, struct PrivacyBuffer *output);
-int32_t AssetGetPrivacyResult(uint32_t uid, const struct PrivacySearchRequest *input, struct PrivacyResult *output);
-void AssetFreePrivacyResult(struct PrivacyResult *output);
+// Caller owns output storage. On success, size is the encoded length; failure leaves output unchanged.
+int32_t AssetGetPrivacyResult(uint32_t uid, const struct PrivacySearchRequest *input, struct PrivacyBuffer *output);
 #ifdef __cplusplus
 }
 #endif

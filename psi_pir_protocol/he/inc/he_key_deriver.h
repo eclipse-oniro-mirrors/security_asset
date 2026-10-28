@@ -24,7 +24,8 @@ namespace psi_pir::internal {
 class IHeSeedDeriver {
 public:
     virtual ~IHeSeedDeriver() = default;
-    virtual int32_t Derive(const std::array<uint8_t, kIdentityHashSize> &materialHash, HeSeed &seed) const noexcept = 0;
+    virtual int32_t Derive(const CallerIdentity &identity, const std::array<uint8_t, kIdentityHashSize> &materialHash,
+                           HeSeed &seed) const noexcept = 0;
 };
 void SetHeSeedDeriver(std::shared_ptr<const IHeSeedDeriver> deriver) noexcept;
 

@@ -40,8 +40,11 @@ public:
 // Test-only provider proves explicit injection and identity binding; it is not a production KDF.
 class RecordingSeedDeriver final : public IHeSeedDeriver {
 public:
-    int32_t Derive(const std::array<uint8_t, 32> &hash, HeSeed &seed) const noexcept override
+    mutable CallerIdentity lastIdentity{};
+    int32_t Derive(const CallerIdentity &identity, const std::array<uint8_t, 32> &hash,
+                   HeSeed &seed) const noexcept override
     {
+        lastIdentity = identity;
         seed.bytes = hash;
         seed.bytes[0] ^= 0xa5;
         return PSI_PIR_SUCCESS;
@@ -55,7 +58,8 @@ HWTEST_F(PsiPirHeTest, SeedRequiresServiceProviderAndBindsIdentity, TestSize.Lev
     first.bytes.fill(0x99);
     EXPECT_EQ(HeKeyDeriver().DeriveKey({1000, 100}, first), PSI_PIR_HE_ERROR);
     EXPECT_EQ(first.bytes[0], 0x99);
-    SetHeSeedDeriver(std::make_shared<RecordingSeedDeriver>());
+    const auto provider = std::make_shared<RecordingSeedDeriver>();
+    SetHeSeedDeriver(provider);
     HeSeed repeated;
     HeSeed other;
     ASSERT_EQ(HeKeyDeriver().DeriveKey({1000, 100}, first), PSI_PIR_SUCCESS);
@@ -65,6 +69,8 @@ HWTEST_F(PsiPirHeTest, SeedRequiresServiceProviderAndBindsIdentity, TestSize.Lev
     EXPECT_NE(first.bytes, other.bytes);
     ASSERT_EQ(HeKeyDeriver().DeriveKey({1000, 101}, other), PSI_PIR_SUCCESS);
     EXPECT_NE(first.bytes, other.bytes);
+    EXPECT_EQ(provider->lastIdentity.uid, 1000U);
+    EXPECT_EQ(provider->lastIdentity.userId, 101U);
 }
 
 /* @tc.name: UnavailableBackendsPreserveOutputs

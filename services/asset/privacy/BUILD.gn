@@ -13,7 +13,10 @@
 
 import("//build/ohos.gni")
 ohos_static_library("asset_privacy") {
-  sources = [ "src/privacy_service.cpp" ]
+  sources = [
+    "src/privacy_service.cpp",
+    "src/huks_seed_deriver.cpp",
+  ]
   include_dirs = [
     "inc",
     "../../../frameworks/hpic/ipc/inc",
@@ -24,7 +27,7 @@ ohos_static_library("asset_privacy") {
   deps = [ "../../../psi_pir_protocol:psi_pir_protocol" ]
   external_deps = [
     "hilog:libhilog",
-    "openssl:libcrypto_shared",
+    "huks:libhukssdk",
     "os_account:os_account_innerkits",
   ]
   cflags_cc = [

@@ -125,5 +125,59 @@ fn native_layout_matches_c_abi_sizes() {
     assert_eq!(std::mem::size_of::<PrivacyTargetRequest>(), if wide { 32 } else { 20 });
     assert_eq!(std::mem::size_of::<PrivacySearchRequest>(), if wide { 48 } else { 28 });
     assert_eq!(std::mem::size_of::<PrivacyBuffer>(), if wide { 16 } else { 8 });
-    assert_eq!(std::mem::size_of::<PrivacyResult>(), if wide { 32 } else { 20 });
+}
+
+#[test]
+fn native_result_bytes_match_cpp_layout() {
+    let value = SearchResponse { matched: true, values: Some(vec![vec![], vec![0, 255]]) };
+    let expected = vec![
+        1, 0, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0,
+        0, 0, 0, 0, 2, 0, 0, 0, 0, 255,
+    ];
+    assert_eq!(encode_result_bytes(&value).unwrap(), expected);
+    let decoded = decode_result_bytes(&expected).unwrap();
+    assert!(decoded.matched);
+    assert_eq!(decoded.values, value.values);
+}
+
+#[test]
+fn native_result_buffer_preserves_presence() {
+    for values in [None, Some(Vec::new()), Some(vec![Vec::new()])] {
+        let value = SearchResponse { matched: false, values };
+        let encoded = encode_result_bytes(&value).unwrap();
+        let decoded = decode_result_bytes(&encoded).unwrap();
+        assert!(!decoded.matched);
+        assert_eq!(decoded.values, value.values);
+    }
+}
+
+#[test]
+fn native_result_buffer_rejects_malformed_data() {
+    let value = SearchResponse { matched: true, values: Some(vec![vec![0, 255]]) };
+    let encoded = encode_result_bytes(&value).unwrap();
+    for length in 0..encoded.len() {
+        assert!(decode_result_bytes(&encoded[..length]).is_err());
+    }
+    let mut invalid_flag = encoded.clone();
+    invalid_flag[4] = 2;
+    assert!(decode_result_bytes(&invalid_flag).is_err());
+    let mut invalid_count = encoded.clone();
+    invalid_count[8..12].copy_from_slice(&u32::MAX.to_le_bytes());
+    assert!(decode_result_bytes(&invalid_count).is_err());
+    let mut trailing = encoded;
+    trailing.push(0);
+    assert!(decode_result_bytes(&trailing).is_err());
+}
+
+#[test]
+fn native_result_buffer_enforces_exact_byte_limit() {
+    // Two flags, one count and one length consume four u32 fields.
+    let overhead = 4 * std::mem::size_of::<u32>();
+    let mut value = SearchResponse { matched: true, values: Some(vec![vec![0; MAX_BYTES - overhead]]) };
+    let encoded = encode_result_bytes(&value).unwrap();
+    assert_eq!(encoded.len(), MAX_BYTES);
+    assert!(decode_result_bytes(&encoded).is_ok());
+    value.values.as_mut().unwrap()[0].push(0);
+    assert!(encode_result_bytes(&value).is_err());
+    assert!(decode_result_bytes(&vec![0; MAX_BYTES + 1]).is_err());
 }

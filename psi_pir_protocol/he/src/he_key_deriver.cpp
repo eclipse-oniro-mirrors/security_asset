@@ -68,7 +68,7 @@ int32_t HeKeyDeriver::DeriveKey(const CallerIdentity &identity, HeSeed &seed) co
         std::lock_guard<std::mutex> lock(g_seedMutex);
         deriver = g_seedDeriver;
     }
-    const auto ret = deriver ? deriver->Derive(digest, seed) : psi_pir::PSI_PIR_HE_ERROR;
+    const auto ret = deriver ? deriver->Derive(identity, digest, seed) : psi_pir::PSI_PIR_HE_ERROR;
     OPENSSL_cleanse(digest.data(), digest.size());
     return ret;
 }
