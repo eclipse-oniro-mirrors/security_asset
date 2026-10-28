@@ -32,7 +32,7 @@ namespace {
     constexpr int32_t MAX_TICKET_EXPIRE_TIME_MS = 60000;
 
     // IMPORTANT: Keep in sync with PATH_TRAVERSAL_PATTERNS in
-    //   services/secure_access_fence/core_service/src/task_identity/validator.rs
+    //   services/secure_access_fence/core_service/src/task_identity/constants.rs
     const std::vector<std::string> PATH_TRAVERSAL_PATTERNS = {
         "../", "..//", "./", ".\\", "//", "\\", "/", "/..", "\\..", ".."
     };

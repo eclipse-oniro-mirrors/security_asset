@@ -23,7 +23,7 @@ use std::sync::{Mutex, OnceLock};
 use saf_definition::{macros_lib, ErrCode, ExecuteType, Result};
 use saf_log::{loge, logi, logw};
 
-use super::constants::{VEC_CAPACITY, MAX_FILES_PER_CALLER, MS_PER_SEC, CHALLENGE_TIMEOUT_MS};
+use super::constants::{VEC_CAPACITY, MAX_FILES_PER_CALLER, MS_PER_SEC};
 use super::storage_backend::{create_storage, StorageBackend};
 
 #[derive(Debug, Clone)]
@@ -37,6 +37,7 @@ pub struct TaskIdentityRecord {
     pub allowable_duration: i32,
 }
 
+// (caller, taskId)
 type StoreKey = (String, String);
 
 pub struct ChallengeEntry {
@@ -152,10 +153,6 @@ impl TaskIdentityStore {
         if raw < 0 { 0 } else { raw as u64 }
     }
 
-    fn is_challenge_expired(created_boot_ms: u64, now_boot_ms: u64) -> bool {
-        now_boot_ms > created_boot_ms && (now_boot_ms - created_boot_ms) > CHALLENGE_TIMEOUT_MS
-    }
-
     fn is_safe_segment(segment: &str) -> bool {
         super::validator::validate_path_segment(segment).is_ok()
     }
@@ -163,7 +160,7 @@ impl TaskIdentityStore {
     pub fn insert_challenge(
         &self,
         os_account_id: i32,
-        caller: &str,
+        caller: u32,
         task_id: &str,
         challenge: &str,
     ) -> Result<()> {
@@ -177,14 +174,15 @@ impl TaskIdentityStore {
                 "caller file count limit reached: {} has {}", caller, file_count);
         }
         let created_boot_ms = Self::now_boot_ms();
-        self.storage.write_challenge_file(os_account_id, caller, task_id, challenge, created_boot_ms)?;
+        let entry = ChallengeEntry {
+            challenge: challenge.to_string(),
+            created_boot_ms,
+        };
+        self.storage.write_challenge_file(os_account_id, caller, task_id, &entry)?;
         {
             let mut inner = self.lock_inner()?;
             let key = (caller.to_string(), task_id.to_string());
-            inner.challenges_put(key, ChallengeEntry {
-                challenge: challenge.to_string(),
-                created_boot_ms,
-            });
+            inner.challenges_put(key, entry);
         }
         logi!("[TaskIdentityStore] challenge inserted for caller={}, task_id={}", caller, task_id.len());
         Ok(())
@@ -195,7 +193,7 @@ impl TaskIdentityStore {
     pub fn get_challenge(
         &self,
         os_account_id: i32,
-        caller: &str,
+        caller: u32,
         task_id: &str,
     ) -> Result<String> {
         record_os_account_id(os_account_id);
@@ -205,7 +203,7 @@ impl TaskIdentityStore {
             let key = (caller.to_string(), task_id.to_string());
             if let Some(entry) = inner.challenges_take(&key) {
                 let _ = self.storage.delete_challenge_file(os_account_id, caller, task_id);
-                if Self::is_challenge_expired(entry.created_boot_ms, now_boot_ms) {
+                if super::storage_backend::is_challenge_expired(entry.created_boot_ms, now_boot_ms) {
                     logw!("[TaskIdentityStore] challenge memory expired for caller={}, task_id={}", caller, task_id);
                     return macros_lib::log_throw_error!(ErrCode::TaskIdentityNotFound,
                         "challenge expired");
@@ -216,7 +214,7 @@ impl TaskIdentityStore {
         }
         if let Some((challenge, created_boot_ms)) = self.storage.read_challenge_file(os_account_id, caller, task_id) {
             let _ = self.storage.delete_challenge_file(os_account_id, caller, task_id);
-            if Self::is_challenge_expired(created_boot_ms, now_boot_ms) {
+            if super::storage_backend::is_challenge_expired(created_boot_ms, now_boot_ms) {
                 logw!("[TaskIdentityStore] challenge expired on disk for caller={}, task_id={}", caller, task_id);
                 return macros_lib::log_throw_error!(ErrCode::TaskIdentityNotFound,
                     "challenge expired");
@@ -235,7 +233,7 @@ impl TaskIdentityStore {
     pub fn insert_task_entry(
         &self,
         os_account_id: i32,
-        caller: &str,
+        caller: u32,
         task_id: &str,
         record: TaskIdentityRecord,
     ) -> Result<()> {
@@ -259,7 +257,7 @@ impl TaskIdentityStore {
     }
 
     /// Caches a record from disk into memory (no disk I/O).
-    fn cache_to_memory(&self, _os_account_id: i32, caller: &str, task_id: &str, record: TaskIdentityRecord) {
+    fn cache_to_memory(&self, _os_account_id: i32, caller: u32, task_id: &str, record: TaskIdentityRecord) {
         let mut inner = match self.lock_inner() {
             Ok(g) => g,
             Err(_) => return,
@@ -276,7 +274,7 @@ impl TaskIdentityStore {
     pub fn get_task_record(
         &self,
         os_account_id: i32,
-        caller: &str,
+        caller: u32,
         task_id: &str,
     ) -> Result<TaskIdentityRecord> {
         record_os_account_id(os_account_id);
@@ -291,7 +289,7 @@ impl TaskIdentityStore {
                 return Ok(record.clone());
             }
         }
-        let disk_record = self.read_and_cache_record(os_account_id, caller, task_id)?;
+        let disk_record = self.read_and_cache_record(os_account_id, caller, task_id);
         if let Some(record) = disk_record {
             logi!("[TaskIdentityStore] record found on disk for caller={}", caller);
             return Ok(record);
@@ -299,62 +297,38 @@ impl TaskIdentityStore {
         macros_lib::log_throw_error!(ErrCode::TaskIdentityNotFound, "task identity not found")
     }
 
-    /// Reads a record from disk and caches it in memory. Returns Ok(None) if not found.
+    /// Reads a record from disk and caches it in memory. Returns None if not found.
     fn read_and_cache_record(
         &self,
         os_account_id: i32,
-        caller: &str,
+        caller: u32,
         task_id: &str,
-    ) -> Result<Option<TaskIdentityRecord>> {
-        let disk_record = self.storage.read_record_file(os_account_id, caller, task_id)
-            .map_err(|e| {
-                logw!("[TaskIdentityStore] disk read failed, err={}", e.code);
-                e
-            })?;
-        if let Some(record) = disk_record {
-            self.cache_to_memory(os_account_id, caller, task_id, record.clone());
-            return Ok(Some(record));
-        }
-        Ok(None)
+    ) -> Option<TaskIdentityRecord> {
+        let record = self.storage.read_record_file(os_account_id, caller, task_id)?;
+        self.cache_to_memory(os_account_id, caller, task_id, record.clone());
+        Some(record)
     }
 
     /// Deletes a task record (disk first → memory second). Does NOT touch challenges.
     /// Idempotent — missing disk file or memory entry is not an error.
-    pub fn delete_task_entry(&self, os_account_id: i32, caller: &str, task_id: &str) -> Result<()> {
+    pub fn delete_task_entry(&self, os_account_id: i32, caller: u32, task_id: &str) -> Result<()> {
         record_os_account_id(os_account_id);
         if !Self::is_safe_segment(task_id) {
             return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "invalid caller or task id");
         }
-        self.storage.delete_record_file(os_account_id, caller, task_id)?;
         {
             let mut inner = self.lock_inner()?;
             let key = (caller.to_string(), task_id.to_string());
             inner.tasks_remove(&key);
         }
+        self.storage.delete_record_file(os_account_id, caller, task_id)?;
         Ok(())
-    }
-
-    /// Deletes a task from memory and disk. Called asynchronously when a task is found expired.
-    /// Memory is deleted first to avoid inconsistency. Disk failure is logged but not propagated.
-    pub fn delete_expired_task(&self, os_account_id: i32, caller: &str, task_id: &str) {
-        if !Self::is_safe_segment(task_id) {
-            return;
-        }
-        {
-            if let Ok(mut inner) = self.lock_inner() {
-                let key = (caller.to_string(), task_id.to_string());
-                inner.tasks_remove(&key);
-            }
-        }
-        if let Err(e) = self.storage.delete_record_file(os_account_id, caller, task_id) {
-            logw!("[TaskIdentityStore] async delete expired task file failed: {}", e.msg);
-        }
     }
 
     /// Clears all memory cache (tasks + challenges) and spawns async disk cleanup
     /// for all seen os_account_ids. Intended for SA on_idle.
-    /// Returns true if disk cleanup was scheduled, false otherwise.
-    pub fn clean_memory_and_disk(&self) -> bool {
+    /// Returns the number of os account ids that scheduled to clean.
+    pub fn on_idle_cleanup(&self) -> usize {
         let mut inner = self.inner.lock().unwrap_or_else(|e| {
             logw!("[TaskIdentityStore] mutex poisoned during cleanup, recovering");
             e.into_inner()
@@ -366,7 +340,7 @@ impl TaskIdentityStore {
         let os_account_ids = take_seen_os_account_ids();
         if os_account_ids.is_empty() {
             logi!("[TaskIdentityStore] on_idle: memory cleared, no os_account_ids to clean");
-            return false;
+            return 0;
         }
         let count = os_account_ids.len();
         ylong_runtime::spawn_blocking(move || {
@@ -377,14 +351,20 @@ impl TaskIdentityStore {
             logi!("[TaskIdentityStore] on_idle: disk cleanup done for {} os_account_ids", count);
         });
         logi!("[TaskIdentityStore] on_idle: memory cleared, disk cleanup scheduled for {} os_account_ids", count);
-        true
+        count
     }
 
     /// Cleans expired task and challenge files from disk.
     /// Scans all files under taskAttributes/{caller}/, deletes expired .json (tasks) and .challenge files.
     /// Intended for async background cleanup at SA startup.
     pub fn cleanup_disk_files(&self, os_account_id: i32) {
-        let now_sec = Self::now_sec().unwrap_or(0);
+        let now_sec = match Self::now_sec() {
+            Ok(s) => s,
+            Err(e) => {
+                logw!("[TaskIdentityStore] cleanup_disk_files: get time failed, skipping: {}", e.msg);
+                return;
+            }
+        };
         let now_sec_i64 = i64::try_from(now_sec).unwrap_or(i64::MAX);
         let now_boot_ms = Self::now_boot_ms();
         self.storage.cleanup_disk_expired(os_account_id, now_sec_i64, now_boot_ms);

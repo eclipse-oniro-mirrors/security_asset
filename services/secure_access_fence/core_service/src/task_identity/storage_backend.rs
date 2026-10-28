@@ -24,7 +24,7 @@ use saf_log::{loge, logi, logw};
 use saf_common::JsonBuilder;
 use saf_utils::{JsonValue, get_compact_json_value};
 
-use super::store::TaskIdentityRecord;
+use super::store::{TaskIdentityRecord, ChallengeEntry};
 
 use super::constants::{
     CHALLENGE_TIMEOUT_MS, RECORD_VERSION, TASK_BASE_DIR_PREFIX, TASK_DIR_SUFFIX,
@@ -37,21 +37,20 @@ pub trait StorageBackend: Send + Sync {
     fn write_record_file(
         &self,
         os_account_id: i32,
-        caller: &str,
+        caller: u32,
         task_id: &str,
         record: &TaskIdentityRecord
     ) -> Result<()>;
-    fn read_record_file(&self, os_account_id: i32, caller: &str, task_id: &str) -> Result<Option<TaskIdentityRecord>>;
-    fn delete_record_file(&self, os_account_id: i32, caller: &str, task_id: &str) -> Result<()>;
+    fn read_record_file(&self, os_account_id: i32, caller: u32, task_id: &str) -> Option<TaskIdentityRecord>;
+    fn delete_record_file(&self, os_account_id: i32, caller: u32, task_id: &str) -> Result<()>;
     fn write_challenge_file(&self,
         os_account_id: i32,
-        caller: &str, task_id: &str,
-        challenge_b64: &str,
-        created_boot_ms: u64
+        caller: u32, task_id: &str,
+        entry: &ChallengeEntry,
     ) -> Result<()>;
-    fn read_challenge_file(&self, os_account_id: i32, caller: &str, task_id: &str) -> Option<(String, u64)>;
-    fn delete_challenge_file(&self, os_account_id: i32, caller: &str, task_id: &str) -> Result<()>;
-    fn count_caller_files(&self, os_account_id: i32, caller: &str) -> Result<usize>;
+    fn read_challenge_file(&self, os_account_id: i32, caller: u32, task_id: &str) -> Option<(String, u64)>;
+    fn delete_challenge_file(&self, os_account_id: i32, caller: u32, task_id: &str) -> Result<()>;
+    fn count_caller_files(&self, os_account_id: i32, caller: u32) -> Result<usize>;
     fn cleanup_disk_expired(&self, os_account_id: i32, expire_threshold_sec: i64, now_boot_ms: u64);
     fn cleanup_file_locks(&self);
 }
@@ -65,7 +64,7 @@ pub fn create_storage() -> Box<dyn StorageBackend> {
     { Box::new(MockStorage) }
 }
 
-fn is_challenge_expired(created_boot_ms: u64, now_boot_ms: u64) -> bool {
+pub(super) fn is_challenge_expired(created_boot_ms: u64, now_boot_ms: u64) -> bool {
     if now_boot_ms < created_boot_ms {
         return true;
     }
@@ -95,19 +94,19 @@ fn delete_file_with_lock(file_path: &std::path::Path) {
 
 // ======================== Path helpers ========================
 
-fn get_task_dir(os_account_id: i32, caller: &str) -> String {
+fn get_task_dir(os_account_id: i32, caller: u32) -> String {
     format!("{}/{}/{}/{}", TASK_BASE_DIR_PREFIX, os_account_id, TASK_DIR_SUFFIX, caller)
 }
 
-fn get_task_file_path(os_account_id: i32, caller: &str, task_id: &str) -> String {
+fn get_task_file_path(os_account_id: i32, caller: u32, task_id: &str) -> String {
     format!("{}/{}.json", get_task_dir(os_account_id, caller), task_id)
 }
 
-fn get_challenge_file_path(os_account_id: i32, caller: &str, task_id: &str) -> String {
+fn get_challenge_file_path(os_account_id: i32, caller: u32, task_id: &str) -> String {
     format!("{}/{}.challenge", get_task_dir(os_account_id, caller), task_id)
 }
 
-fn ensure_task_dir_exists(os_account_id: i32, caller: &str) -> Result<()> {
+fn ensure_task_dir_exists(os_account_id: i32, caller: u32) -> Result<()> {
     let dir_path = get_task_dir(os_account_id, caller);
     let path = std::path::Path::new(&dir_path);
     if !path.exists() {
@@ -191,7 +190,7 @@ impl StorageBackend for DiskStorage {
     fn write_record_file(
         &self,
         os_account_id: i32,
-        caller: &str,
+        caller: u32,
         task_id: &str,
         record: &TaskIdentityRecord
     ) -> Result<()> {
@@ -223,32 +222,29 @@ impl StorageBackend for DiskStorage {
         })
     }
 
-    fn read_record_file(&self, os_account_id: i32, caller: &str, task_id: &str) -> Result<Option<TaskIdentityRecord>> {
+    fn read_record_file(&self, os_account_id: i32, caller: u32, task_id: &str) -> Option<TaskIdentityRecord> {
         let file_path = get_task_file_path(os_account_id, caller, task_id);
         let lock = get_file_lock(&file_path);
         let _guard = lock
             .lock().unwrap_or_else(|e| { logw!("[TaskIdentityStore] file lock poisoned"); e.into_inner() });
-        let content = match fs::read_to_string(&file_path) {
-            Ok(c) => c,
-            Err(_) => return Ok(None),
-        };
+        let content = fs::read_to_string(&file_path).ok()?;
         match deserialize_record(&content) {
-            Some(record) => Ok(Some(record)),
+            Some(record) => Some(record),
             None => {
                 loge!("[TaskIdentityStore] failed to parse task file: {}", file_path);
-                Ok(None)
+                None
             }
         }
     }
 
-    fn delete_record_file(&self, os_account_id: i32, caller: &str, task_id: &str) -> Result<()> {
+    fn delete_record_file(&self, os_account_id: i32, caller: u32, task_id: &str) -> Result<()> {
         let file_path = get_task_file_path(os_account_id, caller, task_id);
         let lock = get_file_lock(&file_path);
         let _guard = lock
             .lock().unwrap_or_else(|e| { logw!("[TaskIdentityStore] file lock poisoned"); e.into_inner() });
-        let path = Path::new(&file_path);
-        if !path.exists() { return Ok(()); }
-        fs::remove_file(path).map_err(|e| {
+        fs::remove_file(&file_path).or_else(|e| {
+            if e.kind() == std::io::ErrorKind::NotFound { Ok(()) } else { Err(e) }
+        }).map_err(|e| {
             macros_lib::log_and_into_saf_error!(ErrCode::FileOperationError,
                 "Failed to delete task file: {}", e)
         })
@@ -257,10 +253,9 @@ impl StorageBackend for DiskStorage {
     fn write_challenge_file(
         &self,
         os_account_id: i32,
-        caller: &str,
+        caller: u32,
         task_id: &str,
-        challenge_b64: &str,
-        created_boot_ms: u64
+        entry: &ChallengeEntry,
     ) -> Result<()> {
         ensure_task_dir_exists(os_account_id, caller)?;
         let file_path = get_challenge_file_path(os_account_id, caller, task_id);
@@ -270,7 +265,7 @@ impl StorageBackend for DiskStorage {
         let path = Path::new(&file_path);
         let tmp_path = format!("{}.tmp", file_path);
         let tmp_ref = Path::new(&tmp_path);
-        let content = serialize_challenge_record(challenge_b64, created_boot_ms)?;
+        let content = serialize_challenge_record(&entry.challenge, entry.created_boot_ms)?;
         let write_result = (|| -> std::io::Result<()> {
             let mut file = OpenOptions::new().write(true).create(true).truncate(true)
                 .mode(FILE_MODE).open(tmp_ref)?;
@@ -290,7 +285,7 @@ impl StorageBackend for DiskStorage {
         })
     }
 
-    fn read_challenge_file(&self, os_account_id: i32, caller: &str, task_id: &str) -> Option<(String, u64)> {
+    fn read_challenge_file(&self, os_account_id: i32, caller: u32, task_id: &str) -> Option<(String, u64)> {
         let file_path = get_challenge_file_path(os_account_id, caller, task_id);
         let content = fs::read_to_string(file_path).ok()?;
         let parsed = JsonValue::from_text(content).ok()?;
@@ -300,20 +295,20 @@ impl StorageBackend for DiskStorage {
         Some((challenge, created_boot_ms))
     }
 
-    fn delete_challenge_file(&self, os_account_id: i32, caller: &str, task_id: &str) -> Result<()> {
+    fn delete_challenge_file(&self, os_account_id: i32, caller: u32, task_id: &str) -> Result<()> {
         let file_path = get_challenge_file_path(os_account_id, caller, task_id);
         let lock = get_file_lock(&file_path);
         let _guard = lock
             .lock().unwrap_or_else(|e| { logw!("[TaskIdentityStore] file lock poisoned"); e.into_inner() });
-        let path = Path::new(&file_path);
-        if !path.exists() { return Ok(()); }
-        fs::remove_file(path).map_err(|e| {
+        fs::remove_file(&file_path).or_else(|e| {
+            if e.kind() == std::io::ErrorKind::NotFound { Ok(()) } else { Err(e) }
+        }).map_err(|e| {
             macros_lib::log_and_into_saf_error!(ErrCode::FileOperationError,
                 "Failed to delete challenge file: {}", e)
         })
     }
 
-    fn count_caller_files(&self, os_account_id: i32, caller: &str) -> Result<usize> {
+    fn count_caller_files(&self, os_account_id: i32, caller: u32) -> Result<usize> {
         let dir = get_task_dir(os_account_id, caller);
         let path = Path::new(&dir);
         if !path.exists() { return Ok(0); }
@@ -405,13 +400,16 @@ fn should_delete_task(content: &str, now_sec: i64) -> bool {
 pub struct MockStorage;
 
 impl StorageBackend for MockStorage {
-    fn write_record_file(&self, _os_account_id: i32, _caller: &str, _task_id: &str, _record: &TaskIdentityRecord) -> Result<()> { Ok(()) }
-    fn read_record_file(&self, _os_account_id: i32, _caller: &str, _task_id: &str) -> Result<Option<TaskIdentityRecord>> { Ok(None) }
-    fn delete_record_file(&self, _os_account_id: i32, _caller: &str, _task_id: &str) -> Result<()> { Ok(()) }
-    fn write_challenge_file(&self, _os_account_id: i32, _caller: &str, _task_id: &str, _challenge_b64: &str, _created_boot_ms: u64) -> Result<()> { Ok(()) }
-    fn read_challenge_file(&self, _os_account_id: i32, _caller: &str, _task_id: &str) -> Option<(String, u64)> { None }
-    fn delete_challenge_file(&self, _os_account_id: i32, _caller: &str, _task_id: &str) -> Result<()> { Ok(()) }
-    fn count_caller_files(&self, _os_account_id: i32, _caller: &str) -> Result<usize> { Ok(0) }
+    fn write_record_file(&self, _os_account_id: i32, _caller: u32, _task_id: &str,
+        _record: &TaskIdentityRecord) -> Result<()> { Ok(()) }
+    fn read_record_file(&self, _os_account_id: i32, _caller: u32, _task_id: &str)
+        -> Option<TaskIdentityRecord> { None }
+    fn delete_record_file(&self, _os_account_id: i32, _caller: u32, _task_id: &str) -> Result<()> { Ok(()) }
+    fn write_challenge_file(&self, _os_account_id: i32, _caller: u32, _task_id: &str,
+        _entry: &ChallengeEntry) -> Result<()> { Ok(()) }
+    fn read_challenge_file(&self, _os_account_id: i32, _caller: u32, _task_id: &str) -> Option<(String, u64)> { None }
+    fn delete_challenge_file(&self, _os_account_id: i32, _caller: u32, _task_id: &str) -> Result<()> { Ok(()) }
+    fn count_caller_files(&self, _os_account_id: i32, _caller: u32) -> Result<usize> { Ok(0) }
     fn cleanup_disk_expired(&self, _os_account_id: i32, _expire_threshold_sec: i64, _now_boot_ms: u64) {}
     fn cleanup_file_locks(&self) {}
 }

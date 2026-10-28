@@ -25,6 +25,7 @@
 /// All JSON keys used by task identity module.
 pub struct TaskIdentityKeys;
 impl TaskIdentityKeys {
+    pub const TASK_IDENTITY: &str = "taskIdentity";
     // taskAttributes fields
     pub const TASK_ID: &str = "taskId";
     pub const TASK_EXPIRE_TIME: &str = "taskExpireTime";

@@ -49,7 +49,7 @@ constexpr int32_t DEFAULT_ALLOWABLE_DURATION = 60;
 // ============================================================================
 // JSON key constants for task identity.
 // IMPORTANT: Keep in sync with TaskIdentityKeys in:
-//   services/secure_access_fence/core_service/src/task_identity/validator.rs
+//   services/secure_access_fence/core_service/src/task_identity/constants.rs
 // ============================================================================
 
 struct TaskIdentityKeys {
@@ -67,13 +67,6 @@ struct TaskIdentityKeys {
     static constexpr const char* VERSION = "version";
     static constexpr const char* CREATE_TIME = "createTime";
 };
-
-// ============================================================================
-// Path traversal detection.
-// IMPORTANT: The path traversal patterns MUST be kept in sync with the Rust
-// PATH_TRAVERSAL_PATTERNS array in: services/secure_access_fence/core_service/src/task_identity/validator.rs
-// If you add/remove/modify patterns here, update the Rust file and vice versa.
-// ============================================================================
 
 bool ContainsPathTraversalChars(const std::string &str);
 

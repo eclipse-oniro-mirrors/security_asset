@@ -52,7 +52,7 @@ pub fn validate_path_segment(segment: &str) -> Result<()> {
 /// Validates TaskIdentityInfo:
 /// - taskId path safety
 /// - taskExpireTime: -1 (never) or positive; INSTANT cannot be -1
-/// - authToken size ≤4096; each value must be in u8 range (0~255)
+/// - authToken size ≤1024
 /// - allowableDuration: 0 means not provided, defaults to 60; otherwise must be (0, 60]
 pub fn validate_task_id_info(info: &mut TaskIdentityInfo) -> Result<()> {
     validate_path_segment(&info.task_id)?;
