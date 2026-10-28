@@ -1,0 +1,211 @@
+/*
+ * Copyright (c) 2026 Huawei Device Co., Ltd.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "he_key_deriver.h"
+#include "hifhe_adapter.h"
+#include "provider_registry.h"
+#include "psi_pir_error_code.h"
+#include "psi_pir_protocol.h"
+#include "soft_he_engine.h"
+#include <gtest/gtest.h>
+
+namespace {
+using namespace testing::ext;
+using namespace psi_pir;
+using namespace psi_pir::internal;
+
+Slots Pattern()
+{
+    Slots slots(kDefaultPolyModulusDegree);
+    for (size_t i = 0; i < slots.size(); ++i) {
+        slots[i] = i % kDefaultPlainModulus;
+    }
+    slots.back() = kDefaultPlainModulus - 1;
+    return slots;
+}
+
+/* @tc.name: RecreatedContextRecoversKey
+ * @tc.desc: Recover the same HE key in a fresh context and decrypt a serialized ciphertext.
+ * @tc.type: FUNC
+ */
+HWTEST(HifheAdapterTest, RecreatedContextRecoversKey, TestSize.Level1)
+{
+    HeSeed seed;
+    seed.bytes.fill(0x45);
+    const auto slots = Pattern();
+    Bytes ciphertext;
+    ASSERT_EQ(SoftHeEngine().Encrypt(slots, ProtocolParams{}, seed, ciphertext), PSI_PIR_SUCCESS);
+    Slots recovered;
+    ASSERT_EQ(SoftHeEngine().Decrypt(ciphertext, ProtocolParams{}, seed, recovered), PSI_PIR_SUCCESS);
+    EXPECT_EQ(recovered, slots);
+}
+
+/* @tc.name: KeylessEvaluationMatchesArithmetic
+ * @tc.desc: A context without keys computes mask * (plaintext - ciphertext), then rerandomizes.
+ * @tc.type: FUNC
+ */
+HWTEST(HifheAdapterTest, KeylessEvaluationMatchesArithmetic, TestSize.Level1)
+{
+    HeSeed seed;
+    seed.bytes.fill(0x45);
+    const auto query = Pattern();
+    Slots bucket(query.size());
+    Slots mask(query.size(), 3);
+    for (size_t i = 0; i < bucket.size(); ++i) {
+        bucket[i] = (query[i] + i % 4) % kDefaultPlainModulus;
+    }
+    const SoftHeEngine engine;
+    HifheAdapter owner;
+    ASSERT_EQ(owner.InitializeKeyed(ProtocolParams{}, seed), PSI_PIR_SUCCESS);
+    Bytes plaintext;
+    Bytes target;
+    ASSERT_EQ(owner.Encode(query, plaintext), PSI_PIR_SUCCESS);
+    ASSERT_EQ(owner.Encrypt(plaintext, target), PSI_PIR_SUCCESS);
+    Bytes difference;
+    Bytes product;
+    Bytes result;
+    ASSERT_EQ(engine.addPlain(target, bucket, difference), PSI_PIR_SUCCESS);
+    ASSERT_EQ(engine.multiplyPlain(difference, mask, product), PSI_PIR_SUCCESS);
+    ASSERT_EQ(engine.RandCipherText(product, result), PSI_PIR_SUCCESS);
+    EXPECT_NE(product, result);
+    Slots recovered;
+    ASSERT_EQ(owner.Decrypt(result, plaintext), PSI_PIR_SUCCESS);
+    ASSERT_EQ(owner.Decode(plaintext, recovered), PSI_PIR_SUCCESS);
+    ASSERT_EQ(recovered.size(), query.size());
+    for (size_t i = 0; i < recovered.size(); ++i) {
+        EXPECT_EQ(recovered[i], ((bucket[i] + kDefaultPlainModulus - query[i]) * mask[i]) % kDefaultPlainModulus);
+    }
+}
+
+/* @tc.name: RejectInvalidSlotsAndCiphertexts
+ * @tc.desc: Reject malformed data and out-of-range slots while preserving the caller's output.
+ * @tc.type: FUNC
+ */
+HWTEST(HifheAdapterTest, RejectInvalidSlotsAndCiphertexts, TestSize.Level2)
+{
+    HifheAdapter adapter;
+    ASSERT_EQ(adapter.InitializeEvaluation(ProtocolParams{}), PSI_PIR_SUCCESS);
+    Bytes output{0x99};
+    Slots invalid(kDefaultPolyModulusDegree - 1);
+    EXPECT_EQ(adapter.Encode(invalid, output), PSI_PIR_INVALID_ARGUMENT);
+    invalid.resize(kDefaultPolyModulusDegree);
+    invalid.front() = kDefaultPlainModulus;
+    EXPECT_EQ(adapter.Encode(invalid, output), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(output, Bytes({0x99}));
+    EXPECT_EQ(adapter.Rerandomize(Bytes{1}, output), PSI_PIR_HE_ERROR);
+    EXPECT_EQ(output, Bytes({0x99}));
+    Slots slots{0x99};
+    EXPECT_EQ(adapter.Decode(Bytes{1}, slots), PSI_PIR_HE_ERROR);
+    EXPECT_EQ(slots, Slots({0x99}));
+}
+
+/* @tc.name: EvaluationCannotDecrypt
+ * @tc.desc: Evaluation initializes parameters only and never generates a private key.
+ * @tc.type: FUNC
+ */
+HWTEST(HifheAdapterTest, EvaluationCannotDecrypt, TestSize.Level2)
+{
+    HeSeed seed;
+    seed.bytes.fill(0x45);
+    Bytes ciphertext;
+    ASSERT_EQ(SoftHeEngine().Encrypt(Pattern(), ProtocolParams{}, seed, ciphertext), PSI_PIR_SUCCESS);
+    HifheAdapter evaluator;
+    ASSERT_EQ(evaluator.InitializeEvaluation(ProtocolParams{}), PSI_PIR_SUCCESS);
+    Bytes output{0x99};
+    EXPECT_EQ(evaluator.Decrypt(ciphertext, output), PSI_PIR_HE_ERROR);
+    EXPECT_EQ(output, Bytes({0x99}));
+}
+
+/* @tc.name: InvalidInitializationCanRetry
+ * @tc.desc: Invalid parameters and repeated initialization do not replace an existing context.
+ * @tc.type: FUNC
+ */
+HWTEST(HifheAdapterTest, InvalidInitializationCanRetry, TestSize.Level2)
+{
+    HifheAdapter adapter;
+    ProtocolParams invalid;
+    invalid.plainModulus = 17;
+    EXPECT_EQ(adapter.InitializeEvaluation(invalid), PSI_PIR_INVALID_ARGUMENT);
+    ASSERT_EQ(adapter.InitializeEvaluation(ProtocolParams{}), PSI_PIR_SUCCESS);
+    EXPECT_EQ(adapter.InitializeEvaluation(ProtocolParams{}), PSI_PIR_INVALID_ARGUMENT);
+    Bytes plaintext;
+    EXPECT_EQ(adapter.Encode(Pattern(), plaintext), PSI_PIR_SUCCESS);
+}
+// Deterministic test provider exercises protocol orchestration without a device HUKS dependency.
+class TestSeedDeriver final : public IHeSeedDeriver {
+public:
+    int32_t Derive(const CallerIdentity &, const std::array<uint8_t, kIdentityHashSize> &hash,
+                   HeSeed &seed) const noexcept override
+    {
+        seed.bytes = hash;
+        return PSI_PIR_SUCCESS;
+    }
+};
+
+class HifheProtocolTest : public testing::Test {
+public:
+    void SetUp() override
+    {
+        SetHeSeedDeriver(std::make_shared<TestSeedDeriver>());
+    }
+    void TearDown() override
+    {
+        SetHeSeedDeriver(nullptr);
+        SetHEEngine(nullptr);
+    }
+};
+
+/* @tc.name: PsiCompleteWorkflow
+ * @tc.desc: Three public protocol operations preserve hit and miss results with separate HE contexts.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HifheProtocolTest, PsiCompleteWorkflow, TestSize.Level1)
+{
+    const PrivacyProtocol protocol{DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL};
+    const CallerIdentity identity{20010001, 100};
+    Bytes target;
+    ASSERT_EQ(genPrivacyTarget({Bytes{'q'}, HashAlg::SHA256}, protocol, identity, target), PSI_PIR_SUCCESS);
+    for (const uint8_t key : {static_cast<uint8_t>('q'), static_cast<uint8_t>('z')}) {
+        PrivacySearchResult encrypted;
+        ASSERT_EQ(privacySearch(target, {{Bytes{key}, HashAlg::SHA256, std::nullopt}}, protocol, encrypted),
+                  PSI_PIR_SUCCESS);
+        SearchResult result;
+        ASSERT_EQ(getSearchResult(encrypted, protocol, identity, result), PSI_PIR_SUCCESS);
+        EXPECT_EQ(result.matchedResult, key == 'q');
+        EXPECT_FALSE(result.attachedValues.has_value());
+    }
+}
+
+/* @tc.name: PirCompleteWorkflow
+ * @tc.desc: Three public protocol operations recover associated values, including binary and empty values.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HifheProtocolTest, PirCompleteWorkflow, TestSize.Level1)
+{
+    const PrivacyProtocol protocol{DataSetSize::SIZE_512, ProtocolType::PIR_PROTOCOL};
+    const CallerIdentity identity{20010001, 100};
+    Bytes target;
+    ASSERT_EQ(genPrivacyTarget({Bytes{'q'}, HashAlg::SHA256}, protocol, identity, target), PSI_PIR_SUCCESS);
+    for (const auto &value : std::vector<Bytes>{{}, {0, 0xFF, 0x45}}) {
+        PrivacySearchResult encrypted;
+        ASSERT_EQ(privacySearch(target, {{Bytes{'q'}, HashAlg::SHA256, value}}, protocol, encrypted), PSI_PIR_SUCCESS);
+        SearchResult result;
+        ASSERT_EQ(getSearchResult(encrypted, protocol, identity, result), PSI_PIR_SUCCESS);
+        EXPECT_TRUE(result.matchedResult);
+        ASSERT_TRUE(result.attachedValues.has_value());
+        EXPECT_EQ(*result.attachedValues, std::vector<Bytes>{value});
+    }
+}
+} // namespace

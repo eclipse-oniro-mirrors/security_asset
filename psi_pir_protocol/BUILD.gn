@@ -48,6 +48,9 @@ ohos_static_library("psi_pir_protocol") {
   external_deps = [
     "bounds_checking_function:libsec_shared",
     "hilog:libhilog",
+    "hifhe:libhifhe",
+    "openhitls:openhitls_bsl",
+    "openhitls:openhitls_crypto",
     "openssl:libcrypto_shared",
   ]
 
@@ -114,6 +117,9 @@ ohos_unittest("psi_pir_he_test") {
   external_deps = [
     "hilog:libhilog",
     "openssl:libcrypto_shared",
+    "hifhe:libhifhe",
+    "openhitls:openhitls_bsl",
+    "openhitls:openhitls_crypto",
     "googletest:gtest_main"
   ]
   cflags_cc = [

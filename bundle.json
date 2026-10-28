@@ -53,6 +53,8 @@
                 "hitrace",
                 "hisysevent",
                 "huks",
+                "hifhe",
+                "openhitls",
                 "ipc",
                 "kv_store",
                 "napi",

@@ -112,17 +112,12 @@ int32_t SoftHeEngine::addPlain(const Bytes &ciphertext, const Slots &plaintext, 
         return ret;
     }
     Bytes encoded;
-    Bytes negative;
     Bytes result;
     ret = adapter.Encode(plaintext, encoded);
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
         return ret;
     }
-    ret = adapter.NegateCiphertext(ciphertext, negative);
-    if (ret != psi_pir::PSI_PIR_SUCCESS) {
-        return ret;
-    }
-    ret = adapter.AddPlaintext(negative, encoded, result);
+    ret = adapter.SubtractFromPlaintext(ciphertext, encoded, result);
     if (ret == psi_pir::PSI_PIR_SUCCESS) {
         output = std::move(result);
     }

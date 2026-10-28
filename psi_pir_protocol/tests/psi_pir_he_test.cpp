@@ -73,15 +73,15 @@ HWTEST_F(PsiPirHeTest, SeedRequiresServiceProviderAndBindsIdentity, TestSize.Lev
     EXPECT_EQ(provider->lastIdentity.userId, 101U);
 }
 
-/* @tc.name: UnavailableBackendsPreserveOutputs
- * @tc.desc: Unavailable HE operations never commit a partially transformed result.
+/* @tc.name: FailedOperationsPreserveOutputs
+ * @tc.desc: Uninitialized operations and missing seed providers never commit partial results.
  * @tc.type: FUNC
  */
-HWTEST_F(PsiPirHeTest, UnavailableBackendsPreserveOutputs, TestSize.Level1)
+HWTEST_F(PsiPirHeTest, FailedOperationsPreserveOutputs, TestSize.Level1)
 {
     HifheAdapter adapter;
     Bytes output{0x99};
-    EXPECT_EQ(adapter.InitializeEvaluation(ProtocolParams{}), PSI_PIR_HE_ERROR);
+    SetHeSeedDeriver(nullptr);
     EXPECT_EQ(adapter.AddPlaintext(Bytes{1}, Bytes{2}, output), PSI_PIR_HE_ERROR);
     EXPECT_EQ(output, Bytes({0x99}));
     EXPECT_EQ(genPrivacyTarget(TargetInput{Bytes{'a'}, HashAlg::SHA256}, PSI, {1000, 100}, output),

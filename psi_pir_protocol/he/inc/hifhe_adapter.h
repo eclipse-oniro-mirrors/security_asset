@@ -17,25 +17,34 @@
 #define PSI_PIR_HIFHE_ADAPTER_H
 
 #include "he_types.h"
+#include "hifhe.h"
 
 namespace psi_pir::internal {
-// Fail-closed backend until the formal HIFHE ABI and library are supplied.
+// Native HiFHE API. Ciphertexts are transferred only through HIFHE_Serialize/Deserialize.
 class HifheAdapter final {
 public:
     HifheAdapter() noexcept = default;
-    ~HifheAdapter() = default;
+    ~HifheAdapter();
     HifheAdapter(const HifheAdapter &) = delete;
     HifheAdapter &operator=(const HifheAdapter &) = delete;
+    HifheAdapter(HifheAdapter &&) = delete;
+    HifheAdapter &operator=(HifheAdapter &&) = delete;
     int32_t InitializeEvaluation(const ProtocolParams &params) noexcept;
     int32_t InitializeKeyed(const ProtocolParams &params, const HeSeed &seed) noexcept;
     int32_t Encode(const Slots &slots, Bytes &output) noexcept;
     int32_t Decode(const Bytes &plaintext, Slots &output) noexcept;
     int32_t Encrypt(const Bytes &plaintext, Bytes &output) noexcept;
     int32_t Decrypt(const Bytes &ciphertext, Bytes &output) noexcept;
-    int32_t NegateCiphertext(const Bytes &ciphertext, Bytes &output) noexcept;
+    // SET_NEGATE is a transient flag: consume it in Add before serializing the result.
+    int32_t SubtractFromPlaintext(const Bytes &ciphertext, const Bytes &plaintext, Bytes &output) noexcept;
     int32_t AddPlaintext(const Bytes &ciphertext, const Bytes &plaintext, Bytes &output) noexcept;
     int32_t MultiplyPlaintext(const Bytes &ciphertext, const Bytes &plaintext, Bytes &output) noexcept;
     int32_t Rerandomize(const Bytes &ciphertext, Bytes &output) noexcept;
+
+private:
+    int32_t ConfigureContext() noexcept;
+    void Reset() noexcept;
+    HIFHE_Ctx *ctx_ = nullptr;
 };
 
 } // namespace psi_pir::internal
