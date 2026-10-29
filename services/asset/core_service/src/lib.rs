@@ -282,7 +282,6 @@ impl Ability for AssetAbility {
     }
 
     fn on_idle(&self, _reason: SystemAbilityOnDemandReason) -> i32 {
-        clear_db_map();
         let crypto_manager = CryptoManager::get_instance();
         let max_crypto_expire_duration = crypto_manager.lock().unwrap().max_crypto_expire_duration();
         if max_crypto_expire_duration > 0 {
@@ -299,6 +298,9 @@ impl Ability for AssetAbility {
             );
             return DELAYED_UNLOAD_TIME_IN_SEC * SEC_TO_MILLISEC;
         }
+
+        clear_db_map();
+
         let mut lock = HAS_NOTIFY_MEMORY_MGR_MUTEX.lock().unwrap();
         (*lock).set_sa_status(SaStatus::Idle);
         logi!("Asset on_idle.");
