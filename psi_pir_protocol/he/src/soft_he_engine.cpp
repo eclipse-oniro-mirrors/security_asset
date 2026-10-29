@@ -19,6 +19,7 @@
 #include "provider_registry.h"
 #include "psi_pir_error_code.h"
 #include "psi_pir_log.h"
+#include <new>
 #include <utility>
 
 namespace psi_pir::internal {
@@ -40,40 +41,25 @@ bool SoftHeEngine::IsCompatible(const ProtocolParams &params) const noexcept
            params.plainModulus == kDefaultPlainModulus && params.polyModulusDegree == kDefaultPolyModulusDegree;
 }
 
-namespace {
-ProtocolParams EvaluationParams()
-{
-    return ProtocolParams{};
-}
-} // namespace
-
 int32_t SoftHeEngine::Encrypt(const Slots &slots, const ProtocolParams &params, const HeSeed &seed,
                               Bytes &output) const noexcept
 {
     HifheAdapter adapter;
     auto ret = adapter.InitializeKeyed(params, seed);
     if (ret != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("HE encryption context initialization failed, ret=%{public}d", ret);
         return ret;
     }
-    Bytes plaintext;
+    HifheText plaintext;
     ret = adapter.Encode(slots, plaintext);
     if (ret != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("HE encoding failed, ret=%{public}d", ret);
         return ret;
     }
-    Bytes ciphertext;
+    HifheText ciphertext;
     ret = adapter.Encrypt(plaintext, ciphertext);
     if (ret != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("HE encryption failed, ret=%{public}d", ret);
         return ret;
     }
-    if (ciphertext.empty()) {
-        PSI_PIR_LOGE("HE encryption returned empty ciphertext");
-        return PSI_PIR_HE_ERROR;
-    }
-    output = std::move(ciphertext);
-    return PSI_PIR_SUCCESS;
+    return adapter.Serialize(ciphertext, output);
 }
 
 int32_t SoftHeEngine::Decrypt(const Bytes &ciphertext, const ProtocolParams &params, const HeSeed &seed,
@@ -85,78 +71,129 @@ int32_t SoftHeEngine::Decrypt(const Bytes &ciphertext, const ProtocolParams &par
     HifheAdapter adapter;
     auto ret = adapter.InitializeKeyed(params, seed);
     if (ret != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("HE decryption context initialization failed, ret=%{public}d", ret);
         return ret;
     }
-    Bytes plaintext;
-    ret = adapter.Decrypt(ciphertext, plaintext);
+    HifheText encrypted;
+    ret = adapter.Deserialize(ciphertext, encrypted);
     if (ret != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("HE decryption failed, ret=%{public}d", ret);
         return ret;
     }
-    Slots slots;
-    ret = adapter.Decode(plaintext, slots);
+    HifheText plaintext;
+    ret = adapter.Decrypt(encrypted, plaintext);
     if (ret != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("HE decoding failed, ret=%{public}d", ret);
         return ret;
     }
-    output = std::move(slots);
+    return adapter.Decode(plaintext, output);
+}
+
+namespace {
+class HifheEvaluation final : public HeEvaluation {
+public:
+    int32_t Initialize(const Bytes &ciphertext) noexcept
+    {
+        status_ = adapter_.InitializeEvaluation(ProtocolParams{});
+        if (status_ == PSI_PIR_SUCCESS) {
+            status_ = adapter_.Deserialize(ciphertext, current_);
+        }
+        return status_;
+    }
+
+    int32_t AddPlain(const Slots &slots) noexcept override
+    {
+        if (status_ != PSI_PIR_SUCCESS) {
+            return status_;
+        }
+        HifheText plaintext;
+        status_ = adapter_.Encode(slots, plaintext);
+        if (status_ == PSI_PIR_SUCCESS) {
+            status_ = adapter_.SubtractFromPlaintext(current_, plaintext, current_);
+        }
+        return status_;
+    }
+
+    int32_t MultiplyPlain(const Slots &slots) noexcept override
+    {
+        if (status_ != PSI_PIR_SUCCESS) {
+            return status_;
+        }
+        HifheText plaintext;
+        status_ = adapter_.Encode(slots, plaintext);
+        if (status_ == PSI_PIR_SUCCESS) {
+            status_ = adapter_.MultiplyPlaintext(current_, plaintext, current_);
+        }
+        return status_;
+    }
+
+    int32_t Rerandomize() noexcept override
+    {
+        if (status_ == PSI_PIR_SUCCESS) {
+            status_ = adapter_.Rerandomize(current_, current_);
+        }
+        return status_;
+    }
+
+    int32_t Serialize(Bytes &output) const noexcept override
+    {
+        return status_ == PSI_PIR_SUCCESS ? adapter_.Serialize(current_, output) : status_;
+    }
+
+private:
+    HifheAdapter adapter_;
+    HifheText current_;
+    int32_t status_ = PSI_PIR_HE_ERROR;
+};
+} // namespace
+
+int32_t CreateSoftHeEvaluation(const Bytes &ciphertext, std::unique_ptr<HeEvaluation> &evaluation) noexcept
+{
+    if (ciphertext.empty()) {
+        return PSI_PIR_INVALID_ARGUMENT;
+    }
+    auto result = std::unique_ptr<HifheEvaluation>(new (std::nothrow) HifheEvaluation());
+    if (!result) {
+        PSI_PIR_LOGE("Allocate HiFHE evaluation failed");
+        return PSI_PIR_INTERNAL_ERROR;
+    }
+    const auto ret = result->Initialize(ciphertext);
+    if (ret != PSI_PIR_SUCCESS) {
+        PSI_PIR_LOGE("Import HiFHE evaluation ciphertext failed, ret=%{public}d", ret);
+        return ret;
+    }
+    evaluation = std::move(result);
     return PSI_PIR_SUCCESS;
 }
 
 int32_t SoftHeEngine::addPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept
 {
-    HifheAdapter adapter;
-    auto ret = adapter.InitializeEvaluation(EvaluationParams());
-    if (ret != psi_pir::PSI_PIR_SUCCESS) {
+    std::unique_ptr<HeEvaluation> evaluation;
+    auto ret = CreateSoftHeEvaluation(ciphertext, evaluation);
+    if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
-    Bytes encoded;
-    Bytes result;
-    ret = adapter.Encode(plaintext, encoded);
-    if (ret != psi_pir::PSI_PIR_SUCCESS) {
-        return ret;
-    }
-    ret = adapter.SubtractFromPlaintext(ciphertext, encoded, result);
-    if (ret == psi_pir::PSI_PIR_SUCCESS) {
-        output = std::move(result);
-    }
-    return ret;
+    ret = evaluation->AddPlain(plaintext);
+    return ret == PSI_PIR_SUCCESS ? evaluation->Serialize(output) : ret;
 }
 
 int32_t SoftHeEngine::multiplyPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept
 {
-    HifheAdapter adapter;
-    auto ret = adapter.InitializeEvaluation(EvaluationParams());
-    if (ret != psi_pir::PSI_PIR_SUCCESS) {
+    std::unique_ptr<HeEvaluation> evaluation;
+    auto ret = CreateSoftHeEvaluation(ciphertext, evaluation);
+    if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
-    Bytes encoded;
-    Bytes result;
-    ret = adapter.Encode(plaintext, encoded);
-    if (ret != psi_pir::PSI_PIR_SUCCESS) {
-        return ret;
-    }
-    ret = adapter.MultiplyPlaintext(ciphertext, encoded, result);
-    if (ret == psi_pir::PSI_PIR_SUCCESS) {
-        output = std::move(result);
-    }
-    return ret;
+    ret = evaluation->MultiplyPlain(plaintext);
+    return ret == PSI_PIR_SUCCESS ? evaluation->Serialize(output) : ret;
 }
 
 int32_t SoftHeEngine::RandCipherText(const Bytes &ciphertext, Bytes &output) const noexcept
 {
-    HifheAdapter adapter;
-    const auto ret = adapter.InitializeEvaluation(EvaluationParams());
-    if (ret != psi_pir::PSI_PIR_SUCCESS) {
+    std::unique_ptr<HeEvaluation> evaluation;
+    auto ret = CreateSoftHeEvaluation(ciphertext, evaluation);
+    if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
-    Bytes result;
-    const auto operationRet = adapter.Rerandomize(ciphertext, result);
-    if (operationRet == psi_pir::PSI_PIR_SUCCESS) {
-        output = std::move(result);
-    }
-    return operationRet;
+    ret = evaluation->Rerandomize();
+    return ret == PSI_PIR_SUCCESS ? evaluation->Serialize(output) : ret;
 }
 
 std::shared_ptr<const psi_pir::internal::IHEEngine> GetSoftHeEngine() noexcept

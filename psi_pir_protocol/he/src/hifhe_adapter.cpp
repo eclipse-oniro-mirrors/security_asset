@@ -24,30 +24,26 @@ namespace psi_pir::internal {
 namespace {
 constexpr uint32_t MAX_HE_BYTES = 256 * 1024;
 
-// Native objects are local to an operation and always freed, including partially failed calls.
-struct HifheText final {
-    HifheText() = default;
-    ~HifheText()
-    {
-        HIFHE_HETextFree(value);
-    }
-    HifheText(const HifheText &) = delete;
-    HifheText &operator=(const HifheText &) = delete;
-    HifheText(HifheText &&) = delete;
-    HifheText &operator=(HifheText &&) = delete;
-    HIFHE_HEText *value = nullptr;
-};
+} // namespace
 
-int32_t SerializeText(const HIFHE_Ctx *ctx, const HifheText &text, Bytes &output)
+HifheText::~HifheText()
 {
+    HIFHE_HETextFree(value);
+}
+
+int32_t HifheAdapter::Serialize(const HifheText &ciphertext, Bytes &output) const noexcept
+{
+    if (ctx_ == nullptr) {
+        return PSI_PIR_HE_ERROR;
+    }
     uint32_t size = 0;
-    auto ret = HIFHE_Serialize(ctx, text.value, nullptr, &size);
+    auto ret = HIFHE_Serialize(ctx_, ciphertext.value, nullptr, &size);
     if (ret != HIFHE_BUFFER_TOO_SMALL || size == 0 || size > MAX_HE_BYTES) {
         PSI_PIR_LOGE("Query HiFHE serialized length failed, ret=%{public}d, size=%{public}u", ret, size);
         return PSI_PIR_HE_ERROR;
     }
     Bytes buffer(size);
-    ret = HIFHE_Serialize(ctx, text.value, buffer.data(), &size);
+    ret = HIFHE_Serialize(ctx_, ciphertext.value, buffer.data(), &size);
     if (ret != HIFHE_SUCCESS || size == 0 || size > buffer.size()) {
         PSI_PIR_LOGE("Serialize HiFHE object failed, ret=%{public}d, size=%{public}u", ret, size);
         return PSI_PIR_HE_ERROR;
@@ -57,22 +53,24 @@ int32_t SerializeText(const HIFHE_Ctx *ctx, const HifheText &text, Bytes &output
     return PSI_PIR_SUCCESS;
 }
 
-int32_t DeserializeText(const HIFHE_Ctx *ctx, const Bytes &input, HifheText &output)
+int32_t HifheAdapter::Deserialize(const Bytes &ciphertext, HifheText &output) noexcept
 {
-    if (ctx == nullptr) {
+    if (ctx_ == nullptr) {
         return PSI_PIR_HE_ERROR;
     }
-    if (input.empty() || input.size() > MAX_HE_BYTES) {
+    if (ciphertext.empty() || ciphertext.size() > MAX_HE_BYTES) {
         return PSI_PIR_INVALID_ARGUMENT;
     }
-    const auto ret = HIFHE_Deserialize(ctx, input.data(), static_cast<uint32_t>(input.size()), &output.value);
-    if (ret != HIFHE_SUCCESS || output.value == nullptr) {
+    HifheText result;
+    const auto ret =
+        HIFHE_Deserialize(ctx_, ciphertext.data(), static_cast<uint32_t>(ciphertext.size()), &result.value);
+    if (ret != HIFHE_SUCCESS || result.value == nullptr) {
         PSI_PIR_LOGE("Deserialize HiFHE object failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
     }
+    std::swap(output.value, result.value);
     return PSI_PIR_SUCCESS;
 }
-} // namespace
 
 HifheAdapter::~HifheAdapter()
 {
@@ -157,7 +155,7 @@ int32_t HifheAdapter::InitializeKeyed(const ProtocolParams &params, const HeSeed
     return PSI_PIR_SUCCESS;
 }
 
-int32_t HifheAdapter::Encode(const Slots &slots, Bytes &output) noexcept
+int32_t HifheAdapter::Encode(const Slots &slots, HifheText &output) noexcept
 {
     if (ctx_ == nullptr) {
         return PSI_PIR_HE_ERROR;
@@ -167,27 +165,25 @@ int32_t HifheAdapter::Encode(const Slots &slots, Bytes &output) noexcept
         PSI_PIR_LOGE("Invalid HiFHE slot count or slot value");
         return PSI_PIR_INVALID_ARGUMENT;
     }
-    // The protocol uses uint64 slots; the native API requires checked uint32 values.
     const std::vector<uint32_t> values(slots.begin(), slots.end());
-    HifheText plaintext;
-    const auto ret = HIFHE_Encode(ctx_, values.data(), static_cast<uint32_t>(values.size()), &plaintext.value);
-    if (ret != HIFHE_SUCCESS) {
+    HifheText result;
+    const auto ret = HIFHE_Encode(ctx_, values.data(), static_cast<uint32_t>(values.size()), &result.value);
+    if (ret != HIFHE_SUCCESS || result.value == nullptr) {
         PSI_PIR_LOGE("HIFHE_Encode failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
     }
-    return SerializeText(ctx_, plaintext, output);
+    std::swap(output.value, result.value);
+    return PSI_PIR_SUCCESS;
 }
 
-int32_t HifheAdapter::Decode(const Bytes &plaintext, Slots &output) noexcept
+int32_t HifheAdapter::Decode(const HifheText &plaintext, Slots &output) noexcept
 {
-    HifheText decoded;
-    auto ret = DeserializeText(ctx_, plaintext, decoded);
-    if (ret != PSI_PIR_SUCCESS) {
-        return ret;
+    if (ctx_ == nullptr) {
+        return PSI_PIR_HE_ERROR;
     }
     std::vector<uint32_t> values(kDefaultPolyModulusDegree);
     uint32_t count = static_cast<uint32_t>(values.size());
-    ret = HIFHE_Decode(ctx_, decoded.value, values.data(), &count);
+    const auto ret = HIFHE_Decode(ctx_, plaintext.value, values.data(), &count);
     if (ret != HIFHE_SUCCESS || count != values.size() ||
         std::any_of(values.begin(), values.end(), [](uint32_t slot) { return slot >= kDefaultPlainModulus; })) {
         PSI_PIR_LOGE("HIFHE_Decode failed, ret=%{public}d, count=%{public}u", ret, count);
@@ -198,120 +194,86 @@ int32_t HifheAdapter::Decode(const Bytes &plaintext, Slots &output) noexcept
     return PSI_PIR_SUCCESS;
 }
 
-int32_t HifheAdapter::Encrypt(const Bytes &plaintext, Bytes &output) noexcept
+int32_t HifheAdapter::Encrypt(const HifheText &plaintext, HifheText &output) noexcept
 {
-    HifheText plain;
-    auto ret = DeserializeText(ctx_, plaintext, plain);
-    if (ret != PSI_PIR_SUCCESS) {
-        return ret;
+    if (ctx_ == nullptr) {
+        return PSI_PIR_HE_ERROR;
     }
-    HifheText ciphertext;
-    ret = HIFHE_Encrypt(ctx_, plain.value, &ciphertext.value);
-    if (ret != HIFHE_SUCCESS) {
+    HifheText result;
+    const auto ret = HIFHE_Encrypt(ctx_, plaintext.value, &result.value);
+    if (ret != HIFHE_SUCCESS || result.value == nullptr) {
         PSI_PIR_LOGE("HIFHE_Encrypt failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
     }
-    return SerializeText(ctx_, ciphertext, output);
+    std::swap(output.value, result.value);
+    return PSI_PIR_SUCCESS;
 }
 
-int32_t HifheAdapter::Decrypt(const Bytes &ciphertext, Bytes &output) noexcept
+int32_t HifheAdapter::Decrypt(const HifheText &ciphertext, HifheText &output) noexcept
 {
-    HifheText cipher;
-    auto ret = DeserializeText(ctx_, ciphertext, cipher);
-    if (ret != PSI_PIR_SUCCESS) {
-        return ret;
+    if (ctx_ == nullptr) {
+        return PSI_PIR_HE_ERROR;
     }
-    HifheText plaintext;
-    ret = HIFHE_Decrypt(ctx_, cipher.value, &plaintext.value);
-    if (ret != HIFHE_SUCCESS) {
+    HifheText result;
+    const auto ret = HIFHE_Decrypt(ctx_, ciphertext.value, &result.value);
+    if (ret != HIFHE_SUCCESS || result.value == nullptr) {
         PSI_PIR_LOGE("HIFHE_Decrypt failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
     }
-    return SerializeText(ctx_, plaintext, output);
+    std::swap(output.value, result.value);
+    return PSI_PIR_SUCCESS;
 }
 
-int32_t HifheAdapter::SubtractFromPlaintext(const Bytes &ciphertext, const Bytes &plaintext, Bytes &output) noexcept
+int32_t HifheAdapter::SubtractFromPlaintext(HifheText &ciphertext, const HifheText &plaintext,
+                                            HifheText &output) noexcept
 {
-    HifheText cipher;
-    HifheText plain;
-    auto ret = DeserializeText(ctx_, ciphertext, cipher);
-    if (ret != PSI_PIR_SUCCESS) {
-        return ret;
+    if (ctx_ == nullptr) {
+        return PSI_PIR_HE_ERROR;
     }
-    ret = DeserializeText(ctx_, plaintext, plain);
-    if (ret != PSI_PIR_SUCCESS) {
-        return ret;
-    }
-    ret = HIFHE_Ctrl(ctx_, HIFHE_CTRL_BGV_SET_NEGATE, cipher.value, nullptr, 0);
+    auto ret = HIFHE_Ctrl(ctx_, HIFHE_CTRL_BGV_SET_NEGATE, ciphertext.value, nullptr, 0);
     if (ret != HIFHE_SUCCESS) {
         PSI_PIR_LOGE("Set native HiFHE negate flag failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
     }
-    // The native negate flag is consumed by Add and cannot be serialized by itself.
     HifheText result;
-    ret = HIFHE_Add(ctx_, cipher.value, plain.value, &result.value);
-    if (ret != HIFHE_SUCCESS) {
+    ret = HIFHE_Add(ctx_, ciphertext.value, plaintext.value, &result.value);
+    if (ret != HIFHE_SUCCESS || result.value == nullptr) {
         PSI_PIR_LOGE("HIFHE_Add for PT-CT failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
     }
-    return SerializeText(ctx_, result, output);
+    std::swap(output.value, result.value);
+    return PSI_PIR_SUCCESS;
 }
 
-int32_t HifheAdapter::AddPlaintext(const Bytes &ciphertext, const Bytes &plaintext, Bytes &output) noexcept
+int32_t HifheAdapter::MultiplyPlaintext(const HifheText &ciphertext, const HifheText &plaintext,
+                                        HifheText &output) noexcept
 {
-    HifheText cipher;
-    HifheText plain;
-    auto ret = DeserializeText(ctx_, ciphertext, cipher);
-    if (ret != PSI_PIR_SUCCESS) {
-        return ret;
-    }
-    ret = DeserializeText(ctx_, plaintext, plain);
-    if (ret != PSI_PIR_SUCCESS) {
-        return ret;
-    }
-    HifheText result;
-    ret = HIFHE_Add(ctx_, cipher.value, plain.value, &result.value);
-    if (ret != HIFHE_SUCCESS) {
-        PSI_PIR_LOGE("HIFHE_Add failed, ret=%{public}d", ret);
+    if (ctx_ == nullptr) {
         return PSI_PIR_HE_ERROR;
     }
-    return SerializeText(ctx_, result, output);
-}
-
-int32_t HifheAdapter::MultiplyPlaintext(const Bytes &ciphertext, const Bytes &plaintext, Bytes &output) noexcept
-{
-    HifheText cipher;
-    HifheText plain;
-    auto ret = DeserializeText(ctx_, ciphertext, cipher);
-    if (ret != PSI_PIR_SUCCESS) {
-        return ret;
-    }
-    ret = DeserializeText(ctx_, plaintext, plain);
-    if (ret != PSI_PIR_SUCCESS) {
-        return ret;
-    }
     HifheText result;
-    ret = HIFHE_Mul(ctx_, cipher.value, plain.value, &result.value);
-    if (ret != HIFHE_SUCCESS) {
+    const auto ret = HIFHE_Mul(ctx_, ciphertext.value, plaintext.value, &result.value);
+    if (ret != HIFHE_SUCCESS || result.value == nullptr) {
         PSI_PIR_LOGE("HIFHE_Mul failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
     }
-    return SerializeText(ctx_, result, output);
+    std::swap(output.value, result.value);
+    return PSI_PIR_SUCCESS;
 }
 
-int32_t HifheAdapter::Rerandomize(const Bytes &ciphertext, Bytes &output) noexcept
+int32_t HifheAdapter::Rerandomize(const HifheText &ciphertext, HifheText &output) noexcept
 {
-    HifheText cipher;
-    auto ret = DeserializeText(ctx_, ciphertext, cipher);
-    if (ret != PSI_PIR_SUCCESS) {
-        return ret;
+    if (ctx_ == nullptr) {
+        return PSI_PIR_HE_ERROR;
     }
     HifheText result;
-    ret = HIFHE_Ctrl(ctx_, HIFHE_CTRL_BGV_RERANDOMIZE, cipher.value, &result.value, sizeof(result.value));
-    if (ret != HIFHE_SUCCESS) {
+    const auto ret =
+        HIFHE_Ctrl(ctx_, HIFHE_CTRL_BGV_RERANDOMIZE, ciphertext.value, &result.value, sizeof(result.value));
+    if (ret != HIFHE_SUCCESS || result.value == nullptr) {
         PSI_PIR_LOGE("Native HiFHE rerandomization failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
     }
-    return SerializeText(ctx_, result, output);
+    std::swap(output.value, result.value);
+    return PSI_PIR_SUCCESS;
 }
 } // namespace psi_pir::internal

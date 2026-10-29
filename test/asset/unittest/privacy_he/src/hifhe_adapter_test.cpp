@@ -15,6 +15,7 @@
 
 #include "he_key_deriver.h"
 #include "hifhe_adapter.h"
+#include "protocol_evaluation.h"
 #include "provider_registry.h"
 #include "psi_pir_error_code.h"
 #include "psi_pir_protocol.h"
@@ -66,27 +67,57 @@ HWTEST(HifheAdapterTest, KeylessEvaluationMatchesArithmetic, TestSize.Level1)
     for (size_t i = 0; i < bucket.size(); ++i) {
         bucket[i] = (query[i] + i % 4) % kDefaultPlainModulus;
     }
-    const SoftHeEngine engine;
     HifheAdapter owner;
     ASSERT_EQ(owner.InitializeKeyed(ProtocolParams{}, seed), PSI_PIR_SUCCESS);
-    Bytes plaintext;
+    HifheText plaintext;
+    HifheText ciphertext;
     Bytes target;
     ASSERT_EQ(owner.Encode(query, plaintext), PSI_PIR_SUCCESS);
-    ASSERT_EQ(owner.Encrypt(plaintext, target), PSI_PIR_SUCCESS);
-    Bytes difference;
-    Bytes product;
+    ASSERT_EQ(owner.Encrypt(plaintext, ciphertext), PSI_PIR_SUCCESS);
+    ASSERT_EQ(owner.Serialize(ciphertext, target), PSI_PIR_SUCCESS);
+    std::unique_ptr<HeEvaluation> evaluation;
+    ASSERT_EQ(CreateHeEvaluation(*GetSoftHeEngine(), target, evaluation), PSI_PIR_SUCCESS);
+    ASSERT_EQ(evaluation->AddPlain(bucket), PSI_PIR_SUCCESS);
+    ASSERT_EQ(evaluation->MultiplyPlain(mask), PSI_PIR_SUCCESS);
+    ASSERT_EQ(evaluation->Rerandomize(), PSI_PIR_SUCCESS);
     Bytes result;
-    ASSERT_EQ(engine.addPlain(target, bucket, difference), PSI_PIR_SUCCESS);
-    ASSERT_EQ(engine.multiplyPlain(difference, mask, product), PSI_PIR_SUCCESS);
-    ASSERT_EQ(engine.RandCipherText(product, result), PSI_PIR_SUCCESS);
-    EXPECT_NE(product, result);
+    ASSERT_EQ(evaluation->Serialize(result), PSI_PIR_SUCCESS);
     Slots recovered;
-    ASSERT_EQ(owner.Decrypt(result, plaintext), PSI_PIR_SUCCESS);
+    ASSERT_EQ(owner.Deserialize(result, ciphertext), PSI_PIR_SUCCESS);
+    ASSERT_EQ(owner.Decrypt(ciphertext, plaintext), PSI_PIR_SUCCESS);
     ASSERT_EQ(owner.Decode(plaintext, recovered), PSI_PIR_SUCCESS);
     ASSERT_EQ(recovered.size(), query.size());
     for (size_t i = 0; i < recovered.size(); ++i) {
         EXPECT_EQ(recovered[i], ((bucket[i] + kDefaultPlainModulus - query[i]) * mask[i]) % kDefaultPlainModulus);
     }
+}
+
+/* @tc.name: BatchFailurePreservesSerializedInputAndOutput
+ * @tc.desc: A later operator failure cannot alter the source ciphertext or commit a partial serialized result.
+ * @tc.type: FUNC
+ */
+HWTEST(HifheAdapterTest, BatchFailurePreservesSerializedInputAndOutput, TestSize.Level2)
+{
+    HeSeed seed;
+    seed.bytes.fill(0x46);
+    HifheAdapter source;
+    ASSERT_EQ(source.InitializeKeyed(ProtocolParams{}, seed), PSI_PIR_SUCCESS);
+    HifheText plaintext;
+    HifheText ciphertext;
+    ASSERT_EQ(source.Encode(Pattern(), plaintext), PSI_PIR_SUCCESS);
+    ASSERT_EQ(source.Encrypt(plaintext, ciphertext), PSI_PIR_SUCCESS);
+    Bytes target;
+    ASSERT_EQ(source.Serialize(ciphertext, target), PSI_PIR_SUCCESS);
+    const auto original = target;
+    Bytes output{0x99};
+    std::unique_ptr<HeEvaluation> evaluation;
+    ASSERT_EQ(CreateHeEvaluation(*GetSoftHeEngine(), target, evaluation), PSI_PIR_SUCCESS);
+    ASSERT_EQ(evaluation->AddPlain(Pattern()), PSI_PIR_SUCCESS);
+    EXPECT_EQ(evaluation->MultiplyPlain(Slots(kDefaultPolyModulusDegree - 1)), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(evaluation->Rerandomize(), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(evaluation->Serialize(output), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(target, original);
+    EXPECT_EQ(output, Bytes({0x99}));
 }
 
 /* @tc.name: RejectInvalidSlotsAndCiphertexts
@@ -97,17 +128,22 @@ HWTEST(HifheAdapterTest, RejectInvalidSlotsAndCiphertexts, TestSize.Level2)
 {
     HifheAdapter adapter;
     ASSERT_EQ(adapter.InitializeEvaluation(ProtocolParams{}), PSI_PIR_SUCCESS);
-    Bytes output{0x99};
+    HifheText output;
+    ASSERT_EQ(adapter.Encode(Pattern(), output), PSI_PIR_SUCCESS);
+    const auto *original = output.value;
     Slots invalid(kDefaultPolyModulusDegree - 1);
     EXPECT_EQ(adapter.Encode(invalid, output), PSI_PIR_INVALID_ARGUMENT);
     invalid.resize(kDefaultPolyModulusDegree);
     invalid.front() = kDefaultPlainModulus;
     EXPECT_EQ(adapter.Encode(invalid, output), PSI_PIR_INVALID_ARGUMENT);
-    EXPECT_EQ(output, Bytes({0x99}));
-    EXPECT_EQ(adapter.Rerandomize(Bytes{1}, output), PSI_PIR_HE_ERROR);
-    EXPECT_EQ(output, Bytes({0x99}));
+    EXPECT_EQ(output.value, original);
+    EXPECT_EQ(adapter.Deserialize(Bytes{1}, output), PSI_PIR_HE_ERROR);
+    EXPECT_EQ(output.value, original);
+    HifheText empty;
+    EXPECT_EQ(adapter.Rerandomize(empty, output), PSI_PIR_HE_ERROR);
+    EXPECT_EQ(output.value, original);
     Slots slots{0x99};
-    EXPECT_EQ(adapter.Decode(Bytes{1}, slots), PSI_PIR_HE_ERROR);
+    EXPECT_EQ(adapter.Decode(empty, slots), PSI_PIR_HE_ERROR);
     EXPECT_EQ(slots, Slots({0x99}));
 }
 
@@ -123,9 +159,13 @@ HWTEST(HifheAdapterTest, EvaluationCannotDecrypt, TestSize.Level2)
     ASSERT_EQ(SoftHeEngine().Encrypt(Pattern(), ProtocolParams{}, seed, ciphertext), PSI_PIR_SUCCESS);
     HifheAdapter evaluator;
     ASSERT_EQ(evaluator.InitializeEvaluation(ProtocolParams{}), PSI_PIR_SUCCESS);
-    Bytes output{0x99};
-    EXPECT_EQ(evaluator.Decrypt(ciphertext, output), PSI_PIR_HE_ERROR);
-    EXPECT_EQ(output, Bytes({0x99}));
+    HifheText encrypted;
+    HifheText output;
+    ASSERT_EQ(evaluator.Deserialize(ciphertext, encrypted), PSI_PIR_SUCCESS);
+    ASSERT_EQ(evaluator.Encode(Pattern(), output), PSI_PIR_SUCCESS);
+    const auto *original = output.value;
+    EXPECT_EQ(evaluator.Decrypt(encrypted, output), PSI_PIR_HE_ERROR);
+    EXPECT_EQ(output.value, original);
 }
 
 /* @tc.name: InvalidInitializationCanRetry
@@ -140,7 +180,7 @@ HWTEST(HifheAdapterTest, InvalidInitializationCanRetry, TestSize.Level2)
     EXPECT_EQ(adapter.InitializeEvaluation(invalid), PSI_PIR_INVALID_ARGUMENT);
     ASSERT_EQ(adapter.InitializeEvaluation(ProtocolParams{}), PSI_PIR_SUCCESS);
     EXPECT_EQ(adapter.InitializeEvaluation(ProtocolParams{}), PSI_PIR_INVALID_ARGUMENT);
-    Bytes plaintext;
+    HifheText plaintext;
     EXPECT_EQ(adapter.Encode(Pattern(), plaintext), PSI_PIR_SUCCESS);
 }
 // Deterministic test provider exercises protocol orchestration without a device HUKS dependency.

@@ -16,11 +16,12 @@
 #include "psi_pir_protocol_impl.h"
 
 #include "he_key_deriver.h"
+#include "protocol_evaluation.h"
 #include "protocol_mapper.h"
 #include "provider_registry.h"
+#include "psi_pir_log.h"
 #include "search_result_processor.h"
 #include "soft_he_engine.h"
-#include "psi_pir_log.h"
 
 #include <algorithm>
 #include <limits>
@@ -244,44 +245,25 @@ Slots BuildDifferencePlain(const EvaluationContext &context, std::size_t batchSt
     return differencePlain;
 }
 
-int32_t EvaluateDifference(const EvaluationContext &context, const Slots &differencePlain, Bytes &evaluated) noexcept
+int32_t EvaluateDifference(const EvaluationContext &context, const Slots &differencePlain,
+                           HeEvaluation &evaluation) noexcept
 {
-    Bytes differenceCiphertext;
-    auto ret = context.engine.addPlain(context.privacyTarget, differencePlain, differenceCiphertext);
+    auto ret = evaluation.AddPlain(differencePlain);
     if (ret != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("HE addPlain difference failed: ciphertextBytes=%{public}zu, "
-                     "plainSlots=%{public}zu, ret=%{public}d",
-                     context.privacyTarget.size(), differencePlain.size(), ret);
+        PSI_PIR_LOGE("EvaluateDifference subtraction failed, ret=%{public}d", ret);
         return ret;
     }
-    if (differenceCiphertext.empty()) {
-        PSI_PIR_LOGE("HE addPlain returned empty ciphertext");
-        return PSI_PIR_HE_ERROR;
-    }
-    PSI_PIR_LOGI("HE addPlain difference complete, inputBytes=%{public}zu, "
-                 "plainSlots=%{public}zu, outputBytes=%{public}zu",
-                 context.privacyTarget.size(), differencePlain.size(), differenceCiphertext.size());
-    Slots maskVector;
-    ret = context.encoder.GenerateMaskVector(context.params, maskVector);
+    Slots mask;
+    ret = context.encoder.GenerateMaskVector(context.params, mask);
     if (ret != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("GenerateMaskVector failed, ret=%{public}d", ret);
         return ret;
     }
-    ret = context.engine.multiplyPlain(differenceCiphertext, maskVector, evaluated);
+    ret = evaluation.MultiplyPlain(mask);
     if (ret != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("HE multiplyPlain failed: ciphertextBytes=%{public}zu, "
-                     "plainSlots=%{public}zu, ret=%{public}d",
-                     differenceCiphertext.size(), maskVector.size(), ret);
-        return ret;
+        PSI_PIR_LOGE("EvaluateDifference mask multiplication failed, ret=%{public}d", ret);
     }
-    if (evaluated.empty()) {
-        PSI_PIR_LOGE("HE multiplyPlain returned empty ciphertext");
-        return PSI_PIR_HE_ERROR;
-    }
-    PSI_PIR_LOGI("HE multiplyPlain mask complete, inputBytes=%{public}zu, "
-                 "plainSlots=%{public}zu, outputBytes=%{public}zu",
-                 differenceCiphertext.size(), maskVector.size(), evaluated.size());
-    return PSI_PIR_SUCCESS;
+    return ret;
 }
 
 int32_t BuildSeedPlain(const EvaluationContext &context, std::size_t batchStart, std::size_t batchElementCount,
@@ -304,60 +286,57 @@ int32_t BuildSeedPlain(const EvaluationContext &context, std::size_t batchStart,
 }
 
 int32_t AddSeeds(const EvaluationContext &context, std::size_t batchStart, std::size_t batchElementCount,
-                 std::size_t slotCount, Bytes &evaluated) noexcept
+                 HeEvaluation &evaluation) noexcept
 {
     Slots seedPlain;
-    auto ret = BuildSeedPlain(context, batchStart, batchElementCount, slotCount, seedPlain);
+    auto ret = BuildSeedPlain(context, batchStart, batchElementCount, context.params.polyModulusDegree, seedPlain);
     if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
-    Bytes seededEvaluation;
-    ret = context.engine.addPlain(evaluated, seedPlain, seededEvaluation);
+    ret = evaluation.AddPlain(seedPlain);
     if (ret != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("HE addPlain seed failed: ciphertextBytes=%{public}zu, "
-                     "plainSlots=%{public}zu, ret=%{public}d",
-                     evaluated.size(), seedPlain.size(), ret);
-        return ret;
+        PSI_PIR_LOGE("AddSeeds failed, ret=%{public}d", ret);
     }
-    evaluated = std::move(seededEvaluation);
-    if (evaluated.empty()) {
-        PSI_PIR_LOGE("HE addPlain (seeds) returned empty ciphertext");
-        return PSI_PIR_HE_ERROR;
-    }
-    PSI_PIR_LOGI("HE addPlain seed complete, plainSlots=%{public}zu, outputBytes=%{public}zu", seedPlain.size(),
-                 evaluated.size());
-    return PSI_PIR_SUCCESS;
+    return ret;
 }
 
-int32_t RerandResult(const EvaluationContext &context, Bytes &evaluated)
+int32_t RerandResult(HeEvaluation &evaluation) noexcept
 {
-    Bytes rerandEvaluation;
-    auto ret = context.engine.RandCipherText(evaluated, rerandEvaluation);
+    const auto ret = evaluation.Rerandomize();
     if (ret != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("HE Rerand failed: ciphertextBytes=%{public}zu, ret=%{public}d", evaluated.size(), ret);
-        return ret;
+        PSI_PIR_LOGE("RerandResult failed, ret=%{public}d", ret);
     }
-    std::size_t inputSize = evaluated.size();
-    evaluated = std::move(rerandEvaluation);
-    PSI_PIR_LOGI("HE Rerand complete, inputBytes=%{public}zu, outputBytes=%{public}zu", inputSize, evaluated.size());
     return ret;
 }
 
 int32_t EvaluateBatch(const EvaluationContext &context, std::size_t batchStart, std::size_t batchElementCount,
                       Bytes &evaluated) noexcept
 {
-    const auto differencePlain = BuildDifferencePlain(context, batchStart, batchElementCount);
-    auto ret = EvaluateDifference(context, differencePlain, evaluated);
-    if (ret != PSI_PIR_SUCCESS || !IsPir(context.params)) {
-        PSI_PIR_LOGW("EvaluateDifference failed or is psi protocol(if ret = 0), ret=%{public}d", ret);
-        return ret;
-    }
-    ret = AddSeeds(context, batchStart, batchElementCount, differencePlain.size(), evaluated);
+    std::unique_ptr<HeEvaluation> evaluation;
+    auto ret = CreateHeEvaluation(context.engine, context.privacyTarget, evaluation);
     if (ret != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("AddSeeds failed, ret=%{public}d", ret);
         return ret;
     }
-    return RerandResult(context, evaluated);
+    const auto differencePlain = BuildDifferencePlain(context, batchStart, batchElementCount);
+    ret = EvaluateDifference(context, differencePlain, *evaluation);
+    if (ret != PSI_PIR_SUCCESS) {
+        return ret;
+    }
+    if (IsPir(context.params)) {
+        ret = AddSeeds(context, batchStart, batchElementCount, *evaluation);
+        if (ret != PSI_PIR_SUCCESS) {
+            return ret;
+        }
+        ret = RerandResult(*evaluation);
+        if (ret != PSI_PIR_SUCCESS) {
+            return ret;
+        }
+    }
+    ret = evaluation->Serialize(evaluated);
+    if (ret != PSI_PIR_SUCCESS) {
+        PSI_PIR_LOGE("Serialize batch result failed, ret=%{public}d", ret);
+    }
+    return ret;
 }
 
 int32_t EvaluateBatches(const EvaluationContext &context, const BatchLayout &layout,

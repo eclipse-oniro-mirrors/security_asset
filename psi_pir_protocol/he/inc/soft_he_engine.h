@@ -18,6 +18,7 @@
 
 #include "crypto_provider.h"
 #include "he_types.h"
+#include "protocol_evaluation.h"
 #include <memory>
 
 namespace psi_pir::internal {
@@ -32,6 +33,8 @@ public:
     int32_t multiplyPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept override;
     int32_t RandCipherText(const Bytes &ciphertext, Bytes &output) const noexcept override;
 };
+// Imports into one keyless HiFHE context, retained by the returned handle until destruction.
+int32_t CreateSoftHeEvaluation(const Bytes &ciphertext, std::unique_ptr<HeEvaluation> &evaluation) noexcept;
 std::shared_ptr<const psi_pir::internal::IHEEngine> GetSoftHeEngine() noexcept;
 // Installs the protocol default without replacing an explicitly registered provider.
 int32_t EnsureDefaultHeEngineInstalled() noexcept;

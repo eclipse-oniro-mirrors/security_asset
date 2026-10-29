@@ -82,10 +82,10 @@ HWTEST_F(PsiPirHeTest, FailedOperationsPreserveOutputs, TestSize.Level1)
     HifheAdapter adapter;
     Bytes output{0x99};
     SetHeSeedDeriver(nullptr);
-    EXPECT_EQ(adapter.AddPlaintext(Bytes{1}, Bytes{2}, output), PSI_PIR_HE_ERROR);
+    HifheText plaintext;
+    EXPECT_EQ(adapter.Encode(Slots{}, plaintext), PSI_PIR_HE_ERROR);
     EXPECT_EQ(output, Bytes({0x99}));
-    EXPECT_EQ(genPrivacyTarget(TargetInput{Bytes{'a'}, HashAlg::SHA256}, PSI, {1000, 100}, output),
-              PSI_PIR_HE_ERROR);
+    EXPECT_EQ(genPrivacyTarget(TargetInput{Bytes{'a'}, HashAlg::SHA256}, PSI, {1000, 100}, output), PSI_PIR_HE_ERROR);
     EXPECT_EQ(output, Bytes({0x99}));
     PrivacySearchResult encrypted{{Bytes{1}}, std::nullopt};
     SearchResult result{true, std::vector<Bytes>{Bytes{0x99}}};

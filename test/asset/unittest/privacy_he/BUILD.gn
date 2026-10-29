@@ -15,7 +15,10 @@ import("//build/ohos.gni")
 
 ohos_unittest("asset_privacy_he_test") {
   module_out_path = "asset/hpic"
-  sources = [ "src/hifhe_adapter_test.cpp" ]
+  sources = [
+    "src/hifhe_adapter_test.cpp",
+    "src/he_engine_test.cpp",
+  ]
   include_dirs = [
     "../../../../psi_pir_protocol/he/inc",
     "../../../../psi_pir_protocol/common/inc",
