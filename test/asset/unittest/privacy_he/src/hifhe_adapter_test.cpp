@@ -21,6 +21,7 @@
 #include "psi_pir_protocol.h"
 #include "soft_he_engine.h"
 #include <gtest/gtest.h>
+#include <limits>
 
 namespace {
 using namespace testing::ext;
@@ -135,6 +136,8 @@ HWTEST(HifheAdapterTest, RejectInvalidSlotsAndCiphertexts, TestSize.Level2)
     EXPECT_EQ(adapter.Encode(invalid, output), PSI_PIR_INVALID_ARGUMENT);
     invalid.resize(kDefaultPolyModulusDegree);
     invalid.front() = kDefaultPlainModulus;
+    EXPECT_EQ(adapter.Encode(invalid, output), PSI_PIR_INVALID_ARGUMENT);
+    invalid.front() = std::numeric_limits<uint64_t>::max();
     EXPECT_EQ(adapter.Encode(invalid, output), PSI_PIR_INVALID_ARGUMENT);
     EXPECT_EQ(output.value, original);
     EXPECT_EQ(adapter.Deserialize(Bytes{1}, output), PSI_PIR_HE_ERROR);

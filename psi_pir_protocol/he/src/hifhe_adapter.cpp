@@ -165,9 +165,8 @@ int32_t HifheAdapter::Encode(const Slots &slots, HifheText &output) noexcept
         PSI_PIR_LOGE("Invalid HiFHE slot count or slot value");
         return PSI_PIR_INVALID_ARGUMENT;
     }
-    const std::vector<uint32_t> values(slots.begin(), slots.end());
     HifheText result;
-    const auto ret = HIFHE_Encode(ctx_, values.data(), static_cast<uint32_t>(values.size()), &result.value);
+    const auto ret = HIFHE_Encode(ctx_, slots.data(), static_cast<uint32_t>(slots.size()), &result.value);
     if (ret != HIFHE_SUCCESS || result.value == nullptr) {
         PSI_PIR_LOGE("HIFHE_Encode failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
@@ -181,16 +180,15 @@ int32_t HifheAdapter::Decode(const HifheText &plaintext, Slots &output) noexcept
     if (ctx_ == nullptr) {
         return PSI_PIR_HE_ERROR;
     }
-    std::vector<uint32_t> values(kDefaultPolyModulusDegree);
+    Slots values(kDefaultPolyModulusDegree);
     uint32_t count = static_cast<uint32_t>(values.size());
     const auto ret = HIFHE_Decode(ctx_, plaintext.value, values.data(), &count);
     if (ret != HIFHE_SUCCESS || count != values.size() ||
-        std::any_of(values.begin(), values.end(), [](uint32_t slot) { return slot >= kDefaultPlainModulus; })) {
+        std::any_of(values.begin(), values.end(), [](uint64_t slot) { return slot >= kDefaultPlainModulus; })) {
         PSI_PIR_LOGE("HIFHE_Decode failed, ret=%{public}d, count=%{public}u", ret, count);
         return PSI_PIR_HE_ERROR;
     }
-    Slots result(values.begin(), values.end());
-    output = std::move(result);
+    output = std::move(values);
     return PSI_PIR_SUCCESS;
 }
 
