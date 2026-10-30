@@ -20,6 +20,7 @@
 #include "psi_pir_error_code.h"
 #include <algorithm>
 #include <gtest/gtest.h>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -53,6 +54,7 @@ struct HuksCalls {
     uint32_t exportFlag = 0;
     std::vector<uint8_t> salt;
     std::vector<std::string> stages;
+    std::vector<int32_t> accounts;
 };
 HuksCalls g_calls;
 uint32_t ReadUint(const HksParamSet *params, uint32_t tag)
@@ -66,8 +68,9 @@ void ReadAccount(const HksParamSet *params)
     g_calls.storage = ReadUint(params, HKS_TAG_AUTH_STORAGE_LEVEL);
     HksParam *user = nullptr;
     const auto ret = HksGetParam(params, HKS_TAG_SPECIFIC_USER_ID, &user);
-    EXPECT_EQ(ret, HKS_ERROR_PARAM_NOT_EXIST);
-    g_calls.userId = ret == HKS_SUCCESS ? user->int32Param : -1;
+    EXPECT_EQ(ret, HKS_SUCCESS);
+    g_calls.userId = ret == HKS_SUCCESS && user != nullptr ? user->int32Param : -1;
+    g_calls.accounts.push_back(g_calls.userId);
 }
 void ReadAlias(const HksBlob *alias)
 {
@@ -158,14 +161,14 @@ extern "C" int32_t HksAbort(const HksBlob *, const HksParamSet *params)
 namespace {
 /**
  * @tc.name: PrepareRootKey_001
- * @tc.desc: Query the shared CE root without a business account tag or regenerating an existing key.
+ * @tc.desc: Query the fixed CE alias in the explicit OS account without regenerating an existing key.
  * @tc.type: FUNC
  */
 HWTEST_F(HuksSeedDeriverTest, PrepareRootKey_001, TestSize.Level1)
 {
-    EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(RootKeyPolicy::CREATE_IF_MISSING), PSI_PIR_SUCCESS);
+    EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(100, RootKeyPolicy::CREATE_IF_MISSING), PSI_PIR_SUCCESS);
     EXPECT_EQ(g_calls.storage, HKS_AUTH_STORAGE_LEVEL_CE);
-    EXPECT_EQ(g_calls.userId, -1);
+    EXPECT_EQ(g_calls.userId, 100);
     EXPECT_EQ(g_calls.alias, "asset.hpic.derive.root.v1");
     EXPECT_EQ(g_calls.generates, 0U);
 }
@@ -177,14 +180,15 @@ HWTEST_F(HuksSeedDeriverTest, PrepareRootKey_001, TestSize.Level1)
 HWTEST_F(HuksSeedDeriverTest, PrepareRootKey_002, TestSize.Level1)
 {
     g_calls.existResult = HKS_ERROR_NOT_EXIST;
-    ASSERT_EQ(HuksSeedDeriver().PrepareRootKey(RootKeyPolicy::CREATE_IF_MISSING), PSI_PIR_SUCCESS);
+    ASSERT_EQ(HuksSeedDeriver().PrepareRootKey(100, RootKeyPolicy::CREATE_IF_MISSING), PSI_PIR_SUCCESS);
     EXPECT_EQ(g_calls.generates, 1U);
+    EXPECT_EQ(g_calls.accounts, (std::vector<int32_t>{100, 100}));
     EXPECT_EQ(g_calls.algorithm, HKS_ALG_AES);
     EXPECT_EQ(g_calls.purpose, HKS_KEY_PURPOSE_DERIVE);
     EXPECT_EQ(g_calls.keyBits, 256U);
     EXPECT_EQ(g_calls.digest, HKS_DIGEST_SHA256);
     EXPECT_EQ(g_calls.storage, HKS_AUTH_STORAGE_LEVEL_CE);
-    EXPECT_EQ(g_calls.userId, -1);
+    EXPECT_EQ(g_calls.userId, 100);
     EXPECT_EQ(g_calls.alias, "asset.hpic.derive.root.v1");
 }
 /**
@@ -195,9 +199,9 @@ HWTEST_F(HuksSeedDeriverTest, PrepareRootKey_002, TestSize.Level1)
 HWTEST_F(HuksSeedDeriverTest, PrepareRootKey_003, TestSize.Level2)
 {
     g_calls.existResult = HKS_ERROR_NOT_EXIST;
-    EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(RootKeyPolicy::REQUIRE_EXISTING), PSI_PIR_CRYPTO_ERROR);
+    EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(100, RootKeyPolicy::REQUIRE_EXISTING), PSI_PIR_CRYPTO_ERROR);
     g_calls.existResult = HKS_ERROR_NO_PERMISSION;
-    EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(RootKeyPolicy::CREATE_IF_MISSING), PSI_PIR_CRYPTO_ERROR);
+    EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(100, RootKeyPolicy::CREATE_IF_MISSING), PSI_PIR_CRYPTO_ERROR);
     EXPECT_EQ(g_calls.generates, 0U);
 }
 /**
@@ -209,7 +213,7 @@ HWTEST_F(HuksSeedDeriverTest, PrepareRootKey_004, TestSize.Level2)
 {
     g_calls.existResult = HKS_ERROR_NOT_EXIST;
     g_calls.generateResult = HKS_ERROR_CRYPTO_ENGINE_ERROR;
-    EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(RootKeyPolicy::CREATE_IF_MISSING), PSI_PIR_CRYPTO_ERROR);
+    EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(100, RootKeyPolicy::CREATE_IF_MISSING), PSI_PIR_CRYPTO_ERROR);
     EXPECT_EQ(g_calls.generates, 1U);
     EXPECT_EQ(g_calls.inits, 0U);
 }
@@ -228,7 +232,7 @@ HWTEST_F(HuksSeedDeriverTest, Derive_001, TestSize.Level1)
     EXPECT_EQ(g_calls.digest, HKS_DIGEST_SHA256);
     EXPECT_EQ(g_calls.deriveBytes, 32U);
     EXPECT_EQ(g_calls.exportFlag, HKS_STORAGE_ALLOW_KEY_EXPORTED);
-    EXPECT_EQ(g_calls.userId, -1);
+    EXPECT_EQ(g_calls.userId, 100);
     EXPECT_EQ(g_calls.storage, HKS_AUTH_STORAGE_LEVEL_CE);
     EXPECT_EQ(g_calls.salt, std::vector<uint8_t>(salt.begin(), salt.end()));
     EXPECT_TRUE(std::all_of(seed.bytes.begin(), seed.bytes.end(), [](uint8_t value) { return value == 0xAB; }));
@@ -236,6 +240,7 @@ HWTEST_F(HuksSeedDeriverTest, Derive_001, TestSize.Level1)
     EXPECT_EQ(g_calls.finishes, 1U);
     EXPECT_EQ(g_calls.aborts, 0U);
     EXPECT_EQ(g_calls.stages, (std::vector<std::string>{"Init", "Update", "Finish"}));
+    EXPECT_EQ(g_calls.accounts, (std::vector<int32_t>{100, 100, 100}));
 }
 /**
  * @tc.name: Derive_002
@@ -293,7 +298,7 @@ HWTEST_F(HuksSeedDeriverTest, Derive_004, TestSize.Level2)
 }
 /**
  * @tc.name: Derive_005
- * @tc.desc: Use the same root alias and namespace for different callers while retaining their supplied salts.
+ * @tc.desc: Use the same root alias in the corresponding CE account and retain each caller supplied salt.
  * @tc.type: FUNC
  */
 HWTEST_F(HuksSeedDeriverTest, Derive_005, TestSize.Level2)
@@ -304,13 +309,32 @@ HWTEST_F(HuksSeedDeriverTest, Derive_005, TestSize.Level2)
     ASSERT_EQ(deriver.Derive({20010001, 100}, salt, seed), PSI_PIR_SUCCESS);
     const auto alias = g_calls.alias;
     EXPECT_EQ(alias, "asset.hpic.derive.root.v1");
-    EXPECT_EQ(g_calls.userId, -1);
+    EXPECT_EQ(g_calls.userId, 100);
     salt.front() ^= 1;
     ASSERT_EQ(deriver.Derive({40010001, 200}, salt, seed), PSI_PIR_SUCCESS);
     EXPECT_EQ(g_calls.alias, alias);
-    EXPECT_EQ(g_calls.userId, -1);
+    EXPECT_EQ(g_calls.userId, 200);
     EXPECT_EQ(g_calls.salt, std::vector<uint8_t>(salt.begin(), salt.end()));
     EXPECT_EQ(g_calls.inits, 2U);
+    EXPECT_EQ(g_calls.accounts, (std::vector<int32_t>{100, 100, 100, 200, 200, 200}));
     EXPECT_EQ(g_calls.generates, 0U);
+}
+/*
+ * @tc.name: InvalidCeUserId
+ * @tc.desc: Reject user IDs outside the signed HUKS tag range before any key access or output modification.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HuksSeedDeriverTest, InvalidCeUserId, TestSize.Level2)
+{
+    const auto userId = std::numeric_limits<uint32_t>::max();
+    const HuksSeedDeriver deriver;
+    EXPECT_EQ(deriver.PrepareRootKey(userId, RootKeyPolicy::CREATE_IF_MISSING), PSI_PIR_INVALID_ARGUMENT);
+    HeSeed seed;
+    seed.bytes.fill(0x99);
+    EXPECT_EQ(deriver.Derive({1000, userId}, Salt(), seed), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(seed.bytes.front(), 0x99);
+    EXPECT_EQ(g_calls.exists, 0U);
+    EXPECT_EQ(g_calls.generates, 0U);
+    EXPECT_EQ(g_calls.inits, 0U);
 }
 } // namespace

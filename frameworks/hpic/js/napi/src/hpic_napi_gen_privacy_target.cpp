@@ -40,8 +40,10 @@ napi_status ParseGenPrivacyTargetArgs(napi_env env, napi_callback_info info, Hpi
 napi_value NapiGenPrivacyTarget(napi_env env, napi_callback_info info)
 {
     if (IsCczConfigured()) {
+        LOGI("HPIC NAPI genPrivacyTarget begin, route=CCZ");
         return CallComputationNapiFunc(env, info, "GenPrivacyTarget");
     }
+    LOGI("HPIC NAPI genPrivacyTarget begin, route=AssetSA");
     auto context = std::unique_ptr<GenPrivacyTargetContext>(new (std::nothrow) GenPrivacyTargetContext());
     NAPI_THROW(env, context == nullptr, HPIC_OUT_OF_MEMORY, GetErrorMessage(HPIC_OUT_OF_MEMORY));
     context->parse = ParseGenPrivacyTargetArgs;

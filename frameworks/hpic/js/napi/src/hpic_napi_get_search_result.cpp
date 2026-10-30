@@ -40,8 +40,10 @@ napi_status ParseGetSearchResultArgs(napi_env env, napi_callback_info info, Hpic
 napi_value NapiGetSearchResult(napi_env env, napi_callback_info info)
 {
     if (IsCczConfigured()) {
+        LOGI("HPIC NAPI getSearchResult begin, route=CCZ");
         return CallComputationNapiFunc(env, info, "GetSearchResult");
     }
+    LOGI("HPIC NAPI getSearchResult begin, route=AssetSA");
     auto context = std::unique_ptr<GetSearchResultContext>(new (std::nothrow) GetSearchResultContext());
     NAPI_THROW(env, context == nullptr, HPIC_OUT_OF_MEMORY, GetErrorMessage(HPIC_OUT_OF_MEMORY));
     context->parse = ParseGetSearchResultArgs;

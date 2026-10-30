@@ -30,7 +30,7 @@ namespace OHOS::Security::PrivacyComputation {
 namespace {
 using namespace psi_pir;
 using namespace psi_pir::internal;
-int32_t PrepareRootKey(RootKeyPolicy policy)
+int32_t PrepareRootKey(uint32_t userId, RootKeyPolicy policy)
 {
     // Function-local static initialization serializes provider registration once per SA process.
     static const auto deriver = [] {
@@ -38,7 +38,7 @@ int32_t PrepareRootKey(RootKeyPolicy policy)
         SetHeSeedDeriver(provider);
         return provider;
     }();
-    return deriver->PrepareRootKey(policy);
+    return deriver->PrepareRootKey(userId, policy);
 }
 int32_t PrepareIdentity(uint32_t uid, CallerIdentity &identity)
 {
@@ -48,6 +48,8 @@ int32_t PrepareIdentity(uint32_t uid, CallerIdentity &identity)
         return PSI_PIR_INTERNAL_ERROR;
     }
     identity = {uid, static_cast<uint32_t>(userId)};
+    PSI_PIR_LOGI("HPIC SA caller identity resolved, uid=%{private}u, userId=%{private}u", identity.uid,
+        identity.userId);
     return PSI_PIR_SUCCESS;
 }
 bool CopyBlob(const PrivacyBlob &input, Bytes &output, size_t &total)
@@ -84,13 +86,16 @@ bool CopyBlobs(const PrivacyBlobList &input, std::vector<Bytes> &output, size_t 
 extern "C" int32_t AssetGenPrivacyTarget(uint32_t uid, const PrivacyTargetRequest *input, PrivacyBuffer *output)
 {
     using namespace OHOS::Security::PrivacyComputation;
+    PSI_PIR_LOGI("HPIC SA genPrivacyTarget begin, uid=%{private}u", uid);
     if (input == nullptr || output == nullptr || output->data == nullptr || output->size > MAX_PRIVACY_BYTES) {
+        PSI_PIR_LOGE("HPIC SA genPrivacyTarget invalid request or output buffer");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
     psi_pir::TargetInput target;
     target.hashAlg = static_cast<psi_pir::HashAlg>(input->hashAlg);
     size_t total = TARGET_FIXED_BYTES;
     if (!CopyBlob(input->element, target.elemData, total)) {
+        PSI_PIR_LOGE("HPIC SA genPrivacyTarget invalid element buffer or byte budget");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
     const psi_pir::PrivacyProtocol protocol{static_cast<psi_pir::DataSetSize>(input->protocol.dataSetSize),
@@ -105,7 +110,7 @@ extern "C" int32_t AssetGenPrivacyTarget(uint32_t uid, const PrivacyTargetReques
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
         return ret;
     }
-    ret = PrepareRootKey(RootKeyPolicy::CREATE_IF_MISSING);
+    ret = PrepareRootKey(identity.userId, RootKeyPolicy::CREATE_IF_MISSING);
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
         return ret;
     }
@@ -115,28 +120,34 @@ extern "C" int32_t AssetGenPrivacyTarget(uint32_t uid, const PrivacyTargetReques
         return ret;
     }
     if (result.size() > output->size) {
+        PSI_PIR_LOGE("HPIC SA genPrivacyTarget output exceeds capacity, bytes=%{public}zu", result.size());
         return psi_pir::PSI_PIR_CODEC_ERROR;
     }
     std::copy(result.begin(), result.end(), output->data);
     output->size = static_cast<uint32_t>(result.size());
+    PSI_PIR_LOGI("HPIC SA genPrivacyTarget success, outputBytes=%{public}u", output->size);
     return psi_pir::PSI_PIR_SUCCESS;
 }
 
 extern "C" int32_t AssetGetPrivacyResult(uint32_t uid, const PrivacySearchRequest *input, PrivacyBuffer *output)
 {
     using namespace OHOS::Security::PrivacyComputation;
+    PSI_PIR_LOGI("HPIC SA getSearchResult begin, uid=%{private}u", uid);
     if (input == nullptr || output == nullptr || output->data == nullptr || output->size > MAX_PRIVACY_BYTES ||
         input->hasSymmetric > 1) {
+        PSI_PIR_LOGE("HPIC SA getSearchResult invalid request or output buffer");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
     psi_pir::PrivacySearchResult request;
     size_t total = SEARCH_FIXED_BYTES;
     if (!CopyBlobs(input->ciphertexts, request.fheCipherText, total)) {
+        PSI_PIR_LOGE("HPIC SA getSearchResult invalid ciphertext buffers or byte budget");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
     if (input->hasSymmetric == 1) {
         request.symCipherText.emplace();
         if (!CopyBlobs(input->symmetric, *request.symCipherText, total)) {
+            PSI_PIR_LOGE("HPIC SA getSearchResult invalid symmetric buffers or byte budget");
             return psi_pir::PSI_PIR_INVALID_ARGUMENT;
         }
     }
@@ -152,7 +163,7 @@ extern "C" int32_t AssetGetPrivacyResult(uint32_t uid, const PrivacySearchReques
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
         return ret;
     }
-    ret = PrepareRootKey(RootKeyPolicy::REQUIRE_EXISTING);
+    ret = PrepareRootKey(identity.userId, RootKeyPolicy::REQUIRE_EXISTING);
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
         return ret;
     }
@@ -165,5 +176,6 @@ extern "C" int32_t AssetGetPrivacyResult(uint32_t uid, const PrivacySearchReques
         PSI_PIR_LOGE("Privacy result exceeds output capacity or byte budget");
         return psi_pir::PSI_PIR_CODEC_ERROR;
     }
+    PSI_PIR_LOGI("HPIC SA getSearchResult success, outputBytes=%{public}u", output->size);
     return psi_pir::PSI_PIR_SUCCESS;
 }

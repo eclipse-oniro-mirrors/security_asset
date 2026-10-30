@@ -16,7 +16,7 @@
 //! Asset Stub has already checked the interface token and protected service lifetime.
 use asset_ipc::privacy::*;
 use asset_ipc::{IpcCode, IPC_SUCCESS};
-use asset_log::loge;
+use asset_log::{loge, logi};
 use ipc::{parcel::MsgParcel, IpcResult, IpcStatusCode, Skeleton};
 use std::convert::TryFrom;
 
@@ -26,12 +26,17 @@ extern "C" {
 }
 
 fn gen_privacy_target(uid: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
-    let input = deserialize_target(data).map_err(|_| IpcStatusCode::InvalidValue)?;
+    logi!("HPIC Stub genPrivacyTarget received");
+    let input = deserialize_target(data).map_err(|_| {
+        loge!("HPIC Stub genPrivacyTarget deserialize failed");
+        IpcStatusCode::InvalidValue
+    })?;
     let request = input.as_native();
     let mut bytes = vec![0u8; MAX_BYTES];
     let mut output = PrivacyBuffer { data: bytes.as_mut_ptr(), size: bytes.len() as u32 };
     let result = unsafe { AssetGenPrivacyTarget(uid, &request, &mut output) };
     if output.size as usize > bytes.len() {
+        loge!("HPIC Stub service output exceeds capacity");
         return Err(IpcStatusCode::Failed);
     }
     reply.write(&IPC_SUCCESS)?;
@@ -39,14 +44,19 @@ fn gen_privacy_target(uid: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> 
     if result == PROTOCOL_SUCCESS {
         bytes.truncate(output.size as usize);
         reply.write::<Vec<u8>>(&bytes)?;
+        logi!("HPIC Stub genPrivacyTarget reply written, bytes={}", bytes.len());
     } else {
-        loge!("Generate privacy target failed: {}", result);
+        loge!("HPIC Stub genPrivacyTarget failed, ret={}", result);
     }
     Ok(())
 }
 
 fn get_privacy_result(uid: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
-    let input = deserialize_search(data).map_err(|_| IpcStatusCode::InvalidValue)?;
+    logi!("HPIC Stub getSearchResult received");
+    let input = deserialize_search(data).map_err(|_| {
+        loge!("HPIC Stub getSearchResult deserialize failed");
+        IpcStatusCode::InvalidValue
+    })?;
     let ciphertexts = blobs(&input.ciphertexts);
     let symmetric = blobs(input.symmetric.as_deref().unwrap_or(&[]));
     let request = input.as_native(&ciphertexts, &symmetric);
@@ -54,16 +64,24 @@ fn get_privacy_result(uid: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> 
     let mut output = PrivacyBuffer { data: bytes.as_mut_ptr(), size: bytes.len() as u32 };
     let result = unsafe { AssetGetPrivacyResult(uid, &request, &mut output) };
     if output.size as usize > bytes.len() {
+        loge!("HPIC Stub service output exceeds capacity");
         return Err(IpcStatusCode::Failed);
     }
     reply.write(&IPC_SUCCESS)?;
     reply.write(&result)?;
     if result == PROTOCOL_SUCCESS {
         bytes.truncate(output.size as usize);
-        let response = decode_result_bytes(&bytes).map_err(|_| IpcStatusCode::InvalidValue)?;
-        serialize_result(&response, reply).map_err(|_| IpcStatusCode::InvalidValue)?;
+        let response = decode_result_bytes(&bytes).map_err(|_| {
+            loge!("HPIC Stub getSearchResult native result decode failed");
+            IpcStatusCode::InvalidValue
+        })?;
+        serialize_result(&response, reply).map_err(|_| {
+            loge!("HPIC Stub getSearchResult reply serialization failed");
+            IpcStatusCode::InvalidValue
+        })?;
+        logi!("HPIC Stub getSearchResult reply written, bytes={}", bytes.len());
     } else {
-        loge!("Get privacy result failed: {}", result);
+        loge!("HPIC Stub getSearchResult failed, ret={}", result);
     }
     Ok(())
 }

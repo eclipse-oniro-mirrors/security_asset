@@ -53,6 +53,7 @@ void *GetComputationHandle()
     }
     // Closed-source async callbacks may outlive this invocation; keep the library loaded.
     g_computationHandle.store(handle, std::memory_order_release);
+    LOGI("HPIC CCZ NAPI library loaded");
     return handle;
 }
 } // namespace
@@ -75,6 +76,7 @@ napi_value CallComputationNapiFunc(napi_env env, napi_callback_info info, const 
         LOGE("dlsym %{public}s failed: %{public}s", funcName, error == nullptr ? "null symbol" : error);
         return CreateRejectedPromise(env, HPIC_UNAVAILABLE, "Computation NAPI symbol is unavailable.");
     }
+    LOGI("HPIC CCZ dispatch %{public}s", funcName);
     return computationFunc(env, info);
 }
 } // namespace OHOS::Security::PrivacyComputation

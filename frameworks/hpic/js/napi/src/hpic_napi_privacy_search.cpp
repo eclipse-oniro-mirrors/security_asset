@@ -38,6 +38,7 @@ napi_status ParsePrivacySearchArgs(napi_env env, napi_callback_info info, HpicBa
 
 napi_value NapiPrivacySearch(napi_env env, napi_callback_info info)
 {
+    LOGI("HPIC NAPI privacySearch begin, route=Local");
     auto context = std::unique_ptr<PrivacySearchContext>(new (std::nothrow) PrivacySearchContext());
     NAPI_THROW(env, context == nullptr, HPIC_OUT_OF_MEMORY, GetErrorMessage(HPIC_OUT_OF_MEMORY));
     context->parse = ParsePrivacySearchArgs;

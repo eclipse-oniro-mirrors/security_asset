@@ -262,6 +262,8 @@ int32_t EvaluateDifference(const EvaluationContext &context, const Slots &differ
     ret = evaluation.MultiplyPlain(mask);
     if (ret != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("EvaluateDifference mask multiplication failed, ret=%{public}d", ret);
+    } else {
+        PSI_PIR_LOGI("HPIC batch EvaluateDifference success");
     }
     return ret;
 }
@@ -296,6 +298,8 @@ int32_t AddSeeds(const EvaluationContext &context, std::size_t batchStart, std::
     ret = evaluation.AddPlain(seedPlain);
     if (ret != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("AddSeeds failed, ret=%{public}d", ret);
+    } else {
+        PSI_PIR_LOGI("HPIC batch AddSeeds success");
     }
     return ret;
 }
@@ -305,6 +309,8 @@ int32_t RerandResult(HeEvaluation &evaluation) noexcept
     const auto ret = evaluation.Rerandomize();
     if (ret != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("RerandResult failed, ret=%{public}d", ret);
+    } else {
+        PSI_PIR_LOGI("HPIC batch RerandResult success");
     }
     return ret;
 }
@@ -493,6 +499,7 @@ int32_t PsiPirProtocolImpl::genPrivacyTarget(const TargetInput &input, const Pro
     if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
+    PSI_PIR_LOGI("HPIC target vector encoded, slots=%{public}zu", target.size());
     HeSeed seed;
     ret = HeKeyDeriver().DeriveKey(identity, seed);
     if (ret != PSI_PIR_SUCCESS) {
@@ -558,6 +565,8 @@ int32_t PsiPirProtocolImpl::getSearchResult(const PrivacySearchResult &input, co
     auto decoded = input;
     const SoftHeEngine engine;
     for (size_t batch = 0; batch < input.fheCipherText.size(); ++batch) {
+        PSI_PIR_LOGI("HPIC result decrypt batch begin, batch=%{public}zu, bytes=%{public}zu", batch,
+            input.fheCipherText[batch].size());
         if (input.fheCipherText[batch].empty()) {
             return PSI_PIR_INVALID_ARGUMENT;
         }
@@ -576,6 +585,7 @@ int32_t PsiPirProtocolImpl::getSearchResult(const PrivacySearchResult &input, co
         if (ret != PSI_PIR_SUCCESS) {
             return ret;
         }
+        PSI_PIR_LOGI("HPIC result decrypt batch success, batch=%{public}zu, slots=%{public}zu", batch, slots.size());
     }
     SearchResult result;
     ret = ProcessDecryptedSearchResult(decoded, params, result);

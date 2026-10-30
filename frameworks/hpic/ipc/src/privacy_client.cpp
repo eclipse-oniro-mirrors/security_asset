@@ -16,6 +16,7 @@
 #include "privacy_client.h"
 #include "privacy_client_ffi.h"
 #include "privacy_result_codec.h"
+#include "psi_pir_log.h"
 #include <utility>
 
 namespace OHOS::Security::PrivacyComputation {
@@ -40,7 +41,9 @@ bool MakeBlobs(const std::vector<psi_pir::Bytes> &input, std::vector<PrivacyBlob
 int32_t GenPrivacyTargetRemote(const psi_pir::TargetInput &input, const psi_pir::PrivacyProtocol &protocol,
                                psi_pir::Bytes &output)
 {
+    PSI_PIR_LOGI("HPIC IPC genPrivacyTarget begin, inputBytes=%{public}zu", input.elemData.size());
     if (input.elemData.size() > MAX_PRIVACY_BYTES - TARGET_FIXED_BYTES - PRIVACY_LENGTH_BYTES) {
+        PSI_PIR_LOGE("HPIC IPC genPrivacyTarget input exceeds byte budget");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
     const PrivacyTargetRequest request{
@@ -51,23 +54,28 @@ int32_t GenPrivacyTargetRemote(const psi_pir::TargetInput &input, const psi_pir:
     PrivacyBuffer result{bytes.data(), static_cast<uint32_t>(bytes.size())};
     const auto ret = asset_privacy_gen_target(&request, &result);
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
+        PSI_PIR_LOGE("HPIC IPC genPrivacyTarget failed, ret=%{public}d", ret);
         return ret;
     }
     if (result.size == 0 || result.size > bytes.size()) {
+        PSI_PIR_LOGE("HPIC IPC genPrivacyTarget invalid response size=%{public}u", result.size);
         return psi_pir::PSI_PIR_CODEC_ERROR;
     }
     bytes.resize(result.size);
     output = std::move(bytes);
+    PSI_PIR_LOGI("HPIC IPC genPrivacyTarget success, outputBytes=%{public}zu", output.size());
     return psi_pir::PSI_PIR_SUCCESS;
 }
 int32_t GetSearchResultRemote(const psi_pir::PrivacySearchResult &input, const psi_pir::PrivacyProtocol &protocol,
                               psi_pir::SearchResult &output)
 {
+    PSI_PIR_LOGI("HPIC IPC getSearchResult begin, batches=%{public}zu", input.fheCipherText.size());
     std::vector<PrivacyBlob> ciphertexts;
     std::vector<PrivacyBlob> symmetric;
     size_t total = SEARCH_FIXED_BYTES;
     if (!MakeBlobs(input.fheCipherText, ciphertexts, total) ||
         (input.symCipherText && !MakeBlobs(*input.symCipherText, symmetric, total))) {
+        PSI_PIR_LOGE("HPIC IPC getSearchResult input exceeds byte budget");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
     const PrivacySearchRequest request{
@@ -79,11 +87,14 @@ int32_t GetSearchResultRemote(const psi_pir::PrivacySearchResult &input, const p
     PrivacyBuffer result{bytes.data(), static_cast<uint32_t>(bytes.size())};
     const auto ret = asset_privacy_get_result(&request, &result);
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
+        PSI_PIR_LOGE("HPIC IPC getSearchResult failed, ret=%{public}d", ret);
         return ret;
     }
     if (result.size > bytes.size() || !DecodePrivacyResult(bytes.data(), result.size, output)) {
+        PSI_PIR_LOGE("HPIC IPC getSearchResult invalid response, bytes=%{public}u", result.size);
         return psi_pir::PSI_PIR_CODEC_ERROR;
     }
+    PSI_PIR_LOGI("HPIC IPC getSearchResult success, responseBytes=%{public}u", result.size);
     return psi_pir::PSI_PIR_SUCCESS;
 }
 } // namespace OHOS::Security::PrivacyComputation

@@ -24,12 +24,12 @@ enum class RootKeyPolicy {
     CREATE_IF_MISSING,
 };
 
-// All callers share one root in the Asset SA HUKS CE namespace; root bytes never leave HUKS.
+// Callers in one OS account share the fixed alias in its HUKS CE namespace; root bytes never leave HUKS.
 class HuksSeedDeriver final : public psi_pir::internal::IHeSeedDeriver {
 public:
     // Only target generation may create a missing root; result decryption must fail if absent.
-    int32_t PrepareRootKey(RootKeyPolicy policy) const;
-    // Caller identity is already included in materialHash; it does not select a different root.
+    int32_t PrepareRootKey(uint32_t userId, RootKeyPolicy policy) const;
+    // userId selects the CE namespace, while the complete caller identity is included in materialHash.
     int32_t Derive(const psi_pir::CallerIdentity &identity,
                    const std::array<uint8_t, psi_pir::internal::kIdentityHashSize> &materialHash,
                    psi_pir::internal::HeSeed &seed) const noexcept override;

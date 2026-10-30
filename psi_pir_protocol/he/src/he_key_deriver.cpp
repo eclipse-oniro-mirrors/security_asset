@@ -15,6 +15,7 @@
 
 #include "he_key_deriver.h"
 #include "psi_pir_error_code.h"
+#include "psi_pir_log.h"
 #include <array>
 #include <mutex>
 #include <openssl/crypto.h>
@@ -45,6 +46,7 @@ HeSeed::~HeSeed()
 
 int32_t HeKeyDeriver::DeriveKey(const CallerIdentity &identity, HeSeed &seed) const noexcept
 {
+    PSI_PIR_LOGI("HPIC seed identity derivation begin");
     std::array<uint8_t, IDENTITY_MATERIAL_BYTES> material{};
     for (size_t i = 0; i < IDENTITY_FIELD_BYTES; ++i) {
         material[i] = static_cast<uint8_t>(identity.uid >> ((IDENTITY_FIELD_BYTES - 1 - i) * kBitsPerByte));
@@ -61,6 +63,7 @@ int32_t HeKeyDeriver::DeriveKey(const CallerIdentity &identity, HeSeed &seed) co
     OPENSSL_cleanse(material.data(), material.size());
     if (digestRet != 1 || digestSize != digest.size()) {
         OPENSSL_cleanse(digest.data(), digest.size());
+        PSI_PIR_LOGE("HPIC seed identity digest failed");
         return psi_pir::PSI_PIR_CRYPTO_ERROR;
     }
     std::shared_ptr<const IHeSeedDeriver> deriver;
@@ -70,6 +73,11 @@ int32_t HeKeyDeriver::DeriveKey(const CallerIdentity &identity, HeSeed &seed) co
     }
     const auto ret = deriver ? deriver->Derive(identity, digest, seed) : psi_pir::PSI_PIR_HE_ERROR;
     OPENSSL_cleanse(digest.data(), digest.size());
+    if (ret != psi_pir::PSI_PIR_SUCCESS) {
+        PSI_PIR_LOGE("HPIC seed derivation failed, providerPresent=%{public}d, ret=%{public}d", deriver ? 1 : 0, ret);
+    } else {
+        PSI_PIR_LOGI("HPIC seed derivation success, seedBytes=%{public}zu", seed.bytes.size());
+    }
     return ret;
 }
 } // namespace psi_pir::internal

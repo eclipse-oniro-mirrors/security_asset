@@ -19,6 +19,7 @@
 #include "hpic_napi_error_code.h"
 #include "napi/native_api.h"
 #include "psi_pir_protocol.h"
+#include <string>
 
 namespace OHOS::Security::PrivacyComputation {
 // Common parse/execute/resolve lifecycle follows asset_napi_context.h.
@@ -34,6 +35,7 @@ public:
     napi_async_work work = nullptr;
     napi_deferred deferred = nullptr;
     int32_t result = HPIC_INVALID_ARGUMENT;
+    std::string operationName;
     psi_pir::PrivacyProtocol protocol;
 
     napi_status (*parse)(napi_env, napi_callback_info, HpicBaseContext *) = nullptr;

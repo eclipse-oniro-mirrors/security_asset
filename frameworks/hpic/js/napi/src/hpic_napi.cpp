@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 
+#include "hpic_log.h"
 #include "hpic_napi_gen_privacy_target.h"
 #include "hpic_napi_get_search_result.h"
 #include "hpic_napi_privacy_search.h"
@@ -90,6 +91,7 @@ napi_value Register(const napi_env env, napi_value exports)
     };
 
     NAPI_CALL(env, napi_define_properties(env, exports, sizeof(desc) / sizeof(desc[0]), desc));
+    LOGI("HPIC NAPI security.privacyComputation exports registered");
     return exports;
 }
 

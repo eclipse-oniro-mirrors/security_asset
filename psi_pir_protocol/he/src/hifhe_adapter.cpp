@@ -50,6 +50,7 @@ int32_t HifheAdapter::Serialize(const HifheText &ciphertext, Bytes &output) cons
     }
     buffer.resize(size);
     output = std::move(buffer);
+    PSI_PIR_LOGI("HPIC HiFHE Serialize success, bytes=%{public}zu", output.size());
     return PSI_PIR_SUCCESS;
 }
 
@@ -69,6 +70,7 @@ int32_t HifheAdapter::Deserialize(const Bytes &ciphertext, HifheText &output) no
         return PSI_PIR_HE_ERROR;
     }
     std::swap(output.value, result.value);
+    PSI_PIR_LOGI("HPIC HiFHE Deserialize success, bytes=%{public}zu", ciphertext.size());
     return PSI_PIR_SUCCESS;
 }
 
@@ -107,6 +109,8 @@ int32_t HifheAdapter::ConfigureContext() noexcept
         PSI_PIR_LOGE("Configure native HiFHE parameters failed, ret=%{public}d, degree=%{public}u", ret, degree);
         return PSI_PIR_HE_ERROR;
     }
+    PSI_PIR_LOGI("HPIC HiFHE parameters configured, degree=%{public}u, plaintextBytes=%{public}u, "
+        "ciphertextBytes=%{public}u", degree, plaintextBytes, ciphertextBytes);
     return PSI_PIR_SUCCESS;
 }
 
@@ -117,6 +121,7 @@ int32_t HifheAdapter::InitializeEvaluation(const ProtocolParams &params) noexcep
         PSI_PIR_LOGE("Invalid HiFHE protocol parameters or repeated initialization");
         return PSI_PIR_INVALID_ARGUMENT;
     }
+    PSI_PIR_LOGI("HPIC HiFHE context initialize begin, degree=%{public}zu", params.polyModulusDegree);
     // Shared random facilities live for the process; an adapter must not globally clean them up.
     static const auto initRet = CRYPT_EAL_Init(CRYPT_EAL_INIT_CPU | CRYPT_EAL_INIT_BSL | CRYPT_EAL_INIT_RAND);
     if (initRet != HIFHE_SUCCESS) {
@@ -133,6 +138,7 @@ int32_t HifheAdapter::InitializeEvaluation(const ProtocolParams &params) noexcep
         Reset();
         return ret;
     }
+    PSI_PIR_LOGI("HPIC HiFHE evaluation context initialized");
     return PSI_PIR_SUCCESS;
 }
 
@@ -145,6 +151,7 @@ int32_t HifheAdapter::InitializeKeyed(const ProtocolParams &params, const HeSeed
     ret = HIFHE_Ctrl(ctx_, HIFHE_CTRL_BGV_SET_SEED, nullptr, const_cast<uint8_t *>(seed.bytes.data()),
                      static_cast<uint32_t>(seed.bytes.size()));
     if (ret == HIFHE_SUCCESS) {
+        PSI_PIR_LOGI("HPIC HiFHE seed configured, key generation begin");
         ret = HIFHE_KeyGen(ctx_);
     }
     if (ret != HIFHE_SUCCESS) {
@@ -152,6 +159,7 @@ int32_t HifheAdapter::InitializeKeyed(const ProtocolParams &params, const HeSeed
         Reset();
         return PSI_PIR_HE_ERROR;
     }
+    PSI_PIR_LOGI("HPIC HiFHE key generation success");
     return PSI_PIR_SUCCESS;
 }
 
@@ -172,6 +180,7 @@ int32_t HifheAdapter::Encode(const Slots &slots, HifheText &output) noexcept
         return PSI_PIR_HE_ERROR;
     }
     std::swap(output.value, result.value);
+    PSI_PIR_LOGI("HPIC HiFHE Encode success, slots=%{public}zu", slots.size());
     return PSI_PIR_SUCCESS;
 }
 
@@ -189,6 +198,7 @@ int32_t HifheAdapter::Decode(const HifheText &plaintext, Slots &output) noexcept
         return PSI_PIR_HE_ERROR;
     }
     output = std::move(values);
+    PSI_PIR_LOGI("HPIC HiFHE Decode success, slots=%{public}zu", output.size());
     return PSI_PIR_SUCCESS;
 }
 
@@ -204,6 +214,7 @@ int32_t HifheAdapter::Encrypt(const HifheText &plaintext, HifheText &output) noe
         return PSI_PIR_HE_ERROR;
     }
     std::swap(output.value, result.value);
+    PSI_PIR_LOGI("HPIC HiFHE Encrypt success");
     return PSI_PIR_SUCCESS;
 }
 
@@ -219,6 +230,7 @@ int32_t HifheAdapter::Decrypt(const HifheText &ciphertext, HifheText &output) no
         return PSI_PIR_HE_ERROR;
     }
     std::swap(output.value, result.value);
+    PSI_PIR_LOGI("HPIC HiFHE Decrypt success");
     return PSI_PIR_SUCCESS;
 }
 
@@ -240,6 +252,7 @@ int32_t HifheAdapter::SubtractFromPlaintext(HifheText &ciphertext, const HifheTe
         return PSI_PIR_HE_ERROR;
     }
     std::swap(output.value, result.value);
+    PSI_PIR_LOGI("HPIC HiFHE AddPlain success");
     return PSI_PIR_SUCCESS;
 }
 
@@ -256,6 +269,7 @@ int32_t HifheAdapter::MultiplyPlaintext(const HifheText &ciphertext, const Hifhe
         return PSI_PIR_HE_ERROR;
     }
     std::swap(output.value, result.value);
+    PSI_PIR_LOGI("HPIC HiFHE MultiplyPlain success");
     return PSI_PIR_SUCCESS;
 }
 
@@ -272,6 +286,7 @@ int32_t HifheAdapter::Rerandomize(const HifheText &ciphertext, HifheText &output
         return PSI_PIR_HE_ERROR;
     }
     std::swap(output.value, result.value);
+    PSI_PIR_LOGI("HPIC HiFHE Rerandomize success");
     return PSI_PIR_SUCCESS;
 }
 } // namespace psi_pir::internal

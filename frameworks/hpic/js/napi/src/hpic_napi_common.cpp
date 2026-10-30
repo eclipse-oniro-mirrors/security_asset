@@ -135,7 +135,7 @@ namespace {
 void ResolvePromise(napi_env env, HpicBaseContext *context)
 {
     if (context->result != HPIC_SUCCESS) {
-        LOGE("Async operation failed, code=%{public}d", context->result);
+        LOGE("HPIC NAPI %{public}s failed, code=%{public}d", context->operationName.c_str(), context->result);
         RejectPromise(env, context->deferred, context->result, GetErrorMessage(context->result));
         return;
     }
@@ -149,6 +149,7 @@ void ResolvePromise(napi_env env, HpicBaseContext *context)
     }
 
     NAPI_CALL_RETURN_VOID(env, napi_resolve_deferred(env, context->deferred, output));
+    LOGI("HPIC NAPI %{public}s success, promise resolved", context->operationName.c_str());
 }
 
 void CompleteAsyncWork(napi_env env, napi_status status, void *data)
@@ -168,6 +169,7 @@ void CompleteAsyncWork(napi_env env, napi_status status, void *data)
 napi_status PrepareAsyncWork(napi_env env, napi_callback_info info, HpicBaseContext *context, const char *resourceName)
 {
     IF_ERR_RETURN(context->parse(env, info, context));
+    LOGI("HPIC NAPI %{public}s arguments parsed", resourceName);
     context->result = HPIC_SERVICE_ERROR;
     napi_value resource = nullptr;
     NAPI_CALL_RETURN_ERR(env, napi_create_string_utf8(env, resourceName, NAPI_AUTO_LENGTH, &resource));
@@ -185,6 +187,7 @@ napi_value CreateAsyncWork(napi_env env, napi_callback_info info, std::unique_pt
     NAPI_THROW(env, context->parse == nullptr || context->execute == nullptr || context->resolve == nullptr,
                HPIC_SERVICE_ERROR, "Invalid privacy computation async context.");
     context->env = env;
+    context->operationName = resourceName;
     napi_value promise = nullptr;
     IF_FALSE_RETURN(CheckNapiStatus(env, napi_create_promise(env, &context->deferred, &promise)) == napi_ok, nullptr);
     const napi_status status = PrepareAsyncWork(env, info, context.get(), resourceName);
@@ -196,6 +199,7 @@ napi_value CreateAsyncWork(napi_env env, napi_callback_info info, std::unique_pt
                         nullptr);
         return promise; // Context destructor deletes any work created before queue failure.
     }
+    LOGI("HPIC NAPI %{public}s async work queued", resourceName);
     context.release(); // Ownership transfers to completion only after successful queueing.
     return promise;
 }
