@@ -23,6 +23,7 @@
 
 #include "errors.h"
 #include "gui_cache_manager.h"
+#include "gui_fence_inner_helper.h"
 #include "isecure_access_fence.h"
 #include "iservice_registry.h"
 #include "ipc_skeleton.h"
@@ -37,7 +38,6 @@ namespace {
 
 constexpr int32_t WAIT_TIMEOUT_IN_SEC = 5;
 constexpr int32_t SAF_SERVICE_ID = 66532;
-constexpr int32_t ERR_REMOTE_DEAD = 29189;
 constexpr const char *SETTINGS_KEY_AGENT_APP_CONTROL_STATUS = "agent_app_control_status";
 
 std::recursive_mutex g_mutex;
@@ -66,19 +66,6 @@ sptr<ISecureAccessFence> GetProxy(std::recursive_mutex &mutex, bool needCheck = 
     return iface_cast<ISecureAccessFence>(sa);
 }
 
-int32_t HandleIpcError(sptr<ISecureAccessFence> &proxy, std::function<int32_t()> call)
-{
-    if (call == nullptr) {
-        return SAF_ERR_SERVICE_UNAVAILABLE;
-    }
-    int32_t ret = call();
-    if (ret == ERR_DEAD_OBJECT || ret == ERR_REMOTE_DEAD) {
-        LOGW("service unavailable and not retry.");
-        return SAF_ERR_SERVICE_UNAVAILABLE;
-    }
-    return ret;
-}
-
 } // namespace
 
 // Validate callerApp and targetApp parameters.
@@ -93,30 +80,6 @@ static int32_t ValidateCheckControlParams(const AppInfo &callerApp, const AppInf
         return SAF_ERR_ARG_EMPTY;
     }
     return SAF_SUCCESS;
-}
-
-// Parse a deniedPair string "callerBundle:callerIdx:targetBundle:targetIdx" into AppPairKey.
-// Returns false if the format is invalid.
-static bool ParseDeniedPair(const std::string &pair, AppPairKey &key)
-{
-    size_t pos1 = pair.find(':');
-    if (pos1 == std::string::npos) {
-        return false;
-    }
-    std::string callerBundle = pair.substr(0, pos1);
-    size_t pos2 = pair.find(':', pos1 + 1);
-    if (pos2 == std::string::npos) {
-        return false;
-    }
-    int32_t callerIdx = std::stoi(pair.substr(pos1 + 1, pos2 - pos1 - 1));
-    size_t pos3 = pair.find(':', pos2 + 1);
-    if (pos3 == std::string::npos) {
-        return false;
-    }
-    std::string targetBundle = pair.substr(pos2 + 1, pos3 - pos2 - 1);
-    int32_t targetIdx = std::stoi(pair.substr(pos3 + 1));
-    key = std::make_tuple(callerBundle, callerIdx, targetBundle, targetIdx);
-    return true;
 }
 
 // Fetch full denied-pairs list from service via IPC 505 and update the cache.
@@ -135,7 +98,7 @@ static int32_t RefreshDeniedPairs()
     std::vector<std::string> deniedPairs;
     int32_t resultCode = SAF_SUCCESS;
     int32_t ret = HandleIpcError(proxy,
-        [&]() {return proxy->QueryAllDeniedPairs(deniedPairs, resultCode); });
+        [&proxy, &deniedPairs, &resultCode]() { return proxy->QueryAllDeniedPairs(deniedPairs, resultCode); });
     if (ret != SAF_SUCCESS) {
         LOGE("RefreshDeniedPairs: IPC call failed, ret=%{public}d", ret);
         cache.EndRefresh();
@@ -215,7 +178,9 @@ static void AsyncStoreOperationRecord(const AppInfo &callerApp, const AppInfo &t
         }
         int32_t resultCode = SAF_SUCCESS;
         int32_t ret = HandleIpcError(proxy,
-            [&]() { return proxy->StoreOperationRecord(callerCopy, targetCopy, decision, resultCode); });
+            [&proxy, &callerCopy, &targetCopy, &decision, &resultCode]() {
+                return proxy->StoreOperationRecord(callerCopy, targetCopy, decision, resultCode);
+            });
         if (ret != SAF_SUCCESS) {
             LOGE("StoreOperationRecord async IPC failed, ret=%{public}d", ret);
             return;
@@ -272,7 +237,7 @@ int32_t SafGuiFence::RegisterComponentClickCallback(
 
     int32_t resultCode = SAF_SUCCESS;
     int32_t ret = HandleIpcError(proxy,
-        [&]() {
+        [&proxy, &sessionId, &callback, &resultCode]() {
             return proxy->RegisterComponentClickCallback(
                 static_cast<int64_t>(sessionId), callback->AsObject(), resultCode);
         });
@@ -304,7 +269,7 @@ int32_t SafGuiFence::ReportComponentClickDecision(
 
     int32_t resultCode = SAF_SUCCESS;
     int32_t ret = HandleIpcError(proxy,
-        [&]() {
+        [&proxy, &sessionId, &result, &resultCode]() {
             return proxy->ReportComponentClickDecision(
                 static_cast<int64_t>(sessionId), result, resultCode);
         });
@@ -329,7 +294,7 @@ int32_t SafGuiFence::UnregisterComponentClickCallback(uint64_t sessionId)
 
     int32_t resultCode = SAF_SUCCESS;
     int32_t ret = HandleIpcError(proxy,
-        [&]() {
+        [&proxy, &sessionId, &resultCode]() {
             return proxy->UnregisterComponentClickCallback(
                 static_cast<int64_t>(sessionId), resultCode);
         });
