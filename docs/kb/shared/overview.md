@@ -106,8 +106,8 @@
 ## 相关主题
 
 - [Asset 服务架构](../asset/architecture/service.md)
-- [安全访问围栏架构](../saf/architecture/service.md)
+- [安全访问围栏架构](../secure_access_fence/architecture/service.md)
 - [公共 NDK API](../asset/api/ndk-api.md)
 - [Core Service 模块](../asset/services/core-service.md)
 - [Crypto Manager 模块](../asset/services/crypto-manager.md)
-- [SAF Agent Fence API](../saf/api/agent-fence-api.md)
+- [SAF Agent Fence API](../secure_access_fence/api/agent-fence-api.md)

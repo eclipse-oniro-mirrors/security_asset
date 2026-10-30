@@ -2,7 +2,7 @@
 
 > 检查工具：ohos-design-api-doc-checking + SDD 工作流映射 + 易读性扩展 + 回归检查
 > 检查日期：2026-10-13
-> 检查范围：docs/kb/ 下 31 个 KB 页面（按 asset/saf/hpic/shared 拆分后）
+> 检查范围：docs/kb/ 下 31 个 KB 页面（按 asset/secure_access_fence/hpic/shared 拆分后）
 > 检查重点：拆分后回归验证 + SDD 帮助度 + 易读性
 
 ## 拆分后结构
@@ -11,7 +11,7 @@
 docs/kb/
 ├── shared/          (1 文件)  跨子系统概览
 ├── asset/           (16 文件) SA 8100 关键资产存储
-├── saf/             (13 文件) SA 66532 安全访问围栏
+├── secure_access_fence/             (13 文件) SA 66532 安全访问围栏
 └── hpic/            (1 文件)  隐私计算 NAPI
 ```
 
@@ -62,7 +62,7 @@ docs/kb/
 | 低文本占比文件（<30%） | 0 | 0 | — |
 | Section 顺序一致性 | 95% | 97% | +2%（拆分后文件更短更聚焦） |
 | 平均文件行数 | 100 | 75 | -25（更精简） |
-| 最大文件行数 | 215 | 171 | -44（saf/error-codes.md） |
+| 最大文件行数 | 215 | 171 | -44（secure_access_fence/error-codes.md） |
 | 跨页链接密度 | 81 条 | ~80 条 | — |
 
 ## 拆分前后对比
@@ -70,7 +70,7 @@ docs/kb/
 | 指标 | 拆分前 | 拆分后 |
 |------|--------|--------|
 | 文件数 | 19 | 31 |
-| 目录层级 | 按类别（architecture/api/services/...） | 按子系统（asset/saf/hpic/shared） |
+| 目录层级 | 按类别（architecture/api/services/...） | 按子系统（asset/secure_access_fence/hpic/shared） |
 | 每文件平均行数 | 100 | 75 |
 | context_registry 条目 | 19 | 31 |
 | 子系统隔离度 | 混合 | 完全隔离 ✅ |
@@ -82,8 +82,8 @@ docs/kb/
 | 编号 | 文件 | 问题 | 级别 | 建议 |
 |------|------|------|------|------|
 | 1 | hpic/napi-bindings.md | 缺测试入口 | 低 | HPIC 测试基础设施有限，可后续补充 |
-| 2 | saf/troubleshooting.md | 缺标准"源码入口"/"测试入口" | 低 | troubleshooting 页面用"调试入口"替代（预期） |
-| 3 | 4 个文件缺数据流 | asset/api/ndk-api.md、asset/api/ipc.md、asset/services/crypto-manager.md、saf/api/ipc.md | 低 | 这些是纯 API/接口页面，数据流已在对应架构和服务层页面覆盖 |
+| 2 | secure_access_fence/troubleshooting.md | 缺标准"源码入口"/"测试入口" | 低 | troubleshooting 页面用"调试入口"替代（预期） |
+| 3 | 4 个文件缺数据流 | asset/api/ndk-api.md、asset/api/ipc.md、asset/services/crypto-manager.md、secure_access_fence/api/ipc.md | 低 | 这些是纯 API/接口页面，数据流已在对应架构和服务层页面覆盖 |
 
 ## 执行台账
 
