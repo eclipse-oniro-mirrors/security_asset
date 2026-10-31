@@ -61,6 +61,7 @@ group("asset_bin_test") {
     "test/secure_access_fence/gui_fence:saf_settings_observer_test",
     "test/secure_access_fence/gui_fence:saf_gui_service_test",
     "test/secure_access_fence/gui_fence:saf_gui_inner_api_test",
+    "test/secure_access_fence/gui_fence:saf_gui_fence_parse_test",
     #"test/secure_access_fence/credential:saf_credential_test",
     #"test/secure_access_fence/credential:saf_credential_permission_test",
     #"test/secure_access_fence/agent_fence:saf_agent_fence_test",

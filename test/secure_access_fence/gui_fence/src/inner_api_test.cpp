@@ -119,6 +119,15 @@ protected:
         app.index = index;
         return app;
     }
+
+    ComponentClickResult MakeComponentClickResult(const std::string &compId, bool allowed, const std::string &reason)
+    {
+        ComponentClickResult result;
+        result.compId = compId;
+        result.allowed = allowed;
+        result.reason = reason;
+        return result;
+    }
 };
 
 // ================== CheckControlPermission tests =================
@@ -233,6 +242,67 @@ HWTEST_F(GuiInnerApiTest, InnerApi_CheckControlPermission_006, TestSize.Level0)
     int32_t ret = SafGuiFence::CheckControlPermission(callerApp, targetApp, decision);
     EXPECT_EQ(ret, SAF_SUCCESS);
     EXPECT_TRUE(decision == ControlDecision::ALLOW || decision == ControlDecision::DENY);
+}
+
+// ================== RegisterComponentClickCallback tests =================
+
+/**
+ * @tc.name: InnerApi_RegisterComponentClickCallback_001
+ * @tc.desc: Null callback -> SAF_ERR_NULL_PTR (param validation before IPC, no SA needed).
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiInnerApiTest, InnerApi_RegisterComponentClickCallback_001, TestSize.Level0)
+{
+    GuiCallback callback = nullptr;
+    int32_t ret = SafGuiFence::RegisterComponentClickCallback(70001, callback);
+    EXPECT_EQ(ret, SAF_ERR_NULL_PTR);
+}
+
+// ================== ReportComponentClickDecision tests =================
+
+/**
+ * @tc.name: InnerApi_ReportComponentClickDecision_001
+ * @tc.desc: result.compId is empty -> SAF_ERR_ARG_EMPTY (param validation before IPC, no SA needed).
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiInnerApiTest, InnerApi_ReportComponentClickDecision_001, TestSize.Level0)
+{
+    auto result = MakeComponentClickResult("", true, "allowed");
+    int32_t ret = SafGuiFence::ReportComponentClickDecision(80001, result);
+    EXPECT_EQ(ret, SAF_ERR_ARG_EMPTY);
+}
+
+/**
+ * @tc.name: InnerApi_ReportComponentClickDecision_002
+ * @tc.desc: Valid compId but unknown sessionId -> service returns SAF_ERR_GUI_SESSION_NOT_FOUND.
+ *          Covers GetProxy success, IPC success, and the resultCode != SAF_SUCCESS branch.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiInnerApiTest, InnerApi_ReportComponentClickDecision_002, TestSize.Level0)
+{
+    // Unique sessionId that was never registered.
+    auto result = MakeComponentClickResult("comp_report_002", false, "user denied");
+    int32_t ret = SafGuiFence::ReportComponentClickDecision(987651, result);
+    EXPECT_EQ(ret, SAF_ERR_GUI_SESSION_NOT_FOUND);
+}
+
+// ================== UnregisterComponentClickCallback tests =================
+
+/**
+ * @tc.name: InnerApi_UnregisterComponentClickCallback_001
+ * @tc.desc: Unknown sessionId -> service returns SAF_ERR_GUI_SESSION_NOT_FOUND.
+ *          Covers GetProxy success, IPC success, and the resultCode != SAF_SUCCESS branch.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiInnerApiTest, InnerApi_UnregisterComponentClickCallback_001, TestSize.Level0)
+{
+    // Unique sessionId that was never registered.
+    int32_t ret = SafGuiFence::UnregisterComponentClickCallback(987652);
+    EXPECT_EQ(ret, SAF_ERR_GUI_SESSION_NOT_FOUND);
 }
 
 } // namespace UnitTest::GuiInnerApiTest
