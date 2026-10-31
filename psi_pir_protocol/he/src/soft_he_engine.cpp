@@ -163,7 +163,7 @@ int32_t CreateSoftHeEvaluation(const Bytes &ciphertext, std::unique_ptr<HeEvalua
     return PSI_PIR_SUCCESS;
 }
 
-int32_t SoftHeEngine::addPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept
+int32_t SoftHeEngine::AddPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept
 {
     std::unique_ptr<HeEvaluation> evaluation;
     auto ret = CreateSoftHeEvaluation(ciphertext, evaluation);
@@ -174,7 +174,7 @@ int32_t SoftHeEngine::addPlain(const Bytes &ciphertext, const Slots &plaintext, 
     return ret == PSI_PIR_SUCCESS ? evaluation->Serialize(output) : ret;
 }
 
-int32_t SoftHeEngine::multiplyPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept
+int32_t SoftHeEngine::MultiplyPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept
 {
     std::unique_ptr<HeEvaluation> evaluation;
     auto ret = CreateSoftHeEvaluation(ciphertext, evaluation);

@@ -14,12 +14,18 @@
 import("//build/ohos.gni")
 
 ohos_rust_static_library("asset_ipc") {
-  sources = [ "src/lib.rs" ]
+  sources = [
+    "src/lib.rs",
+    "src/privacy/transport.rs",
+  ]
   deps = [
     "../definition:asset_definition",
     "../os_dependency/log:asset_log",
   ]
-  external_deps = [ "ipc:ipc_rust" ]
+  external_deps = [
+    "ipc:ipc_rust",
+    "c_utils:utils_rust",
+  ]
 
   rustflags = [ "-C", "codegen-units=1", "-C", "opt-level=z", "-C", "debuginfo=0" ]
 

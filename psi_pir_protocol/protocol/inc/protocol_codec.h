@@ -27,6 +27,7 @@ class ProtocolCodec final {
 public:
     int32_t ValidateProtocol(const ProtocolParams &params) const noexcept;
     int32_t ValidatePrivacyTarget(const Bytes &privacyTarget) const noexcept;
+    int32_t ValidateSearchResultLayout(const PrivacySearchResult &result, const ProtocolParams &params) const noexcept;
     int32_t ValidatePlainSearchResult(const PrivacySearchResult &result, const ProtocolParams &params) const noexcept;
     // Requires validated protocol parameters; checks decoded slots and writes uint64 little-endian bytes.
     int32_t SerializePlaintext(const Slots &slots, const ProtocolParams &params, Bytes &output) const noexcept;

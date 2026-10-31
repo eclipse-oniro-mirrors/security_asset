@@ -15,6 +15,7 @@
 
 #include "hpic_napi_utils.h"
 #include "hpic_napi_common.h"
+#include "privacy_limits.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
@@ -69,6 +70,7 @@ napi_status ParseJsUint8Array(napi_env env, napi_value value, psi_pir::Bytes &by
     NAPI_CALL_RETURN_ERR(env, napi_get_typedarray_info(env, value, &type, &count, &data, nullptr, nullptr));
     NAPI_THROW_RETURN_ERR(env, type != napi_uint8_array || (count != 0 && data == nullptr), HPIC_INVALID_ARGUMENT,
                           message);
+    NAPI_THROW_RETURN_ERR(env, count > MAX_PRIVACY_BYTES, HPIC_INVALID_ARGUMENT, "Privacy byte array is too large.");
     psi_pir::Bytes copy;
     if (count != 0) {
         const auto *begin = static_cast<const uint8_t *>(data);
@@ -115,15 +117,23 @@ napi_status GetArrayLength(napi_env env, napi_value value, uint32_t &count, cons
     return napi_ok;
 }
 
-napi_status ParseJsByteArray(napi_env env, napi_value value, std::vector<psi_pir::Bytes> &bytes)
+napi_status ParseJsByteArray(napi_env env, napi_value value, std::vector<psi_pir::Bytes> &bytes, size_t &total)
 {
     uint32_t count = 0;
     IF_ERR_RETURN(GetArrayLength(env, value, count, "Ciphertexts must be an array of Uint8Array."));
+    NAPI_THROW_RETURN_ERR(env, count > MAX_PRIVACY_ITEMS || total > MAX_PRIVACY_BYTES - PRIVACY_LENGTH_BYTES,
+                          HPIC_INVALID_ARGUMENT, "Privacy ciphertext list is too large.");
+    total += PRIVACY_LENGTH_BYTES;
     for (uint32_t i = 0; i < count; ++i) {
         napi_value item = nullptr;
         NAPI_CALL_RETURN_ERR(env, napi_get_element(env, value, i, &item));
         psi_pir::Bytes entry;
         IF_ERR_RETURN(ParseJsUint8Array(env, item, entry, "Each ciphertext must be a Uint8Array."));
+        NAPI_THROW_RETURN_ERR(env,
+                              total > MAX_PRIVACY_BYTES - PRIVACY_LENGTH_BYTES ||
+                                  entry.size() > MAX_PRIVACY_BYTES - total - PRIVACY_LENGTH_BYTES,
+                              HPIC_INVALID_ARGUMENT, "Privacy request is too large.");
+        total += PRIVACY_LENGTH_BYTES + entry.size();
         bytes.push_back(std::move(entry));
     }
     return napi_ok;
@@ -222,12 +232,13 @@ napi_status ParseJsSearchResult(napi_env env, napi_value value, psi_pir::Privacy
 {
     napi_value ciphertext = nullptr;
     IF_ERR_RETURN(GetRequiredProperty(env, value, "fheCipherText", ciphertext));
-    IF_ERR_RETURN(ParseJsByteArray(env, ciphertext, result.fheCipherText));
+    size_t total = SEARCH_FIXED_BYTES;
+    IF_ERR_RETURN(ParseJsByteArray(env, ciphertext, result.fheCipherText, total));
     bool present = false;
     IF_ERR_RETURN(GetOptionalProperty(env, value, "symCipherText", ciphertext, present));
     if (present) {
         result.symCipherText.emplace();
-        IF_ERR_RETURN(ParseJsByteArray(env, ciphertext, *result.symCipherText));
+        IF_ERR_RETURN(ParseJsByteArray(env, ciphertext, *result.symCipherText, total));
     }
     return napi_ok;
 }

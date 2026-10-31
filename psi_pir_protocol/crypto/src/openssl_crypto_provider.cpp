@@ -463,7 +463,7 @@ void StoreDecryptedPayload(Bytes &payload, std::optional<Bytes> &output)
 
 class OpenSslHashProvider final : public IHashProvider {
 public:
-    int32_t digest(HashAlg algorithm, const Bytes &input, Bytes &output) const noexcept override
+    int32_t Digest(HashAlg algorithm, const Bytes &input, Bytes &output) const noexcept override
     {
         const auto digestAlgorithm = GetDigestAlgorithm(algorithm);
         const auto expectedSize = GetDigestSize(algorithm);
@@ -488,7 +488,7 @@ public:
 
 class OpenSslRandomSource final : public IRandomSource {
 public:
-    int32_t fill(Bytes &output) noexcept override
+    int32_t Fill(Bytes &output) noexcept override
     {
         if (output.empty() || !FitsOpenSslInt(output.size())) {
             PSI_PIR_LOGE("randomBytes fill invalid: size=%{public}zu", output.size());

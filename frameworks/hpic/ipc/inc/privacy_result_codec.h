@@ -19,6 +19,7 @@
 #include "privacy_limits.h"
 #include "privacy_types.h"
 #include "psi_pir_types.h"
+#include "psi_pir_error_code.h"
 #include <algorithm>
 #include <utility>
 
@@ -47,7 +48,7 @@ inline bool ReadUint32(const uint8_t *&cursor, const uint8_t *end, uint32_t &val
 // Same-process FFI encoding: little-endian u32 matched, hasValues, then (if present)
 // u32 count followed by u32 length + bytes for each value. No pointers cross this boundary.
 // Validate all sizes before writing; on failure the caller's buffer and size remain unchanged.
-inline bool EncodePrivacyResult(const psi_pir::SearchResult &input, PrivacyBuffer &output)
+inline bool GetPrivacyResultSize(const psi_pir::SearchResult &input, size_t &encodedSize)
 {
     size_t size = RESULT_FIXED_BYTES;
     if (input.attachedValues) {
@@ -62,6 +63,16 @@ inline bool EncodePrivacyResult(const psi_pir::SearchResult &input, PrivacyBuffe
             }
             size += PRIVACY_LENGTH_BYTES + value.size();
         }
+    }
+    encodedSize = size;
+    return true;
+}
+
+inline bool EncodePrivacyResult(const psi_pir::SearchResult &input, PrivacyBuffer &output)
+{
+    size_t size = 0;
+    if (!GetPrivacyResultSize(input, size)) {
+        return false;
     }
     if (output.data == nullptr || output.size > MAX_PRIVACY_BYTES || size > output.size) {
         return false;
@@ -78,6 +89,32 @@ inline bool EncodePrivacyResult(const psi_pir::SearchResult &input, PrivacyBuffe
     }
     output.size = static_cast<uint32_t>(size);
     return true;
+}
+
+// Allocates only the exact encoded size, never a maximum-size result buffer.
+inline bool EncodePrivacyResult(const psi_pir::SearchResult &input, psi_pir::Bytes &output)
+{
+    size_t size = 0;
+    if (!GetPrivacyResultSize(input, size)) {
+        return false;
+    }
+    psi_pir::Bytes bytes(size);
+    PrivacyBuffer buffer{bytes.data(), static_cast<uint32_t>(bytes.size())};
+    if (!EncodePrivacyResult(input, buffer)) {
+        return false;
+    }
+    output = std::move(bytes);
+    return true;
+}
+
+inline int32_t CollectPrivacyBytes(void *context, const uint8_t *data, uint32_t size)
+{
+    if (context == nullptr || data == nullptr || size == 0 || size > MAX_PRIVACY_BYTES) {
+        return psi_pir::PSI_PIR_INVALID_ARGUMENT;
+    }
+    auto &bytes = *static_cast<psi_pir::Bytes *>(context);
+    bytes.assign(data, data + size);
+    return psi_pir::PSI_PIR_SUCCESS;
 }
 
 // Commit only a fully validated result; reject truncated data, invalid flags and trailing bytes.

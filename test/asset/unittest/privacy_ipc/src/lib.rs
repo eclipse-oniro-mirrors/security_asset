@@ -64,11 +64,9 @@ fn result_preserves_match_and_optional_values() {
 
 #[test]
 fn oversized_list_count_is_rejected_before_items() {
-    let mut parcel = MsgParcel::new();
-    parcel.write(&1u32).unwrap();
-    parcel.write(&2u32).unwrap();
-    parcel.write(&((MAX_ITEMS + 1) as u32)).unwrap();
-    assert!(deserialize_search(&mut parcel).is_err());
+    let mut bytes = vec![0u8; 12];
+    bytes.extend_from_slice(&((MAX_ITEMS + 1) as u32).to_le_bytes());
+    assert!(decode_search_bytes(&bytes).is_err());
 }
 
 #[test]
@@ -180,4 +178,53 @@ fn native_result_buffer_enforces_exact_byte_limit() {
     value.values.as_mut().unwrap()[0].push(0);
     assert!(encode_result_bytes(&value).is_err());
     assert!(decode_result_bytes(&vec![0; MAX_BYTES + 1]).is_err());
+}
+
+#[test]
+fn large_search_and_result_use_shared_transport() {
+    const LARGE_BYTES: usize = 512 * 1024;
+    let input = SearchRequest {
+        protocol: PrivacyProtocol { data_set_size: 1, protocol_type: 1 },
+        ciphertexts: vec![vec![0xA5; LARGE_BYTES]],
+        symmetric: Some(vec![vec![0; LARGE_BYTES], vec![255; 17]]),
+    };
+    let mut parcel = MsgParcel::new();
+    serialize_search(&input, &mut parcel).unwrap();
+    let decoded = deserialize_search(&mut parcel).unwrap();
+    assert_eq!(decoded.ciphertexts, input.ciphertexts);
+    assert_eq!(decoded.symmetric, input.symmetric);
+    let result = SearchResponse { matched: true, values: Some(vec![vec![0x5A; LARGE_BYTES]]) };
+    let mut reply = MsgParcel::new();
+    serialize_result(&result, &mut reply).unwrap();
+    let decoded = deserialize_result(&mut reply).unwrap();
+    assert!(decoded.matched);
+    assert_eq!(decoded.values, result.values);
+}
+
+#[test]
+fn shared_transport_rejects_invalid_metadata() {
+    for (mode, size) in [(9u32, 1u32), (0, 512 * 1024), (1, 4), (1, MAX_BYTES as u32 + 1)] {
+        let mut parcel = MsgParcel::new();
+        parcel.write(&mode).unwrap();
+        parcel.write(&size).unwrap();
+        assert!(read_payload(&mut parcel).is_err());
+    }
+}
+
+#[test]
+fn search_snapshot_rejects_truncation_and_trailing_bytes() {
+    let input = SearchRequest {
+        protocol: PrivacyProtocol { data_set_size: 1, protocol_type: 1 },
+        ciphertexts: vec![vec![1, 2]], symmetric: Some(vec![vec![3]]),
+    };
+    let bytes = encode_search_bytes(&input).unwrap();
+    for len in 0..bytes.len() {
+        assert!(decode_search_bytes(&bytes[..len]).is_err());
+    }
+    let mut bad_flag = bytes.clone();
+    bad_flag[8..12].copy_from_slice(&2u32.to_le_bytes());
+    assert!(decode_search_bytes(&bad_flag).is_err());
+    let mut trailing = bytes;
+    trailing.push(0);
+    assert!(decode_search_bytes(&trailing).is_err());
 }

@@ -444,45 +444,45 @@ int32_t BuildMatchedResult(const SearchResultContext &context, const Slots &plai
     return DecryptAttachedValue(context, plain, offset, globalIndex, result.attachedValues);
 }
 
+int32_t ProcessDecryptedBatch(const SearchResultContext &context, const Slots &plain, std::size_t batch,
+                              SearchResult &result) noexcept
+{
+    for (std::size_t item = 0; item < context.capacity; ++item) {
+        const auto offset = item * context.groupsPerItem * context.params.slotsPerData;
+        bool matched = false;
+        auto ret = context.encoder.IsMatch(plain, offset, context.params, matched);
+        if (ret != PSI_PIR_SUCCESS) {
+            PSI_PIR_LOGE("IsMatch failed at batch=%{public}zu, item=%{private}zu, ret=%{public}d", batch, item, ret);
+            return ret;
+        }
+        if (!matched) {
+            continue;
+        }
+        ret = BuildMatchedResult(context, plain, batch, item, result);
+        if (ret != PSI_PIR_SUCCESS) {
+            return ret;
+        }
+    }
+    return PSI_PIR_SUCCESS;
+}
+
 int32_t ProcessSearchResultPlaintexts(const SearchResultContext &context, const std::vector<Slots> &plaintexts,
                                       SearchResult &resolvedResult) noexcept
 {
-    resolvedResult = {};
-    for (std::size_t batch = 0; batch < plaintexts.size(); ++batch) {
-        for (std::size_t item = 0; item < context.capacity; ++item) {
-            const auto offset = item * context.groupsPerItem * context.params.slotsPerData;
-            bool matched = false;
-            auto ret = context.encoder.IsMatch(plaintexts[batch], offset, context.params, matched);
-            if (ret != PSI_PIR_SUCCESS) {
-                PSI_PIR_LOGE("IsMatch failed at batch=%{public}zu, item=%{private}zu, ret=%{public}d", batch, item,
-                             ret);
-                return ret;
-            }
-            if (!matched) {
-                continue;
-            }
-            ret = BuildMatchedResult(context, plaintexts[batch], batch, item, resolvedResult);
-            if (ret != PSI_PIR_SUCCESS) {
-                return ret;
-            }
+    SearchResult result;
+    for (size_t batch = 0; batch < plaintexts.size(); ++batch) {
+        const auto ret = ProcessDecryptedBatch(context, plaintexts[batch], batch, result);
+        if (ret != PSI_PIR_SUCCESS) {
+            return ret;
         }
     }
-    if (IsPir(context.params)) {
-        const std::size_t matchedCount =
-            resolvedResult.attachedValues.has_value() ? resolvedResult.attachedValues->size() : 0;
-        PSI_PIR_LOGI("GetSearchResult scan complete, PIR batchCount=%{public}zu, matched=%{public}d, matchedCount="
-                     "%{public}zu",
-                     plaintexts.size(), resolvedResult.matchedResult, matchedCount);
-    } else {
-        PSI_PIR_LOGI("GetSearchResult scan complete, PSI batchCount=%{public}zu, matched=%{public}d", plaintexts.size(),
-                     resolvedResult.matchedResult);
-    }
+    resolvedResult = std::move(result);
     return PSI_PIR_SUCCESS;
 }
 
 } // namespace
 
-int32_t PsiPirProtocolImpl::genPrivacyTarget(const TargetInput &input, const ProtocolParams &params,
+int32_t PsiPirProtocolImpl::GenPrivacyTarget(const TargetInput &input, const ProtocolParams &params,
                                              const CallerIdentity &identity, Bytes &result) const noexcept
 {
     auto ret = codec_.ValidateProtocol(params);
@@ -509,7 +509,7 @@ int32_t PsiPirProtocolImpl::genPrivacyTarget(const TargetInput &input, const Pro
     return SoftHeEngine().Encrypt(target, params, seed, result);
 }
 
-int32_t PsiPirProtocolImpl::privacySearch(const Bytes &privacyTarget, const std::vector<Element> &elements,
+int32_t PsiPirProtocolImpl::PrivacySearch(const Bytes &privacyTarget, const std::vector<Element> &elements,
                                           const ProtocolParams &params,
                                           PrivacySearchResult &searchResult) const noexcept
 {
@@ -555,18 +555,25 @@ int32_t PsiPirProtocolImpl::privacySearch(const Bytes &privacyTarget, const std:
     return PSI_PIR_SUCCESS;
 }
 
-int32_t PsiPirProtocolImpl::getSearchResult(const PrivacySearchResult &input, const ProtocolParams &params,
+int32_t PsiPirProtocolImpl::GetSearchResult(const PrivacySearchResult &input, const ProtocolParams &params,
                                             const CallerIdentity &identity, SearchResult &output) const noexcept
 {
     auto ret = codec_.ValidateProtocol(params);
     if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
-    auto decoded = input;
+    ret = codec_.ValidateSearchResultLayout(input, params);
+    if (ret != PSI_PIR_SUCCESS) {
+        return ret;
+    }
+    const auto groupsPerItem = GetGroupsPerItem(params);
+    const SearchResultContext context{input, params, encoder_, groupsPerItem,
+                                      params.dataNumPerPlaintext / groupsPerItem};
+    SearchResult result;
     const SoftHeEngine engine;
     for (size_t batch = 0; batch < input.fheCipherText.size(); ++batch) {
         PSI_PIR_LOGI("HPIC result decrypt batch begin, batch=%{public}zu, bytes=%{public}zu", batch,
-            input.fheCipherText[batch].size());
+                     input.fheCipherText[batch].size());
         if (input.fheCipherText[batch].empty()) {
             return PSI_PIR_INVALID_ARGUMENT;
         }
@@ -581,16 +588,11 @@ int32_t PsiPirProtocolImpl::getSearchResult(const PrivacySearchResult &input, co
         if (ret != PSI_PIR_SUCCESS) {
             return ret;
         }
-        ret = codec_.SerializePlaintext(slots, params, decoded.fheCipherText[batch]);
+        ret = ProcessDecryptedBatch(context, slots, batch, result);
         if (ret != PSI_PIR_SUCCESS) {
             return ret;
         }
         PSI_PIR_LOGI("HPIC result decrypt batch success, batch=%{public}zu, slots=%{public}zu", batch, slots.size());
-    }
-    SearchResult result;
-    ret = ProcessDecryptedSearchResult(decoded, params, result);
-    if (ret != PSI_PIR_SUCCESS) {
-        return ret;
     }
     output = std::move(result);
     return PSI_PIR_SUCCESS;

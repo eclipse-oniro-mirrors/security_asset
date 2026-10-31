@@ -25,7 +25,7 @@ use std::{ffi::CString, os::raw::c_char, sync::OnceLock};
 
 use asset_log::logw;
 use asset_ipc::privacy::{TargetRequest, SearchRequest, SearchResponse,
-    serialize_target, serialize_search, deserialize_result, MAX_BYTES, PROTOCOL_SUCCESS};
+    serialize_target, serialize_search, deserialize_result, read_payload, MAX_TARGET_RESULT_BYTES, PROTOCOL_SUCCESS};
 use ipc::{
     parcel::{MsgOption, MsgParcel},
     remote::RemoteObj,
@@ -424,11 +424,11 @@ impl Manager {
         let mut reply = self.privacy_request(IpcCode::PrivacyGenTarget, |parcel| serialize_target(input, parcel))?;
         let result = reply.read::<i32>().map_err(ipc_err_handle)?;
         let output = if result == PROTOCOL_SUCCESS {
-            reply.read::<Vec<u8>>().map_err(ipc_err_handle)?
+            read_payload(&mut reply)?
         } else {
             Vec::new()
         };
-        if output.len() > MAX_BYTES {
+        if output.len() > MAX_TARGET_RESULT_BYTES {
             return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                 ErrCode::InvalidArgument, "Privacy target exceeds the byte limit");
         }

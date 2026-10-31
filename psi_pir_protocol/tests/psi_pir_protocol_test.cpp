@@ -131,13 +131,13 @@ Bytes HexBytes(const std::string &hex)
 int32_t BuiltInDigest(HashAlg algorithm, const Bytes &input, Bytes &output)
 {
     const auto provider = GetOpenSslHashProvider();
-    return provider ? provider->digest(algorithm, input, output) : PSI_PIR_HASH_ERROR;
+    return provider ? provider->Digest(algorithm, input, output) : PSI_PIR_HASH_ERROR;
 }
 
 int32_t BuiltInFillRandom(Bytes &output)
 {
     const auto provider = GetOpenSslRandomSource();
-    return provider ? provider->fill(output) : PSI_PIR_RANDOM_ERROR;
+    return provider ? provider->Fill(output) : PSI_PIR_RANDOM_ERROR;
 }
 
 int32_t BuiltInEncryptOrderValue(const Bytes &seed, const std::optional<Bytes> &value, const ProtocolParams &params,
@@ -206,7 +206,7 @@ PrivacySearchResult DecryptOutsideProtocol(const PrivacySearchResult &response)
 
 class RecordingHash final : public IHashProvider {
 public:
-    int32_t digest(HashAlg algorithm, const Bytes &input, Bytes &output) const noexcept override
+    int32_t Digest(HashAlg algorithm, const Bytes &input, Bytes &output) const noexcept override
     {
         algorithms.push_back(algorithm);
         inputs.push_back(input);
@@ -224,7 +224,7 @@ public:
 
 class RecordingRandom final : public IRandomSource {
 public:
-    int32_t fill(Bytes &output) noexcept override
+    int32_t Fill(Bytes &output) noexcept override
     {
         requestedSizes.push_back(output.size());
         std::fill(output.begin(), output.end(), nextValue_++);
@@ -239,7 +239,7 @@ private:
 
 class BoundaryRandom final : public IRandomSource {
 public:
-    int32_t fill(Bytes &output) noexcept override
+    int32_t Fill(Bytes &output) noexcept override
     {
         requestedSizes.push_back(output.size());
         std::fill(output.begin(), output.end(), 0x12);
@@ -343,13 +343,13 @@ public:
         return compatible;
     }
 
-    int32_t addPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept override
+    int32_t AddPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept override
     {
         Slots slots;
         if (DeserializeSlots(ciphertext, slots) != PSI_PIR_SUCCESS || slots.size() != plaintext.size()) {
             return PSI_PIR_HE_ERROR;
         }
-        // Model the externally injected TA contract: addPlain(C, P) decrypts to P - C.
+        // Model the externally injected TA contract: AddPlain(C, P) decrypts to P - C.
         for (std::size_t i = 0; i < slots.size(); ++i) {
             const auto subtrahend = plaintext[i] % PLAIN_MODULUS;
             slots[i] = (subtrahend + PLAIN_MODULUS - slots[i]) % PLAIN_MODULUS;
@@ -358,7 +358,7 @@ public:
         return PSI_PIR_SUCCESS;
     }
 
-    int32_t multiplyPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept override
+    int32_t MultiplyPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept override
     {
         Slots slots;
         if (DeserializeSlots(ciphertext, slots) != PSI_PIR_SUCCESS || slots.size() != plaintext.size()) {
@@ -506,7 +506,7 @@ TEST(PsiPirProtocolHeContractTest, AddPlainMeansPlaintextMinusCiphertext)
     const Slots ciphertextSlots{1, 0, PLAIN_MODULUS - 1};
     const Slots plaintext{2, 1, PLAIN_MODULUS - 1};
     Bytes output;
-    ASSERT_EQ(he.addPlain(SerializeSlots(ciphertextSlots), plaintext, output), PSI_PIR_SUCCESS);
+    ASSERT_EQ(he.AddPlain(SerializeSlots(ciphertextSlots), plaintext, output), PSI_PIR_SUCCESS);
 
     Slots result;
     ASSERT_EQ(DeserializeSlots(output, result), PSI_PIR_SUCCESS);
@@ -710,7 +710,7 @@ TEST(PsiPirProtocolProviderTest, CustomProvidersDriveEvaluationAndResolution)
 
     const auto target = MakePrivacyTargetFromSuffix(CompareSuffix(2, 8), 4);
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(target, {MakeElement(1, "one"), MakeElement(2, "two")}, PIR_PROTOCOL, response),
+    ASSERT_EQ(PrivacySearch(target, {MakeElement(1, "one"), MakeElement(2, "two")}, PIR_PROTOCOL, response),
               PSI_PIR_SUCCESS);
 
     ASSERT_EQ(response.fheCipherText.size(), 1U);
@@ -781,7 +781,7 @@ TEST(PsiPirProtocolProviderTest, IndependentPirMasksHideNonMatchingSeed)
     const auto providers = InstallRecordingProviders();
     const auto target = MakePrivacyTargetFromSuffix(CompareSuffix(2, 8), 4);
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(target, {MakeElement(1, "one"), MakeElement(2, "two")}, PIR_PROTOCOL, response),
+    ASSERT_EQ(PrivacySearch(target, {MakeElement(1, "one"), MakeElement(2, "two")}, PIR_PROTOCOL, response),
               PSI_PIR_SUCCESS);
 
     Slots evaluatedSlots;
@@ -831,7 +831,7 @@ TEST(PsiPirProtocolProviderTest, NullOverridesRestoreOpenSslDefaults)
     EXPECT_EQ(restoredPirValue.get(), GetOpenSslPirValueCrypto().get());
 
     Bytes digest;
-    ASSERT_EQ(restoredHash->digest(HashAlg::SHA256, Bytes{'a', 'b', 'c'}, digest), PSI_PIR_SUCCESS);
+    ASSERT_EQ(restoredHash->Digest(HashAlg::SHA256, Bytes{'a', 'b', 'c'}, digest), PSI_PIR_SUCCESS);
     EXPECT_EQ(digest, HexBytes("ba7816bf8f01cfea414140de5dae2223"
                                "b00361a396177a9cb410ff61f20015ad"));
 }
@@ -1003,7 +1003,7 @@ TEST(PsiPirProtocolTest, BothPublicApisRejectUnsupportedPrivacyProtocols)
     for (const auto &unsupported : unsupportedProtocols) {
         PrivacySearchResult response;
         SearchResult result;
-        EXPECT_EQ(privacySearch({1}, {MakeElement(1)}, unsupported, response), PSI_PIR_INVALID_ARGUMENT);
+        EXPECT_EQ(PrivacySearch({1}, {MakeElement(1)}, unsupported, response), PSI_PIR_INVALID_ARGUMENT);
         EXPECT_EQ(ProcessDecryptedSearchResult({}, unsupported, result), PSI_PIR_INVALID_ARGUMENT);
     }
 }
@@ -1015,7 +1015,7 @@ TEST(PsiPirProtocolTest, InvalidElementHashIsRejectedBeforeHeEvaluation)
     Element element = MakeElement(1);
     element.hashAlg = static_cast<HashAlg>(99);
     PrivacySearchResult response;
-    EXPECT_EQ(privacySearch({1}, {element}, PSI_PROTOCOL, response), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(PrivacySearch({1}, {element}, PSI_PROTOCOL, response), PSI_PIR_INVALID_ARGUMENT);
 }
 
 TEST(PsiPirProtocolTest, EmptyElementKeyKeepsTheExistingHashSemantics)
@@ -1027,7 +1027,7 @@ TEST(PsiPirProtocolTest, EmptyElementKeyKeepsTheExistingHashSemantics)
     element.elemKey = {};
     element.hashAlg = HashAlg::SHA256;
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTargetForKey({}, 4), {element}, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(PrivacySearch(MakePrivacyTargetForKey({}, 4), {element}, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
 
     SearchResult result;
     ASSERT_EQ(ProcessDecryptedSearchResult(DecryptOutsideProtocol(response), PSI_PROTOCOL, result), PSI_PIR_SUCCESS);
@@ -1039,7 +1039,7 @@ TEST(PsiPirProtocolTest, EmptyEvaluationAndResolutionDoNotRequireHeEngine)
     SetHEEngine(nullptr);
 
     PrivacySearchResult psiResponse;
-    EXPECT_EQ(privacySearch({1}, {}, PSI_PROTOCOL, psiResponse), PSI_PIR_SUCCESS);
+    EXPECT_EQ(PrivacySearch({1}, {}, PSI_PROTOCOL, psiResponse), PSI_PIR_SUCCESS);
     EXPECT_TRUE(psiResponse.fheCipherText.empty());
     EXPECT_FALSE(psiResponse.symCipherText.has_value());
     SearchResult result;
@@ -1047,7 +1047,7 @@ TEST(PsiPirProtocolTest, EmptyEvaluationAndResolutionDoNotRequireHeEngine)
     EXPECT_FALSE(result.matchedResult);
 
     PrivacySearchResult pirResponse;
-    EXPECT_EQ(privacySearch({1}, {}, PIR_PROTOCOL, pirResponse), PSI_PIR_SUCCESS);
+    EXPECT_EQ(PrivacySearch({1}, {}, PIR_PROTOCOL, pirResponse), PSI_PIR_SUCCESS);
     EXPECT_TRUE(pirResponse.fheCipherText.empty());
     ASSERT_TRUE(pirResponse.symCipherText.has_value());
     EXPECT_TRUE(pirResponse.symCipherText->empty());
@@ -1064,7 +1064,7 @@ TEST(PsiPirProtocolTest, SingleLayerElementUsesExplicitSha256)
     element.elemKey = EightByteKey(2);
     element.hashAlg = HashAlg::SHA256;
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(2), {element}, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(PrivacySearch(MakePrivacyTarget(2), {element}, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
     SearchResult result;
     ASSERT_EQ(ProcessDecryptedSearchResult(DecryptOutsideProtocol(response), PSI_PROTOCOL, result), PSI_PIR_SUCCESS);
     EXPECT_TRUE(result.matchedResult);
@@ -1103,7 +1103,7 @@ TEST(PsiPirProtocolTest, PsiMatchesAndMissesAfterExternalHeDecryption)
     const std::vector<Element> elements{MakeElement(1, "ignored"), MakeElement(2, "also ignored"), MakeElement(3)};
 
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(2), elements, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(PrivacySearch(MakePrivacyTarget(2), elements, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
     ASSERT_EQ(response.fheCipherText.size(), 1U);
     EXPECT_EQ(response.fheCipherText.front().size(), SLOT_COUNT * sizeof(std::uint64_t));
     EXPECT_FALSE(response.symCipherText.has_value());
@@ -1114,7 +1114,7 @@ TEST(PsiPirProtocolTest, PsiMatchesAndMissesAfterExternalHeDecryption)
     EXPECT_TRUE(result.matchedResult);
     EXPECT_FALSE(result.attachedValues.has_value());
 
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(9), elements, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(PrivacySearch(MakePrivacyTarget(9), elements, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
     decrypted = DecryptOutsideProtocol(response);
     ASSERT_EQ(ProcessDecryptedSearchResult(decrypted, PSI_PROTOCOL, result), PSI_PIR_SUCCESS);
     EXPECT_FALSE(result.matchedResult);
@@ -1126,7 +1126,7 @@ TEST(PsiPirProtocolTest, PirReturnsOneAttachedValue)
     ConfigureProtocol();
     const std::vector<Element> elements{MakeElement(1, "one"), MakeElement(2, "two"), MakeElement(3, "three")};
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(2), elements, PIR_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(PrivacySearch(MakePrivacyTarget(2), elements, PIR_PROTOCOL, response), PSI_PIR_SUCCESS);
     ASSERT_EQ(response.fheCipherText.size(), 1U);
     EXPECT_EQ(response.fheCipherText.front().size(), SLOT_COUNT * sizeof(std::uint64_t));
     ASSERT_TRUE(response.symCipherText.has_value());
@@ -1153,7 +1153,7 @@ TEST(PsiPirProtocolTest, PirReturnsAllAttachedValuesAcrossBatchesInScanOrder)
     elements.push_back(MakeElement(2, "last"));
 
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(2), elements, PIR_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(PrivacySearch(MakePrivacyTarget(2), elements, PIR_PROTOCOL, response), PSI_PIR_SUCCESS);
     ASSERT_EQ(response.fheCipherText.size(), 2U);
 
     SearchResult result;
@@ -1169,7 +1169,7 @@ TEST(PsiPirProtocolTest, PirMatchMayHaveNoAttachedValue)
 {
     ConfigureProtocol();
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(2), {MakeElement(1, "one"), MakeElement(2)}, PIR_PROTOCOL, response),
+    ASSERT_EQ(PrivacySearch(MakePrivacyTarget(2), {MakeElement(1, "one"), MakeElement(2)}, PIR_PROTOCOL, response),
               PSI_PIR_SUCCESS);
 
     SearchResult result;
@@ -1188,7 +1188,7 @@ TEST(PsiPirProtocolTest, FixedCapacitiesAre512ForPsiAnd256ForPir)
         psiElements.push_back(MakeElement(i + 1));
     }
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(513), psiElements, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(PrivacySearch(MakePrivacyTarget(513), psiElements, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
     ASSERT_EQ(response.fheCipherText.size(), 2U);
     auto decrypted = DecryptOutsideProtocol(response);
     ASSERT_EQ(decrypted.fheCipherText.size(), 2U);
@@ -1200,7 +1200,7 @@ TEST(PsiPirProtocolTest, FixedCapacitiesAre512ForPsiAnd256ForPir)
     for (std::size_t i = 0; i < 257; ++i) {
         pirElements.push_back(MakeElement(i + 1, std::to_string(i + 1)));
     }
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(257), pirElements, PIR_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(PrivacySearch(MakePrivacyTarget(257), pirElements, PIR_PROTOCOL, response), PSI_PIR_SUCCESS);
     ASSERT_EQ(response.fheCipherText.size(), 2U);
     ASSERT_TRUE(response.symCipherText.has_value());
     EXPECT_EQ(response.symCipherText->size(), pirElements.size());
@@ -1222,7 +1222,7 @@ TEST(PsiPirProtocolTest, OneHundredTwentyEightBitPirUsesCapacity128AcrossBothPub
     }
 
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(Make128BitPrivacyTarget(129), elements, PIR_128_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(PrivacySearch(Make128BitPrivacyTarget(129), elements, PIR_128_PROTOCOL, response), PSI_PIR_SUCCESS);
     ASSERT_EQ(response.fheCipherText.size(), 2U);
     for (const auto &batch : response.fheCipherText) {
         EXPECT_EQ(batch.size(), SLOT_COUNT * sizeof(std::uint64_t));
@@ -1247,7 +1247,7 @@ TEST(PsiPirProtocolTest, GetSearchResultDoesNotDependOnHeProvider)
     ConfigureProtocol();
     PrivacySearchResult response;
     ASSERT_EQ(
-        privacySearch(MakePrivacyTarget(2), {MakeElement(1, "one"), MakeElement(2, "two")}, PIR_PROTOCOL, response),
+        PrivacySearch(MakePrivacyTarget(2), {MakeElement(1, "one"), MakeElement(2, "two")}, PIR_PROTOCOL, response),
         PSI_PIR_SUCCESS);
     const auto decrypted = DecryptOutsideProtocol(response);
 
@@ -1264,7 +1264,7 @@ TEST(PsiPirProtocolTest, PsiGetSearchResultNeedsNoHeEngine)
 {
     ConfigureProtocol();
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(2), {MakeElement(1), MakeElement(2)}, PSI_PROTOCOL, response),
+    ASSERT_EQ(PrivacySearch(MakePrivacyTarget(2), {MakeElement(1), MakeElement(2)}, PSI_PROTOCOL, response),
               PSI_PIR_SUCCESS);
     const auto decrypted = DecryptOutsideProtocol(response);
 
@@ -1349,7 +1349,7 @@ TEST(PsiPirProtocolTest, NonZeroQueryDoesNotMatchZeroPaddedPsiCapacity)
 {
     ConfigureProtocol();
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(9), {MakeElement(1)}, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(PrivacySearch(MakePrivacyTarget(9), {MakeElement(1)}, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
     ASSERT_EQ(response.fheCipherText.size(), 1U);
 
     const auto decrypted = DecryptOutsideProtocol(response);
@@ -1363,7 +1363,7 @@ TEST(PsiPirProtocolTest, ZeroQueryShowsWhyPsiPaddingIsAnInvalidProtocolInput)
 {
     ConfigureProtocol();
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakeZeroPrivacyTarget(), {MakeElement(1)}, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(PrivacySearch(MakeZeroPrivacyTarget(), {MakeElement(1)}, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
 
     // With no item count in the northbound DTO, getSearchResult scans all 512 groups.
     // A zero query makes every zero-padded group decrypt to zero, so the wire
@@ -1378,7 +1378,7 @@ TEST(PsiPirProtocolTest, NonZeroQueryDoesNotMatchZeroPaddedPirCapacity)
 {
     ConfigureProtocol();
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakePrivacyTarget(9), {MakeElement(1, "one")}, PIR_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(PrivacySearch(MakePrivacyTarget(9), {MakeElement(1, "one")}, PIR_PROTOCOL, response), PSI_PIR_SUCCESS);
 
     SearchResult result;
     ASSERT_EQ(ProcessDecryptedSearchResult(DecryptOutsideProtocol(response), PIR_PROTOCOL, result), PSI_PIR_SUCCESS);
@@ -1390,7 +1390,7 @@ TEST(PsiPirProtocolTest, ZeroQueryPirPaddingCannotIndexPastSymmetricCiphertexts)
 {
     ConfigureProtocol();
     PrivacySearchResult response;
-    ASSERT_EQ(privacySearch(MakeZeroPrivacyTarget(), {MakeElement(1, "one")}, PIR_PROTOCOL, response), PSI_PIR_SUCCESS);
+    ASSERT_EQ(PrivacySearch(MakeZeroPrivacyTarget(), {MakeElement(1, "one")}, PIR_PROTOCOL, response), PSI_PIR_SUCCESS);
 
     SearchResult result;
     EXPECT_EQ(ProcessDecryptedSearchResult(DecryptOutsideProtocol(response), PIR_PROTOCOL, result),

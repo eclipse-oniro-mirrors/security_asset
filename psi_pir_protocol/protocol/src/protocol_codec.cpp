@@ -233,6 +233,12 @@ int32_t ProtocolCodec::ValidatePrivacyTarget(const Bytes &privacyTarget) const n
     return PSI_PIR_SUCCESS;
 }
 
+int32_t ProtocolCodec::ValidateSearchResultLayout(const PrivacySearchResult &result,
+                                                  const ProtocolParams &params) const noexcept
+{
+    return params.mode == ProtocolMode::PIR ? ValidatePirResultLayout(result, params) : PSI_PIR_SUCCESS;
+}
+
 int32_t ProtocolCodec::ValidatePlainSearchResult(const PrivacySearchResult &result,
                                                  const ProtocolParams &params) const noexcept
 {
@@ -245,14 +251,11 @@ int32_t ProtocolCodec::ValidatePlainSearchResult(const PrivacySearchResult &resu
     if (resultCode != PSI_PIR_SUCCESS) {
         return resultCode;
     }
-    if (params.mode == ProtocolMode::PIR) {
-        return ValidatePirResultLayout(result, params);
-    }
-
-    return PSI_PIR_SUCCESS;
+    return ValidateSearchResultLayout(result, params);
 }
 
-int32_t ProtocolCodec::SerializePlaintext(const Slots &slots, const ProtocolParams &params, Bytes &output) const noexcept
+int32_t ProtocolCodec::SerializePlaintext(const Slots &slots, const ProtocolParams &params,
+                                          Bytes &output) const noexcept
 {
     if (slots.size() != params.polyModulusDegree) {
         PSI_PIR_LOGE("decoded slot count does not match protocol dimension");

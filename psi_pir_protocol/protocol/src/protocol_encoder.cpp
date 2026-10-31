@@ -141,7 +141,7 @@ int32_t SampleMaskCandidates(IRandomSource &randomSource, const std::vector<std:
         return PSI_PIR_INVALID_ARGUMENT;
     }
     Bytes randomBytes(indices.size() * config.bytesPerValue);
-    const auto resultCode = randomSource.fill(randomBytes);
+    const auto resultCode = randomSource.Fill(randomBytes);
     if (resultCode != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("random fill failed: requested=%{public}zu, ret=%{public}d", randomBytes.size(), resultCode);
         return resultCode;
@@ -246,7 +246,7 @@ int32_t ProtocolEncoder::Hash(HashAlg algorithm, const Bytes &input, Bytes &dige
         return PSI_PIR_HASH_ERROR;
     }
     Bytes output;
-    const auto digestRet = hashProvider->digest(algorithm, input, output);
+    const auto digestRet = hashProvider->Digest(algorithm, input, output);
     if (digestRet != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("hash provider digest failed, algorithm=%{public}u, ret=%{public}d",
                      static_cast<uint32_t>(algorithm), digestRet);
@@ -360,7 +360,7 @@ int32_t ProtocolEncoder::GenerateSeed(const ProtocolParams &params, Bytes &seed)
         return PSI_PIR_RANDOM_ERROR;
     }
     Bytes output(params.compareBits / kBitsPerByte);
-    const auto resultCode = randomSource->fill(output);
+    const auto resultCode = randomSource->Fill(output);
     if (resultCode != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("seed random fill failed, requested=%{public}zu, ret=%{public}d", output.size(), resultCode);
         return resultCode;

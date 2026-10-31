@@ -16,8 +16,8 @@
 //! Typed PSI/PIR DTOs and the same field-by-field Parcel pattern as Asset maps.
 use crate::{ipc_err_handle, macros_lib, ErrCode, MsgParcel, Result};
 
-/// Maximum logical field budget in bytes, excluding the interface token and Parcel alignment.
-pub const MAX_BYTES: usize = 256 * 1024;
+/// Per-operation resource budget; large messages are transported through shared memory.
+pub const MAX_BYTES: usize = 64 * 1024 * 1024;
 const LENGTH_BYTES: usize = std::mem::size_of::<u32>();
 const FLAG_BYTES: usize = std::mem::size_of::<u32>();
 const PROTOCOL_BYTES: usize = std::mem::size_of::<u32>() + std::mem::size_of::<u32>();
@@ -27,8 +27,13 @@ const SEARCH_FIXED_BYTES: usize = PROTOCOL_BYTES + FLAG_BYTES;
 const RESULT_FIXED_BYTES: usize = FLAG_BYTES + FLAG_BYTES;
 /// Logical target request overhead, including the element length field.
 pub const TARGET_OVERHEAD_BYTES: usize = TARGET_FIXED_BYTES + LENGTH_BYTES;
-/// Maximum list item count permitted by the logical length-field budget.
-pub const MAX_ITEMS: usize = MAX_BYTES / LENGTH_BYTES;
+/// Independent bound on list descriptors, including lists containing only empty values.
+pub const MAX_ITEMS: usize = 65536;
+/// Maximum target ciphertext result, independent of the search request resource budget.
+pub const MAX_TARGET_RESULT_BYTES: usize = 256 * 1024;
+
+mod transport;
+pub use transport::{read_payload, write_payload};
 /// Protocol operation success code, separate from the outer Asset IPC status.
 pub const PROTOCOL_SUCCESS: i32 = 0;
 
@@ -93,6 +98,29 @@ pub struct PrivacyBuffer {
     pub data: *mut u8,
     /// Writable capacity on entry; actual byte length after a successful call.
     pub size: u32,
+}
+
+/// Synchronous same-process result receiver; the writer copies bytes before returning.
+#[repr(C)]
+pub struct PrivacyOutput {
+    /// Caller-owned output context; never serialized or passed across processes.
+    pub context: *mut std::ffi::c_void,
+    /// Borrows data only for the duration of this callback. Zero means success.
+    pub write: Option<unsafe extern "C" fn(*mut std::ffi::c_void, *const u8, u32) -> i32>,
+}
+
+/// Copies a synchronous result into a caller-owned Vec; no allocation ownership crosses FFI.
+///
+/// # Safety
+/// context must point to an exclusively borrowed Vec<u8>; data must be readable for size bytes
+/// and must not alias that Vec. Both ranges must remain valid until this function returns.
+pub unsafe extern "C" fn collect_privacy_bytes(context: *mut std::ffi::c_void, data: *const u8, size: u32) -> i32 {
+    if context.is_null() || data.is_null() || size == 0 || size as usize > MAX_BYTES {
+        return 1;
+    }
+    let output = &mut *(context as *mut Vec<u8>);
+    *output = std::slice::from_raw_parts(data, size as usize).to_vec();
+    PROTOCOL_SUCCESS
 }
 
 /// Owned target generation fields used by the Rust Parcel serializer.
@@ -330,39 +358,14 @@ fn read_protocol(parcel: &mut MsgParcel) -> Result<PrivacyProtocol> {
 fn write_bytes(value: &Vec<u8>, total: &mut usize, parcel: &mut MsgParcel) -> Result<()> {
     charge(total, LENGTH_BYTES)?;
     charge(total, value.len())?;
-    parcel.write::<Vec<u8>>(value).map_err(ipc_err_handle)
+    write_payload(value, parcel)
 }
 
 fn read_bytes(total: &mut usize, parcel: &mut MsgParcel) -> Result<Vec<u8>> {
-    let value = parcel.read::<Vec<u8>>().map_err(ipc_err_handle)?;
+    let value = read_payload(parcel)?;
     charge(total, LENGTH_BYTES)?;
     charge(total, value.len())?;
     Ok(value)
-}
-
-fn write_list(values: &Vec<Vec<u8>>, total: &mut usize, parcel: &mut MsgParcel) -> Result<()> {
-    charge(total, LENGTH_BYTES)?;
-    if values.len() > MAX_ITEMS {
-        return invalid();
-    }
-    parcel.write(&(values.len() as u32)).map_err(ipc_err_handle)?;
-    for value in values {
-        write_bytes(value, total, parcel)?;
-    }
-    Ok(())
-}
-
-fn read_list(total: &mut usize, parcel: &mut MsgParcel) -> Result<Vec<Vec<u8>>> {
-    charge(total, LENGTH_BYTES)?;
-    let count = parcel.read::<u32>().map_err(ipc_err_handle)? as usize;
-    if count > MAX_ITEMS {
-        return invalid();
-    }
-    let mut values = Vec::new();
-    for _ in 0..count {
-        values.push(read_bytes(total, parcel)?);
-    }
-    Ok(values)
 }
 
 /// Writes target fields in the shared Parcel order, rejecting requests over the byte budget.
@@ -383,50 +386,91 @@ pub fn deserialize_target(parcel: &mut MsgParcel) -> Result<TargetRequest> {
     })
 }
 
-/// Writes encrypted batches and presence-tagged frames while enforcing a shared byte budget.
+/// Writes one complete request through inline storage or read-only shared memory.
 pub fn serialize_search(value: &SearchRequest, parcel: &mut MsgParcel) -> Result<()> {
-    let mut total = SEARCH_FIXED_BYTES;
-    write_protocol(value.protocol, parcel)?;
-    write_list(&value.ciphertexts, &mut total, parcel)?;
-    parcel.write(&value.symmetric.is_some()).map_err(ipc_err_handle)?;
-    if let Some(values) = &value.symmetric {
-        write_list(values, &mut total, parcel)?;
-    }
-    Ok(())
+    let bytes = encode_search_bytes(value)?;
+    write_payload(&bytes, parcel)
 }
 
 /// Reads encrypted batches and optional frames, rejecting invalid counts or oversized fields.
 pub fn deserialize_search(parcel: &mut MsgParcel) -> Result<SearchRequest> {
-    let mut total = SEARCH_FIXED_BYTES;
-    let protocol = read_protocol(parcel)?;
-    let ciphertexts = read_list(&mut total, parcel)?;
-    let symmetric = if parcel.read::<bool>().map_err(ipc_err_handle)? {
-        Some(read_list(&mut total, parcel)?)
-    } else {
-        None
-    };
-    Ok(SearchRequest { protocol, ciphertexts, symmetric })
+    decode_search_bytes(&read_payload(parcel)?)
 }
 
 /// Writes match status and optional values, preserving absent and present empty lists.
 pub fn serialize_result(value: &SearchResponse, parcel: &mut MsgParcel) -> Result<()> {
-    let mut total = RESULT_FIXED_BYTES;
-    parcel.write(&value.matched).map_err(ipc_err_handle)?;
-    parcel.write(&value.values.is_some()).map_err(ipc_err_handle)?;
-    if let Some(values) = &value.values {
-        write_list(values, &mut total, parcel)?;
+    write_payload(&encode_result_bytes(value)?, parcel)
+}
+
+/// Reads an inline or shared-memory result and validates the complete encoded snapshot.
+pub fn deserialize_result(parcel: &mut MsgParcel) -> Result<SearchResponse> {
+    decode_result_bytes(&read_payload(parcel)?)
+}
+
+fn append_list(values: &[Vec<u8>], bytes: &mut Vec<u8>) -> Result<()> {
+    if values.len() > MAX_ITEMS {
+        return invalid();
+    }
+    let mut total = bytes.len();
+    charge(&mut total, LENGTH_BYTES)?;
+    bytes.extend_from_slice(&(values.len() as u32).to_le_bytes());
+    for value in values {
+        charge(&mut total, LENGTH_BYTES)?;
+        charge(&mut total, value.len())?;
+        bytes.extend_from_slice(&(value.len() as u32).to_le_bytes());
+        bytes.extend_from_slice(value);
     }
     Ok(())
 }
 
-/// Reads match status and optional values while enforcing the result byte budget.
-pub fn deserialize_result(parcel: &mut MsgParcel) -> Result<SearchResponse> {
-    let mut total = RESULT_FIXED_BYTES;
-    let matched = parcel.read::<bool>().map_err(ipc_err_handle)?;
-    let values = if parcel.read::<bool>().map_err(ipc_err_handle)? {
-        Some(read_list(&mut total, parcel)?)
-    } else {
-        None
+fn parse_list(bytes: &[u8], offset: &mut usize) -> Result<Vec<Vec<u8>>> {
+    let count = read_result_word(bytes, offset)? as usize;
+    if count > MAX_ITEMS || count > (bytes.len() - *offset) / LENGTH_BYTES {
+        return invalid();
+    }
+    let mut values = Vec::new();
+    for _ in 0..count {
+        let len = read_result_word(bytes, offset)? as usize;
+        if len > bytes.len() - *offset {
+            return invalid();
+        }
+        values.push(bytes[*offset..*offset + len].to_vec());
+        *offset += len;
+    }
+    Ok(values)
+}
+
+/// Encodes the complete request into a bounded, little-endian field stream without native pointers.
+pub fn encode_search_bytes(value: &SearchRequest) -> Result<Vec<u8>> {
+    let mut bytes = Vec::new();
+    bytes.extend_from_slice(&value.protocol.data_set_size.to_le_bytes());
+    bytes.extend_from_slice(&value.protocol.protocol_type.to_le_bytes());
+    bytes.extend_from_slice(&(value.symmetric.is_some() as u32).to_le_bytes());
+    append_list(&value.ciphertexts, &mut bytes)?;
+    if let Some(values) = &value.symmetric {
+        append_list(values, &mut bytes)?;
+    }
+    Ok(bytes)
+}
+
+/// Validates a complete request snapshot, including counts, lengths, flags and trailing data.
+pub fn decode_search_bytes(bytes: &[u8]) -> Result<SearchRequest> {
+    if bytes.len() > MAX_BYTES {
+        return invalid();
+    }
+    let mut offset = 0;
+    let protocol = PrivacyProtocol {
+        data_set_size: read_result_word(bytes, &mut offset)?,
+        protocol_type: read_result_word(bytes, &mut offset)?,
     };
-    Ok(SearchResponse { matched, values })
+    let flag = read_result_word(bytes, &mut offset)?;
+    if flag > 1 {
+        return invalid();
+    }
+    let ciphertexts = parse_list(bytes, &mut offset)?;
+    let symmetric = if flag == 1 { Some(parse_list(bytes, &mut offset)?) } else { None };
+    if offset != bytes.len() {
+        return invalid();
+    }
+    Ok(SearchRequest { protocol, ciphertexts, symmetric })
 }

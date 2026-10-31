@@ -219,13 +219,13 @@ HWTEST_F(HifheProtocolTest, PsiCompleteWorkflow, TestSize.Level1)
     const PrivacyProtocol protocol{DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL};
     const CallerIdentity identity{20010001, 100};
     Bytes target;
-    ASSERT_EQ(genPrivacyTarget({Bytes{'q'}, HashAlg::SHA256}, protocol, identity, target), PSI_PIR_SUCCESS);
+    ASSERT_EQ(GenPrivacyTarget({Bytes{'q'}, HashAlg::SHA256}, protocol, identity, target), PSI_PIR_SUCCESS);
     for (const uint8_t key : {static_cast<uint8_t>('q'), static_cast<uint8_t>('z')}) {
         PrivacySearchResult encrypted;
-        ASSERT_EQ(privacySearch(target, {{Bytes{key}, HashAlg::SHA256, std::nullopt}}, protocol, encrypted),
+        ASSERT_EQ(PrivacySearch(target, {{Bytes{key}, HashAlg::SHA256, std::nullopt}}, protocol, encrypted),
                   PSI_PIR_SUCCESS);
         SearchResult result;
-        ASSERT_EQ(getSearchResult(encrypted, protocol, identity, result), PSI_PIR_SUCCESS);
+        ASSERT_EQ(GetSearchResult(encrypted, protocol, identity, result), PSI_PIR_SUCCESS);
         EXPECT_EQ(result.matchedResult, key == 'q');
         EXPECT_FALSE(result.attachedValues.has_value());
     }
@@ -240,12 +240,12 @@ HWTEST_F(HifheProtocolTest, PirCompleteWorkflow, TestSize.Level1)
     const PrivacyProtocol protocol{DataSetSize::SIZE_512, ProtocolType::PIR_PROTOCOL};
     const CallerIdentity identity{20010001, 100};
     Bytes target;
-    ASSERT_EQ(genPrivacyTarget({Bytes{'q'}, HashAlg::SHA256}, protocol, identity, target), PSI_PIR_SUCCESS);
+    ASSERT_EQ(GenPrivacyTarget({Bytes{'q'}, HashAlg::SHA256}, protocol, identity, target), PSI_PIR_SUCCESS);
     for (const auto &value : std::vector<Bytes>{{}, {0, 0xFF, 0x45}}) {
         PrivacySearchResult encrypted;
-        ASSERT_EQ(privacySearch(target, {{Bytes{'q'}, HashAlg::SHA256, value}}, protocol, encrypted), PSI_PIR_SUCCESS);
+        ASSERT_EQ(PrivacySearch(target, {{Bytes{'q'}, HashAlg::SHA256, value}}, protocol, encrypted), PSI_PIR_SUCCESS);
         SearchResult result;
-        ASSERT_EQ(getSearchResult(encrypted, protocol, identity, result), PSI_PIR_SUCCESS);
+        ASSERT_EQ(GetSearchResult(encrypted, protocol, identity, result), PSI_PIR_SUCCESS);
         EXPECT_TRUE(result.matchedResult);
         ASSERT_TRUE(result.attachedValues.has_value());
         EXPECT_EQ(*result.attachedValues, std::vector<Bytes>{value});

@@ -35,11 +35,11 @@ public:
     {
         return true;
     }
-    int32_t addPlain(const Bytes &input, const Slots &, Bytes &output) const noexcept override
+    int32_t AddPlain(const Bytes &input, const Slots &, Bytes &output) const noexcept override
     {
         return Record(Operation::SUBTRACT_FROM_PLAIN, input, output);
     }
-    int32_t multiplyPlain(const Bytes &input, const Slots &, Bytes &output) const noexcept override
+    int32_t MultiplyPlain(const Bytes &input, const Slots &, Bytes &output) const noexcept override
     {
         return Record(Operation::MULTIPLY_PLAIN, input, output);
     }

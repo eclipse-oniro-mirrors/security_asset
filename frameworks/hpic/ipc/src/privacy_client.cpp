@@ -50,7 +50,7 @@ int32_t GenPrivacyTargetRemote(const psi_pir::TargetInput &input, const psi_pir:
         {static_cast<uint32_t>(protocol.dataSetSize), static_cast<uint32_t>(protocol.protocolType)},
         static_cast<uint32_t>(input.hashAlg),
         {input.elemData.data(), static_cast<uint32_t>(input.elemData.size())}};
-    psi_pir::Bytes bytes(MAX_PRIVACY_BYTES);
+    psi_pir::Bytes bytes(MAX_TARGET_RESULT_BYTES);
     PrivacyBuffer result{bytes.data(), static_cast<uint32_t>(bytes.size())};
     const auto ret = asset_privacy_gen_target(&request, &result);
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
@@ -83,18 +83,18 @@ int32_t GetSearchResultRemote(const psi_pir::PrivacySearchResult &input, const p
         {ciphertexts.data(), static_cast<uint32_t>(ciphertexts.size())},
         input.symCipherText ? 1U : 0U,
         {symmetric.data(), static_cast<uint32_t>(symmetric.size())}};
-    psi_pir::Bytes bytes(MAX_PRIVACY_BYTES);
-    PrivacyBuffer result{bytes.data(), static_cast<uint32_t>(bytes.size())};
+    psi_pir::Bytes bytes;
+    const PrivacyOutput result{&bytes, CollectPrivacyBytes};
     const auto ret = asset_privacy_get_result(&request, &result);
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("HPIC IPC getSearchResult failed, ret=%{public}d", ret);
         return ret;
     }
-    if (result.size > bytes.size() || !DecodePrivacyResult(bytes.data(), result.size, output)) {
-        PSI_PIR_LOGE("HPIC IPC getSearchResult invalid response, bytes=%{public}u", result.size);
+    if (!DecodePrivacyResult(bytes.data(), bytes.size(), output)) {
+        PSI_PIR_LOGE("HPIC IPC getSearchResult invalid response, bytes=%{public}zu", bytes.size());
         return psi_pir::PSI_PIR_CODEC_ERROR;
     }
-    PSI_PIR_LOGI("HPIC IPC getSearchResult success, responseBytes=%{public}u", result.size);
+    PSI_PIR_LOGI("HPIC IPC getSearchResult success, responseBytes=%{public}zu", bytes.size());
     return psi_pir::PSI_PIR_SUCCESS;
 }
 } // namespace OHOS::Security::PrivacyComputation

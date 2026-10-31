@@ -21,7 +21,7 @@
 
 namespace psi_pir {
 
-int32_t genPrivacyTarget(const TargetInput &input, const PrivacyProtocol &protocol, const CallerIdentity &identity,
+int32_t GenPrivacyTarget(const TargetInput &input, const PrivacyProtocol &protocol, const CallerIdentity &identity,
                          Bytes &output) noexcept
 {
     PSI_PIR_LOGI("HPIC protocol genPrivacyTarget begin, inputBytes=%{public}zu", input.elemData.size());
@@ -30,7 +30,7 @@ int32_t genPrivacyTarget(const TargetInput &input, const PrivacyProtocol &protoc
     if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
-    const auto targetRet = internal::PsiPirProtocolImpl().genPrivacyTarget(input, params, identity, output);
+    const auto targetRet = internal::PsiPirProtocolImpl().GenPrivacyTarget(input, params, identity, output);
     if (targetRet != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("genPrivacyTarget failed in protocol core, ret=%{public}d", targetRet);
     } else {
@@ -39,17 +39,17 @@ int32_t genPrivacyTarget(const TargetInput &input, const PrivacyProtocol &protoc
     return targetRet;
 }
 
-int32_t privacySearch(const Bytes &privacyTarget, const std::vector<Element> &elements, const PrivacyProtocol &protocol,
+int32_t PrivacySearch(const Bytes &privacyTarget, const std::vector<Element> &elements, const PrivacyProtocol &protocol,
                       PrivacySearchResult &output) noexcept
 {
     PSI_PIR_LOGI("HPIC protocol privacySearch begin, targetBytes=%{public}zu, elements=%{public}zu",
-        privacyTarget.size(), elements.size());
+                 privacyTarget.size(), elements.size());
     internal::ProtocolParams params;
     const auto ret = internal::MapPrivacyProtocol(protocol, params);
     if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
-    const auto searchRet = internal::PsiPirProtocolImpl().privacySearch(privacyTarget, elements, params, output);
+    const auto searchRet = internal::PsiPirProtocolImpl().PrivacySearch(privacyTarget, elements, params, output);
     if (searchRet != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("privacySearch failed in protocol core, ret=%{public}d", searchRet);
     } else {
@@ -58,7 +58,7 @@ int32_t privacySearch(const Bytes &privacyTarget, const std::vector<Element> &el
     return searchRet;
 }
 
-int32_t getSearchResult(const PrivacySearchResult &input, const PrivacyProtocol &protocol,
+int32_t GetSearchResult(const PrivacySearchResult &input, const PrivacyProtocol &protocol,
                         const CallerIdentity &identity, SearchResult &output) noexcept
 {
     PSI_PIR_LOGI("HPIC protocol getSearchResult begin, batches=%{public}zu", input.fheCipherText.size());
@@ -67,7 +67,7 @@ int32_t getSearchResult(const PrivacySearchResult &input, const PrivacyProtocol 
     if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
-    const auto resultRet = internal::PsiPirProtocolImpl().getSearchResult(input, params, identity, output);
+    const auto resultRet = internal::PsiPirProtocolImpl().GetSearchResult(input, params, identity, output);
     if (resultRet != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("getSearchResult failed in protocol core, ret=%{public}d", resultRet);
     } else {

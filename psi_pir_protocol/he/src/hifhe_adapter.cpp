@@ -93,24 +93,14 @@ int32_t HifheAdapter::ConfigureContext() noexcept
         ret = HIFHE_SetParaById(ctx_, HIFHE_BGV_2048_48_17BIT);
     }
     uint32_t degree = 0;
-    uint32_t plaintextBytes = 0;
-    uint32_t ciphertextBytes = 0;
     if (ret == HIFHE_SUCCESS) {
         ret = HIFHE_Ctrl(ctx_, HIFHE_CTRL_BGV_GET_POLY_DEGREE, nullptr, &degree, sizeof(degree));
     }
-    if (ret == HIFHE_SUCCESS) {
-        ret = HIFHE_Ctrl(ctx_, HIFHE_CTRL_BGV_GET_PLAINTEXT_LEN, nullptr, &plaintextBytes, sizeof(plaintextBytes));
-    }
-    if (ret == HIFHE_SUCCESS) {
-        ret = HIFHE_Ctrl(ctx_, HIFHE_CTRL_BGV_GET_CIPHERTEXT_LEN, nullptr, &ciphertextBytes, sizeof(ciphertextBytes));
-    }
-    if (ret != HIFHE_SUCCESS || degree != kDefaultPolyModulusDegree || plaintextBytes == 0 ||
-        plaintextBytes > MAX_HE_BYTES || ciphertextBytes == 0 || ciphertextBytes > MAX_HE_BYTES) {
-        PSI_PIR_LOGE("Configure native HiFHE parameters failed, ret=%{public}d, degree=%{public}u", ret, degree);
+    if (ret != HIFHE_SUCCESS || degree != kDefaultPolyModulusDegree) {
+        PSI_PIR_LOGE("Configure HiFHE parameters failed, ret=%{public}d, degree=%{public}u", ret, degree);
         return PSI_PIR_HE_ERROR;
     }
-    PSI_PIR_LOGI("HPIC HiFHE parameters configured, degree=%{public}u, plaintextBytes=%{public}u, "
-        "ciphertextBytes=%{public}u", degree, plaintextBytes, ciphertextBytes);
+    PSI_PIR_LOGI("HPIC HiFHE parameters configured, degree=%{public}u", degree);
     return PSI_PIR_SUCCESS;
 }
 

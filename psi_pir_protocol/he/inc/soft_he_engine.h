@@ -29,8 +29,8 @@ public:
     int32_t Decrypt(const Bytes &ciphertext, const ProtocolParams &params, const HeSeed &seed,
                     Slots &output) const noexcept;
     bool IsCompatible(const ProtocolParams &params) const noexcept override;
-    int32_t addPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept override;
-    int32_t multiplyPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept override;
+    int32_t AddPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept override;
+    int32_t MultiplyPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept override;
     int32_t RandCipherText(const Bytes &ciphertext, Bytes &output) const noexcept override;
 };
 // Imports into one keyless HiFHE context, retained by the returned handle until destruction.

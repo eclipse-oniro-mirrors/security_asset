@@ -14,7 +14,7 @@
  */
 
 //! Typed C bindings, following the existing full.rs Manager/guard convention.
-use asset_sdk::privacy::{PrivacyTargetRequest, PrivacySearchRequest, PrivacyBuffer};
+use asset_sdk::privacy::{PrivacyTargetRequest, PrivacySearchRequest, PrivacyBuffer, PrivacyOutput};
 #[cfg(not(feature = "AssetEmptyMode"))]
 use asset_sdk::privacy::{encode_result_bytes, MAX_BYTES, PROTOCOL_SUCCESS};
 #[cfg(not(feature = "AssetEmptyMode"))]
@@ -90,26 +90,26 @@ pub unsafe extern "C" fn asset_privacy_gen_target(
     PROTOCOL_SUCCESS
 }
 
-/// Retrieves an encoded result into caller-owned storage; no allocation ownership is transferred.
-/// Output bytes and size are committed only after successful IPC, encoding and capacity validation.
+/// Delivers a complete encoded result through a synchronous caller-owned writer; no allocation crosses FFI.
+/// The writer is invoked once after successful IPC and complete result encoding.
 ///
 /// # Safety
 /// Non-null input and output must point to aligned, initialized request and buffer structs.
 /// Input descriptors and nonempty byte ranges must remain readable and unchanged during this call.
-/// Output storage must be exclusively writable for its declared capacity and must not overlap
-/// the input ranges or descriptor structs. The caller retains ownership of all buffers.
+/// The output context and function pointer must remain valid throughout the call. The writer
+/// must copy its borrowed bytes before returning and must not unwind or retain the byte pointer.
 #[cfg(not(feature = "AssetEmptyMode"))]
 #[no_mangle]
 pub unsafe extern "C" fn asset_privacy_get_result(
     input: *const PrivacySearchRequest,
-    output: *mut PrivacyBuffer,
+    output: *const PrivacyOutput,
 ) -> i32 {
     if input.is_null() || output.is_null() {
         loge!("Privacy FFI input or output is null");
         return INVALID_ARGUMENT;
     }
-    let output = &mut *output;
-    if output.data.is_null() || output.size as usize > MAX_BYTES {
+    let output = &*output;
+    if output.context.is_null() || output.write.is_none() {
         return INVALID_ARGUMENT;
     }
     let input = match (*input).to_value() {
@@ -145,13 +145,10 @@ pub unsafe extern "C" fn asset_privacy_get_result(
         Ok(bytes) => bytes,
         Err(e) => return map_privacy_error(e.code),
     };
-    if bytes.len() > output.size as usize {
-        loge!("Privacy result exceeds output capacity");
-        return INVALID_ARGUMENT;
+    match output.write {
+        Some(write) => write(output.context, bytes.as_ptr(), bytes.len() as u32),
+        None => INVALID_ARGUMENT,
     }
-    std::ptr::copy_nonoverlapping(bytes.as_ptr(), output.data, bytes.len());
-    output.size = bytes.len() as u32;
-    PROTOCOL_SUCCESS
 }
 
 /// Returns UNSUPPORTED without reading or writing the request or output in empty mode.
@@ -177,7 +174,7 @@ pub unsafe extern "C" fn asset_privacy_gen_target(
 #[no_mangle]
 pub unsafe extern "C" fn asset_privacy_get_result(
     _input: *const PrivacySearchRequest,
-    _output: *mut PrivacyBuffer,
+    _output: *const PrivacyOutput,
 ) -> i32 {
     UNSUPPORTED
 }

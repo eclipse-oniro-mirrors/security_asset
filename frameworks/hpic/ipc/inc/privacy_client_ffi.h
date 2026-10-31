@@ -20,8 +20,8 @@
 extern "C" {
 #endif
 int32_t asset_privacy_gen_target(const struct PrivacyTargetRequest *input, struct PrivacyBuffer *output);
-// Caller owns output storage. On success, size is the encoded length; failure leaves output unchanged.
-int32_t asset_privacy_get_result(const struct PrivacySearchRequest *input, struct PrivacyBuffer *output);
+// Delivers encoded bytes to caller-owned storage exactly once after successful processing.
+int32_t asset_privacy_get_result(const struct PrivacySearchRequest *input, const struct PrivacyOutput *output);
 #ifdef __cplusplus
 }
 #endif

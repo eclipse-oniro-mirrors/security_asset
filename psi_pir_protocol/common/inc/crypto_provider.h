@@ -30,13 +30,13 @@ namespace psi_pir::internal {
 class IHashProvider {
 public:
     virtual ~IHashProvider() = default;
-    virtual int32_t digest(HashAlg algorithm, const Bytes &input, Bytes &output) const noexcept = 0;
+    virtual int32_t Digest(HashAlg algorithm, const Bytes &input, Bytes &output) const noexcept = 0;
 };
 
 class IRandomSource {
 public:
     virtual ~IRandomSource() = default;
-    virtual int32_t fill(Bytes &output) noexcept = 0;
+    virtual int32_t Fill(Bytes &output) noexcept = 0;
 };
 
 class IHEEngine {
@@ -44,8 +44,8 @@ public:
     virtual ~IHEEngine() = default;
     virtual bool IsCompatible(const ProtocolParams &params) const noexcept = 0;
     // TA-compatible operation: plaintext - Dec(ciphertext), modulo the plaintext modulus.
-    virtual int32_t addPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept = 0;
-    virtual int32_t multiplyPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept = 0;
+    virtual int32_t AddPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept = 0;
+    virtual int32_t MultiplyPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept = 0;
     virtual int32_t RandCipherText(const Bytes &ciphertext, Bytes &output) const noexcept = 0;
 };
 

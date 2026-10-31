@@ -49,7 +49,7 @@ napi_value NapiPrivacySearch(napi_env env, napi_callback_info info)
         }
         auto *context = static_cast<PrivacySearchContext *>(data);
         context->result = MapProtocolError(
-            psi_pir::privacySearch(context->target, context->elements, context->protocol, context->searchResult));
+            psi_pir::PrivacySearch(context->target, context->elements, context->protocol, context->searchResult));
         if (context->result != HPIC_SUCCESS) {
             LOGE("privacy_search failed, code=%{public}d", context->result);
         }

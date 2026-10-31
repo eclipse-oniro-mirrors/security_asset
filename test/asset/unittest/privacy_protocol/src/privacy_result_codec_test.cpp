@@ -130,4 +130,25 @@ HWTEST(PrivacyResultCodecTest, ResultBuffer_005, TestSize.Level2)
     EXPECT_EQ(bytes, original);
     EXPECT_EQ(buffer.size, MAX_PRIVACY_BYTES);
 }
+/* @tc.name: DynamicLargeResult
+ * @tc.desc: Allocate only the actual result size and round-trip values exceeding the former 256 KiB limit.
+ * @tc.type: FUNC
+ */
+HWTEST(PrivacyResultCodecTest, DynamicLargeResult, TestSize.Level1)
+{
+    constexpr size_t LARGE_VALUE_BYTES = 512 * 1024;
+    SearchResult input;
+    input.matchedResult = true;
+    input.attachedValues = std::vector<Bytes>{Bytes(LARGE_VALUE_BYTES, 0xA5)};
+    Bytes bytes;
+    ASSERT_TRUE(EncodePrivacyResult(input, bytes));
+    EXPECT_EQ(bytes.size(), LARGE_VALUE_BYTES + RESULT_FIXED_BYTES + 2 * PRIVACY_LENGTH_BYTES);
+    SearchResult output;
+    ASSERT_TRUE(DecodePrivacyResult(bytes.data(), bytes.size(), output));
+    EXPECT_EQ(output.attachedValues, input.attachedValues);
+    Bytes collected;
+    EXPECT_EQ(CollectPrivacyBytes(&collected, bytes.data(), static_cast<uint32_t>(bytes.size())),
+              psi_pir::PSI_PIR_SUCCESS);
+    EXPECT_EQ(collected, bytes);
+}
 } // namespace

@@ -33,7 +33,7 @@ public:
             return status_;
         }
         Bytes result;
-        const auto ret = engine_.addPlain(current_, plaintext, result);
+        const auto ret = engine_.AddPlain(current_, plaintext, result);
         return CommitResult(ret, std::move(result));
     }
 
@@ -43,7 +43,7 @@ public:
             return status_;
         }
         Bytes result;
-        const auto ret = engine_.multiplyPlain(current_, plaintext, result);
+        const auto ret = engine_.MultiplyPlain(current_, plaintext, result);
         return CommitResult(ret, std::move(result));
     }
 

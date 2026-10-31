@@ -44,6 +44,11 @@ struct PrivacySearchRequest {
     uint32_t hasSymmetric;
     struct PrivacyBlobList symmetric;
 };
+// Same-process output receiver. Bytes are borrowed only during Write; no allocation crosses the FFI.
+struct PrivacyOutput {
+    void *context;
+    int32_t (*write)(void *context, const uint8_t *data, uint32_t size);
+};
 // size is the writable capacity on entry and the actual length on success.
 struct PrivacyBuffer {
     uint8_t *data;
