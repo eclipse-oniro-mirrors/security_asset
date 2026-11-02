@@ -219,7 +219,7 @@
 | VM-13 | R-7,R-9 / AC-3.3, AC-3.5 | XTS 用例 / 测试 HAP：锁屏态 verifyTicket（DELAYED/-1，ATL 达标） | XTS 或测试 HAP（JS 入口） | 锁屏执行豁免未实现时，锁屏态校验被拦截 | 锁屏态校验通过、任务可执行/拉起 |
 | VM-14 | R-2,R-9 / AC-4.1, AC-4.3 | C++ TDD：`saf_agent_fence_retrieve_auth_token_test.cpp`（15 用例） | TDD 单测（HWTEST_F，C++ InnerAPI 入口） | 检索路径缺失时返回错误而非 authToken 字节；过期/撤销/篡改凭证仍返回 | 有效凭证返回 authToken 字节；过期/撤销/篡改→24010002 |
 | VM-15 | R-5 / AC-4.2 | C++ TDD：RetrieveAuthTokenByTaskId 权限 | TDD 单测（HWTEST_F，C++ InnerAPI 入口） | 未做系统 SA/权限校验时任意调用成功 | 201 |
-| VM-16 | R-7,R-9 / AC-2.1, AC-3.1（性能对照实验） | benchmark：锁屏态 vs 解锁态下的 `requestToolPermissions`（携带 taskIdentity 锁屏豁免）与 `verifyTicket`（锁屏拉起）时延对照 | benchmark（≥100 次采样 / AndroidX 同口径或 hilog 计时桩） | 无对照基线或未采集冷路径时无法证明劣化 <150ms | 锁屏拉起校验时延相对解锁态基线**最大劣化 ≤150ms**；锁屏态单次拉起校验 P95 ≤250ms |
+| VM-16 | R-7,R-9 / AC-2.1, AC-3.1（性能对照实验） | benchmark：锁屏态 vs 解锁态下的 `requestToolPermissions`（携带 taskIdentity 锁屏豁免）与 `verifyTicket`（锁屏拉起）时延对照 | benchmark（≥100 次采样 / 统一计时口径或 hilog 计时桩） | 无对照基线或未采集冷路径时无法证明劣化 <150ms | 锁屏拉起校验时延相对解锁态基线**最大劣化 ≤150ms**；锁屏态单次拉起校验 P95 ≤250ms |
 
 ## 测试数据样例
 
