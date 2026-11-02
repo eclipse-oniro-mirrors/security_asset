@@ -30,9 +30,11 @@ public:
                              Bytes &result) const noexcept;
     int32_t PrivacySearch(const Bytes &privacyTarget, const std::vector<Element> &elements,
                           const ProtocolParams &params, PrivacySearchResult &result) const noexcept;
-    // Complete result handling: decrypt all batches, decode slots, then resolve matches and values.
-    int32_t GetSearchResult(const PrivacySearchResult &privacySearchResult, const ProtocolParams &params,
-                            const CallerIdentity &identity, SearchResult &result) const noexcept;
+    int32_t DecryptCiphertext(const Bytes &ciphertext, const ProtocolParams &params,
+        const CallerIdentity &identity, Bytes &plaintext) const noexcept;
+    int32_t GetSearchResult(const std::vector<Bytes> &fhePlainText,
+        const std::optional<std::vector<Bytes>> &symCipherText, const ProtocolParams &params,
+        SearchResult &result) const noexcept;
     // Internal plaintext stage, also used by tests that inject decrypted slot data.
     int32_t ProcessDecryptedSearchResult(const PrivacySearchResult &privacySearchResult, const ProtocolParams &params,
                                          SearchResult &result) const noexcept;

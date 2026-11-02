@@ -18,7 +18,6 @@
 #include "os_account_manager.h"
 #include "privacy_limits.h"
 #include "privacy_request.h"
-#include "privacy_result_codec.h"
 #include "protocol_mapper.h"
 #include "psi_pir_log.h"
 #include "psi_pir_protocol.h"
@@ -54,45 +53,13 @@ int32_t PrepareIdentity(uint32_t uid, CallerIdentity &identity)
 }
 bool CopyBlob(const PrivacyBlob &input, Bytes &output, size_t &total)
 {
-    if (total > MAX_PRIVACY_BYTES - PRIVACY_LENGTH_BYTES ||
+    if (total > MAX_PRIVACY_INLINE_BYTES - PRIVACY_LENGTH_BYTES ||
         input.size > MAX_PRIVACY_BYTES - total - PRIVACY_LENGTH_BYTES || (input.size != 0 && input.data == nullptr)) {
         return false;
     }
     total += PRIVACY_LENGTH_BYTES + input.size;
     if (input.size != 0) {
         output.assign(input.data, input.data + input.size);
-    }
-    return true;
-}
-bool CopyBlobs(const PrivacyBlobList &input, std::vector<Bytes> &output, size_t &total)
-{
-    if (input.count > MAX_PRIVACY_ITEMS || total > MAX_PRIVACY_BYTES - PRIVACY_LENGTH_BYTES ||
-        (input.count != 0 && input.data == nullptr)) {
-        return false;
-    }
-    total += PRIVACY_LENGTH_BYTES;
-    for (uint32_t i = 0; i < input.count; ++i) {
-        Bytes value;
-        if (!CopyBlob(input.data[i], value, total)) {
-            return false;
-        }
-        output.push_back(std::move(value));
-    }
-    return true;
-}
-bool CopySearchRequest(const PrivacySearchRequest &input, psi_pir::PrivacySearchResult &request)
-{
-    size_t total = SEARCH_FIXED_BYTES;
-    if (!CopyBlobs(input.ciphertexts, request.fheCipherText, total)) {
-        PSI_PIR_LOGE("HPIC SA getSearchResult invalid ciphertext buffers or byte budget");
-        return false;
-    }
-    if (input.hasSymmetric == 1) {
-        request.symCipherText.emplace();
-        if (!CopyBlobs(input.symmetric, *request.symCipherText, total)) {
-            PSI_PIR_LOGE("HPIC SA getSearchResult invalid symmetric buffers or byte budget");
-            return false;
-        }
     }
     return true;
 }
@@ -103,7 +70,7 @@ extern "C" int32_t AssetGenPrivacyTarget(uint32_t uid, const PrivacyTargetReques
 {
     using namespace OHOS::Security::PrivacyComputation;
     PSI_PIR_LOGI("HPIC SA genPrivacyTarget begin, uid=%{private}u", uid);
-    if (input == nullptr || output == nullptr || output->data == nullptr || output->size > MAX_PRIVACY_BYTES) {
+    if (input == nullptr || output == nullptr || output->data == nullptr || output->size > MAX_PRIVACY_INLINE_BYTES) {
         PSI_PIR_LOGE("HPIC SA genPrivacyTarget invalid request or output buffer");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
@@ -145,21 +112,24 @@ extern "C" int32_t AssetGenPrivacyTarget(uint32_t uid, const PrivacyTargetReques
     return psi_pir::PSI_PIR_SUCCESS;
 }
 
-extern "C" int32_t AssetGetPrivacyResult(uint32_t uid, const PrivacySearchRequest *input, const PrivacyOutput *output)
+extern "C" int32_t AssetDecryptPrivacyCiphertext(uint32_t uid, const PrivacyDecryptRequest *input,
+    PrivacyBuffer *output)
 {
     using namespace OHOS::Security::PrivacyComputation;
-    PSI_PIR_LOGI("HPIC SA getSearchResult begin, uid=%{private}u", uid);
-    if (input == nullptr || output == nullptr || output->context == nullptr || output->write == nullptr ||
-        input->hasSymmetric > 1) {
-        PSI_PIR_LOGE("HPIC SA getSearchResult invalid request or output buffer");
+    PSI_PIR_LOGI("HPIC SA decryptCiphertext begin, uid=%{private}u", uid);
+    if (input == nullptr || output == nullptr || output->data == nullptr ||
+        output->size < MAX_DECRYPT_RESULT_BYTES || output->size > MAX_PRIVACY_INLINE_BYTES) {
+        PSI_PIR_LOGE("HPIC SA decryptCiphertext invalid request or output buffer");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
-    psi_pir::PrivacySearchResult request;
-    if (!CopySearchRequest(*input, request)) {
+    psi_pir::Bytes ciphertext;
+    size_t total = DECRYPT_FIXED_BYTES;
+    if (input->ciphertext.size == 0 || !CopyBlob(input->ciphertext, ciphertext, total)) {
+        PSI_PIR_LOGE("HPIC SA decryptCiphertext invalid ciphertext");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
     const psi_pir::PrivacyProtocol protocol{static_cast<psi_pir::DataSetSize>(input->protocol.dataSetSize),
-                                            static_cast<psi_pir::ProtocolType>(input->protocol.protocolType)};
+        static_cast<psi_pir::ProtocolType>(input->protocol.protocolType)};
     psi_pir::internal::ProtocolParams params;
     auto ret = psi_pir::internal::MapPrivacyProtocol(protocol, params);
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
@@ -174,19 +144,17 @@ extern "C" int32_t AssetGetPrivacyResult(uint32_t uid, const PrivacySearchReques
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
         return ret;
     }
-    psi_pir::SearchResult result;
-    ret = psi_pir::GetSearchResult(request, protocol, identity, result);
+    psi_pir::Bytes plaintext;
+    ret = psi_pir::DecryptCiphertext(ciphertext, protocol, identity, plaintext);
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
         return ret;
     }
-    psi_pir::Bytes bytes;
-    if (!EncodePrivacyResult(result, bytes)) {
-        PSI_PIR_LOGE("Privacy result exceeds output capacity or byte budget");
+    if (plaintext.size() != MAX_DECRYPT_RESULT_BYTES) {
+        PSI_PIR_LOGE("HPIC SA decryptCiphertext unexpected plaintext size=%{public}zu", plaintext.size());
         return psi_pir::PSI_PIR_CODEC_ERROR;
     }
-    ret = output->write(output->context, bytes.data(), static_cast<uint32_t>(bytes.size()));
-    if (ret == psi_pir::PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGI("HPIC SA getSearchResult success, outputBytes=%{public}zu", bytes.size());
-    }
-    return ret;
+    std::copy(plaintext.begin(), plaintext.end(), output->data);
+    output->size = static_cast<uint32_t>(plaintext.size());
+    PSI_PIR_LOGI("HPIC SA decryptCiphertext success, bytes=%{public}u", output->size);
+    return psi_pir::PSI_PIR_SUCCESS;
 }

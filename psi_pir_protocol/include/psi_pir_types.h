@@ -64,8 +64,8 @@ struct Element {
     std::optional<Bytes> elemValue;
 };
 
-// privacySearch produces HE ciphertext batches. getSearchResult decrypts them
-// before applying the common protocol post-processing.
+// PrivacySearch produces encrypted batches. DecryptCiphertext handles each HE batch;
+// GetSearchResult consumes decoded plaintext batches and locally held symmetric frames.
 struct PrivacySearchResult {
     std::vector<Bytes> fheCipherText;
     std::optional<std::vector<Bytes>> symCipherText;

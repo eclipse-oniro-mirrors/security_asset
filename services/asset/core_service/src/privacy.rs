@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-//! Asset Stub has already checked the interface token and protected service lifetime.
+//! Asset Stub has checked the interface token and protects this single IPC call's lifetime.
 use asset_ipc::privacy::*;
 use asset_ipc::{IpcCode, IPC_SUCCESS};
 use asset_log::{loge, logi};
@@ -22,7 +22,7 @@ use std::convert::TryFrom;
 
 extern "C" {
     fn AssetGenPrivacyTarget(uid: u32, input: *const PrivacyTargetRequest, output: *mut PrivacyBuffer) -> i32;
-    fn AssetGetPrivacyResult(uid: u32, input: *const PrivacySearchRequest, output: *const PrivacyOutput) -> i32;
+    fn AssetDecryptPrivacyCiphertext(uid: u32, input: *const PrivacyDecryptRequest, output: *mut PrivacyBuffer) -> i32;
 }
 
 fn gen_privacy_target(uid: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
@@ -51,40 +51,40 @@ fn gen_privacy_target(uid: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> 
     Ok(())
 }
 
-fn get_privacy_result(uid: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
-    logi!("HPIC Stub getSearchResult received");
-    let input = deserialize_search(data).map_err(|_| {
-        loge!("HPIC Stub getSearchResult deserialize failed");
+fn decrypt_privacy_ciphertext(uid: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
+    let input = deserialize_decrypt(data).map_err(|_| {
+        loge!("HPIC Stub decryptCiphertext deserialize failed");
         IpcStatusCode::InvalidValue
     })?;
-    let ciphertexts = blobs(&input.ciphertexts);
-    let symmetric = blobs(input.symmetric.as_deref().unwrap_or(&[]));
-    let request = input.as_native(&ciphertexts, &symmetric);
-    let mut bytes: Vec<u8> = Vec::new();
-    let output = PrivacyOutput {
-        context: (&mut bytes as *mut Vec<u8>).cast(),
-        write: Some(collect_privacy_bytes),
-    };
-    let result = unsafe { AssetGetPrivacyResult(uid, &request, &output) };
+    logi!("HPIC Stub decryptCiphertext begin, bytes={}", input.ciphertext.len());
+    let request = input.as_native();
+    let mut bytes = vec![0u8; MAX_DECRYPT_RESULT_BYTES];
+    let mut output = PrivacyBuffer { data: bytes.as_mut_ptr(), size: bytes.len() as u32 };
+    let status = unsafe { AssetDecryptPrivacyCiphertext(uid, &request, &mut output) };
+    if status == PROTOCOL_SUCCESS && output.size as usize != MAX_DECRYPT_RESULT_BYTES {
+        loge!("HPIC Stub decryptCiphertext invalid plaintext length={}", output.size);
+        return Err(IpcStatusCode::Failed);
+    }
     reply.write(&IPC_SUCCESS)?;
-    reply.write(&result)?;
-    if result == PROTOCOL_SUCCESS {
-        // Native result encoding matches the validated transport result format.
+    reply.write(&status)?;
+    if status == PROTOCOL_SUCCESS {
+        bytes.truncate(output.size as usize);
         write_payload(&bytes, reply).map_err(|_| IpcStatusCode::Failed)?;
-        logi!("HPIC Stub getSearchResult reply written, bytes={}", bytes.len());
+        logi!("HPIC Stub decryptCiphertext success, bytes={}", bytes.len());
     } else {
-        loge!("HPIC Stub getSearchResult failed, ret={}", result);
+        loge!("HPIC Stub decryptCiphertext failed, ret={}", status);
     }
     Ok(())
 }
-/// Dispatches a privacy request on the Binder thread after capturing the actual calling UID.
+
+/// Captures the actual Binder UID separately for every single-batch operation.
 pub(crate) fn request(code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
     let uid = u32::try_from(Skeleton::calling_uid()).map_err(|_| IpcStatusCode::Failed)?;
     if code == IpcCode::PrivacyGenTarget as u32 {
         return gen_privacy_target(uid, data, reply);
     }
-    if code == IpcCode::PrivacyGetResult as u32 {
-        return get_privacy_result(uid, data, reply);
+    if code == IpcCode::PrivacyDecryptCiphertext as u32 {
+        return decrypt_privacy_ciphertext(uid, data, reply);
     }
     Err(IpcStatusCode::InvalidValue)
 }

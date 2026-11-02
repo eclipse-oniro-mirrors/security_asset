@@ -56,7 +56,7 @@ struct EvaluationContext {
 };
 
 struct SearchResultContext {
-    const PrivacySearchResult &searchResult;
+    const std::optional<std::vector<Bytes>> &symCipherText;
     const ProtocolParams &params;
     const ProtocolEncoder &encoder;
     std::size_t groupsPerItem;
@@ -384,13 +384,13 @@ PrivacySearchResult BuildEvaluationResult(std::vector<Bytes> batches, PirPayload
 
 int32_t ValidateCiphertextIndex(const SearchResultContext &context, std::size_t globalIndex) noexcept
 {
-    if (!context.searchResult.symCipherText.has_value()) {
+    if (!context.symCipherText.has_value()) {
         PSI_PIR_LOGE("symCipherText not present in PIR mode");
         return PSI_PIR_CODEC_ERROR;
     }
-    if (globalIndex >= context.searchResult.symCipherText->size()) {
+    if (globalIndex >= context.symCipherText->size()) {
         PSI_PIR_LOGE("symmetric index out of range: index=%{private}zu, available=%{public}zu", globalIndex,
-                     context.searchResult.symCipherText->size());
+                     context.symCipherText->size());
         return PSI_PIR_CODEC_ERROR;
     }
     return PSI_PIR_SUCCESS;
@@ -416,9 +416,9 @@ int32_t DecryptAttachedValue(const SearchResultContext &context, const Slots &pl
         return ret;
     }
     std::optional<Bytes> decrypted;
-    ret = pirValueCrypto->decrypt(seed, (*context.searchResult.symCipherText)[globalIndex], context.params, decrypted);
+    ret = pirValueCrypto->decrypt(seed, (*context.symCipherText)[globalIndex], context.params, decrypted);
     if (ret != PSI_PIR_SUCCESS) {
-        const auto frameSize = (*context.searchResult.symCipherText)[globalIndex].size();
+        const auto frameSize = (*context.symCipherText)[globalIndex].size();
         PSI_PIR_LOGE("value crypto decrypt failed: index=%{private}zu, frameBytes=%{public}zu, ret=%{public}d",
                      globalIndex, frameSize, ret);
         return ret;
@@ -555,68 +555,54 @@ int32_t PsiPirProtocolImpl::PrivacySearch(const Bytes &privacyTarget, const std:
     return PSI_PIR_SUCCESS;
 }
 
-int32_t PsiPirProtocolImpl::GetSearchResult(const PrivacySearchResult &input, const ProtocolParams &params,
-                                            const CallerIdentity &identity, SearchResult &output) const noexcept
+int32_t PsiPirProtocolImpl::DecryptCiphertext(const Bytes &ciphertext, const ProtocolParams &params,
+    const CallerIdentity &identity, Bytes &output) const noexcept
 {
     auto ret = codec_.ValidateProtocol(params);
     if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
-    ret = codec_.ValidateSearchResultLayout(input, params);
+    if (ciphertext.empty()) {
+        return PSI_PIR_INVALID_ARGUMENT;
+    }
+    HeSeed seed;
+    ret = HeKeyDeriver().DeriveKey(identity, seed);
+    if (ret != PSI_PIR_SUCCESS) {
+        PSI_PIR_LOGE("HE seed derivation failed, ret=%{public}d", ret);
+        return ret;
+    }
+    Slots slots;
+    ret = SoftHeEngine().Decrypt(ciphertext, params, seed, slots);
     if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
-    const auto groupsPerItem = GetGroupsPerItem(params);
-    const SearchResultContext context{input, params, encoder_, groupsPerItem,
-                                      params.dataNumPerPlaintext / groupsPerItem};
-    SearchResult result;
-    const SoftHeEngine engine;
-    for (size_t batch = 0; batch < input.fheCipherText.size(); ++batch) {
-        PSI_PIR_LOGI("HPIC result decrypt batch begin, batch=%{public}zu, bytes=%{public}zu", batch,
-                     input.fheCipherText[batch].size());
-        if (input.fheCipherText[batch].empty()) {
-            return PSI_PIR_INVALID_ARGUMENT;
-        }
-        HeSeed seed;
-        ret = HeKeyDeriver().DeriveKey(identity, seed);
-        if (ret != PSI_PIR_SUCCESS) {
-            PSI_PIR_LOGE("result seed derivation failed, ret=%{public}d", ret);
-            return ret;
-        }
-        Slots slots;
-        ret = engine.Decrypt(input.fheCipherText[batch], params, seed, slots);
-        if (ret != PSI_PIR_SUCCESS) {
-            return ret;
-        }
-        ret = ProcessDecryptedBatch(context, slots, batch, result);
-        if (ret != PSI_PIR_SUCCESS) {
-            return ret;
-        }
-        PSI_PIR_LOGI("HPIC result decrypt batch success, batch=%{public}zu, slots=%{public}zu", batch, slots.size());
-    }
-    output = std::move(result);
-    return PSI_PIR_SUCCESS;
+    return codec_.SerializePlaintext(slots, params, output);
 }
 
-int32_t PsiPirProtocolImpl::ProcessDecryptedSearchResult(const PrivacySearchResult &privacySearchResult,
-                                                         const ProtocolParams &params,
-                                                         SearchResult &resolvedResult) const noexcept
+int32_t PsiPirProtocolImpl::GetSearchResult(const std::vector<Bytes> &fhePlainText,
+    const std::optional<std::vector<Bytes>> &symCipherText, const ProtocolParams &params,
+    SearchResult &result) const noexcept
 {
     auto ret = codec_.ValidateProtocol(params);
     if (ret != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("ValidateProtocol failed, ret=%{public}d", ret);
         return ret;
     }
     std::vector<Slots> plaintexts;
-    ret = codec_.ParsePlaintexts(privacySearchResult, params, plaintexts);
+    ret = codec_.ParsePlaintexts(fhePlainText, symCipherText, params, plaintexts);
     if (ret != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("ParsePlaintexts failed, ret=%{public}d", ret);
         return ret;
     }
     const auto groupsPerItem = GetGroupsPerItem(params);
-    const SearchResultContext context{privacySearchResult, params, encoder_, groupsPerItem,
-                                      params.dataNumPerPlaintext / groupsPerItem};
-    return ProcessSearchResultPlaintexts(context, plaintexts, resolvedResult);
+    const SearchResultContext context{symCipherText, params, encoder_, groupsPerItem,
+        params.dataNumPerPlaintext / groupsPerItem};
+    return ProcessSearchResultPlaintexts(context, plaintexts, result);
+}
+
+int32_t PsiPirProtocolImpl::ProcessDecryptedSearchResult(const PrivacySearchResult &input,
+    const ProtocolParams &params, SearchResult &result) const noexcept
+{
+    return GetSearchResult(input.fheCipherText, input.symCipherText, params, result);
 }
 
 int32_t ProcessDecryptedSearchResult(const PrivacySearchResult &input, const PrivacyProtocol &protocol,

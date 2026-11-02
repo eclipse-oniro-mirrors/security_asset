@@ -136,10 +136,10 @@ int32_t CalculatePlaintextByteCount(const ProtocolParams &params, std::size_t &b
     return PSI_PIR_SUCCESS;
 }
 
-int32_t ValidateSerializedPlaintexts(const PrivacySearchResult &result, std::size_t expectedBytes) noexcept
+int32_t ValidateSerializedPlaintexts(const std::vector<Bytes> &plaintexts, std::size_t expectedBytes) noexcept
 {
-    for (std::size_t batch = 0; batch < result.fheCipherText.size(); ++batch) {
-        const auto actualBytes = result.fheCipherText[batch].size();
+    for (std::size_t batch = 0; batch < plaintexts.size(); ++batch) {
+        const auto actualBytes = plaintexts[batch].size();
         if (actualBytes != expectedBytes) {
             PSI_PIR_LOGE("plaintext size mismatch: batch=%{public}zu, expected=%{public}zu, "
                          "actual=%{public}zu",
@@ -166,27 +166,28 @@ int32_t ValidateSymmetricCiphertexts(const std::vector<Bytes> &ciphertexts) noex
     return PSI_PIR_SUCCESS;
 }
 
-int32_t ValidatePirResultLayout(const PrivacySearchResult &result, const ProtocolParams &params) noexcept
+int32_t ValidatePirResultLayout(std::size_t batchCount,
+    const std::optional<std::vector<Bytes>> &symCipherText, const ProtocolParams &params) noexcept
 {
     const auto capacity = params.dataNumPerPlaintext / kPirGroupsPerItem;
     if (capacity == 0) {
         PSI_PIR_LOGE("PIR capacity is zero, dataNumPerPlaintext=%{public}zu", params.dataNumPerPlaintext);
         return PSI_PIR_CODEC_ERROR;
     }
-    const auto symmetricCount = result.symCipherText.has_value() ? result.symCipherText->size() : 0;
+    const auto symmetricCount = symCipherText.has_value() ? symCipherText->size() : 0;
     const auto expectedBatches = CalculateBatchCount(symmetricCount, capacity);
-    if (expectedBatches != result.fheCipherText.size()) {
+    if (expectedBatches != batchCount) {
         PSI_PIR_LOGE("batch count mismatch: expected=%{public}zu, actual=%{public}zu, "
                      "symCount=%{public}zu, capacity=%{public}zu",
-                     expectedBatches, result.fheCipherText.size(), symmetricCount, capacity);
+                     expectedBatches, batchCount, symmetricCount, capacity);
         return PSI_PIR_CODEC_ERROR;
     }
-    if (!result.fheCipherText.empty() && !result.symCipherText.has_value()) {
+    if (batchCount != 0 && !symCipherText.has_value()) {
         PSI_PIR_LOGE("fheCipherText non-empty but symCipherText missing");
         return PSI_PIR_CODEC_ERROR;
     }
-    if (result.symCipherText.has_value()) {
-        return ValidateSymmetricCiphertexts(*result.symCipherText);
+    if (symCipherText.has_value()) {
+        return ValidateSymmetricCiphertexts(*symCipherText);
     }
     return PSI_PIR_SUCCESS;
 }
@@ -236,7 +237,9 @@ int32_t ProtocolCodec::ValidatePrivacyTarget(const Bytes &privacyTarget) const n
 int32_t ProtocolCodec::ValidateSearchResultLayout(const PrivacySearchResult &result,
                                                   const ProtocolParams &params) const noexcept
 {
-    return params.mode == ProtocolMode::PIR ? ValidatePirResultLayout(result, params) : PSI_PIR_SUCCESS;
+    return params.mode == ProtocolMode::PIR
+        ? ValidatePirResultLayout(result.fheCipherText.size(), result.symCipherText, params)
+        : PSI_PIR_SUCCESS;
 }
 
 int32_t ProtocolCodec::ValidatePlainSearchResult(const PrivacySearchResult &result,
@@ -247,7 +250,7 @@ int32_t ProtocolCodec::ValidatePlainSearchResult(const PrivacySearchResult &resu
     if (resultCode != PSI_PIR_SUCCESS) {
         return resultCode;
     }
-    resultCode = ValidateSerializedPlaintexts(result, expectedBytes);
+    resultCode = ValidateSerializedPlaintexts(result.fheCipherText, expectedBytes);
     if (resultCode != PSI_PIR_SUCCESS) {
         return resultCode;
     }
@@ -276,23 +279,41 @@ int32_t ProtocolCodec::SerializePlaintext(const Slots &slots, const ProtocolPara
     return PSI_PIR_SUCCESS;
 }
 
-int32_t ProtocolCodec::ParsePlaintexts(const PrivacySearchResult &result, const ProtocolParams &params,
-                                       std::vector<Slots> &plaintexts) const noexcept
+int32_t ProtocolCodec::ParsePlaintexts(const std::vector<Bytes> &fhePlainText,
+    const std::optional<std::vector<Bytes>> &symCipherText, const ProtocolParams &params,
+    std::vector<Slots> &plaintexts) const noexcept
 {
-    const auto resultCode = ValidatePlainSearchResult(result, params);
-    if (resultCode != PSI_PIR_SUCCESS) {
-        return resultCode;
+    std::size_t expectedBytes = 0;
+    auto ret = CalculatePlaintextByteCount(params, expectedBytes);
+    if (ret != PSI_PIR_SUCCESS) {
+        return ret;
+    }
+    ret = ValidateSerializedPlaintexts(fhePlainText, expectedBytes);
+    if (ret != PSI_PIR_SUCCESS) {
+        return ret;
+    }
+    if (params.mode == ProtocolMode::PIR) {
+        ret = ValidatePirResultLayout(fhePlainText.size(), symCipherText, params);
+        if (ret != PSI_PIR_SUCCESS) {
+            return ret;
+        }
     }
     const auto slotCount = params.dataNumPerPlaintext * params.slotsPerData;
-    std::vector<Slots> decodedPlaintexts;
-    decodedPlaintexts.reserve(result.fheCipherText.size());
-    for (const auto &serialized : result.fheCipherText) {
-        decodedPlaintexts.push_back(DeserializePlaintext(serialized, slotCount));
+    std::vector<Slots> decoded;
+    decoded.reserve(fhePlainText.size());
+    for (const auto &serialized : fhePlainText) {
+        decoded.push_back(DeserializePlaintext(serialized, slotCount));
     }
-    plaintexts = std::move(decodedPlaintexts);
-    PSI_PIR_LOGI("plaintext parsing complete, batches=%{public}zu, slotsPerBatch=%{public}zu", plaintexts.size(),
-                 slotCount);
+    plaintexts = std::move(decoded);
+    PSI_PIR_LOGI("plaintext parsing complete, batches=%{public}zu, slotsPerBatch=%{public}zu",
+        fhePlainText.size(), slotCount);
     return PSI_PIR_SUCCESS;
+}
+
+int32_t ProtocolCodec::ParsePlaintexts(const PrivacySearchResult &input, const ProtocolParams &params,
+    std::vector<Slots> &plaintexts) const noexcept
+{
+    return ParsePlaintexts(input.fheCipherText, input.symCipherText, params, plaintexts);
 }
 
 } // namespace psi_pir::internal

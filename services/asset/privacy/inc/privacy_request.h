@@ -20,9 +20,9 @@
 extern "C" {
 #endif
 int32_t AssetGenPrivacyTarget(uint32_t uid, const struct PrivacyTargetRequest *input, struct PrivacyBuffer *output);
-// Delivers a complete encoded result to the synchronous, caller-owned receiver.
-int32_t AssetGetPrivacyResult(uint32_t uid, const struct PrivacySearchRequest *input,
-                              const struct PrivacyOutput *output);
+// Decrypts exactly one HE ciphertext into caller-owned plaintext storage.
+int32_t AssetDecryptPrivacyCiphertext(uint32_t uid, const struct PrivacyDecryptRequest *input,
+    struct PrivacyBuffer *output);
 #ifdef __cplusplus
 }
 #endif

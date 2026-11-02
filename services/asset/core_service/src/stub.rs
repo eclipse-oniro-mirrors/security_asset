@@ -172,7 +172,7 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
         },
     }
     let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
-    if matches!(ipc_code, IpcCode::PrivacyGenTarget | IpcCode::PrivacyGetResult) {
+    if matches!(ipc_code, IpcCode::PrivacyGenTarget | IpcCode::PrivacyDecryptCiphertext) {
         return crate::privacy::request(code, data, reply);
     }
     match ipc_code {

@@ -14,9 +14,9 @@
  */
 
 //! Typed C bindings, following the existing full.rs Manager/guard convention.
-use asset_sdk::privacy::{PrivacyTargetRequest, PrivacySearchRequest, PrivacyBuffer, PrivacyOutput};
+use asset_sdk::privacy::{PrivacyTargetRequest, PrivacyDecryptRequest, PrivacyBuffer};
 #[cfg(not(feature = "AssetEmptyMode"))]
-use asset_sdk::privacy::{encode_result_bytes, MAX_BYTES, PROTOCOL_SUCCESS};
+use asset_sdk::privacy::{MAX_INLINE_BYTES, PROTOCOL_SUCCESS};
 #[cfg(not(feature = "AssetEmptyMode"))]
 use asset_log::loge;
 #[cfg(not(feature = "AssetEmptyMode"))]
@@ -57,7 +57,7 @@ pub unsafe extern "C" fn asset_privacy_gen_target(
         return INVALID_ARGUMENT;
     }
     let output = &mut *output;
-    if output.data.is_null() || output.size as usize > MAX_BYTES {
+    if output.data.is_null() || output.size as usize > MAX_INLINE_BYTES {
         return INVALID_ARGUMENT;
     }
     let input = match (*input).to_value() {
@@ -90,26 +90,25 @@ pub unsafe extern "C" fn asset_privacy_gen_target(
     PROTOCOL_SUCCESS
 }
 
-/// Delivers a complete encoded result through a synchronous caller-owned writer; no allocation crosses FFI.
-/// The writer is invoked once after successful IPC and complete result encoding.
+/// Decrypts one ciphertext through Asset IPC, borrowing input and committing output only on success.
 ///
 /// # Safety
 /// Non-null input and output must point to aligned, initialized request and buffer structs.
-/// Input descriptors and nonempty byte ranges must remain readable and unchanged during this call.
-/// The output context and function pointer must remain valid throughout the call. The writer
-/// must copy its borrowed bytes before returning and must not unwind or retain the byte pointer.
+/// All nonempty input ranges must remain readable and unchanged until this call returns.
+/// The output buffer must be exclusively writable for its declared capacity and must not
+/// overlap the input or either descriptor struct. The caller retains ownership of all buffers.
 #[cfg(not(feature = "AssetEmptyMode"))]
 #[no_mangle]
-pub unsafe extern "C" fn asset_privacy_get_result(
-    input: *const PrivacySearchRequest,
-    output: *const PrivacyOutput,
+pub unsafe extern "C" fn asset_privacy_decrypt_ciphertext(
+    input: *const PrivacyDecryptRequest,
+    output: *mut PrivacyBuffer,
 ) -> i32 {
     if input.is_null() || output.is_null() {
         loge!("Privacy FFI input or output is null");
         return INVALID_ARGUMENT;
     }
-    let output = &*output;
-    if output.context.is_null() || output.write.is_none() {
+    let output = &mut *output;
+    if output.data.is_null() || output.size as usize > MAX_INLINE_BYTES {
         return INVALID_ARGUMENT;
     }
     let input = match (*input).to_value() {
@@ -127,28 +126,19 @@ pub unsafe extern "C" fn asset_privacy_get_result(
             return INTERNAL_ERROR;
         },
     };
-    let (result, response) = match guard.get_privacy_result(&input) {
+    let (result, bytes) = match guard.decrypt_privacy_ciphertext(&input) {
         Ok(res) => res,
         Err(e) => return map_privacy_error(e.code),
     };
     if result != PROTOCOL_SUCCESS {
         return result;
     }
-    let response = match response {
-        Some(response) => response,
-        None => {
-            loge!("Missing privacy response after successful IPC");
-            return INTERNAL_ERROR;
-        },
-    };
-    let bytes = match encode_result_bytes(&response) {
-        Ok(bytes) => bytes,
-        Err(e) => return map_privacy_error(e.code),
-    };
-    match output.write {
-        Some(write) => write(output.context, bytes.as_ptr(), bytes.len() as u32),
-        None => INVALID_ARGUMENT,
+    if bytes.len() > output.size as usize {
+        return INVALID_ARGUMENT;
     }
+    std::ptr::copy_nonoverlapping(bytes.as_ptr(), output.data, bytes.len());
+    output.size = bytes.len() as u32;
+    PROTOCOL_SUCCESS
 }
 
 /// Returns UNSUPPORTED without reading or writing the request or output in empty mode.
@@ -172,9 +162,9 @@ pub unsafe extern "C" fn asset_privacy_gen_target(
 /// pointee validity is required. No output storage is accessed.
 #[cfg(feature = "AssetEmptyMode")]
 #[no_mangle]
-pub unsafe extern "C" fn asset_privacy_get_result(
-    _input: *const PrivacySearchRequest,
-    _output: *const PrivacyOutput,
+pub unsafe extern "C" fn asset_privacy_decrypt_ciphertext(
+    _input: *const PrivacyDecryptRequest,
+    _output: *mut PrivacyBuffer,
 ) -> i32 {
     UNSUPPORTED
 }

@@ -89,7 +89,8 @@ HWTEST_F(PsiPirHeTest, FailedOperationsPreserveOutputs, TestSize.Level1)
     EXPECT_EQ(output, Bytes({0x99}));
     PrivacySearchResult encrypted{{Bytes{1}}, std::nullopt};
     SearchResult result{true, std::vector<Bytes>{Bytes{0x99}}};
-    EXPECT_EQ(GetSearchResult(encrypted, PSI, {1000, 100}, result), PSI_PIR_HE_ERROR);
+    EXPECT_EQ(DecryptCiphertext(encrypted.fheCipherText.front(), PSI, {1000, 100}, output), PSI_PIR_HE_ERROR);
+    EXPECT_EQ(output, Bytes({0x99}));
     EXPECT_TRUE(result.matchedResult);
     ASSERT_TRUE(result.attachedValues.has_value());
     EXPECT_EQ(*result.attachedValues, std::vector<Bytes>({Bytes{0x99}}));
@@ -108,13 +109,14 @@ HWTEST_F(PsiPirHeTest, CompleteResultEntryValidatesProtocol, TestSize.Level1)
 {
     SearchResult result{true, std::vector<Bytes>{Bytes{0x99}}};
     const PrivacyProtocol invalid{static_cast<DataSetSize>(-1), ProtocolType::PSI_PROTOCOL};
-    EXPECT_EQ(GetSearchResult({}, invalid, {1000, 100}, result), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(GetSearchResult({}, std::nullopt, invalid, result), PSI_PIR_INVALID_ARGUMENT);
     EXPECT_TRUE(result.matchedResult);
     ASSERT_TRUE(result.attachedValues.has_value());
     EXPECT_EQ(*result.attachedValues, std::vector<Bytes>({Bytes{0x99}}));
 
     // Empty input needs no HE operation, but still runs result processing.
-    EXPECT_EQ(GetSearchResult({}, PSI, {1000, 100}, result), PSI_PIR_SUCCESS);
+    SetHeSeedDeriver(nullptr);
+    EXPECT_EQ(GetSearchResult({}, std::nullopt, PSI, result), PSI_PIR_SUCCESS);
     EXPECT_FALSE(result.matchedResult);
     EXPECT_FALSE(result.attachedValues.has_value());
 }

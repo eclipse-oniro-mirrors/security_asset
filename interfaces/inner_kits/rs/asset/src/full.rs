@@ -24,8 +24,8 @@ pub use asset_definition::*;
 use std::{ffi::CString, os::raw::c_char, sync::OnceLock};
 
 use asset_log::logw;
-use asset_ipc::privacy::{TargetRequest, SearchRequest, SearchResponse,
-    serialize_target, serialize_search, deserialize_result, read_payload, MAX_TARGET_RESULT_BYTES, PROTOCOL_SUCCESS};
+use asset_ipc::privacy::{TargetRequest, DecryptRequest, serialize_target, serialize_decrypt,
+    read_payload, MAX_TARGET_RESULT_BYTES, MAX_DECRYPT_RESULT_BYTES, PROTOCOL_SUCCESS};
 use ipc::{
     parcel::{MsgOption, MsgParcel},
     remote::RemoteObj,
@@ -435,17 +435,21 @@ impl Manager {
         Ok((result, output))
     }
 
-    /// Decrypts and processes search batches through Asset, returning protocol status and optional results.
-    /// A non-success protocol status has no result; transport errors use the outer Result.
-    pub fn get_privacy_result(&mut self, input: &SearchRequest) -> Result<(i32, Option<SearchResponse>)> {
-        let mut reply = self.privacy_request(IpcCode::PrivacyGetResult, |parcel| serialize_search(input, parcel))?;
+    /// Decrypts one HE batch through SA. Associated values never cross this IPC boundary.
+    /// Failure preserves the protocol status and returns no plaintext.
+    pub fn decrypt_privacy_ciphertext(&mut self, input: &DecryptRequest) -> Result<(i32, Vec<u8>)> {
+        let mut reply = self.privacy_request(IpcCode::PrivacyDecryptCiphertext,
+            |parcel| serialize_decrypt(input, parcel))?;
         let result = reply.read::<i32>().map_err(ipc_err_handle)?;
-        let output = if result == PROTOCOL_SUCCESS {
-            Some(deserialize_result(&mut reply)?)
-        } else {
-            None
-        };
-        Ok((result, output))
+        if result != PROTOCOL_SUCCESS {
+            return Ok((result, Vec::new()));
+        }
+        let bytes = read_payload(&mut reply)?;
+        if bytes.len() != MAX_DECRYPT_RESULT_BYTES {
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::IpcError, "Invalid decoded HE plaintext length");
+        }
+        Ok((result, bytes))
     }
 
     fn send_request(&self, mut parcel: MsgParcel, ipc_code: IpcCode) -> Result<MsgParcel> {

@@ -15,16 +15,37 @@ import("//build/test.gni")
 
 ohos_unittest("asset_privacy_protocol_test") {
   module_out_path = "asset/hpic"
-  sources = [
-    "src/protocol_codec_test.cpp",
-    "src/privacy_result_codec_test.cpp",
-  ]
+  sources = [ "src/protocol_codec_test.cpp" ]
   include_dirs = [
     "../../../../frameworks/hpic/ipc/inc",
     "../../../../psi_pir_protocol/common/inc",
     "../../../../psi_pir_protocol/protocol/inc",
   ]
   deps = [ "../../../../psi_pir_protocol:psi_pir_protocol" ]
+  external_deps = [
+    "hilog:libhilog",
+    "googletest:gtest_main",
+  ]
+  cflags_cc = [
+    "-std=c++17",
+    "-Wall",
+    "-Werror",
+  ]
+  subsystem_name = "security"
+  part_name = "asset"
+}
+
+ohos_unittest("asset_privacy_client_test") {
+  module_out_path = "asset/hpic"
+  sources = [
+    "../../../../frameworks/hpic/ipc/src/privacy_client.cpp",
+    "src/privacy_client_test.cpp",
+  ]
+  include_dirs = [
+    "../../../../frameworks/hpic/ipc/inc",
+    "../../../../psi_pir_protocol/include",
+    "../../../../psi_pir_protocol/common/inc",
+  ]
   external_deps = [
     "hilog:libhilog",
     "googletest:gtest_main",

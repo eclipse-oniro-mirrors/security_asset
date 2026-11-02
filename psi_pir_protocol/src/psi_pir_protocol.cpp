@@ -58,20 +58,39 @@ int32_t PrivacySearch(const Bytes &privacyTarget, const std::vector<Element> &el
     return searchRet;
 }
 
-int32_t GetSearchResult(const PrivacySearchResult &input, const PrivacyProtocol &protocol,
-                        const CallerIdentity &identity, SearchResult &output) noexcept
+int32_t DecryptCiphertext(const Bytes &ciphertext, const PrivacyProtocol &protocol,
+    const CallerIdentity &identity, Bytes &output) noexcept
 {
-    PSI_PIR_LOGI("HPIC protocol getSearchResult begin, batches=%{public}zu", input.fheCipherText.size());
+    PSI_PIR_LOGI("HPIC protocol decryptCiphertext begin, bytes=%{public}zu", ciphertext.size());
     internal::ProtocolParams params;
     const auto ret = internal::MapPrivacyProtocol(protocol, params);
     if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
-    const auto resultRet = internal::PsiPirProtocolImpl().GetSearchResult(input, params, identity, output);
-    if (resultRet != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("getSearchResult failed in protocol core, ret=%{public}d", resultRet);
+    const auto decryptRet = internal::PsiPirProtocolImpl().DecryptCiphertext(ciphertext, params, identity, output);
+    if (decryptRet != PSI_PIR_SUCCESS) {
+        PSI_PIR_LOGE("decryptCiphertext failed, ret=%{public}d", decryptRet);
     } else {
-        PSI_PIR_LOGI("HPIC protocol getSearchResult success");
+        PSI_PIR_LOGI("HPIC protocol decryptCiphertext success, bytes=%{public}zu", output.size());
+    }
+    return decryptRet;
+}
+
+int32_t GetSearchResult(const std::vector<Bytes> &fhePlainText,
+    const std::optional<std::vector<Bytes>> &symCipherText, const PrivacyProtocol &protocol,
+    SearchResult &output) noexcept
+{
+    PSI_PIR_LOGI("HPIC protocol getSearchResult postprocess begin, batches=%{public}zu", fhePlainText.size());
+    internal::ProtocolParams params;
+    const auto ret = internal::MapPrivacyProtocol(protocol, params);
+    if (ret != PSI_PIR_SUCCESS) {
+        return ret;
+    }
+    const auto resultRet = internal::PsiPirProtocolImpl().GetSearchResult(fhePlainText, symCipherText, params, output);
+    if (resultRet != PSI_PIR_SUCCESS) {
+        PSI_PIR_LOGE("getSearchResult postprocess failed, ret=%{public}d", resultRet);
+    } else {
+        PSI_PIR_LOGI("HPIC protocol getSearchResult postprocess success");
     }
     return resultRet;
 }

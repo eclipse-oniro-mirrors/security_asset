@@ -20,6 +20,7 @@
 namespace OHOS::Security::PrivacyComputation {
 int32_t GenPrivacyTargetRemote(const psi_pir::TargetInput &input, const psi_pir::PrivacyProtocol &protocol,
                                psi_pir::Bytes &output);
+// Decrypts HE batches through SA, then postprocesses locally without sending symmetric frames.
 int32_t GetSearchResultRemote(const psi_pir::PrivacySearchResult &input, const psi_pir::PrivacyProtocol &protocol,
                               psi_pir::SearchResult &output);
 } // namespace OHOS::Security::PrivacyComputation

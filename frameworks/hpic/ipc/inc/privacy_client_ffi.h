@@ -20,8 +20,9 @@
 extern "C" {
 #endif
 int32_t asset_privacy_gen_target(const struct PrivacyTargetRequest *input, struct PrivacyBuffer *output);
-// Delivers encoded bytes to caller-owned storage exactly once after successful processing.
-int32_t asset_privacy_get_result(const struct PrivacySearchRequest *input, const struct PrivacyOutput *output);
+// Decrypts exactly one HE ciphertext into caller-owned plaintext storage.
+int32_t asset_privacy_decrypt_ciphertext(const struct PrivacyDecryptRequest *input,
+    struct PrivacyBuffer *output);
 #ifdef __cplusplus
 }
 #endif

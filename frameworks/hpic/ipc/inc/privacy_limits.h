@@ -20,7 +20,7 @@
 #include <cstdint>
 
 namespace OHOS::Security::PrivacyComputation {
-// Per-operation resource budget; large payloads travel through read-only shared memory.
+// Local NAPI resource budget; only individual HE batches cross IPC.
 constexpr uint32_t MAX_PRIVACY_BYTES = 64 * 1024 * 1024;
 constexpr size_t PRIVACY_LENGTH_BYTES = sizeof(uint32_t);
 constexpr size_t PRIVACY_FLAG_BYTES = sizeof(uint32_t);
@@ -29,7 +29,11 @@ constexpr size_t TARGET_FIXED_BYTES = PRIVACY_PROTOCOL_BYTES + sizeof(uint32_t);
 constexpr size_t SEARCH_FIXED_BYTES = PRIVACY_PROTOCOL_BYTES + PRIVACY_FLAG_BYTES;
 constexpr size_t RESULT_FIXED_BYTES = PRIVACY_FLAG_BYTES + PRIVACY_FLAG_BYTES;
 constexpr size_t MAX_PRIVACY_ITEMS = 65536;
-constexpr uint32_t MAX_TARGET_RESULT_BYTES = 256 * 1024;
+constexpr uint32_t MAX_PRIVACY_INLINE_BYTES = 192 * 1024;
+constexpr uint32_t MAX_TARGET_RESULT_BYTES = MAX_PRIVACY_INLINE_BYTES;
+// BGV-2048 decoded slots encoded as little-endian uint64 values.
+constexpr uint32_t MAX_DECRYPT_RESULT_BYTES = 2048 * sizeof(uint64_t);
+constexpr size_t DECRYPT_FIXED_BYTES = PRIVACY_PROTOCOL_BYTES;
 } // namespace OHOS::Security::PrivacyComputation
 
 #endif // HPIC_PRIVACY_LIMITS_H

@@ -211,7 +211,7 @@ public:
 };
 
 /* @tc.name: PsiCompleteWorkflow
- * @tc.desc: Three public protocol operations preserve hit and miss results with separate HE contexts.
+ * @tc.desc: Four public protocol operations preserve hit and miss results with separate HE contexts.
  * @tc.type: FUNC
  */
 HWTEST_F(HifheProtocolTest, PsiCompleteWorkflow, TestSize.Level1)
@@ -225,14 +225,20 @@ HWTEST_F(HifheProtocolTest, PsiCompleteWorkflow, TestSize.Level1)
         ASSERT_EQ(PrivacySearch(target, {{Bytes{key}, HashAlg::SHA256, std::nullopt}}, protocol, encrypted),
                   PSI_PIR_SUCCESS);
         SearchResult result;
-        ASSERT_EQ(GetSearchResult(encrypted, protocol, identity, result), PSI_PIR_SUCCESS);
+        std::vector<Bytes> plaintexts;
+        for (const auto &ciphertext : encrypted.fheCipherText) {
+            Bytes plaintext;
+            ASSERT_EQ(DecryptCiphertext(ciphertext, protocol, identity, plaintext), PSI_PIR_SUCCESS);
+            plaintexts.push_back(std::move(plaintext));
+        }
+        ASSERT_EQ(GetSearchResult(plaintexts, encrypted.symCipherText, protocol, result), PSI_PIR_SUCCESS);
         EXPECT_EQ(result.matchedResult, key == 'q');
         EXPECT_FALSE(result.attachedValues.has_value());
     }
 }
 
 /* @tc.name: PirCompleteWorkflow
- * @tc.desc: Three public protocol operations recover associated values, including binary and empty values.
+ * @tc.desc: Four public protocol operations recover associated values, including binary and empty values.
  * @tc.type: FUNC
  */
 HWTEST_F(HifheProtocolTest, PirCompleteWorkflow, TestSize.Level1)
@@ -245,7 +251,13 @@ HWTEST_F(HifheProtocolTest, PirCompleteWorkflow, TestSize.Level1)
         PrivacySearchResult encrypted;
         ASSERT_EQ(PrivacySearch(target, {{Bytes{'q'}, HashAlg::SHA256, value}}, protocol, encrypted), PSI_PIR_SUCCESS);
         SearchResult result;
-        ASSERT_EQ(GetSearchResult(encrypted, protocol, identity, result), PSI_PIR_SUCCESS);
+        std::vector<Bytes> plaintexts;
+        for (const auto &ciphertext : encrypted.fheCipherText) {
+            Bytes plaintext;
+            ASSERT_EQ(DecryptCiphertext(ciphertext, protocol, identity, plaintext), PSI_PIR_SUCCESS);
+            plaintexts.push_back(std::move(plaintext));
+        }
+        ASSERT_EQ(GetSearchResult(plaintexts, encrypted.symCipherText, protocol, result), PSI_PIR_SUCCESS);
         EXPECT_TRUE(result.matchedResult);
         ASSERT_TRUE(result.attachedValues.has_value());
         EXPECT_EQ(*result.attachedValues, std::vector<Bytes>{value});

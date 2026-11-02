@@ -29,10 +29,16 @@ int32_t GenPrivacyTarget(const TargetInput &input, const PrivacyProtocol &privac
 int32_t PrivacySearch(const Bytes &privacyTarget, const std::vector<Element> &elements,
                       const PrivacyProtocol &privacyProtocol, PrivacySearchResult &privacySearchResult) noexcept;
 
-// Decrypts HE ciphertext batches and performs match detection and PIR attached-value
-// processing. Failure leaves searchResult unchanged.
-int32_t GetSearchResult(const PrivacySearchResult &privacySearchResult, const PrivacyProtocol &privacyProtocol,
-                        const CallerIdentity &identity, SearchResult &searchResult) noexcept;
+// Decrypts and decodes one HE ciphertext into uint64 little-endian slots.
+// Derives the seed from the trusted identity; failure leaves plaintext unchanged.
+int32_t DecryptCiphertext(const Bytes &ciphertext, const PrivacyProtocol &privacyProtocol,
+    const CallerIdentity &identity, Bytes &plaintext) noexcept;
+
+// Matches all decrypted batches and decrypts local PIR associated values without HE keys.
+// Batch order must match PrivacySearch output. Failure leaves searchResult unchanged.
+int32_t GetSearchResult(const std::vector<Bytes> &fhePlainText,
+    const std::optional<std::vector<Bytes>> &symCipherText, const PrivacyProtocol &privacyProtocol,
+    SearchResult &searchResult) noexcept;
 
 } // namespace psi_pir
 

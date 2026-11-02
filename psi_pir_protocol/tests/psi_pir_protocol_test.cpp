@@ -1110,7 +1110,7 @@ TEST(PsiPirProtocolTest, PsiMatchesAndMissesAfterExternalHeDecryption)
 
     auto decrypted = DecryptOutsideProtocol(response);
     SearchResult result;
-    ASSERT_EQ(ProcessDecryptedSearchResult(decrypted, PSI_PROTOCOL, result), PSI_PIR_SUCCESS);
+    ASSERT_EQ(GetSearchResult(decrypted.fheCipherText, decrypted.symCipherText, PSI_PROTOCOL, result), PSI_PIR_SUCCESS);
     EXPECT_TRUE(result.matchedResult);
     EXPECT_FALSE(result.attachedValues.has_value());
 
@@ -1270,7 +1270,7 @@ TEST(PsiPirProtocolTest, PsiGetSearchResultNeedsNoHeEngine)
 
     SetHEEngine(nullptr);
     SearchResult result;
-    ASSERT_EQ(ProcessDecryptedSearchResult(decrypted, PSI_PROTOCOL, result), PSI_PIR_SUCCESS);
+    ASSERT_EQ(GetSearchResult(decrypted.fheCipherText, decrypted.symCipherText, PSI_PROTOCOL, result), PSI_PIR_SUCCESS);
     EXPECT_TRUE(result.matchedResult);
     EXPECT_FALSE(result.attachedValues.has_value());
 }

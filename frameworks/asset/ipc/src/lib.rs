@@ -62,8 +62,8 @@ macros_lib::impl_enum_trait! {
         BatchUpdate,
         /// Generate a PSI/PIR target in the Asset service.
         PrivacyGenTarget = 11,
-        /// Decrypt and process a PSI/PIR result in the Asset service.
-        PrivacyGetResult = 12,
+        /// Decrypt one HE ciphertext in the Asset service; postprocessing stays in the caller.
+        PrivacyDecryptCiphertext = 12,
     }
 }
 

@@ -15,34 +15,15 @@
 
 #include "privacy_client.h"
 #include "privacy_client_ffi.h"
-#include "privacy_result_codec.h"
 #include "psi_pir_log.h"
 #include <utility>
 
 namespace OHOS::Security::PrivacyComputation {
-namespace {
-bool MakeBlobs(const std::vector<psi_pir::Bytes> &input, std::vector<PrivacyBlob> &blobs, size_t &total)
-{
-    if (input.size() > MAX_PRIVACY_ITEMS || total > MAX_PRIVACY_BYTES - PRIVACY_LENGTH_BYTES) {
-        return false;
-    }
-    total += PRIVACY_LENGTH_BYTES;
-    for (const auto &value : input) {
-        if (total > MAX_PRIVACY_BYTES - PRIVACY_LENGTH_BYTES ||
-            value.size() > MAX_PRIVACY_BYTES - total - PRIVACY_LENGTH_BYTES) {
-            return false;
-        }
-        total += PRIVACY_LENGTH_BYTES + value.size();
-        blobs.push_back({value.data(), static_cast<uint32_t>(value.size())});
-    }
-    return true;
-}
-} // namespace
 int32_t GenPrivacyTargetRemote(const psi_pir::TargetInput &input, const psi_pir::PrivacyProtocol &protocol,
                                psi_pir::Bytes &output)
 {
     PSI_PIR_LOGI("HPIC IPC genPrivacyTarget begin, inputBytes=%{public}zu", input.elemData.size());
-    if (input.elemData.size() > MAX_PRIVACY_BYTES - TARGET_FIXED_BYTES - PRIVACY_LENGTH_BYTES) {
+    if (input.elemData.size() > MAX_PRIVACY_INLINE_BYTES - TARGET_FIXED_BYTES - PRIVACY_LENGTH_BYTES) {
         PSI_PIR_LOGE("HPIC IPC genPrivacyTarget input exceeds byte budget");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
@@ -70,31 +51,35 @@ int32_t GetSearchResultRemote(const psi_pir::PrivacySearchResult &input, const p
                               psi_pir::SearchResult &output)
 {
     PSI_PIR_LOGI("HPIC IPC getSearchResult begin, batches=%{public}zu", input.fheCipherText.size());
-    std::vector<PrivacyBlob> ciphertexts;
-    std::vector<PrivacyBlob> symmetric;
-    size_t total = SEARCH_FIXED_BYTES;
-    if (!MakeBlobs(input.fheCipherText, ciphertexts, total) ||
-        (input.symCipherText && !MakeBlobs(*input.symCipherText, symmetric, total))) {
-        PSI_PIR_LOGE("HPIC IPC getSearchResult input exceeds byte budget");
-        return psi_pir::PSI_PIR_INVALID_ARGUMENT;
+    std::vector<psi_pir::Bytes> plaintexts;
+    plaintexts.reserve(input.fheCipherText.size());
+    for (size_t batch = 0; batch < input.fheCipherText.size(); ++batch) {
+        const auto &ciphertext = input.fheCipherText[batch];
+        if (ciphertext.empty() ||
+            ciphertext.size() > MAX_PRIVACY_INLINE_BYTES - DECRYPT_FIXED_BYTES - PRIVACY_LENGTH_BYTES) {
+            PSI_PIR_LOGE("HPIC IPC invalid HE batch, batch=%{public}zu, bytes=%{public}zu", batch, ciphertext.size());
+            return psi_pir::PSI_PIR_INVALID_ARGUMENT;
+        }
+        const PrivacyDecryptRequest request{
+            {static_cast<uint32_t>(protocol.dataSetSize), static_cast<uint32_t>(protocol.protocolType)},
+            {ciphertext.data(), static_cast<uint32_t>(ciphertext.size())}};
+        psi_pir::Bytes plaintext(MAX_DECRYPT_RESULT_BYTES);
+        PrivacyBuffer result{plaintext.data(), static_cast<uint32_t>(plaintext.size())};
+        PSI_PIR_LOGI("HPIC IPC decryptCiphertext begin, batch=%{public}zu, bytes=%{public}zu", batch,
+            ciphertext.size());
+        const auto ret = asset_privacy_decrypt_ciphertext(&request, &result);
+        if (ret != psi_pir::PSI_PIR_SUCCESS) {
+            PSI_PIR_LOGE("HPIC IPC decryptCiphertext failed, batch=%{public}zu, ret=%{public}d", batch, ret);
+            return ret;
+        }
+        if (result.size != MAX_DECRYPT_RESULT_BYTES) {
+            PSI_PIR_LOGE("HPIC IPC invalid HE plaintext length=%{public}u", result.size);
+            return psi_pir::PSI_PIR_CODEC_ERROR;
+        }
+        plaintexts.push_back(std::move(plaintext));
+        PSI_PIR_LOGI("HPIC IPC decryptCiphertext success, batch=%{public}zu", batch);
     }
-    const PrivacySearchRequest request{
-        {static_cast<uint32_t>(protocol.dataSetSize), static_cast<uint32_t>(protocol.protocolType)},
-        {ciphertexts.data(), static_cast<uint32_t>(ciphertexts.size())},
-        input.symCipherText ? 1U : 0U,
-        {symmetric.data(), static_cast<uint32_t>(symmetric.size())}};
-    psi_pir::Bytes bytes;
-    const PrivacyOutput result{&bytes, CollectPrivacyBytes};
-    const auto ret = asset_privacy_get_result(&request, &result);
-    if (ret != psi_pir::PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("HPIC IPC getSearchResult failed, ret=%{public}d", ret);
-        return ret;
-    }
-    if (!DecodePrivacyResult(bytes.data(), bytes.size(), output)) {
-        PSI_PIR_LOGE("HPIC IPC getSearchResult invalid response, bytes=%{public}zu", bytes.size());
-        return psi_pir::PSI_PIR_CODEC_ERROR;
-    }
-    PSI_PIR_LOGI("HPIC IPC getSearchResult success, responseBytes=%{public}zu", bytes.size());
-    return psi_pir::PSI_PIR_SUCCESS;
+    // Preserve all batch positions; symmetric frames are borrowed locally and never enter IPC.
+    return psi_pir::GetSearchResult(plaintexts, input.symCipherText, protocol, output);
 }
 } // namespace OHOS::Security::PrivacyComputation

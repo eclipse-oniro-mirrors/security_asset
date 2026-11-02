@@ -25,10 +25,6 @@ struct PrivacyBlob {
     const uint8_t *data;
     uint32_t size;
 };
-struct PrivacyBlobList {
-    const struct PrivacyBlob *data;
-    uint32_t count;
-};
 struct PrivacyProtocol {
     uint32_t dataSetSize;
     uint32_t protocolType;
@@ -38,16 +34,9 @@ struct PrivacyTargetRequest {
     uint32_t hashAlg;
     struct PrivacyBlob element;
 };
-struct PrivacySearchRequest {
+struct PrivacyDecryptRequest {
     struct PrivacyProtocol protocol;
-    struct PrivacyBlobList ciphertexts;
-    uint32_t hasSymmetric;
-    struct PrivacyBlobList symmetric;
-};
-// Same-process output receiver. Bytes are borrowed only during Write; no allocation crosses the FFI.
-struct PrivacyOutput {
-    void *context;
-    int32_t (*write)(void *context, const uint8_t *data, uint32_t size);
+    struct PrivacyBlob ciphertext;
 };
 // size is the writable capacity on entry and the actual length on success.
 struct PrivacyBuffer {
