@@ -1110,7 +1110,7 @@ TEST(PsiPirProtocolTest, PsiMatchesAndMissesAfterExternalHeDecryption)
 
     auto decrypted = DecryptOutsideProtocol(response);
     SearchResult result;
-    ASSERT_EQ(GetSearchResult(decrypted.fheCipherText, decrypted.symCipherText, PSI_PROTOCOL, result), PSI_PIR_SUCCESS);
+    ASSERT_EQ(PostProcessSearchResult(decrypted.fheCipherText, decrypted.symCipherText, PSI_PROTOCOL, result), PSI_PIR_SUCCESS);
     EXPECT_TRUE(result.matchedResult);
     EXPECT_FALSE(result.attachedValues.has_value());
 
@@ -1270,7 +1270,7 @@ TEST(PsiPirProtocolTest, PsiGetSearchResultNeedsNoHeEngine)
 
     SetHEEngine(nullptr);
     SearchResult result;
-    ASSERT_EQ(GetSearchResult(decrypted.fheCipherText, decrypted.symCipherText, PSI_PROTOCOL, result), PSI_PIR_SUCCESS);
+    ASSERT_EQ(PostProcessSearchResult(decrypted.fheCipherText, decrypted.symCipherText, PSI_PROTOCOL, result), PSI_PIR_SUCCESS);
     EXPECT_TRUE(result.matchedResult);
     EXPECT_FALSE(result.attachedValues.has_value());
 }
@@ -1365,7 +1365,7 @@ TEST(PsiPirProtocolTest, ZeroQueryShowsWhyPsiPaddingIsAnInvalidProtocolInput)
     PrivacySearchResult response;
     ASSERT_EQ(PrivacySearch(MakeZeroPrivacyTarget(), {MakeElement(1)}, PSI_PROTOCOL, response), PSI_PIR_SUCCESS);
 
-    // With no item count in the northbound DTO, getSearchResult scans all 512 groups.
+    // With no item count in the northbound DTO, PostProcessSearchResult scans all 512 groups.
     // A zero query makes every zero-padded group decrypt to zero, so the wire
     // result cannot distinguish such padding from a real match. Target
     // generation must therefore reject the all-zero comparison vector.

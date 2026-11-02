@@ -26,9 +26,9 @@ extern "C" {
 }
 
 fn gen_privacy_target(uid: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
-    logi!("HPIC Stub genPrivacyTarget received");
+    logi!("PRIVACY_COMPUTATION Stub genPrivacyTarget received");
     let input = deserialize_target(data).map_err(|_| {
-        loge!("HPIC Stub genPrivacyTarget deserialize failed");
+        loge!("PRIVACY_COMPUTATION Stub genPrivacyTarget deserialize failed");
         IpcStatusCode::InvalidValue
     })?;
     let request = input.as_native();
@@ -36,7 +36,7 @@ fn gen_privacy_target(uid: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> 
     let mut output = PrivacyBuffer { data: bytes.as_mut_ptr(), size: bytes.len() as u32 };
     let result = unsafe { AssetGenPrivacyTarget(uid, &request, &mut output) };
     if output.size as usize > bytes.len() {
-        loge!("HPIC Stub service output exceeds capacity");
+        loge!("PRIVACY_COMPUTATION Stub service output exceeds capacity");
         return Err(IpcStatusCode::Failed);
     }
     reply.write(&IPC_SUCCESS)?;
@@ -44,25 +44,25 @@ fn gen_privacy_target(uid: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> 
     if result == PROTOCOL_SUCCESS {
         bytes.truncate(output.size as usize);
         write_payload(&bytes, reply).map_err(|_| IpcStatusCode::Failed)?;
-        logi!("HPIC Stub genPrivacyTarget reply written, bytes={}", bytes.len());
+        logi!("PRIVACY_COMPUTATION Stub genPrivacyTarget reply written, bytes={}", bytes.len());
     } else {
-        loge!("HPIC Stub genPrivacyTarget failed, ret={}", result);
+        loge!("PRIVACY_COMPUTATION Stub genPrivacyTarget failed, ret={}", result);
     }
     Ok(())
 }
 
 fn decrypt_privacy_ciphertext(uid: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
     let input = deserialize_decrypt(data).map_err(|_| {
-        loge!("HPIC Stub decryptCiphertext deserialize failed");
+        loge!("PRIVACY_COMPUTATION Stub decryptCiphertext deserialize failed");
         IpcStatusCode::InvalidValue
     })?;
-    logi!("HPIC Stub decryptCiphertext begin, bytes={}", input.ciphertext.len());
+    logi!("PRIVACY_COMPUTATION Stub decryptCiphertext begin, bytes={}", input.ciphertext.len());
     let request = input.as_native();
     let mut bytes = vec![0u8; MAX_DECRYPT_RESULT_BYTES];
     let mut output = PrivacyBuffer { data: bytes.as_mut_ptr(), size: bytes.len() as u32 };
     let status = unsafe { AssetDecryptPrivacyCiphertext(uid, &request, &mut output) };
     if status == PROTOCOL_SUCCESS && output.size as usize != MAX_DECRYPT_RESULT_BYTES {
-        loge!("HPIC Stub decryptCiphertext invalid plaintext length={}", output.size);
+        loge!("PRIVACY_COMPUTATION Stub decryptCiphertext invalid plaintext length={}", output.size);
         return Err(IpcStatusCode::Failed);
     }
     reply.write(&IPC_SUCCESS)?;
@@ -70,9 +70,9 @@ fn decrypt_privacy_ciphertext(uid: u32, data: &mut MsgParcel, reply: &mut MsgPar
     if status == PROTOCOL_SUCCESS {
         bytes.truncate(output.size as usize);
         write_payload(&bytes, reply).map_err(|_| IpcStatusCode::Failed)?;
-        logi!("HPIC Stub decryptCiphertext success, bytes={}", bytes.len());
+        logi!("PRIVACY_COMPUTATION Stub decryptCiphertext success, bytes={}", bytes.len());
     } else {
-        loge!("HPIC Stub decryptCiphertext failed, ret={}", status);
+        loge!("PRIVACY_COMPUTATION Stub decryptCiphertext failed, ret={}", status);
     }
     Ok(())
 }

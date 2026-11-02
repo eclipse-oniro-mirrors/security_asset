@@ -24,7 +24,7 @@ namespace psi_pir {
 int32_t GenPrivacyTarget(const TargetInput &input, const PrivacyProtocol &protocol, const CallerIdentity &identity,
                          Bytes &output) noexcept
 {
-    PSI_PIR_LOGI("HPIC protocol genPrivacyTarget begin, inputBytes=%{public}zu", input.elemData.size());
+    PSI_PIR_LOGI("protocol genPrivacyTarget begin, inputBytes=%{public}zu", input.elemData.size());
     internal::ProtocolParams params;
     const auto ret = internal::MapPrivacyProtocol(protocol, params);
     if (ret != PSI_PIR_SUCCESS) {
@@ -34,7 +34,7 @@ int32_t GenPrivacyTarget(const TargetInput &input, const PrivacyProtocol &protoc
     if (targetRet != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("genPrivacyTarget failed in protocol core, ret=%{public}d", targetRet);
     } else {
-        PSI_PIR_LOGI("HPIC protocol genPrivacyTarget success, outputBytes=%{public}zu", output.size());
+        PSI_PIR_LOGI("protocol genPrivacyTarget success, outputBytes=%{public}zu", output.size());
     }
     return targetRet;
 }
@@ -42,7 +42,7 @@ int32_t GenPrivacyTarget(const TargetInput &input, const PrivacyProtocol &protoc
 int32_t PrivacySearch(const Bytes &privacyTarget, const std::vector<Element> &elements, const PrivacyProtocol &protocol,
                       PrivacySearchResult &output) noexcept
 {
-    PSI_PIR_LOGI("HPIC protocol privacySearch begin, targetBytes=%{public}zu, elements=%{public}zu",
+    PSI_PIR_LOGI("protocol privacySearch begin, targetBytes=%{public}zu, elements=%{public}zu",
                  privacyTarget.size(), elements.size());
     internal::ProtocolParams params;
     const auto ret = internal::MapPrivacyProtocol(protocol, params);
@@ -53,7 +53,7 @@ int32_t PrivacySearch(const Bytes &privacyTarget, const std::vector<Element> &el
     if (searchRet != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("privacySearch failed in protocol core, ret=%{public}d", searchRet);
     } else {
-        PSI_PIR_LOGI("HPIC protocol privacySearch success, batches=%{public}zu", output.fheCipherText.size());
+        PSI_PIR_LOGI("protocol privacySearch success, batches=%{public}zu", output.fheCipherText.size());
     }
     return searchRet;
 }
@@ -61,7 +61,7 @@ int32_t PrivacySearch(const Bytes &privacyTarget, const std::vector<Element> &el
 int32_t DecryptCiphertext(const Bytes &ciphertext, const PrivacyProtocol &protocol,
     const CallerIdentity &identity, Bytes &output) noexcept
 {
-    PSI_PIR_LOGI("HPIC protocol decryptCiphertext begin, bytes=%{public}zu", ciphertext.size());
+    PSI_PIR_LOGI("protocol decryptCiphertext begin, bytes=%{public}zu", ciphertext.size());
     internal::ProtocolParams params;
     const auto ret = internal::MapPrivacyProtocol(protocol, params);
     if (ret != PSI_PIR_SUCCESS) {
@@ -71,26 +71,26 @@ int32_t DecryptCiphertext(const Bytes &ciphertext, const PrivacyProtocol &protoc
     if (decryptRet != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("decryptCiphertext failed, ret=%{public}d", decryptRet);
     } else {
-        PSI_PIR_LOGI("HPIC protocol decryptCiphertext success, bytes=%{public}zu", output.size());
+        PSI_PIR_LOGI("protocol decryptCiphertext success, bytes=%{public}zu", output.size());
     }
     return decryptRet;
 }
 
-int32_t GetSearchResult(const std::vector<Bytes> &fhePlainText,
+int32_t PostProcessSearchResult(const std::vector<Bytes> &fhePlainText,
     const std::optional<std::vector<Bytes>> &symCipherText, const PrivacyProtocol &protocol,
     SearchResult &output) noexcept
 {
-    PSI_PIR_LOGI("HPIC protocol getSearchResult postprocess begin, batches=%{public}zu", fhePlainText.size());
+    PSI_PIR_LOGI("protocol PostProcessSearchResult postprocess begin, batches=%{public}zu", fhePlainText.size());
     internal::ProtocolParams params;
     const auto ret = internal::MapPrivacyProtocol(protocol, params);
     if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
-    const auto resultRet = internal::PsiPirProtocolImpl().GetSearchResult(fhePlainText, symCipherText, params, output);
+    const auto resultRet = internal::PsiPirProtocolImpl().PostProcessSearchResult(fhePlainText, symCipherText, params, output);
     if (resultRet != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("getSearchResult postprocess failed, ret=%{public}d", resultRet);
+        PSI_PIR_LOGE("PostProcessSearchResult postprocess failed, ret=%{public}d", resultRet);
     } else {
-        PSI_PIR_LOGI("HPIC protocol getSearchResult postprocess success");
+        PSI_PIR_LOGI("protocol PostProcessSearchResult postprocess success");
     }
     return resultRet;
 }

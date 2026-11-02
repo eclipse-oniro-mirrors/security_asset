@@ -61,7 +61,7 @@ extern "C" int32_t asset_privacy_decrypt_ciphertext(const PrivacyDecryptRequest 
 
 namespace psi_pir {
 // This suite isolates client orchestration; the protocol suite tests actual postprocessing.
-int32_t GetSearchResult(const std::vector<Bytes> &plaintexts,
+int32_t PostProcessSearchResult(const std::vector<Bytes> &plaintexts,
     const std::optional<std::vector<Bytes>> &symmetric, const PrivacyProtocol &, SearchResult &output) noexcept
 {
     ++g_postprocessCalls;

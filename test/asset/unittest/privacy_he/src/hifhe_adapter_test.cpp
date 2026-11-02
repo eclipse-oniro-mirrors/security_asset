@@ -231,7 +231,7 @@ HWTEST_F(HifheProtocolTest, PsiCompleteWorkflow, TestSize.Level1)
             ASSERT_EQ(DecryptCiphertext(ciphertext, protocol, identity, plaintext), PSI_PIR_SUCCESS);
             plaintexts.push_back(std::move(plaintext));
         }
-        ASSERT_EQ(GetSearchResult(plaintexts, encrypted.symCipherText, protocol, result), PSI_PIR_SUCCESS);
+        ASSERT_EQ(PostProcessSearchResult(plaintexts, encrypted.symCipherText, protocol, result), PSI_PIR_SUCCESS);
         EXPECT_EQ(result.matchedResult, key == 'q');
         EXPECT_FALSE(result.attachedValues.has_value());
     }
@@ -257,7 +257,7 @@ HWTEST_F(HifheProtocolTest, PirCompleteWorkflow, TestSize.Level1)
             ASSERT_EQ(DecryptCiphertext(ciphertext, protocol, identity, plaintext), PSI_PIR_SUCCESS);
             plaintexts.push_back(std::move(plaintext));
         }
-        ASSERT_EQ(GetSearchResult(plaintexts, encrypted.symCipherText, protocol, result), PSI_PIR_SUCCESS);
+        ASSERT_EQ(PostProcessSearchResult(plaintexts, encrypted.symCipherText, protocol, result), PSI_PIR_SUCCESS);
         EXPECT_TRUE(result.matchedResult);
         ASSERT_TRUE(result.attachedValues.has_value());
         EXPECT_EQ(*result.attachedValues, std::vector<Bytes>{value});

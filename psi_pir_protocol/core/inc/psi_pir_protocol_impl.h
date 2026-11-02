@@ -32,7 +32,7 @@ public:
                           const ProtocolParams &params, PrivacySearchResult &result) const noexcept;
     int32_t DecryptCiphertext(const Bytes &ciphertext, const ProtocolParams &params,
         const CallerIdentity &identity, Bytes &plaintext) const noexcept;
-    int32_t GetSearchResult(const std::vector<Bytes> &fhePlainText,
+    int32_t PostProcessSearchResult(const std::vector<Bytes> &fhePlainText,
         const std::optional<std::vector<Bytes>> &symCipherText, const ProtocolParams &params,
         SearchResult &result) const noexcept;
     // Internal plaintext stage, also used by tests that inject decrypted slot data.

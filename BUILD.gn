@@ -27,7 +27,7 @@ group("asset_component") {
     ]
   }
 
- deps += [ "frameworks/hpic/js/napi:privacycomputation_napi" ]
+ deps += [ "frameworks/privacy_computation/js/napi:privacycomputation_napi" ]
  
   if (asset_build_mode == "full") {
     deps += [

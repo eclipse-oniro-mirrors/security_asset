@@ -263,7 +263,7 @@ int32_t EvaluateDifference(const EvaluationContext &context, const Slots &differ
     if (ret != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("EvaluateDifference mask multiplication failed, ret=%{public}d", ret);
     } else {
-        PSI_PIR_LOGI("HPIC batch EvaluateDifference success");
+        PSI_PIR_LOGI("batch EvaluateDifference success");
     }
     return ret;
 }
@@ -299,7 +299,7 @@ int32_t AddSeeds(const EvaluationContext &context, std::size_t batchStart, std::
     if (ret != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("AddSeeds failed, ret=%{public}d", ret);
     } else {
-        PSI_PIR_LOGI("HPIC batch AddSeeds success");
+        PSI_PIR_LOGI("batch AddSeeds success");
     }
     return ret;
 }
@@ -310,7 +310,7 @@ int32_t RerandResult(HeEvaluation &evaluation) noexcept
     if (ret != PSI_PIR_SUCCESS) {
         PSI_PIR_LOGE("RerandResult failed, ret=%{public}d", ret);
     } else {
-        PSI_PIR_LOGI("HPIC batch RerandResult success");
+        PSI_PIR_LOGI("batch RerandResult success");
     }
     return ret;
 }
@@ -499,7 +499,7 @@ int32_t PsiPirProtocolImpl::GenPrivacyTarget(const TargetInput &input, const Pro
     if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
-    PSI_PIR_LOGI("HPIC target vector encoded, slots=%{public}zu", target.size());
+    PSI_PIR_LOGI("target vector encoded, slots=%{public}zu", target.size());
     HeSeed seed;
     ret = HeKeyDeriver().DeriveKey(identity, seed);
     if (ret != PSI_PIR_SUCCESS) {
@@ -579,7 +579,7 @@ int32_t PsiPirProtocolImpl::DecryptCiphertext(const Bytes &ciphertext, const Pro
     return codec_.SerializePlaintext(slots, params, output);
 }
 
-int32_t PsiPirProtocolImpl::GetSearchResult(const std::vector<Bytes> &fhePlainText,
+int32_t PsiPirProtocolImpl::PostProcessSearchResult(const std::vector<Bytes> &fhePlainText,
     const std::optional<std::vector<Bytes>> &symCipherText, const ProtocolParams &params,
     SearchResult &result) const noexcept
 {
@@ -602,7 +602,7 @@ int32_t PsiPirProtocolImpl::GetSearchResult(const std::vector<Bytes> &fhePlainTe
 int32_t PsiPirProtocolImpl::ProcessDecryptedSearchResult(const PrivacySearchResult &input,
     const ProtocolParams &params, SearchResult &result) const noexcept
 {
-    return GetSearchResult(input.fheCipherText, input.symCipherText, params, result);
+    return PostProcessSearchResult(input.fheCipherText, input.symCipherText, params, result);
 }
 
 int32_t ProcessDecryptedSearchResult(const PrivacySearchResult &input, const PrivacyProtocol &protocol,

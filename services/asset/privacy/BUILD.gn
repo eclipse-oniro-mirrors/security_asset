@@ -19,7 +19,7 @@ ohos_static_library("asset_privacy") {
   ]
   include_dirs = [
     "inc",
-    "../../../frameworks/hpic/ipc/inc",
+    "../../../frameworks/privacy_computation/ipc/inc",
     "../../../psi_pir_protocol/he/inc",
     "../../../psi_pir_protocol/common/inc",
     "../../../psi_pir_protocol/protocol/inc",

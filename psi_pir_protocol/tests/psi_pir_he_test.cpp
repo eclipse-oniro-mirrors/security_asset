@@ -109,14 +109,14 @@ HWTEST_F(PsiPirHeTest, CompleteResultEntryValidatesProtocol, TestSize.Level1)
 {
     SearchResult result{true, std::vector<Bytes>{Bytes{0x99}}};
     const PrivacyProtocol invalid{static_cast<DataSetSize>(-1), ProtocolType::PSI_PROTOCOL};
-    EXPECT_EQ(GetSearchResult({}, std::nullopt, invalid, result), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(PostProcessSearchResult({}, std::nullopt, invalid, result), PSI_PIR_INVALID_ARGUMENT);
     EXPECT_TRUE(result.matchedResult);
     ASSERT_TRUE(result.attachedValues.has_value());
     EXPECT_EQ(*result.attachedValues, std::vector<Bytes>({Bytes{0x99}}));
 
     // Empty input needs no HE operation, but still runs result processing.
     SetHeSeedDeriver(nullptr);
-    EXPECT_EQ(GetSearchResult({}, std::nullopt, PSI, result), PSI_PIR_SUCCESS);
+    EXPECT_EQ(PostProcessSearchResult({}, std::nullopt, PSI, result), PSI_PIR_SUCCESS);
     EXPECT_FALSE(result.matchedResult);
     EXPECT_FALSE(result.attachedValues.has_value());
 }

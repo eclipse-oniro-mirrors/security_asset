@@ -36,7 +36,7 @@ int32_t DecryptCiphertext(const Bytes &ciphertext, const PrivacyProtocol &privac
 
 // Matches all decrypted batches and decrypts local PIR associated values without HE keys.
 // Batch order must match PrivacySearch output. Failure leaves searchResult unchanged.
-int32_t GetSearchResult(const std::vector<Bytes> &fhePlainText,
+int32_t PostProcessSearchResult(const std::vector<Bytes> &fhePlainText,
     const std::optional<std::vector<Bytes>> &symCipherText, const PrivacyProtocol &privacyProtocol,
     SearchResult &searchResult) noexcept;
 

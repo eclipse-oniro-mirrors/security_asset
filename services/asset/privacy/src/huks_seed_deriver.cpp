@@ -29,7 +29,7 @@ namespace {
 using namespace psi_pir;
 using namespace psi_pir::internal;
 constexpr uint32_t ROOT_KEY_BITS = 256;
-constexpr char ROOT_KEY_ALIAS[] = "asset.hpic.derive.root.v1";
+constexpr char ROOT_KEY_ALIAS[] = "asset.privacy.derive.root.v1";
 std::mutex g_rootMutex;
 
 int32_t BuildParamSet(HksParamSet **paramSet, const HksParam *params, uint32_t paramCount)
@@ -78,7 +78,7 @@ public:
             return PSI_PIR_CRYPTO_ERROR;
         }
         active_ = true;
-        PSI_PIR_LOGI("HPIC HUKS derive Init success");
+        PSI_PIR_LOGI("HUKS derive Init success");
         HeSeed updateStorage;
         HksBlob updateOutput{static_cast<uint32_t>(updateStorage.bytes.size()), updateStorage.bytes.data()};
         // HKDF consumes SALT/INFO tags; the API still requires an input blob for each stage.
@@ -87,7 +87,7 @@ public:
             PSI_PIR_LOGE("Update privacy HUKS derivation failed, ret=%{public}d", ret);
             return PSI_PIR_CRYPTO_ERROR;
         }
-        PSI_PIR_LOGI("HPIC HUKS derive Update success");
+        PSI_PIR_LOGI("HUKS derive Update success");
         HeSeed derived;
         HksBlob output{static_cast<uint32_t>(derived.bytes.size()), derived.bytes.data()};
         ret = HksFinish(&handle_, params_, &salt, &output);
@@ -101,7 +101,7 @@ public:
             return PSI_PIR_CRYPTO_ERROR;
         }
         seed.bytes = derived.bytes;
-        PSI_PIR_LOGI("HPIC HUKS derive Finish success, seedBytes=%{public}u", output.size);
+        PSI_PIR_LOGI("HUKS derive Finish success, seedBytes=%{public}u", output.size);
         return PSI_PIR_SUCCESS;
     }
 
@@ -127,14 +127,14 @@ int32_t GenerateRoot(const HksBlob &alias, uint32_t userId)
     if (ret != HKS_SUCCESS) {
         return PSI_PIR_CRYPTO_ERROR;
     }
-    PSI_PIR_LOGI("HPIC HUKS root generate begin, userId=%{private}u", userId);
+    PSI_PIR_LOGI("HUKS root generate begin, userId=%{private}u", userId);
     const auto generateRet = HksGenerateKey(&alias, paramSet, nullptr);
     HksFreeParamSet(&paramSet);
     if (generateRet != HKS_SUCCESS) {
         PSI_PIR_LOGE("Generate privacy HUKS derivation root failed, ret=%{public}d", generateRet);
         return PSI_PIR_CRYPTO_ERROR;
     }
-    PSI_PIR_LOGI("HPIC HUKS root generate success, userId=%{private}u", userId);
+    PSI_PIR_LOGI("HUKS root generate success, userId=%{private}u", userId);
     return PSI_PIR_SUCCESS;
 }
 } // namespace
@@ -142,10 +142,10 @@ int32_t GenerateRoot(const HksBlob &alias, uint32_t userId)
 int32_t HuksSeedDeriver::PrepareRootKey(uint32_t userId, RootKeyPolicy policy) const
 {
     if (userId > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())) {
-        PSI_PIR_LOGE("Invalid HPIC HUKS CE userId");
+        PSI_PIR_LOGE("Invalid HUKS CE userId");
         return PSI_PIR_INVALID_ARGUMENT;
     }
-    PSI_PIR_LOGI("HPIC HUKS root prepare begin, userId=%{private}u, policy=%{public}u", userId,
+    PSI_PIR_LOGI("HUKS root prepare begin, userId=%{private}u, policy=%{public}u", userId,
         static_cast<uint32_t>(policy));
     const HksParam params[] = {
         {.tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = HKS_AUTH_STORAGE_LEVEL_CE},
@@ -161,7 +161,7 @@ int32_t HuksSeedDeriver::PrepareRootKey(uint32_t userId, RootKeyPolicy policy) c
     const auto ret = HksKeyExist(&alias, paramSet);
     HksFreeParamSet(&paramSet);
     if (ret == HKS_SUCCESS) {
-        PSI_PIR_LOGI("HPIC HUKS root exists, userId=%{private}u", userId);
+        PSI_PIR_LOGI("HUKS root exists, userId=%{private}u", userId);
         return PSI_PIR_SUCCESS;
     }
     if (ret == HKS_ERROR_NOT_EXIST && policy == RootKeyPolicy::CREATE_IF_MISSING) {
@@ -176,10 +176,10 @@ int32_t HuksSeedDeriver::Derive(const CallerIdentity &identity,
     const std::array<uint8_t, kIdentityHashSize> &materialHash, HeSeed &seed) const noexcept
 {
     if (identity.userId > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())) {
-        PSI_PIR_LOGE("Invalid HPIC HUKS derivation CE userId");
+        PSI_PIR_LOGE("Invalid HUKS derivation CE userId");
         return PSI_PIR_INVALID_ARGUMENT;
     }
-    PSI_PIR_LOGI("HPIC HUKS derive begin, userId=%{private}u", identity.userId);
+    PSI_PIR_LOGI("HUKS derive begin, userId=%{private}u", identity.userId);
     std::string aliasName = ROOT_KEY_ALIAS;
     const HksBlob alias{static_cast<uint32_t>(aliasName.size()), reinterpret_cast<uint8_t *>(aliasName.data())};
     const HksBlob salt{static_cast<uint32_t>(materialHash.size()), const_cast<uint8_t *>(materialHash.data())};

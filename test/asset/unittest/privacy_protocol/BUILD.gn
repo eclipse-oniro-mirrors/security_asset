@@ -14,10 +14,10 @@ import("//build/ohos.gni")
 import("//build/test.gni")
 
 ohos_unittest("asset_privacy_protocol_test") {
-  module_out_path = "asset/hpic"
+  module_out_path = "asset/privacy_computation"
   sources = [ "src/protocol_codec_test.cpp" ]
   include_dirs = [
-    "../../../../frameworks/hpic/ipc/inc",
+    "../../../../frameworks/privacy_computation/ipc/inc",
     "../../../../psi_pir_protocol/common/inc",
     "../../../../psi_pir_protocol/protocol/inc",
   ]
@@ -36,13 +36,13 @@ ohos_unittest("asset_privacy_protocol_test") {
 }
 
 ohos_unittest("asset_privacy_client_test") {
-  module_out_path = "asset/hpic"
+  module_out_path = "asset/privacy_computation"
   sources = [
-    "../../../../frameworks/hpic/ipc/src/privacy_client.cpp",
+    "../../../../frameworks/privacy_computation/ipc/src/privacy_client.cpp",
     "src/privacy_client_test.cpp",
   ]
   include_dirs = [
-    "../../../../frameworks/hpic/ipc/inc",
+    "../../../../frameworks/privacy_computation/ipc/inc",
     "../../../../psi_pir_protocol/include",
     "../../../../psi_pir_protocol/common/inc",
   ]

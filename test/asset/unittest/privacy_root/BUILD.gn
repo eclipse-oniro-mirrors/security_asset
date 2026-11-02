@@ -14,7 +14,7 @@ import("//build/test.gni")
 import("//build/ohos.gni")
 
 ohos_unittest("asset_privacy_root_test") {
-  module_out_path = "asset/hpic"
+  module_out_path = "asset/privacy_computation"
   sources = [
     "src/huks_seed_deriver_test.cpp",
     "../../../../services/asset/privacy/src/huks_seed_deriver.cpp",

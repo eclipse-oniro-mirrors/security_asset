@@ -111,7 +111,7 @@ ohos_unittest("psi_pir_protocol_test") {
 
 # HE integration tests share the same library and provider registry as protocol tests.
 ohos_unittest("psi_pir_he_test") {
-  module_out_path = "asset/hpic"
+  module_out_path = "asset/privacy_computation"
   sources = [ "tests/psi_pir_he_test.cpp" ]
   include_dirs = psi_pir_protocol_internal_include_dirs
   deps = [ ":psi_pir_protocol" ]

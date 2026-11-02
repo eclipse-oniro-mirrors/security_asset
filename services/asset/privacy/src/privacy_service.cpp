@@ -47,7 +47,7 @@ int32_t PrepareIdentity(uint32_t uid, CallerIdentity &identity)
         return PSI_PIR_INTERNAL_ERROR;
     }
     identity = {uid, static_cast<uint32_t>(userId)};
-    PSI_PIR_LOGI("HPIC SA caller identity resolved, uid=%{private}u, userId=%{private}u", identity.uid,
+    PSI_PIR_LOGI("SA caller identity resolved, uid=%{private}u, userId=%{private}u", identity.uid,
                  identity.userId);
     return PSI_PIR_SUCCESS;
 }
@@ -69,16 +69,16 @@ bool CopyBlob(const PrivacyBlob &input, Bytes &output, size_t &total)
 extern "C" int32_t AssetGenPrivacyTarget(uint32_t uid, const PrivacyTargetRequest *input, PrivacyBuffer *output)
 {
     using namespace OHOS::Security::PrivacyComputation;
-    PSI_PIR_LOGI("HPIC SA genPrivacyTarget begin, uid=%{private}u", uid);
+    PSI_PIR_LOGI("SA genPrivacyTarget begin, uid=%{private}u", uid);
     if (input == nullptr || output == nullptr || output->data == nullptr || output->size > MAX_PRIVACY_INLINE_BYTES) {
-        PSI_PIR_LOGE("HPIC SA genPrivacyTarget invalid request or output buffer");
+        PSI_PIR_LOGE("SA genPrivacyTarget invalid request or output buffer");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
     psi_pir::TargetInput target;
     target.hashAlg = static_cast<psi_pir::HashAlg>(input->hashAlg);
     size_t total = TARGET_FIXED_BYTES;
     if (!CopyBlob(input->element, target.elemData, total)) {
-        PSI_PIR_LOGE("HPIC SA genPrivacyTarget invalid element buffer or byte budget");
+        PSI_PIR_LOGE("SA genPrivacyTarget invalid element buffer or byte budget");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
     const psi_pir::PrivacyProtocol protocol{static_cast<psi_pir::DataSetSize>(input->protocol.dataSetSize),
@@ -103,12 +103,12 @@ extern "C" int32_t AssetGenPrivacyTarget(uint32_t uid, const PrivacyTargetReques
         return ret;
     }
     if (result.size() > output->size) {
-        PSI_PIR_LOGE("HPIC SA genPrivacyTarget output exceeds capacity, bytes=%{public}zu", result.size());
+        PSI_PIR_LOGE("SA genPrivacyTarget output exceeds capacity, bytes=%{public}zu", result.size());
         return psi_pir::PSI_PIR_CODEC_ERROR;
     }
     std::copy(result.begin(), result.end(), output->data);
     output->size = static_cast<uint32_t>(result.size());
-    PSI_PIR_LOGI("HPIC SA genPrivacyTarget success, outputBytes=%{public}u", output->size);
+    PSI_PIR_LOGI("SA genPrivacyTarget success, outputBytes=%{public}u", output->size);
     return psi_pir::PSI_PIR_SUCCESS;
 }
 
@@ -116,16 +116,16 @@ extern "C" int32_t AssetDecryptPrivacyCiphertext(uint32_t uid, const PrivacyDecr
     PrivacyBuffer *output)
 {
     using namespace OHOS::Security::PrivacyComputation;
-    PSI_PIR_LOGI("HPIC SA decryptCiphertext begin, uid=%{private}u", uid);
+    PSI_PIR_LOGI("SA decryptCiphertext begin, uid=%{private}u", uid);
     if (input == nullptr || output == nullptr || output->data == nullptr ||
         output->size < MAX_DECRYPT_RESULT_BYTES || output->size > MAX_PRIVACY_INLINE_BYTES) {
-        PSI_PIR_LOGE("HPIC SA decryptCiphertext invalid request or output buffer");
+        PSI_PIR_LOGE("SA decryptCiphertext invalid request or output buffer");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
     psi_pir::Bytes ciphertext;
     size_t total = DECRYPT_FIXED_BYTES;
     if (input->ciphertext.size == 0 || !CopyBlob(input->ciphertext, ciphertext, total)) {
-        PSI_PIR_LOGE("HPIC SA decryptCiphertext invalid ciphertext");
+        PSI_PIR_LOGE("SA decryptCiphertext invalid ciphertext");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
     const psi_pir::PrivacyProtocol protocol{static_cast<psi_pir::DataSetSize>(input->protocol.dataSetSize),
@@ -150,11 +150,11 @@ extern "C" int32_t AssetDecryptPrivacyCiphertext(uint32_t uid, const PrivacyDecr
         return ret;
     }
     if (plaintext.size() != MAX_DECRYPT_RESULT_BYTES) {
-        PSI_PIR_LOGE("HPIC SA decryptCiphertext unexpected plaintext size=%{public}zu", plaintext.size());
+        PSI_PIR_LOGE("SA decryptCiphertext unexpected plaintext size=%{public}zu", plaintext.size());
         return psi_pir::PSI_PIR_CODEC_ERROR;
     }
     std::copy(plaintext.begin(), plaintext.end(), output->data);
     output->size = static_cast<uint32_t>(plaintext.size());
-    PSI_PIR_LOGI("HPIC SA decryptCiphertext success, bytes=%{public}u", output->size);
+    PSI_PIR_LOGI("SA decryptCiphertext success, bytes=%{public}u", output->size);
     return psi_pir::PSI_PIR_SUCCESS;
 }

@@ -169,7 +169,7 @@ HWTEST_F(HuksSeedDeriverTest, PrepareRootKey_001, TestSize.Level1)
     EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(100, RootKeyPolicy::CREATE_IF_MISSING), PSI_PIR_SUCCESS);
     EXPECT_EQ(g_calls.storage, HKS_AUTH_STORAGE_LEVEL_CE);
     EXPECT_EQ(g_calls.userId, 100);
-    EXPECT_EQ(g_calls.alias, "asset.hpic.derive.root.v1");
+    EXPECT_EQ(g_calls.alias, "asset.privacy.derive.root.v1");
     EXPECT_EQ(g_calls.generates, 0U);
 }
 /**
@@ -189,7 +189,7 @@ HWTEST_F(HuksSeedDeriverTest, PrepareRootKey_002, TestSize.Level1)
     EXPECT_EQ(g_calls.digest, HKS_DIGEST_SHA256);
     EXPECT_EQ(g_calls.storage, HKS_AUTH_STORAGE_LEVEL_CE);
     EXPECT_EQ(g_calls.userId, 100);
-    EXPECT_EQ(g_calls.alias, "asset.hpic.derive.root.v1");
+    EXPECT_EQ(g_calls.alias, "asset.privacy.derive.root.v1");
 }
 /**
  * @tc.name: PrepareRootKey_003
@@ -308,7 +308,7 @@ HWTEST_F(HuksSeedDeriverTest, Derive_005, TestSize.Level2)
     auto salt = Salt();
     ASSERT_EQ(deriver.Derive({20010001, 100}, salt, seed), PSI_PIR_SUCCESS);
     const auto alias = g_calls.alias;
-    EXPECT_EQ(alias, "asset.hpic.derive.root.v1");
+    EXPECT_EQ(alias, "asset.privacy.derive.root.v1");
     EXPECT_EQ(g_calls.userId, 100);
     salt.front() ^= 1;
     ASSERT_EQ(deriver.Derive({40010001, 200}, salt, seed), PSI_PIR_SUCCESS);
