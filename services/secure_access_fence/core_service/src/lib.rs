@@ -74,7 +74,7 @@ const EXEC_PUBLIC_CLI_TOOL_PERMISSION: &str = "ohos.permission.EXEC_PUBLIC_CLI_T
 const AUTH_STATUS_AUTHORIZED: i32 = 2;
 const MAX_CLI_CMD_INFOS_COUNT: usize = 300;
 const MAX_CMD_NAME_LENGTH: usize = 512;
-const MAX_TICKET_EXPIRE_TIME_MS: u64 = 60_000;
+const MAX_TICKET_EXPIRE_TIME_MS: i32 = 60_000;
 extern "C" {
     fn CheckPermission(permission: *const raw_c_char) -> bool;
     fn CheckIsSystemHap() -> bool;
@@ -452,7 +452,7 @@ impl SAFService {
         &self,
         os_account_id: i32,
         cli_cmd_infos: Vec<wrapper::ffi::CxxCommandInfo>,
-        ticket_expire_time_ms: u64,
+        ticket_expire_time_ms: i32,
     ) -> Result<wrapper::ffi::CxxTicketQueryResult> {
         let start_time = Instant::now();
         let function_name = "request_tool_ticket".to_string();
@@ -813,8 +813,8 @@ pub(crate) fn validate_cli_cmd_infos(cli_cmd_infos: &[wrapper::ffi::CxxCommandIn
     Ok(())
 }
 
-pub(crate) fn validate_ticket_expire_time_ms(ticket_expire_time_ms: u64) -> Result<()> {
-    if ticket_expire_time_ms > MAX_TICKET_EXPIRE_TIME_MS {
+pub(crate) fn validate_ticket_expire_time_ms(ticket_expire_time_ms: i32) -> Result<()> {
+    if !(0..=MAX_TICKET_EXPIRE_TIME_MS).contains(&ticket_expire_time_ms) {
         return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
             "ticketExpireTimeMs {} exceeds max {}", ticket_expire_time_ms, MAX_TICKET_EXPIRE_TIME_MS);
     }
@@ -854,7 +854,7 @@ pub(crate) mod test_mocks {
 
     pub fn mock_cxx_request_tool_ticket(
         _cli_cmd_infos: &Vec<CxxCommandInfo>,
-        _ticket_expire_time_ms: u64,
+        _ticket_expire_time_ms: i32,
         result: &mut CxxTicketQueryResult,
     ) -> i32 {
         let mock = MOCK_CXX_RESULT.lock().unwrap();
@@ -874,7 +874,7 @@ pub(crate) mod test_mocks {
 
 pub(crate) fn do_request_tool_ticket(
     cli_cmd_infos: Vec<wrapper::ffi::CxxCommandInfo>,
-    ticket_expire_time_ms: u64,
+    ticket_expire_time_ms: i32,
 ) -> Result<wrapper::ffi::CxxTicketQueryResult> {
     #[cfg(feature = "SAFTest")]
     let has_permission = test_mocks::mock_check_permission();

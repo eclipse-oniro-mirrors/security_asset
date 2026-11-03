@@ -163,7 +163,7 @@ pub mod ffi {
         /// Call C++ PermissionManager::RequestToolPermissions via bridge.
         fn CxxRequestToolTicket(
             cli_cmd_infos: &Vec<CxxCommandInfo>,
-            ticket_expire_time_ms: u64,
+            ticket_expire_time_ms: i32,
             result: &mut CxxTicketQueryResult,
         ) -> i32;
         /// Call C++ PermissionManager::QueryStaticCliCmdPermissions via bridge.

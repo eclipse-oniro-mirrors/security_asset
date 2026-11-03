@@ -440,7 +440,7 @@ fn handle_update_remote_grant_status(data: &mut MsgParcel, reply: &mut MsgParcel
 
 fn deserialize_request_tool_ticket_request(
     data: &mut MsgParcel,
-) -> IpcResult<(Vec<wrapper::ffi::CxxCommandInfo>, u64)> {
+) -> IpcResult<(Vec<wrapper::ffi::CxxCommandInfo>, i32)> {
     let count = data.read::<i32>().map_err(|e| {
         loge!("[FATAL]RequestToolTicket: read cliCmdInfos count failed: {:?}", e);
         IpcStatusCode::Failed
@@ -463,15 +463,10 @@ fn deserialize_request_tool_ticket_request(
         cli_cmd_infos.push(wrapper::ffi::CxxCommandInfo { cmd_name, sub_cmd });
     }
 
-    let ticket_expire_time_ms_raw = data.read::<i32>().map_err(|e| {
+    let ticket_expire_time_ms = data.read::<i32>().map_err(|e| {
         loge!("[FATAL]RequestToolTicket: read ticketExpireTimeMs failed: {:?}", e);
         IpcStatusCode::Failed
     })?;
-    if ticket_expire_time_ms_raw < 0 {
-        loge!("[FATAL]RequestToolTicket: ticketExpireTimeMs is negative: {}", ticket_expire_time_ms_raw);
-        return Err(IpcStatusCode::Failed);
-    }
-    let ticket_expire_time_ms = ticket_expire_time_ms_raw as u64;
 
     Ok((cli_cmd_infos, ticket_expire_time_ms))
 }

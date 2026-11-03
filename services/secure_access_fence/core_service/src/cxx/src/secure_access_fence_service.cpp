@@ -181,7 +181,7 @@ int64_t GetBootTimeMs()
 
 int32_t CxxRequestToolTicket(
     const rust::Vec<CxxCommandInfo>& cliCmdInfos,
-    uint64_t ticketExpireTimeMs,
+    int32_t ticketExpireTimeMs,
     CxxTicketQueryResult& result)
 {
     PermissionQuery permissionQuery;
