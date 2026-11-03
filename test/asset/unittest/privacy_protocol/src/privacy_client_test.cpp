@@ -62,7 +62,8 @@ extern "C" int32_t asset_privacy_decrypt_ciphertext(const PrivacyDecryptRequest 
 namespace psi_pir {
 // This suite isolates client orchestration; the protocol suite tests actual postprocessing.
 int32_t PostProcessSearchResult(const std::vector<Bytes> &plaintexts,
-    const std::optional<std::vector<Bytes>> &symmetric, const PrivacyProtocol &, SearchResult &output) noexcept
+                                const std::optional<std::vector<Bytes>> &symmetric, const PrivacyProtocol &,
+                                SearchResult &output) noexcept
 {
     ++g_postprocessCalls;
     EXPECT_EQ(&symmetric, g_localSymmetric);
@@ -80,14 +81,14 @@ HWTEST_F(PrivacyClientTest, SymmetricFramesStayLocalAndBatchesKeepOrder, TestSiz
 {
     const psi_pir::PrivacyProtocol protocol{DataSetSize::SIZE_512, ProtocolType::PIR_PROTOCOL};
     PrivacySearchResult input{{Bytes(100 * 1024, 0xA5), Bytes(100 * 1024, 0x5A), Bytes{3}},
-        std::vector<Bytes>{Bytes(512 * 1024, 0xFF)}};
-    g_localSymmetric = &input.symCipherText;
+                              std::vector<Bytes>{Bytes(512 * 1024, 0xFF)}};
+    g_localSymmetric = &input.valueCipherText;
     SearchResult output;
     ASSERT_EQ(GetSearchResultRemote(input, protocol, output), PSI_PIR_SUCCESS);
-    EXPECT_EQ(g_received, input.fheCipherText);
+    EXPECT_EQ(g_received, input.resultCipherText);
     EXPECT_EQ(g_postprocessCalls, 1U);
     EXPECT_TRUE(output.matchedResult);
-    EXPECT_EQ(input.symCipherText->front().size(), 512U * 1024U);
+    EXPECT_EQ(input.valueCipherText->front().size(), 512U * 1024U);
 }
 
 HWTEST_F(PrivacyClientTest, FailedBatchStopsBeforePostprocessing, TestSize.Level1)

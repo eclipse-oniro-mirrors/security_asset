@@ -12,7 +12,6 @@
 # limitations under the License.
 
 import("//build/ohos.gni")
-import("//build/test.gni")
 
 config("psi_pir_protocol_public_config") {
   include_dirs = [ "include" ]
@@ -73,61 +72,6 @@ ohos_static_library("psi_pir_protocol") {
     ubsan = true
   }
 
-  subsystem_name = "security"
-  part_name = "asset"
-}
-
-ohos_unittest("psi_pir_protocol_test") {
-  module_out_path = "asset/asset"
-
-  sources = [ "tests/psi_pir_protocol_test.cpp" ]
-
-  include_dirs = psi_pir_protocol_internal_include_dirs
-
-  deps = [ ":psi_pir_protocol" ]
-
-  external_deps = [ "hilog:libhilog" ]
-
-  cflags_cc = [
-    "-std=c++17",
-    "-Wall",
-    "-Werror",
-    "-fno-exceptions",
-  ]
-
-  branch_protector_ret = "pac_ret"
-  sanitize = {
-    integer_overflow = true
-    cfi = true
-    debug = false
-    cfi_cross_dso = true
-    boundary_sanitize = true
-    ubsan = true
-  }
-
-  subsystem_name = "security"
-  part_name = "asset"
-}
-
-# HE integration tests share the same library and provider registry as protocol tests.
-ohos_unittest("psi_pir_he_test") {
-  module_out_path = "asset/privacy_computation"
-  sources = [ "tests/psi_pir_he_test.cpp" ]
-  include_dirs = psi_pir_protocol_internal_include_dirs
-  deps = [ ":psi_pir_protocol" ]
-  external_deps = [
-    "hilog:libhilog",
-    "openssl:libcrypto_shared",
-    "hifhe:libhifhe",
-    "openhitls:openhitls_bsl",
-    "openhitls:openhitls_crypto",
-    "googletest:gtest_main"
-  ]
-  cflags_cc = [
-    "-std=c++17",
-    "-Wall",
-    "-Werror",
-  ]
   subsystem_name = "security"
   part_name = "asset"
 }

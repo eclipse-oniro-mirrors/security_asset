@@ -19,6 +19,7 @@
 #include <atomic>
 #include <dlfcn.h>
 #include <mutex>
+#include <utility>
 
 namespace OHOS::Security::PrivacyComputation {
 namespace {
@@ -28,8 +29,8 @@ constexpr char COMP_NAPI_PATH[] = ASSET_ENABLE_PRIVACY_COMPUTATION_CONFIG;
 constexpr char COMP_NAPI_PATH[] = "";
 #endif
 using ComputationNapiFunc = napi_value (*)(napi_env, napi_callback_info);
-using ComputationFunc = int32_t (*)(const psi_pir::PrivacySearchResult&, const psi_pir::PrivacyProtocol&,
-    std::vector<psi_pir::Bytes> &);
+using ComputationFunc = int32_t (*)(const psi_pir::PrivacySearchResult &, const psi_pir::PrivacyProtocol &,
+                                    std::vector<psi_pir::Bytes> &);
 
 std::atomic<void *> g_computationHandle{nullptr};
 std::mutex g_computationMutex;
@@ -82,8 +83,9 @@ napi_value CallComputationNapiFunc(napi_env env, napi_callback_info info, const 
     return computationFunc(env, info);
 }
 
-int32_t CallComputationFunc(const psi_pir::PrivacySearchResult &input, const psi_pir::PrivacyProtocol &protocol,
-    std::vector<psi_pir::Bytes> &output)
+int32_t DecryptCiphertextsWithComputationLib(const psi_pir::PrivacySearchResult &input,
+                                             const psi_pir::PrivacyProtocol &protocol,
+                                             std::vector<psi_pir::Bytes> &output)
 {
     void *handle = GetComputationHandle();
     if (handle == nullptr) {
@@ -96,6 +98,19 @@ int32_t CallComputationFunc(const psi_pir::PrivacySearchResult &input, const psi
         LOGE("dlsym GetSearchResult failed: %{public}s", error == nullptr ? "null symbol" : error);
         return PRIVACY_COMPUTATION_UNAVAILABLE;
     }
-    return computationFunc(input, protocol, output);
+    std::vector<psi_pir::Bytes> plaintexts;
+    const auto result = computationFunc(input, protocol, plaintexts);
+    if (result != PRIVACY_COMPUTATION_SUCCESS) {
+        LOGE("ComputationLib HE decryption failed, code=%{public}d", result);
+        return result;
+    }
+    if (plaintexts.size() != input.resultCipherText.size()) {
+        LOGE("ComputationLib returned inconsistent batch count, expected=%{public}zu, actual=%{public}zu",
+             input.resultCipherText.size(), plaintexts.size());
+        return PRIVACY_COMPUTATION_DATA_CORRUPTED;
+    }
+    output = std::move(plaintexts);
+    LOGI("ComputationLib HE decryption success, batches=%{public}zu", output.size());
+    return PRIVACY_COMPUTATION_SUCCESS;
 }
 } // namespace OHOS::Security::PrivacyComputation

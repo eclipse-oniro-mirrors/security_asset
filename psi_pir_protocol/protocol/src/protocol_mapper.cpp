@@ -110,13 +110,13 @@ int32_t MapPrivacyProtocol(const PrivacyProtocol &privacyProtocol, ProtocolParam
     const ProtocolKey key{privacyProtocol.dataSetSize, privacyProtocol.protocolType};
     const auto *preset = FindProtocolPreset(key);
     if (preset == nullptr) {
-        PSI_PIR_LOGE("protocol preset not found: dataSetSize=%{public}u, protocolType=%{public}u",
+        LOGE("protocol preset not found: dataSetSize=%{public}u, protocolType=%{public}u",
                      static_cast<uint32_t>(privacyProtocol.dataSetSize),
                      static_cast<uint32_t>(privacyProtocol.protocolType));
         return PSI_PIR_INVALID_ARGUMENT;
     }
     params = *preset;
-    PSI_PIR_LOGI("protocol mapped: mode=%{public}u, compareBits=%{public}zu, "
+    LOGI("protocol mapped: mode=%{public}u, compareBits=%{public}zu, "
                  "bitsPerSlot=%{public}zu, slotsPerData=%{public}zu, groups=%{public}zu",
                  static_cast<uint32_t>(params.mode), params.compareBits, params.bitsPerSlot, params.slotsPerData,
                  params.dataNumPerPlaintext);

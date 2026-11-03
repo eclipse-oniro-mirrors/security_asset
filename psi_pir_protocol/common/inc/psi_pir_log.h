@@ -17,34 +17,39 @@
 #define PSI_PIR_PROTOCOL_LOG_H
 
 #include "hilog/log.h"
+#include <cstdint>
 
 // The current Asset build already owns this domain. Keeping the value here
 // avoids a dependency on Asset's log wrapper. A future integration can define
-// PSI_PIR_LOG_DOMAIN/PSI_PIR_LOG_TAG or replace this header after assigning its domain.
-#ifndef PSI_PIR_LOG_DOMAIN
-#define PSI_PIR_LOG_DOMAIN 0xD002F20
+// LOG_DOMAIN/LOG_TAG or replace this header after assigning its domain.
+#ifndef LOG_DOMAIN
+#define LOG_DOMAIN 0xD002F20
 #endif
 
-#ifndef PSI_PIR_LOG_TAG
-#define PSI_PIR_LOG_TAG "PsiPirProtocol"
+#ifndef LOG_TAG
+#define LOG_TAG "PsiPirProtocol"
 #endif
 
 #undef LOG_DOMAIN
-#define LOG_DOMAIN PSI_PIR_LOG_DOMAIN
+#define LOG_DOMAIN LOG_DOMAIN
 
 #undef LOG_TAG
-#define LOG_TAG PSI_PIR_LOG_TAG
+#define LOG_TAG LOG_TAG
 
-#define PSI_PIR_LOGD(fmt, args...)                                                                                     \
-    HILOG_DEBUG(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", __func__, static_cast<unsigned int>(__LINE__), ##args)
+#define LOGD(fmt, args...)                                                                                     \
+    HILOG_DEBUG(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", __func__, static_cast<uint32_t>(__LINE__),              \
+                ##args)
 
-#define PSI_PIR_LOGI(fmt, args...)                                                                                     \
-    HILOG_INFO(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", __func__, static_cast<unsigned int>(__LINE__), ##args)
+#define LOGI(fmt, args...)                                                                                     \
+    HILOG_INFO(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", __func__, static_cast<uint32_t>(__LINE__),               \
+               ##args)
 
-#define PSI_PIR_LOGW(fmt, args...)                                                                                     \
-    HILOG_WARN(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", __func__, static_cast<unsigned int>(__LINE__), ##args)
+#define LOGW(fmt, args...)                                                                                     \
+    HILOG_WARN(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", __func__, static_cast<uint32_t>(__LINE__),               \
+               ##args)
 
-#define PSI_PIR_LOGE(fmt, args...)                                                                                     \
-    HILOG_ERROR(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", __func__, static_cast<unsigned int>(__LINE__), ##args)
+#define LOGE(fmt, args...)                                                                                     \
+    HILOG_ERROR(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", __func__, static_cast<uint32_t>(__LINE__),              \
+                ##args)
 
 #endif // PSI_PIR_PROTOCOL_LOG_H

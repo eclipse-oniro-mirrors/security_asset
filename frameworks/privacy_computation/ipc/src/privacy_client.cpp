@@ -22,9 +22,9 @@ namespace OHOS::Security::PrivacyComputation {
 int32_t GenPrivacyTargetRemote(const psi_pir::TargetInput &input, const psi_pir::PrivacyProtocol &protocol,
                                psi_pir::Bytes &output)
 {
-    PSI_PIR_LOGI("IPC genPrivacyTarget begin, inputBytes=%{public}zu", input.elemData.size());
+    LOGI("IPC genPrivacyTarget begin, inputBytes=%{public}zu", input.elemData.size());
     if (input.elemData.size() > MAX_PRIVACY_INLINE_BYTES - TARGET_FIXED_BYTES - PRIVACY_LENGTH_BYTES) {
-        PSI_PIR_LOGE("IPC genPrivacyTarget input exceeds byte budget");
+        LOGE("IPC genPrivacyTarget input exceeds byte budget");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
     const PrivacyTargetRequest request{
@@ -35,30 +35,30 @@ int32_t GenPrivacyTargetRemote(const psi_pir::TargetInput &input, const psi_pir:
     PrivacyBuffer result{bytes.data(), static_cast<uint32_t>(bytes.size())};
     const auto ret = asset_privacy_gen_target(&request, &result);
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("IPC genPrivacyTarget failed, ret=%{public}d", ret);
+        LOGE("IPC genPrivacyTarget failed, ret=%{public}d", ret);
         return ret;
     }
     if (result.size == 0 || result.size > bytes.size()) {
-        PSI_PIR_LOGE("IPC genPrivacyTarget invalid response size=%{public}u", result.size);
+        LOGE("IPC genPrivacyTarget invalid response size=%{public}u", result.size);
         return psi_pir::PSI_PIR_CODEC_ERROR;
     }
     bytes.resize(result.size);
     output = std::move(bytes);
-    PSI_PIR_LOGI("IPC genPrivacyTarget success, outputBytes=%{public}zu", output.size());
+    LOGI("IPC genPrivacyTarget success, outputBytes=%{public}zu", output.size());
     return psi_pir::PSI_PIR_SUCCESS;
 }
 
 int32_t GetSearchResultRemote(const psi_pir::PrivacySearchResult &input, const psi_pir::PrivacyProtocol &protocol,
                               psi_pir::SearchResult &output)
 {
-    PSI_PIR_LOGI("IPC getSearchResult begin, batches=%{public}zu", input.fheCipherText.size());
+    LOGI("IPC getSearchResult begin, batches=%{public}zu", input.resultCipherText.size());
     std::vector<psi_pir::Bytes> plaintexts;
-    plaintexts.reserve(input.fheCipherText.size());
-    for (size_t batch = 0; batch < input.fheCipherText.size(); ++batch) {
-        const auto &ciphertext = input.fheCipherText[batch];
+    plaintexts.reserve(input.resultCipherText.size());
+    for (size_t batch = 0; batch < input.resultCipherText.size(); ++batch) {
+        const auto &ciphertext = input.resultCipherText[batch];
         if (ciphertext.empty() ||
             ciphertext.size() > MAX_PRIVACY_INLINE_BYTES - DECRYPT_FIXED_BYTES - PRIVACY_LENGTH_BYTES) {
-            PSI_PIR_LOGE("IPC invalid HE batch, batch=%{public}zu, bytes=%{public}zu", batch, ciphertext.size());
+            LOGE("IPC invalid HE batch, batch=%{public}zu, bytes=%{public}zu", batch, ciphertext.size());
             return psi_pir::PSI_PIR_INVALID_ARGUMENT;
         }
         const PrivacyDecryptRequest request{
@@ -66,21 +66,20 @@ int32_t GetSearchResultRemote(const psi_pir::PrivacySearchResult &input, const p
             {ciphertext.data(), static_cast<uint32_t>(ciphertext.size())}};
         psi_pir::Bytes plaintext(MAX_DECRYPT_RESULT_BYTES);
         PrivacyBuffer result{plaintext.data(), static_cast<uint32_t>(plaintext.size())};
-        PSI_PIR_LOGI("IPC decryptCiphertext begin, batch=%{public}zu, bytes=%{public}zu", batch,
-            ciphertext.size());
+        LOGI("IPC decryptCiphertext begin, batch=%{public}zu, bytes=%{public}zu", batch, ciphertext.size());
         const auto ret = asset_privacy_decrypt_ciphertext(&request, &result);
         if (ret != psi_pir::PSI_PIR_SUCCESS) {
-            PSI_PIR_LOGE("IPC decryptCiphertext failed, batch=%{public}zu, ret=%{public}d", batch, ret);
+            LOGE("IPC decryptCiphertext failed, batch=%{public}zu, ret=%{public}d", batch, ret);
             return ret;
         }
         if (result.size != MAX_DECRYPT_RESULT_BYTES) {
-            PSI_PIR_LOGE("IPC invalid HE plaintext length=%{public}u", result.size);
+            LOGE("IPC invalid HE plaintext length=%{public}u", result.size);
             return psi_pir::PSI_PIR_CODEC_ERROR;
         }
         plaintexts.push_back(std::move(plaintext));
-        PSI_PIR_LOGI("IPC decryptCiphertext success, batch=%{public}zu", batch);
+        LOGI("IPC decryptCiphertext success, batch=%{public}zu", batch);
     }
     // Preserve all batch positions; symmetric frames are borrowed locally and never enter IPC.
-    return psi_pir::PostProcessSearchResult(plaintexts, input.symCipherText, protocol, output);
+    return psi_pir::PostProcessSearchResult(plaintexts, input.valueCipherText, protocol, output);
 }
 } // namespace OHOS::Security::PrivacyComputation

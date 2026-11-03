@@ -66,24 +66,27 @@ public:
     }
 
 private:
-    int32_t CommitResult(int32_t ret, Bytes result) noexcept
-    {
-        status_ = ret;
-        if (ret == PSI_PIR_SUCCESS && result.empty()) {
-            status_ = PSI_PIR_HE_ERROR;
-        }
-        if (status_ != PSI_PIR_SUCCESS) {
-            PSI_PIR_LOGE("Provider evaluation failed, ret=%{public}d", status_);
-            return status_;
-        }
-        current_ = std::move(result);
-        return PSI_PIR_SUCCESS;
-    }
+    int32_t CommitResult(int32_t ret, Bytes result) noexcept;
 
     const IHEEngine &engine_;
     Bytes current_;
     int32_t status_ = PSI_PIR_SUCCESS;
 };
+
+int32_t ProviderEvaluation::CommitResult(int32_t ret, Bytes result) noexcept
+{
+    status_ = ret;
+    if (ret == PSI_PIR_SUCCESS && result.empty()) {
+        status_ = PSI_PIR_HE_ERROR;
+    }
+    if (status_ != PSI_PIR_SUCCESS) {
+        LOGE("Provider evaluation failed, ret=%{public}d", status_);
+        return status_;
+    }
+    current_ = std::move(result);
+    return PSI_PIR_SUCCESS;
+}
+
 } // namespace
 
 int32_t CreateHeEvaluation(const IHEEngine &engine, const Bytes &ciphertext,
@@ -97,7 +100,7 @@ int32_t CreateHeEvaluation(const IHEEngine &engine, const Bytes &ciphertext,
     }
     auto result = std::unique_ptr<HeEvaluation>(new (std::nothrow) ProviderEvaluation(engine, ciphertext));
     if (!result) {
-        PSI_PIR_LOGE("Allocate provider evaluation failed");
+        LOGE("Allocate provider evaluation failed");
         return PSI_PIR_INTERNAL_ERROR;
     }
     evaluation = std::move(result);

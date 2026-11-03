@@ -14,6 +14,8 @@
  */
 
 #include "openssl_crypto_provider.h"
+#include "protocol_params.h"
+#include "securec.h"
 
 #include "psi_pir_error_code.h"
 #include "psi_pir_log.h"
@@ -22,8 +24,6 @@
 #include <openssl/evp.h>
 #include <openssl/kdf.h>
 #include <openssl/rand.h>
-
-#include "securec.h"
 
 #include <algorithm>
 #include <array>
@@ -75,34 +75,34 @@ constexpr std::array<std::uint8_t, 34> HKDF_INFO{
 const EVP_MD *GetDigestAlgorithm(HashAlg algorithm) noexcept
 {
     switch (algorithm) {
-    case HashAlg::SHA256:
-        return EVP_sha256();
-    case HashAlg::SHA384:
-        return EVP_sha384();
-    case HashAlg::SHA512:
-        return EVP_sha512();
-    default:
-        return nullptr;
+        case HashAlg::SHA256:
+            return EVP_sha256();
+        case HashAlg::SHA384:
+            return EVP_sha384();
+        case HashAlg::SHA512:
+            return EVP_sha512();
+        default:
+            return nullptr;
     }
 }
 
 std::size_t GetDigestSize(HashAlg algorithm) noexcept
 {
     switch (algorithm) {
-    case HashAlg::SHA256:
-        return SHA256_DIGEST_SIZE;
-    case HashAlg::SHA384:
-        return SHA384_DIGEST_SIZE;
-    case HashAlg::SHA512:
-        return SHA512_DIGEST_SIZE;
-    default:
-        return 0;
+        case HashAlg::SHA256:
+            return SHA256_DIGEST_SIZE;
+        case HashAlg::SHA384:
+            return SHA384_DIGEST_SIZE;
+        case HashAlg::SHA512:
+            return SHA512_DIGEST_SIZE;
+        default:
+            return 0;
     }
 }
 
 bool FitsOpenSslInt(std::size_t size) noexcept
 {
-    return size <= static_cast<std::size_t>(std::numeric_limits<int>::max());
+    return size <= static_cast<std::size_t>(std::numeric_limits<int32_t>::max());
 }
 
 void WriteUint16Be(Bytes &output, std::size_t offset, std::uint16_t value) noexcept
@@ -141,28 +141,32 @@ bool ValidateValueParams(const Bytes &seed, const ProtocolParams &params) noexce
 bool ConfigureHkdf(EVP_PKEY_CTX *context, const Bytes &seed,
                    const std::array<std::uint8_t, HKDF_INFO.size()> &info) noexcept
 {
+    if (!FitsOpenSslInt(seed.size()) || !FitsOpenSslInt(info.size())) {
+        LOGE("HKDF input length exceeds OpenSSL integer range");
+        return false;
+    }
     if (EVP_PKEY_derive_init(context) <= 0) {
-        PSI_PIR_LOGE("HKDF derive initialization failed");
+        LOGE("HKDF derive initialization failed");
         return false;
     }
     if (EVP_PKEY_CTX_set_hkdf_mode(context, EVP_KDF_HKDF_MODE_EXTRACT_AND_EXPAND) <= 0) {
-        PSI_PIR_LOGE("HKDF Extract-and-Expand mode setup failed");
+        LOGE("HKDF Extract-and-Expand mode setup failed");
         return false;
     }
     if (EVP_PKEY_CTX_set_hkdf_md(context, EVP_sha256()) <= 0) {
-        PSI_PIR_LOGE("HKDF SHA-256 setup failed");
+        LOGE("HKDF SHA-256 setup failed");
         return false;
     }
     if (EVP_PKEY_CTX_set1_hkdf_salt(context, HKDF_SALT.data(), HKDF_SALT.size()) <= 0) {
-        PSI_PIR_LOGE("HKDF salt setup failed");
+        LOGE("HKDF salt setup failed");
         return false;
     }
-    if (EVP_PKEY_CTX_set1_hkdf_key(context, seed.data(), seed.size()) <= 0) {
-        PSI_PIR_LOGE("HKDF input key material setup failed");
+    if (EVP_PKEY_CTX_set1_hkdf_key(context, seed.data(), static_cast<int32_t>(seed.size())) <= 0) {
+        LOGE("HKDF input key material setup failed");
         return false;
     }
-    if (EVP_PKEY_CTX_add1_hkdf_info(context, info.data(), info.size()) <= 0) {
-        PSI_PIR_LOGE("HKDF info setup failed");
+    if (EVP_PKEY_CTX_add1_hkdf_info(context, info.data(), static_cast<int32_t>(info.size())) <= 0) {
+        LOGE("HKDF info setup failed");
         return false;
     }
     return true;
@@ -180,7 +184,7 @@ int32_t DeriveAesKey(const Bytes &seed, const ProtocolParams &params,
 
     EVP_PKEY_CTX *context = EVP_PKEY_CTX_new_id(EVP_PKEY_HKDF, nullptr);
     if (context == nullptr) {
-        PSI_PIR_LOGE("HKDF context creation failed");
+        LOGE("HKDF context creation failed");
         OPENSSL_cleanse(key.data(), key.size());
         return PSI_PIR_CRYPTO_ERROR;
     }
@@ -190,7 +194,7 @@ int32_t DeriveAesKey(const Bytes &seed, const ProtocolParams &params,
     const bool derived = configured && EVP_PKEY_derive(context, key.data(), &keySize) > 0;
     EVP_PKEY_CTX_free(context);
     if (!derived || keySize != key.size()) {
-        PSI_PIR_LOGE("HKDF-SHA256 derive failed, configured=%{public}d, keyBytes=%{public}zu", configured ? 1 : 0,
+        LOGE("HKDF-SHA256 derive failed, configured=%{public}d, keyBytes=%{public}zu", configured ? 1 : 0,
                      keySize);
         OPENSSL_cleanse(key.data(), key.size());
         return PSI_PIR_CRYPTO_ERROR;
@@ -202,7 +206,10 @@ int32_t DeriveAesKey(const Bytes &seed, const ProtocolParams &params,
 Bytes BuildFrameHeader(const ProtocolParams &params, std::uint32_t ciphertextSize)
 {
     Bytes header(FRAME_HEADER_SIZE, 0);
-    std::copy(FRAME_MAGIC.begin(), FRAME_MAGIC.end(), header.begin());
+    if (memcpy_s(header.data(), header.size(), FRAME_MAGIC.data(), FRAME_MAGIC.size()) != EOK) {
+        LOGE("Failed to copy PIR frame magic");
+        return {};
+    }
     header[FRAME_OFFSET_VERSION] = FRAME_VERSION;
     header[FRAME_OFFSET_ALGORITHM] = FRAME_ALGORITHM_AES_GCM;
     header[FRAME_OFFSET_NONCE_LEN] = static_cast<std::uint8_t>(GCM_NONCE_SIZE);
@@ -216,40 +223,40 @@ Bytes BuildFrameHeader(const ProtocolParams &params, std::uint32_t ciphertextSiz
 bool ParseFrameHeader(const Bytes &frame, const ProtocolParams &params, std::size_t &ciphertextSize) noexcept
 {
     if (frame.size() < FRAME_FIXED_SIZE + 1) {
-        PSI_PIR_LOGE("PIR1 frame too short, frameBytes=%{public}zu, minimum=%{public}zu", frame.size(),
+        LOGE("PIR1 frame too short, frameBytes=%{public}zu, minimum=%{public}zu", frame.size(),
                      FRAME_FIXED_SIZE + 1);
         return false;
     }
     if (!std::equal(FRAME_MAGIC.begin(), FRAME_MAGIC.end(), frame.begin())) {
-        PSI_PIR_LOGE("PIR1 frame magic mismatch");
+        LOGE("PIR1 frame magic mismatch");
         return false;
     }
     if (frame[FRAME_OFFSET_VERSION] != FRAME_VERSION || frame[FRAME_OFFSET_ALGORITHM] != FRAME_ALGORITHM_AES_GCM) {
-        PSI_PIR_LOGE("PIR1 frame version or algorithm mismatch, version=%{public}u, algorithm=%{public}u",
+        LOGE("PIR1 frame version or algorithm mismatch, version=%{public}u, algorithm=%{public}u",
                      static_cast<uint32_t>(frame[FRAME_OFFSET_VERSION]),
                      static_cast<uint32_t>(frame[FRAME_OFFSET_ALGORITHM]));
         return false;
     }
     if (frame[FRAME_OFFSET_NONCE_LEN] != GCM_NONCE_SIZE || frame[FRAME_OFFSET_TAG_LEN] != GCM_TAG_SIZE) {
-        PSI_PIR_LOGE("PIR1 nonce or tag length mismatch, nonceBytes=%{public}u, tagBytes=%{public}u",
+        LOGE("PIR1 nonce or tag length mismatch, nonceBytes=%{public}u, tagBytes=%{public}u",
                      static_cast<uint32_t>(frame[FRAME_OFFSET_NONCE_LEN]),
                      static_cast<uint32_t>(frame[FRAME_OFFSET_TAG_LEN]));
         return false;
     }
     if (ReadUint16Be(frame, FRAME_OFFSET_KEY_SIZE) != params.symKeySize ||
         ReadUint16Be(frame, FRAME_OFFSET_COMPARE_BITS) != params.compareBits) {
-        PSI_PIR_LOGE("PIR1 protocol fields mismatch, keyBits=%{public}u, compareBits=%{public}u",
+        LOGE("PIR1 protocol fields mismatch, keyBits=%{public}u, compareBits=%{public}u",
                      static_cast<uint32_t>(ReadUint16Be(frame, FRAME_OFFSET_KEY_SIZE)),
                      static_cast<uint32_t>(ReadUint16Be(frame, FRAME_OFFSET_COMPARE_BITS)));
         return false;
     }
     const auto encodedSize = static_cast<std::size_t>(ReadUint32Be(frame, FRAME_OFFSET_CIPHER_LEN));
     if (encodedSize == 0 || encodedSize > std::numeric_limits<std::size_t>::max() - FRAME_FIXED_SIZE) {
-        PSI_PIR_LOGE("PIR1 ciphertext length invalid, encodedBytes=%{public}zu", encodedSize);
+        LOGE("PIR1 ciphertext length invalid, encodedBytes=%{public}zu", encodedSize);
         return false;
     }
     if (frame.size() != FRAME_FIXED_SIZE + encodedSize) {
-        PSI_PIR_LOGE("PIR1 total length mismatch, frameBytes=%{public}zu, encodedBytes=%{public}zu", frame.size(),
+        LOGE("PIR1 total length mismatch, frameBytes=%{public}zu, encodedBytes=%{public}zu", frame.size(),
                      encodedSize);
         return false;
     }
@@ -280,7 +287,10 @@ Bytes BuildPayload(const std::optional<Bytes> &value, std::size_t payloadSize)
     Bytes payload(payloadSize, 0);
     payload[0] = value.has_value() ? PAYLOAD_VALUE_PRESENT : PAYLOAD_VALUE_ABSENT;
     if (value.has_value() && !value->empty()) {
-        std::copy(value->begin(), value->end(), payload.begin() + 1);
+        if (memcpy_s(payload.data() + 1, payload.size() - 1, value->data(), value->size()) != EOK) {
+            LOGE("Failed to copy PIR value payload");
+            return {};
+        }
     }
     return payload;
 }
@@ -290,10 +300,14 @@ int32_t PrepareEncryptionFrame(const ProtocolParams &params, std::size_t payload
 {
     header = BuildFrameHeader(params, static_cast<std::uint32_t>(payloadSize));
     frame.assign(FRAME_FIXED_SIZE + payloadSize, 0);
-    std::copy(header.begin(), header.end(), frame.begin());
+    if (header.size() != FRAME_HEADER_SIZE ||
+        memcpy_s(frame.data(), frame.size(), header.data(), header.size()) != EOK) {
+        LOGE("Failed to copy PIR frame header");
+        return PSI_PIR_CRYPTO_ERROR;
+    }
     auto *nonce = frame.data() + FRAME_HEADER_SIZE;
-    if (RAND_priv_bytes(nonce, static_cast<int>(GCM_NONCE_SIZE)) != 1) {
-        PSI_PIR_LOGE("GCM nonce generation failed, requestedBytes=%{public}zu", GCM_NONCE_SIZE);
+    if (RAND_priv_bytes(nonce, static_cast<int32_t>(GCM_NONCE_SIZE)) != 1) {
+        LOGE("GCM nonce generation failed, requestedBytes=%{public}zu", GCM_NONCE_SIZE);
         OPENSSL_cleanse(frame.data(), frame.size());
         OPENSSL_cleanse(header.data(), header.size());
         return PSI_PIR_RANDOM_ERROR;
@@ -304,21 +318,21 @@ int32_t PrepareEncryptionFrame(const ProtocolParams &params, std::size_t payload
 bool InitializeEncryptionContext(EVP_CIPHER_CTX *context, const std::array<std::uint8_t, AES_KEY_SIZE> &key,
                                  const std::uint8_t *nonce, const Bytes &header) noexcept
 {
-    int aadLength = 0;
+    int32_t aadLength = 0;
     if (EVP_EncryptInit_ex(context, EVP_aes_256_gcm(), nullptr, nullptr, nullptr) != 1) {
-        PSI_PIR_LOGE("AES-GCM encrypt init failed");
+        LOGE("AES-GCM encrypt init failed");
         return false;
     }
-    if (EVP_CIPHER_CTX_ctrl(context, EVP_CTRL_GCM_SET_IVLEN, static_cast<int>(GCM_NONCE_SIZE), nullptr) != 1) {
-        PSI_PIR_LOGE("AES-GCM encrypt IV length setup failed");
+    if (EVP_CIPHER_CTX_ctrl(context, EVP_CTRL_GCM_SET_IVLEN, static_cast<int32_t>(GCM_NONCE_SIZE), nullptr) != 1) {
+        LOGE("AES-GCM encrypt IV length setup failed");
         return false;
     }
     if (EVP_EncryptInit_ex(context, nullptr, nullptr, key.data(), nonce) != 1) {
-        PSI_PIR_LOGE("AES-GCM encrypt key and nonce setup failed");
+        LOGE("AES-GCM encrypt key and nonce setup failed");
         return false;
     }
-    if (EVP_EncryptUpdate(context, nullptr, &aadLength, header.data(), static_cast<int>(header.size())) != 1) {
-        PSI_PIR_LOGE("AES-GCM encrypt AAD update failed");
+    if (EVP_EncryptUpdate(context, nullptr, &aadLength, header.data(), static_cast<int32_t>(header.size())) != 1) {
+        LOGE("AES-GCM encrypt AAD update failed");
         return false;
     }
     return true;
@@ -326,25 +340,25 @@ bool InitializeEncryptionContext(EVP_CIPHER_CTX *context, const std::array<std::
 
 bool EncryptPayload(EVP_CIPHER_CTX *context, const Bytes &payload, std::uint8_t *encrypted) noexcept
 {
-    int encryptedLength = 0;
-    int finalLength = 0;
-    if (EVP_EncryptUpdate(context, encrypted, &encryptedLength, payload.data(), static_cast<int>(payload.size())) !=
+    int32_t encryptedLength = 0;
+    int32_t finalLength = 0;
+    if (EVP_EncryptUpdate(context, encrypted, &encryptedLength, payload.data(), static_cast<int32_t>(payload.size())) !=
         1) {
-        PSI_PIR_LOGE("AES-GCM payload encryption failed, payloadBytes=%{public}zu", payload.size());
+        LOGE("AES-GCM payload encryption failed, payloadBytes=%{public}zu", payload.size());
         return false;
     }
     if (EVP_EncryptFinal_ex(context, encrypted + encryptedLength, &finalLength) != 1) {
-        PSI_PIR_LOGE("AES-GCM encrypt final failed");
+        LOGE("AES-GCM encrypt final failed");
         return false;
     }
     if (static_cast<std::size_t>(encryptedLength + finalLength) != payload.size()) {
-        PSI_PIR_LOGE("AES-GCM encrypted length mismatch, expected=%{public}zu, actual=%{public}d", payload.size(),
+        LOGE("AES-GCM encrypted length mismatch, expected=%{public}zu, actual=%{public}d", payload.size(),
                      encryptedLength + finalLength);
         return false;
     }
     auto *tag = encrypted + payload.size();
-    if (EVP_CIPHER_CTX_ctrl(context, EVP_CTRL_GCM_GET_TAG, static_cast<int>(GCM_TAG_SIZE), tag) != 1) {
-        PSI_PIR_LOGE("AES-GCM tag extraction failed");
+    if (EVP_CIPHER_CTX_ctrl(context, EVP_CTRL_GCM_GET_TAG, static_cast<int32_t>(GCM_TAG_SIZE), tag) != 1) {
+        LOGE("AES-GCM tag extraction failed");
         return false;
     }
     return true;
@@ -356,10 +370,13 @@ int32_t EncryptValueIntoFrame(const std::optional<Bytes> &value, std::size_t pay
 {
     auto context = CreateCipherContext();
     if (context == nullptr) {
-        PSI_PIR_LOGE("EVP encryption context allocation failed");
+        LOGE("EVP encryption context allocation failed");
         return PSI_PIR_CRYPTO_ERROR;
     }
     auto payload = BuildPayload(value, payloadSize);
+    if (payload.empty()) {
+        return PSI_PIR_CRYPTO_ERROR;
+    }
     const auto *nonce = frame.data() + FRAME_HEADER_SIZE;
     auto *encrypted = frame.data() + FRAME_HEADER_SIZE + GCM_NONCE_SIZE;
     const bool success = InitializeEncryptionContext(context.get(), key, nonce, header) &&
@@ -371,21 +388,21 @@ int32_t EncryptValueIntoFrame(const std::optional<Bytes> &value, std::size_t pay
 bool InitializeDecryptionContext(EVP_CIPHER_CTX *context, const std::array<std::uint8_t, AES_KEY_SIZE> &key,
                                  const std::uint8_t *nonce, const Bytes &frame) noexcept
 {
-    int aadLength = 0;
+    int32_t aadLength = 0;
     if (EVP_DecryptInit_ex(context, EVP_aes_256_gcm(), nullptr, nullptr, nullptr) != 1) {
-        PSI_PIR_LOGE("AES-GCM decrypt init failed");
+        LOGE("AES-GCM decrypt init failed");
         return false;
     }
-    if (EVP_CIPHER_CTX_ctrl(context, EVP_CTRL_GCM_SET_IVLEN, static_cast<int>(GCM_NONCE_SIZE), nullptr) != 1) {
-        PSI_PIR_LOGE("AES-GCM decrypt IV length setup failed");
+    if (EVP_CIPHER_CTX_ctrl(context, EVP_CTRL_GCM_SET_IVLEN, static_cast<int32_t>(GCM_NONCE_SIZE), nullptr) != 1) {
+        LOGE("AES-GCM decrypt IV length setup failed");
         return false;
     }
     if (EVP_DecryptInit_ex(context, nullptr, nullptr, key.data(), nonce) != 1) {
-        PSI_PIR_LOGE("AES-GCM decrypt key and nonce setup failed");
+        LOGE("AES-GCM decrypt key and nonce setup failed");
         return false;
     }
-    if (EVP_DecryptUpdate(context, nullptr, &aadLength, frame.data(), static_cast<int>(FRAME_HEADER_SIZE)) != 1) {
-        PSI_PIR_LOGE("AES-GCM decrypt AAD update failed");
+    if (EVP_DecryptUpdate(context, nullptr, &aadLength, frame.data(), static_cast<int32_t>(FRAME_HEADER_SIZE)) != 1) {
+        LOGE("AES-GCM decrypt AAD update failed");
         return false;
     }
     return true;
@@ -394,29 +411,29 @@ bool InitializeDecryptionContext(EVP_CIPHER_CTX *context, const std::array<std::
 bool DecryptPayload(EVP_CIPHER_CTX *context, const std::uint8_t *encrypted, const std::uint8_t *tag,
                     Bytes &payload) noexcept
 {
-    int plaintextLength = 0;
-    int finalLength = 0;
-    if (EVP_DecryptUpdate(context, payload.data(), &plaintextLength, encrypted, static_cast<int>(payload.size())) !=
+    int32_t plaintextLength = 0;
+    int32_t finalLength = 0;
+    if (EVP_DecryptUpdate(context, payload.data(), &plaintextLength, encrypted, static_cast<int32_t>(payload.size())) !=
         1) {
-        PSI_PIR_LOGE("AES-GCM payload decryption failed, payloadBytes=%{public}zu", payload.size());
+        LOGE("AES-GCM payload decryption failed, payloadBytes=%{public}zu", payload.size());
         return false;
     }
     std::array<std::uint8_t, GCM_TAG_SIZE> expectedTag{};
     if (memcpy_s(expectedTag.data(), expectedTag.size(), tag, GCM_TAG_SIZE) != EOK) {
-        PSI_PIR_LOGE("AES-GCM expected tag copy failed");
+        LOGE("AES-GCM expected tag copy failed");
         return false;
     }
-    if (EVP_CIPHER_CTX_ctrl(context, EVP_CTRL_GCM_SET_TAG, static_cast<int>(expectedTag.size()), expectedTag.data()) !=
-        1) {
-        PSI_PIR_LOGE("AES-GCM expected tag setup failed");
+    if (EVP_CIPHER_CTX_ctrl(context, EVP_CTRL_GCM_SET_TAG, static_cast<int32_t>(expectedTag.size()),
+                            expectedTag.data()) != 1) {
+        LOGE("AES-GCM expected tag setup failed");
         return false;
     }
     if (EVP_DecryptFinal_ex(context, payload.data() + plaintextLength, &finalLength) != 1) {
-        PSI_PIR_LOGE("AES-GCM authentication or decrypt final failed");
+        LOGE("AES-GCM authentication or decrypt final failed");
         return false;
     }
     if (static_cast<std::size_t>(plaintextLength + finalLength) != payload.size()) {
-        PSI_PIR_LOGE("AES-GCM plaintext length mismatch, expected=%{public}zu, actual=%{public}d", payload.size(),
+        LOGE("AES-GCM plaintext length mismatch, expected=%{public}zu, actual=%{public}d", payload.size(),
                      plaintextLength + finalLength);
         return false;
     }
@@ -428,7 +445,7 @@ int32_t DecryptFrame(const Bytes &frame, std::size_t ciphertextSize, const std::
 {
     auto context = CreateCipherContext();
     if (context == nullptr) {
-        PSI_PIR_LOGE("EVP decryption context allocation failed");
+        LOGE("EVP decryption context allocation failed");
         return PSI_PIR_CRYPTO_ERROR;
     }
     const auto *nonce = frame.data() + FRAME_HEADER_SIZE;
@@ -463,126 +480,140 @@ void StoreDecryptedPayload(Bytes &payload, std::optional<Bytes> &output)
 
 class OpenSslHashProvider final : public IHashProvider {
 public:
-    int32_t Digest(HashAlg algorithm, const Bytes &input, Bytes &output) const noexcept override
-    {
-        const auto digestAlgorithm = GetDigestAlgorithm(algorithm);
-        const auto expectedSize = GetDigestSize(algorithm);
-        if (digestAlgorithm == nullptr || expectedSize == 0) {
-            PSI_PIR_LOGE("unsupported hash algorithm=%{public}u", static_cast<uint32_t>(algorithm));
-            return PSI_PIR_INVALID_ARGUMENT;
-        }
-        Bytes digest(expectedSize, 0);
-        unsigned int actualSize = 0;
-        const std::uint8_t emptyInput = 0;
-        const auto *inputData = input.empty() ? &emptyInput : input.data();
-        if (EVP_Digest(inputData, input.size(), digest.data(), &actualSize, digestAlgorithm, nullptr) != 1 ||
-            actualSize != expectedSize) {
-            PSI_PIR_LOGE("EVP_Digest failed, algorithm=%{public}u, inputLen=%{public}zu",
-                         static_cast<uint32_t>(algorithm), input.size());
-            return PSI_PIR_HASH_ERROR;
-        }
-        output.swap(digest);
+    int32_t Digest(HashAlg algorithm, const Bytes &input, Bytes &output) const noexcept override;
+};
+
+int32_t OpenSslHashProvider::Digest(HashAlg algorithm, const Bytes &input, Bytes &output) const noexcept
+{
+    if (algorithm == HashAlg::NONE) {
+        output = input;
         return PSI_PIR_SUCCESS;
     }
-};
+    const auto digestAlgorithm = GetDigestAlgorithm(algorithm);
+    const auto expectedSize = GetDigestSize(algorithm);
+    if (digestAlgorithm == nullptr || expectedSize == 0) {
+        LOGE("unsupported hash algorithm=%{public}u", static_cast<uint32_t>(algorithm));
+        return PSI_PIR_INVALID_ARGUMENT;
+    }
+    Bytes digest(expectedSize, 0);
+    uint32_t actualSize = 0;
+    const std::uint8_t emptyInput = 0;
+    const auto *inputData = input.empty() ? &emptyInput : input.data();
+    if (EVP_Digest(inputData, input.size(), digest.data(), &actualSize, digestAlgorithm, nullptr) != 1 ||
+        actualSize != expectedSize) {
+        LOGE("EVP_Digest failed, algorithm=%{public}u, inputLen=%{public}zu", static_cast<uint32_t>(algorithm),
+                     input.size());
+        return PSI_PIR_HASH_ERROR;
+    }
+    output.swap(digest);
+    return PSI_PIR_SUCCESS;
+}
 
 class OpenSslRandomSource final : public IRandomSource {
 public:
-    int32_t Fill(Bytes &output) noexcept override
-    {
-        if (output.empty() || !FitsOpenSslInt(output.size())) {
-            PSI_PIR_LOGE("randomBytes fill invalid: size=%{public}zu", output.size());
-            return PSI_PIR_RANDOM_ERROR;
-        }
-        Bytes randomBytes(output.size(), 0);
-        if (RAND_priv_bytes(randomBytes.data(), static_cast<int>(randomBytes.size())) != 1) {
-            PSI_PIR_LOGE("RAND_priv_bytes failed, requestedLen=%{public}zu", randomBytes.size());
-            OPENSSL_cleanse(randomBytes.data(), randomBytes.size());
-            return PSI_PIR_RANDOM_ERROR;
-        }
-        output.swap(randomBytes);
-        return PSI_PIR_SUCCESS;
-    }
+    int32_t Fill(Bytes &output) noexcept override;
 };
+
+int32_t OpenSslRandomSource::Fill(Bytes &output) noexcept
+{
+    if (output.empty() || !FitsOpenSslInt(output.size())) {
+        LOGE("randomBytes fill invalid: size=%{public}zu", output.size());
+        return PSI_PIR_RANDOM_ERROR;
+    }
+    Bytes randomBytes(output.size(), 0);
+    if (RAND_priv_bytes(randomBytes.data(), static_cast<int32_t>(randomBytes.size())) != 1) {
+        LOGE("RAND_priv_bytes failed, requestedLen=%{public}zu", randomBytes.size());
+        OPENSSL_cleanse(randomBytes.data(), randomBytes.size());
+        return PSI_PIR_RANDOM_ERROR;
+    }
+    output.swap(randomBytes);
+    return PSI_PIR_SUCCESS;
+}
 
 class OpenSslPirValueCrypto final : public IPirValueCrypto {
 public:
-    int32_t encrypt(const Bytes &seed, const std::optional<Bytes> &value, const ProtocolParams &params,
-                    Bytes &output) const noexcept override
-    {
-        if (!ValidateValueParams(seed, params)) {
-            PSI_PIR_LOGE("encrypt: invalid order params, seedSize=%{public}zu, "
-                         "symKeySize=%{public}zu, compareBits=%{public}zu",
-                         seed.size(), params.symKeySize, params.compareBits);
-            return PSI_PIR_INVALID_ARGUMENT;
-        }
-        std::size_t payloadSize = 0;
-        if (!TryGetPayloadSize(value, payloadSize)) {
-            PSI_PIR_LOGE("encrypt: payload size overflow");
-            return PSI_PIR_INVALID_ARGUMENT;
-        }
-        Bytes header;
-        Bytes frame;
-        auto ret = PrepareEncryptionFrame(params, payloadSize, header, frame);
-        if (ret != PSI_PIR_SUCCESS) {
-            PSI_PIR_LOGE("encrypt: PrepareEncryptionFrame failed, ret=%{public}d", ret);
-            return ret;
-        }
-        std::array<std::uint8_t, AES_KEY_SIZE> key{};
-        ret = DeriveAesKey(seed, params, key);
-        if (ret != PSI_PIR_SUCCESS) {
-            PSI_PIR_LOGE("encrypt: DeriveAesKey failed, ret=%{public}d", ret);
-            OPENSSL_cleanse(frame.data(), frame.size());
-            OPENSSL_cleanse(header.data(), header.size());
-            return ret;
-        }
-        ret = EncryptValueIntoFrame(value, payloadSize, key, header, frame);
-        OPENSSL_cleanse(key.data(), key.size());
-        if (ret == PSI_PIR_SUCCESS) {
-            output.swap(frame);
-        } else {
-            PSI_PIR_LOGE("encrypt: EncryptValueIntoFrame failed, ret=%{public}d", ret);
-        }
+    int32_t Encrypt(const Bytes &seed, const std::optional<Bytes> &value, const ProtocolParams &params,
+                    Bytes &output) const noexcept override;
+
+    int32_t Decrypt(const Bytes &seed, const Bytes &frame, const ProtocolParams &params,
+                    std::optional<Bytes> &output) const noexcept override;
+};
+
+int32_t OpenSslPirValueCrypto::Encrypt(const Bytes &seed, const std::optional<Bytes> &value,
+                                       const ProtocolParams &params, Bytes &output) const noexcept
+{
+    if (!ValidateValueParams(seed, params)) {
+        LOGE("encrypt: invalid order params, seedSize=%{public}zu, "
+                     "symKeySize=%{public}zu, compareBits=%{public}zu",
+                     seed.size(), params.symKeySize, params.compareBits);
+        return PSI_PIR_INVALID_ARGUMENT;
+    }
+    std::size_t payloadSize = 0;
+    if (!TryGetPayloadSize(value, payloadSize)) {
+        LOGE("encrypt: payload size overflow");
+        return PSI_PIR_INVALID_ARGUMENT;
+    }
+    Bytes header;
+    Bytes frame;
+    auto ret = PrepareEncryptionFrame(params, payloadSize, header, frame);
+    if (ret != PSI_PIR_SUCCESS) {
+        LOGE("encrypt: PrepareEncryptionFrame failed, ret=%{public}d", ret);
         return ret;
     }
-
-    int32_t decrypt(const Bytes &seed, const Bytes &frame, const ProtocolParams &params,
-                    std::optional<Bytes> &output) const noexcept override
-    {
-        if (!ValidateValueParams(seed, params)) {
-            PSI_PIR_LOGE("decrypt: invalid order params, seedSize=%{public}zu, "
-                         "symKeySize=%{public}zu, compareBits=%{public}zu",
-                         seed.size(), params.symKeySize, params.compareBits);
-            return PSI_PIR_INVALID_ARGUMENT;
-        }
-        std::size_t ciphertextSize = 0;
-        if (!ParseFrameHeader(frame, params, ciphertextSize) || !FitsOpenSslInt(ciphertextSize)) {
-            PSI_PIR_LOGE("decrypt: frame header invalid, frameSize=%{public}zu", frame.size());
-            return PSI_PIR_CRYPTO_ERROR;
-        }
-        std::array<std::uint8_t, AES_KEY_SIZE> key{};
-        auto ret = DeriveAesKey(seed, params, key);
-        if (ret != PSI_PIR_SUCCESS) {
-            PSI_PIR_LOGE("decrypt: DeriveAesKey failed, ret=%{public}d", ret);
-            return ret;
-        }
-        Bytes payload;
-        ret = DecryptFrame(frame, ciphertextSize, key, payload);
-        OPENSSL_cleanse(key.data(), key.size());
-        if (ret != PSI_PIR_SUCCESS) {
-            PSI_PIR_LOGE("decrypt: AES-GCM frame decryption failed, ret=%{public}d", ret);
-            OPENSSL_cleanse(payload.data(), payload.size());
-            return ret;
-        }
-        if (!IsValidPayload(payload)) {
-            PSI_PIR_LOGE("decrypt: authenticated payload layout is invalid");
-            OPENSSL_cleanse(payload.data(), payload.size());
-            return PSI_PIR_CRYPTO_ERROR;
-        }
-        StoreDecryptedPayload(payload, output);
-        return PSI_PIR_SUCCESS;
+    std::array<std::uint8_t, AES_KEY_SIZE> key{};
+    ret = DeriveAesKey(seed, params, key);
+    if (ret != PSI_PIR_SUCCESS) {
+        LOGE("encrypt: DeriveAesKey failed, ret=%{public}d", ret);
+        OPENSSL_cleanse(frame.data(), frame.size());
+        OPENSSL_cleanse(header.data(), header.size());
+        return ret;
     }
-};
+    ret = EncryptValueIntoFrame(value, payloadSize, key, header, frame);
+    OPENSSL_cleanse(key.data(), key.size());
+    if (ret == PSI_PIR_SUCCESS) {
+        output.swap(frame);
+    } else {
+        LOGE("encrypt: EncryptValueIntoFrame failed, ret=%{public}d", ret);
+    }
+    return ret;
+}
+
+int32_t OpenSslPirValueCrypto::Decrypt(const Bytes &seed, const Bytes &frame, const ProtocolParams &params,
+                                       std::optional<Bytes> &output) const noexcept
+{
+    if (!ValidateValueParams(seed, params)) {
+        LOGE("decrypt: invalid order params, seedSize=%{public}zu, "
+                     "symKeySize=%{public}zu, compareBits=%{public}zu",
+                     seed.size(), params.symKeySize, params.compareBits);
+        return PSI_PIR_INVALID_ARGUMENT;
+    }
+    std::size_t ciphertextSize = 0;
+    if (!ParseFrameHeader(frame, params, ciphertextSize) || !FitsOpenSslInt(ciphertextSize)) {
+        LOGE("decrypt: frame header invalid, frameSize=%{public}zu", frame.size());
+        return PSI_PIR_CRYPTO_ERROR;
+    }
+    std::array<std::uint8_t, AES_KEY_SIZE> key{};
+    auto ret = DeriveAesKey(seed, params, key);
+    if (ret != PSI_PIR_SUCCESS) {
+        LOGE("decrypt: DeriveAesKey failed, ret=%{public}d", ret);
+        return ret;
+    }
+    Bytes payload;
+    ret = DecryptFrame(frame, ciphertextSize, key, payload);
+    OPENSSL_cleanse(key.data(), key.size());
+    if (ret != PSI_PIR_SUCCESS) {
+        LOGE("decrypt: AES-GCM frame decryption failed, ret=%{public}d", ret);
+        OPENSSL_cleanse(payload.data(), payload.size());
+        return ret;
+    }
+    if (!IsValidPayload(payload)) {
+        LOGE("decrypt: authenticated payload layout is invalid");
+        OPENSSL_cleanse(payload.data(), payload.size());
+        return PSI_PIR_CRYPTO_ERROR;
+    }
+    StoreDecryptedPayload(payload, output);
+    return PSI_PIR_SUCCESS;
+}
 
 } // namespace
 
@@ -590,7 +621,7 @@ std::shared_ptr<const IHashProvider> GetOpenSslHashProvider() noexcept
 {
     static const auto provider = [] {
         auto instance = std::make_shared<const OpenSslHashProvider>();
-        PSI_PIR_LOGI("OpenSSL hash provider initialized");
+        LOGI("OpenSSL hash provider initialized");
         return instance;
     }();
     return provider;
@@ -600,7 +631,7 @@ std::shared_ptr<IRandomSource> GetOpenSslRandomSource() noexcept
 {
     static const auto provider = [] {
         auto instance = std::make_shared<OpenSslRandomSource>();
-        PSI_PIR_LOGI("OpenSSL randomBytes provider initialized");
+        LOGI("OpenSSL randomBytes provider initialized");
         return instance;
     }();
     return provider;
@@ -610,7 +641,7 @@ std::shared_ptr<const IPirValueCrypto> GetOpenSslPirValueCrypto() noexcept
 {
     static const auto provider = [] {
         auto instance = std::make_shared<const OpenSslPirValueCrypto>();
-        PSI_PIR_LOGI("OpenSSL PIR value crypto provider initialized");
+        LOGI("OpenSSL PIR value crypto provider initialized");
         return instance;
     }();
     return provider;

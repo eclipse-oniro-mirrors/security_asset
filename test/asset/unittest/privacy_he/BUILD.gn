@@ -42,3 +42,32 @@ ohos_unittest("asset_privacy_he_test") {
   subsystem_name = "security"
   part_name = "asset"
 }
+
+# HE integration tests share the production library and provider registry.
+ohos_unittest("psi_pir_he_test") {
+  module_out_path = "asset/privacy_computation"
+  sources = [ "src/psi_pir_he_test.cpp" ]
+  include_dirs = [
+    "../../../../psi_pir_protocol/common/inc",
+    "../../../../psi_pir_protocol/crypto/inc",
+    "../../../../psi_pir_protocol/protocol/inc",
+    "../../../../psi_pir_protocol/core/inc",
+    "../../../../psi_pir_protocol/he/inc",
+  ]
+  deps = [ "../../../../psi_pir_protocol:psi_pir_protocol" ]
+  external_deps = [
+    "hilog:libhilog",
+    "openssl:libcrypto_shared",
+    "hifhe:libhifhe",
+    "openhitls:openhitls_bsl",
+    "openhitls:openhitls_crypto",
+    "googletest:gtest_main",
+  ]
+  cflags_cc = [
+    "-std=c++17",
+    "-Wall",
+    "-Werror",
+  ]
+  subsystem_name = "security"
+  part_name = "asset"
+}

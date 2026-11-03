@@ -21,8 +21,9 @@
 #include "protocol_mapper.h"
 #include "psi_pir_log.h"
 #include "psi_pir_protocol.h"
-#include <algorithm>
+#include "securec.h"
 #include <memory>
+#include <limits>
 #include <utility>
 
 namespace OHOS::Security::PrivacyComputation {
@@ -41,20 +42,24 @@ int32_t PrepareRootKey(uint32_t userId, RootKeyPolicy policy)
 }
 int32_t PrepareIdentity(uint32_t uid, CallerIdentity &identity)
 {
+    if (uid > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())) {
+        LOGE("Privacy caller UID exceeds OSAccount integer range");
+        return PSI_PIR_INVALID_ARGUMENT;
+    }
     int32_t userId = -1;
-    if (AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(uid, userId) != 0 || userId < 0) {
-        PSI_PIR_LOGE("Failed to resolve privacy caller OS account");
+    if (AccountSA::OsAccountManager::GetOsAccountLocalIdFromUid(static_cast<int32_t>(uid), userId) != 0 || userId < 0) {
+        LOGE("Failed to resolve privacy caller OS account");
         return PSI_PIR_INTERNAL_ERROR;
     }
     identity = {uid, static_cast<uint32_t>(userId)};
-    PSI_PIR_LOGI("SA caller identity resolved, uid=%{private}u, userId=%{private}u", identity.uid,
-                 identity.userId);
+    LOGI("SA caller identity resolved, uid=%{private}u, userId=%{private}u", identity.uid, identity.userId);
     return PSI_PIR_SUCCESS;
 }
 bool CopyBlob(const PrivacyBlob &input, Bytes &output, size_t &total)
 {
     if (total > MAX_PRIVACY_INLINE_BYTES - PRIVACY_LENGTH_BYTES ||
-        input.size > MAX_PRIVACY_BYTES - total - PRIVACY_LENGTH_BYTES || (input.size != 0 && input.data == nullptr)) {
+        input.size > MAX_PRIVACY_INLINE_BYTES - total - PRIVACY_LENGTH_BYTES ||
+        (input.size != 0 && input.data == nullptr)) {
         return false;
     }
     total += PRIVACY_LENGTH_BYTES + input.size;
@@ -63,28 +68,43 @@ bool CopyBlob(const PrivacyBlob &input, Bytes &output, size_t &total)
     }
     return true;
 }
+
+int32_t ParseProtocol(const ::PrivacyProtocol &input, psi_pir::PrivacyProtocol &protocol)
+{
+    if (input.dataSetSize > static_cast<uint32_t>(psi_pir::DataSetSize::SIZE_512) ||
+        input.protocolType > static_cast<uint32_t>(psi_pir::ProtocolType::PIR_PROTOCOL)) {
+        LOGE("SA protocol enum value is out of range");
+        return psi_pir::PSI_PIR_INVALID_ARGUMENT;
+    }
+    protocol = {static_cast<psi_pir::DataSetSize>(input.dataSetSize),
+                static_cast<psi_pir::ProtocolType>(input.protocolType)};
+    psi_pir::internal::ProtocolParams params;
+    return psi_pir::internal::MapPrivacyProtocol(protocol, params);
+}
 } // namespace
 } // namespace OHOS::Security::PrivacyComputation
 
 extern "C" int32_t AssetGenPrivacyTarget(uint32_t uid, const PrivacyTargetRequest *input, PrivacyBuffer *output)
 {
     using namespace OHOS::Security::PrivacyComputation;
-    PSI_PIR_LOGI("SA genPrivacyTarget begin, uid=%{private}u", uid);
+    LOGI("SA genPrivacyTarget begin, uid=%{private}u", uid);
     if (input == nullptr || output == nullptr || output->data == nullptr || output->size > MAX_PRIVACY_INLINE_BYTES) {
-        PSI_PIR_LOGE("SA genPrivacyTarget invalid request or output buffer");
+        LOGE("SA genPrivacyTarget invalid request or output buffer");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
     psi_pir::TargetInput target;
+    if (input->hashAlg > static_cast<uint32_t>(psi_pir::HashAlg::SHA512)) {
+        LOGE("SA hash algorithm enum value is out of range");
+        return psi_pir::PSI_PIR_INVALID_ARGUMENT;
+    }
     target.hashAlg = static_cast<psi_pir::HashAlg>(input->hashAlg);
     size_t total = TARGET_FIXED_BYTES;
     if (!CopyBlob(input->element, target.elemData, total)) {
-        PSI_PIR_LOGE("SA genPrivacyTarget invalid element buffer or byte budget");
+        LOGE("SA genPrivacyTarget invalid element buffer or byte budget");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
-    const psi_pir::PrivacyProtocol protocol{static_cast<psi_pir::DataSetSize>(input->protocol.dataSetSize),
-                                            static_cast<psi_pir::ProtocolType>(input->protocol.protocolType)};
-    psi_pir::internal::ProtocolParams params;
-    auto ret = psi_pir::internal::MapPrivacyProtocol(protocol, params);
+    psi_pir::PrivacyProtocol protocol;
+    auto ret = ParseProtocol(input->protocol, protocol);
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
         return ret;
     }
@@ -103,35 +123,36 @@ extern "C" int32_t AssetGenPrivacyTarget(uint32_t uid, const PrivacyTargetReques
         return ret;
     }
     if (result.size() > output->size) {
-        PSI_PIR_LOGE("SA genPrivacyTarget output exceeds capacity, bytes=%{public}zu", result.size());
+        LOGE("SA genPrivacyTarget output exceeds capacity, bytes=%{public}zu", result.size());
         return psi_pir::PSI_PIR_CODEC_ERROR;
     }
-    std::copy(result.begin(), result.end(), output->data);
+    if (memcpy_s(output->data, output->size, result.data(), result.size()) != EOK) {
+        LOGE("SA failed to copy generated target");
+        return psi_pir::PSI_PIR_INTERNAL_ERROR;
+    }
     output->size = static_cast<uint32_t>(result.size());
-    PSI_PIR_LOGI("SA genPrivacyTarget success, outputBytes=%{public}u", output->size);
+    LOGI("SA genPrivacyTarget success, outputBytes=%{public}u", output->size);
     return psi_pir::PSI_PIR_SUCCESS;
 }
 
 extern "C" int32_t AssetDecryptPrivacyCiphertext(uint32_t uid, const PrivacyDecryptRequest *input,
-    PrivacyBuffer *output)
+                                                 PrivacyBuffer *output)
 {
     using namespace OHOS::Security::PrivacyComputation;
-    PSI_PIR_LOGI("SA decryptCiphertext begin, uid=%{private}u", uid);
-    if (input == nullptr || output == nullptr || output->data == nullptr ||
-        output->size < MAX_DECRYPT_RESULT_BYTES || output->size > MAX_PRIVACY_INLINE_BYTES) {
-        PSI_PIR_LOGE("SA decryptCiphertext invalid request or output buffer");
+    LOGI("SA decryptCiphertext begin, uid=%{private}u", uid);
+    if (input == nullptr || output == nullptr || output->data == nullptr || output->size < MAX_DECRYPT_RESULT_BYTES ||
+        output->size > MAX_PRIVACY_INLINE_BYTES) {
+        LOGE("SA decryptCiphertext invalid request or output buffer");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
     psi_pir::Bytes ciphertext;
     size_t total = DECRYPT_FIXED_BYTES;
     if (input->ciphertext.size == 0 || !CopyBlob(input->ciphertext, ciphertext, total)) {
-        PSI_PIR_LOGE("SA decryptCiphertext invalid ciphertext");
+        LOGE("SA decryptCiphertext invalid ciphertext");
         return psi_pir::PSI_PIR_INVALID_ARGUMENT;
     }
-    const psi_pir::PrivacyProtocol protocol{static_cast<psi_pir::DataSetSize>(input->protocol.dataSetSize),
-        static_cast<psi_pir::ProtocolType>(input->protocol.protocolType)};
-    psi_pir::internal::ProtocolParams params;
-    auto ret = psi_pir::internal::MapPrivacyProtocol(protocol, params);
+    psi_pir::PrivacyProtocol protocol;
+    auto ret = ParseProtocol(input->protocol, protocol);
     if (ret != psi_pir::PSI_PIR_SUCCESS) {
         return ret;
     }
@@ -150,11 +171,14 @@ extern "C" int32_t AssetDecryptPrivacyCiphertext(uint32_t uid, const PrivacyDecr
         return ret;
     }
     if (plaintext.size() != MAX_DECRYPT_RESULT_BYTES) {
-        PSI_PIR_LOGE("SA decryptCiphertext unexpected plaintext size=%{public}zu", plaintext.size());
+        LOGE("SA decryptCiphertext unexpected plaintext size=%{public}zu", plaintext.size());
         return psi_pir::PSI_PIR_CODEC_ERROR;
     }
-    std::copy(plaintext.begin(), plaintext.end(), output->data);
+    if (memcpy_s(output->data, output->size, plaintext.data(), plaintext.size()) != EOK) {
+        LOGE("SA failed to copy HE plaintext");
+        return psi_pir::PSI_PIR_INTERNAL_ERROR;
+    }
     output->size = static_cast<uint32_t>(plaintext.size());
-    PSI_PIR_LOGI("SA decryptCiphertext success, bytes=%{public}u", output->size);
+    LOGI("SA decryptCiphertext success, bytes=%{public}u", output->size);
     return psi_pir::PSI_PIR_SUCCESS;
 }

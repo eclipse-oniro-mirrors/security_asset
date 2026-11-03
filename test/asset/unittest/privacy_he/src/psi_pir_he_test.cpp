@@ -89,16 +89,16 @@ HWTEST_F(PsiPirHeTest, FailedOperationsPreserveOutputs, TestSize.Level1)
     EXPECT_EQ(output, Bytes({0x99}));
     PrivacySearchResult encrypted{{Bytes{1}}, std::nullopt};
     SearchResult result{true, std::vector<Bytes>{Bytes{0x99}}};
-    EXPECT_EQ(DecryptCiphertext(encrypted.fheCipherText.front(), PSI, {1000, 100}, output), PSI_PIR_HE_ERROR);
+    EXPECT_EQ(DecryptCiphertext(encrypted.resultCipherText.front(), PSI, {1000, 100}, output), PSI_PIR_HE_ERROR);
     EXPECT_EQ(output, Bytes({0x99}));
     EXPECT_TRUE(result.matchedResult);
     ASSERT_TRUE(result.attachedValues.has_value());
     EXPECT_EQ(*result.attachedValues, std::vector<Bytes>({Bytes{0x99}}));
-    EXPECT_EQ(encrypted.fheCipherText, std::vector<Bytes>({Bytes{1}}));
+    EXPECT_EQ(encrypted.resultCipherText, std::vector<Bytes>({Bytes{1}}));
     PrivacySearchResult searchOutput{{Bytes{0x99}}, std::nullopt};
     EXPECT_EQ(PrivacySearch(Bytes{1}, {Element{Bytes{'a'}, HashAlg::SHA256, std::nullopt}}, PSI, searchOutput),
               PSI_PIR_HE_ERROR);
-    EXPECT_EQ(searchOutput.fheCipherText, std::vector<Bytes>({Bytes{0x99}}));
+    EXPECT_EQ(searchOutput.resultCipherText, std::vector<Bytes>({Bytes{0x99}}));
 }
 
 /* @tc.name: CompleteResultEntryValidatesProtocol
@@ -133,13 +133,13 @@ HWTEST_F(PsiPirHeTest, DefaultFactoryNeverOverwritesCustom, TestSize.Level1)
     const auto snapshot = GetHEEngine();
     std::atomic<bool> good{true};
     std::thread install([&good]() {
-        for (int i = 0; i < 1000; ++i) {
+        for (int32_t i = 0; i < 1000; ++i) {
             if (EnsureDefaultHeEngineInstalled() != PSI_PIR_SUCCESS || !GetHEEngine()) {
                 good.store(false);
             }
         }
     });
-    for (int i = 0; i < 1000; ++i) {
+    for (int32_t i = 0; i < 1000; ++i) {
         SetHEEngine(nullptr);
         SetHEEngine(custom);
     }

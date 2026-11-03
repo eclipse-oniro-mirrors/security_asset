@@ -13,14 +13,11 @@
  * limitations under the License.
  */
 
-#ifndef privacy_computation_napi_GET_SEARCH_RESULT_H
-#define privacy_computation_napi_GET_SEARCH_RESULT_H
-
-#include "napi/native_api.h"
-
-namespace OHOS::Security::PrivacyComputation {
-napi_value NapiGetSearchResult(napi_env env, napi_callback_info info);
-
-} // namespace OHOS::Security::PrivacyComputation
-
-#endif // privacy_computation_napi_GET_SEARCH_RESULT_H
+#ifndef PRIVACY_COVERAGE_HILOG_H
+#define PRIVACY_COVERAGE_HILOG_H
+#define LOG_CORE 0
+#define HILOG_DEBUG(...) ((void)0)
+#define HILOG_INFO(...) ((void)0)
+#define HILOG_WARN(...) ((void)0)
+#define HILOG_ERROR(...) ((void)0)
+#endif

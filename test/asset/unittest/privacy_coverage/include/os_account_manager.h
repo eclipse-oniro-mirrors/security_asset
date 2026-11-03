@@ -13,14 +13,17 @@
  * limitations under the License.
  */
 
-#ifndef privacy_computation_napi_PRIVACY_SEARCH_H
-#define privacy_computation_napi_PRIVACY_SEARCH_H
-
-#include "napi/native_api.h"
-
-namespace OHOS::Security::PrivacyComputation {
-napi_value NapiPrivacySearch(napi_env env, napi_callback_info info);
-
-} // namespace OHOS::Security::PrivacyComputation
-
-#endif // privacy_computation_napi_PRIVACY_SEARCH_H
+#ifndef PRIVACY_COVERAGE_OS_ACCOUNT_MANAGER_H
+#define PRIVACY_COVERAGE_OS_ACCOUNT_MANAGER_H
+#include "host_faults.h"
+namespace OHOS::AccountSA {
+class OsAccountManager {
+public:
+    static int32_t GetOsAccountLocalIdFromUid(int32_t, int32_t &userId)
+    {
+        userId = PrivacyHost::State().userId;
+        return PrivacyHost::State().accountStatus;
+    }
+};
+} // namespace OHOS::AccountSA
+#endif

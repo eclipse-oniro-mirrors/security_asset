@@ -226,12 +226,12 @@ HWTEST_F(HifheProtocolTest, PsiCompleteWorkflow, TestSize.Level1)
                   PSI_PIR_SUCCESS);
         SearchResult result;
         std::vector<Bytes> plaintexts;
-        for (const auto &ciphertext : encrypted.fheCipherText) {
+        for (const auto &ciphertext : encrypted.resultCipherText) {
             Bytes plaintext;
             ASSERT_EQ(DecryptCiphertext(ciphertext, protocol, identity, plaintext), PSI_PIR_SUCCESS);
             plaintexts.push_back(std::move(plaintext));
         }
-        ASSERT_EQ(PostProcessSearchResult(plaintexts, encrypted.symCipherText, protocol, result), PSI_PIR_SUCCESS);
+        ASSERT_EQ(PostProcessSearchResult(plaintexts, encrypted.valueCipherText, protocol, result), PSI_PIR_SUCCESS);
         EXPECT_EQ(result.matchedResult, key == 'q');
         EXPECT_FALSE(result.attachedValues.has_value());
     }
@@ -243,7 +243,7 @@ HWTEST_F(HifheProtocolTest, PsiCompleteWorkflow, TestSize.Level1)
  */
 HWTEST_F(HifheProtocolTest, PirCompleteWorkflow, TestSize.Level1)
 {
-    const PrivacyProtocol protocol{DataSetSize::SIZE_512, ProtocolType::PIR_PROTOCOL};
+    const PrivacyProtocol protocol{DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL};
     const CallerIdentity identity{20010001, 100};
     Bytes target;
     ASSERT_EQ(GenPrivacyTarget({Bytes{'q'}, HashAlg::SHA256}, protocol, identity, target), PSI_PIR_SUCCESS);
@@ -252,12 +252,12 @@ HWTEST_F(HifheProtocolTest, PirCompleteWorkflow, TestSize.Level1)
         ASSERT_EQ(PrivacySearch(target, {{Bytes{'q'}, HashAlg::SHA256, value}}, protocol, encrypted), PSI_PIR_SUCCESS);
         SearchResult result;
         std::vector<Bytes> plaintexts;
-        for (const auto &ciphertext : encrypted.fheCipherText) {
+        for (const auto &ciphertext : encrypted.resultCipherText) {
             Bytes plaintext;
             ASSERT_EQ(DecryptCiphertext(ciphertext, protocol, identity, plaintext), PSI_PIR_SUCCESS);
             plaintexts.push_back(std::move(plaintext));
         }
-        ASSERT_EQ(PostProcessSearchResult(plaintexts, encrypted.symCipherText, protocol, result), PSI_PIR_SUCCESS);
+        ASSERT_EQ(PostProcessSearchResult(plaintexts, encrypted.valueCipherText, protocol, result), PSI_PIR_SUCCESS);
         EXPECT_TRUE(result.matchedResult);
         ASSERT_TRUE(result.attachedValues.has_value());
         EXPECT_EQ(*result.attachedValues, std::vector<Bytes>{value});

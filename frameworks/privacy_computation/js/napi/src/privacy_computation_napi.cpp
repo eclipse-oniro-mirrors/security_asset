@@ -13,15 +13,134 @@
  * limitations under the License.
  */
 
-#include "privacy_computation_log.h"
-#include "privacy_computation_napi_gen_privacy_target.h"
-#include "privacy_computation_napi_get_search_result.h"
-#include "privacy_computation_napi_privacy_search.h"
-#include "privacy_computation_napi_utils.h"
-#include "napi/native_api.h"
-#include "napi/native_node_api.h"
+#include "privacy_computation_napi_common.h"
+#include "privacy_computation_napi_loader.h"
+#include "privacy_client.h"
+#include "napi/native_common.h"
+#include <new>
+#include <utility>
 
 namespace OHOS::Security::PrivacyComputation {
+napi_value NapiGenPrivacyTarget(napi_env env, napi_callback_info info)
+{
+    if (IsComputationLibConfigured()) {
+        LOGI("NAPI genPrivacyTarget begin, route=ComputationLib");
+        return CallComputationNapiFunc(env, info, "GenPrivacyTarget");
+    }
+    LOGI("NAPI genPrivacyTarget begin, route=AssetSA");
+    auto context = std::unique_ptr<GenPrivacyTargetContext>(new (std::nothrow) GenPrivacyTargetContext());
+    NAPI_THROW(env, context == nullptr, PRIVACY_COMPUTATION_OUT_OF_MEMORY,
+               GetErrorMessage(PRIVACY_COMPUTATION_OUT_OF_MEMORY));
+    context->parse = [](napi_env env, napi_callback_info info,
+                        PrivacyComputationBaseContext *baseContext) -> napi_status {
+        auto *context = static_cast<GenPrivacyTargetContext *>(baseContext);
+        constexpr size_t ARG_COUNT = 2;
+        napi_value args[ARG_COUNT] = {nullptr};
+        IF_ERR_RETURN(ParseJsArgs(env, info, args, ARG_COUNT));
+        IF_ERR_RETURN(NapiGetProperty(env, args[0], context->input));
+        IF_ERR_RETURN(NapiGetProperty(env, args[1], context->protocol));
+        return napi_ok;
+    };
+    context->execute = [](napi_env, void *data) {
+        if (data == nullptr) {
+            LOGE("Async execute context is null");
+            return;
+        }
+        auto *context = static_cast<GenPrivacyTargetContext *>(data);
+        context->result = MapProtocolError(GenPrivacyTargetRemote(context->input, context->protocol, context->target));
+        if (context->result != PRIVACY_COMPUTATION_SUCCESS) {
+            LOGE("gen_privacy_target failed, code=%{public}d", context->result);
+        }
+    };
+    context->resolve = [](napi_env env, PrivacyComputationBaseContext *baseContext, napi_value &output) {
+        auto *context = static_cast<GenPrivacyTargetContext *>(baseContext);
+        return NapiSetProperty(env, context->target, output);
+    };
+    return CreateAsyncWork(env, info, std::move(context), __func__);
+}
+
+napi_value NapiPrivacySearch(napi_env env, napi_callback_info info)
+{
+    LOGI("NAPI privacySearch begin, route=Local");
+    auto context = std::unique_ptr<PrivacySearchContext>(new (std::nothrow) PrivacySearchContext());
+    NAPI_THROW(env, context == nullptr, PRIVACY_COMPUTATION_OUT_OF_MEMORY,
+               GetErrorMessage(PRIVACY_COMPUTATION_OUT_OF_MEMORY));
+    context->parse = [](napi_env env, napi_callback_info info,
+                        PrivacyComputationBaseContext *baseContext) -> napi_status {
+        auto *context = static_cast<PrivacySearchContext *>(baseContext);
+        constexpr size_t ARG_COUNT = 3;
+        napi_value args[ARG_COUNT] = {nullptr};
+        IF_ERR_RETURN(ParseJsArgs(env, info, args, ARG_COUNT));
+        IF_ERR_RETURN(NapiGetProperty(env, args[0], context->target));
+        IF_ERR_RETURN(NapiGetProperty(env, args[1], context->elements));
+        IF_ERR_RETURN(NapiGetProperty(env, args[2], context->protocol));
+        return napi_ok;
+    };
+    context->execute = [](napi_env, void *data) {
+        if (data == nullptr) {
+            LOGE("Async execute context is null");
+            return;
+        }
+        auto *context = static_cast<PrivacySearchContext *>(data);
+        context->result = MapProtocolError(
+            psi_pir::PrivacySearch(context->target, context->elements, context->protocol, context->searchResult));
+        if (context->result != PRIVACY_COMPUTATION_SUCCESS) {
+            LOGE("privacy_search failed, code=%{public}d", context->result);
+        }
+    };
+    context->resolve = [](napi_env env, PrivacyComputationBaseContext *baseContext, napi_value &output) {
+        auto *context = static_cast<PrivacySearchContext *>(baseContext);
+        return NapiSetProperty(env, context->searchResult, output);
+    };
+    return CreateAsyncWork(env, info, std::move(context), __func__);
+}
+
+napi_value NapiGetSearchResult(napi_env env, napi_callback_info info)
+{
+    auto context = std::unique_ptr<GetSearchResultContext>(new (std::nothrow) GetSearchResultContext());
+    NAPI_THROW(env, context == nullptr, PRIVACY_COMPUTATION_OUT_OF_MEMORY,
+               GetErrorMessage(PRIVACY_COMPUTATION_OUT_OF_MEMORY));
+    context->parse = [](napi_env env, napi_callback_info info,
+                        PrivacyComputationBaseContext *baseContext) -> napi_status {
+        auto *context = static_cast<GetSearchResultContext *>(baseContext);
+        constexpr size_t ARG_COUNT = 2;
+        napi_value args[ARG_COUNT] = {nullptr};
+        IF_ERR_RETURN(ParseJsArgs(env, info, args, ARG_COUNT));
+        IF_ERR_RETURN(NapiGetProperty(env, args[0], context->searchResult));
+        IF_ERR_RETURN(NapiGetProperty(env, args[1], context->protocol));
+        return napi_ok;
+    };
+    context->execute = [](napi_env, void *data) {
+        if (data == nullptr) {
+            LOGE("Async execute context is null");
+            return;
+        }
+        auto *context = static_cast<GetSearchResultContext *>(data);
+        if (IsComputationLibConfigured()) {
+            std::vector<psi_pir::Bytes> plaintexts;
+            LOGI("NAPI getSearchResult begin, route=ComputationLib");
+            context->result =
+                DecryptCiphertextsWithComputationLib(context->searchResult, context->protocol, plaintexts);
+            if (context->result == PRIVACY_COMPUTATION_SUCCESS) {
+                context->result = MapProtocolError(psi_pir::PostProcessSearchResult(
+                    plaintexts, context->searchResult.valueCipherText, context->protocol, context->output));
+            }
+        } else {
+            LOGI("NAPI getSearchResult begin, route=AssetSA");
+            context->result =
+                MapProtocolError(GetSearchResultRemote(context->searchResult, context->protocol, context->output));
+        }
+        if (context->result != PRIVACY_COMPUTATION_SUCCESS) {
+            LOGE("get_search_result failed, code=%{public}d", context->result);
+        }
+    };
+    context->resolve = [](napi_env env, PrivacyComputationBaseContext *baseContext, napi_value &output) {
+        auto *context = static_cast<GetSearchResultContext *>(baseContext);
+        return NapiSetProperty(env, context->output, output);
+    };
+    return CreateAsyncWork(env, info, std::move(context), __func__);
+}
+
 constexpr uint32_t PRIVATE_SET_INTERSECTION = 0;
 constexpr uint32_t PRIVATE_INFORMATION_RETRIEVAL = 1;
 constexpr uint32_t DATA_SET_SIZE_128 = 0;
@@ -29,22 +148,6 @@ constexpr uint32_t DATA_SET_SIZE_256 = 1;
 constexpr uint32_t DATA_SET_SIZE_512 = 2;
 constexpr const char *PRIVATE_SET_INTERSECTION_PROTOCOL = "PSI_PROTOCOL";
 constexpr const char *PRIVATE_INFORMATION_RETRIEVAL_PROTOCOL = "PIR_PROTOCOL";
-
-napi_status NapiSetProperty(napi_env env, napi_value object, const char *propertyName, uint32_t propertyValue)
-{
-    napi_value property = nullptr;
-    napi_status status = napi_create_uint32(env, propertyValue, &property);
-    if (status != napi_ok) {
-        GET_AND_THROW_LAST_ERROR(env);
-        return status;
-    }
-    status = napi_set_named_property(env, object, propertyName, property);
-    if (status != napi_ok) {
-        GET_AND_THROW_LAST_ERROR(env);
-        return status;
-    }
-    return napi_ok;
-}
 
 napi_value DeclareProtocolType(const napi_env env)
 {

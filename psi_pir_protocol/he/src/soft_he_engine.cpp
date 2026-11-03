@@ -98,31 +98,9 @@ public:
         return status_;
     }
 
-    int32_t AddPlain(const Slots &slots) noexcept override
-    {
-        if (status_ != PSI_PIR_SUCCESS) {
-            return status_;
-        }
-        HifheText plaintext;
-        status_ = adapter_.Encode(slots, plaintext);
-        if (status_ == PSI_PIR_SUCCESS) {
-            status_ = adapter_.SubtractFromPlaintext(current_, plaintext, current_);
-        }
-        return status_;
-    }
+    int32_t AddPlain(const Slots &slots) noexcept override;
 
-    int32_t MultiplyPlain(const Slots &slots) noexcept override
-    {
-        if (status_ != PSI_PIR_SUCCESS) {
-            return status_;
-        }
-        HifheText plaintext;
-        status_ = adapter_.Encode(slots, plaintext);
-        if (status_ == PSI_PIR_SUCCESS) {
-            status_ = adapter_.MultiplyPlaintext(current_, plaintext, current_);
-        }
-        return status_;
-    }
+    int32_t MultiplyPlain(const Slots &slots) noexcept override;
 
     int32_t Rerandomize() noexcept override
     {
@@ -142,6 +120,33 @@ private:
     HifheText current_;
     int32_t status_ = PSI_PIR_HE_ERROR;
 };
+
+int32_t HifheEvaluation::AddPlain(const Slots &slots) noexcept
+{
+    if (status_ != PSI_PIR_SUCCESS) {
+        return status_;
+    }
+    HifheText plaintext;
+    status_ = adapter_.Encode(slots, plaintext);
+    if (status_ == PSI_PIR_SUCCESS) {
+        status_ = adapter_.SubtractFromPlaintext(current_, plaintext, current_);
+    }
+    return status_;
+}
+
+int32_t HifheEvaluation::MultiplyPlain(const Slots &slots) noexcept
+{
+    if (status_ != PSI_PIR_SUCCESS) {
+        return status_;
+    }
+    HifheText plaintext;
+    status_ = adapter_.Encode(slots, plaintext);
+    if (status_ == PSI_PIR_SUCCESS) {
+        status_ = adapter_.MultiplyPlaintext(current_, plaintext, current_);
+    }
+    return status_;
+}
+
 } // namespace
 
 int32_t CreateSoftHeEvaluation(const Bytes &ciphertext, std::unique_ptr<HeEvaluation> &evaluation) noexcept
@@ -151,12 +156,12 @@ int32_t CreateSoftHeEvaluation(const Bytes &ciphertext, std::unique_ptr<HeEvalua
     }
     auto result = std::unique_ptr<HifheEvaluation>(new (std::nothrow) HifheEvaluation());
     if (!result) {
-        PSI_PIR_LOGE("Allocate HiFHE evaluation failed");
+        LOGE("Allocate HiFHE evaluation failed");
         return PSI_PIR_INTERNAL_ERROR;
     }
     const auto ret = result->Initialize(ciphertext);
     if (ret != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("Import HiFHE evaluation ciphertext failed, ret=%{public}d", ret);
+        LOGE("Import HiFHE evaluation ciphertext failed, ret=%{public}d", ret);
         return ret;
     }
     evaluation = std::move(result);

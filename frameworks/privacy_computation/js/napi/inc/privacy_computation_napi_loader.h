@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 
-#ifndef privacy_computation_napi_LOADER_H
-#define privacy_computation_napi_LOADER_H
+#ifndef PRIVACY_COMPUTATION_NAPI_LOADER_H
+#define PRIVACY_COMPUTATION_NAPI_LOADER_H
 
 #include "napi/native_api.h"
 #include "psi_pir_protocol.h"
@@ -23,9 +23,11 @@ namespace OHOS::Security::PrivacyComputation {
 bool IsComputationLibConfigured();
 // Invoke the original closed-source NAPI export on the JS thread. Loading errors reject its Promise.
 napi_value CallComputationNapiFunc(napi_env env, napi_callback_info info, const char *funcName);
-// Invoke function.
-int32_t CallComputationFunc(const psi_pir::PrivacySearchResult &input, const psi_pir::PrivacyProtocol &protocol,
-                              std::vector<psi_pir::Bytes> &output);
+// Calls the closed-source GetSearchResult export to obtain decoded HE batches, without postprocessing.
+// The export's existing C++ ABI and error codes are preserved.
+int32_t DecryptCiphertextsWithComputationLib(const psi_pir::PrivacySearchResult &input,
+                                             const psi_pir::PrivacyProtocol &protocol,
+                                             std::vector<psi_pir::Bytes> &output);
 } // namespace OHOS::Security::PrivacyComputation
 
-#endif // privacy_computation_napi_LOADER_H
+#endif // PRIVACY_COMPUTATION_NAPI_LOADER_H

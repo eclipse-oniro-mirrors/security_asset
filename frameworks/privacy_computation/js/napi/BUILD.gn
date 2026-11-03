@@ -19,12 +19,7 @@ ohos_shared_library("privacycomputation_napi") {
   sources = [
     "src/privacy_computation_napi.cpp",
     "src/privacy_computation_napi_common.cpp",
-    "src/privacy_computation_napi_context.cpp",
-    "src/privacy_computation_napi_gen_privacy_target.cpp",
-    "src/privacy_computation_napi_get_search_result.cpp",
     "src/privacy_computation_napi_loader.cpp",
-    "src/privacy_computation_napi_privacy_search.cpp",
-    "src/privacy_computation_napi_utils.cpp",
   ]
   deps = [
     "../../../../psi_pir_protocol:psi_pir_protocol",
@@ -32,6 +27,7 @@ ohos_shared_library("privacycomputation_napi") {
   ]
 
   external_deps = [
+    "bounds_checking_function:libsec_shared",
     "hilog:libhilog",
     "napi:ace_napi",
     "node:node_header_notice",

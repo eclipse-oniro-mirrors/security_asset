@@ -22,8 +22,6 @@
 #include <array>
 
 namespace psi_pir::internal {
-using psi_pir::internal::ProtocolParams;
-using psi_pir::internal::Slots;
 constexpr std::size_t kHeSeedSize = 32;
 constexpr std::size_t kIdentityHashSize = 32;
 // Secret storage is cleared at scope exit; no copies may escape an operation.

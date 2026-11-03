@@ -32,29 +32,29 @@ int32_t ValidatePackingDimensions(const ProtocolParams &params) noexcept
 {
     if (params.compareBits == 0 || params.bitsPerSlot == 0 || params.slotsPerData == 0 ||
         params.dataNumPerPlaintext == 0) {
-        PSI_PIR_LOGE("zero dimensions: compareBits=%{public}zu, bitsPerSlot=%{public}zu, "
+        LOGE("zero dimensions: compareBits=%{public}zu, bitsPerSlot=%{public}zu, "
                      "slotsPerData=%{public}zu, groups=%{public}zu",
                      params.compareBits, params.bitsPerSlot, params.slotsPerData, params.dataNumPerPlaintext);
         return PSI_PIR_INVALID_ARGUMENT;
     }
     if (params.slotsPerData > std::numeric_limits<std::size_t>::max() / params.bitsPerSlot) {
-        PSI_PIR_LOGE("slotsPerData overflow: slotsPerData=%{public}zu, bitsPerSlot=%{public}zu", params.slotsPerData,
+        LOGE("slotsPerData overflow: slotsPerData=%{public}zu, bitsPerSlot=%{public}zu", params.slotsPerData,
                      params.bitsPerSlot);
         return PSI_PIR_INVALID_ARGUMENT;
     }
     if (params.compareBits != params.bitsPerSlot * params.slotsPerData) {
-        PSI_PIR_LOGE("compareBits mismatch: compareBits=%{public}zu, bitsPerSlot*slotsPerData=%{public}zu",
+        LOGE("compareBits mismatch: compareBits=%{public}zu, bitsPerSlot*slotsPerData=%{public}zu",
                      params.compareBits, params.bitsPerSlot * params.slotsPerData);
         return PSI_PIR_INVALID_ARGUMENT;
     }
     if (params.compareBits % kBitsPerByte != 0 || params.bitsPerSlot >= kMaxBitsPerSlot) {
-        PSI_PIR_LOGE("unsupported packing: compareBits%%8=%{public}zu, bitsPerSlot=%{public}zu",
+        LOGE("unsupported packing: compareBits%%8=%{public}zu, bitsPerSlot=%{public}zu",
                      params.compareBits % kBitsPerByte, params.bitsPerSlot);
         return PSI_PIR_UNSUPPORTED_PROTOCOL;
     }
     const auto slotLimit = std::uint64_t{1} << params.bitsPerSlot;
     if (params.plainModulus < slotLimit) {
-        PSI_PIR_LOGE("plainModulus too small: plainModulus=%{public}llu, slotLimit=%{public}llu",
+        LOGE("plainModulus too small: plainModulus=%{public}llu, slotLimit=%{public}llu",
                      static_cast<unsigned long long>(params.plainModulus), static_cast<unsigned long long>(slotLimit));
         return PSI_PIR_INVALID_ARGUMENT;
     }
@@ -69,17 +69,17 @@ bool IsSupportedMode(ProtocolMode mode) noexcept
 int32_t ValidateAlgorithmParameters(const ProtocolParams &params) noexcept
 {
     if (params.fheAlgorithm != FheAlgorithm::BGV2048_48) {
-        PSI_PIR_LOGE("unsupported FHE algorithm=%{public}u", static_cast<uint32_t>(params.fheAlgorithm));
+        LOGE("unsupported FHE algorithm=%{public}u", static_cast<uint32_t>(params.fheAlgorithm));
         return PSI_PIR_INVALID_ARGUMENT;
     }
     if (params.plainModulus != kBgvPlainModulus) {
-        PSI_PIR_LOGE("plainModulus mismatch: expected=%{public}llu, actual=%{public}llu",
+        LOGE("plainModulus mismatch: expected=%{public}llu, actual=%{public}llu",
                      static_cast<unsigned long long>(kBgvPlainModulus),
                      static_cast<unsigned long long>(params.plainModulus));
         return PSI_PIR_INVALID_ARGUMENT;
     }
     if (params.polyModulusDegree != kBgvPolyModulusDegree) {
-        PSI_PIR_LOGE("polyModulusDegree mismatch: expected=%{public}zu, actual=%{public}zu", kBgvPolyModulusDegree,
+        LOGE("polyModulusDegree mismatch: expected=%{public}zu, actual=%{public}zu", kBgvPolyModulusDegree,
                      params.polyModulusDegree);
         return PSI_PIR_INVALID_ARGUMENT;
     }
@@ -88,7 +88,7 @@ int32_t ValidateAlgorithmParameters(const ProtocolParams &params) noexcept
             ? params.symAlgorithm == SymAlgorithm::AES_GCM && params.symKeySize == kAesKeyBits
             : params.symAlgorithm == SymAlgorithm::NONE && params.symKeySize == kDefaultSymKeySize;
     if (!validSymmetricParams) {
-        PSI_PIR_LOGE("invalid symmetric params: mode=%{public}u, symAlgorithm=%{public}u, symKeySize=%{public}zu",
+        LOGE("invalid symmetric params: mode=%{public}u, symAlgorithm=%{public}u, symKeySize=%{public}zu",
                      static_cast<uint32_t>(params.mode), static_cast<uint32_t>(params.symAlgorithm), params.symKeySize);
         return PSI_PIR_INVALID_ARGUMENT;
     }
@@ -98,21 +98,21 @@ int32_t ValidateAlgorithmParameters(const ProtocolParams &params) noexcept
 int32_t ValidatePlaintextLayout(const ProtocolParams &params) noexcept
 {
     if (!IsSupportedMode(params.mode)) {
-        PSI_PIR_LOGE("unsupported mode=%{public}u", static_cast<uint32_t>(params.mode));
+        LOGE("unsupported mode=%{public}u", static_cast<uint32_t>(params.mode));
         return PSI_PIR_INVALID_ARGUMENT;
     }
     if (params.mode == ProtocolMode::PIR && params.dataNumPerPlaintext % kPirGroupsPerItem != 0) {
-        PSI_PIR_LOGE("PIR requires even dataNumPerPlaintext, got=%{public}zu", params.dataNumPerPlaintext);
+        LOGE("PIR requires even dataNumPerPlaintext, got=%{public}zu", params.dataNumPerPlaintext);
         return PSI_PIR_INVALID_ARGUMENT;
     }
     if (params.slotsPerData > std::numeric_limits<std::size_t>::max() / params.dataNumPerPlaintext) {
-        PSI_PIR_LOGE("slotsPerData overflow: slotsPerData=%{public}zu, dataNumPerPlaintext=%{public}zu",
+        LOGE("slotsPerData overflow: slotsPerData=%{public}zu, dataNumPerPlaintext=%{public}zu",
                      params.slotsPerData, params.dataNumPerPlaintext);
         return PSI_PIR_INVALID_ARGUMENT;
     }
     const auto slotCount = params.dataNumPerPlaintext * params.slotsPerData;
     if (slotCount != params.polyModulusDegree) {
-        PSI_PIR_LOGE("slotCount mismatch: slotCount=%{public}zu, polyModulusDegree=%{public}zu", slotCount,
+        LOGE("slotCount mismatch: slotCount=%{public}zu, polyModulusDegree=%{public}zu", slotCount,
                      params.polyModulusDegree);
         return PSI_PIR_INVALID_ARGUMENT;
     }
@@ -123,13 +123,13 @@ int32_t CalculatePlaintextByteCount(const ProtocolParams &params, std::size_t &b
 {
     if (params.slotsPerData != 0 &&
         params.dataNumPerPlaintext > std::numeric_limits<std::size_t>::max() / params.slotsPerData) {
-        PSI_PIR_LOGE("slot count overflow: dataNumPerPlaintext=%{public}zu, slotsPerData=%{public}zu",
+        LOGE("slot count overflow: dataNumPerPlaintext=%{public}zu, slotsPerData=%{public}zu",
                      params.dataNumPerPlaintext, params.slotsPerData);
         return PSI_PIR_INVALID_ARGUMENT;
     }
     const auto slotCount = params.dataNumPerPlaintext * params.slotsPerData;
     if (slotCount > std::numeric_limits<std::size_t>::max() / sizeof(std::uint64_t)) {
-        PSI_PIR_LOGE("byte count overflow: slotCount=%{public}zu", slotCount);
+        LOGE("byte count overflow: slotCount=%{public}zu", slotCount);
         return PSI_PIR_INVALID_ARGUMENT;
     }
     byteCount = slotCount * sizeof(std::uint64_t);
@@ -141,7 +141,7 @@ int32_t ValidateSerializedPlaintexts(const std::vector<Bytes> &plaintexts, std::
     for (std::size_t batch = 0; batch < plaintexts.size(); ++batch) {
         const auto actualBytes = plaintexts[batch].size();
         if (actualBytes != expectedBytes) {
-            PSI_PIR_LOGE("plaintext size mismatch: batch=%{public}zu, expected=%{public}zu, "
+            LOGE("plaintext size mismatch: batch=%{public}zu, expected=%{public}zu, "
                          "actual=%{public}zu",
                          batch, expectedBytes, actualBytes);
             return PSI_PIR_CODEC_ERROR;
@@ -159,35 +159,35 @@ int32_t ValidateSymmetricCiphertexts(const std::vector<Bytes> &ciphertexts) noex
 {
     for (std::size_t index = 0; index < ciphertexts.size(); ++index) {
         if (ciphertexts[index].empty()) {
-            PSI_PIR_LOGE("empty symmetric ciphertext at index=%{private}zu", index);
+            LOGE("empty symmetric ciphertext at index=%{private}zu", index);
             return PSI_PIR_CODEC_ERROR;
         }
     }
     return PSI_PIR_SUCCESS;
 }
 
-int32_t ValidatePirResultLayout(std::size_t batchCount,
-    const std::optional<std::vector<Bytes>> &symCipherText, const ProtocolParams &params) noexcept
+int32_t ValidatePirResultLayout(std::size_t batchCount, const std::optional<std::vector<Bytes>> &valueCipherText,
+                                const ProtocolParams &params) noexcept
 {
     const auto capacity = params.dataNumPerPlaintext / kPirGroupsPerItem;
     if (capacity == 0) {
-        PSI_PIR_LOGE("PIR capacity is zero, dataNumPerPlaintext=%{public}zu", params.dataNumPerPlaintext);
+        LOGE("PIR capacity is zero, dataNumPerPlaintext=%{public}zu", params.dataNumPerPlaintext);
         return PSI_PIR_CODEC_ERROR;
     }
-    const auto symmetricCount = symCipherText.has_value() ? symCipherText->size() : 0;
+    const auto symmetricCount = valueCipherText.has_value() ? valueCipherText->size() : 0;
     const auto expectedBatches = CalculateBatchCount(symmetricCount, capacity);
     if (expectedBatches != batchCount) {
-        PSI_PIR_LOGE("batch count mismatch: expected=%{public}zu, actual=%{public}zu, "
+        LOGE("batch count mismatch: expected=%{public}zu, actual=%{public}zu, "
                      "symCount=%{public}zu, capacity=%{public}zu",
                      expectedBatches, batchCount, symmetricCount, capacity);
         return PSI_PIR_CODEC_ERROR;
     }
-    if (batchCount != 0 && !symCipherText.has_value()) {
-        PSI_PIR_LOGE("fheCipherText non-empty but symCipherText missing");
+    if (batchCount != 0 && !valueCipherText.has_value()) {
+        LOGE("resultCipherText non-empty but valueCipherText missing");
         return PSI_PIR_CODEC_ERROR;
     }
-    if (symCipherText.has_value()) {
-        return ValidateSymmetricCiphertexts(*symCipherText);
+    if (valueCipherText.has_value()) {
+        return ValidateSymmetricCiphertexts(*valueCipherText);
     }
     return PSI_PIR_SUCCESS;
 }
@@ -228,47 +228,24 @@ int32_t ProtocolCodec::ValidateProtocol(const ProtocolParams &params) const noex
 int32_t ProtocolCodec::ValidatePrivacyTarget(const Bytes &privacyTarget) const noexcept
 {
     if (privacyTarget.empty()) {
-        PSI_PIR_LOGE("privacyTarget is empty");
+        LOGE("privacyTarget is empty");
         return PSI_PIR_CODEC_ERROR;
     }
     return PSI_PIR_SUCCESS;
-}
-
-int32_t ProtocolCodec::ValidateSearchResultLayout(const PrivacySearchResult &result,
-                                                  const ProtocolParams &params) const noexcept
-{
-    return params.mode == ProtocolMode::PIR
-        ? ValidatePirResultLayout(result.fheCipherText.size(), result.symCipherText, params)
-        : PSI_PIR_SUCCESS;
-}
-
-int32_t ProtocolCodec::ValidatePlainSearchResult(const PrivacySearchResult &result,
-                                                 const ProtocolParams &params) const noexcept
-{
-    std::size_t expectedBytes = 0;
-    auto resultCode = CalculatePlaintextByteCount(params, expectedBytes);
-    if (resultCode != PSI_PIR_SUCCESS) {
-        return resultCode;
-    }
-    resultCode = ValidateSerializedPlaintexts(result.fheCipherText, expectedBytes);
-    if (resultCode != PSI_PIR_SUCCESS) {
-        return resultCode;
-    }
-    return ValidateSearchResultLayout(result, params);
 }
 
 int32_t ProtocolCodec::SerializePlaintext(const Slots &slots, const ProtocolParams &params,
                                           Bytes &output) const noexcept
 {
     if (slots.size() != params.polyModulusDegree) {
-        PSI_PIR_LOGE("decoded slot count does not match protocol dimension");
+        LOGE("decoded slot count does not match protocol dimension");
         return PSI_PIR_CODEC_ERROR;
     }
     Bytes result;
     result.reserve(slots.size() * sizeof(uint64_t));
     for (const auto slot : slots) {
         if (slot >= params.plainModulus) {
-            PSI_PIR_LOGE("decoded slot exceeds plaintext modulus");
+            LOGE("decoded slot exceeds plaintext modulus");
             return PSI_PIR_CODEC_ERROR;
         }
         for (size_t byte = 0; byte < sizeof(uint64_t); ++byte) {
@@ -280,8 +257,8 @@ int32_t ProtocolCodec::SerializePlaintext(const Slots &slots, const ProtocolPara
 }
 
 int32_t ProtocolCodec::ParsePlaintexts(const std::vector<Bytes> &fhePlainText,
-    const std::optional<std::vector<Bytes>> &symCipherText, const ProtocolParams &params,
-    std::vector<Slots> &plaintexts) const noexcept
+                                       const std::optional<std::vector<Bytes>> &valueCipherText,
+                                       const ProtocolParams &params, std::vector<Slots> &plaintexts) const noexcept
 {
     std::size_t expectedBytes = 0;
     auto ret = CalculatePlaintextByteCount(params, expectedBytes);
@@ -293,10 +270,13 @@ int32_t ProtocolCodec::ParsePlaintexts(const std::vector<Bytes> &fhePlainText,
         return ret;
     }
     if (params.mode == ProtocolMode::PIR) {
-        ret = ValidatePirResultLayout(fhePlainText.size(), symCipherText, params);
+        ret = ValidatePirResultLayout(fhePlainText.size(), valueCipherText, params);
         if (ret != PSI_PIR_SUCCESS) {
             return ret;
         }
+    } else if (valueCipherText.has_value()) {
+        LOGE("PSI plaintext result must not contain value ciphertexts");
+        return PSI_PIR_CODEC_ERROR;
     }
     const auto slotCount = params.dataNumPerPlaintext * params.slotsPerData;
     std::vector<Slots> decoded;
@@ -305,15 +285,9 @@ int32_t ProtocolCodec::ParsePlaintexts(const std::vector<Bytes> &fhePlainText,
         decoded.push_back(DeserializePlaintext(serialized, slotCount));
     }
     plaintexts = std::move(decoded);
-    PSI_PIR_LOGI("plaintext parsing complete, batches=%{public}zu, slotsPerBatch=%{public}zu",
-        fhePlainText.size(), slotCount);
+    LOGI("plaintext parsing complete, batches=%{public}zu, slotsPerBatch=%{public}zu", fhePlainText.size(),
+                 slotCount);
     return PSI_PIR_SUCCESS;
-}
-
-int32_t ProtocolCodec::ParsePlaintexts(const PrivacySearchResult &input, const ProtocolParams &params,
-    std::vector<Slots> &plaintexts) const noexcept
-{
-    return ParsePlaintexts(input.fheCipherText, input.symCipherText, params, plaintexts);
 }
 
 } // namespace psi_pir::internal

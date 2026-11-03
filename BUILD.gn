@@ -54,8 +54,8 @@ group("asset_bin_test") {
   deps = [
     "test/asset/unittest/kits_ndk:asset_ndk_test",
     "test/asset/unittest/module_test:asset_dependency_test",
-    "psi_pir_protocol:psi_pir_protocol_test",
-    "psi_pir_protocol:psi_pir_he_test",
+    "test/asset/unittest/privacy_protocol:psi_pir_protocol_test",
+    "test/asset/unittest/privacy_he:psi_pir_he_test",
     "test/asset/unittest/privacy_protocol:asset_privacy_protocol_test",
     "test/asset/unittest/privacy_he:asset_privacy_he_test",
     "test/asset/unittest/privacy_root:asset_privacy_root_test",

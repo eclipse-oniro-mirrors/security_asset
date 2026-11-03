@@ -34,25 +34,25 @@ std::shared_ptr<const IPirValueCrypto> g_pirValueCrypto;
 
 void SetHashProvider(std::shared_ptr<const IHashProvider> provider) noexcept
 {
-    PSI_PIR_LOGI("hash provider override changed, custom=%{public}d", provider ? 1 : 0);
+    LOGI("hash provider override changed, custom=%{public}d", provider ? 1 : 0);
     std::atomic_store_explicit(&g_hashProvider, std::move(provider), std::memory_order_release);
 }
 
 void SetRandomSource(std::shared_ptr<IRandomSource> source) noexcept
 {
-    PSI_PIR_LOGI("random source override changed, custom=%{public}d", source ? 1 : 0);
+    LOGI("random source override changed, custom=%{public}d", source ? 1 : 0);
     std::atomic_store_explicit(&g_randomSource, std::move(source), std::memory_order_release);
 }
 
 void SetHEEngine(std::shared_ptr<const IHEEngine> engine) noexcept
 {
-    PSI_PIR_LOGI("HE engine changed, registered=%{public}d", engine ? 1 : 0);
+    LOGI("HE engine changed, registered=%{public}d", engine ? 1 : 0);
     std::atomic_store_explicit(&g_heEngine, std::move(engine), std::memory_order_release);
 }
 
 void SetPirValueCrypto(std::shared_ptr<const IPirValueCrypto> crypto) noexcept
 {
-    PSI_PIR_LOGI("pir value crypto override changed, custom=%{public}d", crypto ? 1 : 0);
+    LOGI("pir value crypto override changed, custom=%{public}d", crypto ? 1 : 0);
     std::atomic_store_explicit(&g_pirValueCrypto, std::move(crypto), std::memory_order_release);
 }
 

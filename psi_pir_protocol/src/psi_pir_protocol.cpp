@@ -24,7 +24,7 @@ namespace psi_pir {
 int32_t GenPrivacyTarget(const TargetInput &input, const PrivacyProtocol &protocol, const CallerIdentity &identity,
                          Bytes &output) noexcept
 {
-    PSI_PIR_LOGI("protocol genPrivacyTarget begin, inputBytes=%{public}zu", input.elemData.size());
+    LOGI("protocol genPrivacyTarget begin, inputBytes=%{public}zu", input.elemData.size());
     internal::ProtocolParams params;
     const auto ret = internal::MapPrivacyProtocol(protocol, params);
     if (ret != PSI_PIR_SUCCESS) {
@@ -32,9 +32,9 @@ int32_t GenPrivacyTarget(const TargetInput &input, const PrivacyProtocol &protoc
     }
     const auto targetRet = internal::PsiPirProtocolImpl().GenPrivacyTarget(input, params, identity, output);
     if (targetRet != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("genPrivacyTarget failed in protocol core, ret=%{public}d", targetRet);
+        LOGE("genPrivacyTarget failed in protocol core, ret=%{public}d", targetRet);
     } else {
-        PSI_PIR_LOGI("protocol genPrivacyTarget success, outputBytes=%{public}zu", output.size());
+        LOGI("protocol genPrivacyTarget success, outputBytes=%{public}zu", output.size());
     }
     return targetRet;
 }
@@ -42,8 +42,8 @@ int32_t GenPrivacyTarget(const TargetInput &input, const PrivacyProtocol &protoc
 int32_t PrivacySearch(const Bytes &privacyTarget, const std::vector<Element> &elements, const PrivacyProtocol &protocol,
                       PrivacySearchResult &output) noexcept
 {
-    PSI_PIR_LOGI("protocol privacySearch begin, targetBytes=%{public}zu, elements=%{public}zu",
-                 privacyTarget.size(), elements.size());
+    LOGI("protocol privacySearch begin, targetBytes=%{public}zu, elements=%{public}zu", privacyTarget.size(),
+                 elements.size());
     internal::ProtocolParams params;
     const auto ret = internal::MapPrivacyProtocol(protocol, params);
     if (ret != PSI_PIR_SUCCESS) {
@@ -51,17 +51,17 @@ int32_t PrivacySearch(const Bytes &privacyTarget, const std::vector<Element> &el
     }
     const auto searchRet = internal::PsiPirProtocolImpl().PrivacySearch(privacyTarget, elements, params, output);
     if (searchRet != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("privacySearch failed in protocol core, ret=%{public}d", searchRet);
+        LOGE("privacySearch failed in protocol core, ret=%{public}d", searchRet);
     } else {
-        PSI_PIR_LOGI("protocol privacySearch success, batches=%{public}zu", output.fheCipherText.size());
+        LOGI("protocol privacySearch success, batches=%{public}zu", output.resultCipherText.size());
     }
     return searchRet;
 }
 
-int32_t DecryptCiphertext(const Bytes &ciphertext, const PrivacyProtocol &protocol,
-    const CallerIdentity &identity, Bytes &output) noexcept
+int32_t DecryptCiphertext(const Bytes &ciphertext, const PrivacyProtocol &protocol, const CallerIdentity &identity,
+                          Bytes &output) noexcept
 {
-    PSI_PIR_LOGI("protocol decryptCiphertext begin, bytes=%{public}zu", ciphertext.size());
+    LOGI("protocol decryptCiphertext begin, bytes=%{public}zu", ciphertext.size());
     internal::ProtocolParams params;
     const auto ret = internal::MapPrivacyProtocol(protocol, params);
     if (ret != PSI_PIR_SUCCESS) {
@@ -69,28 +69,29 @@ int32_t DecryptCiphertext(const Bytes &ciphertext, const PrivacyProtocol &protoc
     }
     const auto decryptRet = internal::PsiPirProtocolImpl().DecryptCiphertext(ciphertext, params, identity, output);
     if (decryptRet != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("decryptCiphertext failed, ret=%{public}d", decryptRet);
+        LOGE("decryptCiphertext failed, ret=%{public}d", decryptRet);
     } else {
-        PSI_PIR_LOGI("protocol decryptCiphertext success, bytes=%{public}zu", output.size());
+        LOGI("protocol decryptCiphertext success, bytes=%{public}zu", output.size());
     }
     return decryptRet;
 }
 
 int32_t PostProcessSearchResult(const std::vector<Bytes> &fhePlainText,
-    const std::optional<std::vector<Bytes>> &symCipherText, const PrivacyProtocol &protocol,
-    SearchResult &output) noexcept
+                                const std::optional<std::vector<Bytes>> &valueCipherText,
+                                const PrivacyProtocol &protocol, SearchResult &output) noexcept
 {
-    PSI_PIR_LOGI("protocol PostProcessSearchResult postprocess begin, batches=%{public}zu", fhePlainText.size());
+    LOGI("protocol PostProcessSearchResult postprocess begin, batches=%{public}zu", fhePlainText.size());
     internal::ProtocolParams params;
     const auto ret = internal::MapPrivacyProtocol(protocol, params);
     if (ret != PSI_PIR_SUCCESS) {
         return ret;
     }
-    const auto resultRet = internal::PsiPirProtocolImpl().PostProcessSearchResult(fhePlainText, symCipherText, params, output);
+    const auto resultRet =
+        internal::PsiPirProtocolImpl().PostProcessSearchResult(fhePlainText, valueCipherText, params, output);
     if (resultRet != PSI_PIR_SUCCESS) {
-        PSI_PIR_LOGE("PostProcessSearchResult postprocess failed, ret=%{public}d", resultRet);
+        LOGE("PostProcessSearchResult postprocess failed, ret=%{public}d", resultRet);
     } else {
-        PSI_PIR_LOGI("protocol PostProcessSearchResult postprocess success");
+        LOGI("protocol PostProcessSearchResult postprocess success");
     }
     return resultRet;
 }

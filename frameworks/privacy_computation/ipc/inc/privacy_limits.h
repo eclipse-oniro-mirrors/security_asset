@@ -27,7 +27,6 @@ constexpr size_t PRIVACY_FLAG_BYTES = sizeof(uint32_t);
 constexpr size_t PRIVACY_PROTOCOL_BYTES = sizeof(uint32_t) + sizeof(uint32_t);
 constexpr size_t TARGET_FIXED_BYTES = PRIVACY_PROTOCOL_BYTES + sizeof(uint32_t); // Protocol and hash algorithm.
 constexpr size_t SEARCH_FIXED_BYTES = PRIVACY_PROTOCOL_BYTES + PRIVACY_FLAG_BYTES;
-constexpr size_t RESULT_FIXED_BYTES = PRIVACY_FLAG_BYTES + PRIVACY_FLAG_BYTES;
 constexpr size_t MAX_PRIVACY_ITEMS = 65536;
 constexpr uint32_t MAX_PRIVACY_INLINE_BYTES = 192 * 1024;
 constexpr uint32_t MAX_TARGET_RESULT_BYTES = MAX_PRIVACY_INLINE_BYTES;

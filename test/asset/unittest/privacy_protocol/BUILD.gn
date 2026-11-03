@@ -58,3 +58,45 @@ ohos_unittest("asset_privacy_client_test") {
   subsystem_name = "security"
   part_name = "asset"
 }
+
+ohos_unittest("psi_pir_protocol_test") {
+  module_out_path = "asset/asset"
+
+  sources = [ "src/psi_pir_protocol_test.cpp" ]
+
+  include_dirs = [
+    "../../../../psi_pir_protocol/common/inc",
+    "../../../../psi_pir_protocol/crypto/inc",
+    "../../../../psi_pir_protocol/protocol/inc",
+    "../../../../psi_pir_protocol/core/inc",
+    "../../../../psi_pir_protocol/he/inc",
+  ]
+
+  deps = [ "../../../../psi_pir_protocol:psi_pir_protocol" ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+  ]
+
+  cflags_cc = [
+    "-std=c++17",
+    "-Wall",
+    "-Werror",
+    "-fno-exceptions",
+  ]
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+
+  subsystem_name = "security"
+  part_name = "asset"
+}

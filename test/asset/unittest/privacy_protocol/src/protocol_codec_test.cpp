@@ -44,7 +44,8 @@ HWTEST(PrivacyProtocolCodecTest, SerializePlaintext_001, TestSize.Level1)
     EXPECT_TRUE(std::equal(lastSlot.begin(), lastSlot.end(), bytes.end() - sizeof(uint64_t)));
     const PrivacySearchResult plaintexts{{bytes}, std::nullopt};
     std::vector<Slots> decoded;
-    ASSERT_EQ(ProtocolCodec().ParsePlaintexts(plaintexts, params, decoded), PSI_PIR_SUCCESS);
+    ASSERT_EQ(ProtocolCodec().ParsePlaintexts(plaintexts.resultCipherText, plaintexts.valueCipherText, params, decoded),
+              PSI_PIR_SUCCESS);
     ASSERT_EQ(decoded.size(), 1U);
     EXPECT_EQ(decoded.front(), slots);
 }

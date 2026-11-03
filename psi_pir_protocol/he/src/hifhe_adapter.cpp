@@ -15,6 +15,7 @@
 
 #include "hifhe_adapter.h"
 #include "crypt_eal_init.h"
+#include "crypt_errno.h"
 #include "psi_pir_error_code.h"
 #include "psi_pir_log.h"
 #include <algorithm>
@@ -39,18 +40,18 @@ int32_t HifheAdapter::Serialize(const HifheText &ciphertext, Bytes &output) cons
     uint32_t size = 0;
     auto ret = HIFHE_Serialize(ctx_, ciphertext.value, nullptr, &size);
     if (ret != HIFHE_BUFFER_TOO_SMALL || size == 0 || size > MAX_HE_BYTES) {
-        PSI_PIR_LOGE("Query HiFHE serialized length failed, ret=%{public}d, size=%{public}u", ret, size);
+        LOGE("Query HiFHE serialized length failed, ret=%{public}d, size=%{public}u", ret, size);
         return PSI_PIR_HE_ERROR;
     }
     Bytes buffer(size);
     ret = HIFHE_Serialize(ctx_, ciphertext.value, buffer.data(), &size);
     if (ret != HIFHE_SUCCESS || size == 0 || size > buffer.size()) {
-        PSI_PIR_LOGE("Serialize HiFHE object failed, ret=%{public}d, size=%{public}u", ret, size);
+        LOGE("Serialize HiFHE object failed, ret=%{public}d, size=%{public}u", ret, size);
         return PSI_PIR_HE_ERROR;
     }
     buffer.resize(size);
     output = std::move(buffer);
-    PSI_PIR_LOGI("HiFHE Serialize success, bytes=%{public}zu", output.size());
+    LOGI("HiFHE Serialize success, bytes=%{public}zu", output.size());
     return PSI_PIR_SUCCESS;
 }
 
@@ -66,11 +67,11 @@ int32_t HifheAdapter::Deserialize(const Bytes &ciphertext, HifheText &output) no
     const auto ret =
         HIFHE_Deserialize(ctx_, ciphertext.data(), static_cast<uint32_t>(ciphertext.size()), &result.value);
     if (ret != HIFHE_SUCCESS || result.value == nullptr) {
-        PSI_PIR_LOGE("Deserialize HiFHE object failed, ret=%{public}d", ret);
+        LOGE("Deserialize HiFHE object failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
     }
     std::swap(output.value, result.value);
-    PSI_PIR_LOGI("HiFHE Deserialize success, bytes=%{public}zu", ciphertext.size());
+    LOGI("HiFHE Deserialize success, bytes=%{public}zu", ciphertext.size());
     return PSI_PIR_SUCCESS;
 }
 
@@ -97,10 +98,10 @@ int32_t HifheAdapter::ConfigureContext() noexcept
         ret = HIFHE_Ctrl(ctx_, HIFHE_CTRL_BGV_GET_POLY_DEGREE, nullptr, &degree, sizeof(degree));
     }
     if (ret != HIFHE_SUCCESS || degree != kDefaultPolyModulusDegree) {
-        PSI_PIR_LOGE("Configure HiFHE parameters failed, ret=%{public}d, degree=%{public}u", ret, degree);
+        LOGE("Configure HiFHE parameters failed, ret=%{public}d, degree=%{public}u", ret, degree);
         return PSI_PIR_HE_ERROR;
     }
-    PSI_PIR_LOGI("HiFHE parameters configured, degree=%{public}u", degree);
+    LOGI("HiFHE parameters configured, degree=%{public}u", degree);
     return PSI_PIR_SUCCESS;
 }
 
@@ -108,19 +109,19 @@ int32_t HifheAdapter::InitializeEvaluation(const ProtocolParams &params) noexcep
 {
     if (ctx_ != nullptr || params.fheAlgorithm != FheAlgorithm::BGV2048_48 ||
         params.polyModulusDegree != kDefaultPolyModulusDegree || params.plainModulus != kDefaultPlainModulus) {
-        PSI_PIR_LOGE("Invalid HiFHE protocol parameters or repeated initialization");
+        LOGE("Invalid HiFHE protocol parameters or repeated initialization");
         return PSI_PIR_INVALID_ARGUMENT;
     }
-    PSI_PIR_LOGI("HiFHE context initialize begin, degree=%{public}zu", params.polyModulusDegree);
+    LOGI("HiFHE context initialize begin, degree=%{public}zu", params.polyModulusDegree);
     // Shared random facilities live for the process; an adapter must not globally clean them up.
     static const auto initRet = CRYPT_EAL_Init(CRYPT_EAL_INIT_CPU | CRYPT_EAL_INIT_BSL | CRYPT_EAL_INIT_RAND);
-    if (initRet != HIFHE_SUCCESS) {
-        PSI_PIR_LOGE("Initialize openHiTLS failed, ret=%{public}d", initRet);
+    if (initRet != CRYPT_SUCCESS && initRet != CRYPT_EAL_ERR_DRBG_REPEAT_INIT) {
+        LOGE("Initialize openHiTLS failed, ret=%{public}d", initRet);
         return PSI_PIR_HE_ERROR;
     }
     ctx_ = HIFHE_New(HIFHE_BGV);
     if (ctx_ == nullptr) {
-        PSI_PIR_LOGE("Create native HiFHE BGV context failed");
+        LOGE("Create native HiFHE BGV context failed");
         return PSI_PIR_HE_ERROR;
     }
     const auto ret = ConfigureContext();
@@ -128,7 +129,7 @@ int32_t HifheAdapter::InitializeEvaluation(const ProtocolParams &params) noexcep
         Reset();
         return ret;
     }
-    PSI_PIR_LOGI("HiFHE evaluation context initialized");
+    LOGI("HiFHE evaluation context initialized");
     return PSI_PIR_SUCCESS;
 }
 
@@ -141,15 +142,15 @@ int32_t HifheAdapter::InitializeKeyed(const ProtocolParams &params, const HeSeed
     ret = HIFHE_Ctrl(ctx_, HIFHE_CTRL_BGV_SET_SEED, nullptr, const_cast<uint8_t *>(seed.bytes.data()),
                      static_cast<uint32_t>(seed.bytes.size()));
     if (ret == HIFHE_SUCCESS) {
-        PSI_PIR_LOGI("HiFHE seed configured, key generation begin");
+        LOGI("HiFHE seed configured, key generation begin");
         ret = HIFHE_KeyGen(ctx_);
     }
     if (ret != HIFHE_SUCCESS) {
-        PSI_PIR_LOGE("Generate native HiFHE key from seed failed, ret=%{public}d", ret);
+        LOGE("Generate native HiFHE key from seed failed, ret=%{public}d", ret);
         Reset();
         return PSI_PIR_HE_ERROR;
     }
-    PSI_PIR_LOGI("HiFHE key generation success");
+    LOGI("HiFHE key generation success");
     return PSI_PIR_SUCCESS;
 }
 
@@ -160,17 +161,17 @@ int32_t HifheAdapter::Encode(const Slots &slots, HifheText &output) noexcept
     }
     if (slots.size() != kDefaultPolyModulusDegree ||
         std::any_of(slots.begin(), slots.end(), [](uint64_t slot) { return slot >= kDefaultPlainModulus; })) {
-        PSI_PIR_LOGE("Invalid HiFHE slot count or slot value");
+        LOGE("Invalid HiFHE slot count or slot value");
         return PSI_PIR_INVALID_ARGUMENT;
     }
     HifheText result;
     const auto ret = HIFHE_Encode(ctx_, slots.data(), static_cast<uint32_t>(slots.size()), &result.value);
     if (ret != HIFHE_SUCCESS || result.value == nullptr) {
-        PSI_PIR_LOGE("HIFHE_Encode failed, ret=%{public}d", ret);
+        LOGE("HIFHE_Encode failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
     }
     std::swap(output.value, result.value);
-    PSI_PIR_LOGI("HiFHE Encode success, slots=%{public}zu", slots.size());
+    LOGI("HiFHE Encode success, slots=%{public}zu", slots.size());
     return PSI_PIR_SUCCESS;
 }
 
@@ -184,11 +185,11 @@ int32_t HifheAdapter::Decode(const HifheText &plaintext, Slots &output) noexcept
     const auto ret = HIFHE_Decode(ctx_, plaintext.value, values.data(), &count);
     if (ret != HIFHE_SUCCESS || count != values.size() ||
         std::any_of(values.begin(), values.end(), [](uint64_t slot) { return slot >= kDefaultPlainModulus; })) {
-        PSI_PIR_LOGE("HIFHE_Decode failed, ret=%{public}d, count=%{public}u", ret, count);
+        LOGE("HIFHE_Decode failed, ret=%{public}d, count=%{public}u", ret, count);
         return PSI_PIR_HE_ERROR;
     }
     output = std::move(values);
-    PSI_PIR_LOGI("HiFHE Decode success, slots=%{public}zu", output.size());
+    LOGI("HiFHE Decode success, slots=%{public}zu", output.size());
     return PSI_PIR_SUCCESS;
 }
 
@@ -200,11 +201,11 @@ int32_t HifheAdapter::Encrypt(const HifheText &plaintext, HifheText &output) noe
     HifheText result;
     const auto ret = HIFHE_Encrypt(ctx_, plaintext.value, &result.value);
     if (ret != HIFHE_SUCCESS || result.value == nullptr) {
-        PSI_PIR_LOGE("HIFHE_Encrypt failed, ret=%{public}d", ret);
+        LOGE("HIFHE_Encrypt failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
     }
     std::swap(output.value, result.value);
-    PSI_PIR_LOGI("HiFHE Encrypt success");
+    LOGI("HiFHE Encrypt success");
     return PSI_PIR_SUCCESS;
 }
 
@@ -216,11 +217,11 @@ int32_t HifheAdapter::Decrypt(const HifheText &ciphertext, HifheText &output) no
     HifheText result;
     const auto ret = HIFHE_Decrypt(ctx_, ciphertext.value, &result.value);
     if (ret != HIFHE_SUCCESS || result.value == nullptr) {
-        PSI_PIR_LOGE("HIFHE_Decrypt failed, ret=%{public}d", ret);
+        LOGE("HIFHE_Decrypt failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
     }
     std::swap(output.value, result.value);
-    PSI_PIR_LOGI("HiFHE Decrypt success");
+    LOGI("HiFHE Decrypt success");
     return PSI_PIR_SUCCESS;
 }
 
@@ -232,17 +233,17 @@ int32_t HifheAdapter::SubtractFromPlaintext(HifheText &ciphertext, const HifheTe
     }
     auto ret = HIFHE_Ctrl(ctx_, HIFHE_CTRL_BGV_SET_NEGATE, ciphertext.value, nullptr, 0);
     if (ret != HIFHE_SUCCESS) {
-        PSI_PIR_LOGE("Set native HiFHE negate flag failed, ret=%{public}d", ret);
+        LOGE("Set native HiFHE negate flag failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
     }
     HifheText result;
     ret = HIFHE_Add(ctx_, ciphertext.value, plaintext.value, &result.value);
     if (ret != HIFHE_SUCCESS || result.value == nullptr) {
-        PSI_PIR_LOGE("HIFHE_Add for PT-CT failed, ret=%{public}d", ret);
+        LOGE("HIFHE_Add for PT-CT failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
     }
     std::swap(output.value, result.value);
-    PSI_PIR_LOGI("HiFHE AddPlain success");
+    LOGI("HiFHE AddPlain success");
     return PSI_PIR_SUCCESS;
 }
 
@@ -255,11 +256,11 @@ int32_t HifheAdapter::MultiplyPlaintext(const HifheText &ciphertext, const Hifhe
     HifheText result;
     const auto ret = HIFHE_Mul(ctx_, ciphertext.value, plaintext.value, &result.value);
     if (ret != HIFHE_SUCCESS || result.value == nullptr) {
-        PSI_PIR_LOGE("HIFHE_Mul failed, ret=%{public}d", ret);
+        LOGE("HIFHE_Mul failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
     }
     std::swap(output.value, result.value);
-    PSI_PIR_LOGI("HiFHE MultiplyPlain success");
+    LOGI("HiFHE MultiplyPlain success");
     return PSI_PIR_SUCCESS;
 }
 
@@ -269,14 +270,16 @@ int32_t HifheAdapter::Rerandomize(const HifheText &ciphertext, HifheText &output
         return PSI_PIR_HE_ERROR;
     }
     HifheText result;
-    const auto ret =
-        HIFHE_Ctrl(ctx_, HIFHE_CTRL_BGV_RERANDOMIZE, ciphertext.value, &result.value, sizeof(result.value));
+    // The native API requires the size of an output HEText handle, not the opaque object.
+    // NOLINTNEXTLINE(bugprone-sizeof-expression)
+    constexpr uint32_t OUTPUT_HANDLE_BYTES = sizeof(HIFHE_HEText *);
+    const auto ret = HIFHE_Ctrl(ctx_, HIFHE_CTRL_BGV_RERANDOMIZE, ciphertext.value, &result.value, OUTPUT_HANDLE_BYTES);
     if (ret != HIFHE_SUCCESS || result.value == nullptr) {
-        PSI_PIR_LOGE("Native HiFHE rerandomization failed, ret=%{public}d", ret);
+        LOGE("Native HiFHE rerandomization failed, ret=%{public}d", ret);
         return PSI_PIR_HE_ERROR;
     }
     std::swap(output.value, result.value);
-    PSI_PIR_LOGI("HiFHE Rerandomize success");
+    LOGI("HiFHE Rerandomize success");
     return PSI_PIR_SUCCESS;
 }
 } // namespace psi_pir::internal

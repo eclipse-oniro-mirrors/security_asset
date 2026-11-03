@@ -13,18 +13,10 @@
  * limitations under the License.
  */
 
-#include "privacy_computation_napi_context.h"
-#include "privacy_computation_log.h"
-
-namespace OHOS::Security::PrivacyComputation {
-PrivacyComputationBaseContext::~PrivacyComputationBaseContext()
-{
-    if (work != nullptr && env != nullptr) {
-        const napi_status status = napi_delete_async_work(env, work);
-        if (status != napi_ok) {
-            LOGE("Failed to delete async work, status=%{public}d", static_cast<int32_t>(status));
-        }
-        work = nullptr;
-    }
-}
-} // namespace OHOS::Security::PrivacyComputation
+#ifndef PRIVACY_COVERAGE_HOST_TEST_H
+#define PRIVACY_COVERAGE_HOST_TEST_H
+#include <gtest/gtest.h>
+namespace testing::ext {}
+#define HWTEST(suite, name, level) TEST(suite, name)
+#define HWTEST_F(suite, name, level) TEST_F(suite, name)
+#endif

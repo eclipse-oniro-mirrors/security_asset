@@ -19,13 +19,13 @@
 namespace {
 using namespace OHOS::Security::PrivacyComputation;
 
-constexpr napi_status CountStatus(int &calls, napi_status status)
+constexpr napi_status CountStatus(int32_t &calls, napi_status status)
 {
     ++calls;
     return status;
 }
 
-constexpr napi_status RunStatusGuard(int &calls, int &continued, napi_status status)
+constexpr napi_status RunStatusGuard(int32_t &calls, int32_t &continued, napi_status status)
 {
     IF_ERR_RETURN(CountStatus(calls, status));
     ++continued;
@@ -34,13 +34,13 @@ constexpr napi_status RunStatusGuard(int &calls, int &continued, napi_status sta
 
 constexpr bool StatusGuardEvaluatesOnce(napi_status status)
 {
-    int calls = 0;
-    int continued = 0;
+    int32_t calls = 0;
+    int32_t continued = 0;
     const auto result = RunStatusGuard(calls, continued, status);
     return result == status && calls == 1 && continued == (status == napi_ok ? 1 : 0);
 }
 
-constexpr int RunBooleanGuard(int &calls, int &continued, bool pass)
+constexpr int32_t RunBooleanGuard(int32_t &calls, int32_t &continued, bool pass)
 {
     IF_FALSE_RETURN((++calls, pass), 7);
     ++continued;
@@ -49,22 +49,22 @@ constexpr int RunBooleanGuard(int &calls, int &continued, bool pass)
 
 constexpr bool BooleanGuardEvaluatesOnce(bool pass)
 {
-    int calls = 0;
-    int continued = 0;
-    const int result = RunBooleanGuard(calls, continued, pass);
+    int32_t calls = 0;
+    int32_t continued = 0;
+    const int32_t result = RunBooleanGuard(calls, continued, pass);
     return calls == 1 && result == (pass ? 0 : 7) && continued == (pass ? 1 : 0);
 }
 
-constexpr int CheckThrowCondition()
+constexpr int32_t CheckThrowCondition()
 {
-    int calls = 0;
+    int32_t calls = 0;
     // The false guard is constexpr: it must evaluate the condition exactly once,
     // without executing the non-constexpr JS throw helper.
     NAPI_THROW_BASE(nullptr, ++calls == 2, -1, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "test");
     return calls;
 }
 
-constexpr int CheckIfElseBinding(bool firstBranch)
+constexpr int32_t CheckIfElseBinding(bool firstBranch)
 {
     if (firstBranch)
         IF_FALSE_RETURN(false, 7);

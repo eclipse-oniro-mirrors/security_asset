@@ -13,15 +13,12 @@
  * limitations under the License.
  */
 
-#ifndef PSI_PIR_SEARCH_RESULT_PROCESSOR_H
-#define PSI_PIR_SEARCH_RESULT_PROCESSOR_H
-
-#include "psi_pir_protocol.h"
-
-namespace psi_pir::internal {
-// Input contains decrypted uint64_le slots, not HE ciphertexts.
-int32_t ProcessDecryptedSearchResult(const PrivacySearchResult &input, const PrivacyProtocol &protocol,
-                                     SearchResult &output) noexcept;
-} // namespace psi_pir::internal
-
-#endif // PSI_PIR_SEARCH_RESULT_PROCESSOR_H
+#ifndef PRIVACY_COVERAGE_DLFCN_H
+#define PRIVACY_COVERAGE_DLFCN_H
+#include <cstdint>
+#define RTLD_NOW 2
+#define RTLD_LOCAL 0
+extern "C" void *dlopen(const char *, int32_t);
+extern "C" void *dlsym(void *, const char *);
+extern "C" char *dlerror();
+#endif
