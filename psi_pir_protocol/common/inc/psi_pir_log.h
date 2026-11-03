@@ -19,22 +19,11 @@
 #include "hilog/log.h"
 #include <cstdint>
 
-// The current Asset build already owns this domain. Keeping the value here
-// avoids a dependency on Asset's log wrapper. A future integration can define
-// LOG_DOMAIN/LOG_TAG or replace this header after assigning its domain.
-#ifndef LOG_DOMAIN
-#define LOG_DOMAIN 0xD002F20
-#endif
-
-#ifndef LOG_TAG
-#define LOG_TAG "PsiPirProtocol"
-#endif
-
 #undef LOG_DOMAIN
-#define LOG_DOMAIN LOG_DOMAIN
+#define LOG_DOMAIN 0xD002F0F
 
 #undef LOG_TAG
-#define LOG_TAG LOG_TAG
+#define LOG_TAG "PsiPirProtocol"
 
 #define LOGD(fmt, args...)                                                                                     \
     HILOG_DEBUG(LOG_CORE, "%{public}s[%{public}u]: " fmt "\n", __func__, static_cast<uint32_t>(__LINE__),              \

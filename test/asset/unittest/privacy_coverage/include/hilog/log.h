@@ -16,8 +16,9 @@
 #ifndef PRIVACY_COVERAGE_HILOG_H
 #define PRIVACY_COVERAGE_HILOG_H
 #define LOG_CORE 0
-#define HILOG_DEBUG(...) ((void)0)
-#define HILOG_INFO(...) ((void)0)
-#define HILOG_WARN(...) ((void)0)
-#define HILOG_ERROR(...) ((void)0)
+// Resolve the same module identifiers as real HiLog, even when discarding log output.
+#define HILOG_DEBUG(...) ((void)(LOG_DOMAIN), (void)(LOG_TAG))
+#define HILOG_INFO(...) ((void)(LOG_DOMAIN), (void)(LOG_TAG))
+#define HILOG_WARN(...) ((void)(LOG_DOMAIN), (void)(LOG_TAG))
+#define HILOG_ERROR(...) ((void)(LOG_DOMAIN), (void)(LOG_TAG))
 #endif
