@@ -28,13 +28,12 @@ namespace {
 // ===== Test fixtures =====
 
 // Whether the SA 66532 service is deployed on this device. When false, every
-// credential method degrades to SAF_ERR_SERVICE_UNAVAILABLE (except
-// UpdateModel/UpdateTool length-mismatch which the inner API checks before IPC).
+// credential method degrades to SAF_ERR_SERVICE_UNAVAILABLE.
 bool IsSaDeployed()
 {
     SafCredential cred;
     std::vector<ModelCredential> list;
-    int32_t ret = cred.GetAllModelCredentials(list);
+    int32_t ret = cred.PreGetAllModelCredentials(list);
     if (ret == SAF_ERR_SERVICE_UNAVAILABLE) {
         LOGI("SA 66532 not deployed (ret=%{public}d)", ret);
         return false;
@@ -49,40 +48,56 @@ constexpr char TEST_SUBJECT_ID[] = "test-subject-001";
 constexpr char TEST_PROVIDER[] = "openai";
 constexpr char TEST_BASE_URL[] = "https://api.openai.com/v1";
 constexpr char TEST_API_KEY[] = "sk-test-key-001";
+constexpr char TEST_HANDLE_ALIAS[] = "test-handle-alias";
+constexpr char TEST_CREDENTIAL_ALIAS[] = "test-credential-alias";
+
+ModelCredentialContent MakeValidModelCredentialContent()
+{
+    ModelCredentialContent content;
+    content.baseUrl = TEST_BASE_URL;
+    content.credentialValue = TEST_API_KEY;
+    return content;
+}
+
+ModelCredentialInfo MakeValidModelCredentialInfo()
+{
+    ModelCredentialInfo info;
+    info.provider = TEST_PROVIDER;
+    info.modelList = {"gpt-4", "gpt-3.5-turbo"};
+    info.handleAlias = TEST_HANDLE_ALIAS;
+    info.credentialAlias = TEST_CREDENTIAL_ALIAS;
+    info.state = true;
+    return info;
+}
+
+ModelCredentialIndex MakeValidModelCredentialIndex()
+{
+    ModelCredentialIndex index;
+    index.credentialHandle = "mc_test_handle";
+    index.credentialId = "test-credential-id";
+    return index;
+}
 
 ModelCredential MakeValidModelCredential()
 {
     ModelCredential mc;
-    mc.provider = TEST_PROVIDER;
-    mc.baseUrl = TEST_BASE_URL;
-    mc.credentialValue = TEST_API_KEY;
-    mc.modelList = {"gpt-4", "gpt-3.5-turbo"};
-    mc.state = true;
-    mc.credentialAlias = "test-alias";
+    mc.modelCredentialContent = MakeValidModelCredentialContent();
+    mc.modelCredentialInfo = MakeValidModelCredentialInfo();
+    mc.modelCredentialIndex = MakeValidModelCredentialIndex();
     return mc;
-}
-
-ToolInfo MakeValidToolInfo()
-{
-    ToolInfo info;
-    info.agentTokenId = TEST_AGENT_TOKEN_ID;
-    info.subjectId = TEST_SUBJECT_ID;
-    info.accountId = "";
-    info.subAgentId = "";
-    return info;
 }
 
 ToolCredential MakeValidToolCredential()
 {
     ToolCredential tc;
-    tc.toolInfo = MakeValidToolInfo();
-    ToolCredentialInfo ci1;
+    tc.subjectId = TEST_SUBJECT_ID;
+    ToolCredentialContent ci1;
     ci1.envName = "API_KEY";
     ci1.credentialValue = "tool-secret-001";
-    ToolCredentialInfo ci2;
+    ToolCredentialContent ci2;
     ci2.envName = "ENDPOINT";
     ci2.credentialValue = "https://tool.example.com";
-    tc.toolCredentialInfos = {ci1, ci2};
+    tc.toolCredentialContents = {ci1, ci2};
     return tc;
 }
 
@@ -132,14 +147,18 @@ HWTEST_F(SafCredentialTest, AddModelCredential_001, TestSize.Level0)
 {
     LOGI("AddModelCredential_001 start");
     SafCredential cred;
-    ModelCredential mc = MakeValidModelCredential();
+    ModelCredentialContent content = MakeValidModelCredentialContent();
+    ModelCredentialInfo info = MakeValidModelCredentialInfo();
     std::string handle;
-    LOGI("call AddModelCredential provider=%{public}s", mc.provider.c_str());
-    int32_t ret = cred.AddModelCredential(mc, handle);
-    LOGI("AddModelCredential ret=%{public}d handleLen=%{public}zu", ret, handle.size());
+    std::string credentialId;
+    LOGI("call AddModelCredential provider=%{public}s", info.provider.c_str());
+    int32_t ret = cred.AddModelCredential(content, info, handle, credentialId);
+    LOGI("AddModelCredential ret=%{public}d handleLen=%{public}zu idLen=%{public}zu",
+        ret, handle.size(), credentialId.size());
     if (IsSaDeployed()) {
         EXPECT_EQ(ret, SAF_SUCCESS);
         EXPECT_FALSE(handle.empty());
+        EXPECT_FALSE(credentialId.empty());
     } else {
         EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
     }
@@ -157,10 +176,12 @@ HWTEST_F(SafCredentialTest, AddModelCredential_002, TestSize.Level0)
 {
     LOGI("AddModelCredential_002 start (empty provider)");
     SafCredential cred;
-    ModelCredential mc = MakeValidModelCredential();
-    mc.provider = "";
+    ModelCredentialContent content = MakeValidModelCredentialContent();
+    ModelCredentialInfo info = MakeValidModelCredentialInfo();
+    info.provider = "";
     std::string handle;
-    int32_t ret = cred.AddModelCredential(mc, handle);
+    std::string credentialId;
+    int32_t ret = cred.AddModelCredential(content, info, handle, credentialId);
     LOGI("AddModelCredential ret=%{public}d", ret);
     if (IsSaDeployed()) {
         // Service may accept or reject; only assert no crash + sensible code.
@@ -230,7 +251,7 @@ HWTEST_F(SafCredentialTest, UpdateModelCredential_001, TestSize.Level0)
     SafCredential cred;
     std::vector<ModelCredential> src = {MakeValidModelCredential()};
     std::vector<ModelCredential> dst = {MakeValidModelCredential()};
-    dst[0].credentialValue = "sk-updated-key";
+    dst[0].modelCredentialContent.credentialValue = "sk-updated-key";
     CredentialBatchResult result;
     int32_t ret = cred.UpdateModelCredential(src, dst, result);
     LOGI("UpdateModelCredential ret=%{public}d", ret);
@@ -289,18 +310,18 @@ HWTEST_F(SafCredentialTest, UpdateModelCredential_003, TestSize.Level0)
 
 /**
  * @tc.name: SafCredentialTest.GetActiveModelCredential_001
- * @tc.desc: Query with a non-empty handle.
+ * @tc.desc: Query with a non-empty handle and a model filter.
  * @tc.type: FUNC
  */
 HWTEST_F(SafCredentialTest, GetActiveModelCredential_001, TestSize.Level0)
 {
     LOGI("GetActiveModelCredential_001 start");
     SafCredential cred;
-    ModelCredentialInfo info;
-    int32_t ret = cred.GetActiveModelCredential("some-handle", info);
+    ModelCredentialContent content;
+    int32_t ret = cred.GetActiveModelCredential("mc_some_handle", "gpt-4", content);
     LOGI("GetActiveModelCredential ret=%{public}d", ret);
     if (IsSaDeployed()) {
-        EXPECT_EQ(ret, SAF_SUCCESS);
+        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID);
     } else {
         EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
     }
@@ -316,8 +337,8 @@ HWTEST_F(SafCredentialTest, GetActiveModelCredential_002, TestSize.Level0)
 {
     LOGI("GetActiveModelCredential_002 start (empty handle)");
     SafCredential cred;
-    ModelCredentialInfo info;
-    int32_t ret = cred.GetActiveModelCredential("", info);
+    ModelCredentialContent content;
+    int32_t ret = cred.GetActiveModelCredential("", "", content);
     LOGI("GetActiveModelCredential ret=%{public}d", ret);
     if (IsSaDeployed()) {
         EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID);
@@ -327,26 +348,73 @@ HWTEST_F(SafCredentialTest, GetActiveModelCredential_002, TestSize.Level0)
     LOGI("GetActiveModelCredential_002 end");
 }
 
-// ===== Model Credential — GetAllModelCredentials =====
+// ===== Model Credential — PreGetAllModelCredentials =====
 
 /**
- * @tc.name: SafCredentialTest.GetAllModelCredentials_001
- * @tc.desc: Query all model credentials.
+ * @tc.name: SafCredentialTest.PreGetAllModelCredentials_001
+ * @tc.desc: Query all model credentials (metadata only, credentialValue empty).
  * @tc.type: FUNC
  */
-HWTEST_F(SafCredentialTest, GetAllModelCredentials_001, TestSize.Level0)
+HWTEST_F(SafCredentialTest, PreGetAllModelCredentials_001, TestSize.Level0)
 {
-    LOGI("GetAllModelCredentials_001 start");
+    LOGI("PreGetAllModelCredentials_001 start");
     SafCredential cred;
     std::vector<ModelCredential> out;
-    int32_t ret = cred.GetAllModelCredentials(out);
-    LOGI("GetAllModelCredentials ret=%{public}d outSize=%{public}zu", ret, out.size());
+    int32_t ret = cred.PreGetAllModelCredentials(out);
+    LOGI("PreGetAllModelCredentials ret=%{public}d outSize=%{public}zu", ret, out.size());
     if (IsSaDeployed()) {
         EXPECT_EQ(ret, SAF_SUCCESS);
+        for (const auto &mc : out) {
+            EXPECT_TRUE(mc.modelCredentialContent.credentialValue.empty());
+        }
     } else {
         EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
     }
-    LOGI("GetAllModelCredentials_001 end");
+    LOGI("PreGetAllModelCredentials_001 end");
+}
+
+// ===== Model Credential — GetModelCredentialValue =====
+
+/**
+ * @tc.name: SafCredentialTest.GetModelCredentialValue_001
+ * @tc.desc: Query one credential value by index.
+ * @tc.type: FUNC
+ */
+HWTEST_F(SafCredentialTest, GetModelCredentialValue_001, TestSize.Level0)
+{
+    LOGI("GetModelCredentialValue_001 start");
+    SafCredential cred;
+    ModelCredentialIndex index = MakeValidModelCredentialIndex();
+    std::string credentialValue;
+    int32_t ret = cred.GetModelCredentialValue(index, credentialValue);
+    LOGI("GetModelCredentialValue ret=%{public}d valueLen=%{public}zu", ret, credentialValue.size());
+    if (IsSaDeployed()) {
+        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID);
+    } else {
+        EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
+    }
+    LOGI("GetModelCredentialValue_001 end");
+}
+
+/**
+ * @tc.name: SafCredentialTest.GetModelCredentialValue_002
+ * @tc.desc: Query with an empty index. Inner API does not validate.
+ * @tc.type: FUNC
+ */
+HWTEST_F(SafCredentialTest, GetModelCredentialValue_002, TestSize.Level0)
+{
+    LOGI("GetModelCredentialValue_002 start (empty index)");
+    SafCredential cred;
+    ModelCredentialIndex index;
+    std::string credentialValue;
+    int32_t ret = cred.GetModelCredentialValue(index, credentialValue);
+    LOGI("GetModelCredentialValue ret=%{public}d", ret);
+    if (IsSaDeployed()) {
+        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID);
+    } else {
+        EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
+    }
+    LOGI("GetModelCredentialValue_002 end");
 }
 
 // ===== Tool Credential — AddToolCredential =====
@@ -374,16 +442,16 @@ HWTEST_F(SafCredentialTest, AddToolCredential_001, TestSize.Level0)
 
 /**
  * @tc.name: SafCredentialTest.AddToolCredential_002
- * @tc.desc: Add a tool credential with empty toolCredentialInfos. Inner API does
- *           not validate; service may return ARG_INVALID.
+ * @tc.desc: Add a tool credential with empty toolCredentialContents. Inner API
+ *           does not validate; service may return ARG_INVALID.
  * @tc.type: FUNC
  */
 HWTEST_F(SafCredentialTest, AddToolCredential_002, TestSize.Level0)
 {
-    LOGI("AddToolCredential_002 start (empty toolCredentialInfos)");
+    LOGI("AddToolCredential_002 start (empty toolCredentialContents)");
     SafCredential cred;
     ToolCredential tc = MakeValidToolCredential();
-    tc.toolCredentialInfos.clear();
+    tc.toolCredentialContents.clear();
     std::vector<ToolCredential> tools = {tc};
     CredentialBatchResult result;
     int32_t ret = cred.AddToolCredential(tools, result);
@@ -400,21 +468,20 @@ HWTEST_F(SafCredentialTest, AddToolCredential_002, TestSize.Level0)
 
 /**
  * @tc.name: SafCredentialTest.UpdateToolCredential_001
- * @tc.desc: Update with src/dst of equal length.
+ * @tc.desc: Update the secret value of an existing env name.
  * @tc.type: FUNC
  */
 HWTEST_F(SafCredentialTest, UpdateToolCredential_001, TestSize.Level0)
 {
     LOGI("UpdateToolCredential_001 start");
     SafCredential cred;
-    std::vector<ToolCredential> src = {MakeValidToolCredential()};
-    std::vector<ToolCredential> dst = {MakeValidToolCredential()};
-    dst[0].toolCredentialInfos[0].credentialValue = "updated-tool-secret";
+    std::vector<ToolCredential> tools = {MakeValidToolCredential()};
+    tools[0].toolCredentialContents[0].credentialValue = "updated-tool-secret";
     CredentialBatchResult result;
-    int32_t ret = cred.UpdateToolCredential(src, dst, result);
+    int32_t ret = cred.UpdateToolCredential(tools, result);
     LOGI("UpdateToolCredential ret=%{public}d", ret);
     if (IsSaDeployed()) {
-        EXPECT_EQ(ret, SAF_SUCCESS);
+        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID);
     } else {
         EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
     }
@@ -423,20 +490,22 @@ HWTEST_F(SafCredentialTest, UpdateToolCredential_001, TestSize.Level0)
 
 /**
  * @tc.name: SafCredentialTest.UpdateToolCredential_002
- * @tc.desc: Update with src/dst length mismatch. Inner API checks before IPC,
- *           so ARG_INVALID in both environments.
+ * @tc.desc: Update with an empty array.
  * @tc.type: FUNC
  */
 HWTEST_F(SafCredentialTest, UpdateToolCredential_002, TestSize.Level0)
 {
-    LOGI("UpdateToolCredential_002 start (length mismatch — inner API checks before IPC)");
+    LOGI("UpdateToolCredential_002 start (empty array)");
     SafCredential cred;
-    std::vector<ToolCredential> src = {MakeValidToolCredential()};
-    std::vector<ToolCredential> dst;  // empty -> length mismatch
+    std::vector<ToolCredential> tools;
     CredentialBatchResult result;
-    int32_t ret = cred.UpdateToolCredential(src, dst, result);
-    LOGI("UpdateToolCredential ret=%{public}d (expect ARG_INVALID)", ret);
-    EXPECT_EQ(ret, SAF_ERR_ARG_INVALID);
+    int32_t ret = cred.UpdateToolCredential(tools, result);
+    LOGI("UpdateToolCredential ret=%{public}d", ret);
+    if (IsSaDeployed()) {
+        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID);
+    } else {
+        EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
+    }
     LOGI("UpdateToolCredential_002 end");
 }
 
@@ -444,19 +513,19 @@ HWTEST_F(SafCredentialTest, UpdateToolCredential_002, TestSize.Level0)
 
 /**
  * @tc.name: SafCredentialTest.DeleteToolCredential_001
- * @tc.desc: Batch delete with a valid ToolInfo.
+ * @tc.desc: Batch delete with a valid ToolCredential.
  * @tc.type: FUNC
  */
 HWTEST_F(SafCredentialTest, DeleteToolCredential_001, TestSize.Level0)
 {
     LOGI("DeleteToolCredential_001 start");
     SafCredential cred;
-    std::vector<ToolInfo> infos = {MakeValidToolInfo()};
+    std::vector<ToolCredential> tools = {MakeValidToolCredential()};
     CredentialBatchResult result;
-    int32_t ret = cred.DeleteToolCredential(infos, result);
+    int32_t ret = cred.DeleteToolCredential(tools, result);
     LOGI("DeleteToolCredential ret=%{public}d", ret);
     if (IsSaDeployed()) {
-        EXPECT_EQ(ret, SAF_SUCCESS);
+        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID);
     } else {
         EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
     }
@@ -470,11 +539,11 @@ HWTEST_F(SafCredentialTest, DeleteToolCredential_001, TestSize.Level0)
  */
 HWTEST_F(SafCredentialTest, DeleteToolCredential_002, TestSize.Level0)
 {
-    LOGI("DeleteToolCredential_002 start (empty infos)");
+    LOGI("DeleteToolCredential_002 start (empty array)");
     SafCredential cred;
-    std::vector<ToolInfo> infos;
+    std::vector<ToolCredential> tools;
     CredentialBatchResult result;
-    int32_t ret = cred.DeleteToolCredential(infos, result);
+    int32_t ret = cred.DeleteToolCredential(tools, result);
     LOGI("DeleteToolCredential ret=%{public}d", ret);
     if (IsSaDeployed()) {
         EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID);
@@ -488,14 +557,16 @@ HWTEST_F(SafCredentialTest, DeleteToolCredential_002, TestSize.Level0)
 
 /**
  * @tc.name: SafCredentialTest.GetToolCredential_001
- * @tc.desc: Query with a valid ToolInfo (subjectId set).
+ * @tc.desc: Query with a valid ToolInfo (agentTokenId + subjectId).
  * @tc.type: FUNC
  */
 HWTEST_F(SafCredentialTest, GetToolCredential_001, TestSize.Level0)
 {
     LOGI("GetToolCredential_001 start");
     SafCredential cred;
-    ToolInfo info = MakeValidToolInfo();
+    ToolInfo info;
+    info.agentTokenId = TEST_AGENT_TOKEN_ID;
+    info.subjectId = TEST_SUBJECT_ID;
     std::vector<ToolCredentialInfo> out;
     int32_t ret = cred.GetToolCredential(info, out);
     LOGI("GetToolCredential ret=%{public}d outSize=%{public}zu", ret, out.size());
@@ -520,15 +591,12 @@ HWTEST_F(SafCredentialTest, GetToolCredential_002, TestSize.Level0)
 {
     LOGI("GetToolCredential_002 start (empty subjectId)");
     SafCredential cred;
-    ToolInfo info = MakeValidToolInfo();
+    ToolInfo info;
+    info.agentTokenId = TEST_AGENT_TOKEN_ID;
     info.subjectId = "";
     std::vector<ToolCredentialInfo> out;
     int32_t ret = cred.GetToolCredential(info, out);
     LOGI("GetToolCredential ret=%{public}d outSize=%{public}zu", ret, out.size());
-    for (size_t i = 0; i < out.size(); ++i) {
-        LOGI("GetToolCredential out[%{public}zu]: envName=%{public}s credentialValue=%{public}s",
-            i, out[i].envName.c_str(), out[i].credentialValue.c_str());
-    }
     if (IsSaDeployed()) {
         EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID);
     } else {

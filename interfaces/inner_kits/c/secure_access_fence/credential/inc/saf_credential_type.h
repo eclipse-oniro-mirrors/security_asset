@@ -29,16 +29,17 @@ namespace OHOS::Security::SAF {
 // vendor-side IDL-generated headers (e.g. the NAPI layer).
 #ifdef OHOS_SECURITY_SAF_SECUREACCESSFENCETYPE_H
 
-// Types ErrInfo, CredentialBatchResult, ModelCredentialInfo, ModelCredential,
-// ToolInfo, ToolCredentialInfo, ToolCredential are already defined by
-// secure_access_fence_type.h — nothing to do here.
+// Types ErrInfo, CredentialBatchResult, ModelCredentialContent,
+// ModelCredentialInfo, ModelCredentialIndex, ModelCredential, ToolInfo,
+// ToolCredentialContent, ToolCredentialInfo and ToolCredential are already
+// defined by secure_access_fence_type.h — nothing to do here.
 
 #else
 
 /**
  * @brief Error information for a single failed item in a batch operation.
  *
- * Corresponds to `ErrInfo` in @hms.security.secureAccessFence.d.ts (since 26.2.0).
+ * Corresponds to `ErrInfo` in @hms.security.secureAccessFence.d.ts.
  */
 struct ErrInfo {
     /** Index of the failed item in the input array. */
@@ -52,7 +53,7 @@ struct ErrInfo {
 /**
  * @brief Result of a batch credential operation.
  *
- * Corresponds to `Result` in @hms.security.secureAccessFence.d.ts (since 26.2.0).
+ * Corresponds to `Result` in @hms.security.secureAccessFence.d.ts.
  */
 struct CredentialBatchResult {
     /** Number of items that failed in the batch operation. */
@@ -62,11 +63,11 @@ struct CredentialBatchResult {
 };
 
 /**
- * @brief Credential information for Model access (query result).
+ * @brief Content of the model credential (the secret part).
  *
- * Corresponds to `ModelCredentialInfo` in @hms.security.secureAccessFence.d.ts (since 26.2.0).
+ * Corresponds to `ModelCredentialContent` in @hms.security.secureAccessFence.d.ts.
  */
-struct ModelCredentialInfo {
+struct ModelCredentialContent {
     /** Base URL of the model service endpoint. */
     std::string baseUrl;
     /** Credential value, such as the API KEY used to access the model service. */
@@ -74,58 +75,80 @@ struct ModelCredentialInfo {
 };
 
 /**
- * @brief Credential configuration information of the agent (full model credential).
+ * @brief Configuration information of the model credential (the metadata part).
  *
- * Corresponds to `ModelCredential` (extends ModelCredentialInfo) in
- * @hms.security.secureAccessFence.d.ts (since 26.2.0).
- *
- * NOTE: IDL does not support `struct extends`, so this struct flattens
- * ModelCredentialInfo's fields plus its own. Optional fields (credentialHandle,
- * credentialAlias) are represented by empty strings when not set.
+ * Corresponds to `ModelCredentialInfo` in @hms.security.secureAccessFence.d.ts.
  */
-struct ModelCredential {
-    // === Fields inherited from ModelCredentialInfo ===
-    std::string baseUrl;
-    std::string credentialValue;
-    // === ModelCredential's own fields ===
+struct ModelCredentialInfo {
     /** Provider of the model service. */
     std::string provider;
     /** List of model names that this credential applies to. */
     std::vector<std::string> modelList;
+    /** Alias of the credential handle, input by user. */
+    std::string handleAlias;
+    /** Alias of the credential value, input by user. */
+    std::string credentialAlias;
     /** Whether the credential is in active state. true: active; false: inactive. */
     bool state = false;
-    /**
-     * Handle of the credential returned by AddModelCredential, used as a unique
-     * identifier for subsequent operations. Empty when not yet assigned.
-     */
-    std::string credentialHandle;
-    /**
-     * Alias of the credential returned by AddModelCredential. Empty when not set.
-     */
-    std::string credentialAlias;
 };
 
 /**
- * @brief Identity info of the agent used to manage tool credentials.
+ * @brief Index of the model credential, used to locate one credential entry.
  *
- * Corresponds to `ToolInfo` in @hms.security.secureAccessFence.d.ts (since 26.2.0).
- * The d.ts `bigint` type for agentTokenId is mapped to uint64_t.
+ * Corresponds to `ModelCredentialIndex` in @hms.security.secureAccessFence.d.ts.
+ */
+struct ModelCredentialIndex {
+    /** Handle of the credential. */
+    std::string credentialHandle;
+    /** Unique identifier of the credential entry within the handle. */
+    std::string credentialId;
+};
+
+/**
+ * @brief Model credential entry: content + info + index.
+ *
+ * Corresponds to `ModelCredential` in @hms.security.secureAccessFence.d.ts.
+ * `modelCredentialContent.credentialValue` is empty in
+ * PreGetAllModelCredentials results.
+ */
+struct ModelCredential {
+    /** Content of the model credential. */
+    ModelCredentialContent modelCredentialContent;
+    /** Configuration information of the model credential. */
+    ModelCredentialInfo modelCredentialInfo;
+    /** Index of the model credential. */
+    ModelCredentialIndex modelCredentialIndex;
+};
+
+/**
+ * @brief Identity of a tool, used as the lookup key by GetToolCredential.
+ *
+ * The storage identity is agentTokenId + subjectId only.
  */
 struct ToolInfo {
-    /** Access token ID of the agent (d.ts bigint -> uint64_t). */
+    /** Access token ID of the agent. */
     uint64_t agentTokenId = 0;
     /** Unique identifier of the tool, primary key for tool credential lookup. */
     std::string subjectId;
-    /** Account ID of the agent owner. Empty when not set. */
-    std::string accountId;
-    /** Sub-agent ID, distinguishes sub-agents under the same agent. Empty when not set. */
-    std::string subAgentId;
 };
 
 /**
- * @brief Tool credential information (single environment variable entry).
+ * @brief Tool credential content (single environment variable entry).
  *
- * Corresponds to `ToolCredentialInfo` in @hms.security.secureAccessFence.d.ts (since 26.2.0).
+ * Corresponds to `ToolCredentialContent` in @hms.security.secureAccessFence.d.ts.
+ */
+struct ToolCredentialContent {
+    /** Environment variable name of the tool. */
+    std::string envName;
+    /** Credential value of the tool. */
+    std::string credentialValue;
+};
+
+/**
+ * @brief Tool credential information returned by GetToolCredential.
+ *
+ * Same layout as ToolCredentialContent; the separate name is kept because
+ * external modules already depend on it.
  */
 struct ToolCredentialInfo {
     /** Environment variable name of the tool. */
@@ -135,15 +158,15 @@ struct ToolCredentialInfo {
 };
 
 /**
- * @brief Tool credential entry, binds agent identity info to its credential values.
+ * @brief Tool credential entry, binds the tool identity to its credential contents.
  *
- * Corresponds to `ToolCredential` in @hms.security.secureAccessFence.d.ts (since 26.2.0).
+ * Corresponds to `ToolCredential` in @hms.security.secureAccessFence.d.ts.
  */
 struct ToolCredential {
-    /** Identity info of the tool. */
-    ToolInfo toolInfo;
-    /** List of tool credential infos (env var entries). */
-    std::vector<ToolCredentialInfo> toolCredentialInfos;
+    /** Unique identifier of the tool, primary key for tool credential lookup. */
+    std::string subjectId;
+    /** List of tool credential contents (env var entries). */
+    std::vector<ToolCredentialContent> toolCredentialContents;
 };
 
 #endif  // OHOS_SECURITY_SAF_SECUREACCESSFENCETYPE_H (else: asset-side standalone definitions)
