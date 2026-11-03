@@ -97,6 +97,10 @@ napi_value NapiPrivacySearch(napi_env env, napi_callback_info info)
 
 napi_value NapiGetSearchResult(napi_env env, napi_callback_info info)
 {
+    if (IsComputationLibConfigured()) {
+        LOGI("NAPI genPrivacyTarget begin, route=ComputationLib");
+        return CallComputationNapiFunc(env, info, "GetSearchResult");
+    }
     auto context = std::unique_ptr<GetSearchResultContext>(new (std::nothrow) GetSearchResultContext());
     NAPI_THROW(env, context == nullptr, PRIVACY_COMPUTATION_OUT_OF_MEMORY,
                GetErrorMessage(PRIVACY_COMPUTATION_OUT_OF_MEMORY));
@@ -116,20 +120,9 @@ napi_value NapiGetSearchResult(napi_env env, napi_callback_info info)
             return;
         }
         auto *context = static_cast<GetSearchResultContext *>(data);
-        if (IsComputationLibConfigured()) {
-            std::vector<psi_pir::Bytes> plaintexts;
-            LOGI("NAPI getSearchResult begin, route=ComputationLib");
-            context->result =
-                DecryptCiphertextsWithComputationLib(context->searchResult, context->protocol, plaintexts);
-            if (context->result == PRIVACY_COMPUTATION_SUCCESS) {
-                context->result = MapProtocolError(psi_pir::PostProcessSearchResult(
-                    plaintexts, context->searchResult.valueCipherText, context->protocol, context->output));
-            }
-        } else {
-            LOGI("NAPI getSearchResult begin, route=AssetSA");
-            context->result =
-                MapProtocolError(GetSearchResultRemote(context->searchResult, context->protocol, context->output));
-        }
+        LOGI("NAPI getSearchResult begin, route=AssetSA");
+        context->result =
+            MapProtocolError(GetSearchResultRemote(context->searchResult, context->protocol, context->output));
         if (context->result != PRIVACY_COMPUTATION_SUCCESS) {
             LOGE("get_search_result failed, code=%{public}d", context->result);
         }

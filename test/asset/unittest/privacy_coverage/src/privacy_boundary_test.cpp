@@ -279,17 +279,6 @@ HWTEST_F(PrivacyBoundaryTest, SaPropagatesHuksAndHeFailuresWithoutCommittingOutp
     EXPECT_TRUE(Invoke("genPrivacyTarget", {Target(), Protocol()})->rejected);
 }
 
-HWTEST_F(PrivacyBoundaryTest, MissingClosedLibraryIsExplicitAndAtomic, TestSize.Level2)
-{
-    EXPECT_FALSE(IsComputationLibConfigured());
-    auto promise = CallComputationNapiFunc(&env_, nullptr, "GenPrivacyTarget");
-    ASSERT_NE(promise, nullptr);
-    EXPECT_TRUE(promise->rejected);
-    std::vector<psi_pir::Bytes> output{{0x99}};
-    EXPECT_EQ(DecryptCiphertextsWithComputationLib({}, {}, output), PRIVACY_COMPUTATION_UNAVAILABLE);
-    EXPECT_EQ(output, (std::vector<psi_pir::Bytes>{{0x99}}));
-}
-
 HWTEST_F(PrivacyBoundaryTest, DrbgInitializationStatus, TestSize.Level2)
 {
     const char *mode = std::getenv("PRIVACY_TEST_DRBG");

@@ -23,11 +23,6 @@ namespace OHOS::Security::PrivacyComputation {
 bool IsComputationLibConfigured();
 // Invoke the original closed-source NAPI export on the JS thread. Loading errors reject its Promise.
 napi_value CallComputationNapiFunc(napi_env env, napi_callback_info info, const char *funcName);
-// Calls the closed-source GetSearchResult export to obtain decoded HE batches, without postprocessing.
-// The export's existing C++ ABI and error codes are preserved.
-int32_t DecryptCiphertextsWithComputationLib(const psi_pir::PrivacySearchResult &input,
-                                             const psi_pir::PrivacyProtocol &protocol,
-                                             std::vector<psi_pir::Bytes> &output);
 } // namespace OHOS::Security::PrivacyComputation
 
 #endif // PRIVACY_COMPUTATION_NAPI_LOADER_H

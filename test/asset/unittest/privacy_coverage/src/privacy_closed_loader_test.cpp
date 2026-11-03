@@ -36,35 +36,6 @@ public:
     napi_env__ env_;
 };
 
-HWTEST_F(ClosedLoaderTest, OpenFailure, TestSize.Level2)
-{
-    PrivacyHost::State().dlopenFailure = true;
-    EXPECT_TRUE(IsComputationLibConfigured());
-    auto promise = CallComputationNapiFunc(&env_, nullptr, "GenPrivacyTarget");
-    ASSERT_NE(promise, nullptr);
-    EXPECT_TRUE(promise->rejected);
-    std::vector<psi_pir::Bytes> output{{0x99}};
-    EXPECT_EQ(DecryptCiphertextsWithComputationLib({}, {}, output), PRIVACY_COMPUTATION_UNAVAILABLE);
-    EXPECT_EQ(output, (std::vector<psi_pir::Bytes>{{0x99}}));
-}
-
-HWTEST_F(ClosedLoaderTest, SymbolsAndPartialFailuresPreserveOutput, TestSize.Level2)
-{
-    PrivacyHost::State().symbolFailure = true;
-    auto promise = CallComputationNapiFunc(&env_, nullptr, "GenPrivacyTarget");
-    ASSERT_NE(promise, nullptr);
-    EXPECT_TRUE(promise->rejected);
-    std::vector<psi_pir::Bytes> output{{0x99}};
-    EXPECT_EQ(DecryptCiphertextsWithComputationLib({}, {}, output), PRIVACY_COMPUTATION_UNAVAILABLE);
-    PrivacyHost::State().symbolFailure = false;
-    PrivacyHost::State().closedStatus = PRIVACY_COMPUTATION_CRYPTO_ERROR;
-    EXPECT_EQ(DecryptCiphertextsWithComputationLib({}, {}, output), PRIVACY_COMPUTATION_CRYPTO_ERROR);
-    PrivacyHost::State().closedStatus = PRIVACY_COMPUTATION_SUCCESS;
-    PrivacyHost::State().closedBatchMismatch = true;
-    EXPECT_EQ(DecryptCiphertextsWithComputationLib({}, {}, output), PRIVACY_COMPUTATION_DATA_CORRUPTED);
-    EXPECT_EQ(output, (std::vector<psi_pir::Bytes>{{0x99}}));
-}
-
 HWTEST_F(ClosedLoaderTest, HardRouteUsesLocalPostprocessingAndRegisteredEntry, TestSize.Level1)
 {
     const psi_pir::PrivacyProtocol protocol{DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL};
