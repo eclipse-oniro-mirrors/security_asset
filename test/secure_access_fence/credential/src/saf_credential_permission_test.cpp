@@ -32,7 +32,7 @@ bool IsSaDeployed()
 {
     SafCredential cred;
     std::vector<ModelCredential> list;
-    int32_t ret = cred.GetAllModelCredentials(list);
+    int32_t ret = cred.PreGetAllModelCredentials(list);
     if (ret == SAF_ERR_SERVICE_UNAVAILABLE) {
         LOGI("SA 66532 not deployed (ret=%{public}d)", ret);
         return false;
@@ -96,27 +96,27 @@ void SafCredentialPermissionTest::TearDown(void)
 
 /**
  * @tc.name: SafCredentialPermissionTest.AddModelCredential_NoPermission_001
- * @tc.desc: AddModelCredential has no ACCESS_SECURE_FENCE check on the server
- *           (only the system-app-202 gate described in d.ts, which is enforced
- *           by the permission application threshold, not by the service). A
- *           normal-app caller therefore reaches the DIA layer. When SA is not
- *           deployed, SERVICE_UNAVAILABLE is returned first.
+ * @tc.desc: AddModelCredential requires ACCESS_SECURE_FENCE (201) on the
+ *           server. A normal-app caller is rejected with PERMISSION_DENIED.
  * @tc.type: FUNC
  */
 HWTEST_F(SafCredentialPermissionTest, AddModelCredential_NoPermission_001, TestSize.Level0)
 {
     LOGI("AddModelCredential_NoPermission_001 start");
     SafCredential cred;
-    ModelCredential mc;
-    mc.provider = "x";
-    mc.baseUrl = "y";
-    mc.credentialValue = "z";
+    ModelCredentialContent content;
+    content.baseUrl = "https://api.example.com";
+    content.credentialValue = "secret";
+    ModelCredentialInfo info;
+    info.provider = "x";
+    info.modelList = {"m"};
+    info.handleAlias = "alias";
     std::string handle;
-    int32_t ret = cred.AddModelCredential(mc, handle);
-    LOGI("AddModelCredential ret=%{public}d (expect SUCCESS or SERVICE_UNAVAILABLE)", ret);
+    std::string credentialId;
+    int32_t ret = cred.AddModelCredential(content, info, handle, credentialId);
+    LOGI("AddModelCredential ret=%{public}d (expect PERMISSION_DENIED)", ret);
     if (IsSaDeployed()) {
-        // Server does not gate AddModelCredential; it delegates straight to DIA.
-        EXPECT_EQ(ret, SAF_SUCCESS);
+        EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
     } else {
         EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
     }
@@ -154,8 +154,8 @@ HWTEST_F(SafCredentialPermissionTest, GetActiveModelCredential_NoPermission_001,
 {
     LOGI("GetActiveModelCredential_NoPermission_001 start");
     SafCredential cred;
-    ModelCredentialInfo info;
-    int32_t ret = cred.GetActiveModelCredential("any-handle", info);
+    ModelCredentialContent content;
+    int32_t ret = cred.GetActiveModelCredential("mc_any_handle", "m", content);
     LOGI("GetActiveModelCredential ret=%{public}d (expect PERMISSION_DENIED)", ret);
     if (IsSaDeployed()) {
         EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
@@ -166,12 +166,32 @@ HWTEST_F(SafCredentialPermissionTest, GetActiveModelCredential_NoPermission_001,
 }
 
 /**
+ * @tc.name: SafCredentialPermissionTest.GetModelCredentialValue_NoPermission_001
+ * @tc.desc: GetModelCredentialValue requires ACCESS_SECURE_FENCE (201).
+ * @tc.type: FUNC
+ */
+HWTEST_F(SafCredentialPermissionTest, GetModelCredentialValue_NoPermission_001, TestSize.Level0)
+{
+    LOGI("GetModelCredentialValue_NoPermission_001 start");
+    SafCredential cred;
+    ModelCredentialIndex index;
+    index.credentialHandle = "mc_any_handle";
+    index.credentialId = "any-id";
+    std::string credentialValue;
+    int32_t ret = cred.GetModelCredentialValue(index, credentialValue);
+    LOGI("GetModelCredentialValue ret=%{public}d (expect PERMISSION_DENIED)", ret);
+    if (IsSaDeployed()) {
+        EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
+    } else {
+        EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
+    }
+    LOGI("GetModelCredentialValue_NoPermission_001 end");
+}
+
+/**
  * @tc.name: SafCredentialPermissionTest.AddToolCredential_NoPermission_001
- * @tc.desc: AddToolCredential has no ACCESS_SECURE_FENCE check on the server
- *           (only the system-app-202 gate described in d.ts, which is enforced
- *           by the permission application threshold, not by the service). A
- *           normal-app caller therefore reaches the DIA layer. When SA is not
- *           deployed, SERVICE_UNAVAILABLE is returned first.
+ * @tc.desc: AddToolCredential requires ACCESS_SECURE_FENCE (201) on the
+ *           server. A normal-app caller is rejected with PERMISSION_DENIED.
  * @tc.type: FUNC
  */
 HWTEST_F(SafCredentialPermissionTest, AddToolCredential_NoPermission_001, TestSize.Level0)
@@ -179,23 +199,44 @@ HWTEST_F(SafCredentialPermissionTest, AddToolCredential_NoPermission_001, TestSi
     LOGI("AddToolCredential_NoPermission_001 start");
     SafCredential cred;
     ToolCredential tc;
-    tc.toolInfo.agentTokenId = TEST_AGENT_TOKEN_ID;
-    tc.toolInfo.subjectId = TEST_SUBJECT_ID;
-    ToolCredentialInfo ci;
+    tc.subjectId = TEST_SUBJECT_ID;
+    ToolCredentialContent ci;
     ci.envName = "API_KEY";
     ci.credentialValue = "secret";
-    tc.toolCredentialInfos = {ci};
+    tc.toolCredentialContents = {ci};
     std::vector<ToolCredential> tools = {tc};
     CredentialBatchResult result;
     int32_t ret = cred.AddToolCredential(tools, result);
-    LOGI("AddToolCredential ret=%{public}d (expect SUCCESS or SERVICE_UNAVAILABLE)", ret);
+    LOGI("AddToolCredential ret=%{public}d (expect PERMISSION_DENIED)", ret);
     if (IsSaDeployed()) {
-        // Server does not gate AddToolCredential; it delegates straight to DIA.
-        EXPECT_EQ(ret, SAF_SUCCESS);
+        EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
     } else {
         EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
     }
     LOGI("AddToolCredential_NoPermission_001 end");
+}
+
+/**
+ * @tc.name: SafCredentialPermissionTest.GetToolCredential_NoPermission_001
+ * @tc.desc: GetToolCredential requires ACCESS_SECURE_FENCE (201).
+ * @tc.type: FUNC
+ */
+HWTEST_F(SafCredentialPermissionTest, GetToolCredential_NoPermission_001, TestSize.Level0)
+{
+    LOGI("GetToolCredential_NoPermission_001 start");
+    SafCredential cred;
+    ToolInfo info;
+    info.agentTokenId = TEST_AGENT_TOKEN_ID;
+    info.subjectId = TEST_SUBJECT_ID;
+    std::vector<ToolCredentialInfo> out;
+    int32_t ret = cred.GetToolCredential(info, out);
+    LOGI("GetToolCredential ret=%{public}d (expect PERMISSION_DENIED)", ret);
+    if (IsSaDeployed()) {
+        EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
+    } else {
+        EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
+    }
+    LOGI("GetToolCredential_NoPermission_001 end");
 }
 
 }  // namespace OHOS::Security::SAF

@@ -321,9 +321,9 @@ struct CredentialBatchResult {
 };
 
 /**
- * @brief Credential information for Model access (query result).
+ * @brief Content of the model credential (the secret part).
  */
-struct ModelCredentialInfo {
+struct ModelCredentialContent {
     /** Base URL of the model service endpoint. */
     String baseUrl;
     /** Credential value, such as the API KEY used to access the model service. */
@@ -331,41 +331,73 @@ struct ModelCredentialInfo {
 };
 
 /**
- * @brief Credential configuration information of the agent (full model credential).
+ * @brief Configuration information of the model credential (the metadata part).
  */
-struct ModelCredential {
-    /** Base URL of the model service endpoint. */
-    String baseUrl;
-    /** Credential value, such as the API KEY used to access the model service. */
-    String credentialValue;
+struct ModelCredentialInfo {
     /** Provider of the model service. */
     String provider;
     /** List of model names that this credential applies to. */
     List<String> modelList;
+    /** Alias of the credential handle, input by user. */
+    String handleAlias;
+    /** Alias of the credential value, input by user. */
+    String credentialAlias;
     /** Whether the credential is in active state. true: active; false: inactive. */
     boolean state;
-    /** Handle of the credential returned by AddModelCredential. */
-    String credentialHandle;
-    /** Alias of the credential returned by AddModelCredential. */
-    String credentialAlias;
 };
 
 /**
- * @brief Identity info of the agent used to manage tool credentials.
+ * @brief Index of the model credential, used to locate one credential entry.
+ */
+struct ModelCredentialIndex {
+    /** Handle of the credential. */
+    String credentialHandle;
+    /** Unique identifier of the credential entry within the handle. */
+    String credentialId;
+};
+
+/**
+ * @brief Model credential entry: content + info + index.
+ *
+ * IDL has no struct inheritance, so the three parts are composed explicitly.
+ * credentialValue is empty in PreGetAllModelCredentials results.
+ */
+struct ModelCredential {
+    /** Content of the model credential. */
+    ModelCredentialContent modelCredentialContent;
+    /** Configuration information of the model credential. */
+    ModelCredentialInfo modelCredentialInfo;
+    /** Index of the model credential. */
+    ModelCredentialIndex modelCredentialIndex;
+};
+
+/**
+ * @brief Identity of a tool, used as the lookup key by GetToolCredential.
+ *
+ * The storage identity is agentTokenId + subjectId only.
  */
 struct ToolInfo {
-    /** Access token ID of the agent (d.ts bigint -> uint64). */
+    /** Access token ID of the agent. */
     unsigned long agentTokenId;
     /** Unique identifier of the tool, primary key for tool credential lookup. */
     String subjectId;
-    /** Account ID of the agent owner. Empty when not set. */
-    String accountId;
-    /** Sub-agent ID, distinguishes sub-agents under the same agent. */
-    String subAgentId;
 };
 
 /**
- * @brief Tool credential information (single environment variable entry).
+ * @brief Tool credential content (single environment variable entry).
+ */
+struct ToolCredentialContent {
+    /** Environment variable name of the tool. */
+    String envName;
+    /** Credential value of the tool. */
+    String credentialValue;
+};
+
+/**
+ * @brief Tool credential information returned by GetToolCredential.
+ *
+ * Same layout as ToolCredentialContent; the separate name is kept because
+ * external modules already depend on it.
  */
 struct ToolCredentialInfo {
     /** Environment variable name of the tool. */
@@ -375,11 +407,11 @@ struct ToolCredentialInfo {
 };
 
 /**
- * @brief Tool credential entry, binds agent identity info to its credential values.
+ * @brief Tool credential entry, binds the tool identity to its credential contents.
  */
 struct ToolCredential {
-    /** Identity info of the tool. */
-    ToolInfo toolInfo;
-    /** List of tool credential infos (env var entries). */
-    List<ToolCredentialInfo> toolCredentialInfos;
+    /** Unique identifier of the tool, primary key for tool credential lookup. */
+    String subjectId;
+    /** List of tool credential contents (env var entries). */
+    List<ToolCredentialContent> toolCredentialContents;
 };

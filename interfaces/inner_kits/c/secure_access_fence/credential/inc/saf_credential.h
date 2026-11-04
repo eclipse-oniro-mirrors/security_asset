@@ -16,6 +16,7 @@
 #ifndef SAF_CREDENTIAL_H
 #define SAF_CREDENTIAL_H
 
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -24,7 +25,7 @@
 namespace OHOS::Security::SAF {
 
 /**
- * @brief Inner API for the 26.2.0 Credential APIs.
+ * @brief Inner API for the Credential APIs.
  *
  * Architecture:
  *   Each call goes through the access_fence SA (66532) via direct IPC, using
@@ -44,32 +45,38 @@ public:
     /**
      * @brief Add a model credential.
      *
-     * d.ts: addModelCredential(modelCredential: ModelCredential): Promise<string>
+     * d.ts: addModelCredential(content, info): Promise<ModelCredentialIndex>
      *
-     * @param modelCredential The model credential to add. `provider`, `baseUrl`
-     *        and `credentialValue` are required.
-     * @param credentialHandle [out] The handle of the added credential, used as
-     *        the unique identifier for subsequent operations on this credential.
+     * @param modelCredentialContent Content of the credential to add.
+     *        `baseUrl` and `credentialValue` are required.
+     * @param modelCredentialInfo Configuration of the credential to add.
+     *        `provider` is required; `handleAlias` is required when creating a
+     *        new handle.
+     * @param credentialHandle [out] Handle of the added credential.
+     * @param credentialId [out] Unique identifier of the added entry within the
+     *        handle.
      * @return SAF_SUCCESS on success; otherwise an error code:
+     *         - SAF_ERR_PERMISSION_DENIED (201): missing ACCESS_SECURE_FENCE.
      *         - SAF_ERR_NOT_SYSTEM_APP (202): caller is not a system app.
      *         - SAF_ERR_SERVICE_UNAVAILABLE: SA service unavailable.
      *
-     * Authorization: only system app (202). No @permission required.
+     * Authorization: ACCESS_SECURE_FENCE (201) + system app (202).
      */
-    int32_t AddModelCredential(const ModelCredential &modelCredential,
-                               std::string &credentialHandle);
+    int32_t AddModelCredential(const ModelCredentialContent &modelCredentialContent,
+                               const ModelCredentialInfo &modelCredentialInfo,
+                               std::string &credentialHandle, std::string &credentialId);
 
     /**
      * @brief Batch delete model credentials.
      *
-     * d.ts: deleteModelCredential(modelCredentials: ModelCredential[]): Promise<Result>
+     * d.ts: deleteModelCredential(modelCredentials): Promise<Result>
      *
      * @param modelCredentials The model credentials to delete, identified by
-     *        `credentialHandle`.
+     *        `modelCredentialIndex.credentialHandle` and `credentialId`.
      * @param result [out] Batch result (failed count + per-item error info).
      * @return SAF_SUCCESS on success; otherwise an error code:
-     *         - SAF_ERR_PERMISSION_DENIED (201): missing ACCESS_SECURE_FENCE.
-     *         - SAF_ERR_NOT_SYSTEM_APP (202): caller is not a system app.
+     *         - SAF_ERR_PERMISSION_DENIED (201).
+     *         - SAF_ERR_NOT_SYSTEM_APP (202).
      *         - SAF_ERR_SERVICE_UNAVAILABLE: SA service unavailable.
      *
      * Authorization: ACCESS_SECURE_FENCE (201) + system app (202).
@@ -82,12 +89,11 @@ public:
      *
      * d.ts: updateModelCredential(source, dest): Promise<Result>
      *
-     * Each source credential (identified by `credentialHandle`) is replaced by
-     * the corresponding destination credential. The two arrays must be the same
+     * Each source credential (identified by index) is replaced by the
+     * corresponding destination credential. The two arrays must be the same
      * length.
      *
-     * @param sourceModelCredentials Source credentials to update, identified by
-     *        `credentialHandle`.
+     * @param sourceModelCredentials Source credentials to update.
      * @param destModelCredentials Destination credentials with new values.
      * @param result [out] Batch result.
      * @return SAF_SUCCESS on success; otherwise an error code:
@@ -103,12 +109,15 @@ public:
                                   CredentialBatchResult &result);
 
     /**
-     * @brief Query the active model credential info by handle.
+     * @brief Query the active model credential content by handle and model.
      *
-     * d.ts: getActiveModelCredential(credentialHandle: string): Promise<ModelCredentialInfo>
+     * d.ts: getActiveModelCredential(handle, model): Promise<ModelCredentialContent>
      *
      * @param credentialHandle Handle of the credential to query.
-     * @param modelCredentialInfo [out] The credential info (baseUrl + credentialValue).
+     * @param model Model name to filter; when non-empty the active credential
+     *        must list it, otherwise no content is returned.
+     * @param modelCredentialContent [out] The credential content
+     *        (baseUrl + credentialValue).
      * @return SAF_SUCCESS on success; otherwise an error code:
      *         - SAF_ERR_PERMISSION_DENIED (201).
      *         - SAF_ERR_NOT_SYSTEM_APP (202).
@@ -116,15 +125,16 @@ public:
      *
      * Authorization: ACCESS_SECURE_FENCE (201) + system app (202).
      */
-    int32_t GetActiveModelCredential(const std::string &credentialHandle,
-                                     ModelCredentialInfo &modelCredentialInfo);
+    int32_t GetActiveModelCredential(const std::string &credentialHandle, const std::string &model,
+                                     ModelCredentialContent &modelCredentialContent);
 
     /**
-     * @brief Query all model credentials.
+     * @brief Query all model credentials without their credential values.
      *
-     * d.ts: getAllModelCredentials(): Promise<ModelCredential[]>
+     * d.ts: preGetAllModelCredentials(): Promise<ModelCredential[]>
      *
-     * @param modelCredentials [out] All stored model credentials.
+     * @param modelCredentials [out] All stored model credentials, with
+     *        `modelCredentialContent.credentialValue` empty.
      * @return SAF_SUCCESS on success; otherwise an error code:
      *         - SAF_ERR_PERMISSION_DENIED (201).
      *         - SAF_ERR_NOT_SYSTEM_APP (202).
@@ -132,23 +142,41 @@ public:
      *
      * Authorization: ACCESS_SECURE_FENCE (201) + system app (202).
      */
-    int32_t GetAllModelCredentials(std::vector<ModelCredential> &modelCredentials);
+    int32_t PreGetAllModelCredentials(std::vector<ModelCredential> &modelCredentials);
+
+    /**
+     * @brief Query one model credential value by index.
+     *
+     * d.ts: getModelCredentialValue(index): Promise<string>
+     *
+     * @param modelCredentialIndex Index of the credential to query.
+     * @param credentialValue [out] The credential value (plaintext).
+     * @return SAF_SUCCESS on success; otherwise an error code:
+     *         - SAF_ERR_PERMISSION_DENIED (201).
+     *         - SAF_ERR_NOT_SYSTEM_APP (202).
+     *         - SAF_ERR_SERVICE_UNAVAILABLE: SA service unavailable.
+     *
+     * Authorization: ACCESS_SECURE_FENCE (201) + system app (202).
+     */
+    int32_t GetModelCredentialValue(const ModelCredentialIndex &modelCredentialIndex,
+                                    std::string &credentialValue);
 
     // ===== Tool Credential API =====
 
     /**
      * @brief Batch add tool credentials.
      *
-     * d.ts: addToolCredential(toolCredentials: ToolCredential[]): Promise<Result>
+     * d.ts: addToolCredential(toolCredentials): Promise<Result>
      *
      * @param toolCredentials Tool credentials to add. For each entry,
-     *        `toolInfo.subjectId` and `toolCredentialInfos` are required.
+     *        `subjectId` and `toolCredentialContents` are required.
      * @param result [out] Batch result.
      * @return SAF_SUCCESS on success; otherwise an error code:
      *         - SAF_ERR_NOT_SYSTEM_APP (202).
      *         - SAF_ERR_SERVICE_UNAVAILABLE: SA service unavailable.
      *
-     * Authorization: only system app (202). No @permission required.
+     * Authorization: system app (202) only; the agent identity is taken from
+     * the caller's access token ID by the service.
      */
     int32_t AddToolCredential(const std::vector<ToolCredential> &toolCredentials,
                               CredentialBatchResult &result);
@@ -156,35 +184,32 @@ public:
     /**
      * @brief Batch update tool credentials.
      *
-     * d.ts: updateToolCredential(source, dest): Promise<Result>
+     * d.ts: updateToolCredential(toolCredentials): Promise<Result>
      *
-     * Each source tool credential (identified by `ToolInfo`) is replaced by the
-     * corresponding destination tool credential. The two arrays must be the
-     * same length.
+     * Each entry updates the secret values of its existing env names under the
+     * caller's agent identity.
      *
-     * @param sourceToolCredentials Source tool credentials to update.
-     * @param destToolCredentials Destination tool credentials with new values.
+     * @param toolCredentials Tool credentials to update.
      * @param result [out] Batch result.
      * @return SAF_SUCCESS on success; otherwise an error code:
      *         - SAF_ERR_PERMISSION_DENIED (201).
      *         - SAF_ERR_NOT_SYSTEM_APP (202).
-     *         - SAF_ERR_ARG_INVALID: src/dst length mismatch or empty.
      *         - SAF_ERR_SERVICE_UNAVAILABLE: SA service unavailable.
      *
      * Authorization: ACCESS_SECURE_FENCE (201) + system app (202).
      */
-    int32_t UpdateToolCredential(const std::vector<ToolCredential> &sourceToolCredentials,
-                                 const std::vector<ToolCredential> &destToolCredentials,
+    int32_t UpdateToolCredential(const std::vector<ToolCredential> &toolCredentials,
                                  CredentialBatchResult &result);
 
     /**
      * @brief Batch delete tool credentials.
      *
-     * d.ts: deleteToolCredential(toolInfos: ToolInfo[]): Promise<Result>
+     * d.ts: deleteToolCredential(toolCredentials): Promise<Result>
      *
-     * @param toolInfos Identity info of the tool credentials to delete. Each
-     *        entry is matched by the combination of
-     *        {agentTokenId, subjectId, accountId, subAgentId}.
+     * Each entry deletes the listed env names under the caller's agent
+     * identity.
+     *
+     * @param toolCredentials Tool credentials to delete.
      * @param result [out] Batch result.
      * @return SAF_SUCCESS on success; otherwise an error code:
      *         - SAF_ERR_PERMISSION_DENIED (201).
@@ -193,15 +218,17 @@ public:
      *
      * Authorization: ACCESS_SECURE_FENCE (201) + system app (202).
      */
-    int32_t DeleteToolCredential(const std::vector<ToolInfo> &toolInfos,
+    int32_t DeleteToolCredential(const std::vector<ToolCredential> &toolCredentials,
                                  CredentialBatchResult &result);
 
     /**
-     * @brief Query tool credential info by agent identity.
+     * @brief Query tool credentials by tool identity.
      *
-     * d.ts: getToolCredential(toolInfo: ToolInfo): Promise<ToolCredentialInfo[]>
+     * Inner API only. The d.ts exposes no query API for tool credentials.
      *
-     * @param toolInfo Identity info of the tool to query. `subjectId` is required.
+     * @param toolInfo Identity of the tool to query. `agentTokenId` is supplied
+     *        by the caller because this path is invoked by another system
+     *        service rather than by the owning app.
      * @param toolCredentialInfos [out] The tool credential info list
      *        (environment variable entries) for the given tool.
      * @return SAF_SUCCESS on success; otherwise an error code:

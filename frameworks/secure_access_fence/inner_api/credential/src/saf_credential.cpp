@@ -79,8 +79,9 @@ int32_t HandleIpcError(sptr<ISecureAccessFence> &proxy, std::function<int32_t()>
 
 // ===== Model Credential API =====
 
-int32_t SafCredential::AddModelCredential(const ModelCredential &modelCredential,
-                                          std::string &credentialHandle)
+int32_t SafCredential::AddModelCredential(const ModelCredentialContent &modelCredentialContent,
+                                          const ModelCredentialInfo &modelCredentialInfo,
+                                          std::string &credentialHandle, std::string &credentialId)
 {
     LOGI("SafCredential::AddModelCredential start");
     auto proxy = GetProxy(g_mutex);
@@ -88,7 +89,8 @@ int32_t SafCredential::AddModelCredential(const ModelCredential &modelCredential
 
     int32_t resultCode = SAF_SUCCESS;
     int32_t ret = HandleIpcError(proxy, [&]() {
-        return proxy->AddModelCredential(modelCredential, credentialHandle, resultCode);
+        return proxy->AddModelCredential(modelCredentialContent, modelCredentialInfo,
+                                         credentialHandle, credentialId, resultCode);
     });
     IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
     LOGI("AddModelCredential ret=%{public}d handle=%{public}s", resultCode, credentialHandle.c_str());
@@ -133,8 +135,8 @@ int32_t SafCredential::UpdateModelCredential(const std::vector<ModelCredential> 
     return resultCode;
 }
 
-int32_t SafCredential::GetActiveModelCredential(const std::string &credentialHandle,
-                                                ModelCredentialInfo &modelCredentialInfo)
+int32_t SafCredential::GetActiveModelCredential(const std::string &credentialHandle, const std::string &model,
+                                                ModelCredentialContent &modelCredentialContent)
 {
     LOGI("SafCredential::GetActiveModelCredential start");
     auto proxy = GetProxy(g_mutex);
@@ -142,25 +144,41 @@ int32_t SafCredential::GetActiveModelCredential(const std::string &credentialHan
 
     int32_t resultCode = SAF_SUCCESS;
     int32_t ret = HandleIpcError(proxy, [&]() {
-        return proxy->GetActiveModelCredential(credentialHandle, modelCredentialInfo, resultCode);
+        return proxy->GetActiveModelCredential(credentialHandle, model, modelCredentialContent, resultCode);
     });
     IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
     LOGI("GetActiveModelCredential ret=%{public}d", resultCode);
     return resultCode;
 }
 
-int32_t SafCredential::GetAllModelCredentials(std::vector<ModelCredential> &modelCredentials)
+int32_t SafCredential::PreGetAllModelCredentials(std::vector<ModelCredential> &modelCredentials)
 {
-    LOGI("SafCredential::GetAllModelCredentials start");
+    LOGI("SafCredential::PreGetAllModelCredentials start");
     auto proxy = GetProxy(g_mutex);
     IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
 
     int32_t resultCode = SAF_SUCCESS;
     int32_t ret = HandleIpcError(proxy, [&]() {
-        return proxy->GetAllModelCredentials(modelCredentials, resultCode);
+        return proxy->PreGetAllModelCredentials(modelCredentials, resultCode);
     });
     IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
-    LOGI("GetAllModelCredentials ret=%{public}d outSize=%{public}zu", resultCode, modelCredentials.size());
+    LOGI("PreGetAllModelCredentials ret=%{public}d outSize=%{public}zu", resultCode, modelCredentials.size());
+    return resultCode;
+}
+
+int32_t SafCredential::GetModelCredentialValue(const ModelCredentialIndex &modelCredentialIndex,
+                                               std::string &credentialValue)
+{
+    LOGI("SafCredential::GetModelCredentialValue start");
+    auto proxy = GetProxy(g_mutex);
+    IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
+
+    int32_t resultCode = SAF_SUCCESS;
+    int32_t ret = HandleIpcError(proxy, [&]() {
+        return proxy->GetModelCredentialValue(modelCredentialIndex, credentialValue, resultCode);
+    });
+    IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
+    LOGI("GetModelCredentialValue ret=%{public}d", resultCode);
     return resultCode;
 }
 
@@ -182,29 +200,23 @@ int32_t SafCredential::AddToolCredential(const std::vector<ToolCredential> &tool
     return resultCode;
 }
 
-int32_t SafCredential::UpdateToolCredential(const std::vector<ToolCredential> &sourceToolCredentials,
-                                            const std::vector<ToolCredential> &destToolCredentials,
+int32_t SafCredential::UpdateToolCredential(const std::vector<ToolCredential> &toolCredentials,
                                             CredentialBatchResult &result)
 {
     LOGI("SafCredential::UpdateToolCredential start");
-    if (sourceToolCredentials.size() != destToolCredentials.size()) {
-        LOGE("source/dest size mismatch: %{public}zu vs %{public}zu",
-            sourceToolCredentials.size(), destToolCredentials.size());
-        return SAF_ERR_ARG_INVALID;
-    }
     auto proxy = GetProxy(g_mutex);
     IF_TRUE_LOGE_RETURN_ERR(proxy == nullptr, SAF_ERR_SERVICE_UNAVAILABLE, "load sa fail.");
 
     int32_t resultCode = SAF_SUCCESS;
     int32_t ret = HandleIpcError(proxy, [&]() {
-        return proxy->UpdateToolCredential(sourceToolCredentials, destToolCredentials, result, resultCode);
+        return proxy->UpdateToolCredential(toolCredentials, result, resultCode);
     });
     IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
     LOGI("UpdateToolCredential ret=%{public}d failedCount=%{public}d", resultCode, result.failedCount);
     return resultCode;
 }
 
-int32_t SafCredential::DeleteToolCredential(const std::vector<ToolInfo> &toolInfos,
+int32_t SafCredential::DeleteToolCredential(const std::vector<ToolCredential> &toolCredentials,
                                             CredentialBatchResult &result)
 {
     LOGI("SafCredential::DeleteToolCredential start");
@@ -213,7 +225,7 @@ int32_t SafCredential::DeleteToolCredential(const std::vector<ToolInfo> &toolInf
 
     int32_t resultCode = SAF_SUCCESS;
     int32_t ret = HandleIpcError(proxy, [&]() {
-        return proxy->DeleteToolCredential(toolInfos, result, resultCode);
+        return proxy->DeleteToolCredential(toolCredentials, result, resultCode);
     });
     IF_ERROR_LOGE_RETURN_ERR(ret, SAF_ERR_IPC_PROXY_FAIL, "IPC call failed, ret=%{public}d", ret);
     LOGI("DeleteToolCredential ret=%{public}d failedCount=%{public}d", resultCode, result.failedCount);
