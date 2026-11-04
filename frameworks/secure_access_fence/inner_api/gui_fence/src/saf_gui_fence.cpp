@@ -27,6 +27,7 @@
 #include "isecure_access_fence.h"
 #include "iservice_registry.h"
 #include "ipc_skeleton.h"
+#include "saf_gui_thread_pool.h"
 #include "saf_log.h"
 #include "saf_result_code.h"
 #include "settings_observer.h"
@@ -170,7 +171,12 @@ static void AsyncStoreOperationRecord(const AppInfo &callerApp, const AppInfo &t
 {
     AppInfo callerCopy = callerApp;
     AppInfo targetCopy = targetApp;
-    std::thread asyncThread([callerCopy, targetCopy, decision]() {
+    auto pool = SafGuiThreadPool::GetInstance();
+    if (!pool || !pool->IsRunning()) {
+        LOGE("AsyncStoreOperationRecord: thread pool not running");
+        return;
+    }
+    pool->AddTask([callerCopy, targetCopy, decision]() {
         auto proxy = GetProxy(g_mutex);
         if (proxy == nullptr) {
             LOGE("StoreOperationRecord async: load sa fail");
@@ -191,7 +197,6 @@ static void AsyncStoreOperationRecord(const AppInfo &callerApp, const AppInfo &t
         }
         LOGI("StoreOperationRecord async success");
     });
-    asyncThread.detach();
 }
 
 int32_t SafGuiFence::CheckControlPermission(
@@ -202,6 +207,14 @@ int32_t SafGuiFence::CheckControlPermission(
     int32_t ret = ValidateCheckControlParams(callerApp, targetApp);
     if (ret != SAF_SUCCESS) {
         return ret;
+    }
+
+    auto threadPool = SafGuiThreadPool::GetInstance();
+    if (threadPool && !threadPool->IsRunning()) {
+        int32_t poolRet = threadPool->StartPool();
+        if (poolRet != SAF_SUCCESS) {
+            LOGE("SafGuiFence::CheckControlPermission: StartPool failed, ret=%{public}d", poolRet);
+        }
     }
 
     auto &cache = GuiCacheManager::GetInstance();
@@ -215,9 +228,27 @@ int32_t SafGuiFence::CheckControlPermission(
     cache.WaitForRefresh();
     bool denied = cache.IsDenied(callerApp.bundleName, callerApp.index, targetApp.bundleName, targetApp.index);
     decision = denied ? ControlDecision::DENY : ControlDecision::ALLOW;
-
     AsyncStoreOperationRecord(callerApp, targetApp, decision);
     return SAF_SUCCESS;
+}
+
+int32_t SafGuiFence::PreloadAgentAppStatus()
+{
+    auto threadPool = SafGuiThreadPool::GetInstance();
+    if (threadPool) {
+        int32_t poolRet = threadPool->StartPool();
+        if (poolRet != SAF_SUCCESS) {
+            LOGE("SafGuiFence::PreloadAgentAppStatus: StartPool failed, ret=%{public}d", poolRet);
+            return poolRet;
+        }
+    }
+
+    auto &cache = GuiCacheManager::GetInstance();
+    if (cache.IsInitialized()) {
+        LOGI("PreloadAgentAppStatus: cache already initialized");
+        return SAF_SUCCESS;
+    }
+    return InitCacheFromService();
 }
 
 int32_t SafGuiFence::RegisterComponentClickCallback(

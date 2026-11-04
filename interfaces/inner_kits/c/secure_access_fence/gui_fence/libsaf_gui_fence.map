@@ -14,6 +14,7 @@
 {
   global:
     _ZN4OHOS8Security3SAF11SafGuiFence22CheckControlPermissionERKNS1_7AppInfoES5_RNS1_15ControlDecisionE;
+    _ZN4OHOS8Security3SAF11SafGuiFence21PreloadAgentAppStatusEv;
     _ZN4OHOS8Security3SAF11SafGuiFence30RegisterComponentClickCallbackEmRKNS_4sptrINS1_12IGuiCallbackEEE;
     _ZN4OHOS8Security3SAF11SafGuiFence28ReportComponentClickDecisionEmRKNS1_20ComponentClickResultE;
     _ZN4OHOS8Security3SAF11SafGuiFence32UnregisterComponentClickCallbackEm;

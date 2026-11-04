@@ -94,6 +94,17 @@ public:
         const AppInfo &callerApp,
         const AppInfo &targetApp,
         ControlDecision &decision);
+
+    /**
+     * @brief Preload the agent app control status cache.
+     *
+     * Loads the denied-pairs cache from the SAF service via IPC so that
+     * subsequent calls to CheckControlPermission can skip the IPC loading
+     * step and directly use the cache.
+     *
+     * @return Returns 0 on success, or error code on failure.
+     */
+    static int32_t PreloadAgentAppStatus();
 };
 
 } // namespace OHOS::Security::SAF

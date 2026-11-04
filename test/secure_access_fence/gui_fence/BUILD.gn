@@ -217,3 +217,40 @@ ohos_unittest("saf_gui_fence_parse_test") {
     ubsan = true
   }
 }
+
+# Unit test for SafGuiThreadPool. The pool .cpp is compiled directly into this
+# test target (it only depends on c_utils::ThreadPool and the SAF result-code
+# enum, with no SAMGR/IPC runtime needs) so the test stays self-contained and
+# does not have to link the saf_gui_fence shared library's version_script.
+ohos_unittest("saf_gui_thread_pool_test") {
+  module_out_path = module_output_path
+  subsystem_name = "security"
+  part_name = "asset"
+
+  include_dirs = [
+    "../../../frameworks/secure_access_fence/inner_api/gui_fence/inc",
+    "../../../interfaces/inner_kits/c/secure_access_fence/common/inc",
+    "../../../frameworks/secure_access_fence/os_dependency/log/inc",
+  ]
+
+  sources = [
+    "src/saf_gui_thread_pool_test.cpp",
+    "../../../frameworks/secure_access_fence/inner_api/gui_fence/src/saf_gui_thread_pool.cpp",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "googletest:gtest_main",
+  ]
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+}

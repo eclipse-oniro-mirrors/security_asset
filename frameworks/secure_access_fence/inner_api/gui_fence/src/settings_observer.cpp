@@ -26,7 +26,7 @@ namespace OHOS::Security::SAF {
 namespace {
 constexpr int32_t SAF_SERVICE_ID = 66532;
 const constexpr char *SETTING_URI_PROXY_PREFIX =
-    "datashare://com.ohos.settingsdata/entry/settingsdata/USER_SETTINGSDATA_SECURE_";
+    "datashare:///com.ohos.settingsdata/entry/settingsdata/USER_SETTINGSDATA_SECURE_";
 const constexpr char *SETTING_URI_PROXY_SUFFIX = "?Proxy=true";
 const constexpr char *SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
 
@@ -82,8 +82,12 @@ bool RegisterSettingsObserver(const std::string &key, int32_t userId,
     std::string uriStr = BuildSettingUri(userId, key);
     OHOS::Uri settingsUri(uriStr);
     LOGI("RegisterSettingsObserver: uri=%{public}s", uriStr.c_str());
-    helper->RegisterObserver(settingsUri, observer);
+    int32_t ret = helper->RegisterObserver(settingsUri, observer);
     helper->Release();
+    if (ret != OHOS::ERR_OK) {
+        LOGE("RegisterSettingsObserver: RegisterObserver failed, ret=%{public}d", ret);
+        return false;
+    }
     LOGI("RegisterSettingsObserver: success, key=%{public}s", key.c_str());
     return true;
 }
