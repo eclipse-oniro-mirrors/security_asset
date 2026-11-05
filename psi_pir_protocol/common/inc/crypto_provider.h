@@ -17,8 +17,10 @@
 #define PSI_PIR_PROTOCOL_INTERNAL_CRYPTO_PROVIDER_H
 
 #include "internal_types.h"
+#include "protocol_evaluation.h"
 #include "psi_pir_types.h"
 
+#include <memory>
 #include <stdint.h>
 
 namespace psi_pir::internal {
@@ -44,10 +46,9 @@ class IHEEngine {
 public:
     virtual ~IHEEngine() = default;
     virtual bool IsCompatible(const ProtocolParams &params) const noexcept = 0;
-    // TA-compatible operation: plaintext - Dec(ciphertext), modulo the plaintext modulus.
-    virtual int32_t AddPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept = 0;
-    virtual int32_t MultiplyPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept = 0;
-    virtual int32_t RandCipherText(const Bytes &ciphertext, Bytes &output) const noexcept = 0;
+    // Imports once into an independently owned batch context. Failure preserves the existing handle.
+    virtual int32_t CreateEvaluation(const Bytes &ciphertext,
+                                     std::unique_ptr<HeEvaluation> &evaluation) const noexcept = 0;
 };
 
 class IPirValueCrypto {

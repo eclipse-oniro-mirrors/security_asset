@@ -345,6 +345,59 @@ private:
     }
 };
 
+// Test-only handle keeps arithmetic in Slots; only import and final export use Bytes.
+class CleartextEvaluation final : public HeEvaluation {
+public:
+    explicit CleartextEvaluation(Slots slots) : slots_(std::move(slots)) {}
+    int32_t AddPlain(const Slots &plaintext) noexcept override;
+    int32_t MultiplyPlain(const Slots &plaintext) noexcept override;
+    int32_t Rerandomize() noexcept override
+    {
+        return status_; // Cleartext fixtures need no cryptographic rerandomization.
+    }
+    int32_t Serialize(Bytes &output) const noexcept override
+    {
+        if (status_ == PSI_PIR_SUCCESS) {
+            output = SerializeSlots(slots_);
+        }
+        return status_;
+    }
+
+private:
+    Slots slots_;
+    int32_t status_ = PSI_PIR_SUCCESS;
+};
+
+int32_t CleartextEvaluation::AddPlain(const Slots &plaintext) noexcept
+{
+    if (status_ != PSI_PIR_SUCCESS) {
+        return status_;
+    }
+    if (slots_.size() != plaintext.size()) {
+        status_ = PSI_PIR_HE_ERROR;
+        return status_;
+    }
+    for (size_t i = 0; i < slots_.size(); ++i) {
+        slots_[i] = (plaintext[i] % PLAIN_MODULUS + PLAIN_MODULUS - slots_[i]) % PLAIN_MODULUS;
+    }
+    return PSI_PIR_SUCCESS;
+}
+
+int32_t CleartextEvaluation::MultiplyPlain(const Slots &plaintext) noexcept
+{
+    if (status_ != PSI_PIR_SUCCESS) {
+        return status_;
+    }
+    if (slots_.size() != plaintext.size()) {
+        status_ = PSI_PIR_HE_ERROR;
+        return status_;
+    }
+    for (size_t i = 0; i < slots_.size(); ++i) {
+        slots_[i] = (slots_[i] * plaintext[i]) % PLAIN_MODULUS;
+    }
+    return PSI_PIR_SUCCESS;
+}
+
 class CleartextHe final : public IHEEngine {
 public:
     bool IsCompatible(const ProtocolParams &params) const noexcept override
@@ -352,44 +405,29 @@ public:
         compatibleParams.push_back(params);
         return compatible;
     }
-
-    int32_t AddPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept override
-    {
-        Slots slots;
-        if (DeserializeSlots(ciphertext, slots) != PSI_PIR_SUCCESS || slots.size() != plaintext.size()) {
-            return PSI_PIR_HE_ERROR;
-        }
-        // Model the externally injected TA contract: AddPlain(C, P) decrypts to P - C.
-        for (std::size_t i = 0; i < slots.size(); ++i) {
-            const auto subtrahend = plaintext[i] % PLAIN_MODULUS;
-            slots[i] = (subtrahend + PLAIN_MODULUS - slots[i]) % PLAIN_MODULUS;
-        }
-        output = SerializeSlots(slots);
-        return PSI_PIR_SUCCESS;
-    }
-
-    int32_t MultiplyPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept override
-    {
-        Slots slots;
-        if (DeserializeSlots(ciphertext, slots) != PSI_PIR_SUCCESS || slots.size() != plaintext.size()) {
-            return PSI_PIR_HE_ERROR;
-        }
-        for (std::size_t i = 0; i < slots.size(); ++i) {
-            slots[i] = (slots[i] * plaintext[i]) % PLAIN_MODULUS;
-        }
-        output = SerializeSlots(slots);
-        return PSI_PIR_SUCCESS;
-    }
-
-    int32_t RandCipherText(const Bytes &ciphertext, Bytes &output) const noexcept override
-    {
-        output = ciphertext; // Test-only identity rerandomization, never a production backend.
-        return PSI_PIR_SUCCESS;
-    }
-
+    int32_t CreateEvaluation(const Bytes &ciphertext,
+                             std::unique_ptr<HeEvaluation> &evaluation) const noexcept override;
     bool compatible{true};
+    bool emptyEvaluation{false};
     mutable std::vector<ProtocolParams> compatibleParams;
 };
+
+int32_t CleartextHe::CreateEvaluation(const Bytes &ciphertext,
+                                     std::unique_ptr<HeEvaluation> &evaluation) const noexcept
+{
+    if (ciphertext.empty()) {
+        return PSI_PIR_INVALID_ARGUMENT;
+    }
+    Slots slots;
+    if (DeserializeSlots(ciphertext, slots) != PSI_PIR_SUCCESS) {
+        return PSI_PIR_HE_ERROR;
+    }
+    if (emptyEvaluation) {
+        return PSI_PIR_SUCCESS;
+    }
+    evaluation = std::make_unique<CleartextEvaluation>(std::move(slots));
+    return PSI_PIR_SUCCESS;
+}
 
 struct RecordingProviders {
     std::shared_ptr<RecordingHash> hash;
@@ -516,7 +554,10 @@ TEST(PsiPirProtocolHeContractTest, AddPlainMeansPlaintextMinusCiphertext)
     const Slots ciphertextSlots{1, 0, PLAIN_MODULUS - 1};
     const Slots plaintext{2, 1, PLAIN_MODULUS - 1};
     Bytes output;
-    ASSERT_EQ(he.AddPlain(SerializeSlots(ciphertextSlots), plaintext, output), PSI_PIR_SUCCESS);
+    std::unique_ptr<HeEvaluation> evaluation;
+    ASSERT_EQ(he.CreateEvaluation(SerializeSlots(ciphertextSlots), evaluation), PSI_PIR_SUCCESS);
+    ASSERT_EQ(evaluation->AddPlain(plaintext), PSI_PIR_SUCCESS);
+    ASSERT_EQ(evaluation->Serialize(output), PSI_PIR_SUCCESS);
 
     Slots result;
     ASSERT_EQ(DeserializeSlots(output, result), PSI_PIR_SUCCESS);
@@ -1502,4 +1543,21 @@ TEST(PsiPirProtocolTest, SeedPackingSupportsTenBitSlotsAcrossByteBoundaries)
     EXPECT_EQ(decoded, input);
 }
 
+} // namespace
+
+namespace {
+using namespace testing::ext;
+/* @tc.name: SuccessfulEngineMustReturnHandle
+ * @tc.desc: Reject a broken engine before arithmetic without publishing partial search results.
+ * @tc.type: FUNC
+ */
+HWTEST(PsiPirProtocolHeContractTest, SuccessfulEngineMustReturnHandle, TestSize.Level2)
+{
+    ScopedProviderReset reset;
+    auto engine = ConfigureProtocol();
+    engine->emptyEvaluation = true;
+    PrivacySearchResult output{{Bytes{0x99}}, std::nullopt};
+    EXPECT_EQ(PrivacySearch(MakePrivacyTarget(2), {MakeElement(2)}, PSI_PROTOCOL, output), PSI_PIR_HE_ERROR);
+    EXPECT_EQ(output.resultCipherText, (std::vector<Bytes>{{0x99}}));
+}
 } // namespace

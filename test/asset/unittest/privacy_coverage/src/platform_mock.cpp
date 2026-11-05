@@ -57,26 +57,32 @@ extern "C" int32_t asset_privacy_decrypt_ciphertext(const PrivacyDecryptRequest 
     return AssetDecryptPrivacyCiphertext(20010001, input, output);
 }
 namespace {
-int32_t ClosedDecrypt(const psi_pir::PrivacySearchResult &input, const psi_pir::PrivacyProtocol &protocol,
-                      std::vector<psi_pir::Bytes> &output)
+napi_value ClosedResult(napi_env env, const char *operation)
 {
-    for (const auto &cipher : input.resultCipherText) {
-        psi_pir::Bytes plain;
-        const auto ret = psi_pir::DecryptCiphertext(cipher, protocol, {20010001, 100}, plain);
-        if (ret != psi_pir::PSI_PIR_SUCCESS) {
-            return ret;
-        }
-        output.push_back(std::move(plain));
+    ++PrivacyHost::State().calls[operation];
+    const auto status = PrivacyHost::State().closedStatus;
+    if (status != 0) {
+        return OHOS::Security::PrivacyComputation::CreateRejectedPromise(env, status, "closed boundary mock");
     }
-    if (PrivacyHost::State().closedBatchMismatch) {
-        output.emplace_back();
+    napi_deferred deferred = nullptr;
+    napi_value promise = nullptr;
+    napi_value result = nullptr;
+    if (napi_create_promise(env, &deferred, &promise) != napi_ok ||
+        napi_create_string_utf8(env, operation, NAPI_AUTO_LENGTH, &result) != napi_ok ||
+        napi_resolve_deferred(env, deferred, result) != napi_ok) {
+        return nullptr;
     }
-    return PrivacyHost::State().closedStatus;
+    return promise;
 }
 napi_value ClosedGen(napi_env env, napi_callback_info)
 {
-    return OHOS::Security::PrivacyComputation::CreateRejectedPromise(env, 24000017, "closed boundary mock");
+    return ClosedResult(env, "ClosedGenPrivacyTarget");
 }
+napi_value ClosedGet(napi_env env, napi_callback_info)
+{
+    return ClosedResult(env, "ClosedGetSearchResult");
+}
+
 } // namespace
 extern "C" void *dlopen(const char *, int32_t)
 {
@@ -88,8 +94,10 @@ extern "C" void *dlsym(void *, const char *name)
     if (PrivacyHost::State().symbolFailure) {
         return nullptr;
     }
-    return std::strcmp(name, "GetSearchResult") == 0 ? reinterpret_cast<void *>(ClosedDecrypt)
-                                                     : reinterpret_cast<void *>(ClosedGen);
+    if (std::strcmp(name, "GetSearchResult") == 0) {
+        return reinterpret_cast<void *>(ClosedGet);
+    }
+    return std::strcmp(name, "GenPrivacyTarget") == 0 ? reinterpret_cast<void *>(ClosedGen) : nullptr;
 }
 extern "C" char *dlerror()
 {

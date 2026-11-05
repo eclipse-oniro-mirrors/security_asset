@@ -327,9 +327,13 @@ int32_t EvaluateBatch(const EvaluationContext &context, std::size_t batchStart, 
                       Bytes &evaluated) noexcept
 {
     std::unique_ptr<HeEvaluation> evaluation;
-    auto ret = CreateHeEvaluation(context.engine, context.privacyTarget, evaluation);
+    auto ret = context.engine.CreateEvaluation(context.privacyTarget, evaluation);
     if (ret != PSI_PIR_SUCCESS) {
         return ret;
+    }
+    if (!evaluation) {
+        LOGE("HE engine returned success without an evaluation handle");
+        return PSI_PIR_HE_ERROR;
     }
     Slots differencePlain;
     ret = BuildDifferencePlain(context, batchStart, batchElementCount, differencePlain);

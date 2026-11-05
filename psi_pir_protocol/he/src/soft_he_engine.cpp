@@ -149,7 +149,8 @@ int32_t HifheEvaluation::MultiplyPlain(const Slots &slots) noexcept
 
 } // namespace
 
-int32_t CreateSoftHeEvaluation(const Bytes &ciphertext, std::unique_ptr<HeEvaluation> &evaluation) noexcept
+int32_t SoftHeEngine::CreateEvaluation(const Bytes &ciphertext,
+                                       std::unique_ptr<HeEvaluation> &evaluation) const noexcept
 {
     if (ciphertext.empty()) {
         return PSI_PIR_INVALID_ARGUMENT;
@@ -166,39 +167,6 @@ int32_t CreateSoftHeEvaluation(const Bytes &ciphertext, std::unique_ptr<HeEvalua
     }
     evaluation = std::move(result);
     return PSI_PIR_SUCCESS;
-}
-
-int32_t SoftHeEngine::AddPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept
-{
-    std::unique_ptr<HeEvaluation> evaluation;
-    auto ret = CreateSoftHeEvaluation(ciphertext, evaluation);
-    if (ret != PSI_PIR_SUCCESS) {
-        return ret;
-    }
-    ret = evaluation->AddPlain(plaintext);
-    return ret == PSI_PIR_SUCCESS ? evaluation->Serialize(output) : ret;
-}
-
-int32_t SoftHeEngine::MultiplyPlain(const Bytes &ciphertext, const Slots &plaintext, Bytes &output) const noexcept
-{
-    std::unique_ptr<HeEvaluation> evaluation;
-    auto ret = CreateSoftHeEvaluation(ciphertext, evaluation);
-    if (ret != PSI_PIR_SUCCESS) {
-        return ret;
-    }
-    ret = evaluation->MultiplyPlain(plaintext);
-    return ret == PSI_PIR_SUCCESS ? evaluation->Serialize(output) : ret;
-}
-
-int32_t SoftHeEngine::RandCipherText(const Bytes &ciphertext, Bytes &output) const noexcept
-{
-    std::unique_ptr<HeEvaluation> evaluation;
-    auto ret = CreateSoftHeEvaluation(ciphertext, evaluation);
-    if (ret != PSI_PIR_SUCCESS) {
-        return ret;
-    }
-    ret = evaluation->Rerandomize();
-    return ret == PSI_PIR_SUCCESS ? evaluation->Serialize(output) : ret;
 }
 
 std::shared_ptr<const psi_pir::internal::IHEEngine> GetSoftHeEngine() noexcept

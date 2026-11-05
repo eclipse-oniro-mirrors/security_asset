@@ -29,8 +29,6 @@ constexpr char COMP_NAPI_PATH[] = ASSET_ENABLE_PRIVACY_COMPUTATION_CONFIG;
 constexpr char COMP_NAPI_PATH[] = "";
 #endif
 using ComputationNapiFunc = napi_value (*)(napi_env, napi_callback_info);
-using ComputationFunc = int32_t (*)(const psi_pir::PrivacySearchResult &, const psi_pir::PrivacyProtocol &,
-                                    std::vector<psi_pir::Bytes> &);
 
 std::atomic<void *> g_computationHandle{nullptr};
 std::mutex g_computationMutex;

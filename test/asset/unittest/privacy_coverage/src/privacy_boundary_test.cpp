@@ -24,6 +24,7 @@
 #include "provider_registry.h"
 #include "hifhe_adapter.h"
 #include "protocol_mapper.h"
+#include "soft_he_engine.h"
 #include <limits>
 #include <cstring>
 #include <cstdlib>
@@ -285,5 +286,79 @@ HWTEST_F(PrivacyBoundaryTest, DrbgInitializationStatus, TestSize.Level2)
     const bool failed = mode != nullptr && std::strcmp(mode, "failure") == 0;
     HifheAdapter adapter;
     EXPECT_EQ(adapter.InitializeEvaluation(ProtocolParams{}), failed ? PSI_PIR_HE_ERROR : PSI_PIR_SUCCESS);
+}
+
+HWTEST_F(PrivacyBoundaryTest, EachBatchImportsOnceAndExportsOnlyAfterEvaluation, TestSize.Level1)
+{
+    const std::vector<psi_pir::PrivacyProtocol> protocols{{DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL},
+                                                          {DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL},
+                                                          {DataSetSize::SIZE_128, ProtocolType::PIR_PROTOCOL}};
+    for (const auto &protocol : protocols) {
+        ProtocolParams params;
+        ASSERT_EQ(MapPrivacyProtocol(protocol, params), PSI_PIR_SUCCESS);
+        const bool pir = protocol.protocolType == ProtocolType::PIR_PROTOCOL;
+        const size_t capacity = params.dataNumPerPlaintext / (pir ? kPirGroupsPerItem : kPsiGroupsPerItem);
+        const Element element{psi_pir::Bytes(8, 0x45), HashAlg::SHA256, psi_pir::Bytes{0xFF}};
+        const std::vector<Element> elements(capacity + 1, element);
+        psi_pir::Bytes target;
+        ASSERT_EQ(GenPrivacyTarget({element.elemKey, element.hashAlg}, protocol, {20010001, 100}, target),
+                  PSI_PIR_SUCCESS);
+        for (bool custom : {false, true}) {
+            SetHEEngine(custom ? std::make_shared<const SoftHeEngine>() : nullptr);
+            State().calls.clear();
+            PrivacySearchResult output;
+            ASSERT_EQ(PrivacySearch(target, elements, protocol, output), PSI_PIR_SUCCESS);
+            ASSERT_EQ(output.resultCipherText.size(), 2U);
+            EXPECT_EQ(State().calls["Deserialize"], 2U);
+            EXPECT_EQ(State().calls["SerializeQuery"], 2U);
+            EXPECT_EQ(State().calls["Serialize"], 2U);
+            EXPECT_EQ(State().calls["New"], 2U);
+        }
+    }
+}
+
+HWTEST_F(PrivacyBoundaryTest, FailedBatchNeverSerializesIntermediateResults, TestSize.Level2)
+{
+    const psi_pir::PrivacyProtocol protocol{DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL};
+    const Element element{psi_pir::Bytes(8, 0x45), HashAlg::SHA256, psi_pir::Bytes{0xFF}};
+    psi_pir::Bytes target;
+    ASSERT_EQ(GenPrivacyTarget({element.elemKey, element.hashAlg}, protocol, {20010001, 100}, target), PSI_PIR_SUCCESS);
+    SetHEEngine(std::make_shared<const SoftHeEngine>());
+    const std::vector<std::pair<const char *, uint32_t>> failures{
+        {"Deserialize", 1}, {"Encode", 1}, {"Negate", 1}, {"Add", 1},        {"Mul", 1},
+        {"Encode", 3},      {"Negate", 2}, {"Add", 2},    {"Rerandomize", 1}};
+    for (const auto &[operation, occurrence] : failures) {
+        State().calls.clear();
+        State().failAt = operation;
+        State().failOccurrence = occurrence;
+        PrivacySearchResult output{{psi_pir::Bytes{0x99}}, std::vector<psi_pir::Bytes>{{0x88}}};
+        EXPECT_EQ(PrivacySearch(target, {element}, protocol, output), PSI_PIR_HE_ERROR);
+        EXPECT_EQ(State().calls["SerializeQuery"], 0U) << operation;
+        EXPECT_EQ(State().calls["Serialize"], 0U) << operation;
+        EXPECT_EQ(output.resultCipherText, (std::vector<psi_pir::Bytes>{{0x99}}));
+        ASSERT_TRUE(output.valueCipherText.has_value());
+        EXPECT_EQ(*output.valueCipherText, (std::vector<psi_pir::Bytes>{{0x88}}));
+    }
+}
+
+HWTEST_F(PrivacyBoundaryTest, FinalExportFailurePreservesOutput, TestSize.Level2)
+{
+    const psi_pir::PrivacyProtocol protocol{DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL};
+    const Element element{psi_pir::Bytes(8, 0x45), HashAlg::SHA256, psi_pir::Bytes{0xFF}};
+    psi_pir::Bytes target;
+    ASSERT_EQ(GenPrivacyTarget({element.elemKey, element.hashAlg}, protocol, {20010001, 100}, target), PSI_PIR_SUCCESS);
+    for (const auto operation : {"SerializeQuery", "Serialize"}) {
+        State().calls.clear();
+        State().failAt = operation;
+        PrivacySearchResult output{{psi_pir::Bytes{0x99}}, std::nullopt};
+        EXPECT_EQ(PrivacySearch(target, {element}, protocol, output), PSI_PIR_HE_ERROR);
+        EXPECT_EQ(output.resultCipherText, (std::vector<psi_pir::Bytes>{{0x99}}));
+        EXPECT_FALSE(output.valueCipherText.has_value());
+        EXPECT_EQ(State().calls["Deserialize"], 1U);
+        EXPECT_EQ(State().calls["Add"], 2U);
+        EXPECT_EQ(State().calls["Mul"], 1U);
+        EXPECT_EQ(State().calls["Rerandomize"], 1U);
+        EXPECT_EQ(State().calls["SerializeQuery"], 1U);
+    }
 }
 } // namespace

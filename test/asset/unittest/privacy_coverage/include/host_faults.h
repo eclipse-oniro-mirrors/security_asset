@@ -40,7 +40,6 @@ struct Faults {
     uint32_t seedBytes = 32;
     bool dlopenFailure = false;
     bool symbolFailure = false;
-    bool closedBatchMismatch = false;
     int32_t closedStatus = 0;
 };
 Faults &State();

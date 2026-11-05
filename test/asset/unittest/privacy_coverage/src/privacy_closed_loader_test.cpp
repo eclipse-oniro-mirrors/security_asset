@@ -17,55 +17,63 @@
 #include "host_faults.h"
 #include "privacy_computation_napi_common.h"
 #include "privacy_computation_napi_loader.h"
-#include "privacy_client.h"
-#include "huks_seed_deriver.h"
-#include "he_key_deriver.h"
 
 namespace {
 using namespace testing::ext;
 using namespace OHOS::Security::PrivacyComputation;
-using namespace psi_pir;
-using namespace psi_pir::internal;
 class ClosedLoaderTest : public testing::Test {
 public:
     void SetUp() override
     {
         PrivacyHost::Reset();
-        SetHeSeedDeriver(std::make_shared<HuksSeedDeriver>());
     }
     napi_env__ env_;
 };
 
-HWTEST_F(ClosedLoaderTest, HardRouteUsesLocalPostprocessingAndRegisteredEntry, TestSize.Level1)
+HWTEST_F(ClosedLoaderTest, OpenFailure, TestSize.Level2)
 {
-    const psi_pir::PrivacyProtocol protocol{DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL};
-    psi_pir::Bytes target;
-    ASSERT_EQ(GenPrivacyTargetRemote({psi_pir::Bytes(8, 0x45), HashAlg::SHA256}, protocol, target), PSI_PIR_SUCCESS);
-    PrivacySearchResult encrypted;
-    ASSERT_EQ(PrivacySearch(target, {{psi_pir::Bytes(8, 0x45), HashAlg::SHA256, psi_pir::Bytes{0, 0xFF}}}, protocol,
-                            encrypted),
-              PSI_PIR_SUCCESS);
-    napi_value jsInput = nullptr;
-    ASSERT_EQ(NapiSetProperty(&env_, encrypted, jsInput), napi_ok);
-    auto jsProtocol = PrivacyHost::Value(&env_);
-    jsProtocol->properties["dataSetSize"] = PrivacyHost::Number(&env_, 1);
-    jsProtocol->properties["protocolType"] = PrivacyHost::Number(&env_, 1);
-    auto promise = PrivacyHost::Call(&env_, "getSearchResult", {jsInput, jsProtocol});
-    PrivacyHost::Drain(&env_);
-    ASSERT_NE(promise, nullptr);
-    ASSERT_FALSE(promise->rejected);
-    EXPECT_TRUE(promise->result->properties.at("matchedResult")->boolean);
-    const auto values = promise->result->properties.at("attachedValues");
-    ASSERT_EQ(values->elements.size(), 1U);
-    EXPECT_EQ(values->elements[0]->buffer->storage, (psi_pir::Bytes{0, 0xFF}));
-    // The first entry delegates to the configured closed NAPI callback.
-    auto first = PrivacyHost::Call(&env_, "genPrivacyTarget", {});
-    ASSERT_NE(first, nullptr);
-    EXPECT_TRUE(first->rejected);
+    PrivacyHost::State().dlopenFailure = true;
+    EXPECT_TRUE(IsComputationLibConfigured());
+    for (const auto function : {"GenPrivacyTarget", "GetSearchResult"}) {
+        auto promise = CallComputationNapiFunc(&env_, nullptr, function);
+        ASSERT_NE(promise, nullptr);
+        EXPECT_TRUE(promise->rejected);
+        EXPECT_EQ(promise->result->properties.at("code")->number, PRIVACY_COMPUTATION_UNAVAILABLE);
+    }
+}
+
+HWTEST_F(ClosedLoaderTest, SymbolsAndClosedErrorsRejectPromise, TestSize.Level2)
+{
+    PrivacyHost::State().symbolFailure = true;
+    for (const auto function : {"GenPrivacyTarget", "GetSearchResult"}) {
+        auto promise = CallComputationNapiFunc(&env_, nullptr, function);
+        ASSERT_NE(promise, nullptr);
+        EXPECT_TRUE(promise->rejected);
+        EXPECT_EQ(promise->result->properties.at("code")->number, PRIVACY_COMPUTATION_UNAVAILABLE);
+    }
+    PrivacyHost::State().symbolFailure = false;
     PrivacyHost::State().closedStatus = PRIVACY_COMPUTATION_CRYPTO_ERROR;
-    promise = PrivacyHost::Call(&env_, "getSearchResult", {jsInput, jsProtocol});
-    PrivacyHost::Drain(&env_);
+    auto promise = PrivacyHost::Call(&env_, "getSearchResult", {});
     ASSERT_NE(promise, nullptr);
     EXPECT_TRUE(promise->rejected);
+    EXPECT_EQ(promise->result->properties.at("code")->number, PRIVACY_COMPUTATION_CRYPTO_ERROR);
+}
+
+HWTEST_F(ClosedLoaderTest, HardRouteDelegatesToClosedNapi, TestSize.Level1)
+{
+    auto first = PrivacyHost::Call(&env_, "genPrivacyTarget", {});
+    ASSERT_NE(first, nullptr);
+    ASSERT_TRUE(first->settled);
+    ASSERT_FALSE(first->rejected);
+    EXPECT_EQ(first->result->text, "ClosedGenPrivacyTarget");
+    auto third = PrivacyHost::Call(&env_, "getSearchResult", {});
+    ASSERT_NE(third, nullptr);
+    ASSERT_TRUE(third->settled);
+    ASSERT_FALSE(third->rejected);
+    EXPECT_EQ(third->result->text, "ClosedGetSearchResult");
+    EXPECT_TRUE(env_.queued.empty());
+    EXPECT_EQ(PrivacyHost::State().calls["ClosedGenPrivacyTarget"], 1U);
+    EXPECT_EQ(PrivacyHost::State().calls["ClosedGetSearchResult"], 1U);
+    EXPECT_EQ(PrivacyHost::State().calls["Deserialize"], 0U);
 }
 } // namespace

@@ -16,8 +16,8 @@
 #ifndef PSI_PIR_PROTOCOL_EVALUATION_H
 #define PSI_PIR_PROTOCOL_EVALUATION_H
 
-#include "crypto_provider.h"
-#include <memory>
+#include "internal_types.h"
+#include "psi_pir_types.h"
 
 namespace psi_pir::internal {
 // Opaque per-batch handle. Owns the current ciphertext and its evaluation context.
@@ -27,7 +27,7 @@ public:
     virtual ~HeEvaluation() = default;
     HeEvaluation(const HeEvaluation &) = delete;
     HeEvaluation &operator=(const HeEvaluation &) = delete;
-    // Matches the existing addPlain contract: plaintext - Dec(current), modulo the plaintext modulus.
+    // TA-compatible subtraction: plaintext - Dec(current), modulo the plaintext modulus.
     virtual int32_t AddPlain(const Slots &plaintext) noexcept = 0;
     virtual int32_t MultiplyPlain(const Slots &plaintext) noexcept = 0;
     virtual int32_t Rerandomize() noexcept = 0;
@@ -37,9 +37,6 @@ protected:
     HeEvaluation() = default;
 };
 
-// Imports one ciphertext. The engine must outlive the handle; failure preserves the caller's existing handle.
-int32_t CreateHeEvaluation(const IHEEngine &engine, const Bytes &ciphertext,
-                           std::unique_ptr<HeEvaluation> &evaluation) noexcept;
 } // namespace psi_pir::internal
 
 #endif // PSI_PIR_PROTOCOL_EVALUATION_H

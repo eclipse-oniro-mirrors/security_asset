@@ -32,7 +32,6 @@ ohos_static_library("psi_pir_protocol") {
   include_dirs = psi_pir_protocol_internal_include_dirs
 
   sources = [
-    "common/src/protocol_evaluation.cpp",
     "common/src/provider_registry.cpp",
     "core/src/psi_pir_protocol_impl.cpp",
     "crypto/src/openssl_crypto_provider.cpp",

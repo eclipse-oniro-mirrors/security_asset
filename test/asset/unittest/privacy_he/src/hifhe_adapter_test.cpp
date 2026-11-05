@@ -77,7 +77,7 @@ HWTEST(HifheAdapterTest, KeylessEvaluationMatchesArithmetic, TestSize.Level1)
     ASSERT_EQ(owner.Encrypt(plaintext, ciphertext), PSI_PIR_SUCCESS);
     ASSERT_EQ(owner.Serialize(ciphertext, target), PSI_PIR_SUCCESS);
     std::unique_ptr<HeEvaluation> evaluation;
-    ASSERT_EQ(CreateHeEvaluation(*GetSoftHeEngine(), target, evaluation), PSI_PIR_SUCCESS);
+    ASSERT_EQ(GetSoftHeEngine()->CreateEvaluation(target, evaluation), PSI_PIR_SUCCESS);
     ASSERT_EQ(evaluation->AddPlain(bucket), PSI_PIR_SUCCESS);
     ASSERT_EQ(evaluation->MultiplyPlain(mask), PSI_PIR_SUCCESS);
     ASSERT_EQ(evaluation->Rerandomize(), PSI_PIR_SUCCESS);
@@ -112,7 +112,7 @@ HWTEST(HifheAdapterTest, BatchFailurePreservesSerializedInputAndOutput, TestSize
     const auto original = target;
     Bytes output{0x99};
     std::unique_ptr<HeEvaluation> evaluation;
-    ASSERT_EQ(CreateHeEvaluation(*GetSoftHeEngine(), target, evaluation), PSI_PIR_SUCCESS);
+    ASSERT_EQ(GetSoftHeEngine()->CreateEvaluation(target, evaluation), PSI_PIR_SUCCESS);
     ASSERT_EQ(evaluation->AddPlain(Pattern()), PSI_PIR_SUCCESS);
     EXPECT_EQ(evaluation->MultiplyPlain(Slots(kDefaultPolyModulusDegree - 1)), PSI_PIR_INVALID_ARGUMENT);
     EXPECT_EQ(evaluation->Rerandomize(), PSI_PIR_INVALID_ARGUMENT);
