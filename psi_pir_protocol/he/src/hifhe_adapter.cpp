@@ -37,6 +37,8 @@ int32_t HifheAdapter::Serialize(const HifheText &ciphertext, Bytes &output) cons
     if (ctx_ == nullptr) {
         return PSI_PIR_HE_ERROR;
     }
+    uint32_t interchange = HIFHE_WIRE_INTERCHANGE;
+    HIFHE_Ctrl(ctx_, HIFHE_CTRL_BGV_SET_WIRE_FORMAT, NULL, &interchange, sizeof(interchange));
     uint32_t size = 0;
     auto ret = HIFHE_Serialize(ctx_, ciphertext.value, nullptr, &size);
     if (ret != HIFHE_BUFFER_TOO_SMALL || size == 0 || size > MAX_HE_BYTES) {
