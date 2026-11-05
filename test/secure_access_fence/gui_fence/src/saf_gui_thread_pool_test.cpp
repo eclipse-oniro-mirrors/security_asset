@@ -299,11 +299,45 @@ HWTEST_F(SafGuiThreadPoolTest, AddTask_MultipleSequential_001, TestSize.Level0)
     }
 }
 
+/**
+ * @tc.name: AddTask_QueueFull_001
+ * @tc.desc: UT-TP-10: AddTask returns SAF_ERR_THREAD_POOL_QUEUE_FULL when the queue reaches SAF_GUI_MAX_TASK_NUM.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(SafGuiThreadPoolTest, AddTask_QueueFull_001, TestSize.Level0)
+{
+    auto pool = SafGuiThreadPool::GetInstance();
+    ASSERT_NE(pool, nullptr);
+    ASSERT_EQ(pool->StartPool(), SAF_SUCCESS);
+
+    // Block the single worker so every subsequent task piles up in the queue
+    // instead of being executed; this lets us drive GetCurTaskNum to the limit.
+    auto workerEntered = MakeFlag();
+    auto releaseWorker = MakeFlag();
+    ASSERT_EQ(pool->AddTask(MakeBlockingTask(workerEntered, releaseWorker)), SAF_SUCCESS);
+    ASSERT_TRUE(WaitForFlag(workerEntered, TASK_ENTER_TIMEOUT_MS));
+
+    // A cheap no-op flag reused by every filler task; the goal is only to fill
+    // the queue up to SAF_GUI_MAX_TASK_NUM so the next AddTask hits the full branch.
+    auto filler = MakeFlag();
+    for (uint32_t i = 0; i < SAF_GUI_MAX_TASK_NUM; ++i) {
+        ASSERT_EQ(pool->AddTask(MakeSimpleTask(filler)), SAF_SUCCESS) <<
+            "AddTask failed before reaching max at i=" << i;
+    }
+
+    // The very next AddTask must be rejected on the queue-full branch.
+    EXPECT_EQ(pool->AddTask(MakeSimpleTask(filler)), SAF_ERR_THREAD_POOL_QUEUE_FULL);
+
+    // Release the worker so it can drain the queue and let TearDown stop cleanly.
+    releaseWorker->store(true);
+}
+
 // ============ StopPool ============
 
 /**
  * @tc.name: StopPool_AlreadyStopped_001
- * @tc.desc: UT-TP-10: StopPool when pool_ is null returns SAF_SUCCESS without crashing.
+ * @tc.desc: UT-TP-11: StopPool when pool_ is null returns SAF_SUCCESS without crashing.
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -319,7 +353,7 @@ HWTEST_F(SafGuiThreadPoolTest, StopPool_AlreadyStopped_001, TestSize.Level0)
 
 /**
  * @tc.name: StopPool_DrainsQueue_001
- * @tc.desc: UT-TP-11: StopPool waits for queued tasks to drain (GetTaskNum > 0 loop) before stopping.
+ * @tc.desc: UT-TP-12: StopPool waits for queued tasks to drain (GetTaskNum > 0 loop) before stopping.
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -341,7 +375,7 @@ HWTEST_F(SafGuiThreadPoolTest, StopPool_DrainsQueue_001, TestSize.Level0)
 
 /**
  * @tc.name: StopPool_RunningPool_001
- * @tc.desc: UT-TP-12: StopPool on a running, idle pool stops the worker and clears state.
+ * @tc.desc: UT-TP-13: StopPool on a running, idle pool stops the worker and clears state.
  * @tc.type: FUNC
  * @tc.require:
  */

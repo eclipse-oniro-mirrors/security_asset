@@ -305,4 +305,48 @@ HWTEST_F(GuiInnerApiTest, InnerApi_UnregisterComponentClickCallback_001, TestSiz
     EXPECT_EQ(ret, SAF_ERR_GUI_SESSION_NOT_FOUND);
 }
 
+// ================== PreloadAgentAppStatus tests =================
+
+/**
+ * @tc.name: InnerApi_PreloadAgentAppStatus_001
+ * @tc.desc: Preload after cache is already initialized -> hits the "cache already initialized"
+ *          early-return branch and returns SAF_SUCCESS without re-initializing.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiInnerApiTest, InnerApi_PreloadAgentAppStatus_001, TestSize.Level0)
+{
+    // Prime the cache via a normal CheckControlPermission call so the
+    // "cache already initialized" branch inside PreloadAgentAppStatus is taken.
+    auto callerApp = MakeAppInfo("com.app.preload", TEST_APP_INDEX);
+    auto targetApp = MakeAppInfo("com.app.target", TEST_APP_INDEX);
+    ControlDecision decision = ControlDecision::ALLOW;
+    int32_t primeRet = SafGuiFence::CheckControlPermission(callerApp, targetApp, decision);
+    ASSERT_EQ(primeRet, SAF_SUCCESS);
+    ASSERT_TRUE(GuiCacheManager::GetInstance().IsInitialized());
+
+    // Now PreloadAgentAppStatus must short-circuit on the initialized cache.
+    int32_t ret = SafGuiFence::PreloadAgentAppStatus();
+    EXPECT_EQ(ret, SAF_SUCCESS);
+    EXPECT_TRUE(GuiCacheManager::GetInstance().IsInitialized());
+}
+
+/**
+ * @tc.name: InnerApi_PreloadAgentAppStatus_002
+ * @tc.desc: Preload with an uninitialized cache -> falls through to InitCacheFromService,
+ *          which loads the denied-pairs list via IPC and registers the settings observer.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiInnerApiTest, InnerApi_PreloadAgentAppStatus_002, TestSize.Level0)
+{
+    // TearDown of the previous case resets the cache, so here it is uninitialized
+    // and PreloadAgentAppStatus must take the InitCacheFromService path.
+    ASSERT_FALSE(GuiCacheManager::GetInstance().IsInitialized());
+
+    int32_t ret = SafGuiFence::PreloadAgentAppStatus();
+    EXPECT_EQ(ret, SAF_SUCCESS);
+    EXPECT_TRUE(GuiCacheManager::GetInstance().IsInitialized());
+}
+
 } // namespace UnitTest::GuiInnerApiTest
