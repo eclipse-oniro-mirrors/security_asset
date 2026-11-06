@@ -22,7 +22,7 @@ use crate::{
     database::Database,
     statement::Statement,
     table::Table,
-    types::{ColumnInfo, DbMap, SQLITE_DONE, SQLITE_ROW},
+    types::{ColumnInfo, DbMap, SqliteErr},
 };
 
 use crate::test::TEST_CASE_MUTEX;
@@ -121,7 +121,7 @@ fn execute_sql() {
     assert!(stmt.bind_data(1, &Value::Number(1)).is_ok());
 
     let mut count = 0;
-    while stmt.step().unwrap() == SQLITE_ROW {
+    while stmt.step().unwrap() == SqliteErr::ROW {
         count += 1;
     }
     assert_eq!(count, 2);
@@ -167,7 +167,7 @@ fn single_data() {
     let stmt = Statement::prepare("select id,alias from table_name where id < ?", &db).unwrap();
     stmt.bind_data(1, &Value::Number(1000)).unwrap();
 
-    while stmt.step().unwrap() == SQLITE_ROW {
+    while stmt.step().unwrap() == SqliteErr::ROW {
         let count = stmt.data_count();
         assert_eq!(2, count);
 
@@ -205,13 +205,13 @@ fn multiple_data() {
         stmt.reset().unwrap();
         stmt.bind_data(1, &data[0]).unwrap();
         stmt.bind_data(2, &data[1]).unwrap();
-        assert_eq!(SQLITE_DONE, stmt.step().unwrap());
+        assert_eq!(SqliteErr::DONE, stmt.step().unwrap());
     }
 
     let stmt = Statement::prepare("select id,alias from table_name where id < ?", &db).unwrap();
     stmt.bind_data(1, &Value::Number(1000)).unwrap();
     let mut index = 0;
-    while stmt.step().unwrap() == SQLITE_ROW {
+    while stmt.step().unwrap() == SqliteErr::ROW {
         let data_count = stmt.data_count();
         assert_eq!(data_count, 2);
 

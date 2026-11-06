@@ -72,6 +72,9 @@ pub enum EventType {
 
     /// Report HA event.
     ReportHAEvent,
+
+    /// Clean cloud cache
+    CleanCloudCache,
 }
 
 /// param name for bundle name

@@ -17,6 +17,7 @@
 //! Databases are isolated based on users and protected by locks.
 
 use core::ffi::c_void;
+use std::cell::RefCell;
 use std::ffi::c_char;
 use std::path::Path;
 use std::{collections::{HashMap, HashSet}, ffi::CStr, fs, ptr::null_mut, sync::{Arc, Mutex}};
@@ -40,7 +41,7 @@ use crate::{
     statement::Statement,
     table::Table,
     types::{
-        column, sqlite_err_handle, DbMap, QueryOptions, SQLITE_OK, TABLE_NAME,
+        column, sqlite_err_handle, sqlite_err_name, DbMap, QueryOptions, SqliteErr, TABLE_NAME,
         ADAPT_CLOUD_COLUMN_INFO, ADAPT_CLOUD_TABLE, COLUMN_INFO, COMBINE_COLUMN_INFO,
         DB_UPGRADE_VERSION, DB_UPGRADE_VERSION_V0, DB_UPGRADE_VERSION_V1, DB_UPGRADE_VERSION_V2, DB_UPGRADE_VERSION_V3,
         UPGRADE_COLUMN_INFO, UPGRADE_COLUMN_INFO_V2, UPGRADE_COLUMN_INFO_V3, UPGRADE_COLUMN_INFO_V4
@@ -133,6 +134,31 @@ pub fn clear_db_map() {
     }
 }
 
+/// Remove a single database entry from DB_MAP by (user_id, db_name).
+/// Closes the SQLite handle but leaks the Database struct memory to avoid
+/// use-after-free if another thread still holds a pointer from DB_MAP.
+/// `skip_db_lock`: true when the caller already holds db_lock.mtx (e.g. current db).
+pub fn remove_db_from_db_map(user_id: i32, db_name: &str, skip_db_lock: bool) {
+    let db_ref = {
+        let mut map = DB_MAP.lock().unwrap();
+        map.remove(&(user_id, db_name.to_string()))
+    };
+    if let Some(db_ref) = db_ref {
+        let ptr = db_ref as *mut Database;
+        unsafe {
+            if !skip_db_lock {
+                let _lock = (*ptr).db_lock.mtx.lock().unwrap();
+                (*ptr).use_lock = false;
+                (*ptr).close();
+            } else {
+                (*ptr).use_lock = false;
+                (*ptr).close();
+            }
+        }
+        loge!("[WARNING] Removed [{}] for user [{}] from DB_MAP.", db_name, user_id);
+    }
+}
+
 pub(crate) fn get_split_db_lock_by_user_id(user_id: i32) -> &'static UserDbLock {
     let mut map = SPLIT_DB_LOCK_MAP.lock().unwrap();
     if let Some(&lock) = map.get(&user_id) {
@@ -173,6 +199,8 @@ pub struct Database {
     pub(crate) db_lock: &'static UserDbLock,
     pub(crate) db_name: String,
     pub(crate) use_lock: bool,
+    pub(crate) user_id: i32,
+    pub(crate) db_key: Option<Vec<u8>>,
 }
 
 /// Callback for database upgrade.
@@ -228,7 +256,8 @@ pub(crate) fn get_db_by_type_without_lock(
     let backup_path = fmt_backup_path(&db_path);
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
     let mut db = Database {
-        path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: false
+        path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: false,
+        user_id, db_key: db_key.map(|k| k.to_vec()),
     };
     db.process_db(user_id, db_key)?;
     Ok(db)
@@ -243,7 +272,8 @@ pub(crate) fn get_db_by_type(
     let backup_path = fmt_backup_path(&db_path);
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
     let mut db = Database {
-        path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: true
+        path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: true,
+        user_id, db_key: db_key.map(|k| k.to_vec()),
     };
     let _lock = db.db_lock.mtx.lock().unwrap();
     db.process_db(user_id, db_key)?;
@@ -254,7 +284,8 @@ pub(crate) fn get_specific_db_version(user_id: i32, db_name: &str, db_path: Stri
     let backup_path = fmt_backup_path(&db_path);
     let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string().clone());
     let mut db = Database {
-        path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: true
+        path: db_path, backup_path, handle: 0, db_lock: lock, db_name: db_name.to_string(), use_lock: true,
+        user_id, db_key: None,
     };
     let _lock = db.db_lock.mtx.lock().unwrap();
     db.open()?;
@@ -269,6 +300,86 @@ pub(crate) fn get_db(user_id: i32, db_name: &str, db_key: &Option<Vec<u8>>) -> R
 pub(crate) fn get_db_without_lock(user_id: i32, db_name: &str, db_key: &Option<Vec<u8>>) -> Result<Database> {
     let db_path = fmt_db_path(user_id, db_name, db_key);
     get_db_by_type_without_lock(user_id, db_name, db_path, db_key.as_ref())
+}
+
+thread_local! {
+    static DELETED_DB_INFO: RefCell<Vec<(String, String, String)>> = RefCell::new(vec![]);
+}
+
+fn set_deleted_db_info(db_name: &str, db_type: &str, sqlite_error: &str) {
+    DELETED_DB_INFO.with(|info| {
+        info.borrow_mut().push((db_name.to_string(), db_type.to_string(), sqlite_error.to_string()));
+    });
+}
+
+/// Take deleted corrupted database info: list of (db_name, db_type, sqlite_error).
+pub fn take_deleted_db_info() -> Vec<(String, String, String)> {
+    DELETED_DB_INFO.with(|info| std::mem::take(&mut *info.borrow_mut()))
+}
+
+/// Get Database from DB_MAP by user_id and db_name
+/// Returns true if accessible, false otherwise.
+fn try_open_ce_db(path: &str, db_name: &str, db_key: &Vec<u8>, user_id: i32) -> bool {
+    let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.to_string());
+    let _lock = lock.mtx.lock().unwrap();
+    let mut db = Database {
+        path: path.to_string(), backup_path: fmt_backup_path(path), handle: 0,
+        db_lock: lock, db_name: db_name.to_string(), use_lock: false,
+        user_id, db_key: None,
+    };
+    if db.open().is_err() {
+        return false;
+    }
+    if db.set_db_key(db_key).is_err() {
+        db.close();
+        return false;
+    }
+    let table = Table::new(TABLE_NAME, &db);
+    let result = table.count_datas(&DbMap::new(), false);
+    db.close();
+    result.is_ok()
+}
+
+/// Iterate CE directory and test each database with db_key.
+/// Returns (any_accessible, inaccessible_list) where each item is (db_name, db_path, backup_path).
+fn collect_ce_db_status(ce_dir: &str, db_key: &Vec<u8>, user_id: i32, skip_db_name: &str) -> (bool, Vec<(String, String, String)>) {
+    let mut any_accessible = false;
+    let mut inaccessible = vec![];
+
+    let entries = match fs::read_dir(ce_dir) {
+        Ok(e) => e,
+        Err(e) => {
+            loge!("[FATAL][DB]Failed to read CE dir [{}], err={}", ce_dir, e);
+            return (false, inaccessible);
+        }
+    };
+
+    for entry in entries {
+        let entry = match entry {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+        let name = entry.file_name().to_string_lossy().to_string();
+        if !name.starts_with("enc_") || !name.ends_with(".db") {
+            continue;
+        }
+        let db_name = name.strip_suffix(".db").unwrap_or(&name).to_string();
+        let db_path = format!("{}/{}", ce_dir, name);
+        let backup_path = format!("{}.backup", db_path);
+        if db_name == skip_db_name {
+            inaccessible.push((db_name, db_path, backup_path));
+            continue;
+        }
+        if is_db_need_ce_unlock(&db_name) {
+            continue;
+        }
+        if try_open_ce_db(&db_path, &db_name, db_key, user_id) {
+            any_accessible = true;
+        } else {
+            inaccessible.push((db_name, db_path, backup_path));
+        }
+    }
+    (any_accessible, inaccessible)
 }
 
 /// Initialize sqlite
@@ -307,7 +418,8 @@ impl Database {
     pub fn check_db_accessible(path: String, user_id: i32, db_name: String, db_key: Option<&Vec<u8>>) -> Result<()> {
         let lock = get_file_lock_by_user_id_db_file_name(user_id, db_name.clone());
         let mut db = Database {
-            path: path.clone(), backup_path: path, handle: 0, db_lock: lock, db_name, use_lock: true
+            path: path.clone(), backup_path: path, handle: 0, db_lock: lock, db_name, use_lock: true,
+            user_id, db_key: db_key.map(|k| k.to_vec()),
         };
         db.open()?;
         if let Some(db_key) = db_key {
@@ -316,7 +428,9 @@ impl Database {
             }
         }
         let table = Table::new(TABLE_NAME, &db);
-        table.create(COLUMN_INFO)
+        table.create(COLUMN_INFO)?;
+        table.count_datas(&DbMap::new(), false)?;
+        Ok(())
     }
 
     /// Open database connection.
@@ -325,12 +439,12 @@ impl Database {
         path_c.push('\0');
 
         let ret = unsafe { SqliteOpen(path_c.as_ptr(), &mut self.handle as *mut usize as _) };
-        if ret == SQLITE_OK {
+        if ret == SqliteErr::OK {
             Ok(())
         } else {
             self.close();
             macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                sqlite_err_handle(ret), "[FATAL][DB]Open database failed, err={}", ret)
+                sqlite_err_handle(ret), "[FATAL][DB]Open database failed, err={}({})", sqlite_err_name(ret), ret)
         }
     }
 
@@ -351,22 +465,39 @@ impl Database {
     }
 
     /// Open the database connection and restore the database if the connection fails.
-    pub(crate) fn open_and_restore(&mut self, db_key: Option<&Vec<u8>>) -> Result<()> {
-        let mut result = self.open();
-        if let Some(db_key) = db_key {
+    fn apply_db_key_after_open(&mut self) -> Result<()> {
+        if let Some(db_key) = self.db_key.clone() {
             if self.is_need_set_db_key() {
-                self.set_db_key(db_key)?;
+                self.set_db_key(&db_key)?;
             } else if self.check_db_is_encrypt()? {
+                logi!("need clear db key");
                 self.close();
-                self.clear_db_key(db_key)?;
-                result = self.open();
+                if let Err(e) = self.clear_db_key(&db_key) {
+                    self.delete_db_and_backup(&e.msg);
+                    return Err(e);
+                }
+                self.open()?;
             }
         }
-        let result = match result {
-            Err(ret) if ret.code == ErrCode::DataCorrupted => self.restore(),
+        Ok(())
+    }
+
+    pub(crate) fn open_and_restore(&mut self, db_key: Option<&Vec<u8>>) -> Result<()> {
+        let result = self.open();
+        if db_key.is_some() {
+            self.apply_db_key_after_open()?;
+        }
+        match result {
+            Err(ret) if ret.code == ErrCode::DataCorrupted => {
+                if let Err(e) = self.restore() {
+                    self.close();
+                    self.cleanup_after_restore_failure(&ret.msg);
+                    return Err(e);
+                }
+                Ok(())
+            },
             ret => ret,
-        };
-        result
+        }
     }
 
     /// Get db name.
@@ -396,11 +527,11 @@ impl Database {
     pub fn set_db_key(&mut self, p_key: &Vec<u8>) -> Result<()> {
         let ret =
             unsafe { SqliteKey(self.handle as _, p_key.as_ptr() as *const c_void, p_key.len() as i32) };
-        if ret == SQLITE_OK {
+        if ret == SqliteErr::OK {
             Ok(())
         } else {
             macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                sqlite_err_handle(ret), "[FATAL][DB]Set database key failed, err={}", ret)
+                sqlite_err_handle(ret), "[FATAL][DB]Set database key failed, err={}({})", sqlite_err_name(ret), ret)
         }
     }
 
@@ -409,11 +540,11 @@ impl Database {
         unsafe { SqliteReKeyToEmpty(
             self.path.as_ptr() as *const c_char, p_key.as_ptr() as *const c_void, p_key.len() as i32
         ) };
-        if ret == SQLITE_OK {
+        if ret == SqliteErr::OK {
             Ok(())
         } else {
             macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                sqlite_err_handle(ret), "[FATAL][DB]SqliteReKeyToEmpty failed, err={}", ret)
+                sqlite_err_handle(ret), "[FATAL][DB]SqliteReKeyToEmpty failed, err={}({})", sqlite_err_name(ret), ret)
         }
     }
 
@@ -433,7 +564,9 @@ impl Database {
             return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                 ErrCode::FileOperationError,  "[FATAL][DB]Recovery database failed, err={}", e);
         }
-        self.open()
+        self.open()?;
+        self.apply_db_key_after_open()?;
+        Ok(())
     }
 
     /// Get database version, default is 0.
@@ -564,17 +697,17 @@ impl Database {
             let s = unsafe { CStr::from_ptr(msg as _) };
             if let Ok(rs) = s.to_str() {
                 let err = macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                    sqlite_err_handle(ret), "[FATAL]Database execute sql failed. error code={}, msg={}", ret, rs);
+                    sqlite_err_handle(ret), "[FATAL]Database execute sql failed. err={}({}), msg={}", sqlite_err_name(ret), ret, rs);
                 unsafe { SqliteFree(msg as _) };
                 return err;
             }
             unsafe { SqliteFree(msg as _) };
         }
-        if ret == SQLITE_OK {
+        if ret == SqliteErr::OK {
             Ok(())
         } else {
             macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                sqlite_err_handle(ret), "[FATAL]Database execute sql failed. error code={}", ret)
+                sqlite_err_handle(ret), "[FATAL]Database execute sql failed. err={}({})", sqlite_err_name(ret), ret)
         }
     }
 
@@ -584,11 +717,110 @@ impl Database {
         let result = func(&table);
         match result {
             Err(ret) if ret.code == ErrCode::DataCorrupted => {
-                self.restore()?;
-                let table = Table::new(TABLE_NAME, self); // Database handle will be changed.
-                func(&table)
+                if let Err(e) = self.restore() {
+                    self.close();
+                    self.cleanup_after_restore_failure(&ret.msg);
+                    return Err(e);
+                }
+                let table = Table::new(TABLE_NAME, self);
+                let retry = func(&table);
+                if let Err(ref e) = retry {
+                    if e.code == ErrCode::DataCorrupted {
+                        self.close();
+                        self.cleanup_after_restore_failure(&e.msg);
+                    }
+                }
+                retry
             },
             ret => ret,
+        }
+    }
+
+    fn db_type_str(&self) -> &'static str {
+        if self.db_key.is_some() {
+            if is_db_need_ce_unlock(&self.db_name) { "NEED_UNLOCK_CE" } else { "CE" }
+        } else {
+            "DE"
+        }
+    }
+
+    fn cleanup_after_restore_failure(&self, sqlite_error: &str) {
+        let is_ce = self.db_key.is_some();
+        if !is_ce || is_db_need_ce_unlock(&self.db_name) {
+            self.delete_db_and_backup(sqlite_error);
+        } else {
+            self.cleanup_ce_databases(sqlite_error);
+        }
+    }
+
+    fn delete_db_and_backup(&self, sqlite_error: &str) {
+        loge!("[FATAL][DB]Deleting db and backup. db={}, user={}", self.db_name, self.user_id);
+        remove_db_from_db_map(self.user_id, &self.db_name, true);
+        let mut deleted = true;
+        if let Err(e) = fs::remove_file(&self.path) {
+            loge!("[FATAL][DB]Failed to remove db file [{}], err={}", self.path, e);
+            deleted = false;
+        }
+        if let Err(e) = fs::remove_file(&self.backup_path) {
+            loge!("[FATAL][DB]Failed to remove backup file [{}], err={}", self.backup_path, e);
+            deleted = false;
+        }
+        let report_error = if deleted {
+            sqlite_error.to_string()
+        } else {
+            format!("{} (file deletion failed)", sqlite_error)
+        };
+        set_deleted_db_info(&self.db_name, self.db_type_str(), &report_error);
+    }
+
+    fn cleanup_ce_databases(&self, sqlite_error: &str) {
+        let ce_dir = format!("{}/{}/asset_service", CE_ROOT_PATH, self.user_id);
+        let db_key = match &self.db_key {
+            Some(k) => k,
+            None => return,
+        };
+
+        let (any_accessible, inaccessible) = collect_ce_db_status(&ce_dir, db_key, self.user_id, &self.db_name);
+
+        if any_accessible {
+            self.delete_inaccessible_ce_dbs(&inaccessible, sqlite_error);
+        } else {
+            self.delete_all_ce_dbs_and_key(&ce_dir, sqlite_error);
+        }
+    }
+
+    fn delete_inaccessible_ce_dbs(&self, inaccessible: &[(String, String, String)], sqlite_error: &str) {
+        for (db_name, db_path, backup_path) in inaccessible {
+            loge!("[FATAL][DB]CE db inaccessible, deleting. db={}", db_name);
+            let skip = *db_name == self.db_name;
+            remove_db_from_db_map(self.user_id, db_name, skip);
+            let _ = fs::remove_file(db_path);
+            let _ = fs::remove_file(backup_path);
+            set_deleted_db_info(db_name, "CE", sqlite_error);
+        }
+    }
+
+    fn delete_all_ce_dbs_and_key(&self, ce_dir: &str, sqlite_error: &str) {
+        loge!("[FATAL][DB]All CE dbs inaccessible, deleting db_key + all CE dbs.");
+        let db_key_path = format!("{}/db_key", ce_dir);
+        let _ = fs::remove_file(&db_key_path);
+        if let Ok(entries) = fs::read_dir(ce_dir) {
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if name.starts_with("enc_") && name.ends_with(".db") {
+                    let db_name = name.strip_suffix(".db").unwrap_or(&name).to_string();
+                    if is_db_need_ce_unlock(&db_name) {
+                        continue;
+                    }
+                    let db_path = format!("{}/{}", ce_dir, name);
+                    let backup_path = format!("{}.backup", db_path);
+                    let skip = db_name == self.db_name;
+                    remove_db_from_db_map(self.user_id, &db_name, skip);
+                    let _ = fs::remove_file(&db_path);
+                    let _ = fs::remove_file(&backup_path);
+                    set_deleted_db_info(&db_name, "CE", sqlite_error);
+                }
+            }
         }
     }
 
@@ -683,14 +915,14 @@ impl Database {
         let mut db_datas = Vec::new();
         let mut err_info = Vec::new();
         let time = time::system_time_in_millis()?;
-        if attributes_array.is_empty() || attributes_to_update_array.is_empty() { 
+        if attributes_array.is_empty() || attributes_to_update_array.is_empty() {
             return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
                 ErrCode::InvalidArgument, "[FATAL]The data to update is empty.");
         }
 
         for (index, (attr, attr_to_update)) in attributes_array.iter()
             .zip(attributes_to_update_array.iter())
-            .enumerate() 
+            .enumerate()
         {
             check_invalid_tags(attr)?;
             let query = get_query_condition(attr, calling_info)?;
