@@ -207,10 +207,10 @@ extern "C" int32_t HIFHE_Serialize(const HIFHE_Ctx *, const HIFHE_HEText *text, 
     if (*size < WIRE_BYTES) {
         return HIFHE_BUFFER_TOO_SMALL;
     }
+    const size_t slotBytes = SLOT_COUNT * sizeof(uint64_t);
     if (memset_s(out, *size, 0, WIRE_BYTES) != EOK ||
         memcpy_s(out + SEED_OFFSET, WIRE_BYTES - SEED_OFFSET, text->seed.data(), text->seed.size()) != EOK ||
-        memcpy_s(out + HEADER_BYTES, WIRE_BYTES - HEADER_BYTES, text->slots.data(), SLOT_COUNT * sizeof(uint64_t)) !=
-            EOK) {
+        memcpy_s(out + HEADER_BYTES, WIRE_BYTES - HEADER_BYTES, text->slots.data(), slotBytes) != EOK) {
         return HIFHE_PARAM_INVALID;
     }
     out[0] = WIRE_MAGIC;

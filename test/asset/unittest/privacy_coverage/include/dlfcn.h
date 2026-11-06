@@ -18,7 +18,14 @@
 #include <cstdint>
 #define RTLD_NOW 2
 #define RTLD_LOCAL 0
-extern "C" void *dlopen(const char *, int32_t);
-extern "C" void *dlsym(void *, const char *);
-extern "C" char *dlerror();
+namespace PrivacyHost {
+void *OpenLibrary(const char *path, int32_t mode);
+void *FindLibrarySymbol(void *handle, const char *name);
+char *GetLibraryError();
+} // namespace PrivacyHost
+
+// The host loader uses the same call sites as the OpenHarmony build.
+#define dlopen ::PrivacyHost::OpenLibrary
+#define dlsym ::PrivacyHost::FindLibrarySymbol
+#define dlerror ::PrivacyHost::GetLibraryError
 #endif

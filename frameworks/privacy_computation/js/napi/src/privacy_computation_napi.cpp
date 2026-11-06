@@ -166,6 +166,7 @@ constexpr uint32_t PRIVATE_INFORMATION_RETRIEVAL = 1;
 constexpr uint32_t DATA_SET_SIZE_128 = 0;
 constexpr uint32_t DATA_SET_SIZE_256 = 1;
 constexpr uint32_t DATA_SET_SIZE_512 = 2;
+// Public ArkTS name for Private Set Intersection.
 constexpr const char *PRIVATE_SET_INTERSECTION_PROTOCOL = "PSI_PROTOCOL";
 constexpr const char *PRIVATE_INFORMATION_RETRIEVAL_PROTOCOL = "PIR_PROTOCOL";
 

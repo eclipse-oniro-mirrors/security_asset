@@ -231,26 +231,26 @@ HWTEST_F(PrivacyBoundaryTest, PirRequiresValueAndRejectsInvalidKeyLength, TestSi
     EXPECT_FALSE(Invoke("privacySearch", {generated->result, elements, protocol})->rejected);
 }
 
-HWTEST_F(PrivacyBoundaryTest, PsiIgnoresValuesAndReadsPirResults, TestSize.Level2)
+HWTEST_F(PrivacyBoundaryTest, IntersectionIgnoresValuesAndReadsPirResults, TestSize.Level2)
 {
-    auto psi = Protocol();
+    auto intersection = Protocol();
     auto pir = Protocol(true);
-    auto generated = Invoke("genPrivacyTarget", {Target(), psi});
+    auto generated = Invoke("genPrivacyTarget", {Target(), intersection});
     ASSERT_FALSE(generated->rejected);
     auto element = PrivacyHost::Value(&env_);
     element->properties["hashAlg"] = PrivacyHost::Number(&env_, HASH_ALG_SHA256);
     element->properties["elemKey"] = Target()->properties.at("elemData");
     element->properties["elemValue"] = PrivacyHost::Number(&env_, 1);
     auto elements = PrivacyHost::Array(&env_, {element});
-    auto psiSearch = Invoke("privacySearch", {generated->result, elements, psi});
-    ASSERT_FALSE(psiSearch->rejected);
-    EXPECT_EQ(psiSearch->result->properties.count("valueCipherText"), 0U);
-    auto wrongProtocol = Invoke("getSearchResult", {psiSearch->result, pir});
+    auto intersectionSearch = Invoke("privacySearch", {generated->result, elements, intersection});
+    ASSERT_FALSE(intersectionSearch->rejected);
+    EXPECT_EQ(intersectionSearch->result->properties.count("valueCipherText"), 0U);
+    auto wrongProtocol = Invoke("getSearchResult", {intersectionSearch->result, pir});
     ASSERT_TRUE(wrongProtocol->rejected);
     EXPECT_EQ(wrongProtocol->result->properties.at("code")->number, PRIVACY_COMPUTATION_CRYPTO_ERROR);
 
-    psiSearch->result->properties["valueCipherText"] = PrivacyHost::Number(&env_, 1);
-    auto extraValue = Invoke("getSearchResult", {psiSearch->result, psi});
+    intersectionSearch->result->properties["valueCipherText"] = PrivacyHost::Number(&env_, 1);
+    auto extraValue = Invoke("getSearchResult", {intersectionSearch->result, intersection});
     ASSERT_FALSE(extraValue->rejected);
     EXPECT_TRUE(extraValue->result->properties.at("matchedResult")->boolean);
 
@@ -258,7 +258,7 @@ HWTEST_F(PrivacyBoundaryTest, PsiIgnoresValuesAndReadsPirResults, TestSize.Level
     auto pirSearch = Invoke("privacySearch", {generated->result, elements, pir});
     ASSERT_FALSE(pirSearch->rejected);
     ASSERT_EQ(pirSearch->result->properties.count("valueCipherText"), 1U);
-    auto mixedProtocol = Invoke("getSearchResult", {pirSearch->result, psi});
+    auto mixedProtocol = Invoke("getSearchResult", {pirSearch->result, intersection});
     ASSERT_FALSE(mixedProtocol->rejected);
     EXPECT_TRUE(mixedProtocol->result->properties.at("matchedResult")->boolean);
 }

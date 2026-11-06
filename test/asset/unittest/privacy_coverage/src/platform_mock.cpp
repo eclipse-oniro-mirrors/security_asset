@@ -19,6 +19,7 @@
 #include "privacy_request.h"
 #include "privacy_client_ffi.h"
 #include "privacy_computation_napi_common.h"
+#include "dlfcn.h"
 #include <algorithm>
 #include <cstring>
 #include "securec.h"
@@ -91,12 +92,12 @@ napi_value ClosedGet(napi_env env, napi_callback_info)
 }
 
 } // namespace
-extern "C" void *dlopen(const char *, int32_t)
+void *PrivacyHost::OpenLibrary(const char *, int32_t)
 {
     static uint8_t handle;
     return PrivacyHost::State().dlopenFailure ? nullptr : &handle;
 }
-extern "C" void *dlsym(void *, const char *name)
+void *PrivacyHost::FindLibrarySymbol(void *, const char *name)
 {
     if (PrivacyHost::State().symbolFailure) {
         return nullptr;
@@ -106,7 +107,7 @@ extern "C" void *dlsym(void *, const char *name)
     }
     return std::strcmp(name, "GenPrivacyTarget") == 0 ? reinterpret_cast<void *>(ClosedGen) : nullptr;
 }
-extern "C" char *dlerror()
+char *PrivacyHost::GetLibraryError()
 {
     return nullptr;
 }

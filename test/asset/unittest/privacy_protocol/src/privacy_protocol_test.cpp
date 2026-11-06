@@ -44,8 +44,8 @@ constexpr PrivacyProtocol PIR_PROTOCOL{DataSetSize::SIZE_256, ProtocolType::PIR_
 constexpr PrivacyProtocol PIR_128_PROTOCOL{DataSetSize::SIZE_128, ProtocolType::PIR_PROTOCOL};
 constexpr std::size_t SLOT_COUNT = 512U * 4U;
 constexpr std::uint64_t PLAIN_MODULUS = 65537;
-constexpr size_t kExtendedCompareBytes = 16;
-constexpr size_t kExtendedSlotsPerData = kExtendedCompareBytes / sizeof(uint16_t);
+constexpr size_t K_EXTENDED_COMPARE_BYTES = 16;
+constexpr size_t K_EXTENDED_SLOTS_PER_DATA = K_EXTENDED_COMPARE_BYTES / sizeof(uint16_t);
 constexpr size_t HEX_DIGITS_PER_BYTE = 2;
 constexpr size_t BITS_PER_HEX_DIGIT = 4;
 constexpr uint8_t INVALID_HEX_DIGIT = 0xff;
@@ -184,7 +184,7 @@ Bytes MakePrivacyTarget(std::uint64_t compareValue)
 
 Bytes Make128BitPrivacyTarget(std::uint64_t compareValue)
 {
-    return MakePrivacyTargetForKey(CompareSuffix(compareValue, kExtendedCompareBytes), kExtendedSlotsPerData);
+    return MakePrivacyTargetForKey(CompareSuffix(compareValue, K_EXTENDED_COMPARE_BYTES), K_EXTENDED_SLOTS_PER_DATA);
 }
 
 Bytes MakeZeroPrivacyTarget()
@@ -495,7 +495,7 @@ Element MakeElement(std::uint64_t key, const std::optional<std::string> &value =
 Element Make128BitElement(std::uint64_t key, const std::optional<std::string> &value = std::nullopt)
 {
     Element element;
-    element.elemKey = CompareSuffix(key, kExtendedCompareBytes);
+    element.elemKey = CompareSuffix(key, K_EXTENDED_COMPARE_BYTES);
     element.hashAlg = HashAlg::SHA256;
     if (value.has_value()) {
         element.elemValue = Bytes(value->begin(), value->end());

@@ -17,6 +17,9 @@
 #define PRIVACY_COVERAGE_HOST_TEST_H
 #include <gtest/gtest.h>
 namespace testing::ext {}
+// GoogleTest registers test bodies through macros. The host adapter drops only the device test level.
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define HWTEST(suite, name, level) TEST(suite, name)
+// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define HWTEST_F(suite, name, level) TEST_F(suite, name)
 #endif

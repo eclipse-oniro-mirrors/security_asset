@@ -58,6 +58,8 @@ constexpr std::size_t FRAME_KEY_SIZE_BYTES = 2;
 constexpr std::size_t FRAME_OFFSET_COMPARE_BITS = FRAME_OFFSET_KEY_SIZE + FRAME_KEY_SIZE_BYTES;
 constexpr std::size_t FRAME_COMPARE_BITS_BYTES = 2;
 constexpr std::size_t FRAME_OFFSET_CIPHER_LEN = FRAME_OFFSET_COMPARE_BITS + FRAME_COMPARE_BITS_BYTES;
+constexpr std::size_t UINT32_MOST_SIGNIFICANT_BYTE_SHIFT = 3 * kBitsPerByte;
+constexpr std::size_t UINT32_SECOND_BYTE_SHIFT = 2 * kBitsPerByte;
 
 constexpr std::size_t SHA256_DIGEST_SIZE = 32;
 constexpr std::size_t SHA384_DIGEST_SIZE = 48;
@@ -113,8 +115,8 @@ void WriteUint16Be(Bytes &output, std::size_t offset, std::uint16_t value) noexc
 
 void WriteUint32Be(Bytes &output, std::size_t offset, std::uint32_t value) noexcept
 {
-    output[offset] = static_cast<std::uint8_t>(value >> (3 * kBitsPerByte));
-    output[offset + 1] = static_cast<std::uint8_t>(value >> (2 * kBitsPerByte));
+    output[offset] = static_cast<std::uint8_t>(value >> UINT32_MOST_SIGNIFICANT_BYTE_SHIFT);
+    output[offset + 1] = static_cast<std::uint8_t>(value >> UINT32_SECOND_BYTE_SHIFT);
     output[offset + sizeof(uint16_t)] = static_cast<std::uint8_t>(value >> kBitsPerByte);
     output[offset + sizeof(uint32_t) - 1] = static_cast<std::uint8_t>(value);
 }
@@ -126,8 +128,8 @@ std::uint16_t ReadUint16Be(const Bytes &input, std::size_t offset) noexcept
 
 std::uint32_t ReadUint32Be(const Bytes &input, std::size_t offset) noexcept
 {
-    return (static_cast<std::uint32_t>(input[offset]) << (3 * kBitsPerByte)) |
-           (static_cast<std::uint32_t>(input[offset + 1]) << (2 * kBitsPerByte)) |
+    return (static_cast<std::uint32_t>(input[offset]) << UINT32_MOST_SIGNIFICANT_BYTE_SHIFT) |
+           (static_cast<std::uint32_t>(input[offset + 1]) << UINT32_SECOND_BYTE_SHIFT) |
            (static_cast<std::uint32_t>(input[offset + sizeof(uint16_t)]) << kBitsPerByte) |
            static_cast<std::uint32_t>(input[offset + sizeof(uint32_t) - 1]);
 }

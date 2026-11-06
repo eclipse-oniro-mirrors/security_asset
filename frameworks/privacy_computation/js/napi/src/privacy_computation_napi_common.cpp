@@ -292,8 +292,8 @@ napi_status NapiGetProperty(napi_env env, napi_value value, ::PrivacyComputation
     }
     const auto size = static_cast<::PrivacyComputation::DataSetSize>(sizeId);
     const auto type = static_cast<::PrivacyComputation::ProtocolType>(modeId);
-    const bool psi = type == ::PrivacyComputation::ProtocolType::PRIVATE_SET_INTERSECTION;
-    if (psi != (size == ::PrivacyComputation::DataSetSize::SIZE_512)) {
+    const bool isIntersection = type == ::PrivacyComputation::ProtocolType::PRIVATE_SET_INTERSECTION;
+    if (isIntersection != (size == ::PrivacyComputation::DataSetSize::SIZE_512)) {
         ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "Unsupported protocol and dataSetSize combination.");
         return napi_invalid_arg;
     }
