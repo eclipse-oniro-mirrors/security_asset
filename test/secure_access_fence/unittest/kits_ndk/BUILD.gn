@@ -48,6 +48,7 @@ ohos_unittest("saf_agent_fence_ndk_test") {
   if (not_emulator) {
     sources += [ "src/saf_agent_fence_query_static_cli_cmd_permissions_test.cpp" ]
     sources += [ "src/saf_agent_fence_task_identity_ndk_test.cpp" ]
+    sources += [ "src/saf_agent_fence_control_app_status_test.cpp" ]
   }
 
   deps = [
