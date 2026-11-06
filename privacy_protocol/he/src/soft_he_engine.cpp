@@ -76,14 +76,15 @@ int32_t SoftHeEngine::Decrypt(const Bytes &ciphertext, const ProtocolParams &par
     HifheText encrypted;
     ret = adapter.Deserialize(ciphertext, encrypted);
     if (ret != PRIVACY_PROTOCOL_SUCCESS) {
-        return ret;
+        return PRIVACY_PROTOCOL_CRYPTO_ERROR;
     }
     HifheText plaintext;
     ret = adapter.Decrypt(encrypted, plaintext);
     if (ret != PRIVACY_PROTOCOL_SUCCESS) {
-        return ret;
+        return PRIVACY_PROTOCOL_CRYPTO_ERROR;
     }
-    return adapter.Decode(plaintext, output);
+    ret = adapter.Decode(plaintext, output);
+    return ret == PRIVACY_PROTOCOL_SUCCESS ? ret : PRIVACY_PROTOCOL_CRYPTO_ERROR;
 }
 
 namespace {

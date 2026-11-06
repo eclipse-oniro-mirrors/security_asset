@@ -86,14 +86,15 @@ napi_value NapiPrivacySearch(napi_env env, napi_callback_info info)
         if (const auto callStatus = NapiGetProperty(env, args[0], context->target); callStatus != napi_ok) {
             return callStatus;
         }
-        if (const auto callStatus = NapiGetProperty(env, args[1], context->elements); callStatus != napi_ok) {
-            return callStatus;
+        if (context->target.empty()) {
+            ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "privacyTarget must contain ciphertext.");
+            return napi_invalid_arg;
         }
         if (const auto callStatus = NapiGetProperty(env, args[ARG_COUNT - 1], context->protocol);
             callStatus != napi_ok) {
             return callStatus;
         }
-        return napi_ok;
+        return NapiGetProperty(env, args[1], context->elements, context->protocol.protocolType);
     };
     context->execute = [](napi_env, void *data) {
         if (data == nullptr) {
@@ -117,7 +118,7 @@ napi_value NapiPrivacySearch(napi_env env, napi_callback_info info)
 napi_value NapiGetSearchResult(napi_env env, napi_callback_info info)
 {
     if (IsComputationLibConfigured()) {
-        LOGI("NAPI genPrivacyTarget begin, route=ComputationLib");
+        LOGI("NAPI getSearchResult begin, route=ComputationLib");
         return CallComputationNapiFunc(env, info, "GetSearchResult");
     }
     auto context = std::unique_ptr<GetSearchResultContext>(new (std::nothrow) GetSearchResultContext());
@@ -133,13 +134,10 @@ napi_value NapiGetSearchResult(napi_env env, napi_callback_info info)
         if (const auto callStatus = ParseJsArgs(env, info, args, ARG_COUNT); callStatus != napi_ok) {
             return callStatus;
         }
-        if (const auto callStatus = NapiGetProperty(env, args[0], context->searchResult); callStatus != napi_ok) {
-            return callStatus;
-        }
         if (const auto callStatus = NapiGetProperty(env, args[1], context->protocol); callStatus != napi_ok) {
             return callStatus;
         }
-        return napi_ok;
+        return NapiGetProperty(env, args[0], context->searchResult, context->protocol.protocolType);
     };
     context->execute = [](napi_env, void *data) {
         if (data == nullptr) {
@@ -148,8 +146,10 @@ napi_value NapiGetSearchResult(napi_env env, napi_callback_info info)
         }
         auto *context = static_cast<GetSearchResultContext *>(data);
         LOGI("NAPI getSearchResult begin, route=AssetSA");
-        context->result =
-            MapProtocolError(GetSearchResultRemote(context->searchResult, context->protocol, context->output));
+        const auto ret = GetSearchResultRemote(context->searchResult, context->protocol, context->output);
+        // A well-typed result can still fail ciphertext or decrypted layout validation.
+        context->result = ret == ::PrivacyComputation::PRIVACY_PROTOCOL_CODEC_ERROR ?
+            PRIVACY_COMPUTATION_CRYPTO_ERROR : MapProtocolError(ret);
         if (context->result != PRIVACY_COMPUTATION_SUCCESS) {
             LOGE("get_search_result failed, code=%{public}d", context->result);
         }

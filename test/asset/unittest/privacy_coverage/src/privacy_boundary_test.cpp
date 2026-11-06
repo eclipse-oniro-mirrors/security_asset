@@ -143,14 +143,30 @@ HWTEST_F(PrivacyBoundaryTest, NumericAndEnumBoundariesAreChecked, TestSize.Level
 
 HWTEST_F(PrivacyBoundaryTest, ByteArrayBoundariesAndOptionalHashes, TestSize.Level2)
 {
-    for (uint32_t hash = 0; hash <= 3; ++hash) {
+    for (const auto size : {32U, 48U, 64U}) {
+        auto target = Target();
+        target->properties.erase("hashAlg");
+        target->properties["elemData"] = PrivacyHost::Bytes(&env_, Bytes(size, TARGET_BYTE));
+        EXPECT_FALSE(Invoke("genPrivacyTarget", {target, Protocol()})->rejected);
+    }
+    for (uint32_t hash = 1; hash <= 3; ++hash) {
         auto target = Target();
         target->properties["hashAlg"] = PrivacyHost::Number(&env_, hash);
         EXPECT_FALSE(Invoke("genPrivacyTarget", {target, Protocol()})->rejected);
     }
     auto target = Target();
     target->properties.erase("hashAlg");
+    target->properties["elemData"] = PrivacyHost::Bytes(&env_, Bytes(33, TARGET_BYTE));
+    auto invalidDigest = Invoke("genPrivacyTarget", {target, Protocol()});
+    ASSERT_TRUE(invalidDigest->rejected);
+    EXPECT_EQ(invalidDigest->result->properties.at("code")->number, PRIVACY_COMPUTATION_INVALID_ARGUMENT);
+    target->properties["hashAlg"] = PrivacyHost::Number(&env_, HASH_ALG_SHA256);
+    target->properties["elemData"] = PrivacyHost::Bytes(&env_, Bytes(1024, TARGET_BYTE));
     EXPECT_FALSE(Invoke("genPrivacyTarget", {target, Protocol()})->rejected);
+    target->properties["elemData"] = PrivacyHost::Bytes(&env_, Bytes(1025, TARGET_BYTE));
+    auto overlongTarget = Invoke("genPrivacyTarget", {target, Protocol()});
+    ASSERT_TRUE(overlongTarget->rejected);
+    EXPECT_EQ(overlongTarget->result->properties.at("code")->number, PRIVACY_COMPUTATION_INVALID_ARGUMENT);
     for (uint32_t mode = 0; mode < 4; ++mode) {
         auto bytes = PrivacyHost::Bytes(&env_, {1});
         if (mode == 0) {
@@ -173,21 +189,100 @@ HWTEST_F(PrivacyBoundaryTest, ByteArrayBoundariesAndOptionalHashes, TestSize.Lev
 HWTEST_F(PrivacyBoundaryTest, ParseSearchArraysAndValueArrays, TestSize.Level2)
 {
     std::vector<Element> elements;
-    EXPECT_NE(NapiGetProperty(&env_, PrivacyHost::Value(&env_), elements), napi_ok);
+    constexpr auto pir = ProtocolType::PIR_PROTOCOL;
+    EXPECT_NE(NapiGetProperty(&env_, PrivacyHost::Value(&env_), elements, pir), napi_ok);
     env_.exception = nullptr;
     auto missing = PrivacyHost::Value(&env_);
-    EXPECT_NE(NapiGetProperty(&env_, PrivacyHost::Array(&env_, {missing}), elements), napi_ok);
+    EXPECT_NE(NapiGetProperty(&env_, PrivacyHost::Array(&env_, {missing}), elements, pir), napi_ok);
     env_.exception = nullptr;
     PrivacySearchResult result;
     auto object = PrivacyHost::Value(&env_);
     object->properties["resultCipherText"] = PrivacyHost::Array(&env_, {PrivacyHost::Bytes(&env_, {1, 2})});
     object->properties["valueCipherText"] = PrivacyHost::Array(&env_, {PrivacyHost::Bytes(&env_, {})});
-    ASSERT_EQ(NapiGetProperty(&env_, object, result), napi_ok);
+    ASSERT_EQ(NapiGetProperty(&env_, object, result, pir), napi_ok);
     EXPECT_EQ(result.resultCipherText, (std::vector<::PrivacyComputation::Bytes>{{1, 2}}));
     ASSERT_TRUE(result.valueCipherText.has_value());
     EXPECT_TRUE(result.valueCipherText->front().empty());
     object->properties["valueCipherText"] = PrivacyHost::Number(&env_, 1);
-    EXPECT_NE(NapiGetProperty(&env_, object, result), napi_ok);
+    EXPECT_NE(NapiGetProperty(&env_, object, result, pir), napi_ok);
+}
+
+HWTEST_F(PrivacyBoundaryTest, PirRequiresValueAndRejectsInvalidKeyLength, TestSize.Level2)
+{
+    auto protocol = Protocol(true);
+    auto generated = Invoke("genPrivacyTarget", {Target(), protocol});
+    ASSERT_FALSE(generated->rejected);
+    auto element = PrivacyHost::Value(&env_);
+    element->properties["hashAlg"] = PrivacyHost::Number(&env_, HASH_ALG_SHA256);
+    element->properties["elemKey"] = Target()->properties.at("elemData");
+    auto elements = PrivacyHost::Array(&env_, {element});
+    auto missingValue = Invoke("privacySearch", {generated->result, elements, protocol});
+    ASSERT_TRUE(missingValue->rejected);
+    EXPECT_EQ(missingValue->result->properties.at("code")->number, 24000018);
+
+    element->properties["elemValue"] = PrivacyHost::Bytes(&env_, {});
+    for (const auto size : {0U, 1025U}) {
+        element->properties["elemKey"] = PrivacyHost::Bytes(&env_, Bytes(size, TARGET_BYTE));
+        auto invalidKey = Invoke("privacySearch", {generated->result, elements, protocol});
+        ASSERT_TRUE(invalidKey->rejected);
+        EXPECT_EQ(invalidKey->result->properties.at("code")->number, PRIVACY_COMPUTATION_INVALID_ARGUMENT);
+    }
+    element->properties["elemKey"] = PrivacyHost::Bytes(&env_, Bytes(1024, TARGET_BYTE));
+    EXPECT_FALSE(Invoke("privacySearch", {generated->result, elements, protocol})->rejected);
+}
+
+HWTEST_F(PrivacyBoundaryTest, PsiIgnoresValuesAndReadsPirResults, TestSize.Level2)
+{
+    auto psi = Protocol();
+    auto pir = Protocol(true);
+    auto generated = Invoke("genPrivacyTarget", {Target(), psi});
+    ASSERT_FALSE(generated->rejected);
+    auto element = PrivacyHost::Value(&env_);
+    element->properties["hashAlg"] = PrivacyHost::Number(&env_, HASH_ALG_SHA256);
+    element->properties["elemKey"] = Target()->properties.at("elemData");
+    element->properties["elemValue"] = PrivacyHost::Number(&env_, 1);
+    auto elements = PrivacyHost::Array(&env_, {element});
+    auto psiSearch = Invoke("privacySearch", {generated->result, elements, psi});
+    ASSERT_FALSE(psiSearch->rejected);
+    EXPECT_EQ(psiSearch->result->properties.count("valueCipherText"), 0U);
+    auto wrongProtocol = Invoke("getSearchResult", {psiSearch->result, pir});
+    ASSERT_TRUE(wrongProtocol->rejected);
+    EXPECT_EQ(wrongProtocol->result->properties.at("code")->number, PRIVACY_COMPUTATION_CRYPTO_ERROR);
+
+    psiSearch->result->properties["valueCipherText"] = PrivacyHost::Number(&env_, 1);
+    auto extraValue = Invoke("getSearchResult", {psiSearch->result, psi});
+    ASSERT_FALSE(extraValue->rejected);
+    EXPECT_TRUE(extraValue->result->properties.at("matchedResult")->boolean);
+
+    element->properties["elemValue"] = PrivacyHost::Bytes(&env_, {TARGET_BYTE});
+    auto pirSearch = Invoke("privacySearch", {generated->result, elements, pir});
+    ASSERT_FALSE(pirSearch->rejected);
+    ASSERT_EQ(pirSearch->result->properties.count("valueCipherText"), 1U);
+    auto mixedProtocol = Invoke("getSearchResult", {pirSearch->result, psi});
+    ASSERT_FALSE(mixedProtocol->rejected);
+    EXPECT_TRUE(mixedProtocol->result->properties.at("matchedResult")->boolean);
+}
+
+HWTEST_F(PrivacyBoundaryTest, InvalidArgumentsAndTamperedCiphertextReturnDifferentCodes, TestSize.Level2)
+{
+    auto protocol = Protocol(true);
+    auto unsupported = Protocol();
+    unsupported->properties["protocolType"] =
+        PrivacyHost::Number(&env_, static_cast<uint32_t>(ProtocolType::PIR_PROTOCOL));
+    auto invalidProtocol = Invoke("genPrivacyTarget", {Target(), unsupported});
+    ASSERT_TRUE(invalidProtocol->rejected);
+    EXPECT_EQ(invalidProtocol->result->properties.at("code")->number, PRIVACY_COMPUTATION_INVALID_ARGUMENT);
+
+    auto result = PrivacyHost::Value(&env_);
+    result->properties["resultCipherText"] = PrivacyHost::Array(&env_, {});
+    auto empty = Invoke("getSearchResult", {result, protocol});
+    ASSERT_TRUE(empty->rejected);
+    EXPECT_EQ(empty->result->properties.at("code")->number, PRIVACY_COMPUTATION_INVALID_ARGUMENT);
+
+    result->properties["resultCipherText"] = PrivacyHost::Array(&env_, {PrivacyHost::Bytes(&env_, {TARGET_BYTE})});
+    auto malformed = Invoke("getSearchResult", {result, protocol});
+    ASSERT_TRUE(malformed->rejected);
+    EXPECT_EQ(malformed->result->properties.at("code")->number, PRIVACY_COMPUTATION_CRYPTO_ERROR);
 }
 
 HWTEST_F(PrivacyBoundaryTest, AsyncSetupAndCompletionFailuresReleaseWork, TestSize.Level2)

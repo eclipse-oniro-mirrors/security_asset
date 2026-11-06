@@ -47,6 +47,11 @@ napi_status NapiGetNamedProperty(napi_env env, napi_value object, const char *na
 }
 
 namespace {
+constexpr size_t MAX_KEY_BYTES = 1024;
+constexpr size_t SHA256_DIGEST_BYTES = 32;
+constexpr size_t SHA384_DIGEST_BYTES = 48;
+constexpr size_t SHA512_DIGEST_BYTES = 64;
+
 napi_status GetOptionalProperty(napi_env env, napi_value object, const char *name, napi_value &value, bool &present)
 {
     if (const auto callStatus = CheckNapiStatus(env, napi_get_named_property(env, object, name, &value));
@@ -83,7 +88,8 @@ napi_status GetUint32Value(napi_env env, napi_value value, uint32_t &number, con
     return napi_ok;
 }
 
-napi_status GetByteArrayValue(napi_env env, napi_value value, ::PrivacyComputation::Bytes &bytes, const char *message)
+napi_status GetByteArrayValue(napi_env env, napi_value value, ::PrivacyComputation::Bytes &bytes,
+    const char *message, size_t maxBytes = MAX_PRIVACY_BYTES)
 {
     bool typed = false;
     if (const auto callStatus = CheckNapiStatus(env, napi_is_typedarray(env, value, &typed)); callStatus != napi_ok) {
@@ -105,7 +111,7 @@ napi_status GetByteArrayValue(napi_env env, napi_value value, ::PrivacyComputati
         ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, message);
         return napi_invalid_arg;
     }
-    if (count > MAX_PRIVACY_BYTES) {
+    if (count > maxBytes) {
         ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "Privacy byte array is too large.");
         return napi_invalid_arg;
     }
@@ -146,10 +152,35 @@ napi_status ParseJsHashAlg(napi_env env, napi_value object, ::PrivacyComputation
             hash = ::PrivacyComputation::HashAlg::SHA512;
             break;
         default:
-            if (true) {
-                ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "hashAlg is outside the supported enum range.");
-                return napi_invalid_arg;
-            }
+            ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "hashAlg is outside the supported enum range.");
+            return napi_invalid_arg;
+    }
+    return napi_ok;
+}
+
+napi_status ParseJsKey(napi_env env, napi_value object, const char *name, ::PrivacyComputation::Bytes &bytes,
+    ::PrivacyComputation::HashAlg &hash)
+{
+    napi_value value = nullptr;
+    if (const auto status = NapiGetNamedProperty(env, object, name, value); status != napi_ok) {
+        return status;
+    }
+    if (const auto status = GetByteArrayValue(env, value, bytes, "Expected a Uint8Array.", MAX_KEY_BYTES);
+        status != napi_ok) {
+        return status;
+    }
+    if (const auto status = ParseJsHashAlg(env, object, hash); status != napi_ok) {
+        return status;
+    }
+    const size_t size = bytes.size();
+    if (size == 0) {
+        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "elemData and elemKey must not be empty.");
+        return napi_invalid_arg;
+    }
+    if (hash == ::PrivacyComputation::HashAlg::NONE &&
+        size != SHA256_DIGEST_BYTES && size != SHA384_DIGEST_BYTES && size != SHA512_DIGEST_BYTES) {
+        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "A prehashed key must contain 32, 48 or 64 bytes.");
+        return napi_invalid_arg;
     }
     return napi_ok;
 }
@@ -206,29 +237,15 @@ napi_status ParseJsByteArray(napi_env env, napi_value value, std::vector<::Priva
     return napi_ok;
 }
 
-napi_status ParseJsElement(napi_env env, napi_value value, ::PrivacyComputation::Element &element)
+napi_status ParseJsElement(napi_env env, napi_value value, ::PrivacyComputation::Element &element,
+    ::PrivacyComputation::ProtocolType protocolType)
 {
-    if (const auto callStatus = NapiGetProperty(env, value, "elemKey", element.elemKey); callStatus != napi_ok) {
-        return callStatus;
+    const auto status = ParseJsKey(env, value, "elemKey", element.elemKey, element.hashAlg);
+    if (status != napi_ok || protocolType != ::PrivacyComputation::ProtocolType::PIR_PROTOCOL) {
+        return status;
     }
-    if (const auto callStatus = ParseJsHashAlg(env, value, element.hashAlg); callStatus != napi_ok) {
-        return callStatus;
-    }
-    napi_value attached = nullptr;
-    bool present = false;
-    if (const auto callStatus = GetOptionalProperty(env, value, "elemValue", attached, present);
-        callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (present) {
-        element.elemValue.emplace();
-        if (const auto callStatus =
-                GetByteArrayValue(env, attached, *element.elemValue, "elemValue must be a Uint8Array when provided.");
-            callStatus != napi_ok) {
-            return callStatus;
-        }
-    }
-    return napi_ok;
+    element.elemValue.emplace();
+    return NapiGetProperty(env, value, "elemValue", *element.elemValue);
 }
 
 } // namespace
@@ -273,31 +290,33 @@ napi_status NapiGetProperty(napi_env env, napi_value value, ::PrivacyComputation
         ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "Unsupported protocol enum value.");
         return napi_invalid_arg;
     }
-    protocol.dataSetSize = static_cast<::PrivacyComputation::DataSetSize>(sizeId);
-    protocol.protocolType = static_cast<::PrivacyComputation::ProtocolType>(modeId);
+    const auto size = static_cast<::PrivacyComputation::DataSetSize>(sizeId);
+    const auto type = static_cast<::PrivacyComputation::ProtocolType>(modeId);
+    const bool psi = type == ::PrivacyComputation::ProtocolType::PRIVATE_SET_INTERSECTION;
+    if (psi != (size == ::PrivacyComputation::DataSetSize::SIZE_512)) {
+        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "Unsupported protocol and dataSetSize combination.");
+        return napi_invalid_arg;
+    }
+    protocol.dataSetSize = size;
+    protocol.protocolType = type;
     return napi_ok;
 }
 
 napi_status NapiGetProperty(napi_env env, napi_value value, ::PrivacyComputation::TargetInput &target)
 {
-    if (const auto callStatus = NapiGetProperty(env, value, "elemData", target.elemData); callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (const auto callStatus = ParseJsHashAlg(env, value, target.hashAlg); callStatus != napi_ok) {
-        return callStatus;
-    }
-    return napi_ok;
+    return ParseJsKey(env, value, "elemData", target.elemData, target.hashAlg);
 }
 
-napi_status NapiGetProperty(napi_env env, napi_value value, std::vector<::PrivacyComputation::Element> &elements)
+napi_status NapiGetProperty(napi_env env, napi_value value, std::vector<::PrivacyComputation::Element> &elements,
+    ::PrivacyComputation::ProtocolType protocolType)
 {
     uint32_t count = 0;
     if (const auto callStatus = GetArrayLength(env, value, count, "elements must be an array.");
         callStatus != napi_ok) {
         return callStatus;
     }
-    if (count > MAX_PRIVACY_ITEMS) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "Too many privacy search elements.");
+    if (count == 0 || count > MAX_PRIVACY_ITEMS) {
+        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "Invalid privacy search element count.");
         return napi_invalid_arg;
     }
     size_t total = 0;
@@ -308,7 +327,7 @@ napi_status NapiGetProperty(napi_env env, napi_value value, std::vector<::Privac
             return callStatus;
         }
         ::PrivacyComputation::Element element;
-        if (const auto callStatus = ParseJsElement(env, item, element); callStatus != napi_ok) {
+        if (const auto callStatus = ParseJsElement(env, item, element, protocolType); callStatus != napi_ok) {
             return callStatus;
         }
         const size_t valueSize = element.elemValue ? element.elemValue->size() : 0;
@@ -323,7 +342,8 @@ napi_status NapiGetProperty(napi_env env, napi_value value, std::vector<::Privac
     return napi_ok;
 }
 
-napi_status NapiGetProperty(napi_env env, napi_value value, ::PrivacyComputation::PrivacySearchResult &result)
+napi_status NapiGetProperty(napi_env env, napi_value value, ::PrivacyComputation::PrivacySearchResult &result,
+    ::PrivacyComputation::ProtocolType protocolType)
 {
     napi_value ciphertext = nullptr;
     if (const auto callStatus = NapiGetNamedProperty(env, value, "resultCipherText", ciphertext);
@@ -334,6 +354,13 @@ napi_status NapiGetProperty(napi_env env, napi_value value, ::PrivacyComputation
     if (const auto callStatus = ParseJsByteArray(env, ciphertext, result.resultCipherText, total);
         callStatus != napi_ok) {
         return callStatus;
+    }
+    if (result.resultCipherText.empty()) {
+        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "resultCipherText must contain at least one batch.");
+        return napi_invalid_arg;
+    }
+    if (protocolType != ::PrivacyComputation::ProtocolType::PIR_PROTOCOL) {
+        return napi_ok;
     }
     bool present = false;
     if (const auto callStatus = GetOptionalProperty(env, value, "valueCipherText", ciphertext, present);

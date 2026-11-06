@@ -24,7 +24,7 @@
 
 namespace OHOS::Security::PrivacyComputation {
 constexpr int32_t PRIVACY_COMPUTATION_SUCCESS = 0;
-constexpr int32_t PRIVACY_COMPUTATION_INVALID_ARGUMENT = 401;
+constexpr int32_t PRIVACY_COMPUTATION_INVALID_ARGUMENT = 24000018;
 constexpr int32_t PRIVACY_COMPUTATION_SERVICE_ERROR = 24000001;
 constexpr int32_t PRIVACY_COMPUTATION_OUT_OF_MEMORY = 24000006;
 constexpr int32_t PRIVACY_COMPUTATION_DATA_CORRUPTED = 24000007;
@@ -93,8 +93,10 @@ napi_status NapiGetProperty(napi_env env, napi_value value, uint32_t &number);
 napi_status NapiGetProperty(napi_env env, napi_value value, ::PrivacyComputation::Bytes &bytes);
 napi_status NapiGetProperty(napi_env env, napi_value value, ::PrivacyComputation::PrivacyProtocol &protocol);
 napi_status NapiGetProperty(napi_env env, napi_value value, ::PrivacyComputation::TargetInput &target);
-napi_status NapiGetProperty(napi_env env, napi_value value, std::vector<::PrivacyComputation::Element> &elements);
-napi_status NapiGetProperty(napi_env env, napi_value value, ::PrivacyComputation::PrivacySearchResult &result);
+napi_status NapiGetProperty(napi_env env, napi_value value, std::vector<::PrivacyComputation::Element> &elements,
+    ::PrivacyComputation::ProtocolType protocolType);
+napi_status NapiGetProperty(napi_env env, napi_value value, ::PrivacyComputation::PrivacySearchResult &result,
+    ::PrivacyComputation::ProtocolType protocolType);
 napi_status NapiSetProperty(napi_env env, uint32_t value, napi_value &output);
 napi_status NapiSetProperty(napi_env env, bool value, napi_value &output);
 napi_status NapiSetProperty(napi_env env, const ::PrivacyComputation::Bytes &bytes, napi_value &output);
