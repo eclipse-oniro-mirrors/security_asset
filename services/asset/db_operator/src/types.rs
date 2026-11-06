@@ -18,6 +18,7 @@
 use std::{cmp::Ordering, collections::HashMap};
 
 use asset_definition::{DataType, ErrCode, Value, WrapType};
+use asset_log::{loge, logw};
 
 /// A Map type containing tag-value pairs that describe the attributes of an DB field.
 pub type DbMap = HashMap<&'static str, Value>;
@@ -330,19 +331,56 @@ pub struct QueryOptions {
     pub amend: Option<String>,
 }
 
-pub(crate) const SQLITE_OK: i32 = 0;
-pub(crate) const SQLITE_NOMEM: i32 = 7;
-pub(crate) const SQLITE_CORRUPT: i32 = 11;
-pub(crate) const SQLITE_NOTADB: i32 = 26;
-/// Another row willed queried by function: sqlite3_step().
-pub(crate) const SQLITE_ROW: i32 = 100;
-/// End the execution of function sqlite3_step().
-pub(crate) const SQLITE_DONE: i32 = 101;
+/// SQLite error codes used by asset database operations.
+pub(crate) struct SqliteErr;
+
+impl SqliteErr {
+    pub(crate) const OK: i32 = 0;
+    pub(crate) const BUSY: i32 = 5;
+    pub(crate) const NOMEM: i32 = 7;
+    pub(crate) const READONLY: i32 = 8;
+    pub(crate) const IOERR: i32 = 10;
+    pub(crate) const CORRUPT: i32 = 11;
+    pub(crate) const FULL: i32 = 13;
+    pub(crate) const CANTOPEN: i32 = 14;
+    pub(crate) const NOLFS: i32 = 22;
+    pub(crate) const NOTADB: i32 = 26;
+    /// Another row queried by function: sqlite3_step().
+    pub(crate) const ROW: i32 = 100;
+    /// End the execution of function: sqlite3_step().
+    pub(crate) const DONE: i32 = 101;
+}
+
+/// Returns the symbolic name of a SQLite error code for logging.
+pub(crate) fn sqlite_err_name(ret: i32) -> &'static str {
+    match ret {
+        SqliteErr::OK => "SQLITE_OK",
+        SqliteErr::BUSY => "SQLITE_BUSY",
+        SqliteErr::READONLY => "SQLITE_READONLY",
+        SqliteErr::IOERR => "SQLITE_IOERR",
+        SqliteErr::CORRUPT => "SQLITE_CORRUPT",
+        SqliteErr::FULL => "SQLITE_FULL",
+        SqliteErr::CANTOPEN => "SQLITE_CANTOPEN",
+        SqliteErr::NOLFS => "SQLITE_NOLFS",
+        SqliteErr::NOTADB => "SQLITE_NOTADB",
+        SqliteErr::NOMEM => "SQLITE_NOMEM",
+        SqliteErr::ROW => "SQLITE_ROW",
+        SqliteErr::DONE => "SQLITE_DONE",
+        _ => "SQLITE_UNKNOWN",
+    }
+}
 
 pub(crate) fn sqlite_err_handle(ret: i32) -> ErrCode {
     match ret {
-        SQLITE_CORRUPT | SQLITE_NOTADB => ErrCode::DataCorrupted,
-        SQLITE_NOMEM => ErrCode::OutOfMemory,
-        _ => ErrCode::DatabaseError,
+        SqliteErr::CORRUPT | SqliteErr::NOTADB => ErrCode::DataCorrupted,
+        SqliteErr::NOMEM => ErrCode::OutOfMemory,
+        code => {
+            if matches!(code, SqliteErr::BUSY | SqliteErr::READONLY | SqliteErr::FULL) {
+                logw!("[DB]SQLite error {} mapped to DatabaseError", sqlite_err_name(code));
+            } else {
+                loge!("[DB]SQLite error {} mapped to DatabaseError", sqlite_err_name(code));
+            }
+            ErrCode::DatabaseError
+        }
     }
 }

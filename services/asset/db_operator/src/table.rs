@@ -29,8 +29,8 @@ use crate::{
     statement::Statement,
     transaction::Transaction,
     types::{
-        adapt_column, column, ColumnInfo, DbMap, QueryOptions, UpgradeColumnInfo,
-        ADAPT_CLOUD_TABLE, COLUMN_INFO, DB_UPGRADE_VERSION, SQLITE_ROW
+        adapt_column, column, ColumnInfo, DbMap, QueryOptions, SqliteErr, UpgradeColumnInfo,
+        ADAPT_CLOUD_TABLE, COLUMN_INFO, DB_UPGRADE_VERSION
     },
 };
 
@@ -266,7 +266,7 @@ impl<'a> Table<'a> {
         let sql = format!("select * from sqlite_master where type ='table' and name = '{}'", self.table_name);
         let stmt = Statement::prepare(sql.as_str(), self.db)?;
         let ret = stmt.step()?;
-        if ret == SQLITE_ROW {
+        if ret == SqliteErr::ROW {
             Ok(true)
         } else {
             Ok(false)
@@ -729,7 +729,7 @@ impl<'a> Table<'a> {
         let mut index = 1;
         bind_where_datas(condition, &stmt, &mut index)?;
         let mut result = vec![];
-        while stmt.step()? == SQLITE_ROW {
+        while stmt.step()? == SqliteErr::ROW {
             let mut record = DbMap::new();
             let n = stmt.data_count();
             for i in 0..n {
@@ -788,7 +788,7 @@ impl<'a> Table<'a> {
         let mut index = 1;
         bind_where_datas(condition, &stmt, &mut index)?;
         let mut result = vec![];
-        while stmt.step()? == SQLITE_ROW {
+        while stmt.step()? == SqliteErr::ROW {
             let mut record = DbMap::new();
             let n = stmt.data_count();
             for i in 0..n {

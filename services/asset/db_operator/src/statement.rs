@@ -23,7 +23,7 @@ use asset_log::loge;
 
 use crate::{
     database::Database,
-    types::{sqlite_err_handle, SQLITE_DONE, SQLITE_NOTADB, SQLITE_OK, SQLITE_ROW},
+    types::{sqlite_err_handle, sqlite_err_name, SqliteErr},
 };
 
 type BindCallback = extern "C" fn(p: *mut c_void);
@@ -74,18 +74,18 @@ impl<'b> Statement<'b> {
         } else {
             db.print_db_msg();
             macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                sqlite_err_handle(ret), "Prepare statement failed, err={}", ret)
+                sqlite_err_handle(ret), "Prepare statement failed, err={}({})", sqlite_err_name(ret), ret)
         }
     }
 
     /// Executing the precompiled sql. if succ
-    /// If the execution is successful, return SQLITE_DONE for update, insert, delete and return SQLITE_ROW for select.
+    /// If the execution is successful, return SqliteErr::DONE for update, insert, delete and return SqliteErr::ROW for select.
     pub(crate) fn step(&self) -> Result<i32> {
         let ret = unsafe { SqliteStep(self.handle as _) };
-        if ret != SQLITE_ROW && ret != SQLITE_DONE {
+        if ret != SqliteErr::ROW && ret != SqliteErr::DONE {
             self.db.print_db_msg();
             macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                sqlite_err_handle(ret), "Step statement failed, err={}", ret)
+                sqlite_err_handle(ret), "Step statement failed, err={}({})", sqlite_err_name(ret), ret)
         } else {
             Ok(ret)
         }
@@ -94,13 +94,13 @@ impl<'b> Statement<'b> {
     /// Executing the precompiled sql.
     pub(crate) fn step_db_encrypt(&self) -> Result<bool> {
         let ret = unsafe { SqliteStep(self.handle as _) };
-        if ret == SQLITE_NOTADB {
+        if ret == SqliteErr::NOTADB {
             return Ok(true)
         }
-        if ret != SQLITE_ROW && ret != SQLITE_DONE {
+        if ret != SqliteErr::ROW && ret != SqliteErr::DONE {
             self.db.print_db_msg();
             macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                sqlite_err_handle(ret), "Step statement failed, err={}", ret)
+                sqlite_err_handle(ret), "Step statement failed, err={}({})", sqlite_err_name(ret), ret)
         } else {
             Ok(false)
         }
@@ -110,10 +110,10 @@ impl<'b> Statement<'b> {
     #[allow(dead_code)]
     pub(crate) fn reset(&self) -> Result<()> {
         let ret = unsafe { SqliteReset(self.handle as _) };
-        if ret != SQLITE_OK {
+        if ret != SqliteErr::OK {
             self.db.print_db_msg();
             macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                sqlite_err_handle(ret), "Reset statement failed, err={}", ret)
+                sqlite_err_handle(ret), "Reset statement failed, err={}({})", sqlite_err_name(ret), ret)
         } else {
             Ok(())
         }
@@ -126,10 +126,10 @@ impl<'b> Statement<'b> {
             Value::Number(i) => unsafe { SqliteBindInt64(self.handle as _, index, *i as _) },
             Value::Bool(b) => unsafe { SqliteBindInt64(self.handle as _, index, *b as _) },
         };
-        if ret != SQLITE_OK {
+        if ret != SqliteErr::OK {
             self.db.print_db_msg();
             macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                sqlite_err_handle(ret), "Bind data failed, index={}, err={}", index, ret)
+                sqlite_err_handle(ret), "Bind data failed, index={}, err={}({})", index, sqlite_err_name(ret), ret)
         } else {
             Ok(())
         }
@@ -143,10 +143,10 @@ impl<'b> Statement<'b> {
             Some(Value::Bool(b)) => unsafe { SqliteBindInt64(self.handle as _, index, *b as _) },
             None => unsafe { SqliteBindNull(self.handle as _, index) },
         };
-        if ret != SQLITE_OK {
+        if ret != SqliteErr::OK {
             self.db.print_db_msg();
             macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                sqlite_err_handle(ret), "Bind data failed, index={}, err={}", index, ret)
+                sqlite_err_handle(ret), "Bind data failed, index={}, err={}({})", index, sqlite_err_name(ret), ret)
         } else {
             Ok(())
         }
@@ -219,7 +219,7 @@ impl<'b> Drop for Statement<'b> {
     fn drop(&mut self) {
         if self.handle != 0 {
             let ret = unsafe { SqliteFinalize(self.handle as _) };
-            if ret != SQLITE_OK {
+            if ret != SqliteErr::OK {
                 loge!("sqlite3 finalize fail ret {}", ret);
             }
         }
