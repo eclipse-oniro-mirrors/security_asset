@@ -32,9 +32,10 @@
 namespace {
 using namespace testing::ext;
 using namespace OHOS::Security::PrivacyComputation;
-using namespace psi_pir;
-using namespace psi_pir::internal;
+using namespace ::PrivacyComputation;
+using namespace ::PrivacyComputation::internal;
 using PrivacyHost::State;
+constexpr uint8_t TARGET_BYTE = 0x45;
 
 class PrivacyBoundaryTest : public testing::Test {
 public:
@@ -50,14 +51,17 @@ public:
     napi_value Protocol(bool pir = false)
     {
         auto result = PrivacyHost::Value(&env_);
-        result->properties["dataSetSize"] = PrivacyHost::Number(&env_, pir ? 1 : 2);
-        result->properties["protocolType"] = PrivacyHost::Number(&env_, pir ? 1 : 0);
+        result->properties["dataSetSize"] =
+            PrivacyHost::Number(&env_, static_cast<uint32_t>(pir ? DataSetSize::SIZE_256 : DataSetSize::SIZE_512));
+        result->properties["protocolType"] = PrivacyHost::Number(
+            &env_, static_cast<uint32_t>(pir ? ProtocolType::PIR_PROTOCOL : ProtocolType::PRIVATE_SET_INTERSECTION));
         return result;
     }
     napi_value Target()
     {
         auto result = PrivacyHost::Value(&env_);
-        result->properties["elemData"] = PrivacyHost::Bytes(&env_, psi_pir::Bytes(8, 0x45));
+        result->properties["elemData"] =
+            PrivacyHost::Bytes(&env_, ::PrivacyComputation::Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE));
         result->properties["hashAlg"] = PrivacyHost::Number(&env_, 1);
         return result;
     }
@@ -79,7 +83,8 @@ HWTEST_F(PrivacyBoundaryTest, NapiPsiAndPirRecoverThroughSa, TestSize.Level1)
         ASSERT_TRUE(generated->settled);
         ASSERT_FALSE(generated->rejected);
         auto element = PrivacyHost::Value(&env_);
-        element->properties["elemKey"] = PrivacyHost::Bytes(&env_, psi_pir::Bytes(8, 0x45));
+        element->properties["elemKey"] =
+            PrivacyHost::Bytes(&env_, ::PrivacyComputation::Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE));
         element->properties["hashAlg"] = PrivacyHost::Number(&env_, 1);
         if (pir) {
             element->properties["elemValue"] = PrivacyHost::Bytes(&env_, {0, 0xFF, 0x45});
@@ -95,7 +100,7 @@ HWTEST_F(PrivacyBoundaryTest, NapiPsiAndPirRecoverThroughSa, TestSize.Level1)
         if (pir) {
             auto values = result->result->properties.at("attachedValues");
             ASSERT_EQ(values->elements.size(), 1U);
-            EXPECT_EQ(values->elements[0]->buffer->storage, (psi_pir::Bytes{0, 0xFF, 0x45}));
+            EXPECT_EQ(values->elements[0]->buffer->storage, (::PrivacyComputation::Bytes{0, 0xFF, 0x45}));
         }
     }
     EXPECT_EQ(env_.deletedWorks, 6U);
@@ -178,7 +183,7 @@ HWTEST_F(PrivacyBoundaryTest, ParseSearchArraysAndValueArrays, TestSize.Level2)
     object->properties["resultCipherText"] = PrivacyHost::Array(&env_, {PrivacyHost::Bytes(&env_, {1, 2})});
     object->properties["valueCipherText"] = PrivacyHost::Array(&env_, {PrivacyHost::Bytes(&env_, {})});
     ASSERT_EQ(NapiGetProperty(&env_, object, result), napi_ok);
-    EXPECT_EQ(result.resultCipherText, (std::vector<psi_pir::Bytes>{{1, 2}}));
+    EXPECT_EQ(result.resultCipherText, (std::vector<::PrivacyComputation::Bytes>{{1, 2}}));
     ASSERT_TRUE(result.valueCipherText.has_value());
     EXPECT_TRUE(result.valueCipherText->front().empty());
     object->properties["valueCipherText"] = PrivacyHost::Number(&env_, 1);
@@ -216,9 +221,10 @@ HWTEST_F(PrivacyBoundaryTest, GetterExceptionIsPreservedAndErrorsAreMapped, Test
     ASSERT_NE(promise, nullptr);
     EXPECT_EQ(promise->result, original);
     EXPECT_EQ(env_.exception, nullptr);
-    for (const auto code : {PSI_PIR_SUCCESS, PSI_PIR_INVALID_ARGUMENT, PSI_PIR_CODEC_ERROR, PSI_PIR_HASH_ERROR,
-                            PSI_PIR_RANDOM_ERROR, PSI_PIR_CRYPTO_ERROR, PSI_PIR_UNSUPPORTED_PROTOCOL,
-                            PSI_PIR_INCOMPATIBLE_HE_PARAMETERS, PSI_PIR_HE_ERROR, PSI_PIR_INTERNAL_ERROR}) {
+    for (const auto code : {PRIVACY_PROTOCOL_SUCCESS, PRIVACY_PROTOCOL_INVALID_ARGUMENT, PRIVACY_PROTOCOL_CODEC_ERROR,
+                            PRIVACY_PROTOCOL_HASH_ERROR, PRIVACY_PROTOCOL_RANDOM_ERROR, PRIVACY_PROTOCOL_CRYPTO_ERROR,
+                            PRIVACY_PROTOCOL_UNSUPPORTED_PROTOCOL, PRIVACY_PROTOCOL_INCOMPATIBLE_HE_PARAMETERS,
+                            PRIVACY_PROTOCOL_HE_ERROR, PRIVACY_PROTOCOL_INTERNAL_ERROR}) {
         const auto mapped = MapProtocolError(code);
         EXPECT_NE(GetErrorMessage(mapped), nullptr);
         EXPECT_EQ(mapped == 0, code == 0);
@@ -232,33 +238,33 @@ HWTEST_F(PrivacyBoundaryTest, GetterExceptionIsPreservedAndErrorsAreMapped, Test
 
 HWTEST_F(PrivacyBoundaryTest, SaValidatesPointersIdentityAndOutputCapacity, TestSize.Level2)
 {
-    psi_pir::Bytes storage(MAX_TARGET_RESULT_BYTES);
+    ::PrivacyComputation::Bytes storage(MAX_TARGET_RESULT_BYTES);
     PrivacyBuffer output{storage.data(), static_cast<uint32_t>(storage.size())};
-    psi_pir::Bytes element(8, 0x45);
+    ::PrivacyComputation::Bytes element(8, 0x45);
     PrivacyTargetRequest input{{2, 0}, 1, {element.data(), static_cast<uint32_t>(element.size())}};
-    EXPECT_EQ(AssetGenPrivacyTarget(1, nullptr, &output), PSI_PIR_INVALID_ARGUMENT);
-    EXPECT_EQ(AssetGenPrivacyTarget(1, &input, nullptr), PSI_PIR_INVALID_ARGUMENT);
-    EXPECT_EQ(AssetGenPrivacyTarget(UINT32_MAX, &input, &output), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(AssetGenPrivacyTarget(1, nullptr, &output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    EXPECT_EQ(AssetGenPrivacyTarget(1, &input, nullptr), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    EXPECT_EQ(AssetGenPrivacyTarget(UINT32_MAX, &input, &output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
     State().accountStatus = -1;
-    EXPECT_EQ(AssetGenPrivacyTarget(1, &input, &output), PSI_PIR_INTERNAL_ERROR);
+    EXPECT_EQ(AssetGenPrivacyTarget(1, &input, &output), PRIVACY_PROTOCOL_INTERNAL_ERROR);
     State().accountStatus = 0;
     State().userId = -1;
-    EXPECT_EQ(AssetGenPrivacyTarget(1, &input, &output), PSI_PIR_INTERNAL_ERROR);
+    EXPECT_EQ(AssetGenPrivacyTarget(1, &input, &output), PRIVACY_PROTOCOL_INTERNAL_ERROR);
     State().userId = 100;
     output.size = 1;
-    EXPECT_EQ(AssetGenPrivacyTarget(1, &input, &output), PSI_PIR_CODEC_ERROR);
+    EXPECT_EQ(AssetGenPrivacyTarget(1, &input, &output), PRIVACY_PROTOCOL_CODEC_ERROR);
     output.size = static_cast<uint32_t>(storage.size());
     input.hashAlg = UINT32_MAX;
-    EXPECT_EQ(AssetGenPrivacyTarget(1, &input, &output), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(AssetGenPrivacyTarget(1, &input, &output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
     input.hashAlg = 1;
     input.protocol.dataSetSize = UINT32_MAX;
-    EXPECT_EQ(AssetGenPrivacyTarget(1, &input, &output), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(AssetGenPrivacyTarget(1, &input, &output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
     input.protocol = {2, 0};
     input.element.data = nullptr;
-    EXPECT_EQ(AssetGenPrivacyTarget(1, &input, &output), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(AssetGenPrivacyTarget(1, &input, &output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
     PrivacyDecryptRequest request{{2, 0}, {element.data(), 0}};
-    EXPECT_EQ(AssetDecryptPrivacyCiphertext(1, nullptr, &output), PSI_PIR_INVALID_ARGUMENT);
-    EXPECT_EQ(AssetDecryptPrivacyCiphertext(1, &request, &output), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(AssetDecryptPrivacyCiphertext(1, nullptr, &output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    EXPECT_EQ(AssetDecryptPrivacyCiphertext(1, &request, &output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
 }
 
 HWTEST_F(PrivacyBoundaryTest, SaPropagatesHuksAndHeFailuresWithoutCommittingOutput, TestSize.Level2)
@@ -266,11 +272,12 @@ HWTEST_F(PrivacyBoundaryTest, SaPropagatesHuksAndHeFailuresWithoutCommittingOutp
     for (const auto failure : {"New", "SetPara", "KeyGen", "Encode", "Encrypt", "SerializeQuery", "Serialize"}) {
         PrivacyHost::Reset();
         State().failAt = failure;
-        psi_pir::Bytes output{0x99};
-        EXPECT_NE(GenPrivacyTargetRemote({psi_pir::Bytes(8, 0x45), HashAlg::SHA256},
-                                         {DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL}, output),
-                  PSI_PIR_SUCCESS);
-        EXPECT_EQ(output, (psi_pir::Bytes{0x99}));
+        ::PrivacyComputation::Bytes output{0x99};
+        EXPECT_NE(GenPrivacyTargetRemote(
+                      {::PrivacyComputation::Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE), HashAlg::SHA256},
+                      {DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION}, output),
+                  PRIVACY_PROTOCOL_SUCCESS);
+        EXPECT_EQ(output, (::PrivacyComputation::Bytes{0x99}));
     }
     PrivacyHost::Reset();
     State().huksInitStatus = -1;
@@ -285,29 +292,32 @@ HWTEST_F(PrivacyBoundaryTest, DrbgInitializationStatus, TestSize.Level2)
     const char *mode = std::getenv("PRIVACY_TEST_DRBG");
     const bool failed = mode != nullptr && std::strcmp(mode, "failure") == 0;
     HifheAdapter adapter;
-    EXPECT_EQ(adapter.InitializeEvaluation(ProtocolParams{}), failed ? PSI_PIR_HE_ERROR : PSI_PIR_SUCCESS);
+    EXPECT_EQ(adapter.InitializeEvaluation(ProtocolParams{}),
+              failed ? PRIVACY_PROTOCOL_HE_ERROR : PRIVACY_PROTOCOL_SUCCESS);
 }
 
 HWTEST_F(PrivacyBoundaryTest, EachBatchImportsOnceAndExportsOnlyAfterEvaluation, TestSize.Level1)
 {
-    const std::vector<psi_pir::PrivacyProtocol> protocols{{DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL},
-                                                          {DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL},
-                                                          {DataSetSize::SIZE_128, ProtocolType::PIR_PROTOCOL}};
+    const std::vector<::PrivacyComputation::PrivacyProtocol> protocols{
+        {DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION},
+        {DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL},
+        {DataSetSize::SIZE_128, ProtocolType::PIR_PROTOCOL}};
     for (const auto &protocol : protocols) {
         ProtocolParams params;
-        ASSERT_EQ(MapPrivacyProtocol(protocol, params), PSI_PIR_SUCCESS);
+        ASSERT_EQ(MapPrivacyProtocol(protocol, params), PRIVACY_PROTOCOL_SUCCESS);
         const bool pir = protocol.protocolType == ProtocolType::PIR_PROTOCOL;
-        const size_t capacity = params.dataNumPerPlaintext / (pir ? kPirGroupsPerItem : kPsiGroupsPerItem);
-        const Element element{psi_pir::Bytes(8, 0x45), HashAlg::SHA256, psi_pir::Bytes{0xFF}};
+        const size_t capacity = params.dataNumPerPlaintext / (pir ? kPirGroupsPerItem : kIntersectionGroupsPerItem);
+        const Element element{::PrivacyComputation::Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE),
+                              HashAlg::SHA256, ::PrivacyComputation::Bytes{0xFF}};
         const std::vector<Element> elements(capacity + 1, element);
-        psi_pir::Bytes target;
+        ::PrivacyComputation::Bytes target;
         ASSERT_EQ(GenPrivacyTarget({element.elemKey, element.hashAlg}, protocol, {20010001, 100}, target),
-                  PSI_PIR_SUCCESS);
+                  PRIVACY_PROTOCOL_SUCCESS);
         for (bool custom : {false, true}) {
             SetHEEngine(custom ? std::make_shared<const SoftHeEngine>() : nullptr);
             State().calls.clear();
             PrivacySearchResult output;
-            ASSERT_EQ(PrivacySearch(target, elements, protocol, output), PSI_PIR_SUCCESS);
+            ASSERT_EQ(PrivacySearch(target, elements, protocol, output), PRIVACY_PROTOCOL_SUCCESS);
             ASSERT_EQ(output.resultCipherText.size(), 2U);
             EXPECT_EQ(State().calls["Deserialize"], 2U);
             EXPECT_EQ(State().calls["SerializeQuery"], 2U);
@@ -319,10 +329,12 @@ HWTEST_F(PrivacyBoundaryTest, EachBatchImportsOnceAndExportsOnlyAfterEvaluation,
 
 HWTEST_F(PrivacyBoundaryTest, FailedBatchNeverSerializesIntermediateResults, TestSize.Level2)
 {
-    const psi_pir::PrivacyProtocol protocol{DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL};
-    const Element element{psi_pir::Bytes(8, 0x45), HashAlg::SHA256, psi_pir::Bytes{0xFF}};
-    psi_pir::Bytes target;
-    ASSERT_EQ(GenPrivacyTarget({element.elemKey, element.hashAlg}, protocol, {20010001, 100}, target), PSI_PIR_SUCCESS);
+    const ::PrivacyComputation::PrivacyProtocol protocol{DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL};
+    const Element element{::PrivacyComputation::Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE), HashAlg::SHA256,
+                          ::PrivacyComputation::Bytes{0xFF}};
+    ::PrivacyComputation::Bytes target;
+    ASSERT_EQ(GenPrivacyTarget({element.elemKey, element.hashAlg}, protocol, {20010001, 100}, target),
+              PRIVACY_PROTOCOL_SUCCESS);
     SetHEEngine(std::make_shared<const SoftHeEngine>());
     const std::vector<std::pair<const char *, uint32_t>> failures{
         {"Deserialize", 1}, {"Encode", 1}, {"Negate", 1}, {"Add", 1},        {"Mul", 1},
@@ -331,28 +343,31 @@ HWTEST_F(PrivacyBoundaryTest, FailedBatchNeverSerializesIntermediateResults, Tes
         State().calls.clear();
         State().failAt = operation;
         State().failOccurrence = occurrence;
-        PrivacySearchResult output{{psi_pir::Bytes{0x99}}, std::vector<psi_pir::Bytes>{{0x88}}};
-        EXPECT_EQ(PrivacySearch(target, {element}, protocol, output), PSI_PIR_HE_ERROR);
+        PrivacySearchResult output{{::PrivacyComputation::Bytes{0x99}},
+                                   std::vector<::PrivacyComputation::Bytes>{{0x88}}};
+        EXPECT_EQ(PrivacySearch(target, {element}, protocol, output), PRIVACY_PROTOCOL_HE_ERROR);
         EXPECT_EQ(State().calls["SerializeQuery"], 0U) << operation;
         EXPECT_EQ(State().calls["Serialize"], 0U) << operation;
-        EXPECT_EQ(output.resultCipherText, (std::vector<psi_pir::Bytes>{{0x99}}));
+        EXPECT_EQ(output.resultCipherText, (std::vector<::PrivacyComputation::Bytes>{{0x99}}));
         ASSERT_TRUE(output.valueCipherText.has_value());
-        EXPECT_EQ(*output.valueCipherText, (std::vector<psi_pir::Bytes>{{0x88}}));
+        EXPECT_EQ(*output.valueCipherText, (std::vector<::PrivacyComputation::Bytes>{{0x88}}));
     }
 }
 
 HWTEST_F(PrivacyBoundaryTest, FinalExportFailurePreservesOutput, TestSize.Level2)
 {
-    const psi_pir::PrivacyProtocol protocol{DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL};
-    const Element element{psi_pir::Bytes(8, 0x45), HashAlg::SHA256, psi_pir::Bytes{0xFF}};
-    psi_pir::Bytes target;
-    ASSERT_EQ(GenPrivacyTarget({element.elemKey, element.hashAlg}, protocol, {20010001, 100}, target), PSI_PIR_SUCCESS);
+    const ::PrivacyComputation::PrivacyProtocol protocol{DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL};
+    const Element element{::PrivacyComputation::Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE), HashAlg::SHA256,
+                          ::PrivacyComputation::Bytes{0xFF}};
+    ::PrivacyComputation::Bytes target;
+    ASSERT_EQ(GenPrivacyTarget({element.elemKey, element.hashAlg}, protocol, {20010001, 100}, target),
+              PRIVACY_PROTOCOL_SUCCESS);
     for (const auto operation : {"SerializeQuery", "Serialize"}) {
         State().calls.clear();
         State().failAt = operation;
-        PrivacySearchResult output{{psi_pir::Bytes{0x99}}, std::nullopt};
-        EXPECT_EQ(PrivacySearch(target, {element}, protocol, output), PSI_PIR_HE_ERROR);
-        EXPECT_EQ(output.resultCipherText, (std::vector<psi_pir::Bytes>{{0x99}}));
+        PrivacySearchResult output{{::PrivacyComputation::Bytes{0x99}}, std::nullopt};
+        EXPECT_EQ(PrivacySearch(target, {element}, protocol, output), PRIVACY_PROTOCOL_HE_ERROR);
+        EXPECT_EQ(output.resultCipherText, (std::vector<::PrivacyComputation::Bytes>{{0x99}}));
         EXPECT_FALSE(output.valueCipherText.has_value());
         EXPECT_EQ(State().calls["Deserialize"], 1U);
         EXPECT_EQ(State().calls["Add"], 2U);

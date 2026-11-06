@@ -17,11 +17,11 @@ config("privacy_ipc_config") {
 }
 ohos_static_library("privacy_client") {
   sources = [ "src/privacy_client.cpp" ]
-  include_dirs = [ "../../../psi_pir_protocol/common/inc" ]
+  include_dirs = [ "../../../privacy_protocol/common/inc" ]
   external_deps = [ "hilog:libhilog" ]
   public_configs = [ ":privacy_ipc_config" ]
   deps = [ "../../../interfaces/inner_kits/c/asset:asset_sdk_ffi" ]
-  public_deps = [ "../../../psi_pir_protocol:psi_pir_protocol" ]
+  public_deps = [ "../../../privacy_protocol:privacy_protocol" ]
   cflags_cc = [
     "-std=c++17",
     "-Wall",

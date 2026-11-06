@@ -29,16 +29,24 @@ napi_value NapiGenPrivacyTarget(napi_env env, napi_callback_info info)
     }
     LOGI("NAPI genPrivacyTarget begin, route=AssetSA");
     auto context = std::unique_ptr<GenPrivacyTargetContext>(new (std::nothrow) GenPrivacyTargetContext());
-    NAPI_THROW(env, context == nullptr, PRIVACY_COMPUTATION_OUT_OF_MEMORY,
-               GetErrorMessage(PRIVACY_COMPUTATION_OUT_OF_MEMORY));
+    if (context == nullptr) {
+        ThrowJsError(env, PRIVACY_COMPUTATION_OUT_OF_MEMORY, GetErrorMessage(PRIVACY_COMPUTATION_OUT_OF_MEMORY));
+        return nullptr;
+    }
     context->parse = [](napi_env env, napi_callback_info info,
                         PrivacyComputationBaseContext *baseContext) -> napi_status {
         auto *context = static_cast<GenPrivacyTargetContext *>(baseContext);
         constexpr size_t ARG_COUNT = 2;
         napi_value args[ARG_COUNT] = {nullptr};
-        IF_ERR_RETURN(ParseJsArgs(env, info, args, ARG_COUNT));
-        IF_ERR_RETURN(NapiGetProperty(env, args[0], context->input));
-        IF_ERR_RETURN(NapiGetProperty(env, args[1], context->protocol));
+        if (const auto callStatus = ParseJsArgs(env, info, args, ARG_COUNT); callStatus != napi_ok) {
+            return callStatus;
+        }
+        if (const auto callStatus = NapiGetProperty(env, args[0], context->input); callStatus != napi_ok) {
+            return callStatus;
+        }
+        if (const auto callStatus = NapiGetProperty(env, args[1], context->protocol); callStatus != napi_ok) {
+            return callStatus;
+        }
         return napi_ok;
     };
     context->execute = [](napi_env, void *data) {
@@ -63,17 +71,28 @@ napi_value NapiPrivacySearch(napi_env env, napi_callback_info info)
 {
     LOGI("NAPI privacySearch begin, route=Local");
     auto context = std::unique_ptr<PrivacySearchContext>(new (std::nothrow) PrivacySearchContext());
-    NAPI_THROW(env, context == nullptr, PRIVACY_COMPUTATION_OUT_OF_MEMORY,
-               GetErrorMessage(PRIVACY_COMPUTATION_OUT_OF_MEMORY));
+    if (context == nullptr) {
+        ThrowJsError(env, PRIVACY_COMPUTATION_OUT_OF_MEMORY, GetErrorMessage(PRIVACY_COMPUTATION_OUT_OF_MEMORY));
+        return nullptr;
+    }
     context->parse = [](napi_env env, napi_callback_info info,
                         PrivacyComputationBaseContext *baseContext) -> napi_status {
         auto *context = static_cast<PrivacySearchContext *>(baseContext);
         constexpr size_t ARG_COUNT = 3;
         napi_value args[ARG_COUNT] = {nullptr};
-        IF_ERR_RETURN(ParseJsArgs(env, info, args, ARG_COUNT));
-        IF_ERR_RETURN(NapiGetProperty(env, args[0], context->target));
-        IF_ERR_RETURN(NapiGetProperty(env, args[1], context->elements));
-        IF_ERR_RETURN(NapiGetProperty(env, args[2], context->protocol));
+        if (const auto callStatus = ParseJsArgs(env, info, args, ARG_COUNT); callStatus != napi_ok) {
+            return callStatus;
+        }
+        if (const auto callStatus = NapiGetProperty(env, args[0], context->target); callStatus != napi_ok) {
+            return callStatus;
+        }
+        if (const auto callStatus = NapiGetProperty(env, args[1], context->elements); callStatus != napi_ok) {
+            return callStatus;
+        }
+        if (const auto callStatus = NapiGetProperty(env, args[ARG_COUNT - 1], context->protocol);
+            callStatus != napi_ok) {
+            return callStatus;
+        }
         return napi_ok;
     };
     context->execute = [](napi_env, void *data) {
@@ -82,8 +101,8 @@ napi_value NapiPrivacySearch(napi_env env, napi_callback_info info)
             return;
         }
         auto *context = static_cast<PrivacySearchContext *>(data);
-        context->result = MapProtocolError(
-            psi_pir::PrivacySearch(context->target, context->elements, context->protocol, context->searchResult));
+        context->result = MapProtocolError(::PrivacyComputation::PrivacySearch(
+            context->target, context->elements, context->protocol, context->searchResult));
         if (context->result != PRIVACY_COMPUTATION_SUCCESS) {
             LOGE("privacy_search failed, code=%{public}d", context->result);
         }
@@ -102,16 +121,24 @@ napi_value NapiGetSearchResult(napi_env env, napi_callback_info info)
         return CallComputationNapiFunc(env, info, "GetSearchResult");
     }
     auto context = std::unique_ptr<GetSearchResultContext>(new (std::nothrow) GetSearchResultContext());
-    NAPI_THROW(env, context == nullptr, PRIVACY_COMPUTATION_OUT_OF_MEMORY,
-               GetErrorMessage(PRIVACY_COMPUTATION_OUT_OF_MEMORY));
+    if (context == nullptr) {
+        ThrowJsError(env, PRIVACY_COMPUTATION_OUT_OF_MEMORY, GetErrorMessage(PRIVACY_COMPUTATION_OUT_OF_MEMORY));
+        return nullptr;
+    }
     context->parse = [](napi_env env, napi_callback_info info,
                         PrivacyComputationBaseContext *baseContext) -> napi_status {
         auto *context = static_cast<GetSearchResultContext *>(baseContext);
         constexpr size_t ARG_COUNT = 2;
         napi_value args[ARG_COUNT] = {nullptr};
-        IF_ERR_RETURN(ParseJsArgs(env, info, args, ARG_COUNT));
-        IF_ERR_RETURN(NapiGetProperty(env, args[0], context->searchResult));
-        IF_ERR_RETURN(NapiGetProperty(env, args[1], context->protocol));
+        if (const auto callStatus = ParseJsArgs(env, info, args, ARG_COUNT); callStatus != napi_ok) {
+            return callStatus;
+        }
+        if (const auto callStatus = NapiGetProperty(env, args[0], context->searchResult); callStatus != napi_ok) {
+            return callStatus;
+        }
+        if (const auto callStatus = NapiGetProperty(env, args[1], context->protocol); callStatus != napi_ok) {
+            return callStatus;
+        }
         return napi_ok;
     };
     context->execute = [](napi_env, void *data) {

@@ -16,12 +16,14 @@
 #ifndef PRIVACY_COMPUTATION_PRIVACY_CLIENT_H
 #define PRIVACY_COMPUTATION_PRIVACY_CLIENT_H
 #include "privacy_limits.h"
-#include "psi_pir_protocol.h"
+#include "privacy_protocol.h"
 namespace OHOS::Security::PrivacyComputation {
-int32_t GenPrivacyTargetRemote(const psi_pir::TargetInput &input, const psi_pir::PrivacyProtocol &protocol,
-                               psi_pir::Bytes &output);
+int32_t GenPrivacyTargetRemote(const ::PrivacyComputation::TargetInput &input,
+                               const ::PrivacyComputation::PrivacyProtocol &protocol,
+                               ::PrivacyComputation::Bytes &output);
 // Decrypts HE batches through SA, then postprocesses locally without sending symmetric frames.
-int32_t GetSearchResultRemote(const psi_pir::PrivacySearchResult &input, const psi_pir::PrivacyProtocol &protocol,
-                              psi_pir::SearchResult &output);
+int32_t GetSearchResultRemote(const ::PrivacyComputation::PrivacySearchResult &input,
+                              const ::PrivacyComputation::PrivacyProtocol &protocol,
+                              ::PrivacyComputation::SearchResult &output);
 } // namespace OHOS::Security::PrivacyComputation
 #endif // PRIVACY_COMPUTATION_PRIVACY_CLIENT_H

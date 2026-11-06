@@ -25,14 +25,14 @@ enum class RootKeyPolicy {
 };
 
 // Callers in one OS account share the fixed alias in its HUKS CE namespace; root bytes never leave HUKS.
-class HuksSeedDeriver final : public psi_pir::internal::IHeSeedDeriver {
+class HuksSeedDeriver final : public ::PrivacyComputation::internal::IHeSeedDeriver {
 public:
     // Only target generation may create a missing root; result decryption must fail if absent.
     int32_t PrepareRootKey(uint32_t userId, RootKeyPolicy policy) const;
     // userId selects the CE namespace, while the complete caller identity is included in materialHash.
-    int32_t Derive(const psi_pir::CallerIdentity &identity,
-                   const std::array<uint8_t, psi_pir::internal::kIdentityHashSize> &materialHash,
-                   psi_pir::internal::HeSeed &seed) const noexcept override;
+    int32_t Derive(const ::PrivacyComputation::CallerIdentity &identity,
+                   const std::array<uint8_t, ::PrivacyComputation::internal::kIdentityHashSize> &materialHash,
+                   ::PrivacyComputation::internal::HeSeed &seed) const noexcept override;
 };
 } // namespace OHOS::Security::PrivacyComputation
 #endif // ASSET_HUKS_SEED_DERIVER_H

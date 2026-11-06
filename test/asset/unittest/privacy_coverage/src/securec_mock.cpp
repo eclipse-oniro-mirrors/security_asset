@@ -14,6 +14,7 @@
  */
 
 #include "securec.h"
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 
@@ -22,7 +23,11 @@ extern "C" errno_t memcpy_s(void *dest, size_t capacity, const void *src, size_t
     if (dest == nullptr || src == nullptr || count > capacity) {
         return EINVAL;
     }
-    std::memcpy(dest, src, count);
+    auto *destination = static_cast<uint8_t *>(dest);
+    const auto *source = static_cast<const uint8_t *>(src);
+    for (size_t i = 0; i < count; ++i) {
+        destination[i] = source[i];
+    }
     return EOK;
 }
 
@@ -31,7 +36,10 @@ extern "C" errno_t memset_s(void *dest, size_t capacity, int32_t value, size_t c
     if (dest == nullptr || count > capacity) {
         return EINVAL;
     }
-    std::memset(dest, value, count);
+    auto *destination = static_cast<uint8_t *>(dest);
+    for (size_t i = 0; i < count; ++i) {
+        destination[i] = static_cast<uint8_t>(value);
+    }
     return EOK;
 }
 

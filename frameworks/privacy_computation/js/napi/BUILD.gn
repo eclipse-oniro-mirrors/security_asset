@@ -22,7 +22,7 @@ ohos_shared_library("privacycomputation_napi") {
     "src/privacy_computation_napi_loader.cpp",
   ]
   deps = [
-    "../../../../psi_pir_protocol:psi_pir_protocol",
+    "../../../../privacy_protocol:privacy_protocol",
     "../../ipc:privacy_client",
   ]
 

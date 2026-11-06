@@ -21,14 +21,21 @@
 #include <array>
 #include <cstdlib>
 #include <cstring>
+#include "securec.h"
 #include <vector>
 
+namespace {
+constexpr size_t SEED_BYTES = 32;
+constexpr size_t SEED_OFFSET = 8;
+constexpr uint8_t WIRE_MAGIC = 0xA5;
+} // namespace
+
 struct HIFHE_Ctx {
-    std::array<uint8_t, 32> seed{};
+    std::array<uint8_t, SEED_BYTES> seed{};
     bool keyed = false;
 };
 struct HIFHE_HEText {
-    std::array<uint8_t, 32> seed{};
+    std::array<uint8_t, SEED_BYTES> seed{};
     std::vector<uint64_t> slots;
     bool encrypted = false;
     bool negate = false;
@@ -107,7 +114,9 @@ extern "C" int32_t HIFHE_Ctrl(HIFHE_Ctx *ctx, int32_t cmd, HIFHE_HEText *text, v
         *static_cast<uint32_t *>(value) = PrivacyHost::State().degree;
     }
     if (cmd == HIFHE_CTRL_BGV_SET_SEED) {
-        std::memcpy(ctx->seed.data(), value, ctx->seed.size());
+        if (memcpy_s(ctx->seed.data(), ctx->seed.size(), value, ctx->seed.size()) != EOK) {
+            return HIFHE_PARAM_INVALID;
+        }
     }
     if (cmd == HIFHE_CTRL_BGV_SET_NEGATE) {
         if (text == nullptr || PrivacyHost::Fail("Negate")) {
@@ -170,7 +179,10 @@ extern "C" int32_t HIFHE_Decode(const HIFHE_Ctx *, const HIFHE_HEText *plain, ui
     if (plain == nullptr || PrivacyHost::Fail("Decode")) {
         return HIFHE_PARAM_INVALID;
     }
-    std::memcpy(values, plain->slots.data(), plain->slots.size() * sizeof(uint64_t));
+    if (count == nullptr || memcpy_s(values, *count * sizeof(uint64_t), plain->slots.data(),
+                                     plain->slots.size() * sizeof(uint64_t)) != EOK) {
+        return HIFHE_PARAM_INVALID;
+    }
     *count = PrivacyHost::State().decodeCount;
     if (PrivacyHost::State().overrideDecodeFirst) {
         values[0] = PrivacyHost::State().decodeFirst;
@@ -195,26 +207,34 @@ extern "C" int32_t HIFHE_Serialize(const HIFHE_Ctx *, const HIFHE_HEText *text, 
     if (*size < WIRE_BYTES) {
         return HIFHE_BUFFER_TOO_SMALL;
     }
-    std::memset(out, 0, WIRE_BYTES);
-    out[0] = 0xA5;
+    if (memset_s(out, *size, 0, WIRE_BYTES) != EOK ||
+        memcpy_s(out + SEED_OFFSET, WIRE_BYTES - SEED_OFFSET, text->seed.data(), text->seed.size()) != EOK ||
+        memcpy_s(out + HEADER_BYTES, WIRE_BYTES - HEADER_BYTES, text->slots.data(), SLOT_COUNT * sizeof(uint64_t)) !=
+            EOK) {
+        return HIFHE_PARAM_INVALID;
+    }
+    out[0] = WIRE_MAGIC;
     out[1] = text->encrypted ? 1 : 0;
-    std::memcpy(out + 8, text->seed.data(), text->seed.size());
-    std::memcpy(out + HEADER_BYTES, text->slots.data(), SLOT_COUNT * sizeof(uint64_t));
     *size = PrivacyHost::State().serializeResultBytes == 0 ? WIRE_BYTES : PrivacyHost::State().serializeResultBytes;
     return HIFHE_SUCCESS;
 }
 extern "C" int32_t HIFHE_Deserialize(const HIFHE_Ctx *ctx, const uint8_t *bytes, uint32_t size, HIFHE_HEText **out)
 {
-    if (size != WIRE_BYTES || bytes[0] != 0xA5) {
+    if (size != WIRE_BYTES || bytes[0] != WIRE_MAGIC) {
         return HIFHE_PARAM_INVALID;
     }
     HIFHE_HEText value;
     value.encrypted = bytes[1] == 1;
-    std::memcpy(value.seed.data(), bytes + 8, value.seed.size());
+    if (memcpy_s(value.seed.data(), value.seed.size(), bytes + SEED_OFFSET, value.seed.size()) != EOK) {
+        return HIFHE_PARAM_INVALID;
+    }
     if (ctx->keyed && value.seed != ctx->seed) {
         return HIFHE_PARAM_INVALID;
     }
     value.slots.resize(SLOT_COUNT);
-    std::memcpy(value.slots.data(), bytes + HEADER_BYTES, SLOT_COUNT * sizeof(uint64_t));
+    if (memcpy_s(value.slots.data(), value.slots.size() * sizeof(uint64_t), bytes + HEADER_BYTES,
+                 SLOT_COUNT * sizeof(uint64_t)) != EOK) {
+        return HIFHE_PARAM_INVALID;
+    }
     return Export(out, "Deserialize", value);
 }

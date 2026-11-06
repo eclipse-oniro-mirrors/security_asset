@@ -20,7 +20,7 @@
 #include <gtest/gtest.h>
 
 namespace {
-using namespace psi_pir;
+using namespace ::PrivacyComputation;
 using namespace OHOS::Security::PrivacyComputation;
 using namespace testing::ext;
 
@@ -45,21 +45,21 @@ public:
 
 extern "C" int32_t asset_privacy_gen_target(const PrivacyTargetRequest *, PrivacyBuffer *)
 {
-    return PSI_PIR_UNSUPPORTED_PROTOCOL;
+    return PRIVACY_PROTOCOL_UNSUPPORTED_PROTOCOL;
 }
 
 extern "C" int32_t asset_privacy_decrypt_ciphertext(const PrivacyDecryptRequest *input, PrivacyBuffer *output)
 {
     g_received.emplace_back(input->ciphertext.data, input->ciphertext.data + input->ciphertext.size);
     if (g_failBatch != 0 && g_received.size() == g_failBatch) {
-        return PSI_PIR_HE_ERROR;
+        return PRIVACY_PROTOCOL_HE_ERROR;
     }
     std::fill_n(output->data, MAX_DECRYPT_RESULT_BYTES, static_cast<uint8_t>(g_received.size()));
     output->size = g_invalidPlaintext ? 1 : MAX_DECRYPT_RESULT_BYTES;
-    return PSI_PIR_SUCCESS;
+    return PRIVACY_PROTOCOL_SUCCESS;
 }
 
-namespace psi_pir {
+namespace PrivacyComputation {
 // This suite isolates client orchestration; the protocol suite tests actual postprocessing.
 int32_t PostProcessSearchResult(const std::vector<Bytes> &plaintexts,
                                 const std::optional<std::vector<Bytes>> &symmetric, const PrivacyProtocol &,
@@ -72,19 +72,19 @@ int32_t PostProcessSearchResult(const std::vector<Bytes> &plaintexts,
         EXPECT_EQ(plaintexts[batch], Bytes(MAX_DECRYPT_RESULT_BYTES, static_cast<uint8_t>(batch + 1)));
     }
     output = {true, std::nullopt};
-    return PSI_PIR_SUCCESS;
+    return PRIVACY_PROTOCOL_SUCCESS;
 }
-} // namespace psi_pir
+} // namespace PrivacyComputation
 
 namespace {
 HWTEST_F(PrivacyClientTest, SymmetricFramesStayLocalAndBatchesKeepOrder, TestSize.Level1)
 {
-    const psi_pir::PrivacyProtocol protocol{DataSetSize::SIZE_512, ProtocolType::PIR_PROTOCOL};
+    const ::PrivacyComputation::PrivacyProtocol protocol{DataSetSize::SIZE_512, ProtocolType::PIR_PROTOCOL};
     PrivacySearchResult input{{Bytes(100 * 1024, 0xA5), Bytes(100 * 1024, 0x5A), Bytes{3}},
                               std::vector<Bytes>{Bytes(512 * 1024, 0xFF)}};
     g_localSymmetric = &input.valueCipherText;
     SearchResult output;
-    ASSERT_EQ(GetSearchResultRemote(input, protocol, output), PSI_PIR_SUCCESS);
+    ASSERT_EQ(GetSearchResultRemote(input, protocol, output), PRIVACY_PROTOCOL_SUCCESS);
     EXPECT_EQ(g_received, input.resultCipherText);
     EXPECT_EQ(g_postprocessCalls, 1U);
     EXPECT_TRUE(output.matchedResult);
@@ -93,11 +93,11 @@ HWTEST_F(PrivacyClientTest, SymmetricFramesStayLocalAndBatchesKeepOrder, TestSiz
 
 HWTEST_F(PrivacyClientTest, FailedBatchStopsBeforePostprocessing, TestSize.Level1)
 {
-    const psi_pir::PrivacyProtocol protocol{DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL};
+    const ::PrivacyComputation::PrivacyProtocol protocol{DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION};
     const PrivacySearchResult input{{Bytes{1}, Bytes{2}, Bytes{3}}, std::nullopt};
     g_failBatch = 2;
     SearchResult output{true, std::vector<Bytes>{Bytes{0x99}}};
-    EXPECT_EQ(GetSearchResultRemote(input, protocol, output), PSI_PIR_HE_ERROR);
+    EXPECT_EQ(GetSearchResultRemote(input, protocol, output), PRIVACY_PROTOCOL_HE_ERROR);
     EXPECT_EQ(g_received.size(), 2U);
     EXPECT_EQ(g_postprocessCalls, 0U);
     ASSERT_TRUE(output.attachedValues.has_value());
@@ -106,11 +106,11 @@ HWTEST_F(PrivacyClientTest, FailedBatchStopsBeforePostprocessing, TestSize.Level
 
 HWTEST_F(PrivacyClientTest, InvalidPlaintextStopsBeforePostprocessing, TestSize.Level1)
 {
-    const psi_pir::PrivacyProtocol protocol{DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL};
+    const ::PrivacyComputation::PrivacyProtocol protocol{DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION};
     const PrivacySearchResult input{{Bytes{1}}, std::nullopt};
     g_invalidPlaintext = true;
     SearchResult output;
-    EXPECT_EQ(GetSearchResultRemote(input, protocol, output), PSI_PIR_CODEC_ERROR);
+    EXPECT_EQ(GetSearchResultRemote(input, protocol, output), PRIVACY_PROTOCOL_CODEC_ERROR);
     EXPECT_EQ(g_postprocessCalls, 0U);
 }
 } // namespace

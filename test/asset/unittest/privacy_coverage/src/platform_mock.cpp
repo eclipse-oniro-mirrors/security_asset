@@ -21,6 +21,7 @@
 #include "privacy_computation_napi_common.h"
 #include <algorithm>
 #include <cstring>
+#include "securec.h"
 
 extern "C" int32_t HksKeyExist(const HksBlob *, const HksParamSet *)
 {
@@ -40,7 +41,9 @@ extern "C" int32_t HksUpdate(const HksBlob *, const HksParamSet *, const HksBlob
 }
 extern "C" int32_t HksFinish(const HksBlob *, const HksParamSet *, const HksBlob *salt, HksBlob *output)
 {
-    std::memcpy(output->data, salt->data, std::min(output->size, salt->size));
+    if (memcpy_s(output->data, output->size, salt->data, std::min(output->size, salt->size)) != EOK) {
+        return HKS_ERROR_INVALID_ARGUMENT;
+    }
     output->size = PrivacyHost::State().seedBytes;
     return PrivacyHost::State().huksFinishStatus;
 }
@@ -48,13 +51,17 @@ extern "C" int32_t HksAbort(const HksBlob *, const HksParamSet *)
 {
     return HKS_SUCCESS;
 }
+namespace {
+constexpr uint32_t CALLER_UID = 20010001;
+}
+
 extern "C" int32_t asset_privacy_gen_target(const PrivacyTargetRequest *input, PrivacyBuffer *output)
 {
-    return AssetGenPrivacyTarget(20010001, input, output);
+    return AssetGenPrivacyTarget(CALLER_UID, input, output);
 }
 extern "C" int32_t asset_privacy_decrypt_ciphertext(const PrivacyDecryptRequest *input, PrivacyBuffer *output)
 {
-    return AssetDecryptPrivacyCiphertext(20010001, input, output);
+    return AssetDecryptPrivacyCiphertext(CALLER_UID, input, output);
 }
 namespace {
 napi_value ClosedResult(napi_env env, const char *operation)

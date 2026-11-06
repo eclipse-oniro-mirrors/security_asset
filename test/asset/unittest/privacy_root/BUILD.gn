@@ -21,11 +21,11 @@ ohos_unittest("asset_privacy_root_test") {
   ]
   include_dirs = [
     "../../../../services/asset/privacy/inc",
-    "../../../../psi_pir_protocol/common/inc",
-    "../../../../psi_pir_protocol/he/inc",
-    "../../../../psi_pir_protocol/protocol/inc",
+    "../../../../privacy_protocol/common/inc",
+    "../../../../privacy_protocol/he/inc",
+    "../../../../privacy_protocol/protocol/inc",
   ]
-  deps = [ "../../../../psi_pir_protocol:psi_pir_protocol" ]
+  deps = [ "../../../../privacy_protocol:privacy_protocol" ]
   external_deps = [
     "huks:libhukssdk",
     "hilog:libhilog",

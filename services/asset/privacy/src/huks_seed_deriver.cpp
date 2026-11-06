@@ -17,8 +17,8 @@
 
 #include "hks_api.h"
 #include "hks_param.h"
-#include "psi_pir_error_code.h"
-#include "psi_pir_log.h"
+#include "privacy_error_code.h"
+#include "privacy_log.h"
 #include <iterator>
 #include <limits>
 #include <mutex>
@@ -26,8 +26,8 @@
 
 namespace OHOS::Security::PrivacyComputation {
 namespace {
-using namespace psi_pir;
-using namespace psi_pir::internal;
+using namespace ::PrivacyComputation;
+using namespace ::PrivacyComputation::internal;
 constexpr uint32_t ROOT_KEY_BITS = 256;
 constexpr char ROOT_KEY_ALIAS[] = "asset.privacy.derive.root.v1";
 std::mutex g_rootMutex;
@@ -60,7 +60,7 @@ int32_t DeriveSeed(const HksBlob &alias, const HksBlob &salt, const HksParamSet 
     auto ret = HksInit(&alias, params, &handle, nullptr);
     if (ret != HKS_SUCCESS) {
         LOGE("Initialize privacy HUKS derivation failed, ret=%{public}d", ret);
-        return PSI_PIR_CRYPTO_ERROR;
+        return PRIVACY_PROTOCOL_CRYPTO_ERROR;
     }
     LOGI("HUKS derive Init success");
     HeSeed updateStorage;
@@ -73,7 +73,7 @@ int32_t DeriveSeed(const HksBlob &alias, const HksBlob &salt, const HksParamSet 
         if (abortRet != HKS_SUCCESS) {
             LOGE("Abort privacy HUKS derivation failed, ret=%{public}d", abortRet);
         }
-        return PSI_PIR_CRYPTO_ERROR;
+        return PRIVACY_PROTOCOL_CRYPTO_ERROR;
     }
     LOGI("HUKS derive Update success");
     HeSeed derived;
@@ -85,15 +85,15 @@ int32_t DeriveSeed(const HksBlob &alias, const HksBlob &salt, const HksParamSet 
         if (abortRet != HKS_SUCCESS) {
             LOGE("Abort privacy HUKS derivation failed, ret=%{public}d", abortRet);
         }
-        return PSI_PIR_CRYPTO_ERROR;
+        return PRIVACY_PROTOCOL_CRYPTO_ERROR;
     }
     if (output.size != derived.bytes.size()) {
         LOGE("Privacy HUKS seed has invalid length=%{public}u", output.size);
-        return PSI_PIR_CRYPTO_ERROR;
+        return PRIVACY_PROTOCOL_CRYPTO_ERROR;
     }
     seed.bytes = derived.bytes;
     LOGI("HUKS derive Finish success, seedBytes=%{public}u", output.size);
-    return PSI_PIR_SUCCESS;
+    return PRIVACY_PROTOCOL_SUCCESS;
 }
 
 int32_t GenerateRoot(const HksBlob &alias, uint32_t userId)
@@ -109,17 +109,17 @@ int32_t GenerateRoot(const HksBlob &alias, uint32_t userId)
     HksParamSet *paramSet = nullptr;
     const auto ret = BuildParamSet(&paramSet, params, static_cast<uint32_t>(std::size(params)));
     if (ret != HKS_SUCCESS) {
-        return PSI_PIR_CRYPTO_ERROR;
+        return PRIVACY_PROTOCOL_CRYPTO_ERROR;
     }
     LOGI("HUKS root generate begin, userId=%{private}u", userId);
     const auto generateRet = HksGenerateKey(&alias, paramSet, nullptr);
     HksFreeParamSet(&paramSet);
     if (generateRet != HKS_SUCCESS) {
         LOGE("Generate privacy HUKS derivation root failed, ret=%{public}d", generateRet);
-        return PSI_PIR_CRYPTO_ERROR;
+        return PRIVACY_PROTOCOL_CRYPTO_ERROR;
     }
     LOGI("HUKS root generate success, userId=%{private}u", userId);
-    return PSI_PIR_SUCCESS;
+    return PRIVACY_PROTOCOL_SUCCESS;
 }
 } // namespace
 
@@ -127,17 +127,16 @@ int32_t HuksSeedDeriver::PrepareRootKey(uint32_t userId, RootKeyPolicy policy) c
 {
     if (userId > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())) {
         LOGE("Invalid HUKS CE userId");
-        return PSI_PIR_INVALID_ARGUMENT;
+        return PRIVACY_PROTOCOL_INVALID_ARGUMENT;
     }
-    LOGI("HUKS root prepare begin, userId=%{private}u, policy=%{public}u", userId,
-                 static_cast<uint32_t>(policy));
+    LOGI("HUKS root prepare begin, userId=%{private}u, policy=%{public}u", userId, static_cast<uint32_t>(policy));
     const HksParam params[] = {
         {.tag = HKS_TAG_AUTH_STORAGE_LEVEL, .uint32Param = HKS_AUTH_STORAGE_LEVEL_CE},
         {.tag = HKS_TAG_SPECIFIC_USER_ID, .int32Param = static_cast<int32_t>(userId)},
     };
     HksParamSet *paramSet = nullptr;
     if (BuildParamSet(&paramSet, params, static_cast<uint32_t>(std::size(params))) != HKS_SUCCESS) {
-        return PSI_PIR_CRYPTO_ERROR;
+        return PRIVACY_PROTOCOL_CRYPTO_ERROR;
     }
     std::string aliasName = ROOT_KEY_ALIAS;
     const HksBlob alias{static_cast<uint32_t>(aliasName.size()), reinterpret_cast<uint8_t *>(aliasName.data())};
@@ -146,14 +145,13 @@ int32_t HuksSeedDeriver::PrepareRootKey(uint32_t userId, RootKeyPolicy policy) c
     HksFreeParamSet(&paramSet);
     if (ret == HKS_SUCCESS) {
         LOGI("HUKS root exists, userId=%{private}u", userId);
-        return PSI_PIR_SUCCESS;
+        return PRIVACY_PROTOCOL_SUCCESS;
     }
     if (ret == HKS_ERROR_NOT_EXIST && policy == RootKeyPolicy::CREATE_IF_MISSING) {
         return GenerateRoot(alias, userId);
     }
-    LOGE("Query privacy HUKS root failed, ret=%{public}d, policy=%{public}u", ret,
-                 static_cast<uint32_t>(policy));
-    return PSI_PIR_CRYPTO_ERROR;
+    LOGE("Query privacy HUKS root failed, ret=%{public}d, policy=%{public}u", ret, static_cast<uint32_t>(policy));
+    return PRIVACY_PROTOCOL_CRYPTO_ERROR;
 }
 
 int32_t HuksSeedDeriver::Derive(const CallerIdentity &identity,
@@ -161,7 +159,7 @@ int32_t HuksSeedDeriver::Derive(const CallerIdentity &identity,
 {
     if (identity.userId > static_cast<uint32_t>(std::numeric_limits<int32_t>::max())) {
         LOGE("Invalid HUKS derivation CE userId");
-        return PSI_PIR_INVALID_ARGUMENT;
+        return PRIVACY_PROTOCOL_INVALID_ARGUMENT;
     }
     LOGI("HUKS derive begin, userId=%{private}u", identity.userId);
     std::string aliasName = ROOT_KEY_ALIAS;
@@ -180,7 +178,7 @@ int32_t HuksSeedDeriver::Derive(const CallerIdentity &identity,
     HksParamSet *paramSet = nullptr;
     auto ret = BuildParamSet(&paramSet, params, static_cast<uint32_t>(std::size(params)));
     if (ret != HKS_SUCCESS) {
-        return PSI_PIR_CRYPTO_ERROR;
+        return PRIVACY_PROTOCOL_CRYPTO_ERROR;
     }
     ret = DeriveSeed(alias, salt, paramSet, seed);
     HksFreeParamSet(&paramSet);

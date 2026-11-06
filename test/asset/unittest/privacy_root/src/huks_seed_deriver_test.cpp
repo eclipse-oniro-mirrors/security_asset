@@ -17,7 +17,7 @@
 
 #include "hks_api.h"
 #include "hks_param.h"
-#include "psi_pir_error_code.h"
+#include "privacy_error_code.h"
 #include <algorithm>
 #include <gtest/gtest.h>
 #include <limits>
@@ -26,8 +26,8 @@
 
 namespace {
 using namespace testing::ext;
-using namespace psi_pir;
-using namespace psi_pir::internal;
+using namespace ::PrivacyComputation;
+using namespace ::PrivacyComputation::internal;
 using OHOS::Security::PrivacyComputation::HuksSeedDeriver;
 using OHOS::Security::PrivacyComputation::RootKeyPolicy;
 struct HuksCalls {
@@ -166,7 +166,7 @@ namespace {
  */
 HWTEST_F(HuksSeedDeriverTest, PrepareRootKey_001, TestSize.Level1)
 {
-    EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(100, RootKeyPolicy::CREATE_IF_MISSING), PSI_PIR_SUCCESS);
+    EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(100, RootKeyPolicy::CREATE_IF_MISSING), PRIVACY_PROTOCOL_SUCCESS);
     EXPECT_EQ(g_calls.storage, HKS_AUTH_STORAGE_LEVEL_CE);
     EXPECT_EQ(g_calls.userId, 100);
     EXPECT_EQ(g_calls.alias, "asset.privacy.derive.root.v1");
@@ -180,7 +180,7 @@ HWTEST_F(HuksSeedDeriverTest, PrepareRootKey_001, TestSize.Level1)
 HWTEST_F(HuksSeedDeriverTest, PrepareRootKey_002, TestSize.Level1)
 {
     g_calls.existResult = HKS_ERROR_NOT_EXIST;
-    ASSERT_EQ(HuksSeedDeriver().PrepareRootKey(100, RootKeyPolicy::CREATE_IF_MISSING), PSI_PIR_SUCCESS);
+    ASSERT_EQ(HuksSeedDeriver().PrepareRootKey(100, RootKeyPolicy::CREATE_IF_MISSING), PRIVACY_PROTOCOL_SUCCESS);
     EXPECT_EQ(g_calls.generates, 1U);
     EXPECT_EQ(g_calls.accounts, (std::vector<int32_t>{100, 100}));
     EXPECT_EQ(g_calls.algorithm, HKS_ALG_AES);
@@ -199,9 +199,9 @@ HWTEST_F(HuksSeedDeriverTest, PrepareRootKey_002, TestSize.Level1)
 HWTEST_F(HuksSeedDeriverTest, PrepareRootKey_003, TestSize.Level2)
 {
     g_calls.existResult = HKS_ERROR_NOT_EXIST;
-    EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(100, RootKeyPolicy::REQUIRE_EXISTING), PSI_PIR_CRYPTO_ERROR);
+    EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(100, RootKeyPolicy::REQUIRE_EXISTING), PRIVACY_PROTOCOL_CRYPTO_ERROR);
     g_calls.existResult = HKS_ERROR_NO_PERMISSION;
-    EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(100, RootKeyPolicy::CREATE_IF_MISSING), PSI_PIR_CRYPTO_ERROR);
+    EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(100, RootKeyPolicy::CREATE_IF_MISSING), PRIVACY_PROTOCOL_CRYPTO_ERROR);
     EXPECT_EQ(g_calls.generates, 0U);
 }
 /**
@@ -213,7 +213,7 @@ HWTEST_F(HuksSeedDeriverTest, PrepareRootKey_004, TestSize.Level2)
 {
     g_calls.existResult = HKS_ERROR_NOT_EXIST;
     g_calls.generateResult = HKS_ERROR_CRYPTO_ENGINE_ERROR;
-    EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(100, RootKeyPolicy::CREATE_IF_MISSING), PSI_PIR_CRYPTO_ERROR);
+    EXPECT_EQ(HuksSeedDeriver().PrepareRootKey(100, RootKeyPolicy::CREATE_IF_MISSING), PRIVACY_PROTOCOL_CRYPTO_ERROR);
     EXPECT_EQ(g_calls.generates, 1U);
     EXPECT_EQ(g_calls.inits, 0U);
 }
@@ -226,7 +226,7 @@ HWTEST_F(HuksSeedDeriverTest, Derive_001, TestSize.Level1)
 {
     HeSeed seed;
     const auto salt = Salt();
-    ASSERT_EQ(HuksSeedDeriver().Derive({20010001, 100}, salt, seed), PSI_PIR_SUCCESS);
+    ASSERT_EQ(HuksSeedDeriver().Derive({20010001, 100}, salt, seed), PRIVACY_PROTOCOL_SUCCESS);
     EXPECT_EQ(g_calls.algorithm, HKS_ALG_HKDF);
     EXPECT_EQ(g_calls.purpose, HKS_KEY_PURPOSE_DERIVE);
     EXPECT_EQ(g_calls.digest, HKS_DIGEST_SHA256);
@@ -252,7 +252,7 @@ HWTEST_F(HuksSeedDeriverTest, Derive_002, TestSize.Level2)
     g_calls.initResult = HKS_ERROR_NOT_EXIST;
     HeSeed seed;
     seed.bytes.fill(0x99);
-    EXPECT_EQ(HuksSeedDeriver().Derive({20010001, 100}, Salt(), seed), PSI_PIR_CRYPTO_ERROR);
+    EXPECT_EQ(HuksSeedDeriver().Derive({20010001, 100}, Salt(), seed), PRIVACY_PROTOCOL_CRYPTO_ERROR);
     EXPECT_EQ(seed.bytes.front(), 0x99);
     EXPECT_EQ(g_calls.updates, 0U);
     EXPECT_EQ(g_calls.aborts, 0U);
@@ -269,7 +269,7 @@ HWTEST_F(HuksSeedDeriverTest, Derive_003, TestSize.Level2)
     g_calls.updateResult = HKS_ERROR_CRYPTO_ENGINE_ERROR;
     HeSeed seed;
     seed.bytes.fill(0x99);
-    EXPECT_EQ(HuksSeedDeriver().Derive({20010001, 100}, Salt(), seed), PSI_PIR_CRYPTO_ERROR);
+    EXPECT_EQ(HuksSeedDeriver().Derive({20010001, 100}, Salt(), seed), PRIVACY_PROTOCOL_CRYPTO_ERROR);
     EXPECT_EQ(seed.bytes.front(), 0x99);
     EXPECT_EQ(g_calls.finishes, 0U);
     EXPECT_EQ(g_calls.aborts, 1U);
@@ -285,13 +285,13 @@ HWTEST_F(HuksSeedDeriverTest, Derive_004, TestSize.Level2)
     g_calls.finishResult = HKS_ERROR_CRYPTO_ENGINE_ERROR;
     HeSeed seed;
     seed.bytes.fill(0x99);
-    EXPECT_EQ(HuksSeedDeriver().Derive({20010001, 100}, Salt(), seed), PSI_PIR_CRYPTO_ERROR);
+    EXPECT_EQ(HuksSeedDeriver().Derive({20010001, 100}, Salt(), seed), PRIVACY_PROTOCOL_CRYPTO_ERROR);
     EXPECT_EQ(seed.bytes.front(), 0x99);
     EXPECT_EQ(g_calls.aborts, 1U);
     EXPECT_EQ(g_calls.stages, (std::vector<std::string>{"Init", "Update", "Finish", "Abort"}));
     g_calls.finishResult = HKS_SUCCESS;
     g_calls.outputSize = 31;
-    EXPECT_EQ(HuksSeedDeriver().Derive({20010001, 100}, Salt(), seed), PSI_PIR_CRYPTO_ERROR);
+    EXPECT_EQ(HuksSeedDeriver().Derive({20010001, 100}, Salt(), seed), PRIVACY_PROTOCOL_CRYPTO_ERROR);
     EXPECT_EQ(seed.bytes.front(), 0x99);
     EXPECT_EQ(g_calls.finishes, 2U);
     EXPECT_EQ(g_calls.aborts, 1U);
@@ -306,12 +306,12 @@ HWTEST_F(HuksSeedDeriverTest, Derive_005, TestSize.Level2)
     const HuksSeedDeriver deriver;
     HeSeed seed;
     auto salt = Salt();
-    ASSERT_EQ(deriver.Derive({20010001, 100}, salt, seed), PSI_PIR_SUCCESS);
+    ASSERT_EQ(deriver.Derive({20010001, 100}, salt, seed), PRIVACY_PROTOCOL_SUCCESS);
     const auto alias = g_calls.alias;
     EXPECT_EQ(alias, "asset.privacy.derive.root.v1");
     EXPECT_EQ(g_calls.userId, 100);
     salt.front() ^= 1;
-    ASSERT_EQ(deriver.Derive({40010001, 200}, salt, seed), PSI_PIR_SUCCESS);
+    ASSERT_EQ(deriver.Derive({40010001, 200}, salt, seed), PRIVACY_PROTOCOL_SUCCESS);
     EXPECT_EQ(g_calls.alias, alias);
     EXPECT_EQ(g_calls.userId, 200);
     EXPECT_EQ(g_calls.salt, std::vector<uint8_t>(salt.begin(), salt.end()));
@@ -328,10 +328,10 @@ HWTEST_F(HuksSeedDeriverTest, InvalidCeUserId, TestSize.Level2)
 {
     const auto userId = std::numeric_limits<uint32_t>::max();
     const HuksSeedDeriver deriver;
-    EXPECT_EQ(deriver.PrepareRootKey(userId, RootKeyPolicy::CREATE_IF_MISSING), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(deriver.PrepareRootKey(userId, RootKeyPolicy::CREATE_IF_MISSING), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
     HeSeed seed;
     seed.bytes.fill(0x99);
-    EXPECT_EQ(deriver.Derive({1000, userId}, Salt(), seed), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(deriver.Derive({1000, userId}, Salt(), seed), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
     EXPECT_EQ(seed.bytes.front(), 0x99);
     EXPECT_EQ(g_calls.exists, 0U);
     EXPECT_EQ(g_calls.generates, 0U);

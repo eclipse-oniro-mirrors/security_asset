@@ -151,14 +151,14 @@
                     }
                 },
                 {
-                    "name": "//base/security/asset/psi_pir_protocol:psi_pir_protocol",
+                    "name": "//base/security/asset/privacy_protocol:privacy_protocol",
                     "header": {
                         "header_files": [
-                            "psi_pir_error_code.h",
-                            "psi_pir_protocol.h",
-                            "psi_pir_types.h"
+                            "privacy_error_code.h",
+                            "privacy_protocol.h",
+                            "privacy_protocol_types.h"
                         ],
-                        "header_base": "//base/security/asset/psi_pir_protocol/include"
+                        "header_base": "//base/security/asset/privacy_protocol/include"
                     }
                 }
             ],

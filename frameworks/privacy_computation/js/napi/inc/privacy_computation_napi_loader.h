@@ -17,7 +17,7 @@
 #define PRIVACY_COMPUTATION_NAPI_LOADER_H
 
 #include "napi/native_api.h"
-#include "psi_pir_protocol.h"
+#include "privacy_protocol.h"
 
 namespace OHOS::Security::PrivacyComputation {
 bool IsComputationLibConfigured();

@@ -20,11 +20,11 @@ ohos_static_library("asset_privacy") {
   include_dirs = [
     "inc",
     "../../../frameworks/privacy_computation/ipc/inc",
-    "../../../psi_pir_protocol/he/inc",
-    "../../../psi_pir_protocol/common/inc",
-    "../../../psi_pir_protocol/protocol/inc",
+    "../../../privacy_protocol/he/inc",
+    "../../../privacy_protocol/common/inc",
+    "../../../privacy_protocol/protocol/inc",
   ]
-  deps = [ "../../../psi_pir_protocol:psi_pir_protocol" ]
+  deps = [ "../../../privacy_protocol:privacy_protocol" ]
   external_deps = [
     "bounds_checking_function:libsec_shared",
     "c_utils:utils",

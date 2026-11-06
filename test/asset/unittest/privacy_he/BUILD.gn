@@ -20,11 +20,11 @@ ohos_unittest("asset_privacy_he_test") {
     "src/he_engine_test.cpp",
   ]
   include_dirs = [
-    "../../../../psi_pir_protocol/he/inc",
-    "../../../../psi_pir_protocol/common/inc",
-    "../../../../psi_pir_protocol/protocol/inc",
+    "../../../../privacy_protocol/he/inc",
+    "../../../../privacy_protocol/common/inc",
+    "../../../../privacy_protocol/protocol/inc",
   ]
-  deps = [ "../../../../psi_pir_protocol:psi_pir_protocol" ]
+  deps = [ "../../../../privacy_protocol:privacy_protocol" ]
   external_deps = [
     "hilog:libhilog",
     "hifhe:libhifhe",
@@ -44,17 +44,17 @@ ohos_unittest("asset_privacy_he_test") {
 }
 
 # HE integration tests share the production library and provider registry.
-ohos_unittest("psi_pir_he_test") {
+ohos_unittest("privacy_he_test") {
   module_out_path = "asset/privacy_computation"
-  sources = [ "src/psi_pir_he_test.cpp" ]
+  sources = [ "src/privacy_he_test.cpp" ]
   include_dirs = [
-    "../../../../psi_pir_protocol/common/inc",
-    "../../../../psi_pir_protocol/crypto/inc",
-    "../../../../psi_pir_protocol/protocol/inc",
-    "../../../../psi_pir_protocol/core/inc",
-    "../../../../psi_pir_protocol/he/inc",
+    "../../../../privacy_protocol/common/inc",
+    "../../../../privacy_protocol/crypto/inc",
+    "../../../../privacy_protocol/protocol/inc",
+    "../../../../privacy_protocol/core/inc",
+    "../../../../privacy_protocol/he/inc",
   ]
-  deps = [ "../../../../psi_pir_protocol:psi_pir_protocol" ]
+  deps = [ "../../../../privacy_protocol:privacy_protocol" ]
   external_deps = [
     "hilog:libhilog",
     "openssl:libcrypto_shared",

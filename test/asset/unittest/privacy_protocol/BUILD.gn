@@ -18,10 +18,10 @@ ohos_unittest("asset_privacy_protocol_test") {
   sources = [ "src/protocol_codec_test.cpp" ]
   include_dirs = [
     "../../../../frameworks/privacy_computation/ipc/inc",
-    "../../../../psi_pir_protocol/common/inc",
-    "../../../../psi_pir_protocol/protocol/inc",
+    "../../../../privacy_protocol/common/inc",
+    "../../../../privacy_protocol/protocol/inc",
   ]
-  deps = [ "../../../../psi_pir_protocol:psi_pir_protocol" ]
+  deps = [ "../../../../privacy_protocol:privacy_protocol" ]
   external_deps = [
     "hilog:libhilog",
     "googletest:gtest_main",
@@ -43,8 +43,8 @@ ohos_unittest("asset_privacy_client_test") {
   ]
   include_dirs = [
     "../../../../frameworks/privacy_computation/ipc/inc",
-    "../../../../psi_pir_protocol/include",
-    "../../../../psi_pir_protocol/common/inc",
+    "../../../../privacy_protocol/include",
+    "../../../../privacy_protocol/common/inc",
   ]
   external_deps = [
     "hilog:libhilog",
@@ -59,20 +59,20 @@ ohos_unittest("asset_privacy_client_test") {
   part_name = "asset"
 }
 
-ohos_unittest("psi_pir_protocol_test") {
+ohos_unittest("privacy_protocol_test") {
   module_out_path = "asset/asset"
 
-  sources = [ "src/psi_pir_protocol_test.cpp" ]
+  sources = [ "src/privacy_protocol_test.cpp" ]
 
   include_dirs = [
-    "../../../../psi_pir_protocol/common/inc",
-    "../../../../psi_pir_protocol/crypto/inc",
-    "../../../../psi_pir_protocol/protocol/inc",
-    "../../../../psi_pir_protocol/core/inc",
-    "../../../../psi_pir_protocol/he/inc",
+    "../../../../privacy_protocol/common/inc",
+    "../../../../privacy_protocol/crypto/inc",
+    "../../../../privacy_protocol/protocol/inc",
+    "../../../../privacy_protocol/core/inc",
+    "../../../../privacy_protocol/he/inc",
   ]
 
-  deps = [ "../../../../psi_pir_protocol:psi_pir_protocol" ]
+  deps = [ "../../../../privacy_protocol:privacy_protocol" ]
 
   external_deps = [
     "bounds_checking_function:libsec_shared",

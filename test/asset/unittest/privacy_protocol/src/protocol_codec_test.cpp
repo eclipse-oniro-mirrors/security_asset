@@ -21,8 +21,8 @@
 
 namespace {
 using namespace testing::ext;
-using namespace psi_pir;
-using namespace psi_pir::internal;
+using namespace ::PrivacyComputation;
+using namespace ::PrivacyComputation::internal;
 
 /**
  * @tc.name: SerializePlaintext_001
@@ -36,7 +36,7 @@ HWTEST(PrivacyProtocolCodecTest, SerializePlaintext_001, TestSize.Level1)
     slots.front() = 1;
     slots.back() = params.plainModulus - 1;
     Bytes bytes;
-    ASSERT_EQ(ProtocolCodec().SerializePlaintext(slots, params, bytes), PSI_PIR_SUCCESS);
+    ASSERT_EQ(ProtocolCodec().SerializePlaintext(slots, params, bytes), PRIVACY_PROTOCOL_SUCCESS);
     ASSERT_EQ(bytes.size(), slots.size() * sizeof(uint64_t));
     const std::array<uint8_t, sizeof(uint64_t)> firstSlot{1, 0, 0, 0, 0, 0, 0, 0};
     const std::array<uint8_t, sizeof(uint64_t)> lastSlot{0, 0, 1, 0, 0, 0, 0, 0};
@@ -45,7 +45,7 @@ HWTEST(PrivacyProtocolCodecTest, SerializePlaintext_001, TestSize.Level1)
     const PrivacySearchResult plaintexts{{bytes}, std::nullopt};
     std::vector<Slots> decoded;
     ASSERT_EQ(ProtocolCodec().ParsePlaintexts(plaintexts.resultCipherText, plaintexts.valueCipherText, params, decoded),
-              PSI_PIR_SUCCESS);
+              PRIVACY_PROTOCOL_SUCCESS);
     ASSERT_EQ(decoded.size(), 1U);
     EXPECT_EQ(decoded.front(), slots);
 }
@@ -61,10 +61,10 @@ HWTEST(PrivacyProtocolCodecTest, SerializePlaintext_002, TestSize.Level2)
     Slots slots(params.polyModulusDegree, 0);
     Bytes output{0x99};
     slots.back() = params.plainModulus;
-    EXPECT_EQ(ProtocolCodec().SerializePlaintext(slots, params, output), PSI_PIR_CODEC_ERROR);
+    EXPECT_EQ(ProtocolCodec().SerializePlaintext(slots, params, output), PRIVACY_PROTOCOL_CODEC_ERROR);
     EXPECT_EQ(output, Bytes({0x99}));
     slots.pop_back();
-    EXPECT_EQ(ProtocolCodec().SerializePlaintext(slots, params, output), PSI_PIR_CODEC_ERROR);
+    EXPECT_EQ(ProtocolCodec().SerializePlaintext(slots, params, output), PRIVACY_PROTOCOL_CODEC_ERROR);
     EXPECT_EQ(output, Bytes({0x99}));
 }
 } // namespace

@@ -14,21 +14,24 @@
  */
 
 #include "soft_he_engine.h"
-#include "psi_pir_error_code.h"
+#include "privacy_error_code.h"
 #include <gtest/gtest.h>
 
 namespace {
 using namespace testing::ext;
-using namespace psi_pir;
-using namespace psi_pir::internal;
+using namespace ::PrivacyComputation;
+using namespace ::PrivacyComputation::internal;
+
+constexpr uint64_t INPUT_SLOT_VALUE = 7;
 
 class HeEngineTest : public testing::Test {
 public:
     void SetUp() override
     {
         seed_.bytes.fill(0x45);
-        ASSERT_EQ(SoftHeEngine().Encrypt(Slots(kDefaultPolyModulusDegree, 7), ProtocolParams{}, seed_, target_),
-                  PSI_PIR_SUCCESS);
+        ASSERT_EQ(SoftHeEngine().Encrypt(Slots(kDefaultPolyModulusDegree, INPUT_SLOT_VALUE), ProtocolParams{}, seed_,
+                                         target_),
+                  PRIVACY_PROTOCOL_SUCCESS);
     }
     HeSeed seed_;
     Bytes target_;
@@ -43,16 +46,16 @@ HWTEST_F(HeEngineTest, HandleKeepsOperationOrderAndOutlivesEngine, TestSize.Leve
     std::unique_ptr<HeEvaluation> evaluation;
     {
         const SoftHeEngine engine;
-        ASSERT_EQ(engine.CreateEvaluation(target_, evaluation), PSI_PIR_SUCCESS);
+        ASSERT_EQ(engine.CreateEvaluation(target_, evaluation), PRIVACY_PROTOCOL_SUCCESS);
     }
-    ASSERT_EQ(evaluation->AddPlain(Slots(kDefaultPolyModulusDegree, 10)), PSI_PIR_SUCCESS);
-    ASSERT_EQ(evaluation->MultiplyPlain(Slots(kDefaultPolyModulusDegree, 3)), PSI_PIR_SUCCESS);
-    ASSERT_EQ(evaluation->AddPlain(Slots(kDefaultPolyModulusDegree, 20)), PSI_PIR_SUCCESS);
-    ASSERT_EQ(evaluation->Rerandomize(), PSI_PIR_SUCCESS);
+    ASSERT_EQ(evaluation->AddPlain(Slots(kDefaultPolyModulusDegree, 10)), PRIVACY_PROTOCOL_SUCCESS);
+    ASSERT_EQ(evaluation->MultiplyPlain(Slots(kDefaultPolyModulusDegree, 3)), PRIVACY_PROTOCOL_SUCCESS);
+    ASSERT_EQ(evaluation->AddPlain(Slots(kDefaultPolyModulusDegree, 20)), PRIVACY_PROTOCOL_SUCCESS);
+    ASSERT_EQ(evaluation->Rerandomize(), PRIVACY_PROTOCOL_SUCCESS);
     Bytes output;
-    ASSERT_EQ(evaluation->Serialize(output), PSI_PIR_SUCCESS);
+    ASSERT_EQ(evaluation->Serialize(output), PRIVACY_PROTOCOL_SUCCESS);
     Slots recovered;
-    ASSERT_EQ(SoftHeEngine().Decrypt(output, ProtocolParams{}, seed_, recovered), PSI_PIR_SUCCESS);
+    ASSERT_EQ(SoftHeEngine().Decrypt(output, ProtocolParams{}, seed_, recovered), PRIVACY_PROTOCOL_SUCCESS);
     EXPECT_EQ(recovered, Slots(kDefaultPolyModulusDegree, 11)); // 20 - (10 - 7) * 3.
 }
 
@@ -64,12 +67,12 @@ HWTEST_F(HeEngineTest, FailedHandleCannotContinueOrSerialize, TestSize.Level2)
 {
     const Bytes original = target_;
     std::unique_ptr<HeEvaluation> evaluation;
-    ASSERT_EQ(SoftHeEngine().CreateEvaluation(target_, evaluation), PSI_PIR_SUCCESS);
-    EXPECT_EQ(evaluation->MultiplyPlain(Slots(kDefaultPolyModulusDegree - 1)), PSI_PIR_INVALID_ARGUMENT);
-    EXPECT_EQ(evaluation->AddPlain(Slots(kDefaultPolyModulusDegree, 10)), PSI_PIR_INVALID_ARGUMENT);
-    EXPECT_EQ(evaluation->Rerandomize(), PSI_PIR_INVALID_ARGUMENT);
+    ASSERT_EQ(SoftHeEngine().CreateEvaluation(target_, evaluation), PRIVACY_PROTOCOL_SUCCESS);
+    EXPECT_EQ(evaluation->MultiplyPlain(Slots(kDefaultPolyModulusDegree - 1)), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    EXPECT_EQ(evaluation->AddPlain(Slots(kDefaultPolyModulusDegree, 10)), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    EXPECT_EQ(evaluation->Rerandomize(), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
     Bytes output{0x99};
-    EXPECT_EQ(evaluation->Serialize(output), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(evaluation->Serialize(output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
     EXPECT_EQ(output, (Bytes{0x99}));
     EXPECT_EQ(target_, original);
 }
@@ -82,17 +85,17 @@ HWTEST_F(HeEngineTest, FailedImportPreservesExistingHandle, TestSize.Level2)
 {
     const SoftHeEngine engine;
     std::unique_ptr<HeEvaluation> evaluation;
-    ASSERT_EQ(engine.CreateEvaluation(target_, evaluation), PSI_PIR_SUCCESS);
+    ASSERT_EQ(engine.CreateEvaluation(target_, evaluation), PRIVACY_PROTOCOL_SUCCESS);
     const auto *original = evaluation.get();
-    EXPECT_EQ(engine.CreateEvaluation({}, evaluation), PSI_PIR_INVALID_ARGUMENT);
+    EXPECT_EQ(engine.CreateEvaluation({}, evaluation), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
     EXPECT_EQ(evaluation.get(), original);
-    EXPECT_EQ(engine.CreateEvaluation({1}, evaluation), PSI_PIR_HE_ERROR);
+    EXPECT_EQ(engine.CreateEvaluation({1}, evaluation), PRIVACY_PROTOCOL_HE_ERROR);
     EXPECT_EQ(evaluation.get(), original);
-    ASSERT_EQ(evaluation->AddPlain(Slots(kDefaultPolyModulusDegree, 10)), PSI_PIR_SUCCESS);
+    ASSERT_EQ(evaluation->AddPlain(Slots(kDefaultPolyModulusDegree, 10)), PRIVACY_PROTOCOL_SUCCESS);
     Bytes output;
-    ASSERT_EQ(evaluation->Serialize(output), PSI_PIR_SUCCESS);
+    ASSERT_EQ(evaluation->Serialize(output), PRIVACY_PROTOCOL_SUCCESS);
     Slots recovered;
-    ASSERT_EQ(SoftHeEngine().Decrypt(output, ProtocolParams{}, seed_, recovered), PSI_PIR_SUCCESS);
+    ASSERT_EQ(SoftHeEngine().Decrypt(output, ProtocolParams{}, seed_, recovered), PRIVACY_PROTOCOL_SUCCESS);
     EXPECT_EQ(recovered, Slots(kDefaultPolyModulusDegree, 3));
 }
 
@@ -105,17 +108,17 @@ HWTEST_F(HeEngineTest, SeparateHandlesKeepIndependentCiphertexts, TestSize.Level
     const SoftHeEngine engine;
     std::unique_ptr<HeEvaluation> first;
     std::unique_ptr<HeEvaluation> second;
-    ASSERT_EQ(engine.CreateEvaluation(target_, first), PSI_PIR_SUCCESS);
-    ASSERT_EQ(engine.CreateEvaluation(target_, second), PSI_PIR_SUCCESS);
-    ASSERT_EQ(first->AddPlain(Slots(kDefaultPolyModulusDegree, 10)), PSI_PIR_SUCCESS);
-    ASSERT_EQ(second->MultiplyPlain(Slots(kDefaultPolyModulusDegree, 3)), PSI_PIR_SUCCESS);
+    ASSERT_EQ(engine.CreateEvaluation(target_, first), PRIVACY_PROTOCOL_SUCCESS);
+    ASSERT_EQ(engine.CreateEvaluation(target_, second), PRIVACY_PROTOCOL_SUCCESS);
+    ASSERT_EQ(first->AddPlain(Slots(kDefaultPolyModulusDegree, 10)), PRIVACY_PROTOCOL_SUCCESS);
+    ASSERT_EQ(second->MultiplyPlain(Slots(kDefaultPolyModulusDegree, 3)), PRIVACY_PROTOCOL_SUCCESS);
     Bytes output;
     Slots recovered;
-    ASSERT_EQ(first->Serialize(output), PSI_PIR_SUCCESS);
-    ASSERT_EQ(engine.Decrypt(output, ProtocolParams{}, seed_, recovered), PSI_PIR_SUCCESS);
+    ASSERT_EQ(first->Serialize(output), PRIVACY_PROTOCOL_SUCCESS);
+    ASSERT_EQ(engine.Decrypt(output, ProtocolParams{}, seed_, recovered), PRIVACY_PROTOCOL_SUCCESS);
     EXPECT_EQ(recovered, Slots(kDefaultPolyModulusDegree, 3));
-    ASSERT_EQ(second->Serialize(output), PSI_PIR_SUCCESS);
-    ASSERT_EQ(engine.Decrypt(output, ProtocolParams{}, seed_, recovered), PSI_PIR_SUCCESS);
+    ASSERT_EQ(second->Serialize(output), PRIVACY_PROTOCOL_SUCCESS);
+    ASSERT_EQ(engine.Decrypt(output, ProtocolParams{}, seed_, recovered), PRIVACY_PROTOCOL_SUCCESS);
     EXPECT_EQ(recovered, Slots(kDefaultPolyModulusDegree, 21));
 }
 } // namespace
