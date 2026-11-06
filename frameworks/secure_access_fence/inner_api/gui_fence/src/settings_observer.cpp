@@ -92,4 +92,29 @@ bool RegisterSettingsObserver(const std::string &key, int32_t userId,
     return true;
 }
 
+bool UnregisterSettingsObserver(const std::string &key, int32_t userId,
+    const sptr<SettingsDataObserver> &observer)
+{
+    if (observer == nullptr) {
+        LOGE("UnregisterSettingsObserver: observer is null");
+        return false;
+    }
+
+    auto helper = CreateDataShareHelper(userId);
+    if (helper == nullptr) {
+        LOGE("UnregisterSettingsObserver: CreateDataShareHelper failed for userId=%{public}d", userId);
+        return false;
+    }
+    std::string uriStr = BuildSettingUri(userId, key);
+    OHOS::Uri settingsUri(uriStr);
+    int32_t ret = helper->UnregisterObserver(settingsUri, observer);
+    helper->Release();
+    if (ret != OHOS::ERR_OK) {
+        LOGE("UnregisterSettingsObserver: UnregisterObserver failed, ret=%{public}d", ret);
+        return false;
+    }
+    LOGI("UnregisterSettingsObserver: success, key=%{public}s", key.c_str());
+    return true;
+}
+
 } // namespace OHOS::Security::SAF

@@ -46,6 +46,10 @@ constexpr int32_t TEST_APP_INDEX = 0;
 constexpr int32_t PERF_RECORD_COUNT = 1000;
 constexpr int32_t PERF_QUERY_INDEX = 500;
 constexpr int64_t CACHE_HIT_LATENCY_THRESHOLD_US = 2000; // 2ms = 2000us
+// Sentinel value used by GuiCacheManager when no OS account ID has been recorded yet.
+constexpr int32_t CACHED_USER_ID_UNSET = -1;
+// A representative OS account ID used to verify SetCachedUserId / GetCachedUserId round-trip.
+constexpr int32_t TEST_USER_ID = 100;
 
 // Worker function for concurrent IsDenied test: queries cache repeatedly and counts errors.
 void ConcurrentIsDeniedWorker(GuiCacheManager &cache, std::atomic<int> &errorCount)
@@ -398,6 +402,66 @@ HWTEST_F(GuiCacheManagerTest, BeginRefresh_Twice_WaitUnblocks_001, TestSize.Leve
         waiter.join();
         EXPECT_TRUE(waitingFinished.load());
     }
+}
+
+// ============ Cached user ID (GetCachedUserId / SetCachedUserId) ============
+
+/**
+ * @tc.name: GetCachedUserId_DefaultUnset_001
+ * @tc.desc: UT-C-15: After ResetForTesting, GetCachedUserId returns the unset sentinel (-1).
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiCacheManagerTest, GetCachedUserId_DefaultUnset_001, TestSize.Level0)
+{
+    auto &cache = GuiCacheManager::GetInstance();
+    // SetUp already called ResetForTesting, so cachedUserId_ must be the sentinel.
+    EXPECT_EQ(cache.GetCachedUserId(), CACHED_USER_ID_UNSET);
+}
+
+/**
+ * @tc.name: SetCachedUserId_RoundTrip_001
+ * @tc.desc: UT-C-16: SetCachedUserId stores the value and GetCachedUserId returns it.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiCacheManagerTest, SetCachedUserId_RoundTrip_001, TestSize.Level0)
+{
+    auto &cache = GuiCacheManager::GetInstance();
+    ASSERT_EQ(cache.GetCachedUserId(), CACHED_USER_ID_UNSET);
+    cache.SetCachedUserId(TEST_USER_ID);
+    EXPECT_EQ(cache.GetCachedUserId(), TEST_USER_ID);
+}
+
+/**
+ * @tc.name: SetCachedUserId_Overwrite_001
+ * @tc.desc: UT-C-17: A second SetCachedUserId overwrites the previous value (user switch scenario).
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiCacheManagerTest, SetCachedUserId_Overwrite_001, TestSize.Level0)
+{
+    auto &cache = GuiCacheManager::GetInstance();
+    cache.SetCachedUserId(TEST_USER_ID);
+    ASSERT_EQ(cache.GetCachedUserId(), TEST_USER_ID);
+    constexpr int32_t switchedUserId = 101;
+    cache.SetCachedUserId(switchedUserId);
+    EXPECT_EQ(cache.GetCachedUserId(), switchedUserId);
+}
+
+/**
+ * @tc.name: ResetForTesting_ClearsCachedUserId_001
+ * @tc.desc: UT-C-18: ResetForTesting restores cachedUserId_ back to the unset sentinel.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiCacheManagerTest, ResetForTesting_ClearsCachedUserId_001, TestSize.Level0)
+{
+    auto &cache = GuiCacheManager::GetInstance();
+    cache.SetCachedUserId(TEST_USER_ID);
+    ASSERT_EQ(cache.GetCachedUserId(), TEST_USER_ID);
+    GuiCacheManager::ResetForTesting();
+    EXPECT_EQ(cache.GetCachedUserId(), CACHED_USER_ID_UNSET);
 }
 
 } // namespace UnitTest::GuiCacheManagerTest

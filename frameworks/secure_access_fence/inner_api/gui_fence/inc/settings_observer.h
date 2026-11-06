@@ -52,6 +52,17 @@ private:
  */
 bool RegisterSettingsObserver(const std::string &key, int32_t userId,
     const sptr<SettingsDataObserver> &observer);
+
+/**
+ * @brief Unregister a previously registered Datashare observer.
+ *
+ * @param key The settings key that was observed.
+ * @param userId The OS account ID that was used during registration.
+ * @param observer The observer to unregister.
+ * @return true on success, false on failure.
+ */
+bool UnregisterSettingsObserver(const std::string &key, int32_t userId,
+    const sptr<SettingsDataObserver> &observer);
 } // namespace OHOS::Security::SAF
 
 #endif

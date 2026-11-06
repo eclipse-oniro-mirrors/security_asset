@@ -98,6 +98,25 @@ public:
     bool IsInitialized();
 
     /**
+     * @brief Get the OS account ID that the current cache corresponds to.
+     *
+     * Acquires shared lock.
+     *
+     * @return The cached OS account ID, or -1 if not set.
+     */
+    int32_t GetCachedUserId();
+
+    /**
+     * @brief Set the OS account ID that the cache corresponds to.
+     *
+     * Acquires unique lock. Called after a successful cache refresh so that
+     * subsequent PreloadAgentAppStatus calls can detect user switches.
+     *
+     * @param userId The OS account ID to record.
+     */
+    void SetCachedUserId(int32_t userId);
+
+    /**
      * @brief Mark the start of a cache refresh.
      *
      * Sets the refreshing flag so that concurrent CheckControlPermission calls
@@ -131,6 +150,7 @@ private:
     std::shared_mutex mutex_;
     std::set<AppPairKey> deniedSet_;
     bool initialized_ {false};
+    int32_t cachedUserId_ {-1};
     std::atomic<bool> refreshing_ {false};
     std::mutex refreshMutex_;
     std::condition_variable refreshCv_;

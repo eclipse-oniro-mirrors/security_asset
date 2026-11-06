@@ -127,6 +127,14 @@ static int32_t RefreshDeniedPairs()
 // Register a settings DataShare observer to refresh the cache when agent_app_control_status changes.
 static void RegisterCacheObserver()
 {
+    // Unregister the previous observer if it exists (e.g., after a user switch).
+    if (g_settingsObserver != nullptr) {
+        int32_t oldUserId = GuiCacheManager::GetInstance().GetCachedUserId();
+        if (oldUserId >= 0) {
+            UnregisterSettingsObserver(SETTINGS_KEY_AGENT_APP_CONTROL_STATUS, oldUserId, g_settingsObserver);
+        }
+        g_settingsObserver = nullptr;
+    }
     int32_t userId = 0;
     int32_t ret = OHOS::AccountSA::OsAccountManager::GetForegroundOsAccountLocalId(userId);
     if (ret != 0) {
@@ -204,6 +212,7 @@ int32_t SafGuiFence::CheckControlPermission(
     const AppInfo &targetApp,
     ControlDecision &decision)
 {
+    auto checkStart = std::chrono::steady_clock::now();
     int32_t ret = ValidateCheckControlParams(callerApp, targetApp);
     if (ret != SAF_SUCCESS) {
         return ret;
@@ -224,11 +233,13 @@ int32_t SafGuiFence::CheckControlPermission(
             return ret;
         }
     }
-
     cache.WaitForRefresh();
     bool denied = cache.IsDenied(callerApp.bundleName, callerApp.index, targetApp.bundleName, targetApp.index);
     decision = denied ? ControlDecision::DENY : ControlDecision::ALLOW;
     AsyncStoreOperationRecord(callerApp, targetApp, decision);
+    auto checkEnd = std::chrono::steady_clock::now();
+    auto checkCostUs = std::chrono::duration_cast<std::chrono::microseconds>(checkEnd - checkStart).count();
+    LOGI("CheckControlPermission: cost=%{public}lld us", static_cast<long long>(checkCostUs));
     return SAF_SUCCESS;
 }
 
@@ -242,7 +253,7 @@ int32_t SafGuiFence::PreloadAgentAppStatus()
             return poolRet;
         }
     }
-
+ 
     auto &cache = GuiCacheManager::GetInstance();
     if (cache.IsInitialized()) {
         LOGI("PreloadAgentAppStatus: cache already initialized");
