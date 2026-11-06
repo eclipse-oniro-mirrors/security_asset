@@ -27,8 +27,10 @@ ohos_static_library("asset_privacy") {
   deps = [ "../../../psi_pir_protocol:psi_pir_protocol" ]
   external_deps = [
     "bounds_checking_function:libsec_shared",
+    "c_utils:utils",
     "hilog:libhilog",
     "huks:libhukssdk",
+    "ipc:ipc_single",
     "os_account:os_account_innerkits",
   ]
   cflags_cc = [
