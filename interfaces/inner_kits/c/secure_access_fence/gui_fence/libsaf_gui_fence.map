@@ -22,6 +22,8 @@
     _ZN4OHOS8Security3SAF15GuiCacheManager8IsDeniedERKNSt3__h12basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEEiSB_i;
     _ZN4OHOS8Security3SAF15GuiCacheManager18UpdateFromFullListERKNSt3__h6vectorINS3_5tupleIJNS3_12basic_stringIcNS3_11char_traitsIcEENS3_9allocatorIcEEEEiSB_iEEENS9_ISC_EEEE;
     _ZN4OHOS8Security3SAF15GuiCacheManager13IsInitializedEv;
+    _ZN4OHOS8Security3SAF15GuiCacheManager15GetCachedUserIdEv;
+    _ZN4OHOS8Security3SAF15GuiCacheManager15SetCachedUserIdEi;
     _ZN4OHOS8Security3SAF15GuiCacheManager15ResetForTestingEv;
     _ZN4OHOS8Security3SAF12IGuiCallback5LABELE;
     __cfi_check;

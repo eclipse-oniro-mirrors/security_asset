@@ -47,6 +47,18 @@ bool GuiCacheManager::IsInitialized()
     return initialized_;
 }
 
+int32_t GuiCacheManager::GetCachedUserId()
+{
+    std::shared_lock<std::shared_mutex> lock(mutex_);
+    return cachedUserId_;
+}
+
+void GuiCacheManager::SetCachedUserId(int32_t userId)
+{
+    std::unique_lock<std::shared_mutex> lock(mutex_);
+    cachedUserId_ = userId;
+}
+
 void GuiCacheManager::BeginRefresh()
 {
     refreshing_ = true;
@@ -76,6 +88,7 @@ void GuiCacheManager::ResetForTesting()
     std::unique_lock<std::shared_mutex> lock(instance.mutex_);
     instance.deniedSet_.clear();
     instance.initialized_ = false;
+    instance.cachedUserId_ = -1;
     instance.refreshing_ = false;
     std::lock_guard<std::mutex> refreshLock(instance.refreshMutex_);
     instance.refreshCv_.notify_all();
