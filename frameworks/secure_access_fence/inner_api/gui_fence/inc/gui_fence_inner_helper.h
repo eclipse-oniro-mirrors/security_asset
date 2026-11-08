@@ -33,7 +33,11 @@ namespace OHOS::Security::SAF {
  * The string format matches what IPC 505 (QueryAllDeniedPairs) returns. Each
  * denied pair is colon-separated into four fields. Returns false if the format
  * is invalid (fewer than three colons, or index fields cannot be parsed as
- * integers via std::stoi).
+ * base-10 int32).
+ *
+ * Index parsing uses strtol (not std::stoi) so that malformed or out-of-range
+ * fields are rejected without throwing exceptions, complying with the
+ * OpenHarmony C++ coding rule that forbids try/catch.
  *
  * Note: this function does NOT validate semantic emptiness of the bundle names
  * (an empty callerBundle such as ":0:com.b:0" still parses successfully); it

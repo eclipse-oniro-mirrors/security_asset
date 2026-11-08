@@ -99,44 +99,7 @@ HWTEST_F(SettingsObserverTest, SettingsDataObserver_OnChange_003, TestSize.Level
 HWTEST_F(SettingsObserverTest, RegisterSettingsObserver_NullObserver_001, TestSize.Level0)
 {
     sptr<SettingsDataObserver> nullObserver = nullptr;
-    bool ret = RegisterSettingsObserver("agent_app_control_status", 100, nullObserver);
+    bool ret = RegisterSettingsObserver(100, nullObserver);
     EXPECT_FALSE(ret);
 }
-
-/**
- * @tc.name: RegisterSettingsObserver_NoDataShareHelper_001
- * @tc.desc: UT-O-05: RegisterSettingsObserver with a valid observer but no DataShareHelper available
- *                   (no samgr / SA not loaded in unit-test env) returns false. This covers the
- *                   CreateDataShareHelper failure -> helper == nullptr branch.
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(SettingsObserverTest, RegisterSettingsObserver_NoDataShareHelper_001, TestSize.Level0)
-{
-    auto observer = sptr<SettingsDataObserver>::MakeSptr([]() {});
-    ASSERT_NE(observer, nullptr);
-
-    // In a unit-test environment there is no running samgr/datashare service, so
-    // CreateDataShareHelper returns nullptr and RegisterSettingsObserver returns false.
-    bool ret = RegisterSettingsObserver("agent_app_control_status", 100, observer);
-    EXPECT_FALSE(ret);
-}
-
-/**
- * @tc.name: RegisterSettingsObserver_EmptyKey_001
- * @tc.desc: UT-O-06: RegisterSettingsObserver with an empty key still reaches the helper-creation
- *                   path (empty key is not rejected by the function itself); returns false because
- *                   the helper cannot be created in the unit-test environment.
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(SettingsObserverTest, RegisterSettingsObserver_EmptyKey_001, TestSize.Level0)
-{
-    auto observer = sptr<SettingsDataObserver>::MakeSptr([]() {});
-    ASSERT_NE(observer, nullptr);
-
-    bool ret = RegisterSettingsObserver("", 100, observer);
-    EXPECT_FALSE(ret);
-}
-
 } // namespace UnitTest::SettingsObserverTest

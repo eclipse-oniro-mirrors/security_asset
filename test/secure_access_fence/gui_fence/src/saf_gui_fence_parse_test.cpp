@@ -277,6 +277,74 @@ HWTEST_F(GuiFenceParseTest, ParseDeniedPair_MultiplePairs_001, TestSize.Level0)
     EXPECT_EQ(std::get<3>(keys[INDEX_TWO]), MULTIPLE_PAIR_THIRD_TARGET_IDX);
 }
 
+// ================== ParseDeniedPair malformed-index tests =================
+// These cases cover the strtol-based defense added to reject malformed index
+// fields without throwing (the old std::stoi implementation would throw
+// std::invalid_argument / std::out_of_range and crash the caller process,
+// since the throw escaped ParseDeniedPair's bool return).
+
+/**
+ * @tc.name: ParseDeniedPair_NonNumericIndex_001
+ * @tc.desc: Three colons present but the caller index field is non-numeric
+ *          ("com.app.a:abc:com.app.b:1") -> false. Previously std::stoi would
+ *          throw std::invalid_argument; now strtol rejects it and returns false.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiFenceParseTest, ParseDeniedPair_NonNumericIndex_001, TestSize.Level0)
+{
+    AppPairKey key;
+    bool ret = ParseDeniedPair("com.app.a:abc:com.app.b:1", key);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name: ParseDeniedPair_EmptyIndexField_001
+ * @tc.desc: Three colons present but the target index field is empty
+ *          ("com.app.a:0:com.app.b:") -> false. Previously std::stoi would
+ *          throw std::invalid_argument on the empty substring; now rejected.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiFenceParseTest, ParseDeniedPair_EmptyIndexField_001, TestSize.Level0)
+{
+    AppPairKey key;
+    bool ret = ParseDeniedPair("com.app.a:0:com.app.b:", key);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name: ParseDeniedPair_IndexOutOfRange_001
+ * @tc.desc: Three colons present but the target index exceeds INT32_MAX
+ *          -> false. Previously std::stoi would throw std::out_of_range;
+ *          now strtol reports ERANGE and ParseInt32 returns false.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiFenceParseTest, ParseDeniedPair_IndexOutOfRange_001, TestSize.Level0)
+{
+    AppPairKey key;
+    // "99999999999" far exceeds INT32_MAX (2147483647).
+    bool ret = ParseDeniedPair("com.app.a:0:com.app.b:99999999999", key);
+    EXPECT_FALSE(ret);
+}
+
+/**
+ * @tc.name: ParseDeniedPair_IndexWithTrailingJunk_001
+ * @tc.desc: Three colons present but the caller index field has trailing
+ *          non-digit characters ("com.app.a:1abc:com.app.b:2") -> false.
+ *          std::stoi would accept the leading "1" and silently drop the rest;
+ *          the strtol-based parser rejects the whole field as malformed.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiFenceParseTest, ParseDeniedPair_IndexWithTrailingJunk_001, TestSize.Level0)
+{
+    AppPairKey key;
+    bool ret = ParseDeniedPair("com.app.a:1abc:com.app.b:2", key);
+    EXPECT_FALSE(ret);
+}
+
 // ================== HandleIpcError tests =================
 // HandleIpcError is the helper invoked by all three component-click callbacks
 // (and by RefreshDeniedPairs / AsyncStoreOperationRecord). It maps dead-object
