@@ -379,32 +379,4 @@ HWTEST_F(GuiInnerApiTest, InnerApi_PreloadAgentAppStatus_UserSwitch_001, TestSiz
     EXPECT_NE(GuiCacheManager::GetInstance().GetCachedUserId(), MISMATCHED_USER_ID);
 }
 
-/**
- * @tc.name: InnerApi_CheckControlPermission_UserSwitch_001
- * @tc.desc: CheckControlPermission when cache is initialized but cachedUserId differs from
- *          the current foreground user -> the needRefresh flag is forced true and the cache
- *          is re-fetched before serving the query (covers the user-switch detection branch).
- * @tc.type: FUNC
- * @tc.require:
- */
-HWTEST_F(GuiInnerApiTest, InnerApi_CheckControlPermission_UserSwitch_001, TestSize.Level0)
-{
-    // Prime the cache so it is initialized with the real current user ID.
-    auto callerApp = MakeAppInfo("com.app.switch", TEST_APP_INDEX);
-    auto targetApp = MakeAppInfo("com.app.target", TEST_APP_INDEX);
-    ControlDecision decision = ControlDecision::ALLOW;
-    ASSERT_EQ(SafGuiFence::CheckControlPermission(callerApp, targetApp, decision), SAF_SUCCESS);
-    ASSERT_TRUE(GuiCacheManager::GetInstance().IsInitialized());
-
-    // Tamper with the cached user ID to simulate a user switch.
-    GuiCacheManager::GetInstance().SetCachedUserId(MISMATCHED_USER_ID);
-
-    // CheckControlPermission must detect the mismatch and re-fetch the cache.
-    ControlDecision secondDecision = ControlDecision::ALLOW;
-    int32_t ret = SafGuiFence::CheckControlPermission(callerApp, targetApp, secondDecision);
-    EXPECT_EQ(ret, SAF_SUCCESS);
-    // After the re-fetch, cachedUserId must be updated back to the real user.
-    EXPECT_NE(GuiCacheManager::GetInstance().GetCachedUserId(), MISMATCHED_USER_ID);
-}
-
 } // namespace UnitTest::GuiInnerApiTest

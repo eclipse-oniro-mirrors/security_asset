@@ -29,11 +29,17 @@ const constexpr char *SETTING_URI_PROXY_PREFIX =
     "datashare:///com.ohos.settingsdata/entry/settingsdata/USER_SETTINGSDATA_SECURE_";
 const constexpr char *SETTING_URI_PROXY_SUFFIX = "?Proxy=true";
 const constexpr char *SETTINGS_DATA_EXT_URI = "datashare:///com.ohos.settingsdata.DataAbility";
+// The settings key observed by SAF. Hard-coded here (and in BuildSettingUri)
+// because there is exactly one caller and exactly one key; exposing it as a
+// parameter would invite future misuse with unescaped reserved characters in
+// the URI. If a second key is ever needed, reintroduce a parameter plus proper
+// percent-encoding at that time.
+const constexpr char *SETTINGS_KEY_AGENT_APP_CONTROL_STATUS = "agent_app_control_status";
 
-std::string BuildSettingUri(int32_t userId, const std::string &key)
+std::string BuildSettingUri(int32_t userId)
 {
     return std::string(SETTING_URI_PROXY_PREFIX) + std::to_string(userId) +
-        std::string(SETTING_URI_PROXY_SUFFIX) + "&key=" + key;
+        std::string(SETTING_URI_PROXY_SUFFIX) + "&key=" + SETTINGS_KEY_AGENT_APP_CONTROL_STATUS;
 }
 
 std::shared_ptr<OHOS::DataShare::DataShareHelper> CreateDataShareHelper(int32_t userId)
@@ -66,8 +72,7 @@ void SettingsDataObserver::OnChange()
     }
 }
 
-bool RegisterSettingsObserver(const std::string &key, int32_t userId,
-    const sptr<SettingsDataObserver> &observer)
+bool RegisterSettingsObserver(int32_t userId, const sptr<SettingsDataObserver> &observer)
 {
     if (observer == nullptr) {
         LOGE("RegisterSettingsObserver: observer is null");
@@ -79,7 +84,7 @@ bool RegisterSettingsObserver(const std::string &key, int32_t userId,
         LOGE("RegisterSettingsObserver: CreateDataShareHelper failed for userId=%{public}d", userId);
         return false;
     }
-    std::string uriStr = BuildSettingUri(userId, key);
+    std::string uriStr = BuildSettingUri(userId);
     OHOS::Uri settingsUri(uriStr);
     LOGI("RegisterSettingsObserver: uri=%{public}s", uriStr.c_str());
     int32_t ret = helper->RegisterObserver(settingsUri, observer);
@@ -88,12 +93,11 @@ bool RegisterSettingsObserver(const std::string &key, int32_t userId,
         LOGE("RegisterSettingsObserver: RegisterObserver failed, ret=%{public}d", ret);
         return false;
     }
-    LOGI("RegisterSettingsObserver: success, key=%{public}s", key.c_str());
+    LOGI("RegisterSettingsObserver: success");
     return true;
 }
 
-bool UnregisterSettingsObserver(const std::string &key, int32_t userId,
-    const sptr<SettingsDataObserver> &observer)
+bool UnregisterSettingsObserver(int32_t userId, const sptr<SettingsDataObserver> &observer)
 {
     if (observer == nullptr) {
         LOGE("UnregisterSettingsObserver: observer is null");
@@ -105,7 +109,7 @@ bool UnregisterSettingsObserver(const std::string &key, int32_t userId,
         LOGE("UnregisterSettingsObserver: CreateDataShareHelper failed for userId=%{public}d", userId);
         return false;
     }
-    std::string uriStr = BuildSettingUri(userId, key);
+    std::string uriStr = BuildSettingUri(userId);
     OHOS::Uri settingsUri(uriStr);
     int32_t ret = helper->UnregisterObserver(settingsUri, observer);
     helper->Release();
@@ -113,7 +117,7 @@ bool UnregisterSettingsObserver(const std::string &key, int32_t userId,
         LOGE("UnregisterSettingsObserver: UnregisterObserver failed, ret=%{public}d", ret);
         return false;
     }
-    LOGI("UnregisterSettingsObserver: success, key=%{public}s", key.c_str());
+    LOGI("UnregisterSettingsObserver: success");
     return true;
 }
 

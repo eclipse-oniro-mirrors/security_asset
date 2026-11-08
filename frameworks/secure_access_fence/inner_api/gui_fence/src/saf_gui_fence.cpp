@@ -39,11 +39,15 @@ namespace {
 
 constexpr int32_t WAIT_TIMEOUT_IN_SEC = 5;
 constexpr int32_t SAF_SERVICE_ID = 66532;
-constexpr const char *SETTINGS_KEY_AGENT_APP_CONTROL_STATUS = "agent_app_control_status";
 
 std::recursive_mutex g_mutex;
-// Observer kept alive for the process lifetime.
+// Observer kept alive for the process lifetime. All reads/writes of this
+// global are guarded by g_initMutex (held by InitCacheFromService) to prevent
+// concurrent double-registration / sptr refcount races when two threads call
+// PreloadAgentAppStatus or CheckControlPermission simultaneously.
 sptr<SettingsDataObserver> g_settingsObserver;
+// Serializes InitCacheFromService invocations and protects g_settingsObserver.
+std::mutex g_initMutex;
 
 sptr<ISecureAccessFence> GetProxy(std::recursive_mutex &mutex, bool needCheck = true)
 {
@@ -83,16 +87,45 @@ static int32_t ValidateCheckControlParams(const AppInfo &callerApp, const AppInf
     return SAF_SUCCESS;
 }
 
+// RAII guard that ensures EndRefresh() runs even if an exception is thrown
+// between BeginRefresh() and EndRefresh(). Without this, a std::bad_alloc from
+// UpdateFromFullList (std::set::insert of std::string keys) would leave
+// refreshing_ permanently true and block all WaitForRefresh callers forever.
+class RefreshGuard {
+public:
+    explicit RefreshGuard(GuiCacheManager &cache) : cache_(cache), active_(true) {}
+
+    ~RefreshGuard()
+    {
+        if (active_) {
+            cache_.EndRefresh();
+        }
+    }
+
+    void Dismiss()
+    {
+        active_ = false;
+    }
+
+    RefreshGuard(const RefreshGuard &) = delete;
+    RefreshGuard &operator=(const RefreshGuard &) = delete;
+
+private:
+    GuiCacheManager &cache_;
+    bool active_;
+};
+
 // Fetch full denied-pairs list from service via IPC 505 and update the cache.
-// Uses BeginRefresh/EndRefresh to synchromize with concurrent readers.
+// Uses BeginRefresh/EndRefresh to synchronize with concurrent readers.
 static int32_t RefreshDeniedPairs()
 {
     auto &cache = GuiCacheManager::GetInstance();
     cache.BeginRefresh();
+    RefreshGuard guard(cache);
+
     auto proxy = GetProxy(g_mutex);
     if (proxy == nullptr) {
         LOGE("RefreshDeniedPairs: load sa fail");
-        cache.EndRefresh();
         return SAF_ERR_SERVICE_UNAVAILABLE;
     }
 
@@ -102,12 +135,10 @@ static int32_t RefreshDeniedPairs()
         [&proxy, &deniedPairs, &resultCode]() { return proxy->QueryAllDeniedPairs(deniedPairs, resultCode); });
     if (ret != SAF_SUCCESS) {
         LOGE("RefreshDeniedPairs: IPC call failed, ret=%{public}d", ret);
-        cache.EndRefresh();
         return SAF_ERR_IPC_PROXY_FAIL;
     }
     if (resultCode != SAF_SUCCESS) {
         LOGE("RefreshDeniedPairs: service error, resultCode=%{public}d", resultCode);
-        cache.EndRefresh();
         return resultCode;
     }
 
@@ -119,7 +150,6 @@ static int32_t RefreshDeniedPairs()
         }
     }
     cache.UpdateFromFullList(deniedKeys);
-    cache.EndRefresh();
     LOGI("RefreshedDeniedPairs: success, deniedPairs size = %{public}zu", deniedKeys.size());
     return SAF_SUCCESS;
 }
@@ -131,7 +161,7 @@ static void RegisterCacheObserver()
     if (g_settingsObserver != nullptr) {
         int32_t oldUserId = GuiCacheManager::GetInstance().GetCachedUserId();
         if (oldUserId >= 0) {
-            UnregisterSettingsObserver(SETTINGS_KEY_AGENT_APP_CONTROL_STATUS, oldUserId, g_settingsObserver);
+            UnregisterSettingsObserver(oldUserId, g_settingsObserver);
         }
         g_settingsObserver = nullptr;
     }
@@ -151,18 +181,36 @@ static void RegisterCacheObserver()
         return;
     }
 
-    if (!RegisterSettingsObserver(SETTINGS_KEY_AGENT_APP_CONTROL_STATUS, userId, g_settingsObserver)) {
+    if (!RegisterSettingsObserver(userId, g_settingsObserver)) {
         LOGE("RegisterCacheObserver: RegisterSettingsObserver failed");
         g_settingsObserver = nullptr;
         return;
     }
-    LOGI("RegisterCacheObserver: success");
+    // Record the user the cache now corresponds to, so that subsequent
+    // PreloadAgentAppStatus calls can detect a foreground-user switch.
+    GuiCacheManager::GetInstance().SetCachedUserId(userId);
+    LOGI("RegisterCacheObserver: success, cachedUserId=%{public}d", userId);
 }
 
+// Forward declaration: defined after CheckControlPermission below; used here by
+// the init-guard re-check.
+static bool IsCacheReadyForCurrentUser();
+
 // First-time full-list fetch via IPC 505 to initialize the cache.
-// Returns SAF_SUCCESS on success.
+// Guarded by g_initMutex: the first caller performs the actual IPC + observer
+// registration; concurrent/recursive callers skip to a re-check and either
+// reuse the now-initialized cache or fail fast. This prevents two threads from
+// racing on g_settingsObserver (double-register, leak unregister, sptr refcount
+// corruption) and avoids redundant IPC 505 round-trips.
 static int32_t InitCacheFromService()
 {
+    std::lock_guard<std::mutex> initLock(g_initMutex);
+    // Re-check under the lock: another thread may have fully initialized the
+    // cache while we were waiting for g_initMutex.
+    if (IsCacheReadyForCurrentUser()) {
+        LOGI("InitCacheFromService: cache already initialized by a concurrent call");
+        return SAF_SUCCESS;
+    }
     int32_t ret = RefreshDeniedPairs();
     if (ret != SAF_SUCCESS) {
         LOGE("InitCacheFromService: RefreshDeniedPairs failed, ret=%{public}d", ret);
@@ -228,6 +276,11 @@ int32_t SafGuiFence::CheckControlPermission(
 
     auto &cache = GuiCacheManager::GetInstance();
     if (!cache.IsInitialized()) {
+        // Synchronous IPC 505 below will block this thread. Callers on the UI
+        // thread should call PreloadAgentAppStatus() in advance to warm the
+        // cache; landing here means the cache was not preloaded.
+        LOGI("CheckControlPermission: cache not initialized, performing synchronous init "
+             "(consider calling PreloadAgentAppStatus beforehand)");
         ret = InitCacheFromService();
         if (ret != SAF_SUCCESS) {
             return ret;
@@ -243,20 +296,54 @@ int32_t SafGuiFence::CheckControlPermission(
     return SAF_SUCCESS;
 }
 
-int32_t SafGuiFence::PreloadAgentAppStatus()
+// Ensure the background thread pool is running for async operations.
+// Returns SAF_SUCCESS if the pool is running, was started, or not present.
+static int32_t EnsureThreadPoolStarted()
 {
     auto threadPool = SafGuiThreadPool::GetInstance();
-    if (threadPool) {
-        int32_t poolRet = threadPool->StartPool();
-        if (poolRet != SAF_SUCCESS) {
-            LOGE("SafGuiFence::PreloadAgentAppStatus: StartPool failed, ret=%{public}d", poolRet);
-            return poolRet;
-        }
+    if (!threadPool) {
+        return SAF_SUCCESS;
     }
- 
+    int32_t poolRet = threadPool->StartPool();
+    if (poolRet != SAF_SUCCESS) {
+        LOGE("EnsureThreadPoolStarted: StartPool failed, ret=%{public}d", poolRet);
+        return poolRet;
+    }
+    return SAF_SUCCESS;
+}
+
+// Check whether the cache is valid for the current foreground user.
+// Returns true when the cache is initialized and corresponds to the current
+// foreground OS account; false otherwise (including transient account-manager
+// failures, which force a re-init so the next call can retry).
+static bool IsCacheReadyForCurrentUser()
+{
     auto &cache = GuiCacheManager::GetInstance();
-    if (cache.IsInitialized()) {
-        LOGI("PreloadAgentAppStatus: cache already initialized");
+    if (!cache.IsInitialized()) {
+        return false;
+    }
+    int32_t currentUserId = 0;
+    int32_t ret = OHOS::AccountSA::OsAccountManager::GetForegroundOsAccountLocalId(currentUserId);
+    if (ret != 0) {
+        LOGI("IsCacheReadyForCurrentUser: GetForegroundOsAccountLocalId failed, ret=%{public}d, re-init", ret);
+        return false;
+    }
+    if (currentUserId != cache.GetCachedUserId()) {
+        LOGI("IsCacheReadyForCurrentUser: user switched (cached=%{public}d, current=%{public}d), re-init",
+             cache.GetCachedUserId(), currentUserId);
+        return false;
+    }
+    return true;
+}
+
+int32_t SafGuiFence::PreloadAgentAppStatus()
+{
+    int32_t poolRet = EnsureThreadPoolStarted();
+    if (poolRet != SAF_SUCCESS) {
+        return poolRet;
+    }
+    if (IsCacheReadyForCurrentUser()) {
+        LOGI("PreloadAgentAppStatus: cache already initialized for current user");
         return SAF_SUCCESS;
     }
     return InitCacheFromService();

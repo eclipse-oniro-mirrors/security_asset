@@ -43,26 +43,27 @@ private:
 };
 
 /**
- * @brief Register a Datashare observer for a settings key on the user's secure settings.
+ * @brief Register a Datashare observer for the agent_app_control_status key
+ * on the given user's secure settings.
  *
- * @param key The settings key to observe.
+ * The observed key is fixed internally (agent_app_control_status); it is not
+ * exposed as a parameter because there is exactly one such key, and exposing
+ * it would invite future misuse with URI-reserved characters.
+ *
  * @param userId The OS account ID for per-user settings.
  * @param observer The observer to register.
  * @return true on success, false on failure.
  */
-bool RegisterSettingsObserver(const std::string &key, int32_t userId,
-    const sptr<SettingsDataObserver> &observer);
+bool RegisterSettingsObserver(int32_t userId, const sptr<SettingsDataObserver> &observer);
 
 /**
  * @brief Unregister a previously registered Datashare observer.
  *
- * @param key The settings key that was observed.
  * @param userId The OS account ID that was used during registration.
  * @param observer The observer to unregister.
  * @return true on success, false on failure.
  */
-bool UnregisterSettingsObserver(const std::string &key, int32_t userId,
-    const sptr<SettingsDataObserver> &observer);
+bool UnregisterSettingsObserver(int32_t userId, const sptr<SettingsDataObserver> &observer);
 } // namespace OHOS::Security::SAF
 
 #endif
