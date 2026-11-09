@@ -44,7 +44,14 @@ namespace OHOS::Security::SAF {
 struct ErrInfo {
     /** Index of the failed item in the input array. */
     int32_t index = 0;
-    /** Error code indicating the failure reason. */
+    /**
+     * Error code indicating the failure reason. Always non-zero: an entry only
+     * appears here when it failed, so callers can trust `errCode != 0` to mean
+     * "this item failed". The value is always one of the base SAF result codes
+     * declared in saf_result_defs.h. A missing target entry is reported as
+     * SAF_ERR_ARG_INVALID, since for update/delete that is a failure rather
+     * than a no-op.
+     */
     int32_t errCode = 0;
     /** Error message describing the failure reason. */
     std::string message;

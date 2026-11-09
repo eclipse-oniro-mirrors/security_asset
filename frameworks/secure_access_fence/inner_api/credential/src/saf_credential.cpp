@@ -18,6 +18,7 @@
 #include <functional>
 #include <mutex>
 
+#include "credential_inner_helper.h"
 #include "saf_credential.h"
 #include "saf_defines.h"
 #include "saf_log.h"
@@ -33,7 +34,6 @@ namespace {
 
 constexpr int32_t WAIT_TIMEOUT_IN_SEC = 5;
 constexpr int32_t SAF_SERVICE_ID = 66532;
-constexpr int32_t ERR_REMOTE_DEAD = 29189;
 
 std::recursive_mutex g_mutex;
 
@@ -62,9 +62,10 @@ int32_t HandleIpcError(sptr<ISecureAccessFence> &proxy, std::function<int32_t()>
         return SAF_ERR_SERVICE_UNAVAILABLE;
     }
     int32_t ret = call();
-    if (ret == ERR_DEAD_OBJECT || ret == ERR_REMOTE_DEAD) {
+    int32_t normalized = NormalizeIpcResult(ret);
+    if (normalized != ret) {
         LOGW("service unavailable and not retry.");
-        return SAF_ERR_SERVICE_UNAVAILABLE;
+        return normalized;
     }
     if (ret == SAF_ERR_SERVICE_IS_STOPPING) {
         LOGW("service is stopping, try to load sa");
@@ -118,7 +119,7 @@ int32_t SafCredential::UpdateModelCredential(const std::vector<ModelCredential> 
                                              CredentialBatchResult &result)
 {
     LOGI("SafCredential::UpdateModelCredential start");
-    if (sourceModelCredentials.size() != destModelCredentials.size()) {
+    if (!IsBatchSizeMatched(sourceModelCredentials.size(), destModelCredentials.size())) {
         LOGE("source/dest size mismatch: %{public}zu vs %{public}zu",
             sourceModelCredentials.size(), destModelCredentials.size());
         return SAF_ERR_ARG_INVALID;
