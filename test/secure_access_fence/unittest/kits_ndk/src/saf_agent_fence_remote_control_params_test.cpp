@@ -47,6 +47,95 @@ void SafAgentFenceRemoteControlParamsTest::TearDown(void)
 {
 }
 
+// Mirrors saf_definition::RemoteGrantStatus: Enable = 1, Disable = 2.
+constexpr int32_t REMOTE_GRANT_STATUS_ENABLE = 1;
+constexpr int32_t REMOTE_GRANT_STATUS_DISABLE = 2;
+
+/**
+ * @tc.name: GetRemoteGrantStatusTest001
+ * @tc.desc: GetRemoteGrantStatus is not supported, expect SAF_ERR_PLUGIN_NOT_SUPPORT.
+ * @tc.type: FUNC
+ * @tc.result: SAF_ERR_PLUGIN_NOT_SUPPORT
+ */
+HWTEST_F(SafAgentFenceRemoteControlParamsTest, GetRemoteGrantStatusTest001, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    int32_t remoteGrantStatus = 0;
+    int32_t result = agentFence.GetRemoteGrantStatus(remoteGrantStatus);
+    EXPECT_EQ(result, SAF_ERR_PLUGIN_NOT_SUPPORT);
+}
+
+/**
+ * @tc.name: UpdateRemoteGrantStatusTest001
+ * @tc.desc: UpdateRemoteGrantStatus with Enable is not supported, expect SAF_ERR_PLUGIN_NOT_SUPPORT.
+ * @tc.type: FUNC
+ * @tc.result: SAF_ERR_PLUGIN_NOT_SUPPORT
+ */
+HWTEST_F(SafAgentFenceRemoteControlParamsTest, UpdateRemoteGrantStatusTest001, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    int32_t result = agentFence.UpdateRemoteGrantStatus(REMOTE_GRANT_STATUS_ENABLE);
+    EXPECT_EQ(result, SAF_ERR_PLUGIN_NOT_SUPPORT);
+}
+
+/**
+ * @tc.name: UpdateRemoteGrantStatusTest002
+ * @tc.desc: UpdateRemoteGrantStatus with Disable is not supported, expect SAF_ERR_PLUGIN_NOT_SUPPORT.
+ * @tc.type: FUNC
+ * @tc.result: SAF_ERR_PLUGIN_NOT_SUPPORT
+ */
+HWTEST_F(SafAgentFenceRemoteControlParamsTest, UpdateRemoteGrantStatusTest002, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    int32_t result = agentFence.UpdateRemoteGrantStatus(REMOTE_GRANT_STATUS_DISABLE);
+    EXPECT_EQ(result, SAF_ERR_PLUGIN_NOT_SUPPORT);
+}
+
+/**
+ * @tc.name: UpdateRemoteGrantStatusTest003
+ * @tc.desc: UpdateRemoteGrantStatus with status 0, expect SAF_ERR_ARG_INVALID.
+ * @tc.type: FUNC
+ * @tc.result: SAF_ERR_ARG_INVALID
+ */
+HWTEST_F(SafAgentFenceRemoteControlParamsTest, UpdateRemoteGrantStatusTest003, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    int32_t result = agentFence.UpdateRemoteGrantStatus(0);
+    EXPECT_EQ(result, SAF_ERR_ARG_INVALID);
+}
+
+/**
+ * @tc.name: UpdateRemoteGrantStatusTest004
+ * @tc.desc: UpdateRemoteGrantStatus with status 3, expect SAF_ERR_ARG_INVALID.
+ * @tc.type: FUNC
+ * @tc.result: SAF_ERR_ARG_INVALID
+ */
+HWTEST_F(SafAgentFenceRemoteControlParamsTest, UpdateRemoteGrantStatusTest004, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    int32_t result = agentFence.UpdateRemoteGrantStatus(3);
+    EXPECT_EQ(result, SAF_ERR_ARG_INVALID);
+}
+
+/**
+ * @tc.name: UpdateRemoteGrantStatusTest005
+ * @tc.desc: UpdateRemoteGrantStatus with negative status, expect SAF_ERR_ARG_INVALID.
+ * @tc.type: FUNC
+ * @tc.result: SAF_ERR_ARG_INVALID
+ */
+HWTEST_F(SafAgentFenceRemoteControlParamsTest, UpdateRemoteGrantStatusTest005, TestSize.Level0)
+{
+    OHOS::Security::SAF::SafAgentFence agentFence;
+
+    int32_t result = agentFence.UpdateRemoteGrantStatus(-1);
+    EXPECT_EQ(result, SAF_ERR_ARG_INVALID);
+}
+
 HWTEST_F(SafAgentFenceRemoteControlParamsTest, GenerateControlledDevicePackageParamsTest001, TestSize.Level0)
 {
     OHOS::Security::SAF::SafAgentFence agentFence;

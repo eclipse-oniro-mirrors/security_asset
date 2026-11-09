@@ -41,6 +41,12 @@ int VerifyControllerDevicePackageParamsTest003(void);
 int VerifyControllerDevicePackageParamsTest004(void);
 int VerifyControllerDevicePackageParamsTest005(void);
 int VerifyControllerDevicePackageParamsTest006(void);
+int GetRemoteGrantStatusTest001(void);
+int UpdateRemoteGrantStatusTest001(void);
+int UpdateRemoteGrantStatusTest002(void);
+int UpdateRemoteGrantStatusTest003(void);
+int UpdateRemoteGrantStatusTest004(void);
+int UpdateRemoteGrantStatusTest005(void);
 }
 
 #endif // SAF_AGENT_FENCE_REMOTE_CONTROL_PARAMS_TEST_H
