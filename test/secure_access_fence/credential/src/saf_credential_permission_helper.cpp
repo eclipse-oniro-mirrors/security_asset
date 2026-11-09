@@ -21,17 +21,18 @@
 namespace UnitTest::SafCredentialTest {
 
 // Grants the test process system_basic APL + ACCESS_SECURE_FENCE so the
-// service's authorization check (CheckSignaturePermission) passes. Mirrors
-// the pattern in saf_permission_change.cpp but with the credential permission
-// set.
+// service's authorization check (CheckSignaturePermission) passes. Also grants
+// INTERACT_ACROSS_LOCAL_ACCOUNTS which asset SDK's check_system_permission
+// requires when SEC_ASSET_TAG_USER_ID is set (DIA always sets it).
 int GrantCredentialPermission(void)
 {
     const char *permissions[] = {
         "ohos.permission.ACCESS_SECURE_FENCE",
+        "ohos.permission.INTERACT_ACROSS_LOCAL_ACCOUNTS",
     };
     NativeTokenInfoParams info = {
         .dcapsNum = 0,
-        .permsNum = 1,
+        .permsNum = 2,
         .aclsNum = 0,
         .dcaps = nullptr,
         .perms = permissions,

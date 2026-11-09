@@ -26,19 +26,34 @@ using namespace testing::ext;
 namespace OHOS::Security::SAF {
 namespace {
 
-// Whether the SA 66532 service is deployed on this device. When false, the IPC
-// fails with SAF_ERR_SERVICE_UNAVAILABLE before any authorization check runs.
+// Whether the credential APIs of SA 66532 are usable on this device.
+//
+// Two environments yield "not usable":
+//   - No SA 66532 at all: the IPC layer reports SAF_ERR_SERVICE_UNAVAILABLE.
+//   - An SA 66532 built before the credential plugin existed: the service is
+//     reachable but rejects the credential ipccode, so the proxy reports
+//     SAF_ERR_IPC_PROXY_FAIL.
 bool IsSaDeployed()
 {
     SafCredential cred;
     std::vector<ModelCredential> list;
     int32_t ret = cred.PreGetAllModelCredentials(list);
-    if (ret == SAF_ERR_SERVICE_UNAVAILABLE) {
-        LOGI("SA 66532 not deployed (ret=%{public}d)", ret);
+    if (ret == SAF_ERR_SERVICE_UNAVAILABLE || ret == SAF_ERR_IPC_PROXY_FAIL) {
+        LOGI("credential API of SA 66532 not available (ret=%{public}d)", ret);
         return false;
     }
-    LOGI("SA 66532 reachable (ret=%{public}d)", ret);
+    LOGI("credential API of SA 66532 reachable (ret=%{public}d)", ret);
     return true;
+}
+
+// The code every credential call degrades to when the API is not usable.
+int32_t DegradedCode()
+{
+    SafCredential cred;
+    std::vector<ModelCredential> list;
+    int32_t ret = cred.PreGetAllModelCredentials(list);
+    return (ret == SAF_ERR_SERVICE_UNAVAILABLE || ret == SAF_ERR_IPC_PROXY_FAIL) ?
+        ret : SAF_ERR_SERVICE_UNAVAILABLE;
 }
 
 constexpr uint64_t TEST_AGENT_TOKEN_ID = 123456789ULL;
@@ -118,7 +133,7 @@ HWTEST_F(SafCredentialPermissionTest, AddModelCredential_NoPermission_001, TestS
     if (IsSaDeployed()) {
         EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
     } else {
-        EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
+        EXPECT_EQ(ret, DegradedCode());
     }
     LOGI("AddModelCredential_NoPermission_001 end");
 }
@@ -140,9 +155,52 @@ HWTEST_F(SafCredentialPermissionTest, DeleteModelCredential_NoPermission_001, Te
     if (IsSaDeployed()) {
         EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
     } else {
-        EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
+        EXPECT_EQ(ret, DegradedCode());
     }
     LOGI("DeleteModelCredential_NoPermission_001 end");
+}
+
+/**
+ * @tc.name: SafCredentialPermissionTest.UpdateModelCredential_NoPermission_001
+ * @tc.desc: UpdateModelCredential requires ACCESS_SECURE_FENCE (201). A
+ *           normal-app caller is rejected with PERMISSION_DENIED.
+ * @tc.type: FUNC
+ */
+HWTEST_F(SafCredentialPermissionTest, UpdateModelCredential_NoPermission_001, TestSize.Level0)
+{
+    LOGI("UpdateModelCredential_NoPermission_001 start");
+    SafCredential cred;
+    std::vector<ModelCredential> src;
+    std::vector<ModelCredential> dst;
+    CredentialBatchResult result;
+    int32_t ret = cred.UpdateModelCredential(src, dst, result);
+    LOGI("UpdateModelCredential ret=%{public}d (expect PERMISSION_DENIED)", ret);
+    if (IsSaDeployed()) {
+        EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
+    } else {
+        EXPECT_EQ(ret, DegradedCode());
+    }
+    LOGI("UpdateModelCredential_NoPermission_001 end");
+}
+
+/**
+ * @tc.name: SafCredentialPermissionTest.PreGetAllModelCredentials_NoPermission_001
+ * @tc.desc: PreGetAllModelCredentials requires ACCESS_SECURE_FENCE (201).
+ * @tc.type: FUNC
+ */
+HWTEST_F(SafCredentialPermissionTest, PreGetAllModelCredentials_NoPermission_001, TestSize.Level0)
+{
+    LOGI("PreGetAllModelCredentials_NoPermission_001 start");
+    SafCredential cred;
+    std::vector<ModelCredential> list;
+    int32_t ret = cred.PreGetAllModelCredentials(list);
+    LOGI("PreGetAllModelCredentials ret=%{public}d (expect PERMISSION_DENIED)", ret);
+    if (IsSaDeployed()) {
+        EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
+    } else {
+        EXPECT_EQ(ret, DegradedCode());
+    }
+    LOGI("PreGetAllModelCredentials_NoPermission_001 end");
 }
 
 /**
@@ -160,7 +218,7 @@ HWTEST_F(SafCredentialPermissionTest, GetActiveModelCredential_NoPermission_001,
     if (IsSaDeployed()) {
         EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
     } else {
-        EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
+        EXPECT_EQ(ret, DegradedCode());
     }
     LOGI("GetActiveModelCredential_NoPermission_001 end");
 }
@@ -183,7 +241,7 @@ HWTEST_F(SafCredentialPermissionTest, GetModelCredentialValue_NoPermission_001, 
     if (IsSaDeployed()) {
         EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
     } else {
-        EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
+        EXPECT_EQ(ret, DegradedCode());
     }
     LOGI("GetModelCredentialValue_NoPermission_001 end");
 }
@@ -211,9 +269,63 @@ HWTEST_F(SafCredentialPermissionTest, AddToolCredential_NoPermission_001, TestSi
     if (IsSaDeployed()) {
         EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
     } else {
-        EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
+        EXPECT_EQ(ret, DegradedCode());
     }
     LOGI("AddToolCredential_NoPermission_001 end");
+}
+
+/**
+ * @tc.name: SafCredentialPermissionTest.UpdateToolCredential_NoPermission_001
+ * @tc.desc: UpdateToolCredential requires ACCESS_SECURE_FENCE (201).
+ * @tc.type: FUNC
+ */
+HWTEST_F(SafCredentialPermissionTest, UpdateToolCredential_NoPermission_001, TestSize.Level0)
+{
+    LOGI("UpdateToolCredential_NoPermission_001 start");
+    SafCredential cred;
+    ToolCredential tc;
+    tc.subjectId = TEST_SUBJECT_ID;
+    ToolCredentialContent ci;
+    ci.envName = "API_KEY";
+    ci.credentialValue = "secret";
+    tc.toolCredentialContents = {ci};
+    std::vector<ToolCredential> tools = {tc};
+    CredentialBatchResult result;
+    int32_t ret = cred.UpdateToolCredential(tools, result);
+    LOGI("UpdateToolCredential ret=%{public}d (expect PERMISSION_DENIED)", ret);
+    if (IsSaDeployed()) {
+        EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
+    } else {
+        EXPECT_EQ(ret, DegradedCode());
+    }
+    LOGI("UpdateToolCredential_NoPermission_001 end");
+}
+
+/**
+ * @tc.name: SafCredentialPermissionTest.DeleteToolCredential_NoPermission_001
+ * @tc.desc: DeleteToolCredential requires ACCESS_SECURE_FENCE (201).
+ * @tc.type: FUNC
+ */
+HWTEST_F(SafCredentialPermissionTest, DeleteToolCredential_NoPermission_001, TestSize.Level0)
+{
+    LOGI("DeleteToolCredential_NoPermission_001 start");
+    SafCredential cred;
+    ToolCredential tc;
+    tc.subjectId = TEST_SUBJECT_ID;
+    ToolCredentialContent ci;
+    ci.envName = "API_KEY";
+    ci.credentialValue = "secret";
+    tc.toolCredentialContents = {ci};
+    std::vector<ToolCredential> tools = {tc};
+    CredentialBatchResult result;
+    int32_t ret = cred.DeleteToolCredential(tools, result);
+    LOGI("DeleteToolCredential ret=%{public}d (expect PERMISSION_DENIED)", ret);
+    if (IsSaDeployed()) {
+        EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
+    } else {
+        EXPECT_EQ(ret, DegradedCode());
+    }
+    LOGI("DeleteToolCredential_NoPermission_001 end");
 }
 
 /**
@@ -234,7 +346,7 @@ HWTEST_F(SafCredentialPermissionTest, GetToolCredential_NoPermission_001, TestSi
     if (IsSaDeployed()) {
         EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
     } else {
-        EXPECT_EQ(ret, SAF_ERR_SERVICE_UNAVAILABLE);
+        EXPECT_EQ(ret, DegradedCode());
     }
     LOGI("GetToolCredential_NoPermission_001 end");
 }
