@@ -26,10 +26,8 @@
 
 namespace {
 using namespace testing::ext;
-using namespace ::PrivacyComputation;
-using namespace ::PrivacyComputation::internal;
-using OHOS::Security::PrivacyComputation::HuksSeedDeriver;
-using OHOS::Security::PrivacyComputation::RootKeyPolicy;
+using namespace OHOS::Security::PrivacyComputation;
+using namespace OHOS::Security::PrivacyComputation::internal;
 struct HuksCalls {
     int32_t existResult = HKS_SUCCESS;
     int32_t generateResult = HKS_SUCCESS;

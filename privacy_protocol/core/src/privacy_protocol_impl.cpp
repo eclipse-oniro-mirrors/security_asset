@@ -26,7 +26,7 @@
 #include <limits>
 #include <utility>
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 namespace {
 
 struct BatchLayout {
@@ -610,4 +610,4 @@ int32_t PrivacyProtocolImpl::PostProcessSearchResult(const std::vector<Bytes> &f
     return PRIVACY_PROTOCOL_SUCCESS;
 }
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal

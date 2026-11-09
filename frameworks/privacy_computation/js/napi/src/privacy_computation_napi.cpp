@@ -102,7 +102,7 @@ napi_value NapiPrivacySearch(napi_env env, napi_callback_info info)
             return;
         }
         auto *context = static_cast<PrivacySearchContext *>(data);
-        context->result = MapProtocolError(::PrivacyComputation::PrivacySearch(
+        context->result = MapProtocolError(PrivacySearch(
             context->target, context->elements, context->protocol, context->searchResult));
         if (context->result != PRIVACY_COMPUTATION_SUCCESS) {
             LOGE("privacy_search failed, code=%{public}d", context->result);
@@ -148,7 +148,7 @@ napi_value NapiGetSearchResult(napi_env env, napi_callback_info info)
         LOGI("NAPI getSearchResult begin, route=AssetSA");
         const auto ret = GetSearchResultRemote(context->searchResult, context->protocol, context->output);
         // A well-typed result can still fail ciphertext or decrypted layout validation.
-        context->result = ret == ::PrivacyComputation::PRIVACY_PROTOCOL_CODEC_ERROR ?
+        context->result = ret == PRIVACY_PROTOCOL_CODEC_ERROR ?
             PRIVACY_COMPUTATION_CRYPTO_ERROR : MapProtocolError(ret);
         if (context->result != PRIVACY_COMPUTATION_SUCCESS) {
             LOGE("get_search_result failed, code=%{public}d", context->result);

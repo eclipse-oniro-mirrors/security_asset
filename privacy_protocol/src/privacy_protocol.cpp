@@ -19,7 +19,7 @@
 #include "privacy_log.h"
 #include "privacy_protocol_impl.h"
 
-namespace PrivacyComputation {
+namespace OHOS::Security::PrivacyComputation {
 
 int32_t GenPrivacyTarget(const TargetInput &input, const PrivacyProtocol &protocol, const CallerIdentity &identity,
                          Bytes &output) noexcept
@@ -95,4 +95,4 @@ int32_t PostProcessSearchResult(const std::vector<Bytes> &fhePlainText,
     }
     return resultRet;
 }
-} // namespace PrivacyComputation
+} // namespace OHOS::Security::PrivacyComputation

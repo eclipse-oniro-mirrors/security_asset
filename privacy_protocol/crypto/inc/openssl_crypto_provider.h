@@ -20,7 +20,7 @@
 
 #include <memory>
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 
 // Built-in implementations used when no integration override is registered.
 // These factories and provider interfaces are internal; business callers only
@@ -29,6 +29,6 @@ std::shared_ptr<const IHashProvider> GetOpenSslHashProvider() noexcept;
 std::shared_ptr<IRandomSource> GetOpenSslRandomSource() noexcept;
 std::shared_ptr<const IPirValueCrypto> GetOpenSslPirValueCrypto() noexcept;
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal
 
 #endif // PRIVACY_PROTOCOL_OPENSSL_CRYPTO_PROVIDER_H

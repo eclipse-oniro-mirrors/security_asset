@@ -25,8 +25,8 @@
 
 namespace {
 using namespace testing::ext;
-using namespace ::PrivacyComputation;
-using namespace ::PrivacyComputation::internal;
+using namespace OHOS::Security::PrivacyComputation;
+using namespace OHOS::Security::PrivacyComputation::internal;
 
 Slots Pattern()
 {

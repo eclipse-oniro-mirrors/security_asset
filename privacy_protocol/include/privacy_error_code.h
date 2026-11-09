@@ -18,7 +18,7 @@
 
 #include <stdint.h>
 
-namespace PrivacyComputation {
+namespace OHOS::Security::PrivacyComputation {
 
 constexpr int32_t PRIVACY_PROTOCOL_SUCCESS = 0;
 constexpr int32_t PRIVACY_PROTOCOL_INVALID_ARGUMENT = 1;
@@ -31,6 +31,6 @@ constexpr int32_t PRIVACY_PROTOCOL_HE_ERROR = 7;
 constexpr int32_t PRIVACY_PROTOCOL_CRYPTO_ERROR = 8;
 constexpr int32_t PRIVACY_PROTOCOL_INTERNAL_ERROR = 9;
 
-} // namespace PrivacyComputation
+} // namespace OHOS::Security::PrivacyComputation
 
 #endif // PRIVACY_PROTOCOL_ERROR_CODE_H

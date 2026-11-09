@@ -21,7 +21,7 @@
 #include "protocol_params.h"
 #include "privacy_protocol_types.h"
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 
 class PrivacyProtocolImpl final {
 public:
@@ -41,6 +41,6 @@ private:
     ProtocolEncoder encoder_;
 };
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal
 
 #endif // PRIVACY_PROTOCOL_IMPL_H

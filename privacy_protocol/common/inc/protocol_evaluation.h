@@ -19,7 +19,7 @@
 #include "internal_types.h"
 #include "privacy_protocol_types.h"
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 // Opaque per-batch handle. Owns the current ciphertext and its evaluation context.
 // A failed operation invalidates the handle; Serialize then returns that error without modifying output.
 class HeEvaluation {
@@ -37,6 +37,6 @@ protected:
     HeEvaluation() = default;
 };
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal
 
 #endif // PRIVACY_PROTOCOL_EVALUATION_H

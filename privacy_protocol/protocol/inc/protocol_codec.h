@@ -21,7 +21,7 @@
 #include "privacy_error_code.h"
 #include "privacy_protocol_types.h"
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 
 class ProtocolCodec final {
 public:
@@ -34,6 +34,6 @@ public:
                             std::vector<Slots> &plaintexts) const noexcept;
 };
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal
 
 #endif // PRIVACY_PROTOCOL_PROTOCOL_CODEC_H

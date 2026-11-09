@@ -24,8 +24,8 @@
 
 namespace {
 using namespace testing::ext;
-using namespace ::PrivacyComputation;
-using namespace ::PrivacyComputation::internal;
+using namespace OHOS::Security::PrivacyComputation;
+using namespace OHOS::Security::PrivacyComputation::internal;
 constexpr PrivacyProtocol intersection{DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION};
 
 class PrivacyHeTest : public testing::Test {

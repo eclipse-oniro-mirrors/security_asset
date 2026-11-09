@@ -19,8 +19,8 @@
 
 namespace {
 using namespace testing::ext;
-using namespace ::PrivacyComputation;
-using namespace ::PrivacyComputation::internal;
+using namespace OHOS::Security::PrivacyComputation;
+using namespace OHOS::Security::PrivacyComputation::internal;
 
 constexpr uint64_t INPUT_SLOT_VALUE = 7;
 

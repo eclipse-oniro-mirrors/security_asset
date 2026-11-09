@@ -22,7 +22,7 @@
 #include <new>
 #include <utility>
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 namespace {
 constexpr size_t PIR128_COMPARE_BITS = 128;
 constexpr size_t PIR128_SLOTS_PER_DATA = 8;
@@ -30,7 +30,6 @@ constexpr size_t PIR128_DATA_PER_PLAINTEXT = 256;
 } // namespace
 bool SoftHeEngine::IsCompatible(const ProtocolParams &params) const noexcept
 {
-    using namespace ::PrivacyComputation::internal;
     const bool layout =
         (params.compareBits == kDefaultCompareBits && params.slotsPerData == kDefaultSlotsPerData &&
          params.dataNumPerPlaintext == kDefaultDataNumberPerPlaintext &&
@@ -170,7 +169,7 @@ int32_t SoftHeEngine::CreateEvaluation(const Bytes &ciphertext,
     return PRIVACY_PROTOCOL_SUCCESS;
 }
 
-std::shared_ptr<const ::PrivacyComputation::internal::IHEEngine> GetSoftHeEngine() noexcept
+std::shared_ptr<const IHEEngine> GetSoftHeEngine() noexcept
 {
     static const auto engine = std::make_shared<const SoftHeEngine>();
     return engine;
@@ -178,8 +177,8 @@ std::shared_ptr<const ::PrivacyComputation::internal::IHEEngine> GetSoftHeEngine
 
 int32_t EnsureDefaultHeEngineInstalled() noexcept
 {
-    return ::PrivacyComputation::internal::InstallDefaultHEEngineFactory(GetSoftHeEngine)
-               ? ::PrivacyComputation::PRIVACY_PROTOCOL_SUCCESS
-               : ::PrivacyComputation::PRIVACY_PROTOCOL_INTERNAL_ERROR;
+    return InstallDefaultHEEngineFactory(GetSoftHeEngine)
+               ? PRIVACY_PROTOCOL_SUCCESS
+               : PRIVACY_PROTOCOL_INTERNAL_ERROR;
 }
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal

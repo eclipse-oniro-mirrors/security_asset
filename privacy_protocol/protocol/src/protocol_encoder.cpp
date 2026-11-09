@@ -22,7 +22,7 @@
 #include <limits>
 #include <utility>
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 namespace {
 
 constexpr std::size_t MAX_RANDOM_ATTEMPTS = 128;
@@ -405,4 +405,4 @@ int32_t ProtocolEncoder::IsMatch(const Slots &plain, std::size_t offset, const P
     return PRIVACY_PROTOCOL_SUCCESS;
 }
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal

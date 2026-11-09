@@ -36,8 +36,8 @@
 #include <vector>
 
 namespace {
-using namespace ::PrivacyComputation;
-using namespace ::PrivacyComputation::internal;
+using namespace OHOS::Security::PrivacyComputation;
+using namespace OHOS::Security::PrivacyComputation::internal;
 
 constexpr PrivacyProtocol PRIVATE_SET_INTERSECTION{DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION};
 constexpr PrivacyProtocol PIR_PROTOCOL{DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL};

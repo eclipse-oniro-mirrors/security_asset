@@ -32,8 +32,7 @@
 namespace {
 using namespace testing::ext;
 using namespace OHOS::Security::PrivacyComputation;
-using namespace ::PrivacyComputation;
-using namespace ::PrivacyComputation::internal;
+using namespace OHOS::Security::PrivacyComputation::internal;
 using PrivacyHost::State;
 constexpr uint8_t TARGET_BYTE = 0x45;
 
@@ -61,7 +60,7 @@ public:
     {
         auto result = PrivacyHost::Value(&env_);
         result->properties["elemData"] =
-            PrivacyHost::Bytes(&env_, ::PrivacyComputation::Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE));
+            PrivacyHost::Bytes(&env_, Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE));
         result->properties["hashAlg"] = PrivacyHost::Number(&env_, 1);
         return result;
     }
@@ -84,7 +83,7 @@ HWTEST_F(PrivacyBoundaryTest, NapiPsiAndPirRecoverThroughSa, TestSize.Level1)
         ASSERT_FALSE(generated->rejected);
         auto element = PrivacyHost::Value(&env_);
         element->properties["elemKey"] =
-            PrivacyHost::Bytes(&env_, ::PrivacyComputation::Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE));
+            PrivacyHost::Bytes(&env_, Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE));
         element->properties["hashAlg"] = PrivacyHost::Number(&env_, 1);
         if (pir) {
             element->properties["elemValue"] = PrivacyHost::Bytes(&env_, {0, 0xFF, 0x45});
@@ -100,7 +99,7 @@ HWTEST_F(PrivacyBoundaryTest, NapiPsiAndPirRecoverThroughSa, TestSize.Level1)
         if (pir) {
             auto values = result->result->properties.at("attachedValues");
             ASSERT_EQ(values->elements.size(), 1U);
-            EXPECT_EQ(values->elements[0]->buffer->storage, (::PrivacyComputation::Bytes{0, 0xFF, 0x45}));
+            EXPECT_EQ(values->elements[0]->buffer->storage, (Bytes{0, 0xFF, 0x45}));
         }
     }
     EXPECT_EQ(env_.deletedWorks, 6U);
@@ -200,7 +199,7 @@ HWTEST_F(PrivacyBoundaryTest, ParseSearchArraysAndValueArrays, TestSize.Level2)
     object->properties["resultCipherText"] = PrivacyHost::Array(&env_, {PrivacyHost::Bytes(&env_, {1, 2})});
     object->properties["valueCipherText"] = PrivacyHost::Array(&env_, {PrivacyHost::Bytes(&env_, {})});
     ASSERT_EQ(NapiGetProperty(&env_, object, result, pir), napi_ok);
-    EXPECT_EQ(result.resultCipherText, (std::vector<::PrivacyComputation::Bytes>{{1, 2}}));
+    EXPECT_EQ(result.resultCipherText, (std::vector<Bytes>{{1, 2}}));
     ASSERT_TRUE(result.valueCipherText.has_value());
     EXPECT_TRUE(result.valueCipherText->front().empty());
     object->properties["valueCipherText"] = PrivacyHost::Number(&env_, 1);
@@ -333,9 +332,9 @@ HWTEST_F(PrivacyBoundaryTest, GetterExceptionIsPreservedAndErrorsAreMapped, Test
 
 HWTEST_F(PrivacyBoundaryTest, SaValidatesPointersIdentityAndOutputCapacity, TestSize.Level2)
 {
-    ::PrivacyComputation::Bytes storage(MAX_TARGET_RESULT_BYTES);
+    Bytes storage(MAX_TARGET_RESULT_BYTES);
     PrivacyBuffer output{storage.data(), static_cast<uint32_t>(storage.size())};
-    ::PrivacyComputation::Bytes element(8, 0x45);
+    Bytes element(8, 0x45);
     PrivacyTargetRequest input{{2, 0}, 1, {element.data(), static_cast<uint32_t>(element.size())}};
     EXPECT_EQ(AssetGenPrivacyTarget(1, nullptr, &output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
     EXPECT_EQ(AssetGenPrivacyTarget(1, &input, nullptr), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
@@ -367,12 +366,12 @@ HWTEST_F(PrivacyBoundaryTest, SaPropagatesHuksAndHeFailuresWithoutCommittingOutp
     for (const auto failure : {"New", "SetPara", "KeyGen", "Encode", "Encrypt", "SerializeQuery", "Serialize"}) {
         PrivacyHost::Reset();
         State().failAt = failure;
-        ::PrivacyComputation::Bytes output{0x99};
+        Bytes output{0x99};
         EXPECT_NE(GenPrivacyTargetRemote(
-                      {::PrivacyComputation::Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE), HashAlg::SHA256},
+                      {Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE), HashAlg::SHA256},
                       {DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION}, output),
                   PRIVACY_PROTOCOL_SUCCESS);
-        EXPECT_EQ(output, (::PrivacyComputation::Bytes{0x99}));
+        EXPECT_EQ(output, (Bytes{0x99}));
     }
     PrivacyHost::Reset();
     State().huksInitStatus = -1;
@@ -393,7 +392,7 @@ HWTEST_F(PrivacyBoundaryTest, DrbgInitializationStatus, TestSize.Level2)
 
 HWTEST_F(PrivacyBoundaryTest, EachBatchImportsOnceAndExportsOnlyAfterEvaluation, TestSize.Level1)
 {
-    const std::vector<::PrivacyComputation::PrivacyProtocol> protocols{
+    const std::vector<OHOS::Security::PrivacyComputation::PrivacyProtocol> protocols{
         {DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION},
         {DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL},
         {DataSetSize::SIZE_128, ProtocolType::PIR_PROTOCOL}};
@@ -402,10 +401,10 @@ HWTEST_F(PrivacyBoundaryTest, EachBatchImportsOnceAndExportsOnlyAfterEvaluation,
         ASSERT_EQ(MapPrivacyProtocol(protocol, params), PRIVACY_PROTOCOL_SUCCESS);
         const bool pir = protocol.protocolType == ProtocolType::PIR_PROTOCOL;
         const size_t capacity = params.dataNumPerPlaintext / (pir ? kPirGroupsPerItem : kIntersectionGroupsPerItem);
-        const Element element{::PrivacyComputation::Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE),
-                              HashAlg::SHA256, ::PrivacyComputation::Bytes{0xFF}};
+        const Element element{Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE),
+                              HashAlg::SHA256, Bytes{0xFF}};
         const std::vector<Element> elements(capacity + 1, element);
-        ::PrivacyComputation::Bytes target;
+        Bytes target;
         ASSERT_EQ(GenPrivacyTarget({element.elemKey, element.hashAlg}, protocol, {20010001, 100}, target),
                   PRIVACY_PROTOCOL_SUCCESS);
         for (bool custom : {false, true}) {
@@ -424,10 +423,11 @@ HWTEST_F(PrivacyBoundaryTest, EachBatchImportsOnceAndExportsOnlyAfterEvaluation,
 
 HWTEST_F(PrivacyBoundaryTest, FailedBatchNeverSerializesIntermediateResults, TestSize.Level2)
 {
-    const ::PrivacyComputation::PrivacyProtocol protocol{DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL};
-    const Element element{::PrivacyComputation::Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE), HashAlg::SHA256,
-                          ::PrivacyComputation::Bytes{0xFF}};
-    ::PrivacyComputation::Bytes target;
+    const OHOS::Security::PrivacyComputation::PrivacyProtocol protocol{
+        DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL};
+    const Element element{Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE), HashAlg::SHA256,
+                          Bytes{0xFF}};
+    Bytes target;
     ASSERT_EQ(GenPrivacyTarget({element.elemKey, element.hashAlg}, protocol, {20010001, 100}, target),
               PRIVACY_PROTOCOL_SUCCESS);
     SetHEEngine(std::make_shared<const SoftHeEngine>());
@@ -438,31 +438,32 @@ HWTEST_F(PrivacyBoundaryTest, FailedBatchNeverSerializesIntermediateResults, Tes
         State().calls.clear();
         State().failAt = operation;
         State().failOccurrence = occurrence;
-        PrivacySearchResult output{{::PrivacyComputation::Bytes{0x99}},
-                                   std::vector<::PrivacyComputation::Bytes>{{0x88}}};
+        PrivacySearchResult output{{Bytes{0x99}},
+                                   std::vector<Bytes>{{0x88}}};
         EXPECT_EQ(PrivacySearch(target, {element}, protocol, output), PRIVACY_PROTOCOL_HE_ERROR);
         EXPECT_EQ(State().calls["SerializeQuery"], 0U) << operation;
         EXPECT_EQ(State().calls["Serialize"], 0U) << operation;
-        EXPECT_EQ(output.resultCipherText, (std::vector<::PrivacyComputation::Bytes>{{0x99}}));
+        EXPECT_EQ(output.resultCipherText, (std::vector<Bytes>{{0x99}}));
         ASSERT_TRUE(output.valueCipherText.has_value());
-        EXPECT_EQ(*output.valueCipherText, (std::vector<::PrivacyComputation::Bytes>{{0x88}}));
+        EXPECT_EQ(*output.valueCipherText, (std::vector<Bytes>{{0x88}}));
     }
 }
 
 HWTEST_F(PrivacyBoundaryTest, FinalExportFailurePreservesOutput, TestSize.Level2)
 {
-    const ::PrivacyComputation::PrivacyProtocol protocol{DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL};
-    const Element element{::PrivacyComputation::Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE), HashAlg::SHA256,
-                          ::PrivacyComputation::Bytes{0xFF}};
-    ::PrivacyComputation::Bytes target;
+    const OHOS::Security::PrivacyComputation::PrivacyProtocol protocol{
+        DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL};
+    const Element element{Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE), HashAlg::SHA256,
+                          Bytes{0xFF}};
+    Bytes target;
     ASSERT_EQ(GenPrivacyTarget({element.elemKey, element.hashAlg}, protocol, {20010001, 100}, target),
               PRIVACY_PROTOCOL_SUCCESS);
     for (const auto operation : {"SerializeQuery", "Serialize"}) {
         State().calls.clear();
         State().failAt = operation;
-        PrivacySearchResult output{{::PrivacyComputation::Bytes{0x99}}, std::nullopt};
+        PrivacySearchResult output{{Bytes{0x99}}, std::nullopt};
         EXPECT_EQ(PrivacySearch(target, {element}, protocol, output), PRIVACY_PROTOCOL_HE_ERROR);
-        EXPECT_EQ(output.resultCipherText, (std::vector<::PrivacyComputation::Bytes>{{0x99}}));
+        EXPECT_EQ(output.resultCipherText, (std::vector<Bytes>{{0x99}}));
         EXPECT_FALSE(output.valueCipherText.has_value());
         EXPECT_EQ(State().calls["Deserialize"], 1U);
         EXPECT_EQ(State().calls["Add"], 2U);

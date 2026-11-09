@@ -21,7 +21,7 @@
 #include "privacy_protocol_types.h"
 #include <array>
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 constexpr std::size_t kHeSeedSize = 32;
 constexpr std::size_t kIdentityHashSize = 32;
 // Secret storage is cleared at scope exit; no copies may escape an operation.
@@ -34,6 +34,6 @@ public:
     std::array<uint8_t, kHeSeedSize> bytes{};
 };
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal
 
 #endif // PRIVACY_PROTOCOL_HE_TYPES_H

@@ -19,7 +19,7 @@
 #include "he_types.h"
 #include "hifhe.h"
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 // An operation-local native object. Never transfer the handle through IPC or public protocol APIs.
 struct HifheText final {
     HifheText() noexcept = default;
@@ -57,5 +57,5 @@ private:
     void Reset() noexcept;
     HIFHE_Ctx *ctx_ = nullptr;
 };
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal
 #endif // PRIVACY_PROTOCOL_HIFHE_ADAPTER_H

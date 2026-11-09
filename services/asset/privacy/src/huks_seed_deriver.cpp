@@ -26,8 +26,7 @@
 
 namespace OHOS::Security::PrivacyComputation {
 namespace {
-using namespace ::PrivacyComputation;
-using namespace ::PrivacyComputation::internal;
+using namespace OHOS::Security::PrivacyComputation::internal;
 constexpr uint32_t ROOT_KEY_BITS = 256;
 constexpr char ROOT_KEY_ALIAS[] = "asset.privacy.derive.root.v1";
 std::mutex g_rootMutex;

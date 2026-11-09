@@ -20,7 +20,7 @@
 #include <optional>
 #include <vector>
 
-namespace PrivacyComputation {
+namespace OHOS::Security::PrivacyComputation {
 
 using Bytes = std::vector<std::uint8_t>;
 
@@ -76,6 +76,6 @@ struct SearchResult {
     std::optional<std::vector<Bytes>> attachedValues;
 };
 
-} // namespace PrivacyComputation
+} // namespace OHOS::Security::PrivacyComputation
 
 #endif // PRIVACY_PROTOCOL_TYPES_H

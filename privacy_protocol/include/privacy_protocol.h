@@ -19,7 +19,7 @@
 #include "privacy_error_code.h"
 #include "privacy_protocol_types.h"
 
-namespace PrivacyComputation {
+namespace OHOS::Security::PrivacyComputation {
 
 // Generates an encrypted privacy target using the caller-provided identity.
 int32_t GenPrivacyTarget(const TargetInput &input, const PrivacyProtocol &privacyProtocol,
@@ -40,6 +40,6 @@ int32_t PostProcessSearchResult(const std::vector<Bytes> &fhePlainText,
                                 const std::optional<std::vector<Bytes>> &valueCipherText,
                                 const PrivacyProtocol &privacyProtocol, SearchResult &searchResult) noexcept;
 
-} // namespace PrivacyComputation
+} // namespace OHOS::Security::PrivacyComputation
 
 #endif // PRIVACY_PROTOCOL_H

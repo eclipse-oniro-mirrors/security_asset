@@ -23,7 +23,7 @@
 #include <memory>
 #include <stdint.h>
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 
 struct ProtocolParams;
 
@@ -60,6 +60,6 @@ public:
                             std::optional<Bytes> &output) const noexcept = 0;
 };
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal
 
 #endif // PRIVACY_PROTOCOL_INTERNAL_CRYPTO_PROVIDER_H

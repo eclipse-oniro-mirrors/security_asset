@@ -22,7 +22,7 @@
 #include <openssl/evp.h>
 #include <utility>
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 namespace {
 constexpr size_t IDENTITY_FIELD_BYTES = sizeof(uint32_t);
 constexpr size_t USER_ID_OFFSET = IDENTITY_FIELD_BYTES;
@@ -64,7 +64,7 @@ int32_t HeKeyDeriver::DeriveKey(const CallerIdentity &identity, HeSeed &seed) co
     if (digestRet != 1 || digestSize != digest.size()) {
         OPENSSL_cleanse(digest.data(), digest.size());
         LOGE("seed identity digest failed");
-        return ::PrivacyComputation::PRIVACY_PROTOCOL_CRYPTO_ERROR;
+        return PRIVACY_PROTOCOL_CRYPTO_ERROR;
     }
     std::shared_ptr<const IHeSeedDeriver> deriver;
     {
@@ -72,13 +72,13 @@ int32_t HeKeyDeriver::DeriveKey(const CallerIdentity &identity, HeSeed &seed) co
         deriver = g_seedDeriver;
     }
     const auto ret =
-        deriver ? deriver->Derive(identity, digest, seed) : ::PrivacyComputation::PRIVACY_PROTOCOL_HE_ERROR;
+        deriver ? deriver->Derive(identity, digest, seed) : PRIVACY_PROTOCOL_HE_ERROR;
     OPENSSL_cleanse(digest.data(), digest.size());
-    if (ret != ::PrivacyComputation::PRIVACY_PROTOCOL_SUCCESS) {
+    if (ret != PRIVACY_PROTOCOL_SUCCESS) {
         LOGE("seed derivation failed, providerPresent=%{public}d, ret=%{public}d", deriver ? 1 : 0, ret);
     } else {
         LOGI("seed derivation success, seedBytes=%{public}zu", seed.bytes.size());
     }
     return ret;
 }
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal

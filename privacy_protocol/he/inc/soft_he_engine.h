@@ -21,8 +21,8 @@
 #include "protocol_evaluation.h"
 #include <memory>
 
-namespace PrivacyComputation::internal {
-class SoftHeEngine final : public ::PrivacyComputation::internal::IHEEngine {
+namespace OHOS::Security::PrivacyComputation::internal {
+class SoftHeEngine final : public internal::IHEEngine {
 public:
     // Raw HE primitives: no caller identity lookup, target construction or search-result processing.
     int32_t Encrypt(const Slots &slots, const ProtocolParams &params, const HeSeed &seed, Bytes &output) const noexcept;
@@ -32,10 +32,10 @@ public:
     int32_t CreateEvaluation(const Bytes &ciphertext,
                              std::unique_ptr<HeEvaluation> &evaluation) const noexcept override;
 };
-std::shared_ptr<const ::PrivacyComputation::internal::IHEEngine> GetSoftHeEngine() noexcept;
+std::shared_ptr<const internal::IHEEngine> GetSoftHeEngine() noexcept;
 // Installs the protocol default without replacing an explicitly registered provider.
 int32_t EnsureDefaultHeEngineInstalled() noexcept;
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal
 
 #endif // PRIVACY_PROTOCOL_SOFT_HE_ENGINE_H

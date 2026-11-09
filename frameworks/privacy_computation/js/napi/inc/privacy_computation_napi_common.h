@@ -48,7 +48,7 @@ public:
     napi_deferred deferred = nullptr;
     int32_t result = PRIVACY_COMPUTATION_INVALID_ARGUMENT;
     std::string operationName;
-    ::PrivacyComputation::PrivacyProtocol protocol;
+    PrivacyProtocol protocol;
 
     napi_status (*parse)(napi_env, napi_callback_info, PrivacyComputationBaseContext *) = nullptr;
     napi_async_execute_callback execute = nullptr;
@@ -57,21 +57,21 @@ public:
 
 class GenPrivacyTargetContext final : public PrivacyComputationBaseContext {
 public:
-    ::PrivacyComputation::TargetInput input;
-    ::PrivacyComputation::Bytes target;
+    TargetInput input;
+    Bytes target;
 };
 
 class PrivacySearchContext final : public PrivacyComputationBaseContext {
 public:
-    ::PrivacyComputation::Bytes target;
-    std::vector<::PrivacyComputation::Element> elements;
-    ::PrivacyComputation::PrivacySearchResult searchResult;
+    Bytes target;
+    std::vector<Element> elements;
+    PrivacySearchResult searchResult;
 };
 
 class GetSearchResultContext final : public PrivacyComputationBaseContext {
 public:
-    ::PrivacyComputation::PrivacySearchResult searchResult;
-    ::PrivacyComputation::SearchResult output;
+    PrivacySearchResult searchResult;
+    SearchResult output;
 };
 
 napi_status CheckNapiStatus(napi_env env, napi_status status);
@@ -82,27 +82,27 @@ napi_value CreateRejectedPromise(napi_env env, int32_t code, const char *message
 napi_value CreateAsyncWork(napi_env env, napi_callback_info info,
                            std::unique_ptr<PrivacyComputationBaseContext> context, const char *resourceName);
 
-constexpr uint32_t HASH_ALG_NONE = static_cast<uint32_t>(::PrivacyComputation::HashAlg::NONE);
-constexpr uint32_t HASH_ALG_SHA256 = static_cast<uint32_t>(::PrivacyComputation::HashAlg::SHA256);
-constexpr uint32_t HASH_ALG_SHA384 = static_cast<uint32_t>(::PrivacyComputation::HashAlg::SHA384);
-constexpr uint32_t HASH_ALG_SHA512 = static_cast<uint32_t>(::PrivacyComputation::HashAlg::SHA512);
+constexpr uint32_t HASH_ALG_NONE = static_cast<uint32_t>(HashAlg::NONE);
+constexpr uint32_t HASH_ALG_SHA256 = static_cast<uint32_t>(HashAlg::SHA256);
+constexpr uint32_t HASH_ALG_SHA384 = static_cast<uint32_t>(HashAlg::SHA384);
+constexpr uint32_t HASH_ALG_SHA512 = static_cast<uint32_t>(HashAlg::SHA512);
 
 napi_status ParseJsArgs(napi_env env, napi_callback_info info, napi_value *args, size_t expectedCount);
 napi_status NapiGetNamedProperty(napi_env env, napi_value object, const char *name, napi_value &value);
 napi_status NapiGetProperty(napi_env env, napi_value value, uint32_t &number);
-napi_status NapiGetProperty(napi_env env, napi_value value, ::PrivacyComputation::Bytes &bytes);
-napi_status NapiGetProperty(napi_env env, napi_value value, ::PrivacyComputation::PrivacyProtocol &protocol);
-napi_status NapiGetProperty(napi_env env, napi_value value, ::PrivacyComputation::TargetInput &target);
-napi_status NapiGetProperty(napi_env env, napi_value value, std::vector<::PrivacyComputation::Element> &elements,
-    ::PrivacyComputation::ProtocolType protocolType);
-napi_status NapiGetProperty(napi_env env, napi_value value, ::PrivacyComputation::PrivacySearchResult &result,
-    ::PrivacyComputation::ProtocolType protocolType);
+napi_status NapiGetProperty(napi_env env, napi_value value, Bytes &bytes);
+napi_status NapiGetProperty(napi_env env, napi_value value, PrivacyProtocol &protocol);
+napi_status NapiGetProperty(napi_env env, napi_value value, TargetInput &target);
+napi_status NapiGetProperty(napi_env env, napi_value value, std::vector<Element> &elements,
+    ProtocolType protocolType);
+napi_status NapiGetProperty(napi_env env, napi_value value, PrivacySearchResult &result,
+    ProtocolType protocolType);
 napi_status NapiSetProperty(napi_env env, uint32_t value, napi_value &output);
 napi_status NapiSetProperty(napi_env env, bool value, napi_value &output);
-napi_status NapiSetProperty(napi_env env, const ::PrivacyComputation::Bytes &bytes, napi_value &output);
-napi_status NapiSetProperty(napi_env env, const std::vector<::PrivacyComputation::Bytes> &bytes, napi_value &output);
-napi_status NapiSetProperty(napi_env env, const ::PrivacyComputation::PrivacySearchResult &result, napi_value &output);
-napi_status NapiSetProperty(napi_env env, const ::PrivacyComputation::SearchResult &result, napi_value &output);
+napi_status NapiSetProperty(napi_env env, const Bytes &bytes, napi_value &output);
+napi_status NapiSetProperty(napi_env env, const std::vector<Bytes> &bytes, napi_value &output);
+napi_status NapiSetProperty(napi_env env, const PrivacySearchResult &result, napi_value &output);
+napi_status NapiSetProperty(napi_env env, const SearchResult &result, napi_value &output);
 
 template <typename T> napi_status NapiGetProperty(napi_env env, napi_value object, const char *name, T &value)
 {

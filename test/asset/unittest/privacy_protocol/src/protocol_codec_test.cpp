@@ -21,8 +21,8 @@
 
 namespace {
 using namespace testing::ext;
-using namespace ::PrivacyComputation;
-using namespace ::PrivacyComputation::internal;
+using namespace OHOS::Security::PrivacyComputation;
+using namespace OHOS::Security::PrivacyComputation::internal;
 
 /**
  * @tc.name: SerializePlaintext_001

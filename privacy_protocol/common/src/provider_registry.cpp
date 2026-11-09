@@ -21,7 +21,7 @@
 #include <atomic>
 #include <utility>
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 namespace {
 
 std::shared_ptr<const IHashProvider> g_hashProvider;
@@ -104,4 +104,4 @@ std::shared_ptr<const IPirValueCrypto> GetPirValueCrypto() noexcept
     return GetOpenSslPirValueCrypto();
 }
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal

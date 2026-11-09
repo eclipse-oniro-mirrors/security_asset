@@ -21,7 +21,7 @@
 #include <algorithm>
 #include <utility>
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 namespace {
 constexpr uint32_t MAX_HE_BYTES = 256 * 1024;
 
@@ -284,4 +284,4 @@ int32_t HifheAdapter::Rerandomize(const HifheText &ciphertext, HifheText &output
     LOGI("HiFHE Rerandomize success");
     return PRIVACY_PROTOCOL_SUCCESS;
 }
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal

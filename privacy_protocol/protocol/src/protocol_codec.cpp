@@ -21,7 +21,7 @@
 #include <limits>
 #include <utility>
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 namespace {
 
 constexpr std::uint64_t BGV_PLAIN_MODULUS = 65537;
@@ -288,4 +288,4 @@ int32_t ProtocolCodec::ParsePlaintexts(const std::vector<Bytes> &fhePlainText,
     return PRIVACY_PROTOCOL_SUCCESS;
 }
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal

@@ -19,7 +19,7 @@
 #include <cstdint>
 #include <vector>
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 
 using Slots = std::vector<std::uint64_t>;
 
@@ -28,6 +28,6 @@ constexpr std::size_t kPirGroupsPerItem = 2;
 constexpr std::size_t kIntersectionGroupsPerItem = 1;
 constexpr std::size_t kMaxBitsPerSlot = sizeof(std::uint64_t) * kBitsPerByte;
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal
 
 #endif // PRIVACY_PROTOCOL_INTERNAL_TYPES_H

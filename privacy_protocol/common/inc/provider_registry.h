@@ -20,7 +20,7 @@
 
 #include <memory>
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 
 // Internal integration hooks; never exposed through installed public headers.
 // Passing nullptr clears an override. Hash, random and pir value crypto then fall
@@ -39,6 +39,6 @@ std::shared_ptr<IRandomSource> GetRandomSource() noexcept;
 std::shared_ptr<const IHEEngine> GetHEEngine() noexcept;
 std::shared_ptr<const IPirValueCrypto> GetPirValueCrypto() noexcept;
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal
 
 #endif // PRIVACY_PROTOCOL_INTERNAL_PROVIDER_REGISTRY_H

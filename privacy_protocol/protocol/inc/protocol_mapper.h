@@ -20,10 +20,10 @@
 #include "privacy_error_code.h"
 #include "privacy_protocol_types.h"
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 
 int32_t MapPrivacyProtocol(const PrivacyProtocol &privacyProtocol, ProtocolParams &params) noexcept;
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal
 
 #endif // PRIVACY_PROTOCOL_PROTOCOL_MAPPER_H

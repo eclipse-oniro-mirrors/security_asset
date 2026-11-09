@@ -21,7 +21,7 @@
 #include "privacy_error_code.h"
 #include "privacy_protocol_types.h"
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 
 class ProtocolEncoder final {
 public:
@@ -43,6 +43,6 @@ private:
     int32_t BytesToSlots(const Bytes &input, const ProtocolParams &params, Slots &slots) const noexcept;
 };
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal
 
 #endif // PRIVACY_PROTOCOL_PROTOCOL_ENCODER_H

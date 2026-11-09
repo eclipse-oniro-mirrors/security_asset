@@ -19,7 +19,7 @@
 
 #include <array>
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 namespace {
 
 constexpr std::size_t COMPARE_BITS_64 = 64;
@@ -125,4 +125,4 @@ int32_t MapPrivacyProtocol(const PrivacyProtocol &privacyProtocol, ProtocolParam
     return PRIVACY_PROTOCOL_SUCCESS;
 }
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal

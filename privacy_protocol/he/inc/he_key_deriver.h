@@ -19,7 +19,7 @@
 #include "he_types.h"
 #include <memory>
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 // Service-side extension. No root material is exposed through the protocol API or IPC.
 class IHeSeedDeriver {
 public:
@@ -34,6 +34,6 @@ public:
     int32_t DeriveKey(const CallerIdentity &identity, HeSeed &seed) const noexcept;
 };
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal
 
 #endif // PRIVACY_PROTOCOL_HE_KEY_DERIVER_H

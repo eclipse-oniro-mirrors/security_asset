@@ -21,7 +21,7 @@
 #include <cstddef>
 #include <cstdint>
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 
 enum class ProtocolMode : std::uint32_t {
     INTERSECTION = 0,
@@ -58,6 +58,6 @@ struct ProtocolParams {
     SymAlgorithm symAlgorithm{SymAlgorithm::NONE};
 };
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal
 
 #endif // PRIVACY_PROTOCOL_PROTOCOL_PARAMS_H

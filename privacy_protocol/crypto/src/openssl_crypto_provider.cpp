@@ -33,7 +33,7 @@
 #include <memory>
 #include <optional>
 
-namespace PrivacyComputation::internal {
+namespace OHOS::Security::PrivacyComputation::internal {
 namespace {
 
 constexpr std::size_t AES_KEY_SIZE = 32;
@@ -646,4 +646,4 @@ std::shared_ptr<const IPirValueCrypto> GetOpenSslPirValueCrypto() noexcept
     return provider;
 }
 
-} // namespace PrivacyComputation::internal
+} // namespace OHOS::Security::PrivacyComputation::internal
