@@ -74,8 +74,42 @@ public:
     SearchResult output;
 };
 
-napi_status CheckNapiStatus(napi_env env, napi_status status);
+void ThrowNapiError(napi_env env, napi_status status);
 napi_status ThrowJsError(napi_env env, int32_t code, const char *message);
+
+// Propagate the exact status so the async setup can reject with the pending exception.
+#define PRIVACY_NAPI_RETURN_IF_FAILED(call)           \
+    do {                                              \
+        const napi_status privacyNapiStatus = (call); \
+        if (privacyNapiStatus != napi_ok) {           \
+            return privacyNapiStatus;                 \
+        }                                             \
+    } while (false)
+
+#define PRIVACY_NAPI_CALL_BASE(env, call, result)                                            \
+    do {                                                                                     \
+        const napi_status privacyNapiStatus = (call);                                        \
+        if (privacyNapiStatus != napi_ok) {                                                   \
+            OHOS::Security::PrivacyComputation::ThrowNapiError((env), privacyNapiStatus);      \
+            return (result);                                                                 \
+        }                                                                                    \
+    } while (false)
+
+#define PRIVACY_NAPI_CALL(env, call) \
+    PRIVACY_NAPI_CALL_BASE(env, call, privacyNapiStatus)
+
+#define PRIVACY_NAPI_THROW_IF(env, condition, result, code, message)                    \
+    do {                                                                                \
+        if ((condition)) {                                                              \
+            OHOS::Security::PrivacyComputation::ThrowJsError((env), (code), (message)); \
+            return (result);                                                            \
+        }                                                                               \
+    } while (false)
+
+#define PRIVACY_NAPI_INVALID_ARG_IF(env, condition, message) \
+    PRIVACY_NAPI_THROW_IF(env, condition, napi_invalid_arg,  \
+        OHOS::Security::PrivacyComputation::PRIVACY_COMPUTATION_INVALID_ARGUMENT, message)
+
 napi_value CreateJsError(napi_env env, int32_t code, const char *message);
 napi_status RejectPromise(napi_env env, napi_deferred deferred, int32_t code, const char *message);
 napi_value CreateRejectedPromise(napi_env env, int32_t code, const char *message);
@@ -107,19 +141,16 @@ napi_status NapiSetProperty(napi_env env, const SearchResult &result, napi_value
 template <typename T> napi_status NapiGetProperty(napi_env env, napi_value object, const char *name, T &value)
 {
     napi_value property = nullptr;
-    if (const auto callStatus = NapiGetNamedProperty(env, object, name, property); callStatus != napi_ok) {
-        return callStatus;
-    }
+    PRIVACY_NAPI_RETURN_IF_FAILED(NapiGetNamedProperty(env, object, name, property));
     return NapiGetProperty(env, property, value);
 }
 
 template <typename T> napi_status NapiSetProperty(napi_env env, napi_value object, const char *name, const T &value)
 {
     napi_value property = nullptr;
-    if (const auto callStatus = NapiSetProperty(env, value, property); callStatus != napi_ok) {
-        return callStatus;
-    }
-    return CheckNapiStatus(env, napi_set_named_property(env, object, name, property));
+    PRIVACY_NAPI_RETURN_IF_FAILED(NapiSetProperty(env, value, property));
+    PRIVACY_NAPI_CALL(env, napi_set_named_property(env, object, name, property));
+    return napi_ok;
 }
 
 } // namespace OHOS::Security::PrivacyComputation

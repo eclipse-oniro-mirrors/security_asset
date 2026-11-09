@@ -16,14 +16,15 @@
 #include "privacy_client.h"
 #include "privacy_client_ffi.h"
 #include "privacy_log.h"
+#include <limits>
 #include <utility>
 
 namespace OHOS::Security::PrivacyComputation {
 int32_t GenPrivacyTargetRemote(const TargetInput &input, const PrivacyProtocol &protocol, Bytes &output)
 {
     LOGI("IPC genPrivacyTarget begin, inputBytes=%{public}zu", input.elemData.size());
-    if (input.elemData.size() > MAX_PRIVACY_INLINE_BYTES - TARGET_FIXED_BYTES - PRIVACY_LENGTH_BYTES) {
-        LOGE("IPC genPrivacyTarget input exceeds byte budget");
+    if (input.elemData.size() > std::numeric_limits<uint32_t>::max()) {
+        LOGE("IPC genPrivacyTarget input length does not fit the request");
         return PRIVACY_PROTOCOL_INVALID_ARGUMENT;
     }
     const PrivacyTargetRequest request{
@@ -56,7 +57,7 @@ int32_t GetSearchResultRemote(const PrivacySearchResult &input, const PrivacyPro
     for (size_t batch = 0; batch < input.resultCipherText.size(); ++batch) {
         const auto &ciphertext = input.resultCipherText[batch];
         if (ciphertext.empty() ||
-            ciphertext.size() > MAX_PRIVACY_INLINE_BYTES - DECRYPT_FIXED_BYTES - PRIVACY_LENGTH_BYTES) {
+            ciphertext.size() > std::numeric_limits<uint32_t>::max()) {
             LOGE("IPC invalid HE batch, batch=%{public}zu, bytes=%{public}zu", batch, ciphertext.size());
             return PRIVACY_PROTOCOL_INVALID_ARGUMENT;
         }

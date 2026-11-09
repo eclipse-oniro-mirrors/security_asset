@@ -16,23 +16,20 @@
 //! Single-message IPC tests; symmetric payloads have no IPC representation.
 use asset_ipc::privacy::*;
 use ipc::parcel::MsgParcel;
-use std::ptr::null;
 
 fn protocol() -> PrivacyProtocol {
     PrivacyProtocol { data_set_size: 1, protocol_type: 1 }
 }
 
 #[test]
-fn target_round_trip_and_inline_boundary() {
-    let mut value = TargetRequest { protocol: protocol(), hash_alg: 0,
-        element: vec![0x5A; MAX_INLINE_BYTES - TARGET_OVERHEAD_BYTES] };
+fn target_round_trip() {
+    let value = TargetRequest { protocol: protocol(), hash_alg: 0,
+        element: vec![0x5A; 1024] };
     let mut parcel = MsgParcel::new();
     serialize_target(&value, &mut parcel).unwrap();
     let result = deserialize_target(&mut parcel).unwrap();
     assert_eq!(result.element, value.element);
     assert_eq!(result.hash_alg, 0);
-    value.element.push(0);
-    assert!(serialize_target(&value, &mut MsgParcel::new()).is_err());
 }
 
 #[test]
@@ -49,16 +46,9 @@ fn decrypt_round_trip_and_field_order() {
 }
 
 #[test]
-fn decrypt_rejects_empty_and_oversized_ciphertext() {
-    for size in [0, MAX_INLINE_BYTES - DECRYPT_OVERHEAD_BYTES + 1] {
-        let value = DecryptRequest { protocol: protocol(), ciphertext: vec![0; size] };
-        assert!(serialize_decrypt(&value, &mut MsgParcel::new()).is_err());
-    }
-    let value = DecryptRequest { protocol: protocol(),
-        ciphertext: vec![0xA5; MAX_INLINE_BYTES - DECRYPT_OVERHEAD_BYTES] };
-    let mut parcel = MsgParcel::new();
-    serialize_decrypt(&value, &mut parcel).unwrap();
-    assert_eq!(deserialize_decrypt(&mut parcel).unwrap().ciphertext, value.ciphertext);
+fn decrypt_rejects_empty_ciphertext() {
+    let value = DecryptRequest { protocol: protocol(), ciphertext: Vec::new() };
+    assert!(serialize_decrypt(&value, &mut MsgParcel::new()).is_err());
 }
 
 #[test]
@@ -84,22 +74,16 @@ fn decoded_slot_bytes_are_transported_without_reordering() {
 }
 
 #[test]
-fn native_view_checks_pointers_before_copying() {
-    let mut value = PrivacyDecryptRequest { protocol: protocol(),
-        ciphertext: PrivacyBlob { data: null(), size: 0 } };
-    assert!(unsafe { value.to_value() }.is_err());
-    value.ciphertext.size = 1;
-    assert!(unsafe { value.to_value() }.is_err());
-    value.ciphertext.size = u32::MAX;
-    assert!(unsafe { value.to_value() }.is_err());
-    let bytes = [1, 2, 3];
-    value.ciphertext = PrivacyBlob { data: bytes.as_ptr(), size: bytes.len() as u32 };
-    assert_eq!(unsafe { value.to_value() }.unwrap().ciphertext, bytes);
+fn native_view_borrows_ciphertext_storage() {
+    let request = DecryptRequest { protocol: protocol(), ciphertext: vec![1, 2, 3] };
+    let native = request.as_native();
+    assert_eq!(native.ciphertext.data, request.ciphertext.as_ptr());
+    assert_eq!(native.ciphertext.size as usize, request.ciphertext.len());
 }
 
 #[test]
-fn truncated_and_oversized_parcel_fields_are_rejected() {
-    for size in [1, MAX_INLINE_BYTES as u32 + 1] {
+fn declared_payload_longer_than_parcel_is_rejected() {
+    for size in [1, u32::MAX] {
         let mut parcel = MsgParcel::new();
         parcel.write(&size).unwrap();
         assert!(read_payload(&mut parcel).is_err());

@@ -14,7 +14,6 @@
  */
 
 #include "privacy_computation_napi_common.h"
-#include "privacy_limits.h"
 #include "securec.h"
 #include <cmath>
 #include <limits>
@@ -24,25 +23,12 @@ namespace OHOS::Security::PrivacyComputation {
 napi_status NapiGetNamedProperty(napi_env env, napi_value object, const char *name, napi_value &value)
 {
     napi_valuetype type = napi_undefined;
-    if (const auto callStatus = CheckNapiStatus(env, napi_typeof(env, object, &type)); callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (type != napi_object) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "Expected an object parameter.");
-        return napi_invalid_arg;
-    }
-    if (const auto callStatus = CheckNapiStatus(env, napi_get_named_property(env, object, name, &value));
-        callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (const auto callStatus = CheckNapiStatus(env, napi_typeof(env, value, &type)); callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (type == napi_undefined) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT,
-                     (std::string("Missing required property: ") + name).c_str());
-        return napi_invalid_arg;
-    }
+    PRIVACY_NAPI_CALL(env, napi_typeof(env, object, &type));
+    PRIVACY_NAPI_INVALID_ARG_IF(env, type != napi_object, "Expected an object parameter.");
+    PRIVACY_NAPI_CALL(env, napi_get_named_property(env, object, name, &value));
+    PRIVACY_NAPI_CALL(env, napi_typeof(env, value, &type));
+    PRIVACY_NAPI_INVALID_ARG_IF(env, type == napi_undefined,
+        (std::string("Missing required property: ") + name).c_str());
     return napi_ok;
 }
 
@@ -54,14 +40,9 @@ constexpr size_t SHA512_DIGEST_BYTES = 64;
 
 napi_status GetOptionalProperty(napi_env env, napi_value object, const char *name, napi_value &value, bool &present)
 {
-    if (const auto callStatus = CheckNapiStatus(env, napi_get_named_property(env, object, name, &value));
-        callStatus != napi_ok) {
-        return callStatus;
-    }
+    PRIVACY_NAPI_CALL(env, napi_get_named_property(env, object, name, &value));
     napi_valuetype type = napi_undefined;
-    if (const auto callStatus = CheckNapiStatus(env, napi_typeof(env, value, &type)); callStatus != napi_ok) {
-        return callStatus;
-    }
+    PRIVACY_NAPI_CALL(env, napi_typeof(env, value, &type));
     present = type != napi_undefined;
     return napi_ok;
 }
@@ -69,52 +50,29 @@ napi_status GetOptionalProperty(napi_env env, napi_value object, const char *nam
 napi_status GetUint32Value(napi_env env, napi_value value, uint32_t &number, const char *message)
 {
     napi_valuetype type = napi_undefined;
-    if (const auto callStatus = CheckNapiStatus(env, napi_typeof(env, value, &type)); callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (type != napi_number) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, message);
-        return napi_invalid_arg;
-    }
+    PRIVACY_NAPI_CALL(env, napi_typeof(env, value, &type));
+    PRIVACY_NAPI_INVALID_ARG_IF(env, type != napi_number, message);
     double raw = 0;
-    if (const auto callStatus = CheckNapiStatus(env, napi_get_value_double(env, value, &raw)); callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (!std::isfinite(raw) || raw < 0 || raw > std::numeric_limits<uint32_t>::max() || std::floor(raw) != raw) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, message);
-        return napi_invalid_arg;
-    }
+    PRIVACY_NAPI_CALL(env, napi_get_value_double(env, value, &raw));
+    PRIVACY_NAPI_INVALID_ARG_IF(env,
+        !std::isfinite(raw) || raw < 0 || raw > std::numeric_limits<uint32_t>::max() || std::floor(raw) != raw,
+        message);
     number = static_cast<uint32_t>(raw);
     return napi_ok;
 }
 
 napi_status GetByteArrayValue(napi_env env, napi_value value, Bytes &bytes,
-    const char *message, size_t maxBytes = MAX_PRIVACY_BYTES)
+    const char *message, size_t maxBytes = std::numeric_limits<size_t>::max())
 {
     bool typed = false;
-    if (const auto callStatus = CheckNapiStatus(env, napi_is_typedarray(env, value, &typed)); callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (!typed) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, message);
-        return napi_invalid_arg;
-    }
+    PRIVACY_NAPI_CALL(env, napi_is_typedarray(env, value, &typed));
+    PRIVACY_NAPI_INVALID_ARG_IF(env, !typed, message);
     napi_typedarray_type type;
     size_t count = 0;
     void *data = nullptr;
-    if (const auto callStatus =
-            CheckNapiStatus(env, napi_get_typedarray_info(env, value, &type, &count, &data, nullptr, nullptr));
-        callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (type != napi_uint8_array || (count != 0 && data == nullptr)) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, message);
-        return napi_invalid_arg;
-    }
-    if (count > maxBytes) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "Privacy byte array is too large.");
-        return napi_invalid_arg;
-    }
+    PRIVACY_NAPI_CALL(env, napi_get_typedarray_info(env, value, &type, &count, &data, nullptr, nullptr));
+    PRIVACY_NAPI_INVALID_ARG_IF(env, type != napi_uint8_array || (count != 0 && data == nullptr), message);
+    PRIVACY_NAPI_INVALID_ARG_IF(env, count > maxBytes, "Privacy byte array is too large.");
     Bytes copy;
     if (count != 0) {
         const auto *begin = static_cast<const uint8_t *>(data);
@@ -128,15 +86,10 @@ napi_status ParseJsHashAlg(napi_env env, napi_value object, HashAlg &hash)
 {
     napi_value value = nullptr;
     bool present = false;
-    if (const auto callStatus = GetOptionalProperty(env, object, "hashAlg", value, present); callStatus != napi_ok) {
-        return callStatus;
-    }
+    PRIVACY_NAPI_RETURN_IF_FAILED(GetOptionalProperty(env, object, "hashAlg", value, present));
     uint32_t id = HASH_ALG_NONE;
     if (present) {
-        if (const auto callStatus = GetUint32Value(env, value, id, "hashAlg must be a supported integer enum.");
-            callStatus != napi_ok) {
-            return callStatus;
-        }
+        PRIVACY_NAPI_RETURN_IF_FAILED(GetUint32Value(env, value, id, "hashAlg must be a supported integer enum."));
     }
     switch (id) {
         case HASH_ALG_NONE:
@@ -162,76 +115,35 @@ napi_status ParseJsKey(napi_env env, napi_value object, const char *name, Bytes 
     HashAlg &hash)
 {
     napi_value value = nullptr;
-    if (const auto status = NapiGetNamedProperty(env, object, name, value); status != napi_ok) {
-        return status;
-    }
-    if (const auto status = GetByteArrayValue(env, value, bytes, "Expected a Uint8Array.", MAX_KEY_BYTES);
-        status != napi_ok) {
-        return status;
-    }
-    if (const auto status = ParseJsHashAlg(env, object, hash); status != napi_ok) {
-        return status;
-    }
+    PRIVACY_NAPI_RETURN_IF_FAILED(NapiGetNamedProperty(env, object, name, value));
+    PRIVACY_NAPI_RETURN_IF_FAILED(GetByteArrayValue(env, value, bytes, "Expected a Uint8Array.", MAX_KEY_BYTES));
+    PRIVACY_NAPI_RETURN_IF_FAILED(ParseJsHashAlg(env, object, hash));
     const size_t size = bytes.size();
-    if (size == 0) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "elemData and elemKey must not be empty.");
-        return napi_invalid_arg;
-    }
-    if (hash == HashAlg::NONE &&
-        size != SHA256_DIGEST_BYTES && size != SHA384_DIGEST_BYTES && size != SHA512_DIGEST_BYTES) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "A prehashed key must contain 32, 48 or 64 bytes.");
-        return napi_invalid_arg;
-    }
+    PRIVACY_NAPI_INVALID_ARG_IF(env, size == 0, "elemData and elemKey must not be empty.");
+    PRIVACY_NAPI_INVALID_ARG_IF(env, hash == HashAlg::NONE &&
+        size != SHA256_DIGEST_BYTES && size != SHA384_DIGEST_BYTES && size != SHA512_DIGEST_BYTES,
+        "A prehashed key must contain 32, 48 or 64 bytes.");
     return napi_ok;
 }
 
 napi_status GetArrayLength(napi_env env, napi_value value, uint32_t &count, const char *message)
 {
     bool array = false;
-    if (const auto callStatus = CheckNapiStatus(env, napi_is_array(env, value, &array)); callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (!array) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, message);
-        return napi_invalid_arg;
-    }
-    if (const auto callStatus = CheckNapiStatus(env, napi_get_array_length(env, value, &count));
-        callStatus != napi_ok) {
-        return callStatus;
-    }
+    PRIVACY_NAPI_CALL(env, napi_is_array(env, value, &array));
+    PRIVACY_NAPI_INVALID_ARG_IF(env, !array, message);
+    PRIVACY_NAPI_CALL(env, napi_get_array_length(env, value, &count));
     return napi_ok;
 }
 
-napi_status ParseJsByteArray(napi_env env, napi_value value, std::vector<Bytes> &bytes,
-                             size_t &total)
+napi_status ParseJsByteArray(napi_env env, napi_value value, std::vector<Bytes> &bytes)
 {
     uint32_t count = 0;
-    if (const auto callStatus = GetArrayLength(env, value, count, "Ciphertexts must be an array of Uint8Array.");
-        callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (count > MAX_PRIVACY_ITEMS || total > MAX_PRIVACY_BYTES - PRIVACY_LENGTH_BYTES) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "Privacy ciphertext list is too large.");
-        return napi_invalid_arg;
-    }
-    total += PRIVACY_LENGTH_BYTES;
+    PRIVACY_NAPI_RETURN_IF_FAILED(GetArrayLength(env, value, count, "Ciphertexts must be an array of Uint8Array."));
     for (uint32_t i = 0; i < count; ++i) {
         napi_value item = nullptr;
-        if (const auto callStatus = CheckNapiStatus(env, napi_get_element(env, value, i, &item));
-            callStatus != napi_ok) {
-            return callStatus;
-        }
+        PRIVACY_NAPI_CALL(env, napi_get_element(env, value, i, &item));
         Bytes entry;
-        if (const auto callStatus = GetByteArrayValue(env, item, entry, "Each ciphertext must be a Uint8Array.");
-            callStatus != napi_ok) {
-            return callStatus;
-        }
-        if (total > MAX_PRIVACY_BYTES - PRIVACY_LENGTH_BYTES ||
-            entry.size() > MAX_PRIVACY_BYTES - total - PRIVACY_LENGTH_BYTES) {
-            ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "Privacy request is too large.");
-            return napi_invalid_arg;
-        }
-        total += PRIVACY_LENGTH_BYTES + entry.size();
+        PRIVACY_NAPI_RETURN_IF_FAILED(GetByteArrayValue(env, item, entry, "Each ciphertext must be a Uint8Array."));
         bytes.push_back(std::move(entry));
     }
     return napi_ok;
@@ -252,21 +164,9 @@ napi_status ParseJsElement(napi_env env, napi_value value, Element &element,
 
 napi_status ParseJsArgs(napi_env env, napi_callback_info info, napi_value *args, size_t expectedCount)
 {
-    constexpr size_t maxArgsCount = 4;
-    napi_value values[maxArgsCount] = {nullptr};
-    size_t count = maxArgsCount;
-    if (const auto callStatus = CheckNapiStatus(env, napi_get_cb_info(env, info, &count, values, nullptr, nullptr));
-        callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (count != expectedCount || expectedCount >= maxArgsCount) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "Unexpected number of arguments.");
-        return napi_invalid_arg;
-    }
-    if (memcpy_s(args, expectedCount * sizeof(napi_value), values, expectedCount * sizeof(napi_value)) != EOK) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_SERVICE_ERROR, "Unable to copy NAPI arguments.");
-        return napi_invalid_arg;
-    }
+    size_t argc = expectedCount;
+    PRIVACY_NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, nullptr, nullptr));
+    PRIVACY_NAPI_INVALID_ARG_IF(env, argc < expectedCount, "Mandatory parameters are left unspecified.");
     return napi_ok;
 }
 
@@ -279,24 +179,15 @@ napi_status NapiGetProperty(napi_env env, napi_value value, PrivacyProtocol &pro
 {
     uint32_t sizeId = 0;
     uint32_t modeId = 0;
-    if (const auto callStatus = NapiGetProperty(env, value, "dataSetSize", sizeId); callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (const auto callStatus = NapiGetProperty(env, value, "protocolType", modeId); callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (sizeId > static_cast<uint32_t>(DataSetSize::SIZE_512) ||
-        modeId > static_cast<uint32_t>(ProtocolType::PIR_PROTOCOL)) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "Unsupported protocol enum value.");
-        return napi_invalid_arg;
-    }
+    PRIVACY_NAPI_RETURN_IF_FAILED(NapiGetProperty(env, value, "dataSetSize", sizeId));
+    PRIVACY_NAPI_RETURN_IF_FAILED(NapiGetProperty(env, value, "protocolType", modeId));
+    PRIVACY_NAPI_INVALID_ARG_IF(env, sizeId > static_cast<uint32_t>(DataSetSize::SIZE_512) ||
+        modeId > static_cast<uint32_t>(ProtocolType::PIR_PROTOCOL), "Unsupported protocol enum value.");
     const auto size = static_cast<DataSetSize>(sizeId);
     const auto type = static_cast<ProtocolType>(modeId);
     const bool isIntersection = type == ProtocolType::PRIVATE_SET_INTERSECTION;
-    if (isIntersection != (size == DataSetSize::SIZE_512)) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "Unsupported protocol and dataSetSize combination.");
-        return napi_invalid_arg;
-    }
+    PRIVACY_NAPI_INVALID_ARG_IF(env, isIntersection != (size == DataSetSize::SIZE_512),
+        "Unsupported protocol and dataSetSize combination.");
     protocol.dataSetSize = size;
     protocol.protocolType = type;
     return napi_ok;
@@ -311,32 +202,13 @@ napi_status NapiGetProperty(napi_env env, napi_value value, std::vector<Element>
     ProtocolType protocolType)
 {
     uint32_t count = 0;
-    if (const auto callStatus = GetArrayLength(env, value, count, "elements must be an array.");
-        callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (count == 0 || count > MAX_PRIVACY_ITEMS) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "Invalid privacy search element count.");
-        return napi_invalid_arg;
-    }
-    size_t total = 0;
+    PRIVACY_NAPI_RETURN_IF_FAILED(GetArrayLength(env, value, count, "elements must be an array."));
+    PRIVACY_NAPI_INVALID_ARG_IF(env, count == 0, "Invalid privacy search element count.");
     for (uint32_t i = 0; i < count; ++i) {
         napi_value item = nullptr;
-        if (const auto callStatus = CheckNapiStatus(env, napi_get_element(env, value, i, &item));
-            callStatus != napi_ok) {
-            return callStatus;
-        }
+        PRIVACY_NAPI_CALL(env, napi_get_element(env, value, i, &item));
         Element element;
-        if (const auto callStatus = ParseJsElement(env, item, element, protocolType); callStatus != napi_ok) {
-            return callStatus;
-        }
-        const size_t valueSize = element.elemValue ? element.elemValue->size() : 0;
-        const size_t elementSize = element.elemKey.size() + valueSize;
-        if (elementSize > MAX_PRIVACY_BYTES - total) {
-            ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "Privacy search elements exceed the byte budget.");
-            return napi_invalid_arg;
-        }
-        total += elementSize;
+        PRIVACY_NAPI_RETURN_IF_FAILED(ParseJsElement(env, item, element, protocolType));
         elements.push_back(std::move(element));
     }
     return napi_ok;
@@ -346,33 +218,18 @@ napi_status NapiGetProperty(napi_env env, napi_value value, PrivacySearchResult 
     ProtocolType protocolType)
 {
     napi_value ciphertext = nullptr;
-    if (const auto callStatus = NapiGetNamedProperty(env, value, "resultCipherText", ciphertext);
-        callStatus != napi_ok) {
-        return callStatus;
-    }
-    size_t total = SEARCH_FIXED_BYTES;
-    if (const auto callStatus = ParseJsByteArray(env, ciphertext, result.resultCipherText, total);
-        callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (result.resultCipherText.empty()) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_INVALID_ARGUMENT, "resultCipherText must contain at least one batch.");
-        return napi_invalid_arg;
-    }
+    PRIVACY_NAPI_RETURN_IF_FAILED(NapiGetNamedProperty(env, value, "resultCipherText", ciphertext));
+    PRIVACY_NAPI_RETURN_IF_FAILED(ParseJsByteArray(env, ciphertext, result.resultCipherText));
+    PRIVACY_NAPI_INVALID_ARG_IF(env, result.resultCipherText.empty(),
+        "resultCipherText must contain at least one batch.");
     if (protocolType != ProtocolType::PIR_PROTOCOL) {
         return napi_ok;
     }
     bool present = false;
-    if (const auto callStatus = GetOptionalProperty(env, value, "valueCipherText", ciphertext, present);
-        callStatus != napi_ok) {
-        return callStatus;
-    }
+    PRIVACY_NAPI_RETURN_IF_FAILED(GetOptionalProperty(env, value, "valueCipherText", ciphertext, present));
     if (present) {
         result.valueCipherText.emplace();
-        if (const auto callStatus = ParseJsByteArray(env, ciphertext, *result.valueCipherText, total);
-            callStatus != napi_ok) {
-            return callStatus;
-        }
+        PRIVACY_NAPI_RETURN_IF_FAILED(ParseJsByteArray(env, ciphertext, *result.valueCipherText));
     }
     return napi_ok;
 }
@@ -381,82 +238,47 @@ napi_status NapiSetProperty(napi_env env, const Bytes &bytes, napi_value &output
 {
     void *data = nullptr;
     napi_value buffer = nullptr;
-    if (const auto callStatus = CheckNapiStatus(env, napi_create_arraybuffer(env, bytes.size(), &data, &buffer));
-        callStatus != napi_ok) {
-        return callStatus;
-    }
+    PRIVACY_NAPI_CALL(env, napi_create_arraybuffer(env, bytes.size(), &data, &buffer));
     if (!bytes.empty()) {
-        if (data == nullptr) {
-            ThrowJsError(env, PRIVACY_COMPUTATION_SERVICE_ERROR, "Unable to create output ArrayBuffer.");
-            return napi_invalid_arg;
-        }
-        if (memcpy_s(data, bytes.size(), bytes.data(), bytes.size()) != EOK) {
-            ThrowJsError(env, PRIVACY_COMPUTATION_SERVICE_ERROR, "Unable to copy output bytes.");
-            return napi_invalid_arg;
-        }
+        PRIVACY_NAPI_THROW_IF(env, data == nullptr, napi_invalid_arg,
+            PRIVACY_COMPUTATION_SERVICE_ERROR, "Unable to create output ArrayBuffer.");
+        PRIVACY_NAPI_THROW_IF(env, memcpy_s(data, bytes.size(), bytes.data(), bytes.size()) != EOK, napi_invalid_arg,
+            PRIVACY_COMPUTATION_SERVICE_ERROR, "Unable to copy output bytes.");
     }
-    if (const auto callStatus =
-            CheckNapiStatus(env, napi_create_typedarray(env, napi_uint8_array, bytes.size(), buffer, 0, &output));
-        callStatus != napi_ok) {
-        return callStatus;
-    }
+    PRIVACY_NAPI_CALL(env, napi_create_typedarray(env, napi_uint8_array, bytes.size(), buffer, 0, &output));
     return napi_ok;
 }
 
 napi_status NapiSetProperty(napi_env env, const PrivacySearchResult &result, napi_value &output)
 {
-    if (const auto callStatus = CheckNapiStatus(env, napi_create_object(env, &output)); callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (const auto callStatus = NapiSetProperty(env, output, "resultCipherText", result.resultCipherText);
-        callStatus != napi_ok) {
-        return callStatus;
-    }
+    PRIVACY_NAPI_CALL(env, napi_create_object(env, &output));
+    PRIVACY_NAPI_RETURN_IF_FAILED(NapiSetProperty(env, output, "resultCipherText", result.resultCipherText));
     if (result.valueCipherText) {
-        if (const auto callStatus = NapiSetProperty(env, output, "valueCipherText", *result.valueCipherText);
-            callStatus != napi_ok) {
-            return callStatus;
-        }
+        PRIVACY_NAPI_RETURN_IF_FAILED(NapiSetProperty(env, output, "valueCipherText", *result.valueCipherText));
     }
     return napi_ok;
 }
 
 napi_status NapiSetProperty(napi_env env, const SearchResult &result, napi_value &output)
 {
-    if (const auto callStatus = CheckNapiStatus(env, napi_create_object(env, &output)); callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (const auto callStatus = NapiSetProperty(env, output, "matchedResult", result.matchedResult);
-        callStatus != napi_ok) {
-        return callStatus;
-    }
+    PRIVACY_NAPI_CALL(env, napi_create_object(env, &output));
+    PRIVACY_NAPI_RETURN_IF_FAILED(NapiSetProperty(env, output, "matchedResult", result.matchedResult));
     if (result.attachedValues) {
-        if (const auto callStatus = NapiSetProperty(env, output, "attachedValues", *result.attachedValues);
-            callStatus != napi_ok) {
-            return callStatus;
-        }
+        PRIVACY_NAPI_RETURN_IF_FAILED(NapiSetProperty(env, output, "attachedValues", *result.attachedValues));
     }
     return napi_ok;
 }
 
 napi_status NapiSetProperty(napi_env env, const std::vector<Bytes> &bytes, napi_value &output)
 {
-    if (!(bytes.size() <= std::numeric_limits<uint32_t>::max())) {
+    if (bytes.size() > std::numeric_limits<uint32_t>::max()) {
         return napi_generic_failure;
     }
-    if (const auto callStatus = CheckNapiStatus(env, napi_create_array_with_length(env, bytes.size(), &output));
-        callStatus != napi_ok) {
-        return callStatus;
-    }
+    PRIVACY_NAPI_CALL(env, napi_create_array_with_length(env, bytes.size(), &output));
     for (uint32_t i = 0; i < bytes.size(); ++i) {
         napi_value item = nullptr;
-        if (const auto callStatus = NapiSetProperty(env, bytes[i], item); callStatus != napi_ok) {
-            return callStatus;
-        }
-        if (const auto callStatus = CheckNapiStatus(env, napi_set_element(env, output, i, item));
-            callStatus != napi_ok) {
-            return callStatus;
-        }
+        PRIVACY_NAPI_RETURN_IF_FAILED(NapiSetProperty(env, bytes[i], item));
+        PRIVACY_NAPI_CALL(env, napi_set_element(env, output, i, item));
     }
     return napi_ok;
 }
@@ -468,12 +290,14 @@ napi_status NapiGetProperty(napi_env env, napi_value value, uint32_t &number)
 
 napi_status NapiSetProperty(napi_env env, uint32_t value, napi_value &output)
 {
-    return CheckNapiStatus(env, napi_create_uint32(env, value, &output));
+    PRIVACY_NAPI_CALL(env, napi_create_uint32(env, value, &output));
+    return napi_ok;
 }
 
 napi_status NapiSetProperty(napi_env env, bool value, napi_value &output)
 {
-    return CheckNapiStatus(env, napi_get_boolean(env, value, &output));
+    PRIVACY_NAPI_CALL(env, napi_get_boolean(env, value, &output));
+    return napi_ok;
 }
 
 PrivacyComputationBaseContext::~PrivacyComputationBaseContext()
@@ -534,17 +358,17 @@ napi_value CreateJsError(napi_env env, int32_t code, const char *message)
     napi_value text = nullptr;
     napi_value error = nullptr;
     napi_value number = nullptr;
-    // Keep this primitive below ThrowJsError: do not recurse through CheckNapiStatus.
-    if (!(napi_create_string_utf8(env, message, NAPI_AUTO_LENGTH, &text) == napi_ok)) {
+    // Use raw NAPI calls here because this function constructs the error itself.
+    if (napi_create_string_utf8(env, message, NAPI_AUTO_LENGTH, &text) != napi_ok) {
         return nullptr;
     }
-    if (!(napi_create_error(env, nullptr, text, &error) == napi_ok)) {
+    if (napi_create_error(env, nullptr, text, &error) != napi_ok) {
         return nullptr;
     }
-    if (!(napi_create_int32(env, code, &number) == napi_ok)) {
+    if (napi_create_int32(env, code, &number) != napi_ok) {
         return nullptr;
     }
-    if (!(napi_set_named_property(env, error, "code", number) == napi_ok)) {
+    if (napi_set_named_property(env, error, "code", number) != napi_ok) {
         return nullptr;
     }
     return error;
@@ -554,56 +378,38 @@ napi_status ThrowJsError(napi_env env, int32_t code, const char *message)
 {
     LOGE("NAPI operation failed, code=%{public}d", code);
     bool pending = false;
-    if (const auto callStatus = napi_is_exception_pending(env, &pending); callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (!(!pending)) {
+    PRIVACY_NAPI_RETURN_IF_FAILED(napi_is_exception_pending(env, &pending));
+    if (pending) {
         return napi_pending_exception;
     }
     napi_value error = CreateJsError(env, code, message);
     if (error == nullptr) {
         LOGE("Failed to create JS error, code=%{public}d", code);
-    }
-    if (!(error != nullptr)) {
         return napi_generic_failure;
     }
     return napi_throw(env, error);
 }
 
-napi_status CheckNapiStatus(napi_env env, napi_status status)
+void ThrowNapiError(napi_env env, napi_status status)
 {
-    if (status == napi_ok) {
-        return napi_ok;
-    }
     LOGE("NAPI call failed, status=%{public}d", static_cast<int32_t>(status));
-    // Like asset's GET_AND_THROW_LAST_ERROR, preserve a getter/runtime exception.
-    bool pending = false;
-    if (napi_is_exception_pending(env, &pending) == napi_ok && !pending) {
-        const int32_t code =
-            status == napi_invalid_arg ? PRIVACY_COMPUTATION_INVALID_ARGUMENT : PRIVACY_COMPUTATION_SERVICE_ERROR;
-        ThrowJsError(env, code, GetErrorMessage(code));
-    }
-    return status;
+    const int32_t code =
+        status == napi_invalid_arg ? PRIVACY_COMPUTATION_INVALID_ARGUMENT : PRIVACY_COMPUTATION_SERVICE_ERROR;
+    ThrowJsError(env, code, GetErrorMessage(code));
 }
 
 napi_status RejectPromise(napi_env env, napi_deferred deferred, int32_t code, const char *message)
 {
     bool pending = false;
-    if (const auto callStatus = napi_is_exception_pending(env, &pending); callStatus != napi_ok) {
-        return callStatus;
-    }
+    PRIVACY_NAPI_RETURN_IF_FAILED(napi_is_exception_pending(env, &pending));
     napi_value error = nullptr;
     if (pending) {
-        if (const auto callStatus = napi_get_and_clear_last_exception(env, &error); callStatus != napi_ok) {
-            return callStatus;
-        }
+        PRIVACY_NAPI_RETURN_IF_FAILED(napi_get_and_clear_last_exception(env, &error));
     } else {
         error = CreateJsError(env, code, message);
     }
     if (error == nullptr) {
         LOGE("Failed to obtain Promise rejection error, code=%{public}d", code);
-    }
-    if (!(error != nullptr)) {
         return napi_generic_failure;
     }
     const napi_status status = napi_reject_deferred(env, deferred, error);
@@ -617,10 +423,8 @@ napi_value CreateRejectedPromise(napi_env env, int32_t code, const char *message
 {
     napi_deferred deferred = nullptr;
     napi_value promise = nullptr;
-    if (!(CheckNapiStatus(env, napi_create_promise(env, &deferred, &promise)) == napi_ok)) {
-        return nullptr;
-    }
-    if (!(RejectPromise(env, deferred, code, message) == napi_ok)) {
+    PRIVACY_NAPI_CALL_BASE(env, napi_create_promise(env, &deferred, &promise), nullptr);
+    if (RejectPromise(env, deferred, code, message) != napi_ok) {
         return nullptr;
     }
     return promise;
@@ -636,14 +440,17 @@ void ResolvePromise(napi_env env, PrivacyComputationBaseContext *context)
     }
 
     napi_value output = nullptr;
-    if (context->resolve(env, context, output) != napi_ok || output == nullptr) {
+    const napi_status outputStatus = context->resolve(env, context, output);
+    if (outputStatus != napi_ok || output == nullptr) {
         LOGE("Failed to convert async result to JS output");
         context->result = PRIVACY_COMPUTATION_SERVICE_ERROR;
         RejectPromise(env, context->deferred, context->result, GetErrorMessage(context->result));
         return;
     }
 
-    if (CheckNapiStatus(env, napi_resolve_deferred(env, context->deferred, output)) != napi_ok) {
+    const napi_status resolveStatus = napi_resolve_deferred(env, context->deferred, output);
+    if (resolveStatus != napi_ok) {
+        ThrowNapiError(env, resolveStatus);
         return;
     }
     LOGI("NAPI %{public}s success, promise resolved", context->operationName.c_str());
@@ -654,41 +461,26 @@ void CompleteAsyncWork(napi_env env, napi_status status, void *data)
     std::unique_ptr<PrivacyComputationBaseContext> context(static_cast<PrivacyComputationBaseContext *>(data));
     if (context == nullptr) {
         LOGE("Async completion context is null");
-    }
-    if (!(context != nullptr)) {
         return;
     }
     if (status != napi_ok) {
         LOGE("Async work completion failed, status=%{public}d", static_cast<int32_t>(status));
+        context->result = PRIVACY_COMPUTATION_SERVICE_ERROR;
     }
-    context->result = status == napi_ok ? context->result : PRIVACY_COMPUTATION_SERVICE_ERROR;
     ResolvePromise(env, context.get());
 }
 
 napi_status PrepareAsyncWork(napi_env env, napi_callback_info info, PrivacyComputationBaseContext *context,
                              const char *resourceName)
 {
-    if (const auto callStatus = context->parse(env, info, context); callStatus != napi_ok) {
-        return callStatus;
-    }
+    PRIVACY_NAPI_RETURN_IF_FAILED(context->parse(env, info, context));
     LOGI("NAPI %{public}s arguments parsed", resourceName);
     context->result = PRIVACY_COMPUTATION_SERVICE_ERROR;
     napi_value resource = nullptr;
-    if (const auto callStatus =
-            CheckNapiStatus(env, napi_create_string_utf8(env, resourceName, NAPI_AUTO_LENGTH, &resource));
-        callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (const auto callStatus =
-            CheckNapiStatus(env, napi_create_async_work(env, nullptr, resource, context->execute, CompleteAsyncWork,
-                                                        context, &context->work));
-        callStatus != napi_ok) {
-        return callStatus;
-    }
-    if (const auto callStatus = CheckNapiStatus(env, napi_queue_async_work(env, context->work));
-        callStatus != napi_ok) {
-        return callStatus;
-    }
+    PRIVACY_NAPI_CALL(env, napi_create_string_utf8(env, resourceName, NAPI_AUTO_LENGTH, &resource));
+    PRIVACY_NAPI_CALL(env, napi_create_async_work(env, nullptr, resource, context->execute, CompleteAsyncWork, context,
+        &context->work));
+    PRIVACY_NAPI_CALL(env, napi_queue_async_work(env, context->work));
     return napi_ok;
 }
 } // namespace
@@ -696,25 +488,19 @@ napi_status PrepareAsyncWork(napi_env env, napi_callback_info info, PrivacyCompu
 napi_value CreateAsyncWork(napi_env env, napi_callback_info info,
                            std::unique_ptr<PrivacyComputationBaseContext> context, const char *resourceName)
 {
-    if (context == nullptr) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_OUT_OF_MEMORY, GetErrorMessage(PRIVACY_COMPUTATION_OUT_OF_MEMORY));
-        return nullptr;
-    }
-    if (context->parse == nullptr || context->execute == nullptr || context->resolve == nullptr) {
-        ThrowJsError(env, PRIVACY_COMPUTATION_SERVICE_ERROR, "Invalid privacy computation async context.");
-        return nullptr;
-    }
+    PRIVACY_NAPI_THROW_IF(env, context == nullptr, nullptr,
+        PRIVACY_COMPUTATION_OUT_OF_MEMORY, GetErrorMessage(PRIVACY_COMPUTATION_OUT_OF_MEMORY));
+    PRIVACY_NAPI_THROW_IF(env, context->parse == nullptr || context->execute == nullptr || context->resolve == nullptr,
+        nullptr, PRIVACY_COMPUTATION_SERVICE_ERROR, "Invalid privacy computation async context.");
     context->env = env;
     context->operationName = resourceName;
     napi_value promise = nullptr;
-    if (!(CheckNapiStatus(env, napi_create_promise(env, &context->deferred, &promise)) == napi_ok)) {
-        return nullptr;
-    }
+    PRIVACY_NAPI_CALL_BASE(env, napi_create_promise(env, &context->deferred, &promise), nullptr);
     const napi_status status = PrepareAsyncWork(env, info, context.get(), resourceName);
     if (status != napi_ok) {
         LOGE("Failed to prepare %{public}s, status=%{public}d", resourceName, static_cast<int32_t>(status));
         // Once a Promise exists, failure must reject it, not just return from a NAPI_CALL macro.
-        if (!(RejectPromise(env, context->deferred, context->result, GetErrorMessage(context->result)) == napi_ok)) {
+        if (RejectPromise(env, context->deferred, context->result, GetErrorMessage(context->result)) != napi_ok) {
             return nullptr;
         }
         return promise; // Context destructor deletes any work created before queue failure.

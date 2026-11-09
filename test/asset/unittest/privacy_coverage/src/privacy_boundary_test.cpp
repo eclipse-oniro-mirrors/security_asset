@@ -119,6 +119,15 @@ HWTEST_F(PrivacyBoundaryTest, NapiRejectsMissingArgumentsAndMalformedObjects, Te
     }
 }
 
+HWTEST_F(PrivacyBoundaryTest, NapiIgnoresExtraArguments, TestSize.Level2)
+{
+    auto extra = PrivacyHost::Number(&env_, 1);
+    auto result = Invoke("genPrivacyTarget", {Target(), Protocol(), extra});
+    ASSERT_NE(result, nullptr);
+    ASSERT_TRUE(result->settled);
+    EXPECT_FALSE(result->rejected);
+}
+
 HWTEST_F(PrivacyBoundaryTest, NumericAndEnumBoundariesAreChecked, TestSize.Level2)
 {
     for (double invalid :
@@ -166,7 +175,7 @@ HWTEST_F(PrivacyBoundaryTest, ByteArrayBoundariesAndOptionalHashes, TestSize.Lev
     auto overlongTarget = Invoke("genPrivacyTarget", {target, Protocol()});
     ASSERT_TRUE(overlongTarget->rejected);
     EXPECT_EQ(overlongTarget->result->properties.at("code")->number, PRIVACY_COMPUTATION_INVALID_ARGUMENT);
-    for (uint32_t mode = 0; mode < 4; ++mode) {
+    for (uint32_t mode = 0; mode < 3; ++mode) {
         auto bytes = PrivacyHost::Bytes(&env_, {1});
         if (mode == 0) {
             bytes->typed = false;
@@ -176,9 +185,6 @@ HWTEST_F(PrivacyBoundaryTest, ByteArrayBoundariesAndOptionalHashes, TestSize.Lev
         }
         if (mode == 2) {
             bytes->storage.clear();
-        }
-        if (mode == 3) {
-            bytes->count = MAX_PRIVACY_BYTES + 1;
         }
         target->properties["elemData"] = bytes;
         EXPECT_TRUE(Invoke("genPrivacyTarget", {target, Protocol()})->rejected);
@@ -326,8 +332,10 @@ HWTEST_F(PrivacyBoundaryTest, GetterExceptionIsPreservedAndErrorsAreMapped, Test
     for (const auto code : {PRIVACY_COMPUTATION_OUT_OF_MEMORY, PRIVACY_COMPUTATION_ACCOUNT_ERROR}) {
         EXPECT_NE(GetErrorMessage(code), nullptr);
     }
-    EXPECT_EQ(CheckNapiStatus(&env_, napi_invalid_arg), napi_invalid_arg);
-    EXPECT_NE(env_.exception, nullptr);
+    napi_value property = nullptr;
+    EXPECT_EQ(NapiGetNamedProperty(&env_, nullptr, "elemData", property), napi_invalid_arg);
+    ASSERT_NE(env_.exception, nullptr);
+    EXPECT_EQ(env_.exception->properties.at("code")->number, PRIVACY_COMPUTATION_INVALID_ARGUMENT);
 }
 
 HWTEST_F(PrivacyBoundaryTest, SaValidatesPointersIdentityAndOutputCapacity, TestSize.Level2)

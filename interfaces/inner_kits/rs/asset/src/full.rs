@@ -25,7 +25,7 @@ use std::{ffi::CString, os::raw::c_char, sync::OnceLock};
 
 use asset_log::logw;
 use asset_ipc::privacy::{TargetRequest, DecryptRequest, serialize_target, serialize_decrypt,
-    read_payload, MAX_TARGET_RESULT_BYTES, MAX_DECRYPT_RESULT_BYTES, PROTOCOL_SUCCESS};
+    read_payload, MAX_DECRYPT_RESULT_BYTES, PROTOCOL_SUCCESS};
 use ipc::{
     parcel::{MsgOption, MsgParcel},
     remote::RemoteObj,
@@ -428,10 +428,6 @@ impl Manager {
         } else {
             Vec::new()
         };
-        if output.len() > MAX_TARGET_RESULT_BYTES {
-            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
-                ErrCode::InvalidArgument, "Privacy target exceeds the byte limit");
-        }
         Ok((result, output))
     }
 

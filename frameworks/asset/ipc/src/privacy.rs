@@ -16,18 +16,12 @@
 //! Single-target generation and single-ciphertext decryption over ordinary Asset IPC.
 use crate::{ipc_err_handle, macros_lib, ErrCode, MsgParcel, Result};
 
-/// Single-message payload budget below the 200 KB IPC ceiling.
-pub const MAX_INLINE_BYTES: usize = 192 * 1024;
-/// Maximum encrypted target response, independent of third-interface batch count.
-pub const MAX_TARGET_RESULT_BYTES: usize = MAX_INLINE_BYTES;
+use std::convert::TryFrom;
+
+/// Capacity of the caller-owned buffer for one encrypted target reply.
+pub const MAX_TARGET_RESULT_BYTES: usize = 192 * 1024;
 /// BGV-2048 decoded slots, encoded as little-endian u64 values.
 pub const MAX_DECRYPT_RESULT_BYTES: usize = 2048 * std::mem::size_of::<u64>();
-/// Logical protocol selector bytes, excluding any native struct padding.
-pub const PROTOCOL_BYTES: usize = 2 * std::mem::size_of::<u32>();
-/// Target request fields including hash algorithm and element length.
-pub const TARGET_OVERHEAD_BYTES: usize = PROTOCOL_BYTES + 2 * std::mem::size_of::<u32>();
-/// Decryption request fields including ciphertext length.
-pub const DECRYPT_OVERHEAD_BYTES: usize = PROTOCOL_BYTES + std::mem::size_of::<u32>();
 /// Protocol operation success, separate from the outer Asset IPC status.
 pub const PROTOCOL_SUCCESS: i32 = 0;
 
@@ -103,45 +97,6 @@ fn invalid<T>() -> Result<T> {
         ErrCode::InvalidArgument, "Invalid privacy single-message request")
 }
 
-/// Copies a bounded native byte view.
-///
-/// # Safety
-/// Nonempty storage must remain readable and unchanged for blob.size bytes during this call.
-unsafe fn copy_blob(blob: PrivacyBlob, overhead: usize) -> Result<Vec<u8>> {
-    if blob.size as usize > MAX_INLINE_BYTES - overhead || (blob.size != 0 && blob.data.is_null()) {
-        return invalid();
-    }
-    if blob.size == 0 {
-        return Ok(Vec::new());
-    }
-    Ok(std::slice::from_raw_parts(blob.data, blob.size as usize).to_vec())
-}
-
-impl PrivacyTargetRequest {
-    /// Copies target fields after validating the single-message bound.
-    ///
-    /// # Safety
-    /// A nonempty element must be readable and unchanged for element.size bytes during this call.
-    pub unsafe fn to_value(&self) -> Result<TargetRequest> {
-        Ok(TargetRequest { protocol: self.protocol, hash_alg: self.hash_alg,
-            element: copy_blob(self.element, TARGET_OVERHEAD_BYTES)? })
-    }
-}
-
-impl PrivacyDecryptRequest {
-    /// Copies one ciphertext after validating its single-message bound.
-    ///
-    /// # Safety
-    /// A nonempty ciphertext must be readable and unchanged for ciphertext.size bytes during this call.
-    pub unsafe fn to_value(&self) -> Result<DecryptRequest> {
-        if self.ciphertext.size == 0 {
-            return invalid();
-        }
-        Ok(DecryptRequest { protocol: self.protocol,
-            ciphertext: copy_blob(self.ciphertext, DECRYPT_OVERHEAD_BYTES)? })
-    }
-}
-
 impl TargetRequest {
     /// Borrows target bytes; storage must outlive the native call and lengths must fit in u32.
     pub fn as_native(&self) -> PrivacyTargetRequest {
@@ -160,10 +115,11 @@ impl DecryptRequest {
 
 /// Writes a length-prefixed inline field; never creates shared memory or transfer tasks.
 pub fn write_payload(bytes: &[u8], parcel: &mut MsgParcel) -> Result<()> {
-    if bytes.len() > MAX_INLINE_BYTES {
-        return invalid();
-    }
-    parcel.write(&(bytes.len() as u32)).map_err(ipc_err_handle)?;
+    let size = match u32::try_from(bytes.len()) {
+        Ok(size) => size,
+        Err(_) => return invalid(),
+    };
+    parcel.write(&size).map_err(ipc_err_handle)?;
     if !bytes.is_empty() {
         parcel.write_buffer(bytes).map_err(ipc_err_handle)?;
     }
@@ -173,7 +129,7 @@ pub fn write_payload(bytes: &[u8], parcel: &mut MsgParcel) -> Result<()> {
 /// Reads an inline field, validating the declared size before copying from Parcel.
 pub fn read_payload(parcel: &mut MsgParcel) -> Result<Vec<u8>> {
     let size = parcel.read::<u32>().map_err(ipc_err_handle)? as usize;
-    if size > MAX_INLINE_BYTES {
+    if size > parcel.readable() {
         return invalid();
     }
     if size == 0 { return Ok(Vec::new()); }
@@ -192,24 +148,22 @@ fn read_protocol(parcel: &mut MsgParcel) -> Result<PrivacyProtocol> {
 
 /// Writes one target request in the Asset Parcel field order.
 pub fn serialize_target(value: &TargetRequest, parcel: &mut MsgParcel) -> Result<()> {
-    if value.element.len() > MAX_INLINE_BYTES - TARGET_OVERHEAD_BYTES { return invalid(); }
     write_protocol(value.protocol, parcel)?;
     parcel.write(&value.hash_alg).map_err(ipc_err_handle)?;
     write_payload(&value.element, parcel)
 }
 
-/// Reads one target request and validates its complete logical size.
+/// Reads one target request in the Asset Parcel field order.
 pub fn deserialize_target(parcel: &mut MsgParcel) -> Result<TargetRequest> {
     let protocol = read_protocol(parcel)?;
     let hash_alg = parcel.read::<u32>().map_err(ipc_err_handle)?;
     let element = read_payload(parcel)?;
-    if element.len() > MAX_INLINE_BYTES - TARGET_OVERHEAD_BYTES { return invalid(); }
     Ok(TargetRequest { protocol, hash_alg, element })
 }
 
 /// Writes exactly one HE ciphertext; there is no symmetric ciphertext field.
 pub fn serialize_decrypt(value: &DecryptRequest, parcel: &mut MsgParcel) -> Result<()> {
-    if value.ciphertext.is_empty() || value.ciphertext.len() > MAX_INLINE_BYTES - DECRYPT_OVERHEAD_BYTES {
+    if value.ciphertext.is_empty() {
         return invalid();
     }
     write_protocol(value.protocol, parcel)?;
@@ -220,7 +174,7 @@ pub fn serialize_decrypt(value: &DecryptRequest, parcel: &mut MsgParcel) -> Resu
 pub fn deserialize_decrypt(parcel: &mut MsgParcel) -> Result<DecryptRequest> {
     let protocol = read_protocol(parcel)?;
     let ciphertext = read_payload(parcel)?;
-    if ciphertext.is_empty() || ciphertext.len() > MAX_INLINE_BYTES - DECRYPT_OVERHEAD_BYTES {
+    if ciphertext.is_empty() {
         return invalid();
     }
     Ok(DecryptRequest { protocol, ciphertext })

@@ -16,13 +16,13 @@
 //! Typed C bindings, following the existing full.rs Manager/guard convention.
 use asset_sdk::privacy::{PrivacyTargetRequest, PrivacyDecryptRequest, PrivacyBuffer};
 #[cfg(not(feature = "AssetEmptyMode"))]
-use asset_sdk::privacy::{MAX_INLINE_BYTES, PROTOCOL_SUCCESS};
+use asset_sdk::privacy::{DecryptRequest, PrivacyBlob, TargetRequest, PROTOCOL_SUCCESS};
 #[cfg(not(feature = "AssetEmptyMode"))]
 use asset_log::loge;
 #[cfg(not(feature = "AssetEmptyMode"))]
 use asset_sdk::full::Manager;
 #[cfg(not(feature = "AssetEmptyMode"))]
-use asset_sdk::ErrCode;
+use asset_sdk::{ErrCode, Result};
 
 const UNSUPPORTED: i32 = 2;
 #[cfg(not(feature = "AssetEmptyMode"))]
@@ -39,6 +39,27 @@ fn map_privacy_error(code: ErrCode) -> i32 {
     }
 }
 
+#[cfg(not(feature = "AssetEmptyMode"))]
+fn blob_size(blob: PrivacyBlob) -> Option<usize> {
+    let size = blob.size as usize;
+    if size > isize::MAX as usize || (size != 0 && blob.data.is_null()) {
+        return None;
+    }
+    Some(size)
+}
+
+#[cfg(not(feature = "AssetEmptyMode"))]
+fn send_privacy_request(
+    request: impl FnOnce(&mut Manager) -> Result<(i32, Vec<u8>)>,
+) -> std::result::Result<(i32, Vec<u8>), i32> {
+    let manager = Manager::build().map_err(|e| map_privacy_error(e.code))?;
+    let mut guard = manager.lock().map_err(|_| {
+        loge!("Privacy request failed to lock Asset Manager");
+        INTERNAL_ERROR
+    })?;
+    request(&mut guard).map_err(|e| map_privacy_error(e.code))
+}
+
 /// Generates a target through Asset IPC, borrowing input and committing output only on success.
 ///
 /// # Safety
@@ -48,7 +69,7 @@ fn map_privacy_error(code: ErrCode) -> i32 {
 /// overlap the input or either descriptor struct. The caller retains ownership of all buffers.
 #[cfg(not(feature = "AssetEmptyMode"))]
 #[no_mangle]
-pub unsafe extern "C" fn asset_privacy_gen_target(
+extern "C" fn asset_privacy_gen_target(
     input: *const PrivacyTargetRequest,
     output: *mut PrivacyBuffer,
 ) -> i32 {
@@ -56,28 +77,30 @@ pub unsafe extern "C" fn asset_privacy_gen_target(
         loge!("Privacy FFI input or output is null");
         return INVALID_ARGUMENT;
     }
-    let output = &mut *output;
-    if output.data.is_null() || output.size as usize > MAX_INLINE_BYTES {
+    // SAFETY: The C caller supplies an exclusive, initialized descriptor.
+    let output = unsafe { &mut *output };
+    if output.data.is_null() {
         return INVALID_ARGUMENT;
     }
-    let input = match (*input).to_value() {
-        Ok(input) => input,
-        Err(e) => return map_privacy_error(e.code),
-    };
-    let manager = match Manager::build() {
-        Ok(manager) => manager,
-        Err(e) => return map_privacy_error(e.code),
-    };
-    let mut guard = match manager.lock() {
-        Ok(guard) => guard,
-        Err(_) => {
-            loge!("Privacy request failed to lock Asset Manager");
-            return INTERNAL_ERROR;
+    // SAFETY: The C caller supplies an initialized request and readable element bytes.
+    let request = unsafe { &*input };
+    let size = match blob_size(request.element) {
+        Some(size) => size,
+        None => {
+            loge!("Invalid privacy element buffer");
+            return INVALID_ARGUMENT;
         },
     };
-    let (result, bytes) = match guard.gen_privacy_target(&input) {
+    let element = if size == 0 {
+        Vec::new()
+    } else {
+        // SAFETY: The length and non-null pointer were checked above. The caller owns the storage.
+        unsafe { std::slice::from_raw_parts(request.element.data, size) }.to_vec()
+    };
+    let input = TargetRequest { protocol: request.protocol, hash_alg: request.hash_alg, element };
+    let (result, bytes) = match send_privacy_request(|manager| manager.gen_privacy_target(&input)) {
         Ok(res) => res,
-        Err(e) => return map_privacy_error(e.code),
+        Err(code) => return code,
     };
     if result != PROTOCOL_SUCCESS {
         return result;
@@ -85,7 +108,8 @@ pub unsafe extern "C" fn asset_privacy_gen_target(
     if bytes.len() > output.size as usize {
         return INVALID_ARGUMENT;
     }
-    std::ptr::copy_nonoverlapping(bytes.as_ptr(), output.data, bytes.len());
+    // SAFETY: The capacity was checked above and the C caller guarantees non-overlap.
+    unsafe { std::ptr::copy_nonoverlapping(bytes.as_ptr(), output.data, bytes.len()) };
     output.size = bytes.len() as u32;
     PROTOCOL_SUCCESS
 }
@@ -99,7 +123,7 @@ pub unsafe extern "C" fn asset_privacy_gen_target(
 /// overlap the input or either descriptor struct. The caller retains ownership of all buffers.
 #[cfg(not(feature = "AssetEmptyMode"))]
 #[no_mangle]
-pub unsafe extern "C" fn asset_privacy_decrypt_ciphertext(
+extern "C" fn asset_privacy_decrypt_ciphertext(
     input: *const PrivacyDecryptRequest,
     output: *mut PrivacyBuffer,
 ) -> i32 {
@@ -107,28 +131,26 @@ pub unsafe extern "C" fn asset_privacy_decrypt_ciphertext(
         loge!("Privacy FFI input or output is null");
         return INVALID_ARGUMENT;
     }
-    let output = &mut *output;
-    if output.data.is_null() || output.size as usize > MAX_INLINE_BYTES {
+    // SAFETY: The C caller supplies an exclusive, initialized descriptor.
+    let output = unsafe { &mut *output };
+    if output.data.is_null() {
         return INVALID_ARGUMENT;
     }
-    let input = match (*input).to_value() {
-        Ok(input) => input,
-        Err(e) => return map_privacy_error(e.code),
-    };
-    let manager = match Manager::build() {
-        Ok(manager) => manager,
-        Err(e) => return map_privacy_error(e.code),
-    };
-    let mut guard = match manager.lock() {
-        Ok(guard) => guard,
-        Err(_) => {
-            loge!("Privacy request failed to lock Asset Manager");
-            return INTERNAL_ERROR;
+    // SAFETY: The C caller supplies an initialized request and readable ciphertext bytes.
+    let request = unsafe { &*input };
+    let size = match blob_size(request.ciphertext) {
+        Some(size) if size != 0 => size,
+        _ => {
+            loge!("Invalid privacy ciphertext buffer");
+            return INVALID_ARGUMENT;
         },
     };
-    let (result, bytes) = match guard.decrypt_privacy_ciphertext(&input) {
+    // SAFETY: The length and non-null pointer were checked above. The caller owns the storage.
+    let ciphertext = unsafe { std::slice::from_raw_parts(request.ciphertext.data, size) }.to_vec();
+    let input = DecryptRequest { protocol: request.protocol, ciphertext };
+    let (result, bytes) = match send_privacy_request(|manager| manager.decrypt_privacy_ciphertext(&input)) {
         Ok(res) => res,
-        Err(e) => return map_privacy_error(e.code),
+        Err(code) => return code,
     };
     if result != PROTOCOL_SUCCESS {
         return result;
@@ -136,19 +158,16 @@ pub unsafe extern "C" fn asset_privacy_decrypt_ciphertext(
     if bytes.len() > output.size as usize {
         return INVALID_ARGUMENT;
     }
-    std::ptr::copy_nonoverlapping(bytes.as_ptr(), output.data, bytes.len());
+    // SAFETY: The capacity was checked above and the C caller guarantees non-overlap.
+    unsafe { std::ptr::copy_nonoverlapping(bytes.as_ptr(), output.data, bytes.len()) };
     output.size = bytes.len() as u32;
     PROTOCOL_SUCCESS
 }
 
 /// Returns UNSUPPORTED without reading or writing the request or output in empty mode.
-///
-/// # Safety
-/// This build does not dereference either pointer, so null pointers are accepted and no
-/// pointee validity is required. No result allocation is created.
 #[cfg(feature = "AssetEmptyMode")]
 #[no_mangle]
-pub unsafe extern "C" fn asset_privacy_gen_target(
+extern "C" fn asset_privacy_gen_target(
     _input: *const PrivacyTargetRequest,
     _output: *mut PrivacyBuffer,
 ) -> i32 {
@@ -156,13 +175,9 @@ pub unsafe extern "C" fn asset_privacy_gen_target(
 }
 
 /// Returns UNSUPPORTED without reading or writing the request or result in empty mode.
-///
-/// # Safety
-/// This build does not dereference either pointer, so null pointers are accepted and no
-/// pointee validity is required. No output storage is accessed.
 #[cfg(feature = "AssetEmptyMode")]
 #[no_mangle]
-pub unsafe extern "C" fn asset_privacy_decrypt_ciphertext(
+extern "C" fn asset_privacy_decrypt_ciphertext(
     _input: *const PrivacyDecryptRequest,
     _output: *mut PrivacyBuffer,
 ) -> i32 {

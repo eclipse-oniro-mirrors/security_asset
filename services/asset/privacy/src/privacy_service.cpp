@@ -53,14 +53,11 @@ int32_t PrepareIdentity(uint32_t uid, CallerIdentity &identity)
     LOGI("SA caller identity resolved, uid=%{private}u, userId=%{private}u", identity.uid, identity.userId);
     return PRIVACY_PROTOCOL_SUCCESS;
 }
-bool CopyBlob(const PrivacyBlob &input, Bytes &output, size_t &total)
+bool CopyBlob(const PrivacyBlob &input, Bytes &output)
 {
-    if (total > MAX_PRIVACY_INLINE_BYTES - PRIVACY_LENGTH_BYTES ||
-        input.size > MAX_PRIVACY_INLINE_BYTES - total - PRIVACY_LENGTH_BYTES ||
-        (input.size != 0 && input.data == nullptr)) {
+    if (input.size != 0 && input.data == nullptr) {
         return false;
     }
-    total += PRIVACY_LENGTH_BYTES + input.size;
     if (input.size != 0) {
         output.assign(input.data, input.data + input.size);
     }
@@ -86,7 +83,7 @@ extern "C" int32_t AssetGenPrivacyTarget(uint32_t uid, const PrivacyTargetReques
 {
     using namespace OHOS::Security::PrivacyComputation;
     LOGI("SA genPrivacyTarget begin, uid=%{private}u", uid);
-    if (input == nullptr || output == nullptr || output->data == nullptr || output->size > MAX_PRIVACY_INLINE_BYTES) {
+    if (input == nullptr || output == nullptr || output->data == nullptr) {
         LOGE("SA genPrivacyTarget invalid request or output buffer");
         return PRIVACY_PROTOCOL_INVALID_ARGUMENT;
     }
@@ -96,9 +93,8 @@ extern "C" int32_t AssetGenPrivacyTarget(uint32_t uid, const PrivacyTargetReques
         return PRIVACY_PROTOCOL_INVALID_ARGUMENT;
     }
     target.hashAlg = static_cast<HashAlg>(input->hashAlg);
-    size_t total = TARGET_FIXED_BYTES;
-    if (!CopyBlob(input->element, target.elemData, total)) {
-        LOGE("SA genPrivacyTarget invalid element buffer or byte budget");
+    if (!CopyBlob(input->element, target.elemData)) {
+        LOGE("SA genPrivacyTarget invalid element buffer");
         return PRIVACY_PROTOCOL_INVALID_ARGUMENT;
     }
     OHOS::Security::PrivacyComputation::PrivacyProtocol protocol;
@@ -138,14 +134,12 @@ extern "C" int32_t AssetDecryptPrivacyCiphertext(uint32_t uid, const PrivacyDecr
 {
     using namespace OHOS::Security::PrivacyComputation;
     LOGI("SA decryptCiphertext begin, uid=%{private}u", uid);
-    if (input == nullptr || output == nullptr || output->data == nullptr || output->size < MAX_DECRYPT_RESULT_BYTES ||
-        output->size > MAX_PRIVACY_INLINE_BYTES) {
+    if (input == nullptr || output == nullptr || output->data == nullptr || output->size < MAX_DECRYPT_RESULT_BYTES) {
         LOGE("SA decryptCiphertext invalid request or output buffer");
         return PRIVACY_PROTOCOL_INVALID_ARGUMENT;
     }
     Bytes ciphertext;
-    size_t total = DECRYPT_FIXED_BYTES;
-    if (input->ciphertext.size == 0 || !CopyBlob(input->ciphertext, ciphertext, total)) {
+    if (input->ciphertext.size == 0 || !CopyBlob(input->ciphertext, ciphertext)) {
         LOGE("SA decryptCiphertext invalid ciphertext");
         return PRIVACY_PROTOCOL_INVALID_ARGUMENT;
     }

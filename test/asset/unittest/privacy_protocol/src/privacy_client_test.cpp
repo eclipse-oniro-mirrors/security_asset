@@ -95,11 +95,12 @@ HWTEST_F(PrivacyClientTest, FailedBatchStopsBeforePostprocessing, TestSize.Level
 {
     const OHOS::Security::PrivacyComputation::PrivacyProtocol protocol{
         DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION};
-    const PrivacySearchResult input{{Bytes{1}, Bytes{2}, Bytes{3}}, std::nullopt};
+    const PrivacySearchResult input{{Bytes{1}, Bytes(193 * 1024, 2), Bytes{3}}, std::nullopt};
     g_failBatch = 2;
     SearchResult output{true, std::vector<Bytes>{Bytes{0x99}}};
     EXPECT_EQ(GetSearchResultRemote(input, protocol, output), PRIVACY_PROTOCOL_HE_ERROR);
     EXPECT_EQ(g_received.size(), 2U);
+    EXPECT_EQ(g_received.back(), input.resultCipherText[1]);
     EXPECT_EQ(g_postprocessCalls, 0U);
     ASSERT_TRUE(output.attachedValues.has_value());
     EXPECT_EQ(*output.attachedValues, std::vector<Bytes>({Bytes{0x99}}));
