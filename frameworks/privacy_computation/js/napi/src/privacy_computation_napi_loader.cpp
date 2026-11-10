@@ -74,7 +74,10 @@ napi_value CallComputationNapiFunc(napi_env env, napi_callback_info info, const 
     auto computationFunc = reinterpret_cast<ComputationNapiFunc>(dlsym(handle, funcName));
     const char *error = dlerror();
     if (error != nullptr || computationFunc == nullptr) {
-        LOGE("dlsym %{public}s failed: %{public}s", funcName, error == nullptr ? "null symbol" : error);
+        if (error == nullptr) {
+            error = "null symbol";
+        }
+        LOGE("dlsym %{public}s failed: %{public}s", funcName, error);
         return CreateRejectedPromise(env, PRIVACY_COMPUTATION_UNAVAILABLE, "Computation NAPI symbol is unavailable.");
     }
     LOGI("ComputationLib dispatch %{public}s", funcName);

@@ -126,8 +126,11 @@ napi_value NapiGetSearchResult(napi_env env, napi_callback_info info)
         LOGI("NAPI getSearchResult begin, route=AssetSA");
         const auto ret = GetSearchResultRemote(context->searchResult, context->protocol, context->output);
         // A well-typed result can still fail ciphertext or decrypted layout validation.
-        context->result = ret == PRIVACY_PROTOCOL_CODEC_ERROR ?
-            PRIVACY_COMPUTATION_CRYPTO_ERROR : MapProtocolError(ret);
+        if (ret == PRIVACY_PROTOCOL_CODEC_ERROR) {
+            context->result = PRIVACY_COMPUTATION_CRYPTO_ERROR;
+        } else {
+            context->result = MapProtocolError(ret);
+        }
         if (context->result != PRIVACY_COMPUTATION_SUCCESS) {
             LOGE("get_search_result failed, code=%{public}d", context->result);
         }

@@ -181,13 +181,23 @@ napi_status NapiGetProperty(napi_env env, napi_value value, PrivacyProtocol &pro
     uint32_t modeId = 0;
     PRIVACY_NAPI_RETURN_ERROR(NapiGetProperty(env, value, "dataSetSize", sizeId));
     PRIVACY_NAPI_RETURN_ERROR(NapiGetProperty(env, value, "protocolType", modeId));
-    PRIVACY_NAPI_RETURN_INVALID_ARG(env, sizeId > static_cast<uint32_t>(DataSetSize::SIZE_512) ||
-        modeId > static_cast<uint32_t>(ProtocolType::PIR_PROTOCOL), "Unsupported protocol enum value.");
+    PRIVACY_NAPI_RETURN_INVALID_ARG(env, sizeId > static_cast<uint32_t>(DataSetSize::SIZE_512),
+        "Unsupported protocol enum value.");
+    PRIVACY_NAPI_RETURN_INVALID_ARG(env, modeId > static_cast<uint32_t>(ProtocolType::PIR_PROTOCOL),
+        "Unsupported protocol enum value.");
     const auto size = static_cast<DataSetSize>(sizeId);
     const auto type = static_cast<ProtocolType>(modeId);
-    const bool isIntersection = type == ProtocolType::PSI_PROTOCOL;
-    PRIVACY_NAPI_RETURN_INVALID_ARG(env, isIntersection != (size == DataSetSize::SIZE_512),
-        "Unsupported protocol and dataSetSize combination.");
+    switch (size) {
+        case DataSetSize::SIZE_128:
+        case DataSetSize::SIZE_256:
+            PRIVACY_NAPI_RETURN_INVALID_ARG(env, type != ProtocolType::PIR_PROTOCOL,
+                "Unsupported protocol and dataSetSize combination.");
+            break;
+        case DataSetSize::SIZE_512:
+            PRIVACY_NAPI_RETURN_INVALID_ARG(env, type != ProtocolType::PSI_PROTOCOL,
+                "Unsupported protocol and dataSetSize combination.");
+            break;
+    }
     protocol.dataSetSize = size;
     protocol.protocolType = type;
     return napi_ok;
@@ -395,8 +405,10 @@ napi_status ThrowJsError(napi_env env, int32_t code, const char *message)
 void ThrowNapiError(napi_env env, napi_status status)
 {
     LOGE("NAPI call failed, status=%{public}d", static_cast<int32_t>(status));
-    const int32_t code =
-        status == napi_invalid_arg ? PRIVACY_COMPUTATION_INVALID_ARGUMENT : PRIVACY_COMPUTATION_SERVICE_ERROR;
+    int32_t code = PRIVACY_COMPUTATION_SERVICE_ERROR;
+    if (status == napi_invalid_arg) {
+        code = PRIVACY_COMPUTATION_INVALID_ARGUMENT;
+    }
     ThrowJsError(env, code, GetErrorMessage(code));
 }
 

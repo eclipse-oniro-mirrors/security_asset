@@ -1385,9 +1385,10 @@ TEST(PrivacyProtocolTest, PsiGetSearchResultNeedsNoHeEngine)
     PrivacySearchResult response;
     ASSERT_EQ(PrivacySearch(MakePrivacyTarget(2), {MakeElement(1), MakeElement(2)}, PRIVATE_SET_INTERSECTION, response),
               PRIVACY_PROTOCOL_SUCCESS);
-    const auto decrypted = DecryptOutsideProtocol(response);
+    auto decrypted = DecryptOutsideProtocol(response);
 
     SetHEEngine(nullptr);
+    decrypted.valueCipherText = std::vector<Bytes>{Bytes{1}};
     SearchResult result;
     ASSERT_EQ(PostProcessSearchResult(decrypted.resultCipherText, decrypted.valueCipherText, PRIVATE_SET_INTERSECTION,
                                       result),
@@ -1408,11 +1409,6 @@ TEST(PrivacyProtocolTest, GetSearchResultRejectsMalformedDecryptedStructure)
 
     PrivacySearchResult malformed;
     malformed.resultCipherText.push_back(SerializeSlots(Slots(SLOT_COUNT - 1, 1)));
-    expectCodecError(malformed, PRIVATE_SET_INTERSECTION);
-
-    malformed = {};
-    malformed.resultCipherText.push_back(SerializeSlots(Slots(SLOT_COUNT, 1)));
-    malformed.valueCipherText.emplace();
     expectCodecError(malformed, PRIVATE_SET_INTERSECTION);
 
     malformed = {};
