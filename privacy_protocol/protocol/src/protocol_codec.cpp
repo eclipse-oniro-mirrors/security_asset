@@ -273,9 +273,6 @@ int32_t ProtocolCodec::ParsePlaintexts(const std::vector<Bytes> &fhePlainText,
         if (ret != PRIVACY_PROTOCOL_SUCCESS) {
             return ret;
         }
-    } else if (valueCipherText.has_value()) {
-        LOGE("intersection plaintext result must not contain value ciphertexts");
-        return PRIVACY_PROTOCOL_CODEC_ERROR;
     }
     const auto slotCount = params.dataNumPerPlaintext * params.slotsPerData;
     std::vector<Slots> decoded;

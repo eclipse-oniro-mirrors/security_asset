@@ -29,16 +29,16 @@ napi_value NapiGenPrivacyTarget(napi_env env, napi_callback_info info)
     }
     LOGI("NAPI genPrivacyTarget begin, route=AssetSA");
     auto context = std::unique_ptr<GenPrivacyTargetContext>(new (std::nothrow) GenPrivacyTargetContext());
-    PRIVACY_NAPI_THROW_IF(env, context == nullptr, nullptr,
+    PRIVACY_NAPI_RETURN_JS_ERROR(env, context == nullptr, nullptr,
         PRIVACY_COMPUTATION_OUT_OF_MEMORY, GetErrorMessage(PRIVACY_COMPUTATION_OUT_OF_MEMORY));
     context->parse = [](napi_env env, napi_callback_info info,
                         PrivacyComputationBaseContext *baseContext) -> napi_status {
         auto *context = static_cast<GenPrivacyTargetContext *>(baseContext);
         constexpr size_t ARG_COUNT = 2;
         napi_value args[ARG_COUNT] = {nullptr};
-        PRIVACY_NAPI_RETURN_IF_FAILED(ParseJsArgs(env, info, args, ARG_COUNT));
+        PRIVACY_NAPI_RETURN_ERROR(ParseJsArgs(env, info, args, ARG_COUNT));
         const auto &[targetElement, privacyProtocol] = args;
-        PRIVACY_NAPI_RETURN_IF_FAILED(NapiGetProperty(env, targetElement, context->input));
+        PRIVACY_NAPI_RETURN_ERROR(NapiGetProperty(env, targetElement, context->input));
         return NapiGetProperty(env, privacyProtocol, context->protocol);
     };
     context->execute = [](napi_env, void *data) {
@@ -63,19 +63,19 @@ napi_value NapiPrivacySearch(napi_env env, napi_callback_info info)
 {
     LOGI("NAPI privacySearch begin, route=Local");
     auto context = std::unique_ptr<PrivacySearchContext>(new (std::nothrow) PrivacySearchContext());
-    PRIVACY_NAPI_THROW_IF(env, context == nullptr, nullptr,
+    PRIVACY_NAPI_RETURN_JS_ERROR(env, context == nullptr, nullptr,
         PRIVACY_COMPUTATION_OUT_OF_MEMORY, GetErrorMessage(PRIVACY_COMPUTATION_OUT_OF_MEMORY));
     context->parse = [](napi_env env, napi_callback_info info,
                         PrivacyComputationBaseContext *baseContext) -> napi_status {
         auto *context = static_cast<PrivacySearchContext *>(baseContext);
         constexpr size_t ARG_COUNT = 3;
         napi_value args[ARG_COUNT] = {nullptr};
-        PRIVACY_NAPI_RETURN_IF_FAILED(ParseJsArgs(env, info, args, ARG_COUNT));
+        PRIVACY_NAPI_RETURN_ERROR(ParseJsArgs(env, info, args, ARG_COUNT));
         const auto &[privacyTarget, elements, privacyProtocol] = args;
-        PRIVACY_NAPI_RETURN_IF_FAILED(NapiGetProperty(env, privacyTarget, context->target));
-        PRIVACY_NAPI_INVALID_ARG_IF(env, context->target.empty(), "privacyTarget must contain ciphertext.");
+        PRIVACY_NAPI_RETURN_ERROR(NapiGetProperty(env, privacyTarget, context->target));
+        PRIVACY_NAPI_RETURN_INVALID_ARG(env, context->target.empty(), "privacyTarget must contain ciphertext.");
         // Only PIR reads and requires elemValue.
-        PRIVACY_NAPI_RETURN_IF_FAILED(NapiGetProperty(env, privacyProtocol, context->protocol));
+        PRIVACY_NAPI_RETURN_ERROR(NapiGetProperty(env, privacyProtocol, context->protocol));
         return NapiGetProperty(env, elements, context->elements, context->protocol.protocolType);
     };
     context->execute = [](napi_env, void *data) {
@@ -104,17 +104,17 @@ napi_value NapiGetSearchResult(napi_env env, napi_callback_info info)
         return CallComputationNapiFunc(env, info, "GetSearchResult");
     }
     auto context = std::unique_ptr<GetSearchResultContext>(new (std::nothrow) GetSearchResultContext());
-    PRIVACY_NAPI_THROW_IF(env, context == nullptr, nullptr,
+    PRIVACY_NAPI_RETURN_JS_ERROR(env, context == nullptr, nullptr,
         PRIVACY_COMPUTATION_OUT_OF_MEMORY, GetErrorMessage(PRIVACY_COMPUTATION_OUT_OF_MEMORY));
     context->parse = [](napi_env env, napi_callback_info info,
                         PrivacyComputationBaseContext *baseContext) -> napi_status {
         auto *context = static_cast<GetSearchResultContext *>(baseContext);
         constexpr size_t ARG_COUNT = 2;
         napi_value args[ARG_COUNT] = {nullptr};
-        PRIVACY_NAPI_RETURN_IF_FAILED(ParseJsArgs(env, info, args, ARG_COUNT));
+        PRIVACY_NAPI_RETURN_ERROR(ParseJsArgs(env, info, args, ARG_COUNT));
         const auto &[privacySearchResult, privacyProtocol] = args;
         // Only PIR reads valueCipherText.
-        PRIVACY_NAPI_RETURN_IF_FAILED(NapiGetProperty(env, privacyProtocol, context->protocol));
+        PRIVACY_NAPI_RETURN_ERROR(NapiGetProperty(env, privacyProtocol, context->protocol));
         return NapiGetProperty(env, privacySearchResult, context->searchResult, context->protocol.protocolType);
     };
     context->execute = [](napi_env, void *data) {
@@ -139,8 +139,8 @@ napi_value NapiGetSearchResult(napi_env env, napi_callback_info info)
     return CreateAsyncWork(env, info, std::move(context), __func__);
 }
 
-constexpr uint32_t PRIVATE_SET_INTERSECTION = 0;
-constexpr uint32_t PRIVATE_INFORMATION_RETRIEVAL = 1;
+constexpr uint32_t PSI_PROTOCOL_VALUE = static_cast<uint32_t>(ProtocolType::PSI_PROTOCOL);
+constexpr uint32_t PIR_PROTOCOL_VALUE = static_cast<uint32_t>(ProtocolType::PIR_PROTOCOL);
 constexpr uint32_t DATA_SET_SIZE_128 = 0;
 constexpr uint32_t DATA_SET_SIZE_256 = 1;
 constexpr uint32_t DATA_SET_SIZE_512 = 2;
@@ -152,8 +152,8 @@ napi_value DeclareProtocolType(const napi_env env)
 {
     napi_value obj;
     NAPI_CALL(env, napi_create_object(env, &obj));
-    NAPI_CALL(env, NapiSetProperty(env, obj, PRIVATE_SET_INTERSECTION_PROTOCOL, PRIVATE_SET_INTERSECTION));
-    NAPI_CALL(env, NapiSetProperty(env, obj, PRIVATE_INFORMATION_RETRIEVAL_PROTOCOL, PRIVATE_INFORMATION_RETRIEVAL));
+    NAPI_CALL(env, NapiSetProperty(env, obj, PRIVATE_SET_INTERSECTION_PROTOCOL, PSI_PROTOCOL_VALUE));
+    NAPI_CALL(env, NapiSetProperty(env, obj, PRIVATE_INFORMATION_RETRIEVAL_PROTOCOL, PIR_PROTOCOL_VALUE));
     return obj;
 }
 

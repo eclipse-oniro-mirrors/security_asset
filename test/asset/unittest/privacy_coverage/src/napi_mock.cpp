@@ -15,6 +15,8 @@
 
 #include "napi_host.h"
 #include "host_faults.h"
+#include <cstdlib>
+#include <new>
 #include <algorithm>
 #include <cstring>
 
@@ -24,10 +26,13 @@ napi_module *g_module = nullptr;
 namespace PrivacyHost {
 napi_value Value(napi_env env, napi_valuetype type)
 {
-    env->values.push_back(std::make_unique<napi_value__>());
-    auto result = env->values.back().get();
-    result->type = type;
-    return result;
+    auto value = std::unique_ptr<napi_value__>(new (std::nothrow) napi_value__());
+    if (value == nullptr) {
+        std::abort();
+    }
+    value->type = type;
+    env->values.push_back(std::move(value));
+    return env->values.back().get();
 }
 napi_value Number(napi_env env, double number)
 {
@@ -294,8 +299,13 @@ extern "C" napi_status napi_create_promise(napi_env env, napi_deferred *deferred
     if (PrivacyHost::Fail("create_promise")) {
         return napi_generic_failure;
     }
-    *out = PrivacyHost::Value(env);
-    env->deferreds.push_back(std::make_unique<napi_deferred__>(napi_deferred__{*out}));
+    auto promise = PrivacyHost::Value(env);
+    auto holder = std::unique_ptr<napi_deferred__>(new (std::nothrow) napi_deferred__{promise});
+    if (holder == nullptr) {
+        return napi_generic_failure;
+    }
+    env->deferreds.push_back(std::move(holder));
+    *out = promise;
     *deferred = env->deferreds.back().get();
     return napi_ok;
 }

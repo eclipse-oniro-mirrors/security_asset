@@ -24,6 +24,7 @@
 #include "securec.h"
 #include <memory>
 #include <limits>
+#include <new>
 #include <utility>
 
 namespace OHOS::Security::PrivacyComputation {
@@ -31,11 +32,19 @@ namespace {
 int32_t PrepareRootKey(uint32_t userId, RootKeyPolicy policy)
 {
     // Function-local static initialization serializes provider registration once per SA process.
-    static const auto deriver = [] {
-        auto provider = std::make_shared<HuksSeedDeriver>();
+    static const auto deriver = []() -> std::shared_ptr<HuksSeedDeriver> {
+        auto *instance = new (std::nothrow) HuksSeedDeriver();
+        if (instance == nullptr) {
+            LOGE("Allocate HUKS seed deriver failed");
+            return nullptr;
+        }
+        auto provider = std::shared_ptr<HuksSeedDeriver>(instance);
         internal::SetHeSeedDeriver(provider);
         return provider;
     }();
+    if (deriver == nullptr) {
+        return PRIVACY_PROTOCOL_INTERNAL_ERROR;
+    }
     return deriver->PrepareRootKey(userId, policy);
 }
 int32_t PrepareIdentity(uint32_t uid, CallerIdentity &identity)

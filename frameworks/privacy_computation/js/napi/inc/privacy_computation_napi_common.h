@@ -78,7 +78,7 @@ void ThrowNapiError(napi_env env, napi_status status);
 napi_status ThrowJsError(napi_env env, int32_t code, const char *message);
 
 // Propagate the exact status so the async setup can reject with the pending exception.
-#define PRIVACY_NAPI_RETURN_IF_FAILED(call)           \
+#define PRIVACY_NAPI_RETURN_ERROR(call)               \
     do {                                              \
         const napi_status privacyNapiStatus = (call); \
         if (privacyNapiStatus != napi_ok) {           \
@@ -86,29 +86,29 @@ napi_status ThrowJsError(napi_env env, int32_t code, const char *message);
         }                                             \
     } while (false)
 
-#define PRIVACY_NAPI_CALL_BASE(env, call, result)                                            \
-    do {                                                                                     \
-        const napi_status privacyNapiStatus = (call);                                        \
-        if (privacyNapiStatus != napi_ok) {                                                   \
-            OHOS::Security::PrivacyComputation::ThrowNapiError((env), privacyNapiStatus);      \
-            return (result);                                                                 \
-        }                                                                                    \
+#define PRIVACY_NAPI_CALL_RETURN(env, call, result)   \
+    do {                                              \
+        const napi_status privacyNapiStatus = (call); \
+        if (privacyNapiStatus != napi_ok) {           \
+            ThrowNapiError((env), privacyNapiStatus); \
+            return (result);                          \
+        }                                             \
     } while (false)
 
-#define PRIVACY_NAPI_CALL(env, call) \
-    PRIVACY_NAPI_CALL_BASE(env, call, privacyNapiStatus)
+#define PRIVACY_NAPI_CALL_RETURN_ERROR(env, call) \
+    PRIVACY_NAPI_CALL_RETURN(env, call, privacyNapiStatus)
 
-#define PRIVACY_NAPI_THROW_IF(env, condition, result, code, message)                    \
-    do {                                                                                \
-        if ((condition)) {                                                              \
-            OHOS::Security::PrivacyComputation::ThrowJsError((env), (code), (message)); \
-            return (result);                                                            \
-        }                                                                               \
+#define PRIVACY_NAPI_RETURN_JS_ERROR(env, condition, result, code, message) \
+    do {                                                                    \
+        if ((condition)) {                                                  \
+            ThrowJsError((env), (code), (message));                         \
+            return (result);                                                \
+        }                                                                   \
     } while (false)
 
-#define PRIVACY_NAPI_INVALID_ARG_IF(env, condition, message) \
-    PRIVACY_NAPI_THROW_IF(env, condition, napi_invalid_arg,  \
-        OHOS::Security::PrivacyComputation::PRIVACY_COMPUTATION_INVALID_ARGUMENT, message)
+#define PRIVACY_NAPI_RETURN_INVALID_ARG(env, condition, message)   \
+    PRIVACY_NAPI_RETURN_JS_ERROR(env, condition, napi_invalid_arg, \
+        PRIVACY_COMPUTATION_INVALID_ARGUMENT, message)
 
 napi_value CreateJsError(napi_env env, int32_t code, const char *message);
 napi_status RejectPromise(napi_env env, napi_deferred deferred, int32_t code, const char *message);
@@ -141,15 +141,15 @@ napi_status NapiSetProperty(napi_env env, const SearchResult &result, napi_value
 template <typename T> napi_status NapiGetProperty(napi_env env, napi_value object, const char *name, T &value)
 {
     napi_value property = nullptr;
-    PRIVACY_NAPI_RETURN_IF_FAILED(NapiGetNamedProperty(env, object, name, property));
+    PRIVACY_NAPI_RETURN_ERROR(NapiGetNamedProperty(env, object, name, property));
     return NapiGetProperty(env, property, value);
 }
 
 template <typename T> napi_status NapiSetProperty(napi_env env, napi_value object, const char *name, const T &value)
 {
     napi_value property = nullptr;
-    PRIVACY_NAPI_RETURN_IF_FAILED(NapiSetProperty(env, value, property));
-    PRIVACY_NAPI_CALL(env, napi_set_named_property(env, object, name, property));
+    PRIVACY_NAPI_RETURN_ERROR(NapiSetProperty(env, value, property));
+    PRIVACY_NAPI_CALL_RETURN_ERROR(env, napi_set_named_property(env, object, name, property));
     return napi_ok;
 }
 

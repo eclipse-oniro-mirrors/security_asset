@@ -94,7 +94,7 @@ HWTEST_F(PrivacyClientTest, SymmetricFramesStayLocalAndBatchesKeepOrder, TestSiz
 HWTEST_F(PrivacyClientTest, FailedBatchStopsBeforePostprocessing, TestSize.Level1)
 {
     const OHOS::Security::PrivacyComputation::PrivacyProtocol protocol{
-        DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION};
+        DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL};
     const PrivacySearchResult input{{Bytes{1}, Bytes(193 * 1024, 2), Bytes{3}}, std::nullopt};
     g_failBatch = 2;
     SearchResult output{true, std::vector<Bytes>{Bytes{0x99}}};
@@ -109,7 +109,7 @@ HWTEST_F(PrivacyClientTest, FailedBatchStopsBeforePostprocessing, TestSize.Level
 HWTEST_F(PrivacyClientTest, InvalidPlaintextStopsBeforePostprocessing, TestSize.Level1)
 {
     const OHOS::Security::PrivacyComputation::PrivacyProtocol protocol{
-        DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION};
+        DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL};
     const PrivacySearchResult input{{Bytes{1}}, std::nullopt};
     g_invalidPlaintext = true;
     SearchResult output;

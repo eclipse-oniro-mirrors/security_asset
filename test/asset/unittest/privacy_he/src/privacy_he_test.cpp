@@ -18,6 +18,7 @@
 #include "provider_registry.h"
 #include "privacy_protocol.h"
 #include "soft_he_engine.h"
+#include <new>
 #include <atomic>
 #include <gtest/gtest.h>
 #include <thread>
@@ -26,7 +27,7 @@ namespace {
 using namespace testing::ext;
 using namespace OHOS::Security::PrivacyComputation;
 using namespace OHOS::Security::PrivacyComputation::internal;
-constexpr PrivacyProtocol intersection{DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION};
+constexpr PrivacyProtocol intersection{DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL};
 
 class PrivacyHeTest : public testing::Test {
 public:
@@ -58,7 +59,8 @@ HWTEST_F(PrivacyHeTest, SeedRequiresServiceProviderAndBindsIdentity, TestSize.Le
     first.bytes.fill(0x99);
     EXPECT_EQ(HeKeyDeriver().DeriveKey({1000, 100}, first), PRIVACY_PROTOCOL_HE_ERROR);
     EXPECT_EQ(first.bytes[0], 0x99);
-    const auto provider = std::make_shared<RecordingSeedDeriver>();
+    const auto provider = std::shared_ptr<RecordingSeedDeriver>(new (std::nothrow) RecordingSeedDeriver());
+    ASSERT_NE(provider, nullptr);
     SetHeSeedDeriver(provider);
     HeSeed repeated;
     HeSeed other;
@@ -110,7 +112,7 @@ HWTEST_F(PrivacyHeTest, FailedOperationsPreserveOutputs, TestSize.Level1)
 HWTEST_F(PrivacyHeTest, CompleteResultEntryValidatesProtocol, TestSize.Level1)
 {
     SearchResult result{true, std::vector<Bytes>{Bytes{0x99}}};
-    const PrivacyProtocol invalid{static_cast<DataSetSize>(-1), ProtocolType::PRIVATE_SET_INTERSECTION};
+    const PrivacyProtocol invalid{static_cast<DataSetSize>(-1), ProtocolType::PSI_PROTOCOL};
     EXPECT_EQ(PostProcessSearchResult({}, std::nullopt, invalid, result), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
     EXPECT_TRUE(result.matchedResult);
     ASSERT_TRUE(result.attachedValues.has_value());
@@ -130,7 +132,8 @@ HWTEST_F(PrivacyHeTest, CompleteResultEntryValidatesProtocol, TestSize.Level1)
 HWTEST_F(PrivacyHeTest, DefaultFactoryNeverOverwritesCustom, TestSize.Level1)
 {
     ASSERT_EQ(EnsureDefaultHeEngineInstalled(), PRIVACY_PROTOCOL_SUCCESS);
-    auto custom = std::make_shared<const SoftHeEngine>();
+    auto custom = std::shared_ptr<const SoftHeEngine>(new (std::nothrow) const SoftHeEngine());
+    ASSERT_NE(custom, nullptr);
     SetHEEngine(custom);
     const auto snapshot = GetHEEngine();
     std::atomic<bool> good{true};

@@ -25,6 +25,7 @@
 #include "hifhe_adapter.h"
 #include "protocol_mapper.h"
 #include "soft_he_engine.h"
+#include <new>
 #include <limits>
 #include <cstring>
 #include <cstdlib>
@@ -41,7 +42,9 @@ public:
     void SetUp() override
     {
         PrivacyHost::Reset();
-        SetHeSeedDeriver(std::make_shared<HuksSeedDeriver>());
+        auto provider = std::shared_ptr<HuksSeedDeriver>(new (std::nothrow) HuksSeedDeriver());
+        ASSERT_NE(provider, nullptr);
+        SetHeSeedDeriver(provider);
         SetHashProvider(nullptr);
         SetRandomSource(nullptr);
         SetPirValueCrypto(nullptr);
@@ -53,7 +56,7 @@ public:
         result->properties["dataSetSize"] =
             PrivacyHost::Number(&env_, static_cast<uint32_t>(pir ? DataSetSize::SIZE_256 : DataSetSize::SIZE_512));
         result->properties["protocolType"] = PrivacyHost::Number(
-            &env_, static_cast<uint32_t>(pir ? ProtocolType::PIR_PROTOCOL : ProtocolType::PRIVATE_SET_INTERSECTION));
+            &env_, static_cast<uint32_t>(pir ? ProtocolType::PIR_PROTOCOL : ProtocolType::PSI_PROTOCOL));
         return result;
     }
     napi_value Target()
@@ -377,7 +380,7 @@ HWTEST_F(PrivacyBoundaryTest, SaPropagatesHuksAndHeFailuresWithoutCommittingOutp
         Bytes output{0x99};
         EXPECT_NE(GenPrivacyTargetRemote(
                       {Bytes(kDefaultCompareBits / kBitsPerByte, TARGET_BYTE), HashAlg::SHA256},
-                      {DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION}, output),
+                      {DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL}, output),
                   PRIVACY_PROTOCOL_SUCCESS);
         EXPECT_EQ(output, (Bytes{0x99}));
     }
@@ -401,7 +404,7 @@ HWTEST_F(PrivacyBoundaryTest, DrbgInitializationStatus, TestSize.Level2)
 HWTEST_F(PrivacyBoundaryTest, EachBatchImportsOnceAndExportsOnlyAfterEvaluation, TestSize.Level1)
 {
     const std::vector<OHOS::Security::PrivacyComputation::PrivacyProtocol> protocols{
-        {DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION},
+        {DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL},
         {DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL},
         {DataSetSize::SIZE_128, ProtocolType::PIR_PROTOCOL}};
     for (const auto &protocol : protocols) {
@@ -416,7 +419,12 @@ HWTEST_F(PrivacyBoundaryTest, EachBatchImportsOnceAndExportsOnlyAfterEvaluation,
         ASSERT_EQ(GenPrivacyTarget({element.elemKey, element.hashAlg}, protocol, {20010001, 100}, target),
                   PRIVACY_PROTOCOL_SUCCESS);
         for (bool custom : {false, true}) {
-            SetHEEngine(custom ? std::make_shared<const SoftHeEngine>() : nullptr);
+            std::shared_ptr<const SoftHeEngine> engine;
+            if (custom) {
+                engine.reset(new (std::nothrow) const SoftHeEngine());
+                ASSERT_NE(engine, nullptr);
+            }
+            SetHEEngine(engine);
             State().calls.clear();
             PrivacySearchResult output;
             ASSERT_EQ(PrivacySearch(target, elements, protocol, output), PRIVACY_PROTOCOL_SUCCESS);
@@ -438,7 +446,9 @@ HWTEST_F(PrivacyBoundaryTest, FailedBatchNeverSerializesIntermediateResults, Tes
     Bytes target;
     ASSERT_EQ(GenPrivacyTarget({element.elemKey, element.hashAlg}, protocol, {20010001, 100}, target),
               PRIVACY_PROTOCOL_SUCCESS);
-    SetHEEngine(std::make_shared<const SoftHeEngine>());
+    auto engine = std::shared_ptr<const SoftHeEngine>(new (std::nothrow) const SoftHeEngine());
+    ASSERT_NE(engine, nullptr);
+    SetHEEngine(engine);
     const std::vector<std::pair<const char *, uint32_t>> failures{
         {"Deserialize", 1}, {"Encode", 1}, {"Negate", 1}, {"Add", 1},        {"Mul", 1},
         {"Encode", 3},      {"Negate", 2}, {"Add", 2},    {"Rerandomize", 1}};

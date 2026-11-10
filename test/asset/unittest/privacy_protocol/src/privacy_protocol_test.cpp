@@ -23,6 +23,7 @@
 #include "protocol_params.h"
 #include "provider_registry.h"
 
+#include <new>
 #include <gtest/gtest.h>
 
 #include <algorithm>
@@ -39,7 +40,7 @@ namespace {
 using namespace OHOS::Security::PrivacyComputation;
 using namespace OHOS::Security::PrivacyComputation::internal;
 
-constexpr PrivacyProtocol PRIVATE_SET_INTERSECTION{DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION};
+constexpr PrivacyProtocol PRIVATE_SET_INTERSECTION{DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL};
 constexpr PrivacyProtocol PIR_PROTOCOL{DataSetSize::SIZE_256, ProtocolType::PIR_PROTOCOL};
 constexpr PrivacyProtocol PIR_128_PROTOCOL{DataSetSize::SIZE_128, ProtocolType::PIR_PROTOCOL};
 constexpr std::size_t SLOT_COUNT = 512U * 4U;
@@ -436,7 +437,11 @@ int32_t CleartextHe::CreateEvaluation(const Bytes &ciphertext, std::unique_ptr<H
     if (emptyEvaluation) {
         return PRIVACY_PROTOCOL_SUCCESS;
     }
-    evaluation = std::make_unique<CleartextEvaluation>(std::move(slots));
+    auto result = std::unique_ptr<CleartextEvaluation>(new (std::nothrow) CleartextEvaluation(std::move(slots)));
+    if (result == nullptr) {
+        return PRIVACY_PROTOCOL_INTERNAL_ERROR;
+    }
+    evaluation = std::move(result);
     return PRIVACY_PROTOCOL_SUCCESS;
 }
 
@@ -450,11 +455,14 @@ struct RecordingProviders {
 RecordingProviders InstallRecordingProviders()
 {
     RecordingProviders providers{
-        std::make_shared<RecordingHash>(),
-        std::make_shared<RecordingRandom>(),
-        std::make_shared<RecordingPirValueCrypto>(),
-        std::make_shared<CleartextHe>(),
+        std::shared_ptr<RecordingHash>(new (std::nothrow) RecordingHash()),
+        std::shared_ptr<RecordingRandom>(new (std::nothrow) RecordingRandom()),
+        std::shared_ptr<RecordingPirValueCrypto>(new (std::nothrow) RecordingPirValueCrypto()),
+        std::shared_ptr<CleartextHe>(new (std::nothrow) CleartextHe()),
     };
+    if (!providers.hash || !providers.randomSource || !providers.pirValue || !providers.he) {
+        return {};
+    }
     SetHashProvider(providers.hash);
     SetRandomSource(providers.randomSource);
     SetPirValueCrypto(providers.pirValue);
@@ -467,7 +475,10 @@ std::shared_ptr<CleartextHe> ConfigureProtocol()
     SetHashProvider(nullptr);
     SetRandomSource(nullptr);
     SetPirValueCrypto(nullptr);
-    auto he = std::make_shared<CleartextHe>();
+    auto he = std::shared_ptr<CleartextHe>(new (std::nothrow) CleartextHe());
+    if (he == nullptr) {
+        return nullptr;
+    }
     SetHEEngine(he);
     return he;
 }
@@ -756,6 +767,7 @@ TEST(PrivacyProtocolProviderTest, CustomProvidersAreSelected)
 {
     ScopedProviderReset resetProviders;
     const auto providers = InstallRecordingProviders();
+    ASSERT_NE(providers.he, nullptr);
 
     const auto selectedHash = GetHashProvider();
     const auto selectedRandom = GetRandomSource();
@@ -770,6 +782,7 @@ TEST(PrivacyProtocolProviderTest, CustomProvidersDriveEvaluationAndResolution)
 {
     ScopedProviderReset resetProviders;
     const auto providers = InstallRecordingProviders();
+    ASSERT_NE(providers.he, nullptr);
 
     const auto target = MakePrivacyTargetFromSuffix(CompareSuffix(2, 8), 4);
     PrivacySearchResult response;
@@ -798,7 +811,8 @@ TEST(PrivacyProtocolProviderTest, CustomProvidersDriveEvaluationAndResolution)
 TEST(PrivacyProtocolProviderTest, GetSearchResultReturnsAllPirMatchesAcrossBatchesInOrder)
 {
     ScopedProviderReset resetProviders;
-    auto pirValueCrypto = std::make_shared<RecordingPirValueCrypto>();
+    auto pirValueCrypto = std::shared_ptr<RecordingPirValueCrypto>(new (std::nothrow) RecordingPirValueCrypto());
+    ASSERT_NE(pirValueCrypto, nullptr);
     SetPirValueCrypto(pirValueCrypto);
     ProtocolParams params;
     ASSERT_EQ(MapPrivacyProtocol(PIR_PROTOCOL, params), PRIVACY_PROTOCOL_SUCCESS);
@@ -850,6 +864,7 @@ TEST(PrivacyProtocolProviderTest, IndependentPirMasksHideNonMatchingSeed)
 {
     ScopedProviderReset resetProviders;
     const auto providers = InstallRecordingProviders();
+    ASSERT_NE(providers.he, nullptr);
     const auto target = MakePrivacyTargetFromSuffix(CompareSuffix(2, 8), 4);
     PrivacySearchResult response;
     ASSERT_EQ(PrivacySearch(target, {MakeElement(1, "one"), MakeElement(2, "two")}, PIR_PROTOCOL, response),
@@ -892,7 +907,7 @@ TEST(PrivacyProtocolProviderTest, IndependentPirMasksHideNonMatchingSeed)
 TEST(PrivacyProtocolProviderTest, NullOverridesRestoreOpenSslDefaults)
 {
     ScopedProviderReset resetProviders;
-    InstallRecordingProviders();
+    ASSERT_NE(InstallRecordingProviders().he, nullptr);
     SetHashProvider(nullptr);
     SetRandomSource(nullptr);
     SetPirValueCrypto(nullptr);
@@ -912,7 +927,8 @@ TEST(PrivacyProtocolProviderTest, NullOverridesRestoreOpenSslDefaults)
 TEST(PrivacyProtocolProviderTest, PirMaskVectorCoversAllSlotsAndSeparatesPairedGroups)
 {
     ScopedProviderReset resetProviders;
-    auto randomSource = std::make_shared<RecordingRandom>();
+    auto randomSource = std::shared_ptr<RecordingRandom>(new (std::nothrow) RecordingRandom());
+    ASSERT_NE(randomSource, nullptr);
     SetRandomSource(randomSource);
 
     ProtocolParams mapped;
@@ -948,7 +964,8 @@ TEST(PrivacyProtocolProviderTest, PirMaskVectorCoversAllSlotsAndSeparatesPairedG
 TEST(PrivacyProtocolProviderTest, MaskVectorMapsBoundaryCandidatesToNonZeroFieldElements)
 {
     ScopedProviderReset resetProviders;
-    auto randomSource = std::make_shared<BoundaryRandom>();
+    auto randomSource = std::shared_ptr<BoundaryRandom>(new (std::nothrow) BoundaryRandom());
+    ASSERT_NE(randomSource, nullptr);
     SetRandomSource(randomSource);
 
     ProtocolParams mapped;
@@ -969,7 +986,8 @@ TEST(PrivacyProtocolProviderTest, MaskVectorMapsBoundaryCandidatesToNonZeroField
 TEST(PrivacyProtocolProviderTest, MaskVectorSupportsTheSmallestNonZeroField)
 {
     ScopedProviderReset resetProviders;
-    auto randomSource = std::make_shared<RecordingRandom>();
+    auto randomSource = std::shared_ptr<RecordingRandom>(new (std::nothrow) RecordingRandom());
+    ASSERT_NE(randomSource, nullptr);
     SetRandomSource(randomSource);
     ProtocolParams params;
     params.plainModulus = 2;
@@ -1005,13 +1023,13 @@ TEST(PrivacyProtocolTest, MapsTheThreeSupportedPrivacyProtocols)
     EXPECT_EQ(static_cast<std::uint32_t>(DataSetSize::SIZE_512), 2U);
 
     ProtocolParams unsupported;
-    EXPECT_EQ(MapPrivacyProtocol({DataSetSize::SIZE_256, ProtocolType::PRIVATE_SET_INTERSECTION}, unsupported),
+    EXPECT_EQ(MapPrivacyProtocol({DataSetSize::SIZE_256, ProtocolType::PSI_PROTOCOL}, unsupported),
               PRIVACY_PROTOCOL_INVALID_ARGUMENT);
     EXPECT_EQ(MapPrivacyProtocol({DataSetSize::SIZE_512, ProtocolType::PIR_PROTOCOL}, unsupported),
               PRIVACY_PROTOCOL_INVALID_ARGUMENT);
-    EXPECT_EQ(MapPrivacyProtocol({DataSetSize::SIZE_128, ProtocolType::PRIVATE_SET_INTERSECTION}, unsupported),
+    EXPECT_EQ(MapPrivacyProtocol({DataSetSize::SIZE_128, ProtocolType::PSI_PROTOCOL}, unsupported),
               PRIVACY_PROTOCOL_INVALID_ARGUMENT);
-    EXPECT_EQ(MapPrivacyProtocol({static_cast<DataSetSize>(99), ProtocolType::PRIVATE_SET_INTERSECTION}, unsupported),
+    EXPECT_EQ(MapPrivacyProtocol({static_cast<DataSetSize>(99), ProtocolType::PSI_PROTOCOL}, unsupported),
               PRIVACY_PROTOCOL_INVALID_ARGUMENT);
     EXPECT_EQ(MapPrivacyProtocol({DataSetSize::SIZE_512, static_cast<ProtocolType>(99)}, unsupported),
               PRIVACY_PROTOCOL_INVALID_ARGUMENT);
@@ -1023,7 +1041,7 @@ TEST(PrivacyProtocolTest, FailedProtocolMappingDoesNotModifyOutput)
     ASSERT_EQ(MapPrivacyProtocol(PIR_128_PROTOCOL, params), PRIVACY_PROTOCOL_SUCCESS);
     const auto original = params;
 
-    EXPECT_EQ(MapPrivacyProtocol({DataSetSize::SIZE_128, ProtocolType::PRIVATE_SET_INTERSECTION}, params),
+    EXPECT_EQ(MapPrivacyProtocol({DataSetSize::SIZE_128, ProtocolType::PSI_PROTOCOL}, params),
               PRIVACY_PROTOCOL_INVALID_ARGUMENT);
     EXPECT_EQ(params.mode, original.mode);
     EXPECT_EQ(params.compareBits, original.compareBits);
@@ -1067,10 +1085,10 @@ TEST(PrivacyProtocolTest, ProtocolValidationRejectsMismatchedAlgorithmParameters
 TEST(PrivacyProtocolTest, BothPublicApisRejectUnsupportedPrivacyProtocols)
 {
     const std::vector<PrivacyProtocol> unsupportedProtocols{
-        {DataSetSize::SIZE_256, ProtocolType::PRIVATE_SET_INTERSECTION},
+        {DataSetSize::SIZE_256, ProtocolType::PSI_PROTOCOL},
         {DataSetSize::SIZE_512, ProtocolType::PIR_PROTOCOL},
-        {DataSetSize::SIZE_128, ProtocolType::PRIVATE_SET_INTERSECTION},
-        {static_cast<DataSetSize>(99), ProtocolType::PRIVATE_SET_INTERSECTION},
+        {DataSetSize::SIZE_128, ProtocolType::PSI_PROTOCOL},
+        {static_cast<DataSetSize>(99), ProtocolType::PSI_PROTOCOL},
         {DataSetSize::SIZE_512, static_cast<ProtocolType>(99)},
     };
     for (const auto &unsupported : unsupportedProtocols) {
@@ -1094,7 +1112,9 @@ TEST(PrivacyProtocolTest, InvalidElementHashIsRejectedBeforeHeEvaluation)
 TEST(PrivacyProtocolTest, EmptyElementKeyKeepsTheExistingHashSemantics)
 {
     ScopedProviderReset resetProviders;
-    SetHEEngine(std::make_shared<CleartextHe>());
+    auto engine = std::shared_ptr<CleartextHe>(new (std::nothrow) CleartextHe());
+    ASSERT_NE(engine, nullptr);
+    SetHEEngine(engine);
 
     Element element;
     element.elemKey = {};
@@ -1137,7 +1157,7 @@ TEST(PrivacyProtocolTest, EmptyEvaluationAndResolutionDoNotRequireHeEngine)
 
 TEST(PrivacyProtocolTest, SingleLayerElementUsesExplicitSha256)
 {
-    ConfigureProtocol();
+    ASSERT_NE(ConfigureProtocol(), nullptr);
     Element element;
     element.elemKey = EightByteKey(2);
     element.hashAlg = HashAlg::SHA256;
@@ -1181,7 +1201,7 @@ TEST(PrivacyProtocolTest, OneHundredTwentyEightBitServerVectorUsesTeeSuffixAndLs
 
 TEST(PrivacyProtocolTest, PsiMatchesAndMissesAfterExternalHeDecryption)
 {
-    ConfigureProtocol();
+    ASSERT_NE(ConfigureProtocol(), nullptr);
     const std::vector<Element> elements{MakeElement(1, "ignored"), MakeElement(2, "also ignored"), MakeElement(3)};
 
     PrivacySearchResult response;
@@ -1211,7 +1231,7 @@ TEST(PrivacyProtocolTest, PsiMatchesAndMissesAfterExternalHeDecryption)
 
 TEST(PrivacyProtocolTest, PirReturnsOneAttachedValue)
 {
-    ConfigureProtocol();
+    ASSERT_NE(ConfigureProtocol(), nullptr);
     const std::vector<Element> elements{MakeElement(1, "one"), MakeElement(2, "two"), MakeElement(3, "three")};
     PrivacySearchResult response;
     ASSERT_EQ(PrivacySearch(MakePrivacyTarget(2), elements, PIR_PROTOCOL, response), PRIVACY_PROTOCOL_SUCCESS);
@@ -1232,7 +1252,7 @@ TEST(PrivacyProtocolTest, PirReturnsOneAttachedValue)
 
 TEST(PrivacyProtocolTest, PirReturnsAllAttachedValuesAcrossBatchesInScanOrder)
 {
-    ConfigureProtocol();
+    ASSERT_NE(ConfigureProtocol(), nullptr);
     std::vector<Element> elements;
     elements.reserve(257);
     elements.push_back(MakeElement(2, "first"));
@@ -1258,7 +1278,7 @@ TEST(PrivacyProtocolTest, PirReturnsAllAttachedValuesAcrossBatchesInScanOrder)
 
 TEST(PrivacyProtocolTest, PirMatchMayHaveNoAttachedValue)
 {
-    ConfigureProtocol();
+    ASSERT_NE(ConfigureProtocol(), nullptr);
     PrivacySearchResult response;
     ASSERT_EQ(PrivacySearch(MakePrivacyTarget(2), {MakeElement(1, "one"), MakeElement(2)}, PIR_PROTOCOL, response),
               PRIVACY_PROTOCOL_SUCCESS);
@@ -1273,7 +1293,7 @@ TEST(PrivacyProtocolTest, PirMatchMayHaveNoAttachedValue)
 
 TEST(PrivacyProtocolTest, FixedCapacitiesAre512ForPsiAnd256ForPir)
 {
-    ConfigureProtocol();
+    ASSERT_NE(ConfigureProtocol(), nullptr);
     std::vector<Element> intersectionElements;
     for (std::size_t i = 0; i < 513; ++i) {
         intersectionElements.push_back(MakeElement(i + 1));
@@ -1311,6 +1331,7 @@ TEST(PrivacyProtocolTest, FixedCapacitiesAre512ForPsiAnd256ForPir)
 TEST(PrivacyProtocolTest, OneHundredTwentyEightBitPirUsesCapacity128AcrossBothPublicApis)
 {
     const auto he = ConfigureProtocol();
+    ASSERT_NE(he, nullptr);
     std::vector<Element> elements;
     for (std::size_t i = 0; i < 129; ++i) {
         elements.push_back(Make128BitElement(i + 1, std::to_string(i + 1)));
@@ -1341,7 +1362,7 @@ TEST(PrivacyProtocolTest, OneHundredTwentyEightBitPirUsesCapacity128AcrossBothPu
 
 TEST(PrivacyProtocolTest, GetSearchResultDoesNotDependOnHeProvider)
 {
-    ConfigureProtocol();
+    ASSERT_NE(ConfigureProtocol(), nullptr);
     PrivacySearchResult response;
     ASSERT_EQ(
         PrivacySearch(MakePrivacyTarget(2), {MakeElement(1, "one"), MakeElement(2, "two")}, PIR_PROTOCOL, response),
@@ -1360,7 +1381,7 @@ TEST(PrivacyProtocolTest, GetSearchResultDoesNotDependOnHeProvider)
 
 TEST(PrivacyProtocolTest, PsiGetSearchResultNeedsNoHeEngine)
 {
-    ConfigureProtocol();
+    ASSERT_NE(ConfigureProtocol(), nullptr);
     PrivacySearchResult response;
     ASSERT_EQ(PrivacySearch(MakePrivacyTarget(2), {MakeElement(1), MakeElement(2)}, PRIVATE_SET_INTERSECTION, response),
               PRIVACY_PROTOCOL_SUCCESS);
@@ -1450,7 +1471,7 @@ TEST(PrivacyProtocolTest, FailedPlaintextParsingDoesNotModifyOutput)
 
 TEST(PrivacyProtocolTest, NonZeroQueryDoesNotMatchZeroPaddedPsiCapacity)
 {
-    ConfigureProtocol();
+    ASSERT_NE(ConfigureProtocol(), nullptr);
     PrivacySearchResult response;
     ASSERT_EQ(PrivacySearch(MakePrivacyTarget(9), {MakeElement(1)}, PRIVATE_SET_INTERSECTION, response),
               PRIVACY_PROTOCOL_SUCCESS);
@@ -1467,7 +1488,7 @@ TEST(PrivacyProtocolTest, NonZeroQueryDoesNotMatchZeroPaddedPsiCapacity)
 
 TEST(PrivacyProtocolTest, ZeroQueryShowsWhyPsiPaddingIsAnInvalidProtocolInput)
 {
-    ConfigureProtocol();
+    ASSERT_NE(ConfigureProtocol(), nullptr);
     PrivacySearchResult response;
     ASSERT_EQ(PrivacySearch(MakeZeroPrivacyTarget(), {MakeElement(1)}, PRIVATE_SET_INTERSECTION, response),
               PRIVACY_PROTOCOL_SUCCESS);
@@ -1486,7 +1507,7 @@ TEST(PrivacyProtocolTest, ZeroQueryShowsWhyPsiPaddingIsAnInvalidProtocolInput)
 
 TEST(PrivacyProtocolTest, NonZeroQueryDoesNotMatchZeroPaddedPirCapacity)
 {
-    ConfigureProtocol();
+    ASSERT_NE(ConfigureProtocol(), nullptr);
     PrivacySearchResult response;
     ASSERT_EQ(PrivacySearch(MakePrivacyTarget(9), {MakeElement(1, "one")}, PIR_PROTOCOL, response),
               PRIVACY_PROTOCOL_SUCCESS);
@@ -1501,7 +1522,7 @@ TEST(PrivacyProtocolTest, NonZeroQueryDoesNotMatchZeroPaddedPirCapacity)
 
 TEST(PrivacyProtocolTest, ZeroQueryPirPaddingCannotIndexPastSymmetricCiphertexts)
 {
-    ConfigureProtocol();
+    ASSERT_NE(ConfigureProtocol(), nullptr);
     PrivacySearchResult response;
     ASSERT_EQ(PrivacySearch(MakeZeroPrivacyTarget(), {MakeElement(1, "one")}, PIR_PROTOCOL, response),
               PRIVACY_PROTOCOL_SUCCESS);
@@ -1589,6 +1610,7 @@ HWTEST(PrivacyProtocolHeContractTest, SuccessfulEngineMustReturnHandle, TestSize
 {
     ScopedProviderReset reset;
     auto engine = ConfigureProtocol();
+    ASSERT_NE(engine, nullptr);
     engine->emptyEvaluation = true;
     PrivacySearchResult output{{Bytes{0x99}}, std::nullopt};
     EXPECT_EQ(PrivacySearch(MakePrivacyTarget(2), {MakeElement(2)}, PRIVATE_SET_INTERSECTION, output),

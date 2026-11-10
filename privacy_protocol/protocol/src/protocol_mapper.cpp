@@ -50,7 +50,7 @@ struct ProtocolPreset {
 
 constexpr std::array<ProtocolPreset, 3> kProtocolPresets{{
     {
-        {DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION},
+        {DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL},
         {ProtocolMode::INTERSECTION, COMPARE_BITS_64, BITS_PER_SLOT_16, SLOTS_PER_DATA_4, DATA_NUM_PER_PLAINTEXT_512,
          PLAIN_MODULUS_65537, POLY_MODULUS_DEGREE_2048, FheAlgorithm::BGV2048_48, kDefaultSymKeySize,
          SymAlgorithm::NONE},

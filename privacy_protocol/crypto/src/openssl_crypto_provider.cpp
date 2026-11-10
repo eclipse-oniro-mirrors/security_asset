@@ -31,6 +31,7 @@
 #include <cstdint>
 #include <limits>
 #include <memory>
+#include <new>
 #include <optional>
 
 namespace OHOS::Security::PrivacyComputation::internal {
@@ -618,30 +619,42 @@ int32_t OpenSslPirValueCrypto::Decrypt(const Bytes &seed, const Bytes &frame, co
 
 std::shared_ptr<const IHashProvider> GetOpenSslHashProvider() noexcept
 {
-    static const auto provider = [] {
-        auto instance = std::make_shared<const OpenSslHashProvider>();
+    static const auto provider = []() -> std::shared_ptr<const OpenSslHashProvider> {
+        auto *instance = new (std::nothrow) const OpenSslHashProvider();
+        if (instance == nullptr) {
+            LOGE("Allocate OpenSSL hash provider failed");
+            return nullptr;
+        }
         LOGI("OpenSSL hash provider initialized");
-        return instance;
+        return std::shared_ptr<const OpenSslHashProvider>(instance);
     }();
     return provider;
 }
 
 std::shared_ptr<IRandomSource> GetOpenSslRandomSource() noexcept
 {
-    static const auto provider = [] {
-        auto instance = std::make_shared<OpenSslRandomSource>();
+    static const auto provider = []() -> std::shared_ptr<OpenSslRandomSource> {
+        auto *instance = new (std::nothrow) OpenSslRandomSource();
+        if (instance == nullptr) {
+            LOGE("Allocate OpenSSL random provider failed");
+            return nullptr;
+        }
         LOGI("OpenSSL randomBytes provider initialized");
-        return instance;
+        return std::shared_ptr<OpenSslRandomSource>(instance);
     }();
     return provider;
 }
 
 std::shared_ptr<const IPirValueCrypto> GetOpenSslPirValueCrypto() noexcept
 {
-    static const auto provider = [] {
-        auto instance = std::make_shared<const OpenSslPirValueCrypto>();
+    static const auto provider = []() -> std::shared_ptr<const OpenSslPirValueCrypto> {
+        auto *instance = new (std::nothrow) const OpenSslPirValueCrypto();
+        if (instance == nullptr) {
+            LOGE("Allocate OpenSSL PIR value crypto provider failed");
+            return nullptr;
+        }
         LOGI("OpenSSL PIR value crypto provider initialized");
-        return instance;
+        return std::shared_ptr<const OpenSslPirValueCrypto>(instance);
     }();
     return provider;
 }

@@ -39,13 +39,13 @@ enum class DataSetSize : std::uint32_t {
 };
 
 enum class ProtocolType : std::uint32_t {
-    PRIVATE_SET_INTERSECTION = 0,
+    PSI_PROTOCOL = 0,
     PIR_PROTOCOL = 1,
 };
 
 struct PrivacyProtocol {
     DataSetSize dataSetSize{DataSetSize::SIZE_512};
-    ProtocolType protocolType{ProtocolType::PRIVATE_SET_INTERSECTION};
+    ProtocolType protocolType{ProtocolType::PSI_PROTOCOL};
 };
 
 struct CallerIdentity {

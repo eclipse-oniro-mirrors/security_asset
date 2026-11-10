@@ -171,7 +171,14 @@ int32_t SoftHeEngine::CreateEvaluation(const Bytes &ciphertext,
 
 std::shared_ptr<const IHEEngine> GetSoftHeEngine() noexcept
 {
-    static const auto engine = std::make_shared<const SoftHeEngine>();
+    static const auto engine = []() -> std::shared_ptr<const SoftHeEngine> {
+        auto *instance = new (std::nothrow) const SoftHeEngine();
+        if (instance == nullptr) {
+            LOGE("Allocate default HE engine failed");
+            return nullptr;
+        }
+        return std::shared_ptr<const SoftHeEngine>(instance);
+    }();
     return engine;
 }
 

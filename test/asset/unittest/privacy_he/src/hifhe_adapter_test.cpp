@@ -20,6 +20,7 @@
 #include "privacy_error_code.h"
 #include "privacy_protocol.h"
 #include "soft_he_engine.h"
+#include <new>
 #include <gtest/gtest.h>
 #include <limits>
 
@@ -201,7 +202,9 @@ class HifheProtocolTest : public testing::Test {
 public:
     void SetUp() override
     {
-        SetHeSeedDeriver(std::make_shared<TestSeedDeriver>());
+        auto provider = std::shared_ptr<TestSeedDeriver>(new (std::nothrow) TestSeedDeriver());
+        ASSERT_NE(provider, nullptr);
+        SetHeSeedDeriver(provider);
     }
     void TearDown() override
     {
@@ -216,7 +219,7 @@ public:
  */
 HWTEST_F(HifheProtocolTest, PsiCompleteWorkflow, TestSize.Level1)
 {
-    const PrivacyProtocol protocol{DataSetSize::SIZE_512, ProtocolType::PRIVATE_SET_INTERSECTION};
+    const PrivacyProtocol protocol{DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL};
     const CallerIdentity identity{20010001, 100};
     Bytes target;
     ASSERT_EQ(GenPrivacyTarget({Bytes{'q'}, HashAlg::SHA256}, protocol, identity, target), PRIVACY_PROTOCOL_SUCCESS);
