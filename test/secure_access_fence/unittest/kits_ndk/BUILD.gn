@@ -50,7 +50,7 @@ ohos_unittest("saf_agent_fence_ndk_test") {
     sources += [ "src/saf_agent_fence_task_identity_ndk_test.cpp" ]
     sources += [ "src/saf_agent_fence_control_app_status_test.cpp" ]
   }
-
+  
   deps = [
     "../../../../interfaces/inner_kits/c/secure_access_fence/agent_fence:saf_agent_fence",
     "../../../../frameworks/secure_access_fence/inner_api/ipc:secure_access_fence_proxy",
