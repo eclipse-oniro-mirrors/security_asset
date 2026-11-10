@@ -24,17 +24,20 @@
 
 #include "saf_log.h"
 
+#ifdef SAF_SUPPORT_USER_AUTH_FRAMEWORK
 #include "user_access_ctrl_client.h"
 #include "user_access_ctrl_client_callback.h"
 #include "attributes.h"
 #include "iam_common_defines.h"
 
 using namespace OHOS::UserIam::UserAuth;
+#endif
 
 namespace OHOS {
 namespace Security {
 namespace SAF {
 
+#ifdef SAF_SUPPORT_USER_AUTH_FRAMEWORK
 constexpr int32_t IAM_VERIFY_RESULT_NOT_SET = -1;
 constexpr int32_t IAM_VERIFY_RESULT_TIMEOUT = -2;
 constexpr int32_t IAM_VERIFY_TIMEOUT_MS = 5000;
@@ -100,6 +103,21 @@ IamVerifyResult VerifyAuthToken(const rust::Vec<uint8_t> &authToken, uint64_t al
     ret.auth_trust_level = verifyResult.authTrustLevel;
     return ret;
 }
+
+#else // !SAF_SUPPORT_USER_AUTH_FRAMEWORK
+
+constexpr int32_t IAM_VERIFY_RESULT_NOT_SUPPORTED = -3;
+
+IamVerifyResult VerifyAuthToken(const rust::Vec<uint8_t> &authToken, uint64_t allowableDurationMs)
+{
+    (void)authToken;
+    (void)allowableDurationMs;
+    IamVerifyResult ret = {};
+    ret.result_code = IAM_VERIFY_RESULT_NOT_SUPPORTED;
+    return ret;
+}
+
+#endif // SAF_SUPPORT_USER_AUTH_FRAMEWORK
 
 } // namespace SAF
 } // namespace Security
