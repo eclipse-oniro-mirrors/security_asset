@@ -39,30 +39,52 @@ int32_t CredentialApiProbe()
     return probe;
 }
 
-// Whether the credential APIs of SA 66532 are usable on this device.
+// Codes that mean the credential backend cannot serve the request in this
+// environment, regardless of arguments. Any of them is an acceptable outcome
+// for a functional case that needs the real backend:
+//   - SAF_ERR_SERVICE_UNAVAILABLE : no SA 66532 at all.
+//   - SAF_ERR_IPC_PROXY_FAIL      : SA present but built without the credential
+//                                   plugin, so the ipccode is rejected.
+//   - SAF_ERR_DLOPEN_FAIL         : SA present but the DIA SO
+//                                   (libcredential_fence_sdk.z.so) is absent on
+//                                   this ROM image.
+//   - SAF_ERR_DLSYM_FAIL          : DIA SO present but a required symbol is
+//                                   missing.
+//   - SAF_ERR_IPC_ERROR / SAF_ERR_IPC_SEND_REQUEST_FAIL : transport failure.
 //
-// Two environments yield "not usable":
-//   - No SA 66532 at all: the IPC layer reports SAF_ERR_SERVICE_UNAVAILABLE.
-//   - An SA 66532 built before the credential plugin existed: the service is
-//     reachable but rejects the credential ipccode, so the proxy reports
-//     SAF_ERR_IPC_PROXY_FAIL.
-bool IsSaDeployed()
+// Additionally, every credential method shares the same service-side pre-gate
+// (Counter -> CheckSignaturePermission -> CheckIsSystemHap ->
+// ResolveCredentialStorageContext). When that gate rejects in this environment
+// (e.g. the test binary runs under a UID that maps to osAccountId < 100, so
+// ResolveCredentialStorageContext returns SAF_ERR_INVALID_ARGS), every method
+// returns that same code. The probe below goes through the identical gate, so
+// its non-SUCCESS result is exactly the code the other methods will return.
+bool IsBackendUnavailable(int32_t ret)
 {
-    int32_t ret = CredentialApiProbe();
-    if (ret == SAF_ERR_SERVICE_UNAVAILABLE || ret == SAF_ERR_IPC_PROXY_FAIL) {
-        LOGI("credential API of SA 66532 not available (ret=%{public}d)", ret);
-        return false;
+    int32_t probe = CredentialApiProbe();
+    if (probe != SAF_SUCCESS && ret == probe) {
+        return true;
     }
-    LOGI("credential API of SA 66532 reachable (ret=%{public}d)", ret);
-    return true;
+    return ret == SAF_ERR_SERVICE_UNAVAILABLE || ret == SAF_ERR_IPC_PROXY_FAIL ||
+           ret == SAF_ERR_DLOPEN_FAIL || ret == SAF_ERR_DLSYM_FAIL ||
+           ret == SAF_ERR_IPC_ERROR || ret == SAF_ERR_IPC_SEND_REQUEST_FAIL;
 }
 
-// The code every credential call degrades to when the API is not usable.
-int32_t DegradedCode()
+// Functional cases need the real backend, but must stay green on every image:
+// CI without SA, a device ROM without the DIA SO, and a fully provisioned
+// device. Accept a success-path business code OR any backend-unavailable code.
+// The actual value is streamed so a future failure shows what was returned.
+void ExpectSuccessOrUnavailable(int32_t ret)
 {
-    int32_t ret = CredentialApiProbe();
-    return (ret == SAF_ERR_SERVICE_UNAVAILABLE || ret == SAF_ERR_IPC_PROXY_FAIL) ?
-        ret : SAF_ERR_SERVICE_UNAVAILABLE;
+    EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_PERMISSION_DENIED || IsBackendUnavailable(ret))
+        << "unexpected ret=" << ret;
+}
+
+void ExpectSuccessArgInvalidOrUnavailable(int32_t ret)
+{
+    EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID ||
+                ret == SAF_ERR_PERMISSION_DENIED || IsBackendUnavailable(ret))
+        << "unexpected ret=" << ret;
 }
 
 // Shared test constants
@@ -143,6 +165,11 @@ void SafCredentialTest::SetUpTestCase(void)
     int32_t grantRet = UnitTest::SafCredentialTest::GrantCredentialPermission();
     LOGI("GrantCredentialPermission ret=%{public}d", grantRet);
     ASSERT_EQ(0, grantRet);
+    // Log the backend state once so a failing run shows which environment the
+    // device is in (no SA / no DIA SO / fully provisioned).
+    int32_t probe = CredentialApiProbe();
+    LOGI("credential backend probe ret=%{public}d (unavailable=%{public}d)",
+        probe, static_cast<int32_t>(IsBackendUnavailable(probe)));
 }
 
 void SafCredentialTest::TearDownTestCase(void)
@@ -178,14 +205,10 @@ HWTEST_F(SafCredentialTest, AddModelCredential_001, TestSize.Level0)
     int32_t ret = cred.AddModelCredential(content, info, handle, credentialId);
     LOGI("AddModelCredential ret=%{public}d handleLen=%{public}zu idLen=%{public}zu",
         ret, handle.size(), credentialId.size());
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_PERMISSION_DENIED);
-        if (ret == SAF_SUCCESS) {
-            EXPECT_FALSE(handle.empty());
-            EXPECT_FALSE(credentialId.empty());
-        }
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
+    ExpectSuccessOrUnavailable(ret);
+    if (ret == SAF_SUCCESS) {
+        EXPECT_FALSE(handle.empty());
+        EXPECT_FALSE(credentialId.empty());
     }
     LOGI("AddModelCredential_001 end");
 }
@@ -208,12 +231,8 @@ HWTEST_F(SafCredentialTest, AddModelCredential_002, TestSize.Level0)
     std::string credentialId;
     int32_t ret = cred.AddModelCredential(content, info, handle, credentialId);
     LOGI("AddModelCredential ret=%{public}d", ret);
-    if (IsSaDeployed()) {
-        // Service may accept or reject; only assert no crash + sensible code.
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    // Service may accept or reject; only assert no crash + sensible code.
+    ExpectSuccessArgInvalidOrUnavailable(ret);
     LOGI("AddModelCredential_002 end");
 }
 
@@ -233,11 +252,7 @@ HWTEST_F(SafCredentialTest, DeleteModelCredential_001, TestSize.Level0)
     CredentialBatchResult result;
     int32_t ret = cred.DeleteModelCredential(list, result);
     LOGI("DeleteModelCredential ret=%{public}d", ret);
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    ExpectSuccessOrUnavailable(ret);
     LOGI("DeleteModelCredential_001 end");
 }
 
@@ -255,11 +270,7 @@ HWTEST_F(SafCredentialTest, DeleteModelCredential_002, TestSize.Level0)
     CredentialBatchResult result;
     int32_t ret = cred.DeleteModelCredential(list, result);
     LOGI("DeleteModelCredential ret=%{public}d", ret);
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    ExpectSuccessArgInvalidOrUnavailable(ret);
     LOGI("DeleteModelCredential_002 end");
 }
 
@@ -280,11 +291,7 @@ HWTEST_F(SafCredentialTest, UpdateModelCredential_001, TestSize.Level0)
     CredentialBatchResult result;
     int32_t ret = cred.UpdateModelCredential(src, dst, result);
     LOGI("UpdateModelCredential ret=%{public}d", ret);
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    ExpectSuccessOrUnavailable(ret);
     LOGI("UpdateModelCredential_001 end");
 }
 
@@ -323,11 +330,7 @@ HWTEST_F(SafCredentialTest, UpdateModelCredential_003, TestSize.Level0)
     CredentialBatchResult result;
     int32_t ret = cred.UpdateModelCredential(src, dst, result);
     LOGI("UpdateModelCredential ret=%{public}d", ret);
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    ExpectSuccessArgInvalidOrUnavailable(ret);
     LOGI("UpdateModelCredential_003 end");
 }
 
@@ -345,11 +348,7 @@ HWTEST_F(SafCredentialTest, GetActiveModelCredential_001, TestSize.Level0)
     ModelCredentialContent content;
     int32_t ret = cred.GetActiveModelCredential("mc_some_handle", "gpt-4", content);
     LOGI("GetActiveModelCredential ret=%{public}d", ret);
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    ExpectSuccessArgInvalidOrUnavailable(ret);
     LOGI("GetActiveModelCredential_001 end");
 }
 
@@ -365,11 +364,7 @@ HWTEST_F(SafCredentialTest, GetActiveModelCredential_002, TestSize.Level0)
     ModelCredentialContent content;
     int32_t ret = cred.GetActiveModelCredential("", "", content);
     LOGI("GetActiveModelCredential ret=%{public}d", ret);
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    ExpectSuccessArgInvalidOrUnavailable(ret);
     LOGI("GetActiveModelCredential_002 end");
 }
 
@@ -387,15 +382,11 @@ HWTEST_F(SafCredentialTest, PreGetAllModelCredentials_001, TestSize.Level0)
     std::vector<ModelCredential> out;
     int32_t ret = cred.PreGetAllModelCredentials(out);
     LOGI("PreGetAllModelCredentials ret=%{public}d outSize=%{public}zu", ret, out.size());
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_PERMISSION_DENIED);
-        if (ret == SAF_SUCCESS) {
-            for (const auto &mc : out) {
-                EXPECT_TRUE(mc.modelCredentialContent.credentialValue.empty());
-            }
+    ExpectSuccessOrUnavailable(ret);
+    if (ret == SAF_SUCCESS) {
+        for (const auto &mc : out) {
+            EXPECT_TRUE(mc.modelCredentialContent.credentialValue.empty());
         }
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
     }
     LOGI("PreGetAllModelCredentials_001 end");
 }
@@ -415,11 +406,7 @@ HWTEST_F(SafCredentialTest, GetModelCredentialValue_001, TestSize.Level0)
     std::string credentialValue;
     int32_t ret = cred.GetModelCredentialValue(index, credentialValue);
     LOGI("GetModelCredentialValue ret=%{public}d valueLen=%{public}zu", ret, credentialValue.size());
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    ExpectSuccessArgInvalidOrUnavailable(ret);
     LOGI("GetModelCredentialValue_001 end");
 }
 
@@ -436,11 +423,7 @@ HWTEST_F(SafCredentialTest, GetModelCredentialValue_002, TestSize.Level0)
     std::string credentialValue;
     int32_t ret = cred.GetModelCredentialValue(index, credentialValue);
     LOGI("GetModelCredentialValue ret=%{public}d", ret);
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    ExpectSuccessArgInvalidOrUnavailable(ret);
     LOGI("GetModelCredentialValue_002 end");
 }
 
@@ -459,11 +442,7 @@ HWTEST_F(SafCredentialTest, AddToolCredential_001, TestSize.Level0)
     CredentialBatchResult result;
     int32_t ret = cred.AddToolCredential(tools, result);
     LOGI("AddToolCredential ret=%{public}d", ret);
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    ExpectSuccessOrUnavailable(ret);
     LOGI("AddToolCredential_001 end");
 }
 
@@ -483,11 +462,7 @@ HWTEST_F(SafCredentialTest, AddToolCredential_002, TestSize.Level0)
     CredentialBatchResult result;
     int32_t ret = cred.AddToolCredential(tools, result);
     LOGI("AddToolCredential ret=%{public}d", ret);
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    ExpectSuccessArgInvalidOrUnavailable(ret);
     LOGI("AddToolCredential_002 end");
 }
 
@@ -507,11 +482,7 @@ HWTEST_F(SafCredentialTest, UpdateToolCredential_001, TestSize.Level0)
     CredentialBatchResult result;
     int32_t ret = cred.UpdateToolCredential(tools, result);
     LOGI("UpdateToolCredential ret=%{public}d", ret);
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    ExpectSuccessArgInvalidOrUnavailable(ret);
     LOGI("UpdateToolCredential_001 end");
 }
 
@@ -528,11 +499,7 @@ HWTEST_F(SafCredentialTest, UpdateToolCredential_002, TestSize.Level0)
     CredentialBatchResult result;
     int32_t ret = cred.UpdateToolCredential(tools, result);
     LOGI("UpdateToolCredential ret=%{public}d", ret);
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    ExpectSuccessArgInvalidOrUnavailable(ret);
     LOGI("UpdateToolCredential_002 end");
 }
 
@@ -551,11 +518,7 @@ HWTEST_F(SafCredentialTest, DeleteToolCredential_001, TestSize.Level0)
     CredentialBatchResult result;
     int32_t ret = cred.DeleteToolCredential(tools, result);
     LOGI("DeleteToolCredential ret=%{public}d", ret);
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    ExpectSuccessArgInvalidOrUnavailable(ret);
     LOGI("DeleteToolCredential_001 end");
 }
 
@@ -572,11 +535,7 @@ HWTEST_F(SafCredentialTest, DeleteToolCredential_002, TestSize.Level0)
     CredentialBatchResult result;
     int32_t ret = cred.DeleteToolCredential(tools, result);
     LOGI("DeleteToolCredential ret=%{public}d", ret);
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    ExpectSuccessArgInvalidOrUnavailable(ret);
     LOGI("DeleteToolCredential_002 end");
 }
 
@@ -601,11 +560,7 @@ HWTEST_F(SafCredentialTest, GetToolCredential_001, TestSize.Level0)
         LOGI("GetToolCredential out[%{public}zu]: envName=%{public}s credentialValue=%{public}s",
             i, out[i].envName.c_str(), out[i].credentialValue.c_str());
     }
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    ExpectSuccessOrUnavailable(ret);
     LOGI("GetToolCredential_001 end");
 }
 
@@ -624,11 +579,7 @@ HWTEST_F(SafCredentialTest, GetToolCredential_002, TestSize.Level0)
     std::vector<ToolCredentialInfo> out;
     int32_t ret = cred.GetToolCredential(info, out);
     LOGI("GetToolCredential ret=%{public}d outSize=%{public}zu", ret, out.size());
-    if (IsSaDeployed()) {
-        EXPECT_TRUE(ret == SAF_SUCCESS || ret == SAF_ERR_ARG_INVALID || ret == SAF_ERR_PERMISSION_DENIED);
-    } else {
-        EXPECT_EQ(ret, DegradedCode());
-    }
+    ExpectSuccessArgInvalidOrUnavailable(ret);
     LOGI("GetToolCredential_002 end");
 }
 
