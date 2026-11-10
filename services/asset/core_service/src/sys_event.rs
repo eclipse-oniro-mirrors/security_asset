@@ -24,7 +24,7 @@ use hisysevent::{
 };
 use ipc::Skeleton;
 
-use asset_common::{CallingInfo, OWNER_INFO_SEPARATOR};
+use asset_common::{CallingInfo, TaskManager, OWNER_INFO_SEPARATOR};
 use asset_definition::{
     Accessibility, AssetError, AssetMap, AuthType, ConflictResolution, ErrCode, IsArray, Extension, OperationType, Result,
     ReturnType, SyncType, Tag, WrapType,
@@ -169,6 +169,16 @@ fn construct_ext_info(attributes: &AssetMap, params: &mut ExtDbMap) -> Result<St
     transfer_tag_to_string(&tags, attributes, params)
 }
 
+/// Spawn telemetry work on the blocking pool so it never blocks the interface return.
+fn spawn_telemetry<F>(f: F)
+where
+    F: FnOnce() + Send + 'static,
+{
+    let handle = ylong_runtime::spawn_blocking(f);
+    let task_manager = TaskManager::get_instance();
+    task_manager.lock().unwrap().push_task(handle);
+}
+
 fn report_ha_event(params: &mut ExtDbMap) {
     if let Ok(load) = AssetPlugin::get_instance().load_plugin() {
         if let Err(code) = load.process_event(AssetEventType::ReportHAEvent, params) {
@@ -186,46 +196,51 @@ pub(crate) fn upload_statistic_system_event(
     ext_info: &str,
     params: &mut ExtDbMap,
 ) {
-    let duration = start_time.elapsed().as_millis();
-    let owner_info = String::from_utf8_lossy(calling_info.owner_info()).to_string();
-    SysEvent::new(EventType::Statistic, SysEvent::ASSET_DOMAIN, SysEvent::ASSET_STATISTIC)
-        .set_param(build_str_param!(SysEvent::FUNCTION, func_name))
-        .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
-        .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
-        .set_param(build_number_param!(SysEvent::RUN_TIME, duration as u32))
-        .set_param(build_str_param!(
-            SysEvent::EXTRA,
-            format!(
-                "CallingUid={} ext_info={} caller_owner_type={}",
-                Skeleton::calling_uid(),
-                ext_info,
-                calling_info.owner_type()
-            )
-        ))
-        .write();
+    let calling_info = calling_info.clone();
+    let func_name = func_name.to_string();
+    let ext_info = ext_info.to_string();
+    let mut params = params.clone();
+    let calling_uid = Skeleton::calling_uid();
+    spawn_telemetry(move || {
+        let duration = start_time.elapsed().as_millis();
+        let owner_info = String::from_utf8_lossy(calling_info.owner_info()).to_string();
+        let extra = format!(
+            "CallingUid={} ext_info={} caller_owner_type={}",
+            calling_uid,
+            ext_info,
+            calling_info.owner_type()
+        );
+        SysEvent::new(EventType::Statistic, SysEvent::ASSET_DOMAIN, SysEvent::ASSET_STATISTIC)
+            .set_param(build_str_param!(SysEvent::FUNCTION, func_name.as_str()))
+            .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
+            .set_param(build_str_param!(SysEvent::CALLER, owner_info.as_str()))
+            .set_param(build_number_param!(SysEvent::RUN_TIME, duration as u32))
+            .set_param(build_str_param!(SysEvent::EXTRA, extra.as_str()))
+            .write();
 
-    if !params.contains_key(PARAM_NAME_EVENT_ID) {
-        params.insert(PARAM_NAME_EVENT_ID, Value::Number(ASSET_OTHER_STATISTIC));
-    }
-    if !params.contains_key(PARAM_NAME_EXTRA_INFO) {
-        params.insert(PARAM_NAME_EXTRA_INFO, Value::Bytes(ext_info.as_bytes().to_vec()));
-    }
-    params.insert(PARAM_NAME_FUNCTION_NAME, Value::Bytes(func_name.as_bytes().to_vec()));
-    params.insert(PARAM_NAME_BEGIN_TIME, Value::Bytes("".as_bytes().to_vec()));
-    params.insert(PARAM_NAME_DIFF_TIME, Value::Bytes(duration.to_string().as_bytes().to_vec()));
-    params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
-    params.insert(PARAM_NAME_CALLER, Value::Bytes(owner_info.as_bytes().to_vec()));
-    report_ha_event(params);
+        if !params.contains_key(PARAM_NAME_EVENT_ID) {
+            params.insert(PARAM_NAME_EVENT_ID, Value::Number(ASSET_OTHER_STATISTIC));
+        }
+        if !params.contains_key(PARAM_NAME_EXTRA_INFO) {
+            params.insert(PARAM_NAME_EXTRA_INFO, Value::Bytes(ext_info.as_bytes().to_vec()));
+        }
+        params.insert(PARAM_NAME_FUNCTION_NAME, Value::Bytes(func_name.as_bytes().to_vec()));
+        params.insert(PARAM_NAME_BEGIN_TIME, Value::Bytes("".as_bytes().to_vec()));
+        params.insert(PARAM_NAME_DIFF_TIME, Value::Bytes(duration.to_string().as_bytes().to_vec()));
+        params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
+        params.insert(PARAM_NAME_CALLER, Value::Bytes(owner_info.as_bytes().to_vec()));
+        report_ha_event(&mut params);
 
-    logi!(
-        "Calling fun:[{}], user_id:[{}], caller:[{}], start_time:[{:?}], run_time:[{}], ext_info=[{}]",
-        func_name,
-        calling_info.user_id(),
-        owner_info,
-        start_time,
-        duration,
-        ext_info
-    )
+        logi!(
+            "Calling fun:[{}], user_id:[{}], caller:[{}], start_time:[{:?}], run_time:[{}], ext_info=[{}]",
+            func_name,
+            calling_info.user_id(),
+            owner_info,
+            start_time,
+            duration,
+            ext_info
+        )
+    });
 }
 
 pub(crate) fn upload_fault_system_event(
@@ -236,47 +251,50 @@ pub(crate) fn upload_fault_system_event(
     e: &AssetError,
     params: &mut ExtDbMap,
 ) {
-    let owner_info = String::from_utf8_lossy(calling_info.owner_info()).to_string();
-    SysEvent::new(EventType::Fault, SysEvent::ASSET_DOMAIN, SysEvent::ASSET_FAULT)
-        .set_param(build_str_param!(SysEvent::FUNCTION, func_name))
-        .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
-        .set_param(build_str_param!(SysEvent::CALLER, owner_info.clone()))
-        .set_param(build_number_param!(SysEvent::ERROR_CODE, e.code as i32))
-        .set_param(build_str_param!(SysEvent::EXTRA, format!(
-            "error code={} error msg={} ext_info={}",
-            e.code,
-            &e.msg,
+    let calling_info = calling_info.clone();
+    let func_name = func_name.to_string();
+    let ext_info = ext_info.to_string();
+    let mut params = params.clone();
+    let err = e.clone();
+    spawn_telemetry(move || {
+        let owner_info = String::from_utf8_lossy(calling_info.owner_info()).to_string();
+        let extra = format!("error code={} error msg={} ext_info={}", err.code, &err.msg, ext_info);
+        SysEvent::new(EventType::Fault, SysEvent::ASSET_DOMAIN, SysEvent::ASSET_FAULT)
+            .set_param(build_str_param!(SysEvent::FUNCTION, func_name.as_str()))
+            .set_param(build_number_param!(SysEvent::USER_ID, calling_info.user_id()))
+            .set_param(build_str_param!(SysEvent::CALLER, owner_info.as_str()))
+            .set_param(build_number_param!(SysEvent::ERROR_CODE, err.code as i32))
+            .set_param(build_str_param!(SysEvent::EXTRA, extra.as_str()))
+            .write();
+
+        if !params.contains_key(PARAM_NAME_EVENT_ID) {
+            params.insert(PARAM_NAME_EVENT_ID, Value::Number(ASSET_OTHER_FAULT));
+        }
+        if !params.contains_key(PARAM_NAME_EXTRA_INFO) {
+            params.insert(PARAM_NAME_EXTRA_INFO, Value::Bytes(
+                format!("{};{}", ext_info, &err.msg).as_bytes().to_vec()
+            ));
+        }
+        params.insert(PARAM_NAME_FUNCTION_NAME, Value::Bytes(func_name.as_bytes().to_vec()));
+        params.insert(PARAM_NAME_BEGIN_TIME, Value::Bytes("".as_bytes().to_vec()));
+        params.insert(PARAM_NAME_DIFF_TIME, Value::Bytes("".as_bytes().to_vec()));
+        params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
+        params.insert(PARAM_NAME_CALLER, Value::Bytes(owner_info.as_bytes().to_vec()));
+        params.insert(PARAM_NAME_ERROR_CODE, Value::Bytes(err.code.to_string().as_bytes().to_vec()));
+        params.insert(PARAM_NAME_CALL_STACK, Value::Bytes(err.call_chain.as_bytes().to_vec()));
+        report_ha_event(&mut params);
+
+        loge!(
+            "[ERROR]Calling fun:[{}], user_id:[{}], caller:[{}], start_time:[{:?}], code:[{}], msg:[{}], ext_info:[{}]",
+            func_name,
+            calling_info.user_id(),
+            owner_info,
+            start_time,
+            err.code,
+            &err.msg,
             ext_info
-        )))
-        .write();
-
-    if !params.contains_key(PARAM_NAME_EVENT_ID) {
-        params.insert(PARAM_NAME_EVENT_ID, Value::Number(ASSET_OTHER_FAULT));
-    }
-    if !params.contains_key(PARAM_NAME_EXTRA_INFO) {
-        params.insert(PARAM_NAME_EXTRA_INFO, Value::Bytes(
-            format!("{};{}", ext_info, &e.msg).as_bytes().to_vec()
-        ));
-    }
-    params.insert(PARAM_NAME_FUNCTION_NAME, Value::Bytes(func_name.as_bytes().to_vec()));
-    params.insert(PARAM_NAME_BEGIN_TIME, Value::Bytes("".as_bytes().to_vec()));
-    params.insert(PARAM_NAME_DIFF_TIME, Value::Bytes("".as_bytes().to_vec()));
-    params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
-    params.insert(PARAM_NAME_CALLER, Value::Bytes(owner_info.as_bytes().to_vec()));
-    params.insert(PARAM_NAME_ERROR_CODE, Value::Bytes(e.code.to_string().as_bytes().to_vec()));
-    params.insert(PARAM_NAME_CALL_STACK, Value::Bytes(e.call_chain.as_bytes().to_vec()));
-    report_ha_event(params);
-
-    loge!(
-        "[ERROR]Calling fun:[{}], user_id:[{}], caller:[{}], start_time:[{:?}], code:[{}], msg:[{}], ext_info:[{}]",
-        func_name,
-        calling_info.user_id(),
-        owner_info,
-        start_time,
-        e.code,
-        &e.msg,
-        ext_info
-    );
+        );
+    });
 }
 
 pub(crate) fn upload_system_event<T: IsArray>(
@@ -355,20 +373,23 @@ fn report_deleted_db_fault(
 }
 
 fn send_clean_cloud_cache(calling_info: &CallingInfo) {
-    let load = match AssetPlugin::get_instance().load_plugin() {
-        Ok(l) => l,
-        Err(_) => return,
-    };
-    let owner_info_str = String::from_utf8_lossy(calling_info.owner_info()).to_string();
-    let owner_info_vec: Vec<_> = owner_info_str.split(OWNER_INFO_SEPARATOR).collect();
-    let caller_name = owner_info_vec[0];
-    let mut params = ExtDbMap::new();
-    params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
-    params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(caller_name.as_bytes().to_vec()));
-    match load.process_event(AssetEventType::CleanCloudCache, &mut params) {
-        Ok(()) => logi!("process clean cloud cache ext event success."),
-        Err(code) => loge!("process clean cloud cache ext event failed, code: {}", code),
-    }
+    let calling_info = calling_info.clone();
+    spawn_telemetry(move || {
+        let load = match AssetPlugin::get_instance().load_plugin() {
+            Ok(l) => l,
+            Err(_) => return,
+        };
+        let owner_info_str = String::from_utf8_lossy(calling_info.owner_info()).to_string();
+        let owner_info_vec: Vec<_> = owner_info_str.split(OWNER_INFO_SEPARATOR).collect();
+        let caller_name = owner_info_vec[0];
+        let mut params = ExtDbMap::new();
+        params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
+        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(caller_name.as_bytes().to_vec()));
+        match load.process_event(AssetEventType::CleanCloudCache, &mut params) {
+            Ok(()) => logi!("process clean cloud cache ext event success."),
+            Err(code) => loge!("process clean cloud cache ext event failed, code: {}", code),
+        }
+    });
 }
 
 /// upload data size
@@ -377,18 +398,20 @@ pub(crate) fn upload_data_size(
     file_or_folder_path: Vec<String>,
     file_or_folder_size: Vec<u64>,
 ) {
-    let folder_path: Vec<&str> = file_or_folder_path.iter().map(|s| s.as_str()).collect();
-    let mut folder_size = [0u64; MAX_DIR_NUMBER];
-    let min_size = min(MAX_DIR_NUMBER, folder_path.len());
-    folder_size[..min_size].copy_from_slice(&file_or_folder_size[..min_size]);
+    spawn_telemetry(move || {
+        let folder_path: Vec<&str> = file_or_folder_path.iter().map(|s| s.as_str()).collect();
+        let mut folder_size = [0u64; MAX_DIR_NUMBER];
+        let min_size = min(MAX_DIR_NUMBER, folder_path.len());
+        folder_size[..min_size].copy_from_slice(&file_or_folder_size[..min_size]);
 
-    SysEvent::new(EventType::Statistic, SysEvent::FILEMANAGEMENT_DOMAIN, SysEvent::FILEMANAGEMENT_STATISTIC)
-        .set_param(build_str_param!(SysEvent::COMPONENT_NAME, COMPONENT))
-        .set_param(build_str_param!(SysEvent::PARTITION_NAME, PARTITION))
-        .set_param(build_number_param!(SysEvent::REMAIN_PARTITION_SIZE, remain_partition_size))
-        .set_param(build_string_array_params!(SysEvent::FILE_OR_FOLDER_PATH, &folder_path))
-        .set_param(build_array_params!(SysEvent::FILE_OR_FOLDER_SIZE, &folder_size))
-        .write();
+        SysEvent::new(EventType::Statistic, SysEvent::FILEMANAGEMENT_DOMAIN, SysEvent::FILEMANAGEMENT_STATISTIC)
+            .set_param(build_str_param!(SysEvent::COMPONENT_NAME, COMPONENT))
+            .set_param(build_str_param!(SysEvent::PARTITION_NAME, PARTITION))
+            .set_param(build_number_param!(SysEvent::REMAIN_PARTITION_SIZE, remain_partition_size))
+            .set_param(build_string_array_params!(SysEvent::FILE_OR_FOLDER_PATH, &folder_path))
+            .set_param(build_array_params!(SysEvent::FILE_OR_FOLDER_SIZE, &folder_size))
+            .write();
+    });
 }
 
 fn build_ext_info(stats: &UsageStatistics) -> String {
