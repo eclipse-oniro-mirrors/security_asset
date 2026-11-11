@@ -80,11 +80,9 @@ fn decrypt_privacy_ciphertext(uid: u32, data: &mut MsgParcel, reply: &mut MsgPar
 /// Captures the actual Binder UID separately for every single-batch operation.
 pub(crate) fn request(code: u32, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
     let uid = u32::try_from(Skeleton::calling_uid()).map_err(|_| IpcStatusCode::Failed)?;
-    if code == IpcCode::PrivacyGenTarget as u32 {
-        return gen_privacy_target(uid, data, reply);
+    match code {
+        c if c == IpcCode::PrivacyGenTarget as u32 => gen_privacy_target(uid, data, reply),
+        c if c == IpcCode::PrivacyDecryptCiphertext as u32 => decrypt_privacy_ciphertext(uid, data, reply),
+        _ => Err(IpcStatusCode::InvalidValue),
     }
-    if code == IpcCode::PrivacyDecryptCiphertext as u32 {
-        return decrypt_privacy_ciphertext(uid, data, reply);
-    }
-    Err(IpcStatusCode::InvalidValue)
 }

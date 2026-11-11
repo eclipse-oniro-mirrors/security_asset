@@ -139,18 +139,23 @@ int32_t HuksSeedDeriver::PrepareRootKey(uint32_t userId, RootKeyPolicy policy) c
     }
     std::string aliasName = ROOT_KEY_ALIAS;
     const HksBlob alias{static_cast<uint32_t>(aliasName.size()), reinterpret_cast<uint8_t *>(aliasName.data())};
-    std::lock_guard<std::mutex> lock(g_rootMutex);
-    const auto ret = HksKeyExist(&alias, paramSet);
-    HksFreeParamSet(&paramSet);
-    if (ret == HKS_SUCCESS) {
-        LOGI("HUKS root exists, userId=%{private}u", userId);
-        return PRIVACY_PROTOCOL_SUCCESS;
+    // Serialize root key existence check and conditional creation under a single lock
+    // to prevent concurrent callers from racing on HksKeyExist / HksGenerateKey.
+    {
+        std::lock_guard<std::mutex> lock(g_rootMutex);
+        const auto ret = HksKeyExist(&alias, paramSet);
+        HksFreeParamSet(&paramSet);
+        if (ret == HKS_SUCCESS) {
+            LOGI("HUKS root exists, userId=%{private}u", userId);
+            return PRIVACY_PROTOCOL_SUCCESS;
+        }
+        if (ret == HKS_ERROR_NOT_EXIST && policy == RootKeyPolicy::CREATE_IF_MISSING) {
+            return GenerateRoot(alias, userId);
+        }
+        LOGE("Query privacy HUKS root failed, ret=%{public}d, policy=%{public}u", ret,
+             static_cast<uint32_t>(policy));
+        return PRIVACY_PROTOCOL_CRYPTO_ERROR;
     }
-    if (ret == HKS_ERROR_NOT_EXIST && policy == RootKeyPolicy::CREATE_IF_MISSING) {
-        return GenerateRoot(alias, userId);
-    }
-    LOGE("Query privacy HUKS root failed, ret=%{public}d, policy=%{public}u", ret, static_cast<uint32_t>(policy));
-    return PRIVACY_PROTOCOL_CRYPTO_ERROR;
 }
 
 int32_t HuksSeedDeriver::Derive(const CallerIdentity &identity,
