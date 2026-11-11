@@ -34,3 +34,9 @@ declare_args() {
     theme_screenlock_mgr_emf_enable = false
   }
 }
+
+enable_user_auth_framework = true
+
+if (!defined(global_parts_info.useriam_user_auth_framework)) {
+  enable_user_auth_framework = false
+}
