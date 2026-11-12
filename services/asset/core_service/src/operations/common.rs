@@ -200,7 +200,7 @@ pub(crate) fn check_tags_consistency(tags: &[Tag], attributes_array: &[AssetMap]
 }
 
 /// Threshold for free storage space (MB).
-pub(crate) const FREE_SPACE_THRESHOLD_MB: f64 = 100.0;
+pub(crate) const FREE_SPACE_THRESHOLD_MB: f64 = 600.0;
 
 /// Threshold for owner data size (bytes).
 pub(crate) const OWNER_DATA_SIZE_THRESHOLD_BYTES: u64 = 300 * 1024 * 1024;
@@ -262,10 +262,10 @@ pub(crate) fn check_storage_threshold(calling_info: &CallingInfo) -> Result<()> 
 fn compute_owner_data_size(calling_info: &CallingInfo) -> Result<u64> {
     let user_id = calling_info.user_id();
 
-    // 群组管群组容量，应用管应用自身容量，互不交叉：
-    // - HAP：只统计自身 db（Hap_{owner}_{app_index}.db），不统计群组
-    // - HapGroup：只统计该 developer 名下群组 db（Group_{dev_id}_*.db），不统计自身 HAP db
-    // - Native：只统计自身 db（Native_{owner_info}.db）
+    // Groups manage group capacity and apps manage their own capacity, with no overlap:
+    // - HAP: only counts its own dbs (Hap_{owner}_{app_index}.db), excluding group dbs
+    // - HapGroup: only counts group dbs under the developer (Group_{dev_id}_*.db), excluding its own HAP dbs
+    // - Native: only counts its own db (Native_{owner_info}.db)
     let (own_db_file, developer_id) = match calling_info.owner_type_enum() {
         OwnerType::Hap => {
             let (de, ce) = get_hap_db_file_names(calling_info.owner_info())?;
@@ -293,8 +293,8 @@ fn compute_owner_data_size(calling_info: &CallingInfo) -> Result<u64> {
     Ok(total)
 }
 
-/// 构造该应用自身的普通 HAP 数据库文件名（含 .db 后缀）。
-/// 直接调用 construct_hap_owner_info，不走 construct_splited_db_name 的 owner_type 分支。
+/// Constructs the app's own HAP database file names (with .db suffix).
+/// Calls construct_hap_owner_info directly, bypassing the owner_type branch of construct_splited_db_name.
 fn get_hap_db_file_names(owner_info: &[u8]) -> Result<(String, String)> {
     let hap_name = construct_hap_owner_info(owner_info)?;
     Ok((format!("{}{}", hap_name, DB_SUFFIX), format!("enc_{}{}", hap_name, DB_SUFFIX)))
