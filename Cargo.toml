@@ -12,6 +12,7 @@
 # limitations under the License.
 
 [workspace]
+resolver = "2"
 members = [
     "frameworks/asset/definition",
     "frameworks/asset/ipc",

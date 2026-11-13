@@ -1,0 +1,102 @@
+# Copyright (c) 2026 Huawei Device Co., Ltd.
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+import("//build/ohos.gni")
+import("//build/test.gni")
+
+ohos_unittest("asset_privacy_protocol_test") {
+  module_out_path = "asset/privacy_computation"
+  sources = [ "src/protocol_codec_test.cpp" ]
+  include_dirs = [
+    "../../../../frameworks/privacy_computation/ipc/inc",
+    "../../../../privacy_protocol/common/inc",
+    "../../../../privacy_protocol/protocol/inc",
+  ]
+  deps = [ "../../../../privacy_protocol:privacy_protocol" ]
+  external_deps = [
+    "hilog:libhilog",
+    "googletest:gtest_main",
+  ]
+  cflags_cc = [
+    "-std=c++17",
+    "-Wall",
+    "-Werror",
+  ]
+  subsystem_name = "security"
+  part_name = "asset"
+}
+
+ohos_unittest("asset_privacy_client_test") {
+  module_out_path = "asset/privacy_computation"
+  sources = [
+    "../../../../frameworks/privacy_computation/ipc/src/privacy_client.cpp",
+    "src/privacy_client_test.cpp",
+  ]
+  include_dirs = [
+    "../../../../frameworks/privacy_computation/ipc/inc",
+    "../../../../privacy_protocol/include",
+    "../../../../privacy_protocol/common/inc",
+  ]
+  external_deps = [
+    "hilog:libhilog",
+    "googletest:gtest_main",
+  ]
+  cflags_cc = [
+    "-std=c++17",
+    "-Wall",
+    "-Werror",
+  ]
+  subsystem_name = "security"
+  part_name = "asset"
+}
+
+ohos_unittest("privacy_protocol_test") {
+  module_out_path = "asset/asset"
+
+  sources = [ "src/privacy_protocol_test.cpp" ]
+
+  include_dirs = [
+    "../../../../privacy_protocol/common/inc",
+    "../../../../privacy_protocol/crypto/inc",
+    "../../../../privacy_protocol/protocol/inc",
+    "../../../../privacy_protocol/core/inc",
+    "../../../../privacy_protocol/he/inc",
+  ]
+
+  deps = [ "../../../../privacy_protocol:privacy_protocol" ]
+
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "googletest:gtest_main",
+    "hilog:libhilog",
+  ]
+
+  cflags_cc = [
+    "-std=c++17",
+    "-Wall",
+    "-Werror",
+    "-fno-exceptions",
+  ]
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+
+  subsystem_name = "security"
+  part_name = "asset"
+}

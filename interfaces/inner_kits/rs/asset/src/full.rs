@@ -24,6 +24,8 @@ pub use asset_definition::*;
 use std::{ffi::CString, os::raw::c_char, sync::OnceLock};
 
 use asset_log::logw;
+use asset_ipc::privacy::{TargetRequest, DecryptRequest, serialize_target, serialize_decrypt,
+    read_payload, MAX_DECRYPT_RESULT_BYTES, PROTOCOL_SUCCESS};
 use ipc::{
     parcel::{MsgOption, MsgParcel},
     remote::RemoteObj,
@@ -32,7 +34,8 @@ use samgr::manage::SystemAbilityManager;
 
 pub use asset_ipc::{
     deserialize_batch_result, deserialize_map, deserialize_maps, deserialize_sync_result, ipc_err_handle,
-    serialize_map, serialize_maps, IpcCode, IPC_SUCCESS, SA_ID, SA_NAME,
+    serialize_map, serialize_maps,
+    IpcCode, IPC_SUCCESS, SA_ID, SA_NAME,
 };
 
 extern "C" {
@@ -393,6 +396,56 @@ impl Manager {
                 _ => Err(e),
             },
         }
+    }
+
+    fn privacy_request<F>(&mut self, code: IpcCode, serialize: F) -> Result<MsgParcel>
+    where
+        F: Fn(&mut MsgParcel) -> Result<()>,
+    {
+        let mut parcel = MsgParcel::new();
+        parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
+        serialize(&mut parcel)?;
+        match self.send_request(parcel, code) {
+            Ok(reply) => Ok(reply),
+            Err(error) if error.code == ErrCode::ServiceUnavailable => {
+                self.rebuild()?;
+                let mut parcel = MsgParcel::new();
+                parcel.write_interface_token(self.descriptor()).map_err(ipc_err_handle)?;
+                serialize(&mut parcel)?;
+                self.send_request(parcel, code)
+            },
+            Err(error) => Err(error),
+        }
+    }
+
+    /// Generates a protocol target through Asset, returning the protocol status and ciphertext.
+    /// A non-success protocol status has an empty ciphertext; transport errors use the outer Result.
+    pub fn gen_privacy_target(&mut self, input: &TargetRequest) -> Result<(i32, Vec<u8>)> {
+        let mut reply = self.privacy_request(IpcCode::PrivacyGenTarget, |parcel| serialize_target(input, parcel))?;
+        let result = reply.read::<i32>().map_err(ipc_err_handle)?;
+        let output = if result == PROTOCOL_SUCCESS {
+            read_payload(&mut reply)?
+        } else {
+            Vec::new()
+        };
+        Ok((result, output))
+    }
+
+    /// Decrypts one HE batch through SA. Associated values never cross this IPC boundary.
+    /// Failure preserves the protocol status and returns no plaintext.
+    pub fn decrypt_privacy_ciphertext(&mut self, input: &DecryptRequest) -> Result<(i32, Vec<u8>)> {
+        let mut reply = self.privacy_request(IpcCode::PrivacyDecryptCiphertext,
+            |parcel| serialize_decrypt(input, parcel))?;
+        let result = reply.read::<i32>().map_err(ipc_err_handle)?;
+        if result != PROTOCOL_SUCCESS {
+            return Ok((result, Vec::new()));
+        }
+        let bytes = read_payload(&mut reply)?;
+        if bytes.len() != MAX_DECRYPT_RESULT_BYTES {
+            return macros_lib::log_throw_error!(macros_lib::hisysevent::function!(),
+                ErrCode::IpcError, "Invalid decoded HE plaintext length");
+        }
+        Ok((result, bytes))
     }
 
     fn send_request(&self, mut parcel: MsgParcel, ipc_code: IpcCode) -> Result<MsgParcel> {

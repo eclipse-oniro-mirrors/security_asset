@@ -27,7 +27,7 @@ group("asset_component") {
     ]
   }
 
- deps += [ "frameworks/hpic/js/napi:privacycomputation_napi" ]
+ deps += [ "frameworks/privacy_computation/js/napi:privacycomputation_napi" ]
  
   if (asset_build_mode == "full") {
     deps += [
@@ -54,6 +54,11 @@ group("asset_bin_test") {
   deps = [
     "test/asset/unittest/kits_ndk:asset_ndk_test",
     "test/asset/unittest/module_test:asset_dependency_test",
+    "test/asset/unittest/privacy_protocol:privacy_protocol_test",
+    "test/asset/unittest/privacy_he:privacy_he_test",
+    "test/asset/unittest/privacy_protocol:asset_privacy_protocol_test",
+    "test/asset/unittest/privacy_he:asset_privacy_he_test",
+    "test/asset/unittest/privacy_root:asset_privacy_root_test",
     "test/secure_access_fence/unittest/kits_ndk:saf_agent_fence_ndk_test",
     "test/secure_access_fence/gui_fence:saf_gui_cache_manager_test",
     "test/secure_access_fence/gui_fence:saf_settings_observer_test",
@@ -82,6 +87,7 @@ group("asset_bin_test") {
   }
 
   if (enable_local_test) {
+    deps += [ "test/asset/unittest/privacy_ipc:asset_privacy_ipc_test" ]
     deps += [ "test/secure_access_fence/unittest/module_test:saf_dependency_test" ]
     deps += [ "test/asset/unittest/inner_kits_rust:rust_asset_inner_test" ]
     deps += [ "test/asset/unittest/module_test:rust_asset_module_test" ]

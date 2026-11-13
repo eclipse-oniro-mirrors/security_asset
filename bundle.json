@@ -53,6 +53,8 @@
                 "hitrace",
                 "hisysevent",
                 "huks",
+                "hifhe",
+                "openhitls",
                 "ipc",
                 "kv_store",
                 "napi",
@@ -146,6 +148,17 @@
                             "asset_system_type.h"
                         ],
                         "header_base": "//base/security/asset/interfaces/inner_kits/c/asset/inc"
+                    }
+                },
+                {
+                    "name": "//base/security/asset/privacy_protocol:privacy_protocol",
+                    "header": {
+                        "header_files": [
+                            "privacy_error_code.h",
+                            "privacy_protocol.h",
+                            "privacy_protocol_types.h"
+                        ],
+                        "header_base": "//base/security/asset/privacy_protocol/include"
                     }
                 }
             ],

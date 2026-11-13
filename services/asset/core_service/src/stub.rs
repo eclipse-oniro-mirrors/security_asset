@@ -172,6 +172,10 @@ fn on_remote_request(stub: &AssetService, code: u32, data: &mut MsgParcel, reply
         },
     }
     let ipc_code = IpcCode::try_from(code).map_err(asset_err_handle)?;
+    // Forward privacy computation IPC codes to the privacy dispatcher.
+    if matches!(ipc_code, IpcCode::PrivacyGenTarget | IpcCode::PrivacyDecryptCiphertext) {
+        return crate::privacy::request(code, data, reply);
+    }
     match ipc_code {
         IpcCode::BatchAdd | IpcCode::BatchRemove | IpcCode::BatchUpdate => {
             return process_batch_data(stub, data, reply, &ipc_code);

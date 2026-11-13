@@ -49,6 +49,7 @@ mod common_event;
 mod data_size_mod;
 mod operations;
 mod stub;
+mod privacy;
 mod sys_event;
 mod trace_scope;
 mod upgrade_operator;
