@@ -28,6 +28,7 @@
 #include "agent_fence_napi_context.h"
 #include "napi_common.h"
 #include "agent_fence_error_codes.h"
+#include "component_click_callback.h"
 
 #include "ability.h"
 #include "ui_content.h"
@@ -1100,6 +1101,10 @@ napi_value Register(const napi_env env, napi_value exports)
         DECLARE_NAPI_FUNCTION("revokeTaskIdentity", NapiRevokeTaskIdentity),
         DECLARE_NAPI_FUNCTION("queryControlAppStatus", NapiQueryControlAppStatus),
         DECLARE_NAPI_FUNCTION("requestControlAppPermissionFromUser", NapiRequestControlAppPermissionFromUser),
+        DECLARE_NAPI_FUNCTION("registerControlComponentResultCallback",
+            NapiRegisterControlComponentResultCallback),
+        DECLARE_NAPI_FUNCTION("unregisterControlComponentResultCallback",
+            NapiUnregisterControlComponentResultCallback),
 
         DECLARE_NAPI_PROPERTY("OperationType", DeclareOperationType(env)),
         DECLARE_NAPI_PROPERTY("ExecuteType", DeclareExecuteType(env)),

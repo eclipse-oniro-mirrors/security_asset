@@ -16,17 +16,25 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
+#include "accesstoken_kit.h"
+#include "ipc_skeleton.h"
 
-#include "mock_permission.h"
 #include "saf_agent_fence.h"
 #include "saf_result_code.h"
 #include "secure_access_fence_type.h"
+#include "mock_permission.h"
 
 using namespace testing::ext;
 using namespace OHOS::Security::SAF;
 using namespace OHOS::Security::AccessToken;
 
 namespace UnitTest::SafAgentFenceControlAppStatusTest {
+
+// Permission required by QueryControlAppStatus on the service side; without it
+// the IPC handler returns SAF_ERR_PERMISSION_DENIED instead of SAF_SUCCESS.
+const static std::vector<std::string> PERMISSIONS = {
+    "ohos.permission.CONTROL_DEVICE",
+};
 
 namespace {
 // A non-empty bundle name used to build a valid AppInfo for IPC calls.
@@ -36,12 +44,14 @@ const std::string TEST_BUNDLE_NAME_B = "com.app.control.target";
 // Application index used together with the bundle names above.
 constexpr int32_t TEST_APP_INDEX = 0;
 
-// QueryControlAppStatus is gated on ohos.permission.CONTROL_DEVICE. Without it
-// the service returns SAF_ERR_PERMISSION_DENIED on devices that enforce the
-// check, so grant it to the test process.
-const std::vector<std::string> PERMISSIONS = {
-    "ohos.permission.CONTROL_DEVICE",
-};
+// Returns true if ohos.permission.CONTROL_DEVICE is available on the current device.
+// This permission is only registered on 2in1 (PC) devices.
+bool IsControlDevicePermissionAvailable()
+{
+    auto tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
+    return AccessTokenKit::VerifyAccessToken(tokenId, "ohos.permission.CONTROL_DEVICE") ==
+        PERMISSION_GRANTED;
+}
 } // namespace
 
 class SafAgentFenceControlAppStatusTest : public testing::Test {
@@ -50,7 +60,7 @@ public:
     static void TearDownTestCase(void);
     void SetUp() override {}
     void TearDown() override {}
-    static MockToken *mockToken_;
+    static MockToken* mockToken_;
 
 protected:
     // Build an AppInfo with the given bundle name and index.
@@ -63,12 +73,13 @@ protected:
     }
 };
 
-MockToken *SafAgentFenceControlAppStatusTest::mockToken_ = nullptr;
+MockToken* SafAgentFenceControlAppStatusTest::mockToken_ = nullptr;
 
 void SafAgentFenceControlAppStatusTest::SetUpTestCase(void)
 {
     mockToken_ = new MockToken(PERMISSIONS, true, true);
     ASSERT_NE(mockToken_, nullptr);
+
     std::string errorMsg = mockToken_->GetMockErrorMsg();
     if (errorMsg != "success") {
         ASSERT_NE(mockToken_->GetTokenId(), INVALID_TOKENID) << "MockToken failed: " << errorMsg;
@@ -99,8 +110,12 @@ HWTEST_F(SafAgentFenceControlAppStatusTest, QueryControlAppStatus_Success_001, T
     std::vector<AppInfo> appInfoList = { MakeAppInfo(TEST_BUNDLE_NAME_A, TEST_APP_INDEX) };
     std::vector<ControlAppStatusResult> resultList;
     int32_t ret = SafAgentFence::QueryControlAppStatus(appInfoList, resultList);
-    EXPECT_EQ(ret, SAF_SUCCESS);
-    EXPECT_EQ(resultList.size(), appInfoList.size());
+    if (IsControlDevicePermissionAvailable()) {
+        EXPECT_EQ(ret, SAF_SUCCESS);
+        EXPECT_EQ(resultList.size(), appInfoList.size());
+    } else {
+        EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
+    }
 }
 
 /**
@@ -117,14 +132,18 @@ HWTEST_F(SafAgentFenceControlAppStatusTest, QueryControlAppStatus_Success_Multip
     };
     std::vector<ControlAppStatusResult> resultList;
     int32_t ret = SafAgentFence::QueryControlAppStatus(appInfoList, resultList);
-    EXPECT_EQ(ret, SAF_SUCCESS);
-    EXPECT_EQ(resultList.size(), appInfoList.size());
+    if (IsControlDevicePermissionAvailable()) {
+        EXPECT_EQ(ret, SAF_SUCCESS);
+        EXPECT_EQ(resultList.size(), appInfoList.size());
+    } else {
+        EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
+    }
 }
 
 /**
  * @tc.name: QueryControlAppStatus_EmptyInput_001
- * @tc.desc: Query with an empty AppInfo list; the service accepts it and returns SAF_SUCCESS
- *           with an empty result list (covers the zero-length input path through IPC).
+ * @tc.desc: Query with an empty AppInfo list; the service rejects it with SAF_ERR_ARG_EMPTY
+ *           and leaves the result list empty (covers the zero-length input path through IPC).
  * @tc.type: FUNC
  * @tc.require:
  */
@@ -133,8 +152,12 @@ HWTEST_F(SafAgentFenceControlAppStatusTest, QueryControlAppStatus_EmptyInput_001
     std::vector<AppInfo> appInfoList;
     std::vector<ControlAppStatusResult> resultList;
     int32_t ret = SafAgentFence::QueryControlAppStatus(appInfoList, resultList);
-    EXPECT_EQ(ret, SAF_SUCCESS);
-    EXPECT_TRUE(resultList.empty());
+    if (IsControlDevicePermissionAvailable()) {
+        EXPECT_EQ(ret, SAF_ERR_ARG_EMPTY);
+        EXPECT_TRUE(resultList.empty());
+    } else {
+        EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
+    }
 }
 
 // ============ GetControlDialogBundleName ============

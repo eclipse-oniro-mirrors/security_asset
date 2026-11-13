@@ -21,12 +21,29 @@
 #include <mutex>
 
 #include "iremote_broker.h"
+#include "iremote_object.h"
 #include "refbase.h"
 
 #include "saf_gui_fence.h"
 #include "saf_result_code.h"
 
 namespace OHOS::Security::SAF {
+
+/**
+ * @brief DeathRecipient that cleans up callbacks when the registering process dies.
+ *
+ * When OnRemoteDied fires, the dead session's entry is removed from
+ * GuiCallbackRegistry so the SA can unload normally.
+ */
+class GuiCallbackDeathRecipient : public IRemoteObject::DeathRecipient {
+public:
+    explicit GuiCallbackDeathRecipient(uint64_t sessionId) : sessionId_(sessionId) {}
+    ~GuiCallbackDeathRecipient() override = default;
+    void OnRemoteDied(const wptr<IRemoteObject> &object) override;
+
+private:
+    uint64_t sessionId_;
+};
 
 /**
  * @brief Registry for component click decision callbacks (IPC 506/507/508).
@@ -39,6 +56,8 @@ namespace OHOS::Security::SAF {
  *
  * Lifecycle: lives as long as the Service process. The SA idle-unload check
  * queries IsEmpty() - the SA will not be unloaded while the registry is non-empty.
+ * When a registering process dies, a DeathRecipient automatically removes its
+ * callback so the SA can unload.
  */
 class GuiCallbackRegistry {
 public:
@@ -50,6 +69,10 @@ public:
 
     /**
      * @brief Register a callback for a session ID.
+     *
+     * Registers a DeathRecipient on the callback's IRemoteObject so that the
+     * entry is automatically removed if the registering process dies.
+     *
      * @param sessionId The session ID identifying the feedback channel.
      * @param callback The IGuiCallback proxy from the A app.
      * @return SAF_SUCCESS on success, SAF_ERR_GUI_SESSION_ALREADY_EXIST if sessionId already registered,
@@ -59,6 +82,9 @@ public:
 
     /**
      * @brief Unregister a callback by session ID.
+     *
+     * Also removes the DeathRecipient from the callback's IRemoteObject.
+     *
      * @param sessionId The session ID to remove.
      * @return SAF_SUCCESS on success, SAF_ERR_GUI_SESSION_NOT_FOUND if sessionId not found.
      */
@@ -91,14 +117,38 @@ public:
      */
     static void ResetForTesting();
 
+    /**
+     * @brief Drop the death-recipient bookkeeping for one session, leaving the
+     *        session itself registered.
+     *
+     * Production code keeps registry_ and deathRecipients_ in sync, so the
+     * missing-record fallbacks in Unregister/Clear are unreachable through the
+     * public API. This seam desynchronizes the maps on purpose so unit tests can
+     * exercise those fallbacks. Intended for unit tests only; must not be called
+     * from production code.
+     *
+     * @param sessionId The session whose death-recipient record is dropped.
+     */
+    void DropDeathRecipientForTesting(uint64_t sessionId);
+
+    /**
+     * @brief Remove a callback by session ID, called from DeathRecipient.
+     *
+     * Unlike Unregister, this does not attempt to RemoveDeathRecipient (the
+     * remote object is already dead). It also removes the death recipient entry.
+     *
+     * @param sessionId The session ID to remove.
+     */
+    void RemoveByDeath(uint64_t sessionId);
+
 private:
     GuiCallbackRegistry() = default;
     ~GuiCallbackRegistry() = default;
     GuiCallbackRegistry(const GuiCallbackRegistry &) = delete;
     GuiCallbackRegistry &operator=(const GuiCallbackRegistry &) = delete;
-
     mutable std::recursive_mutex mutex_;
     std::map<uint64_t, GuiCallback> registry_;
+    std::map<uint64_t, sptr<GuiCallbackDeathRecipient>> deathRecipients_;
 };
 
 } // namespace OHOS::Security::SAF

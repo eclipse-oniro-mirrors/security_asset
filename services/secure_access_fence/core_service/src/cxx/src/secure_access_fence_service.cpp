@@ -441,6 +441,15 @@ ErrCode QueryAllDeniedPairs(
     std::vector<std::string> &deniedPairs,
     int32_t &resultCode)
 {
+    // The denied-pairs list describes who may control whom; it is only served
+    // to system SA callers (e.g. the click executor). Reject everyone else
+    // before any data is fetched.
+    if (!CheckIsSystemSa()) {
+        LOGE("QueryAllDeniedPairs caller is not system SA");
+        resultCode = SAF_ERR_PERMISSION_DENIED;
+        return SAF_SUCCESS;
+    }
+
     auto startTime = std::chrono::steady_clock::now();
     
     // Get OS account ID from foreground user (calling UID may belong to system SA with osAccountId=0)
@@ -483,6 +492,21 @@ ErrCode RegisterComponentClickCallback(
     const GuiCallback &callback,
     int32_t &resultCode)
 {
+    if (!CheckPermission(CONTROL_DEVICE_PERMISSION)) {
+        LOGE("RegisterComponentClickCallback permission denied, need %{public}s",
+            CONTROL_DEVICE_PERMISSION);
+        resultCode = SAF_ERR_PERMISSION_DENIED;
+        return SAF_SUCCESS;
+    }
+    // The session id of the click-result feedback channel is the calling uid.
+    // Reject forged session ids so one controller cannot intercept another
+    // controller's click results.
+    if (sessionId != static_cast<uint64_t>(IPCSkeleton::GetCallingUid())) {
+        LOGE("RegisterComponentClickCallback sessionId=%{public}llu mismatch with calling uid",
+            static_cast<unsigned long long>(sessionId));
+        resultCode = SAF_ERR_ARG_INVALID;
+        return SAF_SUCCESS;
+    }
     if (callback == nullptr) {
         LOGE("RegisterComponentClickCallback failed, callback is null");
         resultCode = SAF_ERR_NULL_PTR;
@@ -532,6 +556,20 @@ ErrCode UnregisterComponentClickCallback(
     uint64_t sessionId,
     int32_t &resultCode)
 {
+    if (!CheckPermission(CONTROL_DEVICE_PERMISSION)) {
+        LOGE("UnregisterComponentClickCallback permission denied, need %{public}s",
+            CONTROL_DEVICE_PERMISSION);
+        resultCode = SAF_ERR_PERMISSION_DENIED;
+        return SAF_SUCCESS;
+    }
+    // Same session-id policy as RegisterComponentClickCallback: a controller
+    // can only unregister its own feedback session.
+    if (sessionId != static_cast<uint64_t>(IPCSkeleton::GetCallingUid())) {
+        LOGE("UnregisterComponentClickCallback sessionId=%{public}llu mismatch with calling uid",
+            static_cast<unsigned long long>(sessionId));
+        resultCode = SAF_ERR_ARG_INVALID;
+        return SAF_SUCCESS;
+    }
     int32_t ret = GuiCallbackRegistry::GetInstance().Unregister(sessionId);
     if (ret != SAF_SUCCESS) {
         LOGE("UnregisterComponentClickCallback failed, ret=%{public}d", ret);

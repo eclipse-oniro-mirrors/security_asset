@@ -18,20 +18,25 @@ ohos_shared_library("abilitytoolaccessctrl_napi") {
   include_dirs += [ "../../os_dependency/log/inc"]
   include_dirs += [ "../../../common/napi/inc"]
   include_dirs += [ "../../../../interfaces/inner_kits/c/secure_access_fence/agent_fence/inc"]
+  include_dirs += [ "../../../../interfaces/inner_kits/c/secure_access_fence/gui_fence/inc"]
 
   sources = [
     "src/agent_fence_napi.cpp",
+    "src/component_click_callback.cpp",
+    "src/component_id_parser.cpp",
     "../../../common/napi/src/napi_common.cpp"
   ]
 
   deps = [
     "../../os_dependency/log:saf_log",
     "../../inner_api/ipc:secure_access_fence_proxy",
-    "../../../../interfaces/inner_kits/c/secure_access_fence/agent_fence:saf_agent_fence"
+    "../../../../interfaces/inner_kits/c/secure_access_fence/agent_fence:saf_agent_fence",
+    "../../../../interfaces/inner_kits/c/secure_access_fence/gui_fence:saf_gui_fence"
   ]
 
   external_deps = [
     "bounds_checking_function:libsec_shared",
+    "cJSON:cjson",
     "ipc:ipc_single",
     "c_utils:utils",
     "hilog:libhilog",

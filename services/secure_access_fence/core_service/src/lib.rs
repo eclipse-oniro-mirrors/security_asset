@@ -36,7 +36,7 @@ use saf_plugin::saf_plugin::{SAFContext, SAFPlugin};
 
 use saf_utils::get_compact_json_value;
 
-use crate::wrapper::{cxx_is_screen_locked, notify_error, notify_performance_metrics};
+use crate::wrapper::{cxx_is_screen_locked, is_callback_registry_empty, notify_error, notify_performance_metrics};
 use crate::remote_control::{BatchGenerateResult, BatchVerifyResult};
 use crate::critical_manager::CriticalManager;
 
@@ -126,6 +126,10 @@ pub(crate) fn unload_sa() {
                 continue;
             }
 
+            if !is_callback_registry_empty() {
+                continue;
+            }
+
             CriticalManager::get_instance().set_critical(false);
             if start_time.elapsed() >= Duration::from_secs(DELAYED_UNLOAD_TIME_IN_SEC as u64) {
                 SystemAbilityManager::unload_system_ability(SA_ID);
@@ -192,6 +196,14 @@ impl Ability for SAFAbility {
                 0
             },
         };
+
+        // If there are registered GUI callbacks, the SA must stay alive so the
+        // caller process can be reached via IPC callback. Delay unload by the
+        // standard check interval.
+        if !is_callback_registry_empty() {
+            logi!("SAF service on idle: GUI callback registry non-empty, delaying unload");
+            return UNLOAD_CHECK_INTERVAL_IN_SEC as i32 * SEC_TO_MILLISEC;
+        }
 
         // If async disk cleanup was scheduled, ensure the SA stays alive until cleanup finishes.
         let store = task_identity::store::global_task_identity_store();
