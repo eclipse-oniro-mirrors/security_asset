@@ -18,9 +18,14 @@
 #include <gtest/gtest.h>
 #include <mutex>
 #include <thread>
+#include <unistd.h>
 
 #include "accesstoken_kit.h"
+#include "errors.h"
+#include "ipc_skeleton.h"
 #include "iservice_registry.h"
+#include "message_option.h"
+#include "message_parcel.h"
 #include "nativetoken_kit.h"
 #include "system_ability_load_callback_stub.h"
 #include "token_setproc.h"
@@ -60,6 +65,66 @@ static void GrantTestPermission()
     uint64_t tokenId = GetAccessTokenId(&info);
     SetSelfTokenID(tokenId);
 }
+
+// Whether ohos.permission.CONTROL_DEVICE is currently verifiable for this test
+// process. The permission is only registered on 2in1 (PC) devices; on other
+// device forms the Register/UnregisterComponentClickCallback service gates
+// return SAF_ERR_PERMISSION_DENIED first, so the tests below must branch on it.
+static bool IsControlDevicePermissionAvailable()
+{
+    auto tokenId = OHOS::IPCSkeleton::GetCallingTokenID();
+    return OHOS::Security::AccessToken::AccessTokenKit::VerifyAccessToken(
+        tokenId, "ohos.permission.CONTROL_DEVICE") == OHOS::Security::AccessToken::PERMISSION_GRANTED;
+}
+
+// The service identifies a click-result feedback session by the calling uid
+// (anti-forgery: one controller cannot unregister or intercept another
+// controller's results), so register/unregister must pass this process's uid.
+static uint64_t OwnSessionId()
+{
+    return static_cast<uint64_t>(getuid());
+}
+
+// Real IGuiCallback stub inside this test process. Unlike GuiCallbackMock (a
+// plain class whose AsObject returns a mock object), it is a genuine binder
+// object, so it can travel through real IPC and the service stores a proxy to
+// it in the session registry. The parcel field order mirrors the app-side
+// ComponentClickCallbackStub in the napi layer.
+class InnerApiCallbackStub : public OHOS::IRemoteStub<IGuiCallback> {
+public:
+    InnerApiCallbackStub() = default;
+    ~InnerApiCallbackStub() override = default;
+
+    void OnComponentClickDecision(const ComponentClickResult &result) override
+    {
+        lastResult_ = result;
+        called_ = true;
+    }
+
+    int OnRemoteRequest(uint32_t code, OHOS::MessageParcel &data, OHOS::MessageParcel &reply,
+        OHOS::MessageOption &option) override
+    {
+        if (code == static_cast<uint32_t>(IGuiCallback::ON_COMPONENT_CLICK_DECISION)) {
+            if (data.ReadInterfaceToken() != IGuiCallback::GetDescriptor()) {
+                return OHOS::ERR_INVALID_DATA;
+            }
+            ComponentClickResult result;
+            result.compId = data.ReadString();
+            result.allowed = data.ReadBool();
+            result.reason = data.ReadString();
+            OnComponentClickDecision(result);
+            return OHOS::ERR_NONE;
+        }
+        return OHOS::IPCObjectStub::OnRemoteRequest(code, data, reply, option);
+    }
+
+    bool WasCalled() const { return called_; }
+    const ComponentClickResult &GetLastResult() const { return lastResult_; }
+
+private:
+    bool called_ = false;
+    ComponentClickResult lastResult_ {};
+};
 
 // SA load callback that signals a condition_variable when loading completes.
 class SafLoadCallback : public OHOS::SystemAbilityLoadCallbackStub {
@@ -262,6 +327,56 @@ HWTEST_F(GuiInnerApiTest, InnerApi_RegisterComponentClickCallback_001, TestSize.
     EXPECT_EQ(ret, SAF_ERR_NULL_PTR);
 }
 
+/**
+ * @tc.name: InnerApi_RegisterComponentClickCallback_002
+ * @tc.desc: Register with the caller's own uid and a real callback stub -> SAF_SUCCESS
+ *          (permission + anti-forgery session gates pass), then unregister -> SAF_SUCCESS.
+ *          On non-2in1 devices CONTROL_DEVICE is not registered, so the permission gate
+ *          rejects with SAF_ERR_PERMISSION_DENIED instead.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiInnerApiTest, InnerApi_RegisterComponentClickCallback_002, TestSize.Level0)
+{
+    GuiCallback callback = new InnerApiCallbackStub();
+    ASSERT_NE(callback, nullptr);
+    // Tolerate a stale session left by an earlier run of this test binary; the
+    // death recipient normally cleans it up when the previous process exits.
+    SafGuiFence::UnregisterComponentClickCallback(OwnSessionId());
+    int32_t ret = SafGuiFence::RegisterComponentClickCallback(OwnSessionId(), callback);
+    if (IsControlDevicePermissionAvailable()) {
+        EXPECT_EQ(ret, SAF_SUCCESS);
+        EXPECT_EQ(SafGuiFence::UnregisterComponentClickCallback(OwnSessionId()), SAF_SUCCESS);
+    } else {
+        EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
+    }
+}
+
+/**
+ * @tc.name: InnerApi_RegisterComponentClickCallback_003
+ * @tc.desc: Register with a session id that is not the caller's uid -> rejected with
+ *          SAF_ERR_ARG_INVALID by the anti-forgery gate (a controller must not be able
+ *          to intercept another controller's click results). The unregister path
+ *          enforces the same gate. On non-2in1 devices the permission gate rejects
+ *          first with SAF_ERR_PERMISSION_DENIED.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiInnerApiTest, InnerApi_RegisterComponentClickCallback_003, TestSize.Level0)
+{
+    // A session id that can never equal this test process's uid.
+    uint64_t forgedSessionId = OwnSessionId() + 1;
+    GuiCallback callback = new InnerApiCallbackStub();
+    ASSERT_NE(callback, nullptr);
+    int32_t ret = SafGuiFence::RegisterComponentClickCallback(forgedSessionId, callback);
+    if (IsControlDevicePermissionAvailable()) {
+        EXPECT_EQ(ret, SAF_ERR_ARG_INVALID);
+        EXPECT_EQ(SafGuiFence::UnregisterComponentClickCallback(forgedSessionId), SAF_ERR_ARG_INVALID);
+    } else {
+        EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
+    }
+}
+
 // ================== ReportComponentClickDecision tests =================
 
 /**
@@ -292,20 +407,74 @@ HWTEST_F(GuiInnerApiTest, InnerApi_ReportComponentClickDecision_002, TestSize.Le
     EXPECT_EQ(ret, SAF_ERR_GUI_SESSION_NOT_FOUND);
 }
 
+/**
+ * @tc.name: InnerApi_ReportComponentClickDecision_003
+ * @tc.desc: E2E: register an own-uid session, report a valid decision, and the real service
+ *          forwards it through the GuiCallbackProxy back into this process, where the callback
+ *          stub receives compId/allowed/reason intact; finally unregister. Covers the
+ *          service-side Report happy path (session found, compId non-empty, proxy callback)
+ *          and the proxy oneway marshalling. On non-2in1 devices CONTROL_DEVICE is not
+ *          registered, so the register permission gate rejects and no session is established.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiInnerApiTest, InnerApi_ReportComponentClickDecision_003, TestSize.Level0)
+{
+    InnerApiCallbackStub *stub = new InnerApiCallbackStub();
+    GuiCallback callback = stub;
+    // Tolerate a stale session left by an earlier run of this test binary; the
+    // death recipient normally cleans it up when the previous process exits.
+    SafGuiFence::UnregisterComponentClickCallback(OwnSessionId());
+    int32_t regRet = SafGuiFence::RegisterComponentClickCallback(OwnSessionId(), callback);
+    if (!IsControlDevicePermissionAvailable()) {
+        EXPECT_EQ(regRet, SAF_ERR_PERMISSION_DENIED);
+        return;
+    }
+    ASSERT_EQ(regRet, SAF_SUCCESS);
+
+    auto result = MakeComponentClickResult(
+        "{\"bundleName\":\"com.example.myapplication\",\"index\":\"0\"}", true, "policy allowed");
+    int32_t reportRet = SafGuiFence::ReportComponentClickDecision(OwnSessionId(), result);
+    EXPECT_EQ(reportRet, SAF_SUCCESS);
+
+    // GuiCallbackProxy delivers the decision with MessageOption::TF_ASYNC, so the
+    // callback may land after the report IPC returns; poll the stub for ~2s.
+    bool delivered = false;
+    for (int32_t i = 0; i < 100 && !delivered; ++i) {
+        delivered = stub->WasCalled();
+        if (!delivered) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
+        }
+    }
+    ASSERT_TRUE(delivered);
+    const ComponentClickResult &deliveredResult = stub->GetLastResult();
+    EXPECT_EQ(deliveredResult.compId, result.compId);
+    EXPECT_TRUE(deliveredResult.allowed);
+    EXPECT_EQ(deliveredResult.reason, result.reason);
+
+    EXPECT_EQ(SafGuiFence::UnregisterComponentClickCallback(OwnSessionId()), SAF_SUCCESS);
+}
+
 // ================== UnregisterComponentClickCallback tests =================
 
 /**
  * @tc.name: InnerApi_UnregisterComponentClickCallback_001
- * @tc.desc: Unknown sessionId -> service returns SAF_ERR_GUI_SESSION_NOT_FOUND.
- *          Covers GetProxy success, IPC success, and the resultCode != SAF_SUCCESS branch.
+ * @tc.desc: Own-uid session that was never registered -> service returns SAF_ERR_GUI_SESSION_NOT_FOUND.
+ *          The session id must be the caller's own uid; any other value is rejected by the
+ *          anti-forgery gate before the registry lookup. On non-2in1 devices CONTROL_DEVICE is
+ *          not registered, so the permission gate rejects first.
  * @tc.type: FUNC
  * @tc.require:
  */
 HWTEST_F(GuiInnerApiTest, InnerApi_UnregisterComponentClickCallback_001, TestSize.Level0)
 {
-    // Unique sessionId that was never registered.
-    int32_t ret = SafGuiFence::UnregisterComponentClickCallback(987652);
-    EXPECT_EQ(ret, SAF_ERR_GUI_SESSION_NOT_FOUND);
+    // The service only accepts the caller's own uid as the session id.
+    int32_t ret = SafGuiFence::UnregisterComponentClickCallback(OwnSessionId());
+    if (IsControlDevicePermissionAvailable()) {
+        EXPECT_EQ(ret, SAF_ERR_GUI_SESSION_NOT_FOUND);
+    } else {
+        EXPECT_EQ(ret, SAF_ERR_PERMISSION_DENIED);
+    }
 }
 
 // ================== PreloadAgentAppStatus tests =================

@@ -254,3 +254,45 @@ ohos_unittest("saf_gui_thread_pool_test") {
     ubsan = true
   }
 }
+
+# Unit test for the componentId JSON parser used by the napi layer
+# (component_click_callback.cpp). The parser .cpp is compiled directly into
+# this test target: it depends only on cJSON and the IDL-generated
+# secure_access_fence_type.h, so the test does not need the napi module, the
+# JS engine, or any IPC runtime.
+ohos_unittest("saf_component_id_parser_test") {
+  module_out_path = module_output_path
+  subsystem_name = "security"
+  part_name = "asset"
+
+  include_dirs = [
+    "../../../frameworks/secure_access_fence/js/napi/inc",
+    "../../../interfaces/inner_kits/c/secure_access_fence/common/inc",
+  ]
+
+  sources = [
+    "src/component_id_parser_test.cpp",
+    "../../../frameworks/secure_access_fence/js/napi/src/component_id_parser.cpp",
+  ]
+
+  deps = [
+    "../../../frameworks/secure_access_fence/inner_api/ipc:secure_access_fence_proxy",
+  ]
+
+  external_deps = [
+    "c_utils:utils",
+    "hilog:libhilog",
+    "cJSON:cjson",
+    "googletest:gtest_main",
+  ]
+
+  branch_protector_ret = "pac_ret"
+  sanitize = {
+    integer_overflow = true
+    cfi = true
+    debug = false
+    cfi_cross_dso = true
+    boundary_sanitize = true
+    ubsan = true
+  }
+}

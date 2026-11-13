@@ -20,12 +20,16 @@
 #include <chrono>
 #include <vector>
 #include <string>
-
 #include "secure_access_fence_type.h"
-
+#include "saf_gui_fence.h"
 #include "saf_log.h"
 #include "saf_result_code.h"
 
+namespace {
+// Register GuiCallbackProxy so that iface_cast<IGuiCallback> can create
+// a proxy on the service side when a callback IPC object arrives.
+OHOS::BrokerDelegator<OHOS::Security::SAF::GuiCallbackProxy> g_guiCallbackProxyDelegator;
+} // namespace
 namespace OHOS {
 namespace Security {
 namespace SAF {
@@ -261,6 +265,13 @@ int32_t HandleRegisterComponentClickCallback(MessageParcel& data, MessageParcel&
     uint64_t sessionId = data.ReadUint64();
     auto remoteObj = data.ReadRemoteObject();
     GuiCallback callback = iface_cast<IGuiCallback>(remoteObj);
+    if (callback == nullptr) {
+        // The parcel carried no binder object, or one that does not implement
+        // IGuiCallback (descriptor mismatch). Reject the malformed message
+        // before it can touch any service state.
+        LOGE("HandleRegisterComponentClickCallback invalid callback object");
+        return SAF_ERR_IPC_READ_DATA_FAIL;
+    }
 
     int32_t resultCode = 0;
     ErrCode errCode = RegisterComponentClickCallback(sessionId, callback, resultCode);

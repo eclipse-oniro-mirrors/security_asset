@@ -178,7 +178,15 @@ pub mod ffi {
         fn GetOsAccountIdFromTokenId(tokenId: u32) -> i32;
         /// Verify auth token via IAM, returns challenge + authTrustLevel.
         fn VerifyAuthToken(authToken: &Vec<u8>, allowableDurationMs: u64) -> IamVerifyResult;
+        /// Check whether the GUI callback registry is empty (for SA idle-unload decision).
+        fn IsCallbackRegistryEmpty() -> bool;
     }
+}
+
+/// Check whether the GUI callback registry is empty.
+/// Returns false if any callback is registered (SA should stay alive).
+pub fn is_callback_registry_empty() -> bool {
+    ffi::IsCallbackRegistryEmpty()
 }
 
 /// IPC request handler for C++ redirect.

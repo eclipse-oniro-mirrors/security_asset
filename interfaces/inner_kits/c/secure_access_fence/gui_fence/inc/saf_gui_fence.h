@@ -20,7 +20,10 @@
 #include <string>
 
 #include "iremote_broker.h"
-
+#include "iremote_proxy.h"
+#include "iremote_stub.h"
+#include "message_parcel.h"
+#include "message_option.h"
 #include "secure_access_fence_type.h"
 
 namespace OHOS::Security::SAF {
@@ -38,6 +41,10 @@ class IGuiCallback : public IRemoteBroker {
 public:
     DECLARE_INTERFACE_DESCRIPTOR(u"ohos.security.saf.IGuiCallback");
 
+    enum {
+        ON_COMPONENT_CLICK_DECISION = 1,
+    };
+
     /**
      * @brief Called when a component click decision is reported.
      * @param result The component click decision result.
@@ -46,6 +53,32 @@ public:
 };
 
 using GuiCallback = sptr<IGuiCallback>;
+
+class GuiCallbackProxy : public IRemoteProxy<IGuiCallback> {
+public:
+    explicit GuiCallbackProxy(const sptr<IRemoteObject> &impl) : IRemoteProxy<IGuiCallback>(impl) {}
+    ~GuiCallbackProxy() override = default;
+
+    void OnComponentClickDecision(const ComponentClickResult &result) override
+    {
+        MessageParcel data;
+        MessageParcel reply;
+        MessageOption option(MessageOption::TF_ASYNC);
+        if (!data.WriteInterfaceToken(GetDescriptor()) || !WriteResult(data, result)) {
+            return;
+        }
+        Remote()->SendRequest(IGuiCallback::ON_COMPONENT_CLICK_DECISION, data, reply, option);
+    }
+
+private:
+    static bool WriteResult(MessageParcel &data, const ComponentClickResult &result)
+    {
+        return data.WriteString(result.compId) && data.WriteBool(result.allowed) &&
+               data.WriteString(result.reason);
+    }
+
+    static inline BrokerDelegator<GuiCallbackProxy> delegator_;
+};
 
 class SafGuiFence {
 public:
