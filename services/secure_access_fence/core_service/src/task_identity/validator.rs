@@ -22,7 +22,13 @@ use saf_definition::{macros_lib, ErrCode, ExecuteType, Result, TaskIdentityInfo}
 use super::constants::{
     MAX_PATH_SEGMENT_LEN, MAX_AUTH_TOKEN_SIZE, MAX_ALLOWABLE_DURATION,
     DEFAULT_ALLOWABLE_DURATION, MAX_REVOKE_TASK_IDS, PATH_TRAVERSAL_PATTERNS,
+    INITIAL_WAKE_UP_TASK_ID,
 };
+
+/// Returns true if the taskId is the reserved initial-wakeup challenge marker.
+pub fn is_from_initial_wake_up(task_id: &str) -> bool {
+    task_id == INITIAL_WAKE_UP_TASK_ID
+}
 
 /// Checks if a string contains path traversal characters.
 fn contains_path_traversal(segment: &str) -> bool {
@@ -83,6 +89,10 @@ pub fn validate_revoke_params(task_ids: &[String]) -> Result<()> {
             "taskIds count must be 1~{}, got {}", MAX_REVOKE_TASK_IDS, task_ids.len());
     }
     for tid in task_ids {
+        if is_from_initial_wake_up(tid) {
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
+                "InitialWakeUp is a reserved task id");
+        }
         validate_path_segment(tid)?;
     }
     Ok(())

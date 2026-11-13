@@ -23,7 +23,11 @@ use std::sync::{Mutex, OnceLock};
 use saf_definition::{macros_lib, ErrCode, ExecuteType, Result};
 use saf_log::{loge, logi, logw};
 
-use super::constants::{VEC_CAPACITY, MAX_FILES_PER_CALLER, MS_PER_SEC};
+use crate::ticket_operation::constant_time_eq;
+
+use super::constants::{
+    VEC_CAPACITY, MAX_FILES_PER_CALLER, MAX_INITIAL_CHALLENGES_PER_CALLER, MS_PER_SEC,
+};
 use super::storage_backend::{create_storage, StorageBackend};
 
 #[derive(Debug, Clone)]
@@ -50,6 +54,9 @@ struct TaskIdentityStoreInner {
     tasks: Vec<(StoreKey, TaskIdentityRecord)>,
     // front=oldest, back=newest. get() removes immediately (consume, one-time use).
     challenges: Vec<(StoreKey, ChallengeEntry)>,
+    // Initial-wakeup challenges keyed by caller only (multiple entries may coexist).
+    // Unlike `challenges`, these are reusable and never consumed on read.
+    initial_challenges: Vec<(String, ChallengeEntry)>,
 }
 
 impl TaskIdentityStoreInner {
@@ -57,6 +64,7 @@ impl TaskIdentityStoreInner {
         Self {
             tasks: Vec::with_capacity(VEC_CAPACITY),
             challenges: Vec::with_capacity(VEC_CAPACITY),
+            initial_challenges: Vec::with_capacity(VEC_CAPACITY),
         }
     }
 
@@ -114,6 +122,38 @@ impl TaskIdentityStoreInner {
         } else {
             None
         }
+    }
+
+    // ==================== initial challenges (reusable, keyed by caller) ====================
+
+    fn initial_challenges_prune_expired(&mut self, caller: &str, now_boot_ms: u64) {
+        self.initial_challenges.retain(|(c, entry)| {
+            c.as_str() != caller ||
+                !super::storage_backend::is_challenge_expired(entry.created_boot_ms, now_boot_ms)
+        });
+    }
+
+    fn initial_challenges_contains(&self, caller: &str, challenge: &str) -> Result<bool> {
+        for (c, entry) in &self.initial_challenges {
+            if c.as_str() == caller &&
+                constant_time_eq(entry.challenge.as_bytes(), challenge.as_bytes())? {
+                return Ok(true);
+            }
+        }
+        Ok(false)
+    }
+
+    fn initial_challenges_put(&mut self, caller: &str, entry: ChallengeEntry) {
+        while self.initial_challenges.iter().filter(|(c, _)| c.as_str() == caller).count()
+            >= MAX_INITIAL_CHALLENGES_PER_CALLER {
+            match self.initial_challenges.iter().position(|(c, _)| c.as_str() == caller) {
+                Some(idx) => {
+                    self.initial_challenges.remove(idx);
+                },
+                None => break,
+            }
+        }
+        self.initial_challenges.push((caller.to_string(), entry));
     }
 }
 
@@ -228,6 +268,89 @@ impl TaskIdentityStore {
         ))
     }
 
+    /// Inserts a reusable initial-wakeup challenge for the caller.
+    /// Multiple entries may coexist; expired entries are pruned first.
+    pub fn insert_initial_challenge(
+        &self,
+        os_account_id: i32,
+        caller: u32,
+        file_stem: &str,
+        challenge: &str,
+    ) -> Result<()> {
+        record_os_account_id(os_account_id);
+        if !Self::is_safe_segment(file_stem) {
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "invalid initial challenge file name");
+        }
+        let file_count = self.storage.count_caller_files(os_account_id, caller)?;
+        if file_count >= MAX_FILES_PER_CALLER {
+            return macros_lib::log_throw_error!(ErrCode::ChallengeLimitExceeded,
+                "caller file count limit reached: {} has {}", caller, file_count);
+        }
+        let created_boot_ms = Self::now_boot_ms();
+        let entry = ChallengeEntry {
+            challenge: challenge.to_string(),
+            created_boot_ms,
+        };
+        self.storage.write_challenge_file(os_account_id, caller, file_stem, &entry)?;
+        {
+            let mut inner = self.lock_inner()?;
+            let caller_key = caller.to_string();
+            inner.initial_challenges_prune_expired(&caller_key, created_boot_ms);
+            inner.initial_challenges_put(&caller_key, entry);
+        }
+        logi!("[TaskIdentityStore] initial challenge inserted for caller={}", caller);
+        Ok(())
+    }
+
+    /// Checks whether a reusable initial-wakeup challenge exists for the caller.
+    /// Never consumes the challenge. Memory first, disk fallback by derived file name.
+    pub fn check_initial_challenge(
+        &self,
+        os_account_id: i32,
+        caller: u32,
+        file_stem: &str,
+        challenge: &str,
+    ) -> Result<()> {
+        record_os_account_id(os_account_id);
+        let now_boot_ms = Self::now_boot_ms();
+        let caller_key = caller.to_string();
+        {
+            let mut inner = self.lock_inner()?;
+            inner.initial_challenges_prune_expired(&caller_key, now_boot_ms);
+            if inner.initial_challenges_contains(&caller_key, challenge)? {
+                logi!("[TaskIdentityStore] initial challenge found in memory for caller={}", caller);
+                return Ok(());
+            }
+        }
+        if let Some((stored, created_boot_ms)) =
+            self.storage.read_challenge_file(os_account_id, caller, file_stem) {
+            if super::storage_backend::is_challenge_expired(created_boot_ms, now_boot_ms) {
+                let _ = self.storage.delete_challenge_file(os_account_id, caller, file_stem);
+                logw!("[TaskIdentityStore] initial challenge expired for caller={}", caller);
+                return macros_lib::log_throw_error!(ErrCode::TaskIdentityNotFound,
+                    "initial challenge expired");
+            }
+            if !constant_time_eq(stored.as_bytes(), challenge.as_bytes())? {
+                return macros_lib::log_throw_error!(ErrCode::TaskIdentityNotFound,
+                    "initial challenge mismatched");
+            }
+            let mut inner = self.lock_inner()?;
+            inner.initial_challenges_prune_expired(&caller_key, now_boot_ms);
+            if !inner.initial_challenges_contains(&caller_key, challenge)? {
+                inner.initial_challenges_put(&caller_key, ChallengeEntry {
+                    challenge: stored,
+                    created_boot_ms,
+                });
+            }
+            logi!("[TaskIdentityStore] initial challenge found on disk for caller={}", caller);
+            return Ok(());
+        }
+        logw!("[TaskIdentityStore] no initial challenge for caller={}", caller);
+        Err(macros_lib::log_and_into_saf_error!(
+            ErrCode::TaskIdentityNotFound, "initial challenge not found"
+        ))
+    }
+
     /// Inserts a task identity record (disk write → LRU Vec insert).
     /// If full (32), evicts the least recently used entry (front).
     pub fn insert_task_entry(
@@ -335,6 +458,7 @@ impl TaskIdentityStore {
         });
         inner.tasks.clear();
         inner.challenges.clear();
+        inner.initial_challenges.clear();
         drop(inner);
 
         let os_account_ids = take_seen_os_account_ids();

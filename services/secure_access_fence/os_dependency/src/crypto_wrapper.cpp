@@ -85,6 +85,21 @@ int32_t VerifyHmacSha256(const Uint8Buff *key, const Uint8Buff *data, const Uint
     return SAF_SUCCESS;
 }
 
+int32_t ConstantTimeEquals(const Uint8Buff *left, const Uint8Buff *right, int32_t *isEqual)
+{
+    if (left == nullptr || left->buf == nullptr || right == nullptr || right->buf == nullptr ||
+        isEqual == nullptr) {
+        LOGE("[FATAL]ConstantTimeEquals invalid params.");
+        return SAF_ERR_NULL_PTR;
+    }
+    if (left->size != right->size) {
+        *isEqual = 0;
+        return SAF_SUCCESS;
+    }
+    *isEqual = (CRYPTO_memcmp(left->buf, right->buf, left->size) == 0) ? 1 : 0;
+    return SAF_SUCCESS;
+}
+
 int32_t Base64Encode(const Uint8Buff *input, Uint8Buff *output)
 {
     if (input == nullptr || input->buf == nullptr || output == nullptr || output->buf == nullptr) {

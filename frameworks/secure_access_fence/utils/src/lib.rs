@@ -15,9 +15,11 @@
 
 //! This module provides common utilities for SAF.
 
+mod hex;
 mod json_builder;
 mod time;
 
+pub use hex::to_hex;
 pub use json_builder::{JsonBuilder, new_object, object_add_string, object_add_number, 
     get_compact_json_value, take_optional_string, take_required_string, take_required_value, json_into_object,
     get_string_array_from_json, get_array_from_json};

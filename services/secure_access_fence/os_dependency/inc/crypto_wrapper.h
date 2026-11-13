@@ -37,6 +37,8 @@ int32_t ComputeHmacSha256(const Uint8Buff *key, const Uint8Buff *data, Uint8Buff
 
 int32_t VerifyHmacSha256(const Uint8Buff *key, const Uint8Buff *data, const Uint8Buff *expectedHmac);
 
+int32_t ConstantTimeEquals(const Uint8Buff *left, const Uint8Buff *right, int32_t *isEqual);
+
 int32_t Base64Encode(const Uint8Buff *input, Uint8Buff *output);
 
 int32_t Base64Decode(const Uint8Buff *input, Uint8Buff *output);
