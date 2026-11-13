@@ -39,6 +39,7 @@ constexpr int BUNDLE_MGR_SERVICE_SYS_ABILITY_ID = 401;
 
 const char * const UPGRADE_HAP_LIST[] = ASSET_UPGRADE_HAP_CONFIG;
 const char * const CE_UPGRADE_CONFIG = ASSET_CE_UPGRADE_CONFIG;
+const char * const CE_REMOVE_LIST[] = ASSET_CE_REMOVE_CONFIG;
 
 bool AssetMemCmp(const void *ptr1, const void *ptr2, uint32_t size1, uint32_t size2)
 {
@@ -358,6 +359,22 @@ int32_t GetUninstallGroups(int32_t userId, ConstAssetBlob *developerId, MutAsset
 const char *GetCeUpgradeInfo()
 {
     return CE_UPGRADE_CONFIG;
+}
+
+int32_t IsDbInCeRemoveList(const char *db_name, bool *is_in_list)
+{
+    if (db_name == nullptr || is_in_list == nullptr) {
+        LOGE("[FATAL]db_name or is_in_list is null.");
+        return ASSET_INVALID_ARGUMENT;
+    }
+    *is_in_list = false;
+    for (uint32_t i = 0; i < ARRAY_SIZE(CE_REMOVE_LIST); ++i) {
+        if (strcmp(CE_REMOVE_LIST[i], db_name) == 0) {
+            *is_in_list = true;
+            return ASSET_SUCCESS;
+        }
+    }
+    return ASSET_SUCCESS;
 }
 
 int32_t GetCallingHapGroups(uint64_t uid, MutAssetBlobArrayChangeable *groupIds, Asset_Blob *developerId)

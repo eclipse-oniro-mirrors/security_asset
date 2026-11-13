@@ -24,18 +24,17 @@ use hisysevent::{
 };
 use ipc::Skeleton;
 
-use asset_common::{CallingInfo, TaskManager, OWNER_INFO_SEPARATOR};
+use asset_common::{CallingInfo, TaskManager};
 use asset_definition::{
-    Accessibility, AssetError, AssetMap, AuthType, ConflictResolution, ErrCode, IsArray, Extension, OperationType, Result,
+    Accessibility, AssetError, AssetMap, AuthType, ConflictResolution, IsArray, Extension, OperationType, Result,
     ReturnType, SyncType, Tag, WrapType,
 };
 use asset_log::{loge, logi};
-use asset_db_operator::database::take_deleted_db_info;
 use asset_utils::hasher;
 use asset_sdk::Value;
 use asset_plugin::asset_plugin::AssetPlugin;
 use asset_plugin_interface::plugin_interface::{
-    EventType as AssetEventType, ExtDbMap, PARAM_NAME_BUNDLE_NAME, PARAM_NAME_USER_ID, PARAM_NAME_CALLER, PARAM_NAME_GROUP_ID,
+    EventType as AssetEventType, ExtDbMap, PARAM_NAME_USER_ID, PARAM_NAME_CALLER, PARAM_NAME_GROUP_ID,
     PARAM_NAME_REQUIRE_ATTR_ENCRYPTED, PARAM_NAME_ACCESSIBILITY, PARAM_NAME_ERROR_CODE, PARAM_NAME_EVENT_ID,
     PARAM_NAME_FUNCTION_NAME, PARAM_NAME_BEGIN_TIME, PARAM_NAME_DIFF_TIME, PARAM_NAME_EXTRA_INFO,
     PARAM_NAME_CALL_STACK, PARAM_NAME_ALIAS, PARAM_NAME_SYNC_TYPE, PARAM_NAME_REQUIRE_PASSWORD_SET,
@@ -317,7 +316,6 @@ pub(crate) fn upload_system_event<T: IsArray>(
         Err(e) => {
             params.insert(PARAM_NAME_EVENT_ID, Value::Number(ASSET_BASIC_FAULT));
             upload_fault_system_event(calling_info, start_time, func_name, &ext_info, e, &mut params);
-            report_deleted_db(calling_info, start_time);
         }
     }
     result
@@ -340,56 +338,9 @@ pub(crate) fn upload_batch_system_event<T: IsArray>(
         },
         Err(e) => {
             upload_fault_system_event(calling_info, start_time, func_name, &ext_info, e, &mut ExtDbMap::new());
-            report_deleted_db(calling_info, start_time);
         },
     }
     result
-}
-
-/// If a corrupted database was deleted during the operation, report it via upload_fault_system_event
-/// and send CleanCloudCache event to plugin.
-fn report_deleted_db(calling_info: &CallingInfo, start_time: Instant) {
-    let deleted = take_deleted_db_info();
-    if deleted.is_empty() {
-        return;
-    }
-    for (db_name, db_type, sqlite_error) in &deleted {
-        report_deleted_db_fault(calling_info, start_time, db_name, db_type, sqlite_error);
-    }
-    send_clean_cloud_cache(calling_info);
-}
-
-fn report_deleted_db_fault(
-    calling_info: &CallingInfo, start_time: Instant,
-    db_name: &str, db_type: &str, sqlite_error: &str,
-) {
-    let err_msg = format!("db_name={}, db_type={}, sqlite_error={}", db_name, db_type, sqlite_error);
-    let err = AssetError::new(ErrCode::DataCorrupted, err_msg.clone(), "delete_corrupted_db");
-    let mut params = ExtDbMap::new();
-    params.insert(PARAM_NAME_EXTRA_INFO, Value::Bytes(sqlite_error.as_bytes().to_vec()));
-    upload_fault_system_event(
-        calling_info, start_time, "delete_corrupted_db", &err_msg, &err, &mut params,
-    );
-}
-
-fn send_clean_cloud_cache(calling_info: &CallingInfo) {
-    let calling_info = calling_info.clone();
-    spawn_telemetry(move || {
-        let load = match AssetPlugin::get_instance().load_plugin() {
-            Ok(l) => l,
-            Err(_) => return,
-        };
-        let owner_info_str = String::from_utf8_lossy(calling_info.owner_info()).to_string();
-        let owner_info_vec: Vec<_> = owner_info_str.split(OWNER_INFO_SEPARATOR).collect();
-        let caller_name = owner_info_vec[0];
-        let mut params = ExtDbMap::new();
-        params.insert(PARAM_NAME_USER_ID, Value::Number(calling_info.user_id() as u32));
-        params.insert(PARAM_NAME_BUNDLE_NAME, Value::Bytes(caller_name.as_bytes().to_vec()));
-        match load.process_event(AssetEventType::CleanCloudCache, &mut params) {
-            Ok(()) => logi!("process clean cloud cache ext event success."),
-            Err(code) => loge!("process clean cloud cache ext event failed, code: {}", code),
-        }
-    });
 }
 
 /// upload data size

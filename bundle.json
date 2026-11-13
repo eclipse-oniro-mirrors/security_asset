@@ -24,6 +24,7 @@
             "asset_split_hap_list",
             "asset_extend_timeout",
             "asset_ce_upgrade_list",
+            "asset_ce_remove_list",
             "asset_build_mode",
 	        "asset_enable_privacy_computation_config"
         ],

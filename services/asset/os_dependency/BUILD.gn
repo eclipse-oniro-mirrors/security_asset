@@ -55,6 +55,7 @@ ohos_static_library("asset_os_dependency") {
   cflags = [
     "-DASSET_UPGRADE_HAP_CONFIG=${asset_split_hap_list}",
     "-DASSET_CE_UPGRADE_CONFIG=\"${asset_ce_upgrade_list}\"",
+    "-DASSET_CE_REMOVE_CONFIG=${asset_ce_remove_list}",
   ]
 
   cflags_cc = [

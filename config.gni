@@ -17,6 +17,7 @@ declare_args() {
   asset_split_hap_list = "{}"
   asset_extend_timeout = false
   asset_ce_upgrade_list = ""
+  asset_ce_remove_list = "{}"
   asset_build_mode = "full"
   # the config of privacy computation
   asset_enable_privacy_computation_config = ""

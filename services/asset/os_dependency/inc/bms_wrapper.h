@@ -71,6 +71,8 @@ int32_t GetCallingHapGroups(uint64_t uid, MutAssetBlobArrayChangeable *groupIds,
 
 const char *GetCeUpgradeInfo();
 
+int32_t IsDbInCeRemoveList(const char *db_name, bool *is_in_list);
+
 #ifdef __cplusplus
 }
 #endif
