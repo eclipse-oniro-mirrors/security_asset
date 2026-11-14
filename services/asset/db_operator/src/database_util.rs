@@ -18,13 +18,14 @@
 
 use std::ffi::CStr;
 
-use asset_common::OWNER_INFO_SEPARATOR;
+use asset_common::{OWNER_INFO_SEPARATOR, SUCCESS};
 use asset_definition::{
     macros_lib, ErrCode, Result,
 };
 
 extern "C" {
     fn GetCeUpgradeInfo() -> *const u8;
+    fn IsDbInCeRemoveList(db_name: *const u8, is_in_list: *mut bool) -> i32;
 }
 
 const MINIM_OWNER_INFO_LEN: usize = 3;
@@ -67,4 +68,13 @@ pub(crate) fn is_db_need_ce_unlock(db_name: &str) -> bool {
         Ok(de_db_name) => db_name == format!("enc_{}", de_db_name),
         Err(_e) => false,
     }
+}
+
+/// Check whether the db_name is in the CE remove list.
+pub(crate) fn is_db_in_ce_remove_list(db_name: &str) -> bool {
+    let mut is_in_list: bool = false;
+    let mut name_c = db_name.as_bytes().to_vec();
+    name_c.push(b'\0');
+    let ret = unsafe { IsDbInCeRemoveList(name_c.as_ptr(), &mut is_in_list) };
+    ret == SUCCESS && is_in_list
 }
