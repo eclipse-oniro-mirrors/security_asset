@@ -90,6 +90,11 @@ ohos_static_library("hifhe_api_mock") {
     "-Wall",
     "-Werror",
   ]
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   subsystem_name = "security"
   part_name = "asset"
 }
