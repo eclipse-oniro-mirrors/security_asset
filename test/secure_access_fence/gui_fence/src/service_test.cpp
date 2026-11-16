@@ -27,6 +27,7 @@ using namespace OHOS::Security::SAF;
 using OHOS::ErrCode;
 using OHOS::sptr;
 using OHOS::Security::SAF::Test::GuiCallbackMock;
+using OHOS::Security::SAF::Test::MockRemoteObject;
 
 namespace UnitTest::GuiServiceTest {
 
@@ -757,6 +758,30 @@ HWTEST_F(GuiServiceTest, CallbackRegistry_ClearWithoutDeathRecipient_001, TestSi
     EXPECT_TRUE(registry.IsEmpty());
     EXPECT_FALSE(desyncCb->GetRemoteObject()->WasRemoveDeathRecipientCalled());
     EXPECT_TRUE(healthyCb->GetRemoteObject()->WasRemoveDeathRecipientCalled());
+}
+
+// ============ GuiCallbackProxy (inner-kit IPC 507 callback marshalling) ============
+
+/**
+ * @tc.name: GuiCallbackProxy_OnComponentClickDecision_001
+ * @tc.desc: OnComponentClickDecision over a mock remote object -> interface token and all
+ *           fields marshalled, request sent with the ON_COMPONENT_CLICK_DECISION code.
+ *           Runs the header-only proxy inside this test process so its branches are
+ *           collected by the host coverage run; the full cross-process contract is
+ *           exercised on device by InnerApi_ReportComponentClickDecision_003.
+ * @tc.type: FUNC
+ * @tc.require:
+ */
+HWTEST_F(GuiServiceTest, GuiCallbackProxy_OnComponentClickDecision_001, TestSize.Level0)
+{
+    sptr<MockRemoteObject> remote = new MockRemoteObject();
+    GuiCallbackProxy proxy(remote);
+    auto result = MakeResult(
+        "{\"bundleName\":\"com.example.myapplication\",\"index\":\"0\"}", true, "policy allowed");
+    proxy.OnComponentClickDecision(result);
+    EXPECT_TRUE(remote->WasSendRequestCalled());
+    EXPECT_EQ(remote->GetLastRequestCode(),
+        static_cast<uint32_t>(IGuiCallback::ON_COMPONENT_CLICK_DECISION));
 }
 
 } // namespace UnitTest::GuiServiceTest
