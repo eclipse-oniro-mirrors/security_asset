@@ -79,6 +79,12 @@ pub mod ffi {
         pub auth_trust_level: u32,
     }
 
+    /// IAM scheduled auth token redemption result.
+    pub struct IamRedeemResult {
+        pub result_code: i32,
+        pub token: Vec<u8>,
+    }
+
     // C++ callable Rust functions
     extern "Rust" {
         /// Notify performance metrics.
@@ -178,6 +184,8 @@ pub mod ffi {
         fn GetOsAccountIdFromTokenId(tokenId: u32) -> i32;
         /// Verify auth token via IAM, returns challenge + authTrustLevel.
         fn VerifyAuthToken(authToken: &Vec<u8>, allowableDurationMs: u64) -> IamVerifyResult;
+        /// Redeem a scheduled auth token into a short-lived real-time auth token via IAM.
+        fn RedeemScheduledAuthToken(challenge: &Vec<u8>, scheduleToken: &Vec<u8>) -> IamRedeemResult;
         /// Check whether the GUI callback registry is empty (for SA idle-unload decision).
         fn IsCallbackRegistryEmpty() -> bool;
     }

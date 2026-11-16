@@ -57,23 +57,37 @@ fn initial_challenge_file_stem(challenge: &[u8]) -> Result<String> {
 /// Verifies auth token via IAM. Returns (challenge, authTrustLevel).
 /// challenge is compared with pending challenge from generateTaskChallenge.
 /// authTrustLevel is written into taskAttributes.
-fn iam_verify_auth_token(auth_token: &[u8], allowable_duration: i32) -> Result<(Vec<u8>, u32)> {
-    if allowable_duration < 0 {
+/// allowableDuration is in milliseconds, per IAM's constraint (0, 86400000].
+fn iam_verify_auth_token(auth_token: &[u8], allowable_duration_ms: i32) -> Result<(Vec<u8>, u32)> {
+    if allowable_duration_ms <= 0 {
         return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
-            "allowableDuration must be non-negative: {}", allowable_duration);
+            "allowableDuration must be positive: {}", allowable_duration_ms);
     }
-    let allowable_ms = match (allowable_duration as u64).checked_mul(MS_PER_SEC) {
-        Some(v) => v,
-        None => return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
-            "allowableDuration overflow: {} * {}", allowable_duration, MS_PER_SEC),
-    };
     let token_vec: Vec<u8> = auth_token.to_vec();
-    let result = crate::wrapper::ffi::VerifyAuthToken(&token_vec, allowable_ms);
+    let result = crate::wrapper::ffi::VerifyAuthToken(&token_vec, allowable_duration_ms as u64);
     if result.result_code != 0 {
         return macros_lib::log_throw_error!(ErrCode::GeneralError,
             "IAM VerifyAuthToken failed, result_code={}", result.result_code);
     }
     Ok((result.challenge, result.auth_trust_level))
+}
+
+/// Redeems a scheduled auth token into a short-lived real-time auth token via IAM.
+/// A fresh random challenge is generated internally and bound to the redeemed token.
+fn redeem_scheduled_auth_token(schedule_token: &[u8]) -> Result<Vec<u8>> {
+    let mut challenge = vec![0u8; CHALLENGE_SIZE as usize];
+    generate_random_bytes(&mut challenge, CHALLENGE_SIZE)?;
+    let schedule_token_vec: Vec<u8> = schedule_token.to_vec();
+    let result = crate::wrapper::ffi::RedeemScheduledAuthToken(&challenge, &schedule_token_vec);
+    if result.result_code != 0 {
+        return macros_lib::log_throw_error!(ErrCode::GeneralError,
+            "IAM RedeemScheduledAuthToken failed, result_code={}", result.result_code);
+    }
+    if result.token.is_empty() {
+        return macros_lib::log_throw_error!(ErrCode::GeneralError,
+            "IAM RedeemScheduledAuthToken returned empty token");
+    }
+    Ok(result.token)
 }
 
 /// Computes absolute expiration time (epoch seconds).
@@ -402,6 +416,8 @@ fn extract_auth_token(task_attributes: &str) -> Result<Vec<u8>> {
 }
 
 /// Retrieves authToken by callerToken + taskId via the shared verification spine.
+/// The stored token is a scheduled auth token, so it is redeemed into a short-lived
+/// real-time auth token via IAM before being returned.
 /// Note: INSTANT task consumption (delete after verify) is handled by the ticket
 /// verification flow (verify_ticket_impl), not by this function.
 pub fn retrieve_auth_token_by_task_id(
@@ -410,7 +426,11 @@ pub fn retrieve_auth_token_by_task_id(
     task_id: &str,
 ) -> Result<Vec<u8>> {
     let record = fetch_record_and_verify(os_account_id, caller, task_id)?;
-    extract_auth_token(&record.task_attributes)
+    let schedule_token = extract_auth_token(&record.task_attributes)?;
+    if schedule_token.is_empty() {
+        return Ok(Vec::new());
+    }
+    redeem_scheduled_auth_token(&schedule_token)
 }
 
 /// Verifies the task identity embedded in a ticket message (if present).

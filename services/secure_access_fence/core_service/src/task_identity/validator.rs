@@ -59,7 +59,7 @@ pub fn validate_path_segment(segment: &str) -> Result<()> {
 /// - taskId path safety
 /// - taskExpireTime: -1 (never) or positive; INSTANT cannot be -1
 /// - authToken size ≤1024
-/// - allowableDuration: 0 means not provided, defaults to 60; otherwise must be (0, 60]
+/// - allowableDuration: 0 means not provided, defaults to 86400000; otherwise must be (0, 86400000] ms
 pub fn validate_task_id_info(info: &mut TaskIdentityInfo) -> Result<()> {
     validate_path_segment(&info.task_id)?;
     if info.task_expire_time < -1 {
@@ -77,7 +77,7 @@ pub fn validate_task_id_info(info: &mut TaskIdentityInfo) -> Result<()> {
         info.allowable_duration = DEFAULT_ALLOWABLE_DURATION;
     } else if info.allowable_duration < 0 || info.allowable_duration > MAX_ALLOWABLE_DURATION {
         return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
-            "allowableDuration must be in (0, 60], got {}", info.allowable_duration);
+            "allowableDuration must be in (0, 86400000] ms, got {}", info.allowable_duration);
     }
     Ok(())
 }

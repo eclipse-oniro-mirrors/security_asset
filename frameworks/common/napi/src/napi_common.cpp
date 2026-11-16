@@ -299,7 +299,7 @@ napi_status NapiGetProperty(const napi_env env, napi_value object, SAF::TaskIden
             taskIdentityInfo.allowableDuration = DEFAULT_ALLOWABLE_DURATION;
         } else if (taskIdentityInfo.allowableDuration < 0 ||
                    taskIdentityInfo.allowableDuration > MAX_ALLOWABLE_DURATION) {
-            NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "allowableDuration must be in (0, 60]");
+            NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "allowableDuration must be in (0, 86400000] ms");
         }
     }
     if (napi_get_named_property(env, object, TaskIdentityKeys::AUTH_TOKEN, &propValue) == napi_ok) {

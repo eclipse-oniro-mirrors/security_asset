@@ -53,10 +53,10 @@ impl TaskIdentityKeys {
 pub const MAX_PATH_SEGMENT_LEN: usize = 256;
 /// Max auth token size in bytes (DoS prevention).
 pub const MAX_AUTH_TOKEN_SIZE: usize = 1024;
-/// Max allowable duration in seconds.
-pub const MAX_ALLOWABLE_DURATION: i32 = 60;
-/// Default allowable duration in seconds (when not provided, i.e., 0).
-pub const DEFAULT_ALLOWABLE_DURATION: i32 = 60;
+/// Max allowable duration in milliseconds (24 hours, per IAM constraint).
+pub const MAX_ALLOWABLE_DURATION: i32 = 86_400_000;
+/// Default allowable duration in milliseconds (when not provided, i.e., 0).
+pub const DEFAULT_ALLOWABLE_DURATION: i32 = 86_400_000;
 /// Max task IDs per revoke call.
 pub const MAX_REVOKE_TASK_IDS: usize = 100;
 /// Max task attributes JSON size in bytes (DoS prevention).

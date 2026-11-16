@@ -774,7 +774,7 @@
 
 | Task ID | 类型 | 问题/偏差 | 处理状态 | 回退能力/Owner |
 |---------|------|-----------|----------|----------------|
-| TASK-2 | API | `MAX_ALLOWABLE_DURATION=86400`（validator）向声明 `(0,60]` 收敛（D-2） | 计划内 | ohos-plan / Lin Shen |
+| TASK-2 | API | `allowableDuration` 统一为 IAM 口径：毫秒、`(0, 86400000]`（D-2，已落地） | 已完成 | ohos-plan / Lin Shen |
 | TASK-4 | design | 插件 `GetAtlPermissionPolicy` 契约在闭源仓确认（TH-011） | 计划内 | ohos-design / Lin Shen |
 | TASK-3 | security | 磁盘 authToken 明文存储分类分级复核（D-3） | 计划内 | ohos-security-threat-model / Lin Shen |
 | 全部 | security | threat-model P0/P1（TH-001~004,010-012）缓解随各 Task 落地 | 计划内 | 各 Task |

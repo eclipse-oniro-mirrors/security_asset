@@ -43,8 +43,8 @@ namespace SAF_ASSET_COMMON {
 constexpr size_t MAX_TASK_ID_LEN = 256;
 constexpr size_t MAX_AUTH_TOKEN_SIZE = 1024;
 constexpr size_t MAX_REVOKE_TASK_IDS = 100;
-constexpr int32_t MAX_ALLOWABLE_DURATION = 60;
-constexpr int32_t DEFAULT_ALLOWABLE_DURATION = 60;
+constexpr int32_t MAX_ALLOWABLE_DURATION = 86400000;
+constexpr int32_t DEFAULT_ALLOWABLE_DURATION = 86400000;
 
 // ============================================================================
 // JSON key constants for task identity.

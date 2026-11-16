@@ -24,7 +24,7 @@
 | 代码基线 | 基线 `7e1109015c5941f014d9cf0421f528351a3b9c07` 仅含 ticket 链路；**任务级身份凭证（Task Identity）全部为本次新增**。实际开发内容对应提交 `cd731e5b0d94c262a6f1f1d7a4b28ae451052f38`（task identity 生成/撤销/存储/IAM 桥）+ `fc582502b877fc00a5cf4968056173fa916d8bfa`（锁屏豁免 + 验证脊柱重构 + get_atl_permission_policy 插件事件） |
 | 锁屏豁免 | ATL3(30000)/ATL4(40000) 为有效可豁免机主认证强度，当前锁屏拒绝权限列表为空 → 放行（spec AC-2.1~2.3，C-5 已确认最终规格） |
 | 一次性任务语义 | 一次性（INSTANT）任务凭证校验通过并执行后不可再次通过校验；延时（DELAYED）可重复通过（spec AC-3.1，R-9） |
-| 权限口径 | `allowableDuration` 声明文件侧约束 `(0,60]` 为最终对外口径（C-3 已确认）；实现侧当前常量 `MAX_ALLOWABLE_DURATION=86400` 需对齐（见风险） |
+| 权限口径 | `allowableDuration` 按 IAM 要求为毫秒、约束 `(0, 86400000]`（24 小时，以声明文件口径为准）；实现侧 `MAX_ALLOWABLE_DURATION=86400000` 对齐 |
 
 ## 上下文和现状
 
@@ -399,7 +399,7 @@ interface TaskIdentityInfo {
   executeType: ExecuteType;       // INSTANT=1 / DELAYED=2
   allowScreenLockExecution: boolean;
   authToken?: Uint8Array;         // 高危路径
-  allowableDuration?: number;     // 秒；(0,60]
+  allowableDuration?: number;     // 毫秒；(0,86400000]
 }
 ```
 
@@ -501,7 +501,7 @@ sequenceDiagram
 |------|------|------|----------|----------|----------|
 | generateTaskChallenge/Identity | taskId | string | 非空、≤256、无路径穿越 | 24010000 | 路径穿越 pattern（validator.rs） |
 | generateTaskIdentity | authToken | Uint8Array | ≤4096 字节；u8 逐元素 0~255 | 24010000 | 高危专属 |
-| generateTaskIdentity | allowableDuration | number | (0,60]（对外）；实现侧当前 86400（待对齐） | 24010000 | C-3 确认 60 |
+| generateTaskIdentity | allowableDuration | number | (0, 86400000] 毫秒（与 IAM 约束一致） | 24010000 | 默认 86400000 |
 | generateTaskIdentity | executeType | ExecuteType | INSTANT=1/DELAYED=2 | 24010000 | -1 仅 DELAYED |
 | revokeTaskIdentity | taskId | string[] | 1~100 个、非空、无路径穿越 | 24010000 | 幂等 |
 | RetrieveAuthTokenByTaskId | callerToken/taskId | int32/string | 系统 SA 身份 + taskId 合法 | 201/24010000/24010002 | 服务侧双重权限 |
@@ -555,7 +555,7 @@ sequenceDiagram
 
 | 项 | 类型 | 影响 | 处理方式 | Owner |
 |----|------|------|----------|-------|
-| `MAX_ALLOWABLE_DURATION=86400` 与声明 `(0,60]` 不一致（C-3 已定 60） | API | 中 | 实现侧将校验口径收敛为 `(0,60]`，回归 NAPI 校验测试 | Lin Shen |
+| `allowableDuration` 已按 IAM 约束统一为毫秒、`(0, 86400000]`（声明文件口径） | API | 低 | 实现侧 `MAX_ALLOWABLE_DURATION=86400000`，回归 NAPI 校验测试 | Lin Shen |
 | `selinux_adapter` 策略合入时序依赖（IAM binder_call） | 构建 | 中 | 策略随 IAM 绑定联调验证；阻塞则升级 | Lin Shen |
 | 锁屏豁免性能（冷路径查询插件策略） | 性能 | 中 | 插件策略查询结果缓存/最小化；时延预算 Plan 阶段给 | Lin Shen |
 | 深度威胁分析（认证/授权模型变更） | 安全 | 高 | 经 ohos-security-threat-model 生成 threat-model.md | Lin Shen |

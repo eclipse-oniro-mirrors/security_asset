@@ -191,7 +191,7 @@
 | R-3 | 异常 | 高危路径 IAM `VerifyAuthToken` 返回的挑战值与待认证挑战值（pending challenge）不匹配，或待认证挑战值不存在/超时 | 拒绝签发：对外 24010002（内部 `TASK_IDENTITY_MISMATCH` / `TASK_IDENTITY_NOT_FOUND`） | 待认证挑战值 10 分钟（boot-time）有效 | AC-1.3, AC-1.4 |
 | R-4 | 行为 | `revokeTaskIdentity(taskIds)` / `RetrieveAuthTokenByTaskId` / 重新生成同 taskId | 撤销：Promise resolve，删除对应记录，幂等（不存在的 taskId 不报错）；检索：返回 authToken 字节；撤销后再生成同 taskId 可正常检索 | taskIds 1~100 个、非空、无路径穿越字符（10 种 pattern） | AC-1.5, AC-4.1, AC-4.4 |
 | R-5 | 异常 | 调用方权限不足或非系统应用 | 权限不足返回 201；非系统应用调用 system API 返回 202；检索类调用非系统 SA/缺权限返回 201 | `QUERY_TOOL_PERMISSIONS`；检索额外需 `INTERACT_ACROSS_LOCAL_ACCOUNTS` | AC-1.6, AC-4.2 |
-| R-6 | 边界 | 入参非法：taskId 空/executeType 非法/authToken 超 4096/allowableDuration 非法/callerToken 空或 0 | 拒绝并返回 24010000 | authToken ≤4096；**allowableDuration 约束为 (0,60]（已确认，声明文件口径即最终约束）**；callerToken 空或 "0" 视为非法 | AC-1.7, AC-3.4 |
+| R-6 | 边界 | 入参非法：taskId 空/executeType 非法/authToken 超 4096/allowableDuration 非法/callerToken 空或 0 | 拒绝并返回 24010000 | authToken ≤4096；**allowableDuration 按 IAM 要求为毫秒，约束 (0, 86400000]**；callerToken 空或 "0" 视为非法 | AC-1.7, AC-3.4 |
 | R-7 | 行为 | **锁屏豁免判定**（requestToolPermissions 发授权与 verifyTicket 执行均涉及；仅当任务凭证声明允许锁屏执行时进入判定） | **放行路径**：任务凭证 `allowScreenLockExecution=true` 且 ATL 为该 ATL 的有效豁免强度（当前 ATL3(30000)/ATL4(40000)），且该 ATL 存在锁屏策略（policyFound=true），且请求的权限不落在该 ATL 锁屏拒绝权限列表中（当前两者拒绝列表为空），则锁屏态下授权/执行放行。**拦截路径**：ATL<=0、或 policyFound=false（该 ATL 无锁屏策略）、或请求权限命中拒绝列表时，返回 24010006（`OPERATION_FAILED_UNDER_SCREEN_LOCK`，内部 `0x22002`），不生成 ticket/不通过校验，不产生副作用 | 豁免条件必须全部满足才放行：`allowScreenLockExecution=true` + ATL>0 + policyFound + 权限不在拒绝列表；任一不满足即拦截。**当前 ATL3(30000)/ATL4(40000) 为有效可豁免强度且拒绝列表为空**；任务凭证未携带（基线调用）或不含豁免声明时按基线 `needUnlockScreen` 语义处理（AC-2.4/R-10） | AC-2.1, AC-2.2, AC-2.3, AC-2.4, AC-3.3 |
 | R-8 | 恢复 | 任务凭证的有效期与状态在系统空闲/重启后仍被可靠维护：过期的一次性（INSTANT）任务凭证与过期挑战在重启后不被错误放行 | 过期/已撤销/一次性已执行的任务凭证在任何时刻校验都不通过（包括系统空闲回收或重启后），不出现"已失效凭证被重新放行" | 凭证与挑战的存储/回收实现属内部资源管理（见 design.md 状态归属与不变量）；spec 只约束"对外可观察的有效性判定稳定不变" | AC-3.1, AC-3.2 |
 | R-9 | 行为 | **链上任务校验的对外行为**：requestToolPermissions 携带 taskIdentity（授权前校验任务凭证有效性）；verifyTicket 消息携带 taskIdentity（执行前校验任务凭证有效性） | 校验通过则继续授权/执行流程；校验失败则整体失败（对外 24010002；参数错误 24010000），不产生授权/执行副作用 | **一次性（INSTANT）任务凭证校验通过并执行后不可再次通过校验，延时（DELAYED）任务凭证可重复通过校验**；携带无效任务凭证（已撤销/过期/篡改/一次性已执行）时授权与执行的校验均失败 | AC-2.1, AC-3.1, AC-3.2, AC-3.4, AC-4.3 |
@@ -244,7 +244,7 @@
 |--------|----------|---------|
 | 201 | 调用方无 `QUERY_TOOL_PERMISSIONS`（或检索类无 `INTERACT_ACROSS_LOCAL_ACCOUNTS`） | AC-1.6, AC-4.2 |
 | 202 | 非系统应用调用 System API | AC-1.6 |
-| 24010000 | taskId 空、executeType=0/3、authToken 4097 字节、allowableDuration=0 或 61、callerToken 空或 "0" | AC-1.7, AC-3.4 |
+| 24010000 | taskId 空、executeType=0/3、authToken 4097 字节、allowableDuration=0 或 86400001、callerToken 空或 "0" | AC-1.7, AC-3.4 |
 | 24010002 | IAM challenge 不匹配 / 无 pending challenge / 凭证已撤销 / 已过期 / 篡改 / INSTANT 已执行 | AC-1.3, AC-1.4, AC-1.5, AC-3.2, AC-4.3 |
 | 24010006 | 锁屏态未豁免（无 taskIdentity / allowScreenLockExecution=false / ATL<=0 / policyFound=false / 命中拒绝列表） | AC-2.2, AC-2.3, AC-3.3 |
 
@@ -316,7 +316,7 @@
 | taskIdentityInfo.executeType | ExecuteType | 是 | — | 仅 1(INSTANT)/2(DELAYED) |
 | taskIdentityInfo.allowScreenLockExecution | boolean | 是 | — | 是否允许锁屏执行 |
 | taskIdentityInfo.authToken | Uint8Array? | 否 | — | ≤4096 字节；高危路径携带 |
-| taskIdentityInfo.allowableDuration | number? | 否 | — | 秒；约束为 (0,60]（已确认） |
+| taskIdentityInfo.allowableDuration | number? | 否 | — | 毫秒；约束为 (0, 86400000] |
 
 **行为场景**
 
@@ -595,7 +595,7 @@
 |---|--------|------|------|
 | C-1 | `@since` / 目标发行版本 | **26.1.0 与版本规划一致**：OpenHarmony 7.1 对应的 SDK 配套版本即 26.1.0 | ✅ 已确认 |
 | C-2 | `interface_sdk-js` 声明文件落地点 | **声明已合入** `interface_sdk-js`（MR 36745），签名与本 spec 权威声明 `D:\@ohos.abilityToolAccessCtrl.d.ts` 一致 | ✅ 已确认 |
-| C-3 | `allowableDuration` 边界口径 | **保持 60**：声明文件侧口径 `(0,60]` 即最终约束，实现侧按此对齐（见 R-6） | ✅ 已确认 |
+| C-3 | `allowableDuration` 边界口径 | **对齐 IAM 与声明文件**：单位为毫秒，约束 `(0, 86400000]`（见 R-6） | ✅ 已确认 |
 | C-4 | SIG 协同 / SELinux | **SELinux 配置非本项目目标**：`secure_access_fence.te` 配置已在 `selinux_adapter` 仓完成，本仓不涉及该配置交付 | ✅ 已确认 |
 | C-5 | 锁屏豁免 ATL 扩展与拒绝列表 | **本规格即当前版本最终规格**：ATL3(30000)/ATL4(40000) 豁免、拒绝列表为空 → 放行的行为不再扩展；无补充项 | ✅ 已确认（无遗留） |
 | C-6 | 闭源工具扫描整改（6 项） | **已纳入**：①性能指标量化——锁屏拉起校验时延相对解锁态基线最大劣化 ≤150ms、单次 P95 ≤250ms（NFR + VM-16）；②ATL 分级定义（AuthTrustLevel 枚举 4 级，见「核心术语定义」）；③每个 API 补充 Depends On（外部模块 API）；④锁屏拉起校验基准实验增加具体数值；⑤补充测试数据样例（测试数据样例表）；⑥用户故事补充正常流程步骤（供测试脚本编排）。均为规格表述层面的补齐，未改变对外行为与错误码语义 | ✅ 已纳入（Owner Lin Shen 2026-10-24） |

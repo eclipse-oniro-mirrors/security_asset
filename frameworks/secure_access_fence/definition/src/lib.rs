@@ -492,7 +492,7 @@ pub struct TaskIdentityInfo {
     pub execute_type: ExecuteType,
     /// Whether screen-lock execution is allowed.
     pub allow_screen_lock_execution: bool,
-    /// Allowable duration for delayed execution.
+    /// Allowable duration for delayed execution, in milliseconds (0, 86400000].
     pub allowable_duration: i32,
     /// IAM auth token bytes; empty when no authentication is required.
     pub auth_token: Vec<u8>,
