@@ -25,19 +25,45 @@ ohos_unittest("asset_privacy_root_test") {
     "../../../../privacy_protocol/he/inc",
     "../../../../privacy_protocol/protocol/inc",
   ]
-  deps = [ "../../../../privacy_protocol:privacy_protocol" ]
+  deps = [
+    ":huks_param_mock",
+    "../../../../privacy_protocol:privacy_protocol",
+  ]
   external_deps = [
     "huks:libhukssdk",
     "hilog:libhilog",
     "openssl:libcrypto_shared",
     "googletest:gtest_main",
   ]
+  mock_header = rebase_path("mock/huks_param_mock_redirect.h", root_build_dir)
   cflags_cc = [
+    "-include",
+    mock_header,
     "-std=c++17",
     "-Wall",
     "-Wextra",
     "-Werror",
   ]
+  subsystem_name = "security"
+  part_name = "asset"
+}
+
+ohos_static_library("huks_param_mock") {
+  testonly = true
+  sources = [ "mock/huks_param_mock.cpp" ]
+  external_deps = [
+    "huks:libhukssdk",
+  ]
+  cflags_cc = [
+    "-std=c++17",
+    "-Wall",
+    "-Werror",
+  ]
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   subsystem_name = "security"
   part_name = "asset"
 }

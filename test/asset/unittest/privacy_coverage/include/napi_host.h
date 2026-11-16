@@ -57,12 +57,16 @@ struct napi_env__ {
     napi_value exception = nullptr;
     napi_status completion = napi_ok;
     uint32_t deletedWorks = 0;
+    bool omitLastError = false;
+    bool omitLastErrorMessage = false;
+    bool failThrow = false;
 };
 namespace PrivacyHost {
 napi_value Value(napi_env env, napi_valuetype type = napi_object);
 napi_value Number(napi_env env, double number);
 napi_value Bytes(napi_env env, const std::vector<uint8_t> &bytes);
 napi_value Array(napi_env env, const std::vector<napi_value> &items);
+napi_value RegisterExports(napi_env env, napi_value exports);
 napi_value Call(napi_env env, const char *name, std::vector<napi_value> args);
 void Drain(napi_env env);
 } // namespace PrivacyHost

@@ -18,6 +18,7 @@
 #include "privacy_computation_napi_common.h"
 #include "privacy_computation_napi_loader.h"
 #include "privacy_request.h"
+#include "hks_error_code.h"
 #include "privacy_client.h"
 #include "he_key_deriver.h"
 #include "huks_seed_deriver.h"
@@ -392,6 +393,44 @@ HWTEST_F(PrivacyBoundaryTest, SaPropagatesHuksAndHeFailuresWithoutCommittingOutp
     EXPECT_TRUE(Invoke("genPrivacyTarget", {Target(), Protocol()})->rejected);
 }
 
+/*
+ * @tc.name: SaDecryptRejectsInvalidInputsAndUnavailableKey
+ * @tc.desc: Reject invalid IPC buffers, protocol and caller information before writing plaintext.
+ * @tc.type: FUNC
+ */
+HWTEST_F(PrivacyBoundaryTest, SaDecryptRejectsInvalidInputsAndUnavailableKey, TestSize.Level2)
+{
+    constexpr uint32_t UID = 20010001;
+    const OHOS::Security::PrivacyComputation::PrivacyProtocol protocol{};
+    Bytes ciphertext;
+    ASSERT_EQ(GenPrivacyTargetRemote({Bytes{TARGET_BYTE}, HashAlg::SHA256}, protocol, ciphertext),
+        PRIVACY_PROTOCOL_SUCCESS);
+    const Bytes sentinel(MAX_DECRYPT_RESULT_BYTES, 0x99);
+    Bytes plaintext = sentinel;
+    PrivacyBuffer output{plaintext.data(), MAX_DECRYPT_RESULT_BYTES};
+    const PrivacyDecryptRequest request{{2, 0}, {ciphertext.data(), static_cast<uint32_t>(ciphertext.size())}};
+
+    EXPECT_EQ(AssetDecryptPrivacyCiphertext(UID, &request, nullptr), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    PrivacyBuffer missingOutput{nullptr, MAX_DECRYPT_RESULT_BYTES};
+    EXPECT_EQ(AssetDecryptPrivacyCiphertext(UID, &request, &missingOutput), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    PrivacyBuffer shortOutput{plaintext.data(), MAX_DECRYPT_RESULT_BYTES - 1};
+    EXPECT_EQ(AssetDecryptPrivacyCiphertext(UID, &request, &shortOutput), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    auto invalid = request;
+    invalid.ciphertext.data = nullptr;
+    EXPECT_EQ(AssetDecryptPrivacyCiphertext(UID, &invalid, &output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    invalid = request;
+    invalid.protocol.protocolType = UINT32_MAX;
+    EXPECT_EQ(AssetDecryptPrivacyCiphertext(UID, &invalid, &output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    EXPECT_EQ(AssetDecryptPrivacyCiphertext(UINT32_MAX, &request, &output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    State().keyExistsStatus = HKS_ERROR_NOT_EXIST;
+    EXPECT_EQ(AssetDecryptPrivacyCiphertext(UID, &request, &output), PRIVACY_PROTOCOL_CRYPTO_ERROR);
+    State().keyExistsStatus = HKS_SUCCESS;
+    EXPECT_EQ(plaintext, sentinel);
+    EXPECT_EQ(output.size, MAX_DECRYPT_RESULT_BYTES);
+    EXPECT_EQ(AssetDecryptPrivacyCiphertext(UID, &request, &output), PRIVACY_PROTOCOL_SUCCESS);
+    EXPECT_NE(plaintext, sentinel);
+}
+
 HWTEST_F(PrivacyBoundaryTest, DrbgInitializationStatus, TestSize.Level2)
 {
     const char *mode = std::getenv("PRIVACY_TEST_DRBG");
@@ -399,6 +438,60 @@ HWTEST_F(PrivacyBoundaryTest, DrbgInitializationStatus, TestSize.Level2)
     HifheAdapter adapter;
     EXPECT_EQ(adapter.InitializeEvaluation(ProtocolParams{}),
               failed ? PRIVACY_PROTOCOL_HE_ERROR : PRIVACY_PROTOCOL_SUCCESS);
+}
+
+/*
+ * @tc.name: HeInitializationCanRetryAfterBackendFailure
+ * @tc.desc: Release a failed context so the same adapter can initialize again.
+ * @tc.type: FUNC
+ */
+HWTEST_F(PrivacyBoundaryTest, HeInitializationCanRetryAfterBackendFailure, TestSize.Level2)
+{
+    for (const auto occurrence : {1U, 2U, 3U}) {
+        PrivacyHost::Reset();
+        State().failAt = "Ctrl";
+        State().failOccurrence = occurrence;
+        HifheAdapter adapter;
+        EXPECT_EQ(adapter.InitializeKeyed(ProtocolParams{}, HeSeed{}), PRIVACY_PROTOCOL_HE_ERROR);
+        PrivacyHost::Reset();
+        EXPECT_EQ(adapter.InitializeKeyed(ProtocolParams{}, HeSeed{}), PRIVACY_PROTOCOL_SUCCESS);
+    }
+    PrivacyHost::Reset();
+    State().degree = 1024;
+    HifheAdapter adapter;
+    EXPECT_EQ(adapter.InitializeEvaluation(ProtocolParams{}), PRIVACY_PROTOCOL_HE_ERROR);
+    PrivacyHost::Reset();
+    EXPECT_EQ(adapter.InitializeEvaluation(ProtocolParams{}), PRIVACY_PROTOCOL_SUCCESS);
+}
+
+/*
+ * @tc.name: HeDecryptDoesNotCommitMalformedBackendOutput
+ * @tc.desc: Preserve decoded output on backend failure, wrong slot count, or out-of-field values.
+ * @tc.type: FUNC
+ */
+HWTEST_F(PrivacyBoundaryTest, HeDecryptDoesNotCommitMalformedBackendOutput, TestSize.Level2)
+{
+    const SoftHeEngine engine;
+    const ProtocolParams params;
+    const HeSeed seed;
+    Bytes ciphertext;
+    ASSERT_EQ(engine.Encrypt(Slots(params.polyModulusDegree, 1), params, seed, ciphertext), PRIVACY_PROTOCOL_SUCCESS);
+    const Slots sentinel{7};
+    auto decoded = sentinel;
+    EXPECT_EQ(engine.Decrypt({}, params, seed, decoded), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    for (const auto stage : {"Decrypt", "Decode"}) {
+        State().failAt = stage;
+        EXPECT_EQ(engine.Decrypt(ciphertext, params, seed, decoded), PRIVACY_PROTOCOL_CRYPTO_ERROR);
+        EXPECT_EQ(decoded, sentinel);
+    }
+    PrivacyHost::Reset();
+    State().decodeCount = 1;
+    EXPECT_EQ(engine.Decrypt(ciphertext, params, seed, decoded), PRIVACY_PROTOCOL_CRYPTO_ERROR);
+    PrivacyHost::Reset();
+    State().overrideDecodeFirst = true;
+    State().decodeFirst = params.plainModulus;
+    EXPECT_EQ(engine.Decrypt(ciphertext, params, seed, decoded), PRIVACY_PROTOCOL_CRYPTO_ERROR);
+    EXPECT_EQ(decoded, sentinel);
 }
 
 HWTEST_F(PrivacyBoundaryTest, EachBatchImportsOnceAndExportsOnlyAfterEvaluation, TestSize.Level1)

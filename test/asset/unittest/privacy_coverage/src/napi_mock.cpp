@@ -55,10 +55,16 @@ napi_value Array(napi_env env, const std::vector<napi_value> &items)
     result->elements = items;
     return result;
 }
+napi_value RegisterExports(napi_env env, napi_value exports)
+{
+    return g_module->nm_register_func(env, exports);
+}
 napi_value Call(napi_env env, const char *name, std::vector<napi_value> args)
 {
     auto exports = Value(env);
-    g_module->nm_register_func(env, exports);
+    if (RegisterExports(env, exports) == nullptr) {
+        return nullptr;
+    }
     auto function = exports->properties.at(name);
     napi_callback_info__ info{std::move(args)};
     return function->callback(env, &info);
@@ -258,7 +264,7 @@ extern "C" napi_status napi_create_error(napi_env env, napi_value, napi_value te
 }
 extern "C" napi_status napi_throw(napi_env env, napi_value error)
 {
-    if (PrivacyHost::Fail("throw")) {
+    if (env->failThrow || PrivacyHost::Fail("throw")) {
         return napi_generic_failure;
     }
     env->exception = error;
@@ -271,9 +277,18 @@ extern "C" napi_status napi_throw_error(napi_env env, const char *, const char *
     env->exception = error;
     return napi_ok;
 }
-extern "C" napi_status napi_get_last_error_info(napi_env, const napi_extended_error_info **info)
+extern "C" napi_status napi_get_last_error_info(napi_env env, const napi_extended_error_info **info)
 {
     static const napi_extended_error_info value{"host boundary failure", nullptr, 0, napi_generic_failure};
+    static const napi_extended_error_info noMessage{nullptr, nullptr, 0, napi_generic_failure};
+    if (env->omitLastError) {
+        *info = nullptr;
+        return napi_ok;
+    }
+    if (env->omitLastErrorMessage) {
+        *info = &noMessage;
+        return napi_ok;
+    }
     *info = &value;
     return napi_ok;
 }

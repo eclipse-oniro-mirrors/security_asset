@@ -62,7 +62,14 @@ ohos_unittest("asset_privacy_client_test") {
 ohos_unittest("privacy_protocol_test") {
   module_out_path = "asset/asset"
 
-  sources = [ "src/privacy_protocol_test.cpp" ]
+  # Compile the fault-injected copies in this test executable.
+  sources = [
+    "../../../../privacy_protocol/core/src/privacy_protocol_impl.cpp",
+    "../../../../privacy_protocol/crypto/src/openssl_crypto_provider.cpp",
+    "src/crypto_provider_fault_test.cpp",
+    "src/privacy_protocol_test.cpp",
+  ]
+  mock_header = rebase_path("mock/openssl_mock_redirect.h", root_build_dir)
 
   include_dirs = [
     "../../../../privacy_protocol/common/inc",
@@ -72,15 +79,21 @@ ohos_unittest("privacy_protocol_test") {
     "../../../../privacy_protocol/he/inc",
   ]
 
-  deps = [ "../../../../privacy_protocol:privacy_protocol" ]
+  deps = [
+    ":openssl_mock",
+    "../../../../privacy_protocol:privacy_protocol",
+  ]
 
   external_deps = [
     "bounds_checking_function:libsec_shared",
     "googletest:gtest_main",
     "hilog:libhilog",
+    "openssl:libcrypto_shared",
   ]
 
   cflags_cc = [
+    "-include",
+    mock_header,
     "-std=c++17",
     "-Wall",
     "-Werror",
@@ -97,6 +110,27 @@ ohos_unittest("privacy_protocol_test") {
     ubsan = true
   }
 
+  subsystem_name = "security"
+  part_name = "asset"
+}
+
+ohos_static_library("openssl_mock") {
+  testonly = true
+  sources = [ "mock/openssl_mock.cpp" ]
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "openssl:libcrypto_shared",
+  ]
+  cflags_cc = [
+    "-std=c++17",
+    "-Wall",
+    "-Werror",
+  ]
+  sanitize = {
+    cfi = true
+    cfi_cross_dso = true
+    debug = false
+  }
   subsystem_name = "security"
   part_name = "asset"
 }

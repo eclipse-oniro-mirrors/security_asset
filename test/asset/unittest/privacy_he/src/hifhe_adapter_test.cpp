@@ -187,6 +187,32 @@ HWTEST(HifheAdapterTest, InvalidInitializationCanRetry, TestSize.Level2)
     HifheText plaintext;
     EXPECT_EQ(adapter.Encode(Pattern(), plaintext), PRIVACY_PROTOCOL_SUCCESS);
 }
+
+/*
+ * @tc.name: RejectsOperationsBeforeInitialization
+ * @tc.desc: Reject HE operations without a context and leave the caller's buffers intact.
+ * @tc.type: FUNC
+ */
+HWTEST(HifheAdapterTest, RejectsOperationsBeforeInitialization, TestSize.Level2)
+{
+    HifheAdapter adapter;
+    HifheText ciphertext;
+    HifheText plaintext;
+    HifheText result;
+    Bytes serialized{1};
+    Slots slots{2};
+    EXPECT_EQ(adapter.Serialize(ciphertext, serialized), PRIVACY_PROTOCOL_HE_ERROR);
+    EXPECT_EQ(adapter.Deserialize(serialized, result), PRIVACY_PROTOCOL_HE_ERROR);
+    EXPECT_EQ(adapter.Decode(plaintext, slots), PRIVACY_PROTOCOL_HE_ERROR);
+    EXPECT_EQ(adapter.Encrypt(plaintext, result), PRIVACY_PROTOCOL_HE_ERROR);
+    EXPECT_EQ(adapter.Decrypt(ciphertext, result), PRIVACY_PROTOCOL_HE_ERROR);
+    EXPECT_EQ(adapter.SubtractFromPlaintext(ciphertext, plaintext, result), PRIVACY_PROTOCOL_HE_ERROR);
+    EXPECT_EQ(adapter.MultiplyPlaintext(ciphertext, plaintext, result), PRIVACY_PROTOCOL_HE_ERROR);
+    EXPECT_EQ(adapter.Rerandomize(ciphertext, result), PRIVACY_PROTOCOL_HE_ERROR);
+    EXPECT_EQ(serialized, Bytes{1});
+    EXPECT_EQ(slots, Slots{2});
+    EXPECT_EQ(result.value, nullptr);
+}
 // Deterministic test provider exercises protocol orchestration without a device HUKS dependency.
 class TestSeedDeriver final : public IHeSeedDeriver {
 public:

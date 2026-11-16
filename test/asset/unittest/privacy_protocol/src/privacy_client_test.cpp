@@ -27,6 +27,7 @@ std::vector<Bytes> g_received;
 size_t g_failBatch = 0;
 size_t g_postprocessCalls = 0;
 bool g_invalidPlaintext = false;
+std::optional<uint32_t> g_targetResponseSize;
 const std::optional<std::vector<Bytes>> *g_localSymmetric = nullptr;
 
 class PrivacyClientTest : public testing::Test {
@@ -37,14 +38,19 @@ public:
         g_failBatch = 0;
         g_postprocessCalls = 0;
         g_invalidPlaintext = false;
+        g_targetResponseSize.reset();
         g_localSymmetric = nullptr;
     }
 };
 } // namespace
 
-extern "C" int32_t asset_privacy_gen_target(const PrivacyTargetRequest *, PrivacyBuffer *)
+extern "C" int32_t asset_privacy_gen_target(const PrivacyTargetRequest *, PrivacyBuffer *output)
 {
-    return PRIVACY_PROTOCOL_UNSUPPORTED_PROTOCOL;
+    if (!g_targetResponseSize.has_value()) {
+        return PRIVACY_PROTOCOL_UNSUPPORTED_PROTOCOL;
+    }
+    output->size = *g_targetResponseSize;
+    return PRIVACY_PROTOCOL_SUCCESS;
 }
 
 extern "C" int32_t asset_privacy_decrypt_ciphertext(const PrivacyDecryptRequest *input, PrivacyBuffer *output)
@@ -115,5 +121,41 @@ HWTEST_F(PrivacyClientTest, InvalidPlaintextStopsBeforePostprocessing, TestSize.
     SearchResult output;
     EXPECT_EQ(GetSearchResultRemote(input, protocol, output), PRIVACY_PROTOCOL_CODEC_ERROR);
     EXPECT_EQ(g_postprocessCalls, 0U);
+}
+
+/*
+ * @tc.name: ClientRejectsInvalidTargetResponseSize
+ * @tc.desc: Reject empty and oversized successful IPC replies without replacing the target.
+ * @tc.type: FUNC
+ */
+HWTEST_F(PrivacyClientTest, ClientRejectsInvalidTargetResponseSize, TestSize.Level2)
+{
+    const OHOS::Security::PrivacyComputation::PrivacyProtocol protocol{
+        DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL};
+    const TargetInput input{Bytes{1}, HashAlg::SHA256};
+    const Bytes sentinel{0x99};
+    Bytes output = sentinel;
+    for (const uint32_t size : {0U, MAX_TARGET_RESULT_BYTES + 1U}) {
+        g_targetResponseSize = size;
+        EXPECT_EQ(GenPrivacyTargetRemote(input, protocol, output), PRIVACY_PROTOCOL_CODEC_ERROR);
+        EXPECT_EQ(output, sentinel);
+    }
+}
+
+/*
+ * @tc.name: ClientRejectsEmptyHeBatchBeforeIpc
+ * @tc.desc: Reject an empty batch before sending any decrypt request or processing results.
+ * @tc.type: FUNC
+ */
+HWTEST_F(PrivacyClientTest, ClientRejectsEmptyHeBatchBeforeIpc, TestSize.Level2)
+{
+    const OHOS::Security::PrivacyComputation::PrivacyProtocol protocol{
+        DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL};
+    const PrivacySearchResult input{{Bytes{}}, std::nullopt};
+    SearchResult output{true, std::nullopt};
+    EXPECT_EQ(GetSearchResultRemote(input, protocol, output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    EXPECT_TRUE(g_received.empty());
+    EXPECT_EQ(g_postprocessCalls, 0U);
+    EXPECT_TRUE(output.matchedResult);
 }
 } // namespace
