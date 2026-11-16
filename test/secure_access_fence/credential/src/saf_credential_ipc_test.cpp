@@ -48,7 +48,6 @@
 
 #include <cstdint>
 #include <deque>
-#include <functional>
 #include <limits>
 #include <memory>
 #include <string>
@@ -125,86 +124,123 @@ public:
                                std::string &credentialHandle, std::string &credentialId,
                                int32_t &resultCode) override
     {
-        return Finish(IPC_ADD_MODEL_CREDENTIAL, resultCode, [&]() {
+        const IpcReply reply = BeginCall(IPC_ADD_MODEL_CREDENTIAL, resultCode);
+        if (IsServiceSuccess(reply)) {
             credentialHandle = MOCK_HANDLE;
             credentialId = MOCK_CREDENTIAL_ID;
-        });
+        }
+        return reply.ret;
     }
 
     int32_t DeleteModelCredential(const std::vector<ModelCredential> &, CredentialBatchResult &result,
                                   int32_t &resultCode) override
     {
-        return Finish(IPC_DELETE_MODEL_CREDENTIAL, resultCode, [&]() { FillBatchResult(result); });
+        const IpcReply reply = BeginCall(IPC_DELETE_MODEL_CREDENTIAL, resultCode);
+        if (IsServiceSuccess(reply)) {
+            FillBatchResult(result);
+        }
+        return reply.ret;
     }
 
     int32_t UpdateModelCredential(const std::vector<ModelCredential> &, const std::vector<ModelCredential> &,
                                   CredentialBatchResult &result, int32_t &resultCode) override
     {
-        return Finish(IPC_UPDATE_MODEL_CREDENTIAL, resultCode, [&]() { FillBatchResult(result); });
+        const IpcReply reply = BeginCall(IPC_UPDATE_MODEL_CREDENTIAL, resultCode);
+        if (IsServiceSuccess(reply)) {
+            FillBatchResult(result);
+        }
+        return reply.ret;
     }
 
     int32_t GetActiveModelCredential(const std::string &, const std::string &,
                                      ModelCredentialContent &modelCredentialContent,
                                      int32_t &resultCode) override
     {
-        return Finish(IPC_GET_ACTIVE_MODEL_CREDENTIAL, resultCode, [&]() {
+        const IpcReply reply = BeginCall(IPC_GET_ACTIVE_MODEL_CREDENTIAL, resultCode);
+        if (IsServiceSuccess(reply)) {
             modelCredentialContent.baseUrl = MOCK_MODEL_URL;
             modelCredentialContent.credentialValue = MOCK_SECRET;
-        });
+        }
+        return reply.ret;
     }
 
     int32_t PreGetAllModelCredentials(std::vector<ModelCredential> &modelCredentials,
                                       int32_t &resultCode) override
     {
-        return Finish(IPC_PRE_GET_ALL_MODEL_CREDENTIALS, resultCode, [&]() {
+        const IpcReply reply = BeginCall(IPC_PRE_GET_ALL_MODEL_CREDENTIALS, resultCode);
+        if (IsServiceSuccess(reply)) {
             ModelCredential entry;
             entry.modelCredentialContent.baseUrl = MOCK_MODEL_URL;
             entry.modelCredentialIndex.credentialHandle = MOCK_HANDLE;
             // The service strips credentialValue from this API's result.
             entry.modelCredentialContent.credentialValue.clear();
             modelCredentials.push_back(entry);
-        });
+        }
+        return reply.ret;
     }
 
     int32_t GetModelCredentialValue(const ModelCredentialIndex &, std::string &credentialValue,
                                     int32_t &resultCode) override
     {
-        return Finish(IPC_GET_MODEL_CREDENTIAL_VALUE, resultCode, [&]() { credentialValue = MOCK_SECRET; });
+        const IpcReply reply = BeginCall(IPC_GET_MODEL_CREDENTIAL_VALUE, resultCode);
+        if (IsServiceSuccess(reply)) {
+            credentialValue = MOCK_SECRET;
+        }
+        return reply.ret;
     }
 
     int32_t AddToolCredential(const std::vector<ToolCredential> &, CredentialBatchResult &result,
                               int32_t &resultCode) override
     {
-        return Finish(IPC_ADD_TOOL_CREDENTIAL, resultCode, [&]() { FillBatchResult(result); });
+        const IpcReply reply = BeginCall(IPC_ADD_TOOL_CREDENTIAL, resultCode);
+        if (IsServiceSuccess(reply)) {
+            FillBatchResult(result);
+        }
+        return reply.ret;
     }
 
     int32_t UpdateToolCredential(const std::vector<ToolCredential> &, CredentialBatchResult &result,
                                  int32_t &resultCode) override
     {
-        return Finish(IPC_UPDATE_TOOL_CREDENTIAL, resultCode, [&]() { FillBatchResult(result); });
+        const IpcReply reply = BeginCall(IPC_UPDATE_TOOL_CREDENTIAL, resultCode);
+        if (IsServiceSuccess(reply)) {
+            FillBatchResult(result);
+        }
+        return reply.ret;
     }
 
     int32_t DeleteToolCredential(const std::vector<ToolCredential> &, CredentialBatchResult &result,
                                  int32_t &resultCode) override
     {
-        return Finish(IPC_DELETE_TOOL_CREDENTIAL, resultCode, [&]() { FillBatchResult(result); });
+        const IpcReply reply = BeginCall(IPC_DELETE_TOOL_CREDENTIAL, resultCode);
+        if (IsServiceSuccess(reply)) {
+            FillBatchResult(result);
+        }
+        return reply.ret;
     }
 
     int32_t GetToolCredential(const ToolInfo &, std::vector<ToolCredentialInfo> &toolCredentialInfos,
                               int32_t &resultCode) override
     {
-        return Finish(IPC_GET_TOOL_CREDENTIAL, resultCode, [&]() {
+        const IpcReply reply = BeginCall(IPC_GET_TOOL_CREDENTIAL, resultCode);
+        if (IsServiceSuccess(reply)) {
             ToolCredentialInfo info;
             info.envName = MOCK_TOOL_ENV;
             info.credentialValue = MOCK_SECRET;
             toolCredentialInfos.push_back(info);
-        });
+        }
+        return reply.ret;
     }
 
     int32_t ipcCalls = 0;
     int32_t lastIpcCode = -1;
 
 private:
+    static bool IsServiceSuccess(const IpcReply &reply)
+    {
+        return reply.ret == SAF_SUCCESS && reply.resultCode == SAF_SUCCESS;
+    }
+
     static void FillBatchResult(CredentialBatchResult &result)
     {
         result.failedCount = 1;
@@ -225,23 +261,17 @@ private:
         return reply;
     }
 
-    int32_t Finish(int32_t ipcCode, int32_t &resultCode, const std::function<void()> &fillOutputs)
+    IpcReply BeginCall(int32_t ipcCode, int32_t &resultCode)
     {
         ++ipcCalls;
         lastIpcCode = ipcCode;
-        IpcReply reply = NextReply();
-        if (reply.ret != SAF_SUCCESS) {
-            // A failed IPC call never reaches the service body, so the service
-            // does not touch resultCode or the out-parameters.
-            LOGI("[CRED-UT] mock ipc=%{public}d ret=%{public}d (transport failure)", ipcCode, reply.ret);
-            return reply.ret;
+        const IpcReply reply = NextReply();
+        if (reply.ret == SAF_SUCCESS) {
+            resultCode = reply.resultCode;
         }
-        resultCode = reply.resultCode;
-        if (reply.resultCode == SAF_SUCCESS) {
-            fillOutputs();
-        }
-        LOGI("[CRED-UT] mock ipc=%{public}d ret=0 resultCode=%{public}d", ipcCode, reply.resultCode);
-        return reply.ret;
+        LOGI("[CRED-UT] mock ipc=%{public}d ret=%{public}d resultCode=%{public}d",
+            ipcCode, reply.ret, reply.resultCode);
+        return reply;
     }
 
     std::deque<IpcReply> replies_;
@@ -564,7 +594,8 @@ protected:
 
     // Runs body once per public API with a fresh mock state and a fresh
     // SafCredential instance. SCOPED_TRACE reports the API name on failure.
-    void ForEachApi(const std::function<void(const ApiEntry &, SafCredential &, ApiInvocation &)> &body)
+    template <typename Body>
+    void ForEachApi(Body &&body)
     {
         for (const ApiEntry &api : API_TABLE) {
             SCOPED_TRACE(api.name);

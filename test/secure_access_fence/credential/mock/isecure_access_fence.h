@@ -62,7 +62,9 @@ template <typename T>
 class sptr {
 public:
     sptr() = default;
-    sptr(std::nullptr_t) {}  // NOLINT(google-explicit-constructor)
+    // Implicit nullptr conversion is required: saf_credential.cpp's
+    // IF_TRUE_LOGE_RETURN_NULL macro does `return nullptr;`.
+    sptr(std::nullptr_t) {}  // NOLINT
     explicit sptr(T *object) : object_(object) {}
 
     sptr(const sptr &other) = default;
