@@ -244,6 +244,40 @@ HWTEST_F(SafAgentFenceTaskIdentityTest, GenerateTaskChallenge_004, TestSize.Leve
     SafAgentFence::RevokeTaskIdentity(taskIds);
 }
 
+/**
+ * @tc.name: GenerateTaskChallenge_005
+ * @tc.desc: Generate reusable initial-wakeup challenge, should return 32-byte challenge.
+ * @tc.type: FUNC
+ * @tc.result: SAF_SUCCESS
+ */
+HWTEST_F(SafAgentFenceTaskIdentityTest, GenerateTaskChallenge_005, TestSize.Level0)
+{
+    TaskIdentityInfo info = MakeLowRiskInfo("InitialWakeUp", 3600);
+
+    std::vector<int32_t> challenge;
+    int32_t result = SafAgentFence::GenerateTaskChallenge(info, challenge);
+    EXPECT_EQ(result, SAF_SUCCESS);
+    EXPECT_EQ(challenge.size(), 32u);
+}
+
+/**
+ * @tc.name: GenerateTaskChallenge_006
+ * @tc.desc: Initial-wakeup challenges may coexist; repeat generation should still succeed.
+ * @tc.type: FUNC
+ * @tc.result: SAF_SUCCESS
+ */
+HWTEST_F(SafAgentFenceTaskIdentityTest, GenerateTaskChallenge_006, TestSize.Level0)
+{
+    TaskIdentityInfo info = MakeLowRiskInfo("InitialWakeUp", 3600);
+
+    std::vector<int32_t> challenge1;
+    std::vector<int32_t> challenge2;
+    EXPECT_EQ(SafAgentFence::GenerateTaskChallenge(info, challenge1), SAF_SUCCESS);
+    EXPECT_EQ(SafAgentFence::GenerateTaskChallenge(info, challenge2), SAF_SUCCESS);
+    EXPECT_EQ(challenge1.size(), 32u);
+    EXPECT_EQ(challenge2.size(), 32u);
+}
+
 // ==================== GenerateTaskIdentity ====================
 
 /**
@@ -333,6 +367,20 @@ HWTEST_F(SafAgentFenceTaskIdentityTest, GenerateTaskIdentity_004, TestSize.Level
     // Cleanup
     std::vector<std::string> taskIds = {"task_identity_004"};
     SafAgentFence::RevokeTaskIdentity(taskIds);
+}
+
+/**
+ * @tc.name: GenerateTaskIdentity_005
+ * @tc.desc: InitialWakeUp is a reserved taskId and cannot be used to generate a real identity.
+ * @tc.type: FUNC
+ * @tc.result: SAF_ERR_ARG_INVALID
+ */
+HWTEST_F(SafAgentFenceTaskIdentityTest, GenerateTaskIdentity_005, TestSize.Level0)
+{
+    TaskIdentityInfo info = MakeLowRiskInfo("InitialWakeUp", 3600);
+
+    TaskIdentity identity;
+    EXPECT_EQ(SafAgentFence::GenerateTaskIdentity(info, identity), SAF_ERR_ARG_INVALID);
 }
 
 // ==================== RevokeTaskIdentity ====================
@@ -445,6 +493,18 @@ HWTEST_F(SafAgentFenceTaskIdentityTest, RevokeTaskIdentity_005, TestSize.Level0)
     EXPECT_EQ(SafAgentFence::RetrieveAuthTokenByTaskId(g_testHapTokenId, "task_revoke_mixed_005", authToken),
         SAF_ERR_TASK_IDENTITY_NOT_FOUND);
     SwitchToGenerateCaller();
+}
+
+/**
+ * @tc.name: RevokeTaskIdentity_006
+ * @tc.desc: InitialWakeUp is a reserved taskId and cannot be revoked as a real task.
+ * @tc.type: FUNC
+ * @tc.result: SAF_ERR_ARG_INVALID
+ */
+HWTEST_F(SafAgentFenceTaskIdentityTest, RevokeTaskIdentity_006, TestSize.Level0)
+{
+    std::vector<std::string> taskIds = {"InitialWakeUp"};
+    EXPECT_EQ(SafAgentFence::RevokeTaskIdentity(taskIds), SAF_ERR_ARG_INVALID);
 }
 
 // ==================== RetrieveAuthTokenByTaskId (lifecycle) ====================

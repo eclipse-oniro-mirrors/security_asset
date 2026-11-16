@@ -61,6 +61,10 @@ pub const DEFAULT_ALLOWABLE_DURATION: i32 = 60;
 pub const MAX_REVOKE_TASK_IDS: usize = 100;
 /// Max task attributes JSON size in bytes (DoS prevention).
 pub const MAX_TASK_ATTRIBUTES_SIZE: usize = 8192;
+/// Reserved taskId used to create a reusable initial-wakeup challenge.
+pub const INITIAL_WAKE_UP_TASK_ID: &str = "InitialWakeUp";
+/// Max number of live initial-wakeup challenges kept per caller.
+pub const MAX_INITIAL_CHALLENGES_PER_CALLER: usize = 32;
 
 // ============================================================================
 // Challenge constants.
@@ -72,6 +76,10 @@ pub const CHALLENGE_SIZE: u32 = 32;
 pub const COMBINED_CHALLENGE_SIZE: usize = 64;
 /// Challenge lifetime in milliseconds (10 minutes), using boot time.
 pub const CHALLENGE_TIMEOUT_MS: u64 = 600_000;
+/// Disk file name prefix for initial-wakeup challenge files.
+pub const INITIAL_WAKE_UP_FILE_PREFIX: &str = "InitialWakeUpChallenge_";
+/// Domain separation for deriving initial-wakeup challenge file names.
+pub const INITIAL_WAKE_UP_FILENAME_DOMAIN: &[u8] = b"SAF_INITIAL_WAKEUP_FILENAME";
 
 // ============================================================================
 // Memory cache constants.

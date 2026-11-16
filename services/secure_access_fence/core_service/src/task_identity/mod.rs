@@ -21,21 +21,38 @@ pub(crate) mod storage_backend;
 pub(crate) mod validator;
 
 pub(crate) use constants::TaskIdentityKeys;
-pub(crate) use validator::validate_path_segment;
+pub(crate) use validator::{is_from_initial_wake_up, validate_path_segment};
 
 use saf_common::JsonBuilder;
 use saf_definition::{macros_lib, ErrCode, ExecuteType, Result, TaskIdentity, TaskIdentityInfo};
 use saf_log::{loge, logi, logw};
-use saf_utils::{JsonValue, get_compact_json_value};
+use saf_utils::{JsonValue, get_compact_json_value, to_hex};
 
 use crate::JSON_KEY_CALLER_TOKEN_ID;
 use crate::ticket_operation::{
-    base64_decode, base64_encode, compute_hmac_sha256, create_ticket_key_manager, generate_random_bytes,
-    verify_hmac_sha256,
+    base64_decode, base64_encode, compute_hmac_sha256, constant_time_eq, create_ticket_key_manager,
+    generate_random_bytes, verify_hmac_sha256,
 };
-use constants::{CHALLENGE_SIZE, COMBINED_CHALLENGE_SIZE, MS_PER_SEC, MAX_TASK_ATTRIBUTES_SIZE};
+use constants::{
+    CHALLENGE_SIZE, COMBINED_CHALLENGE_SIZE, MS_PER_SEC, MAX_TASK_ATTRIBUTES_SIZE,
+    INITIAL_WAKE_UP_FILE_PREFIX, INITIAL_WAKE_UP_FILENAME_DOMAIN,
+};
 use store::{global_task_identity_store, TaskIdentityRecord};
 use TaskIdentityKeys as K;
+
+/// Converts encoded bytes into a UTF-8 string without lossy replacement.
+fn encoded_to_string(bytes: Vec<u8>) -> Result<String> {
+    String::from_utf8(bytes).map_err(|e| {
+        macros_lib::log_and_into_saf_error!(ErrCode::GeneralError, "encoded data is not valid UTF-8: {}", e)
+    })
+}
+
+/// Derives a non-reversible file name stem from the challenge:
+/// `InitialWakeUpChallenge_<hex(HMAC-SHA256(domain, challenge))>`.
+fn initial_challenge_file_stem(challenge: &[u8]) -> Result<String> {
+    let digest = compute_hmac_sha256(INITIAL_WAKE_UP_FILENAME_DOMAIN, challenge)?;
+    Ok(format!("{}{}", INITIAL_WAKE_UP_FILE_PREFIX, encoded_to_string(to_hex(&digest))?))
+}
 
 /// Verifies auth token via IAM. Returns (challenge, authTrustLevel).
 /// challenge is compared with pending challenge from generateTaskChallenge.
@@ -92,7 +109,7 @@ fn build_task_attributes(info: &TaskIdentityInfo, caller: u32, atl: u32) -> Resu
     builder.add_bool(K::ALLOW_SCREEN_LOCK_EXECUTION, info.allow_screen_lock_execution);
     builder.add_number(K::ALLOWABLE_DURATION, info.allowable_duration as i64);
     if !info.auth_token.is_empty() {
-        let encoded = String::from_utf8_lossy(&base64_encode(&info.auth_token)?).to_string();
+        let encoded = encoded_to_string(base64_encode(&info.auth_token)?)?;
         builder.add_string(K::AUTH_TOKEN, &encoded);
         builder.add_number(K::ATL, atl as i64);
     }
@@ -109,8 +126,15 @@ pub fn generate_task_challenge(
     let mut challenge = vec![0u8; CHALLENGE_SIZE as usize];
     generate_random_bytes(&mut challenge, CHALLENGE_SIZE)?;
 
-    let challenge_b64 = String::from_utf8_lossy(&base64_encode(&challenge)?).to_string();
-    global_task_identity_store().insert_challenge(os_account_id, caller, &info.task_id, &challenge_b64)?;
+    let challenge_b64 = encoded_to_string(base64_encode(&challenge)?)?;
+    if is_from_initial_wake_up(&info.task_id) {
+        let file_stem = initial_challenge_file_stem(&challenge)?;
+        global_task_identity_store().insert_initial_challenge(
+            os_account_id, caller, &file_stem, &challenge_b64)?;
+    } else {
+        global_task_identity_store().insert_challenge(
+            os_account_id, caller, &info.task_id, &challenge_b64)?;
+    }
 
     Ok(challenge)
 }
@@ -120,17 +144,31 @@ pub fn generate_task_challenge(
 fn verify_iam_and_get_challenge(
     os_account_id: i32,
     caller: u32,
-    task_id: &str,
-    auth_token: &[u8],
-    allowable_duration: i32,
+    info: &TaskIdentityInfo,
 ) -> Result<u32> {
-    let (iam_challenge, atl) = iam_verify_auth_token(auth_token, allowable_duration)?;
-    let pending_challenge_b64 = global_task_identity_store()
-        .get_challenge(os_account_id, caller, task_id)?;
-    let pending_challenge = base64_decode(pending_challenge_b64.as_bytes())?;
-    if iam_challenge != pending_challenge {
-        return macros_lib::log_throw_error!(ErrCode::TaskIdentityMismatch,
-            "IAM challenge does not match pending challenge");
+    let (iam_challenge, atl) = iam_verify_auth_token(&info.auth_token, info.allowable_duration)?;
+
+    let store = global_task_identity_store();
+    match store.get_challenge(os_account_id, caller, &info.task_id) {
+        Ok(pending_challenge_b64) => {
+            // Task-bound challenge takes precedence and is consumed.
+            let pending_challenge = base64_decode(pending_challenge_b64.as_bytes())?;
+            if !constant_time_eq(&iam_challenge, &pending_challenge)? {
+                return macros_lib::log_throw_error!(ErrCode::TaskIdentityMismatch,
+                    "IAM challenge does not match pending challenge");
+            }
+        },
+        Err(e) if e.code == ErrCode::TaskIdentityNotFound => {
+            // No task-bound challenge: fall back to a reusable initial-wakeup challenge.
+            if info.execute_type != ExecuteType::Instant {
+                return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
+                    "initial wakeup challenge can only be used for INSTANT tasks");
+            }
+            let iam_challenge_b64 = encoded_to_string(base64_encode(&iam_challenge)?)?;
+            let file_stem = initial_challenge_file_stem(&iam_challenge)?;
+            store.check_initial_challenge(os_account_id, caller, &file_stem, &iam_challenge_b64)?;
+        },
+        Err(e) => return Err(e),
     }
     Ok(atl)
 }
@@ -159,10 +197,10 @@ fn compute_identity_and_challenge(
     data.extend_from_slice(&challenge2);
 
     let hmac = compute_hmac_sha256(&session_key, &data)?;
-    let identity = String::from_utf8_lossy(&base64_encode(&hmac)?).to_string();
+    let identity = encoded_to_string(base64_encode(&hmac)?)?;
 
     let combined = [challenge1.as_slice(), challenge2.as_slice()].concat();
-    let challenge_b64 = String::from_utf8_lossy(&base64_encode(&combined)?).to_string();
+    let challenge_b64 = encoded_to_string(base64_encode(&combined)?)?;
 
     Ok((identity, challenge_b64))
 }
@@ -178,10 +216,13 @@ pub fn generate_task_identity(
     caller: u32,
     info: &mut TaskIdentityInfo,
 ) -> Result<TaskIdentity> {
+    if is_from_initial_wake_up(&info.task_id) {
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
+            "InitialWakeUp is a reserved task id");
+    }
     let mut atl = 0u32;
     if !info.auth_token.is_empty() {
-        atl = verify_iam_and_get_challenge(
-            os_account_id, caller, &info.task_id, &info.auth_token, info.allowable_duration)?;
+        atl = verify_iam_and_get_challenge(os_account_id, caller, info)?;
     }
 
     let task_attributes = build_task_attributes(info, caller, atl)?;
@@ -218,6 +259,10 @@ pub fn revoke_task_identities(os_account_id: i32, caller: u32, task_ids: Vec<Str
     for task_id in task_ids {
         if task_id.is_empty() {
             continue;
+        }
+        if is_from_initial_wake_up(&task_id) {
+            return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
+                "InitialWakeUp is a reserved task id");
         }
         global_task_identity_store().delete_task_entry(os_account_id, caller, &task_id)?;
     }
@@ -282,6 +327,10 @@ pub(crate) fn fetch_record_and_verify(
 ) -> Result<TaskIdentityRecord> {
     if caller == 0 {
         return macros_lib::log_throw_error!(ErrCode::InvalidArgument, "callerToken is invalid");
+    }
+    if is_from_initial_wake_up(task_id) {
+        return macros_lib::log_throw_error!(ErrCode::InvalidArgument,
+            "InitialWakeUp is a reserved task id");
     }
     validate_path_segment(task_id)?;
 

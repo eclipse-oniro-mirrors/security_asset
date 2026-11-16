@@ -49,6 +49,7 @@ extern "C" {
     fn GenerateRandomBytes(buf: *mut Uint8Buff) -> i32;
     fn ComputeHmacSha256(key: *const Uint8BuffConst, data: *const Uint8BuffConst, hmac: *mut Uint8Buff) -> i32;
     fn VerifyHmacSha256(key: *const Uint8BuffConst, data: *const Uint8BuffConst, expectedHmac: *const Uint8BuffConst) -> i32;
+    fn ConstantTimeEquals(left: *const Uint8BuffConst, right: *const Uint8BuffConst, isEqual: *mut i32) -> i32;
     fn Base64Encode(input: *const Uint8BuffConst, output: *mut Uint8Buff) -> i32;
     fn Base64Decode(input: *const Uint8BuffConst, output: *mut Uint8Buff) -> i32;
     fn CheckBatchGenerateTicketParamsC(osAccountId: i32, callerId: *const c_char, messagesCount: usize) -> i32;
@@ -117,6 +118,24 @@ pub(crate) fn verify_hmac_sha256(key: &[u8], data: &[u8], expected_hmac: &[u8]) 
         Ok(true)
     } else {
         macros_lib::log_throw_error!(ErrCode::try_from(ret as u32)?, "verify hmac failed")
+    }
+}
+
+pub(crate) fn constant_time_eq(left: &[u8], right: &[u8]) -> Result<bool> {
+    let left_buff = Uint8BuffConst {
+        buf: left.as_ptr(),
+        size: left.len() as u32,
+    };
+    let right_buff = Uint8BuffConst {
+        buf: right.as_ptr(),
+        size: right.len() as u32,
+    };
+    let mut is_equal: i32 = 0;
+    let ret = unsafe { ConstantTimeEquals(&left_buff, &right_buff, &mut is_equal) };
+    if ret != SAF_SUCCESS {
+        macros_lib::log_throw_error!(ErrCode::try_from(ret as u32)?, "constant time compare failed")
+    } else {
+        Ok(is_equal == 1)
     }
 }
 
