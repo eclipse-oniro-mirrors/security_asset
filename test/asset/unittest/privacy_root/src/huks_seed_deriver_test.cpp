@@ -16,7 +16,7 @@
 #include "huks_seed_deriver.h"
 
 #include "hks_api.h"
-#include "hks_param.h"
+#include "../mock/huks_param_mock.h"
 #include "privacy_error_code.h"
 #include <algorithm>
 #include <gtest/gtest.h>
@@ -28,12 +28,16 @@ namespace {
 using namespace testing::ext;
 using namespace OHOS::Security::PrivacyComputation;
 using namespace OHOS::Security::PrivacyComputation::internal;
+using PrivacyRootTest::ParamFailure;
+using PrivacyRootTest::g_paramFault;
+
 struct HuksCalls {
     int32_t existResult = HKS_SUCCESS;
     int32_t generateResult = HKS_SUCCESS;
     int32_t initResult = HKS_SUCCESS;
     int32_t updateResult = HKS_SUCCESS;
     int32_t finishResult = HKS_SUCCESS;
+    int32_t abortResult = HKS_SUCCESS;
     uint32_t outputSize = kHeSeedSize;
     size_t exists = 0;
     size_t generates = 0;
@@ -85,11 +89,12 @@ public:
     void SetUp() override
     {
         g_calls = HuksCalls{};
+        g_paramFault = {};
     }
 };
 } // namespace
 
-// Replace only service-facing calls. Parameter construction/parsing uses the real HUKS SDK.
+// Replace service-facing calls. The parameter mock delegates to the HUKS SDK outside injected failures.
 extern "C" int32_t HksKeyExist(const HksBlob *alias, const HksParamSet *params)
 {
     ++g_calls.exists;
@@ -153,7 +158,7 @@ extern "C" int32_t HksAbort(const HksBlob *, const HksParamSet *params)
     ++g_calls.aborts;
     g_calls.stages.push_back("Abort");
     ReadAccount(params);
-    return HKS_SUCCESS;
+    return g_calls.abortResult;
 }
 
 namespace {
@@ -334,5 +339,69 @@ HWTEST_F(HuksSeedDeriverTest, InvalidCeUserId, TestSize.Level2)
     EXPECT_EQ(g_calls.exists, 0U);
     EXPECT_EQ(g_calls.generates, 0U);
     EXPECT_EQ(g_calls.inits, 0U);
+}
+
+/*
+ * @tc.name: AbortFailurePreservesSeed
+ * @tc.desc: Preserve the caller seed when cleanup also fails after a failed update or finish.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HuksSeedDeriverTest, AbortFailurePreservesSeed, TestSize.Level2)
+{
+    const HuksSeedDeriver deriver;
+    for (const bool failUpdate : {true, false}) {
+        g_calls = HuksCalls{};
+        g_calls.abortResult = HKS_ERROR_CRYPTO_ENGINE_ERROR;
+        std::vector<std::string> stages{"Init", "Update"};
+        if (failUpdate) {
+            g_calls.updateResult = HKS_ERROR_CRYPTO_ENGINE_ERROR;
+        } else {
+            g_calls.finishResult = HKS_ERROR_CRYPTO_ENGINE_ERROR;
+            stages.push_back("Finish");
+        }
+        stages.push_back("Abort");
+        HeSeed seed;
+        seed.bytes.fill(0x99);
+        const auto original = seed.bytes;
+        EXPECT_EQ(deriver.Derive({20010001, 100}, Salt(), seed), PRIVACY_PROTOCOL_CRYPTO_ERROR);
+        EXPECT_EQ(seed.bytes, original);
+        EXPECT_EQ(g_calls.aborts, 1U);
+        EXPECT_EQ(g_calls.stages, stages);
+    }
+}
+
+/*
+ * @tc.name: ParamFailuresStopBeforeHuksOperations
+ * @tc.desc: Stop at the failed parameter step and preserve the derived seed output.
+ * @tc.type: FUNC
+ */
+HWTEST_F(HuksSeedDeriverTest, ParamFailuresStopBeforeHuksOperations, TestSize.Level2)
+{
+    const HuksSeedDeriver deriver;
+    for (const auto failure : {ParamFailure::INIT, ParamFailure::ADD, ParamFailure::BUILD}) {
+        g_calls = HuksCalls{};
+        g_paramFault = {failure};
+        EXPECT_EQ(deriver.PrepareRootKey(100, RootKeyPolicy::CREATE_IF_MISSING), PRIVACY_PROTOCOL_CRYPTO_ERROR);
+        EXPECT_EQ(g_calls.exists, 0U);
+        EXPECT_EQ(g_paramFault.failure, ParamFailure::NONE);
+
+        g_calls = HuksCalls{};
+        g_paramFault = {failure, 2};
+        g_calls.existResult = HKS_ERROR_NOT_EXIST;
+        EXPECT_EQ(deriver.PrepareRootKey(100, RootKeyPolicy::CREATE_IF_MISSING), PRIVACY_PROTOCOL_CRYPTO_ERROR);
+        EXPECT_EQ(g_calls.exists, 1U);
+        EXPECT_EQ(g_calls.generates, 0U);
+        EXPECT_EQ(g_paramFault.failure, ParamFailure::NONE);
+
+        g_calls = HuksCalls{};
+        g_paramFault = {failure};
+        HeSeed seed;
+        seed.bytes.fill(0x99);
+        const auto original = seed.bytes;
+        EXPECT_EQ(deriver.Derive({20010001, 100}, Salt(), seed), PRIVACY_PROTOCOL_CRYPTO_ERROR);
+        EXPECT_EQ(seed.bytes, original);
+        EXPECT_EQ(g_calls.inits, 0U);
+        EXPECT_EQ(g_paramFault.failure, ParamFailure::NONE);
+    }
 }
 } // namespace

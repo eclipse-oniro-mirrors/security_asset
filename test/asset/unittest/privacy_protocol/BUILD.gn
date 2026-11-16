@@ -62,7 +62,14 @@ ohos_unittest("asset_privacy_client_test") {
 ohos_unittest("privacy_protocol_test") {
   module_out_path = "asset/asset"
 
-  sources = [ "src/privacy_protocol_test.cpp" ]
+  # Compile the fault-injected copies in this test executable.
+  sources = [
+    "../../../../privacy_protocol/core/src/privacy_protocol_impl.cpp",
+    "../../../../privacy_protocol/crypto/src/openssl_crypto_provider.cpp",
+    "src/crypto_provider_fault_test.cpp",
+    "src/privacy_protocol_test.cpp",
+  ]
+  mock_header = rebase_path("mock/openssl_mock.h", root_build_dir)
 
   include_dirs = [
     "../../../../privacy_protocol/common/inc",
@@ -78,9 +85,12 @@ ohos_unittest("privacy_protocol_test") {
     "bounds_checking_function:libsec_shared",
     "googletest:gtest_main",
     "hilog:libhilog",
+    "openssl:libcrypto_shared",
   ]
 
   cflags_cc = [
+    "-include",
+    mock_header,
     "-std=c++17",
     "-Wall",
     "-Werror",

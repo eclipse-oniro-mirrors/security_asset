@@ -16,6 +16,7 @@ import("//build/ohos.gni")
 ohos_unittest("asset_privacy_he_test") {
   module_out_path = "asset/privacy_computation"
   sources = [
+    "../../../../privacy_protocol/he/src/hifhe_adapter.cpp",
     "src/hifhe_adapter_test.cpp",
     "src/he_engine_test.cpp",
   ]
@@ -33,7 +34,10 @@ ohos_unittest("asset_privacy_he_test") {
     "openssl:libcrypto_shared",
     "googletest:gtest_main",
   ]
+  mock_header = rebase_path("mock/hifhe_api_mock.h", root_build_dir)
   cflags_cc = [
+    "-include",
+    mock_header,
     "-std=c++17",
     "-Wall",
     "-Wextra",

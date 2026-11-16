@@ -32,7 +32,10 @@ ohos_unittest("asset_privacy_root_test") {
     "openssl:libcrypto_shared",
     "googletest:gtest_main",
   ]
+  mock_header = rebase_path("mock/huks_param_mock.h", root_build_dir)
   cflags_cc = [
+    "-include",
+    mock_header,
     "-std=c++17",
     "-Wall",
     "-Wextra",

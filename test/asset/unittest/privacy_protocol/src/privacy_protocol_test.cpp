@@ -30,6 +30,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <string>
@@ -37,6 +38,7 @@
 #include <vector>
 
 namespace {
+using namespace testing::ext;
 using namespace OHOS::Security::PrivacyComputation;
 using namespace OHOS::Security::PrivacyComputation::internal;
 
@@ -223,6 +225,9 @@ public:
     {
         algorithms.push_back(algorithm);
         inputs.push_back(input);
+        if (status != PRIVACY_PROTOCOL_SUCCESS) {
+            return status;
+        }
         Bytes digest(SHA256_DIGEST_BYTES, 0);
         const auto copySize = std::min(digest.size(), input.size());
         if (copySize != 0 && memcpy_s(digest.data() + digest.size() - copySize, copySize,
@@ -235,6 +240,7 @@ public:
 
     mutable std::vector<HashAlg> algorithms;
     mutable std::vector<Bytes> inputs;
+    int32_t status = PRIVACY_PROTOCOL_SUCCESS;
 };
 
 class RecordingRandom final : public IRandomSource {
@@ -242,6 +248,13 @@ public:
     int32_t Fill(Bytes &output) noexcept override
     {
         requestedSizes.push_back(output.size());
+        if (status != PRIVACY_PROTOCOL_SUCCESS) {
+            return status;
+        }
+        if (rejectMaskCandidates) {
+            std::fill(output.begin(), output.end(), UINT8_MAX);
+            return PRIVACY_PROTOCOL_SUCCESS;
+        }
         const auto value = nextValue_++;
         std::fill(output.begin(), output.end(), value);
         // Supply distinct entropy to adjacent PIR groups within the same random fill.
@@ -255,6 +268,8 @@ public:
     }
 
     std::vector<std::size_t> requestedSizes;
+    int32_t status = PRIVACY_PROTOCOL_SUCCESS;
+    bool rejectMaskCandidates = false;
 
 private:
     std::uint8_t nextValue_{0x31};
@@ -285,6 +300,13 @@ public:
     {
         encryptParams.push_back(params);
         encryptSeeds.push_back(seed);
+        if (encryptStatus != PRIVACY_PROTOCOL_SUCCESS) {
+            return encryptStatus;
+        }
+        if (returnEmptyCiphertext) {
+            output.clear();
+            return PRIVACY_PROTOCOL_SUCCESS;
+        }
         Bytes encrypted{static_cast<std::uint8_t>(seed.size())};
         encrypted.insert(encrypted.end(), seed.begin(), seed.end());
         encrypted.push_back(value.has_value() ? 1 : 0);
@@ -334,6 +356,8 @@ public:
     mutable std::vector<ProtocolParams> encryptParams;
     mutable std::vector<ProtocolParams> decryptParams;
     mutable std::vector<Bytes> encryptSeeds;
+    int32_t encryptStatus = PRIVACY_PROTOCOL_SUCCESS;
+    bool returnEmptyCiphertext = false;
 };
 
 class ScopedProviderReset final {
@@ -680,12 +704,12 @@ TEST(PrivacyProtocolOpenSslTest, AesGcmRejectsTamperingAndWrongSeedWithoutChangi
     ASSERT_EQ(BuiltInEncryptOrderValue(seed, Bytes{'s', 'e', 'c', 'r', 'e', 't'}, params, ciphertext),
               PRIVACY_PROTOCOL_SUCCESS);
 
-    const std::array<std::size_t, 4> tamperOffsets{4, 16, 28, ciphertext.size() - 1};
+    const std::array<std::size_t, 9> tamperOffsets{0, 4, 5, 6, 7, 8, 16, 28, ciphertext.size() - 1};
     for (const auto offset : tamperOffsets) {
         auto tampered = ciphertext;
         tampered[offset] ^= 0x01;
         std::optional<Bytes> output{Bytes{7, 8, 9}};
-        EXPECT_NE(BuiltInDecryptOrderValue(seed, tampered, params, output), PRIVACY_PROTOCOL_SUCCESS);
+        EXPECT_EQ(BuiltInDecryptOrderValue(seed, tampered, params, output), PRIVACY_PROTOCOL_CRYPTO_ERROR) << offset;
         EXPECT_EQ(output, std::optional<Bytes>(Bytes{7, 8, 9}));
     }
 
@@ -704,6 +728,162 @@ TEST(PrivacyProtocolOpenSslTest, AesGcmRejectsTamperingAndWrongSeedWithoutChangi
     extended.push_back(0);
     EXPECT_NE(BuiltInDecryptOrderValue(seed, extended, params, output), PRIVACY_PROTOCOL_SUCCESS);
     EXPECT_EQ(output, std::optional<Bytes>(Bytes{7, 8, 9}));
+
+    constexpr size_t LENGTH_OFFSET = 12;
+    constexpr size_t HEADER_SIZE = 16;
+    auto zeroLength = ciphertext;
+    std::fill(zeroLength.begin() + LENGTH_OFFSET, zeroLength.begin() + HEADER_SIZE, 0);
+    EXPECT_EQ(BuiltInDecryptOrderValue(seed, zeroLength, params, output), PRIVACY_PROTOCOL_CRYPTO_ERROR);
+    EXPECT_EQ(BuiltInDecryptOrderValue(seed, Bytes{}, params, output), PRIVACY_PROTOCOL_CRYPTO_ERROR);
+    EXPECT_EQ(output, std::optional<Bytes>(Bytes{7, 8, 9}));
+}
+
+/*
+ * @tc.name: RejectsUnsupportedCryptoInputs
+ * @tc.desc: Reject unsupported digest, random buffer, and PIR parameters without committing outputs.
+ * @tc.type: FUNC
+ */
+HWTEST(PrivacyProtocolOpenSslTest, RejectsUnsupportedCryptoInputs, TestSize.Level2)
+{
+    const auto hash = GetOpenSslHashProvider();
+    const auto random = GetOpenSslRandomSource();
+    ASSERT_NE(hash, nullptr);
+    ASSERT_NE(random, nullptr);
+    const Bytes sentinel{0x99};
+    auto output = sentinel;
+    EXPECT_EQ(hash->Digest(static_cast<HashAlg>(UINT32_MAX), {}, output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    EXPECT_EQ(output, sentinel);
+    Bytes empty;
+    EXPECT_EQ(random->Fill(empty), PRIVACY_PROTOCOL_RANDOM_ERROR);
+
+    ProtocolParams defaults;
+    ASSERT_EQ(MapPrivacyProtocol(PIR_PROTOCOL, defaults), PRIVACY_PROTOCOL_SUCCESS);
+    const Bytes seed(defaults.compareBits / kBitsPerByte, 1);
+    auto params = defaults;
+    params.mode = ProtocolMode::INTERSECTION;
+    EXPECT_EQ(BuiltInEncryptOrderValue(seed, Bytes{1}, params, output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    params = defaults;
+    params.symAlgorithm = SymAlgorithm::NONE;
+    EXPECT_EQ(BuiltInEncryptOrderValue(seed, Bytes{1}, params, output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    params = defaults;
+    params.symKeySize = 0;
+    EXPECT_EQ(BuiltInEncryptOrderValue(seed, Bytes{1}, params, output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    for (const auto bits : {size_t{0}, size_t{7}, size_t{65536}, size_t{128}}) {
+        params = defaults;
+        params.compareBits = bits;
+        EXPECT_EQ(BuiltInEncryptOrderValue(seed, Bytes{1}, params, output), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    }
+    EXPECT_EQ(output, sentinel);
+}
+
+/*
+ * @tc.name: EvaluationDoesNotCommitOnProviderFailure
+ * @tc.desc: Stop evaluation on dependency failure and preserve the caller's result.
+ * @tc.type: FUNC
+ */
+HWTEST(PrivacyProtocolProviderTest, EvaluationDoesNotCommitOnProviderFailure, TestSize.Level2)
+{
+    ScopedProviderReset reset;
+    const auto providers = InstallRecordingProviders();
+    ASSERT_NE(providers.he, nullptr);
+    const auto target = MakePrivacyTarget(1);
+    const std::vector<Element> elements{MakeElement(1, "value")};
+    const PrivacySearchResult sentinel{{Bytes{0x99}}, std::vector<Bytes>{Bytes{0x88}}};
+    auto output = sentinel;
+    EXPECT_EQ(PrivacySearch({}, elements, PIR_PROTOCOL, output), PRIVACY_PROTOCOL_CODEC_ERROR);
+    providers.he->compatible = false;
+    EXPECT_EQ(PrivacySearch(target, elements, PIR_PROTOCOL, output), PRIVACY_PROTOCOL_INCOMPATIBLE_HE_PARAMETERS);
+    providers.he->compatible = true;
+    providers.hash->status = PRIVACY_PROTOCOL_HASH_ERROR;
+    EXPECT_EQ(PrivacySearch(target, elements, PIR_PROTOCOL, output), PRIVACY_PROTOCOL_HASH_ERROR);
+    providers.hash->status = PRIVACY_PROTOCOL_SUCCESS;
+    providers.randomSource->status = PRIVACY_PROTOCOL_RANDOM_ERROR;
+    EXPECT_EQ(PrivacySearch(target, elements, PIR_PROTOCOL, output), PRIVACY_PROTOCOL_RANDOM_ERROR);
+    EXPECT_EQ(PrivacySearch(target, elements, PRIVATE_SET_INTERSECTION, output), PRIVACY_PROTOCOL_RANDOM_ERROR);
+    providers.randomSource->status = PRIVACY_PROTOCOL_SUCCESS;
+    providers.pirValue->encryptStatus = PRIVACY_PROTOCOL_CRYPTO_ERROR;
+    EXPECT_EQ(PrivacySearch(target, elements, PIR_PROTOCOL, output), PRIVACY_PROTOCOL_CRYPTO_ERROR);
+    providers.pirValue->encryptStatus = PRIVACY_PROTOCOL_SUCCESS;
+    providers.pirValue->returnEmptyCiphertext = true;
+    EXPECT_EQ(PrivacySearch(target, elements, PIR_PROTOCOL, output), PRIVACY_PROTOCOL_CRYPTO_ERROR);
+    EXPECT_EQ(output.resultCipherText, sentinel.resultCipherText);
+    EXPECT_EQ(output.valueCipherText, sentinel.valueCipherText);
+}
+
+/*
+ * @tc.name: EncoderRejectsInvalidDimensionsAndSlotRanges
+ * @tc.desc: Reject malformed packing and missing slot groups without changing caller outputs.
+ * @tc.type: FUNC
+ */
+HWTEST(PrivacyProtocolTest, EncoderRejectsInvalidDimensionsAndSlotRanges, TestSize.Level2)
+{
+    const ProtocolEncoder encoder;
+    const ProtocolParams defaults;
+    const Bytes seed(defaults.compareBits / kBitsPerByte, 1);
+    const Slots sentinel{7};
+    auto slots = sentinel;
+    for (const auto field : {&ProtocolParams::compareBits, &ProtocolParams::bitsPerSlot,
+                             &ProtocolParams::slotsPerData}) {
+        auto params = defaults;
+        params.*field = 0;
+        EXPECT_EQ(encoder.EncodeSeed(seed, params, slots), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    }
+    auto params = defaults;
+    params.bitsPerSlot = kMaxBitsPerSlot;
+    EXPECT_EQ(encoder.EncodeSeed(seed, params, slots), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    params = defaults;
+    params.slotsPerData = std::numeric_limits<size_t>::max();
+    EXPECT_EQ(encoder.EncodeSeed(seed, params, slots), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    params = defaults;
+    params.compareBits += kBitsPerByte;
+    EXPECT_EQ(encoder.EncodeSeed(seed, params, slots), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    ++params.compareBits;
+    EXPECT_EQ(encoder.EncodeSeed(seed, params, slots), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    EXPECT_EQ(slots, sentinel);
+    Bytes extracted{0x99};
+    EXPECT_EQ(encoder.ExtractSeed(slots, 0, params, extracted), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    EXPECT_EQ(encoder.ExtractSeed(slots, 0, defaults, extracted), PRIVACY_PROTOCOL_CODEC_ERROR);
+    EXPECT_EQ(extracted, Bytes{0x99});
+    bool matched = true;
+    EXPECT_EQ(encoder.IsMatch(slots, slots.size() + 1, defaults, matched), PRIVACY_PROTOCOL_CODEC_ERROR);
+    EXPECT_TRUE(matched);
+}
+
+/*
+ * @tc.name: MaskSamplingRejectsInvalidDimensionsAndExhaustion
+ * @tc.desc: Keep the original mask when packing is invalid or rejection sampling exhausts its retries.
+ * @tc.type: FUNC
+ */
+HWTEST(PrivacyProtocolProviderTest, MaskSamplingRejectsInvalidDimensionsAndExhaustion, TestSize.Level2)
+{
+    ScopedProviderReset reset;
+    const ProtocolEncoder encoder;
+    const ProtocolParams defaults;
+    const Slots sentinel{7};
+    auto slots = sentinel;
+    for (const auto field : {&ProtocolParams::bitsPerSlot, &ProtocolParams::slotsPerData,
+                             &ProtocolParams::dataNumPerPlaintext}) {
+        auto params = defaults;
+        params.*field = 0;
+        EXPECT_EQ(encoder.GenerateMaskVector(params, slots), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    }
+    auto params = defaults;
+    params.bitsPerSlot = kMaxBitsPerSlot;
+    EXPECT_EQ(encoder.GenerateMaskVector(params, slots), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    params = defaults;
+    params.slotsPerData = std::numeric_limits<size_t>::max();
+    EXPECT_EQ(encoder.GenerateMaskVector(params, slots), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    params = defaults;
+    params.plainModulus = 1;
+    EXPECT_EQ(encoder.GenerateMaskVector(params, slots), PRIVACY_PROTOCOL_INVALID_ARGUMENT);
+    const auto providers = InstallRecordingProviders();
+    ASSERT_NE(providers.he, nullptr);
+    providers.randomSource->rejectMaskCandidates = true;
+    params.plainModulus = 6;
+    params.dataNumPerPlaintext = 1;
+    EXPECT_EQ(encoder.GenerateMaskVector(params, slots), PRIVACY_PROTOCOL_RANDOM_ERROR);
+    EXPECT_GT(providers.randomSource->requestedSizes.size(), 1U);
+    EXPECT_EQ(slots, sentinel);
 }
 
 TEST(PrivacyProtocolOpenSslTest, AesGcmUsesFreshNonceAndAuthenticatedFrameHeader)
@@ -1250,6 +1430,31 @@ TEST(PrivacyProtocolTest, PirReturnsOneAttachedValue)
     EXPECT_EQ(std::string(result.attachedValues->front().begin(), result.attachedValues->front().end()), "two");
 }
 
+/*
+ * @tc.name: PirRejectsTamperedAttachedValue
+ * @tc.desc: Reject a modified authentication tag after a match and preserve the caller's result.
+ * @tc.type: FUNC
+ */
+HWTEST(PrivacyProtocolTest, PirRejectsTamperedAttachedValue, TestSize.Level2)
+{
+    ASSERT_NE(ConfigureProtocol(), nullptr);
+    PrivacySearchResult response;
+    ASSERT_EQ(PrivacySearch(MakePrivacyTarget(2), {MakeElement(2, "value")}, PIR_PROTOCOL, response),
+        PRIVACY_PROTOCOL_SUCCESS);
+    auto decrypted = DecryptOutsideProtocol(response);
+    ASSERT_TRUE(decrypted.valueCipherText.has_value());
+    ASSERT_EQ(decrypted.valueCipherText->size(), 1U);
+    ASSERT_FALSE(decrypted.valueCipherText->front().empty());
+    decrypted.valueCipherText->front().back() ^= 0x01;
+
+    const SearchResult sentinel{false, std::vector<Bytes>{Bytes{0x99}}};
+    auto result = sentinel;
+    EXPECT_EQ(PostProcessSearchResult(decrypted.resultCipherText, decrypted.valueCipherText, PIR_PROTOCOL, result),
+        PRIVACY_PROTOCOL_CRYPTO_ERROR);
+    EXPECT_EQ(result.matchedResult, sentinel.matchedResult);
+    EXPECT_EQ(result.attachedValues, sentinel.attachedValues);
+}
+
 TEST(PrivacyProtocolTest, PirReturnsAllAttachedValuesAcrossBatchesInScanOrder)
 {
     ASSERT_NE(ConfigureProtocol(), nullptr);
@@ -1597,7 +1802,6 @@ TEST(PrivacyProtocolTest, SeedPackingSupportsTenBitSlotsAcrossByteBoundaries)
 } // namespace
 
 namespace {
-using namespace testing::ext;
 /* @tc.name: SuccessfulEngineMustReturnHandle
  * @tc.desc: Reject a broken engine before arithmetic without publishing partial search results.
  * @tc.type: FUNC
