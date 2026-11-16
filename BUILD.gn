@@ -69,6 +69,7 @@ group("asset_bin_test") {
     "test/secure_access_fence/credential:saf_credential_test",
     "test/secure_access_fence/credential:saf_credential_permission_test",
     "test/secure_access_fence/credential:saf_credential_inner_helper_test",
+    "test/secure_access_fence/credential:saf_credential_ipc_test",
     #"test/secure_access_fence/agent_fence:saf_agent_fence_test",
     #"test/secure_access_fence/agent_fence:saf_agent_fence_manual_test",
     #"test/secure_access_fence/agent_fence:saf_agent_fence_stress_test",
