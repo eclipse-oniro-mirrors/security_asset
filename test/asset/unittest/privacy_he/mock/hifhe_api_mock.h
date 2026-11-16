@@ -28,41 +28,5 @@ struct HeFault {
 };
 
 inline thread_local HeFault g_heFault;
-
-inline bool TakeFault(HeOperation operation)
-{
-    if (g_heFault.operation != operation) {
-        return false;
-    }
-    g_heFault.operation = HeOperation::NONE;
-    return true;
-}
-
-// The adapter initializes output handles to null before invoking HiFHE.
-template<HeOperation OPERATION, auto Backend, typename... Args>
-int32_t MockHeCall(Args... args)
-{
-    if (TakeFault(OPERATION)) {
-        return g_heFault.status;
-    }
-    return Backend(args...);
-}
-
-inline int32_t MockCtrl(HIFHE_Ctx *ctx, int32_t command, HIFHE_HEText *text, void *value, uint32_t size)
-{
-    if (command == HIFHE_CTRL_BGV_RERANDOMIZE && TakeFault(HeOperation::RERANDOMIZE)) {
-        return g_heFault.status;
-    }
-    return HIFHE_Ctrl(ctx, command, text, value, size);
-}
 } // namespace PrivacyHeTest
-
-// Only the unit test target redirects these calls.
-#define HIFHE_Encode ::PrivacyHeTest::MockHeCall<::PrivacyHeTest::HeOperation::ENCODE, &::HIFHE_Encode>
-#define HIFHE_Encrypt ::PrivacyHeTest::MockHeCall<::PrivacyHeTest::HeOperation::ENCRYPT, &::HIFHE_Encrypt>
-#define HIFHE_Decrypt ::PrivacyHeTest::MockHeCall<::PrivacyHeTest::HeOperation::DECRYPT, &::HIFHE_Decrypt>
-#define HIFHE_Deserialize ::PrivacyHeTest::MockHeCall<::PrivacyHeTest::HeOperation::DESERIALIZE, &::HIFHE_Deserialize>
-#define HIFHE_Add ::PrivacyHeTest::MockHeCall<::PrivacyHeTest::HeOperation::ADD, &::HIFHE_Add>
-#define HIFHE_Mul ::PrivacyHeTest::MockHeCall<::PrivacyHeTest::HeOperation::MULTIPLY, &::HIFHE_Mul>
-#define HIFHE_Ctrl ::PrivacyHeTest::MockCtrl
 #endif

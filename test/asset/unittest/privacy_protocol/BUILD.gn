@@ -69,7 +69,7 @@ ohos_unittest("privacy_protocol_test") {
     "src/crypto_provider_fault_test.cpp",
     "src/privacy_protocol_test.cpp",
   ]
-  mock_header = rebase_path("mock/openssl_mock.h", root_build_dir)
+  mock_header = rebase_path("mock/openssl_mock_redirect.h", root_build_dir)
 
   include_dirs = [
     "../../../../privacy_protocol/common/inc",
@@ -79,7 +79,10 @@ ohos_unittest("privacy_protocol_test") {
     "../../../../privacy_protocol/he/inc",
   ]
 
-  deps = [ "../../../../privacy_protocol:privacy_protocol" ]
+  deps = [
+    ":openssl_mock",
+    "../../../../privacy_protocol:privacy_protocol",
+  ]
 
   external_deps = [
     "bounds_checking_function:libsec_shared",
@@ -107,6 +110,22 @@ ohos_unittest("privacy_protocol_test") {
     ubsan = true
   }
 
+  subsystem_name = "security"
+  part_name = "asset"
+}
+
+ohos_static_library("openssl_mock") {
+  testonly = true
+  sources = [ "mock/openssl_mock.cpp" ]
+  external_deps = [
+    "bounds_checking_function:libsec_shared",
+    "openssl:libcrypto_shared",
+  ]
+  cflags_cc = [
+    "-std=c++17",
+    "-Wall",
+    "-Werror",
+  ]
   subsystem_name = "security"
   part_name = "asset"
 }

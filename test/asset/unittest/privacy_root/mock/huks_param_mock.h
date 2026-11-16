@@ -16,8 +16,7 @@
 #ifndef ASSET_PRIVACY_HUKS_PARAM_MOCK_H
 #define ASSET_PRIVACY_HUKS_PARAM_MOCK_H
 
-#include "hks_error_code.h"
-#include "hks_param.h"
+#include <cstdint>
 
 namespace PrivacyRootTest {
 enum class ParamFailure { NONE, INIT, ADD, BUILD };
@@ -29,43 +28,5 @@ struct ParamFault {
 };
 
 inline thread_local ParamFault g_paramFault;
-
-inline bool TakeParamFailure(ParamFailure failure)
-{
-    if (g_paramFault.failure != failure || g_paramFault.initCount != g_paramFault.paramSet) {
-        return false;
-    }
-    g_paramFault.failure = ParamFailure::NONE;
-    return true;
-}
-
-inline int32_t MockInitParamSet(HksParamSet **params)
-{
-    ++g_paramFault.initCount;
-    if (TakeParamFailure(ParamFailure::INIT)) {
-        return HKS_ERROR_MALLOC_FAIL;
-    }
-    return HksInitParamSet(params);
-}
-
-inline int32_t MockAddParams(HksParamSet *set, const HksParam *params, uint32_t count)
-{
-    if (TakeParamFailure(ParamFailure::ADD)) {
-        return HKS_ERROR_INVALID_ARGUMENT;
-    }
-    return HksAddParams(set, params, count);
-}
-
-inline int32_t MockBuildParamSet(HksParamSet **params)
-{
-    if (TakeParamFailure(ParamFailure::BUILD)) {
-        return HKS_ERROR_INVALID_ARGUMENT;
-    }
-    return HksBuildParamSet(params);
-}
 } // namespace PrivacyRootTest
-
-#define HksInitParamSet ::PrivacyRootTest::MockInitParamSet
-#define HksAddParams ::PrivacyRootTest::MockAddParams
-#define HksBuildParamSet ::PrivacyRootTest::MockBuildParamSet
 #endif

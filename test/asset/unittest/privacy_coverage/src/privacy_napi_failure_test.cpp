@@ -31,6 +31,44 @@ struct RegistrationFailure {
     const char *exportName = nullptr;
 };
 
+enum class ErrorInfo { PENDING, MESSAGE, NO_MESSAGE, NO_INFO };
+
+void VerifyRegistrationFailure(const RegistrationFailure &failure, ErrorInfo errorInfo)
+{
+    SCOPED_TRACE(static_cast<uint32_t>(errorInfo));
+    PrivacyHost::Reset();
+    napi_env__ env;
+    auto exports = PrivacyHost::Value(&env);
+    if (errorInfo == ErrorInfo::PENDING) {
+        env.exception = PrivacyHost::Value(&env);
+    }
+    const auto original = env.exception;
+    env.omitLastError = errorInfo == ErrorInfo::NO_INFO;
+    env.omitLastErrorMessage = errorInfo == ErrorInfo::NO_MESSAGE;
+    // Simulate a failed structured throw so the outer registration macro consults the last error.
+    env.failThrow = true;
+    State().failAt = failure.operation;
+    State().failOccurrence = failure.occurrence;
+    auto result = PrivacyHost::RegisterExports(&env, exports);
+    if (failure.exportName == nullptr) {
+        EXPECT_EQ(result, nullptr);
+        EXPECT_TRUE(exports->properties.empty());
+    } else {
+        EXPECT_EQ(result, exports);
+        EXPECT_EQ(exports->properties.at(failure.exportName), nullptr);
+    }
+    if (errorInfo == ErrorInfo::PENDING || errorInfo == ErrorInfo::NO_INFO) {
+        EXPECT_EQ(env.exception, original);
+    } else {
+        ASSERT_NE(env.exception, nullptr);
+        if (errorInfo == ErrorInfo::NO_MESSAGE) {
+            EXPECT_EQ(env.exception->text, "empty error message");
+        } else {
+            EXPECT_EQ(env.exception->text, "host boundary failure");
+        }
+    }
+}
+
 class PrivacyNapiFailureTest : public testing::Test {
 public:
     void SetUp() override
@@ -56,8 +94,8 @@ public:
 
     std::unique_ptr<PrivacyComputationBaseContext> AsyncContext()
     {
-        auto context = std::unique_ptr<PrivacyComputationBaseContext>(new (std::nothrow) PrivacyComputationBaseContext);
-        if (!context) {
+        auto *context = new (std::nothrow) PrivacyComputationBaseContext();
+        if (context == nullptr) {
             return nullptr;
         }
         context->parse = [](napi_env, napi_callback_info, PrivacyComputationBaseContext *) {
@@ -69,7 +107,7 @@ public:
         context->resolve = [](napi_env env, PrivacyComputationBaseContext *, napi_value &output) {
             return napi_create_uint32(env, 1, &output);
         };
-        return context;
+        return std::unique_ptr<PrivacyComputationBaseContext>(context);
     }
 
     napi_env__ env_;
@@ -97,43 +135,11 @@ HWTEST_F(PrivacyNapiFailureTest, RegistrationPreservesPendingErrorAndUsesLastErr
         {"set_property", 9, "HashAlg"},
         {"define_properties", 1, nullptr},
     };
-    enum class ErrorInfo { PENDING, MESSAGE, NO_MESSAGE, NO_INFO };
     for (const auto &failure : failures) {
         SCOPED_TRACE(failure.operation);
         SCOPED_TRACE(failure.occurrence);
         for (auto errorInfo : {ErrorInfo::PENDING, ErrorInfo::MESSAGE, ErrorInfo::NO_MESSAGE, ErrorInfo::NO_INFO}) {
-            SCOPED_TRACE(static_cast<uint32_t>(errorInfo));
-            PrivacyHost::Reset();
-            napi_env__ env;
-            auto exports = PrivacyHost::Value(&env);
-            if (errorInfo == ErrorInfo::PENDING) {
-                env.exception = PrivacyHost::Value(&env);
-            }
-            const auto original = env.exception;
-            env.omitLastError = errorInfo == ErrorInfo::NO_INFO;
-            env.omitLastErrorMessage = errorInfo == ErrorInfo::NO_MESSAGE;
-            // Simulate a failed structured throw so the outer registration macro consults the last error.
-            env.failThrow = true;
-            State().failAt = failure.operation;
-            State().failOccurrence = failure.occurrence;
-            auto result = PrivacyHost::RegisterExports(&env, exports);
-            if (failure.exportName == nullptr) {
-                EXPECT_EQ(result, nullptr);
-                EXPECT_TRUE(exports->properties.empty());
-            } else {
-                EXPECT_EQ(result, exports);
-                EXPECT_EQ(exports->properties.at(failure.exportName), nullptr);
-            }
-            if (errorInfo == ErrorInfo::PENDING || errorInfo == ErrorInfo::NO_INFO) {
-                EXPECT_EQ(env.exception, original);
-            } else {
-                ASSERT_NE(env.exception, nullptr);
-                if (errorInfo == ErrorInfo::NO_MESSAGE) {
-                    EXPECT_EQ(env.exception->text, "empty error message");
-                } else {
-                    EXPECT_EQ(env.exception->text, "host boundary failure");
-                }
-            }
+            VerifyRegistrationFailure(failure, errorInfo);
         }
     }
 }
@@ -170,14 +176,14 @@ HWTEST_F(PrivacyNapiFailureTest, ErrorConversionHonorsRuntimeFailures, TestSize.
 }
 
 /*
- * @tc.name: AsyncWorkReleasesContextOnRuntimeFailure
- * @tc.desc: Verify setup, output conversion and cleanup failures with an observable Promise or error.
+ * @tc.name: AsyncWorkRejectsSetupFailure
+ * @tc.desc: Verify that invalid callbacks and runtime setup errors stop async submission.
  * @tc.type: FUNC
  */
-HWTEST_F(PrivacyNapiFailureTest, AsyncWorkReleasesContextOnRuntimeFailure, TestSize.Level2)
+HWTEST_F(PrivacyNapiFailureTest, AsyncWorkRejectsSetupFailure, TestSize.Level2)
 {
-    constexpr auto NAME = "PrivacyAsyncWork";
-    EXPECT_EQ(CreateAsyncWork(&env_, nullptr, nullptr, NAME), nullptr);
+    constexpr auto name = "PrivacyAsyncWork";
+    EXPECT_EQ(CreateAsyncWork(&env_, nullptr, nullptr, name), nullptr);
     for (uint32_t missingCallback = 0; missingCallback < 3; ++missingCallback) {
         FailAt("");
         auto context = AsyncContext();
@@ -193,15 +199,15 @@ HWTEST_F(PrivacyNapiFailureTest, AsyncWorkReleasesContextOnRuntimeFailure, TestS
                 context->resolve = nullptr;
                 break;
         }
-        EXPECT_EQ(CreateAsyncWork(&env_, nullptr, std::move(context), NAME), nullptr);
+        EXPECT_EQ(CreateAsyncWork(&env_, nullptr, std::move(context), name), nullptr);
         EXPECT_NE(env_.exception, nullptr);
         EXPECT_TRUE(env_.queued.empty());
     }
     FailAt("create_promise");
-    EXPECT_EQ(CreateAsyncWork(&env_, nullptr, AsyncContext(), NAME), nullptr);
+    EXPECT_EQ(CreateAsyncWork(&env_, nullptr, AsyncContext(), name), nullptr);
     EXPECT_TRUE(env_.queued.empty());
     FailAt("create_string");
-    auto promise = CreateAsyncWork(&env_, nullptr, AsyncContext(), NAME);
+    auto promise = CreateAsyncWork(&env_, nullptr, AsyncContext(), name);
     ASSERT_NE(promise, nullptr);
     EXPECT_TRUE(promise->rejected);
     EXPECT_TRUE(env_.queued.empty());
@@ -212,16 +218,25 @@ HWTEST_F(PrivacyNapiFailureTest, AsyncWorkReleasesContextOnRuntimeFailure, TestS
     context->parse = [](napi_env, napi_callback_info, PrivacyComputationBaseContext *) {
         return napi_invalid_arg;
     };
-    EXPECT_EQ(CreateAsyncWork(&env_, nullptr, std::move(context), NAME), nullptr);
+    EXPECT_EQ(CreateAsyncWork(&env_, nullptr, std::move(context), name), nullptr);
     EXPECT_TRUE(env_.queued.empty());
+}
 
+/*
+ * @tc.name: AsyncWorkReleasesContextOnCompletionFailure
+ * @tc.desc: Verify cleanup after output conversion or Promise resolution fails.
+ * @tc.type: FUNC
+ */
+HWTEST_F(PrivacyNapiFailureTest, AsyncWorkReleasesContextOnCompletionFailure, TestSize.Level2)
+{
+    constexpr auto name = "PrivacyAsyncWork";
     FailAt("delete_work");
-    context = AsyncContext();
+    auto context = AsyncContext();
     ASSERT_NE(context, nullptr);
     context->resolve = [](napi_env, PrivacyComputationBaseContext *, napi_value &) {
         return napi_ok;
     };
-    promise = CreateAsyncWork(&env_, nullptr, std::move(context), NAME);
+    auto promise = CreateAsyncWork(&env_, nullptr, std::move(context), name);
     ASSERT_NE(promise, nullptr);
     ASSERT_EQ(env_.queued.size(), 1U);
     env_.queued.front()->complete(&env_, napi_ok, nullptr);
@@ -232,7 +247,7 @@ HWTEST_F(PrivacyNapiFailureTest, AsyncWorkReleasesContextOnRuntimeFailure, TestS
     EXPECT_EQ(env_.deletedWorks, deleted + 1);
 
     FailAt("resolve");
-    promise = CreateAsyncWork(&env_, nullptr, AsyncContext(), NAME);
+    promise = CreateAsyncWork(&env_, nullptr, AsyncContext(), name);
     ASSERT_NE(promise, nullptr);
     PrivacyHost::Drain(&env_);
     EXPECT_FALSE(promise->settled);
@@ -250,7 +265,7 @@ HWTEST_F(PrivacyNapiFailureTest, SearchAndResultEntryPointsRejectInvalidArgument
     const auto target = PrivacyHost::Bytes(&env_, {1});
     const auto emptyTarget = PrivacyHost::Bytes(&env_, {});
     const auto invalid = PrivacyHost::Value(&env_);
-    const auto protocol = Protocol(DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL);
+    const auto protocol = Protocol(DataSetSize::SIZE_512, PrivacyProtocol{}.protocolType);
     auto element = PrivacyHost::Value(&env_);
     element->properties["elemKey"] = PrivacyHost::Bytes(&env_, Bytes(32, 1));
     const auto elements = PrivacyHost::Array(&env_, {element});
@@ -297,11 +312,11 @@ HWTEST_F(PrivacyNapiFailureTest, ClosedLoaderRejectsCallsWithoutConfiguredLibrar
 }
 
 /*
- * @tc.name: ObjectAndArrayReadFailuresPropagate
- * @tc.desc: Verify that property, number, byte array and element readers return the runtime error.
+ * @tc.name: TargetAndProtocolReadFailuresPropagate
+ * @tc.desc: Verify that key and protocol readers return property, number and byte array errors.
  * @tc.type: FUNC
  */
-HWTEST_F(PrivacyNapiFailureTest, ObjectAndArrayReadFailuresPropagate, TestSize.Level2)
+HWTEST_F(PrivacyNapiFailureTest, TargetAndProtocolReadFailuresPropagate, TestSize.Level2)
 {
     auto key = PrivacyHost::Value(&env_);
     key->properties["elemData"] = PrivacyHost::Bytes(&env_, Bytes(32, 1));
@@ -330,20 +345,28 @@ HWTEST_F(PrivacyNapiFailureTest, ObjectAndArrayReadFailuresPropagate, TestSize.L
     EXPECT_EQ(NapiGetProperty(&env_, pir, protocol), napi_ok);
     EXPECT_EQ(protocol.dataSetSize, DataSetSize::SIZE_128);
     EXPECT_EQ(protocol.protocolType, ProtocolType::PIR_PROTOCOL);
-    auto unsupported = Protocol(DataSetSize::SIZE_128, ProtocolType::PSI_PROTOCOL);
+    auto unsupported = Protocol(DataSetSize::SIZE_128, PrivacyProtocol{}.protocolType);
     EXPECT_EQ(NapiGetProperty(&env_, unsupported, protocol), napi_invalid_arg);
+}
 
+/*
+ * @tc.name: ArrayReadFailuresPropagate
+ * @tc.desc: Verify that element list and search result readers propagate runtime errors.
+ * @tc.type: FUNC
+ */
+HWTEST_F(PrivacyNapiFailureTest, ArrayReadFailuresPropagate, TestSize.Level2)
+{
     const auto array = PrivacyHost::Array(&env_, {PrivacyHost::Bytes(&env_, {1})});
     for (const auto operation : {"is_array", "array_length", "get_element"}) {
         SCOPED_TRACE(operation);
         FailAt(operation);
         std::vector<Element> elements;
-        EXPECT_EQ(NapiGetProperty(&env_, array, elements, ProtocolType::PSI_PROTOCOL), napi_generic_failure);
+        EXPECT_EQ(NapiGetProperty(&env_, array, elements, PrivacyProtocol{}.protocolType), napi_generic_failure);
         EXPECT_TRUE(elements.empty());
     }
     FailAt("");
     std::vector<Element> elements;
-    EXPECT_EQ(NapiGetProperty(&env_, PrivacyHost::Array(&env_, {}), elements, ProtocolType::PSI_PROTOCOL),
+    EXPECT_EQ(NapiGetProperty(&env_, PrivacyHost::Array(&env_, {}), elements, PrivacyProtocol{}.protocolType),
         napi_invalid_arg);
 
     auto result = PrivacyHost::Value(&env_);

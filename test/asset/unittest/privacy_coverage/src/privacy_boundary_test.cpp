@@ -401,8 +401,7 @@ HWTEST_F(PrivacyBoundaryTest, SaPropagatesHuksAndHeFailuresWithoutCommittingOutp
 HWTEST_F(PrivacyBoundaryTest, SaDecryptRejectsInvalidInputsAndUnavailableKey, TestSize.Level2)
 {
     constexpr uint32_t UID = 20010001;
-    const OHOS::Security::PrivacyComputation::PrivacyProtocol protocol{
-        DataSetSize::SIZE_512, ProtocolType::PSI_PROTOCOL};
+    const OHOS::Security::PrivacyComputation::PrivacyProtocol protocol{};
     Bytes ciphertext;
     ASSERT_EQ(GenPrivacyTargetRemote({Bytes{TARGET_BYTE}, HashAlg::SHA256}, protocol, ciphertext),
         PRIVACY_PROTOCOL_SUCCESS);

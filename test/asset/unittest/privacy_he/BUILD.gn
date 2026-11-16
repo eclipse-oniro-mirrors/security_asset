@@ -25,7 +25,10 @@ ohos_unittest("asset_privacy_he_test") {
     "../../../../privacy_protocol/common/inc",
     "../../../../privacy_protocol/protocol/inc",
   ]
-  deps = [ "../../../../privacy_protocol:privacy_protocol" ]
+  deps = [
+    ":hifhe_api_mock",
+    "../../../../privacy_protocol:privacy_protocol",
+  ]
   external_deps = [
     "hilog:libhilog",
     "hifhe:libhifhe",
@@ -34,7 +37,7 @@ ohos_unittest("asset_privacy_he_test") {
     "openssl:libcrypto_shared",
     "googletest:gtest_main",
   ]
-  mock_header = rebase_path("mock/hifhe_api_mock.h", root_build_dir)
+  mock_header = rebase_path("mock/hifhe_api_mock_redirect.h", root_build_dir)
   cflags_cc = [
     "-include",
     mock_header,
@@ -66,6 +69,21 @@ ohos_unittest("privacy_he_test") {
     "openhitls:openhitls_bsl",
     "openhitls:openhitls_crypto",
     "googletest:gtest_main",
+  ]
+  cflags_cc = [
+    "-std=c++17",
+    "-Wall",
+    "-Werror",
+  ]
+  subsystem_name = "security"
+  part_name = "asset"
+}
+
+ohos_static_library("hifhe_api_mock") {
+  testonly = true
+  sources = [ "mock/hifhe_api_mock.cpp" ]
+  external_deps = [
+    "hifhe:libhifhe",
   ]
   cflags_cc = [
     "-std=c++17",

@@ -16,6 +16,7 @@
 #include "huks_seed_deriver.h"
 
 #include "hks_api.h"
+#include "hks_param.h"
 #include "../mock/huks_param_mock.h"
 #include "privacy_error_code.h"
 #include <algorithm>

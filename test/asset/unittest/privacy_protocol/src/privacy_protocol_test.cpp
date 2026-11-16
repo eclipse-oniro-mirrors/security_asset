@@ -729,10 +729,10 @@ TEST(PrivacyProtocolOpenSslTest, AesGcmRejectsTamperingAndWrongSeedWithoutChangi
     EXPECT_NE(BuiltInDecryptOrderValue(seed, extended, params, output), PRIVACY_PROTOCOL_SUCCESS);
     EXPECT_EQ(output, std::optional<Bytes>(Bytes{7, 8, 9}));
 
-    constexpr size_t LENGTH_OFFSET = 12;
-    constexpr size_t HEADER_SIZE = 16;
+    constexpr size_t lengthOffset = 12;
+    constexpr size_t headerSize = 16;
     auto zeroLength = ciphertext;
-    std::fill(zeroLength.begin() + LENGTH_OFFSET, zeroLength.begin() + HEADER_SIZE, 0);
+    std::fill(zeroLength.begin() + lengthOffset, zeroLength.begin() + headerSize, 0);
     EXPECT_EQ(BuiltInDecryptOrderValue(seed, zeroLength, params, output), PRIVACY_PROTOCOL_CRYPTO_ERROR);
     EXPECT_EQ(BuiltInDecryptOrderValue(seed, Bytes{}, params, output), PRIVACY_PROTOCOL_CRYPTO_ERROR);
     EXPECT_EQ(output, std::optional<Bytes>(Bytes{7, 8, 9}));
