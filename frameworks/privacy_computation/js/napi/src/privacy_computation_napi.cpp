@@ -23,6 +23,12 @@
 namespace OHOS::Security::PrivacyComputation {
 napi_value NapiGenPrivacyTarget(napi_env env, napi_callback_info info)
 {
+#ifndef ASSET_PRIVACY_COMPUTATION_SUPPORTED
+    LOGE("genPrivacyTarget rejected: privacy computation ability is disabled, code=%{public}d",
+        PRIVACY_COMPUTATION_UNAVAILABLE);
+    return CreateRejectedPromise(env, PRIVACY_COMPUTATION_UNAVAILABLE,
+        GetErrorMessage(PRIVACY_COMPUTATION_UNAVAILABLE));
+#endif
     if (IsComputationLibConfigured()) {
         LOGI("NAPI genPrivacyTarget begin, route=ComputationLib");
         return CallComputationNapiFunc(env, info, "GenPrivacyTarget");
@@ -61,6 +67,12 @@ napi_value NapiGenPrivacyTarget(napi_env env, napi_callback_info info)
 
 napi_value NapiPrivacySearch(napi_env env, napi_callback_info info)
 {
+#ifndef ASSET_PRIVACY_COMPUTATION_SUPPORTED
+    LOGE("privacySearch rejected: privacy computation ability is disabled, code=%{public}d",
+        PRIVACY_COMPUTATION_UNAVAILABLE);
+    return CreateRejectedPromise(env, PRIVACY_COMPUTATION_UNAVAILABLE,
+        GetErrorMessage(PRIVACY_COMPUTATION_UNAVAILABLE));
+#endif
     LOGI("NAPI privacySearch begin, route=Local");
     auto context = std::unique_ptr<PrivacySearchContext>(new (std::nothrow) PrivacySearchContext());
     PRIVACY_NAPI_RETURN_JS_ERROR(env, context == nullptr, nullptr,
@@ -99,6 +111,12 @@ napi_value NapiPrivacySearch(napi_env env, napi_callback_info info)
 
 napi_value NapiGetSearchResult(napi_env env, napi_callback_info info)
 {
+#ifndef ASSET_PRIVACY_COMPUTATION_SUPPORTED
+    LOGE("getSearchResult rejected: privacy computation ability is disabled, code=%{public}d",
+        PRIVACY_COMPUTATION_UNAVAILABLE);
+    return CreateRejectedPromise(env, PRIVACY_COMPUTATION_UNAVAILABLE,
+        GetErrorMessage(PRIVACY_COMPUTATION_UNAVAILABLE));
+#endif
     if (IsComputationLibConfigured()) {
         LOGI("NAPI getSearchResult begin, route=ComputationLib");
         return CallComputationNapiFunc(env, info, "GetSearchResult");

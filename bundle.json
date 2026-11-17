@@ -26,7 +26,8 @@
             "asset_ce_upgrade_list",
             "asset_ce_remove_list",
             "asset_build_mode",
-	        "asset_enable_privacy_computation_config"
+	        "asset_enable_privacy_computation_config",
+            "asset_privacy_computation_supported"
         ],
         "adapted_system_type": [
             "standard"

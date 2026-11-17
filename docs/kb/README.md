@@ -4,7 +4,7 @@
 
 ## 目录结构
 
-> 以下路径均为 `docs/kb/` 下的相对路径。按子系统组织：`asset/`（SA 8100）、`secure_access_fence/`（SA 66532）、`hpic/`（隐私计算 NAPI），`shared/` 放跨子系统内容。
+> 以下路径均为 `docs/kb/` 下的相对路径。按子系统组织：`asset/`（SA 8100）、`secure_access_fence/`（SA 66532）、`privacy_computation/`（隐私计算），`shared/` 放跨子系统内容。
 
 ```
 docs/kb/
@@ -50,8 +50,17 @@ docs/kb/
 │   │   └── os-dependency.md            # SAF Framework OS Dependency 模块
 │   ├── error-codes.md                  # SAF 错误码参考
 │   └── troubleshooting.md              # SAF 常见问题定位
-└── hpic/                               # 隐私计算
-    └── napi-bindings.md                # HPIC NAPI 绑定模块
+└── privacy_computation/                # 隐私计算
+    ├── architecture/
+    │   └── overview.md                 # 隐私计算架构总览
+    ├── frameworks/
+    │   ├── napi-bindings.md            # 隐私计算 NAPI 绑定模块
+    │   └── ipc-client.md               # 隐私计算 FFI/IPC 客户端
+    ├── protocol/
+    │   └── privacy-protocol.md         # 隐私计算协议库
+    ├── services/
+    │   └── privacy-service.md          # 隐私计算服务侧模块
+    └── error-codes.md                  # 隐私计算错误码参考
 ```
 
 ## 主题索引
@@ -84,7 +93,12 @@ docs/kb/
 | SAF IPC 序列化模块 | `secure_access_fence/frameworks/ipc.md` | saf_ipc, IDL, sub_modules |
 | Asset NAPI 绑定模块 | `asset/frameworks/napi-bindings.md` | asset_napi, asset_napi_check |
 | SAF NAPI 绑定模块 | `secure_access_fence/frameworks/napi-bindings.md` | agent_fence_napi, agent_fence_error_codes |
-| HPIC NAPI 绑定模块 | `hpic/napi-bindings.md` | hpic_napi, libprivacycomputation_napi |
+| 隐私计算架构总览 | `privacy_computation/architecture/overview.md` | PSI, PIR, ComputationLib, AssetSA |
+| 隐私计算 NAPI 绑定模块 | `privacy_computation/frameworks/napi-bindings.md` | privacy_computation_napi, privacycomputation_napi |
+| 隐私计算 FFI/IPC 客户端 | `privacy_computation/frameworks/ipc-client.md` | privacy_client, asset_privacy_gen_target, IpcCode |
+| 隐私计算协议库 | `privacy_computation/protocol/privacy-protocol.md` | privacy_protocol, hifhe, BGV, HE |
+| 隐私计算服务侧模块 | `privacy_computation/services/privacy-service.md` | privacy_service, huks_seed_deriver, asset_privacy |
+| 隐私计算错误码参考 | `privacy_computation/error-codes.md` | PRIVACY_PROTOCOL, PRIVACY_COMPUTATION, 24000017 |
 | Asset Framework OS Dependency | `asset/frameworks/os-dependency.md` | file_operator, ce_operator, de_operator |
 | SAF Framework OS Dependency | `secure_access_fence/frameworks/os-dependency.md` | saf_log, saf_utils |
 | Asset 错误码参考 | `asset/error-codes.md` | Asset_ResultCode, ErrCode, 24000001 |

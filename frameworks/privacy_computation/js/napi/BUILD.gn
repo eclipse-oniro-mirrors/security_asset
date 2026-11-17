@@ -47,6 +47,10 @@ ohos_shared_library("privacycomputation_napi") {
     cflags = [ "-DASSET_ENABLE_PRIVACY_COMPUTATION_CONFIG=\"${asset_enable_privacy_computation_config}\"" ]
   }
 
+  if (asset_privacy_computation_supported) {
+    cflags += [ "-DASSET_PRIVACY_COMPUTATION_SUPPORTED" ]
+  }
+
   cflags_cc = [
     "-std=c++17",
     "-Wall",
