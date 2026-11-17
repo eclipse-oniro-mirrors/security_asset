@@ -12,6 +12,7 @@
             "start-on-demand": {
                 "commonevent": [
                     { "name": "usual.event.PACKAGE_REMOVED" },
+                    { "name": "usual.event.PACKAGE_UNINSTALLED_DATA_CLEARED" },
                     { "name": "usual.event.SANDBOX_PACKAGE_REMOVED" },
                     { "name": "usual.event.USER_REMOVED" },
                     { "name": "usual.event.CHARGING" },

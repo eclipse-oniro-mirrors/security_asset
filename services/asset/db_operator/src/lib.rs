@@ -19,6 +19,7 @@ pub mod common;
 pub mod database;
 pub mod database_file_upgrade;
 pub mod database_util;
+pub mod keepdata_cache;
 mod process_batch_data;
 mod statement;
 mod table;

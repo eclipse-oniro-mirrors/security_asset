@@ -17,6 +17,7 @@
 #include <utility>
 #include <type_traits>
 
+#include "os_account_wrapper.h"
 #include "system_event_wrapper.h"
 
 #include "bundle_constants.h"
@@ -40,6 +41,8 @@ const char * const DEVELOPER_ID = "developerId";
 const char * const GROUP_IDS = "assetAccessGroups";
 const char * const OWNER_INFO_SEPARATOR = "_";
 const char * const GROUP_SEPARATOR = ",";
+const char * const KEEP_DATA = "keepData";
+const char * const COMMON_EVENT_UNINSTALLED_DATA_CLEARED = "usual.event.PACKAGE_UNINSTALLED_DATA_CLEARED";
 
 void ParseGroupIds(const std::string &groupIds, std::vector<std::string> &groupIdStrs,
     std::vector<ConstAssetBlob> &groupIdBlobs, ConstAssetBlobArray &groupIdBlobArray)
@@ -90,11 +93,57 @@ void HandlePackageRemoved(const OHOS::AAFwk::Want &want, bool isSandBoxApp, OnPa
     ConstAssetBlobArray groupIdBlobArray;
     ParseGroupIds(groupIds, groupIdStrs, groupIdBlobs, groupIdBlobArray);
 
+    bool keepdata = false;
+    if (!isSandBoxApp) {
+        // Loose parsing: accept both the bool param and the string form (design R-1);
+        // the sandbox path always goes the baseline logic (spec AC-2).
+        keepdata = want.GetBoolParam(KEEP_DATA, false) || want.GetStringParam(KEEP_DATA) == "true";
+        LOGI("Keepdata parsed: %{public}d (bool=%{public}d, str=%{public}s)", keepdata,
+            want.GetBoolParam(KEEP_DATA, false), want.GetStringParam(KEEP_DATA).c_str());
+    }
+
     if (onPackageRemoved != nullptr) {
-        onPackageRemoved({ userId, appIndex, ownerBlob, developerIdBlob, groupIdBlobArray, bundleNameBlob });
+        onPackageRemoved({ userId, appIndex, ownerBlob, developerIdBlob, groupIdBlobArray, bundleNameBlob,
+            keepdata });
     }
     LOGI("Receive event: PACKAGE_REMOVED, userId=%{public}d, appId=%{public}s, appIndex=%{public}d", userId,
         appId.c_str(), appIndex);
+}
+
+void HandleUninstallDataCleared(const OHOS::AAFwk::Want &want, OnUninstallDataCleared onUninstallDataCleared)
+{
+    if (onUninstallDataCleared == nullptr) {
+        return;
+    }
+    int userId = want.GetIntParam(USER_ID, INVALID_USERID);
+    if (userId == INVALID_USERID) {
+        // The clear event carries uid instead of userId (BMS
+        // NotifyUninstalledBundleCleared), so derive it via the account service.
+        int uid = want.GetIntParam(UID, INVALID_UID);
+        uint32_t convertedUserId = 0;
+        if (uid > 0 && GetUserIdByUid(static_cast<uint64_t>(uid), &convertedUserId)) {
+            userId = static_cast<int32_t>(convertedUserId);
+        }
+    }
+    std::string bundleName = want.GetStringParam(BUNDLE_NAME);
+    if (bundleName.empty()) {
+        bundleName = want.GetBundle();
+    }
+    std::string developerId = want.GetStringParam(DEVELOPER_ID);
+    std::string groupIds = want.GetStringParam(GROUP_IDS);
+    // The event carries the identity of the app that triggered the clear:
+    // the cleanup is scoped to its own retention entry, never to the whole
+    // bundle (clones in their own retention cycle are not consumed).
+    std::string appId = want.GetStringParam(APP_ID);
+    int appIndex = want.GetIntParam(APP_INDEX, -1);
+    if (userId == INVALID_USERID || bundleName.empty()) {
+        LOGE("[FATAL]Get uninstalled data cleared info failed, userId=%{public}d", userId);
+        return;
+    }
+    onUninstallDataCleared(userId, bundleName.c_str(), appId.empty() ? nullptr : appId.c_str(), appIndex,
+        developerId.empty() ? nullptr : developerId.c_str(), groupIds.empty() ? nullptr : groupIds.c_str());
+    LOGI("Receive event: PACKAGE_UNINSTALLED_DATA_CLEARED, userId=%{public}d, bundleName=%{public}s", userId,
+        bundleName.c_str());
 }
 
 void HandleAppRestore(const OHOS::AAFwk::Want &want, OnAppRestore onAppRestore)
@@ -148,6 +197,8 @@ public:
             HandlePackageRemoved(want, false, this->eventCallBack.onPackageRemoved);
         } else if (action == CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED) {
             HandlePackageRemoved(want, true, this->eventCallBack.onPackageRemoved);
+        } else if (action == COMMON_EVENT_UNINSTALLED_DATA_CLEARED) {
+            HandleUninstallDataCleared(want, this->eventCallBack.onUninstallDataCleared);
         } else if (action == CommonEventSupport::COMMON_EVENT_USER_REMOVED) {
             int userId = data.GetCode();
             HandleCallback(this->eventCallBack.onUserRemoved, userId);
@@ -227,6 +278,7 @@ bool SubscribeSystemEvent(const EventCallBack eventCallBack)
     MatchingSkills matchingSkills;
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_PACKAGE_REMOVED);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SANDBOX_PACKAGE_REMOVED);
+    matchingSkills.AddEvent(COMMON_EVENT_UNINSTALLED_DATA_CLEARED);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_USER_REMOVED);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_SCREEN_OFF);
     matchingSkills.AddEvent(CommonEventSupport::COMMON_EVENT_CHARGING);

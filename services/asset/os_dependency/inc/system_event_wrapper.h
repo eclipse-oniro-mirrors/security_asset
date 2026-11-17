@@ -45,6 +45,7 @@ typedef struct {
     ConstAssetBlob developerId;
     ConstAssetBlobArray groupIds;
     ConstAssetBlob bundleName;
+    bool keepdata;
 } PackageInfo;
 
 typedef void (*OnPackageRemoved)(PackageInfo);
@@ -56,6 +57,7 @@ typedef void (*OnUserUnlocked)(int32_t);
 typedef void (*OnConnectivityChange)(void);
 typedef void (*OnDataShareReady)(void);
 typedef void (*OnUserSwitched)(int32_t);
+typedef void (*OnUninstallDataCleared)(int32_t, const char *, const char *, int32_t, const char *, const char *);
 
 typedef struct {
     OnPackageRemoved onPackageRemoved;
@@ -67,6 +69,7 @@ typedef struct {
     OnConnectivityChange onConnectivityChange;
     OnDataShareReady onDataShareReady;
     OnUserSwitched onUserSwitched;
+    OnUninstallDataCleared onUninstallDataCleared;
 } EventCallBack;
 
 #ifdef __cplusplus

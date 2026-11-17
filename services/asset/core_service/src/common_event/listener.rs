@@ -18,6 +18,7 @@
 use std::{
     ffi::{CStr, CString},
     fs::{self, DirEntry},
+    os::raw::c_char,
     os::unix::fs::PermissionsExt,
     path::Path,
     slice,
@@ -28,7 +29,8 @@ use std::{
 use lazy_static::lazy_static;
 
 use asset_common::{
-    AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, Group, ModifyAssetBlob, MutAssetBlobArray, OwnerType
+    AutoCounter, CallingInfo, ConstAssetBlob, ConstAssetBlobArray, GROUP_SEPARATOR, Group, ModifyAssetBlob,
+    MutAssetBlobArray, OwnerType
 };
 use asset_crypto_manager::{crypto_manager::CryptoManager, secret_key::SecretKey,
     db_key_operator::{DbKey, get_db_key}};
@@ -36,6 +38,11 @@ use asset_db_operator::{
     database::Database,
     database_file_upgrade::{
         construct_splited_db_name, trigger_db_upgrade, update_upgrade_list,
+    },
+    keepdata_cache::{
+        add_keepdata_entry, get_keepdata_entries_by_bundle, get_keepdata_entries_by_developer,
+        remove_keepdata_entries, remove_keepdata_entry, remove_keepdata_group_ids,
+        KeepdataEntry,
     },
     types::{
         column::{self},
@@ -218,6 +225,30 @@ fn construct_calling_infos(
     calling_infos
 }
 
+/// Check whether the group is retained by a keepdata marker: any marker entry
+/// of the developer whose group ids cover the group means an earlier uninstall
+/// of the group chose to retain the data (spec R-3, AC-1.3).
+fn is_group_retained_by_keepdata(
+    user_id: i32,
+    developer_id: &Option<String>,
+    group_id: Option<&Vec<u8>>,
+) -> bool {
+    let Some(developer_id) = developer_id else { return false };
+    let Some(group_id) = group_id else { return false };
+    let group_id_str = String::from_utf8_lossy(group_id).to_string();
+    let entries = get_keepdata_entries_by_developer(user_id, developer_id);
+    logi!(
+        "Check group retention: developer:[{}], group:[{}], matched entries:[{}], entries:[{:?}]",
+        developer_id,
+        group_id_str,
+        entries.len(),
+        entries
+    );
+    entries
+        .iter()
+        .any(|entry| entry.group_ids.iter().any(|id| *id == group_id_str))
+}
+
 fn delete_data_by_owner(
     user_id: i32,
     owner: ConstAssetBlob,
@@ -227,9 +258,24 @@ fn delete_data_by_owner(
     let _counter_user = AutoCounter::new();
     let start_time = Instant::now();
     let owner: Vec<u8> = unsafe { slice::from_raw_parts(owner.data, owner.size as usize).to_vec() };
+    let developer_id_str: Option<String> = if developer_id.size != 0 && !developer_id.data.is_null() {
+        Some(String::from_utf8_lossy(unsafe {
+            slice::from_raw_parts(developer_id.data, developer_id.size as usize)
+        }).to_string())
+    } else {
+        None
+    };
 
     for calling_info in construct_calling_infos(user_id, owner.clone(), developer_id, group_ids) {
         clear_cryptos(&calling_info);
+        // Skip the deletion of a group retained by a keepdata marker: an
+        // earlier uninstall of the group chose to retain the data (spec R-3).
+        // NOTE: group_id() is the bare group id; group() is the concatenated
+        // "developer_id<sep>group_id" form and must not be used here.
+        if is_group_retained_by_keepdata(user_id, &developer_id_str, calling_info.group_id()) {
+            logi!("Group data is retained by a keepdata marker, skip the group deletion.");
+            continue;
+        }
         let res = match delete_on_package_removed(&calling_info) {
             Ok(DataExist::OwnerData(true)) => {
                 logi!("Data remain in owner db after uninstallation. Do not delete owner key in HUKS.");
@@ -262,12 +308,105 @@ fn delete_data_by_owner(
     }
 }
 
-pub(crate) extern "C" fn on_package_removed(package_info: PackageInfoFfi) {
-    delete_data_by_owner(package_info.user_id, package_info.owner, package_info.developer_id, package_info.group_ids);
+/// Safely copy an FFI blob into a Vec, tolerating a null data pointer (the
+/// C side may hand over null blobs for absent optional fields).
+fn blob_to_vec(blob: &ConstAssetBlob) -> Vec<u8> {
+    if blob.data.is_null() || blob.size == 0 {
+        return Vec::new();
+    }
+    unsafe { slice::from_raw_parts(blob.data, blob.size as usize).to_vec() }
+}
 
-    let bundle_name: Vec<u8> = unsafe {
-        slice::from_raw_parts(package_info.bundle_name.data, package_info.bundle_name.size as usize).to_vec()
+/// Retain the critical assets on a keepdata uninstall (PACKAGE_REMOVED with
+/// keepdata=true): record the keepdata marker and skip the baseline deletion
+/// chain (db data, HUKS keys and plugin notification), while the in-memory
+/// crypto sessions and the upgrade list are still handled as in the baseline
+/// path (design ADR-6).
+fn retain_data_on_keepdata_uninstall(package_info: PackageInfoFfi) {
+    let bundle_name: Vec<u8> = blob_to_vec(&package_info.bundle_name);
+    logi!(
+        "On app -{}-{}-{}- removed with keepdata, retain the critical assets.",
+        package_info.user_id,
+        String::from_utf8_lossy(&bundle_name),
+        package_info.app_index
+    );
+
+    let owner: Vec<u8> = blob_to_vec(&package_info.owner);
+    let developer_id: String =
+        if package_info.developer_id.size > 0 && !package_info.developer_id.data.is_null() {
+            String::from_utf8_lossy(&blob_to_vec(&package_info.developer_id)).to_string()
+        } else {
+            String::new()
+        };
+    let group_ids: Vec<String> =
+        if package_info.group_ids.size > 0 && !package_info.group_ids.blobs.is_null() {
+            (0..package_info.group_ids.size as usize)
+                .map(|i| {
+                    let blob = unsafe { package_info.group_ids.blobs.add(i) };
+                    String::from_utf8_lossy(&blob_to_vec(unsafe { &*blob })).to_string()
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
+
+    for calling_info in construct_calling_infos(
+        package_info.user_id,
+        owner.clone(),
+        package_info.developer_id,
+        package_info.group_ids,
+    ) {
+        clear_cryptos(&calling_info);
+    }
+
+    if package_info.app_index == 0 {
+        let _ = update_upgrade_list(package_info.user_id, &String::from_utf8_lossy(&bundle_name).to_string());
+    }
+
+    // Record the keepdata marker (best-effort): developer_id and group_ids are
+    // recorded only for the main app (app_index == 0), serving as the group
+    // retention credential (spec R-2). The owner string is "appId_appIndex",
+    // so the app id is the part before the app index suffix.
+    let owner_str = String::from_utf8_lossy(&owner).to_string();
+    let app_id = match owner_str.strip_suffix(&format!("_{}", package_info.app_index)) {
+        Some(app_id) => app_id.to_string(),
+        None => owner_str.clone(),
     };
+    let entry = KeepdataEntry {
+        bundle_name: String::from_utf8_lossy(&bundle_name).to_string(),
+        app_id,
+        app_index: package_info.app_index,
+        developer_id: if package_info.app_index == 0 { developer_id.clone() } else { String::new() },
+        group_ids: if package_info.app_index == 0 { group_ids.clone() } else { Vec::new() },
+    };
+    if let Err(e) = add_keepdata_entry(package_info.user_id, &entry) {
+        loge!("Write keepdata entry failed, code:{}, msg:{}", e.code as u32, e.msg);
+    }
+}
+
+pub(crate) extern "C" fn on_package_removed(package_info: PackageInfoFfi) {
+    if package_info.keepdata {
+        // Retain the critical assets: record the keepdata marker and skip the
+        // baseline deletion chain (db data, HUKS keys and plugin notification).
+        retain_data_on_keepdata_uninstall(package_info);
+        return;
+    }
+
+    let bundle_name: Vec<u8> = blob_to_vec(&package_info.bundle_name);
+
+    // Consume the retention mark of THIS app (appId/appIndex) before the
+    // deletion: the baseline logic deletes its own data, so its own retention
+    // ends ("the next uninstall without keepdata of this hap follows the
+    // baseline rules"). Marks of other apps of the same bundle (e.g. clones
+    // in their own retention cycle) are not touched (spec R-3).
+    let owner_str = String::from_utf8_lossy(&blob_to_vec(&package_info.owner)).to_string();
+    let app_id = match owner_str.strip_suffix(&format!("_{}", package_info.app_index)) {
+        Some(app_id) => app_id.to_string(),
+        None => owner_str.clone(),
+    };
+    let _ = remove_keepdata_entry(package_info.user_id, &app_id, package_info.app_index);
+
+    delete_data_by_owner(package_info.user_id, package_info.owner, package_info.developer_id, package_info.group_ids);
     logi!(
         "On app -{}-{}-{}- removed.",
         package_info.user_id,
@@ -292,6 +431,202 @@ pub(crate) extern "C" fn on_package_removed(package_info: PackageInfoFfi) {
             Err(code) => loge!("process package remove event failed, code: {}", code),
         }
     }
+}
+
+/// Handle the deferred cleanup event (PACKAGE_UNINSTALLED_DATA_CLEARED): clean
+/// the critical assets retained by an earlier keepdata uninstall, located by
+/// the keepdata markers (spec R-4, AC-2.1/AC-2.2).
+pub(crate) fn on_uninstall_data_cleared(
+    user_id: i32,
+    bundle_name: String,
+    app_id: Option<String>,
+    app_index: Option<i32>,
+    developer_id: Option<String>,
+    group_ids: Option<Vec<String>>,
+) {
+    let _counter_user = AutoCounter::new();
+    let start_time = Instant::now();
+    logi!("On package uninstalled data cleared, bundle name is [{}].", bundle_name);
+
+    // Locate the retained owners of the bundle by the keepdata markers, then
+    // scope the cleanup to the app that triggered the event (BMS carries its
+    // appId/appIndex): only its own retention entry is consumed, other
+    // retained apps of the bundle (e.g. clones in their own retention
+    // cycle) keep their data and marks. An empty match is tolerated.
+    let entries = get_keepdata_entries_by_bundle(user_id, &bundle_name);
+    let targets: Vec<KeepdataEntry> = match (&app_id, app_index) {
+        (Some(app_id), Some(app_index)) => entries
+            .iter()
+            .filter(|e| e.app_id == *app_id && e.app_index == app_index)
+            .cloned()
+            .collect(),
+        _ => entries.clone(),
+    };
+    if targets.is_empty() {
+        logw!("[WARNING]No keepdata entry matched for bundle [{}] app index [{:?}], skip the cleanup.",
+            bundle_name, app_index);
+        return;
+    }
+
+    // Clean the retained data of each owner. The baseline deletion kernel is
+    // reused: the IsPersistent=false condition and the TrustedAccount reverse
+    // condition already cover the developer-retention exemption (design ADR-4).
+    for entry in targets.iter() {
+        let owner = format!("{}_{}", entry.app_id, entry.app_index);
+        let calling_info = CallingInfo::new(user_id, OwnerType::Hap, owner.into_bytes(), None);
+        clear_cryptos(&calling_info);
+        let res = match delete_on_package_removed(&calling_info) {
+            Ok(DataExist::OwnerData(true)) => {
+                logi!("Data remain in owner db after data cleared. Do not delete owner key in HUKS.");
+                Ok(())
+            },
+            Ok(DataExist::OwnerData(false)) => {
+                logi!("No data remain in owner db after data cleared. Delete owner key in HUKS.");
+                SecretKey::delete_by_owner(&calling_info)
+            },
+            Ok(_) => Ok(()),
+            Err(e) => {
+                upload_fault_system_event(&calling_info, start_time, "on_uninstall_data_cleared", "", &e,
+                    &mut ExtDbMap::new());
+                Ok(())
+            },
+        };
+        if let Err(e) = res {
+            let calling_info = CallingInfo::new_self();
+            upload_fault_system_event(&calling_info, start_time, "on_uninstall_data_cleared", "", &e,
+                &mut ExtDbMap::new());
+        }
+    }
+    let _ = remove_keepdata_entries(user_id, &targets);
+
+    // Clean the group data following the baseline uninstall group logic (spec R-5).
+    if let (Some(developer_id), Some(group_ids)) = (developer_id.as_ref(), group_ids.as_ref()) {
+        let owner = targets
+            .iter()
+            .find(|entry| entry.app_index == 0)
+            .or_else(|| entries.first())
+            .map(|entry| format!("{}_{}", entry.app_id, entry.app_index).into_bytes())
+            .unwrap_or_default();
+        clean_group_data_on_data_cleared(user_id, owner, developer_id, group_ids, start_time);
+    }
+}
+
+/// FFI entry of PACKAGE_UNINSTALLED_DATA_CLEARED from the C++ subscriber:
+/// convert the C string parameters and forward them to the handler.
+extern "C" fn on_uninstall_data_cleared_ffi(
+    user_id: i32,
+    bundle_name: *const c_char,
+    app_id: *const c_char,
+    app_index: i32,
+    developer_id: *const c_char,
+    group_ids: *const c_char,
+) {
+    if bundle_name.is_null() {
+        loge!("[FATAL]Uninstall data cleared bundle name is null.");
+        return;
+    }
+    let bundle_name = unsafe { CStr::from_ptr(bundle_name) }.to_string_lossy().to_string();
+    let app_id = if app_id.is_null() {
+        None
+    } else {
+        Some(unsafe { CStr::from_ptr(app_id) }.to_string_lossy().to_string())
+    };
+    let app_index = if app_index >= 0 { Some(app_index) } else { None };
+    let developer_id = if developer_id.is_null() {
+        None
+    } else {
+        Some(unsafe { CStr::from_ptr(developer_id) }.to_string_lossy().to_string())
+    };
+    let group_ids = if group_ids.is_null() {
+        None
+    } else {
+        let group_ids = unsafe { CStr::from_ptr(group_ids) }.to_string_lossy().to_string();
+        Some(group_ids.split(GROUP_SEPARATOR).map(|group_id| group_id.to_string()).collect())
+    };
+    on_uninstall_data_cleared(user_id, bundle_name, app_id, app_index, developer_id, group_ids);
+}
+
+/// Clean the group data of the clear-data event, following the baseline
+/// uninstall group logic (spec R-5): a group is cleaned only when no installed
+/// app of the developer belongs to it, and the group marks of the queried
+/// groups are consumed afterwards.
+fn clean_group_data_on_data_cleared(
+    user_id: i32,
+    owner: Vec<u8>,
+    developer_id: &str,
+    group_ids: &Vec<String>,
+    start_time: Instant,
+) {
+    let mut blobs = Vec::new();
+    let mut group_id_blobs = Vec::new();
+    for group_id in group_ids {
+        let data_str = match CString::new(group_id.clone()) {
+            Ok(data_str) => data_str,
+            Err(_) => {
+                logw!("[WARNING]Group id contains an interior NUL, skip it.");
+                continue;
+            },
+        };
+        group_id_blobs.push(ModifyAssetBlob { modify: false, blob: data_str.as_ptr() });
+        blobs.push(data_str);
+    }
+    let mut the_group_ids =
+        MutAssetBlobArray { size: group_id_blobs.len() as u32, blobs: group_id_blobs.as_mut_ptr() };
+    let developer_id_blob = ConstAssetBlob { size: developer_id.len() as u32, data: developer_id.as_ptr() };
+    match unsafe { GetUninstallGroups(user_id, &developer_id_blob, &mut the_group_ids) } {
+        SUCCESS => (),
+        error => {
+            loge!("[FATAL]Get GetUninstallGroups failed, res is {}.", error);
+            return;
+        },
+    }
+
+    let the_group_ids_slice = unsafe { slice::from_raw_parts(the_group_ids.blobs, the_group_ids.size as usize) };
+    let mut main_developer_id = developer_id.as_bytes().to_vec();
+    if let Some(pos) = developer_id.find('.') {
+        main_developer_id.drain(..=pos);
+    }
+    for group_id_slice in the_group_ids_slice {
+        if group_id_slice.modify {
+            // An installed app of the developer still belongs to the group:
+            // retain the group data (spec AC-2.3).
+            continue;
+        }
+        let group_id = unsafe { CStr::from_ptr(group_id_slice.blob) };
+        let calling_info = CallingInfo::new(
+            user_id,
+            OwnerType::HapGroup,
+            owner.clone(),
+            Some(Group { developer_id: main_developer_id.clone(), group_id: group_id.to_bytes().to_vec() }),
+        );
+        clear_cryptos(&calling_info);
+        let res = match delete_on_package_removed(&calling_info) {
+            Ok(DataExist::GroupData(true)) => {
+                logi!("Data remain in group db after data cleared. Do not delete group key in HUKS.");
+                Ok(())
+            },
+            Ok(DataExist::GroupData(false)) => {
+                logi!("No data remain in group db after data cleared. Delete group key in HUKS.");
+                SecretKey::delete_by_owner(&calling_info)
+            },
+            Ok(_) => Ok(()),
+            Err(e) => {
+                upload_fault_system_event(&calling_info, start_time, "on_uninstall_data_cleared", "", &e,
+                    &mut ExtDbMap::new());
+                Ok(())
+            },
+        };
+        if let Err(e) = res {
+            let calling_info = CallingInfo::new_self();
+            upload_fault_system_event(&calling_info, start_time, "on_uninstall_data_cleared", "", &e,
+                &mut ExtDbMap::new());
+        }
+    }
+
+    // Consume the group retention marks of the queried groups: the retained
+    // groups have their marks cleared (AC-2.3) and the cleaned groups no
+    // longer need the credential.
+    let _ = remove_keepdata_group_ids(user_id, developer_id, group_ids);
 }
 
 extern "C" fn on_user_removed(user_id: i32) {
@@ -683,6 +1018,8 @@ struct EventCallBack {
     on_connectivity_change: extern "C" fn(),
     on_data_share_ready: extern "C" fn(),
     on_user_switched: extern "C" fn(i32),
+    on_uninstall_data_cleared:
+        extern "C" fn(i32, *const c_char, *const c_char, i32, *const c_char, *const c_char),
 }
 
 extern "C" {
@@ -705,6 +1042,7 @@ pub(crate) fn subscribe() {
             on_connectivity_change,
             on_data_share_ready,
             on_user_switched,
+            on_uninstall_data_cleared: on_uninstall_data_cleared_ffi,
         };
         if SubscribeSystemEvent(call_back.clone()) {
             logi!("Subscribe system event success.");

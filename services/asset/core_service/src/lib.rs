@@ -77,6 +77,7 @@ struct PackageInfo {
     developer_id: Option<String>,
     group_ids: Option<Vec<String>>,
     bundle_name: String,
+    keepdata: bool,
 }
 
 #[repr(C)]
@@ -87,6 +88,7 @@ struct PackageInfoFfi {
     developer_id: ConstAssetBlob,
     group_ids: ConstAssetBlobArray,
     bundle_name: ConstAssetBlob,
+    keepdata: bool,
 }
 
 static DELAYED_UNLOAD_TIME_IN_SEC: i32 = 20;
