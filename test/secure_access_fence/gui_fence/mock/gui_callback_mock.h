@@ -34,7 +34,9 @@ namespace OHOS::Security::SAF::Test {
  * can be constructed in a host unit test without an IPC runtime. AddDeathRecipient
  * and RemoveDeathRecipient return configurable results and record whether they
  * were called, so the DeathRecipient branches of GuiCallbackRegistry can be
- * exercised. TriggerDeath() fires OnRemoteDied on the stored recipient.
+ * exercised. SendRequest records the request code, so the GuiCallbackProxy
+ * OnComponentClickDecision marshalling can be asserted.
+ * TriggerDeath() fires OnRemoteDied on the stored recipient.
  */
 class MockRemoteObject : public IRemoteObject {
 public:
@@ -45,10 +47,11 @@ public:
 
     int SendRequest(uint32_t code, MessageParcel &data, MessageParcel &reply, MessageOption &option) override
     {
-        (void)code;
         (void)data;
         (void)reply;
         (void)option;
+        lastCode_ = code;
+        sendRequestCalled_ = true;
         return 0;
     }
 
@@ -79,6 +82,9 @@ public:
     void SetAddDeathRecipientFail(bool fail) { addDeathFail_ = fail; }
     bool WasRemoveDeathRecipientCalled() const { return removeDeathCalled_; }
 
+    bool WasSendRequestCalled() const { return sendRequestCalled_; }
+    uint32_t GetLastRequestCode() const { return lastCode_; }
+
     void TriggerDeath()
     {
         if (deathRecipient_ == nullptr) {
@@ -91,6 +97,8 @@ public:
 private:
     bool addDeathFail_ = false;
     bool removeDeathCalled_ = false;
+    bool sendRequestCalled_ = false;
+    uint32_t lastCode_ = 0;
     sptr<DeathRecipient> deathRecipient_;
 };
 
