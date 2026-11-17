@@ -38,7 +38,7 @@ OpenHarmony security 子系统 `@ohos/asset` 部件仓（part_name=`asset`，sub
 - 错误码：Asset 侧 `ErrCode`（24000001 起，`interfaces/kits/c/asset/inc/asset_type.h` 与 `frameworks/asset/definition`）；隐私计算侧 24000001~24000018（`frameworks/privacy_computation/js/napi/inc/privacy_computation_napi_common.h`）；SAF 侧 `SafResultCode`（`saf_result_defs.h`）。三套不要混用。
 - 日志：各模块自带 HiLog 封装（`*_log.h`）。**敏感数据（密文、authToken、secret 值）不得打印**，只打长度/错误码等非敏感信息。
 - NAPI：异步操作统一走各模块 context/async work 封装；注意 HandleScope 生命周期，避免 NAPI 泄漏。
-- GN 中 `-D` 宏注入走 `cflags`/`cflags_cc`；条件块用 `if (flag)` 判布尔、字符串开关判 `!= ""`。
+- GN 中 `-D` 宏注入走 `cflags`/`cflags_cc`；条件块用 `if (flag)` 判布尔、字符串开关判 `!= ""`。**注意**：`ohos_*` 模板的 invoker scope 不会预声明 `cflags`/`cflags_cc`——条件注入前必须先无条件 `cflags = []`（或基线 flags）再 `+=`，否则默认配置路径会报 "Appending to non-existent variable"（原生 target 如 `group`/`config` 才有预声明，勿混淆）。
 
 ## 测试
 

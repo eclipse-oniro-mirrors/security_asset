@@ -43,8 +43,9 @@ ohos_shared_library("privacycomputation_napi") {
     ubsan = true
   }
 
+  cflags = []
   if (asset_enable_privacy_computation_config != "") {
-    cflags = [ "-DASSET_ENABLE_PRIVACY_COMPUTATION_CONFIG=\"${asset_enable_privacy_computation_config}\"" ]
+    cflags += [ "-DASSET_ENABLE_PRIVACY_COMPUTATION_CONFIG=\"${asset_enable_privacy_computation_config}\"" ]
   }
 
   if (asset_privacy_computation_supported) {
