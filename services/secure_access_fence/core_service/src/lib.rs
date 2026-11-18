@@ -559,13 +559,13 @@ impl SAFService {
     fn retrieve_auth_token_by_task_id(
         &self,
         os_account_id: i32,
-        caller_token: i32,
+        caller_token: u32,
         task_id: String,
     ) -> Result<Vec<u8>> {
         if let Err(code) = check_retrieve_auth_token_permission(os_account_id) {
             return macros_lib::log_throw_error!(code, "Permission denied");
         }
-        let caller = caller_token as u32;
+        let caller = caller_token;
         execute_with_metrics_single!(
             "retrieve_auth_token_by_task_id",
             task_identity::retrieve_auth_token_by_task_id,

@@ -136,7 +136,7 @@ interface OHOS.Security.SAF.ISecureAccessFence {
      */
     [ipccode 12] void GenerateTaskChallenge(
         [in] TaskIdentityInfo taskIdentityInfo,
-        [out] List<int> challenge,
+        [out] unsigned char[] challenge,
         [out] int resultCode
     );
 
@@ -170,9 +170,9 @@ interface OHOS.Security.SAF.ISecureAccessFence {
      * @param resultCode Error code output (0 for success).
      */
     [ipccode 15] void RetrieveAuthTokenByTaskId(
-        [in] int callerToken,
+        [in] unsigned int callerToken,
         [in] String taskId,
-        [out] List<int> authToken,
+        [out] unsigned char[] authToken,
         [out] int resultCode
     );
 

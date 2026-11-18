@@ -107,7 +107,7 @@ public:
 class GenerateTaskChallengeContext : public AgentFenceAsyncContext {
 public:
     TaskIdentityInfo taskIdentityInfo {};
-    std::vector<int32_t> challenge {};
+    std::vector<uint8_t> challenge {};
 };
 
 class GenerateTaskIdentityContext : public AgentFenceAsyncContext {

@@ -456,8 +456,10 @@ napi_value NapiGenerateTaskChallenge(const napi_env env, napi_callback_info info
         size_t challengeSize = asyncContext->challenge.size();
         NAPI_CALL(env, napi_create_arraybuffer(env, challengeSize, &data, &arrayBuffer));
         uint8_t *bytes = static_cast<uint8_t *>(data);
-        for (size_t i = 0; i < challengeSize; ++i) {
-            bytes[i] = static_cast<uint8_t>(asyncContext->challenge[i]);
+        if (challengeSize > 0 && memcpy_s(bytes, challengeSize,
+            asyncContext->challenge.data(), challengeSize) != EOK) {
+            NAPI_CALL(env, napi_throw_error(env, nullptr, "memcpy_s failed"));
+            return nullptr;
         }
         napi_value jsResult = nullptr;
         NAPI_CALL(env, napi_create_typedarray(env, napi_uint8_array,

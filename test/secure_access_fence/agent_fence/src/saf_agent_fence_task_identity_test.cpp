@@ -77,7 +77,7 @@ public:
 static void GrantTestPermission()
 {
     // Step 1: native token with SAF permissions (gives privilege to allocate HAP tokens
-    // and restarts the access_token service). Save this native token â€” it has
+    // and restarts the access_token service). Save this native token â€?it has
     // QUERY_TOOL_PERMISSIONS + INTERACT_ACROSS_LOCAL_ACCOUNTS and is TOKEN_NATIVE,
     // which RetrieveAuthTokenByTaskId's CheckIsSystemSa() requires.
     GrantSelfPermission();
@@ -169,7 +169,7 @@ HWTEST_F(SafAgentFenceTaskIdentityTest, GenerateTaskChallenge_001, TestSize.Leve
 {
     TaskIdentityInfo info = MakeLowRiskInfo("task_challenge_001", 3600);
 
-    std::vector<int32_t> challenge;
+    std::vector<uint8_t> challenge;
     int32_t result = SafAgentFence::GenerateTaskChallenge(info, challenge);
     EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(challenge.size(), 32u);
@@ -189,7 +189,7 @@ HWTEST_F(SafAgentFenceTaskIdentityTest, GenerateTaskChallenge_002, TestSize.Leve
 {
     TaskIdentityInfo info = MakeDelayedInfo("task_challenge_002", -1);
 
-    std::vector<int32_t> challenge;
+    std::vector<uint8_t> challenge;
     int32_t result = SafAgentFence::GenerateTaskChallenge(info, challenge);
     EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(challenge.size(), 32u);
@@ -209,12 +209,12 @@ HWTEST_F(SafAgentFenceTaskIdentityTest, GenerateTaskChallenge_003, TestSize.Leve
 {
     TaskIdentityInfo info = MakeLowRiskInfo("task_challenge_003", 3600);
 
-    std::vector<int32_t> challenge1;
+    std::vector<uint8_t> challenge1;
     int32_t result1 = SafAgentFence::GenerateTaskChallenge(info, challenge1);
     EXPECT_EQ(result1, SAF_SUCCESS);
     EXPECT_EQ(challenge1.size(), 32u);
 
-    std::vector<int32_t> challenge2;
+    std::vector<uint8_t> challenge2;
     int32_t result2 = SafAgentFence::GenerateTaskChallenge(info, challenge2);
     EXPECT_EQ(result2, SAF_SUCCESS);
     EXPECT_EQ(challenge2.size(), 32u);
@@ -234,7 +234,7 @@ HWTEST_F(SafAgentFenceTaskIdentityTest, GenerateTaskChallenge_004, TestSize.Leve
 {
     TaskIdentityInfo info = MakeDelayedInfo("task_challenge_004", -1);
 
-    std::vector<int32_t> challenge;
+    std::vector<uint8_t> challenge;
     int32_t result = SafAgentFence::GenerateTaskChallenge(info, challenge);
     EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(challenge.size(), 32u);
@@ -254,7 +254,7 @@ HWTEST_F(SafAgentFenceTaskIdentityTest, GenerateTaskChallenge_005, TestSize.Leve
 {
     TaskIdentityInfo info = MakeLowRiskInfo("InitialWakeUp", 3600);
 
-    std::vector<int32_t> challenge;
+    std::vector<uint8_t> challenge;
     int32_t result = SafAgentFence::GenerateTaskChallenge(info, challenge);
     EXPECT_EQ(result, SAF_SUCCESS);
     EXPECT_EQ(challenge.size(), 32u);
@@ -270,8 +270,8 @@ HWTEST_F(SafAgentFenceTaskIdentityTest, GenerateTaskChallenge_006, TestSize.Leve
 {
     TaskIdentityInfo info = MakeLowRiskInfo("InitialWakeUp", 3600);
 
-    std::vector<int32_t> challenge1;
-    std::vector<int32_t> challenge2;
+    std::vector<uint8_t> challenge1;
+    std::vector<uint8_t> challenge2;
     EXPECT_EQ(SafAgentFence::GenerateTaskChallenge(info, challenge1), SAF_SUCCESS);
     EXPECT_EQ(SafAgentFence::GenerateTaskChallenge(info, challenge2), SAF_SUCCESS);
     EXPECT_EQ(challenge1.size(), 32u);

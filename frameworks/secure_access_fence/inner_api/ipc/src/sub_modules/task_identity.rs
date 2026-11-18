@@ -58,45 +58,22 @@ pub fn serialize_task_identity(identity: &TaskIdentity, parcel: &mut MsgParcel) 
     Ok(())
 }
 
-/// Maximum value for a u8 byte (255).
-const U8_MAX: i32 = 255;
-
-/// Deserialize an i32 list carrying raw bytes (authToken / challenge) from MsgParcel.
-/// Each value must be in u8 range (0~255); values outside this range are rejected.
+/// Deserialize raw bytes (authToken / challenge) from MsgParcel (IDL unsigned char[]).
 pub fn deserialize_i32_u8_list(parcel: &mut MsgParcel) -> Result<Vec<u8>> {
-    let count = parcel.read::<i32>().map_err(ipc_err_handle)?;
-    if count < 0 || count as u32 > crate::MAX_VEC_CAPACITY {
+    let vec = parcel.read::<Vec<u8>>().map_err(ipc_err_handle)?;
+    if vec.len() as u32 > crate::MAX_VEC_CAPACITY {
         return macros_lib::log_throw_error!(
             ErrCode::InvalidArrayLen,
-            "[FATAL][IPC]i32 list size invalid: {}",
-            count
+            "[FATAL][IPC]u8 list size invalid: {}",
+            vec.len()
         );
-    }
-    let mut vec = Vec::with_capacity(count as usize);
-    for _ in 0..count {
-        let val = parcel.read::<i32>().map_err(ipc_err_handle)?;
-        if !(0..=U8_MAX).contains(&val) {
-            return macros_lib::log_throw_error!(
-                ErrCode::InvalidArgument,
-                "[FATAL][IPC]i32 value out of u8 range: {}",
-                val
-            );
-        }
-        vec.push(val as u8);
     }
     Ok(vec)
 }
 
-/// Serialize raw bytes as an i32 list to MsgParcel (for reply).
-pub fn serialize_u8_to_i32_list(bytes: &[u8], parcel: &mut MsgParcel) -> Result<()> {
-    let count = i32::try_from(bytes.len()).map_err(|_| {
-        macros_lib::log_and_into_saf_error!(ErrCode::InvalidArrayLen,
-            "[FATAL][IPC]bytes length overflows i32")
-    })?;
-    parcel.write::<i32>(&count).map_err(ipc_err_handle)?;
-    for byte in bytes {
-        parcel.write::<i32>(&(i32::from(*byte))).map_err(ipc_err_handle)?;
-    }
+/// Serialize raw bytes to MsgParcel (for reply, matches IDL unsigned char[]).
+pub fn serialize_u8_list(bytes: &[u8], parcel: &mut MsgParcel) -> Result<()> {
+    parcel.write::<Vec<u8>>(&bytes.to_vec()).map_err(ipc_err_handle)?;
     Ok(())
 }
 

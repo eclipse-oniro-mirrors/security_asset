@@ -345,7 +345,7 @@ int32_t SafAgentFence::VerifyTicket(
 
 int32_t SafAgentFence::GenerateTaskChallenge(
     const TaskIdentityInfo &taskIdentityInfo,
-    std::vector<int32_t> &challenge)
+    std::vector<uint8_t> &challenge)
 {
     LOGI("SafAgentFence::GenerateTaskChallenge enter");
 
@@ -399,9 +399,9 @@ int32_t SafAgentFence::RevokeTaskIdentity(const std::vector<std::string> &taskId
 }
 
 int32_t SafAgentFence::RetrieveAuthTokenByTaskId(
-    int32_t callerToken,
+    uint32_t callerToken,
     const std::string &taskId,
-    std::vector<int32_t> &authToken)
+    std::vector<uint8_t> &authToken)
 {
     LOGI("SafAgentFence::RetrieveAuthTokenByTaskId enter");
 

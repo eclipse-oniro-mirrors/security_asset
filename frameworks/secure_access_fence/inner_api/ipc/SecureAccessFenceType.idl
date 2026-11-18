@@ -184,7 +184,7 @@ struct TaskIdentityInfo {
     /** Allowable duration for delayed execution. */
     int allowableDuration;
     /** IAM auth token bytes; empty when no authentication is required. */
-    List<int> authToken;
+    unsigned char[] authToken;
 };
 
 struct UserAuthResult {
