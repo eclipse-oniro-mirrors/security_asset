@@ -410,31 +410,6 @@ int32_t CxxQueryStaticCliCmdPermissions(
     return SAF_SUCCESS;
 }
 
-// Rust callable: returns the binder calling token id.
-uint32_t GetCallingTokenId()
-{
-    return IPCSkeleton::GetCallingTokenID();
-}
-
-// Rust callable: resolves os_account_id from a token id.
-// TOKEN_HAP → GetHapTokenInfo → osAccountID; TOKEN_NATIVE/other → 0.
-int32_t GetOsAccountIdFromTokenId(uint32_t tokenId)
-{
-    ATokenTypeEnum tokenType = AccessTokenKit::GetTokenTypeFlag(tokenId);
-    if (tokenType != ATokenTypeEnum::TOKEN_HAP) {
-        LOGI("non-HAP token (type=%{public}d), os_account_id=0", static_cast<int32_t>(tokenType));
-        return 0;
-    }
-    HapTokenInfo hapInfo;
-    int32_t ret = AccessTokenKit::GetHapTokenInfo(tokenId, hapInfo);
-    if (ret != RET_SUCCESS) {
-        LOGE("GetHapTokenInfo failed, ret=%{public}d, os_account_id=0", ret);
-        return 0;
-    }
-    LOGI("HAP token, os_account_id=%{public}d", hapInfo.userID);
-    return hapInfo.userID;
-}
-
 // ---- IPC 505-509 Service functions (TDD stubs - to be implemented in T06-T08) ----
 
 ErrCode QueryAllDeniedPairs(

@@ -86,13 +86,6 @@ ErrCode QueryControlAppStatus(
 // Rust callable: returns boot time in milliseconds, or -1 on failure.
 int64_t GetBootTimeMs();
 
-// Rust callable: returns the binder calling token id.
-uint32_t GetCallingTokenId();
-
-// Rust callable: resolves os_account_id from a token id.
-// For SA (TOKEN_NATIVE): returns 0. For HAP: returns osAccountID from HapTokenInfo.
-int32_t GetOsAccountIdFromTokenId(uint32_t tokenId);
-
 /**
  * @brief Query the full list of explicitly-denied app-pairs for GUI control (IPC 505).
  *

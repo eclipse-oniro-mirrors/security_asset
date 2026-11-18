@@ -38,10 +38,11 @@ graph TD
     SA -->|C++ InnerAPI| FW[Inner API/插件仓]
 
     SA -->|cxx_verify_task_identity| TI[(task_identity 模块)]
-    TI -->|读写| STORE[(磁盘 taskAttributes/challenges)]
-    TI -->|VerifyAuthToken| IAM[IAM useriam 服务]
+    TI -->|读写| STORE[(磁盘 taskAttributes/{uid}/{taskId}.json|.challenge)]
+    TI -->|VerifyAuthToken / RedeemScheduledAuthToken| IAM[IAM useriam 服务]
     SA -->|get_atl_permission_policy| PLUGIN((插件: 锁屏策略))
     SA -->|CheckScreenLock| SCLK[ScreenLock 服务]
+    SA -->|GetHapTokenInfo 解析属主 uid| AT[AccessTokenKit]
 
     subgraph 用户空间
         App
@@ -66,10 +67,11 @@ graph TD
 | 边界类型 | 边界描述 | 跨越的交互 |
 |---------|----------|-----------|
 | 用户空间 ↔ SAF 服务 | 系统应用/Agent 通过 Binder IPC 调用 SAF 服务 | ipccode 12-15、requestToolPermissions/verifyTicket |
-| SAF 服务 ↔ IAM | 高危签发调用 useriam `VerifyAuthToken` 获取 (challenge, atl) | CXX 桥 |
+| SAF 服务 ↔ IAM | 高危签发/校验调用 useriam `VerifyAuthToken` 获取 (challenge, atl)；DELAYED 周期 token 经 `RedeemScheduledAuthToken`（服务端随机 redeem challenge 与 VerifyAuthToken 返回 challenge 比对） | CXX 桥 |
 | SAF 服务 ↔ 插件 | 查询锁屏拒绝权限策略（ATL→permissionPolicy）、授权策略 | plugin process_event（GetAtlPermissionPolicy） |
-| SAF 服务 ↔ 持久化 | 任务凭证与待认证挑战值读写磁盘 | `/data/service/el2/{os_id}/secure_access_fence/agent_plugin/` |
+| SAF 服务 ↔ 持久化 | 任务凭证与待认证挑战值读写磁盘 | `/data/service/el2/{os_id}/secure_access_fence/agent_plugin/taskAttributes/{uid}/` |
 | SAF 服务 ↔ ScreenLock | 锁屏状态检测（`needUnlockScreen` + `IsScreenLocked`） | cxx_is_screen_locked |
+| SAF 服务 ↔ AccessTokenKit | RetrieveAuthTokenByTaskId 入参 callerToken 解析任务属主 uid/os_account_id | GetHapTokenInfo（服务侧，不信调用方自报身份） |
 
 ## STRIDE 威胁分析
 
@@ -90,7 +92,7 @@ graph TD
 | Tampering | 磁盘上的任务凭证被攻击者直接修改 | Med | Low | 目录 0o750 / 文件 0o640 访问控制；HMAC 覆盖 taskAttributes | 定期安全审计；异常行为监控（篡改后校验失败可观测） | P2 | AC-3.3 |
 | Elevation | 锁屏态下未达 ATL 的任务通过伪造 `allowScreenLockExecution=true` 获得锁屏放行 | High | Med | 锁屏豁免 = 声明 + ATL>0 + 待认证挑战值比对 + HMAC；ATL 捆绑于高危路径（真实 IAM 认证） | 锁屏放行必须校验凭证 ATL 有效（INV-5/INV-7；AC-2.2）；policyFound=false 一律不放行 | P0 | AC-2.2, AC-2.3 |
 | DoS | 大量 create/revoke/verify 调用耗尽内存或磁盘 | Med | Med | LRU 32 内存上限（entries+challenges）；authToken≤4096；taskAttributes JSON≤8192；revoke taskIds≤100 | 保持配额上限；插件策略查询最小化 | P1 | AC-4.3, INV-6 |
-| Info Disclosure | 校验失败错误信息泄露内部错误码细节/ATL 值 | Low | Low | 统一错误宏脱敏（log_throw_error! 不打印 authToken/identity 值） | 安全日志脱敏原则持续 | P2 | 全部 |
+| Info Disclosure | 校验失败错误信息泄露内部错误码细节/ATL 值；challenge 值经日志外泄 | Low | Low | 统一错误宏脱敏（log_throw_error! 不打印 authToken/identity 值）；**challenge 值日志已全量移除**（服务端与 NAPI 层均无 challenge hex 打印） | 安全日志脱敏原则持续 | P2 | 全部 |
 
 ### Store[(数据存储：磁盘凭证/challenge)]
 
@@ -105,7 +107,7 @@ graph TD
 | 威胁类型 | 威胁场景 | 影响 | 可能性 | 现有控制 | 建议控制 | 优先级 | 关联 AC/Task |
 |---------|----------|------|--------|----------|----------|--------|-------------|
 | Spoofing | IPC 参数（typedarray/authToken/taskId）越界或格式伪造 | Med | Med | NAPI typedarray 校验（u8 逐元素 0~255）；validator.rs 路径穿越/长度/数量校验；IPC 序列化 u8 范围校验 | 保持全部入口校验；新增字段同步 validator 与 napi 双端 | P1 | AC-1.7, AC-3.4 |
-| Tampering | IAM 返回 challenge/atl 被中间层篡改 | Med | High | 真实 IAM `VerifyAuthToken`（跨进程可信服务）经 CXX 桥；待认证挑战值在签发侧比对 | 不信任任何本地模拟的 atl；高危必须走真实 IAM 路径 | P1 | AC-1.3, AC-1.4 |
+| Tampering | IAM 返回 challenge/atl 或兑换实时 token 被中间层篡改 | Med | High | 真实 IAM `VerifyAuthToken` / `RedeemScheduledAuthToken`（跨进程可信服务）经 CXX 桥；INSTANT 在签发侧与 pending challenge 比对，DELAYED 将 redeem 时服务端随机生成的 challenge 与 VerifyAuthToken 返回 challenge 比对 | 不信任任何本地模拟的 atl；高危必须走真实 IAM 路径 | P1 | AC-1.3, AC-1.4 |
 | Repudiation | 调用方否认曾签发/撤销任务凭证 | Low | Low | 无审计日志（当前无 task 操作审计） | 补充关键操作审计事件（签发/撤销/豁免放行）——建议新增审计打点 | P2 | 全部 |
 | Tampering | 插件返回伪造的锁屏策略（错误 PolicyFound / 空列表语义误用） | Med | Low | 服务侧字段校验（wrapper.rs:243：PolicyFound 必须布尔、PermissionPolicy 字符串列表、空串拦截、found=0 时忽略列表） | 保持服务侧不信任畸形插件响应；插件凭据/域约束由平台供应链保障 | P1 | AC-2.2, AC-2.3 |
 

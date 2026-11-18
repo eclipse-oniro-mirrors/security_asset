@@ -1068,10 +1068,12 @@ int32_t PermissionManager::VerifyTaskIdentity(const PermissionQuery &permissionQ
     bool retFlag = GetOsAccountIdFromUid(callerUid, &osAccountId);
     IF_FALSE_LOGE_RETURN_ERR(retFlag, SAF_ERROR, "VerifyTaskIdentity :: GetOsAccountIdFromUid failed");
 
-    std::string callerTokenId = std::to_string(IPCSkeleton::GetCallingTokenID());
+    // Task identity records are keyed by the task owner's uid (same as generate),
+    // so the IPC caller's uid is passed directly.
+    std::string callerUidStr = std::to_string(callerUid);
     int32_t ret = OHOS::Security::SAF::cxx_verify_task_identity(
         osAccountId,
-        rust::String(callerTokenId),
+        rust::String(callerUidStr),
         rust::String(permissionQuery.taskIdentity.taskAttributes),
         rust::String(permissionQuery.taskIdentity.identity),
         rust::String(permissionQuery.taskIdentity.challenge));

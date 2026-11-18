@@ -67,7 +67,9 @@
 | security_asset | 错误码 | `interfaces/inner_kits/c/secure_access_fence/common/inc/saf_result_defs.h` | 修改 | 内部码 0x71005-0x71008 |
 | security_asset | 构建 | `services/secure_access_fence/core_service/BUILD.gn` | 修改 | 新增源 + `user_auth_framework:userauth_client` 依赖 |
 | security_asset | 构建 | `bundle.json` | 修改 | `user_auth_framework` 加入 deps.components |
-| security_asset | C++ 测试 | `test/secure_access_fence/agent_fence/src/saf_agent_fence_retrieve_auth_token_test.cpp` | 新增 | RetrieveAuthTokenByTaskId 15 个 HWTEST_F |
+| security_asset | C++ 测试 | `test/secure_access_fence/agent_fence/src/saf_agent_fence_retrieve_auth_token_test.cpp` | 新增 | RetrieveAuthTokenByTaskId 24 个 HWTEST_F（含 DELAYED scheduled token 兑换检索） |
+| security_asset | C++ 测试 | `test/secure_access_fence/agent_fence/src/saf_agent_fence_task_identity_test.cpp` | 新增 | 任务身份生成/撤销/挑战链路 HWTEST_F |
+| security_asset | C++ 测试 | `test/secure_access_fence/unittest/kits_ndk/src/saf_agent_fence_task_identity_ndk_test.cpp` | 新增 | NDK 入口任务身份 HWTEST_F |
 | security_asset | Rust 单测 | `test/secure_access_fence/unittest/ut_test/services/core_service/src/` | 新增 | task_identity 模块单测 |
 
 **检查项：**
@@ -130,7 +132,7 @@
 | TASK-1 | API/IDL 声明 + 服务侧鉴权接线 | `.idl`、`saf_agent_fence.*`、`NAPI`、`stub.rs`、`saf_result_defs.h`、BUILD/bundle | AC-1.1,1.2,1.5,1.6,4.1,4.2 | design+spec Approved | IDL/NAPI/InnerAPI 可编译链接；服务侧 201/202 校验通过 | `hb build secure_access_fence` + 单测 | Done |
 | TASK-2 | 任务身份签发/校验核心（双 challenge HMAC + IAM） | `task_identity/mod.rs`、`validator.rs`、`iam_verify_wrapper.*` | AC-1.1~1.4,1.7,4.3 | TASK-1 | 签发/校验/过期/篡改/边界单测通过 | C++/Rust 单测 | Done |
 | TASK-3 | 任务凭证存储（磁盘+LRU+撤销幂等） | `task_identity/store.rs`、`storage_backend.rs` | AC-4.1,4.3,4.4,3.2 | TASK-1 | 磁盘/LRU/撤销/重生成/过期清理单测通过 | Rust 单测 | Done |
-| TASK-4 | 锁屏豁免判定 + 任务有效性检索 | `permission_manager.cpp`、`wrapper.rs`、`plugin_interface.rs`、`saf_agent_fence.*` | AC-2.1~2.4,3.3 | TASK-2, TASK-3 | 豁免矩阵遍历 + RetrieveAuthTokenByTaskId 15 用例通过 | HWTEST_F + 集成 | Done |
+| TASK-4 | 锁屏豁免判定 + 任务有效性检索 | `permission_manager.cpp`、`wrapper.rs`、`plugin_interface.rs`、`saf_agent_fence.*` | AC-2.1~2.4,3.3 | TASK-2, TASK-3 | 豁免矩阵遍历 + RetrieveAuthTokenByTaskId 25 用例通过 | HWTEST_F + 集成 | Done |
 | TASK-5 | verifyTicket 链上任务校验消费 | `lib.rs`（verify_ticket_impl 插入） | AC-3.1~3.5 | TASK-2, TASK-3 | verifyTicket 携带 taskIdentity 校验/消费端到端通过 | 集成/XTS | Done |
 
 ## Task 详情
@@ -524,7 +526,7 @@
 | AC 映射 | AC-2.1~AC-2.4, AC-3.3 |
 | 前置依赖 | TASK-2（authToken/atl 绑定）、TASK-3（检索读库） |
 | 非目标 | verifyTicket 消费（归 TASK-5）；存储/签发（归前序） |
-| 完成判据 | 豁免矩阵遍历（AC-2.1~2.3）与兼容分支（AC-2.4）通过；RetrieveAuthTokenByTaskId 15 用例通过 |
+| 完成判据 | 豁免矩阵遍历（AC-2.1~2.3）与兼容分支（AC-2.4）通过；RetrieveAuthTokenByTaskId 25 用例通过 |
 | 停止条件 | 插件 `GetAtlPermissionPolicy` 契约或 ATL 语义与 spec 冲突时停止回 spec 澄清 |
 | Design 状态/不变量 | STATE-3（插件策略）；INV-5, INV-7；TH-002, TH-003, TH-011 |
 
@@ -558,7 +560,7 @@
 | Modify | `permission_manager.h / .cpp` | TaskAtlAttributes、VerifyAndParseTaskIdentity、锁屏豁免流程 |
 | Modify | `wrapper.rs` | get_atl_permission_policy 对齐 |
 | Modify | `plugin_interface.rs` | EventType + AtlPermissionPolicyKeys |
-| Test | `saf_agent_fence_retrieve_auth_token_test.cpp`（15 用例）+ 豁免矩阵集成用例 | HWTEST_F |
+| Test | `saf_agent_fence_retrieve_auth_token_test.cpp`（25 用例）+ 豁免矩阵集成用例 | HWTEST_F |
 
 **禁止修改文件**
 
@@ -585,7 +587,7 @@
 
 **Steps**
 
-- [ ] 写失败测试：豁免矩阵（声明/ATL/policy/拒绝列表 全组合）；Retrieve 15 用例；插件畸形响应
+- [ ] 写失败测试：豁免矩阵（声明/ATL/policy/拒绝列表 全组合）；Retrieve 25 用例；插件畸形响应
 - [ ] 运行测试，确认 Red
 - [ ] 实现锁屏豁免判定 + 检索接入
 - [ ] 运行测试，确认 GREEN
@@ -612,7 +614,7 @@
 
 | 证据类型 | 命令/路径 | Expected Result | Actual Result |
 |----------|-----------|-----------------|---------------|
-| 单测 | `HWTEST_F saf_agent_fence_retrieve_auth_token_test` | 15/15 通过 | PASS：15/15 通过（Owner 确认） |
+| 单测 | `HWTEST_F saf_agent_fence_retrieve_auth_token_test` | 25/25 通过 | PASS：25/25 通过（Owner 确认） |
 | 集成 | 豁免矩阵 XTS | 4 象限放行/拦截一致 | PASS：豁免矩阵遍历通过（AC-2.1~2.3） |
 | 静态检查 | clippy + clang-tidy | 无新增 | PASS：无新增（构建机） |
 
@@ -622,7 +624,7 @@
 |----|------|
 | 任务描述 | TASK-4：锁屏豁免判定 + 任务有效性检索 |
 | 允许修改 | `permission_manager.*`、`wrapper.rs`、`plugin_interface.rs` |
-| 允许新建 | 豁免矩阵测试、15 用例 |
+| 允许新建 | 豁免矩阵测试、25 用例 |
 | 只读参考 | plugin_interface 事件契约、spec US-2 |
 | Spec 引用 | `AC-2.x,3.3` / `spec.md#用户故事` |
 | Design 引用 | `ADR-2,6` / `STATE-3` / `INV-5,7` |
@@ -636,7 +638,7 @@
 |----------|-------|
 | Spec Compliance | 豁免判定与 AC-2.1~2.4 一致；兼容分支（AC-2.4）未破坏 |
 | Code Quality | 插件响应校验、锁屏边界 |
-| Verification | 矩阵遍历 + 15 用例证据 |
+| Verification | 矩阵遍历 + 25 用例证据 |
 
 ---
 
@@ -769,6 +771,7 @@
 | TASK-3 | `task_identity/store.rs`、`storage_backend.rs` | `task_identity/{store,storage_backend}.rs` | Add | `cd731e5b` | `evidence/reviews/spec-compliance.md#TASK-3` | `evidence/reviews/code-quality.md#TASK-3` | `evidence/reviews/verification.md#execution-records` | 无 |
 | TASK-4 | `permission_manager.*`、`wrapper.rs`、`plugin_interface.rs` | `permission_manager.{h,cpp}`、`wrapper.rs`、`plugin_interface.rs`、`saf_result_defs.h`、`libsecure_access_fence_service.map` | Modify | `fc582502` | `evidence/reviews/spec-compliance.md#TASK-4` | `evidence/reviews/code-quality.md#TASK-4` | `evidence/reviews/verification.md#execution-records` | 无 |
 | TASK-5 | `lib.rs`、`task_identity/mod.rs`（消费） | `lib.rs`（verify_ticket_impl）、`task_identity/mod.rs`（verify_task_identity_and_consume） | Modify | `fc582502` | `evidence/reviews/spec-compliance.md#TASK-5` | `evidence/reviews/code-quality.md#TASK-5` | `evidence/reviews/verification.md#execution-records` | 无 |
+| TASK-2+（评审后演进） | 周期 scheduled authToken（DELAYED 先 `RedeemScheduledAuthToken` 兑换再校验；检索按 executeType 分流；RequestToolPermissions 增加 `verify_task_auth_token` 校验；DELAYED 挑战比较改为 redeem 随机 challenge vs VerifyAuthToken 返回 challenge） | `task_identity/mod.rs`、`iam_verify_wrapper.cpp`、`wrapper.rs`、`permission_manager.cpp`、`stub.rs`、`lib.rs` | Modify | `0043bc2c` 及后续（caller 参数统一 uid、challenge/authToken IPC 载荷定稿为 `List<int>` i32 逐元素、callerToken 经 GetHapTokenInfo 解析 uid） | spec.md（AC-1.3/AC-4.1/R-2/R-3 已刷新对齐） | 代码评审（会话内） | `verification.md#execution-records` | 行为扩展：DELAYED 挑战比较不再依赖存储 pending challenge |
 
 ## 实现偏差和开放问题
 

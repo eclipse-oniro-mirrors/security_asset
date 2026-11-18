@@ -18,6 +18,7 @@ ohos_shared_library("abilitytoolaccessctrl_napi") {
   include_dirs += [ "../../os_dependency/log/inc"]
   include_dirs += [ "../../../common/napi/inc"]
   include_dirs += [ "../../../../interfaces/inner_kits/c/secure_access_fence/agent_fence/inc"]
+  include_dirs += [ "../../../../interfaces/inner_kits/c/secure_access_fence/common/inc"]
   include_dirs += [ "../../../../interfaces/inner_kits/c/secure_access_fence/gui_fence/inc"]
 
   sources = [

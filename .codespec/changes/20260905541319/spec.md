@@ -67,7 +67,7 @@
 **正常流程步骤（供测试脚本编排）：**
 
 1. 系统应用持 `ohos.permission.QUERY_TOOL_PERMISSIONS` 调用 `generateTaskChallenge(taskIdentityInfo)`（taskId 非空、executeType=INSTANT/DELAYED）。
-2. 高危路径：用户在 10 分钟（boot-time）内完成 IAM 机主认证，系统应用携带 authToken 调用 `generateTaskIdentity(taskIdentityInfo)`；低危路径：直接调用 `generateTaskIdentity` 且不携带 authToken。
+2. 高危路径：用户在 10 分钟（boot-time）内完成 IAM 机主认证，系统应用携带 authToken 调用 `generateTaskIdentity(taskIdentityInfo)`（INSTANT 携带普通 authToken；DELAYED 携带周期 scheduled authToken，服务端先经 `RedeemScheduledAuthToken` 兑换为实时 token）；低危路径：直接调用 `generateTaskIdentity` 且不携带 authToken。
 3. 断言 resolve 的 `TaskIdentity{taskAttributes, identity, challenge}`：identity/challenge 均为非空 base64；高危路径 taskAttributes 内含 atl。
 4. 调用 `revokeTaskIdentity([taskId])` 断言 resolve（幂等）。
 5. 断言撤销后对该 taskId 的校验/检索返回 24010002（内部 NOT_FOUND）。
@@ -78,7 +78,7 @@
 |--------|----------|--------------|------|
 | AC-1.1 | WHEN 系统应用持 `ohos.permission.QUERY_TOOL_PERMISSIONS` 调用 `generateTaskChallenge(taskIdentityInfo)` 且 taskId 非空、executeType=INSTANT 或 DELAYED、allowScreenLockExecution 为布尔值 THEN Promise resolve 为 32 字节 `Uint8Array` challenge | System API 返回值 | 正常 |
 | AC-1.2 | WHEN 系统应用调用 `generateTaskIdentity(taskIdentityInfo)` 且未携带 authToken（低危路径） THEN Promise resolve 为 `TaskIdentity{taskAttributes, identity, challenge}`，其中 identity/challenge 为非空 base64 值 | System API 返回值 | 正常 |
-| AC-1.3 | WHEN 系统应用调用 `generateTaskIdentity(taskIdentityInfo)` 且携带 authToken（高危路径），IAM `VerifyAuthToken` 返回的挑战值与**待认证挑战值（pending challenge）**不匹配 THEN reject BusinessError 24010002（内部 `TASK_IDENTITY_MISMATCH`） | System API 错误码 | 异常 |
+| AC-1.3 | WHEN 系统应用调用 `generateTaskIdentity(taskIdentityInfo)` 且携带 authToken（高危路径），IAM 校验返回的挑战值与本次签发绑定的挑战值不匹配 THEN reject BusinessError 24010002（内部 `TASK_IDENTITY_MISMATCH`）。挑战值口径按执行类型区分：INSTANT 比较 `VerifyAuthToken` 返回的挑战值与待认证挑战值（pending challenge）；DELAYED 携带周期 authToken，先经 `RedeemScheduledAuthToken` 兑换为实时 token（兑换时服务端随机生成 redeem challenge），再比较 `VerifyAuthToken` 返回的挑战值与该 redeem challenge | System API 错误码 | 异常 |
 | AC-1.4 | WHEN 高危路径未先生成挑战（待认证挑战值 pending challenge 不存在或超时） THEN reject BusinessError 24010002（内部 `TASK_IDENTITY_NOT_FOUND`） | System API 错误码 | 异常 |
 | AC-1.5 | WHEN 系统应用调用 `revokeTaskIdentity(taskIds)`（1~100 个、非空、无路径穿越字符） THEN Promise resolve；随后对该 taskId 的校验返回非成功（内部 `TASK_IDENTITY_NOT_FOUND` → 对外 24010002） | System API 返回值/错误码 | 正常 |
 | AC-1.6 | WHEN 调用方未持 `QUERY_TOOL_PERMISSIONS` THEN reject 201；WHEN 非系统应用调用 system API THEN reject 202 | System API 错误码 | 异常 |
@@ -139,7 +139,7 @@
 
 | AC编号 | 验收标准 | 可观察表面 | 类型 |
 |--------|----------|--------------|------|
-| AC-4.1 | WHEN 系统 SA 调用 InnerAPI `RetrieveAuthTokenByTaskId(callerToken, taskId)`，凭证未过期、HMAC 校验通过、callerToken 可解析 os_account_id THEN 返回该任务关联的 authToken 字节 | InnerAPI 返回值 | 正常 |
+| AC-4.1 | WHEN 系统 SA 调用 InnerAPI `RetrieveAuthTokenByTaskId(callerToken, taskId)`，凭证未过期、HMAC 校验通过、callerToken 可解析任务属主（经 AccessTokenKit `GetHapTokenInfo` 解析 uid 与 os_account_id） THEN 返回该任务关联的 authToken 字节；INSTANT 任务返回存储的原始 authToken，DELAYED 任务返回经 `RedeemScheduledAuthToken` 兑换后的实时 authToken | InnerAPI 返回值 | 正常 |
 | AC-4.2 | WHEN 调用 `RetrieveAuthTokenByTaskId` 的调用方非系统 SA、或未持 `QUERY_TOOL_PERMISSIONS`、或未持 `INTERACT_ACROSS_LOCAL_ACCOUNTS` THEN 返回权限错误 201 | InnerAPI 错误码 | 异常 |
 | AC-4.3 | WHEN 凭证已过期、已撤销或一次性（INSTANT）任务已执行 THEN `RetrieveAuthTokenByTaskId` 校验返回非成功（对外 24010002） | InnerAPI 错误码 | 异常 |
 | AC-4.4 | WHEN `revokeTaskIdentity` 传入不存在的 taskId THEN Promise resolve（幂等）；重新以相同 taskId 生成后可正常检索 | System API 返回值 | 边界 |
@@ -187,8 +187,8 @@
 | 规则ID | 类型 | 触发条件 | 预期行为 | 边界/约束 | 关联AC |
 |--------|------|----------|----------|-----------|--------|
 | R-1 | 行为 | 系统应用调用 `generateTaskChallenge`，入参合法 | 生成 32 字节随机 challenge，Promise resolve `Uint8Array`；同一 (caller,taskId) 重复调用覆盖旧 challenge | `Uint8Array` 长度=32；challenge 以 (caller, taskId) 为 key 存储 | AC-1.1 |
-| R-2 | 行为 | 正向路径执行：低危不携 authToken / 高危携 authToken 且 IAM 校验通过；凭证校验（检索/执行）有效 | 生成 `TaskIdentity{taskAttributes, identity, challenge}`；taskExpireTime 存储时转为绝对 epoch 秒（-1 表示永不过期，仅 DELAYED）；检索/执行校验时按过期/撤销/篡改判定 | 双 challenge HMAC；identity=base64(HMAC_SHA256(taskAttributes+taskId+challenge2, session_key))；challenge=base64(ch1+ch2)；taskAttributes 含 callerTokenId + authToken(base64) + atl | AC-1.2, AC-3.1, AC-3.5, AC-4.1, AC-4.3 |
-| R-3 | 异常 | 高危路径 IAM `VerifyAuthToken` 返回的挑战值与待认证挑战值（pending challenge）不匹配，或待认证挑战值不存在/超时 | 拒绝签发：对外 24010002（内部 `TASK_IDENTITY_MISMATCH` / `TASK_IDENTITY_NOT_FOUND`） | 待认证挑战值 10 分钟（boot-time）有效 | AC-1.3, AC-1.4 |
+| R-2 | 行为 | 正向路径执行：低危不携 authToken / 高危携 authToken 且 IAM 校验通过；凭证校验（检索/执行）有效 | 生成 `TaskIdentity{taskAttributes, identity, challenge}`；taskExpireTime 存储时转为绝对 epoch 秒（-1 表示永不过期，仅 DELAYED）；检索/执行校验时按过期/撤销/篡改判定 | 双 challenge HMAC；identity=base64(HMAC_SHA256(taskAttributes+taskId+challenge2, session_key))；challenge=base64(ch1+ch2)；taskAttributes 含 callerUid + authToken(base64) + atl（DELAYED 存储原始输入的周期 authToken） | AC-1.2, AC-3.1, AC-3.5, AC-4.1, AC-4.3 |
+| R-3 | 异常 | 高危路径 IAM 校验挑战值不匹配或待认证挑战值缺失 | INSTANT：`VerifyAuthToken` 返回的挑战值与待认证挑战值（pending challenge，10 分钟 boot-time 有效）不匹配或不存在；DELAYED：`RedeemScheduledAuthToken` 兑换时随机生成的 challenge 与 `VerifyAuthToken` 返回的挑战值不匹配。均拒绝签发：对外 24010002（内部 `TASK_IDENTITY_MISMATCH` / `TASK_IDENTITY_NOT_FOUND`） | DELAYED 路径的挑战比对不依赖存储的 pending challenge | AC-1.3, AC-1.4 |
 | R-4 | 行为 | `revokeTaskIdentity(taskIds)` / `RetrieveAuthTokenByTaskId` / 重新生成同 taskId | 撤销：Promise resolve，删除对应记录，幂等（不存在的 taskId 不报错）；检索：返回 authToken 字节；撤销后再生成同 taskId 可正常检索 | taskIds 1~100 个、非空、无路径穿越字符（10 种 pattern） | AC-1.5, AC-4.1, AC-4.4 |
 | R-5 | 异常 | 调用方权限不足或非系统应用 | 权限不足返回 201；非系统应用调用 system API 返回 202；检索类调用非系统 SA/缺权限返回 201 | `QUERY_TOOL_PERMISSIONS`；检索额外需 `INTERACT_ACROSS_LOCAL_ACCOUNTS` | AC-1.6, AC-4.2 |
 | R-6 | 边界 | 入参非法：taskId 空/executeType 非法/authToken 超 4096/allowableDuration 非法/callerToken 空或 0 | 拒绝并返回 24010000 | authToken ≤4096；**allowableDuration 按 IAM 要求为毫秒，约束 (0, 86400000]**；callerToken 空或 "0" 视为非法 | AC-1.7, AC-3.4 |
@@ -217,7 +217,7 @@
 | VM-11 | R-9 / AC-3.1, AC-3.2 | XTS 用例 / 测试 HAP：verifyTicket 携带 taskIdentity（合法 / 一次性任务已执行 / 已撤销） | XTS 或测试 HAP（JS 入口） | 未实现任务凭证校验时，verifyTicket 携带非法/一次性已执行的凭证仍通过 | 有效 DELAYED 校验通过；INSTANT 校验通过并执行后重复校验失败；已撤销→24010002 |
 | VM-12 | R-9 / AC-3.4 | XTS 用例：verifyTicket 携带 taskIdentity 但 callerToken 空/0 | XTS 或测试 HAP（JS 入口） | 未做 callerToken 校验时空 token 被接受 | 24010000（内部 InvalidArgument） |
 | VM-13 | R-7,R-9 / AC-3.3, AC-3.5 | XTS 用例 / 测试 HAP：锁屏态 verifyTicket（DELAYED/-1，ATL 达标） | XTS 或测试 HAP（JS 入口） | 锁屏执行豁免未实现时，锁屏态校验被拦截 | 锁屏态校验通过、任务可执行/拉起 |
-| VM-14 | R-2,R-9 / AC-4.1, AC-4.3 | C++ TDD：`saf_agent_fence_retrieve_auth_token_test.cpp`（15 用例） | TDD 单测（HWTEST_F，C++ InnerAPI 入口） | 检索路径缺失时返回错误而非 authToken 字节；过期/撤销/篡改凭证仍返回 | 有效凭证返回 authToken 字节；过期/撤销/篡改→24010002 |
+| VM-14 | R-2,R-9 / AC-4.1, AC-4.3 | C++ TDD：`saf_agent_fence_retrieve_auth_token_test.cpp`（25 用例）+ `saf_agent_fence_task_identity_test.cpp` + `saf_agent_fence_task_identity_ndk_test.cpp` | TDD 单测（HWTEST_F，C++ InnerAPI 入口） | 检索路径缺失时返回错误而非 authToken 字节；过期/撤销/篡改凭证仍返回 | 有效凭证返回 authToken 字节；过期/撤销/篡改→24010002 |
 | VM-15 | R-5 / AC-4.2 | C++ TDD：RetrieveAuthTokenByTaskId 权限 | TDD 单测（HWTEST_F，C++ InnerAPI 入口） | 未做系统 SA/权限校验时任意调用成功 | 201 |
 | VM-16 | R-7,R-9 / AC-2.1, AC-3.1（性能对照实验） | benchmark：锁屏态 vs 解锁态下的 `requestToolPermissions`（携带 taskIdentity 锁屏豁免）与 `verifyTicket`（锁屏拉起）时延对照 | benchmark（≥100 次采样 / 统一计时口径或 hilog 计时桩） | 无对照基线或未采集冷路径时无法证明劣化 <150ms | 锁屏拉起校验时延相对解锁态基线**最大劣化 ≤150ms**；锁屏态单次拉起校验 P95 ≤250ms |
 
@@ -230,8 +230,8 @@
 | # | 场景 | 输入样例 | 预期输出/断言 |
 |---|------|----------|---------------|
 | TD-1 | 低危签发 | `generateTaskIdentity({ taskId: "agent_task_123", taskExpireTime: 3600, executeType: ExecuteType.DELAYED, allowScreenLockExecution: true })`（不携 authToken） | resolve `TaskIdentity`；identity 为非空 base64(HMAC)，challenge 解码后 64 字节 |
-| TD-2 | 高危签发（ATL3） | `generateTaskChallenge(...)` → IAM 认证（ATL=30000）→ `generateTaskIdentity({ ..., authToken: <32B> })` | resolve `TaskIdentity`；taskAttributes 含 atl=30000 |
-| TD-3 | 高危 challenge 不匹配 | 挑战值 A 生成后，以 IAM 返回挑战值 B 携 authToken 调用 `generateTaskIdentity` | reject 24010002（内部 MISMATCH） |
+| TD-2 | 高危签发（ATL3） | `generateTaskChallenge(...)` → IAM 认证（ATL=30000）→ `generateTaskIdentity({ ..., authToken: <32B> })`（INSTANT 携普通 authToken；DELAYED 携周期 scheduled authToken，服务端先 Redeem 兑换） | resolve `TaskIdentity`；taskAttributes 含 atl=30000；DELAYED 任务 JSON 存储原始周期 authToken |
+| TD-3 | 高危 challenge 不匹配 | INSTANT：挑战值 A 生成后，以 IAM 返回挑战值 B 携 authToken 调用 `generateTaskIdentity`；DELAYED：redeem 时随机生成的 challenge 与 `VerifyAuthToken` 返回的挑战值不一致 | reject 24010002（内部 MISMATCH） |
 | TD-4 | 撤销 | `revokeTaskIdentity(["agent_task_123"])` | resolve（幂等）；随后检索/校验返回 24010002 |
 | TD-5 | 锁屏放行（AC-2.1） | TD-2 凭证 + `permissionQuery.taskIdentity` 携带 + 设备锁屏 + 请求权限不在 ATL3 拒绝列表 | 正常进入授权+ticket 流程，无 24010006 |
 | TD-6 | 锁屏拦截（AC-2.2） | 同 TD-5 但 `allowScreenLockExecution=false` 或 ATL<=0 | 24010006，不生成 ticket |
@@ -245,7 +245,7 @@
 | 201 | 调用方无 `QUERY_TOOL_PERMISSIONS`（或检索类无 `INTERACT_ACROSS_LOCAL_ACCOUNTS`） | AC-1.6, AC-4.2 |
 | 202 | 非系统应用调用 System API | AC-1.6 |
 | 24010000 | taskId 空、executeType=0/3、authToken 4097 字节、allowableDuration=0 或 86400001、callerToken 空或 "0" | AC-1.7, AC-3.4 |
-| 24010002 | IAM challenge 不匹配 / 无 pending challenge / 凭证已撤销 / 已过期 / 篡改 / INSTANT 已执行 | AC-1.3, AC-1.4, AC-1.5, AC-3.2, AC-4.3 |
+| 24010002 | IAM challenge 不匹配（INSTANT pending / DELAYED redeem） / 无 pending challenge / 凭证已撤销 / 已过期 / 篡改 / INSTANT 已执行 | AC-1.3, AC-1.4, AC-1.5, AC-3.2, AC-4.3 |
 | 24010006 | 锁屏态未豁免（无 taskIdentity / allowScreenLockExecution=false / ATL<=0 / policyFound=false / 命中拒绝列表） | AC-2.2, AC-2.3, AC-3.3 |
 
 ## API 变更分析
@@ -257,9 +257,9 @@
 | API 名称 | 开放级别 | 入参概要 | 返回值 | 错误码范围 | 功能描述 | Depends On（外部模块 API） | 关联 AC |
 |----------|----------|----------|--------|------------|----------|---------------------------|---------|
 | `generateTaskChallenge` | System | `TaskIdentityInfo` | `Promise<Uint8Array>` | 201/202/24010000/24010001/24010002 | 生成任务认证挑战值 | 无外部模块 API（本地 CSPRNG 生成）；不依赖 IAM | AC-1.1, AC-1.6, AC-1.7 |
-| `generateTaskIdentity` | System | `TaskIdentityInfo` | `Promise<TaskIdentity>` | 201/202/24010000/24010001/24010002 | 为代理命令生成基于任务的身份认证身份（含机主认证 ATL 绑定） | **高危路径依赖**：`useriam_framework` 的 `UserAccessCtrlClient::VerifyAuthToken`（经本仓 CXX 桥）；低危路径不依赖 | AC-1.2, AC-1.3, AC-1.4, AC-1.6, AC-1.7, AC-2.1, AC-2.2, AC-3.5 |
+| `generateTaskIdentity` | System | `TaskIdentityInfo` | `Promise<TaskIdentity>` | 201/202/24010000/24010001/24010002 | 为代理命令生成基于任务的身份认证身份（含机主认证 ATL 绑定） | **高危路径依赖**：`useriam_framework` 的 `UserAccessCtrlClient::VerifyAuthToken` 与 `RedeemScheduledAuthToken`（经本仓 CXX 桥，DELAYED 周期 token 先兑换）；低危路径不依赖 | AC-1.2, AC-1.3, AC-1.4, AC-1.6, AC-1.7, AC-2.1, AC-2.2, AC-3.5 |
 | `revokeTaskIdentity` | System | `string[]`（taskId） | `Promise<void>` | 201/202/24010000/24010001/24010002 | 批量撤销任务认证标识 | 无外部模块 API（本地删除） | AC-1.5, AC-4.4 |
-| `RetrieveAuthTokenByTaskId` | InnerAPI | `callerToken` + `taskId` | authToken 字节 | 201/24010000/24010001/24010002 | 任务有效性校验：校验任务凭证并返回关联 authToken，作为系统侧校验/放行条件 | 无外部模块 API（服务侧本地校验）；调用方权限复用既有 PERMISSION 体系 | AC-4.1, AC-4.2, AC-4.3 |
+| `RetrieveAuthTokenByTaskId` | InnerAPI | `callerToken` + `taskId` | authToken 字节 | 201/24010000/24010001/24010002 | 任务有效性校验：校验任务凭证并返回关联 authToken，作为系统侧校验/放行条件 | `RedeemScheduledAuthToken`（DELAYED 检索兑换）；callerToken→uid 解析（AccessTokenKit `GetHapTokenInfo`，服务侧完成） | AC-4.1, AC-4.2, AC-4.3 |
 
 > **变更 API 的 Depends On：** 既有 `requestToolPermissions`（锁屏豁免分支）与 `verifyTicket`（任务校验分支）依赖：①插件（闭源）`GetAtlPermissionPolicy` 事件（锁屏拒绝权限策略来源）；②IAM `VerifyAuthToken` 认证结果（高危路径含 ATL）。未携带 taskIdentity 时无上述新增依赖。
 
@@ -280,7 +280,7 @@
 | `TaskIdentityInfo.allowScreenLockExecution` | New API | System | `boolean`（@since 26.1.0） | 生成任务身份时声明任务是否允许锁屏执行 | 允许锁屏执行标记 | `D:\@ohos.abilityToolAccessCtrl.d.ts:899`；New 依据 `proposal.md` 目标 2（AC-2.1） | AC-2.1 |
 | `ExecuteType` | New API | System | `enum { INSTANT = 0x01, DELAYED = 0x02 }` | 任务执行类别输入 | 定义任务即时/延时类型 | `D:\@ohos.abilityToolAccessCtrl.d.ts:833`；New 依据 `proposal.md` 目标 1（AC-1.1） | AC-1.1 |
 | `TaskIdentity` | New API | System | `interface TaskIdentity { taskAttributes: string; identity: string; challenge: string }` | 生成身份后的返回 | 任务身份凭证 | `D:\@ohos.abilityToolAccessCtrl.d.ts:794`；New 依据 `proposal.md` 目标 1（AC-1.2） | AC-1.2 |
-| `RetrieveAuthTokenByTaskId` | New API | InnerAPI | `static int32_t RetrieveAuthTokenByTaskId(int32_t callerToken, const std::string &taskId, std::vector<int32_t> &authToken)` | 系统 SA 持 QUERY+INTERACT_ACROSS 权限；凭证未过期、HMAC 校验通过、callerToken 可解析 os_account_id | 校验通过返回 authToken 字节（输出参数）；权限不足 201；NotFound/Expired/Mismatch 对外映射 24010002 | `New`: 依据 `proposal.md` 目标 2（系统侧任务有效性校验 InnerApi，AC-4.1）；实现已落 `saf_agent_fence.h:236` | AC-4.1, AC-4.2, AC-4.3 |
+| `RetrieveAuthTokenByTaskId` | New API | InnerAPI | `static int32_t RetrieveAuthTokenByTaskId(uint32_t callerToken, const std::string &taskId, std::vector<uint8_t> &authToken)`（内部 IPC 载荷仍为 `List<int>` i32 逐元素，Inner API 边界转换为 uint8 字节） | 系统 SA 持 QUERY+INTERACT_ACROSS 权限；凭证未过期、HMAC 校验通过、callerToken 可解析任务属主 uid 与 os_account_id | 校验通过返回 authToken 字节（uint8 输出参数）；权限不足 201；NotFound/Expired/Mismatch 对外映射 24010002 | `New`: 依据 `proposal.md` 目标 2（系统侧任务有效性校验 InnerApi，AC-4.1）；实现已落 `saf_agent_fence.h:207` | AC-4.1, AC-4.2, AC-4.3 |
 | BusinessError 201 | Existing Error Code | System | `201` | 调用方无 `QUERY_TOOL_PERMISSIONS` | reject BusinessError 201 | `D:\@ohos.abilityToolAccessCtrl.d.ts:986/1203/1286`（既有声明错误码） | AC-1.6, AC-4.2 |
 | BusinessError 202 | Existing Error Code | System | `202` | 非系统应用调用 system API | reject BusinessError 202 | `.d.ts:1205,1287` | AC-1.6 |
 | BusinessError 24010000 | Existing Error Code | System | `24010000` | 参数无效（taskId 空/executeType 非法/allowableDuration 越界/callerToken 空或 0 等） | reject BusinessError 24010000 | `D:\@ohos.abilityToolAccessCtrl.d.ts:1206`（既有声明错误码，参数无效语义） | AC-1.7, AC-3.4 |
@@ -334,7 +334,7 @@
 | 返回值 | `Promise<TaskIdentity>` — {taskAttributes, identity, challenge} |
 | 开放级别 | System |
 | 错误码 | 201 / 202 / 24010000 / 24010001 / 24010002 |
-| Depends On（外部模块 API） | 高危路径：`useriam_framework` `UserAccessCtrlClient::VerifyAuthToken`（经 CXX 桥） |
+| Depends On（外部模块 API） | 高危路径：`useriam_framework` `UserAccessCtrlClient::VerifyAuthToken` 与 `RedeemScheduledAuthToken`（经 CXX 桥；DELAYED 周期 token 先兑换） |
 | 关联 AC | AC-1.2, AC-1.3, AC-1.4, AC-1.5, AC-1.6, AC-1.7, AC-2.1, AC-2.2 |
 
 **参数约束**
@@ -346,10 +346,12 @@
 | # | 触发条件 | 可观察表面 | 预期行为 | 关联 AC |
 |---|----------|--------------|----------|---------|
 | 1 | 不携 authToken（低危） | System API | resolve TaskIdentity（identity/challenge 为 base64 值） | AC-1.2 |
-| 2 | 携 authToken 且 IAM 校验通过（高危） | System API | resolve TaskIdentity（taskAttributes 含 authToken+atl） | AC-1.2 |
-| 3 | 携 authToken 但 IAM challenge 不匹配 | System API | reject 24010002（MISMATCH） | AC-1.3 |
-| 4 | 高危未先 challenge / 已超时 | System API | reject 24010002（NOT_FOUND） | AC-1.4 |
-| 5 | 入参非法 | System API | reject 24010000 | AC-1.7 |
+| 2 | INSTANT 携普通 authToken 且 IAM 校验通过（高危） | System API | resolve TaskIdentity（taskAttributes 含 authToken+atl） | AC-1.2 |
+| 3 | DELAYED 携周期 scheduled authToken 且兑换+校验通过（高危） | System API | resolve TaskIdentity（taskAttributes 存储原始周期 authToken+atl） | AC-1.2 |
+| 4 | INSTANT 携 authToken 但 IAM challenge 与 pending 不匹配 | System API | reject 24010002（MISMATCH） | AC-1.3 |
+| 5 | DELAYED 的 VerifyAuthToken 返回 challenge 与 redeem challenge 不匹配 | System API | reject 24010002（MISMATCH） | AC-1.3 |
+| 6 | 高危未先 challenge / 已超时（INSTANT） | System API | reject 24010002（NOT_FOUND） | AC-1.4 |
+| 7 | 入参非法 | System API | reject 24010000 | AC-1.7 |
 
 **abilityToolAccessCtrl.revokeTaskIdentity**
 
@@ -380,20 +382,22 @@
 
 | 属性 | 值 |
 |------|-----|
-| 函数签名 | `RetrieveAuthTokenByTaskId(callerToken, taskId)`（C++，具体签名见本仓 `saf_agent_fence.h`） |
-| 返回值 | authToken 字节 |
+| 函数签名 | `static int32_t RetrieveAuthTokenByTaskId(uint32_t callerToken, const std::string &taskId, std::vector<uint8_t> &authToken)`（本仓 `saf_agent_fence.h`；内部 IPC 载荷仍为 `List<int>`，Inner API 边界转换为 uint8 字节） |
+| 返回值 | authToken 字节（INSTANT 返回存储的原始 token，DELAYED 返回兑换后的实时 token） |
 | 开放级别 | InnerAPI |
 | 错误码 | 201 / 24010000 / 24010001 / 24010002 |
-| Depends On（外部模块 API） | 无（服务侧本地校验；调用方权限复用既有 PERMISSION 体系） |
+| Depends On（外部模块 API） | `RedeemScheduledAuthToken`（DELAYED 检索兑换）；callerToken→uid/os_account_id 解析（AccessTokenKit `GetHapTokenInfo`，服务侧完成） |
 | 关联 AC | AC-4.1, AC-4.2, AC-4.3 |
 
 **行为场景**
 
 | # | 触发条件 | 可观察表面 | 预期行为 | 关联 AC |
 |---|----------|--------------|----------|---------|
-| 1 | 系统 SA + 凭证有效 + HMAC 通过 | InnerAPI | 返回 authToken 字节 | AC-4.1 |
-| 2 | 凭证过期/篡改/撤销 | InnerAPI | 映射 24010002（EXPIRED / MISMATCH / NOT_FOUND） | AC-4.3 |
-| 3 | 非系统 SA / 缺权限 | InnerAPI | 201 | AC-4.2 |
+| 1 | 系统 SA + 凭证有效 + HMAC 通过（INSTANT） | InnerAPI | 返回存储的 authToken 字节 | AC-4.1 |
+| 2 | 系统 SA + 凭证有效 + HMAC 通过（DELAYED） | InnerAPI | 返回经 RedeemScheduledAuthToken 兑换后的实时 authToken 字节 | AC-4.1 |
+| 3 | 凭证过期/篡改/撤销 | InnerAPI | 映射 24010002（EXPIRED / MISMATCH / NOT_FOUND） | AC-4.3 |
+| 4 | 非系统 SA / 缺权限 | InnerAPI | 201 | AC-4.2 |
+| 5 | callerToken 非法（无法解析 HAP 属主） | InnerAPI | 24010002（记录不可达 → NOT_FOUND） | AC-4.1 |
 
 ## API 规格定义
 

@@ -325,49 +325,10 @@ napi_status ValidateTaskIdentityInfo(const napi_env env, const SAF::TaskIdentity
     return napi_ok;
 }
 
-/// Parses a JS value as a byte array (Uint8Array or ArrayBuffer) into vector<int32_t>.
-/// Each byte (0~255) is stored as one int32_t element, matching the IDL List<int> type
-/// used for authToken transport. Values are always 0~255 (u8 range), validated in
-/// ValidateTaskIdentityInfo and Rust validator.
-napi_status NapiGetProperty(const napi_env env, napi_value object, std::vector<uint8_t> &values)
-{
-    NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);
-    bool isTypedArray = false;
-    NAPI_CALL_RETURN_ERR(env, napi_is_typedarray(env, object, &isTypedArray));
-    if (isTypedArray) {
-        napi_typedarray_type type;
-        size_t length = 0;
-        void *data = nullptr;
-        napi_value arraybuffer = nullptr;
-        size_t byteOffset = 0;
-        NAPI_CALL_RETURN_ERR(env, napi_get_typedarray_info(env, object, &type, &length, &data,
-            &arraybuffer, &byteOffset));
-        if (type != napi_uint8_array) {
-            NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "authToken must be Uint8Array");
-        }
-        if (data == nullptr) {
-            NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "authToken data is null");
-        }
-        const uint8_t *bytes = static_cast<const uint8_t *>(data);
-        values.assign(bytes, bytes + length);
-        return napi_ok;
-    }
-    bool isArrayBuffer = false;
-    NAPI_CALL_RETURN_ERR(env, napi_is_arraybuffer(env, object, &isArrayBuffer));
-    if (isArrayBuffer) {
-        void *data = nullptr;
-        size_t length = 0;
-        NAPI_CALL_RETURN_ERR(env, napi_get_arraybuffer_info(env, object, &data, &length));
-        if (data == nullptr) {
-            NAPI_THROW_RETURN_ERR(env, true, INVALID_PARAMETER, "authToken data is null");
-        }
-        const uint8_t *bytes = static_cast<const uint8_t *>(data);
-        values.assign(bytes, bytes + length);
-        return napi_ok;
-    }
-    return napi_ok;
-}
-
+/// Parses a JS value as a byte array (Uint8Array or ArrayBuffer) or a JS number array
+/// into vector<int32_t>. Each byte (0~255) is stored as one int32_t element, matching
+/// the IDL List<int> type used for authToken / challenge transport. Values are always
+/// 0~255 (u8 range), validated in ValidateTaskIdentityInfo and Rust validator.
 napi_status NapiGetProperty(const napi_env env, napi_value object, std::vector<int32_t> &values)
 {
     NAPI_RETURN_IF_VALUE_UNDEFINED(env, object);

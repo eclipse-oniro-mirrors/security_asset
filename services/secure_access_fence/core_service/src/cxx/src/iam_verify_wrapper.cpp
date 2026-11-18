@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "saf_log.h"
+#include "saf_secure_clear.h"
 
 #ifdef SAF_SUPPORT_USER_AUTH_FRAMEWORK
 #include "user_access_ctrl_client.h"
@@ -119,6 +120,8 @@ IamVerifyResult VerifyAuthToken(const rust::Vec<uint8_t> &authToken, uint64_t al
     auto future = sharedPromise->get_future();
     auto callback = std::make_shared<VerifyTokenCallbackWrapper>(sharedPromise);
     UserAccessCtrlClient::GetInstance().VerifyAuthToken(token, allowableDurationMs, callback);
+    // The client call has serialized the token into the IPC parcel; wipe our copy.
+    SecureClear(token);
 
     if (future.wait_for(std::chrono::milliseconds(IAM_VERIFY_TIMEOUT_MS)) == std::future_status::timeout) {
         LOGE("VerifyAuthToken timeout");
@@ -150,6 +153,9 @@ IamRedeemResult RedeemScheduledAuthToken(
     auto future = sharedPromise->get_future();
     auto callback = std::make_shared<RedeemTokenCallbackWrapper>(sharedPromise);
     UserAccessCtrlClient::GetInstance().RedeemScheduledAuthToken(challengeVec, scheduleTokenVec, callback);
+    // The client call has serialized the inputs into the IPC parcel; wipe our copies.
+    SecureClear(challengeVec);
+    SecureClear(scheduleTokenVec);
 
     if (future.wait_for(std::chrono::milliseconds(IAM_VERIFY_TIMEOUT_MS)) == std::future_status::timeout) {
         LOGE("RedeemScheduledAuthToken timeout");

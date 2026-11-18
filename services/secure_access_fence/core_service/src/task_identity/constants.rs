@@ -49,7 +49,7 @@ impl TaskIdentityKeys {
 // IMPORTANT: Keep in sync with napi_common.h constants.
 // ============================================================================
 
-/// Max path segment length for taskId, caller_token, etc.
+/// Max path segment length for taskId, caller uid, etc.
 pub const MAX_PATH_SEGMENT_LEN: usize = 256;
 /// Max auth token size in bytes (DoS prevention).
 pub const MAX_AUTH_TOKEN_SIZE: usize = 1024;

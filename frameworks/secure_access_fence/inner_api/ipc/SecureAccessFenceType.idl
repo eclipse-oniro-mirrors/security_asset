@@ -183,8 +183,8 @@ struct TaskIdentityInfo {
     boolean allowScreenLockExecution;
     /** Allowable duration for delayed execution. */
     int allowableDuration;
-    /** IAM auth token bytes; empty when no authentication is required. */
-    unsigned char[] authToken;
+    /** IAM auth token bytes (each byte as an int32 element); empty when no authentication is required. */
+    List<int> authToken;
 };
 
 struct UserAuthResult {

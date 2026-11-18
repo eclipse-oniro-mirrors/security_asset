@@ -41,7 +41,7 @@ pub struct TaskIdentityRecord {
     pub allowable_duration: i32,
 }
 
-// (caller, taskId)
+// (caller uid, taskId)
 type StoreKey = (String, String);
 
 pub struct ChallengeEntry {

@@ -119,10 +119,12 @@ pub mod ffi {
             permission_names: Vec<String>,
             caller_token_id: i32,
         ) -> i32;
-        /// CXX bridge for task identity verification (memory only, used by RequestToolPermissions).
+        /// CXX bridge for task identity verification (memory first,
+        /// disk fallback for long-duration tasks after the SA restarts).
+        /// caller_uid: the task owner's uid (records are keyed by uid).
         fn cxx_verify_task_identity(
             os_account_id: i32,
-            caller_token_id: &str,
+            caller_uid: &str,
             task_attributes: &str,
             identity: &str,
             challenge: &str,
@@ -178,10 +180,6 @@ pub mod ffi {
             caller_token_id: u32,
             result: &mut Vec<CxxCommandPermissionInfo>,
         ) -> i32;
-        /// Get the binder calling token id.
-        fn GetCallingTokenId() -> u32;
-        /// Resolve os_account_id from a token id (SA→0, HAP→osAccountID).
-        fn GetOsAccountIdFromTokenId(tokenId: u32) -> i32;
         /// Verify auth token via IAM, returns challenge + authTrustLevel.
         fn VerifyAuthToken(authToken: &Vec<u8>, allowableDurationMs: u64) -> IamVerifyResult;
         /// Redeem a scheduled auth token into a short-lived real-time auth token via IAM.
@@ -464,23 +462,18 @@ pub fn cxx_store_controlled_grant_record(
     }
 }
 
-/// Get the binder calling token id.
-pub fn get_calling_token_id() -> u32 {
-    ffi::GetCallingTokenId()
-}
-
 /// C++ -> Rust bridge for task identity verification (memory first,
 /// disk fallback for long-duration tasks after the SA restarts).
 pub fn cxx_verify_task_identity(
     os_account_id: i32,
-    caller_token_id: &str,
+    caller_uid: &str,
     task_attributes: &str,
     identity: &str,
     challenge: &str,
 ) -> i32 {
-    let caller: u32 = caller_token_id.parse().unwrap_or(0);
+    let caller: u32 = caller_uid.parse().unwrap_or(0);
     logi!(
-        "[Wrapper cxx_verify_task_identity] os_account_id = {}, caller = {}, task_attributes_len = {}",
+        "[Wrapper cxx_verify_task_identity] os_account_id = {}, caller_uid = {}, task_attributes_len = {}",
         os_account_id, caller, task_attributes.len()
     );
     match crate::task_identity::verify_task_identity(

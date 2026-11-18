@@ -143,6 +143,18 @@ fn get_calling_os_account_id() -> IpcResult<i32> {
     })
 }
 
+/// Resolves the binder calling uid once and derives the os_account_id from it.
+/// Both are returned so handlers can pass them down to the service layer
+/// without a second uid fetch (avoids redundant binder/FFI calls).
+fn get_calling_uid_and_os_account_id() -> IpcResult<(u32, i32)> {
+    let uid = Skeleton::calling_uid();
+    let os_account_id = get_user_id(uid).map_err(|e| {
+        loge!("[FATAL]Get user id failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })?;
+    Ok((uid as u32, os_account_id))
+}
+
 fn handle_batch_generate_ticket(stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel) -> IpcResult<()> {
     let (os_account_id, caller_id, messages) = deserialize_batch_generate_ticket_request(data).map_err(|e| {
         loge!("[FATAL]Deserialize batch generate ticket request failed: {}", e.msg);
@@ -604,13 +616,14 @@ fn handle_generate_task_challenge(
         return Ok(());
     }
 
-    let caller_token = crate::wrapper::ffi::GetCallingTokenId();
-    let os_account_id = crate::wrapper::ffi::GetOsAccountIdFromTokenId(caller_token);
+    // Resolve the calling uid once; os_account_id is derived from it and both
+    // are passed down (records are uid-keyed, no second uid fetch in the service).
+    let (caller_uid, os_account_id) = get_calling_uid_and_os_account_id()?;
 
     logi!("GenerateTaskChallenge received, os_account_id: {}, task_id_len: {}",
         os_account_id, info.task_id.len());
 
-    let result = stub.generate_task_challenge(os_account_id, info);
+    let result = stub.generate_task_challenge(os_account_id, caller_uid, info);
 
     reply.write::<i32>(&(IPC_SUCCESS as i32))?;
     match result {
@@ -652,13 +665,14 @@ fn handle_generate_task_identity(
         return Ok(());
     }
 
-    let caller_token = crate::wrapper::ffi::GetCallingTokenId();
-    let os_account_id = crate::wrapper::ffi::GetOsAccountIdFromTokenId(caller_token);
+    // Resolve the calling uid once; os_account_id is derived from it and both
+    // are passed down (records are uid-keyed, no second uid fetch in the service).
+    let (caller_uid, os_account_id) = get_calling_uid_and_os_account_id()?;
 
     logi!("GenerateTaskIdentity received, os_account_id: {}, task_id_len: {}",
         os_account_id, info.task_id.len());
 
-    let result = stub.generate_task_identity(os_account_id, info);
+    let result = stub.generate_task_identity(os_account_id, caller_uid, info);
 
     reply.write::<i32>(&(IPC_SUCCESS as i32))?;
     match result {
@@ -698,13 +712,14 @@ fn handle_revoke_task_identity(
         return Ok(());
     }
 
-    let caller_token = crate::wrapper::ffi::GetCallingTokenId();
-    let os_account_id = crate::wrapper::ffi::GetOsAccountIdFromTokenId(caller_token);
+    // Resolve the calling uid once; os_account_id is derived from it and both
+    // are passed down (records are uid-keyed, no second uid fetch in the service).
+    let (caller_uid, os_account_id) = get_calling_uid_and_os_account_id()?;
 
     logi!("RevokeTaskIdentity received, os_account_id: {}, task_count: {}",
         os_account_id, task_ids.len());
 
-    let result = stub.revoke_task_identity(os_account_id, task_ids);
+    let result = stub.revoke_task_identity(os_account_id, caller_uid, task_ids);
 
     reply.write::<i32>(&(IPC_SUCCESS as i32))?;
     match result {
@@ -723,18 +738,17 @@ fn handle_revoke_task_identity(
 fn handle_retrieve_auth_token_by_task_id(
     stub: &SAFService, data: &mut MsgParcel, reply: &mut MsgParcel
 ) -> IpcResult<()> {
-    let caller_token_i32 = data.read::<i32>().map_err(|e| {
-        loge!("[FATAL]Deserialize RetrieveAuthTokenByTaskId callerToken failed: {:?}", e);
+    let uid = data.read::<u32>().map_err(|e| {
+        loge!("[FATAL]Deserialize RetrieveAuthTokenByTaskId uid failed: {:?}", e);
         IpcStatusCode::Failed
     })?;
-    let caller_token: u32 = caller_token_i32 as u32;
     let task_id = data.read_string16().map_err(|e| {
         loge!("[FATAL]Deserialize RetrieveAuthTokenByTaskId taskId failed: {:?}", e);
         IpcStatusCode::Failed
     })?;
 
-    if caller_token == 0 {
-        loge!("[FATAL]RetrieveAuthTokenByTaskId invalid caller_token: {}", caller_token);
+    if uid == 0 {
+        loge!("[FATAL]RetrieveAuthTokenByTaskId invalid uid: {}", uid);
         reply.write::<i32>(&(IPC_SUCCESS as i32))?;
         let empty: Vec<u8> = vec![];
         serialize_u8_list(&empty, reply).map_err(|_| IpcStatusCode::Failed)?;
@@ -751,13 +765,17 @@ fn handle_retrieve_auth_token_by_task_id(
         return Ok(());
     }
 
-    // RetrieveAuthTokenByTaskId resolves os_account_id from callerToken parameter.
-    let os_account_id = crate::wrapper::ffi::GetOsAccountIdFromTokenId(caller_token);
+    // Resolve the task owner's os_account_id from the uid parameter (the IPC
+    // caller is a tool SA whose own os_account differs from the task owner's).
+    let os_account_id = get_user_id(uid as u64).map_err(|e| {
+        loge!("[FATAL]RetrieveAuthTokenByTaskId resolve os_account_id from uid failed: {}", e.msg);
+        IpcStatusCode::Failed
+    })?;
 
-    logi!("RetrieveAuthTokenByTaskId received, os_account_id: {}, caller_token: {}, task_id_len: {}",
-        os_account_id, caller_token, task_id.len());
+    logi!("RetrieveAuthTokenByTaskId received, os_account_id: {}, uid: {}, task_id_len: {}",
+        os_account_id, uid, task_id.len());
 
-    let result = stub.retrieve_auth_token_by_task_id(os_account_id, caller_token, task_id);
+    let result = stub.retrieve_auth_token_by_task_id(os_account_id, uid, task_id);
 
     reply.write::<i32>(&(IPC_SUCCESS as i32))?;
     match result {

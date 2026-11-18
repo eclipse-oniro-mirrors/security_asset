@@ -21,7 +21,7 @@
 
 | 项 | 补充说明 |
 |----|----------|
-| 代码基线 | 基线 `7e1109015c5941f014d9cf0421f528351a3b9c07` 仅含 ticket 链路；**任务级身份凭证（Task Identity）全部为本次新增**。实际开发内容对应提交 `cd731e5b0d94c262a6f1f1d7a4b28ae451052f38`（task identity 生成/撤销/存储/IAM 桥）+ `fc582502b877fc00a5cf4968056173fa916d8bfa`（锁屏豁免 + 验证脊柱重构 + get_atl_permission_policy 插件事件） |
+| 代码基线 | 基线 `7e1109015c5941f014d9cf0421f528351a3b9c07` 仅含 ticket 链路；**任务级身份凭证（Task Identity）全部为本次新增**。实际开发内容对应提交 `cd731e5b0d94c262a6f1f1d7a4b28ae451052f38`（task identity 生成/撤销/存储/IAM 桥）+ `fc582502b877fc00a5cf4968056173fa916d8bfa`（锁屏豁免 + 验证脊柱重构 + get_atl_permission_policy 插件事件）+ `0043bc2c`（周期 scheduled authToken：DELAYED 先 RedeemScheduledAuthToken 兑换再校验）及其后续参数与序列化收口（caller 参数统一为 uid、challenge/authToken IPC 序列化定为 `List<int>` i32 逐元素格式） |
 | 锁屏豁免 | ATL3(30000)/ATL4(40000) 为有效可豁免机主认证强度，当前锁屏拒绝权限列表为空 → 放行（spec AC-2.1~2.3，C-5 已确认最终规格） |
 | 一次性任务语义 | 一次性（INSTANT）任务凭证校验通过并执行后不可再次通过校验；延时（DELAYED）可重复通过（spec AC-3.1，R-9） |
 | 权限口径 | `allowableDuration` 按 IAM 要求为毫秒、约束 `(0, 86400000]`（24 小时，以声明文件口径为准）；实现侧 `MAX_ALLOWABLE_DURATION=86400000` 对齐 |
@@ -64,11 +64,11 @@
 |----|------|------|----------|
 | NAPI（JS 入口） | `frameworks/secure_access_fence/js/napi/src/agent_fence_napi.cpp` | `generateTaskChallenge`/`generateTaskIdentity`/`revokeTaskIdentity` 的 ArkTS 入口，参数校验 + typedarray 校验（u8_list 逐元素转换） | 新增 |
 | Inner API（C++ 入口） | `interfaces/.../agent_fence/inc/saf_agent_fence.h:205-239` | 静态方法签名 + proxy 调用（GenerateTask* / RevokeTaskIdentity / RetrieveAuthTokenByTaskId） | 新增 |
-| IPC | `frameworks/secure_access_fence/inner_api/ipc/`（IDL + Rust `sub_modules/task_identity.rs`） | ipccode 12-15 序列化/反序列化 + `deserialize_i32_u8_list` 范围校验 | 新增 |
+| IPC | `frameworks/secure_access_fence/inner_api/ipc/`（IDL + Rust `sub_modules/task_identity.rs`） | ipccode 12-15 序列化/反序列化；challenge/authToken 载荷为 `List<int>`（`[i32 count][count × 4 字节 int32]`，与 IDL 代码生成格式一致），`deserialize_i32_u8_list` 逐元素 0~255 范围校验 | 新增 |
 | SAF 服务（Rust） | `services/secure_access_fence/core_service/src/stub.rs` + `lib.rs` | IPC 分发、服务侧权限校验（`check_query_tool_permission` / `check_retrieve_auth_token_permission`）、`verify_ticket_impl` 集成任务校验 | 修改 |
 | 任务身份模块 | `services/secure_access_fence/core_service/src/task_identity/`（mod/store/storage_backend/validator） | 挑战生成、身份签发（双 challenge HMAC + IAM 绑定）、撤销、校验（脊柱）、消费、持久化 | 新增 |
-| CXX 桥 | `services/secure_access_fence/core_service/src/wrapper.rs` + `cxx/src/cxx_bridge_functions.h` | Rust↔C++ 边界：`VerifyAuthToken`（IAM）、`get_atl_permission_policy`（插件）、`cxx_verify_task_identity` | 新增 |
-| IAM | `cxx/src/iam_verify_wrapper.cpp` | `UserAccessCtrlClient::VerifyAuthToken` 同步等待，返回 (challenge, atl)；10 秒超时 | 新增 |
+| CXX 桥 | `services/secure_access_fence/core_service/src/wrapper.rs` + `cxx/src/cxx_bridge_functions.h` | Rust↔C++ 边界：`VerifyAuthToken` / `RedeemScheduledAuthToken`（IAM）、`get_atl_permission_policy`（插件）、`cxx_verify_task_identity`、`GetCallingUid` / `GetCallingTokenId` / `GetOsAccountIdFromTokenId` / `GetUidFromTokenId`（caller 解析） | 新增 |
+| IAM | `cxx/src/iam_verify_wrapper.cpp` | `UserAccessCtrlClient::VerifyAuthToken` / `RedeemScheduledAuthToken` 同步等待，返回 (challenge, atl) / 实时 token；5 秒超时 | 新增 |
 | 插件（闭源） | `EventType::GetAtlPermissionPolicy` / `GetPolicyAuthStatus` | 锁屏拒绝权限策略与授权策略来源 | 扩展事件（新增 GetAtlPermissionPolicy=10） |
 
 **检查项：**
@@ -119,8 +119,8 @@
 | ADR-1 | 任务身份凭证如何生成以保证防篡改、可校验？ | 复用既有 ticket 链路**双 challenge HMAC 模式**：challenge1 派生 session_key、challenge2 入 HMAC 数据、`taskAttributes` 内嵌 callerTokenId； identity=base64(HMAC(taskAttributes+taskId+challenge2)) | A：独立新建凭证体系（新 key 管理、新校验器）——与 ticket 链路完全解耦但引入重复路径与迁移成本；B：单向签名（无 challenge）——无法绑定认证会话与防重放 | 与基线 ticket 链路同构，验证端可复用 `create_ticket_key_manager`/HMAC 基础件；HMAC 覆盖 callerTokenId 防止调用方伪冒；不引入动态调用方 uid 拼接，验证方无需区分生成/验证 caller | 任务凭证签发与校验路径（TASK-2） |
 | ADR-2 | 锁屏豁免如何判定？ | ATL 分级锁屏策略：任务凭证声明 `allowScreenLockExecution=true` 且含有效 authToken（高危签发）时，请求 ATL 对应的**锁屏拒绝权限策略**（插件 `GetAtlPermissionPolicy`），请求权限不在拒绝列表即放行 | A：仅凭 `needUnlockScreen` 字段判定（基线已有）——无法区分"用户本人认证后的任务豁免"与普通调用；B：阈值判定（ATL>=X 即放行）——无法表达按权限粒度控制 | 权限粒度可控（不同 ATL 可配不同拒绝列表）；ATL3(30000)/ATL4(40000) 已验证，当前拒绝列表为空→全放行（已确认）；策略来源插件便于安全侧集中配置 | 锁屏执行管控（TASK-4） |
 | ADR-3 | 一次性任务"执行后不可再校验"如何实现？ | **执行后删除本地记录**：`verify_task_identity_and_consume` 校验通过后对一次性任务删除（内存+磁盘） | A：状态字段标记（consumed）+ 保留记录——需额外状态管理与过期清理；B：仅内存标记——重启后记录复活，语义不一致 | 删除即天然幂等、重启后不复活；无额外状态机；DELAYED 不删除保持可重复校验 | 一次性任务语义（TASK-5） |
-| ADR-4 | 任务凭证存储与一致性？ | 磁盘 source of truth + 内存 LRU 32（entries/challenges 各 32）；`StorageBackend` trait 抽象磁盘/dock | A：纯内存——SA 重启丢失；B：每任务独立锁文件——复杂；C：全局单写者 Mutex + per-record 文件 | 磁盘保证跨 SA 生命周期；LRU 有界防 DoS（~24KB）；StorageBackend 使 store.rs 零 `#[cfg]`（测试用 Mock） | 存储与生命周期（TASK-3） |
-| ADR-5 | IAM 机主认证如何接入？ | CXX 桥封装 `UserAccessCtrlClient::VerifyAuthToken`（`iam_verify_wrapper.cpp`，SyncVerifyCallback + 10s 超时），返回 (challenge, atl)；SELinux 在 `selinux_adapter` 仓 | A：Rust 直接调用 IAM——跨语言绑定成本高；B：打桩 ATL=3——非真实认证不可靠（草稿曾用，已替换） | 真实机主认证；CXX 桥隔离；超时兜底防阻塞 SA | IAM 集成（TASK-2） |
+| ADR-4 | 任务凭证存储与一致性？ | 磁盘 source of truth + 内存缓存（任务记录 Vec LRU 32、挑战 FIFO 读后消费、唤醒初始挑战可复用）；`StorageBackend` trait 抽象磁盘/Mock；on_idle 清空内存并 spawn_blocking 异步磁盘清理 | A：纯内存——SA 重启丢失；B：每任务独立锁文件——复杂；C：全局单写者 Mutex + per-record 文件 | 磁盘保证跨 SA 生命周期；LRU 有界防 DoS（~24KB）；StorageBackend 使 store.rs 零 `#[cfg]`（测试用 Mock） | 存储与生命周期（TASK-3） |
+| ADR-5 | IAM 机主认证如何接入？ | CXX 桥封装 `UserAccessCtrlClient::VerifyAuthToken` 与 `RedeemScheduledAuthToken`（`iam_verify_wrapper.cpp`，callback wrapper + 5s 超时），分别返回 (challenge, atl) / 实时 token；DELAYED 周期 token 先兑换再校验，兑换时服务端随机生成 redeem challenge 与 VerifyAuthToken 返回 challenge 比对；SELinux 在 `selinux_adapter` 仓 | A：Rust 直接调用 IAM——跨语言绑定成本高；B：打桩 ATL=3——非真实认证不可靠（草稿曾用，已替换） | 真实机主认证；CXX 桥隔离；超时兜底防阻塞 SA | IAM 集成（TASK-2） |
 | ADR-6 | `RetrieveAuthTokenByTaskId` 定位？ | 新增 InnerAPI（C++ 入口，无 NAPI），供系统侧校验任务有效性并取回 authToken 字节（输出参数） | A：复用既有 `verify_task_identity`（不返回 authToken）——无法满足"取回 authToken"需求；B：Public API——暴露给三方不安全 | 系统侧内部校验+取数；开放级别 InnerAPI 约束调用方为系统 SA；权限双重校验 | 任务有效性检索（TASK-4） |
 
 ## 设计骨架
@@ -277,18 +277,26 @@ sequenceDiagram
   participant NAPI as NAPI
   participant SA as SAFService
   participant TI as task_identity
-  participant IAM as IAM VerifyAuthToken
+  participant IAM as IAM VerifyAuthToken/Redeem
   participant ST as TaskIdentityStore
   App->>NAPI: generateTaskIdentity(taskIdentityInfo)
   NAPI->>SA: IPC ipccode 13
   SA->>TI: generate_task_identity
   alt 高危路径（携带 authToken）
-    TI->>IAM: VerifyAuthToken(authToken, allowableDuration)
-    IAM-->>TI: (challenge, atl)
-    TI->>ST: get_challenge(caller, taskId) [待认证挑战值]
-    ST-->>TI: pending_challenge
-    TI->>TI: 比对 IAM challenge vs pending（不匹配→Mismatch）
-    TI->>TI: 构建 taskAttributes(含 atl) + 双challenge HMAC
+    alt DELAYED（携带周期 scheduled authToken）
+      TI->>IAM: RedeemScheduledAuthToken(redeem_challenge, scheduledToken)
+      IAM-->>TI: 实时 authToken（redeem_challenge 由服务端随机生成）
+      TI->>IAM: VerifyAuthToken(实时token, allowableDuration)
+      IAM-->>TI: (verify_challenge, atl)
+      TI->>TI: 比对 redeem_challenge vs verify_challenge（不匹配→Mismatch）
+    else INSTANT（携带普通 authToken）
+      TI->>IAM: VerifyAuthToken(authToken, allowableDuration)
+      IAM-->>TI: (verify_challenge, atl)
+      TI->>ST: get_challenge(caller, taskId) [待认证挑战值]
+      ST-->>TI: pending_challenge
+      TI->>TI: 比对 verify_challenge vs pending（不匹配→Mismatch）
+    end
+    TI->>TI: 构建 taskAttributes(含 atl；DELAYED 存储原始周期 authToken) + 双challenge HMAC
   else 低危路径（未携带 authToken）
     TI->>TI: 构建 taskAttributes(atl=0) + 双challenge HMAC
   end
@@ -307,15 +315,23 @@ sequenceDiagram
   participant FW as SafAgentFence(C++ InnerAPI)
   participant SA as SAFService
   participant TI as task_identity
+  participant IAM as IAM Redeem
   participant ST as TaskIdentityStore
   CSA->>FW: RetrieveAuthTokenByTaskId(callerToken, taskId)
   FW->>SA: IPC ipccode 15（校验系统SA+QUERY+INTERACT权限）
-  SA->>TI: retrieve_auth_token_by_task_id
+  SA->>SA: GetUidFromTokenId(callerToken)→uid；GetOsAccountIdFromTokenId→os_account_id
+  SA->>TI: retrieve_auth_token_by_task_id(os_account_id, uid, taskId)
   TI->>ST: fetch_record_and_verify → get_task_record
   ST-->>TI: record（过期检查+HMAC校验）
   TI->>TI: extract_auth_token(record)
-  TI-->>SA: authToken 字节
-  SA-->>FW: OK(authToken out)
+  alt DELAYED（存储的是周期 token）
+    TI->>IAM: RedeemScheduledAuthToken(随机challenge, scheduledToken)
+    IAM-->>TI: 实时 authToken
+    TI-->>SA: 实时 authToken 字节
+  else INSTANT
+    TI-->>SA: 存储 authToken 字节
+  end
+    SA-->>FW: OK(authToken out, Inner API 边界转换为 uint8 字节；内部 IPC 载荷为 List<int>)
   FW-->>CSA: 0 / 错误码
 ```
 
@@ -333,8 +349,8 @@ sequenceDiagram
   PM->>PM: VerifyRemoteTicketIfNeed（远程先验）
   PM->>PM: ConvertOperationsToPermissions(聚合权限)
   PM->>PM: needUnlock = AnyCommandRequiresUnlock(CLI)
-  PM->>TI: VerifyTaskIdentity (cxx_verify_task_identity)
-  TI-->>PM: 校验通过 / 失败（carry taskIdentity 时）
+  PM->>TI: VerifyTaskIdentity (cxx_verify_task_identity：记录 HMAC 校验 + authToken 校验)
+  TI-->>PM: 校验通过 / 失败（carry taskIdentity 时；INSTANT 直接 VerifyAuthToken 存储token，DELAYED 先 Redeem 再 VerifyAuthToken）
   PM->>PM: needsAtlExemption = needUnlock && hasAuthToken && allowScreenLockExecution
   alt needsAtlExemption
     PM->>PLUG: GetAtlPermissionPolicy(atl)
@@ -389,7 +405,7 @@ sequenceDiagram
 ```typescript
 // 任务身份凭证（System API 返回）
 interface TaskIdentity {
-  taskAttributes: string; // JSON：taskId/callerTokenId/expireTime/executeType/allowScreenLock/allowableDuration/authToken/atl
+  taskAttributes: string; // JSON：taskId/callerUid/expireTime/executeType/allowScreenLock/allowableDuration/authToken/atl
   identity: string;       // base64(HMAC_SHA256(taskAttributes+taskId+challenge2))
   challenge: string;      // base64(challenge1+challenge2)
 }
@@ -398,7 +414,7 @@ interface TaskIdentityInfo {
   taskExpireTime: number;         // 秒；-1=DELAYED 永不过期
   executeType: ExecuteType;       // INSTANT=1 / DELAYED=2
   allowScreenLockExecution: boolean;
-  authToken?: Uint8Array;         // 高危路径
+  authToken?: Uint8Array;         // 高危路径；DELAYED 携周期 scheduled authToken（IPC 以 List<int> i32 逐元素传输）
   allowableDuration?: number;     // 毫秒；(0,86400000]
 }
 ```
@@ -407,8 +423,9 @@ interface TaskIdentityInfo {
 
 | 数据类型 | 存储方式 | 位置 | 生命周期 |
 |----------|----------|------|----------|
-| 任务记录（taskAttributes） | 磁盘 JSON + 内存 LRU | `/data/service/el2/{os_id}/secure_access_fence/agent_plugin/taskAttributes/{caller}/{taskId}.json` | 签发→撤销/过期/一次性执行后删除 |
-| 待认证挑战值 | 磁盘 JSON + 内存 LRU | `.../taskChallenges/{caller}/{taskId}.json` | 10 分钟超时 |
+| 任务记录（taskAttributes） | 磁盘 JSON + 内存 LRU（Vec 32） | `/data/service/el2/{os_id}/secure_access_fence/agent_plugin/taskAttributes/{uid}/{taskId}.json`（caller 以任务属主 uid 为键；单属主目录上限 10000 文件） | 签发→撤销/过期/一次性执行后删除；on_idle 异步磁盘清理（spawn_blocking，按已知 os_account_id 集合） |
+| 待认证挑战值 | 磁盘 + 内存（FIFO 消费式） | `.../taskAttributes/{uid}/{taskId}.challenge`（与任务记录同目录、不同后缀） | 10 分钟（boot-time）超时；读后即消费 |
+| 唤醒初始挑战值 | 磁盘 + 内存（可复用） | `.../taskAttributes/{uid}/initial_wakeup*`（仅 INSTANT 可回退使用） | 可复用，不随读消费 |
 
 ### 状态归属与不变量
 
@@ -416,8 +433,8 @@ interface TaskIdentityInfo {
 
 | State ID | 状态/资源 | 唯一 Owner | 存储/Key/Index | 创建与初始化 | 读取/更新方 | 清理/恢复/回滚触发 | 并发模型 | 代码事实/规则来源 |
 |----------|-----------|------------|-------------------|------------|-------------|--------------------|----------|-------------------|
-| STATE-1 | 任务凭证记录（`TaskIdentityRecord`） | `task_identity/store.rs`（`TaskIdentityStore`） | 磁盘 `taskAttributes/{caller}/{taskId}.json` + 内存 LruMap 32 | `generate_task_identity` 签发时创建（任务记录含 HMAC 域） | 写入：签发；读取：fetch_record_and_verify（内存优先/磁盘兜底）；删除：撤销/一次性消费/过期清理 | 撤销删除；一次性执行后删除；on_idle/空闲过期清理；SA 重启磁盘兜底 | 全局 `OnceLock<TaskIdentityStore>` + 内部 Mutex（每 key 串行） | `store.rs:28,35,64` + OH-ARCH-IPC-SAF |
-| STATE-2 | 待认证挑战值（pending challenge） | `task_identity/store.rs` | `taskChallenges/{caller}/{taskId}.json` + LruMap | `generate_task_challenge` 创建 | 写入：签发挑战；读取：`verify_iam_and_get_challenge` 比对后消费；删除：比对后/超时清理 | 10 分钟超时清理 | 每 key 串行 | `store.rs:31` + `mod.rs:119` |
+| STATE-1 | 任务凭证记录（`TaskIdentityRecord`） | `task_identity/store.rs`（`TaskIdentityStore`） | 磁盘 `taskAttributes/{uid}/{taskId}.json` + 内存 Vec LRU 32 | `generate_task_identity` 签发时创建（任务记录含 HMAC 域） | 写入：签发；读取：fetch_record_and_verify（内存优先/磁盘兜底）；删除：撤销/一次性消费/过期清理 | 撤销删除；一次性执行后删除；on_idle spawn_blocking 异步磁盘清理（按已知 os_account_id 集合，延迟卸载时间与清理数量挂钩）；SA 重启磁盘兜底 | 全局 `OnceLock<TaskIdentityStore>` + 内部 Mutex（每 key 串行） | `store.rs:28,35,64` + OH-ARCH-IPC-SAF |
+| STATE-2 | 待认证挑战值（pending challenge） | `task_identity/store.rs` | `taskAttributes/{uid}/{taskId}.challenge` + 内存（FIFO 读后即消费） | `generate_task_challenge` 创建 | 写入：签发挑战；读取：`verify_iam_and_get_challenge`（INSTANT 比对后消费；DELAYED 不依赖 pending） | 10 分钟（boot-time）超时清理；重启检测（now_boot < created 判过期） | 每 key 串行 | `store.rs:31` + `mod.rs:119` |
 | STATE-3 | 锁屏拒绝权限策略缓存 | 插件（闭源）持有 | 插件侧 | 查询时获取（`get_atl_permission_policy`） | 读取：`RequestToolPermissions` 锁屏豁免 | 由插件生命周期管理 | 每次豁免判定查询 | `wrapper.rs:243` + OH-ARCH-IPC-SAF |
 
 #### 不变量追溯
@@ -504,14 +521,14 @@ sequenceDiagram
 | generateTaskIdentity | allowableDuration | number | (0, 86400000] 毫秒（与 IAM 约束一致） | 24010000 | 默认 86400000 |
 | generateTaskIdentity | executeType | ExecuteType | INSTANT=1/DELAYED=2 | 24010000 | -1 仅 DELAYED |
 | revokeTaskIdentity | taskId | string[] | 1~100 个、非空、无路径穿越 | 24010000 | 幂等 |
-| RetrieveAuthTokenByTaskId | callerToken/taskId | int32/string | 系统 SA 身份 + taskId 合法 | 201/24010000/24010002 | 服务侧双重权限 |
+| RetrieveAuthTokenByTaskId | callerToken/taskId/authToken | uint32/string/vector<uint8_t> | 系统 SA 身份 + taskId 合法；callerToken 经 AccessTokenKit `GetHapTokenInfo` 解析任务属主 uid | 201/24010000/24010002 | 服务侧双重权限；内部 IPC 载荷为 `List<int>` i32 逐元素，Inner API 边界转 uint8 字节 |
 
 ### 线程与并发模型
 
 | 操作 | State ID / 竞争对象 | 发起线程 | 回调线程 | 跨进程边界 | 同步/所有权机制 | 锁顺序/重入约束 | 关联不变量 |
 |------|---------------------|----------|----------|------------|----------------|----------------|------------|
 | 签发/撤销/校验 | STATE-1/2 | Binder（SA 工作线程） | 同线程 | 是 | TaskIdentityStore 内部 Mutex 串行化 key 访问 | 每 key 串行；禁止跨调用重入 | INV-1,4 |
-| IAM 校验 | — | Binder 线程 | SyncVerifyCallback（promise/future 同步等待） | IAM 跨进程 | 同步等待 + 10s 超时 | 不阻塞 SA 主线程过久（超时兜底） | INV-4 |
+| IAM 校验 | — | Binder 线程 | VerifyTokenCallbackWrapper（promise + call_once 同步等待） | IAM 跨进程 | 同步等待 + 5s 超时 | 不阻塞 SA 主线程过久（超时兜底） | INV-4 |
 | 锁屏豁免查询 | STATE-3 | Binder 线程 | 插件回调 | 插件进程 | plugin process_event 同步 | — | INV-5 |
 
 ### 安全基础检查

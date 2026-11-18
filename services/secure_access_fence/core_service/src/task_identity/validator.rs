@@ -35,7 +35,7 @@ fn contains_path_traversal(segment: &str) -> bool {
     PATH_TRAVERSAL_PATTERNS.iter().any(|p| segment.contains(p))
 }
 
-/// Unified path segment validation for strings embedded in file paths (taskId, caller_token, etc.).
+/// Unified path segment validation for strings embedded in file paths (taskId, caller uid, etc.).
 /// Checks: non-empty, length ≤256, no null byte, no path traversal patterns.
 pub fn validate_path_segment(segment: &str) -> Result<()> {
     if segment.is_empty() {

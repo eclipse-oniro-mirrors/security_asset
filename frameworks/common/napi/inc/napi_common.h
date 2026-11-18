@@ -187,9 +187,6 @@ napi_status NapiGetProperty(const napi_env env, napi_value object,
     SAF::TaskIdentity &taskIdentity);
 
 napi_status NapiGetProperty(const napi_env env, napi_value object,
-    std::vector<uint8_t> &values);
-
-napi_status NapiGetProperty(const napi_env env, napi_value object,
     std::vector<int32_t> &values);
 
 napi_status NapiGetProperty(const napi_env env, napi_value object,

@@ -131,12 +131,12 @@ interface OHOS.Security.SAF.ISecureAccessFence {
     /**
      * @brief Generate a random challenge for task-level authorization.
      * @param taskIdentityInfo Task identity info.
-     * @param challenge Output random challenge bytes.
+     * @param challenge Output random challenge bytes (each byte as an int32 element).
      * @param resultCode Error code output (0 for success).
      */
     [ipccode 12] void GenerateTaskChallenge(
         [in] TaskIdentityInfo taskIdentityInfo,
-        [out] unsigned char[] challenge,
+        [out] List<int> challenge,
         [out] int resultCode
     );
 
@@ -164,15 +164,15 @@ interface OHOS.Security.SAF.ISecureAccessFence {
 
     /**
      * @brief Retrieve auth token by task id.
-     * @param callerToken Caller token id.
+     * @param uid Task owner's application uid.
      * @param taskId Task id to retrieve auth token for.
-     * @param authToken Output auth token bytes (empty for low-risk tasks).
+     * @param authToken Output auth token bytes (each byte as an int32 element; empty for low-risk tasks).
      * @param resultCode Error code output (0 for success).
      */
     [ipccode 15] void RetrieveAuthTokenByTaskId(
-        [in] unsigned int callerToken,
+        [in] unsigned int uid,
         [in] String taskId,
-        [out] unsigned char[] authToken,
+        [out] List<int> authToken,
         [out] int resultCode
     );
 
